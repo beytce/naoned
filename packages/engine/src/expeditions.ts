@@ -1,5 +1,6 @@
 import { draw } from "./draw.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
+import { pirateRiskBps, portDues, readyFleet } from "./ships.js";
 import {
   DAY_MS,
   type Expedition,
@@ -70,6 +71,7 @@ export function launchExpedition(
   destination: string,
   cargo: Record<string, number>,
   escort: boolean,
+  ships?: string[],
 ): Expedition {
   const { settings } = tx.ctx;
   const dest = settings.expeditions.destinations[destination];
@@ -79,6 +81,9 @@ export function launchExpedition(
   );
   if (active.length >= settings.expeditions.maxActive) fail("too_many_galleys");
 
+  // Own ships (merchant ship first, then escorts), or a chartered galley.
+  const fleet = ships && ships.length > 0 ? readyFleet(tx, playerId, ships) : null;
+
   let value: Deniers = 0n;
   const entries = Object.entries(cargo).filter(([, q]) => q !== 0);
   if (entries.length === 0) fail("invalid_cargo");
@@ -86,30 +91,34 @@ export function launchExpedition(
     if (!Number.isInteger(qty) || qty <= 0 || !shippable(tx, resource)) fail("invalid_cargo");
     value += (settings.referencePrices[resource] ?? 0n) * BigInt(qty);
   }
-  if (value > dest.maxCargoValue) fail("cargo_too_valuable");
+  if (value > (fleet ? fleet.hold : dest.maxCargoValue)) fail("cargo_too_valuable");
 
   const id = nextId(tx, "g");
   for (const [resource, qty] of entries)
     removeStock(tx, playerId, resource, qty, "expedition_out", id);
+  const crews = fleet ? fleet.ships.length : 1;
   for (const [resource, qty] of Object.entries(dest.provisions)) {
-    removeStock(tx, playerId, resource, qty, "expedition_out", id);
+    removeStock(tx, playerId, resource, qty * crews, "expedition_out", id);
   }
-  const fee = dest.charter + (escort ? dest.escort : 0n);
+  const fee = fleet ? portDues(tx.ctx, dest.charter) : dest.charter + (escort ? dest.escort : 0n);
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, fee, "expedition_charter", id);
 
   const loaded = Object.fromEntries(entries);
+  const hours = dest.hours * HOUR_MS;
   const expedition: Expedition = {
     id,
     playerId,
     destination,
     departAt: tx.now,
-    returnAt: tx.now + dest.hours * HOUR_MS,
+    returnAt: tx.now + (fleet ? Math.round((hours * fleet.speedBps) / 10_000) : hours),
     cargo: loaded,
-    escort,
+    escort: fleet ? fleet.ships.length > 1 : escort,
     cargoValue: cargoValueAt(tx.ctx, destination, loaded, tx.now),
     outcome: "pending",
     brought: 0,
+    defense: fleet ? fleet.defense : escort ? 3 : 1,
   };
+  if (fleet) expedition.ships = fleet.ships;
   tx.s.expeditions ??= {};
   tx.s.expeditions[id] = expedition;
   emit(tx, "expedition_launched", playerId, { expedition: id, destination, escort });
@@ -126,9 +135,13 @@ export function collectExpedition(tx: Tx, playerId: PlayerId, expeditionId: stri
   const dest = tx.ctx.settings.expeditions.destinations[e.destination];
   if (!dest) fail("unknown_destination");
 
-  const risk = e.escort ? dest.escortRiskBps : dest.riskBps;
+  const defense = e.defense ?? (e.escort ? 3 : 1);
+  const risk = pirateRiskBps(dest.riskBps, dest.escortRiskBps, defense);
   if (draw(tx.ctx, `pirates:${e.id}`) % 10_000 < risk) {
     e.outcome = "lost";
+    // Ships are never sunk: the merchant ship comes back damaged.
+    const merchant = e.ships?.[0] ? tx.s.ships?.[e.ships[0]] : undefined;
+    if (merchant) merchant.damaged = true;
     emit(tx, "expedition_lost", playerId, { expedition: e.id });
     return;
   }

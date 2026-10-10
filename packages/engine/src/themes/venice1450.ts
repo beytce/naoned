@@ -29,6 +29,11 @@ export const venice1450: Theme = {
     { code: "caffa", name: "Caffa" },
     { code: "bruges", name: "Bruges" },
   ],
+  ships: [
+    { type: "cog", name: "Cogue" },
+    { type: "galley", name: "Galère" },
+    { type: "carrack", name: "Caraque" },
+  ],
   regions: [
     { code: "terraferma", name: "Terraferma", bonusResource: "wheat" },
     { code: "lagoon", name: "Lagune", bonusResource: "clay" },

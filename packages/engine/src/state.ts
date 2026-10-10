@@ -114,8 +114,24 @@ export interface Expedition {
   /** Cargo at the port's prices of the week, fixed at departure. */
   cargoValue: Deniers;
   outcome: "pending" | "returned" | "lost";
+  /** Own ships: the merchant ship first, then the escorts (none for a chartered galley). */
+  ships?: string[];
+  /** Strength against pirates and privateers (1 for a chartered galley, 3 escorted). */
+  defense?: number;
   /** Exotic goods brought back (0 when lost or pending). */
   brought: number;
+}
+
+export interface Ship {
+  id: string;
+  playerId: PlayerId;
+  type: string;
+  /** Cost at reference prices, counted in net worth like a building. */
+  investedValue: Deniers;
+  /** Damaged by pirates or privateers: stays in port until repaired. */
+  damaged: boolean;
+  /** In the shipyard until then (repairs). */
+  readyAt: number;
 }
 
 export interface DailyPriceStat {
@@ -149,6 +165,7 @@ export interface WorldState {
   /** Contracts of the Doge fulfilled today, per player. */
   contractsDone?: Record<PlayerId, { day: number; ids: string[] }>;
   expeditions?: Record<string, Expedition>;
+  ships?: Record<string, Ship>;
   /** Resets used per player this season (absent in states saved before resets existed). */
   resets?: Record<PlayerId, number>;
   /** Weekly ranking: current week and each player's net worth when it started (or on joining). */
@@ -195,6 +212,7 @@ export function createWorldState(ctx: WorldContext): WorldState {
     resets: {},
     contractsDone: {},
     expeditions: {},
+    ships: {},
     weekly: { week: 0, start: {} },
   };
 }

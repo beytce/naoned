@@ -48,7 +48,14 @@ export type EngineErrorCode =
   | "invalid_cargo"
   | "cargo_too_valuable"
   | "unknown_expedition"
-  | "expedition_not_back";
+  | "expedition_not_back"
+  | "unknown_ship_type"
+  | "unknown_ship"
+  | "max_ships"
+  | "ship_busy"
+  | "ship_damaged"
+  | "ship_not_damaged"
+  | "invalid_fleet";
 
 export class EngineError extends Error {
   constructor(

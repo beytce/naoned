@@ -7,6 +7,7 @@ import { collectExpedition, launchExpedition } from "./expeditions.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { collect, startProduction } from "./production.js";
 import { deliverToProject } from "./projects.js";
+import { buildShip, repairShip } from "./ships.js";
 import {
   type Building,
   DAY_MS,
@@ -64,7 +65,11 @@ export type Command =
       destination: string;
       cargo: Record<string, number>;
       escort: boolean;
+      /** Own ships, merchant ship first; none to charter a galley. */
+      ships?: string[];
     }
+  | { type: "buildShip"; playerId: PlayerId; shipType: string }
+  | { type: "repairShip"; playerId: PlayerId; shipId: string }
   | { type: "collectExpedition"; playerId: PlayerId; expeditionId: string }
   | { type: "tick" };
 
@@ -138,6 +143,9 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
   delete tx.s.accounts[cash];
   delete tx.s.accounts[escrowAccount(playerId)];
   delete tx.s.players[playerId];
+  for (const ship of Object.values(tx.s.ships ?? {})) {
+    if (ship.playerId === playerId) delete tx.s.ships?.[ship.id];
+  }
   if (tx.s.weekly) delete tx.s.weekly.start[playerId];
   resets[playerId] = used + 1;
   emit(tx, "player_reset", playerId);
@@ -196,7 +204,13 @@ function apply(tx: Tx, cmd: Command): void {
       fulfillContract(tx, cmd.playerId, cmd.contractId);
       break;
     case "launchExpedition":
-      launchExpedition(tx, cmd.playerId, cmd.destination, cmd.cargo, cmd.escort);
+      launchExpedition(tx, cmd.playerId, cmd.destination, cmd.cargo, cmd.escort, cmd.ships);
+      break;
+    case "buildShip":
+      buildShip(tx, cmd.playerId, cmd.shipType);
+      break;
+    case "repairShip":
+      repairShip(tx, cmd.playerId, cmd.shipId);
       break;
     case "collectExpedition":
       collectExpedition(tx, cmd.playerId, cmd.expeditionId);

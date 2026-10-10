@@ -3,6 +3,7 @@ import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
 import { bigMin } from "./money.js";
 import { openDueProjects } from "./projects.js";
+import { shipUpkeep } from "./ships.js";
 import { DAY_MS, HOUR_MS, SINK_ACCOUNT, cashAccount, dayIndex } from "./state.js";
 import { type Tx, balance, emit, removeStock, transfer } from "./tx.js";
 import { closeWeek } from "./weekly.js";
@@ -22,6 +23,9 @@ export function chargeUpkeep(tx: Tx): void {
       let due = 0n;
       for (const b of Object.values(tx.s.buildings)) {
         if (b.playerId === player.id) due += upkeepPerDay(ctx, b);
+      }
+      for (const ship of Object.values(tx.s.ships ?? {})) {
+        if (ship.playerId === player.id) due += shipUpkeep(ctx, ship);
       }
       const cash = cashAccount(player.id);
       const paid = bigMin(due, balance(tx, cash));

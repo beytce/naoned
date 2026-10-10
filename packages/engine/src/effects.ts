@@ -16,7 +16,8 @@ export type LedgerReason =
   | "trade"
   | "player_reset"
   | "contract_reward"
-  | "expedition_charter";
+  | "expedition_charter"
+  | "ship_repair";
 
 /**
  * Double-entry ledger line: `amount` leaves `from` and enters `to`.

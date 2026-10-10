@@ -105,6 +105,28 @@ export const worldSettingsSchema = z.object({
     .default({ maxActive: 1, weeklySwingBps: 0, destinations: {} }),
   /** Computer-run merchants keep the world at this many active merchants while players are few. */
   bots: z.object({ population: qty }).default({ population: 0 }),
+  /** Ships built at the arsenal: they carry convoys and escort them. */
+  ships: z
+    .object({
+      maxPerPlayer: qty,
+      /** Port dues for a convoy on one's own ships, as a share of the route's charter. */
+      portDuesBps: bps.default(0),
+      types: z.record(
+        z.object({
+          costDucats: money,
+          costMaterials: z.record(qty).default({}),
+          /** Most cargo the ship carries as the merchant ship, at reference prices. */
+          holdValue: money,
+          /** Voyage duration factor: below 10 000 is faster. */
+          speedBps: positive,
+          defense: positive,
+          upkeepPerDay: money,
+          repairCost: money,
+          repairHours: positive,
+        }),
+      ),
+    })
+    .default({ maxPerPlayer: 0, portDuesBps: 0, types: {} }),
   /** How many times a player may restart from scratch during a season. */
   maxResetsPerPlayer: qty.default(1),
   maxBuildings: positive,
