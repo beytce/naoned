@@ -60,25 +60,14 @@ const lastDay = Math.max(...r.players.map((p) => p.day));
 const active = new Set(
   r.players.filter((p) => p.day === lastDay && p.active).map((p) => p.playerId),
 );
-let ha = 0,
-  hi = 0,
-  da = 0,
-  di = 0;
+const counts = { hungryActive: 0, hungryInactive: 0, defaultsActive: 0, defaultsInactive: 0 };
 for (const [k, n] of hungryBy) {
   const [type, id] = k.split(" ");
   const isActive = active.has(id ?? "");
-  if (type === "hungry") isActive ? (ha += n) : (hi += n);
-  else isActive ? (da += n) : (di += n);
+  if (type === "hungry") {
+    if (isActive) counts.hungryActive += n;
+    else counts.hungryInactive += n;
+  } else if (isActive) counts.defaultsActive += n;
+  else counts.defaultsInactive += n;
 }
-console.log(
-  "hungry active",
-  ha,
-  "inactive",
-  hi,
-  "| defaults active",
-  da,
-  "inactive",
-  di,
-  "| active players",
-  active.size,
-);
+console.log(counts, "active players", active.size);
