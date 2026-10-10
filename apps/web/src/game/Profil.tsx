@@ -13,6 +13,7 @@ import { P } from "../art/palette.js";
 import { fr } from "../i18n.js";
 import { Big, Donut, Label, Panel, Ribbon, Sheet, Slab } from "../ui.js";
 import type { GameProps } from "./Game.js";
+import { PushSettings } from "./PushSettings.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
 import type { Profile } from "./types.js";
@@ -254,6 +255,8 @@ export function Profil(props: GameProps) {
           </div>
         </section>
       )}
+
+      <PushSettings />
 
       <section className="space-y-3">
         <Slab tone="ghost" className="w-full" onClick={props.openHelp}>

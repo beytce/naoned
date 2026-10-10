@@ -10,6 +10,9 @@ Un seul service : le serveur Fastify sert l'API (`/api/…`) et l'application we
 | `APP_URL` | oui | URL publique du jeu, sans `/` final (ex. `https://comptoirs.up.railway.app`) ; sert aux liens de connexion |
 | `RESEND_API_KEY` | oui | Clé API Resend |
 | `MAIL_FROM` | non | Expéditeur, par défaut `Comptoirs <onboarding@resend.dev>` |
+| `VAPID_PUBLIC_KEY` | non | Clé publique des notifications push ; sans elle, notifications dans le jeu seulement |
+| `VAPID_PRIVATE_KEY` | non | Clé privée des notifications push (secrète) |
+| `VAPID_SUBJECT` | non | Contact de l'émetteur, par défaut `mailto:contact@comptoirs.app` |
 | `PORT` | non | Fourni par Railway |
 | `NODE_ENV` | non | `production` (déjà fixé dans le Dockerfile) |
 
@@ -22,8 +25,9 @@ Le serveur refuse de démarrer en production sans `RESEND_API_KEY` ou avec une b
 3. **Base** : dans le projet, *New → Database → PostgreSQL*. Dans le service web, onglet *Variables*, ajouter `DATABASE_URL` avec la référence `${{Postgres.DATABASE_URL}}`.
 4. **Domaine** : service web → *Settings → Networking → Generate Domain*. Recopier l'URL obtenue dans la variable `APP_URL`.
 5. **Clé e-mail** : ajouter `RESEND_API_KEY` (et `MAIL_FROM` si un domaine est vérifié).
-6. Railway redéploie. Le contrôle de santé `/api/health` doit passer au vert.
-7. **Vérification du jalon** : ouvrir l'URL sur un téléphone, demander un lien, l'ouvrir depuis l'e-mail, choisir un nom de marchand. Sur iPhone : *Partager → Sur l'écran d'accueil* ; sur Android : *Installer l'application*.
+6. **Notifications push** (facultatif) : sur un ordinateur, dans le dépôt, lancer `pnpm --filter @comptoirs/server vapid`. La commande affiche une clé publique et une clé privée : les copier dans `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY`. Ne jamais publier la clé privée ; en changer invalide les abonnements des joueurs.
+7. Railway redéploie. Le contrôle de santé `/api/health` doit passer au vert.
+8. **Vérification du jalon** : ouvrir l'URL sur un téléphone, demander un lien, l'ouvrir depuis l'e-mail, choisir un nom de marchand. Sur iPhone : *Partager → Sur l'écran d'accueil* ; sur Android : *Installer l'application*.
 
 Coût indicatif : l'offre Hobby de Railway (environ 5 $ par mois, usage inclus) suffit au jalon 2 ; Resend est gratuit jusqu'à 3 000 e-mails par mois. Ces tarifs évoluent : vérifier sur les sites.
 
@@ -33,6 +37,8 @@ Au premier démarrage, le serveur crée le monde « Venise 1450 — bêta », qu
 
 - Un seul exemplaire du service doit tourner (pas de mise à l'échelle horizontale dans Railway) : le monde est tenu en mémoire et les actions sont traitées une par une. Un second exemplaire serait détecté et refusé à la première écriture.
 - Le marché du PNJ, l'entretien et les chantiers avancent chaque minute ; la production est calculée à la lecture.
+- Des maisons marchandes PNJ complètent le monde jusqu'à 15 marchands actifs (`bots.population` dans les réglages du monde) ; elles se retirent à mesure que des joueurs arrivent. Mettre `bots.population` à 0 les arrête.
+- Les notifications (cloche, push) sont calculées chaque minute ; la semaine se clôt à la première minute après chaque période de 7 jours depuis l'ouverture du monde.
 - Les six invariants du grand livre sont vérifiés au démarrage puis toutes les heures ; un écart apparaît dans les journaux sous « invariant violations ».
 
 ## En local

@@ -156,6 +156,24 @@ export interface GameResponse {
   serverTime: number;
   view: PlayerView | null;
   error?: string;
+  /** Unread notifications (the bell). */
+  unread?: number;
+}
+
+export type NotificationKind = "harvest" | "galley" | "event" | "week";
+
+export interface Notice {
+  id: number;
+  kind: NotificationKind;
+  data: Record<string, unknown>;
+  createdAt: number;
+  read: boolean;
+}
+
+export interface PushSettings {
+  publicKey: string | null;
+  kinds: NotificationKind[];
+  off: NotificationKind[];
 }
 
 export interface CrestData {

@@ -4,6 +4,7 @@ import { Crest, defaultCrest } from "../art/crest.js";
 import { Coin, NavIcon } from "../art/icons.js";
 import { Lorenzo } from "../art/scenes.js";
 import { fr } from "../i18n.js";
+import { Bell } from "./Bell.js";
 import { Coach } from "./Coach.js";
 import { Comptoir } from "./Comptoir.js";
 import { Contrats } from "./Contrats.js";
@@ -80,6 +81,8 @@ export function Game(props: {
   const [help, setHelp] = useState(false);
   const [introSeen, setIntroSeen] = useState(() => store.get("introSeen") === "1");
   const [guideKey, setGuideKey] = useState(0);
+  const [unread, setUnread] = useState(0);
+  const clearUnread = useCallback(() => setUnread(0), []);
 
   const apply = useCallback((serverTime: number, v: PlayerView | null) => {
     setOffset(serverTime - Date.now());
@@ -90,6 +93,7 @@ export function Game(props: {
     try {
       const res = await gameApi.view();
       apply(res.serverTime, res.view);
+      setUnread(res.unread ?? 0);
       if (res.view) setPrices((await gameApi.prices()).series);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) onLogout();
@@ -261,14 +265,18 @@ export function Game(props: {
       <header className="sticky top-0 z-20 bg-night/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur">
         <div className="mx-auto flex max-w-md items-center gap-2">
           <div className="leading-none">
-            <p className="font-display text-base font-extrabold uppercase tracking-tight">
+            {/* On the narrowest phones the day stands alone, so the header fits. */}
+            <p className="hidden font-display text-sm font-extrabold uppercase tracking-tight min-[360px]:block min-[380px]:text-base">
               {fr.appName}
             </p>
-            <p className="font-mono text-[10px] tracking-[0.35em] text-lagoon">
+            <p className="hidden font-mono text-[10px] tracking-[0.35em] text-lagoon min-[360px]:block">
               {fr.game.day(view.day, catalog.world.seasonDays)}
             </p>
+            <p className="font-display text-sm font-extrabold text-lagoon min-[360px]:hidden">
+              {fr.game.shortDay(view.day, catalog.world.seasonDays)}
+            </p>
           </div>
-          <div className="ml-auto flex items-center gap-2 rounded-full bg-night-3 py-1 pl-1 pr-3 ring-1 ring-line">
+          <div className="ml-auto flex items-center gap-1.5 rounded-full bg-night-3 py-1 pl-1 pr-2.5 ring-1 ring-line">
             <Coin size={24} />
             <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
               {d(view.cash)}
@@ -288,14 +296,7 @@ export function Game(props: {
               <Lorenzo size={28} />
             </button>
           )}
-          <button
-            type="button"
-            aria-label={fr.game.help}
-            className="text-cream-dim"
-            onClick={() => setHelp(true)}
-          >
-            {NavIcon.help()}
-          </button>
+          <Bell {...gp} unread={unread} onRead={clearUnread} />
           <button
             type="button"
             aria-label={fr.game.tabs.profil}

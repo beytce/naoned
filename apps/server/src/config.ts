@@ -20,6 +20,10 @@ const schema = z
     /** Directory of the built web app, served in production. */
     WEB_DIST: z.string().optional(),
     RESEND_API_KEY: z.string().optional(),
+    /** Web Push keys (pnpm --filter @comptoirs/server vapid). Without them, no push. */
+    VAPID_PUBLIC_KEY: z.string().optional(),
+    VAPID_PRIVATE_KEY: z.string().optional(),
+    VAPID_SUBJECT: z.string().default("mailto:contact@comptoirs.app"),
     MAIL_FROM: z.string().default("Comptoirs <onboarding@resend.dev>"),
     /**
      * Beta: the open world takes the theme's current balancing at each start. Set to "false" once

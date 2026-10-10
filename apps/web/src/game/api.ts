@@ -4,8 +4,11 @@ import type {
   Catalog,
   CrestData,
   GameResponse,
+  Notice,
+  NotificationKind,
   PriceSeries,
   Profile,
+  PushSettings,
   RankingRow,
   WeekRanking,
 } from "./types.js";
@@ -43,6 +46,15 @@ export const gameApi = {
       "/api/game/profile",
     ),
   prices: () => call<{ series: PriceSeries }>("GET", "/api/game/prices"),
+  notifications: () => call<{ items: Notice[]; unread: number }>("GET", "/api/notifications"),
+  markRead: () => call<{ ok: true }>("POST", "/api/notifications/read", {}),
+  pushSettings: () => call<PushSettings>("GET", "/api/notifications/push"),
+  setPushOff: (off: NotificationKind[]) =>
+    call<{ off: NotificationKind[] }>("PATCH", "/api/notifications/push", { off }),
+  subscribe: (sub: PushSubscriptionJSON) =>
+    call<{ ok: true }>("POST", "/api/notifications/push/subscribe", sub),
+  unsubscribe: (endpoint: string) =>
+    call<{ ok: true }>("POST", "/api/notifications/push/unsubscribe", { endpoint }),
   weekRanking: () => call<WeekRanking>("GET", "/api/game/ranking/week"),
   ranking: () =>
     call<{ rows: RankingRow[]; me: number | null; total: number }>("GET", "/api/game/ranking"),

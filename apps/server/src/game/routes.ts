@@ -4,7 +4,8 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { AuthService, PublicAccount } from "../auth/service.js";
 import type { Db } from "../db/client.js";
-import { accounts, players, telemetry } from "../db/schema.js";
+import { accounts, players, pushSubscriptions, telemetry } from "../db/schema.js";
+import { NOTIFICATION_KINDS, type Notifier } from "../notify/notifier.js";
 import { priceHistory, profile } from "./profile.js";
 import { toJson } from "./serialize.js";
 import { catalog, playerView, ranking } from "./view.js";
@@ -58,10 +59,11 @@ export interface GameRouteDeps {
   world: GameWorld;
   auth: AuthService;
   sessionCookie: string;
+  notifier: Notifier;
 }
 
 export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): void {
-  const { db, world, auth } = deps;
+  const { db, world, auth, notifier } = deps;
 
   async function requireAccount(req: FastifyRequest, reply: FastifyReply) {
     const account = await auth.accountForSession(req.cookies[deps.sessionCookie]);
@@ -99,7 +101,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       await tutorialOf(account.id),
       await retiredBots(),
     );
-    return toJson({ serverTime: now, view: v });
+    return toJson({ serverTime: now, view: v, unread: v ? await notifier.unread(account.id) : 0 });
   }
 
   /** Counts a new session when the player comes back after a pause. */
@@ -220,6 +222,77 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const account = await requireAccount(req, reply);
     if (!account) return;
     return { series: await priceHistory(db, world.id, world.now()) };
+  });
+
+  app.get("/api/notifications", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return toJson(await notifier.list(account.id));
+  });
+
+  app.post("/api/notifications/read", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    await notifier.markRead(account.id);
+    return { ok: true };
+  });
+
+  /** Push settings: VAPID public key, whether this device is subscribed, kinds turned off. */
+  app.get("/api/notifications/push", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const [row] = await db
+      .select({ off: accounts.pushOff })
+      .from(accounts)
+      .where(eq(accounts.id, account.id));
+    return {
+      publicKey: notifier.publicKey,
+      kinds: NOTIFICATION_KINDS,
+      off: row?.off ?? [],
+    };
+  });
+
+  app.patch("/api/notifications/push", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const { off } = z.object({ off: z.array(z.enum(NOTIFICATION_KINDS)) }).parse(req.body);
+    await db.update(accounts).set({ pushOff: off }).where(eq(accounts.id, account.id));
+    return { off };
+  });
+
+  app.post("/api/notifications/push/subscribe", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const sub = z
+      .object({
+        endpoint: z.string().url().max(2000),
+        keys: z.object({ p256dh: z.string().max(200), auth: z.string().max(100) }),
+      })
+      .parse(req.body);
+    const values = {
+      endpoint: sub.endpoint,
+      accountId: account.id,
+      p256dh: sub.keys.p256dh,
+      auth: sub.keys.auth,
+      createdAt: new Date(world.now()),
+    };
+    await db
+      .insert(pushSubscriptions)
+      .values(values)
+      .onConflictDoUpdate({ target: pushSubscriptions.endpoint, set: values });
+    return { ok: true };
+  });
+
+  app.post("/api/notifications/push/unsubscribe", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const { endpoint } = z.object({ endpoint: z.string() }).parse(req.body);
+    await db
+      .delete(pushSubscriptions)
+      .where(
+        and(eq(pushSubscriptions.endpoint, endpoint), eq(pushSubscriptions.accountId, account.id)),
+      );
+    return { ok: true };
   });
 
   app.get("/api/game/ranking/week", async (req, reply) => {

@@ -157,6 +157,7 @@ export const fr = {
       nothing: "Rien à charger : produisez ou achetez d'abord des marchandises.",
     },
     day: (day: number, total: number) => `Jour ${day}/${total}`,
+    shortDay: (day: number, total: number) => `J${day}/${total}`,
     perDay: "/ jour",
     upkeepDefault:
       "Entretien impayé : production bloquée 24 h. Vendez du stock pour renflouer la caisse.",
@@ -242,6 +243,38 @@ export const fr = {
     closesIn: "Clôture dans",
     myRank: "Ton rang",
     you: "Toi",
+    notices: {
+      title: "Nouvelles du comptoir",
+      empty:
+        "Rien de neuf pour l'instant. Les récoltes, les galères, la gazette et les résultats de la semaine s'afficheront ici.",
+      now: "à l'instant",
+      settings: "Régler les notifications",
+      harvest: "Récolte prête : vos ateliers ont terminé leur production.",
+      galley: (port: string) =>
+        `Votre galère est rentrée${port ? ` de ${port}` : ""} : déchargez la cargaison.`,
+      event: "Un événement agite les marchés.",
+      week: (week: number, rank: number, gain: string, award: string | null) =>
+        `Semaine ${week} : vous terminez ${rank}${rank === 1 ? "er" : "e"} (${gain}).${award ? ` Vous êtes ${award} !` : ""}`,
+      push: {
+        title: "Notifications",
+        help: "Recevez une alerte sur ce téléphone ou cet ordinateur, même jeu fermé. Jamais entre 22 h et 8 h, et au plus une par type et par heure.",
+        enable: "Activer sur cet appareil",
+        disable: "Couper sur cet appareil",
+        on: "Activées sur cet appareil",
+        denied:
+          "Votre navigateur bloque les notifications de Comptoirs. Autorisez-les dans ses réglages.",
+        unsupported: "Ce navigateur ne gère pas les notifications.",
+        homeScreen:
+          "Sur iPhone, ajoutez d'abord Comptoirs à l'écran d'accueil (Partager → Sur l'écran d'accueil), puis ouvrez-le depuis l'icône.",
+        unavailable: "Les notifications ne sont pas encore activées sur ce serveur.",
+        kinds: {
+          harvest: "Récolte prête",
+          galley: "Galère rentrée",
+          event: "Gazette (nouvel événement)",
+          week: "Résultats de la semaine",
+        } as Record<string, string>,
+      },
+    },
     week: {
       tab: "Semaine",
       seasonTab: "Saison",

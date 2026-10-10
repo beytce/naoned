@@ -11,6 +11,8 @@ import type { Db } from "./db/client.js";
 import { registerGameRoutes } from "./game/routes.js";
 import type { GameWorld } from "./game/world.js";
 import { MailError, type Mailer } from "./mail/mailer.js";
+import { Notifier } from "./notify/notifier.js";
+import { NoPusher } from "./notify/push.js";
 
 export const SESSION_COOKIE = "comptoirs_session";
 
@@ -21,6 +23,8 @@ export interface AppOptions {
   production: boolean;
   /** Running world; game routes are only registered when present. */
   world?: GameWorld;
+  /** Notifications (bell and push); in-game only by default. */
+  notifier?: Notifier;
   /** Built web app to serve (production). */
   webDist?: string;
   now?: () => Date;
@@ -120,6 +124,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
       world: options.world,
       auth,
       sessionCookie: SESSION_COOKIE,
+      notifier: options.notifier ?? new Notifier(options.db, options.world, new NoPusher()),
     });
   }
 

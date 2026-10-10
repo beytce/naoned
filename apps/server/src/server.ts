@@ -6,6 +6,8 @@ import { openDatabase } from "./db/client.js";
 import { BotRunner } from "./game/bots.js";
 import { GameWorld } from "./game/world.js";
 import { ConsoleMailer, ResendMailer } from "./mail/mailer.js";
+import { Notifier } from "./notify/notifier.js";
+import { NoPusher, WebPusher } from "./notify/push.js";
 
 const config = loadConfig();
 const production = config.NODE_ENV === "production";
@@ -22,6 +24,12 @@ world.startTicking();
 const bots = new BotRunner(database.db, world);
 await bots.load();
 bots.start(60_000, (err) => console.error(err));
+const pusher =
+  config.VAPID_PUBLIC_KEY && config.VAPID_PRIVATE_KEY
+    ? new WebPusher(config.VAPID_PUBLIC_KEY, config.VAPID_PRIVATE_KEY, config.VAPID_SUBJECT)
+    : new NoPusher();
+const notifier = new Notifier(database.db, world, pusher);
+notifier.start(60_000, (err) => console.error(err));
 const here = dirname(fileURLToPath(import.meta.url));
 const app = await buildApp({
   db: database.db,
@@ -29,6 +37,7 @@ const app = await buildApp({
   appUrl: config.APP_URL.replace(/\/$/, ""),
   production,
   world,
+  notifier,
   webDist: config.WEB_DIST ?? (production ? join(here, "..", "..", "web", "dist") : undefined),
   logger: true,
 });
@@ -36,6 +45,7 @@ const app = await buildApp({
 const shutdown = async () => {
   world.stopTicking();
   bots.stop();
+  notifier.stop();
   await app.close();
   await database.close();
   process.exit(0);

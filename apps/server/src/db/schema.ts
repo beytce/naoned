@@ -31,6 +31,8 @@ export const accounts = pgTable(
     lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
     /** Computer-run merchant: no mailbox, never logs in, shown with an NPC badge. */
     isBot: boolean("is_bot").notNull().default(false),
+    /** Push notification kinds turned off by the player (all on by default). */
+    pushOff: jsonb("push_off").$type<string[]>().notNull().default([]),
   },
   (t) => [
     uniqueIndex("accounts_email_key").on(t.email),
@@ -189,6 +191,41 @@ export const weeklyResults = pgTable(
     award: text("award"),
   },
   (t) => [primaryKey({ columns: [t.worldId, t.week, t.accountId] })],
+);
+
+/** In-game notifications (the bell); some are also pushed to the player's devices. */
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    pushedAt: timestamp("pushed_at", { withTimezone: true }),
+  },
+  (t) => [index("notifications_account_idx").on(t.accountId, t.createdAt)],
+);
+
+/** Web Push subscriptions (one per device and browser). */
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    endpoint: text("endpoint").primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("push_subscriptions_account_idx").on(t.accountId)],
 );
 
 /** Analytics events (KPIs). Account layer: survives the end of a world. */

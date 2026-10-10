@@ -4,9 +4,8 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 
 ## Pistes de jeu proposées (non retenues pour l'instant)
 - Ordres à cours limité dans l'interface et journal du Rialto (gros échanges en direct).
-- Classement hebdomadaire sur le gain de la semaine, récompenses cosmétiques.
 - Banque de Venise : prêts avec intérêts.
-- Notifications « Récolte prête », « Galère rentrée », « Ordre exécuté ».
+- Notification « Ordre exécuté » (utile seulement avec les ordres à cours limité ; les ordres des joueurs sont aujourd'hui instantanés).
 - Parrainage avec blason exclusif.
 - Échanges d'épices et de soie entre joueurs (nécessite les ordres à cours limité).
 
