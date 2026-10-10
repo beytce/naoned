@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { World } from "./helpers.js";
+import { upkeepPerDay } from "../src/index.js";
+import { World, makeContext } from "./helpers.js";
 
 describe("buildings", () => {
+  it("charges upkeep growing faster than the level", () => {
+    const ctx = makeContext({ upkeepLevelGrowthBps: 2_000 });
+    const farm = { id: "b1", playerId: "a", type: "farm", level: 3, job: null, investedValue: 0n };
+    expect(upkeepPerDay(ctx, farm)).toBe((1_000n * 3n * 14n) / 10n); // × (1 + 2 × 20 %)
+  });
+
   it("builds with ducats and materials", () => {
     const w = new World();
     w.do({ type: "join", playerId: "a", region: "terraferma" });

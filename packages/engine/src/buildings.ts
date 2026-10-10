@@ -36,7 +36,9 @@ export function costValue(ctx: WorldContext, cost: BuildingCost): Deniers {
 
 export function upkeepPerDay(ctx: WorldContext, building: Building): Deniers {
   const def = ctx.settings.buildings[building.type];
-  return (def?.upkeepPerDay ?? 0n) * BigInt(building.level);
+  const level = BigInt(building.level);
+  const growthBps = 10_000 + (building.level - 1) * ctx.settings.upkeepLevelGrowthBps;
+  return applyBpsFloor((def?.upkeepPerDay ?? 0n) * level, growthBps);
 }
 
 function payCost(tx: Tx, playerId: PlayerId, cost: BuildingCost, ref: string): void {
@@ -78,7 +80,6 @@ export function build(tx: Tx, playerId: PlayerId, type: string): Building {
 
 export function upgrade(tx: Tx, building: Building): void {
   if (building.level >= tx.ctx.settings.maxBuildingLevel) fail("max_level");
-  if (building.job) fail("building_busy");
   const cost = costForLevel(tx.ctx, building.type, building.level + 1);
   payCost(tx, building.playerId, cost, building.id);
   building.level += 1;

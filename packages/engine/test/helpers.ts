@@ -12,9 +12,8 @@ import {
   decide,
   emptyTotals,
   parseSettings,
-  venice1450,
-  venice1450Settings,
 } from "../src/index.js";
+import { testSettings, testTheme } from "./fixture.js";
 
 export const T0 = Date.UTC(2026, 0, 5, 0, 0, 0);
 export const MIN = 60_000;
@@ -23,8 +22,8 @@ export const DAY = 24 * HOUR;
 
 export function makeContext(overrides: Partial<WorldSettingsInput> = {}): WorldContext {
   return {
-    theme: venice1450,
-    settings: parseSettings({ ...venice1450Settings, ...overrides }),
+    theme: testTheme,
+    settings: parseSettings({ ...testSettings, ...overrides }),
     startAt: T0,
   };
 }

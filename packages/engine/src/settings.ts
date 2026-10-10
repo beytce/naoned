@@ -42,6 +42,8 @@ export const worldSettingsSchema = z.object({
   maxBuildings: positive,
   maxBuildingLevel: positive,
   levelCostGrowthBps: bps,
+  /** Extra upkeep per level above 1: a level-L building costs base × L × (1 + (L − 1) × growth). */
+  upkeepLevelGrowthBps: bps.default(0),
   upkeepDefaultHours: positive,
   /** A player counts as active if they acted within this many hours. */
   activeWindowHours: positive,
@@ -51,6 +53,8 @@ export const worldSettingsSchema = z.object({
     spreadStartBps: bps,
     spreadEndBps: bps,
     spreadRampDays: positive,
+    /** The quoted reference follows the market down (never up), to this fraction at most. */
+    referenceFloorBps: bps.max(10_000),
     /** Daily quantity per resource and per active player, in each direction. */
     dailyDepthPerPlayer: z.record(qty),
   }),

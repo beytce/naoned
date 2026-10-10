@@ -119,12 +119,12 @@ describe("valuation", () => {
     expect(stockUnitValue(w.ctx, w.state, "wheat", w.now)).toBe(100n);
   });
 
-  it("adds cash, escrow, stock and half the buildings' cost", () => {
+  it("adds cash, escrow, stock and the buildings at cost", () => {
     const w = new World();
     w.do({ type: "join", playerId: "a", region: "terraferma" });
     const nw = netWorth(w.ctx, w.state, "a", w.now);
     // farm 30 000 + 20 × 220 × 2 ; mill 40 000 + 30 × 220 × 2
-    expect(nw.buildings).toBe((38_800n + 53_200n) / 2n);
-    expect(nw.total).toBe(100_000n + 46_000n);
+    expect(nw.buildings).toBe(38_800n + 53_200n);
+    expect(nw.total).toBe(100_000n + 92_000n);
   });
 });

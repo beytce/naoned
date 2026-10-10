@@ -1,7 +1,15 @@
 import { placeOrder, removeMarketMakerOrders } from "./market.js";
-import { type Deniers, applyBpsCeil, applyBpsFloor } from "./money.js";
-import { DAY_MS, MARKET_MAKER, type WorldContext, activePlayerCount, dayIndex } from "./state.js";
+import { type Deniers, applyBpsCeil, applyBpsFloor, bigMax } from "./money.js";
+import {
+  DAY_MS,
+  MARKET_MAKER,
+  type WorldContext,
+  type WorldState,
+  activePlayerCount,
+  dayIndex,
+} from "./state.js";
 import type { Tx } from "./tx.js";
+import { stockUnitValue } from "./valuation.js";
 
 /** Current spread in bps: widens linearly from start to end over the ramp, then stays there. */
 export function marketMakerSpreadBps(ctx: WorldContext, now: number): number {
@@ -26,6 +34,22 @@ export function marketMakerQuotes(
 }
 
 /**
+ * Price the market maker quotes around: the reference price, or the recent market price when it
+ * is lower (prudence principle, as for valuation). It never follows the market up, so it cannot
+ * be pushed into buying high, and it does not prop up a price the players have abandoned.
+ */
+export function marketMakerReference(
+  ctx: WorldContext,
+  state: WorldState,
+  resource: string,
+  now: number,
+): Deniers {
+  const reference = ctx.settings.referencePrices[resource] ?? 0n;
+  const floor = applyBpsFloor(reference, ctx.settings.marketMaker.referenceFloorBps);
+  return bigMax(floor, stockUnitValue(ctx, state, resource, now));
+}
+
+/**
  * Replaces the market maker's quotes. Its depth per day is capped per active player, so players
  * set prices whenever they trade inside its spread.
  */
@@ -37,7 +61,8 @@ export function requoteMarketMaker(tx: Tx): void {
     tx.s.marketMaker = { day, bought: {}, sold: {} };
   }
   const players = Math.max(1, activePlayerCount(ctx, tx.s, tx.now));
-  for (const [resource, reference] of Object.entries(ctx.settings.referencePrices)) {
+  for (const resource of Object.keys(ctx.settings.referencePrices)) {
+    const reference = marketMakerReference(ctx, tx.s as WorldState, resource, tx.now);
     const depth = (ctx.settings.marketMaker.dailyDepthPerPlayer[resource] ?? 0) * players;
     const { bid, ask } = marketMakerQuotes(ctx, reference, tx.now);
     const bidQty = depth - (tx.s.marketMaker.bought[resource] ?? 0);

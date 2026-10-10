@@ -97,6 +97,41 @@ describe("production", () => {
     expect(w.stock("a", "wheat").available).toBe(60); // rejected command changed nothing
   });
 
+  it("applies an upgrade to the next batches only", () => {
+    const w = new World();
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    const farm = farmOf(w, "a");
+    w.do({
+      type: "startProduction",
+      playerId: "a",
+      buildingId: farm.id,
+      recipe: "grow_wheat",
+      batches: 2,
+    });
+    w.give("a", "bricks", 40).give("a", "planks", 40);
+    w.do({ type: "upgrade", playerId: "a", buildingId: farm.id });
+    const busy = w.try({
+      type: "startProduction",
+      playerId: "a",
+      buildingId: farm.id,
+      recipe: "grow_wheat",
+      batches: 1,
+    });
+    expect(busy.ok).toBe(false);
+    w.advance(2 * HOUR);
+    w.do({
+      type: "startProduction",
+      playerId: "a",
+      buildingId: farm.id,
+      recipe: "grow_wheat",
+      batches: 1,
+    });
+    expect(w.stock("a", "wheat").available).toBe(2 * 26); // old batches at level 1
+    w.advance(HOUR);
+    w.do({ type: "collect", playerId: "a", buildingId: farm.id });
+    expect(w.stock("a", "wheat").available).toBe(2 * 26 + 52); // new batch at level 2
+  });
+
   it("refuses a recipe from another building", () => {
     const w = new World();
     w.do({ type: "join", playerId: "a", region: "terraferma" });
@@ -112,20 +147,20 @@ describe("production", () => {
 
   it("gives late joiners a temporary bonus", () => {
     const w = new World();
-    w.at(8 * DAY).do({ type: "join", playerId: "late", region: "lagoon" });
-    const mill = w.buildingsOf("late").find((b) => b.type === "mill");
-    if (!mill) throw new Error("no mill");
-    w.give("late", "wheat", 10);
+    w.at(8 * DAY).do({ type: "join", playerId: "late", region: "dolomites" });
+    const sawmill = w.buildingsOf("late").find((b) => b.type === "sawmill");
+    if (!sawmill) throw new Error("no sawmill");
+    w.give("late", "wood", 20);
     w.do({
       type: "startProduction",
       playerId: "late",
-      buildingId: mill.id,
-      recipe: "mill_flour",
+      buildingId: sawmill.id,
+      recipe: "saw_planks",
       batches: 1,
     });
     w.advance(HOUR);
-    w.do({ type: "collect", playerId: "late", buildingId: mill.id });
-    expect(w.stock("late", "flour").available).toBe(12); // 8 × 1.5
+    w.do({ type: "collect", playerId: "late", buildingId: sawmill.id });
+    expect(w.stock("late", "planks").available).toBe(18); // 12 × 1.5
   });
 
   it("charges upkeep daily and blocks production after a default", () => {

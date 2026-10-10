@@ -227,7 +227,7 @@ describe("market maker", () => {
       price: 98n,
       quantity: 30,
     });
-    expect(w.trades.reduce((n, t) => n + t.quantity, 0)).toBe(20);
+    expect(w.trades.reduce((n, t) => n + t.quantity, 0)).toBe(5);
     w.do({ type: "tick" });
     expect(
       Object.values(w.state.orders).some(
@@ -242,5 +242,40 @@ describe("market maker", () => {
     w.do({ type: "tick" });
     expect(w.trades[0]?.buyerId).toBe("market_maker");
     expect(w.trades[0]?.price).toBe(95n);
+  });
+});
+
+describe("market maker reference", () => {
+  const mmQuotes = (w: World) =>
+    Object.values(w.state.orders)
+      .filter((o) => o.playerId === "market_maker" && o.resource === "wheat")
+      .map((o) => [o.side, o.price])
+      .sort();
+
+  it("follows the market down, but never above the reference price", () => {
+    const w = twoPlayers();
+    w.do(sell("seller", 80, 300)); // enough volume to count
+    w.do(buy("buyer", 80, 300));
+    w.do({ type: "tick" });
+    expect(mmQuotes(w)).toEqual([
+      ["buy", 78n],
+      ["sell", 82n],
+    ]);
+    w.do(sell("seller", 150, 400));
+    w.do(buy("buyer", 150, 400));
+    w.do({ type: "tick" });
+    // Its ask was used up by the buyer today; its bid is back at the reference.
+    expect(mmQuotes(w)).toEqual([["buy", 98n]]);
+  });
+
+  it("does not follow the market below its floor", () => {
+    const w = twoPlayers();
+    w.do(sell("seller", 30, 300));
+    w.do(buy("buyer", 30, 300));
+    w.do({ type: "tick" });
+    expect(mmQuotes(w)).toEqual([
+      ["buy", 49n],
+      ["sell", 51n],
+    ]);
   });
 });

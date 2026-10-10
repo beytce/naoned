@@ -38,6 +38,8 @@ export interface ProductionJob {
   startedAt: number;
   /** Batches still in the queue; their inputs are already consumed. */
   batches: number;
+  /** Building level when the batches were queued: an upgrade applies to the next batches. */
+  level: number;
 }
 
 export interface Building {

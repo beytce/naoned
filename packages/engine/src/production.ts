@@ -41,7 +41,7 @@ export function collect(tx: Tx, building: Building): void {
     let total = 0;
     for (let k = 0; k < done; k++) {
       const completedAt = job.startedAt + (k + 1) * batchMs;
-      const base = (perBatch ?? 0) * building.level;
+      const base = (perBatch ?? 0) * job.level;
       total += applyBonusToQuantity(base, yieldBonusBps(tx.ctx, player, resource, completedAt));
     }
     addStock(tx, building.playerId, resource, total, "production_output", building.id);
@@ -69,7 +69,7 @@ export function startProduction(
   collect(tx, building);
   const batchMs = recipe.durationMinutes * MINUTE_MS;
   const job = building.job;
-  if (job && job.recipe !== recipeCode) fail("building_busy");
+  if (job && (job.recipe !== recipeCode || job.level !== building.level)) fail("building_busy");
 
   const queuedEnd = job ? job.startedAt + job.batches * batchMs : tx.now;
   const newEnd = queuedEnd + batches * batchMs;
@@ -81,7 +81,7 @@ export function startProduction(
   }
 
   if (job) job.batches += batches;
-  else building.job = { recipe: recipeCode, startedAt: tx.now, batches };
+  else building.job = { recipe: recipeCode, startedAt: tx.now, batches, level: building.level };
   emit(tx, "production_started", building.playerId, {
     building: building.id,
     recipe: recipeCode,
@@ -100,12 +100,13 @@ export function freeBatches(
   if (!recipe) return 0;
   const batchMs = recipe.durationMinutes * MINUTE_MS;
   const job = building.job;
-  if (job && job.recipe !== recipeCode) {
+  const sameQueue = job && job.recipe === recipeCode && job.level === building.level;
+  if (job && !sameQueue) {
     const end = job.startedAt + job.batches * batchMs;
     if (end > now) return 0;
   }
   let queuedEnd = now;
-  if (job && job.recipe === recipeCode) {
+  if (job && sameQueue) {
     const done = Math.min(job.batches, Math.floor((now - job.startedAt) / batchMs));
     queuedEnd = Math.max(now, job.startedAt + job.batches * batchMs);
     if (done === job.batches) queuedEnd = now;
