@@ -8,6 +8,8 @@ import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import { ZodError, z } from "zod";
 import { AuthError, AuthService, SESSION_DAYS } from "./auth/service.js";
 import type { Db } from "./db/client.js";
+import { registerGameRoutes } from "./game/routes.js";
+import type { GameWorld } from "./game/world.js";
 import { MailError, type Mailer } from "./mail/mailer.js";
 
 export const SESSION_COOKIE = "comptoirs_session";
@@ -17,6 +19,8 @@ export interface AppOptions {
   mailer: Mailer;
   appUrl: string;
   production: boolean;
+  /** Running world; game routes are only registered when present. */
+  world?: GameWorld;
   /** Built web app to serve (production). */
   webDist?: string;
   now?: () => Date;
@@ -104,6 +108,15 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     const { pseudo } = z.object({ pseudo: z.string() }).parse(req.body);
     return { account: await auth.setPseudo(account.id, pseudo) };
   });
+
+  if (options.world) {
+    registerGameRoutes(app, {
+      db: options.db,
+      world: options.world,
+      auth,
+      sessionCookie: SESSION_COOKIE,
+    });
+  }
 
   const webDist = options.webDist ? resolve(options.webDist) : undefined;
   if (webDist && existsSync(webDist)) {

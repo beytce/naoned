@@ -20,6 +20,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@comptoirs/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@electric-sql/pglite':
         specifier: 0.2.15
         version: 0.2.15

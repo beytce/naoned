@@ -1,19 +1,30 @@
 import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { hashToken } from "../src/auth/tokens.js";
 import { type Database, openDatabase } from "../src/db/client.js";
 import { loginTokens } from "../src/db/schema.js";
 import { MailError, MemoryMailer } from "../src/mail/mailer.js";
+import { testDatabase } from "./db.js";
 
 let database: Database;
+let dbUrl: string;
+let dropDb: () => Promise<void>;
+
+beforeAll(async () => {
+  ({ url: dbUrl, drop: dropDb } = await testDatabase());
+});
+
+afterAll(async () => {
+  await dropDb();
+});
 let app: FastifyInstance;
 let mailer: MemoryMailer;
 let clock: Date;
 
 beforeEach(async () => {
-  database = openDatabase(process.env.TEST_DATABASE_URL ?? "pglite:memory");
+  database = openDatabase(dbUrl);
   await database.migrate();
   await database.db.execute(sql`truncate accounts, login_tokens, sessions cascade`);
   mailer = new MemoryMailer();

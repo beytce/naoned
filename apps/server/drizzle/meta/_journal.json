@@ -8,6 +8,13 @@
       "when": 1791658545676,
       "tag": "0000_accounts_and_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791661269506,
+      "tag": "0001_worlds_and_journals",
+      "breakpoints": true
     }
   ]
 }

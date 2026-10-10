@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@comptoirs/engine": "workspace:*",
     "@electric-sql/pglite": "0.2.15",
     "@fastify/cookie": "11.0.2",
     "@fastify/rate-limit": "10.2.1",
