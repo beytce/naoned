@@ -24,6 +24,8 @@ export const accounts = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     email: text("email").notNull(),
     pseudo: text("pseudo"),
+    /** Cosmetic coat of arms chosen by the player: { shape, color, symbol }. */
+    crest: jsonb("crest").$type<{ shape: string; color: string; symbol: string }>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
   },

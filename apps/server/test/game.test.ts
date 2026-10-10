@@ -66,6 +66,50 @@ const post = (cookie: string, url: string, payload: unknown) =>
   app.inject({ method: "POST", url, headers: { cookie }, payload: payload as object });
 const act = (cookie: string, payload: unknown) => post(cookie, "/api/game/actions", payload);
 
+describe("profile and visuals", () => {
+  it("saves a coat of arms and rejects unknown pieces", async () => {
+    const cookie = await login("ada@example.org");
+    const ok = await app.inject({
+      method: "PATCH",
+      url: "/api/me",
+      headers: { cookie },
+      payload: { crest: { shape: "heater", color: "lagoon", symbol: "lion" } },
+    });
+    expect(ok.json().account.crest).toEqual({ shape: "heater", color: "lagoon", symbol: "lion" });
+    const bad = await app.inject({
+      method: "PATCH",
+      url: "/api/me",
+      headers: { cookie },
+      payload: { crest: { shape: "heater", color: "pink", symbol: "lion" } },
+    });
+    expect(bad.statusCode).toBe(400);
+  });
+
+  it("gives a profile with title, rank, stats and trophies", async () => {
+    const cookie = await login("ada@example.org");
+    await post(cookie, "/api/game/join", { region: "lagoon" });
+    await world.execute({ type: "tick" });
+    await act(cookie, { type: "instantOrder", resource: "planks", side: "buy", quantity: 2 });
+    const res = await get(cookie, "/api/game/profile");
+    expect(res.statusCode).toBe(200);
+    const p = res.json().profile;
+    expect(p.title.current.name).toBe("Colporteur");
+    expect(p.rank).toBe(1);
+    expect(p.stats.trades).toBe(1);
+    expect(p.badges.find((b: { code: string }) => b.code === "first_trade").earned).toBe(true);
+  });
+
+  it("returns hourly price history", async () => {
+    const cookie = await login("ada@example.org");
+    await post(cookie, "/api/game/join", { region: "lagoon" });
+    await world.execute({ type: "tick" });
+    await act(cookie, { type: "instantOrder", resource: "planks", side: "buy", quantity: 2 });
+    const series = (await get(cookie, "/api/game/prices")).json().series;
+    expect(series.planks).toHaveLength(1);
+    expect(series.planks[0].volume).toBe(2);
+  });
+});
+
 describe("game API", () => {
   it("creates the first world and serves its catalog", async () => {
     const res = await app.inject({ method: "GET", url: "/api/game/catalog" });

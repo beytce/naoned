@@ -105,8 +105,13 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   app.patch("/api/me", async (req, reply) => {
     const account = await auth.accountForSession(req.cookies[SESSION_COOKIE]);
     if (!account) return reply.code(401).send({ error: "unauthenticated" });
-    const { pseudo } = z.object({ pseudo: z.string() }).parse(req.body);
-    return { account: await auth.setPseudo(account.id, pseudo) };
+    const body = z
+      .object({ pseudo: z.string().optional(), crest: z.unknown().optional() })
+      .parse(req.body);
+    let updated = account;
+    if (body.pseudo !== undefined) updated = await auth.setPseudo(account.id, body.pseudo);
+    if (body.crest !== undefined) updated = await auth.setCrest(account.id, body.crest);
+    return { account: updated };
   });
 
   if (options.world) {

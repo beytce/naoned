@@ -17,11 +17,44 @@ export const pseudoSchema = z
   .trim()
   .regex(/^[\p{L}\p{N}_-]{3,20}$/u, "3 à 20 lettres, chiffres, _ ou -");
 
+export interface Crest {
+  shape: string;
+  color: string;
+  symbol: string;
+}
+
 export interface PublicAccount {
   id: string;
   email: string;
   pseudo: string | null;
+  crest: Crest | null;
 }
+
+/** Choices offered for the coat of arms (cosmetic only). The web app draws them. */
+export const CREST_SHAPES = ["heater", "round", "banner"] as const;
+export const CREST_COLORS = ["gold", "lagoon", "vermilion", "ink", "emerald", "violet"] as const;
+export const CREST_SYMBOLS = [
+  "lion",
+  "ship",
+  "key",
+  "tower",
+  "star",
+  "wheat",
+  "anchor",
+  "crown",
+] as const;
+export const crestSchema = z.object({
+  shape: z.enum(CREST_SHAPES),
+  color: z.enum(CREST_COLORS),
+  symbol: z.enum(CREST_SYMBOLS),
+});
+
+const publicColumns = {
+  id: accounts.id,
+  email: accounts.email,
+  pseudo: accounts.pseudo,
+  crest: accounts.crest,
+};
 
 export class AuthError extends Error {
   constructor(
@@ -95,7 +128,7 @@ export class AuthService {
       .update(accounts)
       .set({ lastLoginAt: now })
       .where(eq(accounts.email, used.email))
-      .returning({ id: accounts.id, email: accounts.email, pseudo: accounts.pseudo });
+      .returning(publicColumns);
     if (!account) throw new Error("account missing after upsert");
 
     const sessionToken = newToken();
@@ -111,7 +144,7 @@ export class AuthService {
   async accountForSession(sessionToken: string | undefined): Promise<PublicAccount | null> {
     if (!sessionToken) return null;
     const [row] = await this.deps.db
-      .select({ id: accounts.id, email: accounts.email, pseudo: accounts.pseudo })
+      .select(publicColumns)
       .from(sessions)
       .innerJoin(accounts, eq(accounts.id, sessions.accountId))
       .where(
@@ -123,6 +156,17 @@ export class AuthService {
   async logout(sessionToken: string | undefined): Promise<void> {
     if (!sessionToken) return;
     await this.deps.db.delete(sessions).where(eq(sessions.tokenHash, hashToken(sessionToken)));
+  }
+
+  async setCrest(accountId: string, raw: unknown): Promise<PublicAccount> {
+    const crest = crestSchema.parse(raw);
+    const [account] = await this.deps.db
+      .update(accounts)
+      .set({ crest })
+      .where(eq(accounts.id, accountId))
+      .returning(publicColumns);
+    if (!account) throw new Error("account not found");
+    return account;
   }
 
   async setPseudo(accountId: string, rawPseudo: string): Promise<PublicAccount> {
@@ -137,7 +181,7 @@ export class AuthService {
         .update(accounts)
         .set({ pseudo })
         .where(eq(accounts.id, accountId))
-        .returning({ id: accounts.id, email: accounts.email, pseudo: accounts.pseudo });
+        .returning(publicColumns);
       if (!account) throw new Error("account not found");
       return account;
     } catch (err) {

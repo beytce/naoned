@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { AuthService, PublicAccount } from "../auth/service.js";
 import type { Db } from "../db/client.js";
 import { accounts, players, telemetry } from "../db/schema.js";
+import { priceHistory, profile } from "./profile.js";
 import { toJson } from "./serialize.js";
 import { catalog, playerView, ranking } from "./view.js";
 import type { GameWorld } from "./world.js";
@@ -144,19 +145,46 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return view(account);
   });
 
-  app.get("/api/game/ranking", async (req, reply) => {
-    const account = await requireAccount(req, reply);
-    if (!account) return;
+  async function rankingTable() {
     const ids = Object.keys(world.current.players);
     const rows =
       ids.length === 0
         ? []
         : await db
-            .select({ id: accounts.id, pseudo: accounts.pseudo })
+            .select({ id: accounts.id, pseudo: accounts.pseudo, crest: accounts.crest })
             .from(accounts)
             .where(inArray(accounts.id, ids));
     const pseudos = new Map(rows.map((r) => [r.id, r.pseudo]));
-    const table = ranking(world.ctx, world.current, world.now(), pseudos);
+    const crests = new Map(rows.map((r) => [r.id, r.crest]));
+    return ranking(world.ctx, world.current, world.now(), pseudos).map((r) => ({
+      ...r,
+      crest: crests.get(r.playerId) ?? null,
+    }));
+  }
+
+  app.get("/api/game/profile", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const table = await rankingTable();
+    const me = table.find((r) => r.playerId === account.id);
+    const p = await profile(db, world.id, world.ctx, world.current, account.id, world.now(), {
+      rank: me?.rank ?? null,
+      total: table.length,
+    });
+    if (!p) return reply.code(409).send({ error: "not_joined" });
+    return toJson({ account: { pseudo: account.pseudo, crest: account.crest }, profile: p });
+  });
+
+  app.get("/api/game/prices", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return { series: await priceHistory(db, world.id, world.now()) };
+  });
+
+  app.get("/api/game/ranking", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const table = await rankingTable();
     return toJson({
       rows: table
         .slice(0, 50)
