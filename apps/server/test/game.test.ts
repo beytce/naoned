@@ -223,6 +223,22 @@ describe("game API", () => {
     expect(row?.region).toBe("terraferma");
   });
 
+  it("restarts a player from scratch once, keeping the journals consistent", async () => {
+    const cookie = await login("ada@example.org");
+    await post(cookie, "/api/game/join", { region: "lagoon" });
+    await world.execute({ type: "tick" });
+    await act(cookie, { type: "instantOrder", resource: "planks", side: "buy", quantity: 2 });
+    const reset = await post(cookie, "/api/game/reset", {});
+    expect(reset.statusCode).toBe(200);
+    expect(reset.json().view).toBeNull();
+    expect(await world.checkInvariants()).toEqual([]);
+
+    const again = (await post(cookie, "/api/game/join", { region: "dolomites" })).json().view;
+    expect(again.cash).toBe("100000");
+    expect(again.tutorial).toEqual([]);
+    expect((await post(cookie, "/api/game/reset", {})).json().error).toBe("reset_limit");
+  });
+
   it("counts a new session after a pause", async () => {
     const cookie = await login("ada@example.org");
     await post(cookie, "/api/game/join", { region: "terraferma" });

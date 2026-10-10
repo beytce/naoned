@@ -2,13 +2,14 @@ import { type Draft, enableMapSet, produce } from "immer";
 import { build, grantBuilding, upgrade } from "./buildings.js";
 import { sellToCity } from "./cities.js";
 import { type Effects, emptyEffects } from "./effects.js";
-import { type PlaceOrderInput, cancelOrder, placeOrder } from "./market.js";
+import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { collect, startProduction } from "./production.js";
 import { deliverToProject } from "./projects.js";
 import {
   type Building,
   DAY_MS,
   type PlayerId,
+  SINK_ACCOUNT,
   SOURCE_ACCOUNT,
   type WorldContext,
   type WorldState,
@@ -17,7 +18,15 @@ import {
 } from "./state.js";
 import { findRegion } from "./theme.js";
 import { tick } from "./tick.js";
-import { EngineError, type EngineErrorCode, type Tx, emit, fail, transfer } from "./tx.js";
+import {
+  EngineError,
+  type EngineErrorCode,
+  type Tx,
+  emit,
+  fail,
+  removeStock,
+  transfer,
+} from "./tx.js";
 
 enableMapSet();
 
@@ -43,6 +52,7 @@ export type Command =
       resource: string;
       quantity: number;
     }
+  | { type: "resetPlayer"; playerId: PlayerId }
   | { type: "tick" };
 
 export type DecideResult =
@@ -86,6 +96,35 @@ function join(tx: Tx, playerId: PlayerId, region: string): void {
   emit(tx, "join", playerId, { region });
 }
 
+/**
+ * Restarts a player from scratch. Orders are cancelled, then cash and stock leave the game through
+ * the journals (like a sink), so the invariants hold; the player may then join again.
+ */
+function resetPlayer(tx: Tx, playerId: PlayerId): void {
+  const { ctx } = tx;
+  if (!tx.s.players[playerId]) fail("unknown_player");
+  const resets = tx.s.resets ?? {};
+  tx.s.resets = resets;
+  const used = resets[playerId] ?? 0;
+  if (used >= ctx.settings.maxResetsPerPlayer) fail("reset_limit");
+
+  cancelAllOrders(tx, playerId);
+  for (const [resource, line] of Object.entries(tx.s.inventories[playerId] ?? {})) {
+    removeStock(tx, playerId, resource, line.available, "player_reset");
+  }
+  const cash = cashAccount(playerId);
+  transfer(tx, cash, SINK_ACCOUNT, tx.s.accounts[cash] ?? 0n, "player_reset");
+  for (const b of Object.values(tx.s.buildings)) {
+    if (b.playerId === playerId) delete tx.s.buildings[b.id];
+  }
+  delete tx.s.inventories[playerId];
+  delete tx.s.accounts[cash];
+  delete tx.s.accounts[escrowAccount(playerId)];
+  delete tx.s.players[playerId];
+  resets[playerId] = used + 1;
+  emit(tx, "player_reset", playerId);
+}
+
 function apply(tx: Tx, cmd: Command): void {
   const { ctx } = tx;
   if (cmd.type === "tick") {
@@ -94,6 +133,10 @@ function apply(tx: Tx, cmd: Command): void {
   }
   if (cmd.type === "join") {
     join(tx, cmd.playerId, cmd.region);
+    return;
+  }
+  if (cmd.type === "resetPlayer") {
+    resetPlayer(tx, cmd.playerId);
     return;
   }
 

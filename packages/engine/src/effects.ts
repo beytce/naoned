@@ -13,7 +13,8 @@ export type LedgerReason =
   | "construction"
   | "escrow_lock"
   | "escrow_release"
-  | "trade";
+  | "trade"
+  | "player_reset";
 
 /**
  * Double-entry ledger line: `amount` leaves `from` and enters `to`.
@@ -36,7 +37,8 @@ export type StockReason =
   | "trade_buy"
   | "trade_sell"
   | "city_sale"
-  | "project_delivery";
+  | "project_delivery"
+  | "player_reset";
 
 /** Change of a player's total holding (available + escrow) of one resource. */
 export interface StockMovement {

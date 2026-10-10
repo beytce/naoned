@@ -124,6 +124,8 @@ export interface WorldState {
   priceStats: Record<ResourceCode, Record<number, DailyPriceStat>>;
   /** Last day index for which upkeep was charged. */
   lastUpkeepDay: number;
+  /** Resets used per player this season (absent in states saved before resets existed). */
+  resets?: Record<PlayerId, number>;
 }
 
 export const SOURCE_ACCOUNT: AccountId = "system:source";
@@ -163,6 +165,7 @@ export function createWorldState(ctx: WorldContext): WorldState {
     projectCount: 0,
     priceStats: {},
     lastUpkeepDay: 0,
+    resets: {},
   };
 }
 

@@ -38,7 +38,8 @@ export type EngineErrorCode =
   | "no_liquidity"
   | "not_bought_here"
   | "project_closed"
-  | "project_full";
+  | "project_full"
+  | "reset_limit";
 
 export class EngineError extends Error {
   constructor(

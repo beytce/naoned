@@ -43,6 +43,8 @@ export const worldSettingsSchema = z.object({
   tutorial: z
     .object({ minutes: qty, fastBatchSeconds: positive, fastBatchesPerBuilding: qty })
     .default({ minutes: 0, fastBatchSeconds: 30, fastBatchesPerBuilding: 0 }),
+  /** How many times a player may restart from scratch during a season. */
+  maxResetsPerPlayer: qty.default(1),
   maxBuildings: positive,
   maxBuildingLevel: positive,
   levelCostGrowthBps: bps,

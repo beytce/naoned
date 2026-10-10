@@ -89,6 +89,12 @@ export interface PlayerView {
   escrow: Money;
   upkeepPerDay: Money;
   netWorth: { cash: Money; stock: Money; buildings: Money; total: Money };
+  standing: {
+    rank: number | null;
+    players: number;
+    title: { index: number; current: Title; next: Title | null; progress: number };
+    seasonEndsAt: number;
+  };
   inventory: { resource: string; available: number; escrow: number }[];
   buildings: BuildingView[];
   market: MarketLine[];

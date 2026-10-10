@@ -173,7 +173,19 @@ export class GameWorld {
         );
       }
 
-      if (command.type === "join") {
+      if (command.type === "resetPlayer") {
+        // The player row (region, tutorial) goes; the journals keep the history.
+        await tx
+          .delete(players)
+          .where(and(eq(players.worldId, worldId), eq(players.accountId, command.playerId)));
+        await tx.insert(telemetry).values({
+          accountId: command.playerId,
+          worldId,
+          type: "player_reset",
+          at,
+          props: {},
+        });
+      } else if (command.type === "join") {
         const player = next.players[command.playerId];
         if (player) {
           await tx.insert(players).values({

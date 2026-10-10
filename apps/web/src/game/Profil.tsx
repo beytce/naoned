@@ -128,6 +128,8 @@ function CrestEditor({ props, onClose }: { props: GameProps; onClose: () => void
 export function Profil(props: GameProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editing, setEditing] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [busyReset, setBusyReset] = useState(false);
   useEffect(() => {
     gameApi
       .profile()
@@ -268,11 +270,47 @@ export function Profil(props: GameProps) {
         <button
           type="button"
           onClick={props.onLogout}
-          className="label w-full pt-2 text-center text-vermilion"
+          className="label w-full pt-2 text-center text-cream-dim"
         >
           {fr.logout}
         </button>
       </section>
+
+      <section className="border-t border-vermilion/40 pt-6">
+        <Slab tone="vermilion" size="sm" className="w-full" onClick={() => setResetting(true)}>
+          {fr.game.reset.title}
+        </Slab>
+      </section>
+
+      <Sheet open={resetting} onClose={() => setResetting(false)}>
+        <div className="space-y-5">
+          <h3 className="font-display text-xl font-extrabold uppercase text-vermilion">
+            {fr.game.reset.title}
+          </h3>
+          <p className="text-cream-dim">{fr.game.reset.text}</p>
+          <Slab
+            tone="vermilion"
+            size="lg"
+            className="w-full"
+            disabled={busyReset}
+            onClick={async () => {
+              setBusyReset(true);
+              await props.resetGame();
+              setBusyReset(false);
+              setResetting(false);
+            }}
+          >
+            {fr.game.reset.confirm}
+          </Slab>
+          <button
+            type="button"
+            className="label w-full text-center"
+            onClick={() => setResetting(false)}
+          >
+            {fr.game.reset.cancel}
+          </button>
+        </div>
+      </Sheet>
 
       <Sheet open={editing} onClose={() => setEditing(false)}>
         {editing && <CrestEditor props={props} onClose={() => setEditing(false)} />}

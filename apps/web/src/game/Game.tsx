@@ -48,6 +48,7 @@ export interface GameProps {
   openHelp: () => void;
   replayIntro: () => void;
   replayGuide: () => void;
+  resetGame: () => Promise<void>;
   onAccount: (account: Account) => void;
   onLogout: () => void;
 }
@@ -224,6 +225,19 @@ export function Game(props: {
       store.set("guideHidden", "0");
       setGuideKey((k) => k + 1);
       setTab("comptoir");
+    },
+    resetGame: async () => {
+      try {
+        const res = await gameApi.reset();
+        for (const key of ["introSeen", "guideDone", "guideHidden"]) store.set(key, "0");
+        setSheet(null);
+        setTab("comptoir");
+        setIntroSeen(false);
+        apply(res.serverTime, res.view);
+      } catch (err) {
+        const code = err instanceof ApiError ? err.code : "unknown";
+        setToast(fr.game.errors[code] ?? fr.errors.unknown ?? null);
+      }
     },
     onAccount: props.onAccount,
     onLogout,

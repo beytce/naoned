@@ -127,6 +127,14 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return view(account);
   });
 
+  app.post("/api/game/reset", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const res = await world.execute({ type: "resetPlayer", playerId: account.id });
+    if (!res.ok) return reply.code(409).send({ error: res.error });
+    return view(account);
+  });
+
   app.post("/api/game/actions", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;

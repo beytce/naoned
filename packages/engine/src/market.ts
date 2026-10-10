@@ -275,6 +275,13 @@ export function cancelOrder(tx: Tx, playerId: PlayerId, orderId: string): void {
   emit(tx, "order_cancelled", playerId, { order: orderId });
 }
 
+/** Cancels every open order of a player, returning what they held in escrow. */
+export function cancelAllOrders(tx: Tx, playerId: PlayerId): void {
+  for (const order of Object.values(tx.s.orders) as Order[]) {
+    if (order.playerId === playerId) closeOrder(tx, order);
+  }
+}
+
 export function expireOrders(tx: Tx): void {
   for (const order of Object.values(tx.s.orders) as Order[]) {
     if (order.expiresAt <= tx.now) {

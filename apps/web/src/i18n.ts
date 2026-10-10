@@ -24,43 +24,53 @@ export const fr = {
   intro: {
     skip: "Passer",
     next: "Suivant",
-    start: "Choisir ma région",
+    start: "Choisir mon métier",
     slides: [
       {
-        kicker: "Venise, 1450",
-        title: "La République vit du commerce",
-        text: "Vous arrivez avec 1 000 ducats et un petit atelier. Dans six semaines, la saison se termine : le marchand le plus riche l'emporte.",
+        kicker: "Le but du jeu",
+        title: "Devenez le marchand le plus riche de Venise",
+        text: "La saison dure 42 jours. À la fin, le classement se fige : le plus gros patrimoine l'emporte. Vous partez avec 1 000 ducats et deux ou trois ateliers.",
       },
       {
-        kicker: "Produire",
-        title: "Vos ateliers tournent même quand vous dormez",
-        text: "Lancez la production, revenez récolter. La file dure 8 heures au plus : quelques visites par jour suffisent.",
+        kicker: "Comment",
+        title: "Produire, vendre, réinvestir",
+        text: "Vos ateliers fabriquent des marchandises, même quand vous dormez. Vendez-les aux villes ou aux autres joueurs, puis réinvestissez pour produire plus. Et recommencez.",
       },
       {
-        kicker: "Commercer",
-        title: "Les prix, ce sont les joueurs",
-        text: "Vendez aux villes ou aux autres marchands, achetez ce qui vous manque. Chaque région ne produit qu'un des deux matériaux de construction : il faudra commercer.",
+        kicker: "Le piège",
+        title: "Vous ne pouvez pas tout faire seul",
+        text: "Pour agrandir vos ateliers, il faut des briques ET des planches. Votre métier n'en produit qu'une sorte : l'autre, vous l'achèterez aux autres marchands. Les prix, ce sont eux.",
       },
       {
-        kicker: "Grandir",
-        title: "Réinvestissez, montez au classement",
-        text: "Améliorez vos ateliers, livrez les grands chantiers, bâtissez un palais. Votre patrimoine fait votre rang.",
+        kicker: "Le rythme",
+        title: "Quelques minutes, plusieurs fois par jour",
+        text: "Lancez jusqu'à 8 heures de production, revenez récolter, vendez, réinvestissez. Lorenzo, votre facteur, vous guide pour vos premiers pas.",
       },
     ],
   },
 
   region: {
-    title: "Où installer votre comptoir ?",
-    help: "Chaque région maîtrise une chaîne. Vous aurez besoin des matériaux des autres pour grandir.",
+    title: "Choisissez votre métier",
+    help: "Chaque métier vend ses produits aux villes, mais aura besoin de l'autre matériau de construction pour grandir.",
     bonus: (pct: number, resource: string) => `+${pct} % de ${resource.toLowerCase()}`,
     kit: "Ateliers de départ",
-    sells: "Vend aux villes",
-    settle: "M'installer ici",
-    names: {
-      terraferma: "La terre ferme et ses blés : vous nourrissez la ville.",
-      lagoon: "Les argiles de la lagune : vous cuisez les briques des palais.",
-      dolomites: "Les forêts des montagnes : vous sciez les planches des navires.",
-    } as Record<string, string>,
+    sells: "Vous vendez",
+    needs: "Vous achèterez",
+    settle: "Choisir ce métier",
+    jobs: {
+      terraferma: {
+        name: "Boulanger",
+        text: "Blé, farine, pain : vous nourrissez Venise. Le pain est ce que les villes achètent le plus.",
+      },
+      lagoon: {
+        name: "Briquetier",
+        text: "Argile et briques : vous bâtissez les palais. Tout le monde a besoin de vos briques.",
+      },
+      dolomites: {
+        name: "Charpentier",
+        text: "Bois et planches : vous fournissez navires et chantiers. Tout le monde a besoin de vos planches.",
+      },
+    } as Record<string, { name: string; text: string }>,
   },
 
   game: {
@@ -76,6 +86,29 @@ export const fr = {
     upkeepDefault:
       "Entretien impayé : production bloquée 24 h. Vendez du stock pour renflouer la caisse.",
 
+    goal: {
+      kicker: "Objectif de la saison",
+      title: "Le plus gros patrimoine de Venise",
+      rank: (rank: number, total: number) => `Rang ${rank} / ${total}`,
+      worth: "Votre patrimoine",
+      nextTitle: (name: string, amount: string) => `${name} à ${amount}`,
+      left: "Fin de saison dans",
+    },
+    firstSteps: {
+      title: "Premiers pas",
+      items: {
+        produce: ["Lancer une production", "Vos ateliers travaillent pendant votre absence."],
+        harvest: ["Récolter", "La marchandise rentre dans votre stock."],
+        transform: ["Transformer", "Un produit fini vaut bien plus que la matière brute."],
+        sell_city: ["Vendre à une ville", "C'est ainsi que les ducats entrent dans votre caisse."],
+        market_buy: ["Acheter au marché", "Le matériau d'un autre métier, pour grandir."],
+        invest: [
+          "Améliorer un atelier",
+          "Plus de production à chaque lot : votre patrimoine grimpe.",
+        ],
+      } as Record<string, [string, string]>,
+      guide: "Me guider",
+    },
     nextBatch: "Prochain lot dans",
     readyNow: "Récolte prête",
     idleAll: "Ateliers à l'arrêt",
@@ -162,6 +195,12 @@ export const fr = {
     symbol: "Meuble",
     save: "Enregistrer",
     help: "Comment jouer",
+    reset: {
+      title: "Recommencer ma partie",
+      text: "Vos ateliers, vos stocks et vos ducats seront effacés : vous repartirez de zéro avec 1 000 ducats et pourrez choisir un autre métier. Possible une seule fois par saison.",
+      confirm: "Oui, tout recommencer",
+      cancel: "Annuler",
+    },
     replayIntro: "Revoir l'introduction",
     replayGuide: "Relancer le guide",
 
@@ -236,6 +275,7 @@ export const fr = {
       season_over: "La saison est terminée.",
       invalid_quantity: "Quantité invalide.",
       not_joined: "Installez d'abord votre comptoir.",
+      reset_limit: "Vous avez déjà recommencé une fois cette saison.",
     } as Record<string, string>,
   },
 

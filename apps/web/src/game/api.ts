@@ -31,6 +31,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 export const gameApi = {
   catalog: () => call<Catalog>("GET", "/api/game/catalog"),
   view: () => call<GameResponse>("GET", "/api/game"),
+  /** Restart from scratch (once per season). */
+  reset: () => call<GameResponse>("POST", "/api/game/reset", {}),
   join: (region: string) => call<GameResponse>("POST", "/api/game/join", { region }),
   /** A refused action still returns the fresh view, with `error` set. */
   act: (action: Action) => call<GameResponse>("POST", "/api/game/actions", action),

@@ -20,6 +20,7 @@ import {
   upkeepPerDay,
   vwap,
 } from "@comptoirs/engine";
+import { titleFor } from "./profile.js";
 
 /** Static data of a world, for the client: names, recipes, costs. */
 export function catalog(ctx: WorldContext, world: { id: string; name: string }) {
@@ -124,6 +125,11 @@ export function playerView(
     }
   }
 
+  // Where the player stands in the season: the goal, always in sight.
+  const table = ranking(ctx, state, now, new Map());
+  const mine = table.find((r) => r.playerId === playerId);
+  const worth = netWorth(ctx, state, playerId, now);
+
   let upkeep = 0n;
   for (const b of buildings) upkeep += upkeepPerDay(ctx, b);
 
@@ -139,7 +145,13 @@ export function playerView(
     cash: state.accounts[cashAccount(playerId)] ?? 0n,
     escrow: state.accounts[escrowAccount(playerId)] ?? 0n,
     upkeepPerDay: upkeep,
-    netWorth: netWorth(ctx, state, playerId, now),
+    netWorth: worth,
+    standing: {
+      rank: mine?.rank ?? null,
+      players: table.length,
+      title: titleFor(worth.total),
+      seasonEndsAt: ctx.startAt + ctx.settings.seasonDays * 86_400_000,
+    },
     inventory: ctx.theme.resources.map((r) => ({
       resource: r.code,
       available: state.inventories[playerId]?.[r.code]?.available ?? 0,

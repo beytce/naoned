@@ -129,6 +129,95 @@ function Hero(props: GameProps) {
   );
 }
 
+/** The season goal, always in sight: rank, net worth, next title, time left. */
+function Goal(props: GameProps) {
+  const { standing, netWorth } = props.view;
+  const next = standing.title.next;
+  return (
+    <button type="button" className="block w-full text-left" onClick={() => props.goTo("top")}>
+      <Panel glow="gold">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <Label className="text-gold">{fr.game.goal.kicker}</Label>
+            <p className="mt-1 font-display text-base font-extrabold uppercase leading-tight">
+              {fr.game.goal.title}
+            </p>
+          </div>
+          {standing.rank && (
+            <span className="slab shrink-0 bg-gold px-2 py-1 font-display text-sm font-extrabold text-night">
+              <span>#{standing.rank}</span>
+            </span>
+          )}
+        </div>
+        <div className="mt-3 flex items-end justify-between">
+          <div>
+            <Label>{fr.game.goal.worth}</Label>
+            <Big className="mt-1 text-2xl">{d(netWorth.total)}</Big>
+          </div>
+          <div className="text-right">
+            <Label>{fr.game.goal.left}</Label>
+            <Big className="mt-1 text-lg text-lagoon">
+              {clock(standing.seasonEndsAt - props.now)}
+            </Big>
+          </div>
+        </div>
+        {next && (
+          <div className="mt-3">
+            <Ribbon
+              value={standing.title.progress}
+              label={fr.game.goal.nextTitle(next.name, `${next.from.toLocaleString("fr-FR")} d`)}
+            />
+          </div>
+        )}
+        {standing.rank && (
+          <p className="label mt-2">{fr.game.goal.rank(standing.rank, standing.players)}</p>
+        )}
+      </Panel>
+    </button>
+  );
+}
+
+const FIRST_STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "invest"];
+
+/** The first six steps as a checklist, with why each one matters. */
+function FirstSteps(props: GameProps) {
+  const done = new Set(props.view.tutorial);
+  if (FIRST_STEPS.every((s) => done.has(s))) return null;
+  const current = FIRST_STEPS.find((s) => !done.has(s));
+  return (
+    <Panel>
+      <div className="flex items-center justify-between">
+        <Label className="text-lagoon">{fr.game.firstSteps.title}</Label>
+        <span className="label">
+          {FIRST_STEPS.filter((s) => done.has(s)).length}/{FIRST_STEPS.length}
+        </span>
+      </div>
+      <ol className="mt-3 space-y-2.5">
+        {FIRST_STEPS.map((s, i) => {
+          const [title, why] = fr.game.firstSteps.items[s] ?? [s, ""];
+          const ok = done.has(s);
+          const now = s === current;
+          return (
+            <li key={s} className={`flex gap-3 ${ok ? "opacity-50" : ""}`}>
+              <span
+                className={`slab flex h-6 w-6 shrink-0 items-center justify-center font-display text-xs font-extrabold ${
+                  ok ? "bg-lagoon text-night" : now ? "bg-gold text-night" : "bg-night-4 text-muted"
+                }`}
+              >
+                <span>{ok ? "✓" : i + 1}</span>
+              </span>
+              <div>
+                <p className={`text-sm font-semibold ${ok ? "line-through" : ""}`}>{title}</p>
+                {now && <p className="text-xs text-cream-dim">{why}</p>}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </Panel>
+  );
+}
+
 function StockStrip(props: GameProps) {
   return (
     <div>
@@ -356,7 +445,9 @@ export function Comptoir(props: GameProps) {
 
   return (
     <div className="space-y-6">
+      <Goal {...props} />
       <Hero {...props} />
+      <FirstSteps {...props} />
       <StockStrip {...props} />
       <section className="space-y-3">
         <Label>{fr.game.workshops}</Label>
