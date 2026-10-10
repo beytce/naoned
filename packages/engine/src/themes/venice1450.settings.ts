@@ -17,6 +17,7 @@ export const venice1450Settings: WorldSettingsInput = {
   productionQueueMaxHours: 8,
   regionBonusBps: 3_000,
   lateJoiner: { afterDay: 7, bonusBps: 5_000, hours: 72 },
+  tutorial: { minutes: 30, fastBatchSeconds: 30, fastBatchesPerBuilding: 1 },
   maxBuildings: 12,
   maxBuildingLevel: 5,
   levelCostGrowthBps: 10_000,

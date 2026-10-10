@@ -79,8 +79,10 @@ function join(tx: Tx, playerId: PlayerId, region: string): void {
     ctx.settings.startingCapital,
     "starting_capital",
   );
-  for (const type of ctx.settings.startingBuildings[region] ?? [])
-    grantBuilding(tx, playerId, type);
+  for (const type of ctx.settings.startingBuildings[region] ?? []) {
+    const building = grantBuilding(tx, playerId, type);
+    building.fastBatchesLeft = ctx.settings.tutorial.fastBatchesPerBuilding;
+  }
   emit(tx, "join", playerId, { region });
 }
 

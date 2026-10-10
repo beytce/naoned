@@ -40,6 +40,8 @@ export interface ProductionJob {
   batches: number;
   /** Building level when the batches were queued: an upgrade applies to the next batches. */
   level: number;
+  /** Duration of one batch of this job (shorter for a tutorial batch). */
+  batchMs: number;
 }
 
 export interface Building {
@@ -50,6 +52,8 @@ export interface Building {
   job: ProductionJob | null;
   /** Cumulative construction cost (ducats + materials at reference price), for valuation. */
   investedValue: Deniers;
+  /** Accelerated batches left for the first minutes of play (starting kit only). */
+  fastBatchesLeft: number;
 }
 
 export interface InventoryLine {

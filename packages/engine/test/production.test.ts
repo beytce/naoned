@@ -132,6 +132,83 @@ describe("production", () => {
     expect(w.stock("a", "wheat").available).toBe(2 * 26 + 52); // new batch at level 2
   });
 
+  it("finishes the first one-batch job of a starting building in seconds", () => {
+    const w = new World(
+      makeContext({ tutorial: { minutes: 30, fastBatchSeconds: 30, fastBatchesPerBuilding: 1 } }),
+    );
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    const farm = farmOf(w, "a");
+    w.do({
+      type: "startProduction",
+      playerId: "a",
+      buildingId: farm.id,
+      recipe: "grow_wheat",
+      batches: 1,
+    });
+    // Appending to an accelerated job is refused: it would speed up normal batches.
+    expect(
+      w.try({
+        type: "startProduction",
+        playerId: "a",
+        buildingId: farm.id,
+        recipe: "grow_wheat",
+        batches: 1,
+      }).ok,
+    ).toBe(false);
+    w.advance(30_000);
+    w.do({ type: "collect", playerId: "a", buildingId: farm.id });
+    expect(w.stock("a", "wheat").available).toBe(26);
+    // Only once per building: the next batch takes its normal time.
+    w.do({
+      type: "startProduction",
+      playerId: "a",
+      buildingId: farm.id,
+      recipe: "grow_wheat",
+      batches: 1,
+    });
+    w.advance(30_000);
+    w.do({ type: "collect", playerId: "a", buildingId: farm.id });
+    expect(w.stock("a", "wheat").available).toBe(26);
+    w.advance(HOUR);
+    w.do({ type: "collect", playerId: "a", buildingId: farm.id });
+    expect(w.stock("a", "wheat").available).toBe(52);
+  });
+
+  it("does not accelerate after the tutorial window or for several batches", () => {
+    const w = new World(
+      makeContext({ tutorial: { minutes: 30, fastBatchSeconds: 30, fastBatchesPerBuilding: 1 } }),
+    );
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    const farm = farmOf(w, "a");
+    w.do({
+      type: "startProduction",
+      playerId: "a",
+      buildingId: farm.id,
+      recipe: "grow_wheat",
+      batches: 2,
+    });
+    w.advance(MIN);
+    w.do({ type: "collect", playerId: "a", buildingId: farm.id });
+    expect(w.stock("a", "wheat").available).toBe(0);
+
+    const late = new World(
+      makeContext({ tutorial: { minutes: 30, fastBatchSeconds: 30, fastBatchesPerBuilding: 1 } }),
+    );
+    late.do({ type: "join", playerId: "b", region: "terraferma" });
+    late.advance(31 * MIN);
+    const lateFarm = farmOf(late, "b");
+    late.do({
+      type: "startProduction",
+      playerId: "b",
+      buildingId: lateFarm.id,
+      recipe: "grow_wheat",
+      batches: 1,
+    });
+    late.advance(MIN);
+    late.do({ type: "collect", playerId: "b", buildingId: lateFarm.id });
+    expect(late.stock("b", "wheat").available).toBe(0);
+  });
+
   it("refuses a recipe from another building", () => {
     const w = new World();
     w.do({ type: "join", playerId: "a", region: "terraferma" });

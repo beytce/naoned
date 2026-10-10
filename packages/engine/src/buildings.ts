@@ -59,6 +59,7 @@ export function grantBuilding(tx: Tx, playerId: PlayerId, type: string): Buildin
     level: 1,
     job: null,
     investedValue: costValue(tx.ctx, costForLevel(tx.ctx, type, 1)),
+    fastBatchesLeft: 0,
   };
   tx.s.buildings[id] = building;
   return tx.s.buildings[id] as Building;

@@ -39,6 +39,10 @@ export const worldSettingsSchema = z.object({
   productionQueueMaxHours: positive,
   regionBonusBps: bps,
   lateJoiner: z.object({ afterDay: qty, bonusBps: bps, hours: positive }),
+  /** First minutes of play: a few one-batch jobs finish in seconds, so the tutorial can flow. */
+  tutorial: z
+    .object({ minutes: qty, fastBatchSeconds: positive, fastBatchesPerBuilding: qty })
+    .default({ minutes: 0, fastBatchSeconds: 30, fastBatchesPerBuilding: 0 }),
   maxBuildings: positive,
   maxBuildingLevel: positive,
   levelCostGrowthBps: bps,

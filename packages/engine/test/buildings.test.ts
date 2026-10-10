@@ -5,7 +5,15 @@ import { World, makeContext } from "./helpers.js";
 describe("buildings", () => {
   it("charges upkeep growing faster than the level", () => {
     const ctx = makeContext({ upkeepLevelGrowthBps: 2_000 });
-    const farm = { id: "b1", playerId: "a", type: "farm", level: 3, job: null, investedValue: 0n };
+    const farm = {
+      id: "b1",
+      playerId: "a",
+      type: "farm",
+      level: 3,
+      job: null,
+      investedValue: 0n,
+      fastBatchesLeft: 0,
+    };
     expect(upkeepPerDay(ctx, farm)).toBe((1_000n * 3n * 14n) / 10n); // × (1 + 2 × 20 %)
   });
 

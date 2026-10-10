@@ -33,7 +33,7 @@ export function collect(tx: Tx, building: Building): void {
   if (!recipe) fail("unknown_recipe");
   const player = tx.s.players[building.playerId];
   if (!player) fail("unknown_player");
-  const batchMs = recipe.durationMinutes * MINUTE_MS;
+  const batchMs = job.batchMs;
   const done = Math.min(job.batches, Math.floor((tx.now - job.startedAt) / batchMs));
   if (done <= 0) return;
 
@@ -67,9 +67,23 @@ export function startProduction(
   if (tx.now < player.upkeepDefaultUntil) fail("upkeep_default");
 
   collect(tx, building);
-  const batchMs = recipe.durationMinutes * MINUTE_MS;
+  const normalMs = recipe.durationMinutes * MINUTE_MS;
   const job = building.job;
-  if (job && (job.recipe !== recipeCode || job.level !== building.level)) fail("building_busy");
+  if (
+    job &&
+    (job.recipe !== recipeCode || job.level !== building.level || job.batchMs !== normalMs)
+  ) {
+    fail("building_busy");
+  }
+
+  // Tutorial: in the first minutes, a single batch of a starting building finishes in seconds.
+  const tutorial = tx.ctx.settings.tutorial;
+  const fast =
+    !job &&
+    batches === 1 &&
+    building.fastBatchesLeft > 0 &&
+    tx.now < player.joinedAt + tutorial.minutes * MINUTE_MS;
+  const batchMs = fast ? tutorial.fastBatchSeconds * 1000 : normalMs;
 
   const queuedEnd = job ? job.startedAt + job.batches * batchMs : tx.now;
   const newEnd = queuedEnd + batches * batchMs;
@@ -80,8 +94,17 @@ export function startProduction(
     removeStock(tx, building.playerId, resource, qty, "production_input", building.id);
   }
 
+  if (fast) building.fastBatchesLeft -= 1;
   if (job) job.batches += batches;
-  else building.job = { recipe: recipeCode, startedAt: tx.now, batches, level: building.level };
+  else {
+    building.job = {
+      recipe: recipeCode,
+      startedAt: tx.now,
+      batches,
+      level: building.level,
+      batchMs,
+    };
+  }
   emit(tx, "production_started", building.playerId, {
     building: building.id,
     recipe: recipeCode,
@@ -100,17 +123,11 @@ export function freeBatches(
   if (!recipe) return 0;
   const batchMs = recipe.durationMinutes * MINUTE_MS;
   const job = building.job;
-  const sameQueue = job && job.recipe === recipeCode && job.level === building.level;
-  if (job && !sameQueue) {
-    const end = job.startedAt + job.batches * batchMs;
-    if (end > now) return 0;
-  }
-  let queuedEnd = now;
-  if (job && sameQueue) {
-    const done = Math.min(job.batches, Math.floor((now - job.startedAt) / batchMs));
-    queuedEnd = Math.max(now, job.startedAt + job.batches * batchMs);
-    if (done === job.batches) queuedEnd = now;
-  }
+  const sameQueue =
+    job && job.recipe === recipeCode && job.level === building.level && job.batchMs === batchMs;
+  const jobEnd = job ? job.startedAt + job.batches * job.batchMs : now;
+  if (job && !sameQueue && jobEnd > now) return 0;
+  const queuedEnd = job && sameQueue ? Math.max(now, jobEnd) : now;
   const room = ctx.settings.productionQueueMaxHours * HOUR_MS - (queuedEnd - now);
   return Math.max(0, Math.floor(room / batchMs));
 }
