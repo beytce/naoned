@@ -1,0 +1,33 @@
+/** Interface texts. French only for now; one object per language when i18n comes. */
+export const fr = {
+  appName: "Comptoirs",
+  tagline: "Bâtissez une maison de commerce en six semaines, sur un marché tenu par les joueurs.",
+  season: "Saison 1 · Venise 1450",
+  emailLabel: "Adresse e-mail",
+  emailPlaceholder: "vous@exemple.fr",
+  sendLink: "Recevoir mon lien de connexion",
+  sending: "Envoi…",
+  noPassword: "Pas de mot de passe : un lien de connexion vous est envoyé par e-mail.",
+  checkInbox: "Consultez votre boîte mail",
+  linkSentTo: (email: string) =>
+    `Un lien de connexion a été envoyé à ${email}. Il est valable 15 minutes.`,
+  otherAddress: "Utiliser une autre adresse",
+  signingIn: "Connexion en cours…",
+  invalidLink: "Ce lien est invalide ou a expiré.",
+  askNewLink: "Demander un nouveau lien",
+  choosePseudo: "Choisissez votre nom de marchand",
+  pseudoHelp: "3 à 20 caractères : lettres, chiffres, _ ou -. Il sera visible des autres joueurs.",
+  pseudoLabel: "Nom de marchand",
+  confirm: "Valider",
+  welcome: (pseudo: string) => `Bienvenue, ${pseudo}`,
+  comingSoon: "Votre comptoir ouvre bientôt. La première saison se prépare.",
+  logout: "Se déconnecter",
+  errors: {
+    invalid_input: "Vérifiez votre saisie.",
+    pseudo_taken: "Ce nom est déjà pris.",
+    too_many_requests: "Trop de demandes. Réessayez dans quelques minutes.",
+    network: "Le serveur ne répond pas. Vérifiez votre connexion.",
+    mail_unavailable: "L'e-mail n'a pas pu être envoyé. Réessayez dans quelques minutes.",
+    unknown: "Une erreur est survenue.",
+  } as Record<string, string>,
+};
