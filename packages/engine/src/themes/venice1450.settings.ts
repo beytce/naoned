@@ -1,0 +1,85 @@
+import type { WorldSettingsInput } from "../settings.js";
+
+/** Default balancing for a Venice 1450 world. Amounts in deniers, rates in bps. */
+export const venice1450Settings: WorldSettingsInput = {
+  seasonDays: 42,
+  registrationClosesDay: 28,
+  startingCapital: 100_000,
+  startingBuildings: {
+    terraferma: ["farm", "mill"],
+    lagoon: ["clay_pit", "mill"],
+    dolomites: ["lumber_camp", "mill"],
+  },
+  marketTaxBps: 300,
+  orderMaxHours: 72,
+  maxOpenOrders: 10,
+  instantOrderSlippageBps: 1_000,
+  productionQueueMaxHours: 8,
+  regionBonusBps: 3_000,
+  lateJoiner: { afterDay: 7, bonusBps: 5_000, hours: 72 },
+  maxBuildings: 12,
+  maxBuildingLevel: 5,
+  levelCostGrowthBps: 10_000,
+  upkeepDefaultHours: 24,
+  activeWindowHours: 72,
+  buildings: {
+    farm: { costDucats: 30_000, costMaterials: { bricks: 20, planks: 20 }, upkeepPerDay: 1_000 },
+    clay_pit: {
+      costDucats: 30_000,
+      costMaterials: { bricks: 20, planks: 20 },
+      upkeepPerDay: 1_000,
+    },
+    lumber_camp: {
+      costDucats: 30_000,
+      costMaterials: { bricks: 20, planks: 20 },
+      upkeepPerDay: 1_000,
+    },
+    mill: { costDucats: 40_000, costMaterials: { bricks: 30, planks: 30 }, upkeepPerDay: 1_500 },
+    bakery: { costDucats: 60_000, costMaterials: { bricks: 40, planks: 40 }, upkeepPerDay: 2_000 },
+    brickworks: {
+      costDucats: 50_000,
+      costMaterials: { bricks: 20, planks: 40 },
+      upkeepPerDay: 1_500,
+    },
+    sawmill: { costDucats: 50_000, costMaterials: { bricks: 40, planks: 20 }, upkeepPerDay: 1_500 },
+  },
+  referencePrices: {
+    wheat: 100,
+    flour: 160,
+    bread: 180,
+    clay: 100,
+    bricks: 220,
+    wood: 100,
+    planks: 220,
+  },
+  marketMaker: {
+    spreadStartBps: 400,
+    spreadEndBps: 2_000,
+    spreadRampDays: 14,
+    dailyDepthPerPlayer: {
+      wheat: 20,
+      flour: 10,
+      bread: 10,
+      clay: 20,
+      bricks: 10,
+      wood: 20,
+      planks: 10,
+    },
+  },
+  cities: {
+    venezia: { bread: { basePrice: 220, dailyCapacityPerPlayer: 60, maxDropBps: 5_000 } },
+    padova: { bread: { basePrice: 210, dailyCapacityPerPlayer: 45, maxDropBps: 5_000 } },
+    verona: { bread: { basePrice: 200, dailyCapacityPerPlayer: 45, maxDropBps: 5_000 } },
+  },
+  projects: {
+    intervalDays: 7,
+    durationDays: 7,
+    needsPerPlayer: { bricks: 60, planks: 60 },
+    premiumBps: 1_000,
+  },
+  valuation: {
+    vwapDays: 7,
+    minVolume: 200,
+    buildingValueBps: 5_000,
+  },
+};

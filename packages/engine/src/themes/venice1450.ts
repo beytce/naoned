@@ -1,0 +1,85 @@
+import type { Theme } from "../theme.js";
+
+export const venice1450: Theme = {
+  code: "venice1450",
+  name: "Venise 1450",
+  resources: [
+    { code: "wheat", name: "Blé", chain: "food", tier: "raw" },
+    { code: "flour", name: "Farine", chain: "food", tier: "intermediate" },
+    { code: "bread", name: "Pain", chain: "food", tier: "finished" },
+    { code: "clay", name: "Argile", chain: "construction", tier: "raw" },
+    { code: "bricks", name: "Briques", chain: "construction", tier: "finished" },
+    { code: "wood", name: "Bois", chain: "carpentry", tier: "raw" },
+    { code: "planks", name: "Planches", chain: "carpentry", tier: "finished" },
+  ],
+  regions: [
+    { code: "terraferma", name: "Terraferma", bonusResource: "wheat" },
+    { code: "lagoon", name: "Lagune", bonusResource: "clay" },
+    { code: "dolomites", name: "Dolomites", bonusResource: "wood" },
+  ],
+  cities: [
+    { code: "venezia", name: "Venise" },
+    { code: "padova", name: "Padoue" },
+    { code: "verona", name: "Vérone" },
+  ],
+  buildings: [
+    { type: "farm", name: "Ferme" },
+    { type: "clay_pit", name: "Carrière d'argile" },
+    { type: "lumber_camp", name: "Camp de bûcherons" },
+    { type: "mill", name: "Moulin" },
+    { type: "bakery", name: "Boulangerie" },
+    { type: "brickworks", name: "Briqueterie" },
+    { type: "sawmill", name: "Scierie" },
+  ],
+  recipes: [
+    {
+      code: "grow_wheat",
+      building: "farm",
+      inputs: {},
+      outputs: { wheat: 20 },
+      durationMinutes: 60,
+    },
+    {
+      code: "dig_clay",
+      building: "clay_pit",
+      inputs: {},
+      outputs: { clay: 20 },
+      durationMinutes: 60,
+    },
+    {
+      code: "cut_wood",
+      building: "lumber_camp",
+      inputs: {},
+      outputs: { wood: 20 },
+      durationMinutes: 60,
+    },
+    {
+      code: "mill_flour",
+      building: "mill",
+      inputs: { wheat: 10 },
+      outputs: { flour: 8 },
+      durationMinutes: 30,
+    },
+    {
+      code: "bake_bread",
+      building: "bakery",
+      inputs: { flour: 8 },
+      outputs: { bread: 10 },
+      durationMinutes: 60,
+    },
+    {
+      code: "fire_bricks",
+      building: "brickworks",
+      inputs: { clay: 10 },
+      outputs: { bricks: 6 },
+      durationMinutes: 60,
+    },
+    {
+      code: "saw_planks",
+      building: "sawmill",
+      inputs: { wood: 10 },
+      outputs: { planks: 6 },
+      durationMinutes: 60,
+    },
+  ],
+};
