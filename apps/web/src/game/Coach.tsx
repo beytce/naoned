@@ -21,6 +21,20 @@ interface CoachStep {
   target?: string;
   waitUntil?: number;
   final?: boolean;
+  /** Store key that lets the player skip a step the world blocks (e.g. an empty market). */
+  skip?: string;
+}
+
+/**
+ * What the market_buy step asks for: the material the region lacks if someone sells it,
+ * otherwise anything useful on offer, so the guide never points at an empty order book.
+ */
+function toBuy(props: GameProps): string | null {
+  const { view } = props;
+  const missing = MISSING[view.player.region] ?? "planks";
+  const wanted = [missing, "planks", "bricks", "wood", "bread", "flour", "wheat", "clay"];
+  const onSale = new Set(view.market.filter((m) => m.bestAsk !== null).map((m) => m.resource));
+  return wanted.find((r) => onSale.has(r)) ?? null;
 }
 
 function goTab(props: GameProps, tab: Tab, text: string): CoachStep | null {
@@ -114,8 +128,9 @@ function nextStep(props: GameProps): CoachStep {
       );
   }
 
-  if (!done.has("market_buy")) {
-    const material = MISSING[view.player.region] ?? "planks";
+  if (!done.has("market_buy") && store.get("skipMarketBuy") !== "1") {
+    const material = toBuy(props);
+    if (!material) return { text: fr.game.coach.emptyMarket, skip: "skipMarketBuy" };
     if (props.sheet === `trade:${material}`)
       return { text: fr.game.coach.buy(names.resource(material)), target: "sheet-buy" };
     return (
@@ -225,7 +240,17 @@ export function Coach(props: GameProps) {
                 />
               ))}
             </div>
-            {step.final ? (
+            {step.skip ? (
+              <Slab
+                size="sm"
+                onClick={() => {
+                  if (step.skip) store.set(step.skip, "1");
+                  props.onGuidePaused();
+                }}
+              >
+                {fr.game.coach.skip}
+              </Slab>
+            ) : step.final ? (
               <Slab
                 size="sm"
                 onClick={() => {

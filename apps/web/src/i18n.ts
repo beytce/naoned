@@ -298,6 +298,9 @@ export const fr = {
         "Pour grandir, il faut les matériaux d'une autre région. Ouvrez l'onglet « Rialto ».",
       buy: (resource: string) =>
         `Achetez quelques ${resource.toLowerCase()} : ils servent à améliorer vos ateliers.`,
+      emptyMarket:
+        "Personne ne vend rien au Rialto pour l'instant : le teneur de marché a écoulé son stock du jour. Passons, vous achèterez plus tard.",
+      skip: "Passer",
       goComptoir: "Retour au comptoir pour investir.",
       invest: "Améliorez un atelier : il produira davantage à chaque lot.",
       investLater:

@@ -228,13 +228,15 @@ export function Game(props: {
     replayGuide: () => {
       store.set("guideDone", "0");
       store.set("guideHidden", "0");
+      store.set("skipMarketBuy", "0");
       setGuideKey((k) => k + 1);
       setTab("comptoir");
     },
     resetGame: async () => {
       try {
         const res = await gameApi.reset();
-        for (const key of ["introSeen", "guideDone", "guideHidden"]) store.set(key, "0");
+        for (const key of ["introSeen", "guideDone", "guideHidden", "skipMarketBuy"])
+          store.set(key, "0");
         setSheet(null);
         setTab("comptoir");
         setIntroSeen(false);
