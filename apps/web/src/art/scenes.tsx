@@ -124,3 +124,88 @@ export function Lorenzo({ size = 56 }: { size?: number }) {
     </svg>
   );
 }
+
+/** A Venetian galley, oars out. `sailing` rocks it on the waves. */
+export function Galley({
+  className = "",
+  sailing = false,
+}: { className?: string; sailing?: boolean }) {
+  return (
+    <svg viewBox="0 0 200 120" className={className} aria-hidden="true">
+      <g>
+        {sailing && (
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            values="-2 100 90;2 100 90;-2 100 90"
+            dur="4s"
+            repeatCount="indefinite"
+          />
+        )}
+        <path d="M100 18 V82" stroke={P.wood} strokeWidth="4" />
+        <path d="M102 20 Q150 44 104 76 Z" fill={P.cream} />
+        <path d="M102 20 Q150 44 104 76" fill="none" stroke={P.goldDeep} strokeWidth="2" />
+        <path d="M118 40 l8 4 -8 4 z" fill={P.vermilion} />
+        <path d="M98 22 Q60 48 96 74 Z" fill={P.cream} opacity="0.85" />
+        <path d="M100 14 l10 4 -10 4 z" fill={P.vermilion} />
+        <path d="M20 80 H180 L166 96 H40 Z" fill={P.vermilion} />
+        <path d="M20 80 H180" stroke={P.gold} strokeWidth="3" />
+        <path
+          d="M168 80 Q188 76 192 64"
+          stroke={P.vermilion}
+          strokeWidth="5"
+          fill="none"
+          strokeLinecap="round"
+        />
+        {[50, 66, 82, 118, 134, 150].map((x) => (
+          <path
+            key={x}
+            d={`M${x} 88 L${x - 12} 108`}
+            stroke={P.woodLight}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+        ))}
+      </g>
+      {[104, 112].map((y, i) => (
+        <path
+          key={y}
+          d={`M0 ${y} Q25 ${y - 4} 50 ${y} T100 ${y} T150 ${y} T200 ${y}`}
+          stroke={P.lagoon}
+          strokeWidth="2.5"
+          fill="none"
+          opacity={0.8 - i * 0.3}
+        />
+      ))}
+    </svg>
+  );
+}
+
+/** Small scene for a port: domes and minarets in the distance. */
+export function PortArt({ code, className = "" }: { code: string; className?: string }) {
+  const sky = code === "alexandria" ? P.gold : P.lagoon;
+  return (
+    <svg viewBox="0 0 160 70" className={className} aria-hidden="true">
+      <circle cx="128" cy="20" r="11" fill={sky} opacity="0.85" />
+      <g fill={P.night3}>
+        {code === "alexandria" ? (
+          <>
+            <path d="M20 60 L40 22 L60 60 Z" />
+            <rect x="72" y="22" width="8" height="38" />
+            <path d="M70 22 h12 l-6 -10 z" />
+            <rect x="90" y="40" width="40" height="20" />
+          </>
+        ) : (
+          <>
+            <path d="M30 60 V40 Q50 18 70 40 V60 Z" />
+            <rect x="22" y="20" width="5" height="40" />
+            <rect x="73" y="20" width="5" height="40" />
+            <path d="M21 20 l3.5 -10 3.5 10 z M72 20 l3.5 -10 3.5 10 z" />
+            <rect x="90" y="44" width="44" height="16" />
+          </>
+        )}
+      </g>
+      <path d="M0 64 Q40 60 80 64 T160 64" stroke={P.lagoon} strokeWidth="2.5" fill="none" />
+    </svg>
+  );
+}

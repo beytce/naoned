@@ -38,6 +38,20 @@ Les premières simulations ont révélé des défauts de conception que des rég
 | Le PNJ rachetait à 90 % du prix de référence quand le marché était à 35 % : subvention exploitable | Le PNJ suit le marché **à la baisse uniquement** (jusqu'à 50 % du prix de référence) |
 | La masse monétaire par joueur actif croît avec la taille des affaires (épargne pour l'amélioration suivante) alors que les prix restent stables | L'inflation se mesure par l'indice des prix ; la masse monétaire par joueur actif a un plafond (2,5 × le capital de départ) et sa croissance devient un diagnostic |
 
+### Le monde vivant (après le premier test de la bêta)
+
+Constat du premier test : seuls les briques et les planches intéressaient les autres joueurs. Le blé, la farine, l'argile, le bois et même le pain n'avaient pas d'acheteur parmi eux.
+
+| Mécanique | Règle | Ce que ça change |
+| --- | --- | --- |
+| **Rations** | Chaque niveau d'atelier mange 2 pains par jour ; sans pain, les nouveaux lots durent 50 % de plus | Tout le monde achète du pain aux boulangers |
+| **Combustible** | Boulangerie : 8 farine + 2 bois → 10 pains ; briqueterie : 10 argile + 2 bois → 6 briques | Le bois devient indispensable au boulanger et au briquetier ; les Dolomites en produisent un excédent à vendre |
+| **Contrats du Doge** | 3 commandes par jour et par joueur, toutes ressources, payées 20 % au-dessus du prix de référence | Blé, farine, argile et bois trouvent preneur ; un objectif concret chaque jour |
+| **Événements de marché** | Tous les 2 jours, 24 h : disette, incendie, tempête, récolte abondante, foire de la Sensa. Annoncés la veille par la gazette | Les prix bougent, il y a des coups à anticiper |
+| **Galères** | Constantinople (12 h, soie, +35 %) ou Alexandrie (24 h, épices, +60 %). Cargaison payée au prix de référence, risque de pirates (10 % / 20 %), escorte payante (3 % / 6 %) | La signature vénitienne ; un usage pour les marchandises bon marché ; une décision de risque |
+
+Chaque métier dépend désormais des deux autres : le boulanger vend son pain à tous et achète bois, briques et planches ; le briquetier achète pain, bois et planches ; le charpentier achète pain et briques. Les tirages (événements, contrats, pirates) viennent d'un secret du monde qui ne quitte pas le serveur.
+
 ## Vision et positionnement
 
 Comptoirs est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.

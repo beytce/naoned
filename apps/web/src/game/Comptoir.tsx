@@ -218,6 +218,28 @@ function FirstSteps(props: GameProps) {
   );
 }
 
+/** Workers eat: how much bread per day, how many days left, and a warning when short. */
+function Rations(props: GameProps) {
+  const { rations } = props.view;
+  if (rations.perDay === 0) return null;
+  const stock = have(props.view, rations.resource);
+  const days = Math.floor(stock / rations.perDay);
+  const hungry = rations.hungryUntil > props.now;
+  const tone = hungry ? "text-vermilion" : days < 1 ? "text-gold" : "text-cream-dim";
+  return (
+    <div
+      className={`flex items-start gap-3 ${hungry ? "bg-vermilion/15 p-3 ring-1 ring-vermilion/60" : ""}`}
+    >
+      <ResourceIcon code={rations.resource} size={30} />
+      <div className="text-sm">
+        <p className={tone}>{fr.game.rations.line(rations.perDay, days)}</p>
+        {hungry && <p className="mt-1 text-vermilion">{fr.game.rations.hungry}</p>}
+        {!hungry && days < 1 && <p className="mt-1 text-gold">{fr.game.rations.low}</p>}
+      </div>
+    </div>
+  );
+}
+
 function StockStrip(props: GameProps) {
   return (
     <div>
@@ -449,6 +471,7 @@ export function Comptoir(props: GameProps) {
       <Hero {...props} />
       <FirstSteps {...props} />
       <StockStrip {...props} />
+      <Rations {...props} />
       <section className="space-y-3">
         <Label>{fr.game.workshops}</Label>
         {view.buildings.map((b) => (

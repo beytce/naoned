@@ -72,3 +72,24 @@ pnpm sim --seeds 1 --scenario scenarios/high-tax.json   # surcharge de paramètr
 ```
 
 Les CSV détaillés (`daily_metrics.csv`, `prices.csv`, `players_daily.csv`) sont écrits par graine dans `apps/simulator/out/`. Ils ne sont pas versionnés.
+
+## Monde vivant : rations, combustible, contrats, événements, galères
+
+Les bots ont appris les nouvelles mécaniques : ils gardent trois jours de pain, achètent leur bois, honorent les contrats qu'ils peuvent couvrir, affrètent des galères quand ils ont des surplus et vendent épices et soie aux villes. `pnpm --filter @comptoirs/simulator inspect` compte ce qu'ils font de chaque mécanique sur une saison.
+
+Réglages ajoutés ou modifiés :
+
+| Paramètre | Valeur | Raison |
+| --- | --- | --- |
+| Rations | 2 pains par niveau et par jour ; lots +50 % sans pain | Demande universelle de pain |
+| Combustible | 2 bois par lot (boulangerie, briqueterie) | Demande de bois hors des Dolomites |
+| Camp de bûcherons | 11 bois par lot (14 avec le bonus) au lieu de 8 | Sans excédent de bois, l'économie s'étouffait (932 épisodes de faim, 861 entretiens impayés) |
+| Entretien | −25 % environ | Les rations s'ajoutent désormais à l'entretien en ducats |
+| Stock de départ | 20 pains pour tous, 10 bois pour Terraferma et la Lagune | Le tutoriel doit pouvoir tourner dès la première minute |
+| Contrats | 3 par jour, prime de 20 % | Débouché pour toutes les ressources |
+| Événements | tous les 2 jours, 24 h, 5 types | Variété sans chaos |
+| Galères | voir le cadrage | Plus-value espérée positive, mais avec du risque |
+
+Résultat sur 5 graines : toutes les cibles bloquantes tenues, indice des prix entre 93 et 101, 70 à 81 % du volume entre joueurs. Sur une saison type (graine 1), les échanges entre joueurs portent sur toutes les ressources : environ 17 600 blés, 11 600 bois, 8 400 farines, 3 400 argiles, 2 100 pains.
+
+Limites : les bots affrètent peu de galères (ils gardent rarement assez de surplus) ; environ 10 % des jours-joueurs actifs connaissent la faim et 12 % un entretien impayé, parce que les bots investissent agressivement. De vrais joueurs devraient faire mieux ; la bêta le dira.

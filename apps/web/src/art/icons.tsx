@@ -39,6 +39,19 @@ export const NavIcon = {
       <path d="M6 9 L10 4 M6 14 L13 4" />
     </Line>
   ),
+  contrats: () => (
+    <Line>
+      <path d="M6 3 H16 L19 6 V21 H6 Z" />
+      <path d="M9 9 H16 M9 12.5 H16 M9 16 H12" />
+      <circle cx="16" cy="17.5" r="2.5" />
+    </Line>
+  ),
+  port: () => (
+    <Line>
+      <path d="M12 3 V15 M12 4 L18 13 H12" />
+      <path d="M3 16 H21 L18.5 20 H5.5 Z" />
+    </Line>
+  ),
   top: () => (
     <Line>
       <path d="M7 4 H17 V9 A5 5 0 0 1 7 9 Z" />

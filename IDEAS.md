@@ -2,6 +2,14 @@
 
 Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas codé.
 
+## Pistes de jeu proposées (non retenues pour l'instant)
+- Ordres à cours limité dans l'interface et journal du Rialto (gros échanges en direct).
+- Classement hebdomadaire sur le gain de la semaine, récompenses cosmétiques.
+- Banque de Venise : prêts avec intérêts.
+- Notifications « Récolte prête », « Galère rentrée », « Ordre exécuté ».
+- Parrainage avec blason exclusif.
+- Échanges d'épices et de soie entre joueurs (nécessite les ordres à cours limité).
+
 ## V1 (après la première saison)
 - Chaînes textile (laine, tissu, vêtements) et ameublement (meubles).
 - Abonnement Négociant : alertes de prix, graphiques avancés, historique long, export CSV, conseiller détaillé.

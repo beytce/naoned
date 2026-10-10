@@ -2,13 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { type Account, ApiError } from "../api.js";
 import { Crest, defaultCrest } from "../art/crest.js";
 import { Coin, NavIcon } from "../art/icons.js";
+import { Lorenzo } from "../art/scenes.js";
 import { fr } from "../i18n.js";
-import { Chantiers } from "./Chantiers.js";
 import { Coach } from "./Coach.js";
 import { Comptoir } from "./Comptoir.js";
+import { Contrats } from "./Contrats.js";
+import { Gazette } from "./Gazette.js";
 import { Help } from "./Help.js";
 import { Intro } from "./Intro.js";
 import { Marche } from "./Marche.js";
+import { Port } from "./Port.js";
 import { Profil } from "./Profil.js";
 import { Region } from "./Region.js";
 import { Top } from "./Top.js";
@@ -17,7 +20,7 @@ import { d } from "./format.js";
 import { store } from "./store.js";
 import type { Action, Catalog, PlayerView, PriceSeries } from "./types.js";
 
-export type Tab = "comptoir" | "marche" | "chantiers" | "top" | "profil";
+export type Tab = "comptoir" | "marche" | "contrats" | "port" | "top" | "profil";
 export type MarketTab = "joueurs" | "villes";
 
 export interface Names {
@@ -51,10 +54,12 @@ export interface GameProps {
   resetGame: () => Promise<void>;
   onAccount: (account: Account) => void;
   onLogout: () => void;
+  onGuidePaused: () => void;
 }
 
 const POLL_MS = 15_000;
-const TABS: Tab[] = ["comptoir", "marche", "chantiers", "top", "profil"];
+/** Bottom bar; the profile opens from the coat of arms in the header. */
+const TABS: Tab[] = ["comptoir", "marche", "contrats", "port", "top"];
 
 export function Game(props: {
   account: Account;
@@ -241,19 +246,20 @@ export function Game(props: {
     },
     onAccount: props.onAccount,
     onLogout,
+    onGuidePaused: () => setGuideKey((k) => k + 1),
   };
+  const guidePaused = store.get("guideHidden") === "1" && store.get("guideDone") !== "1";
 
   const crest = props.account.crest ?? defaultCrest(props.account.id);
-  const project = view.projects[0];
-  const bannerKey = project ? `banner:${project.id}` : "";
-  const showBanner = project && store.get(bannerKey) !== "1" && tab !== "chantiers";
+  const contractsLeft = view.contracts.some((c) => !c.done);
+  const galleyBack = view.expeditions.some((e) => e.outcome === "pending" && e.returnAt <= gp.now);
 
   return (
     <div className="flex min-h-[100dvh] flex-col">
       <header className="sticky top-0 z-20 bg-night/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3">
+        <div className="mx-auto flex max-w-md items-center gap-2">
           <div className="leading-none">
-            <p className="font-display text-lg font-extrabold uppercase tracking-tight">
+            <p className="font-display text-base font-extrabold uppercase tracking-tight">
               {fr.appName}
             </p>
             <p className="font-mono text-[10px] tracking-[0.35em] text-lagoon">
@@ -261,11 +267,25 @@ export function Game(props: {
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2 rounded-full bg-night-3 py-1 pl-1 pr-3 ring-1 ring-line">
-            <Coin size={26} />
+            <Coin size={24} />
             <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
               {d(view.cash)}
             </span>
           </div>
+          {guidePaused && (
+            <button
+              type="button"
+              aria-label={fr.game.coach.resume}
+              className="rounded-full ring-2 ring-gold"
+              onClick={() => {
+                store.set("guideHidden", "0");
+                setTab("comptoir");
+                setGuideKey((k) => k + 1);
+              }}
+            >
+              <Lorenzo size={28} />
+            </button>
+          )}
           <button
             type="button"
             aria-label={fr.game.help}
@@ -280,33 +300,12 @@ export function Game(props: {
             className="rounded-full bg-night-3 p-0.5 ring-2 ring-gold/70"
             onClick={() => gp.goTo("profil")}
           >
-            <Crest crest={crest} size={34} />
+            <Crest crest={crest} size={30} />
           </button>
         </div>
       </header>
 
-      {showBanner && project && (
-        <div className="mx-auto w-full max-w-md px-4">
-          <div className="slab relative mt-1 bg-gold px-4 py-2.5 text-night shadow-[4px_4px_0_0_#168A7E]">
-            <div className="flex items-center gap-2 pr-6 text-sm font-semibold">
-              <span>
-                {fr.game.projectTitle(names.city(project.city))} — {fr.game.projectsHelp}
-              </span>
-            </div>
-            <button
-              type="button"
-              aria-label={fr.game.close}
-              className="absolute right-3 top-2 text-lg"
-              onClick={() => {
-                store.set(bannerKey, "1");
-                setNow(Date.now());
-              }}
-            >
-              <span>×</span>
-            </button>
-          </div>
-        </div>
-      )}
+      <Gazette {...gp} />
 
       {view.player.upkeepDefaultUntil > gp.now && (
         <div className="mx-auto mt-3 w-full max-w-md px-4">
@@ -319,7 +318,8 @@ export function Game(props: {
       <main className="mx-auto w-full max-w-md flex-1 px-4 pb-40 pt-4">
         {tab === "comptoir" && <Comptoir {...gp} />}
         {tab === "marche" && <Marche {...gp} />}
-        {tab === "chantiers" && <Chantiers {...gp} />}
+        {tab === "contrats" && <Contrats {...gp} />}
+        {tab === "port" && <Port {...gp} />}
         {tab === "top" && <Top {...gp} />}
         {tab === "profil" && <Profil {...gp} />}
       </main>
@@ -352,7 +352,7 @@ export function Game(props: {
                 <span className="font-mono text-[10px] font-bold uppercase tracking-wider">
                   {fr.game.tabs[t]}
                 </span>
-                {t === "chantiers" && view.projects.length > 0 && !on && (
+                {((t === "contrats" && contractsLeft) || (t === "port" && galleyBack)) && !on && (
                   <span className="absolute right-[30%] top-2 h-2 w-2 rounded-full bg-vermilion" />
                 )}
               </button>

@@ -24,6 +24,40 @@ const grain = (x: number, y: number, r: number) => (
 );
 
 const ICONS: Record<string, JSX.Element> = {
+  spices: (
+    <g>
+      <path d="M8 30 Q24 44 40 30 L36 40 Q24 46 12 40 Z" fill={P.vermilionDeep} />
+      <path d="M8 30 Q24 38 40 30 Q24 22 8 30 Z" fill={P.vermilion} />
+      <path d="M14 30 Q24 16 34 30 Z" fill="#E8913C" />
+      <path d="M18 27 Q24 18 30 27" fill={P.gold} />
+      {[
+        [17, 22],
+        [26, 18],
+        [31, 24],
+      ].map(([x = 0, y = 0]) => (
+        <circle key={`${x}-${y}`} cx={x} cy={y} r="1.6" fill={P.goldSoft} />
+      ))}
+    </g>
+  ),
+  silk: (
+    <g>
+      <path d="M8 14 Q24 6 40 14 V36 Q24 28 8 36 Z" fill={P.violet} />
+      <path d="M8 14 Q24 22 40 14" fill="none" stroke="#B9A3EC" strokeWidth="2" />
+      <path
+        d="M8 24 Q24 32 40 24 M8 31 Q24 39 40 31"
+        fill="none"
+        stroke="#5E44A0"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M30 8 L34 4 L38 8"
+        fill="none"
+        stroke={P.gold}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </g>
+  ),
   wheat: (
     <g>
       <path d="M24 44 V14" stroke={P.goldDeep} strokeWidth="2.5" strokeLinecap="round" />

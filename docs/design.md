@@ -29,6 +29,10 @@ Comptoirs a sa propre identité : Venise la nuit, des ducats et la lagune. Elle 
 
 Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le moulin et la scierie tournent pendant la production), panorama de Venise, scènes des régions, blasons (3 formes × 6 émaux × 8 meubles), Lorenzo le facteur qui guide le joueur, médailles des trophées. Pas d'image externe.
 
+## Navigation
+
+Barre du bas : Comptoir, Marché, Contrats, Port, Top. Le profil s'ouvre par le blason en haut à droite ; l'aide par « ? » ; Lorenzo, quand le guide est en pause, attend dans l'en-tête. La gazette (événement en cours ou annoncé) s'affiche sous l'en-tête.
+
 ## Guide du joueur
 
 1. **Introduction** : 4 écrans illustrés avant le choix de la région (rejouable depuis le profil ou l'aide).

@@ -175,39 +175,10 @@ export function Coach(props: GameProps) {
 
   if (finished) return null;
 
-  if (hidden) {
-    return (
-      <button
-        type="button"
-        className="slab fixed bottom-24 right-4 z-30 flex items-center gap-2 bg-night-3 px-3 py-1.5 ring-1 ring-gold"
-        onClick={() => {
-          store.set("guideHidden", "0");
-          setHidden(false);
-        }}
-      >
-        <span className="flex items-center gap-2">
-          <Lorenzo size={28} />
-          <span className="label text-gold">{fr.game.coach.resume}</span>
-        </span>
-      </button>
-    );
-  }
+  if (hidden) return null;
 
-  // A message with nothing to point at stays on the counter; elsewhere it shrinks to a pill.
-  if (!step.target && !step.waitUntil && props.tab !== "comptoir") {
-    return (
-      <button
-        type="button"
-        className="slab fixed bottom-24 right-4 z-30 flex items-center gap-2 bg-night-3 px-3 py-1.5 ring-1 ring-gold"
-        onClick={() => props.goTo("comptoir")}
-      >
-        <span className="flex items-center gap-2">
-          <Lorenzo size={28} />
-          <span className="label text-gold">{fr.game.coach.resume}</span>
-        </span>
-      </button>
-    );
-  }
+  // A message with nothing to point at stays on the counter.
+  if (!step.target && !step.waitUntil && props.tab !== "comptoir") return null;
 
   // The bubble goes where it does not hide the target (or the open sheet).
   const atTop =
@@ -271,6 +242,7 @@ export function Coach(props: GameProps) {
                 onClick={() => {
                   store.set("guideHidden", "1");
                   setHidden(true);
+                  props.onGuidePaused();
                 }}
               >
                 {fr.game.coach.later}

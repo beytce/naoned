@@ -16,12 +16,15 @@ export interface Recipe {
 
 export interface Catalog {
   world: {
-    id: string;
     name: string;
     startsAt: number;
     seasonDays: number;
     registrationClosesDay: number;
   };
+  ports: { code: string; name: string }[];
+  destinations: Record<string, Destination>;
+  maxGalleys: number;
+  rations: { resource: string; perLevelPerDay: number; slowdownBps: number };
   resources: { code: string; name: string; chain: string; tier: string }[];
   regions: { code: string; name: string; bonusResource: string; startingBuildings: string[] }[];
   cities: { code: string; name: string; buys: string[] }[];
@@ -41,6 +44,48 @@ export interface Catalog {
     instantOrderSlippageBps: number;
     regionBonusBps: number;
   };
+}
+
+export interface Destination {
+  hours: number;
+  charter: Money;
+  escort: Money;
+  provisions: Record<string, number>;
+  riskBps: number;
+  escortRiskBps: number;
+  returns: string;
+  gainBps: number;
+  maxCargoValue: Money;
+}
+
+export interface ContractView {
+  id: string;
+  day: number;
+  resource: string;
+  quantity: number;
+  city: string;
+  unitPrice: Money;
+  expiresAt: number;
+  done: boolean;
+}
+
+export interface GazetteEvent {
+  code: string;
+  city: string | null;
+  startsAt: number;
+  endsAt: number;
+}
+
+export interface ExpeditionView {
+  id: string;
+  destination: string;
+  departAt: number;
+  returnAt: number;
+  cargo: Record<string, number>;
+  escort: boolean;
+  cargoValue: Money;
+  outcome: "pending" | "returned" | "lost";
+  brought: number;
 }
 
 export interface BuildingView {
@@ -100,6 +145,10 @@ export interface PlayerView {
   market: MarketLine[];
   cityQuotes: { city: string; resource: string; unitPrice: Money }[];
   projects: Project[];
+  contracts: ContractView[];
+  gazette: { current: GazetteEvent | null; next: GazetteEvent | null };
+  expeditions: ExpeditionView[];
+  rations: { resource: string; perDay: number; hungryUntil: number };
   tutorial: string[];
 }
 
@@ -154,4 +203,12 @@ export type Action =
   | { type: "upgrade"; buildingId: string }
   | { type: "instantOrder"; resource: string; side: "buy" | "sell"; quantity: number }
   | { type: "sellToCity"; city: string; resource: string; quantity: number }
-  | { type: "deliverToProject"; projectId: string; resource: string; quantity: number };
+  | { type: "deliverToProject"; projectId: string; resource: string; quantity: number }
+  | { type: "fulfillContract"; contractId: string }
+  | {
+      type: "launchExpedition";
+      destination: string;
+      cargo: Record<string, number>;
+      escort: boolean;
+    }
+  | { type: "collectExpedition"; expeditionId: string };
