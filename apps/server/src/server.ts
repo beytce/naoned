@@ -14,7 +14,9 @@ await database.migrate();
 const mailer = config.RESEND_API_KEY
   ? new ResendMailer(config.RESEND_API_KEY, config.MAIL_FROM)
   : new ConsoleMailer();
-const world = await GameWorld.open(database.db);
+const world = await GameWorld.open(database.db, Date.now, {
+  settingsFromTheme: config.WORLD_SETTINGS_FROM_THEME,
+});
 world.startTicking();
 const here = dirname(fileURLToPath(import.meta.url));
 const app = await buildApp({

@@ -20,14 +20,14 @@ import {
   upkeepPerDay,
   vwap,
 } from "@comptoirs/engine";
+import { activeEvent, contractsFor, nextEvent } from "@comptoirs/engine";
 import { titleFor } from "./profile.js";
 
 /** Static data of a world, for the client: names, recipes, costs. */
-export function catalog(ctx: WorldContext, world: { id: string; name: string }) {
+export function catalog(ctx: WorldContext, world: { name: string }) {
   const { theme, settings } = ctx;
   return {
     world: {
-      id: world.id,
       name: world.name,
       startsAt: ctx.startAt,
       seasonDays: settings.seasonDays,
@@ -48,6 +48,10 @@ export function catalog(ctx: WorldContext, world: { id: string; name: string }) 
       cost: costForLevel(ctx, b.type, 1),
       upkeepPerDay: settings.buildings[b.type]?.upkeepPerDay ?? 0n,
     })),
+    ports: theme.ports ?? [],
+    destinations: settings.expeditions.destinations,
+    maxGalleys: settings.expeditions.maxActive,
+    rations: settings.rations,
     referencePrices: settings.referencePrices,
     rules: {
       maxBuildings: settings.maxBuildings,
@@ -68,7 +72,8 @@ function buildingView(ctx: WorldContext, state: WorldState, b: Building, now: nu
     const need = (perBatch ?? 0) * b.level;
     if (need > 0) affordable = Math.min(affordable, Math.floor((inv[res]?.available ?? 0) / need));
   }
-  const room = recipe ? freeBatches(ctx, b, recipe.code, now) : 0;
+  const player = state.players[b.playerId];
+  const room = recipe ? freeBatches(ctx, b, recipe.code, now, player) : 0;
   const job = b.job
     ? {
         ...b.job,
@@ -130,6 +135,21 @@ export function playerView(
   const mine = table.find((r) => r.playerId === playerId);
   const worth = netWorth(ctx, state, playerId, now);
 
+  const today = dayIndex(ctx, now);
+  const done = state.contractsDone?.[playerId];
+  const doneIds = done && done.day === today ? done.ids : [];
+  const contracts = contractsFor(ctx, playerId, today).map((c) => ({
+    ...c,
+    done: doneIds.includes(c.id),
+  }));
+  const levels = buildings.filter((b) => b.type !== "palazzo").reduce((n, b) => n + b.level, 0);
+  const describe = (e: ReturnType<typeof activeEvent>) =>
+    e && { code: e.code, city: e.city ?? null, startsAt: e.startsAt, endsAt: e.endsAt };
+  const expeditions = Object.values(state.expeditions ?? {})
+    .filter((e) => e.playerId === playerId)
+    .sort((a, b) => b.departAt - a.departAt)
+    .slice(0, 10);
+
   let upkeep = 0n;
   for (const b of buildings) upkeep += upkeepPerDay(ctx, b);
 
@@ -161,6 +181,14 @@ export function playerView(
     market,
     cityQuotes,
     projects: openProjects(state.projects, now),
+    contracts,
+    gazette: { current: describe(activeEvent(ctx, now)), next: describe(nextEvent(ctx, now)) },
+    expeditions,
+    rations: {
+      resource: ctx.settings.rations.resource,
+      perDay: levels * ctx.settings.rations.perLevelPerDay,
+      hungryUntil: player.hungryUntil ?? 0,
+    },
     tutorial: tutorialSteps,
     openOrders: Object.values(state.orders).filter((o) => o.playerId === playerId),
   };

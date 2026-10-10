@@ -35,6 +35,8 @@ interface Counts {
   delivered: number;
   days: number;
   builds: number;
+  contracts: number;
+  voyages: number;
 }
 
 async function counts(db: Db, worldId: string, playerId: string): Promise<Counts> {
@@ -49,7 +51,11 @@ async function counts(db: Db, worldId: string, playerId: string): Promise<Counts
       (select count(distinct date_trunc('day', at)) from telemetry where world_id = ${worldId}
         and account_id = ${playerId}::uuid)::int as days,
       (select count(*) from telemetry where world_id = ${worldId}
-        and account_id = ${playerId}::uuid and type in ('build', 'upgrade'))::int as builds`);
+        and account_id = ${playerId}::uuid and type in ('build', 'upgrade'))::int as builds,
+      (select count(*) from telemetry where world_id = ${worldId}
+        and account_id = ${playerId}::uuid and type = 'contract_fulfilled')::int as contracts,
+      (select count(*) from telemetry where world_id = ${worldId}
+        and account_id = ${playerId}::uuid and type = 'expedition_returned')::int as voyages`);
   const r = ((rows as { rows?: Record<string, number>[] }).rows ?? [])[0] ?? {};
   return {
     trades: Number(r.trades ?? 0),
@@ -57,6 +63,8 @@ async function counts(db: Db, worldId: string, playerId: string): Promise<Counts
     delivered: Number(r.delivered ?? 0),
     days: Number(r.days ?? 0),
     builds: Number(r.builds ?? 0),
+    contracts: Number(r.contracts ?? 0),
+    voyages: Number(r.voyages ?? 0),
   };
 }
 
@@ -94,6 +102,8 @@ export async function profile(
     badge("level_5", "Atelier d'excellence", maxLevel, 5),
     badge("palazzo", "Palais sur le Grand Canal", palazzo, 1),
     badge("days_7", "Fidèle au comptoir", c.days, 7),
+    badge("contracts_10", "Fournisseur du Doge", c.contracts, 10),
+    badge("voyage_1", "Retour d'Orient", c.voyages, 1),
   ];
 
   return {

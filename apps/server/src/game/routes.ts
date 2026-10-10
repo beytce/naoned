@@ -35,6 +35,14 @@ const action = z.discriminatedUnion("type", [
     resource: z.string(),
     quantity: z.number().int().positive().max(10_000),
   }),
+  z.object({ type: z.literal("fulfillContract"), contractId: z.string() }),
+  z.object({
+    type: z.literal("launchExpedition"),
+    destination: z.string(),
+    cargo: z.record(z.number().int().positive().max(100_000)),
+    escort: z.boolean(),
+  }),
+  z.object({ type: z.literal("collectExpedition"), expeditionId: z.string() }),
   z.object({
     type: z.literal("deliverToProject"),
     projectId: z.string(),
@@ -246,6 +254,20 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [
         { type: "sellToCity", playerId, city: a.city, resource: a.resource, quantity: a.quantity },
       ];
+    case "fulfillContract":
+      return [{ type: "fulfillContract", playerId, contractId: a.contractId }];
+    case "launchExpedition":
+      return [
+        {
+          type: "launchExpedition",
+          playerId,
+          destination: a.destination,
+          cargo: a.cargo,
+          escort: a.escort,
+        },
+      ];
+    case "collectExpedition":
+      return [{ type: "collectExpedition", playerId, expeditionId: a.expeditionId }];
     case "deliverToProject":
       return [
         {

@@ -21,6 +21,14 @@ const schema = z
     WEB_DIST: z.string().optional(),
     RESEND_API_KEY: z.string().optional(),
     MAIL_FROM: z.string().default("Comptoirs <onboarding@resend.dev>"),
+    /**
+     * Beta: the open world takes the theme's current balancing at each start. Set to "false" once
+     * a season's settings are tuned in the database.
+     */
+    WORLD_SETTINGS_FROM_THEME: z
+      .enum(["true", "false"])
+      .default("true")
+      .transform((v) => v === "true"),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === "production" && !env.RESEND_API_KEY) {

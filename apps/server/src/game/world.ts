@@ -51,7 +51,11 @@ export class GameWorld {
   ) {}
 
   /** Loads the open world, creating the first one (Venice 1450, starting now) if there is none. */
-  static async open(db: Db, clock: () => number = Date.now): Promise<GameWorld> {
+  static async open(
+    db: Db,
+    clock: () => number = Date.now,
+    options: { settingsFromTheme?: boolean } = {},
+  ): Promise<GameWorld> {
     let [world] = await db.select().from(worlds).where(eq(worlds.status, "open")).limit(1);
     if (!world) {
       const start = new Date(clock());
@@ -70,9 +74,22 @@ export class GameWorld {
     if (!world) throw new Error("could not create a world");
     const theme = THEMES[world.theme as keyof typeof THEMES];
     if (!theme) throw new Error(`unknown theme ${world.theme}`);
+    let stored: unknown = world.settings;
+    if (options.settingsFromTheme) {
+      // Beta: the world follows the theme's current balancing, new mechanics included.
+      stored = venice1450Settings;
+    } else {
+      // New mechanics get their defaults; values already set in the world are kept.
+      stored = mergeDefaults(venice1450Settings, world.settings);
+    }
+    if (JSON.stringify(stored) !== JSON.stringify(world.settings)) {
+      await db.update(worlds).set({ settings: stored }).where(eq(worlds.id, world.id));
+    }
     const ctx: WorldContext = {
       theme,
-      settings: parseSettings(world.settings),
+      // The world id is never sent to players: it seeds draws (events, contracts, pirates).
+      seed: world.id,
+      settings: parseSettings(stored),
       startAt: world.startsAt.getTime(),
     };
 
@@ -265,6 +282,16 @@ export class GameWorld {
   async checkInvariants() {
     return this.serial(async () => checkInvariants(this.state, await this.journalTotals()));
   }
+}
+
+/** Deep merge for settings: `stored` wins, `defaults` fills what is missing. */
+export function mergeDefaults(defaults: unknown, stored: unknown): unknown {
+  const isObject = (v: unknown): v is Record<string, unknown> =>
+    typeof v === "object" && v !== null && !Array.isArray(v);
+  if (!isObject(defaults) || !isObject(stored)) return stored === undefined ? defaults : stored;
+  const out: Record<string, unknown> = { ...defaults };
+  for (const [k, v] of Object.entries(stored)) out[k] = mergeDefaults(defaults[k], v);
+  return out;
 }
 
 /** node-postgres returns { rows }, PGlite returns { rows } too; keep the access in one place. */

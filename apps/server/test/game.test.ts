@@ -110,6 +110,53 @@ describe("profile and visuals", () => {
   });
 });
 
+describe("living world", () => {
+  it("never sends the world id (it seeds the draws)", async () => {
+    const res = (await app.inject({ method: "GET", url: "/api/game/catalog" })).json();
+    expect(res.world.id).toBeUndefined();
+    expect(JSON.stringify(res)).not.toContain(world.id);
+    expect(res.destinations.alexandria.returns).toBe("spices");
+  });
+
+  it("shows today's contracts and the gazette, and pays a contract", async () => {
+    const cookie = await login("ada@example.org");
+    const v = (await post(cookie, "/api/game/join", { region: "terraferma" })).json().view;
+    expect(v.contracts).toHaveLength(3);
+    expect(v.gazette).toHaveProperty("next");
+    expect(v.rations.perDay).toBe(6); // farm + mill + bakery
+    const breadContract = v.contracts.find((c: { resource: string }) => c.resource === "bread");
+    const c = breadContract ?? v.contracts[0];
+    const res = await act(cookie, { type: "fulfillContract", contractId: c.id });
+    if (breadContract && c.quantity <= 20) {
+      expect(res.statusCode).toBe(200);
+      expect(res.json().view.contracts.find((x: { id: string }) => x.id === c.id).done).toBe(true);
+    } else {
+      expect(res.json().error).toBe("insufficient_stock");
+    }
+  });
+
+  it("sends a galley east and unloads it on return", async () => {
+    const cookie = await login("ada@example.org");
+    await post(cookie, "/api/game/join", { region: "lagoon" });
+    const launch = await act(cookie, {
+      type: "launchExpedition",
+      destination: "constantinople",
+      cargo: { wood: 5 },
+      escort: true,
+    });
+    expect(launch.statusCode).toBe(200);
+    const [g] = launch.json().view.expeditions;
+    expect(g.outcome).toBe("pending");
+    expect(
+      (await act(cookie, { type: "collectExpedition", expeditionId: g.id })).json().error,
+    ).toBe("expedition_not_back");
+    now += 12 * 3_600_000;
+    const back = (await act(cookie, { type: "collectExpedition", expeditionId: g.id })).json().view;
+    expect(["returned", "lost"]).toContain(back.expeditions[0].outcome);
+    expect(await world.checkInvariants()).toEqual([]);
+  });
+});
+
 describe("game API", () => {
   it("creates the first world and serves its catalog", async () => {
     const res = await app.inject({ method: "GET", url: "/api/game/catalog" });
