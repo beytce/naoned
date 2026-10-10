@@ -1,29 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ApiError } from "../api.js";
+import { type Account, ApiError } from "../api.js";
+import { Crest, defaultCrest } from "../art/crest.js";
+import { Coin, NavIcon } from "../art/icons.js";
 import { fr } from "../i18n.js";
-import { Advisor } from "./Advisor.js";
 import { Chantiers } from "./Chantiers.js";
-import { Classement } from "./Classement.js";
+import { Coach } from "./Coach.js";
 import { Comptoir } from "./Comptoir.js";
-import { Join } from "./Join.js";
+import { Help } from "./Help.js";
+import { Intro } from "./Intro.js";
 import { Marche } from "./Marche.js";
+import { Profil } from "./Profil.js";
+import { Region } from "./Region.js";
+import { Top } from "./Top.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
-import type { Action, Catalog, PlayerView } from "./types.js";
+import { store } from "./store.js";
+import type { Action, Catalog, PlayerView, PriceSeries } from "./types.js";
 
-export type Tab = "comptoir" | "marche" | "chantiers" | "classement";
-
-/** What every screen needs: data, names and a way to act. */
-export interface GameProps {
-  catalog: Catalog;
-  view: PlayerView;
-  /** Server time now, ticking every second. */
-  now: number;
-  act: (action: Action) => Promise<boolean>;
-  busy: boolean;
-  names: Names;
-  goTo: (tab: Tab) => void;
-}
+export type Tab = "comptoir" | "marche" | "chantiers" | "top" | "profil";
+export type MarketTab = "joueurs" | "villes";
 
 export interface Names {
   resource: (code: string) => string;
@@ -32,16 +27,53 @@ export interface Names {
   region: (code: string) => string;
 }
 
-const POLL_MS = 15_000;
+/** What every screen needs: data, names, navigation and a way to act. */
+export interface GameProps {
+  catalog: Catalog;
+  view: PlayerView;
+  account: Account;
+  /** Server time now, ticking every second. */
+  now: number;
+  act: (action: Action) => Promise<boolean>;
+  busy: boolean;
+  names: Names;
+  tab: Tab;
+  goTo: (tab: Tab) => void;
+  marketTab: MarketTab;
+  setMarketTab: (tab: MarketTab) => void;
+  prices: PriceSeries;
+  /** Sheets opened by the guide (so it can point inside them). */
+  sheet: string | null;
+  setSheet: (sheet: string | null) => void;
+  openHelp: () => void;
+  replayIntro: () => void;
+  replayGuide: () => void;
+  onAccount: (account: Account) => void;
+  onLogout: () => void;
+}
 
-export function Game({ onLogout }: { onLogout: () => void }) {
+const POLL_MS = 15_000;
+const TABS: Tab[] = ["comptoir", "marche", "chantiers", "top", "profil"];
+
+export function Game(props: {
+  account: Account;
+  onAccount: (a: Account) => void;
+  onLogout: () => void;
+}) {
+  const { onLogout } = props;
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [view, setView] = useState<PlayerView | null | undefined>(undefined);
   const [offset, setOffset] = useState(0);
   const [now, setNow] = useState(Date.now());
   const [tab, setTab] = useState<Tab>("comptoir");
+  const [marketTab, setMarketTab] = useState<MarketTab>("joueurs");
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [prices, setPrices] = useState<PriceSeries>({});
+  const [sheet, setSheet] = useState<string | null>(null);
+  const [help, setHelp] = useState(false);
+  const [introSeen, setIntroSeen] = useState(() => store.get("introSeen") === "1");
+  const [guideKey, setGuideKey] = useState(0);
 
   const apply = useCallback((serverTime: number, v: PlayerView | null) => {
     setOffset(serverTime - Date.now());
@@ -52,6 +84,7 @@ export function Game({ onLogout }: { onLogout: () => void }) {
     try {
       const res = await gameApi.view();
       apply(res.serverTime, res.view);
+      if (res.view) setPrices((await gameApi.prices()).series);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) onLogout();
     }
@@ -100,6 +133,12 @@ export function Game({ onLogout }: { onLogout: () => void }) {
           setToast(fr.game.errors[res.error] ?? fr.errors.unknown ?? null);
           return false;
         }
+        if (action.type === "instantOrder" || action.type === "sellToCity") {
+          gameApi
+            .prices()
+            .then((p) => setPrices(p.series))
+            .catch(() => undefined);
+        }
         return true;
       } catch (err) {
         const code = err instanceof ApiError ? err.code : "unknown";
@@ -112,13 +151,26 @@ export function Game({ onLogout }: { onLogout: () => void }) {
     [apply],
   );
 
-  if (!catalog || view === undefined) return <p className="py-20 text-center opacity-70">…</p>;
+  if (!catalog || view === undefined) {
+    return <p className="py-32 text-center font-display text-muted">…</p>;
+  }
 
   if (view === null) {
+    if (!introSeen) {
+      return (
+        <Intro
+          onDone={() => {
+            store.set("introSeen", "1");
+            setIntroSeen(true);
+          }}
+        />
+      );
+    }
     return (
-      <Join
+      <Region
         catalog={catalog}
         names={names}
+        toast={toast}
         onJoin={async (region) => {
           try {
             const res = await gameApi.join(region);
@@ -128,66 +180,170 @@ export function Game({ onLogout }: { onLogout: () => void }) {
             setToast(fr.game.errors[code] ?? fr.errors.unknown ?? null);
           }
         }}
-        toast={toast}
       />
     );
   }
 
-  const props: GameProps = { catalog, view, now: now + offset, act, busy, names, goTo: setTab };
+  if (!introSeen) {
+    return (
+      <Intro
+        onDone={() => {
+          store.set("introSeen", "1");
+          setIntroSeen(true);
+        }}
+      />
+    );
+  }
+
+  const gp: GameProps = {
+    catalog,
+    view,
+    account: props.account,
+    now: now + offset,
+    act,
+    busy,
+    names,
+    tab,
+    goTo: (t) => {
+      setSheet(null);
+      setTab(t);
+      window.scrollTo({ top: 0 });
+    },
+    marketTab,
+    setMarketTab,
+    prices,
+    sheet,
+    setSheet,
+    openHelp: () => setHelp(true),
+    replayIntro: () => {
+      store.set("introSeen", "0");
+      setIntroSeen(false);
+    },
+    replayGuide: () => {
+      store.set("guideDone", "0");
+      store.set("guideHidden", "0");
+      setGuideKey((k) => k + 1);
+      setTab("comptoir");
+    },
+    onAccount: props.onAccount,
+    onLogout,
+  };
+
+  const crest = props.account.crest ?? defaultCrest(props.account.id);
+  const project = view.projects[0];
+  const bannerKey = project ? `banner:${project.id}` : "";
+  const showBanner = project && store.get(bannerKey) !== "1" && tab !== "chantiers";
 
   return (
     <div className="flex min-h-[100dvh] flex-col">
-      <header className="sticky top-0 z-10 border-b border-ink/10 bg-parchment/95 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur dark:border-ink-light/10 dark:bg-parchment-dark/95">
-        <div className="mx-auto flex max-w-md items-baseline justify-between">
-          <div>
-            <p className="font-serif text-lg font-bold text-rust dark:text-gold">{fr.appName}</p>
-            <p className="text-xs opacity-60">
-              {fr.game.dayOf(view.day, catalog.world.seasonDays)} ·{" "}
-              {names.region(view.player.region)}
+      <header className="sticky top-0 z-20 bg-night/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur">
+        <div className="mx-auto flex max-w-md items-center gap-3">
+          <div className="leading-none">
+            <p className="font-display text-lg font-extrabold uppercase tracking-tight">
+              {fr.appName}
+            </p>
+            <p className="font-mono text-[10px] tracking-[0.35em] text-lagoon">
+              {fr.game.day(view.day, catalog.world.seasonDays)}
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-lg font-semibold tabular-nums">{d(view.cash)}</p>
-            <p className="text-xs opacity-60">{fr.game.upkeep(d(view.upkeepPerDay))}</p>
+          <div className="ml-auto flex items-center gap-2 rounded-full bg-night-3 py-1 pl-1 pr-3 ring-1 ring-line">
+            <Coin size={26} />
+            <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
+              {d(view.cash)}
+            </span>
           </div>
+          <button
+            type="button"
+            aria-label={fr.game.help}
+            className="text-cream-dim"
+            onClick={() => setHelp(true)}
+          >
+            {NavIcon.help()}
+          </button>
+          <button
+            type="button"
+            aria-label={fr.game.tabs.profil}
+            className="rounded-full bg-night-3 p-0.5 ring-2 ring-gold/70"
+            onClick={() => gp.goTo("profil")}
+          >
+            <Crest crest={crest} size={34} />
+          </button>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-md flex-1 space-y-4 px-4 pb-28 pt-4">
-        {view.player.upkeepDefaultUntil > now + offset && (
-          <p className="rounded-lg bg-red-100 p-3 text-sm text-red-900 dark:bg-red-950 dark:text-red-200">
+      {showBanner && project && (
+        <div className="mx-auto w-full max-w-md px-4">
+          <div className="slab relative mt-1 bg-gold px-4 py-2.5 text-night shadow-[4px_4px_0_0_#168A7E]">
+            <div className="flex items-center gap-2 pr-6 text-sm font-semibold">
+              <span>
+                {fr.game.projectTitle(names.city(project.city))} — {fr.game.projectsHelp}
+              </span>
+            </div>
+            <button
+              type="button"
+              aria-label={fr.game.close}
+              className="absolute right-3 top-2 text-lg"
+              onClick={() => {
+                store.set(bannerKey, "1");
+                setNow(Date.now());
+              }}
+            >
+              <span>×</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {view.player.upkeepDefaultUntil > gp.now && (
+        <div className="mx-auto mt-3 w-full max-w-md px-4">
+          <p className="bg-vermilion/20 p-3 text-sm text-vermilion ring-1 ring-vermilion/60">
             {fr.game.upkeepDefault}
           </p>
-        )}
-        {tab === "comptoir" && (
-          <>
-            <Advisor {...props} />
-            <Comptoir {...props} />
-          </>
-        )}
-        {tab === "marche" && <Marche {...props} />}
-        {tab === "chantiers" && <Chantiers {...props} />}
-        {tab === "classement" && <Classement {...props} onLogout={onLogout} />}
+        </div>
+      )}
+
+      <main className="mx-auto w-full max-w-md flex-1 px-4 pb-40 pt-4">
+        {tab === "comptoir" && <Comptoir {...gp} />}
+        {tab === "marche" && <Marche {...gp} />}
+        {tab === "chantiers" && <Chantiers {...gp} />}
+        {tab === "top" && <Top {...gp} />}
+        {tab === "profil" && <Profil {...gp} />}
       </main>
 
+      <Coach key={guideKey} {...gp} />
+
       {toast && (
-        <div className="fixed inset-x-4 bottom-24 z-20 mx-auto max-w-md rounded-lg bg-ink p-3 text-sm text-ink-light shadow-lg dark:bg-ink-light dark:text-ink">
+        <div className="fixed inset-x-4 bottom-28 z-50 mx-auto max-w-md animate-rise bg-vermilion p-3 text-sm font-semibold text-cream shadow-[4px_4px_0_0_#13101A]">
           {toast}
         </div>
       )}
 
-      <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-ink/10 bg-parchment/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-ink-light/10 dark:bg-parchment-dark/95">
-        <div className="mx-auto grid max-w-md grid-cols-4">
-          {(["comptoir", "marche", "chantiers", "classement"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={`py-3 text-sm font-medium ${tab === t ? "text-rust dark:text-gold" : "opacity-60"}`}
-            >
-              {fr.game.tabs[t]}
-            </button>
-          ))}
+      {help && <Help {...gp} onClose={() => setHelp(false)} />}
+
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t-2 border-gold/80 bg-night-2/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+        <div className="mx-auto grid max-w-md grid-cols-5">
+          {TABS.map((t) => {
+            const on = tab === t;
+            const Icon = NavIcon[t];
+            return (
+              <button
+                key={t}
+                type="button"
+                data-coach={`tab-${t}`}
+                onClick={() => gp.goTo(t)}
+                className={`relative flex flex-col items-center gap-1 py-3 ${on ? "text-gold" : "text-muted"}`}
+              >
+                {on && <span className="absolute inset-x-5 top-0 h-0.5 bg-lagoon" />}
+                <Icon />
+                <span className="font-mono text-[10px] font-bold uppercase tracking-wider">
+                  {fr.game.tabs[t]}
+                </span>
+                {t === "chantiers" && view.projects.length > 0 && !on && (
+                  <span className="absolute right-[30%] top-2 h-2 w-2 rounded-full bg-vermilion" />
+                )}
+              </button>
+            );
+          })}
         </div>
       </nav>
     </div>

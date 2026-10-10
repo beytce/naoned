@@ -1,7 +1,9 @@
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { type Account, ApiError, api, tokenFromLocation } from "./api.js";
+import { Skyline } from "./art/scenes.js";
 import { Game } from "./game/Game.js";
 import { fr } from "./i18n.js";
+import { Label, Slab } from "./ui.js";
 
 type Screen =
   | { name: "loading" }
@@ -48,11 +50,19 @@ export function App() {
     setScreen({ name: "login" });
   };
 
-  if (screen.name === "home") return <Game onLogout={logout} />;
+  if (screen.name === "home") {
+    return (
+      <Game
+        account={screen.account}
+        onAccount={(account) => setScreen({ name: "home", account })}
+        onLogout={logout}
+      />
+    );
+  }
 
   return (
-    <Shell>
-      {screen.name === "loading" && <p className="text-center opacity-70">…</p>}
+    <Hero>
+      {screen.name === "loading" && <p className="text-center text-muted">…</p>}
       {screen.name === "verifying" && <p className="text-center">{fr.signingIn}</p>}
       {screen.name === "login" && (
         <Login
@@ -62,50 +72,35 @@ export function App() {
         />
       )}
       {screen.name === "invalidLink" && (
-        <div className="space-y-4 text-center">
+        <div className="space-y-6 text-center">
           <p>{fr.invalidLink}</p>
-          <Button onClick={() => setScreen({ name: "login" })}>{fr.askNewLink}</Button>
+          <Slab onClick={() => setScreen({ name: "login" })}>{fr.askNewLink}</Slab>
         </div>
       )}
       {screen.name === "pseudo" && (
         <PseudoForm onDone={(account) => setScreen(screenFor(account))} />
       )}
-    </Shell>
+    </Hero>
   );
 }
 
-function Shell({ children }: { children: ReactNode }) {
+function Hero({ children }: { children: ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2.5rem,env(safe-area-inset-top))]">
-      <header className="mb-10 text-center">
-        <h1 className="font-serif text-4xl font-bold text-rust dark:text-gold">{fr.appName}</h1>
-        <p className="mt-1 text-xs uppercase tracking-widest opacity-60">{fr.season}</p>
+    <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]">
+      <header className="text-center">
+        <h1 className="font-display text-[2.6rem] font-extrabold uppercase leading-none tracking-tight text-cream">
+          {fr.appName}
+        </h1>
+        <Label className="mt-3">{fr.season}</Label>
       </header>
-      <section className="flex flex-1 flex-col justify-center">{children}</section>
+      <Skyline className="-mx-5 mt-4 w-[calc(100%+2.5rem)] max-w-none animate-floaty" />
+      <section className="flex flex-1 flex-col justify-start pt-2">{children}</section>
     </main>
   );
 }
 
-function Button(props: {
-  children: ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-  type?: "button" | "submit";
-}) {
-  return (
-    <button
-      type={props.type ?? "button"}
-      onClick={props.onClick}
-      disabled={props.disabled}
-      className="w-full rounded-lg bg-rust px-4 py-3.5 text-base font-semibold text-white shadow-sm active:bg-rust-light disabled:opacity-50"
-    >
-      {props.children}
-    </button>
-  );
-}
-
 const inputClass =
-  "w-full rounded-lg border border-ink/20 bg-white px-4 py-3.5 text-base outline-none focus:border-rust dark:border-ink-light/20 dark:bg-black/30";
+  "w-full bg-night-3 px-4 py-4 text-base text-cream ring-1 ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gold";
 
 function Login(props: { sentTo?: string; onSent: (email: string) => void; onReset: () => void }) {
   const [email, setEmail] = useState("");
@@ -114,10 +109,10 @@ function Login(props: { sentTo?: string; onSent: (email: string) => void; onRese
 
   if (props.sentTo) {
     return (
-      <div className="space-y-4 text-center">
-        <h2 className="font-serif text-2xl">{fr.checkInbox}</h2>
-        <p className="opacity-80">{fr.linkSentTo(props.sentTo)}</p>
-        <button type="button" onClick={props.onReset} className="text-sm underline opacity-70">
+      <div className="animate-rise space-y-5 text-center">
+        <h2 className="font-display text-xl font-semibold uppercase">{fr.checkInbox}</h2>
+        <p className="text-cream-dim">{fr.linkSentTo(props.sentTo)}</p>
+        <button type="button" onClick={props.onReset} className="label text-gold">
           {fr.otherAddress}
         </button>
       </div>
@@ -139,10 +134,10 @@ function Login(props: { sentTo?: string; onSent: (email: string) => void; onRese
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4">
-      <p className="text-center font-serif text-lg">{fr.tagline}</p>
-      <label className="block space-y-1.5">
-        <span className="text-sm font-medium">{fr.emailLabel}</span>
+    <form onSubmit={submit} className="animate-rise space-y-5">
+      <p className="text-center text-lg leading-snug text-cream-dim">{fr.tagline}</p>
+      <label className="block space-y-2">
+        <Label>{fr.emailLabel}</Label>
         <input
           type="email"
           required
@@ -154,11 +149,11 @@ function Login(props: { sentTo?: string; onSent: (email: string) => void; onRese
           className={inputClass}
         />
       </label>
-      {error && <p className="text-sm text-red-700 dark:text-red-400">{error}</p>}
-      <Button type="submit" disabled={busy}>
+      {error && <p className="text-sm text-vermilion">{error}</p>}
+      <Slab type="submit" size="lg" className="w-full" disabled={busy}>
         {busy ? fr.sending : fr.sendLink}
-      </Button>
-      <p className="text-center text-xs opacity-60">{fr.noPassword}</p>
+      </Slab>
+      <p className="text-center text-xs text-muted">{fr.noPassword}</p>
     </form>
   );
 }
@@ -182,10 +177,12 @@ function PseudoForm({ onDone }: { onDone: (account: Account) => void }) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4">
-      <h2 className="text-center font-serif text-2xl">{fr.choosePseudo}</h2>
-      <label className="block space-y-1.5">
-        <span className="text-sm font-medium">{fr.pseudoLabel}</span>
+    <form onSubmit={submit} className="animate-rise space-y-5">
+      <h2 className="text-center font-display text-xl font-semibold uppercase">
+        {fr.choosePseudo}
+      </h2>
+      <label className="block space-y-2">
+        <Label>{fr.pseudoLabel}</Label>
         <input
           required
           minLength={3}
@@ -196,11 +193,11 @@ function PseudoForm({ onDone }: { onDone: (account: Account) => void }) {
           className={inputClass}
         />
       </label>
-      <p className="text-xs opacity-60">{fr.pseudoHelp}</p>
-      {error && <p className="text-sm text-red-700 dark:text-red-400">{error}</p>}
-      <Button type="submit" disabled={busy}>
+      <p className="text-xs text-muted">{fr.pseudoHelp}</p>
+      {error && <p className="text-sm text-vermilion">{error}</p>}
+      <Slab type="submit" size="lg" className="w-full" disabled={busy}>
         {fr.confirm}
-      </Button>
+      </Slab>
     </form>
   );
 }

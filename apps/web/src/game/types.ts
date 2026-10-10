@@ -103,13 +103,42 @@ export interface GameResponse {
   error?: string;
 }
 
+export interface CrestData {
+  shape: string;
+  color: string;
+  symbol: string;
+}
+
 export interface RankingRow {
   rank: number;
   pseudo: string | null;
   region: string;
   netWorth: Money;
+  crest: CrestData | null;
   me: boolean;
 }
+
+export interface Title {
+  code: string;
+  name: string;
+  from: number;
+}
+
+export interface Profile {
+  region: string;
+  joinedAt: number;
+  title: { index: number; current: Title; next: Title | null; progress: number };
+  titles: Title[];
+  netWorth: { cash: Money; stock: Money; buildings: Money; total: Money };
+  rank: number | null;
+  players: number;
+  buildings: number;
+  totalLevels: number;
+  stats: { trades: number; citySold: number; delivered: number; days: number; builds: number };
+  badges: { code: string; name: string; value: number; goal: number; earned: boolean }[];
+}
+
+export type PriceSeries = Record<string, { t: number; price: string; volume: number }[]>;
 
 export type Action =
   | { type: "startProduction"; buildingId: string; batches: number }

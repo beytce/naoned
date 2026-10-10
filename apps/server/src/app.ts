@@ -125,10 +125,15 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
 
   const webDist = options.webDist ? resolve(options.webDist) : undefined;
   if (webDist && existsSync(webDist)) {
-    await app.register(fastifyStatic, { root: webDist, wildcard: false });
-    // Single-page app: every non-API GET that is not a file gets index.html.
+    // Files are looked up on each request, so a rebuilt app is served without a restart.
+    await app.register(fastifyStatic, { root: webDist });
+    // Single-page app: page routes get index.html; a missing file (old cached asset) is a 404,
+    // never HTML in place of a script.
     app.setNotFoundHandler((req, reply) => {
-      if (req.method === "GET" && !req.url.startsWith("/api/")) return reply.sendFile("index.html");
+      const path = req.url.split("?")[0] ?? "";
+      const isPage =
+        req.method === "GET" && !path.startsWith("/api/") && !/\.[a-z0-9]+$/i.test(path);
+      if (isPage) return reply.type("text/html").sendFile("index.html");
       return reply.code(404).send({ error: "not_found" });
     });
   }

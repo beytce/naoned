@@ -15,8 +15,8 @@ export default defineConfig({
         lang: "fr",
         start_url: "/",
         display: "standalone",
-        background_color: "#f7f0e1",
-        theme_color: "#7c2d12",
+        background_color: "#13101A",
+        theme_color: "#13101A",
         icons: [
           { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
@@ -29,6 +29,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
         // The API is never served from the cache.
         navigateFallbackDenylist: [/^\/api\//],
       },

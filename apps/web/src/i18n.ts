@@ -1,99 +1,229 @@
 /** Interface texts. French only for now; one object per language when i18n comes. */
 export const fr = {
   appName: "Comptoirs",
-  tagline: "Bâtissez une maison de commerce en six semaines, sur un marché tenu par les joueurs.",
   season: "Saison 1 · Venise 1450",
+  tagline: "Bâtissez une maison de commerce en six semaines, sur un marché tenu par les joueurs.",
   emailLabel: "Adresse e-mail",
   emailPlaceholder: "vous@exemple.fr",
-  sendLink: "Recevoir mon lien de connexion",
+  sendLink: "Recevoir mon lien",
   sending: "Envoi…",
   noPassword: "Pas de mot de passe : un lien de connexion vous est envoyé par e-mail.",
-  checkInbox: "Consultez votre boîte mail",
+  checkInbox: "Regardez vos e-mails",
   linkSentTo: (email: string) =>
-    `Un lien de connexion a été envoyé à ${email}. Il est valable 15 minutes.`,
+    `Un lien de connexion vient de partir vers ${email}. Il est valable 15 minutes. Pensez à regarder dans les spams.`,
   otherAddress: "Utiliser une autre adresse",
   signingIn: "Connexion en cours…",
   invalidLink: "Ce lien est invalide ou a expiré.",
   askNewLink: "Demander un nouveau lien",
-  choosePseudo: "Choisissez votre nom de marchand",
+  choosePseudo: "Votre nom de marchand",
   pseudoHelp: "3 à 20 caractères : lettres, chiffres, _ ou -. Il sera visible des autres joueurs.",
   pseudoLabel: "Nom de marchand",
   confirm: "Valider",
   logout: "Se déconnecter",
+
+  intro: {
+    skip: "Passer",
+    next: "Suivant",
+    start: "Choisir ma région",
+    slides: [
+      {
+        kicker: "Venise, 1450",
+        title: "La République vit du commerce",
+        text: "Vous arrivez avec 1 000 ducats et un petit atelier. Dans six semaines, la saison se termine : le marchand le plus riche l'emporte.",
+      },
+      {
+        kicker: "Produire",
+        title: "Vos ateliers tournent même quand vous dormez",
+        text: "Lancez la production, revenez récolter. La file dure 8 heures au plus : quelques visites par jour suffisent.",
+      },
+      {
+        kicker: "Commercer",
+        title: "Les prix, ce sont les joueurs",
+        text: "Vendez aux villes ou aux autres marchands, achetez ce qui vous manque. Chaque région ne produit qu'un des deux matériaux de construction : il faudra commercer.",
+      },
+      {
+        kicker: "Grandir",
+        title: "Réinvestissez, montez au classement",
+        text: "Améliorez vos ateliers, livrez les grands chantiers, bâtissez un palais. Votre patrimoine fait votre rang.",
+      },
+    ],
+  },
+
+  region: {
+    title: "Où installer votre comptoir ?",
+    help: "Chaque région maîtrise une chaîne. Vous aurez besoin des matériaux des autres pour grandir.",
+    bonus: (pct: number, resource: string) => `+${pct} % de ${resource.toLowerCase()}`,
+    kit: "Ateliers de départ",
+    sells: "Vend aux villes",
+    settle: "M'installer ici",
+    names: {
+      terraferma: "La terre ferme et ses blés : vous nourrissez la ville.",
+      lagoon: "Les argiles de la lagune : vous cuisez les briques des palais.",
+      dolomites: "Les forêts des montagnes : vous sciez les planches des navires.",
+    } as Record<string, string>,
+  },
+
   game: {
     tabs: {
       comptoir: "Comptoir",
       marche: "Marché",
       chantiers: "Chantiers",
-      classement: "Classement",
+      top: "Top",
+      profil: "Profil",
     },
-    dayOf: (day: number, total: number) => `Jour ${day} / ${total}`,
-    upkeep: (amount: string) => `entretien ${amount}/jour`,
-    upkeepShort: (amount: string) => `entretien ${amount}/j`,
+    day: (day: number, total: number) => `Jour ${day}/${total}`,
+    perDay: "/ jour",
     upkeepDefault:
-      "Entretien impayé : vos bâtiments ne peuvent pas lancer de production pendant 24 h. Vendez du stock pour renflouer la caisse.",
-    chooseRegion: "Où installer votre comptoir ?",
-    chooseRegionHelp:
-      "Chaque région maîtrise une chaîne de production. Vous aurez besoin des matériaux des autres régions pour grandir.",
-    regionBonus: (pct: number, resource: string) =>
-      `+${pct} % de rendement sur : ${resource.toLowerCase()}`,
-    startingKit: (list: string) => `Bâtiments de départ : ${list}`,
-    settleIn: (region: string) => `S'installer en ${region}`,
-    level: (n: number) => `niveau ${n}`,
+      "Entretien impayé : production bloquée 24 h. Vendez du stock pour renflouer la caisse.",
+
+    nextBatch: "Prochain lot dans",
+    readyNow: "Récolte prête",
+    idleAll: "Ateliers à l'arrêt",
+    idleAllHelp: "Lancez une production pour que vos ateliers travaillent pendant votre absence.",
+    harvestAll: (n: number) => `Tout récolter · ${n} lot${n > 1 ? "s" : ""}`,
+    stock: "Mon stock",
+    workshops: "Mes ateliers",
+    level: (n: number) => `Niv. ${n}`,
     idle: "À l'arrêt",
-    allDone: "Production terminée",
-    batchProgress: (current: number, total: number, left: string) =>
-      `Lot ${current} / ${total} · prêt dans ${left}`,
+    done: "Terminé",
+    batch: (current: number, total: number) => `Lot ${current}/${total}`,
     harvest: (n: number) => (n > 1 ? `Récolter ${n} lots` : "Récolter"),
-    harvestAll: (n: number) => `Tout récolter (${n} lot${n > 1 ? "s" : ""})`,
     produce: "Produire",
-    missingInputs: "Pas assez de matières pour un lot : achetez-en au marché.",
-    upgradeTo: (level: number) => `Niveau ${level}`,
+    batchesLabel: "Lots à lancer",
+    missingInputs: "Matières insuffisantes : achetez-en au Marché.",
     upgrade: "Améliorer",
-    buildTitle: "Construire",
+    upgradeTo: (level: number) => `Passer au niveau ${level}`,
+    upgradeEffect: "Chaque lot produit davantage, mais l'entretien augmente.",
     build: "Construire",
-    maxBuildings: (n: number) => `Vous avez atteint le maximum de ${n} bâtiments.`,
+    buildTitle: "Nouvel atelier",
+    maxBuildings: (n: number) => `Maximum de ${n} bâtiments atteint.`,
     palazzoHelp: "Prestige : ne produit rien, compte à son coût dans le classement.",
-    inStock: (n: number) => `en stock : ${n}`,
-    buyAt: "achat",
-    sellAt: "vente",
+    upkeep: (amount: string) => `Entretien ${amount}/j`,
+    cost: "Coût",
+    missing: "manque",
+    close: "Fermer",
+
+    marketTabs: { joueurs: "Rialto", villes: "Villes" },
+    featured: "Plus forte hausse",
+    buyAt: "Achat",
+    sellAt: "Vente",
+    inStock: "En stock",
     buy: "Acheter",
     sell: "Vendre",
-    cityPays: (city: string, price: string) =>
-      `${city} paie ${price} l'unité (baisse avec la quantité)`,
-    sellToCity: "Vendre à la ville",
+    trade: "Échanger",
+    noOffer: "Aucune offre",
+    maxCost: (amount: string) => `Coût maximal : ${amount}`,
     marketHelp: (slippage: number, tax: number) =>
-      `Achat et vente immédiats au meilleur prix du carnet (écart maximal ${slippage} %). Taxe de ${tax} % payée par le vendeur entre joueurs.`,
+      `Achat et vente immédiats au meilleur prix (écart maximal ${slippage} %). Taxe de ${tax} % payée par le vendeur entre joueurs.`,
+    cityTitle: "Les villes achètent",
+    cityHelp:
+      "Le prix baisse quand on vend beaucoup dans la journée, puis remonte au fil des heures.",
+    cityPays: "Paie l'unité",
+    sellToCity: "Vendre",
+
+    projectsKicker: "Grand chantier",
+    projectTitle: (city: string) => `Chantier de ${city}`,
+    endsIn: "Se termine dans",
     perUnit: "l'unité",
     deliver: "Livrer",
-    noProject: "Aucun grand chantier en cours. Le prochain ouvre lundi.",
-    projectsHelp:
-      "Les villes paient les matériaux livrés à leurs chantiers un peu au-dessus du prix de référence.",
-    projectTitle: (city: string) => `Chantier de ${city}`,
-    endsIn: (left: string) => `fin dans ${left}`,
-    myNetWorth: (total: string) => `Mon patrimoine : ${total}`,
-    netWorthParts: (cash: string, stock: string, buildings: string) =>
-      `Caisse ${cash} · stocks ${stock} · bâtiments ${buildings}`,
+    noProject: "Aucun grand chantier en cours. Le prochain ouvre en début de semaine.",
+    projectsHelp: "Les villes paient les matériaux livrés un peu au-dessus du prix de référence.",
+
+    topKicker: "Saison en cours",
+    topTitle: "Classement des marchands",
+    closesIn: "Clôture dans",
+    myRank: "Ton rang",
+    you: "Toi",
     anonymous: "Marchand anonyme",
     rankingHelp:
       "Patrimoine = caisse + stocks (au plus bas du prix de référence et du prix moyen sur 7 jours) + bâtiments à leur coût.",
-    advisor: {
-      title: (n: number, total: number) => `Conseiller · étape ${n} / ${total}`,
-      produce: (building: string) =>
-        `Lancez votre ${building.toLowerCase()} : choisissez 1 lot et touchez « Produire ». Le premier lot est prêt en 30 secondes.`,
-      harvest: "Votre lot est prêt : touchez « Récolter ».",
-      transform: (building: string) =>
-        `Transformez votre récolte : lancez un lot dans votre ${building.toLowerCase()}.`,
-      sellCity: "Vendez votre production à une ville : onglet Marché, « Vendre à la ville ».",
-      marketBuy: (resource: string) =>
-        `Pour grandir, il vous faut des ${resource.toLowerCase()} d'une autre région : achetez-en quelques-unes au Marché.`,
-      invest:
-        "Améliorez un bâtiment ou construisez-en un nouveau. Ensuite, revenez récolter au plus tard toutes les 8 heures.",
+
+    profileTitle: "Ma progression",
+    nextTitle: (name: string) => `Prochain titre : ${name}`,
+    maxTitle: "Titre suprême atteint",
+    netWorth: "Patrimoine",
+    cash: "Caisse",
+    stockValue: "Stocks",
+    buildingsValue: "Bâtiments",
+    statsTitle: "Mes chiffres",
+    stats: {
+      rank: "Rang",
+      buildings: "Ateliers",
+      trades: "Échanges",
+      citySold: "Vendus aux villes",
+      delivered: "Livrés aux chantiers",
+      days: "Jours joués",
     },
+    trophies: "Trophées",
+    editCrest: "Modifier",
+    crestTitle: "Mon blason",
+    shape: "Forme",
+    color: "Émail",
+    symbol: "Meuble",
+    save: "Enregistrer",
+    help: "Comment jouer",
+    replayIntro: "Revoir l'introduction",
+    replayGuide: "Relancer le guide",
+
+    coach: {
+      name: "Lorenzo, votre facteur",
+      later: "Plus tard",
+      resume: "Guide",
+      step: (n: number, total: number) => `Étape ${n}/${total}`,
+      produce: (building: string) =>
+        `Lançons votre ${building.toLowerCase()} ! Touchez « Produire » : ce premier lot sera prêt en 30 secondes.`,
+      wait: "Vos ouvriers s'activent. Patientez quelques secondes…",
+      harvest: "C'est prêt ! Touchez « Récolter » pour rentrer la marchandise en stock.",
+      transform: (building: string) =>
+        `Une matière brute vaut peu. Transformez-la : lancez votre ${building.toLowerCase()}.`,
+      goMarket: "Votre marchandise est prête à vendre. Ouvrez le Marché.",
+      goCities: "Les villes achètent les produits finis. Ouvrez l'onglet « Villes ».",
+      sellCity: (resource: string) =>
+        `Vendez vos ${resource.toLowerCase()} à la ville qui paie le mieux.`,
+      goRialto:
+        "Pour grandir, il faut les matériaux d'une autre région. Ouvrez l'onglet « Rialto ».",
+      buy: (resource: string) =>
+        `Achetez quelques ${resource.toLowerCase()} : ils servent à améliorer vos ateliers.`,
+      goComptoir: "Retour au comptoir pour investir.",
+      invest: "Améliorez un atelier : il produira davantage à chaque lot.",
+      investLater:
+        "Il vous faut encore des briques et des planches pour améliorer un atelier. Produisez, vendez, achetez : c'est la boucle du marchand !",
+      done: "Bravo, vous connaissez la boucle : produire, vendre, réinvestir. Revenez récolter au moins toutes les 8 heures.",
+      finish: "Terminer",
+    },
+
+    howTo: [
+      {
+        icon: "comptoir",
+        title: "Produire",
+        text: "Chaque atelier transforme des matières en produits, par lots de 2 heures. Lancez jusqu'à 8 heures de production, puis revenez récolter. Rien ne se perd pendant votre absence.",
+      },
+      {
+        icon: "marche",
+        title: "Vendre et acheter",
+        text: "Au Rialto, vous achetez et vendez instantanément au meilleur prix proposé par les joueurs et le marchand de la République. Les villes achètent le pain, les briques et les planches.",
+      },
+      {
+        icon: "chantiers",
+        title: "Grands chantiers",
+        text: "Chaque semaine, une ville commande des briques et des planches. Elle paie un peu plus que le prix de référence.",
+      },
+      {
+        icon: "top",
+        title: "Classement",
+        text: "Votre patrimoine compte votre caisse, vos stocks et vos bâtiments. Les meilleurs reçoivent des récompenses cosmétiques à la fin de la saison.",
+      },
+      {
+        icon: "profil",
+        title: "Entretien",
+        text: "Chaque bâtiment coûte un entretien quotidien. Sans ducats pour le payer, la production est bloquée 24 heures.",
+      },
+    ],
+
     errors: {
       insufficient_funds: "Pas assez de ducats.",
       insufficient_stock: "Pas assez de stock.",
-      building_busy: "Ce bâtiment produit déjà : attendez la fin de la file.",
+      building_busy: "Cet atelier produit déjà : attendez la fin de la file.",
       queue_full: "La file de production est pleine (8 h maximum).",
       upkeep_default: "Entretien impayé : production bloquée pendant 24 h.",
       max_buildings: "Nombre maximal de bâtiments atteint.",
@@ -108,6 +238,7 @@ export const fr = {
       not_joined: "Installez d'abord votre comptoir.",
     } as Record<string, string>,
   },
+
   errors: {
     invalid_input: "Vérifiez votre saisie.",
     pseudo_taken: "Ce nom est déjà pris.",

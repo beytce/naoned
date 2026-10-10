@@ -1,0 +1,284 @@
+import { useEffect, useLayoutEffect, useState } from "react";
+import { Lorenzo } from "../art/scenes.js";
+import { fr } from "../i18n.js";
+import { Big, Label, Slab, clock } from "../ui.js";
+import { affordable, have } from "./Comptoir.js";
+import type { GameProps, MarketTab, Tab } from "./Game.js";
+import { store } from "./store.js";
+
+const STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "invest"] as const;
+const CITY_GOODS = ["bread", "bricks", "planks"];
+/** The construction material each region lacks. */
+const MISSING: Record<string, string> = {
+  terraferma: "bricks",
+  lagoon: "planks",
+  dolomites: "bricks",
+};
+
+interface CoachStep {
+  text: string;
+  /** data-coach value of the element to point at. */
+  target?: string;
+  waitUntil?: number;
+  final?: boolean;
+}
+
+function goTab(props: GameProps, tab: Tab, text: string): CoachStep | null {
+  return props.tab === tab ? null : { text, target: `tab-${tab}` };
+}
+
+function goMarketTab(props: GameProps, tab: MarketTab, text: string): CoachStep | null {
+  return props.marketTab === tab ? null : { text, target: `mtab-${tab}` };
+}
+
+/**
+ * What to do next, read from the live game: the guide follows the player instead of a script,
+ * so it never gets stuck if they do things in another order.
+ */
+function nextStep(props: GameProps): CoachStep {
+  const { view, now, names } = props;
+  const done = new Set(view.tutorial);
+  const ready = view.buildings.find(
+    (b) =>
+      b.job && Math.min(b.job.batches, Math.floor((now - b.job.startedAt) / b.job.batchMs)) > 0,
+  );
+  const recipeOf = (type: string) => props.catalog.buildings.find((b) => b.type === type)?.recipe;
+  const isRaw = (type: string) => Object.keys(recipeOf(type)?.inputs ?? {}).length === 0;
+
+  if (ready && !done.has("invest")) {
+    return (
+      goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
+        text: fr.game.coach.harvest,
+        target: `harvest-${ready.id}`,
+      }
+    );
+  }
+
+  if (!done.has("produce")) {
+    const raw = view.buildings.find((b) => recipeOf(b.type) && isRaw(b.type));
+    if (!raw) return { text: fr.game.coach.done, final: true };
+    if (props.sheet === `produce:${raw.id}`)
+      return { text: fr.game.coach.produce(names.building(raw.type)), target: "sheet-produce" };
+    return (
+      goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
+        text: fr.game.coach.produce(names.building(raw.type)),
+        target: `produce-${raw.id}`,
+      }
+    );
+  }
+
+  if (!done.has("sell_city")) {
+    const good = CITY_GOODS.find((r) => have(view, r) > 0);
+    if (good) {
+      return (
+        goTab(props, "marche", fr.game.coach.goMarket) ??
+        goMarketTab(props, "villes", fr.game.coach.goCities) ?? {
+          text: fr.game.coach.sellCity(names.resource(good)),
+          target: `city-sell-${good}`,
+        }
+      );
+    }
+    const next = view.buildings.find(
+      (b) => !b.job && b.canStart > 0 && !isRaw(b.type) && recipeOf(b.type),
+    );
+    if (next) {
+      if (props.sheet === `produce:${next.id}`)
+        return {
+          text: fr.game.coach.transform(names.building(next.type)),
+          target: "sheet-produce",
+        };
+      return (
+        goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
+          text: fr.game.coach.transform(names.building(next.type)),
+          target: `produce-${next.id}`,
+        }
+      );
+    }
+    const running = view.buildings
+      .filter((b) => b.job)
+      .map((b) =>
+        b.job
+          ? b.job.startedAt +
+            b.job.batchMs * (1 + Math.floor((now - b.job.startedAt) / b.job.batchMs))
+          : 0,
+      )
+      .sort((a, b) => a - b)[0];
+    if (running) return { text: fr.game.coach.wait, waitUntil: running };
+    const raw = view.buildings.find((b) => !b.job && b.canStart > 0 && isRaw(b.type));
+    if (raw)
+      return (
+        goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
+          text: fr.game.coach.produce(names.building(raw.type)),
+          target: `produce-${raw.id}`,
+        }
+      );
+  }
+
+  if (!done.has("market_buy")) {
+    const material = MISSING[view.player.region] ?? "planks";
+    if (props.sheet === `trade:${material}`)
+      return { text: fr.game.coach.buy(names.resource(material)), target: "sheet-buy" };
+    return (
+      goTab(props, "marche", fr.game.coach.goMarket) ??
+      goMarketTab(props, "joueurs", fr.game.coach.goRialto) ?? {
+        text: fr.game.coach.buy(names.resource(material)),
+        target: `row-${material}`,
+      }
+    );
+  }
+
+  if (!done.has("invest")) {
+    const upgradable = view.buildings.find((b) => b.upgradeCost && affordable(view, b.upgradeCost));
+    if (!upgradable) return { text: fr.game.coach.investLater, final: true };
+    if (props.sheet === `upgrade:${upgradable.id}`)
+      return { text: fr.game.coach.invest, target: "sheet-upgrade" };
+    return (
+      goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
+        text: fr.game.coach.invest,
+        target: `upgrade-${upgradable.id}`,
+      }
+    );
+  }
+
+  return { text: fr.game.coach.done, final: true };
+}
+
+/** Spotlight on the element to touch, with Lorenzo explaining why. */
+export function Coach(props: GameProps) {
+  const [hidden, setHidden] = useState(() => store.get("guideHidden") === "1");
+  const [finished, setFinished] = useState(() => store.get("guideDone") === "1");
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const step = nextStep(props);
+  const index = Math.min(STEPS.length, props.view.tutorial.length + 1);
+
+  useLayoutEffect(() => {
+    if (hidden || finished || !step.target) {
+      setRect(null);
+      return;
+    }
+    const find = () => {
+      const el = document.querySelector<HTMLElement>(`[data-coach="${step.target}"]`);
+      setRect(el ? el.getBoundingClientRect() : null);
+      return el;
+    };
+    const el = find();
+    el?.scrollIntoView({ block: "center", behavior: "smooth" });
+    const t = setInterval(find, 250);
+    return () => clearInterval(t);
+  }, [step.target, hidden, finished]);
+
+  useEffect(() => {
+    if (step.final && props.view.tutorial.length >= STEPS.length) {
+      store.set("guideDone", "1");
+    }
+  }, [step.final, props.view.tutorial.length]);
+
+  if (finished) return null;
+
+  if (hidden) {
+    return (
+      <button
+        type="button"
+        className="slab fixed bottom-24 right-4 z-30 flex items-center gap-2 bg-night-3 px-3 py-1.5 ring-1 ring-gold"
+        onClick={() => {
+          store.set("guideHidden", "0");
+          setHidden(false);
+        }}
+      >
+        <span className="flex items-center gap-2">
+          <Lorenzo size={28} />
+          <span className="label text-gold">{fr.game.coach.resume}</span>
+        </span>
+      </button>
+    );
+  }
+
+  // A message with nothing to point at stays on the counter; elsewhere it shrinks to a pill.
+  if (!step.target && !step.waitUntil && props.tab !== "comptoir") {
+    return (
+      <button
+        type="button"
+        className="slab fixed bottom-24 right-4 z-30 flex items-center gap-2 bg-night-3 px-3 py-1.5 ring-1 ring-gold"
+        onClick={() => props.goTo("comptoir")}
+      >
+        <span className="flex items-center gap-2">
+          <Lorenzo size={28} />
+          <span className="label text-gold">{fr.game.coach.resume}</span>
+        </span>
+      </button>
+    );
+  }
+
+  // The bubble goes where it does not hide the target (or the open sheet).
+  const atTop =
+    props.sheet !== null ||
+    (rect !== null && rect.top + rect.height / 2 > window.innerHeight * 0.55);
+  const pad = 6;
+  return (
+    <>
+      {rect && (
+        <div
+          className="pointer-events-none fixed z-[45] animate-pulsering rounded-md ring-2 ring-gold transition-all duration-200"
+          style={{
+            left: rect.left - pad,
+            top: rect.top - pad,
+            width: rect.width + pad * 2,
+            height: rect.height + pad * 2,
+            boxShadow: "0 0 0 9999px rgba(10, 8, 14, 0.62)",
+          }}
+        />
+      )}
+      <div
+        className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-24"}`}
+      >
+        <div className="relative bg-night-2 p-4 ring-2 ring-gold shadow-[6px_6px_0_0_#168A7E]">
+          <div className="flex gap-3">
+            <Lorenzo size={52} />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-gold">{fr.game.coach.name}</Label>
+                <span className="label">{fr.game.coach.step(index, STEPS.length)}</span>
+              </div>
+              <p className="mt-1.5 text-[15px] leading-snug">{step.text}</p>
+              {step.waitUntil && (
+                <Big className="mt-2 text-3xl text-lagoon">{clock(step.waitUntil - props.now)}</Big>
+              )}
+            </div>
+          </div>
+          <div className="mt-3 flex items-center justify-between">
+            <div className="flex gap-1">
+              {STEPS.map((s, k) => (
+                <span
+                  key={s}
+                  className={`slab h-1.5 w-6 ${k < props.view.tutorial.length ? "bg-lagoon" : k === props.view.tutorial.length ? "bg-gold" : "bg-line"}`}
+                />
+              ))}
+            </div>
+            {step.final ? (
+              <Slab
+                size="sm"
+                onClick={() => {
+                  store.set("guideDone", "1");
+                  setFinished(true);
+                }}
+              >
+                {fr.game.coach.finish}
+              </Slab>
+            ) : (
+              <button
+                type="button"
+                className="label text-cream-dim"
+                onClick={() => {
+                  store.set("guideHidden", "1");
+                  setHidden(true);
+                }}
+              >
+                {fr.game.coach.later}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
