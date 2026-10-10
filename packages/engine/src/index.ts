@@ -20,5 +20,6 @@ export { venice1450 } from "./themes/venice1450.js";
 export { venice1450Settings } from "./themes/venice1450.settings.js";
 export { EngineError, type EngineErrorCode } from "./tx.js";
 export * from "./valuation.js";
+export * from "./weekly.js";
 export * from "./bots.js";
 export { MarketView, scale } from "./marketView.js";

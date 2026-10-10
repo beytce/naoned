@@ -8,6 +8,7 @@ import { accounts, players, telemetry } from "../db/schema.js";
 import { priceHistory, profile } from "./profile.js";
 import { toJson } from "./serialize.js";
 import { catalog, playerView, ranking } from "./view.js";
+import { weeklyTable } from "./weekly.js";
 import type { GameWorld } from "./world.js";
 
 /** A visit after this much inactivity counts as a new session (KPI: sessions per day). */
@@ -219,6 +220,25 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const account = await requireAccount(req, reply);
     if (!account) return;
     return { series: await priceHistory(db, world.id, world.now()) };
+  });
+
+  app.get("/api/game/ranking/week", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const table = await weeklyTable(db, world.id, world.ctx, world.current, world.now());
+    const me = table.rows.find((r) => r.playerId === account.id);
+    const strip = ({ playerId, ...rest }: (typeof table.rows)[number]) => ({
+      ...rest,
+      me: playerId === account.id,
+    });
+    return toJson({
+      week: table.week,
+      endsAt: table.endsAt,
+      rows: table.rows.slice(0, 50).map(strip),
+      me: me ? strip(me) : null,
+      total: table.rows.length,
+      lastWeek: table.lastWeek,
+    });
   });
 
   app.get("/api/game/ranking", async (req, reply) => {

@@ -242,6 +242,19 @@ export const fr = {
     closesIn: "Clôture dans",
     myRank: "Ton rang",
     you: "Toi",
+    week: {
+      tab: "Semaine",
+      seasonTab: "Saison",
+      kicker: (n: number) => `Semaine ${n}`,
+      title: "Classement de la semaine",
+      lastWeek: "Podium de la semaine dernière",
+      awards: {
+        doge: "Doge de la semaine",
+        procurator: "Procurateur",
+        senator: "Sénateur",
+      } as Record<string, string>,
+      help: "Gain de patrimoine depuis le début de la semaine (ou depuis votre arrivée), en ducats. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
+    },
     npc: "PNJ",
     npcHelp:
       "PNJ : maisons marchandes tenues par l'ordinateur, avec les mêmes règles que vous. Elles animent le monde tant qu'il compte peu de joueurs et se retirent à mesure que de vrais marchands arrivent.",

@@ -151,6 +151,8 @@ export interface WorldState {
   expeditions?: Record<string, Expedition>;
   /** Resets used per player this season (absent in states saved before resets existed). */
   resets?: Record<PlayerId, number>;
+  /** Weekly ranking: current week and each player's net worth when it started (or on joining). */
+  weekly?: { week: number; start: Record<PlayerId, Deniers> };
 }
 
 export const SOURCE_ACCOUNT: AccountId = "system:source";
@@ -193,6 +195,7 @@ export function createWorldState(ctx: WorldContext): WorldState {
     resets: {},
     contractsDone: {},
     expeditions: {},
+    weekly: { week: 0, start: {} },
   };
 }
 

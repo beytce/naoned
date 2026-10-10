@@ -172,6 +172,25 @@ export const trades = pgTable(
   ],
 );
 
+/** Closed weeks of the weekly ranking: gain of net worth, rank, and cosmetic award (people only). */
+export const weeklyResults = pgTable(
+  "weekly_results",
+  {
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    week: integer("week").notNull(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    rank: integer("rank").notNull(),
+    gain: bigint("gain", { mode: "bigint" }).notNull(),
+    /** doge, procurator or senator for the three best people; null otherwise (and for bots). */
+    award: text("award"),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.week, t.accountId] })],
+);
+
 /** Analytics events (KPIs). Account layer: survives the end of a world. */
 export const telemetry = pgTable(
   "telemetry",

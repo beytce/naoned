@@ -30,6 +30,7 @@ import {
   removeStock,
   transfer,
 } from "./tx.js";
+import { startWeek } from "./weekly.js";
 
 enableMapSet();
 
@@ -108,6 +109,7 @@ function join(tx: Tx, playerId: PlayerId, region: string): void {
   for (const [resource, qty] of Object.entries(ctx.settings.startingStock[region] ?? {})) {
     addStock(tx, playerId, resource, qty, "starting_kit");
   }
+  startWeek(tx, playerId);
   emit(tx, "join", playerId, { region });
 }
 
@@ -136,6 +138,7 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
   delete tx.s.accounts[cash];
   delete tx.s.accounts[escrowAccount(playerId)];
   delete tx.s.players[playerId];
+  if (tx.s.weekly) delete tx.s.weekly.start[playerId];
   resets[playerId] = used + 1;
   emit(tx, "player_reset", playerId);
 }

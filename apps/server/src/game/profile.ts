@@ -1,6 +1,7 @@
 import { type Deniers, type WorldContext, type WorldState, netWorth } from "@comptoirs/engine";
 import { sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
+import { weeklyRecord } from "./weekly.js";
 
 /**
  * Merchant titles, from net worth (ducats). Cosmetic only: a title never changes the economy.
@@ -84,6 +85,9 @@ export async function profile(
   const c = await counts(db, worldId, playerId);
   const maxLevel = buildings.reduce((m, b) => Math.max(m, b.level), 0);
   const palazzo = buildings.find((b) => b.type === "palazzo")?.level ?? 0;
+  const weekly = await weeklyRecord(db, worldId, playerId);
+  const podiums = weekly.filter((w) => w.award).length;
+  const wins = weekly.filter((w) => w.award === "doge").length;
 
   // Trophies: cosmetic milestones, with progress towards each.
   const badge = (code: string, name: string, value: number, goal: number) => ({
@@ -104,6 +108,8 @@ export async function profile(
     badge("days_7", "Fidèle au comptoir", c.days, 7),
     badge("contracts_10", "Fournisseur du Doge", c.contracts, 10),
     badge("voyage_1", "Retour d'Orient", c.voyages, 1),
+    badge("weekly_podium", "Sur le podium de la semaine", podiums, 1),
+    badge("weekly_doge", "Doge de la semaine", wins, 1),
   ];
 
   return {
@@ -118,6 +124,7 @@ export async function profile(
     totalLevels: buildings.reduce((n, b) => n + b.level, 0),
     stats: c,
     badges,
+    weekly,
   };
 }
 

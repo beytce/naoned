@@ -7,6 +7,7 @@ import type {
   PriceSeries,
   Profile,
   RankingRow,
+  WeekRanking,
 } from "./types.js";
 
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -42,6 +43,7 @@ export const gameApi = {
       "/api/game/profile",
     ),
   prices: () => call<{ series: PriceSeries }>("GET", "/api/game/prices"),
+  weekRanking: () => call<WeekRanking>("GET", "/api/game/ranking/week"),
   ranking: () =>
     call<{ rows: RankingRow[]; me: number | null; total: number }>("GET", "/api/game/ranking"),
 };

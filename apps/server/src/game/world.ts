@@ -26,6 +26,7 @@ import {
 } from "../db/schema.js";
 import { decode, encode } from "./serialize.js";
 import { TUTORIAL_STEPS, stepsReached } from "./tutorial.js";
+import { recordWeek } from "./weekly.js";
 
 const THEMES = { venice1450 } as const;
 const DAY_MS = 86_400_000;
@@ -230,6 +231,10 @@ export class GameWorld {
             props: (encode(e.data ?? {}) as Record<string, unknown>) ?? null,
           })),
         );
+      }
+
+      for (const e of fx.events) {
+        if (e.type === "week_closed") await recordWeek(tx, worldId, e.data ?? {});
       }
 
       if (!command) {

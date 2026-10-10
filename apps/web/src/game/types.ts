@@ -175,6 +175,35 @@ export interface RankingRow {
   bot: boolean;
 }
 
+export interface WeekRow {
+  rank: number;
+  pseudo: string | null;
+  region: string;
+  crest: CrestData | null;
+  bot: boolean;
+  me: boolean;
+  /** Net worth gained this week, in deniers (may be negative). */
+  gain: Money;
+}
+
+export interface PodiumRow {
+  rank: number;
+  pseudo: string | null;
+  crest: CrestData | null;
+  bot: boolean;
+  gain: Money;
+  award: "doge" | "procurator" | "senator" | null;
+}
+
+export interface WeekRanking {
+  week: number;
+  endsAt: number;
+  rows: WeekRow[];
+  me: WeekRow | null;
+  total: number;
+  lastWeek: PodiumRow[];
+}
+
 export interface Title {
   code: string;
   name: string;
@@ -193,6 +222,7 @@ export interface Profile {
   totalLevels: number;
   stats: { trades: number; citySold: number; delivered: number; days: number; builds: number };
   badges: { code: string; name: string; value: number; goal: number; earned: boolean }[];
+  weekly: { week: number; rank: number; gain: Money; award: PodiumRow["award"] }[];
 }
 
 export type PriceSeries = Record<string, { t: number; price: string; volume: number }[]>;
