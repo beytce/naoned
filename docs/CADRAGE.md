@@ -15,14 +15,28 @@ Cette version tranche les points ouverts de la v1. Chaque décision est reprise 
 | Types d'ordres | Cours limité uniquement | Cours limité **+ ordre immédiat** avec protection de prix | Une session mobile de 3 minutes ne peut pas surveiller un carnet |
 | Production | Calculée par le tick | **Calcul paresseux** à la lecture | Plus simple, ne coûte rien quand personne ne joue |
 | Grand livre | Monnaie seulement | Monnaie **+ journal des mouvements de stock** | Les bugs de duplication touchent aussi les stocks |
-| Valorisation de fin de saison | Prix moyen sur 24 h | **Principe de prudence** : min(prix de référence, prix moyen pondéré sur 7 jours) | Le prix sur 24 h est manipulable entre comptes complices |
-| Indicateur monétaire principal | Ratio création/destruction entre 0,9 et 1,1 | **Masse monétaire par joueur actif** ; le ratio n'est qu'un diagnostic | Un ratio de 1 en phase de croissance crée de la déflation par joueur |
+| Valorisation de fin de saison | Prix moyen sur 24 h | **Principe de prudence** pour les stocks : min(prix de référence, prix moyen pondéré sur 7 jours) ; bâtiments au coût | Le prix sur 24 h est manipulable entre comptes complices |
+| Indicateur monétaire principal | Ratio création/destruction entre 0,9 et 1,1 | **Indice des prix** + plafond de masse monétaire par joueur actif ; le ratio n'est qu'un diagnostic | Voir « Ajustements issus du simulateur » |
 | Guildes | Nom, membres, chat | + **Grands chantiers** hebdomadaires | Le multijoueur doit se voir, pas seulement exister dans le carnet |
 | Référentiel | Sans `world_id`, sans thème | Ressources et recettes rattachées à un **thème** | Les recettes changent d'une saison historique à l'autre |
 | Jeton Sceau | V2 | **Abandonné** | Revient à vendre de la monnaie de jeu |
 | Abonnement | Production automatisée, 20 ordres | **Confort d'analyse uniquement** | La production automatisée achète du pouvoir économique |
 | Roadmap | Interface au jalon 6 | **Simulateur au jalon 1, tranche jouable au jalon 3** | Valider l'équilibrage et le plaisir de jeu avant de durcir le moteur |
 | Critère de sortie | 50 testeurs, 30 % à J+14 | 100 inscrits **venus de communautés**, 25 % à J+14 | Des amis testeurs ne mesurent pas la rétention réelle |
+
+### Ajustements issus du simulateur (jalon 1)
+
+Les premières simulations ont révélé des défauts de conception que des réglages de paramètres ne corrigeaient pas. Détail et chiffres dans `docs/calibration.md`.
+
+| Constat du simulateur | Décision |
+| --- | --- |
+| Seul le pain faisait entrer de la monnaie : deux régions sur trois dépendaient entièrement des boulangers | Les villes achètent aussi des briques et des planches ; chaque région a son débouché |
+| Matières brutes produites 2 à 3 fois plus vite que consommées : les prix s'effondraient | Chaque région reçoit une chaîne complète au départ, et le bonus régional porte la production brute exactement au besoin du transformateur |
+| Une amélioration était impossible tant que la file tournait, donc jamais | L'amélioration est possible à tout moment et s'applique aux lots suivants |
+| Bâtiments comptés à 50 % : investir faisait baisser le classement, les joueurs thésaurisaient | Bâtiments comptés à leur coût |
+| En fin de saison, plus rien de productif à financer : la trésorerie s'accumulait | **Palais** : bâtiment de prestige sans production, compté à son coût, qui détruit des ducats et consomme des matériaux ; entretien qui croît plus vite que le niveau |
+| Le PNJ rachetait à 90 % du prix de référence quand le marché était à 35 % : subvention exploitable | Le PNJ suit le marché **à la baisse uniquement** (jusqu'à 50 % du prix de référence) |
+| La masse monétaire par joueur actif croît avec la taille des affaires (épargne pour l'amélioration suivante) alors que les prix restent stables | L'inflation se mesure par l'indice des prix ; la masse monétaire par joueur actif a un plafond (2,5 × le capital de départ) et sa croissance devient un diagnostic |
 
 ## Vision et positionnement
 
@@ -68,11 +82,11 @@ Le MVP vise un seul monde de 200 à 500 joueurs, une saison de 6 semaines sur le
 
 C'est la partie la plus importante pour la rétention à J1. Le joueur ne voit pas le carnet d'ordres avant d'avoir compris la production.
 
-1. **Minute 0** : choix de la région, présentée par sa ressource bonifiée (blé, argile ou bois). Le joueur reçoit 1 000 ducats, un champ ou une carrière ou une scierie selon la région, et un moulin.
-2. **Minute 1** : le conseiller propose une commande de la ville : « La Sérénissime demande 20 sacs de farine ». Le joueur lance la récolte puis la mouture, en durée accélérée pour le tutoriel (30 secondes au lieu de 30 minutes).
+1. **Minute 0** : choix de la région, présentée par sa ressource bonifiée (blé, argile ou bois). Le joueur reçoit 1 000 ducats et la chaîne de sa région (voir le tableau des régions).
+2. **Minute 1** : le conseiller propose une commande de la ville : « La Sérénissime demande 20 pains » (ou des briques, ou des planches). Le joueur lance la récolte puis la transformation, en durée accélérée pour le tutoriel (30 secondes au lieu de 2 heures).
 3. **Minute 3** : il livre la commande et touche ses premiers ducats. C'est la vente aux villes.
-4. **Minute 5** : le conseiller lui montre qu'il manque de briques pour construire une boulangerie, et qu'une autre région en produit. Premier **ordre immédiat** d'achat, guidé.
-5. **Minute 8** : construction de la boulangerie et lancement d'une production de 4 h.
+4. **Minute 5** : le conseiller lui montre qu'il lui manque le matériau d'une autre région (planches ou briques) pour améliorer un bâtiment. Premier **ordre immédiat** d'achat, guidé.
+5. **Minute 8** : amélioration du bâtiment et lancement d'une production de 8 h.
 6. **Minute 10** : le carnet d'ordres se débloque, avec une explication en trois écrans (achat, vente, séquestre). Le conseiller propose de placer un premier ordre à cours limité.
 
 Chaque étape écrit un événement `tutorial_step` pour mesurer où les joueurs abandonnent.
@@ -81,10 +95,10 @@ Chaque étape écrit un événement `tutorial_step` pour mesurer où les joueurs
 
 La boucle tient en cinq gestes : produire, vendre, réinvestir, se spécialiser, commercer avec les autres.
 
-1. **Produire** : chaque bâtiment transforme des intrants en extrants selon une recette, en un temps donné (ex. moulin : 10 blé → 8 farine en 30 min).
+1. **Produire** : chaque bâtiment transforme des intrants en extrants selon une recette, en un temps donné (ex. moulin : 10 blé → 8 farine en 2 h).
 2. **Vendre** : aux villes PNJ (prix décroissant avec la quantité vendue dans la journée), au PNJ teneur de marché, ou aux autres joueurs via le carnet.
 3. **Réinvestir** : construire ou améliorer des bâtiments (niveaux 1 à 5), débloquer des recettes.
-4. **Se spécialiser** : chaque région a un bonus de rendement de +30 % sur une ressource brute, ce qui force les échanges.
+4. **Se spécialiser** : chaque région maîtrise une chaîne et produit un seul des deux matériaux de construction ; tout le monde a besoin des deux, ce qui force les échanges.
 5. **Commercer** : acheter les intrants qu'on ne produit pas, revendre ses surplus, spéculer.
 
 **Les 7 ressources du MVP**
@@ -92,16 +106,18 @@ La boucle tient en cinq gestes : produire, vendre, réinvestir, se spécialiser,
 | Chaîne | Brute | Intermédiaire | Finie | Débouché principal |
 | --- | --- | --- | --- | --- |
 | Alimentation | Blé | Farine | Pain | Villes PNJ |
-| Construction | Argile | — | Briques | Bâtiments, grands chantiers |
-| Charpente | Bois | — | Planches | Bâtiments, grands chantiers |
+| Construction | Argile | — | Briques | Bâtiments, palais, grands chantiers, villes PNJ |
+| Charpente | Bois | — | Planches | Bâtiments, palais, grands chantiers, villes PNJ |
 
-| Région | Bonus +30 % |
-| --- | --- |
-| Terraferma | Blé |
-| Lagune | Argile |
-| Dolomites | Bois |
+| Région | Bonus +30 % | Bâtiments de départ |
+| --- | --- | --- |
+| Terraferma | Blé | Ferme, moulin, boulangerie |
+| Lagune | Argile | Carrière, briqueterie |
+| Dolomites | Bois | Camp de bûcherons, scierie |
 
-Les briques et les planches servent à construire et à améliorer les bâtiments, ainsi qu'aux grands chantiers : c'est une demande structurelle entre joueurs. Le pain est le principal produit vendu aux villes, donc la principale source de monnaie.
+Les briques et les planches servent à construire et à améliorer tous les bâtiments, au palais et aux grands chantiers : c'est la demande structurelle entre joueurs, puisque chaque région n'en produit qu'un. Les villes achètent du pain (la plus grosse demande), des briques et des planches. Avec le bonus de +30 %, un bâtiment brut de la région alimente exactement le transformateur de niveau équivalent ; un bâtiment brut hors de sa région produit moins.
+
+**Palais** : bâtiment de prestige, sans production, améliorable jusqu'au niveau 5. Il coûte des ducats, des briques et des planches, compte à son coût dans le patrimoine et se voit sur la carte. C'est le puits de monnaie et de matériaux pour les joueurs qui n'ont plus rien de rentable à financer.
 
 **Rythme** : la production tourne en continu, hors ligne compris, avec une file plafonnée à 8 h. Une session mobile type dure 3 à 5 minutes (récolter, relancer, passer 2 ordres) ; une session PC type dure 20 à 40 minutes (optimiser, analyser les prix).
 
@@ -115,7 +131,7 @@ Les briques et les planches servent à construire et à améliorer les bâtiment
 
 - trésorerie, y compris le séquestre ;
 - stocks valorisés au **plus bas** du prix de référence et du prix moyen pondéré par les volumes sur 7 jours (avec un volume minimum ; à défaut, le prix de référence) ;
-- bâtiments à 50 % de leur coût de construction cumulé.
+- bâtiments, palais compris, à leur coût de construction cumulé (matériaux au prix de référence), pour que l'investissement ne pénalise pas le classement.
 
 Les 3 premiers et le top 10 % reçoivent des cosmétiques permanents. Un classement séparé récompense les guildes sur les grands chantiers.
 
@@ -138,12 +154,12 @@ L'économie repose sur un carnet d'ordres par ressource et par monde (pas par r�
 - Il place des ordres d'achat et de vente autour du prix de référence de chaque ressource.
 - Son écart part de 4 % au lancement et s'élargit jusqu'à 20 % à J+14, puis reste à 20 %. Il sert alors de plancher et de plafond : les joueurs font mieux entre eux, mais le jeu reste jouable avec peu de monde connecté.
 - Sa profondeur est plafonnée : une quantité maximale par ressource et par jour, réglée dans les paramètres du monde.
-- Son prix de référence est fixé dans les paramètres du monde et ajustable sans redéploiement. Il ne suit **pas** automatiquement les prix des joueurs, pour ne pas être manipulable.
+- Son prix de référence est fixé dans les paramètres du monde et ajustable sans redéploiement. Il suit le marché **à la baisse uniquement** : il cote autour du plus bas du prix de référence et du prix moyen pondéré sur 7 jours (comme la valorisation), sans descendre sous 50 % du prix de référence. Il ne peut donc pas être poussé à acheter cher, et il ne soutient pas un prix que les joueurs ont abandonné.
 - Ses achats créent de la monnaie et ses ventes en détruisent ; tout passe par le grand livre, sur un compte système dédié.
 
 **Sources de monnaie** (création)
 
-- Ventes aux villes PNJ : chaque ville achète des produits finis selon une courbe de demande dont le prix baisse avec la quantité vendue dans la journée, puis se régénère.
+- Ventes aux villes PNJ : chaque ville achète du pain, des briques et des planches selon une courbe de demande dont le prix baisse avec la quantité vendue dans la journée, puis se régénère. La capacité de chaque ville est fixée par joueur actif, pour que la demande suive la taille du monde.
 - Paiements des grands chantiers.
 - Achats nets du PNJ teneur de marché.
 - Capital de départ : 1 000 ducats par joueur.
@@ -151,42 +167,21 @@ L'économie repose sur un carnet d'ordres par ressource et par monde (pas par r�
 **Puits de monnaie** (destruction)
 
 - Taxe de marché de 3 % sur chaque transaction entre joueurs, payée par le vendeur.
-- Entretien des bâtiments en ducats, prélevé chaque jour.
-- Part en ducats du coût de construction et d'amélioration (le reste se paie en briques et en planches, qui ne sont pas un puits de monnaie).
+- Entretien des bâtiments en ducats, prélevé chaque jour ; il croît plus vite que le niveau (un bâtiment de niveau L coûte base × L × (1 + 20 % × (L − 1))). Un joueur qui ne peut pas payer ne peut plus lancer de production pendant 24 h.
+- Part en ducats du coût de construction et d'amélioration, palais compris (le reste se paie en briques et en planches, qui ne sont pas un puits de monnaie).
 - Ventes nettes du PNJ teneur de marché.
 
 **Indicateurs de santé**
 
 | Indicateur | Rôle | Cible |
 | --- | --- | --- |
-| Masse monétaire par joueur actif | Indicateur principal d'inflation | Croissance de 0 à 5 % par jour en semaine 1, puis stable à ±2 % |
-| Indice des prix du panier des 7 ressources (base 100 à J1) | Suivi du pouvoir d'achat | 80 à 130 |
-| Ratio monnaie créée / détruite par jour | Diagnostic, pas une cible | Alerte en dehors de 0,8 à 1,3 |
+| Indice des prix du panier des 7 ressources (base 100 à J1) | Indicateur principal d'inflation | 80 à 130 chaque jour |
+| Masse monétaire par joueur actif (argent des seuls joueurs actifs) | Garde-fou | ≤ 2,5 × le capital de départ toute la saison |
+| Croissance de la masse monétaire par joueur actif | Diagnostic | Moyenne glissante sur 7 jours dans ±2 %/jour à partir de J+14 |
+| Ratio monnaie créée / détruite par jour | Diagnostic | Alerte en dehors de 0,8 à 1,3 |
 | Volume échangé entre joueurs vs avec le PNJ | Santé du marché | Part des joueurs > 50 % à J+14 |
 
-**Paramètres d'équilibrage** : tous dans `worlds.settings` (JSON), modifiables sans redéploiement. Exemple de structure :
-
-```json
-{
-  "startingCapital": 100000,
-  "marketTaxBps": 300,
-  "orderMaxHours": 72,
-  "maxOpenOrders": 10,
-  "instantOrderSlippageBps": 1000,
-  "productionQueueMaxHours": 8,
-  "regionBonusBps": 3000,
-  "lateJoinerBonus": { "afterDay": 7, "bonusBps": 5000, "hours": 72 },
-  "marketMaker": {
-    "spreadStartBps": 400,
-    "spreadEndBps": 2000,
-    "spreadRampDays": 14,
-    "dailyDepth": { "wheat": 5000, "flour": 3000, "bread": 2000 }
-  },
-  "referencePrices": { "wheat": 120, "flour": 300, "bread": 700 }
-}
-```
-
-Les montants sont en deniers et les taux en points de base (1 % = 100 points), pour rester en entiers. Les valeurs sont indicatives : elles seront réglées avec le simulateur au jalon 1.
+**Paramètres d'équilibrage** : tous dans `worlds.settings` (JSON), modifiables sans redéploiement. Les montants sont en deniers et les taux en points de base (1 % = 100 points), pour rester en entiers. Les valeurs de Venise 1450, réglées avec le simulateur, sont dans `packages/engine/src/themes/venice1450.settings.ts` et expliquées dans `docs/calibration.md`.
 
 ## Comptabilité et invariants
 
@@ -305,7 +300,7 @@ Le jeu est gratuit et ne vend jamais de ressources, de monnaie de jeu ni de prod
 
 Le développement avance en 8 jalons ; chacun se termine par un critère vérifiable. Compter 4 à 6 mois en soirées et week-ends. L'équilibrage et le plaisir de jeu sont validés avant de durcir le moteur et l'interface.
 
-1. **Moteur minimal et simulateur** : `packages/engine` (production, ordres immédiats et à cours limité, PNJ, villes, taxe, entretien) en mémoire, et `apps/simulator` qui fait jouer 50 bots de profils différents pendant 42 jours.
+1. **Moteur minimal et simulateur** (fait, voir `docs/calibration.md`) : `packages/engine` (production, ordres immédiats et à cours limité, PNJ, villes, taxe, entretien) en mémoire, et `apps/simulator` qui fait jouer 50 bots de profils différents pendant 42 jours.
    - Terminé quand : le simulateur produit un CSV journalier des indicateurs de santé, et ils restent dans les cibles sur 42 jours.
 2. **Socle** : monorepo, base PostgreSQL, migrations, authentification par lien magique, déploiement en ligne.
    - Terminé quand : on se connecte depuis un téléphone sur l'URL de production.
@@ -313,8 +308,8 @@ Le développement avance en 8 jalons ; chacun se termine par un critère vérifi
    - Terminé quand : 5 à 10 personnes jouent une semaine et on a recueilli leurs retours.
 4. **Grand livre et journal des stocks en base** : comptes, écritures, invariants, contrôle nocturne.
    - Terminé quand : un test de 10 000 opérations aléatoires vérifie les 6 invariants à chaque étape.
-5. **Carnet d'ordres complet** : ordres à cours limité, séquestre, appariement, expiration, verrous par carnet.
-   - Terminé quand : 100 % des tests du moteur passent, dont les cas limites (exécution partielle, annulation pendant un appariement, prix égaux, ordres concurrents).
+5. **Carnet d'ordres en base** : la logique d'appariement, de séquestre et d'expiration est déjà dans le moteur (jalon 1) ; ce jalon la persiste avec des verrous par carnet et traite la concurrence entre requêtes.
+   - Terminé quand : les tests passent sur PostgreSQL, dont les cas concurrents (annulation pendant un appariement, deux ordres simultanés sur le même carnet).
 6. **Interface soignée** : écran comptoir, écran marché (carnet + graphique de prix), conseiller, classement, responsive mobile.
    - Terminé quand : une session mobile de 3 minutes est faisable d'une main.
 7. **Social et saison** : guildes, chat modéré, grands chantiers, cycle de vie du monde (ouverture, fin, classement figé, cosmétiques), bonus des arrivants tardifs.
@@ -336,8 +331,8 @@ Chaque action importante écrit une ligne dans la table `telemetry` (compte, mon
 | Marché | Ordres exécutés par jour et par joueur actif | ≥ 2 |
 | Marché | Écart moyen achat-vente entre joueurs, par ressource | < 10 % du prix |
 | Marché | Part du volume échangé entre joueurs (hors PNJ) à J+14 | > 50 % |
-| Économie | Masse monétaire par joueur actif | Voir indicateurs de santé |
 | Économie | Indice des prix du panier (base 100 au jour 1) | 80 à 130 |
+| Économie | Masse monétaire par joueur actif | ≤ 2,5 × le capital de départ |
 | Équité | Indice de Gini du patrimoine à J+21 | < 0,6 |
 | Social | Joueurs actifs membres d'une guilde | ≥ 50 % |
 | Viralité | Invitations envoyées par joueur | ≥ 0,5 |
@@ -351,7 +346,7 @@ Le risque principal n'est pas technique : c'est un marché vide ou déséquilibr
 | Risque | Parade |
 | --- | --- |
 | Marché vide | PNJ teneur de marché permanent, 7 ressources seulement, un seul carnet par ressource et par monde, ordres immédiats |
-| Inflation ou déflation | Masse monétaire par joueur actif suivie chaque jour ; équilibrage réglé par le simulateur ; paramètres modifiables sans redéploiement |
+| Inflation ou déflation | Indice des prix et masse monétaire par joueur actif suivis chaque jour ; palais comme puits de fin de saison ; équilibrage réglé par le simulateur ; paramètres modifiables sans redéploiement |
 | Manipulation du classement | Valorisation prudente des stocks (plus bas du prix de référence et du prix moyen sur 7 jours) ; détection d'échanges à prix aberrants |
 | Vétérans qui écrasent les nouveaux | Saisons de 6 semaines ; bonus de +50 % pendant 72 h pour les arrivants après J+7 |
 | Bots et multi-comptes | Un compte par e-mail vérifié ; détection des échanges répétés entre les mêmes comptes à des prix éloignés du marché |
