@@ -22,6 +22,13 @@
       "when": 1791663997813,
       "tag": "0002_account_crest",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791670065357,
+      "tag": "0003_bots",
+      "breakpoints": true
     }
   ]
 }

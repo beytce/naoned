@@ -1,22 +1,33 @@
+import { costForLevel } from "./buildings.js";
+import { quoteCitySale } from "./cities.js";
+import type { Command } from "./commands.js";
+import { contractsFor } from "./contracts.js";
+import { openOrderCount } from "./market.js";
+import { type MarketView, scale } from "./marketView.js";
+import type { Deniers } from "./money.js";
+import { freeBatches } from "./production.js";
+import { openProjects } from "./projects.js";
+import type { Rng } from "./rng.js";
+import type { WorldSettings } from "./settings.js";
 import {
   type Building,
-  type Command,
-  type Deniers,
-  type Rng,
   type WorldContext,
   type WorldState,
   cashAccount,
-  contractsFor,
-  costForLevel,
   dayIndex,
-  findRegion,
-  freeBatches,
-  openOrderCount,
-  openProjects,
-  quoteCitySale,
-  recipesFor,
-} from "@comptoirs/engine";
-import { type MarketView, scale } from "./market.js";
+} from "./state.js";
+import { findRegion, recipesFor } from "./theme.js";
+
+/**
+ * Computer-run merchants. They play through the same commands as people, with the same limits,
+ * so they move no money or goods outside the journals. The simulator calibrates the economy with
+ * them; the server lets a few liven up a world while it has few players.
+ */
+
+/** Bots needed to bring the world to its target population, given the active human players. */
+export function botsWanted(settings: WorldSettings, activeHumans: number): number {
+  return Math.max(0, settings.bots.population - activeHumans);
+}
 
 export type ProfileName = "producer" | "artisan" | "builder" | "speculator" | "casual";
 

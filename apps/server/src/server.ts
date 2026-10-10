@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { openDatabase } from "./db/client.js";
+import { BotRunner } from "./game/bots.js";
 import { GameWorld } from "./game/world.js";
 import { ConsoleMailer, ResendMailer } from "./mail/mailer.js";
 
@@ -18,6 +19,9 @@ const world = await GameWorld.open(database.db, Date.now, {
   settingsFromTheme: config.WORLD_SETTINGS_FROM_THEME,
 });
 world.startTicking();
+const bots = new BotRunner(database.db, world);
+await bots.load();
+bots.start(60_000, (err) => console.error(err));
 const here = dirname(fileURLToPath(import.meta.url));
 const app = await buildApp({
   db: database.db,
@@ -31,6 +35,7 @@ const app = await buildApp({
 
 const shutdown = async () => {
   world.stopTicking();
+  bots.stop();
   await app.close();
   await database.close();
   process.exit(0);

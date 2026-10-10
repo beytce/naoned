@@ -26,6 +26,7 @@ function Line({ r, props, mine }: { r: RankingRow; props: GameProps; mine?: bool
         </p>
         <div className="mt-1 flex items-center gap-2">
           {mine && <Badge>{fr.game.you}</Badge>}
+          {r.bot && <Badge tone="ghost">{fr.game.npc}</Badge>}
           <span className="label">{props.names.region(r.region)}</span>
         </div>
       </div>
@@ -71,6 +72,7 @@ export function Top(props: GameProps) {
         )}
       </div>
       <p className="text-xs text-muted">{fr.game.rankingHelp}</p>
+      {rows?.some((r) => r.bot) && <p className="text-xs text-muted">{fr.game.npcHelp}</p>}
     </div>
   );
 }

@@ -101,6 +101,8 @@ export function playerView(
   playerId: string,
   now: number,
   tutorialSteps: string[],
+  /** Players left out of the rankings (retired bots). */
+  hidden: Set<string> = new Set(),
 ) {
   const player = state.players[playerId];
   if (!player) return null;
@@ -131,7 +133,7 @@ export function playerView(
   }
 
   // Where the player stands in the season: the goal, always in sight.
-  const table = ranking(ctx, state, now, new Map());
+  const table = ranking(ctx, state, now, new Map(), hidden);
   const mine = table.find((r) => r.playerId === playerId);
   const worth = netWorth(ctx, state, playerId, now);
 
@@ -199,11 +201,12 @@ export function ranking(
   state: WorldState,
   now: number,
   pseudos: Map<string, string | null>,
+  hidden: Set<string> = new Set(),
 ) {
   const unitValues: Record<string, Deniers> = {};
   for (const r of ctx.theme.resources) unitValues[r.code] = stockUnitValue(ctx, state, r.code, now);
   return Object.keys(state.players)
-    .filter((id) => id !== MARKET_MAKER)
+    .filter((id) => id !== MARKET_MAKER && !hidden.has(id))
     .map((id) => ({
       playerId: id,
       pseudo: pseudos.get(id) ?? null,

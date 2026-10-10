@@ -1,5 +1,5 @@
 import type { Command } from "@comptoirs/engine";
-import { and, eq, inArray, isNull, lt, or } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { AuthService, PublicAccount } from "../auth/service.js";
@@ -79,9 +79,25 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return row?.steps ?? [];
   }
 
+  /** Bots that stepped aside: out of the rankings. */
+  async function retiredBots(): Promise<Set<string>> {
+    const rows = await db
+      .select({ id: players.accountId })
+      .from(players)
+      .where(and(eq(players.worldId, world.id), isNotNull(players.retiredAt)));
+    return new Set(rows.map((r) => r.id));
+  }
+
   async function view(account: PublicAccount) {
     const now = world.now();
-    const v = playerView(world.ctx, world.current, account.id, now, await tutorialOf(account.id));
+    const v = playerView(
+      world.ctx,
+      world.current,
+      account.id,
+      now,
+      await tutorialOf(account.id),
+      await retiredBots(),
+    );
     return toJson({ serverTime: now, view: v });
   }
 
@@ -167,14 +183,22 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       ids.length === 0
         ? []
         : await db
-            .select({ id: accounts.id, pseudo: accounts.pseudo, crest: accounts.crest })
+            .select({
+              id: accounts.id,
+              pseudo: accounts.pseudo,
+              crest: accounts.crest,
+              bot: accounts.isBot,
+            })
             .from(accounts)
             .where(inArray(accounts.id, ids));
     const pseudos = new Map(rows.map((r) => [r.id, r.pseudo]));
     const crests = new Map(rows.map((r) => [r.id, r.crest]));
-    return ranking(world.ctx, world.current, world.now(), pseudos).map((r) => ({
+    const bots = new Set(rows.filter((r) => r.bot).map((r) => r.id));
+    const hidden = await retiredBots();
+    return ranking(world.ctx, world.current, world.now(), pseudos, hidden).map((r) => ({
       ...r,
       crest: crests.get(r.playerId) ?? null,
+      bot: bots.has(r.playerId),
     }));
   }
 

@@ -7,6 +7,7 @@ import {
   checkInvariants,
   createWorldState,
   decide,
+  emptyEffects,
   emptyTotals,
   parseSettings,
   venice1450,
@@ -134,7 +135,47 @@ export class GameWorld {
     });
   }
 
-  private async persist(next: WorldState, fx: Effects, now: number, command: Command) {
+  /**
+   * Several commands for one player, decided one after another on the live state and saved in a
+   * single transaction (a bot's session). Refused commands are skipped, as for a person.
+   * Returns the number of accepted commands.
+   */
+  batch(
+    play: (session: {
+      act: (command: Command) => boolean;
+      state: () => WorldState;
+      now: number;
+    }) => void,
+  ): Promise<number> {
+    return this.serial(async () => {
+      const now = this.clock();
+      let state = this.state;
+      const fx = emptyEffects();
+      let accepted = 0;
+      play({
+        now,
+        state: () => state,
+        act: (command) => {
+          const res = decide(this.ctx, state, command, now);
+          if (!res.ok) return false;
+          state = res.state;
+          fx.ledger.push(...res.effects.ledger);
+          fx.stock.push(...res.effects.stock);
+          fx.trades.push(...res.effects.trades);
+          fx.events.push(...res.effects.events);
+          accepted++;
+          return true;
+        },
+      });
+      if (accepted === 0) return 0;
+      await this.persist(state, fx, now, null);
+      this.state = state;
+      this.version += 1;
+      return accepted;
+    });
+  }
+
+  private async persist(next: WorldState, fx: Effects, now: number, command: Command | null) {
     const at = new Date(now);
     const worldId = this.id;
     await this.db.transaction(async (tx) => {
@@ -178,7 +219,8 @@ export class GameWorld {
       }
 
       const playerEvents = fx.events.filter((e) => e.playerId && e.playerId in next.players);
-      if (playerEvents.length > 0) {
+      // Bot sessions stay out of the telemetry (player KPIs).
+      if (command && playerEvents.length > 0) {
         await tx.insert(telemetry).values(
           playerEvents.map((e) => ({
             accountId: e.playerId ?? null,
@@ -190,7 +232,9 @@ export class GameWorld {
         );
       }
 
-      if (command.type === "resetPlayer") {
+      if (!command) {
+        // A batch (bot session): journals only.
+      } else if (command.type === "resetPlayer") {
         // The player row (region, tutorial) goes; the journals keep the history.
         await tx
           .delete(players)

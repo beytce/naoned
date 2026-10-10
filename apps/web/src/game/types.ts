@@ -171,6 +171,8 @@ export interface RankingRow {
   netWorth: Money;
   crest: CrestData | null;
   me: boolean;
+  /** Computer-run merchant. */
+  bot: boolean;
 }
 
 export interface Title {

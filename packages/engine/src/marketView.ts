@@ -1,10 +1,6 @@
-import {
-  type Deniers,
-  type WorldContext,
-  type WorldState,
-  bestPrice,
-  dayIndex,
-} from "@comptoirs/engine";
+import { bestPrice } from "./market.js";
+import type { Deniers } from "./money.js";
+import { type WorldContext, type WorldState, dayIndex } from "./state.js";
 
 /** What any player can see of the market: best prices and recent average prices. */
 export class MarketView {

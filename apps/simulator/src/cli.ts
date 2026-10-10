@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { venice1450Settings } from "@comptoirs/engine";
 import { allBlockingPass, checksTable, evaluate } from "./report.js";
-import { DEFAULT_MIX, type SimulationResult, runSimulation } from "./sim.js";
+import { DEFAULT_MIX, type SimulationResult, runSimulation, scaleMix } from "./sim.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const { values } = parseArgs({
@@ -13,6 +13,8 @@ const { values } = parseArgs({
     days: { type: "string", default: "42" },
     step: { type: "string", default: "15" },
     scenario: { type: "string" },
+    /** Small world: this many merchants from the start, no late joiners (beta with bots). */
+    players: { type: "string" },
     out: { type: "string", default: join(here, "..", "out") },
   },
 });
@@ -20,6 +22,8 @@ const { values } = parseArgs({
 const settings = values.scenario
   ? { ...venice1450Settings, ...JSON.parse(readFileSync(resolve(values.scenario), "utf8")) }
   : venice1450Settings;
+const players = values.players ? Number(values.players) : undefined;
+const mix = players ? scaleMix(DEFAULT_MIX, players) : DEFAULT_MIX;
 const seeds = (values.seeds ?? "1").split(",").map(Number);
 const outDir = resolve(values.out ?? "out");
 mkdirSync(outDir, { recursive: true });
@@ -53,8 +57,8 @@ for (const seed of seeds) {
     seed,
     days: Number(values.days),
     stepMinutes: Number(values.step),
-    mix: DEFAULT_MIX,
-    lateJoiners: 10,
+    mix,
+    lateJoiners: players ? 0 : 10,
   });
   const checks = evaluate(result);
   const pass = allBlockingPass(checks);

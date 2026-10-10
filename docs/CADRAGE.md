@@ -52,6 +52,16 @@ Constat du premier test : seuls les briques et les planches intéressaient les a
 
 Chaque métier dépend désormais des deux autres : le boulanger vend son pain à tous et achète bois, briques et planches ; le briquetier achète pain, bois et planches ; le charpentier achète pain et briques. Les tirages (événements, contrats, pirates) viennent d'un secret du monde qui ne quitte pas le serveur.
 
+### Un monde habité dès le premier joueur (bêta)
+
+| Fonction | Règle |
+| --- | --- |
+| **Maisons marchandes (PNJ)** | Des marchands tenus par l'ordinateur complètent le monde jusqu'à 15 marchands actifs (`worlds.settings.bots.population`). Ce sont les bots du simulateur, qui jouent avec les mêmes commandes et les mêmes limites que les joueurs : tout passe par le grand livre et le journal des stocks. Ils jouent 1 à 5 sessions par jour, entre 7 h et 23 h (UTC) |
+| **Transparence** | Un badge « PNJ » les signale dans le classement. Ils n'ont pas d'adresse e-mail réelle et ne peuvent pas ouvrir de session. Ils sont exclus des récompenses hebdomadaires |
+| **Retrait** | Quand un joueur réel devient actif, une maison se retire (au plus une par heure) : ses ordres sont annulés, elle cesse de jouer et quitte le classement. Si le monde se vide, une maison retirée revient avant qu'on en crée une nouvelle |
+| **Classement hebdomadaire** | Gain de patrimoine de la semaine, en ducats. Une semaine = 7 jours depuis l'ouverture du monde (mêmes bornes que les grands chantiers) ; un nouveau venu part de son patrimoine à l'arrivée. Récompenses cosmétiques uniquement |
+| **Notifications** | Dans le jeu (cloche) et en push (PWA) : récolte prête, galère rentrée, ordre exécuté, événement, résultat de la semaine. Chaque type peut être coupé ; pas de push entre 22 h et 8 h (heure de Paris) |
+
 ## Vision et positionnement
 
 Comptoirs est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.

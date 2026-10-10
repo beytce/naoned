@@ -88,6 +88,8 @@ export const worldSettingsSchema = z.object({
   expeditions: z
     .object({ maxActive: positive, destinations: z.record(destinationDef) })
     .default({ maxActive: 1, destinations: {} }),
+  /** Computer-run merchants keep the world at this many active merchants while players are few. */
+  bots: z.object({ population: qty }).default({ population: 0 }),
   /** How many times a player may restart from scratch during a season. */
   maxResetsPerPlayer: qty.default(1),
   maxBuildings: positive,

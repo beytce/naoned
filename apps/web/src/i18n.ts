@@ -242,6 +242,9 @@ export const fr = {
     closesIn: "Clôture dans",
     myRank: "Ton rang",
     you: "Toi",
+    npc: "PNJ",
+    npcHelp:
+      "PNJ : maisons marchandes tenues par l'ordinateur, avec les mêmes règles que vous. Elles animent le monde tant qu'il compte peu de joueurs et se retirent à mesure que de vrais marchands arrivent.",
     anonymous: "Marchand anonyme",
     rankingHelp:
       "Patrimoine = caisse + stocks (au plus bas du prix de référence et du prix moyen sur 7 jours) + bâtiments à leur coût.",

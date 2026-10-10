@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   bigint,
   bigserial,
+  boolean,
   check,
   index,
   integer,
@@ -28,6 +29,8 @@ export const accounts = pgTable(
     crest: jsonb("crest").$type<{ shape: string; color: string; symbol: string }>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+    /** Computer-run merchant: no mailbox, never logs in, shown with an NPC badge. */
+    isBot: boolean("is_bot").notNull().default(false),
   },
   (t) => [
     uniqueIndex("accounts_email_key").on(t.email),
@@ -100,6 +103,10 @@ export const players = pgTable(
     joinedAt: timestamp("joined_at", { withTimezone: true }).notNull(),
     tutorialSteps: jsonb("tutorial_steps").$type<string[]>().notNull().default([]),
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+    /** For a bot: its play style (engine profile). */
+    botProfile: text("bot_profile"),
+    /** A bot steps aside when enough people play: it stops playing and leaves the rankings. */
+    retiredAt: timestamp("retired_at", { withTimezone: true }),
   },
   (t) => [primaryKey({ columns: [t.worldId, t.accountId] })],
 );

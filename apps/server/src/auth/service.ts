@@ -127,9 +127,10 @@ export class AuthService {
     const [account] = await this.deps.db
       .update(accounts)
       .set({ lastLoginAt: now })
-      .where(eq(accounts.email, used.email))
+      // Bots have no mailbox; their addresses can never open a session.
+      .where(and(eq(accounts.email, used.email), eq(accounts.isBot, false)))
       .returning(publicColumns);
-    if (!account) throw new Error("account missing after upsert");
+    if (!account) throw new AuthError("invalid_token");
 
     const sessionToken = newToken();
     await this.deps.db.insert(sessions).values({

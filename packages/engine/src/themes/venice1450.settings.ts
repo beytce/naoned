@@ -24,6 +24,8 @@ export const venice1450Settings: WorldSettingsInput = {
     dolomites: { bread: 20 },
   },
   rations: { resource: "bread", perLevelPerDay: 2, slowdownBps: 5_000 },
+  // Computer-run merchants fill the world up to this many active merchants (beta).
+  bots: { population: 15 },
   contracts: {
     perDay: 3,
     premiumBps: 2_000,

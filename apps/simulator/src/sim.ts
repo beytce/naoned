@@ -1,8 +1,12 @@
 import {
+  Bot,
   type Command,
   DAY_MS,
   type Effects,
   MINUTE_MS,
+  MarketView,
+  PROFILES,
+  type ProfileName,
   Rng,
   type WorldContext,
   type WorldSettingsInput,
@@ -15,8 +19,6 @@ import {
   parseSettings,
   venice1450,
 } from "@comptoirs/engine";
-import { Bot, PROFILES, type ProfileName } from "./bots.js";
-import { MarketView } from "./market.js";
 import {
   type DailyMetrics,
   type DayFlows,
@@ -56,6 +58,22 @@ export const DEFAULT_MIX: Record<ProfileName, number> = {
   speculator: 5,
   casual: 7,
 };
+
+/** The default mix brought down to `total` merchants, keeping its proportions. */
+export function scaleMix(
+  mix: Record<ProfileName, number>,
+  total: number,
+): Record<ProfileName, number> {
+  const sum = Object.values(mix).reduce((a, b) => a + b, 0);
+  const out = { ...mix };
+  let given = 0;
+  for (const name of Object.keys(mix) as ProfileName[]) {
+    out[name] = Math.max(1, Math.round((mix[name] * total) / sum));
+    given += out[name];
+  }
+  out.producer += total - given;
+  return out;
+}
 
 const REGIONS = ["terraferma", "lagoon", "dolomites"];
 const START = Date.UTC(2026, 0, 5);
