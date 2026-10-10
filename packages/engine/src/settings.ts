@@ -27,6 +27,35 @@ const cityDemand = z.object({
   maxDropBps: bps.max(10_000),
 });
 
+const signedBps = z.number().int().min(-10_000);
+
+/** A market event: for a while, cities pay more (or buy more) and some yields change. */
+const eventDef = z.object({
+  code: z.string(),
+  weight: positive,
+  /** Only this city is affected (all cities when absent). */
+  city: z.string().optional(),
+  cityPriceBps: z.record(bps).default({}),
+  cityCapacityBps: z.record(bps).default({}),
+  /** Added to the yield of a resource while the event lasts (may be negative). */
+  yieldBps: z.record(signedBps).default({}),
+});
+
+/** A sea route: cargo leaves, exotic goods come back, unless pirates strike. */
+const destinationDef = z.object({
+  hours: positive,
+  charter: money,
+  escort: money,
+  provisions: z.record(qty).default({}),
+  riskBps: bps.max(10_000),
+  escortRiskBps: bps.max(10_000),
+  /** Exotic resource brought back. */
+  returns: z.string(),
+  /** Value brought back = cargo value at reference prices × (1 + gain). */
+  gainBps: bps,
+  maxCargoValue: money,
+});
+
 export const worldSettingsSchema = z.object({
   seasonDays: positive,
   registrationClosesDay: positive,
@@ -43,6 +72,22 @@ export const worldSettingsSchema = z.object({
   tutorial: z
     .object({ minutes: qty, fastBatchSeconds: positive, fastBatchesPerBuilding: qty })
     .default({ minutes: 0, fastBatchSeconds: 30, fastBatchesPerBuilding: 0 }),
+  /** Goods given to a new player, by region (resource → quantity). */
+  startingStock: z.record(z.record(qty)).default({}),
+  /** Workers eat: each building level consumes rations every day; without, production slows. */
+  rations: z
+    .object({ resource: z.string(), perLevelPerDay: qty, slowdownBps: bps })
+    .default({ resource: "bread", perLevelPerDay: 0, slowdownBps: 0 }),
+  /** Daily orders from the Doge, per player: deliver goods to a city at a premium. */
+  contracts: z
+    .object({ perDay: qty, premiumBps: bps, quantities: z.record(qty) })
+    .default({ perDay: 0, premiumBps: 0, quantities: {} }),
+  events: z
+    .object({ everyDays: positive, durationHours: positive, catalog: z.array(eventDef) })
+    .default({ everyDays: 2, durationHours: 24, catalog: [] }),
+  expeditions: z
+    .object({ maxActive: positive, destinations: z.record(destinationDef) })
+    .default({ maxActive: 1, destinations: {} }),
   /** How many times a player may restart from scratch during a season. */
   maxResetsPerPlayer: qty.default(1),
   maxBuildings: positive,

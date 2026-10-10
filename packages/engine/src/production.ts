@@ -1,4 +1,5 @@
-import { applyBonusToQuantity } from "./money.js";
+import { eventYieldBps } from "./events.js";
+import { applyBonusToQuantity, applyBpsFloor } from "./money.js";
 import { type Building, HOUR_MS, MINUTE_MS, type Player, type WorldContext } from "./state.js";
 import { findRecipe, findRegion, recipesFor } from "./theme.js";
 import { type Tx, addStock, emit, fail, removeStock } from "./tx.js";
@@ -14,12 +15,13 @@ export function yieldBonusBps(
   if (findRegion(ctx.theme, player.region)?.bonusResource === resource) {
     bonus += ctx.settings.regionBonusBps;
   }
+  bonus += eventYieldBps(ctx, at, resource);
   const late = ctx.settings.lateJoiner;
   const lateFrom = ctx.startAt + late.afterDay * 24 * HOUR_MS;
   if (player.joinedAt >= lateFrom && at < player.joinedAt + late.hours * HOUR_MS) {
     bonus += late.bonusBps;
   }
-  return bonus;
+  return Math.max(-10_000, bonus);
 }
 
 /**
@@ -67,7 +69,7 @@ export function startProduction(
   if (tx.now < player.upkeepDefaultUntil) fail("upkeep_default");
 
   collect(tx, building);
-  const normalMs = recipe.durationMinutes * MINUTE_MS;
+  const normalMs = batchDuration(tx.ctx, player, recipe.durationMinutes, tx.now);
   const job = building.job;
   if (
     job &&
@@ -112,16 +114,31 @@ export function startProduction(
   });
 }
 
+/** Duration of a normal batch for this player now: longer while workers lack rations. */
+export function batchDuration(
+  ctx: WorldContext,
+  player: Player,
+  minutes: number,
+  now: number,
+): number {
+  const base = minutes * MINUTE_MS;
+  if (now >= (player.hungryUntil ?? 0)) return base;
+  return Number(applyBpsFloor(BigInt(base), 10_000 + ctx.settings.rations.slowdownBps));
+}
+
 /** Number of batches that still fit in the queue of a building for a recipe. */
 export function freeBatches(
   ctx: WorldContext,
   building: Building,
   recipeCode: string,
   now: number,
+  player?: Player,
 ) {
   const recipe = findRecipe(ctx.theme, recipeCode);
   if (!recipe) return 0;
-  const batchMs = recipe.durationMinutes * MINUTE_MS;
+  const batchMs = player
+    ? batchDuration(ctx, player, recipe.durationMinutes, now)
+    : recipe.durationMinutes * MINUTE_MS;
   const job = building.job;
   const sameQueue =
     job && job.recipe === recipeCode && job.level === building.level && job.batchMs === batchMs;

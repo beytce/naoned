@@ -1,6 +1,9 @@
 export * from "./buildings.js";
 export * from "./cities.js";
 export * from "./commands.js";
+export { type Contract, contractsFor } from "./contracts.js";
+export { draw } from "./draw.js";
+export * from "./events.js";
 export * from "./effects.js";
 export * from "./invariants.js";
 export { bestPrice, bookSide, openOrderCount } from "./market.js";
@@ -8,7 +11,7 @@ export type { PlaceOrderInput } from "./market.js";
 export * from "./marketMaker.js";
 export * from "./money.js";
 export * from "./rng.js";
-export { defaultRecipe, freeBatches, yieldBonusBps } from "./production.js";
+export { batchDuration, defaultRecipe, freeBatches, yieldBonusBps } from "./production.js";
 export { openProjects } from "./projects.js";
 export * from "./settings.js";
 export * from "./state.js";

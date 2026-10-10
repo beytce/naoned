@@ -11,7 +11,7 @@ export interface ResourceDef {
   code: ResourceCode;
   name: string;
   chain: string;
-  tier: "raw" | "intermediate" | "finished";
+  tier: "raw" | "intermediate" | "finished" | "luxury";
 }
 
 export interface RegionDef {
@@ -39,12 +39,19 @@ export interface BuildingDef {
   name: string;
 }
 
+export interface PortDef {
+  code: string;
+  name: string;
+}
+
 export interface Theme {
   code: string;
   name: string;
   resources: ResourceDef[];
   regions: RegionDef[];
   cities: CityDef[];
+  /** Overseas ports reached by galleys. */
+  ports?: PortDef[];
   buildings: BuildingDef[];
   recipes: RecipeDef[];
 }

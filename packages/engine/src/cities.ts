@@ -1,4 +1,5 @@
-import type { Deniers } from "./money.js";
+import { eventCityBps } from "./events.js";
+import { type Deniers, applyBpsFloor } from "./money.js";
 import {
   type CityDemandState,
   DAY_MS,
@@ -23,7 +24,16 @@ function capacity(
   const demand = ctx.settings.cities[city]?.[resource];
   if (!demand) return undefined;
   const players = Math.max(1, activePlayerCount(ctx, state, now));
-  return { demand, capacity: demand.dailyCapacityPerPlayer * players };
+  const capacityBps = eventCityBps(ctx, now, city, resource, "capacity");
+  const priceBps = eventCityBps(ctx, now, city, resource, "price");
+  return {
+    demand,
+    capacity: Math.max(
+      1,
+      Math.floor((demand.dailyCapacityPerPlayer * players * capacityBps) / 10_000),
+    ),
+    basePrice: applyBpsFloor(demand.basePrice, priceBps),
+  };
 }
 
 /** Pressure after linear regeneration: the daily capacity is absorbed over 24 h. */
@@ -55,7 +65,7 @@ export function quoteCitySale(
   const start = Math.floor(decayedPressureMilli(cityState, c.capacity, now) / 1000);
   let total = 0n;
   for (let i = 0; i < quantity; i++) {
-    total += unitPrice(c.demand.basePrice, c.demand.maxDropBps, c.capacity, start + i);
+    total += unitPrice(c.basePrice, c.demand.maxDropBps, c.capacity, start + i);
   }
   return total;
 }

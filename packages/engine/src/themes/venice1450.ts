@@ -11,6 +11,12 @@ export const venice1450: Theme = {
     { code: "bricks", name: "Briques", chain: "construction", tier: "finished" },
     { code: "wood", name: "Bois", chain: "carpentry", tier: "raw" },
     { code: "planks", name: "Planches", chain: "carpentry", tier: "finished" },
+    { code: "spices", name: "Épices", chain: "orient", tier: "luxury" },
+    { code: "silk", name: "Soie", chain: "orient", tier: "luxury" },
+  ],
+  ports: [
+    { code: "constantinople", name: "Constantinople" },
+    { code: "alexandria", name: "Alexandrie" },
   ],
   regions: [
     { code: "terraferma", name: "Terraferma", bonusResource: "wheat" },
@@ -51,7 +57,7 @@ export const venice1450: Theme = {
       code: "cut_wood",
       building: "lumber_camp",
       inputs: {},
-      outputs: { wood: 8 },
+      outputs: { wood: 11 },
       durationMinutes: 120,
     },
     {
@@ -64,14 +70,14 @@ export const venice1450: Theme = {
     {
       code: "bake_bread",
       building: "bakery",
-      inputs: { flour: 8 },
+      inputs: { flour: 8, wood: 2 },
       outputs: { bread: 10 },
       durationMinutes: 120,
     },
     {
       code: "fire_bricks",
       building: "brickworks",
-      inputs: { clay: 10 },
+      inputs: { clay: 10, wood: 2 },
       outputs: { bricks: 6 },
       durationMinutes: 120,
     },

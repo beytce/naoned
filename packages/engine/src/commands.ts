@@ -1,7 +1,9 @@
 import { type Draft, enableMapSet, produce } from "immer";
 import { build, grantBuilding, upgrade } from "./buildings.js";
 import { sellToCity } from "./cities.js";
+import { fulfillContract } from "./contracts.js";
 import { type Effects, emptyEffects } from "./effects.js";
+import { collectExpedition, launchExpedition } from "./expeditions.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { collect, startProduction } from "./production.js";
 import { deliverToProject } from "./projects.js";
@@ -22,6 +24,7 @@ import {
   EngineError,
   type EngineErrorCode,
   type Tx,
+  addStock,
   emit,
   fail,
   removeStock,
@@ -53,6 +56,15 @@ export type Command =
       quantity: number;
     }
   | { type: "resetPlayer"; playerId: PlayerId }
+  | { type: "fulfillContract"; playerId: PlayerId; contractId: string }
+  | {
+      type: "launchExpedition";
+      playerId: PlayerId;
+      destination: string;
+      cargo: Record<string, number>;
+      escort: boolean;
+    }
+  | { type: "collectExpedition"; playerId: PlayerId; expeditionId: string }
   | { type: "tick" };
 
 export type DecideResult =
@@ -92,6 +104,9 @@ function join(tx: Tx, playerId: PlayerId, region: string): void {
   for (const type of ctx.settings.startingBuildings[region] ?? []) {
     const building = grantBuilding(tx, playerId, type);
     building.fastBatchesLeft = ctx.settings.tutorial.fastBatchesPerBuilding;
+  }
+  for (const [resource, qty] of Object.entries(ctx.settings.startingStock[region] ?? {})) {
+    addStock(tx, playerId, resource, qty, "starting_kit");
   }
   emit(tx, "join", playerId, { region });
 }
@@ -173,6 +188,15 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "sellToCity":
       sellToCity(tx, cmd.playerId, cmd.city, cmd.resource, cmd.quantity);
+      break;
+    case "fulfillContract":
+      fulfillContract(tx, cmd.playerId, cmd.contractId);
+      break;
+    case "launchExpedition":
+      launchExpedition(tx, cmd.playerId, cmd.destination, cmd.cargo, cmd.escort);
+      break;
+    case "collectExpedition":
+      collectExpedition(tx, cmd.playerId, cmd.expeditionId);
       break;
     case "deliverToProject":
       deliverToProject(tx, cmd.playerId, cmd.projectId, cmd.resource, cmd.quantity);

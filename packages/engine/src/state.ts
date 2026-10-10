@@ -21,6 +21,11 @@ export interface WorldContext {
   settings: WorldSettings;
   /** Start of the season, in ms since epoch (UTC). */
   startAt: number;
+  /**
+   * Secret of the world for its draws (events, contracts, pirates). Never sent to players, so
+   * outcomes cannot be computed in advance. Defaults to the start time.
+   */
+  seed?: string;
 }
 
 export interface Player {
@@ -30,6 +35,8 @@ export interface Player {
   lastActionAt: number;
   /** While now < upkeepDefaultUntil, the player cannot start production. */
   upkeepDefaultUntil: number;
+  /** While now < hungryUntil, workers lack rations and new batches take longer. */
+  hungryUntil?: number;
 }
 
 export interface ProductionJob {
@@ -96,6 +103,21 @@ export interface Project {
   unitPrice: Record<ResourceCode, Deniers>;
 }
 
+export interface Expedition {
+  id: string;
+  playerId: PlayerId;
+  destination: string;
+  departAt: number;
+  returnAt: number;
+  cargo: Record<ResourceCode, number>;
+  escort: boolean;
+  /** Cargo at reference prices, fixed at departure. */
+  cargoValue: Deniers;
+  outcome: "pending" | "returned" | "lost";
+  /** Exotic goods brought back (0 when lost or pending). */
+  brought: number;
+}
+
 export interface DailyPriceStat {
   volume: number;
   value: Deniers;
@@ -124,6 +146,9 @@ export interface WorldState {
   priceStats: Record<ResourceCode, Record<number, DailyPriceStat>>;
   /** Last day index for which upkeep was charged. */
   lastUpkeepDay: number;
+  /** Contracts of the Doge fulfilled today, per player. */
+  contractsDone?: Record<PlayerId, { day: number; ids: string[] }>;
+  expeditions?: Record<string, Expedition>;
   /** Resets used per player this season (absent in states saved before resets existed). */
   resets?: Record<PlayerId, number>;
 }
@@ -166,6 +191,8 @@ export function createWorldState(ctx: WorldContext): WorldState {
     priceStats: {},
     lastUpkeepDay: 0,
     resets: {},
+    contractsDone: {},
+    expeditions: {},
   };
 }
 

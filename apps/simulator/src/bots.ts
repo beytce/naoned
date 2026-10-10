@@ -6,7 +6,9 @@ import {
   type WorldContext,
   type WorldState,
   cashAccount,
+  contractsFor,
   costForLevel,
+  dayIndex,
   findRegion,
   freeBatches,
   openOrderCount,
@@ -83,7 +85,8 @@ const CRAFT_BUILDING: Record<string, string> = {
   wood: "sawmill",
 };
 const MAX_PER_TYPE = 3;
-const CITY_GOODS = ["bread", "bricks", "planks"];
+const CITY_GOODS = ["bread", "bricks", "planks", "spices", "silk"];
+const VOYAGERS = new Set<ProfileName>(["producer", "builder", "speculator"]);
 const MATERIALS = ["bricks", "planks"];
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -137,11 +140,15 @@ export class Bot {
     for (const b of this.buildings(s)) {
       if (b.job) s.act({ type: "collect", playerId: this.id, buildingId: b.id });
     }
+    this.collectGalleys(s);
+    this.feed(s);
+    this.doContracts(s);
     this.deliverProjects(s);
     this.sellToCities(s);
     this.invest(s);
     this.runProduction(s);
     if (this.profile.speculates) this.speculate(s);
+    this.voyage(s);
     this.sellSurplus(s);
   }
 
@@ -221,7 +228,7 @@ export class Bot {
     for (const p of openProjects(s.state().projects, s.now)) {
       for (const res of MATERIALS) {
         const room = (p.needs[res] ?? 0) - (p.delivered[res] ?? 0);
-        const have = this.available(s, res) - this.materialsReserve(s, res);
+        const have = this.available(s, res) - this.reserve(s, res);
         const price = p.unitPrice[res] ?? 0n;
         const bid = s.market.bestBid(res, this.id) ?? 0n;
         if (room > 0 && have > 0 && price >= bid) {
@@ -242,7 +249,7 @@ export class Bot {
     for (const resource of CITY_GOODS) {
       const floor = scale(s.market.reference(resource), 0.7);
       for (let guard = 0; guard < 50; guard++) {
-        const qty = Math.min(20, this.available(s, resource) - this.materialsReserve(s, resource));
+        const qty = Math.min(20, this.available(s, resource) - this.reserve(s, resource));
         if (qty <= 0) break;
         let best: { city: string; total: Deniers } | undefined;
         for (const city of Object.keys(s.ctx.settings.cities)) {
@@ -261,6 +268,92 @@ export class Bot {
         if (!sold) break;
       }
     }
+  }
+
+  /** Bread eaten per day by this bot's workers. */
+  private rationsPerDay(s: Session): number {
+    const levels = this.buildings(s)
+      .filter((b) => b.type !== "palazzo")
+      .reduce((n, b) => n + b.level, 0);
+    return levels * s.ctx.settings.rations.perLevelPerDay;
+  }
+
+  /** Stock kept back: next construction, three days of rations. */
+  private reserve(s: Session, resource: string): number {
+    const food = resource === s.ctx.settings.rations.resource ? this.rationsPerDay(s) * 3 : 0;
+    return this.materialsReserve(s, resource) + food;
+  }
+
+  /** Workers must eat: keep two to three days of bread, buying it if needed. */
+  private feed(s: Session): void {
+    const food = s.ctx.settings.rations.resource;
+    const target = this.rationsPerDay(s) * 3;
+    const missing = target - this.available(s, food);
+    if (missing > 0) this.buy(s, food, missing, 1.3);
+  }
+
+  /** The Doge's orders: fulfil those the bot can cover from its spare stock. */
+  private doContracts(s: Session): void {
+    const day = dayIndex(s.ctx, s.now);
+    const done = s.state().contractsDone?.[this.id];
+    const doneIds = done && done.day === day ? done.ids : [];
+    for (const c of contractsFor(s.ctx, this.id, day)) {
+      if (doneIds.includes(c.id)) continue;
+      if (this.available(s, c.resource) - this.reserve(s, c.resource) >= c.quantity) {
+        s.act({ type: "fulfillContract", playerId: this.id, contractId: c.id });
+      }
+    }
+  }
+
+  private collectGalleys(s: Session): void {
+    for (const e of Object.values(s.state().expeditions ?? {})) {
+      if (e.playerId === this.id && e.outcome === "pending" && e.returnAt <= s.now) {
+        s.act({ type: "collectExpedition", playerId: this.id, expeditionId: e.id });
+      }
+    }
+  }
+
+  /** Ships spare goods east when there is enough to make a voyage worth it. */
+  private voyage(s: Session): void {
+    if (!VOYAGERS.has(this.profile.name)) return;
+    const { expeditions, referencePrices } = s.ctx.settings;
+    const busy = Object.values(s.state().expeditions ?? {}).some(
+      (e) => e.playerId === this.id && e.outcome === "pending",
+    );
+    if (busy || this.cash(s) < 60_000n) return;
+    const needs = this.inputNeeds(s);
+    const spare: [string, number, bigint][] = [];
+    for (const r of s.ctx.theme.resources) {
+      if (r.tier === "luxury") continue;
+      const qty = this.available(s, r.code) - (needs.get(r.code) ?? 0) - this.reserve(s, r.code);
+      if (qty > 0) spare.push([r.code, qty, referencePrices[r.code] ?? 0n]);
+    }
+    const total = spare.reduce((v, [, q, p]) => v + BigInt(q) * p, 0n);
+    if (total < 30_000n) return;
+    const destination = total >= 100_000n ? "alexandria" : "constantinople";
+    const dest = expeditions.destinations[destination];
+    if (!dest) return;
+    const food = s.ctx.settings.rations.resource;
+    if (this.available(s, food) - this.reserve(s, food) < (dest.provisions[food] ?? 0)) return;
+    const cargo: Record<string, number> = {};
+    let value = 0n;
+    for (const [code, qty, price] of spare) {
+      if (code === food) continue;
+      const room = price > 0n ? Number((dest.maxCargoValue - value) / price) : 0;
+      const q = Math.min(qty, room);
+      if (q > 0) {
+        cargo[code] = q;
+        value += BigInt(q) * price;
+      }
+    }
+    if (value < 30_000n) return;
+    s.act({
+      type: "launchExpedition",
+      playerId: this.id,
+      destination,
+      cargo,
+      escort: value >= 80_000n,
+    });
   }
 
   /** Stock kept for the next construction. */
@@ -404,7 +497,8 @@ export class Bot {
   private sellSurplus(s: Session): void {
     const needs = this.inputNeeds(s);
     for (const res of s.ctx.theme.resources.map((r) => r.code)) {
-      const keep = (needs.get(res) ?? 0) + this.materialsReserve(s, res);
+      if (s.ctx.theme.resources.find((r) => r.code === res)?.tier === "luxury") continue;
+      const keep = (needs.get(res) ?? 0) + this.reserve(s, res);
       const surplus = this.available(s, res) - keep;
       if (surplus <= 0) continue;
       if (res === "bread" && this.available(s, res) < 20) continue;

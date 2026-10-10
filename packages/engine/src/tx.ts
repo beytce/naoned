@@ -39,7 +39,16 @@ export type EngineErrorCode =
   | "not_bought_here"
   | "project_closed"
   | "project_full"
-  | "reset_limit";
+  | "reset_limit"
+  | "unknown_contract"
+  | "contract_expired"
+  | "contract_done"
+  | "unknown_destination"
+  | "too_many_galleys"
+  | "invalid_cargo"
+  | "cargo_too_valuable"
+  | "unknown_expedition"
+  | "expedition_not_back";
 
 export class EngineError extends Error {
   constructor(
