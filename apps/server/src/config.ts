@@ -7,8 +7,16 @@ const schema = z
     HOST: z.string().default("0.0.0.0"),
     /** postgres://… in production; pglite:<dir> (or pglite:memory) for a local embedded database. */
     DATABASE_URL: z.string().default("pglite:.data/dev"),
-    /** Public URL of the app, used in magic link e-mails. */
-    APP_URL: z.string().url().default("http://localhost:5173"),
+    /**
+     * Public URL of the app, used in magic link e-mails. Railway shows domains without a scheme,
+     * so `https://` is added when missing, and spaces and trailing slashes are dropped.
+     */
+    APP_URL: z
+      .string()
+      .default("http://localhost:5173")
+      .transform((v) => v.trim().replace(/\/+$/, ""))
+      .transform((v) => (/^https?:\/\//.test(v) ? v : `https://${v}`))
+      .pipe(z.string().url()),
     /** Directory of the built web app, served in production. */
     WEB_DIST: z.string().optional(),
     RESEND_API_KEY: z.string().optional(),
