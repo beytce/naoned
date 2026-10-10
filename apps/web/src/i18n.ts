@@ -19,9 +19,95 @@ export const fr = {
   pseudoHelp: "3 à 20 caractères : lettres, chiffres, _ ou -. Il sera visible des autres joueurs.",
   pseudoLabel: "Nom de marchand",
   confirm: "Valider",
-  welcome: (pseudo: string) => `Bienvenue, ${pseudo}`,
-  comingSoon: "Votre comptoir ouvre bientôt. La première saison se prépare.",
   logout: "Se déconnecter",
+  game: {
+    tabs: {
+      comptoir: "Comptoir",
+      marche: "Marché",
+      chantiers: "Chantiers",
+      classement: "Classement",
+    },
+    dayOf: (day: number, total: number) => `Jour ${day} / ${total}`,
+    upkeep: (amount: string) => `entretien ${amount}/jour`,
+    upkeepShort: (amount: string) => `entretien ${amount}/j`,
+    upkeepDefault:
+      "Entretien impayé : vos bâtiments ne peuvent pas lancer de production pendant 24 h. Vendez du stock pour renflouer la caisse.",
+    chooseRegion: "Où installer votre comptoir ?",
+    chooseRegionHelp:
+      "Chaque région maîtrise une chaîne de production. Vous aurez besoin des matériaux des autres régions pour grandir.",
+    regionBonus: (pct: number, resource: string) =>
+      `+${pct} % de rendement sur : ${resource.toLowerCase()}`,
+    startingKit: (list: string) => `Bâtiments de départ : ${list}`,
+    settleIn: (region: string) => `S'installer en ${region}`,
+    level: (n: number) => `niveau ${n}`,
+    idle: "À l'arrêt",
+    allDone: "Production terminée",
+    batchProgress: (current: number, total: number, left: string) =>
+      `Lot ${current} / ${total} · prêt dans ${left}`,
+    harvest: (n: number) => (n > 1 ? `Récolter ${n} lots` : "Récolter"),
+    harvestAll: (n: number) => `Tout récolter (${n} lot${n > 1 ? "s" : ""})`,
+    produce: "Produire",
+    missingInputs: "Pas assez de matières pour un lot : achetez-en au marché.",
+    upgradeTo: (level: number) => `Niveau ${level}`,
+    upgrade: "Améliorer",
+    buildTitle: "Construire",
+    build: "Construire",
+    maxBuildings: (n: number) => `Vous avez atteint le maximum de ${n} bâtiments.`,
+    palazzoHelp: "Prestige : ne produit rien, compte à son coût dans le classement.",
+    inStock: (n: number) => `en stock : ${n}`,
+    buyAt: "achat",
+    sellAt: "vente",
+    buy: "Acheter",
+    sell: "Vendre",
+    cityPays: (city: string, price: string) =>
+      `${city} paie ${price} l'unité (baisse avec la quantité)`,
+    sellToCity: "Vendre à la ville",
+    marketHelp: (slippage: number, tax: number) =>
+      `Achat et vente immédiats au meilleur prix du carnet (écart maximal ${slippage} %). Taxe de ${tax} % payée par le vendeur entre joueurs.`,
+    perUnit: "l'unité",
+    deliver: "Livrer",
+    noProject: "Aucun grand chantier en cours. Le prochain ouvre lundi.",
+    projectsHelp:
+      "Les villes paient les matériaux livrés à leurs chantiers un peu au-dessus du prix de référence.",
+    projectTitle: (city: string) => `Chantier de ${city}`,
+    endsIn: (left: string) => `fin dans ${left}`,
+    myNetWorth: (total: string) => `Mon patrimoine : ${total}`,
+    netWorthParts: (cash: string, stock: string, buildings: string) =>
+      `Caisse ${cash} · stocks ${stock} · bâtiments ${buildings}`,
+    anonymous: "Marchand anonyme",
+    rankingHelp:
+      "Patrimoine = caisse + stocks (au plus bas du prix de référence et du prix moyen sur 7 jours) + bâtiments à leur coût.",
+    advisor: {
+      title: (n: number, total: number) => `Conseiller · étape ${n} / ${total}`,
+      produce: (building: string) =>
+        `Lancez votre ${building.toLowerCase()} : choisissez 1 lot et touchez « Produire ». Le premier lot est prêt en 30 secondes.`,
+      harvest: "Votre lot est prêt : touchez « Récolter ».",
+      transform: (building: string) =>
+        `Transformez votre récolte : lancez un lot dans votre ${building.toLowerCase()}.`,
+      sellCity: "Vendez votre production à une ville : onglet Marché, « Vendre à la ville ».",
+      marketBuy: (resource: string) =>
+        `Pour grandir, il vous faut des ${resource.toLowerCase()} d'une autre région : achetez-en quelques-unes au Marché.`,
+      invest:
+        "Améliorez un bâtiment ou construisez-en un nouveau. Ensuite, revenez récolter au plus tard toutes les 8 heures.",
+    },
+    errors: {
+      insufficient_funds: "Pas assez de ducats.",
+      insufficient_stock: "Pas assez de stock.",
+      building_busy: "Ce bâtiment produit déjà : attendez la fin de la file.",
+      queue_full: "La file de production est pleine (8 h maximum).",
+      upkeep_default: "Entretien impayé : production bloquée pendant 24 h.",
+      max_buildings: "Nombre maximal de bâtiments atteint.",
+      max_level: "Niveau maximal atteint.",
+      no_liquidity: "Personne ne vend ou n'achète cette ressource pour le moment.",
+      not_bought_here: "Cette ville n'achète pas cette ressource.",
+      project_closed: "Ce chantier est terminé.",
+      project_full: "Ce chantier n'a plus besoin de cette quantité.",
+      registration_closed: "Les inscriptions à cette saison sont closes.",
+      season_over: "La saison est terminée.",
+      invalid_quantity: "Quantité invalide.",
+      not_joined: "Installez d'abord votre comptoir.",
+    } as Record<string, string>,
+  },
   errors: {
     invalid_input: "Vérifiez votre saisie.",
     pseudo_taken: "Ce nom est déjà pris.",

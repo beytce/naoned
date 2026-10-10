@@ -63,7 +63,11 @@ export function requoteMarketMaker(tx: Tx): void {
   const players = Math.max(1, activePlayerCount(ctx, tx.s, tx.now));
   for (const resource of Object.keys(ctx.settings.referencePrices)) {
     const reference = marketMakerReference(ctx, tx.s as WorldState, resource, tx.now);
-    const depth = (ctx.settings.marketMaker.dailyDepthPerPlayer[resource] ?? 0) * players;
+    const mm = ctx.settings.marketMaker;
+    const depth = Math.max(
+      (mm.dailyDepthPerPlayer[resource] ?? 0) * players,
+      mm.minDailyDepth[resource] ?? 0,
+    );
     const { bid, ask } = marketMakerQuotes(ctx, reference, tx.now);
     const bidQty = depth - (tx.s.marketMaker.bought[resource] ?? 0);
     const askQty = depth - (tx.s.marketMaker.sold[resource] ?? 0);

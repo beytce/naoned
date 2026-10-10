@@ -1,5 +1,6 @@
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { type Account, ApiError, api, tokenFromLocation } from "./api.js";
+import { Game } from "./game/Game.js";
 import { fr } from "./i18n.js";
 
 type Screen =
@@ -47,6 +48,8 @@ export function App() {
     setScreen({ name: "login" });
   };
 
+  if (screen.name === "home") return <Game onLogout={logout} />;
+
   return (
     <Shell>
       {screen.name === "loading" && <p className="text-center opacity-70">…</p>}
@@ -66,15 +69,6 @@ export function App() {
       )}
       {screen.name === "pseudo" && (
         <PseudoForm onDone={(account) => setScreen(screenFor(account))} />
-      )}
-      {screen.name === "home" && (
-        <div className="space-y-6 text-center">
-          <h2 className="font-serif text-2xl">{fr.welcome(screen.account.pseudo ?? "")}</h2>
-          <p className="opacity-80">{fr.comingSoon}</p>
-          <button type="button" onClick={logout} className="text-sm underline opacity-70">
-            {fr.logout}
-          </button>
-        </div>
       )}
     </Shell>
   );

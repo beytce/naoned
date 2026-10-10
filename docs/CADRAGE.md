@@ -306,9 +306,9 @@ Le développement avance en 8 jalons ; chacun se termine par un critère vérifi
 
 1. **Moteur minimal et simulateur** (fait, voir `docs/calibration.md`) : `packages/engine` (production, ordres immédiats et à cours limité, PNJ, villes, taxe, entretien) en mémoire, et `apps/simulator` qui fait jouer 50 bots de profils différents pendant 42 jours.
    - Terminé quand : le simulateur produit un CSV journalier des indicateurs de santé, et ils restent dans les cibles sur 42 jours.
-2. **Socle** (code fait, mise en ligne à faire, voir `docs/deploiement.md`) : monorepo, base PostgreSQL, migrations, authentification par lien magique, déploiement en ligne.
+2. **Socle** (fait, en ligne sur Railway) : monorepo, base PostgreSQL, migrations, authentification par lien magique, déploiement en ligne.
    - Terminé quand : on se connecte depuis un téléphone sur l'URL de production.
-3. **Tranche jouable** : production, vente aux villes et ordres immédiats contre le PNJ, avec une interface sommaire mais utilisable sur mobile, et le tutoriel des 10 premières minutes.
+3. **Tranche jouable** (code fait ; reste la semaine de test) : production, vente aux villes et ordres immédiats contre le PNJ, avec une interface sommaire mais utilisable sur mobile, et le tutoriel des 10 premières minutes.
    - Terminé quand : 5 à 10 personnes jouent une semaine et on a recueilli leurs retours.
 4. **Grand livre et journal des stocks en base** : comptes, écritures, invariants, contrôle nocturne.
    - Terminé quand : un test de 10 000 opérations aléatoires vérifie les 6 invariants à chaque étape.

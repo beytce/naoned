@@ -219,9 +219,9 @@ export class GameWorld {
   /** Scheduled job: expirations, upkeep, projects, market maker. Every 60 s in production. */
   startTicking(intervalMs = 60_000, onError: (err: unknown) => void = console.error): void {
     this.stopTicking();
-    this.timer = setInterval(() => {
-      this.execute({ type: "tick" }).catch(onError);
-    }, intervalMs);
+    const tick = () => this.execute({ type: "tick" }).catch(onError);
+    void tick(); // quote the market maker right away after a restart
+    this.timer = setInterval(tick, intervalMs);
   }
 
   stopTicking(): void {

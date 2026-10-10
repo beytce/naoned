@@ -236,6 +236,27 @@ describe("market maker", () => {
     ).toBe(false);
   });
 
+  it("keeps a minimum daily depth in a small world", () => {
+    const w = new World(
+      makeContext({
+        marketMaker: {
+          spreadStartBps: 400,
+          spreadEndBps: 2_000,
+          spreadRampDays: 14,
+          referenceFloorBps: 5_000,
+          dailyDepthPerPlayer: { wheat: 5 },
+          minDailyDepth: { wheat: 40 },
+        },
+      }),
+    );
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    w.do({ type: "tick" });
+    const bid = Object.values(w.state.orders).find(
+      (o) => o.playerId === "market_maker" && o.side === "buy" && o.resource === "wheat",
+    );
+    expect(bid?.remaining).toBe(40);
+  });
+
   it("buys from resting player orders that cross its new quote", () => {
     const w = twoPlayers();
     w.do(sell("seller", 95, 5));

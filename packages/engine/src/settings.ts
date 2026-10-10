@@ -61,6 +61,8 @@ export const worldSettingsSchema = z.object({
     referenceFloorBps: bps.max(10_000),
     /** Daily quantity per resource and per active player, in each direction. */
     dailyDepthPerPlayer: z.record(qty),
+    /** Floor of the daily quantity, so that a small world (beta) still has a market. */
+    minDailyDepth: z.record(qty).default({}),
   }),
   cities: z.record(z.record(cityDemand)),
   projects: z.object({

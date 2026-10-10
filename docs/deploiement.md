@@ -27,6 +27,14 @@ Le serveur refuse de démarrer en production sans `RESEND_API_KEY` ou avec une b
 
 Coût indicatif : l'offre Hobby de Railway (environ 5 $ par mois, usage inclus) suffit au jalon 2 ; Resend est gratuit jusqu'à 3 000 e-mails par mois. Ces tarifs évoluent : vérifier sur les sites.
 
+## Monde de jeu
+
+Au premier démarrage, le serveur crée le monde « Venise 1450 — bêta », qui commence à cet instant et dure 42 jours. Les mises à jour suivantes reprennent le même monde : son état est enregistré en base après chaque action, avec le grand livre, les mouvements de stock et les échanges.
+
+- Un seul exemplaire du service doit tourner (pas de mise à l'échelle horizontale dans Railway) : le monde est tenu en mémoire et les actions sont traitées une par une. Un second exemplaire serait détecté et refusé à la première écriture.
+- Le marché du PNJ, l'entretien et les chantiers avancent chaque minute ; la production est calculée à la lecture.
+- Les six invariants du grand livre sont vérifiés au démarrage puis toutes les heures ; un écart apparaît dans les journaux sous « invariant violations ».
+
 ## En local
 
 ```sh

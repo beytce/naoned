@@ -70,6 +70,15 @@ export const venice1450Settings: WorldSettingsInput = {
       wood: 2,
       planks: 2,
     },
+    minDailyDepth: {
+      wheat: 40,
+      flour: 40,
+      bread: 40,
+      clay: 40,
+      bricks: 40,
+      wood: 40,
+      planks: 40,
+    },
   },
   cities: {
     venezia: {
