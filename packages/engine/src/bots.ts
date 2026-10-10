@@ -96,7 +96,7 @@ const CRAFT_BUILDING: Record<string, string> = {
   wood: "sawmill",
 };
 const MAX_PER_TYPE = 3;
-const CITY_GOODS = ["bread", "bricks", "planks", "spices", "silk"];
+const CITY_GOODS = ["bread", "bricks", "planks", "spices", "silk", "salt", "wine", "furs", "cloth"];
 const VOYAGERS = new Set<ProfileName>(["producer", "builder", "speculator"]);
 const MATERIALS = ["bricks", "planks"];
 const HOUR = 3_600_000;

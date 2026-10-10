@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeEvent, contractsFor, dayIndex, quoteCitySale } from "../src/index.js";
+import { activeEvent, contractsFor, dayIndex, portPrices, quoteCitySale } from "../src/index.js";
 import { testSettings } from "./fixture.js";
 import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
 
@@ -223,5 +223,71 @@ describe("galleys", () => {
       escort: false,
     });
     expect(exotic.ok).toBe(false);
+  });
+});
+
+describe("ports", () => {
+  const port = (wants: Record<string, number>, weeklySwingBps = 0) =>
+    living({
+      expeditions: {
+        maxActive: 1,
+        weeklySwingBps,
+        destinations: { alexandria: { ...alexandria, riskBps: 0, escortRiskBps: 0, wants } },
+      },
+    });
+
+  it("pay more for the goods they want", () => {
+    const w = new World(port({ wheat: 5_000 }));
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    w.give("a", "wheat", 500);
+    w.do({
+      type: "launchExpedition",
+      playerId: "a",
+      destination: "alexandria",
+      cargo: { wheat: 500 },
+      escort: false,
+    });
+    const id = Object.keys(w.state.expeditions ?? {})[0] ?? "";
+    w.advance(24 * HOUR);
+    w.do({ type: "collectExpedition", playerId: "a", expeditionId: id });
+    // 500 × 100 × 1.5 = 75 000, × 1.6 = 120 000, / 1 500 per spice
+    expect(w.stock("a", "spices").available).toBe(80);
+  });
+
+  it("change their prices every week, within the swing, the same for everyone", () => {
+    const ctx = port({ wood: 4_000 }, 3_000);
+    const week0 = portPrices(ctx, "alexandria", ctx.startAt + HOUR);
+    expect(portPrices(ctx, "alexandria", ctx.startAt + 6 * DAY)).toEqual(week0);
+    const weeks = [0, 1, 2, 3, 4].map((k) =>
+      portPrices(ctx, "alexandria", ctx.startAt + k * 7 * DAY),
+    );
+    expect(new Set(weeks.map((p) => p.wheat)).size).toBeGreaterThan(1);
+    for (const p of weeks) {
+      expect(p.wheat).toBeGreaterThanOrEqual(7_000);
+      expect(p.wheat).toBeLessThanOrEqual(13_000);
+      expect(p.wood).toBeGreaterThanOrEqual(11_000);
+      expect(p.wood).toBeLessThanOrEqual(17_000);
+    }
+    // Exotic goods are never bought by a port.
+    expect(week0.spices).toBeUndefined();
+  });
+});
+
+describe("luxury contracts", () => {
+  const ctx = (chanceBps: number) =>
+    living({
+      contracts: {
+        perDay: 3,
+        premiumBps: 2_000,
+        quantities: { wheat: 20 },
+        luxury: { chanceBps, quantities: { salt: 5, wine: 4 } },
+      },
+    });
+
+  it("sometimes ask for goods from overseas", () => {
+    const all = contractsFor(ctx(10_000), "a", 1);
+    expect(all.every((c) => c.resource === "salt" || c.resource === "wine")).toBe(true);
+    expect(all.every((c) => c.quantity === 5 || c.quantity === 4)).toBe(true);
+    expect(contractsFor(ctx(0), "a", 1).every((c) => c.resource === "wheat")).toBe(true);
   });
 });

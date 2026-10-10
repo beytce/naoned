@@ -1,6 +1,15 @@
 import { draw } from "./draw.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
-import { type Expedition, HOUR_MS, type PlayerId, SINK_ACCOUNT, cashAccount } from "./state.js";
+import {
+  DAY_MS,
+  type Expedition,
+  HOUR_MS,
+  type PlayerId,
+  SINK_ACCOUNT,
+  type WorldContext,
+  cashAccount,
+} from "./state.js";
+import type { ResourceCode } from "./theme.js";
 import { type Tx, addStock, emit, fail, nextId, removeStock, transfer } from "./tx.js";
 
 /** Resources a galley can carry: priced, and not exotic goods brought back from the East. */
@@ -10,6 +19,49 @@ function shippable(tx: Tx, resource: string): boolean {
   );
   const def = tx.ctx.theme.resources.find((r) => r.code === resource);
   return !exotic && def?.tier !== "luxury" && resource in tx.ctx.settings.referencePrices;
+}
+
+/**
+ * What a port pays for each of our goods this week, in bps of the reference price: its standing
+ * wants plus a weekly swing drawn from the world's secret seed. Exotic goods are not bought.
+ */
+export function portPrices(
+  ctx: WorldContext,
+  port: string,
+  at: number,
+): Record<ResourceCode, number> {
+  const { destinations, weeklySwingBps } = ctx.settings.expeditions;
+  const dest = destinations[port];
+  if (!dest) return {};
+  const week = Math.floor((at - ctx.startAt) / (7 * DAY_MS));
+  const exotic = new Set(Object.values(destinations).map((d) => d.returns));
+  const out: Record<ResourceCode, number> = {};
+  for (const r of ctx.theme.resources) {
+    if (exotic.has(r.code) || r.tier === "luxury" || !(r.code in ctx.settings.referencePrices))
+      continue;
+    const swing =
+      weeklySwingBps > 0
+        ? (draw(ctx, `port:${port}:${week}:${r.code}`) % (2 * weeklySwingBps + 1)) - weeklySwingBps
+        : 0;
+    out[r.code] = Math.max(1_000, 10_000 + (dest.wants[r.code] ?? 0) + swing);
+  }
+  return out;
+}
+
+/** Cargo valued at a port's prices this week. */
+export function cargoValueAt(
+  ctx: WorldContext,
+  port: string,
+  cargo: Record<ResourceCode, number>,
+  at: number,
+): Deniers {
+  const prices = portPrices(ctx, port, at);
+  let value = 0n;
+  for (const [resource, qty] of Object.entries(cargo)) {
+    const ref = ctx.settings.referencePrices[resource] ?? 0n;
+    value += applyBpsFloor(ref * BigInt(qty), prices[resource] ?? 10_000);
+  }
+  return value;
 }
 
 export function launchExpedition(
@@ -45,15 +97,16 @@ export function launchExpedition(
   const fee = dest.charter + (escort ? dest.escort : 0n);
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, fee, "expedition_charter", id);
 
+  const loaded = Object.fromEntries(entries);
   const expedition: Expedition = {
     id,
     playerId,
     destination,
     departAt: tx.now,
     returnAt: tx.now + dest.hours * HOUR_MS,
-    cargo: Object.fromEntries(entries),
+    cargo: loaded,
     escort,
-    cargoValue: value,
+    cargoValue: cargoValueAt(tx.ctx, destination, loaded, tx.now),
     outcome: "pending",
     brought: 0,
   };

@@ -25,20 +25,26 @@ export interface Contract {
  * same on every request and cannot be predicted from outside.
  */
 export function contractsFor(ctx: WorldContext, playerId: PlayerId, day: number): Contract[] {
-  const { perDay, premiumBps, quantities } = ctx.settings.contracts;
+  const { perDay, premiumBps, quantities, luxury } = ctx.settings.contracts;
   const resources = Object.keys(quantities);
+  const exotic = Object.keys(luxury.quantities);
   const cities = ctx.theme.cities;
   if (perDay === 0 || resources.length === 0 || cities.length === 0) return [];
   const out: Contract[] = [];
   for (let i = 0; i < perDay; i++) {
     const h = draw(ctx, `contract:${playerId}:${day}:${i}`);
-    const resource = resources[h % resources.length] ?? "";
+    const overseas =
+      exotic.length > 0 &&
+      draw(ctx, `contract-luxury:${playerId}:${day}:${i}`) % 10_000 < luxury.chanceBps;
+    const resource = overseas
+      ? (exotic[h % exotic.length] ?? "")
+      : (resources[h % resources.length] ?? "");
     const city = cities[(h >>> 8) % cities.length]?.code ?? "";
     out.push({
       id: `${day}:${i}`,
       day,
       resource,
-      quantity: quantities[resource] ?? 0,
+      quantity: (overseas ? luxury.quantities[resource] : quantities[resource]) ?? 0,
       city,
       unitPrice: applyBpsFloor(ctx.settings.referencePrices[resource] ?? 0n, 10_000 + premiumBps),
       expiresAt: ctx.startAt + (day + 1) * DAY_MS,

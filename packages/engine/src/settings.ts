@@ -54,6 +54,8 @@ const destinationDef = z.object({
   /** Value brought back = cargo value at reference prices × (1 + gain). */
   gainBps: bps,
   maxCargoValue: money,
+  /** What the port pays for our goods, above (or below) the reference price. */
+  wants: z.record(signedBps).default({}),
 });
 
 export const worldSettingsSchema = z.object({
@@ -80,14 +82,27 @@ export const worldSettingsSchema = z.object({
     .default({ resource: "bread", perLevelPerDay: 0, slowdownBps: 0 }),
   /** Daily orders from the Doge, per player: deliver goods to a city at a premium. */
   contracts: z
-    .object({ perDay: qty, premiumBps: bps, quantities: z.record(qty) })
+    .object({
+      perDay: qty,
+      premiumBps: bps,
+      quantities: z.record(qty),
+      /** Some orders ask for goods from overseas instead (never needed for building). */
+      luxury: z
+        .object({ chanceBps: bps.max(10_000), quantities: z.record(qty) })
+        .default({ chanceBps: 0, quantities: {} }),
+    })
     .default({ perDay: 0, premiumBps: 0, quantities: {} }),
   events: z
     .object({ everyDays: positive, durationHours: positive, catalog: z.array(eventDef) })
     .default({ everyDays: 2, durationHours: 24, catalog: [] }),
   expeditions: z
-    .object({ maxActive: positive, destinations: z.record(destinationDef) })
-    .default({ maxActive: 1, destinations: {} }),
+    .object({
+      maxActive: positive,
+      /** Port prices move each week by up to this much, drawn from the world's secret seed. */
+      weeklySwingBps: bps.default(0),
+      destinations: z.record(destinationDef),
+    })
+    .default({ maxActive: 1, weeklySwingBps: 0, destinations: {} }),
   /** Computer-run merchants keep the world at this many active merchants while players are few. */
   bots: z.object({ population: qty }).default({ population: 0 }),
   /** How many times a player may restart from scratch during a season. */

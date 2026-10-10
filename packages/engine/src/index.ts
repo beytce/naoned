@@ -4,6 +4,7 @@ export * from "./commands.js";
 export { type Contract, contractsFor } from "./contracts.js";
 export { draw } from "./draw.js";
 export * from "./events.js";
+export { cargoValueAt, portPrices } from "./expeditions.js";
 export * from "./effects.js";
 export * from "./invariants.js";
 export { bestPrice, bookSide, openOrderCount } from "./market.js";

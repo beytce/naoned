@@ -111,7 +111,7 @@ export interface Expedition {
   returnAt: number;
   cargo: Record<ResourceCode, number>;
   escort: boolean;
-  /** Cargo at reference prices, fixed at departure. */
+  /** Cargo at the port's prices of the week, fixed at departure. */
   cargoValue: Deniers;
   outcome: "pending" | "returned" | "lost";
   /** Exotic goods brought back (0 when lost or pending). */
