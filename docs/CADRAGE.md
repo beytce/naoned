@@ -242,7 +242,9 @@ Le moteur n'accède jamais à la base : il reçoit un état, renvoie un nouvel �
 | Temps réel | WebSocket | Carnet d'ordres et prix en direct |
 | Tâche planifiée | Tick toutes les 60 s | Expirations, PNJ, villes, entretien, chantiers (pas la production) |
 | Simulateur | Script Node en mémoire | Équilibrage avant d'avoir des joueurs, sortie CSV |
-| Hébergement | Railway ou Fly.io | Déploiement simple ; coût de départ estimé à une vingtaine d'euros par mois (approximatif) |
+| Hébergement | Railway, un seul service (API + web) depuis le Dockerfile | Déploiement depuis GitHub, PostgreSQL intégré ; quelques euros par mois au départ (à vérifier) |
+| E-mails | Resend | Envoi des liens de connexion par API ; offre gratuite suffisante pour la bêta |
+| Base locale | PGlite (PostgreSQL embarqué) | Développement et tests sans installer de serveur |
 
 **Mondes** : un monde est une ligne de la table `worlds`, pas une machine. Ouvrir une nouvelle saison revient à créer un nouveau `world_id` rattaché à un thème ; la couche compte (profil, cosmétiques, historique) reste commune à tous les mondes.
 
@@ -255,6 +257,8 @@ Le modèle sépare trois couches : la couche compte, permanente ; le référenti
 | Table | Couche | Contenu principal |
 | --- | --- | --- |
 | `accounts` | Compte | E-mail, pseudo, date d'inscription, cosmétiques possédés |
+| `login_tokens` | Compte | Liens de connexion : empreinte SHA-256 du jeton, e-mail, expiration (15 min), usage unique |
+| `sessions` | Compte | Sessions navigateur : empreinte du cookie, compte, expiration (30 jours) |
 | `themes` | Référentiel | Nom (ex. Venise 1450), régions, villes |
 | `resources` | Référentiel | Thème, code, nom, chaîne |
 | `recipes` | Référentiel | Thème, bâtiment, intrants, extrants, durée, niveau requis |
@@ -302,7 +306,7 @@ Le développement avance en 8 jalons ; chacun se termine par un critère vérifi
 
 1. **Moteur minimal et simulateur** (fait, voir `docs/calibration.md`) : `packages/engine` (production, ordres immédiats et à cours limité, PNJ, villes, taxe, entretien) en mémoire, et `apps/simulator` qui fait jouer 50 bots de profils différents pendant 42 jours.
    - Terminé quand : le simulateur produit un CSV journalier des indicateurs de santé, et ils restent dans les cibles sur 42 jours.
-2. **Socle** : monorepo, base PostgreSQL, migrations, authentification par lien magique, déploiement en ligne.
+2. **Socle** (code fait, mise en ligne à faire, voir `docs/deploiement.md`) : monorepo, base PostgreSQL, migrations, authentification par lien magique, déploiement en ligne.
    - Terminé quand : on se connecte depuis un téléphone sur l'URL de production.
 3. **Tranche jouable** : production, vente aux villes et ordres immédiats contre le PNJ, avec une interface sommaire mais utilisable sur mobile, et le tutoriel des 10 premières minutes.
    - Terminé quand : 5 à 10 personnes jouent une semaine et on a recueilli leurs retours.

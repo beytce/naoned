@@ -6,7 +6,9 @@ Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage complet 
 - Monorepo pnpm : apps/web (React + Vite + Tailwind, PWA), apps/server (Node + Fastify), apps/simulator (bots en mémoire, sortie CSV), packages/engine (logique pure en TypeScript).
 - PostgreSQL via Drizzle ORM, migrations versionnées.
 - Tests : Vitest. Temps réel : WebSocket.
-- Commandes : `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm sim` (simulation de saison, rapport dans apps/simulator/out/report.md).
+- Commandes : `pnpm dev`, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm sim` (simulation de saison, rapport dans apps/simulator/out/report.md).
+- Base locale : PGlite (`DATABASE_URL=pglite:…`) en dev et en test ; PostgreSQL en production. Nouvelle table → modifier apps/server/src/db/schema.ts puis `pnpm --filter @comptoirs/server db:generate --name <nom>`.
+- Déploiement : un seul service Railway (Dockerfile), voir docs/deploiement.md.
 
 ## Règles non négociables
 - Montants en entiers (bigint, en deniers), taux en points de base. Jamais de float.
