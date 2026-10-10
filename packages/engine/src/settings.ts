@@ -127,6 +127,38 @@ export const worldSettingsSchema = z.object({
       ),
     })
     .default({ maxPerPlayer: 0, portDuesBps: 0, types: {} }),
+  /** Letters of marque: privateers hunt other players' convoys on a route. */
+  privateers: z
+    .object({
+      /** Privateer cruises per player at once; 0 turns the feature off. */
+      maxActive: qty,
+      letterFee: money,
+      hours: positive,
+      /** Per ship. */
+      provisions: z.record(qty).default({}),
+      /** Share of each cargo line taken by a successful boarding. */
+      shareBps: bps.max(10_000),
+      minChanceBps: bps.max(10_000),
+      maxChanceBps: bps.max(10_000),
+      /** New merchants cannot be boarded for this many days. */
+      newcomerDays: qty,
+      /** Only merchants worth at least this share of the corsair's net worth are hunted. */
+      minTargetWorthBps: bps,
+      /** After a successful boarding, the victim is left alone this long. */
+      cooldownHours: qty,
+    })
+    .default({
+      maxActive: 0,
+      letterFee: 0,
+      hours: 12,
+      provisions: {},
+      shareBps: 0,
+      minChanceBps: 0,
+      maxChanceBps: 0,
+      newcomerDays: 0,
+      minTargetWorthBps: 0,
+      cooldownHours: 0,
+    }),
   /** How many times a player may restart from scratch during a season. */
   maxResetsPerPlayer: qty.default(1),
   maxBuildings: positive,

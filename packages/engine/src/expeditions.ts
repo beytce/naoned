@@ -1,5 +1,6 @@
 import { draw } from "./draw.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
+import { resolveCrossings } from "./privateers.js";
 import { pirateRiskBps, portDues, readyFleet } from "./ships.js";
 import {
   DAY_MS,
@@ -132,6 +133,7 @@ export function collectExpedition(tx: Tx, playerId: PlayerId, expeditionId: stri
   if (e.playerId !== playerId) fail("not_owner");
   if (e.outcome !== "pending") fail("unknown_expedition");
   if (tx.now < e.returnAt) fail("expedition_not_back");
+  resolveCrossings(tx);
   const dest = tx.ctx.settings.expeditions.destinations[e.destination];
   if (!dest) fail("unknown_destination");
 

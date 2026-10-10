@@ -2,6 +2,7 @@ import { upkeepPerDay } from "./buildings.js";
 import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
 import { bigMin } from "./money.js";
+import { resolveCrossings } from "./privateers.js";
 import { openDueProjects } from "./projects.js";
 import { shipUpkeep } from "./ships.js";
 import { DAY_MS, HOUR_MS, SINK_ACCOUNT, cashAccount, dayIndex } from "./state.js";
@@ -58,6 +59,7 @@ export function chargeUpkeep(tx: Tx): void {
 
 /** Scheduled job, every 60 s in production. Does not advance production (it is lazy). */
 export function tick(tx: Tx): void {
+  resolveCrossings(tx);
   expireOrders(tx);
   chargeUpkeep(tx);
   closeWeek(tx);

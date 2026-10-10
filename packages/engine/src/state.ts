@@ -118,8 +118,40 @@ export interface Expedition {
   ships?: string[];
   /** Strength against pirates and privateers (1 for a chartered galley, 3 escorted). */
   defense?: number;
+  /** Mid-voyage passed and privateers on the route resolved. */
+  crossed?: boolean;
   /** Exotic goods brought back (0 when lost or pending). */
   brought: number;
+}
+
+export interface RaidHit {
+  expeditionId: string;
+  victimId: PlayerId;
+  /** When the convoy crossed the corsairs (mid-voyage). */
+  at: number;
+  /** When the engine resolved it (the next tick or unloading). */
+  resolvedAt: number;
+  chanceBps: number;
+  success: boolean;
+  taken: Record<ResourceCode, number>;
+}
+
+/** Privateers cruising a route under a letter of marque. */
+export interface Raid {
+  id: string;
+  playerId: PlayerId;
+  route: string;
+  ships: string[];
+  attack: number;
+  /** Booty the corsairs can carry, at reference prices. */
+  hold: Deniers;
+  startAt: number;
+  endAt: number;
+  outcome: "cruising" | "returned";
+  /** Repelled once: the corsairs limp home and hunt no more. */
+  beaten: boolean;
+  booty: Record<ResourceCode, number>;
+  hits: RaidHit[];
 }
 
 export interface Ship {
@@ -166,6 +198,9 @@ export interface WorldState {
   contractsDone?: Record<PlayerId, { day: number; ids: string[] }>;
   expeditions?: Record<string, Expedition>;
   ships?: Record<string, Ship>;
+  raids?: Record<string, Raid>;
+  /** Last successful boarding suffered, per player (cooldown). */
+  plunderedAt?: Record<PlayerId, number>;
   /** Resets used per player this season (absent in states saved before resets existed). */
   resets?: Record<PlayerId, number>;
   /** Weekly ranking: current week and each player's net worth when it started (or on joining). */
@@ -213,6 +248,8 @@ export function createWorldState(ctx: WorldContext): WorldState {
     contractsDone: {},
     expeditions: {},
     ships: {},
+    raids: {},
+    plunderedAt: {},
     weekly: { week: 0, start: {} },
   };
 }

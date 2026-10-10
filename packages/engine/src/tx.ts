@@ -55,7 +55,11 @@ export type EngineErrorCode =
   | "ship_busy"
   | "ship_damaged"
   | "ship_not_damaged"
-  | "invalid_fleet";
+  | "invalid_fleet"
+  | "no_privateers"
+  | "too_many_raids"
+  | "unknown_raid"
+  | "raid_not_back";
 
 export class EngineError extends Error {
   constructor(

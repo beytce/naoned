@@ -20,7 +20,10 @@ export function shipAtSea(state: WorldState, shipId: string): boolean {
   const sailing = Object.values(state.expeditions ?? {}).some(
     (e) => e.outcome === "pending" && e.ships?.includes(shipId),
   );
-  return sailing;
+  if (sailing) return true;
+  return Object.values(state.raids ?? {}).some(
+    (r) => r.outcome === "cruising" && r.ships.includes(shipId),
+  );
 }
 
 export type ShipStatus = "ready" | "at_sea" | "damaged" | "repairing";

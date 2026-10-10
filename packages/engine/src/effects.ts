@@ -17,7 +17,8 @@ export type LedgerReason =
   | "player_reset"
   | "contract_reward"
   | "expedition_charter"
-  | "ship_repair";
+  | "ship_repair"
+  | "privateer_letter";
 
 /**
  * Double-entry ledger line: `amount` leaves `from` and enters `to`.
@@ -45,7 +46,9 @@ export type StockReason =
   | "rations"
   | "contract"
   | "expedition_out"
-  | "expedition_return";
+  | "expedition_return"
+  | "privateer_out"
+  | "plunder";
 
 /** Change of a player's total holding (available + escrow) of one resource. */
 export interface StockMovement {

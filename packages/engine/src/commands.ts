@@ -5,6 +5,7 @@ import { fulfillContract } from "./contracts.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { collectExpedition, launchExpedition } from "./expeditions.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
+import { collectRaid, commissionPrivateers } from "./privateers.js";
 import { collect, startProduction } from "./production.js";
 import { deliverToProject } from "./projects.js";
 import { buildShip, repairShip } from "./ships.js";
@@ -70,6 +71,8 @@ export type Command =
     }
   | { type: "buildShip"; playerId: PlayerId; shipType: string }
   | { type: "repairShip"; playerId: PlayerId; shipId: string }
+  | { type: "commissionPrivateers"; playerId: PlayerId; route: string; ships: string[] }
+  | { type: "collectRaid"; playerId: PlayerId; raidId: string }
   | { type: "collectExpedition"; playerId: PlayerId; expeditionId: string }
   | { type: "tick" };
 
@@ -146,6 +149,9 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
   for (const ship of Object.values(tx.s.ships ?? {})) {
     if (ship.playerId === playerId) delete tx.s.ships?.[ship.id];
   }
+  for (const raid of Object.values(tx.s.raids ?? {})) {
+    if (raid.playerId === playerId) delete tx.s.raids?.[raid.id];
+  }
   if (tx.s.weekly) delete tx.s.weekly.start[playerId];
   resets[playerId] = used + 1;
   emit(tx, "player_reset", playerId);
@@ -211,6 +217,12 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "repairShip":
       repairShip(tx, cmd.playerId, cmd.shipId);
+      break;
+    case "commissionPrivateers":
+      commissionPrivateers(tx, cmd.playerId, cmd.route, cmd.ships);
+      break;
+    case "collectRaid":
+      collectRaid(tx, cmd.playerId, cmd.raidId);
       break;
     case "collectExpedition":
       collectExpedition(tx, cmd.playerId, cmd.expeditionId);

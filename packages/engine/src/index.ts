@@ -15,6 +15,7 @@ export * from "./rng.js";
 export { batchDuration, defaultRecipe, freeBatches, yieldBonusBps } from "./production.js";
 export { openProjects } from "./projects.js";
 export * from "./settings.js";
+export { crossingAt, watchedRoutes } from "./privateers.js";
 export * from "./ships.js";
 export * from "./state.js";
 export * from "./theme.js";
