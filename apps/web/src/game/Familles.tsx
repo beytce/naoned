@@ -3,7 +3,6 @@ import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Qty, Ribbon, Slab, Stat, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
-import { byRoad } from "./Contrats.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
 import type { FamiliesView, FamilyOrderView } from "./types.js";
@@ -101,7 +100,7 @@ function OrderCard({ o, props }: { o: FamilyOrderView; props: GameProps }) {
       <div className="mt-3">
         {o.done ? (
           <span className="label text-lagoon">✓ {fr.game.contracts.done}</span>
-        ) : byRoad(props, o.resource) ? (
+        ) : props.view.road ? (
           <Slab tone="ghost" className="w-full" onClick={() => props.goTo("routes")}>
             {fr.game.road.byRoad}
           </Slab>

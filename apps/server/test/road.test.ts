@@ -83,7 +83,7 @@ describe("the road", () => {
     const bob = await player("bob@example.org");
     const view = (await get(ada)).view;
     expect(view.road.orders.length).toBeGreaterThanOrEqual(12);
-    expect(view.road.vehicles).toHaveLength(1);
+    expect(view.road.vehicles).toHaveLength(2);
     const order = view.road.orders.find(
       (o: { kind: string; resource: string; status: string }) =>
         o.kind === "city" && o.resource === "bread" && o.status === "open",
@@ -143,7 +143,7 @@ describe("the road", () => {
     await act(ada, { type: "instantOrder", resource: "planks", side: "buy", quantity: 10 });
     const bought = await act(ada, { type: "buyVehicle", vehicleType: "cart" });
     expect(bought.error).toBeUndefined();
-    expect(bought.view.road.vehicles).toHaveLength(2);
+    expect(bought.view.road.vehicles).toHaveLength(3);
     const catalog = (await app.inject({ method: "GET", url: "/api/game/catalog" })).json();
     expect(catalog.road.vehicles.map((v: { type: string }) => v.type)).toContain("cart");
     expect(catalog.road.routes.terraferma.padova).toBe(30);

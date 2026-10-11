@@ -18,7 +18,7 @@ const ICON = {
   season: NavIcon.top,
   criee: NavIcon.marche,
   deal: NavIcon.marche,
-  family: NavIcon.contrats,
+  family: NavIcon.familles,
   ambush: NavIcon.routes,
   delivery: NavIcon.routes,
   robbed: NavIcon.routes,

@@ -77,7 +77,7 @@ export const fr = {
     tabs: {
       comptoir: "Comptoir",
       marche: "Marché",
-      contrats: "Contrats",
+      familles: "Familles",
       routes: "Routes",
       port: "Port",
       top: "Classement",
@@ -422,6 +422,7 @@ export const fr = {
         sell_city: "Vendre 3 fois à une ville",
         deliveries: "Livrer 2 commandes",
         urgent: "Livrer une commande urgente",
+        many_deliveries: "Livrer 5 commandes",
         doge_order: "Honorer un contrat du Doge",
         place_offer: "Laisser une offre au Rialto",
         harvests: "Récolter 4 fois",
@@ -874,7 +875,7 @@ export const fr = {
       {
         icon: "routes",
         title: "Les routes et les brigands",
-        text: "Les villes ne rachètent plus au comptoir : chaque jour, elles vous passent 16 à 20 commandes, dont la moitié portent sur votre propre production. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge et de votre famille y figurent, les urgentes ne restent ouvertes qu'une heure. Des brigands guettent parfois une route (en rouge sur la carte) : une escorte vous protège même absent ; sans escorte, vous avez 10 minutes pour riposter, et une riposte disperse la bande. Une prise coûte au plus 30 % de la cargaison, le véhicule revient toujours, et personne n'attaque entre 22 h et 8 h. À partir du jour 6, vous pouvez vous-même poster une bande sur une route : deux attaques au plus, la moitié du butin se perd dans la fuite.",
+        text: "Les villes ne rachètent plus au comptoir : chaque jour, elles vous passent 22 à 28 commandes, dont la moitié portent sur votre propre production. Les matières premières ne sont commandées qu'à ceux qui les produisent ; les produits transformés, à tous. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge et de votre famille y figurent, les urgentes ne restent ouvertes qu'une heure. Des brigands guettent parfois une route (en rouge sur la carte) : une escorte vous protège même absent ; sans escorte, vous avez 10 minutes pour riposter, et une riposte disperse la bande. Une prise coûte au plus 30 % de la cargaison, le véhicule revient toujours, et personne n'attaque entre 22 h et 8 h. À partir du jour 6, vous pouvez vous-même poster une bande sur une route : deux attaques au plus, la moitié du butin se perd dans la fuite.",
       },
       {
         icon: "comptoir",
@@ -882,9 +883,9 @@ export const fr = {
         text: "Chaque niveau d'atelier mange 2 pains par jour. Sans pain, les nouveaux lots prennent 50 % de temps en plus. Les boulangeries et les briqueteries brûlent du bois.",
       },
       {
-        icon: "contrats",
-        title: "Contrats du Doge",
-        text: "Chaque jour, deux commandes du Doge et une de votre famille, payées 20 % au-dessus du prix de référence. Les produits de la terre ferme se livrent par la route ; ceux d'outre-mer se remettent au comptoir.",
+        icon: "familles",
+        title: "Le Doge et les familles",
+        text: "Chaque jour, le Doge et votre famille vous passent des commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). L'onglet Familles montre votre allégeance, le mécénat et la famille au pouvoir.",
       },
       {
         icon: "port",
@@ -894,17 +895,12 @@ export const fr = {
       {
         icon: "comptoir",
         title: "Produire",
-        text: "Chaque atelier transforme des matières en produits, par lots d'une heure. Lancez jusqu'à 12 heures de production, puis revenez récolter. Rien ne se perd pendant votre absence.",
+        text: "Chaque atelier transforme des matières en produits, par lots d'une demi-heure. Lancez jusqu'à 12 heures de production, puis revenez récolter. Rien ne se perd pendant votre absence.",
       },
       {
         icon: "marche",
         title: "Vendre et acheter",
-        text: "Au Rialto, vous achetez et vendez aux autres marchands et à la Dogana, la douane de la République (en quantité limitée par jour) : tout de suite au meilleur prix, ou à votre prix en laissant une offre. Les villes achètent le pain, les briques et les planches.",
-      },
-      {
-        icon: "chantiers",
-        title: "Grands chantiers",
-        text: "Chaque semaine, une ville commande des briques et des planches. Elle paie un peu plus que le prix de référence.",
+        text: "Au Rialto, vous achetez et vendez aux autres marchands et à la Dogana, la douane de la République (en quantité limitée par jour) : tout de suite au meilleur prix, ou à votre prix en laissant une offre. Les villes, elles, passent commande : voyez l'onglet Routes.",
       },
       {
         icon: "top",

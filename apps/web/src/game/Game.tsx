@@ -13,8 +13,8 @@ import { Bell } from "./Bell.js";
 import { Ceremony } from "./Ceremony.js";
 import { Coach } from "./Coach.js";
 import { Comptoir } from "./Comptoir.js";
-import { Contrats } from "./Contrats.js";
 import { Criee } from "./Criee.js";
+import { Familles } from "./Familles.js";
 import { Gazette } from "./Gazette.js";
 import { Help } from "./Help.js";
 import { Intro } from "./Intro.js";
@@ -57,7 +57,7 @@ import type {
   Welcome as WelcomeData,
 } from "./types.js";
 
-export type Tab = "comptoir" | "routes" | "marche" | "contrats" | "port" | "top" | "profil";
+export type Tab = "comptoir" | "routes" | "marche" | "familles" | "port" | "top" | "profil";
 export type MarketTab = "joueurs" | "villes";
 
 export interface Names {
@@ -102,7 +102,7 @@ export interface GameProps {
 
 const POLL_MS = 15_000;
 /** Bottom bar; the profile opens from the coat of arms in the header. */
-const ALL_TABS: Tab[] = ["comptoir", "routes", "marche", "contrats", "port", "top"];
+const ALL_TABS: Tab[] = ["comptoir", "routes", "marche", "familles", "port", "top"];
 
 export function Game(props: {
   account: Account;
@@ -291,7 +291,11 @@ export function Game(props: {
 
   // The road's tab only in a world with deliveries.
   const hasRoad = !!view?.road;
-  const TABS = useMemo(() => ALL_TABS.filter((t) => t !== "routes" || hasRoad), [hasRoad]);
+  const hasFamilies = !!view?.families;
+  const TABS = useMemo(
+    () => ALL_TABS.filter((t) => (t !== "routes" || hasRoad) && (t !== "familles" || hasFamilies)),
+    [hasRoad, hasFamilies],
+  );
 
   // Computer: keys 1 to 6 switch sections (not while typing).
   useEffect(() => {
@@ -415,7 +419,9 @@ export function Game(props: {
   const guidePaused = store.get("guideHidden") === "1" && store.get("guideDone") !== "1";
 
   const crest = props.account.crest ?? defaultCrest(props.account.id);
-  const contractsLeft = view.contracts.some((c) => !c.done);
+  // The families call: allegiance open and not yet pledged.
+  const familyCalls =
+    !!view.families && !view.families.mine && view.families.opensAt <= now + offset;
   const portLocked = portOpensAt(view) > gp.now;
   const galleyBack =
     view.expeditions.some((e) => e.outcome === "pending" && e.returnAt <= gp.now) ||
@@ -430,7 +436,7 @@ export function Game(props: {
       (view.road.vehicles.some((v) => v.status === "free") &&
         view.road.orders.some((o) => o.status === "open")));
   const badge = (t: Tab) =>
-    (t === "contrats" && contractsLeft) ||
+    (t === "familles" && familyCalls) ||
     (t === "port" && galleyBack) ||
     (t === "routes" && roadCalls);
   const resumeGuide = guidePaused && (
@@ -587,7 +593,7 @@ export function Game(props: {
           {tab === "comptoir" && <Comptoir {...gp} />}
           {tab === "routes" && <Routes {...gp} />}
           {tab === "marche" && <Marche {...gp} />}
-          {tab === "contrats" && <Contrats {...gp} />}
+          {tab === "familles" && <Familles {...gp} />}
           {tab === "port" && <Port {...gp} />}
           {tab === "top" && <Top {...gp} />}
           {tab === "profil" && <Profil {...gp} />}
