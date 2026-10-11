@@ -284,3 +284,29 @@ Résultat sur 5 graines (`pnpm sim`), toutes conformes :
 Le budget de monnaie créée par les commandes ne bouge presque pas (Doge + familles ≈ trois commandes du Doge, +4 % avec la prime du pouvoir), et le mécénat ajoute un puits de 1 à 2 % des destructions. La croissance moyenne de la monnaie par joueur actif passe d'environ 3,7 % à 2,5 à 3 % par jour (diagnostic toujours au-dessus de la cible de ±2 %). Les Dandolo (Levant) restent petits avec les bots : seuls les spéculateurs, peu nombreux, les choisissent.
 
 **Contrôle du Pass (`pnpm sim --pass 0.2`) : non conforme, à trancher.** Avance des abonnés : −22,6 %, +5,3 %, +7,5 %, −9,3 %, +11,3 % (plafond +5 %) ; part du top 10 et « gratuit assidu devant abonné occasionnel » conformes. Sans familles, les mêmes graines donnaient de −33,8 % à +2,5 %. En isolant les avantages sur les graines 2, 3 et 5, le quota Dogana seul donne −7,6 %, +11,4 %, +0,7 %, et les autres avantages seuls −10,3 %, +15,0 %, +15,9 % : des écarts de cette taille pour des avantages aussi petits viennent surtout de la divergence des deux saisons rejouées (la famille qui prend le pouvoir bascule d'une partie à l'autre), que le contrôle ne compte que dans un sens. Pistes : mesurer sur plus de graines ou par la moyenne, ou réduire la prime de la famille au pouvoir, avant d'ouvrir les familles en production.
+
+## Livraisons par la route : mesure de référence (avant le changement)
+
+11 octobre 2026. Mesure prise avant de toucher à la vente aux villes (`docs/plan-livraisons.md`, § 7.1), avec deux nouveaux diagnostics du rapport :
+
+- **monnaie payée pour les marchandises**, par joueur actif et par jour, de J+1 à la fin, par source (ventes aux villes, commandes du Doge, commandes de famille, Criées) ;
+- **assidus devant occasionnels** : patrimoine médian en fin de saison des profils assidus (producteur, artisan, bâtisseur, spéculateur) rapporté à celui des occasionnels, parmi les marchands présents dès le départ et encore actifs.
+
+`pnpm sim` (5 graines, toutes conformes) :
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 | Moyenne |
+| --- | --- | --- | --- | --- | --- | --- |
+| Ventes aux villes (ducats / joueur actif / jour) | 134,6 | 172,4 | 143,7 | 96,4 | 128,1 | 135,0 |
+| Commandes du Doge | 19,3 | 19,5 | 20,2 | 18,8 | 19,3 | 19,4 |
+| Commandes de famille | 13,5 | 14,3 | 13,5 | 11,5 | 12,9 | 13,1 |
+| Criées | 0,7 | 0,9 | 0,6 | 0,5 | 0,5 | 0,6 |
+| **Total payé pour les marchandises** | **168,1** | **207,1** | **178,1** | **127,2** | **160,8** | **168,3** |
+| Indice des prix | 97 – 101 | 97 – 100 | 97 – 100 | 97 – 101 | 97 – 100 | |
+| Monnaie par joueur actif (pic) | 1,02 × | 1,45 × | 1,12 × | 1,05 × | 1,10 × | |
+| Assidus devant occasionnels | +242 % | +40 % | +65 % | +131 % | +28 % | |
+
+Cible des livraisons : **168 ducats par joueur actif et par jour, à ±10 % (151 à 185)**, en moyenne sur les graines.
+
+L'écart brut entre assidus et occasionnels est très bruité (de +28 % à +242 %) : il ne reste en fin de saison que deux à cinq occasionnels actifs par graine, et ils ont joué une session par jour pendant un mois. La cible « 5 à 10 % » du plan vaut pour l'écart *ajouté* par une mécanique de présence (c'est ainsi qu'elle a été mesurée pour les Criées) ; pour les livraisons, on vérifiera que l'écart brut ne se creuse pas par rapport à cette référence.
+
+`pnpm sim --pass 0.2` (graines 1 à 3) : avance des abonnés −22,6 %, +5,3 % (non conforme, déjà avant les livraisons, voir « Familles patriciennes »), puis graine 3 ci-dessous ; part du top 10 et « gratuit assidu devant abonné occasionnel » conformes.

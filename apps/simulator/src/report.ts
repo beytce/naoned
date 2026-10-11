@@ -171,6 +171,7 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
     });
   }
 
+  checks.push(...budgetChecks(r));
   checks.push(...passChecks(r, twin));
 
   const lastDay = r.daily[last];
@@ -189,6 +190,60 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
     blocking: false,
   });
   return checks;
+}
+
+/** Sources of money paid by the cities and the Doge: the budget that deliveries take over. */
+export const ORDER_SOURCES = [
+  "city_sale",
+  "contract_reward",
+  "family_order_reward",
+  "criee_sale",
+  "delivery",
+] as const;
+
+/** Money created per active merchant and per day, by source (J+1 to the end). */
+export function createdPerActiveDay(r: SimulationResult): Record<string, number> {
+  const days = r.daily.slice(1);
+  const activeDays = days.reduce((a, d) => a + d.active, 0);
+  const out: Record<string, number> = {};
+  for (const d of days) {
+    for (const [k, v] of Object.entries(d.createdBy)) out[k] = (out[k] ?? 0) + Number(v);
+  }
+  for (const k of Object.keys(out)) out[k] = (out[k] ?? 0) / Math.max(1, activeDays) / 100;
+  return out;
+}
+
+/** Diagnostics of the money paid for goods (cities, Doge, families, Criées, deliveries). */
+export function budgetChecks(r: SimulationResult): Check[] {
+  const per = createdPerActiveDay(r);
+  const total = ORDER_SOURCES.reduce((a, k) => a + (per[k] ?? 0), 0);
+  const final = finalWorth(r);
+  const frequent = new Set(["producer", "artisan", "builder", "speculator"]);
+  const mFrequent = median(
+    final.filter((p) => frequent.has(p.profile)).map((p) => Number(p.netWorth)),
+  );
+  const mCasual = median(
+    final.filter((p) => p.profile === "casual").map((p) => Number(p.netWorth)),
+  );
+  return [
+    {
+      name: "Monnaie payée pour les marchandises, par joueur actif et par jour",
+      target:
+        "diagnostic : budget des villes, du Doge, des familles et des Criées (ou des livraisons)",
+      value: `${total.toFixed(1)} ducats (${ORDER_SOURCES.filter((k) => per[k])
+        .map((k) => `${k} ${(per[k] ?? 0).toFixed(1)}`)
+        .join(" · ")})`,
+      pass: true,
+      blocking: false,
+    },
+    {
+      name: "Assidus devant occasionnels (patrimoine médian en fin de saison)",
+      target: "diagnostic : +5 à +10 %",
+      value: Number.isNaN(mCasual) ? "—" : pct(mFrequent / mCasual - 1),
+      pass: true,
+      blocking: false,
+    },
+  ];
 }
 
 const median = (xs: number[]) => {
