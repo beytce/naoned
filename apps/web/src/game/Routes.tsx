@@ -73,9 +73,122 @@ export function Routes(props: GameProps) {
   );
 }
 
-/** The bandits' screen (next step). */
-function Bandits(_props: GameProps & { road: RoadView }) {
-  return null;
+/**
+ * The bandits' screen: a road and a duration, the cost and the rules in plain words, then the
+ * bands under way with their attempts and booty.
+ */
+function Bandits(props: GameProps & { road: RoadView }) {
+  const rules = props.catalog.road?.bandits;
+  const routes = Object.entries(props.catalog.road?.routes ?? {}).flatMap(([region, cities]) =>
+    Object.keys(cities).map((city) => `${region}:${city}`),
+  );
+  const [route, setRoute] = useState(routes[0] ?? "");
+  const [hours, setHours] = useState(rules?.hoursOptions[0] ?? 0);
+  if (!rules) return null;
+  const tb = fr.game.bandits;
+  const cost = BigInt(rules.feePerHour) * BigInt(hours);
+  const provisions = Object.entries(rules.provisionsPerHour)
+    .filter(([, q]) => q > 0)
+    .map(([r, q]) => `${q * hours} ${props.names.resource(r).toLowerCase()}`);
+  const label = (r: string) => {
+    const [region = "", city = ""] = r.split(":");
+    return `${props.names.region(region)} → ${props.names.city(city)}`;
+  };
+  return (
+    <div className="space-y-5">
+      <Panel>
+        <h3 className="font-display text-lg font-extrabold uppercase">{tb.title}</h3>
+        <p className="mt-2 text-sm text-cream-dim">{tb.help}</p>
+        <label className="mt-4 block">
+          <Label>{tb.route}</Label>
+          <select
+            value={route}
+            onChange={(e) => setRoute(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-line bg-night-2 px-3 py-2.5 text-sm"
+          >
+            {routes.map((r) => (
+              <option key={r} value={r}>
+                {label(r)}
+                {props.road.watchedRoutes.includes(r) ? " ⚔" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="mt-4">
+          <Label>{tb.hours}</Label>
+          <div className="mt-1">
+            <Tabs
+              value={String(hours)}
+              onChange={(h) => setHours(Number(h))}
+              options={rules.hoursOptions.map((h) => ({
+                value: String(h),
+                label: tb.hoursLabel(h),
+              }))}
+            />
+          </div>
+        </div>
+        <p className="mt-4 text-sm">{tb.cost([d(cost), ...provisions].join(" + "))}</p>
+        <Slab
+          className="mt-4 w-full"
+          disabled={props.busy || !route}
+          onClick={() => props.act({ type: "postBand", route, hours })}
+        >
+          {tb.post}
+        </Slab>
+      </Panel>
+
+      <section className="space-y-2">
+        <Label>{tb.mine}</Label>
+        {props.road.bands.length === 0 && <p className="text-sm text-cream-dim">{tb.none}</p>}
+        {props.road.bands.map((b) => {
+          const booty = Object.entries(b.booty).filter(([, q]) => q > 0);
+          return (
+            <Panel key={b.id} glow={b.collectable ? "gold" : undefined} className="p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-display text-sm font-extrabold uppercase">
+                    {label(b.route)}
+                  </p>
+                  <p className="label mt-1">
+                    {b.active
+                      ? tb.active(clock(b.endAt - props.now))
+                      : b.dispersed
+                        ? tb.dispersed
+                        : tb.over}{" "}
+                    · {tb.attempts(b.attacks, rules.maxAttacksPerBand)}
+                  </p>
+                  <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
+                    <span className="text-cream-dim">{tb.booty} :</span>
+                    {booty.length === 0
+                      ? "—"
+                      : booty.map(([r, q]) => (
+                          <span key={r} className="inline-flex items-center gap-1">
+                            <ResourceIcon code={r} size={18} />
+                            {q}
+                          </span>
+                        ))}
+                  </p>
+                </div>
+                {b.collected ? (
+                  <span className="label text-lagoon">✓ {tb.collected}</span>
+                ) : (
+                  b.collectable && (
+                    <Slab
+                      size="sm"
+                      disabled={props.busy}
+                      onClick={() => props.act({ type: "collectBooty", bandId: b.id })}
+                    >
+                      {tb.collect}
+                    </Slab>
+                  )
+                )}
+              </div>
+            </Panel>
+          );
+        })}
+      </section>
+    </div>
+  );
 }
 
 function Deliveries(props: GameProps & { road: RoadView }) {

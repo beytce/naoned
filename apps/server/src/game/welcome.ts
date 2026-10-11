@@ -27,7 +27,7 @@ export async function welcomeBack(
     await db.execute(sql`
       select reason, sum(amount)::text as total from ledger_entries
       where world_id = ${worldId} and to_account = ${cash} and at > ${since.toISOString()}::timestamptz
-        and reason in ('city_sale', 'trade', 'contract_reward', 'family_order_reward', 'project_delivery', 'market_maker_buy', 'mission_reward')
+        and reason in ('city_sale', 'delivery', 'trade', 'contract_reward', 'family_order_reward', 'project_delivery', 'market_maker_buy', 'mission_reward')
       group by reason`),
   );
   const [upkeep] = rowsOf<{ total: string | null }>(
@@ -48,6 +48,22 @@ export async function welcomeBack(
     if (b.playerId !== playerId || !b.job) continue;
     ready += Math.min(b.job.batches, Math.floor((now - b.job.startedAt) / b.job.batchMs));
   }
+  // The road: deliveries arrived, ambushes suffered or beaten off, booty waiting to be collected.
+  const from = since.getTime();
+  const road = { arrived: 0, robbed: 0, repelled: 0, booty: {} as Record<string, number> };
+  for (const d of Object.values(state.deliveries ?? {})) {
+    if (d.playerId !== playerId) continue;
+    if (d.outcome !== "en_route" && d.arriveAt > from) road.arrived++;
+    const a = d.attack;
+    if (a?.resolvedAt !== undefined && a.resolvedAt > from) {
+      if (a.success) road.robbed++;
+      else road.repelled++;
+    }
+  }
+  for (const b of Object.values(state.bands ?? {})) {
+    if (b.playerId !== playerId || b.collected || (!b.dispersed && now < b.endAt)) continue;
+    for (const [r, q] of Object.entries(b.booty)) road.booty[r] = (road.booty[r] ?? 0) + q;
+  }
   const dormantAfter = ctx.settings.dormancy.afterHours * 3_600_000;
   return {
     since: since.getTime(),
@@ -55,6 +71,7 @@ export async function welcomeBack(
     upkeep: upkeep?.total ?? "0",
     readyBatches: ready,
     notices: Object.fromEntries(notices.map((r) => [r.kind, Number(r.n)])),
+    road,
     /** The counting house slept (reduced upkeep, no hunger) for part of the absence. */
     slept: dormantAfter > 0 && now - since.getTime() > dormantAfter,
   };

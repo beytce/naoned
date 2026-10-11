@@ -44,6 +44,31 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
             ))}
           </ul>
         )}
+        {data.road &&
+          (data.road.arrived > 0 ||
+            data.road.robbed > 0 ||
+            data.road.repelled > 0 ||
+            Object.keys(data.road.booty).length > 0) && (
+            <ul className="space-y-1 text-sm">
+              {data.road.arrived > 0 && <li>· {t.road.arrived(data.road.arrived)}</li>}
+              {data.road.robbed > 0 && (
+                <li className="text-vermilion">· {t.road.robbed(data.road.robbed)}</li>
+              )}
+              {data.road.repelled > 0 && (
+                <li className="text-lagoon">· {t.road.repelled(data.road.repelled)}</li>
+              )}
+              {Object.keys(data.road.booty).length > 0 && (
+                <li className="text-gold">
+                  ·{" "}
+                  {t.road.booty(
+                    Object.entries(data.road.booty)
+                      .map(([r, q]) => `${q} ${props.names.resource(r).toLowerCase()}`)
+                      .join(", "),
+                  )}
+                </li>
+              )}
+            </ul>
+          )}
         {notices.length > 0 && (
           <ul className="space-y-1 text-sm text-cream-dim">
             {notices.map(([kind, n]) => (
