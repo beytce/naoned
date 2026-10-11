@@ -37,6 +37,8 @@ export interface SimulationOptions {
   stepMinutes: number;
   mix: Record<ProfileName, number>;
   lateJoiners: number;
+  /** Bots behave as in the live world (leave the market maker to people, sell on the book). */
+  live?: boolean;
   /** Optional observer of every accepted command's effects (debugging, extra analysis). */
   onEffects?: (effects: Effects, now: number) => void;
 }
@@ -88,18 +90,19 @@ function regionFor(profile: ProfileName, i: number): string {
 
 export function createBots(options: SimulationOptions, rng: Rng): Bot[] {
   const bots: Bot[] = [];
+  const live = options.live ? { spareMarketMaker: true, generous: true } : {};
   let n = 0;
   for (const [name, count] of Object.entries(options.mix) as [ProfileName, number][]) {
     for (let i = 0; i < count; i++) {
       const joinAt = START + Math.floor(rng.next() * DAY_MS);
-      bots.push(new Bot(`${name}-${++n}`, PROFILES[name], regionFor(name, i), joinAt));
+      bots.push(new Bot(`${name}-${++n}`, PROFILES[name], regionFor(name, i), joinAt, live));
     }
   }
   const names = Object.keys(options.mix) as ProfileName[];
   for (let i = 0; i < options.lateJoiners; i++) {
     const name = rng.pick(names.filter((p) => p !== "speculator"));
     const joinAt = START + 7 * DAY_MS + Math.floor(rng.next() * 14 * DAY_MS);
-    bots.push(new Bot(`late-${name}-${++n}`, PROFILES[name], regionFor(name, i), joinAt));
+    bots.push(new Bot(`late-${name}-${++n}`, PROFILES[name], regionFor(name, i), joinAt, live));
   }
   return bots;
 }

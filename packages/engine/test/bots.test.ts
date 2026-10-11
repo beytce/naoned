@@ -68,3 +68,45 @@ describe("bots", () => {
     expect(Object.keys(w.state.buildings).length).toBeGreaterThan(10);
   });
 });
+
+describe("bots in a live world", () => {
+  it("leave the market maker's last units to people and put their own output on sale", () => {
+    const w = new World();
+    const rng = new Rng(3);
+    const live = { spareMarketMaker: true, generous: true };
+    const bots = [
+      new Bot("b1", PROFILES.producer, "terraferma", w.now, live),
+      new Bot("b2", PROFILES.artisan, "terraferma", w.now, live),
+      new Bot("b3", PROFILES.builder, "lagoon", w.now, live),
+      new Bot("b4", PROFILES.builder, "dolomites", w.now, live),
+    ];
+    for (const b of bots) w.do({ type: "join", playerId: b.id, region: b.region });
+    const session = {
+      ctx: w.ctx,
+      state: () => w.state,
+      get now() {
+        return w.now;
+      },
+      market: new MarketView(
+        w.ctx,
+        () => w.state,
+        () => w.now,
+      ),
+      rng,
+      act: (cmd: Parameters<World["try"]>[0]) => w.try(cmd).ok,
+    };
+    const end = w.now + 3 * DAY;
+    while (w.now < end) {
+      w.do({ type: "tick" });
+      for (const b of bots) b.play(session);
+      w.advance(3 * HOUR);
+    }
+    // Here the market maker offers 20 units a day: below the 25 left to people, bots take none.
+    const fromMarketMaker = w.trades.filter((t) => t.sellerId === MARKET_MAKER);
+    expect(fromMarketMaker).toEqual([]);
+    const onSale = Object.values(w.state.orders).filter(
+      (o) => o.side === "sell" && o.playerId !== MARKET_MAKER,
+    );
+    expect(onSale.length).toBeGreaterThan(0);
+  });
+});

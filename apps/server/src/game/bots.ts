@@ -114,7 +114,11 @@ export class BotRunner {
 
   private wrap(id: string, profile: string | null, region: string): Running {
     const p = PROFILES[(profile ?? "producer") as ProfileName] ?? PROFILES.producer;
-    return { bot: new Bot(id, p, region, 0), sessions: [] };
+    // Next to people, bots leave the market maker's stock to them and sell on the book.
+    return {
+      bot: new Bot(id, p, region, 0, { spareMarketMaker: true, generous: true }),
+      sessions: [],
+    };
   }
 
   start(intervalMs = 60_000, onError: (err: unknown) => void = console.error): void {

@@ -15,6 +15,8 @@ const { values } = parseArgs({
     scenario: { type: "string" },
     /** Small world: this many merchants from the start, no late joiners (beta with bots). */
     players: { type: "string" },
+    /** Bots as in the live world (next to people). */
+    live: { type: "boolean", default: false },
     out: { type: "string", default: join(here, "..", "out") },
   },
 });
@@ -59,6 +61,7 @@ for (const seed of seeds) {
     stepMinutes: Number(values.step),
     mix,
     lateJoiners: players ? 0 : 10,
+    live: values.live,
   });
   const checks = evaluate(result);
   const pass = allBlockingPass(checks);

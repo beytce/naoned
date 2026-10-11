@@ -3,7 +3,7 @@ import { quoteCitySale } from "./cities.js";
 import type { Command } from "./commands.js";
 import { contractsFor } from "./contracts.js";
 import { cargoValueAt } from "./expeditions.js";
-import { openOrderCount } from "./market.js";
+import { bestPrice, openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
 import type { Deniers } from "./money.js";
 import { freeBatches } from "./production.js";
@@ -13,6 +13,7 @@ import type { WorldSettings } from "./settings.js";
 import { portDues, shipStatus, shipsOf } from "./ships.js";
 import {
   type Building,
+  MARKET_MAKER,
   type WorldContext,
   type WorldState,
   cashAccount,
@@ -114,6 +115,17 @@ export interface Session {
   act(cmd: Command): boolean;
 }
 
+/** Units of the market maker's daily stock, per resource, that bots leave to people. */
+const PEOPLE_SHARE = 25;
+
+/** How a bot behaves in a live world, next to people. */
+export interface BotOptions {
+  /** Never take the market maker's asks: its daily stock is left to people. */
+  spareMarketMaker?: boolean;
+  /** Keep only half of the materials saved for its next construction; the rest goes on sale. */
+  generous?: boolean;
+}
+
 export class Bot {
   churned = false;
   sessions = 0;
@@ -125,6 +137,7 @@ export class Bot {
     readonly profile: Profile,
     readonly region: string,
     readonly joinAt: number,
+    readonly options: BotOptions = {},
   ) {}
 
   /** Session start times for one day, between 07:00 and 23:00. */
@@ -297,7 +310,8 @@ export class Bot {
   /** Stock kept back: next construction, three days of rations. */
   private reserve(s: Session, resource: string): number {
     const food = resource === s.ctx.settings.rations.resource ? this.rationsPerDay(s) * 3 : 0;
-    return this.materialsReserve(s, resource) + food;
+    const materials = this.materialsReserve(s, resource);
+    return (this.options.generous ? 0 : materials) + food;
   }
 
   /** Workers must eat: keep two to three days of bread, buying it if needed. */
@@ -558,9 +572,48 @@ export class Bot {
   private buy(s: Session, resource: string, qty: number, maxFactor: number): void {
     if (qty <= 0) return;
     const fair = s.market.fair(resource);
-    const cap = scale(fair, maxFactor);
-    const ask = s.market.bestAsk(resource, this.id);
+    let cap = scale(fair, maxFactor);
     const budget = this.cash(s) / 2n;
+    if (this.options.spareMarketMaker) {
+      // The market maker's last units of the day are left to people: buy from players first,
+      // then from the market maker only beyond that share.
+      const mm = Object.values(s.state().orders).find(
+        (o) => o.playerId === MARKET_MAKER && o.resource === resource && o.side === "sell",
+      );
+      const theirs = bestPrice(s.state(), resource, "sell", {
+        excludePlayer: this.id,
+        playersOnly: true,
+      });
+      const spare = mm ? mm.remaining - PEOPLE_SHARE : 0;
+      let price: Deniers | undefined;
+      let q = 0;
+      if (theirs !== undefined && theirs <= cap && (!mm || theirs < mm.price)) {
+        price = theirs;
+        q = qty;
+      } else if (mm && spare > 0 && mm.price <= cap) {
+        price = mm.price;
+        q = Math.min(qty, spare);
+      }
+      if (price !== undefined) {
+        q = Math.min(q, Number(budget / price));
+        if (q > 0 && openOrderCount(s.state(), this.id) < s.ctx.settings.maxOpenOrders) {
+          s.act({
+            type: "placeOrder",
+            playerId: this.id,
+            resource,
+            side: "buy",
+            kind: "limit",
+            price,
+            quantity: q,
+            expiresInHours: 24,
+          });
+        }
+        return;
+      }
+      // Otherwise a bid that waits for a seller, below the market maker's ask.
+      if (mm && mm.price - 1n < cap) cap = mm.price - 1n;
+    }
+    const ask = this.options.spareMarketMaker ? undefined : s.market.bestAsk(resource, this.id);
     if (ask !== undefined && ask <= cap) {
       const affordable = Number(budget / scale(ask, 1.1));
       const q = Math.min(qty, affordable);
@@ -612,7 +665,8 @@ export class Bot {
       if (surplus <= 0) continue;
       if (res === "bread" && this.available(s, res) < 20) continue;
       const fair = s.market.fair(res);
-      const bid = s.market.bestBid(res, this.id);
+      // In a live world, goods go on the book for people rather than to the market maker.
+      const bid = this.options.spareMarketMaker ? undefined : s.market.bestBid(res, this.id);
       if (bid !== undefined && bid >= scale(fair, 0.95)) {
         s.act({
           type: "placeOrder",
@@ -629,7 +683,14 @@ export class Bot {
       if (openOrderCount(s.state(), this.id) >= s.ctx.settings.maxOpenOrders) continue;
       const key = `sell:${res}`;
       const previous = this.lastPrice.get(key);
-      const floorPrice = scale(s.market.reference(res), 0.5);
+      let floorPrice = scale(s.market.reference(res), 0.5);
+      if (this.options.spareMarketMaker) {
+        // Stay above the market maker's bid, so the goods wait on the book for a buyer.
+        const mmBid = Object.values(s.state().orders).find(
+          (o) => o.playerId === MARKET_MAKER && o.resource === res && o.side === "buy",
+        )?.price;
+        if (mmBid !== undefined && mmBid + 1n > floorPrice) floorPrice = mmBid + 1n;
+      }
       let price = previous ? scale(previous, 0.97) : scale(fair, 1.02);
       if (price < floorPrice) price = floorPrice;
       if (
