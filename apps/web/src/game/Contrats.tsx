@@ -1,12 +1,16 @@
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { BuildingArt } from "../art/buildings.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Big, Label, Panel, Qty, Ribbon, Slab, clock } from "../ui.js";
+import { Big, Label, Panel, Qty, Ribbon, Slab, Tabs, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
+import { Familles } from "./Familles.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
+import { store } from "./store.js";
 import type { ContractView, Project } from "./types.js";
+
+type ContractsTab = "doge" | "families";
 
 function ContractCard({ c, props }: { c: ContractView; props: GameProps }) {
   const stock = have(props.view, c.resource);
@@ -118,10 +122,40 @@ function Need({
 }
 
 export function Contrats(props: GameProps) {
+  const [tab, setTab] = useState<ContractsTab>(() =>
+    store.get("contractsTab") === "families" ? "families" : "doge",
+  );
+  const families = props.view.families !== null;
+  const tabs = families && (
+    <Tabs<ContractsTab>
+      value={tab}
+      onChange={(v) => {
+        store.set("contractsTab", v);
+        setTab(v);
+      }}
+      options={[
+        { value: "doge", label: fr.game.contracts.tabs.doge },
+        { value: "families", label: fr.game.contracts.tabs.families },
+      ]}
+    />
+  );
+  if (families && tab === "families") {
+    return (
+      <div className="space-y-6">
+        {tabs}
+        <Familles {...props} />
+      </div>
+    );
+  }
+  return <Doge {...props} tabs={tabs} />;
+}
+
+function Doge(props: GameProps & { tabs: ReactNode }) {
   const contracts = props.view.contracts;
   const renewAt = contracts[0]?.expiresAt;
   return (
     <div className="space-y-8">
+      {props.tabs}
       <section className="space-y-4">
         <header>
           <Label className="text-gold">☆ {fr.game.contracts.kicker}</Label>

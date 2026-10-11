@@ -124,7 +124,7 @@ export const fr = {
     contracts: {
       kicker: "Contrats du Doge",
       title: "Les commandes du jour",
-      help: "Trois commandes par jour, payées 20 % au-dessus du prix de référence. Elles changent chaque jour.",
+      help: "Deux commandes par jour, payées 20 % au-dessus du prix de référence, et une de votre famille. Elles changent chaque jour.",
       renewIn: "Nouvelles commandes dans",
       reward: "Prime",
       deliver: "Honorer",
@@ -132,6 +132,46 @@ export const fr = {
       missing: (n: number) => `Il vous en manque ${n}`,
       buy: "Acheter au Marché",
       projects: "Grand chantier de la semaine",
+      tabs: { doge: "Le Doge", families: "Les familles" },
+    },
+    families: {
+      kicker: "Les familles patriciennes",
+      title: "Qui tiendra la Seigneurie ?",
+      help: "Prêtez allégeance à une grande famille pour la saison. Servez ses commandes et financez son mécénat : chaque semaine, la famille la plus influente par membre actif prend le pouvoir, et ses membres sont mieux payés la semaine suivante.",
+      opensIn: (inTime: string) =>
+        `Les familles vous ouvriront leurs portes dans ${inTime}. Observez qui monte, et choisissez votre camp.`,
+      choose: "Choisissez votre famille",
+      chooseHelp:
+        "Une seule allégeance pour toute la saison. Ses commandes demandent souvent des marchandises d'autres régions ou d'outre-mer.",
+      orders: "Commande",
+      members: (n: number) => (n > 1 ? `${n} membres` : n === 1 ? "1 membre" : "Aucun membre"),
+      pledge: "Prêter allégeance",
+      confirm: "Confirmer : c'est pour toute la saison",
+      cancel: "Annuler",
+      inPower: "Au pouvoir",
+      powerHelp: (pct: number) =>
+        `Famille au pouvoir cette semaine : ses commandes paient ${pct} % de plus.`,
+      yours: "Votre famille",
+      influenceWeek: "Influence de la semaine",
+      influenceSeason: "Influence de la saison",
+      cap: (n: number) => `Compte jusqu'à ${n} par membre et par semaine`,
+      order: "Commande de la famille",
+      orderHelp: (n: number) => `+${n} d'influence. Nouvelle commande chaque jour.`,
+      patronage: "Mécénat",
+      patronageHelp:
+        "Chapelle, fresque, fête de quartier : les ducats offerts quittent le jeu (ils ne comptent plus dans votre patrimoine) et deviennent de l'influence.",
+      patronageLeft: (n: number) => `Encore ${n} point${n > 1 ? "s" : ""} aujourd'hui`,
+      give: (ducats: string) => `Offrir ${ducats}`,
+      points: (n: number) => `+${n} d'influence`,
+      standings: "Classement de la semaine",
+      standingsHelp: (min: number) =>
+        `Influence par membre actif (au moins ${min} comptés) : une petite famille assidue peut battre une grande famille passive.`,
+      champion: "Champion",
+      contumacia: (pct: number) =>
+        `Contumacia : la famille au pouvoir compte ${pct} % de moins, pour que le pouvoir change de mains.`,
+      house: "Les membres",
+      you: "vous",
+      noOne: "—",
     },
     port: {
       kicker: "Port de Venise",
@@ -357,6 +397,7 @@ export const fr = {
         contract_reward: "Contrats du Doge",
         project_delivery: "Grands chantiers",
         mission_reward: "Livre de compte",
+        family_order_reward: "Commandes de famille",
       } as Record<string, string>,
       notices: (kind: string, n: number) =>
         ({
@@ -367,6 +408,7 @@ export const fr = {
           corsairs: "Corsaires de retour",
           event: `${n} nouvelle${n > 1 ? "s" : ""} à la gazette`,
           week: "Résultats de la semaine",
+          family: "La semaine des familles",
         })[kind] ?? `${n} × ${kind}`,
       collect: (n: number) => `Tout récolter et relancer · ${n} lot${n > 1 ? "s" : ""}`,
       restart: "Relancer mes ateliers",
@@ -486,6 +528,12 @@ export const fr = {
           : `Offre conclue : ${who} vous a vendu ${qty} ${what.toLowerCase()}.`,
       corsairs: (route: string) =>
         `Vos corsaires sont rentrés de la route de ${route} : déchargez le butin.`,
+      family: (week: number, winner: string | null, mine: boolean, family: string, rank: number) =>
+        !winner
+          ? `Semaine ${week} : aucune famille n'a gagné d'influence.`
+          : mine
+            ? `Semaine ${week} : les ${winner} prennent le pouvoir. Vos commandes de famille paient davantage !`
+            : `Semaine ${week} : les ${winner} prennent le pouvoir ; les ${family} finissent ${rank}e.`,
       week: (week: number, rank: number, gain: string, award: string | null) =>
         `Semaine ${week} : vous terminez ${rank}${rank === 1 ? "er" : "e"} (${gain}).${award ? ` Vous êtes ${award} !` : ""}`,
       push: {
@@ -511,6 +559,7 @@ export const fr = {
           season: "Fin et ouverture de saison",
           criee: "Criées (Pass Négociant)",
           deal: "Bonnes affaires (Pass Négociant)",
+          family: "Semaine des familles",
         } as Record<string, string>,
       },
     },
@@ -735,6 +784,11 @@ export const fr = {
       cargo_too_valuable: "La cargaison dépasse la cale du navire marchand.",
       unknown_expedition: "Galère introuvable.",
       expedition_not_back: "La galère n'est pas encore rentrée.",
+      unknown_family: "Famille inconnue.",
+      family_locked: "Les familles ne vous ont pas encore ouvert leurs portes.",
+      family_chosen: "Vous avez déjà prêté allégeance pour cette saison.",
+      no_family: "Prêtez d'abord allégeance à une famille.",
+      patronage_limit: "Vous avez atteint le plafond de mécénat du jour.",
     } as Record<string, string>,
   },
 

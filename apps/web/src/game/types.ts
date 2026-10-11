@@ -30,6 +30,19 @@ export interface Catalog {
   ships: ShipType[];
   fleet: { maxPerPlayer: number; portDuesBps: number };
   privateers: PrivateerRules;
+  /** The patrician families: names, domains and what they order. */
+  families: { code: string; name: string; domain: string; quantities: Record<string, number> }[];
+  familyRules: {
+    openDay: number;
+    orderInfluence: number;
+    patronageUnit: Money;
+    patronageMaxPerDay: number;
+    weeklyCapPerMember: number;
+    minMembers: number;
+    powerPremiumBps: number;
+    incumbentHandicapBps: number;
+    orderPremiumBps: number;
+  };
   rations: { resource: string; perLevelPerDay: number; slowdownBps: number };
   resources: { code: string; name: string; chain: string; tier: string }[];
   regions: { code: string; name: string; bonusResource: string; startingBuildings: string[] }[];
@@ -168,6 +181,41 @@ export interface ContractView {
   done: boolean;
 }
 
+export interface FamilyOrderView {
+  id: string;
+  day: number;
+  family: string;
+  resource: string;
+  quantity: number;
+  unitPrice: Money;
+  expiresAt: number;
+  done: boolean;
+}
+
+export interface FamilyStanding {
+  family: string;
+  members: number;
+  activeMembers: number;
+  influence: number;
+  /** Influence per counted member, in hundredths. */
+  score: number;
+  champion: string | null;
+  /** In power this week: its score counts lower (contumacia). */
+  incumbent: boolean;
+}
+
+export interface FamiliesView {
+  mine: string | null;
+  opensAt: number;
+  inPower: string | null;
+  week: number;
+  standings: FamilyStanding[];
+  members: { playerId: string; week: number; season: number; me: boolean }[];
+  orders: FamilyOrderView[];
+  influence: { week: number; season: number };
+  patronageLeft: number;
+}
+
 export interface GazetteEvent {
   code: string;
   city: string | null;
@@ -252,6 +300,7 @@ export interface PlayerView {
   cityQuotes: { city: string; resource: string; unitPrice: Money }[];
   projects: Project[];
   contracts: ContractView[];
+  families: FamiliesView | null;
   gazette: { current: GazetteEvent | null; next: GazetteEvent | null };
   expeditions: ExpeditionView[];
   book: Record<string, BookView>;
@@ -408,7 +457,8 @@ export type NotificationKind =
   | "week"
   | "season"
   | "criee"
-  | "deal";
+  | "deal"
+  | "family";
 
 export interface Notice {
   id: number;
@@ -514,6 +564,9 @@ export type Action =
   | { type: "sellToCity"; city: string; resource: string; quantity: number }
   | { type: "deliverToProject"; projectId: string; resource: string; quantity: number }
   | { type: "fulfillContract"; contractId: string }
+  | { type: "joinFamily"; family: string }
+  | { type: "fulfillFamilyOrder"; orderId: string }
+  | { type: "patronize"; points: number }
   | {
       type: "launchExpedition";
       destination: string;
