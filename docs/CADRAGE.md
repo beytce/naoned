@@ -103,6 +103,19 @@ Inspiré de Mercato Venezia : du risque et de l'affrontement entre joueurs, sans
 | **Ouverture progressive** | Le Port s'ouvre au jour 3 (mission « premier convoi »), les lettres de marque au jour 6 (« premier navire ») ; un joueur déjà en mer n'est jamais bloqué |
 | **Tableau de rétention** | Page `/admin` réservée aux adresses `ADMIN_EMAILS` : retour à J+1, 3, 7, 14, 30, sessions par jour, entonnoir du tutoriel, dernière visite. PNJ exclus |
 
+### Les familles patriciennes (premier lien social)
+
+Plan complet et phases suivantes (mariages, commandite, enchère des galères, prêts, Grand Conseil) : `docs/plan-familles.md`.
+
+| Mécanique | Règle |
+| --- | --- |
+| **Allégeance** | Contarini (bâtisseurs), Morosini (terre ferme), Mocenigo (mer), Dandolo (Levant). Ouverte 4 jours après l'arrivée, une fois pour la saison |
+| **Commande de famille** | Une par jour et par membre, dans le domaine de la famille, à la prime du Doge. Le Doge passe à 2 commandes par jour : la monnaie créée ne bouge pas |
+| **Mécénat** | Ducats offerts à sa famille, plafonnés par jour, **détruits** : un puits qui coûte du patrimoine. Ni l'influence ni le mécénat ne comptent au classement |
+| **Semaine des familles** | Influence plafonnée par membre, divisée par le nombre de membres actifs (au moins 3) : une petite famille assidue bat une grande famille passive. La gagnante tient la Seigneurie la semaine suivante (commandes de famille +10 %), avec une *contumacia* qui réduit son score pour que le pouvoir change de mains |
+| **Visibilité** | Onglet Familles (Contrats) : classement en direct, champions, membres et leurs contributions ; notification du résultat de la semaine |
+| **PNJ** | Les maisons marchandes prêtent allégeance, livrent les commandes et font du mécénat, pour qu'un petit monde ait des familles vivantes |
+
 ## Vision et positionnement
 
 Fondaco est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.
@@ -243,6 +256,7 @@ L'économie repose sur un carnet d'ordres par ressource et par monde (pas par r�
 
 - Ventes aux villes PNJ : chaque ville achète du pain, des briques et des planches selon une courbe de demande dont le prix baisse avec la quantité vendue dans la journée, puis se régénère. La capacité de chaque ville est fixée par joueur actif, pour que la demande suive la taille du monde.
 - Paiements des grands chantiers.
+- Contrats du Doge et commandes de famille (même budget que trois contrats du Doge, plus la prime de la famille au pouvoir).
 - Achats nets du PNJ teneur de marché.
 - Capital de départ : 1 000 ducats par joueur.
 
@@ -252,6 +266,7 @@ L'économie repose sur un carnet d'ordres par ressource et par monde (pas par r�
 - Entretien des bâtiments en ducats, prélevé chaque jour ; il croît plus vite que le niveau (un bâtiment de niveau L coûte base × L × (1 + 20 % × (L − 1))). Un joueur qui ne peut pas payer ne peut plus lancer de production pendant 24 h.
 - Part en ducats du coût de construction et d'amélioration, palais compris (le reste se paie en briques et en planches, qui ne sont pas un puits de monnaie).
 - Ventes nettes du PNJ teneur de marché.
+- Mécénat des familles (plafonné par jour).
 
 **Indicateurs de santé**
 

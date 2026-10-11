@@ -10,7 +10,7 @@
 4. **Pass Négociant** : information et confort seulement ; jamais un meilleur taux, plus de votes, une dot moins chère.
 5. **Tout réglé dans `worlds.settings`**, validé au simulateur (toutes les graines conformes et `--pass 0.2`) et documenté dans `docs/calibration.md`.
 
-## Phase 1 : les familles patriciennes (en cours)
+## Phase 1 : les familles patriciennes (faite)
 
 Quatre grandes familles se disputent l'influence chaque semaine. Chaque marchand prête allégeance à l'une d'elles pour la saison ; les membres la font monter **ensemble**.
 
@@ -30,8 +30,9 @@ Chaque famille demande des marchandises de plusieurs régions ou d'outre-mer : l
 | **Mécénat** | Don de ducats à sa famille (chapelle, fresque, fête), plafonné par jour. Les ducats sont **détruits** : c'est un puits, qui coûte du patrimoine |
 | **Influence** | Une commande et chaque tranche de mécénat rapportent de l'influence à son auteur, pour la semaine et pour la saison |
 | **Classement des familles** | Chaque semaine : somme de l'influence de chaque membre (plafonnée par membre) divisée par le nombre de membres actifs (au moins `minMembers`). Une petite famille assidue peut battre une grande famille passive, et rejoindre la famille en tête ne suffit pas pour gagner |
-| **Famille au pouvoir** | La famille gagnante tient la Seigneurie la semaine suivante : ses membres touchent une prime de plus sur leurs commandes de famille (bornée : une commande par jour), et la gazette l'annonce |
-| **Champion** | Le meilleur contributeur de chaque famille est nommé dans la gazette de la semaine |
+| **Famille au pouvoir** | La famille gagnante tient la Seigneurie la semaine suivante : ses membres touchent une prime de plus sur leurs commandes de famille (bornée : une commande par jour), et chacun en est notifié |
+| **Contumacia** | À Venise, on ne pouvait pas enchaîner deux fois la même charge : la famille au pouvoir compte son score un tiers plus bas. Sans cette règle, au simulateur, la famille aux commandes les plus faciles gagnait 12 semaines sur 15 |
+| **Champion** | Le meilleur contributeur de chaque famille de la semaine est affiché au classement des familles |
 | **Visibilité** | Écran Familles : classement en direct, membres et leurs contributions de la semaine, famille au pouvoir |
 
 Économie : la commande de famille remplace une commande du Doge (création inchangée, sauf la prime de la famille au pouvoir, petite et plafonnée), et le mécénat est un nouveau puits. Ni l'influence ni le mécénat ne comptent dans le patrimoine.
