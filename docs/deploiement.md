@@ -13,7 +13,8 @@ Un seul service : le serveur Fastify sert l'API (`/api/…`) et l'application we
 | `VAPID_PUBLIC_KEY` | non | Clé publique des notifications push ; sans elle, notifications dans le jeu seulement |
 | `VAPID_PRIVATE_KEY` | non | Clé privée des notifications push (secrète) |
 | `VAPID_SUBJECT` | non | Contact de l'émetteur, par défaut `mailto:contact@comptoirs.app` |
-| `ADMIN_EMAILS` | non | Adresses (séparées par des virgules) autorisées à voir le tableau de rétention sur `/admin` |
+| `ADMIN_EMAILS` | non | Adresses (séparées par des virgules) autorisées sur `/admin` : rétention, échanges suspects, répétition de fin de saison, attribution du Pass |
+| `ALERT_WEBHOOK_URL` | non | Webhook Discord ou Slack : alerte si le monde est bloqué, si une erreur serveur survient, si le grand livre a un écart ou lors d'une relève de déploiement |
 | `PORT` | non | Fourni par Railway |
 | `NODE_ENV` | non | `production` (déjà fixé dans le Dockerfile) |
 
@@ -34,13 +35,22 @@ Coût indicatif : l'offre Hobby de Railway (environ 5 $ par mois, usage inclus) 
 
 ## Monde de jeu
 
-Au premier démarrage, le serveur crée le monde « Venise 1450 — bêta », qui commence à cet instant et dure 42 jours. Les mises à jour suivantes reprennent le même monde : son état est enregistré en base après chaque action, avec le grand livre, les mouvements de stock et les échanges.
+Les saisons suivent les mois civils (heure de Paris). Au premier démarrage, le serveur crée le monde « Venise 1450 · <mois> », qui commence à cet instant et se termine à la fin du mois (ou du mois suivant s'il reste moins de 14 jours). Les mises à jour reprennent le même monde : son état est enregistré en base après chaque action, avec le grand livre, les mouvements de stock et les échanges.
 
-- Un seul exemplaire du service doit tourner (pas de mise à l'échelle horizontale dans Railway) : le monde est tenu en mémoire et les actions sont traitées une par une. Un second exemplaire serait détecté et refusé à la première écriture.
+- **Fin de saison** : le premier tick après minuit le 1er du mois fige le classement, distribue les récompenses (Renommée, Pass Négociant), ferme le monde et ouvre le mois suivant. Pour répéter une clôture sur un monde de test : `/admin` → « Fin de saison (répétition) ».
+- Un seul exemplaire du service doit tourner (pas de mise à l'échelle horizontale dans Railway) : le monde est tenu en mémoire et les actions sont traitées une par une. Lors d'un déploiement, Railway démarre la nouvelle instance avant d'arrêter l'ancienne : la nouvelle prend la main sur le monde (colonne `world_states.owner`) et l'ancienne s'arrête à sa prochaine écriture.
 - Le marché du PNJ, l'entretien et les chantiers avancent chaque minute ; la production est calculée à la lecture.
 - Des maisons marchandes PNJ complètent le monde jusqu'à 15 marchands actifs (`bots.population` dans les réglages du monde) ; elles se retirent à mesure que des joueurs arrivent. Mettre `bots.population` à 0 les arrête.
 - Les notifications (cloche, push) sont calculées chaque minute ; la semaine se clôt à la première minute après chaque période de 7 jours depuis l'ouverture du monde.
-- Les six invariants du grand livre sont vérifiés au démarrage puis toutes les heures ; un écart apparaît dans les journaux sous « invariant violations ».
+- Les six invariants du grand livre sont vérifiés au démarrage puis toutes les heures ; un écart apparaît dans les journaux sous « invariant violations » (et en alerte si `ALERT_WEBHOOK_URL` est réglé).
+
+## Exploitation
+
+- **Sauvegardes** : activer les sauvegardes de la base PostgreSQL dans Railway (onglet *Backups* du service Postgres) et faire une fois un essai de restauration sur une base de test. À défaut, une copie quotidienne avec `pg_dump "$DATABASE_URL" > fondaco-$(date +%F).sql` depuis un poste ou une tâche planifiée.
+- **Surveillance** : un service de disponibilité gratuit (UptimeRobot, Better Stack…) qui interroge `https://<domaine>/api/health` toutes les 5 minutes. Le contrôle répond 503 si la base ne répond pas ou si le monde n'a plus avancé depuis 5 minutes. Pour les alertes, créer un webhook dans un salon Discord (*Paramètres du salon → Intégrations → Webhooks*) et le coller dans `ALERT_WEBHOOK_URL`.
+- **Intégration continue** : `.github/workflows/ci.yml` lance le lint, les types, les tests et la construction de l'application à chaque push. Ne déployer qu'une branche au vert.
+- **Triche** : `/admin` liste les paires de marchands qui échangent souvent entre eux loin du prix de référence. Les offres entre joueurs sont de toute façon limitées au quart et au quadruple du prix de référence.
+- **Données personnelles** : chaque joueur peut télécharger ses données et supprimer son compte depuis son profil.
 
 ## En local
 

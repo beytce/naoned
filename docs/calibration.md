@@ -250,3 +250,9 @@ S'y ajoutent, côté serveur, des avantages d'information (carnet à 10 offres, 
 | Gratuit assidu devant abonné occasionnel | 7 477 contre 2 487 ducats | — | — | 5 823 contre 2 563 ducats |
 
 Le Pass reste léger pour des bots : quelques pourcents au plus. La graine 4 montre la limite de la mesure (deux parties qui divergent). De vrais joueurs tireront davantage de l'information (alertes, vigie) : à surveiller pendant la bêta, avec la règle de CLAUDE.md comme garde-fou.
+
+## Fourchette de prix des offres entre joueurs
+
+Une offre entre joueurs doit rester entre le quart et quatre fois le prix de référence (`priceBand` : 2 500 à 40 000 points de base). Elle empêche un second compte de passer des ducats au premier (un pain vendu une fortune), ce qui comptait davantage depuis que le top 10 gagne le Pass Négociant.
+
+Sur les 5 graines, les résultats sont identiques à ceux de la section précédente (toutes conformes, aucun ordre de bot refusé) : la fourchette ne gêne pas le commerce normal.
