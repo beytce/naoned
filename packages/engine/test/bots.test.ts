@@ -8,8 +8,8 @@ import {
   botsWanted,
   parseSettings,
 } from "../src/index.js";
-import { testSettings } from "./fixture.js";
-import { DAY, HOUR, World } from "./helpers.js";
+import { deliverySettings, testSettings } from "./fixture.js";
+import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
 
 describe("bot population", () => {
   const settings = (population: number) => parseSettings({ ...testSettings, bots: { population } });
@@ -107,5 +107,63 @@ describe("bots in a live world", () => {
       (o) => o.side === "sell" && o.playerId !== MARKET_MAKER,
     );
     expect(onSale.length).toBeGreaterThan(0);
+  });
+});
+
+describe("bots on the road", () => {
+  it("deliver their board, buy a vehicle, post bands and fight back when online", () => {
+    const w = new World(
+      makeContext({
+        ...deliverySettings,
+        bandits: { ...deliverySettings.bandits, npcBands: { perDay: 4, hours: 3 } } as never,
+      }),
+    );
+    const rng = new Rng(5);
+    const bots = [
+      new Bot("b1", PROFILES.producer, "terraferma", w.now),
+      new Bot("b2", PROFILES.artisan, "terraferma", w.now),
+      new Bot("b3", PROFILES.builder, "lagoon", w.now),
+      new Bot("b4", PROFILES.builder, "dolomites", w.now),
+      new Bot("b5", PROFILES.speculator, "lagoon", w.now),
+      new Bot("b6", PROFILES.casual, "terraferma", w.now),
+    ];
+    for (const b of bots) {
+      w.do({ type: "join", playerId: b.id, region: b.region });
+      w.give(b.id, "bread", 200).give(b.id, "bricks", 80).give(b.id, "planks", 80);
+    }
+    const session = {
+      ctx: w.ctx,
+      state: () => w.state,
+      get now() {
+        return w.now;
+      },
+      market: new MarketView(
+        w.ctx,
+        () => w.state,
+        () => w.now,
+      ),
+      rng,
+      act: (cmd: Parameters<World["try"]>[0]) => w.try(cmd).ok,
+    };
+    const end = w.now + 7 * DAY;
+    let step = 0;
+    while (w.now < end) {
+      w.do({ type: "tick" });
+      for (const b of bots) {
+        // Play every 2 h in the daytime (UTC 7 h to 21 h).
+        const hour = Math.floor((w.now % DAY) / HOUR);
+        if (step % 8 === 0 && hour >= 7 && hour <= 21) b.play(session);
+        b.respond(session);
+      }
+      w.advance(15 * MIN);
+      step++;
+    }
+    const deliveries = Object.values(w.state.deliveries ?? {});
+    const attacked = deliveries.filter((d) => d.attack);
+    expect(deliveries.filter((d) => d.outcome !== "en_route").length).toBeGreaterThan(20);
+    expect(Object.values(w.state.vehicles ?? {}).length).toBeGreaterThan(bots.length);
+    expect(Object.values(w.state.bands ?? {}).some((b) => b.playerId === "b5")).toBe(true);
+    expect(attacked.length).toBeGreaterThan(0);
+    expect(attacked.some((d) => d.attack?.reacted)).toBe(true);
   });
 });

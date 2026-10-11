@@ -3,6 +3,18 @@ import { costForLevel } from "./buildings.js";
 import { quoteCitySale } from "./cities.js";
 import type { Command } from "./commands.js";
 import { contractsFor, rerollsOf } from "./contracts.js";
+import {
+  allRoutes,
+  banditsOn,
+  deliveriesDoneToday,
+  deliveriesOn,
+  deliveryOrdersFor,
+  escortCost,
+  travelMinutes,
+  vehicleFree,
+  vehiclesOf,
+  watchedRoads,
+} from "./deliveries.js";
 import { cargoValueAt } from "./expeditions.js";
 import { familiesOpenAt, familyOrdersDone, familyOrdersFor, patronageLeft } from "./families.js";
 import { bestPrice, marketMakerQuotaLeft, maxOpenOrdersFor, openOrderCount } from "./market.js";
@@ -47,11 +59,17 @@ export interface Profile {
   /** Inputs the bot buys on the market to keep its buildings busy. */
   buysInputs: boolean;
   speculates: boolean;
+  /** Chance of hiring guards on a road where bandits lie in wait (0 to 1). */
+  prudence: number;
+  /** Vehicles the bot is willing to own. */
+  vehicles: number;
 }
 
 export const PROFILES: Record<ProfileName, Profile> = {
   producer: {
     name: "producer",
+    prudence: 0.5,
+    vehicles: 2,
     sessionsPerDay: [2, 4],
     churnPerDay: 0.01,
     focus: ["$raw", "$craft"],
@@ -60,6 +78,8 @@ export const PROFILES: Record<ProfileName, Profile> = {
   },
   artisan: {
     name: "artisan",
+    prudence: 0.5,
+    vehicles: 2,
     sessionsPerDay: [2, 4],
     churnPerDay: 0.01,
     focus: ["bakery", "mill", "$raw"],
@@ -68,6 +88,8 @@ export const PROFILES: Record<ProfileName, Profile> = {
   },
   builder: {
     name: "builder",
+    prudence: 0.6,
+    vehicles: 2,
     sessionsPerDay: [2, 4],
     churnPerDay: 0.01,
     focus: ["$craft", "$raw"],
@@ -76,6 +98,8 @@ export const PROFILES: Record<ProfileName, Profile> = {
   },
   speculator: {
     name: "speculator",
+    prudence: 0.2,
+    vehicles: 2,
     sessionsPerDay: [3, 5],
     churnPerDay: 0.01,
     focus: ["$raw"],
@@ -84,6 +108,8 @@ export const PROFILES: Record<ProfileName, Profile> = {
   },
   casual: {
     name: "casual",
+    prudence: 1,
+    vehicles: 1,
     sessionsPerDay: [1, 1],
     churnPerDay: 0.04,
     focus: ["$craft", "$raw"],
@@ -115,6 +141,8 @@ const FAMILY_LEANINGS: Record<ProfileName, string[]> = {
   casual: [],
 };
 const HOUR = 3_600_000;
+/** How long a merchant stays at the screen after a session starts. */
+const ONLINE_MS = 30 * 60_000;
 const DAY = 24 * HOUR;
 
 export interface Session {
@@ -141,6 +169,8 @@ export interface BotOptions {
 export class Bot {
   churned = false;
   sessions = 0;
+  /** A session keeps the merchant at the screen for a while: they can fight back meanwhile. */
+  onlineUntil = 0;
   /** Last limit price used per side and resource, to walk prices when orders do not fill. */
   private lastPrice = new Map<string, Deniers>();
 
@@ -174,6 +204,8 @@ export class Bot {
   play(s: Session): void {
     this.ctxTheme = s.ctx.theme;
     this.sessions++;
+    this.onlineUntil = s.now + ONLINE_MS;
+    this.respond(s);
     this.refreshOrders(s);
     for (const b of this.buildings(s)) {
       if (b.job) s.act({ type: "collect", playerId: this.id, buildingId: b.id });
@@ -183,17 +215,131 @@ export class Bot {
     this.doContracts(s);
     this.serveFamily(s);
     this.deliverProjects(s);
-    this.sellToCriee(s);
-    this.sellToCities(s);
+    if (deliveriesOn(s.ctx)) {
+      this.garage(s);
+      this.deliver(s);
+    } else {
+      this.sellToCriee(s);
+      this.sellToCities(s);
+    }
     this.invest(s);
     this.runProduction(s);
     // Corsairs fit out before their cash goes into speculative orders.
     this.shipyard(s);
     this.privateer(s);
+    this.highwayman(s);
     if (this.profile.speculates) this.speculate(s);
     this.voyage(s);
     this.sellSurplus(s);
     this.claimDaily(s);
+  }
+
+  /**
+   * Fights back an ambush if at the screen: during a session, or coming back before the time
+   * runs out (`comingBackAt`, the next planned session).
+   */
+  respond(s: Session, comingBackAt = Number.POSITIVE_INFINITY): void {
+    for (const d of Object.values(s.state().deliveries ?? {})) {
+      const a = d.attack;
+      if (d.playerId !== this.id || !a || a.success !== undefined || a.reacted) continue;
+      if (s.now > a.reactBy) continue;
+      if (s.now <= this.onlineUntil || comingBackAt <= a.reactBy) {
+        s.act({ type: "reactToAmbush", playerId: this.id, deliveryId: d.id });
+      }
+    }
+  }
+
+  /** A second vehicle once the first one cannot carry the whole board. */
+  private garage(s: Session): void {
+    const { deliveries } = s.ctx.settings;
+    const mine = vehiclesOf(s.state(), this.id);
+    if (mine.length >= Math.min(this.profile.vehicles, deliveries.maxVehicles)) return;
+    if (mine.some((v) => vehicleFree(v, s.now))) return;
+    const type = Object.keys(deliveries.vehicles).includes("cart")
+      ? "cart"
+      : Object.keys(deliveries.vehicles)[0];
+    const def = type ? deliveries.vehicles[type] : undefined;
+    if (!type || !def || this.cash(s) < def.costDucats * 4n) return;
+    for (const [res, qty] of Object.entries(def.costMaterials)) {
+      const missing = qty - this.available(s, res);
+      if (missing > 0) this.buy(s, res, missing, 1.15);
+    }
+    s.act({ type: "buyVehicle", playerId: this.id, vehicleType: type });
+  }
+
+  /**
+   * The board: the best-paid orders the bot can load first, each on the free vehicle that fits
+   * it best. Doge's and family orders are bought for if goods are missing; guards are hired on a
+   * road where bandits lie in wait, by prudence.
+   */
+  private deliver(s: Session): void {
+    const state = s.state();
+    const player = state.players[this.id];
+    if (!player) return;
+    const day = dayIndex(s.ctx, s.now);
+    const done = deliveriesDoneToday(state, this.id, day);
+    const orders = deliveryOrdersFor(s.ctx, state, this.id, day)
+      .filter((o) => !done.includes(o.id) && o.opensAt <= s.now && s.now < o.expiresAt)
+      .sort((a, b) => {
+        const va = a.unitPrice * BigInt(a.quantity);
+        const vb = b.unitPrice * BigInt(b.quantity);
+        return va === vb ? a.id.localeCompare(b.id) : va > vb ? -1 : 1;
+      });
+    const types = s.ctx.settings.deliveries.vehicles;
+    const watched = new Set(watchedRoads(s.ctx, s.state(), s.now));
+    for (const o of orders) {
+      const free = vehiclesOf(s.state(), this.id)
+        .filter((v) => vehicleFree(v, s.now) && (types[v.type]?.capacity ?? 0) >= o.quantity)
+        .sort((a, b) => (types[a.type]?.capacity ?? 0) - (types[b.type]?.capacity ?? 0));
+      const vehicle = free[0];
+      if (!vehicle) continue;
+      if (travelMinutes(s.ctx, player.region, o.city, vehicle.type) === undefined) continue;
+      // The order must beat what the market pays.
+      const bid = this.bestBid(s, o.resource) ?? 0n;
+      if (o.unitPrice < bid) continue;
+      const spare = () => this.available(s, o.resource) - this.reserve(s, o.resource);
+      if (o.kind === "doge" || o.kind === "family") {
+        const missing = o.quantity - spare();
+        if (missing > 0) this.buy(s, o.resource, missing, 1.15);
+      }
+      if (spare() < o.quantity) continue;
+      const route = `${player.region}:${o.city}`;
+      let escort = "none";
+      if (watched.has(route) && s.rng.chance(this.profile.prudence)) {
+        const guards = Object.entries(s.ctx.settings.deliveries.escorts).sort(
+          ([, a], [, b]) => a.costBps - b.costBps,
+        )[0]?.[0];
+        if (guards && this.cash(s) > escortCost(s.ctx, o, guards) * 4n) escort = guards;
+      }
+      s.act({
+        type: "dispatchDelivery",
+        playerId: this.id,
+        orderId: o.id,
+        vehicleId: vehicle.id,
+        escort,
+      });
+    }
+  }
+
+  /** Speculators sometimes post a band on a road; any bot collects its booty. */
+  private highwayman(s: Session): void {
+    if (!banditsOn(s.ctx)) return;
+    for (const b of Object.values(s.state().bands ?? {})) {
+      if (b.playerId !== this.id || b.collected) continue;
+      if (b.dispersed || b.endAt <= s.now)
+        s.act({ type: "collectBooty", playerId: this.id, bandId: b.id });
+    }
+    if (!this.profile.speculates || !s.rng.chance(0.3)) return;
+    const cfg = s.ctx.settings.bandits;
+    const hours = cfg.hoursOptions[Math.floor(cfg.hoursOptions.length / 2)] ?? 0;
+    if (this.cash(s) < cfg.feePerHour * BigInt(hours) * 3n) return;
+    for (const [res, perHour] of Object.entries(cfg.provisionsPerHour)) {
+      const missing = perHour * hours - (this.available(s, res) - this.reserve(s, res));
+      if (missing > 0) this.buy(s, res, missing, 1.3);
+      if (this.available(s, res) - this.reserve(s, res) < perHour * hours) return;
+    }
+    const route = s.rng.pick(allRoutes(s.ctx));
+    if (route) s.act({ type: "postBand", playerId: this.id, route, hours });
   }
 
   /** A Criée under way: sell what is spare (rations and construction stock are kept). */
@@ -211,6 +357,10 @@ export class Bot {
     for (const t of dailyFor(s.ctx, s.state(), this.id, s.now).tasks) {
       if (t.done && !t.claimed) s.act({ type: "claimDaily", playerId: this.id, taskId: t.id });
     }
+  }
+
+  private overseas(s: Session, resource: string): boolean {
+    return s.ctx.theme.resources.find((r) => r.code === resource)?.tier === "luxury";
   }
 
   private buildings(s: Session): Building[] {
@@ -360,7 +510,7 @@ export class Bot {
     const done = s.state().contractsDone?.[this.id];
     const doneIds = done && done.day === day ? done.ids : [];
     // With the Pass: an order the bot cannot cover is swapped for another, once a day.
-    if (hasPass(s.state(), this.id, s.now)) {
+    if (hasPass(s.state(), this.id, s.now) && !deliveriesOn(s.ctx)) {
       const today = contractsFor(s.ctx, this.id, day, rerollsOf(s.state(), this.id, day));
       const stuck = today.find(
         (c) =>
@@ -369,8 +519,10 @@ export class Bot {
       );
       if (stuck) s.act({ type: "rerollContract", playerId: this.id, contractId: stuck.id });
     }
+    const byRoad = deliveriesOn(s.ctx);
     for (const c of contractsFor(s.ctx, this.id, day, rerollsOf(s.state(), this.id, day))) {
       if (doneIds.includes(c.id)) continue;
+      if (byRoad && !this.overseas(s, c.resource)) continue;
       if (this.available(s, c.resource) - this.reserve(s, c.resource) >= c.quantity) {
         s.act({ type: "fulfillContract", playerId: this.id, contractId: c.id });
       }
@@ -406,6 +558,8 @@ export class Bot {
     const familyOrders = (x: Session) => familyOrdersFor(x.ctx, x.state(), this.id, day);
     for (const o of familyOrders(s)) {
       if (done.includes(o.id)) continue;
+      // Home goods go by road (see `deliver`).
+      if (deliveriesOn(s.ctx) && !this.overseas(s, o.resource)) continue;
       // The family's order earns influence: what is missing is bought, a little under its price.
       const missing = o.quantity - (this.available(s, o.resource) - this.reserve(s, o.resource));
       if (missing > 0) this.buy(s, o.resource, missing, 1.15);

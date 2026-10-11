@@ -264,6 +264,8 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
         times.shift();
         bot.play(session);
       }
+      // An ambush on the road: fought back if the merchant is at the screen, or back in time.
+      bot.respond(session, times[0]);
     }
     for (const v of checkInvariants(state, totals)) {
       if (result.violations.length < 50)
