@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Big, Label, Panel, Qty, Sheet, Slab, Sparkline, Tabs } from "../ui.js";
+import { Badge, Big, Label, Panel, Qty, Sheet, Slab, Sparkline, Tabs, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import type { GameProps, MarketTab } from "./Game.js";
 import { d } from "./format.js";
-import type { MarketLine } from "./types.js";
+import type { BookLine, MarketLine, OrderView } from "./types.js";
 
 function series(props: GameProps, resource: string): number[] {
   return (props.prices[resource] ?? []).map((p) => Number(p.price));
@@ -96,18 +96,86 @@ function Row({ line, props }: { line: MarketLine; props: GameProps }) {
   );
 }
 
+/** "2,40" or "2.4" ducats → 240 deniers; null if not a price. */
+export function parseDucats(text: string): bigint | null {
+  const m = text.trim().match(/^(\d{1,9})(?:[.,](\d{0,2}))?$/);
+  if (!m) return null;
+  const cents = (m[2] ?? "").padEnd(2, "0");
+  const value = BigInt(m[1] ?? "0") * 100n + BigInt(cents || "0");
+  return value > 0n ? value : null;
+}
+
+const asDucats = (deniers: bigint) => (Number(deniers) / 100).toFixed(2).replace(".", ",");
+
+function BookSide({
+  lines,
+  title,
+  tone,
+  props,
+}: { lines: BookLine[]; title: string; tone: string; props: GameProps }) {
+  const t = fr.game.book;
+  return (
+    <div className="min-w-0">
+      <Label className={tone}>{title}</Label>
+      {lines.length === 0 ? (
+        <p className="mt-2 text-xs text-muted">{t.empty}</p>
+      ) : (
+        <ul className="mt-2 space-y-1.5">
+          {lines.map((l, i) => {
+            const who =
+              l.by === "market_maker"
+                ? t.fondaco
+                : l.mine
+                  ? t.you
+                  : (props.people[l.by] ?? fr.game.anonymous);
+            return (
+              <li key={`${l.by}-${l.price}-${i}`} className="text-xs leading-tight">
+                <p className="flex items-center gap-1 truncate font-semibold">
+                  <span className="truncate">{who}</span>
+                  {props.bots.has(l.by) && <Badge tone="ghost">{fr.game.npc}</Badge>}
+                </p>
+                <p className="font-mono tabular-nums text-cream-dim">
+                  {l.quantity} × {d(l.price)}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function TradeSheet({ line, props }: { line: MarketLine; props: GameProps }) {
+  const t = fr.game.book;
+  const [mode, setMode] = useState<"now" | "price">("now");
   const [qty, setQty] = useState(5);
+  const book = props.view.book[line.resource];
   const stock = have(props.view, line.resource);
   const slippage = 10_000 + props.catalog.rules.instantOrderSlippageBps;
   const ask = line.bestAsk ? BigInt(line.bestAsk) : null;
   const bid = line.bestBid ? BigInt(line.bestBid) : null;
+  const [priceText, setPriceText] = useState(
+    asDucats(ask ?? bid ?? BigInt(props.catalog.referencePrices[line.resource] ?? "100")),
+  );
+  const price = parseDucats(priceText);
   // An instant buy reserves up to the best ask plus the price protection.
   const worstAsk = ask ? (ask * BigInt(slippage)) / 10_000n : null;
-  const maxBuy = worstAsk && worstAsk > 0n ? Number(BigInt(props.view.cash) / worstAsk) : 0;
+  const cash = BigInt(props.view.cash);
+  const maxBuy =
+    mode === "now"
+      ? worstAsk && worstAsk > 0n
+        ? Number(cash / worstAsk)
+        : 0
+      : price
+        ? Number(cash / price)
+        : 0;
   const max = Math.max(1, maxBuy, stock);
   const q = Math.min(qty, max);
   const points = series(props, line.resource);
+  const mine = props.view.openOrders.filter((o) => o.resource === line.resource);
+  const done = () => props.setSheet(null);
+  const quota = book?.quota;
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4">
@@ -124,67 +192,167 @@ function TradeSheet({ line, props }: { line: MarketLine; props: GameProps }) {
         </div>
         <Sparkline points={points} width={90} height={36} />
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-night-3 p-3 ring-1 ring-line">
-          <Label>{fr.game.buyAt}</Label>
-          <Big className="mt-1 text-2xl">{line.bestAsk ? d(line.bestAsk) : fr.game.noOffer}</Big>
-        </div>
-        <div className="bg-night-3 p-3 ring-1 ring-line">
-          <Label>{fr.game.sellAt}</Label>
-          <Big className="mt-1 text-2xl text-lagoon">
-            {line.bestBid ? d(line.bestBid) : fr.game.noOffer}
-          </Big>
-        </div>
+
+      <div className="grid grid-cols-2 gap-4 bg-night-3 p-3 ring-1 ring-line">
+        <BookSide lines={book?.asks ?? []} title={t.sellers} tone="text-gold" props={props} />
+        <BookSide lines={book?.bids ?? []} title={t.buyers} tone="text-lagoon" props={props} />
       </div>
+      {quota && quota.buy !== null && (
+        <p className="text-xs text-cream-dim">
+          {t.quota(String(quota.buy), String(quota.sell ?? "—"))}
+        </p>
+      )}
+
+      <Tabs<"now" | "price">
+        value={mode}
+        onChange={setMode}
+        options={[
+          { value: "now", label: t.now },
+          { value: "price", label: t.myPrice },
+        ]}
+      />
+
+      {mode === "price" && (
+        <label className="block">
+          <Label>{t.price}</Label>
+          <input
+            inputMode="decimal"
+            value={priceText}
+            onChange={(e) => setPriceText(e.target.value)}
+            className={`mt-2 w-full bg-night-3 p-3 font-display text-xl tabular-nums ring-1 ${price ? "ring-line" : "ring-vermilion"}`}
+          />
+        </label>
+      )}
+
       <Qty value={q} max={max} onChange={setQty} />
-      {worstAsk !== null && (
+      {mode === "now" && worstAsk !== null && (
         <p className="text-xs text-muted">{fr.game.maxCost(d(worstAsk * BigInt(q)))}</p>
       )}
-      <div className="grid grid-cols-2 gap-4">
-        <Slab
-          size="lg"
-          coach="sheet-buy"
-          disabled={props.busy || !ask || q > maxBuy}
-          onClick={async () => {
-            if (
-              await props.act({
-                type: "instantOrder",
-                resource: line.resource,
-                side: "buy",
-                quantity: q,
-              })
-            )
-              props.setSheet(null);
-          }}
-        >
-          {fr.game.buy}
-        </Slab>
-        <Slab
-          size="lg"
-          tone="lagoon"
-          disabled={props.busy || !bid || q > stock}
-          onClick={async () => {
-            if (
-              await props.act({
-                type: "instantOrder",
-                resource: line.resource,
-                side: "sell",
-                quantity: q,
-              })
-            )
-              props.setSheet(null);
-          }}
-        >
-          {fr.game.sell}
-        </Slab>
-      </div>
+      {mode === "price" && price !== null && (
+        <p className="text-xs text-muted">{t.reserved(d(price * BigInt(q)))}</p>
+      )}
+
+      {mode === "now" ? (
+        <div className="grid grid-cols-2 gap-4">
+          <Slab
+            size="lg"
+            coach="sheet-buy"
+            disabled={props.busy || !ask || q > maxBuy}
+            onClick={async () => {
+              if (
+                await props.act({
+                  type: "instantOrder",
+                  resource: line.resource,
+                  side: "buy",
+                  quantity: q,
+                })
+              )
+                done();
+            }}
+          >
+            {fr.game.buy}
+          </Slab>
+          <Slab
+            size="lg"
+            tone="lagoon"
+            disabled={props.busy || !bid || q > stock}
+            onClick={async () => {
+              if (
+                await props.act({
+                  type: "instantOrder",
+                  resource: line.resource,
+                  side: "sell",
+                  quantity: q,
+                })
+              )
+                done();
+            }}
+          >
+            {fr.game.sell}
+          </Slab>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          <Slab
+            size="md"
+            disabled={props.busy || !price || price * BigInt(q) > cash}
+            onClick={async () => {
+              if (
+                price &&
+                (await props.act({
+                  type: "limitOrder",
+                  resource: line.resource,
+                  side: "buy",
+                  price: price.toString(),
+                  quantity: q,
+                }))
+              )
+                done();
+            }}
+          >
+            {t.postBuy}
+          </Slab>
+          <Slab
+            size="md"
+            tone="lagoon"
+            disabled={props.busy || !price || q > stock}
+            onClick={async () => {
+              if (
+                price &&
+                (await props.act({
+                  type: "limitOrder",
+                  resource: line.resource,
+                  side: "sell",
+                  price: price.toString(),
+                  quantity: q,
+                }))
+              )
+                done();
+            }}
+          >
+            {t.postSell}
+          </Slab>
+        </div>
+      )}
+
+      {mine.length > 0 && <MyOffers orders={mine} props={props} />}
+
       <p className="text-xs text-muted">
         {fr.game.marketHelp(
           props.catalog.rules.instantOrderSlippageBps / 100,
           props.catalog.rules.marketTaxBps / 100,
-        )}
+        )}{" "}
+        {t.fondacoHelp}
       </p>
     </div>
+  );
+}
+
+function MyOffers({ orders, props }: { orders: OrderView[]; props: GameProps }) {
+  const t = fr.game.book;
+  return (
+    <section className="space-y-2">
+      <Label>{t.myOffers}</Label>
+      {orders.map((o) => (
+        <div key={o.id} className="flex items-center gap-3 border-b border-line/70 py-2">
+          <ResourceIcon code={o.resource} size={28} />
+          <div className="min-w-0 flex-1 text-sm">
+            <p className={o.side === "sell" ? "text-lagoon" : "text-gold"}>
+              {t.offerLine(o.side, o.remaining, props.names.resource(o.resource), d(o.price))}
+            </p>
+            <p className="label">{t.expires(clock(o.expiresAt - props.now))}</p>
+          </div>
+          <Slab
+            size="sm"
+            tone="ghost"
+            disabled={props.busy}
+            onClick={() => props.act({ type: "cancelOrder", orderId: o.id })}
+          >
+            {t.cancel}
+          </Slab>
+        </div>
+      ))}
+    </section>
   );
 }
 
@@ -267,6 +435,9 @@ export function Marche(props: GameProps) {
       />
       {props.marketTab === "joueurs" ? (
         <>
+          {props.view.openOrders.length > 0 && (
+            <MyOffers orders={props.view.openOrders} props={props} />
+          )}
           {featured && <Featured line={featured} props={props} />}
           <div>
             {lines.map((l) => (

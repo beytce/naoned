@@ -40,6 +40,22 @@ export type ActionResult = { ok: true } | { ok: false; error: string };
  */
 export class GameWorld {
   private queue: Promise<unknown> = Promise.resolve();
+  private listeners: ((fx: Effects, now: number) => void)[] = [];
+
+  /** Called after every saved command or batch, with what it wrote (notifications). */
+  onEffects(listener: (fx: Effects, now: number) => void): void {
+    this.listeners.push(listener);
+  }
+
+  private notify(fx: Effects, now: number): void {
+    for (const l of this.listeners) {
+      try {
+        l(fx, now);
+      } catch {
+        // A listener never breaks the game.
+      }
+    }
+  }
   private timer: NodeJS.Timeout | undefined;
 
   private constructor(
@@ -132,6 +148,7 @@ export class GameWorld {
       await this.persist(res.state, res.effects, now, command);
       this.state = res.state;
       this.version += 1;
+      this.notify(res.effects, now);
       return { ok: true };
     });
   }
@@ -172,6 +189,7 @@ export class GameWorld {
       await this.persist(state, fx, now, null);
       this.state = state;
       this.version += 1;
+      this.notify(fx, now);
       return accepted;
     });
   }

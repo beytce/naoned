@@ -10,6 +10,7 @@ import type { Notice } from "./types.js";
 
 const ICON = {
   harvest: NavIcon.comptoir,
+  order: NavIcon.marche,
   galley: NavIcon.port,
   raid: NavIcon.port,
   corsairs: NavIcon.port,
@@ -18,6 +19,7 @@ const ICON = {
 } as const;
 const TONE: Record<string, string> = {
   harvest: "text-lagoon",
+  order: "text-gold",
   galley: "text-lagoon",
   raid: "text-vermilion",
   corsairs: "text-vermilion",
@@ -33,6 +35,15 @@ function text(n: Notice, props: GameProps): string {
     case "galley": {
       const port = props.catalog.ports.find((p) => p.code === n.data.destination)?.name ?? "";
       return t.galley(port);
+    }
+    case "order": {
+      const who = n.data.counterpartyName ? String(n.data.counterpartyName) : fr.game.book.fondaco;
+      return t.order(
+        who,
+        n.data.side === "sell",
+        Number(n.data.quantity),
+        props.names.resource(String(n.data.resource)),
+      );
     }
     case "raid": {
       const route = props.catalog.ports.find((p) => p.code === n.data.route)?.name ?? "";

@@ -8,6 +8,16 @@ const EVENTS: Record<string, string> = {
   sensa_fair: "Foire de la Sensa : les villes achètent plus et paient mieux.",
 };
 
+const RESOURCES: Record<string, string> = {
+  wheat: "blé",
+  flour: "farine",
+  bread: "pains",
+  clay: "argile",
+  bricks: "briques",
+  wood: "bois",
+  planks: "planches",
+};
+
 const AWARDS: Record<string, string> = {
   doge: "Doge de la semaine",
   procurator: "Procurateur de la semaine",
@@ -28,6 +38,13 @@ export function pushText(
         title: "Récolte prête",
         body: "Vos ateliers ont terminé leur production. Venez récolter et relancer !",
       };
+    case "order": {
+      const who = data.counterpartyName ? String(data.counterpartyName) : "le Fondaco";
+      const what = `${data.quantity} ${RESOURCES[String(data.resource)] ?? String(data.resource)}`;
+      return data.side === "sell"
+        ? { title: "Offre conclue", body: `${who} a acheté ${what} de votre offre.` }
+        : { title: "Offre conclue", body: `${who} vous a vendu ${what}.` };
+    }
     case "galley":
       return {
         title: "Galère rentrée",

@@ -43,6 +43,8 @@ export interface GameProps {
   names: Names;
   /** Pseudos of merchants met at sea, by player id. */
   people: Record<string, string | null>;
+  /** Computer-run houses among them. */
+  bots: Set<string>;
   tab: Tab;
   goTo: (tab: Tab) => void;
   marketTab: MarketTab;
@@ -85,6 +87,7 @@ export function Game(props: {
   const [guideKey, setGuideKey] = useState(0);
   const [unread, setUnread] = useState(0);
   const [people, setPeople] = useState<Record<string, string | null>>({});
+  const [bots, setBots] = useState<Set<string>>(new Set());
   const clearUnread = useCallback(() => setUnread(0), []);
 
   const apply = useCallback((serverTime: number, v: PlayerView | null) => {
@@ -98,6 +101,7 @@ export function Game(props: {
       apply(res.serverTime, res.view);
       setUnread(res.unread ?? 0);
       setPeople(res.names ?? {});
+      setBots(new Set(res.bots ?? []));
       if (res.view) setPrices((await gameApi.prices()).series);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) onLogout();
@@ -144,6 +148,7 @@ export function Game(props: {
         const res = await gameApi.act(action);
         apply(res.serverTime, res.view);
         if (res.names) setPeople(res.names);
+        if (res.bots) setBots(new Set(res.bots));
         if (res.error) {
           setToast(fr.game.errors[res.error] ?? fr.errors.unknown ?? null);
           return false;
@@ -219,6 +224,7 @@ export function Game(props: {
     busy,
     names,
     people,
+    bots,
     tab,
     goTo: (t) => {
       setSheet(null);

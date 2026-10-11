@@ -5,11 +5,13 @@ import {
   type WorldContext,
   type WorldState,
   bestPrice,
+  bookSide,
   cashAccount,
   costForLevel,
   dayIndex,
   escrowAccount,
   freeBatches,
+  marketMakerQuotaLeft,
   marketMakerQuotes,
   marketMakerReference,
   netWorth,
@@ -105,6 +107,14 @@ function buildingView(ctx: WorldContext, state: WorldState, b: Building, now: nu
   };
 }
 
+interface BookLine {
+  price: Deniers;
+  quantity: number;
+  /** Player id, or "market_maker" for the Fondaco. */
+  by: string;
+  mine: boolean;
+}
+
 /** Everything one player sees, computed from the engine state. Amounts in deniers. */
 export function playerView(
   ctx: WorldContext,
@@ -141,6 +151,28 @@ export function playerView(
       const unitPrice = quoteCitySale(ctx, state, city, resource, 1, now);
       if (unitPrice !== undefined) cityQuotes.push({ city, resource, unitPrice });
     }
+  }
+
+  // The order book of each resource: best five offers on each side, with who makes them.
+  const book: Record<
+    string,
+    { asks: BookLine[]; bids: BookLine[]; quota: { buy: number | null; sell: number | null } }
+  > = {};
+  for (const r of ctx.theme.resources) {
+    const side = (s: "buy" | "sell") =>
+      bookSide(state, r.code, s)
+        .slice(0, 5)
+        .map((o) => ({
+          price: o.price,
+          quantity: o.remaining,
+          by: o.playerId,
+          mine: o.playerId === playerId,
+        }));
+    book[r.code] = {
+      asks: side("sell"),
+      bids: side("buy"),
+      quota: marketMakerQuotaLeft(ctx, state, playerId, r.code, now),
+    };
   }
 
   // Where the player stands in the season: the goal, always in sight.
@@ -231,6 +263,7 @@ export function playerView(
     })),
     buildings: buildings.map((b) => buildingView(ctx, state, b, now)),
     market,
+    book,
     cityQuotes,
     projects: openProjects(state.projects, now),
     contracts,

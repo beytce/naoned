@@ -276,7 +276,29 @@ export const fr = {
     noOffer: "Aucune offre",
     maxCost: (amount: string) => `Coût maximal : ${amount}`,
     marketHelp: (slippage: number, tax: number) =>
-      `Achat et vente immédiats au meilleur prix (écart maximal ${slippage} %). Taxe de ${tax} % payée par le vendeur entre joueurs.`,
+      `« Tout de suite » : au meilleur prix du carnet (écart maximal ${slippage} %). « À mon prix » : votre offre attend un preneur jusqu'à 72 h. Taxe de ${tax} % payée par le vendeur entre joueurs ; aucune avec le Fondaco.`,
+    book: {
+      sellers: "Ils vendent",
+      buyers: "Ils achètent",
+      empty: "Personne",
+      fondaco: "Fondaco",
+      you: "Vous",
+      quota: (buy: string, sell: string) =>
+        `Fondaco aujourd'hui : encore ${buy} à acheter, ${sell} à lui vendre.`,
+      fondacoHelp:
+        "Le Fondaco, entrepôt de la République, achète et vend chaque ressource de base en quantité limitée par marchand et par jour.",
+      now: "Tout de suite",
+      myPrice: "À mon prix",
+      price: "Prix unitaire (ducats)",
+      postBuy: "Proposer d'acheter",
+      postSell: "Mettre en vente",
+      reserved: (amount: string) => `Réservé jusqu'à la conclusion : ${amount}`,
+      myOffers: "Mes offres",
+      offerLine: (side: "buy" | "sell", qty: number, what: string, price: string) =>
+        `${side === "sell" ? "Vends" : "Achète"} ${qty} ${what.toLowerCase()} à ${price}`,
+      cancel: "Annuler",
+      expires: (left: string) => `expire dans ${left}`,
+    },
     cityTitle: "Les villes achètent",
     cityHelp:
       "Le prix baisse quand on vend beaucoup dans la journée, puis remonte au fil des heures.",
@@ -314,6 +336,10 @@ export const fr = {
         ok
           ? `Vos corsaires ont arraisonné le convoi de ${who}.`
           : `Le convoi de ${who} a repoussé vos corsaires.`,
+      order: (who: string, sold: boolean, qty: number, what: string) =>
+        sold
+          ? `Offre conclue : ${who} a acheté ${qty} ${what.toLowerCase()}.`
+          : `Offre conclue : ${who} vous a vendu ${qty} ${what.toLowerCase()}.`,
       corsairs: (route: string) =>
         `Vos corsaires sont rentrés de la route de ${route} : déchargez le butin.`,
       week: (week: number, rank: number, gain: string, award: string | null) =>
@@ -334,6 +360,7 @@ export const fr = {
           harvest: "Récolte prête",
           galley: "Convoi rentré",
           raid: "Abordages (subis ou réussis)",
+          order: "Offres conclues au marché",
           corsairs: "Retour des corsaires",
           event: "Gazette (nouvel événement)",
           week: "Résultats de la semaine",
@@ -413,7 +440,7 @@ export const fr = {
       buy: (resource: string) =>
         `Achetez quelques ${resource.toLowerCase()} : ils servent à améliorer vos ateliers.`,
       emptyMarket:
-        "Personne ne vend rien au Rialto pour l'instant : le teneur de marché a écoulé son stock du jour. Passons, vous achèterez plus tard.",
+        "Personne ne vend rien au Rialto pour l'instant et votre part du Fondaco est épuisée pour aujourd'hui. Passons, vous achèterez plus tard.",
       skip: "Passer",
       goComptoir: "Retour au comptoir pour investir.",
       invest: "Améliorez un atelier : il produira davantage à chaque lot.",
@@ -437,7 +464,7 @@ export const fr = {
       {
         icon: "port",
         title: "Galères",
-        text: "Envoyez vos marchandises à Constantinople (soie, 12 h) ou Alexandrie (épices, 24 h). Plus-value de 35 à 60 %, mais les pirates rôdent : l'escorte réduit le risque.",
+        text: "Neuf ports, de Raguse (6 h) à Bruges (48 h), paient vos marchandises à leurs prix de la semaine et vous rendent sel, vin, soie, épices, fourrures ou draps. Construisez vos navires à l'Arsenal, escortez vos convois : pirates et corsaires rôdent, et vous pouvez vous-même armer des corsaires.",
       },
       {
         icon: "comptoir",
@@ -447,7 +474,7 @@ export const fr = {
       {
         icon: "marche",
         title: "Vendre et acheter",
-        text: "Au Rialto, vous achetez et vendez instantanément au meilleur prix proposé par les joueurs et le marchand de la République. Les villes achètent le pain, les briques et les planches.",
+        text: "Au Rialto, vous achetez et vendez aux autres marchands et au Fondaco, l'entrepôt de la République (en quantité limitée par jour) : tout de suite au meilleur prix, ou à votre prix en laissant une offre. Les villes achètent le pain, les briques et les planches.",
       },
       {
         icon: "chantiers",

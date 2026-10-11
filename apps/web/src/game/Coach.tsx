@@ -33,7 +33,15 @@ function toBuy(props: GameProps): string | null {
   const { view } = props;
   const missing = MISSING[view.player.region] ?? "planks";
   const wanted = [missing, "planks", "bricks", "wood", "bread", "flour", "wheat", "clay"];
-  const onSale = new Set(view.market.filter((m) => m.bestAsk !== null).map((m) => m.resource));
+  // Something one can actually buy: a player's offer, or the Fondaco within today's quota.
+  const buyable = (resource: string) => {
+    const book = view.book[resource];
+    if (!book) return false;
+    if (book.asks.some((l) => l.by !== "market_maker" && !l.mine)) return true;
+    const fondaco = book.asks.some((l) => l.by === "market_maker");
+    return fondaco && (book.quota.buy === null || book.quota.buy > 0);
+  };
+  const onSale = new Set(view.market.map((m) => m.resource).filter(buyable));
   return wanted.find((r) => onSale.has(r)) ?? null;
 }
 

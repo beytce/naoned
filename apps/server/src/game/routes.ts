@@ -45,6 +45,14 @@ const action = z.discriminatedUnion("type", [
     escort: z.boolean(),
     ships: z.array(z.string()).max(4).optional(),
   }),
+  z.object({
+    type: z.literal("limitOrder"),
+    resource: z.string(),
+    side: z.enum(["buy", "sell"]),
+    price: z.string().regex(/^\d{1,12}$/),
+    quantity: z.number().int().positive().max(100_000),
+  }),
+  z.object({ type: z.literal("cancelOrder"), orderId: z.string() }),
   z.object({ type: z.literal("buildShip"), shipType: z.string() }),
   z.object({ type: z.literal("repairShip"), shipId: z.string() }),
   z.object({
@@ -109,12 +117,18 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       ids.add(n.raider);
       ids.add(n.victim);
     }
-    if (ids.size === 0) return {};
+    for (const b of Object.values(v.book)) {
+      for (const l of [...b.asks, ...b.bids]) if (l.by !== "market_maker") ids.add(l.by);
+    }
+    if (ids.size === 0) return { names: {}, bots: [] };
     const rows = await db
-      .select({ id: accounts.id, pseudo: accounts.pseudo })
+      .select({ id: accounts.id, pseudo: accounts.pseudo, bot: accounts.isBot })
       .from(accounts)
       .where(inArray(accounts.id, [...ids]));
-    return Object.fromEntries(rows.map((r) => [r.id, r.pseudo]));
+    return {
+      names: Object.fromEntries(rows.map((r) => [r.id, r.pseudo])),
+      bots: rows.filter((r) => r.bot).map((r) => r.id),
+    };
   }
 
   async function view(account: PublicAccount) {
@@ -130,7 +144,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return toJson({
       serverTime: now,
       view: v,
-      names: v ? await namesFor(v) : {},
+      ...(v ? await namesFor(v) : { names: {}, bots: [] }),
       unread: v ? await notifier.unread(account.id) : 0,
     });
   }
@@ -415,6 +429,20 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
           ships: a.ships,
         },
       ];
+    case "limitOrder":
+      return [
+        {
+          type: "placeOrder",
+          playerId,
+          resource: a.resource,
+          side: a.side,
+          kind: "limit",
+          price: BigInt(a.price),
+          quantity: a.quantity,
+        },
+      ];
+    case "cancelOrder":
+      return [{ type: "cancelOrder", playerId, orderId: a.orderId }];
     case "buildShip":
       return [{ type: "buildShip", playerId, shipType: a.shipType }];
     case "repairShip":

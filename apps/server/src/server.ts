@@ -30,6 +30,7 @@ const pusher =
     : new NoPusher();
 const notifier = new Notifier(database.db, world, pusher);
 notifier.start(60_000, (err) => console.error(err));
+world.onEffects((fx, now) => void notifier.fromEffects(fx, now).catch(console.error));
 const here = dirname(fileURLToPath(import.meta.url));
 const app = await buildApp({
   db: database.db,

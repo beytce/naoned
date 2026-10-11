@@ -1,4 +1,5 @@
 import { activeEvent, weekIndex } from "@comptoirs/engine";
+import type { Effects } from "@comptoirs/engine";
 import { and, desc, eq, gt, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import {
@@ -14,6 +15,7 @@ import { pushText } from "./texts.js";
 
 export const NOTIFICATION_KINDS = [
   "harvest",
+  "order",
   "galley",
   "raid",
   "corsairs",
@@ -58,6 +60,53 @@ export class Notifier {
     private readonly quiet = { from: 22, to: 8 },
   ) {
     this.ports = Object.fromEntries((world.ctx.theme.ports ?? []).map((p) => [p.code, p.name]));
+  }
+
+  /**
+   * Offers that found a taker, straight from what a command wrote: one notice per player,
+   * resource and side, with the total traded.
+   */
+  async fromEffects(fx: Effects, now: number): Promise<void> {
+    const fills = fx.events.filter((e) => e.type === "order_filled" && e.playerId);
+    if (fills.length === 0) return;
+    const people = await this.people();
+    const grouped = new Map<string, Notice>();
+    for (const e of fills) {
+      const d = e.data ?? {};
+      const accountId = e.playerId ?? "";
+      if (!people.has(accountId)) continue;
+      const key = `${accountId}|${d.resource}|${d.side}`;
+      const n: Notice = grouped.get(key) ?? {
+        accountId,
+        kind: "order",
+        data: {
+          resource: d.resource,
+          side: d.side,
+          quantity: 0,
+          price: d.price,
+          counterparty: d.counterparty,
+        },
+      };
+      n.data.quantity = Number(n.data.quantity) + Number(d.quantity);
+      grouped.set(key, n);
+    }
+    if (grouped.size === 0) return;
+    const ids = [...new Set([...grouped.values()].map((n) => String(n.data.counterparty)))].filter(
+      (id) => /^[0-9a-f-]{36}$/.test(id),
+    );
+    const rows =
+      ids.length === 0
+        ? []
+        : await this.db
+            .select({ id: accounts.id, pseudo: accounts.pseudo })
+            .from(accounts)
+            .where(inArray(accounts.id, ids));
+    const name = new Map(rows.map((r) => [r.id, r.pseudo]));
+    for (const n of grouped.values()) {
+      const who = String(n.data.counterparty);
+      n.data.counterpartyName = who === "market_maker" ? null : (name.get(who) ?? null);
+    }
+    await this.send([...grouped.values()], now);
   }
 
   get publicKey(): string | null {

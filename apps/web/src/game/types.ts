@@ -63,6 +63,32 @@ export interface Destination {
   wants: Record<string, number>;
 }
 
+export interface BookLine {
+  price: Money;
+  quantity: number;
+  /** Player id, or "market_maker" for the Fondaco. */
+  by: string;
+  mine: boolean;
+}
+
+export interface BookView {
+  asks: BookLine[];
+  bids: BookLine[];
+  /** Units still allowed with the Fondaco today (null: no quota). */
+  quota: { buy: number | null; sell: number | null };
+}
+
+export interface OrderView {
+  id: string;
+  resource: string;
+  side: "buy" | "sell";
+  kind: "limit" | "instant";
+  price: Money;
+  quantity: number;
+  remaining: number;
+  expiresAt: number;
+}
+
 export interface ShipType {
   type: string;
   name: string;
@@ -218,6 +244,8 @@ export interface PlayerView {
   contracts: ContractView[];
   gazette: { current: GazetteEvent | null; next: GazetteEvent | null };
   expeditions: ExpeditionView[];
+  book: Record<string, BookView>;
+  openOrders: OrderView[];
   ships: ShipView[];
   raids: RaidView[];
   /** This week's port prices (bps of reference), per port and resource. */
@@ -234,11 +262,20 @@ export interface GameResponse {
   error?: string;
   /** Unread notifications (the bell). */
   unread?: number;
-  /** Pseudos of merchants met at sea. */
+  /** Pseudos of merchants met at sea or in the order book. */
   names?: Record<string, string | null>;
+  /** Which of them are computer-run houses. */
+  bots?: string[];
 }
 
-export type NotificationKind = "harvest" | "galley" | "raid" | "corsairs" | "event" | "week";
+export type NotificationKind =
+  | "harvest"
+  | "order"
+  | "galley"
+  | "raid"
+  | "corsairs"
+  | "event"
+  | "week";
 
 export interface Notice {
   id: number;
@@ -341,6 +378,8 @@ export type Action =
       ships?: string[];
     }
   | { type: "collectExpedition"; expeditionId: string }
+  | { type: "limitOrder"; resource: string; side: "buy" | "sell"; price: string; quantity: number }
+  | { type: "cancelOrder"; orderId: string }
   | { type: "buildShip"; shipType: string }
   | { type: "repairShip"; shipId: string }
   | { type: "commissionPrivateers"; route: string; ships: string[] }
