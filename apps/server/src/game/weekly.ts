@@ -1,7 +1,15 @@
-import { type WorldContext, type WorldState, weekIndex, weeklyStandings } from "@comptoirs/engine";
+import {
+  type WorldContext,
+  type WorldState,
+  seasonEnd,
+  seasonWeeks,
+  weekIndex,
+  weeklyStandings,
+} from "@comptoirs/engine";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { accounts, players, weeklyResults } from "../db/schema.js";
+import { WEEKLY_PASS_DAYS, days, grantPass } from "./pass.js";
 
 /** Cosmetic awards of the week, for the three best people (bots never take one). */
 export const WEEKLY_AWARDS = [
@@ -45,7 +53,13 @@ async function who(db: Db, worldId: string, ids: string[]): Promise<Map<string, 
  * Saves a closed week (engine event `week_closed`), in the transaction of the tick that closed it.
  * Retired bots are left out; the awards go to the three best people with a positive gain.
  */
-export async function recordWeek(db: Db, worldId: string, data: Record<string, unknown>) {
+export async function recordWeek(
+  db: Db,
+  worldId: string,
+  data: Record<string, unknown>,
+  /** When the week closed: the weekly top 10 hold the Pass for the next seven days. */
+  at?: number,
+) {
   const week = Number(data.week);
   const standings = (data.standings ?? []) as { playerId: string; gain: string }[];
   const info = await who(
@@ -69,6 +83,19 @@ export async function recordWeek(db: Db, worldId: string, data: Record<string, u
     return { worldId, week, accountId: s.playerId, rank: i + 1, gain, award };
   });
   await db.insert(weeklyResults).values(rows).onConflictDoNothing();
+  if (at !== undefined) {
+    const people = rows.filter((r) => !info.get(r.accountId)?.bot).slice(0, 10);
+    for (const r of people) {
+      await grantPass(
+        db,
+        r.accountId,
+        "weekly_top10",
+        at,
+        at + days(WEEKLY_PASS_DAYS),
+        `week ${week + 1}`,
+      );
+    }
+  }
   return rows;
 }
 
@@ -125,7 +152,8 @@ export async function weeklyTable(
 
   return {
     week: week + 1,
-    endsAt: ctx.startAt + (week + 1) * WEEK_MS,
+    // The last week of the month runs to the end of the season.
+    endsAt: week >= seasonWeeks(ctx) - 1 ? seasonEnd(ctx) : ctx.startAt + (week + 1) * WEEK_MS,
     rows,
     lastWeek: podium,
   };

@@ -23,6 +23,7 @@ const world = await GameWorld.open(database.db, Date.now, {
 world.startTicking();
 const bots = new BotRunner(database.db, world);
 await bots.load();
+world.onSeasonOpened((closed) => void bots.newSeason(closed).catch(console.error));
 bots.start(60_000, (err) => console.error(err));
 const pusher =
   config.VAPID_PUBLIC_KEY && config.VAPID_PRIVATE_KEY
@@ -31,6 +32,7 @@ const pusher =
 const notifier = new Notifier(database.db, world, pusher);
 notifier.start(60_000, (err) => console.error(err));
 world.onEffects((fx, now) => void notifier.fromEffects(fx, now).catch(console.error));
+world.onSeasonOpened((closed) => void notifier.seasonOpened(closed).catch(console.error));
 const here = dirname(fileURLToPath(import.meta.url));
 const app = await buildApp({
   db: database.db,

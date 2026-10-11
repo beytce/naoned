@@ -193,6 +193,51 @@ export const weeklyResults = pgTable(
   (t) => [primaryKey({ columns: [t.worldId, t.week, t.accountId] })],
 );
 
+/**
+ * Final ranking of a season (people only): rank among people, net worth, reward tier and renown
+ * earned. `seenAt` is set once the player has watched the closing ceremony.
+ */
+export const seasonResults = pgTable(
+  "season_results",
+  {
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    rank: integer("rank").notNull(),
+    players: integer("players").notNull(),
+    worth: bigint("worth", { mode: "bigint" }).notNull(),
+    /** doge, podium, top10, elite, notable, participant or none. */
+    tier: text("tier").notNull(),
+    renown: integer("renown").notNull(),
+    seenAt: timestamp("seen_at", { withTimezone: true }),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.accountId] })],
+);
+
+/**
+ * Pass Négociant: periods during which an account holds it. Bought (later, through a payment
+ * provider), won in the rankings (weekly top 10, season tiers) or granted by an admin.
+ */
+export const passGrants = pgTable(
+  "pass_grants",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    /** purchase, weekly_top10, season, admin. */
+    source: text("source").notNull(),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("pass_grants_account_idx").on(t.accountId, t.endsAt)],
+);
+
 /** In-game notifications (the bell); some are also pushed to the player's devices. */
 export const notifications = pgTable(
   "notifications",

@@ -10,6 +10,7 @@ import {
   emptyEffects,
   emptyTotals,
   parseSettings,
+  seasonEnd,
   venice1450,
   venice1450Settings,
 } from "@comptoirs/engine";
@@ -24,12 +25,13 @@ import {
   worldStates,
   worlds,
 } from "../db/schema.js";
+import { nextSeasonBounds, seasonBounds, seasonMonthName } from "./calendar.js";
+import { recordSeason } from "./season.js";
 import { decode, encode } from "./serialize.js";
 import { TUTORIAL_STEPS, stepsReached } from "./tutorial.js";
 import { recordWeek } from "./weekly.js";
 
 const THEMES = { venice1450 } as const;
-const DAY_MS = 86_400_000;
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -60,15 +62,16 @@ export class GameWorld {
 
   private constructor(
     private readonly db: Db,
-    readonly id: string,
-    readonly name: string,
-    readonly ctx: WorldContext,
+    public id: string,
+    public name: string,
+    public ctx: WorldContext,
     private state: WorldState,
     private version: number,
     private readonly clock: () => number,
+    private readonly options: { settingsFromTheme?: boolean },
   ) {}
 
-  /** Loads the open world, creating the first one (Venice 1450, starting now) if there is none. */
+  /** Loads the open world, creating the first one (Venice 1450, until the end of the month). */
   static async open(
     db: Db,
     clock: () => number = Date.now,
@@ -76,53 +79,55 @@ export class GameWorld {
   ): Promise<GameWorld> {
     let [world] = await db.select().from(worlds).where(eq(worlds.status, "open")).limit(1);
     if (!world) {
-      const start = new Date(clock());
-      const settings = parseSettings(venice1450Settings);
-      [world] = await db
-        .insert(worlds)
-        .values({
-          name: "Venise 1450 — bêta",
-          theme: "venice1450",
-          startsAt: start,
-          endsAt: new Date(start.getTime() + settings.seasonDays * DAY_MS),
-          settings: venice1450Settings,
-        })
-        .returning();
+      // Seasons follow calendar months: the first one runs to the end of this month.
+      world = await createWorld(db, seasonBounds(clock()));
     }
-    if (!world) throw new Error("could not create a world");
-    const theme = THEMES[world.theme as keyof typeof THEMES];
-    if (!theme) throw new Error(`unknown theme ${world.theme}`);
-    let stored: unknown = world.settings;
-    if (options.settingsFromTheme) {
-      // Beta: the world follows the theme's current balancing, new mechanics included.
-      stored = venice1450Settings;
-    } else {
-      // New mechanics get their defaults; values already set in the world are kept.
-      stored = mergeDefaults(venice1450Settings, world.settings);
-    }
-    if (JSON.stringify(stored) !== JSON.stringify(world.settings)) {
-      await db.update(worlds).set({ settings: stored }).where(eq(worlds.id, world.id));
-    }
-    const ctx: WorldContext = {
-      theme,
-      // The world id is never sent to players: it seeds draws (events, contracts, pirates).
-      seed: world.id,
-      settings: parseSettings(stored),
-      startAt: world.startsAt.getTime(),
-    };
+    const loaded = await loadWorld(db, world, options);
+    return new GameWorld(
+      db,
+      world.id,
+      world.name,
+      loaded.ctx,
+      loaded.state,
+      loaded.version,
+      clock,
+      options,
+    );
+  }
 
-    const [saved] = await db.select().from(worldStates).where(eq(worldStates.worldId, world.id));
-    let state: WorldState;
-    let version: number;
-    if (saved) {
-      state = decode<WorldState>(saved.state);
-      version = saved.version;
-    } else {
-      state = createWorldState(ctx);
-      version = 0;
-      await db.insert(worldStates).values({ worldId: world.id, version, state: encode(state) });
+  private seasonListeners: ((closedWorldId: string) => void)[] = [];
+
+  /** Called once a new season has opened (the closed world's id is passed). */
+  onSeasonOpened(listener: (closedWorldId: string) => void): void {
+    this.seasonListeners.push(listener);
+  }
+
+  /**
+   * After the final ranking: closes this world and opens the next calendar month in its place.
+   * Players join the new season from scratch (region, capital, workshops).
+   */
+  private async rollover(now: number): Promise<void> {
+    const closedId = this.id;
+    let bounds = nextSeasonBounds(seasonEnd(this.ctx));
+    // A server stopped for a long time skips the months nobody could play.
+    while (bounds.endsAt <= now) bounds = nextSeasonBounds(bounds.endsAt);
+    const next = await this.db.transaction(async (tx) => {
+      await tx.update(worlds).set({ status: "closed" }).where(eq(worlds.id, closedId));
+      return createWorld(tx, bounds);
+    });
+    const loaded = await loadWorld(this.db, next, this.options);
+    this.id = next.id;
+    this.name = next.name;
+    this.ctx = loaded.ctx;
+    this.state = loaded.state;
+    this.version = loaded.version;
+    for (const l of this.seasonListeners) {
+      try {
+        l(closedId);
+      } catch {
+        // A listener never breaks the game.
+      }
     }
-    return new GameWorld(db, world.id, world.name, ctx, state, version, clock);
   }
 
   get current(): WorldState {
@@ -149,6 +154,7 @@ export class GameWorld {
       this.state = res.state;
       this.version += 1;
       this.notify(res.effects, now);
+      if (command.type === "tick" && this.state.seasonClosed) await this.rollover(now);
       return { ok: true };
     });
   }
@@ -259,7 +265,10 @@ export class GameWorld {
       }
 
       for (const e of fx.events) {
-        if (e.type === "week_closed") await recordWeek(tx, worldId, e.data ?? {});
+        if (e.type === "week_closed") await recordWeek(tx, worldId, e.data ?? {}, now);
+        if (e.type === "season_closed") {
+          await recordSeason(tx, worldId, e.data ?? {}, seasonEnd(this.ctx));
+        }
       }
 
       if (!command) {
@@ -356,6 +365,53 @@ export class GameWorld {
   async checkInvariants() {
     return this.serial(async () => checkInvariants(this.state, await this.journalTotals()));
   }
+}
+
+type WorldRow = typeof worlds.$inferSelect;
+
+async function createWorld(db: Db, bounds: { startsAt: number; endsAt: number }) {
+  const [world] = await db
+    .insert(worlds)
+    .values({
+      name: `Venise 1450 · ${seasonMonthName(bounds.endsAt)}`,
+      theme: "venice1450",
+      startsAt: new Date(bounds.startsAt),
+      endsAt: new Date(bounds.endsAt),
+      settings: venice1450Settings,
+    })
+    .returning();
+  if (!world) throw new Error("could not create a world");
+  return world;
+}
+
+/** Engine context and saved state of a world (a fresh state for a new one). */
+async function loadWorld(db: Db, world: WorldRow, options: { settingsFromTheme?: boolean }) {
+  const theme = THEMES[world.theme as keyof typeof THEMES];
+  if (!theme) throw new Error(`unknown theme ${world.theme}`);
+  let stored: unknown = world.settings;
+  if (options.settingsFromTheme) {
+    // Beta: the world follows the theme's current balancing, new mechanics included.
+    stored = venice1450Settings;
+  } else {
+    // New mechanics get their defaults; values already set in the world are kept.
+    stored = mergeDefaults(venice1450Settings, world.settings);
+  }
+  if (JSON.stringify(stored) !== JSON.stringify(world.settings)) {
+    await db.update(worlds).set({ settings: stored }).where(eq(worlds.id, world.id));
+  }
+  const ctx: WorldContext = {
+    theme,
+    // The world id is never sent to players: it seeds draws (events, contracts, pirates).
+    seed: world.id,
+    settings: parseSettings(stored),
+    startAt: world.startsAt.getTime(),
+    endAt: world.endsAt.getTime(),
+  };
+  const [saved] = await db.select().from(worldStates).where(eq(worldStates.worldId, world.id));
+  if (saved) return { ctx, state: decode<WorldState>(saved.state), version: saved.version };
+  const state = createWorldState(ctx);
+  await db.insert(worldStates).values({ worldId: world.id, version: 0, state: encode(state) });
+  return { ctx, state, version: 0 };
 }
 
 /** Deep merge for settings: `stored` wins, `defaults` fills what is missing. */

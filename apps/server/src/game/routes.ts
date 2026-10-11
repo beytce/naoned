@@ -1,4 +1,4 @@
-import { type Command, freeBatches } from "@comptoirs/engine";
+import { type Command, freeBatches, hasPass } from "@comptoirs/engine";
 import { and, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -7,7 +7,9 @@ import type { Db } from "../db/client.js";
 import { accounts, players, pushSubscriptions, telemetry } from "../db/schema.js";
 import { NOTIFICATION_KINDS, type Notifier } from "../notify/notifier.js";
 import { retention } from "./admin.js";
+import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
 import { priceHistory, profile } from "./profile.js";
+import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
 import { toJson } from "./serialize.js";
 import { catalog, playerView, ranking } from "./view.js";
 import { weeklyTable } from "./weekly.js";
@@ -27,6 +29,12 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("collectAll") }),
   z.object({ type: z.literal("collectAndRestart") }),
   z.object({ type: z.literal("claimMission"), missionId: z.string() }),
+  z.object({ type: z.literal("claimDaily"), taskId: z.string() }),
+  z.object({ type: z.literal("rerollContract"), contractId: z.string() }),
+  z.object({
+    type: z.literal("sellToCriee"),
+    quantity: z.number().int().positive().max(10_000),
+  }),
   z.object({ type: z.literal("build"), buildingType: z.string() }),
   z.object({ type: z.literal("upgrade"), buildingId: z.string() }),
   z.object({
@@ -149,6 +157,8 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return toJson({
       serverTime: now,
       view: v,
+      upcomingPass: await upcomingPass(db, account.id, now),
+      passPrices: PASS_PRICES,
       ...(v ? await namesFor(v) : { names: {}, bots: [] }),
       unread: v ? await notifier.unread(account.id) : 0,
     });
@@ -186,7 +196,9 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     }
   }
 
-  app.get("/api/game/catalog", async () => toJson(catalog(world.ctx, world)));
+  app.get("/api/game/catalog", async () =>
+    toJson({ ...catalog(world.ctx, world), previousDoge: await previousDoge(db, world.id) }),
+  );
 
   app.get("/api/game", async (req, reply) => {
     const account = await requireAccount(req, reply);
@@ -210,9 +222,37 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
         );
       }
       await touch(account, req);
+      await syncPass(db, world, account.id);
     }
     const body = (await view(account)) as Record<string, unknown>;
-    return welcome ? { ...body, welcome: toJson(welcome) } : body;
+    const ceremony = await pendingCeremony(db, account.id);
+    return {
+      ...body,
+      ...(welcome ? { welcome: toJson(welcome) } : {}),
+      ...(ceremony ? { ceremony: toJson(ceremony) } : {}),
+    };
+  });
+
+  /** The closing ceremony has been watched: it is not shown again. */
+  app.post("/api/game/ceremony/seen", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const { worldId } = z.object({ worldId: z.string().uuid() }).parse(req.body);
+    await markCeremonySeen(db, account.id, worldId, new Date(world.now()));
+    return { ok: true };
+  });
+
+  /** Anyone's palmarès (pseudo, crest, renown, seasons, weeks): open to every player. */
+  app.get("/api/game/palmares/:accountId", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const { accountId } = z.object({ accountId: z.string().uuid() }).parse(req.params);
+    const [who] = await db
+      .select({ pseudo: accounts.pseudo, crest: accounts.crest, bot: accounts.isBot })
+      .from(accounts)
+      .where(eq(accounts.id, accountId));
+    if (!who) return reply.code(404).send({ error: "unknown_player" });
+    return toJson({ ...who, palmares: await palmares(db, accountId) });
   });
 
   app.post("/api/game/join", async (req, reply) => {
@@ -221,6 +261,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const { region } = z.object({ region: z.string() }).parse(req.body);
     const res = await world.execute({ type: "join", playerId: account.id, region });
     if (!res.ok) return reply.code(409).send({ error: res.error });
+    await syncPass(db, world, account.id);
     return view(account);
   });
 
@@ -289,13 +330,19 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       total: table.length,
     });
     if (!p) return reply.code(409).send({ error: "not_joined" });
-    return toJson({ account: { pseudo: account.pseudo, crest: account.crest }, profile: p });
+    return toJson({
+      account: { pseudo: account.pseudo, crest: account.crest },
+      profile: p,
+      palmares: await palmares(db, account.id),
+    });
   });
 
   app.get("/api/game/prices", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
-    return { series: await priceHistory(db, world.id, world.now()) };
+    // Pass Négociant: seven days of prices instead of two.
+    const hours = hasPass(world.current, account.id, world.now()) ? 168 : 48;
+    return { series: await priceHistory(db, world.id, world.now(), hours) };
   });
 
   app.get("/api/admin/retention", async (req, reply) => {
@@ -305,6 +352,28 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       return reply.code(403).send({ error: "forbidden" });
     }
     return retention(db, world.id, world.now());
+  });
+
+  /** Admin: grants the Pass to an account for some days (tests, gifts, support). */
+  app.post("/api/admin/pass", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    if (!deps.adminEmails.includes(account.email.toLowerCase())) {
+      return reply.code(403).send({ error: "forbidden" });
+    }
+    const body = z
+      .object({ email: z.string().email(), days: z.number().int().positive().max(366) })
+      .parse(req.body);
+    const [target] = await db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(eq(accounts.email, body.email.toLowerCase()));
+    if (!target) return reply.code(404).send({ error: "unknown_account" });
+    const now = world.now();
+    const from = Math.max(now, await passUntil(db, target.id, now));
+    await grantPass(db, target.id, "admin", from, from + body.days * 86_400_000, account.email);
+    await syncPass(db, world, target.id);
+    return { ok: true, until: await passUntil(db, target.id, now) };
   });
 
   app.get("/api/notifications", async (req, reply) => {
@@ -385,7 +454,9 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const me = table.rows.find((r) => r.playerId === account.id);
     const strip = ({ playerId, ...rest }: (typeof table.rows)[number]) => ({
       ...rest,
+      id: playerId,
       me: playerId === account.id,
+      pass: hasPass(world.current, playerId, world.now()),
     });
     return toJson({
       week: table.week,
@@ -402,9 +473,12 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     if (!account) return;
     const table = await rankingTable();
     return toJson({
-      rows: table
-        .slice(0, 50)
-        .map(({ playerId, ...rest }) => ({ ...rest, me: playerId === account.id })),
+      rows: table.slice(0, 50).map(({ playerId, ...rest }) => ({
+        ...rest,
+        id: playerId,
+        me: playerId === account.id,
+        pass: hasPass(world.current, playerId, world.now()),
+      })),
       me: table.find((r) => r.playerId === account.id)?.rank ?? null,
       total: table.length,
     });
@@ -463,6 +537,12 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "collect", playerId, buildingId: a.buildingId }];
     case "claimMission":
       return [{ type: "claimMission", playerId, missionId: a.missionId }];
+    case "claimDaily":
+      return [{ type: "claimDaily", playerId, taskId: a.taskId }];
+    case "sellToCriee":
+      return [{ type: "sellToCriee", playerId, quantity: a.quantity }];
+    case "rerollContract":
+      return [{ type: "rerollContract", playerId, contractId: a.contractId }];
     case "collectAndRestart":
       return [];
     case "collectAll":

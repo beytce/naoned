@@ -85,6 +85,29 @@ export function pushText(
         body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${sign}${ducats(gain)} ducats).${award}`,
       };
     }
+    case "criee":
+      return {
+        title: "Criée au Rialto !",
+        body: `Une ville rachète ${RESOURCES[String(data.resource)] ?? String(data.resource)} à +${Math.round(Number(data.premiumBps) / 100)} % pendant 20 minutes.`,
+      };
+    case "deal":
+      return {
+        title: "Bonne affaire",
+        body: `Une offre de ${RESOURCES[String(data.resource)] ?? String(data.resource)} à ${(Number(data.price) / 100).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} ducats, bien sous le prix de référence.`,
+      };
+    case "season":
+      if (data.phase === "ending") {
+        return {
+          title: "Dernier sprint",
+          body: "La saison se termine dans 3 jours : chaque place du classement compte.",
+        };
+      }
+      return {
+        title: "Nouvelle saison",
+        body: data.rank
+          ? `La saison est close : vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"}. Venez voir vos récompenses, ${String(data.name)} commence !`
+          : `${String(data.name)} commence : un nouveau comptoir vous attend.`,
+      };
     default:
       return { title: "Fondaco", body: "Du nouveau à votre comptoir." };
   }

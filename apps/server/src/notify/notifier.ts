@@ -1,4 +1,11 @@
-import { activeEvent, weekIndex } from "@comptoirs/engine";
+import {
+  MARKET_MAKER,
+  activeEvent,
+  currentCriee,
+  hasPass,
+  seasonEnd,
+  weekIndex,
+} from "@comptoirs/engine";
 import type { Effects } from "@comptoirs/engine";
 import { and, desc, eq, gt, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
@@ -7,8 +14,10 @@ import {
   notifications,
   players,
   pushSubscriptions,
+  seasonResults,
   weeklyResults,
 } from "../db/schema.js";
+import { seasonPlayers } from "../game/season.js";
 import type { GameWorld } from "../game/world.js";
 import type { Pusher } from "./push.js";
 import { pushText } from "./texts.js";
@@ -21,10 +30,14 @@ export const NOTIFICATION_KINDS = [
   "corsairs",
   "event",
   "week",
+  "season",
+  "criee",
+  "deal",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 const HOUR_MS = 3_600_000;
+const DAY_MS = 24 * HOUR_MS;
 
 interface Notice {
   accountId: string;
@@ -215,6 +228,54 @@ export class Notifier {
       }
     }
 
+    // Pass Négociant: a Criée has just opened, and offers well below the reference price.
+    const holders = [...people].filter((id) => hasPass(state, id, now));
+    const criee = currentCriee(this.world.ctx, now);
+    if (criee && within(criee.startsAt)) {
+      for (const id of holders) {
+        notices.push({
+          accountId: id,
+          kind: "criee",
+          data: {
+            city: criee.city,
+            resource: criee.resource,
+            premiumBps: criee.premiumBps,
+            endsAt: criee.endsAt,
+          },
+        });
+      }
+    }
+    if (holders.length > 0) {
+      const refs = this.world.ctx.settings.referencePrices;
+      const deals = new Map<string, bigint>();
+      for (const o of Object.values(state.orders)) {
+        if (o.side !== "sell" || o.kind !== "limit" || o.playerId === MARKET_MAKER) continue;
+        if (!within(o.createdAt)) continue;
+        const ref = refs[o.resource] ?? 0n;
+        // An offer at least 10 % below the reference price.
+        if (ref > 0n && o.price * 10n <= ref * 9n) {
+          const best = deals.get(o.resource);
+          if (best === undefined || o.price < best) deals.set(o.resource, o.price);
+        }
+      }
+      for (const [resource, price] of deals) {
+        for (const id of holders) {
+          notices.push({
+            accountId: id,
+            kind: "deal",
+            data: { resource, price: price.toString() },
+          });
+        }
+      }
+    }
+
+    // Last sprint: three days before the end of the season, everyone hears about it once.
+    if (within(seasonEnd(this.world.ctx) - 3 * DAY_MS)) {
+      for (const id of people) {
+        notices.push({ accountId: id, kind: "season", data: { phase: "ending", days: 3 } });
+      }
+    }
+
     const event = activeEvent(this.world.ctx, now);
     if (event && within(event.startsAt)) {
       for (const id of people) {
@@ -227,6 +288,30 @@ export class Notifier {
     }
     await this.send(notices, now);
     await this.weekResults(now);
+  }
+
+  /**
+   * A new season has opened: everyone who played the last one is invited back, with their
+   * place in the final ranking (the closing ceremony waits for them in the game).
+   */
+  async seasonOpened(closedWorldId: string): Promise<void> {
+    const people = await seasonPlayers(this.db, closedWorldId);
+    const ranks = new Map(
+      (
+        await this.db
+          .select({ id: seasonResults.accountId, rank: seasonResults.rank })
+          .from(seasonResults)
+          .where(eq(seasonResults.worldId, closedWorldId))
+      ).map((r) => [r.id, r.rank]),
+    );
+    await this.send(
+      people.map((accountId) => ({
+        accountId,
+        kind: "season" as const,
+        data: { phase: "opened", name: this.world.name, rank: ranks.get(accountId) ?? null },
+      })),
+      this.world.now(),
+    );
   }
 
   /** Results of the last closed week, once (they are saved by the tick that closed it). */

@@ -129,8 +129,8 @@ export async function profile(
 }
 
 /** Hourly volume-weighted prices over the last 48 h, per resource, for sparklines. */
-export async function priceHistory(db: Db, worldId: string, now: number) {
-  const since = new Date(now - 48 * 3_600_000);
+export async function priceHistory(db: Db, worldId: string, now: number, hours = 48) {
+  const since = new Date(now - hours * 3_600_000);
   const rows = await db.execute(sql`
     select resource, extract(epoch from date_trunc('hour', at))::bigint * 1000 as hour,
       (sum(price * quantity) / sum(quantity))::bigint as price, sum(quantity)::int as volume

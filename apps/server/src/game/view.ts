@@ -21,6 +21,7 @@ import {
   portPrices,
   quoteCitySale,
   recipesFor,
+  seasonEnd,
   shipStatus,
   shipUpkeep,
   shipsOf,
@@ -29,8 +30,39 @@ import {
   vwap,
   watchedRoutes,
 } from "@comptoirs/engine";
-import { activeEvent, contractsFor, nextEvent } from "@comptoirs/engine";
+import {
+  activeEvent,
+  contractsFor,
+  crieePrice,
+  crieeRoom,
+  currentCriee,
+  dailyFor,
+  hasPass,
+  maxOpenOrdersFor,
+  nextEvent,
+  rerollsOf,
+} from "@comptoirs/engine";
 import { titleFor } from "./profile.js";
+
+/** Corsairs cruising on each route, and the end of the last cruise. */
+function lookout(state: WorldState, now: number) {
+  const out: Record<string, { corsairs: number; until: number }> = {};
+  for (const r of Object.values(state.raids ?? {})) {
+    if (r.outcome !== "cruising" || r.beaten || r.startAt > now || now >= r.endAt) continue;
+    const line = out[r.route] ?? { corsairs: 0, until: 0 };
+    line.corsairs += 1;
+    line.until = Math.max(line.until, r.endAt);
+    out[r.route] = line;
+  }
+  return out;
+}
+
+/** The Criée under way (players only learn of one once it has started). */
+function crieeView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {
+  const c = currentCriee(ctx, now);
+  if (!c) return null;
+  return { ...c, price: crieePrice(ctx, c), room: crieeRoom(ctx, state, c, playerId, now) };
+}
 
 /** Static data of a world, for the client: names, recipes, costs. */
 export function catalog(ctx: WorldContext, world: { name: string }) {
@@ -39,7 +71,8 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
     world: {
       name: world.name,
       startsAt: ctx.startAt,
-      seasonDays: settings.seasonDays,
+      endsAt: seasonEnd(ctx),
+      seasonDays: Math.round((seasonEnd(ctx) - ctx.startAt) / 86_400_000),
       registrationClosesDay: settings.registrationClosesDay,
     },
     resources: theme.resources,
@@ -93,12 +126,21 @@ function buildingView(ctx: WorldContext, state: WorldState, b: Building, now: nu
   const player = state.players[b.playerId];
   const room = recipe ? freeBatches(ctx, b, recipe.code, now, player) : 0;
   const local = allowedHere(ctx, player?.region ?? "", b.type);
+  const fresh = ctx.settings.fresh;
   const job = b.job
-    ? {
-        ...b.job,
-        ready: Math.min(b.job.batches, Math.floor((now - b.job.startedAt) / b.job.batchMs)),
-        endsAt: b.job.startedAt + b.job.batches * b.job.batchMs,
-      }
+    ? (() => {
+        const ready = Math.min(b.job.batches, Math.floor((now - b.job.startedAt) / b.job.batchMs));
+        // The latest batch done stays fresh for a while: collecting now earns the bonus.
+        const lastDone = b.job.startedAt + ready * b.job.batchMs;
+        const freshUntil =
+          fresh.minutes > 0 && ready > 0 ? lastDone + fresh.minutes * 60_000 : null;
+        return {
+          ...b.job,
+          ready,
+          endsAt: b.job.startedAt + b.job.batches * b.job.batchMs,
+          freshUntil: freshUntil !== null && freshUntil > now ? freshUntil : null,
+        };
+      })()
     : null;
   return {
     id: b.id,
@@ -137,6 +179,9 @@ export function playerView(
 ) {
   const player = state.players[playerId];
   if (!player) return null;
+  const pass = hasPass(state, playerId, now);
+  // Pass Négociant: a deeper order book.
+  const depth = pass ? 10 : 5;
   const buildings = Object.values(state.buildings)
     .filter((b) => b.playerId === playerId)
     .sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1)));
@@ -171,7 +216,7 @@ export function playerView(
   for (const r of ctx.theme.resources) {
     const side = (s: "buy" | "sell") =>
       bookSide(state, r.code, s)
-        .slice(0, 5)
+        .slice(0, depth)
         .map((o) => ({
           price: o.price,
           quantity: o.remaining,
@@ -193,7 +238,8 @@ export function playerView(
   const today = dayIndex(ctx, now);
   const done = state.contractsDone?.[playerId];
   const doneIds = done && done.day === today ? done.ids : [];
-  const contracts = contractsFor(ctx, playerId, today).map((c) => ({
+  const rerolls = rerollsOf(state, playerId, today);
+  const contracts = contractsFor(ctx, playerId, today, rerolls).map((c) => ({
     ...c,
     done: doneIds.includes(c.id),
   }));
@@ -264,7 +310,7 @@ export function playerView(
       rank: mine?.rank ?? null,
       players: table.length,
       title: titleFor(worth.total),
-      seasonEndsAt: ctx.startAt + ctx.settings.seasonDays * 86_400_000,
+      seasonEndsAt: seasonEnd(ctx),
     },
     inventory: ctx.theme.resources.map((r) => ({
       resource: r.code,
@@ -293,6 +339,24 @@ export function playerView(
     },
     tutorial: tutorialSteps,
     missions: missionsFor(ctx, state, playerId, now),
+    pass: {
+      active: pass,
+      until: player.passUntil ?? 0,
+      perks: ctx.settings.pass,
+      maxOpenOrders: maxOpenOrdersFor(ctx, state, playerId, now),
+      rerollsLeft: pass
+        ? Math.max(
+            0,
+            ctx.settings.pass.contractRerollsPerDay -
+              Object.values(rerolls).reduce((a, b) => a + b, 0),
+          )
+        : 0,
+      // The lookout: corsairs on each route and when their cruise ends (Pass only).
+      lookout: pass ? lookout(state, now) : null,
+    },
+    daily: ctx.settings.daily.perDay > 0 ? dailyFor(ctx, state, playerId, now) : null,
+    fresh: ctx.settings.fresh,
+    criee: crieeView(ctx, state, playerId, now),
     openOrders: Object.values(state.orders).filter((o) => o.playerId === playerId),
   };
 }

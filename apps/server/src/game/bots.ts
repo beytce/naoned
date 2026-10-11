@@ -102,6 +102,26 @@ export class BotRunner {
     }
   }
 
+  /**
+   * A new season has opened: the trading houses of the last one come back first, under the same
+   * names, starting afresh like everyone else.
+   */
+  async newSeason(closedWorldId: string): Promise<void> {
+    const rows = await this.db
+      .select({ id: players.accountId, profile: players.botProfile, region: players.region })
+      .from(players)
+      .where(and(eq(players.worldId, closedWorldId), isNotNull(players.botProfile)));
+    this.running.clear();
+    this.retired.clear();
+    this.veterans = rows.map((r) => ({
+      id: r.id,
+      profile: r.profile ?? "producer",
+      region: r.region,
+    }));
+  }
+
+  private veterans: { id: string; profile: string; region: string }[] = [];
+
   /** Accounts of every bot, retired ones included. */
   get ids(): Set<string> {
     return new Set([...this.running.keys(), ...this.retired]);
@@ -192,6 +212,24 @@ export class BotRunner {
         .where(and(eq(players.worldId, this.world.id), eq(players.accountId, back)));
       const r = this.wrap(back, row?.profile ?? null, player?.region ?? "terraferma");
       this.running.set(back, r);
+      await this.play(r.bot);
+      return;
+    }
+
+    const veteran = this.veterans.shift();
+    if (veteran) {
+      const res = await this.world.execute({
+        type: "join",
+        playerId: veteran.id,
+        region: veteran.region,
+      });
+      if (!res.ok) return;
+      await this.db
+        .update(players)
+        .set({ botProfile: veteran.profile })
+        .where(and(eq(players.worldId, this.world.id), eq(players.accountId, veteran.id)));
+      const r = this.wrap(veteran.id, veteran.profile, veteran.region);
+      this.running.set(veteran.id, r);
       await this.play(r.bot);
       return;
     }
