@@ -3,13 +3,15 @@ import {
   type Command,
   type DeliveryOrder,
   type WorldSettingsInput,
+  checkInvariants,
+  contractsFor,
   deliveryOrdersFor,
   hourIn,
   netWorth,
   orderUnitPrice,
   travelMinutes,
 } from "../src/index.js";
-import { deliverySettings } from "./fixture.js";
+import { deliverySettings, testSettings } from "./fixture.js";
 import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
 
 const ctx = (more: Partial<WorldSettingsInput> = {}) =>
@@ -293,5 +295,75 @@ describe("dispatching a delivery", () => {
     const res = w.do({ type: "tick" });
     expect(res.effects.events.map((e) => e.type)).toContain("contract_fulfilled");
     expect(res.effects.events.map((e) => e.type)).toContain("delivery_arrived");
+  });
+});
+
+describe("the instant sale to cities, closed by deliveries", () => {
+  it("refuses selling to a city, to a Criée and swapping a Doge's order", () => {
+    const w = world();
+    const sale = w.try({
+      type: "sellToCity",
+      playerId: "a",
+      city: "venezia",
+      resource: "bread",
+      quantity: 10,
+    });
+    expect(error(sale)).toBe("city_sales_closed");
+    expect(error(w.try({ type: "sellToCriee", playerId: "a", quantity: 1 }))).toBe(
+      "city_sales_closed",
+    );
+    w.do({ type: "grantPass", playerId: "a", until: w.now + DAY });
+    const c = contractsFor(w.ctx, "a", 0)[0];
+    expect(error(w.try({ type: "rerollContract", playerId: "a", contractId: c?.id ?? "" }))).toBe(
+      "city_sales_closed",
+    );
+  });
+
+  it("serves the Doge's and the family's home goods by road, goods from overseas at the counter", () => {
+    const luxury = { chanceBps: 10_000, quantities: { salt: 2 } };
+    const families = {
+      openDay: 0,
+      ordersPerDay: 1,
+      powerPremiumBps: 0,
+      orderInfluence: 10,
+      patronageUnit: 100,
+      patronageMaxPerDay: 10,
+      weeklyCapPerMember: 100,
+      minMembers: 1,
+      houses: [{ code: "contarini", quantities: { bricks: 10 } }],
+    };
+    const home = world({ families });
+    home.do({ type: "joinFamily", playerId: "a", family: "contarini" });
+    const c = contractsFor(home.ctx, "a", 0)[0];
+    expect(
+      error(home.try({ type: "fulfillContract", playerId: "a", contractId: c?.id ?? "" })),
+    ).toBe("city_sales_closed");
+    expect(error(home.try({ type: "fulfillFamilyOrder", playerId: "a", orderId: "0:f0" }))).toBe(
+      "city_sales_closed",
+    );
+
+    const overseas = world({
+      contracts: { ...deliverySettings.contracts, luxury } as never,
+      referencePrices: { ...testSettings.referencePrices, salt: 300 },
+    });
+    overseas.give("a", "salt", 10);
+    const lux = contractsFor(overseas.ctx, "a", 0)[0];
+    expect(lux?.resource).toBe("salt");
+    expect(
+      error(overseas.try({ type: "fulfillContract", playerId: "a", contractId: lux?.id ?? "" })),
+    ).toBe("ok");
+    expect(board(overseas).some((o) => o.kind === "doge")).toBe(false);
+  });
+
+  it("keeps goods on the road accounted for (invariant 7)", () => {
+    const w = world();
+    const o = pick(w);
+    dispatch(w, o.id);
+    const [d] = deliveriesOf(w);
+    expect(checkInvariants(w.state, w.totals)).toEqual([]);
+    const broken = structuredClone(w.state);
+    const bad = broken.deliveries?.[d?.id ?? ""];
+    if (bad) bad.cargo[bad.resource] = bad.loaded + 1;
+    expect(checkInvariants(broken, w.totals).map((v) => v.invariant)).toEqual([7]);
   });
 });

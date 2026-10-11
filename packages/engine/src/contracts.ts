@@ -63,6 +63,10 @@ export function contractsFor(
   return out;
 }
 
+function isLuxury(ctx: WorldContext, resource: string): boolean {
+  return ctx.theme.resources.find((r) => r.code === resource)?.tier === "luxury";
+}
+
 export function contractsDoneToday(
   tx: { s: { contractsDone?: Record<string, { day: number; ids: string[] }> } },
   playerId: PlayerId,
@@ -80,6 +84,8 @@ export function rerollsOf(state: WorldState, playerId: PlayerId, day: number) {
 
 /** Pass Négociant: swaps one of today's orders (not yet fulfilled) for another. */
 export function rerollContract(tx: Tx, playerId: PlayerId, contractId: string): void {
+  // The board of deliveries is never swapped, Pass or not.
+  if (tx.ctx.settings.deliveries.ordersPerDay.max > 0) fail("city_sales_closed");
   const allowed = tx.ctx.settings.pass.contractRerollsPerDay;
   if (allowed === 0 || !hasPass(tx.s as WorldState, playerId, tx.now)) fail("pass_required");
   const today = dayIndex(tx.ctx, tx.now);
@@ -111,6 +117,9 @@ export function fulfillContract(tx: Tx, playerId: PlayerId, contractId: string):
   if (!contract) fail("unknown_contract");
   const done = contractsDoneToday(tx, playerId, today);
   if (done.includes(contractId)) fail("contract_done");
+  // With deliveries, home goods go by road; goods from overseas are still handed in here.
+  if (tx.ctx.settings.deliveries.ordersPerDay.max > 0 && !isLuxury(tx.ctx, contract.resource))
+    fail("city_sales_closed");
 
   removeStock(tx, playerId, contract.resource, contract.quantity, "contract", contractId);
   transfer(

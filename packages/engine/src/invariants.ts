@@ -39,11 +39,11 @@ export function accumulate(totals: JournalTotals, fx: Effects): void {
 }
 
 export interface InvariantViolation {
-  invariant: 1 | 2 | 3 | 4 | 5 | 6;
+  invariant: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   detail: string;
 }
 
-/** The six invariants of docs/CADRAGE.md. An empty result means the world is consistent. */
+/** The invariants of docs/CADRAGE.md (and the road). An empty result means the world is consistent. */
 export function checkInvariants(state: WorldState, totals: JournalTotals): InvariantViolation[] {
   const out: InvariantViolation[] = [];
 
@@ -115,6 +115,25 @@ export function checkInvariants(state: WorldState, totals: JournalTotals): Invar
       if (line.escrow !== heldQty) {
         out.push({ invariant: 6, detail: `escrow ${pid}|${res}: ${line.escrow} ≠ ${heldQty}` });
       }
+    }
+  }
+
+  // 7. Goods on the road: what is left plus what bandits took is what was loaded.
+  for (const d of Object.values(state.deliveries ?? {})) {
+    for (const [res, qty] of Object.entries(d.cargo)) {
+      const taken = d.attack?.taken[res] ?? 0;
+      const loaded = res === d.resource ? d.loaded : 0;
+      if (qty < 0 || qty + taken !== loaded) {
+        out.push({
+          invariant: 7,
+          detail: `delivery ${d.id}|${res}: ${qty} + ${taken} ≠ ${loaded}`,
+        });
+      }
+    }
+  }
+  for (const b of Object.values(state.bands ?? {})) {
+    for (const [res, qty] of Object.entries(b.booty)) {
+      if (qty < 0) out.push({ invariant: 7, detail: `band ${b.id}|${res} negative` });
     }
   }
   return out;

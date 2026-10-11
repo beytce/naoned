@@ -77,6 +77,8 @@ export function sellToCity(
   resource: string,
   quantity: number,
 ): Deniers {
+  // Deliveries by road replace the instant sale to cities.
+  if (tx.ctx.settings.deliveries.ordersPerDay.max > 0) fail("city_sales_closed");
   if (!(city in tx.ctx.settings.cities)) fail("unknown_city");
   if (!Number.isInteger(quantity) || quantity <= 0 || quantity > MAX_CITY_SALE) {
     fail("invalid_quantity");

@@ -104,6 +104,8 @@ export function crieePrice(ctx: WorldContext, criee: Criee): Deniers {
 
 /** Sells to the Criée under way: the city pays the premium price, like a city sale. */
 export function sellToCriee(tx: Tx, playerId: PlayerId, quantity: number): void {
+  // Urgent deliveries replace the Criées.
+  if (tx.ctx.settings.deliveries.ordersPerDay.max > 0) fail("city_sales_closed");
   if (!Number.isInteger(quantity) || quantity <= 0) fail("invalid_quantity");
   const criee = currentCriee(tx.ctx, tx.now);
   if (!criee) fail("no_criee");
