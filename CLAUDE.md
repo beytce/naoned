@@ -18,7 +18,8 @@ Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage complet 
 - Production calculée paresseusement à la lecture, pas par le tick.
 - Toute opération de marché = une transaction SQL unique, sérialisée par un verrou transactionnel par (world_id, resource).
 - Paramètres d'équilibrage dans worlds.settings (JSON), jamais en dur.
-- Aucun avantage payant ne modifie production, trésorerie, file de production ou nombre d'ordres.
+- Avantages payants (Pass Négociant) légers, plafonnés et mesurés : jamais de ducats, de ressources, de vitesse de production ni de file plus longue ; utiles seulement à un joueur actif ; tous gagnables au classement ; à activité égale, écart de patrimoine ≤ 5 % vérifié par `pnpm sim --pass 0.2`, et un gratuit assidu devant un abonné occasionnel.
+- Saisons = mois civils (heure de Paris) : `worlds.ends_at` fait foi, `settings.seasonDays` n'est que le mois nominal du simulateur.
 
 ## Façon de travailler
 - Commencer chaque tâche en mode plan, attendre validation avant de coder.

@@ -20,7 +20,7 @@ Cette version tranche les points ouverts de la v1. Chaque décision est reprise 
 | Guildes | Nom, membres, chat | + **Grands chantiers** hebdomadaires | Le multijoueur doit se voir, pas seulement exister dans le carnet |
 | Référentiel | Sans `world_id`, sans thème | Ressources et recettes rattachées à un **thème** | Les recettes changent d'une saison historique à l'autre |
 | Jeton Sceau | V2 | **Abandonné** | Revient à vendre de la monnaie de jeu |
-| Abonnement | Production automatisée, 20 ordres | **Confort d'analyse uniquement** | La production automatisée achète du pouvoir économique |
+| Abonnement | Production automatisée, 20 ordres | **Pass Négociant : avantages légers et plafonnés, gagnables au classement** | La production automatisée achète du pouvoir économique ; un léger avantage pour qui joue, mesuré par le simulateur, reste acceptable |
 | Roadmap | Interface au jalon 6 | **Simulateur au jalon 1, tranche jouable au jalon 3** | Valider l'équilibrage et le plaisir de jeu avant de durcir le moteur |
 | Critère de sortie | 50 testeurs, 30 % à J+14 | 100 inscrits **venus de communautés**, 25 % à J+14 | Des amis testeurs ne mesurent pas la rétention réelle |
 
@@ -59,7 +59,7 @@ Chaque métier dépend désormais des deux autres : le boulanger vend son pain �
 | **Maisons marchandes (PNJ)** | Des marchands tenus par l'ordinateur complètent le monde jusqu'à 15 marchands actifs (`worlds.settings.bots.population`). Ce sont les bots du simulateur, qui jouent avec les mêmes commandes et les mêmes limites que les joueurs : tout passe par le grand livre et le journal des stocks. Ils jouent 1 à 5 sessions par jour, entre 7 h et 23 h (UTC) |
 | **Transparence** | Un badge « PNJ » les signale dans le classement. Ils n'ont pas d'adresse e-mail réelle et ne peuvent pas ouvrir de session. Ils sont exclus des récompenses hebdomadaires |
 | **Retrait** | Quand un joueur réel devient actif, une maison se retire (au plus une par heure) : ses ordres sont annulés, elle cesse de jouer et quitte le classement. Si le monde se vide, une maison retirée revient avant qu'on en crée une nouvelle |
-| **Classement hebdomadaire** | Gain de patrimoine de la semaine, en ducats. Une semaine = 7 jours depuis l'ouverture du monde (mêmes bornes que les grands chantiers) ; un nouveau venu part de son patrimoine à l'arrivée. Récompenses cosmétiques uniquement |
+| **Classement hebdomadaire** | Gain de patrimoine de la semaine, en ducats. Une semaine = 7 jours depuis l'ouverture du monde (mêmes bornes que les grands chantiers), la dernière court jusqu'à la fin du mois ; un nouveau venu part de son patrimoine à l'arrivée. Titres de la semaine pour le podium, Pass Négociant 7 jours pour le top 10 (joueurs réels) |
 | **Notifications** | Dans le jeu (cloche) et en push (PWA) : récolte prête, galère rentrée, ordre exécuté, événement, résultat de la semaine. Chaque type peut être coupé ; pas de push entre 22 h et 8 h (heure de Paris) |
 
 ### La mer : neuf ports, flotte et corsaires
@@ -107,18 +107,18 @@ Inspiré de Mercato Venezia : du risque et de l'affrontement entre joueurs, sans
 
 Fondaco est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.
 
-**Pitch** : le Travian du commerce, en saisons historiques de 6 semaines, avec une économie réelle et lisible.
+**Pitch** : le Travian du commerce, en saisons historiques d'un mois, avec une économie réelle et lisible.
 
-**Promesse joueur** : partir de rien, bâtir une maison de commerce en 6 semaines, et peser réellement sur les prix d'un marché vivant.
+**Promesse joueur** : partir de rien, bâtir une maison de commerce en un mois, et peser réellement sur les prix d'un marché vivant.
 
 **Positionnement** : jeu de niche, assumé. On vise quelques milliers de joueurs très engagés plutôt qu'un large public. La profondeur économique est un atout, pas un défaut à cacher ; l'effort porte sur la **lisibilité** et sur une prise en main guidée en 10 minutes.
 
 **Différenciation** face à Sim Companies, Torn, OGame ou Albion :
 
-- Des saisons historiques de 6 semaines (Venise 1450 pour la première), remises à zéro, pour qu'aucun nouveau venu ne soit écrasé.
+- Des saisons d'un mois civil (Venise 1450 pour la première), remises à zéro, pour qu'aucun nouveau venu ne soit écrasé.
 - Une économie lisible : carnet d'ordres visuel, graphiques simples, conseiller qui explique les prix, journal de bourse public.
 - Une économie saine par construction : grand livre en partie double, indicateurs publics de masse monétaire et d'inflation.
-- Aucun pay-to-win : on ne vend jamais de ressources, de monnaie de jeu ni de production.
+- Pas de pay-to-win écrasant : on ne vend jamais de ressources, de monnaie de jeu ni de production ; le Pass Négociant donne un léger avantage à qui joue, et se gagne aussi au classement.
 
 **Cible** : adultes de 25 à 55 ans, amateurs de gestion, de stratégie et de tableurs, qui jouent en sessions courtes sur mobile et longues sur PC.
 
@@ -126,7 +126,7 @@ Fondaco est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et m
 
 ## Périmètre du MVP
 
-Le MVP vise un seul monde de 200 à 500 joueurs, une saison de 6 semaines sur le thème Venise 1450, en web uniquement (PWA installable).
+Le MVP vise un seul monde de 200 à 500 joueurs, des saisons d'un mois civil sur le thème Venise 1450, en web uniquement (PWA installable).
 
 | Inclus dans le MVP | Exclu du MVP (voir `IDEAS.md`) |
 | --- | --- |
@@ -190,15 +190,32 @@ Les briques et les planches servent à construire et à améliorer tous les bât
 
 **Grands chantiers** : chaque lundi, une ville annonce un chantier (ex. « Arsenal : 10 000 briques et 6 000 planches avant dimanche »). Les guildes livrent les matériaux et sont payées par la ville à un prix fixe légèrement supérieur au prix de référence. Les trois guildes qui ont le plus livré reçoivent un cosmétique de guilde, et le chantier terminé apparaît sur la carte de la ville. Un joueur sans guilde peut livrer sous une bannière « Indépendants ».
 
-**Arrivée en cours de saison** : les inscriptions restent ouvertes jusqu'à J+28. Un joueur qui arrive après J+7 reçoit un bonus de rendement de +50 % pendant 72 h. Pas de second monde en parallèle au MVP : la liquidité prime.
+**Arrivée en cours de saison** : les inscriptions restent ouvertes jusqu'au dernier jour du mois. Un joueur qui arrive après J+5 reçoit un bonus de rendement de +50 % pendant 72 h. Pas de second monde en parallèle au MVP : la liquidité prime.
 
-**Fin de saison** : au bout de 6 semaines, le classement se fige sur le patrimoine, calculé selon le principe de prudence :
+**Fin de saison** : le dernier jour du mois à minuit (heure de Paris), le classement se fige sur le patrimoine, calculé selon le principe de prudence :
 
 - trésorerie, y compris le séquestre ;
 - stocks valorisés au **plus bas** du prix de référence et du prix moyen pondéré par les volumes sur 7 jours (avec un volume minimum ; à défaut, le prix de référence) ;
 - bâtiments, palais compris, à leur coût de construction cumulé (matériaux au prix de référence), pour que l'investissement ne pénalise pas le classement.
 
-Les 3 premiers et le top 10 % reçoivent des cosmétiques permanents. Un classement séparé récompense les guildes sur les grands chantiers.
+Récompenses de fin de saison, entre joueurs réels (les PNJ ne prennent pas de place) :
+
+| Rang final | Récompense | Renommée |
+| --- | --- | --- |
+| 1er | Doge de la saison : Pass Négociant toute la saison suivante, son blason honoré à la Dogana pendant la saison suivante | 100 |
+| 2e et 3e | Podium : Pass toute la saison suivante | 65 |
+| 4e à 10e | Top 10 : Pass toute la saison suivante | 40 |
+| Top 10 % | 3 semaines de Pass | 25 |
+| Top 25 % | 1 semaine de Pass | 15 |
+| Au moins 7 jours joués | Marchand de la saison | 5 |
+
+La Renommée s'additionne de saison en saison (titres : Habitué du Rialto, Marchand notable, Marchand illustre, Légende de Venise, Lion de Saint-Marc). Elle ne donne jamais d'avance économique : chaque saison, tout le monde repart à égalité. Le palmarès (saisons, semaines, Renommée) est visible sur le profil et depuis le classement.
+
+**Enchaînement** : le premier tick après minuit clôt la saison (classement final, récompenses), ferme le monde et ouvre le mois suivant ; les joueurs choisissent leur région et repartent de zéro après une cérémonie de clôture. Trois jours avant la fin, une notification « dernier sprint » ; à l'ouverture, une invitation à revenir. Un monde ouvert en cours de mois court jusqu'à la fin du mois (ou du suivant s'il reste moins de 14 jours).
+
+**Présence active** (gratuit pour tous, réglé dans `worlds.settings`) : produits frais (+5 % pour une récolte ramassée dans les 30 minutes), Criées du Rialto (3 fois par jour entre 8 h et 22 h, 20 minutes, une ville rachète pain, briques ou planches 10 à 20 % au-dessus de la référence, 6 unités par marchand), tâches du jour (3 tirées au sort, un coffre de 10 à 22 ducats selon la série de jours). Cible : un joueur assidu finit 5 à 10 % devant un joueur occasionnel.
+
+Un classement séparé récompense les guildes sur les grands chantiers.
 
 ## Économie et marché
 
@@ -347,16 +364,15 @@ Les prix de référence ne sont pas dans `resources` mais dans `worlds.settings`
 
 ## Monétisation
 
-Le jeu est gratuit et ne vend jamais de ressources, de monnaie de jeu ni de production ; les revenus viennent du confort d'analyse, du cosmétique et des saisons. Rien n'est développé au MVP, mais le modèle de données doit le permettre.
+Le jeu est gratuit et ne vend jamais de ressources, de monnaie de jeu ni de production. Le Pass Négociant donne un léger avantage à qui joue ; il se gagne aussi au classement.
 
 | Offre | Contenu | Phase |
 | --- | --- | --- |
-| Abonnement Négociant | Alertes de prix, graphiques avancés, historique long, export CSV de ses propres données, conseiller détaillé | V1 |
-| Pass saisonnier | Récompenses cosmétiques à paliers sur la saison (blasons, styles de ville) | V1 |
+| Pass Négociant (3,99 € la saison, 1,49 € la semaine) | Quota Dogana +20 %, 2 offres ouvertes de plus, produits frais +8 % au lieu de +5 %, une commande du Doge échangée par jour, carnet à 10 offres, 7 jours d'historique des prix, vigie des corsaires, alertes des Criées et des bonnes affaires, sceau et palette « Or de Venise ». Gagné par le top 10 de la semaine (7 jours) et selon le rang final de la saison | Fait (paiement Stripe à brancher) |
 | Cosmétiques à l'unité | Blasons, façades, bannières de guilde | V1 |
 | Mondes privés | Monde dédié pour une communauté, une école ou une entreprise, facturé par saison | V2 |
 
-**Garde-fou** : aucun avantage payant ne modifie la production, la trésorerie, la taille de la file de production ou le nombre d'ordres. L'abonnement aide à mieux décider, pas à produire plus. Le Jeton Sceau (monnaie de jeu achetable indirectement) est abandonné pour cette raison.
+**Garde-fou** : jamais de ducats, de ressources, de vitesse de production ni de file plus longue (elle avantagerait les absents). À activité égale, l'écart de patrimoine entre abonnés et gratuits reste sous 5 %, les abonnés ne dépassent pas 35 % du top 10, et un gratuit assidu finit devant un abonné occasionnel : trois contrôles bloquants de `pnpm sim --pass 0.2`. Le Jeton Sceau (monnaie de jeu achetable indirectement) reste abandonné.
 
 ## Données personnelles
 

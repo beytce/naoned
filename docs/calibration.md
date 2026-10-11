@@ -189,3 +189,64 @@ La carte des rations affiche désormais l'heure du prochain repas, le pain néce
 Les missions créent au plus environ 300 ducats et quelques dizaines de marchandises par joueur et par saison : négligeable devant les ventes aux villes. Le sommeil réduit la monnaie détruite par l'entretien des joueurs absents.
 
 Résultat sur 5 graines : toutes les cibles bloquantes tenues, indice des prix entre 96 et 100, 56 à 83 % du volume entre joueurs, masse monétaire par joueur actif au plus 1,88 × le capital. Les bots ne réclament pas de missions : leur effet sur l'économie se mesurera avec la bêta.
+
+## Saisons d'un mois civil
+
+Une saison dure désormais un mois civil (28 à 31 jours, heure de Paris) au lieu de 42 jours. Le simulateur joue un mois nominal de 30 jours ; ses jalons suivent la durée (Gini à mi-saison, volume entre joueurs du tiers à la moitié, arrivants tardifs entre le sixième et la moitié). Les semaines restent de 7 jours depuis l'ouverture ; la dernière court jusqu'à la fin du mois, et le dernier grand chantier aussi plutôt que d'en ouvrir un de deux jours.
+
+Nouveau diagnostic : **niveaux d'ateliers par marchand** en fin de saison (un atelier neuf compte 1). Le niveau moyen seul trompait : les bots construisent un atelier de plus tant que c'est moins cher qu'améliorer.
+
+| Réglage (3 graines) | Niveaux d'ateliers par marchand | Remarque |
+| --- | --- | --- |
+| Référence : 42 jours, anciens réglages | 5,8 | |
+| 30 jours, anciens réglages | 5,1 | une graine sous 50 % de volume entre joueurs |
+| + écart de la Dogana sur 10 jours au lieu de 14 | 5,1 | toutes les graines conformes |
+| + coût par niveau +10 à +25 % (au lieu de +50 %) | 5,1 à 5,2 | sans effet : les bots construisent plutôt qu'améliorer |
+| + coût par niveau nul | 6,8 (niveau moyen 2,2) | trop : des ateliers au niveau 5 en un mois |
+| + bâtiments −30 % en ducats | 5,6 | |
+| **+ bâtiments −30 % en ducats et −25 % en matériaux (retenu)** | **6,1** | un mois mène un peu plus loin que six semaines |
+
+Réglages retenus : `seasonDays` 30 (mois nominal), inscriptions ouvertes tout le mois, bonus d'arrivée tardive après J+5, `spreadRampDays` 10, bâtiments 30 % moins chers en ducats et 25 % en matériaux (ferme 210 ducats, 15 briques et 15 planches ; palais 560 ducats, 30 et 30).
+
+## Présence active : produits frais, Criées, tâches du jour
+
+| Réglage | Valeur |
+| --- | --- |
+| Produits frais (`fresh`) | +5 % pour un lot ramassé dans les 30 minutes après la fin |
+| Criées (`criees`) | 3 par jour entre 8 h et 22 h, 20 minutes, pain, briques ou planches à +10 à +20 % ; 6 unités par marchand, 4 par marchand actif au total (24 au moins) |
+| Tâches du jour (`daily`) | 3 tirées parmi 6, petites récompenses en marchandises ; coffre de 10 ducats, +3 par jour d'affilée, 22 au plus (5 jours) |
+
+Les bots vendent aux Criées quand une session tombe pendant l'une d'elles et réclament leurs tâches ; un bot occasionnel (1 session par jour) en profite donc rarement, comme un joueur occasionnel.
+
+Premier essai (Criées de 20 unités à +15 à +25 %, coffre de 30 à 90 ducats) : les bots assidus finissaient 28 % devant les occasionnels, bien au-delà de la cible de +5 à +10 %. Avec 8 unités et un coffre de 10 à 30 ducats : +10,5 %. Réglage retenu : +1 % à +10 % selon la série de graines (la mesure est bruitée : peu de bots occasionnels). Ces mécaniques créent de la monnaie et accélèrent toute l'économie : 7,4 niveaux d'ateliers par marchand en moyenne en fin de mois.
+
+Résultat sur 5 graines avec tous les réglages : toutes les cibles bloquantes tenues.
+
+| Indicateur | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Niveaux d'ateliers par marchand | 7,3 | 7,7 | 7,9 | 6,0 | 8,1 |
+| Monnaie par joueur actif (pic, plafond 2,5 ×) | 1,81 × | 1,45 × | 1,21 × | 1,06 × | 1,01 × |
+| Indice des prix | 97 – 101 | 97 – 100 | 97 – 100 | 98 – 100 | 97 – 101 |
+| Gini à J+15 | 0,23 | 0,21 | 0,21 | 0,19 | 0,20 |
+| Volume entre joueurs (J+10 à J+14) | 78 % | 69 % | 78 % | 63 % | 76 % |
+
+## Pass Négociant
+
+| Avantage (`pass`) | Valeur |
+| --- | --- |
+| Quota quotidien à la Dogana | +20 % de la part du marchand (25 → 30 à l'achat, 10 → 12 à la vente) |
+| Offres ouvertes | +2 (12 au lieu de 10) |
+| Produits frais | +8 % au lieu de +5 % |
+| Commandes du Doge | une échangée par jour |
+
+S'y ajoutent, côté serveur, des avantages d'information (carnet à 10 offres, 7 jours d'historique, vigie des corsaires, alertes des Criées et des bonnes affaires) et des cosmétiques, que les bots n'utilisent pas.
+
+`pnpm sim --pass 0.2` donne le Pass à un bot sur cinq de chaque profil et rejoue chaque saison à l'identique avec les avantages coupés, pour comparer chaque marchand à lui-même (en retirant l'effet sur les non-abonnés). Trois contrôles bloquants :
+
+| Contrôle | Graine 1 | Graine 2 | Graine 3 | Graine 4 |
+| --- | --- | --- | --- | --- |
+| Avance des abonnés (≤ +5 %) | +0,6 % | +2,5 % | −4,5 % | −23,9 % |
+| Part des abonnés dans le top 10 (≤ 35 %, ils sont ~18 %) | 0 % | 20 % | 10 % | 10 % |
+| Gratuit assidu devant abonné occasionnel | 7 477 contre 2 487 ducats | — | — | 5 823 contre 2 563 ducats |
+
+Le Pass reste léger pour des bots : quelques pourcents au plus. La graine 4 montre la limite de la mesure (deux parties qui divergent). De vrais joueurs tireront davantage de l'information (alertes, vigie) : à surveiller pendant la bêta, avec la règle de CLAUDE.md comme garde-fou.

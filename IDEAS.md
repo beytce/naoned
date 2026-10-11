@@ -15,8 +15,8 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 
 ## V1 (après la première saison)
 - Chaînes textile (laine, tissu, vêtements) et ameublement (meubles).
-- Abonnement Négociant : alertes de prix, graphiques avancés, historique long, export CSV, conseiller détaillé.
-- Pass saisonnier et cosmétiques à l'unité.
+- Paiement du Pass Négociant (Stripe Checkout + webhook, CGV) ; export CSV et conseiller détaillé pour les abonnés.
+- Cosmétiques à l'unité ; le Doge de la saison nomme un événement de la gazette de la saison suivante.
 - Emballage Capacitor pour les magasins d'applications ; notifications push.
 - Connexion Google / Apple.
 - Comptes de guilde dans le grand livre (trésorerie de guilde).
