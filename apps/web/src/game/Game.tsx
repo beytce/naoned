@@ -8,6 +8,7 @@ import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { applyPalette, currentPalette, needsPass } from "../theme.js";
 import { Slab } from "../ui.js";
+import { AmbushAlert } from "./AmbushAlert.js";
 import { Bell } from "./Bell.js";
 import { Ceremony } from "./Ceremony.js";
 import { Coach } from "./Coach.js";
@@ -114,7 +115,14 @@ export function Game(props: {
   const [view, setView] = useState<PlayerView | null | undefined>(undefined);
   const [offset, setOffset] = useState(0);
   const [now, setNow] = useState(Date.now());
-  const [tab, setTab] = useState<Tab>("comptoir");
+  // Opened from an ambush notification: straight to the roads (the alert shows over them).
+  const [tab, setTab] = useState<Tab>(() =>
+    new URLSearchParams(window.location.search).has("ambush") ? "routes" : "comptoir",
+  );
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("ambush"))
+      window.history.replaceState(null, "", "/");
+  }, []);
   const [marketTab, setMarketTab] = useState<MarketTab>("joueurs");
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -606,6 +614,7 @@ export function Game(props: {
         </div>
       )}
 
+      <AmbushAlert {...gp} />
       {help && <Help {...gp} onClose={() => setHelp(false)} />}
       {welcome && <Welcome {...gp} data={welcome} onClose={() => setWelcome(null)} />}
 
