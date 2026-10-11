@@ -53,7 +53,8 @@ export const venice1450Settings: WorldSettingsInput = {
     minMembers: 3,
     houses: [
       { code: "contarini", quantities: { bricks: 12, planks: 12 } },
-      { code: "morosini", quantities: { wheat: 30, flour: 20, bread: 20, wood: 30 } },
+      // Every order fits under the free daily quota at the Dogana: the Pass never decides it.
+      { code: "morosini", quantities: { wheat: 20, flour: 20, bread: 20, wood: 20 } },
       { code: "mocenigo", quantities: { salt: 15, wine: 8, planks: 12 } },
       { code: "dandolo", quantities: { spices: 3, silk: 4, furs: 3, cloth: 2 } },
     ],
