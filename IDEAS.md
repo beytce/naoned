@@ -4,9 +4,17 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 
 ## Pistes de jeu proposées (non retenues pour l'instant)
 - Journal du Rialto (gros échanges en direct).
-- Banque de Venise : prêts avec intérêts.
+- Banque de Venise : prêts avec intérêts (voir la phase 5 de la société vénitienne).
 - Parrainage avec blason exclusif.
 - Échanges d'épices et de soie entre joueurs (nécessite les ordres à cours limité).
+
+## Société vénitienne (plan dans docs/plan-familles.md)
+- Phase 1 faite : familles patriciennes.
+- Phase 2 : mariages entre maisons de joueurs (dot détruite, nom de Maison commun, classement de Prestige).
+- Phase 3 : commandite (*colleganza*) des convois d'un autre joueur.
+- Phase 4 : enchère des galères (*incanto*), puits de fin de saison.
+- Phase 5 : prêts du Rialto sur gage et Grand Conseil (décrets votés).
+- Plus tard : assurance maritime, dynastie entre saisons (cosmétique), avantages Pass d'information.
 
 ## Affrontement (proposés, non retenus pour l'instant)
 - Convois de guilde : cargaisons groupées sous une même escorte, butin et risque partagés.

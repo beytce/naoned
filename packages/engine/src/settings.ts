@@ -264,6 +264,48 @@ export const worldSettingsSchema = z.object({
       contractRerollsPerDay: 0,
     }),
   /**
+   * The patrician families: each merchant pledges allegiance to one for the season, serves its
+   * daily orders and gives to its patronage; every week the family with the most influence per
+   * active member holds power. No houses turns it off.
+   */
+  families: z
+    .object({
+      /** Days after joining before a merchant may pledge allegiance. */
+      openDay: qty,
+      /** Family orders per member and per day, paid at the Doge's premium. */
+      ordersPerDay: qty,
+      /** Extra premium on the family orders of the family in power. */
+      powerPremiumBps: bps,
+      /**
+       * Contumacia: the family in power counts its score this much lower, so that power changes
+       * hands (Venetian offices could not be held twice in a row).
+       */
+      incumbentHandicapBps: bps.max(10_000).default(0),
+      /** Influence earned by a family order. */
+      orderInfluence: qty,
+      /** Ducats given (and destroyed) for one point of influence. */
+      patronageUnit: money,
+      /** Most points of patronage per merchant and per day. */
+      patronageMaxPerDay: qty,
+      /** Most influence of one member counted in the family's week. */
+      weeklyCapPerMember: qty,
+      /** A family counts at least this many active members, so a lone merchant cannot win alone. */
+      minMembers: positive,
+      /** Families and what they order (resource → quantity of an order). */
+      houses: z.array(z.object({ code: z.string(), quantities: z.record(positive) })),
+    })
+    .default({
+      openDay: 0,
+      ordersPerDay: 0,
+      powerPremiumBps: 0,
+      orderInfluence: 0,
+      patronageUnit: 0,
+      patronageMaxPerDay: 0,
+      weeklyCapPerMember: 0,
+      minMembers: 1,
+      houses: [],
+    }),
+  /**
    * Offers between players must stay within this share of the reference price: a merchant
    * cannot hand ducats to another account by selling a loaf for a fortune. 0 turns it off.
    */

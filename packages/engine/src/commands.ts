@@ -5,6 +5,7 @@ import { sellToCity } from "./cities.js";
 import { fulfillContract, rerollContract } from "./contracts.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { collectExpedition, launchExpedition } from "./expeditions.js";
+import { fulfillFamilyOrder, joinFamily, leaveFamilies, patronize } from "./families.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { claimMission, trackMissions } from "./missions.js";
 import { collectRaid, commissionPrivateers } from "./privateers.js";
@@ -80,6 +81,9 @@ export type Command =
   | { type: "sellToCriee"; playerId: PlayerId; quantity: number }
   | { type: "claimDaily"; playerId: PlayerId; taskId: string }
   | { type: "rerollContract"; playerId: PlayerId; contractId: string }
+  | { type: "joinFamily"; playerId: PlayerId; family: string }
+  | { type: "fulfillFamilyOrder"; playerId: PlayerId; orderId: string }
+  | { type: "patronize"; playerId: PlayerId; points: number }
   /** From the server: the Pass Négociant until this time (a later date never shortens it). */
   | { type: "grantPass"; playerId: PlayerId; until: number }
   | { type: "collectExpedition"; playerId: PlayerId; expeditionId: string }
@@ -163,6 +167,7 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
   }
   if (tx.s.weekly) delete tx.s.weekly.start[playerId];
   if (tx.s.missions) delete tx.s.missions[playerId];
+  leaveFamilies(tx, playerId);
   resets[playerId] = used + 1;
   emit(tx, "player_reset", playerId);
 }
@@ -252,6 +257,15 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "rerollContract":
       rerollContract(tx, cmd.playerId, cmd.contractId);
+      break;
+    case "joinFamily":
+      joinFamily(tx, cmd.playerId, cmd.family);
+      break;
+    case "fulfillFamilyOrder":
+      fulfillFamilyOrder(tx, cmd.playerId, cmd.orderId);
+      break;
+    case "patronize":
+      patronize(tx, cmd.playerId, cmd.points);
       break;
     case "collectExpedition":
       collectExpedition(tx, cmd.playerId, cmd.expeditionId);

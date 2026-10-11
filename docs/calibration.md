@@ -256,3 +256,31 @@ Le Pass reste léger pour des bots : quelques pourcents au plus. La graine 4 mon
 Une offre entre joueurs doit rester entre le quart et quatre fois le prix de référence (`priceBand` : 2 500 à 40 000 points de base). Elle empêche un second compte de passer des ducats au premier (un pain vendu une fortune), ce qui comptait davantage depuis que le top 10 gagne le Pass Négociant.
 
 Sur les 5 graines, les résultats sont identiques à ceux de la section précédente (toutes conformes, aucun ordre de bot refusé) : la fourchette ne gêne pas le commerce normal.
+
+## Familles patriciennes
+
+Réglage (`families`) : allégeance 4 jours après l'arrivée, une commande de famille par jour à la prime du Doge (+20 %), Doge ramené de 3 à 2 commandes par jour, +10 influence par commande, mécénat à 2 ducats le point (25 points par jour au plus), influence comptée jusqu'à 150 par membre et par semaine, au moins 3 membres comptés, prime de +10 % pour la famille au pouvoir, *contumacia* de 33 %. Plan et règles : `docs/plan-familles.md`.
+
+Ce que le simulateur a appris :
+
+| Constat | Décision |
+| --- | --- |
+| Sans règle contre le sortant, la famille aux commandes les plus faciles (Morosini : blé, pain) gagnait 12 semaines sur 15 | *Contumacia* : la famille au pouvoir compte son score un tiers plus bas |
+| Les maisons PNJ ne livraient que depuis leur stock : les Contarini (briques, planches gardées pour construire) n'avaient aucune chance | Les maisons achètent ce qui manque pour la commande de leur famille, jusqu'à 115 % du prix juste |
+| Une commande de 30 blé ou 30 bois dépassait le quota gratuit à la Dogana (25) mais pas celui du Pass (30) : l'abonnement décidait de la commande | Toutes les commandes de famille tiennent sous le quota gratuit (20 au plus pour les Morosini) |
+
+Résultat sur 5 graines (`pnpm sim`), toutes conformes :
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Au pouvoir, semaines 1 à 3 | Morosini, Contarini, Morosini | Morosini, Contarini, Morosini | Morosini, Morosini, Contarini | Morosini, Contarini, Morosini | Morosini, Morosini, Mocenigo |
+| Commandes de famille livrées | 544 | 604 | 566 | 412 | 557 |
+| Mécénat détruit | 3 614 ducats | 4 414 | 5 446 | 1 310 | 5 034 |
+| Indice des prix | 97 – 101 | 97 – 100 | 97 – 100 | 97 – 101 | 97 – 100 |
+| Gini à J+15 | 0,22 | 0,19 | 0,21 | 0,20 | 0,16 |
+| Volume entre joueurs | 66 % | 72 % | 75 % | 62 % | 67 % |
+| Monnaie par joueur actif (pic) | 1,02 × | 1,45 × | 1,12 × | 1,05 × | 1,10 × |
+
+Le budget de monnaie créée par les commandes ne bouge presque pas (Doge + familles ≈ trois commandes du Doge, +4 % avec la prime du pouvoir), et le mécénat ajoute un puits de 1 à 2 % des destructions. La croissance moyenne de la monnaie par joueur actif passe d'environ 3,7 % à 2,5 à 3 % par jour (diagnostic toujours au-dessus de la cible de ±2 %). Les Dandolo (Levant) restent petits avec les bots : seuls les spéculateurs, peu nombreux, les choisissent.
+
+**Contrôle du Pass (`pnpm sim --pass 0.2`) : non conforme, à trancher.** Avance des abonnés : −22,6 %, +5,3 %, +7,5 %, −9,3 %, +11,3 % (plafond +5 %) ; part du top 10 et « gratuit assidu devant abonné occasionnel » conformes. Sans familles, les mêmes graines donnaient de −33,8 % à +2,5 %. En isolant les avantages sur les graines 2, 3 et 5, le quota Dogana seul donne −7,6 %, +11,4 %, +0,7 %, et les autres avantages seuls −10,3 %, +15,0 %, +15,9 % : des écarts de cette taille pour des avantages aussi petits viennent surtout de la divergence des deux saisons rejouées (la famille qui prend le pouvoir bascule d'une partie à l'autre), que le contrôle ne compte que dans un sens. Pistes : mesurer sur plus de graines ou par la moyenne, ou réduire la prime de la famille au pouvoir, avant d'ouvrir les familles en production.

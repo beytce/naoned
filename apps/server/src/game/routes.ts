@@ -50,6 +50,9 @@ const action = z.discriminatedUnion("type", [
     quantity: z.number().int().positive().max(10_000),
   }),
   z.object({ type: z.literal("fulfillContract"), contractId: z.string() }),
+  z.object({ type: z.literal("joinFamily"), family: z.string() }),
+  z.object({ type: z.literal("fulfillFamilyOrder"), orderId: z.string() }),
+  z.object({ type: z.literal("patronize"), points: z.number().int().positive().max(10_000) }),
   z.object({
     type: z.literal("launchExpedition"),
     destination: z.string(),
@@ -129,6 +132,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     for (const n of v.seaNews) {
       ids.add(n.raider);
       ids.add(n.victim);
+    }
+    if (v.families) {
+      for (const m of v.families.members) ids.add(m.playerId);
+      for (const f of v.families.standings) if (f.champion) ids.add(f.champion);
     }
     for (const b of Object.values(v.book)) {
       for (const l of [...b.asks, ...b.bids]) if (l.by !== "market_maker") ids.add(l.by);
@@ -594,6 +601,12 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       ];
     case "fulfillContract":
       return [{ type: "fulfillContract", playerId, contractId: a.contractId }];
+    case "joinFamily":
+      return [{ type: "joinFamily", playerId, family: a.family }];
+    case "fulfillFamilyOrder":
+      return [{ type: "fulfillFamilyOrder", playerId, orderId: a.orderId }];
+    case "patronize":
+      return [{ type: "patronize", playerId, points: a.points }];
     case "launchExpedition":
       return [
         {

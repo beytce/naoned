@@ -41,8 +41,20 @@ const CREATED = [
   "daily_chest",
   "project_delivery",
   "market_maker_buy",
+  "contract_reward",
+  "family_order_reward",
+  "mission_reward",
 ];
-const DESTROYED = ["market_tax", "upkeep", "construction", "market_maker_sell"];
+const DESTROYED = [
+  "market_tax",
+  "upkeep",
+  "construction",
+  "market_maker_sell",
+  "expedition_charter",
+  "ship_repair",
+  "privateer_letter",
+  "patronage",
+];
 
 /** One column per money source and sink, so the CSV stays flat. */
 function flatDaily(result: SimulationResult): Record<string, unknown>[] {

@@ -2,6 +2,7 @@ import {
   Bot,
   type Command,
   DAY_MS,
+  type Deniers,
   type Effects,
   MINUTE_MS,
   MarketView,
@@ -67,6 +68,13 @@ export interface SimulationResult {
     topLevelShare: number;
     /** Workshop levels per merchant (a new workshop counts 1): how far merchants grew. */
     levelsPerMerchant: number;
+  };
+  /** The patrician families: members at the end, winners of each week, orders and patronage. */
+  families?: {
+    members: Record<string, number>;
+    winners: (string | null)[];
+    orders: number;
+    patronage: Deniers;
   };
 }
 
@@ -153,6 +161,9 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
 
   const raw = new Set(ctx.theme.resources.filter((r) => r.tier === "raw").map((r) => r.code));
   const rawBuyers = new Set<string>();
+  const families = { members: {}, winners: [], orders: 0, patronage: 0n } as NonNullable<
+    SimulationResult["families"]
+  >;
   let now = START;
   const run = (cmd: Command): boolean => {
     const res = decide(ctx, state, cmd, now);
@@ -167,6 +178,13 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     accumulate(totals, res.effects);
     for (const t of res.effects.trades) if (raw.has(t.resource)) rawBuyers.add(t.buyerId);
     recordFlows(flows, res.effects);
+    for (const e of res.effects.events) {
+      if (e.type === "family_order_fulfilled") families.orders++;
+      if (e.type === "family_week_closed")
+        families.winners.push((e.data?.winner as string) ?? null);
+    }
+    for (const l of res.effects.ledger)
+      if (l.reason === "patronage") families.patronage += l.amount;
     options.onEffects?.(res.effects, now);
     return true;
   };
@@ -274,6 +292,10 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
       Math.max(1, workshops.length),
     levelsPerMerchant: workshops.reduce((a, b) => a + b.level, 0) / Math.max(1, merchants.length),
   };
+  for (const code of Object.values(state.families?.members ?? {})) {
+    families.members[code] = (families.members[code] ?? 0) + 1;
+  }
+  result.families = families;
   result.durationMs = performance.now() - started;
   return result;
 }

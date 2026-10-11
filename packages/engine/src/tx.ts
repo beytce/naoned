@@ -73,7 +73,12 @@ export type EngineErrorCode =
   | "daily_claimed"
   | "pass_required"
   | "no_reroll_left"
-  | "price_out_of_band";
+  | "price_out_of_band"
+  | "unknown_family"
+  | "family_locked"
+  | "family_chosen"
+  | "no_family"
+  | "patronage_limit";
 
 export class EngineError extends Error {
   constructor(

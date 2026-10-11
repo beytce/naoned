@@ -237,8 +237,27 @@ export interface WorldState {
   resets?: Record<PlayerId, number>;
   /** Weekly ranking: current week and each player's net worth when it started (or on joining). */
   weekly?: { week: number; start: Record<PlayerId, Deniers> };
+  /** The patrician families: allegiances, influence and the family in power. */
+  families?: FamiliesState;
   /** Set once the final ranking has been published (event `season_closed`). */
   seasonClosed?: boolean;
+}
+
+export interface FamiliesState {
+  /** Week whose influence is being counted. */
+  week: number;
+  /** Family of each merchant who pledged allegiance. */
+  members: Record<PlayerId, string>;
+  /** Influence earned this week, per merchant. */
+  weekInfluence: Record<PlayerId, number>;
+  /** Influence earned this season, per merchant. */
+  seasonInfluence: Record<PlayerId, number>;
+  /** Family orders fulfilled today, per merchant. */
+  ordersDone: Record<PlayerId, { day: number; ids: string[] }>;
+  /** Points of patronage given today, per merchant. */
+  patronage: Record<PlayerId, { day: number; points: number }>;
+  /** Family that won the previous week and holds power in this one. */
+  inPower: string | null;
 }
 
 export const SOURCE_ACCOUNT: AccountId = "system:source";

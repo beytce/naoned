@@ -141,6 +141,36 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
     blocking: false,
   });
 
+  const fam = r.families;
+  if (fam && Object.keys(fam.members).length > 0) {
+    const destroyed = r.daily.reduce((a, d) => a + d.destroyed, 0n);
+    checks.push({
+      name: "Familles : membres en fin de saison",
+      target: "diagnostic : aucune famille vide",
+      value: Object.entries(fam.members)
+        .map(([f, n]) => `${f} ${n}`)
+        .join(" · "),
+      pass: true,
+      blocking: false,
+    });
+    checks.push({
+      name: "Familles : au pouvoir chaque semaine",
+      target: "diagnostic : le pouvoir change de mains",
+      value: fam.winners.map((w) => w ?? "—").join(", "),
+      pass: true,
+      blocking: false,
+    });
+    checks.push({
+      name: "Familles : commandes livrées et mécénat",
+      target: "diagnostic : le mécénat est un puits",
+      value: `${fam.orders} commandes · mécénat ${ducats(fam.patronage)} (${pct(
+        Number(fam.patronage) / Math.max(1, Number(destroyed)),
+      )} des destructions)`,
+      pass: true,
+      blocking: false,
+    });
+  }
+
   checks.push(...passChecks(r, twin));
 
   const lastDay = r.daily[last];

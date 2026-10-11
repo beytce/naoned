@@ -18,6 +18,7 @@ const ICON = {
   season: NavIcon.top,
   criee: NavIcon.marche,
   deal: NavIcon.marche,
+  family: NavIcon.contrats,
 } as const;
 const TONE: Record<string, string> = {
   harvest: "text-lagoon",
@@ -30,6 +31,7 @@ const TONE: Record<string, string> = {
   season: "text-gold",
   criee: "text-gold",
   deal: "text-lagoon",
+  family: "text-gold",
 };
 
 function text(n: Notice, props: GameProps): string {
@@ -76,6 +78,17 @@ function text(n: Notice, props: GameProps): string {
         props.names.resource(String(n.data.resource)).toLowerCase(),
         d(String(n.data.price)),
       );
+    case "family": {
+      const name = (code: unknown) =>
+        props.catalog.families.find((f) => f.code === code)?.name ?? String(code ?? "");
+      return t.family(
+        Number(n.data.week) + 1,
+        n.data.winner ? name(n.data.winner) : null,
+        n.data.winner === n.data.family,
+        name(n.data.family),
+        Number(n.data.rank),
+      );
+    }
     case "week": {
       const gain = BigInt(String(n.data.gain ?? "0"));
       const award = n.data.award ? fr.game.week.awards[String(n.data.award)] : null;
