@@ -150,3 +150,16 @@ Chaque marchand a maintenant son propre quota par ressource et par jour : il peu
 Le calibrage a révélé un défaut des bots : une fois leur quota épuisé, ils visaient encore le prix du Fondaco, n'achetaient rien et ne laissaient pas d'offre aux autres joueurs. Ils ne regardent plus que les offres des joueurs quand leur quota est épuisé.
 
 Les prix restent stables (indice 96 à 100 sur les 5 graines).
+
+## Matières premières locales et prime de spécialisation
+
+Constat de la bêta : un joueur pouvait construire les sept ateliers et produire tout lui-même ; le marché ne lui servait plus qu'à vendre.
+
+| Réglage | Valeur | Raison |
+| --- | --- | --- |
+| Extraction régionale (`buildingRegions`) | ferme en Terraferma, carrière d'argile dans la Lagune, camp de bûcherons dans les Dolomites | Chaque région dépend des deux autres pour ses matières premières, toute la saison. Les ateliers de transformation restent constructibles partout. Un atelier déjà construit hors de sa région produit encore mais ne peut plus être amélioré |
+| Prime de niveau (`levelYieldBonusBps`) | +25 % de rendement par niveau au-delà du premier | L'entretien croît de 20 % par niveau : sans prime, concentrer ses ateliers coûtait plus qu'il ne rapportait. Un niveau 5 produit désormais 10 fois un niveau 1 pour les mêmes matières |
+
+Résultat sur 5 graines (prime à 25 %, comme à 15 %) : toutes les cibles bloquantes tenues, indice des prix entre 96 et 100, 53 à 73 % du volume entre joueurs. Deux nouveaux indicateurs de diagnostic : 59 à 60 marchands sur 60 achètent au moins une matière première, 2,5 types d'ateliers par marchand en fin de saison.
+
+Limite : les bots se spécialisaient déjà (ils ne construisent que la chaîne de leur région), donc la simulation montre surtout que la règle ne dérègle pas l'économie. Son effet sur les joueurs, qui eux visaient l'autarcie, se mesurera pendant la bêta.

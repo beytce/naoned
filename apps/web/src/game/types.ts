@@ -37,6 +37,8 @@ export interface Catalog {
     recipe: Recipe | null;
     cost: Cost;
     upkeepPerDay: Money;
+    /** Regions where it may be built (null: anywhere). */
+    regions: string[] | null;
   }[];
   referencePrices: Record<string, Money>;
   rules: {
@@ -46,6 +48,7 @@ export interface Catalog {
     marketTaxBps: number;
     instantOrderSlippageBps: number;
     regionBonusBps: number;
+    levelYieldBonusBps: number;
   };
 }
 
@@ -201,6 +204,8 @@ export interface BuildingView {
   canStart: number;
   upgradeCost: Cost | null;
   upkeepPerDay: Money;
+  /** Extractor built outside its region before the rule: produces, cannot be upgraded. */
+  outOfRegion: boolean;
 }
 
 export interface MarketLine {

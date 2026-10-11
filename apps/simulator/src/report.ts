@@ -25,6 +25,23 @@ export function rollingMoneyGrowth(r: SimulationResult): { day: number; growth: 
 
 export function evaluate(r: SimulationResult): Check[] {
   const checks: Check[] = [];
+  const dep = r.interdependence;
+  if (dep) {
+    checks.push({
+      name: "Marchands qui achètent une matière première",
+      target: "diagnostic : interdépendance des régions",
+      value: `${dep.rawBuyers} / ${dep.merchants}`,
+      pass: true,
+      blocking: false,
+    });
+    checks.push({
+      name: "Types d'ateliers par marchand (fin de saison)",
+      target: "diagnostic : spécialisation",
+      value: dep.typesPerMerchant.toFixed(1),
+      pass: true,
+      blocking: false,
+    });
+  }
   const last = r.daily.length - 1;
 
   checks.push({

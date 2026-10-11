@@ -26,10 +26,12 @@ function recipeOf(props: GameProps, type: string): Recipe | null {
 }
 
 /** Quantity produced per batch, with the regional bonus. */
-function outputQty(props: GameProps, resource: string, base: number) {
+/** Output of one batch: base × level, with the region's and the level's yield bonuses. */
+function outputQty(props: GameProps, resource: string, base: number, level = 1) {
   const region = props.catalog.regions.find((r) => r.code === props.view.player.region);
-  if (region?.bonusResource !== resource) return base;
-  return Math.floor((base * (10_000 + props.catalog.rules.regionBonusBps)) / 10_000);
+  let bonus = (level - 1) * props.catalog.rules.levelYieldBonusBps;
+  if (region?.bonusResource === resource) bonus += props.catalog.rules.regionBonusBps;
+  return Math.floor((base * (10_000 + bonus)) / 10_000);
 }
 
 /** "10 [clay] → 6 [bricks]" with icons. */
@@ -38,7 +40,7 @@ function RecipeFlow({ recipe, level, props }: { recipe: Recipe; level: number; p
     Object.entries(m).map(([r, q]) => (
       <span key={r} className="inline-flex items-center gap-1">
         <span className="font-display text-sm font-semibold tabular-nums">
-          {out ? outputQty(props, r, q * level) : q * level}
+          {out ? outputQty(props, r, q * level, level) : q * level}
         </span>
         <ResourceIcon code={r} size={22} />
       </span>
@@ -319,6 +321,9 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
         {recipe && b.canStart === 0 && !job && Object.keys(recipe.inputs).length > 0 && (
           <p className="flex-1 self-center text-xs text-muted">{fr.game.missingInputs}</p>
         )}
+        {b.outOfRegion && (
+          <p className="flex-1 self-center text-xs text-muted">{fr.game.outOfRegion}</p>
+        )}
         {b.upgradeCost && (
           <Slab
             tone="ghost"
@@ -403,7 +408,11 @@ function UpgradeSheet({ b, props }: { b: BuildingView; props: GameProps }) {
           </div>
         </div>
       )}
-      <p className="text-sm text-cream-dim">{fr.game.upgradeEffect}</p>
+      <p className="text-sm text-cream-dim">
+        {fr.game.upgradeEffect(
+          Math.round((b.level * props.catalog.rules.levelYieldBonusBps) / 100),
+        )}
+      </p>
       <div className="space-y-2">
         <Label>{fr.game.cost}</Label>
         <CostList cost={cost} props={props} />
@@ -480,24 +489,35 @@ export function Comptoir(props: GameProps) {
       </section>
       <section className="space-y-3">
         <Label>{fr.game.buildTitle}</Label>
+        <p className="text-xs text-muted">
+          {fr.game.localRaw(
+            catalog.buildings
+              .filter((b) => b.regions?.includes(view.player.region))
+              .flatMap((b) => Object.keys(b.recipe?.outputs ?? {}))
+              .map((r) => props.names.resource(r).toLowerCase())
+              .join(", ") || "—",
+          )}
+        </p>
         {full ? (
           <p className="text-sm text-muted">{fr.game.maxBuildings(catalog.rules.maxBuildings)}</p>
         ) : (
           <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2">
-            {catalog.buildings.map((b) => (
-              <button
-                key={b.type}
-                type="button"
-                onClick={() => props.setSheet(`build:${b.type}`)}
-                className={`w-32 shrink-0 bg-night-3 p-2 text-left ring-1 ring-line ${affordable(view, b.cost) ? "" : "opacity-60"}`}
-              >
-                <BuildingArt type={b.type} className="h-16 w-28" />
-                <p className="mt-1 font-display text-[11px] font-semibold uppercase leading-tight">
-                  {b.name}
-                </p>
-                <p className="font-mono text-[11px] text-gold">{d(b.cost.ducats)}</p>
-              </button>
-            ))}
+            {catalog.buildings
+              .filter((b) => !b.regions || b.regions.includes(view.player.region))
+              .map((b) => (
+                <button
+                  key={b.type}
+                  type="button"
+                  onClick={() => props.setSheet(`build:${b.type}`)}
+                  className={`w-32 shrink-0 bg-night-3 p-2 text-left ring-1 ring-line ${affordable(view, b.cost) ? "" : "opacity-60"}`}
+                >
+                  <BuildingArt type={b.type} className="h-16 w-28" />
+                  <p className="mt-1 font-display text-[11px] font-semibold uppercase leading-tight">
+                    {b.name}
+                  </p>
+                  <p className="font-mono text-[11px] text-gold">{d(b.cost.ducats)}</p>
+                </button>
+              ))}
           </div>
         )}
       </section>

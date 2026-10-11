@@ -85,6 +85,13 @@ Inspiré de Mercato Venezia : du risque et de l'affrontement entre joueurs, sans
 | **Carnet visible** | La fiche d'une ressource montre les cinq meilleures offres de chaque côté, avec le nom de leur auteur (badge PNJ pour les maisons, « Fondaco ») et le quota restant du joueur |
 | **Offre conclue** | Une notification prévient l'auteur d'une offre quand quelqu'un la prend |
 
+### Interdépendance des régions (après le troisième test de la bêta)
+
+| Règle | Détail |
+| --- | --- |
+| **Matières premières locales** | Le blé ne pousse qu'en Terraferma, l'argile ne se trouve que dans la Lagune, le bois que dans les Dolomites. Moulin, boulangerie, briqueterie, scierie et palais se construisent partout : il faut acheter ses matières premières aux autres régions |
+| **Prime à la spécialisation** | +25 % de rendement par niveau au-delà du premier : mieux vaut un grand atelier que plusieurs petits, et acheter le reste |
+
 ## Vision et positionnement
 
 Comptoirs est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.

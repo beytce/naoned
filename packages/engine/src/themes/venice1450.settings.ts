@@ -196,6 +196,15 @@ export const venice1450Settings: WorldSettingsInput = {
       },
     },
   },
+  // Raw materials are local: wheat grows in the Terraferma, clay lies in the Lagoon, wood in the
+  // Dolomites. Workshops that transform can be built anywhere.
+  buildingRegions: {
+    farm: ["terraferma"],
+    clay_pit: ["lagoon"],
+    lumber_camp: ["dolomites"],
+  },
+  // Specialising pays: +25 % yield per level above the first (a level 5 workshop: × 2).
+  levelYieldBonusBps: 2_500,
   ships: {
     maxPerPlayer: 4,
     // Convoys on one's own ships pay port dues: 30 % of the route's charter.

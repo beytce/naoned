@@ -51,7 +51,7 @@ export const fr = {
 
   region: {
     title: "Choisissez votre métier",
-    help: "Chaque métier vend ses produits aux villes, mais aura besoin de l'autre matériau de construction pour grandir.",
+    help: "Chaque région n'extrait que sa propre matière première : le blé en Terraferma, l'argile dans la Lagune, le bois dans les Dolomites. Pour le reste, il faudra commercer.",
     bonus: (pct: number, resource: string) => `+${pct} % de ${resource.toLowerCase()}`,
     kit: "Ateliers de départ",
     sells: "Vous vendez",
@@ -255,7 +255,11 @@ export const fr = {
     missingInputs: "Matières insuffisantes : achetez-en au Marché.",
     upgrade: "Améliorer",
     upgradeTo: (level: number) => `Passer au niveau ${level}`,
-    upgradeEffect: "Chaque lot produit davantage, mais l'entretien augmente.",
+    upgradeEffect: (bonus: number) =>
+      `Chaque lot produit davantage, avec une prime de rendement de +${bonus} % : à matières égales, un grand atelier rapporte plus que plusieurs petits. L'entretien augmente aussi.`,
+    localRaw: (raw: string) =>
+      `Matière première de votre région : ${raw}. Les autres ne s'extraient pas ici : achetez-les au Rialto.`,
+    outOfRegion: "Hors de sa région : il produit encore, mais ne peut plus être amélioré.",
     build: "Construire",
     buildTitle: "Nouvel atelier",
     maxBuildings: (n: number) => `Maximum de ${n} bâtiments atteint.`,

@@ -4,6 +4,7 @@ import {
   MARKET_MAKER,
   type WorldContext,
   type WorldState,
+  allowedHere,
   bestPrice,
   bookSide,
   cashAccount,
@@ -53,6 +54,8 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
       ...b,
       recipe: recipesFor(theme, b.type)[0] ?? null,
       cost: costForLevel(ctx, b.type, 1),
+      /** Regions where it may be built (null: anywhere). */
+      regions: settings.buildingRegions[b.type] ?? null,
       upkeepPerDay: settings.buildings[b.type]?.upkeepPerDay ?? 0n,
     })),
     ports: theme.ports ?? [],
@@ -73,6 +76,7 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
       marketTaxBps: settings.marketTaxBps,
       instantOrderSlippageBps: settings.instantOrderSlippageBps,
       regionBonusBps: settings.regionBonusBps,
+      levelYieldBonusBps: settings.levelYieldBonusBps,
     },
   };
 }
@@ -87,6 +91,7 @@ function buildingView(ctx: WorldContext, state: WorldState, b: Building, now: nu
   }
   const player = state.players[b.playerId];
   const room = recipe ? freeBatches(ctx, b, recipe.code, now, player) : 0;
+  const local = allowedHere(ctx, player?.region ?? "", b.type);
   const job = b.job
     ? {
         ...b.job,
@@ -102,7 +107,11 @@ function buildingView(ctx: WorldContext, state: WorldState, b: Building, now: nu
     job,
     canStart: Math.min(room, affordable),
     upgradeCost:
-      b.level < ctx.settings.maxBuildingLevel ? costForLevel(ctx, b.type, b.level + 1) : null,
+      local && b.level < ctx.settings.maxBuildingLevel
+        ? costForLevel(ctx, b.type, b.level + 1)
+        : null,
+    /** Built before raw materials became local: still producing, no more upgrades. */
+    outOfRegion: !local,
     upkeepPerDay: upkeepPerDay(ctx, b),
   };
 }

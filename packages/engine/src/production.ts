@@ -44,7 +44,12 @@ export function collect(tx: Tx, building: Building): void {
     for (let k = 0; k < done; k++) {
       const completedAt = job.startedAt + (k + 1) * batchMs;
       const base = (perBatch ?? 0) * job.level;
-      total += applyBonusToQuantity(base, yieldBonusBps(tx.ctx, player, resource, completedAt));
+      // Specialisation: each level above the first adds to the yield.
+      const levelBonus = (job.level - 1) * tx.ctx.settings.levelYieldBonusBps;
+      total += applyBonusToQuantity(
+        base,
+        yieldBonusBps(tx.ctx, player, resource, completedAt) + levelBonus,
+      );
     }
     addStock(tx, building.playerId, resource, total, "production_output", building.id);
   }

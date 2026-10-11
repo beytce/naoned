@@ -53,6 +53,8 @@ export interface SimulationResult {
   durationMs: number;
   /** World at the end of the run (debugging, extra analysis). */
   finalState?: WorldState;
+  /** Do merchants depend on each other? Raw material buyers and building types per merchant. */
+  interdependence?: { rawBuyers: number; merchants: number; typesPerMerchant: number };
 }
 
 export const DEFAULT_MIX: Record<ProfileName, number> = {
@@ -130,6 +132,8 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     durationMs: 0,
   };
 
+  const raw = new Set(ctx.theme.resources.filter((r) => r.tier === "raw").map((r) => r.code));
+  const rawBuyers = new Set<string>();
   let now = START;
   const run = (cmd: Command): boolean => {
     const res = decide(ctx, state, cmd, now);
@@ -142,6 +146,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     result.commands.accepted++;
     state = res.state;
     accumulate(totals, res.effects);
+    for (const t of res.effects.trades) if (raw.has(t.resource)) rawBuyers.add(t.buyerId);
     recordFlows(flows, res.effects);
     options.onEffects?.(res.effects, now);
     return true;
@@ -215,6 +220,20 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
   }
   closeDay();
   result.finalState = state;
+  const merchants = Object.keys(state.players);
+  const types = merchants.map(
+    (id) =>
+      new Set(
+        Object.values(state.buildings)
+          .filter((b) => b.playerId === id)
+          .map((b) => b.type),
+      ).size,
+  );
+  result.interdependence = {
+    rawBuyers: merchants.filter((id) => rawBuyers.has(id)).length,
+    merchants: merchants.length,
+    typesPerMerchant: types.reduce((a, b) => a + b, 0) / Math.max(1, types.length),
+  };
   result.durationMs = performance.now() - started;
   return result;
 }
