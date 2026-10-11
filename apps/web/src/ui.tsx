@@ -1,5 +1,7 @@
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { P } from "./art/palette.js";
+import { onBack } from "./game/back.js";
 
 type Tone = "gold" | "lagoon" | "vermilion" | "ghost";
 
@@ -268,10 +270,16 @@ export function Qty(props: { value: number; max: number; onChange: (v: number) =
   const set = (v: number) =>
     props.onChange(Math.max(1, Math.min(Math.max(1, props.max), Math.round(v))));
   const btn =
-    "h-10 w-10 rounded-xl bg-night-4 font-display text-lg ring-1 ring-inset ring-line hover:ring-cream-dim/40";
+    "h-11 w-11 rounded-xl bg-night-4 font-display text-lg ring-1 ring-inset ring-line transition hover:ring-cream-dim/40 active:scale-95 disabled:opacity-35";
   return (
     <div className="flex items-center gap-2">
-      <button type="button" className={btn} onClick={() => set(props.value - 1)}>
+      <button
+        type="button"
+        aria-label="Moins"
+        className={btn}
+        disabled={props.value <= 1}
+        onClick={() => set(props.value - 1)}
+      >
         <span>−</span>
       </button>
       <input
@@ -280,15 +288,92 @@ export function Qty(props: { value: number; max: number; onChange: (v: number) =
         min={1}
         value={props.value}
         onChange={(e) => set(Number(e.target.value) || 1)}
-        className="h-10 w-16 rounded-xl bg-night text-center font-display text-base ring-1 ring-line focus:outline-none focus:ring-gold"
+        aria-label="Quantité"
+        className="h-11 w-16 rounded-xl bg-night text-center font-display text-base ring-1 ring-line focus:outline-none focus:ring-gold"
       />
-      <button type="button" className={btn} onClick={() => set(props.value + 1)}>
+      <button
+        type="button"
+        aria-label="Plus"
+        className={btn}
+        disabled={props.value >= props.max}
+        onClick={() => set(props.value + 1)}
+      >
         <span>+</span>
       </button>
-      <button type="button" className="label px-1 text-gold" onClick={() => set(props.max)}>
+      <button
+        type="button"
+        className="label h-11 rounded-xl px-3 text-gold ring-1 ring-inset ring-gold/40 transition hover:bg-gold/10 active:scale-95"
+        onClick={() => set(props.max)}
+      >
         max
       </button>
     </div>
+  );
+}
+
+let scrollLocks = 0;
+
+/** Keeps the page still behind a window; nested windows share the lock. */
+function useScrollLock(on: boolean) {
+  useEffect(() => {
+    if (!on) return;
+    scrollLocks++;
+    const body = document.body;
+    const previous = body.style.overflow;
+    body.style.overflow = "hidden";
+    return () => {
+      scrollLocks--;
+      if (scrollLocks === 0) body.style.overflow = previous;
+    };
+  }, [on]);
+}
+
+/**
+ * While open: Escape and the phone's back button close it, the page behind stays still, and
+ * focus goes into it and comes back to where it was.
+ */
+export function useOverlay(open: boolean, onClose: () => void) {
+  const close = useRef(onClose);
+  close.current = onClose;
+  useScrollLock(open);
+  useEffect(() => {
+    if (!open) return;
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && close.current();
+    window.addEventListener("keydown", esc);
+    const stopBack = onBack(() => {
+      close.current();
+      return true;
+    });
+    const before = document.activeElement as HTMLElement | null;
+    return () => {
+      window.removeEventListener("keydown", esc);
+      stopBack();
+      before?.focus?.({ preventScroll: true });
+    };
+  }, [open]);
+}
+
+/** Round close button, the same in every window. */
+export function CloseButton({
+  onClick,
+  className = "",
+}: { onClick: () => void; className?: string }) {
+  return (
+    <button
+      type="button"
+      aria-label="Fermer"
+      onClick={onClick}
+      className={`flex h-11 w-11 items-center justify-center rounded-full text-cream-dim ring-1 ring-inset ring-line transition hover:text-cream active:scale-95 ${className}`}
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+        <path
+          d="M3 3l10 10M13 3L3 13"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    </button>
   );
 }
 
@@ -298,34 +383,36 @@ export function Sheet({
   onClose,
   children,
 }: { open: boolean; onClose: () => void; children: ReactNode }) {
+  const panel = useRef<HTMLDialogElement>(null);
+  useOverlay(open, onClose);
   useEffect(() => {
-    if (!open) return;
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", esc);
-    return () => window.removeEventListener("keydown", esc);
-  }, [open, onClose]);
+    if (open) panel.current?.focus({ preventScroll: true });
+  }, [open]);
   if (!open) return null;
-  return (
+  // On the body: a parent with a backdrop blur would otherwise trap the fixed window inside it.
+  return createPortal(
     <div className="fixed inset-0 z-40 flex items-end justify-center lg:items-center">
       <button
         type="button"
         aria-label="Fermer"
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        tabIndex={-1}
+        className="absolute inset-0 animate-fade bg-black/60"
         onClick={onClose}
       />
-      <div className="relative max-h-[92dvh] w-full max-w-md animate-rise overflow-y-auto rounded-t-3xl border-t border-line bg-night-2 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 lg:max-w-lg lg:rounded-3xl lg:border lg:p-7">
+      {/* Opened in place (not showModal): it stays under the guide's bubble. */}
+      <dialog
+        open
+        ref={panel}
+        aria-modal="true"
+        tabIndex={-1}
+        className="relative m-0 max-h-[92dvh] w-full max-w-md animate-sheet overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line bg-night-2 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 text-cream shadow-2xl shadow-black/50 focus:outline-none lg:max-w-lg lg:animate-pop lg:rounded-3xl lg:border lg:p-7"
+      >
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-line lg:hidden" />
-        <button
-          type="button"
-          aria-label="Fermer"
-          onClick={onClose}
-          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-cream-dim ring-1 ring-line hover:text-cream"
-        >
-          ×
-        </button>
+        <CloseButton onClick={onClose} className="absolute right-3 top-3 lg:right-4 lg:top-4" />
         {children}
-      </div>
-    </div>
+      </dialog>
+    </div>,
+    document.body,
   );
 }
 

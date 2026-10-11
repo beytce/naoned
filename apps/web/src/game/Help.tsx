@@ -1,22 +1,22 @@
 import { NavIcon } from "../art/icons.js";
 import { fr } from "../i18n.js";
-import { Label, Slab } from "../ui.js";
+import { CloseButton, Label, Slab, useOverlay } from "../ui.js";
 import type { GameProps } from "./Game.js";
 
 export function Help(props: GameProps & { onClose: () => void }) {
+  useOverlay(true, props.onClose);
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-night">
+    // biome-ignore lint/a11y/useSemanticElements: a full-screen layer, like the sheets.
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={fr.game.help}
+      className="fixed inset-0 z-50 animate-fade overflow-y-auto overscroll-contain bg-night"
+    >
       <div className="mx-auto max-w-md space-y-6 px-5 pb-12 pt-[max(1.5rem,env(safe-area-inset-top))]">
         <div className="flex items-center justify-between">
           <Label className="text-lagoon">{fr.season}</Label>
-          <button
-            type="button"
-            className="font-display text-3xl text-cream-dim"
-            onClick={props.onClose}
-            aria-label={fr.game.close}
-          >
-            ×
-          </button>
+          <CloseButton onClick={props.onClose} />
         </div>
         <h1 className="font-display text-3xl font-extrabold uppercase">{fr.game.help}</h1>
         {fr.game.howTo.map((s) => {

@@ -33,20 +33,36 @@ export default {
           "0%": { boxShadow: "0 0 0 0 rgb(var(--gold) / 0.7)" },
           "100%": { boxShadow: "0 0 0 14px rgb(var(--gold) / 0)" },
         },
-        shine: {
-          "0%": { backgroundPosition: "200% 0" },
-          "100%": { backgroundPosition: "-200% 0" },
-        },
         rise: {
           "0%": { opacity: "0", transform: "translateY(12px)" },
+          "100%": { opacity: "1", transform: "none" },
+        },
+        fade: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        sheet: {
+          "0%": { transform: "translateY(100%)" },
+          "100%": { transform: "none" },
+        },
+        pop: {
+          "0%": { opacity: "0", transform: "scale(0.96)" },
+          "100%": { opacity: "1", transform: "none" },
+        },
+        screen: {
+          "0%": { opacity: "0", transform: "translateY(6px)" },
           "100%": { opacity: "1", transform: "none" },
         },
       },
       animation: {
         floaty: "floaty 4s ease-in-out infinite",
         pulsering: "pulsering 1.4s ease-out infinite",
-        shine: "shine 6s linear infinite",
         rise: "rise 0.35s ease-out both",
+        fade: "fade 0.2s ease-out both",
+        // Decelerating curve: windows arrive fast and settle, never bounce.
+        sheet: "sheet 0.28s cubic-bezier(0.22, 1, 0.36, 1) both",
+        pop: "pop 0.2s cubic-bezier(0.22, 1, 0.36, 1) both",
+        screen: "screen 0.22s cubic-bezier(0.22, 1, 0.36, 1) both",
       },
     },
   },

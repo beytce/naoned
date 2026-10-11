@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { type Account, ApiError } from "../api.js";
 import { Crest, defaultCrest } from "../art/crest.js";
 import { Coin, NavIcon } from "../art/icons.js";
-import { Logotype } from "../art/logo.js";
+import { Logotype, Sign } from "../art/logo.js";
 import { Lorenzo } from "../art/scenes.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { applyPalette, currentPalette, needsPass } from "../theme.js";
+import { Slab } from "../ui.js";
 import { Bell } from "./Bell.js";
 import { Ceremony } from "./Ceremony.js";
 import { Coach } from "./Coach.js";
@@ -23,6 +24,7 @@ import { Region } from "./Region.js";
 import { Top } from "./Top.js";
 import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
+import { onBack } from "./back.js";
 import { d } from "./format.js";
 import { store } from "./store.js";
 
@@ -105,6 +107,7 @@ export function Game(props: {
 }) {
   const { onLogout } = props;
   const [catalog, setCatalog] = useState<Catalog | null>(null);
+  const [catalogFailed, setCatalogFailed] = useState(false);
   const [view, setView] = useState<PlayerView | null | undefined>(undefined);
   const [offset, setOffset] = useState(0);
   const [now, setNow] = useState(Date.now());
@@ -125,6 +128,12 @@ export function Game(props: {
   const [people, setPeople] = useState<Record<string, string | null>>({});
   const [bots, setBots] = useState<Set<string>>(new Set());
   const clearUnread = useCallback(() => setUnread(0), []);
+  /** One action at a time: a double tap must not buy, build or sail twice. */
+  const acting = useRef(false);
+  /** Where each section was scrolled to, so coming back to it finds the same place. */
+  const scrolls = useRef<Partial<Record<Tab, number>>>({});
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
 
   const apply = useCallback((serverTime: number, v: PlayerView | null) => {
     setOffset(serverTime - Date.now());
@@ -152,11 +161,16 @@ export function Game(props: {
     }
   }, [apply, onLogout]);
 
-  useEffect(() => {
+  const loadCatalog = useCallback(() => {
+    setCatalogFailed(false);
     gameApi
       .catalog()
       .then(setCatalog)
-      .catch(() => setToast(fr.errors.network ?? null));
+      .catch(() => setCatalogFailed(true));
+  }, []);
+
+  useEffect(() => {
+    loadCatalog();
     refresh();
     const poll = setInterval(refresh, POLL_MS);
     const clock = setInterval(() => setNow(Date.now()), 1000);
@@ -164,7 +178,34 @@ export function Game(props: {
       clearInterval(poll);
       clearInterval(clock);
     };
-  }, [refresh]);
+  }, [refresh, loadCatalog]);
+
+  /** Switches section, keeping each one's scroll; the current one again goes back to its top. */
+  const goTo = useCallback((t: Tab) => {
+    setSheet(null);
+    if (t === tabRef.current) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    haptic("tap");
+    scrolls.current[tabRef.current] = window.scrollY;
+    setTab(t);
+  }, []);
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: scrolls.current[tab] ?? 0 });
+  }, [tab]);
+
+  // Back button: from any section, back to the counter first (windows close before that).
+  useEffect(
+    () =>
+      onBack(() => {
+        if (tabRef.current === "comptoir") return false;
+        goTo("comptoir");
+        return true;
+      }),
+    [goTo],
+  );
 
   // The Pass's palette goes back to the default when the Pass ends.
   const passActive = view?.pass.active;
@@ -203,6 +244,8 @@ export function Game(props: {
 
   const act = useCallback(
     async (action: Action) => {
+      if (acting.current) return false;
+      acting.current = true;
       setBusy(true);
       try {
         const res = await gameApi.act(action);
@@ -228,6 +271,7 @@ export function Game(props: {
         setToast(fr.game.errors[code] ?? fr.errors[code] ?? fr.errors.unknown ?? null);
         return false;
       } finally {
+        acting.current = false;
         setBusy(false);
       }
     },
@@ -241,17 +285,14 @@ export function Game(props: {
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const next = TABS[Number(e.key) - 1];
-      if (next) {
-        setSheet(null);
-        setTab(next);
-      }
+      if (next) goTo(next);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [goTo]);
 
   if (!catalog || view === undefined) {
-    return <p className="py-32 text-center font-display text-muted">…</p>;
+    return <Loading failed={catalogFailed} onRetry={loadCatalog} />;
   }
 
   if (ceremony) {
@@ -320,12 +361,7 @@ export function Game(props: {
     bots,
     tab,
     passInfo,
-    goTo: (t) => {
-      if (t !== tab) haptic("tap");
-      setSheet(null);
-      setTab(t);
-      window.scrollTo({ top: 0 });
-    },
+    goTo,
     marketTab,
     setMarketTab,
     prices,
@@ -378,19 +414,21 @@ export function Game(props: {
     <button
       type="button"
       aria-label={fr.game.coach.resume}
-      className="rounded-full ring-2 ring-gold"
+      className="flex h-11 w-10 items-center justify-center rounded-full transition active:scale-95"
       onClick={() => {
         store.set("guideHidden", "0");
         setTab("comptoir");
         setGuideKey((k) => k + 1);
       }}
     >
-      <Lorenzo size={28} />
+      <span className="flex rounded-full ring-2 ring-gold">
+        <Lorenzo size={26} />
+      </span>
     </button>
   );
   const purse = (
-    <div className="flex items-center gap-1.5 rounded-full bg-night-3 py-1 pl-1 pr-3 ring-1 ring-line">
-      <Coin size={24} />
+    <div className="mr-1 flex items-center gap-1.5 rounded-full bg-night-3 py-1 pl-1 pr-2.5 ring-1 ring-line">
+      <Coin size={22} />
       <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
         {d(view.cash)}
       </span>
@@ -400,10 +438,15 @@ export function Game(props: {
     <button
       type="button"
       aria-label={fr.game.tabs.profil}
-      className="rounded-full bg-night-3 p-0.5 ring-2 ring-gold/70"
+      aria-current={tab === "profil" ? "page" : undefined}
+      className={`flex h-11 w-11 items-center justify-center rounded-full transition active:scale-95 ${tab === "profil" ? "bg-gold/15" : ""}`}
       onClick={() => gp.goTo("profil")}
     >
-      <Crest crest={crest} size={30} />
+      <span
+        className={`rounded-full bg-night-3 p-0.5 ring-2 ${tab === "profil" ? "ring-gold" : "ring-gold/50"}`}
+      >
+        <Crest crest={crest} size={30} />
+      </span>
     </button>
   );
 
@@ -421,8 +464,9 @@ export function Game(props: {
                 key={t}
                 type="button"
                 data-coach={`tab-${t}`}
+                aria-current={on ? "page" : undefined}
                 onClick={() => gp.goTo(t)}
-                className={`relative flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${on ? "bg-night-4 text-gold" : "text-cream-dim hover:bg-night-3 hover:text-cream"} ${t === "port" && portLocked ? "opacity-40" : ""}`}
+                className={`relative flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${on ? "bg-night-4 text-gold" : "text-cream-dim hover:bg-night-3 hover:text-cream"} ${t === "port" && portLocked ? "opacity-50" : ""}`}
               >
                 <Icon />
                 <span className="flex-1 font-display text-sm font-extrabold uppercase tracking-wide">
@@ -437,6 +481,7 @@ export function Game(props: {
         <button
           type="button"
           onClick={() => gp.goTo("profil")}
+          aria-current={tab === "profil" ? "page" : undefined}
           className={`mt-auto flex items-center gap-3 rounded-2xl border p-3 text-left transition hover:border-gold/60 ${tab === "profil" ? "border-gold/70" : "border-line"}`}
         >
           <Crest crest={crest} size={40} />
@@ -453,7 +498,20 @@ export function Game(props: {
 
       <header className="sticky top-0 z-20 border-b border-line/60 bg-night/90 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur lg:px-8 lg:py-3">
         <div className="mx-auto flex max-w-md items-center gap-2 lg:max-w-6xl lg:gap-4">
-          <Logotype size={22} className="lg:hidden" />
+          {/* Phone: the game's name on the counter, the section's name everywhere else. */}
+          <h1 className="flex min-w-0 flex-1 items-center gap-2 lg:hidden">
+            {tab === "comptoir" && (
+              <span className="shrink-0">
+                <Sign size={22} />
+              </span>
+            )}
+            {/* With the guide's button in the header, the counter keeps just its sign. */}
+            {!(tab === "comptoir" && guidePaused) && (
+              <span className="truncate font-display text-base font-extrabold uppercase leading-none tracking-tight">
+                {tab === "comptoir" ? fr.appName : fr.game.tabs[tab]}
+              </span>
+            )}
+          </h1>
           <div className="hidden min-w-0 flex-1 lg:block">
             <p className="label text-lagoon">{fr.game.dayOf(view.day, catalog.world.seasonDays)}</p>
             <div className="mt-1.5 h-1 w-64 overflow-hidden rounded-full bg-night-4">
@@ -463,7 +521,7 @@ export function Game(props: {
               />
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-2 lg:gap-3">
+          <div className="ml-auto flex shrink-0 items-center gap-0.5 lg:gap-3">
             {purse}
             {resumeGuide}
             <Bell {...gp} unread={unread} onRead={clearUnread} />
@@ -501,19 +559,34 @@ export function Game(props: {
             {fr.game.season.lastSprint(daysLeft)}
           </p>
         )}
-        {tab === "comptoir" && <Comptoir {...gp} />}
-        {tab === "marche" && <Marche {...gp} />}
-        {tab === "contrats" && <Contrats {...gp} />}
-        {tab === "port" && <Port {...gp} />}
-        {tab === "top" && <Top {...gp} />}
-        {tab === "profil" && <Profil {...gp} />}
+        {/* A short settle on each section change: enough to see it switch, never in the way. */}
+        <div key={tab} className="animate-screen">
+          {tab === "comptoir" && <Comptoir {...gp} />}
+          {tab === "marche" && <Marche {...gp} />}
+          {tab === "contrats" && <Contrats {...gp} />}
+          {tab === "port" && <Port {...gp} />}
+          {tab === "top" && <Top {...gp} />}
+          {tab === "profil" && <Profil {...gp} />}
+        </div>
       </main>
 
       <Coach key={guideKey} {...gp} />
 
       {toast && (
-        <div className="fixed inset-x-4 bottom-28 z-50 mx-auto max-w-md animate-rise rounded-xl bg-vermilion p-3 text-sm font-semibold text-cream shadow-lg lg:bottom-8">
-          {toast}
+        <div
+          role="alert"
+          className="fixed inset-x-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-50 mx-auto max-w-md animate-rise lg:bottom-8"
+        >
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="flex w-full items-start gap-3 rounded-2xl bg-vermilion px-4 py-3 text-left text-sm font-semibold text-cream shadow-lg shadow-black/40"
+          >
+            <span aria-hidden="true" className="mt-px font-display font-extrabold">
+              !
+            </span>
+            <span className="flex-1">{toast}</span>
+          </button>
         </div>
       )}
 
@@ -530,12 +603,21 @@ export function Game(props: {
                 key={t}
                 type="button"
                 data-coach={`tab-${t}`}
+                aria-current={on ? "page" : undefined}
                 onClick={() => gp.goTo(t)}
-                className={`relative flex flex-col items-center gap-1 py-2.5 ${on ? "text-gold" : "text-muted"} ${t === "port" && portLocked ? "opacity-40" : ""}`}
+                className={`relative flex min-h-[3.5rem] flex-col items-center justify-center gap-1 pb-2 pt-2.5 transition-colors active:bg-night-3 ${on ? "text-gold" : "text-muted"} ${t === "port" && portLocked ? "opacity-50" : ""}`}
               >
-                {on && <span className="absolute inset-x-6 top-0 h-0.5 rounded-full bg-gold" />}
-                <Icon />
-                <span className="text-[11px] font-semibold">{fr.game.tabs[t]}</span>
+                {on && <span className="absolute inset-x-5 top-0 h-[3px] rounded-b-full bg-gold" />}
+                <span
+                  className={`transition-transform duration-200 ${on ? "-translate-y-px scale-110" : ""}`}
+                >
+                  <Icon />
+                </span>
+                <span
+                  className={`max-w-full truncate px-0.5 text-[11px] ${on ? "font-bold" : "font-semibold"}`}
+                >
+                  {fr.game.tabs[t]}
+                </span>
                 {badge(t) && !on && (
                   <span className="absolute right-[30%] top-2 h-2 w-2 rounded-full bg-vermilion" />
                 )}
@@ -545,5 +627,24 @@ export function Game(props: {
         </div>
       </nav>
     </div>
+  );
+}
+
+/** Opening the game: the sign while it loads, and a way out when the network fails. */
+function Loading({ failed, onRetry }: { failed: boolean; onRetry: () => void }) {
+  return (
+    <main className="flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-6 text-center">
+      <span className={failed ? "" : "animate-pulse"}>
+        <Sign size={56} />
+      </span>
+      {failed ? (
+        <>
+          <p className="max-w-xs text-cream-dim">{fr.errors.network}</p>
+          <Slab onClick={onRetry}>{fr.game.retry}</Slab>
+        </>
+      ) : (
+        <output className="label">{fr.game.loading}</output>
+      )}
+    </main>
   );
 }

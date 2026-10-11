@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { NavIcon } from "../art/icons.js";
 import { fr } from "../i18n.js";
 import { Label, Sheet } from "../ui.js";
@@ -136,53 +135,49 @@ export function Bell(props: GameProps & { unread: number; onRead: () => void }) 
       <button
         type="button"
         aria-label={fr.game.notices.title}
-        className="relative text-cream-dim"
+        className="relative flex h-11 w-10 items-center justify-center rounded-full text-cream-dim transition hover:text-cream active:scale-95"
         onClick={() => setOpen(true)}
       >
         {NavIcon.bell()}
         {props.unread > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-vermilion px-1 font-mono text-[10px] font-bold text-cream">
+          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-vermilion px-1 font-mono text-[10px] font-bold text-cream">
             {props.unread > 9 ? "9+" : props.unread}
           </span>
         )}
       </button>
-      {/* Out of the header: its backdrop blur would trap a fixed sheet inside it. */}
-      {createPortal(
-        <Sheet open={open} onClose={() => setOpen(false)}>
-          <div className="space-y-4">
-            <Label className="text-gold">{fr.game.notices.title}</Label>
-            {items === null ? (
-              <p className="text-muted">…</p>
-            ) : items.length === 0 ? (
-              <p className="text-sm text-cream-dim">{fr.game.notices.empty}</p>
-            ) : (
-              <ul className="max-h-[60vh] space-y-1 overflow-y-auto pr-1">
-                {items.map((n) => (
-                  <li
-                    key={n.id}
-                    className={`flex gap-3 border-b border-line/70 py-3 ${n.read ? "" : "border-l-4 border-l-gold pl-3"}`}
-                  >
-                    <span className={TONE[n.kind] ?? "text-cream-dim"}>{ICON[n.kind]?.()}</span>
-                    <p className="flex-1 text-sm leading-snug">{text(n, props)}</p>
-                    <span className="label whitespace-nowrap">{ago(props.now - n.createdAt)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <button
-              type="button"
-              className="label w-full pt-1 text-center text-lagoon"
-              onClick={() => {
-                setOpen(false);
-                props.goTo("profil");
-              }}
-            >
-              {fr.game.notices.settings}
-            </button>
-          </div>
-        </Sheet>,
-        document.body,
-      )}
+      <Sheet open={open} onClose={() => setOpen(false)}>
+        <div className="space-y-4">
+          <Label className="text-gold">{fr.game.notices.title}</Label>
+          {items === null ? (
+            <p className="text-muted">…</p>
+          ) : items.length === 0 ? (
+            <p className="text-sm text-cream-dim">{fr.game.notices.empty}</p>
+          ) : (
+            <ul className="max-h-[60vh] space-y-1 overflow-y-auto pr-1">
+              {items.map((n) => (
+                <li
+                  key={n.id}
+                  className={`flex gap-3 border-b border-line/70 py-3 ${n.read ? "" : "border-l-4 border-l-gold pl-3"}`}
+                >
+                  <span className={TONE[n.kind] ?? "text-cream-dim"}>{ICON[n.kind]?.()}</span>
+                  <p className="flex-1 text-sm leading-snug">{text(n, props)}</p>
+                  <span className="label whitespace-nowrap">{ago(props.now - n.createdAt)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button
+            type="button"
+            className="label w-full pt-1 text-center text-lagoon"
+            onClick={() => {
+              setOpen(false);
+              props.goTo("profil");
+            }}
+          >
+            {fr.game.notices.settings}
+          </button>
+        </div>
+      </Sheet>
     </>
   );
 }

@@ -25,11 +25,11 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
         </div>
         {data.slept && <p className="text-sm text-lagoon">{t.slept}</p>}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-night-3 p-3 ring-1 ring-line">
+          <div className="rounded-xl bg-night-3 p-3 ring-1 ring-inset ring-line">
             <Label>{t.earned}</Label>
             <Big className="mt-1 text-2xl text-lagoon">+{d(total)}</Big>
           </div>
-          <div className="bg-night-3 p-3 ring-1 ring-line">
+          <div className="rounded-xl bg-night-3 p-3 ring-1 ring-inset ring-line">
             <Label>{t.upkeep}</Label>
             <Big className="mt-1 text-2xl text-vermilion">−{d(data.upkeep)}</Big>
           </div>

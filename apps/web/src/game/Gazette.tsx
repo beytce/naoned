@@ -20,7 +20,7 @@ export function Gazette(props: GameProps) {
           live ? "bg-gold text-ink" : "bg-night-3 text-cream ring-1 ring-gold/60"
         }`}
       >
-        <div className="pr-6">
+        <div className="pr-8">
           <p className="font-mono text-[10px] font-bold uppercase tracking-[0.25em]">
             {live ? fr.game.gazette.now : fr.game.gazette.soon} ·{" "}
             {live
@@ -33,7 +33,7 @@ export function Gazette(props: GameProps) {
         <button
           type="button"
           aria-label={fr.game.close}
-          className="absolute right-3 top-2 text-lg"
+          className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-full text-lg opacity-70 transition hover:opacity-100"
           onClick={() => {
             store.set(key, "1");
             setClosed(true);

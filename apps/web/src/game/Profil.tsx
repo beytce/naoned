@@ -41,10 +41,12 @@ function Titles({ profile }: { profile: Profile }) {
                 <span>{i + 1}</span>
               </span>
               <div
-                className={`slab mt-2 flex h-24 flex-col items-center justify-center px-2 ring-1 ${current ? "bg-night-3 ring-2 ring-gold" : "bg-night-2 ring-line"}`}
+                className={`slab mt-2 flex h-24 flex-col items-center justify-center px-1.5 text-center ring-1 ${current ? "bg-night-3 ring-2 ring-gold" : "bg-night-2 ring-line"}`}
               >
                 <span className="flex flex-col items-center">
-                  <span className="font-display text-xs font-extrabold uppercase">{t.name}</span>
+                  <span className="font-display text-xs font-extrabold uppercase leading-tight [font-stretch:100%] [overflow-wrap:anywhere]">
+                    {t.name}
+                  </span>
                   <span className="mt-1 font-mono text-[10px] text-muted">
                     {t.from.toLocaleString("fr-FR")} d
                   </span>
@@ -57,23 +59,26 @@ function Titles({ profile }: { profile: Profile }) {
           );
         })}
       </div>
-      <div className="mt-3 flex justify-between px-6 font-display text-xl text-cream-dim">
-        <button type="button" onClick={() => setAt(0)} aria-label="Premier">
-          «
-        </button>
-        <button type="button" onClick={() => setAt(Math.max(0, at - 1))} aria-label="Précédent">
-          ‹
-        </button>
-        <button
-          type="button"
-          onClick={() => setAt(Math.min(profile.titles.length - 1, at + 1))}
-          aria-label="Suivant"
-        >
-          ›
-        </button>
-        <button type="button" onClick={() => setAt(profile.titles.length - 1)} aria-label="Dernier">
-          »
-        </button>
+      <div className="mt-3 flex justify-between px-2 font-display text-xl text-cream-dim">
+        {(
+          [
+            ["«", "Premier", 0],
+            ["‹", "Précédent", Math.max(0, at - 1)],
+            ["›", "Suivant", Math.min(profile.titles.length - 1, at + 1)],
+            ["»", "Dernier", profile.titles.length - 1],
+          ] as const
+        ).map(([glyph, label, to]) => (
+          <button
+            key={label}
+            type="button"
+            aria-label={label}
+            disabled={to === at}
+            onClick={() => setAt(to)}
+            className="h-11 w-11 rounded-full transition hover:text-cream active:scale-95 disabled:opacity-30"
+          >
+            {glyph}
+          </button>
+        ))}
       </div>
     </div>
   );

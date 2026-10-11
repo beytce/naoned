@@ -108,6 +108,14 @@
   .font-display {
     font-stretch: 125%;
   }
+  /* Keyboard focus: a gold ring, never on a tap. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--gold));
+    outline-offset: 2px;
+  }
+  button {
+    touch-action: manipulation;
+  }
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -116,9 +124,9 @@
 }
 
 @layer components {
-  /* Wide-spaced uppercase labels. */
+  /* Spaced uppercase labels: kickers and small captions. */
   .label {
-    @apply font-mono text-[11px] uppercase tracking-[0.22em] text-muted;
+    @apply font-mono text-[11px] uppercase leading-snug tracking-[0.14em] text-muted;
   }
   /* Card: deep water, a thin foam line, rounded corners. */
   .cartouche {
@@ -131,17 +139,6 @@
   .slab {
     @apply rounded-xl;
   }
-  .holo {
-    background: linear-gradient(
-      110deg,
-      rgb(var(--gold) / 0.22),
-      rgb(var(--lagoon) / 0.22),
-      rgb(var(--vermilion) / 0.16),
-      rgb(var(--gold) / 0.22)
-    );
-    background-size: 300% 100%;
-    @apply animate-shine;
-  }
   .stripes {
     background-image: repeating-linear-gradient(
       -45deg,
@@ -152,5 +149,17 @@
   /* Gentle waves, for the sea chart and the port. */
   .waves {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='16'%3E%3Cpath d='M0 8 Q12 2 24 8 T48 8' fill='none' stroke='%236DB3A2' stroke-opacity='0.13' stroke-width='1.2'/%3E%3C/svg%3E");
+  }
+}
+
+/* Players who ask for less motion: no floating, pulsing or sliding, only instant changes. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
