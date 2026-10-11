@@ -353,4 +353,17 @@ Ce qui ne tient pas, et pourquoi :
 - **Le rendement du brigand reste très bruité** d'une graine à l'autre (une centaine de bandes de bots par saison, une prise vaut quelques ducats) : la moyenne est dans la cible, pas chaque graine. Le levier est `feePerHour`, à réviser avec les vraies bandes de la bêta.
 - **Utilisation des véhicules à 25 %** : les bots jouent 2 à 4 sessions par jour et ne relancent une charrette qu'à leur session suivante. Un joueur qui revient à la notification « livraison arrivée » fera mieux ; la mesure réelle viendra de la bêta.
 - **L'écart entre assidus et occasionnels se creuse** (de +28 à +242 % avant, de +173 à +302 % après, mesure brute très bruitée) : un occasionnel ne livre qu'une commande par session avec sa charrette, là où il vidait son stock d'un coup aux villes. Voir l'essai à deux charrettes ci-dessous.
-- **Pass (`pnpm sim --pass 0.2`)** : avance des abonnés −15,9 %, +13,9 % (graine 2, non conforme, déjà +5,3 % avant), −4,2 %, puis graines 4 et 5 ci-dessous. Le Pass n'a aucun avantage sur la route ; l'écart vient de la divergence des deux saisons rejouées, déjà constatée avec les familles.
+- **Pass (`pnpm sim --pass 0.2`)** : avance des abonnés −15,9 %, +13,9 %, −4,2 %, +3,7 %, −13,5 % : une graine non conforme sur cinq (avant les livraisons : deux sur trois, +5,3 % et +7,5 %). Le Pass n'a aucun avantage sur la route ; l'écart vient surtout de la divergence des deux saisons rejouées, déjà constatée avec les familles.
+
+### Essai : deux charrettes au départ (non retenu)
+
+Pour que l'occasionnel livre deux commandes par session, essai avec deux charrettes à l'arrivée et un bonus ramené à +40 %/h (5 graines) :
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie payée (ducats / joueur actif / jour) | 152,1 | 162,2 | 159,6 | 159,9 | 161,5 |
+| Assidus devant occasionnels | +117 % | +104 % | +123 % | +77 % | +158 % |
+| Rendement du brigand actif | −9,5 % | −29,7 % | −20,3 % | +3,9 % | −0,2 % |
+| Pass : avance des abonnés (≤ +5 %) | −10,1 % | **+39,2 %** | **+22,6 %** | **+27,5 %** | **+13,2 %** |
+
+L'écart des occasionnels redescend, mais le contrôle du Pass échoue sur quatre graines : avec plus de capacité de transport, c'est le stock qui limite les livraisons, et le quota augmenté de la Dogana (avantage du Pass) devient décisif. La règle du Pass étant non négociable, **une seule charrette au départ est retenue** ; l'écart des occasionnels reste à trancher par le porteur (pistes : une charrette de plus gagnée par une mission, ou supprimer l'avantage de quota du Pass à la Dogana).

@@ -304,8 +304,8 @@ export const venice1450Settings: WorldSettingsInput = {
     urgentOpenMinutes: 60,
     urgentHours: { from: 8, to: 21 },
     cityPriceBps: 10_000,
-    // +40 % per hour of road: the money of the former city sales, now earned on the road.
-    distanceBonusBpsPerHour: 4_000,
+    // +50 % per hour of road: the money of the former city sales, now earned on the road.
+    distanceBonusBpsPerHour: 5_000,
     quantity: {
       bread: [15, 40],
       bricks: [6, 15],
@@ -376,8 +376,9 @@ export const venice1450Settings: WorldSettingsInput = {
         upkeepPerDay: 1_200,
       },
     },
-    // Two carts: a merchant who comes once a day still sends two orders.
-    startingVehicles: ["cart", "cart"],
+    // One cart: two at the start narrowed the gap of casual merchants but gave the Pass's
+    // Dogana quota an edge (docs/calibration.md).
+    startingVehicles: ["cart"],
     maxVehicles: 4,
     escorts: {
       guards: { costBps: 400, defense: 2 },
