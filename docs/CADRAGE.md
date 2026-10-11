@@ -92,6 +92,17 @@ Inspiré de Mercato Venezia : du risque et de l'affrontement entre joueurs, sans
 | **Matières premières locales** | Le blé ne pousse qu'en Terraferma, l'argile ne se trouve que dans la Lagune, le bois que dans les Dolomites. Moulin, boulangerie, briqueterie, scierie et palais se construisent partout : il faut acheter ses matières premières aux autres régions |
 | **Prime à la spécialisation** | +25 % de rendement par niveau au-delà du premier : mieux vaut un grand atelier que plusieurs petits, et acheter le reste |
 
+### Rétention : les sept premiers jours (après l'audit de la bêta)
+
+| Fonction | Règle |
+| --- | --- |
+| **Comptoir en sommeil** | Sans visite depuis 24 h, l'entretien tombe à 25 % et les ouvriers ne connaissent pas la faim. Le joueur qui revient retrouve un comptoir intact |
+| **Bon retour** | Après 4 h d'absence, un récapitulatif tiré des journaux : gains par source, entretien payé, lots prêts, nouvelles reçues, et un bouton pour tout récolter et relancer |
+| **Un geste** | « Tout récolter et relancer » récolte chaque atelier et remplit chaque file selon le stock, en une seule transaction |
+| **Livre de compte** | Dix missions ouvertes sur sept jours (première vente à une ville, premier contrat, première offre, premier convoi, première amélioration…), récompensées en marchandises ou en quelques ducats. Le tutoriel se termine en encaissant la première |
+| **Ouverture progressive** | Le Port s'ouvre au jour 3 (mission « premier convoi »), les lettres de marque au jour 6 (« premier navire ») ; un joueur déjà en mer n'est jamais bloqué |
+| **Tableau de rétention** | Page `/admin` réservée aux adresses `ADMIN_EMAILS` : retour à J+1, 3, 7, 14, 30, sessions par jour, entonnoir du tutoriel, dernière visite. PNJ exclus |
+
 ## Vision et positionnement
 
 Comptoirs est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.

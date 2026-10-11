@@ -4,6 +4,7 @@ import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Qty, Ribbon, Sheet, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
+import { Ledger } from "./Ledger.js";
 import { d } from "./format.js";
 import type { BuildingView, Cost, PlayerView, Recipe } from "./types.js";
 
@@ -109,7 +110,7 @@ function Hero(props: GameProps) {
               className="w-full"
               coach="harvest-all"
               disabled={props.busy}
-              onClick={() => props.act({ type: "collectAll" })}
+              onClick={() => props.act({ type: "collectAndRestart" })}
             >
               {fr.game.harvestAll(ready)}
             </Slab>
@@ -134,6 +135,15 @@ function Hero(props: GameProps) {
     <Panel>
       <Label className="text-vermilion">{fr.game.idleAll}</Label>
       <p className="mt-2 text-sm text-cream-dim">{fr.game.idleAllHelp}</p>
+      {props.view.buildings.some((b) => b.canStart > 0) && (
+        <Slab
+          className="mt-3 w-full"
+          disabled={props.busy}
+          onClick={() => props.act({ type: "collectAndRestart" })}
+        >
+          {fr.game.restartAll}
+        </Slab>
+      )}
     </Panel>
   );
 }
@@ -186,7 +196,7 @@ function Goal(props: GameProps) {
   );
 }
 
-const FIRST_STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "invest"];
+const FIRST_STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "mission"];
 
 /** The first six steps as a checklist, with why each one matters. */
 function FirstSteps(props: GameProps) {
@@ -495,6 +505,7 @@ export function Comptoir(props: GameProps) {
       <Goal {...props} />
       <Hero {...props} />
       <FirstSteps {...props} />
+      <Ledger {...props} />
       <StockStrip {...props} />
       <Rations {...props} />
       <section className="space-y-3">

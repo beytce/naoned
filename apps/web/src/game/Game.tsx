@@ -12,14 +12,15 @@ import { Gazette } from "./Gazette.js";
 import { Help } from "./Help.js";
 import { Intro } from "./Intro.js";
 import { Marche } from "./Marche.js";
-import { Port } from "./Port.js";
+import { Port, portOpensAt } from "./Port.js";
 import { Profil } from "./Profil.js";
 import { Region } from "./Region.js";
 import { Top } from "./Top.js";
+import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
 import { store } from "./store.js";
-import type { Action, Catalog, PlayerView, PriceSeries } from "./types.js";
+import type { Action, Catalog, PlayerView, PriceSeries, Welcome as WelcomeData } from "./types.js";
 
 export type Tab = "comptoir" | "marche" | "contrats" | "port" | "top" | "profil";
 export type MarketTab = "joueurs" | "villes";
@@ -86,6 +87,7 @@ export function Game(props: {
   const [introSeen, setIntroSeen] = useState(() => store.get("introSeen") === "1");
   const [guideKey, setGuideKey] = useState(0);
   const [unread, setUnread] = useState(0);
+  const [welcome, setWelcome] = useState<WelcomeData | null>(null);
   const [people, setPeople] = useState<Record<string, string | null>>({});
   const [bots, setBots] = useState<Set<string>>(new Set());
   const clearUnread = useCallback(() => setUnread(0), []);
@@ -100,6 +102,7 @@ export function Game(props: {
       const res = await gameApi.view();
       apply(res.serverTime, res.view);
       setUnread(res.unread ?? 0);
+      if (res.welcome) setWelcome(res.welcome);
       setPeople(res.names ?? {});
       setBots(new Set(res.bots ?? []));
       if (res.view) setPrices((await gameApi.prices()).series);
@@ -270,6 +273,7 @@ export function Game(props: {
 
   const crest = props.account.crest ?? defaultCrest(props.account.id);
   const contractsLeft = view.contracts.some((c) => !c.done);
+  const portLocked = portOpensAt(view) > gp.now;
   const galleyBack =
     view.expeditions.some((e) => e.outcome === "pending" && e.returnAt <= gp.now) ||
     view.raids.some((r) => r.outcome === "cruising" && r.endAt <= gp.now) ||
@@ -351,6 +355,7 @@ export function Game(props: {
       )}
 
       {help && <Help {...gp} onClose={() => setHelp(false)} />}
+      {welcome && <Welcome {...gp} data={welcome} onClose={() => setWelcome(null)} />}
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t-2 border-gold/80 bg-night-2/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
         <div className="mx-auto grid max-w-md grid-cols-5">
@@ -363,7 +368,7 @@ export function Game(props: {
                 type="button"
                 data-coach={`tab-${t}`}
                 onClick={() => gp.goTo(t)}
-                className={`relative flex flex-col items-center gap-1 py-3 ${on ? "text-gold" : "text-muted"}`}
+                className={`relative flex flex-col items-center gap-1 py-3 ${on ? "text-gold" : "text-muted"} ${t === "port" && portLocked ? "opacity-40" : ""}`}
               >
                 {on && <span className="absolute inset-x-5 top-0 h-0.5 bg-lagoon" />}
                 <Icon />

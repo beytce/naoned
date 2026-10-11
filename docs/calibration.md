@@ -178,3 +178,14 @@ Résultat sur 5 graines : toutes les cibles bloquantes tenues, indice des prix e
 Le nouveau diagnostic « Niveau moyen des ateliers » suit la progression. Les bots investissent prudemment ; de vrais joueurs devraient monter plus vite. Si la progression reste lente pendant la bêta, prochain levier : diviser par deux les matériaux du passage au niveau 2.
 
 La carte des rations affiche désormais l'heure du prochain repas, le pain nécessaire et le pain en stock ; pendant la faim, chaque atelier affiche la durée réelle de ses lots (+50 %).
+
+## Rétention : sommeil du comptoir et Livre de compte
+
+| Réglage | Valeur |
+| --- | --- |
+| Sommeil (`dormancy`) | après 24 h sans action : 25 % de l'entretien, pas de rations consommées ni de faim |
+| Missions (`missions`) | 10 missions sur 7 jours ; récompenses : 10 à 20 pains, 5 à 15 briques ou planches, 50 à 150 ducats |
+
+Les missions créent au plus environ 300 ducats et quelques dizaines de marchandises par joueur et par saison : négligeable devant les ventes aux villes. Le sommeil réduit la monnaie détruite par l'entretien des joueurs absents.
+
+Résultat sur 5 graines : toutes les cibles bloquantes tenues, indice des prix entre 96 et 100, 56 à 83 % du volume entre joueurs, masse monétaire par joueur actif au plus 1,88 × le capital. Les bots ne réclament pas de missions : leur effet sur l'économie se mesurera avec la bêta.

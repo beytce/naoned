@@ -6,7 +6,7 @@ import { affordable, have } from "./Comptoir.js";
 import type { GameProps, MarketTab, Tab } from "./Game.js";
 import { store } from "./store.js";
 
-const STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "invest"] as const;
+const STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "mission"] as const;
 const CITY_GOODS = ["bread", "bricks", "planks"];
 /** The construction material each region lacks. */
 const MISSING: Record<string, string> = {
@@ -67,7 +67,7 @@ function nextStep(props: GameProps): CoachStep {
   const recipeOf = (type: string) => props.catalog.buildings.find((b) => b.type === type)?.recipe;
   const isRaw = (type: string) => Object.keys(recipeOf(type)?.inputs ?? {}).length === 0;
 
-  if (ready && !done.has("invest")) {
+  if (ready && !done.has("mission")) {
     return (
       goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
         text: fr.game.coach.harvest,
@@ -150,15 +150,14 @@ function nextStep(props: GameProps): CoachStep {
     );
   }
 
-  if (!done.has("invest")) {
-    const upgradable = view.buildings.find((b) => b.upgradeCost && affordable(view, b.upgradeCost));
-    if (!upgradable) return { text: fr.game.coach.investLater, final: true };
-    if (props.sheet === `upgrade:${upgradable.id}`)
-      return { text: fr.game.coach.invest, target: "sheet-upgrade" };
+  if (!done.has("mission")) {
+    // The tutorial ends on the merchant's ledger: a reward now, goals for the days to come.
+    const claimable = view.missions.find((m) => m.unlocked && m.done && !m.claimed);
+    if (!claimable) return { text: fr.game.coach.ledgerLater, final: true };
     return (
       goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
-        text: fr.game.coach.invest,
-        target: `upgrade-${upgradable.id}`,
+        text: fr.game.coach.ledger,
+        target: `claim-${claimable.id}`,
       }
     );
   }

@@ -1,4 +1,5 @@
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { Admin } from "./Admin.js";
 import { type Account, ApiError, api, tokenFromLocation } from "./api.js";
 import { Skyline } from "./art/scenes.js";
 import { Game } from "./game/Game.js";
@@ -50,6 +51,7 @@ export function App() {
     setScreen({ name: "login" });
   };
 
+  if (screen.name === "home" && window.location.pathname === "/admin") return <Admin />;
   if (screen.name === "home") {
     return (
       <Game

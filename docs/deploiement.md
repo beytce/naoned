@@ -13,6 +13,7 @@ Un seul service : le serveur Fastify sert l'API (`/api/…`) et l'application we
 | `VAPID_PUBLIC_KEY` | non | Clé publique des notifications push ; sans elle, notifications dans le jeu seulement |
 | `VAPID_PRIVATE_KEY` | non | Clé privée des notifications push (secrète) |
 | `VAPID_SUBJECT` | non | Contact de l'émetteur, par défaut `mailto:contact@comptoirs.app` |
+| `ADMIN_EMAILS` | non | Adresses (séparées par des virgules) autorisées à voir le tableau de rétention sur `/admin` |
 | `PORT` | non | Fourni par Railway |
 | `NODE_ENV` | non | `production` (déjà fixé dans le Dockerfile) |
 

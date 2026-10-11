@@ -8,7 +8,14 @@ import { have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
 import { store } from "./store.js";
-import type { Destination, ExpeditionView, RaidView, ShipType, ShipView } from "./types.js";
+import type {
+  Destination,
+  ExpeditionView,
+  PlayerView,
+  RaidView,
+  ShipType,
+  ShipView,
+} from "./types.js";
 
 type PortTab = "routes" | "flotte" | "corsaires";
 
@@ -680,7 +687,42 @@ function Privateers({ props }: { props: GameProps }) {
 
 /* ───────────── The Port tab ───────────── */
 
+/**
+ * The sea opens gradually to newcomers: the port with the "first convoy" mission, privateering
+ * with the "first ship" one. A player already at sea is never locked out.
+ */
+export function portOpensAt(view: PlayerView): number {
+  if (view.expeditions.length > 0 || view.ships.length > 0) return 0;
+  return view.missions.find((m) => m.id === "first_convoy")?.opensAt ?? 0;
+}
+
+function corsairsOpenAt(view: PlayerView): number {
+  if (view.raids.length > 0) return 0;
+  return view.missions.find((m) => m.id === "first_ship")?.opensAt ?? 0;
+}
+
 export function Port(props: GameProps) {
+  const opensAt = portOpensAt(props.view);
+  if (opensAt > props.now) {
+    return (
+      <div className="space-y-6 text-center">
+        <Galley className="mx-auto h-32 w-56 opacity-60" />
+        <h1 className="font-display text-[2rem] font-extrabold uppercase leading-[1.05]">
+          {fr.game.portLocked.title}
+        </h1>
+        <p className="text-sm text-cream-dim">
+          {fr.game.portLocked.text(clock(opensAt - props.now))}
+        </p>
+        <Slab tone="ghost" className="w-full" onClick={() => props.goTo("comptoir")}>
+          {fr.game.ledger.title}
+        </Slab>
+      </div>
+    );
+  }
+  return <OpenPort {...props} />;
+}
+
+function OpenPort(props: GameProps) {
   const [tab, setTab] = useState<PortTab>(() => {
     const saved = store.get("portTab");
     return saved === "flotte" || saved === "corsaires" ? saved : "routes";
@@ -725,7 +767,14 @@ export function Port(props: GameProps) {
         </>
       )}
       {tab === "flotte" && <Fleet props={props} />}
-      {tab === "corsaires" && <Privateers props={props} />}
+      {tab === "corsaires" &&
+        (corsairsOpenAt(props.view) > props.now ? (
+          <p className="text-center text-sm text-cream-dim">
+            {fr.game.corsairsLocked(clock(corsairsOpenAt(props.view) - props.now))}
+          </p>
+        ) : (
+          <Privateers props={props} />
+        ))}
 
       {props.view.seaNews.length > 0 && (
         <section className="space-y-2">

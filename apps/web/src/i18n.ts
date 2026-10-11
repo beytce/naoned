@@ -235,9 +235,9 @@ export const fr = {
         transform: ["Transformer", "Un produit fini vaut bien plus que la matière brute."],
         sell_city: ["Vendre à une ville", "C'est ainsi que les ducats entrent dans votre caisse."],
         market_buy: ["Acheter au marché", "Le matériau d'un autre métier, pour grandir."],
-        invest: [
-          "Améliorer un atelier",
-          "Plus de production à chaque lot : votre patrimoine grimpe.",
+        mission: [
+          "Ouvrir le Livre de compte",
+          "Chaque jour, de nouveaux objectifs et leur récompense.",
         ],
       } as Record<string, [string, string]>,
       guide: "Me guider",
@@ -246,7 +246,77 @@ export const fr = {
     readyNow: "Récolte prête",
     idleAll: "Ateliers à l'arrêt",
     idleAllHelp: "Lancez une production pour que vos ateliers travaillent pendant votre absence.",
-    harvestAll: (n: number) => `Tout récolter · ${n} lot${n > 1 ? "s" : ""}`,
+    harvestAll: (n: number) => `Tout récolter et relancer · ${n} lot${n > 1 ? "s" : ""}`,
+    restartAll: "Tout relancer",
+    ledger: {
+      title: "Livre de compte",
+      claim: "Encaisser",
+      reward: "Récompense",
+      allDone: "Objectifs du jour remplis. Revenez demain pour la suite.",
+      next: (title: string, inTime: string) => `Prochain objectif « ${title} » dans ${inTime}`,
+      items: {
+        first_city_sale: [
+          "Vendre à une ville",
+          "Marché → Villes : les villes paient vos produits finis.",
+        ],
+        first_contract: [
+          "Honorer un contrat du Doge",
+          "Onglet Contrats : livrez une commande, prime de 20 %.",
+        ],
+        first_offer: ["Laisser une offre au Rialto", "Fiche d'une ressource → « À mon prix »."],
+        offer_taken: ["Conclure une offre", "Un marchand achète ou vend sur votre offre."],
+        first_convoy: [
+          "Envoyer un convoi",
+          "Le Port est ouvert : chargez une galère vers l'un des neuf ports.",
+        ],
+        first_upgrade: [
+          "Améliorer un atelier",
+          "+25 % de rendement par niveau : spécialisez-vous.",
+        ],
+        five_contracts: ["Honorer cinq contrats", "Les commandes du Doge changent chaque jour."],
+        first_ship: ["Construire un navire", "Port → Flotte : finis les frais d'affrètement."],
+        first_project: [
+          "Livrer au grand chantier",
+          "Briques et planches pour la ville, payées 10 % de plus.",
+        ],
+        new_workshop: ["Construire un nouvel atelier", "Agrandissez votre comptoir."],
+      } as Record<string, [string, string]>,
+    },
+    welcome: {
+      kicker: (away: string) => `Absent ${away}`,
+      title: "Bon retour au comptoir",
+      slept:
+        "Votre comptoir s'est mis en sommeil : entretien réduit et ouvriers épargnés par la faim.",
+      earned: "Gagné",
+      upkeep: "Entretien",
+      sources: {
+        city_sale: "Ventes aux villes",
+        trade: "Ventes au Rialto",
+        market_maker_buy: "Ventes au Fondaco",
+        contract_reward: "Contrats du Doge",
+        project_delivery: "Grands chantiers",
+        mission_reward: "Livre de compte",
+      } as Record<string, string>,
+      notices: (kind: string, n: number) =>
+        ({
+          order: `${n} offre${n > 1 ? "s" : ""} conclue${n > 1 ? "s" : ""}`,
+          harvest: "Récoltes prêtes",
+          galley: `${n} convoi${n > 1 ? "s" : ""} rentré${n > 1 ? "s" : ""}`,
+          raid: `${n} abordage${n > 1 ? "s" : ""}`,
+          corsairs: "Corsaires de retour",
+          event: `${n} nouvelle${n > 1 ? "s" : ""} à la gazette`,
+          week: "Résultats de la semaine",
+        })[kind] ?? `${n} × ${kind}`,
+      collect: (n: number) => `Tout récolter et relancer · ${n} lot${n > 1 ? "s" : ""}`,
+      restart: "Relancer mes ateliers",
+    },
+    portLocked: {
+      title: "Le port s'ouvre bientôt",
+      text: (inTime: string) =>
+        `Les galères partiront de votre comptoir dans ${inTime}. D'ici là, faites tourner vos ateliers et le Rialto : le Livre de compte vous guide.`,
+    },
+    corsairsLocked: (inTime: string) =>
+      `Les lettres de marque s'ouvrent à vous dans ${inTime}, avec votre premier navire.`,
     stock: "Mon stock",
     workshops: "Mes ateliers",
     level: (n: number) => `Niv. ${n}`,
@@ -452,6 +522,10 @@ export const fr = {
       skip: "Passer",
       goComptoir: "Retour au comptoir pour investir.",
       invest: "Améliorez un atelier : il produira davantage à chaque lot.",
+      ledger:
+        "Voici votre Livre de compte : chaque jour, de nouveaux objectifs et leur récompense. Encaissez la première !",
+      ledgerLater:
+        "Votre Livre de compte, sur le comptoir, vous donne vos objectifs du jour. Remplissez-les pour gagner des récompenses.",
       investLater:
         "Il vous faut encore des briques et des planches pour améliorer un atelier. Produisez, vendez, achetez : c'est la boucle du marchand !",
       done: "Bravo, vous connaissez la boucle : produire, vendre, réinvestir. Revenez récolter au moins toutes les 12 heures : lancez la production le soir, elle tourne toute la nuit.",

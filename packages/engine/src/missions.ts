@@ -32,8 +32,9 @@ export function trackMissions(tx: Tx): void {
       const data = e.data ?? {};
       if (!Object.entries(m.filter).every(([k, v]) => data[k] === v)) continue;
       tx.s.missions ??= {};
-      const mine = (tx.s.missions[e.playerId] ??= { progress: {}, claimed: [] });
-      mine.progress[m.id] = (mine.progress[m.id] ?? 0) + 1;
+      tx.s.missions[e.playerId] ??= { progress: {}, claimed: [] };
+      const mine = tx.s.missions[e.playerId];
+      if (mine) mine.progress[m.id] = (mine.progress[m.id] ?? 0) + 1;
     }
   }
 }

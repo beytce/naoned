@@ -259,6 +259,29 @@ export interface PlayerView {
   seaNews: SeaNews[];
   rations: { resource: string; perDay: number; hungryUntil: number; nextMealAt: number };
   tutorial: string[];
+  missions: MissionView[];
+}
+
+export interface MissionView {
+  id: string;
+  day: number;
+  count: number;
+  progress: number;
+  unlocked: boolean;
+  opensAt: number;
+  done: boolean;
+  claimed: boolean;
+  reward: { goods: Record<string, number>; ducats: Money };
+}
+
+/** "While you were away", after 4 hours or more. */
+export interface Welcome {
+  since: number;
+  income: Record<string, Money>;
+  upkeep: Money;
+  readyBatches: number;
+  notices: Record<string, number>;
+  slept: boolean;
 }
 
 export interface GameResponse {
@@ -267,6 +290,7 @@ export interface GameResponse {
   error?: string;
   /** Unread notifications (the bell). */
   unread?: number;
+  welcome?: Welcome;
   /** Pseudos of merchants met at sea or in the order book. */
   names?: Record<string, string | null>;
   /** Which of them are computer-run houses. */
@@ -368,6 +392,8 @@ export type PriceSeries = Record<string, { t: number; price: string; volume: num
 export type Action =
   | { type: "startProduction"; buildingId: string; batches: number }
   | { type: "collect"; buildingId: string }
+  | { type: "collectAndRestart" }
+  | { type: "claimMission"; missionId: string }
   | { type: "collectAll" }
   | { type: "build"; buildingType: string }
   | { type: "upgrade"; buildingId: string }
