@@ -24,6 +24,43 @@ const grain = (x: number, y: number, r: number) => (
 );
 
 const ICONS: Record<string, JSX.Element> = {
+  salt: (
+    <g>
+      <path d="M10 38 L24 12 L38 38 Z" fill={P.cream} stroke="#CFC2B0" strokeWidth="1.5" />
+      <path d="M17 38 L24 24 L31 38 Z" fill="#E9DCC8" />
+      <path d="M6 40 H42" stroke={P.wood} strokeWidth="3" strokeLinecap="round" />
+      <circle cx="35" cy="16" r="2" fill={P.cream} />
+      <circle cx="40" cy="22" r="1.4" fill={P.cream} />
+    </g>
+  ),
+  wine: (
+    <g>
+      <ellipse cx="24" cy="24" rx="14" ry="16" fill={P.wood} />
+      <path d="M10 18 H38 M10 30 H38" stroke={P.woodLight} strokeWidth="2.5" />
+      <ellipse cx="24" cy="24" rx="5" ry="16" fill="none" stroke="#7A4A26" strokeWidth="1.5" />
+      <circle cx="24" cy="24" r="3" fill={P.vermilionDeep} />
+      <path d="M24 27 Q22 33 24 36 Q26 33 24 27" fill="#8E1F3A" />
+    </g>
+  ),
+  furs: (
+    <g>
+      <path
+        d="M10 16 Q16 8 24 12 Q32 8 38 16 Q42 26 36 36 Q30 42 24 38 Q18 42 12 36 Q6 26 10 16 Z"
+        fill="#8A5A36"
+      />
+      <path d="M16 18 Q24 14 32 18 Q34 28 24 34 Q14 28 16 18 Z" fill="#B07A4C" />
+      <path d="M18 22 l3 2 M26 20 l3 2 M22 28 l3 2" stroke="#6B4126" strokeWidth="1.6" />
+    </g>
+  ),
+  cloth: (
+    <g>
+      <rect x="8" y="14" width="32" height="22" rx="3" fill={P.lagoonDeep} />
+      <path d="M8 20 H40 M8 26 H40 M8 32 H40" stroke={P.lagoon} strokeWidth="1.5" />
+      <path d="M16 14 V36 M24 14 V36 M32 14 V36" stroke="#0F6E64" strokeWidth="1.2" />
+      <circle cx="40" cy="25" r="5" fill={P.gold} />
+      <circle cx="40" cy="25" r="2" fill={P.goldDeep} />
+    </g>
+  ),
   spices: (
     <g>
       <path d="M8 30 Q24 44 40 30 L36 40 Q24 46 12 40 Z" fill={P.vermilionDeep} />

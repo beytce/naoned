@@ -24,6 +24,9 @@ export interface Catalog {
   ports: { code: string; name: string }[];
   destinations: Record<string, Destination>;
   maxGalleys: number;
+  ships: ShipType[];
+  fleet: { maxPerPlayer: number; portDuesBps: number };
+  privateers: PrivateerRules;
   rations: { resource: string; perLevelPerDay: number; slowdownBps: number };
   resources: { code: string; name: string; chain: string; tier: string }[];
   regions: { code: string; name: string; bonusResource: string; startingBuildings: string[] }[];
@@ -56,6 +59,70 @@ export interface Destination {
   returns: string;
   gainBps: number;
   maxCargoValue: Money;
+  /** Standing premium (bps) the port pays for some of our goods. */
+  wants: Record<string, number>;
+}
+
+export interface ShipType {
+  type: string;
+  name: string;
+  costDucats: Money;
+  costMaterials: Record<string, number>;
+  holdValue: Money;
+  speedBps: number;
+  defense: number;
+  upkeepPerDay: Money;
+  repairCost: Money;
+  repairHours: number;
+}
+
+export interface PrivateerRules {
+  maxActive: number;
+  letterFee: Money;
+  hours: number;
+  provisions: Record<string, number>;
+  shareBps: number;
+  minChanceBps: number;
+  maxChanceBps: number;
+  newcomerDays: number;
+  minTargetWorthBps: number;
+  cooldownHours: number;
+}
+
+export interface ShipView {
+  id: string;
+  type: string;
+  damaged: boolean;
+  readyAt: number;
+  status: "ready" | "at_sea" | "damaged" | "repairing";
+}
+
+export interface RaidView {
+  id: string;
+  route: string;
+  ships: string[];
+  attack: number;
+  startAt: number;
+  endAt: number;
+  outcome: "cruising" | "returned";
+  beaten: boolean;
+  booty: Record<string, number>;
+  hits: {
+    expeditionId: string;
+    victimId: string;
+    at: number;
+    chanceBps: number;
+    success: boolean;
+    taken: Record<string, number>;
+  }[];
+}
+
+export interface SeaNews {
+  raider: string;
+  victim: string;
+  route: string;
+  at: number;
+  taken: Record<string, number>;
 }
 
 export interface ContractView {
@@ -86,6 +153,9 @@ export interface ExpeditionView {
   cargoValue: Money;
   outcome: "pending" | "returned" | "lost";
   brought: number;
+  ships?: string[];
+  defense?: number;
+  boarding: { raider: string; success: boolean; taken: Record<string, number> } | null;
 }
 
 export interface BuildingView {
@@ -148,6 +218,12 @@ export interface PlayerView {
   contracts: ContractView[];
   gazette: { current: GazetteEvent | null; next: GazetteEvent | null };
   expeditions: ExpeditionView[];
+  ships: ShipView[];
+  raids: RaidView[];
+  /** This week's port prices (bps of reference), per port and resource. */
+  ports: Record<string, Record<string, number>>;
+  watchedRoutes: string[];
+  seaNews: SeaNews[];
   rations: { resource: string; perDay: number; hungryUntil: number };
   tutorial: string[];
 }
@@ -158,9 +234,11 @@ export interface GameResponse {
   error?: string;
   /** Unread notifications (the bell). */
   unread?: number;
+  /** Pseudos of merchants met at sea. */
+  names?: Record<string, string | null>;
 }
 
-export type NotificationKind = "harvest" | "galley" | "event" | "week";
+export type NotificationKind = "harvest" | "galley" | "raid" | "corsairs" | "event" | "week";
 
 export interface Notice {
   id: number;
@@ -260,5 +338,10 @@ export type Action =
       destination: string;
       cargo: Record<string, number>;
       escort: boolean;
+      ships?: string[];
     }
-  | { type: "collectExpedition"; expeditionId: string };
+  | { type: "collectExpedition"; expeditionId: string }
+  | { type: "buildShip"; shipType: string }
+  | { type: "repairShip"; shipId: string }
+  | { type: "commissionPrivateers"; route: string; ships: string[] }
+  | { type: "collectRaid"; raidId: string };

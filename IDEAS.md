@@ -9,6 +9,11 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - Parrainage avec blason exclusif.
 - Échanges d'épices et de soie entre joueurs (nécessite les ordres à cours limité).
 
+## Affrontement (proposés, non retenus pour l'instant)
+- Convois de guilde : cargaisons groupées sous une même escorte, butin et risque partagés.
+- Défis entre marchands : mise sous séquestre, le plus gros gain sur 3 jours remporte le pot (moins une commission).
+- Appels d'offres du Doge : la commande va au joueur qui demande le prix le plus bas.
+
 ## V1 (après la première saison)
 - Chaînes textile (laine, tissu, vêtements) et ameublement (meubles).
 - Abonnement Négociant : alertes de prix, graphiques avancés, historique long, export CSV, conseiller détaillé.

@@ -11,12 +11,16 @@ import type { Notice } from "./types.js";
 const ICON = {
   harvest: NavIcon.comptoir,
   galley: NavIcon.port,
+  raid: NavIcon.port,
+  corsairs: NavIcon.port,
   event: NavIcon.bell,
   week: NavIcon.top,
 } as const;
-const TONE = {
+const TONE: Record<string, string> = {
   harvest: "text-lagoon",
   galley: "text-lagoon",
+  raid: "text-vermilion",
+  corsairs: "text-vermilion",
   event: "text-gold",
   week: "text-gold",
 };
@@ -30,6 +34,15 @@ function text(n: Notice, props: GameProps): string {
       const port = props.catalog.ports.find((p) => p.code === n.data.destination)?.name ?? "";
       return t.galley(port);
     }
+    case "raid": {
+      const route = props.catalog.ports.find((p) => p.code === n.data.route)?.name ?? "";
+      const ok = n.data.success === true;
+      return n.data.role === "victim"
+        ? t.raidVictim(String(n.data.raiderName ?? fr.game.anonymous), ok, route)
+        : t.raidCorsair(String(n.data.victimName ?? fr.game.anonymous), ok);
+    }
+    case "corsairs":
+      return t.corsairs(props.catalog.ports.find((p) => p.code === n.data.route)?.name ?? "");
     case "event": {
       const e = fr.game.gazette.events[String(n.data.code)];
       return e ? `${e[0]} : ${e[1]}` : t.event;

@@ -62,6 +62,20 @@ Chaque métier dépend désormais des deux autres : le boulanger vend son pain �
 | **Classement hebdomadaire** | Gain de patrimoine de la semaine, en ducats. Une semaine = 7 jours depuis l'ouverture du monde (mêmes bornes que les grands chantiers) ; un nouveau venu part de son patrimoine à l'arrivée. Récompenses cosmétiques uniquement |
 | **Notifications** | Dans le jeu (cloche) et en push (PWA) : récolte prête, galère rentrée, ordre exécuté, événement, résultat de la semaine. Chaque type peut être coupé ; pas de push entre 22 h et 8 h (heure de Paris) |
 
+### La mer : neuf ports, flotte et corsaires
+
+Inspiré de Mercato Venezia : du risque et de l'affrontement entre joueurs, sans jamais tout perdre.
+
+| Mécanique | Règle |
+| --- | --- |
+| **Neuf ports** | Raguse et Corfou (sel), Candie et Chypre (vin), Constantinople (soie), Acre et Alexandrie (épices), Caffa (fourrures), Bruges (draps), de 6 h à 48 h de mer. Chaque port paie nos marchandises à ses prix : des envies durables (l'Égypte paie le bois +40 %) et une variation hebdomadaire de ±25 % tirée du secret du monde |
+| **Nouvelles marchandises** | Sel, vin, fourrures et draps se vendent aux villes et figurent dans une commande du Doge sur cinq. Elles ne servent jamais aux constructions ni aux chantiers |
+| **Flotte** | Cogue, galère, caraque, construites à l'Arsenal (ducats et planches), avec entretien, et comptées dans le patrimoine. Au plus 4 navires. Un convoi part sur ses propres navires (navire marchand + 0 à 3 escortes), paie des droits de port (30 % de l'affrètement), emporte des vivres par navire et va au pas du plus lent. L'affrètement d'une galère reste possible |
+| **Avaries** | Un navire n'est jamais coulé. Les pirates ou un abordage réussi endommagent le navire marchand, un abordage raté les corsaires ; un navire endommagé reste au port jusqu'à sa réparation (ducats, 6 à 8 h de chantier) |
+| **Lettres de marque** | Un joueur envoie ses navires croiser 12 h sur une route (100 ducats et des vivres). Chaque convoi d'un autre joueur qui passe à mi-voyage peut être abordé ; la chance va de 15 % à 75 % selon l'attaque des corsaires face à la défense du convoi. Une prise emporte 30 % de chaque ligne de cargaison, dans la limite des cales ; un échec arrête la chasse |
+| **Garde-fous** | 3 jours d'immunité à l'arrivée ; pas de pillage d'un joueur deux fois moins riche ; un seul pillage réussi par victime et par 24 h ; perte limitée à 30 % d'une cargaison ; jamais de navire, d'atelier ni de trésorerie à quai perdus |
+| **Transparence** | La carte montre les routes guettées (sans dire par qui). La victime et le corsaire sont notifiés et voient le nom de l'autre ; les « nouvelles du large » publient les prises |
+
 ## Vision et positionnement
 
 Comptoirs est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.

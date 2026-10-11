@@ -14,11 +14,16 @@ import {
   marketMakerReference,
   netWorth,
   openProjects,
+  portPrices,
   quoteCitySale,
   recipesFor,
+  shipStatus,
+  shipUpkeep,
+  shipsOf,
   stockUnitValue,
   upkeepPerDay,
   vwap,
+  watchedRoutes,
 } from "@comptoirs/engine";
 import { activeEvent, contractsFor, nextEvent } from "@comptoirs/engine";
 import { titleFor } from "./profile.js";
@@ -51,6 +56,12 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
     ports: theme.ports ?? [],
     destinations: settings.expeditions.destinations,
     maxGalleys: settings.expeditions.maxActive,
+    ships: (theme.ships ?? []).flatMap((t) => {
+      const def = settings.ships.types[t.type];
+      return def ? [{ ...t, ...def }] : [];
+    }),
+    fleet: { maxPerPlayer: settings.ships.maxPerPlayer, portDuesBps: settings.ships.portDuesBps },
+    privateers: settings.privateers,
     rations: settings.rations,
     referencePrices: settings.referencePrices,
     rules: {
@@ -147,13 +158,52 @@ export function playerView(
   const levels = buildings.filter((b) => b.type !== "palazzo").reduce((n, b) => n + b.level, 0);
   const describe = (e: ReturnType<typeof activeEvent>) =>
     e && { code: e.code, city: e.city ?? null, startsAt: e.startsAt, endsAt: e.endsAt };
+  // Boardings that touched this player, as victim or corsair.
+  const hitsOn = new Map<
+    string,
+    { raider: string; success: boolean; taken: Record<string, number> }
+  >();
+  for (const r of Object.values(state.raids ?? {})) {
+    for (const h of r.hits) {
+      if (h.victimId === playerId)
+        hitsOn.set(h.expeditionId, { raider: r.playerId, success: h.success, taken: h.taken });
+    }
+  }
   const expeditions = Object.values(state.expeditions ?? {})
     .filter((e) => e.playerId === playerId)
     .sort((a, b) => b.departAt - a.departAt)
+    .slice(0, 10)
+    .map((e) => ({ ...e, boarding: hitsOn.get(e.id) ?? null }));
+  const ships = shipsOf(state, playerId).map((s) => ({
+    ...s,
+    status: shipStatus(state, s, now),
+  }));
+  const raids = Object.values(state.raids ?? {})
+    .filter((r) => r.playerId === playerId)
+    .sort((a, b) => b.startAt - a.startAt)
     .slice(0, 10);
+  const ports = Object.fromEntries(
+    Object.keys(ctx.settings.expeditions.destinations).map((p) => [p, portPrices(ctx, p, now)]),
+  );
+  // The gazette's sea news: the latest successful boardings in the world.
+  const seaNews = Object.values(state.raids ?? {})
+    .flatMap((r) =>
+      r.hits
+        .filter((h) => h.success)
+        .map((h) => ({
+          raider: r.playerId,
+          victim: h.victimId,
+          route: r.route,
+          at: h.at,
+          taken: h.taken,
+        })),
+    )
+    .sort((a, b) => b.at - a.at)
+    .slice(0, 5);
 
   let upkeep = 0n;
   for (const b of buildings) upkeep += upkeepPerDay(ctx, b);
+  for (const s of shipsOf(state, playerId)) upkeep += shipUpkeep(ctx, s);
 
   return {
     serverTime: now,
@@ -186,6 +236,11 @@ export function playerView(
     contracts,
     gazette: { current: describe(activeEvent(ctx, now)), next: describe(nextEvent(ctx, now)) },
     expeditions,
+    ships,
+    raids,
+    ports,
+    watchedRoutes: watchedRoutes(state, now),
+    seaNews,
     rations: {
       resource: ctx.settings.rations.resource,
       perDay: levels * ctx.settings.rations.perLevelPerDay,

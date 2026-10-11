@@ -12,7 +12,14 @@ import type { GameWorld } from "../game/world.js";
 import type { Pusher } from "./push.js";
 import { pushText } from "./texts.js";
 
-export const NOTIFICATION_KINDS = ["harvest", "galley", "event", "week"] as const;
+export const NOTIFICATION_KINDS = [
+  "harvest",
+  "galley",
+  "raid",
+  "corsairs",
+  "event",
+  "week",
+] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 const HOUR_MS = 3_600_000;
@@ -110,6 +117,55 @@ export class Notifier {
         });
       }
     }
+    // Boardings resolved since the last scan: both sides hear about it.
+    const boardings: {
+      raid: string;
+      raider: string;
+      victim: string;
+      route: string;
+      success: boolean;
+      taken: Record<string, number>;
+    }[] = [];
+    for (const r of Object.values(state.raids ?? {})) {
+      for (const h of r.hits) {
+        if (within(h.resolvedAt))
+          boardings.push({
+            raid: r.id,
+            raider: r.playerId,
+            victim: h.victimId,
+            route: r.route,
+            success: h.success,
+            taken: h.taken,
+          });
+      }
+      if (r.outcome === "cruising" && people.has(r.playerId) && within(r.endAt)) {
+        notices.push({
+          accountId: r.playerId,
+          kind: "corsairs",
+          data: { raid: r.id, route: r.route },
+        });
+      }
+    }
+    if (boardings.length > 0) {
+      const ids = [...new Set(boardings.flatMap((b) => [b.raider, b.victim]))];
+      const rows = await this.db
+        .select({ id: accounts.id, pseudo: accounts.pseudo })
+        .from(accounts)
+        .where(inArray(accounts.id, ids));
+      const name = new Map(rows.map((r) => [r.id, r.pseudo]));
+      for (const b of boardings) {
+        const data = {
+          ...b,
+          raiderName: name.get(b.raider) ?? null,
+          victimName: name.get(b.victim) ?? null,
+        };
+        if (people.has(b.victim))
+          notices.push({ accountId: b.victim, kind: "raid", data: { ...data, role: "victim" } });
+        if (people.has(b.raider))
+          notices.push({ accountId: b.raider, kind: "raid", data: { ...data, role: "corsair" } });
+      }
+    }
+
     const event = activeEvent(this.world.ctx, now);
     if (event && within(event.startsAt)) {
       for (const id of people) {

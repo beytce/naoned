@@ -104,3 +104,20 @@ Pendant la bêta, le monde compte peu de joueurs ; des maisons marchandes tenues
 | Part du volume entre joueurs | conforme | 47 % | conforme | 36 % | 44 % |
 
 Les prix tiennent. La part du volume entre joueurs passe sous 50 % sur 3 graines : c'est attendu, parce que le PNJ teneur de marché garde un plancher de 40 unités par jour et par ressource (`minDailyDepth`), justement pour qu'un petit monde ait toujours un marché. La cible de 50 % vaut pour un monde peuplé ; elle reste bloquante pour la simulation par défaut (60 marchands), qui est toujours conforme sur les 5 graines.
+
+## La mer : ports, flotte et corsaires
+
+Les bots armateurs (producteurs, bâtisseurs, spéculateurs) construisent une cogue ou une galère quand leur trésorerie le permet, réparent leurs navires et envoient leurs surplus vers le port qui rapporte le plus par jour de mer cette semaine. Les spéculateurs gardent un navire de côté et arment des corsaires sur les routes courtes.
+
+| Paramètre | Valeur | Raison |
+| --- | --- | --- |
+| Cogue / galère / caraque | 400 / 900 / 1 800 ducats + 20 / 40 / 60 planches | Débouché supplémentaire pour les planches |
+| Cale | 1 000 / 1 500 / 3 000 ducats | Une caraque remplace deux affrètements |
+| Droits de port | 30 % de l'affrètement | Posséder un navire est rentable après 3 à 4 voyages |
+| Variation hebdomadaire des ports | ±25 % | Il y a chaque semaine une meilleure destination à trouver |
+| Lettre de marque | 100 ducats, 12 h, 4 pains par navire | Piller coûte : un abordage raté fait perdre la lettre et oblige à réparer |
+| Part prise | 30 % | Perte sensible mais jamais ruineuse |
+
+Résultat sur 5 graines : toutes les cibles bloquantes tenues, indice des prix entre 97 et 101, 63 à 80 % du volume entre joueurs.
+
+Limites : les bots restent de piètres armateurs. Ils gardent peu de surplus, donc ils prennent rarement la mer (6 convois et 10 croisières corsaires sur une saison type), et les rencontres entre corsaires et convois sont rares dans la simulation. Le rendement réel de la piraterie se mesurera pendant la bêta, avec de vrais joueurs ; les réglages (part prise, prix de la lettre, chances) sont dans `worlds.settings.privateers`.

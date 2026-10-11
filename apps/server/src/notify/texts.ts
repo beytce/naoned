@@ -33,6 +33,27 @@ export function pushText(
         title: "Galère rentrée",
         body: `Votre galère est de retour de ${ports[String(data.destination)] ?? "l'Orient"}. Déchargez la cargaison !`,
       };
+    case "raid": {
+      const route = ports[String(data.route)] ?? "";
+      if (data.role === "victim") {
+        const who = String(data.raiderName ?? "des corsaires");
+        return data.success
+          ? { title: "Convoi arraisonné !", body: `${who} a pillé votre convoi vers ${route}.` }
+          : {
+              title: "Abordage repoussé",
+              body: `Votre escorte a repoussé ${who} sur la route de ${route}.`,
+            };
+      }
+      const who = String(data.victimName ?? "un marchand");
+      return data.success
+        ? { title: "Prise !", body: `Vos corsaires ont arraisonné le convoi de ${who}.` }
+        : { title: "Abordage manqué", body: `Le convoi de ${who} a repoussé vos corsaires.` };
+    }
+    case "corsairs":
+      return {
+        title: "Corsaires de retour",
+        body: `Vos corsaires sont rentrés de la route de ${ports[String(data.route)] ?? "l'Orient"}. Déchargez le butin !`,
+      };
     case "event":
       return {
         title: "La gazette",

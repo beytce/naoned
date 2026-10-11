@@ -41,6 +41,8 @@ export interface GameProps {
   act: (action: Action) => Promise<boolean>;
   busy: boolean;
   names: Names;
+  /** Pseudos of merchants met at sea, by player id. */
+  people: Record<string, string | null>;
   tab: Tab;
   goTo: (tab: Tab) => void;
   marketTab: MarketTab;
@@ -82,6 +84,7 @@ export function Game(props: {
   const [introSeen, setIntroSeen] = useState(() => store.get("introSeen") === "1");
   const [guideKey, setGuideKey] = useState(0);
   const [unread, setUnread] = useState(0);
+  const [people, setPeople] = useState<Record<string, string | null>>({});
   const clearUnread = useCallback(() => setUnread(0), []);
 
   const apply = useCallback((serverTime: number, v: PlayerView | null) => {
@@ -94,6 +97,7 @@ export function Game(props: {
       const res = await gameApi.view();
       apply(res.serverTime, res.view);
       setUnread(res.unread ?? 0);
+      setPeople(res.names ?? {});
       if (res.view) setPrices((await gameApi.prices()).series);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) onLogout();
@@ -139,6 +143,7 @@ export function Game(props: {
       try {
         const res = await gameApi.act(action);
         apply(res.serverTime, res.view);
+        if (res.names) setPeople(res.names);
         if (res.error) {
           setToast(fr.game.errors[res.error] ?? fr.errors.unknown ?? null);
           return false;
@@ -213,6 +218,7 @@ export function Game(props: {
     act,
     busy,
     names,
+    people,
     tab,
     goTo: (t) => {
       setSheet(null);
@@ -258,7 +264,10 @@ export function Game(props: {
 
   const crest = props.account.crest ?? defaultCrest(props.account.id);
   const contractsLeft = view.contracts.some((c) => !c.done);
-  const galleyBack = view.expeditions.some((e) => e.outcome === "pending" && e.returnAt <= gp.now);
+  const galleyBack =
+    view.expeditions.some((e) => e.outcome === "pending" && e.returnAt <= gp.now) ||
+    view.raids.some((r) => r.outcome === "cruising" && r.endAt <= gp.now) ||
+    view.ships.some((s) => s.status === "damaged");
 
   return (
     <div className="flex min-h-[100dvh] flex-col">

@@ -43,7 +43,16 @@ const action = z.discriminatedUnion("type", [
     destination: z.string(),
     cargo: z.record(z.number().int().positive().max(100_000)),
     escort: z.boolean(),
+    ships: z.array(z.string()).max(4).optional(),
   }),
+  z.object({ type: z.literal("buildShip"), shipType: z.string() }),
+  z.object({ type: z.literal("repairShip"), shipId: z.string() }),
+  z.object({
+    type: z.literal("commissionPrivateers"),
+    route: z.string(),
+    ships: z.array(z.string()).min(1).max(4),
+  }),
+  z.object({ type: z.literal("collectRaid"), raidId: z.string() }),
   z.object({ type: z.literal("collectExpedition"), expeditionId: z.string() }),
   z.object({
     type: z.literal("deliverToProject"),
@@ -91,6 +100,23 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return new Set(rows.map((r) => r.id));
   }
 
+  /** Pseudos of the merchants met at sea (corsairs, victims, gazette). */
+  async function namesFor(v: NonNullable<ReturnType<typeof playerView>>) {
+    const ids = new Set<string>();
+    for (const e of v.expeditions) if (e.boarding) ids.add(e.boarding.raider);
+    for (const r of v.raids) for (const h of r.hits) ids.add(h.victimId);
+    for (const n of v.seaNews) {
+      ids.add(n.raider);
+      ids.add(n.victim);
+    }
+    if (ids.size === 0) return {};
+    const rows = await db
+      .select({ id: accounts.id, pseudo: accounts.pseudo })
+      .from(accounts)
+      .where(inArray(accounts.id, [...ids]));
+    return Object.fromEntries(rows.map((r) => [r.id, r.pseudo]));
+  }
+
   async function view(account: PublicAccount) {
     const now = world.now();
     const v = playerView(
@@ -101,7 +127,12 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       await tutorialOf(account.id),
       await retiredBots(),
     );
-    return toJson({ serverTime: now, view: v, unread: v ? await notifier.unread(account.id) : 0 });
+    return toJson({
+      serverTime: now,
+      view: v,
+      names: v ? await namesFor(v) : {},
+      unread: v ? await notifier.unread(account.id) : 0,
+    });
   }
 
   /** Counts a new session when the player comes back after a pause. */
@@ -381,8 +412,17 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
           destination: a.destination,
           cargo: a.cargo,
           escort: a.escort,
+          ships: a.ships,
         },
       ];
+    case "buildShip":
+      return [{ type: "buildShip", playerId, shipType: a.shipType }];
+    case "repairShip":
+      return [{ type: "repairShip", playerId, shipId: a.shipId }];
+    case "commissionPrivateers":
+      return [{ type: "commissionPrivateers", playerId, route: a.route, ships: a.ships }];
+    case "collectRaid":
+      return [{ type: "collectRaid", playerId, raidId: a.raidId }];
     case "collectExpedition":
       return [{ type: "collectExpedition", playerId, expeditionId: a.expeditionId }];
     case "deliverToProject":
