@@ -13,6 +13,8 @@ import { type Tx, emit, fail, nextId, removeStock, transfer } from "./tx.js";
 export function openDueProjects(tx: Tx): void {
   const { ctx } = tx;
   const cfg = ctx.settings.projects;
+  // No needs: no city projects in this world.
+  if (Object.keys(cfg.needsPerPlayer).length === 0) return;
   const deadline = (openedAt: number) => openedAt + cfg.durationDays * DAY_MS;
   const end = seasonEnd(ctx);
   // A month rarely ends on a week boundary: no stub project in the last days, the previous one

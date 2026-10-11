@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { netWorth, quoteCitySale, stockUnitValue } from "../src/index.js";
-import { DAY, HOUR, World } from "./helpers.js";
+import { DAY, HOUR, World, makeContext } from "./helpers.js";
 
 describe("cities", () => {
   it("pays less as more is sold in the day, then recovers", () => {
@@ -126,5 +126,18 @@ describe("valuation", () => {
     // farm 30 000 + 20 × 220 × 2 ; mill 40 000 + 30 × 220 × 2
     expect(nw.buildings).toBe(38_800n + 53_200n);
     expect(nw.total).toBe(100_000n + 92_000n);
+  });
+});
+
+describe("projects switched off", () => {
+  it("opens no project when the settings ask for nothing", () => {
+    const w = new World(
+      makeContext({
+        projects: { intervalDays: 7, durationDays: 7, needsPerPlayer: {}, premiumBps: 0 },
+      }),
+    );
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    w.at(8 * DAY).do({ type: "tick" });
+    expect(Object.keys(w.state.projects)).toHaveLength(0);
   });
 });

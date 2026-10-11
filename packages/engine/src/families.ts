@@ -160,9 +160,8 @@ export function fulfillFamilyOrder(tx: Tx, playerId: PlayerId, orderId: string):
   if (!order) fail("unknown_contract");
   const done = familyOrdersDone(tx.s as WorldState, playerId, today);
   if (done.includes(orderId)) fail("contract_done");
-  // With deliveries, home goods go by road; goods from overseas are still handed in here.
-  const luxury = tx.ctx.theme.resources.find((r) => r.code === order.resource)?.tier === "luxury";
-  if (tx.ctx.settings.deliveries.ordersPerDay.max > 0 && !luxury) fail("city_sales_closed");
+  // With deliveries, every family order goes by road.
+  if (tx.ctx.settings.deliveries.ordersPerDay.max > 0) fail("city_sales_closed");
 
   removeStock(tx, playerId, order.resource, order.quantity, "family_order", orderId);
   transfer(

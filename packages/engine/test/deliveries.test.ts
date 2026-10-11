@@ -205,6 +205,55 @@ describe("the board of orders", () => {
     expect(later?.kind).toBe("doge");
   });
 
+  it("orders raw goods only from the merchants who produce them, never goods from overseas", () => {
+    const w = world({
+      cities: {
+        ...deliverySettings.cities,
+        padova: {
+          bread: { basePrice: 210, dailyCapacityPerPlayer: 45, maxDropBps: 5_000 },
+          wheat: { basePrice: 110, dailyCapacityPerPlayer: 45, maxDropBps: 5_000 },
+          clay: { basePrice: 110, dailyCapacityPerPlayer: 45, maxDropBps: 5_000 },
+          salt: { basePrice: 340, dailyCapacityPerPlayer: 45, maxDropBps: 5_000 },
+        },
+      } as never,
+      referencePrices: { ...testSettings.referencePrices, salt: 300 },
+      deliveries: {
+        ...deliverySettings.deliveries,
+        quantity: { bread: [5, 10], wheat: [5, 10], clay: [5, 10], salt: [1, 2] },
+      } as never,
+    });
+    w.do({ type: "join", playerId: "potter", region: "lagoon" });
+    const seen = (playerId: string) => {
+      const out = new Set<string>();
+      for (let day = 0; day < 8; day++) {
+        for (const o of deliveryOrdersFor(w.ctx, w.state, playerId, day)) out.add(o.resource);
+      }
+      return out;
+    };
+    // The Terraferma grows wheat, the Lagoon digs clay: each is asked only its own raw goods.
+    const farmer = seen("a");
+    expect(farmer.has("wheat")).toBe(true);
+    expect(farmer.has("clay")).toBe(false);
+    const potter = seen("potter");
+    expect(potter.has("clay")).toBe(true);
+    expect(potter.has("wheat")).toBe(false);
+    expect(farmer.has("salt") || potter.has("salt")).toBe(false);
+  });
+
+  it("puts the Doge's orders of goods from overseas on the road", () => {
+    const w = world({
+      contracts: {
+        perDay: 2,
+        premiumBps: 2_000,
+        quantities: { bread: 20 },
+        luxury: { chanceBps: 10_000, quantities: { salt: 2 } },
+      } as never,
+      referencePrices: { ...testSettings.referencePrices, salt: 300 },
+    });
+    const doge = deliveryOrdersFor(w.ctx, w.state, "a", 0).filter((o) => o.kind === "doge");
+    expect(doge.map((o) => o.resource)).toEqual(["salt", "salt"]);
+  });
+
   it("is empty when deliveries are off", () => {
     const w = new World(makeContext());
     w.do({ type: "join", playerId: "a", region: "terraferma" });
@@ -367,7 +416,7 @@ describe("the instant sale to cities, closed by deliveries", () => {
     );
   });
 
-  it("serves the Doge's and the family's home goods by road, goods from overseas at the counter", () => {
+  it("serves the Doge's and the family's orders by road only, goods from overseas included", () => {
     const luxury = { chanceBps: 10_000, quantities: { salt: 2 } };
     const families = {
       openDay: 0,
@@ -399,8 +448,8 @@ describe("the instant sale to cities, closed by deliveries", () => {
     expect(lux?.resource).toBe("salt");
     expect(
       error(overseas.try({ type: "fulfillContract", playerId: "a", contractId: lux?.id ?? "" })),
-    ).toBe("ok");
-    expect(board(overseas).some((o) => o.kind === "doge")).toBe(false);
+    ).toBe("city_sales_closed");
+    expect(board(overseas).some((o) => o.kind === "doge" && o.resource === "salt")).toBe(true);
   });
 
   it("keeps goods on the road accounted for (invariant 7)", () => {

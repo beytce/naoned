@@ -465,12 +465,15 @@ export const worldSettingsSchema = z.object({
     maxDailyDepth: z.record(qty).default({}),
   }),
   cities: z.record(z.record(cityDemand)),
-  projects: z.object({
-    intervalDays: positive,
-    durationDays: positive,
-    needsPerPlayer: z.record(qty),
-    premiumBps: bps,
-  }),
+  /** Weekly city projects; no needs turns them off. */
+  projects: z
+    .object({
+      intervalDays: positive,
+      durationDays: positive,
+      needsPerPlayer: z.record(qty),
+      premiumBps: bps,
+    })
+    .default({ intervalDays: 7, durationDays: 7, needsPerPlayer: {}, premiumBps: 0 }),
   valuation: z.object({
     vwapDays: positive,
     minVolume: qty,

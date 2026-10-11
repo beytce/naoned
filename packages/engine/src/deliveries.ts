@@ -148,10 +148,6 @@ export function orderUnitPrice(
   return applyBpsFloor(ctx.settings.referencePrices[resource] ?? 0n, bps);
 }
 
-function isLuxury(ctx: WorldContext, resource: string): boolean {
-  return ctx.theme.resources.find((r) => r.code === resource)?.tier === "luxury";
-}
-
 /** Cities on a road from the region that buy this resource. */
 function buyers(ctx: WorldContext, region: string, resource: string): string[] {
   return ctx.theme.cities
@@ -211,6 +207,17 @@ export function deliveryOrdersFor(
     return pool[draw(ctx, key) % Math.max(1, pool.length)];
   };
 
+  // The merchant's own chain: what the starting buildings of the region make.
+  const chain = new Set(
+    (ctx.settings.startingBuildings[region] ?? []).flatMap((type) =>
+      ctx.theme.recipes.filter((r) => r.building === type).flatMap((r) => Object.keys(r.outputs)),
+    ),
+  );
+  // Raw goods are asked only of those who produce them: otherwise an order would just be buying
+  // at the market and selling on (goods made from bought raw goods are fine).
+  const tier = (resource: string) => ctx.theme.resources.find((r) => r.code === resource)?.tier;
+  const mayOrder = (resource: string) => tier(resource) !== "raw" || chain.has(resource);
+
   // The welcome order: on the day of joining, to the nearest city buying the goods.
   const welcome = cfg.welcome[region];
   if (welcome && dayIndex(ctx, player.joinedAt) === day) {
@@ -232,7 +239,7 @@ export function deliveryOrdersFor(
 
   // The Doge's orders (their own draw), at the Doge's premium.
   for (const c of contractsFor(ctx, playerId, day).slice(0, cfg.dogeOrdersPerDay)) {
-    if (isLuxury(ctx, c.resource)) continue;
+    if (!mayOrder(c.resource)) continue;
     const city = routeMinutes(ctx, region, c.city) !== undefined ? c.city : anyCity[0];
     if (!city) continue;
     push({
@@ -248,7 +255,7 @@ export function deliveryOrdersFor(
   }
   // The family's orders, at their premium.
   for (const f of familyOrdersFor(ctx, state, playerId, day)) {
-    if (isLuxury(ctx, f.resource)) continue;
+    if (!mayOrder(f.resource)) continue;
     const city = cityFor(f.resource, `delivery-family:${playerId}:${day}:${f.id}`);
     if (!city) continue;
     push({
@@ -263,15 +270,12 @@ export function deliveryOrdersFor(
     });
   }
 
-  const resources = Object.keys(cfg.quantity).filter((r) => buyers(ctx, region, r).length > 0);
+  // City orders: home goods only (goods from overseas come with the Doge's and the families').
+  const resources = Object.keys(cfg.quantity).filter(
+    (r) => buyers(ctx, region, r).length > 0 && tier(r) !== "luxury" && mayOrder(r),
+  );
   if (resources.length === 0 || anyCity.length === 0) return out;
   const weighted = resources.map((code) => ({ code, weight: cfg.weights[code] ?? 1 }));
-  // The merchant's own chain: what the starting buildings of the region make.
-  const chain = new Set(
-    (ctx.settings.startingBuildings[region] ?? []).flatMap((type) =>
-      ctx.theme.recipes.filter((r) => r.building === type).flatMap((r) => Object.keys(r.outputs)),
-    ),
-  );
   const home = weighted.filter((w) => chain.has(w.code));
   const order = (key: string, leanHome = false) => {
     const h = draw(ctx, key);

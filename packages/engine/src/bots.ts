@@ -389,10 +389,6 @@ export class Bot {
     }
   }
 
-  private overseas(s: Session, resource: string): boolean {
-    return s.ctx.theme.resources.find((r) => r.code === resource)?.tier === "luxury";
-  }
-
   private buildings(s: Session): Building[] {
     // Raw producers first, so their output can feed the next buildings in the same session.
     const order = (b: Building) =>
@@ -552,7 +548,7 @@ export class Bot {
     const byRoad = deliveriesOn(s.ctx);
     for (const c of contractsFor(s.ctx, this.id, day, rerollsOf(s.state(), this.id, day))) {
       if (doneIds.includes(c.id)) continue;
-      if (byRoad && !this.overseas(s, c.resource)) continue;
+      if (byRoad) continue;
       if (this.available(s, c.resource) - this.reserve(s, c.resource) >= c.quantity) {
         s.act({ type: "fulfillContract", playerId: this.id, contractId: c.id });
       }
@@ -588,8 +584,8 @@ export class Bot {
     const familyOrders = (x: Session) => familyOrdersFor(x.ctx, x.state(), this.id, day);
     for (const o of familyOrders(s)) {
       if (done.includes(o.id)) continue;
-      // Home goods go by road (see `deliver`).
-      if (deliveriesOn(s.ctx) && !this.overseas(s, o.resource)) continue;
+      // Family orders go by road (see `deliver`).
+      if (deliveriesOn(s.ctx)) continue;
       // The family's order earns influence: what is missing is bought, a little under its price.
       const missing = o.quantity - (this.available(s, o.resource) - this.reserve(s, o.resource));
       if (missing > 0) this.buy(s, o.resource, missing, 1.15);
