@@ -7,6 +7,11 @@ import { venice1450 } from "../src/index.js";
  */
 export const testTheme: Theme = {
   ...venice1450,
+  cities: [
+    { code: "venezia", name: "Venise" },
+    { code: "padova", name: "Padoue" },
+    { code: "verona", name: "Vérone" },
+  ],
   recipes: [
     {
       code: "grow_wheat",
@@ -124,4 +129,79 @@ export const testSettings: WorldSettingsInput = {
     premiumBps: 1_000,
   },
   valuation: { vwapDays: 7, minVolume: 200, buildingValueBps: 10_000 },
+};
+
+/**
+ * Deliveries by road and bandits, for their own tests (off in `testSettings`, so that the other
+ * tests keep selling to cities).
+ */
+export const testDeliveries = {
+  ordersPerDay: { min: 10, max: 12 },
+  dogeOrdersPerDay: 2,
+  urgentPerDay: 1,
+  urgentPremiumBps: 1_500,
+  urgentOpenMinutes: 60,
+  cityPriceBps: 10_000,
+  distanceBonusBpsPerHour: 1_000,
+  quantity: { bread: [10, 20] as [number, number], bricks: [5, 10] as [number, number] },
+  routes: {
+    terraferma: { venezia: 60, padova: 30, verona: 45 },
+    lagoon: { venezia: 20, padova: 45, verona: 90 },
+    dolomites: { venezia: 90, padova: 75, verona: 60 },
+  },
+  maxDeliveryMinutes: 120,
+  vehicles: {
+    mule: {
+      costDucats: 5_000,
+      costMaterials: {},
+      capacity: 15,
+      speedBps: 5_000,
+      upkeepPerDay: 100,
+    },
+    cart: {
+      costDucats: 10_000,
+      costMaterials: { planks: 10 },
+      capacity: 40,
+      speedBps: 10_000,
+      upkeepPerDay: 200,
+    },
+  },
+  startingVehicles: ["cart"],
+  maxVehicles: 3,
+  escorts: { guards: { costBps: 400, defense: 2 }, company: { costBps: 900, defense: 5 } },
+};
+
+export const testBandits = {
+  hoursOptions: [2, 4],
+  feePerHour: 1_000,
+  provisionsPerHour: { bread: 1 },
+  maxActivePerPlayer: 1,
+  maxAttacksPerBand: 2,
+  maxBandsPerRoute: 2,
+  attackChanceBps: { "0": 10_000, "2": 5_000, "5": 0 },
+  reactionMinutes: 10,
+  takeBps: 3_000,
+  keepBps: 5_000,
+  quietHours: { from: 22, to: 8 },
+  newcomerDays: 0,
+  minTargetWorthBps: 5_000,
+  cooldownHours: 24,
+  sameFamilyImmune: true,
+  openDay: 0,
+  npcBands: { perDay: 0, hours: 3 },
+};
+
+/** Overrides of `testSettings` for a world with deliveries and bandits. */
+export const deliverySettings: Partial<WorldSettingsInput> = {
+  cities: {
+    venezia: {
+      bread: { basePrice: 220, dailyCapacityPerPlayer: 60, maxDropBps: 5_000 },
+      bricks: { basePrice: 260, dailyCapacityPerPlayer: 15, maxDropBps: 5_000 },
+    },
+    padova: { bread: { basePrice: 210, dailyCapacityPerPlayer: 45, maxDropBps: 5_000 } },
+    verona: { bread: { basePrice: 200, dailyCapacityPerPlayer: 45, maxDropBps: 5_000 } },
+  },
+  contracts: { perDay: 2, premiumBps: 2_000, quantities: { bread: 20, bricks: 10 } },
+  deliveries: testDeliveries,
+  bandits: testBandits,
 };

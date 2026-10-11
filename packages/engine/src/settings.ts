@@ -310,6 +310,115 @@ export const worldSettingsSchema = z.object({
    * cannot hand ducats to another account by selling a loaf for a fortune. 0 turns it off.
    */
   priceBand: z.object({ minBps: bps, maxBps: bps }).default({ minBps: 0, maxBps: 0 }),
+  /**
+   * Deliveries by road: each merchant gets a board of personal orders every day (cities, the Doge,
+   * their family, urgent ones) and carts them to the city with their own vehicles; payment is made
+   * on arrival. 0 orders a day turns them off (and keeps the instant sale to cities).
+   */
+  deliveries: z
+    .object({
+      /** Orders drawn per merchant and per day. */
+      ordersPerDay: z.object({ min: qty, max: qty }),
+      /** The Doge's orders on the board (taken from `contracts`, at its premium). */
+      dogeOrdersPerDay: qty,
+      /** Urgent orders: open a short while, at a premium (they replace the Criées). */
+      urgentPerDay: qty,
+      urgentPremiumBps: bps,
+      urgentOpenMinutes: positive,
+      /** Hours of the day (Paris) when an urgent order may open: [from, to). */
+      urgentHours: z.object({ from: qty.max(23), to: qty.max(24) }).default({ from: 8, to: 21 }),
+      /** A city order pays the reference price × this… */
+      cityPriceBps: bps,
+      /** … plus this much per hour of road (one way, normal speed). */
+      distanceBonusBpsPerHour: bps,
+      /** Quantity range of a city order, per resource (also the resources cities order). */
+      quantity: z.record(z.tuple([positive, positive])),
+      /** Minutes of road one way at normal speed: region → city → minutes. */
+      routes: z.record(z.record(positive)),
+      maxDeliveryMinutes: positive,
+      vehicles: z.record(
+        z.object({
+          costDucats: money,
+          costMaterials: z.record(qty).default({}),
+          /** Units carried. */
+          capacity: positive,
+          /** Above 10 000 is faster. */
+          speedBps: positive,
+          upkeepPerDay: money,
+        }),
+      ),
+      /** Given on joining, counted in net worth. */
+      startingVehicles: z.array(z.string()).default([]),
+      maxVehicles: qty,
+      /** Escorts: cost in bps of the cargo's value at the order's price, destroyed. */
+      escorts: z.record(z.object({ costBps: bps, defense: positive })).default({}),
+    })
+    .default({
+      ordersPerDay: { min: 0, max: 0 },
+      dogeOrdersPerDay: 0,
+      urgentPerDay: 0,
+      urgentPremiumBps: 0,
+      urgentOpenMinutes: 60,
+      cityPriceBps: 10_000,
+      distanceBonusBpsPerHour: 0,
+      quantity: {},
+      routes: {},
+      maxDeliveryMinutes: 120,
+      vehicles: {},
+      maxVehicles: 0,
+    }),
+  /**
+   * Bandits on the roads: a merchant (or the computer) posts a band on a route for a few hours;
+   * it may ambush deliveries passing by. No duration options turns them off.
+   */
+  bandits: z
+    .object({
+      /** Hours a band may be posted for. */
+      hoursOptions: z.array(positive),
+      /** Ducats paid in advance per hour, destroyed. */
+      feePerHour: money,
+      /** Provisions eaten in advance per hour. */
+      provisionsPerHour: z.record(qty).default({}),
+      maxActivePerPlayer: qty,
+      /** Attempts a band makes at most, successful or not. */
+      maxAttacksPerBand: positive,
+      /** Bands at once on a route: beyond, the route is full. */
+      maxBandsPerRoute: positive,
+      /** Chance that an ambush succeeds, by the escort's defense (largest key ≤ defense). */
+      attackChanceBps: z.record(bps.max(10_000)),
+      /** Without escort, the merchant has this long to fight back. */
+      reactionMinutes: positive,
+      /** Share of each cargo line taken by a successful ambush. */
+      takeBps: bps.max(10_000),
+      /** Share of what is taken that the bandit keeps; the rest is lost in flight. */
+      keepBps: bps.max(10_000),
+      /** No ambush between these hours (Paris). */
+      quietHours: z.object({ from: qty.max(24), to: qty.max(24) }),
+      newcomerDays: qty,
+      minTargetWorthBps: bps,
+      cooldownHours: qty,
+      sameFamilyImmune: z.boolean().default(true),
+      /** Days after joining before a merchant may post a band. */
+      openDay: qty,
+      /** Bands of the computer, so that a small world has some risk. */
+      npcBands: z.object({ perDay: qty, hours: positive }).default({ perDay: 0, hours: 3 }),
+    })
+    .default({
+      hoursOptions: [],
+      feePerHour: 0,
+      maxActivePerPlayer: 0,
+      maxAttacksPerBand: 1,
+      maxBandsPerRoute: 1,
+      attackChanceBps: {},
+      reactionMinutes: 10,
+      takeBps: 0,
+      keepBps: 0,
+      quietHours: { from: 22, to: 8 },
+      newcomerDays: 0,
+      minTargetWorthBps: 0,
+      cooldownHours: 0,
+      openDay: 0,
+    }),
   /** How many times a player may restart from scratch during a season. */
   maxResetsPerPlayer: qty.default(1),
   maxBuildings: positive,
