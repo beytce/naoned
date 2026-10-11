@@ -435,6 +435,7 @@ export function RoadBoard(
           props={props}
           road={road}
           focus={focused?.id ?? null}
+          now={now}
           onFocus={(id) => setFocus(id === focus ? null : id)}
           onWatch={(vehicleId) => {
             const dv = underway.find((x) => x.vehicleId === vehicleId);
@@ -523,11 +524,16 @@ function MovingVehicle({
   );
 }
 
-/** The merchant's vehicles under the map: free ones glow and pick the cities they can serve. */
+/**
+ * The stable, under the map: each vehicle with where it is (at the depot, on the way to a city,
+ * on the way back, stopped by bandits) and when it will be free; then buying another one.
+ * A vehicle at the depot lights the cities it can serve.
+ */
 function Garage({
   props,
   road,
   focus,
+  now,
   onFocus,
   onWatch,
   onBuy,
@@ -535,46 +541,103 @@ function Garage({
   props: GameProps;
   road: RoadView;
   focus: string | null;
+  now: number;
   onFocus: (id: string) => void;
   onWatch: (vehicleId: string) => void;
   onBuy: () => void;
 }) {
   const max = props.catalog.road?.maxVehicles ?? 0;
+  const types = props.catalog.road?.vehicles ?? [];
+  const g = m().stable;
+  const free = road.vehicles.filter((v) => v.status === "free").length;
   return (
-    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:px-0">
-      {road.vehicles.map((v) => {
-        const isFree = v.status === "free";
-        const on = focus === v.id;
-        return (
-          <button
-            key={v.id}
-            type="button"
-            onClick={() => (isFree ? onFocus(v.id) : onWatch(v.id))}
-            aria-pressed={on}
-            className={`flex shrink-0 items-center gap-2 rounded-2xl border px-3 py-2 text-left transition active:scale-95 ${on ? "border-gold bg-gold/15" : isFree ? "border-lagoon/60 bg-night-3" : "border-line bg-night-3"}`}
-          >
-            <svg viewBox="-20 -16 40 26" width="34" height="22" aria-hidden="true">
-              <VehicleGlyph type={v.type} />
-            </svg>
-            <span>
-              <span className="block text-sm font-semibold">{vehicleName(v.type)}</span>
-              <span className={`label block ${isFree ? "text-lagoon" : ""}`}>
-                {isFree ? t().free : t().backIn(clock(v.busyUntil - props.now))}
+    <section className="space-y-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="font-display text-sm font-extrabold uppercase tracking-wide">{g.title}</h3>
+        <span className="label">{g.summary(free, road.vehicles.length - free)}</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
+        {road.vehicles.map((v) => {
+          const dv = road.deliveries.find((x) => x.vehicleId === v.id && now < x.backAt);
+          const atDepot = v.status === "free" || !dv;
+          const on = focus === v.id;
+          const city = dv ? props.names.city(dv.route.split(":")[1] ?? "") : "";
+          const stopped = dv?.attack?.pending === true && now <= (dv.attack?.reactBy ?? 0);
+          const outbound = !!dv && now < dv.arriveAt;
+          // Progress of the whole trip, there and back.
+          const progress = dv ? (now - dv.departAt) / Math.max(1, dv.backAt - dv.departAt) : 0;
+          const capacity = types.find((x) => x.type === v.type)?.capacity ?? 0;
+          return (
+            <button
+              key={v.id}
+              type="button"
+              onClick={() => (atDepot ? onFocus(v.id) : onWatch(v.id))}
+              aria-pressed={on}
+              className={`flex flex-col gap-2 rounded-2xl border p-3 text-left transition active:scale-[0.98] ${on ? "border-gold bg-gold/15" : stopped ? "border-vermilion bg-vermilion/10" : atDepot ? "border-lagoon/60 bg-night-3" : "border-line bg-night-3"}`}
+            >
+              <span className="flex items-center gap-2">
+                <svg viewBox="-20 -16 40 26" width="34" height="22" aria-hidden="true">
+                  <VehicleGlyph
+                    type={v.type}
+                    load={outbound && dv ? (GOODS_COLOUR[dv.resource] ?? null) : null}
+                  />
+                </svg>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold">
+                    {vehicleName(v.type)}
+                  </span>
+                  <span className="label block">{t().capacity(capacity)}</span>
+                </span>
               </span>
-            </span>
-          </button>
-        );
-      })}
-      {road.vehicles.length < max && (
+              <span
+                className={`text-xs font-semibold ${stopped ? "text-vermilion" : atDepot ? "text-lagoon" : "text-cream"}`}
+              >
+                {atDepot
+                  ? g.atDepot
+                  : stopped
+                    ? g.stopped(city)
+                    : outbound
+                      ? g.outbound(city)
+                      : g.inbound(city)}
+              </span>
+              {dv && !atDepot ? (
+                <span className="block space-y-1">
+                  <span className="block h-1.5 overflow-hidden rounded-full bg-night-4">
+                    <span
+                      className={`block h-full rounded-full ${stopped ? "bg-vermilion" : "bg-gold"}`}
+                      style={{ width: `${Math.max(0, Math.min(1, progress)) * 100}%` }}
+                    />
+                  </span>
+                  <span className="label block">
+                    {stopped
+                      ? g.reactIn(clock((dv.attack?.reactBy ?? now) - now))
+                      : outbound
+                        ? g.arrivesIn(clock(dv.arriveAt - now))
+                        : g.freeIn(clock(dv.backAt - now))}
+                  </span>
+                </span>
+              ) : (
+                <span className="label block text-lagoon">{on ? g.chosen : g.ready}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {road.vehicles.length < max ? (
         <button
           type="button"
           onClick={onBuy}
-          className="flex shrink-0 items-center gap-2 rounded-2xl border border-dashed border-line px-4 py-2 text-sm text-cream-dim transition hover:text-cream active:scale-95"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-gold/50 px-4 py-3 font-display text-sm font-extrabold uppercase tracking-wide text-gold transition hover:bg-gold/10 active:scale-[0.99]"
         >
-          + {t().buy}
+          + {g.buy}
+          <span className="font-sans text-xs font-normal normal-case text-cream-dim">
+            ({road.vehicles.length} / {max})
+          </span>
         </button>
+      ) : (
+        <p className="text-center text-xs text-muted">{t().maxVehicles(max)}</p>
       )}
-    </div>
+    </section>
   );
 }
 
