@@ -167,6 +167,44 @@ describe("the board of orders", () => {
     expect(travelMinutes(c, "lagoon", "nowhere", "cart")).toBeUndefined();
   });
 
+  it("leans to the merchant's own chain when asked", () => {
+    const w = world({
+      cities: {
+        ...deliverySettings.cities,
+        padova: {
+          bread: { basePrice: 210, dailyCapacityPerPlayer: 45, maxDropBps: 5_000 },
+          wheat: { basePrice: 110, dailyCapacityPerPlayer: 45, maxDropBps: 5_000 },
+          flour: { basePrice: 170, dailyCapacityPerPlayer: 45, maxDropBps: 5_000 },
+        },
+      } as never,
+      deliveries: {
+        ...deliverySettings.deliveries,
+        homeShareBps: 10_000,
+        quantity: { bread: [10, 20], bricks: [5, 10], wheat: [5, 10], flour: [5, 10] },
+      } as never,
+    });
+    // The Terraferma of the fixture starts with a farm and a mill: wheat and flour.
+    for (let day = 0; day < 5; day++) {
+      const city = deliveryOrdersFor(w.ctx, w.state, "a", day).filter((o) => o.kind === "city");
+      expect(city.length).toBeGreaterThan(0);
+      for (const o of city) expect(["wheat", "flour"]).toContain(o.resource);
+    }
+  });
+
+  it("opens with a welcome order the starting stock covers, on the day of joining only", () => {
+    const w = world({
+      deliveries: {
+        ...deliverySettings.deliveries,
+        welcome: { terraferma: { resource: "bread", quantity: 12 } },
+      } as never,
+    });
+    const [first] = deliveryOrdersFor(w.ctx, w.state, "a", 0);
+    // The nearest city buying bread from the Terraferma: Padua, 30 minutes.
+    expect(first).toMatchObject({ kind: "city", resource: "bread", quantity: 12, city: "padova" });
+    const later = deliveryOrdersFor(w.ctx, w.state, "a", 1)[0];
+    expect(later?.kind).toBe("doge");
+  });
+
   it("is empty when deliveries are off", () => {
     const w = new World(makeContext());
     w.do({ type: "join", playerId: "a", region: "terraferma" });

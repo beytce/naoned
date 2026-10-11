@@ -211,6 +211,25 @@ export function deliveryOrdersFor(
     return pool[draw(ctx, key) % Math.max(1, pool.length)];
   };
 
+  // The welcome order: on the day of joining, to the nearest city buying the goods.
+  const welcome = cfg.welcome[region];
+  if (welcome && dayIndex(ctx, player.joinedAt) === day) {
+    const city = buyers(ctx, region, welcome.resource).sort(
+      (a, b) => (routeMinutes(ctx, region, a) ?? 0) - (routeMinutes(ctx, region, b) ?? 0),
+    )[0];
+    if (city) {
+      push({
+        kind: "city",
+        city,
+        resource: welcome.resource,
+        quantity: welcome.quantity,
+        unitPrice: orderUnitPrice(ctx, region, city, welcome.resource),
+        opensAt: dayStart,
+        expiresAt,
+      });
+    }
+  }
+
   // The Doge's orders (their own draw), at the Doge's premium.
   for (const c of contractsFor(ctx, playerId, day).slice(0, cfg.dogeOrdersPerDay)) {
     if (isLuxury(ctx, c.resource)) continue;
@@ -247,9 +266,20 @@ export function deliveryOrdersFor(
   const resources = Object.keys(cfg.quantity).filter((r) => buyers(ctx, region, r).length > 0);
   if (resources.length === 0 || anyCity.length === 0) return out;
   const weighted = resources.map((code) => ({ code, weight: cfg.weights[code] ?? 1 }));
-  const order = (key: string) => {
+  // The merchant's own chain: what the starting buildings of the region make.
+  const chain = new Set(
+    (ctx.settings.startingBuildings[region] ?? []).flatMap((type) =>
+      ctx.theme.recipes.filter((r) => r.building === type).flatMap((r) => Object.keys(r.outputs)),
+    ),
+  );
+  const home = weighted.filter((w) => chain.has(w.code));
+  const order = (key: string, leanHome = false) => {
     const h = draw(ctx, key);
-    const resource = pickWeighted(weighted, h)?.code ?? "";
+    const pool =
+      leanHome && home.length > 0 && draw(ctx, `${key}:home`) % 10_000 < cfg.homeShareBps
+        ? home
+        : weighted;
+    const resource = pickWeighted(pool, h)?.code ?? "";
     const list = buyers(ctx, region, resource);
     const city = list[(h >>> 8) % list.length] ?? "";
     const [lo, hi] = cfg.quantity[resource] ?? [1, 1];
@@ -276,7 +306,7 @@ export function deliveryOrdersFor(
   const total =
     min + (draw(ctx, `delivery-count:${playerId}:${day}`) % (Math.max(0, max - min) + 1));
   for (let i = 0; out.length < total; i++) {
-    const o = order(`delivery:${playerId}:${day}:${i}`);
+    const o = order(`delivery:${playerId}:${day}:${i}`, true);
     push({
       kind: "city",
       ...o,

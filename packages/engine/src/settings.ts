@@ -335,6 +335,13 @@ export const worldSettingsSchema = z.object({
       quantity: z.record(z.tuple([positive, positive])),
       /** How often each resource is ordered, relative to the others (1 when absent). */
       weights: z.record(positive).default({}),
+      /**
+       * Share of city orders drawn among the goods of the merchant's own chain (what the starting
+       * buildings of their region make), so that the board speaks to their trade.
+       */
+      homeShareBps: bps.max(10_000).default(0),
+      /** On the day of joining, a first order the starting stock covers, by region. */
+      welcome: z.record(z.object({ resource: z.string(), quantity: positive })).default({}),
       /** Minutes of road one way at normal speed: region → city → minutes. */
       routes: z.record(z.record(positive)),
       maxDeliveryMinutes: positive,
