@@ -7,6 +7,7 @@ export * from "./events.js";
 export { cargoValueAt, portPrices } from "./expeditions.js";
 export * from "./effects.js";
 export * from "./deliveries.js";
+export * from "./clock.js";
 export {
   type FamilyOrder,
   type FamilyStanding,
