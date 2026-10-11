@@ -32,6 +32,10 @@ export function duration(ms: number): string {
   return rest === 0 ? `${h} h` : `${h} h ${rest.toString().padStart(2, "0")}`;
 }
 
+/** "30 min", "2 h", "1 h 30". */
 export function minutesLabel(minutes: number): string {
-  return minutes % 60 === 0 ? `${minutes / 60} h` : `${minutes} min`;
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h} h` : `${h} h ${m.toString().padStart(2, "0")}`;
 }

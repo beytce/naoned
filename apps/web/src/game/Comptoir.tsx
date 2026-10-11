@@ -37,7 +37,16 @@ function outputQty(props: GameProps, resource: string, base: number, level = 1) 
 }
 
 /** "10 [clay] → 6 [bricks]" with icons. */
-function RecipeFlow({ recipe, level, props }: { recipe: Recipe; level: number; props: GameProps }) {
+/**
+ * What a batch takes and gives, and how long it lasts. A batch keeps the duration it was started
+ * with (rations, older settings): the running one shows its own, and the next ones theirs.
+ */
+function RecipeFlow({
+  recipe,
+  level,
+  props,
+  runningMs,
+}: { recipe: Recipe; level: number; props: GameProps; runningMs?: number }) {
   const side = (m: Record<string, number>, out: boolean) =>
     Object.entries(m).map(([r, q]) => (
       <span key={r} className="inline-flex items-center gap-1">
@@ -57,14 +66,38 @@ function RecipeFlow({ recipe, level, props }: { recipe: Recipe; level: number; p
         </>
       )}
       {side(recipe.outputs, true)}
-      {props.view.rations.hungryUntil > props.now ? (
-        <span className="label ml-1 text-vermilion">
-          {(recipe.durationMinutes * (10_000 + props.catalog.rations.slowdownBps)) / 600_000} h ·{" "}
-          {fr.game.rations.slower}
-        </span>
-      ) : (
-        <span className="label ml-1">{minutesLabel(recipe.durationMinutes)}</span>
-      )}
+      {(() => {
+        const hungry = props.view.rations.hungryUntil > props.now;
+        const nextMinutes = hungry
+          ? Math.round(
+              (recipe.durationMinutes * (10_000 + props.catalog.rations.slowdownBps)) / 10_000,
+            )
+          : recipe.durationMinutes;
+        const running = runningMs !== undefined ? Math.round(runningMs / 60_000) : undefined;
+        if (running !== undefined && running !== nextMinutes) {
+          // A tutorial batch lasts seconds.
+          const now =
+            runningMs !== undefined && runningMs < 60_000
+              ? `${runningMs / 1000} s`
+              : minutesLabel(running);
+          return (
+            <span className="label ml-1">
+              {fr.game.batchNow(now)}
+              <span className={hungry ? "text-vermilion" : "text-lagoon"}>
+                {" · "}
+                {fr.game.batchNext(minutesLabel(nextMinutes))}
+                {hungry && ` ${fr.game.rations.slower}`}
+              </span>
+            </span>
+          );
+        }
+        return (
+          <span className={`label ml-1 ${hungry ? "text-vermilion" : ""}`}>
+            {minutesLabel(nextMinutes)}
+            {hungry && ` · ${fr.game.rations.slower}`}
+          </span>
+        );
+      })()}
     </div>
   );
 }
@@ -276,7 +309,14 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
             </h3>
             <Badge tone={b.level >= 3 ? "lagoon" : "gold"}>{fr.game.level(b.level)}</Badge>
           </div>
-          {recipe && <RecipeFlow recipe={recipe} level={b.level} props={props} />}
+          {recipe && (
+            <RecipeFlow
+              recipe={recipe}
+              level={b.level}
+              props={props}
+              runningMs={b.job ? b.job.batchMs : undefined}
+            />
+          )}
           {job && running && (
             <Ribbon
               value={current}

@@ -226,6 +226,8 @@ export const fr = {
       react: "Riposter !",
       later: "Laisser faire",
     },
+    batchNow: (time: string) => `Lot en cours : ${time}`,
+    batchNext: (time: string) => `prochains : ${time}`,
     rations: {
       line: (perDay: number, days: number) =>
         `Vos ouvriers mangent ${perDay} pains par jour · réserve : ${days} j`,
