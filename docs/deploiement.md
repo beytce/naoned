@@ -9,7 +9,7 @@ Un seul service : le serveur Fastify sert l'API (`/api/…`) et l'application we
 | `DATABASE_URL` | oui | URL PostgreSQL (`postgres://…`), fournie par Railway |
 | `APP_URL` | oui | URL publique du jeu, sans `/` final (ex. `https://comptoirs.up.railway.app`) ; sert aux liens de connexion |
 | `RESEND_API_KEY` | oui | Clé API Resend |
-| `MAIL_FROM` | non | Expéditeur, par défaut `Comptoirs <onboarding@resend.dev>` |
+| `MAIL_FROM` | non | Expéditeur, par défaut `Fondaco <onboarding@resend.dev>` |
 | `VAPID_PUBLIC_KEY` | non | Clé publique des notifications push ; sans elle, notifications dans le jeu seulement |
 | `VAPID_PRIVATE_KEY` | non | Clé privée des notifications push (secrète) |
 | `VAPID_SUBJECT` | non | Contact de l'émetteur, par défaut `mailto:contact@comptoirs.app` |

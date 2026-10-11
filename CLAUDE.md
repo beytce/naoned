@@ -1,4 +1,4 @@
-# Comptoirs
+# Fondaco (ex-Comptoirs)
 
 Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage complet : docs/CADRAGE.md. Nom de code du dépôt : naoned.
 

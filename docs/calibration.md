@@ -134,11 +134,11 @@ Dans le monde réel (pas dans la simulation de calibrage), les PNJ jouent donc a
 
 Sans aucun accès au teneur de marché, l'économie des PNJ se bloquait (bois introuvable, boulangeries à l'arrêt, faim). `pnpm sim --players 15 --live` reproduit ce petit monde.
 
-## Le Fondaco : un quota par marchand
+## La Dogana (ex-Fondaco) : un quota par marchand
 
-Le PNJ teneur de marché s'appelle désormais **le Fondaco** dans le jeu. Jusqu'ici, son stock du jour (40 unités par ressource dans un petit monde) était commun à tous : les maisons PNJ le vidaient en quelques minutes et les joueurs ne trouvaient plus rien.
+Le PNJ teneur de marché s'appelle désormais **la Dogana** dans le jeu (il s'appelait le Fondaco avant que le jeu ne prenne ce nom). Jusqu'ici, son stock du jour (40 unités par ressource dans un petit monde) était commun à tous : les maisons PNJ le vidaient en quelques minutes et les joueurs ne trouvaient plus rien.
 
-Chaque marchand a maintenant son propre quota par ressource et par jour : il peut acheter 25 unités au Fondaco et lui en vendre 10 (la vente crée de la monnaie, d'où un quota plus serré). Quand le monde se remplit, les quotas se partagent un plafond de 250 unités par jour et par ressource : 15 par marchand à 16 marchands actifs, 5 à 50.
+Chaque marchand a maintenant son propre quota par ressource et par jour : il peut acheter 25 unités à la Dogana et lui en vendre 10 (la vente crée de la monnaie, d'où un quota plus serré). Quand le monde se remplit, les quotas se partagent un plafond de 250 unités par jour et par ressource : 15 par marchand à 16 marchands actifs, 5 à 50.
 
 | Réglage essayé | Graines conformes | Part du volume entre joueurs |
 | --- | --- | --- |
@@ -147,7 +147,7 @@ Chaque marchand a maintenant son propre quota par ressource et par jour : il peu
 | Achat 25, vente 10, plafond 150 | 3 sur 5 | 46 à 78 % |
 | **Achat 25, vente 10, plafond 250 (retenu)** | **5 sur 5** | **53 à 72 %** |
 
-Le calibrage a révélé un défaut des bots : une fois leur quota épuisé, ils visaient encore le prix du Fondaco, n'achetaient rien et ne laissaient pas d'offre aux autres joueurs. Ils ne regardent plus que les offres des joueurs quand leur quota est épuisé.
+Le calibrage a révélé un défaut des bots : une fois leur quota épuisé, ils visaient encore le prix de la Dogana, n'achetaient rien et ne laissaient pas d'offre aux autres joueurs. Ils ne regardent plus que les offres des joueurs quand leur quota est épuisé.
 
 Les prix restent stables (indice 96 à 100 sur les 5 graines).
 

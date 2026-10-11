@@ -1,6 +1,6 @@
 /** Interface texts. French only for now; one object per language when i18n comes. */
 export const fr = {
-  appName: "Comptoirs",
+  appName: "Fondaco",
   season: "Saison 1 · Venise 1450",
   tagline: "Bâtissez une maison de commerce en six semaines, sur un marché tenu par les joueurs.",
   emailLabel: "Adresse e-mail",
@@ -79,7 +79,7 @@ export const fr = {
       marche: "Marché",
       contrats: "Contrats",
       port: "Port",
-      top: "Top",
+      top: "Classement",
       profil: "Profil",
     },
     gazette: {
@@ -215,6 +215,7 @@ export const fr = {
     },
     day: (day: number, total: number) => `Jour ${day}/${total}`,
     shortDay: (day: number, total: number) => `J${day}/${total}`,
+    dayOf: (day: number, total: number) => `Jour ${day} sur ${total}`,
     perDay: "/ jour",
     upkeepDefault:
       "Entretien impayé : production bloquée 24 h. Vendez du stock pour renflouer la caisse.",
@@ -292,7 +293,7 @@ export const fr = {
       sources: {
         city_sale: "Ventes aux villes",
         trade: "Ventes au Rialto",
-        market_maker_buy: "Ventes au Fondaco",
+        market_maker_buy: "Ventes à la Dogana",
         contract_reward: "Contrats du Doge",
         project_delivery: "Grands chantiers",
         mission_reward: "Livre de compte",
@@ -354,17 +355,17 @@ export const fr = {
     noOffer: "Aucune offre",
     maxCost: (amount: string) => `Coût maximal : ${amount}`,
     marketHelp: (slippage: number, tax: number) =>
-      `« Tout de suite » : au meilleur prix du carnet (écart maximal ${slippage} %). « À mon prix » : votre offre attend un preneur jusqu'à 72 h. Taxe de ${tax} % payée par le vendeur entre joueurs ; aucune avec le Fondaco.`,
+      `« Tout de suite » : au meilleur prix du carnet (écart maximal ${slippage} %). « À mon prix » : votre offre attend un preneur jusqu'à 72 h. Taxe de ${tax} % payée par le vendeur entre joueurs ; aucune avec la Dogana.`,
     book: {
       sellers: "Ils vendent",
       buyers: "Ils achètent",
       empty: "Personne",
-      fondaco: "Fondaco",
+      fondaco: "Dogana",
       you: "Vous",
       quota: (buy: string, sell: string) =>
-        `Fondaco aujourd'hui : encore ${buy} à acheter, ${sell} à lui vendre.`,
+        `Dogana aujourd'hui : encore ${buy} à acheter, ${sell} à lui vendre.`,
       fondacoHelp:
-        "Le Fondaco, entrepôt de la République, achète et vend chaque ressource de base en quantité limitée par marchand et par jour.",
+        "La Dogana, la douane de la République, achète et vend chaque ressource de base en quantité limitée par marchand et par jour.",
       now: "Tout de suite",
       myPrice: "À mon prix",
       price: "Prix unitaire (ducats)",
@@ -429,10 +430,10 @@ export const fr = {
         disable: "Couper sur cet appareil",
         on: "Activées sur cet appareil",
         denied:
-          "Votre navigateur bloque les notifications de Comptoirs. Autorisez-les dans ses réglages.",
+          "Votre navigateur bloque les notifications de Fondaco. Autorisez-les dans ses réglages.",
         unsupported: "Ce navigateur ne gère pas les notifications.",
         homeScreen:
-          "Sur iPhone, ajoutez d'abord Comptoirs à l'écran d'accueil (Partager → Sur l'écran d'accueil), puis ouvrez-le depuis l'icône.",
+          "Sur iPhone, ajoutez d'abord Fondaco à l'écran d'accueil (Partager → Sur l'écran d'accueil), puis ouvrez-le depuis l'icône.",
         unavailable: "Les notifications ne sont pas encore activées sur ce serveur.",
         kinds: {
           harvest: "Récolte prête",
@@ -497,6 +498,8 @@ export const fr = {
     },
     replayIntro: "Revoir l'introduction",
     replayGuide: "Relancer le guide",
+    palette: "Palette",
+    paletteHint: "Change les couleurs du jeu sur cet appareil.",
 
     coach: {
       name: "Lorenzo, votre facteur",
@@ -518,7 +521,7 @@ export const fr = {
       buy: (resource: string) =>
         `Achetez quelques ${resource.toLowerCase()} : ils servent à améliorer vos ateliers.`,
       emptyMarket:
-        "Personne ne vend rien au Rialto pour l'instant et votre part du Fondaco est épuisée pour aujourd'hui. Passons, vous achèterez plus tard.",
+        "Personne ne vend rien au Rialto pour l'instant et votre part de la Dogana est épuisée pour aujourd'hui. Passons, vous achèterez plus tard.",
       skip: "Passer",
       goComptoir: "Retour au comptoir pour investir.",
       invest: "Améliorez un atelier : il produira davantage à chaque lot.",
@@ -556,7 +559,7 @@ export const fr = {
       {
         icon: "marche",
         title: "Vendre et acheter",
-        text: "Au Rialto, vous achetez et vendez aux autres marchands et au Fondaco, l'entrepôt de la République (en quantité limitée par jour) : tout de suite au meilleur prix, ou à votre prix en laissant une offre. Les villes achètent le pain, les briques et les planches.",
+        text: "Au Rialto, vous achetez et vendez aux autres marchands et à la Dogana, la douane de la République (en quantité limitée par jour) : tout de suite au meilleur prix, ou à votre prix en laissant une offre. Les villes achètent le pain, les briques et les planches.",
       },
       {
         icon: "chantiers",

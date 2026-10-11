@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BuildingArt } from "../art/buildings.js";
 import { Coin } from "../art/icons.js";
+import { Sign } from "../art/logo.js";
 import { ResourceIcon } from "../art/resources.js";
 import { Lorenzo } from "../art/scenes.js";
 import { Skyline } from "../art/scenes.js";
@@ -22,7 +23,7 @@ function Goal() {
             </div>
           )}
           <div
-            className={`slab flex w-full ${p.h} items-start justify-center ${p.tone} pt-2 font-display text-2xl font-extrabold text-night`}
+            className={`slab flex w-full ${p.h} items-start justify-center ${p.tone} pt-2 font-display text-2xl font-extrabold text-ink`}
           >
             <span>{p.rank}</span>
           </div>
@@ -59,28 +60,28 @@ function Loop() {
             markerHeight="5"
             orient="auto"
           >
-            <path d="M0 0 L10 5 L0 10 z" fill="#F4B740" />
+            <path d="M0 0 L10 5 L0 10 z" fill="rgb(var(--gold))" />
           </marker>
         </defs>
-        <circle cx="100" cy="110" r="62" fill="none" stroke="#3D3450" strokeWidth="10" />
+        <circle cx="100" cy="110" r="62" fill="none" stroke="rgb(var(--line))" strokeWidth="10" />
         <path
           d="M140 64 A62 62 0 0 1 158 140"
           fill="none"
-          stroke="#F4B740"
+          stroke="rgb(var(--gold))"
           strokeWidth="4"
           markerEnd="url(#arrow)"
         />
         <path
           d="M130 166 A62 62 0 0 1 64 160"
           fill="none"
-          stroke="#2FC6B4"
+          stroke="rgb(var(--lagoon))"
           strokeWidth="4"
           markerEnd="url(#arrow)"
         />
         <path
           d="M42 136 A62 62 0 0 1 62 62"
           fill="none"
-          stroke="#EF5A4C"
+          stroke="rgb(var(--vermilion))"
           strokeWidth="4"
           markerEnd="url(#arrow)"
         />
@@ -138,12 +139,13 @@ export function Intro({ onDone }: { onDone: () => void }) {
   if (!slide) return null;
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-1.5">
+      <div className="flex items-center justify-between gap-3">
+        <Sign size={26} />
+        <div className="flex flex-1 gap-1.5">
           {slides.map((s, k) => (
             <span
               key={s.title}
-              className={`slab h-1.5 w-8 ${k <= i ? (k === i ? "bg-gold" : "bg-lagoon") : "bg-line"}`}
+              className={`h-1.5 w-8 rounded-full ${k <= i ? (k === i ? "bg-gold" : "bg-lagoon") : "bg-line"}`}
             />
           ))}
         </div>

@@ -39,7 +39,7 @@ export function pushText(
         body: "Vos ateliers ont terminé leur production. Venez récolter et relancer !",
       };
     case "order": {
-      const who = data.counterpartyName ? String(data.counterpartyName) : "le Fondaco";
+      const who = data.counterpartyName ? String(data.counterpartyName) : "la Dogana";
       const what = `${data.quantity} ${RESOURCES[String(data.resource)] ?? String(data.resource)}`;
       return data.side === "sell"
         ? { title: "Offre conclue", body: `${who} a acheté ${what} de votre offre.` }
@@ -86,6 +86,6 @@ export function pushText(
       };
     }
     default:
-      return { title: "Comptoirs", body: "Du nouveau à votre comptoir." };
+      return { title: "Fondaco", body: "Du nouveau à votre comptoir." };
   }
 }

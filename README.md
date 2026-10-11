@@ -1,4 +1,6 @@
-# Comptoirs
+# Fondaco
+
+*(anciennement Comptoirs)*
 
 Jeu de commerce multijoueur 2D (web/PWA, PC et mobile), en saisons historiques de 6 semaines. Nom de code du dépôt : `naoned`.
 

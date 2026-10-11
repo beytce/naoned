@@ -9,14 +9,14 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "icons/apple-touch-icon.png"],
       manifest: {
-        name: "Comptoirs",
-        short_name: "Comptoirs",
+        name: "Fondaco",
+        short_name: "Fondaco",
         description: "Jeu de commerce multijoueur en saisons historiques",
         lang: "fr",
         start_url: "/",
         display: "standalone",
-        background_color: "#13101A",
-        theme_color: "#13101A",
+        background_color: "#0F1B1E",
+        theme_color: "#0F1B1E",
         icons: [
           { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },

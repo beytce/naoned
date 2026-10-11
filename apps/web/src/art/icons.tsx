@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { SignPaths } from "./logo.js";
 import { P } from "./palette.js";
 
 function Line({ children, size = 24 }: { children: ReactNode; size?: number }) {
@@ -79,26 +80,15 @@ export const NavIcon = {
 };
 
 /** The ducat: a gold coin with a lion of Saint Mark (simplified). */
+/** The ducat: a gold coin struck with the sign of four. */
 export function Coin({ size = 28 }: { size?: number }) {
   return (
     <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
       <circle cx="16" cy="16" r="15" fill={P.gold} />
-      <circle
-        cx="16"
-        cy="16"
-        r="11.5"
-        fill="none"
-        stroke={P.goldDeep}
-        strokeWidth="1.5"
-        strokeDasharray="2 2"
-      />
-      <circle cx="16" cy="16" r="8.5" fill={P.goldDeep} />
-      <path
-        d="M12 12 h8 l-2 3 h-4 z M11.5 16 h9 M13 19 h6"
-        stroke={P.goldSoft}
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
+      <circle cx="16" cy="16" r="12.2" fill="none" stroke={P.goldDeep} strokeWidth="1.2" />
+      <g transform="translate(8.4 8) scale(0.127)">
+        <SignPaths color={P.night} />
+      </g>
     </svg>
   );
 }

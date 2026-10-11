@@ -26,7 +26,7 @@ const schema = z
     ADMIN_EMAILS: z.string().default(""),
     VAPID_PRIVATE_KEY: z.string().optional(),
     VAPID_SUBJECT: z.string().default("mailto:contact@comptoirs.app"),
-    MAIL_FROM: z.string().default("Comptoirs <onboarding@resend.dev>"),
+    MAIL_FROM: z.string().default("Fondaco <onboarding@resend.dev>"),
     /**
      * Beta: the open world takes the theme's current balancing at each start. Set to "false" once
      * a season's settings are tuned in the database.

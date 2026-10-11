@@ -1,4 +1,4 @@
-# Comptoirs — Document de cadrage (v2)
+# Fondaco (ex-Comptoirs) — Document de cadrage (v2)
 
 10 octobre 2026 · nom de code du dépôt : `naoned`
 
@@ -80,9 +80,9 @@ Inspiré de Mercato Venezia : du risque et de l'affrontement entre joueurs, sans
 
 | Fonction | Règle |
 | --- | --- |
-| **Fondaco** | Le PNJ teneur de marché prend le nom du Fondaco, l'entrepôt de la République. Chaque marchand peut lui acheter 25 unités et lui en vendre 10 par ressource et par jour ; à plusieurs, ces quotas se partagent 250 unités par jour et par ressource |
+| **Dogana** | Le PNJ teneur de marché s'appelle la Dogana, la douane de la République (le nom Fondaco est réservé au jeu). Chaque marchand peut lui acheter 25 unités et lui en vendre 10 par ressource et par jour ; à plusieurs, ces quotas se partagent 250 unités par jour et par ressource |
 | **Offres à son prix** | Tout joueur peut laisser une offre d'achat ou de vente à son prix (72 h au plus, 10 offres ouvertes). Le stock ou les ducats sont mis de côté jusqu'à la conclusion ou l'annulation |
-| **Carnet visible** | La fiche d'une ressource montre les cinq meilleures offres de chaque côté, avec le nom de leur auteur (badge PNJ pour les maisons, « Fondaco ») et le quota restant du joueur |
+| **Carnet visible** | La fiche d'une ressource montre les cinq meilleures offres de chaque côté, avec le nom de leur auteur (badge PNJ pour les maisons, « Dogana ») et le quota restant du joueur |
 | **Offre conclue** | Une notification prévient l'auteur d'une offre quand quelqu'un la prend |
 
 ### Interdépendance des régions (après le troisième test de la bêta)
@@ -105,7 +105,7 @@ Inspiré de Mercato Venezia : du risque et de l'affrontement entre joueurs, sans
 
 ## Vision et positionnement
 
-Comptoirs est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.
+Fondaco est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.
 
 **Pitch** : le Travian du commerce, en saisons historiques de 6 semaines, avec une économie réelle et lisible.
 

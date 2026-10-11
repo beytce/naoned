@@ -1,6 +1,7 @@
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { Admin } from "./Admin.js";
 import { type Account, ApiError, api, tokenFromLocation } from "./api.js";
+import { Sign } from "./art/logo.js";
 import { Skyline } from "./art/scenes.js";
 import { Game } from "./game/Game.js";
 import { fr } from "./i18n.js";
@@ -89,8 +90,9 @@ export function App() {
 function Hero({ children }: { children: ReactNode }) {
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]">
-      <header className="text-center">
-        <h1 className="font-display text-[2.6rem] font-extrabold uppercase leading-none tracking-tight text-cream">
+      <header className="flex flex-col items-center text-center">
+        <Sign size={64} />
+        <h1 className="mt-3 font-display text-[2.6rem] font-extrabold uppercase leading-none tracking-tight text-cream">
           {fr.appName}
         </h1>
         <Label className="mt-3">{fr.season}</Label>
@@ -102,7 +104,7 @@ function Hero({ children }: { children: ReactNode }) {
 }
 
 const inputClass =
-  "w-full bg-night-3 px-4 py-4 text-base text-cream ring-1 ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gold";
+  "w-full rounded-xl bg-night-3 px-4 py-4 text-base text-cream ring-1 ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gold";
 
 function Login(props: { sentTo?: string; onSent: (email: string) => void; onReset: () => void }) {
   const [email, setEmail] = useState("");

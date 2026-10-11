@@ -69,7 +69,7 @@ export interface Destination {
 export interface BookLine {
   price: Money;
   quantity: number;
-  /** Player id, or "market_maker" for the Fondaco. */
+  /** Player id, or "market_maker" for the Dogana. */
   by: string;
   mine: boolean;
 }
@@ -77,7 +77,7 @@ export interface BookLine {
 export interface BookView {
   asks: BookLine[];
   bids: BookLine[];
-  /** Units still allowed with the Fondaco today (null: no quota). */
+  /** Units still allowed with the Dogana today (null: no quota). */
   quota: { buy: number | null; sell: number | null };
 }
 

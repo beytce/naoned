@@ -120,7 +120,7 @@ function buildingView(ctx: WorldContext, state: WorldState, b: Building, now: nu
 interface BookLine {
   price: Deniers;
   quantity: number;
-  /** Player id, or "market_maker" for the Fondaco. */
+  /** Player id, or "market_maker" for the Dogana. */
   by: string;
   mine: boolean;
 }
