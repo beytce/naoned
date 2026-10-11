@@ -24,9 +24,14 @@ const r = runSimulation({
     }
     for (const m of fx.stock)
       if (
-        ["rations", "contract", "expedition_out", "expedition_return", "city_sale"].includes(
-          m.reason,
-        )
+        [
+          "rations",
+          "contract",
+          "expedition_out",
+          "expedition_return",
+          "city_sale",
+          "plunder",
+        ].includes(m.reason)
       ) {
         const k = `${m.resource} ${m.reason}`;
         stock.set(k, (stock.get(k) ?? 0) + m.quantity);
@@ -36,7 +41,9 @@ const r = runSimulation({
 console.log(
   "events",
   Object.fromEntries(
-    [...ev].filter(([k]) => /contract|expedition|hungry|upkeep_default|build|upgrade/.test(k)),
+    [...ev].filter(([k]) =>
+      /contract|expedition|hungry|upkeep_default|build|upgrade|ship|raid|convoy|privateer/.test(k),
+    ),
   ),
 );
 console.log("trades", Object.fromEntries([...trades].sort()));

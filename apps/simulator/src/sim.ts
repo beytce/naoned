@@ -49,6 +49,8 @@ export interface SimulationResult {
   violations: { at: number; detail: string }[];
   commands: { accepted: number; rejected: number; rejectedBy: Record<string, number> };
   durationMs: number;
+  /** World at the end of the run (debugging, extra analysis). */
+  finalState?: WorldState;
 }
 
 export const DEFAULT_MIX: Record<ProfileName, number> = {
@@ -209,6 +211,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     }
   }
   closeDay();
+  result.finalState = state;
   result.durationMs = performance.now() - started;
   return result;
 }

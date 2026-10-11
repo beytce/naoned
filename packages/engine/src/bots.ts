@@ -2,6 +2,7 @@ import { costForLevel } from "./buildings.js";
 import { quoteCitySale } from "./cities.js";
 import type { Command } from "./commands.js";
 import { contractsFor } from "./contracts.js";
+import { cargoValueAt } from "./expeditions.js";
 import { openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
 import type { Deniers } from "./money.js";
@@ -9,6 +10,7 @@ import { freeBatches } from "./production.js";
 import { openProjects } from "./projects.js";
 import type { Rng } from "./rng.js";
 import type { WorldSettings } from "./settings.js";
+import { portDues, shipStatus, shipsOf } from "./ships.js";
 import {
   type Building,
   type WorldContext,
@@ -158,6 +160,9 @@ export class Bot {
     this.sellToCities(s);
     this.invest(s);
     this.runProduction(s);
+    // Corsairs fit out before their cash goes into speculative orders.
+    this.shipyard(s);
+    this.privateer(s);
     if (this.profile.speculates) this.speculate(s);
     this.voyage(s);
     this.sellSurplus(s);
@@ -324,46 +329,139 @@ export class Bot {
     }
   }
 
-  /** Ships spare goods east when there is enough to make a voyage worth it. */
+  /** Ready ships of this bot, the largest hold first. */
+  private readyShips(s: Session) {
+    const types = s.ctx.settings.ships.types;
+    return shipsOf(s.state(), this.id)
+      .filter((ship) => shipStatus(s.state(), ship, s.now) === "ready")
+      .sort((a, b) => {
+        const ha = types[a.type]?.holdValue ?? 0n;
+        const hb = types[b.type]?.holdValue ?? 0n;
+        return ha === hb ? a.id.localeCompare(b.id) : ha > hb ? -1 : 1;
+      });
+  }
+
+  /** Keeps the fleet afloat: repairs damaged ships, builds one when trade makes it worth it. */
+  private shipyard(s: Session): void {
+    if (!VOYAGERS.has(this.profile.name)) return;
+    const { ships } = s.ctx.settings;
+    for (const ship of shipsOf(s.state(), this.id)) {
+      if (shipStatus(s.state(), ship, s.now) !== "damaged") continue;
+      const cost = ships.types[ship.type]?.repairCost ?? 0n;
+      if (this.cash(s) > cost * 4n)
+        s.act({ type: "repairShip", playerId: this.id, shipId: ship.id });
+    }
+    const fleet = shipsOf(s.state(), this.id).length;
+    const wanted = this.profile.speculates ? 3 : 2;
+    if (fleet >= Math.min(wanted, ships.maxPerPlayer)) return;
+    const type = fleet === 0 ? "cog" : this.profile.speculates ? "galley" : "cog";
+    const def = ships.types[type];
+    if (!def || this.cash(s) < def.costDucats * (this.profile.speculates ? 2n : 3n)) return;
+    for (const [res, qty] of Object.entries(def.costMaterials)) {
+      const missing = qty - this.available(s, res);
+      if (missing > 0) this.buy(s, res, missing, 1.15);
+    }
+    s.act({ type: "buildShip", playerId: this.id, shipType: type });
+  }
+
+  /** Expected deniers gained by sending this cargo to a port. */
+  private voyageProfit(s: Session, port: string, cargo: Record<string, number>, fee: bigint) {
+    const dest = s.ctx.settings.expeditions.destinations[port];
+    if (!dest) return Number.NEGATIVE_INFINITY;
+    let cost = fee;
+    for (const [r, q] of Object.entries(cargo))
+      cost += (s.ctx.settings.referencePrices[r] ?? 0n) * BigInt(q);
+    const back =
+      (cargoValueAt(s.ctx, port, cargo, s.now) * BigInt(10_000 + dest.gainBps)) / 10_000n;
+    const kept = (Number(back) * (10_000 - dest.riskBps / 2)) / 10_000;
+    // Long voyages tie the ships up: compare per day at sea.
+    return (kept - Number(cost)) / Math.max(0.5, dest.hours / 24);
+  }
+
+  /** Ships spare goods overseas, on its own ships when it has some, to the best port this week. */
   private voyage(s: Session): void {
     if (!VOYAGERS.has(this.profile.name)) return;
     const { expeditions, referencePrices } = s.ctx.settings;
     const busy = Object.values(s.state().expeditions ?? {}).some(
       (e) => e.playerId === this.id && e.outcome === "pending",
     );
-    if (busy || this.cash(s) < 60_000n) return;
+    const owned = shipsOf(s.state(), this.id).length > 0;
+    if (busy || this.cash(s) < (owned ? 30_000n : 60_000n)) return;
     const needs = this.inputNeeds(s);
+    const food = s.ctx.settings.rations.resource;
     const spare: [string, number, bigint][] = [];
     for (const r of s.ctx.theme.resources) {
-      if (r.tier === "luxury") continue;
+      if (r.tier === "luxury" || r.code === food) continue;
       const qty = this.available(s, r.code) - (needs.get(r.code) ?? 0) - this.reserve(s, r.code);
       if (qty > 0) spare.push([r.code, qty, referencePrices[r.code] ?? 0n]);
     }
     const total = spare.reduce((v, [, q, p]) => v + BigInt(q) * p, 0n);
-    if (total < 30_000n) return;
-    const destination = total >= 100_000n ? "alexandria" : "constantinople";
-    const dest = expeditions.destinations[destination];
-    if (!dest) return;
-    const food = s.ctx.settings.rations.resource;
-    if (this.available(s, food) - this.reserve(s, food) < (dest.provisions[food] ?? 0)) return;
-    const cargo: Record<string, number> = {};
-    let value = 0n;
-    for (const [code, qty, price] of spare) {
-      if (code === food) continue;
-      const room = price > 0n ? Number((dest.maxCargoValue - value) / price) : 0;
-      const q = Math.min(qty, room);
-      if (q > 0) {
-        cargo[code] = q;
-        value += BigInt(q) * price;
+    if (total < 20_000n) return;
+
+    const ready = this.readyShips(s);
+    // Keep a ship back for privateering if the bot hunts.
+    const sailing = this.profile.speculates ? ready.slice(0, 1) : ready;
+    const fleet = sailing.map((x) => x.id);
+    const hold =
+      fleet.length > 0
+        ? (s.ctx.settings.ships.types[sailing[0]?.type ?? ""]?.holdValue ?? 0n)
+        : undefined;
+
+    let best: { port: string; cargo: Record<string, number>; profit: number } | undefined;
+    for (const [port, dest] of Object.entries(expeditions.destinations)) {
+      const room0 = hold ?? dest.maxCargoValue;
+      const cargo: Record<string, number> = {};
+      let value = 0n;
+      for (const [code, qty, price] of spare) {
+        const q = Math.min(qty, price > 0n ? Number((room0 - value) / price) : 0);
+        if (q > 0) {
+          cargo[code] = q;
+          value += BigInt(q) * price;
+        }
       }
+      if (value < 20_000n) continue;
+      const crews = fleet.length > 0 ? fleet.length : 1;
+      if (this.available(s, food) - this.reserve(s, food) < (dest.provisions[food] ?? 0) * crews)
+        continue;
+      const fee = fleet.length > 0 ? portDues(s.ctx, dest.charter) : dest.charter;
+      const profit = this.voyageProfit(s, port, cargo, fee);
+      if (profit > 0 && (!best || profit > best.profit)) best = { port, cargo, profit };
     }
-    if (value < 30_000n) return;
+    if (!best) return;
     s.act({
       type: "launchExpedition",
       playerId: this.id,
-      destination,
-      cargo,
-      escort: value >= 80_000n,
+      destination: best.port,
+      cargo: best.cargo,
+      escort: fleet.length === 0 && total >= 80_000n,
+      ships: fleet,
+    });
+  }
+
+  /** Speculators sometimes send a spare ship privateering on a busy route. */
+  private privateer(s: Session): void {
+    if (!this.profile.speculates) return;
+    const cfg = s.ctx.settings.privateers;
+    if (cfg.maxActive === 0) return;
+    for (const r of Object.values(s.state().raids ?? {})) {
+      if (r.playerId === this.id && r.outcome === "cruising" && r.endAt <= s.now)
+        s.act({ type: "collectRaid", playerId: this.id, raidId: r.id });
+    }
+    if (!s.rng.chance(0.35) || this.cash(s) < cfg.letterFee * 3n) return;
+    const ready = this.readyShips(s);
+    if (ready.length === 0) return;
+    // Short, busy routes see the most convoys.
+    const routes = Object.entries(s.ctx.settings.expeditions.destinations)
+      .sort(([, a], [, b]) => a.hours - b.hours)
+      .slice(0, 5)
+      .map(([code]) => code);
+    const route = s.rng.pick(routes);
+    if (!route) return;
+    s.act({
+      type: "commissionPrivateers",
+      playerId: this.id,
+      route,
+      ships: ready.slice(0, 2).map((x) => x.id),
     });
   }
 
