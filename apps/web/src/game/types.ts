@@ -257,7 +257,7 @@ export interface PlayerView {
   ports: Record<string, Record<string, number>>;
   watchedRoutes: string[];
   seaNews: SeaNews[];
-  rations: { resource: string; perDay: number; hungryUntil: number };
+  rations: { resource: string; perDay: number; hungryUntil: number; nextMealAt: number };
   tutorial: string[];
 }
 

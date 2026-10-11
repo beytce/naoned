@@ -163,3 +163,18 @@ Constat de la bêta : un joueur pouvait construire les sept ateliers et produire
 Résultat sur 5 graines (prime à 25 %, comme à 15 %) : toutes les cibles bloquantes tenues, indice des prix entre 96 et 100, 53 à 73 % du volume entre joueurs. Deux nouveaux indicateurs de diagnostic : 59 à 60 marchands sur 60 achètent au moins une matière première, 2,5 types d'ateliers par marchand en fin de saison.
 
 Limite : les bots se spécialisaient déjà (ils ne construisent que la chaîne de leur région), donc la simulation montre surtout que la règle ne dérègle pas l'économie. Son effet sur les joueurs, qui eux visaient l'autarcie, se mesurera pendant la bêta.
+
+## Progression : améliorations moins chères, production de nuit
+
+Constat de la bêta : passer un atelier au niveau 2 demandait environ une semaine de jeu, et la production s'arrêtait la nuit (file limitée à 8 h). La simulation le confirmait : les bots finissaient la saison avec des ateliers au niveau 1,1 en moyenne.
+
+| Réglage | Avant | Après |
+| --- | --- | --- |
+| Croissance du coût par niveau (`levelCostGrowthBps`) | +100 % (niveau 5 = 5 × le prix de base) | +50 % (niveau 5 = 3 ×) |
+| File de production (`productionQueueMaxHours`) | 8 h | 12 h : une production lancée le soir tourne toute la nuit |
+
+Résultat sur 5 graines : toutes les cibles bloquantes tenues, indice des prix entre 95 et 100, 55 à 83 % du volume entre joueurs, masse monétaire par joueur actif au plus 1,86 × le capital (plafond 2,5 ×). Niveau moyen des ateliers en fin de saison : 1,16 à 1,30 (contre 1,07 à 1,12), aucun atelier au niveau maximal.
+
+Le nouveau diagnostic « Niveau moyen des ateliers » suit la progression. Les bots investissent prudemment ; de vrais joueurs devraient monter plus vite. Si la progression reste lente pendant la bêta, prochain levier : diviser par deux les matériaux du passage au niveau 2.
+
+La carte des rations affiche désormais l'heure du prochain repas, le pain nécessaire et le pain en stock ; pendant la faim, chaque atelier affiche la durée réelle de ses lots (+50 %).

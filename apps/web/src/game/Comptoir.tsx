@@ -55,7 +55,14 @@ function RecipeFlow({ recipe, level, props }: { recipe: Recipe; level: number; p
         </>
       )}
       {side(recipe.outputs, true)}
-      <span className="label ml-1">{recipe.durationMinutes / 60} h</span>
+      {props.view.rations.hungryUntil > props.now ? (
+        <span className="label ml-1 text-vermilion">
+          {(recipe.durationMinutes * (10_000 + props.catalog.rations.slowdownBps)) / 600_000} h ·{" "}
+          {fr.game.rations.slower}
+        </span>
+      ) : (
+        <span className="label ml-1">{recipe.durationMinutes / 60} h</span>
+      )}
     </div>
   );
 }
@@ -235,8 +242,17 @@ function Rations(props: GameProps) {
       <ResourceIcon code={rations.resource} size={30} />
       <div className="text-sm">
         <p className={tone}>{fr.game.rations.line(rations.perDay, days)}</p>
-        {hungry && <p className="mt-1 text-vermilion">{fr.game.rations.hungry}</p>}
-        {!hungry && days < 1 && <p className="mt-1 text-gold">{fr.game.rations.low}</p>}
+        <p className="mt-1 text-cream-dim">
+          {fr.game.rations.nextMeal(clock(rations.nextMealAt - props.now), rations.perDay, stock)}
+        </p>
+        {hungry && (
+          <p className="mt-1 text-vermilion">
+            {fr.game.rations.hungry(clock(rations.hungryUntil - props.now))}
+          </p>
+        )}
+        {!hungry && days < 1 && (
+          <p className="mt-1 text-gold">{fr.game.rations.low(rations.perDay - stock)}</p>
+        )}
       </div>
     </div>
   );

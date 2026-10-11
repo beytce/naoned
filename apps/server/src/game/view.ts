@@ -287,6 +287,8 @@ export function playerView(
       resource: ctx.settings.rations.resource,
       perDay: levels * ctx.settings.rations.perLevelPerDay,
       hungryUntil: player.hungryUntil ?? 0,
+      /** Workers eat at each day boundary of the world. */
+      nextMealAt: ctx.startAt + (dayIndex(ctx, now) + 1) * 86_400_000,
     },
     tutorial: tutorialSteps,
     openOrders: Object.values(state.orders).filter((o) => o.playerId === playerId),

@@ -54,7 +54,14 @@ export interface SimulationResult {
   /** World at the end of the run (debugging, extra analysis). */
   finalState?: WorldState;
   /** Do merchants depend on each other? Raw material buyers and building types per merchant. */
-  interdependence?: { rawBuyers: number; merchants: number; typesPerMerchant: number };
+  interdependence?: {
+    rawBuyers: number;
+    merchants: number;
+    typesPerMerchant: number;
+    /** Average workshop level at the end, and share of workshops at the top level. */
+    avgLevel: number;
+    topLevelShare: number;
+  };
 }
 
 export const DEFAULT_MIX: Record<ProfileName, number> = {
@@ -221,6 +228,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
   closeDay();
   result.finalState = state;
   const merchants = Object.keys(state.players);
+  const workshops = Object.values(state.buildings).filter((b) => b.type !== "palazzo");
   const types = merchants.map(
     (id) =>
       new Set(
@@ -233,6 +241,10 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     rawBuyers: merchants.filter((id) => rawBuyers.has(id)).length,
     merchants: merchants.length,
     typesPerMerchant: types.reduce((a, b) => a + b, 0) / Math.max(1, types.length),
+    avgLevel: workshops.reduce((a, b) => a + b.level, 0) / Math.max(1, workshops.length),
+    topLevelShare:
+      workshops.filter((b) => b.level >= ctx.settings.maxBuildingLevel).length /
+      Math.max(1, workshops.length),
   };
   result.durationMs = performance.now() - started;
   return result;

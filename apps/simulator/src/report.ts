@@ -41,6 +41,13 @@ export function evaluate(r: SimulationResult): Check[] {
       pass: true,
       blocking: false,
     });
+    checks.push({
+      name: "Niveau moyen des ateliers (fin de saison)",
+      target: "diagnostic : progression",
+      value: `${dep.avgLevel.toFixed(2)} · ${(dep.topLevelShare * 100).toFixed(0)} % au niveau maximal`,
+      pass: true,
+      blocking: false,
+    });
   }
   const last = r.daily.length - 1;
 

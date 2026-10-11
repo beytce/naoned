@@ -44,7 +44,7 @@ export const fr = {
       {
         kicker: "Le rythme",
         title: "Quelques minutes, plusieurs fois par jour",
-        text: "Lancez jusqu'à 8 heures de production, revenez récolter, vendez, réinvestissez. Lorenzo, votre facteur, vous guide pour vos premiers pas.",
+        text: "Lancez jusqu'à 12 heures de production (toute une nuit), revenez récolter, vendez, réinvestissez. Lorenzo, votre facteur, vous guide pour vos premiers pas.",
       },
     ],
   },
@@ -113,9 +113,13 @@ export const fr = {
     rations: {
       line: (perDay: number, days: number) =>
         `Vos ouvriers mangent ${perDay} pains par jour · réserve : ${days} j`,
-      hungry:
-        "Ouvriers affamés : vos nouveaux lots prennent 50 % de temps en plus. Achetez du pain au Marché.",
-      low: "Réserve de pain bientôt vide : achetez-en avant demain, sinon la production ralentit.",
+      nextMeal: (inTime: string, need: number, have: number) =>
+        `Prochain repas dans ${inTime} : il faut ${need} pains, vous en avez ${have}.`,
+      hungry: (left: string) =>
+        `Ouvriers affamés encore ${left} : les lots lancés maintenant durent 50 % de plus. Achetez du pain au Marché.`,
+      low: (missing: number) =>
+        `Il manque ${missing} pains pour le prochain repas : sans eux, vos lots dureront 50 % de plus pendant 24 h.`,
+      slower: "+50 % (faim)",
     },
     contracts: {
       kicker: "Contrats du Doge",
@@ -450,7 +454,7 @@ export const fr = {
       invest: "Améliorez un atelier : il produira davantage à chaque lot.",
       investLater:
         "Il vous faut encore des briques et des planches pour améliorer un atelier. Produisez, vendez, achetez : c'est la boucle du marchand !",
-      done: "Bravo, vous connaissez la boucle : produire, vendre, réinvestir. Revenez récolter au moins toutes les 8 heures.",
+      done: "Bravo, vous connaissez la boucle : produire, vendre, réinvestir. Revenez récolter au moins toutes les 12 heures : lancez la production le soir, elle tourne toute la nuit.",
       finish: "Terminer",
     },
 
@@ -473,7 +477,7 @@ export const fr = {
       {
         icon: "comptoir",
         title: "Produire",
-        text: "Chaque atelier transforme des matières en produits, par lots de 2 heures. Lancez jusqu'à 8 heures de production, puis revenez récolter. Rien ne se perd pendant votre absence.",
+        text: "Chaque atelier transforme des matières en produits, par lots de 2 heures. Lancez jusqu'à 12 heures de production, puis revenez récolter. Rien ne se perd pendant votre absence.",
       },
       {
         icon: "marche",
@@ -501,7 +505,7 @@ export const fr = {
       insufficient_funds: "Pas assez de ducats.",
       insufficient_stock: "Pas assez de stock.",
       building_busy: "Cet atelier produit déjà : attendez la fin de la file.",
-      queue_full: "La file de production est pleine (8 h maximum).",
+      queue_full: "La file de production est pleine (12 h maximum).",
       upkeep_default: "Entretien impayé : production bloquée pendant 24 h.",
       max_buildings: "Nombre maximal de bâtiments atteint.",
       max_level: "Niveau maximal atteint.",
