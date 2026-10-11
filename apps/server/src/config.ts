@@ -24,6 +24,8 @@ const schema = z
     VAPID_PUBLIC_KEY: z.string().optional(),
     /** Comma-separated e-mails allowed to see the retention dashboard (/admin). */
     ADMIN_EMAILS: z.string().default(""),
+    /** Discord or Slack incoming webhook: alerts when the world stalls or something breaks. */
+    ALERT_WEBHOOK_URL: z.string().url().optional(),
     VAPID_PRIVATE_KEY: z.string().optional(),
     VAPID_SUBJECT: z.string().default("mailto:contact@comptoirs.app"),
     MAIL_FROM: z.string().default("Fondaco <onboarding@resend.dev>"),

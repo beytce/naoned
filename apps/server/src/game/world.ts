@@ -434,9 +434,26 @@ export class GameWorld {
   }
 
   /** Scheduled job: expirations, upkeep, projects, market maker. Every 60 s in production. */
+  /** Time of the last tick saved (undefined until the scheduler runs). */
+  lastTickAt: number | undefined;
+  private tickInterval = 60_000;
+
+  /** True when the scheduler runs but no tick has been saved for five intervals. */
+  stalled(now: number = this.clock()): boolean {
+    if (!this.timer || this.lastTickAt === undefined) return false;
+    return now - this.lastTickAt > 5 * this.tickInterval;
+  }
+
   startTicking(intervalMs = 60_000, onError: (err: unknown) => void = console.error): void {
     this.stopTicking();
-    const tick = () => this.execute({ type: "tick" }).catch(onError);
+    this.tickInterval = intervalMs;
+    this.lastTickAt = this.clock();
+    const tick = () =>
+      this.execute({ type: "tick" })
+        .then((res) => {
+          if (res.ok) this.lastTickAt = this.clock();
+        })
+        .catch(onError);
     void tick(); // quote the market maker right away after a restart
     this.timer = setInterval(tick, intervalMs);
   }

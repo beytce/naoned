@@ -6,6 +6,7 @@ import { openDatabase } from "./db/client.js";
 import { BotRunner } from "./game/bots.js";
 import { GameWorld } from "./game/world.js";
 import { ConsoleMailer, ResendMailer } from "./mail/mailer.js";
+import { Alerts } from "./monitor.js";
 import { Notifier } from "./notify/notifier.js";
 import { NoPusher, WebPusher } from "./notify/push.js";
 
@@ -17,6 +18,11 @@ await database.migrate();
 const mailer = config.RESEND_API_KEY
   ? new ResendMailer(config.RESEND_API_KEY, config.MAIL_FROM)
   : new ConsoleMailer();
+const alerts = new Alerts(config.ALERT_WEBHOOK_URL);
+process.on("unhandledRejection", (reason) => {
+  console.error(reason);
+  void alerts.alert("Erreur non gérée", String((reason as Error)?.stack ?? reason));
+});
 const world = await GameWorld.open(database.db, Date.now, {
   settingsFromTheme: config.WORLD_SETTINGS_FROM_THEME,
 });
@@ -46,6 +52,7 @@ const app = await buildApp({
     .filter(Boolean),
   webDist: config.WEB_DIST ?? (production ? join(here, "..", "..", "web", "dist") : undefined),
   logger: true,
+  alerts,
 });
 
 const shutdown = async () => {
@@ -62,6 +69,10 @@ process.on("SIGINT", shutdown);
 // restart policy does not bring it back).
 world.onLostOwnership(() => {
   app.log.warn("another instance took the world over: stopping");
+  void alerts.alert(
+    "Relève de déploiement",
+    "L'ancienne instance s'arrête : la nouvelle a repris le monde.",
+  );
   void shutdown();
 });
 
@@ -70,8 +81,10 @@ await app.listen({ port: config.PORT, host: config.HOST });
 // Six invariants against the journals in the database: at startup, then every hour.
 const audit = async () => {
   const violations = await world.checkInvariants();
-  if (violations.length > 0) app.log.error({ violations }, "invariant violations");
-  else app.log.info("invariants ok");
+  if (violations.length > 0) {
+    app.log.error({ violations }, "invariant violations");
+    void alerts.alert("Écart du grand livre", JSON.stringify(violations));
+  } else app.log.info("invariants ok");
 };
 await audit();
 setInterval(() => audit().catch((err) => app.log.error(err)), 3_600_000).unref();

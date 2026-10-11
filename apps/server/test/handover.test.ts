@@ -52,3 +52,17 @@ describe("a deploy: the new server takes over from the old one", () => {
     expect(res.ok).toBe(true);
   });
 });
+
+describe("a stalled world", () => {
+  it("is reported when no tick has been saved for five minutes", async () => {
+    let clock = now;
+    const w = await GameWorld.open(database.db, () => clock);
+    expect(w.stalled()).toBe(false);
+    w.startTicking(60_000, () => undefined);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(w.stalled()).toBe(false);
+    clock += 6 * 60_000;
+    expect(w.stalled()).toBe(true);
+    w.stopTicking();
+  });
+});

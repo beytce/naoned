@@ -12,6 +12,7 @@ import type { Db } from "./db/client.js";
 import { registerGameRoutes } from "./game/routes.js";
 import type { GameWorld } from "./game/world.js";
 import { MailError, type Mailer } from "./mail/mailer.js";
+import type { Alerts } from "./monitor.js";
 import { Notifier } from "./notify/notifier.js";
 import { NoPusher } from "./notify/push.js";
 
@@ -32,6 +33,7 @@ export interface AppOptions {
   webDist?: string;
   now?: () => Date;
   logger?: boolean;
+  alerts?: Alerts;
 }
 
 export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
@@ -68,11 +70,17 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
       return reply.code(429).send({ error: "too_many_requests" });
     }
     app.log.error(err);
+    void options.alerts?.alert("Erreur serveur", String((err as Error).stack ?? err));
     return reply.code(500).send({ error: "internal" });
   });
 
-  app.get("/api/health", async () => {
+  // For Railway and an uptime monitor: the database answers and the world keeps ticking.
+  app.get("/api/health", async (_req, reply) => {
     await options.db.execute(sql`select 1`);
+    if (options.world?.stalled()) {
+      void options.alerts?.alert("Monde bloqué", "Aucun tick enregistré depuis plus de 5 minutes.");
+      return reply.code(503).send({ ok: false, error: "world_stalled" });
+    }
     return { ok: true };
   });
 
