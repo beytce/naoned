@@ -76,3 +76,63 @@ export async function retention(db: Db, worldId: string, now: number) {
     lastSeen,
   };
 }
+
+/**
+ * Pairs of merchants who trade a lot with each other, away from the reference price: the trace of
+ * a second account feeding a first one. People only; the market maker is left out.
+ */
+export async function suspiciousPairs(db: Db, worldId: string, references: Record<string, bigint>) {
+  const rows = rowsOf<{
+    buyer: string;
+    seller: string;
+    resource: string;
+    price: string;
+    quantity: number;
+  }>(
+    await db.execute(sql`
+      select t.buyer_id as buyer, t.seller_id as seller, t.resource, t.price::text as price,
+        t.quantity
+      from trades t
+      join accounts b on b.id::text = t.buyer_id and b.is_bot = false
+      join accounts s on s.id::text = t.seller_id and s.is_bot = false
+      where t.world_id = ${worldId}`),
+  );
+  const pairs = new Map<
+    string,
+    { a: string; b: string; trades: number; value: bigint; gap: bigint; transfer: bigint }
+  >();
+  for (const r of rows) {
+    const [a, b] = [r.buyer, r.seller].sort() as [string, string];
+    const key = `${a}|${b}`;
+    const p = pairs.get(key) ?? { a, b, trades: 0, value: 0n, gap: 0n, transfer: 0n };
+    const price = BigInt(r.price);
+    const ref = references[r.resource] ?? price;
+    const qty = BigInt(r.quantity);
+    p.trades += 1;
+    p.value += price * qty;
+    // What the buyer paid above (or the seller gave below) the reference: value moved over.
+    const moved = (price - ref) * qty;
+    p.gap += moved < 0n ? -moved : moved;
+    p.transfer += r.buyer === a ? moved : -moved;
+    pairs.set(key, p);
+  }
+  const names = new Map(
+    rowsOf<{ id: string; pseudo: string | null }>(
+      await db.execute(sql`select id::text as id, pseudo from accounts where is_bot = false`),
+    ).map((r) => [r.id, r.pseudo]),
+  );
+  return [...pairs.values()]
+    .filter((p) => p.trades >= 3)
+    .sort((x, y) => (y.gap > x.gap ? 1 : y.gap < x.gap ? -1 : 0))
+    .slice(0, 20)
+    .map((p) => ({
+      a: names.get(p.a) ?? p.a,
+      b: names.get(p.b) ?? p.b,
+      trades: p.trades,
+      value: p.value.toString(),
+      /** Total distance from the reference price, both ways. */
+      gap: p.gap.toString(),
+      /** Net value moved from a to b, in deniers (negative: from b to a). */
+      transfer: p.transfer.toString(),
+    }));
+}

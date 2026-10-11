@@ -6,7 +6,7 @@ import type { AuthService, PublicAccount } from "../auth/service.js";
 import type { Db } from "../db/client.js";
 import { accounts, players, pushSubscriptions, telemetry } from "../db/schema.js";
 import { NOTIFICATION_KINDS, type Notifier } from "../notify/notifier.js";
-import { retention } from "./admin.js";
+import { retention, suspiciousPairs } from "./admin.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
 import { priceHistory, profile } from "./profile.js";
 import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
@@ -352,6 +352,16 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       return reply.code(403).send({ error: "forbidden" });
     }
     return retention(db, world.id, world.now());
+  });
+
+  /** Admin: pairs of people trading a lot with each other away from the reference price. */
+  app.get("/api/admin/suspicious", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    if (!deps.adminEmails.includes(account.email.toLowerCase())) {
+      return reply.code(403).send({ error: "forbidden" });
+    }
+    return { pairs: await suspiciousPairs(db, world.id, world.ctx.settings.referencePrices) };
   });
 
   /** Admin: grants the Pass to an account for some days (tests, gifts, support). */

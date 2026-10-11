@@ -309,6 +309,8 @@ export const venice1450Settings: WorldSettingsInput = {
     ],
     chest: { ducats: 1_000, perStreakDay: 300, maxStreak: 5 },
   },
+  // Offers between players: from a quarter to four times the reference price.
+  priceBand: { minBps: 2_500, maxBps: 40_000 },
   // Pass Négociant: a fifth more at the Dogana, two more open offers, fresher produce (+8 %
   // instead of +5 %) and one Doge's order swapped a day. Nothing for an absent merchant.
   pass: {

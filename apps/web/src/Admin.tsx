@@ -2,6 +2,18 @@ import { useEffect, useState } from "react";
 import { fr } from "./i18n.js";
 import { Big, Label, Panel, Ribbon } from "./ui.js";
 
+interface Pair {
+  a: string;
+  b: string;
+  trades: number;
+  value: string;
+  gap: string;
+  transfer: string;
+}
+
+const ducats = (deniers: string) =>
+  `${Math.round(Number(deniers) / 100).toLocaleString("fr-FR")} d`;
+
 interface Retention {
   players: number;
   retention: { day: number; eligible: number; returned: number }[];
@@ -31,6 +43,13 @@ export function Admin() {
         setData(await r.json());
       })
       .catch((e: Error) => setError(e.message));
+  }, []);
+
+  const [pairs, setPairs] = useState<Pair[] | null>(null);
+  useEffect(() => {
+    fetch("/api/admin/suspicious", { credentials: "same-origin" })
+      .then(async (r) => (r.ok ? setPairs((await r.json()).pairs) : setPairs([])))
+      .catch(() => setPairs([]));
   }, []);
 
   if (error) return <p className="p-8 text-center text-vermilion">{error}</p>;
@@ -110,6 +129,33 @@ export function Admin() {
             ))}
           </tbody>
         </table>
+      </Panel>
+      <Panel>
+        <Label>Échanges suspects</Label>
+        <p className="mt-1 text-xs text-cream-dim">
+          Paires de marchands qui échangent souvent entre eux loin du prix de référence (au moins 3
+          échanges). « Écart » : distance totale au prix de référence ; « transfert » : valeur
+          passée du premier au second.
+        </p>
+        {pairs === null ? (
+          <p className="mt-3 text-muted">…</p>
+        ) : pairs.length === 0 ? (
+          <p className="mt-3 text-sm text-lagoon">Rien à signaler.</p>
+        ) : (
+          <ul className="mt-3 space-y-2 text-sm">
+            {pairs.map((p) => (
+              <li key={`${p.a}-${p.b}`} className="rounded-xl bg-night-2 p-2.5">
+                <p className="font-semibold">
+                  {p.a} ↔ {p.b}
+                </p>
+                <p className="text-xs text-cream-dim">
+                  {p.trades} échanges · {ducats(p.value)} · écart {ducats(p.gap)} · transfert{" "}
+                  {ducats(p.transfer)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </Panel>
     </main>
   );

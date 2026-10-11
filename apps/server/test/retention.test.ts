@@ -145,3 +145,45 @@ describe("the retention dashboard", () => {
     expect(body.tutorial[0].step).toBe("produce");
   });
 });
+
+describe("suspicious trades", () => {
+  it("shows two accounts trading with each other far above the reference price", async () => {
+    const ada = await player("ada@example.org");
+    const bob = await player("bob@example.org");
+    for (let i = 0; i < 3; i++) {
+      const bid = await act(ada, {
+        type: "limitOrder",
+        resource: "bread",
+        side: "buy",
+        price: "720",
+        quantity: 1,
+      });
+      expect(bid.error).toBeUndefined();
+      const sold = await act(bob, {
+        type: "instantOrder",
+        resource: "bread",
+        side: "sell",
+        quantity: 1,
+      });
+      expect(sold.error).toBeUndefined();
+    }
+    // Beyond four times the reference (180 deniers), an offer is refused.
+    const tooHigh = await act(ada, {
+      type: "limitOrder",
+      resource: "bread",
+      side: "buy",
+      price: "721",
+      quantity: 1,
+    });
+    expect(tooHigh.error).toBe("price_out_of_band");
+    const boss = await login("boss@example.org");
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/admin/suspicious",
+      headers: { cookie: boss },
+    });
+    const [pair] = res.json().pairs;
+    expect(pair.trades).toBe(3);
+    expect(BigInt(pair.gap)).toBe(3n * (720n - 180n));
+  });
+});

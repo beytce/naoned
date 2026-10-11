@@ -319,6 +319,16 @@ export function placeOrder(tx: Tx, input: PlaceOrderInput): Order {
   } else {
     if (input.price === undefined || input.price <= 0n) fail("invalid_price");
     price = input.price;
+    const band = settings.priceBand;
+    const ref = settings.referencePrices[input.resource];
+    if (!isMarketMaker && band.maxBps > 0 && ref !== undefined) {
+      if (
+        price * 10_000n < ref * BigInt(band.minBps) ||
+        price * 10_000n > ref * BigInt(band.maxBps)
+      ) {
+        fail("price_out_of_band");
+      }
+    }
     if (
       !isMarketMaker &&
       openOrderCount(tx.s as WorldState, input.playerId) >=

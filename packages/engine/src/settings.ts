@@ -263,6 +263,11 @@ export const worldSettingsSchema = z.object({
       freshBonusBps: 0,
       contractRerollsPerDay: 0,
     }),
+  /**
+   * Offers between players must stay within this share of the reference price: a merchant
+   * cannot hand ducats to another account by selling a loaf for a fortune. 0 turns it off.
+   */
+  priceBand: z.object({ minBps: bps, maxBps: bps }).default({ minBps: 0, maxBps: 0 }),
   /** How many times a player may restart from scratch during a season. */
   maxResetsPerPlayer: qty.default(1),
   maxBuildings: positive,
