@@ -3,7 +3,14 @@ import { claimDaily, sellToCriee, trackDaily } from "./activity.js";
 import { build, grantBuilding, upgrade } from "./buildings.js";
 import { sellToCity } from "./cities.js";
 import { fulfillContract, rerollContract } from "./contracts.js";
-import { buyVehicle, dispatchDelivery, grantStartingVehicles } from "./deliveries.js";
+import {
+  buyVehicle,
+  collectBooty,
+  dispatchDelivery,
+  grantStartingVehicles,
+  postBand,
+  reactToAmbush,
+} from "./deliveries.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { collectExpedition, launchExpedition } from "./expeditions.js";
 import { fulfillFamilyOrder, joinFamily, leaveFamilies, patronize } from "./families.js";
@@ -97,6 +104,9 @@ export type Command =
       /** "none" or an escort of the settings. */
       escort: string;
     }
+  | { type: "reactToAmbush"; playerId: PlayerId; deliveryId: string }
+  | { type: "postBand"; playerId: PlayerId; route: string; hours: number }
+  | { type: "collectBooty"; playerId: PlayerId; bandId: string }
   | { type: "tick" };
 
 export type DecideResult =
@@ -289,6 +299,15 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "dispatchDelivery":
       dispatchDelivery(tx, cmd.playerId, cmd.orderId, cmd.vehicleId, cmd.escort);
+      break;
+    case "reactToAmbush":
+      reactToAmbush(tx, cmd.playerId, cmd.deliveryId);
+      break;
+    case "postBand":
+      postBand(tx, cmd.playerId, cmd.route, cmd.hours);
+      break;
+    case "collectBooty":
+      collectBooty(tx, cmd.playerId, cmd.bandId);
       break;
     case "deliverToProject":
       deliverToProject(tx, cmd.playerId, cmd.projectId, cmd.resource, cmd.quantity);

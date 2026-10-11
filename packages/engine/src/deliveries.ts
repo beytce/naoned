@@ -5,6 +5,7 @@ import { draw } from "./draw.js";
 import { addInfluence, familyOrdersDone, familyOrdersFor } from "./families.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
 import {
+  type BanditBand,
   DAY_MS,
   type Delivery,
   type DeliveryOrder,
@@ -19,7 +20,8 @@ import {
   cashAccount,
   dayIndex,
 } from "./state.js";
-import { type Tx, emit, fail, nextId, removeStock, transfer } from "./tx.js";
+import { type Tx, addStock, emit, fail, nextId, removeStock, transfer } from "./tx.js";
+import { netWorth } from "./valuation.js";
 
 /**
  * Deliveries by road: the land side of the sea. Each merchant gets a board of personal orders
@@ -424,8 +426,284 @@ function arrive(tx: Tx, d: Delivery): void {
 export function resolveDeliveries(tx: Tx): void {
   const due = Object.values(tx.s.deliveries ?? {})
     .filter((d) => d.outcome === "en_route")
-    .sort((a, b) => a.departAt - b.departAt || (a.id < b.id ? -1 : 1));
-  for (const d of due) {
-    if (tx.now >= d.arriveAt) arrive(tx, d as Delivery);
+    .sort((a, b) => a.midAt - b.midAt || (a.id < b.id ? -1 : 1));
+  for (const d of due as Delivery[]) {
+    if (!d.crossed && tx.now >= d.midAt) cross(tx, d);
+    const a = d.attack;
+    if (a && a.success === undefined && tx.now >= a.reactBy) settle(tx, d, a.reactBy);
+    if (tx.now >= d.arriveAt) arrive(tx, d);
+  }
+  closeBands(tx);
+}
+
+// ——— Bandits ———
+
+export function banditsOn(ctx: WorldContext): boolean {
+  return ctx.settings.bandits.hoursOptions.length > 0;
+}
+
+/** Bands still able to strike at `at` (posted, not over, not broken up, attempts left). */
+function bandLive(ctx: WorldContext, b: BanditBand, at: number): boolean {
+  return (
+    !b.dispersed &&
+    b.attacks < ctx.settings.bandits.maxAttacksPerBand &&
+    b.startAt <= at &&
+    at < b.endAt
+  );
+}
+
+/** All roads: every region to every city it reaches. */
+export function allRoutes(ctx: WorldContext): string[] {
+  const out: string[] = [];
+  for (const [region, cities] of Object.entries(ctx.settings.deliveries.routes)) {
+    for (const city of Object.keys(cities)) out.push(routeId(region, city));
+  }
+  return out;
+}
+
+function routeExists(ctx: WorldContext, route: string): boolean {
+  const [region = "", city = ""] = route.split(":");
+  return routeMinutes(ctx, region, city) !== undefined;
+}
+
+/** Roads where bandits lie in wait now (who they are stays hidden). */
+export function watchedRoads(ctx: WorldContext, state: WorldState, now: number): string[] {
+  const routes = new Set<string>();
+  for (const b of Object.values(state.bands ?? {})) if (bandLive(ctx, b, now)) routes.add(b.route);
+  return [...routes].sort();
+}
+
+/** Chance that an ambush succeeds against this defense: the entry with the largest key ≤ it. */
+export function ambushChanceBps(ctx: WorldContext, defense: number): number {
+  let best = -1;
+  let chance = 0;
+  for (const [key, bps] of Object.entries(ctx.settings.bandits.attackChanceBps)) {
+    const k = Number(key);
+    if (k <= defense && k > best) {
+      best = k;
+      chance = bps;
+    }
+  }
+  return chance;
+}
+
+export function postBand(tx: Tx, playerId: PlayerId, route: string, hours: number): BanditBand {
+  const { ctx } = tx;
+  const cfg = ctx.settings.bandits;
+  if (!banditsOn(ctx)) fail("no_bandits");
+  const player = tx.s.players[playerId];
+  if (!player) fail("unknown_player");
+  if (tx.now < player.joinedAt + cfg.openDay * DAY_MS) fail("bandits_locked");
+  if (!routeExists(ctx, route)) fail("no_route");
+  if (!cfg.hoursOptions.includes(hours)) fail("invalid_hours");
+  const bands = Object.values(tx.s.bands ?? {}) as BanditBand[];
+  const mine = bands.filter((b) => b.playerId === playerId && !b.dispersed && tx.now < b.endAt);
+  if (mine.length >= cfg.maxActivePerPlayer) fail("too_many_bands");
+  if (
+    bands.filter((b) => b.route === route && bandLive(ctx, b, tx.now)).length >=
+    cfg.maxBandsPerRoute
+  )
+    fail("route_full");
+  const id = nextId(tx, "k");
+  transfer(tx, cashAccount(playerId), SINK_ACCOUNT, cfg.feePerHour * BigInt(hours), "bandits", id);
+  for (const [res, qty] of Object.entries(cfg.provisionsPerHour)) {
+    removeStock(tx, playerId, res, qty * hours, "bandits", id);
+  }
+  const band = newBand(id, playerId, route, tx.now, tx.now + hours * HOUR_MS);
+  tx.s.bands ??= {};
+  tx.s.bands[id] = band;
+  emit(tx, "band_posted", playerId, { band: id, route, hours });
+  return band;
+}
+
+function newBand(
+  id: string,
+  playerId: PlayerId | null,
+  route: string,
+  startAt: number,
+  endAt: number,
+): BanditBand {
+  return {
+    id,
+    playerId,
+    route,
+    startAt,
+    endAt,
+    attacks: 0,
+    dispersed: false,
+    booty: {},
+    collected: false,
+  };
+}
+
+/** May this band strike this delivery's merchant? The safeguards of the road. */
+function fairPrey(tx: Tx, b: BanditBand, d: Delivery, at: number): boolean {
+  const cfg = tx.ctx.settings.bandits;
+  if (b.playerId === null) return true;
+  if (b.playerId === d.playerId) return false;
+  const members = tx.s.families?.members ?? {};
+  const family = members[d.playerId];
+  if (cfg.sameFamilyImmune && family && members[b.playerId] === family) return false;
+  const state = tx.s as WorldState;
+  const theirs = netWorth(tx.ctx, state, d.playerId, at).total;
+  const ours = netWorth(tx.ctx, state, b.playerId, at).total;
+  return theirs * 10_000n >= ours * BigInt(cfg.minTargetWorthBps);
+}
+
+/** Mid-way: the oldest band lying in wait on the road may strike, once. */
+function cross(tx: Tx, d: Delivery): void {
+  d.crossed = true;
+  const { ctx } = tx;
+  const cfg = ctx.settings.bandits;
+  const at = d.midAt;
+  const victim = tx.s.players[d.playerId];
+  if (!victim || !banditsOn(ctx)) return;
+  if (hourWithin(hourIn(at), cfg.quietHours)) return;
+  if (at < victim.joinedAt + cfg.newcomerDays * DAY_MS) return;
+  const last = tx.s.plunderedAt?.[d.playerId];
+  if (last !== undefined && at < last + cfg.cooldownHours * HOUR_MS) return;
+  const band = (Object.values(tx.s.bands ?? {}) as BanditBand[])
+    .filter((b) => b.route === d.route && bandLive(ctx, b, at))
+    .sort((a, b) => a.startAt - b.startAt || (a.id < b.id ? -1 : 1))
+    .find((b) => fairPrey(tx, b, d, at));
+  if (!band) return;
+  band.attacks += 1;
+  const defense = escortDefense(ctx, d.escort);
+  const escorted = d.escort !== "none";
+  // Without escort the delivery halts: the merchant always has the full time to fight back,
+  // counted from when the engine sees the ambush.
+  const reactBy = escorted ? at : Math.max(at, tx.now) + cfg.reactionMinutes * MINUTE_MS;
+  d.attack = {
+    bandId: band.id,
+    banditId: band.playerId,
+    at,
+    chanceBps: ambushChanceBps(ctx, defense),
+    reactBy,
+    reacted: false,
+    taken: {},
+  };
+  if (escorted) {
+    settle(tx, d, at);
+    return;
+  }
+  const delay = reactBy - at;
+  d.arriveAt += delay;
+  d.backAt += delay;
+  const vehicle = tx.s.vehicles?.[d.vehicleId];
+  if (vehicle && vehicle.busyUntil < d.backAt) vehicle.busyUntil = d.backAt;
+  emit(tx, "delivery_ambushed", d.playerId, {
+    delivery: d.id,
+    route: d.route,
+    reactBy,
+    bandit: band.playerId,
+  });
+}
+
+/** The ambush is decided: a draw against the chance of the escort's defense. */
+function settle(tx: Tx, d: Delivery, at: number): void {
+  const a = d.attack;
+  if (!a) return;
+  const band = tx.s.bands?.[a.bandId];
+  const success = draw(tx.ctx, `ambush:${d.id}`) % 10_000 < a.chanceBps;
+  a.resolvedAt = tx.now;
+  a.success = success;
+  const data = { delivery: d.id, route: d.route, bandit: a.banditId, victim: d.playerId };
+  if (!success) {
+    emit(tx, "delivery_defended", d.playerId, { ...data, reacted: false });
+    if (a.banditId) emit(tx, "band_struck", a.banditId, { ...data, success: false });
+    return;
+  }
+  const { takeBps, keepBps } = tx.ctx.settings.bandits;
+  for (const [resource, qty] of Object.entries(d.cargo)) {
+    const taken = Math.floor((qty * takeBps) / 10_000);
+    if (taken <= 0) continue;
+    d.cargo[resource] = qty - taken;
+    a.taken[resource] = taken;
+    // Half of it is lost in flight.
+    if (band)
+      band.booty[resource] = (band.booty[resource] ?? 0) + Math.floor((taken * keepBps) / 10_000);
+  }
+  tx.s.plunderedAt ??= {};
+  tx.s.plunderedAt[d.playerId] = Math.max(at, tx.now);
+  emit(tx, "delivery_robbed", d.playerId, { ...data, taken: { ...a.taken } });
+  if (a.banditId)
+    emit(tx, "band_struck", a.banditId, { ...data, success: true, taken: { ...a.taken } });
+}
+
+/** The merchant fights back in time: the ambush fails and the band breaks up. */
+export function reactToAmbush(tx: Tx, playerId: PlayerId, deliveryId: string): void {
+  const d = tx.s.deliveries?.[deliveryId] as Delivery | undefined;
+  if (!d) fail("unknown_delivery");
+  if (d.playerId !== playerId) fail("not_owner");
+  const a = d.attack;
+  if (!a || a.reacted || a.success !== undefined) {
+    resolveDeliveries(tx);
+    fail("no_ambush");
+  }
+  if (tx.now > a.reactBy) fail("too_late");
+  a.reacted = true;
+  a.resolvedAt = tx.now;
+  a.success = false;
+  const band = tx.s.bands?.[a.bandId];
+  if (band) band.dispersed = true;
+  const data = { delivery: d.id, route: d.route, bandit: a.banditId, victim: d.playerId };
+  emit(tx, "delivery_defended", playerId, { ...data, reacted: true });
+  if (a.banditId) emit(tx, "band_dispersed", a.banditId, { ...data, band: a.bandId });
+  resolveDeliveries(tx);
+}
+
+/** An ambush of this band still waits for the merchant's answer. */
+function bandWaiting(state: WorldState, bandId: string): boolean {
+  return Object.values(state.deliveries ?? {}).some(
+    (d) => d.attack?.bandId === bandId && d.attack.success === undefined,
+  );
+}
+
+/** The band is over (or broken up): its booty enters the bandit's stock. */
+export function collectBooty(tx: Tx, playerId: PlayerId, bandId: string): void {
+  resolveDeliveries(tx);
+  const band = tx.s.bands?.[bandId];
+  if (!band) fail("unknown_band");
+  if (band.playerId !== playerId) fail("not_owner");
+  if (band.collected) fail("booty_collected");
+  if ((!band.dispersed && tx.now < band.endAt) || bandWaiting(tx.s as WorldState, bandId))
+    fail("band_active");
+  for (const [resource, qty] of Object.entries(band.booty)) {
+    if (qty > 0) addStock(tx, playerId, resource, qty, "booty", band.id);
+  }
+  band.collected = true;
+  emit(tx, "booty_collected", playerId, { band: band.id, booty: { ...band.booty } });
+}
+
+/** The computer's bands: posted each day; once over, their booty is lost. */
+function closeBands(tx: Tx): void {
+  const { ctx } = tx;
+  if (!banditsOn(ctx)) return;
+  const state = tx.s as WorldState;
+  for (const b of Object.values(tx.s.bands ?? {})) {
+    if (b.playerId === null && !b.collected && tx.now >= b.endAt && !bandWaiting(state, b.id))
+      b.collected = true;
+  }
+  const { perDay, hours } = ctx.settings.bandits.npcBands;
+  const today = dayIndex(ctx, tx.now);
+  if (perDay === 0 || (tx.s.npcBandsDay ?? -1) >= today) return;
+  tx.s.npcBandsDay = today;
+  const routes = allRoutes(ctx);
+  if (routes.length === 0) return;
+  const dayStart = ctx.startAt + today * DAY_MS;
+  const quiet = ctx.settings.bandits.quietHours;
+  const open: number[] = [];
+  for (let h = 0; h < 24; h++) {
+    const at = dayStart + h * HOUR_MS;
+    if (!hourWithin(hourIn(at), quiet)) open.push(at);
+  }
+  for (let i = 0; i < perDay; i++) {
+    const h = draw(ctx, `npc-band:${today}:${i}`);
+    const route = routes[h % routes.length] ?? "";
+    const startAt =
+      (open[(h >>> 8) % Math.max(1, open.length)] ?? dayStart) + ((h >>> 16) % 60) * MINUTE_MS;
+    const id = nextId(tx, "k");
+    tx.s.bands ??= {};
+    tx.s.bands[id] = newBand(id, null, route, startAt, startAt + hours * HOUR_MS);
   }
 }

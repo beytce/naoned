@@ -3,6 +3,8 @@ import {
   activeEvent,
   currentCriee,
   hasPass,
+  hourIn,
+  hourWithin,
   seasonEnd,
   weekIndex,
 } from "@comptoirs/engine";
@@ -44,16 +46,6 @@ interface Notice {
   accountId: string;
   kind: NotificationKind;
   data: Record<string, unknown>;
-}
-
-/** Hour of the day in Paris, for the quiet hours. */
-function parisHour(at: number): number {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Paris",
-    hour: "numeric",
-    hourCycle: "h23",
-  }).formatToParts(at);
-  return Number(parts.find((p) => p.type === "hour")?.value ?? 12);
 }
 
 /**
@@ -400,12 +392,7 @@ export class Notifier {
       });
 
     if (!this.pusher.publicKey) return;
-    const hour = parisHour(now);
-    const night =
-      this.quiet.from > this.quiet.to
-        ? hour >= this.quiet.from || hour < this.quiet.to
-        : hour >= this.quiet.from && hour < this.quiet.to;
-    if (night) return;
+    if (hourWithin(hourIn(now), this.quiet)) return;
 
     const ids = [...new Set(saved.map((n) => n.accountId))];
     const subs = await this.db
