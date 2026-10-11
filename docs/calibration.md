@@ -393,3 +393,30 @@ Constat du porteur : on ne pouvait répondre à presque aucune commande, le jeu 
 | Commande de bienvenue | — | le jour de l'arrivée, 12 pains, 8 briques ou 8 planches vers la ville la plus proche |
 
 **Résultat sur 5 graines (`pnpm sim`), toutes conformes aux cibles bloquantes :** monnaie payée pour les marchandises 163 à 167 ducats par joueur actif et par jour (référence 168), indice des prix 93 à 100, monnaie par joueur actif au plus 0,99 × le capital, Gini à mi-saison 0,31 à 0,39 (contre 0,25 : les assidus profitent davantage d'une production plus rapide), perte d'un livreur 0,3 à 0,4 %.
+
+### Deuxième passe : lots de 30 minutes, commandes réservées aux producteurs, plus de chantiers
+
+Demandes du porteur : plus de commandes livrables, des matières premières commandées seulement à ceux qui les produisent (sinon une commande revient à acheter puis revendre), plus de grands chantiers, et jusqu'à 30 % de monnaie créée en plus si besoin. Le Pass Négociant sera refait : son contrôle n'est plus un critère de calibrage pour l'instant.
+
+| Réglage | Avant | Après |
+| --- | --- | --- |
+| Lots de production | 1 h | 30 min, même quantité |
+| Tableau | 16 à 20 commandes, 2 urgentes | 22 à 28, 4 urgentes |
+| Matières premières (blé, argile, bois) | à tous | seulement aux marchands de la région qui les produit (Doge et familles compris) |
+| Produits d'outre-mer | commandes de ville, et commandes du Doge et des familles au comptoir | seulement les commandes du Doge et des familles, livrées par la route |
+| Véhicules à l'arrivée | une charrette | une charrette et une mule |
+| Grands chantiers | hebdomadaires | coupés (`projects.needsPerPlayer` vide) |
+
+Chaque commande d'un produit transformé paie au moins 1,3 fois le coût de ses matières au prix de référence, même sur la route la plus courte (test `settings.test.ts`) : aucune commande ne fait vendre à perte. Essai écarté : une file de production de 24 h pour les occasionnels ne réduit pas leur écart (+574 % contre +582 % sur la graine 1).
+
+Résultat sur 5 graines, toutes conformes aux cibles bloquantes :
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Commandes ouvertes que le stock couvre (à chaque session) | 58 % | 62 % | 62 % | 59 % | 63 % |
+| Première livraison (médiane) | 2,5 h | 0,5 h | 0 h | 0,3 h | 0,5 h |
+| Monnaie payée (ducats / joueur actif / jour) | 166 | 170 | 169 | 167 | 172 |
+| Indice des prix | 93 – 100 | 93 – 100 | 93 – 100 | 93 – 100 | 93 – 100 |
+| Gini à mi-saison | 0,46 | 0,47 | 0,43 | 0,40 | 0,39 |
+
+Les bots livrent environ 4 commandes par jour : ils ne jouent que 2 à 4 sessions et repartent avec un véhicule par session. Un joueur qui revient souvent en livrera bien plus ; la monnaie créée suivra, dans la marge de +30 % acceptée. À surveiller pendant la bêta : la monnaie par joueur actif et l'indice des prix, et le Gini, monté de 0,25 à 0,45 (la limite est 0,6).
