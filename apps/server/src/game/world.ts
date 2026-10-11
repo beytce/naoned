@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   type Command,
   type Effects,
@@ -61,6 +62,8 @@ export class GameWorld {
   private timer: NodeJS.Timeout | undefined;
 
   private constructor(
+    /** This server instance, owner of the world while it runs. */
+    private readonly instance: string,
     private readonly db: Db,
     public id: string,
     public name: string,
@@ -82,8 +85,10 @@ export class GameWorld {
       // Seasons follow calendar months: the first one runs to the end of this month.
       world = await createWorld(db, seasonBounds(clock()));
     }
-    const loaded = await loadWorld(db, world, options);
+    const instance = randomUUID();
+    const loaded = await loadWorld(db, world, options, instance);
     return new GameWorld(
+      instance,
       db,
       world.id,
       world.name,
@@ -115,7 +120,7 @@ export class GameWorld {
       await tx.update(worlds).set({ status: "closed" }).where(eq(worlds.id, closedId));
       return createWorld(tx, bounds);
     });
-    const loaded = await loadWorld(this.db, next, this.options);
+    const loaded = await loadWorld(this.db, next, this.options, this.instance);
     this.id = next.id;
     this.name = next.name;
     this.ctx = loaded.ctx;
@@ -145,12 +150,79 @@ export class GameWorld {
     return next;
   }
 
+  private lost = false;
+  private lostListeners: (() => void)[] = [];
+
+  /** Called once if another instance takes the world over (this one must stop). */
+  onLostOwnership(listener: () => void): void {
+    this.lostListeners.push(listener);
+  }
+
+  /**
+   * Saves through `persist`; if the saved state changed behind this instance's back, reloads it
+   * and lets the caller decide again (once). If another instance took over, stops for good.
+   */
+  private async guarded(attempt: () => Promise<void>, retry = true): Promise<boolean> {
+    for (let tries = 0; tries < (retry ? 2 : 1); tries++) {
+      try {
+        await attempt();
+        return true;
+      } catch (err) {
+        if (!(err instanceof StaleState)) throw err;
+        if (err.lost) {
+          this.loseOwnership();
+          return false;
+        }
+        await this.reload();
+      }
+    }
+    return false;
+  }
+
+  private loseOwnership(): void {
+    if (this.lost) return;
+    this.lost = true;
+    this.stopTicking();
+    for (const l of this.lostListeners) {
+      try {
+        l();
+      } catch {
+        // Stopping anyway.
+      }
+    }
+  }
+
+  private async reload(): Promise<void> {
+    const [saved] = await this.db
+      .select()
+      .from(worldStates)
+      .where(eq(worldStates.worldId, this.id));
+    if (!saved) return;
+    if (saved.owner !== this.instance) throw new StaleState(true);
+    this.state = decode<WorldState>(saved.state);
+    this.version = saved.version;
+  }
+
   execute(command: Command): Promise<ActionResult> {
     return this.serial(async () => {
-      const now = this.clock();
-      const res = decide(this.ctx, this.state, command, now);
+      if (this.lost) return { ok: false, error: "lost_ownership" };
+      let res: ReturnType<typeof decide> | undefined;
+      let now = this.clock();
+      const saved = await this.guarded(async () => {
+        now = this.clock();
+        res = decide(this.ctx, this.state, command, now);
+        if (res.ok) await this.persist(res.state, res.effects, now, command);
+      }).catch((err) => {
+        if (err instanceof StaleState && err.lost) {
+          this.loseOwnership();
+          return false;
+        }
+        throw err;
+      });
+      if (this.lost) return { ok: false, error: "lost_ownership" };
+      if (!res) return { ok: false, error: "stale_state" };
       if (!res.ok) return { ok: false, error: res.error };
-      await this.persist(res.state, res.effects, now, command);
+      if (!saved) return { ok: false, error: "stale_state" };
       this.state = res.state;
       this.version += 1;
       this.notify(res.effects, now);
@@ -193,13 +265,19 @@ export class GameWorld {
           return true;
         },
       });
-      if (accepted === 0) return 0;
-      await this.persist(
-        state,
-        fx,
-        now,
-        playerId ? { type: "collect", playerId, buildingId: "" } : null,
-      );
+      if (accepted === 0 || this.lost) return 0;
+      // A bot session is not replayed on a conflict: it simply plays at its next turn.
+      const saved = await this.guarded(
+        () =>
+          this.persist(
+            state,
+            fx,
+            now,
+            playerId ? { type: "collect", playerId, buildingId: "" } : null,
+          ),
+        false,
+      ).catch(() => false);
+      if (!saved) return 0;
       this.state = state;
       this.version += 1;
       this.notify(fx, now);
@@ -214,9 +292,21 @@ export class GameWorld {
       const updated = await tx
         .update(worldStates)
         .set({ state: encode(next), version: this.version + 1, updatedAt: at })
-        .where(and(eq(worldStates.worldId, worldId), eq(worldStates.version, this.version)))
+        .where(
+          and(
+            eq(worldStates.worldId, worldId),
+            eq(worldStates.version, this.version),
+            eq(worldStates.owner, this.instance),
+          ),
+        )
         .returning({ version: worldStates.version });
-      if (updated.length !== 1) throw new Error("world state changed elsewhere (two servers?)");
+      if (updated.length !== 1) {
+        const [row] = await tx
+          .select({ owner: worldStates.owner })
+          .from(worldStates)
+          .where(eq(worldStates.worldId, worldId));
+        throw new StaleState(row?.owner !== this.instance);
+      }
 
       if (fx.ledger.length > 0) {
         await tx.insert(ledgerEntries).values(
@@ -385,7 +475,12 @@ async function createWorld(db: Db, bounds: { startsAt: number; endsAt: number })
 }
 
 /** Engine context and saved state of a world (a fresh state for a new one). */
-async function loadWorld(db: Db, world: WorldRow, options: { settingsFromTheme?: boolean }) {
+async function loadWorld(
+  db: Db,
+  world: WorldRow,
+  options: { settingsFromTheme?: boolean },
+  owner: string,
+) {
   const theme = THEMES[world.theme as keyof typeof THEMES];
   if (!theme) throw new Error(`unknown theme ${world.theme}`);
   let stored: unknown = world.settings;
@@ -407,11 +502,22 @@ async function loadWorld(db: Db, world: WorldRow, options: { settingsFromTheme?:
     startAt: world.startsAt.getTime(),
     endAt: world.endsAt.getTime(),
   };
+  // Take over first, then read: an old instance can no longer write once we hold the state.
+  await db.update(worldStates).set({ owner }).where(eq(worldStates.worldId, world.id));
   const [saved] = await db.select().from(worldStates).where(eq(worldStates.worldId, world.id));
   if (saved) return { ctx, state: decode<WorldState>(saved.state), version: saved.version };
   const state = createWorldState(ctx);
-  await db.insert(worldStates).values({ worldId: world.id, version: 0, state: encode(state) });
+  await db
+    .insert(worldStates)
+    .values({ worldId: world.id, version: 0, state: encode(state), owner });
   return { ctx, state, version: 0 };
+}
+
+/** The saved state was written by another instance, or changed behind this one's back. */
+class StaleState extends Error {
+  constructor(readonly lost: boolean) {
+    super(lost ? "another server instance took over the world" : "world state changed elsewhere");
+  }
 }
 
 /** Deep merge for settings: `stored` wins, `defaults` fills what is missing. */

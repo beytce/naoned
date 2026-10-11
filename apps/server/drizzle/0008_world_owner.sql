@@ -1,0 +1,1 @@
+ALTER TABLE "world_states" ADD COLUMN "owner" text;

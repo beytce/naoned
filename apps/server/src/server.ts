@@ -58,6 +58,12 @@ const shutdown = async () => {
 };
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
+// A deploy: the new instance has taken the world over. This one stops (exit code 0, so that the
+// restart policy does not bring it back).
+world.onLostOwnership(() => {
+  app.log.warn("another instance took the world over: stopping");
+  void shutdown();
+});
 
 await app.listen({ port: config.PORT, host: config.HOST });
 

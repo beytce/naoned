@@ -90,6 +90,11 @@ export const worldStates = pgTable("world_states", {
   version: integer("version").notNull(),
   state: jsonb("state").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  /**
+   * Server instance allowed to write. A deploy starts the new instance before stopping the old
+   * one: the new one takes over here, and the old one stops at its next write.
+   */
+  owner: text("owner"),
 });
 
 export const players = pgTable(

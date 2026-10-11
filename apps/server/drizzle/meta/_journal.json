@@ -57,6 +57,13 @@
       "when": 1791722627400,
       "tag": "0007_pass_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791724882177,
+      "tag": "0008_world_owner",
+      "breakpoints": true
     }
   ]
 }
