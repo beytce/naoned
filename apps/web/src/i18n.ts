@@ -595,6 +595,16 @@ export const fr = {
     symbol: "Meuble",
     save: "Enregistrer",
     help: "Comment jouer",
+    data: {
+      title: "Mes données",
+      help: "Téléchargez tout ce que le jeu conserve sur vous, ou supprimez votre compte.",
+      export: "Télécharger mes données",
+      delete: "Supprimer mon compte",
+      deleteText:
+        "Votre adresse, votre nom, votre blason, vos notifications et votre historique d'activité seront effacés, et vous serez déconnecté. Votre comptoir reste dans la saison en cours sous le nom « Marchand anonyme », pour que les échanges des autres joueurs restent justes. C'est définitif.",
+      typeToConfirm: "Tapez SUPPRIMER pour confirmer",
+      confirm: "Supprimer définitivement",
+    },
     reset: {
       title: "Recommencer ma partie",
       text: "Vos ateliers, vos stocks et vos ducats seront effacés : vous repartirez de zéro avec 1 000 ducats et pourrez choisir un autre métier. Possible une seule fois par saison.",
@@ -695,6 +705,8 @@ export const fr = {
       max_buildings: "Nombre maximal de bâtiments atteint.",
       max_level: "Niveau maximal atteint.",
       no_liquidity: "Personne ne vend ou n'achète cette ressource pour le moment.",
+      price_out_of_band:
+        "Prix refusé : une offre doit rester entre le quart et quatre fois le prix de référence.",
       not_bought_here: "Cette ville n'achète pas cette ressource.",
       project_closed: "Ce chantier est terminé.",
       project_full: "Ce chantier n'a plus besoin de cette quantité.",

@@ -6,6 +6,7 @@ import fastifyStatic from "@fastify/static";
 import { sql } from "drizzle-orm";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import { ZodError, z } from "zod";
+import { deleteAccount, exportAccount } from "./account.js";
 import { AuthError, AuthService, SESSION_DAYS } from "./auth/service.js";
 import type { Db } from "./db/client.js";
 import { registerGameRoutes } from "./game/routes.js";
@@ -118,6 +119,28 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     if (body.pseudo !== undefined) updated = await auth.setPseudo(account.id, body.pseudo);
     if (body.crest !== undefined) updated = await auth.setCrest(account.id, body.crest);
     return { account: updated };
+  });
+
+  /** GDPR: everything the game keeps about the player, as a JSON file. */
+  app.get("/api/me/export", async (req, reply) => {
+    const account = await auth.accountForSession(req.cookies[SESSION_COOKIE]);
+    if (!account) return reply.code(401).send({ error: "unauthenticated" });
+    const data = await exportAccount(options.db, account.id);
+    reply.header("content-disposition", 'attachment; filename="fondaco-mes-donnees.json"');
+    return JSON.parse(
+      JSON.stringify(data, (_k, v) => (typeof v === "bigint" ? v.toString() : v)),
+    ) as unknown;
+  });
+
+  /** GDPR: deletes the account, after typing SUPPRIMER. */
+  app.delete("/api/me", async (req, reply) => {
+    const account = await auth.accountForSession(req.cookies[SESSION_COOKIE]);
+    if (!account) return reply.code(401).send({ error: "unauthenticated" });
+    const { confirm } = z.object({ confirm: z.string() }).parse(req.body ?? {});
+    if (confirm !== "SUPPRIMER") return reply.code(400).send({ error: "confirm_required" });
+    await deleteAccount(options.db, account.id);
+    reply.clearCookie(SESSION_COOKIE, { path: "/" });
+    return reply.code(204).send();
   });
 
   if (options.world) {

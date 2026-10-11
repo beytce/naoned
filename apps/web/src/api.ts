@@ -42,6 +42,7 @@ export const api = {
   setCrest: (crest: { shape: string; color: string; symbol: string }) =>
     call<{ account: Account }>("PATCH", "/api/me", { crest }).then((r) => r.account),
   logout: () => call<void>("POST", "/api/auth/logout"),
+  deleteAccount: () => call<void>("DELETE", "/api/me", { confirm: "SUPPRIMER" }),
 };
 
 /** Token of a magic link, when the page was opened from one (/connexion?token=…). */

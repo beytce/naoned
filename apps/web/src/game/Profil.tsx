@@ -196,6 +196,8 @@ export function Profil(props: GameProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [palmares, setPalmares] = useState<Palmares | null>(null);
   const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [typed, setTyped] = useState("");
   const [resetting, setResetting] = useState(false);
   const [busyReset, setBusyReset] = useState(false);
   useEffect(() => {
@@ -362,6 +364,25 @@ export function Profil(props: GameProps) {
         </button>
       </section>
 
+      <section className="space-y-3">
+        <div>
+          <Label>{fr.game.data.title}</Label>
+          <p className="mt-1 text-xs text-cream-dim">{fr.game.data.help}</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <a
+            href="/api/me/export"
+            download
+            className="rounded-xl bg-night-4 px-3 py-2 text-center font-display text-xs font-extrabold uppercase tracking-wide text-cream ring-1 ring-inset ring-line hover:ring-cream-dim/40"
+          >
+            {fr.game.data.export}
+          </a>
+          <Slab tone="ghost" size="sm" onClick={() => setDeleting(true)}>
+            {fr.game.data.delete}
+          </Slab>
+        </div>
+      </section>
+
       <section className="border-t border-vermilion/40 pt-6">
         <Slab tone="vermilion" size="sm" className="w-full" onClick={() => setResetting(true)}>
           {fr.game.reset.title}
@@ -395,6 +416,32 @@ export function Profil(props: GameProps) {
           >
             {fr.game.reset.cancel}
           </button>
+        </div>
+      </Sheet>
+
+      <Sheet open={deleting} onClose={() => setDeleting(false)}>
+        <div className="space-y-4">
+          <h3 className="font-display text-xl font-extrabold uppercase text-vermilion">
+            {fr.game.data.delete}
+          </h3>
+          <p className="text-sm text-cream-dim">{fr.game.data.deleteText}</p>
+          <input
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            placeholder={fr.game.data.typeToConfirm}
+            className="w-full rounded-xl bg-night-3 px-4 py-3 text-cream ring-1 ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-vermilion"
+          />
+          <Slab
+            tone="vermilion"
+            className="w-full"
+            disabled={typed.trim().toUpperCase() !== "SUPPRIMER"}
+            onClick={async () => {
+              await api.deleteAccount().catch(() => undefined);
+              window.location.href = "/";
+            }}
+          >
+            {fr.game.data.confirm}
+          </Slab>
         </div>
       </Sheet>
 
