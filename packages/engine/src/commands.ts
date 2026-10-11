@@ -3,6 +3,7 @@ import { claimDaily, sellToCriee, trackDaily } from "./activity.js";
 import { build, grantBuilding, upgrade } from "./buildings.js";
 import { sellToCity } from "./cities.js";
 import { fulfillContract, rerollContract } from "./contracts.js";
+import { buyVehicle, grantStartingVehicles } from "./deliveries.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { collectExpedition, launchExpedition } from "./expeditions.js";
 import { fulfillFamilyOrder, joinFamily, leaveFamilies, patronize } from "./families.js";
@@ -87,6 +88,7 @@ export type Command =
   /** From the server: the Pass Négociant until this time (a later date never shortens it). */
   | { type: "grantPass"; playerId: PlayerId; until: number }
   | { type: "collectExpedition"; playerId: PlayerId; expeditionId: string }
+  | { type: "buyVehicle"; playerId: PlayerId; vehicleType: string }
   | { type: "tick" };
 
 export type DecideResult =
@@ -127,6 +129,7 @@ function join(tx: Tx, playerId: PlayerId, region: string): void {
     const building = grantBuilding(tx, playerId, type);
     building.fastBatchesLeft = ctx.settings.tutorial.fastBatchesPerBuilding;
   }
+  grantStartingVehicles(tx, playerId);
   for (const [resource, qty] of Object.entries(ctx.settings.startingStock[region] ?? {})) {
     addStock(tx, playerId, resource, qty, "starting_kit");
   }
@@ -164,6 +167,9 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
   }
   for (const raid of Object.values(tx.s.raids ?? {})) {
     if (raid.playerId === playerId) delete tx.s.raids?.[raid.id];
+  }
+  for (const v of Object.values(tx.s.vehicles ?? {})) {
+    if (v.playerId === playerId) delete tx.s.vehicles?.[v.id];
   }
   if (tx.s.weekly) delete tx.s.weekly.start[playerId];
   if (tx.s.missions) delete tx.s.missions[playerId];
@@ -269,6 +275,9 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "collectExpedition":
       collectExpedition(tx, cmd.playerId, cmd.expeditionId);
+      break;
+    case "buyVehicle":
+      buyVehicle(tx, cmd.playerId, cmd.vehicleType);
       break;
     case "deliverToProject":
       deliverToProject(tx, cmd.playerId, cmd.projectId, cmd.resource, cmd.quantity);

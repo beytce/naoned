@@ -78,7 +78,30 @@ export type EngineErrorCode =
   | "family_locked"
   | "family_chosen"
   | "no_family"
-  | "patronage_limit";
+  | "patronage_limit"
+  | "city_sales_closed"
+  | "unknown_vehicle_type"
+  | "unknown_vehicle"
+  | "max_vehicles"
+  | "vehicle_busy"
+  | "over_capacity"
+  | "unknown_delivery_order"
+  | "order_not_open"
+  | "order_expired"
+  | "order_done"
+  | "unknown_escort"
+  | "no_route"
+  | "unknown_delivery"
+  | "no_ambush"
+  | "too_late"
+  | "no_bandits"
+  | "bandits_locked"
+  | "too_many_bands"
+  | "route_full"
+  | "invalid_hours"
+  | "unknown_band"
+  | "band_active"
+  | "booty_collected";
 
 export class EngineError extends Error {
   constructor(

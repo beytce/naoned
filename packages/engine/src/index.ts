@@ -6,6 +6,7 @@ export { draw } from "./draw.js";
 export * from "./events.js";
 export { cargoValueAt, portPrices } from "./expeditions.js";
 export * from "./effects.js";
+export * from "./deliveries.js";
 export {
   type FamilyOrder,
   type FamilyStanding,

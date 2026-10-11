@@ -74,5 +74,10 @@ export function netWorth(
       buildings += applyBpsFloor(ship.investedValue, ctx.settings.valuation.buildingValueBps);
     }
   }
+  for (const v of Object.values(state.vehicles ?? {})) {
+    if (v.playerId === playerId) {
+      buildings += applyBpsFloor(v.investedValue, ctx.settings.valuation.buildingValueBps);
+    }
+  }
   return { cash, stock, buildings, total: cash + stock + buildings };
 }

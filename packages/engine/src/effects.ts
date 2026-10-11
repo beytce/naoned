@@ -24,7 +24,11 @@ export type LedgerReason =
   | "privateer_letter"
   | "mission_reward"
   | "family_order_reward"
-  | "patronage";
+  | "patronage"
+  | "vehicle"
+  | "escort"
+  | "delivery"
+  | "bandits";
 
 /**
  * Double-entry ledger line: `amount` leaves `from` and enters `to`.
@@ -58,7 +62,11 @@ export type StockReason =
   | "privateer_out"
   | "plunder"
   | "mission_reward"
-  | "family_order";
+  | "family_order"
+  | "vehicle"
+  | "delivery"
+  | "bandits"
+  | "booty";
 
 /** Change of a player's total holding (available + escrow) of one resource. */
 export interface StockMovement {

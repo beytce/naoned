@@ -1,4 +1,5 @@
 import { upkeepPerDay } from "./buildings.js";
+import { vehicleUpkeep } from "./deliveries.js";
 import { closeFamilyWeek } from "./families.js";
 import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
@@ -32,6 +33,9 @@ export function chargeUpkeep(tx: Tx): void {
       }
       for (const ship of Object.values(tx.s.ships ?? {})) {
         if (ship.playerId === player.id) due += shipUpkeep(ctx, ship);
+      }
+      for (const v of Object.values(tx.s.vehicles ?? {})) {
+        if (v.playerId === player.id) due += vehicleUpkeep(ctx, v);
       }
       if (dormant) due = (due * BigInt(dormancy.upkeepBps)) / 10_000n;
       const cash = cashAccount(player.id);

@@ -173,6 +173,97 @@ export interface Ship {
   readyAt: number;
 }
 
+/** A cart, mule or wagon: carries one delivery at a time, there and back. */
+export interface Vehicle {
+  id: string;
+  playerId: PlayerId;
+  type: string;
+  /** Cost at reference prices, counted in net worth like a ship. */
+  investedValue: Deniers;
+  /** End of the way back of its last delivery (0 when free). */
+  busyUntil: number;
+}
+
+export type DeliveryKind = "city" | "doge" | "family" | "urgent";
+export type EscortKind = "none" | string;
+
+/** An order on a merchant's board (computed, never stored, like a Contract). */
+export interface DeliveryOrder {
+  /** `${day}:${index}` */
+  id: string;
+  day: number;
+  kind: DeliveryKind;
+  city: string;
+  resource: ResourceCode;
+  quantity: number;
+  unitPrice: Deniers;
+  opensAt: number;
+  expiresAt: number;
+  /** The Doge's contract or the family order it stands for. */
+  ref?: string;
+}
+
+export interface DeliveryAttack {
+  bandId: string;
+  /** Null for a band of the computer. */
+  banditId: PlayerId | null;
+  /** When the band struck (mid-way). */
+  at: number;
+  chanceBps: number;
+  /** Without escort: the merchant may fight back until then. */
+  reactBy: number;
+  reacted: boolean;
+  resolvedAt?: number;
+  success?: boolean;
+  taken: Record<ResourceCode, number>;
+}
+
+export interface Delivery {
+  id: string;
+  playerId: PlayerId;
+  orderId: string;
+  kind: DeliveryKind;
+  vehicleId: string;
+  /** `${region}:${city}` */
+  route: string;
+  resource: ResourceCode;
+  /** Units loaded at departure. */
+  loaded: number;
+  /** One resource, kept as a table like a convoy's cargo. */
+  cargo: Record<ResourceCode, number>;
+  /** Price of the whole load, fixed at departure; paid on arrival, pro rata of what arrives. */
+  payment: Deniers;
+  escort: EscortKind;
+  departAt: number;
+  arriveAt: number;
+  backAt: number;
+  /** When a band on the route may strike. */
+  midAt: number;
+  /** Mid-way passed and bands on the route considered. */
+  crossed?: boolean;
+  attack?: DeliveryAttack;
+  outcome: "en_route" | "delivered" | "robbed_delivered";
+  /** Paid on arrival. */
+  paid?: Deniers;
+}
+
+/** Bandits posted on a road for a few hours. */
+export interface BanditBand {
+  id: string;
+  /** Null for a band of the computer. */
+  playerId: PlayerId | null;
+  route: string;
+  startAt: number;
+  endAt: number;
+  /** Ambushes attempted (at most `maxAttacksPerBand`). */
+  attacks: number;
+  /** Beaten off by a merchant who fought back: the band stops. */
+  dispersed: boolean;
+  /** To be collected by the bandit. */
+  booty: Record<ResourceCode, number>;
+  collected: boolean;
+}
+
 export interface DailyPriceStat {
   volume: number;
   value: Deniers;
@@ -231,7 +322,14 @@ export interface WorldState {
       best: number;
     }
   >;
-  /** Last successful boarding suffered, per player (cooldown). */
+  vehicles?: Record<string, Vehicle>;
+  deliveries?: Record<string, Delivery>;
+  bands?: Record<string, BanditBand>;
+  /** Orders of the board dispatched today, per player. */
+  deliveriesDone?: Record<PlayerId, { day: number; ids: string[] }>;
+  /** Last day the computer's bands were posted. */
+  npcBandsDay?: number;
+  /** Last successful boarding or ambush suffered, per player (cooldown). */
   plunderedAt?: Record<PlayerId, number>;
   /** Resets used per player this season (absent in states saved before resets existed). */
   resets?: Record<PlayerId, number>;
