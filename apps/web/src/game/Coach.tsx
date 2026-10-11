@@ -206,10 +206,12 @@ export function Coach(props: GameProps) {
   // A message with nothing to point at stays on the counter.
   if (!step.target && !step.waitUntil && props.tab !== "comptoir") return null;
 
-  // The bubble goes where it does not hide the target (or the open sheet).
+  // The bubble goes where it does not hide the target (or the open sheet). A target in the tab
+  // bar keeps it just above the bar, so the header (purse, notices) stays in sight.
+  const inTabBar = rect !== null && rect.top > window.innerHeight - 96;
   const atTop =
     props.sheet !== null ||
-    (rect !== null && rect.top + rect.height / 2 > window.innerHeight * 0.55);
+    (!inTabBar && rect !== null && rect.top + rect.height / 2 > window.innerHeight * 0.55);
   const pad = 6;
   return (
     <>
@@ -217,24 +219,28 @@ export function Coach(props: GameProps) {
         <div
           className="pointer-events-none fixed z-[45] animate-pulsering rounded-md ring-2 ring-gold transition-all duration-200"
           style={{
-            left: rect.left - pad,
-            top: rect.top - pad,
-            width: rect.width + pad * 2,
-            height: rect.height + pad * 2,
+            // Kept inside the screen: the tab bar's end tabs touch its edges.
+            left: Math.max(2, rect.left - pad),
+            top: Math.max(2, rect.top - pad),
+            width: Math.min(window.innerWidth - 2, rect.right + pad) - Math.max(2, rect.left - pad),
+            height:
+              Math.min(window.innerHeight - 2, rect.bottom + pad) - Math.max(2, rect.top - pad),
             boxShadow: "0 0 0 9999px rgba(10, 8, 14, 0.62)",
           }}
         />
       )}
       <div
-        className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-24"}`}
+        className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-[calc(5.25rem+env(safe-area-inset-bottom))] lg:bottom-8"}`}
       >
         <div className="relative rounded-2xl bg-night-2 p-4 shadow-xl shadow-black/40 ring-2 ring-gold">
           <div className="flex gap-3">
             <Lorenzo size={52} />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-start justify-between gap-2">
                 <Label className="text-gold">{fr.game.coach.name}</Label>
-                <span className="label">{fr.game.coach.step(index, STEPS.length)}</span>
+                <span className="label shrink-0 whitespace-nowrap">
+                  {fr.game.coach.step(index, STEPS.length)}
+                </span>
               </div>
               <p className="mt-1.5 text-[15px] leading-snug">{step.text}</p>
               {step.waitUntil && (
@@ -274,7 +280,7 @@ export function Coach(props: GameProps) {
             ) : (
               <button
                 type="button"
-                className="label text-cream-dim"
+                className="label -my-2 -mr-2 h-11 px-2 text-cream-dim"
                 onClick={() => {
                   store.set("guideHidden", "1");
                   setHidden(true);

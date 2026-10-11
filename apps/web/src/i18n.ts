@@ -403,6 +403,8 @@ export const fr = {
     cost: "Coût",
     missing: "manque",
     close: "Fermer",
+    loading: "Ouverture du comptoir…",
+    retry: "Réessayer",
 
     marketTabs: { joueurs: "Rialto", villes: "Villes" },
     featured: "Plus forte hausse",
