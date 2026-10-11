@@ -18,6 +18,7 @@ import {
   checkInvariants,
   createWorldState,
   decide,
+  deliveryOrdersFor,
   emptyTotals,
   parseSettings,
   venice1450,
@@ -71,6 +72,15 @@ export interface SimulationResult {
     topLevelShare: number;
     /** Workshop levels per merchant (a new workshop counts 1): how far merchants grew. */
     levelsPerMerchant: number;
+  };
+  /** How active play is: share of the board covered by stock at each session, first delivery. */
+  activity?: {
+    fillableShare: number;
+    /** Median hours from joining to the first delivery. */
+    firstDeliveryHours: number;
+    neverDelivered: number;
+    harvestsPerDay: number;
+    deliveriesPerDay: number;
   };
   /** The road: deliveries, vehicles, ambushes and bands (see `roadStats`). */
   road?: RoadStats;
@@ -184,6 +194,15 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     for (const t of res.effects.trades) if (raw.has(t.resource)) rawBuyers.add(t.buyerId);
     recordFlows(flows, res.effects);
     for (const e of res.effects.events) {
+      if (e.type === "harvest") activity.harvests++;
+      if (e.type === "delivery_dispatched" && e.playerId) {
+        activity.deliveries++;
+        if (!delivered.has(e.playerId)) {
+          delivered.add(e.playerId);
+          const joined = state.players[e.playerId]?.joinedAt ?? now;
+          activity.firstDelivery.push((now - joined) / 3_600_000);
+        }
+      }
       if (e.type === "family_order_fulfilled") families.orders++;
       if (e.type === "family_week_closed")
         families.winners.push((e.data?.winner as string) ?? null);
@@ -236,6 +255,34 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     for (const d of Object.values(state.deliveries ?? {})) roadSeen.deliveries.set(d.id, d);
     for (const b of Object.values(state.bands ?? {})) roadSeen.bands.set(b.id, b);
   };
+  // How playable the board is: at each session, the open orders the stock already covers.
+  const activity = {
+    sessions: 0,
+    open: 0,
+    fillable: 0,
+    harvests: 0,
+    deliveries: 0,
+    firstDelivery: [] as number[],
+  };
+  const delivered = new Set<string>();
+  const observeBoard = (playerId: string) => {
+    const s = state;
+    const day = Math.floor((now - START) / DAY_MS);
+    const orders = deliveryOrdersFor(ctx, s, playerId, day).filter(
+      (o) =>
+        o.opensAt <= now &&
+        now < o.expiresAt &&
+        !(
+          s.deliveriesDone?.[playerId]?.day === day &&
+          s.deliveriesDone[playerId]?.ids.includes(o.id)
+        ),
+    );
+    activity.sessions++;
+    activity.open += orders.length;
+    activity.fillable += orders.filter(
+      (o) => (s.inventories[playerId]?.[o.resource]?.available ?? 0) >= o.quantity,
+    ).length;
+  };
   const closeDay = () => {
     sweepRoad();
     const snap = snapshot(ctx, state, now, currentDay, flows, index, botInfo);
@@ -277,6 +324,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
       const times = schedule.get(bot) ?? [];
       while (times.length > 0 && (times[0] ?? Number.POSITIVE_INFINITY) <= now) {
         times.shift();
+        observeBoard(bot.id);
         bot.play(session);
       }
       // An ambush on the road: fought back if the merchant is at the screen, or back in time.
@@ -313,6 +361,15 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     families.members[code] = (families.members[code] ?? 0) + 1;
   }
   result.families = families;
+  const playerDays = result.daily.reduce((a, d) => a + d.active, 0);
+  const sortedFirst = [...activity.firstDelivery].sort((a, b) => a - b);
+  result.activity = {
+    fillableShare: activity.open > 0 ? activity.fillable / activity.open : 0,
+    firstDeliveryHours: sortedFirst[Math.floor(sortedFirst.length / 2)] ?? Number.NaN,
+    neverDelivered: Object.keys(state.players).length - delivered.size,
+    harvestsPerDay: activity.harvests / Math.max(1, playerDays),
+    deliveriesPerDay: activity.deliveries / Math.max(1, playerDays),
+  };
   sweepRoad();
   result.road = roadStats(
     ctx,

@@ -173,6 +173,16 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
 
   checks.push(...budgetChecks(r));
   checks.push(...roadChecks(r));
+  const a = r.activity;
+  if (a) {
+    checks.push({
+      name: "Activité : commandes livrables depuis le stock, à chaque session",
+      target: "diagnostic : plus de la moitié du tableau ouvert",
+      value: `${pct(a.fillableShare)} · première livraison après ${a.firstDeliveryHours.toFixed(1)} h (médiane, ${a.neverDelivered} jamais) · ${a.harvestsPerDay.toFixed(1)} récoltes et ${a.deliveriesPerDay.toFixed(1)} livraisons par joueur actif et par jour`,
+      pass: true,
+      blocking: false,
+    });
+  }
   checks.push(...passChecks(r, twin));
 
   const lastDay = r.daily[last];
