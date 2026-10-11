@@ -367,3 +367,29 @@ Pour que l'occasionnel livre deux commandes par session, essai avec deux charret
 | Pass : avance des abonnés (≤ +5 %) | −10,1 % | **+39,2 %** | **+22,6 %** | **+27,5 %** | **+13,2 %** |
 
 L'écart des occasionnels redescend, mais le contrôle du Pass échoue sur quatre graines : avec plus de capacité de transport, c'est le stock qui limite les livraisons, et le quota augmenté de la Dogana (avantage du Pass) devient décisif. La règle du Pass étant non négociable, **une seule charrette au départ est retenue** ; l'écart des occasionnels reste à trancher par le porteur (pistes : une charrette de plus gagnée par une mission, ou supprimer l'avantage de quota du Pass à la Dogana).
+
+## Rythme de jeu : audit et rééquilibrage (production plus rapide, commandes à la taille d'un lot)
+
+Constat du porteur : on ne pouvait répondre à presque aucune commande, le jeu était trop lent.
+
+**Audit.** Un lot durait 2 h et produisait 6 à 14 unités, alors qu'une commande demandait 15 à 40 pains ou 6 à 15 briques : 4 à 8 h de production par commande. Le pain sortait au bout de 6 h (blé, farine, pain). Le tableau tirait ses commandes parmi 13 ressources, dont un boulanger n'en produit que trois, et le stock de départ (20 pains, 10 bois) ne couvrait presque rien. Nouveaux diagnostics du simulateur, mesurés à chaque session d'un marchand :
+
+| | Avant | Après |
+| --- | --- | --- |
+| Commandes ouvertes que le stock couvre déjà | 26 à 28 % | 48 à 52 % |
+| Première livraison après l'arrivée (médiane) | 14,8 h | 0 à 2,8 h |
+| Livraisons par joueur actif et par jour | 3,3 | 4,0 |
+
+**Réglages.**
+
+| Réglage | Avant | Après |
+| --- | --- | --- |
+| Lots de production (thème) | 2 h | 1 h, même quantité : on produit deux fois plus |
+| Commandes de ville | pain 15–40, blé/argile/bois 20–40, farine 15–30, briques/planches 6–15 | pain 8–20, blé/argile/bois 10–25, farine 8–18, briques/planches 4–10 |
+| Commandes du Doge et des familles | 12 à 30 | 8 à 20 |
+| Tableau | 12 à 16 commandes | 16 à 20, dont la moitié sur la chaîne du marchand (`homeShareBps`) |
+| Prix d'une commande de ville | référence +50 %/h de route | référence ×1,25 +50 %/h (commandes plus petites, même budget) |
+| Stock de départ | 20 pains, 10 bois | de quoi livrer deux fois : 40 pains (Terraferma), 15 briques et 20 argiles (Lagune), 15 planches et 30 bois (Dolomites) |
+| Commande de bienvenue | — | le jour de l'arrivée, 12 pains, 8 briques ou 8 planches vers la ville la plus proche |
+
+**Résultat sur 5 graines (`pnpm sim`), toutes conformes aux cibles bloquantes :** monnaie payée pour les marchandises 163 à 167 ducats par joueur actif et par jour (référence 168), indice des prix 93 à 100, monnaie par joueur actif au plus 0,99 × le capital, Gini à mi-saison 0,31 à 0,39 (contre 0,25 : les assidus profitent davantage d'une production plus rapide), perte d'un livreur 0,3 à 0,4 %.
