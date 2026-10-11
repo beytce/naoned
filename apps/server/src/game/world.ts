@@ -135,6 +135,21 @@ export class GameWorld {
     }
   }
 
+  /**
+   * Moves the end of the season (admin: to rehearse the closing on a test world, or to fix a
+   * calendar). Never into the past: the next tick would close the season at once.
+   */
+  reschedule(endsAt: number): Promise<void> {
+    return this.serial(async () => {
+      if (endsAt <= this.clock()) throw new Error("the end of a season must be in the future");
+      await this.db
+        .update(worlds)
+        .set({ endsAt: new Date(endsAt) })
+        .where(eq(worlds.id, this.id));
+      this.ctx = { ...this.ctx, endAt: endsAt };
+    });
+  }
+
   get current(): WorldState {
     return this.state;
   }

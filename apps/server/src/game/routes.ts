@@ -364,6 +364,20 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return { pairs: await suspiciousPairs(db, world.id, world.ctx.settings.referencePrices) };
   });
 
+  /** Admin: moves the end of the current season (to rehearse the closing on a test world). */
+  app.post("/api/admin/season-end", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    if (!deps.adminEmails.includes(account.email.toLowerCase())) {
+      return reply.code(403).send({ error: "forbidden" });
+    }
+    const { endsAt } = z.object({ endsAt: z.string().datetime() }).parse(req.body);
+    const at = Date.parse(endsAt);
+    if (at <= world.now()) return reply.code(422).send({ error: "end_in_past" });
+    await world.reschedule(at);
+    return { ok: true, world: world.name, endsAt: at };
+  });
+
   /** Admin: grants the Pass to an account for some days (tests, gifts, support). */
   app.post("/api/admin/pass", async (req, reply) => {
     const account = await requireAccount(req, reply);

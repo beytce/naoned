@@ -41,7 +41,7 @@ beforeEach(async () => {
     appUrl: "https://fondaco.test",
     production: false,
     world,
-    adminEmails: [],
+    adminEmails: ["boss@example.org"],
     now: () => new Date(now),
   });
 });
@@ -156,5 +156,44 @@ describe("reward tiers", () => {
     expect(tierFor(50, 200, 0)).toBe("notable");
     expect(tierFor(51, 200, 9)).toBe("participant");
     expect(tierFor(51, 200, 2)).toBe("none");
+  });
+});
+
+describe("rehearsing the end of a season", () => {
+  it("lets an admin bring the end forward to test the closing", async () => {
+    const boss = await (async () => {
+      await app.inject({
+        method: "POST",
+        url: "/api/auth/request",
+        payload: { email: "boss@example.org" },
+      });
+      const token = decodeURIComponent(
+        mailer.sent.at(-1)?.text.match(/token=([\w%-]+)/)?.[1] ?? "",
+      );
+      const res = await app.inject({ method: "POST", url: "/api/auth/verify", payload: { token } });
+      return `${SESSION_COOKIE}=${res.cookies.find((c) => c.name === SESSION_COOKIE)?.value}`;
+    })();
+    const ada = await player("ada@example.org");
+    const first = world.id;
+    const endsAt = new Date(now + 2 * 3_600_000).toISOString();
+    const denied = await app.inject({
+      method: "POST",
+      url: "/api/admin/season-end",
+      headers: { cookie: ada },
+      payload: { endsAt },
+    });
+    expect(denied.statusCode).toBe(403);
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/admin/season-end",
+      headers: { cookie: boss },
+      payload: { endsAt },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(world.ctx.endAt).toBe(Date.parse(endsAt));
+    now += 3 * 3_600_000;
+    await world.execute({ type: "tick" });
+    expect(world.id).not.toBe(first);
+    expect((await get(ada)).ceremony.rank).toBe(1);
   });
 });

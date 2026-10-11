@@ -32,6 +32,44 @@ const LAST_SEEN: Record<string, string> = {
 
 const pct = (a: number, b: number) => (b > 0 ? `${Math.round((a / b) * 100)} %` : "—");
 
+/** Rehearsal: brings the end of the current season forward (test world only). */
+function SeasonEnd() {
+  const [at, setAt] = useState("");
+  const [result, setResult] = useState<string | null>(null);
+  return (
+    <Panel>
+      <Label>Fin de saison (répétition)</Label>
+      <p className="mt-1 text-xs text-cream-dim">
+        Avance la fin de la saison en cours pour vivre une clôture sur un monde de test. Sur le
+        monde des joueurs, ne l'utiliser qu'en connaissance de cause.
+      </p>
+      <input
+        type="datetime-local"
+        value={at}
+        onChange={(e) => setAt(e.target.value)}
+        className="mt-3 w-full rounded-xl bg-night-2 px-3 py-2 text-cream ring-1 ring-line"
+      />
+      <button
+        type="button"
+        disabled={!at}
+        className="mt-3 w-full rounded-xl bg-vermilion px-3 py-2 font-display text-xs font-extrabold uppercase text-cream disabled:opacity-40"
+        onClick={async () => {
+          const r = await fetch("/api/admin/season-end", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ endsAt: new Date(at).toISOString() }),
+          });
+          setResult(r.ok ? "Fin de saison déplacée." : `Refusé (${r.status}).`);
+        }}
+      >
+        Déplacer la fin de saison
+      </button>
+      {result && <p className="mt-2 text-sm text-cream-dim">{result}</p>}
+    </Panel>
+  );
+}
+
 /** Retention dashboard for the beta (admins only): people, not bots. */
 export function Admin() {
   const [data, setData] = useState<Retention | null>(null);
@@ -157,6 +195,7 @@ export function Admin() {
           </ul>
         )}
       </Panel>
+      <SeasonEnd />
     </main>
   );
 }
