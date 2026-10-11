@@ -77,6 +77,20 @@ const action = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("collectRaid"), raidId: z.string() }),
   z.object({ type: z.literal("collectExpedition"), expeditionId: z.string() }),
+  z.object({ type: z.literal("buyVehicle"), vehicleType: z.string() }),
+  z.object({
+    type: z.literal("dispatchDelivery"),
+    orderId: z.string(),
+    vehicleId: z.string(),
+    escort: z.string(),
+  }),
+  z.object({ type: z.literal("reactToAmbush"), deliveryId: z.string() }),
+  z.object({
+    type: z.literal("postBand"),
+    route: z.string(),
+    hours: z.number().int().positive().max(48),
+  }),
+  z.object({ type: z.literal("collectBooty"), bandId: z.string() }),
   z.object({
     type: z.literal("deliverToProject"),
     projectId: z.string(),
@@ -642,6 +656,24 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "collectRaid", playerId, raidId: a.raidId }];
     case "collectExpedition":
       return [{ type: "collectExpedition", playerId, expeditionId: a.expeditionId }];
+    case "buyVehicle":
+      return [{ type: "buyVehicle", playerId, vehicleType: a.vehicleType }];
+    case "dispatchDelivery":
+      return [
+        {
+          type: "dispatchDelivery",
+          playerId,
+          orderId: a.orderId,
+          vehicleId: a.vehicleId,
+          escort: a.escort,
+        },
+      ];
+    case "reactToAmbush":
+      return [{ type: "reactToAmbush", playerId, deliveryId: a.deliveryId }];
+    case "postBand":
+      return [{ type: "postBand", playerId, route: a.route, hours: a.hours }];
+    case "collectBooty":
+      return [{ type: "collectBooty", playerId, bandId: a.bandId }];
     case "deliverToProject":
       return [
         {

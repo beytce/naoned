@@ -48,6 +48,18 @@ import {
   rerollsOf,
   weekIndex,
 } from "@comptoirs/engine";
+import {
+  ambushChanceBps,
+  deliveriesDoneToday,
+  deliveriesOn,
+  deliveryOrdersFor,
+  escortCost,
+  travelMinutes,
+  vehicleFree,
+  vehicleUpkeep,
+  vehiclesOf,
+  watchedRoads,
+} from "@comptoirs/engine";
 import { titleFor } from "./profile.js";
 
 /** Corsairs cruising on each route, and the end of the last cruise. */
@@ -108,6 +120,112 @@ function familiesView(ctx: WorldContext, state: WorldState, playerId: string, no
   };
 }
 
+/**
+ * The road as one merchant sees it: today's board, vehicles, deliveries under way (an ambush
+ * waiting for an answer included), their own bands, and the roads where bandits lie in wait.
+ * Never the draws, nor other merchants' bands or who lies in wait.
+ */
+function roadView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {
+  if (!deliveriesOn(ctx)) return null;
+  const player = state.players[playerId];
+  if (!player) return null;
+  const today = dayIndex(ctx, now);
+  const done = new Set(deliveriesDoneToday(state, playerId, today));
+  const contractsDone = state.contractsDone?.[playerId];
+  const familyDone = state.families?.ordersDone[playerId];
+  const served = (ref?: string, kind?: string) =>
+    ref !== undefined &&
+    ((kind === "doge" && contractsDone?.day === today && contractsDone.ids.includes(ref)) ||
+      (kind === "family" && familyDone?.day === today && familyDone.ids.includes(ref)));
+  const types = Object.keys(ctx.settings.deliveries.vehicles);
+  const orders = deliveryOrdersFor(ctx, state, playerId, today).map((o) => ({
+    ...o,
+    status:
+      done.has(o.id) || served(o.ref, o.kind)
+        ? ("done" as const)
+        : now < o.opensAt
+          ? ("upcoming" as const)
+          : now >= o.expiresAt
+            ? ("expired" as const)
+            : ("open" as const),
+    /** Minutes one way, per vehicle type. */
+    minutes: Object.fromEntries(
+      types.map((t) => [t, travelMinutes(ctx, player.region, o.city, t) ?? null]),
+    ),
+    escorts: Object.fromEntries(
+      Object.keys(ctx.settings.deliveries.escorts).map((e) => [e, escortCost(ctx, o, e)]),
+    ),
+  }));
+  const vehicles = vehiclesOf(state, playerId).map((v) => ({
+    ...v,
+    status: vehicleFree(v, now) ? ("free" as const) : ("busy" as const),
+  }));
+  const deliveries = Object.values(state.deliveries ?? {})
+    .filter((d) => d.playerId === playerId)
+    .sort((a, b) => b.departAt - a.departAt)
+    .slice(0, 20)
+    .map((d) => {
+      const a = d.attack;
+      return {
+        ...d,
+        attack: a
+          ? {
+              at: a.at,
+              reactBy: a.reactBy,
+              reacted: a.reacted,
+              pending: a.success === undefined,
+              success: a.success ?? null,
+              taken: a.taken,
+              // Who struck is told once the ambush is settled (a band of the computer: null).
+              bandit: a.success === undefined ? null : a.banditId,
+            }
+          : null,
+      };
+    });
+  const bands = Object.values(state.bands ?? {})
+    .filter((b) => b.playerId === playerId)
+    .sort((a, b) => b.startAt - a.startAt)
+    .slice(0, 10)
+    .map((b) => ({
+      ...b,
+      active: !b.dispersed && now < b.endAt,
+      collectable:
+        !b.collected &&
+        (b.dispersed || now >= b.endAt) &&
+        !Object.values(state.deliveries ?? {}).some(
+          (d) => d.attack?.bandId === b.id && d.attack.success === undefined,
+        ),
+    }));
+  return {
+    orders,
+    vehicles,
+    deliveries,
+    bands,
+    watchedRoutes: watchedRoads(ctx, state, now),
+    banditsOpenAt: player.joinedAt + ctx.settings.bandits.openDay * 86_400_000,
+    /** Chance of an ambush succeeding, by escort (what a merchant may know of the rules). */
+    ambushChance: Object.fromEntries(
+      ["none", ...Object.keys(ctx.settings.deliveries.escorts)].map((e) => [
+        e,
+        ambushChanceBps(ctx, e === "none" ? 0 : (ctx.settings.deliveries.escorts[e]?.defense ?? 0)),
+      ]),
+    ),
+  };
+}
+
+/** The gazette's road news: the latest successful ambushes in the world (no names). */
+function roadNews(state: WorldState) {
+  return Object.values(state.deliveries ?? {})
+    .filter((d) => d.attack?.success)
+    .map((d) => ({
+      route: d.route,
+      at: d.attack?.resolvedAt ?? d.attack?.at ?? 0,
+      resource: d.resource,
+    }))
+    .sort((a, b) => b.at - a.at)
+    .slice(0, 5);
+}
+
 /** Static data of a world, for the client: names, recipes, costs. */
 export function catalog(ctx: WorldContext, world: { name: string }) {
   const { theme, settings } = ctx;
@@ -145,6 +263,30 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
     }),
     fleet: { maxPerPlayer: settings.ships.maxPerPlayer, portDuesBps: settings.ships.portDuesBps },
     privateers: settings.privateers,
+    road: deliveriesOn(ctx)
+      ? {
+          routes: settings.deliveries.routes,
+          vehicles: Object.entries(settings.deliveries.vehicles).map(([type, v]) => ({
+            type,
+            ...v,
+          })),
+          maxVehicles: settings.deliveries.maxVehicles,
+          maxDeliveryMinutes: settings.deliveries.maxDeliveryMinutes,
+          escorts: settings.deliveries.escorts,
+          bandits: {
+            hoursOptions: settings.bandits.hoursOptions,
+            feePerHour: settings.bandits.feePerHour,
+            provisionsPerHour: settings.bandits.provisionsPerHour,
+            maxAttacksPerBand: settings.bandits.maxAttacksPerBand,
+            maxBandsPerRoute: settings.bandits.maxBandsPerRoute,
+            reactionMinutes: settings.bandits.reactionMinutes,
+            takeBps: settings.bandits.takeBps,
+            keepBps: settings.bandits.keepBps,
+            quietHours: settings.bandits.quietHours,
+            openDay: settings.bandits.openDay,
+          },
+        }
+      : null,
     families: (theme.families ?? []).flatMap((t) => {
       const house = settings.families.houses.find((h) => h.code === t.code);
       return house ? [{ ...t, quantities: house.quantities }] : [];
@@ -351,6 +493,7 @@ export function playerView(
   let upkeep = 0n;
   for (const b of buildings) upkeep += upkeepPerDay(ctx, b);
   for (const s of shipsOf(state, playerId)) upkeep += shipUpkeep(ctx, s);
+  for (const v of vehiclesOf(state, playerId)) upkeep += vehicleUpkeep(ctx, v);
 
   return {
     serverTime: now,
@@ -390,6 +533,8 @@ export function playerView(
     ports,
     watchedRoutes: watchedRoutes(state, now),
     seaNews,
+    road: roadView(ctx, state, playerId, now),
+    roadNews: roadNews(state),
     rations: {
       resource: ctx.settings.rations.resource,
       perDay: levels * ctx.settings.rations.perLevelPerDay,
