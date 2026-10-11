@@ -305,7 +305,8 @@ export const venice1450Settings: WorldSettingsInput = {
     urgentPremiumBps: 1_500,
     urgentOpenMinutes: 60,
     urgentHours: { from: 8, to: 21 },
-    cityPriceBps: 10_000,
+    // Smaller orders, a better price per unit: the money of the city sales is kept.
+    cityPriceBps: 12_500,
     // +50 % per hour of road: the money of the former city sales, now earned on the road.
     distanceBonusBpsPerHour: 5_000,
     // One or two batches of a workshop: an order is within reach of a session or two.
