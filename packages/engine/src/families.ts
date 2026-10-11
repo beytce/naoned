@@ -45,6 +45,8 @@ export interface FamilyStanding {
   score: number;
   /** Member with the most influence this week, if any. */
   champion: PlayerId | null;
+  /** In power this week: its score is lowered by the contumacia. */
+  incumbent: boolean;
 }
 
 function emptyFamilies(week: number): FamiliesState {
@@ -203,7 +205,7 @@ export function familyStandings(
   state: WorldState,
   now: number,
 ): FamilyStanding[] {
-  const { houses, weeklyCapPerMember, minMembers } = ctx.settings.families;
+  const { houses, weeklyCapPerMember, minMembers, incumbentHandicapBps } = ctx.settings.families;
   const f = state.families;
   const table = houses.map((h) => {
     let members = 0;
@@ -224,8 +226,18 @@ export function familyStandings(
         champion = playerId;
       }
     }
-    const score = Math.floor((influence * 100) / Math.max(active, minMembers));
-    return { family: h.code, members, activeMembers: active, influence, score, champion };
+    const incumbent = f?.inPower === h.code;
+    const weight = 10_000 - (incumbent ? incumbentHandicapBps : 0);
+    const score = Math.floor((influence * 100 * weight) / 10_000 / Math.max(active, minMembers));
+    return {
+      family: h.code,
+      members,
+      activeMembers: active,
+      influence,
+      score,
+      champion,
+      incumbent,
+    };
   });
   return table.sort(
     (a, b) => b.score - a.score || b.influence - a.influence || a.family.localeCompare(b.family),

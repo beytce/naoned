@@ -56,7 +56,7 @@ export interface Theme {
   ships?: { type: string; name: string }[];
   buildings: BuildingDef[];
   /** Patrician families (names; what they order lives in the world settings). */
-  families?: { code: string; name: string; motto: string }[];
+  families?: { code: string; name: string; domain: string }[];
   recipes: RecipeDef[];
 }
 

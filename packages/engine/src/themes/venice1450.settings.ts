@@ -28,8 +28,9 @@ export const venice1450Settings: WorldSettingsInput = {
   rations: { resource: "bread", perLevelPerDay: 2, slowdownBps: 5_000 },
   // Computer-run merchants fill the world up to this many active merchants (beta).
   bots: { population: 15 },
+  // Two orders of the Doge a day, plus one of the merchant's family (same budget as three).
   contracts: {
-    perDay: 3,
+    perDay: 2,
     premiumBps: 2_000,
     quantities: { wheat: 30, flour: 20, bread: 20, clay: 30, wood: 30, bricks: 12, planks: 12 },
     // One order in five asks for goods from overseas.
@@ -37,6 +38,25 @@ export const venice1450Settings: WorldSettingsInput = {
       chanceBps: 2_000,
       quantities: { salt: 15, wine: 8, silk: 4, spices: 3, furs: 3, cloth: 2 },
     },
+  },
+  // The patrician families: allegiance from day 4, one order a day, patronage, weekly power.
+  families: {
+    openDay: 4,
+    ordersPerDay: 1,
+    powerPremiumBps: 1_000,
+    // Contumacia: the family in power counts its score a third lower, so power changes hands.
+    incumbentHandicapBps: 3_300,
+    orderInfluence: 10,
+    patronageUnit: 200,
+    patronageMaxPerDay: 25,
+    weeklyCapPerMember: 150,
+    minMembers: 3,
+    houses: [
+      { code: "contarini", quantities: { bricks: 12, planks: 12 } },
+      { code: "morosini", quantities: { wheat: 30, flour: 20, bread: 20, wood: 30 } },
+      { code: "mocenigo", quantities: { salt: 15, wine: 8, planks: 12 } },
+      { code: "dandolo", quantities: { spices: 3, silk: 4, furs: 3, cloth: 2 } },
+    ],
   },
   events: {
     everyDays: 2,

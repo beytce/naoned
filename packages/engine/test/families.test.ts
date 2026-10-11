@@ -11,7 +11,7 @@ import { DAY, HOUR, World, makeContext } from "./helpers.js";
 
 const WEEK = 7 * DAY;
 
-const rules = {
+const rules: NonNullable<WorldSettingsInput["families"]> = {
   openDay: 2,
   ordersPerDay: 1,
   powerPremiumBps: 1_000,
@@ -191,6 +191,32 @@ describe("the patrician families", () => {
     // Only once per week.
     const again = w.do({ type: "tick" });
     expect(again.effects.events.some((e) => e.type === "family_week_closed")).toBe(false);
+  });
+
+  it("count the family in power lower (contumacia), so that power changes hands", () => {
+    const w = new World(
+      makeContext({ ...families, families: { ...rules, incumbentHandicapBps: 5_000 } }),
+    );
+    for (const id of ["a", "b"]) w.do({ type: "join", playerId: id, region: "terraferma" });
+    w.do({ type: "tick" });
+    pledge(w, "a", "morosini");
+    w.do({ type: "joinFamily", playerId: "b", family: "contarini" });
+    w.do({ type: "patronize", playerId: "a", points: 20 });
+    w.at(WEEK + HOUR);
+    w.do({ type: "tick" });
+    expect(w.state.families?.inPower).toBe("morosini");
+    // Second week: Morosini give more, but their score is halved.
+    w.do({ type: "patronize", playerId: "a", points: 20 });
+    w.do({ type: "patronize", playerId: "b", points: 15 });
+    const table = familyStandings(w.ctx, w.state, w.now);
+    expect(table.find((f) => f.family === "morosini")).toMatchObject({
+      incumbent: true,
+      score: Math.floor((20 * 100) / 2 / 2),
+    });
+    expect(table[0]?.family).toBe("contarini");
+    w.at(2 * WEEK + HOUR);
+    w.do({ type: "tick" });
+    expect(w.state.families?.inPower).toBe("contarini");
   });
 
   it("leave power vacant after a week without influence", () => {

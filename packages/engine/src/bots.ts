@@ -4,6 +4,7 @@ import { quoteCitySale } from "./cities.js";
 import type { Command } from "./commands.js";
 import { contractsFor, rerollsOf } from "./contracts.js";
 import { cargoValueAt } from "./expeditions.js";
+import { familiesOpenAt, familyOrdersDone, familyOrdersFor, patronageLeft } from "./families.js";
 import { bestPrice, marketMakerQuotaLeft, maxOpenOrdersFor, openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
 import type { Deniers } from "./money.js";
@@ -105,6 +106,14 @@ const MAX_PER_TYPE = 3;
 const CITY_GOODS = ["bread", "bricks", "planks", "spices", "silk", "salt", "wine", "furs", "cloth"];
 const VOYAGERS = new Set<ProfileName>(["producer", "builder", "speculator"]);
 const MATERIALS = ["bricks", "planks"];
+/** Families each profile leans to; a bot joins the smallest of them. */
+const FAMILY_LEANINGS: Record<ProfileName, string[]> = {
+  producer: [],
+  artisan: ["morosini", "contarini"],
+  builder: ["contarini", "mocenigo"],
+  speculator: ["dandolo", "mocenigo"],
+  casual: [],
+};
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 
@@ -172,6 +181,7 @@ export class Bot {
     this.collectGalleys(s);
     this.feed(s);
     this.doContracts(s);
+    this.serveFamily(s);
     this.deliverProjects(s);
     this.sellToCriee(s);
     this.sellToCities(s);
@@ -365,6 +375,53 @@ export class Bot {
         s.act({ type: "fulfillContract", playerId: this.id, contractId: c.id });
       }
     }
+  }
+
+  /**
+   * The patrician families: pledge allegiance once it opens (to the smallest family it leans to),
+   * fulfil the family's order from spare stock, and give to its patronage when cash is plenty.
+   */
+  private serveFamily(s: Session): void {
+    const rules = s.ctx.settings.families;
+    if (rules.houses.length === 0) return;
+    const state = s.state();
+    let family = state.families?.members[this.id];
+    if (!family) {
+      if (s.now < familiesOpenAt(s.ctx, state, this.id)) return;
+      const raw = findRegion(s.ctx.theme, this.region)?.bonusResource;
+      const leanings = FAMILY_LEANINGS[this.profile.name];
+      const own = raw === "wheat" ? ["morosini", "mocenigo"] : ["contarini", "mocenigo"];
+      const wanted = (leanings.length > 0 ? leanings : own).filter((code) =>
+        rules.houses.some((h) => h.code === code),
+      );
+      const options = wanted.length > 0 ? wanted : rules.houses.map((h) => h.code);
+      const size = (code: string) =>
+        Object.values(state.families?.members ?? {}).filter((c) => c === code).length;
+      const choice = [...options].sort((a, b) => size(a) - size(b))[0];
+      if (!choice || !s.act({ type: "joinFamily", playerId: this.id, family: choice })) return;
+      family = choice;
+    }
+    const day = dayIndex(s.ctx, s.now);
+    const done = familyOrdersDone(s.state(), this.id, day);
+    const familyOrders = (x: Session) => familyOrdersFor(x.ctx, x.state(), this.id, day);
+    for (const o of familyOrders(s)) {
+      if (done.includes(o.id)) continue;
+      // The family's order earns influence: what is missing is bought, a little under its price.
+      const missing = o.quantity - (this.available(s, o.resource) - this.reserve(s, o.resource));
+      if (missing > 0) this.buy(s, o.resource, missing, 1.15);
+      if (this.available(s, o.resource) - this.reserve(s, o.resource) >= o.quantity) {
+        s.act({ type: "fulfillFamilyOrder", playerId: this.id, orderId: o.id });
+      }
+    }
+    // Patronage: a quarter of the cash above one and a half times the starting capital.
+    if (this.profile.name === "casual" || rules.patronageUnit === 0n) return;
+    const spare = this.cash(s) - (s.ctx.settings.startingCapital * 3n) / 2n;
+    if (spare <= 0n) return;
+    const points = Math.min(
+      patronageLeft(s.ctx, s.state(), this.id, day),
+      Number(spare / 4n / rules.patronageUnit),
+    );
+    if (points > 0) s.act({ type: "patronize", playerId: this.id, points });
   }
 
   private collectGalleys(s: Session): void {

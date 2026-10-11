@@ -276,6 +276,11 @@ export const worldSettingsSchema = z.object({
       ordersPerDay: qty,
       /** Extra premium on the family orders of the family in power. */
       powerPremiumBps: bps,
+      /**
+       * Contumacia: the family in power counts its score this much lower, so that power changes
+       * hands (Venetian offices could not be held twice in a row).
+       */
+      incumbentHandicapBps: bps.max(10_000).default(0),
       /** Influence earned by a family order. */
       orderInfluence: qty,
       /** Ducats given (and destroyed) for one point of influence. */
