@@ -40,17 +40,15 @@ export function Region(props: {
           <Panel glow={k === 0 ? "gold" : k === 1 ? "lagoon" : undefined}>
             <RegionArt
               code={r.code}
-              className="-mx-4 -mt-4 mb-3 h-28 w-[calc(100%+2rem)] max-w-none bg-night-2"
+              className="-mx-4 -mt-4 mb-3 h-28 w-[calc(100%+2rem)] max-w-none rounded-t-2xl bg-night-2"
             />
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="font-display text-2xl font-extrabold uppercase">
-                  {fr.region.jobs[r.code]?.name ?? r.name}
-                </h2>
-                <p className="label mt-1 text-lagoon">{r.name}</p>
-              </div>
-              <span className="slab shrink-0 bg-lagoon px-2 py-1 font-mono text-xs font-bold text-on-lagoon">
-                <span>{fr.region.bonus(bonus, props.names.resource(r.bonusResource))}</span>
+            <h2 className="font-display text-2xl font-extrabold uppercase leading-tight">
+              {fr.region.jobs[r.code]?.name ?? r.name}
+            </h2>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <p className="label text-lagoon">{r.name}</p>
+              <span className="slab whitespace-nowrap bg-lagoon px-2 py-0.5 font-mono text-xs font-bold text-on-lagoon">
+                {fr.region.bonus(bonus, props.names.resource(r.bonusResource))}
               </span>
             </div>
             <p className="mt-2 text-sm text-cream-dim">{fr.region.jobs[r.code]?.text}</p>
@@ -64,8 +62,8 @@ export function Region(props: {
                 </div>
               ))}
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="flex items-center gap-2 bg-night-2 p-2 ring-1 ring-gold/50">
+            <div className="mt-3 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
+              <div className="flex items-center gap-2 rounded-xl bg-night-2 p-2.5 ring-1 ring-inset ring-gold/50">
                 <ResourceIcon code={SELLS[r.code] ?? "bread"} size={30} />
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-wider text-gold">
@@ -76,7 +74,7 @@ export function Region(props: {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 bg-night-2 p-2 ring-1 ring-line">
+              <div className="flex min-w-0 items-center gap-2 rounded-xl bg-night-2 p-2.5 ring-1 ring-inset ring-line">
                 <div className="flex">
                   {(NEEDS[r.code] ?? []).map((n) => (
                     <ResourceIcon key={n} code={n} size={26} />

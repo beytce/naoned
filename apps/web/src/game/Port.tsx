@@ -58,7 +58,8 @@ function Stepper({
   onChange,
 }: { value: number; max: number; onChange: (v: number) => void }) {
   const set = (v: number) => onChange(Math.max(0, Math.min(max, v)));
-  const btn = "slab h-9 min-w-9 bg-night-4 px-2 font-display text-sm ring-1 ring-inset ring-line";
+  const btn =
+    "slab h-11 min-w-11 bg-night-4 px-2.5 font-display text-sm ring-1 ring-inset ring-line transition active:scale-95";
   return (
     <div className="flex items-center gap-1.5">
       <button type="button" className={btn} onClick={() => set(value - 10)}>

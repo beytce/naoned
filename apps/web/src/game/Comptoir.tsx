@@ -7,6 +7,7 @@ import { Daily } from "./Daily.js";
 import type { GameProps } from "./Game.js";
 import { Ledger } from "./Ledger.js";
 import { d } from "./format.js";
+import { store } from "./store.js";
 import type { BuildingView, Cost, PlayerView, Recipe } from "./types.js";
 
 export function have(view: PlayerView, resource: string) {
@@ -27,7 +28,6 @@ function recipeOf(props: GameProps, type: string): Recipe | null {
   return props.catalog.buildings.find((x) => x.type === type)?.recipe ?? null;
 }
 
-/** Quantity produced per batch, with the regional bonus. */
 /** Output of one batch: base × level, with the region's and the level's yield bonuses. */
 function outputQty(props: GameProps, resource: string, base: number, level = 1) {
   const region = props.catalog.regions.find((r) => r.code === props.view.player.region);
@@ -203,6 +203,8 @@ const FIRST_STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy
 function FirstSteps(props: GameProps) {
   const done = new Set(props.view.tutorial);
   if (FIRST_STEPS.every((s) => done.has(s))) return null;
+  // While Lorenzo guides, he already says what to do next: the list stands in when he is paused.
+  if (store.get("guideDone") !== "1" && store.get("guideHidden") !== "1") return null;
   const current = FIRST_STEPS.find((s) => !done.has(s));
   return (
     <Panel>
@@ -252,7 +254,7 @@ function Rations(props: GameProps) {
   const tone = hungry ? "text-vermilion" : days < 1 ? "text-gold" : "text-cream-dim";
   return (
     <div
-      className={`flex items-start gap-3 ${hungry ? "bg-vermilion/15 p-3 ring-1 ring-vermilion/60" : ""}`}
+      className={`flex items-start gap-3 ${hungry ? "rounded-2xl bg-vermilion/15 p-3 ring-1 ring-vermilion/60" : ""}`}
     >
       <ResourceIcon code={rations.resource} size={30} />
       <div className="text-sm">
@@ -312,8 +314,8 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
   return (
     <Panel glow={ready > 0 ? "gold" : running ? "lagoon" : undefined}>
       <div className="flex gap-3">
-        <div className="-my-1 -ml-1 w-28 shrink-0">
-          <BuildingArt type={b.type} active={running} className="h-24 w-28" />
+        <div className="-my-1 -ml-1 w-20 shrink-0 min-[360px]:w-28">
+          <BuildingArt type={b.type} active={running} className="h-24 w-full" />
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex items-start justify-between gap-2">
@@ -339,7 +341,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
           {!recipe && <p className="text-xs text-muted">{fr.game.palazzoHelp}</p>}
         </div>
       </div>
-      <div className="mt-3 flex gap-3">
+      <div className="mt-3 flex flex-wrap gap-3">
         {ready > 0 && (
           <Slab
             className="flex-1"
@@ -517,22 +519,23 @@ export function Comptoir(props: GameProps) {
   const sheetBuilding = view.buildings.find((b) => b.id === id);
 
   return (
-    // Phone: one column in reading order. Computer: the workshops on the left, the merchant's
+    // Phone: one column in reading order (the goal, what to do now, the workshops, then the
+    // objectives and what can be built). Computer: the workshops on the left, the merchant's
     // dashboard (goal, ledger, rations, stock) in a side column that stays in view.
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
       <div className="contents lg:col-start-1 lg:flex lg:flex-col lg:gap-6">
         <div className="order-2 lg:order-none">
           <Hero {...props} />
         </div>
-        <section className="order-7 space-y-3 lg:order-none">
+        <section className="order-3 space-y-3 lg:order-none">
           <Label>{fr.game.workshops}</Label>
-          <div className="grid gap-3 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 2xl:grid-cols-2">
             {view.buildings.map((b) => (
               <Workshop key={b.id} b={b} props={props} />
             ))}
           </div>
         </section>
-        <section className="order-8 space-y-3 lg:order-none">
+        <section className="order-9 space-y-3 lg:order-none">
           <Label>{fr.game.buildTitle}</Label>
           <p className="text-xs text-muted">
             {fr.game.localRaw(
@@ -571,19 +574,19 @@ export function Comptoir(props: GameProps) {
         <div className="order-1 lg:order-none">
           <Goal {...props} />
         </div>
-        <div className="order-3 empty:hidden lg:order-none">
+        <div className="order-6 empty:hidden lg:order-none">
           <FirstSteps {...props} />
         </div>
-        <div className="order-4 empty:hidden lg:order-none">
+        <div className="order-7 empty:hidden lg:order-none">
           <Ledger {...props} />
         </div>
-        <div className="order-4 empty:hidden lg:order-none">
+        <div className="order-8 empty:hidden lg:order-none">
           <Daily {...props} />
         </div>
-        <div className="order-6 lg:order-none">
+        <div className="order-5 empty:hidden lg:order-none">
           <Rations {...props} />
         </div>
-        <div className="order-5 lg:order-none">
+        <div className="order-4 lg:order-none">
           <StockStrip {...props} />
         </div>
       </aside>

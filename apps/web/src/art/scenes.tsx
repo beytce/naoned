@@ -58,7 +58,12 @@ export function Skyline({ className = "" }: { className?: string }) {
 export function RegionArt({ code, className = "" }: { code: string; className?: string }) {
   const sky = { terraferma: P.gold, lagoon: P.lagoon, dolomites: P.cream }[code] ?? P.gold;
   return (
-    <svg viewBox="0 0 160 80" className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 160 80"
+      preserveAspectRatio="xMidYMid slice"
+      className={className}
+      aria-hidden="true"
+    >
       <circle cx="120" cy="22" r="12" fill={sky} opacity="0.8" />
       {code === "terraferma" && (
         <g>

@@ -31,41 +31,37 @@ function ChangeTag({ value }: { value: number }) {
   );
 }
 
+/** The good that rose most: one compact card above the list, so the list stays in view. */
 function Featured({ line, props }: { line: MarketLine; props: GameProps }) {
   const points = series(props, line.resource);
   return (
     <button
       type="button"
-      className="block w-full text-center"
+      className="block w-full rounded-2xl border border-gold/60 bg-night-3 p-4 text-left transition active:scale-[0.99]"
       onClick={() => props.setSheet(`trade:${line.resource}`)}
     >
-      <div className="relative mx-auto w-44">
-        <div className="holo absolute -inset-1 rounded-2xl blur-md" />
-        <div className="relative rounded-2xl bg-night-3 p-5 ring-2 ring-gold/60">
-          <div className="holo flex h-28 items-center justify-center rounded-xl">
-            <ResourceIcon code={line.resource} size={88} />
-          </div>
-          <p className="mt-3 font-display text-sm font-extrabold uppercase">
+      <div className="flex items-center gap-3">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-night-2 ring-1 ring-inset ring-line">
+          <ResourceIcon code={line.resource} size={40} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <Label className="text-gold">{fr.game.featured}</Label>
+          <p className="mt-0.5 truncate font-display text-base font-extrabold uppercase">
             {props.names.resource(line.resource)}
           </p>
-          <div className="mt-2 flex justify-center">
-            <Sparkline points={points} width={120} height={30} />
-          </div>
+          <ChangeTag value={change(points)} />
         </div>
+        <Sparkline points={points} width={72} height={30} />
       </div>
-      <Label className="mt-4 text-gold">☆ {fr.game.featured}</Label>
-      <div className="mt-2 flex items-end justify-center gap-6">
+      <div className="mt-3 flex gap-6 border-t border-line/70 pt-3">
         <div>
           <Label>{fr.game.buyAt}</Label>
-          <Big className="mt-1 text-3xl">{d(line.bestAsk)}</Big>
+          <Big className="mt-1 text-xl">{d(line.bestAsk)}</Big>
         </div>
         <div>
           <Label>{fr.game.sellAt}</Label>
-          <Big className="mt-1 text-3xl text-lagoon">{d(line.bestBid)}</Big>
+          <Big className="mt-1 text-xl text-lagoon">{d(line.bestBid)}</Big>
         </div>
-      </div>
-      <div className="mt-2">
-        <ChangeTag value={change(points)} />
       </div>
     </button>
   );
@@ -189,11 +185,12 @@ function TradeSheet({
   const quota = book?.quota;
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-4">
-        <div className="holo rounded-xl p-2">
+      {/* Room on the right for the window's close button. */}
+      <div className={`flex items-center gap-4 ${inline ? "" : "pr-12"}`}>
+        <div className="shrink-0 rounded-xl bg-night-3 p-2 ring-1 ring-inset ring-line">
           <ResourceIcon code={line.resource} size={56} />
         </div>
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <h3 className="font-display text-xl font-extrabold uppercase">
             {props.names.resource(line.resource)}
           </h3>
@@ -204,7 +201,7 @@ function TradeSheet({
         <Sparkline points={points} width={90} height={36} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 bg-night-3 p-3 ring-1 ring-line">
+      <div className="grid grid-cols-2 gap-4 rounded-2xl bg-night-3 p-3 ring-1 ring-inset ring-line">
         <BookSide lines={book?.asks ?? []} title={t.sellers} tone="text-gold" props={props} />
         <BookSide lines={book?.bids ?? []} title={t.buyers} tone="text-lagoon" props={props} />
       </div>
@@ -443,6 +440,8 @@ export function Marche(props: GameProps) {
   const featured = [...lines].sort(
     (a, b) => change(series(props, b.resource)) - change(series(props, a.resource)),
   )[0];
+  // Only a real rise earns the spotlight.
+  const rising = featured && change(series(props, featured.resource)) > 0 ? featured : undefined;
   const cityGoods = [...new Set(props.view.cityQuotes.map((q) => q.resource))];
   const sheetResource = props.sheet?.startsWith("trade:") ? props.sheet.slice(6) : null;
   const sheetLine = lines.find((l) => l.resource === sheetResource);
@@ -470,7 +469,7 @@ export function Marche(props: GameProps) {
             {props.view.openOrders.length > 0 && (
               <MyOffers orders={props.view.openOrders} props={props} />
             )}
-            {featured && !wide && <Featured line={featured} props={props} />}
+            {rising && !wide && <Featured line={rising} props={props} />}
             <div>
               {lines.map((l) => (
                 <Row
