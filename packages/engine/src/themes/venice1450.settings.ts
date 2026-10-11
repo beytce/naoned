@@ -20,10 +20,12 @@ export const venice1450Settings: WorldSettingsInput = {
   regionBonusBps: 3_000,
   lateJoiner: { afterDay: 5, bonusBps: 5_000, hours: 72 },
   tutorial: { minutes: 30, fastBatchSeconds: 30, fastBatchesPerBuilding: 1 },
+  // Enough to deliver twice in the first minutes (the welcome order and another), and to feed
+  // the workers: a new merchant plays at once.
   startingStock: {
-    terraferma: { bread: 20, wood: 10 },
-    lagoon: { bread: 20, wood: 10 },
-    dolomites: { bread: 20 },
+    terraferma: { bread: 40, wood: 20 },
+    lagoon: { bread: 20, wood: 20, clay: 20, bricks: 15 },
+    dolomites: { bread: 20, wood: 30, planks: 15 },
   },
   rations: { resource: "bread", perLevelPerDay: 2, slowdownBps: 5_000 },
   // Computer-run merchants fill the world up to this many active merchants (beta).
@@ -32,7 +34,7 @@ export const venice1450Settings: WorldSettingsInput = {
   contracts: {
     perDay: 2,
     premiumBps: 2_000,
-    quantities: { wheat: 30, flour: 20, bread: 20, clay: 30, wood: 30, bricks: 12, planks: 12 },
+    quantities: { wheat: 20, flour: 15, bread: 15, clay: 20, wood: 20, bricks: 8, planks: 8 },
     // One order in five asks for goods from overseas.
     luxury: {
       chanceBps: 2_000,
@@ -52,10 +54,10 @@ export const venice1450Settings: WorldSettingsInput = {
     weeklyCapPerMember: 150,
     minMembers: 3,
     houses: [
-      { code: "contarini", quantities: { bricks: 12, planks: 12 } },
+      { code: "contarini", quantities: { bricks: 8, planks: 8 } },
       // Every order fits under the free daily quota at the Dogana: the Pass never decides it.
-      { code: "morosini", quantities: { wheat: 20, flour: 20, bread: 20, wood: 20 } },
-      { code: "mocenigo", quantities: { salt: 15, wine: 8, planks: 12 } },
+      { code: "morosini", quantities: { wheat: 15, flour: 15, bread: 15, wood: 15 } },
+      { code: "mocenigo", quantities: { salt: 15, wine: 8, planks: 8 } },
       { code: "dandolo", quantities: { spices: 3, silk: 4, furs: 3, cloth: 2 } },
     ],
   },
@@ -297,7 +299,7 @@ export const venice1450Settings: WorldSettingsInput = {
   // carried to the cities with one's own vehicles and paid on arrival. They replace the instant
   // sale to cities and the Criées.
   deliveries: {
-    ordersPerDay: { min: 12, max: 16 },
+    ordersPerDay: { min: 16, max: 20 },
     dogeOrdersPerDay: 2,
     urgentPerDay: 2,
     urgentPremiumBps: 1_500,
@@ -306,14 +308,15 @@ export const venice1450Settings: WorldSettingsInput = {
     cityPriceBps: 10_000,
     // +50 % per hour of road: the money of the former city sales, now earned on the road.
     distanceBonusBpsPerHour: 5_000,
+    // One or two batches of a workshop: an order is within reach of a session or two.
     quantity: {
-      bread: [15, 40],
-      bricks: [6, 15],
-      planks: [6, 15],
-      wheat: [20, 40],
-      flour: [15, 30],
-      clay: [20, 40],
-      wood: [20, 40],
+      bread: [8, 20],
+      bricks: [4, 10],
+      planks: [4, 10],
+      wheat: [10, 25],
+      flour: [8, 18],
+      clay: [10, 25],
+      wood: [10, 25],
       salt: [4, 10],
       wine: [2, 6],
       silk: [1, 3],
@@ -323,6 +326,13 @@ export const venice1450Settings: WorldSettingsInput = {
     },
     // Home goods four times as often as goods from overseas.
     weights: { bread: 4, bricks: 4, planks: 4, wheat: 4, flour: 4, clay: 4, wood: 4 },
+    // Half the city orders are for the merchant's own chain, the rest for the others' goods.
+    homeShareBps: 5_000,
+    welcome: {
+      terraferma: { resource: "bread", quantity: 12 },
+      lagoon: { resource: "bricks", quantity: 8 },
+      dolomites: { resource: "planks", quantity: 8 },
+    },
     routes: {
       terraferma: {
         padova: 30,

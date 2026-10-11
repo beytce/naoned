@@ -860,7 +860,7 @@ export const fr = {
       {
         icon: "routes",
         title: "Les routes et les brigands",
-        text: "Les villes ne rachètent plus au comptoir : chaque jour, elles vous passent 12 à 16 commandes. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge et de votre famille y figurent, les urgentes ne restent ouvertes qu'une heure. Des brigands guettent parfois une route (en rouge sur la carte) : une escorte vous protège même absent ; sans escorte, vous avez 10 minutes pour riposter, et une riposte disperse la bande. Une prise coûte au plus 30 % de la cargaison, le véhicule revient toujours, et personne n'attaque entre 22 h et 8 h. À partir du jour 6, vous pouvez vous-même poster une bande sur une route : deux attaques au plus, la moitié du butin se perd dans la fuite.",
+        text: "Les villes ne rachètent plus au comptoir : chaque jour, elles vous passent 16 à 20 commandes, dont la moitié portent sur votre propre production. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge et de votre famille y figurent, les urgentes ne restent ouvertes qu'une heure. Des brigands guettent parfois une route (en rouge sur la carte) : une escorte vous protège même absent ; sans escorte, vous avez 10 minutes pour riposter, et une riposte disperse la bande. Une prise coûte au plus 30 % de la cargaison, le véhicule revient toujours, et personne n'attaque entre 22 h et 8 h. À partir du jour 6, vous pouvez vous-même poster une bande sur une route : deux attaques au plus, la moitié du butin se perd dans la fuite.",
       },
       {
         icon: "comptoir",
@@ -880,7 +880,7 @@ export const fr = {
       {
         icon: "comptoir",
         title: "Produire",
-        text: "Chaque atelier transforme des matières en produits, par lots de 2 heures. Lancez jusqu'à 12 heures de production, puis revenez récolter. Rien ne se perd pendant votre absence.",
+        text: "Chaque atelier transforme des matières en produits, par lots d'une heure. Lancez jusqu'à 12 heures de production, puis revenez récolter. Rien ne se perd pendant votre absence.",
       },
       {
         icon: "marche",
