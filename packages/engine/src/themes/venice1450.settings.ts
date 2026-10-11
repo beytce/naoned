@@ -286,22 +286,15 @@ export const venice1450Settings: WorldSettingsInput = {
     { id: "first_ship", day: 5, event: "ship_built", count: 1, reward: { goods: { planks: 15 } } },
     // Opens with the bandits (`bandits.openDay`).
     { id: "first_band", day: 6, event: "band_posted", count: 1, reward: { goods: { bread: 10 } } },
-    {
-      id: "first_project",
-      day: 6,
-      event: "project_delivery",
-      count: 1,
-      reward: { goods: { bricks: 10, planks: 10 } },
-    },
     { id: "new_workshop", day: 7, event: "build", count: 1, reward: { goods: {}, ducats: 15_000 } },
   ],
   // Deliveries by road (docs/plan-livraisons.md): a board of 10 to 15 personal orders a day,
   // carried to the cities with one's own vehicles and paid on arrival. They replace the instant
   // sale to cities and the Criées.
   deliveries: {
-    ordersPerDay: { min: 16, max: 20 },
+    ordersPerDay: { min: 22, max: 28 },
     dogeOrdersPerDay: 2,
-    urgentPerDay: 2,
+    urgentPerDay: 4,
     urgentPremiumBps: 1_500,
     urgentOpenMinutes: 60,
     urgentHours: { from: 8, to: 21 },
@@ -318,15 +311,7 @@ export const venice1450Settings: WorldSettingsInput = {
       flour: [8, 18],
       clay: [10, 25],
       wood: [10, 25],
-      salt: [4, 10],
-      wine: [2, 6],
-      silk: [1, 3],
-      spices: [1, 3],
-      furs: [1, 2],
-      cloth: [1, 2],
     },
-    // Home goods four times as often as goods from overseas.
-    weights: { bread: 4, bricks: 4, planks: 4, wheat: 4, flour: 4, clay: 4, wood: 4 },
     // Half the city orders are for the merchant's own chain, the rest for the others' goods.
     homeShareBps: 5_000,
     welcome: {
@@ -387,9 +372,8 @@ export const venice1450Settings: WorldSettingsInput = {
         upkeepPerDay: 1_200,
       },
     },
-    // One cart: two at the start narrowed the gap of casual merchants but gave the Pass's
-    // Dogana quota an edge (docs/calibration.md).
-    startingVehicles: ["cart"],
+    // A cart and a mule: two orders on the road from the first day.
+    startingVehicles: ["cart", "mule"],
     maxVehicles: 4,
     escorts: {
       guards: { costBps: 400, defense: 2 },
@@ -455,10 +439,10 @@ export const venice1450Settings: WorldSettingsInput = {
       },
       { id: "harvests", event: "harvest", count: 4, reward: { goods: {}, ducats: 1_000 } },
       {
-        id: "build_site",
-        event: "project_delivery",
-        count: 1,
-        reward: { goods: { bread: 10 } },
+        id: "many_deliveries",
+        event: "delivery_arrived",
+        count: 5,
+        reward: { goods: {}, ducats: 1_500 },
       },
       {
         id: "urgent",
@@ -699,12 +683,8 @@ export const venice1450Settings: WorldSettingsInput = {
       wood: { basePrice: 110, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
     },
   },
-  projects: {
-    intervalDays: 7,
-    durationDays: 7,
-    needsPerPlayer: { bricks: 60, planks: 60 },
-    premiumBps: 1_000,
-  },
+  // No city projects: deliveries by road are the cities' demand.
+  projects: { intervalDays: 7, durationDays: 7, needsPerPlayer: {}, premiumBps: 0 },
   valuation: {
     vwapDays: 7,
     minVolume: 200,

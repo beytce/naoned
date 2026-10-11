@@ -33,4 +33,24 @@ describe("settings", () => {
     expect(s.bandits.feePerHour).toBe(1_000n);
     expect(s.bandits.attackChanceBps["2"]).toBe(5_000);
   });
+
+  it("pays every Venetian order of a made good well above the cost of its inputs", () => {
+    const s = parseSettings(venice1450Settings);
+    const d = s.deliveries;
+    const ref = (r: string) => Number(s.referencePrices[r] ?? 0n);
+    const shortest = Math.min(
+      ...Object.values(d.routes).flatMap((cities) => Object.values(cities)),
+    );
+    for (const recipe of venice1450.recipes) {
+      if (Object.keys(recipe.inputs).length === 0) continue;
+      for (const [out, qty] of Object.entries(recipe.outputs)) {
+        const inputs = Object.entries(recipe.inputs).reduce((a, [r, q]) => a + ref(r) * q, 0);
+        const cost = inputs / qty;
+        const cheapest =
+          (ref(out) * (d.cityPriceBps + Math.floor((d.distanceBonusBpsPerHour * shortest) / 60))) /
+          10_000;
+        expect(cheapest).toBeGreaterThan(cost * 1.3);
+      }
+    }
+  });
 });
