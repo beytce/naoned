@@ -20,6 +20,8 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - Le roulage (phase 6) : confier une commande au véhicule d'un autre joueur contre une part du prix, avec une réputation de transporteur.
 - Améliorer les véhicules (essieux, chevaux de trait).
 - Des routes qui se dégradent, ou des péages tenus par des joueurs.
+- Carte des routes : zoom à deux doigts et déplacement, quand il y aura plus de villes (aujourd'hui, 7 villes tiennent sur un écran).
+- Carte des routes : voir les véhicules des autres marchands (écarté pour l'instant : cela montrerait aux brigands les routes fréquentées).
 
 ## Affrontement (proposés, non retenus pour l'instant)
 - Convois de guilde : cargaisons groupées sous une même escorte, butin et risque partagés.

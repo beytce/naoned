@@ -191,6 +191,19 @@ export const fr = {
       collected: "Encaissé",
       locked: (time: string) => `Le brigandage ouvre dans ${time}.`,
     },
+    roadMap: {
+      label: "Carte des routes de la Vénétie",
+      hud: (orders: number, free: number) =>
+        `${orders} commande${orders > 1 ? "s" : ""} · ${free} véhicule${free > 1 ? "s" : ""} libre${free > 1 ? "s" : ""}`,
+      view: { carte: "Carte", liste: "Liste" },
+      focusHint: (vehicle: string) =>
+        `${vehicle} : touchez une ville en surbrillance pour la charger.`,
+      pickRoad: "Touchez une route pour y poster votre bande.",
+      cityKicker: "Commandes de la ville",
+      noOrder: "Pas de commande de cette ville aujourd'hui.",
+      back: (city: string) => `Commandes de ${city}`,
+      underwayTitle: "Sur les routes",
+    },
     alert: {
       title: "Brigands sur la route !",
       body: (city: string) =>

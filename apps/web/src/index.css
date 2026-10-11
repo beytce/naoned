@@ -152,6 +152,31 @@
   }
 }
 
+/* The road map: urgent cities and ambushed vehicles pulse, watched roads march. */
+.map-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: map-pulse 1.6s ease-out infinite;
+}
+@keyframes map-pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+.map-march {
+  animation: map-march 1.2s linear infinite;
+}
+@keyframes map-march {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
 /* Players who ask for less motion: no floating, pulsing or sliding, only instant changes. */
 @media (prefers-reduced-motion: reduce) {
   *,

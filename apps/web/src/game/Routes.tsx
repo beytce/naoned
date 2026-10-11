@@ -1,54 +1,62 @@
 import { useState } from "react";
-import { RoadMap } from "../art/map.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Sheet, Slab, Tabs, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
+import { RoadBoard } from "./RoadBoard.js";
 import { d, minutesLabel } from "./format.js";
+import {
+  BuyVehicleSheet,
+  OrderPanel,
+  UnderwayCard,
+  bestMinutes,
+  roadPosition,
+  total,
+  vehicleName,
+} from "./roadKit.js";
 import { store } from "./store.js";
-import type { DeliveryOrderView, DeliveryView, RoadView, VehicleView } from "./types.js";
+import type { DeliveryOrderView, RoadView } from "./types.js";
 
 type Sort = "price" | "distance" | "deadline";
 
 const t = () => fr.game.road;
 
-export function vehicleName(type: string): string {
-  return t().vehicleNames[type] ?? type;
-}
-
-const total = (o: DeliveryOrderView) => BigInt(o.unitPrice) * BigInt(o.quantity);
-
-/** Shortest road time of an order with the merchant's own vehicles (for sorting and display). */
-function bestMinutes(o: DeliveryOrderView, owned: string[]): number {
-  const all = Object.entries(o.minutes)
-    .filter(([type]) => owned.length === 0 || owned.includes(type))
-    .map(([, m]) => m)
-    .filter((m): m is number => m !== null);
-  return all.length > 0 ? Math.min(...all) : Number.POSITIVE_INFINITY;
-}
-
-/** Where a delivery stands on its road: 0 at the depot, 1 at the city, back to 0. */
-export function roadPosition(dv: DeliveryView, now: number): number {
-  if (now <= dv.arriveAt) {
-    // Halted by an ambush waiting for an answer: it stays mid-way.
-    if (dv.attack?.pending) return 0.5;
-    return (now - dv.departAt) / Math.max(1, dv.arriveAt - dv.departAt);
-  }
-  return 1 - (now - dv.arriveAt) / Math.max(1, dv.backAt - dv.arriveAt);
-}
-
 /** Today's board, the vehicles and the roads; the bandits' screen from their opening day. */
 export function Routes(props: GameProps) {
   const road = props.view.road;
   const [tab, setTab] = useState<"livraisons" | "brigands">("livraisons");
+  const [view, setView] = useState<"carte" | "liste">(() =>
+    store.get("roadView") === "liste" ? "liste" : "carte",
+  );
   if (!road) return null;
   return (
     <div className="space-y-5">
-      <header>
-        <p className="label text-lagoon">{t().kicker}</p>
-        <h2 className="mt-1 font-display text-2xl font-extrabold uppercase">{t().title}</h2>
-        <p className="mt-2 text-sm text-cream-dim">{t().help}</p>
+      <header className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="label text-lagoon">{t().kicker}</p>
+          <h2 className="mt-1 font-display text-xl font-extrabold uppercase leading-tight">
+            {t().title}
+          </h2>
+        </div>
+        {(tab === "livraisons" || props.now < road.banditsOpenAt) && (
+          <div className="flex shrink-0 rounded-xl border border-line bg-night-2 p-0.5">
+            {(["carte", "liste"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                aria-pressed={view === v}
+                onClick={() => {
+                  store.set("roadView", v);
+                  setView(v);
+                }}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${view === v ? "bg-cream text-night" : "text-cream-dim"}`}
+              >
+                {fr.game.roadMap.view[v]}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
       {props.now < road.banditsOpenAt ? (
         <p className="text-xs text-muted">
@@ -65,7 +73,19 @@ export function Routes(props: GameProps) {
         />
       )}
       {tab === "livraisons" || props.now < road.banditsOpenAt ? (
-        <Deliveries {...props} road={road} />
+        <>
+          {view === "carte" ? (
+            <>
+              <RoadBoard {...props} road={road} />
+              <RoadNews {...props} />
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-cream-dim">{t().help}</p>
+              <Deliveries {...props} road={road} />
+            </>
+          )}
+        </>
       ) : (
         <Bandits {...props} road={road} />
       )}
@@ -96,6 +116,7 @@ function Bandits(props: GameProps & { road: RoadView }) {
   };
   return (
     <div className="space-y-5">
+      <RoadBoard {...props} mode="bandits" banditRoute={route} onBanditRoute={setRoute} />
       <Panel>
         <h3 className="font-display text-lg font-extrabold uppercase">{tb.title}</h3>
         <p className="mt-2 text-sm text-cream-dim">{tb.help}</p>
@@ -195,14 +216,10 @@ function Deliveries(props: GameProps & { road: RoadView }) {
   const { road } = props;
   const [sort, setSort] = useState<Sort>(() => (store.get("roadSort") as Sort) || "price");
   const [selected, setSelected] = useState<string | null>(null);
-  const [city, setCity] = useState<string | null>(null);
-  const region = props.view.player.region;
-  const reached = Object.keys(props.catalog.road?.routes[region] ?? {});
   const underway = road.deliveries.filter((dv) => props.now < dv.backAt);
   const owned = road.vehicles.map((v) => v.type);
   const orders = road.orders
     .filter((o) => o.status === "open" || o.status === "upcoming")
-    .filter((o) => !city || o.city === city)
     .sort((a, b) => {
       // The Doge's and the family's orders first: they earn more than ducats.
       const star = (o: DeliveryOrderView) => (o.kind === "doge" || o.kind === "family" ? 0 : 1);
@@ -219,24 +236,6 @@ function Deliveries(props: GameProps & { road: RoadView }) {
 
   return (
     <>
-      <Panel className="overflow-hidden p-0">
-        <RoadMap
-          region={region}
-          regions={props.catalog.regions}
-          cities={props.catalog.cities}
-          reached={reached}
-          watched={road.watchedRoutes}
-          selected={city}
-          dots={underway.map((dv) => ({
-            id: dv.id,
-            route: dv.route,
-            f: roadPosition(dv, props.now),
-            alarm: dv.attack?.pending === true,
-          }))}
-          onSelect={(c) => setCity(c === city ? null : c)}
-        />
-      </Panel>
-
       {underway.length > 0 && (
         <section className="space-y-2">
           <Label>{t().underway}</Label>
@@ -268,30 +267,16 @@ function Deliveries(props: GameProps & { road: RoadView }) {
             label: t().sort[s],
           }))}
         />
-        {city && (
-          <button type="button" className="label text-gold" onClick={() => setCity(null)}>
-            {props.names.city(city)} ✕
-          </button>
-        )}
         {orders.length === 0 && <p className="text-sm text-cream-dim">{t().empty}</p>}
         {orders.map((o) => (
           <OrderCard key={o.id} o={o} props={props} onOpen={() => setSelected(o.id)} />
         ))}
       </section>
 
-      {props.view.roadNews.length > 0 && (
-        <section className="space-y-2">
-          <Label>{t().newsTitle}</Label>
-          {props.view.roadNews.map((n) => (
-            <p key={`${n.route}:${n.at}`} className="text-sm text-cream-dim">
-              · {t().news(props.names.city(n.route.split(":")[1] ?? ""))}
-            </p>
-          ))}
-        </section>
-      )}
+      <RoadNews {...props} />
 
       <Sheet open={order !== null} onClose={() => setSelected(null)}>
-        {order && <OrderSheet o={order} props={props} onDone={() => setSelected(null)} />}
+        {order && <OrderPanel o={order} props={props} onDone={() => setSelected(null)} />}
       </Sheet>
     </>
   );
@@ -348,149 +333,8 @@ function OrderCard({
   );
 }
 
-function OrderSheet({
-  o,
-  props,
-  onDone,
-}: { o: DeliveryOrderView; props: GameProps; onDone: () => void }) {
-  const road = props.view.road as RoadView;
-  const vehicles = props.catalog.road?.vehicles ?? [];
-  const capacity = (v: VehicleView) => vehicles.find((x) => x.type === v.type)?.capacity ?? 0;
-  const fit = road.vehicles.filter((v) => v.status === "free" && capacity(v) >= o.quantity);
-  const [vehicleId, setVehicleId] = useState<string | null>(fit[0]?.id ?? null);
-  const route = `${props.view.player.region}:${o.city}`;
-  const watched = road.watchedRoutes.includes(route);
-  const [escort, setEscort] = useState<string>(watched ? "guards" : "none");
-  const stock = have(props.view, o.resource);
-  const vehicle = road.vehicles.find((v) => v.id === vehicleId);
-  const minutes = vehicle ? o.minutes[vehicle.type] : null;
-  const escorts = ["none", ...Object.keys(props.catalog.road?.escorts ?? {})];
-  return (
-    <div className="space-y-4">
-      <div>
-        <p className="label text-lagoon">{t().kinds[o.kind]}</p>
-        <h3 className="mt-1 font-display text-xl font-extrabold uppercase">
-          {o.quantity} {props.names.resource(o.resource).toLowerCase()} → {props.names.city(o.city)}
-        </h3>
-        <p className="mt-2 text-sm">
-          {t().sheet.payment} : <span className="font-bold text-gold">{d(total(o))}</span>
-        </p>
-      </div>
-
-      {watched && (
-        <p className="rounded-xl bg-vermilion/15 p-3 text-sm text-vermilion ring-1 ring-vermilion/60">
-          ⚔ {t().watchedWarning}
-        </p>
-      )}
-
-      <div className="space-y-2">
-        <Label>{t().sheet.vehicle}</Label>
-        {fit.length === 0 && <p className="text-sm text-cream-dim">{t().sheet.noVehicle}</p>}
-        {fit.map((v) => (
-          <button
-            key={v.id}
-            type="button"
-            onClick={() => setVehicleId(v.id)}
-            className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm ${vehicleId === v.id ? "border-gold bg-gold/10" : "border-line bg-night-3"}`}
-          >
-            <span className="font-semibold">{vehicleName(v.type)}</span>
-            <span className="label">
-              {t().capacity(capacity(v))} ·{" "}
-              {o.minutes[v.type] !== null ? t().oneWay(minutesLabel(o.minutes[v.type] ?? 0)) : "—"}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <div className="space-y-2">
-        <Label>{t().sheet.escort}</Label>
-        {escorts.map((e) => (
-          <button
-            key={e}
-            type="button"
-            onClick={() => setEscort(e)}
-            className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm ${escort === e ? "border-gold bg-gold/10" : "border-line bg-night-3"}`}
-          >
-            <span className="font-semibold">{t().sheet.escorts[e] ?? e}</span>
-            <span className="label text-right">
-              {e !== "none" && `${t().sheet.escortCost(d(o.escorts[e] ?? "0"))} · `}
-              {t().sheet.chance(Math.round((road.ambushChance[e] ?? 0) / 100))}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {stock < o.quantity && (
-        <p className="text-sm text-vermilion">{t().sheet.missing(o.quantity - stock)}</p>
-      )}
-      <Slab
-        size="lg"
-        className="w-full"
-        disabled={props.busy || !vehicleId || stock < o.quantity || o.status !== "open"}
-        onClick={async () => {
-          if (!vehicleId) return;
-          const ok = await props.act({
-            type: "dispatchDelivery",
-            orderId: o.id,
-            vehicleId,
-            escort,
-          });
-          if (ok) onDone();
-        }}
-      >
-        {t().sheet.go}
-        {minutes ? ` · ${minutesLabel(minutes)}` : ""}
-      </Slab>
-    </div>
-  );
-}
-
-function UnderwayCard({ dv, props }: { dv: DeliveryView; props: GameProps }) {
-  const city = props.names.city(dv.route.split(":")[1] ?? "");
-  const pending = dv.attack?.pending === true && props.now <= (dv.attack?.reactBy ?? 0);
-  const taken = Object.values(dv.attack?.taken ?? {}).reduce((a, b) => a + b, 0);
-  return (
-    <Panel glow={pending ? "vermilion" : undefined} className="p-3">
-      <div className="flex items-center gap-3">
-        <ResourceIcon code={dv.resource} size={32} />
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-display text-sm font-extrabold uppercase">
-            {dv.loaded} → {city}
-          </p>
-          <p className="label mt-1">
-            {pending
-              ? `${t().ambushed} ${clock((dv.attack?.reactBy ?? 0) - props.now)}`
-              : props.now < dv.arriveAt
-                ? t().arrivesIn(clock(dv.arriveAt - props.now))
-                : t().backHome(clock(dv.backAt - props.now))}
-          </p>
-          {dv.outcome !== "en_route" && (
-            <p className="mt-1 text-xs text-lagoon">
-              {dv.attack?.success ? t().robbed(taken) : t().arrived(d(dv.paid ?? dv.payment))}
-            </p>
-          )}
-          {dv.attack?.success === false && (
-            <p className="mt-1 text-xs text-lagoon">{t().repelled}</p>
-          )}
-        </div>
-        {pending && (
-          <Slab
-            tone="vermilion"
-            size="sm"
-            disabled={props.busy}
-            onClick={() => props.act({ type: "reactToAmbush", deliveryId: dv.id })}
-          >
-            {t().react}
-          </Slab>
-        )}
-      </div>
-    </Panel>
-  );
-}
-
 function Vehicles(props: GameProps & { road: RoadView }) {
   const [buying, setBuying] = useState(false);
-  const types = props.catalog.road?.vehicles ?? [];
   const max = props.catalog.road?.maxVehicles ?? 0;
   return (
     <section className="space-y-2">
@@ -512,40 +356,22 @@ function Vehicles(props: GameProps & { road: RoadView }) {
           </div>
         ))}
       </div>
-      <Sheet open={buying} onClose={() => setBuying(false)}>
-        <div className="space-y-3">
-          <h3 className="font-display text-xl font-extrabold uppercase">{t().buyTitle}</h3>
-          <p className="text-sm text-cream-dim">{t().maxVehicles(max)}</p>
-          {types.map((v) => (
-            <Panel key={v.type} className="p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-display font-extrabold uppercase">{vehicleName(v.type)}</p>
-                  <p className="label mt-1">
-                    {t().capacity(v.capacity)} · {t().upkeep(d(v.upkeepPerDay))}
-                  </p>
-                  <p className="mt-1 text-sm">
-                    {d(v.costDucats)}
-                    {Object.entries(v.costMaterials).map(
-                      ([r, q]) => ` + ${q} ${props.names.resource(r).toLowerCase()}`,
-                    )}
-                  </p>
-                </div>
-                <Slab
-                  size="sm"
-                  disabled={props.busy}
-                  onClick={async () => {
-                    if (await props.act({ type: "buyVehicle", vehicleType: v.type }))
-                      setBuying(false);
-                  }}
-                >
-                  {t().buy}
-                </Slab>
-              </div>
-            </Panel>
-          ))}
-        </div>
-      </Sheet>
+      <BuyVehicleSheet props={props} open={buying} onClose={() => setBuying(false)} />
+    </section>
+  );
+}
+
+/** The gazette of the roads: the latest ambushes, without names. */
+function RoadNews(props: GameProps) {
+  if (props.view.roadNews.length === 0) return null;
+  return (
+    <section className="space-y-2">
+      <Label>{t().newsTitle}</Label>
+      {props.view.roadNews.map((n) => (
+        <p key={`${n.route}:${n.at}`} className="text-sm text-cream-dim">
+          · {t().news(props.names.city(n.route.split(":")[1] ?? ""))}
+        </p>
+      ))}
     </section>
   );
 }
