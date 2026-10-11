@@ -105,6 +105,13 @@ export const worldSettingsSchema = z.object({
     .default({ maxActive: 1, weeklySwingBps: 0, destinations: {} }),
   /** Computer-run merchants keep the world at this many active merchants while players are few. */
   bots: z.object({ population: qty }).default({ population: 0 }),
+  /**
+   * Buildings that may only be built (or upgraded) in some regions: raw materials are local.
+   * Building type → regions. Absent: anywhere.
+   */
+  buildingRegions: z.record(z.array(z.string())).default({}),
+  /** Yield bonus per building level above the first: specialising pays. */
+  levelYieldBonusBps: bps.default(0),
   /** Ships built at the arsenal: they carry convoys and escort them. */
   ships: z
     .object({

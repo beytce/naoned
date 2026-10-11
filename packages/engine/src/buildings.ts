@@ -69,8 +69,20 @@ export function buildingsOf(tx: Tx, playerId: PlayerId): Building[] {
   return Object.values(tx.s.buildings).filter((b) => b.playerId === playerId) as Building[];
 }
 
+/** Raw materials are local: some buildings belong to some regions only. */
+export function allowedHere(ctx: WorldContext, region: string, type: string): boolean {
+  const regions = ctx.settings.buildingRegions[type];
+  return !regions || regions.includes(region);
+}
+
+function checkRegion(tx: Tx, playerId: PlayerId, type: string): void {
+  const region = tx.s.players[playerId]?.region ?? "";
+  if (!allowedHere(tx.ctx, region, type)) fail("wrong_region");
+}
+
 export function build(tx: Tx, playerId: PlayerId, type: string): Building {
   if (!tx.ctx.theme.buildings.some((b) => b.type === type)) fail("unknown_building_type");
+  checkRegion(tx, playerId, type);
   if (buildingsOf(tx, playerId).length >= tx.ctx.settings.maxBuildings) fail("max_buildings");
   const cost = costForLevel(tx.ctx, type, 1);
   const building = grantBuilding(tx, playerId, type);
@@ -81,6 +93,7 @@ export function build(tx: Tx, playerId: PlayerId, type: string): Building {
 
 export function upgrade(tx: Tx, building: Building): void {
   if (building.level >= tx.ctx.settings.maxBuildingLevel) fail("max_level");
+  checkRegion(tx, building.playerId, building.type);
   const cost = costForLevel(tx.ctx, building.type, building.level + 1);
   payCost(tx, building.playerId, cost, building.id);
   building.level += 1;

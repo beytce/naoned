@@ -56,6 +56,7 @@ export type EngineErrorCode =
   | "ship_damaged"
   | "ship_not_damaged"
   | "invalid_fleet"
+  | "wrong_region"
   | "no_privateers"
   | "too_many_raids"
   | "unknown_raid"
