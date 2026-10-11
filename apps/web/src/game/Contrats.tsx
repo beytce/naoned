@@ -38,6 +38,16 @@ function ContractCard({ c, props }: { c: ContractView; props: GameProps }) {
         ) : missing > 0 ? (
           <>
             <span className="text-sm text-vermilion">{fr.game.contracts.missing(missing)}</span>
+            {props.view.pass.rerollsLeft > 0 && (
+              <Slab
+                tone="ghost"
+                size="sm"
+                disabled={props.busy}
+                onClick={() => props.act({ type: "rerollContract", contractId: c.id })}
+              >
+                {fr.game.pass.reroll}
+              </Slab>
+            )}
             <Slab
               tone="ghost"
               size="sm"

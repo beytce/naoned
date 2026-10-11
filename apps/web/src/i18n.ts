@@ -2,7 +2,7 @@
 export const fr = {
   appName: "Fondaco",
   season: "Saison 1 · Venise 1450",
-  tagline: "Bâtissez une maison de commerce en six semaines, sur un marché tenu par les joueurs.",
+  tagline: "Bâtissez une maison de commerce en un mois, sur un marché tenu par les joueurs.",
   emailLabel: "Adresse e-mail",
   emailPlaceholder: "vous@exemple.fr",
   sendLink: "Recevoir mon lien",
@@ -29,7 +29,7 @@ export const fr = {
       {
         kicker: "Le but du jeu",
         title: "Devenez le marchand le plus riche de Venise",
-        text: "La saison dure 42 jours. À la fin, le classement se fige : le plus gros patrimoine l'emporte. Vous partez avec 1 000 ducats et deux ou trois ateliers.",
+        text: "Une saison dure un mois : elle s'ouvre le 1er et se termine le dernier jour du mois. À la fin, le classement se fige : le plus gros patrimoine l'emporte. Vous partez avec 1 000 ducats et deux ou trois ateliers.",
       },
       {
         kicker: "Comment",
@@ -249,6 +249,66 @@ export const fr = {
     idleAllHelp: "Lancez une production pour que vos ateliers travaillent pendant votre absence.",
     harvestAll: (n: number) => `Tout récolter et relancer · ${n} lot${n > 1 ? "s" : ""}`,
     restartAll: "Tout relancer",
+    daily: {
+      title: "Tâches du jour",
+      streak: (n: number) =>
+        n > 0 ? `Série : ${n} jour${n > 1 ? "s" : ""}` : "Pas encore de série",
+      chest: "Coffre du jour",
+      chestHint:
+        "Les trois tâches faites ouvrent le coffre ; chaque jour d'affilée l'agrandit (jusqu'à 5).",
+      chestOpen: "Coffre ouvert : revenez demain pour prolonger la série.",
+      resetsIn: (t: string) => `Nouvelles tâches dans ${t}`,
+      claim: "Encaisser",
+      tasks: {
+        sell_city: "Vendre 3 fois à une ville",
+        doge_order: "Honorer un contrat du Doge",
+        place_offer: "Laisser une offre au Rialto",
+        harvests: "Récolter 4 fois",
+        build_site: "Livrer un grand chantier",
+        criee: "Vendre à une Criée",
+      } as Record<string, string>,
+    },
+    criee: {
+      kicker: "Criée du Rialto",
+      title: (city: string, resource: string, pct: string) =>
+        `${city} achète ${resource} à +${pct}`,
+      endsIn: (t: string) => `Fin dans ${t}`,
+      room: (mine: number, total: number) =>
+        `Vous pouvez vendre ${mine} · il en reste ${total} pour tous`,
+      sell: (q: number) => `Vendre ${q}`,
+      none: "Rien à vendre en stock",
+      soldOut: "Criée épuisée",
+      help: "Trois fois par jour, à une heure imprévisible, une ville rachète une marchandise au-dessus du prix de référence pendant 20 minutes. Seuls ceux qui sont là en profitent.",
+    },
+    pass: {
+      title: "Pass Négociant",
+      active: (until: string) => `Actif jusqu'au ${until}`,
+      upcoming: (from: string) => `Gagné : actif à partir du ${from}`,
+      inactive: "Vous ne l'avez pas encore.",
+      pitch:
+        "Des avantages légers, utiles seulement à qui joue : ils ne produisent rien à votre place et ne donnent ni ducats ni marchandises.",
+      perks: {
+        quota: (pct: number) => `+${pct} % de quota quotidien à la Dogana`,
+        orders: (n: number) => `${n} offres ouvertes de plus au Rialto`,
+        fresh: (pct: number) => `Produits frais à +${pct} % au lieu de +5 %`,
+        reroll: "Échanger une commande du Doge par jour",
+        info: "Carnet d'ordres à 10 offres, 7 jours d'historique des prix",
+        lookout: "La vigie : corsaires en guet sur chaque route",
+        alerts: "Alertes des Criées et des bonnes affaires",
+        cosmetics: "Sceau à côté de votre nom, palette « Or de Venise »",
+      },
+      earn: "Le gagner sans payer : top 10 de la semaine (7 jours), top 10 de la saison (toute la saison suivante), top 10 % et 25 % (3 semaines, 1 semaine).",
+      price: (season: string, week: string) => `${season} la saison · ${week} la semaine`,
+      soon: "Achat bientôt disponible",
+      seal: "Pass Négociant",
+      reroll: "Échanger",
+      rerollHelp: "Pass Négociant : une commande échangée par jour.",
+      lookoutLine: (n: number, until: string) =>
+        `Vigie : ${n} corsaire${n > 1 ? "s" : ""} en guet jusqu'à ${until}`,
+      lookoutClear: "Vigie : route dégagée",
+      paletteLocked: "Réservée au Pass Négociant",
+    },
+    fresh: (pct: number, t: string) => `Frais : +${pct} % encore ${t}`,
     ledger: {
       title: "Livre de compte",
       claim: "Encaisser",
@@ -407,6 +467,11 @@ export const fr = {
       galley: (port: string) =>
         `Votre galère est rentrée${port ? ` de ${port}` : ""} : déchargez la cargaison.`,
       event: "Un événement agite les marchés.",
+      seasonEnding: "Dernier sprint : la saison se termine dans 3 jours.",
+      seasonOpened: (name: string) => `${name} commence : venez voir vos récompenses.`,
+      criee: (city: string, what: string, pct: number) =>
+        `Criée : ${city} achète ${what} à +${pct} % pendant 20 minutes.`,
+      deal: (what: string, price: string) => `Bonne affaire : ${what} à ${price} au Rialto.`,
       raidVictim: (who: string, ok: boolean, route: string) =>
         ok
           ? `${who} a pillé votre convoi vers ${route}.`
@@ -443,6 +508,9 @@ export const fr = {
           corsairs: "Retour des corsaires",
           event: "Gazette (nouvel événement)",
           week: "Résultats de la semaine",
+          season: "Fin et ouverture de saison",
+          criee: "Criées (Pass Négociant)",
+          deal: "Bonnes affaires (Pass Négociant)",
         } as Record<string, string>,
       },
     },
@@ -458,6 +526,43 @@ export const fr = {
         senator: "Sénateur",
       } as Record<string, string>,
       help: "Gain de patrimoine depuis le début de la semaine (ou depuis votre arrivée), en ducats. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
+    },
+    season: {
+      closed: (name: string) => `La saison ${name} est close`,
+      rankOf: (rank: number, players: number) =>
+        `${rank}${rank === 1 ? "er" : "e"} sur ${players} marchand${players > 1 ? "s" : ""}`,
+      worth: "Patrimoine final",
+      podium: "Le podium",
+      rewards: "Vos récompenses",
+      passSeason: "Pass Négociant pour toute la nouvelle saison",
+      passDays: (n: number) => `${n} jours de Pass Négociant`,
+      renown: (n: number) => `+${n} de Renommée`,
+      renownTotal: (name: string, points: number) => `${name} · ${points} points de Renommée`,
+      nothing:
+        "Jouez au moins 7 jours dans une saison pour recevoir l'écusson de participant, et visez le top 25 % pour du Pass Négociant.",
+      start: "Ouvrir mon nouveau comptoir",
+      newSeason: (name: string) =>
+        `${name} commence : tout le monde repart de zéro. Votre palmarès et votre Renommée vous suivent.`,
+      lastSprint: (days: number) =>
+        `Dernier sprint : la saison se termine dans ${days} jour${days > 1 ? "s" : ""}. Le top 10 gagne le Pass Négociant pour la saison suivante.`,
+      honoured: (pseudo: string, season: string) => `${pseudo}, Doge de ${season}`,
+    },
+    palmares: {
+      title: "Palmarès",
+      renown: "Renommée",
+      renownHelp:
+        "La Renommée s'accumule de saison en saison selon votre rang final. Elle donne des titres, jamais d'avance économique : chaque saison, tout le monde repart à égalité.",
+      nextRenown: (name: string, missing: number) => `${missing} points avant « ${name} »`,
+      seasons: "Saisons",
+      weeks: "Semaines classées",
+      bestWeek: "Meilleur rang hebdo",
+      podiums: "Podiums hebdo",
+      wins: "Doge de la semaine",
+      noSeason:
+        "Aucune saison terminée pour l'instant : le classement final se fige le dernier jour du mois.",
+      latestWeeks: "Dernières semaines",
+      weekOf: (week: number, season: string) => `Semaine ${week} · ${season}`,
+      open: "Voir le palmarès",
     },
     npc: "PNJ",
     npcHelp:
@@ -498,6 +603,9 @@ export const fr = {
     },
     replayIntro: "Revoir l'introduction",
     replayGuide: "Relancer le guide",
+    haptics: "Vibrations",
+    hapticsHint:
+      "Un léger retour quand une action réussit, une alerte en cas d'abordage. Sur iPhone, seulement un petit clic.",
     palette: "Palette",
     paletteHint: "Change les couleurs du jeu sur cet appareil.",
 

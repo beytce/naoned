@@ -1,8 +1,10 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { Crest, defaultCrest } from "../art/crest.js";
+import { Sign } from "../art/logo.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Tabs, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
+import { PlayerPalmares } from "./Palmares.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
 import { store } from "./store.js";
@@ -13,6 +15,8 @@ type Period = "week" | "season";
 const RANK_COLOR = ["text-gold", "text-lagoon", "text-vermilion"];
 
 interface Who {
+  id?: string;
+  pass?: boolean;
   rank: number;
   pseudo: string | null;
   region: string;
@@ -20,11 +24,20 @@ interface Who {
   bot: boolean;
 }
 
-function Line(props: { r: Who; game: GameProps; mine?: boolean; value: ReactNode }) {
+function Line(props: {
+  r: Who;
+  game: GameProps;
+  mine?: boolean;
+  value: ReactNode;
+  onOpen?: (id: string) => void;
+}) {
   const { r, mine } = props;
   return (
-    <div
-      className={`flex items-center gap-3 py-3 ${mine ? "border-l-4 border-gold bg-gold/10 px-3" : "border-b border-line/70"}`}
+    <button
+      type="button"
+      onClick={() => r.id && props.onOpen?.(r.id)}
+      aria-label={fr.game.palmares.open}
+      className={`flex w-full items-center gap-3 py-3 text-left transition hover:bg-night-3/60 ${mine ? "rounded-r-xl border-l-4 border-gold bg-gold/10 px-3" : "border-b border-line/70"}`}
     >
       <span
         className={`w-10 font-display text-xl font-extrabold tabular-nums ${RANK_COLOR[r.rank - 1] ?? "text-cream-dim"}`}
@@ -39,11 +52,16 @@ function Line(props: { r: Who; game: GameProps; mine?: boolean; value: ReactNode
         <div className="mt-1 flex items-center gap-2">
           {mine && <Badge>{fr.game.you}</Badge>}
           {r.bot && <Badge tone="ghost">{fr.game.npc}</Badge>}
+          {r.pass && (
+            <span title={fr.game.pass.seal} className="inline-flex">
+              <Sign size={14} />
+            </span>
+          )}
           <span className="label">{props.game.names.region(r.region)}</span>
         </div>
       </div>
       <span className="font-display text-sm font-extrabold tabular-nums">{props.value}</span>
-    </div>
+    </button>
   );
 }
 
@@ -96,7 +114,7 @@ function Podium({ rows }: { rows: PodiumRow[] }) {
   );
 }
 
-function Week({ game }: { game: GameProps }) {
+function Week({ game, onOpen }: { game: GameProps; onOpen: (id: string) => void }) {
   const [data, setData] = useState<WeekRanking | null>(null);
   useEffect(() => {
     gameApi
@@ -106,7 +124,14 @@ function Week({ game }: { game: GameProps }) {
   }, []);
   if (!data) return <p className="text-muted">…</p>;
   const line = (r: WeekRow, mine?: boolean) => (
-    <Line key={r.rank} r={r} game={game} mine={mine} value={<Gain value={r.gain} />} />
+    <Line
+      key={r.rank}
+      r={r}
+      game={game}
+      mine={mine}
+      value={<Gain value={r.gain} />}
+      onOpen={onOpen}
+    />
   );
   return (
     <div className="space-y-6">
@@ -134,7 +159,7 @@ function Week({ game }: { game: GameProps }) {
   );
 }
 
-function Season({ game }: { game: GameProps }) {
+function Season({ game, onOpen }: { game: GameProps; onOpen: (id: string) => void }) {
   const [rows, setRows] = useState<RankingRow[] | null>(null);
   useEffect(() => {
     gameApi
@@ -142,7 +167,7 @@ function Season({ game }: { game: GameProps }) {
       .then((r) => setRows(r.rows))
       .catch(() => setRows([]));
   }, []);
-  const end = game.catalog.world.startsAt + game.catalog.world.seasonDays * 86_400_000;
+  const end = game.catalog.world.endsAt;
   const me = rows?.find((r) => r.me);
   return (
     <div className="space-y-6">
@@ -159,14 +184,16 @@ function Season({ game }: { game: GameProps }) {
       {me && (
         <div>
           <Label className="mb-2">{fr.game.myRank}</Label>
-          <Line r={me} game={game} mine value={d(me.netWorth)} />
+          <Line r={me} game={game} mine value={d(me.netWorth)} onOpen={onOpen} />
         </div>
       )}
       <div>
         {rows === null ? (
           <p className="text-muted">…</p>
         ) : (
-          rows.map((r) => <Line key={r.rank} r={r} game={game} value={d(r.netWorth)} />)
+          rows.map((r) => (
+            <Line key={r.rank} r={r} game={game} value={d(r.netWorth)} onOpen={onOpen} />
+          ))
         )}
       </div>
       <p className="text-xs text-muted">{fr.game.rankingHelp}</p>
@@ -176,6 +203,7 @@ function Season({ game }: { game: GameProps }) {
 }
 
 export function Top(props: GameProps) {
+  const [opened, setOpened] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>(() =>
     store.get("topPeriod") === "season" ? "season" : "week",
   );
@@ -192,7 +220,12 @@ export function Top(props: GameProps) {
           { value: "season", label: fr.game.week.seasonTab },
         ]}
       />
-      {period === "week" ? <Week game={props} /> : <Season game={props} />}
+      {period === "week" ? (
+        <Week game={props} onOpen={setOpened} />
+      ) : (
+        <Season game={props} onOpen={setOpened} />
+      )}
+      <PlayerPalmares accountId={opened} onClose={() => setOpened(null)} />
     </div>
   );
 }

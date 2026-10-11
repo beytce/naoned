@@ -1,14 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type Account, ApiError } from "../api.js";
 import { Crest, defaultCrest } from "../art/crest.js";
 import { Coin, NavIcon } from "../art/icons.js";
 import { Logotype } from "../art/logo.js";
 import { Lorenzo } from "../art/scenes.js";
+import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
+import { applyPalette, currentPalette, needsPass } from "../theme.js";
 import { Bell } from "./Bell.js";
+import { Ceremony } from "./Ceremony.js";
 import { Coach } from "./Coach.js";
 import { Comptoir } from "./Comptoir.js";
 import { Contrats } from "./Contrats.js";
+import { Criee } from "./Criee.js";
 import { Gazette } from "./Gazette.js";
 import { Help } from "./Help.js";
 import { Intro } from "./Intro.js";
@@ -21,7 +25,31 @@ import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
 import { store } from "./store.js";
-import type { Action, Catalog, PlayerView, PriceSeries, Welcome as WelcomeData } from "./types.js";
+
+/** Actions that bring something in: a fuller cue than a plain tap. */
+const REWARDING = new Set<string>([
+  "collect",
+  "collectAll",
+  "collectAndRestart",
+  "claimMission",
+  "build",
+  "upgrade",
+  "sellToCity",
+  "fulfillContract",
+  "deliverToProject",
+  "collectExpedition",
+  "collectRaid",
+  "buildShip",
+]);
+import type {
+  Action,
+  Catalog,
+  Ceremony as CeremonyData,
+  GameResponse,
+  PlayerView,
+  PriceSeries,
+  Welcome as WelcomeData,
+} from "./types.js";
 
 export type Tab = "comptoir" | "marche" | "contrats" | "port" | "top" | "profil";
 export type MarketTab = "joueurs" | "villes";
@@ -37,6 +65,8 @@ export interface Names {
 export interface GameProps {
   catalog: Catalog;
   view: PlayerView;
+  /** Pass won for later, and its prices. */
+  passInfo: Pick<GameResponse, "upcomingPass" | "passPrices">;
   account: Account;
   /** Server time now, ticking every second. */
   now: number;
@@ -88,7 +118,10 @@ export function Game(props: {
   const [introSeen, setIntroSeen] = useState(() => store.get("introSeen") === "1");
   const [guideKey, setGuideKey] = useState(0);
   const [unread, setUnread] = useState(0);
+  const loaded = useRef(false);
   const [welcome, setWelcome] = useState<WelcomeData | null>(null);
+  const [ceremony, setCeremony] = useState<CeremonyData | null>(null);
+  const [passInfo, setPassInfo] = useState<Pick<GameResponse, "upcomingPass" | "passPrices">>({});
   const [people, setPeople] = useState<Record<string, string | null>>({});
   const [bots, setBots] = useState<Set<string>>(new Set());
   const clearUnread = useCallback(() => setUnread(0), []);
@@ -102,8 +135,15 @@ export function Game(props: {
     try {
       const res = await gameApi.view();
       apply(res.serverTime, res.view);
-      setUnread(res.unread ?? 0);
+      setUnread((before) => {
+        // A notice arrived while playing: a light cue (convoys, offers taken, boardings).
+        if (loaded.current && (res.unread ?? 0) > before) haptic("success");
+        loaded.current = true;
+        return res.unread ?? 0;
+      });
       if (res.welcome) setWelcome(res.welcome);
+      setCeremony(res.ceremony ?? null);
+      setPassInfo({ upcomingPass: res.upcomingPass, passPrices: res.passPrices });
       setPeople(res.names ?? {});
       setBots(new Set(res.bots ?? []));
       if (res.view) setPrices((await gameApi.prices()).series);
@@ -125,6 +165,22 @@ export function Game(props: {
       clearInterval(clock);
     };
   }, [refresh]);
+
+  // The Pass's palette goes back to the default when the Pass ends.
+  const passActive = view?.pass.active;
+  useEffect(() => {
+    if (passActive === false && needsPass(currentPalette())) applyPalette("lagune");
+  }, [passActive]);
+
+  // A season closed while the game was open: the catalog (dates, name) is the new month's.
+  const closedWorld = ceremony?.worldId;
+  useEffect(() => {
+    if (!closedWorld) return;
+    gameApi
+      .catalog()
+      .then(setCatalog)
+      .catch(() => undefined);
+  }, [closedWorld]);
 
   useEffect(() => {
     if (!toast) return;
@@ -154,9 +210,11 @@ export function Game(props: {
         if (res.names) setPeople(res.names);
         if (res.bots) setBots(new Set(res.bots));
         if (res.error) {
+          haptic("warn");
           setToast(fr.game.errors[res.error] ?? fr.errors.unknown ?? null);
           return false;
         }
+        haptic(REWARDING.has(action.type) ? "success" : "tap");
         if (action.type === "instantOrder" || action.type === "sellToCity") {
           gameApi
             .prices()
@@ -166,6 +224,7 @@ export function Game(props: {
         return true;
       } catch (err) {
         const code = err instanceof ApiError ? err.code : "unknown";
+        haptic("warn");
         setToast(fr.game.errors[code] ?? fr.errors[code] ?? fr.errors.unknown ?? null);
         return false;
       } finally {
@@ -193,6 +252,20 @@ export function Game(props: {
 
   if (!catalog || view === undefined) {
     return <p className="py-32 text-center font-display text-muted">…</p>;
+  }
+
+  if (ceremony) {
+    return (
+      <Ceremony
+        data={ceremony}
+        nextSeason={catalog.world.name}
+        onDone={() => {
+          haptic("success");
+          setCeremony(null);
+          gameApi.ceremonySeen(ceremony.worldId).catch(() => undefined);
+        }}
+      />
+    );
   }
 
   if (view === null) {
@@ -246,7 +319,9 @@ export function Game(props: {
     people,
     bots,
     tab,
+    passInfo,
     goTo: (t) => {
+      if (t !== tab) haptic("tap");
       setSheet(null);
       setTab(t);
       window.scrollTo({ top: 0 });
@@ -297,6 +372,7 @@ export function Game(props: {
     view.ships.some((s) => s.status === "damaged");
 
   const dayProgress = Math.min(1, view.day / catalog.world.seasonDays);
+  const daysLeft = Math.ceil((catalog.world.endsAt - (now + offset)) / 86_400_000);
   const badge = (t: Tab) => (t === "contrats" && contractsLeft) || (t === "port" && galleyBack);
   const resumeGuide = guidePaused && (
     <button
@@ -419,6 +495,12 @@ export function Game(props: {
       )}
 
       <main className="mx-auto w-full max-w-md flex-1 px-4 pb-40 pt-4 lg:max-w-6xl lg:px-8 lg:pb-16 lg:pt-6">
+        <Criee {...gp} />
+        {daysLeft > 0 && daysLeft <= 3 && (
+          <p className="mb-4 rounded-2xl border border-gold/60 bg-gold/10 px-4 py-3 text-sm text-gold">
+            {fr.game.season.lastSprint(daysLeft)}
+          </p>
+        )}
         {tab === "comptoir" && <Comptoir {...gp} />}
         {tab === "marche" && <Marche {...gp} />}
         {tab === "contrats" && <Contrats {...gp} />}

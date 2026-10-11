@@ -16,6 +16,9 @@ const ICON = {
   corsairs: NavIcon.port,
   event: NavIcon.bell,
   week: NavIcon.top,
+  season: NavIcon.top,
+  criee: NavIcon.marche,
+  deal: NavIcon.marche,
 } as const;
 const TONE: Record<string, string> = {
   harvest: "text-lagoon",
@@ -25,6 +28,9 @@ const TONE: Record<string, string> = {
   corsairs: "text-vermilion",
   event: "text-gold",
   week: "text-gold",
+  season: "text-gold",
+  criee: "text-gold",
+  deal: "text-lagoon",
 };
 
 function text(n: Notice, props: GameProps): string {
@@ -58,6 +64,19 @@ function text(n: Notice, props: GameProps): string {
       const e = fr.game.gazette.events[String(n.data.code)];
       return e ? `${e[0]} : ${e[1]}` : t.event;
     }
+    case "season":
+      return n.data.phase === "ending" ? t.seasonEnding : t.seasonOpened(String(n.data.name ?? ""));
+    case "criee":
+      return t.criee(
+        props.names.city(String(n.data.city)),
+        props.names.resource(String(n.data.resource)).toLowerCase(),
+        Math.round(Number(n.data.premiumBps) / 100),
+      );
+    case "deal":
+      return t.deal(
+        props.names.resource(String(n.data.resource)).toLowerCase(),
+        d(String(n.data.price)),
+      );
     case "week": {
       const gain = BigInt(String(n.data.gain ?? "0"));
       const award = n.data.award ? fr.game.week.awards[String(n.data.award)] : null;

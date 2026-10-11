@@ -9,9 +9,20 @@ export const PALETTES = [
     name: "Parchemin & Lapis",
     swatch: ["#F3E9D4", "#C9952F", "#2D5486", "#B2412D"],
   },
+  // The Pass Négociant's own palette.
+  {
+    id: "or",
+    name: "Or de Venise",
+    swatch: ["#12100C", "#ECBE50", "#80B696", "#DE684C"],
+    pass: true,
+  },
 ] as const;
 
 export type PaletteId = (typeof PALETTES)[number]["id"];
+
+export function needsPass(id: PaletteId): boolean {
+  return PALETTES.some((p) => p.id === id && "pass" in p && p.pass);
+}
 
 export function currentPalette(): PaletteId {
   const saved = store.get("palette");

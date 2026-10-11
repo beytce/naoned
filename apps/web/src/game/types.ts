@@ -18,9 +18,12 @@ export interface Catalog {
   world: {
     name: string;
     startsAt: number;
+    endsAt: number;
     seasonDays: number;
     registrationClosesDay: number;
   };
+  /** The Doge of the season before, honoured on the Dogana's façade. */
+  previousDoge?: { pseudo: string | null; crest: CrestData | null; season: string } | null;
   ports: { code: string; name: string }[];
   destinations: Record<string, Destination>;
   maxGalleys: number;
@@ -200,6 +203,8 @@ export interface BuildingView {
     level: number;
     ready: number;
     endsAt: number;
+    /** Collecting before this time earns the fresh produce bonus. */
+    freshUntil: number | null;
   } | null;
   canStart: number;
   upgradeCost: Cost | null;
@@ -260,6 +265,54 @@ export interface PlayerView {
   rations: { resource: string; perDay: number; hungryUntil: number; nextMealAt: number };
   tutorial: string[];
   missions: MissionView[];
+  daily: DailyView | null;
+  pass: PassView;
+  fresh: { minutes: number; bonusBps: number };
+  criee: CrieeView | null;
+}
+
+export interface PassView {
+  active: boolean;
+  until: number;
+  perks: {
+    marketMakerQuotaBps: number;
+    extraOpenOrders: number;
+    freshBonusBps: number;
+    contractRerollsPerDay: number;
+  };
+  maxOpenOrders: number;
+  rerollsLeft: number;
+  /** Corsairs on each route (Pass only). */
+  lookout: Record<string, { corsairs: number; until: number }> | null;
+}
+
+export interface DailyView {
+  day: number;
+  tasks: {
+    id: string;
+    event: string;
+    count: number;
+    progress: number;
+    done: boolean;
+    claimed: boolean;
+    reward: { goods: Record<string, number>; ducats: Money };
+  }[];
+  chestClaimed: boolean;
+  chest: Money;
+  streak: number;
+  best: number;
+  resetsAt: number;
+}
+
+export interface CrieeView {
+  index: number;
+  city: string;
+  resource: string;
+  premiumBps: number;
+  startsAt: number;
+  endsAt: number;
+  price: Money;
+  room: { mine: number; total: number };
 }
 
 export interface MissionView {
@@ -295,6 +348,54 @@ export interface GameResponse {
   names?: Record<string, string | null>;
   /** Which of them are computer-run houses. */
   bots?: string[];
+  /** A Pass won that starts later (the next season). */
+  upcomingPass?: { startsAt: number; endsAt: number; source: string } | null;
+  /** Prices shown for the Pass, in euro cents. */
+  passPrices?: { season: number; week: number };
+  /** The closing ceremony of the last season, until watched. */
+  ceremony?: Ceremony;
+}
+
+export interface Ceremony {
+  worldId: string;
+  season: string;
+  rank: number;
+  players: number;
+  worth: Money;
+  tier: string;
+  award: string;
+  renown: number;
+  passDays: number | "season";
+  totalRenown: Renown;
+  podium: { rank: number; pseudo: string | null; crest: CrestData | null; worth: Money }[];
+}
+
+export interface Renown {
+  points: number;
+  current: { from: number; name: string };
+  next: { from: number; name: string } | null;
+}
+
+export interface Palmares {
+  renown: Renown;
+  seasons: {
+    season: string;
+    endsAt: number;
+    rank: number;
+    players: number;
+    worth: Money;
+    tier: string;
+    award: string;
+    renown: number;
+  }[];
+  weekly: {
+    weeks: number;
+    podiums: number;
+    wins: number;
+    top10: number;
+    best: number | null;
+    latest: { season: string; week: number; rank: number; gain: Money; award: string | null }[];
+  };
 }
 
 export type NotificationKind =
@@ -304,7 +405,10 @@ export type NotificationKind =
   | "raid"
   | "corsairs"
   | "event"
-  | "week";
+  | "week"
+  | "season"
+  | "criee"
+  | "deal";
 
 export interface Notice {
   id: number;
@@ -327,6 +431,10 @@ export interface CrestData {
 }
 
 export interface RankingRow {
+  /** Account id, to open the merchant's palmarès. */
+  id: string;
+  /** Holds the Pass Négociant (a seal next to the name). */
+  pass?: boolean;
   rank: number;
   pseudo: string | null;
   region: string;
@@ -338,6 +446,8 @@ export interface RankingRow {
 }
 
 export interface WeekRow {
+  id: string;
+  pass?: boolean;
   rank: number;
   pseudo: string | null;
   region: string;
@@ -394,6 +504,9 @@ export type Action =
   | { type: "collect"; buildingId: string }
   | { type: "collectAndRestart" }
   | { type: "claimMission"; missionId: string }
+  | { type: "claimDaily"; taskId: string }
+  | { type: "sellToCriee"; quantity: number }
+  | { type: "rerollContract"; contractId: string }
   | { type: "collectAll" }
   | { type: "build"; buildingType: string }
   | { type: "upgrade"; buildingId: string }

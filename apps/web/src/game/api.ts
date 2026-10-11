@@ -6,6 +6,7 @@ import type {
   GameResponse,
   Notice,
   NotificationKind,
+  Palmares,
   PriceSeries,
   Profile,
   PushSettings,
@@ -41,10 +42,18 @@ export const gameApi = {
   /** A refused action still returns the fresh view, with `error` set. */
   act: (action: Action) => call<GameResponse>("POST", "/api/game/actions", action),
   profile: () =>
-    call<{ account: { pseudo: string | null; crest: CrestData | null }; profile: Profile }>(
+    call<{
+      account: { pseudo: string | null; crest: CrestData | null };
+      profile: Profile;
+      palmares: Palmares;
+    }>("GET", "/api/game/profile"),
+  palmares: (accountId: string) =>
+    call<{ pseudo: string | null; crest: CrestData | null; bot: boolean; palmares: Palmares }>(
       "GET",
-      "/api/game/profile",
+      `/api/game/palmares/${accountId}`,
     ),
+  ceremonySeen: (worldId: string) =>
+    call<{ ok: true }>("POST", "/api/game/ceremony/seen", { worldId }),
   prices: () => call<{ series: PriceSeries }>("GET", "/api/game/prices"),
   notifications: () => call<{ items: Notice[]; unread: number }>("GET", "/api/notifications"),
   markRead: () => call<{ ok: true }>("POST", "/api/notifications/read", {}),

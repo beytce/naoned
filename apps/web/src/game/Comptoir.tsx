@@ -3,6 +3,7 @@ import { BuildingArt } from "../art/buildings.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Qty, Ribbon, Sheet, Slab, clock } from "../ui.js";
+import { Daily } from "./Daily.js";
 import type { GameProps } from "./Game.js";
 import { Ledger } from "./Ledger.js";
 import { d } from "./format.js";
@@ -220,7 +221,11 @@ function FirstSteps(props: GameProps) {
             <li key={s} className={`flex gap-3 ${ok ? "opacity-50" : ""}`}>
               <span
                 className={`slab flex h-6 w-6 shrink-0 items-center justify-center font-display text-xs font-extrabold ${
-                  ok ? "bg-lagoon text-on-lagoon" : now ? "bg-gold text-ink" : "bg-night-4 text-muted"
+                  ok
+                    ? "bg-lagoon text-on-lagoon"
+                    : now
+                      ? "bg-gold text-ink"
+                      : "bg-night-4 text-muted"
                 }`}
               >
                 <span>{ok ? "✓" : i + 1}</span>
@@ -297,6 +302,12 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
   const current =
     job && running ? (props.now - job.startedAt - ready * job.batchMs) / job.batchMs : 0;
   const nextIn = job && running ? job.startedAt + (ready + 1) * job.batchMs - props.now : 0;
+  // Fresh produce: the latest batch done, collected soon, yields a little more.
+  const fresh = props.view.fresh;
+  const freshLeft =
+    job && ready > 0 && fresh.minutes > 0
+      ? job.startedAt + ready * job.batchMs + fresh.minutes * 60_000 - props.now
+      : 0;
 
   return (
     <Panel glow={ready > 0 ? "gold" : running ? "lagoon" : undefined}>
@@ -318,6 +329,11 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
               tone="lagoon"
               label={`${fr.game.batch(ready + 1, job.batches)} · ${clock(nextIn)}`}
             />
+          )}
+          {freshLeft > 0 && (
+            <p className="label text-lagoon">
+              {fr.game.fresh(fresh.bonusBps / 100, clock(freshLeft))}
+            </p>
           )}
           {!job && recipe && <p className="label">{fr.game.idle}</p>}
           {!recipe && <p className="text-xs text-muted">{fr.game.palazzoHelp}</p>}
@@ -560,6 +576,9 @@ export function Comptoir(props: GameProps) {
         </div>
         <div className="order-4 empty:hidden lg:order-none">
           <Ledger {...props} />
+        </div>
+        <div className="order-4 empty:hidden lg:order-none">
+          <Daily {...props} />
         </div>
         <div className="order-6 lg:order-none">
           <Rations {...props} />

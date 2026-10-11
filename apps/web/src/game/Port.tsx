@@ -149,6 +149,21 @@ function PortCard({ code, props }: { code: string; props: GameProps }) {
         </div>
       </div>
       {watched && <p className="mt-2 text-sm text-vermilion">☠ {t().watched}</p>}
+      {props.view.pass.lookout && (
+        <p
+          className={`label mt-2 ${props.view.pass.lookout[code] ? "text-vermilion" : "text-lagoon"}`}
+        >
+          {props.view.pass.lookout[code]
+            ? fr.game.pass.lookoutLine(
+                props.view.pass.lookout[code].corsairs,
+                new Date(props.view.pass.lookout[code].until).toLocaleTimeString("fr-FR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+              )
+            : fr.game.pass.lookoutClear}
+        </p>
+      )}
       <div className="mt-3 grid grid-cols-3 gap-2">
         <Stat label={t().duration} value={`${dest.hours} h`} />
         <Stat label={t().risk} value={pct(dest.riskBps)} tone="vermilion" />

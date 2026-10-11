@@ -10,14 +10,17 @@ import {
 } from "../art/crest.js";
 import { Medal } from "../art/icons.js";
 import { P } from "../art/palette.js";
+import { hapticsEnabled, setHapticsEnabled } from "../haptics.js";
 import { fr } from "../i18n.js";
-import { PALETTES, type PaletteId, applyPalette, currentPalette } from "../theme.js";
-import { Big, Donut, Label, Panel, Ribbon, Sheet, Slab } from "../ui.js";
+import { PALETTES, type PaletteId, applyPalette, currentPalette, needsPass } from "../theme.js";
+import { Big, Donut, Label, Panel, Ribbon, Sheet, Slab, Switch } from "../ui.js";
 import type { GameProps } from "./Game.js";
+import { PalmaresView } from "./Palmares.js";
+import { PassPanel } from "./PassPanel.js";
 import { PushSettings } from "./PushSettings.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
-import type { Profile } from "./types.js";
+import type { Palmares, Profile } from "./types.js";
 
 function Titles({ profile }: { profile: Profile }) {
   const [at, setAt] = useState(profile.title.index);
@@ -127,7 +130,22 @@ function CrestEditor({ props, onClose }: { props: GameProps; onClose: () => void
   );
 }
 
-function PalettePicker() {
+function HapticsSetting() {
+  const [on, setOn] = useState(hapticsEnabled());
+  return (
+    <Switch
+      checked={on}
+      onChange={(v) => {
+        setHapticsEnabled(v);
+        setOn(v);
+      }}
+      label={fr.game.haptics}
+      hint={fr.game.hapticsHint}
+    />
+  );
+}
+
+function PalettePicker({ pass }: { pass: boolean }) {
   const [chosen, setChosen] = useState<PaletteId>(currentPalette());
   return (
     <section className="space-y-3">
@@ -135,19 +153,22 @@ function PalettePicker() {
         <Label>{fr.game.palette}</Label>
         <p className="mt-1 text-xs text-cream-dim">{fr.game.paletteHint}</p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {PALETTES.map((p) => {
           const on = p.id === chosen;
+          const locked = needsPass(p.id) && !pass;
           return (
             <button
               key={p.id}
               type="button"
               aria-pressed={on}
+              disabled={locked}
+              title={locked ? fr.game.pass.paletteLocked : undefined}
               onClick={() => {
                 applyPalette(p.id);
                 setChosen(p.id);
               }}
-              className={`flex items-center gap-3 rounded-2xl border bg-night-3 p-3 text-left transition ${on ? "border-gold" : "border-line hover:border-cream-dim/40"}`}
+              className={`flex items-center gap-3 rounded-2xl border bg-night-3 p-3 text-left transition disabled:opacity-50 ${on ? "border-gold" : "border-line hover:border-cream-dim/40"}`}
             >
               <span
                 className="flex h-10 w-10 shrink-0 items-end justify-center gap-0.5 overflow-hidden rounded-xl p-1.5"
@@ -157,7 +178,12 @@ function PalettePicker() {
                   <span key={c} className="h-4 w-2 rounded-sm" style={{ background: c }} />
                 ))}
               </span>
-              <span className="text-sm font-semibold">{p.name}</span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold">{p.name}</span>
+                {needsPass(p.id) && (
+                  <span className="block text-xs text-gold">{fr.game.pass.seal}</span>
+                )}
+              </span>
             </button>
           );
         })}
@@ -168,13 +194,17 @@ function PalettePicker() {
 
 export function Profil(props: GameProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [palmares, setPalmares] = useState<Palmares | null>(null);
   const [editing, setEditing] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [busyReset, setBusyReset] = useState(false);
   useEffect(() => {
     gameApi
       .profile()
-      .then((r) => setProfile(r.profile))
+      .then((r) => {
+        setProfile(r.profile);
+        setPalmares(r.palmares);
+      })
       .catch(() => setProfile(null));
   }, []);
   const crest = props.account.crest ?? defaultCrest(props.account.id);
@@ -296,7 +326,18 @@ export function Profil(props: GameProps) {
         </section>
       )}
 
-      <PalettePicker />
+      {palmares && (
+        <section className="space-y-3">
+          <h2 className="font-display text-2xl font-extrabold">{fr.game.palmares.title}</h2>
+          <PalmaresView data={palmares} />
+        </section>
+      )}
+
+      <PassPanel props={props} extra={props.passInfo} />
+
+      <PalettePicker pass={props.view.pass.active} />
+
+      <HapticsSetting />
 
       <PushSettings />
 

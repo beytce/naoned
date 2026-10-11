@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Crest } from "../art/crest.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Qty, Sheet, Slab, Sparkline, Tabs, clock } from "../ui.js";
@@ -326,6 +327,20 @@ function TradeSheet({
       )}
 
       {mine.length > 0 && <MyOffers orders={mine} props={props} />}
+
+      {props.catalog.previousDoge?.pseudo && (
+        <div className="flex items-center gap-3 rounded-2xl border border-gold/50 bg-night-3 p-3">
+          {props.catalog.previousDoge.crest && (
+            <Crest crest={props.catalog.previousDoge.crest} size={36} />
+          )}
+          <p className="text-sm text-cream-dim">
+            {fr.game.season.honoured(
+              props.catalog.previousDoge.pseudo,
+              props.catalog.previousDoge.season.replace(/^.*· /, ""),
+            )}
+          </p>
+        </div>
+      )}
 
       <p className="text-xs text-muted">
         {fr.game.marketHelp(

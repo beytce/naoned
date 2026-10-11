@@ -51,6 +51,28 @@
     --vermilion: 240 122 92;
     --vermilion-deep: 181 81 58;
   }
+  /* Or de Venise: the Pass Négociant's own palette (night lacquer and gold leaf). */
+  [data-palette="or"] {
+    color-scheme: dark;
+    --night: 18 16 12;
+    --night-2: 25 22 16;
+    --night-3: 32 28 20;
+    --night-4: 42 37 26;
+    --line: 70 60 40;
+    --cream: 247 236 210;
+    --cream-dim: 207 192 160;
+    --muted: 160 146 116;
+    --ink: 18 16 12;
+    --on-lagoon: 18 16 12;
+    --gold: 236 190 80;
+    --gold-deep: 190 146 50;
+    --gold-soft: 245 216 150;
+    --lagoon: 128 182 150;
+    --lagoon-deep: 80 136 104;
+    --lagoon-soft: 180 216 194;
+    --vermilion: 222 104 76;
+    --vermilion-deep: 170 72 50;
+  }
   [data-palette="parchemin"] {
     color-scheme: light;
     --night: 243 233 212;
