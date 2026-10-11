@@ -223,6 +223,8 @@ export interface Delivery {
   playerId: PlayerId;
   orderId: string;
   kind: DeliveryKind;
+  /** The Doge's contract or the family order it stands for. */
+  ref?: string;
   vehicleId: string;
   /** `${region}:${city}` */
   route: string;

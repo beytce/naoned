@@ -3,7 +3,7 @@ import { claimDaily, sellToCriee, trackDaily } from "./activity.js";
 import { build, grantBuilding, upgrade } from "./buildings.js";
 import { sellToCity } from "./cities.js";
 import { fulfillContract, rerollContract } from "./contracts.js";
-import { buyVehicle, grantStartingVehicles } from "./deliveries.js";
+import { buyVehicle, dispatchDelivery, grantStartingVehicles } from "./deliveries.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { collectExpedition, launchExpedition } from "./expeditions.js";
 import { fulfillFamilyOrder, joinFamily, leaveFamilies, patronize } from "./families.js";
@@ -89,6 +89,14 @@ export type Command =
   | { type: "grantPass"; playerId: PlayerId; until: number }
   | { type: "collectExpedition"; playerId: PlayerId; expeditionId: string }
   | { type: "buyVehicle"; playerId: PlayerId; vehicleType: string }
+  | {
+      type: "dispatchDelivery";
+      playerId: PlayerId;
+      orderId: string;
+      vehicleId: string;
+      /** "none" or an escort of the settings. */
+      escort: string;
+    }
   | { type: "tick" };
 
 export type DecideResult =
@@ -278,6 +286,9 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "buyVehicle":
       buyVehicle(tx, cmd.playerId, cmd.vehicleType);
+      break;
+    case "dispatchDelivery":
+      dispatchDelivery(tx, cmd.playerId, cmd.orderId, cmd.vehicleId, cmd.escort);
       break;
     case "deliverToProject":
       deliverToProject(tx, cmd.playerId, cmd.projectId, cmd.resource, cmd.quantity);

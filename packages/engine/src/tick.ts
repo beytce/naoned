@@ -1,5 +1,5 @@
 import { upkeepPerDay } from "./buildings.js";
-import { vehicleUpkeep } from "./deliveries.js";
+import { resolveDeliveries, vehicleUpkeep } from "./deliveries.js";
 import { closeFamilyWeek } from "./families.js";
 import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
@@ -70,6 +70,7 @@ export function chargeUpkeep(tx: Tx): void {
 /** Scheduled job, every 60 s in production. Does not advance production (it is lazy). */
 export function tick(tx: Tx): void {
   resolveCrossings(tx);
+  resolveDeliveries(tx);
   expireOrders(tx);
   chargeUpkeep(tx);
   closeWeek(tx);

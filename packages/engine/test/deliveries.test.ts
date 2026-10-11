@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  type Command,
+  type DeliveryOrder,
   type WorldSettingsInput,
   deliveryOrdersFor,
   hourIn,
@@ -8,7 +10,7 @@ import {
   travelMinutes,
 } from "../src/index.js";
 import { deliverySettings } from "./fixture.js";
-import { DAY, HOUR, World, makeContext } from "./helpers.js";
+import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
 
 const ctx = (more: Partial<WorldSettingsInput> = {}) =>
   makeContext({ ...deliverySettings, ...more });
@@ -167,5 +169,129 @@ describe("the board of orders", () => {
     const w = new World(makeContext());
     w.do({ type: "join", playerId: "a", region: "terraferma" });
     expect(deliveryOrdersFor(w.ctx, w.state, "a", 0)).toEqual([]);
+  });
+});
+
+const board = (w: World, playerId = "a") =>
+  deliveryOrdersFor(w.ctx, w.state, playerId, Math.floor((w.now - w.ctx.startAt) / DAY));
+
+const pick = (w: World, kind: DeliveryOrder["kind"] = "city", playerId = "a") => {
+  const o = board(w, playerId).find((x) => x.kind === kind && x.quantity <= 40);
+  if (!o) throw new Error(`no ${kind} order`);
+  return o;
+};
+
+const cartOf = (w: World, playerId = "a") => vehiclesOf(w, playerId)[0]?.id ?? "";
+
+const dispatch = (w: World, orderId: string, escort = "none", playerId = "a", vehicleId?: string) =>
+  w.try({
+    type: "dispatchDelivery",
+    playerId,
+    orderId,
+    vehicleId: vehicleId ?? cartOf(w, playerId),
+    escort,
+  } as Command);
+
+const error = (res: ReturnType<World["try"]>) => (res.ok ? "ok" : res.error);
+
+const deliveriesOf = (w: World, playerId = "a") =>
+  Object.values(w.state.deliveries ?? {}).filter((d) => d.playerId === playerId);
+
+describe("dispatching a delivery", () => {
+  it("loads the goods, keeps the vehicle busy there and back, and pays on arrival", () => {
+    const w = world();
+    const o = pick(w);
+    const before = { cash: w.cash("a"), stock: w.stock("a", o.resource).available };
+    w.do({
+      type: "dispatchDelivery",
+      playerId: "a",
+      orderId: o.id,
+      vehicleId: cartOf(w),
+      escort: "none",
+    });
+    expect(w.stock("a", o.resource).available).toBe(before.stock - o.quantity);
+    expect(w.cash("a")).toBe(before.cash);
+    const [d] = deliveriesOf(w);
+    const minutes = travelMinutes(w.ctx, "terraferma", o.city, "cart") ?? 0;
+    expect(d?.arriveAt).toBe(w.now + minutes * MIN);
+    expect(d?.backAt).toBe(w.now + 2 * minutes * MIN);
+    expect(vehiclesOf(w, "a")[0]?.busyUntil).toBe(d?.backAt);
+
+    // The vehicle is busy: no second delivery.
+    const other = board(w).find((x) => x.id !== o.id && x.kind === "city") as DeliveryOrder;
+    expect(error(dispatch(w, other.id))).toBe("vehicle_busy");
+
+    w.at((d?.arriveAt ?? 0) - w.ctx.startAt - MIN).do({ type: "tick" });
+    expect(w.cash("a")).toBe(before.cash);
+    w.at((d?.arriveAt ?? 0) - w.ctx.startAt).do({ type: "tick" });
+    expect(w.cash("a")).toBe(before.cash + o.unitPrice * BigInt(o.quantity));
+    expect(deliveriesOf(w)[0]?.outcome).toBe("delivered");
+    expect(error(dispatch(w, other.id))).toBe("vehicle_busy");
+    w.at((d?.backAt ?? 0) - w.ctx.startAt);
+    expect(error(dispatch(w, other.id))).toBe("ok");
+  });
+
+  it("refuses an order already dispatched, expired or not open yet", () => {
+    const w = world();
+    w.do({ type: "buyVehicle", playerId: "a", vehicleType: "cart" });
+    const [first, second] = vehiclesOf(w, "a");
+    const o = pick(w);
+    expect(error(dispatch(w, o.id, "none", "a", first?.id))).toBe("ok");
+    expect(error(dispatch(w, o.id, "none", "a", second?.id))).toBe("order_done");
+    expect(error(dispatch(w, "0:99", "none", "a", second?.id))).toBe("unknown_delivery_order");
+
+    const urgent = pick(w, "urgent");
+    w.at(urgent.opensAt - w.ctx.startAt - MIN);
+    expect(error(dispatch(w, urgent.id, "none", "a", second?.id))).toBe("order_not_open");
+    w.at(urgent.expiresAt - w.ctx.startAt);
+    expect(error(dispatch(w, urgent.id, "none", "a", second?.id))).toBe("order_expired");
+
+    // Yesterday's orders are gone.
+    const late = board(w).find((x) => x.kind === "city" && x.id !== o.id) as DeliveryOrder;
+    w.at(DAY + 9 * HOUR);
+    expect(error(dispatch(w, late.id, "none", "a", second?.id))).toBe("order_expired");
+  });
+
+  it("refuses a load over capacity, short stock, someone else's vehicle or an unknown escort", () => {
+    const w = world({
+      deliveries: { ...deliverySettings.deliveries, startingVehicles: ["mule"] } as never,
+    });
+    const big = board(w).find((x) => x.kind === "city" && x.quantity > 15) as DeliveryOrder;
+    expect(error(dispatch(w, big.id))).toBe("over_capacity");
+    const small = board(w).find((x) => x.kind === "city" && x.quantity <= 15) as DeliveryOrder;
+    expect(error(dispatch(w, small.id, "none", "a", cartOf(w, "b")))).toBe("not_owner");
+    expect(error(dispatch(w, small.id, "dragoons"))).toBe("unknown_escort");
+    w.do({
+      type: "placeOrder",
+      playerId: "a",
+      resource: small.resource,
+      side: "sell",
+      kind: "limit",
+      price: 1_000n,
+      quantity: w.stock("a", small.resource).available - small.quantity + 1,
+    });
+    expect(error(dispatch(w, small.id))).toBe("insufficient_stock");
+  });
+
+  it("pays the escort into the sink, a share of the load at the order's price", () => {
+    const w = world();
+    const o = pick(w);
+    const cash = w.cash("a");
+    expect(error(dispatch(w, o.id, "guards"))).toBe("ok");
+    const fee = (o.unitPrice * BigInt(o.quantity) * 400n) / 10_000n;
+    expect(w.cash("a")).toBe(cash - fee);
+    expect(w.state.accounts["system:sink"]).toBe(fee);
+  });
+
+  it("counts a Doge's order as fulfilled once it arrives", () => {
+    const w = world();
+    const o = pick(w, "doge");
+    expect(error(dispatch(w, o.id))).toBe("ok");
+    expect(w.state.contractsDone?.a?.ids).toContain(o.ref);
+    const d = deliveriesOf(w)[0];
+    w.at((d?.arriveAt ?? 0) - w.ctx.startAt);
+    const res = w.do({ type: "tick" });
+    expect(res.effects.events.map((e) => e.type)).toContain("contract_fulfilled");
+    expect(res.effects.events.map((e) => e.type)).toContain("delivery_arrived");
   });
 });

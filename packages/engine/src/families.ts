@@ -128,7 +128,7 @@ export function patronageLeft(
   return Math.max(0, ctx.settings.families.patronageMaxPerDay - given);
 }
 
-function addInfluence(tx: Tx, playerId: PlayerId, points: number): void {
+export function addInfluence(tx: Tx, playerId: PlayerId, points: number): void {
   const f = families(tx);
   f.weekInfluence[playerId] = (f.weekInfluence[playerId] ?? 0) + points;
   f.seasonInfluence[playerId] = (f.seasonInfluence[playerId] ?? 0) + points;

@@ -1,20 +1,23 @@
 import { costValue } from "./buildings.js";
 import { hourIn, hourWithin } from "./clock.js";
-import { contractsFor } from "./contracts.js";
+import { contractsDoneToday, contractsFor } from "./contracts.js";
 import { draw } from "./draw.js";
-import { familyOrdersFor } from "./families.js";
+import { addInfluence, familyOrdersDone, familyOrdersFor } from "./families.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
 import {
   DAY_MS,
+  type Delivery,
   type DeliveryOrder,
   HOUR_MS,
   MINUTE_MS,
   type PlayerId,
   SINK_ACCOUNT,
+  SOURCE_ACCOUNT,
   type Vehicle,
   type WorldContext,
   type WorldState,
   cashAccount,
+  dayIndex,
 } from "./state.js";
 import { type Tx, emit, fail, nextId, removeStock, transfer } from "./tx.js";
 
@@ -264,4 +267,165 @@ export function deliveryOrdersFor(
 export function deliveriesDoneToday(state: WorldState, playerId: PlayerId, day: number): string[] {
   const entry = state.deliveriesDone?.[playerId];
   return entry && entry.day === day ? entry.ids : [];
+}
+
+// ——— Departure and arrival ———
+
+/** Value of a load at the order's price. */
+function loadValue(o: DeliveryOrder): Deniers {
+  return o.unitPrice * BigInt(o.quantity);
+}
+
+/** What an escort costs for this order (destroyed). */
+export function escortCost(ctx: WorldContext, o: DeliveryOrder, escort: string): Deniers {
+  if (escort === "none") return 0n;
+  const def = ctx.settings.deliveries.escorts[escort];
+  return def ? applyBpsFloor(loadValue(o), def.costBps) : 0n;
+}
+
+/** Defense of a delivery: 0 alone, the escort's otherwise. */
+export function escortDefense(ctx: WorldContext, escort: string): number {
+  return escort === "none" ? 0 : (ctx.settings.deliveries.escorts[escort]?.defense ?? 0);
+}
+
+/**
+ * Loads an order of today's board on a free vehicle and sets off. The goods leave the stock now;
+ * the city pays on arrival.
+ */
+export function dispatchDelivery(
+  tx: Tx,
+  playerId: PlayerId,
+  orderId: string,
+  vehicleId: string,
+  escort: string,
+): Delivery {
+  const { ctx } = tx;
+  if (!deliveriesOn(ctx)) fail("unknown_delivery_order");
+  resolveDeliveries(tx);
+  const state = tx.s as WorldState;
+  const player = state.players[playerId];
+  if (!player) fail("unknown_player");
+  const today = dayIndex(ctx, tx.now);
+  const [dayText] = orderId.split(":");
+  if (Number(dayText) !== today) fail("order_expired");
+  const order = deliveryOrdersFor(ctx, state, playerId, today).find((o) => o.id === orderId);
+  if (!order) fail("unknown_delivery_order");
+  const done = deliveriesDoneToday(state, playerId, today);
+  if (done.includes(orderId)) fail("order_done");
+  if (order.kind === "doge" && contractsDoneToday(tx, playerId, today).includes(order.ref ?? ""))
+    fail("order_done");
+  if (order.kind === "family" && familyOrdersDone(state, playerId, today).includes(order.ref ?? ""))
+    fail("order_done");
+  if (tx.now < order.opensAt) fail("order_not_open");
+  if (tx.now >= order.expiresAt) fail("order_expired");
+
+  const vehicle = tx.s.vehicles?.[vehicleId];
+  if (!vehicle) fail("unknown_vehicle");
+  if (vehicle.playerId !== playerId) fail("not_owner");
+  if (!vehicleFree(vehicle as Vehicle, tx.now)) fail("vehicle_busy");
+  const def = ctx.settings.deliveries.vehicles[vehicle.type];
+  if (!def) fail("unknown_vehicle_type");
+  if (order.quantity > def.capacity) fail("over_capacity");
+  if (escort !== "none" && !ctx.settings.deliveries.escorts[escort]) fail("unknown_escort");
+  const minutes = travelMinutes(ctx, player.region, order.city, vehicle.type);
+  if (minutes === undefined) fail("no_route");
+
+  const id = nextId(tx, "d");
+  removeStock(tx, playerId, order.resource, order.quantity, "delivery", id);
+  transfer(tx, cashAccount(playerId), SINK_ACCOUNT, escortCost(ctx, order, escort), "escort", id);
+  const trip = minutes * MINUTE_MS;
+  const delivery: Delivery = {
+    id,
+    playerId,
+    orderId,
+    kind: order.kind,
+    vehicleId,
+    ...(order.ref ? { ref: order.ref } : {}),
+    route: routeId(player.region, order.city),
+    resource: order.resource,
+    loaded: order.quantity,
+    cargo: { [order.resource]: order.quantity },
+    payment: loadValue(order),
+    escort,
+    departAt: tx.now,
+    arriveAt: tx.now + trip,
+    backAt: tx.now + 2 * trip,
+    midAt: tx.now + Math.floor(trip / 2),
+    outcome: "en_route",
+  };
+  tx.s.deliveries ??= {};
+  tx.s.deliveries[id] = delivery;
+  vehicle.busyUntil = delivery.backAt;
+  tx.s.deliveriesDone ??= {};
+  tx.s.deliveriesDone[playerId] = { day: today, ids: [...done, orderId] };
+  // The Doge's and the family's orders cannot be served twice (at the counter, then by road).
+  if (order.kind === "doge" && order.ref) {
+    tx.s.contractsDone ??= {};
+    tx.s.contractsDone[playerId] = {
+      day: today,
+      ids: [...contractsDoneToday(tx, playerId, today), order.ref],
+    };
+  }
+  if (order.kind === "family" && order.ref && tx.s.families) {
+    tx.s.families.ordersDone[playerId] = {
+      day: today,
+      ids: [...familyOrdersDone(state, playerId, today), order.ref],
+    };
+  }
+  emit(tx, "delivery_dispatched", playerId, {
+    delivery: id,
+    kind: order.kind,
+    city: order.city,
+    resource: order.resource,
+    quantity: order.quantity,
+    escort,
+  });
+  return delivery;
+}
+
+/** The goods reach the city: it pays for what arrives, pro rata of what was loaded. */
+function arrive(tx: Tx, d: Delivery): void {
+  const left = d.cargo[d.resource] ?? 0;
+  const amount = d.loaded > 0 ? (d.payment * BigInt(left)) / BigInt(d.loaded) : 0n;
+  transfer(tx, SOURCE_ACCOUNT, cashAccount(d.playerId), amount, "delivery", d.id);
+  d.paid = amount;
+  d.outcome = d.attack?.success ? "robbed_delivered" : "delivered";
+  const city = d.route.split(":")[1] ?? "";
+  emit(tx, "delivery_arrived", d.playerId, {
+    delivery: d.id,
+    kind: d.kind,
+    city,
+    resource: d.resource,
+    quantity: left,
+    amount: amount.toString(),
+  });
+  if (d.kind === "doge") {
+    emit(tx, "contract_fulfilled", d.playerId, { contract: d.ref, resource: d.resource });
+  }
+  if (d.kind === "family") {
+    const family = tx.s.families?.members[d.playerId];
+    if (family) {
+      const influence = tx.ctx.settings.families.orderInfluence;
+      addInfluence(tx, d.playerId, influence);
+      emit(tx, "family_order_fulfilled", d.playerId, {
+        family,
+        order: d.ref,
+        resource: d.resource,
+        influence,
+      });
+    }
+  }
+}
+
+/**
+ * Scheduled (every tick) and before any delivery command: deliveries reach mid-way (where bands
+ * may strike), the time to fight back runs out, goods arrive. In time order.
+ */
+export function resolveDeliveries(tx: Tx): void {
+  const due = Object.values(tx.s.deliveries ?? {})
+    .filter((d) => d.outcome === "en_route")
+    .sort((a, b) => a.departAt - b.departAt || (a.id < b.id ? -1 : 1));
+  for (const d of due) {
+    if (tx.now >= d.arriveAt) arrive(tx, d as Delivery);
+  }
 }
