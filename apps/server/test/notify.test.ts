@@ -9,6 +9,7 @@ import { MemoryMailer } from "../src/mail/mailer.js";
 import { Notifier } from "../src/notify/notifier.js";
 import { MemoryPusher } from "../src/notify/push.js";
 import { testDatabase } from "./db.js";
+import { smallOrders } from "./road.js";
 
 let database: Database;
 let dbUrl: string;
@@ -217,5 +218,71 @@ describe("notifications", () => {
       .where(eq(notifications.kind, "week"));
     expect(rows).toHaveLength(1);
     expect(pusher.sent[0]?.payload.body).toContain("Doge de la semaine");
+  });
+});
+
+describe("notifications of the road", () => {
+  it("pushes an ambush at once, then the outcome to both sides and the arrival", async () => {
+    smallOrders(world);
+    world.ctx.settings.bandits.openDay = 0;
+    world.ctx.settings.bandits.newcomerDays = 0;
+    const ada = await player("ada@example.org");
+    const bob = await player("bob@example.org");
+    await app.inject({
+      method: "PATCH",
+      url: "/api/me",
+      headers: { cookie: bob.cookie },
+      payload: { pseudo: "Bob" },
+    });
+    await subscribe(ada.cookie);
+    await notifier.scan();
+    const view = (
+      await app.inject({ method: "GET", url: "/api/game", headers: { cookie: ada.cookie } })
+    ).json().view;
+    const order = view.road.orders.find(
+      (o: { kind: string; status: string }) => o.kind === "city" && o.status === "open",
+    );
+    const act = (cookie: string, payload: object) =>
+      app.inject({ method: "POST", url: "/api/game/actions", headers: { cookie }, payload });
+    await act(bob.cookie, { type: "postBand", route: `terraferma:${order.city}`, hours: 2 });
+    await act(ada.cookie, {
+      type: "dispatchDelivery",
+      orderId: order.id,
+      vehicleId: view.road.vehicles[0].id,
+      escort: "none",
+    });
+    const d = Object.values(world.current.deliveries ?? {})[0];
+    if (!d) throw new Error("no delivery");
+    now = d.midAt;
+    await world.execute({ type: "tick" });
+    now += 30_000;
+    await notifier.scan();
+    const alert = pusher.sent.find((p) => p.payload.kind === "ambush");
+    expect(alert?.payload.title).toBe("Brigands sur la route !");
+    expect(alert?.payload.body).toContain("10 minutes");
+    expect(alert?.payload.url).toBe(`/?ambush=${d.id}`);
+
+    now += 2 * MIN;
+    await act(ada.cookie, { type: "reactToAmbush", deliveryId: d.id });
+    await notifier.scan();
+    const kinds = async (id: string) =>
+      (await database.db.select().from(notifications).where(eq(notifications.accountId, id))).map(
+        (n) => n.kind,
+      );
+    expect(await kinds(ada.id)).toContain("defended");
+    expect(await kinds(bob.id)).toContain("defended");
+    const toBob = (
+      await database.db.select().from(notifications).where(eq(notifications.accountId, bob.id))
+    ).find((n) => n.kind === "defended");
+    expect(toBob?.data.victimName).toBe(null);
+
+    now = (world.current.deliveries?.[d.id]?.arriveAt ?? 0) + 10_000;
+    await world.execute({ type: "tick" });
+    await notifier.scan();
+    expect(await kinds(ada.id)).toContain("delivery");
+    now = (Object.values(world.current.bands ?? {})[0]?.endAt ?? 0) + 10_000;
+    await notifier.scan();
+    // A band broken up hears it with the defeat, not again at the end.
+    expect((await kinds(bob.id)).filter((k) => k === "band_over")).toHaveLength(0);
   });
 });

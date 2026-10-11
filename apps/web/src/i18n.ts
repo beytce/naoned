@@ -78,6 +78,7 @@ export const fr = {
       comptoir: "Comptoir",
       marche: "Marché",
       contrats: "Contrats",
+      routes: "Routes",
       port: "Port",
       top: "Classement",
       profil: "Profil",
@@ -109,6 +110,94 @@ export const fr = {
           "Grande foire : les villes achètent plus et paient mieux, épices et soie en tête.",
         ],
       } as Record<string, [string, string]>,
+    },
+    road: {
+      kicker: "Les routes de terre ferme",
+      title: "Commandes à livrer",
+      help: "Chaque jour, les villes vous passent des commandes. Chargez une charrette, choisissez votre escorte et partez : la ville paie à l'arrivée. Plus la route est longue, mieux elle paie.",
+      tabs: { livraisons: "Livraisons", brigands: "Brigands" },
+      sort: { price: "Prix", distance: "Distance", deadline: "Échéance" },
+      kinds: { city: "Ville", doge: "Doge", family: "Famille", urgent: "Urgente" } as Record<
+        string,
+        string
+      >,
+      empty: "Plus de commande à livrer aujourd'hui. Nouvelles commandes à minuit.",
+      renewIn: "Nouvelles commandes dans",
+      closesIn: "Ferme dans",
+      opensIn: "Ouvre dans",
+      oneWay: (time: string) => `${time} aller`,
+      done: "Livrée",
+      expired: "Expirée",
+      watched: "Route guettée",
+      watchedWarning:
+        "Des brigands guettent cette route. Une escorte vous protège même absent ; sans escorte, vous aurez quelques minutes pour riposter.",
+      vehicles: "Vos véhicules",
+      vehicleNames: { mule: "Mule", cart: "Charrette", wagon: "Chariot" } as Record<string, string>,
+      free: "Libre",
+      backIn: (time: string) => `De retour dans ${time}`,
+      capacity: (n: number) => `${n} unités`,
+      buy: "Acheter",
+      buyTitle: "Acheter un véhicule",
+      upkeep: (amount: string) => `Entretien ${amount} / jour`,
+      maxVehicles: (n: number) => `${n} véhicules au plus.`,
+      sheet: {
+        payment: "Paiement à l'arrivée",
+        vehicle: "Véhicule",
+        noVehicle: "Aucun véhicule libre assez grand pour cette commande.",
+        escort: "Escorte",
+        escorts: { none: "Sans escorte", guards: "Gardes", company: "Compagnie" } as Record<
+          string,
+          string
+        >,
+        escortCost: (cost: string) => `Coût ${cost}`,
+        chance: (pct: number) => `Une attaque réussit ${pct} fois sur 100`,
+        missing: (n: number) => `Il vous en manque ${n}.`,
+        go: "Charger et partir",
+      },
+      underway: "En route",
+      arrivesIn: (time: string) => `Arrivée dans ${time}`,
+      backHome: (time: string) => `Retour à vide dans ${time}`,
+      arrived: (amount: string) => `Livrée : ${amount}`,
+      robbed: (n: number) => `Détroussée (${n} pris), payée au prorata`,
+      repelled: "Attaque repoussée",
+      ambushed: "Attaquée !",
+      react: "Riposter",
+      shortcut: (orders: number, free: number) =>
+        `${orders} commande${orders > 1 ? "s" : ""} à livrer, ${free} véhicule${free > 1 ? "s" : ""} libre${free > 1 ? "s" : ""}`,
+      newsTitle: "Nouvelles des routes",
+      news: (city: string) => `Des brigands ont détroussé un convoi sur la route de ${city}.`,
+      cityClosed:
+        "Les villes ne rachètent plus au comptoir : elles passent commande. Livrez-les depuis l'onglet Routes.",
+      byRoad: "À livrer par la route",
+      seeRoutes: "Voir les routes",
+    },
+    bandits: {
+      title: "Poster une bande",
+      help: "Postez des brigands sur une route pour quelques heures. Ils tentent deux attaques au plus et prennent 30 % de la cargaison, dont la moitié se perd dans la fuite. Une victime qui riposte disperse votre bande ; une escorte vous repousse souvent. Personne n'attaque entre 22 h et 8 h, ni les nouveaux venus, ni les marchands de votre famille.",
+      route: "Route",
+      hours: "Durée",
+      hoursLabel: (h: number) => `${h} h`,
+      cost: (amount: string) => `Mise : ${amount}, détruite`,
+      full: "Route pleine",
+      post: "Poster la bande",
+      mine: "Vos bandes",
+      none: "Aucune bande pour l'instant.",
+      active: (time: string) => `En embuscade · encore ${time}`,
+      over: "Terminée",
+      dispersed: "Dispersée",
+      attempts: (n: number, max: number) => `${n} / ${max} attaques`,
+      booty: "Butin",
+      collect: "Encaisser",
+      collected: "Encaissé",
+      locked: (time: string) => `Le brigandage ouvre dans ${time}.`,
+    },
+    alert: {
+      title: "Brigands sur la route !",
+      body: (city: string) =>
+        `Votre convoi vers ${city} est arrêté par une bande. Ripostez avant la fin du délai : l'attaque échouera et la bande sera dispersée.`,
+      left: "Temps pour riposter",
+      react: "Riposter !",
+      later: "Laisser faire",
     },
     rations: {
       line: (perDay: number, days: number) =>
@@ -274,7 +363,10 @@ export const fr = {
         produce: ["Lancer une production", "Vos ateliers travaillent pendant votre absence."],
         harvest: ["Récolter", "La marchandise rentre dans votre stock."],
         transform: ["Transformer", "Un produit fini vaut bien plus que la matière brute."],
-        sell_city: ["Vendre à une ville", "C'est ainsi que les ducats entrent dans votre caisse."],
+        sell_city: [
+          "Livrer une ville",
+          "C'est ainsi que les ducats entrent dans votre caisse : la ville paie à l'arrivée.",
+        ],
         market_buy: ["Acheter au marché", "Le matériau d'un autre métier, pour grandir."],
         mission: [
           "Ouvrir le Livre de compte",
@@ -301,6 +393,8 @@ export const fr = {
       claim: "Encaisser",
       tasks: {
         sell_city: "Vendre 3 fois à une ville",
+        deliveries: "Livrer 2 commandes",
+        urgent: "Livrer une commande urgente",
         doge_order: "Honorer un contrat du Doge",
         place_offer: "Laisser une offre au Rialto",
         harvests: "Récolter 4 fois",
@@ -360,6 +454,15 @@ export const fr = {
           "Vendre à une ville",
           "Marché → Villes : les villes paient vos produits finis.",
         ],
+        first_delivery: [
+          "Première livraison",
+          "Routes : chargez une commande, la ville paie à l'arrivée.",
+        ],
+        first_vehicle: [
+          "Premier véhicule",
+          "Routes → Vos véhicules : livrez plusieurs commandes à la fois.",
+        ],
+        first_band: ["Première bande", "Routes → Brigands : postez une bande sur une route."],
         first_contract: [
           "Honorer un contrat du Doge",
           "Onglet Contrats : livrez une commande, prime de 20 %.",
@@ -398,7 +501,14 @@ export const fr = {
         project_delivery: "Grands chantiers",
         mission_reward: "Livre de compte",
         family_order_reward: "Commandes de famille",
+        delivery: "Livraisons",
       } as Record<string, string>,
+      road: {
+        arrived: (n: number) => `${n} livraison${n > 1 ? "s" : ""} arrivée${n > 1 ? "s" : ""}`,
+        robbed: (n: number) => `${n} convoi${n > 1 ? "s" : ""} détroussé${n > 1 ? "s" : ""}`,
+        repelled: (n: number) => `${n} attaque${n > 1 ? "s" : ""} repoussée${n > 1 ? "s" : ""}`,
+        booty: (what: string) => `Butin à encaisser : ${what}`,
+      },
       notices: (kind: string, n: number) =>
         ({
           order: `${n} offre${n > 1 ? "s" : ""} conclue${n > 1 ? "s" : ""}`,
@@ -409,6 +519,11 @@ export const fr = {
           event: `${n} nouvelle${n > 1 ? "s" : ""} à la gazette`,
           week: "Résultats de la semaine",
           family: "La semaine des familles",
+          ambush: `${n} attaque${n > 1 ? "s" : ""} de brigands`,
+          delivery: `${n} livraison${n > 1 ? "s" : ""} payée${n > 1 ? "s" : ""}`,
+          robbed: `${n} prise${n > 1 ? "s" : ""} sur la route`,
+          defended: `${n} attaque${n > 1 ? "s" : ""} repoussée${n > 1 ? "s" : ""}`,
+          band_over: "Votre bande est rentrée",
         })[kind] ?? `${n} × ${kind}`,
       collect: (n: number) => `Tout récolter et relancer · ${n} lot${n > 1 ? "s" : ""}`,
       restart: "Relancer mes ateliers",
@@ -530,6 +645,21 @@ export const fr = {
           : `Offre conclue : ${who} vous a vendu ${qty} ${what.toLowerCase()}.`,
       corsairs: (route: string) =>
         `Vos corsaires sont rentrés de la route de ${route} : déchargez le butin.`,
+      ambush: (city: string) =>
+        `Brigands sur la route de ${city} ! Ripostez avant la fin du délai.`,
+      delivery: (qty: number, what: string, city: string, amount: string) =>
+        `${qty} ${what} livrés à ${city} : ${amount} encaissés.`,
+      roadVictim: (who: string | null, ok: boolean, city: string) =>
+        ok
+          ? `${who ?? "Des brigands"} ont détroussé votre convoi sur la route de ${city}.`
+          : `Votre convoi a repoussé ${who ?? "des brigands"} sur la route de ${city}.`,
+      roadBandit: (who: string, ok: boolean, reacted: boolean) =>
+        ok
+          ? `Votre bande a détroussé le convoi de ${who}.`
+          : reacted
+            ? `${who} a riposté : votre bande est dispersée. Encaissez son butin.`
+            : `Le convoi de ${who} a repoussé votre bande.`,
+      bandOver: (city: string) => `Votre bande quitte la route de ${city} : encaissez le butin.`,
       family: (week: number, winner: string | null, mine: boolean, family: string, rank: number) =>
         !winner
           ? `Semaine ${week} : aucune famille n'a gagné d'influence.`
@@ -540,7 +670,7 @@ export const fr = {
         `Semaine ${week} : vous terminez ${rank}${rank === 1 ? "er" : "e"} (${gain}).${award ? ` Vous êtes ${award} !` : ""}`,
       push: {
         title: "Notifications",
-        help: "Recevez une alerte sur ce téléphone ou cet ordinateur, même jeu fermé. Jamais entre 22 h et 8 h, et au plus une par type et par heure.",
+        help: "Recevez une alerte sur ce téléphone ou cet ordinateur, même jeu fermé. Jamais entre 22 h et 8 h, et au plus une par type et par heure, sauf les attaques de brigands, envoyées tout de suite.",
         enable: "Activer sur cet appareil",
         disable: "Couper sur cet appareil",
         on: "Activées sur cet appareil",
@@ -562,6 +692,11 @@ export const fr = {
           criee: "Criées (Pass Négociant)",
           deal: "Bonnes affaires (Pass Négociant)",
           family: "Semaine des familles",
+          ambush: "Attaque de brigands (alerte immédiate)",
+          delivery: "Livraison arrivée",
+          robbed: "Convoi détroussé (subi ou réussi)",
+          defended: "Attaque repoussée (subie ou réussie)",
+          band_over: "Fin de votre bande",
         } as Record<string, string>,
       },
     },
@@ -685,6 +820,10 @@ export const fr = {
       goCities: "Les villes achètent les produits finis. Ouvrez l'onglet « Villes ».",
       sellCity: (resource: string) =>
         `Vendez vos ${resource.toLowerCase()} à la ville qui paie le mieux.`,
+      goRoutes: "Les villes passent commande. Ouvrez l'onglet « Routes ».",
+      deliver:
+        "Choisissez une commande que votre stock couvre, chargez la charrette et partez : la ville paie à l'arrivée.",
+      deliveryUnderway: "Votre charrette est en route. La ville paiera à l'arrivée.",
       goRialto:
         "Pour grandir, il faut les matériaux d'une autre région. Ouvrez l'onglet « Rialto ».",
       buy: (resource: string) =>
@@ -706,6 +845,11 @@ export const fr = {
 
     howTo: [
       {
+        icon: "routes",
+        title: "Les routes et les brigands",
+        text: "Les villes ne rachètent plus au comptoir : chaque jour, elles vous passent 12 à 16 commandes. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge et de votre famille y figurent, les urgentes ne restent ouvertes qu'une heure. Des brigands guettent parfois une route (en rouge sur la carte) : une escorte vous protège même absent ; sans escorte, vous avez 10 minutes pour riposter, et une riposte disperse la bande. Une prise coûte au plus 30 % de la cargaison, le véhicule revient toujours, et personne n'attaque entre 22 h et 8 h. À partir du jour 6, vous pouvez vous-même poster une bande sur une route : deux attaques au plus, la moitié du butin se perd dans la fuite.",
+      },
+      {
         icon: "comptoir",
         title: "Pain et bois",
         text: "Chaque niveau d'atelier mange 2 pains par jour. Sans pain, les nouveaux lots prennent 50 % de temps en plus. Les boulangeries et les briqueteries brûlent du bois.",
@@ -713,7 +857,7 @@ export const fr = {
       {
         icon: "contrats",
         title: "Contrats du Doge",
-        text: "Chaque jour, trois commandes payées 20 % au-dessus du prix de référence : blé, farine, argile, bois… tout trouve preneur.",
+        text: "Chaque jour, deux commandes du Doge et une de votre famille, payées 20 % au-dessus du prix de référence. Les produits de la terre ferme se livrent par la route ; ceux d'outre-mer se remettent au comptoir.",
       },
       {
         icon: "port",

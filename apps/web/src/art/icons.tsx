@@ -47,6 +47,13 @@ export const NavIcon = {
       <circle cx="16" cy="17.5" r="2.5" />
     </Line>
   ),
+  routes: () => (
+    <Line>
+      <path d="M4 21 C8 15 6 11 11 9 S17 5 20 3" strokeDasharray="3 2.5" />
+      <circle cx="5" cy="19" r="2" />
+      <path d="M17 3 H21 V7" />
+    </Line>
+  ),
   port: () => (
     <Line>
       <path d="M12 3 V15 M12 4 L18 13 H12" />

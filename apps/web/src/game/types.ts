@@ -30,6 +30,8 @@ export interface Catalog {
   ships: ShipType[];
   fleet: { maxPerPlayer: number; portDuesBps: number };
   privateers: PrivateerRules;
+  /** Deliveries by road and bandits (null when the world has none). */
+  road: RoadRules | null;
   /** The patrician families: names, domains and what they order. */
   families: { code: string; name: string; domain: string; quantities: Record<string, number> }[];
   familyRules: {
@@ -66,6 +68,118 @@ export interface Catalog {
     regionBonusBps: number;
     levelYieldBonusBps: number;
   };
+}
+
+export interface VehicleType {
+  type: string;
+  costDucats: Money;
+  costMaterials: Record<string, number>;
+  capacity: number;
+  speedBps: number;
+  upkeepPerDay: Money;
+}
+
+export interface RoadRules {
+  /** Minutes one way at normal speed: region → city → minutes. */
+  routes: Record<string, Record<string, number>>;
+  vehicles: VehicleType[];
+  maxVehicles: number;
+  maxDeliveryMinutes: number;
+  escorts: Record<string, { costBps: number; defense: number }>;
+  bandits: {
+    hoursOptions: number[];
+    feePerHour: Money;
+    provisionsPerHour: Record<string, number>;
+    maxAttacksPerBand: number;
+    maxBandsPerRoute: number;
+    reactionMinutes: number;
+    takeBps: number;
+    keepBps: number;
+    quietHours: { from: number; to: number };
+    openDay: number;
+  };
+}
+
+export type DeliveryKind = "city" | "doge" | "family" | "urgent";
+
+export interface DeliveryOrderView {
+  id: string;
+  day: number;
+  kind: DeliveryKind;
+  city: string;
+  resource: string;
+  quantity: number;
+  unitPrice: Money;
+  opensAt: number;
+  expiresAt: number;
+  status: "open" | "done" | "upcoming" | "expired";
+  /** Minutes one way, per vehicle type (null: no road). */
+  minutes: Record<string, number | null>;
+  /** Cost of each escort for this order. */
+  escorts: Record<string, Money>;
+}
+
+export interface VehicleView {
+  id: string;
+  type: string;
+  investedValue: Money;
+  busyUntil: number;
+  status: "free" | "busy";
+}
+
+export interface DeliveryView {
+  id: string;
+  orderId: string;
+  kind: DeliveryKind;
+  vehicleId: string;
+  /** "region:city" */
+  route: string;
+  resource: string;
+  loaded: number;
+  cargo: Record<string, number>;
+  payment: Money;
+  paid?: Money;
+  escort: string;
+  departAt: number;
+  arriveAt: number;
+  backAt: number;
+  midAt: number;
+  outcome: "en_route" | "delivered" | "robbed_delivered";
+  attack: {
+    at: number;
+    reactBy: number;
+    reacted: boolean;
+    pending: boolean;
+    success: boolean | null;
+    taken: Record<string, number>;
+    /** Told once settled; null for a band of the computer. */
+    bandit: string | null;
+  } | null;
+}
+
+export interface BandView {
+  id: string;
+  route: string;
+  startAt: number;
+  endAt: number;
+  attacks: number;
+  dispersed: boolean;
+  booty: Record<string, number>;
+  collected: boolean;
+  active: boolean;
+  collectable: boolean;
+}
+
+export interface RoadView {
+  orders: DeliveryOrderView[];
+  vehicles: VehicleView[];
+  deliveries: DeliveryView[];
+  bands: BandView[];
+  /** Roads where bandits lie in wait (who they are stays hidden). */
+  watchedRoutes: string[];
+  banditsOpenAt: number;
+  /** Chance of an ambush succeeding, by escort ("none" included), in bps. */
+  ambushChance: Record<string, number>;
 }
 
 export interface Destination {
@@ -311,6 +425,10 @@ export interface PlayerView {
   ports: Record<string, Record<string, number>>;
   watchedRoutes: string[];
   seaNews: SeaNews[];
+  /** Deliveries by road (null when the world has none). */
+  road: RoadView | null;
+  /** The latest successful ambushes on the roads (no names). */
+  roadNews: { route: string; at: number; resource: string }[];
   rations: { resource: string; perDay: number; hungryUntil: number; nextMealAt: number };
   tutorial: string[];
   missions: MissionView[];
@@ -384,6 +502,8 @@ export interface Welcome {
   readyBatches: number;
   notices: Record<string, number>;
   slept: boolean;
+  /** The road while away: deliveries arrived, ambushes suffered and beaten off, booty to collect. */
+  road?: { arrived: number; robbed: number; repelled: number; booty: Record<string, number> };
 }
 
 export interface GameResponse {
@@ -458,7 +578,12 @@ export type NotificationKind =
   | "season"
   | "criee"
   | "deal"
-  | "family";
+  | "family"
+  | "ambush"
+  | "delivery"
+  | "robbed"
+  | "defended"
+  | "band_over";
 
 export interface Notice {
   id: number;
@@ -580,4 +705,9 @@ export type Action =
   | { type: "buildShip"; shipType: string }
   | { type: "repairShip"; shipId: string }
   | { type: "commissionPrivateers"; route: string; ships: string[] }
-  | { type: "collectRaid"; raidId: string };
+  | { type: "collectRaid"; raidId: string }
+  | { type: "buyVehicle"; vehicleType: string }
+  | { type: "dispatchDelivery"; orderId: string; vehicleId: string; escort: string }
+  | { type: "reactToAmbush"; deliveryId: string }
+  | { type: "postBand"; route: string; hours: number }
+  | { type: "collectBooty"; bandId: string };

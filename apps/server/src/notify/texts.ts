@@ -34,12 +34,60 @@ const FAMILIES: Record<string, string> = {
 const ducats = (deniers: string) =>
   new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(deniers) / 100);
 
+/** "la route de Vérone": the city at the end of a road `region:city`. */
+const road = (route: unknown, cities: Record<string, string>) =>
+  `la route de ${cities[String(route).split(":")[1] ?? ""] ?? "la ville"}`;
+
 export function pushText(
   kind: string,
   data: Record<string, unknown>,
   ports: Record<string, string>,
+  cities: Record<string, string> = {},
+  now = 0,
 ): { title: string; body: string } {
   switch (kind) {
+    case "ambush": {
+      const minutes = Math.max(1, Math.round((Number(data.reactBy) - now) / 60_000));
+      return {
+        title: "Brigands sur la route !",
+        body: `Votre convoi est attaqué sur ${road(data.route, cities)}. Ripostez dans les ${minutes} minutes !`,
+      };
+    }
+    case "delivery":
+      return {
+        title: "Livraison arrivée",
+        body: `${data.quantity} ${RESOURCES[String(data.resource)] ?? String(data.resource)} livrés par ${road(data.route, cities)} : ${ducats(String(data.amount ?? "0"))} ducats encaissés.`,
+      };
+    case "robbed":
+    case "defended": {
+      const ok = kind === "robbed";
+      if (data.role === "victim") {
+        const who = data.banditName ? String(data.banditName) : "des brigands";
+        return ok
+          ? {
+              title: "Convoi détroussé",
+              body: `${who} ont pris une part de votre cargaison sur ${road(data.route, cities)}.`,
+            }
+          : {
+              title: "Attaque repoussée",
+              body: `Votre convoi a repoussé ${who} sur ${road(data.route, cities)}.`,
+            };
+      }
+      const who = String(data.victimName ?? "un marchand");
+      return ok
+        ? { title: "Belle prise !", body: `Votre bande a détroussé le convoi de ${who}.` }
+        : {
+            title: data.reacted ? "Bande dispersée" : "Attaque manquée",
+            body: data.reacted
+              ? `${who} a riposté : votre bande est dispersée. Encaissez son butin.`
+              : `Le convoi de ${who} a repoussé votre bande.`,
+          };
+    }
+    case "band_over":
+      return {
+        title: "Bande de retour",
+        body: `Votre bande quitte ${road(data.route, cities)}. Encaissez le butin !`,
+      };
     case "harvest":
       return {
         title: "Récolte prête",

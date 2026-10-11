@@ -36,10 +36,17 @@ export const NOTIFICATION_KINDS = [
   "criee",
   "deal",
   "family",
+  "ambush",
+  "delivery",
+  "robbed",
+  "defended",
+  "band_over",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 const HOUR_MS = 3_600_000;
+/** Pushed at once, never held back by the hourly limit per kind: the merchant has minutes. */
+const URGENT: ReadonlySet<NotificationKind> = new Set(["ambush"]);
 const DAY_MS = 24 * HOUR_MS;
 
 interface Notice {
@@ -58,6 +65,7 @@ export class Notifier {
   private last: number | undefined;
   private timer: NodeJS.Timeout | undefined;
   private readonly ports: Record<string, string>;
+  private readonly cities: Record<string, string>;
 
   constructor(
     private readonly db: Db,
@@ -66,6 +74,7 @@ export class Notifier {
     private readonly quiet = { from: 22, to: 8 },
   ) {
     this.ports = Object.fromEntries((world.ctx.theme.ports ?? []).map((p) => [p.code, p.name]));
+    this.cities = Object.fromEntries(world.ctx.theme.cities.map((c) => [c.code, c.name]));
   }
 
   /**
@@ -250,6 +259,92 @@ export class Notifier {
       }
     }
 
+    // The road: an ambush waits for an answer, goods arrived, ambushes settled, bands over.
+    const reaction = this.world.ctx.settings.bandits.reactionMinutes * 60_000;
+    const settled: {
+      delivery: string;
+      route: string;
+      victim: string;
+      bandit: string | null;
+      success: boolean;
+      reacted: boolean;
+      taken: Record<string, number>;
+    }[] = [];
+    for (const d of Object.values(state.deliveries ?? {})) {
+      const a = d.attack;
+      const mine = people.has(d.playerId);
+      if (a && a.success === undefined && mine && d.escort === "none") {
+        // Seen by the engine when the time to fight back started.
+        if (within(a.reactBy - reaction)) {
+          notices.push({
+            accountId: d.playerId,
+            kind: "ambush",
+            data: { delivery: d.id, route: d.route, reactBy: a.reactBy },
+          });
+        }
+      }
+      if (a && a.success !== undefined && a.resolvedAt !== undefined && within(a.resolvedAt)) {
+        settled.push({
+          delivery: d.id,
+          route: d.route,
+          victim: d.playerId,
+          bandit: a.banditId,
+          success: a.success,
+          reacted: a.reacted,
+          taken: a.taken,
+        });
+      }
+      if (mine && within(d.arriveAt)) {
+        const left = d.cargo[d.resource] ?? 0;
+        const paid = d.paid ?? (d.loaded > 0 ? (d.payment * BigInt(left)) / BigInt(d.loaded) : 0n);
+        notices.push({
+          accountId: d.playerId,
+          kind: "delivery",
+          data: {
+            delivery: d.id,
+            route: d.route,
+            resource: d.resource,
+            quantity: left,
+            amount: paid.toString(),
+          },
+        });
+      }
+    }
+    for (const b of Object.values(state.bands ?? {})) {
+      if (b.playerId && people.has(b.playerId) && !b.dispersed && within(b.endAt)) {
+        notices.push({
+          accountId: b.playerId,
+          kind: "band_over",
+          data: { band: b.id, route: b.route, booty: b.booty },
+        });
+      }
+    }
+    if (settled.length > 0) {
+      const ids = [...new Set(settled.flatMap((s) => [s.victim, s.bandit ?? ""]))].filter((id) =>
+        /^[0-9a-f-]{36}$/.test(id),
+      );
+      const rows =
+        ids.length === 0
+          ? []
+          : await this.db
+              .select({ id: accounts.id, pseudo: accounts.pseudo })
+              .from(accounts)
+              .where(inArray(accounts.id, ids));
+      const name = new Map(rows.map((r) => [r.id, r.pseudo]));
+      for (const s of settled) {
+        const kind = s.success ? "robbed" : "defended";
+        const data = {
+          ...s,
+          banditName: s.bandit ? (name.get(s.bandit) ?? null) : null,
+          victimName: name.get(s.victim) ?? null,
+        };
+        if (people.has(s.victim))
+          notices.push({ accountId: s.victim, kind, data: { ...data, role: "victim" } });
+        if (s.bandit && people.has(s.bandit))
+          notices.push({ accountId: s.bandit, kind, data: { ...data, role: "bandit" } });
+      }
+    }
+
     // Pass Négociant: a Criée has just opened, and offers well below the reference price.
     const holders = [...people].filter((id) => hasPass(state, id, now));
     const criee = currentCriee(this.world.ctx, now);
@@ -411,21 +506,25 @@ export class Notifier {
     for (const n of saved) {
       const mine = subs.filter((s) => s.accountId === n.accountId);
       if (mine.length === 0 || prefs.get(n.accountId)?.has(n.kind)) continue;
-      const [recent] = await this.db
-        .select({ id: notifications.id })
-        .from(notifications)
-        .where(
-          and(
-            eq(notifications.accountId, n.accountId),
-            eq(notifications.kind, n.kind),
-            isNotNull(notifications.pushedAt),
-            gt(notifications.pushedAt, new Date(now - HOUR_MS)),
-          ),
-        )
-        .limit(1);
+      const [recent] = URGENT.has(n.kind as NotificationKind)
+        ? []
+        : await this.db
+            .select({ id: notifications.id })
+            .from(notifications)
+            .where(
+              and(
+                eq(notifications.accountId, n.accountId),
+                eq(notifications.kind, n.kind),
+                isNotNull(notifications.pushedAt),
+                gt(notifications.pushedAt, new Date(now - HOUR_MS)),
+              ),
+            )
+            .limit(1);
       if (recent) continue;
-      const text = pushText(n.kind, n.data, this.ports);
-      const payload = JSON.stringify({ ...text, kind: n.kind, url: "/" });
+      const text = pushText(n.kind, n.data, this.ports, this.cities, now);
+      // An ambush opens the game on the alert, to fight back.
+      const url = n.kind === "ambush" ? `/?ambush=${String(n.data.delivery)}` : "/";
+      const payload = JSON.stringify({ ...text, kind: n.kind, url });
       let delivered = false;
       for (const s of mine) {
         const res = await this.pusher.send(s, payload);

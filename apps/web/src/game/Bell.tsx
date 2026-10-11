@@ -19,6 +19,11 @@ const ICON = {
   criee: NavIcon.marche,
   deal: NavIcon.marche,
   family: NavIcon.contrats,
+  ambush: NavIcon.routes,
+  delivery: NavIcon.routes,
+  robbed: NavIcon.routes,
+  defended: NavIcon.routes,
+  band_over: NavIcon.routes,
 } as const;
 const TONE: Record<string, string> = {
   harvest: "text-lagoon",
@@ -32,6 +37,11 @@ const TONE: Record<string, string> = {
   criee: "text-gold",
   deal: "text-lagoon",
   family: "text-gold",
+  ambush: "text-vermilion",
+  delivery: "text-lagoon",
+  robbed: "text-vermilion",
+  defended: "text-lagoon",
+  band_over: "text-gold",
 };
 
 function text(n: Notice, props: GameProps): string {
@@ -99,9 +109,36 @@ function text(n: Notice, props: GameProps): string {
         award ?? null,
       );
     }
+    case "ambush":
+      return t.ambush(roadCity(n.data.route, props));
+    case "delivery":
+      return t.delivery(
+        Number(n.data.quantity),
+        props.names.resource(String(n.data.resource)).toLowerCase(),
+        roadCity(n.data.route, props),
+        d(String(n.data.amount ?? "0")),
+      );
+    case "robbed":
+    case "defended": {
+      const ok = n.kind === "robbed";
+      return n.data.role === "victim"
+        ? t.roadVictim(
+            n.data.banditName ? String(n.data.banditName) : null,
+            ok,
+            roadCity(n.data.route, props),
+          )
+        : t.roadBandit(String(n.data.victimName ?? fr.game.anonymous), ok, n.data.reacted === true);
+    }
+    case "band_over":
+      return t.bandOver(roadCity(n.data.route, props));
     default:
       return "";
   }
+}
+
+/** The city at the end of a road "region:city". */
+function roadCity(route: unknown, props: GameProps): string {
+  return props.names.city(String(route ?? "").split(":")[1] ?? "");
 }
 
 function ago(ms: number): string {
