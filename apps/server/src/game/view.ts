@@ -37,10 +37,16 @@ import {
   crieeRoom,
   currentCriee,
   dailyFor,
+  familiesOpenAt,
+  familyOrdersDone,
+  familyOrdersFor,
+  familyStandings,
   hasPass,
   maxOpenOrdersFor,
   nextEvent,
+  patronageLeft,
   rerollsOf,
+  weekIndex,
 } from "@comptoirs/engine";
 import { titleFor } from "./profile.js";
 
@@ -62,6 +68,44 @@ function crieeView(ctx: WorldContext, state: WorldState, playerId: string, now: 
   const c = currentCriee(ctx, now);
   if (!c) return null;
   return { ...c, price: crieePrice(ctx, c), room: crieeRoom(ctx, state, c, playerId, now) };
+}
+
+/**
+ * The patrician families as one merchant sees them: allegiance, today's order, patronage left,
+ * the live ranking of the week and the members of their own family. Null when families are off.
+ */
+function familiesView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {
+  const rules = ctx.settings.families;
+  if (rules.houses.length === 0) return null;
+  const f = state.families;
+  const mine = f?.members[playerId] ?? null;
+  const today = dayIndex(ctx, now);
+  const done = familyOrdersDone(state, playerId, today);
+  const members = mine
+    ? Object.entries(f?.members ?? {})
+        .filter(([id, code]) => code === mine && state.players[id])
+        .map(([id]) => ({
+          playerId: id,
+          week: f?.weekInfluence[id] ?? 0,
+          season: f?.seasonInfluence[id] ?? 0,
+          me: id === playerId,
+        }))
+        .sort((a, b) => b.week - a.week || b.season - a.season)
+    : [];
+  return {
+    mine,
+    opensAt: familiesOpenAt(ctx, state, playerId),
+    inPower: f?.inPower ?? null,
+    week: weekIndex(ctx, now),
+    standings: familyStandings(ctx, state, now),
+    members,
+    orders: familyOrdersFor(ctx, state, playerId, today).map((o) => ({
+      ...o,
+      done: done.includes(o.id),
+    })),
+    influence: { week: f?.weekInfluence[playerId] ?? 0, season: f?.seasonInfluence[playerId] ?? 0 },
+    patronageLeft: mine ? patronageLeft(ctx, state, playerId, today) : 0,
+  };
 }
 
 /** Static data of a world, for the client: names, recipes, costs. */
@@ -101,6 +145,21 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
     }),
     fleet: { maxPerPlayer: settings.ships.maxPerPlayer, portDuesBps: settings.ships.portDuesBps },
     privateers: settings.privateers,
+    families: (theme.families ?? []).flatMap((t) => {
+      const house = settings.families.houses.find((h) => h.code === t.code);
+      return house ? [{ ...t, quantities: house.quantities }] : [];
+    }),
+    familyRules: {
+      openDay: settings.families.openDay,
+      orderInfluence: settings.families.orderInfluence,
+      patronageUnit: settings.families.patronageUnit,
+      patronageMaxPerDay: settings.families.patronageMaxPerDay,
+      weeklyCapPerMember: settings.families.weeklyCapPerMember,
+      minMembers: settings.families.minMembers,
+      powerPremiumBps: settings.families.powerPremiumBps,
+      incumbentHandicapBps: settings.families.incumbentHandicapBps,
+      orderPremiumBps: settings.contracts.premiumBps,
+    },
     rations: settings.rations,
     referencePrices: settings.referencePrices,
     rules: {
@@ -323,6 +382,7 @@ export function playerView(
     cityQuotes,
     projects: openProjects(state.projects, now),
     contracts,
+    families: familiesView(ctx, state, playerId, now),
     gazette: { current: describe(activeEvent(ctx, now)), next: describe(nextEvent(ctx, now)) },
     expeditions,
     ships,

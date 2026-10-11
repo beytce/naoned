@@ -27,7 +27,7 @@ export async function welcomeBack(
     await db.execute(sql`
       select reason, sum(amount)::text as total from ledger_entries
       where world_id = ${worldId} and to_account = ${cash} and at > ${since.toISOString()}::timestamptz
-        and reason in ('city_sale', 'trade', 'contract_reward', 'project_delivery', 'market_maker_buy', 'mission_reward')
+        and reason in ('city_sale', 'trade', 'contract_reward', 'family_order_reward', 'project_delivery', 'market_maker_buy', 'mission_reward')
       group by reason`),
   );
   const [upkeep] = rowsOf<{ total: string | null }>(

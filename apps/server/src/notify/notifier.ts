@@ -33,6 +33,7 @@ export const NOTIFICATION_KINDS = [
   "season",
   "criee",
   "deal",
+  "family",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -80,6 +81,7 @@ export class Notifier {
    * resource and side, with the total traded.
    */
   async fromEffects(fx: Effects, now: number): Promise<void> {
+    await this.familyWeek(fx, now);
     const fills = fx.events.filter((e) => e.type === "order_filled" && e.playerId);
     if (fills.length === 0) return;
     const people = await this.people();
@@ -120,6 +122,34 @@ export class Notifier {
       n.data.counterpartyName = who === "market_maker" ? null : (name.get(who) ?? null);
     }
     await this.send([...grouped.values()], now);
+  }
+
+  /**
+   * The families' week has closed: each member (people only) learns where their family finished
+   * and who holds power for the week starting.
+   */
+  private async familyWeek(fx: Effects, now: number): Promise<void> {
+    const closed = fx.events.find((e) => e.type === "family_week_closed");
+    if (!closed) return;
+    const data = closed.data ?? {};
+    const standings = (data.standings ?? []) as { family: string }[];
+    const members = this.world.current.families?.members ?? {};
+    const people = await this.people();
+    const notices: Notice[] = [];
+    for (const [accountId, family] of Object.entries(members)) {
+      if (!people.has(accountId)) continue;
+      notices.push({
+        accountId,
+        kind: "family",
+        data: {
+          week: data.week,
+          family,
+          winner: data.winner ?? null,
+          rank: standings.findIndex((s) => s.family === family) + 1,
+        },
+      });
+    }
+    await this.send(notices, now);
   }
 
   get publicKey(): string | null {

@@ -24,6 +24,13 @@ const AWARDS: Record<string, string> = {
   senator: "Sénateur de la semaine",
 };
 
+const FAMILIES: Record<string, string> = {
+  contarini: "Contarini",
+  morosini: "Morosini",
+  mocenigo: "Mocenigo",
+  dandolo: "Dandolo",
+};
+
 const ducats = (deniers: string) =>
   new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(deniers) / 100);
 
@@ -83,6 +90,21 @@ export function pushText(
       return {
         title: "Résultats de la semaine",
         body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${sign}${ducats(gain)} ducats).${award}`,
+      };
+    }
+    case "family": {
+      const winner = data.winner ? (FAMILIES[String(data.winner)] ?? String(data.winner)) : null;
+      if (winner && data.winner === data.family) {
+        return {
+          title: "Votre famille au pouvoir",
+          body: `Les ${winner} remportent la semaine : vos commandes de famille paient davantage cette semaine.`,
+        };
+      }
+      return {
+        title: "La semaine des familles",
+        body: winner
+          ? `Les ${winner} prennent le pouvoir ; les ${FAMILIES[String(data.family)] ?? ""} finissent ${data.rank}e.`
+          : "Aucune famille n'a gagné d'influence cette semaine.",
       };
     }
     case "criee":
