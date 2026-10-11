@@ -116,6 +116,23 @@ Plan complet et phases suivantes (mariages, commandite, enchère des galères, p
 | **Visibilité** | Onglet Familles (Contrats) : classement en direct, champions, membres et leurs contributions ; notification du résultat de la semaine |
 | **PNJ** | Les maisons marchandes prêtent allégeance, livrent les commandes et font du mécénat, pour qu'un petit monde ait des familles vivantes |
 
+### Les routes et les brigands (le pendant terrestre de la mer)
+
+Note d'implémentation : `docs/plan-livraisons.md` ; réglages calibrés : `docs/calibration.md`. Constat de départ : une session se résumait à « Tout récolter et relancer », et vendre aux villes ne demandait aucun choix.
+
+| Mécanique | Règle |
+| --- | --- |
+| **Fin de la vente instantanée** | Les villes ne rachètent plus au comptoir et les Criées disparaissent. Le marché commun (Dogana, offres entre joueurs) ne change pas |
+| **Tableau de commandes** | 12 à 16 commandes personnelles par jour, tirées du secret du monde, que personne d'autre ne peut prendre : les deux commandes du Doge et celle de la famille (à leur prime), deux urgentes (ouvertes une heure entre 8 h et 21 h, +15 %), le reste en commandes de ville. Une ville commande ce qu'elle demande ; le prix vaut la référence +40 % par heure de route. Les commandes expirent à minuit. Les marchandises d'outre-mer peuvent être commandées par les villes ; les commandes d'outre-mer du Doge et des familles se remettent toujours au comptoir |
+| **Sept villes** | Venise, Padoue, Vérone, Vicence, Trévise, Mantoue, Ferrare ; de 20 min à 1 h 50 de route selon la région de départ |
+| **Véhicules** | Mule (15 unités, lente), charrette (40 ; deux données à l'arrivée), chariot (90, rapide) ; 4 au plus, achetés en ducats et planches (détruits), avec entretien, comptés au patrimoine. Un trajet aller dure 2 h au plus ; le véhicule revient à vide, la ville paie à l'arrivée |
+| **Escortes** | Gardes (4 % de la valeur de la cargaison) ou compagnie (9 %), détruits. Une escorte protège sans qu'il soit besoin d'être là |
+| **Brigands** | Dès le jour 6, un joueur poste une bande sur une route pour 2, 4 ou 6 h (une mise détruite). À mi-parcours d'une livraison, la plus ancienne bande de la route tente sa chance, deux fois au plus par bande. Sans escorte, la livraison s'arrête et le joueur a 10 minutes pour riposter : une riposte fait échouer l'attaque et disperse la bande. Une prise emporte 30 % de chaque ligne ; le brigand en garde la moitié, le reste se perd dans la fuite. La livraison est payée au prorata de ce qui arrive. Des bandes de l'ordinateur guettent aussi, pour qu'un petit monde ait du risque |
+| **Garde-fous** | Aucune attaque entre 22 h et 8 h (heure de Paris), ni contre un nouveau venu (3 jours), un marchand deux fois moins riche que le brigand, un membre de sa famille, ni deux fois en 24 h contre la même victime (délai partagé avec la mer). Le véhicule revient toujours |
+| **Équilibre** | La monnaie payée pour les marchandises reste celle d'avant (villes, Doge, familles, Criées), à ±10 % ; le transport est un puits ; brigander ne crée jamais de valeur et rapporte à peine sa mise à un brigand assidu |
+| **Pass Négociant** | Aucun avantage sur la route : ni véhicule, ni escorte moins chère, ni délai de riposte, ni commande échangée (l'échange de commande du Doge disparaît avec le tableau) |
+| **Notifications** | Attaque (immédiate, jamais regroupée, ouvre le jeu sur l'alerte), livraison payée, attaque réussie ou repoussée (aux deux joueurs, avec le nom de l'autre), fin de bande. La gazette publie les prises, sans noms |
+
 ## Vision et positionnement
 
 Fondaco est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.

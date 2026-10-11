@@ -16,6 +16,11 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - Phase 5 : prêts du Rialto sur gage et Grand Conseil (décrets votés).
 - Plus tard : assurance maritime, dynastie entre saisons (cosmétique), avantages Pass d'information.
 
+## Les routes (suite des livraisons, voir docs/plan-livraisons.md)
+- Le roulage (phase 6) : confier une commande au véhicule d'un autre joueur contre une part du prix, avec une réputation de transporteur.
+- Améliorer les véhicules (essieux, chevaux de trait).
+- Des routes qui se dégradent, ou des péages tenus par des joueurs.
+
 ## Affrontement (proposés, non retenus pour l'instant)
 - Convois de guilde : cargaisons groupées sous une même escorte, butin et risque partagés.
 - Défis entre marchands : mise sous séquestre, le plus gros gain sur 3 jours remporte le pot (moins une commission).
