@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import {
   type Command,
   type Effects,
+  type GameEvent,
   type JournalTotals,
   type WorldContext,
   type WorldState,
@@ -402,13 +403,22 @@ export class GameWorld {
           });
         }
       } else if (command.type !== "tick") {
-        await this.recordTutorial(tx, command.playerId, fx, at);
+        await this.recordTutorial(tx, command.playerId, fx.events, at);
+      } else {
+        // The tick settles deliveries on arrival: a first delivery is a step of the tutorial.
+        const arrived = new Set(
+          fx.events.filter((e) => e.type === "delivery_arrived").map((e) => e.playerId ?? ""),
+        );
+        for (const id of arrived) {
+          const mine = fx.events.filter((e) => e.playerId === id);
+          await this.recordTutorial(tx, id, mine, at);
+        }
       }
     });
   }
 
-  private async recordTutorial(tx: Db, accountId: string, fx: Effects, at: Date) {
-    const reached = stepsReached(this.ctx.theme, fx.events);
+  private async recordTutorial(tx: Db, accountId: string, events: GameEvent[], at: Date) {
+    const reached = stepsReached(this.ctx.theme, events);
     if (reached.size === 0) return;
     const [row] = await tx
       .select({ steps: players.tutorialSteps })

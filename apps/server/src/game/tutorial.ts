@@ -21,7 +21,8 @@ export function stepsReached(theme: Theme, events: GameEvent[]): Set<TutorialSte
       if (recipe && Object.keys(recipe.inputs).length > 0) reached.add("transform");
     }
     if (e.type === "harvest") reached.add("harvest");
-    if (e.type === "city_sale") reached.add("sell_city");
+    // Selling to a city: by road once deliveries are on.
+    if (e.type === "city_sale" || e.type === "delivery_arrived") reached.add("sell_city");
     if (e.type === "order_placed" && data.side === "buy" && Number(data.filled) > 0) {
       reached.add("market_buy");
     }

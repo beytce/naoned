@@ -333,6 +333,8 @@ export const worldSettingsSchema = z.object({
       distanceBonusBpsPerHour: bps,
       /** Quantity range of a city order, per resource (also the resources cities order). */
       quantity: z.record(z.tuple([positive, positive])),
+      /** How often each resource is ordered, relative to the others (1 when absent). */
+      weights: z.record(positive).default({}),
       /** Minutes of road one way at normal speed: region → city → minutes. */
       routes: z.record(z.record(positive)),
       maxDeliveryMinutes: positive,

@@ -43,6 +43,10 @@ export const venice1450: Theme = {
     { code: "venezia", name: "Venise" },
     { code: "padova", name: "Padoue" },
     { code: "verona", name: "Vérone" },
+    { code: "vicenza", name: "Vicence" },
+    { code: "treviso", name: "Trévise" },
+    { code: "mantova", name: "Mantoue" },
+    { code: "ferrara", name: "Ferrare" },
   ],
   families: [
     { code: "contarini", name: "Contarini", domain: "Les bâtisseurs" },

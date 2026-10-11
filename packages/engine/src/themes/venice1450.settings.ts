@@ -225,9 +225,9 @@ export const venice1450Settings: WorldSettingsInput = {
   // The merchant's ledger: one or two short goals a day for the first week.
   missions: [
     {
-      id: "first_city_sale",
+      id: "first_delivery",
       day: 0,
-      event: "city_sale",
+      event: "delivery_arrived",
       count: 1,
       reward: { goods: { bread: 10, wood: 5 } },
     },
@@ -274,7 +274,16 @@ export const venice1450Settings: WorldSettingsInput = {
       count: 5,
       reward: { goods: {}, ducats: 10_000 },
     },
+    {
+      id: "first_vehicle",
+      day: 3,
+      event: "vehicle_bought",
+      count: 1,
+      reward: { goods: { planks: 10 } },
+    },
     { id: "first_ship", day: 5, event: "ship_built", count: 1, reward: { goods: { planks: 15 } } },
+    // Opens with the bandits (`bandits.openDay`).
+    { id: "first_band", day: 6, event: "band_posted", count: 1, reward: { goods: { bread: 10 } } },
     {
       id: "first_project",
       day: 6,
@@ -284,12 +293,124 @@ export const venice1450Settings: WorldSettingsInput = {
     },
     { id: "new_workshop", day: 7, event: "build", count: 1, reward: { goods: {}, ducats: 15_000 } },
   ],
+  // Deliveries by road (docs/plan-livraisons.md): a board of 10 to 15 personal orders a day,
+  // carried to the cities with one's own vehicles and paid on arrival. They replace the instant
+  // sale to cities and the Criées.
+  deliveries: {
+    ordersPerDay: { min: 12, max: 16 },
+    dogeOrdersPerDay: 2,
+    urgentPerDay: 2,
+    urgentPremiumBps: 1_500,
+    urgentOpenMinutes: 60,
+    urgentHours: { from: 8, to: 21 },
+    cityPriceBps: 10_000,
+    // +50 % per hour of road: the money of the former city sales, now earned on the road.
+    distanceBonusBpsPerHour: 5_000,
+    quantity: {
+      bread: [15, 40],
+      bricks: [6, 15],
+      planks: [6, 15],
+      wheat: [20, 40],
+      flour: [15, 30],
+      clay: [20, 40],
+      wood: [20, 40],
+      salt: [4, 10],
+      wine: [2, 6],
+      silk: [1, 3],
+      spices: [1, 3],
+      furs: [1, 2],
+      cloth: [1, 2],
+    },
+    // Home goods four times as often as goods from overseas.
+    weights: { bread: 4, bricks: 4, planks: 4, wheat: 4, flour: 4, clay: 4, wood: 4 },
+    routes: {
+      terraferma: {
+        padova: 30,
+        verona: 45,
+        vicenza: 25,
+        mantova: 60,
+        venezia: 75,
+        treviso: 70,
+        ferrara: 80,
+      },
+      lagoon: {
+        venezia: 20,
+        treviso: 40,
+        padova: 45,
+        ferrara: 70,
+        vicenza: 70,
+        verona: 90,
+        mantova: 100,
+      },
+      dolomites: {
+        treviso: 45,
+        vicenza: 50,
+        verona: 60,
+        venezia: 90,
+        padova: 75,
+        mantova: 100,
+        ferrara: 110,
+      },
+    },
+    maxDeliveryMinutes: 120,
+    vehicles: {
+      mule: {
+        costDucats: 8_000,
+        costMaterials: {},
+        capacity: 15,
+        speedBps: 7_500,
+        upkeepPerDay: 300,
+      },
+      cart: {
+        costDucats: 15_000,
+        costMaterials: { planks: 10 },
+        capacity: 40,
+        speedBps: 10_000,
+        upkeepPerDay: 600,
+      },
+      wagon: {
+        costDucats: 30_000,
+        costMaterials: { planks: 25 },
+        capacity: 90,
+        speedBps: 13_000,
+        upkeepPerDay: 1_200,
+      },
+    },
+    startingVehicles: ["cart"],
+    maxVehicles: 4,
+    escorts: {
+      guards: { costBps: 400, defense: 2 },
+      company: { costBps: 900, defense: 5 },
+    },
+  },
+  // Bandits on the roads: a band posted for 2, 4 or 6 hours tries two ambushes at most; half of
+  // what it takes is lost in flight, its fee leaves the game. No ambush at night. A band costs
+  // little because it rarely takes much: a seasoned bandit just about pays for it.
+  bandits: {
+    hoursOptions: [2, 4, 6],
+    feePerHour: 35,
+    provisionsPerHour: {},
+    maxActivePerPlayer: 1,
+    maxAttacksPerBand: 2,
+    maxBandsPerRoute: 2,
+    attackChanceBps: { "0": 7_000, "2": 2_500, "5": 800 },
+    reactionMinutes: 10,
+    takeBps: 3_000,
+    keepBps: 5_000,
+    quietHours: { from: 22, to: 8 },
+    newcomerDays: 3,
+    minTargetWorthBps: 5_000,
+    cooldownHours: 24,
+    sameFamilyImmune: true,
+    openDay: 6,
+    npcBands: { perDay: 3, hours: 3 },
+  },
   // Fresh produce: a batch collected within 30 minutes of being done yields 5 % more.
   fresh: { minutes: 30, bonusBps: 500 },
-  // The Criées of the Rialto: three times a day between 8 h and 22 h, a city buys bread, bricks
-  // or planks 10 to 20 % above the reference for 20 minutes; 6 units per merchant at most.
+  // The Criées of the Rialto are replaced by urgent deliveries (off; kept for older worlds:
+  // three times a day between 8 h and 22 h, bread, bricks or planks 10 to 20 % above reference).
   criees: {
-    perDay: 3,
+    perDay: 0,
     fromHour: 8,
     toHour: 22,
     minutes: 20,
@@ -305,7 +426,7 @@ export const venice1450Settings: WorldSettingsInput = {
   daily: {
     perDay: 3,
     tasks: [
-      { id: "sell_city", event: "city_sale", count: 3, reward: { goods: { bread: 10 } } },
+      { id: "deliveries", event: "delivery_arrived", count: 2, reward: { goods: { bread: 10 } } },
       {
         id: "doge_order",
         event: "contract_fulfilled",
@@ -326,19 +447,26 @@ export const venice1450Settings: WorldSettingsInput = {
         count: 1,
         reward: { goods: { bread: 10 } },
       },
-      { id: "criee", event: "criee_sale", count: 1, reward: { goods: {}, ducats: 1_000 } },
+      {
+        id: "urgent",
+        event: "delivery_arrived",
+        filter: { kind: "urgent" },
+        count: 1,
+        reward: { goods: {}, ducats: 1_000 },
+      },
     ],
     chest: { ducats: 1_000, perStreakDay: 300, maxStreak: 5 },
   },
   // Offers between players: from a quarter to four times the reference price.
   priceBand: { minBps: 2_500, maxBps: 40_000 },
   // Pass Négociant: a fifth more at the Dogana, two more open offers, fresher produce (+8 %
-  // instead of +5 %) and one Doge's order swapped a day. Nothing for an absent merchant.
+  // instead of +5 %). No order swapped: the board of deliveries is the same for everyone.
+  // Nothing for an absent merchant.
   pass: {
     marketMakerQuotaBps: 2_000,
     extraOpenOrders: 2,
     freshBonusBps: 800,
-    contractRerollsPerDay: 1,
+    contractRerollsPerDay: 0,
   },
   // Raw materials are local: wheat grows in the Terraferma, clay lies in the Lagoon, wood in the
   // Dolomites. Workshops that transform can be built anywhere.
@@ -498,11 +626,14 @@ export const venice1450Settings: WorldSettingsInput = {
       planks: 250,
     },
   },
+  // Seven cities share the demand of the three first ones (bread 130, bricks 35, planks 35 per
+  // active merchant and per day); the new ones also buy raw goods. With deliveries by road, the
+  // demand says which city orders what (the instant sale is closed).
   cities: {
     venezia: {
-      bread: { basePrice: 220, dailyCapacityPerPlayer: 50, maxDropBps: 5_000 },
-      bricks: { basePrice: 260, dailyCapacityPerPlayer: 15, maxDropBps: 5_000 },
-      planks: { basePrice: 260, dailyCapacityPerPlayer: 15, maxDropBps: 5_000 },
+      bread: { basePrice: 220, dailyCapacityPerPlayer: 30, maxDropBps: 5_000 },
+      bricks: { basePrice: 260, dailyCapacityPerPlayer: 9, maxDropBps: 5_000 },
+      planks: { basePrice: 260, dailyCapacityPerPlayer: 9, maxDropBps: 5_000 },
       spices: { basePrice: 1_700, dailyCapacityPerPlayer: 4, maxDropBps: 5_000 },
       silk: { basePrice: 1_400, dailyCapacityPerPlayer: 4, maxDropBps: 5_000 },
       salt: { basePrice: 340, dailyCapacityPerPlayer: 12, maxDropBps: 5_000 },
@@ -511,20 +642,48 @@ export const venice1450Settings: WorldSettingsInput = {
       cloth: { basePrice: 2_050, dailyCapacityPerPlayer: 2, maxDropBps: 5_000 },
     },
     padova: {
-      bread: { basePrice: 210, dailyCapacityPerPlayer: 40, maxDropBps: 5_000 },
-      bricks: { basePrice: 250, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
-      planks: { basePrice: 250, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
+      bread: { basePrice: 210, dailyCapacityPerPlayer: 20, maxDropBps: 5_000 },
+      bricks: { basePrice: 250, dailyCapacityPerPlayer: 5, maxDropBps: 5_000 },
+      planks: { basePrice: 250, dailyCapacityPerPlayer: 5, maxDropBps: 5_000 },
       silk: { basePrice: 1_350, dailyCapacityPerPlayer: 3, maxDropBps: 5_000 },
       wine: { basePrice: 670, dailyCapacityPerPlayer: 5, maxDropBps: 5_000 },
       cloth: { basePrice: 2_000, dailyCapacityPerPlayer: 2, maxDropBps: 5_000 },
     },
     verona: {
-      bread: { basePrice: 200, dailyCapacityPerPlayer: 40, maxDropBps: 5_000 },
-      bricks: { basePrice: 240, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
-      planks: { basePrice: 240, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
+      bread: { basePrice: 200, dailyCapacityPerPlayer: 20, maxDropBps: 5_000 },
+      bricks: { basePrice: 240, dailyCapacityPerPlayer: 5, maxDropBps: 5_000 },
+      planks: { basePrice: 240, dailyCapacityPerPlayer: 5, maxDropBps: 5_000 },
       spices: { basePrice: 1_650, dailyCapacityPerPlayer: 3, maxDropBps: 5_000 },
       salt: { basePrice: 330, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
       furs: { basePrice: 1_550, dailyCapacityPerPlayer: 2, maxDropBps: 5_000 },
+    },
+    vicenza: {
+      bread: { basePrice: 200, dailyCapacityPerPlayer: 20, maxDropBps: 5_000 },
+      bricks: { basePrice: 240, dailyCapacityPerPlayer: 4, maxDropBps: 5_000 },
+      planks: { basePrice: 240, dailyCapacityPerPlayer: 4, maxDropBps: 5_000 },
+      wheat: { basePrice: 110, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
+      wood: { basePrice: 110, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
+    },
+    treviso: {
+      bread: { basePrice: 200, dailyCapacityPerPlayer: 15, maxDropBps: 5_000 },
+      bricks: { basePrice: 240, dailyCapacityPerPlayer: 4, maxDropBps: 5_000 },
+      planks: { basePrice: 240, dailyCapacityPerPlayer: 4, maxDropBps: 5_000 },
+      clay: { basePrice: 110, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
+      flour: { basePrice: 175, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
+    },
+    mantova: {
+      bread: { basePrice: 200, dailyCapacityPerPlayer: 15, maxDropBps: 5_000 },
+      bricks: { basePrice: 240, dailyCapacityPerPlayer: 4, maxDropBps: 5_000 },
+      planks: { basePrice: 240, dailyCapacityPerPlayer: 4, maxDropBps: 5_000 },
+      wheat: { basePrice: 110, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
+      flour: { basePrice: 175, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
+    },
+    ferrara: {
+      bread: { basePrice: 200, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
+      bricks: { basePrice: 240, dailyCapacityPerPlayer: 4, maxDropBps: 5_000 },
+      planks: { basePrice: 240, dailyCapacityPerPlayer: 4, maxDropBps: 5_000 },
+      clay: { basePrice: 110, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
+      wood: { basePrice: 110, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
     },
   },
   projects: {

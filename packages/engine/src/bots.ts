@@ -63,11 +63,14 @@ export interface Profile {
   prudence: number;
   /** Vehicles the bot is willing to own. */
   vehicles: number;
+  /** Chance per session of posting a band on a road (0 to 1). */
+  banditry: number;
 }
 
 export const PROFILES: Record<ProfileName, Profile> = {
   producer: {
     name: "producer",
+    banditry: 0,
     prudence: 0.5,
     vehicles: 2,
     sessionsPerDay: [2, 4],
@@ -78,6 +81,7 @@ export const PROFILES: Record<ProfileName, Profile> = {
   },
   artisan: {
     name: "artisan",
+    banditry: 0,
     prudence: 0.5,
     vehicles: 2,
     sessionsPerDay: [2, 4],
@@ -88,6 +92,7 @@ export const PROFILES: Record<ProfileName, Profile> = {
   },
   builder: {
     name: "builder",
+    banditry: 0,
     prudence: 0.6,
     vehicles: 2,
     sessionsPerDay: [2, 4],
@@ -98,6 +103,7 @@ export const PROFILES: Record<ProfileName, Profile> = {
   },
   speculator: {
     name: "speculator",
+    banditry: 0.3,
     prudence: 0.2,
     vehicles: 2,
     sessionsPerDay: [3, 5],
@@ -108,6 +114,7 @@ export const PROFILES: Record<ProfileName, Profile> = {
   },
   casual: {
     name: "casual",
+    banditry: 0.15,
     prudence: 1,
     vehicles: 1,
     sessionsPerDay: [1, 1],
@@ -215,10 +222,8 @@ export class Bot {
     this.doContracts(s);
     this.serveFamily(s);
     this.deliverProjects(s);
-    if (deliveriesOn(s.ctx)) {
-      this.garage(s);
-      this.deliver(s);
-    } else {
+    if (deliveriesOn(s.ctx)) this.garage(s, this.deliver(s));
+    else {
       this.sellToCriee(s);
       this.sellToCities(s);
     }
@@ -249,22 +254,25 @@ export class Bot {
     }
   }
 
-  /** A second vehicle once the first one cannot carry the whole board. */
-  private garage(s: Session): void {
+  /**
+   * Another vehicle when the board holds more orders the bot could load than it has vehicles
+   * free (called after the deliveries of the session).
+   */
+  private garage(s: Session, waiting: number): void {
     const { deliveries } = s.ctx.settings;
     const mine = vehiclesOf(s.state(), this.id);
-    if (mine.length >= Math.min(this.profile.vehicles, deliveries.maxVehicles)) return;
-    if (mine.some((v) => vehicleFree(v, s.now))) return;
+    if (waiting === 0 || mine.length >= Math.min(this.profile.vehicles, deliveries.maxVehicles))
+      return;
     const type = Object.keys(deliveries.vehicles).includes("cart")
       ? "cart"
       : Object.keys(deliveries.vehicles)[0];
     const def = type ? deliveries.vehicles[type] : undefined;
-    if (!type || !def || this.cash(s) < def.costDucats * 4n) return;
+    if (!type || !def || this.cash(s) < def.costDucats * 3n) return;
     for (const [res, qty] of Object.entries(def.costMaterials)) {
       const missing = qty - this.available(s, res);
       if (missing > 0) this.buy(s, res, missing, 1.15);
     }
-    s.act({ type: "buyVehicle", playerId: this.id, vehicleType: type });
+    if (s.act({ type: "buyVehicle", playerId: this.id, vehicleType: type })) this.deliver(s);
   }
 
   /**
@@ -272,10 +280,12 @@ export class Bot {
    * it best. Doge's and family orders are bought for if goods are missing; guards are hired on a
    * road where bandits lie in wait, by prudence.
    */
-  private deliver(s: Session): void {
+  /** Returns how many orders the bot could have loaded but had no vehicle for. */
+  private deliver(s: Session): number {
     const state = s.state();
     const player = state.players[this.id];
-    if (!player) return;
+    if (!player) return 0;
+    let waiting = 0;
     const day = dayIndex(s.ctx, s.now);
     const done = deliveriesDoneToday(state, this.id, day);
     const orders = deliveryOrdersFor(s.ctx, state, this.id, day)
@@ -292,7 +302,11 @@ export class Bot {
         .filter((v) => vehicleFree(v, s.now) && (types[v.type]?.capacity ?? 0) >= o.quantity)
         .sort((a, b) => (types[a.type]?.capacity ?? 0) - (types[b.type]?.capacity ?? 0));
       const vehicle = free[0];
-      if (!vehicle) continue;
+      const spareNow = this.available(s, o.resource) - this.reserve(s, o.resource);
+      if (!vehicle) {
+        if (spareNow >= o.quantity && o.unitPrice >= (this.bestBid(s, o.resource) ?? 0n)) waiting++;
+        continue;
+      }
       if (travelMinutes(s.ctx, player.region, o.city, vehicle.type) === undefined) continue;
       // The order must beat what the market pays.
       const bid = this.bestBid(s, o.resource) ?? 0n;
@@ -319,9 +333,10 @@ export class Bot {
         escort,
       });
     }
+    return waiting;
   }
 
-  /** Speculators sometimes post a band on a road; any bot collects its booty. */
+  /** Speculators (and a few casual merchants) post a band on a road; any bot collects booty. */
   private highwayman(s: Session): void {
     if (!banditsOn(s.ctx)) return;
     for (const b of Object.values(s.state().bands ?? {})) {
@@ -329,7 +344,7 @@ export class Bot {
       if (b.dispersed || b.endAt <= s.now)
         s.act({ type: "collectBooty", playerId: this.id, bandId: b.id });
     }
-    if (!this.profile.speculates || !s.rng.chance(0.3)) return;
+    if (this.profile.banditry === 0 || !s.rng.chance(this.profile.banditry)) return;
     const cfg = s.ctx.settings.bandits;
     const hours = cfg.hoursOptions[Math.floor(cfg.hoursOptions.length / 2)] ?? 0;
     if (this.cash(s) < cfg.feePerHour * BigInt(hours) * 3n) return;
@@ -338,7 +353,22 @@ export class Bot {
       if (missing > 0) this.buy(s, res, missing, 1.3);
       if (this.available(s, res) - this.reserve(s, res) < perHour * hours) return;
     }
-    const route = s.rng.pick(allRoutes(s.ctx));
+    // A seasoned bandit knows the busy roads (the last day's traffic); an occasional one guesses.
+    const routes = allRoutes(s.ctx);
+    let route = s.rng.pick(routes);
+    if (this.profile.name !== "casual") {
+      const traffic = new Map<string, number>();
+      for (const d of Object.values(s.state().deliveries ?? {})) {
+        if (d.playerId !== this.id && d.departAt > s.now - DAY)
+          traffic.set(d.route, (traffic.get(d.route) ?? 0) + 1);
+      }
+      const watched = new Set(watchedRoads(s.ctx, s.state(), s.now));
+      const best = routes
+        .filter((r) => !watched.has(r))
+        .sort((a, b) => (traffic.get(b) ?? 0) - (traffic.get(a) ?? 0))
+        .slice(0, 3);
+      route = s.rng.pick(best) ?? route;
+    }
     if (route) s.act({ type: "postBand", playerId: this.id, route, hours });
   }
 

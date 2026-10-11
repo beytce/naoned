@@ -26,6 +26,7 @@ export type LedgerReason =
   | "family_order_reward"
   | "patronage"
   | "vehicle"
+  | "vehicle_upkeep"
   | "escort"
   | "delivery"
   | "bandits";

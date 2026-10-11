@@ -7,6 +7,7 @@ import { ledgerEntries, players, telemetry } from "../src/db/schema.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
+import { deliverBread, smallOrders } from "./road.js";
 
 let database: Database;
 let dbUrl: string;
@@ -118,20 +119,18 @@ describe("living world", () => {
     expect(res.destinations.alexandria.returns).toBe("spices");
   });
 
-  it("shows today's contracts and the gazette, and pays a contract", async () => {
+  it("shows today's contracts and the gazette; home goods go by road", async () => {
     const cookie = await login("ada@example.org");
     const v = (await post(cookie, "/api/game/join", { region: "terraferma" })).json().view;
     expect(v.contracts).toHaveLength(2); // Two orders of the Doge; the third is the family's.
     expect(v.gazette).toHaveProperty("next");
     expect(v.rations.perDay).toBe(6); // farm + mill + bakery
-    const breadContract = v.contracts.find((c: { resource: string }) => c.resource === "bread");
-    const c = breadContract ?? v.contracts[0];
-    const res = await act(cookie, { type: "fulfillContract", contractId: c.id });
-    if (breadContract && c.quantity <= 20) {
-      expect(res.statusCode).toBe(200);
-      expect(res.json().view.contracts.find((x: { id: string }) => x.id === c.id).done).toBe(true);
-    } else {
-      expect(res.json().error).toBe("insufficient_stock");
+    const home = v.contracts.find((c: { resource: string }) =>
+      ["wheat", "flour", "bread", "clay", "wood", "bricks", "planks"].includes(c.resource),
+    );
+    if (home) {
+      const res = await act(cookie, { type: "fulfillContract", contractId: home.id });
+      expect(res.json().error).toBe("city_sales_closed");
     }
   });
 
@@ -177,7 +176,8 @@ describe("game API", () => {
     expect((await act(cookie, { type: "collectAll" })).statusCode).toBe(409);
   });
 
-  it("plays the tutorial loop: produce, harvest, transform, sell to a city", async () => {
+  it("plays the tutorial loop: produce, harvest, transform, deliver to a city", async () => {
+    smallOrders(world);
     const cookie = await login("ada@example.org");
     const joined = await post(cookie, "/api/game/join", { region: "lagoon" });
     expect(joined.statusCode).toBe(200);
@@ -192,14 +192,10 @@ describe("game API", () => {
     await act(cookie, { type: "startProduction", buildingId: works.id, batches: 1 });
     now += 31_000;
     await act(cookie, { type: "collectAll" });
-    const sold = await act(cookie, {
-      type: "sellToCity",
-      city: "venezia",
-      resource: "bricks",
-      quantity: 6,
-    });
-    expect(sold.statusCode).toBe(200);
-    const after = sold.json().view;
+    const d = await deliverBread(world, v.player.id, now);
+    now = d.arriveAt;
+    await world.execute({ type: "tick" });
+    const after = (await get(cookie)).json().view;
     expect(BigInt(after.cash)).toBeGreaterThan(100_000n);
     expect(after.tutorial).toEqual(["produce", "harvest", "transform", "sell_city"]);
 

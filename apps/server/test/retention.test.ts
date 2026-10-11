@@ -6,6 +6,7 @@ import { type Database, openDatabase } from "../src/db/client.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
+import { deliverBread, smallOrders } from "./road.js";
 
 let database: Database;
 let dbUrl: string;
@@ -109,12 +110,15 @@ describe("coming back", () => {
 });
 
 describe("the ledger of missions", () => {
-  it("rewards the first sale to a city and closes the tutorial", async () => {
+  it("rewards the first delivery and closes the tutorial", async () => {
+    smallOrders(world);
     const cookie = await player("ada@example.org");
     const before = await get(cookie);
-    expect(before.view.missions[0]).toMatchObject({ id: "first_city_sale", done: false });
-    await act(cookie, { type: "sellToCity", city: "venezia", resource: "bread", quantity: 5 });
-    const claimed = await act(cookie, { type: "claimMission", missionId: "first_city_sale" });
+    expect(before.view.missions[0]).toMatchObject({ id: "first_delivery", done: false });
+    const d = await deliverBread(world, before.view.player.id, now);
+    now = d.arriveAt;
+    await world.execute({ type: "tick" });
+    const claimed = await act(cookie, { type: "claimMission", missionId: "first_delivery" });
     expect(claimed.error).toBeUndefined();
     expect(claimed.view.missions[0].claimed).toBe(true);
     expect(claimed.view.tutorial).toContain("mission");

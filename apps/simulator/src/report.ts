@@ -172,6 +172,7 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
   }
 
   checks.push(...budgetChecks(r));
+  checks.push(...roadChecks(r));
   checks.push(...passChecks(r, twin));
 
   const lastDay = r.daily[last];
@@ -211,6 +212,94 @@ export function createdPerActiveDay(r: SimulationResult): Record<string, number>
   }
   for (const k of Object.keys(out)) out[k] = (out[k] ?? 0) / Math.max(1, activeDays) / 100;
   return out;
+}
+
+/** Return of banditry: booty at reference prices over fee and provisions. */
+const banditReturn = (b: { cost: number; booty: number }) =>
+  b.cost > 0 ? b.booty / b.cost - 1 : Number.NaN;
+
+/** The road (deliveries and bandits), with the targets of docs/plan-livraisons.md § 7. */
+export function roadChecks(r: SimulationResult): Check[] {
+  const road = r.road;
+  if (!road || road.dispatched === 0) return [];
+  const active = banditReturn(road.bandits.frequent);
+  const casual = banditReturn(road.bandits.casual);
+  const destroyed = r.daily.reduce(
+    (acc, d) => {
+      for (const k of ["vehicle", "vehicle_upkeep", "escort", "bandits"])
+        acc[k] = (acc[k] ?? 0) + Number(d.destroyedBy[k] ?? 0n);
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+  const allDestroyed = r.daily.reduce((a, d) => a + Number(d.destroyed), 0);
+  const transport = Object.values(destroyed).reduce((a, b) => a + b, 0);
+  return [
+    {
+      name: "Livraisons",
+      target: "diagnostic",
+      value: `${road.dispatched} parties, ${road.perMerchantDay.toFixed(1)} par marchand et par jour, ${road.vehiclesPerMerchant.toFixed(1)} véhicule(s) par marchand, ${road.escorted} escortées`,
+      pass: true,
+      blocking: false,
+    },
+    {
+      name: "Utilisation des véhicules (assidus)",
+      target: "50 à 80 % de la journée (8 h – 22 h)",
+      value: `${pct(road.utilization)} (occasionnels ${pct(road.utilizationCasual)})`,
+      pass: road.utilization >= 0.5 && road.utilization <= 0.8,
+      blocking: false,
+    },
+    {
+      name: "Attaques",
+      target: "diagnostic : jamais la nuit",
+      value: `${road.ambushes} tentées, ${road.robbed} réussies, ${road.defended} repoussées par l'escorte ou le sort, ${road.reacted} par riposte ; ${road.nightAmbushes} de nuit ; ${road.npcBands} bandes PNJ`,
+      pass: road.nightAmbushes === 0,
+      blocking: true,
+    },
+    {
+      name: "Perte moyenne d'un livreur",
+      target: "< 3 % de la valeur livrée",
+      value: pct(road.lossBps / 10_000),
+      pass: road.lossBps < 300,
+      blocking: true,
+    },
+    {
+      name: "Rendement du brigandage, brigand actif",
+      target: "entre 0 et +20 % de la mise",
+      value: Number.isNaN(active)
+        ? "aucune bande"
+        : `${pct(active)} (${road.bandits.frequent.bands} bandes, ${road.bandits.frequent.attacks} tentatives, ${road.bandits.frequent.hits} prises ; mise ${(road.bandits.frequent.cost / 100).toFixed(0)}, butin ${(road.bandits.frequent.booty / 100).toFixed(0)} ducats)`,
+      pass: Number.isNaN(active) || (active >= 0 && active <= 0.2),
+      blocking: false,
+    },
+    {
+      name: "Rendement du brigandage, brigand occasionnel",
+      target: "négatif",
+      value: Number.isNaN(casual)
+        ? "aucune bande"
+        : `${pct(casual)} (${road.bandits.casual.bands} bandes, ${road.bandits.casual.attacks} tentatives, ${road.bandits.casual.hits} prises ; mise ${(road.bandits.casual.cost / 100).toFixed(0)}, butin ${(road.bandits.casual.booty / 100).toFixed(0)} ducats)`,
+      pass: Number.isNaN(casual) || casual < 0,
+      blocking: false,
+    },
+    {
+      name: "Livreur prudent contre brigand (gain par heure)",
+      target: "le livreur n'est jamais derrière",
+      value: `${(road.deliveryMarginPerHour / 100).toFixed(1)} contre ${(road.banditGainPerHour / 100).toFixed(1)} ducats par heure`,
+      pass: road.deliveryMarginPerHour >= road.banditGainPerHour,
+      blocking: true,
+    },
+    {
+      name: "Monnaie détruite par le transport",
+      target: "diagnostic : véhicules, entretien, escortes, bandes",
+      value: `${(transport / 100).toFixed(0)} ducats (${pct(transport / Math.max(1, allDestroyed))} des destructions) : ${Object.entries(
+        destroyed,
+      )
+        .map(([k, v]) => `${k} ${(v / 100).toFixed(0)}`)
+        .join(" · ")}`,
+      pass: true,
+      blocking: false,
+    },
+  ];
 }
 
 /** Diagnostics of the money paid for goods (cities, Doge, families, Criées, deliveries). */

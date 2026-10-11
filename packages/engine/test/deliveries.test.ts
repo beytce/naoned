@@ -285,6 +285,16 @@ describe("dispatching a delivery", () => {
     expect(w.state.accounts["system:sink"]).toBe(fee);
   });
 
+  it("is forgotten a few days after the vehicle is back", () => {
+    const w = world();
+    dispatch(w, pick(w).id);
+    const [d] = deliveriesOf(w);
+    w.at((d?.backAt ?? 0) - w.ctx.startAt + 3 * DAY - MIN).do({ type: "tick" });
+    expect(deliveriesOf(w)).toHaveLength(1);
+    w.advance(2 * MIN).do({ type: "tick" });
+    expect(deliveriesOf(w)).toHaveLength(0);
+  });
+
   it("counts a Doge's order as fulfilled once it arrives", () => {
     const w = world();
     const o = pick(w, "doge");

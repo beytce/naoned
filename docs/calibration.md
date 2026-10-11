@@ -309,4 +309,48 @@ Cible des livraisons : **168 ducats par joueur actif et par jour, à ±10 % (151
 
 L'écart brut entre assidus et occasionnels est très bruité (de +28 % à +242 %) : il ne reste en fin de saison que deux à cinq occasionnels actifs par graine, et ils ont joué une session par jour pendant un mois. La cible « 5 à 10 % » du plan vaut pour l'écart *ajouté* par une mécanique de présence (c'est ainsi qu'elle a été mesurée pour les Criées) ; pour les livraisons, on vérifiera que l'écart brut ne se creuse pas par rapport à cette référence.
 
-`pnpm sim --pass 0.2` (graines 1 à 3) : avance des abonnés −22,6 %, +5,3 % (non conforme, déjà avant les livraisons, voir « Familles patriciennes »), puis graine 3 ci-dessous ; part du top 10 et « gratuit assidu devant abonné occasionnel » conformes.
+`pnpm sim --pass 0.2` (graines 1 à 3) : avance des abonnés −22,6 %, +5,3 % et +7,5 % (deux graines non conformes, déjà avant les livraisons, voir « Familles patriciennes ») ; part du top 10 et « gratuit assidu devant abonné occasionnel » conformes.
+
+## Livraisons par la route : calibrage
+
+Réglages de `deliveries` et `bandits` (Venise) partis des valeurs de `docs/plan-livraisons.md`, ajustés au simulateur. Nouveaux diagnostics du rapport : livraisons, utilisation des véhicules, attaques, perte moyenne d'un livreur, rendement du brigandage (brigand actif : les spéculateurs, qui connaissent les routes fréquentées ; brigand occasionnel : les marchands occasionnels, qui choisissent une route au hasard), livreur prudent contre brigand (gain par heure : marge au-dessus du prix de référence par heure de route d'un bâtisseur, contre gain net par heure de bande), monnaie détruite par le transport.
+
+| Essai (graine 1) | Monnaie payée / joueur actif / jour | Brigand actif | Constat |
+| --- | --- | --- | --- |
+| Valeurs de la note (bonus 10 %/h, bande 25 ducats/h + 2 pains/h, attaque 40 %) | 109 | −99,7 % | Une prise rapporte 5 à 8 ducats (15 % d'une cargaison de 30 à 60 ducats) : aucune mise de cet ordre ne se rembourse |
+| Bande 0,5 ducat/h sans vivres, attaque 70 % sans escorte | 121 | −45 % | Les bots ripostent souvent quand ils sont en ligne |
+| + bonus de distance 40 %/h, 12 à 16 commandes | 152 | +19 % | |
+| + bonus 50 %/h, attaque 90 % | 165 | +39 % | Trop facile pour le brigand |
+| **Bonus 50 %/h, 12 à 16 commandes, bande 0,3 à 0,4 ducat/h, attaque 70 / 25 / 8 %** | **160 à 168** | **−18 à +8 %** | retenu, voir ci-dessous |
+
+Le simulateur a aussi appris :
+
+| Constat | Décision |
+| --- | --- |
+| Chaque livraison terminée restait dans l'état du monde (un seul document JSON) : la saison simulée passait de 55 à 190 s | Les livraisons et les bandes terminées sont oubliées 3 jours après leur fin ; le moteur lit l'état d'avant la commande pour les parcourir |
+| Les bots n'achetaient un second véhicule que si le premier était en route au début d'une session, ce qui n'arrivait presque jamais | Ils l'achètent quand des commandes qu'ils pourraient charger restent faute de véhicule |
+| Sans marchandises d'outre-mer sur la route, épices et soie n'avaient plus de débouché en ville | Les villes les commandent aussi, quatre fois moins souvent que les produits de la terre ferme (`weights`) |
+| Les ventes des maisons aux Criées et l'échange de commande du Pass n'ont plus d'objet | Criées et échange coupés (`criees.perDay` 0, `pass.contractRerollsPerDay` 0) ; tâches du jour « Livrer 2 commandes » et « Livrer une urgente » |
+
+Résultat sur 5 graines (`pnpm sim`, bande à 0,4 ducat/h), toutes conformes aux cibles bloquantes :
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 | Cible |
+| --- | --- | --- | --- | --- | --- | --- |
+| Monnaie payée pour les marchandises (ducats / joueur actif / jour) | 163,3 | 167,0 | 159,9 | 168,0 | 166,2 | 151 à 185 (référence 168,3) |
+| Indice des prix | 93 – 100 | 93 – 100 | 93 – 100 | 93 – 100 | 93 – 100 | 80 à 130 |
+| Perte moyenne d'un livreur | 0,4 % | 0,4 % | 0,4 % | 0,4 % | 0,3 % | < 3 % |
+| Rendement du brigand actif | −2,5 % | +5,1 % | −17,8 % | +8,4 % | −5,5 % | 0 à +20 % |
+| Rendement du brigand occasionnel | −100 % | −67 % | −41 % | +71 % (18 bandes) | −40 % | négatif |
+| Livreur prudent / brigand (ducats par heure) | 5,2 / 0,0 | 5,0 / 0,0 | 5,0 / −0,1 | 5,3 / 0,0 | 5,3 / 0,0 | livreur devant |
+| Utilisation des véhicules des assidus | 25 % | 27 % | 27 % | 27 % | 25 % | 50 à 80 % |
+| Monnaie détruite par le transport | 6,7 % | 6,6 % | 6,8 % | 6,7 % | 7,0 % | des destructions |
+| Niveaux d'ateliers par marchand | 6,9 | 7,0 | 6,7 | 6,8 | 7,0 | (7,5 avant) |
+
+La mise d'une bande est finalement passée à **0,35 ducat de l'heure** : le butin et la mise étant proportionnels, le rendement du brigand actif se recentre autour de +10 % (de −6 % à +24 % sur les mêmes saisons).
+
+Ce qui ne tient pas, et pourquoi :
+
+- **Le rendement du brigand reste très bruité** d'une graine à l'autre (une centaine de bandes de bots par saison, une prise vaut quelques ducats) : la moyenne est dans la cible, pas chaque graine. Le levier est `feePerHour`, à réviser avec les vraies bandes de la bêta.
+- **Utilisation des véhicules à 25 %** : les bots jouent 2 à 4 sessions par jour et ne relancent une charrette qu'à leur session suivante. Un joueur qui revient à la notification « livraison arrivée » fera mieux ; la mesure réelle viendra de la bêta.
+- **L'écart entre assidus et occasionnels se creuse** (de +28 à +242 % avant, de +173 à +302 % après, mesure brute très bruitée) : un occasionnel ne livre qu'une commande par session avec sa charrette, là où il vidait son stock d'un coup aux villes. Voir l'essai à deux charrettes ci-dessous.
+- **Pass (`pnpm sim --pass 0.2`)** : avance des abonnés −15,9 %, +13,9 % (graine 2, non conforme, déjà +5,3 % avant), −4,2 %, puis graines 4 et 5 ci-dessous. Le Pass n'a aucun avantage sur la route ; l'écart vient de la divergence des deux saisons rejouées, déjà constatée avec les familles.

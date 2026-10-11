@@ -119,6 +119,8 @@ describe("bots on the road", () => {
       }),
     );
     const rng = new Rng(5);
+    // Finished deliveries leave the state after a few days: count them from the events.
+    const events: string[] = [];
     const bots = [
       new Bot("b1", PROFILES.producer, "terraferma", w.now),
       new Bot("b2", PROFILES.artisan, "terraferma", w.now),
@@ -143,12 +145,16 @@ describe("bots on the road", () => {
         () => w.now,
       ),
       rng,
-      act: (cmd: Parameters<World["try"]>[0]) => w.try(cmd).ok,
+      act: (cmd: Parameters<World["try"]>[0]) => {
+        const res = w.try(cmd);
+        if (res.ok) events.push(...res.effects.events.map((e) => e.type));
+        return res.ok;
+      },
     };
     const end = w.now + 7 * DAY;
     let step = 0;
     while (w.now < end) {
-      w.do({ type: "tick" });
+      events.push(...w.do({ type: "tick" }).effects.events.map((e) => e.type));
       for (const b of bots) {
         // Play every 2 h in the daytime (UTC 7 h to 21 h).
         const hour = Math.floor((w.now % DAY) / HOUR);
@@ -158,12 +164,11 @@ describe("bots on the road", () => {
       w.advance(15 * MIN);
       step++;
     }
-    const deliveries = Object.values(w.state.deliveries ?? {});
-    const attacked = deliveries.filter((d) => d.attack);
-    expect(deliveries.filter((d) => d.outcome !== "en_route").length).toBeGreaterThan(20);
+    const count = (type: string) => events.filter((e) => e === type).length;
+    expect(count("delivery_arrived")).toBeGreaterThan(20);
     expect(Object.values(w.state.vehicles ?? {}).length).toBeGreaterThan(bots.length);
-    expect(Object.values(w.state.bands ?? {}).some((b) => b.playerId === "b5")).toBe(true);
-    expect(attacked.length).toBeGreaterThan(0);
-    expect(attacked.some((d) => d.attack?.reacted)).toBe(true);
+    expect(count("band_posted")).toBeGreaterThan(0);
+    expect(count("delivery_ambushed")).toBeGreaterThan(0);
+    expect(count("delivery_defended")).toBeGreaterThan(0);
   });
 });

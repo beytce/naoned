@@ -44,6 +44,7 @@ const CREATED = [
   "contract_reward",
   "family_order_reward",
   "mission_reward",
+  "delivery",
 ];
 const DESTROYED = [
   "market_tax",
@@ -54,6 +55,10 @@ const DESTROYED = [
   "ship_repair",
   "privateer_letter",
   "patronage",
+  "vehicle",
+  "vehicle_upkeep",
+  "escort",
+  "bandits",
 ];
 
 /** One column per money source and sink, so the CSV stays flat. */

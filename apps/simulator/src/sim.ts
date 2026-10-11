@@ -1,7 +1,9 @@
 import {
+  type BanditBand,
   Bot,
   type Command,
   DAY_MS,
+  type Delivery,
   type Deniers,
   type Effects,
   MINUTE_MS,
@@ -30,6 +32,7 @@ import {
   recordFlows,
   snapshot,
 } from "./metrics.js";
+import { type RoadStats, roadStats } from "./road.js";
 
 export interface SimulationOptions {
   settings: WorldSettingsInput;
@@ -69,6 +72,8 @@ export interface SimulationResult {
     /** Workshop levels per merchant (a new workshop counts 1): how far merchants grew. */
     levelsPerMerchant: number;
   };
+  /** The road: deliveries, vehicles, ambushes and bands (see `roadStats`). */
+  road?: RoadStats;
   /** The patrician families: members at the end, winners of each week, orders and patronage. */
   families?: {
     members: Record<string, number>;
@@ -222,7 +227,17 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
   const botInfo = bots.map((b) => ({ id: b.id, profile: b.profile.name, region: b.region }));
   let currentDay = 0;
 
+  // Deliveries and bands leave the state a few days after they end: keep their last look.
+  const roadSeen = {
+    deliveries: new Map<string, Delivery>(),
+    bands: new Map<string, BanditBand>(),
+  };
+  const sweepRoad = () => {
+    for (const d of Object.values(state.deliveries ?? {})) roadSeen.deliveries.set(d.id, d);
+    for (const b of Object.values(state.bands ?? {})) roadSeen.bands.set(b.id, b);
+  };
   const closeDay = () => {
+    sweepRoad();
     const snap = snapshot(ctx, state, now, currentDay, flows, index, botInfo);
     result.daily.push(snap.daily);
     result.prices.push(...snap.prices);
@@ -298,6 +313,16 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     families.members[code] = (families.members[code] ?? 0) + 1;
   }
   result.families = families;
+  sweepRoad();
+  result.road = roadStats(
+    ctx,
+    state,
+    [...roadSeen.deliveries.values()],
+    [...roadSeen.bands.values()],
+    botInfo,
+    START,
+    end,
+  );
   result.durationMs = performance.now() - started;
   return result;
 }

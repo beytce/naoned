@@ -182,6 +182,8 @@ export interface Vehicle {
   investedValue: Deniers;
   /** End of the way back of its last delivery (0 when free). */
   busyUntil: number;
+  /** When it was bought (or given). */
+  since?: number;
 }
 
 export type DeliveryKind = "city" | "doge" | "family" | "urgent";

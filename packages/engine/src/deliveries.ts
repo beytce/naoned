@@ -1,7 +1,8 @@
+import { isDraft, original } from "immer";
 import { costValue } from "./buildings.js";
 import { hourIn, hourWithin } from "./clock.js";
 import { contractsDoneToday, contractsFor } from "./contracts.js";
-import { draw } from "./draw.js";
+import { draw, pickWeighted } from "./draw.js";
 import { addInfluence, familyOrdersDone, familyOrdersFor } from "./families.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
 import {
@@ -30,6 +31,26 @@ import { netWorth } from "./valuation.js";
  * back for a few minutes.
  */
 
+/** Finished deliveries and bands stay this long in the world's state (views, notices, recap). */
+export const ROAD_RETENTION_MS = 3 * DAY_MS;
+
+/**
+ * Entries of a record in a transaction, read cheaply: the state before the command for those it
+ * did not touch (no draft proxies over a long history), the draft for the others. Callers that
+ * change an entry must read it again from the draft.
+ */
+function entries<T>(record: Record<string, T> | undefined): T[] {
+  if (!record) return [];
+  if (!isDraft(record)) return Object.values(record);
+  const base = (original(record) ?? {}) as Record<string, T>;
+  return Object.keys(record).map((id) => base[id] ?? (record[id] as T));
+}
+
+/** The state before the command (for reading only: net worths, while a tick runs). */
+function baseState(tx: Tx): WorldState {
+  return (isDraft(tx.s) ? original(tx.s) : tx.s) as WorldState;
+}
+
 // ——— Vehicles ———
 
 export function vehiclesOf(state: WorldState, playerId: PlayerId): Vehicle[] {
@@ -56,6 +77,7 @@ function addVehicle(tx: Tx, playerId: PlayerId, type: string): Vehicle {
     type,
     investedValue: costValue(tx.ctx, { ducats: def.costDucats, materials: def.costMaterials }),
     busyUntil: 0,
+    since: tx.now,
   };
   tx.s.vehicles ??= {};
   tx.s.vehicles[id] = vehicle;
@@ -224,9 +246,10 @@ export function deliveryOrdersFor(
 
   const resources = Object.keys(cfg.quantity).filter((r) => buyers(ctx, region, r).length > 0);
   if (resources.length === 0 || anyCity.length === 0) return out;
+  const weighted = resources.map((code) => ({ code, weight: cfg.weights[code] ?? 1 }));
   const order = (key: string) => {
     const h = draw(ctx, key);
-    const resource = resources[h % resources.length] ?? "";
+    const resource = pickWeighted(weighted, h)?.code ?? "";
     const list = buyers(ctx, region, resource);
     const city = list[(h >>> 8) % list.length] ?? "";
     const [lo, hi] = cfg.quantity[resource] ?? [1, 1];
@@ -424,10 +447,12 @@ function arrive(tx: Tx, d: Delivery): void {
  * may strike), the time to fight back runs out, goods arrive. In time order.
  */
 export function resolveDeliveries(tx: Tx): void {
-  const due = Object.values(tx.s.deliveries ?? {})
-    .filter((d) => d.outcome === "en_route")
-    .sort((a, b) => a.midAt - b.midAt || (a.id < b.id ? -1 : 1));
-  for (const d of due as Delivery[]) {
+  const due = entries(tx.s.deliveries as Record<string, Delivery>)
+    .filter((d) => d.outcome === "en_route" && tx.now >= Math.min(d.midAt, d.arriveAt))
+    .sort((a, b) => a.midAt - b.midAt || (a.id < b.id ? -1 : 1))
+    .map((d) => tx.s.deliveries?.[d.id] as Delivery);
+  for (const d of due) {
+    if (d.outcome !== "en_route") continue;
     if (!d.crossed && tx.now >= d.midAt) cross(tx, d);
     const a = d.attack;
     if (a && a.success === undefined && tx.now >= a.reactBy) settle(tx, d, a.reactBy);
@@ -496,7 +521,7 @@ export function postBand(tx: Tx, playerId: PlayerId, route: string, hours: numbe
   if (tx.now < player.joinedAt + cfg.openDay * DAY_MS) fail("bandits_locked");
   if (!routeExists(ctx, route)) fail("no_route");
   if (!cfg.hoursOptions.includes(hours)) fail("invalid_hours");
-  const bands = Object.values(tx.s.bands ?? {}) as BanditBand[];
+  const bands = entries(tx.s.bands as Record<string, BanditBand>);
   const mine = bands.filter((b) => b.playerId === playerId && !b.dispersed && tx.now < b.endAt);
   if (mine.length >= cfg.maxActivePerPlayer) fail("too_many_bands");
   if (
@@ -544,7 +569,7 @@ function fairPrey(tx: Tx, b: BanditBand, d: Delivery, at: number): boolean {
   const members = tx.s.families?.members ?? {};
   const family = members[d.playerId];
   if (cfg.sameFamilyImmune && family && members[b.playerId] === family) return false;
-  const state = tx.s as WorldState;
+  const state = baseState(tx);
   const theirs = netWorth(tx.ctx, state, d.playerId, at).total;
   const ours = netWorth(tx.ctx, state, b.playerId, at).total;
   return theirs * 10_000n >= ours * BigInt(cfg.minTargetWorthBps);
@@ -562,8 +587,10 @@ function cross(tx: Tx, d: Delivery): void {
   if (at < victim.joinedAt + cfg.newcomerDays * DAY_MS) return;
   const last = tx.s.plunderedAt?.[d.playerId];
   if (last !== undefined && at < last + cfg.cooldownHours * HOUR_MS) return;
-  const band = (Object.values(tx.s.bands ?? {}) as BanditBand[])
-    .filter((b) => b.route === d.route && bandLive(ctx, b, at))
+  const band = entries(tx.s.bands as Record<string, BanditBand>)
+    .filter((b) => b.route === d.route)
+    .map((b) => tx.s.bands?.[b.id] as BanditBand)
+    .filter((b) => bandLive(ctx, b, at))
     .sort((a, b) => a.startAt - b.startAt || (a.id < b.id ? -1 : 1))
     .find((b) => fairPrey(tx, b, d, at));
   if (!band) return;
@@ -654,7 +681,7 @@ export function reactToAmbush(tx: Tx, playerId: PlayerId, deliveryId: string): v
 
 /** An ambush of this band still waits for the merchant's answer. */
 function bandWaiting(state: WorldState, bandId: string): boolean {
-  return Object.values(state.deliveries ?? {}).some(
+  return entries(state.deliveries).some(
     (d) => d.attack?.bandId === bandId && d.attack.success === undefined,
   );
 }
@@ -675,14 +702,29 @@ export function collectBooty(tx: Tx, playerId: PlayerId, bandId: string): void {
   emit(tx, "booty_collected", playerId, { band: band.id, booty: { ...band.booty } });
 }
 
+/**
+ * Forgets finished deliveries and bands after a few days, so that the world's state (one JSON
+ * document) does not grow all season.
+ */
+export function pruneRoad(tx: Tx): void {
+  const before = tx.now - ROAD_RETENTION_MS;
+  for (const d of entries(tx.s.deliveries as Record<string, Delivery>)) {
+    if (d.outcome !== "en_route" && d.backAt < before) delete tx.s.deliveries?.[d.id];
+  }
+  for (const b of entries(tx.s.bands as Record<string, BanditBand>)) {
+    if (b.collected && b.endAt < before) delete tx.s.bands?.[b.id];
+  }
+}
+
 /** The computer's bands: posted each day; once over, their booty is lost. */
 function closeBands(tx: Tx): void {
   const { ctx } = tx;
   if (!banditsOn(ctx)) return;
   const state = tx.s as WorldState;
-  for (const b of Object.values(tx.s.bands ?? {})) {
-    if (b.playerId === null && !b.collected && tx.now >= b.endAt && !bandWaiting(state, b.id))
-      b.collected = true;
+  for (const old of entries(tx.s.bands as Record<string, BanditBand>)) {
+    if (old.playerId !== null || old.collected || tx.now < old.endAt) continue;
+    const b = tx.s.bands?.[old.id];
+    if (b && !bandWaiting(state, b.id)) b.collected = true;
   }
   const { perDay, hours } = ctx.settings.bandits.npcBands;
   const today = dayIndex(ctx, tx.now);

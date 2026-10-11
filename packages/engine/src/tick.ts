@@ -1,5 +1,5 @@
 import { upkeepPerDay } from "./buildings.js";
-import { resolveDeliveries, vehicleUpkeep } from "./deliveries.js";
+import { pruneRoad, resolveDeliveries, vehicleUpkeep } from "./deliveries.js";
 import { closeFamilyWeek } from "./families.js";
 import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
@@ -34,13 +34,22 @@ export function chargeUpkeep(tx: Tx): void {
       for (const ship of Object.values(tx.s.ships ?? {})) {
         if (ship.playerId === player.id) due += shipUpkeep(ctx, ship);
       }
+      let road = 0n;
       for (const v of Object.values(tx.s.vehicles ?? {})) {
-        if (v.playerId === player.id) due += vehicleUpkeep(ctx, v);
+        if (v.playerId === player.id) road += vehicleUpkeep(ctx, v);
       }
-      if (dormant) due = (due * BigInt(dormancy.upkeepBps)) / 10_000n;
+      if (dormant) {
+        due = (due * BigInt(dormancy.upkeepBps)) / 10_000n;
+        road = (road * BigInt(dormancy.upkeepBps)) / 10_000n;
+      }
       const cash = cashAccount(player.id);
-      const paid = bigMin(due, balance(tx, cash));
-      transfer(tx, cash, SINK_ACCOUNT, paid, "upkeep", `day:${day}`);
+      const paidHome = bigMin(due, balance(tx, cash));
+      transfer(tx, cash, SINK_ACCOUNT, paidHome, "upkeep", `day:${day}`);
+      // Vehicles apart, so that the cost of transport shows in the ledger.
+      const paidRoad = bigMin(road, balance(tx, cash));
+      transfer(tx, cash, SINK_ACCOUNT, paidRoad, "vehicle_upkeep", `day:${day}`);
+      const paid = paidHome + paidRoad;
+      due += road;
       if (paid < due) {
         player.upkeepDefaultUntil = tx.now + ctx.settings.upkeepDefaultHours * HOUR_MS;
         emit(tx, "upkeep_default", player.id, { due: due.toString(), paid: paid.toString() });
@@ -71,6 +80,7 @@ export function chargeUpkeep(tx: Tx): void {
 export function tick(tx: Tx): void {
   resolveCrossings(tx);
   resolveDeliveries(tx);
+  pruneRoad(tx);
   expireOrders(tx);
   chargeUpkeep(tx);
   closeWeek(tx);

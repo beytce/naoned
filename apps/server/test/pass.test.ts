@@ -104,12 +104,11 @@ describe("the Pass Négociant", () => {
     const view = (await get(ada)).view;
     expect(view.pass.active).toBe(true);
     expect(view.pass.maxOpenOrders).toBe(12);
-    expect(view.pass.rerollsLeft).toBe(1);
+    // With deliveries by road, the board is never swapped: no Pass perk there.
+    expect(view.pass.rerollsLeft).toBe(0);
     const contract = view.contracts[0];
     const swapped = await act(ada, { type: "rerollContract", contractId: contract.id });
-    expect(swapped.error).toBeUndefined();
-    expect(swapped.view.contracts[0].id).not.toBe(contract.id);
-    expect(swapped.view.pass.rerollsLeft).toBe(0);
+    expect(swapped.error).toBe("city_sales_closed");
   });
 
   it("goes to the weekly top 10 for the next seven days", async () => {
