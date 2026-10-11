@@ -12,7 +12,7 @@ import { AmbushAlert } from "./AmbushAlert.js";
 import { Bell } from "./Bell.js";
 import { Ceremony } from "./Ceremony.js";
 import { Coach } from "./Coach.js";
-import { Comptoir } from "./Comptoir.js";
+import { Comptoir, carnetRewards } from "./Comptoir.js";
 import { Criee } from "./Criee.js";
 import { Familles } from "./Familles.js";
 import { Gazette } from "./Gazette.js";
@@ -437,6 +437,7 @@ export function Game(props: {
         view.road.orders.some((o) => o.status === "open")));
   const badge = (t: Tab) =>
     (t === "familles" && familyCalls) ||
+    (t === "comptoir" && carnetRewards(gp) > 0) ||
     (t === "port" && galleyBack) ||
     (t === "routes" && roadCalls);
   const resumeGuide = guidePaused && (

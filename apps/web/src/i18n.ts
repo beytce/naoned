@@ -408,6 +408,13 @@ export const fr = {
     idleAllHelp: "Lancez une production pour que vos ateliers travaillent pendant votre absence.",
     harvestAll: (n: number) => `Tout récolter et relancer · ${n} lot${n > 1 ? "s" : ""}`,
     restartAll: "Tout relancer",
+    carnet: {
+      title: "Carnet du jour",
+      rewards: (n: number) => `${n} récompense${n > 1 ? "s" : ""} à réclamer`,
+      left: (n: number) =>
+        n > 0 ? `${n} tâche${n > 1 ? "s" : ""} du jour à faire` : "Tâches du jour faites",
+      open: "Ouvrez votre carnet du jour : vos objectifs et leurs récompenses s'y trouvent.",
+    },
     daily: {
       title: "Tâches du jour",
       streak: (n: number) =>

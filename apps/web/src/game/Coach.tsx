@@ -172,10 +172,10 @@ function nextStep(props: GameProps): CoachStep {
     const claimable = view.missions.find((m) => m.unlocked && m.done && !m.claimed);
     if (!claimable) return { text: fr.game.coach.ledgerLater, final: true };
     return (
-      goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
-        text: fr.game.coach.ledger,
-        target: `claim-${claimable.id}`,
-      }
+      goTab(props, "comptoir", fr.game.coach.goComptoir) ??
+      (props.sheet !== "carnet"
+        ? { text: fr.game.carnet.open, target: "carnet" }
+        : { text: fr.game.coach.ledger, target: `claim-${claimable.id}` })
     );
   }
 

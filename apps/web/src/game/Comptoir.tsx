@@ -6,7 +6,7 @@ import { Badge, Big, Label, Panel, Qty, Ribbon, Sheet, Slab, clock } from "../ui
 import { Daily } from "./Daily.js";
 import type { GameProps } from "./Game.js";
 import { Ledger } from "./Ledger.js";
-import { d } from "./format.js";
+import { d, duration, minutesLabel } from "./format.js";
 import { store } from "./store.js";
 import type { BuildingView, Cost, PlayerView, Recipe } from "./types.js";
 
@@ -63,7 +63,7 @@ function RecipeFlow({ recipe, level, props }: { recipe: Recipe; level: number; p
           {fr.game.rations.slower}
         </span>
       ) : (
-        <span className="label ml-1">{recipe.durationMinutes / 60} h</span>
+        <span className="label ml-1">{minutesLabel(recipe.durationMinutes)}</span>
       )}
     </div>
   );
@@ -149,62 +149,14 @@ function Hero(props: GameProps) {
   );
 }
 
-/** The season goal, always in sight: rank, net worth, next title, time left. */
-function Goal(props: GameProps) {
-  const { standing, netWorth } = props.view;
-  const next = standing.title.next;
-  return (
-    <button type="button" className="block w-full text-left" onClick={() => props.goTo("top")}>
-      <Panel glow="gold">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <Label className="text-gold">{fr.game.goal.kicker}</Label>
-            <p className="mt-1 font-display text-base font-extrabold uppercase leading-tight">
-              {fr.game.goal.title}
-            </p>
-          </div>
-          {standing.rank && (
-            <span className="slab shrink-0 bg-gold px-2 py-1 font-display text-sm font-extrabold text-ink">
-              <span>#{standing.rank}</span>
-            </span>
-          )}
-        </div>
-        <div className="mt-3 flex items-end justify-between">
-          <div>
-            <Label>{fr.game.goal.worth}</Label>
-            <Big className="mt-1 text-2xl">{d(netWorth.total)}</Big>
-          </div>
-          <div className="text-right">
-            <Label>{fr.game.goal.left}</Label>
-            <Big className="mt-1 text-lg text-lagoon">
-              {clock(standing.seasonEndsAt - props.now)}
-            </Big>
-          </div>
-        </div>
-        {next && (
-          <div className="mt-3">
-            <Ribbon
-              value={standing.title.progress}
-              label={fr.game.goal.nextTitle(next.name, `${next.from.toLocaleString("fr-FR")} d`)}
-            />
-          </div>
-        )}
-        {standing.rank && (
-          <p className="label mt-2">{fr.game.goal.rank(standing.rank, standing.players)}</p>
-        )}
-      </Panel>
-    </button>
-  );
-}
-
 const FIRST_STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "mission"];
 
-/** The first six steps as a checklist, with why each one matters. */
-function FirstSteps(props: GameProps) {
+function FirstSteps(props: GameProps & { inSheet?: boolean }) {
   const done = new Set(props.view.tutorial);
   if (FIRST_STEPS.every((s) => done.has(s))) return null;
   // While Lorenzo guides, he already says what to do next: the list stands in when he is paused.
-  if (store.get("guideDone") !== "1" && store.get("guideHidden") !== "1") return null;
+  if (!props.inSheet && store.get("guideDone") !== "1" && store.get("guideHidden") !== "1")
+    return null;
   const current = FIRST_STEPS.find((s) => !done.has(s));
   return (
     <Panel>
@@ -405,7 +357,8 @@ function ProduceSheet({ b, props }: { b: BuildingView; props: GameProps }) {
         <Label>{fr.game.batchesLabel}</Label>
         <Qty value={q} max={b.canStart} onChange={setQty} />
         <p className="text-sm text-cream-dim">
-          {q} × {recipe.durationMinutes / 60} h = {(q * recipe.durationMinutes) / 60} h
+          {q} × {minutesLabel(recipe.durationMinutes)} ={" "}
+          {duration(q * recipe.durationMinutes * 60_000)}
         </p>
       </div>
       <Slab
@@ -513,6 +466,41 @@ function BuildSheet({ type, props }: { type: string; props: GameProps }) {
 }
 
 /** "N orders to deliver, M vehicles free": straight to the Routes tab. */
+/** What waits to be claimed in the day's notebook: tasks done, missions done, the chest. */
+export function carnetRewards(props: GameProps): number {
+  const daily = props.view.daily?.tasks.filter((t) => t.done && !t.claimed).length ?? 0;
+  const missions = props.view.missions.filter((m) => m.unlocked && m.done && !m.claimed).length;
+  return daily + missions;
+}
+
+/** The day's notebook: tasks of the day, the merchant's ledger and first steps, in a window. */
+function CarnetButton(props: GameProps) {
+  const rewards = carnetRewards(props);
+  const daily = props.view.daily;
+  const left = daily ? daily.tasks.filter((t) => !t.done).length : 0;
+  const c = fr.game.carnet;
+  return (
+    <button
+      type="button"
+      data-coach="carnet"
+      onClick={() => props.setSheet("carnet")}
+      className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition active:scale-[0.99] ${rewards > 0 ? "border-gold/60 bg-gold/10 text-gold" : "border-line bg-night-3 text-cream-dim"}`}
+    >
+      <span>
+        <span className="block font-semibold">{c.title}</span>
+        <span className="label block">{rewards > 0 ? c.rewards(rewards) : c.left(left)}</span>
+      </span>
+      {rewards > 0 ? (
+        <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-gold px-1.5 text-xs font-bold text-ink">
+          {rewards}
+        </span>
+      ) : (
+        <span aria-hidden="true">→</span>
+      )}
+    </button>
+  );
+}
+
 function RoadShortcut(props: GameProps) {
   const road = props.view.road;
   if (!road) return null;
@@ -538,14 +526,17 @@ export function Comptoir(props: GameProps) {
   const sheetBuilding = view.buildings.find((b) => b.id === id);
 
   return (
-    // Phone: one column in reading order (the goal, what to do now, the workshops, then the
-    // objectives and what can be built). Computer: the workshops on the left, the merchant's
-    // dashboard (goal, ledger, rations, stock) in a side column that stays in view.
+    // The production screen. Phone: what to do now (harvest, the day's notebook, the road), the
+    // workshops, stock and rations, then what can be built. Computer: the workshops on the left,
+    // stock and rations in a side column that stays in view.
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
       <div className="contents lg:col-start-1 lg:flex lg:flex-col lg:gap-6">
         <div className="order-2 space-y-3 lg:order-none">
           <Hero {...props} />
-          <RoadShortcut {...props} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <CarnetButton {...props} />
+            <RoadShortcut {...props} />
+          </div>
         </div>
         <section className="order-3 space-y-3 lg:order-none">
           <Label>{fr.game.workshops}</Label>
@@ -591,23 +582,11 @@ export function Comptoir(props: GameProps) {
         </section>
       </div>
       <aside className="contents lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:flex lg:max-h-[calc(100dvh-7rem)] lg:flex-col lg:gap-6 lg:overflow-y-auto lg:pb-2">
-        <div className="order-1 lg:order-none">
-          <Goal {...props} />
-        </div>
-        <div className="order-6 empty:hidden lg:order-none">
-          <FirstSteps {...props} />
-        </div>
-        <div className="order-7 empty:hidden lg:order-none">
-          <Ledger {...props} />
-        </div>
-        <div className="order-8 empty:hidden lg:order-none">
-          <Daily {...props} />
+        <div className="order-4 lg:order-none">
+          <StockStrip {...props} />
         </div>
         <div className="order-5 empty:hidden lg:order-none">
           <Rations {...props} />
-        </div>
-        <div className="order-4 lg:order-none">
-          <StockStrip {...props} />
         </div>
       </aside>
 
@@ -616,6 +595,14 @@ export function Comptoir(props: GameProps) {
       </Sheet>
       <Sheet open={kind === "upgrade" && !!sheetBuilding} onClose={() => props.setSheet(null)}>
         {sheetBuilding && <UpgradeSheet b={sheetBuilding} props={props} />}
+      </Sheet>
+      <Sheet open={props.sheet === "carnet"} onClose={() => props.setSheet(null)}>
+        <div className="space-y-4 pt-6">
+          <h3 className="font-display text-xl font-extrabold uppercase">{fr.game.carnet.title}</h3>
+          <FirstSteps {...props} inSheet />
+          <Daily {...props} />
+          <Ledger {...props} />
+        </div>
       </Sheet>
       <Sheet open={kind === "build"} onClose={() => props.setSheet(null)}>
         {kind === "build" && id && <BuildSheet type={id} props={props} />}
