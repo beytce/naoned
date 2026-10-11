@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { type Account, ApiError } from "../api.js";
 import { Crest, defaultCrest } from "../art/crest.js";
 import { Coin, NavIcon } from "../art/icons.js";
+import { Logotype } from "../art/logo.js";
 import { Lorenzo } from "../art/scenes.js";
 import { fr } from "../i18n.js";
 import { Bell } from "./Bell.js";
@@ -174,6 +175,22 @@ export function Game(props: {
     [apply],
   );
 
+  // Computer: keys 1 to 5 switch sections (not while typing).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const next = TABS[Number(e.key) - 1];
+      if (next) {
+        setSheet(null);
+        setTab(next);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   if (!catalog || view === undefined) {
     return <p className="py-32 text-center font-display text-muted">…</p>;
   }
@@ -279,65 +296,129 @@ export function Game(props: {
     view.raids.some((r) => r.outcome === "cruising" && r.endAt <= gp.now) ||
     view.ships.some((s) => s.status === "damaged");
 
+  const dayProgress = Math.min(1, view.day / catalog.world.seasonDays);
+  const badge = (t: Tab) => (t === "contrats" && contractsLeft) || (t === "port" && galleyBack);
+  const resumeGuide = guidePaused && (
+    <button
+      type="button"
+      aria-label={fr.game.coach.resume}
+      className="rounded-full ring-2 ring-gold"
+      onClick={() => {
+        store.set("guideHidden", "0");
+        setTab("comptoir");
+        setGuideKey((k) => k + 1);
+      }}
+    >
+      <Lorenzo size={28} />
+    </button>
+  );
+  const purse = (
+    <div className="flex items-center gap-1.5 rounded-full bg-night-3 py-1 pl-1 pr-3 ring-1 ring-line">
+      <Coin size={24} />
+      <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
+        {d(view.cash)}
+      </span>
+    </div>
+  );
+  const crestButton = (
+    <button
+      type="button"
+      aria-label={fr.game.tabs.profil}
+      className="rounded-full bg-night-3 p-0.5 ring-2 ring-gold/70"
+      onClick={() => gp.goTo("profil")}
+    >
+      <Crest crest={crest} size={30} />
+    </button>
+  );
+
   return (
-    <div className="flex min-h-[100dvh] flex-col">
-      <header className="sticky top-0 z-20 bg-night/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-2">
-          <div className="leading-none">
-            {/* On the narrowest phones the day stands alone, so the header fits. */}
-            <p className="hidden font-display text-sm font-extrabold uppercase tracking-tight min-[360px]:block min-[380px]:text-base">
-              {fr.appName}
-            </p>
-            <p className="hidden font-mono text-[10px] tracking-[0.35em] text-lagoon min-[360px]:block">
-              {fr.game.day(view.day, catalog.world.seasonDays)}
-            </p>
-            <p className="font-display text-sm font-extrabold text-lagoon min-[360px]:hidden">
-              {fr.game.shortDay(view.day, catalog.world.seasonDays)}
-            </p>
-          </div>
-          <div className="ml-auto flex items-center gap-1.5 rounded-full bg-night-3 py-1 pl-1 pr-2.5 ring-1 ring-line">
-            <Coin size={24} />
-            <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
-              {d(view.cash)}
+    <div className="flex min-h-[100dvh] flex-col lg:pl-64">
+      {/* Computer: a game's side bar, sections in full and the merchant at the bottom. */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-night-2 px-4 py-6 lg:flex">
+        <Logotype size={30} className="px-2" />
+        <nav className="mt-10 space-y-1">
+          {TABS.map((t, i) => {
+            const on = tab === t;
+            const Icon = NavIcon[t];
+            return (
+              <button
+                key={t}
+                type="button"
+                data-coach={`tab-${t}`}
+                onClick={() => gp.goTo(t)}
+                className={`relative flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${on ? "bg-night-4 text-gold" : "text-cream-dim hover:bg-night-3 hover:text-cream"} ${t === "port" && portLocked ? "opacity-40" : ""}`}
+              >
+                <Icon />
+                <span className="flex-1 font-display text-sm font-extrabold uppercase tracking-wide">
+                  {fr.game.tabs[t]}
+                </span>
+                {badge(t) && !on && <span className="h-2 w-2 rounded-full bg-vermilion" />}
+                <kbd className="font-mono text-[10px] text-muted">{i + 1}</kbd>
+              </button>
+            );
+          })}
+        </nav>
+        <button
+          type="button"
+          onClick={() => gp.goTo("profil")}
+          className={`mt-auto flex items-center gap-3 rounded-2xl border p-3 text-left transition hover:border-gold/60 ${tab === "profil" ? "border-gold/70" : "border-line"}`}
+        >
+          <Crest crest={crest} size={40} />
+          <span className="min-w-0">
+            <span className="block truncate font-display text-sm font-extrabold">
+              {props.account.pseudo ?? fr.game.anonymous}
             </span>
+            <span className="label block truncate">
+              {view.standing.title.current.name} · #{view.standing.rank ?? "—"}
+            </span>
+          </span>
+        </button>
+      </aside>
+
+      <header className="sticky top-0 z-20 border-b border-line/60 bg-night/90 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur lg:px-8 lg:py-3">
+        <div className="mx-auto flex max-w-md items-center gap-2 lg:max-w-6xl lg:gap-4">
+          <Logotype size={22} className="lg:hidden" />
+          <div className="hidden min-w-0 flex-1 lg:block">
+            <p className="label text-lagoon">{fr.game.dayOf(view.day, catalog.world.seasonDays)}</p>
+            <div className="mt-1.5 h-1 w-64 overflow-hidden rounded-full bg-night-4">
+              <div
+                className="h-full rounded-full bg-lagoon"
+                style={{ width: `${dayProgress * 100}%` }}
+              />
+            </div>
           </div>
-          {guidePaused && (
-            <button
-              type="button"
-              aria-label={fr.game.coach.resume}
-              className="rounded-full ring-2 ring-gold"
-              onClick={() => {
-                store.set("guideHidden", "0");
-                setTab("comptoir");
-                setGuideKey((k) => k + 1);
-              }}
-            >
-              <Lorenzo size={28} />
-            </button>
-          )}
-          <Bell {...gp} unread={unread} onRead={clearUnread} />
-          <button
-            type="button"
-            aria-label={fr.game.tabs.profil}
-            className="rounded-full bg-night-3 p-0.5 ring-2 ring-gold/70"
-            onClick={() => gp.goTo("profil")}
-          >
-            <Crest crest={crest} size={30} />
-          </button>
+          <div className="ml-auto flex items-center gap-2 lg:gap-3">
+            {purse}
+            {resumeGuide}
+            <Bell {...gp} unread={unread} onRead={clearUnread} />
+            <span className="lg:hidden">{crestButton}</span>
+          </div>
+        </div>
+        {/* Phone: the season's day, as a line under the header. */}
+        <div className="mx-auto mt-2 flex max-w-md items-center gap-3 lg:hidden">
+          <p className="label shrink-0 text-lagoon">
+            {fr.game.dayOf(view.day, catalog.world.seasonDays)}
+          </p>
+          <div className="h-1 flex-1 overflow-hidden rounded-full bg-night-4">
+            <div
+              className="h-full rounded-full bg-lagoon"
+              style={{ width: `${dayProgress * 100}%` }}
+            />
+          </div>
         </div>
       </header>
 
       <Gazette {...gp} />
 
       {view.player.upkeepDefaultUntil > gp.now && (
-        <div className="mx-auto mt-3 w-full max-w-md px-4">
-          <p className="bg-vermilion/20 p-3 text-sm text-vermilion ring-1 ring-vermilion/60">
+        <div className="mx-auto mt-3 w-full max-w-md px-4 lg:max-w-6xl lg:px-8">
+          <p className="rounded-xl bg-vermilion/15 p-3 text-sm text-vermilion ring-1 ring-vermilion/60">
             {fr.game.upkeepDefault}
           </p>
         </div>
       )}
 
-      <main className="mx-auto w-full max-w-md flex-1 px-4 pb-40 pt-4">
+      <main className="mx-auto w-full max-w-md flex-1 px-4 pb-40 pt-4 lg:max-w-6xl lg:px-8 lg:pb-16 lg:pt-6">
         {tab === "comptoir" && <Comptoir {...gp} />}
         {tab === "marche" && <Marche {...gp} />}
         {tab === "contrats" && <Contrats {...gp} />}
@@ -349,7 +430,7 @@ export function Game(props: {
       <Coach key={guideKey} {...gp} />
 
       {toast && (
-        <div className="fixed inset-x-4 bottom-28 z-50 mx-auto max-w-md animate-rise bg-vermilion p-3 text-sm font-semibold text-cream shadow-[4px_4px_0_0_#13101A]">
+        <div className="fixed inset-x-4 bottom-28 z-50 mx-auto max-w-md animate-rise rounded-xl bg-vermilion p-3 text-sm font-semibold text-cream shadow-lg lg:bottom-8">
           {toast}
         </div>
       )}
@@ -357,7 +438,7 @@ export function Game(props: {
       {help && <Help {...gp} onClose={() => setHelp(false)} />}
       {welcome && <Welcome {...gp} data={welcome} onClose={() => setWelcome(null)} />}
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t-2 border-gold/80 bg-night-2/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-night-2/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
         <div className="mx-auto grid max-w-md grid-cols-5">
           {TABS.map((t) => {
             const on = tab === t;
@@ -368,14 +449,12 @@ export function Game(props: {
                 type="button"
                 data-coach={`tab-${t}`}
                 onClick={() => gp.goTo(t)}
-                className={`relative flex flex-col items-center gap-1 py-3 ${on ? "text-gold" : "text-muted"} ${t === "port" && portLocked ? "opacity-40" : ""}`}
+                className={`relative flex flex-col items-center gap-1 py-2.5 ${on ? "text-gold" : "text-muted"} ${t === "port" && portLocked ? "opacity-40" : ""}`}
               >
-                {on && <span className="absolute inset-x-5 top-0 h-0.5 bg-lagoon" />}
+                {on && <span className="absolute inset-x-6 top-0 h-0.5 rounded-full bg-gold" />}
                 <Icon />
-                <span className="font-mono text-[10px] font-bold uppercase tracking-wider">
-                  {fr.game.tabs[t]}
-                </span>
-                {((t === "contrats" && contractsLeft) || (t === "port" && galleyBack)) && !on && (
+                <span className="text-[11px] font-semibold">{fr.game.tabs[t]}</span>
+                {badge(t) && !on && (
                   <span className="absolute right-[30%] top-2 h-2 w-2 rounded-full bg-vermilion" />
                 )}
               </button>

@@ -6,6 +6,7 @@ import { have } from "./Comptoir.js";
 import type { GameProps, MarketTab } from "./Game.js";
 import { d } from "./format.js";
 import type { BookLine, MarketLine, OrderView } from "./types.js";
+import { useWide } from "./useWide.js";
 
 function series(props: GameProps, resource: string): number[] {
   return (props.prices[resource] ?? []).map((p) => Number(p.price));
@@ -69,14 +70,18 @@ function Featured({ line, props }: { line: MarketLine; props: GameProps }) {
   );
 }
 
-function Row({ line, props }: { line: MarketLine; props: GameProps }) {
+function Row({
+  line,
+  props,
+  selected = false,
+}: { line: MarketLine; props: GameProps; selected?: boolean }) {
   const points = series(props, line.resource);
   return (
     <button
       type="button"
       data-coach={`row-${line.resource}`}
       onClick={() => props.setSheet(`trade:${line.resource}`)}
-      className="flex w-full items-center gap-3 border-b border-line/70 py-3 text-left"
+      className={`flex w-full items-center gap-3 border-b border-line/70 py-3 text-left transition lg:rounded-xl lg:border-transparent lg:px-3 lg:hover:bg-night-3 ${selected ? "lg:bg-night-3 lg:ring-1 lg:ring-gold/60" : ""}`}
     >
       <ResourceIcon code={line.resource} size={36} />
       <div className="min-w-0 flex-1">
@@ -146,7 +151,11 @@ function BookSide({
   );
 }
 
-function TradeSheet({ line, props }: { line: MarketLine; props: GameProps }) {
+function TradeSheet({
+  line,
+  props,
+  inline = false,
+}: { line: MarketLine; props: GameProps; inline?: boolean }) {
   const t = fr.game.book;
   const [mode, setMode] = useState<"now" | "price">("now");
   const [qty, setQty] = useState(5);
@@ -174,7 +183,8 @@ function TradeSheet({ line, props }: { line: MarketLine; props: GameProps }) {
   const q = Math.min(qty, max);
   const points = series(props, line.resource);
   const mine = props.view.openOrders.filter((o) => o.resource === line.resource);
-  const done = () => props.setSheet(null);
+  // In the computer's side panel the sheet stays open on the same resource.
+  const done = () => (inline ? undefined : props.setSheet(null));
   const quota = book?.quota;
   return (
     <div className="space-y-5">
@@ -422,29 +432,47 @@ export function Marche(props: GameProps) {
   const sheetResource = props.sheet?.startsWith("trade:") ? props.sheet.slice(6) : null;
   const sheetLine = lines.find((l) => l.resource === sheetResource);
 
+  const wide = useWide();
+  // Computer: the trade sheet stays open beside the list, on the chosen (or featured) resource.
+  const sideLine = wide ? (sheetLine ?? featured) : undefined;
+
   return (
     <div className="space-y-6">
-      <Tabs<MarketTab>
-        value={props.marketTab}
-        onChange={props.setMarketTab}
-        coach="mtab"
-        options={[
-          { value: "joueurs", label: fr.game.marketTabs.joueurs },
-          { value: "villes", label: fr.game.marketTabs.villes },
-        ]}
-      />
+      <div className="lg:max-w-sm">
+        <Tabs<MarketTab>
+          value={props.marketTab}
+          onChange={props.setMarketTab}
+          coach="mtab"
+          options={[
+            { value: "joueurs", label: fr.game.marketTabs.joueurs },
+            { value: "villes", label: fr.game.marketTabs.villes },
+          ]}
+        />
+      </div>
       {props.marketTab === "joueurs" ? (
-        <>
-          {props.view.openOrders.length > 0 && (
-            <MyOffers orders={props.view.openOrders} props={props} />
-          )}
-          {featured && <Featured line={featured} props={props} />}
-          <div>
-            {lines.map((l) => (
-              <Row key={l.resource} line={l} props={props} />
-            ))}
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:items-start lg:gap-8">
+          <div className="space-y-6">
+            {props.view.openOrders.length > 0 && (
+              <MyOffers orders={props.view.openOrders} props={props} />
+            )}
+            {featured && !wide && <Featured line={featured} props={props} />}
+            <div>
+              {lines.map((l) => (
+                <Row
+                  key={l.resource}
+                  line={l}
+                  props={props}
+                  selected={sideLine?.resource === l.resource}
+                />
+              ))}
+            </div>
           </div>
-        </>
+          {sideLine && (
+            <div className="sticky top-24 rounded-3xl border border-line bg-night-2 p-6">
+              <TradeSheet key={sideLine.resource} line={sideLine} props={props} inline />
+            </div>
+          )}
+        </div>
       ) : (
         <div className="space-y-4">
           <div>
@@ -453,12 +481,14 @@ export function Marche(props: GameProps) {
             </h2>
             <p className="mt-2 text-sm text-cream-dim">{fr.game.cityHelp}</p>
           </div>
-          {cityGoods.map((r) => (
-            <CityCard key={r} resource={r} props={props} />
-          ))}
+          <div className="grid gap-4 lg:grid-cols-2">
+            {cityGoods.map((r) => (
+              <CityCard key={r} resource={r} props={props} />
+            ))}
+          </div>
         </div>
       )}
-      <Sheet open={!!sheetLine} onClose={() => props.setSheet(null)}>
+      <Sheet open={!!sheetLine && !wide} onClose={() => props.setSheet(null)}>
         {sheetLine && <TradeSheet key={sheetLine.resource} line={sheetLine} props={props} />}
       </Sheet>
     </div>

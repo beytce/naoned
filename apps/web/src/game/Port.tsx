@@ -3,7 +3,7 @@ import { SeaChart } from "../art/map.js";
 import { ResourceIcon } from "../art/resources.js";
 import { Galley, PortArt } from "../art/scenes.js";
 import { fr } from "../i18n.js";
-import { Badge, Big, Label, Panel, Ribbon, Sheet, Slab, Tabs, clock } from "../ui.js";
+import { Badge, Big, Label, Panel, Ribbon, Sheet, Slab, Stat, Switch, Tabs, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
@@ -149,18 +149,11 @@ function PortCard({ code, props }: { code: string; props: GameProps }) {
         </div>
       </div>
       {watched && <p className="mt-2 text-sm text-vermilion">☠ {t().watched}</p>}
-      <dl className="mt-3 grid grid-cols-3 gap-2">
-        {[
-          [t().duration, `${dest.hours} h`],
-          [t().risk, pct(dest.riskBps)],
-          [t().gain, `+${pct(dest.gainBps)}`],
-        ].map(([k, v]) => (
-          <div key={k}>
-            <dt className="font-mono text-[10px] uppercase tracking-wider text-muted">{k}</dt>
-            <dd className="text-sm font-semibold">{v}</dd>
-          </div>
-        ))}
-      </dl>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <Stat label={t().duration} value={`${dest.hours} h`} />
+        <Stat label={t().risk} value={pct(dest.riskBps)} tone="vermilion" />
+        <Stat label={t().gain} value={`+${pct(dest.gainBps)}`} tone="lagoon" />
+      </div>
       <div className="mt-3">
         <span className="font-mono text-[10px] uppercase tracking-wider text-muted">
           {t().wantsThisWeek}
@@ -248,7 +241,7 @@ function ConvoySheet({ code, props }: { code: string; props: GameProps }) {
                 setMerchant(s.id);
                 setEscorts(escorts.filter((e) => e !== s.id));
               }}
-              className={`slab px-3 py-2 text-left text-sm ${merchant === s.id ? "bg-gold text-night" : "bg-night-4 ring-1 ring-inset ring-line"}`}
+              className={`slab px-3 py-2 text-left text-sm ${merchant === s.id ? "bg-gold text-ink" : "bg-night-4 ring-1 ring-inset ring-line"}`}
             >
               <span>{shipType(props, s.type)?.name}</span>
             </button>
@@ -259,7 +252,7 @@ function ConvoySheet({ code, props }: { code: string; props: GameProps }) {
               setMerchant("");
               setEscorts([]);
             }}
-            className={`slab px-3 py-2 text-left text-sm ${!own ? "bg-gold text-night" : "bg-night-4 ring-1 ring-inset ring-line"}`}
+            className={`slab px-3 py-2 text-left text-sm ${!own ? "bg-gold text-ink" : "bg-night-4 ring-1 ring-inset ring-line"}`}
           >
             <span>
               {t().chartered} ({d(dest.charter)})
@@ -273,35 +266,27 @@ function ConvoySheet({ code, props }: { code: string; props: GameProps }) {
               {ready
                 .filter((s) => s.id !== merchant)
                 .map((s) => (
-                  <label key={s.id} className="flex items-center gap-3 text-sm">
-                    <input
-                      type="checkbox"
-                      className="h-5 w-5 accent-gold"
-                      checked={escorts.includes(s.id)}
-                      onChange={(ev) =>
-                        setEscorts(
-                          ev.target.checked
-                            ? [...escorts, s.id].slice(0, 3)
-                            : escorts.filter((x) => x !== s.id),
-                        )
-                      }
-                    />
-                    {shipType(props, s.type)?.name} · {t().defense}{" "}
-                    {shipType(props, s.type)?.defense}
-                  </label>
+                  <Switch
+                    key={s.id}
+                    checked={escorts.includes(s.id)}
+                    onChange={(on) =>
+                      setEscorts(
+                        on ? [...escorts, s.id].slice(0, 3) : escorts.filter((x) => x !== s.id),
+                      )
+                    }
+                    label={shipType(props, s.type)?.name}
+                    hint={`${t().defense} ${shipType(props, s.type)?.defense}`}
+                  />
                 ))}
             </div>
           )
         ) : (
-          <label className="flex items-center gap-3 text-sm">
-            <input
-              type="checkbox"
-              checked={hiredEscort}
-              onChange={(ev) => setHiredEscort(ev.target.checked)}
-              className="h-5 w-5 accent-gold"
-            />
-            {t().withEscort} (+{d(dest.escort)})
-          </label>
+          <Switch
+            checked={hiredEscort}
+            onChange={setHiredEscort}
+            label={t().withEscort}
+            hint={`+${d(dest.escort)} · ${t().risk} ${pct(pirateRisk(dest, 3))}`}
+          />
         )}
       </div>
 
@@ -342,23 +327,14 @@ function ConvoySheet({ code, props }: { code: string; props: GameProps }) {
         <Ribbon value={Number(value) / Number(hold || 1n)} />
       </div>
 
-      <dl className="grid grid-cols-3 gap-2 text-sm">
-        <div>
-          <dt className="label">{t().duration}</dt>
-          <dd className="font-semibold">{Math.round((dest.hours * speed) / 1000) / 10} h</dd>
-        </div>
-        <div>
-          <dt className="label">{t().risk}</dt>
-          <dd className="font-semibold">{pct(pirateRisk(dest, defense))}</dd>
-        </div>
-        <div>
-          <dt className="label">{t().defense}</dt>
-          <dd className="font-semibold">{defense}</dd>
-        </div>
-      </dl>
+      <div className="grid grid-cols-3 gap-2">
+        <Stat label={t().duration} value={`${Math.round((dest.hours * speed) / 1000) / 10} h`} />
+        <Stat label={t().risk} value={pct(pirateRisk(dest, defense))} tone="vermilion" />
+        <Stat label={t().defense} value={defense} tone="lagoon" />
+      </div>
       {watched && <p className="text-sm text-vermilion">☠ {t().watchedWarning}</p>}
 
-      <div className="flex items-center justify-between bg-night-3 p-3 ring-1 ring-line">
+      <div className="flex items-center justify-between rounded-2xl bg-night-3 p-4 ring-1 ring-line">
         <div>
           <Label>{t().expected}</Label>
           <div className="mt-1 flex items-center gap-2">
@@ -409,25 +385,30 @@ function Routes({ props }: { props: GameProps }) {
     .map((e) => e.destination);
   const shown = selected ? ports.filter((p) => p.code === selected) : ports;
   return (
-    <div className="space-y-5">
-      <div className="overflow-hidden ring-1 ring-line">
-        <SeaChart
-          ports={ports}
-          watched={props.view.watchedRoutes}
-          selected={selected}
-          sailing={sailing}
-          onSelect={(code) => setSelected(selected === code ? null : code)}
-        />
+    // Computer: the chart stays in view on the left, the ports scroll on the right.
+    <div className="space-y-5 lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-start lg:gap-8 lg:space-y-0">
+      <div className="space-y-3 lg:sticky lg:top-24">
+        <div className="overflow-hidden rounded-2xl border border-line">
+          <SeaChart
+            ports={ports}
+            watched={props.view.watchedRoutes}
+            selected={selected}
+            sailing={sailing}
+            onSelect={(code) => setSelected(selected === code ? null : code)}
+          />
+        </div>
+        <p className="text-xs text-muted">{t().chartHelp}</p>
       </div>
-      <p className="text-xs text-muted">{t().chartHelp}</p>
-      {selected && (
-        <button type="button" className="label text-lagoon" onClick={() => setSelected(null)}>
-          ← {t().allPorts}
-        </button>
-      )}
-      {shown.map((p) => (
-        <PortCard key={p.code} code={p.code} props={props} />
-      ))}
+      <div className="space-y-5">
+        {selected && (
+          <button type="button" className="label text-lagoon" onClick={() => setSelected(null)}>
+            ← {t().allPorts}
+          </button>
+        )}
+        {shown.map((p) => (
+          <PortCard key={p.code} code={p.code} props={props} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -478,66 +459,72 @@ function Fleet({ props }: { props: GameProps }) {
       {props.view.ships.length === 0 ? (
         <p className="text-sm text-muted">{t().noShip}</p>
       ) : (
-        props.view.ships.map((s) => <ShipCard key={s.id} s={s} props={props} />)
+        <div className="grid gap-3 lg:grid-cols-2">
+          {props.view.ships.map((s) => (
+            <ShipCard key={s.id} s={s} props={props} />
+          ))}
+        </div>
       )}
       <section className="space-y-3">
         <Label>
           {t().arsenal} · {props.view.ships.length}/{props.catalog.fleet.maxPerPlayer}
         </Label>
-        {props.catalog.ships.map((type) => {
-          const planks = Object.entries(type.costMaterials);
-          const can =
-            !full &&
-            BigInt(props.view.cash) >= BigInt(type.costDucats) &&
-            planks.every(([r, q]) => have(props.view, r) >= q);
-          return (
-            <Panel key={type.type}>
-              <div className="flex items-center justify-between">
-                <h3 className="font-display text-lg font-extrabold uppercase">{type.name}</h3>
-                <span className="font-display text-sm font-semibold">
-                  {d(type.costDucats)}
-                  {planks.map(([r, q]) => (
-                    <span key={r} className="ml-2 inline-flex items-center gap-1">
-                      <ResourceIcon code={r} size={18} />
-                      {q}
-                    </span>
+        <div className="grid gap-3 lg:grid-cols-3">
+          {props.catalog.ships.map((type) => {
+            const planks = Object.entries(type.costMaterials);
+            const can =
+              !full &&
+              BigInt(props.view.cash) >= BigInt(type.costDucats) &&
+              planks.every(([r, q]) => have(props.view, r) >= q);
+            return (
+              <Panel key={type.type}>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display text-lg font-extrabold uppercase">{type.name}</h3>
+                  <span className="font-display text-sm font-semibold">
+                    {d(type.costDucats)}
+                    {planks.map(([r, q]) => (
+                      <span key={r} className="ml-2 inline-flex items-center gap-1">
+                        <ResourceIcon code={r} size={18} />
+                        {q}
+                      </span>
+                    ))}
+                  </span>
+                </div>
+                <dl className="mt-3 grid grid-cols-4 gap-2 text-sm">
+                  {[
+                    [t().hold, d(type.holdValue)],
+                    [
+                      t().speed,
+                      type.speedBps < 10_000
+                        ? `+${pct(10_000 - type.speedBps)}`
+                        : type.speedBps > 10_000
+                          ? `−${pct(type.speedBps - 10_000)}`
+                          : "=",
+                    ],
+                    [t().defense, String(type.defense)],
+                    [t().upkeep, d(type.upkeepPerDay)],
+                  ].map(([k, v]) => (
+                    <div key={k}>
+                      <dt className="font-mono text-[10px] uppercase tracking-wider text-muted">
+                        {k}
+                      </dt>
+                      <dd className="font-semibold">{v}</dd>
+                    </div>
                   ))}
-                </span>
-              </div>
-              <dl className="mt-3 grid grid-cols-4 gap-2 text-sm">
-                {[
-                  [t().hold, d(type.holdValue)],
-                  [
-                    t().speed,
-                    type.speedBps < 10_000
-                      ? `+${pct(10_000 - type.speedBps)}`
-                      : type.speedBps > 10_000
-                        ? `−${pct(type.speedBps - 10_000)}`
-                        : "=",
-                  ],
-                  [t().defense, String(type.defense)],
-                  [t().upkeep, d(type.upkeepPerDay)],
-                ].map(([k, v]) => (
-                  <div key={k}>
-                    <dt className="font-mono text-[10px] uppercase tracking-wider text-muted">
-                      {k}
-                    </dt>
-                    <dd className="font-semibold">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-              <Slab
-                className="mt-3 w-full"
-                tone="lagoon"
-                size="sm"
-                disabled={props.busy || !can}
-                onClick={() => props.act({ type: "buildShip", shipType: type.type })}
-              >
-                {t().build}
-              </Slab>
-            </Panel>
-          );
-        })}
+                </dl>
+                <Slab
+                  className="mt-3 w-full"
+                  tone="lagoon"
+                  size="sm"
+                  disabled={props.busy || !can}
+                  onClick={() => props.act({ type: "buildShip", shipType: type.type })}
+                >
+                  {t().build}
+                </Slab>
+              </Panel>
+            );
+          })}
+        </div>
       </section>
     </div>
   );
@@ -625,7 +612,7 @@ function Privateers({ props }: { props: GameProps }) {
           <select
             value={route}
             onChange={(e) => setRoute(e.target.value)}
-            className="w-full bg-night-3 p-3 text-sm ring-1 ring-line"
+            className="w-full rounded-xl bg-night-3 p-3 text-sm ring-1 ring-line"
           >
             {ports.map((p) => (
               <option key={p.code} value={p.code}>
@@ -638,20 +625,16 @@ function Privateers({ props }: { props: GameProps }) {
             <p className="text-sm text-muted">{t().needShips}</p>
           ) : (
             ready.map((s) => (
-              <label key={s.id} className="flex items-center gap-3 text-sm">
-                <input
-                  type="checkbox"
-                  className="h-5 w-5 accent-gold"
-                  checked={ships.includes(s.id)}
-                  onChange={(ev) =>
-                    setShips(ev.target.checked ? [...ships, s.id] : ships.filter((x) => x !== s.id))
-                  }
-                />
-                {shipType(props, s.type)?.name} · {t().attack} {shipType(props, s.type)?.defense}
-              </label>
+              <Switch
+                key={s.id}
+                checked={ships.includes(s.id)}
+                onChange={(on) => setShips(on ? [...ships, s.id] : ships.filter((x) => x !== s.id))}
+                label={shipType(props, s.type)?.name}
+                hint={`${t().attack} ${shipType(props, s.type)?.defense}`}
+              />
             ))
           )}
-          <div className="flex items-center justify-between bg-night-3 p-3 text-sm ring-1 ring-line">
+          <div className="flex items-center justify-between rounded-xl bg-night-3 p-3 text-sm ring-1 ring-line">
             <span>
               {t().attack} <strong>{attack}</strong>
             </span>

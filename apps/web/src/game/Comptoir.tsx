@@ -163,7 +163,7 @@ function Goal(props: GameProps) {
             </p>
           </div>
           {standing.rank && (
-            <span className="slab shrink-0 bg-gold px-2 py-1 font-display text-sm font-extrabold text-night">
+            <span className="slab shrink-0 bg-gold px-2 py-1 font-display text-sm font-extrabold text-ink">
               <span>#{standing.rank}</span>
             </span>
           )}
@@ -220,7 +220,7 @@ function FirstSteps(props: GameProps) {
             <li key={s} className={`flex gap-3 ${ok ? "opacity-50" : ""}`}>
               <span
                 className={`slab flex h-6 w-6 shrink-0 items-center justify-center font-display text-xs font-extrabold ${
-                  ok ? "bg-lagoon text-night" : now ? "bg-gold text-night" : "bg-night-4 text-muted"
+                  ok ? "bg-lagoon text-on-lagoon" : now ? "bg-gold text-ink" : "bg-night-4 text-muted"
                 }`}
               >
                 <span>{ok ? "✓" : i + 1}</span>
@@ -272,7 +272,7 @@ function StockStrip(props: GameProps) {
   return (
     <div>
       <Label className="mb-2">{fr.game.stock}</Label>
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0">
         {props.view.inventory.map((i) => (
           <div
             key={i.resource}
@@ -501,53 +501,73 @@ export function Comptoir(props: GameProps) {
   const sheetBuilding = view.buildings.find((b) => b.id === id);
 
   return (
-    <div className="space-y-6">
-      <Goal {...props} />
-      <Hero {...props} />
-      <FirstSteps {...props} />
-      <Ledger {...props} />
-      <StockStrip {...props} />
-      <Rations {...props} />
-      <section className="space-y-3">
-        <Label>{fr.game.workshops}</Label>
-        {view.buildings.map((b) => (
-          <Workshop key={b.id} b={b} props={props} />
-        ))}
-      </section>
-      <section className="space-y-3">
-        <Label>{fr.game.buildTitle}</Label>
-        <p className="text-xs text-muted">
-          {fr.game.localRaw(
-            catalog.buildings
-              .filter((b) => b.regions?.includes(view.player.region))
-              .flatMap((b) => Object.keys(b.recipe?.outputs ?? {}))
-              .map((r) => props.names.resource(r).toLowerCase())
-              .join(", ") || "—",
-          )}
-        </p>
-        {full ? (
-          <p className="text-sm text-muted">{fr.game.maxBuildings(catalog.rules.maxBuildings)}</p>
-        ) : (
-          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2">
-            {catalog.buildings
-              .filter((b) => !b.regions || b.regions.includes(view.player.region))
-              .map((b) => (
-                <button
-                  key={b.type}
-                  type="button"
-                  onClick={() => props.setSheet(`build:${b.type}`)}
-                  className={`w-32 shrink-0 bg-night-3 p-2 text-left ring-1 ring-line ${affordable(view, b.cost) ? "" : "opacity-60"}`}
-                >
-                  <BuildingArt type={b.type} className="h-16 w-28" />
-                  <p className="mt-1 font-display text-[11px] font-semibold uppercase leading-tight">
-                    {b.name}
-                  </p>
-                  <p className="font-mono text-[11px] text-gold">{d(b.cost.ducats)}</p>
-                </button>
-              ))}
+    // Phone: one column in reading order. Computer: the workshops on the left, the merchant's
+    // dashboard (goal, ledger, rations, stock) in a side column that stays in view.
+    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
+      <div className="contents lg:col-start-1 lg:flex lg:flex-col lg:gap-6">
+        <div className="order-2 lg:order-none">
+          <Hero {...props} />
+        </div>
+        <section className="order-7 space-y-3 lg:order-none">
+          <Label>{fr.game.workshops}</Label>
+          <div className="grid gap-3 xl:grid-cols-2">
+            {view.buildings.map((b) => (
+              <Workshop key={b.id} b={b} props={props} />
+            ))}
           </div>
-        )}
-      </section>
+        </section>
+        <section className="order-8 space-y-3 lg:order-none">
+          <Label>{fr.game.buildTitle}</Label>
+          <p className="text-xs text-muted">
+            {fr.game.localRaw(
+              catalog.buildings
+                .filter((b) => b.regions?.includes(view.player.region))
+                .flatMap((b) => Object.keys(b.recipe?.outputs ?? {}))
+                .map((r) => props.names.resource(r).toLowerCase())
+                .join(", ") || "—",
+            )}
+          </p>
+          {full ? (
+            <p className="text-sm text-muted">{fr.game.maxBuildings(catalog.rules.maxBuildings)}</p>
+          ) : (
+            <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0 xl:grid-cols-6">
+              {catalog.buildings
+                .filter((b) => !b.regions || b.regions.includes(view.player.region))
+                .map((b) => (
+                  <button
+                    key={b.type}
+                    type="button"
+                    onClick={() => props.setSheet(`build:${b.type}`)}
+                    className={`w-32 shrink-0 rounded-2xl border border-line bg-night-3 p-2 text-left transition hover:border-gold/60 lg:w-auto ${affordable(view, b.cost) ? "" : "opacity-60"}`}
+                  >
+                    <BuildingArt type={b.type} className="h-16 w-28" />
+                    <p className="mt-1 font-display text-[11px] font-extrabold uppercase leading-tight">
+                      {b.name}
+                    </p>
+                    <p className="font-mono text-[11px] text-gold">{d(b.cost.ducats)}</p>
+                  </button>
+                ))}
+            </div>
+          )}
+        </section>
+      </div>
+      <aside className="contents lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:flex lg:max-h-[calc(100dvh-7rem)] lg:flex-col lg:gap-6 lg:overflow-y-auto lg:pb-2">
+        <div className="order-1 lg:order-none">
+          <Goal {...props} />
+        </div>
+        <div className="order-3 empty:hidden lg:order-none">
+          <FirstSteps {...props} />
+        </div>
+        <div className="order-4 empty:hidden lg:order-none">
+          <Ledger {...props} />
+        </div>
+        <div className="order-6 lg:order-none">
+          <Rations {...props} />
+        </div>
+        <div className="order-5 lg:order-none">
+          <StockStrip {...props} />
+        </div>
+      </aside>
 
       <Sheet open={kind === "produce" && !!sheetBuilding} onClose={() => props.setSheet(null)}>
         {sheetBuilding && <ProduceSheet key={sheetBuilding.id} b={sheetBuilding} props={props} />}

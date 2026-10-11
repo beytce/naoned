@@ -126,9 +126,11 @@ export function Contrats(props: GameProps) {
             </div>
           )}
         </header>
-        {contracts.map((c) => (
-          <ContractCard key={c.id} c={c} props={props} />
-        ))}
+        <div className="grid gap-4 lg:grid-cols-3">
+          {contracts.map((c) => (
+            <ContractCard key={c.id} c={c} props={props} />
+          ))}
+        </div>
       </section>
 
       <section className="space-y-4">
@@ -137,7 +139,7 @@ export function Contrats(props: GameProps) {
           <p className="text-cream-dim">{fr.game.noProject}</p>
         ) : (
           props.view.projects.map((p) => (
-            <Panel key={p.id}>
+            <Panel key={p.id} className="lg:max-w-3xl">
               <div className="flex items-center gap-3">
                 <BuildingArt type="palazzo" className="h-16 w-20" />
                 <div className="flex-1">
