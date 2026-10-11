@@ -493,13 +493,19 @@ export function Marche(props: GameProps) {
             <h2 className="font-display text-2xl font-extrabold uppercase leading-tight">
               {fr.game.cityTitle}
             </h2>
-            <p className="mt-2 text-sm text-cream-dim">{fr.game.cityHelp}</p>
+            <p className="mt-2 text-sm text-cream-dim">
+              {props.view.road ? fr.game.road.cityClosed : fr.game.cityHelp}
+            </p>
           </div>
-          <div className="grid gap-4 lg:grid-cols-2">
-            {cityGoods.map((r) => (
-              <CityCard key={r} resource={r} props={props} />
-            ))}
-          </div>
+          {props.view.road ? (
+            <Slab onClick={() => props.goTo("routes")}>{fr.game.road.seeRoutes}</Slab>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {cityGoods.map((r) => (
+                <CityCard key={r} resource={r} props={props} />
+              ))}
+            </div>
+          )}
         </div>
       )}
       <Sheet open={!!sheetLine && !wide} onClose={() => props.setSheet(null)}>

@@ -512,6 +512,25 @@ function BuildSheet({ type, props }: { type: string; props: GameProps }) {
   );
 }
 
+/** "N orders to deliver, M vehicles free": straight to the Routes tab. */
+function RoadShortcut(props: GameProps) {
+  const road = props.view.road;
+  if (!road) return null;
+  const orders = road.orders.filter((o) => o.status === "open").length;
+  const free = road.vehicles.filter((v) => v.status === "free").length;
+  if (orders === 0) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => props.goTo("routes")}
+      className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition active:scale-[0.99] ${free > 0 ? "border-gold/60 bg-gold/10 text-gold" : "border-line bg-night-3 text-cream-dim"}`}
+    >
+      <span className="font-semibold">{fr.game.road.shortcut(orders, free)}</span>
+      <span aria-hidden="true">→</span>
+    </button>
+  );
+}
+
 export function Comptoir(props: GameProps) {
   const { view, catalog } = props;
   const full = view.buildings.length >= catalog.rules.maxBuildings;
@@ -524,8 +543,9 @@ export function Comptoir(props: GameProps) {
     // dashboard (goal, ledger, rations, stock) in a side column that stays in view.
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
       <div className="contents lg:col-start-1 lg:flex lg:flex-col lg:gap-6">
-        <div className="order-2 lg:order-none">
+        <div className="order-2 space-y-3 lg:order-none">
           <Hero {...props} />
+          <RoadShortcut {...props} />
         </div>
         <section className="order-3 space-y-3 lg:order-none">
           <Label>{fr.game.workshops}</Label>

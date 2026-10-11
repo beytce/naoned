@@ -12,6 +12,12 @@ import type { ContractView, Project } from "./types.js";
 
 type ContractsTab = "doge" | "families";
 
+/** With deliveries by road, home goods are delivered from the Routes tab. */
+export function byRoad(props: GameProps, resource: string): boolean {
+  if (!props.view.road) return false;
+  return props.catalog.resources.find((r) => r.code === resource)?.tier !== "luxury";
+}
+
 function ContractCard({ c, props }: { c: ContractView; props: GameProps }) {
   const stock = have(props.view, c.resource);
   const missing = Math.max(0, c.quantity - stock);
@@ -39,6 +45,10 @@ function ContractCard({ c, props }: { c: ContractView; props: GameProps }) {
       <div className="mt-3 flex items-center justify-between gap-3">
         {c.done ? (
           <span className="label text-lagoon">✓ {fr.game.contracts.done}</span>
+        ) : byRoad(props, c.resource) ? (
+          <Slab tone="ghost" className="w-full" onClick={() => props.goTo("routes")}>
+            {fr.game.road.byRoad}
+          </Slab>
         ) : missing > 0 ? (
           <>
             <span className="text-sm text-vermilion">{fr.game.contracts.missing(missing)}</span>

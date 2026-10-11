@@ -90,7 +90,24 @@ function nextStep(props: GameProps): CoachStep {
   }
 
   if (!done.has("sell_city")) {
-    const good = CITY_GOODS.find((r) => have(view, r) > 0);
+    // With deliveries by road: an order of the board the stock covers, loaded on the cart.
+    const road = view.road;
+    if (road) {
+      if (road.deliveries.some((dv) => now < dv.arriveAt))
+        return { text: fr.game.coach.deliveryUnderway };
+      const order = road.orders.find(
+        (o) => o.status === "open" && have(view, o.resource) >= o.quantity,
+      );
+      if (order) {
+        return (
+          goTab(props, "routes", fr.game.coach.goRoutes) ?? {
+            text: fr.game.coach.deliver,
+            target: `road-order-${order.id}`,
+          }
+        );
+      }
+    }
+    const good = road ? undefined : CITY_GOODS.find((r) => have(view, r) > 0);
     if (good) {
       return (
         goTab(props, "marche", fr.game.coach.goMarket) ??

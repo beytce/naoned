@@ -21,6 +21,7 @@ import { Marche } from "./Marche.js";
 import { Port, portOpensAt } from "./Port.js";
 import { Profil } from "./Profil.js";
 import { Region } from "./Region.js";
+import { Routes } from "./Routes.js";
 import { Top } from "./Top.js";
 import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
@@ -42,6 +43,8 @@ const REWARDING = new Set<string>([
   "collectExpedition",
   "collectRaid",
   "buildShip",
+  "dispatchDelivery",
+  "collectBooty",
 ]);
 import type {
   Action,
@@ -53,7 +56,7 @@ import type {
   Welcome as WelcomeData,
 } from "./types.js";
 
-export type Tab = "comptoir" | "marche" | "contrats" | "port" | "top" | "profil";
+export type Tab = "comptoir" | "routes" | "marche" | "contrats" | "port" | "top" | "profil";
 export type MarketTab = "joueurs" | "villes";
 
 export interface Names {
@@ -98,7 +101,7 @@ export interface GameProps {
 
 const POLL_MS = 15_000;
 /** Bottom bar; the profile opens from the coat of arms in the header. */
-const TABS: Tab[] = ["comptoir", "marche", "contrats", "port", "top"];
+const ALL_TABS: Tab[] = ["comptoir", "routes", "marche", "contrats", "port", "top"];
 
 export function Game(props: {
   account: Account;
@@ -278,7 +281,11 @@ export function Game(props: {
     [apply],
   );
 
-  // Computer: keys 1 to 5 switch sections (not while typing).
+  // The road's tab only in a world with deliveries.
+  const hasRoad = !!view?.road;
+  const TABS = useMemo(() => ALL_TABS.filter((t) => t !== "routes" || hasRoad), [hasRoad]);
+
+  // Computer: keys 1 to 6 switch sections (not while typing).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -289,7 +296,7 @@ export function Game(props: {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [goTo]);
+  }, [goTo, TABS]);
 
   if (!catalog || view === undefined) {
     return <Loading failed={catalogFailed} onRetry={loadCatalog} />;
@@ -409,7 +416,15 @@ export function Game(props: {
 
   const dayProgress = Math.min(1, view.day / catalog.world.seasonDays);
   const daysLeft = Math.ceil((catalog.world.endsAt - (now + offset)) / 86_400_000);
-  const badge = (t: Tab) => (t === "contrats" && contractsLeft) || (t === "port" && galleyBack);
+  const roadCalls =
+    !!view.road &&
+    (view.road.deliveries.some((dv) => dv.attack?.pending) ||
+      (view.road.vehicles.some((v) => v.status === "free") &&
+        view.road.orders.some((o) => o.status === "open")));
+  const badge = (t: Tab) =>
+    (t === "contrats" && contractsLeft) ||
+    (t === "port" && galleyBack) ||
+    (t === "routes" && roadCalls);
   const resumeGuide = guidePaused && (
     <button
       type="button"
@@ -562,6 +577,7 @@ export function Game(props: {
         {/* A short settle on each section change: enough to see it switch, never in the way. */}
         <div key={tab} className="animate-screen">
           {tab === "comptoir" && <Comptoir {...gp} />}
+          {tab === "routes" && <Routes {...gp} />}
           {tab === "marche" && <Marche {...gp} />}
           {tab === "contrats" && <Contrats {...gp} />}
           {tab === "port" && <Port {...gp} />}
@@ -594,7 +610,7 @@ export function Game(props: {
       {welcome && <Welcome {...gp} data={welcome} onClose={() => setWelcome(null)} />}
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-night-2/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-5">
+        <div className={`mx-auto grid max-w-md ${TABS.length > 5 ? "grid-cols-6" : "grid-cols-5"}`}>
           {TABS.map((t) => {
             const on = tab === t;
             const Icon = NavIcon[t];
