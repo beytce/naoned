@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BuildingArt } from "../art/buildings.js";
 import { Coin } from "../art/icons.js";
 import { Sign } from "../art/logo.js";
@@ -7,6 +7,7 @@ import { Lorenzo } from "../art/scenes.js";
 import { Skyline } from "../art/scenes.js";
 import { fr } from "../i18n.js";
 import { Label, Slab } from "../ui.js";
+import { onBack } from "./back.js";
 
 function Goal() {
   return (
@@ -136,6 +137,14 @@ export function Intro({ onDone }: { onDone: () => void }) {
   const slides = fr.intro.slides;
   const slide = slides[i];
   const last = i === slides.length - 1;
+  // The back button steps back through the slides before leaving them.
+  useEffect(() => {
+    if (i === 0) return;
+    return onBack(() => {
+      setI((k) => Math.max(0, k - 1));
+      return true;
+    });
+  }, [i]);
   if (!slide) return null;
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
@@ -149,11 +158,11 @@ export function Intro({ onDone }: { onDone: () => void }) {
             />
           ))}
         </div>
-        <button type="button" className="label text-cream-dim" onClick={onDone}>
+        <button type="button" className="label -mr-3 h-11 px-3 text-cream-dim" onClick={onDone}>
           {fr.intro.skip}
         </button>
       </div>
-      <div key={i} className="flex flex-1 animate-rise flex-col justify-center gap-8">
+      <div key={i} className="flex flex-1 animate-rise flex-col justify-center gap-8 py-6">
         <Illustration index={i} />
         <div className="space-y-3">
           <Label className="text-lagoon">{slide.kicker}</Label>
