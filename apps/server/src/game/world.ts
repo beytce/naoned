@@ -164,6 +164,8 @@ export class GameWorld {
       state: () => WorldState;
       now: number;
     }) => void,
+    /** The person acting, if any: their tutorial and telemetry are recorded as for a command. */
+    playerId?: string,
   ): Promise<number> {
     return this.serial(async () => {
       const now = this.clock();
@@ -186,7 +188,12 @@ export class GameWorld {
         },
       });
       if (accepted === 0) return 0;
-      await this.persist(state, fx, now, null);
+      await this.persist(
+        state,
+        fx,
+        now,
+        playerId ? { type: "collect", playerId, buildingId: "" } : null,
+      );
       this.state = state;
       this.version += 1;
       this.notify(fx, now);

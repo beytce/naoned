@@ -39,6 +39,9 @@ const app = await buildApp({
   production,
   world,
   notifier,
+  adminEmails: config.ADMIN_EMAILS.split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
   webDist: config.WEB_DIST ?? (production ? join(here, "..", "..", "web", "dist") : undefined),
   logger: true,
 });

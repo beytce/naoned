@@ -23,6 +23,8 @@ export interface AppOptions {
   production: boolean;
   /** Running world; game routes are only registered when present. */
   world?: GameWorld;
+  /** E-mails allowed to see the retention dashboard. */
+  adminEmails?: string[];
   /** Notifications (bell and push); in-game only by default. */
   notifier?: Notifier;
   /** Built web app to serve (production). */
@@ -125,6 +127,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
       auth,
       sessionCookie: SESSION_COOKIE,
       notifier: options.notifier ?? new Notifier(options.db, options.world, new NoPusher()),
+      adminEmails: options.adminEmails ?? [],
     });
   }
 

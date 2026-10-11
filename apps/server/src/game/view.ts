@@ -15,6 +15,7 @@ import {
   marketMakerQuotaLeft,
   marketMakerQuotes,
   marketMakerReference,
+  missionsFor,
   netWorth,
   openProjects,
   portPrices,
@@ -291,6 +292,7 @@ export function playerView(
       nextMealAt: ctx.startAt + (dayIndex(ctx, now) + 1) * 86_400_000,
     },
     tutorial: tutorialSteps,
+    missions: missionsFor(ctx, state, playerId, now),
     openOrders: Object.values(state.orders).filter((o) => o.playerId === playerId),
   };
 }

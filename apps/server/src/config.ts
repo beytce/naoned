@@ -22,6 +22,8 @@ const schema = z
     RESEND_API_KEY: z.string().optional(),
     /** Web Push keys (pnpm --filter @comptoirs/server vapid). Without them, no push. */
     VAPID_PUBLIC_KEY: z.string().optional(),
+    /** Comma-separated e-mails allowed to see the retention dashboard (/admin). */
+    ADMIN_EMAILS: z.string().default(""),
     VAPID_PRIVATE_KEY: z.string().optional(),
     VAPID_SUBJECT: z.string().default("mailto:contact@comptoirs.app"),
     MAIL_FROM: z.string().default("Comptoirs <onboarding@resend.dev>"),

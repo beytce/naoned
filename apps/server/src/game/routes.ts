@@ -1,4 +1,4 @@
-import type { Command } from "@comptoirs/engine";
+import { type Command, freeBatches } from "@comptoirs/engine";
 import { and, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -6,10 +6,12 @@ import type { AuthService, PublicAccount } from "../auth/service.js";
 import type { Db } from "../db/client.js";
 import { accounts, players, pushSubscriptions, telemetry } from "../db/schema.js";
 import { NOTIFICATION_KINDS, type Notifier } from "../notify/notifier.js";
+import { retention } from "./admin.js";
 import { priceHistory, profile } from "./profile.js";
 import { toJson } from "./serialize.js";
 import { catalog, playerView, ranking } from "./view.js";
 import { weeklyTable } from "./weekly.js";
+import { WELCOME_AFTER_MS, welcomeBack } from "./welcome.js";
 import type { GameWorld } from "./world.js";
 
 /** A visit after this much inactivity counts as a new session (KPI: sessions per day). */
@@ -23,6 +25,8 @@ const action = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("collect"), buildingId: z.string() }),
   z.object({ type: z.literal("collectAll") }),
+  z.object({ type: z.literal("collectAndRestart") }),
+  z.object({ type: z.literal("claimMission"), missionId: z.string() }),
   z.object({ type: z.literal("build"), buildingType: z.string() }),
   z.object({ type: z.literal("upgrade"), buildingId: z.string() }),
   z.object({
@@ -77,6 +81,7 @@ export interface GameRouteDeps {
   auth: AuthService;
   sessionCookie: string;
   notifier: Notifier;
+  adminEmails: string[];
 }
 
 export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): void {
@@ -186,8 +191,28 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   app.get("/api/game", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
-    if (world.current.players[account.id]) await touch(account, req);
-    return view(account);
+    let welcome = null;
+    if (world.current.players[account.id]) {
+      const [row] = await db
+        .select({ lastSeenAt: players.lastSeenAt })
+        .from(players)
+        .where(and(eq(players.worldId, world.id), eq(players.accountId, account.id)));
+      const now = world.now();
+      if (row?.lastSeenAt && now - row.lastSeenAt.getTime() >= WELCOME_AFTER_MS) {
+        welcome = await welcomeBack(
+          db,
+          world.id,
+          world.ctx,
+          world.current,
+          account.id,
+          row.lastSeenAt,
+          now,
+        );
+      }
+      await touch(account, req);
+    }
+    const body = (await view(account)) as Record<string, unknown>;
+    return welcome ? { ...body, welcome: toJson(welcome) } : body;
   });
 
   app.post("/api/game/join", async (req, reply) => {
@@ -212,6 +237,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     if (!account) return;
     if (!world.current.players[account.id]) return reply.code(409).send({ error: "not_joined" });
     const a = action.parse(req.body);
+    if (a.type === "collectAndRestart") {
+      await collectAndRestart(world, account.id);
+      return view(account);
+    }
     const commands = toCommands(a, account.id, world);
     let error: string | undefined;
     for (const cmd of commands) {
@@ -267,6 +296,15 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const account = await requireAccount(req, reply);
     if (!account) return;
     return { series: await priceHistory(db, world.id, world.now()) };
+  });
+
+  app.get("/api/admin/retention", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    if (!deps.adminEmails.includes(account.email.toLowerCase())) {
+      return reply.code(403).send({ error: "forbidden" });
+    }
+    return retention(db, world.id, world.now());
   });
 
   app.get("/api/notifications", async (req, reply) => {
@@ -373,6 +411,36 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   });
 }
 
+/**
+ * One tap for a short session: collect every workshop, then fill every queue with what the
+ * stock allows (raw producers first). Saved as one transaction.
+ */
+async function collectAndRestart(world: GameWorld, playerId: string): Promise<void> {
+  const { ctx } = world;
+  const raw = (type: string) =>
+    Object.keys(ctx.theme.recipes.find((r) => r.building === type)?.inputs ?? {}).length === 0;
+  await world.batch(({ act, state, now }) => {
+    const mine = () => Object.values(state().buildings).filter((b) => b.playerId === playerId);
+    for (const b of mine()) if (b.job) act({ type: "collect", playerId, buildingId: b.id });
+    const order = mine().sort((a, b) => Number(raw(b.type)) - Number(raw(a.type)));
+    for (const { id } of order) {
+      const b = state().buildings[id];
+      const player = state().players[playerId];
+      const recipe = b ? ctx.theme.recipes.find((r) => r.building === b.type) : undefined;
+      if (!b || !player || !recipe) continue;
+      let batches = freeBatches(ctx, b, recipe.code, now, player);
+      const stock = state().inventories[playerId] ?? {};
+      for (const [res, perBatch] of Object.entries(recipe.inputs)) {
+        const need = (perBatch ?? 0) * b.level;
+        if (need > 0) batches = Math.min(batches, Math.floor((stock[res]?.available ?? 0) / need));
+      }
+      if (batches > 0) {
+        act({ type: "startProduction", playerId, buildingId: id, recipe: recipe.code, batches });
+      }
+    }
+  }, playerId);
+}
+
 /** Turns a client action into engine commands, always for the logged-in player. */
 function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
   switch (a.type) {
@@ -393,6 +461,10 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
     }
     case "collect":
       return [{ type: "collect", playerId, buildingId: a.buildingId }];
+    case "claimMission":
+      return [{ type: "claimMission", playerId, missionId: a.missionId }];
+    case "collectAndRestart":
+      return [];
     case "collectAll":
       return Object.values(world.current.buildings)
         .filter((b) => b.playerId === playerId && b.job)
