@@ -2,8 +2,10 @@ import type { WorldSettingsInput } from "../settings.js";
 
 /** Default balancing for a Venice 1450 world. Amounts in deniers, rates in bps. */
 export const venice1450Settings: WorldSettingsInput = {
-  seasonDays: 42,
-  registrationClosesDay: 28,
+  // Seasons follow calendar months: the world says when it ends; 30 days is the nominal month
+  // (simulator). Merchants may join until the last day.
+  seasonDays: 30,
+  registrationClosesDay: 31,
   startingCapital: 100_000,
   startingBuildings: {
     terraferma: ["farm", "mill", "bakery"],
@@ -16,7 +18,7 @@ export const venice1450Settings: WorldSettingsInput = {
   instantOrderSlippageBps: 1_000,
   productionQueueMaxHours: 12,
   regionBonusBps: 3_000,
-  lateJoiner: { afterDay: 7, bonusBps: 5_000, hours: 72 },
+  lateJoiner: { afterDay: 5, bonusBps: 5_000, hours: 72 },
   tutorial: { minutes: 30, fastBatchSeconds: 30, fastBatchesPerBuilding: 1 },
   startingStock: {
     terraferma: { bread: 20, wood: 10 },
@@ -261,6 +263,60 @@ export const venice1450Settings: WorldSettingsInput = {
     },
     { id: "new_workshop", day: 7, event: "build", count: 1, reward: { goods: {}, ducats: 15_000 } },
   ],
+  // Fresh produce: a batch collected within 30 minutes of being done yields 5 % more.
+  fresh: { minutes: 30, bonusBps: 500 },
+  // The Criées of the Rialto: three times a day between 8 h and 22 h, a city buys bread, bricks
+  // or planks 10 to 20 % above the reference for 20 minutes; 6 units per merchant at most.
+  criees: {
+    perDay: 3,
+    fromHour: 8,
+    toHour: 22,
+    minutes: 20,
+    minPremiumBps: 1_000,
+    maxPremiumBps: 2_000,
+    perPlayer: 6,
+    perActivePlayer: 4,
+    minTotal: 24,
+    resources: ["bread", "bricks", "planks"],
+  },
+  // Tasks of the day: three drawn from this pool, the same for everyone; doing all three opens a
+  // chest of 10 ducats, 3 more for each day in a row, up to 22 (five days running).
+  daily: {
+    perDay: 3,
+    tasks: [
+      { id: "sell_city", event: "city_sale", count: 3, reward: { goods: { bread: 10 } } },
+      {
+        id: "doge_order",
+        event: "contract_fulfilled",
+        count: 1,
+        reward: { goods: { bricks: 5, planks: 5 } },
+      },
+      {
+        id: "place_offer",
+        event: "order_placed",
+        count: 1,
+        filter: { kind: "limit" },
+        reward: { goods: { bread: 10 } },
+      },
+      { id: "harvests", event: "harvest", count: 4, reward: { goods: {}, ducats: 1_000 } },
+      {
+        id: "build_site",
+        event: "project_delivery",
+        count: 1,
+        reward: { goods: { bread: 10 } },
+      },
+      { id: "criee", event: "criee_sale", count: 1, reward: { goods: {}, ducats: 1_000 } },
+    ],
+    chest: { ducats: 1_000, perStreakDay: 300, maxStreak: 5 },
+  },
+  // Pass Négociant: a fifth more at the Dogana, two more open offers, fresher produce (+8 %
+  // instead of +5 %) and one Doge's order swapped a day. Nothing for an absent merchant.
+  pass: {
+    marketMakerQuotaBps: 2_000,
+    extraOpenOrders: 2,
+    freshBonusBps: 800,
+    contractRerollsPerDay: 1,
+  },
   // Raw materials are local: wheat grows in the Terraferma, clay lies in the Lagoon, wood in the
   // Dolomites. Workshops that transform can be built anywhere.
   buildingRegions: {
@@ -326,28 +382,30 @@ export const venice1450Settings: WorldSettingsInput = {
   upkeepLevelGrowthBps: 2_000,
   upkeepDefaultHours: 24,
   activeWindowHours: 72,
+  // A month to grow: buildings cost 30 % fewer ducats and 25 % fewer materials than in the
+  // six-week seasons, so merchants end a month a little further than they ended six weeks.
   buildings: {
-    farm: { costDucats: 30_000, costMaterials: { bricks: 20, planks: 20 }, upkeepPerDay: 1_500 },
+    farm: { costDucats: 21_000, costMaterials: { bricks: 15, planks: 15 }, upkeepPerDay: 1_500 },
     clay_pit: {
-      costDucats: 30_000,
-      costMaterials: { bricks: 20, planks: 20 },
+      costDucats: 21_000,
+      costMaterials: { bricks: 15, planks: 15 },
       upkeepPerDay: 1_500,
     },
     lumber_camp: {
-      costDucats: 30_000,
-      costMaterials: { bricks: 20, planks: 20 },
+      costDucats: 21_000,
+      costMaterials: { bricks: 15, planks: 15 },
       upkeepPerDay: 1_500,
     },
-    mill: { costDucats: 40_000, costMaterials: { bricks: 30, planks: 30 }, upkeepPerDay: 1_900 },
-    bakery: { costDucats: 60_000, costMaterials: { bricks: 40, planks: 40 }, upkeepPerDay: 2_200 },
+    mill: { costDucats: 28_000, costMaterials: { bricks: 25, planks: 25 }, upkeepPerDay: 1_900 },
+    bakery: { costDucats: 42_000, costMaterials: { bricks: 30, planks: 30 }, upkeepPerDay: 2_200 },
     brickworks: {
-      costDucats: 50_000,
-      costMaterials: { bricks: 20, planks: 40 },
+      costDucats: 35_000,
+      costMaterials: { bricks: 15, planks: 30 },
       upkeepPerDay: 1_900,
     },
-    sawmill: { costDucats: 50_000, costMaterials: { bricks: 40, planks: 20 }, upkeepPerDay: 1_900 },
+    sawmill: { costDucats: 35_000, costMaterials: { bricks: 30, planks: 15 }, upkeepPerDay: 1_900 },
     // Prestige sink: produces nothing, counts at cost in the ranking.
-    palazzo: { costDucats: 80_000, costMaterials: { bricks: 40, planks: 40 }, upkeepPerDay: 1_000 },
+    palazzo: { costDucats: 56_000, costMaterials: { bricks: 30, planks: 30 }, upkeepPerDay: 1_000 },
   },
   referencePrices: {
     wheat: 100,
@@ -367,7 +425,7 @@ export const venice1450Settings: WorldSettingsInput = {
   marketMaker: {
     spreadStartBps: 400,
     spreadEndBps: 2_000,
-    spreadRampDays: 14,
+    spreadRampDays: 10,
     referenceFloorBps: 5_000,
     dailyDepthPerPlayer: {
       wheat: 2,

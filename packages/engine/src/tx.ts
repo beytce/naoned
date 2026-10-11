@@ -64,7 +64,15 @@ export type EngineErrorCode =
   | "no_privateers"
   | "too_many_raids"
   | "unknown_raid"
-  | "raid_not_back";
+  | "raid_not_back"
+  | "no_criee"
+  | "criee_quota"
+  | "criee_sold_out"
+  | "unknown_daily"
+  | "daily_not_done"
+  | "daily_claimed"
+  | "pass_required"
+  | "no_reroll_left";
 
 export class EngineError extends Error {
   constructor(

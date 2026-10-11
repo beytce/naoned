@@ -5,6 +5,9 @@ import type { ResourceCode } from "./theme.js";
 export type LedgerReason =
   | "starting_capital"
   | "city_sale"
+  | "criee_sale"
+  | "daily_reward"
+  | "daily_chest"
   | "project_delivery"
   | "market_maker_buy"
   | "market_maker_sell"
@@ -42,6 +45,8 @@ export type StockReason =
   | "trade_buy"
   | "trade_sell"
   | "city_sale"
+  | "criee_sale"
+  | "daily_reward"
   | "project_delivery"
   | "player_reset"
   | "rations"

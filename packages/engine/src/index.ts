@@ -1,13 +1,19 @@
 export * from "./buildings.js";
 export * from "./cities.js";
 export * from "./commands.js";
-export { type Contract, contractsFor } from "./contracts.js";
+export { type Contract, contractsFor, rerollsOf } from "./contracts.js";
 export { draw } from "./draw.js";
 export * from "./events.js";
 export { cargoValueAt, portPrices } from "./expeditions.js";
 export * from "./effects.js";
 export * from "./invariants.js";
-export { bestPrice, bookSide, marketMakerQuotaLeft, openOrderCount } from "./market.js";
+export {
+  bestPrice,
+  bookSide,
+  marketMakerQuotaLeft,
+  maxOpenOrdersFor,
+  openOrderCount,
+} from "./market.js";
 export type { PlaceOrderInput } from "./market.js";
 export * from "./marketMaker.js";
 export * from "./money.js";
@@ -18,6 +24,7 @@ export * from "./settings.js";
 export { type MissionView, missionsFor } from "./missions.js";
 export { crossingAt, watchedRoutes } from "./privateers.js";
 export * from "./ships.js";
+export * from "./activity.js";
 export * from "./state.js";
 export * from "./theme.js";
 export { venice1450 } from "./themes/venice1450.js";

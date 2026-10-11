@@ -1,7 +1,8 @@
 import { type Draft, enableMapSet, produce } from "immer";
+import { claimDaily, sellToCriee, trackDaily } from "./activity.js";
 import { build, grantBuilding, upgrade } from "./buildings.js";
 import { sellToCity } from "./cities.js";
-import { fulfillContract } from "./contracts.js";
+import { fulfillContract, rerollContract } from "./contracts.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { collectExpedition, launchExpedition } from "./expeditions.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
@@ -20,6 +21,7 @@ import {
   type WorldState,
   cashAccount,
   escrowAccount,
+  seasonEnd,
 } from "./state.js";
 import { findRegion } from "./theme.js";
 import { tick } from "./tick.js";
@@ -75,6 +77,11 @@ export type Command =
   | { type: "commissionPrivateers"; playerId: PlayerId; route: string; ships: string[] }
   | { type: "collectRaid"; playerId: PlayerId; raidId: string }
   | { type: "claimMission"; playerId: PlayerId; missionId: string }
+  | { type: "sellToCriee"; playerId: PlayerId; quantity: number }
+  | { type: "claimDaily"; playerId: PlayerId; taskId: string }
+  | { type: "rerollContract"; playerId: PlayerId; contractId: string }
+  /** From the server: the Pass Négociant until this time (a later date never shortens it). */
+  | { type: "grantPass"; playerId: PlayerId; until: number }
   | { type: "collectExpedition"; playerId: PlayerId; expeditionId: string }
   | { type: "tick" };
 
@@ -166,6 +173,13 @@ function apply(tx: Tx, cmd: Command): void {
     tick(tx);
     return;
   }
+  if (cmd.type === "grantPass") {
+    const p = tx.s.players[cmd.playerId];
+    if (!p) fail("unknown_player");
+    p.passUntil = Math.max(p.passUntil ?? 0, cmd.until);
+    emit(tx, "pass_granted", cmd.playerId, { until: cmd.until });
+    return;
+  }
   if (cmd.type === "join") {
     join(tx, cmd.playerId, cmd.region);
     return;
@@ -177,7 +191,7 @@ function apply(tx: Tx, cmd: Command): void {
 
   const player = tx.s.players[cmd.playerId];
   if (!player) fail("unknown_player");
-  if (tx.now >= ctx.startAt + ctx.settings.seasonDays * DAY_MS) fail("season_over");
+  if (tx.now >= seasonEnd(ctx)) fail("season_over");
   player.lastActionAt = tx.now;
 
   switch (cmd.type) {
@@ -230,6 +244,15 @@ function apply(tx: Tx, cmd: Command): void {
     case "claimMission":
       claimMission(tx, cmd.playerId, cmd.missionId);
       break;
+    case "sellToCriee":
+      sellToCriee(tx, cmd.playerId, cmd.quantity);
+      break;
+    case "claimDaily":
+      claimDaily(tx, cmd.playerId, cmd.taskId);
+      break;
+    case "rerollContract":
+      rerollContract(tx, cmd.playerId, cmd.contractId);
+      break;
     case "collectExpedition":
       collectExpedition(tx, cmd.playerId, cmd.expeditionId);
       break;
@@ -255,6 +278,7 @@ export function decide(
       const tx = { ctx, s: draft, now, fx };
       apply(tx, cmd);
       trackMissions(tx);
+      trackDaily(tx);
     });
     return { ok: true, state: next, effects: fx };
   } catch (err) {

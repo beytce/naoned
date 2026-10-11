@@ -22,6 +22,11 @@ export interface WorldContext {
   /** Start of the season, in ms since epoch (UTC). */
   startAt: number;
   /**
+   * End of the season (exclusive), in ms since epoch. Seasons follow calendar months, so the
+   * world says when it ends; without it, the season lasts `settings.seasonDays`.
+   */
+  endAt?: number;
+  /**
    * Secret of the world for its draws (events, contracts, pirates). Never sent to players, so
    * outcomes cannot be computed in advance. Defaults to the start time.
    */
@@ -37,6 +42,8 @@ export interface Player {
   upkeepDefaultUntil: number;
   /** While now < hungryUntil, workers lack rations and new batches take longer. */
   hungryUntil?: number;
+  /** Pass Négociant held until this time (bought, or won in the rankings). */
+  passUntil?: number;
 }
 
 export interface ProductionJob {
@@ -201,17 +208,37 @@ export interface WorldState {
   lastUpkeepDay: number;
   /** Contracts of the Doge fulfilled today, per player. */
   contractsDone?: Record<PlayerId, { day: number; ids: string[] }>;
+  /** Doge's orders swapped today with the Pass: slot index → number of swaps. */
+  contractRerolls?: Record<PlayerId, { day: number; slots: Record<number, number> }>;
   expeditions?: Record<string, Expedition>;
   ships?: Record<string, Ship>;
   raids?: Record<string, Raid>;
   /** The merchant's ledger, per player: progress per mission and missions already rewarded. */
   missions?: Record<PlayerId, { progress: Record<string, number>; claimed: string[] }>;
+  /** Units sold at each Criée (by its index), in all and per merchant. */
+  criees?: Record<number, { sold: number; byPlayer: Record<PlayerId, number> }>;
+  /** Tasks of the day: progress of the current day, and the streak of chests opened. */
+  daily?: Record<
+    PlayerId,
+    {
+      day: number;
+      progress: Record<string, number>;
+      claimed: string[];
+      chest: boolean;
+      streak: number;
+      /** Last day a chest was opened. */
+      lastChestDay: number;
+      best: number;
+    }
+  >;
   /** Last successful boarding suffered, per player (cooldown). */
   plunderedAt?: Record<PlayerId, number>;
   /** Resets used per player this season (absent in states saved before resets existed). */
   resets?: Record<PlayerId, number>;
   /** Weekly ranking: current week and each player's net worth when it started (or on joining). */
   weekly?: { week: number; start: Record<PlayerId, Deniers> };
+  /** Set once the final ranking has been published (event `season_closed`). */
+  seasonClosed?: boolean;
 }
 
 export const SOURCE_ACCOUNT: AccountId = "system:source";
@@ -223,6 +250,16 @@ export function cashAccount(playerId: PlayerId): AccountId {
 
 export function escrowAccount(playerId: PlayerId): AccountId {
   return `escrow:${playerId}`;
+}
+
+/** Whether a merchant holds the Pass Négociant at `at`. */
+export function hasPass(state: WorldState, playerId: PlayerId, at: number): boolean {
+  return (state.players[playerId]?.passUntil ?? 0) > at;
+}
+
+/** When play stops: the end of the calendar month, or the nominal length of a season. */
+export function seasonEnd(ctx: WorldContext): number {
+  return ctx.endAt ?? ctx.startAt + ctx.settings.seasonDays * DAY_MS;
 }
 
 export function dayIndex(ctx: WorldContext, at: number): number {

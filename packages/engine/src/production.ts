@@ -1,6 +1,14 @@
 import { eventYieldBps } from "./events.js";
 import { applyBonusToQuantity, applyBpsFloor } from "./money.js";
-import { type Building, HOUR_MS, MINUTE_MS, type Player, type WorldContext } from "./state.js";
+import {
+  type Building,
+  HOUR_MS,
+  MINUTE_MS,
+  type Player,
+  type WorldContext,
+  type WorldState,
+  hasPass,
+} from "./state.js";
 import { findRecipe, findRegion, recipesFor } from "./theme.js";
 import { type Tx, addStock, emit, fail, removeStock } from "./tx.js";
 
@@ -46,9 +54,18 @@ export function collect(tx: Tx, building: Building): void {
       const base = (perBatch ?? 0) * job.level;
       // Specialisation: each level above the first adds to the yield.
       const levelBonus = (job.level - 1) * tx.ctx.settings.levelYieldBonusBps;
+      // Fresh produce: collected soon after the batch was done.
+      const fresh = tx.ctx.settings.fresh;
+      const passFresh = tx.ctx.settings.pass.freshBonusBps;
+      const freshBps =
+        passFresh > 0 && hasPass(tx.s as WorldState, building.playerId, tx.now)
+          ? passFresh
+          : fresh.bonusBps;
+      const freshBonus =
+        fresh.minutes > 0 && tx.now - completedAt <= fresh.minutes * 60_000 ? freshBps : 0;
       total += applyBonusToQuantity(
         base,
-        yieldBonusBps(tx.ctx, player, resource, completedAt) + levelBonus,
+        yieldBonusBps(tx.ctx, player, resource, completedAt) + levelBonus + freshBonus,
       );
     }
     addStock(tx, building.playerId, resource, total, "production_output", building.id);

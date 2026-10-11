@@ -1,9 +1,10 @@
+import { crieeRoom, currentCriee, dailyFor } from "./activity.js";
 import { costForLevel } from "./buildings.js";
 import { quoteCitySale } from "./cities.js";
 import type { Command } from "./commands.js";
-import { contractsFor } from "./contracts.js";
+import { contractsFor, rerollsOf } from "./contracts.js";
 import { cargoValueAt } from "./expeditions.js";
-import { bestPrice, marketMakerQuotaLeft, openOrderCount } from "./market.js";
+import { bestPrice, marketMakerQuotaLeft, maxOpenOrdersFor, openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
 import type { Deniers } from "./money.js";
 import { freeBatches } from "./production.js";
@@ -18,6 +19,8 @@ import {
   type WorldState,
   cashAccount,
   dayIndex,
+  hasPass,
+  seasonEnd,
 } from "./state.js";
 import { findRegion, recipesFor } from "./theme.js";
 
@@ -170,6 +173,7 @@ export class Bot {
     this.feed(s);
     this.doContracts(s);
     this.deliverProjects(s);
+    this.sellToCriee(s);
     this.sellToCities(s);
     this.invest(s);
     this.runProduction(s);
@@ -179,6 +183,24 @@ export class Bot {
     if (this.profile.speculates) this.speculate(s);
     this.voyage(s);
     this.sellSurplus(s);
+    this.claimDaily(s);
+  }
+
+  /** A Criée under way: sell what is spare (rations and construction stock are kept). */
+  private sellToCriee(s: Session): void {
+    const criee = currentCriee(s.ctx, s.now);
+    if (!criee) return;
+    const room = crieeRoom(s.ctx, s.state(), criee, this.id, s.now);
+    const spare = this.available(s, criee.resource) - this.reserve(s, criee.resource);
+    const qty = Math.min(spare, room.mine, room.total);
+    if (qty > 0) s.act({ type: "sellToCriee", playerId: this.id, quantity: qty });
+  }
+
+  /** Tasks of the day already done along the way: collect their reward. */
+  private claimDaily(s: Session): void {
+    for (const t of dailyFor(s.ctx, s.state(), this.id, s.now).tasks) {
+      if (t.done && !t.claimed) s.act({ type: "claimDaily", playerId: this.id, taskId: t.id });
+    }
   }
 
   private buildings(s: Session): Building[] {
@@ -327,7 +349,17 @@ export class Bot {
     const day = dayIndex(s.ctx, s.now);
     const done = s.state().contractsDone?.[this.id];
     const doneIds = done && done.day === day ? done.ids : [];
-    for (const c of contractsFor(s.ctx, this.id, day)) {
+    // With the Pass: an order the bot cannot cover is swapped for another, once a day.
+    if (hasPass(s.state(), this.id, s.now)) {
+      const today = contractsFor(s.ctx, this.id, day, rerollsOf(s.state(), this.id, day));
+      const stuck = today.find(
+        (c) =>
+          !doneIds.includes(c.id) &&
+          this.available(s, c.resource) - this.reserve(s, c.resource) < c.quantity,
+      );
+      if (stuck) s.act({ type: "rerollContract", playerId: this.id, contractId: stuck.id });
+    }
+    for (const c of contractsFor(s.ctx, this.id, day, rerollsOf(s.state(), this.id, day))) {
       if (doneIds.includes(c.id)) continue;
       if (this.available(s, c.resource) - this.reserve(s, c.resource) >= c.quantity) {
         s.act({ type: "fulfillContract", playerId: this.id, contractId: c.id });
@@ -547,7 +579,7 @@ export class Bot {
 
   /** Builds or upgrades if affordable, buying the materials if needed. */
   private invest(s: Session): void {
-    const daysLeft = (s.ctx.startAt + s.ctx.settings.seasonDays * DAY - s.now) / DAY;
+    const daysLeft = (seasonEnd(s.ctx) - s.now) / DAY;
     if (daysLeft < 1) return;
     const next = this.nextInvestment(s) ?? this.prestigeInvestment(s);
     if (!next) return;
@@ -602,7 +634,10 @@ export class Bot {
       });
       if (theirs !== undefined && theirs <= cap && (!mm || theirs < mm.price)) {
         const q = Math.min(qty, Number(budget / theirs));
-        if (q > 0 && openOrderCount(s.state(), this.id) < s.ctx.settings.maxOpenOrders) {
+        if (
+          q > 0 &&
+          openOrderCount(s.state(), this.id) < maxOpenOrdersFor(s.ctx, s.state(), this.id, s.now)
+        ) {
           s.act({
             type: "placeOrder",
             playerId: this.id,
@@ -634,7 +669,8 @@ export class Bot {
       return;
     }
     if (this.myOrders(s).some((o) => o.resource === resource && o.side === "buy")) return;
-    if (openOrderCount(s.state(), this.id) >= s.ctx.settings.maxOpenOrders) return;
+    if (openOrderCount(s.state(), this.id) >= maxOpenOrdersFor(s.ctx, s.state(), this.id, s.now))
+      return;
     const key = `buy:${resource}`;
     const previous = this.lastPrice.get(key);
     const price = previous
@@ -684,7 +720,8 @@ export class Bot {
       const left = this.available(s, res) - keep;
       if (left <= 0) continue;
       if (this.myOrders(s).some((o) => o.resource === res && o.side === "sell")) continue;
-      if (openOrderCount(s.state(), this.id) >= s.ctx.settings.maxOpenOrders) continue;
+      if (openOrderCount(s.state(), this.id) >= maxOpenOrdersFor(s.ctx, s.state(), this.id, s.now))
+        continue;
       const key = `sell:${res}`;
       const previous = this.lastPrice.get(key);
       let floorPrice = scale(s.market.reference(res), 0.5);
@@ -717,7 +754,11 @@ export class Bot {
   private speculate(s: Session): void {
     const resources = ["wheat", "flour", "bricks", "planks"];
     for (const res of resources) {
-      if (openOrderCount(s.state(), this.id) >= s.ctx.settings.maxOpenOrders - 2) return;
+      if (
+        openOrderCount(s.state(), this.id) >=
+        maxOpenOrdersFor(s.ctx, s.state(), this.id, s.now) - 2
+      )
+        return;
       const fair = s.market.fair(res, 7);
       const held = this.available(s, res);
       if (held > 0 && !this.myOrders(s).some((o) => o.resource === res && o.side === "sell")) {

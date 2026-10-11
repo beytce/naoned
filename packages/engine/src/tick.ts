@@ -7,7 +7,7 @@ import { openDueProjects } from "./projects.js";
 import { shipUpkeep } from "./ships.js";
 import { DAY_MS, HOUR_MS, SINK_ACCOUNT, cashAccount, dayIndex } from "./state.js";
 import { type Tx, balance, emit, removeStock, transfer } from "./tx.js";
-import { closeWeek } from "./weekly.js";
+import { closeSeason, closeWeek } from "./weekly.js";
 
 /**
  * Daily upkeep, charged once per day boundary to players who joined before it.
@@ -68,6 +68,7 @@ export function tick(tx: Tx): void {
   expireOrders(tx);
   chargeUpkeep(tx);
   closeWeek(tx);
+  closeSeason(tx);
   openDueProjects(tx);
   requoteMarketMaker(tx);
 }

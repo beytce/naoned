@@ -37,6 +37,8 @@ export interface SimulationOptions {
   stepMinutes: number;
   mix: Record<ProfileName, number>;
   lateJoiners: number;
+  /** Share of bots holding the Pass Négociant all season (0 to 1). */
+  passShare?: number;
   /** Bots behave as in the live world (leave the market maker to people, sell on the book). */
   live?: boolean;
   /** Optional observer of every accepted command's effects (debugging, extra analysis). */
@@ -51,6 +53,8 @@ export interface SimulationResult {
   violations: { at: number; detail: string }[];
   commands: { accepted: number; rejected: number; rejectedBy: Record<string, number> };
   durationMs: number;
+  /** Bots that held the Pass Négociant. */
+  passHolders?: string[];
   /** World at the end of the run (debugging, extra analysis). */
   finalState?: WorldState;
   /** Do merchants depend on each other? Raw material buyers and building types per merchant. */
@@ -61,6 +65,8 @@ export interface SimulationResult {
     /** Average workshop level at the end, and share of workshops at the top level. */
     avgLevel: number;
     topLevelShare: number;
+    /** Workshop levels per merchant (a new workshop counts 1): how far merchants grew. */
+    levelsPerMerchant: number;
   };
 }
 
@@ -110,7 +116,12 @@ export function createBots(options: SimulationOptions, rng: Rng): Bot[] {
   const names = Object.keys(options.mix) as ProfileName[];
   for (let i = 0; i < options.lateJoiners; i++) {
     const name = rng.pick(names.filter((p) => p !== "speculator"));
-    const joinAt = START + 7 * DAY_MS + Math.floor(rng.next() * 14 * DAY_MS);
+    // Late joiners arrive between a sixth and a half of the season.
+    const from = Math.round(options.days / 6);
+    const joinAt =
+      START +
+      from * DAY_MS +
+      Math.floor(rng.next() * (Math.round(options.days / 2) - from) * DAY_MS);
     bots.push(new Bot(`late-${name}-${++n}`, PROFILES[name], regionFor(name, i), joinAt, live));
   }
   return bots;
@@ -122,6 +133,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     theme: venice1450,
     settings: parseSettings(options.settings),
     startAt: START,
+    endAt: START + options.days * DAY_MS,
   };
   const rng = new Rng(options.seed);
   const bots = createBots(options, rng);
@@ -174,6 +186,18 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     act: run,
   };
 
+  // Pass holders: every k-th bot of each profile, so that profiles stay comparable.
+  const passHolders = new Set<string>();
+  const share = options.passShare ?? 0;
+  if (share > 0) {
+    const seen: Record<string, number> = {};
+    for (const bot of bots) {
+      const n = (seen[bot.profile.name] ?? 0) + 1;
+      seen[bot.profile.name] = n;
+      if (Math.floor(n * share) > Math.floor((n - 1) * share)) passHolders.add(bot.id);
+    }
+  }
+  result.passHolders = [...passHolders];
   const schedule = new Map<Bot, number[]>();
   const step = options.stepMinutes * MINUTE_MS;
   const end = START + options.days * DAY_MS;
@@ -213,6 +237,9 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
       if (!state.players[bot.id]) {
         if (bot.joinAt <= now) run({ type: "join", playerId: bot.id, region: bot.region });
         if (!state.players[bot.id]) continue;
+        if (passHolders.has(bot.id)) {
+          run({ type: "grantPass", playerId: bot.id, until: end });
+        }
       }
       const times = schedule.get(bot) ?? [];
       while (times.length > 0 && (times[0] ?? Number.POSITIVE_INFINITY) <= now) {
@@ -245,6 +272,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     topLevelShare:
       workshops.filter((b) => b.level >= ctx.settings.maxBuildingLevel).length /
       Math.max(1, workshops.length),
+    levelsPerMerchant: workshops.reduce((a, b) => a + b.level, 0) / Math.max(1, merchants.length),
   };
   result.durationMs = performance.now() - started;
   return result;

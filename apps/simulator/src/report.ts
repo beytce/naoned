@@ -23,7 +23,7 @@ export function rollingMoneyGrowth(r: SimulationResult): { day: number; growth: 
   return out;
 }
 
-export function evaluate(r: SimulationResult): Check[] {
+export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] {
   const checks: Check[] = [];
   const dep = r.interdependence;
   if (dep) {
@@ -48,8 +48,19 @@ export function evaluate(r: SimulationResult): Check[] {
       pass: true,
       blocking: false,
     });
+    checks.push({
+      name: "Niveaux d'ateliers par marchand (fin de saison)",
+      target: "diagnostic : développement (un atelier neuf compte 1)",
+      value: dep.levelsPerMerchant.toFixed(1),
+      pass: true,
+      blocking: false,
+    });
   }
   const last = r.daily.length - 1;
+  // Milestones scale with the length of the season (a calendar month): a third, a half.
+  const days = r.options.days;
+  const third = Math.round(days / 3);
+  const half = Math.round(days / 2);
 
   checks.push({
     name: "Invariants",
@@ -71,8 +82,8 @@ export function evaluate(r: SimulationResult): Check[] {
     blocking: true,
   });
 
-  // Windows of 7 days that start at J+14 or later.
-  const growth = rollingMoneyGrowth(r).filter((g) => g.day >= 21);
+  // Windows of 7 days that start a third of the way into the season or later.
+  const growth = rollingMoneyGrowth(r).filter((g) => g.day >= third + 7);
   const worst = growth.reduce((w, g) => (Math.abs(g.growth) > Math.abs(w.growth) ? g : w), {
     day: 0,
     growth: 0,
@@ -80,7 +91,7 @@ export function evaluate(r: SimulationResult): Check[] {
   const meanGrowth = growth.reduce((a, g) => a + g.growth, 0) / Math.max(1, growth.length);
   checks.push({
     name: "Croissance de la monnaie par joueur actif",
-    target: "diagnostic : moyenne glissante sur 7 jours dans ±2 %/jour, de J+14 à la fin",
+    target: `diagnostic : moyenne glissante sur 7 jours dans ±2 %/jour, de J+${third} à la fin`,
     value: `moyenne ${pct(meanGrowth)}/jour, pire ${pct(worst.growth)}/jour à J+${worst.day}`,
     pass: growth.every((g) => Math.abs(g.growth) <= 0.02),
     blocking: false,
@@ -97,20 +108,20 @@ export function evaluate(r: SimulationResult): Check[] {
     blocking: true,
   });
 
-  const g21 = r.daily[21]?.gini ?? Number.NaN;
+  const gHalf = r.daily[half]?.gini ?? Number.NaN;
   checks.push({
-    name: "Gini du patrimoine à J+21",
+    name: `Gini du patrimoine à J+${half}`,
     target: "< 0,6",
-    value: g21.toFixed(2),
-    pass: g21 < 0.6,
+    value: gHalf.toFixed(2),
+    pass: gHalf < 0.6,
     blocking: true,
   });
 
-  const week3 = r.daily.slice(14, 21);
+  const week3 = r.daily.slice(third, half);
   const share = week3.reduce((a, d) => a + d.playerShareOfValue, 0) / Math.max(1, week3.length);
   checks.push({
     name: "Part du volume échangé entre joueurs",
-    target: "> 50 % (moyenne J+14 à J+20)",
+    target: `> 50 % (moyenne J+${third} à J+${half - 1})`,
     value: pct(share),
     pass: share > 0.5,
     blocking: true,
@@ -130,6 +141,8 @@ export function evaluate(r: SimulationResult): Check[] {
     blocking: false,
   });
 
+  checks.push(...passChecks(r, twin));
+
   const lastDay = r.daily[last];
   checks.push({
     name: "Joueurs actifs en fin de saison",
@@ -145,6 +158,82 @@ export function evaluate(r: SimulationResult): Check[] {
     pass: true,
     blocking: false,
   });
+  return checks;
+}
+
+const median = (xs: number[]) => {
+  const s = [...xs].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length === 0
+    ? Number.NaN
+    : s.length % 2
+      ? (s[m] ?? 0)
+      : ((s[m - 1] ?? 0) + (s[m] ?? 0)) / 2;
+};
+
+/** Final net worth of the bots that started the season and were still active at its end. */
+function finalWorth(r: SimulationResult) {
+  const lastDay = Math.max(...r.players.map((p) => p.day));
+  return r.players.filter((p) => p.day === lastDay && p.active && !p.playerId.startsWith("late"));
+}
+
+/**
+ * Guard rails of the Pass Négociant (with `passShare` > 0): light, never crushing.
+ * `twin` is the same season replayed with the Pass's perks off: each merchant is compared with
+ * itself, and the Pass's effect is what holders gain beyond what everyone else gains.
+ */
+export function passChecks(r: SimulationResult, twin?: SimulationResult): Check[] {
+  const holders = new Set(r.passHolders ?? []);
+  if (holders.size === 0) return [];
+  const final = finalWorth(r);
+  const checks: Check[] = [];
+  if (twin) {
+    const before = new Map(finalWorth(twin).map((p) => [p.playerId, Number(p.netWorth)]));
+    const ratios = (paid: boolean) =>
+      final
+        .filter((p) => holders.has(p.playerId) === paid && (before.get(p.playerId) ?? 0) > 0)
+        .map((p) => Number(p.netWorth) / (before.get(p.playerId) ?? 1));
+    const gap = median(ratios(true)) / median(ratios(false)) - 1;
+    checks.push({
+      name: "Pass : avance des abonnés (même saison rejouée sans Pass)",
+      target: "≤ +5 % (médiane, au-delà de l'effet sur les non-abonnés)",
+      value: Number.isNaN(gap) ? "—" : pct(gap),
+      pass: Number.isNaN(gap) || gap <= 0.05,
+      blocking: true,
+    });
+  }
+  const frequent = new Set(["producer", "artisan", "builder", "speculator"]);
+  const top = [...final].sort((a, b) => Number(b.netWorth - a.netWorth)).slice(0, 10);
+  const topShare = top.filter((p) => holders.has(p.playerId)).length / Math.max(1, top.length);
+  const share = final.filter((p) => holders.has(p.playerId)).length / Math.max(1, final.length);
+  const freeFrequent = median(
+    final
+      .filter((p) => frequent.has(p.profile) && !holders.has(p.playerId))
+      .map((p) => Number(p.netWorth)),
+  );
+  const paidCasual = median(
+    final
+      .filter((p) => p.profile === "casual" && holders.has(p.playerId))
+      .map((p) => Number(p.netWorth)),
+  );
+  checks.push(
+    {
+      name: "Pass : part des abonnés dans le top 10",
+      target: `≤ 35 % (ils sont ${pct(share)} des marchands)`,
+      value: pct(topShare),
+      pass: topShare <= 0.35,
+      blocking: true,
+    },
+    {
+      name: "Pass : un gratuit assidu devant un abonné occasionnel",
+      target: "patrimoine médian supérieur",
+      value: Number.isNaN(paidCasual)
+        ? "pas d'abonné occasionnel"
+        : `${ducats(BigInt(Math.round(freeFrequent)))} contre ${ducats(BigInt(Math.round(paidCasual)))}`,
+      pass: Number.isNaN(paidCasual) || freeFrequent > paidCasual,
+      blocking: true,
+    },
+  );
   return checks;
 }
 

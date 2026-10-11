@@ -1,13 +1,24 @@
 import { applyBpsFloor } from "./money.js";
-import { DAY_MS, type Project, SOURCE_ACCOUNT, activePlayerCount, cashAccount } from "./state.js";
+import {
+  DAY_MS,
+  type Project,
+  SOURCE_ACCOUNT,
+  activePlayerCount,
+  cashAccount,
+  seasonEnd,
+} from "./state.js";
 import { type Tx, emit, fail, nextId, removeStock, transfer } from "./tx.js";
 
 /** Opens the weekly city project when it is due. Needs scale with the number of active players. */
 export function openDueProjects(tx: Tx): void {
   const { ctx } = tx;
   const cfg = ctx.settings.projects;
-  const seasonEnd = ctx.startAt + ctx.settings.seasonDays * DAY_MS;
-  while (tx.s.nextProjectAt <= tx.now && tx.s.nextProjectAt < seasonEnd) {
+  const deadline = (openedAt: number) => openedAt + cfg.durationDays * DAY_MS;
+  const end = seasonEnd(ctx);
+  // A month rarely ends on a week boundary: no stub project in the last days, the previous one
+  // runs to the end of the season instead.
+  const tail = (cfg.intervalDays * DAY_MS) / 2;
+  while (tx.s.nextProjectAt <= tx.now && tx.s.nextProjectAt < end - tail) {
     const openedAt = tx.s.nextProjectAt;
     const players = Math.max(1, activePlayerCount(ctx, tx.s, tx.now));
     const cities = ctx.theme.cities;
@@ -28,7 +39,7 @@ export function openDueProjects(tx: Tx): void {
       id,
       city,
       openedAt,
-      deadline: Math.min(openedAt + cfg.durationDays * DAY_MS, seasonEnd),
+      deadline: end - deadline(openedAt) < tail ? end : Math.min(deadline(openedAt), end),
       needs,
       delivered,
       unitPrice,

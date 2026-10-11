@@ -188,6 +188,81 @@ export const worldSettingsSchema = z.object({
       }),
     )
     .default([]),
+  /**
+   * Fresh produce: batches collected within `minutes` of being done yield `bonusBps` more.
+   * Rewards coming back on time, never punishes the absent. 0 minutes turns it off.
+   */
+  fresh: z.object({ minutes: qty, bonusBps: bps }).default({ minutes: 0, bonusBps: 0 }),
+  /**
+   * The Criées of the Rialto: a few times a day, at hours drawn in advance but never shown before,
+   * a city buys one resource at a premium for a few minutes, up to a share per merchant and a
+   * total that grows with the number of active merchants. 0 per day turns them off.
+   */
+  criees: z
+    .object({
+      perDay: qty,
+      /** Window of the day (hours after the season's daily boundary) when they may start. */
+      fromHour: qty,
+      toHour: qty,
+      minutes: positive,
+      minPremiumBps: bps,
+      maxPremiumBps: bps,
+      perPlayer: qty,
+      perActivePlayer: qty,
+      minTotal: qty,
+      resources: z.array(z.string()),
+    })
+    .default({
+      perDay: 0,
+      fromHour: 0,
+      toHour: 24,
+      minutes: 20,
+      minPremiumBps: 0,
+      maxPremiumBps: 0,
+      perPlayer: 0,
+      perActivePlayer: 0,
+      minTotal: 0,
+      resources: [],
+    }),
+  /**
+   * Tasks of the day: `perDay` drawn from the pool every day (the same for everyone), each with a
+   * small reward; doing them all opens the day's chest, larger for each day in a row (up to
+   * `maxStreak`). 0 per day turns them off.
+   */
+  daily: z
+    .object({
+      perDay: qty,
+      tasks: z.array(
+        z.object({
+          id: z.string(),
+          event: z.string(),
+          filter: z.record(z.union([z.string(), z.number()])).default({}),
+          count: positive,
+          reward: z.object({ goods: z.record(qty).default({}), ducats: money.default(0) }),
+        }),
+      ),
+      chest: z.object({ ducats: money, perStreakDay: money, maxStreak: positive }),
+    })
+    .default({ perDay: 0, tasks: [], chest: { ducats: 0, perStreakDay: 0, maxStreak: 1 } }),
+  /**
+   * Pass Négociant: light advantages that only help a merchant who plays. Never ducats, goods,
+   * production speed or a longer queue. All zero turns it off.
+   */
+  pass: z
+    .object({
+      /** Extra share of the daily quota at the Dogana (2 000 = a fifth more). */
+      marketMakerQuotaBps: bps,
+      extraOpenOrders: qty,
+      /** Fresh produce bonus for Pass holders (instead of the usual one). */
+      freshBonusBps: bps,
+      contractRerollsPerDay: qty,
+    })
+    .default({
+      marketMakerQuotaBps: 0,
+      extraOpenOrders: 0,
+      freshBonusBps: 0,
+      contractRerollsPerDay: 0,
+    }),
   /** How many times a player may restart from scratch during a season. */
   maxResetsPerPlayer: qty.default(1),
   maxBuildings: positive,

@@ -14,6 +14,7 @@ import {
   cashAccount,
   dayIndex,
   escrowAccount,
+  hasPass,
 } from "./state.js";
 import type { ResourceCode } from "./theme.js";
 import {
@@ -82,6 +83,17 @@ export function bestPrice(
   return bookSide(state, resource, side, options)[0]?.price;
 }
 
+/** Open offers allowed: two more with the Pass Négociant. */
+export function maxOpenOrdersFor(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  now: number,
+): number {
+  const extra = hasPass(state, playerId, now) ? ctx.settings.pass.extraOpenOrders : 0;
+  return ctx.settings.maxOpenOrders + extra;
+}
+
 export function openOrderCount(state: WorldState, playerId: PlayerId): number {
   let n = 0;
   for (const o of Object.values(state.orders)) if (o.playerId === playerId) n++;
@@ -120,22 +132,24 @@ export function playerQuota(
   resource: string,
   dir: "bought" | "sold",
   now: number,
+  playerId?: PlayerId,
 ): number | undefined {
   const mm = ctx.settings.marketMaker;
   const base = dir === "bought" ? mm.playerDailyQuota[resource] : mm.playerDailySellQuota[resource];
   if (base === undefined) return undefined;
   const cap = mm.maxDailyDepth[resource];
-  if (cap === undefined) return base;
   const players = Math.max(1, activePlayerCount(ctx, state, now));
-  return Math.min(base, Math.max(1, Math.floor(cap / players)));
-}
-
-function quotaOf(tx: Tx, resource: string, dir: "bought" | "sold") {
-  return playerQuota(tx.ctx, tx.s as WorldState, resource, dir, tx.now);
+  const share = cap === undefined ? base : Math.min(base, Math.max(1, Math.floor(cap / players)));
+  // Pass Négociant: a fifth more of the merchant's own share.
+  const bonus = ctx.settings.pass.marketMakerQuotaBps;
+  if (playerId && bonus > 0 && hasPass(state, playerId, now)) {
+    return share + Math.floor((share * bonus) / 10_000);
+  }
+  return share;
 }
 
 function quotaRoom(tx: Tx, playerId: PlayerId, resource: string, dir: "bought" | "sold"): number {
-  const quota = quotaOf(tx, resource, dir);
+  const quota = playerQuota(tx.ctx, tx.s as WorldState, resource, dir, tx.now, playerId);
   if (quota === undefined) return Number.POSITIVE_INFINITY;
   const used = usageToday(tx).byPlayer?.[playerId]?.[dir][resource] ?? 0;
   return Math.max(0, quota - used);
@@ -166,7 +180,7 @@ export function marketMakerQuotaLeft(
   const today = state.marketMaker.day === dayIndex(ctx, now);
   const mine = today ? state.marketMaker.byPlayer?.[playerId] : undefined;
   const left = (dir: "bought" | "sold") => {
-    const quota = playerQuota(ctx, state, resource, dir, now);
+    const quota = playerQuota(ctx, state, resource, dir, now, playerId);
     return quota === undefined ? null : Math.max(0, quota - (mine?.[dir][resource] ?? 0));
   };
   return { buy: left("bought"), sell: left("sold") };
@@ -307,7 +321,8 @@ export function placeOrder(tx: Tx, input: PlaceOrderInput): Order {
     price = input.price;
     if (
       !isMarketMaker &&
-      openOrderCount(tx.s as WorldState, input.playerId) >= settings.maxOpenOrders
+      openOrderCount(tx.s as WorldState, input.playerId) >=
+        maxOpenOrdersFor(tx.ctx, tx.s as WorldState, input.playerId, tx.now)
     ) {
       fail("max_open_orders");
     }

@@ -1,6 +1,6 @@
 import { draw, pickWeighted } from "./draw.js";
 import type { WorldSettings } from "./settings.js";
-import { DAY_MS, HOUR_MS, type WorldContext } from "./state.js";
+import { DAY_MS, HOUR_MS, type WorldContext, seasonEnd } from "./state.js";
 
 export type EventDef = WorldSettings["events"]["catalog"][number];
 
@@ -15,7 +15,7 @@ function eventAtIndex(ctx: WorldContext, k: number): MarketEvent | null {
   const { everyDays, durationHours, catalog } = ctx.settings.events;
   if (k < 0 || catalog.length === 0) return null;
   const startsAt = ctx.startAt + (k * everyDays + 1) * DAY_MS;
-  if (startsAt >= ctx.startAt + ctx.settings.seasonDays * DAY_MS) return null;
+  if (startsAt >= seasonEnd(ctx)) return null;
   const def = pickWeighted(catalog, draw(ctx, `event:${k}`));
   if (!def) return null;
   return { ...def, index: k, startsAt, endsAt: startsAt + durationHours * HOUR_MS };

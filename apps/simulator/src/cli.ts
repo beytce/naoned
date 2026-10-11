@@ -10,11 +10,14 @@ const here = dirname(fileURLToPath(import.meta.url));
 const { values } = parseArgs({
   options: {
     seeds: { type: "string", default: "1,2,3,4,5" },
-    days: { type: "string", default: "42" },
+    /** Length of the season; by default the nominal month of the settings. */
+    days: { type: "string" },
     step: { type: "string", default: "15" },
     scenario: { type: "string" },
     /** Small world: this many merchants from the start, no late joiners (beta with bots). */
     players: { type: "string" },
+    /** Share of bots holding the Pass Négociant (0 to 1). */
+    pass: { type: "string", default: "0" },
     /** Bots as in the live world (next to people). */
     live: { type: "boolean", default: false },
     out: { type: "string", default: join(here, "..", "out") },
@@ -30,7 +33,15 @@ const seeds = (values.seeds ?? "1").split(",").map(Number);
 const outDir = resolve(values.out ?? "out");
 mkdirSync(outDir, { recursive: true });
 
-const CREATED = ["starting_capital", "city_sale", "project_delivery", "market_maker_buy"];
+const CREATED = [
+  "starting_capital",
+  "city_sale",
+  "criee_sale",
+  "daily_reward",
+  "daily_chest",
+  "project_delivery",
+  "market_maker_buy",
+];
 const DESTROYED = ["market_tax", "upkeep", "construction", "market_maker_sell"];
 
 /** One column per money source and sink, so the CSV stays flat. */
@@ -54,16 +65,35 @@ function csv(rows: Record<string, unknown>[]): string {
 const sections: string[] = [];
 let allPass = true;
 for (const seed of seeds) {
-  const result: SimulationResult = runSimulation({
+  const options = {
     settings,
     seed,
-    days: Number(values.days),
+    days: Number(values.days ?? settings.seasonDays),
     stepMinutes: Number(values.step),
     mix,
     lateJoiners: players ? 0 : 10,
     live: values.live,
-  });
-  const checks = evaluate(result);
+    passShare: Number(values.pass),
+  };
+  const result: SimulationResult = runSimulation(options);
+  // With Pass holders, the same season again with the Pass's perks off: its effect, merchant by
+  // merchant.
+  const twin =
+    options.passShare > 0
+      ? runSimulation({
+          ...options,
+          settings: {
+            ...settings,
+            pass: {
+              marketMakerQuotaBps: 0,
+              extraOpenOrders: 0,
+              freshBonusBps: 0,
+              contractRerollsPerDay: 0,
+            },
+          },
+        })
+      : undefined;
+  const checks = evaluate(result, twin);
   const pass = allBlockingPass(checks);
   allPass &&= pass;
   const dir = join(outDir, `seed-${seed}`);
