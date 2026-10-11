@@ -15,6 +15,12 @@ export function d(deniers: string | bigint | null | undefined): string {
   return `${ducatsFormat.format(Number(BigInt(deniers)) / 100)} d`;
 }
 
+/** The bare number, for the purse next to its coin: "1 000". */
+export function amount(deniers: string | bigint | null | undefined): string {
+  if (deniers === null || deniers === undefined) return "—";
+  return ducatsFormat.format(Number(BigInt(deniers)) / 100);
+}
+
 export function duration(ms: number): string {
   if (ms <= 0) return "0 s";
   const s = Math.ceil(ms / 1000);

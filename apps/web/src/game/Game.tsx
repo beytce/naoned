@@ -27,7 +27,7 @@ import { Top } from "./Top.js";
 import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
 import { onBack } from "./back.js";
-import { d } from "./format.js";
+import { amount } from "./format.js";
 import { store } from "./store.js";
 
 /** Actions that bring something in: a fuller cue than a plain tap. */
@@ -453,7 +453,7 @@ export function Game(props: {
     <div className="mr-1 flex items-center gap-1.5 rounded-full bg-night-3 py-1 pl-1 pr-2.5 ring-1 ring-line">
       <Coin size={22} />
       <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
-        {d(view.cash)}
+        {amount(view.cash)}
       </span>
     </div>
   );
