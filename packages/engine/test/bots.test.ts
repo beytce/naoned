@@ -70,7 +70,7 @@ describe("bots", () => {
 });
 
 describe("bots in a live world", () => {
-  it("leave the market maker's last units to people and put their own output on sale", () => {
+  it("never sell to the market maker: their surplus waits on the book for people", () => {
     const w = new World();
     const rng = new Rng(3);
     const live = { spareMarketMaker: true, generous: true };
@@ -101,9 +101,8 @@ describe("bots in a live world", () => {
       for (const b of bots) b.play(session);
       w.advance(3 * HOUR);
     }
-    // Here the market maker offers 20 units a day: below the 25 left to people, bots take none.
-    const fromMarketMaker = w.trades.filter((t) => t.sellerId === MARKET_MAKER);
-    expect(fromMarketMaker).toEqual([]);
+    const toMarketMaker = w.trades.filter((t) => t.buyerId === MARKET_MAKER);
+    expect(toMarketMaker).toEqual([]);
     const onSale = Object.values(w.state.orders).filter(
       (o) => o.side === "sell" && o.playerId !== MARKET_MAKER,
     );

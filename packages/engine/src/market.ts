@@ -8,7 +8,9 @@ import {
   type PlayerId,
   SINK_ACCOUNT,
   SOURCE_ACCOUNT,
+  type WorldContext,
   type WorldState,
+  activePlayerCount,
   cashAccount,
   dayIndex,
   escrowAccount,
@@ -99,6 +101,77 @@ function recordPrice(tx: Tx, resource: ResourceCode, price: Deniers, qty: number
   byDay[day] = stat;
 }
 
+/** Today's market maker usage, started afresh on a new day. */
+function usageToday(tx: Tx) {
+  const day = dayIndex(tx.ctx, tx.now);
+  if (tx.s.marketMaker.day !== day) tx.s.marketMaker = { day, bought: {}, sold: {}, byPlayer: {} };
+  tx.s.marketMaker.byPlayer ??= {};
+  return tx.s.marketMaker;
+}
+
+/** Units a player may still buy from ("bought") or sell to ("sold") the market maker today. */
+/**
+ * A player's daily quota with the market maker: the world's setting, shrunk to a fair share of
+ * its daily cap when many players are active. Undefined: no quota.
+ */
+export function playerQuota(
+  ctx: WorldContext,
+  state: WorldState,
+  resource: string,
+  dir: "bought" | "sold",
+  now: number,
+): number | undefined {
+  const mm = ctx.settings.marketMaker;
+  const base = dir === "bought" ? mm.playerDailyQuota[resource] : mm.playerDailySellQuota[resource];
+  if (base === undefined) return undefined;
+  const cap = mm.maxDailyDepth[resource];
+  if (cap === undefined) return base;
+  const players = Math.max(1, activePlayerCount(ctx, state, now));
+  return Math.min(base, Math.max(1, Math.floor(cap / players)));
+}
+
+function quotaOf(tx: Tx, resource: string, dir: "bought" | "sold") {
+  return playerQuota(tx.ctx, tx.s as WorldState, resource, dir, tx.now);
+}
+
+function quotaRoom(tx: Tx, playerId: PlayerId, resource: string, dir: "bought" | "sold"): number {
+  const quota = quotaOf(tx, resource, dir);
+  if (quota === undefined) return Number.POSITIVE_INFINITY;
+  const used = usageToday(tx).byPlayer?.[playerId]?.[dir][resource] ?? 0;
+  return Math.max(0, quota - used);
+}
+
+function useQuota(
+  tx: Tx,
+  playerId: PlayerId,
+  resource: string,
+  dir: "bought" | "sold",
+  qty: number,
+) {
+  const usage = usageToday(tx);
+  usage.byPlayer ??= {};
+  usage.byPlayer[playerId] ??= { bought: {}, sold: {} };
+  const mine = usage.byPlayer[playerId];
+  mine[dir][resource] = (mine[dir][resource] ?? 0) + qty;
+}
+
+/** What a player may still trade with the market maker today; null where there is no quota. */
+export function marketMakerQuotaLeft(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  resource: string,
+  now: number,
+): { buy: number | null; sell: number | null } {
+  const today = state.marketMaker.day === dayIndex(ctx, now);
+  const mine = today ? state.marketMaker.byPlayer?.[playerId] : undefined;
+  const left = (dir: "bought" | "sold") => {
+    const quota = playerQuota(ctx, state, resource, dir, now);
+    return quota === undefined ? null : Math.max(0, quota - (mine?.[dir][resource] ?? 0));
+  };
+  return { buy: left("bought"), sell: left("sold") };
+}
+
 /** Settles one fill between a buy and a sell order, at `price` (the resting order's price). */
 function settle(tx: Tx, buy: Order, sell: Order, price: Deniers, qty: number): void {
   const gross = price * BigInt(qty);
@@ -110,11 +183,13 @@ function settle(tx: Tx, buy: Order, sell: Order, price: Deniers, qty: number): v
     removeEscrowedStock(tx, sell.playerId, sell.resource, qty, "trade_sell", tradeId);
     transfer(tx, SOURCE_ACCOUNT, cashAccount(sell.playerId), gross, "market_maker_buy", tradeId);
     tx.s.marketMaker.bought[sell.resource] = (tx.s.marketMaker.bought[sell.resource] ?? 0) + qty;
+    useQuota(tx, sell.playerId, sell.resource, "sold", qty);
   } else if (sell.playerId === MARKET_MAKER) {
     // The market maker sells: money is destroyed, the goods enter the economy.
     transfer(tx, escrowAccount(buy.playerId), SINK_ACCOUNT, gross, "market_maker_sell", tradeId);
     addStock(tx, buy.playerId, buy.resource, qty, "trade_buy", tradeId);
     tx.s.marketMaker.sold[buy.resource] = (tx.s.marketMaker.sold[buy.resource] ?? 0) + qty;
+    useQuota(tx, buy.playerId, buy.resource, "bought", qty);
   } else {
     removeEscrowedStock(tx, sell.playerId, sell.resource, qty, "trade_sell", tradeId);
     addStock(tx, buy.playerId, buy.resource, qty, "trade_buy", tradeId);
@@ -166,9 +241,28 @@ function match(tx: Tx, taker: Order): void {
     const crosses = taker.side === "buy" ? m.price <= taker.price : m.price >= taker.price;
     if (!crosses) break;
     const maker = tx.s.orders[m.id] as Order;
-    const qty = Math.min(taker.remaining, maker.remaining);
+    let qty = Math.min(taker.remaining, maker.remaining);
+    // Quota per player with the market maker, whichever side rests.
+    const player =
+      maker.playerId === MARKET_MAKER ? taker : taker.playerId === MARKET_MAKER ? maker : null;
+    if (player) {
+      const dir = player.side === "buy" ? "bought" : "sold";
+      qty = Math.min(qty, quotaRoom(tx, player.playerId, player.resource, dir));
+      if (qty <= 0) continue;
+    }
     if (taker.side === "buy") settle(tx, taker, maker, maker.price, qty);
     else settle(tx, maker, taker, maker.price, qty);
+    // The owner of a resting offer learns that it found a taker.
+    if (maker.playerId !== MARKET_MAKER) {
+      emit(tx, "order_filled", maker.playerId, {
+        order: maker.id,
+        resource: maker.resource,
+        side: maker.side,
+        quantity: qty,
+        price: maker.price.toString(),
+        counterparty: taker.playerId,
+      });
+    }
     if (maker.remaining === 0) delete tx.s.orders[maker.id];
   }
 }

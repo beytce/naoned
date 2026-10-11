@@ -181,6 +181,19 @@ export const worldSettingsSchema = z.object({
     dailyDepthPerPlayer: z.record(qty),
     /** Floor of the daily quantity, so that a small world (beta) still has a market. */
     minDailyDepth: z.record(qty).default({}),
+    /**
+     * Units each player may buy from the market maker per resource and per day, so that nobody
+     * can empty it for the others. Its daily stock grows to this × active players.
+     * No entry: no quota per player.
+     */
+    playerDailyQuota: z.record(qty).default({}),
+    /** Same, for selling to the market maker (which creates money: kept tighter). */
+    playerDailySellQuota: z.record(qty).default({}),
+    /**
+     * Most the market maker trades per resource and per day, all players together: as the world
+     * fills up, each player's quota shrinks to their share of it (never below 1).
+     */
+    maxDailyDepth: z.record(qty).default({}),
   }),
   cities: z.record(z.record(cityDemand)),
   projects: z.object({

@@ -1,4 +1,4 @@
-import { placeOrder, removeMarketMakerOrders } from "./market.js";
+import { placeOrder, playerQuota, removeMarketMakerOrders } from "./market.js";
 import { type Deniers, applyBpsCeil, applyBpsFloor, bigMax } from "./money.js";
 import {
   DAY_MS,
@@ -58,7 +58,7 @@ export function requoteMarketMaker(tx: Tx): void {
   removeMarketMakerOrders(tx);
   const day = dayIndex(ctx, tx.now);
   if (tx.s.marketMaker.day !== day) {
-    tx.s.marketMaker = { day, bought: {}, sold: {} };
+    tx.s.marketMaker = { day, bought: {}, sold: {}, byPlayer: {} };
   }
   const players = Math.max(1, activePlayerCount(ctx, tx.s, tx.now));
   for (const resource of Object.keys(ctx.settings.referencePrices)) {
@@ -69,8 +69,14 @@ export function requoteMarketMaker(tx: Tx): void {
       mm.minDailyDepth[resource] ?? 0,
     );
     const { bid, ask } = marketMakerQuotes(ctx, reference, tx.now);
-    const bidQty = depth - (tx.s.marketMaker.bought[resource] ?? 0);
-    const askQty = depth - (tx.s.marketMaker.sold[resource] ?? 0);
+    // With a quota per player, its stock covers every active player's share.
+    const state = tx.s as WorldState;
+    const buyQuota = playerQuota(ctx, state, resource, "bought", tx.now) ?? 0;
+    const sellQuota = playerQuota(ctx, state, resource, "sold", tx.now) ?? 0;
+    const askDepth = Math.max(depth, buyQuota * players);
+    const bidDepth = Math.max(depth, sellQuota * players);
+    const bidQty = bidDepth - (tx.s.marketMaker.bought[resource] ?? 0);
+    const askQty = askDepth - (tx.s.marketMaker.sold[resource] ?? 0);
     if (bidQty > 0) {
       placeOrder(tx, {
         playerId: MARKET_MAKER,

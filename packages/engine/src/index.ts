@@ -7,7 +7,7 @@ export * from "./events.js";
 export { cargoValueAt, portPrices } from "./expeditions.js";
 export * from "./effects.js";
 export * from "./invariants.js";
-export { bestPrice, bookSide, openOrderCount } from "./market.js";
+export { bestPrice, bookSide, marketMakerQuotaLeft, openOrderCount } from "./market.js";
 export type { PlaceOrderInput } from "./market.js";
 export * from "./marketMaker.js";
 export * from "./money.js";

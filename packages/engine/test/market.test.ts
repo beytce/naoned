@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { marketMakerQuotaLeft } from "../src/index.js";
 import { DAY, HOUR, World, makeContext } from "./helpers.js";
 
 function twoPlayers() {
@@ -298,5 +299,117 @@ describe("market maker reference", () => {
       ["buy", 49n],
       ["sell", 51n],
     ]);
+  });
+});
+
+describe("market maker quota per player", () => {
+  const quota = (wheat = 10) =>
+    makeContext({
+      marketMaker: {
+        spreadStartBps: 400,
+        spreadEndBps: 2_000,
+        spreadRampDays: 14,
+        referenceFloorBps: 5_000,
+        dailyDepthPerPlayer: { wheat: 5 },
+        playerDailyQuota: { wheat },
+        playerDailySellQuota: { wheat },
+      },
+    });
+
+  function world() {
+    const w = new World(quota());
+    for (const id of ["a", "b"]) {
+      w.do({ type: "join", playerId: id, region: "lagoon" });
+      w.give(id, "wheat", 100);
+    }
+    w.do({ type: "tick" });
+    return w;
+  }
+
+  const instant = (playerId: string, side: "buy" | "sell", quantity: number) =>
+    ({ type: "placeOrder", playerId, resource: "wheat", side, kind: "instant", quantity }) as const;
+
+  it("stocks every active player's share", () => {
+    const w = world();
+    const ask = Object.values(w.state.orders).find(
+      (o) => o.playerId === "market_maker" && o.side === "sell" && o.resource === "wheat",
+    );
+    expect(ask?.remaining).toBe(20);
+  });
+
+  it("lets each player buy at most their own share of the day", () => {
+    const w = world();
+    w.do(instant("a", "buy", 15));
+    expect(w.stock("a", "wheat").available).toBe(110);
+    expect(marketMakerQuotaLeft(w.ctx, w.state, "a", "wheat", w.now)).toEqual({ buy: 0, sell: 10 });
+    // The quota of one player never eats into another's.
+    w.do(instant("b", "buy", 10));
+    expect(w.stock("b", "wheat").available).toBe(110);
+  });
+
+  it("caps sales to the market maker too, and starts afresh the next day", () => {
+    const w = world();
+    w.do(instant("a", "sell", 30));
+    expect(w.stock("a", "wheat").available).toBe(90);
+    w.at(DAY + 60_000).do({ type: "tick" });
+    expect(marketMakerQuotaLeft(w.ctx, w.state, "a", "wheat", w.now)).toEqual({
+      buy: 10,
+      sell: 10,
+    });
+    w.do(instant("a", "sell", 5));
+    expect(w.stock("a", "wheat").available).toBe(85);
+  });
+
+  it("applies when the market maker's new quote crosses a resting order", () => {
+    const w = world();
+    w.do(sell("a", 90, 30));
+    w.do({ type: "tick" });
+    const sold = w.trades.filter((t) => t.sellerId === "a").reduce((n, t) => n + t.quantity, 0);
+    expect(sold).toBe(10);
+  });
+
+  it("still lets players trade with each other beyond it", () => {
+    const w = world();
+    w.do(instant("a", "buy", 10));
+    w.do(sell("b", 105, 20));
+    w.do(buy("a", 105, 20));
+    expect(w.stock("a", "wheat").available).toBe(130);
+  });
+
+  it("is unlimited where the world sets none", () => {
+    const w = twoPlayers();
+    w.do({ type: "tick" });
+    expect(marketMakerQuotaLeft(w.ctx, w.state, "buyer", "wheat", w.now)).toEqual({
+      buy: null,
+      sell: null,
+    });
+  });
+});
+
+describe("market maker quota in a growing world", () => {
+  it("shrinks each player's quota to a share of the daily cap", () => {
+    const ctx = makeContext({
+      marketMaker: {
+        spreadStartBps: 400,
+        spreadEndBps: 2_000,
+        spreadRampDays: 14,
+        referenceFloorBps: 5_000,
+        dailyDepthPerPlayer: { wheat: 2 },
+        playerDailyQuota: { wheat: 20 },
+        maxDailyDepth: { wheat: 50 },
+      },
+    });
+    const w = new World(ctx);
+    w.do({ type: "join", playerId: "a", region: "lagoon" });
+    w.do({ type: "tick" });
+    expect(marketMakerQuotaLeft(w.ctx, w.state, "a", "wheat", w.now).buy).toBe(20);
+    for (const id of ["b", "c", "d", "e"]) w.do({ type: "join", playerId: id, region: "lagoon" });
+    w.do({ type: "tick" });
+    // Five merchants share 50 units: 10 each.
+    expect(marketMakerQuotaLeft(w.ctx, w.state, "a", "wheat", w.now).buy).toBe(10);
+    const ask = Object.values(w.state.orders).find(
+      (o) => o.playerId === "market_maker" && o.side === "sell" && o.resource === "wheat",
+    );
+    expect(ask?.remaining).toBe(50);
   });
 });

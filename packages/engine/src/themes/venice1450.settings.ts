@@ -313,6 +313,35 @@ export const venice1450Settings: WorldSettingsInput = {
       wood: 40,
       planks: 40,
     },
+    // Each merchant may buy 25 and sell 10 units a day per resource at the Fondaco, so nobody
+    // empties it for the others; as the world fills, quotas shrink to share 250 units a day.
+    playerDailyQuota: {
+      wheat: 25,
+      flour: 25,
+      bread: 25,
+      clay: 25,
+      bricks: 25,
+      wood: 25,
+      planks: 25,
+    },
+    playerDailySellQuota: {
+      wheat: 10,
+      flour: 10,
+      bread: 10,
+      clay: 10,
+      bricks: 10,
+      wood: 10,
+      planks: 10,
+    },
+    maxDailyDepth: {
+      wheat: 250,
+      flour: 250,
+      bread: 250,
+      clay: 250,
+      bricks: 250,
+      wood: 250,
+      planks: 250,
+    },
   },
   cities: {
     venezia: {

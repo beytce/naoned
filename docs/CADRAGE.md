@@ -76,6 +76,15 @@ Inspiré de Mercato Venezia : du risque et de l'affrontement entre joueurs, sans
 | **Garde-fous** | 3 jours d'immunité à l'arrivée ; pas de pillage d'un joueur deux fois moins riche ; un seul pillage réussi par victime et par 24 h ; perte limitée à 30 % d'une cargaison ; jamais de navire, d'atelier ni de trésorerie à quai perdus |
 | **Transparence** | La carte montre les routes guettées (sans dire par qui). La victime et le corsaire sont notifiés et voient le nom de l'autre ; les « nouvelles du large » publient les prises |
 
+### Le marché entre joueurs (après le deuxième test de la bêta)
+
+| Fonction | Règle |
+| --- | --- |
+| **Fondaco** | Le PNJ teneur de marché prend le nom du Fondaco, l'entrepôt de la République. Chaque marchand peut lui acheter 25 unités et lui en vendre 10 par ressource et par jour ; à plusieurs, ces quotas se partagent 250 unités par jour et par ressource |
+| **Offres à son prix** | Tout joueur peut laisser une offre d'achat ou de vente à son prix (72 h au plus, 10 offres ouvertes). Le stock ou les ducats sont mis de côté jusqu'à la conclusion ou l'annulation |
+| **Carnet visible** | La fiche d'une ressource montre les cinq meilleures offres de chaque côté, avec le nom de leur auteur (badge PNJ pour les maisons, « Fondaco ») et le quota restant du joueur |
+| **Offre conclue** | Une notification prévient l'auteur d'une offre quand quelqu'un la prend |
+
 ## Vision et positionnement
 
 Comptoirs est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.

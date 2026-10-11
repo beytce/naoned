@@ -3,7 +3,7 @@ import { quoteCitySale } from "./cities.js";
 import type { Command } from "./commands.js";
 import { contractsFor } from "./contracts.js";
 import { cargoValueAt } from "./expeditions.js";
-import { bestPrice, openOrderCount } from "./market.js";
+import { bestPrice, marketMakerQuotaLeft, openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
 import type { Deniers } from "./money.js";
 import { freeBatches } from "./production.js";
@@ -115,12 +115,12 @@ export interface Session {
   act(cmd: Command): boolean;
 }
 
-/** Units of the market maker's daily stock, per resource, that bots leave to people. */
-const PEOPLE_SHARE = 25;
-
 /** How a bot behaves in a live world, next to people. */
 export interface BotOptions {
-  /** Never take the market maker's asks: its daily stock is left to people. */
+  /**
+   * Buy from players before the market maker, and never sell to it: surplus waits on the book
+   * for people. (Each merchant's own quota keeps it from emptying the market maker.)
+   */
   spareMarketMaker?: boolean;
   /** Keep only half of the materials saved for its next construction; the rest goes on sale. */
   generous?: boolean;
@@ -259,7 +259,7 @@ export class Bot {
         const room = (p.needs[res] ?? 0) - (p.delivered[res] ?? 0);
         const have = this.available(s, res) - this.reserve(s, res);
         const price = p.unitPrice[res] ?? 0n;
-        const bid = s.market.bestBid(res, this.id) ?? 0n;
+        const bid = this.bestBid(s, res) ?? 0n;
         if (room > 0 && have > 0 && price >= bid) {
           s.act({
             type: "deliverToProject",
@@ -285,7 +285,7 @@ export class Bot {
           const total = quoteCitySale(s.ctx, s.state(), city, resource, qty, s.now);
           if (total !== undefined && (!best || total > best.total)) best = { city, total };
         }
-        const bid = s.market.bestBid(resource, this.id) ?? 0n;
+        const bid = this.bestBid(s, resource) ?? 0n;
         if (!best || best.total < floor * BigInt(qty) || best.total < bid * BigInt(qty)) break;
         const sold = s.act({
           type: "sellToCity",
@@ -568,15 +568,31 @@ export class Bot {
       s.act({ type: "upgrade", playerId: this.id, buildingId: next.building.id });
   }
 
+  /** Best ask this bot can actually take: the market maker's only within today's quota. */
+  private bestAsk(s: Session, resource: string): Deniers | undefined {
+    const left = marketMakerQuotaLeft(s.ctx, s.state(), this.id, resource, s.now).buy;
+    if (left === 0) {
+      return bestPrice(s.state(), resource, "sell", { excludePlayer: this.id, playersOnly: true });
+    }
+    return s.market.bestAsk(resource, this.id);
+  }
+
+  private bestBid(s: Session, resource: string): Deniers | undefined {
+    const left = marketMakerQuotaLeft(s.ctx, s.state(), this.id, resource, s.now).sell;
+    if (left === 0) {
+      return bestPrice(s.state(), resource, "buy", { excludePlayer: this.id, playersOnly: true });
+    }
+    return s.market.bestBid(resource, this.id);
+  }
+
   /** Buys `qty`: instantly if the ask is reasonable, otherwise with a bid that walks up daily. */
   private buy(s: Session, resource: string, qty: number, maxFactor: number): void {
     if (qty <= 0) return;
     const fair = s.market.fair(resource);
-    let cap = scale(fair, maxFactor);
+    const cap = scale(fair, maxFactor);
     const budget = this.cash(s) / 2n;
     if (this.options.spareMarketMaker) {
-      // The market maker's last units of the day are left to people: buy from players first,
-      // then from the market maker only beyond that share.
+      // Players first: a seller cheaper than the market maker gets the order.
       const mm = Object.values(s.state().orders).find(
         (o) => o.playerId === MARKET_MAKER && o.resource === resource && o.side === "sell",
       );
@@ -584,18 +600,8 @@ export class Bot {
         excludePlayer: this.id,
         playersOnly: true,
       });
-      const spare = mm ? mm.remaining - PEOPLE_SHARE : 0;
-      let price: Deniers | undefined;
-      let q = 0;
       if (theirs !== undefined && theirs <= cap && (!mm || theirs < mm.price)) {
-        price = theirs;
-        q = qty;
-      } else if (mm && spare > 0 && mm.price <= cap) {
-        price = mm.price;
-        q = Math.min(qty, spare);
-      }
-      if (price !== undefined) {
-        q = Math.min(q, Number(budget / price));
+        const q = Math.min(qty, Number(budget / theirs));
         if (q > 0 && openOrderCount(s.state(), this.id) < s.ctx.settings.maxOpenOrders) {
           s.act({
             type: "placeOrder",
@@ -603,17 +609,15 @@ export class Bot {
             resource,
             side: "buy",
             kind: "limit",
-            price,
+            price: theirs,
             quantity: q,
             expiresInHours: 24,
           });
         }
         return;
       }
-      // Otherwise a bid that waits for a seller, below the market maker's ask.
-      if (mm && mm.price - 1n < cap) cap = mm.price - 1n;
     }
-    const ask = this.options.spareMarketMaker ? undefined : s.market.bestAsk(resource, this.id);
+    const ask = this.bestAsk(s, resource);
     if (ask !== undefined && ask <= cap) {
       const affordable = Number(budget / scale(ask, 1.1));
       const q = Math.min(qty, affordable);
@@ -666,7 +670,7 @@ export class Bot {
       if (res === "bread" && this.available(s, res) < 20) continue;
       const fair = s.market.fair(res);
       // In a live world, goods go on the book for people rather than to the market maker.
-      const bid = this.options.spareMarketMaker ? undefined : s.market.bestBid(res, this.id);
+      const bid = this.options.spareMarketMaker ? undefined : this.bestBid(s, res);
       if (bid !== undefined && bid >= scale(fair, 0.95)) {
         s.act({
           type: "placeOrder",

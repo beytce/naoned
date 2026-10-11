@@ -175,6 +175,11 @@ export interface MarketMakerUsage {
   day: number;
   bought: Record<ResourceCode, number>;
   sold: Record<ResourceCode, number>;
+  /** Today, per player: units bought from and sold to the market maker (quota per player). */
+  byPlayer?: Record<
+    PlayerId,
+    { bought: Record<ResourceCode, number>; sold: Record<ResourceCode, number> }
+  >;
 }
 
 export interface WorldState {
