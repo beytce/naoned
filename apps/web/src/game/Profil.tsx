@@ -11,6 +11,7 @@ import {
 import { Medal } from "../art/icons.js";
 import { P } from "../art/palette.js";
 import { fr } from "../i18n.js";
+import { PALETTES, type PaletteId, applyPalette, currentPalette } from "../theme.js";
 import { Big, Donut, Label, Panel, Ribbon, Sheet, Slab } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { PushSettings } from "./PushSettings.js";
@@ -32,7 +33,7 @@ function Titles({ profile }: { profile: Profile }) {
           return (
             <div key={t.code} className="text-center">
               <span
-                className={`slab inline-block px-2 py-0.5 font-display text-sm font-extrabold ${current ? "bg-gold text-night" : "bg-night-4 text-cream-dim"}`}
+                className={`slab inline-block px-2 py-0.5 font-display text-sm font-extrabold ${current ? "bg-gold text-ink" : "bg-night-4 text-cream-dim"}`}
               >
                 <span>{i + 1}</span>
               </span>
@@ -126,6 +127,45 @@ function CrestEditor({ props, onClose }: { props: GameProps; onClose: () => void
   );
 }
 
+function PalettePicker() {
+  const [chosen, setChosen] = useState<PaletteId>(currentPalette());
+  return (
+    <section className="space-y-3">
+      <div>
+        <Label>{fr.game.palette}</Label>
+        <p className="mt-1 text-xs text-cream-dim">{fr.game.paletteHint}</p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {PALETTES.map((p) => {
+          const on = p.id === chosen;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              aria-pressed={on}
+              onClick={() => {
+                applyPalette(p.id);
+                setChosen(p.id);
+              }}
+              className={`flex items-center gap-3 rounded-2xl border bg-night-3 p-3 text-left transition ${on ? "border-gold" : "border-line hover:border-cream-dim/40"}`}
+            >
+              <span
+                className="flex h-10 w-10 shrink-0 items-end justify-center gap-0.5 overflow-hidden rounded-xl p-1.5"
+                style={{ background: p.swatch[0] }}
+              >
+                {p.swatch.slice(1).map((c) => (
+                  <span key={c} className="h-4 w-2 rounded-sm" style={{ background: c }} />
+                ))}
+              </span>
+              <span className="text-sm font-semibold">{p.name}</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export function Profil(props: GameProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editing, setEditing] = useState(false);
@@ -146,7 +186,7 @@ export function Profil(props: GameProps) {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-3xl space-y-8">
       <div className="flex justify-end">
         <Slab tone="ghost" size="sm" onClick={() => setEditing(true)}>
           {fr.game.editCrest}
@@ -158,7 +198,7 @@ export function Profil(props: GameProps) {
             <Crest crest={crest} size={96} />
           </div>
           {profile && (
-            <span className="slab absolute -bottom-3 left-1 bg-gold px-3 py-1 font-display text-xs font-extrabold uppercase text-night">
+            <span className="slab absolute -bottom-3 left-1 bg-gold px-3 py-1 font-display text-xs font-extrabold uppercase text-ink">
               <span>{profile.title.current.name}</span>
             </span>
           )}
@@ -199,7 +239,7 @@ export function Profil(props: GameProps) {
           <ul className="space-y-2 text-sm">
             {parts.map((p) => (
               <li key={p.label} className="flex items-center gap-2">
-                <span className="h-3 w-3" style={{ background: p.color }} />
+                <span className="h-3 w-3 rounded-sm" style={{ background: p.color }} />
                 <span className="text-cream-dim">{p.label}</span>
                 <span className="font-display font-semibold">{d(String(p.value))}</span>
               </li>
@@ -220,7 +260,7 @@ export function Profil(props: GameProps) {
               [fr.game.stats.delivered, profile.stats.delivered],
               [fr.game.stats.days, profile.stats.days],
             ].map(([label, value]) => (
-              <div key={String(label)} className="bg-night-3 p-3 ring-1 ring-line">
+              <div key={String(label)} className="rounded-xl bg-night-3 p-3 ring-1 ring-line">
                 <Big className="text-2xl text-gold">{value}</Big>
                 <p className="mt-2 font-mono text-[10px] uppercase leading-tight tracking-wider text-muted">
                   {label}
@@ -255,6 +295,8 @@ export function Profil(props: GameProps) {
           </div>
         </section>
       )}
+
+      <PalettePicker />
 
       <PushSettings />
 

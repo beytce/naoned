@@ -1,21 +1,26 @@
 /** @type {import('tailwindcss').Config} */
+const v = (name) => `rgb(var(--${name}) / <alpha-value>)`;
+
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      // Colours come from the active palette (CSS variables, see index.css): the screens are the
+      // same whatever palette the player picks.
       colors: {
-        // Night lagoon: the canvas.
-        night: { DEFAULT: "#13101A", 2: "#1B1724", 3: "#241E2F", 4: "#2E2740" },
-        line: "#3D3450",
-        cream: { DEFAULT: "#F7EAD7", dim: "#C9BBA6" },
-        muted: "#9C8FB0",
-        // Ducat gold, lagoon turquoise, Venetian vermilion.
-        gold: { DEFAULT: "#F4B740", deep: "#C68618", soft: "#F9D88E" },
-        lagoon: { DEFAULT: "#2FC6B4", deep: "#168A7E", soft: "#9FEBE0" },
-        vermilion: { DEFAULT: "#EF5A4C", deep: "#B23A2F" },
+        night: { DEFAULT: v("night"), 2: v("night-2"), 3: v("night-3"), 4: v("night-4") },
+        line: v("line"),
+        cream: { DEFAULT: v("cream"), dim: v("cream-dim") },
+        muted: v("muted"),
+        /** Text on gold or lagoon fills. */
+        ink: v("ink"),
+        "on-lagoon": v("on-lagoon"),
+        gold: { DEFAULT: v("gold"), deep: v("gold-deep"), soft: v("gold-soft") },
+        lagoon: { DEFAULT: v("lagoon"), deep: v("lagoon-deep"), soft: v("lagoon-soft") },
+        vermilion: { DEFAULT: v("vermilion"), deep: v("vermilion-deep") },
       },
       fontFamily: {
-        display: ["Unbounded", "system-ui", "sans-serif"],
+        display: ["Archivo Variable", "Archivo", "system-ui", "sans-serif"],
         sans: ["Space Grotesk", "system-ui", "sans-serif"],
         mono: ["Space Mono", "ui-monospace", "monospace"],
       },
@@ -25,8 +30,8 @@ export default {
           "50%": { transform: "translateY(-6px)" },
         },
         pulsering: {
-          "0%": { boxShadow: "0 0 0 0 rgba(244,183,64,0.7)" },
-          "100%": { boxShadow: "0 0 0 14px rgba(244,183,64,0)" },
+          "0%": { boxShadow: "0 0 0 0 rgb(var(--gold) / 0.7)" },
+          "100%": { boxShadow: "0 0 0 14px rgb(var(--gold) / 0)" },
         },
         shine: {
           "0%": { backgroundPosition: "200% 0" },

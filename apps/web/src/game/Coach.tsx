@@ -33,7 +33,7 @@ function toBuy(props: GameProps): string | null {
   const { view } = props;
   const missing = MISSING[view.player.region] ?? "planks";
   const wanted = [missing, "planks", "bricks", "wood", "bread", "flour", "wheat", "clay"];
-  // Something one can actually buy: a player's offer, or the Fondaco within today's quota.
+  // Something one can actually buy: a player's offer, or the Dogana within today's quota.
   const buyable = (resource: string) => {
     const book = view.book[resource];
     if (!book) return false;
@@ -179,7 +179,11 @@ export function Coach(props: GameProps) {
       return;
     }
     const find = () => {
-      const el = document.querySelector<HTMLElement>(`[data-coach="${step.target}"]`);
+      // The same target may exist twice (phone tab bar, computer side bar): take the visible one.
+      const el =
+        [...document.querySelectorAll<HTMLElement>(`[data-coach="${step.target}"]`)].find(
+          (e) => e.getClientRects().length > 0,
+        ) ?? null;
       setRect(el ? el.getBoundingClientRect() : null);
       return el;
     };
@@ -224,7 +228,7 @@ export function Coach(props: GameProps) {
       <div
         className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-24"}`}
       >
-        <div className="relative bg-night-2 p-4 ring-2 ring-gold shadow-[6px_6px_0_0_#168A7E]">
+        <div className="relative rounded-2xl bg-night-2 p-4 shadow-xl shadow-black/40 ring-2 ring-gold">
           <div className="flex gap-3">
             <Lorenzo size={52} />
             <div className="min-w-0 flex-1">

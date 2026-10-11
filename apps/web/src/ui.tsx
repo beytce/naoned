@@ -4,15 +4,13 @@ import { P } from "./art/palette.js";
 type Tone = "gold" | "lagoon" | "vermilion" | "ghost";
 
 const TONES: Record<Tone, string> = {
-  gold: "bg-gold text-night shadow-[5px_5px_0_0_#168A7E] active:shadow-[2px_2px_0_0_#168A7E] active:translate-x-[3px] active:translate-y-[3px]",
-  lagoon:
-    "bg-lagoon text-night shadow-[5px_5px_0_0_#C68618] active:shadow-[2px_2px_0_0_#C68618] active:translate-x-[3px] active:translate-y-[3px]",
-  vermilion:
-    "bg-vermilion text-cream shadow-[5px_5px_0_0_#13101A] active:translate-x-[3px] active:translate-y-[3px]",
-  ghost: "bg-night-4 text-cream ring-1 ring-inset ring-line",
+  gold: "bg-gold text-ink hover:brightness-105 active:brightness-95",
+  lagoon: "bg-lagoon text-on-lagoon hover:brightness-105 active:brightness-95",
+  vermilion: "bg-vermilion text-cream hover:brightness-105 active:brightness-95",
+  ghost: "bg-night-4 text-cream ring-1 ring-inset ring-line hover:ring-cream-dim/40",
 };
 
-/** Skewed slab button with a hard offset shadow. */
+/** Main button: a rounded block, gold for the action that matters. */
 export function Slab(props: {
   children: ReactNode;
   onClick?: () => void;
@@ -23,23 +21,25 @@ export function Slab(props: {
   type?: "button" | "submit";
   coach?: string;
 }) {
-  const size = { sm: "px-3 py-2 text-xs", md: "px-5 py-3 text-sm", lg: "px-6 py-4 text-base" }[
-    props.size ?? "md"
-  ];
+  const size = {
+    sm: "px-3 py-2 text-xs",
+    md: "px-5 py-3 text-sm",
+    lg: "px-6 py-4 text-base",
+  }[props.size ?? "md"];
   return (
     <button
       type={props.type ?? "button"}
       onClick={props.onClick}
       disabled={props.disabled}
       data-coach={props.coach}
-      className={`slab font-display font-semibold uppercase tracking-wide transition-transform disabled:opacity-35 disabled:shadow-none ${size} ${TONES[props.tone ?? "gold"]} ${props.className ?? ""}`}
+      className={`rounded-xl font-display font-extrabold uppercase tracking-wide transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-35 ${size} ${TONES[props.tone ?? "gold"]} ${props.className ?? ""}`}
     >
       <span>{props.children}</span>
     </button>
   );
 }
 
-/** Tabs with the two-tone underline. */
+/** Segmented control: the chosen option is a vellum pill. */
 export function Tabs<T extends string>(props: {
   value: T;
   options: { value: T; label: string }[];
@@ -47,7 +47,7 @@ export function Tabs<T extends string>(props: {
   coach?: string;
 }) {
   return (
-    <div className="flex justify-center gap-8">
+    <div className="flex gap-1 rounded-2xl border border-line bg-night-2 p-1">
       {props.options.map((o) => {
         const on = o.value === props.value;
         return (
@@ -56,19 +56,9 @@ export function Tabs<T extends string>(props: {
             type="button"
             data-coach={props.coach ? `${props.coach}-${o.value}` : undefined}
             onClick={() => props.onChange(o.value)}
-            className="relative pb-3"
+            className={`flex-1 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${on ? "bg-cream text-night shadow-sm" : "text-cream-dim hover:text-cream"}`}
           >
-            <span
-              className={`font-display text-sm font-semibold uppercase tracking-wider ${on ? "text-cream" : "text-muted"}`}
-            >
-              {o.label}
-            </span>
-            {on && (
-              <span className="absolute inset-x-0 bottom-0 flex gap-1">
-                <span className="slab h-1 flex-[3] bg-lagoon" />
-                <span className="slab h-1 flex-1 bg-gold" />
-              </span>
-            )}
+            {o.label}
           </button>
         );
       })}
@@ -76,22 +66,75 @@ export function Tabs<T extends string>(props: {
   );
 }
 
+/** Card: deep water with a thin foam line; a coloured line draws the eye when it matters. */
 export function Panel({
   children,
   className = "",
   glow,
 }: { children: ReactNode; className?: string; glow?: Tone }) {
-  const ring =
+  const border =
     glow === "gold"
-      ? "bg-gold/60"
+      ? "border-gold/70"
       : glow === "lagoon"
-        ? "bg-lagoon/60"
+        ? "border-lagoon/60"
         : glow === "vermilion"
-          ? "bg-vermilion/70"
-          : "bg-line";
+          ? "border-vermilion/70"
+          : "border-line";
   return (
-    <div className={`cartouche-line ${ring} ${className}`}>
-      <div className="cartouche p-4">{children}</div>
+    <div className={`rounded-2xl border bg-night-3 p-4 ${border} ${className}`}>{children}</div>
+  );
+}
+
+/** On/off switch (vellum knob), instead of a bare checkbox. */
+export function Switch(props: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: ReactNode;
+  hint?: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={props.checked}
+      onClick={() => props.onChange(!props.checked)}
+      className="flex w-full items-center gap-3 rounded-2xl border border-line bg-night-3 p-3 text-left"
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold">{props.label}</span>
+        {props.hint && <span className="block text-xs text-cream-dim">{props.hint}</span>}
+      </span>
+      <span
+        className={`relative h-7 w-12 shrink-0 rounded-full transition ${props.checked ? "bg-lagoon" : "bg-night-4 ring-1 ring-inset ring-line"}`}
+      >
+        <span
+          className={`absolute top-1 h-5 w-5 rounded-full bg-cream transition-all ${props.checked ? "left-6" : "left-1"}`}
+        />
+      </span>
+    </button>
+  );
+}
+
+/** Small figure tile: a label and a value, side by side with others. */
+export function Stat({
+  label,
+  value,
+  tone,
+}: { label: ReactNode; value: ReactNode; tone?: "gold" | "lagoon" | "vermilion" }) {
+  const color =
+    tone === "gold"
+      ? "text-gold"
+      : tone === "lagoon"
+        ? "text-lagoon"
+        : tone === "vermilion"
+          ? "text-vermilion"
+          : "text-cream";
+  return (
+    <div className="rounded-xl bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70">
+      <p className="text-xs text-cream-dim">{label}</p>
+      <p className={`mt-0.5 font-display text-base font-extrabold tabular-nums ${color}`}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -111,14 +154,14 @@ export function Big({ children, className = "" }: { children: ReactNode; classNa
 
 export function Badge({ children, tone = "gold" }: { children: ReactNode; tone?: Tone }) {
   const look = {
-    gold: "bg-gold text-night",
-    lagoon: "bg-lagoon text-night",
+    gold: "bg-gold text-ink",
+    lagoon: "bg-lagoon text-on-lagoon",
     vermilion: "bg-vermilion text-cream",
     ghost: "bg-night-4 text-cream",
   }[tone];
   return (
     <span
-      className={`slab inline-block px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-widest ${look}`}
+      className={`inline-block rounded-md px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-widest ${look}`}
     >
       <span>{children}</span>
     </span>
@@ -133,7 +176,7 @@ export function Ribbon({
 }: { value: number; label?: string; tone?: "gold" | "lagoon" }) {
   const v = Math.max(0, Math.min(1, value));
   return (
-    <div className="relative h-7 overflow-hidden rounded-full bg-night ring-1 ring-line">
+    <div className="relative h-6 overflow-hidden rounded-full bg-night ring-1 ring-line">
       <div
         className={`stripes h-full rounded-full ${tone === "gold" ? "bg-gold" : "bg-lagoon"} transition-all duration-500`}
         style={{ width: `${v * 100}%` }}
@@ -224,7 +267,8 @@ export function Donut({
 export function Qty(props: { value: number; max: number; onChange: (v: number) => void }) {
   const set = (v: number) =>
     props.onChange(Math.max(1, Math.min(Math.max(1, props.max), Math.round(v))));
-  const btn = "slab h-10 w-10 bg-night-4 font-display text-lg ring-1 ring-inset ring-line";
+  const btn =
+    "h-10 w-10 rounded-xl bg-night-4 font-display text-lg ring-1 ring-inset ring-line hover:ring-cream-dim/40";
   return (
     <div className="flex items-center gap-2">
       <button type="button" className={btn} onClick={() => set(props.value - 1)}>
@@ -236,7 +280,7 @@ export function Qty(props: { value: number; max: number; onChange: (v: number) =
         min={1}
         value={props.value}
         onChange={(e) => set(Number(e.target.value) || 1)}
-        className="h-10 w-16 bg-night text-center font-display text-base ring-1 ring-line focus:outline-none focus:ring-gold"
+        className="h-10 w-16 rounded-xl bg-night text-center font-display text-base ring-1 ring-line focus:outline-none focus:ring-gold"
       />
       <button type="button" className={btn} onClick={() => set(props.value + 1)}>
         <span>+</span>
@@ -248,7 +292,7 @@ export function Qty(props: { value: number; max: number; onChange: (v: number) =
   );
 }
 
-/** Bottom sheet for focused actions (one hand on mobile). */
+/** Bottom sheet on a phone, centred window on a computer, for focused actions. */
 export function Sheet({
   open,
   onClose,
@@ -262,15 +306,23 @@ export function Sheet({
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center">
+    <div className="fixed inset-0 z-40 flex items-end justify-center lg:items-center">
       <button
         type="button"
         aria-label="Fermer"
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-md animate-rise rounded-t-3xl border-t-2 border-gold bg-night-2 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3">
-        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-line" />
+      <div className="relative max-h-[92dvh] w-full max-w-md animate-rise overflow-y-auto rounded-t-3xl border-t border-line bg-night-2 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 lg:max-w-lg lg:rounded-3xl lg:border lg:p-7">
+        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-line lg:hidden" />
+        <button
+          type="button"
+          aria-label="Fermer"
+          onClick={onClose}
+          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-cream-dim ring-1 ring-line hover:text-cream"
+        >
+          ×
+        </button>
         {children}
       </div>
     </div>

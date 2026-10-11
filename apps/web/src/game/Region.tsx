@@ -49,7 +49,7 @@ export function Region(props: {
                 </h2>
                 <p className="label mt-1 text-lagoon">{r.name}</p>
               </div>
-              <span className="slab shrink-0 bg-lagoon px-2 py-1 font-mono text-xs font-bold text-night">
+              <span className="slab shrink-0 bg-lagoon px-2 py-1 font-mono text-xs font-bold text-on-lagoon">
                 <span>{fr.region.bonus(bonus, props.names.resource(r.bonusResource))}</span>
               </span>
             </div>

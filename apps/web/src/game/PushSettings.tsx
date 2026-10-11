@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fr } from "../i18n.js";
-import { Label, Panel, Slab } from "../ui.js";
+import { Label, Panel, Slab, Switch } from "../ui.js";
 import { gameApi } from "./api.js";
 import {
   currentSubscription,
@@ -87,15 +87,12 @@ export function PushSettings() {
         {message && <p className="mt-3 text-sm text-vermilion">{message}</p>}
         <div className="mt-4 space-y-2">
           {settings.kinds.map((kind) => (
-            <label key={kind} className="flex items-center gap-3 text-sm">
-              <input
-                type="checkbox"
-                className="h-5 w-5 accent-gold"
-                checked={!settings.off.includes(kind)}
-                onChange={() => toggleKind(kind)}
-              />
-              {t.kinds[kind]}
-            </label>
+            <Switch
+              key={kind}
+              checked={!settings.off.includes(kind)}
+              onChange={() => toggleKind(kind)}
+              label={t.kinds[kind]}
+            />
           ))}
         </div>
       </Panel>

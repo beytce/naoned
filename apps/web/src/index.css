@@ -2,19 +2,89 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Fondaco palettes (identity guide): same roles, same places, so the player can switch between
+ * them without any screen changing. Gold is for money and the main action only; lagoon for gains
+ * and safe routes; cinnabar for pirates and losses.
+ */
 @layer base {
-  html {
+  :root,
+  [data-palette="lagune"] {
     color-scheme: dark;
+    --night: 15 27 30;
+    --night-2: 19 35 42;
+    --night-3: 23 42 45;
+    --night-4: 31 54 56;
+    --line: 46 75 75;
+    --cream: 241 228 198;
+    --cream-dim: 194 187 166;
+    --muted: 134 160 154;
+    --ink: 15 27 30;
+    --on-lagoon: 15 27 30;
+    --gold: 224 173 75;
+    --gold-deep: 181 134 47;
+    --gold-soft: 240 208 143;
+    --lagoon: 109 179 162;
+    --lagoon-deep: 63 127 113;
+    --lagoon-soft: 168 214 202;
+    --vermilion: 226 105 79;
+    --vermilion-deep: 169 71 47;
+  }
+  [data-palette="pourpre"] {
+    color-scheme: dark;
+    --night: 28 16 22;
+    --night-2: 34 20 27;
+    --night-3: 42 24 32;
+    --night-4: 53 32 42;
+    --line: 74 46 54;
+    --cream: 244 230 208;
+    --cream-dim: 205 185 166;
+    --muted: 166 141 147;
+    --ink: 28 16 22;
+    --on-lagoon: 28 16 22;
+    --gold: 221 176 84;
+    --gold-deep: 176 136 53;
+    --gold-soft: 237 210 147;
+    --lagoon: 111 181 170;
+    --lagoon-deep: 67 133 123;
+    --lagoon-soft: 171 216 208;
+    --vermilion: 240 122 92;
+    --vermilion-deep: 181 81 58;
+  }
+  [data-palette="parchemin"] {
+    color-scheme: light;
+    --night: 243 233 212;
+    --night-2: 237 225 200;
+    --night-3: 251 245 232;
+    --night-4: 239 228 207;
+    --line: 220 205 174;
+    --cream: 43 32 22;
+    --cream-dim: 92 75 59;
+    --muted: 126 109 90;
+    --ink: 43 32 22;
+    --on-lagoon: 251 245 232;
+    --gold: 201 149 47;
+    --gold-deep: 156 112 32;
+    --gold-soft: 228 194 122;
+    --lagoon: 45 84 134;
+    --lagoon-deep: 31 60 99;
+    --lagoon-soft: 126 156 196;
+    --vermilion: 178 65 45;
+    --vermilion-deep: 138 47 32;
   }
   body {
     @apply bg-night font-sans text-cream antialiased;
     -webkit-tap-highlight-color: transparent;
     background-image: radial-gradient(
         60rem 30rem at 85% -10%,
-        rgba(47, 198, 180, 0.12),
+        rgb(var(--lagoon) / 0.08),
         transparent 60%
-      ), radial-gradient(50rem 30rem at -10% 110%, rgba(244, 183, 64, 0.1), transparent 60%);
+      ), radial-gradient(50rem 30rem at -10% 110%, rgb(var(--gold) / 0.07), transparent 60%);
     background-attachment: fixed;
+  }
+  /* Archivo, widened: the expanded cut of the identity guide. */
+  .font-display {
+    font-stretch: 125%;
   }
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
@@ -26,32 +96,26 @@
 @layer components {
   /* Wide-spaced uppercase labels. */
   .label {
-    @apply font-mono text-[11px] uppercase tracking-[0.28em] text-muted;
+    @apply font-mono text-[11px] uppercase tracking-[0.22em] text-muted;
   }
-  /* Panel with a cut corner, like a merchant's cartouche. */
+  /* Card: deep water, a thin foam line, rounded corners. */
   .cartouche {
-    @apply relative bg-night-3/90;
-    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+    @apply relative rounded-2xl bg-night-3;
   }
   .cartouche-line {
-    @apply relative bg-line p-px;
-    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+    @apply relative rounded-2xl border border-line bg-night-3;
   }
-  /* Skewed slab used for buttons, badges and banners. */
+  /* Former skewed slab: now a rounded block (kept as a class so every screen follows). */
   .slab {
-    transform: skewX(-10deg);
-  }
-  .slab > * {
-    display: inline-block;
-    transform: skewX(10deg);
+    @apply rounded-xl;
   }
   .holo {
     background: linear-gradient(
       110deg,
-      rgba(244, 183, 64, 0.25),
-      rgba(47, 198, 180, 0.25),
-      rgba(239, 90, 76, 0.2),
-      rgba(244, 183, 64, 0.25)
+      rgb(var(--gold) / 0.22),
+      rgb(var(--lagoon) / 0.22),
+      rgb(var(--vermilion) / 0.16),
+      rgb(var(--gold) / 0.22)
     );
     background-size: 300% 100%;
     @apply animate-shine;
@@ -59,8 +123,12 @@
   .stripes {
     background-image: repeating-linear-gradient(
       -45deg,
-      rgba(255, 255, 255, 0.14) 0 8px,
+      rgb(255 255 255 / 0.14) 0 8px,
       transparent 8px 16px
     );
+  }
+  /* Gentle waves, for the sea chart and the port. */
+  .waves {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='16'%3E%3Cpath d='M0 8 Q12 2 24 8 T48 8' fill='none' stroke='%236DB3A2' stroke-opacity='0.13' stroke-width='1.2'/%3E%3C/svg%3E");
   }
 }

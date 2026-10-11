@@ -81,10 +81,16 @@ export function SeaChart(props: {
     <svg viewBox="0 0 320 215" className="w-full" role="img" aria-label="Carte des routes">
       <defs>
         <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M20 0 H0 V20" fill="none" stroke={P.line} strokeWidth="0.4" />
+          <path
+            d="M0 10 Q5 7 10 10 T20 10"
+            fill="none"
+            stroke={P.lagoon}
+            strokeOpacity="0.18"
+            strokeWidth="0.5"
+          />
         </pattern>
       </defs>
-      <rect width="320" height="215" fill="#1A2234" />
+      <rect width="320" height="215" fill="#13262A" />
       <rect width="320" height="215" fill="url(#grid)" opacity="0.6" />
       {/* Compass rose */}
       <g transform="translate(40 120)" opacity="0.5">
@@ -114,7 +120,8 @@ export function SeaChart(props: {
           fill={P.gold}
           fontSize="9"
           fontWeight="800"
-          fontFamily="Unbounded, sans-serif"
+          fontFamily="Archivo Variable, sans-serif"
+          style={{ fontStretch: "125%" }}
         >
           VENISE
         </text>

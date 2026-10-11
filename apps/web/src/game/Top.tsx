@@ -82,7 +82,7 @@ function Podium({ rows }: { rows: PodiumRow[] }) {
               )}
               {r.bot && <Badge tone="ghost">{fr.game.npc}</Badge>}
               <div
-                className={`slab flex w-full items-start justify-center pt-1 ${height} ${slot === "first" ? "bg-gold text-night" : "bg-night-4 text-cream"}`}
+                className={`slab flex w-full items-start justify-center pt-1 ${height} ${slot === "first" ? "bg-gold text-ink" : "bg-night-4 text-cream"}`}
               >
                 <span className="font-display text-lg font-extrabold">{r.rank}</span>
               </div>
@@ -180,7 +180,7 @@ export function Top(props: GameProps) {
     store.get("topPeriod") === "season" ? "season" : "week",
   );
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <Tabs<Period>
         value={period}
         onChange={(p) => {

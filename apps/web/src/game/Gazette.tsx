@@ -16,8 +16,8 @@ export function Gazette(props: GameProps) {
   return (
     <div className="mx-auto w-full max-w-md px-4">
       <div
-        className={`slab relative mt-1 px-4 py-2.5 shadow-[4px_4px_0_0_#168A7E] ${
-          live ? "bg-gold text-night" : "bg-night-3 text-cream ring-1 ring-gold/60"
+        className={`relative mt-1 rounded-2xl px-4 py-2.5 shadow-lg shadow-black/30 ${
+          live ? "bg-gold text-ink" : "bg-night-3 text-cream ring-1 ring-gold/60"
         }`}
       >
         <div className="pr-6">
