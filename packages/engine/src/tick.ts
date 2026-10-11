@@ -19,8 +19,12 @@ export function chargeUpkeep(tx: Tx): void {
   while (tx.s.lastUpkeepDay < today) {
     const day = tx.s.lastUpkeepDay + 1;
     const boundary = ctx.startAt + day * DAY_MS;
+    const dormancy = ctx.settings.dormancy;
     for (const player of Object.values(tx.s.players)) {
       if (player.joinedAt >= boundary) continue;
+      // Left alone for a while: a share of the upkeep, and the workers do not starve.
+      const dormant =
+        dormancy.afterHours > 0 && player.lastActionAt < boundary - dormancy.afterHours * HOUR_MS;
       let due = 0n;
       for (const b of Object.values(tx.s.buildings)) {
         if (b.playerId === player.id) due += upkeepPerDay(ctx, b);
@@ -28,6 +32,7 @@ export function chargeUpkeep(tx: Tx): void {
       for (const ship of Object.values(tx.s.ships ?? {})) {
         if (ship.playerId === player.id) due += shipUpkeep(ctx, ship);
       }
+      if (dormant) due = (due * BigInt(dormancy.upkeepBps)) / 10_000n;
       const cash = cashAccount(player.id);
       const paid = bigMin(due, balance(tx, cash));
       transfer(tx, cash, SINK_ACCOUNT, paid, "upkeep", `day:${day}`);
@@ -42,7 +47,7 @@ export function chargeUpkeep(tx: Tx): void {
       for (const b of Object.values(tx.s.buildings)) {
         if (b.playerId === player.id && b.type !== "palazzo") levels += b.level;
       }
-      const needed = levels * rations.perLevelPerDay;
+      const needed = dormant ? 0 : levels * rations.perLevelPerDay;
       if (needed > 0) {
         const have = tx.s.inventories[player.id]?.[rations.resource]?.available ?? 0;
         const eaten = Math.min(needed, have);

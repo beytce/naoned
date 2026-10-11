@@ -5,6 +5,7 @@ import { fulfillContract } from "./contracts.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { collectExpedition, launchExpedition } from "./expeditions.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
+import { claimMission, trackMissions } from "./missions.js";
 import { collectRaid, commissionPrivateers } from "./privateers.js";
 import { collect, startProduction } from "./production.js";
 import { deliverToProject } from "./projects.js";
@@ -73,6 +74,7 @@ export type Command =
   | { type: "repairShip"; playerId: PlayerId; shipId: string }
   | { type: "commissionPrivateers"; playerId: PlayerId; route: string; ships: string[] }
   | { type: "collectRaid"; playerId: PlayerId; raidId: string }
+  | { type: "claimMission"; playerId: PlayerId; missionId: string }
   | { type: "collectExpedition"; playerId: PlayerId; expeditionId: string }
   | { type: "tick" };
 
@@ -153,6 +155,7 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
     if (raid.playerId === playerId) delete tx.s.raids?.[raid.id];
   }
   if (tx.s.weekly) delete tx.s.weekly.start[playerId];
+  if (tx.s.missions) delete tx.s.missions[playerId];
   resets[playerId] = used + 1;
   emit(tx, "player_reset", playerId);
 }
@@ -224,6 +227,9 @@ function apply(tx: Tx, cmd: Command): void {
     case "collectRaid":
       collectRaid(tx, cmd.playerId, cmd.raidId);
       break;
+    case "claimMission":
+      claimMission(tx, cmd.playerId, cmd.missionId);
+      break;
     case "collectExpedition":
       collectExpedition(tx, cmd.playerId, cmd.expeditionId);
       break;
@@ -246,7 +252,9 @@ export function decide(
   const fx = emptyEffects();
   try {
     const next = produce(state, (draft) => {
-      apply({ ctx, s: draft, now, fx }, cmd);
+      const tx = { ctx, s: draft, now, fx };
+      apply(tx, cmd);
+      trackMissions(tx);
     });
     return { ok: true, state: next, effects: fx };
   } catch (err) {

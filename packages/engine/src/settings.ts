@@ -166,6 +166,28 @@ export const worldSettingsSchema = z.object({
       minTargetWorthBps: 0,
       cooldownHours: 0,
     }),
+  /**
+   * A counting house left alone this long is dormant: it pays a share of its upkeep and its
+   * workers do not go hungry, so a returning player finds it intact. 0 turns it off.
+   */
+  dormancy: z
+    .object({ afterHours: qty, upkeepBps: bps.max(10_000) })
+    .default({ afterHours: 0, upkeepBps: 10_000 }),
+  /** The merchant's ledger: short goals opening day after day, with a small reward. */
+  missions: z
+    .array(
+      z.object({
+        id: z.string(),
+        /** Days after joining when it opens. */
+        day: qty,
+        /** Engine event that counts towards it, optionally only with these data values. */
+        event: z.string(),
+        filter: z.record(z.union([z.string(), z.number()])).default({}),
+        count: positive,
+        reward: z.object({ goods: z.record(qty).default({}), ducats: money.default(0) }),
+      }),
+    )
+    .default([]),
   /** How many times a player may restart from scratch during a season. */
   maxResetsPerPlayer: qty.default(1),
   maxBuildings: positive,

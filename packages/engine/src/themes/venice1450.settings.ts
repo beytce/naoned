@@ -196,6 +196,71 @@ export const venice1450Settings: WorldSettingsInput = {
       },
     },
   },
+  // Left alone for 24 h, a counting house pays a quarter of its upkeep and its workers do not
+  // starve: a returning player finds it intact.
+  dormancy: { afterHours: 24, upkeepBps: 2_500 },
+  // The merchant's ledger: one or two short goals a day for the first week.
+  missions: [
+    {
+      id: "first_city_sale",
+      day: 0,
+      event: "city_sale",
+      count: 1,
+      reward: { goods: { bread: 10, wood: 5 } },
+    },
+    {
+      id: "first_contract",
+      day: 0,
+      event: "contract_fulfilled",
+      count: 1,
+      reward: { goods: { bread: 10 } },
+    },
+    {
+      id: "first_offer",
+      day: 1,
+      event: "order_placed",
+      count: 1,
+      filter: { kind: "limit" },
+      reward: { goods: { bricks: 5, planks: 5 } },
+    },
+    {
+      id: "offer_taken",
+      day: 1,
+      event: "order_filled",
+      count: 1,
+      reward: { goods: {}, ducats: 5_000 },
+    },
+    {
+      id: "first_convoy",
+      day: 2,
+      event: "expedition_launched",
+      count: 1,
+      reward: { goods: { bread: 20 } },
+    },
+    {
+      id: "first_upgrade",
+      day: 3,
+      event: "upgrade",
+      count: 1,
+      reward: { goods: { bricks: 10, planks: 10 } },
+    },
+    {
+      id: "five_contracts",
+      day: 4,
+      event: "contract_fulfilled",
+      count: 5,
+      reward: { goods: {}, ducats: 10_000 },
+    },
+    { id: "first_ship", day: 5, event: "ship_built", count: 1, reward: { goods: { planks: 15 } } },
+    {
+      id: "first_project",
+      day: 6,
+      event: "project_delivery",
+      count: 1,
+      reward: { goods: { bricks: 10, planks: 10 } },
+    },
+    { id: "new_workshop", day: 7, event: "build", count: 1, reward: { goods: {}, ducats: 15_000 } },
+  ],
   // Raw materials are local: wheat grows in the Terraferma, clay lies in the Lagoon, wood in the
   // Dolomites. Workshops that transform can be built anywhere.
   buildingRegions: {

@@ -204,6 +204,8 @@ export interface WorldState {
   expeditions?: Record<string, Expedition>;
   ships?: Record<string, Ship>;
   raids?: Record<string, Raid>;
+  /** The merchant's ledger, per player: progress per mission and missions already rewarded. */
+  missions?: Record<PlayerId, { progress: Record<string, number>; claimed: string[] }>;
   /** Last successful boarding suffered, per player (cooldown). */
   plunderedAt?: Record<PlayerId, number>;
   /** Resets used per player this season (absent in states saved before resets existed). */
