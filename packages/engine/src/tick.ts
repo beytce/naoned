@@ -1,4 +1,5 @@
 import { upkeepPerDay } from "./buildings.js";
+import { closeFamilyWeek } from "./families.js";
 import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
 import { bigMin } from "./money.js";
@@ -68,6 +69,7 @@ export function tick(tx: Tx): void {
   expireOrders(tx);
   chargeUpkeep(tx);
   closeWeek(tx);
+  closeFamilyWeek(tx);
   closeSeason(tx);
   openDueProjects(tx);
   requoteMarketMaker(tx);
