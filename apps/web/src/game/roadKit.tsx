@@ -75,6 +75,12 @@ export function OrderFacts({ o, props }: { o: DeliveryOrderView; props: GameProp
   return (
     <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-cream-dim">
       {i.deliverable && <Badge tone="lagoon">{t().facts.deliverable}</Badge>}
+      {o.shared && o.status === "open" && (o.rivals ?? 0) > 0 && (
+        // A race only matters for an order one can serve now: red then, quiet otherwise.
+        <Badge tone={i.deliverable ? "vermilion" : "ghost"}>
+          {t().facts.contested(o.rivals ?? 0)}
+        </Badge>
+      )}
       <span>{t().facts.unit(d(o.unitPrice))}</span>
       {gap && (
         <span className={i.gapBps !== null && i.gapBps >= 0 ? "text-lagoon" : "text-vermilion"}>

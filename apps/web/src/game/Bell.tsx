@@ -14,6 +14,7 @@ const ICON = {
   raid: NavIcon.port,
   corsairs: NavIcon.port,
   event: NavIcon.bell,
+  act: NavIcon.bell,
   week: NavIcon.top,
   season: NavIcon.top,
   criee: NavIcon.marche,
@@ -32,6 +33,7 @@ const TONE: Record<string, string> = {
   raid: "text-vermilion",
   corsairs: "text-vermilion",
   event: "text-gold",
+  act: "text-gold",
   week: "text-gold",
   season: "text-gold",
   criee: "text-gold",
@@ -74,6 +76,12 @@ function text(n: Notice, props: GameProps): string {
     case "event": {
       const e = fr.game.gazette.events[String(n.data.code)];
       return e ? `${e[0]} : ${e[1]}` : t.event;
+    }
+    case "act": {
+      const a = fr.game.acts;
+      const [title, text] = a.variants[String(n.data.variant ?? "")] ??
+        a.acts[String(n.data.code)] ?? [String(n.data.code), ""];
+      return `${a.kicker(String(Number(n.data.index) + 1))} · ${title} : ${text}`;
     }
     case "season":
       return n.data.phase === "ending" ? t.seasonEnding : t.seasonOpened(String(n.data.name ?? ""));

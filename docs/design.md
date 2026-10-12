@@ -68,7 +68,7 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 - **Cérémonie de clôture** (`Ceremony`) : à la première visite après la fin du mois, rang final révélé, podium, récompenses (titre, Pass, Renommée), puis choix de la région pour le nouveau mois.
 - **Palmarès** (`Palmares`) : Renommée et titre, saisons terminées, statistiques et frise des dernières semaines ; sur le profil et en touchant un nom du classement.
 - **Dernier sprint** : bandeau doré les trois derniers jours ; l'hommage au Doge de la saison passée s'affiche au Marché.
-- **Gazette** (`Gazette`) : une ligne repliée (« En ce moment » ou « Bientôt », titre, compte à rebours) qui se déplie au toucher, seulement sur Comptoir, Routes et Marché, jamais pendant les premiers pas guidés par Lorenzo ; fermeture par ×.
+- **Gazette** (`Gazette`) : une ligne repliée (« En ce moment » ou « Bientôt », titre, compte à rebours) qui se déplie au toucher, seulement sur Comptoir, Routes et Marché, jamais pendant les premiers pas guidés par Lorenzo ; fermeture par ×. Le premier jour d'un acte, elle annonce l'acte (« Acte III », titre, récit) avant l'événement du jour ; sans événement, elle rappelle l'acte en cours.
 - **Commandes de la route** (`Routes`, `roadKit.tsx`) : chaque commande montre son prix unitaire, l'écart avec le Rialto, les ducats par heure de route et un badge « Livrable » ; tri par gain à l'heure par défaut. La vue Liste est celle du tutoriel.
 - **Domaine** (`Domain`, `art/domain.tsx`) : en tête du Comptoir, la scène de la Maison sur la terre de sa région.
   - **Décor** : champs et moulin de la Terraferma, canaux et silhouette de Venise de la Lagune, pics et sapins des Dolomites. Ciel de jour, de crépuscule ou de nuit selon l'heure de Paris.
@@ -92,7 +92,9 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 - **Frise de la saison** (`Acts`) : sous l'en-tête, le jour et l'acte en cours (chiffre romain et titre), une barre par acte (passés en lagune, en cours en or).
   - Un toucher ouvre la carte de l'acte, qui s'ouvre aussi d'elle-même à la première visite de chaque acte, après les premiers pas.
   - À l'acte III, le panneau de l'Arsenal (avancement, livrer, course des familles) est en tête de l'onglet Familles.
-- **Tableau commun** (`Routes`) : une ligne rappelle que les commandes des villes sont communes ; celles que d'autres ont prises sont repliées sous « déjà prises », avec le nom du preneur.
+- **Tableau commun** (`Routes`) : une ligne rappelle que les commandes des villes sont communes ; celles que d'autres ont prises sont repliées sous « déjà prises », avec le nom du preneur. Badge « Disputée · N » (les autres marchands actifs qui peuvent la prendre) : rouge sur une commande livrable tout de suite, discret sinon. Les nouvelles des routes publient les trois plus grosses prises du jour (« Bob a raflé 30 briques pour Venise »).
+- **Monument** (`RoadBoard`) : un obélisque blanc et or à côté de la ville d'un chantier d'acte gagné ; la feuille de la ville nomme la famille victorieuse.
+- **Notification d'acte** : à l'ouverture des actes II à IV, une notification « Acte II : la peste » (cloche et push), réglable comme les autres.
 - **Fil de la famille** (`Familles`, `Thread`) : messages des membres, les miens à droite sur fond lagune, « Signaler » sous ceux des autres, saisie en bas ; pastille sur l'onglet Familles quand un message n'a pas été lu.
 - **Objectif de saison** (`Comptoir`, `SeasonGoal`) : titre actuel et Renommée assurée, prochain palier et sa barre ; affiché après la première livraison.
 - **Brigands** : encadré d'infamie (prises de la saison, prime sur la tête, primes reçues) sous l'aide de l'écran Brigands.

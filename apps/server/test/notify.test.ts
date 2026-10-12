@@ -1,3 +1,4 @@
+import { seasonActs } from "@comptoirs/engine";
 import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -196,6 +197,21 @@ describe("notifications", () => {
     await notifier.scan();
     const rows = await database.db.select().from(notifications);
     expect(rows.map((r) => r.kind)).toEqual(["event"]);
+  });
+
+  it("announces each new act of the season once, with the variant drawn for it", async () => {
+    await player("ada@example.org");
+    const act = seasonActs(world.ctx)[1];
+    if (!act) throw new Error("the theme has acts");
+    now = act.startsAt - MIN;
+    await notifier.scan();
+    now += 2 * MIN;
+    await notifier.scan();
+    await notifier.scan();
+    const rows = await database.db.select().from(notifications);
+    const acts = rows.filter((r) => r.kind === "act");
+    expect(acts).toHaveLength(1);
+    expect(acts[0]?.data).toMatchObject({ code: act.code, index: 1, variant: act.variant?.code });
   });
 
   it("tells each person their weekly result once", async () => {

@@ -133,6 +133,8 @@ export interface DeliveryOrderView {
   /** An order of the world's board, open to all; who took it. */
   shared?: boolean;
   takenBy?: string | null;
+  /** Other active merchants who may take it (shared orders). */
+  rivals?: number;
   /** Minutes one way, per vehicle type (null: no road). */
   minutes: Record<string, number | null>;
   /** Cost of each escort for this order. */
@@ -192,6 +194,14 @@ export interface BandView {
 
 export interface RoadView {
   orders: DeliveryOrderView[];
+  /** The day's biggest takes on the world's board. */
+  boardNews?: {
+    playerId: string;
+    city: string;
+    resource: string;
+    quantity: number;
+    payment: Money;
+  }[];
   vehicles: VehicleView[];
   deliveries: DeliveryView[];
   bands: BandView[];
@@ -456,6 +466,8 @@ export interface PlayerView {
   market: MarketLine[];
   cityQuotes: { city: string; resource: string; unitPrice: Money }[];
   projects: Project[];
+  /** Worksites of the acts already won: the winning family's monument on the map. */
+  monuments: { city: string; family: string; act: number }[];
   contracts: ContractView[];
   families: FamiliesView | null;
   gazette: { current: GazetteEvent | null; next: GazetteEvent | null };
@@ -647,6 +659,7 @@ export type NotificationKind =
   | "raid"
   | "corsairs"
   | "event"
+  | "act"
   | "week"
   | "season"
   | "criee"

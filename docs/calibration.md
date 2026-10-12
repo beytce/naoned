@@ -568,3 +568,23 @@ La courbe par acte donne au mois l'arc voulu : un creux pendant la crise, qui ne
 Le Gini monte un peu (0,43 à 0,50 contre 0,39 à 0,47). Le premier servi prend les meilleures commandes, et c'est l'effet recherché : les autres pèsent sur soi. L'écart brut entre assidus et occasionnels reste très bruité (+18 % à +204 %).
 
 Le tableau commun ralentit le simulateur d'environ 5 % par graine, après la mise en cache du tableau et des événements ; sans cette mise en cache, il était quatre fois plus lent.
+
+### Tableau commun : mesures (sans changement de réglage)
+
+Nouveau diagnostic du rapport, « Tableau commun : commandes prises ». Il donne trois mesures :
+- la part des commandes du tableau prises avant la fin de leur jour ;
+- la part de ces prises faites dans l'heure qui suit l'ouverture ;
+- à chaque session, les commandes que le stock du bot couvrait mais qu'un autre marchand avait déjà prises.
+
+Les commandes prises par d'autres ne comptent plus dans « commandes livrables depuis le stock ». Cette part passe d'environ 54 % à 50–53 %.
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie payée (ducats / joueur actif / jour) | 181,0 | 178,3 | 175,9 | 177,8 | 181,5 |
+| Commandes du tableau prises | 31,8 % | 31,7 % | 30,6 % | 31,4 % | 32,0 % |
+| Prises dans l'heure de l'ouverture | 10,2 % | 10,5 % | 10,0 % | 10,2 % | 10,2 % |
+| Commandes couvertes par le stock mais prises par un autre, par session | 45,1 | 42,5 | 41,9 | 45,5 | 44,4 |
+
+**Lecture.** Le tableau est large : deux commandes sur trois expirent sans preneur. Les bots sont limités par leurs véhicules, pas par les commandes. La course existe : une quarantaine de commandes que le stock couvrait sont déjà prises à chaque session. Mais il reste presque toujours une autre commande à prendre, et la monnaie payée ne bouge pas.
+
+**Piste pour la bêta.** Pour une course plus serrée, baisser `deliveries.sharedOrdersPerActivePlayer` (10 aujourd'hui) vers 6 ou 7 et vérifier que la monnaie payée reste dans 151 à 185.

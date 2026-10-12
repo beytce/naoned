@@ -333,6 +333,7 @@ export function RoadBoard(
                     ✦
                   </text>
                 )}
+                {props.view.monuments.some((m) => m.city === code) && <Monument />}
                 <MapText x={0} y={28} size={9} weight={700}>
                   {cityInfo.name}
                 </MapText>
@@ -637,6 +638,25 @@ function Garage({
 }
 
 /** A city's orders; choosing one opens the loading: vehicle, escort, departure. */
+/** The obelisk raised to the family that won an act's worksite, beside its city. */
+function Monument() {
+  return (
+    <g transform="translate(-27 -2)">
+      <ellipse cx="0" cy="14" rx="7" ry="2" fill="#000" opacity="0.3" />
+      <rect x="-5" y="10" width="10" height="4" fill={P.cream} />
+      <path
+        d="M-3 10 L-1.6 -14 L1.6 -14 L3 10 Z"
+        fill={P.cream}
+        stroke={P.line}
+        strokeWidth="0.6"
+      />
+      <path d="M-1.6 -14 L0 -18 L1.6 -14 Z" fill={P.gold} />
+      <path d="M0 -18 V-24" stroke={P.gold} strokeWidth="1" />
+      <path d="M0 -24 L7 -22 L0 -20 Z" fill={P.vermilion} />
+    </g>
+  );
+}
+
 function CitySheet({
   city,
   props,
@@ -690,6 +710,18 @@ function CitySheet({
           {props.names.city(city)}
         </h3>
       </div>
+      {props.view.monuments
+        .filter((mo) => mo.city === city)
+        .map((mo) => (
+          <p
+            key={mo.act}
+            className="rounded-xl bg-gold/10 p-3 text-sm text-gold ring-1 ring-gold/50"
+          >
+            {m().monument(
+              props.catalog.families.find((f) => f.code === mo.family)?.name ?? mo.family,
+            )}
+          </p>
+        ))}
       {road.watchedRoutes.includes(route) && (
         <p className="rounded-xl bg-vermilion/15 p-3 text-sm text-vermilion ring-1 ring-vermilion/60">
           ⚔ {t().watchedWarning}

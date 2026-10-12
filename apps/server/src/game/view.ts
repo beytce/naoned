@@ -6,6 +6,8 @@ import {
   type WorldState,
   allowedHere,
   bestPrice,
+  boardRivals,
+  boardTakes,
   bookSide,
   bountyFor,
   cashAccount,
@@ -144,8 +146,11 @@ function roadView(ctx: WorldContext, state: WorldState, playerId: string, now: n
     ((kind === "doge" && contractsDone?.day === today && contractsDone.ids.includes(ref)) ||
       (kind === "family" && familyDone?.day === today && familyDone.ids.includes(ref)));
   const types = Object.keys(ctx.settings.deliveries.vehicles);
+  const rivalsOf = boardRivals(ctx, state, playerId, now);
   const orders = deliveryOrdersFor(ctx, state, playerId, today).map((o) => ({
     ...o,
+    /** Other active merchants who may take this order of the world's board. */
+    rivals: o.shared ? rivalsOf(o) : 0,
     status:
       done.has(o.id) || served(o.ref, o.kind)
         ? ("done" as const)
@@ -206,6 +211,8 @@ function roadView(ctx: WorldContext, state: WorldState, playerId: string, now: n
     }));
   return {
     orders,
+    /** The day's biggest takes on the world's board, for the road news. */
+    boardNews: boardTakes(state, 3),
     vehicles,
     deliveries,
     bands,
@@ -557,6 +564,10 @@ export function playerView(
     book,
     cityQuotes,
     projects: openProjects(state.projects, now),
+    // The worksites of the acts already won: a monument to the winning family on the map.
+    monuments: Object.values(state.projects)
+      .filter((p) => p.act !== undefined && p.winner)
+      .map((p) => ({ city: p.city, family: p.winner ?? "", act: p.act ?? 0 })),
     contracts,
     families: familiesView(ctx, state, playerId, now),
     gazette: { current: describe(activeEvent(ctx, now)), next: describe(nextEvent(ctx, now)) },

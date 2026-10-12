@@ -119,6 +119,7 @@ export const fr = {
       sort: { gain: "Gain/h", price: "Prix", distance: "Distance", deadline: "Échéance" },
       facts: {
         deliverable: "Livrable",
+        contested: (n: number) => `Disputée · ${n}`,
         unit: (price: string) => `${price} l'unité`,
         rialto: (gap: string) => `${gap} / Rialto`,
         perHour: (amount: string) => `${amount}/h`,
@@ -176,6 +177,8 @@ export const fr = {
       shortcut: (orders: number, free: number) =>
         `${orders} commande${orders > 1 ? "s" : ""} à livrer, ${free} véhicule${free > 1 ? "s" : ""} libre${free > 1 ? "s" : ""}`,
       newsTitle: "Nouvelles des routes",
+      take: (who: string, q: number, res: string, city: string, amount: string) =>
+        `${who} a raflé ${q} ${res} pour ${city} (${amount}).`,
       news: (city: string) => `Des brigands ont détroussé un convoi sur la route de ${city}.`,
       cityClosed:
         "Les villes ne rachètent plus au comptoir : elles passent commande. Livrez-les depuis l'onglet Routes.",
@@ -208,6 +211,8 @@ export const fr = {
       locked: (time: string) => `Le brigandage ouvre dans ${time}.`,
     },
     roadMap: {
+      monument: (family: string) =>
+        `Ici s'élève le monument des ${family}, vainqueurs du chantier de l'Arsenal.`,
       label: "Carte des routes de la Vénétie",
       hud: (orders: number, free: number) =>
         `${orders} commande${orders > 1 ? "s" : ""} · ${free} véhicule${free > 1 ? "s" : ""} libre${free > 1 ? "s" : ""}`,
@@ -757,6 +762,7 @@ export const fr = {
           raid: `${n} abordage${n > 1 ? "s" : ""}`,
           corsairs: "Corsaires de retour",
           event: `${n} nouvelle${n > 1 ? "s" : ""} à la gazette`,
+          act: "Un nouvel acte de la saison",
           week: "Résultats de la semaine",
           family: "La semaine des familles",
           ambush: `${n} attaque${n > 1 ? "s" : ""} de brigands`,
@@ -928,6 +934,7 @@ export const fr = {
           order: "Offres conclues au marché",
           corsairs: "Retour des corsaires",
           event: "Gazette (nouvel événement)",
+          act: "Nouvel acte de la saison",
           week: "Résultats de la semaine",
           season: "Fin et ouverture de saison",
           criee: "Criées (Pass Négociant)",

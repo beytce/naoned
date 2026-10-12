@@ -167,6 +167,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     }
     // Shared demand: who took the orders of the board.
     for (const o of v.road?.orders ?? []) if (o.takenBy) ids.add(o.takenBy);
+    for (const t of v.road?.boardNews ?? []) ids.add(t.playerId);
     if (ids.size === 0) return { names: {}, bots: [] };
     const rows = await db
       .select({ id: accounts.id, pseudo: accounts.pseudo, bot: accounts.isBot })

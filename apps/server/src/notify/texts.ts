@@ -10,6 +10,24 @@ const EVENTS: Record<string, string> = {
   sensa_fair: "Foire de la Sensa : commandes plus nombreuses et mieux payées.",
 };
 
+/** Each act of the season, and the variant drawn for its crisis. */
+const ACTS: Record<string, [string, string]> = {
+  installation: ["L'installation", "Les marchands s'installent en Vénétie."],
+  crisis: ["La crise", "Une crise frappe la République."],
+  worksite: [
+    "L'Arsenal",
+    "Le Doge agrandit l'Arsenal : briques et planches pour Venise payées 15 % de plus. La famille qui livre le plus l'emporte.",
+  ],
+  sensa: ["La Sensa", "La grande foire : commandes payées 15 % de plus. Dernière ligne droite !"],
+  chioggia: [
+    "La guerre de Chioggia",
+    "Venise paie briques et planches 30 % de plus et en commande davantage.",
+  ],
+  plague: ["La peste", "Le pain se paie 30 % de plus, la farine 20 %."],
+  embargo: ["L'embargo du Levant", "Les marchandises d'outre-mer se paient 50 à 60 % de plus."],
+};
+const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
+
 const RESOURCES: Record<string, string> = {
   wheat: "blé",
   flour: "farine",
@@ -140,6 +158,11 @@ export function pushText(
         title: "La gazette",
         body: EVENTS[String(data.code)] ?? "Un événement agite les marchés.",
       };
+    case "act": {
+      const [title, body] = ACTS[String(data.variant ?? "")] ?? ACTS[String(data.code)] ?? ["", ""];
+      const n = ROMAN[Number(data.index)] ?? String(Number(data.index) + 1);
+      return { title: `Acte ${n} : ${title}`, body };
+    }
     case "week": {
       const gain = String(data.gain ?? "0");
       const sign = BigInt(gain) > 0n ? "+" : "";

@@ -5,6 +5,7 @@ import {
   hasPass,
   hourIn,
   hourWithin,
+  seasonActs,
   seasonEnd,
   weekIndex,
 } from "@comptoirs/engine";
@@ -31,6 +32,7 @@ export const NOTIFICATION_KINDS = [
   "raid",
   "corsairs",
   "event",
+  "act",
   "week",
   "season",
   "criee",
@@ -404,6 +406,17 @@ export class Notifier {
           accountId: id,
           kind: "event",
           data: { code: event.code, city: event.city ?? null },
+        });
+      }
+    }
+    // A new act of the season (the first one opens with the season itself).
+    for (const act of seasonActs(this.world.ctx)) {
+      if (act.index === 0 || !within(act.startsAt)) continue;
+      for (const id of people) {
+        notices.push({
+          accountId: id,
+          kind: "act",
+          data: { code: act.code, variant: act.variant?.code ?? null, index: act.index },
         });
       }
     }

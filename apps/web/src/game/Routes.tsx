@@ -418,12 +418,25 @@ function Vehicles(props: GameProps & { road: RoadView }) {
   );
 }
 
-/** The gazette of the roads: the latest ambushes, without names. */
+/** The gazette of the roads: the day's biggest takes on the shared board, the latest ambushes. */
 function RoadNews(props: GameProps) {
-  if (props.view.roadNews.length === 0) return null;
+  const takes = props.view.road?.boardNews ?? [];
+  if (props.view.roadNews.length === 0 && takes.length === 0) return null;
   return (
     <section className="space-y-2">
       <Label>{t().newsTitle}</Label>
+      {takes.map((n) => (
+        <p key={`${n.playerId}:${n.city}:${n.resource}:${n.payment}`} className="text-sm">
+          ·{" "}
+          {t().take(
+            props.people[n.playerId] ?? fr.game.anonymous,
+            n.quantity,
+            props.names.resource(n.resource).toLowerCase(),
+            props.names.city(n.city),
+            d(n.payment),
+          )}
+        </p>
+      ))}
       {props.view.roadNews.map((n) => (
         <p key={`${n.route}:${n.at}`} className="text-sm text-cream-dim">
           · {t().news(props.names.city(n.route.split(":")[1] ?? ""))}
