@@ -7,6 +7,7 @@ import {
   allowedHere,
   bestPrice,
   bookSide,
+  bountyFor,
   cashAccount,
   costForLevel,
   dayIndex,
@@ -205,6 +206,11 @@ function roadView(ctx: WorldContext, state: WorldState, playerId: string, now: n
     bands,
     watchedRoutes: watchedRoads(ctx, state, now),
     banditsOpenAt: player.joinedAt + ctx.settings.bandits.openDay * 86_400_000,
+    /** The merchant's infamy (successful ambushes this season) and the bounty on their head. */
+    infamy: state.infamy?.[playerId] ?? 0,
+    bountyOnHead: bountyFor(ctx, state, playerId).toString(),
+    /** Bounties received this season. */
+    bounties: (state.bounties?.[playerId] ?? 0n).toString(),
     /** Chance of an ambush succeeding, by escort (what a merchant may know of the rules). */
     ambushChance: Object.fromEntries(
       ["none", ...Object.keys(ctx.settings.deliveries.escorts)].map((e) => [

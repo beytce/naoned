@@ -72,12 +72,19 @@ export function pushText(
             }
           : {
               title: "Attaque repoussée",
-              body: `Votre convoi a repoussé ${who} sur ${road(data.route, cities)}.`,
+              body: `Votre convoi a repoussé ${who} sur ${road(data.route, cities)}.${
+                data.bounty
+                  ? ` Le Doge vous verse une prime de ${ducats(String(data.bounty))} ducats.`
+                  : ""
+              }`,
             };
       }
       const who = String(data.victimName ?? "un marchand");
       return ok
-        ? { title: "Belle prise !", body: `Votre bande a détroussé le convoi de ${who}.` }
+        ? {
+            title: "Belle prise !",
+            body: `Votre bande a détroussé le convoi de ${who}. Votre infamie monte à ${Number(data.infamy ?? 0)} : votre tête vaut plus cher.`,
+          }
         : {
             title: data.reacted ? "Bande dispersée" : "Attaque manquée",
             body: data.reacted

@@ -269,6 +269,8 @@ export class Notifier {
       success: boolean;
       reacted: boolean;
       taken: Record<string, number>;
+      bounty: string | null;
+      infamy: number;
     }[] = [];
     for (const d of Object.values(state.deliveries ?? {})) {
       const a = d.attack;
@@ -292,6 +294,8 @@ export class Notifier {
           success: a.success,
           reacted: a.reacted,
           taken: a.taken,
+          bounty: a.bounty !== undefined ? a.bounty.toString() : null,
+          infamy: a.banditId ? (state.infamy?.[a.banditId] ?? 0) : 0,
         });
       }
       if (mine && within(d.arriveAt)) {

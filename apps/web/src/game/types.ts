@@ -178,6 +178,11 @@ export interface RoadView {
   /** Roads where bandits lie in wait (who they are stays hidden). */
   watchedRoutes: string[];
   banditsOpenAt: number;
+  /** Successful ambushes of the merchant this season, and the bounty on their head. */
+  infamy: number;
+  bountyOnHead: Money;
+  /** Bounties received this season. */
+  bounties: Money;
   /** Chance of an ambush succeeding, by escort ("none" included), in bps. */
   ambushChance: Record<string, number>;
 }

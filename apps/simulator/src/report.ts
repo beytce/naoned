@@ -245,6 +245,9 @@ export function roadChecks(r: SimulationResult): Check[] {
   );
   const allDestroyed = r.daily.reduce((a, d) => a + Number(d.destroyed), 0);
   const transport = Object.values(destroyed).reduce((a, b) => a + b, 0);
+  const created = (k: string) => r.daily.reduce((a, d) => a + Number(d.createdBy[k] ?? 0n), 0);
+  const bounties = created("bounty");
+  const paidForGoods = ORDER_SOURCES.reduce((a, k) => a + created(k), 0);
   return [
     {
       name: "Livraisons",
@@ -275,12 +278,19 @@ export function roadChecks(r: SimulationResult): Check[] {
       blocking: true,
     },
     {
+      name: "Primes du Doge (bandes repoussées)",
+      target: "< 2 % de la monnaie payée pour les marchandises",
+      value: `${(bounties / 100).toFixed(0)} ducats (${pct(bounties / Math.max(1, paidForGoods))})`,
+      pass: bounties <= 0.02 * paidForGoods,
+      blocking: false,
+    },
+    {
       name: "Rendement du brigandage, brigand actif",
-      target: "entre 0 et +20 % de la mise",
+      target: "un vrai rôle : entre +30 et +150 % de la mise",
       value: Number.isNaN(active)
         ? "aucune bande"
         : `${pct(active)} (${road.bandits.frequent.bands} bandes, ${road.bandits.frequent.attacks} tentatives, ${road.bandits.frequent.hits} prises ; mise ${(road.bandits.frequent.cost / 100).toFixed(0)}, butin ${(road.bandits.frequent.booty / 100).toFixed(0)} ducats)`,
-      pass: Number.isNaN(active) || (active >= 0 && active <= 0.2),
+      pass: Number.isNaN(active) || (active >= 0.3 && active <= 1.5),
       blocking: false,
     },
     {

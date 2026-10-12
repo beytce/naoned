@@ -218,6 +218,8 @@ export interface DeliveryAttack {
   resolvedAt?: number;
   success?: boolean;
   taken: Record<ResourceCode, number>;
+  /** The Doge's bounty paid to the merchant for beating the band off. */
+  bounty?: Deniers;
 }
 
 export interface Delivery {
@@ -337,6 +339,10 @@ export interface WorldState {
   npcBandsDay?: number;
   /** Last successful boarding or ambush suffered, per player (cooldown). */
   plunderedAt?: Record<PlayerId, number>;
+  /** Successful ambushes of each bandit this season: their infamy. */
+  infamy?: Record<PlayerId, number>;
+  /** Bounties received this season, per merchant. */
+  bounties?: Record<PlayerId, Deniers>;
   /** Resets used per player this season (absent in states saved before resets existed). */
   resets?: Record<PlayerId, number>;
   /** Weekly ranking: current week and each player's net worth when it started (or on joining). */

@@ -189,6 +189,7 @@ export const testBandits = {
   sameFamilyImmune: true,
   openDay: 0,
   npcBands: { perDay: 0, hours: 3 },
+  bounty: { base: 0, perInfamyBps: 0, max: 0 },
 };
 
 /** Overrides of `testSettings` for a world with deliveries and bandits. */

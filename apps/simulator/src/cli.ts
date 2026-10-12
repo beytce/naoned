@@ -35,6 +35,7 @@ mkdirSync(outDir, { recursive: true });
 
 const CREATED = [
   "starting_capital",
+  "bounty",
   "city_sale",
   "criee_sale",
   "daily_reward",

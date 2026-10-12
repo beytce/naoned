@@ -4,6 +4,7 @@ import {
   type Delivery,
   type DeliveryOrder,
   type WorldSettingsInput,
+  checkInvariants,
   deliveryOrdersFor,
   netWorth,
 } from "../src/index.js";
@@ -283,6 +284,81 @@ describe("safeguards", () => {
       return { cash: w.cash("a"), paid: after.paid, attack: after.attack, back: after.backAt };
     };
     expect(run(true)).toEqual(run(false));
+  });
+});
+
+describe("infamy and bounties", () => {
+  const bounty = { base: 500, perInfamyBps: 2_000, max: 1_000 };
+
+  it("a successful take makes the bandit infamous; a failed one does not", () => {
+    const w = world({ bounty });
+    post(w);
+    const d = send(w, "a", "company");
+    tickAt(w, d.midAt);
+    expect(delivery(w, d.id).attack?.success).toBe(false);
+    expect(w.state.infamy?.bandit ?? 0).toBe(0);
+    const lone = send(w, "c");
+    tickAt(w, lone.midAt);
+    tickAt(w, lone.midAt + 10 * MIN);
+    expect(delivery(w, lone.id).attack?.success).toBe(true);
+    expect(w.state.infamy?.bandit).toBe(1);
+  });
+
+  it("the Doge pays whoever beats off a player's band with an escort, at once", () => {
+    const w = world({ bounty });
+    post(w);
+    // Beaten off by an escort: the base bounty, at once.
+    const cash = w.cash("a");
+    const escorted = send(w, "a", "company");
+    const escort = cash - w.cash("a");
+    tickAt(w, escorted.midAt);
+    expect(w.cash("a")).toBe(cash - escort + 500n);
+    expect(w.state.bounties?.a).toBe(500n);
+    expect(checkInvariants(w.state, w.totals)).toEqual([]);
+  });
+
+  it("grows with the bandit's infamy, up to a cap, and pays a fight back too", () => {
+    const w = world({ bounty, maxAttacksPerBand: 3 });
+    post(w);
+    const lone = send(w, "a");
+    tickAt(w, lone.midAt);
+    tickAt(w, lone.midAt + 10 * MIN);
+    expect(w.state.infamy?.bandit).toBe(1);
+    // Infamy 1: 500 × 1.2 = 600.
+    const d = send(w, "c");
+    tickAt(w, d.midAt);
+    const cash = w.cash("c");
+    w.do({ type: "reactToAmbush", playerId: "c", deliveryId: d.id });
+    expect(w.cash("c")).toBe(cash + 600n);
+    // Far more infamous: capped.
+    const steep = world({ bounty: { ...bounty, perInfamyBps: 50_000 }, maxAttacksPerBand: 3 });
+    post(steep);
+    const first = send(steep, "a");
+    tickAt(steep, first.midAt);
+    tickAt(steep, first.midAt + 10 * MIN);
+    const before = steep.cash("c");
+    const second = send(steep, "c", "company");
+    const paidEscort = before - steep.cash("c");
+    tickAt(steep, second.midAt);
+    expect(steep.cash("c")).toBe(before - paidEscort + 1_000n);
+    expect(checkInvariants(steep.state, steep.totals)).toEqual([]);
+  });
+
+  it("pays nothing against the computer's bands, nor without settings", () => {
+    const w = world({ npcBands: { perDay: 2, hours: 12 }, bounty });
+    tickAt(w, w.ctx.startAt + 9 * HOUR + MIN);
+    const cash = w.cash("a");
+    const d = send(w, "a", "company", "padova");
+    const escort = cash - w.cash("a");
+    tickAt(w, d.midAt);
+    expect(w.cash("a")).toBe(cash - escort);
+    const off = world();
+    post(off);
+    const before = off.cash("a");
+    const e = send(off, "a", "company");
+    const paid = before - off.cash("a");
+    tickAt(off, e.midAt);
+    expect(off.cash("a")).toBe(before - paid);
   });
 });
 

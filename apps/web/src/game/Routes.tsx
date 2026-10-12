@@ -132,7 +132,22 @@ function Bandits(props: GameProps & { road: RoadView }) {
       <RoadBoard {...props} mode="bandits" banditRoute={route} onBanditRoute={setRoute} />
       <Panel>
         <h3 className="font-display text-lg font-extrabold uppercase">{tb.title}</h3>
-        <p className="mt-2 text-sm text-cream-dim">{tb.help}</p>
+        <p className="mt-2 text-sm text-cream-dim">
+          {tb.help(
+            rules.maxAttacksPerBand,
+            Math.round(rules.takeBps / 100),
+            Math.round(rules.keepBps / 100),
+          )}
+        </p>
+        <div className="mt-3 space-y-1 rounded-xl bg-night-3 p-3 text-sm">
+          <p className={props.road.infamy > 0 ? "text-vermilion" : "text-cream-dim"}>
+            {tb.infamy(props.road.infamy)}
+          </p>
+          {props.road.infamy > 0 && <p>{tb.bountyOnHead(d(props.road.bountyOnHead))}</p>}
+          {BigInt(props.road.bounties) > 0n && (
+            <p className="text-lagoon">{tb.bountiesWon(d(props.road.bounties))}</p>
+          )}
+        </div>
         <label className="mt-4 block">
           <Label>{tb.route}</Label>
           <select

@@ -457,6 +457,13 @@ export const worldSettingsSchema = z.object({
       openDay: qty,
       /** Bands of the computer, so that a small world has some risk. */
       npcBands: z.object({ perDay: qty, hours: positive }).default({ perDay: 0, hours: 3 }),
+      /**
+       * The Doge's bounty (taglia) to a merchant who beats off a player's band, by escort or by
+       * fighting back: base × (1 + infamy × perInfamyBps), at most `max`. Created money.
+       */
+      bounty: z
+        .object({ base: money, perInfamyBps: bps, max: money })
+        .default({ base: 0, perInfamyBps: 0, max: 0 }),
     })
     .default({
       hoursOptions: [],

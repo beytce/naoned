@@ -699,7 +699,10 @@ function settle(tx: Tx, d: Delivery, at: number): void {
   const data = { delivery: d.id, route: d.route, bandit: a.banditId, victim: d.playerId };
   if (!success) {
     emit(tx, "delivery_defended", d.playerId, { ...data, reacted: false });
-    if (a.banditId) emit(tx, "band_struck", a.banditId, { ...data, success: false });
+    if (a.banditId) {
+      emit(tx, "band_struck", a.banditId, { ...data, success: false });
+      payBounty(tx, d, a.banditId);
+    }
     return;
   }
   const { takeBps, keepBps } = tx.ctx.settings.bandits;
@@ -708,15 +711,42 @@ function settle(tx: Tx, d: Delivery, at: number): void {
     if (taken <= 0) continue;
     d.cargo[resource] = qty - taken;
     a.taken[resource] = taken;
-    // Half of it is lost in flight.
+    // A share may be lost in flight (keepBps).
     if (band)
       band.booty[resource] = (band.booty[resource] ?? 0) + Math.floor((taken * keepBps) / 10_000);
   }
   tx.s.plunderedAt ??= {};
   tx.s.plunderedAt[d.playerId] = Math.max(at, tx.now);
+  if (a.banditId) {
+    tx.s.infamy ??= {};
+    tx.s.infamy[a.banditId] = (tx.s.infamy[a.banditId] ?? 0) + 1;
+  }
   emit(tx, "delivery_robbed", d.playerId, { ...data, taken: { ...a.taken } });
   if (a.banditId)
     emit(tx, "band_struck", a.banditId, { ...data, success: true, taken: { ...a.taken } });
+}
+
+/** What the Doge pays for beating off this bandit: more as their infamy grows, capped. */
+export function bountyFor(ctx: WorldContext, state: WorldState, banditId: PlayerId): Deniers {
+  const { base, perInfamyBps, max } = ctx.settings.bandits.bounty;
+  const infamy = state.infamy?.[banditId] ?? 0;
+  const amount = applyBpsFloor(base, 10_000 + infamy * perInfamyBps);
+  return amount < max ? amount : max;
+}
+
+/** A player's band beaten off: the Doge's bounty to the merchant, through the ledger. */
+function payBounty(tx: Tx, d: Delivery, banditId: PlayerId): void {
+  const amount = bountyFor(tx.ctx, tx.s as WorldState, banditId);
+  if (amount <= 0n) return;
+  transfer(tx, SOURCE_ACCOUNT, cashAccount(d.playerId), amount, "bounty", d.id);
+  if (d.attack) d.attack.bounty = amount;
+  tx.s.bounties ??= {};
+  tx.s.bounties[d.playerId] = (tx.s.bounties[d.playerId] ?? 0n) + amount;
+  emit(tx, "bounty_paid", d.playerId, {
+    delivery: d.id,
+    bandit: banditId,
+    amount: amount.toString(),
+  });
 }
 
 /** The merchant fights back in time: the ambush fails and the band breaks up. */
@@ -737,7 +767,10 @@ export function reactToAmbush(tx: Tx, playerId: PlayerId, deliveryId: string): v
   if (band) band.dispersed = true;
   const data = { delivery: d.id, route: d.route, bandit: a.banditId, victim: d.playerId };
   emit(tx, "delivery_defended", playerId, { ...data, reacted: true });
-  if (a.banditId) emit(tx, "band_dispersed", a.banditId, { ...data, band: a.bandId });
+  if (a.banditId) {
+    emit(tx, "band_dispersed", a.banditId, { ...data, band: a.bandId });
+    payBounty(tx, d, a.banditId);
+  }
   resolveDeliveries(tx);
 }
 

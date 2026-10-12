@@ -29,7 +29,8 @@ export type LedgerReason =
   | "vehicle_upkeep"
   | "escort"
   | "delivery"
-  | "bandits";
+  | "bandits"
+  | "bounty";
 
 /**
  * Double-entry ledger line: `amount` leaves `from` and enters `to`.

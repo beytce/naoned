@@ -181,7 +181,12 @@ export const fr = {
     },
     bandits: {
       title: "Poster une bande",
-      help: "Postez des brigands sur une route pour quelques heures. Ils tentent deux attaques au plus et prennent 30 % de la cargaison, dont la moitié se perd dans la fuite. Une victime qui riposte disperse votre bande ; une escorte vous repousse souvent. Personne n'attaque entre 22 h et 8 h, ni les nouveaux venus, ni les marchands de votre famille.",
+      help: (attacks: number, takePct: number, keptPct: number) =>
+        `Postez des brigands sur une route pour quelques heures. Ils tentent ${attacks} attaques au plus et prennent ${takePct} % de la cargaison${keptPct < 100 ? `, dont vous gardez ${keptPct} %` : ", que vous gardez entière"}. Chaque prise accroît votre infamie, et la prime que le Doge verse à qui vous repousse. Une victime qui riposte disperse votre bande ; une escorte vous repousse souvent. Personne n'attaque entre 22 h et 8 h, ni les nouveaux venus, ni les marchands de votre famille.`,
+      infamy: (n: number) =>
+        n > 0 ? `Infamie : ${n} prise${n > 1 ? "s" : ""} cette saison` : "Infamie : aucune prise",
+      bountyOnHead: (amount: string) => `Prime sur votre tête : ${amount}`,
+      bountiesWon: (amount: string) => `Primes du Doge reçues : ${amount}`,
       route: "Route",
       hours: "Durée",
       hoursLabel: (h: number) => `${h} h`,
@@ -597,6 +602,7 @@ export const fr = {
         mission_reward: "Livre de compte",
         family_order_reward: "Commandes de famille",
         delivery: "Livraisons",
+        bounty: "Primes du Doge",
       } as Record<string, string>,
       road: {
         arrived: (n: number) => `${n} livraison${n > 1 ? "s" : ""} arrivée${n > 1 ? "s" : ""}`,
@@ -946,7 +952,7 @@ export const fr = {
       {
         icon: "routes",
         title: "Les routes et les brigands",
-        text: "Les villes ne rachètent plus au comptoir : chaque jour, elles vous passent 22 à 28 commandes, dont la moitié portent sur votre propre production. Les matières premières ne sont commandées qu'à ceux qui les produisent ; les produits transformés, à tous. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge et de votre famille y figurent, les urgentes ne restent ouvertes que trois heures. Des brigands guettent parfois une route (en rouge sur la carte) : une escorte vous protège même absent ; sans escorte, vous avez 20 minutes pour riposter, et une riposte disperse la bande. Une prise coûte au plus 30 % de la cargaison, le véhicule revient toujours, et personne n'attaque entre 22 h et 8 h. À partir du jour 6, vous pouvez vous-même poster une bande sur une route : deux attaques au plus, la moitié du butin se perd dans la fuite.",
+        text: "Les villes ne rachètent plus au comptoir : chaque jour, elles vous passent 22 à 28 commandes, dont la moitié portent sur votre propre production. Les matières premières ne sont commandées qu'à ceux qui les produisent ; les produits transformés, à tous. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge et de votre famille y figurent, les urgentes ne restent ouvertes que trois heures. Des brigands guettent parfois une route (en rouge sur la carte) : une escorte vous protège même absent ; sans escorte, vous avez 20 minutes pour riposter, et une riposte disperse la bande. Repousser la bande d'un marchand vous vaut une prime du Doge, d'autant plus forte que le brigand est connu. Une prise coûte au plus 30 % de la cargaison, le véhicule revient toujours, et personne n'attaque entre 22 h et 8 h. À partir du jour 6, vous pouvez vous-même poster une bande sur une route : trois attaques au plus, vous gardez tout le butin, mais chaque prise fait monter votre infamie.",
       },
       {
         icon: "comptoir",
