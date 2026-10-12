@@ -259,7 +259,7 @@ describe("notifications of the road", () => {
     await notifier.scan();
     const alert = pusher.sent.find((p) => p.payload.kind === "ambush");
     expect(alert?.payload.title).toBe("Brigands sur la route !");
-    expect(alert?.payload.body).toContain("10 minutes");
+    expect(alert?.payload.body).toContain(`${world.ctx.settings.bandits.reactionMinutes} minutes`);
     expect(alert?.payload.url).toBe(`/?ambush=${d.id}`);
 
     now += 2 * MIN;

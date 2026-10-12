@@ -110,7 +110,7 @@ describe("the road", () => {
     const held = (await get(ada)).view.road.deliveries[0];
     expect(held.attack.pending).toBe(true);
     expect(held.attack.bandit).toBeNull();
-    expect(held.attack.reactBy).toBe(d.midAt + 10 * 60_000);
+    expect(held.attack.reactBy).toBe(d.midAt + world.ctx.settings.bandits.reactionMinutes * 60_000);
 
     now += 5 * 60_000;
     const fought = await act(ada, { type: "reactToAmbush", deliveryId: d.id });
