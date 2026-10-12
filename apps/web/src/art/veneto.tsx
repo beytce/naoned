@@ -121,7 +121,56 @@ const regionName = (x: number, y: number, text: string, rotate = 0) => (
   </text>
 );
 
-const SEA = `M${MAP_W} 120 Q338 160 342 210 Q346 236 330 256 Q316 276 322 312 Q330 352 316 392 Q306 420 312 ${MAP_H} H${MAP_W} Z`;
+/** The Alps along the north: x, y, scale. */
+export const MOUNTAINS: [number, number, number][] = [
+  [20, 74, 1.1],
+  [56, 58, 1.3],
+  [96, 80, 1],
+  [132, 50, 1.4],
+  [176, 74, 1.1],
+  [204, 40, 1.5],
+  [282, 46, 1.3],
+  [322, 78, 1.1],
+  [160, 28, 1.1],
+  [84, 26, 1.1],
+  [26, 30, 1.2],
+  [340, 30, 1.1],
+  [268, 96, 0.9],
+  [124, 100, 0.8],
+];
+
+/** Woods of the Montello and the Cansiglio, the Berici. */
+export const WOODS: [number, number][] = [
+  [246, 128],
+  [256, 136],
+  [236, 138],
+  [300, 112],
+  [312, 120],
+  [290, 122],
+  [116, 160],
+  [126, 168],
+  [106, 170],
+];
+
+/** The Euganean and Berici hills: x, y, scale. */
+export const HILLS: [number, number, number][] = [
+  [188, 292, 0.9],
+  [204, 300, 0.7],
+  [150, 222, 0.8],
+];
+
+/** Lake Garda, the lagoon and the rivers (the Po, the Adige, the Brenta, the Piave), as paths. */
+export const GARDA = "M30 130 Q46 152 42 190 Q38 210 26 206 Q18 178 22 150 Q24 132 30 130 Z";
+export const LAGOON =
+  "M326 222 Q306 236 308 262 Q312 290 300 320 Q290 304 284 276 Q282 248 302 228 Z";
+export const RIVERS = [
+  "M0 368 Q60 352 110 372 Q160 390 210 378 Q258 368 296 386 Q306 392 314 402",
+  "M58 110 Q64 180 72 222 Q90 266 140 322 Q200 344 256 342 Q286 340 310 348",
+  "M204 70 Q196 130 208 180 Q220 222 250 254 Q268 276 288 284",
+  "M268 40 Q276 96 290 146 Q304 188 330 214",
+];
+
+export const SEA = `M${MAP_W} 120 Q338 160 342 210 Q346 236 330 256 Q316 276 322 312 Q330 352 316 392 Q306 420 312 ${MAP_H} H${MAP_W} Z`;
 
 /** The land, the lagoon, the sea, the Alps, rivers and woods. Drawn once (memoised). */
 export const VenetoTerrain = memo(function VenetoTerrain() {
@@ -168,52 +217,16 @@ export const VenetoTerrain = memo(function VenetoTerrain() {
       <rect width={MAP_W} height={MAP_H} fill="url(#vn-fields)" />
       {/* The Alps and the Dolomites along the north. */}
       <rect width={MAP_W} height="130" fill="url(#vn-alps)" />
-      {[
-        [20, 74, 1.1],
-        [56, 58, 1.3],
-        [96, 80, 1],
-        [132, 50, 1.4],
-        [176, 74, 1.1],
-        [204, 40, 1.5],
-        [282, 46, 1.3],
-        [322, 78, 1.1],
-        [160, 28, 1.1],
-        [84, 26, 1.1],
-        [26, 30, 1.2],
-        [340, 30, 1.1],
-        [268, 96, 0.9],
-        [124, 100, 0.8],
-      ].map(([x = 0, y = 0, s = 1]) => mountain(x, y, s))}
+      {MOUNTAINS.map(([x, y, s]) => mountain(x, y, s))}
       {/* Woods of the Montello and the Cansiglio, the Euganean and Berici hills. */}
-      {[
-        [246, 128],
-        [256, 136],
-        [236, 138],
-        [300, 112],
-        [312, 120],
-        [290, 122],
-        [116, 160],
-        [126, 168],
-        [106, 170],
-      ].map(([x = 0, y = 0]) => tree(x, y))}
-      {hill(188, 292, 0.9)}
-      {hill(204, 300, 0.7)}
-      {hill(150, 222, 0.8)}
+      {WOODS.map(([x, y]) => tree(x, y))}
+      {HILLS.map(([x, y, s]) => hill(x, y, s))}
       {/* Lake Garda. */}
-      <path
-        d="M30 130 Q46 152 42 190 Q38 210 26 206 Q18 178 22 150 Q24 132 30 130 Z"
-        fill="#235A58"
-        stroke={P.lagoon}
-        strokeOpacity="0.5"
-      />
+      <path d={GARDA} fill="#235A58" stroke={P.lagoon} strokeOpacity="0.5" />
       {/* The Adriatic, the lagoon and its barrier islands. */}
       <path d={SEA} fill="url(#vn-sea)" />
       <path d={SEA} fill="url(#vn-waves)" />
-      <path
-        d="M326 222 Q306 236 308 262 Q312 290 300 320 Q290 304 284 276 Q282 248 302 228 Z"
-        fill="#245A58"
-        opacity="0.9"
-      />
+      <path d={LAGOON} fill="#245A58" opacity="0.9" />
       <path
         d="M332 222 Q322 256 326 290 Q328 314 318 334"
         fill="none"
@@ -223,12 +236,7 @@ export const VenetoTerrain = memo(function VenetoTerrain() {
         strokeLinecap="round"
       />
       {/* The Po, the Adige, the Brenta and the Piave. */}
-      {[
-        "M0 368 Q60 352 110 372 Q160 390 210 378 Q258 368 296 386 Q306 392 314 402",
-        "M58 110 Q64 180 72 222 Q90 266 140 322 Q200 344 256 342 Q286 340 310 348",
-        "M204 70 Q196 130 208 180 Q220 222 250 254 Q268 276 288 284",
-        "M268 40 Q276 96 290 146 Q304 188 330 214",
-      ].map((d) => (
+      {RIVERS.map((d) => (
         <g key={d}>
           <path d={d} fill="none" stroke="#10292D" strokeWidth="4.5" strokeLinecap="round" />
           <path

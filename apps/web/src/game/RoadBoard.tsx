@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { P } from "../art/palette.js";
 import { ResourceIcon } from "../art/resources.js";
 import {
@@ -20,6 +20,7 @@ import { fr } from "../i18n.js";
 import { Badge, Big, Sheet, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
+import { StockBand } from "./StockBand.js";
 import { d, minutesLabel } from "./format.js";
 import {
   BuyVehicleSheet,
@@ -32,7 +33,10 @@ import {
   useSmoothNow,
   vehicleName,
 } from "./roadKit.js";
+import { scenePhase, use3d } from "./scene3d.js";
 import type { DeliveryOrderView, DeliveryView, RoadView, VehicleView } from "./types.js";
+
+const Veneto3D = lazy(() => import("../routes3d/Veneto3D.js"));
 
 const t = () => fr.game.road;
 const m = () => fr.game.roadMap;
@@ -111,7 +115,9 @@ export function RoadBoard(
   const [buying, setBuying] = useState(false);
 
   const underway = road.deliveries.filter((dv) => props.now < dv.backAt);
-  const now = useSmoothNow(props.now, underway.length > 0);
+  // In 3D the vehicles move on the scene's own clock: no need to redraw the page every frame.
+  const map3d = mode === "deliver" && use3d;
+  const now = useSmoothNow(props.now, underway.length > 0 && !map3d);
   const focused = road.vehicles.find((v) => v.id === focus && v.status === "free") ?? null;
   const ordersOf = (c: string) =>
     road.orders.filter((o) => o.city === c && (o.status === "open" || o.status === "upcoming"));
@@ -137,294 +143,417 @@ export function RoadBoard(
   const watchedDelivery = road.deliveries.find((dv) => dv.id === watching) ?? null;
 
   return (
-    <section className="mx-auto w-full max-w-xl space-y-3">
-      <div className="relative overflow-hidden cut border border-line bg-night-2 shadow-xl shadow-black/30">
-        <svg
-          viewBox={`0 0 ${MAP_W} ${MAP_H}`}
-          className="block w-full touch-manipulation select-none"
-          role="img"
-          aria-label={m().label}
-        >
-          <VenetoTerrain />
+    <section className={`mx-auto w-full space-y-3 ${map3d ? "" : "max-w-xl"}`}>
+      {map3d ? (
+        // Edge to edge on a phone, most of the screen's height, as the domain.
+        <div className="-mx-4 overflow-hidden border-y border-line bg-night-2 lg:mx-0 lg:cut lg:border">
+          <Suspense
+            fallback={
+              <div className="h-[68svh] min-h-[420px] w-full animate-pulse bg-night-3 lg:h-[62vh]" />
+            }
+          >
+            <Veneto3D
+              region={region}
+              phase={scenePhase(props.now)}
+              still={
+                typeof window !== "undefined" &&
+                window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
+              }
+              clockOffset={props.now - Date.now()}
+              className="h-[68svh] min-h-[420px] lg:h-[62vh]"
+              title={m().label}
+              cities={props.catalog.cities.map((cityInfo) => {
+                const code = cityInfo.code;
+                const reached = routes[region]?.[code] !== undefined;
+                const open = ordersOf(code).filter((o) => o.status === "open");
+                const urgent = open
+                  .filter((o) => o.kind === "urgent")
+                  .sort((a, b) => a.expiresAt - b.expiresAt)[0];
+                const lit = focused !== null && serves(code);
+                return {
+                  code,
+                  name: cityInfo.name,
+                  reached,
+                  open: open.length,
+                  star: open.some((o) => o.kind === "doge" || o.kind === "family"),
+                  dim: !reached || open.length === 0 || (focused !== null && !lit),
+                  lit,
+                  urgent: urgent ? clock(urgent.expiresAt - props.now) : null,
+                  time: reached && (!focused || lit) ? minutesLabel(roadMinutes(code) ?? 0) : null,
+                  watched: road.watchedRoutes.includes(`${region}:${code}`),
+                  monument: props.view.monuments.some((x) => x.city === code),
+                };
+              })}
+              routes={myRoutes.map((route) => {
+                const to = route.split(":")[1] ?? "";
+                return {
+                  route,
+                  lit: city === to || (focused !== null && serves(to)),
+                  watched: road.watchedRoutes.includes(route),
+                };
+              })}
+              deliveries={underway.map((dv) => ({
+                id: dv.id,
+                route: dv.route,
+                type: road.vehicles.find((v) => v.id === dv.vehicleId)?.type ?? "cart",
+                resource: dv.resource,
+                departAt: dv.departAt,
+                arriveAt: dv.arriveAt,
+                backAt: dv.backAt,
+                halted: dv.attack?.pending === true,
+              }))}
+              camps={road.bands.filter((b) => b.active).map((b) => ({ id: b.id, route: b.route }))}
+              vehicles={underway.map((dv) => {
+                const out = props.now < dv.arriveAt;
+                const ambushed = dv.attack?.pending === true && props.now <= dv.attack.reactBy;
+                const until = ambushed
+                  ? (dv.attack?.reactBy ?? props.now)
+                  : out
+                    ? dv.arriveAt
+                    : dv.backAt;
+                return {
+                  id: dv.id,
+                  label: `${ambushed ? "⚔ " : ""}${clock(until - props.now)}`,
+                  ambushed,
+                };
+              })}
+              gains={road.deliveries
+                .filter(
+                  (dv) =>
+                    dv.outcome !== "en_route" &&
+                    props.now >= dv.arriveAt &&
+                    props.now - dv.arriveAt < 4_000,
+                )
+                .map((dv) => ({
+                  id: dv.id,
+                  city: dv.route.split(":")[1] ?? "",
+                  label: `+${d(dv.paid ?? dv.payment)}`,
+                }))}
+              onCity={(code) => setCity(code)}
+              onDelivery={(id) => setWatching(id)}
+            >
+              {/* Over the map: what waits today, and when the board renews. */}
+              <div className="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
+                <span className="rounded-full bg-night/85 px-3 py-1.5 text-xs font-semibold text-gold ring-1 ring-gold/40 backdrop-blur">
+                  {m().hud(openOrders, free)}
+                </span>
+                <span className="rounded-full bg-night/85 px-3 py-1.5 font-mono text-[10px] text-cream-dim ring-1 ring-line backdrop-blur">
+                  ↻ {clock(nextDay - props.now)}
+                </span>
+              </div>
+              {focused && (
+                <p
+                  className={`pointer-events-none absolute inset-x-3 z-20 rounded-2xl ${map3d ? "bottom-14" : "bottom-3"} bg-night/90 px-3 py-2 text-center text-xs text-gold ring-1 ring-gold/50`}
+                >
+                  {m().focusHint(vehicleName(focused.type))}
+                </p>
+              )}
+              <StockBand
+                props={props}
+                label={fr.game.domain.store.label}
+                title={fr.game.stock.toUpperCase()}
+              />
+            </Veneto3D>
+          </Suspense>
+        </div>
+      ) : (
+        <div className="relative overflow-hidden cut border border-line bg-night-2 shadow-xl shadow-black/30">
+          <svg
+            viewBox={`0 0 ${MAP_W} ${MAP_H}`}
+            className="block w-full touch-manipulation select-none"
+            role="img"
+            aria-label={m().label}
+          >
+            <VenetoTerrain />
 
-          {/* Roads: casing, then the road itself (dashed red where bandits lie in wait). */}
-          {drawn.map((route) => {
-            const c = roadCurve(route);
-            if (!c) return null;
-            const [from = "", to = ""] = route.split(":");
-            const mine = from === region;
-            const watched = road.watchedRoutes.includes(route);
-            const chosen = mode === "bandits" ? props.banditRoute === route : city === to;
-            const lit = mode === "deliver" && focused !== null && serves(to);
-            const dimmed = mode === "deliver" && focused !== null && !serves(to);
-            const path = curvePath(c);
-            const colour = chosen ? P.gold : watched ? P.vermilion : lit ? P.goldSoft : P.cream;
-            return (
-              <g key={route} opacity={dimmed ? 0.25 : mode === "bandits" && !mine ? 0.75 : 1}>
-                <path d={path} fill="none" stroke={P.night} strokeWidth="6" opacity="0.55" />
-                <path
-                  d={path}
-                  fill="none"
-                  stroke={colour}
-                  strokeOpacity={chosen || watched || lit ? 0.95 : 0.4}
-                  strokeWidth={chosen ? 2.6 : 1.7}
-                  strokeDasharray={watched ? "4 4" : "7 5"}
-                  strokeLinecap="round"
-                  className={watched ? "map-march" : undefined}
-                />
-                {mode === "bandits" && (
-                  // biome-ignore lint/a11y/useKeyWithClickEvents: the road list below the map offers the same choice
+            {/* Roads: casing, then the road itself (dashed red where bandits lie in wait). */}
+            {drawn.map((route) => {
+              const c = roadCurve(route);
+              if (!c) return null;
+              const [from = "", to = ""] = route.split(":");
+              const mine = from === region;
+              const watched = road.watchedRoutes.includes(route);
+              const chosen = mode === "bandits" ? props.banditRoute === route : city === to;
+              const lit = mode === "deliver" && focused !== null && serves(to);
+              const dimmed = mode === "deliver" && focused !== null && !serves(to);
+              const path = curvePath(c);
+              const colour = chosen ? P.gold : watched ? P.vermilion : lit ? P.goldSoft : P.cream;
+              return (
+                <g key={route} opacity={dimmed ? 0.25 : mode === "bandits" && !mine ? 0.75 : 1}>
+                  <path d={path} fill="none" stroke={P.night} strokeWidth="6" opacity="0.55" />
                   <path
                     d={path}
                     fill="none"
-                    stroke="transparent"
-                    strokeWidth="16"
-                    pointerEvents="stroke"
-                    className="cursor-pointer"
-                    onClick={() => props.onBanditRoute?.(route)}
+                    stroke={colour}
+                    strokeOpacity={chosen || watched || lit ? 0.95 : 0.4}
+                    strokeWidth={chosen ? 2.6 : 1.7}
+                    strokeDasharray={watched ? "4 4" : "7 5"}
+                    strokeLinecap="round"
+                    className={watched ? "map-march" : undefined}
                   />
-                )}
-              </g>
-            );
-          })}
-
-          {/* Time on each of the merchant's roads, and the bandits' mark on watched ones. */}
-          {mode === "deliver" &&
-            myRoutes.map((route) => {
-              const c = roadCurve(route);
-              const to = route.split(":")[1] ?? "";
-              const minutes = roadMinutes(to);
-              if (!c || minutes === undefined || (focused && !serves(to))) return null;
-              const p = clearSpot(c);
-              const watched = road.watchedRoutes.includes(route);
-              const label = `${watched ? "⚔ " : ""}${minutesLabel(minutes)}`;
-              const w = 8 + label.length * 5;
-              return (
-                <g key={`time-${route}`} transform={`translate(${p.x} ${p.y})`}>
-                  <rect
-                    x={-w / 2}
-                    y="-7"
-                    width={w}
-                    height="13"
-                    rx="6.5"
-                    fill={P.night}
-                    stroke={watched ? P.vermilion : P.line}
-                    opacity="0.92"
-                  />
-                  <text
-                    y="3"
-                    textAnchor="middle"
-                    fontSize="7.5"
-                    fontFamily="Space Mono, monospace"
-                    fill={watched ? P.vermilion : P.cream}
-                  >
-                    {label}
-                  </text>
+                  {mode === "bandits" && (
+                    // biome-ignore lint/a11y/useKeyWithClickEvents: the road list below the map offers the same choice
+                    <path
+                      d={path}
+                      fill="none"
+                      stroke="transparent"
+                      strokeWidth="16"
+                      pointerEvents="stroke"
+                      className="cursor-pointer"
+                      onClick={() => props.onBanditRoute?.(route)}
+                    />
+                  )}
                 </g>
               );
             })}
 
-          {/* The stretch already travelled by each vehicle, in gold. */}
-          {underway.map((dv) => {
-            const c = roadCurve(dv.route);
-            if (!c) return null;
-            const f = roadPosition(dv, now);
-            const out = now < dv.arriveAt;
-            return (
-              <path
-                key={`trail-${dv.id}`}
-                d={out ? partialPath(c, 0, f) : partialPath(c, f, 1)}
-                fill="none"
-                stroke={dv.attack?.pending ? P.vermilion : P.gold}
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                opacity={out ? 0.85 : 0.35}
-              />
-            );
-          })}
-
-          {/* Depots: the merchant's glows; the others show in the bandits' mode. */}
-          {Object.keys(routes).map((r) => {
-            const [x, y] = PLACES[r] ?? [0, 0];
-            const mine = r === region;
-            if (!mine && mode !== "bandits") return null;
-            return (
-              <g key={`depot-${r}`} transform={`translate(${x} ${y})`} opacity={mine ? 1 : 0.6}>
-                <DepotGlyph />
-                {mode === "bandits" && (
-                  <MapText y={-22} x={0} size={8} fill={P.gold} weight={800}>
-                    {props.names.region(r).toUpperCase()}
-                  </MapText>
-                )}
-              </g>
-            );
-          })}
-
-          {/* Cities: open orders, the Doge's or the family's mark, urgent orders ticking. */}
-          {props.catalog.cities.map((cityInfo) => {
-            const code = cityInfo.code;
-            const [x, y] = PLACES[code] ?? [0, 0];
-            const reached = routes[region]?.[code] !== undefined;
-            const orders = ordersOf(code);
-            const open = orders.filter((o) => o.status === "open");
-            const star = open.some((o) => o.kind === "doge" || o.kind === "family");
-            const urgent = open
-              .filter((o) => o.kind === "urgent")
-              .sort((a, b) => a.expiresAt - b.expiresAt)[0];
-            const lit = focused !== null && serves(code);
-            const dim =
-              mode === "deliver" && (!reached || open.length === 0 || (focused !== null && !lit));
-            const on = city === code;
-            const clickable = mode === "deliver" && reached;
-            return (
-              // biome-ignore lint/a11y/useKeyWithClickEvents: the list view offers the same orders
-              <g
-                key={code}
-                transform={`translate(${x} ${y})`}
-                onClick={() => clickable && setCity(code)}
-                className={clickable ? "cursor-pointer" : undefined}
-                opacity={dim ? 0.55 : 1}
-              >
-                <circle r="24" fill="transparent" />
-                {!dim && open.length > 0 && <circle r="30" fill="url(#vn-glow)" />}
-                {urgent && (
-                  <circle
-                    r="18"
-                    fill="none"
-                    stroke={P.vermilion}
-                    strokeWidth="2"
-                    className="map-pulse"
-                  />
-                )}
-                {(on || lit) && (
-                  <circle r="19" fill={P.gold} opacity="0.2" stroke={P.gold} strokeWidth="1.5" />
-                )}
-                <circle
-                  r="15.5"
-                  fill={P.night}
-                  stroke={on ? P.gold : dim ? P.line : P.goldDeep}
-                  strokeWidth="1.8"
-                />
-                <g transform="translate(0 2.5) scale(1.25)">
-                  <CityGlyph dim={dim} />
-                </g>
-                {open.length > 0 && mode === "deliver" && (
-                  <g transform="translate(13 -13)">
-                    <circle
-                      r="7"
-                      fill={star ? P.gold : P.lagoon}
-                      stroke={P.night}
-                      strokeWidth="1.5"
+            {/* Time on each of the merchant's roads, and the bandits' mark on watched ones. */}
+            {mode === "deliver" &&
+              myRoutes.map((route) => {
+                const c = roadCurve(route);
+                const to = route.split(":")[1] ?? "";
+                const minutes = roadMinutes(to);
+                if (!c || minutes === undefined || (focused && !serves(to))) return null;
+                const p = clearSpot(c);
+                const watched = road.watchedRoutes.includes(route);
+                const label = `${watched ? "⚔ " : ""}${minutesLabel(minutes)}`;
+                const w = 8 + label.length * 5;
+                return (
+                  <g key={`time-${route}`} transform={`translate(${p.x} ${p.y})`}>
+                    <rect
+                      x={-w / 2}
+                      y="-7"
+                      width={w}
+                      height="13"
+                      rx="6.5"
+                      fill={P.night}
+                      stroke={watched ? P.vermilion : P.line}
+                      opacity="0.92"
                     />
                     <text
-                      y="2.6"
+                      y="3"
                       textAnchor="middle"
-                      fontSize="8"
-                      fontWeight="800"
-                      fill={P.night}
-                      fontFamily="Archivo Variable, sans-serif"
+                      fontSize="7.5"
+                      fontFamily="Space Mono, monospace"
+                      fill={watched ? P.vermilion : P.cream}
                     >
-                      {open.length}
+                      {label}
                     </text>
                   </g>
-                )}
-                {star && mode === "deliver" && (
-                  <text x="-13" y="-8" fontSize="9" fill={P.gold}>
-                    ✦
-                  </text>
-                )}
-                {props.view.monuments.some((m) => m.city === code) && <Monument />}
-                <MapText x={0} y={28} size={9} weight={700}>
-                  {cityInfo.name}
-                </MapText>
-                {urgent && mode === "deliver" && (
-                  <MapText x={0} y={38} size={7.5} fill={P.vermilion} font="Space Mono, monospace">
-                    {`⏱ ${clock(urgent.expiresAt - props.now)}`}
-                  </MapText>
-                )}
-              </g>
-            );
-          })}
+                );
+              })}
 
-          {/* The merchant's bands: a camp on the road while they lie in wait. */}
-          {road.bands
-            .filter((b) => b.active)
-            .map((b) => {
-              const c = roadCurve(b.route);
+            {/* The stretch already travelled by each vehicle, in gold. */}
+            {underway.map((dv) => {
+              const c = roadCurve(dv.route);
               if (!c) return null;
-              const p = pointOn(c, 0.58);
+              const f = roadPosition(dv, now);
+              const out = now < dv.arriveAt;
               return (
-                <g key={`camp-${b.id}`} transform={`translate(${p.x} ${p.y})`}>
-                  <CampGlyph />
-                  <MapText x={0} y={15} size={7} fill={P.vermilion} font="Space Mono, monospace">
-                    {clock(b.endAt - props.now)}
-                  </MapText>
+                <path
+                  key={`trail-${dv.id}`}
+                  d={out ? partialPath(c, 0, f) : partialPath(c, f, 1)}
+                  fill="none"
+                  stroke={dv.attack?.pending ? P.vermilion : P.gold}
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  opacity={out ? 0.85 : 0.35}
+                />
+              );
+            })}
+
+            {/* Depots: the merchant's glows; the others show in the bandits' mode. */}
+            {Object.keys(routes).map((r) => {
+              const [x, y] = PLACES[r] ?? [0, 0];
+              const mine = r === region;
+              if (!mine && mode !== "bandits") return null;
+              return (
+                <g key={`depot-${r}`} transform={`translate(${x} ${y})`} opacity={mine ? 1 : 0.6}>
+                  <DepotGlyph />
+                  {mode === "bandits" && (
+                    <MapText y={-22} x={0} size={8} fill={P.gold} weight={800}>
+                      {props.names.region(r).toUpperCase()}
+                    </MapText>
+                  )}
                 </g>
               );
             })}
 
-          {/* Vehicles on the road, there and back, in real time. */}
-          {underway.map((dv) => (
-            <MovingVehicle
-              key={dv.id}
-              dv={dv}
-              now={now}
-              type={road.vehicles.find((v) => v.id === dv.vehicleId)?.type ?? "cart"}
-              onOpen={() => setWatching(dv.id)}
-            />
-          ))}
-
-          {/* What a city paid, rising above it for a few seconds. */}
-          {road.deliveries
-            .filter(
-              (dv) => dv.outcome !== "en_route" && now >= dv.arriveAt && now - dv.arriveAt < 4_000,
-            )
-            .map((dv) => {
-              const [x, y] = PLACES[dv.route.split(":")[1] ?? ""] ?? [0, 0];
-              const age = (now - dv.arriveAt) / 4_000;
+            {/* Cities: open orders, the Doge's or the family's mark, urgent orders ticking. */}
+            {props.catalog.cities.map((cityInfo) => {
+              const code = cityInfo.code;
+              const [x, y] = PLACES[code] ?? [0, 0];
+              const reached = routes[region]?.[code] !== undefined;
+              const orders = ordersOf(code);
+              const open = orders.filter((o) => o.status === "open");
+              const star = open.some((o) => o.kind === "doge" || o.kind === "family");
+              const urgent = open
+                .filter((o) => o.kind === "urgent")
+                .sort((a, b) => a.expiresAt - b.expiresAt)[0];
+              const lit = focused !== null && serves(code);
+              const dim =
+                mode === "deliver" && (!reached || open.length === 0 || (focused !== null && !lit));
+              const on = city === code;
+              const clickable = mode === "deliver" && reached;
               return (
+                // biome-ignore lint/a11y/useKeyWithClickEvents: the list view offers the same orders
                 <g
-                  key={`paid-${dv.id}`}
-                  opacity={1 - age}
-                  transform={`translate(${x} ${y - 22 - age * 18})`}
+                  key={code}
+                  transform={`translate(${x} ${y})`}
+                  onClick={() => clickable && setCity(code)}
+                  className={clickable ? "cursor-pointer" : undefined}
+                  opacity={dim ? 0.55 : 1}
                 >
-                  <MapText
-                    x={0}
-                    y={0}
-                    size={11}
-                    fill={P.gold}
-                    weight={800}
-                    font="Archivo Variable, sans-serif"
-                  >
-                    {`+${d(dv.paid ?? dv.payment)}`}
+                  <circle r="24" fill="transparent" />
+                  {!dim && open.length > 0 && <circle r="30" fill="url(#vn-glow)" />}
+                  {urgent && (
+                    <circle
+                      r="18"
+                      fill="none"
+                      stroke={P.vermilion}
+                      strokeWidth="2"
+                      className="map-pulse"
+                    />
+                  )}
+                  {(on || lit) && (
+                    <circle r="19" fill={P.gold} opacity="0.2" stroke={P.gold} strokeWidth="1.5" />
+                  )}
+                  <circle
+                    r="15.5"
+                    fill={P.night}
+                    stroke={on ? P.gold : dim ? P.line : P.goldDeep}
+                    strokeWidth="1.8"
+                  />
+                  <g transform="translate(0 2.5) scale(1.25)">
+                    <CityGlyph dim={dim} />
+                  </g>
+                  {open.length > 0 && mode === "deliver" && (
+                    <g transform="translate(13 -13)">
+                      <circle
+                        r="7"
+                        fill={star ? P.gold : P.lagoon}
+                        stroke={P.night}
+                        strokeWidth="1.5"
+                      />
+                      <text
+                        y="2.6"
+                        textAnchor="middle"
+                        fontSize="8"
+                        fontWeight="800"
+                        fill={P.night}
+                        fontFamily="Archivo Variable, sans-serif"
+                      >
+                        {open.length}
+                      </text>
+                    </g>
+                  )}
+                  {star && mode === "deliver" && (
+                    <text x="-13" y="-8" fontSize="9" fill={P.gold}>
+                      ✦
+                    </text>
+                  )}
+                  {props.view.monuments.some((m) => m.city === code) && <Monument />}
+                  <MapText x={0} y={28} size={9} weight={700}>
+                    {cityInfo.name}
                   </MapText>
+                  {urgent && mode === "deliver" && (
+                    <MapText
+                      x={0}
+                      y={38}
+                      size={7.5}
+                      fill={P.vermilion}
+                      font="Space Mono, monospace"
+                    >
+                      {`⏱ ${clock(urgent.expiresAt - props.now)}`}
+                    </MapText>
+                  )}
                 </g>
               );
             })}
-        </svg>
 
-        {/* Over the map: what waits today, and when the board renews. */}
-        {mode === "deliver" && (
-          <div className="pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-2">
-            <span className="rounded-full bg-night/85 px-3 py-1.5 text-xs font-semibold text-gold ring-1 ring-gold/40 backdrop-blur">
-              {m().hud(openOrders, free)}
-            </span>
-            <span className="rounded-full bg-night/85 px-3 py-1.5 font-mono text-[10px] text-cream-dim ring-1 ring-line backdrop-blur">
-              ↻ {clock(nextDay - props.now)}
-            </span>
-          </div>
-        )}
-        {mode === "deliver" && focused && (
-          <p className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl bg-night/90 px-3 py-2 text-center text-xs text-gold ring-1 ring-gold/50">
-            {m().focusHint(vehicleName(focused.type))}
-          </p>
-        )}
-        {mode === "bandits" && (
-          <p className="pointer-events-none absolute inset-x-3 top-3 rounded-2xl bg-night/90 px-3 py-2 text-center text-xs text-cream ring-1 ring-line">
-            {m().pickRoad}
-          </p>
-        )}
-      </div>
+            {/* The merchant's bands: a camp on the road while they lie in wait. */}
+            {road.bands
+              .filter((b) => b.active)
+              .map((b) => {
+                const c = roadCurve(b.route);
+                if (!c) return null;
+                const p = pointOn(c, 0.58);
+                return (
+                  <g key={`camp-${b.id}`} transform={`translate(${p.x} ${p.y})`}>
+                    <CampGlyph />
+                    <MapText x={0} y={15} size={7} fill={P.vermilion} font="Space Mono, monospace">
+                      {clock(b.endAt - props.now)}
+                    </MapText>
+                  </g>
+                );
+              })}
+
+            {/* Vehicles on the road, there and back, in real time. */}
+            {underway.map((dv) => (
+              <MovingVehicle
+                key={dv.id}
+                dv={dv}
+                now={now}
+                type={road.vehicles.find((v) => v.id === dv.vehicleId)?.type ?? "cart"}
+                onOpen={() => setWatching(dv.id)}
+              />
+            ))}
+
+            {/* What a city paid, rising above it for a few seconds. */}
+            {road.deliveries
+              .filter(
+                (dv) =>
+                  dv.outcome !== "en_route" && now >= dv.arriveAt && now - dv.arriveAt < 4_000,
+              )
+              .map((dv) => {
+                const [x, y] = PLACES[dv.route.split(":")[1] ?? ""] ?? [0, 0];
+                const age = (now - dv.arriveAt) / 4_000;
+                return (
+                  <g
+                    key={`paid-${dv.id}`}
+                    opacity={1 - age}
+                    transform={`translate(${x} ${y - 22 - age * 18})`}
+                  >
+                    <MapText
+                      x={0}
+                      y={0}
+                      size={11}
+                      fill={P.gold}
+                      weight={800}
+                      font="Archivo Variable, sans-serif"
+                    >
+                      {`+${d(dv.paid ?? dv.payment)}`}
+                    </MapText>
+                  </g>
+                );
+              })}
+          </svg>
+
+          {/* Over the map: what waits today, and when the board renews. */}
+          {mode === "deliver" && (
+            <div className="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
+              <span className="rounded-full bg-night/85 px-3 py-1.5 text-xs font-semibold text-gold ring-1 ring-gold/40 backdrop-blur">
+                {m().hud(openOrders, free)}
+              </span>
+              <span className="rounded-full bg-night/85 px-3 py-1.5 font-mono text-[10px] text-cream-dim ring-1 ring-line backdrop-blur">
+                ↻ {clock(nextDay - props.now)}
+              </span>
+            </div>
+          )}
+          {mode === "deliver" && focused && (
+            <p
+              className={`pointer-events-none absolute inset-x-3 z-20 rounded-2xl ${map3d ? "bottom-14" : "bottom-3"} bg-night/90 px-3 py-2 text-center text-xs text-gold ring-1 ring-gold/50`}
+            >
+              {m().focusHint(vehicleName(focused.type))}
+            </p>
+          )}
+          {mode === "bandits" && (
+            <p className="pointer-events-none absolute inset-x-3 top-3 rounded-2xl bg-night/90 px-3 py-2 text-center text-xs text-cream ring-1 ring-line">
+              {m().pickRoad}
+            </p>
+          )}
+        </div>
+      )}
 
       {mode === "deliver" && (
         <Garage

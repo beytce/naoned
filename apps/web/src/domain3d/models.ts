@@ -191,7 +191,7 @@ function doorOn(parent: THREE.Object3D, face: "x" | "z", x: number, z: number, h
 }
 
 /** A walled house: plaster or planks, windows on its two seen faces, a gable roof. */
-function house(
+export function house(
   model: Model,
   parent: THREE.Object3D,
   o: {
@@ -276,7 +276,7 @@ export function shadowBlob(parent: THREE.Object3D, sx: number, sz: number, x = 0
   return m;
 }
 
-function banner(model: Model, parent: THREE.Object3D, x: number, z: number, gold: boolean) {
+export function banner(model: Model, parent: THREE.Object3D, x: number, z: number, gold: boolean) {
   cyl(parent, 0.025, 0.03, 1.15, "#C98E52", x, 0, z, 8);
   const flag = new THREE.Group();
   flag.position.set(x, 1.0, z);

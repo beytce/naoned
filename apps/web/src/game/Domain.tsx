@@ -27,6 +27,7 @@ import { StockBand } from "./StockBand.js";
 import { d } from "./format.js";
 import { underPoint } from "./gestures.js";
 import { OrderFacts, OrderPanel, canServe, total, vehicleName } from "./roadKit.js";
+import { parisHour, use3d } from "./scene3d.js";
 import { store as prefs } from "./store.js";
 import type { DeliveryOrderView } from "./types.js";
 import { useWide } from "./useWide.js";
@@ -36,30 +37,9 @@ import { have, readyOf, workshopState } from "./workshops.js";
 const Domain3D = lazy(() => import("../domain3d/Domain3D.js"));
 
 /** WebGL on this device, unless the player asked for the drawn domain (`domain2d`). */
-const use3d = (() => {
-  try {
-    if (prefs.get("domain2d") === "1") return false;
-    const c = document.createElement("canvas");
-    return !!(c.getContext("webgl2") ?? c.getContext("webgl"));
-  } catch {
-    return false;
-  }
-})();
 
 /** How long the golden burst of a new building or level lasts. */
 const BURST_MS = 3_000;
-
-function parisHour(now: number): number {
-  return Number(
-    new Intl.DateTimeFormat("fr-FR", {
-      hour: "numeric",
-      hourCycle: "h23",
-      timeZone: "Europe/Paris",
-    })
-      .formatToParts(new Date(now))
-      .find((p) => p.type === "hour")?.value ?? 12,
-  );
-}
 
 /**
  * The merchant's domain at the head of the counter: what they have built, drawn on their land.
