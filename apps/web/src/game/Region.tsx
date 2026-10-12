@@ -12,10 +12,11 @@ const SELLS: Record<string, string> = {
   lagoon: "bricks",
   dolomites: "planks",
 };
+/** What each trade must buy: fuel for the ovens, bread for the workers, the other material. */
 const NEEDS: Record<string, string[]> = {
-  terraferma: ["bricks", "planks"],
-  lagoon: ["planks"],
-  dolomites: ["bricks"],
+  terraferma: ["wood", "bricks", "planks"],
+  lagoon: ["wood", "bread", "planks"],
+  dolomites: ["bread", "bricks"],
 };
 
 export function Region(props: {

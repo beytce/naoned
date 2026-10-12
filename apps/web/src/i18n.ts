@@ -33,8 +33,8 @@ export const fr = {
       },
       {
         kicker: "Comment",
-        title: "Produire, vendre, réinvestir",
-        text: "Vos ateliers fabriquent des marchandises, même quand vous dormez. Vendez-les aux villes ou aux autres joueurs, puis réinvestissez pour produire plus. Et recommencez.",
+        title: "Produire, livrer, réinvestir",
+        text: "Vos ateliers fabriquent des marchandises, même quand vous dormez. Les villes vous passent commande : chargez une charrette et livrez-les par la route, ou vendez aux autres marchands au Rialto. Puis réinvestissez pour produire plus.",
       },
       {
         kicker: "Le piège",

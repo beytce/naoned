@@ -91,8 +91,18 @@ function Row({
       </div>
       <Sparkline points={points} width={64} height={26} />
       <div className="w-20 text-right">
-        <p className="font-display text-sm font-semibold tabular-nums">{d(line.bestAsk)}</p>
-        <p className="font-display text-xs tabular-nums text-lagoon">{d(line.bestBid)}</p>
+        <p
+          className="font-display text-sm font-semibold tabular-nums"
+          aria-label={`${fr.game.buyAt} ${d(line.bestAsk)}`}
+        >
+          {d(line.bestAsk)}
+        </p>
+        <p
+          className="font-display text-xs tabular-nums text-lagoon"
+          aria-label={`${fr.game.sellAt} ${d(line.bestBid)}`}
+        >
+          {d(line.bestBid)}
+        </p>
       </div>
     </button>
   );
@@ -471,6 +481,13 @@ export function Marche(props: GameProps) {
             )}
             {rising && !wide && <Featured line={rising} props={props} />}
             <div>
+              {/* The two prices of each row: what buying costs now, what selling brings now. */}
+              <div className="flex items-end justify-end gap-3 border-b border-line/70 pb-2 lg:px-3">
+                <div className="w-20 text-right">
+                  <p className="label">{fr.game.buyAt}</p>
+                  <p className="label text-lagoon">{fr.game.sellAt}</p>
+                </div>
+              </div>
               {lines.map((l) => (
                 <Row
                   key={l.resource}

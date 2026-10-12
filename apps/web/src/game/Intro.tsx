@@ -37,7 +37,7 @@ function Goal() {
   );
 }
 
-/** Produce → sell → reinvest, drawn as a loop. */
+/** Produce → deliver → reinvest, drawn as a loop. */
 function Loop() {
   const steps = [
     {
@@ -45,7 +45,7 @@ function Loop() {
       icon: <BuildingArt type="mill" active className="h-16 w-20" />,
       pos: "left-1/2 top-0 -translate-x-1/2",
     },
-    { label: "Vendre", icon: <ResourceIcon code="bread" size={48} />, pos: "bottom-2 right-0" },
+    { label: "Livrer", icon: <ResourceIcon code="bread" size={48} />, pos: "bottom-2 right-0" },
     { label: "Réinvestir", icon: <Coin size={44} />, pos: "bottom-2 left-0" },
   ];
   return (
