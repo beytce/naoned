@@ -1,11 +1,11 @@
 /** Push texts, in French (the interface language). The bell renders its own from kind + data. */
 
 const EVENTS: Record<string, string> = {
-  famine_verona: "Disette à Vérone : le pain s'y vend 60 % plus cher.",
-  fire_venezia: "Incendie à Venise : briques et planches 50 % plus chères.",
-  storm: "Tempête sur l'Adriatique : planches, épices et soie +30 % dans les villes.",
+  famine_verona: "Disette à Vérone : commandes de pain pour Vérone payées 60 % de plus.",
+  fire_venezia: "Incendie à Venise : commandes de briques et de planches pour Venise payées 50 % de plus.",
+  storm: "Tempête sur l'Adriatique : commandes de planches, d'épices et de soie payées 30 % de plus.",
   harvest: "Récolte abondante : le blé pousse 30 % plus vite.",
-  sensa_fair: "Foire de la Sensa : les villes achètent plus et paient mieux.",
+  sensa_fair: "Foire de la Sensa : commandes plus nombreuses et mieux payées.",
 };
 
 const RESOURCES: Record<string, string> = {

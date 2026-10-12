@@ -124,6 +124,7 @@ Note d'implémentation : `docs/plan-livraisons.md` ; réglages calibrés : `docs
 | Mécanique | Règle |
 | --- | --- |
 | **Fin de la vente instantanée** | Les villes ne rachètent plus au comptoir et les Criées disparaissent. Le marché commun (Dogana, offres entre joueurs) ne change pas |
+| **Événements sur la route** | Un événement de marché agit sur le tableau de commandes de son jour : prix des commandes qu'il touche (ville et marchandise, Doge et familles compris) et 3 commandes de ville envoyées là où il demande davantage (`deliveries.eventOrdersPerDay`), dans le total du jour |
 | **Tableau de commandes** | 12 à 16 commandes personnelles par jour, tirées du secret du monde, que personne d'autre ne peut prendre : les deux commandes du Doge et celle de la famille (à leur prime), deux urgentes (ouvertes une heure entre 8 h et 21 h, +15 %), le reste en commandes de ville. Une ville commande ce qu'elle demande ; le prix vaut la référence +50 % par heure de route. Les commandes expirent à minuit. Les marchandises d'outre-mer peuvent être commandées par les villes ; les commandes d'outre-mer du Doge et des familles se remettent toujours au comptoir |
 | **Sept villes** | Venise, Padoue, Vérone, Vicence, Trévise, Mantoue, Ferrare ; de 20 min à 1 h 50 de route selon la région de départ |
 | **Véhicules** | Mule (15 unités, lente), charrette (40, donnée à l'arrivée), chariot (90, rapide) ; 4 au plus, achetés en ducats et planches (détruits), avec entretien, comptés au patrimoine. Un trajet aller dure 2 h au plus ; le véhicule revient à vide, la ville paie à l'arrivée |
@@ -405,7 +406,7 @@ Le jeu est gratuit et ne vend jamais de ressources, de monnaie de jeu ni de prod
 | Cosmétiques à l'unité | Blasons, façades, bannières de guilde | V1 |
 | Mondes privés | Monde dédié pour une communauté, une école ou une entreprise, facturé par saison | V2 |
 
-**Garde-fou** : jamais de ducats, de ressources, de vitesse de production ni de file plus longue (elle avantagerait les absents). À activité égale, l'écart de patrimoine entre abonnés et gratuits reste sous 5 %, les abonnés ne dépassent pas 35 % du top 10, et un gratuit assidu finit devant un abonné occasionnel : trois contrôles bloquants de `pnpm sim --pass 0.2`. Le Jeton Sceau (monnaie de jeu achetable indirectement) reste abandonné.
+**Garde-fou** : jamais de ducats, de ressources, de vitesse de production ni de file plus longue (elle avantagerait les absents). À activité égale, l'écart de patrimoine entre abonnés et gratuits reste sous 5 %, les abonnés ne dépassent pas 35 % du top 10, et un gratuit assidu finit devant un abonné occasionnel : trois contrôles bloquants de `pnpm sim --pass 0.2`. **Le paiement du Pass reste débranché tant que ces trois contrôles ne sont pas conformes sur toutes les graines** (audit d'octobre 2026, R7). Le Jeton Sceau (monnaie de jeu achetable indirectement) reste abandonné.
 
 ## Données personnelles
 

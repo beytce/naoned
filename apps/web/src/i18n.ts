@@ -91,23 +91,23 @@ export const fr = {
       events: {
         famine_verona: [
           "Disette à Vérone",
-          "Vérone paie le pain 60 % plus cher et en achète deux fois plus.",
+          "Commandes de pain pour Vérone payées 60 % de plus, et plus nombreuses.",
         ],
         fire_venezia: [
           "Incendie à Venise",
-          "Venise reconstruit : briques et planches 50 % plus chères, demande doublée.",
+          "Venise reconstruit : commandes de briques et de planches pour Venise payées 50 % de plus, et plus nombreuses.",
         ],
         storm: [
           "Tempête sur l'Adriatique",
-          "Bois −30 % en production ; planches, épices et soie +30 % dans les villes.",
+          "Bois −30 % en production ; commandes de planches, d'épices et de soie payées 30 % de plus.",
         ],
         harvest: [
           "Récolte abondante",
-          "Blé +30 % en production ; le pain se vend 10 % moins cher.",
+          "Blé +30 % en production ; commandes de pain payées 10 % de moins.",
         ],
         sensa_fair: [
           "Foire de la Sensa",
-          "Grande foire : les villes achètent plus et paient mieux, épices et soie en tête.",
+          "Grande foire : commandes plus nombreuses et payées 10 % de plus, épices et soie 20 %.",
         ],
       } as Record<string, [string, string]>,
     },

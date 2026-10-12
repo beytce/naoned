@@ -232,6 +232,8 @@ Résultat sur 5 graines avec tous les réglages : toutes les cibles bloquantes t
 
 ## Pass Négociant
 
+**Règle (audit d'octobre 2026, R7) : le paiement du Pass ne sera branché que lorsque `pnpm sim --pass 0.2` sera conforme sur toutes les graines.** Le contrôle d'avance des abonnés échoue aujourd'hui sur une partie d'entre elles (voir « Ballots de Faraj »).
+
 | Avantage (`pass`) | Valeur |
 | --- | --- |
 | Quota quotidien à la Dogana | +20 % de la part du marchand (25 → 30 à l'achat, 10 → 12 à la vente) |
@@ -450,3 +452,24 @@ La matière première de la région du marchand pèse moitié moins (`ownRegionW
 Environ 11,5 % de matière en plus, sous les 15 % acceptés. Les prix ne bougent pas : les communes, nombreuses, sont aussi les moins chères, et les cartes rares sont trop peu nombreuses pour peser sur un carnet. Un assidu reçoit environ 1,5 fois ce que reçoit un occasionnel (deux ballots par jour au plus pour qui ne vient qu'une fois). Une carte légendaire sur 400 : à 3 ou 4 ballots par jour, environ une par saison pour un assidu. Les bots ouvrent leurs ballots au début de chaque session, comme un joueur.
 
 **Contrôle du Pass (`pnpm sim --pass 0.2`) : non conforme, déjà sans les ballots.** Avance des abonnés avec ballots : −38,9 %, −9,7 %, −16,6 %, +6,0 %, +20,6 % (graines 4 et 5 au-dessus de +5 %) ; les mêmes graines 4 et 5 sans ballots donnent +6,9 % et +106,6 %. Les ballots sont identiques avec ou sans Pass (test `bales.test.ts`) : l'écart vient de la divergence des deux saisons rejouées, déjà constatée (voir « Familles patriciennes » et le rythme de jeu). Part des abonnés dans le top 10 et « gratuit assidu devant abonné occasionnel » conformes sur toutes les graines.
+
+## Événements sur les commandes (audit d'octobre 2026, R1)
+
+Depuis la fin de la vente aux villes, les événements de marché n'agissaient plus que sur la production : leurs effets de prix et de demande s'appliquaient à une vente fermée, alors que la gazette les annonçait. Ils agissent désormais sur le tableau de commandes du jour de l'événement (un événement dure exactement un jour du monde) :
+
+| Réglage | Valeur |
+| --- | --- |
+| Prix | chaque commande touchée (ville et marchandise de l'événement ; Doge et familles compris) est payée au prix de l'événement (`cityPriceBps`), arrondi vers le bas |
+| Demande (`deliveries.eventOrdersPerDay`) | 3 commandes de ville du jour vont là où l'événement augmente la demande (`cityCapacityBps` > 100 %), dans le total du jour |
+
+**Mesure (`pnpm sim`, 5 graines, toutes conformes aux cibles bloquantes) :**
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie payée (ducats / joueur actif / jour) | 175,8 | 175,8 | 176,4 | 177,3 | 179,2 |
+| Indice des prix | 93 – 100 | 93 – 100 | 93 – 100 | 93 – 100 | 93 – 100 |
+| Monnaie par joueur actif (pic) | 1,02 × | 1,03 × | 1,01 × | 1,02 × | 1,03 × |
+| Gini à J+15 | 0,40 | 0,40 | 0,47 | 0,44 | 0,39 |
+| Assidus devant occasionnels | +64 % | +126 % | +92 % | +459 % | +141 % |
+
+La monnaie payée monte d'environ 4 % (de 166 à 172 avant, à 176 à 179), toujours dans la cible de 151 à 185 : les événements favorables (disette, incendie, tempête, foire) l'emportent sur la récolte abondante (pain −10 %). L'écart entre assidus et occasionnels reste très bruité (deux à cinq occasionnels actifs en fin de saison par graine) ; la graine 4 s'écarte nettement, à surveiller pendant la bêta avec les vrais joueurs. Les prix du Rialto restent plats : les événements font bouger le prix des commandes, pas encore celui du marché (recommandation R14 de l'audit).

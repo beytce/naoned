@@ -314,6 +314,8 @@ export const venice1450Settings: WorldSettingsInput = {
     },
     // Half the city orders are for the merchant's own chain, the rest for the others' goods.
     homeShareBps: 5_000,
+    // On a market event day, three city orders go where the event asks for more.
+    eventOrdersPerDay: 3,
     welcome: {
       terraferma: { resource: "bread", quantity: 12 },
       lagoon: { resource: "bricks", quantity: 8 },
