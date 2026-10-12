@@ -473,3 +473,39 @@ Depuis la fin de la vente aux villes, les événements de marché n'agissaient p
 | Assidus devant occasionnels | +64 % | +126 % | +92 % | +459 % | +141 % |
 
 La monnaie payée monte d'environ 4 % (de 166 à 172 avant, à 176 à 179), toujours dans la cible de 151 à 185 : les événements favorables (disette, incendie, tempête, foire) l'emportent sur la récolte abondante (pain −10 %). L'écart entre assidus et occasionnels reste très bruité (deux à cinq occasionnels actifs en fin de saison par graine) ; la graine 4 s'écarte nettement, à surveiller pendant la bêta avec les vrais joueurs. Les prix du Rialto restent plats : les événements font bouger le prix des commandes, pas encore celui du marché (recommandation R14 de l'audit).
+
+## Rétention du premier mois (audit d'octobre 2026, P1)
+
+Recommandations R9 à R13 de `docs/audit-2026-10.md`. Les bots ne réclament pas les missions : la charrette gagnée (R10) et les missions de progression (R11) ne se mesurent qu'avec de vrais joueurs.
+
+| Réglage | Avant | Après |
+| --- | --- | --- |
+| Produits frais (`fresh.minutes`) | 30 min | 2 h |
+| Urgentes (`deliveries.urgentOpenMinutes`) | 1 h | 3 h |
+| Riposte (`bandits.reactionMinutes`) | 10 min | 20 min |
+| Mission `three_deliveries` (jour 1) | — | une charrette (`reward.vehicles`) |
+| Matériaux du niveau 2 (`upgradeMaterialsBps`) | 100 % | 50 % |
+| Missions `three_upgrades` (jour 4), `first_palace` (jour 8) | — | 100 et 150 ducats |
+| Butin gardé par une bande (`keepBps`) | 50 % | 100 % |
+| Attaques par bande (`maxAttacksPerBand`) | 2 | 3 |
+| Mise d'une bande (`feePerHour`) | 0,35 ducat/h | 0,60 ducat/h |
+| Prime du Doge (`bandits.bounty`) | — | 5 ducats × (1 + 20 % par prise du brigand), 30 au plus |
+
+**Brigandage, nouvelles cibles** : rendement du brigand actif entre +30 et +150 % de sa mise (avant : 0 à +20 %), perte d'un livreur sous 3 %, primes sous 2 % de la monnaie payée, livreur prudent toujours devant le brigand à l'heure. Premier essai sans relever la mise (0,35 ducat/h) : brigand actif à +243 %, occasionnel à +76 % ; la mise passe à 0,60 ducat/h.
+
+**Mesure (`pnpm sim`, 5 graines, toutes conformes aux cibles bloquantes) :**
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie payée (ducats / joueur actif / jour) | 173,4 | 175,0 | 175,6 | 179,3 | 183,4 |
+| Rendement du brigand actif | +49 % | +83 % | +37 % | +48 % | +92 % |
+| Rendement du brigand occasionnel | −55 % | −77 % | — | — | +8 % (11 bandes) |
+| Primes (part de la monnaie payée) | 0,2 % | 0,3 % | 0,3 % | 0,2 % | 0,5 % |
+| Perte moyenne d'un livreur | 0,4 % | 0,4 % | 0,4 % | 0,4 % | 0,5 % |
+| Livreur prudent / brigand (ducats par heure) | 6,5 / 0,3 | 6,4 / 0,5 | — | — | 6,4 / 0,5 |
+| Niveaux d'ateliers par marchand | 6,7 | 6,5 | 6,4 | 6,7 | 7,0 |
+| Niveau moyen des ateliers | 1,34 | 1,33 | 1,33 | 1,28 | 1,34 |
+| Indice des prix | 93 – 100 | 93 – 100 | 93 – 100 | 93 – 100 | 93 – 100 |
+| Gini à J+15 | 0,40 | 0,44 | 0,47 | 0,44 | 0,41 |
+
+La monnaie payée reste dans la cible (151 à 185), un peu plus haut qu'avant (176 à 179) : les urgentes ouvertes trois heures sont davantage livrées. La graine 5 approche du plafond, à surveiller. Brigander devient rentable sans rattraper la livraison (0,5 ducat de l'heure de bande contre 6,4 pour un livreur), et la perte des livreurs reste minime. Le niveau des ateliers bouge peu chez les bots, qui n'investissent qu'avec prudence ; l'effet du niveau 2 moins cher et des missions se mesurera avec la bêta. L'écart brut entre assidus et occasionnels reste bruité (+74 % à +202 %).

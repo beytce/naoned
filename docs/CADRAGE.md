@@ -114,7 +114,8 @@ Plan complet et phases suivantes (mariages, commandite, enchère des galères, p
 | **Commande de famille** | Une par jour et par membre, dans le domaine de la famille, à la prime du Doge. Le Doge passe à 2 commandes par jour : la monnaie créée ne bouge pas |
 | **Mécénat** | Ducats offerts à sa famille, plafonnés par jour, **détruits** : un puits qui coûte du patrimoine. Ni l'influence ni le mécénat ne comptent au classement |
 | **Semaine des familles** | Influence plafonnée par membre, divisée par le nombre de membres actifs (au moins 3) : une petite famille assidue bat une grande famille passive. La gagnante tient la Seigneurie la semaine suivante (commandes de famille +10 %), avec une *contumacia* qui réduit son score pour que le pouvoir change de mains |
-| **Visibilité** | Onglet Familles (Contrats) : classement en direct, champions, membres et leurs contributions ; notification du résultat de la semaine |
+| **Visibilité** | Onglet Familles : classement en direct, champions, membres et leurs contributions ; notification du résultat de la semaine |
+| **Fil de la famille** | Les membres d'une famille s'écrivent dans l'onglet Familles : 280 caractères, un message toutes les 10 s et 50 par jour, filtre de mots, pas de liens. Trois signalements masquent un message ; les signalements sont sur la page `/admin` |
 | **PNJ** | Les maisons marchandes prêtent allégeance, livrent les commandes et font du mécénat, pour qu'un petit monde ait des familles vivantes |
 
 ### Les routes et les brigands (le pendant terrestre de la mer)
@@ -131,7 +132,8 @@ Note d'implémentation : `docs/plan-livraisons.md` ; réglages calibrés : `docs
 | **Escortes** | Gardes (4 % de la valeur de la cargaison) ou compagnie (9 %), détruits. Une escorte protège sans qu'il soit besoin d'être là |
 | **Brigands** | Dès le jour 6, un joueur poste une bande sur une route pour 2, 4 ou 6 h (une mise détruite). À mi-parcours d'une livraison, la plus ancienne bande de la route tente sa chance, deux fois au plus par bande. Sans escorte, la livraison s'arrête et le joueur a 10 minutes pour riposter : une riposte fait échouer l'attaque et disperse la bande. Une prise emporte 30 % de chaque ligne ; le brigand en garde la moitié, le reste se perd dans la fuite. La livraison est payée au prorata de ce qui arrive. Des bandes de l'ordinateur guettent aussi, pour qu'un petit monde ait du risque |
 | **Garde-fous** | Aucune attaque entre 22 h et 8 h (heure de Paris), ni contre un nouveau venu (3 jours), un marchand deux fois moins riche que le brigand, un membre de sa famille, ni deux fois en 24 h contre la même victime (délai partagé avec la mer). Le véhicule revient toujours |
-| **Équilibre** | La monnaie payée pour les marchandises reste celle d'avant (villes, Doge, familles, Criées), à ±10 % ; le transport est un puits ; brigander ne crée jamais de valeur et rapporte à peine sa mise à un brigand assidu |
+| **Équilibre** | La monnaie payée pour les marchandises reste celle d'avant (villes, Doge, familles, Criées), à ±10 % ; le transport est un puits ; brigander ne crée jamais de valeur mais devient un vrai rôle : une bande garde tout son butin (trois attaques au plus) et un brigand assidu gagne de +30 à +150 % de sa mise, sans rattraper un livreur à l'heure |
+| **Infamie et primes** | Chaque prise fait monter l'infamie du brigand pour la saison. Repousser la bande d'un marchand (escorte ou riposte) vaut au livreur une prime du Doge : 5 ducats, +20 % par prise du brigand, 30 au plus (`bandits.bounty`) |
 | **Pass Négociant** | Aucun avantage sur la route : ni véhicule, ni escorte moins chère, ni délai de riposte, ni commande échangée (l'échange de commande du Doge disparaît avec le tableau) |
 | **Notifications** | Attaque (immédiate, jamais regroupée, ouvre le jeu sur l'alerte), livraison payée, attaque réussie ou repoussée (aux deux joueurs, avec le nom de l'autre), fin de bande. La gazette publie les prises, sans noms |
 
@@ -240,6 +242,8 @@ Récompenses de fin de saison, entre joueurs réels (les PNJ ne prennent pas de 
 | Top 10 % | 3 semaines de Pass | 25 |
 | Top 25 % | 1 semaine de Pass | 15 |
 | Au moins 7 jours joués | Marchand de la saison | 5 |
+
+**Paliers de saison** : le titre de marchand tenu à la clôture (selon le patrimoine) ajoute de la Renommée, quel que soit le rang : Boutiquier +3, Marchand +5, Négociant +10, Armateur +15, Patricien +20, Sénateur +25, Doge +30. L'objectif de saison (prochain palier) est affiché au Comptoir.
 
 La Renommée s'additionne de saison en saison (titres : Habitué du Rialto, Marchand notable, Marchand illustre, Légende de Venise, Lion de Saint-Marc). Elle ne donne jamais d'avance économique : chaque saison, tout le monde repart à égalité. Le palmarès (saisons, semaines, Renommée) est visible sur le profil et depuis le classement.
 

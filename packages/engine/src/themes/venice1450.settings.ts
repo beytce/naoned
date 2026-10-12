@@ -409,15 +409,15 @@ export const venice1450Settings: WorldSettingsInput = {
   // little because it rarely takes much: a seasoned bandit just about pays for it.
   bandits: {
     hoursOptions: [2, 4, 6],
-    feePerHour: 35,
+    feePerHour: 60,
     provisionsPerHour: {},
     maxActivePerPlayer: 1,
-    maxAttacksPerBand: 2,
+    maxAttacksPerBand: 3,
     maxBandsPerRoute: 2,
     attackChanceBps: { "0": 7_000, "2": 2_500, "5": 800 },
     reactionMinutes: 20,
     takeBps: 3_000,
-    keepBps: 5_000,
+    keepBps: 10_000,
     quietHours: { from: 22, to: 8 },
     newcomerDays: 3,
     minTargetWorthBps: 5_000,
@@ -425,6 +425,8 @@ export const venice1450Settings: WorldSettingsInput = {
     sameFamilyImmune: true,
     openDay: 6,
     npcBands: { perDay: 3, hours: 3 },
+    // The Doge's bounty for beating off a player's band: 5 ducats, +20 % per take of the bandit.
+    bounty: { base: 500, perInfamyBps: 2_000, max: 3_000 },
   },
   // Fresh produce: a batch collected within 30 minutes of being done yields 5 % more.
   fresh: { minutes: 120, bonusBps: 500 },
