@@ -44,8 +44,11 @@ describe("settings", () => {
     for (const recipe of venice1450.recipes) {
       if (Object.keys(recipe.inputs).length === 0) continue;
       for (const [out, qty] of Object.entries(recipe.outputs)) {
-        const inputs = Object.entries(recipe.inputs).reduce((a, [r, q]) => a + ref(r) * q, 0);
-        const cost = inputs / qty;
+        const inputs = Object.entries(recipe.inputs).reduce(
+          (a, [r, q]) => a + ref(r) * (q ?? 0),
+          0,
+        );
+        const cost = inputs / (qty ?? 1);
         const cheapest =
           (ref(out) * (d.cityPriceBps + Math.floor((d.distanceBonusBpsPerHour * shortest) / 60))) /
           10_000;
