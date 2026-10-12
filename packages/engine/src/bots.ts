@@ -315,7 +315,9 @@ export class Bot {
     const day = dayIndex(s.ctx, s.now);
     const done = deliveriesDoneToday(state, this.id, day);
     const orders = deliveryOrdersFor(s.ctx, state, this.id, day)
-      .filter((o) => !done.includes(o.id) && o.opensAt <= s.now && s.now < o.expiresAt)
+      .filter(
+        (o) => !o.takenBy && !done.includes(o.id) && o.opensAt <= s.now && s.now < o.expiresAt,
+      )
       .sort((a, b) => {
         const va = a.unitPrice * BigInt(a.quantity);
         const vb = b.unitPrice * BigInt(b.quantity);
@@ -323,13 +325,22 @@ export class Bot {
       });
     const types = s.ctx.settings.deliveries.vehicles;
     const watched = new Set(watchedRoads(s.ctx, s.state(), s.now));
+    // What the bot keeps aside per resource (costly to work out): once per session.
+    const reserved = new Map<string, number>();
+    const reserveOf = (r: string) => {
+      if (!reserved.has(r)) reserved.set(r, this.reserve(s, r));
+      return reserved.get(r) ?? 0;
+    };
     for (const o of orders) {
-      const free = vehiclesOf(s.state(), this.id)
-        .filter((v) => vehicleFree(v, s.now) && (types[v.type]?.capacity ?? 0) >= o.quantity)
+      const vehicles = vehiclesOf(s.state(), this.id).filter((v) => vehicleFree(v, s.now));
+      // No vehicle free and one order already waiting: enough to decide on another vehicle.
+      if (vehicles.length === 0 && waiting > 0) break;
+      const free = vehicles
+        .filter((v) => (types[v.type]?.capacity ?? 0) >= o.quantity)
         .sort((a, b) => (types[a.type]?.capacity ?? 0) - (types[b.type]?.capacity ?? 0));
       const vehicle = free[0];
-      const spareNow = this.available(s, o.resource) - this.reserve(s, o.resource);
       if (!vehicle) {
+        const spareNow = this.available(s, o.resource) - reserveOf(o.resource);
         if (spareNow >= o.quantity && o.unitPrice >= (this.bestBid(s, o.resource) ?? 0n)) waiting++;
         continue;
       }
@@ -337,7 +348,7 @@ export class Bot {
       // The order must beat what the market pays.
       const bid = this.bestBid(s, o.resource) ?? 0n;
       if (o.unitPrice < bid) continue;
-      const spare = () => this.available(s, o.resource) - this.reserve(s, o.resource);
+      const spare = () => this.available(s, o.resource) - reserveOf(o.resource);
       if (o.kind === "doge" || o.kind === "family") {
         const missing = o.quantity - spare();
         if (missing > 0) this.buy(s, o.resource, missing, 1.15);

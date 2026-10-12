@@ -9,6 +9,7 @@ import { type Deniers, applyBpsFloor } from "./money.js";
 import { maxVehiclesFor, specialtyEffects } from "./specialties.js";
 import {
   type BanditBand,
+  type BoardOrder,
   DAY_MS,
   type Delivery,
   type DeliveryOrder,
@@ -20,6 +21,7 @@ import {
   type Vehicle,
   type WorldContext,
   type WorldState,
+  activePlayerCount,
   cashAccount,
   dayIndex,
 } from "./state.js";
@@ -208,6 +210,8 @@ export function deliveryOrdersFor(
   state: WorldState,
   playerId: PlayerId,
   day: number,
+  /** `board: false` leaves the world's board out (personal orders only). */
+  options: { board?: boolean } = {},
 ): DeliveryOrder[] {
   const cfg = ctx.settings.deliveries;
   const player = state.players[playerId];
@@ -219,11 +223,18 @@ export function deliveryOrdersFor(
   const capacity = Math.max(0, ...Object.values(cfg.vehicles).map((v) => v.capacity));
   const anyCity = routedCities(ctx, region);
   const out: DeliveryOrder[] = [];
-  // A market event of the day pays its price on every order it touches (events last a world day).
+  // The day's event and the act pay their price on every order they touch.
+  const priced = (unitPrice: Deniers, city: string, resource: string) => {
+    const bps = marketCityBps(ctx, dayStart, city, resource, "price");
+    return bps === 10_000 ? unitPrice : applyBpsFloor(unitPrice, bps);
+  };
   const push = (o: Omit<DeliveryOrder, "id" | "day">) => {
-    const bps = marketCityBps(ctx, dayStart, o.city, o.resource, "price");
-    const unitPrice = bps === 10_000 ? o.unitPrice : applyBpsFloor(o.unitPrice, bps);
-    out.push({ ...o, unitPrice, id: `${day}:${out.length}`, day });
+    out.push({
+      ...o,
+      unitPrice: priced(o.unitPrice, o.city, o.resource),
+      id: `${day}:${out.length}`,
+      day,
+    });
   };
   const cityFor = (resource: string, key: string) => {
     const list = buyers(ctx, region, resource);
@@ -292,6 +303,35 @@ export function deliveryOrdersFor(
       expiresAt,
       ref: f.id,
     });
+  }
+
+  // Shared demand: the world's board, priced by the road from this merchant's region.
+  if (sharedBoardOn(ctx)) {
+    if (options.board === false) return out;
+    const board = state.board;
+    if (!board || board.day !== day) return out;
+    for (const b of board.orders) {
+      if (!mayOrder(b.resource) || routeMinutes(ctx, region, b.city) === undefined) continue;
+      const premium = b.kind === "urgent" ? cfg.urgentPremiumBps : 0;
+      out.push({
+        id: b.id,
+        day,
+        kind: b.kind,
+        city: b.city,
+        resource: b.resource,
+        quantity: b.quantity,
+        unitPrice: priced(
+          orderUnitPrice(ctx, region, b.city, b.resource, premium),
+          b.city,
+          b.resource,
+        ),
+        opensAt: b.opensAt,
+        expiresAt: b.expiresAt,
+        shared: true,
+        takenBy: board.takenBy[b.id] ?? null,
+      });
+    }
+    return out;
   }
 
   // City orders: home goods only (goods from overseas come with the Doge's and the families').
@@ -369,6 +409,134 @@ export function deliveryOrdersFor(
   return out;
 }
 
+/**
+ * One order of the merchant's board, by id: a shared one is read straight from the world's board
+ * (hundreds of orders, not worth pricing them all), a personal one from the merchant's own board.
+ */
+function findDeliveryOrder(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  day: number,
+  orderId: string,
+): DeliveryOrder | undefined {
+  // Board ids carry a letter (`3:w12`, `3:e0`, `3:u1`); personal ones are plain ranks (`3:4`).
+  if (!/^\d+:[ewu]\d+$/.test(orderId)) {
+    return deliveryOrdersFor(ctx, state, playerId, day, { board: false }).find(
+      (o) => o.id === orderId,
+    );
+  }
+  const board = state.board;
+  const b = board && board.day === day ? board.orders.find((x) => x.id === orderId) : undefined;
+  if (!b || !board) return undefined;
+  return deliveryOrdersFor(ctx, { ...state, board: { ...board, orders: [b] } }, playerId, day).find(
+    (o) => o.id === orderId,
+  );
+}
+
+/** The cities' orders form one board for the world (shared demand). */
+export function sharedBoardOn(ctx: WorldContext): boolean {
+  return deliveriesOn(ctx) && ctx.settings.deliveries.sharedOrdersPerActivePlayer > 0;
+}
+
+/**
+ * Draws the world's board of the day, once, at the first command of the day: city orders and
+ * urgent ones in proportion to the active merchants, the first ones where the day's event or the
+ * act asks for more. Prices are set per merchant when read (`deliveryOrdersFor`).
+ */
+export function ensureBoard(tx: Tx): void {
+  const { ctx } = tx;
+  if (!sharedBoardOn(ctx)) return;
+  const day = dayIndex(ctx, tx.now);
+  const active = Math.max(1, activePlayerCount(ctx, tx.s as WorldState, tx.now));
+  // Drawn once a day; grown (never shrunk) when merchants arrive during the day.
+  const held = tx.s.board;
+  if (held?.day === day && (held.active ?? active) >= active) return;
+  const cfg = ctx.settings.deliveries;
+  const dayStart = ctx.startAt + day * DAY_MS;
+  const expiresAt = dayStart + DAY_MS;
+  const capacity = Math.max(0, ...Object.values(cfg.vehicles).map((v) => v.capacity));
+  const tier = (r: string) => ctx.theme.resources.find((x) => x.code === r)?.tier;
+  const citiesBuying = (r: string) =>
+    ctx.theme.cities.map((c) => c.code).filter((c) => ctx.settings.cities[c]?.[r]);
+  const resources = Object.keys(cfg.quantity).filter(
+    (r) => tier(r) !== "luxury" && citiesBuying(r).length > 0,
+  );
+  const orders: BoardOrder[] = [];
+  if (resources.length > 0) {
+    const weighted = resources.map((code) => ({ code, weight: cfg.weights[code] ?? 1 }));
+    const quantityOf = (resource: string, key: string) => {
+      const [lo, hi] = cfg.quantity[resource] ?? [1, 1];
+      return Math.min(capacity, lo + (draw(ctx, `${key}:q`) % (Math.max(0, hi - lo) + 1)));
+    };
+    const add = (
+      id: string,
+      kind: BoardOrder["kind"],
+      resource: string,
+      city: string,
+      key: string,
+      opensAt: number,
+      ends: number,
+    ) =>
+      orders.push({
+        id: `${day}:${id}`,
+        kind,
+        city,
+        resource,
+        quantity: quantityOf(resource, key),
+        opensAt,
+        expiresAt: ends,
+      });
+    const random = (key: string) => {
+      const h = draw(ctx, key);
+      const resource = pickWeighted(weighted, h)?.code ?? "";
+      const list = citiesBuying(resource);
+      return { resource, city: list[(h >>> 8) % list.length] ?? "" };
+    };
+    const total = cfg.sharedOrdersPerActivePlayer * active;
+    // Where the market asks for more: the same share of the board as on a personal board.
+    const asked = resources.flatMap((resource) =>
+      citiesBuying(resource)
+        .filter((city) => marketCityBps(ctx, dayStart, city, resource, "capacity") > 10_000)
+        .map((city) => ({ resource, city })),
+    );
+    const askedCount =
+      asked.length > 0
+        ? Math.min(
+            total,
+            Math.floor((total * cfg.eventOrdersPerDay) / Math.max(1, cfg.ordersPerDay.max)),
+          )
+        : 0;
+    for (let i = 0; i < askedCount; i++) {
+      const key = `board-event:${day}:${i}`;
+      const pair = asked[draw(ctx, key) % asked.length] as (typeof asked)[number];
+      add(`e${i}`, "city", pair.resource, pair.city, key, dayStart, expiresAt);
+    }
+    // Keyed by rank: a larger board holds the smaller one of the same day.
+    for (let i = 0; i < total - askedCount; i++) {
+      const key = `board:${day}:${i}`;
+      const o = random(key);
+      add(`w${i}`, "city", o.resource, o.city, key, dayStart, expiresAt);
+    }
+    for (let i = 0; i < cfg.urgentPerDay * active; i++) {
+      const key = `board-urgent:${day}:${i}`;
+      const opensAt = urgentOpening(ctx, dayStart, `${key}:at`);
+      if (opensAt === undefined) continue;
+      const o = random(key);
+      add(
+        `u${i}`,
+        "urgent",
+        o.resource,
+        o.city,
+        key,
+        opensAt,
+        opensAt + cfg.urgentOpenMinutes * MINUTE_MS,
+      );
+    }
+  }
+  tx.s.board = { day, active, orders, takenBy: held?.day === day ? held.takenBy : {} };
+}
+
 /** Orders of the board already dispatched today. */
 export function deliveriesDoneToday(state: WorldState, playerId: PlayerId, day: number): string[] {
   const entry = state.deliveriesDone?.[playerId];
@@ -408,16 +576,22 @@ export function dispatchDelivery(
   const { ctx } = tx;
   if (!deliveriesOn(ctx)) fail("unknown_delivery_order");
   resolveDeliveries(tx);
+  ensureBoard(tx);
   const state = tx.s as WorldState;
   const player = state.players[playerId];
   if (!player) fail("unknown_player");
   const today = dayIndex(ctx, tx.now);
   const [dayText] = orderId.split(":");
   if (Number(dayText) !== today) fail("order_expired");
-  const order = deliveryOrdersFor(ctx, state, playerId, today).find((o) => o.id === orderId);
+  const order = findDeliveryOrder(ctx, state, playerId, today, orderId);
   if (!order) fail("unknown_delivery_order");
   const done = deliveriesDoneToday(state, playerId, today);
   if (done.includes(orderId)) fail("order_done");
+  // Shared demand: the first who sends a vehicle takes the order.
+  if (order.shared) {
+    if (order.takenBy) fail("order_taken");
+    if (tx.s.board) tx.s.board.takenBy[orderId] = playerId;
+  }
   if (order.kind === "doge" && contractsDoneToday(tx, playerId, today).includes(order.ref ?? ""))
     fail("order_done");
   if (order.kind === "family" && familyOrdersDone(state, playerId, today).includes(order.ref ?? ""))

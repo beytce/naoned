@@ -419,6 +419,85 @@ describe("market events on the board", () => {
   });
 });
 
+describe("a board shared by the world", () => {
+  const shared = (more: Partial<WorldSettingsInput> = {}) => {
+    const w = new World(
+      ctx({
+        cities: {
+          ...deliverySettings.cities,
+          padova: {
+            bread: { basePrice: 210, dailyCapacityPerPlayer: 45, maxDropBps: 5_000 },
+            wheat: { basePrice: 110, dailyCapacityPerPlayer: 20, maxDropBps: 5_000 },
+          },
+        },
+        deliveries: {
+          ...testDeliveries,
+          quantity: { ...testDeliveries.quantity, wheat: [10, 20] },
+          sharedOrdersPerActivePlayer: 6,
+        },
+        ...more,
+      }),
+    );
+    w.at(9 * HOUR);
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    w.do({ type: "join", playerId: "b", region: "terraferma" });
+    w.do({ type: "join", playerId: "c", region: "lagoon" });
+    for (const id of ["a", "b", "c"]) {
+      w.give(id, "bread", 300).give(id, "bricks", 200).give(id, "wheat", 200);
+    }
+    w.do({ type: "tick" });
+    return w;
+  };
+  const common = (w: World, playerId: string, day = 0) =>
+    deliveryOrdersFor(w.ctx, w.state, playerId, day).filter((o) => o.shared);
+
+  it("is drawn once a day for the whole world, in proportion to the active merchants", () => {
+    const w = shared();
+    expect(w.state.board?.day).toBe(0);
+    expect(w.state.board?.orders.filter((o) => o.kind === "city")).toHaveLength(18);
+    // Two merchants of the same region see the same orders; the board holds through the day.
+    const a = common(w, "a").map((o) => o.id);
+    expect(common(w, "b").map((o) => o.id)).toEqual(a);
+    w.at(15 * HOUR).do({ type: "tick" });
+    expect(common(w, "a").map((o) => o.id)).toEqual(a);
+    // A merchant arriving during the day grows the board; what was there stays, taken or not.
+    const first = w.state.board?.orders.find((o) => o.kind === "city")?.id ?? "";
+    expect(error(dispatch(w, first, "none", "a"))).toBe("ok");
+    w.do({ type: "join", playerId: "d", region: "terraferma" });
+    expect(w.state.board?.orders.filter((o) => o.kind === "city")).toHaveLength(24);
+    expect(common(w, "b").map((o) => o.id)).toEqual(expect.arrayContaining(a));
+    expect(w.state.board?.takenBy[first]).toBe("a");
+    // A new day, a new board.
+    w.at(DAY + 9 * HOUR).do({ type: "tick" });
+    expect(w.state.board?.day).toBe(1);
+    // Personal orders stay personal: the Doge's.
+    expect(deliveryOrdersFor(w.ctx, w.state, "a", 1).some((o) => o.kind === "doge")).toBe(true);
+  });
+
+  it("pays by the road from each merchant's region, and raw goods only to their producers", () => {
+    const w = shared();
+    const fromLagoon = new Map(common(w, "c").map((o) => [o.id, o]));
+    expect([...fromLagoon.values()].some((o) => o.resource === "wheat")).toBe(false);
+    const wheat = common(w, "a").filter((o) => o.resource === "wheat");
+    expect(wheat.length).toBeGreaterThan(0);
+    for (const o of common(w, "a").filter((x) => x.kind === "city")) {
+      expect(o.unitPrice).toBe(orderUnitPrice(w.ctx, "terraferma", o.city, o.resource));
+      const there = fromLagoon.get(o.id);
+      if (there) expect(there.unitPrice).toBe(orderUnitPrice(w.ctx, "lagoon", o.city, o.resource));
+    }
+  });
+
+  it("goes to the first who sends a vehicle", () => {
+    const w = shared();
+    const o = common(w, "a").find((x) => x.kind === "city" && x.quantity <= 40) as DeliveryOrder;
+    expect(error(dispatch(w, o.id, "none", "a"))).toBe("ok");
+    expect(w.state.board?.takenBy[o.id]).toBe("a");
+    expect(common(w, "b").find((x) => x.id === o.id)?.takenBy).toBe("a");
+    expect(error(dispatch(w, o.id, "none", "b"))).toBe("order_taken");
+    expect(checkInvariants(w.state, w.totals)).toEqual([]);
+  });
+});
+
 describe("dispatching a delivery", () => {
   it("loads the goods, keeps the vehicle busy there and back, and pays on arrival", () => {
     const w = world();

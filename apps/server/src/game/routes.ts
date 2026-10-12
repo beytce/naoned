@@ -165,6 +165,8 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     for (const b of Object.values(v.book)) {
       for (const l of [...b.asks, ...b.bids]) if (l.by !== "market_maker") ids.add(l.by);
     }
+    // Shared demand: who took the orders of the board.
+    for (const o of v.road?.orders ?? []) if (o.takenBy) ids.add(o.takenBy);
     if (ids.size === 0) return { names: {}, bots: [] };
     const rows = await db
       .select({ id: accounts.id, pseudo: accounts.pseudo, bot: accounts.isBot })

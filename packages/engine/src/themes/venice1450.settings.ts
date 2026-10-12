@@ -316,12 +316,12 @@ export const venice1450Settings: WorldSettingsInput = {
   deliveries: {
     ordersPerDay: { min: 22, max: 28 },
     dogeOrdersPerDay: 2,
-    urgentPerDay: 4,
+    urgentPerDay: 2,
     urgentPremiumBps: 1_500,
     urgentOpenMinutes: 180,
     urgentHours: { from: 8, to: 21 },
     // Smaller orders, a better price per unit: the money of the city sales is kept.
-    cityPriceBps: 12_500,
+    cityPriceBps: 11_000,
     // +50 % per hour of road: the money of the former city sales, now earned on the road.
     distanceBonusBpsPerHour: 5_000,
     // One or two batches of a workshop: an order is within reach of a session or two.
@@ -338,6 +338,8 @@ export const venice1450Settings: WorldSettingsInput = {
     homeShareBps: 5_000,
     // On a market event day, three city orders go where the event asks for more.
     eventOrdersPerDay: 3,
+    // Shared demand: the cities' orders form one board for the world, first come first served.
+    sharedOrdersPerActivePlayer: 10,
     welcome: {
       terraferma: { resource: "bread", quantity: 12 },
       lagoon: { resource: "bricks", quantity: 8 },

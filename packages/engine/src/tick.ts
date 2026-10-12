@@ -1,5 +1,5 @@
 import { upkeepPerDay } from "./buildings.js";
-import { pruneRoad, resolveDeliveries, vehicleUpkeep } from "./deliveries.js";
+import { ensureBoard, pruneRoad, resolveDeliveries, vehicleUpkeep } from "./deliveries.js";
 import { closeFamilyWeek } from "./families.js";
 import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
@@ -89,5 +89,7 @@ export function tick(tx: Tx): void {
   closeFamilyWeek(tx);
   closeSeason(tx);
   openDueProjects(tx);
+  // Shared demand: the world's board of the day, drawn once the day's active merchants are known.
+  ensureBoard(tx);
   requoteMarketMaker(tx);
 }

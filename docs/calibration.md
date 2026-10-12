@@ -509,3 +509,62 @@ Recommandations R9 à R13 de `docs/audit-2026-10.md`. Les bots ne réclament pas
 | Gini à J+15 | 0,40 | 0,44 | 0,47 | 0,44 | 0,41 |
 
 La monnaie payée reste dans la cible (151 à 185), un peu plus haut qu'avant (176 à 179) : les urgentes ouvertes trois heures sont davantage livrées. La graine 5 approche du plafond, à surveiller. Brigander devient rentable sans rattraper la livraison (0,2 à 0,5 ducat de l'heure de bande contre 6,4 à 6,6 pour un livreur), et la perte des livreurs reste minime. **Écart à la cible** : le brigand occasionnel (bande sur une route au hasard) n'est plus toujours perdant (+8 à +55 % sur trois graines, sur 11 à 22 bandes : très bruité). Ce contrôle n'est pas bloquant ; si la bêta le confirme, le levier est `feePerHour` ou un butin dégressif pour les bandes courtes. Le niveau des ateliers bouge peu chez les bots, qui n'investissent qu'avec prudence ; l'effet du niveau 2 moins cher et des missions se mesurera avec la bêta. L'écart brut entre assidus et occasionnels reste bruité (+74 % à +202 %).
+
+## Un empire qui se voit, un mois qui se raconte (octobre 2026)
+
+Maîtrises, saison en actes et demande commune (voir le cadrage). Le Domaine est purement visuel et n'a pas d'effet sur l'économie.
+
+### Maîtrises
+
+Le diagnostic « avance d'une maîtrise à profil égal » du rapport compare des groupes de deux à dix bots, qui ne se sont pas choisis au hasard : il est trop bruité pour trancher (de 1 % à 350 % d'une graine à l'autre). La mesure retenue est une comparaison par jumeaux :
+- même graine, avec et sans maîtrises (`--scenario scenarios/no-masteries.json`) ;
+- patrimoine final de chaque bot dans les deux mondes.
+
+| Maîtrise | Premier réglage | Retenu | Écart au jumeau sans maîtrise (retenu) |
+| --- | --- | --- | --- |
+| Maître d'atelier | +15 % sur ce qui se transforme | +10 % | +4 % |
+| Roulier | véhicules +25 %, un de plus | inchangé | +3,8 % |
+| Armateur | droits de port −50 %, cales +25 % | inchangé | +0,4 % |
+| Négociant | quotas +50 %, taxe −1 point, 2 offres de plus | quotas +25 %, taxe −2 points, 3 offres de plus | −23 % |
+| Aucune (témoin) | — | — | +1,8 % (bruit) |
+
+Au premier réglage, le Maître d'atelier prenait +9 % (+21 % chez les artisans). **Écart à surveiller** : le Négociant perd chez les bots. Ses bots spéculateurs traitent davantage à la Dogana et y perdent : c'est une faiblesse du comportement des bots plus que de la maîtrise, et ce n'est pas corrigé. À mesurer avec les vrais joueurs pendant la bêta. L'effet des cales de l'Armateur n'a pas de test du moteur dédié.
+
+### Saison en actes
+
+Le modificateur d'acte se multiplie avec l'événement du jour sur les commandes. La crise varie selon le monde : Chioggia (briques et planches de Venise +30 %), peste (pain +30 %, farine +20 %) ou embargo (outre-mer +50 à +60 %). L'Arsenal demande 30 briques et 30 planches par joueur actif, payées +15 %. La Sensa paie +15 % et demande ×1,5.
+
+Mesure avec les actes seuls (avant la demande commune) : la monnaie payée passe de 172–179 à 186–190 ducats, au-dessus de la cible (151 à 185). La Sensa monte à 200–218 ducats et la crise reste vers 170–177 ducats. La demande commune ci-dessous ramène le total dans la cible.
+
+### Demande commune
+
+Les commandes de ville forment un tableau du monde de 10 commandes et 2 urgentes par marchand actif. Le premier qui envoie un véhicule prend la commande.
+
+| Réglage | Avant | Après |
+| --- | --- | --- |
+| `deliveries.sharedOrdersPerActivePlayer` | 0 (tableaux personnels) | 10 |
+| `deliveries.urgentPerDay` (par marchand actif) | 4 | 2 |
+| `deliveries.cityPriceBps` | 12 500 | 11 000 |
+
+Les réglages ont été trouvés en trois essais :
+1. Un premier essai à 12 500, avec les actes, donne 192,5 ducats sur la graine 1.
+2. À 11 500, on mesure 183,4 à 183,6 ducats sur les graines 1 et 2, trop près du plafond.
+3. 11 000 est retenu.
+
+**Mesure (`pnpm sim`, 5 graines, toutes conformes aux cibles bloquantes) :**
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie payée (ducats / joueur actif / jour) | 181,0 | 178,3 | 175,9 | 177,8 | 181,5 |
+| Par acte : installation · crise · Arsenal · Sensa | 178 · 178 · 189 · 197 | 174 · 171 · 190 · 195 | 178 · 167 · 186 · 193 | 180 · 167 · 194 · 192 | 182 · 172 · 194 · 198 |
+| Livraisons par marchand et par jour | 4,2 | 4,2 | 4,1 | 4,2 | 4,3 |
+| Utilisation des véhicules (assidus) | 39 % | 38 % | 36 % | 38 % | 39 % |
+| Niveaux d'ateliers par marchand | 6,5 | 6,6 | 6,5 | 6,7 | 6,8 |
+| Indice des prix | 93 – 100 | 93 – 100 | 93 – 100 | 93 – 100 | 93 – 100 |
+| Gini à J+15 | 0,50 | 0,47 | 0,49 | 0,44 | 0,43 |
+
+La courbe par acte donne au mois l'arc voulu : un creux pendant la crise, qui ne touche que quelques marchandises, puis une montée à l'Arsenal et à la Sensa.
+
+Le Gini monte un peu (0,43 à 0,50 contre 0,39 à 0,47). Le premier servi prend les meilleures commandes, et c'est l'effet recherché : les autres pèsent sur soi. L'écart brut entre assidus et occasionnels reste très bruité (+18 % à +204 %).
+
+Le tableau commun ralentit le simulateur d'environ 5 % par graine, après la mise en cache du tableau et des événements ; sans cette mise en cache, il était quatre fois plus lent.

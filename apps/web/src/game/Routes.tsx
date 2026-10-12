@@ -12,7 +12,6 @@ import {
   OrderPanel,
   UnderwayCard,
   bestMinutes,
-  bestOrder,
   insightOf,
   roadPosition,
   total,
@@ -267,7 +266,8 @@ function Deliveries(props: GameProps & { road: RoadView }) {
       const tb = total(b);
       return ta === tb ? 0 : ta > tb ? -1 : 1;
     });
-  const best = bestOrder(props, orders);
+  // Shared demand: orders others were faster to take.
+  const taken = road.orders.filter((o) => o.status === "taken");
   const done = road.orders.filter((o) => o.status === "done").length;
   const order = road.orders.find((o) => o.id === selected) ?? null;
   const nextDay = props.catalog.world.startsAt + props.view.day * 86_400_000;
@@ -302,18 +302,31 @@ function Deliveries(props: GameProps & { road: RoadView }) {
           }}
           options={SORTS.map((s) => ({ value: s, label: t().sort[s] }))}
         />
-        {orders.length > 0 &&
-          (best ? (
-            <Slab size="md" className="w-full" onClick={() => setSelected(best.id)}>
-              {t().best(props.names.city(best.city), d(insightOf(props, best).perHour))}
-            </Slab>
-          ) : (
-            <p className="text-sm text-cream-dim">{t().noBest}</p>
-          ))}
+        {road.orders.some((o) => o.shared) && (
+          <p className="text-xs text-cream-dim">{t().sharedHelp}</p>
+        )}
         {orders.length === 0 && <p className="text-sm text-cream-dim">{t().empty}</p>}
         {orders.map((o) => (
           <OrderCard key={o.id} o={o} props={props} onOpen={() => setSelected(o.id)} />
         ))}
+        {taken.length > 0 && (
+          <details className="rounded-2xl border border-line bg-night-2 px-3 py-2">
+            <summary className="label cursor-pointer">{t().takenList(taken.length)}</summary>
+            <ul className="mt-2 space-y-1 text-sm">
+              {taken.map((o) => (
+                <li key={o.id} className="flex justify-between gap-2 text-cream-dim">
+                  <span className="truncate">
+                    {o.quantity} {props.names.resource(o.resource).toLowerCase()} →{" "}
+                    {props.names.city(o.city)}
+                  </span>
+                  <span className="shrink-0">
+                    {t().takenBy(props.people[o.takenBy ?? ""] ?? fr.game.anonymous)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </section>
 
       <RoadNews {...props} />

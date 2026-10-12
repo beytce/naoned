@@ -211,6 +211,21 @@ export interface DeliveryOrder {
   expiresAt: number;
   /** The Doge's contract or the family order it stands for. */
   ref?: string;
+  /** An order of the world's board, open to every merchant who may serve it. */
+  shared?: boolean;
+  /** Who took it (a shared order goes to the first who sends a vehicle). */
+  takenBy?: PlayerId | null;
+}
+
+/** An order of the world's board, before it is priced for a merchant's region. */
+export interface BoardOrder {
+  id: string;
+  kind: "city" | "urgent";
+  city: string;
+  resource: ResourceCode;
+  quantity: number;
+  opensAt: number;
+  expiresAt: number;
 }
 
 export interface DeliveryAttack {
@@ -341,6 +356,14 @@ export interface WorldState {
   vehicles?: Record<string, Vehicle>;
   deliveries?: Record<string, Delivery>;
   bands?: Record<string, BanditBand>;
+  /** The world's board of the day (shared demand): its orders, and who took each. */
+  board?: {
+    day: number;
+    /** Active merchants the board was drawn for. */
+    active?: number;
+    orders: BoardOrder[];
+    takenBy: Record<string, PlayerId>;
+  };
   /** Orders of the board dispatched today, per player. */
   deliveriesDone?: Record<PlayerId, { day: number; ids: string[] }>;
   /** Last day the computer's bands were posted. */

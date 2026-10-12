@@ -728,11 +728,13 @@ function CitySheet({
                 <p className="label mt-1">
                   {o.status === "done"
                     ? `✓ ${t().done}`
-                    : o.status === "upcoming"
-                      ? `${t().opensIn} ${clock(o.opensAt - props.now)}`
-                      : o.kind === "urgent"
-                        ? `${t().closesIn} ${clock(o.expiresAt - props.now)}`
-                        : `${fr.game.inStock} ${stock}`}
+                    : o.status === "taken"
+                      ? t().takenBy(props.people[o.takenBy ?? ""] ?? fr.game.anonymous)
+                      : o.status === "upcoming"
+                        ? `${t().opensIn} ${clock(o.opensAt - props.now)}`
+                        : o.kind === "urgent"
+                          ? `${t().closesIn} ${clock(o.expiresAt - props.now)}`
+                          : `${fr.game.inStock} ${stock}`}
                 </p>
                 {open && stock < o.quantity && (
                   <p className="mt-1 text-xs text-vermilion">

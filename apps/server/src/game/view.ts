@@ -60,7 +60,7 @@ import {
   deliveriesOn,
   deliveryOrdersFor,
   escortCost,
-  travelMinutes,
+  travelMinutesFor,
   vehicleFree,
   vehicleUpkeep,
   vehiclesOf,
@@ -149,14 +149,16 @@ function roadView(ctx: WorldContext, state: WorldState, playerId: string, now: n
     status:
       done.has(o.id) || served(o.ref, o.kind)
         ? ("done" as const)
-        : now < o.opensAt
-          ? ("upcoming" as const)
-          : now >= o.expiresAt
-            ? ("expired" as const)
-            : ("open" as const),
+        : o.takenBy && o.takenBy !== playerId
+          ? ("taken" as const)
+          : now < o.opensAt
+            ? ("upcoming" as const)
+            : now >= o.expiresAt
+              ? ("expired" as const)
+              : ("open" as const),
     /** Minutes one way, per vehicle type. */
     minutes: Object.fromEntries(
-      types.map((t) => [t, travelMinutes(ctx, player.region, o.city, t) ?? null]),
+      types.map((t) => [t, travelMinutesFor(ctx, state, playerId, o.city, t) ?? null]),
     ),
     escorts: Object.fromEntries(
       Object.keys(ctx.settings.deliveries.escorts).map((e) => [e, escortCost(ctx, o, e)]),

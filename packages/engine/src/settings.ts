@@ -386,6 +386,12 @@ export const worldSettingsSchema = z.object({
        * more (a city and a resource whose capacity it raises), within the day's total.
        */
       eventOrdersPerDay: qty.default(0),
+      /**
+       * Shared demand: when above 0, the cities' orders form one board for the world, this many
+       * city orders (and `urgentPerDay` urgent ones) per active merchant, taken by the first who
+       * sends a vehicle. The Doge's, family and welcome orders stay personal.
+       */
+      sharedOrdersPerActivePlayer: qty.default(0),
       /** On the day of joining, a first order the starting stock covers, by region. */
       welcome: z.record(z.object({ resource: z.string(), quantity: positive })).default({}),
       /** Minutes of road one way at normal speed: region → city → minutes. */

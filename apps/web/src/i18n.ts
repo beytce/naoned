@@ -114,7 +114,7 @@ export const fr = {
     road: {
       kicker: "Les routes de terre ferme",
       title: "Commandes à livrer",
-      help: "Chaque jour, les villes vous passent des commandes. Chargez une charrette, choisissez votre escorte et partez : la ville paie à l'arrivée. Plus la route est longue, mieux elle paie.",
+      help: "Chaque jour, les villes publient leurs commandes pour tous les marchands, et le Doge et votre famille vous passent les vôtres. Chargez une charrette, choisissez votre escorte et partez : la ville paie à l'arrivée. Plus la route est longue, mieux elle paie.",
       tabs: { livraisons: "Livraisons", brigands: "Brigands" },
       sort: { gain: "Gain/h", price: "Prix", distance: "Distance", deadline: "Échéance" },
       facts: {
@@ -123,8 +123,11 @@ export const fr = {
         rialto: (gap: string) => `${gap} / Rialto`,
         perHour: (amount: string) => `${amount}/h`,
       },
-      best: (city: string, perHour: string) => `Meilleur choix : ${city} · ${perHour}/h`,
-      noBest: "Aucune commande livrable maintenant : produisez ou attendez un véhicule.",
+      sharedHelp:
+        "Les commandes des villes sont communes à tous les marchands : la première charrette qui part l'emporte.",
+      takenBy: (name: string) => `Prise par ${name}`,
+      takenList: (n: number) =>
+        `${n} commande${n > 1 ? "s" : ""} déjà prise${n > 1 ? "s" : ""} par d'autres`,
       kinds: { city: "Ville", doge: "Doge", family: "Famille", urgent: "Urgente" } as Record<
         string,
         string

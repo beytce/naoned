@@ -8,6 +8,7 @@ import {
   buyVehicle,
   collectBooty,
   dispatchDelivery,
+  ensureBoard,
   grantStartingVehicles,
   postBand,
   reactToAmbush,
@@ -217,6 +218,8 @@ function apply(tx: Tx, cmd: Command): void {
   }
   if (cmd.type === "join") {
     join(tx, cmd.playerId, cmd.region);
+    // A newcomer finds the day's board of the world at once.
+    ensureBoard(tx);
     return;
   }
   if (cmd.type === "resetPlayer") {

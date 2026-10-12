@@ -126,7 +126,7 @@ Note d'implémentation : `docs/plan-livraisons.md` ; réglages calibrés : `docs
 | --- | --- |
 | **Fin de la vente instantanée** | Les villes ne rachètent plus au comptoir et les Criées disparaissent. Le marché commun (Dogana, offres entre joueurs) ne change pas |
 | **Événements sur la route** | Un événement de marché agit sur le tableau de commandes de son jour : prix des commandes qu'il touche (ville et marchandise, Doge et familles compris) et 3 commandes de ville envoyées là où il demande davantage (`deliveries.eventOrdersPerDay`), dans le total du jour |
-| **Tableau de commandes** | 12 à 16 commandes personnelles par jour, tirées du secret du monde, que personne d'autre ne peut prendre : les deux commandes du Doge et celle de la famille (à leur prime), deux urgentes (ouvertes une heure entre 8 h et 21 h, +15 %), le reste en commandes de ville. Une ville commande ce qu'elle demande ; le prix vaut la référence +50 % par heure de route. Les commandes expirent à minuit. Les marchandises d'outre-mer peuvent être commandées par les villes ; les commandes d'outre-mer du Doge et des familles se remettent toujours au comptoir |
+| **Tableau de commandes** | (Avant la demande commune, ci-dessous.) 12 à 16 commandes personnelles par jour, tirées du secret du monde, que personne d'autre ne peut prendre : les deux commandes du Doge et celle de la famille (à leur prime), deux urgentes (ouvertes une heure entre 8 h et 21 h, +15 %), le reste en commandes de ville. Une ville commande ce qu'elle demande ; le prix vaut la référence +50 % par heure de route. Les commandes expirent à minuit. Les marchandises d'outre-mer peuvent être commandées par les villes ; les commandes d'outre-mer du Doge et des familles se remettent toujours au comptoir |
 | **Sept villes** | Venise, Padoue, Vérone, Vicence, Trévise, Mantoue, Ferrare ; de 20 min à 1 h 50 de route selon la région de départ |
 | **Véhicules** | Mule (15 unités, lente), charrette (40, donnée à l'arrivée), chariot (90, rapide) ; 4 au plus, achetés en ducats et planches (détruits), avec entretien, comptés au patrimoine. Un trajet aller dure 2 h au plus ; le véhicule revient à vide, la ville paie à l'arrivée |
 | **Escortes** | Gardes (4 % de la valeur de la cargaison) ou compagnie (9 %), détruits. Une escorte protège sans qu'il soit besoin d'être là |
@@ -136,6 +136,17 @@ Note d'implémentation : `docs/plan-livraisons.md` ; réglages calibrés : `docs
 | **Infamie et primes** | Chaque prise fait monter l'infamie du brigand pour la saison. Repousser la bande d'un marchand (escorte ou riposte) vaut au livreur une prime du Doge : 5 ducats, +20 % par prise du brigand, 30 au plus (`bandits.bounty`) |
 | **Pass Négociant** | Aucun avantage sur la route : ni véhicule, ni escorte moins chère, ni délai de riposte, ni commande échangée (l'échange de commande du Doge disparaît avec le tableau) |
 | **Notifications** | Attaque (immédiate, jamais regroupée, ouvre le jeu sur l'alerte), livraison payée, attaque réussie ou repoussée (aux deux joueurs, avec le nom de l'autre), fin de bande. La gazette publie les prises, sans noms |
+
+### Un empire qui se voit, un mois qui se raconte (retour du porteur, octobre 2026)
+
+Constat : le jeu devient vite redondant et on a peu l'impression de se développer. Une session se résume au même tour, les prix ne bougent pas, le mois n'a pas d'arc, les autres joueurs ne pèsent presque pas sur soi, aucun choix n'engage.
+
+| Mécanique | Règle |
+| --- | --- |
+| **Domaine** | En tête du Comptoir, la Maison dessinée sur la terre de sa région. Les ateliers occupent douze parcelles, le palais la place d'honneur. Chaque niveau ajoute un ornement (bannière, socle, tour, couronne dorée). Ciel selon l'heure de Paris. Purement visuel |
+| **Maîtrises** | À 5 niveaux d'ateliers, le marchand choisit une maîtrise pour toute la saison : Maître d'atelier (+10 % sur ce qui se transforme), Roulier (véhicules 25 % plus rapides, un de plus), Négociant (quotas Dogana +25 %, taxe −2 points, 3 offres de plus) ou Armateur (droits de port −50 %, cales +25 %). Réglages `specialties` |
+| **Saison en actes** | Quatre actes, un par semaine, comprimés si le monde ouvre tard (`acts`). I l'installation ; II une crise tirée du secret du monde (guerre de Chioggia, peste ou embargo du Levant) ; III l'Arsenal, un chantier que les familles se disputent (influence par unité, 100 d'influence par membre pour la famille gagnante) ; IV la Sensa, commandes +15 % et plus nombreuses. Le modificateur d'acte se multiplie avec l'événement du jour |
+| **Demande commune** | Les commandes des villes forment un tableau du monde, tiré chaque jour : 10 commandes de ville et 2 urgentes par marchand actif (`sharedOrdersPerActivePlayer`), complété si un marchand arrive dans la journée. Les commandes de ville sont payées la référence +10 % (`cityPriceBps`, contre +25 % sur le tableau personnel), plus le bonus de route. Le premier qui envoie un véhicule prend la commande ; le prix dépend de la route depuis sa région. Les matières premières restent réservées à leurs producteurs ; les commandes du Doge, de la famille et de bienvenue restent personnelles. Le bouton « Meilleur choix » disparaît |
 
 ## Vision et positionnement
 

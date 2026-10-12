@@ -61,6 +61,7 @@ export type EngineErrorCode =
   | "mission_locked"
   | "mission_not_done"
   | "mission_claimed"
+  | "order_taken"
   | "specialty_chosen"
   | "unknown_specialty"
   | "specialty_locked"

@@ -129,7 +129,10 @@ export interface DeliveryOrderView {
   unitPrice: Money;
   opensAt: number;
   expiresAt: number;
-  status: "open" | "done" | "upcoming" | "expired";
+  status: "open" | "done" | "upcoming" | "expired" | "taken";
+  /** An order of the world's board, open to all; who took it. */
+  shared?: boolean;
+  takenBy?: string | null;
   /** Minutes one way, per vehicle type (null: no road). */
   minutes: Record<string, number | null>;
   /** Cost of each escort for this order. */

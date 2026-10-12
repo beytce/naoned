@@ -69,7 +69,7 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 - **Palmarès** (`Palmares`) : Renommée et titre, saisons terminées, statistiques et frise des dernières semaines ; sur le profil et en touchant un nom du classement.
 - **Dernier sprint** : bandeau doré les trois derniers jours ; l'hommage au Doge de la saison passée s'affiche au Marché.
 - **Gazette** (`Gazette`) : une ligne repliée (« En ce moment » ou « Bientôt », titre, compte à rebours) qui se déplie au toucher, seulement sur Comptoir, Routes et Marché, jamais pendant les premiers pas guidés par Lorenzo ; fermeture par ×.
-- **Commandes de la route** (`Routes`, `roadKit.tsx`) : chaque commande montre son prix unitaire, l'écart avec le Rialto, les ducats par heure de route et un badge « Livrable » ; tri par gain à l'heure par défaut et bouton « Meilleur choix ». La vue Liste est celle du tutoriel.
+- **Commandes de la route** (`Routes`, `roadKit.tsx`) : chaque commande montre son prix unitaire, l'écart avec le Rialto, les ducats par heure de route et un badge « Livrable » ; tri par gain à l'heure par défaut. La vue Liste est celle du tutoriel.
 - **Domaine** (`Domain`, `art/domain.tsx`) : en tête du Comptoir, la scène de la Maison sur la terre de sa région.
   - **Décor** : champs et moulin de la Terraferma, canaux et silhouette de Venise de la Lagune, pics et sapins des Dolomites. Ciel de jour, de crépuscule ou de nuit selon l'heure de Paris.
   - **Ateliers** : douze parcelles, remplies du premier plan (grands ateliers) vers le fond ; le palais occupe la place d'honneur.
@@ -77,6 +77,14 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
   - **Bâtir** : seules les deux prochaines parcelles libres sont en pointillé, avec « À bâtir ».
   - **Cour** : véhicules au dépôt et caisses selon le stock, blason sur le mât.
   - **Interactions** : une gerbe dorée salue une construction ou un niveau ; un toucher ouvre l'atelier ou mène à « Nouvel atelier ».
+- **Maîtrise** (`Mastery`, `art/mastery.tsx`) :
+  - **Comptoir** : une tuile de progression vers le palier (niveaux d'ateliers), puis l'appel à choisir.
+  - **Choix** : feuille ouverte d'elle-même la première fois, avec quatre cartes (emblème, devise, effets lus dans les réglages) et une confirmation « pour toute la saison ».
+  - **Emblèmes** : marteau et enclume, roue, balance, ancre, sous le blason du Domaine et dans le classement.
+- **Frise de la saison** (`Acts`) : sous l'en-tête, le jour et l'acte en cours (chiffre romain et titre), une barre par acte (passés en lagune, en cours en or).
+  - Un toucher ouvre la carte de l'acte, qui s'ouvre aussi d'elle-même à la première visite de chaque acte, après les premiers pas.
+  - À l'acte III, le panneau de l'Arsenal (avancement, livrer, course des familles) est en tête de l'onglet Familles.
+- **Tableau commun** (`Routes`) : une ligne rappelle que les commandes des villes sont communes ; celles que d'autres ont prises sont repliées sous « déjà prises », avec le nom du preneur.
 - **Fil de la famille** (`Familles`, `Thread`) : messages des membres, les miens à droite sur fond lagune, « Signaler » sous ceux des autres, saisie en bas ; pastille sur l'onglet Familles quand un message n'a pas été lu.
 - **Objectif de saison** (`Comptoir`, `SeasonGoal`) : titre actuel et Renommée assurée, prochain palier et sa barre ; affiché après la première livraison.
 - **Brigands** : encadré d'infamie (prises de la saison, prime sur la tête, primes reçues) sous l'aide de l'écran Brigands.

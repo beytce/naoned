@@ -65,21 +65,6 @@ export function insightOf(props: GameProps, o: DeliveryOrderView): OrderInsight 
   };
 }
 
-/** The open order that leaves now and earns the most per hour of road, if any. */
-export function bestOrder(props: GameProps, orders: DeliveryOrderView[]): DeliveryOrderView | null {
-  let best: DeliveryOrderView | null = null;
-  let bestRate = -1n;
-  for (const o of orders) {
-    const i = insightOf(props, o);
-    if (!i.deliverable || i.perHour === null) continue;
-    if (i.perHour > bestRate) {
-      best = o;
-      bestRate = i.perHour;
-    }
-  }
-  return best;
-}
-
 /** "1,92 d l'unité · +38 % / Rialto · 24 d/h", and a badge when it can leave now. */
 export function OrderFacts({ o, props }: { o: DeliveryOrderView; props: GameProps }) {
   const i = insightOf(props, o);
