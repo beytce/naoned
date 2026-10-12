@@ -23,6 +23,7 @@ import { fr } from "../i18n.js";
 import { Big, Label, Sheet, Slab, clock } from "../ui.js";
 import { Rations, StockStrip, affordable } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
+import { StockBand } from "./StockBand.js";
 import { d } from "./format.js";
 import { underPoint } from "./gestures.js";
 import { OrderFacts, OrderPanel, canServe, total, vehicleName } from "./roadKit.js";
@@ -426,6 +427,7 @@ export function Domain(props: GameProps) {
             />
           </svg>
         )}
+        <StockBand props={props} label={t.store.label} title={fr.game.stock.toUpperCase()} />
       </div>
       <DomainBand {...props} />
       <DomainSheets {...props} />

@@ -512,12 +512,25 @@ function WorkshopSheet({
 /** What can be built on a free plot of the domain. */
 function BuildHereSheet(props: GameProps) {
   const { view, catalog } = props;
+  const full = view.buildings.length >= catalog.rules.maxBuildings;
   return (
     <div className="space-y-4">
       <h3 className="font-display text-lg font-extrabold uppercase">
         {fr.game.workshop.buildHere}
       </h3>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <p className="text-xs text-muted">
+        {fr.game.localRaw(
+          catalog.buildings
+            .filter((b) => b.regions?.includes(view.player.region))
+            .flatMap((b) => Object.keys(b.recipe?.outputs ?? {}))
+            .map((r) => props.names.resource(r).toLowerCase())
+            .join(", ") || "—",
+        )}
+      </p>
+      {full && (
+        <p className="text-sm text-muted">{fr.game.maxBuildings(catalog.rules.maxBuildings)}</p>
+      )}
+      <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 ${full ? "hidden" : ""}`}>
         {catalog.buildings
           .filter((b) => !b.regions || b.regions.includes(view.player.region))
           .map((b) => (
@@ -663,15 +676,14 @@ function WorkshopList(props: GameProps) {
 }
 
 export function Comptoir(props: GameProps) {
-  const { view, catalog } = props;
-  const full = view.buildings.length >= catalog.rules.maxBuildings;
+  const { view } = props;
   const [kind, id] = (props.sheet ?? "").split(":");
   const sheetBuilding = view.buildings.find((b) => b.id === id);
 
   return (
-    // The production screen. Phone: what to do now (harvest, the day's notebook, the road), the
-    // workshops, stock and rations, then what can be built. Computer: the workshops on the left,
-    // stock and rations in a side column that stays in view.
+    // The production screen. Phone: the domain (where one produces, builds on a free plot and
+    // sees the stock), then the day's notebook and the workshops. Computer: the domain and the
+    // workshops on the left, stock and rations in a side column that stays in view.
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
       <div className="contents lg:col-start-1 lg:flex lg:flex-col lg:gap-6">
         <div className="order-2 space-y-3 lg:order-none">
@@ -683,40 +695,6 @@ export function Comptoir(props: GameProps) {
           </div>
         </div>
         <WorkshopList {...props} />
-        <section id="build-section" className="order-9 scroll-mt-24 space-y-3 lg:order-none">
-          <Label>{fr.game.buildTitle}</Label>
-          <p className="text-xs text-muted">
-            {fr.game.localRaw(
-              catalog.buildings
-                .filter((b) => b.regions?.includes(view.player.region))
-                .flatMap((b) => Object.keys(b.recipe?.outputs ?? {}))
-                .map((r) => props.names.resource(r).toLowerCase())
-                .join(", ") || "—",
-            )}
-          </p>
-          {full ? (
-            <p className="text-sm text-muted">{fr.game.maxBuildings(catalog.rules.maxBuildings)}</p>
-          ) : (
-            <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0 xl:grid-cols-6">
-              {catalog.buildings
-                .filter((b) => !b.regions || b.regions.includes(view.player.region))
-                .map((b) => (
-                  <button
-                    key={b.type}
-                    type="button"
-                    onClick={() => props.setSheet(`build:${b.type}`)}
-                    className={`w-32 shrink-0 cut border border-line bg-night-3 p-2 text-left transition hover:border-gold/60 lg:w-auto ${affordable(view, b.cost) ? "" : "opacity-60"}`}
-                  >
-                    <BuildingArt type={b.type} className="h-16 w-28" />
-                    <p className="mt-1 font-display text-[11px] font-extrabold uppercase leading-tight">
-                      {b.name}
-                    </p>
-                    <p className="font-mono text-[11px] text-gold">{d(b.cost.ducats)}</p>
-                  </button>
-                ))}
-            </div>
-          )}
-        </section>
       </div>
       <aside className="contents lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:flex lg:max-h-[calc(100dvh-7rem)] lg:flex-col lg:gap-6 lg:overflow-y-auto lg:pb-2">
         <div className="order-6 empty:hidden lg:order-none">

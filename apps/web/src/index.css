@@ -493,3 +493,23 @@
     opacity: 0;
   }
 }
+
+/* A quantity of the stock band that just changed: a gold beat. */
+.stock-beat {
+  animation: stock-beat 1.2s ease-out both;
+}
+@keyframes stock-beat {
+  0% {
+    transform: scale(1.18);
+    box-shadow: 0 0 0 2px rgb(var(--gold-soft));
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgb(var(--gold-soft) / 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stock-beat {
+    animation: none;
+  }
+}

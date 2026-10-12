@@ -98,6 +98,7 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 - **Domaine 3D** (`domain3d/`, three.js chargé à la demande dans un morceau séparé) : en tête du Comptoir, la Maison en vraie 3D temps réel.
   - **Caméra** orthographique à l'angle isométrique. Le cadre suit ce qui est bâti et glisse en douceur quand le Domaine grandit.
   - **Scène**, l'écran du Comptoir : bord à bord sur téléphone, environ 68 % de la hauteur (420 px au moins), 62 % sur ordinateur. L'en-tête de la Maison se pose sur la scène, sur un dégradé sombre. Le cadre se refait à chaque taille ; sur un écran plus haut que large, les marges du terrain débordent sur les côtés pour que les ateliers restent grands.
+  - **Bande de stock** (`StockBand`) posée au pied de la scène, sur un dégradé : chaque bien détenu, icône et quantité ; une quantité qui change bat en doré. Un toucher ouvre l'entrepôt. On bâtit depuis la parcelle « + À bâtir » (plus de rangée de construction sous la scène).
   - **Lumière** : soleil chaud avec ombres douces, lumière du ciel, rendu ACES. Au soir, lumière orangée ; la nuit bleutée, avec fenêtres, lanternes de la porte et lampadaires allumés.
   - **Matières** (`materials.ts`) : textures dessinées à la volée (herbe, enduit, planches, briques, tuiles, pavés) et ombres de contact sous chaque objet.
   - **Modèles** (`models.ts`, `actors.ts`) : volumes arrondis.
