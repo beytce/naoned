@@ -101,7 +101,9 @@ export type EngineErrorCode =
   | "invalid_hours"
   | "unknown_band"
   | "band_active"
-  | "booty_collected";
+  | "booty_collected"
+  | "bales_off"
+  | "no_bale";
 
 export class EngineError extends Error {
   constructor(

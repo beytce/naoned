@@ -67,7 +67,8 @@ export type StockReason =
   | "vehicle"
   | "delivery"
   | "bandits"
-  | "booty";
+  | "booty"
+  | "bale_gift";
 
 /** Change of a player's total holding (available + escrow) of one resource. */
 export interface StockMovement {

@@ -1,3 +1,4 @@
+export { baleOdds, balesFor, drawBale, expectedBaleValue } from "./bales.js";
 export * from "./buildings.js";
 export * from "./cities.js";
 export * from "./commands.js";

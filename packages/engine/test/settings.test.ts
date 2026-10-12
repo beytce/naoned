@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSettings, venice1450, venice1450Settings } from "../src/index.js";
+import { expectedBaleValue, parseSettings, venice1450, venice1450Settings } from "../src/index.js";
 import { deliverySettings, testSettings } from "./fixture.js";
 
 describe("settings", () => {
@@ -54,6 +54,27 @@ describe("settings", () => {
           10_000;
         expect(cheapest).toBeGreaterThan(cost * 1.3);
       }
+    }
+  });
+
+  it("fills Faraj's bales of Venice with goods of the theme, rare ones really rare", () => {
+    const settings = parseSettings(venice1450Settings);
+    const ctx = { theme: venice1450, settings, startAt: 0 };
+    const { bales } = settings;
+    const total = bales.rarities.reduce((n, r) => n + r.weight, 0);
+    for (const r of bales.rarities) {
+      for (const g of r.resources) expect(settings.referencePrices[g]).toBeDefined();
+    }
+    const chance = (code: string) =>
+      (bales.rarities.find((r) => r.code === code)?.weight ?? 0) / total;
+    expect(bales.rarities.find((r) => r.code === "legendary")?.resources).toContain("silk");
+    expect(bales.rarities.find((r) => r.code === "rare")?.resources).toContain("salt");
+    expect(chance("legendary")).toBeLessThanOrEqual(0.0025);
+    // About 7.5 ducats a bale, whatever the region (docs/calibration.md).
+    for (const region of venice1450.regions) {
+      const value = Number(expectedBaleValue(ctx, region.code));
+      expect(value).toBeGreaterThan(700);
+      expect(value).toBeLessThan(800);
     }
   });
 });

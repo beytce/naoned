@@ -1,5 +1,6 @@
 import { type Draft, enableMapSet, produce } from "immer";
 import { claimDaily, sellToCriee, trackDaily } from "./activity.js";
+import { grantStartingBales, openBale } from "./bales.js";
 import { build, grantBuilding, upgrade } from "./buildings.js";
 import { sellToCity } from "./cities.js";
 import { fulfillContract, rerollContract } from "./contracts.js";
@@ -88,6 +89,7 @@ export type Command =
   | { type: "claimMission"; playerId: PlayerId; missionId: string }
   | { type: "sellToCriee"; playerId: PlayerId; quantity: number }
   | { type: "claimDaily"; playerId: PlayerId; taskId: string }
+  | { type: "openBale"; playerId: PlayerId }
   | { type: "rerollContract"; playerId: PlayerId; contractId: string }
   | { type: "joinFamily"; playerId: PlayerId; family: string }
   | { type: "fulfillFamilyOrder"; playerId: PlayerId; orderId: string }
@@ -148,6 +150,7 @@ function join(tx: Tx, playerId: PlayerId, region: string): void {
     building.fastBatchesLeft = ctx.settings.tutorial.fastBatchesPerBuilding;
   }
   grantStartingVehicles(tx, playerId);
+  grantStartingBales(tx, playerId);
   for (const [resource, qty] of Object.entries(ctx.settings.startingStock[region] ?? {})) {
     addStock(tx, playerId, resource, qty, "starting_kit");
   }
@@ -191,6 +194,7 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
   }
   if (tx.s.weekly) delete tx.s.weekly.start[playerId];
   if (tx.s.missions) delete tx.s.missions[playerId];
+  if (tx.s.bales) delete tx.s.bales[playerId];
   leaveFamilies(tx, playerId);
   resets[playerId] = used + 1;
   emit(tx, "player_reset", playerId);
@@ -278,6 +282,9 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "claimDaily":
       claimDaily(tx, cmd.playerId, cmd.taskId);
+      break;
+    case "openBale":
+      openBale(tx, cmd.playerId);
       break;
     case "rerollContract":
       rerollContract(tx, cmd.playerId, cmd.contractId);
