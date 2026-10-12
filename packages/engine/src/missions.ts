@@ -1,3 +1,4 @@
+import { addVehicle } from "./deliveries.js";
 import {
   DAY_MS,
   type PlayerId,
@@ -18,7 +19,7 @@ export interface MissionView {
   opensAt: number;
   done: boolean;
   claimed: boolean;
-  reward: { goods: Record<string, number>; ducats: bigint };
+  reward: { goods: Record<string, number>; ducats: bigint; vehicles: string[] };
 }
 
 /** Counts this command's events towards each player's missions. */
@@ -60,7 +61,7 @@ export function missionsFor(
       opensAt,
       done: progress >= m.count,
       claimed: mine?.claimed.includes(m.id) ?? false,
-      reward: { goods: m.reward.goods, ducats: m.reward.ducats },
+      reward: { goods: m.reward.goods, ducats: m.reward.ducats, vehicles: m.reward.vehicles },
     };
   });
 }
@@ -88,6 +89,10 @@ export function claimMission(tx: Tx, playerId: PlayerId, missionId: string): voi
       "mission_reward",
       missionId,
     );
+  }
+  for (const type of def.reward.vehicles) {
+    const owned = Object.values(tx.s.vehicles ?? {}).filter((v) => v.playerId === playerId);
+    if (owned.length < tx.ctx.settings.deliveries.maxVehicles) addVehicle(tx, playerId, type);
   }
   emit(tx, "mission_claimed", playerId, { mission: missionId });
 }

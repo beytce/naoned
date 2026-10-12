@@ -46,6 +46,36 @@ describe("vehicles", () => {
     expect(worth.buildings).toBe(buildings + 12_200n);
   });
 
+  it("may be won with a mission, counted at cost, within the limit", () => {
+    const missions = [
+      {
+        id: "first_trip",
+        day: 0,
+        event: "delivery_dispatched",
+        count: 1,
+        reward: { goods: {}, ducats: 0, vehicles: ["mule"] },
+      },
+    ];
+    const w = world({ missions });
+    expect(error(dispatch(w, pick(w).id))).toBe("ok");
+    const before = netWorth(w.ctx, w.state, "a", w.now).buildings;
+    w.do({ type: "claimMission", playerId: "a", missionId: "first_trip" });
+    const won = vehiclesOf(w, "a").filter((v) => v.type === "mule");
+    expect(won).toHaveLength(1);
+    expect(netWorth(w.ctx, w.state, "a", w.now).buildings).toBe(
+      before + (won[0]?.investedValue ?? 0n),
+    );
+    expect(checkInvariants(w.state, w.totals)).toEqual([]);
+
+    // At the limit, the mission is still paid, without the vehicle.
+    const full = world({ missions });
+    full.do({ type: "buyVehicle", playerId: "a", vehicleType: "cart" });
+    full.do({ type: "buyVehicle", playerId: "a", vehicleType: "cart" });
+    expect(error(dispatch(full, pick(full).id))).toBe("ok");
+    full.do({ type: "claimMission", playerId: "a", missionId: "first_trip" });
+    expect(vehiclesOf(full, "a")).toHaveLength(3);
+  });
+
   it("are bought with ducats and materials, which leave the game, up to the limit", () => {
     const w = world();
     const cash = w.cash("a");

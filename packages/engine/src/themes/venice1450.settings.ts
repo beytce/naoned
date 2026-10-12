@@ -234,6 +234,13 @@ export const venice1450Settings: WorldSettingsInput = {
       reward: { goods: { bread: 10, wood: 5 } },
     },
     {
+      id: "three_deliveries",
+      day: 1,
+      event: "delivery_arrived",
+      count: 3,
+      reward: { goods: {}, vehicles: ["cart"] },
+    },
+    {
       id: "first_contract",
       day: 0,
       event: "contract_fulfilled",

@@ -518,7 +518,7 @@ export interface MissionView {
   opensAt: number;
   done: boolean;
   claimed: boolean;
-  reward: { goods: Record<string, number>; ducats: Money };
+  reward: { goods: Record<string, number>; ducats: Money; vehicles: string[] };
 }
 
 /** "While you were away", after 4 hours or more. */

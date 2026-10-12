@@ -68,7 +68,7 @@ export function vehicleUpkeep(ctx: WorldContext, v: Vehicle): Deniers {
   return ctx.settings.deliveries.vehicles[v.type]?.upkeepPerDay ?? 0n;
 }
 
-function addVehicle(tx: Tx, playerId: PlayerId, type: string): Vehicle {
+export function addVehicle(tx: Tx, playerId: PlayerId, type: string): Vehicle {
   const def = tx.ctx.settings.deliveries.vehicles[type];
   if (!def) fail("unknown_vehicle_type");
   const id = nextId(tx, "v");

@@ -424,6 +424,7 @@ export const fr = {
       left: (n: number) =>
         n > 0 ? `${n} tâche${n > 1 ? "s" : ""} du jour à faire` : "Tâches du jour faites",
       open: "Ouvrez votre carnet du jour : vos objectifs et leurs récompenses s'y trouvent.",
+      vehicle: (name: string) => `+ 1 ${name.toLowerCase()}`,
     },
     daily: {
       title: "Tâches du jour",
@@ -566,6 +567,18 @@ export const fr = {
           "Briques et planches pour la ville, payées 10 % de plus.",
         ],
         new_workshop: ["Construire un nouvel atelier", "Agrandissez votre comptoir."],
+        three_deliveries: [
+          "Livrer trois commandes",
+          "Une deuxième charrette vous attend : deux commandes à la fois.",
+        ],
+        three_upgrades: [
+          "Améliorer trois fois",
+          "Chaque niveau produit plus : le niveau 2 coûte moitié moins de matériaux.",
+        ],
+        first_palace: [
+          "Bâtir un palais",
+          "Le palais compte à son coût dans le patrimoine et se voit de loin.",
+        ],
       } as Record<string, [string, string]>,
     },
     welcome: {

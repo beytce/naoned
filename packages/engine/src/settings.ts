@@ -184,7 +184,12 @@ export const worldSettingsSchema = z.object({
         event: z.string(),
         filter: z.record(z.union([z.string(), z.number()])).default({}),
         count: positive,
-        reward: z.object({ goods: z.record(qty).default({}), ducats: money.default(0) }),
+        reward: z.object({
+          goods: z.record(qty).default({}),
+          ducats: money.default(0),
+          /** Vehicles given (within the limit), counted in net worth at cost. */
+          vehicles: z.array(z.string()).default([]),
+        }),
       }),
     )
     .default([]),

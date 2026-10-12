@@ -3,6 +3,7 @@ import { fr } from "../i18n.js";
 import { Label, Panel, Ribbon, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
+import { vehicleName } from "./roadKit.js";
 import type { MissionView } from "./types.js";
 
 function Reward({ m }: { m: MissionView }) {
@@ -15,6 +16,11 @@ function Reward({ m }: { m: MissionView }) {
         </span>
       ))}
       {BigInt(m.reward.ducats) > 0n && <span className="text-gold">{d(m.reward.ducats)}</span>}
+      {m.reward.vehicles.map((v, i) => (
+        <span key={`${v}-${i}`} className="font-semibold text-lagoon">
+          {fr.game.carnet.vehicle(vehicleName(v))}
+        </span>
+      ))}
     </span>
   );
 }
