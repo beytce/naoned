@@ -132,6 +132,7 @@ export function Game(props: {
   const [introSeen, setIntroSeen] = useState(() => store.get("introSeen") === "1");
   const [guideKey, setGuideKey] = useState(0);
   const [unread, setUnread] = useState(0);
+  const [familyLatestAt, setFamilyLatestAt] = useState<number | null>(null);
   const loaded = useRef(false);
   const [welcome, setWelcome] = useState<WelcomeData | null>(null);
   const [ceremony, setCeremony] = useState<CeremonyData | null>(null);
@@ -161,6 +162,7 @@ export function Game(props: {
         loaded.current = true;
         return res.unread ?? 0;
       });
+      setFamilyLatestAt(res.familyLatestAt ?? null);
       if (res.welcome) setWelcome(res.welcome);
       setCeremony(res.ceremony ?? null);
       setPassInfo({ upcomingPass: res.upcomingPass, passPrices: res.passPrices });
@@ -435,8 +437,11 @@ export function Game(props: {
     (view.road.deliveries.some((dv) => dv.attack?.pending) ||
       (view.road.vehicles.some((v) => v.status === "free") &&
         view.road.orders.some((o) => o.status === "open")));
+  // A message of the family's thread not read yet (the thread remembers the last one seen).
+  const familyUnread =
+    familyLatestAt !== null && familyLatestAt > Number(store.get("familySeen") ?? 0);
   const badge = (t: Tab) =>
-    (t === "familles" && familyCalls) ||
+    (t === "familles" && (familyCalls || familyUnread)) ||
     (t === "comptoir" && carnetRewards(gp) > 0) ||
     (t === "port" && galleyBack) ||
     (t === "routes" && roadCalls);

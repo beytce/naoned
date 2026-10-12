@@ -32,6 +32,65 @@ const LAST_SEEN: Record<string, string> = {
 
 const pct = (a: number, b: number) => (b > 0 ? `${Math.round((a / b) * 100)} %` : "—");
 
+interface Reported {
+  id: string;
+  family: string;
+  pseudo: string | null;
+  body: string;
+  at: number;
+  hidden: boolean;
+  reports: number;
+}
+
+/** Reported messages of the families' threads: read, then hide what should not stay. */
+function Reports() {
+  const [rows, setRows] = useState<Reported[] | null>(null);
+  const load = () =>
+    fetch("/api/admin/reports", { credentials: "same-origin" })
+      .then(async (r) => setRows(r.ok ? (await r.json()).reports : []))
+      .catch(() => setRows([]));
+  useEffect(() => {
+    void load();
+  }, []);
+  return (
+    <Panel>
+      <Label>Messages signalés</Label>
+      {rows === null ? (
+        <p className="mt-2 text-sm text-muted">…</p>
+      ) : rows.length === 0 ? (
+        <p className="mt-2 text-sm text-cream-dim">Aucun signalement.</p>
+      ) : (
+        <ul className="mt-3 space-y-3">
+          {rows.map((m) => (
+            <li key={m.id} className="rounded-xl bg-night-3 p-3 text-sm">
+              <p className="label">
+                {m.family} · {m.pseudo ?? "—"} · {m.reports} signalement{m.reports > 1 ? "s" : ""}
+                {m.hidden ? " · masqué" : ""}
+              </p>
+              <p className="mt-1 break-words">{m.body}</p>
+              {!m.hidden && (
+                <button
+                  type="button"
+                  className="mt-2 rounded-lg bg-vermilion px-3 py-1 font-display text-xs font-extrabold uppercase text-cream"
+                  onClick={async () => {
+                    await fetch(`/api/admin/messages/${m.id}/hide`, {
+                      method: "POST",
+                      credentials: "same-origin",
+                    });
+                    void load();
+                  }}
+                >
+                  Masquer
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
 /** Rehearsal: brings the end of the current season forward (test world only). */
 function SeasonEnd() {
   const [at, setAt] = useState("");
@@ -195,6 +254,7 @@ export function Admin() {
           </ul>
         )}
       </Panel>
+      <Reports />
       <SeasonEnd />
     </main>
   );

@@ -3,6 +3,7 @@ import type {
   Action,
   Catalog,
   CrestData,
+  FamilyMessage,
   GameResponse,
   Notice,
   NotificationKind,
@@ -55,6 +56,14 @@ export const gameApi = {
   ceremonySeen: (worldId: string) =>
     call<{ ok: true }>("POST", "/api/game/ceremony/seen", { worldId }),
   prices: () => call<{ series: PriceSeries }>("GET", "/api/game/prices"),
+  familyThread: () =>
+    call<{ family: string; messages: FamilyMessage[] }>("GET", "/api/game/family/messages"),
+  sayToFamily: (body: string) =>
+    call<{ family: string; messages: FamilyMessage[] }>("POST", "/api/game/family/messages", {
+      body,
+    }),
+  reportMessage: (id: string) =>
+    call<{ ok: true }>("POST", `/api/game/family/messages/${id}/report`, {}),
   notifications: () => call<{ items: Notice[]; unread: number }>("GET", "/api/notifications"),
   markRead: () => call<{ ok: true }>("POST", "/api/notifications/read", {}),
   pushSettings: () => call<PushSettings>("GET", "/api/notifications/push"),

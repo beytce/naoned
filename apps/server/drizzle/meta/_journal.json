@@ -71,6 +71,13 @@
       "when": 1791800172135,
       "tag": "0009_season_milestones",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791800346782,
+      "tag": "0010_family_messages",
+      "breakpoints": true
     }
   ]
 }

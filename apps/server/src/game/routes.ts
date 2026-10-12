@@ -7,6 +7,15 @@ import type { Db } from "../db/client.js";
 import { accounts, players, pushSubscriptions, telemetry } from "../db/schema.js";
 import { NOTIFICATION_KINDS, type Notifier } from "../notify/notifier.js";
 import { retention, suspiciousPairs } from "./admin.js";
+import {
+  ChatError,
+  familyThread,
+  hideMessage,
+  latestMessageAt,
+  postMessage,
+  reportMessage,
+  reportedMessages,
+} from "./familyChat.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
 import { priceHistory, profile } from "./profile.js";
 import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
@@ -183,6 +192,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       passPrices: PASS_PRICES,
       ...(v ? await namesFor(v) : { names: {}, bots: [] }),
       unread: v ? await notifier.unread(account.id) : 0,
+      familyLatestAt: v ? await latestMessageAt(db, world, account.id) : null,
     });
   }
 
@@ -365,6 +375,72 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     // Pass Négociant: seven days of prices instead of two.
     const hours = hasPass(world.current, account.id, world.now()) ? 168 : 48;
     return { series: await priceHistory(db, world.id, world.now(), hours) };
+  });
+
+  /** The family's thread: the call, mapped to a status and an error code when refused. */
+  async function chat<T>(reply: FastifyReply, run: () => Promise<T>) {
+    try {
+      return await run();
+    } catch (e) {
+      if (e instanceof ChatError) return reply.code(e.status).send({ error: e.code });
+      throw e;
+    }
+  }
+
+  app.get("/api/game/family/messages", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return chat(reply, () => familyThread(db, world, account.id));
+  });
+
+  app.post("/api/game/family/messages", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const parsed = z.object({ body: z.string().max(2_000) }).safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_message" });
+    return chat(reply, async () => {
+      await postMessage(db, world, account.id, parsed.data.body, world.now());
+      return familyThread(db, world, account.id);
+    });
+  });
+
+  app.post("/api/game/family/messages/:id/report", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const id = z
+      .string()
+      .uuid()
+      .safeParse((req.params as { id?: string }).id);
+    if (!id.success) return reply.code(404).send({ error: "unknown_message" });
+    return chat(reply, async () => {
+      await reportMessage(db, world, account.id, id.data, world.now());
+      return { ok: true };
+    });
+  });
+
+  /** Admin: reported messages of the families' threads. */
+  app.get("/api/admin/reports", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    if (!deps.adminEmails.includes(account.email.toLowerCase())) {
+      return reply.code(403).send({ error: "forbidden" });
+    }
+    return { reports: await reportedMessages(db, world.id) };
+  });
+
+  app.post("/api/admin/messages/:id/hide", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    if (!deps.adminEmails.includes(account.email.toLowerCase())) {
+      return reply.code(403).send({ error: "forbidden" });
+    }
+    const id = z
+      .string()
+      .uuid()
+      .safeParse((req.params as { id?: string }).id);
+    if (!id.success) return reply.code(404).send({ error: "unknown_message" });
+    await hideMessage(db, world.id, id.data);
+    return { ok: true };
   });
 
   app.get("/api/admin/retention", async (req, reply) => {

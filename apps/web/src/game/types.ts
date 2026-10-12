@@ -544,6 +544,8 @@ export interface GameResponse {
   error?: string;
   /** Unread notifications (the bell). */
   unread?: number;
+  /** Newest message of the family's thread (null: no family or no message). */
+  familyLatestAt?: number | null;
   welcome?: Welcome;
   /** Pseudos of merchants met at sea or in the order book. */
   names?: Record<string, string | null>;
@@ -749,3 +751,12 @@ export type Action =
   | { type: "reactToAmbush"; deliveryId: string }
   | { type: "postBand"; route: string; hours: number }
   | { type: "collectBooty"; bandId: string };
+
+/** A message of the family's thread. */
+export interface FamilyMessage {
+  id: string;
+  pseudo: string | null;
+  body: string;
+  at: number;
+  mine: boolean;
+}

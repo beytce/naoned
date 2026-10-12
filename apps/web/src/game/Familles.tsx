@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { ApiError } from "../api.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Qty, Ribbon, Slab, Stat, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
+import { gameApi } from "./api.js";
 import { d } from "./format.js";
-import type { FamiliesView, FamilyOrderView } from "./types.js";
+import { store } from "./store.js";
+import type { FamiliesView, FamilyMessage, FamilyOrderView } from "./types.js";
 
 const t = () => fr.game.families;
 
@@ -222,6 +225,112 @@ function Members({ fam, props }: { fam: FamiliesView; props: GameProps }) {
 }
 
 /** The patrician families: allegiance, the family's order, patronage and the weekly race. */
+const THREAD_POLL_MS = 15_000;
+
+/** The family's thread: members talk, report what should not be there. */
+function Thread({ props }: { props: GameProps }) {
+  const [messages, setMessages] = useState<FamilyMessage[]>([]);
+  const [text, setText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [reported, setReported] = useState<Set<string>>(new Set());
+  const show = useCallback((list: FamilyMessage[]) => {
+    setMessages(list);
+    const last = list.at(-1);
+    if (last) store.set("familySeen", String(last.at));
+  }, []);
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      gameApi
+        .familyThread()
+        .then((r) => alive && show(r.messages))
+        .catch(() => {});
+    load();
+    const timer = setInterval(load, THREAD_POLL_MS);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [show]);
+  const send = async () => {
+    setSending(true);
+    setError(null);
+    try {
+      show((await gameApi.sayToFamily(text)).messages);
+      setText("");
+    } catch (e) {
+      const errors = t().thread.errors;
+      setError(errors[e instanceof ApiError ? e.code : ""] ?? errors.other ?? null);
+    } finally {
+      setSending(false);
+    }
+  };
+  return (
+    <Panel>
+      <Label className="text-lagoon">{t().thread.title}</Label>
+      <p className="mt-1 text-xs text-cream-dim">{t().thread.help}</p>
+      <ul className="mt-3 max-h-80 space-y-2 overflow-y-auto">
+        {messages.length === 0 && <li className="text-sm text-cream-dim">{t().thread.empty}</li>}
+        {messages.map((m) => (
+          <li
+            key={m.id}
+            className={`rounded-xl px-3 py-2 text-sm ${m.mine ? "ml-6 bg-lagoon/15" : "mr-6 bg-night-3"}`}
+          >
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="label text-gold">{m.mine ? t().thread.me : (m.pseudo ?? "—")}</span>
+              <span className="label">{clockTime(m.at)}</span>
+            </div>
+            <p className="mt-1 whitespace-pre-wrap break-words">{m.body}</p>
+            {!m.mine && (
+              <button
+                type="button"
+                disabled={reported.has(m.id)}
+                className="label mt-1 text-cream-dim disabled:opacity-50"
+                onClick={async () => {
+                  await gameApi.reportMessage(m.id).catch(() => {});
+                  setReported(new Set([...reported, m.id]));
+                }}
+              >
+                {reported.has(m.id) ? t().thread.reported : t().thread.report}
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+      <form
+        className="mt-3 flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (text.trim()) void send();
+        }}
+      >
+        <input
+          value={text}
+          maxLength={280}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={t().thread.placeholder}
+          aria-label={t().thread.placeholder}
+          className="min-w-0 flex-1 rounded-xl border border-line bg-night-2 px-3 py-2.5 text-sm"
+        />
+        <Slab size="sm" disabled={sending || !text.trim()}>
+          {t().thread.send}
+        </Slab>
+      </form>
+      {error && <p className="mt-2 text-sm text-vermilion">{error}</p>}
+    </Panel>
+  );
+}
+
+/** "14:05", Paris time like the rest of the game's clock. */
+function clockTime(at: number): string {
+  return new Date(at).toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Paris",
+  });
+}
+
 export function Familles(props: GameProps) {
   const fam = props.view.families;
   if (!fam) return null;
@@ -281,6 +390,7 @@ export function Familles(props: GameProps) {
           <Stat label={t().influenceSeason} value={fam.influence.season} />
         </div>
       </Panel>
+      <Thread props={props} />
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">
           {fam.orders.map((o) => (

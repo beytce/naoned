@@ -294,3 +294,41 @@ export const telemetry = pgTable(
   },
   (t) => [index("telemetry_type_idx").on(t.type, t.at)],
 );
+
+/** The family's thread: short messages between members of a patrician family, per world. */
+export const familyMessages = pgTable(
+  "family_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    family: text("family").notNull(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    /** Hidden after enough reports, or by an admin. */
+    hidden: boolean("hidden").notNull().default(false),
+  },
+  (t) => [
+    index("family_messages_thread_idx").on(t.worldId, t.family, t.createdAt),
+    index("family_messages_author_idx").on(t.accountId, t.createdAt),
+  ],
+);
+
+/** A member's report of a message of the family's thread (once per member). */
+export const messageReports = pgTable(
+  "message_reports",
+  {
+    messageId: uuid("message_id")
+      .notNull()
+      .references(() => familyMessages.id, { onDelete: "cascade" }),
+    reporterId: uuid("reporter_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.messageId, t.reporterId] })],
+);
