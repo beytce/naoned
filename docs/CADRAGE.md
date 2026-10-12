@@ -99,6 +99,7 @@ Inspiré de Mercato Venezia : du risque et de l'affrontement entre joueurs, sans
 | **Comptoir en sommeil** | Sans visite depuis 24 h, l'entretien tombe à 25 % et les ouvriers ne connaissent pas la faim. Le joueur qui revient retrouve un comptoir intact |
 | **Bon retour** | Après 4 h d'absence, un récapitulatif tiré des journaux : gains par source, entretien payé, lots prêts, nouvelles reçues, et un bouton pour tout récolter et relancer |
 | **Un geste** | « Tout récolter et relancer » récolte chaque atelier et remplit chaque file selon le stock, en une seule transaction |
+| **Ballots de Faraj** | Faraj d'Alexandrie, dont le grand-père du joueur a sauvé la cargaison, envoie un ballot toutes les 6 h (2 au plus en attente) : 3 cartes de 1 à 5 unités, du blé commun à la soie légendaire (0,25 % par carte). Probabilités publiques, rien à acheter, rien de plus avec le Pass. Environ 11,5 % de matière en plus (`docs/calibration.md`) |
 | **Livre de compte** | Dix missions ouvertes sur sept jours (première vente à une ville, premier contrat, première offre, premier convoi, première amélioration…), récompensées en marchandises ou en quelques ducats. Le tutoriel se termine en encaissant la première |
 | **Ouverture progressive** | Le Port s'ouvre au jour 3 (mission « premier convoi »), les lettres de marque au jour 6 (« premier navire ») ; un joueur déjà en mer n'est jamais bloqué |
 | **Tableau de rétention** | Page `/admin` réservée aux adresses `ADMIN_EMAILS` : retour à J+1, 3, 7, 14, 30, sessions par jour, entonnoir du tutoriel, dernière visite. PNJ exclus |
