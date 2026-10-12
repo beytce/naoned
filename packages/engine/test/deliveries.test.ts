@@ -689,3 +689,58 @@ describe("the instant sale to cities, closed by deliveries", () => {
     expect(checkInvariants(broken, w.totals).map((v) => v.invariant)).toEqual([7]);
   });
 });
+
+describe("city prices and the Rialto", () => {
+  const market = { weightBps: 5_000, floorBps: 8_000, capBps: 15_000 };
+  const indexed = () => world({ deliveries: { ...testDeliveries, marketIndex: market } as never });
+  /** Bread traded at `price` on `day`, in volume. */
+  const traded = (w: World, price: number, day: number, volume = 300) => {
+    w.state = {
+      ...w.state,
+      priceStats: {
+        ...w.state.priceStats,
+        bread: { [day]: { volume, value: BigInt(volume * price) } },
+      },
+    };
+  };
+  /** A city order of bread on day 1, and its price without the market. */
+  const bread = (w: World) => {
+    const o = deliveryOrdersFor(w.ctx, w.state, "a", 1).find(
+      (x) => x.kind === "city" && x.resource === "bread",
+    );
+    if (!o) throw new Error("no bread order");
+    return { price: o.unitPrice, plain: orderUnitPrice(w.ctx, "terraferma", o.city, "bread") };
+  };
+
+  /** Equal but for the rounding of the road's bonus. */
+  const near = (a: bigint, b: bigint) => expect(a > b ? a - b : b - a).toBeLessThanOrEqual(1n);
+
+  it("follow yesterday's price at the Rialto, half and half with the reference", () => {
+    const w = indexed();
+    traded(w, 240, 0);
+    const { price, plain } = bread(w);
+    // (180 + 240) / 2 = 210.
+    near(price, (plain * 210n) / 180n);
+  });
+
+  it("stay within their bounds whatever the Rialto does", () => {
+    const w = indexed();
+    traded(w, 900, 0);
+    const high = bread(w);
+    near(high.price, (high.plain * 270n) / 180n);
+    traded(w, 10, 0);
+    const low = bread(w);
+    near(low.price, (low.plain * 144n) / 180n);
+  });
+
+  it("ignore a thin market, and are off without the setting", () => {
+    const w = indexed();
+    traded(w, 240, 0, 10);
+    const thin = bread(w);
+    expect(thin.price).toBe(thin.plain);
+    const off = world();
+    traded(off, 240, 0);
+    const o = bread(off);
+    expect(o.price).toBe(o.plain);
+  });
+});

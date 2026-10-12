@@ -29,6 +29,7 @@ import { portDues, shipStatus, shipsOf } from "./ships.js";
 import { specialtyUnlocked } from "./specialties.js";
 import {
   type Building,
+  type Guild,
   MARKET_MAKER,
   type WorldContext,
   type WorldState,
@@ -38,6 +39,7 @@ import {
   seasonEnd,
 } from "./state.js";
 import { findRegion, recipesFor } from "./theme.js";
+import { activeWarOn, concessionHolder, sideOf, warForBand, warRefusal } from "./wars.js";
 
 /**
  * Computer-run merchants. They play through the same commands as people, with the same limits,
@@ -188,6 +190,8 @@ export class Bot {
   private lastPrice = new Map<string, Deniers>();
   /** Last day it put money in its guild. */
   private investedDay = -1;
+  /** Last day it thought of war. */
+  private warDay = -1;
 
   constructor(
     readonly id: string,
@@ -320,11 +324,19 @@ export class Bot {
     let waiting = 0;
     const day = dayIndex(s.ctx, s.now);
     const done = deliveriesDoneToday(state, this.id, day);
+    const atWar = (o: { city: string; resource: string }) => {
+      const w = activeWarOn(state, o.city, o.resource, s.now);
+      return !!w && !!sideOf(state, w, this.id);
+    };
     const orders = deliveryOrdersFor(s.ctx, state, this.id, day)
       .filter(
         (o) => !o.takenBy && !done.includes(o.id) && o.opensAt <= s.now && s.now < o.expiresAt,
       )
       .sort((a, b) => {
+        // The orders of a war it fights come first: they win the concession.
+        const wa = atWar(a) ? 1 : 0;
+        const wb = atWar(b) ? 1 : 0;
+        if (wa !== wb) return wb - wa;
         const va = a.unitPrice * BigInt(a.quantity);
         const vb = b.unitPrice * BigInt(b.quantity);
         return va === vb ? a.id.localeCompare(b.id) : va > vb ? -1 : 1;
@@ -355,7 +367,7 @@ export class Bot {
       const bid = this.bestBid(s, o.resource) ?? 0n;
       if (o.unitPrice < bid) continue;
       const spare = () => this.available(s, o.resource) - reserveOf(o.resource);
-      if (o.kind === "doge" || o.kind === "family") {
+      if (o.kind === "doge" || o.kind === "family" || atWar(o)) {
         const missing = o.quantity - spare();
         if (missing > 0) this.buy(s, o.resource, missing, 1.15);
       }
@@ -397,7 +409,11 @@ export class Bot {
       if (this.available(s, res) - this.reserve(s, res) < perHour * hours) return;
     }
     // A seasoned bandit knows the busy roads (the last day's traffic); an occasional one guesses.
-    const routes = allRoutes(s.ctx);
+    // In wartime only, the roads to a city at war where the bot fights.
+    const routes = allRoutes(s.ctx).filter(
+      (r) => !cfg.warOnly || !!warForBand(s.state(), r.split(":")[1] ?? "", this.id, s.now),
+    );
+    if (routes.length === 0) return;
     let route = s.rng.pick(routes);
     if (this.profile.name !== "casual") {
       const traffic = new Map<string, number>();
@@ -616,6 +632,7 @@ export class Bot {
     if (rules.maxMembers <= 0 || this.profile.name === "casual") return;
     const state = s.state();
     let guild = guildOf(state, this.id);
+    if (!guild) this.enlist(s);
     if (!guild) {
       if (s.now < guildsOpenAt(s.ctx, state, this.id)) return;
       const all = Object.values(state.guilds?.guilds ?? {});
@@ -654,6 +671,7 @@ export class Bot {
       if (p.guildId !== guild.id || p.status !== "open" || p.votes[this.id] !== undefined) continue;
       s.act({ type: "vote", playerId: this.id, proposalId: p.id, yes: p.kind !== "exclude" });
     }
+    this.wageWar(s, guild);
     // The founder sets the guild going: a share of each income paid out as dividends.
     if (guild.founder === this.id && guild.dividendBps === 0) {
       const pending = Object.values(s.state().guilds?.proposals ?? {}).some(
@@ -666,6 +684,69 @@ export class Bot {
           proposal: { kind: "dividend", value: 3_000 },
         });
     }
+  }
+
+  /**
+   * Wars: once a day, the founder of a guild with the chest to spare proposes a war on a concession
+   * of a good its members make (the Seigneurie's first), then asks a toll on what it holds and a
+   * bounty for suppliers. Members vote yes (see the votes above).
+   */
+  private wageWar(s: Session, guild: Guild): void {
+    const cfg = s.ctx.settings.wars;
+    if (s.ctx.settings.concessions.length === 0 || guild.founder !== this.id) return;
+    const day = dayIndex(s.ctx, s.now);
+    if (this.warDay === day) return;
+    this.warDay = day;
+    const state = s.state();
+    const open = Object.values(state.guilds?.proposals ?? {}).filter(
+      (p) => p.guildId === guild.id && p.status === "open",
+    );
+    const asked = (kind: string) => open.some((p) => p.kind === kind);
+    const held = s.ctx.settings.concessions.filter(
+      (c) => concessionHolder(state, c.code) === guild.id,
+    );
+    if (held.length > 0 && guild.tollBps === 0 && !asked("toll"))
+      s.act({ type: "propose", playerId: this.id, proposal: { kind: "toll", value: 400 } });
+    if (guild.bountyPerUnit === 0n && !asked("bounty"))
+      s.act({ type: "propose", playerId: this.id, proposal: { kind: "bounty", value: 10 } });
+    if (asked("war")) return;
+    const treasury = state.accounts[`guild:${guild.id}`] ?? 0n;
+    if (treasury < cfg.stake * 2n) return;
+    const chain = this.chainGoods(s);
+    const targets = s.ctx.settings.concessions
+      .filter((c) => chain.has(c.resource))
+      .filter((c) => !warRefusal(s.ctx, state, guild.id, c.code, s.now))
+      .sort(
+        (a, b) =>
+          Number(concessionHolder(state, a.code) !== null) -
+          Number(concessionHolder(state, b.code) !== null),
+      );
+    const others = s.ctx.settings.concessions.filter(
+      (c) => !warRefusal(s.ctx, state, guild.id, c.code, s.now),
+    );
+    const target = targets[0] ?? (others.length > 0 ? s.rng.pick(others) : undefined);
+    if (target)
+      s.act({ type: "propose", playerId: this.id, proposal: { kind: "war", target: target.code } });
+  }
+
+  /** A merchant of no guild supplies the attacker of a war on a good it makes, for the bounty. */
+  private enlist(s: Session): void {
+    const chain = this.chainGoods(s);
+    for (const w of Object.values(s.state().wars ?? {})) {
+      if (w.outcome || s.now >= w.endAt || w.enlisted[this.id] || !chain.has(w.resource)) continue;
+      s.act({ type: "enlist", playerId: this.id, warId: w.id, side: "attacker" });
+      return;
+    }
+  }
+
+  /** What the bot's region makes along its chain (raw good, craft, bread for the plain). */
+  private chainGoods(s: Session): Set<string> {
+    const out = new Set<string>();
+    for (const b of this.buildings(s)) {
+      const recipe = s.ctx.theme.recipes.find((r) => r.building === b.type);
+      for (const r of Object.keys(recipe?.outputs ?? {})) out.add(r);
+    }
+    return out;
   }
 
   private collectGalleys(s: Session): void {

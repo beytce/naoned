@@ -9,6 +9,7 @@ import { closeWorksites, openDueProjects } from "./projects.js";
 import { shipUpkeep } from "./ships.js";
 import { DAY_MS, HOUR_MS, SINK_ACCOUNT, cashAccount, dayIndex } from "./state.js";
 import { type Tx, balance, emit, removeStock, transfer } from "./tx.js";
+import { closeWars } from "./wars.js";
 import { closeSeason, closeWeek } from "./weekly.js";
 
 /**
@@ -88,6 +89,7 @@ export function tick(tx: Tx): void {
   // Votes come to an end; at the end of the season, the treasuries are shared out (before the
   // final ranking, which then counts them as cash).
   closeGuildBusiness(tx);
+  closeWars(tx);
   closeSeason(tx);
   openDueProjects(tx);
   // Shared demand: the world's board of the day, drawn once the day's active merchants are known.

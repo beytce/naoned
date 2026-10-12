@@ -383,6 +383,10 @@ export interface WorldState {
   weekly?: { week: number; start: Record<PlayerId, Deniers> };
   /** The merchants' guilds, their members and their votes. */
   guilds?: GuildsState;
+  /** Who holds each concession (absent: the Seigneurie). */
+  concessions?: Record<string, Concession>;
+  /** Trade wars, under way and decided. */
+  wars?: Record<string, EngineWar>;
   /** Set once the final ranking has been published (event `season_closed`). */
   seasonClosed?: boolean;
 }
@@ -442,6 +446,38 @@ export interface GuildProposal {
   closedAt?: number;
   votes: Record<PlayerId, boolean>;
   status: "open" | "passed" | "rejected";
+}
+
+export interface Concession {
+  /** The guild holding it (null: the Seigneurie). */
+  holder: string | null;
+  since: number;
+  /** No war may be declared on it before then. */
+  protectedUntil: number;
+}
+
+export type WarSide = "attacker" | "defender";
+
+export interface EngineWar {
+  id: string;
+  concession: string;
+  city: string;
+  resource: string;
+  attacker: string;
+  attackerName: string;
+  /** The holding guild (null: the Seigneurie, which defends with a threshold). */
+  defender: string | null;
+  defenderName: string | null;
+  startAt: number;
+  endAt: number;
+  /** Units the Seigneurie stands for when it defends. */
+  threshold: number;
+  score: { attacker: number; defender: number };
+  /** Units delivered by each merchant for their side. */
+  supplied: Record<PlayerId, number>;
+  /** Merchants of no guild supplying a side. */
+  enlisted: Record<PlayerId, WarSide>;
+  outcome?: WarSide;
 }
 
 export interface GuildsState {

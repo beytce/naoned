@@ -107,6 +107,14 @@ export interface SimulationResult {
     dividends: Deniers;
     founded: number;
     proposals: { passed: number; rejected: number };
+    /** Trade wars: declared, won by the attacker, concessions held by guilds at the end. */
+    wars: {
+      declared: number;
+      attackerWon: number;
+      held: number;
+      tolls: Deniers;
+      bounties: Deniers;
+    };
   };
 }
 
@@ -200,6 +208,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     dividends: 0n,
     founded: 0,
     proposals: { passed: 0, rejected: 0 },
+    wars: { declared: 0, attackerWon: 0, held: 0, tolls: 0n, bounties: 0n },
   } as NonNullable<SimulationResult["guilds"]>;
   const bales = { opened: 0, cards: {}, valueBy: {} } as NonNullable<SimulationResult["bales"]>;
   let now = START;
@@ -227,6 +236,8 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
         }
       }
       if (e.type === "guild_founded") guilds.founded++;
+      if (e.type === "war_declared") guilds.wars.declared++;
+      if (e.type === "war_closed" && e.data?.winner === "attacker") guilds.wars.attackerWon++;
       if (e.type === "proposal_closed") {
         if (e.data?.passed) guilds.proposals.passed++;
         else guilds.proposals.rejected++;
@@ -235,6 +246,8 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     for (const l of res.effects.ledger) {
       if (l.reason === "guild_stake") guilds.invested += l.amount;
       if (l.reason === "guild_dividend") guilds.dividends += l.amount;
+      if (l.reason === "toll") guilds.wars.tolls += l.amount;
+      if (l.reason === "war_bounty") guilds.wars.bounties += l.amount;
     }
     if (cmd.type === "openBale") {
       bales.opened++;
@@ -407,6 +420,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
   for (const g of Object.values(state.guilds?.guilds ?? {})) {
     guilds.members[g.name] = Object.keys(g.members).length;
   }
+  guilds.wars.held = Object.values(state.concessions ?? {}).filter((c) => c.holder).length;
   guilds.unaffiliated = merchants.filter((id) => !state.guilds?.memberOf[id]).length;
   result.guilds = guilds;
   result.bales = bales;

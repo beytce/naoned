@@ -41,6 +41,34 @@ export const venice1450Settings: WorldSettingsInput = {
       quantities: { salt: 15, wine: 8, silk: 4, spices: 3, furs: 3, cloth: 2 },
     },
   },
+  // Concessions: twelve goods in the cities, held by the Seigneurie until a guild takes them.
+  concessions: [
+    { code: "venezia-bread", city: "venezia", resource: "bread" },
+    { code: "venezia-bricks", city: "venezia", resource: "bricks" },
+    { code: "venezia-planks", city: "venezia", resource: "planks" },
+    { code: "padova-bread", city: "padova", resource: "bread" },
+    { code: "padova-planks", city: "padova", resource: "planks" },
+    { code: "verona-bread", city: "verona", resource: "bread" },
+    { code: "verona-bricks", city: "verona", resource: "bricks" },
+    { code: "vicenza-planks", city: "vicenza", resource: "planks" },
+    { code: "treviso-bricks", city: "treviso", resource: "bricks" },
+    { code: "treviso-flour", city: "treviso", resource: "flour" },
+    { code: "mantova-flour", city: "mantova", resource: "flour" },
+    { code: "ferrara-bricks", city: "ferrara", resource: "bricks" },
+  ],
+  // Trade wars: two days; a war chest of 150 d leaves the treasury; the defender's units count a
+  // fifth more; the Seigneurie defends with 1 unit per active merchant; a concession is safe for
+  // three days after a war; its holder's members are paid 10 % more for that good there; a war
+  // puts a quarter of an order per active merchant and per day on the board.
+  wars: {
+    hours: 48,
+    stake: 15_000,
+    defenderBonusBps: 2_000,
+    protectHours: 72,
+    seigneurieUnitsPerActive: 1,
+    memberPremiumBps: 1_000,
+    ordersPerActiveBps: 2_500,
+  },
   // The merchants' guilds: from day 2, founded for 50 d with a stake of 100 d at least; carats at
   // 1 d to start; twelve members at most; a fifth of a leaver's carats stays with the guild; no
   // member weighs more than 40 % of a vote, open 24 h.
@@ -319,6 +347,9 @@ export const venice1450Settings: WorldSettingsInput = {
     cityPriceBps: 11_000,
     // +50 % per hour of road: the money of the former city sales, now earned on the road.
     distanceBonusBpsPerHour: 5_000,
+    // City prices follow the Rialto: half the reference, half yesterday's traded price, between
+    // 80 % and 150 % of the reference.
+    marketIndex: { weightBps: 5_000, floorBps: 8_000, capBps: 15_000 },
     // One or two batches of a workshop: an order is within reach of a session or two.
     quantity: {
       bread: [8, 20],
@@ -420,6 +451,8 @@ export const venice1450Settings: WorldSettingsInput = {
     minTargetWorthBps: 5_000,
     cooldownHours: 24,
     sameGuildImmune: true,
+    // Bands only in wartime, on the road of a war, against the other side.
+    warOnly: true,
     openDay: 6,
     npcBands: { perDay: 3, hours: 3 },
     // The Doge's bounty for beating off a player's band: 5 ducats, +20 % per take of the bandit.
@@ -738,18 +771,10 @@ export const venice1450Settings: WorldSettingsInput = {
       wood: 40,
       planks: 40,
     },
-    // Each merchant may buy 25 and sell 10 units a day per resource at the Fondaco, so nobody
-    // empties it for the others; as the world fills, quotas shrink to share 250 units a day.
+    // The Dogana is a safety net, not a market: each merchant may buy 10 and sell 5 units a day per
+    // resource there; as the world fills, quotas shrink to share 250 units a day. Trade is between
+    // merchants, at the Rialto.
     playerDailyQuota: {
-      wheat: 25,
-      flour: 25,
-      bread: 25,
-      clay: 25,
-      bricks: 25,
-      wood: 25,
-      planks: 25,
-    },
-    playerDailySellQuota: {
       wheat: 10,
       flour: 10,
       bread: 10,
@@ -757,6 +782,15 @@ export const venice1450Settings: WorldSettingsInput = {
       bricks: 10,
       wood: 10,
       planks: 10,
+    },
+    playerDailySellQuota: {
+      wheat: 5,
+      flour: 5,
+      bread: 5,
+      clay: 5,
+      bricks: 5,
+      wood: 5,
+      planks: 5,
     },
     maxDailyDepth: {
       wheat: 250,

@@ -304,6 +304,36 @@ export const worldSettingsSchema = z.object({
       freshBonusBps: 0,
       contractRerollsPerDay: 0,
     }),
+  /** Concessions: a good in a city, held by a guild that levies a toll (none: no wars). */
+  concessions: z
+    .array(z.object({ code: z.string(), city: z.string(), resource: z.string() }))
+    .default([]),
+  /** Trade wars between guilds for the concessions. */
+  wars: z
+    .object({
+      hours: positive,
+      /** Paid from the treasury to declare a war (destroyed). */
+      stake: money,
+      /** The defender's units count this much more. */
+      defenderBonusBps: bps,
+      /** No new war on a concession for this long after one. */
+      protectHours: qty,
+      /** Units the Seigneurie stands for, per active merchant, when it defends. */
+      seigneurieUnitsPerActive: qty,
+      /** Paid on top to the holder's members for their deliveries of the good to the city. */
+      memberPremiumBps: bps,
+      /** Extra orders of the good to the city on the board, per active merchant and per day. */
+      ordersPerActiveBps: bps,
+    })
+    .default({
+      hours: 48,
+      stake: 0,
+      defenderBonusBps: 0,
+      protectHours: 0,
+      seigneurieUnitsPerActive: 0,
+      memberPremiumBps: 0,
+      ordersPerActiveBps: 0,
+    }),
   /**
    * The merchants' guilds: founded with a stake, owned in carats bought at the treasury's value,
    * run by votes weighted by carats (each member capped). No members allowed turns them off.
@@ -367,6 +397,14 @@ export const worldSettingsSchema = z.object({
       cityPriceBps: bps,
       /** … plus this much per hour of road (one way, normal speed). */
       distanceBonusBpsPerHour: bps,
+      /**
+       * City prices follow the Rialto: the reference blended with yesterday's traded price
+       * (`weightBps` of it, when the volume suffices), kept between `floorBps` and `capBps` of the
+       * reference. Weight 0 turns it off.
+       */
+      marketIndex: z
+        .object({ weightBps: bps.max(10_000), floorBps: bps, capBps: bps })
+        .default({ weightBps: 0, floorBps: 10_000, capBps: 10_000 }),
       /** Quantity range of a city order, per resource (also the resources cities order). */
       quantity: z.record(z.tuple([positive, positive])),
       /** How often each resource is ordered, relative to the others (1 when absent). */
@@ -454,6 +492,8 @@ export const worldSettingsSchema = z.object({
       minTargetWorthBps: bps,
       cooldownHours: qty,
       sameGuildImmune: z.boolean().default(true),
+      /** Bands only on the roads of a war, by its sides, against the other side's convoys. */
+      warOnly: z.boolean().default(false),
       /** Days after joining before a merchant may post a band. */
       openDay: qty,
       /** Bands of the computer, so that a small world has some risk. */

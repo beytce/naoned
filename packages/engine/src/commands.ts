@@ -38,6 +38,7 @@ import {
   type PlayerId,
   SINK_ACCOUNT,
   SOURCE_ACCOUNT,
+  type WarSide,
   type WorldContext,
   type WorldState,
   cashAccount,
@@ -56,6 +57,7 @@ import {
   removeStock,
   transfer,
 } from "./tx.js";
+import { enlist } from "./wars.js";
 import { startWeek } from "./weekly.js";
 
 enableMapSet();
@@ -109,6 +111,7 @@ export type Command =
   | { type: "leaveGuild"; playerId: PlayerId }
   | { type: "propose"; playerId: PlayerId; proposal: ProposalInput }
   | { type: "vote"; playerId: PlayerId; proposalId: string; yes: boolean }
+  | { type: "enlist"; playerId: PlayerId; warId: string; side: WarSide }
   /** From the server: the Pass Négociant until this time (a later date never shortens it). */
   | { type: "grantPass"; playerId: PlayerId; until: number }
   | { type: "collectExpedition"; playerId: PlayerId; expeditionId: string }
@@ -326,6 +329,9 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "vote":
       vote(tx, cmd.playerId, cmd.proposalId, cmd.yes);
+      break;
+    case "enlist":
+      enlist(tx, cmd.playerId, cmd.warId, cmd.side);
       break;
     case "collectExpedition":
       collectExpedition(tx, cmd.playerId, cmd.expeditionId);

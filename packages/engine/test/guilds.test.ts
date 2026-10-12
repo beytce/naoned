@@ -148,9 +148,9 @@ describe("guilds", () => {
     const { w } = leone();
     w.do({ type: "propose", playerId: "a", proposal: { kind: "toll", value: 500 } });
     const p = Object.values(w.state.guilds?.proposals ?? {})[0];
-    expect(p?.status).toBe("open");
-    // a holds 60 % of the carats but weighs 40 % at most: not a majority alone.
-    w.do({ type: "vote", playerId: "a", proposalId: p?.id ?? "", yes: true });
+    // a voted for it in proposing, but holds 60 % of the carats and weighs 40 % at most: not a
+    // majority alone.
+    expect(p?.votes.a).toBe(true);
     expect(w.state.guilds?.proposals[p?.id ?? ""]?.status).toBe("open");
     w.do({ type: "vote", playerId: "b", proposalId: p?.id ?? "", yes: true });
     expect(w.state.guilds?.proposals[p?.id ?? ""]?.status).toBe("passed");
@@ -203,8 +203,8 @@ describe("guilds", () => {
     w.do({ type: "leaveGuild", playerId: "c" });
     w.do({ type: "propose", playerId: "a", proposal: { kind: "open", value: 0 } });
     const pid = Object.keys(w.state.guilds?.proposals ?? {})[0] ?? "";
-    // Two members left: a's 60 carats weigh 32 (40 % of 80), a majority of 52 on their own.
-    w.do({ type: "vote", playerId: "a", proposalId: pid, yes: true });
+    // Two members left: a's 60 carats weigh 32 (40 % of 80), a majority of 52 on their own; who
+    // proposes votes for it.
     expect(w.state.guilds?.proposals[pid]?.status).toBe("passed");
     const r = w.try({ type: "joinGuild", playerId: "c", guildId: id, stake: 10_000 });
     expect(r.ok ? null : r.error).toBe("guild_closed");

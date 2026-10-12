@@ -21,6 +21,14 @@ export {
   treasury,
   votingWeights,
 } from "./guilds.js";
+export {
+  activeWarOn,
+  concessionAt,
+  concessionDef,
+  concessionHolder,
+  sideOf,
+  warRefusal,
+} from "./wars.js";
 export * from "./invariants.js";
 export {
   bestPrice,

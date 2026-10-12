@@ -163,6 +163,13 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
       pass: true,
       blocking: false,
     });
+    checks.push({
+      name: "Guerres de concessions",
+      target: "au moins une guerre par semaine et par monde",
+      value: `${gl.wars.declared} déclarées · ${gl.wars.attackerWon} gagnées par l'attaquant · ${gl.wars.held} concessions tenues en fin de saison · péages ${ducats(gl.wars.tolls)} · primes ${ducats(gl.wars.bounties)}`,
+      pass: gl.wars.declared >= 4,
+      blocking: false,
+    });
   }
 
   checks.push(...budgetChecks(r));

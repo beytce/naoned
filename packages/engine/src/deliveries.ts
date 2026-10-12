@@ -26,7 +26,9 @@ import {
   isActive,
 } from "./state.js";
 import { type Tx, addStock, emit, fail, nextId, removeStock, transfer } from "./tx.js";
+import { vwap } from "./valuation.js";
 import { netWorth } from "./valuation.js";
+import { activeWarOn, onArrival, sideOf, warForBand } from "./wars.js";
 
 /**
  * Deliveries by road: the land side of the sea. Each merchant gets a board of personal orders
@@ -163,11 +165,42 @@ export function orderUnitPrice(
   city: string,
   resource: string,
   extraBps = 0,
+  /** The world and the day: the price follows the Rialto (see `marketIndex`). */
+  market?: { state: WorldState; day: number },
 ): Deniers {
   const { cityPriceBps, distanceBonusBpsPerHour } = ctx.settings.deliveries;
   const minutes = routeMinutes(ctx, region, city) ?? 0;
   const bps = cityPriceBps + Math.floor((distanceBonusBpsPerHour * minutes) / 60) + extraBps;
-  return applyBpsFloor(ctx.settings.referencePrices[resource] ?? 0n, bps);
+  const base = market ? indexedPrice(ctx, market.state, resource, market.day) : undefined;
+  return applyBpsFloor(base ?? ctx.settings.referencePrices[resource] ?? 0n, bps);
+}
+
+/**
+ * The reference price of a good, blended with yesterday's traded price at the Rialto and kept
+ * within bounds; the reference alone without trades enough or without the setting.
+ */
+export function indexedPrice(
+  ctx: WorldContext,
+  state: WorldState,
+  resource: string,
+  day: number,
+): Deniers {
+  const reference = ctx.settings.referencePrices[resource] ?? 0n;
+  const { weightBps, floorBps, capBps } = ctx.settings.deliveries.marketIndex;
+  if (weightBps === 0 || day <= 0) return reference;
+  // Up to the end of yesterday: one price for the whole day.
+  const traded = vwap(
+    ctx,
+    state,
+    resource,
+    ctx.startAt + day * DAY_MS - 1,
+    ctx.settings.valuation.vwapDays,
+  );
+  if (traded === undefined) return reference;
+  const blended = (reference * BigInt(10_000 - weightBps) + traded * BigInt(weightBps)) / 10_000n;
+  const lo = applyBpsFloor(reference, floorBps);
+  const hi = applyBpsFloor(reference, capBps);
+  return blended < lo ? lo : blended > hi ? hi : blended;
 }
 
 /** Cities on a road from the region that buy this resource. */
@@ -259,7 +292,7 @@ export function deliveryOrdersFor(
         city,
         resource: welcome.resource,
         quantity: welcome.quantity,
-        unitPrice: orderUnitPrice(ctx, region, city, welcome.resource),
+        unitPrice: orderUnitPrice(ctx, region, city, welcome.resource, 0, { state, day }),
         opensAt: dayStart,
         expiresAt,
       });
@@ -299,7 +332,7 @@ export function deliveryOrdersFor(
         resource: b.resource,
         quantity: b.quantity,
         unitPrice: priced(
-          orderUnitPrice(ctx, region, b.city, b.resource, premium),
+          orderUnitPrice(ctx, region, b.city, b.resource, premium, { state, day }),
           b.city,
           b.resource,
         ),
@@ -344,7 +377,10 @@ export function deliveryOrdersFor(
     push({
       kind: "urgent",
       ...o,
-      unitPrice: orderUnitPrice(ctx, region, o.city, o.resource, cfg.urgentPremiumBps),
+      unitPrice: orderUnitPrice(ctx, region, o.city, o.resource, cfg.urgentPremiumBps, {
+        state,
+        day,
+      }),
       opensAt,
       expiresAt: opensAt + cfg.urgentOpenMinutes * MINUTE_MS,
     });
@@ -368,7 +404,7 @@ export function deliveryOrdersFor(
       city,
       resource,
       quantity: quantityOf(resource, key),
-      unitPrice: orderUnitPrice(ctx, region, city, resource),
+      unitPrice: orderUnitPrice(ctx, region, city, resource, 0, { state, day }),
       opensAt: dayStart,
       expiresAt,
     });
@@ -379,7 +415,7 @@ export function deliveryOrdersFor(
     push({
       kind: "city",
       ...o,
-      unitPrice: orderUnitPrice(ctx, region, o.city, o.resource),
+      unitPrice: orderUnitPrice(ctx, region, o.city, o.resource, 0, { state, day }),
       opensAt: dayStart,
       expiresAt,
     });
@@ -558,6 +594,16 @@ export function ensureBoard(tx: Tx): void {
       const o = random(key);
       add(`w${i}`, "city", o.resource, o.city, key, dayStart, expiresAt);
     }
+    // A war makes the city ask for more of its good, every day it lasts.
+    const warOrders = Math.ceil((active * ctx.settings.wars.ordersPerActiveBps) / 10_000);
+    for (const war of Object.values(tx.s.wars ?? {})) {
+      if (war.outcome || war.endAt <= dayStart || war.startAt >= expiresAt) continue;
+      if (!resources.includes(war.resource)) continue;
+      for (let i = 0; i < warOrders; i++) {
+        const key = `board-war:${day}:${war.id}:${i}`;
+        add(`x${war.id}-${i}`, "city", war.resource, war.city, key, dayStart, expiresAt);
+      }
+    }
     for (let i = 0; i < cfg.urgentPerDay * active; i++) {
       const key = `board-urgent:${day}:${i}`;
       const opensAt = urgentOpening(ctx, dayStart, `${key}:at`);
@@ -702,6 +748,8 @@ function arrive(tx: Tx, d: Delivery): void {
   transfer(tx, SOURCE_ACCOUNT, cashAccount(d.playerId), amount, "delivery", d.id);
   d.paid = amount;
   d.outcome = d.attack?.success ? "robbed_delivered" : "delivered";
+  // The concession's toll or premium; in a war, the units for the merchant's side.
+  onArrival(tx, d, left, amount);
   const city = d.route.split(":")[1] ?? "";
   emit(tx, "delivery_arrived", d.playerId, {
     delivery: d.id,
@@ -795,6 +843,11 @@ export function postBand(tx: Tx, playerId: PlayerId, route: string, hours: numbe
   if (tx.now < player.joinedAt + cfg.openDay * DAY_MS) fail("bandits_locked");
   if (!routeExists(ctx, route)) fail("no_route");
   if (!cfg.hoursOptions.includes(hours)) fail("invalid_hours");
+  // In wartime only: on the road of a war, by one of its sides.
+  if (cfg.warOnly) {
+    const [region = "", city = ""] = route.split(":");
+    if (region === "" || !warForBand(tx.s as WorldState, city, playerId, tx.now)) fail("no_war");
+  }
   const bands = entries(tx.s.bands as Record<string, BanditBand>);
   const mine = bands.filter((b) => b.playerId === playerId && !b.dispersed && tx.now < b.endAt);
   if (mine.length >= cfg.maxActivePerPlayer) fail("too_many_bands");
@@ -844,6 +897,15 @@ function fairPrey(tx: Tx, b: BanditBand, d: Delivery, at: number): boolean {
   const guild = members[d.playerId];
   if (cfg.sameGuildImmune && guild && members[b.playerId] === guild) return false;
   const state = baseState(tx);
+  if (cfg.warOnly) {
+    // Only the other side's convoys of the war's good.
+    const city = d.route.split(":")[1] ?? "";
+    const war = activeWarOn(state, city, d.resource, at);
+    if (!war) return false;
+    const mine = sideOf(state, war, b.playerId);
+    const theirSide = sideOf(state, war, d.playerId);
+    if (!mine || !theirSide || mine === theirSide) return false;
+  }
   const theirs = netWorth(tx.ctx, state, d.playerId, at).total;
   const ours = netWorth(tx.ctx, state, b.playerId, at).total;
   return theirs * 10_000n >= ours * BigInt(cfg.minTargetWorthBps);
@@ -1035,7 +1097,7 @@ function closeBands(tx: Tx): void {
   }
   const { perDay, hours } = ctx.settings.bandits.npcBands;
   const today = dayIndex(ctx, tx.now);
-  if (perDay === 0 || (tx.s.npcBandsDay ?? -1) >= today) return;
+  if (perDay === 0 || ctx.settings.bandits.warOnly || (tx.s.npcBandsDay ?? -1) >= today) return;
   tx.s.npcBandsDay = today;
   const routes = allRoutes(ctx);
   if (routes.length === 0) return;

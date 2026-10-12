@@ -14,6 +14,7 @@ import {
   seasonEnd,
 } from "./state.js";
 import { type Tx, emit, fail, nextId, transfer } from "./tx.js";
+import { startWar, warRefusal } from "./wars.js";
 
 /**
  * The merchants' guilds. A guild is founded with a stake; every ducat put in its treasury buys
@@ -32,7 +33,8 @@ export type ProposalInput =
   | { kind: "dividend"; value: number }
   | { kind: "bounty"; value: number }
   | { kind: "open"; value: number }
-  | { kind: "exclude"; target: PlayerId };
+  | { kind: "exclude"; target: PlayerId }
+  | { kind: "war"; target: string };
 
 function guilds(tx: Tx): GuildsState {
   tx.s.guilds ??= { guilds: {}, memberOf: {}, proposals: {} };
@@ -191,8 +193,12 @@ export function leaveGuilds(tx: Tx, playerId: PlayerId): void {
 export function propose(tx: Tx, playerId: PlayerId, input: ProposalInput): void {
   const g = memberGuild(tx, playerId);
   const r = rules(tx.ctx);
-  const value = input.kind === "exclude" ? 0 : input.value;
-  if (input.kind !== "exclude" && (!Number.isInteger(value) || value < 0)) fail("invalid_proposal");
+  const value = input.kind === "exclude" || input.kind === "war" ? 0 : input.value;
+  if (!Number.isInteger(value) || value < 0) fail("invalid_proposal");
+  if (input.kind === "war") {
+    const refused = warRefusal(tx.ctx, tx.s as WorldState, g.id, input.target, tx.now);
+    if (refused) fail(refused);
+  }
   if (input.kind === "toll" && value > r.maxTollBps) fail("invalid_proposal");
   if (input.kind === "dividend" && value > 10_000) fail("invalid_proposal");
   if (input.kind === "bounty" && BigInt(value) > r.maxBountyPerUnit) fail("invalid_proposal");
@@ -206,7 +212,7 @@ export function propose(tx: Tx, playerId: PlayerId, input: ProposalInput): void 
     by: playerId,
     kind: input.kind,
     value,
-    target: input.kind === "exclude" ? input.target : undefined,
+    target: input.kind === "exclude" || input.kind === "war" ? input.target : undefined,
     openedAt: tx.now,
     closesAt: tx.now + r.voteHours * HOUR_MS,
     votes: {},
@@ -214,6 +220,8 @@ export function propose(tx: Tx, playerId: PlayerId, input: ProposalInput): void 
   };
   guilds(tx).proposals[id] = p;
   emit(tx, "proposal_opened", playerId, { guild: g.id, proposal: id, kind: p.kind, value });
+  // Who proposes votes for it.
+  vote(tx, playerId, id, true);
 }
 
 /** Voting weight of each member: carats, at most `maxVoteBps` of all the carats. */
@@ -266,12 +274,17 @@ function settle(tx: Tx, g: Guild, p: GuildProposal, passed: boolean): void {
     else if (p.kind === "open") g.open = p.value === 1;
     else if (p.kind === "exclude" && p.target && g.members[p.target])
       removeMember(tx, g, p.target, 0, "excluded");
+    else if (p.kind === "war" && p.target) {
+      // Circumstances may have changed during the vote: then the war does not start.
+      if (warRefusal(tx.ctx, tx.s as WorldState, g.id, p.target, tx.now)) p.status = "rejected";
+      else startWar(tx, g, p.target);
+    }
   }
   emit(tx, "proposal_closed", undefined, {
     guild: g.id,
     proposal: p.id,
     kind: p.kind,
-    passed,
+    passed: p.status === "passed",
   });
 }
 
