@@ -613,4 +613,10 @@ Réglages de Venise : `guilds` (fondation 50 d, mise 100 d, 12 membres, sortie �
 - Le brigandage de guerre reste rare et perdant pour les bots (−76 à −100 %) : peu de routes, peu de convois de l'autre camp. À surveiller avec de vrais joueurs ; pistes : une prise plus forte en guerre, ou des bandes plus longues.
 - L'écart entre assidus et occasionnels reste très bruité ; la graine 4 le met à −37 % (peu d'occasionnels en fin de saison, médiane instable).
 
-Le contrôle du Pass (`pnpm sim --pass 0.2`) est relancé après ce changement ; ses résultats sont ajoutés ci-dessous.
+**Contrôle du Pass (`pnpm sim --pass 0.2`) : toujours non conforme, comme avant.**
+- Avance des abonnés : −7,7 %, +34,2 %, +54,4 %, +4,4 %, +63,7 % (plafond +5 %). Trois graines sur cinq la dépassent.
+- Part des abonnés dans le top 10 : de 10 à 30 %, conforme. Un gratuit assidu devant un abonné occasionnel : conforme partout où il y a un abonné occasionnel.
+
+Le Pass n'a aucun avantage de guilde ni de guerre, et la Dogana où joue son quota pèse moins. L'écart vient surtout de la divergence des deux saisons rejouées, plus forte avec les guerres : la guilde qui prend une concession bascule d'une partie à l'autre, et le péage suit.
+
+Le paiement du Pass reste débranché (règle R7). Avant de le brancher, il faudra mesurer ce contrôle sur plus de graines ou par la moyenne.
