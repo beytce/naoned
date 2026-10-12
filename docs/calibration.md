@@ -499,13 +499,13 @@ Recommandations R9 à R13 de `docs/audit-2026-10.md`. Les bots ne réclament pas
 | --- | --- | --- | --- | --- | --- |
 | Monnaie payée (ducats / joueur actif / jour) | 173,4 | 175,0 | 175,6 | 179,3 | 183,4 |
 | Rendement du brigand actif | +49 % | +83 % | +37 % | +48 % | +92 % |
-| Rendement du brigand occasionnel | −55 % | −77 % | — | — | +8 % (11 bandes) |
+| Rendement du brigand occasionnel | −55 % | −77 % | +55 % | +32 % | +8 % |
 | Primes (part de la monnaie payée) | 0,2 % | 0,3 % | 0,3 % | 0,2 % | 0,5 % |
 | Perte moyenne d'un livreur | 0,4 % | 0,4 % | 0,4 % | 0,4 % | 0,5 % |
-| Livreur prudent / brigand (ducats par heure) | 6,5 / 0,3 | 6,4 / 0,5 | — | — | 6,4 / 0,5 |
+| Livreur prudent / brigand (ducats par heure) | 6,5 / 0,3 | 6,4 / 0,5 | 6,5 / 0,2 | 6,6 / 0,3 | 6,4 / 0,5 |
 | Niveaux d'ateliers par marchand | 6,7 | 6,5 | 6,4 | 6,7 | 7,0 |
 | Niveau moyen des ateliers | 1,34 | 1,33 | 1,33 | 1,28 | 1,34 |
 | Indice des prix | 93 – 100 | 93 – 100 | 93 – 100 | 93 – 100 | 93 – 100 |
 | Gini à J+15 | 0,40 | 0,44 | 0,47 | 0,44 | 0,41 |
 
-La monnaie payée reste dans la cible (151 à 185), un peu plus haut qu'avant (176 à 179) : les urgentes ouvertes trois heures sont davantage livrées. La graine 5 approche du plafond, à surveiller. Brigander devient rentable sans rattraper la livraison (0,5 ducat de l'heure de bande contre 6,4 pour un livreur), et la perte des livreurs reste minime. Le niveau des ateliers bouge peu chez les bots, qui n'investissent qu'avec prudence ; l'effet du niveau 2 moins cher et des missions se mesurera avec la bêta. L'écart brut entre assidus et occasionnels reste bruité (+74 % à +202 %).
+La monnaie payée reste dans la cible (151 à 185), un peu plus haut qu'avant (176 à 179) : les urgentes ouvertes trois heures sont davantage livrées. La graine 5 approche du plafond, à surveiller. Brigander devient rentable sans rattraper la livraison (0,2 à 0,5 ducat de l'heure de bande contre 6,4 à 6,6 pour un livreur), et la perte des livreurs reste minime. **Écart à la cible** : le brigand occasionnel (bande sur une route au hasard) n'est plus toujours perdant (+8 à +55 % sur trois graines, sur 11 à 22 bandes : très bruité). Ce contrôle n'est pas bloquant ; si la bêta le confirme, le levier est `feePerHour` ou un butin dégressif pour les bandes courtes. Le niveau des ateliers bouge peu chez les bots, qui n'investissent qu'avec prudence ; l'effet du niveau 2 moins cher et des missions se mesurera avec la bêta. L'écart brut entre assidus et occasionnels reste bruité (+74 % à +202 %).
