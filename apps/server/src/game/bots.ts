@@ -14,6 +14,9 @@ import type { Db } from "../db/client.js";
 import { accounts, players } from "../db/schema.js";
 import type { GameWorld } from "./world.js";
 
+/** The patrician families of earlier versions: no house is named after them. */
+export const FAMILY_NAMES = ["Contarini", "Morosini", "Mocenigo", "Dandolo"];
+
 /**
  * Great Venetian families: the bots' trading houses. The patrician families players swear
  * allegiance to (theme.families) are left out, so that a house is never taken for one of them.
@@ -104,9 +107,7 @@ export class BotRunner {
 
   /** Houses named after a patrician family (older versions) take a free name instead. */
   private async renameFamilyHouses(): Promise<void> {
-    const families = new Set(
-      (this.world.ctx.theme.families ?? []).map((f) => `casa ${f.name}`.toLowerCase()),
-    );
+    const families = new Set(FAMILY_NAMES.map((f) => `casa ${f}`.toLowerCase()));
     const bots = await this.db
       .select({ id: accounts.id, pseudo: accounts.pseudo })
       .from(accounts)
@@ -126,9 +127,7 @@ export class BotRunner {
         r.pseudo?.toLowerCase(),
       ),
     );
-    const families = new Set(
-      (this.world.ctx.theme.families ?? []).map((f) => f.name.toLowerCase()),
-    );
+    const families = new Set(FAMILY_NAMES.map((f) => f.toLowerCase()));
     return HOUSES.filter((h) => !families.has(h.toLowerCase()))
       .map((h) => `Casa ${h}`)
       .find((name) => !taken.has(name.toLowerCase()));

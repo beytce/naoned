@@ -37,7 +37,7 @@ export const NOTIFICATION_KINDS = [
   "season",
   "criee",
   "deal",
-  "family",
+  "guild",
   "ambush",
   "delivery",
   "robbed",
@@ -84,7 +84,7 @@ export class Notifier {
    * resource and side, with the total traded.
    */
   async fromEffects(fx: Effects, now: number): Promise<void> {
-    await this.familyWeek(fx, now);
+    await this.guildNews(fx, now);
     const fills = fx.events.filter((e) => e.type === "order_filled" && e.playerId);
     if (fills.length === 0) return;
     const people = await this.people();
@@ -128,29 +128,38 @@ export class Notifier {
   }
 
   /**
-   * The families' week has closed: each member (people only) learns where their family finished
-   * and who holds power for the week starting.
+   * The guild's business, to its members (people only): a vote opened by another member, a vote
+   * decided, a worksite won.
    */
-  private async familyWeek(fx: Effects, now: number): Promise<void> {
-    const closed = fx.events.find((e) => e.type === "family_week_closed");
-    if (!closed) return;
-    const data = closed.data ?? {};
-    const standings = (data.standings ?? []) as { family: string }[];
-    const members = this.world.current.families?.members ?? {};
+  private async guildNews(fx: Effects, now: number): Promise<void> {
+    const news = fx.events.filter(
+      (e) =>
+        e.type === "proposal_opened" || e.type === "proposal_closed" || e.type === "worksite_won",
+    );
+    if (news.length === 0) return;
+    const gs = this.world.current.guilds;
     const people = await this.people();
     const notices: Notice[] = [];
-    for (const [accountId, family] of Object.entries(members)) {
-      if (!people.has(accountId)) continue;
-      notices.push({
-        accountId,
-        kind: "family",
-        data: {
-          week: data.week,
-          family,
-          winner: data.winner ?? null,
-          rank: standings.findIndex((s) => s.family === family) + 1,
-        },
-      });
+    for (const e of news) {
+      const guildId = String(e.data?.guild ?? "");
+      const g = gs?.guilds[guildId];
+      if (!g) continue;
+      for (const accountId of Object.keys(g.members)) {
+        if (!people.has(accountId)) continue;
+        if (e.type === "proposal_opened" && accountId === e.playerId) continue;
+        notices.push({
+          accountId,
+          kind: "guild",
+          data: {
+            event: e.type,
+            guild: g.name,
+            kind: e.data?.kind ?? null,
+            value: e.data?.value ?? null,
+            passed: e.data?.passed ?? null,
+            city: e.data?.city ? (this.cities[String(e.data.city)] ?? null) : null,
+          },
+        });
+      }
     }
     await this.send(notices, now);
   }

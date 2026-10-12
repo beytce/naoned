@@ -85,30 +85,35 @@ const act = async (cookie: string, payload: object) =>
 const say = async (cookie: string, body: string) =>
   await app.inject({
     method: "POST",
-    url: "/api/game/family/messages",
+    url: "/api/game/guild/messages",
     headers: { cookie },
     payload: { body },
   });
 const thread = async (cookie: string) =>
-  await app.inject({ method: "GET", url: "/api/game/family/messages", headers: { cookie } });
+  await app.inject({ method: "GET", url: "/api/game/guild/messages", headers: { cookie } });
 const report = async (cookie: string, id: string) =>
   await app.inject({
     method: "POST",
-    url: `/api/game/family/messages/${id}/report`,
+    url: `/api/game/guild/messages/${id}/report`,
     headers: { cookie },
   });
 
-/** Merchants who swore allegiance once the families opened. */
+/** Merchants in one guild once the guilds opened: the first founds it, the others join. */
 async function family(name: string, ...emails: string[]) {
   const cookies: string[] = [];
   for (const email of emails) cookies.push(await player(email));
-  now += 4 * DAY + 60_000;
-  for (const c of cookies) await act(c, { type: "joinFamily", family: name });
+  now += 2 * DAY + 60_000;
+  const [first, ...others] = cookies;
+  if (first) {
+    await act(first, { type: "foundGuild", name, emblem: "lion", stake: 10_000 });
+    const id = (await get(first)).view.guilds.mine.id;
+    for (const c of others) await act(c, { type: "joinGuild", guildId: id, stake: 10_000 });
+  }
   return cookies;
 }
 
-describe("the family's thread", () => {
-  it("is for the family's members only", async () => {
+describe("the guild's thread", () => {
+  it("is for the guild's members only", async () => {
     const eve = await player("eve@example.org", "lagoon");
     const [ada, bob] = (await family("morosini", "ada@example.org", "bob@example.org")) as [
       string,
@@ -116,7 +121,7 @@ describe("the family's thread", () => {
     ];
     expect((await say(eve, "Bonjour")).statusCode).toBe(403);
     expect((await thread(eve)).statusCode).toBe(403);
-    await act(eve, { type: "joinFamily", family: "dandolo" });
+    await act(eve, { type: "foundGuild", name: "Dandolo", emblem: "lion", stake: 10_000 });
     expect((await say(ada, "Qui vend des briques ?")).statusCode).toBe(200);
     now += 20_000;
     expect((await say(bob, "Moi, à 2,20.")).statusCode).toBe(200);
@@ -127,7 +132,7 @@ describe("the family's thread", () => {
     ]);
     expect(seen.messages[0]).toMatchObject({ pseudo: "ada", mine: true });
     expect(seen.messages[1]).toMatchObject({ pseudo: "bob", mine: false });
-    // Another family sees its own thread only.
+    // Another guild sees its own thread only.
     expect((await thread(eve)).json().messages).toEqual([]);
   });
 

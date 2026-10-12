@@ -9,13 +9,13 @@ import { NOTIFICATION_KINDS, type Notifier } from "../notify/notifier.js";
 import { retention, suspiciousPairs } from "./admin.js";
 import {
   ChatError,
-  familyThread,
+  guildThread,
   hideMessage,
   latestMessageAt,
   postMessage,
   reportMessage,
   reportedMessages,
-} from "./familyChat.js";
+} from "./guildChat.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
 import { priceHistory, profile } from "./profile.js";
 import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
@@ -61,9 +61,30 @@ const action = z.discriminatedUnion("type", [
     quantity: z.number().int().positive().max(10_000),
   }),
   z.object({ type: z.literal("fulfillContract"), contractId: z.string() }),
-  z.object({ type: z.literal("joinFamily"), family: z.string() }),
-  z.object({ type: z.literal("fulfillFamilyOrder"), orderId: z.string() }),
-  z.object({ type: z.literal("patronize"), points: z.number().int().positive().max(10_000) }),
+  z.object({
+    type: z.literal("foundGuild"),
+    name: z.string().min(2).max(32),
+    emblem: z.string().max(16),
+    stake: z.number().int().positive(),
+  }),
+  z.object({
+    type: z.literal("joinGuild"),
+    guildId: z.string(),
+    stake: z.number().int().positive(),
+  }),
+  z.object({ type: z.literal("investGuild"), amount: z.number().int().positive() }),
+  z.object({ type: z.literal("leaveGuild") }),
+  z.object({
+    type: z.literal("propose"),
+    proposal: z.discriminatedUnion("kind", [
+      z.object({ kind: z.literal("toll"), value: z.number().int().nonnegative() }),
+      z.object({ kind: z.literal("dividend"), value: z.number().int().nonnegative() }),
+      z.object({ kind: z.literal("bounty"), value: z.number().int().nonnegative() }),
+      z.object({ kind: z.literal("open"), value: z.number().int().min(0).max(1) }),
+      z.object({ kind: z.literal("exclude"), target: z.string() }),
+    ]),
+  }),
+  z.object({ type: z.literal("vote"), proposalId: z.string(), yes: z.boolean() }),
   z.object({
     type: z.literal("launchExpedition"),
     destination: z.string(),
@@ -158,9 +179,12 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       ids.add(n.raider);
       ids.add(n.victim);
     }
-    if (v.families) {
-      for (const m of v.families.members) ids.add(m.playerId);
-      for (const f of v.families.standings) if (f.champion) ids.add(f.champion);
+    if (v.guilds?.mine) {
+      for (const m of v.guilds.mine.members) ids.add(m.playerId);
+      for (const p of v.guilds.mine.proposals) {
+        ids.add(p.by);
+        if (p.target) ids.add(p.target);
+      }
     }
     for (const b of Object.values(v.book)) {
       for (const l of [...b.asks, ...b.bids]) if (l.by !== "market_maker") ids.add(l.by);
@@ -196,7 +220,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       passPrices: PASS_PRICES,
       ...(v ? await namesFor(v) : { names: {}, bots: [] }),
       unread: v ? await notifier.unread(account.id) : 0,
-      familyLatestAt: v ? await latestMessageAt(db, world, account.id) : null,
+      guildLatestAt: v ? await latestMessageAt(db, world, account.id) : null,
     });
   }
 
@@ -381,7 +405,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return { series: await priceHistory(db, world.id, world.now(), hours) };
   });
 
-  /** The family's thread: the call, mapped to a status and an error code when refused. */
+  /** The guild's thread: the call, mapped to a status and an error code when refused. */
   async function chat<T>(reply: FastifyReply, run: () => Promise<T>) {
     try {
       return await run();
@@ -391,24 +415,24 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     }
   }
 
-  app.get("/api/game/family/messages", async (req, reply) => {
+  app.get("/api/game/guild/messages", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
-    return chat(reply, () => familyThread(db, world, account.id));
+    return chat(reply, () => guildThread(db, world, account.id));
   });
 
-  app.post("/api/game/family/messages", async (req, reply) => {
+  app.post("/api/game/guild/messages", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     const parsed = z.object({ body: z.string().max(2_000) }).safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "invalid_message" });
     return chat(reply, async () => {
       await postMessage(db, world, account.id, parsed.data.body, world.now());
-      return familyThread(db, world, account.id);
+      return guildThread(db, world, account.id);
     });
   });
 
-  app.post("/api/game/family/messages/:id/report", async (req, reply) => {
+  app.post("/api/game/guild/messages/:id/report", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     const id = z
@@ -700,12 +724,18 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       ];
     case "fulfillContract":
       return [{ type: "fulfillContract", playerId, contractId: a.contractId }];
-    case "joinFamily":
-      return [{ type: "joinFamily", playerId, family: a.family }];
-    case "fulfillFamilyOrder":
-      return [{ type: "fulfillFamilyOrder", playerId, orderId: a.orderId }];
-    case "patronize":
-      return [{ type: "patronize", playerId, points: a.points }];
+    case "foundGuild":
+      return [{ type: "foundGuild", playerId, name: a.name, emblem: a.emblem, stake: a.stake }];
+    case "joinGuild":
+      return [{ type: "joinGuild", playerId, guildId: a.guildId, stake: a.stake }];
+    case "investGuild":
+      return [{ type: "investGuild", playerId, amount: a.amount }];
+    case "leaveGuild":
+      return [{ type: "leaveGuild", playerId }];
+    case "propose":
+      return [{ type: "propose", playerId, proposal: a.proposal }];
+    case "vote":
+      return [{ type: "vote", playerId, proposalId: a.proposalId, yes: a.yes }];
     case "launchExpedition":
       return [
         {

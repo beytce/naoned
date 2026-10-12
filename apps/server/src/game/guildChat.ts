@@ -4,8 +4,8 @@ import { accounts, familyMessages, messageReports, telemetry } from "../db/schem
 import type { GameWorld } from "./world.js";
 
 /**
- * The family's thread: short messages between members of a patrician family, the first place
- * where merchants talk to each other. Kept small and moderated: members only, a pace, a word
+ * The guild's thread: short messages between members of a guild, the first place where merchants
+ * talk to each other (stored in `family_messages`, the guild's id in its `family` column). Kept small and moderated: members only, a pace, a word
  * filter, no links, and a message three members report is hidden.
  */
 export const MESSAGE_MAX = 280;
@@ -67,15 +67,16 @@ export function checkMessage(text: string): string {
   return body;
 }
 
-function familyOf(world: GameWorld, accountId: string): string {
-  const family = world.current.families?.members[accountId];
-  if (!family) throw new ChatError("not_member", 403);
-  return family;
+/** The merchant's guild (its id is what the thread's rows keep in their `family` column). */
+function guildOfAccount(world: GameWorld, accountId: string): string {
+  const guild = world.current.guilds?.memberOf[accountId];
+  if (!guild) throw new ChatError("not_member", 403);
+  return guild;
 }
 
-/** The latest messages of the merchant's family, oldest first. */
-export async function familyThread(db: Db, world: GameWorld, accountId: string) {
-  const family = familyOf(world, accountId);
+/** The latest messages of the merchant's guild, oldest first. */
+export async function guildThread(db: Db, world: GameWorld, accountId: string) {
+  const family = guildOfAccount(world, accountId);
   const rows = await db
     .select({
       id: familyMessages.id,
@@ -96,7 +97,7 @@ export async function familyThread(db: Db, world: GameWorld, accountId: string) 
     .orderBy(desc(familyMessages.createdAt))
     .limit(THREAD_LENGTH);
   return {
-    family,
+    guild: family,
     messages: rows.reverse().map((r) => ({
       id: r.id,
       pseudo: r.pseudo,
@@ -114,7 +115,7 @@ export async function postMessage(
   text: string,
   now: number,
 ) {
-  const family = familyOf(world, accountId);
+  const family = guildOfAccount(world, accountId);
   const body = checkMessage(text);
   const since = new Date(now - 86_400_000);
   const [last] = await db
@@ -136,7 +137,7 @@ export async function postMessage(
   await db.insert(telemetry).values({
     accountId,
     worldId: world.id,
-    type: "family_message",
+    type: "guild_message",
     at,
     props: { family, length: body.length },
   });
@@ -150,7 +151,7 @@ export async function reportMessage(
   messageId: string,
   now: number,
 ) {
-  const family = familyOf(world, accountId);
+  const family = guildOfAccount(world, accountId);
   const [message] = await db
     .select()
     .from(familyMessages)
@@ -210,9 +211,9 @@ export async function hideMessage(db: Db, worldId: string, messageId: string) {
     .where(and(eq(familyMessages.id, messageId), eq(familyMessages.worldId, worldId)));
 }
 
-/** The newest visible message of the merchant's family (to mark the thread unread). */
+/** The newest visible message of the merchant's guild (to mark the thread unread). */
 export async function latestMessageAt(db: Db, world: GameWorld, accountId: string) {
-  const family = world.current.families?.members[accountId];
+  const family = world.current.guilds?.memberOf[accountId];
   if (!family) return null;
   const [row] = await db
     .select({ at: sql<Date>`max(${familyMessages.createdAt})` })

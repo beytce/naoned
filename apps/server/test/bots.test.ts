@@ -4,7 +4,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
 import { accounts, players } from "../src/db/schema.js";
-import { BotRunner } from "../src/game/bots.js";
+import { BotRunner, FAMILY_NAMES } from "../src/game/bots.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
@@ -131,7 +131,7 @@ describe("bots in a live world", () => {
   });
 
   it("never names a house after a patrician family, and renames the old ones", async () => {
-    const families = (world.ctx.theme.families ?? []).map((f) => `Casa ${f.name}`.toLowerCase());
+    const families = FAMILY_NAMES.map((f) => `Casa ${f}`.toLowerCase());
     setPopulation(6);
     for (let i = 0; i < 6; i++) await runner.step();
     const bots = await database.db.select().from(accounts).where(eq(accounts.isBot, true));

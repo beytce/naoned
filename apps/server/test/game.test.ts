@@ -122,7 +122,7 @@ describe("living world", () => {
   it("shows today's contracts and the gazette; home goods go by road", async () => {
     const cookie = await login("ada@example.org");
     const v = (await post(cookie, "/api/game/join", { region: "terraferma" })).json().view;
-    expect(v.contracts).toHaveLength(2); // Two orders of the Doge; the third is the family's.
+    expect(v.contracts).toHaveLength(2); // Two orders of the Doge.
     expect(v.gazette).toHaveProperty("next");
     expect(v.rations.perDay).toBe(6); // farm + mill + bakery
     const home = v.contracts.find((c: { resource: string }) =>

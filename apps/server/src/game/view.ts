@@ -40,20 +40,21 @@ import {
 import {
   activeEvent,
   balesFor,
+  caratValue,
   contractsFor,
   crieePrice,
   crieeRoom,
   currentCriee,
   dailyFor,
-  familiesOpenAt,
-  familyOrdersDone,
-  familyOrdersFor,
-  familyStandings,
+  guildOf,
+  guildsOpenAt,
   hasPass,
   maxOpenOrdersFor,
   nextEvent,
-  patronageLeft,
   rerollsOf,
+  tally,
+  treasury,
+  votingWeights,
   weekIndex,
 } from "@comptoirs/engine";
 import {
@@ -91,40 +92,76 @@ function crieeView(ctx: WorldContext, state: WorldState, playerId: string, now: 
 }
 
 /**
- * The patrician families as one merchant sees them: allegiance, today's order, patronage left,
- * the live ranking of the week and the members of their own family. Null when families are off.
+ * The guilds as one merchant sees them: their own (treasury, carats, members and their weight,
+ * proposals with the votes so far) and the others they could join. Null when guilds are off.
  */
-function familiesView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {
-  const rules = ctx.settings.families;
-  if (rules.houses.length === 0) return null;
-  const f = state.families;
-  const mine = f?.members[playerId] ?? null;
-  const today = dayIndex(ctx, now);
-  const done = familyOrdersDone(state, playerId, today);
-  const members = mine
-    ? Object.entries(f?.members ?? {})
-        .filter(([id, code]) => code === mine && state.players[id])
-        .map(([id]) => ({
+function guildsView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {
+  const rules = ctx.settings.guilds;
+  if (rules.maxMembers <= 0) return null;
+  const g = guildOf(state, playerId);
+  const all = Object.values(state.guilds?.guilds ?? {});
+  let mine = null;
+  if (g) {
+    const weights = votingWeights(ctx, g);
+    const held = treasury(state, g.id);
+    const proposals = Object.values(state.guilds?.proposals ?? {})
+      .filter((p) => p.guildId === g.id)
+      .sort((a, b) => b.openedAt - a.openedAt)
+      .filter((p, i) => p.status === "open" || i < 12)
+      .map((p) => ({
+        id: p.id,
+        kind: p.kind,
+        value: p.value,
+        target: p.target ?? null,
+        by: p.by,
+        openedAt: p.openedAt,
+        closesAt: p.closesAt,
+        status: p.status,
+        ...tally(ctx, g, p),
+        mine: p.votes[playerId] ?? null,
+      }));
+    mine = {
+      id: g.id,
+      name: g.name,
+      emblem: g.emblem,
+      founder: g.founder,
+      open: g.open,
+      tollBps: g.tollBps,
+      dividendBps: g.dividendBps,
+      bountyPerUnit: g.bountyPerUnit,
+      treasury: held,
+      caratsIssued: g.caratsIssued,
+      /** What a hundred carats are worth (a single one may be under a denier). */
+      valueOf100:
+        g.caratsIssued > 0 ? (held * 100n) / BigInt(g.caratsIssued) : rules.caratValue * 100n,
+      carats: g.members[playerId]?.carats ?? 0,
+      share: caratValue(state, g.id, g.members[playerId]?.carats ?? 0),
+      members: Object.entries(g.members)
+        .map(([id, m]) => ({
           playerId: id,
-          week: f?.weekInfluence[id] ?? 0,
-          season: f?.seasonInfluence[id] ?? 0,
+          carats: m.carats,
+          weight: weights[id] ?? 0,
+          since: m.since,
           me: id === playerId,
         }))
-        .sort((a, b) => b.week - a.week || b.season - a.season)
-    : [];
+        .sort((a, b) => b.carats - a.carats),
+      proposals,
+    };
+  }
   return {
+    opensAt: guildsOpenAt(ctx, state, playerId),
     mine,
-    opensAt: familiesOpenAt(ctx, state, playerId),
-    inPower: f?.inPower ?? null,
-    week: weekIndex(ctx, now),
-    standings: familyStandings(ctx, state, now),
-    members,
-    orders: familyOrdersFor(ctx, state, playerId, today).map((o) => ({
-      ...o,
-      done: done.includes(o.id),
-    })),
-    influence: { week: f?.weekInfluence[playerId] ?? 0, season: f?.seasonInfluence[playerId] ?? 0 },
-    patronageLeft: mine ? patronageLeft(ctx, state, playerId, today) : 0,
+    list: all
+      .map((x) => ({
+        id: x.id,
+        name: x.name,
+        emblem: x.emblem,
+        members: Object.keys(x.members).length,
+        open: x.open,
+        treasury: treasury(state, x.id),
+        mine: x.id === g?.id,
+      }))
+      .sort((a, b) => (b.treasury > a.treasury ? 1 : b.treasury < a.treasury ? -1 : 0)),
   };
 }
 
@@ -140,11 +177,11 @@ function roadView(ctx: WorldContext, state: WorldState, playerId: string, now: n
   const today = dayIndex(ctx, now);
   const done = new Set(deliveriesDoneToday(state, playerId, today));
   const contractsDone = state.contractsDone?.[playerId];
-  const familyDone = state.families?.ordersDone[playerId];
   const served = (ref?: string, kind?: string) =>
     ref !== undefined &&
-    ((kind === "doge" && contractsDone?.day === today && contractsDone.ids.includes(ref)) ||
-      (kind === "family" && familyDone?.day === today && familyDone.ids.includes(ref)));
+    kind === "doge" &&
+    contractsDone?.day === today &&
+    contractsDone.ids.includes(ref);
   const types = Object.keys(ctx.settings.deliveries.vehicles);
   const rivalsOf = boardRivals(ctx, state, playerId, now);
   const orders = deliveryOrdersFor(ctx, state, playerId, today).map((o) => ({
@@ -307,21 +344,7 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
           },
         }
       : null,
-    families: (theme.families ?? []).flatMap((t) => {
-      const house = settings.families.houses.find((h) => h.code === t.code);
-      return house ? [{ ...t, quantities: house.quantities }] : [];
-    }),
-    familyRules: {
-      openDay: settings.families.openDay,
-      orderInfluence: settings.families.orderInfluence,
-      patronageUnit: settings.families.patronageUnit,
-      patronageMaxPerDay: settings.families.patronageMaxPerDay,
-      weeklyCapPerMember: settings.families.weeklyCapPerMember,
-      minMembers: settings.families.minMembers,
-      powerPremiumBps: settings.families.powerPremiumBps,
-      incumbentHandicapBps: settings.families.incumbentHandicapBps,
-      orderPremiumBps: settings.contracts.premiumBps,
-    },
+    guildRules: settings.guilds,
     rations: settings.rations,
     /** Masteries: the house's levels needed, and what each one changes. */
     specialties: settings.specialties,
@@ -564,12 +587,12 @@ export function playerView(
     book,
     cityQuotes,
     projects: openProjects(state.projects, now),
-    // The worksites of the acts already won: a monument to the winning family on the map.
+    // The worksites of the acts already won: a monument to the winning guild on the map.
     monuments: Object.values(state.projects)
       .filter((p) => p.act !== undefined && p.winner)
-      .map((p) => ({ city: p.city, family: p.winner ?? "", act: p.act ?? 0 })),
+      .map((p) => ({ city: p.city, guild: p.winnerName ?? "", act: p.act ?? 0 })),
     contracts,
-    families: familiesView(ctx, state, playerId, now),
+    guilds: guildsView(ctx, state, playerId, now),
     gazette: { current: describe(activeEvent(ctx, now)), next: describe(nextEvent(ctx, now)) },
     expeditions,
     ships,

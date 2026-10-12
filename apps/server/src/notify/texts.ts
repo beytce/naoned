@@ -16,7 +16,7 @@ const ACTS: Record<string, [string, string]> = {
   crisis: ["La crise", "Une crise frappe la République."],
   worksite: [
     "L'Arsenal",
-    "Le Doge agrandit l'Arsenal : briques et planches pour Venise payées 15 % de plus. La famille qui livre le plus l'emporte.",
+    "Le Doge agrandit l'Arsenal : briques et planches pour Venise payées 15 % de plus. La guilde qui livre le plus l'emporte.",
   ],
   sensa: ["La Sensa", "La grande foire : commandes payées 15 % de plus. Dernière ligne droite !"],
   chioggia: [
@@ -42,13 +42,6 @@ const AWARDS: Record<string, string> = {
   doge: "Doge de la semaine",
   procurator: "Procurateur de la semaine",
   senator: "Sénateur de la semaine",
-};
-
-const FAMILIES: Record<string, string> = {
-  contarini: "Contarini",
-  morosini: "Morosini",
-  mocenigo: "Mocenigo",
-  dandolo: "Dandolo",
 };
 
 const ducats = (deniers: string) =>
@@ -172,19 +165,29 @@ export function pushText(
         body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${sign}${ducats(gain)} ducats).${award}`,
       };
     }
-    case "family": {
-      const winner = data.winner ? (FAMILIES[String(data.winner)] ?? String(data.winner)) : null;
-      if (winner && data.winner === data.family) {
+    case "guild": {
+      const what: Record<string, string> = {
+        toll: "le péage de ses concessions",
+        dividend: "la part versée en dividendes",
+        bounty: "la prime aux fournisseurs",
+        open: "l'ouverture aux nouveaux membres",
+        exclude: "l'exclusion d'un membre",
+        war: "une guerre commerciale",
+      };
+      const subject = what[String(data.kind)] ?? "une proposition";
+      if (data.event === "proposal_opened")
         return {
-          title: "Votre famille au pouvoir",
-          body: `Les ${winner} remportent la semaine : vos commandes de famille paient davantage cette semaine.`,
+          title: `${data.guild} vote`,
+          body: `Un membre propose de changer ${subject}. Votez dans les 24 h.`,
         };
-      }
+      if (data.event === "worksite_won")
+        return {
+          title: `${data.guild} remporte le chantier`,
+          body: `Votre guilde a le plus livré${data.city ? ` à ${data.city}` : ""} : la prime rejoint son trésor et le monument porte son nom.`,
+        };
       return {
-        title: "La semaine des familles",
-        body: winner
-          ? `Les ${winner} prennent le pouvoir ; les ${FAMILIES[String(data.family)] ?? ""} finissent ${data.rank}e.`
-          : "Aucune famille n'a gagné d'influence cette semaine.",
+        title: `${data.guild} a voté`,
+        body: data.passed ? `Adopté : ${subject}.` : `Rejeté : ${subject}.`,
       };
     }
     case "criee":
