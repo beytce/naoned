@@ -387,6 +387,8 @@ function Workshop({
       tabIndex={0}
       aria-label={label}
       data-coach={plot.coach}
+      data-plot={plot.id}
+      data-ready={plot.state === "ready" ? "1" : undefined}
       className="cursor-pointer outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold"
       onClick={onSelect}
       onKeyDown={(e) => {
@@ -421,7 +423,9 @@ function Workshop({
           <path d="M8 83.5 H112" stroke={P.line} strokeWidth="1" />
         </g>
       )}
-      <BuildingShape type={plot.type} active={plot.state === "running"} />
+      <g key={plot.gain?.key ?? 0} className={plot.gain ? "domain-bump" : undefined}>
+        <BuildingShape type={plot.type} active={plot.state === "running"} />
+      </g>
       {level >= 5 && (
         <path
           d="M30 14 L36 4 L42 14 L48 2 L54 14 L60 4 L66 14 Z"

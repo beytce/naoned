@@ -125,7 +125,7 @@ export const fr = {
         perHour: (amount: string) => `${amount}/h`,
       },
       sharedHelp:
-        "Les commandes des villes sont communes à tous les marchands : la première charrette qui part l'emporte.",
+        "Les commandes des villes sont communes à tous les marchands : la première charrette qui part l'emporte. Glissez un véhicule libre jusqu'à une ville pour charger sa meilleure commande.",
       takenBy: (name: string) => `Prise par ${name}`,
       takenList: (n: number) =>
         `${n} commande${n > 1 ? "s" : ""} déjà prise${n > 1 ? "s" : ""} par d'autres`,
@@ -217,6 +217,7 @@ export const fr = {
       hud: (orders: number, free: number) =>
         `${orders} commande${orders > 1 ? "s" : ""} · ${free} véhicule${free > 1 ? "s" : ""} libre${free > 1 ? "s" : ""}`,
       view: { carte: "Carte", liste: "Liste" },
+      carry: "Glissez vers une ville",
       focusHint: (vehicle: string) =>
         `${vehicle} : touchez une ville en surbrillance pour la charger.`,
       pickRoad: "Touchez une route pour y poster votre bande.",
@@ -546,7 +547,7 @@ export const fr = {
         upgrade: "amélioration possible",
       },
       next: (building: string, left: string) => `${building} : prochain lot dans ${left}`,
-      hint: "Touchez un atelier pour récolter ou produire, une parcelle libre pour bâtir.",
+      hint: "Touchez un atelier pour récolter ou produire, une parcelle libre pour bâtir. Glissez le doigt sur les ateliers prêts pour tout récolter d'un geste.",
       title: (n: number, levels: number) =>
         `Votre domaine : ${n} atelier${n > 1 ? "s" : ""}, ${levels} niveau${levels > 1 ? "x" : ""} en tout`,
     },
@@ -1074,7 +1075,8 @@ export const fr = {
       produce: (building: string) =>
         `Touchez « Produire » : ce premier lot de votre ${building.toLowerCase()} sera prêt en 30 secondes.`,
       wait: "Vos ouvriers s'activent. Patientez quelques secondes…",
-      harvest: "C'est prêt ! Touchez l'atelier à la bulle dorée : la marchandise rentre en stock.",
+      harvest:
+        "C'est prêt ! Touchez l'atelier à la bulle dorée, ou glissez le doigt d'un atelier prêt à l'autre : la marchandise rentre en stock.",
       transform: (building: string) =>
         `Une matière brute vaut peu. Transformez-la : lancez votre ${building.toLowerCase()}.`,
       goMarket: "Votre marchandise est prête à vendre. Ouvrez le Marché.",

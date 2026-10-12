@@ -479,6 +479,79 @@ export function CloseButton({
   );
 }
 
+/**
+ * A sheet pulled down by the finger: it follows (resisting a little), then closes past a third of
+ * its height or on a quick flick, or springs back. Only from the top of its scroll, on a phone.
+ */
+function useDragToClose(
+  panel: { current: HTMLDialogElement | null },
+  open: boolean,
+  onClose: () => void,
+) {
+  const close = useRef(onClose);
+  close.current = onClose;
+  useEffect(() => {
+    const el = panel.current;
+    if (!open || !el || window.matchMedia("(min-width: 1024px)").matches) return;
+    let startY = 0;
+    let startT = 0;
+    let dy = 0;
+    let dragging = false;
+    const set = (y: number, animate: boolean) => {
+      el.style.transition = animate ? "transform 0.22s cubic-bezier(0.22, 1, 0.36, 1)" : "none";
+      el.style.transform = y > 0 ? `translateY(${y}px)` : "";
+    };
+    const start = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (!t || e.touches.length > 1) return;
+      startY = t.clientY;
+      startT = performance.now();
+      dy = 0;
+      dragging = false;
+    };
+    const move = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (!t) return;
+      const d = t.clientY - startY;
+      if (!dragging) {
+        // Only a pull down from the top of the sheet's own scroll.
+        if (d <= 6 || el.scrollTop > 0) return;
+        dragging = true;
+        startY = t.clientY;
+        // The opening animation would hold the transform: let the finger have it.
+        el.style.animation = "none";
+      }
+      e.preventDefault();
+      dy = Math.max(0, t.clientY - startY);
+      set(dy < 120 ? dy : 120 + (dy - 120) * 0.6, false);
+    };
+    const end = () => {
+      if (!dragging) return;
+      dragging = false;
+      const speed = dy / Math.max(1, performance.now() - startT);
+      if (dy > el.offsetHeight * 0.3 || (speed > 0.6 && dy > 40)) {
+        el.style.transition = "transform 0.2s ease-in";
+        el.style.transform = "translateY(100%)";
+        setTimeout(() => close.current(), 180);
+      } else {
+        set(0, true);
+      }
+    };
+    el.addEventListener("touchstart", start, { passive: true });
+    el.addEventListener("touchmove", move, { passive: false });
+    el.addEventListener("touchend", end);
+    el.addEventListener("touchcancel", end);
+    return () => {
+      el.removeEventListener("touchstart", start);
+      el.removeEventListener("touchmove", move);
+      el.removeEventListener("touchend", end);
+      el.removeEventListener("touchcancel", end);
+      el.style.transform = "";
+      el.style.transition = "";
+    };
+  }, [panel, open]);
+}
+
 /** Bottom sheet on a phone, centred window on a computer, for focused actions. */
 export function Sheet({
   open,
@@ -490,6 +563,7 @@ export function Sheet({
   useEffect(() => {
     if (open) panel.current?.focus({ preventScroll: true });
   }, [open]);
+  useDragToClose(panel, open, onClose);
   if (!open) return null;
   // On the body: a parent with a backdrop blur would otherwise trap the fixed window inside it.
   return createPortal(

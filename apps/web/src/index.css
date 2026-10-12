@@ -238,7 +238,26 @@
   }
 }
 
-/* The domain: what a workshop just gave rises from its plot and fades. */
+/* The domain: a workshop harvested jumps; what it gave rises from its plot and fades. */
+.domain-bump {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: domain-bump 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes domain-bump {
+  0% {
+    transform: scale(1, 1);
+  }
+  35% {
+    transform: scale(1.08, 0.9);
+  }
+  70% {
+    transform: scale(0.96, 1.08);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
+}
 .domain-gain {
   transform-box: fill-box;
   animation: domain-gain 1.6s ease-out both;

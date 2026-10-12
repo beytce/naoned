@@ -6,6 +6,7 @@ import { Badge, Big, Label, Panel, Qty, Sheet, Slab, Sparkline, Tabs, clock } fr
 import { have } from "./Comptoir.js";
 import type { GameProps, MarketTab } from "./Game.js";
 import { d } from "./format.js";
+import { useSwipe } from "./gestures.js";
 import type { BookLine, MarketLine, OrderView } from "./types.js";
 import { useWide } from "./useWide.js";
 
@@ -447,6 +448,11 @@ function CityCard({ resource, props }: { resource: string; props: GameProps }) {
 
 export function Marche(props: GameProps) {
   const lines = props.view.market;
+  // A swipe turns from the merchants' market to the cities' and back, as the tabs.
+  const swipe = useSwipe(
+    () => props.setMarketTab("villes"),
+    () => props.setMarketTab("joueurs"),
+  );
   const featured = [...lines].sort(
     (a, b) => change(series(props, b.resource)) - change(series(props, a.resource)),
   )[0];
@@ -461,7 +467,7 @@ export function Marche(props: GameProps) {
   const sideLine = wide ? (sheetLine ?? featured) : undefined;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" {...swipe}>
       <div className="lg:max-w-sm">
         <Tabs<MarketTab>
           variant="underline"

@@ -53,6 +53,19 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
 - L'onglet actif de la barre du bas porte un trait biseauté et un fanion en coin. Les libellés sont en capitales mono.
 - Tout s'arrête pour qui demande moins de mouvement (`prefers-reduced-motion`).
 
+## Gestes (`game/gestures.ts`)
+
+- **Faucille** : un doigt posé sur un atelier prêt et glissé sur le Domaine récolte chaque atelier prêt qu'il touche.
+  - Chaque récolte : rebond de l'atelier, « +N » qui s'envole, tick haptique.
+  - Une traînée dorée suit le doigt, et les récoltes partent l'une après l'autre.
+  - La page défile normalement si le geste part d'ailleurs. Fonctionne aussi à la souris.
+- **Porter un véhicule** : un véhicule libre se prend sur la carte (plateau « Glissez vers une ville ») ou dans l'écurie.
+  - Pendant le glissé, les villes qu'il peut servir s'allument ; celle survolée pulse en or, avec un tick.
+  - Le lâcher sur une ville ouvre sa feuille avec la commande la mieux payée que le véhicule peut prendre, prête à partir.
+  - Lâché ailleurs, il revient à sa place.
+- **Feuilles** : tirées vers le bas depuis le haut de leur défilement, elles suivent le doigt (avec résistance). Au-delà d'un tiers de leur hauteur ou d'un geste vif, elles se ferment ; sinon elles reviennent.
+- **Sous-onglets** : un glissé horizontal passe de la carte à la liste aux Routes, et des joueurs aux villes au Marché. Il ne joue pas depuis un véhicule ou un champ de saisie.
+
 ## Disposition
 
 **Mobile** : en-tête (logotype, bourse, cloche, blason), ligne « Jour 1 sur 42 » avec sa barre, barre du bas Comptoir · Marché · Contrats · Port · Classement.

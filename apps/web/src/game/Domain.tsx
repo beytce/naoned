@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { Crest, defaultCrest } from "../art/crest.js";
 import { type DomainPlot, DomainScene, skyPhase } from "../art/domain.js";
 import { MasteryEmblem } from "../art/mastery.js";
+import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { Label, Slab, clock } from "../ui.js";
 import { affordable } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
+import { underPoint } from "./gestures.js";
 import { readyOf, workshopState } from "./workshops.js";
 
 /** How long the golden burst of a new building or level lasts. */
@@ -92,32 +94,121 @@ export function Domain(props: GameProps) {
               : "";
     return [base, state, p.canUpgrade ? t.plot.upgrade : ""].filter(Boolean).join(", ");
   };
-  const touch = async (p: DomainPlot) => {
+  // Collects go one after the other (a sweep can reach several workshops in a breath).
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const pending = useRef(new Set<string>());
+  const harvest = (p: DomainPlot, opts: { sweep: boolean }) => {
+    const b = view.buildings.find((x) => x.id === p.id);
+    if (!b || p.state !== "ready" || pending.current.has(b.id)) return;
+    pending.current.add(b.id);
+    haptic("tap");
+    // The goods rise at once, the counting-house confirms behind.
+    if (p.resource) {
+      const gain = { quantity: p.quantity ?? 0, resource: p.resource, key: Date.now() };
+      setGains((old) => new Map([...old, [b.id, gain]]));
+      setTimeout(
+        () =>
+          setGains((old) => {
+            const next = new Map(old);
+            if (next.get(b.id)?.key === gain.key) next.delete(b.id);
+            return next;
+          }),
+        1_700,
+      );
+    }
+    const emptied = b.job !== null && readyOf(b, now) >= b.job.batches;
+    queue.current = queue.current.then(async () => {
+      const ok = await props.act({ type: "collect", buildingId: b.id });
+      pending.current.delete(b.id);
+      // A tap on an emptied workshop leads on to starting it again; a sweep goes on harvesting.
+      if (ok && emptied && !opts.sweep) setRestart(b.id);
+    });
+  };
+  const touch = (p: DomainPlot) => {
+    if (performance.now() < quietUntil.current) return;
     const b = view.buildings.find((x) => x.id === p.id);
     if (!b) return;
-    if (p.state === "ready") {
-      if (props.busy) return;
-      const emptied = b.job !== null && readyOf(b, now) >= b.job.batches;
-      if (await props.act({ type: "collect", buildingId: b.id })) {
-        if (p.resource) {
-          const gain = { quantity: p.quantity ?? 0, resource: p.resource, key: Date.now() };
-          setGains((old) => new Map([...old, [b.id, gain]]));
-          setTimeout(
-            () =>
-              setGains((old) => {
-                const next = new Map(old);
-                if (next.get(b.id)?.key === gain.key) next.delete(b.id);
-                return next;
-              }),
-            1_700,
-          );
-        }
-        if (emptied) setRestart(b.id);
-      }
-      return;
-    }
+    if (p.state === "ready") return harvest(p, { sweep: false });
     if (p.state === "still" && b.upgradeCost) props.setSheet(`upgrade:${b.id}`);
     else props.setSheet(`produce:${b.id}`);
+  };
+
+  // The sweep: a finger set on a ready workshop and drawn across the domain harvests each ready
+  // workshop it passes over, leaving a golden trail.
+  const sweep = useRef<{ start: string; moved: boolean; x: number; y: number } | null>(null);
+  const quietUntil = useRef(0);
+  const area = useRef<HTMLDivElement>(null);
+  const [trail, setTrail] = useState<{ x: number; y: number }[]>([]);
+  const reach = (x: number, y: number) => {
+    const el = underPoint(x, y, "data-plot");
+    if (el?.getAttribute("data-ready") !== "1") return;
+    const p = plotsRef.current.find((q) => q.id === el.getAttribute("data-plot"));
+    if (p) harvest(p, { sweep: true });
+  };
+  const begin = (x: number, y: number) => {
+    const el = underPoint(x, y, "data-plot");
+    if (el?.getAttribute("data-ready") !== "1") return false;
+    sweep.current = { start: el.getAttribute("data-plot") ?? "", moved: false, x, y };
+    return true;
+  };
+  const follow = (x: number, y: number) => {
+    const s = sweep.current;
+    const box = area.current?.getBoundingClientRect();
+    if (!s || !box) return false;
+    if (!s.moved && Math.hypot(x - s.x, y - s.y) < 8) return true;
+    if (!s.moved) {
+      s.moved = true;
+      const first = plotsRef.current.find((q) => q.id === s.start);
+      if (first) harvest(first, { sweep: true });
+    }
+    setTrail((old) => [...old.slice(-13), { x: x - box.left, y: y - box.top }]);
+    reach(x, y);
+    return true;
+  };
+  const finish = () => {
+    if (sweep.current?.moved) quietUntil.current = performance.now() + 400;
+    sweep.current = null;
+    setTimeout(() => setTrail([]), 220);
+  };
+  // The handlers of the latest render, for the touch listeners set once.
+  const plotsRef = useRef(plots);
+  plotsRef.current = plots;
+  const hands = useRef({ begin, follow, finish });
+  hands.current = { begin, follow, finish };
+  useEffect(() => {
+    const el = area.current;
+    if (!el) return;
+    // Touch: the page keeps scrolling unless the finger set out from a ready workshop.
+    const start = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (t && e.touches.length === 1) hands.current.begin(t.clientX, t.clientY);
+    };
+    const move = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (t && hands.current.follow(t.clientX, t.clientY) && e.cancelable) e.preventDefault();
+    };
+    const end = () => hands.current.finish();
+    el.addEventListener("touchstart", start, { passive: true });
+    el.addEventListener("touchmove", move, { passive: false });
+    el.addEventListener("touchend", end);
+    el.addEventListener("touchcancel", end);
+    return () => {
+      el.removeEventListener("touchstart", start);
+      el.removeEventListener("touchmove", move);
+      el.removeEventListener("touchend", end);
+      el.removeEventListener("touchcancel", end);
+    };
+  }, []);
+  // Mouse and pen: the same sweep, by pointer.
+  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "touch") return;
+    if (begin(e.clientX, e.clientY)) e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "touch") follow(e.clientX, e.clientY);
+  };
+  const onPointerEnd = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "touch") finish();
   };
   const levels = view.buildings.reduce((n, b) => n + b.level, 0);
   const stock = view.inventory.reduce((n, i) => n + i.available, 0);
@@ -139,23 +230,45 @@ export function Domain(props: GameProps) {
           {t.levels(levels)}
         </p>
       </div>
-      <DomainScene
-        region={view.player.region}
-        phase={skyPhase(parisHour(now))}
-        plots={plots}
-        maxPlots={catalog.rules.maxBuildings}
-        vehiclesHome={home}
-        stock={stock}
-        crest={<Crest crest={crest} size={26} />}
-        emblem={
-          view.mastery.chosen ? <MasteryEmblem code={view.mastery.chosen} size={20} /> : undefined
-        }
-        labelOf={describe}
-        emptyLabel={t.build}
-        title={t.title(view.buildings.length, levels)}
-        onPlot={touch}
-        onEmpty={() => props.setSheet("buildHere")}
-      />
+      <div
+        ref={area}
+        className="relative"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerEnd}
+        onPointerCancel={onPointerEnd}
+      >
+        <DomainScene
+          region={view.player.region}
+          phase={skyPhase(parisHour(now))}
+          plots={plots}
+          maxPlots={catalog.rules.maxBuildings}
+          vehiclesHome={home}
+          stock={stock}
+          crest={<Crest crest={crest} size={26} />}
+          emblem={
+            view.mastery.chosen ? <MasteryEmblem code={view.mastery.chosen} size={20} /> : undefined
+          }
+          labelOf={describe}
+          emptyLabel={t.build}
+          title={t.title(view.buildings.length, levels)}
+          onPlot={touch}
+          onEmpty={() => props.setSheet("buildHere")}
+        />
+        {trail.length > 1 && (
+          <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full">
+            <polyline
+              points={trail.map((q) => `${q.x},${q.y}`).join(" ")}
+              fill="none"
+              stroke="rgb(var(--gold-soft))"
+              strokeWidth="7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity="0.75"
+            />
+          </svg>
+        )}
+      </div>
       <DomainBand {...props} />
     </section>
   );

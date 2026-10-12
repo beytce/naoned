@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { P } from "../art/palette.js";
 import { ResourceIcon } from "../art/resources.js";
 import {
@@ -16,11 +16,13 @@ import {
   pointOn,
   roadCurve,
 } from "../art/veneto.js";
+import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Sheet, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
 import { d, minutesLabel } from "./format.js";
+import { underPoint } from "./gestures.js";
 import {
   BuyVehicleSheet,
   OrderFacts,
@@ -109,6 +111,16 @@ export function RoadBoard(
   const [focus, setFocus] = useState<string | null>(null);
   const [watching, setWatching] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
+  // A vehicle carried by the finger from the stable to a city: where it is, which city it is over.
+  const [carry, setCarry] = useState<{
+    id: string;
+    type: string;
+    x: number;
+    y: number;
+    over: string | null;
+    home: { x: number; y: number } | null;
+  } | null>(null);
+  const [best, setBest] = useState(false);
 
   const underway = road.deliveries.filter((dv) => props.now < dv.backAt);
   const now = useSmoothNow(props.now, underway.length > 0);
@@ -135,6 +147,41 @@ export function RoadBoard(
   const free = road.vehicles.filter((v) => v.status === "free").length;
   const nextDay = props.catalog.world.startsAt + props.view.day * 86_400_000;
   const watchedDelivery = road.deliveries.find((dv) => dv.id === watching) ?? null;
+  // Carrying a vehicle with the finger: picked up, over a city (lit if it serves it), let go.
+  const carry_: CarryHandlers = {
+    start: (v, x, y, home) => {
+      setFocus(v.id);
+      setCarry({ id: v.id, type: v.type, x, y, over: null, home });
+    },
+    move: (x, y) =>
+      setCarry((c) => {
+        if (!c) return c;
+        const el = underPoint(x, y, "data-city");
+        const code = el?.getAttribute("data-city") ?? null;
+        const over = code && serves(code) ? code : null;
+        if (over && over !== c.over) haptic("tap");
+        return { ...c, x, y, over };
+      }),
+    end: () =>
+      setCarry((c) => {
+        if (!c) return null;
+        if (c.over) {
+          haptic("success");
+          setBest(true);
+          setCity(c.over);
+          return null;
+        }
+        // Dropped elsewhere: the vehicle springs back to where it was taken.
+        setFocus(null);
+        if (c.home) {
+          const back = { ...c, ...c.home, over: null, home: null };
+          setTimeout(() => setCarry(null), 240);
+          return back;
+        }
+        return null;
+      }),
+  };
+  const freeVehicles = road.vehicles.filter((v) => v.status === "free");
 
   return (
     <section className="mx-auto w-full max-w-xl space-y-3">
@@ -280,8 +327,13 @@ export function RoadBoard(
               // biome-ignore lint/a11y/useKeyWithClickEvents: the list view offers the same orders
               <g
                 key={code}
+                data-city={clickable ? code : undefined}
                 transform={`translate(${x} ${y})`}
-                onClick={() => clickable && setCity(code)}
+                onClick={() => {
+                  if (!clickable) return;
+                  setBest(false);
+                  setCity(code);
+                }}
                 className={clickable ? "cursor-pointer" : undefined}
                 opacity={dim ? 0.55 : 1}
               >
@@ -295,6 +347,9 @@ export function RoadBoard(
                     strokeWidth="2"
                     className="map-pulse"
                   />
+                )}
+                {carry?.over === code && (
+                  <circle r="26" fill={P.gold} opacity="0.35" className="map-pulse" />
                 )}
                 {(on || lit) && (
                   <circle r="19" fill={P.gold} opacity="0.2" stroke={P.gold} strokeWidth="1.5" />
@@ -414,6 +469,35 @@ export function RoadBoard(
             </span>
           </div>
         )}
+        {mode === "deliver" && freeVehicles.length > 0 && !focused && (
+          // The free vehicles at hand on the map: picked up and carried to a city.
+          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-night/85 py-1 pl-3 pr-1 ring-1 ring-line">
+            <span className="label text-gold">{m().carry}</span>
+            {freeVehicles.map((v) => (
+              <span
+                key={v.id}
+                data-no-swipe=""
+                aria-hidden="true"
+                style={{ touchAction: "none" }}
+                className="flex h-10 w-12 cursor-grab items-center justify-center rounded-full bg-night-3 ring-1 ring-lagoon/60 active:cursor-grabbing"
+                onPointerDown={(e) => {
+                  const box = e.currentTarget.getBoundingClientRect();
+                  carryFrom(
+                    e,
+                    v,
+                    { x: box.left + box.width / 2, y: box.top + box.height / 2 },
+                    carry_,
+                    () => undefined,
+                  );
+                }}
+              >
+                <svg viewBox="-20 -16 40 26" width="38" height="25" aria-hidden="true">
+                  <VehicleGlyph type={v.type} load={null} />
+                </svg>
+              </span>
+            ))}
+          </div>
+        )}
         {mode === "deliver" && focused && (
           <p className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl bg-night/90 px-3 py-2 text-center text-xs text-gold ring-1 ring-gold/50">
             {m().focusHint(vehicleName(focused.type))}
@@ -433,12 +517,32 @@ export function RoadBoard(
           focus={focused?.id ?? null}
           now={now}
           onFocus={(id) => setFocus(id === focus ? null : id)}
+          carry={carry_}
           onWatch={(vehicleId) => {
             const dv = underway.find((x) => x.vehicleId === vehicleId);
             if (dv) setWatching(dv.id);
           }}
           onBuy={() => setBuying(true)}
         />
+      )}
+
+      {carry && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed left-0 top-0 z-50"
+          style={{
+            transform: `translate(${carry.x - 34}px, ${carry.y - 30}px)`,
+            transition: carry.home === null && !carry.over ? "transform 0.24s ease-out" : "none",
+          }}
+        >
+          <div
+            className={`flex h-14 w-[68px] items-center justify-center rounded-full ${carry.over ? "bg-gold/30 ring-2 ring-gold" : "bg-night/70 ring-1 ring-line"} shadow-xl shadow-black/50`}
+          >
+            <svg viewBox="-20 -16 40 26" width="52" height="34" aria-hidden="true">
+              <VehicleGlyph type={carry.type} load={null} />
+            </svg>
+          </div>
+        </div>
       )}
 
       <Sheet open={city !== null} onClose={() => setCity(null)}>
@@ -449,6 +553,7 @@ export function RoadBoard(
             props={props}
             road={road}
             vehicleId={focused?.id ?? null}
+            best={best}
             onDone={() => {
               setCity(null);
               setFocus(null);
@@ -525,6 +630,48 @@ function MovingVehicle({
  * on the way back, stopped by bandits) and when it will be free; then buying another one.
  * A vehicle at the depot lights the cities it can serve.
  */
+interface CarryHandlers {
+  start: (v: VehicleView, x: number, y: number, home: { x: number; y: number }) => void;
+  move: (x: number, y: number) => void;
+  end: () => void;
+}
+
+/**
+ * A free vehicle picked up by the finger: after a few pixels it leaves its place and follows,
+ * until let go. `carried` runs if it was carried (the tap that ends a drag is then ignored).
+ */
+function carryFrom(
+  e: React.PointerEvent,
+  v: VehicleView,
+  home: { x: number; y: number },
+  h: CarryHandlers,
+  carried: () => void,
+) {
+  const x0 = e.clientX;
+  const y0 = e.clientY;
+  let moving = false;
+  const move = (ev: PointerEvent) => {
+    if (!moving && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 8) return;
+    if (!moving) {
+      moving = true;
+      haptic("tap");
+      h.start(v, ev.clientX, ev.clientY, home);
+    }
+    h.move(ev.clientX, ev.clientY);
+  };
+  const up = () => {
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", up);
+    window.removeEventListener("pointercancel", up);
+    if (!moving) return;
+    carried();
+    h.end();
+  };
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", up);
+  window.addEventListener("pointercancel", up);
+}
+
 function Garage({
   props,
   road,
@@ -533,6 +680,7 @@ function Garage({
   onFocus,
   onWatch,
   onBuy,
+  carry,
 }: {
   props: GameProps;
   road: RoadView;
@@ -541,7 +689,10 @@ function Garage({
   onFocus: (id: string) => void;
   onWatch: (vehicleId: string) => void;
   onBuy: () => void;
+  carry: CarryHandlers;
 }) {
+  // A drag on a free vehicle: a few pixels, then it leaves its stall; the tap after it is ignored.
+  const quietUntil = useRef(0);
   const max = props.catalog.road?.maxVehicles ?? 0;
   const types = props.catalog.road?.vehicles ?? [];
   const g = m().stable;
@@ -567,7 +718,20 @@ function Garage({
             <button
               key={v.id}
               type="button"
-              onClick={() => (atDepot ? onFocus(v.id) : onWatch(v.id))}
+              onClick={() => {
+                if (performance.now() < quietUntil.current) return;
+                atDepot ? onFocus(v.id) : onWatch(v.id);
+              }}
+              onPointerDown={(e) => {
+                if (v.status !== "free") return;
+                const box = e.currentTarget.getBoundingClientRect();
+                carryFrom(e, v, { x: box.left + 40, y: box.top + 30 }, carry, () => {
+                  quietUntil.current = performance.now() + 400;
+                });
+              }}
+              data-no-swipe={v.status === "free" ? "" : undefined}
+              // A free vehicle is carried by the finger to a city: no scrolling from it.
+              style={v.status === "free" ? { touchAction: "none" } : undefined}
               aria-pressed={on}
               className={`flex flex-col gap-2 cut border p-3 text-left transition active:scale-[0.98] ${on ? "border-gold bg-gold/15" : stopped ? "border-vermilion bg-vermilion/10" : atDepot ? "border-lagoon/60 bg-night-3" : "border-line bg-night-3"}`}
             >
@@ -662,12 +826,15 @@ function CitySheet({
   props,
   road,
   vehicleId,
+  best = false,
   onDone,
 }: {
   city: string;
   props: GameProps;
   road: RoadView;
   vehicleId: string | null;
+  /** Brought by a vehicle carried here: its best-paid order that it can take, already chosen. */
+  best?: boolean;
   onDone: () => void;
 }) {
   const orders = road.orders
@@ -681,8 +848,16 @@ function CitySheet({
       return ta === tb ? 0 : ta > tb ? -1 : 1;
     });
   const firstOpen = orders.filter((o) => o.status === "open");
+  const carried = road.vehicles.find((v) => v.id === vehicleId);
+  const capacity = props.catalog.road?.vehicles.find((x) => x.type === carried?.type)?.capacity;
+  const bestOrder =
+    best && capacity !== undefined
+      ? firstOpen
+          .filter((o) => canServe(props, o, capacity))
+          .sort((a, b) => (total(a) === total(b) ? 0 : total(a) > total(b) ? -1 : 1))[0]
+      : undefined;
   const [chosen, setChosen] = useState<string | null>(
-    firstOpen.length === 1 ? (firstOpen[0]?.id ?? null) : null,
+    bestOrder?.id ?? (firstOpen.length === 1 ? (firstOpen[0]?.id ?? null) : null),
   );
   const order = orders.find((o) => o.id === chosen);
   const route = `${props.view.player.region}:${city}`;

@@ -6,6 +6,7 @@ import { have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
 import { RoadBoard } from "./RoadBoard.js";
 import { d, minutesLabel } from "./format.js";
+import { useSwipe } from "./gestures.js";
 import {
   BuyVehicleSheet,
   OrderFacts,
@@ -40,6 +41,14 @@ export function Routes(props: GameProps) {
   const road = props.view.road;
   const [tab, setTab] = useState<"livraisons" | "brigands">("livraisons");
   const [view, setView] = useState<"carte" | "liste">(() => roadViewOf(props));
+  const show = (v: "carte" | "liste") => {
+    store.set("roadView", v);
+    setView(v);
+  };
+  const swipe = useSwipe(
+    () => show("liste"),
+    () => show("carte"),
+  );
   if (!road) return null;
   return (
     <div className="space-y-5">
@@ -58,10 +67,7 @@ export function Routes(props: GameProps) {
                 type="button"
                 aria-pressed={view === v}
                 data-coach={`road-view-${v}`}
-                onClick={() => {
-                  store.set("roadView", v);
-                  setView(v);
-                }}
+                onClick={() => show(v)}
                 className={`slab px-3 py-1.5 font-display text-[11px] font-extrabold uppercase tracking-wide transition ${view === v ? "bg-cream text-night" : "bg-night-3 text-cream-dim"}`}
               >
                 {fr.game.roadMap.view[v]}
@@ -86,7 +92,12 @@ export function Routes(props: GameProps) {
         />
       )}
       {tab === "livraisons" || props.now < road.banditsOpenAt ? (
-        <>
+        // A swipe turns from the map to the list and back, as the toggle above.
+        <div
+          key={view}
+          {...swipe}
+          className={`space-y-5 ${view === "liste" ? "animate-screen-right" : "animate-screen-left"}`}
+        >
           {view === "carte" ? (
             <>
               <RoadBoard {...props} road={road} />
@@ -98,7 +109,7 @@ export function Routes(props: GameProps) {
               <Deliveries {...props} road={road} />
             </>
           )}
-        </>
+        </div>
       ) : (
         <Bandits {...props} road={road} />
       )}
