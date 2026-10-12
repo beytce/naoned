@@ -1,16 +1,25 @@
 /**
- * The sign of four, Fondaco's mark: the Quattrocento merchants' mark redrawn in simple geometry
- * (grid 120, stroke 12, round ends, filled pennant). Readable from the title screen to the favicon.
+ * Fondaco's emblem: a galley's lateen sail whose mast, yard and boom draw an F, over its hull,
+ * a red pennant at the masthead. The same drawing as the app icon (public/icons/icon.svg).
  */
 export function SignPaths({ color }: { color: string }) {
   return (
-    <g fill="none" stroke={color} strokeWidth="12" strokeLinecap="round" strokeLinejoin="round">
-      {/* Pennant, filled. */}
-      <path d="M60 18 L88 50 L60 50 Z" fill={color} />
-      {/* Mast, cross-bar and short bar. */}
-      <path d="M60 18 V98 M34 50 H88 M60 74 H80" />
-      {/* Feet. */}
-      <path d="M60 98 L43 111 M60 98 L77 111" />
+    <g>
+      <path
+        d="M46 34 L92 24 C89 50 72 72 46 86 Z"
+        fill={color}
+        fillOpacity="0.22"
+        stroke={color}
+        strokeWidth="4"
+        strokeLinejoin="round"
+      />
+      <g fill={color}>
+        <rect x="37" y="18" width="10.5" height="74" rx="2" />
+        <path d="M30 33.5 L97 19 L98.8 26.5 L31.8 41 Z" />
+        <path d="M37 60 H72 L69 69 H37 Z" />
+        <path d="M17 90 H103 C99 103 87 109 73 109 H47 C33 109 21 103 17 90 Z" />
+      </g>
+      <path d="M42.5 19 V7 L59 12.5 Z" fill="rgb(var(--vermilion))" />
     </g>
   );
 }
@@ -21,7 +30,7 @@ export function Sign({
   className = "",
 }: { size?: number; color?: string; className?: string }) {
   return (
-    <svg viewBox="0 0 120 124" width={size} height={size} className={className} aria-hidden="true">
+    <svg viewBox="10 2 100 112" width={size} height={size} className={className} aria-hidden="true">
       <SignPaths color={color} />
     </svg>
   );

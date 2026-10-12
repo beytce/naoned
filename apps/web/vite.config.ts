@@ -7,7 +7,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "icons/apple-touch-icon.png"],
+      includeAssets: [
+        "favicon.svg",
+        "icons/apple-touch-icon.png",
+        "icons/apple-touch-icon-1024.png",
+      ],
       manifest: {
         name: "Fondaco",
         short_name: "Fondaco",

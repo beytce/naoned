@@ -546,7 +546,7 @@ export function Game(props: {
           <h1 className="flex min-w-0 flex-1 items-center gap-2 lg:hidden">
             {tab === "comptoir" && (
               <span className="shrink-0">
-                <Sign size={22} />
+                <Sign size={28} />
               </span>
             )}
             {/* With the guide's button in the header, the counter keeps just its sign. */}

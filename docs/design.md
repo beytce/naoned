@@ -4,9 +4,13 @@ Le jeu s'appelle **Fondaco**, du nom des entrepôts où les marchands étrangers
 
 ## Logo : le signe de quatre
 
-Marque de marchand du Quattrocento redessinée en géométrie simple : grille 120, trait 12, bouts arrondis, fanion plein (`apps/web/src/art/logo.tsx`, composants `Sign` et `Logotype`).
+Emblème : la voile latine d'une galère, dont le mât, la vergue et la bôme dessinent un F, sur sa coque, avec un fanion vermillon en tête de mât. Grille 120 (`apps/web/src/art/logo.tsx`, composants `Sign` et `Logotype` ; source de l'icône `apps/web/public/icons/icon.svg`).
 
-- **Icône d'application** : carré arrondi or, signe sombre (`public/icons`, `public/favicon.svg`).
+- **Icône d'application** : fond or en dégradé, cadre fin à coins coupés, voile crème, mât, coque et F en nuit, fanion vermillon.
+  - Rendue nette à chaque taille depuis `public/icons/icon.svg` par `apps/web/scripts/icons.mjs`. À relancer après tout changement de la source : `npx -y -p playwright-core node apps/web/scripts/icons.mjs`.
+  - iPhone : `apple-touch-icon` 180 et 1024 px, carré plein sans transparence (iOS arrondit lui-même).
+  - Android : 192 et 512 px arrondis, plus une version masquable dont l'emblème tient dans la zone sûre de 80 %.
+  - `favicon.svg`.
 - **Ducat** : pièce or frappée du signe (`Coin`).
 - Le signe ouvre l'écran de connexion et l'introduction ; le logotype (signe + « Fondaco ») tient la barre latérale sur PC et l'en-tête sur mobile.
 
