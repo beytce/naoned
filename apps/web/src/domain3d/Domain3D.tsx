@@ -31,6 +31,8 @@ export interface Domain3DProps {
   workers: DomainWorker[];
   stock: number;
   ratio: number;
+  /** The scene's size on the page (its height above all). */
+  className?: string;
   still: boolean;
   labelOf: (plot: DomainPlot) => string;
   vehicleLabel: (v: DomainVehicle) => string;
@@ -76,7 +78,7 @@ export default function Domain3D(props: Domain3DProps) {
       world.current = w;
       const fit = () => {
         const box = host.current?.getBoundingClientRect();
-        if (box) w.setSize(box.width, box.width * latest.current.ratio, latest.current.ratio);
+        if (box) w.setSize(box.width, box.height);
       };
       fit();
       resize = new ResizeObserver(fit);
@@ -143,11 +145,8 @@ export default function Domain3D(props: Domain3DProps) {
 
   const homeVehicles = props.vehicles;
   return (
-    <div
-      ref={host}
-      className="relative w-full overflow-hidden"
-      style={{ aspectRatio: `1 / ${props.ratio}` }}
-    >
+    <div ref={host} className={`relative w-full overflow-hidden ${props.className ?? ""}`}>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: the keyboard has the buttons laid over the scene. */}
       <canvas
         ref={canvas}
         role="img"
@@ -156,7 +155,9 @@ export default function Domain3D(props: Domain3DProps) {
         onPointerDown={(e) => {
           down.current = { x: e.clientX, y: e.clientY, t: performance.now() };
         }}
-        onPointerUp={(e) => {
+        // On the click, not the release: a sheet opened on the release would take the click that
+        // follows on its backdrop, and close at once.
+        onClick={(e) => {
           const d = down.current;
           down.current = null;
           if (!d || props.quiet()) return;

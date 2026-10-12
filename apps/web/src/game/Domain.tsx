@@ -315,8 +315,9 @@ export function Domain(props: GameProps) {
   }
 
   return (
-    <section className="overflow-hidden cut border border-line bg-night-2">
-      <div className="flex items-end justify-between gap-3 px-4 pb-2 pt-3">
+    // Edge to edge on a phone, most of the screen's height: the domain is the game's stage.
+    <section className="relative -mx-4 overflow-hidden border-y border-line bg-night-2 lg:mx-0 lg:cut lg:border">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 bg-gradient-to-b from-night/85 via-night/45 to-transparent px-4 pb-8 pt-3">
         <div className="min-w-0">
           <Label className="text-gold">{view.standing.title.current.name}</Label>
           <h2 className="truncate font-display text-lg font-extrabold uppercase leading-tight">
@@ -338,7 +339,11 @@ export function Domain(props: GameProps) {
         onPointerCancel={onPointerEnd}
       >
         {use3d ? (
-          <Suspense fallback={<div className="aspect-[1/0.82] w-full animate-pulse bg-night-3" />}>
+          <Suspense
+            fallback={
+              <div className="h-[68svh] min-h-[420px] w-full animate-pulse bg-night-3 lg:h-[62vh]" />
+            }
+          >
             <Domain3D
               region={view.player.region}
               phase={(prefs.get("domainPhase") as SkyPhase | null) ?? skyPhase(parisHour(now))}
@@ -366,6 +371,7 @@ export function Domain(props: GameProps) {
               onPlot={touch}
               onEmpty={() => props.setSheet("buildHere")}
               still={stillMotion}
+              className="h-[68svh] min-h-[420px] lg:h-[62vh]"
               onPicker={(f) => {
                 picker.current = f;
               }}

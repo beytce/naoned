@@ -203,12 +203,19 @@ export class DomainWorld {
     this.lanterns[1]?.position.set(STORE.x + 1.1, 1.0, STORE.y + 0.8);
   }
 
-  setSize(width: number, height: number, ratio: number) {
+  setSize(width: number, height: number) {
     this.width = Math.max(1, width);
     this.height = Math.max(1, height);
-    this.ratio = ratio;
+    this.ratio = this.height / this.width;
     this.renderer.setSize(this.width, this.height, false);
+    // A new shape of the screen (rotation, resize): the frame is fitted again, at once.
+    if (this.bounds) {
+      this.target.half = this.fitHalf(this.bounds);
+      this.view.half = this.target.half;
+    }
   }
+
+  private bounds: { minX: number; maxX: number; minY: number; maxY: number } | null = null;
 
   update(state: WorldState) {
     this.state = state;
@@ -332,6 +339,7 @@ export class DomainWorld {
     // The frame: what is shown, the yard and the gate.
     const shown = [...placed.map((p) => p.at), ...empties];
     const b = frameBounds(shown);
+    this.bounds = b;
     this.target = { cx: (b.minX + b.maxX) / 2, cz: (b.minY + b.maxY) / 2, half: 0 };
     this.target.half = this.fitHalf(b);
     if (this.firstUpdate) this.view = { ...this.target };
@@ -357,7 +365,10 @@ export class DomainWorld {
           w = Math.max(w, Math.abs(p.x));
           h = Math.max(h, Math.abs(p.y));
         }
-    return Math.max(h, w * this.ratio) * 1.02;
+    // A tall frame (a phone upright) lets the land's margins run off the sides, so the
+    // workshops are larger rather than lost in grass above and below.
+    const sides = this.ratio > 1 ? 0.74 : 1;
+    return Math.max(h, w * this.ratio * sides) * 1.02;
   }
 
   private vehicleSpot(v: DomainVehicle): THREE.Vector3 {
