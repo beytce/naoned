@@ -398,8 +398,9 @@ function ProduceSheet({ b, props }: { b: BuildingView; props: GameProps }) {
         <Label>{fr.game.batchesLabel}</Label>
         <Qty value={q} max={b.canStart} onChange={setQty} />
         <p className="text-sm text-cream-dim">
-          {q} × {minutesLabel(recipe.durationMinutes)} ={" "}
-          {duration(q * recipe.durationMinutes * 60_000)}
+          {b.fastSeconds !== null && q === 1
+            ? fr.game.fastBatch(b.fastSeconds)
+            : `${q} × ${minutesLabel(recipe.durationMinutes)} = ${duration(q * recipe.durationMinutes * 60_000)}`}
         </p>
       </div>
       <Slab

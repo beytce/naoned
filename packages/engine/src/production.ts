@@ -77,6 +77,20 @@ export function collect(tx: Tx, building: Building): void {
   emit(tx, "harvest", building.playerId, { building: building.id, batches: done });
 }
 
+/** Tutorial: in the first minutes, a single batch of a starting building finishes in seconds. */
+export function fastBatchNext(
+  ctx: WorldContext,
+  building: Building,
+  player: Player,
+  now: number,
+): boolean {
+  return (
+    !building.job &&
+    building.fastBatchesLeft > 0 &&
+    now < player.joinedAt + ctx.settings.tutorial.minutes * MINUTE_MS
+  );
+}
+
 export function startProduction(
   tx: Tx,
   building: Building,
@@ -100,13 +114,8 @@ export function startProduction(
     fail("building_busy");
   }
 
-  // Tutorial: in the first minutes, a single batch of a starting building finishes in seconds.
   const tutorial = tx.ctx.settings.tutorial;
-  const fast =
-    !job &&
-    batches === 1 &&
-    building.fastBatchesLeft > 0 &&
-    tx.now < player.joinedAt + tutorial.minutes * MINUTE_MS;
+  const fast = batches === 1 && fastBatchNext(tx.ctx, building, player, tx.now);
   const batchMs = fast ? tutorial.fastBatchSeconds * 1000 : normalMs;
 
   const queuedEnd = job ? job.startedAt + job.batches * batchMs : tx.now;

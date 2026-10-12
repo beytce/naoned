@@ -369,6 +369,8 @@ export interface BuildingView {
     freshUntil: number | null;
   } | null;
   canStart: number;
+  /** Seconds of the next single batch when it is a tutorial one, otherwise null. */
+  fastSeconds: number | null;
   upgradeCost: Cost | null;
   upkeepPerDay: Money;
   /** Extractor built outside its region before the rule: produces, cannot be upgraded. */

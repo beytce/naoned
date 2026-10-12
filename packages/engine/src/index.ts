@@ -30,7 +30,13 @@ export type { PlaceOrderInput } from "./market.js";
 export * from "./marketMaker.js";
 export * from "./money.js";
 export * from "./rng.js";
-export { batchDuration, defaultRecipe, freeBatches, yieldBonusBps } from "./production.js";
+export {
+  batchDuration,
+  defaultRecipe,
+  fastBatchNext,
+  freeBatches,
+  yieldBonusBps,
+} from "./production.js";
 export { openProjects } from "./projects.js";
 export * from "./settings.js";
 export { type MissionView, missionsFor } from "./missions.js";

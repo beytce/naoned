@@ -618,6 +618,7 @@ export const fr = {
     harvest: (n: number) => (n > 1 ? `Récolter ${n} lots` : "Récolter"),
     produce: "Produire",
     batchesLabel: "Lots à lancer",
+    fastBatch: (seconds: number) => `Premier lot offert par Lorenzo : prêt en ${seconds} s`,
     missingInputs: "Matières insuffisantes : achetez-en au Marché.",
     upgrade: "Améliorer",
     upgradeTo: (level: number) => `Passer au niveau ${level}`,
@@ -895,8 +896,9 @@ export const fr = {
       sellCity: (resource: string) =>
         `Vendez vos ${resource.toLowerCase()} à la ville qui paie le mieux.`,
       goRoutes: "Les villes passent commande. Ouvrez l'onglet « Routes ».",
+      goList: "Passez en « Liste » : chaque commande y montre ce qu'elle rapporte.",
       deliver:
-        "Choisissez une commande que votre stock couvre, chargez la charrette et partez : la ville paie à l'arrivée.",
+        "Votre stock couvre cette commande. Touchez-la, chargez la charrette et partez : la ville paie à l'arrivée.",
       deliveryUnderway: "Votre charrette est en route. La ville paiera à l'arrivée.",
       goRialto:
         "Pour grandir, il faut les matériaux d'une autre région. Ouvrez l'onglet « Rialto ».",

@@ -11,6 +11,7 @@ import {
   costForLevel,
   dayIndex,
   escrowAccount,
+  fastBatchNext,
   freeBatches,
   marketMakerQuotaLeft,
   marketMakerQuotes,
@@ -351,6 +352,9 @@ function buildingView(ctx: WorldContext, state: WorldState, b: Building, now: nu
     recipe: recipe?.code ?? null,
     job,
     canStart: Math.min(room, affordable),
+    /** Seconds of the next single batch when it is a tutorial one, otherwise null. */
+    fastSeconds:
+      player && fastBatchNext(ctx, b, player, now) ? ctx.settings.tutorial.fastBatchSeconds : null,
     upgradeCost:
       local && b.level < ctx.settings.maxBuildingLevel
         ? costForLevel(ctx, b.type, b.level + 1)

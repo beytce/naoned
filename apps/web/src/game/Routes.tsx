@@ -23,12 +23,20 @@ type Sort = "price" | "distance" | "deadline";
 const t = () => fr.game.road;
 
 /** Today's board, the vehicles and the roads; the bandits' screen from their opening day. */
+/**
+ * Map or list: the player's choice once made; until then the list while the guide is on the
+ * road (its orders are the guide's targets), the map afterwards.
+ */
+export function roadViewOf(props: GameProps): "carte" | "liste" {
+  const chosen = store.get("roadView");
+  if (chosen === "carte" || chosen === "liste") return chosen;
+  return props.view.tutorial.includes("sell_city") ? "carte" : "liste";
+}
+
 export function Routes(props: GameProps) {
   const road = props.view.road;
   const [tab, setTab] = useState<"livraisons" | "brigands">("livraisons");
-  const [view, setView] = useState<"carte" | "liste">(() =>
-    store.get("roadView") === "liste" ? "liste" : "carte",
-  );
+  const [view, setView] = useState<"carte" | "liste">(() => roadViewOf(props));
   if (!road) return null;
   return (
     <div className="space-y-5">
@@ -46,6 +54,7 @@ export function Routes(props: GameProps) {
                 key={v}
                 type="button"
                 aria-pressed={view === v}
+                data-coach={`road-view-${v}`}
                 onClick={() => {
                   store.set("roadView", v);
                   setView(v);

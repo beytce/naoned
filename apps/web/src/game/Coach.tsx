@@ -4,6 +4,7 @@ import { fr } from "../i18n.js";
 import { Big, Label, Slab, clock } from "../ui.js";
 import { affordable, have } from "./Comptoir.js";
 import type { GameProps, MarketTab, Tab } from "./Game.js";
+import { roadViewOf } from "./Routes.js";
 import { store } from "./store.js";
 
 const STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "mission"] as const;
@@ -67,7 +68,16 @@ function nextStep(props: GameProps): CoachStep {
   const recipeOf = (type: string) => props.catalog.buildings.find((b) => b.type === type)?.recipe;
   const isRaw = (type: string) => Object.keys(recipeOf(type)?.inputs ?? {}).length === 0;
 
-  if (ready && !done.has("mission")) {
+  // On the road with an order the stock covers: deliver first, the harvest can wait a minute.
+  const road = view.road;
+  const deliverable =
+    done.has("produce") && !done.has("sell_city") && road
+      ? road.deliveries.some((dv) => now < dv.arriveAt)
+        ? undefined
+        : road.orders.find((o) => o.status === "open" && have(view, o.resource) >= o.quantity)
+      : undefined;
+
+  if (ready && !done.has("mission") && !deliverable) {
     return (
       goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
         text: fr.game.coach.harvest,
@@ -91,19 +101,15 @@ function nextStep(props: GameProps): CoachStep {
 
   if (!done.has("sell_city")) {
     // With deliveries by road: an order of the board the stock covers, loaded on the cart.
-    const road = view.road;
     if (road) {
       if (road.deliveries.some((dv) => now < dv.arriveAt))
         return { text: fr.game.coach.deliveryUnderway };
-      const order = road.orders.find(
-        (o) => o.status === "open" && have(view, o.resource) >= o.quantity,
-      );
-      if (order) {
+      if (deliverable) {
         return (
-          goTab(props, "routes", fr.game.coach.goRoutes) ?? {
-            text: fr.game.coach.deliver,
-            target: `road-order-${order.id}`,
-          }
+          goTab(props, "routes", fr.game.coach.goRoutes) ??
+          (roadViewOf(props) !== "liste"
+            ? { text: fr.game.coach.goList, target: "road-view-liste" }
+            : { text: fr.game.coach.deliver, target: `road-order-${deliverable.id}` })
         );
       }
     }
