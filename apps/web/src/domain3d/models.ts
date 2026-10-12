@@ -293,8 +293,9 @@ export function workshopModel(type: string, level: number): Model {
   const lift = level >= 3 ? 0.1 : 0;
   const roof = level >= 5 ? "roof-gold" : "roof";
   const body = new THREE.Group();
-  body.position.y = lift;
+  body.position.y = lift + 0.03;
   group.add(body);
+  plotGround(group, "#7FA04E");
   shadowBlob(group, 2.1, 2.1);
   if (level >= 3) box(group, 1.86, 0.1, 1.86, "stone", 0, 0, 0, 0.04);
 
@@ -550,4 +551,88 @@ export function emptyPlotModel(): THREE.Group {
   }
   box(g, 1.6, 0.02, 1.6, "#9C8E70", 0, 0, 0, 0);
   return g;
+}
+
+/** A round bush of three puffs. */
+export function bush(parent: THREE.Object3D, x: number, z: number, s = 1, tone = "#4E8A4A") {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  g.scale.setScalar(s);
+  sphere(g, 0.2, tone, 0, 0.14, 0, 0.8);
+  sphere(g, 0.15, shadeName(tone, 0.1), 0.15, 0.12, 0.06, 0.8);
+  sphere(g, 0.14, shadeName(tone, 0.05), -0.13, 0.11, 0.08, 0.8);
+  shadowBlob(g, 0.6, 0.5);
+  parent.add(g);
+  return g;
+}
+
+/** A small bed of flowers in a colour. */
+export function flowers(parent: THREE.Object3D, x: number, z: number, colour: string) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    cyl(g, 0.008, 0.008, 0.08, "#4E8A4A", Math.cos(a) * 0.1, 0, Math.sin(a) * 0.1, 4);
+    sphere(g, 0.035, i % 2 ? colour : "#F7EEDC", Math.cos(a) * 0.1, 0.09, Math.sin(a) * 0.1);
+  }
+  parent.add(g);
+  return g;
+}
+
+/** A grey rock, a little flattened. */
+export function rock(parent: THREE.Object3D, x: number, z: number, s = 1) {
+  const g = geo("rock", () => new THREE.DodecahedronGeometry(0.2, 0));
+  const m = new THREE.Mesh(g, mat("stone"));
+  m.position.set(x, 0.08 * s, z);
+  m.scale.set(s * 1.2, s * 0.7, s);
+  m.rotation.y = x * 3.1;
+  m.castShadow = true;
+  m.receiveShadow = true;
+  parent.add(m);
+  return m;
+}
+
+/** A street lamp: a post and a lantern that glows at night. */
+export function lampPost(parent: THREE.Object3D, x: number, z: number): THREE.Mesh {
+  cyl(parent, 0.03, 0.04, 0.9, "#3B2C24", x, 0, z, 8);
+  box(parent, 0.18, 0.03, 0.03, "#3B2C24", x + 0.06, 0.88, z, 0);
+  const lantern = box(parent, 0.09, 0.12, 0.09, "window", x + 0.13, 0.74, z, 0.015);
+  shadowBlob(parent, 0.25, 0.25, x, z);
+  return lantern;
+}
+
+/** A well with its roof and bucket, for the yard. */
+export function well(parent: THREE.Object3D, x: number, z: number) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  cyl(g, 0.28, 0.3, 0.32, "stone", 0, 0, 0, 16);
+  cyl(g, 0.22, 0.22, 0.02, "water", 0, 0.31, 0, 16);
+  box(g, 0.05, 0.6, 0.05, "wood", -0.25, 0.3, 0, 0.01);
+  box(g, 0.05, 0.6, 0.05, "wood", 0.25, 0.3, 0, 0.01);
+  gable(g, 0.6, 0.4, 0.18, "roof", "wood", 0, 0.9, 0, "x", 0.06);
+  box(g, 0.1, 0.1, 0.1, "wood-light", 0.05, 0.55, 0, 0.02);
+  shadowBlob(g, 0.8, 0.8);
+  parent.add(g);
+  return g;
+}
+
+/** A barrel. */
+export function barrel(parent: THREE.Object3D, x: number, z: number) {
+  cyl(parent, 0.11, 0.1, 0.26, "wood", x, 0, z, 12);
+  cyl(parent, 0.115, 0.115, 0.02, "#3B2C24", x, 0.05, z, 12);
+  cyl(parent, 0.115, 0.115, 0.02, "#3B2C24", x, 0.19, z, 12);
+  shadowBlob(parent, 0.3, 0.3, x, z);
+}
+
+/** The ground of a built plot: trimmed grass in a low stone border. */
+export function plotGround(parent: THREE.Object3D, tone: string) {
+  box(parent, 1.96, 0.03, 1.96, tone, 0, 0, 0, 0.02);
+  for (const [x, z, w, d] of [
+    [0, -0.98, 1.96, 0.06],
+    [0, 0.98, 1.96, 0.06],
+    [-0.98, 0, 0.06, 1.96],
+    [0.98, 0, 0.06, 1.96],
+  ] as const) {
+    box(parent, w, 0.06, d, "stone", x, 0, z, 0.015);
+  }
 }

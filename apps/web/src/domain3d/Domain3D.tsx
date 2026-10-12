@@ -223,7 +223,7 @@ export default function Domain3D(props: Domain3DProps) {
             type="button"
             aria-label={props.emptyLabel}
             onClick={props.onEmpty}
-            className="pointer-events-auto -ml-12 -mt-4 flex h-8 w-24 items-center justify-center font-mono text-[10px] tracking-[0.2em] text-cream [text-shadow:0_1px_2px_rgb(15_27_30)]"
+            className="pointer-events-auto -ml-12 mt-2 flex h-8 w-24 items-center justify-center font-mono text-[10px] tracking-[0.2em] text-cream [text-shadow:0_1px_2px_rgb(15_27_30)]"
           >
             + {props.emptyLabel.toUpperCase()}
           </button>

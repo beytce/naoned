@@ -95,7 +95,19 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 - **Dernier sprint** : bandeau doré les trois derniers jours ; l'hommage au Doge de la saison passée s'affiche au Marché.
 - **Gazette** (`Gazette`) : une ligne repliée (« En ce moment » ou « Bientôt », titre, compte à rebours) qui se déplie au toucher, seulement sur Comptoir, Routes et Marché, jamais pendant les premiers pas guidés par Lorenzo ; fermeture par ×. Le premier jour d'un acte, elle annonce l'acte (« Acte III », titre, récit) avant l'événement du jour ; sans événement, elle rappelle l'acte en cours.
 - **Commandes de la route** (`Routes`, `roadKit.tsx`) : chaque commande montre son prix unitaire, l'écart avec le Rialto, les ducats par heure de route et un badge « Livrable » ; tri par gain à l'heure par défaut. La vue Liste est celle du tutoriel.
-- **Domaine** (`Domain`, `art/domain.tsx`) : en tête du Comptoir, la Maison en volume, vue de dessus en isométrique, sur la terre de sa région.
+- **Domaine 3D** (`domain3d/`, three.js chargé à la demande dans un morceau séparé) : en tête du Comptoir, la Maison en vraie 3D temps réel.
+  - **Caméra** orthographique à l'angle isométrique. Le cadre suit ce qui est bâti et glisse en douceur quand le Domaine grandit.
+  - **Lumière** : soleil chaud avec ombres douces, lumière du ciel, rendu ACES. Au soir, lumière orangée ; la nuit bleutée, avec fenêtres, lanternes de la porte et lampadaires allumés.
+  - **Matières** (`materials.ts`) : textures dessinées à la volée (herbe, enduit, planches, briques, tuiles, pavés) et ombres de contact sous chaque objet.
+  - **Modèles** (`models.ts`, `actors.ts`) : volumes arrondis.
+    - Ateliers avec fenêtres, colombages et accessoires : blé, ailes, four, cheminées, lame, loggia du palais.
+    - Les niveaux dans le bâtiment : bannière, socle et étage, tour d'angle, toits dorés.
+    - Charrettes, chariots et mules aux roues et pattes animées, ouvriers aux bras et jambes qui balancent.
+    - Entrepôt dont les piles suivent le stock, porte, puits, tonneaux, lampadaires, buissons, fleurs, rochers.
+  - **Moments forts** : un bâtiment neuf ou amélioré sort du sol avec un rebond, dans une gerbe d'étincelles dorées. Une récolte envoie des caisses en arc jusqu'à l'entrepôt. Fumées douces des cheminées et de la carrière.
+  - **Interface par-dessus** (`Domain3D.tsx`) : bulles, plaques, « +N », bulles de pain et ⚔ suivent chaque objet à l'écran. Ce sont des boutons (avec `data-plot`, `data-coach`), donc le guide et le clavier fonctionnent. Un toucher sur la scène, ou la faucille, prend l'objet visé par lancer de rayon.
+  - **Repli** : sans WebGL, ou avec la préférence `domain2d`, la scène dessinée ci-dessous. La préférence `domainPhase` (`day`, `dusk`, `night`) force l'heure pour les captures.
+- **Domaine dessiné** (`Domain`, `art/domain.tsx`, repli) : la Maison en volume, vue de dessus en isométrique, sur la terre de sa région.
   - **Dessin** (`art/iso.tsx`, `art/isoBuildings.tsx`) : projection 2:1, boîtes à trois faces (dessus éclairé, face gauche, face droite plus sombre), toits à deux pans, pyramides, arbres en cônes.
   - **Décor** : sol de la région (champs, prés de la Lagune bordés d'un canal, prés des Dolomites sous les pics), chemins de dalles entre les parcelles. Crépuscule et nuit teintent la scène, les fenêtres s'allument.
   - **Cadrage** : la vue cadre ce qui est bâti, les deux prochaines parcelles et la cour. Elle commence près et s'élargit à mesure que le Domaine grandit.

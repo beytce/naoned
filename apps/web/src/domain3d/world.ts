@@ -24,10 +24,16 @@ import {
 import { disposeMaterials, mat } from "./materials.js";
 import {
   type Model,
+  barrel,
   box,
+  bush,
   disposeGeometries,
   emptyPlotModel,
+  flowers,
+  lampPost,
+  rock,
   tree,
+  well,
   workshopModel,
 } from "./models.js";
 
@@ -134,6 +140,17 @@ export class DomainWorld {
   private sun = new THREE.DirectionalLight("#ffffff", 2.5);
   private hemi = new THREE.HemisphereLight("#ffffff", "#444444", 1);
   private lanterns: THREE.PointLight[] = [];
+  private lamps: THREE.Mesh[] = [];
+  /** Crates flying from a workshop to the store, sparks of a new building. */
+  private flights: {
+    mesh: THREE.Object3D;
+    from: THREE.Vector3;
+    to: THREE.Vector3;
+    t: number;
+    dur: number;
+  }[] = [];
+  private sparks: { sprite: THREE.Sprite; v: THREE.Vector3; life: number }[] = [];
+  private gains = new Map<string, number>();
   private land = new THREE.Group();
   private plots = new Map<string, PlotEntry>();
   private empties = new THREE.Group();
@@ -211,8 +228,30 @@ export class DomainWorld {
       model.group.position.set(at.x + 1, 0, at.y + 1);
       model.group.userData = { kind: "plot", id: item.id };
       this.scene.add(model.group);
-      // A new building or level rises from the ground (not on the first look).
+      // A new building or level rises from the ground (not on the first look), in golden sparks.
       this.plots.set(item.id, { key, model, at, born: this.firstUpdate ? 0 : now });
+      if (!this.firstUpdate) this.burst(new THREE.Vector3(at.x + 1, 0.4, at.y + 1));
+    }
+    // Goods just collected: crates fly from the workshop to the store.
+    for (const { item, at } of placed) {
+      const key = item.gain?.key;
+      if (!key || this.gains.get(item.id) === key) continue;
+      this.gains.set(item.id, key);
+      if (this.firstUpdate || state.still) continue;
+      const to = new THREE.Vector3(STORE.x + STORE.w / 2, 0.5, STORE.y + STORE.d / 2);
+      for (let i = 0; i < 3; i++) {
+        const crate = new THREE.Group();
+        box(crate, 0.2, 0.18, 0.2, i % 2 ? "wood-light" : "wood", 0, -0.09, 0, 0.025);
+        crate.position.set(at.x + 1, 0.6, at.y + 1);
+        this.scene.add(crate);
+        this.flights.push({
+          mesh: crate,
+          from: crate.position.clone(),
+          to,
+          t: -i * 0.12,
+          dur: 0.9,
+        });
+      }
     }
     for (const [id, e] of this.plots) {
       if (!seen.has(id)) {
@@ -351,6 +390,7 @@ export class DomainWorld {
     for (const e of this.plots.values())
       for (const w of e.model.windows) w.material = night ? lit : dark;
     this.gate.lamp.material = night || phase === "dusk" ? lit : dark;
+    for (const lamp of this.lamps) lamp.material = night || phase === "dusk" ? lit : dark;
   }
 
   private buildLand(region: string) {
@@ -406,6 +446,46 @@ export class DomainWorld {
       [10.5, -2.6, 0.9],
       [-2.6, -1.4, 1.0],
     ];
+    // The yard's life: a well, barrels by the store, lamps along the paths.
+    well(this.land, 8.3, 10.75);
+    barrel(this.land, 2.45, 9.55);
+    barrel(this.land, 2.7, 9.75);
+    barrel(this.land, 2.4, 9.85);
+    this.lamps = [2.95, 5.95, 8.95].map((x) => lampPost(this.land, x, 8.15));
+    // Bushes, flowers and rocks along the paths and around the domain.
+    const bushTone = region === "dolomites" ? "#3E7A4E" : "#4E8A4A";
+    for (const [x, z, sc] of [
+      [-0.6, 8.2, 1],
+      [11.6, 8.1, 0.9],
+      [-0.7, 2.6, 0.8],
+      [11.7, 2.7, 1],
+      [2.4, -0.7, 0.9],
+      [8.6, -0.8, 0.8],
+      [-1.1, 5.4, 1.1],
+      [12.0, 5.6, 0.9],
+    ] as const) {
+      bush(this.land, x, z, sc, bushTone);
+    }
+    const blooms = ["#E2694F", "#E0AD4B", "#8E6BD8", "#F2A3B3"];
+    for (const [i, [x, z]] of [
+      [-0.5, 7.4],
+      [11.5, 7.2],
+      [-0.4, 1.4],
+      [11.6, 1.6],
+      [5.5, -0.7],
+      [-1.4, 9.2],
+    ].entries()) {
+      flowers(this.land, x ?? 0, z ?? 0, blooms[i % blooms.length] ?? "#E2694F");
+    }
+    for (const [x, z, sc] of [
+      [-2.6, 6.2, 1],
+      [13.4, 7.4, 0.8],
+      [4.2, -2.4, 0.9],
+      [-3.4, 9.8, 1.2],
+      [15.0, 9.6, 1],
+    ] as const) {
+      rock(this.land, x, z, sc);
+    }
     const tone = region === "dolomites" ? "#2F6345" : region === "lagoon" ? "#4C7A55" : "#3F7A4A";
     for (const [x, z, s] of trees) tree(this.land, x, z, s, tone);
     if (region === "lagoon") {
@@ -575,7 +655,55 @@ export class DomainWorld {
       }
     }
 
+    // Crates in flight, an arc to the store; sparks falling.
+    for (let i = this.flights.length - 1; i >= 0; i--) {
+      const f = this.flights[i];
+      if (!f) continue;
+      f.t += dt / f.dur;
+      if (f.t >= 1) {
+        this.scene.remove(f.mesh);
+        this.flights.splice(i, 1);
+        continue;
+      }
+      const k = Math.max(0, f.t);
+      f.mesh.visible = f.t >= 0;
+      f.mesh.position.lerpVectors(f.from, f.to, k);
+      f.mesh.position.y += Math.sin(k * Math.PI) * 1.6;
+      f.mesh.rotation.set(k * 4, k * 3, 0);
+    }
+    for (let i = this.sparks.length - 1; i >= 0; i--) {
+      const sp = this.sparks[i];
+      if (!sp) continue;
+      sp.life += dt / 1.1;
+      if (sp.life >= 1) {
+        this.scene.remove(sp.sprite);
+        (sp.sprite.material as THREE.SpriteMaterial).dispose();
+        this.sparks.splice(i, 1);
+        continue;
+      }
+      sp.v.y -= dt * 3.2;
+      sp.sprite.position.addScaledVector(sp.v, dt);
+      (sp.sprite.material as THREE.SpriteMaterial).opacity = 1 - sp.life;
+    }
+
     this.renderer.render(this.scene, this.camera);
+  }
+
+  /** Golden sparks bursting from a new building or level. */
+  private burst(at: THREE.Vector3) {
+    if (this.state?.still) return;
+    for (let i = 0; i < 18; i++) {
+      const a = (i / 18) * Math.PI * 2;
+      const sprite = new THREE.Sprite(sparkMaterial());
+      sprite.position.copy(at);
+      sprite.scale.setScalar(0.14 + (i % 3) * 0.04);
+      this.scene.add(sprite);
+      this.sparks.push({
+        sprite,
+        v: new THREE.Vector3(Math.cos(a) * 1.4, 2.6 + (i % 4) * 0.5, Math.sin(a) * 1.4),
+        life: 0,
+      });
+    }
   }
 
   private last = 0;
@@ -664,11 +792,37 @@ export class DomainWorld {
     disposeMaterials();
     smokeMat?.dispose();
     smokeMat = null;
+    sparkMat?.dispose();
+    sparkMat = null;
   }
 }
 
 function easeOut(x: number): number {
   return 1 - (1 - Math.min(1, x)) ** 3;
+}
+
+let sparkMat: THREE.SpriteMaterial | null = null;
+
+function sparkMaterial(): THREE.SpriteMaterial {
+  if (!sparkMat) {
+    const c = document.createElement("canvas");
+    c.width = 32;
+    c.height = 32;
+    const g = c.getContext("2d") as CanvasRenderingContext2D;
+    const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+    grad.addColorStop(0, "rgba(255,244,200,1)");
+    grad.addColorStop(0.4, "rgba(240,200,110,0.9)");
+    grad.addColorStop(1, "rgba(224,173,75,0)");
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 32, 32);
+    sparkMat = new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(c),
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+  }
+  return sparkMat.clone();
 }
 
 let smokeMat: THREE.SpriteMaterial | null = null;
