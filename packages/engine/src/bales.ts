@@ -175,6 +175,7 @@ export function balesFor(ctx: WorldContext, state: WorldState, playerId: PlayerI
     max: cfg.maxStored,
     nextAt: next !== null && next < seasonEnd(ctx) ? next : null,
     intervalHours: cfg.intervalHours,
+    cardsPerBale: cfg.cardsPerBale,
     opened: saved.opened,
     last: saved.last ?? null,
     odds: baleOdds(ctx, player.region),

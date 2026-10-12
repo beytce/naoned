@@ -3,6 +3,7 @@ import { BuildingArt } from "../art/buildings.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Qty, Ribbon, Sheet, Slab, clock } from "../ui.js";
+import { BaleScreen, BaleTile } from "./Bales.js";
 import { Daily } from "./Daily.js";
 import type { GameProps } from "./Game.js";
 import { Ledger } from "./Ledger.js";
@@ -575,6 +576,7 @@ export function Comptoir(props: GameProps) {
           <Hero {...props} />
           <div className="grid gap-3 sm:grid-cols-2">
             <CarnetButton {...props} />
+            <BaleTile {...props} />
             <RoadShortcut {...props} />
           </div>
         </div>
@@ -644,6 +646,7 @@ export function Comptoir(props: GameProps) {
           <Ledger {...props} />
         </div>
       </Sheet>
+      {props.sheet === "bales" && <BaleScreen {...props} />}
       <Sheet open={kind === "build"} onClose={() => props.setSheet(null)}>
         {kind === "build" && id && <BuildSheet type={id} props={props} />}
       </Sheet>

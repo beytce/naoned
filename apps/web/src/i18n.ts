@@ -439,6 +439,43 @@ export const fr = {
         criee: "Vendre à une Criée",
       } as Record<string, string>,
     },
+    bales: {
+      title: "Ballots de Faraj",
+      kicker: "Présent d'Alexandrie",
+      waiting: (n: number) =>
+        n > 1 ? `${n} ballots vous attendent au quai` : "Un ballot vous attend au quai",
+      next: (t: string) => `Prochain ballot dans ${t}`,
+      full: "Le quai est plein : ouvrez-en un pour que le suivant parte d'Alexandrie",
+      none: "Plus de ballot avant la fin du mois",
+      arriving: "Un ballot arrive au quai…",
+      count: (n: number, max: number) => `${n}/${max}`,
+      lorenzo:
+        "Lorenzo remonte du quai : « Un ballot pour vous, Messer, scellé de la marque de Faraj d'Alexandrie. »",
+      story:
+        "Votre grand-père a sauvé du naufrage, au large de Candie, la cargaison d'un jeune marchand d'Alexandrie. Faraj al-Iskandarani est devenu l'un des plus riches négociants du Levant, et il n'a pas oublié sa dette : toutes les six heures, une balle de toile cordée part pour votre comptoir. On ne sait jamais ce qu'elle contient : trois sacs de blé, ou un coupon de soie de Damas.",
+      storyTitle: "Qui est Faraj ?",
+      tapToOpen: "Touchez le sceau pour ouvrir",
+      open: "Ouvrir le ballot",
+      revealAll: "Tout révéler",
+      tapCard: "Touchez une carte pour la retourner",
+      stored: "Rangé à l'entrepôt",
+      nextBale: (left: number) => `Ballot suivant (${left} restant${left > 1 ? "s" : ""})`,
+      back: "Retour au comptoir",
+      odds: "Probabilités",
+      oddsTitle: "Ce que contient un ballot",
+      oddsIntro: (cards: number, hours: number, max: number) =>
+        `${cards} cartes par ballot, de 1 à 5 unités chacune. Un ballot toutes les ${hours} heures, ${max} au plus en attente au quai. Les ballots ne s'achètent pas et le Pass Négociant n'y change rien.`,
+      oddsOwn: "Votre propre matière première vient deux fois moins souvent.",
+      perCard: "par carte",
+      units: (q: number) => `×${q}`,
+      rarity: {
+        common: "Commun",
+        uncommon: "Peu commun",
+        rare: "Rare",
+        epic: "Épique",
+        legendary: "Légendaire",
+      } as Record<string, string>,
+    },
     criee: {
       kicker: "Criée du Rialto",
       title: (city: string, resource: string, pct: string) =>
@@ -907,6 +944,11 @@ export const fr = {
         text: "Chaque atelier transforme des matières en produits, par lots d'une demi-heure. Lancez jusqu'à 12 heures de production, puis revenez récolter. Rien ne se perd pendant votre absence.",
       },
       {
+        icon: "comptoir",
+        title: "Ballots de Faraj",
+        text: "Faraj d'Alexandrie, l'ami de votre famille, vous envoie un ballot toutes les six heures (deux au plus attendent au quai) : trois cartes de 1 à 5 unités, du blé commun à la soie légendaire. Les probabilités sont affichées ; les ballots ne s'achètent pas.",
+      },
+      {
         icon: "marche",
         title: "Vendre et acheter",
         text: "Au Rialto, vous achetez et vendez aux autres marchands et à la Dogana, la douane de la République (en quantité limitée par jour) : tout de suite au meilleur prix, ou à votre prix en laissant une offre. Les villes, elles, passent commande : voyez l'onglet Routes.",
@@ -924,6 +966,8 @@ export const fr = {
     ],
 
     errors: {
+      no_bale: "Aucun ballot au quai pour l'instant : le prochain est en route.",
+      bales_off: "Pas de ballot de Faraj dans ce monde.",
       insufficient_funds: "Pas assez de ducats.",
       insufficient_stock: "Pas assez de stock.",
       building_busy: "Cet atelier produit déjà : attendez la fin de la file.",

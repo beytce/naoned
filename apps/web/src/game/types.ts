@@ -433,6 +433,7 @@ export interface PlayerView {
   tutorial: string[];
   missions: MissionView[];
   daily: DailyView | null;
+  bales: BalesView | null;
   pass: PassView;
   fresh: { minutes: number; bonusBps: number };
   criee: CrieeView | null;
@@ -469,6 +470,30 @@ export interface DailyView {
   streak: number;
   best: number;
   resetsAt: number;
+}
+
+export interface BaleCard {
+  rarity: string;
+  resource: string;
+  quantity: number;
+}
+
+/** Faraj's bales: waiting, the next one, the last one opened and the odds. */
+export interface BalesView {
+  available: number;
+  max: number;
+  /** Null when the stack is full (or the season ends first). */
+  nextAt: number | null;
+  intervalHours: number;
+  cardsPerBale: number;
+  opened: number;
+  last: { seq: number; at: number; cards: BaleCard[] } | null;
+  odds: {
+    rarity: string;
+    chanceBps: number;
+    goods: { resource: string; chanceBps: number }[];
+    quantities: { quantity: number; chanceBps: number }[];
+  }[];
 }
 
 export interface CrieeView {
@@ -680,6 +705,7 @@ export type Action =
   | { type: "collectAndRestart" }
   | { type: "claimMission"; missionId: string }
   | { type: "claimDaily"; taskId: string }
+  | { type: "openBale" }
   | { type: "sellToCriee"; quantity: number }
   | { type: "rerollContract"; contractId: string }
   | { type: "collectAll" }

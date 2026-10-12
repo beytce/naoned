@@ -188,3 +188,185 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Faraj's bales: the bale shakes and glows, its seal bursts, cards are dealt and turned over. */
+.bale-float {
+  animation: bale-float 3.6s ease-in-out infinite;
+}
+@keyframes bale-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1deg);
+  }
+}
+.bale-shake {
+  animation: bale-shake 0.75s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+@keyframes bale-shake {
+  0% {
+    transform: scale(1);
+  }
+  20% {
+    transform: scale(1.12) rotate(-4deg);
+  }
+  40% {
+    transform: scale(1.16) rotate(4deg);
+  }
+  60% {
+    transform: scale(1.2) rotate(-3deg);
+  }
+  80% {
+    transform: scale(1.24) rotate(2deg);
+  }
+  100% {
+    transform: scale(1.3);
+  }
+}
+.bale-halo {
+  background: radial-gradient(circle, rgb(var(--lagoon) / 0.35) 0%, transparent 62%);
+  animation: bale-halo 2.4s ease-in-out infinite;
+}
+@keyframes bale-halo {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+.bale-burst {
+  animation: bale-burst 0.6s ease-out both;
+}
+@keyframes bale-burst {
+  0% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+.bale-ring {
+  animation: bale-ring 0.7s ease-out both;
+}
+@keyframes bale-ring {
+  0% {
+    transform: scale(0.3);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+/* A shard of wax or canvas, thrown along (--dx, --dy) while turning by --r. */
+.bale-shard {
+  animation: bale-shard 0.9s cubic-bezier(0.15, 0.7, 0.3, 1) both;
+}
+@keyframes bale-shard {
+  0% {
+    transform: translate(-50%, -50%) rotate(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--r));
+    opacity: 0;
+  }
+}
+/* A card leaves the bale (--from-x, from the middle) and lands in its place. */
+.bale-deal {
+  animation: bale-deal 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes bale-deal {
+  0% {
+    transform: translate(var(--from-x), -40px) scale(0.55) rotate(var(--from-r));
+    opacity: 0;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+.flip {
+  perspective: 900px;
+}
+.flip-inner {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.3, 1.3, 0.5, 1);
+}
+.flip.is-flipped .flip-inner {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.flip-front {
+  transform: rotateY(180deg);
+}
+/* Before it turns, a precious card already glows at its edges: suspense. */
+.bale-tease {
+  animation: bale-tease 1.1s ease-in-out infinite;
+}
+@keyframes bale-tease {
+  0%,
+  100% {
+    box-shadow: 0 0 6px 1px var(--glow);
+  }
+  50% {
+    box-shadow: 0 0 22px 6px var(--glow);
+  }
+}
+/* A legendary card: a gold light runs across it, sparks rise. */
+.bale-shimmer {
+  background: linear-gradient(115deg, transparent 30%, rgb(255 240 200 / 0.55) 48%, transparent 66%);
+  background-size: 250% 100%;
+  animation: bale-shimmer 2.2s ease-in-out infinite;
+}
+@keyframes bale-shimmer {
+  0% {
+    background-position: 130% 0;
+  }
+  100% {
+    background-position: -130% 0;
+  }
+}
+.bale-spark {
+  animation: bale-spark 1.6s ease-out infinite;
+}
+@keyframes bale-spark {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-46px) scale(0.4);
+    opacity: 0;
+  }
+}
+.bale-flash {
+  animation: bale-flash 0.7s ease-out both;
+}
+@keyframes bale-flash {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
