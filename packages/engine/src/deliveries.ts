@@ -3,6 +3,7 @@ import { costValue } from "./buildings.js";
 import { hourIn, hourWithin } from "./clock.js";
 import { contractsDoneToday, contractsFor } from "./contracts.js";
 import { draw, pickWeighted } from "./draw.js";
+import { eventCityBps } from "./events.js";
 import { addInfluence, familyOrdersDone, familyOrdersFor } from "./families.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
 import {
@@ -199,8 +200,12 @@ export function deliveryOrdersFor(
   const capacity = Math.max(0, ...Object.values(cfg.vehicles).map((v) => v.capacity));
   const anyCity = routedCities(ctx, region);
   const out: DeliveryOrder[] = [];
-  const push = (o: Omit<DeliveryOrder, "id" | "day">) =>
-    out.push({ ...o, id: `${day}:${out.length}`, day });
+  // A market event of the day pays its price on every order it touches (events last a world day).
+  const push = (o: Omit<DeliveryOrder, "id" | "day">) => {
+    const bps = eventCityBps(ctx, dayStart, o.city, o.resource, "price");
+    const unitPrice = bps === 10_000 ? o.unitPrice : applyBpsFloor(o.unitPrice, bps);
+    out.push({ ...o, unitPrice, id: `${day}:${out.length}`, day });
+  };
   const cityFor = (resource: string, key: string) => {
     const list = buyers(ctx, region, resource);
     const pool = list.length > 0 ? list : anyCity;
@@ -277,6 +282,11 @@ export function deliveryOrdersFor(
   if (resources.length === 0 || anyCity.length === 0) return out;
   const weighted = resources.map((code) => ({ code, weight: cfg.weights[code] ?? 1 }));
   const home = weighted.filter((w) => chain.has(w.code));
+  const quantityOf = (resource: string, key: string) => {
+    const [lo, hi] = cfg.quantity[resource] ?? [1, 1];
+    const span = Math.max(0, hi - lo);
+    return Math.min(capacity, lo + (draw(ctx, `${key}:q`) % (span + 1)));
+  };
   const order = (key: string, leanHome = false) => {
     const h = draw(ctx, key);
     const pool =
@@ -286,10 +296,7 @@ export function deliveryOrdersFor(
     const resource = pickWeighted(pool, h)?.code ?? "";
     const list = buyers(ctx, region, resource);
     const city = list[(h >>> 8) % list.length] ?? "";
-    const [lo, hi] = cfg.quantity[resource] ?? [1, 1];
-    const span = Math.max(0, hi - lo);
-    const quantity = Math.min(capacity, lo + (draw(ctx, `${key}:q`) % (span + 1)));
-    return { resource, city, quantity };
+    return { resource, city, quantity: quantityOf(resource, key) };
   };
 
   // Urgent orders (in place of the Criées): an hour to load, at a premium.
@@ -309,6 +316,27 @@ export function deliveryOrdersFor(
   const { min, max } = cfg.ordersPerDay;
   const total =
     min + (draw(ctx, `delivery-count:${playerId}:${day}`) % (Math.max(0, max - min) + 1));
+
+  // A market event asks for more somewhere: the first city orders of the day go there.
+  const asked = resources.flatMap((resource) =>
+    buyers(ctx, region, resource)
+      .filter((city) => eventCityBps(ctx, dayStart, city, resource, "capacity") > 10_000)
+      .map((city) => ({ resource, city })),
+  );
+  for (let i = 0; i < cfg.eventOrdersPerDay && asked.length > 0 && out.length < total; i++) {
+    const key = `delivery-event:${playerId}:${day}:${i}`;
+    const { resource, city } = asked[draw(ctx, key) % asked.length] as (typeof asked)[number];
+    push({
+      kind: "city",
+      city,
+      resource,
+      quantity: quantityOf(resource, key),
+      unitPrice: orderUnitPrice(ctx, region, city, resource),
+      opensAt: dayStart,
+      expiresAt,
+    });
+  }
+
   for (let i = 0; out.length < total; i++) {
     const o = order(`delivery:${playerId}:${day}:${i}`, true);
     push({

@@ -376,6 +376,11 @@ export const worldSettingsSchema = z.object({
        * buildings of their region make), so that the board speaks to their trade.
        */
       homeShareBps: bps.max(10_000).default(0),
+      /**
+       * On the day of a market event, this many of the city orders go where the event asks for
+       * more (a city and a resource whose capacity it raises), within the day's total.
+       */
+      eventOrdersPerDay: qty.default(0),
       /** On the day of joining, a first order the starting stock covers, by region. */
       welcome: z.record(z.object({ resource: z.string(), quantity: positive })).default({}),
       /** Minutes of road one way at normal speed: region → city → minutes. */

@@ -11,7 +11,7 @@ import {
   orderUnitPrice,
   travelMinutes,
 } from "../src/index.js";
-import { deliverySettings, testSettings } from "./fixture.js";
+import { deliverySettings, testDeliveries, testSettings } from "./fixture.js";
 import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
 
 const ctx = (more: Partial<WorldSettingsInput> = {}) =>
@@ -285,6 +285,109 @@ const error = (res: ReturnType<World["try"]>) => (res.ok ? "ok" : res.error);
 
 const deliveriesOf = (w: World, playerId = "a") =>
   Object.values(w.state.deliveries ?? {}).filter((d) => d.playerId === playerId);
+
+describe("market events on the board", () => {
+  // From day 1, every day: Verona pays bread 50 % more and asks for twice as much.
+  const fire = {
+    everyDays: 1,
+    durationHours: 24,
+    catalog: [
+      {
+        code: "famine",
+        weight: 1,
+        city: "verona",
+        cityPriceBps: { bread: 15_000 },
+        cityCapacityBps: { bread: 20_000 },
+        yieldBps: {},
+      },
+    ],
+  };
+  const withEvents = (events: WorldSettingsInput["events"], eventOrdersPerDay = 2) =>
+    world({ events, deliveries: { ...testDeliveries, eventOrdersPerDay } });
+
+  it("pays the event's price in the city it touches, on its day only", () => {
+    const w = withEvents(fire);
+    for (const day of [0, 1, 2]) {
+      for (const o of deliveryOrdersFor(w.ctx, w.state, "a", day)) {
+        if (o.kind !== "city" && o.kind !== "urgent") continue;
+        const base = orderUnitPrice(
+          w.ctx,
+          "terraferma",
+          o.city,
+          o.resource,
+          o.kind === "urgent" ? 1_500 : 0,
+        );
+        const touched = day > 0 && o.city === "verona" && o.resource === "bread";
+        expect(o.unitPrice).toBe(touched ? (base * 15_000n) / 10_000n : base);
+      }
+    }
+  });
+
+  it("sends the first city orders of the day where the event asks for more, same total", () => {
+    const quiet = world();
+    const w = withEvents(fire);
+    for (const day of [1, 2, 3]) {
+      const board = deliveryOrdersFor(w.ctx, w.state, "a", day);
+      const asked = board.filter(
+        (o) => o.kind === "city" && o.city === "verona" && o.resource === "bread",
+      );
+      expect(asked.length).toBeGreaterThanOrEqual(2);
+      expect(board.length).toBe(deliveryOrdersFor(quiet.ctx, quiet.state, "a", day).length);
+    }
+    // No event on day 0: no event order.
+    const none = withEvents(fire, 0);
+    expect(deliveryOrdersFor(none.ctx, none.state, "a", 1)).toEqual(
+      deliveryOrdersFor(quiet.ctx, quiet.state, "a", 1).map((o) => ({
+        ...o,
+        unitPrice:
+          o.city === "verona" && o.resource === "bread"
+            ? (o.unitPrice * 15_000n) / 10_000n
+            : o.unitPrice,
+      })),
+    );
+  });
+
+  it("touches the Doge's orders too, when the event covers every city", () => {
+    const storm = {
+      ...fire,
+      catalog: [
+        {
+          code: "storm",
+          weight: 1,
+          cityPriceBps: { bread: 13_000, bricks: 13_000 },
+          cityCapacityBps: {},
+          yieldBps: {},
+        },
+      ],
+    };
+    const w = withEvents(storm);
+    const quiet = world();
+    const doge = (x: World) =>
+      deliveryOrdersFor(x.ctx, x.state, "a", 1).filter((o) => o.kind === "doge");
+    const before = doge(quiet);
+    const after = doge(w);
+    expect(after.map((o) => o.resource)).toEqual(before.map((o) => o.resource));
+    after.forEach((o, i) => {
+      const was = before[i]?.unitPrice ?? 0n;
+      expect(o.unitPrice).toBe((was * 13_000n) / 10_000n);
+    });
+  });
+
+  it("pays on arrival the price shown on the board", () => {
+    const w = withEvents(fire);
+    // Upkeep of the new day first, so that only the payment moves the purse.
+    w.at(DAY + 10 * HOUR).do({ type: "tick" });
+    w.give("a", "bread", 100);
+    const o = board(w).find(
+      (x) => x.kind === "city" && x.city === "verona" && x.resource === "bread",
+    ) as DeliveryOrder;
+    const before = w.cash("a");
+    expect(error(dispatch(w, o.id))).toBe("ok");
+    const [d] = deliveriesOf(w);
+    w.at((d?.arriveAt ?? 0) - w.ctx.startAt).do({ type: "tick" });
+    expect(w.cash("a")).toBe(before + o.unitPrice * BigInt(o.quantity));
+  });
+});
 
 describe("dispatching a delivery", () => {
   it("loads the goods, keeps the vehicle busy there and back, and pays on arrival", () => {
