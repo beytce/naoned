@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fr } from "./i18n.js";
 import { Big, Label, Panel, Ribbon } from "./ui.js";
 
@@ -45,13 +45,16 @@ interface Reported {
 /** Reported messages of the families' threads: read, then hide what should not stay. */
 function Reports() {
   const [rows, setRows] = useState<Reported[] | null>(null);
-  const load = () =>
-    fetch("/api/admin/reports", { credentials: "same-origin" })
-      .then(async (r) => setRows(r.ok ? (await r.json()).reports : []))
-      .catch(() => setRows([]));
+  const load = useCallback(
+    () =>
+      fetch("/api/admin/reports", { credentials: "same-origin" })
+        .then(async (r) => setRows(r.ok ? (await r.json()).reports : []))
+        .catch(() => setRows([])),
+    [],
+  );
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
   return (
     <Panel>
       <Label>Messages signalés</Label>

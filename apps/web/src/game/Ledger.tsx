@@ -16,11 +16,11 @@ function Reward({ m }: { m: MissionView }) {
         </span>
       ))}
       {BigInt(m.reward.ducats) > 0n && <span className="text-gold">{d(m.reward.ducats)}</span>}
-      {m.reward.vehicles.map((v, i) => (
-        <span key={`${v}-${i}`} className="font-semibold text-lagoon">
-          {fr.game.carnet.vehicle(vehicleName(v))}
+      {m.reward.vehicles.length > 0 && (
+        <span className="font-semibold text-lagoon">
+          {m.reward.vehicles.map((v) => fr.game.carnet.vehicle(vehicleName(v))).join(" ")}
         </span>
-      ))}
+      )}
     </span>
   );
 }
