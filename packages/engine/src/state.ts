@@ -110,12 +110,14 @@ export interface Project {
   needs: Record<ResourceCode, number>;
   delivered: Record<ResourceCode, number>;
   unitPrice: Record<ResourceCode, Deniers>;
-  /** The act whose worksite this is (a worksite of the families). */
+  /** The act whose worksite this is (a worksite of the guilds). */
   act?: number;
-  /** Units delivered by the members of each family. */
-  byFamily?: Record<string, number>;
-  /** The family that delivered most, once the act is over. */
+  /** Units delivered by the members of each guild. */
+  byGuild?: Record<string, number>;
+  /** The guild that delivered most, once the act is over. */
   winner?: string | null;
+  /** Its name, kept for the monument (the guild may be dissolved since). */
+  winnerName?: string;
 }
 
 export interface Expedition {
@@ -194,6 +196,7 @@ export interface Vehicle {
   since?: number;
 }
 
+/** "family": orders of the former patrician families, kept for deliveries saved then. */
 export type DeliveryKind = "city" | "doge" | "family" | "urgent";
 export type EscortKind = "none" | string;
 
@@ -378,8 +381,8 @@ export interface WorldState {
   resets?: Record<PlayerId, number>;
   /** Weekly ranking: current week and each player's net worth when it started (or on joining). */
   weekly?: { week: number; start: Record<PlayerId, Deniers> };
-  /** The patrician families: allegiances, influence and the family in power. */
-  families?: FamiliesState;
+  /** The merchants' guilds, their members and their votes. */
+  guilds?: GuildsState;
   /** Set once the final ranking has been published (event `season_closed`). */
   seasonClosed?: boolean;
 }
@@ -402,21 +405,52 @@ export interface BaleState {
   last?: { seq: number; at: number; cards: BaleCard[] };
 }
 
-export interface FamiliesState {
-  /** Week whose influence is being counted. */
-  week: number;
-  /** Family of each merchant who pledged allegiance. */
-  members: Record<PlayerId, string>;
-  /** Influence earned this week, per merchant. */
-  weekInfluence: Record<PlayerId, number>;
-  /** Influence earned this season, per merchant. */
-  seasonInfluence: Record<PlayerId, number>;
-  /** Family orders fulfilled today, per merchant. */
-  ordersDone: Record<PlayerId, { day: number; ids: string[] }>;
-  /** Points of patronage given today, per merchant. */
-  patronage: Record<PlayerId, { day: number; points: number }>;
-  /** Family that won the previous week and holds power in this one. */
-  inPower: string | null;
+export interface GuildMember {
+  carats: number;
+  since: number;
+}
+
+export interface Guild {
+  id: string;
+  name: string;
+  emblem: string;
+  founder: PlayerId;
+  foundedAt: number;
+  members: Record<PlayerId, GuildMember>;
+  /** All the carats held by the members. */
+  caratsIssued: number;
+  /** Newcomers may join without a vote. */
+  open: boolean;
+  /** Toll on others' deliveries to the guild's concessions (voted). */
+  tollBps: number;
+  /** Share of each income paid out at once to the members (voted). */
+  dividendBps: number;
+  /** Paid per unit to the merchants who supply the guild in a war (voted). */
+  bountyPerUnit: bigint;
+}
+
+export interface GuildProposal {
+  id: string;
+  guildId: string;
+  by: PlayerId;
+  kind: "toll" | "dividend" | "bounty" | "open" | "exclude" | "war";
+  value: number;
+  /** The member to exclude, or the concession to make war on. */
+  target?: string;
+  openedAt: number;
+  closesAt: number;
+  closedAt?: number;
+  votes: Record<PlayerId, boolean>;
+  status: "open" | "passed" | "rejected";
+}
+
+export interface GuildsState {
+  guilds: Record<string, Guild>;
+  /** The guild of each member. */
+  memberOf: Record<PlayerId, string>;
+  proposals: Record<string, GuildProposal>;
+  /** The treasuries were shared out at the end of the season. */
+  paidOut?: boolean;
 }
 
 export const SOURCE_ACCOUNT: AccountId = "system:source";

@@ -4,7 +4,6 @@ import { costValue } from "./buildings.js";
 import { hourIn, hourWithin } from "./clock.js";
 import { contractsDoneToday, contractsFor } from "./contracts.js";
 import { draw, pickWeighted } from "./draw.js";
-import { addInfluence, familyOrdersDone, familyOrdersFor } from "./families.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
 import { maxVehiclesFor, specialtyEffects } from "./specialties.js";
 import {
@@ -202,7 +201,7 @@ function urgentOpening(ctx: WorldContext, dayStart: number, key: string): number
 }
 
 /**
- * A merchant's board for a day: the Doge's orders first, then their family's, then the urgent
+ * A merchant's board for a day: the Doge's orders first, then the urgent
  * ones, then city orders up to a number drawn between min and max. Drawn from the world's secret
  * seed, so the board is the same on every request. Goods from overseas stay at the counter.
  */
@@ -281,22 +280,6 @@ export function deliveryOrdersFor(
       opensAt: dayStart,
       expiresAt,
       ref: c.id,
-    });
-  }
-  // The family's orders, at their premium.
-  for (const f of familyOrdersFor(ctx, state, playerId, day)) {
-    if (!mayOrder(f.resource)) continue;
-    const city = cityFor(f.resource, `delivery-family:${playerId}:${day}:${f.id}`);
-    if (!city) continue;
-    push({
-      kind: "family",
-      city,
-      resource: f.resource,
-      quantity: f.quantity,
-      unitPrice: f.unitPrice,
-      opensAt: dayStart,
-      expiresAt,
-      ref: f.id,
     });
   }
 
@@ -651,8 +634,6 @@ export function dispatchDelivery(
   }
   if (order.kind === "doge" && contractsDoneToday(tx, playerId, today).includes(order.ref ?? ""))
     fail("order_done");
-  if (order.kind === "family" && familyOrdersDone(state, playerId, today).includes(order.ref ?? ""))
-    fail("order_done");
   if (tx.now < order.opensAt) fail("order_not_open");
   if (tx.now >= order.expiresAt) fail("order_expired");
 
@@ -695,18 +676,12 @@ export function dispatchDelivery(
   vehicle.busyUntil = delivery.backAt;
   tx.s.deliveriesDone ??= {};
   tx.s.deliveriesDone[playerId] = { day: today, ids: [...done, orderId] };
-  // The Doge's and the family's orders cannot be served twice (at the counter, then by road).
+  // The Doge's orders cannot be served twice (at the counter, then by road).
   if (order.kind === "doge" && order.ref) {
     tx.s.contractsDone ??= {};
     tx.s.contractsDone[playerId] = {
       day: today,
       ids: [...contractsDoneToday(tx, playerId, today), order.ref],
-    };
-  }
-  if (order.kind === "family" && order.ref && tx.s.families) {
-    tx.s.families.ordersDone[playerId] = {
-      day: today,
-      ids: [...familyOrdersDone(state, playerId, today), order.ref],
     };
   }
   emit(tx, "delivery_dispatched", playerId, {
@@ -738,19 +713,6 @@ function arrive(tx: Tx, d: Delivery): void {
   });
   if (d.kind === "doge") {
     emit(tx, "contract_fulfilled", d.playerId, { contract: d.ref, resource: d.resource });
-  }
-  if (d.kind === "family") {
-    const family = tx.s.families?.members[d.playerId];
-    if (family) {
-      const influence = tx.ctx.settings.families.orderInfluence;
-      addInfluence(tx, d.playerId, influence);
-      emit(tx, "family_order_fulfilled", d.playerId, {
-        family,
-        order: d.ref,
-        resource: d.resource,
-        influence,
-      });
-    }
   }
 }
 
@@ -878,9 +840,9 @@ function fairPrey(tx: Tx, b: BanditBand, d: Delivery, at: number): boolean {
   const cfg = tx.ctx.settings.bandits;
   if (b.playerId === null) return true;
   if (b.playerId === d.playerId) return false;
-  const members = tx.s.families?.members ?? {};
-  const family = members[d.playerId];
-  if (cfg.sameFamilyImmune && family && members[b.playerId] === family) return false;
+  const members = tx.s.guilds?.memberOf ?? {};
+  const guild = members[d.playerId];
+  if (cfg.sameGuildImmune && guild && members[b.playerId] === guild) return false;
   const state = baseState(tx);
   const theirs = netWorth(tx.ctx, state, d.playerId, at).total;
   const ours = netWorth(tx.ctx, state, b.playerId, at).total;

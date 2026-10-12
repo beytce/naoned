@@ -17,7 +17,7 @@ import {
   watchedRoads,
 } from "./deliveries.js";
 import { cargoValueAt } from "./expeditions.js";
-import { familiesOpenAt, familyOrdersDone, familyOrdersFor, patronageLeft } from "./families.js";
+import { guildOf, guildsOpenAt } from "./guilds.js";
 import { bestPrice, marketMakerQuotaLeft, maxOpenOrdersFor, openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
 import type { Deniers } from "./money.js";
@@ -141,14 +141,18 @@ const MAX_PER_TYPE = 3;
 const CITY_GOODS = ["bread", "bricks", "planks", "spices", "silk", "salt", "wine", "furs", "cloth"];
 const VOYAGERS = new Set<ProfileName>(["producer", "builder", "speculator"]);
 const MATERIALS = ["bricks", "planks"];
-/** Families each profile leans to; a bot joins the smallest of them. */
-const FAMILY_LEANINGS: Record<ProfileName, string[]> = {
-  producer: [],
-  artisan: ["morosini", "contarini"],
-  builder: ["contarini", "mocenigo"],
-  speculator: ["dandolo", "mocenigo"],
-  casual: [],
-};
+/** Names for the guilds bots found. */
+const GUILD_NAMES = [
+  "Leone d'Oro",
+  "Stella Maris",
+  "Arte della Lana",
+  "Compagnia del Sale",
+  "Fondaco dei Fabbri",
+  "Scuola dei Mercanti",
+  "Ca' d'Oro",
+  "Torre dei Venti",
+];
+const GUILD_EMBLEMS = ["lion", "star", "ship", "tower", "key", "sun"];
 const HOUR = 3_600_000;
 /** How long a merchant stays at the screen after a session starts. */
 const ONLINE_MS = 30 * 60_000;
@@ -182,6 +186,8 @@ export class Bot {
   onlineUntil = 0;
   /** Last limit price used per side and resource, to walk prices when orders do not fill. */
   private lastPrice = new Map<string, Deniers>();
+  /** Last day it put money in its guild. */
+  private investedDay = -1;
 
   constructor(
     readonly id: string,
@@ -245,7 +251,7 @@ export class Bot {
     this.collectGalleys(s);
     this.feed(s);
     this.doContracts(s);
-    this.serveFamily(s);
+    this.serveGuild(s);
     this.deliverProjects(s);
     if (deliveriesOn(s.ctx)) this.garage(s, this.deliver(s));
     else {
@@ -601,52 +607,65 @@ export class Bot {
   }
 
   /**
-   * The patrician families: pledge allegiance once it opens (to the smallest family it leans to),
-   * fulfil the family's order from spare stock, and give to its patronage when cash is plenty.
+   * The guilds: once they open, join the smallest open guild, or found one when the guilds are
+   * well filled; then put a tenth of the cash above one and a half times the starting capital into
+   * the treasury (once a day), and vote on what is proposed.
    */
-  private serveFamily(s: Session): void {
-    const rules = s.ctx.settings.families;
-    if (rules.houses.length === 0) return;
+  private serveGuild(s: Session): void {
+    const rules = s.ctx.settings.guilds;
+    if (rules.maxMembers <= 0 || this.profile.name === "casual") return;
     const state = s.state();
-    let family = state.families?.members[this.id];
-    if (!family) {
-      if (s.now < familiesOpenAt(s.ctx, state, this.id)) return;
-      const raw = findRegion(s.ctx.theme, this.region)?.bonusResource;
-      const leanings = FAMILY_LEANINGS[this.profile.name];
-      const own = raw === "wheat" ? ["morosini", "mocenigo"] : ["contarini", "mocenigo"];
-      const wanted = (leanings.length > 0 ? leanings : own).filter((code) =>
-        rules.houses.some((h) => h.code === code),
-      );
-      const options = wanted.length > 0 ? wanted : rules.houses.map((h) => h.code);
-      const size = (code: string) =>
-        Object.values(state.families?.members ?? {}).filter((c) => c === code).length;
-      const choice = [...options].sort((a, b) => size(a) - size(b))[0];
-      if (!choice || !s.act({ type: "joinFamily", playerId: this.id, family: choice })) return;
-      family = choice;
-    }
-    const day = dayIndex(s.ctx, s.now);
-    const done = familyOrdersDone(s.state(), this.id, day);
-    const familyOrders = (x: Session) => familyOrdersFor(x.ctx, x.state(), this.id, day);
-    for (const o of familyOrders(s)) {
-      if (done.includes(o.id)) continue;
-      // Family orders go by road (see `deliver`).
-      if (deliveriesOn(s.ctx)) continue;
-      // The family's order earns influence: what is missing is bought, a little under its price.
-      const missing = o.quantity - (this.available(s, o.resource) - this.reserve(s, o.resource));
-      if (missing > 0) this.buy(s, o.resource, missing, 1.15);
-      if (this.available(s, o.resource) - this.reserve(s, o.resource) >= o.quantity) {
-        s.act({ type: "fulfillFamilyOrder", playerId: this.id, orderId: o.id });
+    let guild = guildOf(state, this.id);
+    if (!guild) {
+      if (s.now < guildsOpenAt(s.ctx, state, this.id)) return;
+      const all = Object.values(state.guilds?.guilds ?? {});
+      const open = all
+        .filter((g) => g.open && Object.keys(g.members).length < rules.maxMembers)
+        .sort((a, b) => Object.keys(a.members).length - Object.keys(b.members).length);
+      const members = all.reduce((n, g) => n + Object.keys(g.members).length, 0);
+      const stake = Number(rules.minStake);
+      const smallest = open[0];
+      if (smallest && members < all.length * 6) {
+        s.act({ type: "joinGuild", playerId: this.id, guildId: smallest.id, stake });
+      } else if (this.cash(s) > rules.foundingCost + rules.minStake * 3n) {
+        const used = new Set(all.map((g) => g.name));
+        const name = GUILD_NAMES.find((n) => !used.has(n)) ?? `Compagnia ${all.length + 1}`;
+        s.act({
+          type: "foundGuild",
+          playerId: this.id,
+          name,
+          emblem: GUILD_EMBLEMS[all.length % GUILD_EMBLEMS.length] ?? "lion",
+          stake,
+        });
       }
+      guild = guildOf(s.state(), this.id);
+      if (!guild) return;
     }
-    // Patronage: a quarter of the cash above one and a half times the starting capital.
-    if (this.profile.name === "casual" || rules.patronageUnit === 0n) return;
-    const spare = this.cash(s) - (s.ctx.settings.startingCapital * 3n) / 2n;
-    if (spare <= 0n) return;
-    const points = Math.min(
-      patronageLeft(s.ctx, s.state(), this.id, day),
-      Number(spare / 4n / rules.patronageUnit),
-    );
-    if (points > 0) s.act({ type: "patronize", playerId: this.id, points });
+    // Investing: a tenth of the spare cash, once a day.
+    const day = dayIndex(s.ctx, s.now);
+    if (this.investedDay !== day) {
+      this.investedDay = day;
+      const spare = this.cash(s) - (s.ctx.settings.startingCapital * 3n) / 2n;
+      if (spare > 1_000n)
+        s.act({ type: "investGuild", playerId: this.id, amount: Number(spare / 10n) });
+    }
+    // Voting: yes to the guild's settings, no to excluding a fellow merchant.
+    for (const p of Object.values(s.state().guilds?.proposals ?? {})) {
+      if (p.guildId !== guild.id || p.status !== "open" || p.votes[this.id] !== undefined) continue;
+      s.act({ type: "vote", playerId: this.id, proposalId: p.id, yes: p.kind !== "exclude" });
+    }
+    // The founder sets the guild going: a share of each income paid out as dividends.
+    if (guild.founder === this.id && guild.dividendBps === 0) {
+      const pending = Object.values(s.state().guilds?.proposals ?? {}).some(
+        (p) => p.guildId === guild?.id && p.kind === "dividend" && p.status === "open",
+      );
+      if (!pending)
+        s.act({
+          type: "propose",
+          playerId: this.id,
+          proposal: { kind: "dividend", value: 3_000 },
+        });
+    }
   }
 
   private collectGalleys(s: Session): void {

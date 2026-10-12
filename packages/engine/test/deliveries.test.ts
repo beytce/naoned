@@ -111,27 +111,14 @@ describe("vehicles", () => {
 });
 
 describe("the board of orders", () => {
-  const families = {
-    openDay: 0,
-    ordersPerDay: 1,
-    powerPremiumBps: 0,
-    orderInfluence: 10,
-    patronageUnit: 100,
-    patronageMaxPerDay: 10,
-    weeklyCapPerMember: 100,
-    minMembers: 1,
-    houses: [{ code: "contarini", quantities: { bricks: 10 } }],
-  };
-
-  it("is drawn the same way every time, with the Doge's, the family's and urgent orders first", () => {
-    const w = world({ families });
-    w.do({ type: "joinFamily", playerId: "a", family: "contarini" });
+  it("is drawn the same way every time, with the Doge's and urgent orders first", () => {
+    const w = world();
     const board = deliveryOrdersFor(w.ctx, w.state, "a", 0);
     expect(deliveryOrdersFor(w.ctx, w.state, "a", 0)).toEqual(board);
     expect(board.length).toBeGreaterThanOrEqual(10);
     expect(board.length).toBeLessThanOrEqual(12);
-    expect(board.map((o) => o.kind).slice(0, 4)).toEqual(["doge", "doge", "family", "urgent"]);
-    expect(board.slice(4).every((o) => o.kind === "city")).toBe(true);
+    expect(board.map((o) => o.kind).slice(0, 3)).toEqual(["doge", "doge", "urgent"]);
+    expect(board.slice(3).every((o) => o.kind === "city")).toBe(true);
     expect(board.map((o) => o.id)).toEqual(board.map((_, i) => `0:${i}`));
     // Another merchant, another day: another board.
     expect(deliveryOrdersFor(w.ctx, w.state, "b", 0)).not.toEqual(board);
@@ -155,11 +142,10 @@ describe("the board of orders", () => {
     }
   });
 
-  it("pays the Doge's and the family's premium, unchanged", () => {
-    const w = world({ families });
-    w.do({ type: "joinFamily", playerId: "a", family: "contarini" });
+  it("pays the Doge's premium, unchanged", () => {
+    const w = world();
     const board = deliveryOrdersFor(w.ctx, w.state, "a", 0);
-    for (const o of board.filter((x) => x.kind === "doge" || x.kind === "family")) {
+    for (const o of board.filter((x) => x.kind === "doge")) {
       const ref = w.ctx.settings.referencePrices[o.resource] ?? 0n;
       expect(o.unitPrice).toBe((ref * 12_000n) / 10_000n);
     }
@@ -670,28 +656,13 @@ describe("the instant sale to cities, closed by deliveries", () => {
     );
   });
 
-  it("serves the Doge's and the family's orders by road only, goods from overseas included", () => {
+  it("serves the Doge's orders by road only, goods from overseas included", () => {
     const luxury = { chanceBps: 10_000, quantities: { salt: 2 } };
-    const families = {
-      openDay: 0,
-      ordersPerDay: 1,
-      powerPremiumBps: 0,
-      orderInfluence: 10,
-      patronageUnit: 100,
-      patronageMaxPerDay: 10,
-      weeklyCapPerMember: 100,
-      minMembers: 1,
-      houses: [{ code: "contarini", quantities: { bricks: 10 } }],
-    };
-    const home = world({ families });
-    home.do({ type: "joinFamily", playerId: "a", family: "contarini" });
+    const home = world();
     const c = contractsFor(home.ctx, "a", 0)[0];
     expect(
       error(home.try({ type: "fulfillContract", playerId: "a", contractId: c?.id ?? "" })),
     ).toBe("city_sales_closed");
-    expect(error(home.try({ type: "fulfillFamilyOrder", playerId: "a", orderId: "0:f0" }))).toBe(
-      "city_sales_closed",
-    );
 
     const overseas = world({
       contracts: { ...deliverySettings.contracts, luxury } as never,

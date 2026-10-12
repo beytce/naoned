@@ -97,12 +97,16 @@ export interface SimulationResult {
   road?: RoadStats;
   /** Faraj's bales: opened, cards by rarity, value at reference prices by player (deniers). */
   bales?: { opened: number; cards: Record<string, number>; valueBy: Record<string, number> };
-  /** The patrician families: members at the end, winners of each week, orders and patronage. */
-  families?: {
+  /** The guilds: their members and treasuries at the end, money put in, dividends, votes. */
+  guilds?: {
+    /** Members of each guild at the end of the season (before the payout empties them). */
     members: Record<string, number>;
-    winners: (string | null)[];
-    orders: number;
-    patronage: Deniers;
+    /** Merchants in no guild at the end. */
+    unaffiliated: number;
+    invested: Deniers;
+    dividends: Deniers;
+    founded: number;
+    proposals: { passed: number; rejected: number };
   };
 }
 
@@ -189,9 +193,14 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
 
   const raw = new Set(ctx.theme.resources.filter((r) => r.tier === "raw").map((r) => r.code));
   const rawBuyers = new Set<string>();
-  const families = { members: {}, winners: [], orders: 0, patronage: 0n } as NonNullable<
-    SimulationResult["families"]
-  >;
+  const guilds = {
+    members: {},
+    unaffiliated: 0,
+    invested: 0n,
+    dividends: 0n,
+    founded: 0,
+    proposals: { passed: 0, rejected: 0 },
+  } as NonNullable<SimulationResult["guilds"]>;
   const bales = { opened: 0, cards: {}, valueBy: {} } as NonNullable<SimulationResult["bales"]>;
   let now = START;
   const run = (cmd: Command): boolean => {
@@ -217,12 +226,16 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
           activity.firstDelivery.push((now - joined) / 3_600_000);
         }
       }
-      if (e.type === "family_order_fulfilled") families.orders++;
-      if (e.type === "family_week_closed")
-        families.winners.push((e.data?.winner as string) ?? null);
+      if (e.type === "guild_founded") guilds.founded++;
+      if (e.type === "proposal_closed") {
+        if (e.data?.passed) guilds.proposals.passed++;
+        else guilds.proposals.rejected++;
+      }
     }
-    for (const l of res.effects.ledger)
-      if (l.reason === "patronage") families.patronage += l.amount;
+    for (const l of res.effects.ledger) {
+      if (l.reason === "guild_stake") guilds.invested += l.amount;
+      if (l.reason === "guild_dividend") guilds.dividends += l.amount;
+    }
     if (cmd.type === "openBale") {
       bales.opened++;
       for (const c of state.bales?.[cmd.playerId]?.last?.cards ?? []) {
@@ -391,10 +404,11 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
       Math.max(1, workshops.length),
     levelsPerMerchant: workshops.reduce((a, b) => a + b.level, 0) / Math.max(1, merchants.length),
   };
-  for (const code of Object.values(state.families?.members ?? {})) {
-    families.members[code] = (families.members[code] ?? 0) + 1;
+  for (const g of Object.values(state.guilds?.guilds ?? {})) {
+    guilds.members[g.name] = Object.keys(g.members).length;
   }
-  result.families = families;
+  guilds.unaffiliated = merchants.filter((id) => !state.guilds?.memberOf[id]).length;
+  result.guilds = guilds;
   result.bales = bales;
   const playerDays = result.daily.reduce((a, d) => a + d.active, 0);
   const sortedFirst = [...activity.firstDelivery].sort((a, b) => a - b);

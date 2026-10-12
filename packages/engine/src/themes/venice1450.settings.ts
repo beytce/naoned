@@ -30,7 +30,7 @@ export const venice1450Settings: WorldSettingsInput = {
   rations: { resource: "bread", perLevelPerDay: 2, slowdownBps: 5_000 },
   // Computer-run merchants fill the world up to this many active merchants (beta).
   bots: { population: 15 },
-  // Two orders of the Doge a day, plus one of the merchant's family (same budget as three).
+  // Two orders of the Doge a day.
   contracts: {
     perDay: 2,
     premiumBps: 2_000,
@@ -41,25 +41,20 @@ export const venice1450Settings: WorldSettingsInput = {
       quantities: { salt: 15, wine: 8, silk: 4, spices: 3, furs: 3, cloth: 2 },
     },
   },
-  // The patrician families: allegiance from day 4, one order a day, patronage, weekly power.
-  families: {
-    openDay: 4,
-    ordersPerDay: 1,
-    powerPremiumBps: 1_000,
-    // Contumacia: the family in power counts its score a third lower, so power changes hands.
-    incumbentHandicapBps: 3_300,
-    orderInfluence: 10,
-    patronageUnit: 200,
-    patronageMaxPerDay: 25,
-    weeklyCapPerMember: 150,
-    minMembers: 3,
-    houses: [
-      { code: "contarini", quantities: { bricks: 8, planks: 8 } },
-      // Every order fits under the free daily quota at the Dogana: the Pass never decides it.
-      { code: "morosini", quantities: { wheat: 15, flour: 15, bread: 15, wood: 15 } },
-      { code: "mocenigo", quantities: { salt: 15, wine: 8, planks: 8 } },
-      { code: "dandolo", quantities: { spices: 3, silk: 4, furs: 3, cloth: 2 } },
-    ],
+  // The merchants' guilds: from day 2, founded for 50 d with a stake of 100 d at least; carats at
+  // 1 d to start; twelve members at most; a fifth of a leaver's carats stays with the guild; no
+  // member weighs more than 40 % of a vote, open 24 h.
+  guilds: {
+    openDay: 2,
+    foundingCost: 5_000,
+    minStake: 10_000,
+    caratValue: 100,
+    maxMembers: 12,
+    exitFeeBps: 2_000,
+    maxVoteBps: 4_000,
+    voteHours: 24,
+    maxTollBps: 800,
+    maxBountyPerUnit: 50,
   },
   events: {
     everyDays: 2,
@@ -424,7 +419,7 @@ export const venice1450Settings: WorldSettingsInput = {
     newcomerDays: 3,
     minTargetWorthBps: 5_000,
     cooldownHours: 24,
-    sameFamilyImmune: true,
+    sameGuildImmune: true,
     openDay: 6,
     npcBands: { perDay: 3, hours: 3 },
     // The Doge's bounty for beating off a player's band: 5 ducats, +20 % per take of the bandit.
@@ -640,8 +635,8 @@ export const venice1450Settings: WorldSettingsInput = {
         city: "venezia",
         needsPerPlayer: { bricks: 30, planks: 30 },
         premiumBps: 1_500,
-        influencePerUnit: 1,
-        winnerInfluence: 100,
+        // The guild that delivered most has 300 d paid into its treasury (and the monument).
+        winnerTreasury: 30_000,
       },
     },
     {

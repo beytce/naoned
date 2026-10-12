@@ -48,12 +48,6 @@ export const venice1450: Theme = {
     { code: "mantova", name: "Mantoue" },
     { code: "ferrara", name: "Ferrare" },
   ],
-  families: [
-    { code: "contarini", name: "Contarini", domain: "Les bâtisseurs" },
-    { code: "morosini", name: "Morosini", domain: "La terre ferme" },
-    { code: "mocenigo", name: "Mocenigo", domain: "La mer" },
-    { code: "dandolo", name: "Dandolo", domain: "Le Levant" },
-  ],
   buildings: [
     { type: "farm", name: "Ferme" },
     { type: "clay_pit", name: "Carrière d'argile" },

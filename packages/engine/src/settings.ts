@@ -305,46 +305,41 @@ export const worldSettingsSchema = z.object({
       contractRerollsPerDay: 0,
     }),
   /**
-   * The patrician families: each merchant pledges allegiance to one for the season, serves its
-   * daily orders and gives to its patronage; every week the family with the most influence per
-   * active member holds power. No houses turns it off.
+   * The merchants' guilds: founded with a stake, owned in carats bought at the treasury's value,
+   * run by votes weighted by carats (each member capped). No members allowed turns them off.
    */
-  families: z
+  guilds: z
     .object({
-      /** Days after joining before a merchant may pledge allegiance. */
+      /** Days after joining before a merchant may found or join a guild. */
       openDay: qty,
-      /** Family orders per member and per day, paid at the Doge's premium. */
-      ordersPerDay: qty,
-      /** Extra premium on the family orders of the family in power. */
-      powerPremiumBps: bps,
-      /**
-       * Contumacia: the family in power counts its score this much lower, so that power changes
-       * hands (Venetian offices could not be held twice in a row).
-       */
-      incumbentHandicapBps: bps.max(10_000).default(0),
-      /** Influence earned by a family order. */
-      orderInfluence: qty,
-      /** Ducats given (and destroyed) for one point of influence. */
-      patronageUnit: money,
-      /** Most points of patronage per merchant and per day. */
-      patronageMaxPerDay: qty,
-      /** Most influence of one member counted in the family's week. */
-      weeklyCapPerMember: qty,
-      /** A family counts at least this many active members, so a lone merchant cannot win alone. */
-      minMembers: positive,
-      /** Families and what they order (resource → quantity of an order). */
-      houses: z.array(z.object({ code: z.string(), quantities: z.record(positive) })),
+      /** Fee to found a guild (destroyed). */
+      foundingCost: money,
+      /** Least first investment, to found or to join. */
+      minStake: money,
+      /** Value of a carat when a guild is founded. */
+      caratValue: money.refine((v) => v > 0n),
+      maxMembers: qty,
+      /** Kept by the guild from what a leaver's carats are worth. */
+      exitFeeBps: bps.max(10_000),
+      /** Most weight of one member in a vote, as a share of all the carats. */
+      maxVoteBps: bps.max(10_000),
+      voteHours: positive,
+      /** Highest toll a guild may vote on its concessions. */
+      maxTollBps: bps.max(10_000),
+      /** Highest bounty per unit a guild may vote for its suppliers in a war. */
+      maxBountyPerUnit: money,
     })
     .default({
       openDay: 0,
-      ordersPerDay: 0,
-      powerPremiumBps: 0,
-      orderInfluence: 0,
-      patronageUnit: 0,
-      patronageMaxPerDay: 0,
-      weeklyCapPerMember: 0,
-      minMembers: 1,
-      houses: [],
+      foundingCost: 0,
+      minStake: 0,
+      caratValue: 100,
+      maxMembers: 0,
+      exitFeeBps: 0,
+      maxVoteBps: 10_000,
+      voteHours: 24,
+      maxTollBps: 0,
+      maxBountyPerUnit: 0,
     }),
   /**
    * Offers between players must stay within this share of the reference price: a merchant
@@ -458,7 +453,7 @@ export const worldSettingsSchema = z.object({
       newcomerDays: qty,
       minTargetWorthBps: bps,
       cooldownHours: qty,
-      sameFamilyImmune: z.boolean().default(true),
+      sameGuildImmune: z.boolean().default(true),
       /** Days after joining before a merchant may post a band. */
       openDay: qty,
       /** Bands of the computer, so that a small world has some risk. */
@@ -521,7 +516,7 @@ export const worldSettingsSchema = z.object({
     .default({ unlockLevels: 5, options: {} }),
   /**
    * The season in acts: from its week (0 = the first), each act may draw a market modifier among
-   * its variants (like an event, for the whole act) and open a worksite for the families.
+   * its variants (like an event, for the whole act) and open a worksite for the guilds.
    */
   acts: z
     .array(
@@ -535,10 +530,8 @@ export const worldSettingsSchema = z.object({
             /** Needs per active player when the act opens. */
             needsPerPlayer: z.record(qty),
             premiumBps: bps,
-            /** Family influence per unit delivered. */
-            influencePerUnit: qty,
-            /** Influence given to each member of the family that delivered most. */
-            winnerInfluence: qty,
+            /** Paid into the treasury of the guild that delivered most. */
+            winnerTreasury: money.default(0),
           })
           .optional(),
       }),

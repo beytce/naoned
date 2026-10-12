@@ -234,21 +234,23 @@ describe("safeguards", () => {
     expect(attacked(w)).toBe(false);
   });
 
-  it("no ambush within the family", () => {
-    const families = {
+  it("no ambush within the guild", () => {
+    const guilds = {
       openDay: 0,
-      ordersPerDay: 0,
-      powerPremiumBps: 0,
-      orderInfluence: 10,
-      patronageUnit: 100,
-      patronageMaxPerDay: 10,
-      weeklyCapPerMember: 100,
-      minMembers: 1,
-      houses: [{ code: "contarini", quantities: { bricks: 10 } }],
+      foundingCost: 0,
+      minStake: 1_000,
+      caratValue: 100,
+      maxMembers: 5,
+      exitFeeBps: 0,
+      maxVoteBps: 10_000,
+      voteHours: 24,
+      maxTollBps: 800,
+      maxBountyPerUnit: 50,
     };
-    const w = world({}, { families });
-    w.do({ type: "joinFamily", playerId: "a", family: "contarini" });
-    w.do({ type: "joinFamily", playerId: "bandit", family: "contarini" });
+    const w = world({}, { guilds });
+    w.do({ type: "foundGuild", playerId: "a", name: "Leone", emblem: "lion", stake: 1_000 });
+    const id = w.state.guilds?.memberOf.a ?? "";
+    w.do({ type: "joinGuild", playerId: "bandit", guildId: id, stake: 1_000 });
     post(w);
     expect(attacked(w)).toBe(false);
     expect(attacked(w, "c")).toBe(true);

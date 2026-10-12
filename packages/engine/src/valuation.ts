@@ -1,3 +1,4 @@
+import { guildShareOf } from "./guilds.js";
 import { type Deniers, applyBpsFloor, bigMin } from "./money.js";
 import {
   type PlayerId,
@@ -46,6 +47,7 @@ export interface NetWorth {
   cash: Deniers;
   stock: Deniers;
   buildings: Deniers;
+  guild: Deniers;
   total: Deniers;
 }
 
@@ -90,5 +92,7 @@ export function netWorth(
       buildings += applyBpsFloor(v.investedValue, ctx.settings.valuation.buildingValueBps);
     }
   }
-  return { cash, stock, buildings, total: cash + stock + buildings };
+  // Carats count at their share of the guild's treasury.
+  const guild = guildShareOf(state, playerId);
+  return { cash, stock, buildings, guild, total: cash + stock + buildings + guild };
 }

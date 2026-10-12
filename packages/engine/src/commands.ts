@@ -15,7 +15,16 @@ import {
 } from "./deliveries.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { collectExpedition, launchExpedition } from "./expeditions.js";
-import { fulfillFamilyOrder, joinFamily, leaveFamilies, patronize } from "./families.js";
+import {
+  type ProposalInput,
+  foundGuild,
+  investGuild,
+  joinGuild,
+  leaveGuild,
+  leaveGuilds,
+  propose,
+  vote,
+} from "./guilds.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { claimMission, trackMissions } from "./missions.js";
 import { collectRaid, commissionPrivateers } from "./privateers.js";
@@ -94,9 +103,12 @@ export type Command =
   | { type: "claimDaily"; playerId: PlayerId; taskId: string }
   | { type: "openBale"; playerId: PlayerId }
   | { type: "rerollContract"; playerId: PlayerId; contractId: string }
-  | { type: "joinFamily"; playerId: PlayerId; family: string }
-  | { type: "fulfillFamilyOrder"; playerId: PlayerId; orderId: string }
-  | { type: "patronize"; playerId: PlayerId; points: number }
+  | { type: "foundGuild"; playerId: PlayerId; name: string; emblem: string; stake: number }
+  | { type: "joinGuild"; playerId: PlayerId; guildId: string; stake: number }
+  | { type: "investGuild"; playerId: PlayerId; amount: number }
+  | { type: "leaveGuild"; playerId: PlayerId }
+  | { type: "propose"; playerId: PlayerId; proposal: ProposalInput }
+  | { type: "vote"; playerId: PlayerId; proposalId: string; yes: boolean }
   /** From the server: the Pass Négociant until this time (a later date never shortens it). */
   | { type: "grantPass"; playerId: PlayerId; until: number }
   | { type: "collectExpedition"; playerId: PlayerId; expeditionId: string }
@@ -198,7 +210,7 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
   if (tx.s.weekly) delete tx.s.weekly.start[playerId];
   if (tx.s.missions) delete tx.s.missions[playerId];
   if (tx.s.bales) delete tx.s.bales[playerId];
-  leaveFamilies(tx, playerId);
+  leaveGuilds(tx, playerId);
   resets[playerId] = used + 1;
   emit(tx, "player_reset", playerId);
 }
@@ -297,14 +309,23 @@ function apply(tx: Tx, cmd: Command): void {
     case "rerollContract":
       rerollContract(tx, cmd.playerId, cmd.contractId);
       break;
-    case "joinFamily":
-      joinFamily(tx, cmd.playerId, cmd.family);
+    case "foundGuild":
+      foundGuild(tx, cmd.playerId, cmd.name, cmd.emblem, cmd.stake);
       break;
-    case "fulfillFamilyOrder":
-      fulfillFamilyOrder(tx, cmd.playerId, cmd.orderId);
+    case "joinGuild":
+      joinGuild(tx, cmd.playerId, cmd.guildId, cmd.stake);
       break;
-    case "patronize":
-      patronize(tx, cmd.playerId, cmd.points);
+    case "investGuild":
+      investGuild(tx, cmd.playerId, cmd.amount);
+      break;
+    case "leaveGuild":
+      leaveGuild(tx, cmd.playerId);
+      break;
+    case "propose":
+      propose(tx, cmd.playerId, cmd.proposal);
+      break;
+    case "vote":
+      vote(tx, cmd.playerId, cmd.proposalId, cmd.yes);
       break;
     case "collectExpedition":
       collectExpedition(tx, cmd.playerId, cmd.expeditionId);

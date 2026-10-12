@@ -186,7 +186,7 @@ export const testBandits = {
   newcomerDays: 0,
   minTargetWorthBps: 5_000,
   cooldownHours: 24,
-  sameFamilyImmune: true,
+  sameGuildImmune: true,
   openDay: 0,
   npcBands: { perDay: 0, hours: 3 },
   bounty: { base: 0, perInfamyBps: 0, max: 0 },

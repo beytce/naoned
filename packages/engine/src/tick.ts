@@ -1,6 +1,6 @@
 import { upkeepPerDay } from "./buildings.js";
 import { ensureBoard, pruneRoad, resolveDeliveries, vehicleUpkeep } from "./deliveries.js";
-import { closeFamilyWeek } from "./families.js";
+import { closeGuildBusiness } from "./guilds.js";
 import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
 import { bigMin } from "./money.js";
@@ -84,9 +84,10 @@ export function tick(tx: Tx): void {
   expireOrders(tx);
   chargeUpkeep(tx);
   closeWeek(tx);
-  // A worksite won counts in the week of its act, before the families' week closes.
   closeWorksites(tx);
-  closeFamilyWeek(tx);
+  // Votes come to an end; at the end of the season, the treasuries are shared out (before the
+  // final ranking, which then counts them as cash).
+  closeGuildBusiness(tx);
   closeSeason(tx);
   openDueProjects(tx);
   // Shared demand: the world's board of the day, drawn once the day's active merchants are known.

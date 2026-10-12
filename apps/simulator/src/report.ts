@@ -141,31 +141,25 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
     blocking: false,
   });
 
-  const fam = r.families;
-  if (fam && Object.keys(fam.members).length > 0) {
-    const destroyed = r.daily.reduce((a, d) => a + d.destroyed, 0n);
+  const gl = r.guilds;
+  if (gl) {
     checks.push({
-      name: "Familles : membres en fin de saison",
-      target: "diagnostic : aucune famille vide",
-      value: Object.entries(fam.members)
-        .map(([f, n]) => `${f} ${n}`)
-        .join(" · "),
+      name: "Guildes : membres en fin de saison",
+      target: "diagnostic : des guildes vivantes, peu d'isolés",
+      value: `${
+        Object.entries(gl.members)
+          .map(([g, n]) => `${g} ${n}`)
+          .join(" · ") || "aucune"
+      } · sans guilde ${gl.unaffiliated}`,
       pass: true,
       blocking: false,
     });
     checks.push({
-      name: "Familles : au pouvoir chaque semaine",
-      target: "diagnostic : le pouvoir change de mains",
-      value: fam.winners.map((w) => w ?? "—").join(", "),
-      pass: true,
-      blocking: false,
-    });
-    checks.push({
-      name: "Familles : commandes livrées et mécénat",
-      target: "diagnostic : le mécénat est un puits",
-      value: `${fam.orders} commandes · mécénat ${ducats(fam.patronage)} (${pct(
-        Number(fam.patronage) / Math.max(1, Number(destroyed)),
-      )} des destructions)`,
+      name: "Guildes : argent investi, dividendes, votes",
+      target: "diagnostic : les trésors servent",
+      value: `${gl.founded} fondées · investi ${ducats(gl.invested)} · dividendes ${ducats(
+        gl.dividends,
+      )} · votes ${gl.proposals.passed} adoptés / ${gl.proposals.rejected} rejetés`,
       pass: true,
       blocking: false,
     });
@@ -419,7 +413,7 @@ export function actChecks(r: SimulationResult): Check[] {
   ];
 }
 
-/** Diagnostics of the money paid for goods (cities, Doge, families, Criées, deliveries). */
+/** Diagnostics of the money paid for goods (cities, Doge, Criées, deliveries). */
 export function budgetChecks(r: SimulationResult): Check[] {
   const per = createdPerActiveDay(r);
   const total = ORDER_SOURCES.reduce((a, k) => a + (per[k] ?? 0), 0);
@@ -434,8 +428,7 @@ export function budgetChecks(r: SimulationResult): Check[] {
   return [
     {
       name: "Monnaie payée pour les marchandises, par joueur actif et par jour",
-      target:
-        "diagnostic : budget des villes, du Doge, des familles et des Criées (ou des livraisons)",
+      target: "diagnostic : budget des villes, du Doge et des Criées (ou des livraisons)",
       value: `${total.toFixed(1)} ducats (${ORDER_SOURCES.filter((k) => per[k])
         .map((k) => `${k} ${(per[k] ?? 0).toFixed(1)}`)
         .join(" · ")})`,

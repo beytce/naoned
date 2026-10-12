@@ -11,14 +11,16 @@ export * from "./effects.js";
 export * from "./deliveries.js";
 export * from "./clock.js";
 export {
-  type FamilyOrder,
-  type FamilyStanding,
-  familiesOpenAt,
-  familyOrdersDone,
-  familyOrdersFor,
-  familyStandings,
-  patronageLeft,
-} from "./families.js";
+  type ProposalInput,
+  caratValue,
+  guildAccount,
+  guildOf,
+  guildShareOf,
+  guildsOpenAt,
+  tally,
+  treasury,
+  votingWeights,
+} from "./guilds.js";
 export * from "./invariants.js";
 export {
   bestPrice,

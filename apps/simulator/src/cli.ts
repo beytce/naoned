@@ -46,6 +46,7 @@ const CREATED = [
   "family_order_reward",
   "mission_reward",
   "delivery",
+  "worksite_prize",
 ];
 const DESTROYED = [
   "market_tax",
@@ -55,7 +56,7 @@ const DESTROYED = [
   "expedition_charter",
   "ship_repair",
   "privateer_letter",
-  "patronage",
+  "guild_founding",
   "vehicle",
   "vehicle_upkeep",
   "escort",

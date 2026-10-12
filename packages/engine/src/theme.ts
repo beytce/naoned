@@ -55,8 +55,6 @@ export interface Theme {
   /** Ship types built at the arsenal (names; numbers live in the world settings). */
   ships?: { type: string; name: string }[];
   buildings: BuildingDef[];
-  /** Patrician families (names; what they order lives in the world settings). */
-  families?: { code: string; name: string; domain: string }[];
   recipes: RecipeDef[];
 }
 
