@@ -1,18 +1,23 @@
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { P } from "./art/palette.js";
 import { onBack } from "./game/back.js";
+import { haptic } from "./haptics.js";
 
 type Tone = "gold" | "lagoon" | "vermilion" | "ghost";
 
-const TONES: Record<Tone, string> = {
-  gold: "bg-gold text-ink hover:brightness-105 active:brightness-95",
-  lagoon: "bg-lagoon text-on-lagoon hover:brightness-105 active:brightness-95",
-  vermilion: "bg-vermilion text-cream hover:brightness-105 active:brightness-95",
-  ghost: "bg-night-4 text-cream ring-1 ring-inset ring-line hover:ring-cream-dim/40",
+/** Face and solid offset shadow of each tone. */
+const TONES: Record<Tone, { face: string; shadow: string }> = {
+  gold: { face: "bg-gold text-ink", shadow: "bg-gold-deep" },
+  lagoon: { face: "bg-lagoon text-on-lagoon", shadow: "bg-lagoon-deep" },
+  vermilion: { face: "bg-vermilion text-cream", shadow: "bg-vermilion-deep" },
+  ghost: { face: "bg-night-4 text-cream", shadow: "bg-line" },
 };
 
-/** Main button: a rounded block, gold for the action that matters. */
+/**
+ * Main button: a slanted slab on a solid offset shadow, gold for the action that matters. Pressed,
+ * the face sinks onto its shadow.
+ */
 export function Slab(props: {
   children: ReactNode;
   onClick?: () => void;
@@ -24,32 +29,86 @@ export function Slab(props: {
   coach?: string;
 }) {
   const size = {
-    sm: "px-3 py-2 text-xs",
-    md: "px-5 py-3 text-sm",
-    lg: "px-6 py-4 text-base",
+    sm: "px-4 py-2 text-xs",
+    md: "px-6 py-3 text-sm",
+    lg: "px-7 py-4 text-base",
   }[props.size ?? "md"];
+  const tone = TONES[props.tone ?? "gold"];
   return (
     <button
       type={props.type ?? "button"}
-      onClick={props.onClick}
+      onClick={() => {
+        haptic("tap");
+        props.onClick?.();
+      }}
       disabled={props.disabled}
       data-coach={props.coach}
-      className={`rounded-xl font-display font-extrabold uppercase tracking-wide transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-35 ${size} ${TONES[props.tone ?? "gold"]} ${props.className ?? ""}`}
+      className={`group relative isolate inline-flex pb-1 pr-1 font-display font-extrabold uppercase tracking-wide disabled:pointer-events-none disabled:opacity-35 ${props.className ?? ""}`}
     >
-      <span>{props.children}</span>
+      <span
+        aria-hidden="true"
+        className={`bevel absolute inset-0 left-1 top-1 -z-10 ${tone.shadow}`}
+      />
+      <span
+        className={`bevel flex w-full items-center justify-center text-center transition-transform duration-100 ease-out group-hover:brightness-105 group-active:translate-x-[3px] group-active:translate-y-[3px] ${size} ${tone.face}`}
+      >
+        <span>{props.children}</span>
+      </span>
     </button>
   );
 }
 
-/** Segmented control: the chosen option is a vellum pill. */
+/**
+ * Tabs. `pills` (default) for a choice of value; `underline` for the parts of a screen: capitals
+ * over a two-tone line that slides from one to the other.
+ */
 export function Tabs<T extends string>(props: {
   value: T;
   options: { value: T; label: string }[];
   onChange: (v: T) => void;
   coach?: string;
+  variant?: "pills" | "underline";
 }) {
+  if (props.variant === "underline") {
+    const n = Math.max(1, props.options.length);
+    const index = Math.max(
+      0,
+      props.options.findIndex((o) => o.value === props.value),
+    );
+    return (
+      <div className="relative flex" role="tablist">
+        {props.options.map((o) => {
+          const on = o.value === props.value;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              data-coach={props.coach ? `${props.coach}-${o.value}` : undefined}
+              onClick={() => {
+                if (!on) haptic("tap");
+                props.onChange(o.value);
+              }}
+              className={`flex-1 pb-2.5 pt-1 font-display text-xs font-extrabold uppercase tracking-[0.12em] transition-colors ${on ? "text-cream" : "text-muted hover:text-cream-dim"}`}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-0 h-1.5 transition-[left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{ left: `${(index * 100) / n}%`, width: `${100 / n}%` }}
+        >
+          <span className="absolute left-[30%] right-[30%] top-0 h-[3px] bg-cream" />
+          <span className="absolute left-[44%] right-[22%] top-[3px] h-[3px] bg-lagoon" />
+        </span>
+      </div>
+    );
+  }
   return (
-    <div className="flex gap-1 rounded-2xl border border-line bg-night-2 p-1">
+    <div className="flex gap-1">
       {props.options.map((o) => {
         const on = o.value === props.value;
         return (
@@ -58,7 +117,7 @@ export function Tabs<T extends string>(props: {
             type="button"
             data-coach={props.coach ? `${props.coach}-${o.value}` : undefined}
             onClick={() => props.onChange(o.value)}
-            className={`flex-1 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${on ? "bg-cream text-night shadow-sm" : "text-cream-dim hover:text-cream"}`}
+            className={`slab flex-1 px-3 py-2.5 font-display text-xs font-extrabold uppercase tracking-wide transition ${on ? "bg-cream text-night" : "bg-night-3 text-cream-dim hover:text-cream"}`}
           >
             {o.label}
           </button>
@@ -68,23 +127,66 @@ export function Tabs<T extends string>(props: {
   );
 }
 
-/** Card: deep water with a thin foam line; a coloured line draws the eye when it matters. */
+/**
+ * Card with cut corners: deep water within a thin line; a coloured line and a glow from within
+ * draw the eye when it matters.
+ */
 export function Panel({
   children,
   className = "",
   glow,
 }: { children: ReactNode; className?: string; glow?: Tone }) {
-  const border =
+  const line =
     glow === "gold"
-      ? "border-gold/70"
+      ? "bg-gold/70"
       : glow === "lagoon"
-        ? "border-lagoon/60"
+        ? "bg-lagoon/60"
         : glow === "vermilion"
-          ? "border-vermilion/70"
-          : "border-line";
+          ? "bg-vermilion/70"
+          : "bg-line";
+  const inner =
+    glow === "gold"
+      ? "shadow-[inset_0_0_32px_rgb(var(--gold)/0.12)]"
+      : glow === "lagoon"
+        ? "shadow-[inset_0_0_32px_rgb(var(--lagoon)/0.12)]"
+        : glow === "vermilion"
+          ? "shadow-[inset_0_0_32px_rgb(var(--vermilion)/0.14)]"
+          : "";
   return (
-    <div className={`rounded-2xl border bg-night-3 p-4 ${border} ${className}`}>{children}</div>
+    <div className={`cut p-px ${line}`}>
+      <div className={`cut h-full bg-night-3 p-4 ${inner} ${className}`}>{children}</div>
+    </div>
   );
+}
+
+/**
+ * A number that runs to its new value (money, counts): 400 ms, decelerating. `format` writes it.
+ */
+export function CountUp({ value, format }: { value: number; format: (v: number) => string }) {
+  const [shown, setShown] = useState(value);
+  const from = useRef(value);
+  useEffect(() => {
+    const start = from.current;
+    if (start === value) return;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      from.current = value;
+      setShown(value);
+      return;
+    }
+    const t0 = performance.now();
+    let raf = 0;
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / 400);
+      const v = start + (value - start) * (1 - (1 - k) ** 3);
+      from.current = v;
+      setShown(v);
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return <>{format(shown)}</>;
 }
 
 /** On/off switch (vellum knob), instead of a bare checkbox. */
@@ -163,7 +265,7 @@ export function Badge({ children, tone = "gold" }: { children: ReactNode; tone?:
   }[tone];
   return (
     <span
-      className={`inline-block rounded-md px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-widest ${look}`}
+      className={`slab inline-block px-2.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-widest ${look}`}
     >
       <span>{children}</span>
     </span>

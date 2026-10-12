@@ -138,7 +138,7 @@ export function RoadBoard(
 
   return (
     <section className="mx-auto w-full max-w-xl space-y-3">
-      <div className="relative overflow-hidden rounded-3xl border border-line bg-night-2 shadow-xl shadow-black/30">
+      <div className="relative overflow-hidden cut border border-line bg-night-2 shadow-xl shadow-black/30">
         <svg
           viewBox={`0 0 ${MAP_W} ${MAP_H}`}
           className="block w-full touch-manipulation select-none"
@@ -569,7 +569,7 @@ function Garage({
               type="button"
               onClick={() => (atDepot ? onFocus(v.id) : onWatch(v.id))}
               aria-pressed={on}
-              className={`flex flex-col gap-2 rounded-2xl border p-3 text-left transition active:scale-[0.98] ${on ? "border-gold bg-gold/15" : stopped ? "border-vermilion bg-vermilion/10" : atDepot ? "border-lagoon/60 bg-night-3" : "border-line bg-night-3"}`}
+              className={`flex flex-col gap-2 cut border p-3 text-left transition active:scale-[0.98] ${on ? "border-gold bg-gold/15" : stopped ? "border-vermilion bg-vermilion/10" : atDepot ? "border-lagoon/60 bg-night-3" : "border-line bg-night-3"}`}
             >
               <span className="flex items-center gap-2">
                 <svg viewBox="-20 -16 40 26" width="34" height="22" aria-hidden="true">
@@ -623,7 +623,7 @@ function Garage({
         <button
           type="button"
           onClick={onBuy}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-gold/50 px-4 py-3 font-display text-sm font-extrabold uppercase tracking-wide text-gold transition hover:bg-gold/10 active:scale-[0.99]"
+          className="flex w-full items-center justify-center gap-2 cut border border-dashed border-gold/50 px-4 py-3 font-display text-sm font-extrabold uppercase tracking-wide text-gold transition hover:bg-gold/10 active:scale-[0.99]"
         >
           + {g.buy}
           <span className="font-sans text-xs font-normal normal-case text-cream-dim">
@@ -738,7 +738,7 @@ function CitySheet({
               type="button"
               disabled={!open}
               onClick={() => setChosen(o.id)}
-              className={`flex w-full items-center gap-3 rounded-2xl border bg-night-3 p-3 text-left transition active:scale-[0.99] disabled:opacity-45 ${o.kind === "doge" || o.kind === "family" ? "border-gold/60" : o.kind === "urgent" ? "border-vermilion/60" : "border-line"}`}
+              className={`flex w-full items-center gap-3 cut border bg-night-3 p-3 text-left transition active:scale-[0.99] disabled:opacity-45 ${o.kind === "doge" || o.kind === "family" ? "border-gold/60" : o.kind === "urgent" ? "border-vermilion/60" : "border-line"}`}
             >
               <div className="relative shrink-0">
                 <ResourceIcon code={o.resource} size={40} />

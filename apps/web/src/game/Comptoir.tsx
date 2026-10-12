@@ -525,7 +525,7 @@ function BuildHereSheet(props: GameProps) {
               key={b.type}
               type="button"
               onClick={() => props.setSheet(`build:${b.type}`)}
-              className={`rounded-2xl border border-line bg-night-3 p-2 text-left transition hover:border-gold/60 ${affordable(view, b.cost) ? "" : "opacity-60"}`}
+              className={`cut border border-line bg-night-3 p-2 text-left transition hover:border-gold/60 ${affordable(view, b.cost) ? "" : "opacity-60"}`}
             >
               <BuildingArt type={b.type} className="h-16 w-full" />
               <p className="mt-1 font-display text-[11px] font-extrabold uppercase leading-tight">
@@ -594,7 +594,7 @@ function CarnetButton(props: GameProps) {
       type="button"
       data-coach="carnet"
       onClick={() => props.setSheet("carnet")}
-      className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition active:scale-[0.99] ${rewards > 0 ? "border-gold/60 bg-gold/10 text-gold" : "border-line bg-night-3 text-cream-dim"}`}
+      className={`flex w-full items-center justify-between gap-3 cut border px-4 py-3 text-left text-sm transition active:scale-[0.99] ${rewards > 0 ? "border-gold/60 bg-gold/10 text-gold" : "border-line bg-night-3 text-cream-dim"}`}
     >
       <span>
         <span className="block font-semibold">{c.title}</span>
@@ -621,7 +621,7 @@ function RoadShortcut(props: GameProps) {
     <button
       type="button"
       onClick={() => props.goTo("routes")}
-      className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition active:scale-[0.99] ${free > 0 ? "border-gold/60 bg-gold/10 text-gold" : "border-line bg-night-3 text-cream-dim"}`}
+      className={`flex w-full items-center justify-between gap-3 cut border px-4 py-3 text-left text-sm transition active:scale-[0.99] ${free > 0 ? "border-gold/60 bg-gold/10 text-gold" : "border-line bg-night-3 text-cream-dim"}`}
     >
       <span className="font-semibold">{fr.game.road.shortcut(orders, free)}</span>
       <span aria-hidden="true">→</span>
@@ -725,7 +725,7 @@ export function Comptoir(props: GameProps) {
                     key={b.type}
                     type="button"
                     onClick={() => props.setSheet(`build:${b.type}`)}
-                    className={`w-32 shrink-0 rounded-2xl border border-line bg-night-3 p-2 text-left transition hover:border-gold/60 lg:w-auto ${affordable(view, b.cost) ? "" : "opacity-60"}`}
+                    className={`w-32 shrink-0 cut border border-line bg-night-3 p-2 text-left transition hover:border-gold/60 lg:w-auto ${affordable(view, b.cost) ? "" : "opacity-60"}`}
                   >
                     <BuildingArt type={b.type} className="h-16 w-28" />
                     <p className="mt-1 font-display text-[11px] font-extrabold uppercase leading-tight">

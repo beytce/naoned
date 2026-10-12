@@ -44,7 +44,7 @@ function MasteryChoice(props: GameProps & { onDone: () => void }) {
             type="button"
             aria-pressed={picked === code}
             onClick={() => setPicked(code)}
-            className={`flex gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99] ${picked === code ? "border-gold bg-gold/10" : "border-line bg-night-3"}`}
+            className={`flex gap-3 cut border p-3 text-left transition active:scale-[0.99] ${picked === code ? "border-gold bg-gold/10" : "border-line bg-night-3"}`}
           >
             <MasteryEmblem code={code} size={48} />
             <div className="min-w-0">
@@ -99,7 +99,7 @@ export function MasteryTile(props: GameProps) {
         <button
           type="button"
           onClick={() => props.setSheet("mastery")}
-          className="flex w-full items-center gap-3 rounded-2xl border border-gold/70 bg-gold/10 px-4 py-3 text-left"
+          className="flex w-full items-center gap-3 cut border border-gold/70 bg-gold/10 px-4 py-3 text-left"
         >
           <span className="flex -space-x-3">
             {Object.keys(props.catalog.specialties.options).map((c) => (

@@ -126,7 +126,7 @@
 @layer components {
   /* Spaced uppercase labels: kickers and small captions. */
   .label {
-    @apply font-mono text-[11px] uppercase leading-snug tracking-[0.14em] text-muted;
+    @apply font-mono text-[11px] uppercase leading-snug tracking-[0.2em] text-muted;
   }
   /* Card: deep water, a thin foam line, rounded corners. */
   .cartouche {
@@ -135,9 +135,24 @@
   .cartouche-line {
     @apply relative rounded-2xl border border-line bg-night-3;
   }
-  /* Former skewed slab: now a rounded block (kept as a class so every screen follows). */
+  /* Slanted block, as the buttons: badges, chips, small slabs. */
   .slab {
-    @apply rounded-xl;
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  }
+  /* The buttons' slant: a parallelogram, the text standing straight. */
+  .bevel {
+    clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+  }
+  /* Cards with cut corners (top left, bottom right). */
+  .cut {
+    clip-path: polygon(
+      14px 0,
+      100% 0,
+      100% calc(100% - 14px),
+      calc(100% - 14px) 100%,
+      0 100%,
+      0 14px
+    );
   }
   .stripes {
     background-image: repeating-linear-gradient(
@@ -174,6 +189,52 @@
 @keyframes map-march {
   to {
     stroke-dashoffset: -16;
+  }
+}
+
+/* A section's blocks rise one after the other (the screen's root, then its direct children). */
+.stagger > * > * {
+  animation: stagger-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger > * > *:nth-child(2) {
+  animation-delay: 45ms;
+}
+.stagger > * > *:nth-child(3) {
+  animation-delay: 90ms;
+}
+.stagger > * > *:nth-child(4) {
+  animation-delay: 135ms;
+}
+.stagger > * > *:nth-child(5) {
+  animation-delay: 180ms;
+}
+.stagger > * > *:nth-child(n + 6) {
+  animation-delay: 220ms;
+}
+@keyframes stagger-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The page's ambient light, its colour following the section; shapes drifting in the haze. */
+.ambient {
+  transition: opacity 0.6s ease;
+}
+.drift {
+  animation: drift 26s ease-in-out infinite alternate;
+}
+@keyframes drift {
+  0% {
+    transform: translate(0, 0) rotate(-8deg);
+  }
+  100% {
+    transform: translate(28px, -36px) rotate(6deg);
   }
 }
 

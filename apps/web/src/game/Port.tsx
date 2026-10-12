@@ -747,6 +747,7 @@ function OpenPort(props: GameProps) {
       ))}
 
       <Tabs<PortTab>
+        variant="underline"
         value={tab}
         onChange={(v) => {
           store.set("portTab", v);

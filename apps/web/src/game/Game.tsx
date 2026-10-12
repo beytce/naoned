@@ -7,7 +7,7 @@ import { Lorenzo } from "../art/scenes.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { applyPalette, currentPalette, needsPass } from "../theme.js";
-import { Slab } from "../ui.js";
+import { CountUp, Slab } from "../ui.js";
 import { ActCard, SeasonFrieze } from "./Acts.js";
 import { AmbushAlert } from "./AmbushAlert.js";
 import { Bell } from "./Bell.js";
@@ -299,6 +299,14 @@ export function Game(props: {
     () => ALL_TABS.filter((t) => (t !== "routes" || hasRoad) && (t !== "familles" || hasFamilies)),
     [hasRoad, hasFamilies],
   );
+  // The screen slides in from the side of the tab it comes from, as one turns pages.
+  const lastTab = useRef(tab);
+  const slide = useRef<"left" | "right">("right");
+  if (lastTab.current !== tab) {
+    const at = (t: Tab) => [...ALL_TABS, "profil"].indexOf(t);
+    slide.current = at(tab) >= at(lastTab.current) ? "right" : "left";
+    lastTab.current = tab;
+  }
 
   // Computer: keys 1 to 6 switch sections (not while typing).
   useEffect(() => {
@@ -466,7 +474,7 @@ export function Game(props: {
     <div className="mr-1 flex items-center gap-1.5 rounded-full bg-night-3 py-1 pl-1 pr-2.5 ring-1 ring-line">
       <Coin size={22} />
       <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
-        {amount(view.cash)}
+        <CountUp value={Number(view.cash)} format={(v) => amount(BigInt(Math.round(v)))} />
       </span>
     </div>
   );
@@ -603,6 +611,7 @@ export function Game(props: {
         </div>
       )}
 
+      <Ambient tab={tab} />
       <main className="mx-auto w-full max-w-md flex-1 px-4 pb-40 pt-4 lg:max-w-6xl lg:px-8 lg:pb-16 lg:pt-6">
         <Criee {...gp} />
         {daysLeft > 0 && daysLeft <= 3 && (
@@ -610,8 +619,11 @@ export function Game(props: {
             {fr.game.season.lastSprint(daysLeft)}
           </p>
         )}
-        {/* A short settle on each section change: enough to see it switch, never in the way. */}
-        <div key={tab} className="animate-screen">
+        {/* Each section slides in from its side, its blocks rising one after the other. */}
+        <div
+          key={tab}
+          className={`stagger ${slide.current === "right" ? "animate-screen-right" : "animate-screen-left"}`}
+        >
           {tab === "comptoir" && <Comptoir {...gp} />}
           {tab === "routes" && <Routes {...gp} />}
           {tab === "marche" && <Marche {...gp} />}
@@ -660,14 +672,20 @@ export function Game(props: {
                 onClick={() => gp.goTo(t)}
                 className={`relative flex min-h-[3.5rem] flex-col items-center justify-center gap-1 pb-2 pt-2.5 transition-colors active:bg-night-3 ${on ? "text-gold" : "text-muted"} ${t === "port" && portLocked ? "opacity-50" : ""}`}
               >
-                {on && <span className="absolute inset-x-5 top-0 h-[3px] rounded-b-full bg-gold" />}
+                {on && (
+                  <>
+                    <span className="bevel absolute inset-x-4 top-0 h-[3px] bg-gold" />
+                    {/* The pennant on the chosen tab's corner. */}
+                    <span className="absolute right-[24%] top-1.5 h-0 w-0 border-l-[7px] border-t-[7px] border-l-transparent border-t-gold" />
+                  </>
+                )}
                 <span
                   className={`transition-transform duration-200 ${on ? "-translate-y-px scale-110" : ""}`}
                 >
                   <Icon />
                 </span>
                 <span
-                  className={`max-w-full truncate px-0.5 text-[11px] ${on ? "font-bold" : "font-semibold"}`}
+                  className={`max-w-full truncate px-0.5 font-mono text-[9.5px] uppercase tracking-[0.08em] ${on ? "font-bold" : ""}`}
                 >
                   {fr.game.tabs[t]}
                 </span>
@@ -679,6 +697,49 @@ export function Game(props: {
           })}
         </div>
       </nav>
+    </div>
+  );
+}
+
+const GLOW: Record<string, string> = {
+  comptoir: "gold",
+  routes: "lagoon",
+  marche: "gold",
+  familles: "vermilion",
+  port: "lagoon",
+  top: "gold",
+  profil: "gold",
+};
+
+/**
+ * Behind the screens: a light whose colour follows the section, and a few blurred shapes (a sail,
+ * crates) drifting slowly in the haze.
+ */
+function Ambient({ tab }: { tab: Tab }) {
+  const tone = GLOW[tab] ?? "gold";
+  return (
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      {(["gold", "lagoon", "vermilion"] as const).map((c) => (
+        <div
+          key={c}
+          className="ambient absolute inset-0"
+          style={{
+            opacity: c === tone ? 1 : 0,
+            background: `radial-gradient(42rem 26rem at 50% -6%, rgb(var(--${c}) / 0.16), transparent 70%)`,
+          }}
+        />
+      ))}
+      <div className="drift absolute -left-10 top-[30%] h-40 w-28 opacity-[0.07] blur-md">
+        <svg viewBox="0 0 60 90" className="h-full w-full" aria-hidden="true">
+          <path d="M8 84 L52 84 L30 6 Z" fill="rgb(var(--cream))" />
+        </svg>
+      </div>
+      <div
+        className="drift absolute -right-8 top-[58%] h-28 w-28 opacity-[0.06] blur-md"
+        style={{ animationDelay: "-9s" }}
+      >
+        <div className="h-full w-full rotate-12 bg-[rgb(var(--gold))]" />
+      </div>
     </div>
   );
 }

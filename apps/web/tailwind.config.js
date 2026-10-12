@@ -53,6 +53,18 @@ export default {
           "0%": { opacity: "0", transform: "translateY(6px)" },
           "100%": { opacity: "1", transform: "none" },
         },
+        "screen-right": {
+          "0%": { opacity: "0", transform: "translateX(28px)" },
+          "100%": { opacity: "1", transform: "none" },
+        },
+        "screen-left": {
+          "0%": { opacity: "0", transform: "translateX(-28px)" },
+          "100%": { opacity: "1", transform: "none" },
+        },
+        bump: {
+          "0%,100%": { transform: "scale(1)" },
+          "40%": { transform: "scale(1.12)" },
+        },
       },
       animation: {
         floaty: "floaty 4s ease-in-out infinite",
@@ -63,6 +75,10 @@ export default {
         sheet: "sheet 0.28s cubic-bezier(0.22, 1, 0.36, 1) both",
         pop: "pop 0.2s cubic-bezier(0.22, 1, 0.36, 1) both",
         screen: "screen 0.22s cubic-bezier(0.22, 1, 0.36, 1) both",
+        // A section slides in from the side of the tab one comes from.
+        "screen-right": "screen-right 0.32s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "screen-left": "screen-left 0.32s cubic-bezier(0.22, 1, 0.36, 1) both",
+        bump: "bump 0.35s ease-out",
       },
     },
   },

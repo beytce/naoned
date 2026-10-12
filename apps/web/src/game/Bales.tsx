@@ -37,7 +37,7 @@ export function BaleTile(props: GameProps) {
     <button
       type="button"
       onClick={() => props.setSheet("bales")}
-      className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left text-sm transition active:scale-[0.99] ${ready ? "border-gold/60 bg-gold/10 text-gold" : "border-line bg-night-3 text-cream-dim"}`}
+      className={`flex w-full items-center gap-3 cut border px-3 py-2 text-left text-sm transition active:scale-[0.99] ${ready ? "border-gold/60 bg-gold/10 text-gold" : "border-line bg-night-3 text-cream-dim"}`}
     >
       <BaleArt size={44} className={ready ? "bale-float shrink-0" : "shrink-0 opacity-70"} />
       <span className="min-w-0 flex-1">
@@ -244,7 +244,7 @@ export function BaleScreen(props: GameProps) {
               </button>
             </div>
             {story && (
-              <div className="flex gap-3 rounded-2xl border border-line bg-night-3 p-4 text-left text-sm text-cream-dim">
+              <div className="flex gap-3 cut border border-line bg-night-3 p-4 text-left text-sm text-cream-dim">
                 <span className="shrink-0">
                   <FarajMark color="rgb(var(--gold))" size={32} />
                 </span>
@@ -399,7 +399,7 @@ function Summary(props: {
   for (const c of props.cards) goods.set(c.resource, (goods.get(c.resource) ?? 0) + c.quantity);
   return (
     <div className="w-full animate-rise space-y-4">
-      <div className="rounded-2xl border border-line bg-night-3 p-4">
+      <div className="cut border border-line bg-night-3 p-4">
         <Label className="text-lagoon">{t.stored}</Label>
         <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm">
           {[...goods].map(([r, q]) => (
@@ -429,7 +429,7 @@ const pct = (bps: number) =>
 /** The odds, exactly those of the world's settings. */
 function Odds({ bales, props }: { bales: BalesView; props: GameProps }) {
   return (
-    <div className="space-y-3 rounded-2xl border border-line bg-night-3 p-4 text-left">
+    <div className="space-y-3 cut border border-line bg-night-3 p-4 text-left">
       <Label>{t.oddsTitle}</Label>
       <p className="text-xs text-cream-dim">
         {t.oddsIntro(bales.cardsPerBale, bales.intervalHours, bales.max)} {t.oddsOwn}

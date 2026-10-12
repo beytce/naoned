@@ -46,12 +46,12 @@ export function Routes(props: GameProps) {
       <header className="flex items-end justify-between gap-3">
         <div className="min-w-0">
           <p className="label text-lagoon">{t().kicker}</p>
-          <h2 className="mt-1 font-display text-xl font-extrabold uppercase leading-tight">
+          <h2 className="mt-1 font-display text-[1.7rem] font-black uppercase leading-[0.95]">
             {t().title}
           </h2>
         </div>
         {(tab === "livraisons" || props.now < road.banditsOpenAt) && (
-          <div className="flex shrink-0 rounded-xl border border-line bg-night-2 p-0.5">
+          <div className="flex shrink-0 gap-1">
             {(["carte", "liste"] as const).map((v) => (
               <button
                 key={v}
@@ -62,7 +62,7 @@ export function Routes(props: GameProps) {
                   store.set("roadView", v);
                   setView(v);
                 }}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${view === v ? "bg-cream text-night" : "text-cream-dim"}`}
+                className={`slab px-3 py-1.5 font-display text-[11px] font-extrabold uppercase tracking-wide transition ${view === v ? "bg-cream text-night" : "bg-night-3 text-cream-dim"}`}
               >
                 {fr.game.roadMap.view[v]}
               </button>
@@ -76,6 +76,7 @@ export function Routes(props: GameProps) {
         </p>
       ) : (
         <Tabs
+          variant="underline"
           value={tab}
           onChange={setTab}
           options={[
@@ -310,7 +311,7 @@ function Deliveries(props: GameProps & { road: RoadView }) {
           <OrderCard key={o.id} o={o} props={props} onOpen={() => setSelected(o.id)} />
         ))}
         {taken.length > 0 && (
-          <details className="rounded-2xl border border-line bg-night-2 px-3 py-2">
+          <details className="cut border border-line bg-night-2 px-3 py-2">
             <summary className="label cursor-pointer">{t().takenList(taken.length)}</summary>
             <ul className="mt-2 space-y-1 text-sm">
               {taken.map((o) => (
@@ -355,7 +356,7 @@ function OrderCard({
       onClick={onOpen}
       disabled={upcoming}
       data-coach={`road-order-${o.id}`}
-      className={`flex w-full items-center gap-3 rounded-2xl border bg-night-3 p-3 text-left transition active:scale-[0.99] ${o.kind === "doge" || o.kind === "family" ? "border-gold/60" : o.kind === "urgent" ? "border-vermilion/60" : "border-line"} ${upcoming ? "opacity-50" : ""}`}
+      className={`flex w-full items-center gap-3 cut border bg-night-3 p-3 text-left transition active:scale-[0.99] ${o.kind === "doge" || o.kind === "family" ? "border-gold/60" : o.kind === "urgent" ? "border-vermilion/60" : "border-line"} ${upcoming ? "opacity-50" : ""}`}
     >
       <div className="relative shrink-0">
         <ResourceIcon code={o.resource} size={40} />

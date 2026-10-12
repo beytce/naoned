@@ -33,13 +33,25 @@ Les illustrations (ressources, bâtiments, blasons) gardent leurs propres couleu
 
 ## Composants (`apps/web/src/ui.tsx`)
 
-- `Slab` : bouton arrondi, or pour l'action qui compte.
-- `Panel` : carte arrondie, liseré coloré quand elle doit attirer l'œil.
-- `Tabs` : sélecteur segmenté (pastille claire sur l'option choisie), comme Routes / Flotte / Corsaires.
+Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arrondis.
+- `Slab` : bouton en parallélogramme (`.bevel`) posé sur une ombre pleine décalée de sa teinte sombre. À l'appui, la face s'enfonce sur son ombre, avec un tick haptique. Or pour l'action qui compte.
+- `Panel` : carte à coins coupés (`.cut`), haut gauche et bas droit, avec un liseré. Une lueur intérieure s'ajoute quand elle doit attirer l'œil. Les tuiles et cartes de commande suivent la même coupe.
+- `Badge`, puces du stock, pastilles de tri : petits biseaux (`.slab`).
+- `Tabs` :
+  - `pills` : choix d'une valeur, par exemple le tri ;
+  - `underline` : parties d'un écran (Livraisons et Brigands, Joueurs et Villes, Port). Capitales sur un double trait crème et lagune qui glisse d'un onglet à l'autre.
+- `CountUp` : un nombre qui court vers sa nouvelle valeur en 400 ms, comme la bourse de l'en-tête.
 - `Stat` : tuile chiffrée (Traversée, Pirates en cinabre, Plus-value en lagune).
 - `Switch` : interrupteur (escorte, navires, notifications), à la place des cases à cocher.
 - `Sheet` : feuille du bas sur mobile, fenêtre centrée sur PC, fermeture par ×.
 - `Ribbon` : barre de progression rayée ; `Big` : grands chiffres.
+
+## Mouvement
+
+- Un écran glisse depuis le côté de l'onglet d'où l'on vient. Ses blocs montent l'un après l'autre, à 45 ms d'écart.
+- Une lueur d'ambiance suit la section, en fondu : or au Comptoir et au Marché, lagune aux Routes et au Port, vermillon aux Familles. Une voile et une caisse floues dérivent lentement dans le fond.
+- L'onglet actif de la barre du bas porte un trait biseauté et un fanion en coin. Les libellés sont en capitales mono.
+- Tout s'arrête pour qui demande moins de mouvement (`prefers-reduced-motion`).
 
 ## Disposition
 

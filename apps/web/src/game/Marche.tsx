@@ -464,6 +464,7 @@ export function Marche(props: GameProps) {
     <div className="space-y-6">
       <div className="lg:max-w-sm">
         <Tabs<MarketTab>
+          variant="underline"
           value={props.marketTab}
           onChange={props.setMarketTab}
           coach="mtab"

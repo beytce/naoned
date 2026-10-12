@@ -125,7 +125,7 @@ export function Domain(props: GameProps) {
   const crest = props.account.crest ?? defaultCrest(props.account.id);
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-line bg-night-2">
+    <section className="overflow-hidden cut border border-line bg-night-2">
       <div className="flex items-end justify-between gap-3 px-4 pb-2 pt-3">
         <div className="min-w-0">
           <Label className="text-gold">{view.standing.title.current.name}</Label>
