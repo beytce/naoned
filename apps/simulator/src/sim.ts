@@ -84,6 +84,8 @@ export interface SimulationResult {
   };
   /** The road: deliveries, vehicles, ambushes and bands (see `roadStats`). */
   road?: RoadStats;
+  /** Faraj's bales: opened, cards by rarity, value at reference prices by player (deniers). */
+  bales?: { opened: number; cards: Record<string, number>; valueBy: Record<string, number> };
   /** The patrician families: members at the end, winners of each week, orders and patronage. */
   families?: {
     members: Record<string, number>;
@@ -179,6 +181,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
   const families = { members: {}, winners: [], orders: 0, patronage: 0n } as NonNullable<
     SimulationResult["families"]
   >;
+  const bales = { opened: 0, cards: {}, valueBy: {} } as NonNullable<SimulationResult["bales"]>;
   let now = START;
   const run = (cmd: Command): boolean => {
     const res = decide(ctx, state, cmd, now);
@@ -209,6 +212,17 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     }
     for (const l of res.effects.ledger)
       if (l.reason === "patronage") families.patronage += l.amount;
+    if (cmd.type === "openBale") {
+      bales.opened++;
+      for (const c of state.bales?.[cmd.playerId]?.last?.cards ?? []) {
+        bales.cards[c.rarity] = (bales.cards[c.rarity] ?? 0) + 1;
+      }
+      for (const m of res.effects.stock) {
+        if (m.reason !== "bale_gift") continue;
+        const value = Number(ctx.settings.referencePrices[m.resource] ?? 0n) * m.quantity;
+        bales.valueBy[m.playerId] = (bales.valueBy[m.playerId] ?? 0) + value;
+      }
+    }
     options.onEffects?.(res.effects, now);
     return true;
   };
@@ -361,6 +375,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     families.members[code] = (families.members[code] ?? 0) + 1;
   }
   result.families = families;
+  result.bales = bales;
   const playerDays = result.daily.reduce((a, d) => a + d.active, 0);
   const sortedFirst = [...activity.firstDelivery].sort((a, b) => a - b);
   result.activity = {

@@ -172,6 +172,7 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
   }
 
   checks.push(...budgetChecks(r));
+  checks.push(...baleChecks(r));
   checks.push(...roadChecks(r));
   const a = r.activity;
   if (a) {
@@ -339,6 +340,57 @@ export function budgetChecks(r: SimulationResult): Check[] {
       name: "Assidus devant occasionnels (patrimoine médian en fin de saison)",
       target: "diagnostic : +5 à +10 %",
       value: Number.isNaN(mCasual) ? "—" : pct(mFrequent / mCasual - 1),
+      pass: true,
+      blocking: false,
+    },
+  ];
+}
+
+/**
+ * Faraj's bales: value at reference prices per merchant and per day present, frequent players
+ * against casual ones, next to the money paid for goods (docs/calibration.md).
+ */
+export function baleChecks(r: SimulationResult): Check[] {
+  const b = r.bales;
+  if (!b || b.opened === 0) return [];
+  const per = createdPerActiveDay(r);
+  const paid = ORDER_SOURCES.reduce((a, k) => a + (per[k] ?? 0), 0);
+  const frequent = new Set(["producer", "artisan", "builder", "speculator"]);
+  // Days present per merchant (one row per day from joining), and the profile of each.
+  const days: Record<string, number> = {};
+  const profile: Record<string, string> = {};
+  for (const p of r.players) {
+    if (!p.active) continue;
+    days[p.playerId] = (days[p.playerId] ?? 0) + 1;
+    profile[p.playerId] = p.profile;
+  }
+  const perDay = (keep: (profile: string) => boolean) => {
+    let value = 0;
+    let n = 0;
+    for (const [id, d] of Object.entries(days)) {
+      if (!keep(profile[id] ?? "")) continue;
+      value += b.valueBy[id] ?? 0;
+      n += d;
+    }
+    return n > 0 ? value / n / 100 : Number.NaN;
+  };
+  const all = perDay(() => true);
+  const assidus = perDay((p) => frequent.has(p));
+  const casual = perDay((p) => p === "casual");
+  const cards = Object.values(b.cards).reduce((a, n) => a + n, 0);
+  const share = (code: string) => pct((b.cards[code] ?? 0) / Math.max(1, cards));
+  return [
+    {
+      name: "Ballots de Faraj, valeur par marchand actif et par jour",
+      target: "diagnostic : environ 15 % de la monnaie payée pour les marchandises",
+      value: `${all.toFixed(1)} ducats (${pct(all / Math.max(1, paid))} de ${paid.toFixed(1)}) ; assidus ${assidus.toFixed(1)}, occasionnels ${Number.isNaN(casual) ? "—" : casual.toFixed(1)}`,
+      pass: true,
+      blocking: false,
+    },
+    {
+      name: "Ballots de Faraj, cartes tirées",
+      target: "diagnostic : légendaires vraiment rares",
+      value: `${b.opened} ballots, ${cards} cartes : commune ${share("common")}, peu commune ${share("uncommon")}, rare ${share("rare")}, épique ${share("epic")}, légendaire ${share("legendary")} (${b.cards.legendary ?? 0})`,
       pass: true,
       blocking: false,
     },
