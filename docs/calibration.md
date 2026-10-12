@@ -420,3 +420,33 @@ Résultat sur 5 graines, toutes conformes aux cibles bloquantes :
 | Gini à mi-saison | 0,46 | 0,47 | 0,43 | 0,40 | 0,39 |
 
 Les bots livrent environ 4 commandes par jour : ils ne jouent que 2 à 4 sessions et repartent avec un véhicule par session. Un joueur qui revient souvent en livrera bien plus ; la monnaie créée suivra, dans la marge de +30 % acceptée. À surveiller pendant la bêta : la monnaie par joueur actif et l'indice des prix, et le Gini, monté de 0,25 à 0,45 (la limite est 0,6).
+
+## Ballots de Faraj
+
+Un présent de Faraj d'Alexandrie toutes les six heures, deux au plus en attente, trois cartes de 1 à 5 unités (`bales`). Décisions du porteur : sel en Rare, deux ballots en attente, jusqu'à +15 % de matière gratuite accepté (sans compensation ailleurs).
+
+| Rareté | Chance par carte | Marchandises | Quantités ×1 / ×2 / ×3 / ×4 / ×5 |
+| --- | --- | --- | --- |
+| Commun | 74 % | blé, argile, bois | 55 / 25 / 10 / 6 / 4 % |
+| Peu commun | 19,5 % | farine, pain, briques, planches | 65 / 20 / 9 / 4 / 2 % |
+| Rare | 5 % | sel, vin | 75 / 15 / 6 / 3 / 1 % |
+| Épique | 1,25 % | épices, fourrures | 85 / 10 / 3 / 1,5 / 0,5 % |
+| Légendaire | 0,25 % | soie, draps | 90 / 7 / 2 / 0,8 / 0,2 % |
+
+La matière première de la région du marchand pèse moitié moins (`ownRegionWeightBps` 5 000) : le ballot apporte surtout ce qu'il faut acheter. Valeur moyenne d'un ballot au prix de référence : 7 à 8 ducats (test `settings.test.ts`). Le tirage vient du secret du monde, du joueur et du numéro du ballot : recharger ne change rien. Le Pass Négociant n'y change rien, et les ballots ne s'achètent pas.
+
+**Mesure (`pnpm sim`, 5 graines, toutes conformes aux cibles bloquantes), avec ballots contre la même saison sans ballots :**
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Valeur des ballots (ducats / marchand actif / jour) | 19,6 | 20,0 | 19,5 | 19,6 | 19,6 |
+| Part de la monnaie payée pour les marchandises | 11,5 % | 11,7 % | 11,7 % | 11,3 % | 11,5 % |
+| Assidus / occasionnels (ducats par jour) | 20,4 / 13,4 | 20,8 / 14,2 | 20,4 / 14,2 | 20,4 / 13,2 | 20,5 / 14,0 |
+| Légendaires tirées (sur ~11 000 cartes) | 25 | 36 | 30 | 26 | 36 |
+| Indice des prix (avec / sans) | 93 – 100 / 93 – 100 | idem | idem | idem | idem |
+| Plafond de monnaie par joueur actif (avec / sans) | 1,02 / 1,01 × | 1,03 / 1,02 × | 1,01 / 1,01 × | 1,02 / 1,00 × | 1,03 / 1,02 × |
+| Gini à J+15 (avec / sans) | 0,41 / 0,46 | 0,42 / 0,47 | 0,44 / 0,43 | 0,46 / 0,40 | 0,41 / 0,39 |
+
+Environ 11,5 % de matière en plus, sous les 15 % acceptés. Les prix ne bougent pas : les communes, nombreuses, sont aussi les moins chères, et les cartes rares sont trop peu nombreuses pour peser sur un carnet. Un assidu reçoit environ 1,5 fois ce que reçoit un occasionnel (deux ballots par jour au plus pour qui ne vient qu'une fois). Une carte légendaire sur 400 : à 3 ou 4 ballots par jour, environ une par saison pour un assidu. Les bots ouvrent leurs ballots au début de chaque session, comme un joueur.
+
+**Contrôle du Pass (`pnpm sim --pass 0.2`) : non conforme, déjà sans les ballots.** Avance des abonnés avec ballots : −38,9 %, −9,7 %, −16,6 %, +6,0 %, +20,6 % (graines 4 et 5 au-dessus de +5 %) ; les mêmes graines 4 et 5 sans ballots donnent +6,9 % et +106,6 %. Les ballots sont identiques avec ou sans Pass (test `bales.test.ts`) : l'écart vient de la divergence des deux saisons rejouées, déjà constatée (voir « Familles patriciennes » et le rythme de jeu). Part des abonnés dans le top 10 et « gratuit assidu devant abonné occasionnel » conformes sur toutes les graines.

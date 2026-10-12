@@ -28,6 +28,12 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - Défis entre marchands : mise sous séquestre, le plus gros gain sur 3 jours remporte le pot (moins une commission).
 - Appels d'offres du Doge : la commande va au joueur qui demande le prix le plus bas.
 
+## Ballots de Faraj (suite)
+- Album des présents : collection cosmétique des cartes reçues dans la saison.
+- Ballots saisonniers (Sensa, Carnaval) avec un dos de carte propre, sans meilleures chances.
+- Notification push « un ballot vous attend » (coupée par défaut, jamais la nuit).
+- Habillage cosmétique de la balle gagnable au classement.
+
 ## V1 (après la première saison)
 - Chaînes textile (laine, tissu, vêtements) et ameublement (meubles).
 - Paiement du Pass Négociant (Stripe Checkout + webhook, CGV) ; export CSV et conseiller détaillé pour les abonnés.
