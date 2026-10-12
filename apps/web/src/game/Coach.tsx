@@ -20,6 +20,10 @@ interface CoachStep {
   text: string;
   /** data-coach value of the element to point at. */
   target?: string;
+  /** Pointed at instead of the target while it is on screen (a sheet opened on the target). */
+  then?: string;
+  /** Text shown while `then` is on screen. */
+  thenText?: string;
   waitUntil?: number;
   final?: boolean;
   /** Store key that lets the player skip a step the world blocks (e.g. an empty market). */
@@ -109,7 +113,12 @@ function nextStep(props: GameProps): CoachStep {
           goTab(props, "routes", fr.game.coach.goRoutes) ??
           (roadViewOf(props) !== "liste"
             ? { text: fr.game.coach.goList, target: "road-view-liste" }
-            : { text: fr.game.coach.deliver, target: `road-order-${deliverable.id}` })
+            : {
+                text: fr.game.coach.deliver,
+                target: `road-order-${deliverable.id}`,
+                then: "road-dispatch",
+                thenText: fr.game.coach.dispatch,
+              })
         );
       }
     }
@@ -193,6 +202,7 @@ export function Coach(props: GameProps) {
   const [hidden, setHidden] = useState(() => store.get("guideHidden") === "1");
   const [finished, setFinished] = useState(() => store.get("guideDone") === "1");
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const [onThen, setOnThen] = useState(false);
   const step = nextStep(props);
   const index = Math.min(STEPS.length, props.view.tutorial.length + 1);
 
@@ -201,12 +211,15 @@ export function Coach(props: GameProps) {
       setRect(null);
       return;
     }
+    // The same target may exist twice (phone tab bar, computer side bar): take the visible one.
+    const visible = (name: string) =>
+      [...document.querySelectorAll<HTMLElement>(`[data-coach="${name}"]`)].find(
+        (e) => e.getClientRects().length > 0,
+      ) ?? null;
     const find = () => {
-      // The same target may exist twice (phone tab bar, computer side bar): take the visible one.
-      const el =
-        [...document.querySelectorAll<HTMLElement>(`[data-coach="${step.target}"]`)].find(
-          (e) => e.getClientRects().length > 0,
-        ) ?? null;
+      const then = step.then ? visible(step.then) : null;
+      const el = then ?? visible(step.target ?? "");
+      setOnThen(then !== null);
       setRect(el ? el.getBoundingClientRect() : null);
       return el;
     };
@@ -214,7 +227,7 @@ export function Coach(props: GameProps) {
     el?.scrollIntoView({ block: "center", behavior: "smooth" });
     const t = setInterval(find, 250);
     return () => clearInterval(t);
-  }, [step.target, hidden, finished]);
+  }, [step.target, step.then, hidden, finished]);
 
   useEffect(() => {
     if (step.final && props.view.tutorial.length >= STEPS.length) {
@@ -234,6 +247,7 @@ export function Coach(props: GameProps) {
   const inTabBar = rect !== null && rect.top > window.innerHeight - 96;
   const atTop =
     props.sheet !== null ||
+    onThen ||
     (!inTabBar && rect !== null && rect.top + rect.height / 2 > window.innerHeight * 0.55);
   const pad = 6;
   return (
@@ -265,7 +279,9 @@ export function Coach(props: GameProps) {
                   {fr.game.coach.step(index, STEPS.length)}
                 </span>
               </div>
-              <p className="mt-1.5 text-[15px] leading-snug">{step.text}</p>
+              <p className="mt-1.5 text-[15px] leading-snug">
+                {onThen && step.thenText ? step.thenText : step.text}
+              </p>
               {step.waitUntil && (
                 <Big className="mt-2 text-3xl text-lagoon">{clock(step.waitUntil - props.now)}</Big>
               )}

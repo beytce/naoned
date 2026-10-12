@@ -221,6 +221,7 @@ export function OrderPanel({
       <Slab
         size="lg"
         className="w-full"
+        coach="road-dispatch"
         disabled={props.busy || !vehicleId || stock < o.quantity || o.status !== "open"}
         onClick={async () => {
           if (!vehicleId) return;

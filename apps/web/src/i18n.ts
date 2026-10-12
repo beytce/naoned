@@ -907,6 +907,8 @@ export const fr = {
       goList: "Passez en « Liste » : chaque commande y montre ce qu'elle rapporte.",
       deliver:
         "Votre stock couvre cette commande. Touchez-la, chargez la charrette et partez : la ville paie à l'arrivée.",
+      dispatch:
+        "La charrette est choisie, et les premiers jours les routes sont sûres : pas besoin d'escorte. Touchez « Charger et partir ».",
       deliveryUnderway: "Votre charrette est en route. La ville paiera à l'arrivée.",
       goRialto:
         "Pour grandir, il faut les matériaux d'une autre région. Ouvrez l'onglet « Rialto ».",
