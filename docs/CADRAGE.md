@@ -104,7 +104,9 @@ Inspiré de Mercato Venezia : du risque et de l'affrontement entre joueurs, sans
 | **Ouverture progressive** | Le Port s'ouvre au jour 3 (mission « premier convoi »), les lettres de marque au jour 6 (« premier navire ») ; un joueur déjà en mer n'est jamais bloqué |
 | **Tableau de rétention** | Page `/admin` réservée aux adresses `ADMIN_EMAILS` : retour à J+1, 3, 7, 14, 30, sessions par jour, entonnoir du tutoriel, dernière visite. PNJ exclus |
 
-### Les familles patriciennes (premier lien social)
+### Les familles patriciennes (premier lien social) — remplacées par les guildes
+
+Remplacées en octobre 2026 par les guildes et les guerres de concessions (section suivante « Guildes, guerres de concessions, Rialto nécessaire »). Pour mémoire :
 
 Plan complet et phases suivantes (mariages, commandite, enchère des galères, prêts, Grand Conseil) : `docs/plan-familles.md`.
 
@@ -147,6 +149,26 @@ Constat : le jeu devient vite redondant et on a peu l'impression de se développ
 | **Maîtrises** | À 5 niveaux d'ateliers, le marchand choisit une maîtrise pour toute la saison : Maître d'atelier (+10 % sur ce qui se transforme), Roulier (véhicules 25 % plus rapides, un de plus), Négociant (quotas Dogana +25 %, taxe −2 points, 3 offres de plus) ou Armateur (droits de port −50 %, cales +25 %). Réglages `specialties` |
 | **Saison en actes** | Quatre actes, un par semaine, comprimés si le monde ouvre tard (`acts`). I l'installation ; II une crise tirée du secret du monde (guerre de Chioggia, peste ou embargo du Levant) ; III l'Arsenal, un chantier que les familles se disputent (influence par unité, 100 d'influence par membre pour la famille gagnante) ; IV la Sensa, commandes +15 % et plus nombreuses. Le modificateur d'acte se multiplie avec l'événement du jour |
 | **Demande commune** | Les commandes des villes forment un tableau du monde, tiré chaque jour : 10 commandes de ville et 2 urgentes par marchand actif (`sharedOrdersPerActivePlayer`), complété si un marchand arrive dans la journée. Les commandes de ville sont payées la référence +10 % (`cityPriceBps`, contre +25 % sur le tableau personnel), plus le bonus de route. Le premier qui envoie un véhicule prend la commande ; le prix dépend de la route depuis sa région. Les matières premières restent réservées à leurs producteurs ; les commandes du Doge, de la famille et de bienvenue restent personnelles. Le bouton « Meilleur choix » disparaît |
+
+### Guildes, guerres de concessions, Rialto nécessaire (retour du porteur, octobre 2026)
+
+Constat : le marché ne sert à rien (les livraisons rapportent bien plus, les prix restent collés à la référence), les familles n'ont pas d'intérêt (l'influence ne rapporte rien, ni vote ni trésor), et il manque un vrai affrontement entre joueurs (le brigandage rapporte peu et frappe au hasard). Choix du porteur : des **guildes** où l'on investit, des **guerres commerciales pour des concessions**, un **Rialto rendu nécessaire**, le brigandage **en temps de guerre seulement**, le Port inchangé.
+
+La boucle : produire (Comptoir) → livrer (Routes) → s'approvisionner et revendre au Rialto → investir dans sa guilde → conquérir et défendre des concessions. Une guerre fait monter la demande d'un bien dans une ville : elle profite aux belligérants, aux fournisseurs sans guilde et aux vendeurs du Rialto.
+
+| Mécanique | Règle |
+| --- | --- |
+| **Guilde** | Fondée pour 50 d (détruits) avec une mise de 100 d au moins, 12 membres au plus, une guilde à la fois, dès le jour 2 (`guilds`). Le trésor est un compte du grand livre (`guild:<id>`) |
+| **Carats** | Chaque ducat versé au trésor achète des carats à leur valeur du moment (trésor ÷ carats émis) : investir ne change pas le patrimoine, et les carats comptent au classement à leur valeur. Partir rend les carats moins un cinquième, qui reste à la guilde ; le dernier membre reprend tout. En fin de saison, le trésor est partagé par carats. Pas d'achat de matières par la guilde |
+| **Votes** | Pondérés par les carats, aucun membre ne pesant plus de 40 % des carats. Une proposition passe dès qu'elle réunit la majorité de la guilde, ou au bout de 24 h si les oui l'emportent sur les non ; proposer vaut voter pour. Sujets : guerre, péage (0 à 8 %), part des recettes versée en dividendes, prime aux fournisseurs (0 à 0,50 d par unité), ouverture, exclusion (rachat à pleine valeur) |
+| **Concessions** | Douze biens dans les villes (`concessions`), à la Seigneurie au départ. Le détenteur lève son péage sur les livraisons des autres de ce bien à cette ville (versé au trésor, dividendes compris) et paie 10 % de plus à ses membres pour les leurs |
+| **Guerre commerciale** | Déclarée par vote : un trésor de guerre de 150 d quitte le trésor, une offensive à la fois par guilde. Pendant 48 h, chaque unité du bien livrée à la ville compte pour son camp ; celles du défenseur comptent 20 % de plus ; la Seigneurie défend par un seuil d'une unité par marchand actif. La ville commande davantage ce bien (un quart de commande par marchand actif et par jour). Le camp qui a le plus livré tient la concession, protégée 72 h (`wars`) |
+| **Fournisseurs** | Un marchand sans guilde s'engage auprès d'un camp : ses livraisons comptent pour lui, et la guilde de ce camp lui paie sa prime par unité tant que son trésor le permet |
+| **Brigandage de guerre** | Une bande ne se poste que sur la route d'une ville en guerre, par un marchand de l'un des camps, et ne frappe que les convois de l'autre camp portant le bien de la guerre (`bandits.warOnly`). Plus de bandes de l'ordinateur |
+| **Rialto nécessaire** | Le prix des commandes des villes suit le Rialto : moitié prix de référence, moitié prix moyen échangé jusqu'à la veille (avec un volume suffisant), entre 80 et 150 % de la référence (`deliveries.marketIndex`). Un prix fixé pour la journée et borné : vendre à perte un jour ne fait baisser les villes que de moitié, et pas sous 80 %. La Dogana devient un filet de sécurité : 10 achats et 5 ventes par jour et par bien |
+| **Le monument** | Le chantier de l'Arsenal (Acte III) se dispute entre guildes : la gagnante reçoit 300 d à son trésor et son monument sur la carte |
+| **Pass Négociant** | Aucun avantage de guilde ni de guerre : ni carat, ni voix, ni péage, ni prime |
+| **Écrans** | Onglet Guilde (fonder, rejoindre, investir, voter, concessions, guerres, fil de guilde). Routes en 3D : blasons des détenteurs sous les villes, minuteur et rapport de force d'une guerre. Fiche de ville : la guerre et ses concessions. Marché : « Demandes de guerre » |
 
 ## Vision et positionnement
 

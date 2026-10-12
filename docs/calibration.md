@@ -588,3 +588,29 @@ Les commandes prises par d'autres ne comptent plus dans « commandes livrables d
 **Lecture.** Le tableau est large : deux commandes sur trois expirent sans preneur. Les bots sont limités par leurs véhicules, pas par les commandes. La course existe : une quarantaine de commandes que le stock couvrait sont déjà prises à chaque session. Mais il reste presque toujours une autre commande à prendre, et la monnaie payée ne bouge pas.
 
 **Piste pour la bêta.** Pour une course plus serrée, baisser `deliveries.sharedOrdersPerActivePlayer` (10 aujourd'hui) vers 6 ou 7 et vérifier que la monnaie payée reste dans 151 à 185.
+
+## Guildes, guerres de concessions, Rialto nécessaire (octobre 2026)
+
+Réglages de Venise : `guilds` (fondation 50 d, mise 100 d, 12 membres, sortie −20 %, voix plafonnée à 40 %, votes 24 h), `concessions` (12), `wars` (48 h, trésor de guerre 150 d, défenseur +20 %, Seigneurie 1 unité par marchand actif, protection 72 h, membres +10 %, un quart de commande par marchand actif et par jour), `bandits.warOnly`, `deliveries.marketIndex` (50 %, entre 80 et 150 %), Dogana à 10 achats et 5 ventes par jour et par bien. Bots : les fondateurs proposent dividendes, péage, prime et guerres sur les biens de leur chaîne ; les membres votent pour ; les bots servent d'abord les commandes de leur guerre (en achetant ce qui manque au Rialto) ; sans guilde, ils fournissent l'attaquant.
+
+`pnpm sim`, 5 graines, toutes conformes :
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Guerres déclarées / gagnées par l'attaquant | 32 / 22 | 34 / 23 | 30 / 19 | 35 / 22 | 37 / 25 |
+| Concessions tenues par une guilde en fin de saison | 12 | 12 | 12 | 12 | 12 |
+| Péages (ducats) | 2 596 | 2 825 | 2 582 | 2 511 | 2 822 |
+| Monnaie payée (ducats / joueur actif / jour) | 153,3 | 154,5 | 157,0 | 156,3 | 156,4 |
+| Part du volume échangé entre joueurs | 90,1 % | 85,5 % | 84,4 % | 90,3 % | 88,1 % |
+| Gini à J+15 | 0,47 | 0,48 | 0,49 | 0,49 | 0,42 |
+| Masse monétaire par joueur actif en fin de saison | 372 | 480 | 402 | 372 | 418 |
+| Assidus devant occasionnels (diagnostic) | +72 % | +165 % | +387 % | −37 % | +359 % |
+
+**Lecture.**
+- Une première version (Seigneurie à 3 unités par marchand actif, bots indifférents aux commandes de guerre) donnait 19 guerres et aucune victoire d'attaquant : le seuil a été ramené à 1, et les bots en guerre servent d'abord ses commandes.
+- La monnaie payée baisse d'environ 20 ducats par jour (178 → 155) : le prix des villes suit désormais un Rialto où les bots vendent sous la référence. Elle reste dans la cible (151 à 185).
+- La masse monétaire de fin de saison baisse (≈ 770 → ≈ 400 ducats par joueur actif) : une partie dort dans les trésors de guilde jusqu'au partage final, et les trésors de guerre sont un nouveau puits.
+- Le brigandage de guerre reste rare et perdant pour les bots (−76 à −100 %) : peu de routes, peu de convois de l'autre camp. À surveiller avec de vrais joueurs ; pistes : une prise plus forte en guerre, ou des bandes plus longues.
+- L'écart entre assidus et occasionnels reste très bruité ; la graine 4 le met à −37 % (peu d'occasionnels en fin de saison, médiane instable).
+
+Le contrôle du Pass (`pnpm sim --pass 0.2`) est relancé après ce changement ; ses résultats sont ajoutés ci-dessous.

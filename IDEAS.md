@@ -8,8 +8,8 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - Parrainage avec blason exclusif.
 - Échanges d'épices et de soie entre joueurs (nécessite les ordres à cours limité).
 
-## Société vénitienne (plan dans docs/plan-familles.md)
-- Phase 1 faite : familles patriciennes.
+## Société vénitienne (plan abandonné dans docs/plan-familles.md)
+- Les familles patriciennes ont été remplacées par les guildes et les guerres de concessions.
 - Phase 2 : mariages entre maisons de joueurs (dot détruite, nom de Maison commun, classement de Prestige).
 - Phase 3 : commandite (*colleganza*) des convois d'un autre joueur.
 - Phase 4 : enchère des galères (*incanto*), puits de fin de saison.
@@ -19,14 +19,16 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 ## Les routes (suite des livraisons, voir docs/plan-livraisons.md)
 - Le roulage (phase 6) : confier une commande au véhicule d'un autre joueur contre une part du prix, avec une réputation de transporteur.
 - Améliorer les véhicules (essieux, chevaux de trait).
-- Des routes qui se dégradent, ou des péages tenus par des joueurs.
+- Des routes qui se dégradent (les péages tenus par des joueurs existent désormais : concessions des guildes).
 - Carte des routes : zoom à deux doigts et déplacement, quand il y aura plus de villes (aujourd'hui, 7 villes tiennent sur un écran).
 - Carte des routes : voir les véhicules des autres marchands (écarté pour l'instant : cela montrerait aux brigands les routes fréquentées).
 
-## Affrontement (proposés, non retenus pour l'instant)
+## Affrontement (le retenu : guerres de concessions entre guildes ; les autres pistes)
+- Corner du Rialto : accaparer une marchandise pour fixer son prix en ville ; les autres cassent le corner en vendant.
+- Alliances de guildes pour une guerre (deux trésors, un camp).
 - Convois de guilde : cargaisons groupées sous une même escorte, butin et risque partagés.
 - Défis entre marchands : mise sous séquestre, le plus gros gain sur 3 jours remporte le pot (moins une commission).
-- Appels d'offres du Doge : la commande va au joueur qui demande le prix le plus bas.
+- Appels d'offres du Doge : offres scellées (prix, quantité, caution), la commande va au moins cher qui tient parole.
 
 ## Ballots de Faraj (suite)
 - Album des présents : collection cosmétique des cartes reçues dans la saison.
@@ -40,7 +42,6 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - Cosmétiques à l'unité ; le Doge de la saison nomme un événement de la gazette de la saison suivante.
 - Emballage Capacitor pour les magasins d'applications ; notifications push.
 - Connexion Google / Apple.
-- Comptes de guilde dans le grand livre (trésorerie de guilde).
 
 ## V2
 - Plusieurs mondes en parallèle ; ouverture d'un nouveau monde quand le précédent dépasse J+14 (seulement si la population le permet sans vider les carnets).

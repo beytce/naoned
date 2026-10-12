@@ -1,5 +1,7 @@
 # Plan d'action : les familles et la société vénitienne
 
+> **Abandonné (octobre 2026).** Les familles sont remplacées par les guildes, leurs carats et leurs votes, et par les guerres de concessions : voir `docs/CADRAGE.md`, section « Guildes, guerres de concessions, Rialto nécessaire ». Les phases suivantes ci-dessous ne sont pas prévues ; certaines idées (commandite, prêts) restent dans `IDEAS.md`.
+
 11 octobre 2026. Suite de la réflexion sur les activités de l'époque : chaque activité ouvre une possibilité nouvelle, met des joueurs face à face et préserve l'économie.
 
 ## Principes

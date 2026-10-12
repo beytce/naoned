@@ -53,7 +53,7 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
 ## Mouvement
 
 - Un écran glisse depuis le côté de l'onglet d'où l'on vient. Ses blocs montent l'un après l'autre, à 45 ms d'écart.
-- Une lueur d'ambiance suit la section, en fondu : or au Comptoir et au Marché, lagune aux Routes et au Port, vermillon aux Familles. Une voile et une caisse floues dérivent lentement dans le fond.
+- Une lueur d'ambiance suit la section, en fondu : or au Comptoir et au Marché, lagune aux Routes et au Port, vermillon à la Guilde. Une voile et une caisse floues dérivent lentement dans le fond.
 - L'onglet actif de la barre du bas porte un trait biseauté et un fanion en coin. Les libellés sont en capitales mono.
 - Tout s'arrête pour qui demande moins de mouvement (`prefers-reduced-motion`).
 
@@ -143,11 +143,11 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
   - **Emblèmes** : marteau et enclume, roue, balance, ancre, sous le blason du Domaine et dans le classement.
 - **Frise de la saison** (`Acts`) : sous l'en-tête, le jour et l'acte en cours (chiffre romain et titre), une barre par acte (passés en lagune, en cours en or).
   - Un toucher ouvre la carte de l'acte, qui s'ouvre aussi d'elle-même à la première visite de chaque acte, après les premiers pas.
-  - À l'acte III, le panneau de l'Arsenal (avancement, livrer, course des familles) est en tête de l'onglet Familles.
+  - À l'acte III, le panneau de l'Arsenal (avancement, livrer, course des guildes) est dans l'onglet Guilde.
 - **Tableau commun** (`Routes`) : une ligne rappelle que les commandes des villes sont communes ; celles que d'autres ont prises sont repliées sous « déjà prises », avec le nom du preneur. Badge « Disputée · N » (les autres marchands actifs qui peuvent la prendre) : rouge sur une commande livrable tout de suite, discret sinon. Les nouvelles des routes publient les trois plus grosses prises du jour (« Bob a raflé 30 briques pour Venise »).
 - **Monument** (`RoadBoard`) : un obélisque blanc et or à côté de la ville d'un chantier d'acte gagné ; la feuille de la ville nomme la famille victorieuse.
 - **Notification d'acte** : à l'ouverture des actes II à IV, une notification « Acte II : la peste » (cloche et push), réglable comme les autres.
-- **Fil de la famille** (`Familles`, `Thread`) : messages des membres, les miens à droite sur fond lagune, « Signaler » sous ceux des autres, saisie en bas ; pastille sur l'onglet Familles quand un message n'a pas été lu.
+- **Fil de la guilde** (`Guilde`, `Thread`) : messages des membres, les miens à droite sur fond lagune, « Signaler » sous ceux des autres, saisie en bas ; pastille sur l'onglet Guilde quand un message n'a pas été lu ou qu'un vote attend.
 - **Objectif de saison** (`Comptoir`, `SeasonGoal`) : titre actuel et Renommée assurée, prochain palier et sa barre ; affiché après la première livraison.
 - **Brigands** : encadré d'infamie (prises de la saison, prime sur la tête, primes reçues) sous l'aide de l'écran Brigands.
 - **Criée** (`Criee`) : bandeau doré en tête de chaque écran tant qu'elle dure, avec la quantité vendable et un retour haptique « alarme » quand elle s'ouvre.
@@ -156,3 +156,10 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 - **Ballots de Faraj** (`Bales`) : tuile du Comptoir après les premiers pas, puis écran plein : la balle de toile flotte sur le quai, tremble et luit, le sceau de cire (marque de Faraj : croissant, mât, fanion, orbe, sœur du signe de quatre) éclate, trois connaissements sortent face cachée. Une carte rare ou mieux luit avant d'être retournée ; cadres parchemin, lagune, lapis, pourpre et or (seul usage de l'or hors argent et action principale) ; éclat doré et reflet pour une légendaire. Probabilités et histoire de Faraj sous le ballot.
 - **Pass Négociant** (`PassPanel`) : statut, avantages, comment le gagner, prix (paiement à venir). Sceau (le signe de quatre) à côté du nom dans les classements ; palette « Or de Venise » réservée.
 - **Retours haptiques** (`haptics.ts`) : léger au changement d'onglet, double pour une action qui rapporte, long pour une erreur, alarme pour une Criée ; réglables dans le Profil. Sur iPhone, Safari ne vibre pas : un interrupteur natif caché donne un petit clic.
+
+## Guilde et guerres
+
+- **Onglet Guilde** (`Guilde.tsx`), en tête un blason de guilde (`art/guildCrest.tsx` : bannière, couleur et symbole des blasons de joueurs). Sans guilde : la mise, les guildes à rejoindre (membres, trésor, ouverte ou non), la fondation (nom, couleur, symbole), les guerres où s'engager. Avec une guilde : trésor, valeur de 100 carats, carats, part et poids de vote ; verser au trésor ; ce que la guilde a voté ; les votes (barre pour en vert d'eau, contre en vermillon, trait de la majorité au milieu) et le formulaire de proposition ; guerres, concessions, chantier, fil, membres ; quitter en dernier, montant du rachat affiché.
+- **Guerres** (`wars.tsx`) : la barre de rapport de force met l'attaquant en or à gauche, le défenseur en vert d'eau à droite (la Seigneurie avec son seuil « à battre ») ; une carte de guerre a la lueur vermillon quand le marchand en est.
+- **Routes 3D** : sous le nom d'une ville, les blasons des guildes qui tiennent ses concessions ; en guerre, une pastille au bord vermillon (or si l'on en est) avec le minuteur et une mini-barre.
+- **Marché** : le bandeau « Demandes de guerre » en tête du Rialto, un bouton « Vendre » par bien demandé.
