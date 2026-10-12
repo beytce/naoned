@@ -1,4 +1,5 @@
 import { crieeRoom, currentCriee, dailyFor } from "./activity.js";
+import { balesFor } from "./bales.js";
 import { costForLevel } from "./buildings.js";
 import { quoteCitySale } from "./cities.js";
 import type { Command } from "./commands.js";
@@ -213,6 +214,7 @@ export class Bot {
     this.sessions++;
     this.onlineUntil = s.now + ONLINE_MS;
     this.respond(s);
+    this.openBales(s);
     this.refreshOrders(s);
     for (const b of this.buildings(s)) {
       if (b.job) s.act({ type: "collect", playerId: this.id, buildingId: b.id });
@@ -386,6 +388,14 @@ export class Bot {
   private claimDaily(s: Session): void {
     for (const t of dailyFor(s.ctx, s.state(), this.id, s.now).tasks) {
       if (t.done && !t.claimed) s.act({ type: "claimDaily", playerId: this.id, taskId: t.id });
+    }
+  }
+
+  /** Faraj's bales waiting: opened first, so their goods serve in this session. */
+  private openBales(s: Session): void {
+    const waiting = balesFor(s.ctx, s.state(), this.id, s.now)?.available ?? 0;
+    for (let i = 0; i < waiting; i++) {
+      if (!s.act({ type: "openBale", playerId: this.id })) break;
     }
   }
 

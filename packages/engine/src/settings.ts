@@ -245,6 +245,42 @@ export const worldSettingsSchema = z.object({
     })
     .default({ perDay: 0, tasks: [], chest: { ducats: 0, perStreakDay: 0, maxStreak: 1 } }),
   /**
+   * Faraj's bales: a friend of Alexandria sends a sealed bale every `intervalHours`, kept up to
+   * `maxStored`. Each holds `cardsPerBale` cards: a rarity drawn by weight, then one of its goods,
+   * then one to five units (`quantityWeights[i]` is the weight of i + 1 units). The raw good of
+   * the merchant's own region weighs `ownRegionWeightBps` of the others. Never sold, never better
+   * with the Pass. 0 hours turns them off.
+   */
+  bales: z
+    .object({
+      intervalHours: qty,
+      maxStored: positive,
+      /** Bales waiting on joining (Lorenzo brings the first one). */
+      onJoin: qty,
+      cardsPerBale: positive,
+      ownRegionWeightBps: bps.max(10_000),
+      rarities: z.array(
+        z.object({
+          code: z.string(),
+          weight: positive,
+          resources: z.array(z.string()).min(1),
+          quantityWeights: z
+            .array(qty)
+            .min(1)
+            .max(5)
+            .refine((w) => w.some((n) => n > 0), "at least one quantity"),
+        }),
+      ),
+    })
+    .default({
+      intervalHours: 0,
+      maxStored: 1,
+      onJoin: 0,
+      cardsPerBale: 1,
+      ownRegionWeightBps: 10_000,
+      rarities: [],
+    }),
+  /**
    * Pass Négociant: light advantages that only help a merchant who plays. Never ducats, goods,
    * production speed or a longer queue. All zero turns it off.
    */

@@ -326,6 +326,8 @@ export interface WorldState {
       best: number;
     }
   >;
+  /** Faraj's bales, per player (absent: none opened yet, see `bales.ts`). */
+  bales?: Record<PlayerId, BaleState>;
   vehicles?: Record<string, Vehicle>;
   deliveries?: Record<string, Delivery>;
   bands?: Record<string, BanditBand>;
@@ -343,6 +345,24 @@ export interface WorldState {
   families?: FamiliesState;
   /** Set once the final ranking has been published (event `season_closed`). */
   seasonClosed?: boolean;
+}
+
+/** One card of a bale: a few units of a good, of a given rarity. */
+export interface BaleCard {
+  rarity: string;
+  resource: ResourceCode;
+  quantity: number;
+}
+
+export interface BaleState {
+  /** Bales already waiting at `since` (at most the settings' `maxStored`). */
+  stored: number;
+  /** From then on, one more bale every `intervalHours`. */
+  since: number;
+  /** Bales opened this season: the number of the next one, for its draw. */
+  opened: number;
+  /** The last bale opened, shown again until the next one. */
+  last?: { seq: number; at: number; cards: BaleCard[] };
 }
 
 export interface FamiliesState {

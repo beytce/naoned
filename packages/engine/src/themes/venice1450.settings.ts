@@ -454,6 +454,49 @@ export const venice1450Settings: WorldSettingsInput = {
     ],
     chest: { ducats: 1_000, perStreakDay: 300, maxStreak: 5 },
   },
+  // Faraj's bales: one every six hours, two kept at most, three cards of one to five units.
+  // Rarity follows value; a bale is worth about 7.5 ducats on average (docs/calibration.md).
+  // Per card: common 74 %, uncommon 19.5 %, rare 5 %, epic 1.25 %, legendary 0.25 % (about one
+  // a season for a merchant who opens three or four a day).
+  bales: {
+    intervalHours: 6,
+    maxStored: 2,
+    onJoin: 1,
+    cardsPerBale: 3,
+    ownRegionWeightBps: 5_000,
+    rarities: [
+      {
+        code: "common",
+        weight: 7_400,
+        resources: ["wheat", "clay", "wood"],
+        quantityWeights: [55, 25, 10, 6, 4],
+      },
+      {
+        code: "uncommon",
+        weight: 1_950,
+        resources: ["flour", "bread", "bricks", "planks"],
+        quantityWeights: [65, 20, 9, 4, 2],
+      },
+      {
+        code: "rare",
+        weight: 500,
+        resources: ["salt", "wine"],
+        quantityWeights: [75, 15, 6, 3, 1],
+      },
+      {
+        code: "epic",
+        weight: 125,
+        resources: ["spices", "furs"],
+        quantityWeights: [850, 100, 30, 15, 5],
+      },
+      {
+        code: "legendary",
+        weight: 25,
+        resources: ["silk", "cloth"],
+        quantityWeights: [900, 70, 20, 8, 2],
+      },
+    ],
+  },
   // Offers between players: from a quarter to four times the reference price.
   priceBand: { minBps: 2_500, maxBps: 40_000 },
   // Pass Négociant: a fifth more at the Dogana, two more open offers, fresher produce (+8 %
