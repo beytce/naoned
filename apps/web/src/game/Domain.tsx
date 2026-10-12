@@ -1,15 +1,26 @@
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { Crest, defaultCrest } from "../art/crest.js";
-import { type DomainPlot, DomainScene, skyPhase } from "../art/domain.js";
+import {
+  type DomainPlot,
+  DomainScene,
+  type DomainVehicle,
+  type DomainWorker,
+  skyPhase,
+} from "../art/domain.js";
 import { MasteryEmblem } from "../art/mastery.js";
+import { ResourceIcon } from "../art/resources.js";
+import { GOODS_COLOUR } from "../art/veneto.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
-import { Label, Slab, clock } from "../ui.js";
-import { affordable } from "./Comptoir.js";
+import { Big, Label, Sheet, Slab, clock } from "../ui.js";
+import { Rations, StockStrip, affordable } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
+import { d } from "./format.js";
 import { underPoint } from "./gestures.js";
+import { OrderFacts, OrderPanel, canServe, total, vehicleName } from "./roadKit.js";
+import type { DeliveryOrderView } from "./types.js";
 import { useWide } from "./useWide.js";
-import { readyOf, workshopState } from "./workshops.js";
+import { have, readyOf, workshopState } from "./workshops.js";
 
 /** How long the golden burst of a new building or level lasts. */
 const BURST_MS = 3_000;
@@ -214,8 +225,66 @@ export function Domain(props: GameProps) {
   };
   const levels = view.buildings.reduce((n, b) => n + b.level, 0);
   const stock = view.inventory.reduce((n, i) => n + i.available, 0);
-  const home = (view.road?.vehicles ?? []).filter((v) => v.status === "free").map((v) => v.type);
   const crest = props.account.crest ?? defaultCrest(props.account.id);
+
+  // The vehicles: at the depot (inviting to load when the stock covers an order), or on the road.
+  const road = view.road;
+  const vehicles: DomainVehicle[] = (road?.vehicles ?? []).map((v) => {
+    const dv = road?.deliveries.find((x) => x.vehicleId === v.id && now < x.backAt);
+    if (!dv || v.status === "free") {
+      return {
+        id: v.id,
+        type: v.type,
+        where: "home",
+        progress: 0,
+        load: null,
+        ready: bestOrders(props, v.id).length > 0,
+        stopped: false,
+      };
+    }
+    const out = now < dv.arriveAt;
+    const progress = out
+      ? (now - dv.departAt) / Math.max(1, dv.arriveAt - dv.departAt)
+      : (now - dv.arriveAt) / Math.max(1, dv.backAt - dv.arriveAt);
+    return {
+      id: v.id,
+      type: v.type,
+      where: out ? "out" : "back",
+      progress: Math.max(0, Math.min(1, progress)),
+      load: out ? (GOODS_COLOUR[dv.resource] ?? null) : null,
+      ready: false,
+      stopped: dv.attack?.pending === true && now <= (dv.attack?.reactBy ?? 0),
+    };
+  });
+  // The workers: one per level of workshop (eight at most), on the rounds of the workshops.
+  const rations = view.rations;
+  const need: DomainWorker["need"] =
+    rations.perDay === 0
+      ? "ok"
+      : rations.hungryUntil > now
+        ? "hungry"
+        : have(view, rations.resource) < rations.perDay
+          ? "low"
+          : "ok";
+  const crafts = view.buildings.filter((b) => b.type !== "palazzo");
+  const stillMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+  const workers: DomainWorker[] = [];
+  for (let round = 0; workers.length < Math.min(8, levels) && round < 5; round++) {
+    for (const b of crafts) {
+      if (workers.length >= 8 || b.level <= round) continue;
+      const st = workshopState(props, b);
+      workers.push({
+        id: `${b.id}-${round}`,
+        plot: b.id,
+        // Those who ask for less motion see the workers wait at their doors.
+        walking: !stillMotion && (st.state === "running" || st.state === "ready"),
+        need,
+        bubble: workers.length < (need === "hungry" ? 3 : 2),
+      });
+    }
+  }
 
   return (
     <section className="overflow-hidden cut border border-line bg-night-2">
@@ -245,7 +314,20 @@ export function Domain(props: GameProps) {
           phase={skyPhase(parisHour(now))}
           plots={plots}
           maxPlots={catalog.rules.maxBuildings}
-          vehiclesHome={home}
+          vehicles={vehicles}
+          vehicleLabel={(v) =>
+            `${vehicleName(v.type)}, ${v.where === "home" ? fr.game.roadMap.stable.atDepot : v.where === "out" ? t.road.out : t.road.back}`
+          }
+          onVehicle={(v) => {
+            if (v.where === "home") props.setSheet(`load:${v.id}`);
+            else props.goTo("routes");
+          }}
+          workers={workers}
+          workerLabel={t.workersLabel}
+          onWorker={() => props.setSheet("rations")}
+          storeLabel={t.store.label}
+          onStore={() => props.setSheet("store")}
+          alert={vehicles.some((v) => v.stopped)}
           stock={stock}
           crest={<Crest crest={crest} size={26} />}
           emblem={
@@ -273,6 +355,7 @@ export function Domain(props: GameProps) {
         )}
       </div>
       <DomainBand {...props} />
+      <DomainSheets {...props} />
     </section>
   );
 }
@@ -292,6 +375,14 @@ function DomainBand(props: GameProps) {
     })
     .sort((x, y) => x.at - y.at)[0];
   const idle = view.buildings.some((b) => !b.job && b.canStart > 0);
+  // Orders the stock covers, for a free vehicle: the cart to load first is the one with the best.
+  const free = (view.road?.vehicles ?? []).filter((v) => v.status === "free");
+  const freeCount = free.length;
+  const loadable = [...new Set(free.flatMap((v) => bestOrders(props, v.id).map((o) => o.id)))];
+  const best = free
+    .map((v) => ({ id: v.id, top: bestOrders(props, v.id)[0] }))
+    .filter((x) => x.top)
+    .sort((a, b) => (a.top && b.top && total(a.top) > total(b.top) ? -1 : 1))[0]?.id;
   return (
     <div className="space-y-2 px-3 pb-3 pt-2">
       {ready > 0 ? (
@@ -322,7 +413,169 @@ function DomainBand(props: GameProps) {
       {!next && ready === 0 && !idle && (
         <p className="text-center text-sm text-cream-dim">{fr.game.idleAllHelp}</p>
       )}
+      {loadable.length > 0 && best && (
+        <button
+          type="button"
+          onClick={() => props.setSheet(`load:${best}`)}
+          className="cut flex w-full items-center justify-between gap-3 border border-gold/60 bg-gold/10 px-4 py-2.5 text-left text-sm text-gold transition active:scale-[0.99]"
+        >
+          <span className="font-semibold">
+            {fr.game.domain.loadable(loadable.length, freeCount)}
+          </span>
+          <span aria-hidden="true">→</span>
+        </button>
+      )}
       <p className="text-center text-[11px] text-muted">{fr.game.domain.hint}</p>
+    </div>
+  );
+}
+
+/** The open orders a free vehicle can take with the stock, the best paid first. */
+function bestOrders(props: GameProps, vehicleId: string): DeliveryOrderView[] {
+  const road = props.view.road;
+  const v = road?.vehicles.find((x) => x.id === vehicleId);
+  const capacity = props.catalog.road?.vehicles.find((x) => x.type === v?.type)?.capacity ?? 0;
+  if (!road || !v || v.status !== "free") return [];
+  return road.orders
+    .filter((o) => props.now >= o.opensAt && canServe(props, o, capacity))
+    .sort((a, b) => (total(a) === total(b) ? 0 : total(a) > total(b) ? -1 : 1));
+}
+
+/** The sheets the domain opens: loading a vehicle, the store, the workers' rations. */
+function DomainSheets(props: GameProps) {
+  const [kind, id] = (props.sheet ?? "").split(":");
+  const close = () => props.setSheet(null);
+  return (
+    <>
+      <Sheet open={kind === "load" && !!id} onClose={close}>
+        {kind === "load" && id && <LoadSheet key={id} vehicleId={id} props={props} />}
+      </Sheet>
+      <Sheet open={props.sheet === "store"} onClose={close}>
+        <div className="space-y-4 pt-6">
+          <h3 className="font-display text-xl font-extrabold uppercase">
+            {fr.game.domain.store.title}
+          </h3>
+          <StockStrip {...props} />
+          <div className="flex gap-2">
+            <Slab
+              tone="ghost"
+              className="flex-1"
+              onClick={() => {
+                close();
+                props.goTo("marche");
+              }}
+            >
+              {fr.game.domain.store.sell}
+            </Slab>
+            <Slab
+              className="flex-1"
+              onClick={() => {
+                close();
+                props.goTo("routes");
+              }}
+            >
+              {fr.game.domain.store.deliver}
+            </Slab>
+          </div>
+        </div>
+      </Sheet>
+      <Sheet open={props.sheet === "rations"} onClose={close}>
+        <RationsSheet {...props} />
+      </Sheet>
+    </>
+  );
+}
+
+/** A free vehicle at the depot: the best orders its load can fill from the stock, then the departure. */
+function LoadSheet({ vehicleId, props }: { vehicleId: string; props: GameProps }) {
+  const orders = bestOrders(props, vehicleId).slice(0, 3);
+  const [chosen, setChosen] = useState<string | null>(null);
+  const v = props.view.road?.vehicles.find((x) => x.id === vehicleId);
+  const order = props.view.road?.orders.find((o) => o.id === chosen);
+  const t = fr.game.domain.load;
+  if (order) {
+    return (
+      <div className="space-y-3">
+        <button type="button" className="label text-gold" onClick={() => setChosen(null)}>
+          ← {t.back}
+        </button>
+        <OrderPanel
+          o={order}
+          props={props}
+          vehicleId={vehicleId}
+          onDone={() => props.setSheet(null)}
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-4 pt-2">
+      <div>
+        <p className="label text-lagoon">{v ? vehicleName(v.type) : ""}</p>
+        <h3 className="mt-1 font-display text-2xl font-extrabold uppercase">{t.title}</h3>
+      </div>
+      {orders.length === 0 ? (
+        <p className="text-sm text-cream-dim">{t.none}</p>
+      ) : (
+        <div className="space-y-2">
+          {orders.map((o) => (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => setChosen(o.id)}
+              className="cut flex w-full items-center gap-3 border border-line bg-night-3 p-3 text-left transition active:scale-[0.99]"
+            >
+              <ResourceIcon code={o.resource} size={30} />
+              <span className="min-w-0 flex-1">
+                <span className="block font-display text-sm font-extrabold uppercase">
+                  {o.quantity} → {props.names.city(o.city)}
+                </span>
+                <OrderFacts o={o} props={props} />
+              </span>
+              <Big className="text-lg text-gold">{d(total(o))}</Big>
+            </button>
+          ))}
+        </div>
+      )}
+      <Slab
+        tone="ghost"
+        className="w-full"
+        onClick={() => {
+          props.setSheet(null);
+          props.goTo("routes");
+        }}
+      >
+        {t.all}
+      </Slab>
+    </div>
+  );
+}
+
+/** The workers' bread: the rations, and where to get bread. */
+function RationsSheet(props: GameProps) {
+  const bakery = props.view.buildings.find((b) => b.type === "bakery");
+  const t = fr.game.domain.workers;
+  return (
+    <div className="space-y-4 pt-6">
+      <h3 className="font-display text-xl font-extrabold uppercase">{t.title}</h3>
+      <Rations {...props} />
+      <div className="flex gap-2">
+        {bakery && (
+          <Slab className="flex-1" onClick={() => props.setSheet(`produce:${bakery.id}`)}>
+            {t.bake}
+          </Slab>
+        )}
+        <Slab
+          tone="ghost"
+          className="flex-1"
+          onClick={() => {
+            props.setSheet(null);
+            props.goTo("marche");
+          }}
+        >
+          {t.buy}
+        </Slab>
+      </div>
     </div>
   );
 }

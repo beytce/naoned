@@ -546,7 +546,28 @@ export const fr = {
         upgrade: "amélioration possible",
       },
       next: (building: string, left: string) => `${building} : prochain lot dans ${left}`,
-      hint: "Touchez un atelier pour récolter ou produire, une parcelle libre pour bâtir. Glissez le doigt sur les ateliers prêts pour tout récolter d'un geste.",
+      loadable: (n: number, free: number) =>
+        `${n} commande${n > 1 ? "s" : ""} couverte${n > 1 ? "s" : ""} par votre stock · ${free} véhicule${free > 1 ? "s" : ""} libre${free > 1 ? "s" : ""}`,
+      road: { out: "en route, chargé", back: "sur le retour" },
+      workersLabel: "Vos ouvriers : leurs rations de pain",
+      store: {
+        label: "L'entrepôt : votre stock",
+        title: "L'entrepôt",
+        sell: "Vendre au marché",
+        deliver: "Livrer",
+      },
+      load: {
+        title: "Charger",
+        back: "Les commandes",
+        none: "Aucune commande ouverte que votre stock couvre pour ce véhicule. Produisez, ou voyez toutes les commandes.",
+        all: "Toutes les commandes",
+      },
+      workers: {
+        title: "Vos ouvriers",
+        bake: "Cuire du pain",
+        buy: "Acheter au marché",
+      },
+      hint: "Touchez un atelier pour récolter ou produire, une charrette pour la charger, l'entrepôt pour votre stock, un ouvrier pour ses rations. Glissez le doigt sur les ateliers prêts pour tout récolter d'un geste.",
       title: (n: number, levels: number) =>
         `Votre domaine : ${n} atelier${n > 1 ? "s" : ""}, ${levels} niveau${levels > 1 ? "x" : ""} en tout`,
     },

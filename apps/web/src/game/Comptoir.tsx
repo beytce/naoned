@@ -154,7 +154,7 @@ function FirstSteps(props: GameProps & { inSheet?: boolean }) {
 }
 
 /** Workers eat: how much bread per day, how many days left, and a warning when short. */
-function Rations(props: GameProps) {
+export function Rations(props: GameProps) {
   const { rations } = props.view;
   if (rations.perDay === 0) return null;
   const stock = have(props.view, rations.resource);
@@ -184,7 +184,7 @@ function Rations(props: GameProps) {
   );
 }
 
-function StockStrip(props: GameProps) {
+export function StockStrip(props: GameProps) {
   return (
     <div>
       <Label className="mb-2">{fr.game.stock}</Label>
@@ -575,7 +575,6 @@ function BuildSheet({ type, props }: { type: string; props: GameProps }) {
   );
 }
 
-/** "N orders to deliver, M vehicles free": straight to the Routes tab. */
 /** What waits to be claimed in the day's notebook: tasks done, missions done, the chest. */
 export function carnetRewards(props: GameProps): number {
   const daily = props.view.daily?.tasks.filter((t) => t.done && !t.claimed).length ?? 0;
@@ -607,24 +606,6 @@ function CarnetButton(props: GameProps) {
       ) : (
         <span aria-hidden="true">→</span>
       )}
-    </button>
-  );
-}
-
-function RoadShortcut(props: GameProps) {
-  const road = props.view.road;
-  if (!road) return null;
-  const orders = road.orders.filter((o) => o.status === "open").length;
-  const free = road.vehicles.filter((v) => v.status === "free").length;
-  if (orders === 0) return null;
-  return (
-    <button
-      type="button"
-      onClick={() => props.goTo("routes")}
-      className={`flex w-full items-center justify-between gap-3 cut border px-4 py-3 text-left text-sm transition active:scale-[0.99] ${free > 0 ? "border-gold/60 bg-gold/10 text-gold" : "border-line bg-night-3 text-cream-dim"}`}
-    >
-      <span className="font-semibold">{fr.game.road.shortcut(orders, free)}</span>
-      <span aria-hidden="true">→</span>
     </button>
   );
 }
@@ -699,7 +680,6 @@ export function Comptoir(props: GameProps) {
             <CarnetButton {...props} />
             <MasteryTile {...props} />
             <BaleTile {...props} />
-            <RoadShortcut {...props} />
           </div>
         </div>
         <WorkshopList {...props} />
@@ -742,10 +722,11 @@ export function Comptoir(props: GameProps) {
         <div className="order-6 empty:hidden lg:order-none">
           <SeasonGoal {...props} />
         </div>
-        <div className="order-4 lg:order-none">
+        {/* On a phone, the store and the workers in the domain open them; on a computer they stay. */}
+        <div className="hidden lg:block">
           <StockStrip {...props} />
         </div>
-        <div className="order-5 empty:hidden lg:order-none">
+        <div className="hidden empty:hidden lg:block">
           <Rations {...props} />
         </div>
       </aside>

@@ -462,43 +462,250 @@ function YardGround() {
   );
 }
 
-/** The yard's buildings: the store with its piles of goods, the vehicles, the gate. */
-function Yard({ vehicles, stock }: { vehicles: string[]; stock: number }) {
+/** The yard's buildings: the store with its piles of goods (a touch opens it) and the gate. */
+function Yard({
+  stock,
+  storeLabel,
+  onStore,
+  alert,
+}: {
+  stock: number;
+  storeLabel: string;
+  onStore: () => void;
+  /** An ambush waiting for an answer: a red bubble over the gate. */
+  alert: boolean;
+}) {
   const piles = Math.min(4, Math.ceil(stock / 60));
+  const [gx, gy] = iso(GATE.x + 0.15, GATE.y + 1, 44);
   return (
     <g>
-      {/* The store: an open shed, crates and sacks under it. */}
-      <IsoBox x={0} y={9.4} w={2.2} d={1.6} h={3} color="#8C826D" />
-      {[0, 1, 2, 3].slice(0, piles).map((i) => (
-        <IsoBox
-          key={i}
-          x={0.2 + (i % 2) * 0.9}
-          y={9.6 + Math.floor(i / 2) * 0.7}
-          w={0.6}
-          d={0.5}
-          h={6 + (i % 3) * 3}
-          z={3}
-          color={i % 2 ? P.woodLight : P.wood}
+      <g
+        // biome-ignore lint/a11y/useSemanticElements: no <button> inside an SVG scene
+        role="button"
+        tabIndex={0}
+        aria-label={storeLabel}
+        data-coach="store"
+        className="cursor-pointer outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold"
+        onClick={onStore}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") onStore();
+        }}
+      >
+        <polygon
+          points={pts(
+            iso(-0.1, 9.3, 34),
+            iso(2.3, 9.3, 34),
+            iso(2.3, 9.3, 0),
+            iso(2.3, 11.1, 0),
+            iso(-0.1, 11.1, 0),
+            iso(-0.1, 11.1, 34),
+          )}
+          fill="transparent"
         />
-      ))}
-      {[0.1, 2.0].map((u) => (
-        <IsoBox key={u} x={u} y={9.4} w={0.12} d={0.12} h={22} z={3} color={P.wood} />
-      ))}
-      <IsoRoof x={-0.1} y={9.3} w={2.4} d={1.8} z={25} rise={7} color={ROOF_TILE} wall={P.wood} />
-      {/* Vehicles at the depot. */}
-      {vehicles.slice(0, 4).map((type, i) => {
-        const [a, b] = iso(3 + i * 1.5, 10.2);
-        return (
-          <g key={`${type}-${i * 1}`} transform={`translate(${a} ${b}) scale(1.1)`}>
-            <ellipse cx="0" cy="3" rx="16" ry="4" fill="#000" opacity="0.18" />
-            <VehicleGlyph type={type} />
-          </g>
-        );
-      })}
+        <IsoBox x={0} y={9.4} w={2.2} d={1.6} h={3} color="#8C826D" />
+        {[0, 1, 2, 3].slice(0, piles).map((i) => (
+          <IsoBox
+            key={i}
+            x={0.2 + (i % 2) * 0.9}
+            y={9.6 + Math.floor(i / 2) * 0.7}
+            w={0.6}
+            d={0.5}
+            h={6 + (i % 3) * 3}
+            z={3}
+            color={i % 2 ? P.woodLight : P.wood}
+          />
+        ))}
+        {[0.1, 2.0].map((u) => (
+          <IsoBox key={u} x={u} y={9.4} w={0.12} d={0.12} h={22} z={3} color={P.wood} />
+        ))}
+        <IsoRoof x={-0.1} y={9.3} w={2.4} d={1.8} z={25} rise={7} color={ROOF_TILE} wall={P.wood} />
+      </g>
       {/* The gate. */}
       <IsoBox x={GATE.x} y={GATE.y} w={0.3} d={0.3} h={26} color={STONE} />
       <IsoBox x={GATE.x} y={GATE.y + 1.7} w={0.3} d={0.3} h={26} color={STONE} />
       <IsoBox x={GATE.x} y={GATE.y} w={0.3} d={2} h={5} z={26} color={STONE} top={P.vermilion} />
+      {alert && (
+        <g transform={`translate(${gx} ${gy})`}>
+          <animateTransform
+            attributeName="transform"
+            type="translate"
+            values={`${gx} ${gy};${gx} ${gy - 3};${gx} ${gy}`}
+            dur="0.8s"
+            repeatCount="indefinite"
+          />
+          <path d="M-4 9 L0 15 L4 9 Z" fill={P.vermilion} />
+          <circle r="11" fill={P.vermilion} />
+          <text textAnchor="middle" y="4.5" fontSize="12" fill={P.cream}>
+            ⚔
+          </text>
+        </g>
+      )}
+    </g>
+  );
+}
+
+/** A vehicle of the merchant: at the depot, or on the road out (loaded) and back (empty). */
+export interface DomainVehicle {
+  id: string;
+  type: string;
+  where: "home" | "out" | "back";
+  /** On the road: share of the leg done (0 to 1). */
+  progress: number;
+  /** Colour of the goods carried, when loaded. */
+  load: string | null;
+  /** At the depot with an order its stock covers: a bubble invites to load it. */
+  ready: boolean;
+  /** Stopped by bandits, waiting for an answer. */
+  stopped: boolean;
+}
+
+/** A vehicle in the yard or on the road, which a touch opens. */
+function Vehicle({
+  v,
+  slot,
+  label,
+  onSelect,
+}: {
+  v: DomainVehicle;
+  slot: number;
+  label: string;
+  onSelect: () => void;
+}) {
+  // At the depot: parked side by side. On the road: from the gate out, or back to it.
+  const lane = YARD.y + 0.65 + (slot % 2) * 0.55;
+  const along = v.where === "out" ? v.progress : 1 - v.progress;
+  const at = v.where === "home" ? iso(3 + slot * 1.5, 10.2) : iso(GATE.x + 0.8 + along * 3.4, lane);
+  return (
+    <g
+      // biome-ignore lint/a11y/useSemanticElements: no <button> inside an SVG scene
+      role="button"
+      tabIndex={0}
+      aria-label={label}
+      data-vehicle={v.id}
+      className="cursor-pointer outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold"
+      style={{ transform: `translate(${at[0]}px, ${at[1]}px)`, transition: "transform 1s linear" }}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onSelect();
+      }}
+    >
+      <rect x="-18" y="-16" width="36" height="24" fill="transparent" />
+      <ellipse cx="0" cy="3" rx="16" ry="4" fill="#000" opacity="0.18" />
+      <g transform={v.where === "back" ? "scale(-1.1 1.1)" : "scale(1.1)"}>
+        <g className={v.where === "home" ? undefined : "cart-roll"}>
+          <VehicleGlyph type={v.type} load={v.load} />
+        </g>
+      </g>
+      {(v.ready || v.stopped) && (
+        <g transform="translate(0 -26) scale(0.85)">
+          {v.stopped ? (
+            <g>
+              <path d="M-4 9 L0 15 L4 9 Z" fill={P.vermilion} />
+              <circle r="11" fill={P.vermilion} />
+              <text textAnchor="middle" y="4.5" fontSize="12" fill={P.cream}>
+                ⚔
+              </text>
+            </g>
+          ) : (
+            <Bubble plot={{ id: v.id, type: v.type, level: 1, state: "idle", burst: false }} />
+          )}
+        </g>
+      )}
+    </g>
+  );
+}
+
+/** A worker of the house and the bread they need. */
+export interface DomainWorker {
+  id: string;
+  /** The workshop they serve. */
+  plot: string;
+  /** Walking between the workshop and the store while it produces, waiting at its door when not. */
+  walking: boolean;
+  /** Bread: enough, short (less than a day in store), or none (hungry, slower). */
+  need: "ok" | "low" | "hungry";
+  /** Shows the bubble of the need (not every worker carries it, when short). */
+  bubble: boolean;
+}
+
+const SHIRTS = ["#6DB3A2", "#E0AD4B", "#E2694F", "#8E6BD8", "#F1E4C6", "#3FA36B"];
+
+/** A worker on their round between their workshop's door and the store. */
+function Worker({
+  w,
+  home,
+  index,
+  label,
+  onSelect,
+}: {
+  w: DomainWorker;
+  home: { x: number; y: number };
+  index: number;
+  label: string;
+  onSelect: () => void;
+}) {
+  const door = iso(home.x + 1, home.y + 2.25);
+  const lane = iso(home.x + 1, 8.7);
+  const store = iso(1.1 + (index % 3) * 0.3, 8.75);
+  const route = [door, lane, store, lane, door];
+  const length = route.slice(1).reduce((n, p, i) => {
+    const q = route[i] ?? p;
+    return n + Math.hypot(p[0] - q[0], p[1] - q[1]);
+  }, 0);
+  const speed = w.need === "hungry" ? 9 : 16;
+  const dur = Math.max(6, length / speed);
+  const path = `M${route.map(([a, b]) => `${a.toFixed(1)} ${b.toFixed(1)}`).join(" L")}`;
+  const wait = iso(home.x + 0.55 + (index % 2) * 0.9, home.y + 2.35);
+  return (
+    <g
+      // biome-ignore lint/a11y/useSemanticElements: no <button> inside an SVG scene
+      role="button"
+      tabIndex={0}
+      aria-label={label}
+      data-worker={w.id}
+      className="cursor-pointer outline-none"
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onSelect();
+      }}
+      transform={w.walking ? undefined : `translate(${wait[0]} ${wait[1]})`}
+    >
+      {w.walking && (
+        <animateMotion
+          path={path}
+          dur={`${dur.toFixed(1)}s`}
+          begin={`-${((index * 7.3) % dur).toFixed(1)}s`}
+          repeatCount="indefinite"
+        />
+      )}
+      <rect x="-6" y="-16" width="12" height="18" fill="transparent" />
+      <ellipse cx="0" cy="1" rx="4.5" ry="1.8" fill="#000" opacity="0.22" />
+      <g className={w.walking ? "worker-step" : undefined}>
+        <rect
+          x="-3.2"
+          y="-9"
+          width="6.4"
+          height="9"
+          rx="3"
+          fill={SHIRTS[index % SHIRTS.length]}
+          stroke={P.night}
+          strokeWidth="0.7"
+        />
+        <circle cy="-11.5" r="3.2" fill="#E7B98F" stroke={P.night} strokeWidth="0.7" />
+        <path d="M-3.2 -12.5 Q0 -16.5 3.2 -12.5 Z" fill="#4A3426" />
+      </g>
+      {w.bubble && w.need !== "ok" && (
+        <g transform="translate(0 -26) scale(0.7)">
+          <path d="M-4 9 L0 15 L4 9 Z" fill={w.need === "hungry" ? P.vermilion : P.cream} />
+          <circle
+            r="11"
+            fill={w.need === "hungry" ? P.vermilion : P.cream}
+            stroke={P.night}
+            strokeWidth="1"
+          />
+          <Icon code="bread" x={0} y={0} size={15} />
+        </g>
+      )}
     </g>
   );
 }
@@ -517,8 +724,18 @@ export function DomainScene(props: {
   plots: DomainPlot[];
   /** Plots a merchant may build on. */
   maxPlots: number;
-  /** Vehicles at the depot (the others are on the road). */
-  vehiclesHome: string[];
+  /** The vehicles, at the depot or on the road. */
+  vehicles: DomainVehicle[];
+  vehicleLabel: (v: DomainVehicle) => string;
+  onVehicle: (v: DomainVehicle) => void;
+  /** The workers, on their rounds, and what they need. */
+  workers: DomainWorker[];
+  workerLabel: string;
+  onWorker: () => void;
+  storeLabel: string;
+  onStore: () => void;
+  /** An ambush waits for an answer on the road. */
+  alert: boolean;
   /** Units in store, for the piles of goods. */
   stock: number;
   /** The merchant's arms, drawn on the mast. */
@@ -615,7 +832,36 @@ export function DomainScene(props: {
           onSelect={() => props.onPlot(plot)}
         />
       ))}
-      <Yard vehicles={props.vehiclesHome} stock={props.stock} />
+      <Yard
+        stock={props.stock}
+        storeLabel={props.storeLabel}
+        onStore={props.onStore}
+        alert={props.alert}
+      />
+      {props.workers.map((w, i) => {
+        const home = placed.find((p) => p.plot.id === w.plot)?.at;
+        return home ? (
+          <Worker
+            key={w.id}
+            w={w}
+            home={home}
+            index={i}
+            label={props.workerLabel}
+            onSelect={props.onWorker}
+          />
+        ) : null;
+      })}
+      {props.vehicles.map((v, i) => (
+        <Vehicle
+          key={v.id}
+          v={v}
+          slot={
+            v.where === "home" ? props.vehicles.filter((x) => x.where === "home").indexOf(v) : i
+          }
+          label={props.vehicleLabel(v)}
+          onSelect={() => props.onVehicle(v)}
+        />
+      ))}
       {props.children}
       {/* The mast with the merchant's arms, at the corner of the yard. */}
       <g transform={`translate(${mx} ${my})`}>

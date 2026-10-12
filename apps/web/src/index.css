@@ -238,6 +238,30 @@
   }
 }
 
+/* The domain's people and carts: a worker's step, a cart's jolt on the road. */
+.worker-step {
+  animation: worker-step 0.5s ease-in-out infinite alternate;
+}
+@keyframes worker-step {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-1.5px);
+  }
+}
+.cart-roll {
+  animation: cart-roll 0.7s ease-in-out infinite alternate;
+}
+@keyframes cart-roll {
+  0% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  100% {
+    transform: translateY(-1px) rotate(1deg);
+  }
+}
+
 /* The domain: a workshop harvested jumps; what it gave rises from its plot and fades. */
 .domain-bump {
   transform-box: fill-box;

@@ -63,10 +63,6 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
   - Chaque récolte : rebond de l'atelier, « +N » qui s'envole, tick haptique.
   - Une traînée dorée suit le doigt, et les récoltes partent l'une après l'autre.
   - La page défile normalement si le geste part d'ailleurs. Fonctionne aussi à la souris.
-- **Porter un véhicule** : un véhicule libre se prend sur la carte (plateau « Glissez vers une ville ») ou dans l'écurie.
-  - Pendant le glissé, les villes qu'il peut servir s'allument ; celle survolée pulse en or, avec un tick.
-  - Le lâcher sur une ville ouvre sa feuille avec la commande la mieux payée que le véhicule peut prendre, prête à partir.
-  - Lâché ailleurs, il revient à sa place.
 - **Feuilles** : tirées vers le bas depuis le haut de leur défilement, elles suivent le doigt (avec résistance). Au-delà d'un tiers de leur hauteur ou d'un geste vif, elles se ferment ; sinon elles reviennent.
 - **Sous-onglets** : un glissé horizontal passe de la carte à la liste aux Routes, et des joueurs aux villes au Marché. Il ne joue pas depuis un véhicule ou un champ de saisie.
 
@@ -107,6 +103,16 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
   - **Niveaux** : II bannière, III socle de pierre et un étage, IV tour d'angle et fanion, V toits dorés et un étage de plus. Plaque en chiffres romains au pied ; petite flèche dorée quand une amélioration est abordable.
   - **Bâtir** : seules les deux prochaines parcelles libres sont en pointillé, avec « À bâtir ».
   - **Cour** : bande pavée devant les parcelles, avec l'entrepôt (hangar et piles selon le stock), les véhicules au dépôt et la porte vers la route. Le blason flotte sur le mât, au coin.
+  - **Entrepôt** : le toucher ouvre le stock, avec « Vendre au marché » et « Livrer ».
+  - **Véhicules** : au dépôt, une bulle ▶ dit qu'une commande couverte par le stock les attend.
+    - Le toucher ouvre « Charger » : les trois commandes ouvertes les mieux payées que ce véhicule peut prendre avec le stock, puis le départ (escorte, « Charger et partir »).
+    - Une livraison en cours se voit sur la route au-delà de la porte, chargée à l'aller, vide au retour, à sa place selon le trajet.
+    - Une embuscade met une bulle ⚔ sur la charrette et sur la porte.
+  - **Ouvriers** : un par niveau d'atelier, huit au plus. Ils vont et viennent entre leur atelier et l'entrepôt quand il produit, et attendent devant sa porte sinon.
+    - Bulle crème du pain quand la réserve passe sous un jour, vermillon quand ils ont faim ; affamés, ils marchent plus lentement.
+    - Le toucher ouvre leurs rations, avec « Cuire du pain » et « Acheter au marché ».
+  - **Bandeau** : sa deuxième ligne compte les commandes couvertes par le stock et les véhicules libres. Le toucher ouvre « Charger » sur le véhicule qui a la meilleure.
+  - Sur téléphone, le stock et les rations ne s'affichent plus sous le Domaine (l'entrepôt et les ouvriers les ouvrent). Sur ordinateur, ils restent dans la colonne de droite.
   - **Bulles d'état** au-dessus du toit, de même taille du premier plan au fond :
     - sac doré « +N » et icône de la marchandise : récolte prête ;
     - anneau lagune et temps restant : lot en cours ;
