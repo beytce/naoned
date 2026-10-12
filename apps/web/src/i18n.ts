@@ -188,7 +188,7 @@ export const fr = {
     bandits: {
       title: "Poster une bande",
       help: (attacks: number, takePct: number, keptPct: number) =>
-        `Postez des brigands sur une route pour quelques heures. Ils tentent ${attacks} attaques au plus et prennent ${takePct} % de la cargaison${keptPct < 100 ? `, dont vous gardez ${keptPct} %` : ", que vous gardez entière"}. Chaque prise accroît votre infamie, et la prime que le Doge verse à qui vous repousse. Une victime qui riposte disperse votre bande ; une escorte vous repousse souvent. Personne n'attaque entre 22 h et 8 h, ni les nouveaux venus, ni les marchands de votre famille.`,
+        `En temps de guerre seulement : sur la route d'une ville en guerre, si vous êtes de l'un des camps (membre d'une guilde belligérante ou fournisseur engagé), vos brigands ne s'en prennent qu'aux convois de l'autre camp. Postez-les pour quelques heures. Ils tentent ${attacks} attaques au plus et prennent ${takePct} % de la cargaison${keptPct < 100 ? `, dont vous gardez ${keptPct} %` : ", que vous gardez entière"}. Chaque prise accroît votre infamie, et la prime que le Doge verse à qui vous repousse. Une victime qui riposte disperse votre bande ; une escorte vous repousse souvent. Personne n'attaque entre 22 h et 8 h, ni les nouveaux venus, ni les marchands de votre famille.`,
       infamy: (n: number) =>
         n > 0 ? `Infamie : ${n} prise${n > 1 ? "s" : ""} cette saison` : "Infamie : aucune prise",
       bountyOnHead: (amount: string) => `Prime sur votre tête : ${amount}`,
@@ -374,6 +374,40 @@ export const fr = {
         `Vous êtes le dernier membre : vous reprenez tout le trésor (${refund}) et la guilde est dissoute.`,
       leaveConfirm: "Quitter",
       cancel: "Annuler",
+    },
+    wars: {
+      war: "Guerre commerciale",
+      title: (good: string, city: string) => `${good} de ${city}`,
+      seigneurie: "La Seigneurie",
+      threshold: "à battre",
+      yourSide: (side: string) => `Vous livrez pour ${side}`,
+      supplied: (n: number) => `${n} unités livrées`,
+      enlistHelp:
+        "Sans guilde, vous pouvez fournir un camp : vos livraisons de ce bien à cette ville comptent pour lui, et sa guilde vous paie sa prime par unité.",
+      supply: (side: string, bounty: string) => `Fournir ${side} · ${bounty}/u.`,
+      toRoad: "Livrer sur la carte",
+      concessions: "Les concessions",
+      concessionsHelp: (premium: number, stake: string, hours: number) =>
+        `Une guilde qui tient une concession lève son péage sur les livraisons des autres et paie ${premium} % de plus à ses membres. Pour la prendre : un vote, un trésor de guerre de ${stake}, et ${hours} h pour livrer plus que le camp d'en face.`,
+      toll: (pct: number) => `péage ${pct} %`,
+      concessionLine: (good: string, holder: string, toll: number) =>
+        `Concession · ${good} : ${holder}${toll > 0 ? `, péage ${toll} %` : ""}`,
+      declare: "Guerre",
+      live: "Les guerres en cours",
+      none: "Aucune guerre en cours.",
+      recent: "Guerres récentes",
+      refusals: {
+        own_concession: "Votre guilde la tient déjà.",
+        concession_protected: "Protégée après sa dernière guerre.",
+        war_under_way: "Une guerre s'y livre déjà.",
+        guild_at_war: "Votre guilde mène déjà une guerre.",
+        treasury_short: "Le trésor ne couvre pas le trésor de guerre.",
+        no_guild: "Rejoignez une guilde.",
+      } as Record<string, string>,
+      banner: "Demandes de guerre",
+      bannerHelp: "Une ville en guerre commande davantage : vendez aux belligérants.",
+      sell: "Vendre",
+      atWar: "En guerre",
     },
     port: {
       kicker: "Port de Venise",
@@ -1277,6 +1311,17 @@ export const fr = {
       invalid_proposal: "Proposition hors des limites.",
       unknown_proposal: "Vote introuvable.",
       proposal_closed: "Ce vote est déjà clos.",
+      unknown_concession: "Concession inconnue.",
+      own_concession: "Votre guilde tient déjà cette concession.",
+      concession_protected: "Cette concession est protégée après sa dernière guerre.",
+      war_under_way: "Une guerre s'y livre déjà.",
+      guild_at_war: "Votre guilde mène déjà une guerre.",
+      treasury_short: "Le trésor ne couvre pas le trésor de guerre.",
+      unknown_war: "Guerre introuvable ou finie.",
+      already_enlisted: "Vous fournissez déjà un camp.",
+      no_side: "Ce camp ne recrute pas.",
+      no_war:
+        "Le brigandage n'est permis que pendant une guerre, sur sa route, par l'un de ses camps.",
     } as Record<string, string>,
   },
 

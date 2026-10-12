@@ -32,6 +32,17 @@ export interface Catalog {
   privateers: PrivateerRules;
   /** Deliveries by road and bandits (null when the world has none). */
   road: RoadRules | null;
+  /** Trade wars' rules, and the concessions (none: no wars). */
+  warRules: {
+    hours: number;
+    stake: Money;
+    defenderBonusBps: number;
+    protectHours: number;
+    seigneurieUnitsPerActive: number;
+    memberPremiumBps: number;
+    ordersPerActiveBps: number;
+  };
+  concessions: { code: string; city: string; resource: string }[];
   /** The guilds' rules (maxMembers 0: guilds are off). */
   guildRules: {
     openDay: number;
@@ -369,6 +380,51 @@ export interface MyGuildView {
   proposals: ProposalView[];
 }
 
+export type WarSide = "attacker" | "defender";
+
+export interface ConcessionView {
+  code: string;
+  city: string;
+  resource: string;
+  holder: string | null;
+  holderName: string | null;
+  holderEmblem: string | null;
+  tollBps: number;
+  protectedUntil: number;
+  war: string | null;
+  /** Why the merchant's guild may not declare war on it now (null: it may). */
+  refusal: string | null;
+}
+
+export interface WarView {
+  id: string;
+  concession: string;
+  city: string;
+  resource: string;
+  attacker: string;
+  attackerName: string;
+  attackerEmblem: string | null;
+  defender: string | null;
+  defenderName: string | null;
+  defenderEmblem: string | null;
+  startAt: number;
+  endAt: number;
+  /** Units the Seigneurie stands for, when it defends. */
+  threshold: number;
+  score: { attacker: number; defender: number };
+  outcome: WarSide | null;
+  side: WarSide | null;
+  supplied: number;
+  enlisted: number;
+  bounty: { attacker: Money; defender: Money };
+}
+
+export interface WarsView {
+  concessions: ConcessionView[];
+  live: WarView[];
+  recent: WarView[];
+}
+
 export interface GuildsView {
   opensAt: number;
   mine: MyGuildView | null;
@@ -488,6 +544,7 @@ export interface PlayerView {
   monuments: { city: string; guild: string; act: number }[];
   contracts: ContractView[];
   guilds: GuildsView | null;
+  wars: WarsView | null;
   gazette: { current: GazetteEvent | null; next: GazetteEvent | null };
   expeditions: ExpeditionView[];
   book: Record<string, BookView>;
@@ -807,9 +864,10 @@ export type Action =
       type: "propose";
       proposal:
         | { kind: "toll" | "dividend" | "bounty" | "open"; value: number }
-        | { kind: "exclude"; target: string };
+        | { kind: "exclude" | "war"; target: string };
     }
   | { type: "vote"; proposalId: string; yes: boolean }
+  | { type: "enlist"; warId: string; side: WarSide }
   | {
       type: "launchExpedition";
       destination: string;

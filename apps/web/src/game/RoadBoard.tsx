@@ -35,6 +35,7 @@ import {
 } from "./roadKit.js";
 import { scenePhase, use3d } from "./scene3d.js";
 import type { DeliveryOrderView, DeliveryView, RoadView, VehicleView } from "./types.js";
+import { WarCard } from "./wars.js";
 
 const Veneto3D = lazy(() => import("../routes3d/Veneto3D.js"));
 
@@ -181,6 +182,25 @@ export function RoadBoard(
                   urgent: urgent ? clock(urgent.expiresAt - props.now) : null,
                   time: reached && (!focused || lit) ? minutesLabel(roadMinutes(code) ?? 0) : null,
                   watched: road.watchedRoutes.includes(`${region}:${code}`),
+                  holders: [
+                    ...new Set(
+                      (props.view.wars?.concessions ?? [])
+                        .filter((x) => x.city === code && x.holderEmblem)
+                        .map((x) => x.holderEmblem ?? ""),
+                    ),
+                  ],
+                  war: (() => {
+                    const w = props.view.wars?.live.find((x) => x.city === code);
+                    if (!w) return null;
+                    const defence = w.defender
+                      ? w.score.defender
+                      : Math.max(w.threshold, w.score.defender);
+                    return {
+                      share: w.score.attacker / Math.max(1, w.score.attacker + defence),
+                      left: clock(w.endAt - props.now),
+                      mine: w.side !== null,
+                    };
+                  })(),
                   monument: props.view.monuments.some((x) => x.city === code),
                 };
               })}
@@ -854,6 +874,23 @@ function CitySheet({
           ⚔ {t().watchedWarning}
         </p>
       )}
+      {(props.view.wars?.live ?? [])
+        .filter((w) => w.city === city)
+        .map((w) => (
+          <WarCard key={w.id} war={w} props={props} />
+        ))}
+      {(props.view.wars?.concessions ?? [])
+        .filter((c) => c.city === city)
+        .map((c) => (
+          <p key={c.code} className="flex items-center gap-2 text-xs text-cream-dim">
+            <ResourceIcon code={c.resource} size={18} />
+            {fr.game.wars.concessionLine(
+              props.names.resource(c.resource).toLowerCase(),
+              c.holderName ?? fr.game.wars.seigneurie,
+              Math.round(c.tollBps / 100),
+            )}
+          </p>
+        ))}
       {orders.length === 0 && <p className="text-sm text-cream-dim">{m().noOrder}</p>}
       <div className="space-y-2">
         {orders.map((o) => {

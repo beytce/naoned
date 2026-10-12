@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { SkyPhase } from "../art/domain.js";
+import { GuildCrest } from "../art/guildCrest.js";
 import type { VenetoHit, VenetoState, VenetoWorld } from "./world.js";
 
 export interface CityMark {
@@ -21,6 +22,10 @@ export interface CityMark {
   watched: boolean;
   /** A monument of the town (won worksite). */
   monument: boolean;
+  /** Emblems of the guilds holding its concessions. */
+  holders: string[];
+  /** A war for one of its goods: the attacker's share of the units, and the time left. */
+  war: { share: number; left: string; mine: boolean } | null;
 }
 
 export interface VehicleMark {
@@ -160,6 +165,28 @@ export default function Veneto3D(props: Veneto3DProps) {
                   {c.monument ? "▲ " : ""}
                   {c.name}
                 </p>
+                {c.holders.length > 0 && (
+                  <span className="mt-0.5 flex justify-center gap-0.5">
+                    {c.holders.map((e) => (
+                      <GuildCrest key={e} emblem={e} size={16} />
+                    ))}
+                  </span>
+                )}
+                {c.war && (
+                  <span
+                    className={`mx-auto mt-0.5 block w-20 rounded-full bg-night/85 px-1.5 py-0.5 ring-1 ${c.war.mine ? "ring-gold" : "ring-vermilion"}`}
+                  >
+                    <span className="block text-center font-mono text-[9px] leading-3 text-vermilion">
+                      ⚔ {c.war.left}
+                    </span>
+                    <span className="mt-0.5 block h-1 overflow-hidden rounded-full bg-lagoon">
+                      <span
+                        className="block h-full bg-gold"
+                        style={{ width: `${Math.round(c.war.share * 100)}%` }}
+                      />
+                    </span>
+                  </span>
+                )}
                 {c.time && (
                   <p
                     className={`mx-auto mt-0.5 w-fit rounded-full px-1.5 font-mono text-[9px] leading-[14px] [text-shadow:none] ${c.watched ? "bg-vermilion text-cream" : "bg-night/70 text-cream-dim"}`}

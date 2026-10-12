@@ -446,6 +446,41 @@ function CityCard({ resource, props }: { resource: string; props: GameProps }) {
   );
 }
 
+/**
+ * Wars make a city ask for more of a good: what is wanted where, and a short way to sell it to
+ * the merchants who fight for it.
+ */
+function WarDemand({ props }: { props: GameProps }) {
+  const live = props.view.wars?.live ?? [];
+  if (live.length === 0) return null;
+  const w = fr.game.wars;
+  return (
+    <Panel glow="vermilion">
+      <Label className="text-vermilion">⚔ {w.banner}</Label>
+      <p className="mt-1 text-xs text-cream-dim">{w.bannerHelp}</p>
+      <ul className="mt-3 space-y-2">
+        {live.map((war) => (
+          <li key={war.id} className="flex items-center gap-3">
+            <ResourceIcon code={war.resource} size={30} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">
+                {w.title(props.names.resource(war.resource), props.names.city(war.city))}
+              </p>
+              <p className="truncate text-xs text-cream-dim">
+                {war.attackerName} ⚔ {war.defenderName ?? w.seigneurie} ·{" "}
+                {clock(war.endAt - props.now)}
+              </p>
+            </div>
+            <Slab size="sm" onClick={() => props.setSheet(`trade:${war.resource}`)}>
+              {w.sell}
+            </Slab>
+          </li>
+        ))}
+      </ul>
+    </Panel>
+  );
+}
+
 export function Marche(props: GameProps) {
   const lines = props.view.market;
   // A swipe turns from the merchants' market to the cities' and back, as the tabs.
@@ -483,6 +518,7 @@ export function Marche(props: GameProps) {
       {props.marketTab === "joueurs" ? (
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:items-start lg:gap-8">
           <div className="space-y-6">
+            <WarDemand props={props} />
             {props.view.openOrders.length > 0 && (
               <MyOffers orders={props.view.openOrders} props={props} />
             )}

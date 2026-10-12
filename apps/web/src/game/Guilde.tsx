@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "../api.js";
 import { CREST_COLORS, CREST_SYMBOLS, Crest } from "../art/crest.js";
+import { GuildCrest } from "../art/guildCrest.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Ribbon, Slab, Stat, clock } from "../ui.js";
 import { WorksitePanel } from "./Acts.js";
@@ -9,16 +10,9 @@ import { gameApi } from "./api.js";
 import { d } from "./format.js";
 import { store } from "./store.js";
 import type { GuildMessage, GuildsView, MyGuildView, ProposalKind, ProposalView } from "./types.js";
+import { Concessions, WarList } from "./wars.js";
 
 const t = () => fr.game.guilds;
-
-/** A guild's emblem, "colour-symbol" (or a symbol alone), on a banner. */
-export function GuildCrest({ emblem, size = 48 }: { emblem: string; size?: number }) {
-  const [a = "", b] = emblem.split("-");
-  const symbol = b ?? a;
-  const color = b ? a : CREST_COLORS[symbol.length % CREST_COLORS.length];
-  return <Crest crest={{ shape: "banner", color: color ?? "gold", symbol }} size={size} />;
-}
 
 function personName(props: GameProps, id: string | null): string {
   if (!id) return "—";
@@ -60,6 +54,7 @@ function Outside({ g, props }: { g: GuildsView; props: GameProps }) {
   return (
     <div className="space-y-4">
       {!open && <p className="text-sm text-lagoon">{t().opensIn(clock(g.opensAt - props.now))}</p>}
+      <WarList props={props} />
       <Panel>
         <Label>{t().stakeTitle}</Label>
         <p className="mt-1 text-sm text-cream-dim">{t().stakeHelp(d(rules.minStake))}</p>
@@ -173,8 +168,12 @@ function proposalText(props: GameProps, p: Pick<ProposalView, "kind" | "value" |
       return p.value === 1 ? t().proposal.open : t().proposal.close;
     case "exclude":
       return t().proposal.exclude(personName(props, p.target));
-    case "war":
-      return t().proposal.war;
+    case "war": {
+      const c = props.catalog.concessions.find((x) => x.code === p.target);
+      return c
+        ? `${t().proposal.war} : ${props.names.resource(c.resource).toLowerCase()} de ${props.names.city(c.city)}`
+        : t().proposal.war;
+    }
   }
 }
 
@@ -416,6 +415,8 @@ function Mine({ g, props }: { g: MyGuildView; props: GameProps }) {
         )}
       </Panel>
 
+      <WarList props={props} />
+      <Concessions props={props} />
       <WorksitePanel {...props} />
       <Thread />
 
