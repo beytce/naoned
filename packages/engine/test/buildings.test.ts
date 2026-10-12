@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { upkeepPerDay } from "../src/index.js";
+import { costForLevel, upkeepPerDay } from "../src/index.js";
 import { World, makeContext } from "./helpers.js";
 
 describe("buildings", () => {
@@ -45,5 +45,21 @@ describe("buildings", () => {
     w.do({ type: "upgrade", playerId: "a", buildingId: pit.id });
     expect(w.cash("a")).toBe(100_000n - 60_000n); // level 2 = 2 × base
     expect(w.state.buildings[pit.id]?.level).toBe(2);
+  });
+
+  it("may ask fewer materials for a level, never fewer ducats", () => {
+    const ctx = makeContext({ upgradeMaterialsBps: { "2": 5_000 } });
+    // Farm: 300 ducats, 20 bricks and 20 planks; level 2 = 2 × base, materials halved.
+    expect(costForLevel(ctx, "farm", 2)).toEqual({
+      ducats: 60_000n,
+      materials: { bricks: 20, planks: 20 },
+    });
+    // Level 3 is untouched: 3 × base.
+    expect(costForLevel(ctx, "farm", 3)).toEqual({
+      ducats: 90_000n,
+      materials: { bricks: 60, planks: 60 },
+    });
+    // Without the setting, as before.
+    expect(costForLevel(makeContext(), "farm", 2).materials).toEqual({ bricks: 40, planks: 40 });
   });
 });

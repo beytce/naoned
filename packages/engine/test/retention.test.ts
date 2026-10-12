@@ -102,3 +102,28 @@ describe("the merchant's ledger of missions", () => {
     expect(missionsFor(w.ctx, w.state, "a", w.now)[0]?.progress).toBe(0);
   });
 });
+
+describe("a mission on a kind of building", () => {
+  it("counts only the building it names", () => {
+    const w = new World(
+      makeContext({
+        missions: [
+          {
+            id: "first_bakery",
+            day: 0,
+            event: "build",
+            filter: { type: "bakery" },
+            count: 1,
+            reward: { goods: {}, ducats: 1_000 },
+          },
+        ],
+      }),
+    );
+    w.do({ type: "join", playerId: "a", region: "lagoon" });
+    w.give("a", "bricks", 200).give("a", "planks", 200);
+    w.do({ type: "build", playerId: "a", buildingType: "mill" });
+    expect(missionsFor(w.ctx, w.state, "a", w.now)[0]?.progress).toBe(0);
+    w.do({ type: "build", playerId: "a", buildingType: "bakery" });
+    expect(missionsFor(w.ctx, w.state, "a", w.now)[0]?.done).toBe(true);
+  });
+});

@@ -479,6 +479,8 @@ export const worldSettingsSchema = z.object({
   maxBuildings: positive,
   maxBuildingLevel: positive,
   levelCostGrowthBps: bps,
+  /** Share of the materials asked for a level (level → bps; 10 000 when absent). */
+  upgradeMaterialsBps: z.record(bps).default({}),
   /** Extra upkeep per level above 1: a level-L building costs base × L × (1 + (L − 1) × growth). */
   upkeepLevelGrowthBps: bps.default(0),
   upkeepDefaultHours: positive,

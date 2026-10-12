@@ -293,6 +293,21 @@ export const venice1450Settings: WorldSettingsInput = {
     { id: "first_ship", day: 5, event: "ship_built", count: 1, reward: { goods: { planks: 15 } } },
     // Opens with the bandits (`bandits.openDay`).
     { id: "first_band", day: 6, event: "band_posted", count: 1, reward: { goods: { bread: 10 } } },
+    {
+      id: "three_upgrades",
+      day: 4,
+      event: "upgrade",
+      count: 3,
+      reward: { goods: {}, ducats: 10_000 },
+    },
+    {
+      id: "first_palace",
+      day: 8,
+      event: "build",
+      filter: { type: "palazzo" },
+      count: 1,
+      reward: { goods: {}, ducats: 15_000 },
+    },
     { id: "new_workshop", day: 7, event: "build", count: 1, reward: { goods: {}, ducats: 15_000 } },
   ],
   // Deliveries by road (docs/plan-livraisons.md): a board of 10 to 15 personal orders a day,
@@ -579,6 +594,8 @@ export const venice1450Settings: WorldSettingsInput = {
   maxBuildings: 12,
   maxBuildingLevel: 5,
   levelCostGrowthBps: 5_000,
+  // Level 2 asks half the materials: a first upgrade within reach in the first days.
+  upgradeMaterialsBps: { "2": 5_000 },
   upkeepLevelGrowthBps: 2_000,
   upkeepDefaultHours: 24,
   activeWindowHours: 72,

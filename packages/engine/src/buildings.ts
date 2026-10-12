@@ -18,9 +18,11 @@ export function costForLevel(ctx: WorldContext, type: string, level: number): Bu
   const def = ctx.settings.buildings[type];
   if (!def) fail("unknown_building_type");
   const factorBps = 10_000 + (level - 1) * ctx.settings.levelCostGrowthBps;
+  // Some levels may ask fewer materials (an easier first step), never fewer ducats.
+  const materialsBps = ctx.settings.upgradeMaterialsBps[String(level)] ?? 10_000;
   const materials: Record<string, number> = {};
   for (const [res, qty] of Object.entries(def.costMaterials)) {
-    materials[res] = Math.ceil((qty * factorBps) / 10_000);
+    materials[res] = Math.ceil((qty * factorBps * materialsBps) / 100_000_000);
   }
   return { ducats: applyBpsFloor(def.costDucats, factorBps), materials };
 }
