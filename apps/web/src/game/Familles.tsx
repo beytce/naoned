@@ -313,7 +313,7 @@ function Thread({ props }: { props: GameProps }) {
           aria-label={t().thread.placeholder}
           className="min-w-0 flex-1 rounded-xl border border-line bg-night-2 px-3 py-2.5 text-sm"
         />
-        <Slab size="sm" disabled={sending || !text.trim()}>
+        <Slab size="sm" disabled={sending || !text.trim()} onClick={() => void send()}>
           {t().thread.send}
         </Slab>
       </form>
