@@ -86,7 +86,7 @@ export function Region(props: {
                     {fr.region.needs}
                   </p>
                   <p className="text-sm font-semibold">
-                    {(NEEDS[r.code] ?? []).map((n) => props.names.resource(n)).join(" + ")}
+                    {(NEEDS[r.code] ?? []).map((n) => props.names.resource(n)).join(", ")}
                   </p>
                 </div>
               </div>
