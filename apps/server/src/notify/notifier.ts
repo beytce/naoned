@@ -134,31 +134,52 @@ export class Notifier {
   private async guildNews(fx: Effects, now: number): Promise<void> {
     const news = fx.events.filter(
       (e) =>
-        e.type === "proposal_opened" || e.type === "proposal_closed" || e.type === "worksite_won",
+        e.type === "proposal_opened" ||
+        e.type === "proposal_closed" ||
+        e.type === "worksite_won" ||
+        e.type === "war_declared" ||
+        e.type === "war_closed",
     );
     if (news.length === 0) return;
     const gs = this.world.current.guilds;
     const people = await this.people();
     const notices: Notice[] = [];
     for (const e of news) {
-      const guildId = String(e.data?.guild ?? "");
-      const g = gs?.guilds[guildId];
-      if (!g) continue;
-      for (const accountId of Object.keys(g.members)) {
-        if (!people.has(accountId)) continue;
-        if (e.type === "proposal_opened" && accountId === e.playerId) continue;
-        notices.push({
-          accountId,
-          kind: "guild",
-          data: {
-            event: e.type,
-            guild: g.name,
-            kind: e.data?.kind ?? null,
-            value: e.data?.value ?? null,
-            passed: e.data?.passed ?? null,
-            city: e.data?.city ? (this.cities[String(e.data.city)] ?? null) : null,
-          },
-        });
+      // A war concerns both its sides.
+      const ids =
+        e.type === "war_declared" || e.type === "war_closed"
+          ? [String(e.data?.guild ?? e.data?.attackerId ?? ""), String(e.data?.defenderId ?? "")]
+          : [String(e.data?.guild ?? "")];
+      for (const guildId of new Set(ids)) {
+        const g = gs?.guilds[guildId];
+        if (!g) continue;
+        for (const accountId of Object.keys(g.members)) {
+          if (!people.has(accountId)) continue;
+          if (e.type === "proposal_opened" && accountId === e.playerId) continue;
+          notices.push({
+            accountId,
+            kind: "guild",
+            data: {
+              event: e.type,
+              guild: g.name,
+              kind: e.data?.kind ?? null,
+              value: e.data?.value ?? null,
+              passed: e.data?.passed ?? null,
+              city: e.data?.city ? (this.cities[String(e.data.city)] ?? null) : null,
+              resource: e.data?.resource ?? null,
+              won:
+                e.type === "war_closed"
+                  ? (e.data?.winner === "attacker") === (guildId === e.data?.attackerId)
+                  : null,
+              enemy:
+                e.type === "war_declared" || e.type === "war_closed"
+                  ? guildId === (e.data?.guild ?? e.data?.attackerId)
+                    ? (e.data?.defender ?? null)
+                    : (e.data?.attacker ?? null)
+                  : null,
+            },
+          });
+        }
       }
     }
     await this.send(notices, now);

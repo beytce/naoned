@@ -39,8 +39,10 @@ import {
 } from "@comptoirs/engine";
 import {
   activeEvent,
+  activeWarOn,
   balesFor,
   caratValue,
+  concessionHolder,
   contractsFor,
   crieePrice,
   crieeRoom,
@@ -52,9 +54,11 @@ import {
   maxOpenOrdersFor,
   nextEvent,
   rerollsOf,
+  sideOf,
   tally,
   treasury,
   votingWeights,
+  warRefusal,
   weekIndex,
 } from "@comptoirs/engine";
 import {
@@ -89,6 +93,68 @@ function crieeView(ctx: WorldContext, state: WorldState, playerId: string, now: 
   const c = currentCriee(ctx, now);
   if (!c) return null;
   return { ...c, price: crieePrice(ctx, c), room: crieeRoom(ctx, state, c, playerId, now) };
+}
+
+/**
+ * Concessions and wars as one merchant sees them: who holds what (and its toll), the wars under
+ * way with their score and the merchant's side, the last ones decided, and what their guild may
+ * declare war on.
+ */
+function warsView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {
+  if (ctx.settings.concessions.length === 0) return null;
+  const guilds = state.guilds?.guilds ?? {};
+  const mine = state.guilds?.memberOf[playerId] ?? null;
+  const concessions = ctx.settings.concessions.map((c) => {
+    const holder = concessionHolder(state, c.code);
+    const war = activeWarOn(state, c.city, c.resource, now);
+    return {
+      code: c.code,
+      city: c.city,
+      resource: c.resource,
+      holder,
+      holderName: holder ? (guilds[holder]?.name ?? null) : null,
+      holderEmblem: holder ? (guilds[holder]?.emblem ?? null) : null,
+      tollBps: holder ? (guilds[holder]?.tollBps ?? 0) : 0,
+      protectedUntil: state.concessions?.[c.code]?.protectedUntil ?? 0,
+      war: war?.id ?? null,
+      /** Why the merchant's guild could not declare war on it now (null: it can). */
+      refusal: mine ? warRefusal(ctx, state, mine, c.code, now) : "no_guild",
+    };
+  });
+  const all = Object.values(state.wars ?? {});
+  const view = (w: (typeof all)[number]) => ({
+    id: w.id,
+    concession: w.concession,
+    city: w.city,
+    resource: w.resource,
+    attacker: w.attacker,
+    attackerName: w.attackerName,
+    attackerEmblem: guilds[w.attacker]?.emblem ?? null,
+    defender: w.defender,
+    defenderName: w.defenderName,
+    defenderEmblem: w.defender ? (guilds[w.defender]?.emblem ?? null) : null,
+    startAt: w.startAt,
+    endAt: w.endAt,
+    threshold: w.threshold,
+    score: w.score,
+    outcome: w.outcome ?? null,
+    side: sideOf(state, w, playerId),
+    supplied: w.supplied[playerId] ?? 0,
+    enlisted: Object.keys(w.enlisted).length,
+    bounty: {
+      attacker: guilds[w.attacker]?.bountyPerUnit ?? 0n,
+      defender: w.defender ? (guilds[w.defender]?.bountyPerUnit ?? 0n) : 0n,
+    },
+  });
+  return {
+    concessions,
+    live: all.filter((w) => !w.outcome && now < w.endAt).map(view),
+    recent: all
+      .filter((w) => w.outcome)
+      .sort((a, b) => b.endAt - a.endAt)
+      .slice(0, 6)
+      .map(view),
+  };
 }
 
 /**
@@ -345,6 +411,8 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
         }
       : null,
     guildRules: settings.guilds,
+    warRules: settings.wars,
+    concessions: settings.concessions,
     rations: settings.rations,
     /** Masteries: the house's levels needed, and what each one changes. */
     specialties: settings.specialties,
@@ -593,6 +661,7 @@ export function playerView(
       .map((p) => ({ city: p.city, guild: p.winnerName ?? "", act: p.act ?? 0 })),
     contracts,
     guilds: guildsView(ctx, state, playerId, now),
+    wars: warsView(ctx, state, playerId, now),
     gazette: { current: describe(activeEvent(ctx, now)), next: describe(nextEvent(ctx, now)) },
     expeditions,
     ships,

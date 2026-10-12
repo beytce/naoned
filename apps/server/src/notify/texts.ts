@@ -180,6 +180,18 @@ export function pushText(
           title: `${data.guild} vote`,
           body: `Un membre propose de changer ${subject}. Votez dans les 24 h.`,
         };
+      if (data.event === "war_declared")
+        return {
+          title: `Guerre commerciale : ${data.city ?? ""}`,
+          body: `${data.guild} est en guerre${data.enemy ? ` contre ${data.enemy}` : " contre la Seigneurie"} pour cette concession : 48 h pour y livrer plus que l'adversaire.`,
+        };
+      if (data.event === "war_closed")
+        return {
+          title: data.won ? `${data.guild} l'emporte` : `${data.guild} perd la guerre`,
+          body: data.won
+            ? `La concession de ${data.city ?? ""} revient à votre guilde.`
+            : `La concession de ${data.city ?? ""} vous échappe.`,
+        };
       if (data.event === "worksite_won")
         return {
           title: `${data.guild} remporte le chantier`,

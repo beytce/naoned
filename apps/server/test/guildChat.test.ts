@@ -191,3 +191,24 @@ describe("the guild's thread", () => {
     expect((await thread(ada)).json().messages).toHaveLength(0);
   });
 });
+
+describe("the guild in the view", () => {
+  it("shows a war proposed on a concession, and the concessions", async () => {
+    const [ada, bob] = (await family("Leone", "ada@example.org", "bob@example.org")) as [
+      string,
+      string,
+    ];
+    const proposed = await act(ada, {
+      type: "propose",
+      proposal: { kind: "war", target: "padova-bread" },
+    });
+    expect(proposed.error).toBeUndefined();
+    const res = await app.inject({ method: "GET", url: "/api/game", headers: { cookie: bob } });
+    expect(res.statusCode).toBe(200);
+    const v = res.json().view;
+    expect(v.guilds.mine.proposals[0]).toMatchObject({ kind: "war", target: "padova-bread" });
+    expect(
+      v.wars.concessions.find((c: { code: string }) => c.code === "padova-bread"),
+    ).toMatchObject({ holder: null });
+  });
+});

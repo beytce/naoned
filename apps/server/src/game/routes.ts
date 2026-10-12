@@ -82,9 +82,15 @@ const action = z.discriminatedUnion("type", [
       z.object({ kind: z.literal("bounty"), value: z.number().int().nonnegative() }),
       z.object({ kind: z.literal("open"), value: z.number().int().min(0).max(1) }),
       z.object({ kind: z.literal("exclude"), target: z.string() }),
+      z.object({ kind: z.literal("war"), target: z.string() }),
     ]),
   }),
   z.object({ type: z.literal("vote"), proposalId: z.string(), yes: z.boolean() }),
+  z.object({
+    type: z.literal("enlist"),
+    warId: z.string(),
+    side: z.enum(["attacker", "defender"]),
+  }),
   z.object({
     type: z.literal("launchExpedition"),
     destination: z.string(),
@@ -183,7 +189,8 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       for (const m of v.guilds.mine.members) ids.add(m.playerId);
       for (const p of v.guilds.mine.proposals) {
         ids.add(p.by);
-        if (p.target) ids.add(p.target);
+        // The target of an exclusion is a merchant (a war's is a concession).
+        if (p.kind === "exclude" && p.target) ids.add(p.target);
       }
     }
     for (const b of Object.values(v.book)) {
@@ -736,6 +743,8 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "propose", playerId, proposal: a.proposal }];
     case "vote":
       return [{ type: "vote", playerId, proposalId: a.proposalId, yes: a.yes }];
+    case "enlist":
+      return [{ type: "enlist", playerId, warId: a.warId, side: a.side }];
     case "launchExpedition":
       return [
         {

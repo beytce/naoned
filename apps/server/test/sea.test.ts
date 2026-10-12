@@ -79,6 +79,8 @@ const act = async (cookie: string, payload: object) => {
 
 describe("the sea", () => {
   it("builds a fleet, sails a convoy, and lets privateers board it, with notices for both", async () => {
+    // Planks for a ship at the Dogana in one go (its daily quota is smaller now).
+    world.ctx.settings.marketMaker.playerDailyQuota.planks = 25;
     const corsair = await player("corsair@example.org", "lagoon");
     const trader = await player("trader@example.org", "terraferma");
     await world.execute({ type: "tick" });
