@@ -70,6 +70,13 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 - **Dernier sprint** : bandeau doré les trois derniers jours ; l'hommage au Doge de la saison passée s'affiche au Marché.
 - **Gazette** (`Gazette`) : une ligne repliée (« En ce moment » ou « Bientôt », titre, compte à rebours) qui se déplie au toucher, seulement sur Comptoir, Routes et Marché, jamais pendant les premiers pas guidés par Lorenzo ; fermeture par ×.
 - **Commandes de la route** (`Routes`, `roadKit.tsx`) : chaque commande montre son prix unitaire, l'écart avec le Rialto, les ducats par heure de route et un badge « Livrable » ; tri par gain à l'heure par défaut et bouton « Meilleur choix ». La vue Liste est celle du tutoriel.
+- **Domaine** (`Domain`, `art/domain.tsx`) : en tête du Comptoir, la scène de la Maison sur la terre de sa région.
+  - **Décor** : champs et moulin de la Terraferma, canaux et silhouette de Venise de la Lagune, pics et sapins des Dolomites. Ciel de jour, de crépuscule ou de nuit selon l'heure de Paris.
+  - **Ateliers** : douze parcelles, remplies du premier plan (grands ateliers) vers le fond ; le palais occupe la place d'honneur.
+  - **Ornements cumulés** : niveau II bannière, III socle de pierre, IV tour et fanion, V couronne dorée et halo. Plaque en chiffres romains, pastille dorée quand une récolte attend.
+  - **Bâtir** : seules les deux prochaines parcelles libres sont en pointillé, avec « À bâtir ».
+  - **Cour** : véhicules au dépôt et caisses selon le stock, blason sur le mât.
+  - **Interactions** : une gerbe dorée salue une construction ou un niveau ; un toucher ouvre l'atelier ou mène à « Nouvel atelier ».
 - **Fil de la famille** (`Familles`, `Thread`) : messages des membres, les miens à droite sur fond lagune, « Signaler » sous ceux des autres, saisie en bas ; pastille sur l'onglet Familles quand un message n'a pas été lu.
 - **Objectif de saison** (`Comptoir`, `SeasonGoal`) : titre actuel et Renommée assurée, prochain palier et sa barre ; affiché après la première livraison.
 - **Brigands** : encadré d'infamie (prises de la saison, prime sur la tête, primes reçues) sous l'aide de l'écran Brigands.

@@ -5,6 +5,7 @@ import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Qty, Ribbon, Sheet, Slab, clock } from "../ui.js";
 import { BaleScreen, BaleTile } from "./Bales.js";
 import { Daily } from "./Daily.js";
+import { Domain } from "./Domain.js";
 import type { GameProps } from "./Game.js";
 import { Ledger } from "./Ledger.js";
 import { d, duration, minutesLabel } from "./format.js";
@@ -600,6 +601,7 @@ export function Comptoir(props: GameProps) {
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
       <div className="contents lg:col-start-1 lg:flex lg:flex-col lg:gap-6">
         <div className="order-2 space-y-3 lg:order-none">
+          <Domain {...props} />
           <Hero {...props} />
           <div className="grid gap-3 sm:grid-cols-2">
             <CarnetButton {...props} />
@@ -615,7 +617,7 @@ export function Comptoir(props: GameProps) {
             ))}
           </div>
         </section>
-        <section className="order-9 space-y-3 lg:order-none">
+        <section id="build-section" className="order-9 scroll-mt-24 space-y-3 lg:order-none">
           <Label>{fr.game.buildTitle}</Label>
           <p className="text-xs text-muted">
             {fr.game.localRaw(

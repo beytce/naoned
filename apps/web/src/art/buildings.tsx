@@ -21,6 +21,11 @@ export function BuildingArt({
   );
 }
 
+/** The drawing alone, in the 120 × 90 box with the ground at y = 80 (to place in a scene). */
+export function BuildingShape({ type, active = false }: { type: string; active?: boolean }) {
+  return (ART[type] ?? ART.palazzo)?.(active) ?? null;
+}
+
 const spin = (cx: number, cy: number, active: boolean, seconds = 6) =>
   active ? (
     <animateTransform

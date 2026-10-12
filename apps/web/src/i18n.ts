@@ -442,6 +442,14 @@ export const fr = {
     idleAllHelp: "Lancez une production pour que vos ateliers travaillent pendant votre absence.",
     harvestAll: (n: number) => `Tout récolter et relancer · ${n} lot${n > 1 ? "s" : ""}`,
     restartAll: "Tout relancer",
+    domain: {
+      house: (pseudo: string) => (pseudo ? `Maison ${pseudo}` : "Votre Maison"),
+      workshops: (n: number) => `${n} atelier${n > 1 ? "s" : ""}`,
+      levels: (n: number) => `${n} niveau${n > 1 ? "x" : ""}`,
+      build: "À bâtir",
+      title: (n: number, levels: number) =>
+        `Votre domaine : ${n} atelier${n > 1 ? "s" : ""}, ${levels} niveau${levels > 1 ? "x" : ""} en tout`,
+    },
     carnet: {
       title: "Carnet du jour",
       rewards: (n: number) => `${n} récompense${n > 1 ? "s" : ""} à réclamer`,
