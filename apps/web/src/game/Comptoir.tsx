@@ -561,6 +561,32 @@ function RoadShortcut(props: GameProps) {
   );
 }
 
+/** The season's goal: the next merchant title, and the renown it adds at the close. */
+function SeasonGoal(props: GameProps) {
+  const { title } = props.view.standing;
+  // Once the first steps are behind: the guide has enough to say before.
+  if (!props.view.tutorial.includes("sell_city")) return null;
+  const t = fr.game.season.goal;
+  return (
+    <Panel>
+      <Label className="text-gold">{t.title}</Label>
+      <p className="mt-2 text-sm">{t.now(title.current.name, title.current.renown)}</p>
+      {title.next ? (
+        <>
+          <p className="mt-1 text-sm text-cream-dim">
+            {t.next(title.next.name, d(BigInt(title.next.from) * 100n), title.next.renown)}
+          </p>
+          <div className="mt-3">
+            <Ribbon value={title.progress} />
+          </div>
+        </>
+      ) : (
+        <p className="mt-1 text-sm text-cream-dim">{t.top}</p>
+      )}
+    </Panel>
+  );
+}
+
 export function Comptoir(props: GameProps) {
   const { view, catalog } = props;
   const full = view.buildings.length >= catalog.rules.maxBuildings;
@@ -625,6 +651,9 @@ export function Comptoir(props: GameProps) {
         </section>
       </div>
       <aside className="contents lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:flex lg:max-h-[calc(100dvh-7rem)] lg:flex-col lg:gap-6 lg:overflow-y-auto lg:pb-2">
+        <div className="order-6 empty:hidden lg:order-none">
+          <SeasonGoal {...props} />
+        </div>
         <div className="order-4 lg:order-none">
           <StockStrip {...props} />
         </div>

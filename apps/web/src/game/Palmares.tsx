@@ -65,6 +65,7 @@ export function PalmaresView({ data }: { data: Palmares }) {
                 <p className="truncate text-sm font-semibold">{s.season}</p>
                 <p className="text-xs text-cream-dim">
                   {fr.game.season.rankOf(s.rank, s.players)} · {d(s.worth)}
+                  {s.milestone.renown > 0 && ` · ${s.milestone.name}`}
                 </p>
               </div>
               {s.award && <Badge tone={tierTone(s.tier)}>{s.award}</Badge>}

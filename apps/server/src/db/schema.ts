@@ -216,6 +216,9 @@ export const seasonResults = pgTable(
     worth: bigint("worth", { mode: "bigint" }).notNull(),
     /** doge, podium, top10, elite, notable, participant or none. */
     tier: text("tier").notNull(),
+    /** Title held at the close (season milestone); its renown is included in `renown`. */
+    milestone: text("milestone").notNull().default("peddler"),
+    /** Renown of the tier plus that of the milestone. */
     renown: integer("renown").notNull(),
     seenAt: timestamp("seen_at", { withTimezone: true }),
   },

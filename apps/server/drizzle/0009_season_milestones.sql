@@ -1,0 +1,1 @@
+ALTER TABLE "season_results" ADD COLUMN "milestone" text DEFAULT 'peddler' NOT NULL;

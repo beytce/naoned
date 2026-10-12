@@ -565,6 +565,8 @@ export interface Ceremony {
   worth: Money;
   tier: string;
   award: string;
+  /** Title held at the close and the renown it added (included in `renown`). */
+  milestone: { name: string; renown: number };
   renown: number;
   passDays: number | "season";
   totalRenown: Renown;
@@ -587,6 +589,7 @@ export interface Palmares {
     worth: Money;
     tier: string;
     award: string;
+    milestone: { name: string; renown: number };
     renown: number;
   }[];
   weekly: {
@@ -687,6 +690,8 @@ export interface Title {
   code: string;
   name: string;
   from: number;
+  /** Renown this title adds when the season closes (its milestone). */
+  renown: number;
 }
 
 export interface Profile {

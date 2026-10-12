@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
-import { tierFor } from "../src/game/season.js";
+import { milestoneFor, seasonReward, tierFor } from "../src/game/season.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { Notifier } from "../src/notify/notifier.js";
@@ -112,7 +112,9 @@ describe("seasons on calendar months", () => {
     // Everyone starts afresh: the region screen, then the ceremony of the last season.
     const back = await get(ada);
     expect(back.view).toBeNull();
-    expect(back.ceremony).toMatchObject({ rank: 1, players: 2, tier: "doge", renown: 100 });
+    expect(back.ceremony).toMatchObject({ rank: 1, players: 2, tier: "doge" });
+    // The Doge's 100, plus the renown of the title held at the close (its milestone).
+    expect(back.ceremony.renown).toBe(100 + back.ceremony.milestone.renown);
     expect(back.ceremony.podium.map((p: { pseudo: string }) => p.pseudo)).toEqual(["ada", "bob"]);
     expect((await get(bob)).ceremony).toMatchObject({ rank: 2, tier: "podium" });
 
@@ -138,7 +140,7 @@ describe("seasons on calendar months", () => {
     expect(joined.view.pass.active).toBe(true);
     expect(joined.view.pass.until).toBe(Date.parse("2026-11-30T23:00:00Z"));
     const prof = await get(ada, "/api/game/profile");
-    expect(prof.palmares.renown.points).toBe(100);
+    expect(prof.palmares.renown.points).toBe(back.ceremony.renown);
     expect(prof.palmares.seasons[0]).toMatchObject({ rank: 1, award: "Doge de la saison" });
 
     await new Promise((r) => setTimeout(r, 50));
@@ -195,5 +197,30 @@ describe("rehearsing the end of a season", () => {
     await world.execute({ type: "tick" });
     expect(world.id).not.toBe(first);
     expect((await get(ada)).ceremony.rank).toBe(1);
+  });
+});
+
+describe("season milestones", () => {
+  const ducats = (n: number) => BigInt(n) * 100n;
+
+  it("give renown for the title reached, whatever the rank", () => {
+    expect(milestoneFor(ducats(2_000))).toMatchObject({ code: "peddler", renown: 0 });
+    expect(milestoneFor(ducats(5_000))).toMatchObject({ code: "merchant", renown: 5 });
+    expect(milestoneFor(ducats(9_000))).toMatchObject({ code: "trader", renown: 10 });
+    expect(milestoneFor(ducats(60_000))).toMatchObject({ code: "doge", renown: 30 });
+  });
+
+  it("add to the renown of the rank, even far from the podium", () => {
+    // 51st of 200 after two days: no tier, but a Négociant.
+    expect(seasonReward(51, 200, 2, ducats(9_000))).toEqual({
+      tier: "none",
+      milestone: "trader",
+      renown: 10,
+    });
+    expect(seasonReward(1, 200, 30, ducats(60_000))).toEqual({
+      tier: "doge",
+      milestone: "doge",
+      renown: 130,
+    });
   });
 });

@@ -3,6 +3,7 @@ import type { Db } from "../db/client.js";
 import { accounts, players, seasonResults, weeklyResults, worlds } from "../db/schema.js";
 import { nextSeasonBounds } from "./calendar.js";
 import { grantPass } from "./pass.js";
+import { TITLES, titleFor } from "./profile.js";
 
 /**
  * Rewards of the final ranking, among people (bots never take a place). Everyone who played a
@@ -32,6 +33,22 @@ export function tierFor(rank: number, people: number, daysPlayed: number): Seaso
   if (rank <= Math.ceil(people * 0.1)) return "elite";
   if (rank <= Math.ceil(people * 0.25)) return "notable";
   return daysPlayed >= PARTICIPANT_DAYS ? "participant" : "none";
+}
+
+/** The season's milestone: the merchant title held at the close, and the renown it adds. */
+export function milestoneFor(worth: bigint) {
+  return titleFor(worth).current;
+}
+
+export function milestoneInfo(code: string) {
+  return TITLES.find((t) => t.code === code) ?? TITLES[0];
+}
+
+/** What a merchant earns at the close: the tier of the rank plus the milestone of the title. */
+export function seasonReward(rank: number, people: number, daysPlayed: number, worth: bigint) {
+  const tier = tierFor(rank, people, daysPlayed);
+  const milestone = milestoneFor(worth);
+  return { tier, milestone: milestone.code, renown: tierInfo(tier).renown + milestone.renown };
 }
 
 export function tierInfo(tier: string): (typeof SEASON_TIERS)[number] {
@@ -89,15 +106,14 @@ export async function recordSeason(
     ]),
   );
   const rows = ranked.map((s, i) => {
-    const tier = tierFor(i + 1, ranked.length, days.get(s.playerId) ?? 0);
+    const reward = seasonReward(i + 1, ranked.length, days.get(s.playerId) ?? 0, BigInt(s.worth));
     return {
       worldId,
       accountId: s.playerId,
       rank: i + 1,
       players: ranked.length,
       worth: BigInt(s.worth),
-      tier,
-      renown: tierInfo(tier).renown,
+      ...reward,
     };
   });
   await db.insert(seasonResults).values(rows).onConflictDoNothing();
@@ -132,6 +148,7 @@ export async function seasonRecord(db: Db, accountId: string) {
       players: seasonResults.players,
       worth: seasonResults.worth,
       tier: seasonResults.tier,
+      milestone: seasonResults.milestone,
       renown: seasonResults.renown,
     })
     .from(seasonResults)
@@ -146,6 +163,7 @@ export async function seasonRecord(db: Db, accountId: string) {
     worth: r.worth.toString(),
     tier: r.tier,
     award: tierInfo(r.tier).name,
+    milestone: { name: milestoneInfo(r.milestone).name, renown: milestoneInfo(r.milestone).renown },
     renown: r.renown,
   }));
 }
@@ -160,6 +178,7 @@ export async function pendingCeremony(db: Db, accountId: string) {
       players: seasonResults.players,
       worth: seasonResults.worth,
       tier: seasonResults.tier,
+      milestone: seasonResults.milestone,
       renown: seasonResults.renown,
     })
     .from(seasonResults)
@@ -188,6 +207,10 @@ export async function pendingCeremony(db: Db, accountId: string) {
     worth: row.worth.toString(),
     tier: row.tier,
     award: info.name,
+    milestone: {
+      name: milestoneInfo(row.milestone).name,
+      renown: milestoneInfo(row.milestone).renown,
+    },
     renown: row.renown,
     passDays: info.passDays,
     totalRenown: renownTitle(await renownOf(db, accountId)),

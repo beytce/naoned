@@ -825,6 +825,17 @@ export const fr = {
       passSeason: "Pass Négociant pour toute la nouvelle saison",
       passDays: (n: number) => `${n} jours de Pass Négociant`,
       renown: (n: number) => `+${n} de Renommée`,
+      milestone: (name: string, n: number) => `Palier ${name} : +${n} de Renommée`,
+      goal: {
+        title: "Objectif de saison",
+        now: (name: string, n: number) =>
+          n > 0
+            ? `${name} : +${n} de Renommée assurés à la fin du mois.`
+            : `${name} : pas encore de Renommée de palier.`,
+        next: (name: string, worth: string, n: number) =>
+          `Prochain palier : ${name}, à ${worth} de patrimoine (+${n} de Renommée), quel que soit votre rang.`,
+        top: "Plus haut palier atteint : tenez-le jusqu'à la fin du mois.",
+      },
       renownTotal: (name: string, points: number) => `${name} · ${points} points de Renommée`,
       nothing:
         "Jouez au moins 7 jours dans une saison pour recevoir l'écusson de participant, et visez le top 25 % pour du Pass Négociant.",

@@ -5,17 +5,18 @@ import { weeklyRecord } from "./weekly.js";
 
 /**
  * Merchant titles, from net worth (ducats). Cosmetic only: a title never changes the economy.
+ * The title held when the season closes is its milestone: it adds `renown`, whatever the rank.
  * Thresholds are a first guess, to be tuned with the beta.
  */
 export const TITLES = [
-  { code: "peddler", name: "Colporteur", from: 0 },
-  { code: "shopkeeper", name: "Boutiquier", from: 3_000 },
-  { code: "merchant", name: "Marchand", from: 5_000 },
-  { code: "trader", name: "Négociant", from: 8_000 },
-  { code: "shipowner", name: "Armateur", from: 13_000 },
-  { code: "patrician", name: "Patricien", from: 20_000 },
-  { code: "senator", name: "Sénateur", from: 32_000 },
-  { code: "doge", name: "Doge", from: 50_000 },
+  { code: "peddler", name: "Colporteur", from: 0, renown: 0 },
+  { code: "shopkeeper", name: "Boutiquier", from: 3_000, renown: 3 },
+  { code: "merchant", name: "Marchand", from: 5_000, renown: 5 },
+  { code: "trader", name: "Négociant", from: 8_000, renown: 10 },
+  { code: "shipowner", name: "Armateur", from: 13_000, renown: 15 },
+  { code: "patrician", name: "Patricien", from: 20_000, renown: 20 },
+  { code: "senator", name: "Sénateur", from: 32_000, renown: 25 },
+  { code: "doge", name: "Doge", from: 50_000, renown: 30 },
 ] as const;
 
 export function titleFor(totalDeniers: Deniers) {
