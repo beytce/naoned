@@ -14,13 +14,12 @@ import type { Db } from "../db/client.js";
 import { accounts, players } from "../db/schema.js";
 import type { GameWorld } from "./world.js";
 
-/** Great Venetian families: the bots' trading houses. */
+/**
+ * Great Venetian families: the bots' trading houses. The patrician families players swear
+ * allegiance to (theme.families) are left out, so that a house is never taken for one of them.
+ */
 const HOUSES = [
-  "Contarini",
-  "Morosini",
-  "Dandolo",
   "Grimani",
-  "Mocenigo",
   "Foscari",
   "Loredan",
   "Gritti",
@@ -100,6 +99,39 @@ export class BotRunner {
       if (row.retiredAt) this.retired.add(row.id);
       else this.running.set(row.id, this.wrap(row.id, row.profile, player.region));
     }
+    await this.renameFamilyHouses();
+  }
+
+  /** Houses named after a patrician family (older versions) take a free name instead. */
+  private async renameFamilyHouses(): Promise<void> {
+    const families = new Set(
+      (this.world.ctx.theme.families ?? []).map((f) => `casa ${f.name}`.toLowerCase()),
+    );
+    const bots = await this.db
+      .select({ id: accounts.id, pseudo: accounts.pseudo })
+      .from(accounts)
+      .where(eq(accounts.isBot, true));
+    for (const bot of bots) {
+      if (!families.has(bot.pseudo?.toLowerCase() ?? "")) continue;
+      const name = await this.freeHouseName();
+      if (!name) return;
+      await this.db.update(accounts).set({ pseudo: name }).where(eq(accounts.id, bot.id));
+    }
+  }
+
+  /** The first house name nobody has taken, never a patrician family's. */
+  private async freeHouseName(): Promise<string | undefined> {
+    const taken = new Set(
+      (await this.db.select({ pseudo: accounts.pseudo }).from(accounts)).map((r) =>
+        r.pseudo?.toLowerCase(),
+      ),
+    );
+    const families = new Set(
+      (this.world.ctx.theme.families ?? []).map((f) => f.name.toLowerCase()),
+    );
+    return HOUSES.filter((h) => !families.has(h.toLowerCase()))
+      .map((h) => `Casa ${h}`)
+      .find((name) => !taken.has(name.toLowerCase()));
   }
 
   /**
@@ -262,14 +294,7 @@ export class BotRunner {
 
     const n = this.ids.size;
     const slot = ROSTER[n % ROSTER.length] ?? { profile: "producer", region: "terraferma" };
-    const taken = new Set(
-      (await this.db.select({ pseudo: accounts.pseudo }).from(accounts)).map((r) =>
-        r.pseudo?.toLowerCase(),
-      ),
-    );
-    const house =
-      HOUSES.map((h) => `Casa ${h}`).find((name) => !taken.has(name.toLowerCase())) ??
-      `Casa ${n + 1}`;
+    const house = (await this.freeHouseName()) ?? `Casa ${n + 1}`;
     const [account] = await this.db
       .insert(accounts)
       .values({

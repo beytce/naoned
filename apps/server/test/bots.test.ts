@@ -130,6 +130,31 @@ describe("bots in a live world", () => {
     );
   });
 
+  it("never names a house after a patrician family, and renames the old ones", async () => {
+    const families = (world.ctx.theme.families ?? []).map((f) => `Casa ${f.name}`.toLowerCase());
+    setPopulation(6);
+    for (let i = 0; i < 6; i++) await runner.step();
+    const bots = await database.db.select().from(accounts).where(eq(accounts.isBot, true));
+    expect(bots).toHaveLength(6);
+    expect(bots.some((b) => families.includes(b.pseudo?.toLowerCase() ?? ""))).toBe(false);
+
+    // A house of an older version, named after a family: renamed on the next start.
+    const old = bots[0];
+    if (!old) throw new Error("no bot");
+    await database.db
+      .update(accounts)
+      .set({ pseudo: "Casa Dandolo" })
+      .where(eq(accounts.id, old.id));
+    await new BotRunner(database.db, world, 1).load();
+    const [renamed] = await database.db.select().from(accounts).where(eq(accounts.id, old.id));
+    expect(renamed?.pseudo?.startsWith("Casa ")).toBe(true);
+    expect(families.includes(renamed?.pseudo?.toLowerCase() ?? "")).toBe(false);
+    const pseudos = (await database.db.select().from(accounts).where(eq(accounts.isBot, true))).map(
+      (b) => b.pseudo,
+    );
+    expect(new Set(pseudos).size).toBe(pseudos.length);
+  });
+
   it("resumes after a restart with the same houses", async () => {
     setPopulation(2);
     await runner.step();
