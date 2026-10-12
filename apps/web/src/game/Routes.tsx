@@ -8,9 +8,12 @@ import { RoadBoard } from "./RoadBoard.js";
 import { d, minutesLabel } from "./format.js";
 import {
   BuyVehicleSheet,
+  OrderFacts,
   OrderPanel,
   UnderwayCard,
   bestMinutes,
+  bestOrder,
+  insightOf,
   roadPosition,
   total,
   vehicleName,
@@ -18,7 +21,8 @@ import {
 import { store } from "./store.js";
 import type { DeliveryOrderView, RoadView } from "./types.js";
 
-type Sort = "price" | "distance" | "deadline";
+type Sort = "gain" | "price" | "distance" | "deadline";
+const SORTS: Sort[] = ["gain", "price", "distance", "deadline"];
 
 const t = () => fr.game.road;
 
@@ -223,22 +227,32 @@ function Bandits(props: GameProps & { road: RoadView }) {
 
 function Deliveries(props: GameProps & { road: RoadView }) {
   const { road } = props;
-  const [sort, setSort] = useState<Sort>(() => (store.get("roadSort") as Sort) || "price");
+  const [sort, setSort] = useState<Sort>(() => {
+    const saved = store.get("roadSort") as Sort;
+    return SORTS.includes(saved) ? saved : "gain";
+  });
   const [selected, setSelected] = useState<string | null>(null);
   const underway = road.deliveries.filter((dv) => props.now < dv.backAt);
   const owned = road.vehicles.map((v) => v.type);
   const orders = road.orders
     .filter((o) => o.status === "open" || o.status === "upcoming")
     .sort((a, b) => {
-      // The Doge's and the family's orders first: they earn more than ducats.
-      const star = (o: DeliveryOrderView) => (o.kind === "doge" || o.kind === "family" ? 0 : 1);
-      if (star(a) !== star(b)) return star(a) - star(b);
       if (sort === "distance") return bestMinutes(a, owned) - bestMinutes(b, owned);
       if (sort === "deadline") return a.expiresAt - b.expiresAt;
+      if (sort === "gain") {
+        // What leaves now first, then ducats per hour of road.
+        const ia = insightOf(props, a);
+        const ib = insightOf(props, b);
+        if (ia.deliverable !== ib.deliverable) return ia.deliverable ? -1 : 1;
+        const ra = ia.perHour ?? -1n;
+        const rb = ib.perHour ?? -1n;
+        if (ra !== rb) return ra > rb ? -1 : 1;
+      }
       const ta = total(a);
       const tb = total(b);
       return ta === tb ? 0 : ta > tb ? -1 : 1;
     });
+  const best = bestOrder(props, orders);
   const done = road.orders.filter((o) => o.status === "done").length;
   const order = road.orders.find((o) => o.id === selected) ?? null;
   const nextDay = props.catalog.world.startsAt + props.view.day * 86_400_000;
@@ -271,11 +285,16 @@ function Deliveries(props: GameProps & { road: RoadView }) {
             store.set("roadSort", s);
             setSort(s);
           }}
-          options={(["price", "distance", "deadline"] as const).map((s) => ({
-            value: s,
-            label: t().sort[s],
-          }))}
+          options={SORTS.map((s) => ({ value: s, label: t().sort[s] }))}
         />
+        {orders.length > 0 &&
+          (best ? (
+            <Slab size="md" className="w-full" onClick={() => setSelected(best.id)}>
+              {t().best(props.names.city(best.city), d(insightOf(props, best).perHour))}
+            </Slab>
+          ) : (
+            <p className="text-sm text-cream-dim">{t().noBest}</p>
+          ))}
         {orders.length === 0 && <p className="text-sm text-cream-dim">{t().empty}</p>}
         {orders.map((o) => (
           <OrderCard key={o.id} o={o} props={props} onOpen={() => setSelected(o.id)} />
@@ -336,6 +355,7 @@ function OrderCard({
         {stock < o.quantity && (
           <p className="mt-1 text-xs text-vermilion">{t().sheet.missing(o.quantity - stock)}</p>
         )}
+        <OrderFacts o={o} props={props} />
       </div>
       <Big className="shrink-0 text-lg text-gold">{d(total(o))}</Big>
     </button>

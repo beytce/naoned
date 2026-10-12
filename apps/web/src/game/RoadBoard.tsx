@@ -23,8 +23,10 @@ import type { GameProps } from "./Game.js";
 import { d, minutesLabel } from "./format.js";
 import {
   BuyVehicleSheet,
+  OrderFacts,
   OrderPanel,
   UnderwayCard,
+  canServe,
   roadPosition,
   total,
   useSmoothNow,
@@ -81,13 +83,6 @@ function clearSpot(c: NonNullable<ReturnType<typeof roadCurve>>) {
     }
   }
   return best;
-}
-
-/** Orders a vehicle could carry now: open, within its capacity, covered by the stock. */
-function canServe(props: GameProps, o: DeliveryOrderView, capacity: number): boolean {
-  return (
-    o.status === "open" && o.quantity <= capacity && have(props.view, o.resource) >= o.quantity
-  );
 }
 
 /**
@@ -744,6 +739,7 @@ function CitySheet({
                     {t().sheet.missing(o.quantity - stock)}
                   </p>
                 )}
+                {open && <OrderFacts o={o} props={props} />}
               </div>
               <Big className="shrink-0 text-lg text-gold">{d(total(o))}</Big>
             </button>

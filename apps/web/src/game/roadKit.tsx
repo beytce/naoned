@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Label, Panel, Sheet, Slab, clock } from "../ui.js";
+import { Badge, Label, Panel, Sheet, Slab, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
 import { d, minutesLabel } from "./format.js";
@@ -24,6 +24,81 @@ export function bestMinutes(o: DeliveryOrderView, owned: string[]): number {
     .map(([, m]) => m)
     .filter((m): m is number => m !== null);
   return all.length > 0 ? Math.min(...all) : Number.POSITIVE_INFINITY;
+}
+
+/** Units a vehicle carries. */
+export function capacityOf(props: GameProps, v: VehicleView): number {
+  return props.catalog.road?.vehicles.find((x) => x.type === v.type)?.capacity ?? 0;
+}
+
+/** Orders a vehicle could carry now: open, within its capacity, covered by the stock. */
+export function canServe(props: GameProps, o: DeliveryOrderView, capacity: number): boolean {
+  return (
+    o.status === "open" && o.quantity <= capacity && have(props.view, o.resource) >= o.quantity
+  );
+}
+
+export interface OrderInsight {
+  /** Covered by the stock, with a free vehicle big enough: can leave now. */
+  deliverable: boolean;
+  /** Ducats (deniers) per hour the vehicle is away, there and back, with the fastest one that fits. */
+  perHour: bigint | null;
+  /** Unit price against what the Rialto pays now (best bid, else the reference), in bps. */
+  gapBps: number | null;
+}
+
+/** What an order is worth at a glance, to choose between them. */
+export function insightOf(props: GameProps, o: DeliveryOrderView): OrderInsight {
+  const vehicles = props.view.road?.vehicles ?? [];
+  const fits = vehicles.filter((v) => capacityOf(props, v) >= o.quantity);
+  const free = fits.filter((v) => v.status === "free");
+  const times = (free.length > 0 ? free : fits)
+    .map((v) => o.minutes[v.type])
+    .filter((m): m is number => typeof m === "number" && m > 0);
+  const minutes = times.length > 0 ? Math.min(...times) : null;
+  const line = props.view.market.find((m) => m.resource === o.resource);
+  const rialto = BigInt(line?.bestBid ?? line?.reference ?? 0);
+  return {
+    deliverable: free.some((v) => canServe(props, o, capacityOf(props, v))),
+    perHour: minutes ? (total(o) * 60n) / BigInt(2 * minutes) : null,
+    gapBps: rialto > 0n ? Number(((BigInt(o.unitPrice) - rialto) * 10_000n) / rialto) : null,
+  };
+}
+
+/** The open order that leaves now and earns the most per hour of road, if any. */
+export function bestOrder(props: GameProps, orders: DeliveryOrderView[]): DeliveryOrderView | null {
+  let best: DeliveryOrderView | null = null;
+  let bestRate = -1n;
+  for (const o of orders) {
+    const i = insightOf(props, o);
+    if (!i.deliverable || i.perHour === null) continue;
+    if (i.perHour > bestRate) {
+      best = o;
+      bestRate = i.perHour;
+    }
+  }
+  return best;
+}
+
+/** "1,92 d l'unité · +38 % / Rialto · 24 d/h", and a badge when it can leave now. */
+export function OrderFacts({ o, props }: { o: DeliveryOrderView; props: GameProps }) {
+  const i = insightOf(props, o);
+  const gap =
+    i.gapBps === null
+      ? null
+      : `${i.gapBps >= 0 ? "+" : "−"}${Math.round(Math.abs(i.gapBps) / 100)} %`;
+  return (
+    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-cream-dim">
+      {i.deliverable && <Badge tone="lagoon">{t().facts.deliverable}</Badge>}
+      <span>{t().facts.unit(d(o.unitPrice))}</span>
+      {gap && (
+        <span className={i.gapBps !== null && i.gapBps >= 0 ? "text-lagoon" : "text-vermilion"}>
+          {t().facts.rialto(gap)}
+        </span>
+      )}
+      {i.perHour !== null && <span className="text-gold">{t().facts.perHour(d(i.perHour))}</span>}
+    </p>
+  );
 }
 
 /** Where a delivery stands on its road: 0 at the depot, 1 at the city, back to 0. */

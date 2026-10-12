@@ -116,7 +116,15 @@ export const fr = {
       title: "Commandes à livrer",
       help: "Chaque jour, les villes vous passent des commandes. Chargez une charrette, choisissez votre escorte et partez : la ville paie à l'arrivée. Plus la route est longue, mieux elle paie.",
       tabs: { livraisons: "Livraisons", brigands: "Brigands" },
-      sort: { price: "Prix", distance: "Distance", deadline: "Échéance" },
+      sort: { gain: "Gain/h", price: "Prix", distance: "Distance", deadline: "Échéance" },
+      facts: {
+        deliverable: "Livrable",
+        unit: (price: string) => `${price} l'unité`,
+        rialto: (gap: string) => `${gap} / Rialto`,
+        perHour: (amount: string) => `${amount}/h`,
+      },
+      best: (city: string, perHour: string) => `Meilleur choix : ${city} · ${perHour}/h`,
+      noBest: "Aucune commande livrable maintenant : produisez ou attendez un véhicule.",
       kinds: { city: "Ville", doge: "Doge", family: "Famille", urgent: "Urgente" } as Record<
         string,
         string
