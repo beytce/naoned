@@ -596,13 +596,80 @@ export const venice1450Settings: WorldSettingsInput = {
   maxBuildings: 12,
   maxBuildingLevel: 5,
   levelCostGrowthBps: 5_000,
+  // The season in four acts, one a week (the last runs to the end of the month).
+  acts: [
+    { code: "installation", week: 0, variants: [] },
+    {
+      code: "crisis",
+      week: 1,
+      variants: [
+        {
+          code: "chioggia",
+          weight: 1,
+          city: "venezia",
+          cityPriceBps: { bricks: 13_000, planks: 13_000 },
+          cityCapacityBps: { bricks: 15_000, planks: 15_000 },
+        },
+        {
+          code: "plague",
+          weight: 1,
+          cityPriceBps: { bread: 13_000, flour: 12_000 },
+          cityCapacityBps: { bread: 15_000 },
+        },
+        {
+          code: "embargo",
+          weight: 1,
+          cityPriceBps: {
+            salt: 15_000,
+            wine: 15_000,
+            spices: 16_000,
+            silk: 16_000,
+            furs: 16_000,
+            cloth: 16_000,
+          },
+        },
+      ],
+    },
+    {
+      code: "worksite",
+      week: 2,
+      variants: [],
+      worksite: {
+        city: "venezia",
+        needsPerPlayer: { bricks: 30, planks: 30 },
+        premiumBps: 1_500,
+        influencePerUnit: 1,
+        winnerInfluence: 100,
+      },
+    },
+    {
+      code: "sensa",
+      week: 3,
+      variants: [
+        {
+          code: "sensa",
+          weight: 1,
+          cityPriceBps: {
+            bread: 11_500,
+            bricks: 11_500,
+            planks: 11_500,
+            flour: 11_500,
+            wheat: 11_500,
+            clay: 11_500,
+            wood: 11_500,
+          },
+          cityCapacityBps: { bread: 15_000, bricks: 15_000, planks: 15_000 },
+        },
+      ],
+    },
+  ],
   // Masteries: chosen once the house's workshops add up to 5 levels, for the whole season.
   specialties: {
     unlockLevels: 5,
     options: {
-      master: { transformYieldBps: 1_500 },
+      master: { transformYieldBps: 1_000 },
       carter: { vehicleSpeedBps: 2_500, extraVehicles: 1 },
-      trader: { marketMakerQuotaBps: 5_000, taxDiscountBps: 100, extraOpenOrders: 2 },
+      trader: { marketMakerQuotaBps: 2_500, taxDiscountBps: 200, extraOpenOrders: 3 },
       shipowner: { portDuesDiscountBps: 5_000, holdBps: 2_500 },
     },
   },

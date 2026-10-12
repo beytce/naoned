@@ -23,6 +23,17 @@ export interface SeasonAct {
  * than its acts' weeks (a world opened late in the month) keeps every act, each one shortened.
  */
 export function seasonActs(ctx: WorldContext): SeasonAct[] {
+  // Read for every order priced: computed once per world (and end of season).
+  const cached = ACTS.get(ctx);
+  if (cached && cached.end === seasonEnd(ctx)) return cached.acts;
+  const acts = computeActs(ctx);
+  ACTS.set(ctx, { end: seasonEnd(ctx), acts });
+  return acts;
+}
+
+const ACTS = new WeakMap<WorldContext, { end: number; acts: SeasonAct[] }>();
+
+function computeActs(ctx: WorldContext): SeasonAct[] {
   const end = seasonEnd(ctx);
   const defs = [...ctx.settings.acts].sort((a, b) => a.week - b.week);
   if (defs.length === 0) return [];

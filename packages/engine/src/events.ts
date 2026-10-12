@@ -10,8 +10,26 @@ export interface MarketEvent extends EventDef {
   endsAt: number;
 }
 
+/** Events drawn so far, per world: read for every order priced. */
+const EVENTS = new WeakMap<
+  WorldContext,
+  { end: number; byIndex: Map<number, MarketEvent | null> }
+>();
+
 /** The k-th event window: from day 1, every `everyDays` days, for `durationHours`. */
 function eventAtIndex(ctx: WorldContext, k: number): MarketEvent | null {
+  let cache = EVENTS.get(ctx);
+  if (!cache || cache.end !== seasonEnd(ctx)) {
+    cache = { end: seasonEnd(ctx), byIndex: new Map() };
+    EVENTS.set(ctx, cache);
+  }
+  if (cache.byIndex.has(k)) return cache.byIndex.get(k) ?? null;
+  const e = drawEventAtIndex(ctx, k);
+  cache.byIndex.set(k, e);
+  return e;
+}
+
+function drawEventAtIndex(ctx: WorldContext, k: number): MarketEvent | null {
   const { everyDays, durationHours, catalog } = ctx.settings.events;
   if (k < 0 || catalog.length === 0) return null;
   const startsAt = ctx.startAt + (k * everyDays + 1) * DAY_MS;
