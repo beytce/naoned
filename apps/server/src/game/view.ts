@@ -14,6 +14,7 @@ import {
   escrowAccount,
   fastBatchNext,
   freeBatches,
+  houseLevels,
   marketMakerQuotaLeft,
   marketMakerQuotes,
   marketMakerReference,
@@ -27,6 +28,7 @@ import {
   shipStatus,
   shipUpkeep,
   shipsOf,
+  specialtyUnlocked,
   stockUnitValue,
   upkeepPerDay,
   vwap,
@@ -311,6 +313,8 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
       orderPremiumBps: settings.contracts.premiumBps,
     },
     rations: settings.rations,
+    /** Masteries: the house's levels needed, and what each one changes. */
+    specialties: settings.specialties,
     referencePrices: settings.referencePrices,
     rules: {
       maxBuildings: settings.maxBuildings,
@@ -525,6 +529,12 @@ export function playerView(
       title: titleFor(worth.total),
       seasonEndsAt: seasonEnd(ctx),
     },
+    /** The house's mastery: chosen, or how far it is (levels of all workshops). */
+    mastery: {
+      chosen: player.specialty ?? null,
+      levels: houseLevels(state, playerId),
+      unlocked: specialtyUnlocked(ctx, state, playerId),
+    },
     inventory: ctx.theme.resources.map((r) => ({
       resource: r.code,
       available: state.inventories[playerId]?.[r.code]?.available ?? 0,
@@ -593,6 +603,7 @@ export function ranking(
       playerId: id,
       pseudo: pseudos.get(id) ?? null,
       region: state.players[id]?.region ?? "",
+      specialty: state.players[id]?.specialty ?? null,
       netWorth: netWorth(ctx, state, id, now, unitValues).total,
     }))
     .sort((a, b) => (a.netWorth > b.netWorth ? -1 : a.netWorth < b.netWorth ? 1 : 0))

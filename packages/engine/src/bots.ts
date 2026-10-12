@@ -26,6 +26,7 @@ import { openProjects } from "./projects.js";
 import type { Rng } from "./rng.js";
 import type { WorldSettings } from "./settings.js";
 import { portDues, shipStatus, shipsOf } from "./ships.js";
+import { specialtyUnlocked } from "./specialties.js";
 import {
   type Building,
   MARKET_MAKER,
@@ -209,6 +210,28 @@ export class Bot {
 
   private ctxTheme!: WorldContext["theme"];
 
+  /**
+   * The mastery of the season, once the house has grown enough: by play style, and one house in
+   * four goes to sea.
+   */
+  private chooseMastery(s: Session): void {
+    const state = s.state();
+    if (state.players[this.id]?.specialty || !specialtyUnlocked(s.ctx, state, this.id)) return;
+    const options = Object.keys(s.ctx.settings.specialties.options);
+    let hash = 0;
+    for (const c of this.id) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
+    const byProfile: Record<string, string> = {
+      producer: "master",
+      artisan: "master",
+      builder: "carter",
+      speculator: "trader",
+      casual: "master",
+    };
+    const wanted = hash % 4 === 0 ? "shipowner" : (byProfile[this.profile.name] ?? "master");
+    const specialty = options.includes(wanted) ? wanted : options[0];
+    if (specialty) s.act({ type: "chooseSpecialty", playerId: this.id, specialty });
+  }
+
   play(s: Session): void {
     this.ctxTheme = s.ctx.theme;
     this.sessions++;
@@ -230,6 +253,7 @@ export class Bot {
       this.sellToCities(s);
     }
     this.invest(s);
+    this.chooseMastery(s);
     this.runProduction(s);
     // Corsairs fit out before their cash goes into speculative orders.
     this.shipyard(s);

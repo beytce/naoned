@@ -174,6 +174,7 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
   checks.push(...budgetChecks(r));
   checks.push(...baleChecks(r));
   checks.push(...roadChecks(r));
+  checks.push(...masteryChecks(r));
   const a = r.activity;
   if (a) {
     checks.push({
@@ -324,6 +325,63 @@ export function roadChecks(r: SimulationResult): Check[] {
 }
 
 /** Diagnostics of the money paid for goods (cities, Doge, families, Criées, deliveries). */
+/**
+ * Masteries: how many houses chose each one, and their median net worth at the close, compared
+ * within each play style (a mastery should not crush the others).
+ */
+export function masteryChecks(r: SimulationResult): Check[] {
+  const state = r.finalState;
+  if (!state) return [];
+  const final = finalWorth(r);
+  const byProfile = new Map<string, Map<string, number[]>>();
+  const counts = new Map<string, number>();
+  for (const p of final) {
+    const m = state.players[p.playerId]?.specialty ?? "aucune";
+    counts.set(m, (counts.get(m) ?? 0) + 1);
+    const line = byProfile.get(p.profile) ?? new Map<string, number[]>();
+    line.set(m, [...(line.get(m) ?? []), Number(p.netWorth)]);
+    byProfile.set(p.profile, line);
+  }
+  if (counts.size === 0 || (counts.size === 1 && counts.has("aucune"))) return [];
+  // Largest lead of one mastery over another, within a play style, among groups of 2 or more.
+  let lead = 0;
+  let where = "";
+  const detail: string[] = [];
+  for (const [profile, line] of byProfile) {
+    const groups = [...line.entries()]
+      .filter(([m, v]) => m !== "aucune" && v.length >= 2)
+      .map(([m, v]) => ({ m, n: v.length, worth: median(v) }))
+      .sort((a, b) => b.worth - a.worth);
+    if (groups.length >= 2) {
+      detail.push(
+        `${profile} : ${groups.map((g) => `${g.m} ${Math.round(g.worth / 100)} (${g.n})`).join(", ")}`,
+      );
+      const top = groups[0];
+      const low = groups[groups.length - 1];
+      if (top && low && top.worth / low.worth - 1 > lead) {
+        lead = top.worth / low.worth - 1;
+        where = `${profile} : ${top.m} devant ${low.m}`;
+      }
+    }
+  }
+  return [
+    {
+      name: "Maîtrises choisies (marchands présents en fin de saison)",
+      target: "diagnostic",
+      value: [...counts.entries()].map(([m, n]) => `${m} ${n}`).join(" · "),
+      pass: true,
+      blocking: false,
+    },
+    {
+      name: "Avance d'une maîtrise sur une autre, à profil égal",
+      target: "≤ 15 % (patrimoine médian)",
+      value: `${pct(lead)}${where ? ` (${where})` : ""}${detail.length ? ` — ${detail.join(" ; ")}` : ""}`,
+      pass: lead <= 0.15,
+      blocking: false,
+    },
+  ];
+}
+
 export function budgetChecks(r: SimulationResult): Check[] {
   const per = createdPerActiveDay(r);
   const total = ORDER_SOURCES.reduce((a, k) => a + (per[k] ?? 0), 0);

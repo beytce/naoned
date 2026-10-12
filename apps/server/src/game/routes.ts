@@ -38,6 +38,7 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("collectAll") }),
   z.object({ type: z.literal("collectAndRestart") }),
   z.object({ type: z.literal("claimMission"), missionId: z.string() }),
+  z.object({ type: z.literal("chooseSpecialty"), specialty: z.string() }),
   z.object({ type: z.literal("claimDaily"), taskId: z.string() }),
   z.object({ type: z.literal("openBale") }),
   z.object({ type: z.literal("rerollContract"), contractId: z.string() }),
@@ -659,6 +660,8 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "collect", playerId, buildingId: a.buildingId }];
     case "claimMission":
       return [{ type: "claimMission", playerId, missionId: a.missionId }];
+    case "chooseSpecialty":
+      return [{ type: "chooseSpecialty", playerId, specialty: a.specialty }];
     case "claimDaily":
       return [{ type: "claimDaily", playerId, taskId: a.taskId }];
     case "openBale":

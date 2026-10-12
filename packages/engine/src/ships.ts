@@ -1,5 +1,6 @@
 import { costValue } from "./buildings.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
+import { specialtyEffects } from "./specialties.js";
 import {
   HOUR_MS,
   type PlayerId,
@@ -103,6 +104,9 @@ export function readyFleet(tx: Tx, playerId: PlayerId, ids: string[]): Fleet {
     speedBps = Math.max(speedBps, def.speedBps);
     defense += def.defense;
   });
+  // A shipowner's mastery: larger holds.
+  const holdBps = specialtyEffects(tx.ctx, tx.s as WorldState, playerId).holdBps;
+  if (holdBps > 0) hold = applyBpsFloor(hold, 10_000 + holdBps);
   return { ships: ids, hold, speedBps, defense };
 }
 

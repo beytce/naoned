@@ -486,6 +486,33 @@ export const worldSettingsSchema = z.object({
   maxBuildings: positive,
   maxBuildingLevel: positive,
   levelCostGrowthBps: bps,
+  /**
+   * Masteries: once the house's workshops add up to `unlockLevels`, the merchant chooses one for
+   * the season. Each changes a few rules for them alone.
+   */
+  specialties: z
+    .object({
+      unlockLevels: positive,
+      options: z.record(
+        z.object({
+          /** Added to the yield of recipes with inputs (transformation). */
+          transformYieldBps: bps.default(0),
+          /** Vehicles go faster by this much. */
+          vehicleSpeedBps: bps.default(0),
+          extraVehicles: qty.default(0),
+          /** A larger share of the market maker's daily quota. */
+          marketMakerQuotaBps: bps.default(0),
+          /** Taken off the market tax on the merchant's sales. */
+          taxDiscountBps: bps.default(0),
+          extraOpenOrders: qty.default(0),
+          /** Taken off the port dues of the merchant's own convoys. */
+          portDuesDiscountBps: bps.max(10_000).default(0),
+          /** Larger holds. */
+          holdBps: bps.default(0),
+        }),
+      ),
+    })
+    .default({ unlockLevels: 5, options: {} }),
   /** Share of the materials asked for a level (level → bps; 10 000 when absent). */
   upgradeMaterialsBps: z.record(bps).default({}),
   /** Extra upkeep per level above 1: a level-L building costs base × L × (1 + (L − 1) × growth). */

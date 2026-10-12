@@ -403,6 +403,8 @@ export function DomainScene(props: {
   stock: number;
   /** The merchant's arms, drawn on the mast. */
   crest: ReactNode;
+  /** The sign of the house's mastery, hung under the arms. */
+  emblem?: ReactNode;
   labelOf: (plot: DomainPlot) => string;
   emptyLabel: string;
   /** What the scene shows, for screen readers. */
@@ -490,6 +492,7 @@ export function DomainScene(props: {
       <g>
         <path d="M18 132 V66" stroke={P.woodLight} strokeWidth="2.5" strokeLinecap="round" />
         <g transform="translate(5 54)">{props.crest}</g>
+        {props.emblem && <g transform="translate(8 84)">{props.emblem}</g>}
       </g>
 
       {emptyRows.map((at, i) => (

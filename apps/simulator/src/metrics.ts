@@ -110,6 +110,8 @@ export interface PlayerRow {
   profile: string;
   region: string;
   active: boolean;
+  /** Mastery chosen, empty before. */
+  specialty: string;
   cash: Deniers;
   netWorth: Deniers;
 }
@@ -180,6 +182,7 @@ export function snapshot(
       profile: bot.profile,
       region: bot.region,
       active: now - p.lastActionAt <= ctx.settings.activeWindowHours * 3_600_000,
+      specialty: p.specialty ?? "",
       cash: state.accounts[cashAccount(bot.id)] ?? 0n,
       netWorth: nw,
     });

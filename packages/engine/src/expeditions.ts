@@ -2,6 +2,7 @@ import { draw } from "./draw.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
 import { resolveCrossings } from "./privateers.js";
 import { pirateRiskBps, portDues, readyFleet } from "./ships.js";
+import { portDuesFor } from "./specialties.js";
 import {
   DAY_MS,
   type Expedition,
@@ -9,6 +10,7 @@ import {
   type PlayerId,
   SINK_ACCOUNT,
   type WorldContext,
+  type WorldState,
   cashAccount,
 } from "./state.js";
 import type { ResourceCode } from "./theme.js";
@@ -101,7 +103,9 @@ export function launchExpedition(
   for (const [resource, qty] of Object.entries(dest.provisions)) {
     removeStock(tx, playerId, resource, qty * crews, "expedition_out", id);
   }
-  const fee = fleet ? portDues(tx.ctx, dest.charter) : dest.charter + (escort ? dest.escort : 0n);
+  const fee = fleet
+    ? portDuesFor(tx.ctx, tx.s as WorldState, playerId, dest.charter)
+    : dest.charter + (escort ? dest.escort : 0n);
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, fee, "expedition_charter", id);
 
   const loaded = Object.fromEntries(entries);

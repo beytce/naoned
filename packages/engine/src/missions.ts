@@ -1,4 +1,5 @@
 import { addVehicle } from "./deliveries.js";
+import { maxVehiclesFor } from "./specialties.js";
 import {
   DAY_MS,
   type PlayerId,
@@ -92,7 +93,8 @@ export function claimMission(tx: Tx, playerId: PlayerId, missionId: string): voi
   }
   for (const type of def.reward.vehicles) {
     const owned = Object.values(tx.s.vehicles ?? {}).filter((v) => v.playerId === playerId);
-    if (owned.length < tx.ctx.settings.deliveries.maxVehicles) addVehicle(tx, playerId, type);
+    if (owned.length < maxVehiclesFor(tx.ctx, tx.s as WorldState, playerId))
+      addVehicle(tx, playerId, type);
   }
   emit(tx, "mission_claimed", playerId, { mission: missionId });
 }

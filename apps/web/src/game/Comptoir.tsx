@@ -8,6 +8,7 @@ import { Daily } from "./Daily.js";
 import { Domain } from "./Domain.js";
 import type { GameProps } from "./Game.js";
 import { Ledger } from "./Ledger.js";
+import { MasteryTile } from "./Mastery.js";
 import { d, duration, minutesLabel } from "./format.js";
 import { store } from "./store.js";
 import type { BuildingView, Cost, PlayerView, Recipe } from "./types.js";
@@ -605,6 +606,7 @@ export function Comptoir(props: GameProps) {
           <Hero {...props} />
           <div className="grid gap-3 sm:grid-cols-2">
             <CarnetButton {...props} />
+            <MasteryTile {...props} />
             <BaleTile {...props} />
             <RoadShortcut {...props} />
           </div>

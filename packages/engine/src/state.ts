@@ -44,6 +44,8 @@ export interface Player {
   hungryUntil?: number;
   /** Pass Négociant held until this time (bought, or won in the rankings). */
   passUntil?: number;
+  /** Mastery chosen for the season (see `specialties.ts`). */
+  specialty?: string;
 }
 
 export interface ProductionJob {

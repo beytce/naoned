@@ -596,6 +596,16 @@ export const venice1450Settings: WorldSettingsInput = {
   maxBuildings: 12,
   maxBuildingLevel: 5,
   levelCostGrowthBps: 5_000,
+  // Masteries: chosen once the house's workshops add up to 5 levels, for the whole season.
+  specialties: {
+    unlockLevels: 5,
+    options: {
+      master: { transformYieldBps: 1_500 },
+      carter: { vehicleSpeedBps: 2_500, extraVehicles: 1 },
+      trader: { marketMakerQuotaBps: 5_000, taxDiscountBps: 100, extraOpenOrders: 2 },
+      shipowner: { portDuesDiscountBps: 5_000, holdBps: 2_500 },
+    },
+  },
   // Level 2 asks half the materials: a first upgrade within reach in the first days.
   upgradeMaterialsBps: { "2": 5_000 },
   upkeepLevelGrowthBps: 2_000,

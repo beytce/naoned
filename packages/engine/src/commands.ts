@@ -21,6 +21,7 @@ import { collectRaid, commissionPrivateers } from "./privateers.js";
 import { collect, startProduction } from "./production.js";
 import { deliverToProject } from "./projects.js";
 import { buildShip, repairShip } from "./ships.js";
+import { chooseSpecialty } from "./specialties.js";
 import {
   type Building,
   DAY_MS,
@@ -87,6 +88,7 @@ export type Command =
   | { type: "commissionPrivateers"; playerId: PlayerId; route: string; ships: string[] }
   | { type: "collectRaid"; playerId: PlayerId; raidId: string }
   | { type: "claimMission"; playerId: PlayerId; missionId: string }
+  | { type: "chooseSpecialty"; playerId: PlayerId; specialty: string }
   | { type: "sellToCriee"; playerId: PlayerId; quantity: number }
   | { type: "claimDaily"; playerId: PlayerId; taskId: string }
   | { type: "openBale"; playerId: PlayerId }
@@ -273,6 +275,9 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "collectRaid":
       collectRaid(tx, cmd.playerId, cmd.raidId);
+      break;
+    case "chooseSpecialty":
+      chooseSpecialty(tx, cmd.playerId, cmd.specialty);
       break;
     case "claimMission":
       claimMission(tx, cmd.playerId, cmd.missionId);

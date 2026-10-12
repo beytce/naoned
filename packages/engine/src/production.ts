@@ -1,5 +1,6 @@
 import { eventYieldBps } from "./events.js";
 import { applyBonusToQuantity, applyBpsFloor } from "./money.js";
+import { specialtyEffects } from "./specialties.js";
 import {
   type Building,
   HOUR_MS,
@@ -47,6 +48,11 @@ export function collect(tx: Tx, building: Building): void {
   const done = Math.min(job.batches, Math.floor((tx.now - job.startedAt) / batchMs));
   if (done <= 0) return;
 
+  // Mastery: a master of the workshop makes more of what they transform.
+  const transform =
+    Object.keys(recipe.inputs).length > 0
+      ? specialtyEffects(tx.ctx, tx.s as WorldState, building.playerId).transformYieldBps
+      : 0;
   for (const [resource, perBatch] of Object.entries(recipe.outputs)) {
     let total = 0;
     for (let k = 0; k < done; k++) {
@@ -65,7 +71,7 @@ export function collect(tx: Tx, building: Building): void {
         fresh.minutes > 0 && tx.now - completedAt <= fresh.minutes * 60_000 ? freshBps : 0;
       total += applyBonusToQuantity(
         base,
-        yieldBonusBps(tx.ctx, player, resource, completedAt) + levelBonus + freshBonus,
+        yieldBonusBps(tx.ctx, player, resource, completedAt) + levelBonus + freshBonus + transform,
       );
     }
     addStock(tx, building.playerId, resource, total, "production_output", building.id);

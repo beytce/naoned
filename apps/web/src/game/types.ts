@@ -46,6 +46,23 @@ export interface Catalog {
     orderPremiumBps: number;
   };
   rations: { resource: string; perLevelPerDay: number; slowdownBps: number };
+  /** Masteries: the house's levels needed, and what each one changes. */
+  specialties: {
+    unlockLevels: number;
+    options: Record<
+      string,
+      {
+        transformYieldBps: number;
+        vehicleSpeedBps: number;
+        extraVehicles: number;
+        marketMakerQuotaBps: number;
+        taxDiscountBps: number;
+        extraOpenOrders: number;
+        portDuesDiscountBps: number;
+        holdBps: number;
+      }
+    >;
+  };
   resources: { code: string; name: string; chain: string; tier: string }[];
   regions: { code: string; name: string; bonusResource: string; startingBuildings: string[] }[];
   cities: { code: string; name: string; buys: string[] }[];
@@ -415,6 +432,8 @@ export interface PlayerView {
     title: { index: number; current: Title; next: Title | null; progress: number };
     seasonEndsAt: number;
   };
+  /** The house's mastery: chosen, or how far it is (levels of all workshops). */
+  mastery: { chosen: string | null; levels: number; unlocked: boolean };
   inventory: { resource: string; available: number; escrow: number }[];
   buildings: BuildingView[];
   market: MarketLine[];
@@ -650,6 +669,8 @@ export interface RankingRow {
   rank: number;
   pseudo: string | null;
   region: string;
+  /** Mastery of the season, if chosen. */
+  specialty?: string | null;
   netWorth: Money;
   crest: CrestData | null;
   me: boolean;
@@ -718,6 +739,7 @@ export type Action =
   | { type: "collect"; buildingId: string }
   | { type: "collectAndRestart" }
   | { type: "claimMission"; missionId: string }
+  | { type: "chooseSpecialty"; specialty: string }
   | { type: "claimDaily"; taskId: string }
   | { type: "openBale" }
   | { type: "sellToCriee"; quantity: number }

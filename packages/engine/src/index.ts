@@ -42,6 +42,7 @@ export * from "./settings.js";
 export { type MissionView, missionsFor } from "./missions.js";
 export { crossingAt, watchedRoutes } from "./privateers.js";
 export * from "./ships.js";
+export * from "./specialties.js";
 export * from "./activity.js";
 export * from "./state.js";
 export * from "./theme.js";

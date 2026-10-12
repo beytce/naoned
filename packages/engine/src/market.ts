@@ -1,4 +1,5 @@
 import { type Deniers, applyBpsCeil, applyBpsFloor } from "./money.js";
+import { specialtyEffects } from "./specialties.js";
 import {
   HOUR_MS,
   MARKET_MAKER,
@@ -91,7 +92,9 @@ export function maxOpenOrdersFor(
   now: number,
 ): number {
   const extra = hasPass(state, playerId, now) ? ctx.settings.pass.extraOpenOrders : 0;
-  return ctx.settings.maxOpenOrders + extra;
+  return (
+    ctx.settings.maxOpenOrders + extra + specialtyEffects(ctx, state, playerId).extraOpenOrders
+  );
 }
 
 export function openOrderCount(state: WorldState, playerId: PlayerId): number {
@@ -140,12 +143,12 @@ export function playerQuota(
   const cap = mm.maxDailyDepth[resource];
   const players = Math.max(1, activePlayerCount(ctx, state, now));
   const share = cap === undefined ? base : Math.min(base, Math.max(1, Math.floor(cap / players)));
-  // Pass Négociant: a fifth more of the merchant's own share.
-  const bonus = ctx.settings.pass.marketMakerQuotaBps;
-  if (playerId && bonus > 0 && hasPass(state, playerId, now)) {
-    return share + Math.floor((share * bonus) / 10_000);
-  }
-  return share;
+  // Pass Négociant: a fifth more of the merchant's own share; a trader's mastery adds its own.
+  const pass =
+    playerId && hasPass(state, playerId, now) ? ctx.settings.pass.marketMakerQuotaBps : 0;
+  const mastery = specialtyEffects(ctx, state, playerId).marketMakerQuotaBps;
+  const bonus = pass + mastery;
+  return bonus > 0 ? share + Math.floor((share * bonus) / 10_000) : share;
 }
 
 function quotaRoom(tx: Tx, playerId: PlayerId, resource: string, dir: "bought" | "sold"): number {
@@ -208,7 +211,9 @@ function settle(tx: Tx, buy: Order, sell: Order, price: Deniers, qty: number): v
     removeEscrowedStock(tx, sell.playerId, sell.resource, qty, "trade_sell", tradeId);
     addStock(tx, buy.playerId, buy.resource, qty, "trade_buy", tradeId);
     transfer(tx, escrowAccount(buy.playerId), cashAccount(sell.playerId), gross, "trade", tradeId);
-    tax = applyBpsCeil(gross, tx.ctx.settings.marketTaxBps);
+    // A trader's mastery lightens the tax on their sales.
+    const discount = specialtyEffects(tx.ctx, tx.s as WorldState, sell.playerId).taxDiscountBps;
+    tax = applyBpsCeil(gross, Math.max(0, tx.ctx.settings.marketTaxBps - discount));
     transfer(tx, cashAccount(sell.playerId), SINK_ACCOUNT, tax, "market_tax", tradeId);
   }
 

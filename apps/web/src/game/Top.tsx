@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { Crest, defaultCrest } from "../art/crest.js";
 import { Sign } from "../art/logo.js";
+import { MasteryEmblem } from "../art/mastery.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Tabs, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
@@ -22,6 +23,7 @@ interface Who {
   region: string;
   crest: RankingRow["crest"];
   bot: boolean;
+  specialty?: string | null;
 }
 
 function Line(props: {
@@ -55,6 +57,11 @@ function Line(props: {
           {r.pass && (
             <span title={fr.game.pass.seal} className="inline-flex">
               <Sign size={14} />
+            </span>
+          )}
+          {r.specialty && (
+            <span title={fr.game.mastery.names[r.specialty] ?? ""} className="inline-flex">
+              <MasteryEmblem code={r.specialty} size={16} />
             </span>
           )}
           <span className="label">{props.game.names.region(r.region)}</span>

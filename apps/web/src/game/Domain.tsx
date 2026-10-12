@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Crest, defaultCrest } from "../art/crest.js";
 import { type DomainPlot, DomainScene, skyPhase } from "../art/domain.js";
+import { MasteryEmblem } from "../art/mastery.js";
 import { fr } from "../i18n.js";
 import { Label } from "../ui.js";
 import type { GameProps } from "./Game.js";
@@ -82,6 +83,9 @@ export function Domain(props: GameProps) {
         vehiclesHome={home}
         stock={stock}
         crest={<Crest crest={crest} size={26} />}
+        emblem={
+          view.mastery.chosen ? <MasteryEmblem code={view.mastery.chosen} size={20} /> : undefined
+        }
         labelOf={(p) => `${props.names.building(p.type)}, ${fr.game.level(p.level)}`}
         emptyLabel={t.build}
         title={t.title(view.buildings.length, levels)}

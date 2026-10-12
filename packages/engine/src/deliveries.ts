@@ -6,6 +6,7 @@ import { draw, pickWeighted } from "./draw.js";
 import { eventCityBps } from "./events.js";
 import { addInfluence, familyOrdersDone, familyOrdersFor } from "./families.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
+import { maxVehiclesFor, specialtyEffects } from "./specialties.js";
 import {
   type BanditBand,
   DAY_MS,
@@ -94,7 +95,8 @@ export function buyVehicle(tx: Tx, playerId: PlayerId, type: string): Vehicle {
   const { deliveries } = tx.ctx.settings;
   const def = deliveries.vehicles[type];
   if (!def) fail("unknown_vehicle_type");
-  if (vehiclesOf(tx.s as WorldState, playerId).length >= deliveries.maxVehicles)
+  const state = tx.s as WorldState;
+  if (vehiclesOf(state, playerId).length >= maxVehiclesFor(tx.ctx, state, playerId))
     fail("max_vehicles");
   const vehicle = addVehicle(tx, playerId, type);
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, def.costDucats, "vehicle", vehicle.id);
@@ -127,12 +129,29 @@ export function travelMinutes(
   region: string,
   city: string,
   vehicleType: string,
+  /** Faster by this much (a carter's mastery). */
+  speedBonusBps = 0,
 ): number | undefined {
   const { vehicles, maxDeliveryMinutes } = ctx.settings.deliveries;
   const road = routeMinutes(ctx, region, city);
-  const speed = vehicles[vehicleType]?.speedBps;
-  if (road === undefined || !speed) return undefined;
+  const base = vehicles[vehicleType]?.speedBps;
+  if (road === undefined || !base) return undefined;
+  const speed = Math.floor((base * (10_000 + speedBonusBps)) / 10_000);
   return Math.min(maxDeliveryMinutes, Math.ceil((road * 10_000) / speed));
+}
+
+/** Time on the road for this merchant (their region, their mastery). */
+export function travelMinutesFor(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  city: string,
+  vehicleType: string,
+): number | undefined {
+  const player = state.players[playerId];
+  if (!player) return undefined;
+  const bonus = specialtyEffects(ctx, state, playerId).vehicleSpeedBps;
+  return travelMinutes(ctx, player.region, city, vehicleType, bonus);
 }
 
 /** Price per unit of a city order: the reference, plus a bonus per hour of road, rounded down. */
@@ -414,7 +433,7 @@ export function dispatchDelivery(
   if (!def) fail("unknown_vehicle_type");
   if (order.quantity > def.capacity) fail("over_capacity");
   if (escort !== "none" && !ctx.settings.deliveries.escorts[escort]) fail("unknown_escort");
-  const minutes = travelMinutes(ctx, player.region, order.city, vehicle.type);
+  const minutes = travelMinutesFor(ctx, state, playerId, order.city, vehicle.type);
   if (minutes === undefined) fail("no_route");
 
   const id = nextId(tx, "d");
