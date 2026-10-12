@@ -296,7 +296,7 @@ export const venice1450Settings: WorldSettingsInput = {
     dogeOrdersPerDay: 2,
     urgentPerDay: 4,
     urgentPremiumBps: 1_500,
-    urgentOpenMinutes: 60,
+    urgentOpenMinutes: 180,
     urgentHours: { from: 8, to: 21 },
     // Smaller orders, a better price per unit: the money of the city sales is kept.
     cityPriceBps: 12_500,
@@ -393,7 +393,7 @@ export const venice1450Settings: WorldSettingsInput = {
     maxAttacksPerBand: 2,
     maxBandsPerRoute: 2,
     attackChanceBps: { "0": 7_000, "2": 2_500, "5": 800 },
-    reactionMinutes: 10,
+    reactionMinutes: 20,
     takeBps: 3_000,
     keepBps: 5_000,
     quietHours: { from: 22, to: 8 },
@@ -405,7 +405,7 @@ export const venice1450Settings: WorldSettingsInput = {
     npcBands: { perDay: 3, hours: 3 },
   },
   // Fresh produce: a batch collected within 30 minutes of being done yields 5 % more.
-  fresh: { minutes: 30, bonusBps: 500 },
+  fresh: { minutes: 120, bonusBps: 500 },
   // The Criées of the Rialto are replaced by urgent deliveries (off; kept for older worlds:
   // three times a day between 8 h and 22 h, bread, bricks or planks 10 to 20 % above reference).
   criees: {
