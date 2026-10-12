@@ -442,6 +442,55 @@ export const fr = {
     idleAllHelp: "Lancez une production pour que vos ateliers travaillent pendant votre absence.",
     harvestAll: (n: number) => `Tout récolter et relancer · ${n} lot${n > 1 ? "s" : ""}`,
     restartAll: "Tout relancer",
+    acts: {
+      kicker: (n: string) => `Acte ${n}`,
+      open: (title: string) => `L'acte en cours : ${title}`,
+      nextIn: (time: string) => `Acte suivant dans ${time}`,
+      endIn: (time: string) => `Fin de la saison dans ${time}`,
+      toWorksite: "Voir le chantier de l'Arsenal",
+      acts: {
+        installation: [
+          "L'installation",
+          "Les marchands s'installent en Vénétie. Bâtissez, livrez, trouvez vos fournisseurs : la semaine prochaine, une crise frappera la République.",
+        ],
+        crisis: ["La crise", "Une crise s'annonce pour la République…"],
+        worksite: [
+          "L'Arsenal",
+          "Le Doge fait agrandir l'Arsenal : livrez briques et planches à Venise, payées 15 % de plus. Chaque unité compte pour votre famille ; celle qui livre le plus gagne 100 d'influence par membre.",
+        ],
+        sensa: [
+          "La Sensa",
+          "La grande foire de l'Ascension : les commandes sont payées 15 % de plus et plus nombreuses. Dernière ligne droite avant la fin du mois.",
+        ],
+      } as Record<string, [string, string]>,
+      variants: {
+        chioggia: [
+          "La guerre de Chioggia",
+          "Gênes menace la lagune : Venise paie briques et planches 30 % de plus et en commande davantage.",
+        ],
+        plague: [
+          "La peste",
+          "La ville a faim : le pain se paie 30 % de plus, la farine 20 %, et les villes en commandent davantage.",
+        ],
+        embargo: [
+          "L'embargo du Levant",
+          "Les galères ne passent plus : sel et vin se paient 50 % de plus, épices, soie, fourrures et draps 60 %.",
+        ],
+        sensa: [
+          "La Sensa",
+          "La grande foire de l'Ascension : les commandes sont payées 15 % de plus et plus nombreuses. Dernière ligne droite avant la fin du mois.",
+        ],
+      } as Record<string, [string, string]>,
+      worksite: {
+        kicker: "Le grand chantier",
+        title: (city: string) => `L'Arsenal de ${city}`,
+        help: "Livrez ici, au prix affiché. Chaque unité compte pour votre famille : celle qui livre le plus d'ici la fin de l'acte gagne 100 d'influence par membre.",
+        closesIn: (time: string) => `Fin du chantier dans ${time}`,
+        deliver: (q: number, amount: string) => `Livrer ${q} · ${amount}`,
+        noFamily: "Prêtez allégeance à une famille pour que vos livraisons comptent.",
+        race: "La course des familles",
+      },
+    },
     mastery: {
       kicker: "Maîtrise de la saison",
       title: "Choisissez votre voie",

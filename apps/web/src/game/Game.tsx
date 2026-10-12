@@ -8,6 +8,7 @@ import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { applyPalette, currentPalette, needsPass } from "../theme.js";
 import { Slab } from "../ui.js";
+import { ActCard, SeasonFrieze } from "./Acts.js";
 import { AmbushAlert } from "./AmbushAlert.js";
 import { Bell } from "./Bell.js";
 import { Ceremony } from "./Ceremony.js";
@@ -548,13 +549,21 @@ export function Game(props: {
             )}
           </h1>
           <div className="hidden min-w-0 flex-1 lg:block">
-            <p className="label text-lagoon">{fr.game.dayOf(view.day, catalog.world.seasonDays)}</p>
-            <div className="mt-1.5 h-1 w-64 overflow-hidden rounded-full bg-night-4">
-              <div
-                className="h-full rounded-full bg-lagoon"
-                style={{ width: `${dayProgress * 100}%` }}
-              />
-            </div>
+            {view.acts.length > 0 ? (
+              <SeasonFrieze {...gp} className="max-w-md" />
+            ) : (
+              <>
+                <p className="label text-lagoon">
+                  {fr.game.dayOf(view.day, catalog.world.seasonDays)}
+                </p>
+                <div className="mt-1.5 h-1 w-64 overflow-hidden rounded-full bg-night-4">
+                  <div
+                    className="h-full rounded-full bg-lagoon"
+                    style={{ width: `${dayProgress * 100}%` }}
+                  />
+                </div>
+              </>
+            )}
           </div>
           <div className="ml-auto flex shrink-0 items-center gap-0.5 lg:gap-3">
             {purse}
@@ -564,20 +573,27 @@ export function Game(props: {
           </div>
         </div>
         {/* Phone: the season's day, as a line under the header. */}
-        <div className="mx-auto mt-2 flex max-w-md items-center gap-3 lg:hidden">
-          <p className="label shrink-0 text-lagoon">
-            {fr.game.dayOf(view.day, catalog.world.seasonDays)}
-          </p>
-          <div className="h-1 flex-1 overflow-hidden rounded-full bg-night-4">
-            <div
-              className="h-full rounded-full bg-lagoon"
-              style={{ width: `${dayProgress * 100}%` }}
-            />
+        {view.acts.length > 0 ? (
+          <div className="mx-auto mt-2 max-w-md lg:hidden">
+            <SeasonFrieze {...gp} />
           </div>
-        </div>
+        ) : (
+          <div className="mx-auto mt-2 flex max-w-md items-center gap-3 lg:hidden">
+            <p className="label shrink-0 text-lagoon">
+              {fr.game.dayOf(view.day, catalog.world.seasonDays)}
+            </p>
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-night-4">
+              <div
+                className="h-full rounded-full bg-lagoon"
+                style={{ width: `${dayProgress * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
       </header>
 
       <Gazette {...gp} />
+      <ActCard {...gp} />
 
       {view.player.upkeepDefaultUntil > gp.now && (
         <div className="mx-auto mt-3 w-full max-w-md px-4 lg:max-w-6xl lg:px-8">

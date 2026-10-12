@@ -5,7 +5,7 @@ import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
 import { bigMin } from "./money.js";
 import { resolveCrossings } from "./privateers.js";
-import { openDueProjects } from "./projects.js";
+import { closeWorksites, openDueProjects } from "./projects.js";
 import { shipUpkeep } from "./ships.js";
 import { DAY_MS, HOUR_MS, SINK_ACCOUNT, cashAccount, dayIndex } from "./state.js";
 import { type Tx, balance, emit, removeStock, transfer } from "./tx.js";
@@ -84,6 +84,8 @@ export function tick(tx: Tx): void {
   expireOrders(tx);
   chargeUpkeep(tx);
   closeWeek(tx);
+  // A worksite won counts in the week of its act, before the families' week closes.
+  closeWorksites(tx);
   closeFamilyWeek(tx);
   closeSeason(tx);
   openDueProjects(tx);

@@ -175,6 +175,7 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
   checks.push(...baleChecks(r));
   checks.push(...roadChecks(r));
   checks.push(...masteryChecks(r));
+  checks.push(...actChecks(r));
   const a = r.activity;
   if (a) {
     checks.push({
@@ -324,7 +325,6 @@ export function roadChecks(r: SimulationResult): Check[] {
   ];
 }
 
-/** Diagnostics of the money paid for goods (cities, Doge, families, Criées, deliveries). */
 /**
  * Masteries: how many houses chose each one, and their median net worth at the close, compared
  * within each play style (a mastery should not crush the others).
@@ -382,6 +382,34 @@ export function masteryChecks(r: SimulationResult): Check[] {
   ];
 }
 
+/** The season in acts: money paid for goods (deliveries and worksites) per active merchant and day, act by act. */
+export function actChecks(r: SimulationResult): Check[] {
+  const acts = [...(r.options.settings.acts ?? [])].sort((a, b) => a.week - b.week);
+  if (acts.length === 0) return [];
+  const sources = [...ORDER_SOURCES, "project_delivery"];
+  const parts = acts.map((a, i) => {
+    const from = a.week * 7;
+    const to = acts[i + 1] ? (acts[i + 1]?.week ?? 0) * 7 : r.options.days;
+    const days = r.daily.filter((d) => d.day >= Math.max(1, from) && d.day < to);
+    const active = days.reduce((n, d) => n + d.active, 0);
+    const paid = days.reduce(
+      (n, d) => n + sources.reduce((m, k) => m + Number(d.createdBy[k] ?? 0n), 0),
+      0,
+    );
+    return `${a.code} ${(paid / Math.max(1, active) / 100).toFixed(1)}`;
+  });
+  return [
+    {
+      name: "Monnaie payée par acte (ducats / joueur actif / jour)",
+      target: "diagnostic : les actes se sentent",
+      value: parts.join(" · "),
+      pass: true,
+      blocking: false,
+    },
+  ];
+}
+
+/** Diagnostics of the money paid for goods (cities, Doge, families, Criées, deliveries). */
 export function budgetChecks(r: SimulationResult): Check[] {
   const per = createdPerActiveDay(r);
   const total = ORDER_SOURCES.reduce((a, k) => a + (per[k] ?? 0), 0);

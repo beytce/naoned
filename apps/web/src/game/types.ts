@@ -416,6 +416,11 @@ export interface Project {
   needs: Record<string, number>;
   delivered: Record<string, number>;
   unitPrice: Record<string, Money>;
+  /** A worksite of the families (the act it belongs to). */
+  act?: number;
+  /** Units delivered by each family's members. */
+  byFamily?: Record<string, number>;
+  winner?: string | null;
 }
 
 export interface PlayerView {
@@ -432,6 +437,15 @@ export interface PlayerView {
     title: { index: number; current: Title; next: Title | null; progress: number };
     seasonEndsAt: number;
   };
+  /** The season's acts (the variant of each one is told once it has begun). */
+  acts: {
+    code: string;
+    index: number;
+    startsAt: number;
+    endsAt: number;
+    variant: string | null;
+    worksite: boolean;
+  }[];
   /** The house's mastery: chosen, or how far it is (levels of all workshops). */
   mastery: { chosen: string | null; levels: number; unlocked: boolean };
   inventory: { resource: string; available: number; escrow: number }[];

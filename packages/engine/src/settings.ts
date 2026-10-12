@@ -513,6 +513,31 @@ export const worldSettingsSchema = z.object({
       ),
     })
     .default({ unlockLevels: 5, options: {} }),
+  /**
+   * The season in acts: from its week (0 = the first), each act may draw a market modifier among
+   * its variants (like an event, for the whole act) and open a worksite for the families.
+   */
+  acts: z
+    .array(
+      z.object({
+        code: z.string(),
+        week: qty,
+        variants: z.array(eventDef).default([]),
+        worksite: z
+          .object({
+            city: z.string(),
+            /** Needs per active player when the act opens. */
+            needsPerPlayer: z.record(qty),
+            premiumBps: bps,
+            /** Family influence per unit delivered. */
+            influencePerUnit: qty,
+            /** Influence given to each member of the family that delivered most. */
+            winnerInfluence: qty,
+          })
+          .optional(),
+      }),
+    )
+    .default([]),
   /** Share of the materials asked for a level (level → bps; 10 000 when absent). */
   upgradeMaterialsBps: z.record(bps).default({}),
   /** Extra upkeep per level above 1: a level-L building costs base × L × (1 + (L − 1) × growth). */

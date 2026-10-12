@@ -110,6 +110,12 @@ export interface Project {
   needs: Record<ResourceCode, number>;
   delivered: Record<ResourceCode, number>;
   unitPrice: Record<ResourceCode, Deniers>;
+  /** The act whose worksite this is (a worksite of the families). */
+  act?: number;
+  /** Units delivered by the members of each family. */
+  byFamily?: Record<string, number>;
+  /** The family that delivered most, once the act is over. */
+  winner?: string | null;
 }
 
 export interface Expedition {

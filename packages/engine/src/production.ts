@@ -1,4 +1,4 @@
-import { eventYieldBps } from "./events.js";
+import { marketYieldBps } from "./acts.js";
 import { applyBonusToQuantity, applyBpsFloor } from "./money.js";
 import { specialtyEffects } from "./specialties.js";
 import {
@@ -24,7 +24,7 @@ export function yieldBonusBps(
   if (findRegion(ctx.theme, player.region)?.bonusResource === resource) {
     bonus += ctx.settings.regionBonusBps;
   }
-  bonus += eventYieldBps(ctx, at, resource);
+  bonus += marketYieldBps(ctx, at, resource);
   const late = ctx.settings.lateJoiner;
   const lateFrom = ctx.startAt + late.afterDay * 24 * HOUR_MS;
   if (player.joinedAt >= lateFrom && at < player.joinedAt + late.hours * HOUR_MS) {

@@ -1,9 +1,9 @@
 import { isDraft, original } from "immer";
+import { marketCityBps } from "./acts.js";
 import { costValue } from "./buildings.js";
 import { hourIn, hourWithin } from "./clock.js";
 import { contractsDoneToday, contractsFor } from "./contracts.js";
 import { draw, pickWeighted } from "./draw.js";
-import { eventCityBps } from "./events.js";
 import { addInfluence, familyOrdersDone, familyOrdersFor } from "./families.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
 import { maxVehiclesFor, specialtyEffects } from "./specialties.js";
@@ -221,7 +221,7 @@ export function deliveryOrdersFor(
   const out: DeliveryOrder[] = [];
   // A market event of the day pays its price on every order it touches (events last a world day).
   const push = (o: Omit<DeliveryOrder, "id" | "day">) => {
-    const bps = eventCityBps(ctx, dayStart, o.city, o.resource, "price");
+    const bps = marketCityBps(ctx, dayStart, o.city, o.resource, "price");
     const unitPrice = bps === 10_000 ? o.unitPrice : applyBpsFloor(o.unitPrice, bps);
     out.push({ ...o, unitPrice, id: `${day}:${out.length}`, day });
   };
@@ -339,7 +339,7 @@ export function deliveryOrdersFor(
   // A market event asks for more somewhere: the first city orders of the day go there.
   const asked = resources.flatMap((resource) =>
     buyers(ctx, region, resource)
-      .filter((city) => eventCityBps(ctx, dayStart, city, resource, "capacity") > 10_000)
+      .filter((city) => marketCityBps(ctx, dayStart, city, resource, "capacity") > 10_000)
       .map((city) => ({ resource, city })),
   );
   for (let i = 0; i < cfg.eventOrdersPerDay && asked.length > 0 && out.length < total; i++) {

@@ -24,6 +24,7 @@ import {
   portPrices,
   quoteCitySale,
   recipesFor,
+  seasonActs,
   seasonEnd,
   shipStatus,
   shipUpkeep,
@@ -529,6 +530,15 @@ export function playerView(
       title: titleFor(worth.total),
       seasonEndsAt: seasonEnd(ctx),
     },
+    /** The season's acts (the variant of each one is told once it has begun). */
+    acts: seasonActs(ctx).map((a) => ({
+      code: a.code,
+      index: a.index,
+      startsAt: a.startsAt,
+      endsAt: a.endsAt,
+      variant: a.startsAt <= now ? (a.variant?.code ?? null) : null,
+      worksite: a.worksite !== null,
+    })),
     /** The house's mastery: chosen, or how far it is (levels of all workshops). */
     mastery: {
       chosen: player.specialty ?? null,

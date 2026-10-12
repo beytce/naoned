@@ -3,6 +3,7 @@ import { ApiError } from "../api.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Qty, Ribbon, Slab, Stat, clock } from "../ui.js";
+import { WorksitePanel } from "./Acts.js";
 import { have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
 import { gameApi } from "./api.js";
@@ -390,6 +391,7 @@ export function Familles(props: GameProps) {
           <Stat label={t().influenceSeason} value={fam.influence.season} />
         </div>
       </Panel>
+      <WorksitePanel {...props} />
       <Thread props={props} />
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">
