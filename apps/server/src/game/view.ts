@@ -32,6 +32,7 @@ import {
 } from "@comptoirs/engine";
 import {
   activeEvent,
+  balesFor,
   contractsFor,
   crieePrice,
   crieeRoom,
@@ -560,6 +561,7 @@ export function playerView(
       lookout: pass ? lookout(state, now) : null,
     },
     daily: ctx.settings.daily.perDay > 0 ? dailyFor(ctx, state, playerId, now) : null,
+    bales: balesFor(ctx, state, playerId, now),
     fresh: ctx.settings.fresh,
     criee: crieeView(ctx, state, playerId, now),
     openOrders: Object.values(state.orders).filter((o) => o.playerId === playerId),

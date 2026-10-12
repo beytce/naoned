@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
-import { ledgerEntries, players, telemetry } from "../src/db/schema.js";
+import { ledgerEntries, players, stockMovements, telemetry } from "../src/db/schema.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
@@ -244,6 +244,25 @@ describe("game API", () => {
         .statusCode,
     ).toBe(400);
     expect((await act(cookie, { type: "placeOrder", playerId: "x" })).statusCode).toBe(400);
+  });
+
+  it("opens Faraj's welcome bale once: its goods are journaled, the next one comes later", async () => {
+    const cookie = await login("ada@example.org");
+    const v = (await post(cookie, "/api/game/join", { region: "lagoon" })).json().view;
+    expect(v.bales).toMatchObject({ available: 1, max: 2 });
+    expect(v.bales.odds.find((o: { rarity: string }) => o.rarity === "legendary")).toBeDefined();
+    const opened = (await act(cookie, { type: "openBale" })).json().view;
+    expect(opened.bales.available).toBe(0);
+    expect(opened.bales.last.cards).toHaveLength(3);
+    expect(opened.bales.nextAt).toBeGreaterThan(now);
+    const again = await act(cookie, { type: "openBale" });
+    expect(again.statusCode).toBe(422);
+    expect(again.json().error).toBe("no_bale");
+    const gifts = (await database.db.select().from(stockMovements)).filter(
+      (m) => m.reason === "bale_gift",
+    );
+    expect(gifts).toHaveLength(3);
+    expect(await world.checkInvariants()).toEqual([]);
   });
 
   it("saves everything: a restarted server finds the same world, journals match the state", async () => {
