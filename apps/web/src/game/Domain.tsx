@@ -1,10 +1,18 @@
-import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
+import {
+  type PointerEvent as ReactPointerEvent,
+  Suspense,
+  lazy,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Crest, defaultCrest } from "../art/crest.js";
 import {
   type DomainPlot,
   DomainScene,
   type DomainVehicle,
   type DomainWorker,
+  type SkyPhase,
   skyPhase,
 } from "../art/domain.js";
 import { MasteryEmblem } from "../art/mastery.js";
@@ -18,9 +26,24 @@ import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
 import { underPoint } from "./gestures.js";
 import { OrderFacts, OrderPanel, canServe, total, vehicleName } from "./roadKit.js";
+import { store as prefs } from "./store.js";
 import type { DeliveryOrderView } from "./types.js";
 import { useWide } from "./useWide.js";
 import { have, readyOf, workshopState } from "./workshops.js";
+
+/** The domain in real time 3D, loaded with three.js when the counter first shows. */
+const Domain3D = lazy(() => import("../domain3d/Domain3D.js"));
+
+/** WebGL on this device, unless the player asked for the drawn domain (`domain2d`). */
+const use3d = (() => {
+  try {
+    if (prefs.get("domain2d") === "1") return false;
+    const c = document.createElement("canvas");
+    return !!(c.getContext("webgl2") ?? c.getContext("webgl"));
+  } catch {
+    return false;
+  }
+})();
 
 /** How long the golden burst of a new building or level lasts. */
 const BURST_MS = 3_000;
@@ -152,16 +175,21 @@ export function Domain(props: GameProps) {
   const quietUntil = useRef(0);
   const area = useRef<HTMLDivElement>(null);
   const [trail, setTrail] = useState<{ x: number; y: number }[]>([]);
+  // The workshop under a point: its bubble or its drawing, or (in 3D) the scene's own picking.
+  const picker = useRef<((x: number, y: number) => string | null) | null>(null);
+  const readyAt = (x: number, y: number): DomainPlot | null => {
+    const id = underPoint(x, y, "data-plot")?.getAttribute("data-plot") ?? picker.current?.(x, y);
+    const p = id ? plotsRef.current.find((q) => q.id === id) : undefined;
+    return p?.state === "ready" ? p : null;
+  };
   const reach = (x: number, y: number) => {
-    const el = underPoint(x, y, "data-plot");
-    if (el?.getAttribute("data-ready") !== "1") return;
-    const p = plotsRef.current.find((q) => q.id === el.getAttribute("data-plot"));
+    const p = readyAt(x, y);
     if (p) harvest(p, { sweep: true });
   };
   const begin = (x: number, y: number) => {
-    const el = underPoint(x, y, "data-plot");
-    if (el?.getAttribute("data-ready") !== "1") return false;
-    sweep.current = { start: el.getAttribute("data-plot") ?? "", moved: false, x, y };
+    const p = readyAt(x, y);
+    if (!p) return false;
+    sweep.current = { start: p.id, moved: false, x, y };
     return true;
   };
   const follow = (x: number, y: number) => {
@@ -309,37 +337,76 @@ export function Domain(props: GameProps) {
         onPointerUp={onPointerEnd}
         onPointerCancel={onPointerEnd}
       >
-        <DomainScene
-          region={view.player.region}
-          phase={skyPhase(parisHour(now))}
-          plots={plots}
-          maxPlots={catalog.rules.maxBuildings}
-          vehicles={vehicles}
-          vehicleLabel={(v) =>
-            `${vehicleName(v.type)}, ${v.where === "home" ? fr.game.roadMap.stable.atDepot : v.where === "out" ? t.road.out : t.road.back}`
-          }
-          onVehicle={(v) => {
-            if (v.where === "home") props.setSheet(`load:${v.id}`);
-            else props.goTo("routes");
-          }}
-          workers={workers}
-          workerLabel={t.workersLabel}
-          onWorker={() => props.setSheet("rations")}
-          storeLabel={t.store.label}
-          onStore={() => props.setSheet("store")}
-          alert={vehicles.some((v) => v.stopped)}
-          stock={stock}
-          crest={<Crest crest={crest} size={26} />}
-          emblem={
-            view.mastery.chosen ? <MasteryEmblem code={view.mastery.chosen} size={20} /> : undefined
-          }
-          labelOf={describe}
-          ratio={wide ? 0.6 : 0.82}
-          emptyLabel={t.build}
-          title={t.title(view.buildings.length, levels)}
-          onPlot={touch}
-          onEmpty={() => props.setSheet("buildHere")}
-        />
+        {use3d ? (
+          <Suspense fallback={<div className="aspect-[1/0.82] w-full animate-pulse bg-night-3" />}>
+            <Domain3D
+              region={view.player.region}
+              phase={(prefs.get("domainPhase") as SkyPhase | null) ?? skyPhase(parisHour(now))}
+              plots={plots}
+              maxPlots={catalog.rules.maxBuildings}
+              vehicles={vehicles}
+              vehicleLabel={(v) =>
+                `${vehicleName(v.type)}, ${v.where === "home" ? fr.game.roadMap.stable.atDepot : v.where === "out" ? t.road.out : t.road.back}`
+              }
+              onVehicle={(v) => {
+                if (v.where === "home") props.setSheet(`load:${v.id}`);
+                else props.goTo("routes");
+              }}
+              workers={workers}
+              workerLabel={t.workersLabel}
+              onWorker={() => props.setSheet("rations")}
+              storeLabel={t.store.label}
+              onStore={() => props.setSheet("store")}
+              alert={vehicles.some((v) => v.stopped)}
+              stock={stock}
+              labelOf={describe}
+              ratio={wide ? 0.6 : 0.82}
+              emptyLabel={t.build}
+              title={t.title(view.buildings.length, levels)}
+              onPlot={touch}
+              onEmpty={() => props.setSheet("buildHere")}
+              still={stillMotion}
+              onPicker={(f) => {
+                picker.current = f;
+              }}
+              quiet={() => performance.now() < quietUntil.current}
+            />
+          </Suspense>
+        ) : (
+          <DomainScene
+            region={view.player.region}
+            phase={(prefs.get("domainPhase") as SkyPhase | null) ?? skyPhase(parisHour(now))}
+            plots={plots}
+            maxPlots={catalog.rules.maxBuildings}
+            vehicles={vehicles}
+            vehicleLabel={(v) =>
+              `${vehicleName(v.type)}, ${v.where === "home" ? fr.game.roadMap.stable.atDepot : v.where === "out" ? t.road.out : t.road.back}`
+            }
+            onVehicle={(v) => {
+              if (v.where === "home") props.setSheet(`load:${v.id}`);
+              else props.goTo("routes");
+            }}
+            workers={workers}
+            workerLabel={t.workersLabel}
+            onWorker={() => props.setSheet("rations")}
+            storeLabel={t.store.label}
+            onStore={() => props.setSheet("store")}
+            alert={vehicles.some((v) => v.stopped)}
+            stock={stock}
+            labelOf={describe}
+            ratio={wide ? 0.6 : 0.82}
+            emptyLabel={t.build}
+            title={t.title(view.buildings.length, levels)}
+            onPlot={touch}
+            onEmpty={() => props.setSheet("buildHere")}
+            crest={<Crest crest={crest} size={26} />}
+            emblem={
+              view.mastery.chosen ? (
+                <MasteryEmblem code={view.mastery.chosen} size={20} />
+              ) : undefined
+            }
+          />
+        )}
         {trail.length > 1 && (
           <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full">
             <polyline

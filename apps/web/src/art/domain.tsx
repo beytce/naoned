@@ -68,7 +68,7 @@ function Burst() {
 }
 
 /** A resource icon placed in the scene, centred on (x, y). */
-function Icon({ code, x, y, size }: { code: string; x: number; y: number; size: number }) {
+export function Icon({ code, x, y, size }: { code: string; x: number; y: number; size: number }) {
   return (
     <svg
       x={x - size / 2}
@@ -84,7 +84,7 @@ function Icon({ code, x, y, size }: { code: string; x: number; y: number; size: 
 }
 
 /** What the workshop asks for, over its roof. */
-function Bubble({ plot }: { plot: DomainPlot }) {
+export function Bubble({ plot }: { plot: DomainPlot }) {
   const tail = (fill: string) => <path d="M-4 9 L0 15 L4 9 Z" fill={fill} />;
   switch (plot.state) {
     case "ready":
