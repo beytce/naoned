@@ -846,9 +846,7 @@ function CitySheet({
             key={mo.act}
             className="rounded-xl bg-gold/10 p-3 text-sm text-gold ring-1 ring-gold/50"
           >
-            {m().monument(
-              props.catalog.families.find((f) => f.code === mo.family)?.name ?? mo.family,
-            )}
+            {m().monument(mo.guild)}
           </p>
         ))}
       {road.watchedRoutes.includes(route) && (

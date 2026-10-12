@@ -19,7 +19,7 @@ const ICON = {
   season: NavIcon.top,
   criee: NavIcon.marche,
   deal: NavIcon.marche,
-  family: NavIcon.familles,
+  guild: NavIcon.guilde,
   ambush: NavIcon.routes,
   delivery: NavIcon.routes,
   robbed: NavIcon.routes,
@@ -38,7 +38,7 @@ const TONE: Record<string, string> = {
   season: "text-gold",
   criee: "text-gold",
   deal: "text-lagoon",
-  family: "text-gold",
+  guild: "text-gold",
   ambush: "text-vermilion",
   delivery: "text-lagoon",
   robbed: "text-vermilion",
@@ -96,15 +96,14 @@ function text(n: Notice, props: GameProps): string {
         props.names.resource(String(n.data.resource)).toLowerCase(),
         d(String(n.data.price)),
       );
-    case "family": {
-      const name = (code: unknown) =>
-        props.catalog.families.find((f) => f.code === code)?.name ?? String(code ?? "");
-      return t.family(
-        Number(n.data.week) + 1,
-        n.data.winner ? name(n.data.winner) : null,
-        n.data.winner === n.data.family,
-        name(n.data.family),
-        Number(n.data.rank),
+    case "guild": {
+      const kind = String(n.data.kind ?? "");
+      const subject = fr.game.guilds.kinds[kind]?.toLowerCase() ?? "";
+      return t.guild(
+        String(n.data.event ?? ""),
+        String(n.data.guild ?? ""),
+        subject,
+        n.data.passed === null || n.data.passed === undefined ? null : !!n.data.passed,
       );
     }
     case "week": {

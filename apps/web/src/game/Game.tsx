@@ -15,8 +15,8 @@ import { Ceremony } from "./Ceremony.js";
 import { Coach } from "./Coach.js";
 import { Comptoir, carnetRewards } from "./Comptoir.js";
 import { Criee } from "./Criee.js";
-import { Familles } from "./Familles.js";
 import { Gazette } from "./Gazette.js";
+import { Guilde } from "./Guilde.js";
 import { Help } from "./Help.js";
 import { Intro } from "./Intro.js";
 import { Marche } from "./Marche.js";
@@ -58,7 +58,7 @@ import type {
   Welcome as WelcomeData,
 } from "./types.js";
 
-export type Tab = "comptoir" | "routes" | "marche" | "familles" | "port" | "top" | "profil";
+export type Tab = "comptoir" | "routes" | "marche" | "guilde" | "port" | "top" | "profil";
 export type MarketTab = "joueurs" | "villes";
 
 export interface Names {
@@ -103,7 +103,7 @@ export interface GameProps {
 
 const POLL_MS = 15_000;
 /** Bottom bar; the profile opens from the coat of arms in the header. */
-const ALL_TABS: Tab[] = ["comptoir", "routes", "marche", "familles", "port", "top"];
+const ALL_TABS: Tab[] = ["comptoir", "routes", "marche", "guilde", "port", "top"];
 
 export function Game(props: {
   account: Account;
@@ -133,7 +133,7 @@ export function Game(props: {
   const [introSeen, setIntroSeen] = useState(() => store.get("introSeen") === "1");
   const [guideKey, setGuideKey] = useState(0);
   const [unread, setUnread] = useState(0);
-  const [familyLatestAt, setFamilyLatestAt] = useState<number | null>(null);
+  const [guildLatestAt, setGuildLatestAt] = useState<number | null>(null);
   const loaded = useRef(false);
   const [welcome, setWelcome] = useState<WelcomeData | null>(null);
   const [ceremony, setCeremony] = useState<CeremonyData | null>(null);
@@ -163,7 +163,7 @@ export function Game(props: {
         loaded.current = true;
         return res.unread ?? 0;
       });
-      setFamilyLatestAt(res.familyLatestAt ?? null);
+      setGuildLatestAt(res.guildLatestAt ?? null);
       if (res.welcome) setWelcome(res.welcome);
       setCeremony(res.ceremony ?? null);
       setPassInfo({ upcomingPass: res.upcomingPass, passPrices: res.passPrices });
@@ -294,10 +294,10 @@ export function Game(props: {
 
   // The road's tab only in a world with deliveries.
   const hasRoad = !!view?.road;
-  const hasFamilies = !!view?.families;
+  const hasGuilds = !!view?.guilds;
   const TABS = useMemo(
-    () => ALL_TABS.filter((t) => (t !== "routes" || hasRoad) && (t !== "familles" || hasFamilies)),
-    [hasRoad, hasFamilies],
+    () => ALL_TABS.filter((t) => (t !== "routes" || hasRoad) && (t !== "guilde" || hasGuilds)),
+    [hasRoad, hasGuilds],
   );
   // The screen slides in from the side of the tab it comes from, as one turns pages.
   const lastTab = useRef(tab);
@@ -430,9 +430,11 @@ export function Game(props: {
   const guidePaused = store.get("guideHidden") === "1" && store.get("guideDone") !== "1";
 
   const crest = props.account.crest ?? defaultCrest(props.account.id);
-  // The families call: allegiance open and not yet pledged.
-  const familyCalls =
-    !!view.families && !view.families.mine && view.families.opensAt <= now + offset;
+  // The guilds call: open to the merchant, who is in none yet; or a vote waits for their voice.
+  const guildCalls =
+    !!view.guilds &&
+    ((!view.guilds.mine && view.guilds.opensAt <= now + offset) ||
+      !!view.guilds.mine?.proposals.some((p) => p.status === "open" && p.mine === null));
   const portLocked = portOpensAt(view) > gp.now;
   const galleyBack =
     view.expeditions.some((e) => e.outcome === "pending" && e.returnAt <= gp.now) ||
@@ -446,11 +448,10 @@ export function Game(props: {
     (view.road.deliveries.some((dv) => dv.attack?.pending) ||
       (view.road.vehicles.some((v) => v.status === "free") &&
         view.road.orders.some((o) => o.status === "open")));
-  // A message of the family's thread not read yet (the thread remembers the last one seen).
-  const familyUnread =
-    familyLatestAt !== null && familyLatestAt > Number(store.get("familySeen") ?? 0);
+  // A message of the guild's thread not read yet (the thread remembers the last one seen).
+  const guildUnread = guildLatestAt !== null && guildLatestAt > Number(store.get("guildSeen") ?? 0);
   const badge = (t: Tab) =>
-    (t === "familles" && (familyCalls || familyUnread)) ||
+    (t === "guilde" && (guildCalls || guildUnread)) ||
     (t === "comptoir" && carnetRewards(gp) > 0) ||
     (t === "port" && galleyBack) ||
     (t === "routes" && roadCalls);
@@ -627,7 +628,7 @@ export function Game(props: {
           {tab === "comptoir" && <Comptoir {...gp} />}
           {tab === "routes" && <Routes {...gp} />}
           {tab === "marche" && <Marche {...gp} />}
-          {tab === "familles" && <Familles {...gp} />}
+          {tab === "guilde" && <Guilde {...gp} />}
           {tab === "port" && <Port {...gp} />}
           {tab === "top" && <Top {...gp} />}
           {tab === "profil" && <Profil {...gp} />}
@@ -705,7 +706,7 @@ const GLOW: Record<string, string> = {
   comptoir: "gold",
   routes: "lagoon",
   marche: "gold",
-  familles: "vermilion",
+  guilde: "vermilion",
   port: "lagoon",
   top: "gold",
   profil: "gold",

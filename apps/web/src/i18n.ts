@@ -77,7 +77,7 @@ export const fr = {
     tabs: {
       comptoir: "Comptoir",
       marche: "Marché",
-      familles: "Familles",
+      guilde: "Guilde",
       routes: "Routes",
       port: "Port",
       top: "Classement",
@@ -114,7 +114,7 @@ export const fr = {
     road: {
       kicker: "Les routes de terre ferme",
       title: "Commandes à livrer",
-      help: "Chaque jour, les villes publient leurs commandes pour tous les marchands, et le Doge et votre famille vous passent les vôtres. Chargez une charrette, choisissez votre escorte et partez : la ville paie à l'arrivée. Plus la route est longue, mieux elle paie.",
+      help: "Chaque jour, les villes publient leurs commandes pour tous les marchands, et le Doge vous passe les siennes. Chargez une charrette, choisissez votre escorte et partez : la ville paie à l'arrivée. Plus la route est longue, mieux elle paie.",
       tabs: { livraisons: "Livraisons", brigands: "Brigands" },
       sort: { gain: "Gain/h", price: "Prix", distance: "Distance", deadline: "Échéance" },
       facts: {
@@ -129,7 +129,7 @@ export const fr = {
       takenBy: (name: string) => `Prise par ${name}`,
       takenList: (n: number) =>
         `${n} commande${n > 1 ? "s" : ""} déjà prise${n > 1 ? "s" : ""} par d'autres`,
-      kinds: { city: "Ville", doge: "Doge", family: "Famille", urgent: "Urgente" } as Record<
+      kinds: { city: "Ville", doge: "Doge", family: "Doge", urgent: "Urgente" } as Record<
         string,
         string
       >,
@@ -211,8 +211,8 @@ export const fr = {
       locked: (time: string) => `Le brigandage ouvre dans ${time}.`,
     },
     roadMap: {
-      monument: (family: string) =>
-        `Ici s'élève le monument des ${family}, vainqueurs du chantier de l'Arsenal.`,
+      monument: (guild: string) =>
+        `Ici s'élève le monument de la guilde ${guild}, victorieuse du chantier de l'Arsenal.`,
       label: "Carte des routes de la Vénétie",
       hud: (orders: number, free: number) =>
         `${orders} commande${orders > 1 ? "s" : ""} · ${free} véhicule${free > 1 ? "s" : ""} libre${free > 1 ? "s" : ""}`,
@@ -263,7 +263,7 @@ export const fr = {
     contracts: {
       kicker: "Contrats du Doge",
       title: "Les commandes du jour",
-      help: "Deux commandes par jour, payées 20 % au-dessus du prix de référence, et une de votre famille. Elles changent chaque jour.",
+      help: "Deux commandes par jour, payées 20 % au-dessus du prix de référence. Elles changent chaque jour.",
       renewIn: "Nouvelles commandes dans",
       reward: "Prime",
       deliver: "Honorer",
@@ -271,15 +271,15 @@ export const fr = {
       missing: (n: number) => `Il vous en manque ${n}`,
       buy: "Acheter au Marché",
       projects: "Grand chantier de la semaine",
-      tabs: { doge: "Le Doge", families: "Les familles" },
+      tabs: { doge: "Le Doge" },
     },
-    families: {
+    guilds: {
       thread: {
-        title: "Fil de la famille",
-        help: "Réservé aux membres de votre famille. Restez courtois : un message signalé par trois membres disparaît.",
+        title: "Fil de la guilde",
+        help: "Réservé aux membres de votre guilde. Restez courtois : un message signalé par trois membres disparaît.",
         empty: "Aucun message pour l'instant. Lancez la conversation !",
         me: "Vous",
-        placeholder: "Un mot pour votre famille…",
+        placeholder: "Un mot pour votre guilde…",
         send: "Envoyer",
         report: "Signaler",
         reported: "Signalé",
@@ -289,47 +289,91 @@ export const fr = {
           message_refused: "Ce message n'est pas accepté (mot interdit ou lien).",
           message_too_fast: "Doucement : un message toutes les 10 secondes.",
           message_too_many: "Vous avez assez écrit pour aujourd'hui.",
-          not_member: "Prêtez d'abord allégeance à une famille.",
+          not_member: "Rejoignez d'abord une guilde.",
           other: "Le message n'est pas parti. Réessayez.",
         } as Record<string, string>,
       },
-      kicker: "Les familles patriciennes",
-      title: "Qui tiendra la Seigneurie ?",
-      help: "Prêtez allégeance à une grande famille pour la saison. Servez ses commandes et financez son mécénat : chaque semaine, la famille la plus influente par membre actif prend le pouvoir, et ses membres sont mieux payés la semaine suivante.",
-      opensIn: (inTime: string) =>
-        `Les familles vous ouvriront leurs portes dans ${inTime}. Observez qui monte, et choisissez votre camp.`,
-      choose: "Choisissez votre famille",
-      chooseHelp:
-        "Une seule allégeance pour toute la saison. Ses commandes demandent souvent des marchandises d'autres régions ou d'outre-mer.",
-      orders: "Commande",
-      members: (n: number) => (n > 1 ? `${n} membres` : n === 1 ? "1 membre" : "Aucun membre"),
-      pledge: "Prêter allégeance",
-      confirm: "Confirmer : c'est pour toute la saison",
-      cancel: "Annuler",
-      inPower: "Au pouvoir",
-      powerHelp: (pct: number) =>
-        `Famille au pouvoir cette semaine : ses commandes paient ${pct} % de plus.`,
-      yours: "Votre famille",
-      influenceWeek: "Influence de la semaine",
-      influenceSeason: "Influence de la saison",
-      cap: (n: number) => `Compte jusqu'à ${n} par membre et par semaine`,
-      order: "Commande de la famille",
-      orderHelp: (n: number) => `+${n} d'influence. Nouvelle commande chaque jour.`,
-      patronage: "Mécénat",
-      patronageHelp:
-        "Chapelle, fresque, fête de quartier : les ducats offerts quittent le jeu (ils ne comptent plus dans votre patrimoine) et deviennent de l'influence.",
-      patronageLeft: (n: number) => `Encore ${n} point${n > 1 ? "s" : ""} aujourd'hui`,
-      give: (ducats: string) => `Offrir ${ducats}`,
-      points: (n: number) => `+${n} d'influence`,
-      standings: "Classement de la semaine",
-      standingsHelp: (min: number) =>
-        `Influence par membre actif (au moins ${min} comptés) : une petite famille assidue peut battre une grande famille passive.`,
-      champion: "Champion",
-      contumacia: (pct: number) =>
-        `Contumacia : la famille au pouvoir compte ${pct} % de moins, pour que le pouvoir change de mains.`,
-      house: "Les membres",
+      kicker: "Les guildes marchandes",
+      title: "Unissez vos ducats",
+      help: "Fondez ou rejoignez une guilde. Chaque ducat versé à son trésor achète des carats à leur valeur du moment : investir ne vous appauvrit pas, et vos carats comptent dans votre patrimoine. Ils donnent vos voix et votre part des dividendes ; ensemble, tenez des concessions.",
+      opensIn: (inTime: string) => `Les guildes vous ouvrent leurs portes dans ${inTime}.`,
+      stakeTitle: "Votre mise",
+      stakeHelp: (min: string) =>
+        `Ce que vous versez au trésor en entrant (${min} au moins) : autant de carats, à leur valeur.`,
+      stake: "Mise",
+      joinTitle: "Rejoindre une guilde",
+      none: "Aucune guilde pour l'instant : fondez la première !",
+      members: (n: number, max: number) => `${n} / ${max} membres`,
+      treasury: "Trésor",
+      closed: "Fermée",
+      openYes: "Ouverte",
+      full: "Complète",
+      join: (amount: string) => `Rejoindre · ${amount}`,
+      foundTitle: "Fonder une guilde",
+      foundHelp: (fee: string) =>
+        `Les droits de fondation (${fee}) quittent le jeu ; votre mise entre au trésor et vous fait premier porteur de carats.`,
+      namePlaceholder: "Nom de la guilde",
+      found: (total: string) => `Fonder · ${total}`,
+      yours: "Votre guilde",
+      value100: "Valeur de 100 carats",
+      myCarats: "Vos carats",
+      myShare: "Votre part",
+      myWeight: (pct: number, cap: string) =>
+        `Vous pesez ${pct} % des voix (personne ne pèse plus de ${cap} des carats).`,
+      invest: "Investir",
+      investGo: "Verser",
+      investHelp:
+        "Les ducats versés deviennent des carats, à la valeur du trésor : votre patrimoine ne bouge pas.",
+      settings: "Ce que la guilde a voté",
+      votes: "Les votes",
+      votesHelp: (hours: number) =>
+        `Une proposition passe dès qu'elle réunit la majorité de la guilde, ou au bout de ${hours} h si les oui l'emportent sur les non.`,
+      newProposal: "Proposer",
+      noVote: "Aucun vote en cours.",
+      history: "Votes passés",
+      passed: "Adopté",
+      rejected: "Rejeté",
+      by: (who: string) => `Proposé par ${who}`,
+      yes: "Pour",
+      no: "Contre",
+      majority: "majorité : 50 %",
+      propose: "Soumettre au vote",
+      kinds: {
+        dividend: "Dividendes",
+        toll: "Péage",
+        bounty: "Prime",
+        open: "Ouverture",
+        exclude: "Exclusion",
+        war: "Guerre",
+      } as Record<string, string>,
+      kindHelp: {
+        dividend:
+          "Part de chaque recette (péages, primes de chantier) versée tout de suite aux membres, au prorata des carats. Le reste grossit le trésor.",
+        toll: "Ce que paient les autres marchands sur leurs livraisons aux villes dont la guilde tient la concession.",
+        bounty:
+          "Ce que le trésor paie par unité aux marchands qui livrent pour la guilde pendant une guerre.",
+        open: "Ouverte : tout marchand peut entrer avec sa mise. Fermée : plus personne n'entre.",
+        exclude: "Le membre exclu reçoit la pleine valeur de ses carats.",
+      } as Record<string, string>,
+      proposal: {
+        toll: (v: string) => `Péage des concessions à ${v}`,
+        dividend: (v: string) => `Verser ${v} des recettes en dividendes`,
+        bounty: (v: string) => `Prime de ${v} par unité aux fournisseurs en guerre`,
+        open: "Ouvrir la guilde aux nouveaux membres",
+        close: "Fermer la guilde aux nouveaux membres",
+        exclude: (who: string) => `Exclure ${who}`,
+        war: "Déclarer une guerre commerciale",
+      },
+      roll: "Les membres et leurs carats",
       you: "vous",
-      noOne: "—",
+      founder: "fondateur",
+      leave: "Quitter la guilde…",
+      leaveHelp: (refund: string, fee: string) =>
+        `Vos carats vous sont rachetés ${refund} : la guilde garde ${fee} de leur valeur.`,
+      leaveLast: (refund: string) =>
+        `Vous êtes le dernier membre : vous reprenez tout le trésor (${refund}) et la guilde est dissoute.`,
+      leaveConfirm: "Quitter",
+      cancel: "Annuler",
     },
     port: {
       kicker: "Port de Venise",
@@ -464,7 +508,7 @@ export const fr = {
         crisis: ["La crise", "Une crise s'annonce pour la République…"],
         worksite: [
           "L'Arsenal",
-          "Le Doge fait agrandir l'Arsenal : livrez briques et planches à Venise, payées 15 % de plus. Chaque unité compte pour votre famille ; celle qui livre le plus gagne 100 d'influence par membre.",
+          "Le Doge fait agrandir l'Arsenal : livrez briques et planches à Venise, payées 15 % de plus. Chaque unité compte pour votre guilde ; celle qui livre le plus reçoit 300 d à son trésor et son monument.",
         ],
         sensa: [
           "La Sensa",
@@ -492,11 +536,11 @@ export const fr = {
       worksite: {
         kicker: "Le grand chantier",
         title: (city: string) => `L'Arsenal de ${city}`,
-        help: "Livrez ici, au prix affiché. Chaque unité compte pour votre famille : celle qui livre le plus d'ici la fin de l'acte gagne 100 d'influence par membre.",
+        help: "Livrez ici, au prix affiché. Chaque unité compte pour votre guilde : celle qui livre le plus d'ici la fin de l'acte reçoit 300 d à son trésor et son monument sur la carte.",
         closesIn: (time: string) => `Fin du chantier dans ${time}`,
         deliver: (q: number, amount: string) => `Livrer ${q} · ${amount}`,
-        noFamily: "Prêtez allégeance à une famille pour que vos livraisons comptent.",
-        race: "La course des familles",
+        noGuild: "Rejoignez une guilde pour que vos livraisons comptent.",
+        race: "La course des guildes",
       },
     },
     mastery: {
@@ -766,6 +810,8 @@ export const fr = {
         project_delivery: "Grands chantiers",
         mission_reward: "Livre de compte",
         family_order_reward: "Commandes de famille",
+        guild_dividend: "Dividendes de guilde",
+        guild_payout: "Trésor de guilde partagé",
         delivery: "Livraisons",
         bounty: "Primes du Doge",
       } as Record<string, string>,
@@ -785,7 +831,7 @@ export const fr = {
           event: `${n} nouvelle${n > 1 ? "s" : ""} à la gazette`,
           act: "Un nouvel acte de la saison",
           week: "Résultats de la semaine",
-          family: "La semaine des familles",
+          guild: "Nouvelles de la guilde",
           ambush: `${n} attaque${n > 1 ? "s" : ""} de brigands`,
           delivery: `${n} livraison${n > 1 ? "s" : ""} payée${n > 1 ? "s" : ""}`,
           robbed: `${n} prise${n > 1 ? "s" : ""} sur la route`,
@@ -928,12 +974,12 @@ export const fr = {
             ? `${who} a riposté : votre bande est dispersée. Encaissez son butin.`
             : `Le convoi de ${who} a repoussé votre bande.`,
       bandOver: (city: string) => `Votre bande quitte la route de ${city} : encaissez le butin.`,
-      family: (week: number, winner: string | null, mine: boolean, family: string, rank: number) =>
-        !winner
-          ? `Semaine ${week} : aucune famille n'a gagné d'influence.`
-          : mine
-            ? `Semaine ${week} : les ${winner} prennent le pouvoir. Vos commandes de famille paient davantage !`
-            : `Semaine ${week} : les ${winner} prennent le pouvoir ; les ${family} finissent ${rank}e.`,
+      guild: (event: string, guild: string, subject: string, passed: boolean | null) =>
+        event === "proposal_opened"
+          ? `${guild} vote : ${subject}.`
+          : event === "worksite_won"
+            ? `${guild} remporte le chantier : la prime rejoint son trésor.`
+            : `${guild} a ${passed ? "adopté" : "rejeté"} : ${subject}.`,
       week: (week: number, rank: number, gain: string, award: string | null) =>
         `Semaine ${week} : vous terminez ${rank}${rank === 1 ? "er" : "e"} (${gain}).${award ? ` Vous êtes ${award} !` : ""}`,
       push: {
@@ -960,7 +1006,7 @@ export const fr = {
           season: "Fin et ouverture de saison",
           criee: "Criées (Pass Négociant)",
           deal: "Bonnes affaires (Pass Négociant)",
-          family: "Semaine des familles",
+          guild: "Votes et nouvelles de la guilde",
           ambush: "Attaque de brigands (alerte immédiate)",
           delivery: "Livraison arrivée",
           robbed: "Convoi détroussé (subi ou réussi)",
@@ -1133,7 +1179,7 @@ export const fr = {
       {
         icon: "routes",
         title: "Les routes et les brigands",
-        text: "Les villes ne rachètent plus au comptoir : chaque jour, elles vous passent 22 à 28 commandes, dont la moitié portent sur votre propre production. Les matières premières ne sont commandées qu'à ceux qui les produisent ; les produits transformés, à tous. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge et de votre famille y figurent, les urgentes ne restent ouvertes que trois heures. Des brigands guettent parfois une route (en rouge sur la carte) : une escorte vous protège même absent ; sans escorte, vous avez 20 minutes pour riposter, et une riposte disperse la bande. Repousser la bande d'un marchand vous vaut une prime du Doge, d'autant plus forte que le brigand est connu. Une prise coûte au plus 30 % de la cargaison, le véhicule revient toujours, et personne n'attaque entre 22 h et 8 h. À partir du jour 6, vous pouvez vous-même poster une bande sur une route : trois attaques au plus, vous gardez tout le butin, mais chaque prise fait monter votre infamie.",
+        text: "Les villes ne rachètent plus au comptoir : chaque jour, elles vous passent 22 à 28 commandes, dont la moitié portent sur votre propre production. Les matières premières ne sont commandées qu'à ceux qui les produisent ; les produits transformés, à tous. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge y figurent, les urgentes ne restent ouvertes que trois heures. Des brigands guettent parfois une route (en rouge sur la carte) : une escorte vous protège même absent ; sans escorte, vous avez 20 minutes pour riposter, et une riposte disperse la bande. Repousser la bande d'un marchand vous vaut une prime du Doge, d'autant plus forte que le brigand est connu. Une prise coûte au plus 30 % de la cargaison, le véhicule revient toujours, et personne n'attaque entre 22 h et 8 h. À partir du jour 6, vous pouvez vous-même poster une bande sur une route : trois attaques au plus, vous gardez tout le butin, mais chaque prise fait monter votre infamie.",
       },
       {
         icon: "comptoir",
@@ -1141,9 +1187,9 @@ export const fr = {
         text: "Chaque niveau d'atelier mange 2 pains par jour. Sans pain, les nouveaux lots prennent 50 % de temps en plus. Les boulangeries et les briqueteries brûlent du bois.",
       },
       {
-        icon: "familles",
-        title: "Le Doge et les familles",
-        text: "Chaque jour, le Doge et votre famille vous passent des commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). L'onglet Familles montre votre allégeance, le mécénat et la famille au pouvoir.",
+        icon: "guilde",
+        title: "Le Doge et les guildes",
+        text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). L'onglet Guilde : fondez ou rejoignez une guilde, investissez dans son trésor contre des carats, votez ses péages et ses dividendes.",
       },
       {
         icon: "port",
@@ -1218,11 +1264,19 @@ export const fr = {
       cargo_too_valuable: "La cargaison dépasse la cale du navire marchand.",
       unknown_expedition: "Galère introuvable.",
       expedition_not_back: "La galère n'est pas encore rentrée.",
-      unknown_family: "Famille inconnue.",
-      family_locked: "Les familles ne vous ont pas encore ouvert leurs portes.",
-      family_chosen: "Vous avez déjà prêté allégeance pour cette saison.",
-      no_family: "Prêtez d'abord allégeance à une famille.",
-      patronage_limit: "Vous avez atteint le plafond de mécénat du jour.",
+      guilds_off: "Pas de guildes dans ce monde.",
+      guild_locked: "Les guildes ne vous ont pas encore ouvert leurs portes.",
+      guild_member: "Vous êtes déjà membre d'une guilde.",
+      guild_name_taken: "Ce nom de guilde est déjà pris.",
+      guild_full: "Cette guilde est complète.",
+      guild_closed: "Cette guilde n'accepte plus de membres.",
+      unknown_guild: "Guilde introuvable.",
+      no_guild: "Rejoignez d'abord une guilde.",
+      stake_too_small: "La mise est trop petite.",
+      invalid_name: "Nom invalide (2 à 32 caractères).",
+      invalid_proposal: "Proposition hors des limites.",
+      unknown_proposal: "Vote introuvable.",
+      proposal_closed: "Ce vote est déjà clos.",
     } as Record<string, string>,
   },
 

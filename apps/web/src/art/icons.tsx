@@ -40,7 +40,7 @@ export const NavIcon = {
       <path d="M6 9 L10 4 M6 14 L13 4" />
     </Line>
   ),
-  familles: () => (
+  guilde: () => (
     <Line>
       <path d="M5 4 H19 V12 Q19 18 12 21 Q5 18 5 12 Z" />
       <path d="M12 7 V16 M8.5 10.5 H15.5" />

@@ -117,7 +117,7 @@ export function ActCard(props: GameProps) {
             className="w-full"
             onClick={() => {
               props.setSheet(null);
-              props.goTo("familles");
+              props.goTo("guilde");
             }}
           >
             {t().toWorksite}
@@ -128,7 +128,7 @@ export function ActCard(props: GameProps) {
   );
 }
 
-/** The act's worksite: what is still needed, delivering, and the families' race. */
+/** The act's worksite: what is still needed, delivering, and the guilds' race. */
 export function WorksitePanel(props: GameProps) {
   const { view, now } = props;
   const project: Project | undefined = view.projects.find(
@@ -141,9 +141,9 @@ export function WorksitePanel(props: GameProps) {
   const left = (r: string) => (project.needs[r] ?? 0) - (project.delivered[r] ?? 0);
   const max = Math.max(0, Math.min(have(view, resource), left(resource)));
   const q = Math.min(Math.max(1, qty), Math.max(1, max));
-  const race = Object.entries(project.byFamily ?? {}).sort((a, b) => b[1] - a[1]);
-  const mine = view.families?.mine ?? null;
-  const name = (code: string) => props.catalog.families.find((f) => f.code === code)?.name ?? code;
+  const race = Object.entries(project.byGuild ?? {}).sort((a, b) => b[1] - a[1]);
+  const mine = view.guilds?.mine?.id ?? null;
+  const name = (id: string) => view.guilds?.list.find((g) => g.id === id)?.name ?? "—";
   return (
     <Panel glow="gold">
       <Label className="text-gold">{t().worksite.kicker}</Label>
@@ -193,19 +193,19 @@ export function WorksitePanel(props: GameProps) {
           </Slab>
         </div>
       ) : (
-        <p className="mt-3 text-sm text-vermilion">{t().worksite.noFamily}</p>
+        <p className="mt-3 text-sm text-vermilion">{t().worksite.noGuild}</p>
       )}
       {race.length > 0 && (
         <div className="mt-4">
           <Label>{t().worksite.race}</Label>
           <ol className="mt-2 space-y-1">
-            {race.map(([family, units], i) => (
+            {race.map(([guild, units], i) => (
               <li
-                key={family}
-                className={`flex justify-between text-sm ${family === mine ? "text-gold" : ""}`}
+                key={guild}
+                className={`flex justify-between text-sm ${guild === mine ? "text-gold" : ""}`}
               >
                 <span>
-                  {i + 1}. {name(family)}
+                  {i + 1}. {name(guild)}
                 </span>
                 <Big className="text-sm">{units}</Big>
               </li>

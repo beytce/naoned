@@ -32,18 +32,18 @@ export interface Catalog {
   privateers: PrivateerRules;
   /** Deliveries by road and bandits (null when the world has none). */
   road: RoadRules | null;
-  /** The patrician families: names, domains and what they order. */
-  families: { code: string; name: string; domain: string; quantities: Record<string, number> }[];
-  familyRules: {
+  /** The guilds' rules (maxMembers 0: guilds are off). */
+  guildRules: {
     openDay: number;
-    orderInfluence: number;
-    patronageUnit: Money;
-    patronageMaxPerDay: number;
-    weeklyCapPerMember: number;
-    minMembers: number;
-    powerPremiumBps: number;
-    incumbentHandicapBps: number;
-    orderPremiumBps: number;
+    foundingCost: Money;
+    minStake: Money;
+    caratValue: Money;
+    maxMembers: number;
+    exitFeeBps: number;
+    maxVoteBps: number;
+    voteHours: number;
+    maxTollBps: number;
+    maxBountyPerUnit: Money;
   };
   rations: { resource: string; perLevelPerDay: number; slowdownBps: number };
   /** Masteries: the house's levels needed, and what each one changes. */
@@ -330,39 +330,57 @@ export interface ContractView {
   done: boolean;
 }
 
-export interface FamilyOrderView {
+export type ProposalKind = "toll" | "dividend" | "bounty" | "open" | "exclude" | "war";
+
+export interface ProposalView {
   id: string;
-  day: number;
-  family: string;
-  resource: string;
-  quantity: number;
-  unitPrice: Money;
-  expiresAt: number;
-  done: boolean;
+  kind: ProposalKind;
+  value: number;
+  target: string | null;
+  by: string;
+  openedAt: number;
+  closesAt: number;
+  status: "open" | "passed" | "rejected";
+  yes: number;
+  no: number;
+  /** The guild's whole voting weight (each member capped). */
+  total: number;
+  /** The merchant's own vote, if cast. */
+  mine: boolean | null;
 }
 
-export interface FamilyStanding {
-  family: string;
-  members: number;
-  activeMembers: number;
-  influence: number;
-  /** Influence per counted member, in hundredths. */
-  score: number;
-  champion: string | null;
-  /** In power this week: its score counts lower (contumacia). */
-  incumbent: boolean;
+export interface MyGuildView {
+  id: string;
+  name: string;
+  emblem: string;
+  founder: string;
+  open: boolean;
+  tollBps: number;
+  dividendBps: number;
+  bountyPerUnit: Money;
+  treasury: Money;
+  caratsIssued: number;
+  /** What a hundred carats are worth. */
+  valueOf100: Money;
+  carats: number;
+  /** The merchant's carats at their value. */
+  share: Money;
+  members: { playerId: string; carats: number; weight: number; since: number; me: boolean }[];
+  proposals: ProposalView[];
 }
 
-export interface FamiliesView {
-  mine: string | null;
+export interface GuildsView {
   opensAt: number;
-  inPower: string | null;
-  week: number;
-  standings: FamilyStanding[];
-  members: { playerId: string; week: number; season: number; me: boolean }[];
-  orders: FamilyOrderView[];
-  influence: { week: number; season: number };
-  patronageLeft: number;
+  mine: MyGuildView | null;
+  list: {
+    id: string;
+    name: string;
+    emblem: string;
+    members: number;
+    open: boolean;
+    treasury: Money;
+    mine: boolean;
+  }[];
 }
 
 export interface GazetteEvent {
@@ -429,10 +447,10 @@ export interface Project {
   needs: Record<string, number>;
   delivered: Record<string, number>;
   unitPrice: Record<string, Money>;
-  /** A worksite of the families (the act it belongs to). */
+  /** A worksite of the guilds (the act it belongs to). */
   act?: number;
-  /** Units delivered by each family's members. */
-  byFamily?: Record<string, number>;
+  /** Units delivered by each guild's members, by guild id. */
+  byGuild?: Record<string, number>;
   winner?: string | null;
 }
 
@@ -443,7 +461,7 @@ export interface PlayerView {
   cash: Money;
   escrow: Money;
   upkeepPerDay: Money;
-  netWorth: { cash: Money; stock: Money; buildings: Money; total: Money };
+  netWorth: { cash: Money; stock: Money; buildings: Money; guild?: Money; total: Money };
   standing: {
     rank: number | null;
     players: number;
@@ -466,10 +484,10 @@ export interface PlayerView {
   market: MarketLine[];
   cityQuotes: { city: string; resource: string; unitPrice: Money }[];
   projects: Project[];
-  /** Worksites of the acts already won: the winning family's monument on the map. */
-  monuments: { city: string; family: string; act: number }[];
+  /** Worksites of the acts already won: the winning guild's monument on the map. */
+  monuments: { city: string; guild: string; act: number }[];
   contracts: ContractView[];
-  families: FamiliesView | null;
+  guilds: GuildsView | null;
   gazette: { current: GazetteEvent | null; next: GazetteEvent | null };
   expeditions: ExpeditionView[];
   book: Record<string, BookView>;
@@ -592,8 +610,8 @@ export interface GameResponse {
   error?: string;
   /** Unread notifications (the bell). */
   unread?: number;
-  /** Newest message of the family's thread (null: no family or no message). */
-  familyLatestAt?: number | null;
+  /** Newest message of the guild's thread (null: no guild or no message). */
+  guildLatestAt?: number | null;
   welcome?: Welcome;
   /** Pseudos of merchants met at sea or in the order book. */
   names?: Record<string, string | null>;
@@ -664,7 +682,7 @@ export type NotificationKind =
   | "season"
   | "criee"
   | "deal"
-  | "family"
+  | "guild"
   | "ambush"
   | "delivery"
   | "robbed"
@@ -752,7 +770,7 @@ export interface Profile {
   joinedAt: number;
   title: { index: number; current: Title; next: Title | null; progress: number };
   titles: Title[];
-  netWorth: { cash: Money; stock: Money; buildings: Money; total: Money };
+  netWorth: { cash: Money; stock: Money; buildings: Money; guild?: Money; total: Money };
   rank: number | null;
   players: number;
   buildings: number;
@@ -781,9 +799,17 @@ export type Action =
   | { type: "sellToCity"; city: string; resource: string; quantity: number }
   | { type: "deliverToProject"; projectId: string; resource: string; quantity: number }
   | { type: "fulfillContract"; contractId: string }
-  | { type: "joinFamily"; family: string }
-  | { type: "fulfillFamilyOrder"; orderId: string }
-  | { type: "patronize"; points: number }
+  | { type: "foundGuild"; name: string; emblem: string; stake: number }
+  | { type: "joinGuild"; guildId: string; stake: number }
+  | { type: "investGuild"; amount: number }
+  | { type: "leaveGuild" }
+  | {
+      type: "propose";
+      proposal:
+        | { kind: "toll" | "dividend" | "bounty" | "open"; value: number }
+        | { kind: "exclude"; target: string };
+    }
+  | { type: "vote"; proposalId: string; yes: boolean }
   | {
       type: "launchExpedition";
       destination: string;
@@ -804,8 +830,8 @@ export type Action =
   | { type: "postBand"; route: string; hours: number }
   | { type: "collectBooty"; bandId: string };
 
-/** A message of the family's thread. */
-export interface FamilyMessage {
+/** A message of the guild's thread. */
+export interface GuildMessage {
   id: string;
   pseudo: string | null;
   body: string;
