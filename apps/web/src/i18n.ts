@@ -533,8 +533,34 @@ export const fr = {
       workshops: (n: number) => `${n} atelier${n > 1 ? "s" : ""}`,
       levels: (n: number) => `${n} niveau${n > 1 ? "x" : ""}`,
       build: "À bâtir",
+      plot: {
+        ready: (q: number, res: string) => `récolte prête : ${q} ${res.toLowerCase()}`,
+        running: (left: string) => `en production, lot fini dans ${left}`,
+        idle: "à l'arrêt, peut produire",
+        blocked: (res: string) => (res ? `à l'arrêt, manque : ${res.toLowerCase()}` : "à l'arrêt"),
+        upgrade: "amélioration possible",
+      },
+      next: (building: string, left: string) => `${building} : prochain lot dans ${left}`,
+      hint: "Touchez un atelier pour récolter ou produire, une parcelle libre pour bâtir.",
       title: (n: number, levels: number) =>
         `Votre domaine : ${n} atelier${n > 1 ? "s" : ""}, ${levels} niveau${levels > 1 ? "x" : ""} en tout`,
+    },
+    workshop: {
+      ready: (q: number, res: string) => `Prêt : ${q} ${res.toLowerCase()} à récolter`,
+      running: (batch: number, of: number, left: string) =>
+        `Lot ${batch} sur ${of}, fini dans ${left}`,
+      idle: "À l'arrêt : lancez une production",
+      blocked: "À l'arrêt : il manque une matière",
+      one: "1 lot",
+      evening: "Jusqu'à ce soir",
+      night: "Pour la nuit",
+      max: "Le plus possible",
+      missing: (res: string, need: number, have: number) =>
+        `Il faut ${need} ${res.toLowerCase()} par lot ; vous en avez ${have}.`,
+      toMarket: "Au marché",
+      makeAt: (building: string) => `Produire : ${building}`,
+      upgradeLater: (level: number) => `Améliorer au niveau ${level}`,
+      buildHere: "Bâtir ici",
     },
     carnet: {
       title: "Carnet du jour",
@@ -1036,10 +1062,12 @@ export const fr = {
       later: "Plus tard",
       resume: "Guide",
       step: (n: number, total: number) => `Étape ${n}/${total}`,
+      produceTap: (building: string) =>
+        `Lançons votre ${building.toLowerCase()} ! Touchez cet atelier sur votre domaine : la bulle ▶ dit qu'il attend du travail.`,
       produce: (building: string) =>
-        `Lançons votre ${building.toLowerCase()} ! Touchez « Produire » : ce premier lot sera prêt en 30 secondes.`,
+        `Touchez « Produire » : ce premier lot de votre ${building.toLowerCase()} sera prêt en 30 secondes.`,
       wait: "Vos ouvriers s'activent. Patientez quelques secondes…",
-      harvest: "C'est prêt ! Touchez « Récolter » pour rentrer la marchandise en stock.",
+      harvest: "C'est prêt ! Touchez l'atelier à la bulle dorée : la marchandise rentre en stock.",
       transform: (building: string) =>
         `Une matière brute vaut peu. Transformez-la : lancez votre ${building.toLowerCase()}.`,
       goMarket: "Votre marchandise est prête à vendre. Ouvrez le Marché.",

@@ -3,8 +3,10 @@ import { Crest, defaultCrest } from "../art/crest.js";
 import { type DomainPlot, DomainScene, skyPhase } from "../art/domain.js";
 import { MasteryEmblem } from "../art/mastery.js";
 import { fr } from "../i18n.js";
-import { Label } from "../ui.js";
+import { Label, Slab, clock } from "../ui.js";
+import { affordable } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
+import { readyOf, workshopState } from "./workshops.js";
 
 /** How long the golden burst of a new building or level lasts. */
 const BURST_MS = 3_000;
@@ -41,24 +43,86 @@ export function Domain(props: GameProps) {
     setBursts((old) => new Map([...old, ...grown.map(([id]) => [id, at] as const)]));
   }, [view.buildings]);
 
+  // Goods just collected, rising from their plot.
+  const [gains, setGains] = useState<Map<string, NonNullable<DomainPlot["gain"]>>>(new Map());
+  // A workshop just emptied: its sheet opens once the new view says it may produce again.
+  const [restart, setRestart] = useState<string | null>(null);
+  useEffect(() => {
+    if (!restart) return;
+    const b = view.buildings.find((x) => x.id === restart);
+    if (!b || b.job) return;
+    // Long enough to see the goods rise before the sheet covers the scene.
+    const t = setTimeout(() => {
+      setRestart(null);
+      if (b.canStart > 0) props.setSheet(`produce:${b.id}`);
+    }, 900);
+    return () => clearTimeout(t);
+  }, [restart, view.buildings, props.setSheet]);
+
+  const t = fr.game.domain;
   const plots: DomainPlot[] = view.buildings.map((b) => {
-    const ready = b.job
-      ? Math.min(b.job.batches, Math.floor((now - b.job.startedAt) / b.job.batchMs))
-      : 0;
+    const st = workshopState(props, b);
     return {
       id: b.id,
       type: b.type,
       level: b.level,
-      active: b.job !== null && ready < b.job.batches,
-      ready: ready > 0,
+      state: st.state,
+      quantity: st.quantity,
+      resource: st.resource,
+      progress: st.progress,
+      left: st.left !== undefined ? clock(st.left) : undefined,
+      canUpgrade: b.upgradeCost !== null && affordable(view, b.upgradeCost),
       burst: (bursts.get(b.id) ?? 0) + BURST_MS > Date.now(),
+      gain: gains.get(b.id),
+      coach: st.state === "ready" ? `harvest-${b.id}` : `produce-${b.id}`,
     };
   });
+  const describe = (p: DomainPlot) => {
+    const base = `${props.names.building(p.type)}, ${fr.game.level(p.level)}`;
+    const res = p.resource ? props.names.resource(p.resource) : "";
+    const state =
+      p.state === "ready"
+        ? t.plot.ready(p.quantity ?? 0, res)
+        : p.state === "running"
+          ? t.plot.running(p.left ?? "")
+          : p.state === "idle"
+            ? t.plot.idle
+            : p.state === "blocked"
+              ? t.plot.blocked(res)
+              : "";
+    return [base, state, p.canUpgrade ? t.plot.upgrade : ""].filter(Boolean).join(", ");
+  };
+  const touch = async (p: DomainPlot) => {
+    const b = view.buildings.find((x) => x.id === p.id);
+    if (!b) return;
+    if (p.state === "ready") {
+      if (props.busy) return;
+      const emptied = b.job !== null && readyOf(b, now) >= b.job.batches;
+      if (await props.act({ type: "collect", buildingId: b.id })) {
+        if (p.resource) {
+          const gain = { quantity: p.quantity ?? 0, resource: p.resource, key: Date.now() };
+          setGains((old) => new Map([...old, [b.id, gain]]));
+          setTimeout(
+            () =>
+              setGains((old) => {
+                const next = new Map(old);
+                if (next.get(b.id)?.key === gain.key) next.delete(b.id);
+                return next;
+              }),
+            1_700,
+          );
+        }
+        if (emptied) setRestart(b.id);
+      }
+      return;
+    }
+    if (p.state === "still" && b.upgradeCost) props.setSheet(`upgrade:${b.id}`);
+    else props.setSheet(`produce:${b.id}`);
+  };
   const levels = view.buildings.reduce((n, b) => n + b.level, 0);
   const stock = view.inventory.reduce((n, i) => n + i.available, 0);
   const home = (view.road?.vehicles ?? []).filter((v) => v.status === "free").map((v) => v.type);
   const crest = props.account.crest ?? defaultCrest(props.account.id);
-  const t = fr.game.domain;
 
   return (
     <section className="overflow-hidden rounded-3xl border border-line bg-night-2">
@@ -86,22 +150,63 @@ export function Domain(props: GameProps) {
         emblem={
           view.mastery.chosen ? <MasteryEmblem code={view.mastery.chosen} size={20} /> : undefined
         }
-        labelOf={(p) => `${props.names.building(p.type)}, ${fr.game.level(p.level)}`}
+        labelOf={describe}
         emptyLabel={t.build}
         title={t.title(view.buildings.length, levels)}
-        onPlot={(p) => {
-          const b = view.buildings.find((x) => x.id === p.id);
-          if (!b) return;
-          if (b.job === null && b.canStart > 0) props.setSheet(`produce:${b.id}`);
-          else if (b.upgradeCost) props.setSheet(`upgrade:${b.id}`);
-          else props.setSheet(`produce:${b.id}`);
-        }}
-        onEmpty={() =>
-          document
-            .getElementById("build-section")
-            ?.scrollIntoView({ behavior: "smooth", block: "start" })
-        }
+        onPlot={touch}
+        onEmpty={() => props.setSheet("buildHere")}
       />
+      <DomainBand {...props} />
     </section>
+  );
+}
+
+/**
+ * Under the scene, the one thing to do now: collect everything and start again, or the next
+ * batch to come, or start the idle workshops.
+ */
+function DomainBand(props: GameProps) {
+  const { view, now } = props;
+  const ready = view.buildings.reduce((n, b) => n + readyOf(b, now), 0);
+  const next = view.buildings
+    .filter((b) => b.job && readyOf(b, now) < b.job.batches)
+    .map((b) => {
+      const job = b.job;
+      return { b, at: job ? job.startedAt + (readyOf(b, now) + 1) * job.batchMs : 0 };
+    })
+    .sort((x, y) => x.at - y.at)[0];
+  const idle = view.buildings.some((b) => !b.job && b.canStart > 0);
+  return (
+    <div className="space-y-2 px-3 pb-3 pt-2">
+      {ready > 0 ? (
+        <Slab
+          size="lg"
+          className="w-full"
+          coach="harvest-all"
+          disabled={props.busy}
+          onClick={() => props.act({ type: "collectAndRestart" })}
+        >
+          {fr.game.harvestAll(ready)}
+        </Slab>
+      ) : idle ? (
+        <Slab
+          className="w-full"
+          tone="lagoon"
+          disabled={props.busy}
+          onClick={() => props.act({ type: "collectAndRestart" })}
+        >
+          {fr.game.restartAll}
+        </Slab>
+      ) : null}
+      {next && ready === 0 && (
+        <p className="label text-center text-lagoon">
+          {fr.game.domain.next(props.names.building(next.b.type), clock(next.at - now))}
+        </p>
+      )}
+      {!next && ready === 0 && !idle && (
+        <p className="text-center text-sm text-cream-dim">{fr.game.idleAllHelp}</p>
+      )}
+      <p className="text-center text-[11px] text-muted">{fr.game.domain.hint}</p>
+    </div>
   );
 }

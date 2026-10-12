@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { BuildingShape } from "./buildings.js";
 import { P } from "./palette.js";
+import { ResourceIcon } from "./resources.js";
 import { VehicleGlyph } from "./veneto.js";
 
 /** A workshop standing on its plot. */
@@ -8,13 +9,29 @@ export interface DomainPlot {
   id: string;
   type: string;
   level: number;
-  /** Producing now: wheels turn, smoke rises. */
-  active: boolean;
-  /** Batches wait to be collected. */
-  ready: boolean;
+  /**
+   * What the workshop asks for, shown in a bubble over its roof: goods to collect, a batch under
+   * way, nothing to do (it may produce), or an input missing. `still`: no recipe (the palace).
+   */
+  state: PlotState;
+  /** Ready: units to collect. Idle: units of a batch. */
+  quantity?: number;
+  /** The goods it gives, or the input it lacks. */
+  resource?: string;
+  /** Running: share of the batch under way done (0 to 1), and its time left, written. */
+  progress?: number;
+  left?: string;
+  /** An upgrade the merchant can afford: a golden arrow at its foot. */
+  canUpgrade?: boolean;
   /** Just built or upgraded: a golden burst. */
   burst: boolean;
+  /** Just collected: the goods rise from the plot. */
+  gain?: { quantity: number; resource: string; key: number };
+  /** Target of the guide. */
+  coach?: string;
 }
+
+export type PlotState = "ready" | "running" | "idle" | "blocked" | "still";
 
 export type SkyPhase = "day" | "dusk" | "night";
 
@@ -230,6 +247,121 @@ function Burst() {
   );
 }
 
+/** A resource icon placed in the scene, centred on (x, y). */
+function Icon({ code, x, y, size }: { code: string; x: number; y: number; size: number }) {
+  return (
+    <svg
+      x={x - size / 2}
+      y={y - size / 2}
+      width={size}
+      height={size}
+      viewBox="0 0 48 48"
+      aria-hidden="true"
+    >
+      <ResourceIcon code={code} size={48} />
+    </svg>
+  );
+}
+
+/** What the workshop asks for, over its roof. */
+function Bubble({ plot }: { plot: DomainPlot }) {
+  const tail = (fill: string) => <path d="M-4 9 L0 15 L4 9 Z" fill={fill} />;
+  switch (plot.state) {
+    case "ready":
+      return (
+        <g>
+          <g>
+            <animateTransform
+              attributeName="transform"
+              type="translate"
+              values="0 0;0 -2.5;0 0"
+              dur="1.2s"
+              repeatCount="indefinite"
+            />
+            {tail(P.gold)}
+            <rect x="-24" y="-12" width="48" height="22" rx="11" fill={P.gold} />
+            {plot.resource && <Icon code={plot.resource} x={-11} y={-1} size={18} />}
+            <text
+              x="11"
+              y="4"
+              textAnchor="middle"
+              fontSize="11"
+              fontWeight="800"
+              fill={P.night}
+              fontFamily="Archivo, sans-serif"
+            >
+              +{plot.quantity ?? 0}
+            </text>
+          </g>
+        </g>
+      );
+    case "running": {
+      const r = 9;
+      const c = 2 * Math.PI * r;
+      return (
+        <g>
+          {tail(P.night)}
+          <rect x="-26" y="-12" width="52" height="22" rx="11" fill={P.night} opacity="0.9" />
+          <circle cx="-14" cy="-1" r={r} fill="none" stroke={P.line} strokeWidth="3" />
+          <circle
+            cx="-14"
+            cy="-1"
+            r={r}
+            fill="none"
+            stroke={P.lagoon}
+            strokeWidth="3"
+            strokeDasharray={`${c * Math.min(1, Math.max(0, plot.progress ?? 0))} ${c}`}
+            transform="rotate(-90 -14 -1)"
+          />
+          <text
+            x="7"
+            y="3"
+            textAnchor="middle"
+            fontSize="9"
+            fontWeight="700"
+            fill={P.cream}
+            fontFamily="Archivo, sans-serif"
+          >
+            {plot.left ?? ""}
+          </text>
+        </g>
+      );
+    }
+    case "idle":
+      return (
+        <g>
+          <animateTransform
+            attributeName="transform"
+            type="scale"
+            values="1;1.1;1"
+            dur="1.8s"
+            repeatCount="indefinite"
+          />
+          {tail(P.lagoon)}
+          <circle r="11" fill={P.lagoon} />
+          <path d="M-3.5 -5.5 L5.5 0 L-3.5 5.5 Z" fill={P.night} />
+        </g>
+      );
+    case "blocked":
+      return (
+        <g>
+          {tail(P.cream)}
+          <circle r="11" fill={P.cream} stroke={P.vermilion} strokeWidth="1.5" />
+          {plot.resource && <Icon code={plot.resource} x={0} y={0} size={17} />}
+          <circle cx="8" cy="-8" r="5" fill={P.vermilion} />
+          <path
+            d="M8 -11 V-8 M8 -6 V-5.5"
+            stroke={P.cream}
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        </g>
+      );
+    default:
+      return null;
+  }
+}
+
 /** A workshop on its plot, with what its level adds: banner, stone, tower, gold. */
 function Workshop({
   plot,
@@ -254,12 +386,15 @@ function Workshop({
       role="button"
       tabIndex={0}
       aria-label={label}
-      className="cursor-pointer"
+      data-coach={plot.coach}
+      className="cursor-pointer outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold"
       onClick={onSelect}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") onSelect();
       }}
     >
+      {/* The whole plot answers a touch, not only the painted strokes. */}
+      <rect x="8" y="8" width="104" height="84" fill="transparent" />
       <ellipse cx="60" cy="82" rx="56" ry="8" fill="#000" opacity="0.28" />
       {level >= 5 && (
         <ellipse cx="60" cy="54" rx="60" ry="40" fill={P.gold} opacity="0.16">
@@ -286,7 +421,7 @@ function Workshop({
           <path d="M8 83.5 H112" stroke={P.line} strokeWidth="1" />
         </g>
       )}
-      <BuildingShape type={plot.type} active={plot.active} />
+      <BuildingShape type={plot.type} active={plot.state === "running"} />
       {level >= 5 && (
         <path
           d="M30 14 L36 4 L42 14 L48 2 L54 14 L60 4 L66 14 Z"
@@ -327,12 +462,42 @@ function Workshop({
           {ROMAN[Math.min(5, level)] ?? level}
         </text>
       </g>
-      {plot.ready && (
-        <g transform="translate(60 -2)">
-          <circle r="9" fill={P.gold}>
-            <animate attributeName="r" values="8;10;8" dur="1.2s" repeatCount="indefinite" />
-          </circle>
-          <path d="M-4 0 L-1 3 L4 -3" stroke={P.night} strokeWidth="2" fill="none" />
+      {plot.canUpgrade && (
+        <g transform="translate(84 92)">
+          <circle r="7" fill={P.gold} stroke={P.night} strokeWidth="1.5" />
+          <path
+            d="M0 4 V-3.5 M-3.5 0 L0 -3.8 L3.5 0"
+            stroke={P.night}
+            strokeWidth="2"
+            fill="none"
+          />
+        </g>
+      )}
+      {/* The bubble keeps one size from the front row to the back: it is read, not seen. */}
+      <g transform={`translate(60 6) scale(${Math.min(1.3, 0.85 / s)})`}>
+        <Bubble plot={plot} />
+      </g>
+      {plot.gain && (
+        <g key={plot.gain.key} transform={`translate(60 10) scale(${Math.min(1.6, 1 / s)})`}>
+          <g className="domain-gain">
+            <text
+              textAnchor="end"
+              x="-1"
+              y="5"
+              fontSize="15"
+              fontWeight="800"
+              fill={P.goldSoft}
+              stroke={P.night}
+              strokeWidth="3"
+              paintOrder="stroke"
+              fontFamily="Archivo, sans-serif"
+            >
+              +{plot.gain.quantity}
+            </text>
+            <svg x="1" y="-9" width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+              <ResourceIcon code={plot.gain.resource} size={48} />
+            </svg>
+          </g>
         </g>
       )}
       {plot.burst && <Burst />}
@@ -360,13 +525,14 @@ function EmptyPlot({
       role="button"
       tabIndex={0}
       aria-label={label}
-      className="cursor-pointer"
+      className="cursor-pointer outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold"
       onClick={onSelect}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") onSelect();
       }}
       opacity="0.75"
     >
+      <rect x="-46" y="-28" width="92" height="42" fill="transparent" />
       <ellipse rx="44" ry="10" fill="#000" opacity="0.15" />
       <ellipse rx="44" ry="10" fill="none" stroke={P.cream} strokeDasharray="5 5" opacity="0.5" />
       <path d="M-6 -2 H6 M0 -8 V4" stroke={P.cream} strokeWidth="2.5" strokeLinecap="round" />

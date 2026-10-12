@@ -97,7 +97,7 @@ function nextStep(props: GameProps): CoachStep {
       return { text: fr.game.coach.produce(names.building(raw.type)), target: "sheet-produce" };
     return (
       goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
-        text: fr.game.coach.produce(names.building(raw.type)),
+        text: fr.game.coach.produceTap(names.building(raw.type)),
         target: `produce-${raw.id}`,
       }
     );
@@ -162,7 +162,7 @@ function nextStep(props: GameProps): CoachStep {
     if (raw)
       return (
         goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
-          text: fr.game.coach.produce(names.building(raw.type)),
+          text: fr.game.coach.produceTap(names.building(raw.type)),
           target: `produce-${raw.id}`,
         }
       );

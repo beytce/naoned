@@ -177,6 +177,25 @@
   }
 }
 
+/* The domain: what a workshop just gave rises from its plot and fades. */
+.domain-gain {
+  transform-box: fill-box;
+  animation: domain-gain 1.6s ease-out both;
+}
+@keyframes domain-gain {
+  0% {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-28px);
+    opacity: 0;
+  }
+}
+
 /* Players who ask for less motion: no floating, pulsing or sliding, only instant changes. */
 @media (prefers-reduced-motion: reduce) {
   *,

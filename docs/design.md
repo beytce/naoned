@@ -73,10 +73,18 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 - **Domaine** (`Domain`, `art/domain.tsx`) : en tête du Comptoir, la scène de la Maison sur la terre de sa région.
   - **Décor** : champs et moulin de la Terraferma, canaux et silhouette de Venise de la Lagune, pics et sapins des Dolomites. Ciel de jour, de crépuscule ou de nuit selon l'heure de Paris.
   - **Ateliers** : douze parcelles, remplies du premier plan (grands ateliers) vers le fond ; le palais occupe la place d'honneur.
-  - **Ornements cumulés** : niveau II bannière, III socle de pierre, IV tour et fanion, V couronne dorée et halo. Plaque en chiffres romains, pastille dorée quand une récolte attend.
+  - **Ornements cumulés** : niveau II bannière, III socle de pierre, IV tour et fanion, V couronne dorée et halo. Plaque en chiffres romains ; petite flèche dorée au pied quand une amélioration est abordable.
   - **Bâtir** : seules les deux prochaines parcelles libres sont en pointillé, avec « À bâtir ».
   - **Cour** : véhicules au dépôt et caisses selon le stock, blason sur le mât.
-  - **Interactions** : une gerbe dorée salue une construction ou un niveau ; un toucher ouvre l'atelier ou mène à « Nouvel atelier ».
+  - **Bulles d'état** au-dessus du toit, de même taille du premier plan au fond :
+    - sac doré « +N » et icône de la marchandise : récolte prête ;
+    - anneau lagune et temps restant : lot en cours ;
+    - ▶ lagune qui respire : à l'arrêt, peut produire ;
+    - pastille crème cerclée de rouge, avec la matière qui manque : à l'arrêt, faute d'intrant.
+  - **Gestes** : toucher un atelier prêt récolte tout de suite ; la marchandise s'envole de la parcelle, puis la feuille de l'atelier s'ouvre si le travail est fini et peut reprendre. Tout autre atelier ouvre sa feuille ; une parcelle libre ouvre « Bâtir ici ». Une gerbe dorée salue une construction ou un niveau. Toute la parcelle répond au toucher, pas seulement le dessin.
+  - **Feuille d'atelier** (une seule, clés `produce:<id>` et `upgrade:<id>`) : état en clair, récolte, production avec trois raccourcis (« 1 lot », « Jusqu'à ce soir » jusqu'à 21 h ou « Pour la nuit » jusqu'à 8 h, « Le plus possible »), la matière qui manque avec « Au marché » et l'atelier qui la produit, puis l'amélioration, repliée quand elle n'est pas abordable.
+  - **Bandeau** sous la scène : « Tout récolter et relancer », sinon « Tout relancer » ou le prochain lot. Il remplace l'ancien grand compteur du Comptoir.
+  - **Liste « Mes ateliers »** sous la scène : ouverte pendant les premiers pas guidés, repliée ensuite. Lorenzo désigne les ateliers sur la scène.
 - **Maîtrise** (`Mastery`, `art/mastery.tsx`) :
   - **Comptoir** : une tuile de progression vers le palier (niveaux d'ateliers), puis l'appel à choisir.
   - **Choix** : feuille ouverte d'elle-même la première fois, avec quatre cartes (emblème, devise, effets lus dans les réglages) et une confirmation « pour toute la saison ».
