@@ -24,6 +24,7 @@ import {
   activePlayerCount,
   cashAccount,
   dayIndex,
+  isActive,
 } from "./state.js";
 import { type Tx, addStock, emit, fail, nextId, removeStock, transfer } from "./tx.js";
 import { netWorth } from "./valuation.js";
@@ -243,13 +244,7 @@ export function deliveryOrdersFor(
   };
 
   // The merchant's own chain: what the starting buildings of the region make.
-  const chain = new Set(
-    (ctx.settings.startingBuildings[region] ?? []).flatMap((type) =>
-      ctx.theme.recipes.filter((r) => r.building === type).flatMap((r) => Object.keys(r.outputs)),
-    ),
-  );
-  // Raw goods are asked only of those who produce them: otherwise an order would just be buying
-  // at the market and selling on (goods made from bought raw goods are fine).
+  const chain = regionChain(ctx, region);
   const tier = (resource: string) => ctx.theme.resources.find((r) => r.code === resource)?.tier;
   const mayOrder = (resource: string) => tier(resource) !== "raw" || chain.has(resource);
 
@@ -432,6 +427,68 @@ function findDeliveryOrder(
   return deliveryOrdersFor(ctx, { ...state, board: { ...board, orders: [b] } }, playerId, day).find(
     (o) => o.id === orderId,
   );
+}
+
+/** What the starting buildings of a region make: its own chain. */
+function regionChain(ctx: WorldContext, region: string): Set<string> {
+  return new Set(
+    (ctx.settings.startingBuildings[region] ?? []).flatMap((type) =>
+      ctx.theme.recipes.filter((r) => r.building === type).flatMap((r) => Object.keys(r.outputs)),
+    ),
+  );
+}
+
+/**
+ * Raw goods are asked only of those who produce them: otherwise an order would just be buying at
+ * the market and selling on (goods made from bought raw goods are fine).
+ */
+function mayBeAsked(ctx: WorldContext, region: string, resource: string): boolean {
+  const tier = ctx.theme.resources.find((r) => r.code === resource)?.tier;
+  return tier !== "raw" || regionChain(ctx, region).has(resource);
+}
+
+/**
+ * How many other active merchants may take each order of the world's board: those whose region
+ * reaches the city and may be asked for the goods.
+ */
+export function boardRivals(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  now: number,
+): (order: { city: string; resource: string }) => number {
+  const byRegion = new Map<string, number>();
+  for (const p of Object.values(state.players)) {
+    if (p.id === playerId || !isActive(ctx, p, now)) continue;
+    byRegion.set(p.region, (byRegion.get(p.region) ?? 0) + 1);
+  }
+  return (order) => {
+    let n = 0;
+    for (const [region, count] of byRegion) {
+      if (routeMinutes(ctx, region, order.city) === undefined) continue;
+      if (mayBeAsked(ctx, region, order.resource)) n += count;
+    }
+    return n;
+  };
+}
+
+/** The biggest takes of the day's board, by what the load pays, with who took them. */
+export function boardTakes(
+  state: WorldState,
+  limit: number,
+): { playerId: PlayerId; city: string; resource: string; quantity: number; payment: Deniers }[] {
+  const taken = state.board?.takenBy ?? {};
+  return Object.values(state.deliveries ?? {})
+    .filter((d) => taken[d.orderId] === d.playerId)
+    .sort((a, b) => (a.payment === b.payment ? 0 : a.payment > b.payment ? -1 : 1))
+    .slice(0, limit)
+    .map((d) => ({
+      playerId: d.playerId,
+      city: d.route.split(":")[1] ?? "",
+      resource: d.resource,
+      quantity: d.loaded,
+      payment: d.payment,
+    }));
 }
 
 /** The cities' orders form one board for the world (shared demand). */

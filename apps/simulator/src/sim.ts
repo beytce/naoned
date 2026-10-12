@@ -82,6 +82,17 @@ export interface SimulationResult {
     harvestsPerDay: number;
     deliveriesPerDay: number;
   };
+  /** The world's board (shared demand): how much of it is taken, how fast, and lost to others. */
+  board?: {
+    days: number;
+    orders: number;
+    /** Share of the board's orders taken by the end of their day. */
+    takenShare: number;
+    /** Of the orders taken, share taken within an hour of opening. */
+    firstHourShare: number;
+    /** At each session, orders the stock covered but another merchant had already taken. */
+    lostPerSession: number;
+  };
   /** The road: deliveries, vehicles, ambushes and bands (see `roadStats`). */
   road?: RoadStats;
   /** Faraj's bales: opened, cards by rarity, value at reference prices by player (deniers). */
@@ -277,12 +288,14 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     harvests: 0,
     deliveries: 0,
     firstDelivery: [] as number[],
+    lost: 0,
   };
   const delivered = new Set<string>();
   const observeBoard = (playerId: string) => {
     const s = state;
     const day = Math.floor((now - START) / DAY_MS);
-    const orders = deliveryOrdersFor(ctx, s, playerId, day).filter(
+    const stock = (r: string) => s.inventories[playerId]?.[r]?.available ?? 0;
+    const showing = deliveryOrdersFor(ctx, s, playerId, day).filter(
       (o) =>
         o.opensAt <= now &&
         now < o.expiresAt &&
@@ -291,12 +304,18 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
           s.deliveriesDone[playerId]?.ids.includes(o.id)
         ),
     );
+    // Taken by another: no longer playable, and lost if the stock covered it.
+    const takenByOther = (o: (typeof showing)[number]) => !!o.takenBy && o.takenBy !== playerId;
+    const orders = showing.filter((o) => !takenByOther(o));
     activity.sessions++;
     activity.open += orders.length;
-    activity.fillable += orders.filter(
-      (o) => (s.inventories[playerId]?.[o.resource]?.available ?? 0) >= o.quantity,
+    activity.fillable += orders.filter((o) => stock(o.resource) >= o.quantity).length;
+    activity.lost += showing.filter(
+      (o) => takenByOther(o) && stock(o.resource) >= o.quantity,
     ).length;
   };
+  // The world's board of each day, as it last stood.
+  const boards = new Map<number, NonNullable<WorldState["board"]>>();
   const closeDay = () => {
     sweepRoad();
     const snap = snapshot(ctx, state, now, currentDay, flows, index, botInfo);
@@ -326,6 +345,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
       planDay(day);
     }
     run({ type: "tick" });
+    if (state.board) boards.set(state.board.day, state.board);
     for (const bot of bots) {
       if (bot.churned) continue;
       if (!state.players[bot.id]) {
@@ -386,6 +406,31 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     deliveriesPerDay: activity.deliveries / Math.max(1, playerDays),
   };
   sweepRoad();
+  if (boards.size > 0) {
+    const departed = new Map<string, number>();
+    for (const d of roadSeen.deliveries.values())
+      departed.set(`${d.playerId}:${d.orderId}`, d.departAt);
+    let orders = 0;
+    let taken = 0;
+    let fast = 0;
+    for (const b of boards.values()) {
+      orders += b.orders.length;
+      for (const o of b.orders) {
+        const taker = b.takenBy[o.id];
+        if (!taker) continue;
+        taken++;
+        const at = departed.get(`${taker}:${o.id}`);
+        if (at !== undefined && at - o.opensAt <= 3_600_000) fast++;
+      }
+    }
+    result.board = {
+      days: boards.size,
+      orders,
+      takenShare: orders > 0 ? taken / orders : 0,
+      firstHourShare: taken > 0 ? fast / taken : 0,
+      lostPerSession: activity.lost / Math.max(1, activity.sessions),
+    };
+  }
   result.road = roadStats(
     ctx,
     state,

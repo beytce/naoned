@@ -3,6 +3,8 @@ import {
   type Command,
   type DeliveryOrder,
   type WorldSettingsInput,
+  boardRivals,
+  boardTakes,
   checkInvariants,
   contractsFor,
   deliveryOrdersFor,
@@ -495,6 +497,46 @@ describe("a board shared by the world", () => {
     expect(common(w, "b").find((x) => x.id === o.id)?.takenBy).toBe("a");
     expect(error(dispatch(w, o.id, "none", "b"))).toBe("order_taken");
     expect(checkInvariants(w.state, w.totals)).toEqual([]);
+  });
+
+  it("counts the other active merchants who may take each order", () => {
+    const w = shared();
+    const rivals = boardRivals(w.ctx, w.state, "a", w.now);
+    const seen = (p: string, id: string) => common(w, p).some((x) => x.id === id);
+    const orders = common(w, "a");
+    expect(orders.some((o) => o.resource === "wheat")).toBe(true);
+    for (const o of orders) {
+      // Raw wheat is for its producers only: the lagoon merchant is no rival there.
+      const expected = ["b", "c"].filter((p) => seen(p, o.id)).length;
+      expect(rivals(o)).toBe(expected);
+    }
+    // A merchant gone quiet is no rival any more.
+    w.at(4 * DAY);
+    w.do({ type: "join", playerId: "d", region: "lagoon" });
+    expect(boardRivals(w.ctx, w.state, "d", w.now)(orders[0] as DeliveryOrder)).toBe(0);
+  });
+
+  it("tells the day's biggest takes, with who took them", () => {
+    const w = shared();
+    const orders = common(w, "a").filter((x) => x.kind === "city" && x.quantity <= 40);
+    const value = (x: DeliveryOrder) => x.unitPrice * BigInt(x.quantity);
+    const sorted = [...orders].sort((x, y) => (value(x) < value(y) ? -1 : 1));
+    const small = sorted[0] as DeliveryOrder;
+    const big = sorted.at(-1) as DeliveryOrder;
+    expect(value(big)).toBeGreaterThan(value(small));
+    expect(error(dispatch(w, small.id, "none", "a"))).toBe("ok");
+    expect(boardTakes(w.state, 3)).toEqual([
+      {
+        playerId: "a",
+        city: small.city,
+        resource: small.resource,
+        quantity: small.quantity,
+        payment: small.unitPrice * BigInt(small.quantity),
+      },
+    ]);
+    expect(error(dispatch(w, big.id, "none", "b"))).toBe("ok");
+    expect(boardTakes(w.state, 3).map((t) => t.playerId)).toEqual(["b", "a"]);
+    expect(boardTakes(w.state, 1)).toHaveLength(1);
   });
 });
 

@@ -186,6 +186,16 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
       blocking: false,
     });
   }
+  const b = r.board;
+  if (b) {
+    checks.push({
+      name: "Tableau commun : commandes prises",
+      target: "diagnostic : la demande est disputée sans rester sur la table",
+      value: `${pct(b.takenShare)} des ${b.orders} commandes en ${b.days} jours · ${pct(b.firstHourShare)} des prises dans l'heure de l'ouverture · ${b.lostPerSession.toFixed(2)} commande(s) perdue(s) au profit d'un autre par session (stock suffisant)`,
+      pass: true,
+      blocking: false,
+    });
+  }
   checks.push(...passChecks(r, twin));
 
   const lastDay = r.daily[last];
