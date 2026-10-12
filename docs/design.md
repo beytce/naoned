@@ -99,12 +99,14 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 - **Dernier sprint** : bandeau doré les trois derniers jours ; l'hommage au Doge de la saison passée s'affiche au Marché.
 - **Gazette** (`Gazette`) : une ligne repliée (« En ce moment » ou « Bientôt », titre, compte à rebours) qui se déplie au toucher, seulement sur Comptoir, Routes et Marché, jamais pendant les premiers pas guidés par Lorenzo ; fermeture par ×. Le premier jour d'un acte, elle annonce l'acte (« Acte III », titre, récit) avant l'événement du jour ; sans événement, elle rappelle l'acte en cours.
 - **Commandes de la route** (`Routes`, `roadKit.tsx`) : chaque commande montre son prix unitaire, l'écart avec le Rialto, les ducats par heure de route et un badge « Livrable » ; tri par gain à l'heure par défaut. La vue Liste est celle du tutoriel.
-- **Domaine** (`Domain`, `art/domain.tsx`) : en tête du Comptoir, la scène de la Maison sur la terre de sa région.
-  - **Décor** : champs et moulin de la Terraferma, canaux et silhouette de Venise de la Lagune, pics et sapins des Dolomites. Ciel de jour, de crépuscule ou de nuit selon l'heure de Paris.
-  - **Ateliers** : douze parcelles, remplies du premier plan (grands ateliers) vers le fond ; le palais occupe la place d'honneur.
-  - **Ornements cumulés** : niveau II bannière, III socle de pierre, IV tour et fanion, V couronne dorée et halo. Plaque en chiffres romains ; petite flèche dorée au pied quand une amélioration est abordable.
+- **Domaine** (`Domain`, `art/domain.tsx`) : en tête du Comptoir, la Maison en volume, vue de dessus en isométrique, sur la terre de sa région.
+  - **Dessin** (`art/iso.tsx`, `art/isoBuildings.tsx`) : projection 2:1, boîtes à trois faces (dessus éclairé, face gauche, face droite plus sombre), toits à deux pans, pyramides, arbres en cônes.
+  - **Décor** : sol de la région (champs, prés de la Lagune bordés d'un canal, prés des Dolomites sous les pics), chemins de dalles entre les parcelles. Crépuscule et nuit teintent la scène, les fenêtres s'allument.
+  - **Cadrage** : la vue cadre ce qui est bâti, les deux prochaines parcelles et la cour. Elle commence près et s'élargit à mesure que le Domaine grandit.
+  - **Ateliers** : douze parcelles de 2 × 2 cases, remplies depuis la cour vers le fond ; le palais à la place d'honneur, derrière. Chaque atelier a son volume et son accessoire animé quand il produit : ailes du moulin, fumée du four et de la briqueterie, lame de la scierie, blé ondulant.
+  - **Niveaux** : II bannière, III socle de pierre et un étage, IV tour d'angle et fanion, V toits dorés et un étage de plus. Plaque en chiffres romains au pied ; petite flèche dorée quand une amélioration est abordable.
   - **Bâtir** : seules les deux prochaines parcelles libres sont en pointillé, avec « À bâtir ».
-  - **Cour** : véhicules au dépôt et caisses selon le stock, blason sur le mât.
+  - **Cour** : bande pavée devant les parcelles, avec l'entrepôt (hangar et piles selon le stock), les véhicules au dépôt et la porte vers la route. Le blason flotte sur le mât, au coin.
   - **Bulles d'état** au-dessus du toit, de même taille du premier plan au fond :
     - sac doré « +N » et icône de la marchandise : récolte prête ;
     - anneau lagune et temps restant : lot en cours ;

@@ -8,6 +8,7 @@ import { Label, Slab, clock } from "../ui.js";
 import { affordable } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
 import { underPoint } from "./gestures.js";
+import { useWide } from "./useWide.js";
 import { readyOf, workshopState } from "./workshops.js";
 
 /** How long the golden burst of a new building or level lasts. */
@@ -31,6 +32,7 @@ function parisHour(now: number): number {
  */
 export function Domain(props: GameProps) {
   const { view, now, catalog } = props;
+  const wide = useWide();
   // Buildings just built or upgraded since the last view: a golden burst on their plot.
   const seen = useRef<Map<string, number> | null>(null);
   const [bursts, setBursts] = useState<Map<string, number>>(new Map());
@@ -250,6 +252,7 @@ export function Domain(props: GameProps) {
             view.mastery.chosen ? <MasteryEmblem code={view.mastery.chosen} size={20} /> : undefined
           }
           labelOf={describe}
+          ratio={wide ? 0.6 : 0.82}
           emptyLabel={t.build}
           title={t.title(view.buildings.length, levels)}
           onPlot={touch}

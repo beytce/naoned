@@ -125,7 +125,7 @@ export const fr = {
         perHour: (amount: string) => `${amount}/h`,
       },
       sharedHelp:
-        "Les commandes des villes sont communes à tous les marchands : la première charrette qui part l'emporte. Glissez un véhicule libre jusqu'à une ville pour charger sa meilleure commande.",
+        "Les commandes des villes sont communes à tous les marchands : la première charrette qui part l'emporte.",
       takenBy: (name: string) => `Prise par ${name}`,
       takenList: (n: number) =>
         `${n} commande${n > 1 ? "s" : ""} déjà prise${n > 1 ? "s" : ""} par d'autres`,
@@ -217,7 +217,6 @@ export const fr = {
       hud: (orders: number, free: number) =>
         `${orders} commande${orders > 1 ? "s" : ""} · ${free} véhicule${free > 1 ? "s" : ""} libre${free > 1 ? "s" : ""}`,
       view: { carte: "Carte", liste: "Liste" },
-      carry: "Glissez vers une ville",
       focusHint: (vehicle: string) =>
         `${vehicle} : touchez une ville en surbrillance pour la charger.`,
       pickRoad: "Touchez une route pour y poster votre bande.",

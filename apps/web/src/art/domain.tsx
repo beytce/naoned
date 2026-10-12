@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { BuildingShape } from "./buildings.js";
+import { IsoBox, IsoRoof, IsoTile, IsoTree, iso, pts } from "./iso.js";
+import { IsoWorkshop, workshopHeight } from "./isoBuildings.js";
 import { P } from "./palette.js";
 import { ResourceIcon } from "./resources.js";
 import { VehicleGlyph } from "./veneto.js";
@@ -35,192 +36,11 @@ export type PlotState = "ready" | "running" | "idle" | "blocked" | "still";
 
 export type SkyPhase = "day" | "dusk" | "night";
 
-const W = 360;
-const H = 254;
-/** Top of the yard strip, below the front row. */
-const YARD = 232;
-
-/**
- * Where the plots lie, back to front: a place of honour for the palace, then three rows that grow
- * larger as they come closer. Twelve plots in all, as many as the buildings a merchant may own.
- */
-const HONOUR = { x: 180, y: 124, scale: 0.8 };
-/** Filled from the front (the first workshops stand large and close) to the back. */
-const ROWS: { x: number; y: number; scale: number }[] = [
-  { x: 64, y: 214, scale: 0.94 },
-  { x: 180, y: 214, scale: 0.94 },
-  { x: 296, y: 214, scale: 0.94 },
-  { x: 48, y: 164, scale: 0.7 },
-  { x: 132, y: 164, scale: 0.7 },
-  { x: 228, y: 164, scale: 0.7 },
-  { x: 312, y: 164, scale: 0.7 },
-  { x: 56, y: 122, scale: 0.52 },
-  { x: 116, y: 122, scale: 0.52 },
-  { x: 244, y: 122, scale: 0.52 },
-  { x: 304, y: 122, scale: 0.52 },
-];
-
-/** Empty plots shown ahead: the next ones to build on, not the whole land. */
-const EMPTY_SHOWN = 2;
-
-const ROMAN = ["", "I", "II", "III", "IV", "V"];
-
 /** The phase of the sky at this hour (Paris). */
 export function skyPhase(hour: number): SkyPhase {
   if (hour >= 21 || hour < 6) return "night";
   if (hour < 8 || hour >= 18) return "dusk";
   return "day";
-}
-
-const SKY: Record<SkyPhase, [string, string]> = {
-  day: ["#2C5E66", "#6E9F95"],
-  dusk: ["#3A2440", "#C8693F"],
-  night: ["#08141A", "#16292E"],
-};
-
-const GROUND: Record<string, [string, string]> = {
-  terraferma: ["#5B5326", "#3E3A1C"],
-  lagoon: ["#4A3A30", "#2F2620"],
-  dolomites: ["#2E4A3A", "#1E3128"],
-};
-
-/** The far landscape of each region, behind the plots. */
-function Backdrop({ region, phase }: { region: string; phase: SkyPhase }) {
-  const far = phase === "night" ? P.night : P.night3;
-  if (region === "lagoon") {
-    return (
-      <g>
-        <g fill={far} opacity="0.9">
-          <rect x="196" y="58" width="9" height="46" />
-          <path d="M194 58 L200.5 42 L207 58 Z" />
-          <path d="M214 104 V86 Q228 70 242 86 V104 Z" />
-          <path d="M240 104 V80 Q258 60 276 80 V104 Z" />
-          <rect x="278" y="88" width="40" height="16" />
-          <rect x="120" y="92" width="60" height="12" />
-          <rect x="60" y="94" width="40" height="10" />
-        </g>
-        <rect x="0" y="100" width={W} height="16" fill={P.lagoonDeep} opacity="0.75" />
-        {[104, 109, 113].map((y, i) => (
-          <path
-            key={y}
-            d={`M${20 + i * 40} ${y} h${60 - i * 10} M${200 - i * 30} ${y} h${90 - i * 20}`}
-            stroke={P.lagoon}
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            opacity={0.7 - i * 0.2}
-          />
-        ))}
-        <g>
-          <path d="M0 4 Q14 9 28 2 Q20 7 4 6 Z" fill={P.cream} />
-          <path d="M20 3 L22 -8" stroke={P.cream} strokeWidth="1" />
-          <animateTransform
-            attributeName="transform"
-            type="translate"
-            values="-30 103; 380 103"
-            dur="70s"
-            repeatCount="indefinite"
-          />
-        </g>
-      </g>
-    );
-  }
-  if (region === "dolomites") {
-    return (
-      <g>
-        <path
-          d="M0 112 L44 40 L76 82 L118 22 L164 92 L206 46 L254 100 L296 34 L340 86 L360 70 V116 H0 Z"
-          fill={far}
-        />
-        <path
-          d="M44 40 L54 56 L36 54 Z M118 22 L130 40 L106 38 Z M206 46 L216 60 L196 58 Z M296 34 L308 52 L286 50 Z"
-          fill={P.cream}
-          opacity="0.85"
-        />
-        {[16, 34, 92, 150, 186, 236, 268, 330, 348].map((x, i) => (
-          <path
-            key={x}
-            d={`M${x} ${92 + (i % 3) * 6} l-7 18 h14 Z`}
-            fill={P.lagoonDeep}
-            opacity="0.9"
-          />
-        ))}
-      </g>
-    );
-  }
-  // Terraferma: rolling fields, poplars, a windmill on the hill.
-  return (
-    <g>
-      <path d="M0 98 Q60 74 130 92 T260 86 T360 90 V116 H0 Z" fill={P.goldDeep} opacity="0.55" />
-      <path d="M0 108 Q90 92 180 104 T360 100 V116 H0 Z" fill={P.gold} opacity="0.35" />
-      {[30, 44, 300, 316, 330].map((x) => (
-        <ellipse key={x} cx={x} cy="90" rx="4" ry="12" fill={far} opacity="0.85" />
-      ))}
-      <g transform="translate(228 70)" fill={far}>
-        <path d="M-4 22 L-2 4 H2 L4 22 Z" />
-        <g>
-          {[0, 90, 180, 270].map((r) => (
-            <path key={r} d="M0 4 L1 -10 H5 L1 4 Z" transform={`rotate(${r} 0 4)`} />
-          ))}
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            from="0 0 4"
-            to="360 0 4"
-            dur="14s"
-            repeatCount="indefinite"
-          />
-        </g>
-      </g>
-    </g>
-  );
-}
-
-/** Texture of the land: furrows, paving or meadow, and the path to the depot. */
-function Ground({ region }: { region: string }) {
-  const mark = region === "lagoon" ? P.clay : region === "dolomites" ? P.lagoon : P.goldSoft;
-  return (
-    <g>
-      <path
-        d={`M168 ${H} Q172 170 180 128 L186 128 Q196 170 204 ${H} Z`}
-        fill={P.cream}
-        opacity="0.12"
-      />
-      {region === "lagoon"
-        ? [130, 150, 176, 204].map((y) => (
-            <path key={y} d={`M0 ${y} H${W}`} stroke={mark} strokeWidth="1" opacity="0.18" />
-          ))
-        : region === "dolomites"
-          ? [
-              [24, 140],
-              [90, 150],
-              [150, 186],
-              [212, 140],
-              [270, 190],
-              [340, 150],
-              [110, 200],
-              [330, 206],
-            ].map(([x = 0, y = 0]) => (
-              <path
-                key={`${x}-${y}`}
-                d={`M${x} ${y} l3 -7 l3 7 M${x + 5} ${y} l3 -6 l3 6`}
-                stroke={mark}
-                strokeWidth="1.4"
-                fill="none"
-                opacity="0.5"
-              />
-            ))
-          : [128, 140, 154, 170, 188, 208].map((y, i) => (
-              <path
-                key={y}
-                d={`M0 ${y} Q${W / 2} ${y - 6 + i} ${W} ${y}`}
-                stroke={mark}
-                strokeWidth="1"
-                fill="none"
-                opacity="0.16"
-              />
-            ))}
-    </g>
-  );
 }
 
 /** Golden sparks around a plot just built or upgraded. */
@@ -362,7 +182,41 @@ function Bubble({ plot }: { plot: DomainPlot }) {
   }
 }
 
-/** A workshop on its plot, with what its level adds: banner, stone, tower, gold. */
+const ROMAN = ["", "I", "II", "III", "IV", "V"];
+
+/**
+ * The land, in cells: twelve plots of 2 × 2 with paths between them, filled from the yard
+ * outwards; the palace's place of honour behind; the yard in front, with the store, the vehicles
+ * and the gate to the road.
+ */
+const SLOTS: { x: number; y: number }[] = [
+  { x: 0, y: 6 },
+  { x: 3, y: 6 },
+  { x: 6, y: 6 },
+  { x: 0, y: 3 },
+  { x: 3, y: 3 },
+  { x: 6, y: 3 },
+  { x: 9, y: 6 },
+  { x: 9, y: 3 },
+  { x: 0, y: 0 },
+  { x: 3, y: 0 },
+  { x: 6, y: 0 },
+  { x: 9, y: 0 },
+];
+const HONOUR = { x: 4.5, y: -3.2 };
+/** The yard: a band in front of the plots, the gate at its right end. */
+export const YARD = { x: 0, y: 9.2, w: 9, d: 2 };
+export const GATE = { x: 9.4, y: 9.2 };
+/** Empty plots shown ahead: the next ones to build on, not the whole land. */
+const EMPTY_SHOWN = 2;
+
+const GROUND: Record<string, { field: string; path: string; tree: string }> = {
+  terraferma: { field: "#7E8B3E", path: "#D8C8A0", tree: "#3F6B3A" },
+  lagoon: { field: "#6F7D5A", path: "#D9CDB2", tree: "#3E6A55" },
+  dolomites: { field: "#4F7A52", path: "#CFC6B0", tree: "#2C5A40" },
+};
+
+/** A workshop in volume on its plot, with its bubble, plaque and the touch that opens it. */
 function Workshop({
   plot,
   at,
@@ -371,17 +225,19 @@ function Workshop({
   onSelect,
 }: {
   plot: DomainPlot;
-  at: { x: number; y: number; scale: number };
+  at: { x: number; y: number };
   night: boolean;
   label: string;
   onSelect: () => void;
 }) {
-  const { level } = plot;
-  const s = at.scale;
+  const { x, y } = at;
+  const top = workshopHeight(plot.type, plot.level);
+  const [bx, by] = iso(x + 1, y + 1, top + 10);
+  const [px, py] = iso(x + 1.15, y + 2.05);
+  const [cx, cy] = iso(x + 1, y + 1, top / 2);
   return (
     // A <button> cannot live inside an SVG: the plot is a group with the button role.
     <g
-      transform={`translate(${at.x - 60 * s} ${at.y - 80 * s}) scale(${s})`}
       // biome-ignore lint/a11y/useSemanticElements: no <button> inside an SVG scene
       role="button"
       tabIndex={0}
@@ -395,100 +251,63 @@ function Workshop({
         if (e.key === "Enter" || e.key === " ") onSelect();
       }}
     >
-      {/* The whole plot answers a touch, not only the painted strokes. */}
-      <rect x="8" y="8" width="104" height="84" fill="transparent" />
-      <ellipse cx="60" cy="82" rx="56" ry="8" fill="#000" opacity="0.28" />
-      {level >= 5 && (
-        <ellipse cx="60" cy="54" rx="60" ry="40" fill={P.gold} opacity="0.16">
-          <animate
-            attributeName="opacity"
-            values="0.1;0.24;0.1"
-            dur="3s"
-            repeatCount="indefinite"
-          />
-        </ellipse>
-      )}
-      {level >= 4 && (
-        <g>
-          <rect x="2" y="26" width="14" height="54" fill={P.cream} stroke={P.line} />
-          <path d="M0 27 L9 12 L18 27 Z" fill={P.vermilion} />
-          <path d="M9 12 V2" stroke={P.cream} strokeWidth="1.5" />
-          <path d="M9 2 L19 5 L9 8 Z" fill={P.gold} />
-          <rect x="6" y="40" width="6" height="8" rx="3" fill={night ? P.gold : P.night3} />
-        </g>
-      )}
-      {level >= 3 && (
-        <g>
-          <rect x="8" y="80" width="104" height="7" rx="1.5" fill={P.cream} opacity="0.85" />
-          <path d="M8 83.5 H112" stroke={P.line} strokeWidth="1" />
-        </g>
-      )}
+      {/* The whole plot and its building answer a touch. */}
+      <polygon
+        points={pts(
+          iso(x, y, top),
+          iso(x + 2, y, top),
+          iso(x + 2, y, 0),
+          iso(x + 2, y + 2, 0),
+          iso(x, y + 2, 0),
+          iso(x, y + 2, top),
+        )}
+        fill="transparent"
+      />
       <g key={plot.gain?.key ?? 0} className={plot.gain ? "domain-bump" : undefined}>
-        <BuildingShape type={plot.type} active={plot.state === "running"} />
-      </g>
-      {level >= 5 && (
-        <path
-          d="M30 14 L36 4 L42 14 L48 2 L54 14 L60 4 L66 14 Z"
-          fill={P.gold}
-          transform="translate(22 0)"
+        <IsoWorkshop
+          type={plot.type}
+          x={x}
+          y={y}
+          level={plot.level}
+          active={plot.state === "running"}
+          night={night}
         />
-      )}
-      {level >= 2 && (
-        <g>
-          <path d="M112 80 V26" stroke={P.woodLight} strokeWidth="2.5" strokeLinecap="round" />
-          <path d="M112 27 H128 L123 34 L128 41 H112 Z" fill={level >= 4 ? P.gold : P.lagoon}>
-            <animateTransform
-              attributeName="transform"
-              type="skewY"
-              values="0;4;0"
-              dur="2.6s"
-              repeatCount="indefinite"
-            />
-          </path>
-        </g>
-      )}
-      {night && (
-        <g>
-          <circle cx="60" cy="64" r="11" fill={P.gold} opacity="0.18" />
-          <circle cx="60" cy="64" r="4" fill={P.goldSoft} opacity="0.8" />
-        </g>
-      )}
-      <g transform="translate(60 92)">
-        <rect x="-11" y="-6" width="22" height="12" rx="3" fill={P.night} stroke={P.gold} />
+      </g>
+      <g transform={`translate(${px} ${py})`}>
+        <rect x="-9" y="-5" width="18" height="10" rx="2" fill={P.night} stroke={P.gold} />
         <text
           textAnchor="middle"
-          y="3.5"
-          fontSize="9"
+          y="3"
+          fontSize="7.5"
           fontWeight="700"
           fill={P.gold}
           fontFamily="Archivo, sans-serif"
         >
-          {ROMAN[Math.min(5, level)] ?? level}
+          {ROMAN[Math.min(5, plot.level)] ?? plot.level}
         </text>
+        {plot.canUpgrade && (
+          <g transform="translate(14 0)">
+            <circle r="6" fill={P.gold} stroke={P.night} strokeWidth="1.2" />
+            <path
+              d="M0 3.5 V-3 M-3 0 L0 -3.3 L3 0"
+              stroke={P.night}
+              strokeWidth="1.8"
+              fill="none"
+            />
+          </g>
+        )}
       </g>
-      {plot.canUpgrade && (
-        <g transform="translate(84 92)">
-          <circle r="7" fill={P.gold} stroke={P.night} strokeWidth="1.5" />
-          <path
-            d="M0 4 V-3.5 M-3.5 0 L0 -3.8 L3.5 0"
-            stroke={P.night}
-            strokeWidth="2"
-            fill="none"
-          />
-        </g>
-      )}
-      {/* The bubble keeps one size from the front row to the back: it is read, not seen. */}
-      <g transform={`translate(60 6) scale(${Math.min(1.3, 0.85 / s)})`}>
+      <g transform={`translate(${bx} ${by})`}>
         <Bubble plot={plot} />
       </g>
       {plot.gain && (
-        <g key={plot.gain.key} transform={`translate(60 10) scale(${Math.min(1.6, 1 / s)})`}>
+        <g key={plot.gain.key} transform={`translate(${bx} ${by + 6})`}>
           <g className="domain-gain">
             <text
               textAnchor="end"
               x="-1"
               y="5"
-              fontSize="15"
+              fontSize="14"
               fontWeight="800"
               fill={P.goldSoft}
               stroke={P.night}
@@ -498,13 +317,15 @@ function Workshop({
             >
               +{plot.gain.quantity}
             </text>
-            <svg x="1" y="-9" width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-              <ResourceIcon code={plot.gain.resource} size={48} />
-            </svg>
+            <Icon code={plot.gain.resource} x={9} y={0} size={17} />
           </g>
         </g>
       )}
-      {plot.burst && <Burst />}
+      {plot.burst && (
+        <g transform={`translate(${cx - 60} ${cy - 46})`}>
+          <Burst />
+        </g>
+      )}
     </g>
   );
 }
@@ -516,15 +337,15 @@ function EmptyPlot({
   label,
   onSelect,
 }: {
-  at: { x: number; y: number; scale: number };
+  at: { x: number; y: number };
   first: boolean;
   label: string;
   onSelect: () => void;
 }) {
-  const s = at.scale;
+  const { x, y } = at;
+  const [cx, cy] = iso(x + 1, y + 1);
   return (
     <g
-      transform={`translate(${at.x} ${at.y}) scale(${s})`}
       // biome-ignore lint/a11y/useSemanticElements: no <button> inside an SVG scene
       role="button"
       tabIndex={0}
@@ -534,17 +355,30 @@ function EmptyPlot({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") onSelect();
       }}
-      opacity="0.75"
     >
-      <rect x="-46" y="-28" width="92" height="42" fill="transparent" />
-      <ellipse rx="44" ry="10" fill="#000" opacity="0.15" />
-      <ellipse rx="44" ry="10" fill="none" stroke={P.cream} strokeDasharray="5 5" opacity="0.5" />
-      <path d="M-6 -2 H6 M0 -8 V4" stroke={P.cream} strokeWidth="2.5" strokeLinecap="round" />
+      <IsoTile x={x + 0.1} y={y + 0.1} w={1.8} d={1.8} fill="#000" opacity={0.12} />
+      <IsoTile
+        x={x + 0.1}
+        y={y + 0.1}
+        w={1.8}
+        d={1.8}
+        fill="transparent"
+        stroke={P.cream}
+        dash="4 4"
+      />
+      <path
+        d={`M${cx - 6} ${cy} H${cx + 6} M${cx} ${cy - 6} V${cy + 6}`}
+        stroke={P.cream}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        opacity="0.85"
+      />
       {first && (
         <text
-          y="-16"
+          x={cx}
+          y={cy - 12}
           textAnchor="middle"
-          fontSize="11"
+          fontSize="9"
           fill={P.cream}
           fontFamily="Space Mono, monospace"
           letterSpacing="1"
@@ -556,10 +390,126 @@ function EmptyPlot({
   );
 }
 
+/** The ground of the region, its paths, and what grows or flows around the domain. */
+function Land({ region, slots }: { region: string; slots: { x: number; y: number }[] }) {
+  const g = GROUND[region] ?? GROUND.terraferma ?? { field: "#777", path: "#ccc", tree: "#363" };
+  const maxX = Math.max(11, ...slots.map((s) => s.x + 2));
+  const minY = Math.min(0, ...slots.map((s) => s.y));
+  const trees: [number, number][] = [
+    [-1.6, 1],
+    [-1.4, 4.5],
+    [-1.8, 7.5],
+    [12.6, 1.5],
+    [12.4, 5],
+    [1.5, -1.8],
+    [7.5, -1.6],
+    [-1.2, 11.5],
+  ];
+  return (
+    <g>
+      <IsoTile x={-8} y={-10} w={30} d={26} fill={g.field} />
+      {region === "lagoon" && (
+        <g>
+          <IsoTile x={-8} y={-10} w={30} d={5.6} fill={P.lagoonDeep} />
+          <IsoTile x={-8} y={-4.6} w={30} d={0.3} fill={P.lagoon} opacity={0.6} />
+        </g>
+      )}
+      {region === "dolomites" &&
+        [
+          [-2, -6],
+          [3, -7],
+          [9, -6.5],
+          [14, -5],
+        ].map(([x = 0, y = 0]) => {
+          const [a, b] = iso(x, y);
+          return (
+            <g key={`${x}`} transform={`translate(${a} ${b})`}>
+              <path d="M-30 0 L0 -46 L30 0 Z" fill="#6E7F86" stroke={P.night} strokeWidth="0.6" />
+              <path d="M0 -46 L30 0 L6 0 Z" fill="#55666D" />
+              <path d="M-9 -32 L0 -46 L9 -32 L3 -34 L0 -30 L-4 -34 Z" fill={P.cream} />
+            </g>
+          );
+        })}
+      {/* Paths between the plots and along the yard. */}
+      <IsoTile x={-0.5} y={8.2} w={maxX + 4} d={0.9} fill={g.path} opacity={0.9} />
+      {[2.1, 5.1, 8.1].map((x) => (
+        <IsoTile key={x} x={x} y={minY - 0.5} w={0.8} d={8.7 - minY} fill={g.path} opacity={0.75} />
+      ))}
+      {[2.1, 5.1].map((y) => (
+        <IsoTile key={y} x={-0.5} y={y} w={maxX + 0.5} d={0.8} fill={g.path} opacity={0.6} />
+      ))}
+      {trees.map(([x, y]) => (
+        <IsoTree key={`${x}-${y}`} x={x} y={y} color={g.tree} />
+      ))}
+    </g>
+  );
+}
+
+/** The yard's ground: paving, and the road out beyond the gate. */
+function YardGround() {
+  return (
+    <g>
+      <IsoTile
+        x={YARD.x - 0.3}
+        y={YARD.y}
+        w={YARD.w + 0.6}
+        d={YARD.d}
+        fill="#B9AE95"
+        stroke="#8C826D"
+      />
+      <IsoTile x={GATE.x} y={YARD.y + 0.5} w={8} d={1} fill="#9C8E70" />
+    </g>
+  );
+}
+
+/** The yard's buildings: the store with its piles of goods, the vehicles, the gate. */
+function Yard({ vehicles, stock }: { vehicles: string[]; stock: number }) {
+  const piles = Math.min(4, Math.ceil(stock / 60));
+  return (
+    <g>
+      {/* The store: an open shed, crates and sacks under it. */}
+      <IsoBox x={0} y={9.4} w={2.2} d={1.6} h={3} color="#8C826D" />
+      {[0, 1, 2, 3].slice(0, piles).map((i) => (
+        <IsoBox
+          key={i}
+          x={0.2 + (i % 2) * 0.9}
+          y={9.6 + Math.floor(i / 2) * 0.7}
+          w={0.6}
+          d={0.5}
+          h={6 + (i % 3) * 3}
+          z={3}
+          color={i % 2 ? P.woodLight : P.wood}
+        />
+      ))}
+      {[0.1, 2.0].map((u) => (
+        <IsoBox key={u} x={u} y={9.4} w={0.12} d={0.12} h={22} z={3} color={P.wood} />
+      ))}
+      <IsoRoof x={-0.1} y={9.3} w={2.4} d={1.8} z={25} rise={7} color={ROOF_TILE} wall={P.wood} />
+      {/* Vehicles at the depot. */}
+      {vehicles.slice(0, 4).map((type, i) => {
+        const [a, b] = iso(3 + i * 1.5, 10.2);
+        return (
+          <g key={`${type}-${i * 1}`} transform={`translate(${a} ${b}) scale(1.1)`}>
+            <ellipse cx="0" cy="3" rx="16" ry="4" fill="#000" opacity="0.18" />
+            <VehicleGlyph type={type} />
+          </g>
+        );
+      })}
+      {/* The gate. */}
+      <IsoBox x={GATE.x} y={GATE.y} w={0.3} d={0.3} h={26} color={STONE} />
+      <IsoBox x={GATE.x} y={GATE.y + 1.7} w={0.3} d={0.3} h={26} color={STONE} />
+      <IsoBox x={GATE.x} y={GATE.y} w={0.3} d={2} h={5} z={26} color={STONE} top={P.vermilion} />
+    </g>
+  );
+}
+
+const ROOF_TILE = "#C8693F";
+const STONE = "#CFC6B0";
+
 /**
- * The merchant's domain: their workshops on the land of their region, the palace in the place of
- * honour, the yard with the vehicles at the depot and the goods in store, their arms on the mast.
- * It grows with every building and every level.
+ * The merchant's domain, in volume: their workshops on the land of their region, the palace in
+ * the place of honour, the yard with the store and the vehicles, the gate to the road, their arms
+ * on the mast. The view frames what is built: it starts close and widens as the domain grows.
  */
 export function DomainScene(props: {
   region: string;
@@ -581,91 +531,72 @@ export function DomainScene(props: {
   title: string;
   onPlot: (plot: DomainPlot) => void;
   onEmpty: () => void;
+  /** Drawn over the buildings: what moves in the yard and on the paths. */
+  children?: ReactNode;
+  /** Height over width of the frame: a little taller than wide on a phone, wide on a computer. */
+  ratio?: number;
 }) {
   const { phase } = props;
   const night = phase === "night";
-  const [skyTop, skyLow] = SKY[phase];
-  const [ground, groundDeep] = GROUND[props.region] ?? GROUND.terraferma ?? ["#333", "#222"];
   const palaces = props.plots.filter((p) => p.type === "palazzo");
   const others = props.plots.filter((p) => p.type !== "palazzo");
-  // The first palace takes the place of honour; everything else fills the rows, back to front.
-  const placed: { plot: DomainPlot; at: { x: number; y: number; scale: number } }[] = [];
+  // The first palace takes the place of honour; everything else fills the plots from the yard out.
+  const placed: { plot: DomainPlot; at: { x: number; y: number } }[] = [];
   const queue = [...palaces.slice(1), ...others];
   if (palaces[0]) placed.push({ plot: palaces[0], at: HONOUR });
-  queue.slice(0, ROWS.length).forEach((plot, i) => {
-    const at = ROWS[i];
+  queue.slice(0, SLOTS.length).forEach((plot, i) => {
+    const at = SLOTS[i];
     if (at) placed.push({ plot, at });
   });
-  const used = queue.length;
-  const free = Math.max(0, Math.min(props.maxPlots, ROWS.length + 1) - props.plots.length);
-  const emptyRows = ROWS.slice(used, used + Math.min(free, EMPTY_SHOWN));
-  const piles = Math.min(4, Math.ceil(props.stock / 60));
-  // Back rows first, so that nearer buildings hide farther ones.
-  const drawOrder = [...placed].sort((a, b) => a.at.y - b.at.y);
+  const used = Math.min(queue.length, SLOTS.length);
+  const free = Math.max(0, Math.min(props.maxPlots, SLOTS.length + 1) - props.plots.length);
+  const empties = SLOTS.slice(used, used + Math.min(free, EMPTY_SHOWN));
+  const drawOrder = [...placed].sort((a, b) => a.at.x + a.at.y - (b.at.x + b.at.y));
+  const shown = [...placed.map((p) => p.at), ...empties];
+
+  // The frame: what is built, the next plots and the yard, with room above for roofs and bubbles.
+  const corners = [
+    ...shown.flatMap((s) => [
+      iso(s.x, s.y, 70),
+      iso(s.x + 2, s.y),
+      iso(s.x, s.y + 2),
+      iso(s.x + 2, s.y + 2),
+    ]),
+    iso(YARD.x - 0.6, YARD.y + YARD.d),
+    iso(GATE.x + 2.5, YARD.y + YARD.d),
+    iso(GATE.x, GATE.y, 40),
+    iso(-1, 8.6, 70),
+  ];
+  const minX = Math.min(...corners.map((c) => c[0])) - 10;
+  const maxX = Math.max(...corners.map((c) => c[0])) + 10;
+  const minY = Math.min(...corners.map((c) => c[1])) - 6;
+  const maxY = Math.max(...corners.map((c) => c[1])) + 8;
+  // Keep the scene's proportions (a little taller than wide on a phone): widen or heighten.
+  const ratio = props.ratio ?? 0.82;
+  let w = maxX - minX;
+  let h = maxY - minY;
+  if (h / w < ratio) h = w * ratio;
+  else w = h / ratio;
+  const vx = (minX + maxX) / 2 - w / 2;
+  const vy = (minY + maxY) / 2 - h / 2;
+  const [mx, my] = iso(-1, 8.6);
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img">
+    <svg
+      viewBox={`${vx.toFixed(1)} ${vy.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`}
+      className="block h-auto w-full"
+      role="img"
+    >
       <title>{props.title}</title>
-      <defs>
-        <linearGradient id="domain-sky" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={skyTop} />
-          <stop offset="100%" stopColor={skyLow} />
-        </linearGradient>
-        <linearGradient id="domain-ground" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={ground} />
-          <stop offset="100%" stopColor={groundDeep} />
-        </linearGradient>
-      </defs>
-      <rect width={W} height="120" fill="url(#domain-sky)" />
-      {night ? (
-        <g fill={P.cream}>
-          {[
-            [30, 18],
-            [80, 34],
-            [140, 12],
-            [210, 26],
-            [262, 10],
-            [320, 30],
-            [176, 44],
-            [110, 54],
-          ].map(([x = 0, y = 0]) => (
-            <circle key={`${x}-${y}`} cx={x} cy={y} r="1.1" opacity="0.8">
-              <animate
-                attributeName="opacity"
-                values="0.3;0.9;0.3"
-                dur={`${2 + (x % 3)}s`}
-                repeatCount="indefinite"
-              />
-            </circle>
-          ))}
-          <circle cx="300" cy="34" r="11" fill={P.cream} opacity="0.85" />
-          <circle cx="305" cy="31" r="10" fill={skyTop} />
-        </g>
-      ) : (
-        <g>
-          <circle
-            cx="292"
-            cy="38"
-            r="26"
-            fill={P.goldSoft}
-            opacity={phase === "dusk" ? 0.35 : 0.2}
-          />
-          <circle cx="292" cy="38" r="12" fill={phase === "dusk" ? P.vermilion : P.goldSoft} />
-        </g>
-      )}
-      <Backdrop region={props.region} phase={phase} />
-      <rect y="112" width={W} height={H - 112} fill="url(#domain-ground)" />
-      <Ground region={props.region} />
-      <rect y={YARD} width={W} height={H - YARD} fill={P.night} opacity="0.35" />
-      <path d={`M0 ${YARD} H${W}`} stroke={P.woodLight} strokeWidth="1" opacity="0.3" />
-
-      {/* The mast with the merchant's arms. */}
-      <g>
-        <path d="M18 132 V66" stroke={P.woodLight} strokeWidth="2.5" strokeLinecap="round" />
-        <g transform="translate(5 54)">{props.crest}</g>
-        {props.emblem && <g transform="translate(8 84)">{props.emblem}</g>}
-      </g>
-
-      {emptyRows.map((at, i) => (
+      <rect
+        x={vx}
+        y={vy}
+        width={w}
+        height={h}
+        fill={(GROUND[props.region] ?? GROUND.terraferma)?.field}
+      />
+      <Land region={props.region} slots={shown} />
+      <YardGround />
+      {empties.map((at, i) => (
         <EmptyPlot
           key={`${at.x}-${at.y}`}
           at={at}
@@ -684,22 +615,26 @@ export function DomainScene(props: {
           onSelect={() => props.onPlot(plot)}
         />
       ))}
-
-      {/* The yard: vehicles at the depot, goods in store. */}
-      <g>
-        {props.vehiclesHome.slice(0, 4).map((type, i) => (
-          <g key={`${type}-${i * 1}`} transform={`translate(${26 + i * 30} ${H - 9}) scale(1.3)`}>
-            <VehicleGlyph type={type} />
-          </g>
-        ))}
-        {Array.from({ length: piles }, (_, i) => (
-          <g key={`pile-${i * 1}`} transform={`translate(${W - 20 - i * 16} ${H - 13})`}>
-            <rect width="13" height="10" rx="1.5" fill={P.wood} stroke={P.night} />
-            <rect x="2" y="-8" width="10" height="8" rx="1.5" fill={P.woodLight} stroke={P.night} />
-            <path d="M0 5 H13" stroke={P.night} strokeWidth="0.8" />
-          </g>
-        ))}
+      <Yard vehicles={props.vehiclesHome} stock={props.stock} />
+      {props.children}
+      {/* The mast with the merchant's arms, at the corner of the yard. */}
+      <g transform={`translate(${mx} ${my})`}>
+        <path d="M0 0 V-62" stroke={P.woodLight} strokeWidth="2.5" strokeLinecap="round" />
+        <g transform="translate(-13 -74)">{props.crest}</g>
+        {props.emblem && <g transform="translate(-10 -44)">{props.emblem}</g>}
       </g>
+      {/* Dusk warms the land, night darkens it (the windows stay lit). */}
+      {phase !== "day" && (
+        <rect
+          x={vx}
+          y={vy}
+          width={w}
+          height={h}
+          fill={night ? "#0A1A2E" : "#7A3A2A"}
+          opacity={night ? 0.38 : 0.14}
+          pointerEvents="none"
+        />
+      )}
     </svg>
   );
 }
