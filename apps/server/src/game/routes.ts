@@ -9,13 +9,13 @@ import { NOTIFICATION_KINDS, type Notifier } from "../notify/notifier.js";
 import { retention, suspiciousPairs } from "./admin.js";
 import {
   ChatError,
-  guildThread,
+  familyThread,
   hideMessage,
   latestMessageAt,
   postMessage,
   reportMessage,
   reportedMessages,
-} from "./guildChat.js";
+} from "./familyChat.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
 import { priceHistory, profile } from "./profile.js";
 import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
@@ -61,35 +61,25 @@ const action = z.discriminatedUnion("type", [
     quantity: z.number().int().positive().max(10_000),
   }),
   z.object({ type: z.literal("fulfillContract"), contractId: z.string() }),
+  z.object({ type: z.literal("joinFamily"), family: z.string().max(32) }),
+  z.object({ type: z.literal("collectLevy") }),
+  z.object({ type: z.literal("hireLances"), count: z.number().int().positive().max(1_000) }),
   z.object({
-    type: z.literal("foundGuild"),
-    name: z.string().min(2).max(32),
-    emblem: z.string().max(16),
-    stake: z.number().int().positive(),
+    type: z.literal("sendMarch"),
+    land: z.string().max(32),
+    lances: z.number().int().positive().max(100_000),
   }),
   z.object({
-    type: z.literal("joinGuild"),
-    guildId: z.string(),
-    stake: z.number().int().positive(),
+    type: z.literal("joinMarch"),
+    marchId: z.string().max(32),
+    lances: z.number().int().positive().max(100_000),
   }),
-  z.object({ type: z.literal("investGuild"), amount: z.number().int().positive() }),
-  z.object({ type: z.literal("leaveGuild") }),
   z.object({
-    type: z.literal("propose"),
-    proposal: z.discriminatedUnion("kind", [
-      z.object({ kind: z.literal("toll"), value: z.number().int().nonnegative() }),
-      z.object({ kind: z.literal("dividend"), value: z.number().int().nonnegative() }),
-      z.object({ kind: z.literal("bounty"), value: z.number().int().nonnegative() }),
-      z.object({ kind: z.literal("open"), value: z.number().int().min(0).max(1) }),
-      z.object({ kind: z.literal("exclude"), target: z.string() }),
-      z.object({ kind: z.literal("war"), target: z.string() }),
-    ]),
-  }),
-  z.object({ type: z.literal("vote"), proposalId: z.string(), yes: z.boolean() }),
-  z.object({
-    type: z.literal("enlist"),
-    warId: z.string(),
-    side: z.enum(["attacker", "defender"]),
+    type: z.literal("voteProgramme"),
+    picks: z
+      .array(z.object({ code: z.string().max(32), target: z.string().max(32).optional() }))
+      .min(1)
+      .max(4),
   }),
   z.object({
     type: z.literal("launchExpedition"),
@@ -185,14 +175,11 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       ids.add(n.raider);
       ids.add(n.victim);
     }
-    if (v.guilds?.mine) {
-      for (const m of v.guilds.mine.members) ids.add(m.playerId);
-      for (const p of v.guilds.mine.proposals) {
-        ids.add(p.by);
-        // The target of an exclusion is a merchant (a war's is a concession).
-        if (p.kind === "exclude" && p.target) ids.add(p.target);
-      }
-    }
+    // The family: its members, the captains of past weeks, who opened the marches.
+    for (const m of v.families?.members ?? []) ids.add(m.playerId);
+    for (const h of v.families?.history ?? [])
+      for (const id of Object.values(h.captains)) ids.add(id);
+    for (const m of v.families?.marches ?? []) if (m.by) ids.add(m.by);
     for (const b of Object.values(v.book)) {
       for (const l of [...b.asks, ...b.bids]) if (l.by !== "market_maker") ids.add(l.by);
     }
@@ -227,7 +214,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       passPrices: PASS_PRICES,
       ...(v ? await namesFor(v) : { names: {}, bots: [] }),
       unread: v ? await notifier.unread(account.id) : 0,
-      guildLatestAt: v ? await latestMessageAt(db, world, account.id) : null,
+      familyLatestAt: v ? await latestMessageAt(db, world, account.id) : null,
     });
   }
 
@@ -412,7 +399,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return { series: await priceHistory(db, world.id, world.now(), hours) };
   });
 
-  /** The guild's thread: the call, mapped to a status and an error code when refused. */
+  /** The family's thread: the call, mapped to a status and an error code when refused. */
   async function chat<T>(reply: FastifyReply, run: () => Promise<T>) {
     try {
       return await run();
@@ -422,24 +409,24 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     }
   }
 
-  app.get("/api/game/guild/messages", async (req, reply) => {
+  app.get("/api/game/family/messages", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
-    return chat(reply, () => guildThread(db, world, account.id));
+    return chat(reply, () => familyThread(db, world, account.id));
   });
 
-  app.post("/api/game/guild/messages", async (req, reply) => {
+  app.post("/api/game/family/messages", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     const parsed = z.object({ body: z.string().max(2_000) }).safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "invalid_message" });
     return chat(reply, async () => {
       await postMessage(db, world, account.id, parsed.data.body, world.now());
-      return guildThread(db, world, account.id);
+      return familyThread(db, world, account.id);
     });
   });
 
-  app.post("/api/game/guild/messages/:id/report", async (req, reply) => {
+  app.post("/api/game/family/messages/:id/report", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     const id = z
@@ -731,20 +718,26 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       ];
     case "fulfillContract":
       return [{ type: "fulfillContract", playerId, contractId: a.contractId }];
-    case "foundGuild":
-      return [{ type: "foundGuild", playerId, name: a.name, emblem: a.emblem, stake: a.stake }];
-    case "joinGuild":
-      return [{ type: "joinGuild", playerId, guildId: a.guildId, stake: a.stake }];
-    case "investGuild":
-      return [{ type: "investGuild", playerId, amount: a.amount }];
-    case "leaveGuild":
-      return [{ type: "leaveGuild", playerId }];
-    case "propose":
-      return [{ type: "propose", playerId, proposal: a.proposal }];
-    case "vote":
-      return [{ type: "vote", playerId, proposalId: a.proposalId, yes: a.yes }];
-    case "enlist":
-      return [{ type: "enlist", playerId, warId: a.warId, side: a.side }];
+    case "joinFamily":
+      return [{ type: "joinFamily", playerId, family: a.family }];
+    case "collectLevy":
+      return [{ type: "collectLevy", playerId }];
+    case "hireLances":
+      return [{ type: "hireLances", playerId, count: a.count }];
+    case "sendMarch":
+      return [{ type: "sendMarch", playerId, land: a.land, lances: a.lances }];
+    case "joinMarch":
+      return [{ type: "joinMarch", playerId, marchId: a.marchId, lances: a.lances }];
+    case "voteProgramme":
+      return [
+        {
+          type: "voteProgramme",
+          playerId,
+          picks: a.picks.map((p) =>
+            p.target ? { code: p.code, target: p.target } : { code: p.code },
+          ),
+        },
+      ];
     case "launchExpedition":
       return [
         {

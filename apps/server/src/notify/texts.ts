@@ -14,9 +14,9 @@ const EVENTS: Record<string, string> = {
 const ACTS: Record<string, [string, string]> = {
   installation: ["L'installation", "Les marchands s'installent en Vénétie."],
   crisis: ["La crise", "Une crise frappe la République."],
-  worksite: [
-    "L'Arsenal",
-    "Le Doge agrandit l'Arsenal : briques et planches pour Venise payées 15 % de plus. La guilde qui livre le plus l'emporte.",
+  lombardy: [
+    "La guerre de Lombardie",
+    "Milan lève ses troupes : ses garnisons et ses chevauchées sont moitié plus fortes cette semaine.",
   ],
   sensa: ["La Sensa", "La grande foire : commandes payées 15 % de plus. Dernière ligne droite !"],
   chioggia: [
@@ -37,6 +37,60 @@ const RESOURCES: Record<string, string> = {
   wood: "bois",
   planks: "planches",
 };
+
+/** The families, the lands of the campaign and the decrees, by their codes. */
+const FAMILIES: Record<string, string> = {
+  contarini: "Contarini",
+  morosini: "Morosini",
+  mocenigo: "Mocenigo",
+  dandolo: "Dandolo",
+  milan: "Milan",
+};
+const LANDS: Record<string, string> = {
+  feltre: "Feltre",
+  bassano: "Bassano",
+  vicenza: "Vicence",
+  conegliano: "Conegliano",
+  udine: "Udine",
+  schio: "Schio",
+  verona: "Vérone",
+  bergamo: "Bergame",
+  treviso: "Trévise",
+  pordenone: "Pordenone",
+  peschiera: "Peschiera",
+  crema: "Crema",
+  brescia: "Brescia",
+  lodi: "Lodi",
+  castelfranco: "Castelfranco",
+  legnago: "Legnago",
+  mantova: "Mantoue",
+  cremona: "Crémone",
+  padova: "Padoue",
+  mestre: "Mestre",
+  rovigo: "Rovigo",
+  adria: "Adria",
+  ferrara: "Ferrare",
+  chioggia: "Chioggia",
+  piove: "Piove di Sacco",
+};
+const DECREES: Record<string, string> = {
+  fondaco: "le privilège du Fondaco",
+  gabelle: "une gabelle",
+  faveur: "la faveur d'une ville",
+  peage: "le péage de Terraferme",
+  course: "les lettres de course",
+  levant: "le tarif du Levant",
+  calmiere: "un calmiere",
+  franchise: "la franchise",
+};
+const familyName = (code: unknown) => FAMILIES[String(code)] ?? String(code ?? "");
+const landName = (code: unknown) => LANDS[String(code)] ?? String(code ?? "");
+const clock = (at: unknown) =>
+  new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Europe/Paris",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(Number(at));
 
 const AWARDS: Record<string, string> = {
   doge: "Doge de la semaine",
@@ -165,41 +219,42 @@ export function pushText(
         body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${sign}${ducats(gain)} ducats).${award}`,
       };
     }
-    case "guild": {
-      const what: Record<string, string> = {
-        toll: "le péage de ses concessions",
-        dividend: "la part versée en dividendes",
-        bounty: "la prime aux fournisseurs",
-        open: "l'ouverture aux nouveaux membres",
-        exclude: "l'exclusion d'un membre",
-        war: "une guerre commerciale",
+    case "siege":
+      return {
+        title: `${landName(data.land)} menacée !`,
+        body: `${Number(data.lances)} lances ${data.by === "milan" ? "de Milan" : `des ${familyName(data.by)}`} arrivent à ${clock(data.arriveAt)}. Renforcez la garnison !`,
       };
-      const subject = what[String(data.kind)] ?? "une proposition";
-      if (data.event === "proposal_opened")
+    case "family": {
+      if (data.event === "land_lost")
         return {
-          title: `${data.guild} vote`,
-          body: `Un membre propose de changer ${subject}. Votez dans les 24 h.`,
+          title: `${landName(data.land)} est perdue`,
+          body: `${data.by === "milan" ? "Milan" : `Les ${familyName(data.by)}`} ont pris la terre que vous gardiez.`,
         };
-      if (data.event === "war_declared")
+      if (data.event === "decree_share")
         return {
-          title: `Guerre commerciale : ${data.city ?? ""}`,
-          body: `${data.guild} est en guerre${data.enemy ? ` contre ${data.enemy}` : " contre la Seigneurie"} pour cette concession : 48 h pour y livrer plus que l'adversaire.`,
+          title: "Votre part des décrets",
+          body: `${ducats(String(data.amount ?? "0"))} ducats de gabelle et de péage, selon votre Mérite.`,
         };
-      if (data.event === "war_closed")
+      const decrees = (Array.isArray(data.decrees) ? data.decrees : [])
+        .map((d) => DECREES[String((d as { code?: string }).code)] ?? "")
+        .filter(Boolean)
+        .join(" et ");
+      if (data.final)
         return {
-          title: data.won ? `${data.guild} l'emporte` : `${data.guild} perd la guerre`,
-          body: data.won
-            ? `La concession de ${data.city ?? ""} revient à votre guilde.`
-            : `La concession de ${data.city ?? ""} vous échappe.`,
-        };
-      if (data.event === "worksite_won")
-        return {
-          title: `${data.guild} remporte le chantier`,
-          body: `Votre guilde a le plus livré${data.city ? ` à ${data.city}` : ""} : la prime rejoint son trésor et le monument porte son nom.`,
+          title: data.won ? "Votre famille gagne la saison !" : "La Campagne est terminée",
+          body: data.winner
+            ? `Les ${familyName(data.winner)} remportent la dernière semaine.`
+            : "Aucune famille n'a tenu de terre.",
         };
       return {
-        title: `${data.guild} a voté`,
-        body: data.passed ? `Adopté : ${subject}.` : `Rejeté : ${subject}.`,
+        title: data.won
+          ? "Votre famille gagne la semaine !"
+          : `Les ${familyName(data.winner)} gagnent la semaine`,
+        body: data.won
+          ? `Elle impose ${decrees || "ses décrets"} pour la semaine qui vient.`
+          : data.winner
+            ? `Ils imposent ${decrees || "leurs décrets"}. La carte rouvre : à vous de les arrêter.`
+            : "La carte rouvre.",
       };
     }
     case "criee":

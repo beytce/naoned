@@ -241,8 +241,8 @@ describe("notifications of the road", () => {
   it("pushes an ambush at once, then the outcome to both sides and the arrival", async () => {
     smallOrders(world);
     world.ctx.settings.bandits.openDay = 0;
-    // Bands at any time, not only in wartime: what is tested here is the ambush.
-    world.ctx.settings.bandits.warOnly = false;
+    // Bands at any time, not only under the letters of marque: what is tested here is the ambush.
+    world.ctx.settings.bandits.decreeOnly = false;
     world.ctx.settings.bandits.newcomerDays = 0;
     const ada = await player("ada@example.org");
     const bob = await player("bob@example.org");

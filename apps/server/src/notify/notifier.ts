@@ -37,7 +37,8 @@ export const NOTIFICATION_KINDS = [
   "season",
   "criee",
   "deal",
-  "guild",
+  "family",
+  "siege",
   "ambush",
   "delivery",
   "robbed",
@@ -48,7 +49,7 @@ export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 const HOUR_MS = 3_600_000;
 /** Pushed at once, never held back by the hourly limit per kind: the merchant has minutes. */
-const URGENT: ReadonlySet<NotificationKind> = new Set(["ambush"]);
+const URGENT: ReadonlySet<NotificationKind> = new Set(["ambush", "siege"]);
 const DAY_MS = 24 * HOUR_MS;
 
 interface Notice {
@@ -84,7 +85,7 @@ export class Notifier {
    * resource and side, with the total traded.
    */
   async fromEffects(fx: Effects, now: number): Promise<void> {
-    await this.guildNews(fx, now);
+    await this.familyNews(fx, now);
     const fills = fx.events.filter((e) => e.type === "order_filled" && e.playerId);
     if (fills.length === 0) return;
     const people = await this.people();
@@ -128,59 +129,48 @@ export class Notifier {
   }
 
   /**
-   * The guild's business, to its members (people only): a vote opened by another member, a vote
-   * decided, a worksite won.
+   * The family's news, to people only: a land of theirs under attack (urgent, with the hour of
+   * arrival), a land lost, the week's result to every member, their share of the decrees.
    */
-  private async guildNews(fx: Effects, now: number): Promise<void> {
+  private async familyNews(fx: Effects, now: number): Promise<void> {
     const news = fx.events.filter(
       (e) =>
-        e.type === "proposal_opened" ||
-        e.type === "proposal_closed" ||
-        e.type === "worksite_won" ||
-        e.type === "war_declared" ||
-        e.type === "war_closed",
+        e.type === "land_threatened" ||
+        e.type === "land_lost" ||
+        e.type === "campaign_closed" ||
+        e.type === "decree_share",
     );
     if (news.length === 0) return;
-    const gs = this.world.current.guilds;
     const people = await this.people();
+    const memberOf = this.world.current.families?.memberOf ?? {};
     const notices: Notice[] = [];
     for (const e of news) {
-      // A war concerns both its sides.
-      const ids =
-        e.type === "war_declared" || e.type === "war_closed"
-          ? [String(e.data?.guild ?? e.data?.attackerId ?? ""), String(e.data?.defenderId ?? "")]
-          : [String(e.data?.guild ?? "")];
-      for (const guildId of new Set(ids)) {
-        const g = gs?.guilds[guildId];
-        if (!g) continue;
-        for (const accountId of Object.keys(g.members)) {
+      const d = e.data ?? {};
+      if (e.type === "campaign_closed") {
+        for (const [accountId, family] of Object.entries(memberOf)) {
           if (!people.has(accountId)) continue;
-          if (e.type === "proposal_opened" && accountId === e.playerId) continue;
           notices.push({
             accountId,
-            kind: "guild",
+            kind: "family",
             data: {
               event: e.type,
-              guild: g.name,
-              kind: e.data?.kind ?? null,
-              value: e.data?.value ?? null,
-              passed: e.data?.passed ?? null,
-              city: e.data?.city ? (this.cities[String(e.data.city)] ?? null) : null,
-              resource: e.data?.resource ?? null,
-              won:
-                e.type === "war_closed"
-                  ? (e.data?.winner === "attacker") === (guildId === e.data?.attackerId)
-                  : null,
-              enemy:
-                e.type === "war_declared" || e.type === "war_closed"
-                  ? guildId === (e.data?.guild ?? e.data?.attackerId)
-                    ? (e.data?.defender ?? null)
-                    : (e.data?.attacker ?? null)
-                  : null,
+              family,
+              winner: d.winner ?? null,
+              won: d.winner === family,
+              decrees: d.decrees ?? [],
+              final: d.final ?? false,
             },
           });
         }
+        continue;
       }
+      const accountId = e.playerId ?? "";
+      if (!people.has(accountId)) continue;
+      notices.push({
+        accountId,
+        kind: e.type === "land_threatened" ? "siege" : "family",
+        data: { event: e.type, ...d },
+      });
     }
     await this.send(notices, now);
   }

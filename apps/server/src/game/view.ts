@@ -39,26 +39,38 @@ import {
 } from "@comptoirs/engine";
 import {
   activeEvent,
-  activeWarOn,
+  activeMembers,
   balesFor,
-  caratValue,
-  concessionHolder,
+  campaignOpen,
+  campaignWeekEnd,
   contractsFor,
   crieePrice,
   crieeRoom,
   currentCriee,
   dailyFor,
-  guildOf,
-  guildsOpenAt,
+  familiesOn,
+  familiesOpenAt,
+  familyOf,
+  garrisonAt,
   hasPass,
+  hireCost,
+  hireLimit,
+  hiredToday,
+  levyFactorBps,
+  levyWaiting,
+  liveGlory,
+  marchMinutes,
   maxOpenOrdersFor,
+  mayTarget,
+  membersOf,
+  meritPoints,
   nextEvent,
+  nextOpenAt,
+  programmeOf,
   rerollsOf,
-  sideOf,
-  tally,
-  treasury,
-  votingWeights,
-  warRefusal,
+  reserveOf,
+  seatFamily,
+  stackCount,
   weekIndex,
 } from "@comptoirs/engine";
 import {
@@ -96,138 +108,128 @@ function crieeView(ctx: WorldContext, state: WorldState, playerId: string, now: 
 }
 
 /**
- * Concessions and wars as one merchant sees them: who holds what (and its toll), the wars under
- * way with their score and the merchant's side, the last ones decided, and what their guild may
- * declare war on.
+ * The families and the week's campaign as one merchant sees them: the four families (members,
+ * glory, levy), the map with its garrisons and the marches under way (all of them, as on a war
+ * map), the merchant's lances, the programmes voted (public), the decrees in force and the past
+ * weeks. Null when the families are off.
  */
-function warsView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {
-  if (ctx.settings.concessions.length === 0) return null;
-  const guilds = state.guilds?.guilds ?? {};
-  const mine = state.guilds?.memberOf[playerId] ?? null;
-  const concessions = ctx.settings.concessions.map((c) => {
-    const holder = concessionHolder(state, c.code);
-    const war = activeWarOn(state, c.city, c.resource, now);
+function familiesView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {
+  if (!familiesOn(ctx)) return null;
+  const rules = ctx.settings.campaign;
+  const c = state.campaign;
+  if (!rules) return null;
+  const mine = familyOf(state, playerId);
+  const glory = liveGlory(ctx, state, now);
+  const week = c?.week ?? weekIndex(ctx, now);
+  const families = ctx.settings.families.list.map((f) => ({
+    code: f.code,
+    seat: f.seat,
+    members: membersOf(state, f.code).length,
+    active: activeMembers(ctx, state, f.code, now).length,
+    levyBps: levyFactorBps(ctx, state, f.code, now),
+    glory: glory[f.code] ?? 0,
+    programme: programmeOf(ctx, state, f.code),
+    lands: Object.values(c?.lands ?? {}).filter((l) => l.holder === f.code).length,
+  }));
+  const kinds = rules.kinds;
+  const lands = rules.lands.map((def) => {
+    const land = c?.lands[def.code];
+    const kind = kinds[def.kind];
     return {
-      code: c.code,
-      city: c.city,
-      resource: c.resource,
-      holder,
-      holderName: holder ? (guilds[holder]?.name ?? null) : null,
-      holderEmblem: holder ? (guilds[holder]?.emblem ?? null) : null,
-      tollBps: holder ? (guilds[holder]?.tollBps ?? 0) : 0,
-      protectedUntil: state.concessions?.[c.code]?.protectedUntil ?? 0,
-      war: war?.id ?? null,
-      /** Why the merchant's guild could not declare war on it now (null: it can). */
-      refusal: mine ? warRefusal(ctx, state, mine, c.code, now) : "no_guild",
+      code: def.code,
+      kind: def.kind,
+      city: def.city ?? null,
+      x: def.x,
+      y: def.y,
+      neighbors: def.neighbors,
+      holder: land?.holder ?? null,
+      garrison: land ? garrisonAt(land, now) : 0,
+      /** The merchant's own lances in its garrison. */
+      mine: land
+        ? stackCount(
+            land.stacks.filter((x) => x.playerId === playerId),
+            now,
+          )
+        : 0,
+      defenseBps: kind?.defenseBps ?? 10_000,
+      glory: kind?.glory ?? 0,
+      seat: seatFamily(ctx, def.code) ?? null,
+      since: land?.since ?? 0,
+      /** The merchant may send lances there now. */
+      open: mine ? mayTarget(ctx, state, mine, def.code) : false,
+      minutes: mine ? marchMinutes(ctx, mine, def.code) : null,
     };
   });
-  const all = Object.values(state.wars ?? {});
-  const view = (w: (typeof all)[number]) => ({
-    id: w.id,
-    concession: w.concession,
-    city: w.city,
-    resource: w.resource,
-    attacker: w.attacker,
-    attackerName: w.attackerName,
-    attackerEmblem: guilds[w.attacker]?.emblem ?? null,
-    defender: w.defender,
-    defenderName: w.defenderName,
-    defenderEmblem: w.defender ? (guilds[w.defender]?.emblem ?? null) : null,
-    startAt: w.startAt,
-    endAt: w.endAt,
-    threshold: w.threshold,
-    score: w.score,
-    outcome: w.outcome ?? null,
-    side: sideOf(state, w, playerId),
-    supplied: w.supplied[playerId] ?? 0,
-    enlisted: Object.keys(w.enlisted).length,
-    bounty: {
-      attacker: guilds[w.attacker]?.bountyPerUnit ?? 0n,
-      defender: w.defender ? (guilds[w.defender]?.bountyPerUnit ?? 0n) : 0n,
-    },
-  });
+  const marches = Object.values(c?.marches ?? {})
+    .filter((m) => m.arriveAt > now || m.arriveAt >= (c?.accruedAt ?? 0))
+    .map((m) => ({
+      id: m.id,
+      family: m.family,
+      by: m.by,
+      target: m.target,
+      startAt: m.startAt,
+      arriveAt: m.arriveAt,
+      lances: m.npc + stackCount(m.stacks, Math.min(now, m.arriveAt)),
+      mine: stackCount(
+        m.stacks.filter((x) => x.playerId === playerId),
+        now,
+      ),
+    }))
+    .sort((a, b) => a.arriveAt - b.arriveAt);
+  const members = mine
+    ? membersOf(state, mine)
+        .map((id) => ({ playerId: id, merit: meritPoints(ctx, state, id), me: id === playerId }))
+        .sort((a, b) => b.merit - a.merit || (a.playerId < b.playerId ? -1 : 1))
+    : [];
+  const hired = hiredToday(ctx, state, playerId, now);
+  const d = state.campaign?.decrees;
+  const inForce = d && d.week === weekIndex(ctx, now) && !c?.closed ? d : null;
   return {
-    concessions,
-    live: all.filter((w) => !w.outcome && now < w.endAt).map(view),
-    recent: all
-      .filter((w) => w.outcome)
-      .sort((a, b) => b.endAt - a.endAt)
-      .slice(0, 6)
-      .map(view),
-  };
-}
-
-/**
- * The guilds as one merchant sees them: their own (treasury, carats, members and their weight,
- * proposals with the votes so far) and the others they could join. Null when guilds are off.
- */
-function guildsView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {
-  const rules = ctx.settings.guilds;
-  if (rules.maxMembers <= 0) return null;
-  const g = guildOf(state, playerId);
-  const all = Object.values(state.guilds?.guilds ?? {});
-  let mine = null;
-  if (g) {
-    const weights = votingWeights(ctx, g);
-    const held = treasury(state, g.id);
-    const proposals = Object.values(state.guilds?.proposals ?? {})
-      .filter((p) => p.guildId === g.id)
-      .sort((a, b) => b.openedAt - a.openedAt)
-      .filter((p, i) => p.status === "open" || i < 12)
-      .map((p) => ({
-        id: p.id,
-        kind: p.kind,
-        value: p.value,
-        target: p.target ?? null,
-        by: p.by,
-        openedAt: p.openedAt,
-        closesAt: p.closesAt,
-        status: p.status,
-        ...tally(ctx, g, p),
-        mine: p.votes[playerId] ?? null,
-      }));
-    mine = {
-      id: g.id,
-      name: g.name,
-      emblem: g.emblem,
-      founder: g.founder,
-      open: g.open,
-      tollBps: g.tollBps,
-      dividendBps: g.dividendBps,
-      bountyPerUnit: g.bountyPerUnit,
-      treasury: held,
-      caratsIssued: g.caratsIssued,
-      /** What a hundred carats are worth (a single one may be under a denier). */
-      valueOf100:
-        g.caratsIssued > 0 ? (held * 100n) / BigInt(g.caratsIssued) : rules.caratValue * 100n,
-      carats: g.members[playerId]?.carats ?? 0,
-      share: caratValue(state, g.id, g.members[playerId]?.carats ?? 0),
-      members: Object.entries(g.members)
-        .map(([id, m]) => ({
-          playerId: id,
-          carats: m.carats,
-          weight: weights[id] ?? 0,
-          since: m.since,
-          me: id === playerId,
-        }))
-        .sort((a, b) => b.carats - a.carats),
-      proposals,
-    };
-  }
-  return {
-    opensAt: guildsOpenAt(ctx, state, playerId),
+    opensAt: familiesOpenAt(ctx, state, playerId),
     mine,
-    list: all
-      .map((x) => ({
-        id: x.id,
-        name: x.name,
-        emblem: x.emblem,
-        members: Object.keys(x.members).length,
-        open: x.open,
-        treasury: treasury(state, x.id),
-        mine: x.id === g?.id,
-      }))
-      .sort((a, b) => (b.treasury > a.treasury ? 1 : b.treasury < a.treasury ? -1 : 0)),
+    families,
+    members,
+    week,
+    weekEndsAt: campaignWeekEnd(ctx, week),
+    closed: c?.closed ?? false,
+    open: campaignOpen(ctx, now),
+    nextOpenAt: nextOpenAt(ctx, now),
+    nextMilanAt: c?.nextMilanAt ?? null,
+    lands,
+    marches,
+    me: mine
+      ? {
+          reserve: reserveOf(state, playerId, now),
+          /** Free lances waiting, once the family's size is applied. */
+          levy: Math.floor(
+            (levyWaiting(ctx, state, playerId, now) * levyFactorBps(ctx, state, mine, now)) /
+              10_000,
+          ),
+          levyMax: rules.levy.max,
+          hired,
+          hireLimit: hireLimit(ctx),
+          /** Price of the next lance (null: the day's limit is reached). */
+          nextPrice: hireCost(ctx, hired, 1) ?? null,
+          merit: meritPoints(ctx, state, playerId),
+          ballot: c?.ballots[playerId] ?? [],
+          /** When the lances in the reserve leave, the soonest first. */
+          leaving: (c?.players[playerId]?.reserve ?? [])
+            .filter((x) => x.expiresAt > now)
+            .map((x) => ({ count: x.count, expiresAt: x.expiresAt }))
+            .sort((a, b) => a.expiresAt - b.expiresAt),
+        }
+      : null,
+    decrees: inForce
+      ? { family: inForce.family, items: inForce.items, cities: inForce.cities, week: inForce.week }
+      : null,
+    history: (c?.history ?? []).map((h) => ({
+      week: h.week,
+      winner: h.winner,
+      glory: h.glory,
+      decrees: h.decrees,
+      captains: h.captains,
+      final: h.final,
+    })),
   };
 }
 
@@ -410,9 +412,25 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
           },
         }
       : null,
-    guildRules: settings.guilds,
-    warRules: settings.wars,
-    concessions: settings.concessions,
+    families: familiesOn(ctx)
+      ? {
+          openDay: settings.families.openDay,
+          list: settings.families.list,
+          campaign: settings.campaign
+            ? {
+                kinds: settings.campaign.kinds,
+                openHours: settings.campaign.openHours,
+                levy: settings.campaign.levy,
+                hire: settings.campaign.hire,
+                lanceHours: settings.campaign.lanceHours,
+                march: settings.campaign.march,
+                milan: settings.campaign.milan,
+                garrisonLancesPerPoint: settings.campaign.garrisonLancesPerPoint,
+              }
+            : null,
+          decrees: settings.decrees,
+        }
+      : null,
     rations: settings.rations,
     /** Masteries: the house's levels needed, and what each one changes. */
     specialties: settings.specialties,
@@ -637,7 +655,7 @@ export function playerView(
       startsAt: a.startsAt,
       endsAt: a.endsAt,
       variant: a.startsAt <= now ? (a.variant?.code ?? null) : null,
-      worksite: a.worksite !== null,
+      milanBps: a.milanBps,
     })),
     /** The house's mastery: chosen, or how far it is (levels of all workshops). */
     mastery: {
@@ -655,13 +673,8 @@ export function playerView(
     book,
     cityQuotes,
     projects: openProjects(state.projects, now),
-    // The worksites of the acts already won: a monument to the winning guild on the map.
-    monuments: Object.values(state.projects)
-      .filter((p) => p.act !== undefined && p.winner)
-      .map((p) => ({ city: p.city, guild: p.winnerName ?? "", act: p.act ?? 0 })),
     contracts,
-    guilds: guildsView(ctx, state, playerId, now),
-    wars: warsView(ctx, state, playerId, now),
+    families: familiesView(ctx, state, playerId, now),
     gazette: { current: describe(activeEvent(ctx, now)), next: describe(nextEvent(ctx, now)) },
     expeditions,
     ships,

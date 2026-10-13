@@ -85,35 +85,30 @@ const act = async (cookie: string, payload: object) =>
 const say = async (cookie: string, body: string) =>
   await app.inject({
     method: "POST",
-    url: "/api/game/guild/messages",
+    url: "/api/game/family/messages",
     headers: { cookie },
     payload: { body },
   });
 const thread = async (cookie: string) =>
-  await app.inject({ method: "GET", url: "/api/game/guild/messages", headers: { cookie } });
+  await app.inject({ method: "GET", url: "/api/game/family/messages", headers: { cookie } });
 const report = async (cookie: string, id: string) =>
   await app.inject({
     method: "POST",
-    url: `/api/game/guild/messages/${id}/report`,
+    url: `/api/game/family/messages/${id}/report`,
     headers: { cookie },
   });
 
-/** Merchants in one guild once the guilds opened: the first founds it, the others join. */
-async function family(name: string, ...emails: string[]) {
+/** Merchants of one family once the families opened. */
+async function family(code: string, ...emails: string[]) {
   const cookies: string[] = [];
   for (const email of emails) cookies.push(await player(email));
   now += 2 * DAY + 60_000;
-  const [first, ...others] = cookies;
-  if (first) {
-    await act(first, { type: "foundGuild", name, emblem: "lion", stake: 10_000 });
-    const id = (await get(first)).view.guilds.mine.id;
-    for (const c of others) await act(c, { type: "joinGuild", guildId: id, stake: 10_000 });
-  }
+  for (const c of cookies) await act(c, { type: "joinFamily", family: code });
   return cookies;
 }
 
-describe("the guild's thread", () => {
-  it("is for the guild's members only", async () => {
+describe("the family's thread", () => {
+  it("is for the family's members only", async () => {
     const eve = await player("eve@example.org", "lagoon");
     const [ada, bob] = (await family("morosini", "ada@example.org", "bob@example.org")) as [
       string,
@@ -121,7 +116,7 @@ describe("the guild's thread", () => {
     ];
     expect((await say(eve, "Bonjour")).statusCode).toBe(403);
     expect((await thread(eve)).statusCode).toBe(403);
-    await act(eve, { type: "foundGuild", name: "Dandolo", emblem: "lion", stake: 10_000 });
+    await act(eve, { type: "joinFamily", family: "dandolo" });
     expect((await say(ada, "Qui vend des briques ?")).statusCode).toBe(200);
     now += 20_000;
     expect((await say(bob, "Moi, à 2,20.")).statusCode).toBe(200);
@@ -132,7 +127,7 @@ describe("the guild's thread", () => {
     ]);
     expect(seen.messages[0]).toMatchObject({ pseudo: "ada", mine: true });
     expect(seen.messages[1]).toMatchObject({ pseudo: "bob", mine: false });
-    // Another guild sees its own thread only.
+    // Another family sees its own thread only.
     expect((await thread(eve)).json().messages).toEqual([]);
   });
 
@@ -192,23 +187,40 @@ describe("the guild's thread", () => {
   });
 });
 
-describe("the guild in the view", () => {
-  it("shows a war proposed on a concession, and the concessions", async () => {
-    const [ada, bob] = (await family("Leone", "ada@example.org", "bob@example.org")) as [
+describe("the families in the view", () => {
+  it("shows the family, the map and the marches of the campaign", async () => {
+    const [ada, bob] = (await family("contarini", "ada@example.org", "bob@example.org")) as [
       string,
       string,
     ];
-    const proposed = await act(ada, {
-      type: "propose",
-      proposal: { kind: "war", target: "padova-bread" },
-    });
-    expect(proposed.error).toBeUndefined();
+    expect((await act(ada, { type: "hireLances", count: 5 })).error).toBeUndefined();
+    const sent = await act(ada, { type: "sendMarch", land: "mestre", lances: 5 });
+    expect(sent.error).toBeUndefined();
     const res = await app.inject({ method: "GET", url: "/api/game", headers: { cookie: bob } });
     expect(res.statusCode).toBe(200);
-    const v = res.json().view;
-    expect(v.guilds.mine.proposals[0]).toMatchObject({ kind: "war", target: "padova-bread" });
-    expect(
-      v.wars.concessions.find((c: { code: string }) => c.code === "padova-bread"),
-    ).toMatchObject({ holder: null });
+    const body = res.json();
+    const v = body.view.families;
+    expect(v.mine).toBe("contarini");
+    expect(v.families.map((f: { code: string }) => f.code)).toEqual([
+      "contarini",
+      "morosini",
+      "mocenigo",
+      "dandolo",
+    ]);
+    expect(v.lands.find((l: { code: string }) => l.code === "mestre")).toMatchObject({
+      holder: null,
+      open: true,
+    });
+    expect(v.lands.find((l: { code: string }) => l.code === "piove")).toMatchObject({
+      holder: "contarini",
+      seat: "contarini",
+    });
+    expect(v.marches).toHaveLength(1);
+    expect(v.marches[0]).toMatchObject({ target: "mestre", family: "contarini", lances: 5 });
+    expect(body.names[v.marches[0].by]).toBe("ada");
+    expect(v.members.map((m: { playerId: string }) => body.names[m.playerId]).sort()).toEqual([
+      "ada",
+      "bob",
+    ]);
   });
 });
