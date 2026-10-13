@@ -141,33 +141,58 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
     blocking: false,
   });
 
-  const gl = r.guilds;
-  if (gl) {
+  const fam = r.families;
+  if (fam) {
     checks.push({
-      name: "Guildes : membres en fin de saison",
-      target: "diagnostic : des guildes vivantes, peu d'isolés",
+      name: "Familles : membres en fin de saison",
+      target: "diagnostic : quatre familles vivantes, d'une taille proche",
       value: `${
-        Object.entries(gl.members)
-          .map(([g, n]) => `${g} ${n}`)
+        Object.entries(fam.members)
+          .map(([f, n]) => `${f} ${n}`)
           .join(" · ") || "aucune"
-      } · sans guilde ${gl.unaffiliated}`,
+      } · sans famille ${fam.unaffiliated}`,
       pass: true,
       blocking: false,
     });
+    const days = Math.max(1, r.daily.length);
+    const playerDays = r.daily.reduce((a, d) => a + d.active, 0);
     checks.push({
-      name: "Guildes : argent investi, dividendes, votes",
-      target: "diagnostic : les trésors servent",
-      value: `${gl.founded} fondées · investi ${ducats(gl.invested)} · dividendes ${ducats(
-        gl.dividends,
-      )} · votes ${gl.proposals.passed} adoptés / ${gl.proposals.rejected} rejetés`,
-      pass: true,
+      name: "Campagne : lances et batailles",
+      target: "diagnostic : la carte bouge toute la semaine",
+      value: `${fam.levied} levées · ${fam.hired} engagées (${ducats(fam.hireCost)}, ${ducats(
+        fam.hireCost / BigInt(Math.max(1, playerDays)),
+      )} par marchand actif et par jour) · ${fam.marches} marches · ${fam.taken} terres prises · ${
+        fam.held
+      } assauts repoussés · ${fam.milanRides} chevauchées de Milan (${(fam.milanRides / days).toFixed(1)} par jour)`,
+      pass: fam.taken >= days,
+      blocking: false,
+    });
+    const wins: Record<string, number> = {};
+    for (const w of fam.weeks) if (w.winner) wins[w.winner] = (wins[w.winner] ?? 0) + 1;
+    const most = Math.max(0, ...Object.values(wins));
+    checks.push({
+      name: "Campagne : vainqueurs des semaines",
+      target: "le pouvoir change de mains (aucune famille ne gagne toutes les semaines)",
+      value:
+        fam.weeks
+          .map(
+            (w) =>
+              `S${w.week + 1} ${w.winner ?? "personne"} (${Object.entries(w.glory)
+                .map(([f, g]) => `${f} ${g}`)
+                .join(", ")})${w.decrees.length > 0 ? ` → ${w.decrees.join(", ")}` : ""}`,
+          )
+          .join(" · ") || "aucune semaine close",
+      pass: fam.weeks.length < 3 || most < fam.weeks.length,
       blocking: false,
     });
     checks.push({
-      name: "Guerres de concessions",
-      target: "au moins une guerre par semaine et par monde",
-      value: `${gl.wars.declared} déclarées · ${gl.wars.attackerWon} gagnées par l'attaquant · ${gl.wars.held} concessions tenues en fin de saison · péages ${ducats(gl.wars.tolls)} · primes ${ducats(gl.wars.bounties)}`,
-      pass: gl.wars.declared >= 4,
+      name: "Décrets : argent déplacé",
+      target: "diagnostic : gabelle et péage partagés, faveur bornée",
+      value:
+        Object.entries(fam.decreeMoney)
+          .map(([k, v]) => `${k.replace("decree_", "")} ${ducats(v)}`)
+          .join(" · ") || "aucun",
+      pass: true,
       blocking: false,
     });
   }

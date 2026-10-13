@@ -656,7 +656,7 @@ export class Bot {
     }
   }
 
-  /** Lances for ducats: a share of the day's limit by temperament, never below a safe purse. */
+  /** Lances for ducats: a share of the day's limit by temperament, keeping a third of the start. */
   private hireLances(s: Session): void {
     if (this.profile.warlike <= 0) return;
     const already = hiredToday(s.ctx, s.state(), this.id, s.now);
@@ -664,7 +664,7 @@ export class Bot {
     if (wanted <= 0) return;
     const cost = hireCost(s.ctx, already, wanted);
     if (cost === undefined) return;
-    if (this.cash(s) - cost < (s.ctx.settings.startingCapital * 3n) / 2n) return;
+    if (this.cash(s) - cost < s.ctx.settings.startingCapital / 3n) return;
     s.act({ type: "hireLances", playerId: this.id, count: wanted });
   }
 

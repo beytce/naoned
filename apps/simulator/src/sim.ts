@@ -97,24 +97,29 @@ export interface SimulationResult {
   road?: RoadStats;
   /** Faraj's bales: opened, cards by rarity, value at reference prices by player (deniers). */
   bales?: { opened: number; cards: Record<string, number>; valueBy: Record<string, number> };
-  /** The guilds: their members and treasuries at the end, money put in, dividends, votes. */
-  guilds?: {
-    /** Members of each guild at the end of the season (before the payout empties them). */
+  /** The families and the week's campaign: members, lances, battles, weeks won, decrees. */
+  families?: {
+    /** Members of each family at the end of the season. */
     members: Record<string, number>;
-    /** Merchants in no guild at the end. */
+    /** Merchants of no family at the end. */
     unaffiliated: number;
-    invested: Deniers;
-    dividends: Deniers;
-    founded: number;
-    proposals: { passed: number; rejected: number };
-    /** Trade wars: declared, won by the attacker, concessions held by guilds at the end. */
-    wars: {
-      declared: number;
-      attackerWon: number;
-      held: number;
-      tolls: Deniers;
-      bounties: Deniers;
-    };
+    levied: number;
+    hired: number;
+    /** Ducats destroyed for the lances. */
+    hireCost: Deniers;
+    marches: number;
+    taken: number;
+    held: number;
+    milanRides: number;
+    /** Each week: the winner, the glory of each family and the decrees imposed. */
+    weeks: {
+      week: number;
+      winner: string | null;
+      glory: Record<string, number>;
+      decrees: string[];
+    }[];
+    /** Money moved by the decrees, by ledger reason (gabelle, toll, favour, shares). */
+    decreeMoney: Record<string, Deniers>;
   };
 }
 
@@ -201,15 +206,19 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
 
   const raw = new Set(ctx.theme.resources.filter((r) => r.tier === "raw").map((r) => r.code));
   const rawBuyers = new Set<string>();
-  const guilds = {
+  const families = {
     members: {},
     unaffiliated: 0,
-    invested: 0n,
-    dividends: 0n,
-    founded: 0,
-    proposals: { passed: 0, rejected: 0 },
-    wars: { declared: 0, attackerWon: 0, held: 0, tolls: 0n, bounties: 0n },
-  } as NonNullable<SimulationResult["guilds"]>;
+    levied: 0,
+    hired: 0,
+    hireCost: 0n,
+    marches: 0,
+    taken: 0,
+    held: 0,
+    milanRides: 0,
+    weeks: [],
+    decreeMoney: {},
+  } as NonNullable<SimulationResult["families"]>;
   const bales = { opened: 0, cards: {}, valueBy: {} } as NonNullable<SimulationResult["bales"]>;
   let now = START;
   const run = (cmd: Command): boolean => {
@@ -235,19 +244,17 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
           activity.firstDelivery.push((now - joined) / 3_600_000);
         }
       }
-      if (e.type === "guild_founded") guilds.founded++;
-      if (e.type === "war_declared") guilds.wars.declared++;
-      if (e.type === "war_closed" && e.data?.winner === "attacker") guilds.wars.attackerWon++;
-      if (e.type === "proposal_closed") {
-        if (e.data?.passed) guilds.proposals.passed++;
-        else guilds.proposals.rejected++;
-      }
+      if (e.type === "levy_collected") families.levied += Number(e.data?.lances ?? 0);
+      if (e.type === "lances_hired") families.hired += Number(e.data?.lances ?? 0);
+      if (e.type === "march_sent") families.marches++;
+      if (e.type === "land_taken") families.taken++;
+      if (e.type === "land_held") families.held++;
+      if (e.type === "milan_rides") families.milanRides++;
     }
     for (const l of res.effects.ledger) {
-      if (l.reason === "guild_stake") guilds.invested += l.amount;
-      if (l.reason === "guild_dividend") guilds.dividends += l.amount;
-      if (l.reason === "toll") guilds.wars.tolls += l.amount;
-      if (l.reason === "war_bounty") guilds.wars.bounties += l.amount;
+      if (l.reason === "campaign_hire") families.hireCost += l.amount;
+      if (l.reason.startsWith("decree_"))
+        families.decreeMoney[l.reason] = (families.decreeMoney[l.reason] ?? 0n) + l.amount;
     }
     if (cmd.type === "openBale") {
       bales.opened++;
@@ -417,12 +424,18 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
       Math.max(1, workshops.length),
     levelsPerMerchant: workshops.reduce((a, b) => a + b.level, 0) / Math.max(1, merchants.length),
   };
-  for (const g of Object.values(state.guilds?.guilds ?? {})) {
-    guilds.members[g.name] = Object.keys(g.members).length;
+  for (const id of merchants) {
+    const f = state.families?.memberOf[id];
+    if (f) families.members[f] = (families.members[f] ?? 0) + 1;
   }
-  guilds.wars.held = Object.values(state.concessions ?? {}).filter((c) => c.holder).length;
-  guilds.unaffiliated = merchants.filter((id) => !state.guilds?.memberOf[id]).length;
-  result.guilds = guilds;
+  families.unaffiliated = merchants.filter((id) => !state.families?.memberOf[id]).length;
+  families.weeks = (state.campaign?.history ?? []).map((h) => ({
+    week: h.week,
+    winner: h.winner,
+    glory: h.glory,
+    decrees: h.decrees.map((d) => (d.target ? `${d.code}:${d.target}` : d.code)),
+  }));
+  result.families = families;
   result.bales = bales;
   const playerDays = result.daily.reduce((a, d) => a + d.active, 0);
   const sortedFirst = [...activity.firstDelivery].sort((a, b) => a - b);
