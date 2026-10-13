@@ -1,6 +1,10 @@
 # Proposition : les quatre familles et la Campagne de Terraferme
 
-> **Statut : proposition, à valider par le porteur avant tout code.** Elle remplacerait les guildes, les carats, les votes de guilde, les concessions et les guerres de concessions (`docs/CADRAGE.md`, section « Guildes, guerres de concessions, Rialto nécessaire »).
+> **Statut : validée par le porteur et livrée le 13 octobre 2026.** Elle remplace les guildes, les carats, les votes de guilde, les concessions et les guerres de concessions. Règles en vigueur : `docs/CADRAGE.md`, section « Les quatre familles et la Campagne de Terraferme » ; réglages : `docs/calibration.md`.
+>
+> Réponses du porteur : la conquête asynchrone convient ; on garde tout le catalogue de décrets ; Milan qui frappe le favori plutôt qu'une *contumacia* ; pas de Pass pour le capitaine, et le Pass est hors sujet (il sera entièrement revu).
+>
+> Écarts à la livraison : la carte compte 25 terres (5 × 5, fiefs aux coins, Milan en croix au milieu avec cinq forteresses, les six villes du jeu entre les deux) au lieu d'environ 32 ; les fiefs sont Piove di Sacco (Contarini), Feltre (Morosini), Rovigo (Mocenigo) et Udine (Dandolo) ; la Gloire est comptée par le tick à chaque événement (arrivée, chevauchée), au lieu d'un calcul paresseux à la lecture.
 
 13 octobre 2026.
 

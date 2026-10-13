@@ -104,9 +104,9 @@ Inspiré de Mercato Venezia : du risque et de l'affrontement entre joueurs, sans
 | **Ouverture progressive** | Le Port s'ouvre au jour 3 (mission « premier convoi »), les lettres de marque au jour 6 (« premier navire ») ; un joueur déjà en mer n'est jamais bloqué |
 | **Tableau de rétention** | Page `/admin` réservée aux adresses `ADMIN_EMAILS` : retour à J+1, 3, 7, 14, 30, sessions par jour, entonnoir du tutoriel, dernière visite. PNJ exclus |
 
-### Les familles patriciennes (premier lien social) — remplacées par les guildes
+### Les familles patriciennes (premier lien social) — remplacées par les guildes, puis revenues autrement
 
-Remplacées en octobre 2026 par les guildes et les guerres de concessions (section suivante « Guildes, guerres de concessions, Rialto nécessaire »). Pour mémoire :
+Remplacées en octobre 2026 par les guildes et les guerres de concessions, puis revenues sous une autre forme : les quatre familles se disputent la Campagne de Terraferme (section « Les quatre familles et la Campagne de Terraferme »). Pour mémoire, la première version :
 
 Plan complet et phases suivantes (mariages, commandite, enchère des galères, prêts, Grand Conseil) : `docs/plan-familles.md`.
 
@@ -147,10 +147,12 @@ Constat : le jeu devient vite redondant et on a peu l'impression de se développ
 | --- | --- |
 | **Domaine** | En tête du Comptoir, la Maison dessinée sur la terre de sa région. Les ateliers occupent douze parcelles, le palais la place d'honneur. Chaque niveau ajoute un ornement (bannière, socle, tour, couronne dorée). Ciel selon l'heure de Paris. Purement visuel |
 | **Maîtrises** | À 5 niveaux d'ateliers, le marchand choisit une maîtrise pour toute la saison : Maître d'atelier (+10 % sur ce qui se transforme), Roulier (véhicules 25 % plus rapides, un de plus), Négociant (quotas Dogana +25 %, taxe −2 points, 3 offres de plus) ou Armateur (droits de port −50 %, cales +25 %). Réglages `specialties` |
-| **Saison en actes** | Quatre actes, un par semaine, comprimés si le monde ouvre tard (`acts`). I l'installation ; II une crise tirée du secret du monde (guerre de Chioggia, peste ou embargo du Levant) ; III l'Arsenal, un chantier que les familles se disputent (influence par unité, 100 d'influence par membre pour la famille gagnante) ; IV la Sensa, commandes +15 % et plus nombreuses. Le modificateur d'acte se multiplie avec l'événement du jour |
+| **Saison en actes** | Quatre actes, un par semaine, comprimés si le monde ouvre tard (`acts`). I l'installation ; II une crise tirée du secret du monde (guerre de Chioggia, peste ou embargo du Levant) ; III la guerre de Lombardie (Milan moitié plus fort dans la Campagne ; auparavant l'Arsenal, un chantier disputé) ; IV la Sensa, commandes +15 % et plus nombreuses. Le modificateur d'acte se multiplie avec l'événement du jour |
 | **Demande commune** | Les commandes des villes forment un tableau du monde, tiré chaque jour : 10 commandes de ville et 2 urgentes par marchand actif (`sharedOrdersPerActivePlayer`), complété si un marchand arrive dans la journée. Les commandes de ville sont payées la référence +10 % (`cityPriceBps`, contre +25 % sur le tableau personnel), plus le bonus de route. Le premier qui envoie un véhicule prend la commande ; le prix dépend de la route depuis sa région. Les matières premières restent réservées à leurs producteurs ; les commandes du Doge, de la famille et de bienvenue restent personnelles. Le bouton « Meilleur choix » disparaît |
 
 ### Guildes, guerres de concessions, Rialto nécessaire (retour du porteur, octobre 2026)
+
+> **Guildes, carats, concessions et guerres remplacés le 13 octobre 2026** par les quatre familles et la Campagne de Terraferme (section suivante). Le Rialto nécessaire reste. Pour mémoire :
 
 Constat : le marché ne sert à rien (les livraisons rapportent bien plus, les prix restent collés à la référence), les familles n'ont pas d'intérêt (l'influence ne rapporte rien, ni vote ni trésor), et il manque un vrai affrontement entre joueurs (le brigandage rapporte peu et frappe au hasard). Choix du porteur : des **guildes** où l'on investit, des **guerres commerciales pour des concessions**, un **Rialto rendu nécessaire**, le brigandage **en temps de guerre seulement**, le Port inchangé.
 
@@ -169,6 +171,29 @@ La boucle : produire (Comptoir) → livrer (Routes) → s'approvisionner et reve
 | **Le monument** | Le chantier de l'Arsenal (Acte III) se dispute entre guildes : la gagnante reçoit 300 d à son trésor et son monument sur la carte |
 | **Pass Négociant** | Aucun avantage de guilde ni de guerre : ni carat, ni voix, ni péage, ni prime |
 | **Écrans** | Onglet Guilde (fonder, rejoindre, investir, voter, concessions, guerres, fil de guilde). Routes en 3D : blasons des détenteurs sous les villes, minuteur et rapport de force d'une guerre. Fiche de ville : la guerre et ses concessions. Marché : « Demandes de guerre » |
+
+### Les quatre familles et la Campagne de Terraferme (retour du porteur, octobre 2026)
+
+Constat du porteur : le système de guilde ne lui plaît pas. Il veut quatre grandes familles qui s'affrontent, où l'on investit seulement avec des ducats (aucune livraison pour la famille), un affrontement continu chaque semaine qui oblige à participer toute la semaine, et des lois et décrets imposés par la famille gagnante, qui pèsent sur le marché et sur le jeu. Choix retenu : une conquête territoriale asynchrone « à la OpenFront », au rythme des sessions mobiles (proposition : `docs/plan-campagne.md`).
+
+| Mécanique | Règle |
+| --- | --- |
+| **Familles** | Contarini, Morosini, Mocenigo, Dandolo. Allégeance dès le jour 2, pour la saison (`families`). Une famille plus petite que la moyenne lève jusqu'à 50 % de lances en plus, une plus grande jusqu'à 25 % de moins. Les maisons PNJ rejoignent la famille qui compte le moins de joueurs réels |
+| **Carte** | La Terraferme en 5 × 5 terres voisines deux à deux : les fiefs des familles aux quatre coins (imprenables), Milan en croix au milieu (cinq forteresses), les six villes du jeu entre les deux, bourgs et villages autour. Symétrique pour l'équité (`campaign.lands`) |
+| **Semaine** | Chaque lundi (mêmes bornes que le classement hebdomadaire), la carte rouvre : les fiefs aux familles, le reste aux milices et à Milan, avec des garnisons qui croissent avec les marchands actifs |
+| **Lances** | Levée gratuite : 2 lances par heure de 8 h à 22 h, 24 en attente au plus, à ramasser en venant. Engagement : 20 lances à 1 d puis 20 à 2 d par jour, ducats **détruits**. Toute lance part 48 h après avoir été levée ou engagée |
+| **Marches** | Vers une terre de sa famille (renfort) ou voisine d'une de ses terres (attaque), jamais un fief. 20 min, +10 min par terre au-delà de la première depuis le fief. Aucune arrivée entre 22 h et 8 h : une marche du soir arrive à 8 h. Les marches se voient sur la carte ; les membres peuvent rejoindre un assaut en cours |
+| **Combat** | Déterministe : l'attaque prend la terre si elle dépasse la garnison fois la défense (village ×1, bourg ×1,2, ville ×1,5, forteresse ×2) ; il reste la différence en garnison. Sinon la garnison perd l'attaque divisée par sa défense |
+| **Gloire** | Chaque heure ouverte, une terre rapporte sa valeur à la famille qui la tient (village 1, bourg 2, ville 3, forteresse 4) |
+| **Milan (PvE)** | Toutes les 4 heures ouvertes, Milan chevauche contre la famille en tête : sa terre la plus faible sur la frontière de Milan, avec 10 lances + 2 par marchand actif, doublées à 100 % d'avance. Ses forteresses se regarnissent chaque jour. L'acte III (la guerre de Lombardie) le rend moitié plus fort |
+| **Mérite** | Une lance par bataille gagnée (attaque ou défense), un point pour 10 lances tenues une heure en garnison. Il pèse le vote du programme (aucun membre au-delà de 25 %) et partage la gabelle et le péage. Le premier de chaque famille est son capitaine |
+| **Décrets** | Pendant la semaine, chaque famille vote son programme de deux décrets, public. La gagnante l'impose la semaine suivante ; jamais le même décret deux semaines de suite. Catalogue (`decrees`) : Privilège du Fondaco (taxe du Rialto 1 %, quotas de la Dogana +50 % pour les membres), Gabelle sur un bien (+4 points de taxe sur les ventes des autres, partagés entre les membres), Faveur d'une ville (livraisons des membres +10 %, ses commandes urgentes à eux la première demi-heure), Péage de Terraferme (3 % des livraisons des autres vers les villes que la famille tenait en fin de semaine), Lettres de course (seuls ses membres postent des brigands, contre les autres familles), Tarif du Levant (droits de port −50 % pour les membres, +25 % pour les autres), Calmiere (aucune offre d'un bien au-dessus de 115 % de la référence), Franchise (entretien −20 % pour les membres) |
+| **Dernière semaine** | Pas de décrets : la famille gagnante remporte la saison |
+| **Monnaie** | Lances : un puits. Gabelle et péage : un transfert entre joueurs par le compte de la famille (`family:<code>`), partagé à la clôture de la semaine. Faveur : seule création, bornée |
+| **Brigandage** | Seulement sous les lettres de course (`bandits.decreeOnly`), jamais entre membres d'une même famille |
+| **Guildes d'un monde existant** | Au premier tick, chaque trésor est rendu à ses membres par carats ; guildes, concessions et guerres disparaissent |
+| **Écrans** | Onglet Famille : choix de la famille, Gloire des quatre familles, lances, carte de la Terraferme, marches, programme, décrets, membres, semaines passées, fil de famille. Bandeau des décrets au Marché, sur les Routes et au Port. Blason de la famille qui tient la terre d'une ville sous son nom, sur les Routes. Notifications : terre menacée (immédiate), terre perdue, résultat de la semaine, part des décrets |
+| **Pass Négociant** | Hors sujet pour cet ajout : le Pass sera entièrement revu (porteur) |
 
 ## Vision et positionnement
 

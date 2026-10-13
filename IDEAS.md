@@ -9,7 +9,7 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - Échanges d'épices et de soie entre joueurs (nécessite les ordres à cours limité).
 
 ## Société vénitienne (plan abandonné dans docs/plan-familles.md)
-- Les familles patriciennes ont été remplacées par les guildes et les guerres de concessions.
+- Les familles patriciennes ont été remplacées par les guildes, puis sont revenues avec la Campagne de Terraferme.
 - Phase 2 : mariages entre maisons de joueurs (dot détruite, nom de Maison commun, classement de Prestige).
 - Phase 3 : commandite (*colleganza*) des convois d'un autre joueur.
 - Phase 4 : enchère des galères (*incanto*), puits de fin de saison.
@@ -23,10 +23,16 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - Carte des routes : zoom à deux doigts et déplacement, quand il y aura plus de villes (aujourd'hui, 7 villes tiennent sur un écran).
 - Carte des routes : voir les véhicules des autres marchands (écarté pour l'instant : cela montrerait aux brigands les routes fréquentées).
 
-## Affrontement (le retenu : guerres de concessions entre guildes ; les autres pistes)
+## Familles et Campagne (suite, voir docs/plan-campagne.md)
+- Alliances entre familles pour une semaine, et trahison.
+- Le capitaine de la famille gagnante choisit seul un décret.
+- Nouveaux décrets (embargo d'un port, levée de grain, prix plancher) et nouvelles cartes de la Terraferme.
+- Récompense cosmétique de la famille gagnante de la saison (monument sur la carte, titre au palmarès).
+
+## Affrontement (le retenu : la Campagne des familles ; les autres pistes)
+- Guerres de concessions entre guildes (abandonnées le 13 octobre 2026).
 - Corner du Rialto : accaparer une marchandise pour fixer son prix en ville ; les autres cassent le corner en vendant.
-- Alliances de guildes pour une guerre (deux trésors, un camp).
-- Convois de guilde : cargaisons groupées sous une même escorte, butin et risque partagés.
+- Convois de famille : cargaisons groupées sous une même escorte, butin et risque partagés.
 - Défis entre marchands : mise sous séquestre, le plus gros gain sur 3 jours remporte le pot (moins une commission).
 - Appels d'offres du Doge : offres scellées (prix, quantité, caution), la commande va au moins cher qui tient parole.
 
