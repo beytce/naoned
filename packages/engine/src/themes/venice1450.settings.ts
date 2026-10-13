@@ -2,64 +2,97 @@ import type { WorldSettingsInput } from "../settings.js";
 
 /** Default balancing for a Venice 1450 world. Amounts in deniers, rates in bps. */
 /**
- * The Terraferma of the campaign: five lands by five, each next to the lands beside it. The
- * families' seats are in the corners, Milan holds the cross in the middle, the six cities of the
- * game stand between them.
+ * The Terraferma of the campaign, where its lands really are (on the drawn map of the Veneto,
+ * 360 × 440, Lombardy beyond its western edge): the families' seats in the east (Feltre, Udine,
+ * Piove di Sacco, Rovigo), Milan's five fortresses in the west, the six cities of the game and
+ * the towns and villages between them. Neighbours by geography.
  */
-const TERRAFERMA_GRID: [string, string, boolean][][] = [
-  [
-    ["feltre", "seat", false],
-    ["bassano", "village", false],
-    ["vicenza", "city", false],
-    ["conegliano", "village", false],
-    ["udine", "seat", false],
-  ],
-  [
-    ["schio", "village", false],
-    ["verona", "city", false],
-    ["bergamo", "fortress", true],
-    ["treviso", "city", false],
-    ["pordenone", "village", false],
-  ],
-  [
-    ["peschiera", "bourg", false],
-    ["crema", "fortress", true],
-    ["brescia", "fortress", true],
-    ["lodi", "fortress", true],
-    ["castelfranco", "bourg", false],
-  ],
-  [
-    ["legnago", "village", false],
-    ["mantova", "city", false],
-    ["cremona", "fortress", true],
-    ["padova", "city", false],
-    ["mestre", "village", false],
-  ],
-  [
-    ["rovigo", "seat", false],
-    ["adria", "village", false],
-    ["ferrara", "city", false],
-    ["chioggia", "village", false],
-    ["piove", "seat", false],
-  ],
+const TERRAFERMA_LANDS: [string, string, number, number][] = [
+  ["feltre", "seat", 224, 64],
+  ["udine", "seat", 352, 64],
+  ["piove", "seat", 252, 290],
+  ["rovigo", "seat", 206, 346],
+  ["bassano", "bourg", 196, 128],
+  ["conegliano", "bourg", 296, 100],
+  ["pordenone", "village", 338, 118],
+  ["schio", "village", 132, 150],
+  ["castelfranco", "village", 226, 172],
+  ["mestre", "bourg", 278, 222],
+  ["chioggia", "bourg", 292, 318],
+  ["adria", "village", 258, 356],
+  ["legnago", "bourg", 130, 300],
+  ["peschiera", "bourg", 34, 214],
+  ["vicenza", "city", 158, 192],
+  ["treviso", "city", 270, 158],
+  ["padova", "city", 218, 262],
+  ["verona", "city", 70, 226],
+  ["mantova", "city", 56, 344],
+  ["ferrara", "city", 192, 396],
+  ["brescia", "fortress", -40, 196],
+  ["bergamo", "fortress", -96, 150],
+  ["crema", "fortress", -104, 246],
+  ["lodi", "fortress", -150, 206],
+  ["cremona", "fortress", -46, 312],
 ];
 
-const TERRAFERMA = TERRAFERMA_GRID.flatMap((row, r) =>
-  row.map(([code, kind, milan], c) => ({
-    code,
-    kind,
-    milan,
-    ...(kind === "city" ? { city: code } : {}),
-    neighbors: [
-      TERRAFERMA_GRID[r - 1]?.[c]?.[0],
-      TERRAFERMA_GRID[r + 1]?.[c]?.[0],
-      TERRAFERMA_GRID[r]?.[c - 1]?.[0],
-      TERRAFERMA_GRID[r]?.[c + 1]?.[0],
-    ].filter((n): n is string => n !== undefined),
-    x: 10 + c * 20,
-    y: 10 + r * 20,
-  })),
-);
+const TERRAFERMA_ROADS: [string, string][] = [
+  ["feltre", "bassano"],
+  ["feltre", "conegliano"],
+  ["udine", "pordenone"],
+  ["udine", "conegliano"],
+  ["piove", "mestre"],
+  ["piove", "chioggia"],
+  ["rovigo", "adria"],
+  ["rovigo", "legnago"],
+  ["bassano", "schio"],
+  ["bassano", "vicenza"],
+  ["bassano", "castelfranco"],
+  ["bassano", "conegliano"],
+  ["conegliano", "treviso"],
+  ["conegliano", "pordenone"],
+  ["pordenone", "treviso"],
+  ["schio", "vicenza"],
+  ["schio", "verona"],
+  ["vicenza", "castelfranco"],
+  ["vicenza", "padova"],
+  ["vicenza", "verona"],
+  ["vicenza", "legnago"],
+  ["treviso", "castelfranco"],
+  ["treviso", "mestre"],
+  ["castelfranco", "padova"],
+  ["castelfranco", "mestre"],
+  ["mestre", "padova"],
+  ["padova", "legnago"],
+  ["chioggia", "adria"],
+  ["adria", "ferrara"],
+  ["legnago", "verona"],
+  ["legnago", "mantova"],
+  ["legnago", "ferrara"],
+  ["ferrara", "mantova"],
+  ["mantova", "verona"],
+  ["mantova", "cremona"],
+  ["mantova", "peschiera"],
+  ["verona", "peschiera"],
+  ["peschiera", "brescia"],
+  ["brescia", "bergamo"],
+  ["brescia", "crema"],
+  ["brescia", "cremona"],
+  ["bergamo", "crema"],
+  ["bergamo", "lodi"],
+  ["crema", "lodi"],
+  ["crema", "cremona"],
+  ["lodi", "cremona"],
+];
+
+const TERRAFERMA = TERRAFERMA_LANDS.map(([code, kind, x, y]) => ({
+  code,
+  kind,
+  milan: kind === "fortress",
+  ...(kind === "city" ? { city: code } : {}),
+  neighbors: TERRAFERMA_ROADS.flatMap(([a, b]) => (a === code ? [b] : b === code ? [a] : [])),
+  x,
+  y,
+}));
 
 export const venice1450Settings: WorldSettingsInput = {
   // Seasons follow calendar months: the world says when it ends; 30 days is the nominal month
@@ -114,7 +147,7 @@ export const venice1450Settings: WorldSettingsInput = {
     levyMinBps: 7_500,
     levyMaxBps: 15_000,
   },
-  // The week's campaign: a symmetric map of the Terraferma (seats in the corners, Milan in the
+  // The week's campaign: the Terraferma where its lands really are (seats in the east, Milan in the
   // middle), lances levied 2 an hour from 8 h to 22 h (24 waiting at most) or engaged for ducats
   // (20 at 1 d, 20 at 2 d a day), leaving after 48 h; Milan rides every 4 open hours.
   campaign: {
@@ -410,10 +443,9 @@ export const venice1450Settings: WorldSettingsInput = {
     urgentPremiumBps: 1_500,
     urgentOpenMinutes: 180,
     urgentHours: { from: 8, to: 21 },
-    // Smaller orders, a better price per unit: the money of the city sales is kept.
-    cityPriceBps: 11_000,
-    // +50 % per hour of road: the money of the former city sales, now earned on the road.
-    distanceBonusBpsPerHour: 5_000,
+    // Vehicles carry several orders at once: city orders at the reference, +30 % per hour of road.
+    cityPriceBps: 10_000,
+    distanceBonusBpsPerHour: 3_000,
     // City prices follow the Rialto: half the reference, half yesterday's traded price, between
     // 80 % and 150 % of the reference.
     marketIndex: { weightBps: 5_000, floorBps: 8_000, capBps: 15_000 },
@@ -431,8 +463,9 @@ export const venice1450Settings: WorldSettingsInput = {
     homeShareBps: 5_000,
     // On a market event day, three city orders go where the event asks for more.
     eventOrdersPerDay: 3,
-    // Shared demand: the cities' orders form one board for the world, first come first served.
-    sharedOrdersPerActivePlayer: 10,
+    // Shared demand: the cities' orders form one board for the world, first come first served
+    // (five city orders per active merchant: vehicles fill up with several of them).
+    sharedOrdersPerActivePlayer: 5,
     welcome: {
       terraferma: { resource: "bread", quantity: 12 },
       lagoon: { resource: "bricks", quantity: 8 },
@@ -468,6 +501,8 @@ export const venice1450Settings: WorldSettingsInput = {
       },
     },
     maxDeliveryMinutes: 120,
+    // A vehicle carries up to four orders together, all for the same city.
+    maxOrdersPerLoad: 4,
     vehicles: {
       mule: {
         costDucats: 8_000,
