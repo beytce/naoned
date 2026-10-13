@@ -397,6 +397,8 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
           })),
           maxVehicles: settings.deliveries.maxVehicles,
           maxDeliveryMinutes: settings.deliveries.maxDeliveryMinutes,
+          /** Orders a vehicle may carry together, all for the same city. */
+          maxOrdersPerLoad: settings.deliveries.maxOrdersPerLoad,
           escorts: settings.deliveries.escorts,
           bandits: {
             hoursOptions: settings.bandits.hoursOptions,

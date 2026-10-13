@@ -347,13 +347,21 @@ export class Bot {
       if (!reserved.has(r)) reserved.set(r, this.reserve(s, r));
       return reserved.get(r) ?? 0;
     };
+    const perLoad = s.ctx.settings.deliveries.maxOrdersPerLoad;
+    const used = new Set<string>();
     for (const o of orders) {
+      if (used.has(o.id)) continue;
       const vehicles = vehiclesOf(s.state(), this.id).filter((v) => vehicleFree(v, s.now));
       // No vehicle free and one order already waiting: enough to decide on another vehicle.
       if (vehicles.length === 0 && waiting > 0) break;
+      // One order a trip: the smallest vehicle that holds it; several: the largest, to fill it.
       const free = vehicles
         .filter((v) => (types[v.type]?.capacity ?? 0) >= o.quantity)
-        .sort((a, b) => (types[a.type]?.capacity ?? 0) - (types[b.type]?.capacity ?? 0));
+        .sort((a, b) =>
+          perLoad > 1
+            ? (types[b.type]?.capacity ?? 0) - (types[a.type]?.capacity ?? 0)
+            : (types[a.type]?.capacity ?? 0) - (types[b.type]?.capacity ?? 0),
+        );
       const vehicle = free[0];
       if (!vehicle) {
         const spareNow = this.available(s, o.resource) - reserveOf(o.resource);
@@ -370,21 +378,40 @@ export class Bot {
         if (missing > 0) this.buy(s, o.resource, missing, 1.15);
       }
       if (spare() < o.quantity) continue;
+      // Fill the vehicle with the best other orders for the same city the stock covers.
+      const load = [o];
+      const room = () =>
+        (types[vehicle.type]?.capacity ?? 0) - load.reduce((n, x) => n + x.quantity, 0);
+      const loadedOf = (r: string) =>
+        load.filter((x) => x.resource === r).reduce((n, x) => n + x.quantity, 0);
+      for (const x of orders) {
+        if (load.length >= perLoad) break;
+        if (used.has(x.id) || x.id === o.id || x.city !== o.city || x.quantity > room()) continue;
+        if (x.unitPrice < (this.bestBid(s, x.resource) ?? 0n)) continue;
+        if (
+          this.available(s, x.resource) - reserveOf(x.resource) - loadedOf(x.resource) <
+          x.quantity
+        )
+          continue;
+        load.push(x);
+      }
       const route = `${player.region}:${o.city}`;
       let escort = "none";
       if (watched.has(route) && s.rng.chance(this.profile.prudence)) {
         const guards = Object.entries(s.ctx.settings.deliveries.escorts).sort(
           ([, a], [, b]) => a.costBps - b.costBps,
         )[0]?.[0];
-        if (guards && this.cash(s) > escortCost(s.ctx, o, guards) * 4n) escort = guards;
+        if (guards && this.cash(s) > escortCost(s.ctx, load, guards) * 4n) escort = guards;
       }
-      s.act({
+      const sent = s.act({
         type: "dispatchDelivery",
         playerId: this.id,
         orderId: o.id,
+        ...(load.length > 1 ? { orderIds: load.map((x) => x.id) } : {}),
         vehicleId: vehicle.id,
         escort,
       });
+      if (sent) for (const x of load) used.add(x.id);
     }
     return waiting;
   }

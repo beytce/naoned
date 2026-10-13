@@ -240,6 +240,17 @@ export interface DeliveryAttack {
   bounty?: Deniers;
 }
 
+/** One order of a load (a vehicle may carry several orders for the same city). */
+export interface DeliveryLine {
+  id: string;
+  kind: DeliveryKind;
+  ref?: string;
+  resource: ResourceCode;
+  quantity: number;
+  /** Its price, fixed at departure. */
+  payment: Deniers;
+}
+
 export interface Delivery {
   id: string;
   playerId: PlayerId;
@@ -257,6 +268,8 @@ export interface Delivery {
   cargo: Record<ResourceCode, number>;
   /** Price of the whole load, fixed at departure; paid on arrival, pro rata of what arrives. */
   payment: Deniers;
+  /** The orders carried, when there are several (the first one is `orderId`). */
+  orders?: DeliveryLine[];
   escort: EscortKind;
   departAt: number;
   arriveAt: number;

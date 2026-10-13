@@ -120,9 +120,13 @@ export function checkInvariants(state: WorldState, totals: JournalTotals): Invar
 
   // 7. Goods on the road: what is left plus what bandits took is what was loaded.
   for (const d of Object.values(state.deliveries ?? {})) {
+    // A load may carry several orders, of several goods.
+    const loadedBy: Record<string, number> = {};
+    for (const l of d.orders ?? [{ resource: d.resource, quantity: d.loaded }])
+      loadedBy[l.resource] = (loadedBy[l.resource] ?? 0) + l.quantity;
     for (const [res, qty] of Object.entries(d.cargo)) {
       const taken = d.attack?.taken[res] ?? 0;
-      const loaded = res === d.resource ? d.loaded : 0;
+      const loaded = loadedBy[res] ?? 0;
       if (qty < 0 || qty + taken !== loaded) {
         out.push({
           invariant: 7,

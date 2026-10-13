@@ -337,9 +337,9 @@ export const worldSettingsSchema = z.object({
           city: z.string().optional(),
           /** Held by Milan when the week opens (by the militia otherwise). */
           milan: z.boolean().default(false),
-          /** Where it is drawn, from 0 to 100. */
-          x: qty.max(100).default(50),
-          y: qty.max(100).default(50),
+          /** Where it stands on the drawn map of the theme (x to the east, y to the south). */
+          x: z.number().int().default(0),
+          y: z.number().int().default(0),
         }),
       ),
       kinds: z.record(
@@ -477,6 +477,8 @@ export const worldSettingsSchema = z.object({
       /** Minutes of road one way at normal speed: region → city → minutes. */
       routes: z.record(z.record(positive)),
       maxDeliveryMinutes: positive,
+      /** Orders a vehicle may carry together, all to the same city. */
+      maxOrdersPerLoad: positive.default(1),
       vehicles: z.record(
         z.object({
           costDucats: money,

@@ -111,6 +111,8 @@ export type Command =
       type: "dispatchDelivery";
       playerId: PlayerId;
       orderId: string;
+      /** Several orders for the same city, carried together (`orderId` alone otherwise). */
+      orderIds?: string[];
       vehicleId: string;
       /** "none" or an escort of the settings. */
       escort: string;
@@ -332,7 +334,7 @@ function apply(tx: Tx, cmd: Command): void {
       buyVehicle(tx, cmd.playerId, cmd.vehicleType);
       break;
     case "dispatchDelivery":
-      dispatchDelivery(tx, cmd.playerId, cmd.orderId, cmd.vehicleId, cmd.escort);
+      dispatchDelivery(tx, cmd.playerId, cmd.orderIds ?? cmd.orderId, cmd.vehicleId, cmd.escort);
       break;
     case "reactToAmbush":
       reactToAmbush(tx, cmd.playerId, cmd.deliveryId);

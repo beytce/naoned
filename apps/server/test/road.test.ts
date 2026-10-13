@@ -151,4 +151,31 @@ describe("the road", () => {
     expect(catalog.road.routes.terraferma.padova).toBe(30);
     expect(catalog.cities.map((c: { code: string }) => c.code)).toContain("ferrara");
   });
+
+  it("loads several orders for one city on a vehicle through the API", async () => {
+    smallOrders(world);
+    const ada = await player("ada@example.org");
+    const view = (await get(ada)).view;
+    expect(
+      (await app.inject({ method: "GET", url: "/api/game/catalog" })).json().road.maxOrdersPerLoad,
+    ).toBe(4);
+    const open = view.road.orders.filter(
+      (o: { kind: string; resource: string; status: string }) =>
+        o.kind === "city" && o.resource === "bread" && o.status === "open",
+    ) as { id: string; city: string }[];
+    const first = open[0] as { id: string; city: string };
+    const same = open.filter((o) => o.city === first.city).slice(0, 2);
+    expect(same.length).toBe(2);
+    const cart = view.road.vehicles.find((v: { type: string }) => v.type === "cart");
+    const sent = await act(ada, {
+      type: "dispatchDelivery",
+      orderId: same[0]?.id,
+      orderIds: same.map((o) => o.id),
+      vehicleId: cart.id,
+      escort: "none",
+    });
+    expect(sent.error).toBeUndefined();
+    const dv = sent.view.road.deliveries[0];
+    expect(dv.orders.map((o: { id: string }) => o.id)).toEqual(same.map((o) => o.id));
+  });
 });

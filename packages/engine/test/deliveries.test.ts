@@ -635,6 +635,115 @@ describe("dispatching a delivery", () => {
   });
 });
 
+const total = (o: DeliveryOrder) => o.unitPrice * BigInt(o.quantity);
+
+describe("loading several orders on one vehicle", () => {
+  const loads = (more = 3) =>
+    world({ deliveries: { ...deliverySettings.deliveries, maxOrdersPerLoad: more } as never });
+  /** Two city orders of the same city that fit together in a cart. */
+  function pair(w: World): [DeliveryOrder, DeliveryOrder] {
+    const city = board(w).filter((x) => x.kind === "city");
+    for (const a of city) {
+      const b = city.find(
+        (x) => x.id !== a.id && x.city === a.city && a.quantity + x.quantity <= 40,
+      );
+      if (b) return [a, b];
+    }
+    throw new Error("no pair");
+  }
+  const load = (w: World, orderIds: string[], escort = "none") =>
+    w.try({
+      type: "dispatchDelivery",
+      playerId: "a",
+      orderId: orderIds[0] ?? "",
+      orderIds,
+      vehicleId: cartOf(w),
+      escort,
+    } as Command);
+
+  it("carries orders for the same city together and pays them all on arrival", () => {
+    const w = loads();
+    const [o1, o2] = pair(w);
+    const cash = w.cash("a");
+    const stock = (r: string) => w.stock("a", r).available;
+    const before = { [o1.resource]: stock(o1.resource), [o2.resource]: stock(o2.resource) };
+    expect(error(load(w, [o1.id, o2.id]))).toBe("ok");
+    const [d] = deliveriesOf(w);
+    expect(d?.orders?.map((o) => o.id)).toEqual([o1.id, o2.id]);
+    expect(d?.loaded).toBe(o1.quantity + o2.quantity);
+    if (o1.resource === o2.resource) {
+      expect(stock(o1.resource)).toBe((before[o1.resource] ?? 0) - o1.quantity - o2.quantity);
+    }
+    expect(w.state.deliveriesDone?.a?.ids).toEqual([o1.id, o2.id]);
+    w.at((d?.arriveAt ?? 0) - w.ctx.startAt).do({ type: "tick" });
+    const paid = o1.unitPrice * BigInt(o1.quantity) + o2.unitPrice * BigInt(o2.quantity);
+    expect(w.cash("a")).toBe(cash + paid);
+    expect(error(load(w, [o1.id]))).toBe("order_done");
+  });
+
+  it("refuses orders for different cities, beyond the capacity or the number allowed", () => {
+    const w = loads(2);
+    const city = board(w).filter((x) => x.kind === "city");
+    const a = city[0] as DeliveryOrder;
+    const other = city.find((x) => x.city !== a.city) as DeliveryOrder;
+    expect(error(load(w, [a.id, other.id]))).toBe("several_cities");
+    expect(error(load(w, [a.id, a.id]))).toBe("invalid_quantity");
+    const same = city.filter((x) => x.city === a.city);
+    const heavy = same.find((x) => x.id !== a.id && a.quantity + x.quantity > 40);
+    if (heavy) expect(error(load(w, [a.id, heavy.id]))).toBe("over_capacity");
+    const three = same.slice(0, 3).map((x) => x.id);
+    if (three.length === 3) expect(error(load(w, three))).toBe("too_many_orders");
+    expect(
+      error(
+        load(
+          loads(1),
+          pair(w).map((x) => x.id),
+        ),
+      ),
+    ).toBe("too_many_orders");
+  });
+
+  it("carries several goods for the same city, each order paid for its own", () => {
+    const w = loads();
+    // The urgent order of bread for Venice, with an order of bricks for Venice.
+    const o1 = pick(w, "urgent");
+    const o2 = board(w).find(
+      (x) => x.kind === "city" && x.city === o1.city && x.resource !== o1.resource,
+    ) as DeliveryOrder;
+    w.at(o1.opensAt - w.ctx.startAt);
+
+    const cash = w.cash("a");
+    expect(error(load(w, [o1.id, o2.id]))).toBe("ok");
+    const [d] = deliveriesOf(w);
+    expect(d?.cargo).toEqual({ [o1.resource]: o1.quantity, [o2.resource]: o2.quantity });
+    w.at((d?.arriveAt ?? 0) - w.ctx.startAt).do({ type: "tick" });
+    expect(w.cash("a")).toBe(cash + total(o1) + total(o2));
+  });
+
+  it("pays the escort on the whole load", () => {
+    const w = loads();
+    const [o1, o2] = pair(w);
+    const cash = w.cash("a");
+    expect(error(load(w, [o1.id, o2.id], "guards"))).toBe("ok");
+    const value = o1.unitPrice * BigInt(o1.quantity) + o2.unitPrice * BigInt(o2.quantity);
+    expect(w.cash("a")).toBe(cash - (value * 400n) / 10_000n);
+  });
+
+  it("fulfils a Doge's order carried with others", () => {
+    const w = loads();
+    const doge = pick(w, "doge");
+    const other = board(w).find(
+      (x) => x.kind === "city" && x.city === doge.city && x.quantity + doge.quantity <= 40,
+    );
+    if (!other) return;
+    expect(error(load(w, [doge.id, other.id]))).toBe("ok");
+    expect(w.state.contractsDone?.a?.ids).toContain(doge.ref);
+    const [d] = deliveriesOf(w);
+    const res = w.at((d?.arriveAt ?? 0) - w.ctx.startAt).do({ type: "tick" });
+    expect(res.effects.events.filter((e) => e.type === "contract_fulfilled")).toHaveLength(1);
+  });
+});
+
 describe("the instant sale to cities, closed by deliveries", () => {
   it("refuses selling to a city, to a Criée and swapping a Doge's order", () => {
     const w = world();

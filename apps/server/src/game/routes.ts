@@ -109,6 +109,8 @@ const action = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("dispatchDelivery"),
     orderId: z.string(),
+    /** Several orders for the same city, carried together. */
+    orderIds: z.array(z.string()).min(1).max(8).optional(),
     vehicleId: z.string(),
     escort: z.string(),
   }),
@@ -781,6 +783,7 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
           type: "dispatchDelivery",
           playerId,
           orderId: a.orderId,
+          ...(a.orderIds ? { orderIds: a.orderIds } : {}),
           vehicleId: a.vehicleId,
           escort: a.escort,
         },

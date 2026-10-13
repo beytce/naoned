@@ -99,6 +99,8 @@ export type EngineErrorCode =
   | "max_vehicles"
   | "vehicle_busy"
   | "over_capacity"
+  | "several_cities"
+  | "too_many_orders"
   | "unknown_delivery_order"
   | "order_not_open"
   | "order_expired"

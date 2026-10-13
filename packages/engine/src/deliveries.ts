@@ -13,6 +13,7 @@ import {
   type BoardOrder,
   DAY_MS,
   type Delivery,
+  type DeliveryLine,
   type DeliveryOrder,
   HOUR_MS,
   MINUTE_MS,
@@ -627,11 +628,16 @@ function loadValue(o: DeliveryOrder): Deniers {
   return o.unitPrice * BigInt(o.quantity);
 }
 
-/** What an escort costs for this order (destroyed). */
-export function escortCost(ctx: WorldContext, o: DeliveryOrder, escort: string): Deniers {
+/** What an escort costs for these orders, carried together (destroyed). */
+export function escortCost(
+  ctx: WorldContext,
+  orders: DeliveryOrder | DeliveryOrder[],
+  escort: string,
+): Deniers {
   if (escort === "none") return 0n;
   const def = ctx.settings.deliveries.escorts[escort];
-  return def ? applyBpsFloor(loadValue(o), def.costBps) : 0n;
+  const value = (Array.isArray(orders) ? orders : [orders]).reduce((a, o) => a + loadValue(o), 0n);
+  return def ? applyBpsFloor(value, def.costBps) : 0n;
 }
 
 /** Defense of a delivery: 0 alone, the escort's otherwise. */
@@ -640,13 +646,14 @@ export function escortDefense(ctx: WorldContext, escort: string): number {
 }
 
 /**
- * Loads an order of today's board on a free vehicle and sets off. The goods leave the stock now;
- * the city pays on arrival.
+ * Loads orders of today's board on a free vehicle and sets off: one order, or several for the same
+ * city (up to `maxOrdersPerLoad`) within the vehicle's capacity. The goods leave the stock now; the
+ * city pays on arrival.
  */
 export function dispatchDelivery(
   tx: Tx,
   playerId: PlayerId,
-  orderId: string,
+  orderIds: string | string[],
   vehicleId: string,
   escort: string,
 ): Delivery {
@@ -654,30 +661,35 @@ export function dispatchDelivery(
   if (!deliveriesOn(ctx)) fail("unknown_delivery_order");
   resolveDeliveries(tx);
   ensureBoard(tx);
+  const ids = Array.isArray(orderIds) ? orderIds : [orderIds];
+  if (ids.length === 0 || new Set(ids).size !== ids.length) fail("invalid_quantity");
+  if (ids.length > ctx.settings.deliveries.maxOrdersPerLoad) fail("too_many_orders");
   const state = tx.s as WorldState;
   const player = state.players[playerId];
   if (!player) fail("unknown_player");
   const today = dayIndex(ctx, tx.now);
-  const [dayText] = orderId.split(":");
-  if (Number(dayText) !== today) fail("order_expired");
-  const order = findDeliveryOrder(ctx, state, playerId, today, orderId);
-  if (!order) fail("unknown_delivery_order");
   const done = deliveriesDoneToday(state, playerId, today);
-  if (done.includes(orderId)) fail("order_done");
-  // Shared demand: the first who sends a vehicle takes the order.
-  if (order.shared) {
-    if (order.takenBy) fail("order_taken");
-    if (tx.s.board) tx.s.board.takenBy[orderId] = playerId;
+  const orders: DeliveryOrder[] = [];
+  for (const orderId of ids) {
+    const [dayText] = orderId.split(":");
+    if (Number(dayText) !== today) fail("order_expired");
+    const order = findDeliveryOrder(ctx, state, playerId, today, orderId);
+    if (!order) fail("unknown_delivery_order");
+    if (done.includes(orderId)) fail("order_done");
+    if (order.shared && order.takenBy) fail("order_taken");
+    if (order.kind === "doge" && contractsDoneToday(tx, playerId, today).includes(order.ref ?? ""))
+      fail("order_done");
+    if (tx.now < order.opensAt) fail("order_not_open");
+    if (tx.now >= order.expiresAt) fail("order_expired");
+    // The favour of a city: its urgent orders are the members' for a while.
+    if (order.kind === "urgent") {
+      const until = urgentReservedUntil(ctx, state, playerId, order.city, order.opensAt, tx.now);
+      if (until !== null && tx.now < until) fail("order_reserved");
+    }
+    orders.push(order);
   }
-  if (order.kind === "doge" && contractsDoneToday(tx, playerId, today).includes(order.ref ?? ""))
-    fail("order_done");
-  if (tx.now < order.opensAt) fail("order_not_open");
-  if (tx.now >= order.expiresAt) fail("order_expired");
-  // The favour of a city: its urgent orders are the members' for a while.
-  if (order.kind === "urgent") {
-    const until = urgentReservedUntil(ctx, state, playerId, order.city, order.opensAt, tx.now);
-    if (until !== null && tx.now < until) fail("order_reserved");
-  }
+  const first = orders[0] as DeliveryOrder;
+  if (orders.some((o) => o.city !== first.city)) fail("several_cities");
 
   const vehicle = tx.s.vehicles?.[vehicleId];
   if (!vehicle) fail("unknown_vehicle");
@@ -685,27 +697,43 @@ export function dispatchDelivery(
   if (!vehicleFree(vehicle as Vehicle, tx.now)) fail("vehicle_busy");
   const def = ctx.settings.deliveries.vehicles[vehicle.type];
   if (!def) fail("unknown_vehicle_type");
-  if (order.quantity > def.capacity) fail("over_capacity");
+  const units = orders.reduce((n, o) => n + o.quantity, 0);
+  if (units > def.capacity) fail("over_capacity");
   if (escort !== "none" && !ctx.settings.deliveries.escorts[escort]) fail("unknown_escort");
-  const minutes = travelMinutesFor(ctx, state, playerId, order.city, vehicle.type);
+  const minutes = travelMinutesFor(ctx, state, playerId, first.city, vehicle.type);
   if (minutes === undefined) fail("no_route");
 
+  // Shared demand: the first who sends a vehicle takes the order.
+  for (const o of orders) if (o.shared && tx.s.board) tx.s.board.takenBy[o.id] = playerId;
   const id = nextId(tx, "d");
-  removeStock(tx, playerId, order.resource, order.quantity, "delivery", id);
-  transfer(tx, cashAccount(playerId), SINK_ACCOUNT, escortCost(ctx, order, escort), "escort", id);
+  const cargo: Record<string, number> = {};
+  for (const o of orders) {
+    removeStock(tx, playerId, o.resource, o.quantity, "delivery", id);
+    cargo[o.resource] = (cargo[o.resource] ?? 0) + o.quantity;
+  }
+  transfer(tx, cashAccount(playerId), SINK_ACCOUNT, escortCost(ctx, orders, escort), "escort", id);
   const trip = minutes * MINUTE_MS;
+  const lines = orders.map((o) => ({
+    id: o.id,
+    kind: o.kind,
+    ...(o.ref ? { ref: o.ref } : {}),
+    resource: o.resource,
+    quantity: o.quantity,
+    payment: loadValue(o),
+  }));
   const delivery: Delivery = {
     id,
     playerId,
-    orderId,
-    kind: order.kind,
+    orderId: first.id,
+    kind: first.kind,
     vehicleId,
-    ...(order.ref ? { ref: order.ref } : {}),
-    route: routeId(player.region, order.city),
-    resource: order.resource,
-    loaded: order.quantity,
-    cargo: { [order.resource]: order.quantity },
-    payment: loadValue(order),
+    ...(first.ref ? { ref: first.ref } : {}),
+    route: routeId(player.region, first.city),
+    resource: first.resource,
+    loaded: units,
+    cargo,
+    payment: lines.reduce((a, l) => a + l.payment, 0n),
+    ...(lines.length > 1 ? { orders: lines } : {}),
     escort,
     departAt: tx.now,
     arriveAt: tx.now + trip,
@@ -717,30 +745,58 @@ export function dispatchDelivery(
   tx.s.deliveries[id] = delivery;
   vehicle.busyUntil = delivery.backAt;
   tx.s.deliveriesDone ??= {};
-  tx.s.deliveriesDone[playerId] = { day: today, ids: [...done, orderId] };
+  tx.s.deliveriesDone[playerId] = { day: today, ids: [...done, ...ids] };
   // The Doge's orders cannot be served twice (at the counter, then by road).
-  if (order.kind === "doge" && order.ref) {
+  const doge = orders.filter((o) => o.kind === "doge" && o.ref).map((o) => o.ref as string);
+  if (doge.length > 0) {
     tx.s.contractsDone ??= {};
     tx.s.contractsDone[playerId] = {
       day: today,
-      ids: [...contractsDoneToday(tx, playerId, today), order.ref],
+      ids: [...contractsDoneToday(tx, playerId, today), ...doge],
     };
   }
   emit(tx, "delivery_dispatched", playerId, {
     delivery: id,
-    kind: order.kind,
-    city: order.city,
-    resource: order.resource,
-    quantity: order.quantity,
+    kind: first.kind,
+    city: first.city,
+    resource: first.resource,
+    quantity: units,
+    orders: ids.length,
     escort,
   });
   return delivery;
 }
 
+/** What a delivery carries, line by line (a single order for the deliveries of one order). */
+export function deliveryLines(d: Delivery): DeliveryLine[] {
+  return (
+    d.orders ?? [
+      {
+        id: d.orderId,
+        kind: d.kind,
+        ...(d.ref ? { ref: d.ref } : {}),
+        resource: d.resource,
+        quantity: d.loaded,
+        payment: d.payment,
+      },
+    ]
+  );
+}
+
 /** The goods reach the city: it pays for what arrives, pro rata of what was loaded. */
 function arrive(tx: Tx, d: Delivery): void {
-  const left = d.cargo[d.resource] ?? 0;
-  const amount = d.loaded > 0 ? (d.payment * BigInt(left)) / BigInt(d.loaded) : 0n;
+  // Each order is paid for its share of what is left of its good.
+  const lines = deliveryLines(d);
+  const loadedBy: Record<string, number> = {};
+  for (const l of lines) loadedBy[l.resource] = (loadedBy[l.resource] ?? 0) + l.quantity;
+  let amount = 0n;
+  let left = 0;
+  for (const l of lines) {
+    const of = loadedBy[l.resource] ?? 0;
+    const there = d.cargo[l.resource] ?? 0;
+    if (of > 0) amount += (l.payment * BigInt(there)) / BigInt(of);
+  }
+  for (const qty of Object.values(d.cargo)) left += qty;
   transfer(tx, SOURCE_ACCOUNT, cashAccount(d.playerId), amount, "delivery", d.id);
   d.paid = amount;
   d.outcome = d.attack?.success ? "robbed_delivered" : "delivered";
@@ -767,8 +823,9 @@ function arrive(tx: Tx, d: Delivery): void {
     quantity: left,
     amount: amount.toString(),
   });
-  if (d.kind === "doge") {
-    emit(tx, "contract_fulfilled", d.playerId, { contract: d.ref, resource: d.resource });
+  for (const l of lines) {
+    if (l.kind === "doge")
+      emit(tx, "contract_fulfilled", d.playerId, { contract: l.ref, resource: l.resource });
   }
 }
 
