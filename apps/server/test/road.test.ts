@@ -154,6 +154,8 @@ describe("the road", () => {
 
   it("loads several orders for one city on a vehicle through the API", async () => {
     smallOrders(world);
+    // A fuller board, so that some city asks for bread twice whatever the world's draw.
+    world.ctx.settings.deliveries.sharedOrdersPerActivePlayer = 12;
     const ada = await player("ada@example.org");
     const view = (await get(ada)).view;
     expect(
@@ -163,8 +165,9 @@ describe("the road", () => {
       (o: { kind: string; resource: string; status: string }) =>
         o.kind === "city" && o.resource === "bread" && o.status === "open",
     ) as { id: string; city: string }[];
-    const first = open[0] as { id: string; city: string };
-    const same = open.filter((o) => o.city === first.city).slice(0, 2);
+    const byCity = new Map<string, { id: string; city: string }[]>();
+    for (const o of open) byCity.set(o.city, [...(byCity.get(o.city) ?? []), o]);
+    const same = [...byCity.values()].sort((a, b) => b.length - a.length)[0]?.slice(0, 2) ?? [];
     expect(same.length).toBe(2);
     const cart = view.road.vehicles.find((v: { type: string }) => v.type === "cart");
     const sent = await act(ada, {
