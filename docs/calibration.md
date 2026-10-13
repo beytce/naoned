@@ -644,3 +644,23 @@ Réglages de Venise : `families` (allégeance au jour 2, levée de −25 % à +5
 - Le pouvoir change de mains : aucune famille ne gagne les trois semaines dans aucune graine, et Milan frappe le favori environ 3,5 fois par jour.
 - Les bots votent surtout la franchise et la faveur de Venise ; gabelle, péage et lettres de course apparaissent selon les graines.
 - Le simulateur va plus vite qu'avec les guerres (136 s contre 170 s pour une graine).
+
+## Chargements de plusieurs commandes et Terraferme géographique (13 octobre 2026)
+
+Un véhicule emporte jusqu'à quatre commandes pour une même ville (`deliveries.maxOrdersPerLoad`). Premier essai avec les réglages d'avant : la monnaie payée monte à 255 ducats par joueur actif et par jour (cible 151 à 185), les bots prenant bien plus du tableau. Essais sur une graine : 6 commandes de ville par marchand actif → 222 ; 5 → 208 ; 5 avec les villes à la référence et +40 % par heure → 184 ; 5 avec +30 % par heure → 175 à 178. Les villes à la référence cassaient la règle « un objet fabriqué rapporte, sur la route la plus courte, plus de 1,3 fois ses matières » (`settings.test.ts`) : retour à +10 %, et quatre commandes de ville par marchand actif.
+
+Réglages retenus : `maxOrdersPerLoad` 4, `sharedOrdersPerActivePlayer` 4, `cityPriceBps` 11 000, `distanceBonusBpsPerHour` 3 000. La carte de la Campagne devient géographique (fiefs à Feltre, Udine, Piove di Sacco et Rovigo, Milan à l'ouest).
+
+`pnpm sim`, 5 graines, toutes conformes :
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie payée (ducats / joueur actif / jour) | 167,9 | 168,4 | 168,0 | 168,3 | 165,9 |
+| Indice des prix | 93 à 100 | 93 à 100 | 93 à 100 | 93 à 100 | 93 à 100 |
+| Masse monétaire par joueur actif (maximum) | 1,03 × | 1,02 × | 1,03 × | 1,02 × | 1,03 × |
+| Commandes du tableau prises | 90,2 % | 90,1 % | 89,4 % | 89,6 % | 88,0 % |
+| Vainqueurs des semaines 1 à 3 | Mocenigo, Contarini, Dandolo | Dandolo, Contarini, Contarini | Mocenigo, Morosini, Dandolo | Morosini, Morosini, Contarini | Mocenigo, Mocenigo, Mocenigo |
+
+**Lecture.**
+- Le tableau se vide presque (neuf commandes sur dix prises) : la course entre marchands devient réelle, comme le proposait la piste de la bêta.
+- La carte géographique n'est pas symétrique : Rovigo touche Legnago, un carrefour vers quatre villes. Dans la graine 5, les Mocenigo gagnent les trois semaines (diagnostic non bloquant). À surveiller avec de vrais joueurs ; pistes : retirer la route Rovigo–Legnago, ou un fief plus exposé à Milan.

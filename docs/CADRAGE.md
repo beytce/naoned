@@ -179,10 +179,10 @@ Constat du porteur : le système de guilde ne lui plaît pas. Il veut quatre gra
 | Mécanique | Règle |
 | --- | --- |
 | **Familles** | Contarini, Morosini, Mocenigo, Dandolo. Allégeance dès le jour 2, pour la saison (`families`). Une famille plus petite que la moyenne lève jusqu'à 50 % de lances en plus, une plus grande jusqu'à 25 % de moins. Les maisons PNJ rejoignent la famille qui compte le moins de joueurs réels |
-| **Carte** | La Terraferme en 5 × 5 terres voisines deux à deux : les fiefs des familles aux quatre coins (imprenables), Milan en croix au milieu (cinq forteresses), les six villes du jeu entre les deux, bourgs et villages autour. Symétrique pour l'équité (`campaign.lands`) |
+| **Carte** | La Terraferme où elle est : 25 terres sur la carte du Veneto, la Lombardie à l'ouest. Fiefs des familles (imprenables) à Feltre (Morosini), Udine (Dandolo), Piove di Sacco (Contarini) et Rovigo (Mocenigo) ; les cinq forteresses de Milan à l'ouest (Brescia, Bergame, Crema, Lodi, Crémone) ; les six villes du jeu, bourgs et villages entre les deux ; voisinages par la géographie (`campaign.lands`). Sur la maquette 3D des Routes, le sol de chaque terre est peint à la couleur de son détenteur, avec ses frontières ; la carte se déplace du doigt et se pince |
 | **Semaine** | Chaque lundi (mêmes bornes que le classement hebdomadaire), la carte rouvre : les fiefs aux familles, le reste aux milices et à Milan, avec des garnisons qui croissent avec les marchands actifs |
 | **Lances** | Levée gratuite : 2 lances par heure de 8 h à 22 h, 24 en attente au plus, à ramasser en venant. Engagement : 20 lances à 1 d puis 20 à 2 d par jour, ducats **détruits**. Toute lance part 48 h après avoir été levée ou engagée |
-| **Marches** | Vers une terre de sa famille (renfort) ou voisine d'une de ses terres (attaque), jamais un fief. 20 min, +10 min par terre au-delà de la première depuis le fief. Aucune arrivée entre 22 h et 8 h : une marche du soir arrive à 8 h. Les marches se voient sur la carte ; les membres peuvent rejoindre un assaut en cours |
+| **Marches** | On glisse ses lances depuis son fief jusqu'à la terre (ou on touche la terre), puis on confirme. Vers une terre de sa famille (renfort) ou voisine d'une de ses terres (attaque), jamais un fief. 20 min, +10 min par terre au-delà de la première depuis le fief. Aucune arrivée entre 22 h et 8 h : une marche du soir arrive à 8 h. Les marches se voient sur la carte ; les membres peuvent rejoindre un assaut en cours |
 | **Combat** | Déterministe : l'attaque prend la terre si elle dépasse la garnison fois la défense (village ×1, bourg ×1,2, ville ×1,5, forteresse ×2) ; il reste la différence en garnison. Sinon la garnison perd l'attaque divisée par sa défense |
 | **Gloire** | Chaque heure ouverte, une terre rapporte sa valeur à la famille qui la tient (village 1, bourg 2, ville 3, forteresse 4) |
 | **Milan (PvE)** | Toutes les 4 heures ouvertes, Milan chevauche contre la famille en tête : sa terre la plus faible sur la frontière de Milan, avec 10 lances + 2 par marchand actif, doublées à 100 % d'avance. Ses forteresses se regarnissent chaque jour. L'acte III (la guerre de Lombardie) le rend moitié plus fort |
@@ -194,6 +194,16 @@ Constat du porteur : le système de guilde ne lui plaît pas. Il veut quatre gra
 | **Guildes d'un monde existant** | Au premier tick, chaque trésor est rendu à ses membres par carats ; guildes, concessions et guerres disparaissent |
 | **Écrans** | Onglet Famille : choix de la famille, Gloire des quatre familles, lances, carte de la Terraferme, marches, programme, décrets, membres, semaines passées, fil de famille. Bandeau des décrets au Marché, sur les Routes et au Port. Blason de la famille qui tient la terre d'une ville sous son nom, sur les Routes. Notifications : terre menacée (immédiate), terre perdue, résultat de la semaine, part des décrets |
 | **Pass Négociant** | Hors sujet pour cet ajout : le Pass sera entièrement revu (porteur) |
+
+### Charger et glisser (retour du porteur, octobre 2026)
+
+Inspiré des quais d'un jeu de commerce spatial : on remplit un véhicule, puis on le glisse jusqu'à sa destination.
+
+| Mécanique | Règle |
+| --- | --- |
+| **Chargement** | Un véhicule emporte jusqu'à 4 commandes du jour, toutes pour la même ville, dans sa capacité (`deliveries.maxOrdersPerLoad`). Chaque commande est payée à l'arrivée pour ce qui reste de sa marchandise ; l'escorte se paie sur tout le chargement |
+| **Geste** | Toucher le dépôt ou un véhicule le sélectionne (barre du véhicule en bas de la carte). « Charger » ouvre les Cargaisons : on coche les commandes, la cale se remplit. On glisse ensuite le véhicule du dépôt jusqu'à la ville (ou on la touche) ; une barre « Départ vers… » laisse six secondes pour choisir l'escorte, partir ou annuler |
+| **Équilibre** | 4 commandes de ville par marchand actif au tableau commun (au lieu de 10), villes à +10 %, +30 % par heure de route : la monnaie payée reste dans sa cible (`docs/calibration.md`) |
 
 ## Vision et positionnement
 
