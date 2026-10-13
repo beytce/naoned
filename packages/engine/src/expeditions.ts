@@ -104,7 +104,7 @@ export function launchExpedition(
     removeStock(tx, playerId, resource, qty * crews, "expedition_out", id);
   }
   const fee = fleet
-    ? portDuesFor(tx.ctx, tx.s as WorldState, playerId, dest.charter)
+    ? portDuesFor(tx.ctx, tx.s as WorldState, playerId, dest.charter, tx.now)
     : dest.charter + (escort ? dest.escort : 0n);
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, fee, "expedition_charter", id);
 

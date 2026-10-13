@@ -186,7 +186,7 @@ export const testBandits = {
   newcomerDays: 0,
   minTargetWorthBps: 5_000,
   cooldownHours: 24,
-  sameGuildImmune: true,
+  sameFamilyImmune: true,
   openDay: 0,
   npcBands: { perDay: 0, hours: 3 },
   bounty: { base: 0, perInfamyBps: 0, max: 0 },
@@ -205,4 +205,91 @@ export const deliverySettings: Partial<WorldSettingsInput> = {
   contracts: { perDay: 2, premiumBps: 2_000, quantities: { bread: 20, bricks: 10 } },
   deliveries: testDeliveries,
   bandits: testBandits,
+};
+
+/**
+ * A small campaign for the families' tests: three lands by three, two families in opposite
+ * corners, Milan in the middle.
+ *
+ *   nord(seat rossi)  borgo(village)  colle(bourg)
+ *   campo(village)    rocca(Milan)    padova(city)
+ *   lago(bourg)       verona(city)    sud(seat verdi)
+ */
+const grid = [
+  ["nord", "borgo", "colle"],
+  ["campo", "rocca", "padova"],
+  ["lago", "verona", "sud"],
+];
+const kindOf: Record<string, string> = {
+  nord: "seat",
+  sud: "seat",
+  borgo: "village",
+  campo: "village",
+  colle: "bourg",
+  lago: "bourg",
+  rocca: "fortress",
+  padova: "city",
+  verona: "city",
+};
+
+export const testFamilies = {
+  openDay: 0,
+  list: [
+    { code: "rossi", seat: "nord" },
+    { code: "verdi", seat: "sud" },
+  ],
+  levyMinBps: 7_500,
+  levyMaxBps: 15_000,
+};
+
+export const testCampaign = {
+  lands: grid.flatMap((row, r) =>
+    row.map((code, c) => ({
+      code,
+      kind: kindOf[code] ?? "village",
+      milan: code === "rocca",
+      ...(code === "padova" || code === "verona" ? { city: code } : {}),
+      neighbors: [grid[r - 1]?.[c], grid[r + 1]?.[c], row[c - 1], row[c + 1]].filter(
+        (n): n is string => n !== undefined,
+      ),
+    })),
+  ),
+  kinds: {
+    seat: { glory: 0, defenseBps: 10_000, militia: 0, militiaPerActive: 0 },
+    village: { glory: 1, defenseBps: 10_000, militia: 2, militiaPerActive: 1 },
+    bourg: { glory: 2, defenseBps: 12_000, militia: 3, militiaPerActive: 1 },
+    city: { glory: 3, defenseBps: 15_000, militia: 4, militiaPerActive: 1 },
+    fortress: { glory: 4, defenseBps: 20_000, militia: 6, militiaPerActive: 2 },
+  },
+  openHours: { from: 8, to: 22 },
+  levy: { perHour: 2, max: 10 },
+  hire: [
+    { count: 5, price: 100 },
+    { count: 5, price: 200 },
+  ],
+  lanceHours: 48,
+  march: { baseMinutes: 20, perHopMinutes: 10 },
+  milan: { everyHours: 4, warningMinutes: 30, base: 4, perActive: 1, leadBonusBps: 10_000 },
+  garrisonLancesPerPoint: 10,
+};
+
+export const testDecrees = {
+  catalog: ["fondaco", "gabelle", "faveur", "peage", "course", "levant", "calmiere", "franchise"],
+  perWinner: 2,
+  maxVoteBps: 5_000,
+  defaults: [{ code: "fondaco" }, { code: "franchise" }],
+  fondaco: { taxBps: 100, quotaBps: 5_000 },
+  gabelle: { extraTaxBps: 400 },
+  faveur: { premiumBps: 1_000, reservedMinutes: 30 },
+  peage: { tollBps: 300 },
+  levant: { memberDiscountBps: 5_000, othersSurchargeBps: 2_500 },
+  calmiere: { capBps: 11_500 },
+  franchise: { upkeepDiscountBps: 2_000 },
+};
+
+/** Overrides of `testSettings` for a world with the families and their campaign. */
+export const campaignSettings: Partial<WorldSettingsInput> = {
+  families: testFamilies,
+  campaign: testCampaign,
+  decrees: testDecrees,
 };

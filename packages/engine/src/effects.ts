@@ -24,6 +24,12 @@ export type LedgerReason =
   | "privateer_letter"
   | "mission_reward"
   | "family_order_reward"
+  | "campaign_hire"
+  | "decree_gabelle"
+  | "decree_toll"
+  | "decree_favour"
+  | "decree_share"
+  // Kept for the entries of the time of the guilds.
   | "guild_founding"
   | "guild_stake"
   | "guild_refund"

@@ -8,7 +8,7 @@ import {
   deliveryOrdersFor,
   netWorth,
 } from "../src/index.js";
-import { deliverySettings, testBandits } from "./fixture.js";
+import { campaignSettings, deliverySettings, testBandits } from "./fixture.js";
 import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
 
 type Bandits = typeof testBandits;
@@ -234,23 +234,10 @@ describe("safeguards", () => {
     expect(attacked(w)).toBe(false);
   });
 
-  it("no ambush within the guild", () => {
-    const guilds = {
-      openDay: 0,
-      foundingCost: 0,
-      minStake: 1_000,
-      caratValue: 100,
-      maxMembers: 5,
-      exitFeeBps: 0,
-      maxVoteBps: 10_000,
-      voteHours: 24,
-      maxTollBps: 800,
-      maxBountyPerUnit: 50,
-    };
-    const w = world({}, { guilds });
-    w.do({ type: "foundGuild", playerId: "a", name: "Leone", emblem: "lion", stake: 1_000 });
-    const id = w.state.guilds?.memberOf.a ?? "";
-    w.do({ type: "joinGuild", playerId: "bandit", guildId: id, stake: 1_000 });
+  it("no ambush within the family", () => {
+    const w = world({}, campaignSettings);
+    w.do({ type: "joinFamily", playerId: "a", family: "rossi" });
+    w.do({ type: "joinFamily", playerId: "bandit", family: "rossi" });
     post(w);
     expect(attacked(w)).toBe(false);
     expect(attacked(w, "c")).toBe(true);

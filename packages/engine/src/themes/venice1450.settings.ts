@@ -1,6 +1,66 @@
 import type { WorldSettingsInput } from "../settings.js";
 
 /** Default balancing for a Venice 1450 world. Amounts in deniers, rates in bps. */
+/**
+ * The Terraferma of the campaign: five lands by five, each next to the lands beside it. The
+ * families' seats are in the corners, Milan holds the cross in the middle, the six cities of the
+ * game stand between them.
+ */
+const TERRAFERMA_GRID: [string, string, boolean][][] = [
+  [
+    ["feltre", "seat", false],
+    ["bassano", "village", false],
+    ["vicenza", "city", false],
+    ["conegliano", "village", false],
+    ["udine", "seat", false],
+  ],
+  [
+    ["schio", "village", false],
+    ["verona", "city", false],
+    ["bergamo", "fortress", true],
+    ["treviso", "city", false],
+    ["pordenone", "village", false],
+  ],
+  [
+    ["peschiera", "bourg", false],
+    ["crema", "fortress", true],
+    ["brescia", "fortress", true],
+    ["lodi", "fortress", true],
+    ["castelfranco", "bourg", false],
+  ],
+  [
+    ["legnago", "village", false],
+    ["mantova", "city", false],
+    ["cremona", "fortress", true],
+    ["padova", "city", false],
+    ["mestre", "village", false],
+  ],
+  [
+    ["rovigo", "seat", false],
+    ["adria", "village", false],
+    ["ferrara", "city", false],
+    ["chioggia", "village", false],
+    ["piove", "seat", false],
+  ],
+];
+
+const TERRAFERMA = TERRAFERMA_GRID.flatMap((row, r) =>
+  row.map(([code, kind, milan], c) => ({
+    code,
+    kind,
+    milan,
+    ...(kind === "city" ? { city: code } : {}),
+    neighbors: [
+      TERRAFERMA_GRID[r - 1]?.[c]?.[0],
+      TERRAFERMA_GRID[r + 1]?.[c]?.[0],
+      TERRAFERMA_GRID[r]?.[c - 1]?.[0],
+      TERRAFERMA_GRID[r]?.[c + 1]?.[0],
+    ].filter((n): n is string => n !== undefined),
+    x: 10 + c * 20,
+    y: 10 + r * 20,
+  })),
+);
+
 export const venice1450Settings: WorldSettingsInput = {
   // Seasons follow calendar months: the world says when it ends; 30 days is the nominal month
   // (simulator). Merchants may join until the last day.
@@ -41,48 +101,55 @@ export const venice1450Settings: WorldSettingsInput = {
       quantities: { salt: 15, wine: 8, silk: 4, spices: 3, furs: 3, cloth: 2 },
     },
   },
-  // Concessions: twelve goods in the cities, held by the Seigneurie until a guild takes them.
-  concessions: [
-    { code: "venezia-bread", city: "venezia", resource: "bread" },
-    { code: "venezia-bricks", city: "venezia", resource: "bricks" },
-    { code: "venezia-planks", city: "venezia", resource: "planks" },
-    { code: "padova-bread", city: "padova", resource: "bread" },
-    { code: "padova-planks", city: "padova", resource: "planks" },
-    { code: "verona-bread", city: "verona", resource: "bread" },
-    { code: "verona-bricks", city: "verona", resource: "bricks" },
-    { code: "vicenza-planks", city: "vicenza", resource: "planks" },
-    { code: "treviso-bricks", city: "treviso", resource: "bricks" },
-    { code: "treviso-flour", city: "treviso", resource: "flour" },
-    { code: "mantova-flour", city: "mantova", resource: "flour" },
-    { code: "ferrara-bricks", city: "ferrara", resource: "bricks" },
-  ],
-  // Trade wars: two days; a war chest of 150 d leaves the treasury; the defender's units count a
-  // fifth more; the Seigneurie defends with 1 unit per active merchant; a concession is safe for
-  // three days after a war; its holder's members are paid 10 % more for that good there; a war
-  // puts a quarter of an order per active merchant and per day on the board.
-  wars: {
-    hours: 48,
-    stake: 15_000,
-    defenderBonusBps: 2_000,
-    protectHours: 72,
-    seigneurieUnitsPerActive: 1,
-    memberPremiumBps: 1_000,
-    ordersPerActiveBps: 2_500,
-  },
-  // The merchants' guilds: from day 2, founded for 50 d with a stake of 100 d at least; carats at
-  // 1 d to start; twelve members at most; a fifth of a leaver's carats stays with the guild; no
-  // member weighs more than 40 % of a vote, open 24 h.
-  guilds: {
+  // The four great families: allegiance from day 2, for the season. A family smaller than the
+  // average levies up to half as many lances again, a larger one down to a quarter less.
+  families: {
     openDay: 2,
-    foundingCost: 5_000,
-    minStake: 10_000,
-    caratValue: 100,
-    maxMembers: 12,
-    exitFeeBps: 2_000,
-    maxVoteBps: 4_000,
-    voteHours: 24,
-    maxTollBps: 800,
-    maxBountyPerUnit: 50,
+    list: [
+      { code: "contarini", seat: "piove" },
+      { code: "morosini", seat: "feltre" },
+      { code: "mocenigo", seat: "rovigo" },
+      { code: "dandolo", seat: "udine" },
+    ],
+    levyMinBps: 7_500,
+    levyMaxBps: 15_000,
+  },
+  // The week's campaign: a symmetric map of the Terraferma (seats in the corners, Milan in the
+  // middle), lances levied 2 an hour from 8 h to 22 h (24 waiting at most) or engaged for ducats
+  // (20 at 1 d, 20 at 2 d a day), leaving after 48 h; Milan rides every 4 open hours.
+  campaign: {
+    lands: TERRAFERMA,
+    kinds: {
+      seat: { glory: 0, defenseBps: 10_000, militia: 0, militiaPerActive: 0 },
+      village: { glory: 1, defenseBps: 10_000, militia: 3, militiaPerActive: 1 },
+      bourg: { glory: 2, defenseBps: 12_000, militia: 5, militiaPerActive: 1 },
+      city: { glory: 3, defenseBps: 15_000, militia: 6, militiaPerActive: 2 },
+      fortress: { glory: 4, defenseBps: 20_000, militia: 10, militiaPerActive: 2 },
+    },
+    openHours: { from: 8, to: 22 },
+    levy: { perHour: 2, max: 24 },
+    hire: [
+      { count: 20, price: 100 },
+      { count: 20, price: 200 },
+    ],
+    lanceHours: 48,
+    march: { baseMinutes: 20, perHopMinutes: 10 },
+    milan: { everyHours: 4, warningMinutes: 30, base: 10, perActive: 2, leadBonusBps: 10_000 },
+    garrisonLancesPerPoint: 10,
+  },
+  // Laws and decrees: the family that wins the week imposes two of them on the next one.
+  decrees: {
+    catalog: ["fondaco", "gabelle", "faveur", "peage", "course", "levant", "calmiere", "franchise"],
+    perWinner: 2,
+    maxVoteBps: 2_500,
+    defaults: [{ code: "fondaco" }, { code: "franchise" }, { code: "faveur", target: "venezia" }],
+    fondaco: { taxBps: 100, quotaBps: 5_000 },
+    gabelle: { extraTaxBps: 400 },
+    faveur: { premiumBps: 1_000, reservedMinutes: 30 },
+    peage: { tollBps: 300 },
+    levant: { memberDiscountBps: 5_000, othersSurchargeBps: 2_500 },
+    calmiere: { capBps: 11_500 },
+    franchise: { upkeepDiscountBps: 2_000 },
   },
   events: {
     everyDays: 2,
@@ -450,9 +517,9 @@ export const venice1450Settings: WorldSettingsInput = {
     newcomerDays: 3,
     minTargetWorthBps: 5_000,
     cooldownHours: 24,
-    sameGuildImmune: true,
-    // Bands only in wartime, on the road of a war, against the other side.
-    warOnly: true,
+    sameFamilyImmune: true,
+    // Bands only under the letters of marque, by the family that imposed them.
+    decreeOnly: true,
     openDay: 6,
     npcBands: { perDay: 3, hours: 3 },
     // The Doge's bounty for beating off a player's band: 5 ducats, +20 % per take of the bandit.
@@ -660,18 +727,8 @@ export const venice1450Settings: WorldSettingsInput = {
         },
       ],
     },
-    {
-      code: "worksite",
-      week: 2,
-      variants: [],
-      worksite: {
-        city: "venezia",
-        needsPerPlayer: { bricks: 30, planks: 30 },
-        premiumBps: 1_500,
-        // The guild that delivered most has 300 d paid into its treasury (and the monument).
-        winnerTreasury: 30_000,
-      },
-    },
+    // The war of Lombardy: Milan's garrisons and rides half as strong again.
+    { code: "lombardy", week: 2, variants: [], milanBps: 15_000 },
     {
       code: "sensa",
       week: 3,

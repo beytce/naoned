@@ -1,9 +1,21 @@
 import { crieeRoom, currentCriee, dailyFor } from "./activity.js";
 import { balesFor } from "./bales.js";
 import { costForLevel } from "./buildings.js";
+import {
+  MILAN,
+  garrisonAt,
+  hireCost,
+  hireLimit,
+  hiredToday,
+  landDef,
+  levyWaiting,
+  mayTarget,
+  reserveOf,
+} from "./campaign.js";
 import { quoteCitySale } from "./cities.js";
 import type { Command } from "./commands.js";
 import { contractsFor, rerollsOf } from "./contracts.js";
+import { corsairFamily, decreeTargetKind } from "./decrees.js";
 import {
   allRoutes,
   banditsOn,
@@ -17,7 +29,7 @@ import {
   watchedRoads,
 } from "./deliveries.js";
 import { cargoValueAt } from "./expeditions.js";
-import { guildOf, guildsOpenAt } from "./guilds.js";
+import { familiesOn, familiesOpenAt, familyCodes, membersOf } from "./families.js";
 import { bestPrice, marketMakerQuotaLeft, maxOpenOrdersFor, openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
 import type { Deniers } from "./money.js";
@@ -29,7 +41,7 @@ import { portDues, shipStatus, shipsOf } from "./ships.js";
 import { specialtyUnlocked } from "./specialties.js";
 import {
   type Building,
-  type Guild,
+  type DecreePick,
   MARKET_MAKER,
   type WorldContext,
   type WorldState,
@@ -39,7 +51,6 @@ import {
   seasonEnd,
 } from "./state.js";
 import { findRegion, recipesFor } from "./theme.js";
-import { activeWarOn, concessionHolder, sideOf, warForBand, warRefusal } from "./wars.js";
 
 /**
  * Computer-run merchants. They play through the same commands as people, with the same limits,
@@ -69,11 +80,14 @@ export interface Profile {
   vehicles: number;
   /** Chance per session of posting a band on a road (0 to 1). */
   banditry: number;
+  /** Share of the day's lances the bot engages for ducats, when its cash allows (0 to 1). */
+  warlike: number;
 }
 
 export const PROFILES: Record<ProfileName, Profile> = {
   producer: {
     name: "producer",
+    warlike: 0.25,
     banditry: 0,
     prudence: 0.5,
     vehicles: 2,
@@ -85,6 +99,7 @@ export const PROFILES: Record<ProfileName, Profile> = {
   },
   artisan: {
     name: "artisan",
+    warlike: 0.25,
     banditry: 0,
     prudence: 0.5,
     vehicles: 2,
@@ -96,6 +111,7 @@ export const PROFILES: Record<ProfileName, Profile> = {
   },
   builder: {
     name: "builder",
+    warlike: 0.5,
     banditry: 0,
     prudence: 0.6,
     vehicles: 2,
@@ -107,6 +123,7 @@ export const PROFILES: Record<ProfileName, Profile> = {
   },
   speculator: {
     name: "speculator",
+    warlike: 0.75,
     banditry: 0.3,
     prudence: 0.2,
     vehicles: 2,
@@ -118,6 +135,7 @@ export const PROFILES: Record<ProfileName, Profile> = {
   },
   casual: {
     name: "casual",
+    warlike: 0,
     banditry: 0.15,
     prudence: 1,
     vehicles: 1,
@@ -143,18 +161,6 @@ const MAX_PER_TYPE = 3;
 const CITY_GOODS = ["bread", "bricks", "planks", "spices", "silk", "salt", "wine", "furs", "cloth"];
 const VOYAGERS = new Set<ProfileName>(["producer", "builder", "speculator"]);
 const MATERIALS = ["bricks", "planks"];
-/** Names for the guilds bots found. */
-const GUILD_NAMES = [
-  "Leone d'Oro",
-  "Stella Maris",
-  "Arte della Lana",
-  "Compagnia del Sale",
-  "Fondaco dei Fabbri",
-  "Scuola dei Mercanti",
-  "Ca' d'Oro",
-  "Torre dei Venti",
-];
-const GUILD_EMBLEMS = ["lion", "star", "ship", "tower", "key", "sun"];
 const HOUR = 3_600_000;
 /** How long a merchant stays at the screen after a session starts. */
 const ONLINE_MS = 30 * 60_000;
@@ -179,6 +185,8 @@ export interface BotOptions {
   spareMarketMaker?: boolean;
   /** Keep only half of the materials saved for its next construction; the rest goes on sale. */
   generous?: boolean;
+  /** Whether a merchant is a person: bots join the family with the fewest people. */
+  isHuman?: (playerId: string) => boolean;
 }
 
 export class Bot {
@@ -188,10 +196,8 @@ export class Bot {
   onlineUntil = 0;
   /** Last limit price used per side and resource, to walk prices when orders do not fill. */
   private lastPrice = new Map<string, Deniers>();
-  /** Last day it put money in its guild. */
-  private investedDay = -1;
-  /** Last day it thought of war. */
-  private warDay = -1;
+  /** Last week it voted its family's programme. */
+  private votedWeek = -1;
 
   constructor(
     readonly id: string,
@@ -255,7 +261,7 @@ export class Bot {
     this.collectGalleys(s);
     this.feed(s);
     this.doContracts(s);
-    this.serveGuild(s);
+    this.serveFamily(s);
     this.deliverProjects(s);
     if (deliveriesOn(s.ctx)) this.garage(s, this.deliver(s));
     else {
@@ -324,19 +330,11 @@ export class Bot {
     let waiting = 0;
     const day = dayIndex(s.ctx, s.now);
     const done = deliveriesDoneToday(state, this.id, day);
-    const atWar = (o: { city: string; resource: string }) => {
-      const w = activeWarOn(state, o.city, o.resource, s.now);
-      return !!w && !!sideOf(state, w, this.id);
-    };
     const orders = deliveryOrdersFor(s.ctx, state, this.id, day)
       .filter(
         (o) => !o.takenBy && !done.includes(o.id) && o.opensAt <= s.now && s.now < o.expiresAt,
       )
       .sort((a, b) => {
-        // The orders of a war it fights come first: they win the concession.
-        const wa = atWar(a) ? 1 : 0;
-        const wb = atWar(b) ? 1 : 0;
-        if (wa !== wb) return wb - wa;
         const va = a.unitPrice * BigInt(a.quantity);
         const vb = b.unitPrice * BigInt(b.quantity);
         return va === vb ? a.id.localeCompare(b.id) : va > vb ? -1 : 1;
@@ -367,7 +365,7 @@ export class Bot {
       const bid = this.bestBid(s, o.resource) ?? 0n;
       if (o.unitPrice < bid) continue;
       const spare = () => this.available(s, o.resource) - reserveOf(o.resource);
-      if (o.kind === "doge" || o.kind === "family" || atWar(o)) {
+      if (o.kind === "doge" || o.kind === "family") {
         const missing = o.quantity - spare();
         if (missing > 0) this.buy(s, o.resource, missing, 1.15);
       }
@@ -409,10 +407,12 @@ export class Bot {
       if (this.available(s, res) - this.reserve(s, res) < perHour * hours) return;
     }
     // A seasoned bandit knows the busy roads (the last day's traffic); an occasional one guesses.
-    // In wartime only, the roads to a city at war where the bot fights.
-    const routes = allRoutes(s.ctx).filter(
-      (r) => !cfg.warOnly || !!warForBand(s.state(), r.split(":")[1] ?? "", this.id, s.now),
-    );
+    // Under the letters of marque only, when its family imposed them.
+    if (cfg.decreeOnly) {
+      const corsairs = corsairFamily(s.ctx, s.state(), s.now);
+      if (!corsairs || s.state().families?.memberOf[this.id] !== corsairs) return;
+    }
+    const routes = allRoutes(s.ctx);
     if (routes.length === 0) return;
     let route = s.rng.pick(routes);
     if (this.profile.name !== "casual") {
@@ -623,120 +623,160 @@ export class Bot {
   }
 
   /**
-   * The guilds: once they open, join the smallest open guild, or found one when the guilds are
-   * well filled; then put a tenth of the cash above one and a half times the starting capital into
-   * the treasury (once a day), and vote on what is proposed.
+   * The family and the week's campaign: swear allegiance to the family with the fewest people (then
+   * the fewest merchants), collect the levy, engage lances by temperament when the cash allows,
+   * defend the lands under threat, attack the cheapest land worth taking, and vote a programme.
    */
-  private serveGuild(s: Session): void {
-    const rules = s.ctx.settings.guilds;
-    if (rules.maxMembers <= 0 || this.profile.name === "casual") return;
-    const state = s.state();
-    let guild = guildOf(state, this.id);
-    if (!guild) this.enlist(s);
-    if (!guild) {
-      if (s.now < guildsOpenAt(s.ctx, state, this.id)) return;
-      const all = Object.values(state.guilds?.guilds ?? {});
-      const open = all
-        .filter((g) => g.open && Object.keys(g.members).length < rules.maxMembers)
-        .sort((a, b) => Object.keys(a.members).length - Object.keys(b.members).length);
-      const members = all.reduce((n, g) => n + Object.keys(g.members).length, 0);
-      const stake = Number(rules.minStake);
-      const smallest = open[0];
-      if (smallest && members < all.length * 6) {
-        s.act({ type: "joinGuild", playerId: this.id, guildId: smallest.id, stake });
-      } else if (this.cash(s) > rules.foundingCost + rules.minStake * 3n) {
-        const used = new Set(all.map((g) => g.name));
-        const name = GUILD_NAMES.find((n) => !used.has(n)) ?? `Compagnia ${all.length + 1}`;
-        s.act({
-          type: "foundGuild",
-          playerId: this.id,
-          name,
-          emblem: GUILD_EMBLEMS[all.length % GUILD_EMBLEMS.length] ?? "lion",
-          stake,
-        });
+  private serveFamily(s: Session): void {
+    if (!familiesOn(s.ctx)) return;
+    let state = s.state();
+    let family = state.families?.memberOf[this.id];
+    if (!family) {
+      if (s.now < familiesOpenAt(s.ctx, state, this.id)) return;
+      const isHuman = this.options.isHuman;
+      const rank = familyCodes(s.ctx).map((f) => {
+        const members = membersOf(state, f);
+        return { f, people: isHuman ? members.filter(isHuman).length : 0, all: members.length };
+      });
+      rank.sort((a, b) => a.people - b.people || a.all - b.all || (a.f < b.f ? -1 : 1));
+      const chosen = rank[0]?.f;
+      if (!chosen || !s.act({ type: "joinFamily", playerId: this.id, family: chosen })) return;
+      family = chosen;
+    }
+    if (levyWaiting(s.ctx, s.state(), this.id, s.now) > 0)
+      s.act({ type: "collectLevy", playerId: this.id });
+    this.hireLances(s);
+    this.campaign(s, family);
+    state = s.state();
+    const week = state.campaign?.week ?? -1;
+    if (this.votedWeek !== week && this.profile.name !== "casual") {
+      this.votedWeek = week;
+      const picks = this.programme(s);
+      if (picks.length > 0) s.act({ type: "voteProgramme", playerId: this.id, picks });
+    }
+  }
+
+  /** Lances for ducats: a share of the day's limit by temperament, never below a safe purse. */
+  private hireLances(s: Session): void {
+    if (this.profile.warlike <= 0) return;
+    const already = hiredToday(s.ctx, s.state(), this.id, s.now);
+    const wanted = Math.floor(hireLimit(s.ctx) * this.profile.warlike) - already;
+    if (wanted <= 0) return;
+    const cost = hireCost(s.ctx, already, wanted);
+    if (cost === undefined) return;
+    if (this.cash(s) - cost < (s.ctx.settings.startingCapital * 3n) / 2n) return;
+    s.act({ type: "hireLances", playerId: this.id, count: wanted });
+  }
+
+  /** Defends what is threatened, then attacks the cheapest land worth taking. */
+  private campaign(s: Session, family: string): void {
+    const kinds = s.ctx.settings.campaign?.kinds ?? {};
+    const defense = (code: string) => kinds[landDef(s.ctx, code)?.kind ?? ""]?.defenseBps ?? 10_000;
+    const glory = (code: string) => kinds[landDef(s.ctx, code)?.kind ?? ""]?.glory ?? 0;
+    for (let round = 0; round < 4; round++) {
+      const state = s.state();
+      const c = state.campaign;
+      const reserve = reserveOf(state, this.id, s.now);
+      if (!c || reserve <= 0) return;
+      const marches = Object.values(c.marches);
+      const incoming = (code: string, own: boolean) =>
+        marches
+          .filter((m) => m.target === code && (m.family === family) === own)
+          .reduce((n, m) => n + m.npc + m.stacks.reduce((a, x) => a + x.count, 0), 0);
+      // 1. A land of the family under attack, not held well enough: reinforce it.
+      const threatened = Object.entries(c.lands)
+        .filter(([code, l]) => l.holder === family && incoming(code, false) > 0)
+        .map(([code, l]) => {
+          const held = Math.floor(
+            ((garrisonAt(l, s.now) + incoming(code, true)) * defense(code)) / 10_000,
+          );
+          return { code, missing: incoming(code, false) - held + 1 };
+        })
+        .filter((t) => t.missing > 0)
+        .sort((a, b) => b.missing - a.missing);
+      const threat = threatened[0];
+      if (threat) {
+        const n = Math.min(reserve, threat.missing);
+        if (!s.act({ type: "sendMarch", playerId: this.id, land: threat.code, lances: n })) return;
+        continue;
       }
-      guild = guildOf(s.state(), this.id);
-      if (!guild) return;
-    }
-    // Investing: a tenth of the spare cash, once a day.
-    const day = dayIndex(s.ctx, s.now);
-    if (this.investedDay !== day) {
-      this.investedDay = day;
-      const spare = this.cash(s) - (s.ctx.settings.startingCapital * 3n) / 2n;
-      if (spare > 1_000n)
-        s.act({ type: "investGuild", playerId: this.id, amount: Number(spare / 10n) });
-    }
-    // Voting: yes to the guild's settings, no to excluding a fellow merchant.
-    for (const p of Object.values(s.state().guilds?.proposals ?? {})) {
-      if (p.guildId !== guild.id || p.status !== "open" || p.votes[this.id] !== undefined) continue;
-      s.act({ type: "vote", playerId: this.id, proposalId: p.id, yes: p.kind !== "exclude" });
-    }
-    this.wageWar(s, guild);
-    // The founder sets the guild going: a share of each income paid out as dividends.
-    if (guild.founder === this.id && guild.dividendBps === 0) {
-      const pending = Object.values(s.state().guilds?.proposals ?? {}).some(
-        (p) => p.guildId === guild?.id && p.kind === "dividend" && p.status === "open",
-      );
-      if (!pending)
-        s.act({
-          type: "propose",
-          playerId: this.id,
-          proposal: { kind: "dividend", value: 3_000 },
-        });
-    }
-  }
-
-  /**
-   * Wars: once a day, the founder of a guild with the chest to spare proposes a war on a concession
-   * of a good its members make (the Seigneurie's first), then asks a toll on what it holds and a
-   * bounty for suppliers. Members vote yes (see the votes above).
-   */
-  private wageWar(s: Session, guild: Guild): void {
-    const cfg = s.ctx.settings.wars;
-    if (s.ctx.settings.concessions.length === 0 || guild.founder !== this.id) return;
-    const day = dayIndex(s.ctx, s.now);
-    if (this.warDay === day) return;
-    this.warDay = day;
-    const state = s.state();
-    const open = Object.values(state.guilds?.proposals ?? {}).filter(
-      (p) => p.guildId === guild.id && p.status === "open",
-    );
-    const asked = (kind: string) => open.some((p) => p.kind === kind);
-    const held = s.ctx.settings.concessions.filter(
-      (c) => concessionHolder(state, c.code) === guild.id,
-    );
-    if (held.length > 0 && guild.tollBps === 0 && !asked("toll"))
-      s.act({ type: "propose", playerId: this.id, proposal: { kind: "toll", value: 400 } });
-    if (guild.bountyPerUnit === 0n && !asked("bounty"))
-      s.act({ type: "propose", playerId: this.id, proposal: { kind: "bounty", value: 10 } });
-    if (asked("war")) return;
-    const treasury = state.accounts[`guild:${guild.id}`] ?? 0n;
-    if (treasury < cfg.stake * 2n) return;
-    const chain = this.chainGoods(s);
-    const targets = s.ctx.settings.concessions
-      .filter((c) => chain.has(c.resource))
-      .filter((c) => !warRefusal(s.ctx, state, guild.id, c.code, s.now))
-      .sort(
-        (a, b) =>
-          Number(concessionHolder(state, a.code) !== null) -
-          Number(concessionHolder(state, b.code) !== null),
-      );
-    const others = s.ctx.settings.concessions.filter(
-      (c) => !warRefusal(s.ctx, state, guild.id, c.code, s.now),
-    );
-    const target = targets[0] ?? (others.length > 0 ? s.rng.pick(others) : undefined);
-    if (target)
-      s.act({ type: "propose", playerId: this.id, proposal: { kind: "war", target: target.code } });
-  }
-
-  /** A merchant of no guild supplies the attacker of a war on a good it makes, for the bounty. */
-  private enlist(s: Session): void {
-    const chain = this.chainGoods(s);
-    for (const w of Object.values(s.state().wars ?? {})) {
-      if (w.outcome || s.now >= w.endAt || w.enlisted[this.id] || !chain.has(w.resource)) continue;
-      s.act({ type: "enlist", playerId: this.id, warId: w.id, side: "attacker" });
+      // 2. A land next to the family's, worth its cost: attack it, or join the assault under way.
+      const targets = Object.entries(c.lands)
+        .filter(([code, l]) => l.holder !== family && mayTarget(s.ctx, state, family, code))
+        .map(([code, l]) => {
+          const needed =
+            Math.ceil((garrisonAt(l, s.now) * defense(code)) / 10_000) + 1 - incoming(code, true);
+          return {
+            code,
+            needed,
+            worth: (glory(code) * 1_000) / Math.max(1, needed),
+            milan: l.holder === MILAN,
+          };
+        })
+        .filter((t) => t.needed > 0)
+        .sort((a, b) => b.worth - a.worth || (a.code < b.code ? -1 : 1));
+      const target = targets.find((t) => t.needed <= reserve);
+      if (target) {
+        const n = Math.min(reserve, Math.ceil(target.needed * 1.1));
+        if (!s.act({ type: "sendMarch", playerId: this.id, land: target.code, lances: n })) return;
+        continue;
+      }
+      // 3. Too strong alone: join an assault of the family, or open one for the others to join.
+      const assault = marches
+        .filter((m) => m.family === family && c.lands[m.target]?.holder !== family)
+        .sort((a, b) => a.arriveAt - b.arriveAt)[0];
+      if (assault) {
+        s.act({ type: "joinMarch", playerId: this.id, marchId: assault.id, lances: reserve });
+        return;
+      }
+      const best = targets[0];
+      if (best && reserve >= best.needed / 3) {
+        s.act({ type: "sendMarch", playerId: this.id, land: best.code, lances: reserve });
+        return;
+      }
+      // 4. Nothing to take: hold the family's weakest land on the border.
+      const border = Object.entries(c.lands)
+        .filter(
+          ([code, l]) =>
+            l.holder === family &&
+            !landDef(s.ctx, code)?.neighbors.every((n) => c.lands[n]?.holder === family) &&
+            mayTarget(s.ctx, state, family, code),
+        )
+        .sort((a, b) => garrisonAt(a[1], s.now) - garrisonAt(b[1], s.now))[0];
+      if (border) s.act({ type: "sendMarch", playerId: this.id, land: border[0], lances: reserve });
       return;
     }
+  }
+
+  /** The bot's programme: by temperament, among the decrees the world allows. */
+  private programme(s: Session): DecreePick[] {
+    const { catalog, perWinner } = s.ctx.settings.decrees;
+    const chain = [...this.chainGoods(s)];
+    const good = chain.find((r) => CITY_GOODS.includes(r)) ?? chain[0] ?? "bread";
+    const wished: Record<ProfileName, string[]> = {
+      producer: ["franchise", "faveur", "gabelle"],
+      artisan: ["gabelle", "franchise", "fondaco"],
+      builder: ["peage", "faveur", "franchise"],
+      speculator: ["fondaco", "course", "calmiere"],
+      casual: [],
+    };
+    const out: DecreePick[] = [];
+    for (const code of wished[this.profile.name]) {
+      if (out.length >= perWinner || !catalog.includes(code)) continue;
+      const kind = decreeTargetKind(code);
+      if (kind === "city")
+        out.push({
+          code,
+          target:
+            "venezia" in s.ctx.settings.cities
+              ? "venezia"
+              : (Object.keys(s.ctx.settings.cities)[0] ?? ""),
+        });
+      else if (kind === "resource")
+        out.push({ code, target: code === "calmiere" ? "bread" : good });
+      else out.push({ code });
+    }
+    return out;
   }
 
   /** What the bot's region makes along its chain (raw good, craft, bread for the plain). */

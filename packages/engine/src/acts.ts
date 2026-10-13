@@ -7,7 +7,7 @@ const WEEK_MS = 7 * DAY_MS;
 
 export type ActDef = WorldSettings["acts"][number];
 
-/** One act of the season: its weeks, the variant drawn for it, and its worksite if any. */
+/** One act of the season: its weeks, the variant drawn for it, and Milan's strength. */
 export interface SeasonAct {
   code: string;
   index: number;
@@ -15,7 +15,8 @@ export interface SeasonAct {
   endsAt: number;
   /** The act's market modifier, drawn from the world's secret (none for a calm act). */
   variant: EventDef | null;
-  worksite: ActDef["worksite"] | null;
+  /** Milan's strength in the campaign during the act (10 000 = as usual). */
+  milanBps: number;
 }
 
 /**
@@ -51,7 +52,7 @@ function computeActs(ctx: WorldContext): SeasonAct[] {
         a.variants.length > 0
           ? (pickWeighted(a.variants, draw(ctx, `act:${index}:${a.code}`)) ?? null)
           : null,
-      worksite: a.worksite ?? null,
+      milanBps: a.milanBps,
     };
   });
 }

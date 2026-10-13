@@ -129,11 +129,11 @@ describe("masteries", () => {
 
   it("shipowner: half the port dues", () => {
     const w = world();
-    expect(portDuesFor(w.ctx, w.state, "a", 10_000n)).toBe(
+    expect(portDuesFor(w.ctx, w.state, "a", 10_000n, w.now)).toBe(
       (10_000n * BigInt(w.ctx.settings.ships.portDuesBps)) / 10_000n,
     );
     choose(w, "shipowner");
-    expect(portDuesFor(w.ctx, w.state, "a", 10_000n)).toBe(
+    expect(portDuesFor(w.ctx, w.state, "a", 10_000n, w.now)).toBe(
       (10_000n * BigInt(w.ctx.settings.ships.portDuesBps)) / 20_000n,
     );
   });

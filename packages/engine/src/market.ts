@@ -1,3 +1,5 @@
+import { familyAccount } from "./campaign.js";
+import { calmiereCap, decreeQuotaBps, decreeTaxBps, gabelleOn } from "./decrees.js";
 import { type Deniers, applyBpsCeil, applyBpsFloor } from "./money.js";
 import { specialtyEffects } from "./specialties.js";
 import {
@@ -147,7 +149,8 @@ export function playerQuota(
   const pass =
     playerId && hasPass(state, playerId, now) ? ctx.settings.pass.marketMakerQuotaBps : 0;
   const mastery = specialtyEffects(ctx, state, playerId).marketMakerQuotaBps;
-  const bonus = pass + mastery;
+  // The Fondaco's privilege: a larger share for the members of the family that imposed it.
+  const bonus = pass + mastery + decreeQuotaBps(ctx, state, playerId, now);
   return bonus > 0 ? share + Math.floor((share * bonus) / 10_000) : share;
 }
 
@@ -211,10 +214,25 @@ function settle(tx: Tx, buy: Order, sell: Order, price: Deniers, qty: number): v
     removeEscrowedStock(tx, sell.playerId, sell.resource, qty, "trade_sell", tradeId);
     addStock(tx, buy.playerId, buy.resource, qty, "trade_buy", tradeId);
     transfer(tx, escrowAccount(buy.playerId), cashAccount(sell.playerId), gross, "trade", tradeId);
-    // A trader's mastery lightens the tax on their sales.
-    const discount = specialtyEffects(tx.ctx, tx.s as WorldState, sell.playerId).taxDiscountBps;
-    tax = applyBpsCeil(gross, Math.max(0, tx.ctx.settings.marketTaxBps - discount));
+    // A trader's mastery lightens the tax on their sales, and so does the Fondaco's privilege.
+    const state = tx.s as WorldState;
+    const discount = specialtyEffects(tx.ctx, state, sell.playerId).taxDiscountBps;
+    const rate = decreeTaxBps(tx.ctx, state, sell.playerId, tx.ctx.settings.marketTaxBps, tx.now);
+    tax = applyBpsCeil(gross, Math.max(0, rate - discount));
     transfer(tx, cashAccount(sell.playerId), SINK_ACCOUNT, tax, "market_tax", tradeId);
+    // The gabelle: others' sales of the good pay the family that imposed it.
+    const gabelle = gabelleOn(tx.ctx, state, sell.playerId, sell.resource, tx.now);
+    if (gabelle) {
+      const due = applyBpsCeil(gross, gabelle.bps);
+      transfer(
+        tx,
+        cashAccount(sell.playerId),
+        familyAccount(gabelle.family),
+        due,
+        "decree_gabelle",
+        tradeId,
+      );
+    }
   }
 
   // A buyer escrowed at its own limit price: refund the price improvement.
@@ -334,6 +352,11 @@ export function placeOrder(tx: Tx, input: PlaceOrderInput): Order {
         fail("price_out_of_band");
       }
     }
+    // The calmiere: no offer of the good above its cap.
+    const cap = isMarketMaker
+      ? null
+      : calmiereCap(tx.ctx, tx.s as WorldState, input.resource, tx.now);
+    if (cap !== null && price > cap) fail("price_out_of_band");
     if (
       !isMarketMaker &&
       openOrderCount(tx.s as WorldState, input.playerId) >=

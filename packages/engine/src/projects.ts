@@ -1,5 +1,3 @@
-import { actAt, seasonActs } from "./acts.js";
-import { creditGuild } from "./guilds.js";
 import { applyBpsFloor } from "./money.js";
 import {
   DAY_MS,
@@ -13,7 +11,6 @@ import { type Tx, emit, fail, nextId, removeStock, transfer } from "./tx.js";
 
 /** Opens the weekly city project when it is due. Needs scale with the number of active players. */
 export function openDueProjects(tx: Tx): void {
-  openActWorksite(tx);
   const { ctx } = tx;
   const cfg = ctx.settings.projects;
   // No needs: no weekly city projects in this world.
@@ -55,69 +52,6 @@ export function openDueProjects(tx: Tx): void {
   }
 }
 
-/** The act's worksite, opened once at the start of its act, for the guilds to compete. */
-function openActWorksite(tx: Tx): void {
-  const { ctx } = tx;
-  const act = actAt(ctx, tx.now);
-  const site = act?.worksite;
-  if (!act || !site) return;
-  if (Object.values(tx.s.projects).some((p) => p.act === act.index)) return;
-  const players = Math.max(1, activePlayerCount(ctx, tx.s, tx.now));
-  const needs: Record<string, number> = {};
-  const delivered: Record<string, number> = {};
-  const unitPrice: Record<string, bigint> = {};
-  for (const [res, perPlayer] of Object.entries(site.needsPerPlayer)) {
-    needs[res] = perPlayer * players;
-    delivered[res] = 0;
-    unitPrice[res] = applyBpsFloor(
-      ctx.settings.referencePrices[res] ?? 0n,
-      10_000 + site.premiumBps,
-    );
-  }
-  const id = nextId(tx, "p");
-  tx.s.projects[id] = {
-    id,
-    city: site.city,
-    openedAt: act.startsAt,
-    deadline: act.endsAt,
-    needs,
-    delivered,
-    unitPrice,
-    act: act.index,
-    byGuild: {},
-    winner: null,
-  };
-  emit(tx, "project_opened", undefined, { project: id, city: site.city, act: act.code });
-}
-
-/**
- * A worksite whose act is over: the guild that delivered most has the prize paid into its
- * treasury (its share of dividends going to the members), and the monument.
- */
-export function closeWorksites(tx: Tx): void {
-  const acts = seasonActs(tx.ctx);
-  for (const p of Object.values(tx.s.projects)) {
-    if (p.act === undefined || p.winner !== null || tx.now < p.deadline) continue;
-    const site = acts[p.act]?.worksite;
-    const ranked = Object.entries(p.byGuild ?? {})
-      .filter(([id, n]) => n > 0 && tx.s.guilds?.guilds[id])
-      .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1));
-    const winner = ranked[0]?.[0] ?? null;
-    const project = tx.s.projects[p.id];
-    if (!project) continue;
-    project.winner = winner ?? "";
-    if (!winner || !site) continue;
-    project.winnerName = tx.s.guilds?.guilds[winner]?.name;
-    creditGuild(tx, SOURCE_ACCOUNT, winner, site.winnerTreasury, "worksite_prize", p.id);
-    emit(tx, "worksite_won", undefined, {
-      project: p.id,
-      guild: winner,
-      name: project.winnerName,
-      city: p.city,
-    });
-  }
-}
-
 export function openProjects(projects: Record<string, Project>, now: number): Project[] {
   return Object.values(projects).filter((p) => p.openedAt <= now && now < p.deadline);
 }
@@ -149,11 +83,5 @@ export function deliverToProject(
     projectId,
   );
   project.delivered[resource] = (project.delivered[resource] ?? 0) + quantity;
-  // A worksite of the guilds: the units count for the merchant's guild.
-  const guild = tx.s.guilds?.memberOf[playerId];
-  if (project.act !== undefined && guild) {
-    project.byGuild ??= {};
-    project.byGuild[guild] = (project.byGuild[guild] ?? 0) + quantity;
-  }
   emit(tx, "project_delivery", playerId, { project: projectId, resource, quantity });
 }

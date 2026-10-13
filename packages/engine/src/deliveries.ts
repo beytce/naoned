@@ -1,8 +1,10 @@
 import { isDraft, original } from "immer";
 import { marketCityBps } from "./acts.js";
 import { costValue } from "./buildings.js";
+import { familyAccount } from "./campaign.js";
 import { hourIn, hourWithin } from "./clock.js";
 import { contractsDoneToday, contractsFor } from "./contracts.js";
+import { corsairFamily, favourBps, tollOn, urgentReservedUntil } from "./decrees.js";
 import { draw, pickWeighted } from "./draw.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
 import { maxVehiclesFor, specialtyEffects } from "./specialties.js";
@@ -28,7 +30,6 @@ import {
 import { type Tx, addStock, emit, fail, nextId, removeStock, transfer } from "./tx.js";
 import { vwap } from "./valuation.js";
 import { netWorth } from "./valuation.js";
-import { activeWarOn, onArrival, sideOf, warForBand } from "./wars.js";
 
 /**
  * Deliveries by road: the land side of the sea. Each merchant gets a board of personal orders
@@ -594,16 +595,6 @@ export function ensureBoard(tx: Tx): void {
       const o = random(key);
       add(`w${i}`, "city", o.resource, o.city, key, dayStart, expiresAt);
     }
-    // A war makes the city ask for more of its good, every day it lasts.
-    const warOrders = Math.ceil((active * ctx.settings.wars.ordersPerActiveBps) / 10_000);
-    for (const war of Object.values(tx.s.wars ?? {})) {
-      if (war.outcome || war.endAt <= dayStart || war.startAt >= expiresAt) continue;
-      if (!resources.includes(war.resource)) continue;
-      for (let i = 0; i < warOrders; i++) {
-        const key = `board-war:${day}:${war.id}:${i}`;
-        add(`x${war.id}-${i}`, "city", war.resource, war.city, key, dayStart, expiresAt);
-      }
-    }
     for (let i = 0; i < cfg.urgentPerDay * active; i++) {
       const key = `board-urgent:${day}:${i}`;
       const opensAt = urgentOpening(ctx, dayStart, `${key}:at`);
@@ -682,6 +673,11 @@ export function dispatchDelivery(
     fail("order_done");
   if (tx.now < order.opensAt) fail("order_not_open");
   if (tx.now >= order.expiresAt) fail("order_expired");
+  // The favour of a city: its urgent orders are the members' for a while.
+  if (order.kind === "urgent") {
+    const until = urgentReservedUntil(ctx, state, playerId, order.city, order.opensAt, tx.now);
+    if (until !== null && tx.now < until) fail("order_reserved");
+  }
 
   const vehicle = tx.s.vehicles?.[vehicleId];
   if (!vehicle) fail("unknown_vehicle");
@@ -748,9 +744,21 @@ function arrive(tx: Tx, d: Delivery): void {
   transfer(tx, SOURCE_ACCOUNT, cashAccount(d.playerId), amount, "delivery", d.id);
   d.paid = amount;
   d.outcome = d.attack?.success ? "robbed_delivered" : "delivered";
-  // The concession's toll or premium; in a war, the units for the merchant's side.
-  onArrival(tx, d, left, amount);
   const city = d.route.split(":")[1] ?? "";
+  // The decrees of the week: the favour of a city pays its family's members more, the toll of
+  // the cities it held takes a share from the others.
+  const state = tx.s as WorldState;
+  const favour = favourBps(tx.ctx, state, d.playerId, city, tx.now);
+  if (favour > 0 && amount > 0n) {
+    const premium = applyBpsFloor(amount, favour);
+    transfer(tx, SOURCE_ACCOUNT, cashAccount(d.playerId), premium, "decree_favour", d.id);
+    d.paid = amount + premium;
+  }
+  const toll = tollOn(tx.ctx, state, d.playerId, city, tx.now);
+  if (toll && amount > 0n) {
+    const due = applyBpsFloor(amount, toll.bps);
+    transfer(tx, cashAccount(d.playerId), familyAccount(toll.family), due, "decree_toll", d.id);
+  }
   emit(tx, "delivery_arrived", d.playerId, {
     delivery: d.id,
     kind: d.kind,
@@ -843,10 +851,10 @@ export function postBand(tx: Tx, playerId: PlayerId, route: string, hours: numbe
   if (tx.now < player.joinedAt + cfg.openDay * DAY_MS) fail("bandits_locked");
   if (!routeExists(ctx, route)) fail("no_route");
   if (!cfg.hoursOptions.includes(hours)) fail("invalid_hours");
-  // In wartime only: on the road of a war, by one of its sides.
-  if (cfg.warOnly) {
-    const [region = "", city = ""] = route.split(":");
-    if (region === "" || !warForBand(tx.s as WorldState, city, playerId, tx.now)) fail("no_war");
+  // Under the letters of marque only: by the members of the family that imposed them.
+  if (cfg.decreeOnly) {
+    const family = corsairFamily(ctx, tx.s as WorldState, tx.now);
+    if (!family || tx.s.families?.memberOf[playerId] !== family) fail("no_decree");
   }
   const bands = entries(tx.s.bands as Record<string, BanditBand>);
   const mine = bands.filter((b) => b.playerId === playerId && !b.dispersed && tx.now < b.endAt);
@@ -893,18 +901,14 @@ function fairPrey(tx: Tx, b: BanditBand, d: Delivery, at: number): boolean {
   const cfg = tx.ctx.settings.bandits;
   if (b.playerId === null) return true;
   if (b.playerId === d.playerId) return false;
-  const members = tx.s.guilds?.memberOf ?? {};
-  const guild = members[d.playerId];
-  if (cfg.sameGuildImmune && guild && members[b.playerId] === guild) return false;
+  const members = tx.s.families?.memberOf ?? {};
+  const family = members[d.playerId];
+  if (cfg.sameFamilyImmune && family && members[b.playerId] === family) return false;
   const state = baseState(tx);
-  if (cfg.warOnly) {
-    // Only the other side's convoys of the war's good.
-    const city = d.route.split(":")[1] ?? "";
-    const war = activeWarOn(state, city, d.resource, at);
-    if (!war) return false;
-    const mine = sideOf(state, war, b.playerId);
-    const theirSide = sideOf(state, war, d.playerId);
-    if (!mine || !theirSide || mine === theirSide) return false;
+  if (cfg.decreeOnly) {
+    // Only while the letters of marque hold, by their family.
+    const corsairs = corsairFamily(tx.ctx, state, at);
+    if (!corsairs || members[b.playerId] !== corsairs) return false;
   }
   const theirs = netWorth(tx.ctx, state, d.playerId, at).total;
   const ours = netWorth(tx.ctx, state, b.playerId, at).total;
@@ -1097,7 +1101,7 @@ function closeBands(tx: Tx): void {
   }
   const { perDay, hours } = ctx.settings.bandits.npcBands;
   const today = dayIndex(ctx, tx.now);
-  if (perDay === 0 || ctx.settings.bandits.warOnly || (tx.s.npcBandsDay ?? -1) >= today) return;
+  if (perDay === 0 || ctx.settings.bandits.decreeOnly || (tx.s.npcBandsDay ?? -1) >= today) return;
   tx.s.npcBandsDay = today;
   const routes = allRoutes(ctx);
   if (routes.length === 0) return;

@@ -304,72 +304,119 @@ export const worldSettingsSchema = z.object({
       freshBonusBps: 0,
       contractRerollsPerDay: 0,
     }),
-  /** Concessions: a good in a city, held by a guild that levies a toll (none: no wars). */
-  concessions: z
-    .array(z.object({ code: z.string(), city: z.string(), resource: z.string() }))
-    .default([]),
-  /** Trade wars between guilds for the concessions. */
-  wars: z
-    .object({
-      hours: positive,
-      /** Paid from the treasury to declare a war (destroyed). */
-      stake: money,
-      /** The defender's units count this much more. */
-      defenderBonusBps: bps,
-      /** No new war on a concession for this long after one. */
-      protectHours: qty,
-      /** Units the Seigneurie stands for, per active merchant, when it defends. */
-      seigneurieUnitsPerActive: qty,
-      /** Paid on top to the holder's members for their deliveries of the good to the city. */
-      memberPremiumBps: bps,
-      /** Extra orders of the good to the city on the board, per active merchant and per day. */
-      ordersPerActiveBps: bps,
-    })
-    .default({
-      hours: 48,
-      stake: 0,
-      defenderBonusBps: 0,
-      protectHours: 0,
-      seigneurieUnitsPerActive: 0,
-      memberPremiumBps: 0,
-      ordersPerActiveBps: 0,
-    }),
   /**
-   * The merchants' guilds: founded with a stake, owned in carats bought at the treasury's value,
-   * run by votes weighted by carats (each member capped). No members allowed turns them off.
+   * The four great families: each merchant swears allegiance to one for the season. No family
+   * listed turns them off (and the campaign with them).
    */
-  guilds: z
+  families: z
     .object({
-      /** Days after joining before a merchant may found or join a guild. */
+      /** Days after joining before a merchant may choose a family. */
       openDay: qty,
-      /** Fee to found a guild (destroyed). */
-      foundingCost: money,
-      /** Least first investment, to found or to join. */
-      minStake: money,
-      /** Value of a carat when a guild is founded. */
-      caratValue: money.refine((v) => v > 0n),
-      maxMembers: qty,
-      /** Kept by the guild from what a leaver's carats are worth. */
-      exitFeeBps: bps.max(10_000),
-      /** Most weight of one member in a vote, as a share of all the carats. */
+      /** Each family and the land it starts from (a land of the campaign, never taken). */
+      list: z.array(z.object({ code: z.string(), seat: z.string() })),
+      /**
+       * Levy of a family's members, by its size: average active members per family ÷ its active
+       * members, kept between these bounds (a small family levies more).
+       */
+      levyMinBps: bps,
+      levyMaxBps: bps,
+    })
+    .default({ openDay: 0, list: [], levyMinBps: 10_000, levyMaxBps: 10_000 }),
+  /**
+   * The week's campaign in the Terraferma: lands held by militias and Milan, conquered with lances
+   * (levied for free, or engaged for ducats destroyed), worth glory every open hour.
+   */
+  campaign: z
+    .object({
+      /** The map: lands, their kind, their neighbours; a land may stand for a city of the game. */
+      lands: z.array(
+        z.object({
+          code: z.string(),
+          kind: z.string(),
+          neighbors: z.array(z.string()),
+          city: z.string().optional(),
+          /** Held by Milan when the week opens (by the militia otherwise). */
+          milan: z.boolean().default(false),
+          /** Where it is drawn, from 0 to 100. */
+          x: qty.max(100).default(50),
+          y: qty.max(100).default(50),
+        }),
+      ),
+      kinds: z.record(
+        z.object({
+          /** Glory per open hour to the family holding it. */
+          glory: qty,
+          /** The garrison counts this much in a battle (10 000 = as many as it is). */
+          defenseBps: positive,
+          /** Militia (or Milan) holding it when the week opens: base + per active merchant. */
+          militia: qty,
+          militiaPerActive: qty,
+        }),
+      ),
+      /** Hours of the day (Paris) when marches arrive, Milan rides and glory counts. */
+      openHours: z.object({ from: qty.max(24), to: qty.max(24) }),
+      /** Free lances: so many per open hour, so many waiting at most. */
+      levy: z.object({ perHour: qty, max: qty }),
+      /** Lances engaged for ducats each day: so many at each price, in this order. */
+      hire: z.array(z.object({ count: positive, price: money })),
+      /** A lance leaves this long after being levied or engaged. */
+      lanceHours: positive,
+      /** A march takes base + perHop per land beyond the first from the family's seat. */
+      march: z.object({ baseMinutes: positive, perHopMinutes: qty }),
+      /**
+       * Milan rides every so many open hours against the family leading in glory: base + per
+       * active merchant lances, more the further ahead it is (leadBonusBps at a lead of 100 %).
+       */
+      milan: z.object({
+        everyHours: positive,
+        warningMinutes: positive,
+        base: qty,
+        perActive: qty,
+        leadBonusBps: bps,
+      }),
+      /** Merit: a point per lance in a battle won, and per so many lances held an hour. */
+      garrisonLancesPerPoint: positive,
+    })
+    .optional(),
+  /**
+   * Laws and decrees: the family that wins the week imposes its programme for the next one.
+   * Each decree of the catalogue is set here; absent from `catalog`, it cannot be voted.
+   */
+  decrees: z
+    .object({
+      catalog: z.array(z.string()),
+      perWinner: qty,
+      /** Most weight of one member in the programme's vote (by merit), as a share. */
       maxVoteBps: bps.max(10_000),
-      voteHours: positive,
-      /** Highest toll a guild may vote on its concessions. */
-      maxTollBps: bps.max(10_000),
-      /** Highest bounty per unit a guild may vote for its suppliers in a war. */
-      maxBountyPerUnit: money,
+      /** The programme of a family that voted nothing (or not enough). */
+      defaults: z.array(z.object({ code: z.string(), target: z.string().optional() })),
+      /** Members' market tax and a larger share of the Dogana. */
+      fondaco: z.object({ taxBps: bps, quotaBps: bps }),
+      /** Added to the market tax of others' sales of a good, shared out among the members. */
+      gabelle: z.object({ extraTaxBps: bps }),
+      /** Members paid more for deliveries to a city; its urgent orders theirs for a while. */
+      faveur: z.object({ premiumBps: bps, reservedMinutes: qty }),
+      /** Paid by others' deliveries to the cities the family held, shared out among members. */
+      peage: z.object({ tollBps: bps }),
+      /** Members' port dues lighter, others' heavier. */
+      levant: z.object({ memberDiscountBps: bps.max(10_000), othersSurchargeBps: bps }),
+      /** No offer of a good above this share of its reference price. */
+      calmiere: z.object({ capBps: bps }),
+      /** Members' building upkeep lighter. */
+      franchise: z.object({ upkeepDiscountBps: bps.max(10_000) }),
     })
     .default({
-      openDay: 0,
-      foundingCost: 0,
-      minStake: 0,
-      caratValue: 100,
-      maxMembers: 0,
-      exitFeeBps: 0,
+      catalog: [],
+      perWinner: 0,
       maxVoteBps: 10_000,
-      voteHours: 24,
-      maxTollBps: 0,
-      maxBountyPerUnit: 0,
+      defaults: [],
+      fondaco: { taxBps: 0, quotaBps: 0 },
+      gabelle: { extraTaxBps: 0 },
+      faveur: { premiumBps: 0, reservedMinutes: 0 },
+      peage: { tollBps: 0 },
+      levant: { memberDiscountBps: 0, othersSurchargeBps: 0 },
+      calmiere: { capBps: 10_000 },
+      franchise: { upkeepDiscountBps: 0 },
     }),
   /**
    * Offers between players must stay within this share of the reference price: a merchant
@@ -491,9 +538,12 @@ export const worldSettingsSchema = z.object({
       newcomerDays: qty,
       minTargetWorthBps: bps,
       cooldownHours: qty,
-      sameGuildImmune: z.boolean().default(true),
-      /** Bands only on the roads of a war, by its sides, against the other side's convoys. */
-      warOnly: z.boolean().default(false),
+      sameFamilyImmune: z.boolean().default(true),
+      /**
+       * Bands only under the decree of the letters of marque: by the members of the family that
+       * imposed it, against the convoys of the others.
+       */
+      decreeOnly: z.boolean().default(false),
       /** Days after joining before a merchant may post a band. */
       openDay: qty,
       /** Bands of the computer, so that a small world has some risk. */
@@ -556,7 +606,7 @@ export const worldSettingsSchema = z.object({
     .default({ unlockLevels: 5, options: {} }),
   /**
    * The season in acts: from its week (0 = the first), each act may draw a market modifier among
-   * its variants (like an event, for the whole act) and open a worksite for the guilds.
+   * its variants (like an event, for the whole act) and make Milan stronger in the campaign.
    */
   acts: z
     .array(
@@ -564,16 +614,8 @@ export const worldSettingsSchema = z.object({
         code: z.string(),
         week: qty,
         variants: z.array(eventDef).default([]),
-        worksite: z
-          .object({
-            city: z.string(),
-            /** Needs per active player when the act opens. */
-            needsPerPlayer: z.record(qty),
-            premiumBps: bps,
-            /** Paid into the treasury of the guild that delivered most. */
-            winnerTreasury: money.default(0),
-          })
-          .optional(),
+        /** Milan's garrisons and rides during the act (10 000 = as usual). */
+        milanBps: bps.default(10_000),
       }),
     )
     .default([]),

@@ -2,8 +2,10 @@ import { type Draft, enableMapSet, produce } from "immer";
 import { claimDaily, sellToCriee, trackDaily } from "./activity.js";
 import { grantStartingBales, openBale } from "./bales.js";
 import { build, grantBuilding, upgrade } from "./buildings.js";
+import { collectLevy, hireLances, joinMarch, sendMarch } from "./campaign.js";
 import { sellToCity } from "./cities.js";
 import { fulfillContract, rerollContract } from "./contracts.js";
+import { voteProgramme } from "./decrees.js";
 import {
   buyVehicle,
   collectBooty,
@@ -15,16 +17,7 @@ import {
 } from "./deliveries.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { collectExpedition, launchExpedition } from "./expeditions.js";
-import {
-  type ProposalInput,
-  foundGuild,
-  investGuild,
-  joinGuild,
-  leaveGuild,
-  leaveGuilds,
-  propose,
-  vote,
-} from "./guilds.js";
+import { joinFamily, leaveFamily } from "./families.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { claimMission, trackMissions } from "./missions.js";
 import { collectRaid, commissionPrivateers } from "./privateers.js";
@@ -35,10 +28,10 @@ import { chooseSpecialty } from "./specialties.js";
 import {
   type Building,
   DAY_MS,
+  type DecreePick,
   type PlayerId,
   SINK_ACCOUNT,
   SOURCE_ACCOUNT,
-  type WarSide,
   type WorldContext,
   type WorldState,
   cashAccount,
@@ -57,7 +50,6 @@ import {
   removeStock,
   transfer,
 } from "./tx.js";
-import { enlist } from "./wars.js";
 import { startWeek } from "./weekly.js";
 
 enableMapSet();
@@ -105,13 +97,12 @@ export type Command =
   | { type: "claimDaily"; playerId: PlayerId; taskId: string }
   | { type: "openBale"; playerId: PlayerId }
   | { type: "rerollContract"; playerId: PlayerId; contractId: string }
-  | { type: "foundGuild"; playerId: PlayerId; name: string; emblem: string; stake: number }
-  | { type: "joinGuild"; playerId: PlayerId; guildId: string; stake: number }
-  | { type: "investGuild"; playerId: PlayerId; amount: number }
-  | { type: "leaveGuild"; playerId: PlayerId }
-  | { type: "propose"; playerId: PlayerId; proposal: ProposalInput }
-  | { type: "vote"; playerId: PlayerId; proposalId: string; yes: boolean }
-  | { type: "enlist"; playerId: PlayerId; warId: string; side: WarSide }
+  | { type: "joinFamily"; playerId: PlayerId; family: string }
+  | { type: "collectLevy"; playerId: PlayerId }
+  | { type: "hireLances"; playerId: PlayerId; count: number }
+  | { type: "sendMarch"; playerId: PlayerId; land: string; lances: number }
+  | { type: "joinMarch"; playerId: PlayerId; marchId: string; lances: number }
+  | { type: "voteProgramme"; playerId: PlayerId; picks: DecreePick[] }
   /** From the server: the Pass Négociant until this time (a later date never shortens it). */
   | { type: "grantPass"; playerId: PlayerId; until: number }
   | { type: "collectExpedition"; playerId: PlayerId; expeditionId: string }
@@ -213,7 +204,11 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
   if (tx.s.weekly) delete tx.s.weekly.start[playerId];
   if (tx.s.missions) delete tx.s.missions[playerId];
   if (tx.s.bales) delete tx.s.bales[playerId];
-  leaveGuilds(tx, playerId);
+  leaveFamily(tx, playerId);
+  if (tx.s.campaign) {
+    delete tx.s.campaign.players[playerId];
+    delete tx.s.campaign.ballots[playerId];
+  }
   resets[playerId] = used + 1;
   emit(tx, "player_reset", playerId);
 }
@@ -312,26 +307,23 @@ function apply(tx: Tx, cmd: Command): void {
     case "rerollContract":
       rerollContract(tx, cmd.playerId, cmd.contractId);
       break;
-    case "foundGuild":
-      foundGuild(tx, cmd.playerId, cmd.name, cmd.emblem, cmd.stake);
+    case "joinFamily":
+      joinFamily(tx, cmd.playerId, cmd.family);
       break;
-    case "joinGuild":
-      joinGuild(tx, cmd.playerId, cmd.guildId, cmd.stake);
+    case "collectLevy":
+      collectLevy(tx, cmd.playerId);
       break;
-    case "investGuild":
-      investGuild(tx, cmd.playerId, cmd.amount);
+    case "hireLances":
+      hireLances(tx, cmd.playerId, cmd.count);
       break;
-    case "leaveGuild":
-      leaveGuild(tx, cmd.playerId);
+    case "sendMarch":
+      sendMarch(tx, cmd.playerId, cmd.land, cmd.lances);
       break;
-    case "propose":
-      propose(tx, cmd.playerId, cmd.proposal);
+    case "joinMarch":
+      joinMarch(tx, cmd.playerId, cmd.marchId, cmd.lances);
       break;
-    case "vote":
-      vote(tx, cmd.playerId, cmd.proposalId, cmd.yes);
-      break;
-    case "enlist":
-      enlist(tx, cmd.playerId, cmd.warId, cmd.side);
+    case "voteProgramme":
+      voteProgramme(tx, cmd.playerId, cmd.picks);
       break;
     case "collectExpedition":
       collectExpedition(tx, cmd.playerId, cmd.expeditionId);

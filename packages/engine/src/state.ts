@@ -110,14 +110,6 @@ export interface Project {
   needs: Record<ResourceCode, number>;
   delivered: Record<ResourceCode, number>;
   unitPrice: Record<ResourceCode, Deniers>;
-  /** The act whose worksite this is (a worksite of the guilds). */
-  act?: number;
-  /** Units delivered by the members of each guild. */
-  byGuild?: Record<string, number>;
-  /** The guild that delivered most, once the act is over. */
-  winner?: string | null;
-  /** Its name, kept for the monument (the guild may be dissolved since). */
-  winnerName?: string;
 }
 
 export interface Expedition {
@@ -381,12 +373,17 @@ export interface WorldState {
   resets?: Record<PlayerId, number>;
   /** Weekly ranking: current week and each player's net worth when it started (or on joining). */
   weekly?: { week: number; start: Record<PlayerId, Deniers> };
-  /** The merchants' guilds, their members and their votes. */
-  guilds?: GuildsState;
-  /** Who holds each concession (absent: the Seigneurie). */
-  concessions?: Record<string, Concession>;
-  /** Trade wars, under way and decided. */
-  wars?: Record<string, EngineWar>;
+  /** The four great families: who swore allegiance to which. */
+  families?: FamiliesState;
+  /** The week's campaign in the Terraferma, and the decrees in force. */
+  campaign?: CampaignState;
+  /**
+   * The merchants' guilds of states saved before the families came back: their treasuries are
+   * paid back by carats at the next tick, then they are gone (with concessions and wars).
+   */
+  guilds?: LegacyGuildsState;
+  concessions?: unknown;
+  wars?: unknown;
   /** Set once the final ranking has been published (event `season_closed`). */
   seasonClosed?: boolean;
 }
@@ -409,84 +406,115 @@ export interface BaleState {
   last?: { seq: number; at: number; cards: BaleCard[] };
 }
 
-export interface GuildMember {
-  carats: number;
-  since: number;
+export interface LegacyGuildsState {
+  guilds: Record<string, { members: Record<PlayerId, { carats: number }>; caratsIssued: number }>;
 }
 
-export interface Guild {
-  id: string;
-  name: string;
-  emblem: string;
-  founder: PlayerId;
-  foundedAt: number;
-  members: Record<PlayerId, GuildMember>;
-  /** All the carats held by the members. */
-  caratsIssued: number;
-  /** Newcomers may join without a vote. */
-  open: boolean;
-  /** Toll on others' deliveries to the guild's concessions (voted). */
-  tollBps: number;
-  /** Share of each income paid out at once to the members (voted). */
-  dividendBps: number;
-  /** Paid per unit to the merchants who supply the guild in a war (voted). */
-  bountyPerUnit: bigint;
-}
-
-export interface GuildProposal {
-  id: string;
-  guildId: string;
-  by: PlayerId;
-  kind: "toll" | "dividend" | "bounty" | "open" | "exclude" | "war";
-  value: number;
-  /** The member to exclude, or the concession to make war on. */
-  target?: string;
-  openedAt: number;
-  closesAt: number;
-  closedAt?: number;
-  votes: Record<PlayerId, boolean>;
-  status: "open" | "passed" | "rejected";
-}
-
-export interface Concession {
-  /** The guild holding it (null: the Seigneurie). */
-  holder: string | null;
-  since: number;
-  /** No war may be declared on it before then. */
-  protectedUntil: number;
-}
-
-export type WarSide = "attacker" | "defender";
-
-export interface EngineWar {
-  id: string;
-  concession: string;
-  city: string;
-  resource: string;
-  attacker: string;
-  attackerName: string;
-  /** The holding guild (null: the Seigneurie, which defends with a threshold). */
-  defender: string | null;
-  defenderName: string | null;
-  startAt: number;
-  endAt: number;
-  /** Units the Seigneurie stands for when it defends. */
-  threshold: number;
-  score: { attacker: number; defender: number };
-  /** Units delivered by each merchant for their side. */
-  supplied: Record<PlayerId, number>;
-  /** Merchants of no guild supplying a side. */
-  enlisted: Record<PlayerId, WarSide>;
-  outcome?: WarSide;
-}
-
-export interface GuildsState {
-  guilds: Record<string, Guild>;
-  /** The guild of each member. */
+export interface FamiliesState {
+  /** The family of each merchant who chose one (for the season). */
   memberOf: Record<PlayerId, string>;
-  proposals: Record<string, GuildProposal>;
-  /** The treasuries were shared out at the end of the season. */
-  paidOut?: boolean;
+  /** When they chose it (their levy runs from then). */
+  since: Record<PlayerId, number>;
+}
+
+/** Lances of one merchant, all leaving at the same time. */
+export interface LanceStack {
+  playerId: PlayerId;
+  count: number;
+  expiresAt: number;
+}
+
+/** "milan", a family's code, or null for the militia. */
+export type LandHolder = string | null;
+
+export interface CampaignLand {
+  holder: LandHolder;
+  /** Lances of the militia or of Milan (no merchant behind them). */
+  npc: number;
+  /** Lances of the holding family's merchants, in garrison. */
+  stacks: LanceStack[];
+  /** Held since then. */
+  since: number;
+}
+
+/** Lances on their way to a land: to reinforce it if the family holds it, to attack it otherwise. */
+export interface March {
+  id: string;
+  /** A family's code, or "milan". */
+  family: string;
+  /** Who opened it (null for Milan). */
+  by: PlayerId | null;
+  target: string;
+  startAt: number;
+  arriveAt: number;
+  stacks: LanceStack[];
+  npc: number;
+}
+
+export interface DecreePick {
+  code: string;
+  /** A good (gabelle, calmiere) or a city (faveur). */
+  target?: string;
+}
+
+/** The programme of the family that won a week, in force the next one. */
+export interface DecreesInForce {
+  week: number;
+  family: string;
+  items: DecreePick[];
+  /** Each member's merit of the winning week: their share of the gabelle and the toll. */
+  shares: Record<PlayerId, number>;
+  /** Cities the family held at the end of the winning week (the toll's cities). */
+  cities: string[];
+}
+
+export interface CampaignPlayer {
+  /** Lances waiting at the seat. */
+  reserve: LanceStack[];
+  /** Free lances accrue from then (open hours only), on top of `levyStored`. */
+  levySince: number;
+  levyStored: number;
+  /** Lances engaged for ducats on `hireDay`. */
+  hireDay: number;
+  hired: number;
+}
+
+export interface CampaignResult {
+  week: number;
+  /** Null when no family had any glory. */
+  winner: string | null;
+  /** Glory points of each family. */
+  glory: Record<string, number>;
+  /** The decrees it imposed for the next week (none for the last week of the season). */
+  decrees: DecreePick[];
+  /** Lands each family held at the end. */
+  lands: Record<string, LandHolder>;
+  /** The best merit of each family (its captain). */
+  captains: Record<string, PlayerId>;
+  final: boolean;
+}
+
+export interface CampaignState {
+  week: number;
+  /** Glory and merit counted up to then. */
+  accruedAt: number;
+  lands: Record<string, CampaignLand>;
+  /** Glory of each family this week, in point-milliseconds (value × open time held). */
+  glory: Record<string, number>;
+  /** Merit this week: lances in battles won, and lance-milliseconds of garrison. */
+  merit: Record<PlayerId, { battle: number; garrisonMs: number }>;
+  marches: Record<string, March>;
+  players: Record<PlayerId, CampaignPlayer>;
+  /** Each member's vote for the programme of their family. */
+  ballots: Record<PlayerId, DecreePick[]>;
+  /** Milan's next ride. */
+  nextMilanAt: number;
+  /** Last day Milan's fortresses were filled up again. */
+  regenDay: number;
+  history: CampaignResult[];
+  decrees?: DecreesInForce;
+  /** The last week of the season is closed. */
+  closed?: boolean;
 }
 
 export const SOURCE_ACCOUNT: AccountId = "system:source";

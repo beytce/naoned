@@ -3,12 +3,10 @@ import {
   type WorldSettingsInput,
   actAt,
   deliveryOrdersFor,
-  guildAccount,
-  guildOf,
   orderUnitPrice,
   seasonActs,
 } from "../src/index.js";
-import { deliverySettings } from "./fixture.js";
+import { campaignSettings, deliverySettings } from "./fixture.js";
 import { DAY, HOUR, T0, World, makeContext } from "./helpers.js";
 
 const WEEK = 7 * DAY;
@@ -29,17 +27,7 @@ const acts: WorldSettingsInput["acts"] = [
       },
     ],
   },
-  {
-    code: "worksite",
-    week: 2,
-    variants: [],
-    worksite: {
-      city: "venezia",
-      needsPerPlayer: { bricks: 50 },
-      premiumBps: 1_500,
-      winnerTreasury: 30_000,
-    },
-  },
+  { code: "lombardy", week: 2, variants: [], milanBps: 15_000 },
   {
     code: "fair",
     week: 3,
@@ -55,24 +43,11 @@ const acts: WorldSettingsInput["acts"] = [
   },
 ];
 
-const guilds: WorldSettingsInput["guilds"] = {
-  openDay: 0,
-  foundingCost: 0,
-  minStake: 1_000,
-  caratValue: 100,
-  maxMembers: 5,
-  exitFeeBps: 0,
-  maxVoteBps: 10_000,
-  voteHours: 24,
-  maxTollBps: 800,
-  maxBountyPerUnit: 50,
-};
-
-// Only the act's worksite: no weekly city projects.
+// No weekly city projects.
 const projects = { intervalDays: 7, durationDays: 7, needsPerPlayer: {}, premiumBps: 0 };
 
 const ctx = (more: Partial<WorldSettingsInput> = {}) =>
-  makeContext({ ...deliverySettings, acts, guilds, projects, ...more });
+  makeContext({ ...deliverySettings, ...campaignSettings, acts, projects, ...more });
 
 function world(more: Partial<WorldSettingsInput> = {}) {
   const w = new World(ctx(more));
@@ -81,8 +56,6 @@ function world(more: Partial<WorldSettingsInput> = {}) {
     w.do({ type: "join", playerId: id, region: "terraferma" });
     w.give(id, "bricks", 500).give(id, "bread", 200);
   }
-  w.do({ type: "foundGuild", playerId: "a", name: "Leone", emblem: "lion", stake: 1_000 });
-  w.do({ type: "foundGuild", playerId: "b", name: "Stella", emblem: "star", stake: 1_000 });
   return w;
 }
 
@@ -98,7 +71,7 @@ describe("the season in acts", () => {
     expect(seasonActs(c).map((a) => [a.code, a.index])).toEqual([
       ["installation", 0],
       ["crisis", 1],
-      ["worksite", 2],
+      ["lombardy", 2],
       ["fair", 3],
     ]);
     expect(actAt(c, c.startAt + WEEK)?.variant?.code).toBe("famine");
@@ -139,49 +112,15 @@ describe("the season in acts", () => {
     }
   });
 
-  it("opens the great worksite in its act only, for the guilds to compete", () => {
+  it("makes Milan stronger in the campaign during its act", () => {
     const w = world();
-    w.at(WEEK + 10 * HOUR).do({ type: "tick" });
-    expect(Object.keys(w.state.projects)).toHaveLength(0);
-    // Both merchants play in the third week: needs follow the active players.
-    w.at(2 * WEEK + 9 * HOUR);
-    for (const id of ["a", "b"]) {
-      w.do({ type: "collect", playerId: id, buildingId: w.buildingsOf(id)[0]?.id ?? "" });
-    }
-    w.at(2 * WEEK + 10 * HOUR).do({ type: "tick" });
-    const [project] = Object.values(w.state.projects);
-    expect(project?.city).toBe("venezia");
-    expect(project?.needs.bricks).toBe(100);
-    expect(project?.deadline).toBe(w.ctx.startAt + 3 * WEEK);
-    const id = project?.id ?? "";
-    const cash = w.cash("a");
-    w.do({
-      type: "deliverToProject",
-      playerId: "a",
-      projectId: id,
-      resource: "bricks",
-      quantity: 30,
-    });
-    w.do({
-      type: "deliverToProject",
-      playerId: "b",
-      projectId: id,
-      resource: "bricks",
-      quantity: 10,
-    });
-    // Paid at the reference (220) plus 15 %.
-    expect(w.cash("a") - cash).toBe(30n * 253n);
-    const leone = guildOf(w.state, "a")?.id ?? "";
-    const stella = guildOf(w.state, "b")?.id ?? "";
-    expect(w.state.projects[id]?.byGuild).toEqual({ [leone]: 30, [stella]: 10 });
-    // At the close of the act, the guild that delivered most wins: the prize in its treasury.
-    const before = w.state.accounts[guildAccount(leone)] ?? 0n;
-    w.at(3 * WEEK + HOUR).do({ type: "tick" });
-    expect(w.state.projects[id]?.winner).toBe(leone);
-    expect(w.state.projects[id]?.winnerName).toBe("Leone");
-    expect((w.state.accounts[guildAccount(leone)] ?? 0n) - before).toBe(30_000n);
-    // No second worksite in the next act.
-    w.at(4 * WEEK).do({ type: "tick" });
-    expect(Object.keys(w.state.projects)).toHaveLength(1);
+    w.do({ type: "tick" });
+    // Fortress: 6 lances and 2 per active merchant.
+    expect(w.state.campaign?.lands.rocca?.npc).toBe(10);
+    // The third week opens the map again (one merchant still active), Milan half as strong again.
+    w.at(2 * WEEK - DAY);
+    w.do({ type: "collect", playerId: "a", buildingId: w.buildingsOf("a")[0]?.id ?? "" });
+    w.at(2 * WEEK + HOUR).do({ type: "tick" });
+    expect(w.state.campaign?.lands.rocca?.npc).toBe(12);
   });
 });

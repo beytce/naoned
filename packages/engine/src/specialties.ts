@@ -1,3 +1,4 @@
+import { levantDuesBps } from "./decrees.js";
 import { applyBpsFloor } from "./money.js";
 import type { Deniers } from "./money.js";
 import type { WorldSettings } from "./settings.js";
@@ -62,8 +63,11 @@ export function portDuesFor(
   state: WorldState,
   playerId: PlayerId,
   charter: Deniers,
+  at: number,
 ): Deniers {
-  const dues = applyBpsFloor(charter, ctx.settings.ships.portDuesBps);
+  const base = applyBpsFloor(charter, ctx.settings.ships.portDuesBps);
+  // The Levant's tariff: lighter for the family that imposed it, heavier for the others.
+  const dues = applyBpsFloor(base, levantDuesBps(ctx, state, playerId, at));
   const discount = specialtyEffects(ctx, state, playerId).portDuesDiscountBps;
   return discount > 0 ? applyBpsFloor(dues, 10_000 - discount) : dues;
 }
