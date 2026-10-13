@@ -1,13 +1,19 @@
-import { useCallback, useEffect, useState } from "react";
+import { type ReactNode, Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "../api.js";
-import { FamilyCrest, familyHex } from "../art/familyCrest.js";
+import { FAMILY_LOOK, FamilyCrest, MILITIA_HEX, familyHex } from "../art/familyCrest.js";
 import { P } from "../art/palette.js";
+import { VenetoTerrain } from "../art/veneto.js";
+import { territories } from "../campaign3d/territory.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Qty, Sheet, Slab, Stat, clock } from "../ui.js";
+import { CarrierDrag } from "./Cargo.js";
 import type { GameProps } from "./Game.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
+import { scenePhase, use3d } from "./scene3d.js";
 import { store } from "./store.js";
+
+const Terraferma3D = lazy(() => import("../campaign3d/Terraferma3D.js"));
 import type {
   DecreePick,
   DecreeRules,
@@ -158,129 +164,305 @@ function Standings({ f }: { f: FamiliesView }) {
   );
 }
 
-const RADIUS: Record<string, number> = { seat: 6, fortress: 6, city: 5.5, bourg: 5, village: 4.4 };
+/** Each holder's colour on the map: the four families, Milan, the militia (""). */
+export function holderColors(): Record<string, string> {
+  return {
+    ...Object.fromEntries(Object.entries(FAMILY_LOOK).map(([k, v]) => [k, v.hex])),
+    "": MILITIA_HEX,
+  };
+}
 
-/** The Terraferma: lands by their holder's colour, garrisons, marches on their way. */
+/** Where a column comes from: the nearest land of its family next to its target, else its seat. */
+export function marchOrigin(f: FamiliesView, m: MarchView): string | null {
+  const target = f.lands.find((l) => l.code === m.target);
+  if (!target) return null;
+  const near = f.lands
+    .filter((l) => l.holder === m.family && target.neighbors.includes(l.code))
+    .sort(
+      (a, b) =>
+        Math.hypot(a.x - target.x, a.y - target.y) - Math.hypot(b.x - target.x, b.y - target.y),
+    )[0];
+  if (near) return near.code;
+  return f.lands.find((l) => l.seat === m.family)?.code ?? null;
+}
+
+/** What a drop of the seat's lances on a land would do (the bubble of the drag). */
+function dropInfo(f: FamiliesView, code: string) {
+  const land = f.lands.find((l) => l.code === code);
+  if (!land) return { ok: false, title: "", sub: "" };
+  const name = landName(code);
+  if (land.seat) return { ok: false, title: name, sub: t().land.seat(familyName(land.seat)) };
+  if (!land.open) return { ok: false, title: name, sub: t().land.notAdjacent };
+  const ours = land.holder !== null && land.holder === f.mine;
+  const needed = Math.ceil((land.garrison * land.defenseBps) / 10_000) + 1;
+  return {
+    ok: true,
+    title: ours ? t().drag.reinforce(name) : t().drag.attack(name),
+    sub: ours
+      ? t().drag.reinforceSub(land.minutes ?? 0, land.garrison)
+      : t().drag.attackSub(land.minutes ?? 0, needed, f.me?.reserve ?? 0),
+  };
+}
+
+/** The lances of the seat, as a token to drag. */
+function LancesToken({ n }: { n: number }) {
+  return (
+    <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-night/85 ring-[3px] ring-gold shadow-[0_0_18px_rgb(var(--gold)/0.6)]">
+      <span className="text-xl" aria-hidden="true">
+        ⚔
+      </span>
+      <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gold px-1.5 font-mono text-[9px] font-bold text-night">
+        {n}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * The Terraferma as a map: each land's ground in its holder's colour (the drawn map of the roads
+ * underneath, Lombardy to the west), borders where holders meet, the lands and their garrisons,
+ * the marches. On the 3D model when the device can draw it.
+ */
 function CampaignMap({
   f,
+  props,
   onPick,
 }: {
   f: FamiliesView;
-  onPick: (land: LandView) => void;
+  props: GameProps;
+  onPick: (land: string) => void;
 }) {
-  const at = new Map(f.lands.map((l) => [l.code, l]));
-  const edges: [LandView, LandView][] = [];
-  for (const l of f.lands) {
-    for (const n of l.neighbors) {
-      const o = at.get(n);
-      if (o && l.code < o.code) edges.push([l, o]);
-    }
+  const colors = holderColors();
+  const seat = f.lands.find((l) => l.seat === f.mine)?.code ?? null;
+  const reserve = f.me?.reserve ?? 0;
+  const carrier =
+    f.mine && seat && reserve > 0 && !f.closed
+      ? {
+          from: seat,
+          token: <LancesToken n={reserve} />,
+          info: (code: string) => dropInfo(f, code),
+          onDrop: (code: string) => onPick(code),
+          onTap: () => {
+            if ((f.me?.levy ?? 0) > 0) void props.act({ type: "collectLevy" });
+          },
+        }
+      : null;
+  const marches = f.marches.map((m) => {
+    const target = f.lands.find((l) => l.code === m.target);
+    return {
+      ...m,
+      from: marchOrigin(f, m),
+      hostile: m.family !== f.mine && target?.holder === f.mine && f.mine !== null,
+      label: `⚔ ${m.lances} · ${clock(m.arriveAt - props.now)}`,
+    };
+  });
+  if (use3d) {
+    return (
+      <Suspense
+        fallback={<div className="h-[62svh] min-h-[400px] w-full animate-pulse bg-night-3" />}
+      >
+        <Terraferma3D
+          phase={scenePhase(props.now)}
+          still={
+            typeof window !== "undefined" &&
+            window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
+          }
+          clockOffset={props.now - Date.now()}
+          className="h-[62svh] min-h-[400px]"
+          title={t().map}
+          colors={colors}
+          focus={seat}
+          lands={f.lands.map((l) => ({
+            ...l,
+            name: landName(l.code),
+            city: l.city ?? null,
+            seat: l.seat ?? null,
+            threatened: marches.some((m) => m.target === l.code && m.hostile),
+          }))}
+          marches={marches}
+          onLand={onPick}
+          carrier={carrier}
+        >
+          {carrier && (
+            <p className="pointer-events-none absolute inset-x-3 bottom-3 z-20 text-center text-[11px] text-gold [text-shadow:0_1px_2px_rgb(15_27_30)]">
+              {t().drag.hint}
+            </p>
+          )}
+        </Terraferma3D>
+      </Suspense>
+    );
   }
-  const incoming = new Map<string, MarchView[]>();
-  for (const m of f.marches) incoming.set(m.target, [...(incoming.get(m.target) ?? []), m]);
+  return <DrawnMap f={f} colors={colors} marches={marches} carrier={carrier} onPick={onPick} />;
+}
+
+/** The drawn map (no 3D): the Veneto of the roads, the territories over it. */
+function DrawnMap({
+  f,
+  colors,
+  marches,
+  carrier,
+  onPick,
+}: {
+  f: FamiliesView;
+  colors: Record<string, string>;
+  marches: (MarchView & { from: string | null; hostile: boolean; label: string })[];
+  carrier: {
+    from: string;
+    token: ReactNode;
+    info: (code: string) => { ok: boolean; title: string; sub: string };
+    onDrop: (code: string) => void;
+    onTap: () => void;
+  } | null;
+  onPick: (land: string) => void;
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  const svg = useRef<SVGSVGElement>(null);
+  const xs = f.lands.map((l) => l.x);
+  const ys = f.lands.map((l) => l.y);
+  const pad = 40;
+  const vb = {
+    x: Math.min(...xs) - pad,
+    y: Math.min(...ys) - pad,
+    w: Math.max(...xs) - Math.min(...xs) + 2 * pad,
+    h: Math.max(...ys) - Math.min(...ys) + 2 * pad,
+  };
+  const t0 = territories(
+    f.lands.map((l) => ({ code: l.code, x: l.x, y: l.y, holder: l.holder })),
+    46,
+  );
+  const at = (x: number, y: number) => {
+    const r = svg.current?.getBoundingClientRect();
+    const b = box.current?.getBoundingClientRect();
+    if (!r || !b) return null;
+    return {
+      x: r.left - b.left + ((x - vb.x) / vb.w) * r.width,
+      y: r.top - b.top + ((y - vb.y) / vb.h) * r.height,
+    };
+  };
+  const origin = () => {
+    const l = f.lands.find((x) => x.code === carrier?.from);
+    return l ? at(l.x, l.y) : null;
+  };
+  const spots = () =>
+    f.lands.flatMap((l) => {
+      const p = at(l.x, l.y);
+      return p ? [{ code: l.code, ...p }] : [];
+    });
+  const byCode = new Map(f.lands.map((l) => [l.code, l]));
   return (
-    <svg viewBox="0 0 100 100" className="w-full select-none" role="img" aria-label={t().map}>
-      <rect x="0" y="0" width="100" height="100" rx="4" fill={P.night} />
-      {edges.map(([a, b]) => (
-        <line
-          key={`${a.code}-${b.code}`}
-          x1={a.x}
-          y1={a.y}
-          x2={b.x}
-          y2={b.y}
-          stroke={P.line}
-          strokeWidth="0.6"
-          strokeDasharray="1.2 1"
-        />
-      ))}
-      {f.lands.map((l) => {
-        const r = RADIUS[l.kind] ?? 4.5;
-        const marches = incoming.get(l.code) ?? [];
-        // Red: another family (or Milan) marches on it; green-blue: the merchant's family does.
-        const enemy = marches.some((m) => m.family !== l.holder && m.family !== f.mine);
-        const ours = marches.some((m) => f.mine !== null && m.family === f.mine);
-        return (
-          // biome-ignore lint/a11y/useKeyWithClickEvents: the lands within reach are listed below the map
-          <g
-            key={l.code}
-            transform={`translate(${l.x} ${l.y})`}
-            onClick={() => onPick(l)}
-            className="cursor-pointer"
-          >
-            {enemy && (
-              <circle r={r + 2.2} fill="none" stroke={P.vermilion} strokeWidth="0.7">
-                <animate
-                  attributeName="r"
-                  values={`${r + 1};${r + 3};${r + 1}`}
-                  dur="1.6s"
-                  repeatCount="indefinite"
+    <div ref={box} className="relative">
+      <svg
+        ref={svg}
+        viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
+        className="block w-full select-none"
+        role="img"
+        aria-label={t().map}
+      >
+        <rect x={vb.x} y={vb.y} width={vb.w} height={vb.h} fill="#1B2E26" />
+        <VenetoTerrain />
+        {f.lands.map((l) => {
+          const cell = t0.cells[l.code] ?? [];
+          return (
+            <polygon
+              key={`cell-${l.code}`}
+              points={cell.map(([x, y]) => `${x},${y}`).join(" ")}
+              fill={colors[l.holder ?? ""] ?? MILITIA_HEX}
+              fillOpacity={l.holder ? 0.42 : 0.14}
+            />
+          );
+        })}
+        {t0.borders
+          .filter((e) => e.holder)
+          .map((e) => (
+            <line
+              key={`${e.code}-${e.from[0]}-${e.from[1]}`}
+              x1={e.from[0]}
+              y1={e.from[1]}
+              x2={e.to[0]}
+              y2={e.to[1]}
+              stroke={colors[e.holder ?? ""] ?? MILITIA_HEX}
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            />
+          ))}
+        {marches.map((m) => {
+          const a = m.from ? byCode.get(m.from) : undefined;
+          const b = byCode.get(m.target);
+          if (!a || !b) return null;
+          return (
+            <line
+              key={m.id}
+              x1={a.x}
+              y1={a.y}
+              x2={b.x}
+              y2={b.y}
+              stroke={m.hostile ? P.vermilion : (colors[m.family] ?? P.cream)}
+              strokeWidth="2.5"
+              strokeDasharray="3 4"
+              className="map-march"
+            />
+          );
+        })}
+        {f.lands.map((l) => {
+          const r = l.seat || l.kind === "fortress" ? 9 : l.city ? 8 : 6.5;
+          return (
+            // biome-ignore lint/a11y/useKeyWithClickEvents: the lands within reach are listed below the map
+            <g
+              key={l.code}
+              transform={`translate(${l.x} ${l.y})`}
+              onClick={() => onPick(l.code)}
+              className="cursor-pointer"
+            >
+              {l.open && (
+                <circle
+                  r={r + 3}
+                  fill="none"
+                  stroke={P.gold}
+                  strokeWidth="1.2"
+                  strokeDasharray="2 2"
                 />
-              </circle>
-            )}
-            {ours && !enemy && <circle r={r + 2} fill="none" stroke={P.lagoon} strokeWidth="0.7" />}
-            {l.open && !enemy && !ours && (
-              <circle
-                r={r + 1.3}
-                fill="none"
-                stroke={P.gold}
-                strokeWidth="0.5"
-                strokeDasharray="1 0.8"
-              />
-            )}
-            {l.kind === "fortress" || l.kind === "seat" ? (
-              <rect
-                x={-r}
-                y={-r}
-                width={2 * r}
-                height={2 * r}
-                rx="1.2"
-                fill={familyHex(l.holder)}
-                stroke={l.mine > 0 ? P.gold : P.night}
-                strokeWidth={l.mine > 0 ? 0.8 : 0.5}
-              />
-            ) : (
+              )}
               <circle
                 r={r}
-                fill={familyHex(l.holder)}
+                fill={colors[l.holder ?? ""] ?? MILITIA_HEX}
                 stroke={l.mine > 0 ? P.gold : P.night}
-                strokeWidth={l.mine > 0 ? 0.8 : 0.5}
+                strokeWidth={l.mine > 0 ? 2 : 1.4}
               />
-            )}
-            <text
-              y="1.2"
-              textAnchor="middle"
-              fontSize="3.4"
-              fontWeight="800"
-              fill={P.cream}
-              style={{ paintOrder: "stroke", stroke: P.night, strokeWidth: 0.6 }}
-            >
-              {l.seat ? "⚑" : l.garrison}
-            </text>
-            <text
-              y={r + 3.4}
-              textAnchor="middle"
-              fontSize="2.7"
-              fill={l.city ? P.goldSoft : P.cream}
-              style={{ paintOrder: "stroke", stroke: P.night, strokeWidth: 0.6 }}
-            >
-              {landName(l.code)}
-            </text>
-            {marches.length > 0 && (
               <text
-                y={-r - 1.4}
+                y="3.2"
                 textAnchor="middle"
-                fontSize="2.6"
+                fontSize="8.5"
                 fontWeight="800"
-                fill={enemy ? P.vermilion : P.lagoon}
-                style={{ paintOrder: "stroke", stroke: P.night, strokeWidth: 0.6 }}
+                fill={P.cream}
+                style={{ paintOrder: "stroke", stroke: P.night, strokeWidth: 2 }}
               >
-                ⚔ {marches.reduce((n, m) => n + m.lances, 0)}
+                {l.seat ? "⚑" : l.garrison}
               </text>
-            )}
-          </g>
-        );
-      })}
-    </svg>
+              <text
+                y={r + 10}
+                textAnchor="middle"
+                fontSize="8"
+                fontWeight="700"
+                fill={l.city ? P.goldSoft : P.cream}
+                style={{ paintOrder: "stroke", stroke: P.night, strokeWidth: 2.5 }}
+              >
+                {landName(l.code)}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      {carrier && (
+        <CarrierDrag
+          origin={origin}
+          spots={spots}
+          info={carrier.info}
+          onDrop={carrier.onDrop}
+          onTap={carrier.onTap}
+          token={carrier.token}
+        />
+      )}
+    </div>
   );
 }
 
@@ -840,6 +1022,9 @@ function Mine({ f, props }: { f: FamiliesView; props: GameProps }) {
   const last = props.view.acts.length > 0 && f.weekEndsAt >= props.catalog.world.endsAt;
   return (
     <div className="space-y-4">
+      <div className="-mx-4 overflow-hidden border-y border-line bg-night-2 lg:mx-0 lg:cut lg:border">
+        <CampaignMap f={f} props={props} onPick={(code) => setLand(code)} />
+      </div>
       <Panel glow="gold">
         <div className="flex items-center gap-3">
           <FamilyCrest family={mine} size={60} />
@@ -867,13 +1052,9 @@ function Mine({ f, props }: { f: FamiliesView; props: GameProps }) {
           </p>
         )}
       </Panel>
-      <Lances f={f} props={props} />
       <Panel>
         <Label>{t().map}</Label>
         <p className="mt-1 text-xs text-cream-dim">{t().mapHelp}</p>
-        <div className="mt-3">
-          <CampaignMap f={f} onPick={(l) => setLand(l.code)} />
-        </div>
         <p className="label mt-3">{t().inReach}</p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {f.lands
@@ -891,6 +1072,7 @@ function Mine({ f, props }: { f: FamiliesView; props: GameProps }) {
             ))}
         </div>
       </Panel>
+      <Lances f={f} props={props} />
       <Marches f={f} props={props} />
       <DecreeBanner props={props} />
       <Programme f={f} props={props} />
@@ -927,12 +1109,9 @@ export function Famille(props: GameProps) {
       </header>
       {f.mine ? <Mine f={f} props={props} /> : <Choose f={f} props={props} />}
       {!f.mine && (
-        <Panel>
-          <Label>{t().map}</Label>
-          <div className="mt-3">
-            <CampaignMap f={f} onPick={() => {}} />
-          </div>
-        </Panel>
+        <div className="-mx-4 overflow-hidden border-y border-line bg-night-2 lg:mx-0 lg:cut lg:border">
+          <CampaignMap f={f} props={props} onPick={() => {}} />
+        </div>
       )}
     </section>
   );

@@ -291,74 +291,7 @@ export class VenetoWorld {
 
   /** The land: plain, Alps, hills and woods, the lake, the rivers, the lagoon and the sea. */
   private buildLand() {
-    const W = MAP_W * SCALE;
-    const H = MAP_H * SCALE;
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(W + 60, H + 60), mat("grass"));
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.set(W / 2, 0, H / 2);
-    ground.receiveShadow = true;
-    const tex = (ground.material as THREE.MeshStandardMaterial).map;
-    if (tex) tex.repeat.set(40, 40);
-    this.land.add(ground);
-    // The foothills: a band of alpine grass along the north.
-    const alps = new THREE.Mesh(new THREE.PlaneGeometry(W + 60, 42), mat("grass-alps"));
-    alps.rotation.x = -Math.PI / 2;
-    alps.position.set(W / 2, 0.005, 12 - 21);
-    alps.receiveShadow = true;
-    this.land.add(alps);
-    for (const [x, y, s] of MOUNTAINS) {
-      const p = toWorld([x, y]);
-      const m = new THREE.Group();
-      m.position.set(p.x, 0, p.z - 0.6);
-      m.scale.setScalar(s * 0.8);
-      const rock = new THREE.Mesh(new THREE.ConeGeometry(1.9, 3.0, 6), mat("#7D8C92"));
-      rock.position.y = 1.5;
-      rock.castShadow = true;
-      rock.receiveShadow = true;
-      const snow = new THREE.Mesh(new THREE.ConeGeometry(0.72, 1.12, 6), mat("#F4F1EA"));
-      snow.position.y = 2.45;
-      m.add(rock, snow);
-      this.land.add(m);
-    }
-    for (const [x, y] of WOODS) {
-      const p = toWorld([x, y]);
-      tree(this.land, p.x, p.z, 0.9, "#2F6345");
-      tree(this.land, p.x + 0.5, p.z + 0.3, 0.7, "#3F7A4A");
-    }
-    for (const [x, y, s] of HILLS) {
-      const p = toWorld([x, y]);
-      const hill = new THREE.Mesh(new THREE.SphereGeometry(1.4 * s, 16, 10), mat("#5E8A4A"));
-      hill.scale.y = 0.35;
-      hill.position.set(p.x, 0, p.z);
-      hill.receiveShadow = true;
-      hill.castShadow = true;
-      this.land.add(hill);
-    }
-    // Fields of the plain, in strips of gold and green.
-    for (const [x, y, gold] of [
-      [110, 240, true],
-      [96, 270, false],
-      [176, 330, true],
-      [236, 300, false],
-      [90, 320, true],
-      [250, 210, true],
-      [140, 360, false],
-      [200, 240, true],
-    ] as const) {
-      const p = toWorld([x, y]);
-      box(this.land, 1.8, 0.03, 0.9, gold ? "#C9A44A" : "#7E9E48", p.x, 0, p.z, 0);
-    }
-    // Waters: the sea, the lagoon, Lake Garda, the rivers.
-    this.land.add(flat(parsePath(SEA, 10), "water", 0.02));
-    this.land.add(flat(parsePath(LAGOON, 10), "#4FA3A0", 0.03));
-    this.land.add(flat(parsePath(GARDA, 10), "water", 0.02));
-    for (const d of RIVERS) {
-      const pts = parsePath(d, 10).map((p) => toWorld(p));
-      this.land.add(ribbon(pts, 0.32, "water", 0.018));
-    }
-    // The Lido: the strip of sand closing the lagoon.
-    const lido = parsePath("M332 222 Q322 256 326 290 Q328 314 318 334", 10).map((p) => toWorld(p));
-    this.land.add(ribbon(lido, 0.3, "#E8D9B5", 0.04));
+    buildVenetoLand(this.land);
   }
 
   /** Advances to time t (ms) and draws. */
@@ -494,8 +427,80 @@ export class VenetoWorld {
   }
 }
 
+/** The Veneto's land in a group: plain, Alps, hills and woods, the lake, the rivers, the lagoon and the sea. */
+export function buildVenetoLand(land: THREE.Group) {
+  const W = MAP_W * SCALE;
+  const H = MAP_H * SCALE;
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(W + 60, H + 60), mat("grass"));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.set(W / 2, 0, H / 2);
+  ground.receiveShadow = true;
+  const tex = (ground.material as THREE.MeshStandardMaterial).map;
+  if (tex) tex.repeat.set(40, 40);
+  land.add(ground);
+  // The foothills: a band of alpine grass along the north.
+  const alps = new THREE.Mesh(new THREE.PlaneGeometry(W + 60, 42), mat("grass-alps"));
+  alps.rotation.x = -Math.PI / 2;
+  alps.position.set(W / 2, 0.005, 12 - 21);
+  alps.receiveShadow = true;
+  land.add(alps);
+  for (const [x, y, s] of MOUNTAINS) {
+    const p = toWorld([x, y]);
+    const m = new THREE.Group();
+    m.position.set(p.x, 0, p.z - 0.6);
+    m.scale.setScalar(s * 0.8);
+    const rock = new THREE.Mesh(new THREE.ConeGeometry(1.9, 3.0, 6), mat("#7D8C92"));
+    rock.position.y = 1.5;
+    rock.castShadow = true;
+    rock.receiveShadow = true;
+    const snow = new THREE.Mesh(new THREE.ConeGeometry(0.72, 1.12, 6), mat("#F4F1EA"));
+    snow.position.y = 2.45;
+    m.add(rock, snow);
+    land.add(m);
+  }
+  for (const [x, y] of WOODS) {
+    const p = toWorld([x, y]);
+    tree(land, p.x, p.z, 0.9, "#2F6345");
+    tree(land, p.x + 0.5, p.z + 0.3, 0.7, "#3F7A4A");
+  }
+  for (const [x, y, s] of HILLS) {
+    const p = toWorld([x, y]);
+    const hill = new THREE.Mesh(new THREE.SphereGeometry(1.4 * s, 16, 10), mat("#5E8A4A"));
+    hill.scale.y = 0.35;
+    hill.position.set(p.x, 0, p.z);
+    hill.receiveShadow = true;
+    hill.castShadow = true;
+    land.add(hill);
+  }
+  // Fields of the plain, in strips of gold and green.
+  for (const [x, y, gold] of [
+    [110, 240, true],
+    [96, 270, false],
+    [176, 330, true],
+    [236, 300, false],
+    [90, 320, true],
+    [250, 210, true],
+    [140, 360, false],
+    [200, 240, true],
+  ] as const) {
+    const p = toWorld([x, y]);
+    box(land, 1.8, 0.03, 0.9, gold ? "#C9A44A" : "#7E9E48", p.x, 0, p.z, 0);
+  }
+  // Waters: the sea, the lagoon, Lake Garda, the rivers.
+  land.add(flat(parsePath(SEA, 10), "water", 0.02));
+  land.add(flat(parsePath(LAGOON, 10), "#4FA3A0", 0.03));
+  land.add(flat(parsePath(GARDA, 10), "water", 0.02));
+  for (const d of RIVERS) {
+    const pts = parsePath(d, 10).map((p) => toWorld(p));
+    land.add(ribbon(pts, 0.32, "water", 0.018));
+  }
+  // The Lido: the strip of sand closing the lagoon.
+  const lido = parsePath("M332 222 Q322 256 326 290 Q328 314 318 334", 10).map((p) => toWorld(p));
+  land.add(ribbon(lido, 0.3, "#E8D9B5", 0.04));
+}
+
 /** A flat band along points (a road, a river), lying just above the ground. */
-function ribbon(points: Spot[], width: number, material: string, y: number): THREE.Mesh {
+export function ribbon(points: Spot[], width: number, material: string, y: number): THREE.Mesh {
   const pos: number[] = [];
   const idx: number[] = [];
   for (let i = 0; i < points.length; i++) {
@@ -533,7 +538,7 @@ function ribbon(points: Spot[], width: number, material: string, y: number): THR
 }
 
 /** A flat shape (the sea, a lake) from map points. */
-function flat(points: [number, number][], material: string, y: number): THREE.Mesh {
+export function flat(points: [number, number][], material: string, y: number): THREE.Mesh {
   const shape = new THREE.Shape(points.map(([x, py]) => new THREE.Vector2(x * SCALE, -py * SCALE)));
   const m = new THREE.Mesh(new THREE.ShapeGeometry(shape), mat(material));
   m.rotation.x = -Math.PI / 2;
