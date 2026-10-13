@@ -620,3 +620,27 @@ Réglages de Venise : `guilds` (fondation 50 d, mise 100 d, 12 membres, sortie �
 Le Pass n'a aucun avantage de guilde ni de guerre, et la Dogana où joue son quota pèse moins. L'écart vient surtout de la divergence des deux saisons rejouées, plus forte avec les guerres : la guilde qui prend une concession bascule d'une partie à l'autre, et le péage suit.
 
 Le paiement du Pass reste débranché (règle R7). Avant de le brancher, il faudra mesurer ce contrôle sur plus de graines ou par la moyenne.
+
+## Les quatre familles et la Campagne de Terraferme (13 octobre 2026)
+
+Réglages de Venise : `families` (allégeance au jour 2, levée de −25 % à +50 % selon la taille de la famille), `campaign` (carte de 25 terres, levée 2 lances par heure de 8 h à 22 h et 24 en attente au plus, engagement 20 lances à 1 d puis 20 à 2 d par jour, lances parties après 48 h, marches de 20 min + 10 min par terre, Milan toutes les 4 heures ouvertes avec 10 lances + 2 par marchand actif, doublées à 100 % d'avance), `decrees` (deux décrets par victoire, voix plafonnée à 25 %), `bandits.decreeOnly`, acte III « guerre de Lombardie » (Milan ×1,5). Bots : ils rejoignent la famille qui compte le moins de joueurs réels, ramassent leur levée, engagent une part du plafond selon leur profil (producteurs et artisans 25 %, bâtisseurs 50 %, spéculateurs 75 %, occasionnels rien) en gardant un tiers du capital de départ, défendent, attaquent la terre voisine qui rapporte le plus pour son coût, rejoignent les assauts et votent un programme.
+
+`pnpm sim`, 5 graines, toutes conformes :
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie payée (ducats / joueur actif / jour) | 158,2 | 159,2 | 159,1 | 159,8 | 161,9 |
+| Indice des prix | 93 à 100 | 93 à 100 | 93 à 100 | 93 à 100 | 93 à 100 |
+| Masse monétaire par joueur actif (maximum) | 1,01 × | 1,04 × | 1,01 × | 1,04 × | 1,01 × |
+| Membres par famille en fin de saison | 14 à 15 | 14 | 14 à 15 | 14 à 15 | 14 à 15 |
+| Lances engagées (ducats détruits par marchand actif et par jour) | 5 | 5 | 6 | 4 | 4 |
+| Terres prises / assauts repoussés | 349 / 337 | 287 / 260 | 258 / 294 | 268 / 270 | 353 / 377 |
+| Chevauchées de Milan par jour | 3,4 | 3,4 | 3,6 | 3,5 | 3,4 |
+| Vainqueurs des semaines 1 à 3 | Mocenigo, Mocenigo, Dandolo | Morosini, Mocenigo, Mocenigo | Morosini, Dandolo, Dandolo | Contarini, Morosini, Dandolo | Morosini, Mocenigo, Contarini |
+
+**Lecture.**
+- Les guerres de concessions disparaissent sans toucher l'économie : la monnaie payée reste dans la cible (151 à 185), l'indice des prix ne bouge pas.
+- Les lances sont un petit puits (4 à 6 ducats par marchand actif et par jour) : la levée gratuite fait l'essentiel des armées des bots. Une première version, où les bots gardaient une fois et demie le capital de départ avant d'engager, n'engageait presque rien (340 lances sur la saison).
+- Le pouvoir change de mains : aucune famille ne gagne les trois semaines dans aucune graine, et Milan frappe le favori environ 3,5 fois par jour.
+- Les bots votent surtout la franchise et la faveur de Venise ; gabelle, péage et lettres de course apparaissent selon les graines.
+- Le simulateur va plus vite qu'avec les guerres (136 s contre 170 s pour une graine).
