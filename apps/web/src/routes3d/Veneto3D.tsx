@@ -1,6 +1,7 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import type { SkyPhase } from "../art/domain.js";
 import { FamilyCrest } from "../art/familyCrest.js";
+import { CarrierDrag, type DropSpot } from "../game/Cargo.js";
 import type { VenetoHit, VenetoState, VenetoWorld } from "./world.js";
 
 export interface CityMark {
@@ -46,6 +47,15 @@ export interface Veneto3DProps {
   className?: string;
   onCity: (code: string) => void;
   onDelivery: (id: string) => void;
+  /** A tap on the merchant's depot. */
+  onDepot?: () => void;
+  /** The selected vehicle, loaded, to be dragged from the depot to a city. */
+  carrier?: {
+    token: ReactNode;
+    info: (code: string) => { ok: boolean; title: string; sub: string };
+    onDrop: (code: string) => void;
+    onTap: () => void;
+  } | null;
   /** Laid over the scene (the hud, the stock). */
   children?: ReactNode;
 }
@@ -59,6 +69,8 @@ export default function Veneto3D(props: Veneto3DProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const world = useRef<VenetoWorld | null>(null);
   const marks = useRef(new Map<string, HTMLElement>());
+  /** Where the anchors were drawn last (css pixels): the depot and the towns, for dragging. */
+  const anchorsAt = useRef(new Map<string, { x: number; y: number }>());
   const [ready, setReady] = useState(false);
   const latest = useRef(props);
   latest.current = props;
@@ -90,6 +102,7 @@ export default function Veneto3D(props: Veneto3DProps) {
         if (!visible || document.hidden) return;
         w.frame(t);
         for (const a of w.anchors()) {
+          anchorsAt.current.set(a.key, { x: a.x, y: a.y });
           const el = marks.current.get(a.key);
           if (el) el.style.transform = `translate3d(${a.x.toFixed(1)}px, ${a.y.toFixed(1)}px, 0)`;
         }
@@ -117,9 +130,19 @@ export default function Veneto3D(props: Veneto3DProps) {
   };
 
   const down = useRef<{ x: number; y: number; t: number } | null>(null);
+  const origin = useCallback(() => anchorsAt.current.get("depot") ?? null, []);
+  const spots = useCallback((): DropSpot[] => {
+    const out: DropSpot[] = [];
+    for (const c of latest.current.cities) {
+      const at = anchorsAt.current.get(`city:${c.code}`);
+      if (at && c.reached) out.push({ code: c.code, x: at.x, y: at.y });
+    }
+    return out;
+  }, []);
   const tap = (hit: VenetoHit | null) => {
     const p = latest.current;
-    if (hit?.kind === "city") {
+    if (hit?.kind === "depot") p.onDepot?.();
+    else if (hit?.kind === "city") {
       if (p.cities.find((c) => c.code === hit.code)?.reached) p.onCity(hit.code);
     } else if (hit?.kind === "delivery") p.onDelivery(hit.id);
   };
@@ -234,6 +257,16 @@ export default function Veneto3D(props: Veneto3DProps) {
           </div>
         ))}
       </div>
+      {props.carrier && (
+        <CarrierDrag
+          origin={origin}
+          spots={spots}
+          info={props.carrier.info}
+          onDrop={props.carrier.onDrop}
+          onTap={props.carrier.onTap}
+          token={props.carrier.token}
+        />
+      )}
       {props.children}
     </div>
   );

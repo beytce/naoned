@@ -91,6 +91,8 @@ export interface RoadRules {
   vehicles: VehicleType[];
   maxVehicles: number;
   maxDeliveryMinutes: number;
+  /** Orders a vehicle may carry together, all for the same city. */
+  maxOrdersPerLoad: number;
   escorts: Record<string, { costBps: number; defense: number }>;
   bandits: {
     hoursOptions: number[];
@@ -149,6 +151,8 @@ export interface DeliveryView {
   loaded: number;
   cargo: Record<string, number>;
   payment: Money;
+  /** The orders carried, when there are several. */
+  orders?: { id: string; kind: string; resource: string; quantity: number; payment: Money }[];
   paid?: Money;
   escort: string;
   departAt: number;
@@ -875,7 +879,13 @@ export type Action =
   | { type: "commissionPrivateers"; route: string; ships: string[] }
   | { type: "collectRaid"; raidId: string }
   | { type: "buyVehicle"; vehicleType: string }
-  | { type: "dispatchDelivery"; orderId: string; vehicleId: string; escort: string }
+  | {
+      type: "dispatchDelivery";
+      orderId: string;
+      orderIds?: string[];
+      vehicleId: string;
+      escort: string;
+    }
   | { type: "reactToAmbush"; deliveryId: string }
   | { type: "postBand"; route: string; hours: number }
   | { type: "collectBooty"; bandId: string };

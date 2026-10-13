@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useCallback, useRef, useState } from "react";
 import { P } from "../art/palette.js";
 import { ResourceIcon } from "../art/resources.js";
 import {
@@ -18,6 +18,16 @@ import {
 } from "../art/veneto.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Sheet, clock } from "../ui.js";
+import {
+  CargoSheet,
+  CarrierDrag,
+  CarrierToken,
+  DepartureBar,
+  type DropSpot,
+  VehicleBar,
+  loadOrders,
+  loadSummary,
+} from "./Cargo.js";
 import { have } from "./Comptoir.js";
 import { DecreeBanner, familyName } from "./Famille.js";
 import type { GameProps } from "./Game.js";
@@ -114,16 +124,152 @@ export function RoadBoard(
   const [focus, setFocus] = useState<string | null>(null);
   const [watching, setWatching] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
+  // The dock: each vehicle's load (orders ticked), the cargo list, the departure under way.
+  const [loads, setLoads] = useState<Record<string, string[]>>({});
+  const [cargoOpen, setCargoOpen] = useState(false);
+  const [departure, setDeparture] = useState<string | null>(null);
+  const [escort, setEscort] = useState("none");
+  const mapBox = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   const underway = road.deliveries.filter((dv) => props.now < dv.backAt);
   // In 3D the vehicles move on the scene's own clock: no need to redraw the page every frame.
   const map3d = mode === "deliver" && use3d;
   const now = useSmoothNow(props.now, underway.length > 0 && !map3d);
   const focused = road.vehicles.find((v) => v.id === focus && v.status === "free") ?? null;
+  const selected = road.vehicles.find((v) => v.id === focus) ?? null;
+  const loaded = selected ? loadOrders(road, loads[selected.id] ?? []) : [];
+  const hold = selected ? loadSummary(props, selected, loaded) : null;
+  const loadCity = hold?.city ?? null;
+  const setLoad = (ids: string[]) => {
+    if (selected) setLoads((all) => ({ ...all, [selected.id]: ids }));
+  };
   const ordersOf = (c: string) =>
     road.orders.filter((o) => o.city === c && (o.status === "open" || o.status === "upcoming"));
+  // A loaded vehicle lights its city only; an empty one, every city it could serve.
   const serves = (c: string) =>
-    !focused || ordersOf(c).some((o) => canServe(props, o, capacityOf(focused)));
+    !focused ||
+    (loadCity !== null
+      ? c === loadCity
+      : ordersOf(c).some((o) => canServe(props, o, capacityOf(focused))));
+  const selectDepot = () => {
+    const v = road.vehicles.find((x) => x.status === "free") ?? road.vehicles[0];
+    if (v) setFocus(v.id);
+    showDock();
+  };
+  // The dock sits at the bottom of the map: bring it into view when a vehicle is chosen.
+  const showDock = () =>
+    requestAnimationFrame(() =>
+      mapBox.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }),
+    );
+  const cycle = (step: number) => {
+    const list = road.vehicles;
+    if (list.length === 0) return;
+    const i = Math.max(
+      0,
+      list.findIndex((v) => v.id === focus),
+    );
+    setFocus(list[(i + step + list.length) % list.length]?.id ?? null);
+  };
+  const tapCity = (code: string) => {
+    if (focused && loadCity === code) setDeparture(code);
+    else setCity(code);
+  };
+  const dropInfo = (code: string) => {
+    const name = props.names.city(code);
+    if (!hold || loaded.length === 0)
+      return { ok: false, title: fr.game.cargo.dropNo(name), sub: fr.game.cargo.dropEmpty };
+    if (code !== loadCity)
+      return {
+        ok: false,
+        title: fr.game.cargo.dropNo(name),
+        sub: fr.game.cargo.dropElsewhere(props.names.city(loadCity ?? "")),
+      };
+    return {
+      ok: true,
+      title: fr.game.cargo.dropOk(name),
+      sub: fr.game.cargo.dropSub(loaded.length, minutesLabel(hold.minutes ?? 0), d(hold.value)),
+    };
+  };
+  const depart = async () => {
+    if (!selected || !departure) return;
+    const ids = loaded.map((o) => o.id);
+    setDeparture(null);
+    if (ids.length === 0) return;
+    const ok = await props.act({
+      type: "dispatchDelivery",
+      orderId: ids[0] ?? "",
+      ...(ids.length > 1 ? { orderIds: ids } : {}),
+      vehicleId: selected.id,
+      escort,
+    });
+    if (ok) {
+      setLoads((all) => ({ ...all, [selected.id]: [] }));
+      setFocus(null);
+      setEscort("none");
+    }
+  };
+  const carrier =
+    mode === "deliver" && focused && loaded.length > 0 && !departure
+      ? {
+          token: <CarrierToken units={hold?.units ?? 0} capacity={hold?.capacity ?? 0} />,
+          info: dropInfo,
+          onDrop: (code: string) => setDeparture(code),
+          onTap: () => setCargoOpen(true),
+        }
+      : null;
+  // The drawn map: the depot and the cities in the box's pixels, for dragging.
+  const svgPoint = useCallback(([x, y]: [number, number]) => {
+    const svg = svgRef.current?.getBoundingClientRect();
+    const box = mapBox.current?.getBoundingClientRect();
+    if (!svg || !box) return null;
+    return {
+      x: svg.left - box.left + (x / MAP_W) * svg.width,
+      y: svg.top - box.top + (y / MAP_H) * svg.height,
+    };
+  }, []);
+  const svgOrigin = useCallback(() => {
+    const at = PLACES[region];
+    return at ? svgPoint(at) : null;
+  }, [region, svgPoint]);
+  const svgSpots = useCallback(
+    (): DropSpot[] =>
+      Object.keys(routes[region] ?? {}).flatMap((code) => {
+        const at = PLACES[code];
+        const p = at ? svgPoint(at) : null;
+        return p ? [{ code, ...p }] : [];
+      }),
+    [region, routes, svgPoint],
+  );
+  const dock =
+    mode === "deliver" && selected ? (
+      departure && focused ? (
+        <DepartureBar
+          key={`${selected.id}-${departure}`}
+          props={props}
+          vehicle={selected}
+          orders={loaded}
+          city={departure}
+          escort={escort}
+          setEscort={setEscort}
+          seconds={6}
+          onGo={() => void depart()}
+          onCancel={() => setDeparture(null)}
+        />
+      ) : (
+        <VehicleBar
+          props={props}
+          road={road}
+          vehicle={selected}
+          load={loads[selected.id] ?? []}
+          onPrev={() => cycle(-1)}
+          onNext={() => cycle(1)}
+          onCargo={() => setCargoOpen(true)}
+          onSend={() => loadCity && setDeparture(loadCity)}
+          onClose={() => setFocus(null)}
+        />
+      )
+    ) : null;
   const myRoutes = Object.keys(routes[region] ?? {}).map((c) => `${region}:${c}`);
   const allRoutes = Object.entries(routes).flatMap(([r, cities]) =>
     Object.keys(cities).map((c) => `${r}:${c}`),
@@ -147,7 +293,10 @@ export function RoadBoard(
     <section className={`mx-auto w-full space-y-3 ${map3d ? "" : "max-w-xl"}`}>
       {map3d ? (
         // Edge to edge on a phone, most of the screen's height, as the domain.
-        <div className="-mx-4 overflow-hidden border-y border-line bg-night-2 lg:mx-0 lg:cut lg:border">
+        <div
+          ref={mapBox}
+          className="-mx-4 overflow-hidden border-y border-line bg-night-2 lg:mx-0 lg:cut lg:border"
+        >
           <Suspense
             fallback={
               <div className="h-[68svh] min-h-[420px] w-full animate-pulse bg-night-3 lg:h-[62vh]" />
@@ -230,8 +379,10 @@ export function RoadBoard(
                   city: dv.route.split(":")[1] ?? "",
                   label: `+${d(dv.paid ?? dv.payment)}`,
                 }))}
-              onCity={(code) => setCity(code)}
+              onCity={tapCity}
               onDelivery={(id) => setWatching(id)}
+              onDepot={selectDepot}
+              carrier={carrier}
             >
               {/* Over the map: what waits today, and when the board renews. */}
               <div className="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
@@ -242,13 +393,12 @@ export function RoadBoard(
                   ↻ {clock(nextDay - props.now)}
                 </span>
               </div>
-              {focused && (
-                <p
-                  className={`pointer-events-none absolute inset-x-3 z-20 rounded-2xl ${map3d ? "bottom-14" : "bottom-3"} bg-night/90 px-3 py-2 text-center text-xs text-gold ring-1 ring-gold/50`}
-                >
-                  {m().focusHint(vehicleName(focused.type))}
+              {!selected && (
+                <p className="pointer-events-none absolute inset-x-3 top-14 z-20 text-center text-[11px] text-cream-dim [text-shadow:0_1px_2px_rgb(15_27_30)]">
+                  {fr.game.cargo.tapDepot}
                 </p>
               )}
+              {dock}
               <StockBand
                 props={props}
                 label={fr.game.domain.store.label}
@@ -258,8 +408,12 @@ export function RoadBoard(
           </Suspense>
         </div>
       ) : (
-        <div className="relative overflow-hidden cut border border-line bg-night-2 shadow-xl shadow-black/30">
+        <div
+          ref={mapBox}
+          className="relative overflow-hidden cut border border-line bg-night-2 shadow-xl shadow-black/30"
+        >
           <svg
+            ref={svgRef}
             viewBox={`0 0 ${MAP_W} ${MAP_H}`}
             className="block w-full touch-manipulation select-none"
             role="img"
@@ -369,7 +523,14 @@ export function RoadBoard(
               const mine = r === region;
               if (!mine && mode !== "bandits") return null;
               return (
-                <g key={`depot-${r}`} transform={`translate(${x} ${y})`} opacity={mine ? 1 : 0.6}>
+                // biome-ignore lint/a11y/useKeyWithClickEvents: the garage below the map offers the same vehicles
+                <g
+                  key={`depot-${r}`}
+                  transform={`translate(${x} ${y})`}
+                  opacity={mine ? 1 : 0.6}
+                  onClick={() => mine && mode === "deliver" && selectDepot()}
+                  className={mine && mode === "deliver" ? "cursor-pointer" : undefined}
+                >
                   <DepotGlyph />
                   {mode === "bandits" && (
                     <MapText y={-22} x={0} size={8} fill={P.gold} weight={800}>
@@ -401,7 +562,7 @@ export function RoadBoard(
                 <g
                   key={code}
                   transform={`translate(${x} ${y})`}
-                  onClick={() => clickable && setCity(code)}
+                  onClick={() => clickable && tapCity(code)}
                   className={clickable ? "cursor-pointer" : undefined}
                   opacity={dim ? 0.55 : 1}
                 >
@@ -540,13 +701,17 @@ export function RoadBoard(
               </span>
             </div>
           )}
-          {mode === "deliver" && focused && (
-            <p
-              className={`pointer-events-none absolute inset-x-3 z-20 rounded-2xl ${map3d ? "bottom-14" : "bottom-3"} bg-night/90 px-3 py-2 text-center text-xs text-gold ring-1 ring-gold/50`}
-            >
-              {m().focusHint(vehicleName(focused.type))}
-            </p>
+          {carrier && (
+            <CarrierDrag
+              origin={svgOrigin}
+              spots={svgSpots}
+              info={carrier.info}
+              onDrop={carrier.onDrop}
+              onTap={carrier.onTap}
+              token={carrier.token}
+            />
           )}
+          {dock}
           {mode === "bandits" && (
             <p className="pointer-events-none absolute inset-x-3 top-3 rounded-2xl bg-night/90 px-3 py-2 text-center text-xs text-cream ring-1 ring-line">
               {m().pickRoad}
@@ -561,7 +726,11 @@ export function RoadBoard(
           road={road}
           focus={focused?.id ?? null}
           now={now}
-          onFocus={(id) => setFocus(id === focus ? null : id)}
+          onFocus={(id) => {
+            setDeparture(null);
+            setFocus(id === focus ? null : id);
+            if (id !== focus) showDock();
+          }}
           onWatch={(vehicleId) => {
             const dv = underway.find((x) => x.vehicleId === vehicleId);
             if (dv) setWatching(dv.id);
@@ -593,6 +762,18 @@ export function RoadBoard(
         )}
       </Sheet>
       <BuyVehicleSheet props={props} open={buying} onClose={() => setBuying(false)} />
+      <Sheet open={cargoOpen && selected !== null} onClose={() => setCargoOpen(false)}>
+        {selected && (
+          <CargoSheet
+            props={props}
+            road={road}
+            vehicle={selected}
+            load={loads[selected.id] ?? []}
+            setLoad={setLoad}
+            onReady={() => setCargoOpen(false)}
+          />
+        )}
+      </Sheet>
       <DecreeBanner props={props} />
     </section>
   );
