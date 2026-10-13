@@ -32,30 +32,8 @@ export interface Catalog {
   privateers: PrivateerRules;
   /** Deliveries by road and bandits (null when the world has none). */
   road: RoadRules | null;
-  /** Trade wars' rules, and the concessions (none: no wars). */
-  warRules: {
-    hours: number;
-    stake: Money;
-    defenderBonusBps: number;
-    protectHours: number;
-    seigneurieUnitsPerActive: number;
-    memberPremiumBps: number;
-    ordersPerActiveBps: number;
-  };
-  concessions: { code: string; city: string; resource: string }[];
-  /** The guilds' rules (maxMembers 0: guilds are off). */
-  guildRules: {
-    openDay: number;
-    foundingCost: Money;
-    minStake: Money;
-    caratValue: Money;
-    maxMembers: number;
-    exitFeeBps: number;
-    maxVoteBps: number;
-    voteHours: number;
-    maxTollBps: number;
-    maxBountyPerUnit: Money;
-  };
+  /** The four families, their campaign and their decrees (null: off in this world). */
+  families: FamilyRules | null;
   rations: { resource: string; perLevelPerDay: number; slowdownBps: number };
   /** Masteries: the house's levels needed, and what each one changes. */
   specialties: {
@@ -341,101 +319,127 @@ export interface ContractView {
   done: boolean;
 }
 
-export type ProposalKind = "toll" | "dividend" | "bounty" | "open" | "exclude" | "war";
-
-export interface ProposalView {
-  id: string;
-  kind: ProposalKind;
-  value: number;
-  target: string | null;
-  by: string;
-  openedAt: number;
-  closesAt: number;
-  status: "open" | "passed" | "rejected";
-  yes: number;
-  no: number;
-  /** The guild's whole voting weight (each member capped). */
-  total: number;
-  /** The merchant's own vote, if cast. */
-  mine: boolean | null;
-}
-
-export interface MyGuildView {
-  id: string;
-  name: string;
-  emblem: string;
-  founder: string;
-  open: boolean;
-  tollBps: number;
-  dividendBps: number;
-  bountyPerUnit: Money;
-  treasury: Money;
-  caratsIssued: number;
-  /** What a hundred carats are worth. */
-  valueOf100: Money;
-  carats: number;
-  /** The merchant's carats at their value. */
-  share: Money;
-  members: { playerId: string; carats: number; weight: number; since: number; me: boolean }[];
-  proposals: ProposalView[];
-}
-
-export type WarSide = "attacker" | "defender";
-
-export interface ConcessionView {
+export interface DecreePick {
   code: string;
-  city: string;
-  resource: string;
+  /** A good (gabelle, calmiere) or a city (faveur). */
+  target?: string;
+}
+
+export interface DecreeRules {
+  catalog: string[];
+  perWinner: number;
+  maxVoteBps: number;
+  defaults: DecreePick[];
+  fondaco: { taxBps: number; quotaBps: number };
+  gabelle: { extraTaxBps: number };
+  faveur: { premiumBps: number; reservedMinutes: number };
+  peage: { tollBps: number };
+  levant: { memberDiscountBps: number; othersSurchargeBps: number };
+  calmiere: { capBps: number };
+  franchise: { upkeepDiscountBps: number };
+}
+
+export interface FamilyRules {
+  openDay: number;
+  list: { code: string; seat: string }[];
+  campaign: {
+    kinds: Record<
+      string,
+      { glory: number; defenseBps: number; militia: number; militiaPerActive: number }
+    >;
+    openHours: { from: number; to: number };
+    levy: { perHour: number; max: number };
+    hire: { count: number; price: Money }[];
+    lanceHours: number;
+    march: { baseMinutes: number; perHopMinutes: number };
+    milan: {
+      everyHours: number;
+      warningMinutes: number;
+      base: number;
+      perActive: number;
+      leadBonusBps: number;
+    };
+    garrisonLancesPerPoint: number;
+  } | null;
+  decrees: DecreeRules;
+}
+
+export interface LandView {
+  code: string;
+  kind: string;
+  city: string | null;
+  x: number;
+  y: number;
+  neighbors: string[];
+  /** A family's code, "milan", or null for the militia. */
   holder: string | null;
-  holderName: string | null;
-  holderEmblem: string | null;
-  tollBps: number;
-  protectedUntil: number;
-  war: string | null;
-  /** Why the merchant's guild may not declare war on it now (null: it may). */
-  refusal: string | null;
+  garrison: number;
+  /** The merchant's own lances in its garrison. */
+  mine: number;
+  defenseBps: number;
+  glory: number;
+  /** The family whose seat it is. */
+  seat: string | null;
+  since: number;
+  /** The merchant may send lances there now. */
+  open: boolean;
+  minutes: number | null;
 }
 
-export interface WarView {
+export interface MarchView {
   id: string;
-  concession: string;
-  city: string;
-  resource: string;
-  attacker: string;
-  attackerName: string;
-  attackerEmblem: string | null;
-  defender: string | null;
-  defenderName: string | null;
-  defenderEmblem: string | null;
+  family: string;
+  by: string | null;
+  target: string;
   startAt: number;
-  endAt: number;
-  /** Units the Seigneurie stands for, when it defends. */
-  threshold: number;
-  score: { attacker: number; defender: number };
-  outcome: WarSide | null;
-  side: WarSide | null;
-  supplied: number;
-  enlisted: number;
-  bounty: { attacker: Money; defender: Money };
+  arriveAt: number;
+  lances: number;
+  /** The merchant's own lances in it. */
+  mine: number;
 }
 
-export interface WarsView {
-  concessions: ConcessionView[];
-  live: WarView[];
-  recent: WarView[];
-}
-
-export interface GuildsView {
+export interface FamiliesView {
   opensAt: number;
-  mine: MyGuildView | null;
-  list: {
-    id: string;
-    name: string;
-    emblem: string;
+  mine: string | null;
+  families: {
+    code: string;
+    seat: string;
     members: number;
-    open: boolean;
-    treasury: Money;
-    mine: boolean;
+    active: number;
+    levyBps: number;
+    glory: number;
+    programme: DecreePick[];
+    lands: number;
+  }[];
+  members: { playerId: string; merit: number; me: boolean }[];
+  week: number;
+  weekEndsAt: number;
+  closed: boolean;
+  /** Marches arrive and glory counts now (outside the night's truce). */
+  open: boolean;
+  nextOpenAt: number;
+  nextMilanAt: number | null;
+  lands: LandView[];
+  marches: MarchView[];
+  me: {
+    reserve: number;
+    levy: number;
+    levyMax: number;
+    hired: number;
+    hireLimit: number;
+    nextPrice: Money | null;
+    merit: number;
+    ballot: DecreePick[];
+    leaving: { count: number; expiresAt: number }[];
+  } | null;
+  decrees: { family: string; items: DecreePick[]; cities: string[]; week: number } | null;
+  history: {
+    week: number;
+    winner: string | null;
+    glory: Record<string, number>;
+    decrees: DecreePick[];
+    captains: Record<string, string>;
+    final: boolean;
   }[];
 }
 
@@ -503,11 +507,6 @@ export interface Project {
   needs: Record<string, number>;
   delivered: Record<string, number>;
   unitPrice: Record<string, Money>;
-  /** A worksite of the guilds (the act it belongs to). */
-  act?: number;
-  /** Units delivered by each guild's members, by guild id. */
-  byGuild?: Record<string, number>;
-  winner?: string | null;
 }
 
 export interface PlayerView {
@@ -517,7 +516,7 @@ export interface PlayerView {
   cash: Money;
   escrow: Money;
   upkeepPerDay: Money;
-  netWorth: { cash: Money; stock: Money; buildings: Money; guild?: Money; total: Money };
+  netWorth: { cash: Money; stock: Money; buildings: Money; total: Money };
   standing: {
     rank: number | null;
     players: number;
@@ -531,7 +530,8 @@ export interface PlayerView {
     startsAt: number;
     endsAt: number;
     variant: string | null;
-    worksite: boolean;
+    /** Milan's strength in the campaign during the act (10 000 = as usual). */
+    milanBps: number;
   }[];
   /** The house's mastery: chosen, or how far it is (levels of all workshops). */
   mastery: { chosen: string | null; levels: number; unlocked: boolean };
@@ -540,11 +540,8 @@ export interface PlayerView {
   market: MarketLine[];
   cityQuotes: { city: string; resource: string; unitPrice: Money }[];
   projects: Project[];
-  /** Worksites of the acts already won: the winning guild's monument on the map. */
-  monuments: { city: string; guild: string; act: number }[];
   contracts: ContractView[];
-  guilds: GuildsView | null;
-  wars: WarsView | null;
+  families: FamiliesView | null;
   gazette: { current: GazetteEvent | null; next: GazetteEvent | null };
   expeditions: ExpeditionView[];
   book: Record<string, BookView>;
@@ -667,8 +664,8 @@ export interface GameResponse {
   error?: string;
   /** Unread notifications (the bell). */
   unread?: number;
-  /** Newest message of the guild's thread (null: no guild or no message). */
-  guildLatestAt?: number | null;
+  /** Newest message of the family's thread (null: no family or no message). */
+  familyLatestAt?: number | null;
   welcome?: Welcome;
   /** Pseudos of merchants met at sea or in the order book. */
   names?: Record<string, string | null>;
@@ -739,7 +736,8 @@ export type NotificationKind =
   | "season"
   | "criee"
   | "deal"
-  | "guild"
+  | "family"
+  | "siege"
   | "ambush"
   | "delivery"
   | "robbed"
@@ -827,7 +825,7 @@ export interface Profile {
   joinedAt: number;
   title: { index: number; current: Title; next: Title | null; progress: number };
   titles: Title[];
-  netWorth: { cash: Money; stock: Money; buildings: Money; guild?: Money; total: Money };
+  netWorth: { cash: Money; stock: Money; buildings: Money; total: Money };
   rank: number | null;
   players: number;
   buildings: number;
@@ -856,18 +854,12 @@ export type Action =
   | { type: "sellToCity"; city: string; resource: string; quantity: number }
   | { type: "deliverToProject"; projectId: string; resource: string; quantity: number }
   | { type: "fulfillContract"; contractId: string }
-  | { type: "foundGuild"; name: string; emblem: string; stake: number }
-  | { type: "joinGuild"; guildId: string; stake: number }
-  | { type: "investGuild"; amount: number }
-  | { type: "leaveGuild" }
-  | {
-      type: "propose";
-      proposal:
-        | { kind: "toll" | "dividend" | "bounty" | "open"; value: number }
-        | { kind: "exclude" | "war"; target: string };
-    }
-  | { type: "vote"; proposalId: string; yes: boolean }
-  | { type: "enlist"; warId: string; side: WarSide }
+  | { type: "joinFamily"; family: string }
+  | { type: "collectLevy" }
+  | { type: "hireLances"; count: number }
+  | { type: "sendMarch"; land: string; lances: number }
+  | { type: "joinMarch"; marchId: string; lances: number }
+  | { type: "voteProgramme"; picks: DecreePick[] }
   | {
       type: "launchExpedition";
       destination: string;
@@ -888,8 +880,8 @@ export type Action =
   | { type: "postBand"; route: string; hours: number }
   | { type: "collectBooty"; bandId: string };
 
-/** A message of the guild's thread. */
-export interface GuildMessage {
+/** A message of the family's thread. */
+export interface FamilyMessage {
   id: string;
   pseudo: string | null;
   body: string;

@@ -19,6 +19,7 @@ import {
 import { fr } from "../i18n.js";
 import { Badge, Big, Sheet, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
+import { DecreeBanner, familyName } from "./Famille.js";
 import type { GameProps } from "./Game.js";
 import { StockBand } from "./StockBand.js";
 import { d, minutesLabel } from "./format.js";
@@ -35,7 +36,6 @@ import {
 } from "./roadKit.js";
 import { scenePhase, use3d } from "./scene3d.js";
 import type { DeliveryOrderView, DeliveryView, RoadView, VehicleView } from "./types.js";
-import { WarCard } from "./wars.js";
 
 const Veneto3D = lazy(() => import("../routes3d/Veneto3D.js"));
 
@@ -182,26 +182,7 @@ export function RoadBoard(
                   urgent: urgent ? clock(urgent.expiresAt - props.now) : null,
                   time: reached && (!focused || lit) ? minutesLabel(roadMinutes(code) ?? 0) : null,
                   watched: road.watchedRoutes.includes(`${region}:${code}`),
-                  holders: [
-                    ...new Set(
-                      (props.view.wars?.concessions ?? [])
-                        .filter((x) => x.city === code && x.holderEmblem)
-                        .map((x) => x.holderEmblem ?? ""),
-                    ),
-                  ],
-                  war: (() => {
-                    const w = props.view.wars?.live.find((x) => x.city === code);
-                    if (!w) return null;
-                    const defence = w.defender
-                      ? w.score.defender
-                      : Math.max(w.threshold, w.score.defender);
-                    return {
-                      share: w.score.attacker / Math.max(1, w.score.attacker + defence),
-                      left: clock(w.endAt - props.now),
-                      mine: w.side !== null,
-                    };
-                  })(),
-                  monument: props.view.monuments.some((x) => x.city === code),
+                  holder: cityHolder(props, code),
                 };
               })}
               routes={myRoutes.map((route) => {
@@ -472,7 +453,6 @@ export function RoadBoard(
                       ✦
                     </text>
                   )}
-                  {props.view.monuments.some((m) => m.city === code) && <Monument />}
                   <MapText x={0} y={28} size={9} weight={700}>
                     {cityInfo.name}
                   </MapText>
@@ -613,6 +593,7 @@ export function RoadBoard(
         )}
       </Sheet>
       <BuyVehicleSheet props={props} open={buying} onClose={() => setBuying(false)} />
+      <DecreeBanner props={props} />
     </section>
   );
 }
@@ -786,26 +767,13 @@ function Garage({
   );
 }
 
-/** A city's orders; choosing one opens the loading: vehicle, escort, departure. */
-/** The obelisk raised to the family that won an act's worksite, beside its city. */
-function Monument() {
-  return (
-    <g transform="translate(-27 -2)">
-      <ellipse cx="0" cy="14" rx="7" ry="2" fill="#000" opacity="0.3" />
-      <rect x="-5" y="10" width="10" height="4" fill={P.cream} />
-      <path
-        d="M-3 10 L-1.6 -14 L1.6 -14 L3 10 Z"
-        fill={P.cream}
-        stroke={P.line}
-        strokeWidth="0.6"
-      />
-      <path d="M-1.6 -14 L0 -18 L1.6 -14 Z" fill={P.gold} />
-      <path d="M0 -18 V-24" stroke={P.gold} strokeWidth="1" />
-      <path d="M0 -24 L7 -22 L0 -20 Z" fill={P.vermilion} />
-    </g>
-  );
+/** The family holding a city's land in the week's campaign (null: the militia or Milan). */
+function cityHolder(props: GameProps, city: string): string | null {
+  const holder = props.view.families?.lands.find((l) => l.city === city)?.holder ?? null;
+  return holder && holder !== "milan" ? holder : null;
 }
 
+/** A city's orders; choosing one opens the loading: vehicle, escort, departure. */
 function CitySheet({
   city,
   props,
@@ -859,38 +827,16 @@ function CitySheet({
           {props.names.city(city)}
         </h3>
       </div>
-      {props.view.monuments
-        .filter((mo) => mo.city === city)
-        .map((mo) => (
-          <p
-            key={mo.act}
-            className="rounded-xl bg-gold/10 p-3 text-sm text-gold ring-1 ring-gold/50"
-          >
-            {m().monument(mo.guild)}
-          </p>
-        ))}
+      {cityHolder(props, city) && (
+        <p className="rounded-xl bg-night-2 p-3 text-sm text-cream-dim ring-1 ring-inset ring-line/70">
+          {m().heldBy(familyName(cityHolder(props, city)))}
+        </p>
+      )}
       {road.watchedRoutes.includes(route) && (
         <p className="rounded-xl bg-vermilion/15 p-3 text-sm text-vermilion ring-1 ring-vermilion/60">
           ⚔ {t().watchedWarning}
         </p>
       )}
-      {(props.view.wars?.live ?? [])
-        .filter((w) => w.city === city)
-        .map((w) => (
-          <WarCard key={w.id} war={w} props={props} />
-        ))}
-      {(props.view.wars?.concessions ?? [])
-        .filter((c) => c.city === city)
-        .map((c) => (
-          <p key={c.code} className="flex items-center gap-2 text-xs text-cream-dim">
-            <ResourceIcon code={c.resource} size={18} />
-            {fr.game.wars.concessionLine(
-              props.names.resource(c.resource).toLowerCase(),
-              c.holderName ?? fr.game.wars.seigneurie,
-              Math.round(c.tollBps / 100),
-            )}
-          </p>
-        ))}
       {orders.length === 0 && <p className="text-sm text-cream-dim">{m().noOrder}</p>}
       <div className="space-y-2">
         {orders.map((o) => {

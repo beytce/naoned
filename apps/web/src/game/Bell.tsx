@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavIcon } from "../art/icons.js";
 import { fr } from "../i18n.js";
 import { Label, Sheet } from "../ui.js";
+import { familyName, landName } from "./Famille.js";
 import type { GameProps } from "./Game.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
@@ -19,7 +20,8 @@ const ICON = {
   season: NavIcon.top,
   criee: NavIcon.marche,
   deal: NavIcon.marche,
-  guild: NavIcon.guilde,
+  family: NavIcon.famille,
+  siege: NavIcon.famille,
   ambush: NavIcon.routes,
   delivery: NavIcon.routes,
   robbed: NavIcon.routes,
@@ -38,7 +40,8 @@ const TONE: Record<string, string> = {
   season: "text-gold",
   criee: "text-gold",
   deal: "text-lagoon",
-  guild: "text-gold",
+  family: "text-gold",
+  siege: "text-vermilion",
   ambush: "text-vermilion",
   delivery: "text-lagoon",
   robbed: "text-vermilion",
@@ -96,15 +99,30 @@ function text(n: Notice, props: GameProps): string {
         props.names.resource(String(n.data.resource)).toLowerCase(),
         d(String(n.data.price)),
       );
-    case "guild": {
-      const kind = String(n.data.kind ?? "");
-      const subject = fr.game.guilds.kinds[kind]?.toLowerCase() ?? "";
-      return t.guild(
-        String(n.data.event ?? ""),
-        String(n.data.guild ?? ""),
-        subject,
-        n.data.passed === null || n.data.passed === undefined ? null : !!n.data.passed,
+    case "siege":
+      return t.siege(
+        landName(String(n.data.land ?? "")),
+        n.data.by === "milan" ? "de Milan" : `des ${familyName(String(n.data.by ?? ""))}`,
+        Number(n.data.lances ?? 0),
+        new Date(Number(n.data.arriveAt)).toLocaleTimeString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: "Europe/Paris",
+        }),
       );
+    case "family": {
+      const decrees = (Array.isArray(n.data.decrees) ? n.data.decrees : [])
+        .map((p) => fr.game.families.decrees.names[String((p as { code?: string }).code)] ?? "")
+        .filter(Boolean)
+        .join(", ");
+      return t.family(String(n.data.event ?? ""), {
+        land: landName(String(n.data.land ?? "")),
+        by: n.data.by === "milan" ? "Milan" : `les ${familyName(String(n.data.by ?? ""))}`,
+        amount: d(String(n.data.amount ?? "0")),
+        won: n.data.won ? "1" : "",
+        winner: n.data.winner ? familyName(String(n.data.winner)) : "",
+        decrees,
+      });
     }
     case "week": {
       const gain = BigInt(String(n.data.gain ?? "0"));

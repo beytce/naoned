@@ -77,7 +77,7 @@ export const fr = {
     tabs: {
       comptoir: "Comptoir",
       marche: "Marché",
-      guilde: "Guilde",
+      famille: "Famille",
       routes: "Routes",
       port: "Port",
       top: "Classement",
@@ -188,7 +188,7 @@ export const fr = {
     bandits: {
       title: "Poster une bande",
       help: (attacks: number, takePct: number, keptPct: number) =>
-        `En temps de guerre seulement : sur la route d'une ville en guerre, si vous êtes de l'un des camps (membre d'une guilde belligérante ou fournisseur engagé), vos brigands ne s'en prennent qu'aux convois de l'autre camp. Postez-les pour quelques heures. Ils tentent ${attacks} attaques au plus et prennent ${takePct} % de la cargaison${keptPct < 100 ? `, dont vous gardez ${keptPct} %` : ", que vous gardez entière"}. Chaque prise accroît votre infamie, et la prime que le Doge verse à qui vous repousse. Une victime qui riposte disperse votre bande ; une escorte vous repousse souvent. Personne n'attaque entre 22 h et 8 h, ni les nouveaux venus, ni les marchands de votre famille.`,
+        `Sous les lettres de course seulement : quand votre famille a imposé ce décret, vos brigands ne s'en prennent qu'aux convois des autres familles. Postez-les pour quelques heures. Ils tentent ${attacks} attaques au plus et prennent ${takePct} % de la cargaison${keptPct < 100 ? `, dont vous gardez ${keptPct} %` : ", que vous gardez entière"}. Chaque prise accroît votre infamie, et la prime que le Doge verse à qui vous repousse. Une victime qui riposte disperse votre bande ; une escorte vous repousse souvent. Personne n'attaque entre 22 h et 8 h, ni les nouveaux venus, ni les marchands de votre famille.`,
       infamy: (n: number) =>
         n > 0 ? `Infamie : ${n} prise${n > 1 ? "s" : ""} cette saison` : "Infamie : aucune prise",
       bountyOnHead: (amount: string) => `Prime sur votre tête : ${amount}`,
@@ -211,8 +211,7 @@ export const fr = {
       locked: (time: string) => `Le brigandage ouvre dans ${time}.`,
     },
     roadMap: {
-      monument: (guild: string) =>
-        `Ici s'élève le monument de la guilde ${guild}, victorieuse du chantier de l'Arsenal.`,
+      heldBy: (family: string) => `Dans la Campagne, la terre de cette ville est aux ${family}.`,
       label: "Carte des routes de la Vénétie",
       hud: (orders: number, free: number) =>
         `${orders} commande${orders > 1 ? "s" : ""} · ${free} véhicule${free > 1 ? "s" : ""} libre${free > 1 ? "s" : ""}`,
@@ -273,13 +272,173 @@ export const fr = {
       projects: "Grand chantier de la semaine",
       tabs: { doge: "Le Doge" },
     },
-    guilds: {
+    families: {
+      kicker: "Les quatre familles",
+      title: "La Campagne de Terraferme",
+      help: "Chaque semaine, les quatre grandes familles se disputent la Terraferme. Levez des lances, engagez-en contre des ducats, prenez des terres aux milices, à Milan et aux autres familles. De 8 h à 22 h, chaque terre rapporte sa Gloire à qui la tient, heure après heure. La famille la plus glorieuse à la fin de la semaine impose ses décrets la semaine suivante.",
+      names: {
+        contarini: "Contarini",
+        morosini: "Morosini",
+        mocenigo: "Mocenigo",
+        dandolo: "Dandolo",
+        milan: "Milan",
+      } as Record<string, string>,
+      militia: "les milices",
+      lands: {
+        feltre: "Feltre",
+        bassano: "Bassano",
+        vicenza: "Vicence",
+        conegliano: "Conegliano",
+        udine: "Udine",
+        schio: "Schio",
+        verona: "Vérone",
+        bergamo: "Bergame",
+        treviso: "Trévise",
+        pordenone: "Pordenone",
+        peschiera: "Peschiera",
+        crema: "Crema",
+        brescia: "Brescia",
+        lodi: "Lodi",
+        castelfranco: "Castelfranco",
+        legnago: "Legnago",
+        mantova: "Mantoue",
+        cremona: "Crémone",
+        padova: "Padoue",
+        mestre: "Mestre",
+        rovigo: "Rovigo",
+        adria: "Adria",
+        ferrara: "Ferrare",
+        chioggia: "Chioggia",
+        piove: "Piove di Sacco",
+      } as Record<string, string>,
+      kinds: {
+        seat: "Fief",
+        village: "Village",
+        bourg: "Bourg",
+        city: "Ville",
+        fortress: "Forteresse",
+      } as Record<string, string>,
+      opensIn: (inTime: string) => `Les familles vous recevront dans ${inTime}.`,
+      chooseTitle: "Prêtez allégeance",
+      chooseHelp:
+        "Une famille pour toute la saison. Une petite famille lève davantage de lances : rejoindre la plus grande ne suffit pas pour gagner.",
+      members: (n: number, active: number) =>
+        `${n} membre${n > 1 ? "s" : ""} · ${active} actif${active > 1 ? "s" : ""}`,
+      levy: (bps: number) =>
+        `Levée ${bps >= 10_000 ? "+" : ""}${Math.round((bps - 10_000) / 100)} %`,
+      smallest: "La plus petite : levée renforcée",
+      pledge: "Prêter allégeance",
+      confirm: (family: string) => `Rejoindre les ${family} pour la saison`,
+      cancel: "Annuler",
+      yours: "Votre famille",
+      glory: "Gloire",
+      gloryHelp:
+        "Gloire de la semaine : la valeur des terres tenues, à chaque heure entre 8 h et 22 h.",
+      weekEnds: (time: string) => `Fin de la semaine dans ${time}`,
+      lastWeek: "Dernière semaine : la famille gagnante remporte la saison.",
+      landsHeld: (n: number) => `${n} terre${n > 1 ? "s" : ""}`,
+      night: (time: string) => `Trêve de nuit : marches et Gloire reprennent dans ${time}.`,
+      milanNext: (time: string) =>
+        `Prochaine chevauchée de Milan dans ${time}, contre la famille en tête.`,
+      closed: "La Campagne de la saison est terminée.",
+      lances: "Vos lances",
+      reserve: "En réserve",
+      levyWaiting: "Levée à ramasser",
+      collect: (n: number) => `Lever ${n} lance${n > 1 ? "s" : ""}`,
+      levyHelp: (perHour: number, max: number) =>
+        `Gratuit : ${perHour} lances par heure de 8 h à 22 h, ${max} en attente au plus. Revenez les ramasser.`,
+      hire: "Engager des lances",
+      hireHelp: (hours: number) =>
+        `Payées en ducats, qui quittent le jeu. Plus chères au-delà des premières, plafonnées chaque jour. Toute lance part ${hours} h après avoir été levée ou engagée.`,
+      hireGo: (n: number, cost: string) => `Engager ${n} · ${cost}`,
+      hireDone: "Plafond du jour atteint : revenez demain.",
+      hiredToday: (n: number, max: number) => `${n} / ${max} engagées aujourd'hui`,
+      leaving: (n: number, time: string) => `${n} partent dans ${time}`,
+      map: "La Terraferme",
+      inReach: "À portée de vos lances",
+      mapHelp:
+        "Touchez une terre : la vôtre pour la renforcer, une voisine pour l'attaquer. Une attaque prend la terre si ses lances dépassent la garnison fois sa défense.",
+      land: {
+        garrison: "Garnison",
+        defense: "Défense",
+        factor: (bps: number) => `×${(bps / 10_000).toLocaleString("fr-FR")}`,
+        glory: (n: number) => `${n} / heure`,
+        heldBy: (who: string) => `Tenue par ${who}`,
+        seat: (family: string) => `Fief des ${family} : imprenable.`,
+        mine: "Vos lances",
+        needed: (n: number) => `Il faut plus de ${n} lances pour la prendre.`,
+        notAdjacent: "Trop loin : prenez d'abord une terre voisine.",
+        march: (minutes: number) => `Marche de ${minutes} min`,
+        reinforce: (n: number) => `Renforcer · ${n}`,
+        attack: (n: number) => `Attaquer · ${n}`,
+        noLances: "Levez ou engagez des lances d'abord.",
+        city: "Une ville du jeu : la famille qui la tient en fin de semaine peut y lever le péage.",
+      },
+      marches: "Les marches en cours",
+      noMarch: "Aucune marche en cours.",
+      marchLine: (who: string, lances: number, land: string) =>
+        `${who} · ${lances} lances → ${land}`,
+      arrives: (time: string) => `arrivée dans ${time}`,
+      join: (n: number) => `Se joindre · ${n}`,
+      yourLances: (n: number) => `dont ${n} à vous`,
+      programme: {
+        title: "Le programme",
+        help: (n: number, cap: string) =>
+          `Les ${n} décrets que votre famille imposera si elle gagne. Chaque membre vote ; les voix pèsent le Mérite de la semaine, aucune au-delà de ${cap} du total. Un décret ne peut pas être imposé deux semaines de suite.`,
+        current: "Si la semaine finissait maintenant",
+        yourVote: "Votre vote",
+        vote: "Voter ce programme",
+        pick: (n: number) => `Choisissez jusqu'à ${n} décrets`,
+        target: "Sur",
+        others: "Les programmes des autres familles",
+      },
+      decrees: {
+        title: "Décrets de la semaine",
+        none: "Aucun décret cette semaine.",
+        by: (family: string) => `Imposés par les ${family}`,
+        mine: "Votre famille les a imposés : ils jouent pour vous.",
+        theirs: "Imposés par une autre famille : ils jouent contre vous.",
+        names: {
+          fondaco: "Privilège du Fondaco",
+          gabelle: "Gabelle",
+          faveur: "Faveur d'une ville",
+          peage: "Péage de Terraferme",
+          course: "Lettres de course",
+          levant: "Tarif du Levant",
+          calmiere: "Calmiere",
+          franchise: "Franchise",
+        } as Record<string, string>,
+        effects: {
+          fondaco: (tax: string, quota: string) =>
+            `Membres : taxe du Rialto à ${tax}, quotas de la Dogana +${quota}.`,
+          gabelle: (good: string, pct: string) =>
+            `Les autres paient ${pct} de plus sur leurs ventes de ${good} au Rialto, au profit des membres.`,
+          faveur: (city: string, pct: string, minutes: number) =>
+            `Membres : livraisons à ${city} payées +${pct}, ses commandes urgentes à eux les ${minutes} premières minutes.`,
+          peage: (pct: string, cities: string) =>
+            `Les autres paient ${pct} de leurs livraisons à ${cities || "leurs villes"} aux membres.`,
+          course: "Seuls les membres postent des brigands, contre les convois des autres familles.",
+          levant: (lighter: string, heavier: string) =>
+            `Droits de port : −${lighter} pour les membres, +${heavier} pour les autres.`,
+          calmiere: (good: string, pct: string) =>
+            `Aucune offre de ${good} au-dessus de ${pct} du prix de référence.`,
+          franchise: (pct: string) => `Membres : entretien des bâtiments −${pct}.`,
+        },
+      },
+      roll: "Les membres et leur Mérite",
+      meritHelp: (per: number) =>
+        `Mérite : une lance par bataille gagnée, un point pour ${per} lances tenues une heure en garnison.`,
+      captain: "capitaine",
+      you: "vous",
+      history: "Les semaines passées",
+      won: (family: string) => `Victoire des ${family}`,
+      nobody: "Personne",
       thread: {
-        title: "Fil de la guilde",
-        help: "Réservé aux membres de votre guilde. Restez courtois : un message signalé par trois membres disparaît.",
+        title: "Fil de la famille",
+        help: "Réservé aux membres de votre famille : préparez vos assauts. Restez courtois : un message signalé par trois membres disparaît.",
         empty: "Aucun message pour l'instant. Lancez la conversation !",
         me: "Vous",
-        placeholder: "Un mot pour votre guilde…",
+        placeholder: "Un mot pour votre famille…",
         send: "Envoyer",
         report: "Signaler",
         reported: "Signalé",
@@ -289,125 +448,10 @@ export const fr = {
           message_refused: "Ce message n'est pas accepté (mot interdit ou lien).",
           message_too_fast: "Doucement : un message toutes les 10 secondes.",
           message_too_many: "Vous avez assez écrit pour aujourd'hui.",
-          not_member: "Rejoignez d'abord une guilde.",
+          not_member: "Prêtez d'abord allégeance à une famille.",
           other: "Le message n'est pas parti. Réessayez.",
         } as Record<string, string>,
       },
-      kicker: "Les guildes marchandes",
-      title: "Unissez vos ducats",
-      help: "Fondez ou rejoignez une guilde. Chaque ducat versé à son trésor achète des carats à leur valeur du moment : investir ne vous appauvrit pas, et vos carats comptent dans votre patrimoine. Ils donnent vos voix et votre part des dividendes ; ensemble, tenez des concessions.",
-      opensIn: (inTime: string) => `Les guildes vous ouvrent leurs portes dans ${inTime}.`,
-      stakeTitle: "Votre mise",
-      stakeHelp: (min: string) =>
-        `Ce que vous versez au trésor en entrant (${min} au moins) : autant de carats, à leur valeur.`,
-      stake: "Mise",
-      joinTitle: "Rejoindre une guilde",
-      none: "Aucune guilde pour l'instant : fondez la première !",
-      members: (n: number, max: number) => `${n} / ${max} membres`,
-      treasury: "Trésor",
-      closed: "Fermée",
-      openYes: "Ouverte",
-      full: "Complète",
-      join: (amount: string) => `Rejoindre · ${amount}`,
-      foundTitle: "Fonder une guilde",
-      foundHelp: (fee: string) =>
-        `Les droits de fondation (${fee}) quittent le jeu ; votre mise entre au trésor et vous fait premier porteur de carats.`,
-      namePlaceholder: "Nom de la guilde",
-      found: (total: string) => `Fonder · ${total}`,
-      yours: "Votre guilde",
-      value100: "Valeur de 100 carats",
-      myCarats: "Vos carats",
-      myShare: "Votre part",
-      myWeight: (pct: number, cap: string) =>
-        `Vous pesez ${pct} % des voix (personne ne pèse plus de ${cap} des carats).`,
-      invest: "Investir",
-      investGo: "Verser",
-      investHelp:
-        "Les ducats versés deviennent des carats, à la valeur du trésor : votre patrimoine ne bouge pas.",
-      settings: "Ce que la guilde a voté",
-      votes: "Les votes",
-      votesHelp: (hours: number) =>
-        `Une proposition passe dès qu'elle réunit la majorité de la guilde, ou au bout de ${hours} h si les oui l'emportent sur les non.`,
-      newProposal: "Proposer",
-      noVote: "Aucun vote en cours.",
-      history: "Votes passés",
-      passed: "Adopté",
-      rejected: "Rejeté",
-      by: (who: string) => `Proposé par ${who}`,
-      yes: "Pour",
-      no: "Contre",
-      majority: "majorité : 50 %",
-      propose: "Soumettre au vote",
-      kinds: {
-        dividend: "Dividendes",
-        toll: "Péage",
-        bounty: "Prime",
-        open: "Ouverture",
-        exclude: "Exclusion",
-        war: "Guerre",
-      } as Record<string, string>,
-      kindHelp: {
-        dividend:
-          "Part de chaque recette (péages, primes de chantier) versée tout de suite aux membres, au prorata des carats. Le reste grossit le trésor.",
-        toll: "Ce que paient les autres marchands sur leurs livraisons aux villes dont la guilde tient la concession.",
-        bounty:
-          "Ce que le trésor paie par unité aux marchands qui livrent pour la guilde pendant une guerre.",
-        open: "Ouverte : tout marchand peut entrer avec sa mise. Fermée : plus personne n'entre.",
-        exclude: "Le membre exclu reçoit la pleine valeur de ses carats.",
-      } as Record<string, string>,
-      proposal: {
-        toll: (v: string) => `Péage des concessions à ${v}`,
-        dividend: (v: string) => `Verser ${v} des recettes en dividendes`,
-        bounty: (v: string) => `Prime de ${v} par unité aux fournisseurs en guerre`,
-        open: "Ouvrir la guilde aux nouveaux membres",
-        close: "Fermer la guilde aux nouveaux membres",
-        exclude: (who: string) => `Exclure ${who}`,
-        war: "Déclarer une guerre commerciale",
-      },
-      roll: "Les membres et leurs carats",
-      you: "vous",
-      founder: "fondateur",
-      leave: "Quitter la guilde…",
-      leaveHelp: (refund: string, fee: string) =>
-        `Vos carats vous sont rachetés ${refund} : la guilde garde ${fee} de leur valeur.`,
-      leaveLast: (refund: string) =>
-        `Vous êtes le dernier membre : vous reprenez tout le trésor (${refund}) et la guilde est dissoute.`,
-      leaveConfirm: "Quitter",
-      cancel: "Annuler",
-    },
-    wars: {
-      war: "Guerre commerciale",
-      title: (good: string, city: string) => `${good} de ${city}`,
-      seigneurie: "La Seigneurie",
-      threshold: "à battre",
-      yourSide: (side: string) => `Vous livrez pour ${side}`,
-      supplied: (n: number) => `${n} unités livrées`,
-      enlistHelp:
-        "Sans guilde, vous pouvez fournir un camp : vos livraisons de ce bien à cette ville comptent pour lui, et sa guilde vous paie sa prime par unité.",
-      supply: (side: string, bounty: string) => `Fournir ${side} · ${bounty}/u.`,
-      toRoad: "Livrer sur la carte",
-      concessions: "Les concessions",
-      concessionsHelp: (premium: number, stake: string, hours: number) =>
-        `Une guilde qui tient une concession lève son péage sur les livraisons des autres et paie ${premium} % de plus à ses membres. Pour la prendre : un vote, un trésor de guerre de ${stake}, et ${hours} h pour livrer plus que le camp d'en face.`,
-      toll: (pct: number) => `péage ${pct} %`,
-      concessionLine: (good: string, holder: string, toll: number) =>
-        `Concession · ${good} : ${holder}${toll > 0 ? `, péage ${toll} %` : ""}`,
-      declare: "Guerre",
-      live: "Les guerres en cours",
-      none: "Aucune guerre en cours.",
-      recent: "Guerres récentes",
-      refusals: {
-        own_concession: "Votre guilde la tient déjà.",
-        concession_protected: "Protégée après sa dernière guerre.",
-        war_under_way: "Une guerre s'y livre déjà.",
-        guild_at_war: "Votre guilde mène déjà une guerre.",
-        treasury_short: "Le trésor ne couvre pas le trésor de guerre.",
-        no_guild: "Rejoignez une guilde.",
-      } as Record<string, string>,
-      banner: "Demandes de guerre",
-      bannerHelp: "Une ville en guerre commande davantage : vendez aux belligérants.",
-      sell: "Vendre",
-      atWar: "En guerre",
     },
     port: {
       kicker: "Port de Venise",
@@ -533,16 +577,16 @@ export const fr = {
       open: (title: string) => `L'acte en cours : ${title}`,
       nextIn: (time: string) => `Acte suivant dans ${time}`,
       endIn: (time: string) => `Fin de la saison dans ${time}`,
-      toWorksite: "Voir le chantier de l'Arsenal",
+      toCampaign: "Voir la Campagne",
       acts: {
         installation: [
           "L'installation",
           "Les marchands s'installent en Vénétie. Bâtissez, livrez, trouvez vos fournisseurs : la semaine prochaine, une crise frappera la République.",
         ],
         crisis: ["La crise", "Une crise s'annonce pour la République…"],
-        worksite: [
-          "L'Arsenal",
-          "Le Doge fait agrandir l'Arsenal : livrez briques et planches à Venise, payées 15 % de plus. Chaque unité compte pour votre guilde ; celle qui livre le plus reçoit 300 d à son trésor et son monument.",
+        lombardy: [
+          "La guerre de Lombardie",
+          "Milan lève ses troupes : cette semaine, ses garnisons et ses chevauchées sont moitié plus fortes. Ses forteresses rapportent toujours le plus de Gloire.",
         ],
         sensa: [
           "La Sensa",
@@ -567,15 +611,6 @@ export const fr = {
           "La grande foire de l'Ascension : les commandes sont payées 15 % de plus et plus nombreuses. Dernière ligne droite avant la fin du mois.",
         ],
       } as Record<string, [string, string]>,
-      worksite: {
-        kicker: "Le grand chantier",
-        title: (city: string) => `L'Arsenal de ${city}`,
-        help: "Livrez ici, au prix affiché. Chaque unité compte pour votre guilde : celle qui livre le plus d'ici la fin de l'acte reçoit 300 d à son trésor et son monument sur la carte.",
-        closesIn: (time: string) => `Fin du chantier dans ${time}`,
-        deliver: (q: number, amount: string) => `Livrer ${q} · ${amount}`,
-        noGuild: "Rejoignez une guilde pour que vos livraisons comptent.",
-        race: "La course des guildes",
-      },
     },
     mastery: {
       kicker: "Maîtrise de la saison",
@@ -846,6 +881,8 @@ export const fr = {
         family_order_reward: "Commandes de famille",
         guild_dividend: "Dividendes de guilde",
         guild_payout: "Trésor de guilde partagé",
+        decree_favour: "Faveur d'une ville",
+        decree_share: "Part des décrets",
         delivery: "Livraisons",
         bounty: "Primes du Doge",
       } as Record<string, string>,
@@ -865,7 +902,8 @@ export const fr = {
           event: `${n} nouvelle${n > 1 ? "s" : ""} à la gazette`,
           act: "Un nouvel acte de la saison",
           week: "Résultats de la semaine",
-          guild: "Nouvelles de la guilde",
+          family: "Nouvelles de la famille",
+          siege: `${n} terre${n > 1 ? "s" : ""} menacée${n > 1 ? "s" : ""}`,
           ambush: `${n} attaque${n > 1 ? "s" : ""} de brigands`,
           delivery: `${n} livraison${n > 1 ? "s" : ""} payée${n > 1 ? "s" : ""}`,
           robbed: `${n} prise${n > 1 ? "s" : ""} sur la route`,
@@ -1008,12 +1046,18 @@ export const fr = {
             ? `${who} a riposté : votre bande est dispersée. Encaissez son butin.`
             : `Le convoi de ${who} a repoussé votre bande.`,
       bandOver: (city: string) => `Votre bande quitte la route de ${city} : encaissez le butin.`,
-      guild: (event: string, guild: string, subject: string, passed: boolean | null) =>
-        event === "proposal_opened"
-          ? `${guild} vote : ${subject}.`
-          : event === "worksite_won"
-            ? `${guild} remporte le chantier : la prime rejoint son trésor.`
-            : `${guild} a ${passed ? "adopté" : "rejeté"} : ${subject}.`,
+      siege: (land: string, by: string, lances: number, time: string) =>
+        `${land} menacée : ${lances} lances ${by} arrivent à ${time}. Renforcez la garnison !`,
+      family: (event: string, data: Record<string, string>) =>
+        event === "land_lost"
+          ? `${data.land} est perdue, prise par ${data.by}.`
+          : event === "decree_share"
+            ? `Votre part des décrets : ${data.amount}.`
+            : data.won === "1"
+              ? `Votre famille gagne la semaine${data.decrees ? ` et impose ${data.decrees}` : ""} !`
+              : data.winner
+                ? `Les ${data.winner} gagnent la semaine${data.decrees ? ` et imposent ${data.decrees}` : ""}.`
+                : "La semaine se termine sans vainqueur.",
       week: (week: number, rank: number, gain: string, award: string | null) =>
         `Semaine ${week} : vous terminez ${rank}${rank === 1 ? "er" : "e"} (${gain}).${award ? ` Vous êtes ${award} !` : ""}`,
       push: {
@@ -1040,7 +1084,8 @@ export const fr = {
           season: "Fin et ouverture de saison",
           criee: "Criées (Pass Négociant)",
           deal: "Bonnes affaires (Pass Négociant)",
-          guild: "Votes et nouvelles de la guilde",
+          family: "Résultats de la Campagne et terres perdues",
+          siege: "Terre menacée (alerte immédiate)",
           ambush: "Attaque de brigands (alerte immédiate)",
           delivery: "Livraison arrivée",
           robbed: "Convoi détroussé (subi ou réussi)",
@@ -1221,9 +1266,9 @@ export const fr = {
         text: "Chaque niveau d'atelier mange 2 pains par jour. Sans pain, les nouveaux lots prennent 50 % de temps en plus. Les boulangeries et les briqueteries brûlent du bois.",
       },
       {
-        icon: "guilde",
-        title: "Le Doge et les guildes",
-        text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). L'onglet Guilde : fondez ou rejoignez une guilde, investissez dans son trésor contre des carats, votez ses péages et ses dividendes.",
+        icon: "famille",
+        title: "Le Doge et les familles",
+        text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). L'onglet Famille : prêtez allégeance à l'une des quatre grandes familles, levez et engagez des lances, prenez des terres dans la Campagne de la semaine. La famille la plus glorieuse impose ses décrets la semaine suivante.",
       },
       {
         icon: "port",
@@ -1298,30 +1343,22 @@ export const fr = {
       cargo_too_valuable: "La cargaison dépasse la cale du navire marchand.",
       unknown_expedition: "Galère introuvable.",
       expedition_not_back: "La galère n'est pas encore rentrée.",
-      guilds_off: "Pas de guildes dans ce monde.",
-      guild_locked: "Les guildes ne vous ont pas encore ouvert leurs portes.",
-      guild_member: "Vous êtes déjà membre d'une guilde.",
-      guild_name_taken: "Ce nom de guilde est déjà pris.",
-      guild_full: "Cette guilde est complète.",
-      guild_closed: "Cette guilde n'accepte plus de membres.",
-      unknown_guild: "Guilde introuvable.",
-      no_guild: "Rejoignez d'abord une guilde.",
-      stake_too_small: "La mise est trop petite.",
-      invalid_name: "Nom invalide (2 à 32 caractères).",
-      invalid_proposal: "Proposition hors des limites.",
-      unknown_proposal: "Vote introuvable.",
-      proposal_closed: "Ce vote est déjà clos.",
-      unknown_concession: "Concession inconnue.",
-      own_concession: "Votre guilde tient déjà cette concession.",
-      concession_protected: "Cette concession est protégée après sa dernière guerre.",
-      war_under_way: "Une guerre s'y livre déjà.",
-      guild_at_war: "Votre guilde mène déjà une guerre.",
-      treasury_short: "Le trésor ne couvre pas le trésor de guerre.",
-      unknown_war: "Guerre introuvable ou finie.",
-      already_enlisted: "Vous fournissez déjà un camp.",
-      no_side: "Ce camp ne recrute pas.",
-      no_war:
-        "Le brigandage n'est permis que pendant une guerre, sur sa route, par l'un de ses camps.",
+      families_off: "Pas de familles dans ce monde.",
+      family_locked: "Les familles ne vous reçoivent pas encore.",
+      family_chosen: "Vous avez déjà prêté allégeance pour la saison.",
+      unknown_family: "Famille inconnue.",
+      no_family: "Prêtez d'abord allégeance à une famille.",
+      unknown_land: "Terre inconnue.",
+      seat_untouchable: "Un fief ne se prend pas et n'a pas besoin de garnison.",
+      not_adjacent: "Trop loin : seulement vos terres et leurs voisines.",
+      not_enough_lances: "Pas assez de lances en réserve.",
+      nothing_to_levy: "Rien à lever pour l'instant.",
+      hire_limit: "Plafond de lances du jour atteint.",
+      unknown_march: "Cette marche est déjà arrivée.",
+      invalid_programme: "Programme invalide.",
+      no_decree: "Le brigandage n'est permis qu'à la famille qui a imposé les lettres de course.",
+      order_reserved:
+        "Cette commande est réservée un moment à la famille qui a la faveur de la ville.",
     } as Record<string, string>,
   },
 

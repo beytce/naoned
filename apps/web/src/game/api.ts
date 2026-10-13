@@ -3,8 +3,8 @@ import type {
   Action,
   Catalog,
   CrestData,
+  FamilyMessage,
   GameResponse,
-  GuildMessage,
   Notice,
   NotificationKind,
   Palmares,
@@ -56,14 +56,14 @@ export const gameApi = {
   ceremonySeen: (worldId: string) =>
     call<{ ok: true }>("POST", "/api/game/ceremony/seen", { worldId }),
   prices: () => call<{ series: PriceSeries }>("GET", "/api/game/prices"),
-  guildThread: () =>
-    call<{ guild: string; messages: GuildMessage[] }>("GET", "/api/game/guild/messages"),
-  sayToGuild: (body: string) =>
-    call<{ guild: string; messages: GuildMessage[] }>("POST", "/api/game/guild/messages", {
+  familyThread: () =>
+    call<{ family: string; messages: FamilyMessage[] }>("GET", "/api/game/family/messages"),
+  sayToFamily: (body: string) =>
+    call<{ family: string; messages: FamilyMessage[] }>("POST", "/api/game/family/messages", {
       body,
     }),
   reportMessage: (id: string) =>
-    call<{ ok: true }>("POST", `/api/game/guild/messages/${id}/report`, {}),
+    call<{ ok: true }>("POST", `/api/game/family/messages/${id}/report`, {}),
   notifications: () => call<{ items: Notice[]; unread: number }>("GET", "/api/notifications"),
   markRead: () => call<{ ok: true }>("POST", "/api/notifications/read", {}),
   pushSettings: () => call<PushSettings>("GET", "/api/notifications/push"),

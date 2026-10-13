@@ -5,6 +5,7 @@ import { Galley, PortArt } from "../art/scenes.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Ribbon, Sheet, Slab, Stat, Switch, Tabs, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
+import { DecreeBanner } from "./Famille.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
 import { store } from "./store.js";
@@ -741,6 +742,7 @@ function OpenPort(props: GameProps) {
         </h1>
         <p className="mt-2 text-sm text-cream-dim">{t().help}</p>
       </header>
+      <DecreeBanner props={props} />
 
       {active.map((e) => (
         <ActiveConvoy key={e.id} e={e} props={props} />

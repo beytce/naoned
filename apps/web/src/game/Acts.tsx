@@ -1,12 +1,9 @@
-import { useEffect, useState } from "react";
-import { ResourceIcon } from "../art/resources.js";
+import { useEffect } from "react";
 import { fr } from "../i18n.js";
-import { Big, Label, Panel, Qty, Ribbon, Sheet, Slab, clock } from "../ui.js";
-import { have } from "./Comptoir.js";
+import { Label, Sheet, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
-import { d } from "./format.js";
 import { store } from "./store.js";
-import type { PlayerView, Project } from "./types.js";
+import type { PlayerView } from "./types.js";
 
 const t = () => fr.game.acts;
 const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
@@ -112,107 +109,18 @@ export function ActCard(props: GameProps) {
         <p className="label">
           {next ? t().nextIn(clock(act.endsAt - now)) : t().endIn(clock(act.endsAt - now))}
         </p>
-        {act.worksite && (
+        {act.milanBps > 10_000 && view.families && (
           <Slab
             className="w-full"
             onClick={() => {
               props.setSheet(null);
-              props.goTo("guilde");
+              props.goTo("famille");
             }}
           >
-            {t().toWorksite}
+            {t().toCampaign}
           </Slab>
         )}
       </div>
     </Sheet>
-  );
-}
-
-/** The act's worksite: what is still needed, delivering, and the guilds' race. */
-export function WorksitePanel(props: GameProps) {
-  const { view, now } = props;
-  const project: Project | undefined = view.projects.find(
-    (p) => p.act !== undefined && now < p.deadline,
-  );
-  const resources = project ? Object.keys(project.needs) : [];
-  const [resource, setResource] = useState(resources[0] ?? "");
-  const [qty, setQty] = useState(1);
-  if (!project) return null;
-  const left = (r: string) => (project.needs[r] ?? 0) - (project.delivered[r] ?? 0);
-  const max = Math.max(0, Math.min(have(view, resource), left(resource)));
-  const q = Math.min(Math.max(1, qty), Math.max(1, max));
-  const race = Object.entries(project.byGuild ?? {}).sort((a, b) => b[1] - a[1]);
-  const mine = view.guilds?.mine?.id ?? null;
-  const name = (id: string) => view.guilds?.list.find((g) => g.id === id)?.name ?? "—";
-  return (
-    <Panel glow="gold">
-      <Label className="text-gold">{t().worksite.kicker}</Label>
-      <h3 className="mt-1 font-display text-xl font-extrabold uppercase">
-        {t().worksite.title(props.names.city(project.city))}
-      </h3>
-      <p className="mt-1 text-sm text-cream-dim">{t().worksite.help}</p>
-      <p className="label mt-2">{t().worksite.closesIn(clock(project.deadline - now))}</p>
-      <div className="mt-3 space-y-2">
-        {resources.map((r) => (
-          <div key={r} className="flex items-center gap-2">
-            <ResourceIcon code={r} size={22} />
-            <div className="flex-1">
-              <Ribbon
-                value={(project.delivered[r] ?? 0) / Math.max(1, project.needs[r] ?? 1)}
-                label={`${project.delivered[r] ?? 0} / ${project.needs[r] ?? 0} · ${d(project.unitPrice[r])}`}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-      {mine ? (
-        <div className="mt-4 space-y-2">
-          <div className="flex gap-2">
-            {resources.map((r) => (
-              <button
-                key={r}
-                type="button"
-                aria-pressed={resource === r}
-                onClick={() => setResource(r)}
-                className={`flex flex-1 items-center justify-center gap-1 rounded-xl border px-2 py-2 text-sm ${resource === r ? "border-gold bg-gold/10" : "border-line"}`}
-              >
-                <ResourceIcon code={r} size={18} />
-                {fr.game.inStock} {have(view, r)}
-              </button>
-            ))}
-          </div>
-          <Qty value={q} max={Math.max(1, max)} onChange={setQty} />
-          <Slab
-            className="w-full"
-            disabled={props.busy || max === 0}
-            onClick={() =>
-              props.act({ type: "deliverToProject", projectId: project.id, resource, quantity: q })
-            }
-          >
-            {t().worksite.deliver(q, d(BigInt(project.unitPrice[resource] ?? 0) * BigInt(q)))}
-          </Slab>
-        </div>
-      ) : (
-        <p className="mt-3 text-sm text-vermilion">{t().worksite.noGuild}</p>
-      )}
-      {race.length > 0 && (
-        <div className="mt-4">
-          <Label>{t().worksite.race}</Label>
-          <ol className="mt-2 space-y-1">
-            {race.map(([guild, units], i) => (
-              <li
-                key={guild}
-                className={`flex justify-between text-sm ${guild === mine ? "text-gold" : ""}`}
-              >
-                <span>
-                  {i + 1}. {name(guild)}
-                </span>
-                <Big className="text-sm">{units}</Big>
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
-    </Panel>
   );
 }
