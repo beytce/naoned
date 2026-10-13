@@ -443,8 +443,8 @@ export const venice1450Settings: WorldSettingsInput = {
     urgentPremiumBps: 1_500,
     urgentOpenMinutes: 180,
     urgentHours: { from: 8, to: 21 },
-    // Vehicles carry several orders at once: city orders at the reference, +30 % per hour of road.
-    cityPriceBps: 10_000,
+    // Vehicles carry several orders at once: city orders at +10 %, +30 % per hour of road.
+    cityPriceBps: 11_000,
     distanceBonusBpsPerHour: 3_000,
     // City prices follow the Rialto: half the reference, half yesterday's traded price, between
     // 80 % and 150 % of the reference.
@@ -464,8 +464,8 @@ export const venice1450Settings: WorldSettingsInput = {
     // On a market event day, three city orders go where the event asks for more.
     eventOrdersPerDay: 3,
     // Shared demand: the cities' orders form one board for the world, first come first served
-    // (five city orders per active merchant: vehicles fill up with several of them).
-    sharedOrdersPerActivePlayer: 5,
+    // (four city orders per active merchant: vehicles fill up with several of them).
+    sharedOrdersPerActivePlayer: 4,
     welcome: {
       terraferma: { resource: "bread", quantity: 12 },
       lagoon: { resource: "bricks", quantity: 8 },
