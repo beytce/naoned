@@ -2,7 +2,9 @@ import * as THREE from "three";
 import type { SkyPhase } from "../art/domain.js";
 import { LIGHT } from "../domain3d/light.js";
 import { disposeMaterials, mat } from "../domain3d/materials.js";
+import { disposeMergedIn, mergeStatic } from "../domain3d/merge.js";
 import { box, cone, cyl, disposeGeometries, shadowBlob, tree } from "../domain3d/models.js";
+import type { Motion } from "../game/pacing.js";
 import { SCALE, type Spot, toWorld } from "../routes3d/layout.js";
 import { type Town, depotModel, townModel } from "../routes3d/towns.js";
 import { buildVenetoLand, ribbon } from "../routes3d/world.js";
@@ -59,6 +61,13 @@ export interface Anchor {
 }
 
 const DIR = new THREE.Vector3(0.18, 1.6, 1).normalize();
+/** Where the sun stands from what the camera looks at. */
+const SUN = new THREE.Vector3(14, 30, -8);
+/** The sun's axes, to set its shadows on whole texels (they do not shimmer as the map moves). */
+const SUN_AXES = new THREE.Matrix4().lookAt(SUN, new THREE.Vector3(), new THREE.Vector3(0, 1, 0));
+const SUN_AXES_INV = SUN_AXES.clone().transpose();
+/** How fast a wheel's zoom settles (per second). */
+const ZOOM_EASE = 14;
 const DISTANCE = 120;
 /** How far a land's ground reaches at most (map units). */
 const RADIUS = 46;
@@ -108,7 +117,6 @@ export class CampaignWorld {
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.shadowMap.enabled = true;
@@ -143,6 +151,19 @@ export class CampaignWorld {
       tree(this.land, p.x, p.z, 0.9, "#2F6345");
       tree(this.land, p.x + 0.6, p.z + 0.3, 0.7, "#3F7A4A");
     }
+    // By zones of 8 units: a zoomed map draws only the zones in view.
+    mergeStatic(this.land, [], { cell: 8 });
+  }
+
+  /** The sharpness of the drawing (pixel ratio), set by the scene's loop. */
+  setRatio(ratio: number) {
+    if (ratio !== this.renderer.getPixelRatio()) this.renderer.setPixelRatio(ratio);
+  }
+
+  /** A wheel's zoom still settling keeps the pace up; flags and columns live otherwise. */
+  motion(): Motion {
+    if (this.zoomLeft !== 0) return "busy";
+    return this.state?.still ? "still" : "anim";
   }
 
   setSize(width: number, height: number) {
@@ -166,11 +187,81 @@ export class CampaignWorld {
     this.clampView();
   }
 
-  /** Zooms in (factor < 1) or out, between a few lands and the whole map. */
-  zoomBy(factor: number) {
+  /** Zoom still to come from the wheel (log of its factor), toward a point of the canvas. */
+  private zoomLeft = 0;
+  private zoomAround = { x: 0, y: 0 };
+  private lastFrame = 0;
+
+  /**
+   * Zooms in (factor < 1) or out by the wheel, keeping the ground under (x, y) css px where it
+   * is; eased over the next frames.
+   */
+  zoomAt(factor: number, x: number, y: number) {
+    // Not beyond the limits: a wheel turned on at the widest view stores nothing.
+    const left = Math.log(this.view.span) + this.zoomLeft + Math.log(factor);
+    const goal = Math.max(Math.log(VIEW_MIN), Math.min(Math.log(VIEW_MAX), left));
+    this.zoomLeft = goal - Math.log(this.view.span);
+    this.zoomAround = { x, y };
+  }
+
+  /** Zooms at once by a pinch, keeping the ground between the fingers where it is. */
+  zoomNow(factor: number, x: number, y: number) {
+    this.zoomLeft = 0;
+    this.applyZoom(factor, x, y);
+  }
+
+  private applyZoom(factor: number, x: number, y: number) {
+    this.placeCamera();
+    const before = this.groundAt(x, y);
     this.view.span = Math.max(VIEW_MIN, Math.min(VIEW_MAX, this.view.span * factor));
     this.half = this.fitHalf();
+    this.placeCamera();
+    const after = this.groundAt(x, y);
+    if (before && after) {
+      this.view.cx += before.x - after.x;
+      this.view.cz += before.z - after.z;
+    }
     this.clampView();
+  }
+
+  /** The ground (y = 0) under a point of the canvas, in css pixels. */
+  private groundAt(x: number, y: number): THREE.Vector3 | null {
+    const ndc = new THREE.Vector2((x / this.width) * 2 - 1, -(y / this.height) * 2 + 1);
+    this.raycaster.setFromCamera(ndc, this.camera);
+    return this.raycaster.ray.intersectPlane(
+      new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),
+      new THREE.Vector3(),
+    );
+  }
+
+  /** The camera over the view's centre, and the sun's shadows around it on whole texels. */
+  private placeCamera() {
+    const aspect = this.width / this.height;
+    this.camera.left = -this.half * aspect;
+    this.camera.right = this.half * aspect;
+    this.camera.top = this.half;
+    this.camera.bottom = -this.half;
+    const look = new THREE.Vector3(this.view.cx, 0, this.view.cz);
+    this.camera.position.copy(look).add(DIR.clone().multiplyScalar(DISTANCE));
+    this.camera.lookAt(look);
+    this.camera.updateProjectionMatrix();
+    this.camera.updateMatrixWorld();
+    const sc = this.sun.shadow.camera;
+    const r = this.half * 1.7;
+    const texel = (2 * r) / this.sun.shadow.mapSize.x;
+    const c = look.applyMatrix4(SUN_AXES_INV);
+    c.x = Math.round(c.x / texel) * texel;
+    c.y = Math.round(c.y / texel) * texel;
+    c.applyMatrix4(SUN_AXES);
+    this.sun.position.copy(c).add(SUN);
+    this.sun.target.position.copy(c);
+    sc.left = -r;
+    sc.right = r;
+    sc.top = r;
+    sc.bottom = -r;
+    sc.near = 0.5;
+    sc.far = 120;
+    sc.updateProjectionMatrix();
   }
 
   private clampView() {
@@ -236,6 +327,7 @@ export class CampaignWorld {
       group.position.set(p.x, 0, p.z);
       let top = 0.8;
       let town: Town | undefined;
+      const kept: THREE.Object3D[] = [];
       if (l.city) {
         town = townModel(l.city);
         town.group.scale.setScalar(0.8);
@@ -243,6 +335,7 @@ export class CampaignWorld {
         top = town.top * 0.8;
       } else if (l.seat) {
         const d = depotModel(false);
+        kept.push(...d.windows, ...d.flags);
         d.group.scale.setScalar(1.25);
         group.add(d.group);
         top = 1.2;
@@ -263,6 +356,7 @@ export class CampaignWorld {
       group.add(flag);
       group.scale.multiplyScalar(MODEL_SCALE);
       group.userData = { kind: "land", code: l.code };
+      mergeStatic(group, [flag, ...(town?.windows ?? []), ...(town?.flags ?? []), ...kept]);
       this.models.set(l.code, { group, flag, top: Math.max(top, pole) * MODEL_SCALE, town });
       this.scene.add(group);
     }
@@ -360,6 +454,8 @@ export class CampaignWorld {
     return w * (this.height / this.width);
   }
 
+  private phase: SkyPhase | null = null;
+
   private light(phase: SkyPhase) {
     const l = LIGHT[phase];
     this.sun.color.set(l.sun);
@@ -368,8 +464,12 @@ export class CampaignWorld {
     this.hemi.groundColor.set(l.ground);
     this.hemi.intensity = l.hemiI;
     this.renderer.toneMappingExposure = l.exposure;
-    this.scene.background = new THREE.Color(l.fog);
-    this.scene.fog = new THREE.Fog(l.fog, 160, 260);
+    // A new fog makes three.js check every material's shader again: only when the hour turns.
+    if (phase !== this.phase) {
+      this.phase = phase;
+      this.scene.background = new THREE.Color(l.fog);
+      this.scene.fog = new THREE.Fog(l.fog, 160, 260);
+    }
     const lit = phase !== "day";
     for (const m of this.models.values())
       for (const w of m.town?.windows ?? []) w.material = mat(lit ? "window-lit" : "window");
@@ -379,28 +479,17 @@ export class CampaignWorld {
     const state = this.state;
     if (!state) return;
     const s = (t - this.started) / 1000;
-    const cx = this.view.cx;
-    const cz = this.view.cz;
-    const aspect = this.width / this.height;
-    this.camera.left = -this.half * aspect;
-    this.camera.right = this.half * aspect;
-    this.camera.top = this.half;
-    this.camera.bottom = -this.half;
-    const look = new THREE.Vector3(cx, 0, cz);
-    this.camera.position.copy(look).add(DIR.clone().multiplyScalar(DISTANCE));
-    this.camera.lookAt(look);
-    this.camera.updateProjectionMatrix();
-    this.sun.position.copy(look).add(new THREE.Vector3(14, 30, -8));
-    this.sun.target.position.copy(look);
-    const sc = this.sun.shadow.camera;
-    const r = this.half * 1.7;
-    sc.left = -r;
-    sc.right = r;
-    sc.top = r;
-    sc.bottom = -r;
-    sc.near = 0.5;
-    sc.far = 120;
-    sc.updateProjectionMatrix();
+    const dt = Math.min(0.1, (t - (this.lastFrame || t)) / 1000);
+    this.lastFrame = t;
+    if (this.zoomLeft !== 0) {
+      const step =
+        Math.abs(this.zoomLeft) < 0.002
+          ? this.zoomLeft
+          : this.zoomLeft * (1 - Math.exp(-dt * ZOOM_EASE));
+      this.zoomLeft -= step;
+      this.applyZoom(Math.exp(step), this.zoomAround.x, this.zoomAround.y);
+    }
+    this.placeCamera();
     const now = Date.now() + state.clockOffset;
     for (const c of this.columns.values()) {
       const { a, b, startAt, arriveAt } = c.group.userData as {
@@ -464,6 +553,7 @@ export class CampaignWorld {
   dispose() {
     for (const c of this.ground.children) (c as THREE.Mesh).geometry?.dispose();
     for (const m of this.owned) m.dispose();
+    disposeMergedIn(this.scene);
     this.scene.clear();
     this.renderer.dispose();
     disposeGeometries();

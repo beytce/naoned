@@ -1,7 +1,8 @@
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SkyPhase } from "../art/domain.js";
 import { FamilyCrest } from "../art/familyCrest.js";
 import { CarrierDrag, type DropSpot } from "../game/Cargo.js";
+import { type SceneLoop, markRefs, runScene } from "../game/sceneLoop.js";
 import type { VenetoHit, VenetoState, VenetoWorld } from "./world.js";
 
 export interface CityMark {
@@ -75,46 +76,26 @@ export default function Veneto3D(props: Veneto3DProps) {
   const latest = useRef(props);
   latest.current = props;
 
+  const loop = useRef<SceneLoop | null>(null);
+  const mark = useMemo(() => markRefs(marks.current, () => loop.current?.poke()), []);
+
   useEffect(() => {
     let alive = true;
-    let raf = 0;
-    let visible = true;
-    let observer: IntersectionObserver | null = null;
-    let resize: ResizeObserver | null = null;
     void import("./world.js").then(({ VenetoWorld }) => {
       if (!alive || !canvas.current || !host.current) return;
       const w = new VenetoWorld(canvas.current);
       world.current = w;
-      const fit = () => {
-        const box = host.current?.getBoundingClientRect();
-        if (box) w.setSize(box.width, box.height);
-      };
-      fit();
-      resize = new ResizeObserver(fit);
-      resize.observe(host.current);
-      observer = new IntersectionObserver(([e]) => {
-        visible = !!e?.isIntersecting;
-      });
-      observer.observe(host.current);
       w.update(stateOf(latest.current));
-      const loop = (t: number) => {
-        raf = requestAnimationFrame(loop);
-        if (!visible || document.hidden) return;
-        w.frame(t);
-        for (const a of w.anchors()) {
-          anchorsAt.current.set(a.key, { x: a.x, y: a.y });
-          const el = marks.current.get(a.key);
-          if (el) el.style.transform = `translate3d(${a.x.toFixed(1)}px, ${a.y.toFixed(1)}px, 0)`;
-        }
-      };
-      raf = requestAnimationFrame(loop);
+      loop.current = runScene(host.current, w, {
+        marks: marks.current,
+        anchorsAt: anchorsAt.current,
+      });
       setReady(true);
     });
     return () => {
       alive = false;
-      cancelAnimationFrame(raf);
-      observer?.disconnect();
-      resize?.disconnect();
+      loop.current?.stop();
+      loop.current = null;
       world.current?.dispose();
       world.current = null;
     };
@@ -122,12 +103,8 @@ export default function Veneto3D(props: Veneto3DProps) {
 
   useEffect(() => {
     world.current?.update(stateOf(props));
+    loop.current?.poke();
   });
-
-  const mark = (key: string) => (el: HTMLElement | null) => {
-    if (el) marks.current.set(key, el);
-    else marks.current.delete(key);
-  };
 
   const down = useRef<{ x: number; y: number; t: number } | null>(null);
   const origin = useCallback(() => anchorsAt.current.get("depot") ?? null, []);

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { DomainPlot, DomainVehicle, DomainWorker, SkyPhase } from "../art/domain.js";
+import type { Motion } from "../game/pacing.js";
 import {
   type VehicleModel,
   type WorkerModel,
@@ -23,6 +24,7 @@ import {
 } from "./layout.js";
 import { LIGHT } from "./light.js";
 import { disposeMaterials, mat } from "./materials.js";
+import { disposeMergedIn, mergeStatic } from "./merge.js";
 import {
   type Model,
   barrel,
@@ -140,7 +142,6 @@ export class DomainWorld {
       alpha: false,
       powerPreference: "high-performance",
     });
-    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.shadowMap.enabled = true;
@@ -175,6 +176,23 @@ export class DomainWorld {
     }
   }
 
+  /** The sharpness of the drawing (pixel ratio), set by the scene's loop. */
+  setRatio(ratio: number) {
+    if (ratio !== this.renderer.getPixelRatio()) this.renderer.setPixelRatio(ratio);
+  }
+
+  /** What moves: the camera settling, crates and sparks in flight, a building rising (busy). */
+  motion(): Motion {
+    const v = this.view;
+    const t = this.target;
+    const settling =
+      Math.abs(v.cx - t.cx) + Math.abs(v.cz - t.cz) + Math.abs(v.half - t.half) > 0.002;
+    const now = performance.now();
+    const rising = [...this.plots.values()].some((e) => e.born && now - e.born < 700);
+    if (settling || rising || this.flights.length > 0 || this.sparks.length > 0) return "busy";
+    return this.state?.still && this.smoke.length === 0 ? "still" : "anim";
+  }
+
   private bounds: { minX: number; maxX: number; minY: number; maxY: number } | null = null;
 
   update(state: WorldState) {
@@ -190,8 +208,17 @@ export class DomainWorld {
       const key = `${item.type}|${item.level}|${at.x}|${at.y}`;
       const old = this.plots.get(item.id);
       if (old && old.key === key) continue;
-      if (old) this.scene.remove(old.model.group);
+      if (old) {
+        this.scene.remove(old.model.group);
+        disposeMergedIn(old.model.group);
+      }
       const model = workshopModel(item.type, item.level);
+      mergeStatic(model.group, [
+        ...model.spin.map((sp) => sp.obj),
+        ...model.sway,
+        ...model.fire,
+        ...model.windows,
+      ]);
       model.group.position.set(at.x + 1, 0, at.y + 1);
       model.group.userData = { kind: "plot", id: item.id };
       this.scene.add(model.group);
@@ -223,6 +250,7 @@ export class DomainWorld {
     for (const [id, e] of this.plots) {
       if (!seen.has(id)) {
         this.scene.remove(e.model.group);
+        disposeMergedIn(e.model.group);
         this.plots.delete(id);
       }
     }
@@ -239,8 +267,12 @@ export class DomainWorld {
     // The store's piles follow the stock (rebuilt by steps of 30 units).
     const pileKey = Math.min(8, Math.ceil(state.stock / 30));
     if (pileKey !== this.storeKey) {
-      if (this.store) this.scene.remove(this.store);
+      if (this.store) {
+        this.scene.remove(this.store);
+        disposeMergedIn(this.store);
+      }
       this.store = storeModel(state.stock);
+      mergeStatic(this.store);
       this.store.position.set(STORE.x + STORE.w / 2, 0, STORE.y + STORE.d / 2);
       this.store.userData = { kind: "store" };
       this.scene.add(this.store);
@@ -351,9 +383,13 @@ export class DomainWorld {
     this.hemi.groundColor.set(l.ground);
     this.hemi.intensity = l.hemiI;
     this.renderer.toneMappingExposure = l.exposure;
-    this.scene.background = new THREE.Color(l.fog);
-    // Haze only far beyond the domain: the land fades into the sky at the edges.
-    this.scene.fog = new THREE.Fog(l.fog, 75, 110);
+    // A new fog makes three.js check every material's shader again: only when the hour turns.
+    if (phase !== this.phase) {
+      this.phase = phase;
+      this.scene.background = new THREE.Color(l.fog);
+      // Haze only far beyond the domain: the land fades into the sky at the edges.
+      this.scene.fog = new THREE.Fog(l.fog, 75, 110);
+    }
     const night = phase === "night";
     for (const lamp of this.lanterns) lamp.intensity = night ? 2.2 : phase === "dusk" ? 0.6 : 0;
     const lit = mat("window-lit");
@@ -364,8 +400,11 @@ export class DomainWorld {
     for (const lamp of this.lamps) lamp.material = night || phase === "dusk" ? lit : dark;
   }
 
+  private phase: SkyPhase | null = null;
+
   private buildLand(region: string) {
     this.region = region;
+    disposeMergedIn(this.land);
     this.land.clear();
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 90), mat(GRASS[region] ?? "grass"));
     ground.rotation.x = -Math.PI / 2;
@@ -493,6 +532,8 @@ export class DomainWorld {
         box(this.land, 3.2, 0.03, 1.4, i % 2 ? "#C9A44A" : "#7E9E48", -6 + i * 3.4, 0, -6.2, 0);
       }
     }
+    // Nothing of the land moves but its lamps (lit at dusk): drawn in a few meshes.
+    mergeStatic(this.land, this.lamps);
   }
 
   /** Advances the scene to time t (ms) and draws it. */
@@ -757,6 +798,7 @@ export class DomainWorld {
 
   dispose() {
     for (const p of this.smoke) this.scene.remove(p.sprite);
+    disposeMergedIn(this.scene);
     this.scene.clear();
     this.renderer.dispose();
     disposeGeometries();
