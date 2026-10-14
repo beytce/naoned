@@ -10,7 +10,8 @@ export function StockBand({
   props,
   label,
   title,
-}: { props: GameProps; label: string; title: string }) {
+  inline = false,
+}: { props: GameProps; label: string; title: string; inline?: boolean }) {
   const held = props.view.inventory.filter((i) => i.available > 0);
   // A quantity that changed since the last view pulses: its key moves on.
   const last = useRef(new Map<string, number>());
@@ -31,7 +32,13 @@ export function StockBand({
   }, [props.view.inventory]);
   if (!held.length) return null;
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-night/90 via-night/55 to-transparent px-3 pb-2 pt-8">
+    <div
+      className={
+        inline
+          ? ""
+          : "pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-night/90 via-night/55 to-transparent px-3 pb-2 pt-8"
+      }
+    >
       <button
         type="button"
         aria-label={label}

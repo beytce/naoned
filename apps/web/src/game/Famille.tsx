@@ -22,6 +22,20 @@ import type { GameProps } from "./Game.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
 import { scenePhase, use3d } from "./scene3d.js";
+import {
+  Chip,
+  Chips,
+  Drawer,
+  HelpButton,
+  Hud,
+  HudBar,
+  HudStat,
+  Stage,
+  Tray,
+  TrayButton,
+  TrayStat,
+  useDrawer,
+} from "./stage.js";
 import { store } from "./store.js";
 
 const Terraferma3D = lazy(() => import("../campaign3d/Terraferma3D.js"));
@@ -1154,52 +1168,7 @@ function History({ f, props }: { f: FamiliesView; props: GameProps }) {
   );
 }
 
-/**
- * Height left to the map between the page's top bar and the bottom navigation (none on a wide
- * screen), so that the campaign holds on one screen without scrolling.
- */
-function useStageHeight(stage: RefObject<HTMLElement | null>): number | null {
-  const [height, setHeight] = useState<number | null>(null);
-  useLayoutEffect(() => {
-    const fit = () => {
-      const el = stage.current;
-      if (!el) return;
-      const top = el.getBoundingClientRect().top + window.scrollY;
-      const nav = document.querySelector<HTMLElement>("[data-bottom-nav]");
-      // A fixed bar has no offset parent: whether it shows is in its computed display.
-      const shown = nav !== null && getComputedStyle(nav).display !== "none";
-      const below = shown ? nav.getBoundingClientRect().height : 24;
-      const next = Math.max(440, Math.round(window.innerHeight - top - below));
-      setHeight((h) => (h === next ? h : next));
-    };
-    fit();
-    // The top bar settles after the fonts and the season's frieze: measure again when it does.
-    const observer = new ResizeObserver(fit);
-    for (const el of document.querySelectorAll("header, [data-bottom-nav]")) observer.observe(el);
-    window.addEventListener("resize", fit);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", fit);
-    };
-  }, [stage]);
-  return height;
-}
-
 type DrawerTab = "campagne" | "decrets" | "famille" | "fil";
-
-/** A wide screen (Tailwind's `lg`): the drawer is a column beside the map, never over it. */
-function useWide(): boolean {
-  const query = "(min-width: 1024px)";
-  const [wide, setWide] = useState(() => window.matchMedia?.(query).matches ?? false);
-  useEffect(() => {
-    const m = window.matchMedia?.(query);
-    if (!m) return;
-    const change = () => setWide(m.matches);
-    m.addEventListener("change", change);
-    return () => m.removeEventListener("change", change);
-  }, []);
-  return wide;
-}
 
 /** The four families' glory over the map, the week's clock and what is coming. */
 function Scoreboard({
@@ -1215,63 +1184,48 @@ function Scoreboard({
 }) {
   const ranked = [...f.families].sort((a, b) => b.glory - a.glory);
   const top = Math.max(1, ranked[0]?.glory ?? 0);
-  const chip =
-    "rounded-full bg-night/85 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide ring-1 backdrop-blur";
   return (
-    <div className="pointer-events-none absolute inset-x-2 top-2 z-10 space-y-1.5">
-      <div className="pointer-events-auto flex items-stretch gap-1 rounded-2xl bg-night/85 p-1 shadow-lg shadow-black/30 ring-1 ring-line/60 backdrop-blur">
+    <Hud>
+      <HudBar>
         {ranked.map((x, i) => (
-          <button
+          <HudStat
             key={x.code}
-            type="button"
             onClick={onFamily}
-            aria-label={`${familyName(x.code)} · ${t().glory} ${x.glory}`}
-            className={`relative flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden rounded-xl px-1.5 py-1 ${x.code === f.mine ? "bg-gold/10 ring-1 ring-inset ring-gold/70" : ""}`}
-          >
-            <FamilyCrest family={x.code} size={22} />
-            <span className="min-w-0 text-left leading-none">
-              <span className="block font-display text-base font-extrabold tabular-nums">
-                {x.glory}
-              </span>
-              <span className="block font-mono text-[8.5px] uppercase tracking-wide text-cream-dim">
-                {i === 0 && x.glory > 0
-                  ? `★ ${t().first}`
-                  : x.code === f.mine
-                    ? t().you
-                    : `${i + 1}e`}
-              </span>
-            </span>
+            active={x.code === f.mine}
+            label={`${familyName(x.code)} · ${t().glory} ${x.glory}`}
+            icon={<FamilyCrest family={x.code} size={22} />}
+            value={x.glory}
+            caption={
+              i === 0 && x.glory > 0 ? `★ ${t().first}` : x.code === f.mine ? t().you : `${i + 1}e`
+            }
+          />
+        ))}
+        <HelpButton onClick={onHelp} label={t().helpTitle} />
+      </HudBar>
+      {/* The glory of each, as a thin line of its colour under the bar. */}
+      <div className="-mt-1 flex gap-1 px-2">
+        {ranked.map((x) => (
+          <span key={x.code} className="h-[2px] flex-1 overflow-hidden rounded-full bg-night/60">
             <span
-              className="absolute inset-x-1.5 bottom-0.5 h-[2px] origin-left rounded-full transition-transform duration-500"
+              className="block h-full origin-left rounded-full transition-transform duration-500"
               style={{ background: familyHex(x.code), transform: `scaleX(${x.glory / top})` }}
             />
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={onHelp}
-          aria-label={t().helpTitle}
-          className="flex w-8 shrink-0 items-center justify-center rounded-xl font-display text-base font-extrabold text-cream-dim active:bg-night-3"
-        >
-          ?
-        </button>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        <span className={`${chip} text-cream ring-line/60`}>
-          {f.closed ? t().closed : t().weekShort(clock(f.weekEndsAt - props.now))}
-        </span>
-        {!f.open && !f.closed && (
-          <span className={`${chip} text-lagoon ring-lagoon/50`}>
-            ☾ {t().truce} {clock(f.nextOpenAt - props.now)}
           </span>
+        ))}
+        <span className="w-8 shrink-0" />
+      </div>
+      <Chips>
+        <Chip>{f.closed ? t().closed : t().weekShort(clock(f.weekEndsAt - props.now))}</Chip>
+        {!f.open && !f.closed && (
+          <Chip tone="lagoon">
+            ☾ {t().truce} {clock(f.nextOpenAt - props.now)}
+          </Chip>
         )}
         {f.nextMilanAt !== null && f.nextMilanAt > props.now && !f.closed && (
-          <span className={`${chip} text-vermilion ring-vermilion/60`}>
-            {t().milanShort(clock(f.nextMilanAt - props.now))}
-          </span>
+          <Chip tone="vermilion">{t().milanShort(clock(f.nextMilanAt - props.now))}</Chip>
         )}
-      </div>
-    </div>
+      </Chips>
+    </Hud>
   );
 }
 
@@ -1291,53 +1245,27 @@ function ActionBar({
   if (!me || f.closed) return null;
   const works = props.catalog.families?.campaign?.works;
   return (
-    <div className="pointer-events-none absolute inset-x-2 bottom-2 z-10 space-y-1.5">
-      {me.reserve > 0 && (
-        <p className="text-center text-[11px] font-semibold text-gold [text-shadow:0_1px_2px_rgb(15_27_30),0_0_6px_rgb(15_27_30)]">
-          {t().drag.hint}
-        </p>
+    <Tray hint={me.reserve > 0 ? t().drag.hint : undefined}>
+      <TrayStat icon="⚔" value={me.reserve} caption={t().reserveShort} />
+      <Slab
+        size="sm"
+        tone="lagoon"
+        className="min-w-0 flex-1 whitespace-nowrap !px-2"
+        disabled={props.busy || me.levy <= 0}
+        onClick={() => props.act({ type: "collectLevy" })}
+      >
+        {t().levyShort(me.levy)}
+      </Slab>
+      <Slab size="sm" className="min-w-0 flex-1 whitespace-nowrap !px-2" onClick={onHire}>
+        {t().hireOpen}
+      </Slab>
+      {works && (
+        <TrayButton onClick={onWorks} label={t().works.count(me.works, me.worksAllowed)}>
+          <WorkGlyph kind="rocca" color={familyHex(f.mine)} size={18} />
+          {me.works}/{me.worksAllowed}
+        </TrayButton>
       )}
-      <div className="pointer-events-auto flex items-center gap-1.5 rounded-2xl bg-night/90 p-1.5 shadow-lg shadow-black/40 ring-1 ring-line/60 backdrop-blur">
-        <div className="flex shrink-0 items-center gap-1.5 pl-1.5 pr-1">
-          <span aria-hidden="true" className="text-lg leading-none">
-            ⚔
-          </span>
-          <span className="leading-none">
-            <span className="block font-display text-lg font-extrabold tabular-nums">
-              {me.reserve}
-            </span>
-            <span className="block font-mono text-[8.5px] uppercase tracking-wide text-cream-dim">
-              {t().reserveShort}
-            </span>
-          </span>
-        </div>
-        <Slab
-          size="sm"
-          tone="lagoon"
-          className="min-w-0 flex-1 whitespace-nowrap !px-2"
-          disabled={props.busy || me.levy <= 0}
-          onClick={() => props.act({ type: "collectLevy" })}
-        >
-          {t().levyShort(me.levy)}
-        </Slab>
-        <Slab size="sm" className="min-w-0 flex-1 whitespace-nowrap !px-2" onClick={onHire}>
-          {t().hireOpen}
-        </Slab>
-        {works && (
-          <button
-            type="button"
-            onClick={onWorks}
-            aria-label={t().works.count(me.works, me.worksAllowed)}
-            className="flex shrink-0 items-center gap-1 rounded-xl px-2 py-1.5 ring-1 ring-inset ring-line/70 active:bg-night-3"
-          >
-            <WorkGlyph kind="rocca" color={familyHex(f.mine)} size={18} />
-            <span className="font-mono text-[11px] tabular-nums">
-              {me.works}/{me.worksAllowed}
-            </span>
-          </button>
-        )}
-      </div>
-    </div>
+    </Tray>
   );
 }
 
@@ -1467,26 +1395,16 @@ function FamilyTab({ f, props }: { f: FamiliesView; props: GameProps }) {
   );
 }
 
-/**
- * The secondary panels under the map: the campaign's lists, the decrees, the family, its thread.
- * On a phone a drawer, folded to its tabs over the foot of the screen and pulled up to read; on a
- * wide screen a column beside the map.
- */
-function Drawer({
+/** The drawer under the map: the campaign's lists, the decrees, the family, its thread. */
+function FamilyDrawer({
   f,
   props,
-  tab,
-  open,
-  onTab,
-  onOpen,
+  drawer,
   onLand,
 }: {
   f: FamiliesView;
   props: GameProps;
-  tab: DrawerTab;
-  open: boolean;
-  onTab: (tab: DrawerTab) => void;
-  onOpen: (open: boolean) => void;
+  drawer: ReturnType<typeof useDrawer<DrawerTab>>;
   onLand: (code: string) => void;
 }) {
   const unread =
@@ -1494,84 +1412,33 @@ function Drawer({
   const threats = f.marches.filter(
     (m) => m.family !== f.mine && f.lands.find((l) => l.code === m.target)?.holder === f.mine,
   ).length;
-  const drag = useRef<{ y: number; moved: boolean } | null>(null);
-  const tabs: { key: DrawerTab; dot: boolean }[] = [
-    { key: "campagne", dot: threats > 0 },
-    { key: "decrets", dot: false },
-    { key: "famille", dot: false },
-    { key: "fil", dot: unread && tab !== "fil" },
-  ];
+  const tab = drawer.tab;
   return (
-    <div
-      className={`absolute inset-x-0 bottom-0 z-20 flex flex-col overflow-hidden rounded-t-3xl border-t border-line bg-night-2/95 shadow-[0_-12px_30px_rgb(0_0_0/0.35)] backdrop-blur transition-[height] duration-300 ease-out lg:static lg:h-full lg:rounded-3xl lg:border lg:shadow-none ${open ? "h-[68%]" : "h-[3.25rem]"}`}
+    <Drawer<DrawerTab>
+      {...drawer.props}
+      tabs={[
+        { key: "campagne", label: t().tabs.campagne, dot: threats > 0 },
+        { key: "decrets", label: t().tabs.decrets },
+        { key: "famille", label: t().tabs.famille },
+        { key: "fil", label: t().tabs.fil, dot: unread && tab !== "fil" },
+      ]}
     >
-      <div
-        className="shrink-0 touch-none select-none lg:touch-auto"
-        onPointerDown={(e) => {
-          drag.current = { y: e.clientY, moved: false };
-        }}
-        onPointerMove={(e) => {
-          const start = drag.current;
-          if (!start) return;
-          const dy = e.clientY - start.y;
-          if (Math.abs(dy) > 24 && !start.moved) {
-            start.moved = true;
-            onOpen(dy < 0);
-          }
-        }}
-        onPointerUp={() => {
-          setTimeout(() => {
-            drag.current = null;
-          }, 0);
-        }}
-      >
-        <div className="mx-auto mt-1.5 h-1 w-10 rounded-full bg-line lg:hidden" />
-        <div role="tablist" className="grid grid-cols-4 gap-1 px-2 pb-1.5 pt-1 lg:pt-2">
-          {tabs.map(({ key, dot }) => {
-            const on = tab === key && open;
-            return (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={tab === key}
-                onClick={() => {
-                  if (drag.current?.moved) return;
-                  if (tab === key) onOpen(!open);
-                  else {
-                    onTab(key);
-                    onOpen(true);
-                  }
-                }}
-                className={`relative rounded-xl py-1.5 font-mono text-[10.5px] uppercase tracking-[0.08em] transition-colors lg:py-2 ${on || tab === key ? "lg:bg-gold/15 lg:text-gold" : ""} ${on ? "bg-gold/15 font-bold text-gold" : "text-cream-dim"}`}
-              >
-                {t().tabs[key]}
-                {dot && (
-                  <span className="absolute right-2 top-1 h-2 w-2 rounded-full bg-vermilion" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-3 pb-6 pt-1">
-        {tab === "campagne" && (
-          <>
-            <Marches f={f} props={props} />
-            <Works f={f} props={props} onLand={onLand} />
-            <InReach f={f} onLand={onLand} />
-          </>
-        )}
-        {tab === "decrets" && (
-          <>
-            <DecreeBanner props={props} />
-            <Programme f={f} props={props} />
-          </>
-        )}
-        {tab === "famille" && <FamilyTab f={f} props={props} />}
-        {tab === "fil" && <Thread />}
-      </div>
-    </div>
+      {tab === "campagne" && (
+        <>
+          <Marches f={f} props={props} />
+          <Works f={f} props={props} onLand={onLand} />
+          <InReach f={f} onLand={onLand} />
+        </>
+      )}
+      {tab === "decrets" && (
+        <>
+          <DecreeBanner props={props} />
+          <Programme f={f} props={props} />
+        </>
+      )}
+      {tab === "famille" && <FamilyTab f={f} props={props} />}
+      {tab === "fil" && <Thread />}
+    </Drawer>
   );
 }
 
@@ -1610,55 +1477,41 @@ function HowTo({ props }: { props: GameProps }) {
 
 /** A family of the merchant's: the map on the whole screen, everything else at hand around it. */
 function Mine({ f, props }: { f: FamiliesView; props: GameProps }) {
-  const stage = useRef<HTMLDivElement>(null);
-  const height = useStageHeight(stage);
-  const wide = useWide();
+  const drawer = useDrawer<DrawerTab>("campagne");
   const [land, setLand] = useState<string | null>(null);
-  const [tab, setTab] = useState<DrawerTab>("campagne");
-  const [open, setOpen] = useState(false);
   const [hire, setHire] = useState(false);
   const [help, setHelp] = useState(false);
   const picked = f.lands.find((l) => l.code === land) ?? null;
-  const openTab = (key: DrawerTab) => {
-    setTab(key);
-    setOpen(true);
-  };
   return (
-    <div
-      ref={stage}
-      style={height ? { height } : undefined}
-      className="relative h-[calc(100svh-12rem)] lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-4"
-    >
-      <div className="absolute inset-x-0 bottom-[3.25rem] top-0 overflow-hidden bg-night-2 lg:relative lg:inset-auto lg:h-full lg:rounded-3xl lg:border lg:border-line">
+    <Stage
+      label={t().title}
+      scene={
         <CampaignMap
           f={f}
           props={props}
           onPick={(code) => setLand(code)}
           className="h-full w-full"
-          covered={open && !wide}
+          covered={drawer.covering}
         />
+      }
+      top={
         <Scoreboard
           f={f}
           props={props}
-          onFamily={() => openTab("famille")}
+          onFamily={() => drawer.show("famille")}
           onHelp={() => setHelp(true)}
         />
+      }
+      bottom={
         <ActionBar
           f={f}
           props={props}
           onHire={() => setHire(true)}
-          onWorks={() => openTab("campagne")}
+          onWorks={() => drawer.show("campagne")}
         />
-      </div>
-      <Drawer
-        f={f}
-        props={props}
-        tab={tab}
-        open={open}
-        onTab={setTab}
-        onOpen={setOpen}
-        onLand={setLand}
-      />
+      }
+      drawer={<FamilyDrawer f={f} props={props} drawer={drawer} onLand={setLand} />}
+    >
       <Sheet open={picked !== null} onClose={() => setLand(null)}>
         {picked && (
           <LandSheet
@@ -1676,7 +1529,7 @@ function Mine({ f, props }: { f: FamiliesView; props: GameProps }) {
       <Sheet open={help} onClose={() => setHelp(false)}>
         <HowTo props={props} />
       </Sheet>
-    </div>
+    </Stage>
   );
 }
 
@@ -1686,11 +1539,7 @@ export function Famille(props: GameProps) {
   if (!f) return null;
   if (f.mine) {
     // The map takes the screen from edge to edge, under the page's top bar.
-    return (
-      <section className="-mx-4 -mb-40 -mt-4 lg:mx-0 lg:-mb-16 lg:mt-0">
-        <Mine f={f} props={props} />
-      </section>
-    );
+    return <Mine f={f} props={props} />;
   }
   return (
     <section className="space-y-4">

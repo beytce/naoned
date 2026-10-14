@@ -5,11 +5,12 @@ import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Qty, Ribbon, Sheet, Slab, clock } from "../ui.js";
 import { BaleScreen, BaleTile } from "./Bales.js";
 import { Daily } from "./Daily.js";
-import { Domain } from "./Domain.js";
+import { Domain, DomainHud, DomainSheets, DomainTray } from "./Domain.js";
 import type { GameProps } from "./Game.js";
 import { Ledger } from "./Ledger.js";
 import { MasteryTile } from "./Mastery.js";
 import { d, duration, minutesLabel } from "./format.js";
+import { Drawer, Stage, useDrawer } from "./stage.js";
 import { store } from "./store.js";
 import type { BuildingView, Cost, PlayerView, Recipe } from "./types.js";
 import { have, outputQty, readyOf, recipeOf, workshopState } from "./workshops.js";
@@ -595,34 +596,6 @@ export function carnetRewards(props: GameProps): number {
   return daily + missions;
 }
 
-/** The day's notebook: tasks of the day, the merchant's ledger and first steps, in a window. */
-function CarnetButton(props: GameProps) {
-  const rewards = carnetRewards(props);
-  const daily = props.view.daily;
-  const left = daily ? daily.tasks.filter((t) => !t.done).length : 0;
-  const c = fr.game.carnet;
-  return (
-    <button
-      type="button"
-      data-coach="carnet"
-      onClick={() => props.setSheet("carnet")}
-      className={`flex w-full items-center justify-between gap-3 cut border px-4 py-3 text-left text-sm transition active:scale-[0.99] ${rewards > 0 ? "border-gold/60 bg-gold/10 text-gold" : "border-line bg-night-3 text-cream-dim"}`}
-    >
-      <span>
-        <span className="block font-semibold">{c.title}</span>
-        <span className="label block">{rewards > 0 ? c.rewards(rewards) : c.left(left)}</span>
-      </span>
-      {rewards > 0 ? (
-        <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-gold px-1.5 text-xs font-bold text-ink">
-          {rewards}
-        </span>
-      ) : (
-        <span aria-hidden="true">→</span>
-      )}
-    </button>
-  );
-}
-
 /** The season's goal: the next merchant title, and the renown it adds at the close. */
 function SeasonGoal(props: GameProps) {
   const { title } = props.view.standing;
@@ -649,66 +622,59 @@ function SeasonGoal(props: GameProps) {
   );
 }
 
-/**
- * The workshops as a list, under the domain: open while the guide leads (its targets live there
- * too), then folded, the domain being where one produces.
- */
-function WorkshopList(props: GameProps) {
-  const guiding =
-    !props.view.tutorial.includes("mission") &&
-    store.get("guideDone") !== "1" &&
-    store.get("guideHidden") !== "1";
-  return (
-    <details open={guiding} className="group order-3 lg:order-none">
-      <summary className="label flex cursor-pointer list-none items-center justify-between py-1">
-        <span>
-          {fr.game.workshops} · {props.view.buildings.length}
-        </span>
-        <span className="transition group-open:rotate-180">▾</span>
-      </summary>
-      <div className="mt-3 grid grid-cols-1 gap-3 2xl:grid-cols-2">
-        {props.view.buildings.map((b) => (
-          <Workshop key={b.id} b={b} props={props} />
-        ))}
-      </div>
-    </details>
-  );
-}
+type CounterTab = "ateliers" | "stock" | "saison";
 
 export function Comptoir(props: GameProps) {
   const { view } = props;
   const [kind, id] = (props.sheet ?? "").split(":");
   const sheetBuilding = view.buildings.find((b) => b.id === id);
+  const drawer = useDrawer<CounterTab>("ateliers");
+  const rewards = carnetRewards(props);
+  const c = fr.game.counter;
+  const hungry = view.rations.perDay > 0 && view.rations.hungryUntil > props.now;
 
   return (
-    // The production screen. Phone: the domain (where one produces, builds on a free plot and
-    // sees the stock), then the day's notebook and the workshops. Computer: the domain and the
-    // workshops on the left, stock and rations in a side column that stays in view.
-    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
-      <div className="contents lg:col-start-1 lg:flex lg:flex-col lg:gap-6">
-        <div className="order-2 space-y-3 lg:order-none">
-          <Domain {...props} />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <CarnetButton {...props} />
-            <MasteryTile {...props} />
-            <BaleTile {...props} />
-          </div>
-        </div>
-        <WorkshopList {...props} />
-      </div>
-      <aside className="contents lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:flex lg:max-h-[calc(100dvh-7rem)] lg:flex-col lg:gap-6 lg:overflow-y-auto lg:pb-2">
-        <div className="order-6 empty:hidden lg:order-none">
-          <SeasonGoal {...props} />
-        </div>
-        {/* On a phone, the store and the workers in the domain open them; on a computer they stay. */}
-        <div className="hidden lg:block">
-          <StockStrip {...props} />
-        </div>
-        <div className="hidden empty:hidden lg:block">
-          <Rations {...props} />
-        </div>
-      </aside>
-
+    // The counter in the game's frame: the domain over the whole screen, the house and its stock
+    // over its head, the harvest at its foot; the workshops, the store and the season's goals in
+    // the drawer.
+    <Stage
+      label={fr.game.tabs.comptoir}
+      scene={<Domain {...props} />}
+      top={<DomainHud {...props} />}
+      bottom={<DomainTray props={props} rewards={rewards} />}
+      drawer={
+        <Drawer<CounterTab>
+          {...drawer.props}
+          tabs={[
+            { key: "ateliers", label: c.tabs.ateliers },
+            { key: "stock", label: c.tabs.stock, dot: hungry },
+            { key: "saison", label: c.tabs.saison },
+          ]}
+        >
+          {drawer.tab === "ateliers" && (
+            <div className="grid grid-cols-1 gap-3 2xl:grid-cols-2">
+              {view.buildings.map((b) => (
+                <Workshop key={b.id} b={b} props={props} />
+              ))}
+            </div>
+          )}
+          {drawer.tab === "stock" && (
+            <>
+              <StockStrip {...props} />
+              <Rations {...props} />
+            </>
+          )}
+          {drawer.tab === "saison" && (
+            <>
+              <SeasonGoal {...props} />
+              <MasteryTile {...props} />
+              <BaleTile {...props} />
+            </>
+          )}
+        </Drawer>
+      }
+    >
+      <DomainSheets {...props} />
       <Sheet
         open={(kind === "produce" || kind === "upgrade") && !!sheetBuilding}
         onClose={() => props.setSheet(null)}
@@ -737,6 +703,6 @@ export function Comptoir(props: GameProps) {
       <Sheet open={kind === "build"} onClose={() => props.setSheet(null)}>
         {kind === "build" && id && <BuildSheet type={id} props={props} />}
       </Sheet>
-    </div>
+    </Stage>
   );
 }

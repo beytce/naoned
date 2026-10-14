@@ -20,7 +20,7 @@ import { ResourceIcon } from "../art/resources.js";
 import { GOODS_COLOUR } from "../art/veneto.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
-import { Big, Label, Sheet, Slab, clock } from "../ui.js";
+import { Big, Sheet, Slab, clock } from "../ui.js";
 import { Rations, StockStrip, affordable } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
 import { StockBand } from "./StockBand.js";
@@ -28,6 +28,17 @@ import { d } from "./format.js";
 import { underPoint } from "./gestures.js";
 import { OrderFacts, OrderPanel, canServe, total, vehicleName } from "./roadKit.js";
 import { parisHour, use3d } from "./scene3d.js";
+import {
+  Chip,
+  Chips,
+  HelpButton,
+  Hud,
+  HudBar,
+  HudStat,
+  Tray,
+  TrayButton,
+  TrayStat,
+} from "./stage.js";
 import { store as prefs } from "./store.js";
 import type { DeliveryOrderView } from "./types.js";
 import { useWide } from "./useWide.js";
@@ -296,70 +307,53 @@ export function Domain(props: GameProps) {
   }
 
   return (
-    // Edge to edge on a phone, most of the screen's height: the domain is the game's stage.
-    <section className="relative -mx-4 overflow-hidden border-y border-line bg-night-2 lg:mx-0 lg:cut lg:border">
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 bg-gradient-to-b from-night/85 via-night/45 to-transparent px-4 pb-8 pt-3">
-        <div className="min-w-0">
-          <Label className="text-gold">{view.standing.title.current.name}</Label>
-          <h2 className="truncate font-display text-lg font-extrabold uppercase leading-tight">
-            {t.house(props.account.pseudo ?? "")}
-          </h2>
-        </div>
-        <p className="label shrink-0 text-right">
-          {t.workshops(view.buildings.length)}
-          <br />
-          {t.levels(levels)}
-        </p>
-      </div>
-      <div
-        ref={area}
-        className="relative"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerEnd}
-        onPointerCancel={onPointerEnd}
-      >
-        {use3d ? (
-          <Suspense
-            fallback={
-              <div className="h-[68svh] min-h-[420px] w-full animate-pulse bg-night-3 lg:h-[62vh]" />
+    // The counter's scene, from edge to edge: the domain is where one produces.
+    <div
+      ref={area}
+      className="relative h-full w-full"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerEnd}
+      onPointerCancel={onPointerEnd}
+    >
+      {use3d ? (
+        <Suspense fallback={<div className="h-full w-full animate-pulse bg-night-3" />}>
+          <Domain3D
+            region={view.player.region}
+            phase={(prefs.get("domainPhase") as SkyPhase | null) ?? skyPhase(parisHour(now))}
+            plots={plots}
+            maxPlots={catalog.rules.maxBuildings}
+            vehicles={vehicles}
+            vehicleLabel={(v) =>
+              `${vehicleName(v.type)}, ${v.where === "home" ? fr.game.roadMap.stable.atDepot : v.where === "out" ? t.road.out : t.road.back}`
             }
-          >
-            <Domain3D
-              region={view.player.region}
-              phase={(prefs.get("domainPhase") as SkyPhase | null) ?? skyPhase(parisHour(now))}
-              plots={plots}
-              maxPlots={catalog.rules.maxBuildings}
-              vehicles={vehicles}
-              vehicleLabel={(v) =>
-                `${vehicleName(v.type)}, ${v.where === "home" ? fr.game.roadMap.stable.atDepot : v.where === "out" ? t.road.out : t.road.back}`
-              }
-              onVehicle={(v) => {
-                if (v.where === "home") props.setSheet(`load:${v.id}`);
-                else props.goTo("routes");
-              }}
-              workers={workers}
-              workerLabel={t.workersLabel}
-              onWorker={() => props.setSheet("rations")}
-              storeLabel={t.store.label}
-              onStore={() => props.setSheet("store")}
-              alert={vehicles.some((v) => v.stopped)}
-              stock={stock}
-              labelOf={describe}
-              ratio={wide ? 0.6 : 0.82}
-              emptyLabel={t.build}
-              title={t.title(view.buildings.length, levels)}
-              onPlot={touch}
-              onEmpty={() => props.setSheet("buildHere")}
-              still={stillMotion}
-              className="h-[68svh] min-h-[420px] lg:h-[62vh]"
-              onPicker={(f) => {
-                picker.current = f;
-              }}
-              quiet={() => performance.now() < quietUntil.current}
-            />
-          </Suspense>
-        ) : (
+            onVehicle={(v) => {
+              if (v.where === "home") props.setSheet(`load:${v.id}`);
+              else props.goTo("routes");
+            }}
+            workers={workers}
+            workerLabel={t.workersLabel}
+            onWorker={() => props.setSheet("rations")}
+            storeLabel={t.store.label}
+            onStore={() => props.setSheet("store")}
+            alert={vehicles.some((v) => v.stopped)}
+            stock={stock}
+            labelOf={describe}
+            ratio={wide ? 0.6 : 0.82}
+            emptyLabel={t.build}
+            title={t.title(view.buildings.length, levels)}
+            onPlot={touch}
+            onEmpty={() => props.setSheet("buildHere")}
+            still={stillMotion}
+            className="h-full"
+            onPicker={(f) => {
+              picker.current = f;
+            }}
+            quiet={() => performance.now() < quietUntil.current}
+          />
+        </Suspense>
+      ) : (
+        <div className="flex h-full w-full items-center overflow-hidden">
           <DomainScene
             region={view.player.region}
             phase={(prefs.get("domainPhase") as SkyPhase | null) ?? skyPhase(parisHour(now))}
@@ -393,95 +387,165 @@ export function Domain(props: GameProps) {
               ) : undefined
             }
           />
-        )}
-        {trail.length > 1 && (
-          <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full">
-            <polyline
-              points={trail.map((q) => `${q.x},${q.y}`).join(" ")}
-              fill="none"
-              stroke="rgb(var(--gold-soft))"
-              strokeWidth="7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity="0.75"
-            />
-          </svg>
-        )}
-        <StockBand props={props} label={t.store.label} title={fr.game.stock.toUpperCase()} />
-      </div>
-      <DomainBand {...props} />
-      <DomainSheets {...props} />
-    </section>
+        </div>
+      )}
+      {trail.length > 1 && (
+        <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full">
+          <polyline
+            points={trail.map((q) => `${q.x},${q.y}`).join(" ")}
+            fill="none"
+            stroke="rgb(var(--gold-soft))"
+            strokeWidth="7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity="0.75"
+          />
+        </svg>
+      )}
+    </div>
   );
 }
 
-/**
- * Under the scene, the one thing to do now: collect everything and start again, or the next
- * batch to come, or start the idle workshops.
- */
-function DomainBand(props: GameProps) {
+/** The counter's state over the domain: the house and its rank, the workshops, the stock. */
+export function DomainHud(props: GameProps) {
   const { view, now } = props;
-  const ready = view.buildings.reduce((n, b) => n + readyOf(b, now), 0);
-  const next = view.buildings
+  const t = fr.game.domain;
+  const levels = view.buildings.reduce((n, b) => n + b.level, 0);
+  const crest = props.account.crest ?? defaultCrest(props.account.id);
+  const next = nextBatch(props);
+  const rations = view.rations;
+  const hungry = rations.perDay > 0 && rations.hungryUntil > now;
+  const stopped = (view.road?.deliveries ?? []).some(
+    (dv) => dv.attack?.pending === true && now <= (dv.attack?.reactBy ?? 0),
+  );
+  return (
+    <Hud>
+      <HudBar>
+        <HudStat
+          icon={<Crest crest={crest} size={24} />}
+          value={t.house(props.account.pseudo ?? "")}
+          caption={`${view.standing.title.current.name} · #${view.standing.rank ?? "—"}`}
+          onClick={() => props.goTo("top")}
+          label={fr.game.tabs.top}
+        />
+        <HudStat
+          value={view.buildings.length}
+          caption={t.levels(levels)}
+          label={t.workshops(view.buildings.length)}
+        />
+        <HelpButton onClick={props.openHelp} label={fr.game.stage.help} />
+      </HudBar>
+      <div className="pointer-events-auto w-fit max-w-full rounded-full bg-night/80 py-0.5 pl-2.5 pr-1 ring-1 ring-line/60 backdrop-blur">
+        <StockBand props={props} label={t.store.label} title={fr.game.stock.toUpperCase()} inline />
+      </div>
+      <Chips>
+        {next && (
+          <Chip tone="lagoon">
+            {t.next(props.names.building(next.b.type), clock(next.at - now))}
+          </Chip>
+        )}
+        {hungry && (
+          <Chip tone="vermilion" onClick={() => props.setSheet("rations")}>
+            {t.hungry}
+          </Chip>
+        )}
+        {stopped && (
+          <Chip tone="vermilion" onClick={() => props.goTo("routes")}>
+            {t.ambush}
+          </Chip>
+        )}
+      </Chips>
+    </Hud>
+  );
+}
+
+/** The next batch to come out of a workshop, if any is running. */
+function nextBatch(props: GameProps) {
+  const { view, now } = props;
+  return view.buildings
     .filter((b) => b.job && readyOf(b, now) < b.job.batches)
     .map((b) => {
       const job = b.job;
       return { b, at: job ? job.startedAt + (readyOf(b, now) + 1) * job.batchMs : 0 };
     })
     .sort((x, y) => x.at - y.at)[0];
+}
+
+/**
+ * At the domain's foot, the one thing to do now: collect everything and start again, or start the
+ * idle workshops; load a vehicle when the stock covers orders; build; the day's notebook.
+ */
+export function DomainTray({ props, rewards }: { props: GameProps; rewards: number }) {
+  const { view, now } = props;
+  const t = fr.game.domain;
+  const ready = view.buildings.reduce((n, b) => n + readyOf(b, now), 0);
   const idle = view.buildings.some((b) => !b.job && b.canStart > 0);
+  const next = nextBatch(props);
   // Orders the stock covers, for a free vehicle: the cart to load first is the one with the best.
   const free = (view.road?.vehicles ?? []).filter((v) => v.status === "free");
-  const freeCount = free.length;
   const loadable = [...new Set(free.flatMap((v) => bestOrders(props, v.id).map((o) => o.id)))];
   const best = free
     .map((v) => ({ id: v.id, top: bestOrders(props, v.id)[0] }))
     .filter((x) => x.top)
     .sort((a, b) => (a.top && b.top && total(a.top) > total(b.top) ? -1 : 1))[0]?.id;
+  const room = view.buildings.length < props.catalog.rules.maxBuildings;
   return (
-    <div className="space-y-2 px-3 pb-3 pt-2">
+    <Tray hint={ready > 1 ? t.sweepHint : undefined}>
       {ready > 0 ? (
         <Slab
-          size="lg"
-          className="w-full"
+          size="sm"
+          className="min-w-0 flex-1 whitespace-nowrap !px-2"
           coach="harvest-all"
           disabled={props.busy}
           onClick={() => props.act({ type: "collectAndRestart" })}
         >
-          {fr.game.harvestAll(ready)}
+          {t.harvestShort(ready)}
         </Slab>
       ) : idle ? (
         <Slab
-          className="w-full"
+          size="sm"
           tone="lagoon"
+          className="min-w-0 flex-1 whitespace-nowrap !px-2"
           disabled={props.busy}
           onClick={() => props.act({ type: "collectAndRestart" })}
         >
-          {fr.game.restartAll}
+          {t.restartShort}
         </Slab>
-      ) : null}
-      {next && ready === 0 && (
-        <p className="label text-center text-lagoon">
-          {fr.game.domain.next(props.names.building(next.b.type), clock(next.at - now))}
-        </p>
-      )}
-      {!next && ready === 0 && !idle && (
-        <p className="text-center text-sm text-cream-dim">{fr.game.idleAllHelp}</p>
+      ) : (
+        <TrayStat icon="⏳" value={next ? clock(next.at - now) : "—"} caption={t.nextShort} />
       )}
       {loadable.length > 0 && best && (
-        <button
-          type="button"
+        <Slab
+          size="sm"
+          tone="lagoon"
+          className="min-w-0 flex-1 whitespace-nowrap !px-2"
           onClick={() => props.setSheet(`load:${best}`)}
-          className="cut flex w-full items-center justify-between gap-3 border border-gold/60 bg-gold/10 px-4 py-2.5 text-left text-sm text-gold transition active:scale-[0.99]"
         >
-          <span className="font-semibold">
-            {fr.game.domain.loadable(loadable.length, freeCount)}
-          </span>
-          <span aria-hidden="true">→</span>
-        </button>
+          {t.loadShort(loadable.length)}
+        </Slab>
       )}
-      <p className="text-center text-[11px] text-muted">{fr.game.domain.hint}</p>
-    </div>
+      {room && (
+        <TrayButton label={t.build} onClick={() => props.setSheet("buildHere")}>
+          <span aria-hidden="true" className="px-0.5 text-base leading-none">
+            ⚒
+          </span>
+        </TrayButton>
+      )}
+      <TrayButton
+        label={fr.game.carnet.title}
+        coach="carnet"
+        onClick={() => props.setSheet("carnet")}
+      >
+        <span aria-hidden="true" className="px-0.5 text-base leading-none">
+          ✎
+        </span>
+        {rewards > 0 && (
+          <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-bold text-ink">
+            {rewards}
+          </span>
+        )}
+      </TrayButton>
+    </Tray>
   );
 }
 
@@ -497,7 +561,7 @@ function bestOrders(props: GameProps, vehicleId: string): DeliveryOrderView[] {
 }
 
 /** The sheets the domain opens: loading a vehicle, the store, the workers' rations. */
-function DomainSheets(props: GameProps) {
+export function DomainSheets(props: GameProps) {
   const [kind, id] = (props.sheet ?? "").split(":");
   const close = () => props.setSheet(null);
   return (

@@ -733,6 +733,13 @@ export const fr = {
         hold: (n: number) => `cales +${n} %`,
       },
     },
+    /** Words shared by every section's frame (the scene, its bars, its drawer). */
+    stage: {
+      help: "Comment ça marche",
+    },
+    counter: {
+      tabs: { ateliers: "Ateliers", stock: "Stock", saison: "Saison" },
+    },
     domain: {
       house: (pseudo: string) => (pseudo ? `Maison ${pseudo}` : "Votre Maison"),
       workshops: (n: number) => `${n} atelier${n > 1 ? "s" : ""}`,
@@ -767,6 +774,14 @@ export const fr = {
         bake: "Cuire du pain",
         buy: "Acheter au marché",
       },
+      sweepHint: "Glissez le doigt sur les ateliers prêts pour tout récolter",
+      harvestShort: (n: number) => `Récolter ${n}`,
+      restartShort: "Tout relancer",
+      nextShort: "Prochain lot",
+      loadShort: (n: number) => `Charger ${n}`,
+      buildShort: "Bâtir",
+      hungry: "Ouvriers affamés",
+      ambush: "Convoi attaqué !",
       hint: "Touchez un atelier pour récolter ou produire, une charrette pour la charger, l'entrepôt pour votre stock, un ouvrier pour ses rations. Glissez le doigt sur les ateliers prêts pour tout récolter d'un geste.",
       title: (n: number, levels: number) =>
         `Votre domaine : ${n} atelier${n > 1 ? "s" : ""}, ${levels} niveau${levels > 1 ? "x" : ""} en tout`,
@@ -790,6 +805,7 @@ export const fr = {
     },
     carnet: {
       title: "Carnet du jour",
+      short: "Carnet",
       rewards: (n: number) => `${n} récompense${n > 1 ? "s" : ""} à réclamer`,
       left: (n: number) =>
         n > 0 ? `${n} tâche${n > 1 ? "s" : ""} du jour à faire` : "Tâches du jour faites",
