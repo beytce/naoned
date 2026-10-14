@@ -15,7 +15,9 @@ import {
 import { type VehicleModel, vehicleModel } from "../domain3d/actors.js";
 import { LIGHT } from "../domain3d/light.js";
 import { disposeMaterials, mat } from "../domain3d/materials.js";
+import { disposeMergedIn, mergeStatic } from "../domain3d/merge.js";
 import { box, disposeGeometries, tree } from "../domain3d/models.js";
+import type { Motion } from "../game/pacing.js";
 import {
   SCALE,
   type Spot,
@@ -127,7 +129,6 @@ export class VenetoWorld {
       alpha: false,
       powerPreference: "high-performance",
     });
-    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.shadowMap.enabled = true;
@@ -156,6 +157,7 @@ export class VenetoWorld {
       town.group.position.set(p.x, code === "venezia" ? 0.02 : 0, p.z);
       town.group.scale.setScalar(TOWN_SCALE);
       town.group.userData = { kind: "city", code };
+      mergeStatic(town.group, [...town.windows, ...town.flags]);
       this.towns.set(code, town);
       this.scene.add(town.group);
     }
@@ -168,14 +170,28 @@ export class VenetoWorld {
     this.view.half = this.fitHalf();
   }
 
+  /** The sharpness of the drawing (pixel ratio), set by the scene's loop. */
+  setRatio(ratio: number) {
+    if (ratio !== this.renderer.getPixelRatio()) this.renderer.setPixelRatio(ratio);
+  }
+
+  /** Flags, carts and fires live unless the player asked for less motion. */
+  motion(): Motion {
+    return this.state?.still ? "still" : "anim";
+  }
+
   update(state: VenetoState) {
     this.state = state;
     this.light(state.phase);
     if (state.region !== this.region) {
       this.region = state.region;
-      if (this.depot) this.scene.remove(this.depot.group);
+      if (this.depot) {
+        this.scene.remove(this.depot.group);
+        disposeMergedIn(this.depot.group);
+      }
       const at = PLACES[state.region];
       this.depot = depotModel(true);
+      mergeStatic(this.depot.group, [...this.depot.windows, ...this.depot.flags]);
       if (at) {
         const p = toWorld(at);
         this.depot.group.position.set(p.x, 0, p.z);
@@ -282,16 +298,24 @@ export class VenetoWorld {
     this.hemi.groundColor.set(l.ground);
     this.hemi.intensity = l.hemiI;
     this.renderer.toneMappingExposure = l.exposure;
-    this.scene.background = new THREE.Color(l.fog);
-    this.scene.fog = new THREE.Fog(l.fog, 120, 190);
+    // A new fog makes three.js check every material's shader again: only when the hour turns.
+    if (phase !== this.phase) {
+      this.phase = phase;
+      this.scene.background = new THREE.Color(l.fog);
+      this.scene.fog = new THREE.Fog(l.fog, 120, 190);
+    }
     const lit = phase !== "day";
     for (const t of [...this.towns.values(), ...(this.depot ? [this.depot] : [])])
       for (const w of t.windows) w.material = mat(lit ? "window-lit" : "window");
   }
 
+  private phase: SkyPhase | null = null;
+
   /** The land: plain, Alps, hills and woods, the lake, the rivers, the lagoon and the sea. */
   private buildLand() {
     buildVenetoLand(this.land);
+    // By zones of 8 units: a zoomed map draws only the zones in view.
+    mergeStatic(this.land, [], { cell: 8 });
   }
 
   /** Advances to time t (ms) and draws. */
@@ -420,6 +444,7 @@ export class VenetoWorld {
   }
 
   dispose() {
+    disposeMergedIn(this.scene);
     this.scene.clear();
     this.renderer.dispose();
     disposeGeometries();

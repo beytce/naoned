@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bubble,
   type DomainPlot,
@@ -8,6 +8,7 @@ import {
   type SkyPhase,
 } from "../art/domain.js";
 import { P } from "../art/palette.js";
+import { type SceneLoop, markRefs, runScene } from "../game/sceneLoop.js";
 import type { DomainWorld, Hit } from "./world.js";
 
 const ROMAN = ["", "I", "II", "III", "IV", "V"];
@@ -65,39 +66,18 @@ export default function Domain3D(props: Domain3DProps) {
   const latest = useRef(props);
   latest.current = props;
 
+  const loop = useRef<SceneLoop | null>(null);
+  const mark = useMemo(() => markRefs(marks.current, () => loop.current?.poke()), []);
+
   // The world: created once (three.js comes with it), its loop paused off screen.
   useEffect(() => {
     let alive = true;
-    let raf = 0;
-    let visible = true;
-    let observer: IntersectionObserver | null = null;
-    let resize: ResizeObserver | null = null;
     void import("./world.js").then(({ DomainWorld }) => {
       if (!alive || !canvas.current || !host.current) return;
       const w = new DomainWorld(canvas.current);
       world.current = w;
-      const fit = () => {
-        const box = host.current?.getBoundingClientRect();
-        if (box) w.setSize(box.width, box.height);
-      };
-      fit();
-      resize = new ResizeObserver(fit);
-      resize.observe(host.current);
-      observer = new IntersectionObserver(([e]) => {
-        visible = !!e?.isIntersecting;
-      });
-      observer.observe(host.current);
       w.update(stateOf(latest.current));
-      const loop = (t: number) => {
-        raf = requestAnimationFrame(loop);
-        if (!visible || document.hidden) return;
-        w.frame(t);
-        for (const a of w.anchors()) {
-          const el = marks.current.get(a.key);
-          if (el) el.style.transform = `translate3d(${a.x.toFixed(1)}px, ${a.y.toFixed(1)}px, 0)`;
-        }
-      };
-      raf = requestAnimationFrame(loop);
+      loop.current = runScene(host.current, w, { marks: marks.current });
       latest.current.onPicker((cx, cy) => {
         const r = canvas.current?.getBoundingClientRect();
         if (!r) return null;
@@ -108,9 +88,8 @@ export default function Domain3D(props: Domain3DProps) {
     });
     return () => {
       alive = false;
-      cancelAnimationFrame(raf);
-      observer?.disconnect();
-      resize?.disconnect();
+      loop.current?.stop();
+      loop.current = null;
       latest.current.onPicker(null);
       world.current?.dispose();
       world.current = null;
@@ -120,12 +99,8 @@ export default function Domain3D(props: Domain3DProps) {
   // Each new view of the domain goes to the world.
   useEffect(() => {
     world.current?.update(stateOf(props));
+    loop.current?.poke();
   });
-
-  const mark = (key: string) => (el: HTMLElement | null) => {
-    if (el) marks.current.set(key, el);
-    else marks.current.delete(key);
-  };
 
   // A tap on the scene: what lies under it.
   const down = useRef<{ x: number; y: number; t: number } | null>(null);

@@ -1,8 +1,12 @@
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SkyPhase } from "../art/domain.js";
 import { WorkGlyph } from "../art/workIcon.js";
 import { CarrierDrag, type DropSpot } from "../game/Cargo.js";
+import { Glide, wheelFactor } from "../game/pacing.js";
+import { type SceneLoop, markRefs, runScene } from "../game/sceneLoop.js";
 import type { CampaignLand, CampaignMarch, CampaignWorld } from "./world.js";
+
+type Pt = { x: number; y: number };
 
 export interface LandMark {
   code: string;
@@ -55,46 +59,55 @@ export default function Terraferma3D(props: Terraferma3DProps) {
   const latest = useRef(props);
   latest.current = props;
 
+  const loop = useRef<SceneLoop | null>(null);
+  const mark = useMemo(() => markRefs(marks.current, () => loop.current?.poke()), []);
+  // Fingers on the map: one pans it, two pinch it; a drag is never a tap. Let go, it glides on.
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const dragged = useRef(false);
+  const glide = useRef(new Glide());
+
   useEffect(() => {
     let alive = true;
-    let raf = 0;
-    let visible = true;
-    let observer: IntersectionObserver | null = null;
-    let resize: ResizeObserver | null = null;
+    let last = 0;
+    const wheel = (e: WheelEvent) => {
+      const w = world.current;
+      const r = canvas.current?.getBoundingClientRect();
+      if (!w || !r) return;
+      // The map takes the wheel: the page does not scroll under it.
+      e.preventDefault();
+      glide.current.stop();
+      w.zoomAt(
+        wheelFactor(e.deltaY, e.deltaMode, e.ctrlKey),
+        e.clientX - r.left,
+        e.clientY - r.top,
+      );
+      loop.current?.poke();
+    };
+    const box = host.current;
+    box?.addEventListener("wheel", wheel, { passive: false });
     void import("./world.js").then(({ CampaignWorld }) => {
       if (!alive || !canvas.current || !host.current) return;
       const w = new CampaignWorld(canvas.current);
       world.current = w;
-      const fit = () => {
-        const box = host.current?.getBoundingClientRect();
-        if (box) w.setSize(box.width, box.height);
-      };
-      fit();
-      resize = new ResizeObserver(fit);
-      resize.observe(host.current);
-      observer = new IntersectionObserver(([e]) => {
-        visible = !!e?.isIntersecting;
-      });
-      observer.observe(host.current);
       w.update(stateOf(latest.current));
-      const loop = (t: number) => {
-        raf = requestAnimationFrame(loop);
-        if (!visible || document.hidden) return;
-        w.frame(t);
-        for (const a of w.anchors()) {
-          anchorsAt.current.set(a.key, { x: a.x, y: a.y });
-          const el = marks.current.get(a.key);
-          if (el) el.style.transform = `translate3d(${a.x.toFixed(1)}px, ${a.y.toFixed(1)}px, 0)`;
-        }
-      };
-      raf = requestAnimationFrame(loop);
+      loop.current = runScene(host.current, w, {
+        marks: marks.current,
+        anchorsAt: anchorsAt.current,
+        busy: () => (dragged.current && pointers.current.size > 0) || glide.current.active,
+        tick: (t) => {
+          const dt = last ? Math.min(50, t - last) : 16;
+          last = t;
+          const move = glide.current.step(dt);
+          if (move) w.panBy(move.dx, move.dy);
+        },
+      });
       setReady(true);
     });
     return () => {
       alive = false;
-      cancelAnimationFrame(raf);
-      observer?.disconnect();
-      resize?.disconnect();
+      box?.removeEventListener("wheel", wheel);
+      loop.current?.stop();
+      loop.current = null;
       world.current?.dispose();
       world.current = null;
     };
@@ -102,12 +115,9 @@ export default function Terraferma3D(props: Terraferma3DProps) {
 
   useEffect(() => {
     world.current?.update(stateOf(props));
+    loop.current?.poke();
   });
 
-  const mark = (key: string) => (el: HTMLElement | null) => {
-    if (el) marks.current.set(key, el);
-    else marks.current.delete(key);
-  };
   const origin = useCallback(
     () => anchorsAt.current.get(`land:${latest.current.carrier?.from ?? ""}`) ?? null,
     [],
@@ -121,54 +131,82 @@ export default function Terraferma3D(props: Terraferma3DProps) {
     return out;
   }, []);
   const down = useRef<{ x: number; y: number; t: number } | null>(null);
-  // Fingers on the map: one pans it, two pinch it; a drag is never a tap.
-  const pointers = useRef(new Map<number, { x: number; y: number }>());
-  const dragged = useRef(false);
+  /** On the map and on the marks over it: a drag may start on a land's badge. */
+  const drag = {
+    onPointerDown: (e: React.PointerEvent) => {
+      if (pointers.current.size === 0) {
+        down.current = { x: e.clientX, y: e.clientY, t: performance.now() };
+        dragged.current = false;
+      }
+      glide.current.stop();
+      glide.current.track(e.clientX, e.clientY, e.timeStamp);
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    },
+    onPointerMove: (e: React.PointerEvent) => {
+      const prev = pointers.current.get(e.pointerId);
+      const w = world.current;
+      if (!prev || !w) return;
+      if (pointers.current.size >= 2) {
+        const [a, b] = [...pointers.current.values()] as [Pt, Pt];
+        const before = {
+          d: Math.hypot(a.x - b.x, a.y - b.y),
+          x: (a.x + b.x) / 2,
+          y: (a.y + b.y) / 2,
+        };
+        pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        const [c, d] = [...pointers.current.values()] as [Pt, Pt];
+        const after = {
+          d: Math.hypot(c.x - d.x, c.y - d.y),
+          x: (c.x + d.x) / 2,
+          y: (c.y + d.y) / 2,
+        };
+        const r = canvas.current?.getBoundingClientRect();
+        if (r && before.d > 0 && after.d > 0)
+          w.zoomNow(before.d / after.d, after.x - r.left, after.y - r.top);
+        w.panBy(after.x - before.x, after.y - before.y);
+        capture(e.pointerId);
+        dragged.current = true;
+        return;
+      }
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const start = down.current;
+      if (!dragged.current && start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 8) {
+        dragged.current = true;
+        capture(e.pointerId);
+      }
+      if (dragged.current) {
+        w.panBy(e.clientX - prev.x, e.clientY - prev.y);
+        glide.current.track(e.clientX, e.clientY, e.timeStamp);
+      }
+    },
+    onPointerUp: (e: React.PointerEvent) => {
+      pointers.current.delete(e.pointerId);
+      // The last finger lifted after a drag: the map glides on; after a pinch, it stays.
+      if (pointers.current.size === 0 && dragged.current) glide.current.release(e.timeStamp);
+      else glide.current.stop();
+    },
+    onPointerCancel: (e: React.PointerEvent) => {
+      pointers.current.delete(e.pointerId);
+      glide.current.stop();
+    },
+  };
+  // Once a drag starts, the map keeps the pointer (a badge under it is not clicked).
+  const capture = (id: number) => {
+    try {
+      canvas.current?.setPointerCapture(id);
+    } catch {
+      // The pointer is gone already.
+    }
+  };
 
   return (
     <div ref={host} className={`relative w-full overflow-hidden ${props.className ?? ""}`}>
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: the lands within reach are listed below the map. */}
       <canvas
         ref={canvas}
         role="img"
         aria-label={props.title}
         className={`block h-full w-full touch-none transition-opacity duration-500 ${ready ? "opacity-100" : "opacity-0"}`}
-        onPointerDown={(e) => {
-          down.current = { x: e.clientX, y: e.clientY, t: performance.now() };
-          dragged.current = false;
-          pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-          e.currentTarget.setPointerCapture(e.pointerId);
-        }}
-        onPointerMove={(e) => {
-          const prev = pointers.current.get(e.pointerId);
-          if (!prev) return;
-          const w = world.current;
-          const all = [...pointers.current.entries()];
-          if (all.length >= 2 && w) {
-            const [a, b] = all.map(([, p]) => p) as [
-              { x: number; y: number },
-              { x: number; y: number },
-            ];
-            const before = Math.hypot(a.x - b.x, a.y - b.y);
-            pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-            const [c, d] = [...pointers.current.values()] as [
-              { x: number; y: number },
-              { x: number; y: number },
-            ];
-            const after = Math.hypot(c.x - d.x, c.y - d.y);
-            if (before > 0 && after > 0) w.zoomBy(before / after);
-            dragged.current = true;
-            return;
-          }
-          pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-          const start = down.current;
-          if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 8)
-            dragged.current = true;
-          if (dragged.current) w?.panBy(e.clientX - prev.x, e.clientY - prev.y);
-        }}
-        onPointerUp={(e) => pointers.current.delete(e.pointerId)}
-        onPointerCancel={(e) => pointers.current.delete(e.pointerId)}
-        onWheel={(e) => world.current?.zoomBy(e.deltaY > 0 ? 1.12 : 1 / 1.12)}
+        {...drag}
         onClick={(e) => {
           const d = down.current;
           down.current = null;
@@ -181,7 +219,7 @@ export default function Terraferma3D(props: Terraferma3DProps) {
         }}
       />
       {!ready && <div className="absolute inset-0 animate-pulse bg-night-3" />}
-      <div className="pointer-events-none absolute inset-0">
+      <div className="pointer-events-none absolute inset-0" {...drag}>
         {props.lands.map((l) => (
           <div key={l.code}>
             <div ref={mark(`name:${l.code}`)} className="absolute left-0 top-0">
@@ -197,7 +235,7 @@ export default function Terraferma3D(props: Terraferma3DProps) {
                 aria-label={l.name}
                 data-land={l.code}
                 onClick={() => props.onLand(l.code)}
-                className="pointer-events-auto absolute -left-5 -top-8 flex h-8 w-10 items-end justify-center"
+                className="pointer-events-auto absolute -left-5 -top-8 flex h-8 w-10 touch-none items-end justify-center"
               >
                 <span
                   className={`relative flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 font-display text-xs font-extrabold text-cream shadow-lg ring-2 ${l.threatened ? "animate-pulse ring-vermilion" : l.open ? "ring-gold" : "ring-night"}`}
