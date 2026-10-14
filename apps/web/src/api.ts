@@ -22,6 +22,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
       credentials: "same-origin",
       headers: body === undefined ? {} : { "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
+      // A server that never answers must not leave the game waiting forever.
+      signal: AbortSignal.timeout(20_000),
     });
   } catch {
     throw new ApiError(0, "network");

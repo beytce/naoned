@@ -113,6 +113,8 @@ export function Game(props: {
   const { onLogout } = props;
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [catalogFailed, setCatalogFailed] = useState(false);
+  /** Why the first view could not be read (shown on the opening screen), if it failed. */
+  const [viewFailed, setViewFailed] = useState<string | null>(null);
   const [view, setView] = useState<PlayerView | null | undefined>(undefined);
   const [offset, setOffset] = useState(0);
   const [now, setNow] = useState(Date.now());
@@ -156,6 +158,7 @@ export function Game(props: {
   const refresh = useCallback(async () => {
     try {
       const res = await gameApi.view();
+      setViewFailed(null);
       apply(res.serverTime, res.view);
       setUnread((before) => {
         // A notice arrived while playing: a light cue (convoys, offers taken, boardings).
@@ -172,6 +175,7 @@ export function Game(props: {
       if (res.view) setPrices((await gameApi.prices()).series);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) onLogout();
+      else setViewFailed(err instanceof ApiError ? `${err.status || ""} ${err.code}`.trim() : "?");
     }
   }, [apply, onLogout]);
 
@@ -322,7 +326,17 @@ export function Game(props: {
   }, [goTo, TABS]);
 
   if (!catalog || view === undefined) {
-    return <Loading failed={catalogFailed} onRetry={loadCatalog} />;
+    const failed = catalogFailed || (view === undefined && viewFailed !== null);
+    return (
+      <Loading
+        failed={failed}
+        detail={viewFailed}
+        onRetry={() => {
+          loadCatalog();
+          void refresh();
+        }}
+      />
+    );
   }
 
   if (ceremony) {
@@ -754,7 +768,11 @@ function Ambient({ tab }: { tab: Tab }) {
 }
 
 /** Opening the game: the sign while it loads, and a way out when the network fails. */
-function Loading({ failed, onRetry }: { failed: boolean; onRetry: () => void }) {
+function Loading({
+  failed,
+  detail,
+  onRetry,
+}: { failed: boolean; detail: string | null; onRetry: () => void }) {
   return (
     <main className="flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-6 text-center">
       <span className={failed ? "" : "animate-pulse"}>
@@ -763,6 +781,7 @@ function Loading({ failed, onRetry }: { failed: boolean; onRetry: () => void }) 
       {failed ? (
         <>
           <p className="max-w-xs text-cream-dim">{fr.errors.network}</p>
+          {detail && <p className="font-mono text-xs text-muted">{detail}</p>}
           <Slab onClick={onRetry}>{fr.game.retry}</Slab>
         </>
       ) : (
