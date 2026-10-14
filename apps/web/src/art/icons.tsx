@@ -92,14 +92,13 @@ export const NavIcon = {
   ),
 };
 
-/** The ducat: a gold coin with a lion of Saint Mark (simplified). */
-/** The ducat: a gold coin struck with the sign of four. */
+/** The ducat: a gold coin struck with the winged lion of Saint Mark. */
 export function Coin({ size = 28 }: { size?: number }) {
   return (
     <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
       <circle cx="16" cy="16" r="15" fill={P.gold} />
       <circle cx="16" cy="16" r="12.2" fill="none" stroke={P.goldDeep} strokeWidth="1.2" />
-      <g transform="translate(8.4 8) scale(0.127)">
+      <g transform="translate(4.6 4.4) scale(0.19)">
         <SignPaths color={P.night} />
       </g>
     </svg>

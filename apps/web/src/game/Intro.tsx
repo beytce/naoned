@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { BuildingArt } from "../art/buildings.js";
 import { Coin } from "../art/icons.js";
-import { Sign } from "../art/logo.js";
+import { Emblem } from "../art/logo.js";
 import { ResourceIcon } from "../art/resources.js";
 import { Lorenzo } from "../art/scenes.js";
 import { Skyline } from "../art/scenes.js";
@@ -149,7 +149,7 @@ export function Intro({ onDone }: { onDone: () => void }) {
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
       <div className="flex items-center justify-between gap-3">
-        <Sign size={26} />
+        <Emblem size={32} className="shrink-0" />
         <div className="flex flex-1 gap-1.5">
           {slides.map((s, k) => (
             <span

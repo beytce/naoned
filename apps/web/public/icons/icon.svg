@@ -1,24 +1,44 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#F2C96A"/>
-      <stop offset="1" stop-color="#C98F2C"/>
-    </linearGradient>
-  </defs>
-  <rect width="120" height="120" fill="url(#g)"/>
-  <path d="M23 13 H97 L107 23 V97 L97 107 H23 L13 97 V23 Z" fill="none" stroke="#0F1B1E" stroke-opacity="0.22" stroke-width="2"/>
-  <!-- Lateen sail, cream, under the yard. -->
-  <path d="M46 34 L92 24 C89 50 72 72 46 86 Z" fill="#F7EBCF" stroke="#0F1B1E" stroke-width="3" stroke-linejoin="round"/>
-  <g fill="#0F1B1E">
-    <!-- Mast: the F's stem. -->
-    <rect x="37" y="18" width="10.5" height="74" rx="2"/>
-    <!-- Yard: the F's top bar, slanting. -->
-    <path d="M30 33.5 L97 19 L98.8 26.5 L31.8 41 Z"/>
-    <!-- Boom: the F's middle bar. -->
-    <path d="M37 60 H72 L69 69 H37 Z"/>
-    <!-- Hull. -->
-    <path d="M17 90 H103 C99 103 87 109 73 109 H47 C33 109 21 103 17 90 Z"/>
+<defs><radialGradient id="bg" cx="0.5" cy="0.38" r="0.78"><stop offset="0" stop-color="#6A4B32"/><stop offset="0.55" stop-color="#3A2A1E"/><stop offset="1" stop-color="#1E1611"/></radialGradient>
+<radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0.55" stop-color="#F6D896" stop-opacity="0.7"/><stop offset="1" stop-color="#F6D896" stop-opacity="0"/></radialGradient>
+<linearGradient id="coin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F6CE6E"/><stop offset="1" stop-color="#D99A32"/></linearGradient></defs>
+<rect width="120" height="120" fill="url(#bg)"/>
+<g transform="translate(6 8) scale(0.9)" stroke="#1E1611" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">
+  <g transform="translate(70 46) rotate(-22) scale(-0.84 0.84)" stroke-width="2.14"><path d="M0 0 C-6 -20 -20 -36 -34 -42 Q-44 -42 -47 -36 L-34 -28 Q-46 -27 -50 -23 L-36 -17 Q-46 -15 -48 -11 L-33 -7 Q-40 -4 -42 0 L-26 2 Q-30 6 -31 10 L-14 9 Q-6 9 0 6 Z" fill="#CDAE78"/><path d="M-34 -28 L-22 -24 M-36 -17 L-22 -14 M-33 -7 L-20 -6 M-26 2 L-14 1" fill="none" stroke-width="1.19"/></g>
+<g transform="translate(70 46) rotate(-22) scale(-0.6 0.6)" stroke-width="2.98"><path d="M0 0 C-6 -20 -20 -36 -34 -42 Q-44 -42 -47 -36 L-34 -28 Q-46 -27 -50 -23 L-36 -17 Q-46 -15 -48 -11 L-33 -7 Q-40 -4 -42 0 L-26 2 Q-30 6 -31 10 L-14 9 Q-6 9 0 6 Z" fill="#D9BC86"/><path d="M-34 -28 L-22 -24 M-36 -17 L-22 -14 M-33 -7 L-20 -6 M-26 2 L-14 1" fill="none" stroke-width="1.65"/></g>
+<g transform="translate(70 46) rotate(-22) scale(-0.39 0.39)" stroke-width="4.66"><path d="M0 0 C-6 -20 -20 -36 -34 -42 Q-44 -42 -47 -36 L-34 -28 Q-46 -27 -50 -23 L-36 -17 Q-46 -15 -48 -11 L-33 -7 Q-40 -4 -42 0 L-26 2 Q-30 6 -31 10 L-14 9 Q-6 9 0 6 Z" fill="#E3CA98"/></g>
+  <path d="M42 86 C32 94 20 94 17 84 C15 77 18 71 23 70" fill="none" stroke-width="5.6"/>
+  <path d="M42 86 C32 94 20 94 17 84 C15 77 18 71 23 70" fill="none" stroke="#F2DDB0" stroke-width="2.2"/>
+  <path d="M25.6 67 Q27.83 67.43 25.79 71.85 Q25.53 69.42 24.62 69.03 Q25.67 71.05 20.95 72.21 Q22.69 70.49 22.42 69.53 Q21.5 71.61 17.65 68.64 Q20.08 68.93 20.66 68.13 Q18.46 68.7 18.38 63.84 Q19.67 65.92 20.66 65.87 Q18.84 64.51 22.59 61.41 Q21.77 63.72 22.42 64.47 Q22.35 62.19 27.11 63.2 Q24.8 64 24.62 64.97 Q26.35 63.49 28.54 67.84 Q26.47 66.53 25.6 67 Z" fill="#5C3521"/>
+  <path d="M46 92 C42 96 38 99 35 101 C32 102 30 105 31 107 H42 C43 104 45 101 50 97 Z" fill="#D2A86C"/>
+  <path d="M60 50 C70 47 79 51 82 58 C85 66 81 74 74 79 C68 83 64 84 60 86 C62 92 66 98 68 102 L70 104 C72 106 70 108 67 108 L56 108 C54 106 55 103 57 101 C52 98 46 96 43 92 C38 86 38 78 42 72 C46 62 52 53 60 50 Z" fill="#F2DDB0"/>
+  <path d="M82 60 C85 68 81 74 74 79 C68 83 64 84 60 86 C62 81 67 77 72 74 C77 70 80 66 82 60 Z" fill="#D2A86C" stroke="none" opacity="0.55"/>
+  <path d="M57 101 C52 94 50 86 56 80" fill="none" stroke-width="1.3"/>
+  <g transform="translate(58 53) rotate(20) scale(1 1)" stroke-width="1.8"><path d="M0 0 C-6 -20 -20 -36 -34 -42 Q-44 -42 -47 -36 L-34 -28 Q-46 -27 -50 -23 L-36 -17 Q-46 -15 -48 -11 L-33 -7 Q-40 -4 -42 0 L-26 2 Q-30 6 -31 10 L-14 9 Q-6 9 0 6 Z" fill="#E9D3A4"/><path d="M-34 -28 L-22 -24 M-36 -17 L-22 -14 M-33 -7 L-20 -6 M-26 2 L-14 1" fill="none" stroke-width="1"/></g>
+<g transform="translate(58 53) rotate(20) scale(0.72 0.72)" stroke-width="2.5"><path d="M0 0 C-6 -20 -20 -36 -34 -42 Q-44 -42 -47 -36 L-34 -28 Q-46 -27 -50 -23 L-36 -17 Q-46 -15 -48 -11 L-33 -7 Q-40 -4 -42 0 L-26 2 Q-30 6 -31 10 L-14 9 Q-6 9 0 6 Z" fill="#F2DFB6"/><path d="M-34 -28 L-22 -24 M-36 -17 L-22 -14 M-33 -7 L-20 -6 M-26 2 L-14 1" fill="none" stroke-width="1.39"/></g>
+<g transform="translate(58 53) rotate(20) scale(0.46 0.46)" stroke-width="3.91"><path d="M0 0 C-6 -20 -20 -36 -34 -42 Q-44 -42 -47 -36 L-34 -28 Q-46 -27 -50 -23 L-36 -17 Q-46 -15 -48 -11 L-33 -7 Q-40 -4 -42 0 L-26 2 Q-30 6 -31 10 L-14 9 Q-6 9 0 6 Z" fill="#F8EBCD"/></g>
+  <g transform="translate(-1 -3)">
+  <circle cx="64" cy="91" r="15" fill="url(#glow)" stroke="none"/>
+  <circle cx="64" cy="91" r="11" fill="url(#coin)"/>
+  <circle cx="64" cy="91" r="8.3" fill="none" stroke="#BA8830" stroke-width="1.1"/>
+  <g stroke="none" fill="#1E1611">
+    <path d="M58 92.3 H70 L68.2 95.6 H59.8 Z"/>
+    <rect x="63.4" y="84" width="1.2" height="8.6"/>
+    <path d="M64.6 85 L69 91.6 H64.6 Z"/>
+    <path d="M63.4 86 L59.4 91.6 H63.4 Z"/>
+    <path d="M64 84 V81.6 L66.6 82.7 Z"/>
   </g>
-  <!-- Pennant. -->
-  <path d="M42.5 19 V7 L59 12.5 Z" fill="#C8462A"/>
+  <path d="M57.6 97.4 Q60.8 96.2 64 97.4 T70.4 97.4" fill="none" stroke="#7DB596" stroke-width="1.2"/>
+  </g>
+  <path d="M76 66 C79 72 80 80 76 86 C78 89 83 88 84 83 C86 77 84 69 80 63 Z" fill="#F2DDB0"/>
+  <path d="M76 58 C84 56 92 52 98 49 C102 47 106 49 105 53 C104 57 100 58 96 59 C90 61 84 64 80 66 Z" fill="#F2DDB0"/>
+  <path d="M100.5 50 L101 54 M103 50.6 L102.6 54.6" fill="none" stroke-width="0.9"/>
+  <path d="M85.5 38 Q89.98 38.82 87.82 49.07 Q86.11 43.71 84.07 43.81 Q87.65 46.62 80.98 54.69 Q81.95 49.15 80.1 48.29 Q81.97 52.44 72.31 56.49 Q75.75 52.03 74.51 50.41 Q74.23 54.96 63.79 54.05 Q68.91 51.7 68.57 49.69 Q66.21 53.59 57.39 47.93 Q63.01 48.23 63.64 46.29 Q59.75 48.65 54.56 39.54 Q59.4 42.42 60.86 40.99 Q56.32 41.27 55.96 30.8 Q58.9 35.59 60.86 35.01 Q56.71 33.14 61.26 23.7 Q61.64 29.32 63.64 29.71 Q60.83 26.13 69.25 19.88 Q66.97 25.03 68.57 26.31 Q67.75 21.83 78.1 20.22 Q73.69 23.72 74.51 25.59 Q75.86 21.24 85.78 24.62 Q80.25 25.67 80.1 27.71 Q83.32 24.49 90.53 32.09 Q85.15 30.45 84.07 32.19 Q88.42 30.84 91.27 40.92 Q87.26 36.96 85.5 38 Z" fill="#5C3521"/>
+  <path d="M71 29 C77 25 84 28 87 33 C88.5 36 90.5 38.5 92 40.5 C93 43.5 91 46.5 88 47.2 C84 48.6 80 49.4 76.5 47.6 C71 45.4 68 40 68 35 C68 32.6 69.2 30.4 71 29 Z" fill="#F2DDB0"/>
+  <path d="M71.5 30 C70.5 25.5 73 22.5 76 23.4 C77 25.4 76 28.4 74 30.4 Z" fill="#F2DDB0"/>
+  <path d="M92.2 40.8 C93.2 42.4 92.2 44 90.2 44 C89.2 43.4 88.8 42 89.6 41 Z" fill="#1E1611" stroke-width="0.9"/>
+  <path d="M88.4 46.3 C86.4 47.3 84.4 47.3 82.9 46.4" fill="none" stroke-width="1.1"/>
+  <path d="M79.6 35.2 C81.3 33.9 83.6 33.9 85 35.3 C83.6 36.3 81.3 36.5 79.6 35.2 Z" fill="#1E1611" stroke-width="0.7"/>
+  <path d="M78.8 32.4 C81 31 84 31.2 85.8 32.8" fill="none" stroke-width="1"/>
+</g>
 </svg>

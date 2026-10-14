@@ -1,7 +1,7 @@
 import { P } from "./palette.js";
 
 /**
- * Faraj's mark, sister of the sign of four: the same grid of 120 and stroke of 12, a pennant on
+ * Faraj's mark (once the sister of the old galley sign): a grid of 120 and stroke of 12, a pennant on
  * the mast, with a crescent over it and an orb at its foot.
  */
 export function FarajMark({ color, size = 40 }: { color: string; size?: number }) {

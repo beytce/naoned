@@ -1,6 +1,6 @@
 import { Crest } from "../art/crest.js";
 import { Medal } from "../art/icons.js";
-import { Sign } from "../art/logo.js";
+import { Emblem } from "../art/logo.js";
 import { fr } from "../i18n.js";
 import { Big, Label, Slab } from "../ui.js";
 import { d } from "./format.js";
@@ -37,7 +37,7 @@ export function Ceremony({
     .filter((p) => p !== undefined);
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-xl flex-col items-center px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] text-center">
-      <Sign size={44} />
+      <Emblem size={64} />
       <Label className="mt-4 text-lagoon">{t.closed(data.season)}</Label>
       <div className="mt-6 animate-rise">
         <Medal earned={top} size={64} />
