@@ -3,14 +3,19 @@ import { balesFor } from "./bales.js";
 import { costForLevel } from "./buildings.js";
 import {
   MILAN,
+  defenseBpsOf,
   garrisonAt,
   hireCost,
   hireLimit,
   hiredToday,
   landDef,
+  landDistance,
   levyWaiting,
   mayTarget,
   reserveOf,
+  seatFamily,
+  worksAllowed,
+  worksOf,
 } from "./campaign.js";
 import { quoteCitySale } from "./cities.js";
 import type { Command } from "./commands.js";
@@ -29,7 +34,7 @@ import {
   watchedRoads,
 } from "./deliveries.js";
 import { cargoValueAt } from "./expeditions.js";
-import { familiesOn, familiesOpenAt, familyCodes, membersOf } from "./families.js";
+import { familiesOn, familiesOpenAt, familyCodes, membersOf, seatOf } from "./families.js";
 import { bestPrice, marketMakerQuotaLeft, maxOpenOrdersFor, openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
 import type { Deniers } from "./money.js";
@@ -674,6 +679,7 @@ export class Bot {
       s.act({ type: "collectLevy", playerId: this.id });
     this.hireLances(s);
     this.campaign(s, family);
+    this.fortify(s, family);
     state = s.state();
     const week = state.campaign?.week ?? -1;
     if (this.votedWeek !== week && this.profile.name !== "casual") {
@@ -698,7 +704,7 @@ export class Bot {
   /** Defends what is threatened, then attacks the cheapest land worth taking. */
   private campaign(s: Session, family: string): void {
     const kinds = s.ctx.settings.campaign?.kinds ?? {};
-    const defense = (code: string) => kinds[landDef(s.ctx, code)?.kind ?? ""]?.defenseBps ?? 10_000;
+    const defense = (code: string) => defenseBpsOf(s.ctx, s.state(), code, s.now);
     const glory = (code: string) => kinds[landDef(s.ctx, code)?.kind ?? ""]?.glory ?? 0;
     for (let round = 0; round < 4; round++) {
       const state = s.state();
@@ -773,6 +779,50 @@ export class Bot {
       if (border) s.act({ type: "sendMarch", playerId: this.id, land: border[0], lances: reserve });
       return;
     }
+  }
+
+  /**
+   * A work where it serves the family best, if the family may build one more and the bot can
+   * spare its price: a tower on a land bordering an enemy, a camp far from the seat, a toll on
+   * the richest land.
+   */
+  private fortify(s: Session, family: string): void {
+    const works = s.ctx.settings.campaign?.works;
+    if (!works || this.profile.warlike <= 0) return;
+    const state = s.state();
+    const c = state.campaign;
+    if (!c || c.closed) return;
+    if (worksOf(state, family) >= worksAllowed(s.ctx, state, family, s.now)) return;
+    const kinds = s.ctx.settings.campaign?.kinds ?? {};
+    const glory = (code: string) => kinds[landDef(s.ctx, code)?.kind ?? ""]?.glory ?? 0;
+    const seat = seatOf(s.ctx, family);
+    const held = Object.entries(c.lands)
+      .filter(([code, l]) => l.holder === family && !l.work && !seatFamily(s.ctx, code))
+      .sort((a, b) => glory(b[0]) - glory(a[0]) || (a[0] < b[0] ? -1 : 1));
+    const pick = held[0];
+    if (!pick) return;
+    const [code] = pick;
+    const exposed = landDef(s.ctx, code)?.neighbors.some((n) => {
+      const h = c.lands[n]?.holder;
+      return h !== undefined && h !== null && h !== family;
+    });
+    const hasCamp = Object.values(c.lands).some(
+      (l) => l.work?.family === family && works.kinds[l.work.kind]?.staging,
+    );
+    const far = seat ? landDistance(s.ctx, seat, code) >= 3 : false;
+    const workKinds = works.kinds;
+    type Kind = (typeof workKinds)[string];
+    const want = (test: (k: Kind) => boolean) =>
+      Object.entries(workKinds).find(([, k]) => test(k))?.[0];
+    const kind = exposed
+      ? want((k) => k.defenseBonusBps > 0)
+      : far && !hasCamp
+        ? want((k) => k.staging)
+        : want((k) => k.gloryBonusBps > 0);
+    const def = kind ? works.kinds[kind] : undefined;
+    if (!kind || !def) return;
+    if (this.cash(s) - def.price < s.ctx.settings.startingCapital / 2n) return;
+    s.act({ type: "buildWork", playerId: this.id, land: code, kind });
   }
 
   /** The bot's programme: by temperament, among the decrees the world allows. */

@@ -223,4 +223,24 @@ describe("the families in the view", () => {
       "bob",
     ]);
   });
+
+  it("lists the works and refuses one on a land the family does not hold", async () => {
+    const [ada] = (await family("contarini", "ada@example.org")) as [string];
+    const catalog = (await app.inject({ method: "GET", url: "/api/game/catalog" })).json();
+    expect(Object.keys(catalog.families.campaign.works.kinds)).toEqual([
+      "rocca",
+      "campo",
+      "dogana",
+    ]);
+    const res = await act(ada, { type: "buildWork", land: "mestre", kind: "rocca" });
+    expect(res.error).toBe("not_held");
+    const v = (
+      await app.inject({ method: "GET", url: "/api/game", headers: { cookie: ada } })
+    ).json().view.families;
+    expect(v.me).toMatchObject({ works: 0, worksAllowed: 2 });
+    expect(v.lands.find((l: { code: string }) => l.code === "mestre")).toMatchObject({
+      work: null,
+      from: "piove",
+    });
+  });
 });

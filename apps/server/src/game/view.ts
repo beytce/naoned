@@ -48,6 +48,8 @@ import {
   crieeRoom,
   currentCriee,
   dailyFor,
+  defenseBpsOf,
+  defenseOf,
   familiesOn,
   familiesOpenAt,
   familyOf,
@@ -60,6 +62,7 @@ import {
   levyWaiting,
   liveGlory,
   marchMinutes,
+  marchStart,
   maxOpenOrdersFor,
   mayTarget,
   membersOf,
@@ -72,6 +75,9 @@ import {
   seatFamily,
   stackCount,
   weekIndex,
+  workServing,
+  worksAllowed,
+  worksOf,
 } from "@comptoirs/engine";
 import {
   ambushChanceBps,
@@ -130,6 +136,7 @@ function familiesView(ctx: WorldContext, state: WorldState, playerId: string, no
     glory: glory[f.code] ?? 0,
     programme: programmeOf(ctx, state, f.code),
     lands: Object.values(c?.lands ?? {}).filter((l) => l.holder === f.code).length,
+    works: worksOf(state, f.code),
   }));
   const kinds = rules.kinds;
   const lands = rules.lands.map((def) => {
@@ -151,13 +158,27 @@ function familiesView(ctx: WorldContext, state: WorldState, playerId: string, no
             now,
           )
         : 0,
-      defenseBps: kind?.defenseBps ?? 10_000,
+      /** What the garrison counts for, its work's share included once finished. */
+      defenseBps: defenseBpsOf(ctx, state, def.code, now),
+      /** Lances an assault must outnumber now. */
+      defense: defenseOf(ctx, state, def.code, now),
       glory: kind?.glory ?? 0,
+      work: land?.work
+        ? {
+            kind: land.work.kind,
+            family: land.work.family,
+            by: land.work.by,
+            readyAt: land.work.readyAt,
+            ready: workServing(ctx, land, now) !== undefined,
+          }
+        : null,
       seat: seatFamily(ctx, def.code) ?? null,
       since: land?.since ?? 0,
       /** The merchant may send lances there now. */
       open: mine ? mayTarget(ctx, state, mine, def.code) : false,
-      minutes: mine ? marchMinutes(ctx, mine, def.code) : null,
+      minutes: mine ? marchMinutes(ctx, mine, def.code, state, now) : null,
+      /** Where the merchant's march would leave from: the seat or a camp of the family. */
+      from: mine ? marchStart(ctx, mine, def.code, state, now).from : null,
     };
   });
   const marches = Object.values(c?.marches ?? {})
@@ -167,6 +188,7 @@ function familiesView(ctx: WorldContext, state: WorldState, playerId: string, no
       family: m.family,
       by: m.by,
       target: m.target,
+      from: m.from ?? null,
       startAt: m.startAt,
       arriveAt: m.arriveAt,
       lances: m.npc + stackCount(m.stacks, Math.min(now, m.arriveAt)),
@@ -211,6 +233,9 @@ function familiesView(ctx: WorldContext, state: WorldState, playerId: string, no
           /** Price of the next lance (null: the day's limit is reached). */
           nextPrice: hireCost(ctx, hired, 1) ?? null,
           merit: meritPoints(ctx, state, playerId),
+          /** Works the family has standing, and may have. */
+          works: worksOf(state, mine),
+          worksAllowed: worksAllowed(ctx, state, mine, now),
           ballot: c?.ballots[playerId] ?? [],
           /** When the lances in the reserve leave, the soonest first. */
           leaving: (c?.players[playerId]?.reserve ?? [])
@@ -428,6 +453,7 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
                 march: settings.campaign.march,
                 milan: settings.campaign.milan,
                 garrisonLancesPerPoint: settings.campaign.garrisonLancesPerPoint,
+                works: settings.campaign.works ?? null,
               }
             : null,
           decrees: settings.decrees,

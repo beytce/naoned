@@ -376,6 +376,32 @@ export const worldSettingsSchema = z.object({
       }),
       /** Merit: a point per lance in a battle won, and per so many lances held an hour. */
       garrisonLancesPerPoint: positive,
+      /**
+       * Works a member builds for ducats (destroyed) on a land the family holds, one a land; a
+       * land taken razes its work, and the map opening again each week clears them all.
+       */
+      works: z
+        .object({
+          kinds: z.record(
+            z.object({
+              price: money,
+              /** The garrison counts this much more in a battle. */
+              defenseBonusBps: bps.default(0),
+              /** The land's glory counts this much more. */
+              gloryBonusBps: bps.default(0),
+              /** The family's marches may leave from here rather than from the seat. */
+              staging: z.boolean().default(false),
+            }),
+          ),
+          /** Open minutes of works before it serves. */
+          buildMinutes: qty,
+          /** Works a family may have standing: so many, and one more per so many members. */
+          perFamily: qty,
+          perMembers: positive,
+          /** Merit to each merchant of an assault that razes a work. */
+          razeMerit: qty,
+        })
+        .optional(),
     })
     .optional(),
   /**

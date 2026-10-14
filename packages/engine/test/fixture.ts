@@ -271,6 +271,17 @@ export const testCampaign = {
   march: { baseMinutes: 20, perHopMinutes: 10 },
   milan: { everyHours: 4, warningMinutes: 30, base: 4, perActive: 1, leadBonusBps: 10_000 },
   garrisonLancesPerPoint: 10,
+  works: {
+    kinds: {
+      tower: { price: 500, defenseBonusBps: 10_000 },
+      camp: { price: 300, staging: true },
+      toll: { price: 400, gloryBonusBps: 10_000 },
+    },
+    buildMinutes: 60,
+    perFamily: 1,
+    perMembers: 2,
+    razeMerit: 3,
+  },
 };
 
 export const testDecrees = {

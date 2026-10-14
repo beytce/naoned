@@ -169,6 +169,19 @@ export const venice1450Settings: WorldSettingsInput = {
     march: { baseMinutes: 20, perHopMinutes: 10 },
     milan: { everyHours: 4, warningMinutes: 30, base: 10, perActive: 2, leadBonusBps: 10_000 },
     garrisonLancesPerPoint: 10,
+    // Works on the lands held: the rocca holds, the campo brings the marches nearer, the dogana
+    // makes a rich land pay; two a family, one more per five active members; razed when taken.
+    works: {
+      kinds: {
+        rocca: { price: 4_000, defenseBonusBps: 6_000 },
+        campo: { price: 3_000, staging: true },
+        dogana: { price: 5_000, gloryBonusBps: 5_000 },
+      },
+      buildMinutes: 120,
+      perFamily: 2,
+      perMembers: 5,
+      razeMerit: 10,
+    },
   },
   // Laws and decrees: the family that wins the week imposes two of them on the next one.
   decrees: {

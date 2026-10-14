@@ -25,6 +25,7 @@ export type LedgerReason =
   | "mission_reward"
   | "family_order_reward"
   | "campaign_hire"
+  | "campaign_work"
   | "decree_gabelle"
   | "decree_toll"
   | "decree_favour"

@@ -137,6 +137,7 @@ export class Notifier {
       (e) =>
         e.type === "land_threatened" ||
         e.type === "land_lost" ||
+        e.type === "work_razed" ||
         e.type === "campaign_closed" ||
         e.type === "decree_share",
     );

@@ -2,7 +2,7 @@ import { type Draft, enableMapSet, produce } from "immer";
 import { claimDaily, sellToCriee, trackDaily } from "./activity.js";
 import { grantStartingBales, openBale } from "./bales.js";
 import { build, grantBuilding, upgrade } from "./buildings.js";
-import { collectLevy, hireLances, joinMarch, sendMarch } from "./campaign.js";
+import { buildWork, collectLevy, hireLances, joinMarch, sendMarch } from "./campaign.js";
 import { sellToCity } from "./cities.js";
 import { fulfillContract, rerollContract } from "./contracts.js";
 import { voteProgramme } from "./decrees.js";
@@ -101,6 +101,7 @@ export type Command =
   | { type: "collectLevy"; playerId: PlayerId }
   | { type: "hireLances"; playerId: PlayerId; count: number }
   | { type: "sendMarch"; playerId: PlayerId; land: string; lances: number }
+  | { type: "buildWork"; playerId: PlayerId; land: string; kind: string }
   | { type: "joinMarch"; playerId: PlayerId; marchId: string; lances: number }
   | { type: "voteProgramme"; playerId: PlayerId; picks: DecreePick[] }
   /** From the server: the Pass Négociant until this time (a later date never shortens it). */
@@ -317,6 +318,9 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "hireLances":
       hireLances(tx, cmd.playerId, cmd.count);
+      break;
+    case "buildWork":
+      buildWork(tx, cmd.playerId, cmd.land, cmd.kind);
       break;
     case "sendMarch":
       sendMarch(tx, cmd.playerId, cmd.land, cmd.lances);

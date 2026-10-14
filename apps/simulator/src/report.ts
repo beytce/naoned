@@ -167,6 +167,15 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
       pass: fam.taken >= days,
       blocking: false,
     });
+    checks.push({
+      name: "Campagne : ouvrages",
+      target: "diagnostic : les familles consolident, les ouvrages tombent aussi",
+      value: `${fam.worksBuilt} bâtis (${ducats(fam.worksCost)}, ${ducats(
+        fam.worksCost / BigInt(Math.max(1, playerDays)),
+      )} par marchand actif et par jour) · ${fam.worksRazed} rasés`,
+      pass: fam.worksBuilt > 0,
+      blocking: false,
+    });
     const wins: Record<string, number> = {};
     for (const w of fam.weeks) if (w.winner) wins[w.winner] = (wins[w.winner] ?? 0) + 1;
     const most = Math.max(0, ...Object.values(wins));

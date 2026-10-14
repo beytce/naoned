@@ -64,6 +64,7 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("joinFamily"), family: z.string().max(32) }),
   z.object({ type: z.literal("collectLevy") }),
   z.object({ type: z.literal("hireLances"), count: z.number().int().positive().max(1_000) }),
+  z.object({ type: z.literal("buildWork"), land: z.string().max(32), kind: z.string().max(32) }),
   z.object({
     type: z.literal("sendMarch"),
     land: z.string().max(32),
@@ -726,6 +727,8 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "collectLevy", playerId }];
     case "hireLances":
       return [{ type: "hireLances", playerId, count: a.count }];
+    case "buildWork":
+      return [{ type: "buildWork", playerId, land: a.land, kind: a.kind }];
     case "sendMarch":
       return [{ type: "sendMarch", playerId, land: a.land, lances: a.lances }];
     case "joinMarch":

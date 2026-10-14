@@ -448,6 +448,16 @@ export interface CampaignLand {
   stacks: LanceStack[];
   /** Held since then. */
   since: number;
+  /** The work standing on it, built by the family holding it. */
+  work?: CampaignWork;
+}
+
+export interface CampaignWork {
+  kind: string;
+  family: string;
+  by: PlayerId;
+  /** It serves from then (open hours of works after it was paid). */
+  readyAt: number;
 }
 
 /** Lances on their way to a land: to reinforce it if the family holds it, to attack it otherwise. */
@@ -458,6 +468,8 @@ export interface March {
   /** Who opened it (null for Milan). */
   by: PlayerId | null;
   target: string;
+  /** Where it left from: the family's seat, or one of its camps (none for Milan). */
+  from?: string;
   startAt: number;
   arriveAt: number;
   stacks: LanceStack[];

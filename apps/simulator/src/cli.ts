@@ -57,6 +57,7 @@ const DESTROYED = [
   "ship_repair",
   "privateer_letter",
   "campaign_hire",
+  "campaign_work",
   "vehicle",
   "vehicle_upkeep",
   "escort",

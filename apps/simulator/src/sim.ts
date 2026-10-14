@@ -107,6 +107,10 @@ export interface SimulationResult {
     hired: number;
     /** Ducats destroyed for the lances. */
     hireCost: Deniers;
+    /** Works built, razed, and the ducats they destroyed. */
+    worksBuilt: number;
+    worksRazed: number;
+    worksCost: Deniers;
     marches: number;
     taken: number;
     held: number;
@@ -212,6 +216,9 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     levied: 0,
     hired: 0,
     hireCost: 0n,
+    worksBuilt: 0,
+    worksRazed: 0,
+    worksCost: 0n,
     marches: 0,
     taken: 0,
     held: 0,
@@ -247,12 +254,15 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
       if (e.type === "levy_collected") families.levied += Number(e.data?.lances ?? 0);
       if (e.type === "lances_hired") families.hired += Number(e.data?.lances ?? 0);
       if (e.type === "march_sent") families.marches++;
+      if (e.type === "work_built") families.worksBuilt++;
+      if (e.type === "work_razed") families.worksRazed++;
       if (e.type === "land_taken") families.taken++;
       if (e.type === "land_held") families.held++;
       if (e.type === "milan_rides") families.milanRides++;
     }
     for (const l of res.effects.ledger) {
       if (l.reason === "campaign_hire") families.hireCost += l.amount;
+      if (l.reason === "campaign_work") families.worksCost += l.amount;
       if (l.reason.startsWith("decree_"))
         families.decreeMoney[l.reason] = (families.decreeMoney[l.reason] ?? 0n) + l.amount;
     }

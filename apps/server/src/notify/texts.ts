@@ -73,6 +73,8 @@ const LANDS: Record<string, string> = {
   chioggia: "Chioggia",
   piove: "Piove di Sacco",
 };
+const WORKS: Record<string, string> = { rocca: "rocca", campo: "camp", dogana: "dogana" };
+
 const DECREES: Record<string, string> = {
   fondaco: "le privilège du Fondaco",
   gabelle: "une gabelle",
@@ -229,6 +231,11 @@ export function pushText(
         return {
           title: `${landName(data.land)} est perdue`,
           body: `${data.by === "milan" ? "Milan" : `Les ${familyName(data.by)}`} ont pris la terre que vous gardiez.`,
+        };
+      if (data.event === "work_razed")
+        return {
+          title: `Votre ${WORKS[String(data.kind)] ?? "ouvrage"} est rasé`,
+          body: `${data.by === "milan" ? "Milan a" : `Les ${familyName(data.by)} ont`} pris ${landName(data.land)} et abattu l'ouvrage que vous y aviez bâti.`,
         };
       if (data.event === "decree_share")
         return {

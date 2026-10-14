@@ -1,12 +1,20 @@
 import { actAt } from "./acts.js";
 import { hourIn, hourWithin } from "./clock.js";
 import { programmeOf } from "./decrees.js";
-import { familiesOn, familyCodes, levyFactorBps, membersOf, seatOf } from "./families.js";
+import {
+  activeMembers,
+  familiesOn,
+  familyCodes,
+  levyFactorBps,
+  membersOf,
+  seatOf,
+} from "./families.js";
 import {
   type AccountId,
   type CampaignLand,
   type CampaignPlayer,
   type CampaignState,
+  type CampaignWork,
   DAY_MS,
   HOUR_MS,
   type LanceStack,
@@ -93,6 +101,21 @@ export function openMs(ctx: WorldContext, from: number, to: number): number {
   return sum;
 }
 
+/** The instant when `ms` of open time have gone by from `from`. */
+export function afterOpen(ctx: WorldContext, from: number, ms: number): number {
+  let left = ms;
+  let t = from;
+  for (let i = 0; left > 0 && i < 24 * 400; i++) {
+    const next = nextHour(t);
+    if (campaignOpen(ctx, t)) {
+      if (next - t >= left) return t + left;
+      left -= next - t;
+    }
+    t = next;
+  }
+  return t;
+}
+
 /** The first open instant from `at` on. */
 export function nextOpenAt(ctx: WorldContext, at: number): number {
   if (campaignOpen(ctx, at)) return at;
@@ -125,12 +148,87 @@ export function landDistance(ctx: WorldContext, from: string, to: string): numbe
   return Number.POSITIVE_INFINITY;
 }
 
-/** Minutes a family's march takes to a land (before the night's truce). */
-export function marchMinutes(ctx: WorldContext, family: string, land: string): number {
-  const { baseMinutes, perHopMinutes } = rules(ctx).march;
+/** Where a family's march to a land leaves from: its seat, or its nearest camp (from `at`). */
+export function marchStart(
+  ctx: WorldContext,
+  family: string,
+  land: string,
+  state?: WorldState,
+  at = 0,
+): { from: string | null; hops: number } {
   const seat = seatOf(ctx, family);
-  const d = seat ? landDistance(ctx, seat, land) : 1;
+  let best = { from: seat ?? null, hops: seat ? landDistance(ctx, seat, land) : 1 };
+  for (const [code, l] of Object.entries(state?.campaign?.lands ?? {})) {
+    if (l.holder !== family || !workServing(ctx, l, at)?.staging) continue;
+    const hops = landDistance(ctx, code, land);
+    if (hops < best.hops || (hops === best.hops && best.from !== null && code < best.from)) {
+      best = { from: code, hops };
+    }
+  }
+  return best;
+}
+
+/** Minutes a family's march takes to a land (before the night's truce). */
+export function marchMinutes(
+  ctx: WorldContext,
+  family: string,
+  land: string,
+  state?: WorldState,
+  at = 0,
+): number {
+  const { baseMinutes, perHopMinutes } = rules(ctx).march;
+  const d = marchStart(ctx, family, land, state, at).hops;
   return baseMinutes + perHopMinutes * Math.max(0, (Number.isFinite(d) ? d : 1) - 1);
+}
+
+// ——— Works ———
+
+type WorkSettings = NonNullable<CampaignSettings["works"]>;
+
+export function workDef(
+  ctx: WorldContext,
+  kind: string,
+): WorkSettings["kinds"][string] | undefined {
+  return ctx.settings.campaign?.works?.kinds[kind];
+}
+
+/** The work of a land, if it serves at `at` (finished, and of the family holding the land). */
+export function workServing(ctx: WorldContext, land: CampaignLand, at: number) {
+  const w = land.work;
+  if (!w || w.readyAt > at || w.family !== land.holder) return undefined;
+  return workDef(ctx, w.kind);
+}
+
+/** Works a family may have standing: so many, and one more per so many active members. */
+export function worksAllowed(
+  ctx: WorldContext,
+  state: WorldState,
+  family: string,
+  at: number,
+): number {
+  const r = ctx.settings.campaign?.works;
+  if (!r) return 0;
+  return r.perFamily + Math.floor(activeMembers(ctx, state, family, at).length / r.perMembers);
+}
+
+/** The family's works standing on the map (finished or not). */
+export function worksOf(state: WorldState, family: string): number {
+  return Object.values(state.campaign?.lands ?? {}).filter((l) => l.work?.family === family).length;
+}
+
+/** What a land's garrison counts for in a battle at `at`: its kind's defense, and its work's. */
+export function defenseBpsOf(ctx: WorldContext, state: WorldState, code: string, at: number) {
+  const base = ctx.settings.campaign?.kinds[landDef(ctx, code)?.kind ?? ""]?.defenseBps ?? 10_000;
+  const land = state.campaign?.lands[code];
+  const bonus = land ? (workServing(ctx, land, at)?.defenseBonusBps ?? 0) : 0;
+  return Math.floor((base * (10_000 + bonus)) / 10_000);
+}
+
+/** Lances an assault must outnumber to take a land at `at`. */
+export function defenseOf(ctx: WorldContext, state: WorldState, code: string, at: number) {
+  const land = state.campaign?.lands[code];
+  if (!land) return 0;
+  return Math.ceil((garrisonAt(land, at) * defenseBpsOf(ctx, state, code, at)) / 10_000);
 }
 
 const alive = (s: LanceStack, at: number) => s.expiresAt > at;
@@ -272,6 +370,13 @@ function accrue(tx: Tx, to: number): void {
     if (!h || h === MILAN) continue;
     const value = kindOf(tx.ctx, code)?.glory ?? 0;
     if (value > 0) c.glory[h] = (c.glory[h] ?? 0) + value * openTo(to);
+    // A finished work adds its share of the land's glory from the moment it serves.
+    const w = land.work;
+    const bonus = w && w.family === h ? (workDef(tx.ctx, w.kind)?.gloryBonusBps ?? 0) : 0;
+    if (value > 0 && bonus > 0 && w && w.readyAt < to) {
+      const ms = openMs(tx.ctx, Math.max(from, w.readyAt), to);
+      c.glory[h] = (c.glory[h] ?? 0) + Math.floor((value * bonus * ms) / 10_000);
+    }
     for (const s of land.stacks) {
       const end = Math.min(to, s.expiresAt);
       if (end <= from) continue;
@@ -331,7 +436,7 @@ function resolveMarch(tx: Tx, m: March, at: number): void {
   }
   const defenders = land.stacks.filter((s) => alive(s, at));
   const garrison = land.npc + stackCount(defenders, at);
-  const defenseBps = kindOf(tx.ctx, m.target)?.defenseBps ?? 10_000;
+  const defenseBps = defenseBpsOf(tx.ctx, tx.s as WorldState, m.target, at);
   const defense = Math.ceil((garrison * defenseBps) / 10_000);
   const from = land.holder;
   const data = { land: m.target, family: m.family, attack, defense, from };
@@ -347,6 +452,8 @@ function resolveMarch(tx: Tx, m: March, at: number): void {
       land.stacks = scaleStacks(stacks, survivors);
     }
     addBattleMerit(c, stacks);
+    if (land.work) razeWork(tx, c, m, land.work, stacks);
+    land.work = undefined;
     emit(tx, "land_taken", undefined, data);
     for (const p of [...new Set(defenders.map((s) => s.playerId))]) {
       emit(tx, "land_lost", p, { land: m.target, by: m.family });
@@ -363,6 +470,26 @@ function resolveMarch(tx: Tx, m: March, at: number): void {
     }
     for (const p of players) emit(tx, "assault_failed", p, { land: m.target, march: m.id });
   }
+}
+
+/** A land taken: its work is razed, each merchant of the assault earning merit for it. */
+function razeWork(
+  tx: Tx,
+  c: CampaignState,
+  m: March,
+  work: CampaignWork,
+  stacks: LanceStack[],
+): void {
+  const merit = tx.ctx.settings.campaign?.works?.razeMerit ?? 0;
+  const players = [...new Set(stacks.map((s) => s.playerId))];
+  for (const p of players) {
+    c.merit[p] ??= { battle: 0, garrisonMs: 0 };
+    const rec = c.merit[p];
+    if (rec) rec.battle += merit;
+  }
+  const data = { land: m.target, kind: work.kind, family: work.family, by: m.family };
+  emit(tx, "work_razed", work.by, data);
+  for (const p of players) emit(tx, "work_razed_by", p, data);
 }
 
 /** The family ahead in glory (none while nobody has any), and how far ahead, in bps. */
@@ -686,7 +813,8 @@ export function sendMarch(tx: Tx, playerId: PlayerId, target: string, lances: nu
   if (seatFamily(tx.ctx, target)) fail("seat_untouchable");
   if (!mayTarget(tx.ctx, tx.s as WorldState, family, target)) fail("not_adjacent");
   const stacks = takeLances(tx, playerId, lances);
-  const minutes = marchMinutes(tx.ctx, family, target);
+  const start = marchStart(tx.ctx, family, target, tx.s as WorldState, tx.now);
+  const minutes = marchMinutes(tx.ctx, family, target, tx.s as WorldState, tx.now);
   const arriveAt = Math.min(
     nextOpenAt(tx.ctx, tx.now + minutes * MINUTE_MS),
     campaignWeekEnd(tx.ctx, c.week) - 1,
@@ -697,6 +825,7 @@ export function sendMarch(tx: Tx, playerId: PlayerId, target: string, lances: nu
     family,
     by: playerId,
     target,
+    ...(start.from ? { from: start.from } : {}),
     startAt: tx.now,
     arriveAt,
     stacks,
@@ -723,4 +852,43 @@ export function joinMarch(tx: Tx, playerId: PlayerId, marchId: string, lances: n
   const stacks = takeLances(tx, playerId, lances);
   march.stacks.push(...stacks);
   emit(tx, "march_joined", playerId, { march: marchId, land: march.target, lances });
+}
+
+/** A member builds a work on a land the family holds, paying its price (destroyed). */
+export function buildWork(tx: Tx, playerId: PlayerId, target: string, kind: string): void {
+  const family = memberFamily(tx, playerId);
+  const r = rules(tx.ctx).works;
+  if (!r) fail("works_off");
+  advanceCampaign(tx);
+  const c = campaign(tx);
+  if (c.closed) fail("season_over");
+  if (!landDef(tx.ctx, target)) fail("unknown_land");
+  if (seatFamily(tx.ctx, target)) fail("seat_untouchable");
+  const def = r.kinds[kind];
+  if (!def) fail("unknown_work");
+  const land = c.lands[target];
+  if (!land || land.holder !== family) fail("not_held");
+  if (land.work) fail("work_exists");
+  if (
+    worksOf(tx.s as WorldState, family) >= worksAllowed(tx.ctx, tx.s as WorldState, family, tx.now)
+  ) {
+    fail("too_many_works");
+  }
+  transfer(
+    tx,
+    cashAccount(playerId),
+    SINK_ACCOUNT,
+    def.price,
+    "campaign_work",
+    `${family}:${target}`,
+  );
+  const readyAt = afterOpen(tx.ctx, tx.now, r.buildMinutes * MINUTE_MS);
+  land.work = { kind, family, by: playerId, readyAt };
+  emit(tx, "work_built", playerId, {
+    land: target,
+    kind,
+    family,
+    readyAt,
+    price: def.price.toString(),
+  });
 }
