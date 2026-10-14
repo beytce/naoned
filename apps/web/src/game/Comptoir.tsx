@@ -2,7 +2,7 @@ import { useState } from "react";
 import { BuildingArt } from "../art/buildings.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Badge, Big, Label, Panel, Qty, Ribbon, Sheet, Slab, clock } from "../ui.js";
+import { Badge, Label, Panel, Qty, Ribbon, Sheet, Slab, clock } from "../ui.js";
 import { BaleScreen, BaleTile } from "./Bales.js";
 import { Daily } from "./Daily.js";
 import { Domain, DomainHud, DomainSheets, DomainTray } from "./Domain.js";

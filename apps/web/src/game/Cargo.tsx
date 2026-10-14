@@ -2,11 +2,12 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { P } from "../art/palette.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Badge, Label, Slab, Tabs, clock } from "../ui.js";
+import { Badge, Label, Slab, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
 import { d, minutesLabel } from "./format.js";
 import { capacityOf, total, vehicleName } from "./roadKit.js";
+import { Segmented } from "./stage.js";
 import type { DeliveryOrderView, RoadView, VehicleView } from "./types.js";
 
 /**
@@ -152,8 +153,7 @@ export function CargoSheet({
         <h3 className="font-display text-2xl font-extrabold uppercase">{t().title}</h3>
         <p className="label mt-1 text-lagoon">{vehicleName(vehicle.type)}</p>
       </div>
-      <Tabs<Sort>
-        variant="underline"
+      <Segmented<Sort>
         value={sort}
         onChange={setSort}
         options={[

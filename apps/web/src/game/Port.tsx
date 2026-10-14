@@ -3,7 +3,7 @@ import { SeaChart } from "../art/map.js";
 import { ResourceIcon } from "../art/resources.js";
 import { Galley, PortArt } from "../art/scenes.js";
 import { fr } from "../i18n.js";
-import { Badge, Big, Label, Panel, Ribbon, Sheet, Slab, Stat, Switch, Tabs, clock } from "../ui.js";
+import { Badge, Big, Label, Panel, Ribbon, Sheet, Slab, Stat, Switch, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import { DecreeBanner } from "./Famille.js";
 import type { GameProps } from "./Game.js";

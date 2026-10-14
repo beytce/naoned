@@ -21,7 +21,7 @@ import {
   useDrawer,
 } from "./stage.js";
 import { store } from "./store.js";
-import type { PodiumRow, RankingRow, WeekRanking, WeekRow } from "./types.js";
+import type { PodiumRow, RankingRow, WeekRanking } from "./types.js";
 
 type Period = "week" | "season";
 

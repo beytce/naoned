@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Crest } from "../art/crest.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Badge, Big, Label, Panel, Qty, Sheet, Slab, Sparkline, Tabs, clock } from "../ui.js";
+import { Badge, Big, Label, Panel, Qty, Sheet, Slab, Sparkline, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import { DecreeBanner } from "./Famille.js";
 import type { GameProps } from "./Game.js";
@@ -15,6 +15,7 @@ import {
   Hud,
   HudBar,
   HudStat,
+  Segmented,
   Stage,
   Tray,
   useDrawer,
@@ -198,7 +199,7 @@ function TradeSheet({
         </p>
       )}
 
-      <Tabs<"now" | "price">
+      <Segmented<"now" | "price">
         value={mode}
         onChange={setMode}
         options={[

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Badge, Big, Label, Panel, Sheet, Slab, Tabs, clock } from "../ui.js";
+import { Badge, Big, Label, Panel, Sheet, Slab, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
 import { Garage, RoadBoard } from "./RoadBoard.js";
@@ -13,9 +13,7 @@ import {
   UnderwayCard,
   bestMinutes,
   insightOf,
-  roadPosition,
   total,
-  vehicleName,
 } from "./roadKit.js";
 import {
   Chip,

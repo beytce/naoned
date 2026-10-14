@@ -196,6 +196,10 @@ Constat du porteur : le système de guilde ne lui plaît pas. Il veut quatre gra
 | **Écrans** | Onglet Famille, carte d'abord : sur téléphone la carte occupe l'écran entre la barre du jeu et la navigation, avec en surimpression la Gloire des quatre familles, l'horloge de la semaine, la trêve et Milan en haut, la réserve, la levée, l'engagement et les ouvrages en bas ; le reste dans un tiroir à onglets (Campagne : marches, ouvrages, terres à portée · Décrets : décrets en vigueur, programme · Famille : classement, membres, semaines passées · Fil). Sur grand écran, le tiroir devient une colonne à côté de la carte. Sans famille : la carte en tête, puis le choix de la famille. Bandeau des décrets au Marché, sur les Routes et au Port. Blason de la famille qui tient la terre d'une ville sous son nom, sur les Routes. Notifications : terre menacée (immédiate), terre perdue, résultat de la semaine, part des décrets |
 | **Pass Négociant** | Hors sujet pour cet ajout : le Pass sera entièrement revu (porteur) |
 
+### Un cadre commun pour tous les onglets (retour du porteur, octobre 2026)
+
+Constat du porteur : la page Famille « carte d'abord » est exactement l'UX voulue ; à appliquer partout, en cherchant la cohérence d'ensemble. Chaque onglet tient désormais sur un écran : une scène d'un bord à l'autre (domaine, carte du Veneto, tableau des cours, carte de la Campagne, carte de la mer, podium), un bandeau d'état en haut, les gestes principaux en bas, le reste dans un tiroir à onglets ; le détail en feuilles ; une colonne à côté de la scène sur grand écran. La bascule Carte/Liste des Routes disparaît (la liste des commandes est un onglet du tiroir). Détail des écrans : `docs/design.md`, section « Disposition ».
+
 ### Charger et glisser (retour du porteur, octobre 2026)
 
 Inspiré des quais d'un jeu de commerce spatial : on remplit un véhicule, puis on le glisse jusqu'à sa destination.

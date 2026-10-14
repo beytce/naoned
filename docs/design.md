@@ -66,17 +66,31 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
 - **Feuilles** : tirées vers le bas depuis le haut de leur défilement, elles suivent le doigt (avec résistance). Au-delà d'un tiers de leur hauteur ou d'un geste vif, elles se ferment ; sinon elles reviennent.
 - **Sous-onglets** : un glissé horizontal passe de la carte à la liste aux Routes, et des joueurs aux villes au Marché. Il ne joue pas depuis un véhicule ou un champ de saisie.
 
-## Disposition
+## Disposition : le cadre commun (`game/stage.tsx`)
 
-**Mobile** : en-tête (logotype, bourse, cloche, blason), ligne « Jour 1 sur 42 » avec sa barre, barre du bas Comptoir · Marché · Contrats · Port · Classement.
+Né sur l'onglet Famille et appliqué à tous les onglets du jeu : une section tient sur un écran, sans défilement de la page.
 
-**PC (≥ 1024 px)** : une disposition de jeu, pas une application étirée.
+| Pièce | Rôle | Composants |
+| --- | --- | --- |
+| **Scène** | La carte ou le tableau de l'onglet, d'un bord à l'autre entre la barre du jeu et la navigation ; la hauteur est mesurée et se recale quand un bandeau (gazette, acte) s'intercale | `Stage`, `useStageHeight` |
+| **Bandeau du haut** | L'état du moment : une barre translucide de chiffres touchables (le sien cerclé d'or), le « ? » de l'aide ; dessous, des puces : horloges, alertes | `Hud`, `HudBar`, `HudStat`, `HelpButton`, `Chips`, `Chip` |
+| **Barre du bas** | Les deux ou trois gestes principaux, une invitation au-dessus | `Tray`, `TrayStat`, `TrayButton` |
+| **Tiroir** | Tout le reste, en onglets : replié sur ses onglets au pied de l'écran, tiré ou touché il couvre deux tiers de l'écran ; point vermillon quand quelque chose attend | `Drawer`, `useDrawer` |
+| **Feuilles** | Le détail d'un élément touché (atelier, ville, port, marchandise, terre) | `Sheet` |
+| **Pastilles** | Un choix parmi quelques-uns dans le tiroir ou une feuille (tri, mode, durée) | `Segmented` |
 
-- Barre latérale fixe : logotype, navigation (raccourcis clavier 1 à 5), carte du joueur (blason, titre, rang).
-- Comptoir sur deux colonnes : héros et ateliers à gauche ; objectif, premiers pas, livre de comptes, vivres et entrepôt dans une colonne fixe à droite.
-- Marché : liste des ressources à gauche, panneau d'achat-vente toujours ouvert à droite (pas de feuille).
-- Port : carte marine fixe à gauche, ports à droite ; flotte et arsenal en grille.
-- Contrats en trois colonnes ; classement et profil centrés.
+Codes de couleur des puces : vert d'eau à soi ou en cours, or argent ou récompense, vermillon danger. Sur grand écran (≥ 1024 px), le tiroir devient une colonne de 400 px à côté de la scène, toujours ouverte ; la barre latérale porte la navigation (raccourcis 1 à 6) et la carte du joueur.
+
+| Onglet | Scène | Haut | Bas | Tiroir |
+| --- | --- | --- | --- | --- |
+| **Comptoir** | Le domaine 3D | Maison et rang, ateliers, stock, prochain lot, ouvriers affamés, convoi attaqué | Récolter n, Charger n, Bâtir, Carnet | Ateliers · Stock · Saison |
+| **Routes** | La carte 3D du Veneto | Commandes à livrer, en route, véhicules libres, renouvellement, routes guettées | Barre du véhicule choisi, ou véhicules libres et commandes | Commandes (tri) · En route · Garage · Brigands |
+| **Marché** | Le tableau des cours du Rialto, qui défile sous le bandeau | Marchandises, mes offres, stock, taxe, décrets | La marchandise en hausse et « Négocier » | (Négoce sur grand écran) · Offres · Villes · Décrets |
+| **Famille** | La carte de la Campagne | Gloire des quatre familles, fin de semaine, trêve, Milan | Réserve, Lever, Engager, ouvrages | Campagne · Décrets · Famille · Fil |
+| **Port** | La carte de la mer, ses vagues jusqu'aux bords ; un port touché ouvre sa fiche | Galères en mer, navires prêts, chaque convoi et son retour | Décharger ou galères libres, Envoyer un convoi | Convois · Ports · Flotte · Corsaires |
+| **Classement** | Le podium de la période puis tout le classement | Semaine et saison (au choix) avec leur clôture | « Ton rang » épinglé | Semaine passée · Règles |
+
+Le guide de Lorenzo vise des éléments de la scène (ateliers, véhicule) ou des onglets du tiroir (Commandes des Routes, Villes du Marché).
 
 ## Illustrations
 
