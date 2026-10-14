@@ -8,7 +8,19 @@ import { have } from "./Comptoir.js";
 import { DecreeBanner } from "./Famille.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
-import { store } from "./store.js";
+import {
+  Chip,
+  Chips,
+  Drawer,
+  HelpButton,
+  Hud,
+  HudBar,
+  HudStat,
+  Stage,
+  Tray,
+  TrayStat,
+  useDrawer,
+} from "./stage.js";
 import type {
   Destination,
   ExpeditionView,
@@ -17,8 +29,6 @@ import type {
   ShipType,
   ShipView,
 } from "./types.js";
-
-type PortTab = "routes" | "flotte" | "corsaires";
 
 const pct = (bps: number) => `${Math.round(bps / 100)} %`;
 const t = () => fr.game.port;
@@ -394,42 +404,6 @@ function ConvoySheet({ code, props }: { code: string; props: GameProps }) {
   );
 }
 
-function Routes({ props }: { props: GameProps }) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const ports = props.catalog.ports.filter((p) => props.catalog.destinations[p.code]);
-  const sailing = props.view.expeditions
-    .filter((e) => e.outcome === "pending")
-    .map((e) => e.destination);
-  const shown = selected ? ports.filter((p) => p.code === selected) : ports;
-  return (
-    // Computer: the chart stays in view on the left, the ports scroll on the right.
-    <div className="space-y-5 lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-start lg:gap-8 lg:space-y-0">
-      <div className="space-y-3 lg:sticky lg:top-24">
-        <div className="overflow-hidden rounded-2xl border border-line">
-          <SeaChart
-            ports={ports}
-            watched={props.view.watchedRoutes}
-            selected={selected}
-            sailing={sailing}
-            onSelect={(code) => setSelected(selected === code ? null : code)}
-          />
-        </div>
-        <p className="text-xs text-muted">{t().chartHelp}</p>
-      </div>
-      <div className="space-y-5">
-        {selected && (
-          <button type="button" className="label text-lagoon" onClick={() => setSelected(null)}>
-            ← {t().allPorts}
-          </button>
-        )}
-        {shown.map((p) => (
-          <PortCard key={p.code} code={p.code} props={props} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /* ───────────── Fleet: ships and the arsenal ───────────── */
 
 const STATUS_TONE = {
@@ -722,107 +696,253 @@ export function Port(props: GameProps) {
   return <OpenPort {...props} />;
 }
 
+type PortTab = "convois" | "ports" | "flotte" | "corsaires";
+
+/** A port in the drawer's list: its crossing, its risk, its gain and what it brings back. */
+function PortRow({ code, props, onOpen }: { code: string; props: GameProps; onOpen: () => void }) {
+  const dest = props.catalog.destinations[code];
+  if (!dest) return null;
+  const watched = props.view.watchedRoutes.includes(code);
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`flex w-full items-center gap-3 rounded-xl bg-night-2 p-2.5 text-left ring-1 ring-inset ${watched ? "ring-vermilion/60" : "ring-line/70"}`}
+    >
+      <ResourceIcon code={dest.returns} size={30} />
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-sm font-extrabold uppercase">
+          {portName(props, code)}
+          {watched && <span className="ml-1.5 text-vermilion">☠</span>}
+        </span>
+        <span className="label block">
+          {dest.hours} h · {t().risk} {pct(dest.riskBps)}
+        </span>
+      </span>
+      <span className="shrink-0 font-display text-sm font-extrabold text-lagoon">
+        +{pct(dest.gainBps)}
+      </span>
+    </button>
+  );
+}
+
 function OpenPort(props: GameProps) {
-  const [tab, setTab] = useState<PortTab>(() => {
-    const saved = store.get("portTab");
-    return saved === "flotte" || saved === "corsaires" ? saved : "routes";
-  });
+  const drawer = useDrawer<PortTab>("convois");
+  const [port, setPort] = useState<string | null>(null);
+  const [help, setHelp] = useState(false);
   const active = props.view.expeditions.filter((e) => e.outcome === "pending");
   const past = props.view.expeditions.filter((e) => e.outcome !== "pending");
   const convoyCode = props.sheet?.startsWith("convoy:") ? props.sheet.slice(7) : null;
   const full = active.length >= props.catalog.maxGalleys;
+  const ports = props.catalog.ports.filter((p) => props.catalog.destinations[p.code]);
+  const docked = active.find((e) => props.now >= e.returnAt);
+  const ready = props.view.ships.filter((s) => s.status === "ready").length;
+  const damaged = props.view.ships.some((s) => s.status === "damaged");
+  const p = t().frame;
 
   return (
-    <div className="space-y-6">
-      <header className="text-center">
-        <Galley className="mx-auto h-28 w-48" sailing={active.length > 0} />
-        <Label className="mt-2 text-lagoon">⚓ {t().kicker}</Label>
-        <h1 className="mt-2 font-display text-[2rem] font-extrabold uppercase leading-[1.05]">
-          {t().title}
-        </h1>
-        <p className="mt-2 text-sm text-cream-dim">{t().help}</p>
-      </header>
-      <DecreeBanner props={props} />
-
-      {active.map((e) => (
-        <ActiveConvoy key={e.id} e={e} props={props} />
-      ))}
-
-      <Tabs<PortTab>
-        variant="underline"
-        value={tab}
-        onChange={(v) => {
-          store.set("portTab", v);
-          setTab(v);
-        }}
-        options={[
-          { value: "routes", label: t().tabs.routes },
-          { value: "flotte", label: t().tabs.flotte },
-          { value: "corsaires", label: t().tabs.corsaires },
-        ]}
-      />
-
-      {tab === "routes" && (
-        <>
-          {full && <p className="text-center text-sm text-muted">{t().busy}</p>}
-          <Routes props={props} />
-        </>
-      )}
-      {tab === "flotte" && <Fleet props={props} />}
-      {tab === "corsaires" &&
-        (corsairsOpenAt(props.view) > props.now ? (
-          <p className="text-center text-sm text-cream-dim">
-            {fr.game.corsairsLocked(clock(corsairsOpenAt(props.view) - props.now))}
-          </p>
-        ) : (
-          <Privateers props={props} />
-        ))}
-
-      {props.view.seaNews.length > 0 && (
-        <section className="space-y-2">
-          <Label>{t().seaNews}</Label>
-          {props.view.seaNews.map((n) => (
-            <p key={`${n.raider}-${n.at}`} className="border-b border-line/70 py-2 text-sm">
-              ☠{" "}
-              {t().news(
-                props.people[n.raider] ?? fr.game.anonymous,
-                props.people[n.victim] ?? fr.game.anonymous,
-                portName(props, n.route),
+    <Stage
+      label={t().title}
+      scene={
+        <div className="relative flex h-full w-full items-center bg-[#13262A]">
+          {/* The sea goes on beyond the chart, to the edges of the scene. */}
+          <svg aria-hidden="true" className="absolute inset-0 h-full w-full">
+            <defs>
+              <pattern id="sea-waves" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path
+                  d="M0 10 Q5 7 10 10 T20 10"
+                  fill="none"
+                  stroke="rgb(var(--lagoon))"
+                  strokeOpacity="0.11"
+                  strokeWidth="0.8"
+                />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#sea-waves)" />
+          </svg>
+          <SeaChart
+            ports={ports}
+            watched={props.view.watchedRoutes}
+            selected={port}
+            sailing={active.map((e) => e.destination)}
+            onSelect={(code) => setPort(code)}
+            className="relative h-full max-h-full w-full"
+          />
+        </div>
+      }
+      top={
+        <Hud>
+          <HudBar>
+            <HudStat
+              icon={<Galley className="h-6 w-9" sailing={active.length > 0} />}
+              value={`${active.length}/${props.catalog.maxGalleys}`}
+              caption={p.atSea}
+              onClick={() => drawer.show("convois")}
+              label={t().atSea}
+            />
+            <HudStat
+              value={`${ready}/${props.view.ships.length}`}
+              caption={p.ships}
+              onClick={() => drawer.show("flotte")}
+              label={t().tabs.flotte}
+            />
+            <HelpButton onClick={() => setHelp(true)} label={fr.game.stage.help} />
+          </HudBar>
+          <Chips>
+            {active.map((e) => (
+              <Chip
+                key={e.id}
+                tone={
+                  props.now >= e.returnAt ? "gold" : e.boarding?.success ? "vermilion" : "lagoon"
+                }
+                onClick={() => drawer.show("convois")}
+              >
+                ⚓ {portName(props, e.destination)}{" "}
+                {props.now >= e.returnAt ? p.docked : clock(e.returnAt - props.now)}
+              </Chip>
+            ))}
+            {props.view.watchedRoutes.length > 0 && (
+              <Chip tone="vermilion">☠ {p.watched(props.view.watchedRoutes.length)}</Chip>
+            )}
+          </Chips>
+        </Hud>
+      }
+      bottom={
+        <Tray hint={docked ? undefined : p.hint}>
+          {docked ? (
+            <Slab
+              size="sm"
+              className="min-w-0 flex-1 whitespace-nowrap !px-2"
+              disabled={props.busy}
+              onClick={() => props.act({ type: "collectExpedition", expeditionId: docked.id })}
+            >
+              {p.unload(portName(props, docked.destination))}
+            </Slab>
+          ) : (
+            <TrayStat icon="⚓" value={props.catalog.maxGalleys - active.length} caption={p.free} />
+          )}
+          <Slab
+            size="sm"
+            tone="lagoon"
+            className="min-w-0 flex-1 whitespace-nowrap !px-2"
+            disabled={full}
+            onClick={() => drawer.show("ports")}
+          >
+            {full ? t().busy : t().sendConvoy}
+          </Slab>
+        </Tray>
+      }
+      drawer={
+        <Drawer<PortTab>
+          {...drawer.props}
+          tabs={[
+            { key: "convois", label: p.tabs.convois, dot: docked !== undefined },
+            { key: "ports", label: p.tabs.ports },
+            { key: "flotte", label: p.tabs.flotte, dot: damaged },
+            { key: "corsaires", label: p.tabs.corsaires },
+          ]}
+        >
+          {drawer.tab === "convois" && (
+            <>
+              <DecreeBanner props={props} />
+              {active.length === 0 && <p className="text-sm text-cream-dim">{p.none}</p>}
+              {active.map((e) => (
+                <ActiveConvoy key={e.id} e={e} props={props} />
+              ))}
+              {props.view.seaNews.length > 0 && (
+                <section className="space-y-2">
+                  <Label>{t().seaNews}</Label>
+                  {props.view.seaNews.map((n) => (
+                    <p key={`${n.raider}-${n.at}`} className="border-b border-line/70 py-2 text-sm">
+                      ☠{" "}
+                      {t().news(
+                        props.people[n.raider] ?? fr.game.anonymous,
+                        props.people[n.victim] ?? fr.game.anonymous,
+                        portName(props, n.route),
+                      )}
+                    </p>
+                  ))}
+                </section>
               )}
-            </p>
-          ))}
-        </section>
-      )}
-
-      {past.length > 0 && (
-        <section className="space-y-2">
-          <Label>{t().history}</Label>
-          {past.map((e) => {
-            const dest = props.catalog.destinations[e.destination];
-            return (
-              <div key={e.id} className="border-b border-line/70 py-2 text-sm">
-                <div className="flex items-center gap-3">
-                  <span className={e.outcome === "lost" ? "text-vermilion" : "text-lagoon"}>
-                    {e.outcome === "lost" ? "☠" : "⚓"}
-                  </span>
-                  <span className="flex-1">
-                    {portName(props, e.destination)} ·{" "}
-                    {e.outcome === "lost"
-                      ? t().lost
-                      : t().returned(e.brought, props.names.resource(dest?.returns ?? ""))}
-                  </span>
-                  <span className="label">{d(e.cargoValue)}</span>
-                </div>
-                {e.boarding && <Boarding e={e} props={props} />}
+              {past.length > 0 && (
+                <section className="space-y-2">
+                  <Label>{t().history}</Label>
+                  {past.map((e) => {
+                    const dest = props.catalog.destinations[e.destination];
+                    return (
+                      <div key={e.id} className="border-b border-line/70 py-2 text-sm">
+                        <div className="flex items-center gap-3">
+                          <span className={e.outcome === "lost" ? "text-vermilion" : "text-lagoon"}>
+                            {e.outcome === "lost" ? "☠" : "⚓"}
+                          </span>
+                          <span className="flex-1">
+                            {portName(props, e.destination)} ·{" "}
+                            {e.outcome === "lost"
+                              ? t().lost
+                              : t().returned(e.brought, props.names.resource(dest?.returns ?? ""))}
+                          </span>
+                          <span className="label">{d(e.cargoValue)}</span>
+                        </div>
+                        {e.boarding && <Boarding e={e} props={props} />}
+                      </div>
+                    );
+                  })}
+                </section>
+              )}
+            </>
+          )}
+          {drawer.tab === "ports" && (
+            <>
+              <p className="text-xs text-cream-dim">{t().help}</p>
+              <div className="space-y-1.5">
+                {ports.map((x) => (
+                  <PortRow
+                    key={x.code}
+                    code={x.code}
+                    props={props}
+                    onOpen={() => setPort(x.code)}
+                  />
+                ))}
               </div>
-            );
-          })}
-        </section>
-      )}
-
-      <Sheet open={!!convoyCode && !full} onClose={() => props.setSheet(null)}>
+            </>
+          )}
+          {drawer.tab === "flotte" && <Fleet props={props} />}
+          {drawer.tab === "corsaires" &&
+            (corsairsOpenAt(props.view) > props.now ? (
+              <p className="text-sm text-cream-dim">
+                {fr.game.corsairsLocked(clock(corsairsOpenAt(props.view) - props.now))}
+              </p>
+            ) : (
+              <Privateers props={props} />
+            ))}
+        </Drawer>
+      }
+    >
+      <Sheet open={port !== null && !convoyCode} onClose={() => setPort(null)}>
+        {port && (
+          <div className="pt-8">
+            <PortCard key={port} code={port} props={props} />
+          </div>
+        )}
+      </Sheet>
+      <Sheet
+        open={!!convoyCode && !full}
+        onClose={() => {
+          props.setSheet(null);
+          setPort(null);
+        }}
+      >
         {convoyCode && <ConvoySheet key={convoyCode} code={convoyCode} props={props} />}
       </Sheet>
-    </div>
+      <Sheet open={help} onClose={() => setHelp(false)}>
+        <div className="space-y-3 pt-4">
+          <Label className="text-lagoon">⚓ {t().kicker}</Label>
+          <h3 className="font-display text-2xl font-extrabold uppercase">{t().title}</h3>
+          <p className="text-sm text-cream-dim">{t().help}</p>
+          <p className="text-sm text-cream-dim">{t().chartHelp}</p>
+          <p className="text-sm text-cream-dim">{t().fleetHelp}</p>
+        </div>
+      </Sheet>
+    </Stage>
   );
 }

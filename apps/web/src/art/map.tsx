@@ -76,9 +76,15 @@ export function SeaChart(props: {
   selected?: string | null;
   sailing: string[];
   onSelect: (code: string) => void;
+  className?: string;
 }) {
   return (
-    <svg viewBox="0 0 320 215" className="w-full" role="img" aria-label="Carte des routes">
+    <svg
+      viewBox="0 0 320 215"
+      className={props.className ?? "w-full"}
+      role="img"
+      aria-label="Carte des routes"
+    >
       <defs>
         <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
           <path
