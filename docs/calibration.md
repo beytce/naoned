@@ -664,3 +664,22 @@ Réglages retenus : `maxOrdersPerLoad` 4, `sharedOrdersPerActivePlayer` 4, `city
 **Lecture.**
 - Le tableau se vide presque (neuf commandes sur dix prises) : la course entre marchands devient réelle, comme le proposait la piste de la bêta.
 - La carte géographique n'est pas symétrique : Rovigo touche Legnago, un carrefour vers quatre villes. Dans la graine 5, les Mocenigo gagnent les trois semaines (diagnostic non bloquant). À surveiller avec de vrais joueurs ; pistes : retirer la route Rovigo–Legnago, ou un fief plus exposé à Milan.
+
+## Les ouvrages de la Campagne (14 octobre 2026)
+
+Une famille peut consolider une terre tenue par un ouvrage, bâti par un membre pour des ducats détruits (`campaign.works`) : la rocca (garnison +60 % en défense, 40 d), le campo (les marches partent de là plutôt que du fief, 30 d), la dogana (Gloire de la terre +50 %, 50 d). Deux heures ouvertes de chantier ; deux ouvrages par famille, un de plus par cinq membres actifs ; une terre prise rase son ouvrage (+10 de Mérite à chaque assaillant) ; la carte qui rouvre les efface. Les maisons PNJ guerrières bâtissent : rocca sur une terre qui touche un ennemi, campo loin du fief, dogana sur la terre la plus riche, si elles gardent la moitié du capital de départ.
+
+`pnpm sim`, 5 graines, toutes conformes :
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie payée (ducats / joueur actif / jour) | 165,4 | 169,2 | 168,5 | 169,9 | 166,4 |
+| Masse monétaire par joueur actif (maximum) | 1,03 × | 1,02 × | 1,03 × | 1,02 × | 1,03 × |
+| Ouvrages bâtis · rasés | 116 · 97 | 108 · 76 | 149 · 122 | 125 · 95 | 109 · 84 |
+| Ducats détruits par les ouvrages (par marchand actif et par jour) | 3 | 3 | 4 | 4 | 3 |
+| Vainqueurs des semaines 1 à 3 | Mocenigo, Dandolo, Morosini | Contarini, Contarini, Morosini | Contarini, Morosini, Contarini | Dandolo, Morosini, Contarini | Dandolo, Morosini, Mocenigo |
+
+**Lecture.**
+- Un petit puits de plus (3 à 4 ducats par marchand actif et par jour, à côté de 5 pour les lances) : la masse monétaire et la monnaie payée ne bougent pas.
+- Trois ouvrages sur quatre finissent rasés : ils consolident sans figer la carte, et deviennent des cibles.
+- Plus aucune famille ne gagne les trois semaines : la domination des Mocenigo de la graine 5 a disparu (une rocca adverse sur Legnago suffit à fermer le carrefour).

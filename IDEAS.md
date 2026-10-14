@@ -28,6 +28,8 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - Le capitaine de la famille gagnante choisit seul un décret.
 - Nouveaux décrets (embargo d'un port, levée de grain, prix plancher) et nouvelles cartes de la Terraferme.
 - Récompense cosmétique de la famille gagnante de la saison (monument sur la carte, titre au palmarès).
+- Ouvrages en volume sur la maquette 3D (tour, tentes, porte de péage) plutôt qu'en médaillon ; ouvrages améliorables (rocca de pierre), réparation après un assaut repoussé.
+- Contribution de plusieurs membres à un même ouvrage (chantier collectif), écartée pour l'instant au profit de l'achat individuel.
 
 ## Affrontement (le retenu : la Campagne des familles ; les autres pistes)
 - Guerres de concessions entre guildes (abandonnées le 13 octobre 2026).
