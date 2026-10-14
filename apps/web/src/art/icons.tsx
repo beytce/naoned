@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { SignPaths } from "./logo.js";
 import { P } from "./palette.js";
 
 function Line({ children, size = 24 }: { children: ReactNode; size?: number }) {
@@ -92,16 +91,27 @@ export const NavIcon = {
   ),
 };
 
-/** The ducat: a gold coin with a lion of Saint Mark (simplified). */
-/** The ducat: a gold coin struck with the sign of four. */
+/** The ducat: a gold coin struck with the galleon of the logo, on its waves. */
 export function Coin({ size = 28 }: { size?: number }) {
   return (
     <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
       <circle cx="16" cy="16" r="15" fill={P.gold} />
       <circle cx="16" cy="16" r="12.2" fill="none" stroke={P.goldDeep} strokeWidth="1.2" />
-      <g transform="translate(8.4 8) scale(0.127)">
-        <SignPaths color={P.night} />
+      <g fill={P.night}>
+        <rect x="15.4" y="7.4" width="1.2" height="13" />
+        <path d="M11.6 10 H20.2 Q20.9 13 20.2 16.2 H11.6 Q12.3 13 11.6 10 Z" />
+        <path d="M21 12 H24.4 Q24.9 14.1 24.4 16.2 H21 Q21.5 14.1 21 12 Z" />
+        <path d="M7.8 12.6 H10.8 V16.2 H7.8 Q8.3 14.4 7.8 12.6 Z" />
+        <path d="M16.6 7.4 L19.8 6.6 L16.6 5.8 Z" />
+        <path d="M6.6 17.4 H25.6 L23.6 21.2 H9 Z" />
       </g>
+      <path
+        d="M7.6 23.4 Q10 22.2 12.4 23.4 T17.2 23.4 T22 23.4 T25 23"
+        fill="none"
+        stroke={P.goldDeep}
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

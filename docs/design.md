@@ -2,17 +2,19 @@
 
 Le jeu s'appelle **Fondaco**, du nom des entrepôts où les marchands étrangers logeaient et commerçaient à Venise. Ambiance : Venise au Quattrocento, des ducats, la lagune. L'identité suit le guide « Fondaco — identité & palettes ».
 
-## Logo : le signe de quatre
+## Logo : le lion ailé
 
-Emblème : la voile latine d'une galère, dont le mât, la vergue et la bôme dessinent un F, sur sa coque, avec un fanion vermillon en tête de mât. Grille 120 (`apps/web/src/art/logo.tsx`, composants `Sign` et `Logotype` ; source de l'icône `apps/web/public/icons/icon.svg`).
+Logo officiel : le lion ailé de saint Marc, de face, rugissant, ailes déployées, qui tient dans ses griffes un ducat d'or frappé d'un galion sur les vagues, sur une tuile brune aux coins arrondis. Pas de nom dans le logo.
 
-- **Icône d'application** : fond or en dégradé, cadre fin à coins coupés, voile crème, mât, coque et F en nuit, fanion vermillon.
-  - Rendue nette à chaque taille depuis `public/icons/icon.svg` par `apps/web/scripts/icons.mjs`. À relancer après tout changement de la source : `npx -y -p playwright-core node apps/web/scripts/icons.mjs`.
-  - iPhone : `apple-touch-icon` 180 et 1024 px, carré plein sans transparence (iOS arrondit lui-même).
-  - Android : 192 et 512 px arrondis, plus une version masquable dont l'emblème tient dans la zone sûre de 80 %.
-  - `favicon.svg`.
-- **Ducat** : pièce or frappée du signe (`Coin`).
-- Le signe ouvre l'écran de connexion et l'introduction ; le logotype (signe + « Fondaco ») tient la barre latérale sur PC et l'en-tête sur mobile.
+- **Source** : `apps/web/brand/logo.webp` (1024 px, carré arrondi sur fond blanc). On ne le redessine pas : on remplace ce fichier.
+- **Rendus** : `apps/web/scripts/icons.mjs` en tire toutes les tailles ; les coins blancs de la source deviennent le brun du logo (`#73371E`). À relancer après tout changement de la source : `npx -y -p playwright-core node apps/web/scripts/icons.mjs`.
+  - iPhone : `apple-touch-icon` 180 et 1024 px, carré plein sans transparence (iOS arrondit lui-même). Le 1024 px et les icônes Android ne sont pas mis en cache par le service worker (le système les télécharge à l'installation).
+  - Android : 192 et 512 px arrondis, plus une version masquable dont le logo tient dans la zone sûre de 80 %.
+  - `favicon.png` (64 px) et `icons/logo-256.webp`, le logo affiché dans le jeu.
+- **Composants** (`apps/web/src/art/logo.tsx`) :
+  - `Emblem` : le logo. Écran de connexion, introduction, chargement, cérémonie de fin de saison, en-tête du Comptoir sur mobile, Pass Négociant, sceau du Pass à côté du nom dans les classements.
+  - `Logotype` : le logo et « Fondaco » côte à côte, dans la barre latérale sur PC.
+- **Ducat** : pièce or frappée du galion du logo sur ses vagues (`Coin`).
 
 ## Palettes
 
@@ -176,8 +178,8 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 - **Criée** (`Criee`) : bandeau doré en tête de chaque écran tant qu'elle dure, avec la quantité vendable et un retour haptique « alarme » quand elle s'ouvre.
 - **Tâches du jour** (`Daily`) : trois tâches, la série de jours et le coffre, dans la colonne de droite du Comptoir.
 - **Produits frais** : sous un atelier prêt, « Frais : +5 % encore 23 min ».
-- **Ballots de Faraj** (`Bales`) : tuile du Comptoir après les premiers pas, puis écran plein : la balle de toile flotte sur le quai, tremble et luit, le sceau de cire (marque de Faraj : croissant, mât, fanion, orbe, sœur du signe de quatre) éclate, trois connaissements sortent face cachée. Une carte rare ou mieux luit avant d'être retournée ; cadres parchemin, lagune, lapis, pourpre et or (seul usage de l'or hors argent et action principale) ; éclat doré et reflet pour une légendaire. Probabilités et histoire de Faraj sous le ballot.
-- **Pass Négociant** (`PassPanel`) : statut, avantages, comment le gagner, prix (paiement à venir). Sceau (le signe de quatre) à côté du nom dans les classements ; palette « Or de Venise » réservée.
+- **Ballots de Faraj** (`Bales`) : tuile du Comptoir après les premiers pas, puis écran plein : la balle de toile flotte sur le quai, tremble et luit, le sceau de cire (marque de Faraj : croissant, mât, fanion, orbe) éclate, trois connaissements sortent face cachée. Une carte rare ou mieux luit avant d'être retournée ; cadres parchemin, lagune, lapis, pourpre et or (seul usage de l'or hors argent et action principale) ; éclat doré et reflet pour une légendaire. Probabilités et histoire de Faraj sous le ballot.
+- **Pass Négociant** (`PassPanel`) : statut, avantages, comment le gagner, prix (paiement à venir). Sceau (le lion ailé) à côté du nom dans les classements ; palette « Or de Venise » réservée.
 - **Retours haptiques** (`haptics.ts`) : léger au changement d'onglet, double pour une action qui rapporte, long pour une erreur, alarme pour une Criée ; réglables dans le Profil. Sur iPhone, Safari ne vibre pas : un interrupteur natif caché donne un petit clic.
 
 ## Famille et Campagne

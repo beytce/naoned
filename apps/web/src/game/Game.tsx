@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { type Account, ApiError } from "../api.js";
 import { Crest, defaultCrest } from "../art/crest.js";
 import { Coin, NavIcon } from "../art/icons.js";
-import { Logotype, Sign } from "../art/logo.js";
+import { Emblem, Logotype } from "../art/logo.js";
 import { Lorenzo } from "../art/scenes.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
@@ -597,7 +597,7 @@ export function Game(props: {
             <h1 className="flex min-w-0 flex-1 items-center gap-2 lg:hidden">
               {tab === "comptoir" && (
                 <span className="shrink-0">
-                  <Sign size={28} />
+                  <Emblem size={32} />
                 </span>
               )}
               {/* With the guide's button in the header, the counter keeps just its sign. */}
@@ -776,7 +776,7 @@ function Loading({
   return (
     <main className="flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-6 text-center">
       <span className={failed ? "" : "animate-pulse"}>
-        <Sign size={56} />
+        <Emblem size={72} />
       </span>
       {failed ? (
         <>

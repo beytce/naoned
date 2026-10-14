@@ -1,7 +1,7 @@
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { Admin } from "./Admin.js";
 import { type Account, ApiError, api, tokenFromLocation } from "./api.js";
-import { Sign } from "./art/logo.js";
+import { Emblem } from "./art/logo.js";
 import { Skyline } from "./art/scenes.js";
 import { Game } from "./game/Game.js";
 import { fr } from "./i18n.js";
@@ -91,7 +91,7 @@ function Hero({ children }: { children: ReactNode }) {
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]">
       <header className="flex flex-col items-center text-center">
-        <Sign size={64} />
+        <Emblem size={88} className="drop-shadow-xl" />
         <h1 className="mt-3 font-display text-[2.6rem] font-extrabold uppercase leading-none tracking-tight text-cream">
           {fr.appName}
         </h1>
