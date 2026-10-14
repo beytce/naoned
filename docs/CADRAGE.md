@@ -200,6 +200,8 @@ Constat du porteur : le système de guilde ne lui plaît pas. Il veut quatre gra
 
 Constat du porteur : la page Famille « carte d'abord » est exactement l'UX voulue ; à appliquer partout, en cherchant la cohérence d'ensemble. Chaque onglet tient désormais sur un écran : une scène d'un bord à l'autre (domaine, carte du Veneto, tableau des cours, carte de la Campagne, carte de la mer, podium), un bandeau d'état en haut, les gestes principaux en bas, le reste dans un tiroir à onglets ; le détail en feuilles ; une colonne à côté de la scène sur grand écran. La bascule Carte/Liste des Routes disparaît (la liste des commandes est un onglet du tiroir). Détail des écrans : `docs/design.md`, section « Disposition ».
 
+Puis (retour du porteur) : la barre de navigation sous le tiroir faisait deux rangées d'onglets au pied de l'écran. Le tiroir replié porte désormais les six sections : une seule rangée ; la section active ouvre son tiroir, les autres y mènent d'un toucher. Un sélecteur de section dans l'en-tête a été écarté (deux touchers pour aller du Comptoir aux Routes).
+
 ### Charger et glisser (retour du porteur, octobre 2026)
 
 Inspiré des quais d'un jeu de commerce spatial : on remplit un véhicule, puis on le glisse jusqu'à sa destination.

@@ -761,6 +761,8 @@ export const fr = {
     /** Words shared by every section's frame (the scene, its bars, its drawer). */
     stage: {
       help: "Comment ça marche",
+      unfold: "Ouvrir le tiroir",
+      fold: "Replier le tiroir",
     },
     market: {
       goods: "Marchandise",

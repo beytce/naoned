@@ -54,7 +54,7 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
 
 - Un écran glisse depuis le côté de l'onglet d'où l'on vient. Ses blocs montent l'un après l'autre, à 45 ms d'écart.
 - Une lueur d'ambiance suit la section, en fondu : or au Comptoir et au Marché, lagune aux Routes et au Port, vermillon à la Guilde. Une voile et une caisse floues dérivent lentement dans le fond.
-- L'onglet actif de la barre du bas porte un trait biseauté et un fanion en coin. Les libellés sont en capitales mono.
+- La section active, au pied de l'écran, porte un fanion en coin et, quand elle a un tiroir, un chevron qui dit qu'il se tire. Les libellés sont en capitales mono.
 - Tout s'arrête pour qui demande moins de mouvement (`prefers-reduced-motion`).
 
 ## Gestes (`game/gestures.ts`)
@@ -75,11 +75,11 @@ Né sur l'onglet Famille et appliqué à tous les onglets du jeu : une section t
 | **Scène** | La carte ou le tableau de l'onglet, d'un bord à l'autre entre la barre du jeu et la navigation ; la hauteur est mesurée et se recale quand un bandeau (gazette, acte) s'intercale | `Stage`, `useStageHeight` |
 | **Bandeau du haut** | L'état du moment : une barre translucide de chiffres touchables (le sien cerclé d'or), le « ? » de l'aide ; dessous, des puces : horloges, alertes | `Hud`, `HudBar`, `HudStat`, `HelpButton`, `Chips`, `Chip` |
 | **Barre du bas** | Les deux ou trois gestes principaux, une invitation au-dessus | `Tray`, `TrayStat`, `TrayButton` |
-| **Tiroir** | Tout le reste, en onglets : replié sur ses onglets au pied de l'écran, tiré ou touché il couvre deux tiers de l'écran ; point vermillon quand quelque chose attend | `Drawer`, `useDrawer` |
+| **Tiroir** | Tout le reste, en onglets. Replié, il porte la navigation du jeu : sa poignée au-dessus des six sections, seule rangée du pied de l'écran. Toucher une autre section y mène ; toucher la section active, la poignée, ou tirer vers le haut l'ouvre sur deux tiers de l'écran, ses onglets en tête ; la poignée, un glissé vers le bas ou le bouton retour le replient. Point vermillon sur la poignée quand un de ses onglets attend | `Drawer`, `useDrawer`, `SectionBar`, `SectionNav` |
 | **Feuilles** | Le détail d'un élément touché (atelier, ville, port, marchandise, terre) | `Sheet` |
 | **Pastilles** | Un choix parmi quelques-uns dans le tiroir ou une feuille (tri, mode, durée) | `Segmented` |
 
-Codes de couleur des puces : vert d'eau à soi ou en cours, or argent ou récompense, vermillon danger. Sur grand écran (≥ 1024 px), le tiroir devient une colonne de 400 px à côté de la scène, toujours ouverte ; la barre latérale porte la navigation (raccourcis 1 à 6) et la carte du joueur.
+Codes de couleur des puces : vert d'eau à soi ou en cours, or argent ou récompense, vermillon danger. Sur grand écran (≥ 1024 px), le tiroir devient une colonne de 400 px à côté de la scène, toujours ouverte, ses onglets toujours visibles ; la barre latérale porte la navigation (raccourcis 1 à 6) et la carte du joueur. Un écran sans tiroir (Profil, Port avant son ouverture) garde la rangée des sections seule, en barre fixe.
 
 | Onglet | Scène | Haut | Bas | Tiroir |
 | --- | --- | --- | --- | --- |

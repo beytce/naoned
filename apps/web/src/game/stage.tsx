@@ -1,4 +1,15 @@
-import { type ReactNode, type RefObject, useLayoutEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  type RefObject,
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { fr } from "../i18n.js";
+import { onBack } from "./back.js";
 import { useSwipe } from "./gestures.js";
 import { useWide } from "./useWide.js";
 
@@ -6,9 +17,17 @@ import { useWide } from "./useWide.js";
  * The frame every section of the game shares, born on the Famille tab: a scene from edge to edge
  * (a map, the domain, a board) between the page's top bar and the bottom navigation, the state
  * of the moment over its head, the main gestures at its foot, and everything else in a drawer of
- * tabs folded over the foot of the screen. On a wide screen the drawer becomes a column beside
- * the scene. Details open in sheets.
+ * tabs folded over the foot of the screen. Folded, the drawer carries the game's sections: the
+ * foot of a phone is one row. On a wide screen the drawer becomes a column beside the scene.
+ * Details open in sheets.
  */
+
+/**
+ * Height of the folded drawer on a phone: its border, its handle (0.625 rem) over the row of
+ * sections (3.5 rem),
+ * safe area included.
+ */
+const FOLDED = "h-[calc(4.125rem+1px+env(safe-area-inset-bottom))]";
 
 /**
  * Height left to the scene between the page's top bar and the bottom navigation (none on a wide
@@ -24,7 +43,9 @@ export function useStageHeight(stage: RefObject<HTMLElement | null>): number | n
       const nav = document.querySelector<HTMLElement>("[data-bottom-nav]");
       // A fixed bar has no offset parent: whether it shows is in its computed display.
       const shown = nav !== null && getComputedStyle(nav).display !== "none";
-      const below = shown ? nav.getBoundingClientRect().height : 24;
+      // Without a bar, the drawer reaches the bottom edge of a phone; a computer keeps a margin.
+      const wide = window.matchMedia("(min-width: 1024px)").matches;
+      const below = shown ? nav.getBoundingClientRect().height : wide ? 24 : 0;
       const next = Math.max(440, Math.round(window.innerHeight - top - below));
       setHeight((h) => (h === next ? h : next));
     };
@@ -76,7 +97,7 @@ export function Stage({
         style={height ? { height } : undefined}
         className="relative h-[calc(100svh-12rem)] lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-4"
       >
-        <div className="absolute inset-x-0 bottom-[3.25rem] top-0 overflow-hidden bg-night-2 lg:relative lg:inset-auto lg:h-full lg:rounded-3xl lg:border lg:border-line">
+        <div className="absolute inset-x-0 bottom-[calc(4.125rem+1px+env(safe-area-inset-bottom))] top-0 overflow-hidden bg-night-2 lg:relative lg:inset-auto lg:h-full lg:rounded-3xl lg:border lg:border-line">
           {scene}
           {top}
           {bottom}
@@ -276,9 +297,102 @@ export interface DrawerTab<T extends string> {
   coach?: string;
 }
 
+/** One of the game's sections, as the folded drawer shows it. */
+export interface SectionItem {
+  key: string;
+  label: string;
+  icon: ReactNode;
+  /** Something waits there. */
+  dot?: boolean;
+  /** Not open yet (the port before its day). */
+  dim?: boolean;
+}
+
+/** The game's sections and the way to them, given by the game to every section's drawer. */
+export const SectionNav = createContext<{
+  items: SectionItem[];
+  current: string;
+  go: (key: string) => void;
+  /** A drawer carries the sections while it is mounted; returns its release. */
+  hold: () => () => void;
+} | null>(null);
+
 /**
- * The secondary panels under the scene. On a phone a drawer, folded to its tabs over the foot of
- * the screen and pulled up (or touched) to read; on a wide screen a column beside the scene.
+ * The row of the game's sections at the foot of a phone. Another section is one touch away; the
+ * current one, marked by a chevron when it has a drawer, pulls that drawer up (`onCurrent`).
+ */
+export function SectionBar({
+  onCurrent,
+  blocked,
+}: {
+  onCurrent?: () => void;
+  /** A drag is going on: the touch that ends it is not a choice. */
+  blocked?: () => boolean;
+}) {
+  const nav = useContext(SectionNav);
+  if (!nav) return null;
+  return (
+    <div
+      className="mx-auto grid max-w-md"
+      style={{ gridTemplateColumns: `repeat(${nav.items.length}, minmax(0, 1fr))` }}
+    >
+      {nav.items.map(({ key, label, icon, dot, dim }) => {
+        const on = nav.current === key;
+        return (
+          <button
+            key={key}
+            type="button"
+            data-coach={`tab-${key}`}
+            aria-current={on ? "page" : undefined}
+            aria-expanded={on && onCurrent ? false : undefined}
+            onClick={() => {
+              if (blocked?.()) return;
+              if (on && onCurrent) onCurrent();
+              else nav.go(key);
+            }}
+            className={`relative flex h-14 flex-col items-center justify-center gap-1 pb-1.5 pt-2 transition-colors active:bg-night-3 ${on ? "text-gold" : "text-muted"} ${dim ? "opacity-50" : ""}`}
+          >
+            {on &&
+              (onCurrent ? (
+                // Its drawer pulls up from here.
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 12 6"
+                  className="absolute left-1/2 top-0 h-1.5 w-3 -translate-x-1/2 fill-gold"
+                >
+                  <path d="M0 6 6 0l6 6z" />
+                </svg>
+              ) : (
+                <span className="bevel absolute inset-x-4 top-0 h-[3px] bg-gold" />
+              ))}
+            {on && (
+              // The pennant on the chosen section's corner.
+              <span className="absolute right-[24%] top-1.5 h-0 w-0 border-l-[7px] border-t-[7px] border-l-transparent border-t-gold" />
+            )}
+            <span
+              className={`transition-transform duration-200 ${on ? "-translate-y-px scale-110" : ""}`}
+            >
+              {icon}
+            </span>
+            <span
+              className={`max-w-full truncate px-0.5 font-mono text-[9.5px] uppercase tracking-[0.08em] ${on ? "font-bold" : ""}`}
+            >
+              {label}
+            </span>
+            {dot && !on && (
+              <span className="absolute right-[30%] top-2 h-2 w-2 rounded-full bg-vermilion" />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * The secondary panels under the scene. On a phone a drawer: folded, its handle over the row of
+ * the game's sections (the current one pulls it up); unfolded, its own tabs over the panel. On a
+ * wide screen a column beside the scene, its tabs always shown.
  */
 export function Drawer<T extends string>({
   tabs,
@@ -306,9 +420,13 @@ export function Drawer<T extends string>({
     () => turn(1),
     () => turn(-1),
   );
+  const waiting = tabs.some((t) => t.dot);
+  // While this drawer is there, the game shows no bar of its own.
+  const hold = useContext(SectionNav)?.hold;
+  useEffect(() => hold?.(), [hold]);
   return (
     <div
-      className={`absolute inset-x-0 bottom-0 z-20 flex flex-col overflow-hidden rounded-t-3xl border-t border-line bg-night-2/95 shadow-[0_-12px_30px_rgb(0_0_0/0.35)] backdrop-blur transition-[height] duration-300 ease-out lg:static lg:h-full lg:rounded-3xl lg:border lg:shadow-none ${open ? "h-[68%]" : "h-[3.25rem]"}`}
+      className={`absolute inset-x-0 bottom-0 z-20 flex flex-col overflow-hidden rounded-t-3xl border-t border-line bg-night-2/95 shadow-[0_-12px_30px_rgb(0_0_0/0.35)] backdrop-blur transition-[height] duration-300 ease-out lg:static lg:h-full lg:rounded-3xl lg:border lg:shadow-none ${open ? "h-[68%]" : FOLDED}`}
     >
       <div
         className="shrink-0 touch-none select-none lg:touch-auto"
@@ -330,10 +448,29 @@ export function Drawer<T extends string>({
           }, 0);
         }}
       >
-        <div className="mx-auto mt-1.5 h-1 w-10 rounded-full bg-line lg:hidden" />
+        <button
+          type="button"
+          aria-label={open ? fr.game.stage.fold : fr.game.stage.unfold}
+          aria-expanded={open}
+          onClick={() => {
+            if (!drag.current?.moved) onOpen(!open);
+          }}
+          className="relative flex h-2.5 w-full items-end justify-center lg:hidden"
+        >
+          <span className="h-1 w-10 rounded-full bg-line" />
+          {waiting && !open && (
+            // Something waits in a tab of the folded drawer.
+            <span className="absolute left-[calc(50%+1.75rem)] top-0.5 h-2 w-2 rounded-full bg-vermilion" />
+          )}
+        </button>
+        {!open && (
+          <div className="pb-[env(safe-area-inset-bottom)] lg:hidden">
+            <SectionBar onCurrent={() => onOpen(true)} blocked={() => !!drag.current?.moved} />
+          </div>
+        )}
         <div
           role="tablist"
-          className="grid gap-1 px-2 pb-1.5 pt-1 lg:pt-2"
+          className={`grid gap-1 px-2 pb-1.5 pt-1 lg:grid lg:pt-2 ${open ? "" : "hidden"}`}
           style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
         >
           {tabs.map(({ key, label, dot, coach }) => {
@@ -347,11 +484,8 @@ export function Drawer<T extends string>({
                 aria-selected={tab === key}
                 onClick={() => {
                   if (drag.current?.moved) return;
-                  if (tab === key) onOpen(!open);
-                  else {
-                    onTab(key);
-                    onOpen(true);
-                  }
+                  onTab(key);
+                  onOpen(true);
                 }}
                 className={`relative truncate rounded-xl px-1 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.08em] transition-colors lg:py-2 ${tab === key ? "lg:bg-gold/15 lg:font-bold lg:text-gold" : ""} ${on ? "bg-gold/15 font-bold text-gold" : "text-cream-dim"}`}
               >
@@ -366,7 +500,7 @@ export function Drawer<T extends string>({
       </div>
       <div
         {...swipe}
-        className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-3 pb-6 pt-1"
+        className={`min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-1 lg:block lg:pb-6 ${open ? "" : "hidden"}`}
       >
         {children}
       </div>
@@ -376,12 +510,20 @@ export function Drawer<T extends string>({
 
 /**
  * The drawer's state: which tab, folded or not. A wide screen shows it always (a column), so it
- * never covers the scene there.
+ * never covers the scene there. The back button folds an unfolded drawer first.
  */
 export function useDrawer<T extends string>(first: T, openFirst = false) {
   const [tab, setTab] = useState<T>(first);
   const [open, setOpen] = useState(openFirst);
   const wide = useWide();
+  const covering = open && !wide;
+  useEffect(() => {
+    if (!covering) return;
+    return onBack(() => {
+      setOpen(false);
+      return true;
+    });
+  }, [covering]);
   return {
     tab,
     open,
@@ -393,7 +535,7 @@ export function useDrawer<T extends string>(first: T, openFirst = false) {
       setOpen(true);
     },
     /** The drawer lies over the scene (a phone, unfolded). */
-    covering: open && !wide,
+    covering,
     props: { tab, open, onTab: setTab, onOpen: setOpen },
   };
 }

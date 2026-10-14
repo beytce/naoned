@@ -54,7 +54,11 @@ type RoadTab = "commandes" | "enroute" | "garage" | "brigands";
 export function Routes(props: GameProps) {
   const road = props.view.road;
   // While the guide leads to an order, the list opens with the section (its targets live there).
-  const drawer = useDrawer<RoadTab>("commandes", roadViewOf(props) === "liste");
+  // Afterwards the section opens folded: the folded drawer carries the game's sections.
+  const drawer = useDrawer<RoadTab>(
+    "commandes",
+    !props.view.tutorial.includes("sell_city") && roadViewOf(props) === "liste",
+  );
   const [focus, setFocus] = useState<string | null>(null);
   const [watching, setWatching] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);

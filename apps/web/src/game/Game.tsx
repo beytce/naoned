@@ -29,6 +29,7 @@ import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
 import { onBack } from "./back.js";
 import { amount } from "./format.js";
+import { SectionBar, SectionNav } from "./stage.js";
 import { store } from "./store.js";
 
 /** Actions that bring something in: a fuller cue than a plain tap. */
@@ -199,6 +200,13 @@ export function Game(props: {
       clearInterval(clock);
     };
   }, [refresh, loadCatalog]);
+
+  // The drawers mounted now: a section's drawer carries the sections, else the game shows a bar.
+  const [drawers, setDrawers] = useState(0);
+  const holdSections = useCallback(() => {
+    setDrawers((n) => n + 1);
+    return () => setDrawers((n) => n - 1);
+  }, []);
 
   /** Switches section, keeping each one's scroll; the current one again goes back to its top. */
   const goTo = useCallback((t: Tab) => {
@@ -520,213 +528,199 @@ export function Game(props: {
     </button>
   );
 
+  const sections = {
+    items: TABS.map((t) => {
+      const Icon = NavIcon[t];
+      return {
+        key: t,
+        label: fr.game.tabs[t],
+        icon: <Icon />,
+        dot: badge(t),
+        dim: t === "port" && portLocked,
+      };
+    }),
+    current: tab,
+    go: (t: string) => gp.goTo(t as Tab),
+    hold: holdSections,
+  };
+
   return (
-    <div className="flex min-h-[100dvh] flex-col lg:pl-64">
-      {/* Computer: a game's side bar, sections in full and the merchant at the bottom. */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-night-2 px-4 py-6 lg:flex">
-        <Logotype size={30} className="px-2" />
-        <nav className="mt-10 space-y-1">
-          {TABS.map((t, i) => {
-            const on = tab === t;
-            const Icon = NavIcon[t];
-            return (
-              <button
-                key={t}
-                type="button"
-                data-coach={`tab-${t}`}
-                aria-current={on ? "page" : undefined}
-                onClick={() => gp.goTo(t)}
-                className={`relative flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${on ? "bg-night-4 text-gold" : "text-cream-dim hover:bg-night-3 hover:text-cream"} ${t === "port" && portLocked ? "opacity-50" : ""}`}
-              >
-                <Icon />
-                <span className="flex-1 font-display text-sm font-extrabold uppercase tracking-wide">
-                  {fr.game.tabs[t]}
-                </span>
-                {badge(t) && !on && <span className="h-2 w-2 rounded-full bg-vermilion" />}
-                <kbd className="font-mono text-[10px] text-muted">{i + 1}</kbd>
-              </button>
-            );
-          })}
-        </nav>
-        <button
-          type="button"
-          onClick={() => gp.goTo("profil")}
-          aria-current={tab === "profil" ? "page" : undefined}
-          className={`mt-auto flex items-center gap-3 rounded-2xl border p-3 text-left transition hover:border-gold/60 ${tab === "profil" ? "border-gold/70" : "border-line"}`}
-        >
-          <Crest crest={crest} size={40} />
-          <span className="min-w-0">
-            <span className="block truncate font-display text-sm font-extrabold">
-              {props.account.pseudo ?? fr.game.anonymous}
-            </span>
-            <span className="label block truncate">
-              {view.standing.title.current.name} · #{view.standing.rank ?? "—"}
-            </span>
-          </span>
-        </button>
-      </aside>
-
-      <header className="sticky top-0 z-20 border-b border-line/60 bg-night/90 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur lg:px-8 lg:py-3">
-        <div className="mx-auto flex max-w-md items-center gap-2 lg:max-w-6xl lg:gap-4">
-          {/* Phone: the game's name on the counter, the section's name everywhere else. */}
-          <h1 className="flex min-w-0 flex-1 items-center gap-2 lg:hidden">
-            {tab === "comptoir" && (
-              <span className="shrink-0">
-                <Sign size={28} />
-              </span>
-            )}
-            {/* With the guide's button in the header, the counter keeps just its sign. */}
-            {!(tab === "comptoir" && guidePaused) && (
-              <span className="truncate font-display text-base font-extrabold uppercase leading-none tracking-tight">
-                {tab === "comptoir" ? fr.appName : fr.game.tabs[tab]}
-              </span>
-            )}
-          </h1>
-          <div className="hidden min-w-0 flex-1 lg:block">
-            {view.acts.length > 0 ? (
-              <SeasonFrieze {...gp} className="max-w-md" />
-            ) : (
-              <>
-                <p className="label text-lagoon">
-                  {fr.game.dayOf(view.day, catalog.world.seasonDays)}
-                </p>
-                <div className="mt-1.5 h-1 w-64 overflow-hidden rounded-full bg-night-4">
-                  <div
-                    className="h-full rounded-full bg-lagoon"
-                    style={{ width: `${dayProgress * 100}%` }}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-          <div className="ml-auto flex shrink-0 items-center gap-0.5 lg:gap-3">
-            {purse}
-            {resumeGuide}
-            <Bell {...gp} unread={unread} onRead={clearUnread} />
-            <span className="lg:hidden">{crestButton}</span>
-          </div>
-        </div>
-        {/* Phone: the season's day, as a line under the header. */}
-        {view.acts.length > 0 ? (
-          <div className="mx-auto mt-2 max-w-md lg:hidden">
-            <SeasonFrieze {...gp} />
-          </div>
-        ) : (
-          <div className="mx-auto mt-2 flex max-w-md items-center gap-3 lg:hidden">
-            <p className="label shrink-0 text-lagoon">
-              {fr.game.dayOf(view.day, catalog.world.seasonDays)}
-            </p>
-            <div className="h-1 flex-1 overflow-hidden rounded-full bg-night-4">
-              <div
-                className="h-full rounded-full bg-lagoon"
-                style={{ width: `${dayProgress * 100}%` }}
-              />
-            </div>
-          </div>
-        )}
-      </header>
-
-      <Gazette {...gp} />
-      <ActCard {...gp} />
-
-      {view.player.upkeepDefaultUntil > gp.now && (
-        <div className="mx-auto mt-3 w-full max-w-md px-4 lg:max-w-6xl lg:px-8">
-          <p className="rounded-xl bg-vermilion/15 p-3 text-sm text-vermilion ring-1 ring-vermilion/60">
-            {fr.game.upkeepDefault}
-          </p>
-        </div>
-      )}
-
-      <Ambient tab={tab} />
-      <main className="mx-auto w-full max-w-md flex-1 px-4 pb-40 pt-4 lg:max-w-6xl lg:px-8 lg:pb-16 lg:pt-6">
-        <Criee {...gp} />
-        {daysLeft > 0 && daysLeft <= 3 && (
-          <p className="mb-4 rounded-2xl border border-gold/60 bg-gold/10 px-4 py-3 text-sm text-gold">
-            {fr.game.season.lastSprint(daysLeft)}
-          </p>
-        )}
-        {/* Each section slides in from its side, its blocks rising one after the other. */}
-        <div
-          key={tab}
-          className={`stagger ${slide.current === "right" ? "animate-screen-right" : "animate-screen-left"}`}
-        >
-          {tab === "comptoir" && <Comptoir {...gp} />}
-          {tab === "routes" && <Routes {...gp} />}
-          {tab === "marche" && <Marche {...gp} />}
-          {tab === "famille" && <Famille {...gp} />}
-          {tab === "port" && <Port {...gp} />}
-          {tab === "top" && <Top {...gp} />}
-          {tab === "profil" && <Profil {...gp} />}
-        </div>
-      </main>
-
-      <Coach key={guideKey} {...gp} />
-
-      {toast && (
-        <div
-          role="alert"
-          className="fixed inset-x-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-50 mx-auto max-w-md animate-rise lg:bottom-8"
-        >
-          <button
-            type="button"
-            onClick={() => setToast(null)}
-            className="flex w-full items-start gap-3 rounded-2xl bg-vermilion px-4 py-3 text-left text-sm font-semibold text-cream shadow-lg shadow-black/40"
-          >
-            <span aria-hidden="true" className="mt-px font-display font-extrabold">
-              !
-            </span>
-            <span className="flex-1">{toast}</span>
-          </button>
-        </div>
-      )}
-
-      <AmbushAlert {...gp} />
-      {help && <Help {...gp} onClose={() => setHelp(false)} />}
-      {welcome && <Welcome {...gp} data={welcome} onClose={() => setWelcome(null)} />}
-
-      <nav
-        data-bottom-nav
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-night-2/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
-      >
-        <div className={`mx-auto grid max-w-md ${TABS.length > 5 ? "grid-cols-6" : "grid-cols-5"}`}>
-          {TABS.map((t) => {
-            const on = tab === t;
-            const Icon = NavIcon[t];
-            return (
-              <button
-                key={t}
-                type="button"
-                data-coach={`tab-${t}`}
-                aria-current={on ? "page" : undefined}
-                onClick={() => gp.goTo(t)}
-                className={`relative flex min-h-[3.5rem] flex-col items-center justify-center gap-1 pb-2 pt-2.5 transition-colors active:bg-night-3 ${on ? "text-gold" : "text-muted"} ${t === "port" && portLocked ? "opacity-50" : ""}`}
-              >
-                {on && (
-                  <>
-                    <span className="bevel absolute inset-x-4 top-0 h-[3px] bg-gold" />
-                    {/* The pennant on the chosen tab's corner. */}
-                    <span className="absolute right-[24%] top-1.5 h-0 w-0 border-l-[7px] border-t-[7px] border-l-transparent border-t-gold" />
-                  </>
-                )}
-                <span
-                  className={`transition-transform duration-200 ${on ? "-translate-y-px scale-110" : ""}`}
+    <SectionNav.Provider value={sections}>
+      <div className="flex min-h-[100dvh] flex-col lg:pl-64">
+        {/* Computer: a game's side bar, sections in full and the merchant at the bottom. */}
+        <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-night-2 px-4 py-6 lg:flex">
+          <Logotype size={30} className="px-2" />
+          <nav className="mt-10 space-y-1">
+            {TABS.map((t, i) => {
+              const on = tab === t;
+              const Icon = NavIcon[t];
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  data-coach={`tab-${t}`}
+                  aria-current={on ? "page" : undefined}
+                  onClick={() => gp.goTo(t)}
+                  className={`relative flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${on ? "bg-night-4 text-gold" : "text-cream-dim hover:bg-night-3 hover:text-cream"} ${t === "port" && portLocked ? "opacity-50" : ""}`}
                 >
                   <Icon />
+                  <span className="flex-1 font-display text-sm font-extrabold uppercase tracking-wide">
+                    {fr.game.tabs[t]}
+                  </span>
+                  {badge(t) && !on && <span className="h-2 w-2 rounded-full bg-vermilion" />}
+                  <kbd className="font-mono text-[10px] text-muted">{i + 1}</kbd>
+                </button>
+              );
+            })}
+          </nav>
+          <button
+            type="button"
+            onClick={() => gp.goTo("profil")}
+            aria-current={tab === "profil" ? "page" : undefined}
+            className={`mt-auto flex items-center gap-3 rounded-2xl border p-3 text-left transition hover:border-gold/60 ${tab === "profil" ? "border-gold/70" : "border-line"}`}
+          >
+            <Crest crest={crest} size={40} />
+            <span className="min-w-0">
+              <span className="block truncate font-display text-sm font-extrabold">
+                {props.account.pseudo ?? fr.game.anonymous}
+              </span>
+              <span className="label block truncate">
+                {view.standing.title.current.name} · #{view.standing.rank ?? "—"}
+              </span>
+            </span>
+          </button>
+        </aside>
+
+        <header className="sticky top-0 z-20 border-b border-line/60 bg-night/90 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur lg:px-8 lg:py-3">
+          <div className="mx-auto flex max-w-md items-center gap-2 lg:max-w-6xl lg:gap-4">
+            {/* Phone: the game's name on the counter, the section's name everywhere else. */}
+            <h1 className="flex min-w-0 flex-1 items-center gap-2 lg:hidden">
+              {tab === "comptoir" && (
+                <span className="shrink-0">
+                  <Sign size={28} />
                 </span>
-                <span
-                  className={`max-w-full truncate px-0.5 font-mono text-[9.5px] uppercase tracking-[0.08em] ${on ? "font-bold" : ""}`}
-                >
-                  {fr.game.tabs[t]}
+              )}
+              {/* With the guide's button in the header, the counter keeps just its sign. */}
+              {!(tab === "comptoir" && guidePaused) && (
+                <span className="truncate font-display text-base font-extrabold uppercase leading-none tracking-tight">
+                  {tab === "comptoir" ? fr.appName : fr.game.tabs[tab]}
                 </span>
-                {badge(t) && !on && (
-                  <span className="absolute right-[30%] top-2 h-2 w-2 rounded-full bg-vermilion" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-    </div>
+              )}
+            </h1>
+            <div className="hidden min-w-0 flex-1 lg:block">
+              {view.acts.length > 0 ? (
+                <SeasonFrieze {...gp} className="max-w-md" />
+              ) : (
+                <>
+                  <p className="label text-lagoon">
+                    {fr.game.dayOf(view.day, catalog.world.seasonDays)}
+                  </p>
+                  <div className="mt-1.5 h-1 w-64 overflow-hidden rounded-full bg-night-4">
+                    <div
+                      className="h-full rounded-full bg-lagoon"
+                      style={{ width: `${dayProgress * 100}%` }}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="ml-auto flex shrink-0 items-center gap-0.5 lg:gap-3">
+              {purse}
+              {resumeGuide}
+              <Bell {...gp} unread={unread} onRead={clearUnread} />
+              <span className="lg:hidden">{crestButton}</span>
+            </div>
+          </div>
+          {/* Phone: the season's day, as a line under the header. */}
+          {view.acts.length > 0 ? (
+            <div className="mx-auto mt-2 max-w-md lg:hidden">
+              <SeasonFrieze {...gp} />
+            </div>
+          ) : (
+            <div className="mx-auto mt-2 flex max-w-md items-center gap-3 lg:hidden">
+              <p className="label shrink-0 text-lagoon">
+                {fr.game.dayOf(view.day, catalog.world.seasonDays)}
+              </p>
+              <div className="h-1 flex-1 overflow-hidden rounded-full bg-night-4">
+                <div
+                  className="h-full rounded-full bg-lagoon"
+                  style={{ width: `${dayProgress * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </header>
+
+        <Gazette {...gp} />
+        <ActCard {...gp} />
+
+        {view.player.upkeepDefaultUntil > gp.now && (
+          <div className="mx-auto mt-3 w-full max-w-md px-4 lg:max-w-6xl lg:px-8">
+            <p className="rounded-xl bg-vermilion/15 p-3 text-sm text-vermilion ring-1 ring-vermilion/60">
+              {fr.game.upkeepDefault}
+            </p>
+          </div>
+        )}
+
+        <Ambient tab={tab} />
+        <main className="mx-auto w-full max-w-md flex-1 px-4 pb-40 pt-4 lg:max-w-6xl lg:px-8 lg:pb-16 lg:pt-6">
+          <Criee {...gp} />
+          {daysLeft > 0 && daysLeft <= 3 && (
+            <p className="mb-4 rounded-2xl border border-gold/60 bg-gold/10 px-4 py-3 text-sm text-gold">
+              {fr.game.season.lastSprint(daysLeft)}
+            </p>
+          )}
+          {/* Each section slides in from its side, its blocks rising one after the other. */}
+          <div
+            key={tab}
+            className={`stagger ${slide.current === "right" ? "animate-screen-right" : "animate-screen-left"}`}
+          >
+            {tab === "comptoir" && <Comptoir {...gp} />}
+            {tab === "routes" && <Routes {...gp} />}
+            {tab === "marche" && <Marche {...gp} />}
+            {tab === "famille" && <Famille {...gp} />}
+            {tab === "port" && <Port {...gp} />}
+            {tab === "top" && <Top {...gp} />}
+            {tab === "profil" && <Profil {...gp} />}
+          </div>
+        </main>
+
+        <Coach key={guideKey} {...gp} />
+
+        {toast && (
+          <div
+            role="alert"
+            className="fixed inset-x-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-50 mx-auto max-w-md animate-rise lg:bottom-8"
+          >
+            <button
+              type="button"
+              onClick={() => setToast(null)}
+              className="flex w-full items-start gap-3 rounded-2xl bg-vermilion px-4 py-3 text-left text-sm font-semibold text-cream shadow-lg shadow-black/40"
+            >
+              <span aria-hidden="true" className="mt-px font-display font-extrabold">
+                !
+              </span>
+              <span className="flex-1">{toast}</span>
+            </button>
+          </div>
+        )}
+
+        <AmbushAlert {...gp} />
+        {help && <Help {...gp} onClose={() => setHelp(false)} />}
+        {welcome && <Welcome {...gp} data={welcome} onClose={() => setWelcome(null)} />}
+
+        {/* Phone: a section's folded drawer carries the sections; a screen without a drawer (the
+            profile, the port before its day) keeps them as a bar of their own. */}
+        {drawers === 0 && (
+          <nav
+            data-bottom-nav
+            className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-night-2/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+          >
+            <SectionBar />
+          </nav>
+        )}
+      </div>
+    </SectionNav.Provider>
   );
 }
 
