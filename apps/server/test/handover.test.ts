@@ -53,6 +53,20 @@ describe("a deploy: the new server takes over from the old one", () => {
   });
 });
 
+describe("a save from an earlier version", () => {
+  it("opens with the first families' tallies dropped", async () => {
+    const old = await GameWorld.open(database.db, () => now);
+    await old.execute({ type: "tick" });
+    // A world opened in the time of the first families (influence, family orders).
+    await database.db.execute(
+      sql`update world_states set state = jsonb_set(state::jsonb, '{families}', '{"week":1,"members":{},"weekInfluence":{},"seasonInfluence":{},"ordersDone":{},"patronage":{},"inPower":null}'::jsonb)`,
+    );
+    const fresh = await GameWorld.open(database.db, () => now + 60_000);
+    expect(fresh.current.families).toBeUndefined();
+    expect((await fresh.execute({ type: "tick" })).ok).toBe(true);
+  });
+});
+
 describe("a stalled world", () => {
   it("is reported when no tick has been saved for five minutes", async () => {
     let clock = now;

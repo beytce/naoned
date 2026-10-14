@@ -108,11 +108,26 @@ export function leaveFamily(tx: Tx, playerId: PlayerId): void {
   delete fs.since[playerId];
 }
 
+/** The first families' week tallies (influence, family orders), saved before the guilds. */
+function isLegacyFamilies(families: unknown): boolean {
+  return typeof families === "object" && families !== null && !("memberOf" in families);
+}
+
+/**
+ * A saved state brought up to date on load: the first families (before the guilds) left their
+ * tallies under `families`, which the four families now use. Nothing in them held money or goods.
+ */
+export function upgradeLegacyState(state: WorldState): WorldState {
+  if (!isLegacyFamilies(state.families)) return state;
+  return { ...state, families: undefined };
+}
+
 /**
  * States saved in the time of the guilds: each treasury is paid back to its members by carats
  * (the last carat-holder takes what rounding leaves), then guilds, concessions and wars are gone.
  */
 export function dissolveLegacyGuilds(tx: Tx): void {
+  if (isLegacyFamilies(tx.s.families)) tx.s.families = undefined;
   const legacy = tx.s.guilds;
   if (legacy) {
     for (const [id, g] of Object.entries(legacy.guilds ?? {})) {

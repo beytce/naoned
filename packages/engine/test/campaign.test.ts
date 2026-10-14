@@ -3,6 +3,7 @@ import {
   type Command,
   SINK_ACCOUNT,
   type WorldSettingsInput,
+  type WorldState,
   accumulate,
   levyFactorBps,
   levyWaiting,
@@ -10,6 +11,7 @@ import {
   meritPoints,
   reserveOf,
   seasonEnd,
+  upgradeLegacyState,
 } from "../src/index.js";
 import { campaignSettings, testCampaign, testFamilies } from "./fixture.js";
 import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
@@ -44,6 +46,41 @@ function takeBorgo(w: World) {
   w.do({ type: "sendMarch", playerId: "a", land: "borgo", lances: 5 });
   tickAt(w, 10 * HOUR + 20 * MIN);
 }
+
+describe("a state saved before the four families", () => {
+  // The first families (influence and family orders, before the guilds) kept their week's
+  // tallies in `families`: a world opened then still carries them.
+  const legacy = {
+    week: 1,
+    members: { a: "dandolo" },
+    weekInfluence: { a: 40 },
+    seasonInfluence: { a: 90 },
+    ordersDone: {},
+    patronage: {},
+    inPower: "dandolo",
+  };
+
+  it("drops the old families' tallies on load", () => {
+    const w = new World(makeContext(campaignSettings));
+    w.at(0);
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    const state = { ...w.state, families: legacy } as unknown as WorldState;
+    expect(upgradeLegacyState(state).families).toBeUndefined();
+    const fresh = { ...w.state, families: { memberOf: { a: "rossi" }, since: { a: 0 } } };
+    expect(upgradeLegacyState(fresh).families?.memberOf.a).toBe("rossi");
+  });
+
+  it("lets the merchants choose a family on the next tick", () => {
+    const w = new World(makeContext(campaignSettings));
+    w.at(0);
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    w.state = { ...w.state, families: legacy } as unknown as WorldState;
+    w.at(DAY + HOUR).do({ type: "tick" });
+    expect(w.state.families).toBeUndefined();
+    w.do({ type: "joinFamily", playerId: "a", family: "rossi" });
+    expect(w.state.families?.memberOf.a).toBe("rossi");
+  });
+});
 
 describe("the families", () => {
   it("are chosen once, after the opening day", () => {

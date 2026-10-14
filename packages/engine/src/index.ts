@@ -19,6 +19,7 @@ export {
   levyFactorBps,
   membersOf,
   seatOf,
+  upgradeLegacyState,
 } from "./families.js";
 export {
   MILAN,

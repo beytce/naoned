@@ -13,6 +13,7 @@ import {
   emptyTotals,
   parseSettings,
   seasonEnd,
+  upgradeLegacyState,
   venice1450,
   venice1450Settings,
 } from "@comptoirs/engine";
@@ -547,7 +548,11 @@ async function loadWorld(
   // Take over first, then read: an old instance can no longer write once we hold the state.
   await db.update(worldStates).set({ owner }).where(eq(worldStates.worldId, world.id));
   const [saved] = await db.select().from(worldStates).where(eq(worldStates.worldId, world.id));
-  if (saved) return { ctx, state: decode<WorldState>(saved.state), version: saved.version };
+  if (saved) {
+    // Saves from earlier versions are brought up to date before anything reads them.
+    const state = upgradeLegacyState(decode<WorldState>(saved.state));
+    return { ctx, state, version: saved.version };
+  }
   const state = createWorldState(ctx);
   await db
     .insert(worldStates)
