@@ -5,10 +5,34 @@
 /*
  * Fondaco palettes (identity guide): same roles, same places, so the player can switch between
  * them without any screen changing. Gold is for money and the main action only; lagoon for gains
- * and safe routes; cinnabar for pirates and losses.
+ * and safe routes; cinnabar for pirates and losses. --glow-a/--glow-b tint the page's two halos.
  */
 @layer base {
+  /* Noyer & Ducat, the default: the fondaco's walnut and leather by lamplight. */
   :root,
+  [data-palette="noyer"] {
+    color-scheme: dark;
+    --night: 30 22 17;
+    --night-2: 37 27 21;
+    --night-3: 46 34 26;
+    --night-4: 58 43 33;
+    --line: 84 64 47;
+    --cream: 246 232 204;
+    --cream-dim: 207 188 156;
+    --muted: 168 146 118;
+    --ink: 30 22 17;
+    --on-lagoon: 30 22 17;
+    --gold: 232 178 76;
+    --gold-deep: 186 136 48;
+    --gold-soft: 243 212 146;
+    --lagoon: 125 181 150;
+    --lagoon-deep: 76 131 102;
+    --lagoon-soft: 180 216 192;
+    --vermilion: 227 106 74;
+    --vermilion-deep: 170 71 47;
+    --glow-a: 232 178 76;
+    --glow-b: 227 106 74;
+  }
   [data-palette="lagune"] {
     color-scheme: dark;
     --night: 15 27 30;
@@ -29,6 +53,8 @@
     --lagoon-soft: 168 214 202;
     --vermilion: 226 105 79;
     --vermilion-deep: 169 71 47;
+    --glow-a: 109 179 162;
+    --glow-b: 224 173 75;
   }
   [data-palette="pourpre"] {
     color-scheme: dark;
@@ -50,6 +76,8 @@
     --lagoon-soft: 171 216 208;
     --vermilion: 240 122 92;
     --vermilion-deep: 181 81 58;
+    --glow-a: var(--lagoon);
+    --glow-b: var(--gold);
   }
   /* Or de Venise: the Pass Négociant's own palette (night lacquer and gold leaf). */
   [data-palette="or"] {
@@ -72,6 +100,8 @@
     --lagoon-soft: 180 216 194;
     --vermilion: 222 104 76;
     --vermilion-deep: 170 72 50;
+    --glow-a: var(--lagoon);
+    --glow-b: var(--gold);
   }
   [data-palette="parchemin"] {
     color-scheme: light;
@@ -93,15 +123,17 @@
     --lagoon-soft: 126 156 196;
     --vermilion: 178 65 45;
     --vermilion-deep: 138 47 32;
+    --glow-a: var(--lagoon);
+    --glow-b: var(--gold);
   }
   body {
     @apply bg-night font-sans text-cream antialiased;
     -webkit-tap-highlight-color: transparent;
     background-image: radial-gradient(
         60rem 30rem at 85% -10%,
-        rgb(var(--lagoon) / 0.08),
+        rgb(var(--glow-a) / 0.08),
         transparent 60%
-      ), radial-gradient(50rem 30rem at -10% 110%, rgb(var(--gold) / 0.07), transparent 60%);
+      ), radial-gradient(50rem 30rem at -10% 110%, rgb(var(--glow-b) / 0.07), transparent 60%);
     background-attachment: fixed;
   }
   /* Archivo, widened: the expanded cut of the identity guide. */

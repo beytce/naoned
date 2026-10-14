@@ -70,7 +70,7 @@ export function vehicleModel(type: string): VehicleModel {
   if (type === "mule") {
     legs = beast(group, 0, "#8C6A4E");
     box(group, 0.16, 0.14, 0.26, "#C9A877", -0.02, 0.38, 0, 0.04);
-    cargo = box(group, 0.14, 0.1, 0.3, "#E0AD4B", -0.02, 0.5, 0, 0.03);
+    cargo = box(group, 0.14, 0.1, 0.3, "#E8B24C", -0.02, 0.5, 0, 0.03);
   } else {
     const wagon = type === "wagon";
     const len = wagon ? 0.9 : 0.62;
@@ -84,11 +84,11 @@ export function vehicleModel(type: string): VehicleModel {
     wheels.push(wheel(group, r, -0.05, r, 0.24), wheel(group, r, -0.05, r, -0.24));
     if (wagon) wheels.push(wheel(group, r, -0.35, r, 0.24), wheel(group, r, -0.35, r, -0.24));
     if (wagon) {
-      const canopy = cyl(group, 0.22, 0.22, len * 0.9, "#F1E4C6", -0.05, 0.3, 0, 14);
+      const canopy = cyl(group, 0.22, 0.22, len * 0.9, "#F6E8CC", -0.05, 0.3, 0, 14);
       canopy.rotation.z = Math.PI / 2;
       canopy.scale.set(1, 1, 1);
     }
-    cargo = box(group, len * 0.7, 0.16, 0.32, "#E0AD4B", -0.08, 0.28, 0, 0.03);
+    cargo = box(group, len * 0.7, 0.16, 0.32, "#E8B24C", -0.08, 0.28, 0, 0.03);
     legs = beast(group, 0.75, "#7A5638");
     shadowBlob(group, len + 0.4, 0.6, -0.05, 0);
   }
@@ -102,14 +102,14 @@ export interface WorkerModel {
   legs: THREE.Object3D[];
 }
 
-const SHIRTS = ["#6DB3A2", "#E0AD4B", "#E2694F", "#8E6BD8", "#F1E4C6", "#3FA36B"];
+const SHIRTS = ["#7DB596", "#E8B24C", "#E36A4A", "#8E6BD8", "#F6E8CC", "#3FA36B"];
 
 /** A worker, facing +z: tunic, apron, cap, rounded like a figurine. */
 export function workerModel(index: number): WorkerModel {
   const group = new THREE.Group();
   const body = new THREE.Group();
   group.add(body);
-  const shirt = SHIRTS[index % SHIRTS.length] ?? "#6DB3A2";
+  const shirt = SHIRTS[index % SHIRTS.length] ?? "#7DB596";
   const legs: THREE.Object3D[] = [];
   for (const x of [-0.035, 0.035]) {
     const leg = new THREE.Group();
@@ -119,7 +119,7 @@ export function workerModel(index: number): WorkerModel {
     legs.push(leg);
   }
   box(body, 0.14, 0.17, 0.1, shirt, 0, 0.11, 0, 0.045);
-  box(body, 0.1, 0.1, 0.012, "#F1E4C6", 0, 0.12, 0.052, 0.005);
+  box(body, 0.1, 0.1, 0.012, "#F6E8CC", 0, 0.12, 0.052, 0.005);
   const arms: THREE.Object3D[] = [];
   for (const x of [-0.085, 0.085]) {
     const arm = new THREE.Group();

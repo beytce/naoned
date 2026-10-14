@@ -183,8 +183,8 @@ export const VenetoTerrain = memo(function VenetoTerrain() {
           <stop offset="100%" stopColor="#152620" />
         </radialGradient>
         <linearGradient id="vn-alps" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#13222A" />
-          <stop offset="75%" stopColor="#1C3333" />
+          <stop offset="0%" stopColor="#1E1611" />
+          <stop offset="75%" stopColor="#2A2A20" />
           <stop offset="100%" stopColor="#233A2E" stopOpacity="0" />
         </linearGradient>
         <linearGradient id="vn-sea" x1="0" y1="0" x2="1" y2="0">

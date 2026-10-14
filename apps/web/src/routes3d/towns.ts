@@ -214,7 +214,7 @@ export function depotModel(mine: boolean): Town {
     cyl(g, 0.02, 0.025, 1.1, "#C98E52", 0.65, 0.05, -0.4, 8);
     const f = new THREE.Group();
     f.position.set(0.65, 1.0, -0.4);
-    box(f, 0.34, 0.2, 0.02, "#E0AD4B", 0.17, 0, 0, 0.01);
+    box(f, 0.34, 0.2, 0.02, "#E8B24C", 0.17, 0, 0, 0.01);
     g.add(f);
     flags.push(f);
   }

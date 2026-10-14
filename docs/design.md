@@ -16,18 +16,20 @@ Emblème : la voile latine d'une galère, dont le mât, la vergue et la bôme de
 
 ## Palettes
 
-Trois palettes, mêmes rôles aux mêmes endroits, au choix du joueur dans le Profil (mémorisé sur l'appareil). Les couleurs sont des variables CSS (`index.css`, `[data-palette]`) lues par Tailwind (`tailwind.config.js`).
+Quatre palettes, mêmes rôles aux mêmes endroits, au choix du joueur dans le Profil (mémorisé sur l'appareil), plus « Or de Venise » réservée au Pass. Les couleurs sont des variables CSS (`index.css`, `[data-palette]`) lues par Tailwind (`tailwind.config.js`). « Noyer & Ducat » est la palette par défaut depuis octobre 2026 : l'intérieur du fondaco à la lueur des lampes, plus chaleureux que la lagune. Un appareil qui gardait « Lagune » sans l'avoir choisie passe à Noyer ; un choix fait dans le Profil est conservé.
 
-| Rôle | Lagune & Ducat (défaut) | Pourpre du Doge | Parchemin & Lapis (clair) | Usage |
-| --- | --- | --- | --- | --- |
-| Fond (`night`) | `#0F1B1E` | `#1C1016` | `#F3E9D4` | Application, panneaux (`night-2/3/4`) |
-| Or (`gold`) | `#E0AD4B` | `#DDB054` | `#C9952F` | Argent et action principale uniquement |
-| Lagune (`lagoon`) | `#6DB3A2` | `#6FB5AA` | `#2D5486` | Gains, production, routes sûres |
-| Cinabre (`vermilion`) | `#E2694F` | `#F07A5C` | `#B2412D` | Corsaires, pertes, alertes |
-| Texte (`cream`) | `#F1E4C6` | `#F4E6D0` | `#2B2016` | Texte |
-| Encre (`ink`) | fond | fond | texte | Texte posé sur l'or ou la lagune |
+| Rôle | Noyer & Ducat (défaut) | Lagune & Ducat | Pourpre du Doge | Parchemin & Lapis (clair) | Usage |
+| --- | --- | --- | --- | --- | --- |
+| Fond (`night`) | `#1E1611` | `#0F1B1E` | `#1C1016` | `#F3E9D4` | Application, panneaux (`night-2/3/4`) |
+| Or (`gold`) | `#E8B24C` | `#E0AD4B` | `#DDB054` | `#C9952F` | Argent et action principale uniquement |
+| Lagune (`lagoon`) | `#7DB596` | `#6DB3A2` | `#6FB5AA` | `#2D5486` | Gains, production, routes sûres |
+| Cinabre (`vermilion`) | `#E36A4A` | `#E2694F` | `#F07A5C` | `#B2412D` | Corsaires, pertes, alertes |
+| Texte (`cream`) | `#F6E8CC` | `#F1E4C6` | `#F4E6D0` | `#2B2016` | Texte |
+| Encre (`ink`) | fond | fond | fond | texte | Texte posé sur l'or ou la lagune |
 
-Les illustrations (ressources, bâtiments, blasons) gardent leurs propres couleurs dans toutes les palettes.
+Les deux halos du fond suivent la palette (`--glow-a`, `--glow-b`) : ambre et braise pour Noyer, vert d'eau et or pour les autres.
+
+Les illustrations (ressources, bâtiments, blasons) et les scènes 3D gardent leurs propres couleurs dans toutes les palettes, réglées sur la palette par défaut (`art/palette.ts`).
 
 ## Typographie (embarquée, sans appel à Google)
 

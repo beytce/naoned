@@ -84,8 +84,8 @@ const TOWN_SCALE = 1.45;
 
 /** Goods aboard, by their colour. */
 const GOODS: Record<string, string> = {
-  wheat: "#E0AD4B",
-  flour: "#F1E4C6",
+  wheat: "#E8B24C",
+  flour: "#F6E8CC",
   bread: "#C98E52",
   clay: "#B5653E",
   bricks: "#C8462A",
@@ -223,7 +223,7 @@ export class VenetoWorld {
         this.scene.add(v.group);
       }
       if (v.cargo) {
-        v.cargo.material = mat(GOODS[dv.resource] ?? "#E0AD4B");
+        v.cargo.material = mat(GOODS[dv.resource] ?? "#E8B24C");
       }
     }
     for (const [id, v] of this.vehicles) {

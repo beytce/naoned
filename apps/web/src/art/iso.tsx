@@ -30,7 +30,7 @@ export function shade(hex: string, amount: number): string {
   return `#${ch((n >> 16) & 255)}${ch((n >> 8) & 255)}${ch(n & 255)}`;
 }
 
-const EDGE = "#0F1B1E";
+const EDGE = "#1E1611";
 
 /** A flat tile on the ground (or at height z). */
 export function IsoTile(props: {
