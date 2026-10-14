@@ -6,7 +6,7 @@ import { Logotype, Sign } from "../art/logo.js";
 import { Lorenzo } from "../art/scenes.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
-import { applyPalette, currentPalette, needsPass } from "../theme.js";
+import { DEFAULT_PALETTE, applyPalette, currentPalette, needsPass } from "../theme.js";
 import { CountUp, Slab } from "../ui.js";
 import { ActCard, SeasonFrieze } from "./Acts.js";
 import { AmbushAlert } from "./AmbushAlert.js";
@@ -238,7 +238,7 @@ export function Game(props: {
   // The Pass's palette goes back to the default when the Pass ends.
   const passActive = view?.pass.active;
   useEffect(() => {
-    if (passActive === false && needsPass(currentPalette())) applyPalette("lagune");
+    if (passActive === false && needsPass(currentPalette())) applyPalette(DEFAULT_PALETTE);
   }, [passActive]);
 
   // A season closed while the game was open: the catalog (dates, name) is the new month's.

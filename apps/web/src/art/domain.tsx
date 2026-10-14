@@ -628,7 +628,7 @@ export interface DomainWorker {
   bubble: boolean;
 }
 
-const SHIRTS = ["#6DB3A2", "#E0AD4B", "#E2694F", "#8E6BD8", "#F1E4C6", "#3FA36B"];
+const SHIRTS = ["#7DB596", "#E8B24C", "#E36A4A", "#8E6BD8", "#F6E8CC", "#3FA36B"];
 
 /** A worker on their round between their workshop's door and the store. */
 function Worker({

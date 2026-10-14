@@ -12,7 +12,7 @@ import { Medal } from "../art/icons.js";
 import { P } from "../art/palette.js";
 import { hapticsEnabled, setHapticsEnabled } from "../haptics.js";
 import { fr } from "../i18n.js";
-import { PALETTES, type PaletteId, applyPalette, currentPalette, needsPass } from "../theme.js";
+import { PALETTES, type PaletteId, choosePalette, currentPalette, needsPass } from "../theme.js";
 import { Big, Donut, Label, Panel, Ribbon, Sheet, Slab, Switch } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { PalmaresView } from "./Palmares.js";
@@ -170,7 +170,7 @@ function PalettePicker({ pass }: { pass: boolean }) {
               disabled={locked}
               title={locked ? fr.game.pass.paletteLocked : undefined}
               onClick={() => {
-                applyPalette(p.id);
+                choosePalette(p.id);
                 setChosen(p.id);
               }}
               className={`flex items-center gap-3 rounded-2xl border bg-night-3 p-3 text-left transition disabled:opacity-50 ${on ? "border-gold" : "border-line hover:border-cream-dim/40"}`}

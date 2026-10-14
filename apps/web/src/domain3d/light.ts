@@ -19,7 +19,7 @@ export const LIGHT: Record<
     sky: "#DCEBFF",
     ground: "#6B5A3A",
     hemiI: 1.15,
-    fog: "#CFE0D6",
+    fog: "#DCD8C2",
     exposure: 1.05,
   },
   dusk: {

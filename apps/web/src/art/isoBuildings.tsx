@@ -153,7 +153,7 @@ export function IsoWorkshop(props: {
                   <path
                     key={v}
                     d={`M${a - 3} ${b} q3 -7 6 0`}
-                    stroke="#F0D08F"
+                    stroke="#F3D492"
                     strokeWidth="1.4"
                     fill="none"
                   >

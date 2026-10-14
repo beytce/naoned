@@ -198,7 +198,7 @@ export function mat(name: string): THREE.Material {
       return std(name, () => ({ map: texture(tiles("#6B3A2E"), 1, 256, 43) }));
     case "roof-gold":
       return std(name, () => ({
-        map: texture(tiles("#E0AD4B"), 1, 256, 47),
+        map: texture(tiles("#E8B24C"), 1, 256, 47),
         metalness: 0.35,
         roughness: 0.45,
       }));
@@ -217,7 +217,7 @@ export function mat(name: string): THREE.Material {
     case "glow":
       return std(name, () => ({ color: "#FFB24A", emissive: "#FF8A2A", emissiveIntensity: 2 }));
     case "gold":
-      return std(name, () => ({ color: "#E0AD4B", metalness: 0.5, roughness: 0.35 }));
+      return std(name, () => ({ color: "#E8B24C", metalness: 0.5, roughness: 0.35 }));
     case "shadow":
       return (
         cache.get(name) ??

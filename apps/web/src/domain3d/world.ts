@@ -437,7 +437,7 @@ export class DomainWorld {
     ] as const) {
       bush(this.land, x, z, sc, bushTone);
     }
-    const blooms = ["#E2694F", "#E0AD4B", "#8E6BD8", "#F2A3B3"];
+    const blooms = ["#E36A4A", "#E8B24C", "#8E6BD8", "#F2A3B3"];
     for (const [i, [x, z]] of [
       [-0.5, 7.4],
       [11.5, 7.2],
@@ -446,7 +446,7 @@ export class DomainWorld {
       [5.5, -0.7],
       [-1.4, 9.2],
     ].entries()) {
-      flowers(this.land, x ?? 0, z ?? 0, blooms[i % blooms.length] ?? "#E2694F");
+      flowers(this.land, x ?? 0, z ?? 0, blooms[i % blooms.length] ?? "#E36A4A");
     }
     for (const [x, z, sc] of [
       [-2.6, 6.2, 1],

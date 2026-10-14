@@ -280,7 +280,7 @@ export function banner(model: Model, parent: THREE.Object3D, x: number, z: numbe
   cyl(parent, 0.025, 0.03, 1.15, "#C98E52", x, 0, z, 8);
   const flag = new THREE.Group();
   flag.position.set(x, 1.0, z);
-  box(flag, 0.32, 0.18, 0.02, gold ? "#E0AD4B" : "#6DB3A2", 0.17, 0, 0, 0.01);
+  box(flag, 0.32, 0.18, 0.02, gold ? "#E8B24C" : "#7DB596", 0.17, 0, 0, 0.01);
   parent.add(flag);
   model.sway.push(flag);
 }
@@ -547,7 +547,7 @@ export function emptyPlotModel(): THREE.Group {
     [-0.85, 0, 0.015, 1.7],
     [0.85, 0, 0.015, 1.7],
   ] as const) {
-    box(g, w, 0.015, d, "#F1E4C6", x, 0.16, z, 0);
+    box(g, w, 0.015, d, "#F6E8CC", x, 0.16, z, 0);
   }
   box(g, 1.6, 0.02, 1.6, "#9C8E70", 0, 0, 0, 0);
   return g;
