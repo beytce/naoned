@@ -8,7 +8,8 @@ export function underPoint(x: number, y: number, attribute: string): Element | n
 /**
  * A horizontal swipe on an element whose vertical scroll stays the browser's (`touch-action:
  * pan-y`): decided by 50 px or a quick flick, never when the gesture went mostly up or down.
- * Gestures that start on an element marked `data-no-swipe` (the road map) are left alone.
+ * Gestures that start on an element marked `data-no-swipe` (a map, a row that scrolls sideways)
+ * are left alone.
  */
 export function useSwipe(onLeft: () => void, onRight: () => void) {
   const start = useRef<{ x: number; y: number; t: number; id: number } | null>(null);

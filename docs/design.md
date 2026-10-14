@@ -64,7 +64,7 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
   - Une traînée dorée suit le doigt, et les récoltes partent l'une après l'autre.
   - La page défile normalement si le geste part d'ailleurs. Fonctionne aussi à la souris.
 - **Feuilles** : tirées vers le bas depuis le haut de leur défilement, elles suivent le doigt (avec résistance). Au-delà d'un tiers de leur hauteur ou d'un geste vif, elles se ferment ; sinon elles reviennent.
-- **Sous-onglets** : un glissé horizontal passe de la carte à la liste aux Routes, et des joueurs aux villes au Marché. Il ne joue pas depuis un véhicule ou un champ de saisie.
+- **Tiroir** : un glissé horizontal sur son contenu passe à l'onglet suivant ou précédent. Il ne joue pas depuis une carte (`data-no-swipe`) ou un champ de saisie.
 
 ## Disposition : le cadre commun (`game/stage.tsx`)
 

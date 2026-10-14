@@ -189,7 +189,10 @@ export function StockStrip(props: GameProps) {
   return (
     <div>
       <Label className="mb-2">{fr.game.stock}</Label>
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0">
+      <div
+        data-no-swipe
+        className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0"
+      >
         {props.view.inventory.map((i) => (
           <div
             key={i.resource}

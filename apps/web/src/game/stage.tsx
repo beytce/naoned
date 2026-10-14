@@ -1,4 +1,5 @@
 import { type ReactNode, type RefObject, useLayoutEffect, useRef, useState } from "react";
+import { useSwipe } from "./gestures.js";
 import { useWide } from "./useWide.js";
 
 /**
@@ -295,6 +296,16 @@ export function Drawer<T extends string>({
   children: ReactNode;
 }) {
   const drag = useRef<{ y: number; moved: boolean } | null>(null);
+  // A horizontal swipe over the panel turns to the next or previous tab, as the sub-tabs did.
+  const index = tabs.findIndex((t) => t.key === tab);
+  const turn = (step: number) => {
+    const next = tabs[index + step];
+    if (next) onTab(next.key);
+  };
+  const swipe = useSwipe(
+    () => turn(1),
+    () => turn(-1),
+  );
   return (
     <div
       className={`absolute inset-x-0 bottom-0 z-20 flex flex-col overflow-hidden rounded-t-3xl border-t border-line bg-night-2/95 shadow-[0_-12px_30px_rgb(0_0_0/0.35)] backdrop-blur transition-[height] duration-300 ease-out lg:static lg:h-full lg:rounded-3xl lg:border lg:shadow-none ${open ? "h-[68%]" : "h-[3.25rem]"}`}
@@ -353,7 +364,10 @@ export function Drawer<T extends string>({
           })}
         </div>
       </div>
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-3 pb-6 pt-1">
+      <div
+        {...swipe}
+        className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-3 pb-6 pt-1"
+      >
         {children}
       </div>
     </div>
