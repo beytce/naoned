@@ -762,6 +762,20 @@ export const fr = {
     stage: {
       help: "Comment ça marche",
     },
+    market: {
+      goods: "Marchandise",
+      offers: "mes offres",
+      stock: "en stock",
+      tax: (pct: number) => `Taxe ${pct.toLocaleString("fr-FR")} %`,
+      decrees: (n: number) => `${n} décret${n > 1 ? "s" : ""} en vigueur`,
+      trade: (price: string) => `Négocier · ${price}`,
+      noOffers: "Aucune offre posée. Touchez une marchandise et choisissez « À mon prix ».",
+      tabs: { negoce: "Négoce", offres: "Offres", decrets: "Décrets" },
+    },
+    top: {
+      tabs: { passee: "Semaine passée", regles: "Règles" },
+      noLastWeek: "Pas encore de semaine terminée : le premier podium se joue maintenant.",
+    },
     counter: {
       tabs: { ateliers: "Ateliers", stock: "Stock", saison: "Saison" },
     },

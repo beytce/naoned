@@ -113,6 +113,7 @@ export function HudStat({
   onClick,
   active = false,
   label,
+  coach,
 }: {
   icon?: ReactNode;
   value: ReactNode;
@@ -121,6 +122,7 @@ export function HudStat({
   /** The merchant's own (circled in gold). */
   active?: boolean;
   label?: string;
+  coach?: string;
 }) {
   const body = (
     <>
@@ -141,6 +143,7 @@ export function HudStat({
       type="button"
       onClick={onClick}
       aria-label={label}
+      data-coach={coach}
       className={`${cls} active:bg-night-3`}
     >
       {body}
