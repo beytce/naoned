@@ -116,6 +116,20 @@ export const fr = {
       title: "Commandes à livrer",
       help: "Chaque jour, les villes publient leurs commandes pour tous les marchands, et le Doge vous passe les siennes. Chargez une charrette, choisissez votre escorte et partez : la ville paie à l'arrivée. Plus la route est longue, mieux elle paie.",
       tabs: { livraisons: "Livraisons", brigands: "Brigands" },
+      frame: {
+        tabs: {
+          commandes: "Commandes",
+          enroute: "En route",
+          garage: "Garage",
+          brigands: "Brigands",
+        },
+        toDeliver: "à livrer",
+        underway: "en route",
+        free: "libres",
+        orders: (n: number) => `${n} commande${n > 1 ? "s" : ""}`,
+        watched: (n: number) => `brigands sur ${n} route${n > 1 ? "s" : ""}`,
+        noneUnderway: "Aucun véhicule sur les routes.",
+      },
       sort: { gain: "Gain/h", price: "Prix", distance: "Distance", deadline: "Échéance" },
       facts: {
         deliverable: "Livrable",

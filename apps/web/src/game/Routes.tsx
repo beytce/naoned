@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Sheet, Slab, Tabs, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
-import { RoadBoard } from "./RoadBoard.js";
+import { Garage, RoadBoard } from "./RoadBoard.js";
 import { d, minutesLabel } from "./format.js";
-import { useSwipe } from "./gestures.js";
 import {
   BuyVehicleSheet,
   OrderFacts,
@@ -18,6 +17,21 @@ import {
   total,
   vehicleName,
 } from "./roadKit.js";
+import {
+  Chip,
+  Chips,
+  Drawer,
+  HelpButton,
+  Hud,
+  HudBar,
+  HudStat,
+  Segmented,
+  Stage,
+  Tray,
+  TrayButton,
+  TrayStat,
+  useDrawer,
+} from "./stage.js";
 import { store } from "./store.js";
 import type { DeliveryOrderView, RoadView } from "./types.js";
 
@@ -37,83 +51,165 @@ export function roadViewOf(props: GameProps): "carte" | "liste" {
   return props.view.tutorial.includes("sell_city") ? "carte" : "liste";
 }
 
+type RoadTab = "commandes" | "enroute" | "garage" | "brigands";
+
 export function Routes(props: GameProps) {
   const road = props.view.road;
-  const [tab, setTab] = useState<"livraisons" | "brigands">("livraisons");
-  const [view, setView] = useState<"carte" | "liste">(() => roadViewOf(props));
-  const show = (v: "carte" | "liste") => {
-    store.set("roadView", v);
-    setView(v);
-  };
-  const swipe = useSwipe(
-    () => show("liste"),
-    () => show("carte"),
-  );
+  // While the guide leads to an order, the list opens with the section (its targets live there).
+  const drawer = useDrawer<RoadTab>("commandes", roadViewOf(props) === "liste");
+  const [focus, setFocus] = useState<string | null>(null);
+  const [watching, setWatching] = useState<string | null>(null);
+  const [buying, setBuying] = useState(false);
+  const [help, setHelp] = useState(false);
+  // The guide reads whether the orders are on screen.
+  const listShown = drawer.open && drawer.tab === "commandes";
+  useEffect(() => {
+    store.set("roadView", listShown ? "liste" : "carte");
+  }, [listShown]);
   if (!road) return null;
+  const r = t().frame;
+  const open = road.orders.filter((o) => o.status === "open").length;
+  const free = road.vehicles.filter((v) => v.status === "free").length;
+  const underway = road.deliveries.filter((dv) => props.now < dv.backAt);
+  const ambushed = underway.some(
+    (dv) => dv.attack?.pending === true && props.now <= (dv.attack?.reactBy ?? 0),
+  );
+  const nextDay = props.catalog.world.startsAt + props.view.day * 86_400_000;
+  const banditsOpen = props.now >= road.banditsOpenAt;
+  const watchedDelivery = road.deliveries.find((dv) => dv.id === watching) ?? null;
+  const max = props.catalog.road?.maxVehicles ?? 0;
   return (
-    <div className="space-y-5">
-      <header className="flex items-end justify-between gap-3">
-        <div className="min-w-0">
-          <p className="label text-lagoon">{t().kicker}</p>
-          <h2 className="mt-1 font-display text-[1.7rem] font-black uppercase leading-[0.95]">
-            {t().title}
-          </h2>
-        </div>
-        {(tab === "livraisons" || props.now < road.banditsOpenAt) && (
-          <div className="flex shrink-0 gap-1">
-            {(["carte", "liste"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                aria-pressed={view === v}
-                data-coach={`road-view-${v}`}
-                onClick={() => show(v)}
-                className={`slab px-3 py-1.5 font-display text-[11px] font-extrabold uppercase tracking-wide transition ${view === v ? "bg-cream text-night" : "bg-night-3 text-cream-dim"}`}
+    <Stage
+      label={t().title}
+      scene={
+        <RoadBoard
+          {...props}
+          road={road}
+          fill
+          focus={focus}
+          onFocus={setFocus}
+          idle={
+            <Tray hint={fr.game.cargo.tapDepot}>
+              <TrayStat icon="⛟" value={`${free}/${road.vehicles.length}`} caption={r.free} />
+              <Slab
+                size="sm"
+                className="min-w-0 flex-1 whitespace-nowrap !px-2"
+                onClick={() => drawer.show("commandes")}
               >
-                {fr.game.roadMap.view[v]}
-              </button>
-            ))}
-          </div>
-        )}
-      </header>
-      {props.now < road.banditsOpenAt ? (
-        <p className="text-xs text-muted">
-          {fr.game.bandits.locked(clock(road.banditsOpenAt - props.now))}
-        </p>
-      ) : (
-        <Tabs
-          variant="underline"
-          value={tab}
-          onChange={setTab}
-          options={[
-            { value: "livraisons", label: t().tabs.livraisons },
-            { value: "brigands", label: t().tabs.brigands },
-          ]}
+                {r.orders(open)}
+              </Slab>
+              {road.vehicles.length < max && (
+                <TrayButton label={t().buy} onClick={() => setBuying(true)}>
+                  <span aria-hidden="true" className="px-0.5 text-base leading-none">
+                    +
+                  </span>
+                </TrayButton>
+              )}
+            </Tray>
+          }
         />
-      )}
-      {tab === "livraisons" || props.now < road.banditsOpenAt ? (
-        // A swipe turns from the map to the list and back, as the toggle above.
-        <div
-          key={view}
-          {...swipe}
-          className={`space-y-5 ${view === "liste" ? "animate-screen-right" : "animate-screen-left"}`}
+      }
+      top={
+        <Hud>
+          <HudBar>
+            <HudStat
+              value={open}
+              caption={r.toDeliver}
+              onClick={() => drawer.show("commandes")}
+              label={r.orders(open)}
+            />
+            <HudStat
+              value={underway.length}
+              caption={r.underway}
+              onClick={() => drawer.show("enroute")}
+              label={t().underway}
+            />
+            <HudStat
+              value={`${free}/${road.vehicles.length}`}
+              caption={r.free}
+              onClick={() => drawer.show("garage")}
+              label={t().vehicles}
+            />
+            <HelpButton onClick={() => setHelp(true)} label={fr.game.stage.help} />
+          </HudBar>
+          <Chips>
+            <Chip>↻ {clock(nextDay - props.now)}</Chip>
+            {ambushed && (
+              <Chip tone="vermilion" onClick={() => drawer.show("enroute")}>
+                {fr.game.domain.ambush}
+              </Chip>
+            )}
+            {road.watchedRoutes.length > 0 && (
+              <Chip tone="vermilion">⚔ {r.watched(road.watchedRoutes.length)}</Chip>
+            )}
+          </Chips>
+        </Hud>
+      }
+      drawer={
+        <Drawer<RoadTab>
+          {...drawer.props}
+          tabs={[
+            { key: "commandes", label: r.tabs.commandes, coach: "road-view-liste" },
+            { key: "enroute", label: r.tabs.enroute, dot: ambushed },
+            { key: "garage", label: r.tabs.garage },
+            { key: "brigands", label: r.tabs.brigands },
+          ]}
         >
-          {view === "carte" ? (
+          {drawer.tab === "commandes" && <Deliveries {...props} road={road} />}
+          {drawer.tab === "enroute" && (
             <>
-              <RoadBoard {...props} road={road} />
+              {underway.length === 0 && <p className="text-sm text-cream-dim">{r.noneUnderway}</p>}
+              {underway.map((dv) => (
+                <UnderwayCard key={dv.id} dv={dv} props={props} />
+              ))}
               <RoadNews {...props} />
             </>
-          ) : (
-            <>
-              <p className="text-sm text-cream-dim">{t().help}</p>
-              <Deliveries {...props} road={road} />
-            </>
           )}
+          {drawer.tab === "garage" && (
+            <Garage
+              props={props}
+              road={road}
+              focus={focus}
+              now={props.now}
+              onFocus={(id) => {
+                setFocus(id === focus ? null : id);
+                drawer.setOpen(false);
+              }}
+              onWatch={(vehicleId) => {
+                const dv = underway.find((x) => x.vehicleId === vehicleId);
+                if (dv) setWatching(dv.id);
+              }}
+              onBuy={() => setBuying(true)}
+            />
+          )}
+          {drawer.tab === "brigands" &&
+            (banditsOpen ? (
+              <Bandits {...props} road={road} />
+            ) : (
+              <p className="text-sm text-cream-dim">
+                {fr.game.bandits.locked(clock(road.banditsOpenAt - props.now))}
+              </p>
+            ))}
+        </Drawer>
+      }
+    >
+      <Sheet open={watchedDelivery !== null} onClose={() => setWatching(null)}>
+        {watchedDelivery && (
+          <div className="space-y-3 pt-6">
+            <UnderwayCard dv={watchedDelivery} props={props} />
+          </div>
+        )}
+      </Sheet>
+      <BuyVehicleSheet props={props} open={buying} onClose={() => setBuying(false)} />
+      <Sheet open={help} onClose={() => setHelp(false)}>
+        <div className="space-y-3 pt-4">
+          <p className="label text-lagoon">{t().kicker}</p>
+          <h3 className="font-display text-2xl font-extrabold uppercase">{t().title}</h3>
+          <p className="text-sm text-cream-dim">{t().help}</p>
+          <p className="text-sm text-cream-dim">{fr.game.domain.hint}</p>
         </div>
-      ) : (
-        <Bandits {...props} road={road} />
-      )}
-    </div>
+      </Sheet>
+    </Stage>
   );
 }
 
@@ -140,7 +236,6 @@ function Bandits(props: GameProps & { road: RoadView }) {
   };
   return (
     <div className="space-y-5">
-      <RoadBoard {...props} mode="bandits" banditRoute={route} onBanditRoute={setRoute} />
       <Panel>
         <h3 className="font-display text-lg font-extrabold uppercase">{tb.title}</h3>
         <p className="mt-2 text-sm text-cream-dim">
@@ -177,7 +272,7 @@ function Bandits(props: GameProps & { road: RoadView }) {
         <div className="mt-4">
           <Label>{tb.hours}</Label>
           <div className="mt-1">
-            <Tabs
+            <Segmented
               value={String(hours)}
               onChange={(h) => setHours(Number(h))}
               options={rules.hoursOptions.map((h) => ({
@@ -258,7 +353,6 @@ function Deliveries(props: GameProps & { road: RoadView }) {
     return SORTS.includes(saved) ? saved : "gain";
   });
   const [selected, setSelected] = useState<string | null>(null);
-  const underway = road.deliveries.filter((dv) => props.now < dv.backAt);
   const owned = road.vehicles.map((v) => v.type);
   const orders = road.orders
     .filter((o) => o.status === "open" || o.status === "upcoming")
@@ -282,31 +376,13 @@ function Deliveries(props: GameProps & { road: RoadView }) {
   const taken = road.orders.filter((o) => o.status === "taken");
   const done = road.orders.filter((o) => o.status === "done").length;
   const order = road.orders.find((o) => o.id === selected) ?? null;
-  const nextDay = props.catalog.world.startsAt + props.view.day * 86_400_000;
-
   return (
     <>
-      {underway.length > 0 && (
-        <section className="space-y-2">
-          <Label>{t().underway}</Label>
-          {underway.map((dv) => (
-            <UnderwayCard key={dv.id} dv={dv} props={props} />
-          ))}
-        </section>
-      )}
-
-      <Vehicles {...props} road={road} />
-
       <section className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <Label>
-            {orders.length} · {done} {t().done.toLowerCase()}
-          </Label>
-          <span className="label">
-            {t().renewIn} {clock(nextDay - props.now)}
-          </span>
-        </div>
-        <Tabs
+        <Label>
+          {orders.length} · {done} {t().done.toLowerCase()}
+        </Label>
+        <Segmented
           value={sort}
           onChange={(s) => {
             store.set("roadSort", s);
@@ -340,8 +416,6 @@ function Deliveries(props: GameProps & { road: RoadView }) {
           </details>
         )}
       </section>
-
-      <RoadNews {...props} />
 
       <Sheet open={order !== null} onClose={() => setSelected(null)}>
         {order && <OrderPanel o={order} props={props} onDone={() => setSelected(null)} />}
@@ -399,34 +473,6 @@ function OrderCard({
       </div>
       <Big className="shrink-0 text-lg text-gold">{d(total(o))}</Big>
     </button>
-  );
-}
-
-function Vehicles(props: GameProps & { road: RoadView }) {
-  const [buying, setBuying] = useState(false);
-  const max = props.catalog.road?.maxVehicles ?? 0;
-  return (
-    <section className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label>{t().vehicles}</Label>
-        {props.road.vehicles.length < max && (
-          <Slab tone="ghost" size="sm" onClick={() => setBuying(true)}>
-            {t().buy}
-          </Slab>
-        )}
-      </div>
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        {props.road.vehicles.map((v) => (
-          <div key={v.id} className="rounded-xl bg-night-3 px-3 py-2.5 ring-1 ring-inset ring-line">
-            <p className="text-sm font-semibold">{vehicleName(v.type)}</p>
-            <p className={`label mt-0.5 ${v.status === "free" ? "text-lagoon" : ""}`}>
-              {v.status === "free" ? t().free : t().backIn(clock(v.busyUntil - props.now))}
-            </p>
-          </div>
-        ))}
-      </div>
-      <BuyVehicleSheet props={props} open={buying} onClose={() => setBuying(false)} />
-    </section>
   );
 }
 

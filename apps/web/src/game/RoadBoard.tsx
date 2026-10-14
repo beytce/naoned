@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useRef, useState } from "react";
+import { type ReactNode, Suspense, lazy, useCallback, useRef, useState } from "react";
 import { P } from "../art/palette.js";
 import { ResourceIcon } from "../art/resources.js";
 import {
@@ -112,6 +112,15 @@ export function RoadBoard(
     /** Bandits' mode: the chosen road and how to change it. */
     banditRoute?: string;
     onBanditRoute?: (route: string) => void;
+    /**
+     * The map as a section's scene (the Routes' frame): its whole box, no lists under it, its
+     * head left to the frame; `idle` shows at its foot while no vehicle is chosen.
+     */
+    fill?: boolean;
+    idle?: ReactNode;
+    /** The vehicle chosen, when the frame holds it (its drawer lists the vehicles too). */
+    focus?: string | null;
+    onFocus?: (id: string | null) => void;
   },
 ) {
   const { road } = props;
@@ -121,7 +130,10 @@ export function RoadBoard(
   const types = props.catalog.road?.vehicles ?? [];
   const capacityOf = (v: VehicleView) => types.find((x) => x.type === v.type)?.capacity ?? 0;
   const [city, setCity] = useState<string | null>(null);
-  const [focus, setFocus] = useState<string | null>(null);
+  const [ownFocus, setOwnFocus] = useState<string | null>(null);
+  const focus = props.focus !== undefined ? props.focus : ownFocus;
+  const setFocus = props.onFocus ?? setOwnFocus;
+  const fill = props.fill === true;
   const [watching, setWatching] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
   // The dock: each vehicle's load (orders ticked), the cargo list, the departure under way.
@@ -290,16 +302,26 @@ export function RoadBoard(
   const watchedDelivery = road.deliveries.find((dv) => dv.id === watching) ?? null;
 
   return (
-    <section className={`mx-auto w-full space-y-3 ${map3d ? "" : "max-w-xl"}`}>
+    <section
+      className={
+        fill ? "relative h-full w-full" : `mx-auto w-full space-y-3 ${map3d ? "" : "max-w-xl"}`
+      }
+    >
       {map3d ? (
         // Edge to edge on a phone, most of the screen's height, as the domain.
         <div
           ref={mapBox}
-          className="-mx-4 overflow-hidden border-y border-line bg-night-2 lg:mx-0 lg:cut lg:border"
+          className={
+            fill
+              ? "relative h-full overflow-hidden bg-night-2"
+              : "-mx-4 overflow-hidden border-y border-line bg-night-2 lg:mx-0 lg:cut lg:border"
+          }
         >
           <Suspense
             fallback={
-              <div className="h-[68svh] min-h-[420px] w-full animate-pulse bg-night-3 lg:h-[62vh]" />
+              <div
+                className={`w-full animate-pulse bg-night-3 ${fill ? "h-full" : "h-[68svh] min-h-[420px] lg:h-[62vh]"}`}
+              />
             }
           >
             <Veneto3D
@@ -310,7 +332,7 @@ export function RoadBoard(
                 window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
               }
               clockOffset={props.now - Date.now()}
-              className="h-[68svh] min-h-[420px] lg:h-[62vh]"
+              className={fill ? "h-full" : "h-[68svh] min-h-[420px] lg:h-[62vh]"}
               title={m().label}
               cities={props.catalog.cities.map((cityInfo) => {
                 const code = cityInfo.code;
@@ -385,37 +407,47 @@ export function RoadBoard(
               carrier={carrier}
             >
               {/* Over the map: what waits today, and when the board renews. */}
-              <div className="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
-                <span className="rounded-full bg-night/85 px-3 py-1.5 text-xs font-semibold text-gold ring-1 ring-gold/40 backdrop-blur">
-                  {m().hud(openOrders, free)}
-                </span>
-                <span className="rounded-full bg-night/85 px-3 py-1.5 font-mono text-[10px] text-cream-dim ring-1 ring-line backdrop-blur">
-                  ↻ {clock(nextDay - props.now)}
-                </span>
-              </div>
-              {!selected && (
-                <p className="pointer-events-none absolute inset-x-3 top-14 z-20 text-center text-[11px] text-cream-dim [text-shadow:0_1px_2px_rgb(15_27_30)]">
-                  {fr.game.cargo.tapDepot}
-                </p>
+              {!fill && (
+                <>
+                  <div className="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
+                    <span className="rounded-full bg-night/85 px-3 py-1.5 text-xs font-semibold text-gold ring-1 ring-gold/40 backdrop-blur">
+                      {m().hud(openOrders, free)}
+                    </span>
+                    <span className="rounded-full bg-night/85 px-3 py-1.5 font-mono text-[10px] text-cream-dim ring-1 ring-line backdrop-blur">
+                      ↻ {clock(nextDay - props.now)}
+                    </span>
+                  </div>
+                  {!selected && (
+                    <p className="pointer-events-none absolute inset-x-3 top-14 z-20 text-center text-[11px] text-cream-dim [text-shadow:0_1px_2px_rgb(15_27_30)]">
+                      {fr.game.cargo.tapDepot}
+                    </p>
+                  )}
+                </>
               )}
-              {dock}
-              <StockBand
-                props={props}
-                label={fr.game.domain.store.label}
-                title={fr.game.stock.toUpperCase()}
-              />
+              {dock ?? (fill ? props.idle : null)}
+              {!fill && (
+                <StockBand
+                  props={props}
+                  label={fr.game.domain.store.label}
+                  title={fr.game.stock.toUpperCase()}
+                />
+              )}
             </Veneto3D>
           </Suspense>
         </div>
       ) : (
         <div
           ref={mapBox}
-          className="relative overflow-hidden cut border border-line bg-night-2 shadow-xl shadow-black/30"
+          className={
+            fill
+              ? "relative flex h-full items-center overflow-hidden bg-night-2"
+              : "relative overflow-hidden cut border border-line bg-night-2 shadow-xl shadow-black/30"
+          }
         >
           <svg
             ref={svgRef}
             viewBox={`0 0 ${MAP_W} ${MAP_H}`}
-            className="block w-full touch-manipulation select-none"
+            className={`block w-full touch-manipulation select-none ${fill ? "max-h-full" : ""}`}
             role="img"
             aria-label={m().label}
           >
@@ -691,7 +723,7 @@ export function RoadBoard(
           </svg>
 
           {/* Over the map: what waits today, and when the board renews. */}
-          {mode === "deliver" && (
+          {mode === "deliver" && !fill && (
             <div className="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
               <span className="rounded-full bg-night/85 px-3 py-1.5 text-xs font-semibold text-gold ring-1 ring-gold/40 backdrop-blur">
                 {m().hud(openOrders, free)}
@@ -711,7 +743,7 @@ export function RoadBoard(
               token={carrier.token}
             />
           )}
-          {dock}
+          {dock ?? (fill ? props.idle : null)}
           {mode === "bandits" && (
             <p className="pointer-events-none absolute inset-x-3 top-3 rounded-2xl bg-night/90 px-3 py-2 text-center text-xs text-cream ring-1 ring-line">
               {m().pickRoad}
@@ -720,7 +752,7 @@ export function RoadBoard(
         </div>
       )}
 
-      {mode === "deliver" && (
+      {mode === "deliver" && !fill && (
         <Garage
           props={props}
           road={road}
@@ -774,7 +806,7 @@ export function RoadBoard(
           />
         )}
       </Sheet>
-      <DecreeBanner props={props} />
+      {!fill && <DecreeBanner props={props} />}
     </section>
   );
 }
@@ -836,7 +868,7 @@ function MovingVehicle({
  * on the way back, stopped by bandits) and when it will be free; then buying another one.
  * A vehicle at the depot lights the cities it can serve.
  */
-function Garage({
+export function Garage({
   props,
   road,
   focus,
