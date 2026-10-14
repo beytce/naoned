@@ -99,6 +99,8 @@ export interface GameProps {
   onAccount: (account: Account) => void;
   onLogout: () => void;
   onGuidePaused: () => void;
+  /** The latest message of the family's thread (to tell whether it was read). */
+  familyLatestAt: number | null;
 }
 
 const POLL_MS = 15_000;
@@ -402,6 +404,7 @@ export function Game(props: {
     busy,
     names,
     people,
+    familyLatestAt,
     bots,
     tab,
     passInfo,
@@ -681,7 +684,10 @@ export function Game(props: {
       {help && <Help {...gp} onClose={() => setHelp(false)} />}
       {welcome && <Welcome {...gp} data={welcome} onClose={() => setWelcome(null)} />}
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-night-2/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+      <nav
+        data-bottom-nav
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-night-2/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+      >
         <div className={`mx-auto grid max-w-md ${TABS.length > 5 ? "grid-cols-6" : "grid-cols-5"}`}>
           {TABS.map((t) => {
             const on = tab === t;

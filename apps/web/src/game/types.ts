@@ -343,6 +343,26 @@ export interface DecreeRules {
   franchise: { upkeepDiscountBps: number };
 }
 
+export interface WorkRules {
+  kinds: Record<
+    string,
+    { price: Money; defenseBonusBps: number; gloryBonusBps: number; staging: boolean }
+  >;
+  buildMinutes: number;
+  perFamily: number;
+  perMembers: number;
+  razeMerit: number;
+}
+
+/** A work standing on a land (finished once `ready`). */
+export interface WorkView {
+  kind: string;
+  family: string;
+  by: string;
+  readyAt: number;
+  ready: boolean;
+}
+
 export interface FamilyRules {
   openDay: number;
   list: { code: string; seat: string }[];
@@ -364,6 +384,7 @@ export interface FamilyRules {
       leadBonusBps: number;
     };
     garrisonLancesPerPoint: number;
+    works: WorkRules | null;
   } | null;
   decrees: DecreeRules;
 }
@@ -380,14 +401,20 @@ export interface LandView {
   garrison: number;
   /** The merchant's own lances in its garrison. */
   mine: number;
+  /** What the garrison counts for, its work's share included once finished. */
   defenseBps: number;
+  /** Lances an assault must outnumber now. */
+  defense: number;
   glory: number;
+  work: WorkView | null;
   /** The family whose seat it is. */
   seat: string | null;
   since: number;
   /** The merchant may send lances there now. */
   open: boolean;
   minutes: number | null;
+  /** Where the merchant's march would leave from: the seat or a camp of the family. */
+  from: string | null;
 }
 
 export interface MarchView {
@@ -395,6 +422,8 @@ export interface MarchView {
   family: string;
   by: string | null;
   target: string;
+  /** Where it left from (null for Milan). */
+  from: string | null;
   startAt: number;
   arriveAt: number;
   lances: number;
@@ -414,6 +443,7 @@ export interface FamiliesView {
     glory: number;
     programme: DecreePick[];
     lands: number;
+    works: number;
   }[];
   members: { playerId: string; merit: number; me: boolean }[];
   week: number;
@@ -433,6 +463,8 @@ export interface FamiliesView {
     hireLimit: number;
     nextPrice: Money | null;
     merit: number;
+    works: number;
+    worksAllowed: number;
     ballot: DecreePick[];
     leaving: { count: number; expiresAt: number }[];
   } | null;
@@ -861,6 +893,7 @@ export type Action =
   | { type: "joinFamily"; family: string }
   | { type: "collectLevy" }
   | { type: "hireLances"; count: number }
+  | { type: "buildWork"; land: string; kind: string }
   | { type: "sendMarch"; land: string; lances: number }
   | { type: "joinMarch"; marchId: string; lances: number }
   | { type: "voteProgramme"; picks: DecreePick[] }

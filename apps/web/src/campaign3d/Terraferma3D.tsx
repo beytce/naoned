@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import type { SkyPhase } from "../art/domain.js";
+import { WorkGlyph } from "../art/workIcon.js";
 import { CarrierDrag, type DropSpot } from "../game/Cargo.js";
 import type { CampaignLand, CampaignMarch, CampaignWorld } from "./world.js";
 
@@ -12,6 +13,8 @@ export interface LandMark {
   open: boolean;
   /** An enemy column marches on it. */
   threatened: boolean;
+  /** The work standing on it (outlined while it is being built). */
+  work: { kind: string; ready: boolean; family: string } | null;
 }
 
 export interface Terraferma3DProps {
@@ -201,6 +204,16 @@ export default function Terraferma3D(props: Terraferma3DProps) {
                   style={{ background: props.colors[l.holder ?? ""] ?? "#3A4F50" }}
                 >
                   {l.seat !== null ? "⚑" : l.garrison}
+                  {l.work && (
+                    <span className="absolute -right-3.5 -top-3 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-night/90 ring-1 ring-line">
+                      <WorkGlyph
+                        kind={l.work.kind}
+                        color={props.colors[l.work.family] ?? "#F2E6CF"}
+                        ready={l.work.ready}
+                        size={14}
+                      />
+                    </span>
+                  )}
                 </span>
               </button>
             </div>

@@ -1,8 +1,19 @@
-import { type ReactNode, Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  type RefObject,
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { ApiError } from "../api.js";
 import { FAMILY_LOOK, FamilyCrest, MILITIA_HEX, familyHex } from "../art/familyCrest.js";
 import { P } from "../art/palette.js";
 import { VenetoTerrain } from "../art/veneto.js";
+import { WorkGlyph, WorkShape } from "../art/workIcon.js";
 import { territories } from "../campaign3d/territory.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Qty, Sheet, Slab, Stat, clock } from "../ui.js";
@@ -22,6 +33,7 @@ import type {
   FamilyRules,
   LandView,
   MarchView,
+  WorkRules,
 } from "./types.js";
 
 const t = () => fr.game.families;
@@ -174,6 +186,7 @@ export function holderColors(): Record<string, string> {
 
 /** Where a column comes from: the nearest land of its family next to its target, else its seat. */
 export function marchOrigin(f: FamiliesView, m: MarchView): string | null {
+  if (m.from) return m.from;
   const target = f.lands.find((l) => l.code === m.target);
   if (!target) return null;
   const near = f.lands
@@ -194,7 +207,7 @@ function dropInfo(f: FamiliesView, code: string) {
   if (land.seat) return { ok: false, title: name, sub: t().land.seat(familyName(land.seat)) };
   if (!land.open) return { ok: false, title: name, sub: t().land.notAdjacent };
   const ours = land.holder !== null && land.holder === f.mine;
-  const needed = Math.ceil((land.garrison * land.defenseBps) / 10_000) + 1;
+  const needed = land.defense + 1;
   return {
     ok: true,
     title: ours ? t().drag.reinforce(name) : t().drag.attack(name),
@@ -227,16 +240,21 @@ function CampaignMap({
   f,
   props,
   onPick,
+  className = "h-[62svh] min-h-[400px]",
+  covered = false,
 }: {
   f: FamiliesView;
   props: GameProps;
   onPick: (land: string) => void;
+  className?: string;
+  /** Something lies over the map (the drawer): no lances to drag then. */
+  covered?: boolean;
 }) {
   const colors = holderColors();
   const seat = f.lands.find((l) => l.seat === f.mine)?.code ?? null;
   const reserve = f.me?.reserve ?? 0;
   const carrier =
-    f.mine && seat && reserve > 0 && !f.closed
+    f.mine && seat && reserve > 0 && !f.closed && !covered
       ? {
           from: seat,
           token: <LancesToken n={reserve} />,
@@ -258,9 +276,7 @@ function CampaignMap({
   });
   if (use3d) {
     return (
-      <Suspense
-        fallback={<div className="h-[62svh] min-h-[400px] w-full animate-pulse bg-night-3" />}
-      >
+      <Suspense fallback={<div className={`w-full animate-pulse bg-night-3 ${className}`} />}>
         <Terraferma3D
           phase={scenePhase(props.now)}
           still={
@@ -268,7 +284,7 @@ function CampaignMap({
             window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
           }
           clockOffset={props.now - Date.now()}
-          className="h-[62svh] min-h-[400px]"
+          className={className}
           title={t().map}
           colors={colors}
           focus={seat}
@@ -278,21 +294,25 @@ function CampaignMap({
             city: l.city ?? null,
             seat: l.seat ?? null,
             threatened: marches.some((m) => m.target === l.code && m.hostile),
+            work: l.work ? { kind: l.work.kind, ready: l.work.ready, family: l.work.family } : null,
           }))}
           marches={marches}
           onLand={onPick}
           carrier={carrier}
-        >
-          {carrier && (
-            <p className="pointer-events-none absolute inset-x-3 bottom-3 z-20 text-center text-[11px] text-gold [text-shadow:0_1px_2px_rgb(15_27_30)]">
-              {t().drag.hint}
-            </p>
-          )}
-        </Terraferma3D>
+        />
       </Suspense>
     );
   }
-  return <DrawnMap f={f} colors={colors} marches={marches} carrier={carrier} onPick={onPick} />;
+  return (
+    <DrawnMap
+      f={f}
+      colors={colors}
+      marches={marches}
+      carrier={carrier}
+      onPick={onPick}
+      className={className}
+    />
+  );
 }
 
 /** The drawn map (no 3D): the Veneto of the roads, the territories over it. */
@@ -302,8 +322,10 @@ function DrawnMap({
   marches,
   carrier,
   onPick,
+  className,
 }: {
   f: FamiliesView;
+  className: string;
   colors: Record<string, string>;
   marches: (MarchView & { from: string | null; hostile: boolean; label: string })[];
   carrier: {
@@ -334,9 +356,13 @@ function DrawnMap({
     const r = svg.current?.getBoundingClientRect();
     const b = box.current?.getBoundingClientRect();
     if (!r || !b) return null;
+    // The drawing is fitted whole in its box, centred (letterboxed on the long side).
+    const scale = Math.min(r.width / vb.w, r.height / vb.h);
+    const ox = (r.width - vb.w * scale) / 2;
+    const oy = (r.height - vb.h * scale) / 2;
     return {
-      x: r.left - b.left + ((x - vb.x) / vb.w) * r.width,
-      y: r.top - b.top + ((y - vb.y) / vb.h) * r.height,
+      x: r.left - b.left + ox + (x - vb.x) * scale,
+      y: r.top - b.top + oy + (y - vb.y) * scale,
     };
   };
   const origin = () => {
@@ -350,11 +376,11 @@ function DrawnMap({
     });
   const byCode = new Map(f.lands.map((l) => [l.code, l]));
   return (
-    <div ref={box} className="relative">
+    <div ref={box} className={`relative bg-[#1B2E26] ${className}`}>
       <svg
         ref={svg}
         viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
-        className="block w-full select-none"
+        className="block h-full w-full select-none"
         role="img"
         aria-label={t().map}
       >
@@ -438,6 +464,16 @@ function DrawnMap({
               >
                 {l.seat ? "⚑" : l.garrison}
               </text>
+              {l.work && (
+                <g transform={`translate(${r - 1} ${-r - 9}) scale(0.6)`}>
+                  <WorkShape
+                    kind={l.work.kind}
+                    fill={l.work.ready ? (colors[l.work.family] ?? P.cream) : "none"}
+                    stroke={l.work.ready ? P.night : (colors[l.work.family] ?? P.cream)}
+                    dashed={!l.work.ready}
+                  />
+                </g>
+              )}
               <text
                 y={r + 10}
                 textAnchor="middle"
@@ -480,7 +516,7 @@ function LandSheet({
 }) {
   const reserve = f.me?.reserve ?? 0;
   const ours = land.holder !== null && land.holder === f.mine;
-  const needed = Math.ceil((land.garrison * land.defenseBps) / 10_000);
+  const needed = land.defense;
   const [lances, setLances] = useState(() =>
     Math.max(1, Math.min(reserve, ours ? Math.ceil(reserve / 2) : needed + 1)),
   );
@@ -513,6 +549,7 @@ function LandSheet({
         </div>
       )}
       {land.city && <p className="text-xs text-cream-dim">{t().land.city}</p>}
+      {!land.seat && <LandWork land={land} f={f} props={props} />}
       {marches.map((m) => (
         <p
           key={m.id}
@@ -541,6 +578,7 @@ function LandSheet({
               {land.minutes !== null && (
                 <p className="label text-center">
                   {t().land.march(land.minutes)}
+                  {land.from ? ` · ${t().works.from(landName(land.from))}` : ""}
                   {!f.open ? ` · ${t().night(clock(f.nextOpenAt - props.now))}` : ""}
                 </p>
               )}
@@ -555,6 +593,108 @@ function LandSheet({
   );
 }
 
+/** What a work does, in the world's numbers. */
+function workEffect(rules: WorkRules, kind: string): string {
+  const k = rules.kinds[kind];
+  if (!k) return "";
+  const w = t().works;
+  return [
+    k.defenseBonusBps > 0 ? w.defense(pct(k.defenseBonusBps)) : "",
+    k.gloryBonusBps > 0 ? w.glory(pct(k.gloryBonusBps)) : "",
+    k.staging ? w.staging : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/**
+ * A land's work: the one standing (finished or being built, the family's or an enemy's), or the
+ * works the merchant may build there when the family holds it.
+ */
+function LandWork({ land, f, props }: { land: LandView; f: FamiliesView; props: GameProps }) {
+  const rules = props.catalog.families?.campaign?.works;
+  if (!rules) return null;
+  const w = t().works;
+  const ours = land.holder !== null && land.holder === f.mine;
+  if (land.work) {
+    const theirs = land.work.family !== f.mine;
+    return (
+      <div
+        className={`flex items-start gap-3 rounded-2xl p-3 ring-1 ring-inset ${theirs ? "bg-vermilion/10 ring-vermilion/50" : "bg-night-3 ring-line/70"}`}
+      >
+        <span className="mt-0.5 shrink-0">
+          <WorkGlyph
+            kind={land.work.kind}
+            color={familyHex(land.work.family)}
+            ready={land.work.ready}
+            size={34}
+          />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-lg font-extrabold uppercase leading-tight">
+            {theirs
+              ? w.enemy(w.names[land.work.kind] ?? land.work.kind, familyName(land.work.family))
+              : (w.names[land.work.kind] ?? land.work.kind)}
+            <span className="label ml-2 text-cream-dim">{w.kinds[land.work.kind]}</span>
+          </p>
+          <p className="text-sm text-cream-dim">{workEffect(rules, land.work.kind)}</p>
+          <p className={`label mt-1 ${land.work.ready ? "text-lagoon" : "text-gold"}`}>
+            {land.work.ready ? w.ready : w.building(clock(land.work.readyAt - props.now))}
+            {!theirs ? ` · ${w.by(personName(props, land.work.by))}` : ""}
+          </p>
+          {theirs && <p className="mt-1 text-xs text-cream-dim">{w.raze(rules.razeMerit)}</p>}
+        </div>
+      </div>
+    );
+  }
+  if (!ours || f.closed) return null;
+  const me = f.me;
+  const full = !me || me.works >= me.worksAllowed;
+  return (
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <Label className="text-gold">{w.title}</Label>
+        {me && <span className="label">{w.count(me.works, me.worksAllowed)}</span>}
+      </div>
+      {full ? (
+        <p className="text-sm text-cream-dim">{w.full(rules.perMembers)}</p>
+      ) : (
+        <>
+          <ul className="grid gap-2">
+            {Object.entries(rules.kinds).map(([kind, k]) => {
+              const price = BigInt(k.price);
+              const short = BigInt(props.view.cash) < price;
+              return (
+                <li
+                  key={kind}
+                  className="flex items-center gap-3 rounded-2xl bg-night-3 p-2.5 ring-1 ring-inset ring-line/70"
+                >
+                  <WorkGlyph kind={kind} color={familyHex(f.mine)} size={30} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-display text-base font-extrabold uppercase leading-tight">
+                      {w.names[kind] ?? kind}
+                    </p>
+                    <p className="label text-cream-dim">{w.kinds[kind]}</p>
+                    <p className="text-xs text-cream-dim">{workEffect(rules, kind)}</p>
+                  </div>
+                  <Slab
+                    size="sm"
+                    disabled={props.busy || short}
+                    onClick={() => props.act({ type: "buildWork", land: land.code, kind })}
+                  >
+                    {w.build(d(price))}
+                  </Slab>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="text-xs text-cream-dim">{w.hours(rules.buildMinutes)}</p>
+        </>
+      )}
+    </div>
+  );
+}
+
 /** The merchant's lances: the levy to collect, lances to engage, those about to leave. */
 function Lances({ f, props }: { f: FamiliesView; props: GameProps }) {
   const rules = props.catalog.families;
@@ -565,7 +705,7 @@ function Lances({ f, props }: { f: FamiliesView; props: GameProps }) {
   const n = Math.max(1, Math.min(count, Math.max(1, room)));
   const cost = hireCost(rules, me.hired, n);
   return (
-    <Panel glow={me.levy > 0 ? "lagoon" : undefined}>
+    <div>
       <Label className="text-lagoon">{t().lances}</Label>
       <div className="mt-2 grid grid-cols-2 gap-2">
         <Stat label={t().reserve} value={me.reserve} tone="lagoon" />
@@ -610,7 +750,7 @@ function Lances({ f, props }: { f: FamiliesView; props: GameProps }) {
           ))}
         </ul>
       )}
-    </Panel>
+    </div>
   );
 }
 
@@ -1014,20 +1154,297 @@ function History({ f, props }: { f: FamiliesView; props: GameProps }) {
   );
 }
 
-/** A family of the merchant's: the week's campaign and everything to play it. */
-function Mine({ f, props }: { f: FamiliesView; props: GameProps }) {
-  const [land, setLand] = useState<string | null>(null);
-  const picked = f.lands.find((l) => l.code === land) ?? null;
+/**
+ * Height left to the map between the page's top bar and the bottom navigation (none on a wide
+ * screen), so that the campaign holds on one screen without scrolling.
+ */
+function useStageHeight(stage: RefObject<HTMLElement | null>): number | null {
+  const [height, setHeight] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const fit = () => {
+      const el = stage.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      const nav = document.querySelector<HTMLElement>("[data-bottom-nav]");
+      // A fixed bar has no offset parent: whether it shows is in its computed display.
+      const shown = nav !== null && getComputedStyle(nav).display !== "none";
+      const below = shown ? nav.getBoundingClientRect().height : 24;
+      const next = Math.max(440, Math.round(window.innerHeight - top - below));
+      setHeight((h) => (h === next ? h : next));
+    };
+    fit();
+    // The top bar settles after the fonts and the season's frieze: measure again when it does.
+    const observer = new ResizeObserver(fit);
+    for (const el of document.querySelectorAll("header, [data-bottom-nav]")) observer.observe(el);
+    window.addEventListener("resize", fit);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", fit);
+    };
+  }, [stage]);
+  return height;
+}
+
+type DrawerTab = "campagne" | "decrets" | "famille" | "fil";
+
+/** A wide screen (Tailwind's `lg`): the drawer is a column beside the map, never over it. */
+function useWide(): boolean {
+  const query = "(min-width: 1024px)";
+  const [wide, setWide] = useState(() => window.matchMedia?.(query).matches ?? false);
+  useEffect(() => {
+    const m = window.matchMedia?.(query);
+    if (!m) return;
+    const change = () => setWide(m.matches);
+    m.addEventListener("change", change);
+    return () => m.removeEventListener("change", change);
+  }, []);
+  return wide;
+}
+
+/** The four families' glory over the map, the week's clock and what is coming. */
+function Scoreboard({
+  f,
+  props,
+  onFamily,
+  onHelp,
+}: {
+  f: FamiliesView;
+  props: GameProps;
+  onFamily: () => void;
+  onHelp: () => void;
+}) {
+  const ranked = [...f.families].sort((a, b) => b.glory - a.glory);
+  const top = Math.max(1, ranked[0]?.glory ?? 0);
+  const chip =
+    "rounded-full bg-night/85 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide ring-1 backdrop-blur";
+  return (
+    <div className="pointer-events-none absolute inset-x-2 top-2 z-10 space-y-1.5">
+      <div className="pointer-events-auto flex items-stretch gap-1 rounded-2xl bg-night/85 p-1 shadow-lg shadow-black/30 ring-1 ring-line/60 backdrop-blur">
+        {ranked.map((x, i) => (
+          <button
+            key={x.code}
+            type="button"
+            onClick={onFamily}
+            aria-label={`${familyName(x.code)} · ${t().glory} ${x.glory}`}
+            className={`relative flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden rounded-xl px-1.5 py-1 ${x.code === f.mine ? "bg-gold/10 ring-1 ring-inset ring-gold/70" : ""}`}
+          >
+            <FamilyCrest family={x.code} size={22} />
+            <span className="min-w-0 text-left leading-none">
+              <span className="block font-display text-base font-extrabold tabular-nums">
+                {x.glory}
+              </span>
+              <span className="block font-mono text-[8.5px] uppercase tracking-wide text-cream-dim">
+                {i === 0 && x.glory > 0
+                  ? `★ ${t().first}`
+                  : x.code === f.mine
+                    ? t().you
+                    : `${i + 1}e`}
+              </span>
+            </span>
+            <span
+              className="absolute inset-x-1.5 bottom-0.5 h-[2px] origin-left rounded-full transition-transform duration-500"
+              style={{ background: familyHex(x.code), transform: `scaleX(${x.glory / top})` }}
+            />
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={onHelp}
+          aria-label={t().helpTitle}
+          className="flex w-8 shrink-0 items-center justify-center rounded-xl font-display text-base font-extrabold text-cream-dim active:bg-night-3"
+        >
+          ?
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        <span className={`${chip} text-cream ring-line/60`}>
+          {f.closed ? t().closed : t().weekShort(clock(f.weekEndsAt - props.now))}
+        </span>
+        {!f.open && !f.closed && (
+          <span className={`${chip} text-lagoon ring-lagoon/50`}>
+            ☾ {t().truce} {clock(f.nextOpenAt - props.now)}
+          </span>
+        )}
+        {f.nextMilanAt !== null && f.nextMilanAt > props.now && !f.closed && (
+          <span className={`${chip} text-vermilion ring-vermilion/60`}>
+            {t().milanShort(clock(f.nextMilanAt - props.now))}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** At the foot of the map: the reserve, the levy to collect, lances to engage, the works. */
+function ActionBar({
+  f,
+  props,
+  onHire,
+  onWorks,
+}: {
+  f: FamiliesView;
+  props: GameProps;
+  onHire: () => void;
+  onWorks: () => void;
+}) {
+  const me = f.me;
+  if (!me || f.closed) return null;
+  const works = props.catalog.families?.campaign?.works;
+  return (
+    <div className="pointer-events-none absolute inset-x-2 bottom-2 z-10 space-y-1.5">
+      {me.reserve > 0 && (
+        <p className="text-center text-[11px] font-semibold text-gold [text-shadow:0_1px_2px_rgb(15_27_30),0_0_6px_rgb(15_27_30)]">
+          {t().drag.hint}
+        </p>
+      )}
+      <div className="pointer-events-auto flex items-center gap-1.5 rounded-2xl bg-night/90 p-1.5 shadow-lg shadow-black/40 ring-1 ring-line/60 backdrop-blur">
+        <div className="flex shrink-0 items-center gap-1.5 pl-1.5 pr-1">
+          <span aria-hidden="true" className="text-lg leading-none">
+            ⚔
+          </span>
+          <span className="leading-none">
+            <span className="block font-display text-lg font-extrabold tabular-nums">
+              {me.reserve}
+            </span>
+            <span className="block font-mono text-[8.5px] uppercase tracking-wide text-cream-dim">
+              {t().reserveShort}
+            </span>
+          </span>
+        </div>
+        <Slab
+          size="sm"
+          tone="lagoon"
+          className="min-w-0 flex-1 whitespace-nowrap !px-2"
+          disabled={props.busy || me.levy <= 0}
+          onClick={() => props.act({ type: "collectLevy" })}
+        >
+          {t().levyShort(me.levy)}
+        </Slab>
+        <Slab size="sm" className="min-w-0 flex-1 whitespace-nowrap !px-2" onClick={onHire}>
+          {t().hireOpen}
+        </Slab>
+        {works && (
+          <button
+            type="button"
+            onClick={onWorks}
+            aria-label={t().works.count(me.works, me.worksAllowed)}
+            className="flex shrink-0 items-center gap-1 rounded-xl px-2 py-1.5 ring-1 ring-inset ring-line/70 active:bg-night-3"
+          >
+            <WorkGlyph kind="rocca" color={familyHex(f.mine)} size={18} />
+            <span className="font-mono text-[11px] tabular-nums">
+              {me.works}/{me.worksAllowed}
+            </span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** The family's works standing on the map, and what they do. */
+function Works({
+  f,
+  props,
+  onLand,
+}: {
+  f: FamiliesView;
+  props: GameProps;
+  onLand: (code: string) => void;
+}) {
+  const rules = props.catalog.families?.campaign?.works;
+  if (!rules || !f.mine) return null;
+  const mine = f.lands.filter((l) => l.work?.family === f.mine);
+  return (
+    <Panel>
+      <div className="flex items-baseline justify-between gap-2">
+        <Label className="text-gold">{t().works.title}</Label>
+        {f.me && <span className="label">{t().works.count(f.me.works, f.me.worksAllowed)}</span>}
+      </div>
+      <p className="mt-1 text-xs text-cream-dim">{t().works.help}</p>
+      {mine.length === 0 ? (
+        <p className="mt-2 text-sm text-cream-dim">{t().works.none}</p>
+      ) : (
+        <ul className="mt-2 space-y-1.5">
+          {mine.map((l) => {
+            const work = l.work;
+            if (!work) return null;
+            return (
+              <li key={l.code}>
+                <button
+                  type="button"
+                  onClick={() => onLand(l.code)}
+                  className="flex w-full items-center gap-2.5 rounded-xl bg-night-2 p-2 text-left ring-1 ring-inset ring-line/70"
+                >
+                  <WorkGlyph
+                    kind={work.kind}
+                    color={familyHex(work.family)}
+                    ready={work.ready}
+                    size={26}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">
+                      {t().works.names[work.kind] ?? work.kind} · {landName(l.code)}
+                    </span>
+                    <span className="block truncate text-xs text-cream-dim">
+                      {workEffect(rules, work.kind)}
+                    </span>
+                  </span>
+                  <span className={`label shrink-0 ${work.ready ? "text-lagoon" : "text-gold"}`}>
+                    {work.ready ? `${l.garrison} ⚔` : clock(work.readyAt - props.now)}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
+/** The lands the merchant's lances can reach now, as chips (the map's list for the keyboard). */
+function InReach({ f, onLand }: { f: FamiliesView; onLand: (code: string) => void }) {
+  const lands = f.lands.filter((l) => l.open);
+  if (lands.length === 0) return null;
+  return (
+    <Panel>
+      <Label>{t().inReach}</Label>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {lands.map((l) => (
+          <button
+            key={l.code}
+            type="button"
+            onClick={() => onLand(l.code)}
+            className="rounded-lg bg-night-2 px-2 py-1 text-xs ring-1 ring-inset ring-line/70"
+            style={{ borderLeft: `3px solid ${familyHex(l.holder)}` }}
+          >
+            <span className="inline-flex items-center gap-1">
+              {landName(l.code)} · {l.garrison}
+              {l.work && (
+                <WorkGlyph
+                  kind={l.work.kind}
+                  color={familyHex(l.work.family)}
+                  ready={l.work.ready}
+                  size={12}
+                />
+              )}
+            </span>
+          </button>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+/** The merchant's family, the week's standings, its members and the weeks gone by. */
+function FamilyTab({ f, props }: { f: FamiliesView; props: GameProps }) {
   const mine = f.mine ?? "";
   const last = props.view.acts.length > 0 && f.weekEndsAt >= props.catalog.world.endsAt;
   return (
     <div className="space-y-4">
-      <div className="-mx-4 overflow-hidden border-y border-line bg-night-2 lg:mx-0 lg:cut lg:border">
-        <CampaignMap f={f} props={props} onPick={(code) => setLand(code)} />
-      </div>
       <Panel glow="gold">
         <div className="flex items-center gap-3">
-          <FamilyCrest family={mine} size={60} />
+          <FamilyCrest family={mine} size={56} />
           <div className="min-w-0 flex-1">
             <Label>{t().yours}</Label>
             <h2 className="truncate font-display text-2xl font-extrabold uppercase">
@@ -1043,42 +1460,205 @@ function Mine({ f, props }: { f: FamiliesView; props: GameProps }) {
           <Standings f={f} />
         </div>
         <p className="mt-2 text-xs text-cream-dim">{t().gloryHelp}</p>
-        {!f.open && !f.closed && (
-          <p className="mt-1 text-xs text-lagoon">{t().night(clock(f.nextOpenAt - props.now))}</p>
-        )}
-        {f.nextMilanAt !== null && f.nextMilanAt > props.now && !f.closed && (
-          <p className="mt-1 text-xs text-vermilion">
-            {t().milanNext(clock(f.nextMilanAt - props.now))}
-          </p>
-        )}
       </Panel>
-      <Panel>
-        <Label>{t().map}</Label>
-        <p className="mt-1 text-xs text-cream-dim">{t().mapHelp}</p>
-        <p className="label mt-3">{t().inReach}</p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {f.lands
-            .filter((l) => l.open)
-            .map((l) => (
-              <button
-                key={l.code}
-                type="button"
-                onClick={() => setLand(l.code)}
-                className="rounded-lg bg-night-2 px-2 py-1 text-xs ring-1 ring-inset ring-line/70"
-                style={{ borderLeft: `3px solid ${familyHex(l.holder)}` }}
-              >
-                {landName(l.code)} · {l.garrison}
-              </button>
-            ))}
-        </div>
-      </Panel>
-      <Lances f={f} props={props} />
-      <Marches f={f} props={props} />
-      <DecreeBanner props={props} />
-      <Programme f={f} props={props} />
       <Roll f={f} props={props} />
       <History f={f} props={props} />
-      <Thread />
+    </div>
+  );
+}
+
+/**
+ * The secondary panels under the map: the campaign's lists, the decrees, the family, its thread.
+ * On a phone a drawer, folded to its tabs over the foot of the screen and pulled up to read; on a
+ * wide screen a column beside the map.
+ */
+function Drawer({
+  f,
+  props,
+  tab,
+  open,
+  onTab,
+  onOpen,
+  onLand,
+}: {
+  f: FamiliesView;
+  props: GameProps;
+  tab: DrawerTab;
+  open: boolean;
+  onTab: (tab: DrawerTab) => void;
+  onOpen: (open: boolean) => void;
+  onLand: (code: string) => void;
+}) {
+  const unread =
+    props.familyLatestAt !== null && props.familyLatestAt > Number(store.get("familySeen") ?? 0);
+  const threats = f.marches.filter(
+    (m) => m.family !== f.mine && f.lands.find((l) => l.code === m.target)?.holder === f.mine,
+  ).length;
+  const drag = useRef<{ y: number; moved: boolean } | null>(null);
+  const tabs: { key: DrawerTab; dot: boolean }[] = [
+    { key: "campagne", dot: threats > 0 },
+    { key: "decrets", dot: false },
+    { key: "famille", dot: false },
+    { key: "fil", dot: unread && tab !== "fil" },
+  ];
+  return (
+    <div
+      className={`absolute inset-x-0 bottom-0 z-20 flex flex-col overflow-hidden rounded-t-3xl border-t border-line bg-night-2/95 shadow-[0_-12px_30px_rgb(0_0_0/0.35)] backdrop-blur transition-[height] duration-300 ease-out lg:static lg:h-full lg:rounded-3xl lg:border lg:shadow-none ${open ? "h-[68%]" : "h-[3.25rem]"}`}
+    >
+      <div
+        className="shrink-0 touch-none select-none lg:touch-auto"
+        onPointerDown={(e) => {
+          drag.current = { y: e.clientY, moved: false };
+        }}
+        onPointerMove={(e) => {
+          const start = drag.current;
+          if (!start) return;
+          const dy = e.clientY - start.y;
+          if (Math.abs(dy) > 24 && !start.moved) {
+            start.moved = true;
+            onOpen(dy < 0);
+          }
+        }}
+        onPointerUp={() => {
+          setTimeout(() => {
+            drag.current = null;
+          }, 0);
+        }}
+      >
+        <div className="mx-auto mt-1.5 h-1 w-10 rounded-full bg-line lg:hidden" />
+        <div role="tablist" className="grid grid-cols-4 gap-1 px-2 pb-1.5 pt-1 lg:pt-2">
+          {tabs.map(({ key, dot }) => {
+            const on = tab === key && open;
+            return (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={tab === key}
+                onClick={() => {
+                  if (drag.current?.moved) return;
+                  if (tab === key) onOpen(!open);
+                  else {
+                    onTab(key);
+                    onOpen(true);
+                  }
+                }}
+                className={`relative rounded-xl py-1.5 font-mono text-[10.5px] uppercase tracking-[0.08em] transition-colors lg:py-2 ${on || tab === key ? "lg:bg-gold/15 lg:text-gold" : ""} ${on ? "bg-gold/15 font-bold text-gold" : "text-cream-dim"}`}
+              >
+                {t().tabs[key]}
+                {dot && (
+                  <span className="absolute right-2 top-1 h-2 w-2 rounded-full bg-vermilion" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-3 pb-6 pt-1">
+        {tab === "campagne" && (
+          <>
+            <Marches f={f} props={props} />
+            <Works f={f} props={props} onLand={onLand} />
+            <InReach f={f} onLand={onLand} />
+          </>
+        )}
+        {tab === "decrets" && (
+          <>
+            <DecreeBanner props={props} />
+            <Programme f={f} props={props} />
+          </>
+        )}
+        {tab === "famille" && <FamilyTab f={f} props={props} />}
+        {tab === "fil" && <Thread />}
+      </div>
+    </div>
+  );
+}
+
+/** How the campaign is played, out of the way until asked for. */
+function HowTo({ props }: { props: GameProps }) {
+  const works = props.catalog.families?.campaign?.works;
+  return (
+    <div className="space-y-3">
+      <Label className="text-gold">⚑ {t().kicker}</Label>
+      <h3 className="font-display text-2xl font-extrabold uppercase leading-tight">
+        {t().helpTitle}
+      </h3>
+      <p className="text-sm text-cream-dim">{t().help}</p>
+      <p className="text-sm text-cream-dim">{t().mapHelp}</p>
+      <p className="text-sm text-cream-dim">{t().gloryHelp}</p>
+      {works && (
+        <div className="space-y-2">
+          <Label>{t().works.title}</Label>
+          <p className="text-sm text-cream-dim">{t().works.help}</p>
+          <ul className="space-y-1.5">
+            {Object.keys(works.kinds).map((kind) => (
+              <li key={kind} className="flex items-start gap-2 text-sm">
+                <WorkGlyph kind={kind} color={P.gold} size={20} />
+                <span>
+                  <span className="font-semibold">{t().works.names[kind] ?? kind}</span>
+                  <span className="text-cream-dim"> — {workEffect(works, kind)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** A family of the merchant's: the map on the whole screen, everything else at hand around it. */
+function Mine({ f, props }: { f: FamiliesView; props: GameProps }) {
+  const stage = useRef<HTMLDivElement>(null);
+  const height = useStageHeight(stage);
+  const wide = useWide();
+  const [land, setLand] = useState<string | null>(null);
+  const [tab, setTab] = useState<DrawerTab>("campagne");
+  const [open, setOpen] = useState(false);
+  const [hire, setHire] = useState(false);
+  const [help, setHelp] = useState(false);
+  const picked = f.lands.find((l) => l.code === land) ?? null;
+  const openTab = (key: DrawerTab) => {
+    setTab(key);
+    setOpen(true);
+  };
+  return (
+    <div
+      ref={stage}
+      style={height ? { height } : undefined}
+      className="relative h-[calc(100svh-12rem)] lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-4"
+    >
+      <div className="absolute inset-x-0 bottom-[3.25rem] top-0 overflow-hidden bg-night-2 lg:relative lg:inset-auto lg:h-full lg:rounded-3xl lg:border lg:border-line">
+        <CampaignMap
+          f={f}
+          props={props}
+          onPick={(code) => setLand(code)}
+          className="h-full w-full"
+          covered={open && !wide}
+        />
+        <Scoreboard
+          f={f}
+          props={props}
+          onFamily={() => openTab("famille")}
+          onHelp={() => setHelp(true)}
+        />
+        <ActionBar
+          f={f}
+          props={props}
+          onHire={() => setHire(true)}
+          onWorks={() => openTab("campagne")}
+        />
+      </div>
+      <Drawer
+        f={f}
+        props={props}
+        tab={tab}
+        open={open}
+        onTab={setTab}
+        onOpen={setOpen}
+        onLand={setLand}
+      />
       <Sheet open={picked !== null} onClose={() => setLand(null)}>
         {picked && (
           <LandSheet
@@ -1090,6 +1670,12 @@ function Mine({ f, props }: { f: FamiliesView; props: GameProps }) {
           />
         )}
       </Sheet>
+      <Sheet open={hire} onClose={() => setHire(false)}>
+        <Lances f={f} props={props} />
+      </Sheet>
+      <Sheet open={help} onClose={() => setHelp(false)}>
+        <HowTo props={props} />
+      </Sheet>
     </div>
   );
 }
@@ -1098,21 +1684,27 @@ function Mine({ f, props }: { f: FamiliesView; props: GameProps }) {
 export function Famille(props: GameProps) {
   const f = props.view.families;
   if (!f) return null;
+  if (f.mine) {
+    // The map takes the screen from edge to edge, under the page's top bar.
+    return (
+      <section className="-mx-4 -mb-40 -mt-4 lg:mx-0 lg:-mb-16 lg:mt-0">
+        <Mine f={f} props={props} />
+      </section>
+    );
+  }
   return (
     <section className="space-y-4">
-      <header>
-        <Label className="text-gold">⚑ {t().kicker}</Label>
-        <h1 className="mt-2 font-display text-[2rem] font-extrabold uppercase leading-[1.05]">
-          {t().title}
-        </h1>
-        <p className="mt-2 text-sm text-cream-dim">{t().help}</p>
-      </header>
-      {f.mine ? <Mine f={f} props={props} /> : <Choose f={f} props={props} />}
-      {!f.mine && (
-        <div className="-mx-4 overflow-hidden border-y border-line bg-night-2 lg:mx-0 lg:cut lg:border">
-          <CampaignMap f={f} props={props} onPick={() => {}} />
+      <div className="relative -mx-4 -mt-4 overflow-hidden border-b border-line lg:mx-0 lg:mt-0 lg:rounded-3xl lg:border">
+        <CampaignMap f={f} props={props} onPick={() => {}} className="h-[46svh] min-h-[320px]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-night via-night/80 to-transparent px-4 pb-3 pt-10">
+          <Label className="text-gold">⚑ {t().kicker}</Label>
+          <h1 className="mt-1 font-display text-[1.75rem] font-extrabold uppercase leading-[1.05]">
+            {t().title}
+          </h1>
         </div>
-      )}
+      </div>
+      <p className="text-sm text-cream-dim">{t().help}</p>
+      <Choose f={f} props={props} />
     </section>
   );
 }
