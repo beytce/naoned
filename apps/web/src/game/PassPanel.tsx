@@ -1,4 +1,4 @@
-import { Sign } from "../art/logo.js";
+import { Emblem } from "../art/logo.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Panel } from "../ui.js";
 import type { GameProps } from "./Game.js";
@@ -34,9 +34,7 @@ export function PassPanel({
     <Panel glow="gold">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gold">
-            <Sign size={26} color="rgb(var(--ink))" />
-          </span>
+          <Emblem size={44} className="shrink-0" />
           <div>
             <Label className="text-gold">{t.title}</Label>
             <p className="mt-0.5 text-sm">

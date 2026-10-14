@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { Crest, defaultCrest } from "../art/crest.js";
-import { Sign } from "../art/logo.js";
+import { Emblem } from "../art/logo.js";
 import { MasteryEmblem } from "../art/mastery.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Panel, clock } from "../ui.js";
@@ -68,7 +68,7 @@ function Line(props: {
           {r.bot && <Badge tone="ghost">{fr.game.npc}</Badge>}
           {r.pass && (
             <span title={fr.game.pass.seal} className="inline-flex">
-              <Sign size={14} />
+              <Emblem size={16} className="rounded-[4px]" />
             </span>
           )}
           {r.specialty && (

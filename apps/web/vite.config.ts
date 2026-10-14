@@ -7,11 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: [
-        "favicon.svg",
-        "icons/apple-touch-icon.png",
-        "icons/apple-touch-icon-1024.png",
-      ],
+      includeAssets: ["favicon.png", "icons/apple-touch-icon.png", "icons/logo-256.webp"],
       manifest: {
         name: "Fondaco",
         short_name: "Fondaco",
@@ -33,7 +29,9 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+        globPatterns: ["**/*.{js,css,html,svg,png,webp,woff2}"],
+        // The large icons are fetched by the system when the app is added: not cached.
+        globIgnores: ["**/apple-touch-icon-1024.png", "**/icons/icon-*.png"],
         // The API is never served from the cache.
         navigateFallbackDenylist: [/^\/api\//],
         // Push notifications (public/push-sw.js).

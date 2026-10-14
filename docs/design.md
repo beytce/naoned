@@ -4,19 +4,17 @@ Le jeu s'appelle **Fondaco**, du nom des entrepôts où les marchands étrangers
 
 ## Logo : le lion ailé
 
-Emblème : le lion ailé de saint Marc, dressé, ailes levées, qui tient un ducat frappé d'une galère. Style d'icône d'application : aplats, contour brun nuit épais, crème pour le lion et les ailes (trois rangées de plumes), crinière brune, ducat or au halo doré, mer vert d'eau sous la galère. Pas de nom dans le logo. Grille 120.
+Logo officiel : le lion ailé de saint Marc, de face, rugissant, ailes déployées, qui tient dans ses griffes un ducat d'or frappé d'un galion sur les vagues, sur une tuile brune aux coins arrondis. Pas de nom dans le logo.
 
-- **Source** : `apps/web/scripts/emblem.mjs` dessine l'emblème et écrit `public/icons/icon.svg`, `public/favicon.svg` et `src/art/emblemArt.tsx` (le même dessin pour React, couleurs en paramètre). Après un changement : `node apps/web/scripts/emblem.mjs`, puis les icônes, puis `pnpm format`.
-- **Icône d'application** : le lion sur une tuile de noyer en dégradé (lueur chaude au centre).
-  - Rendue nette à chaque taille depuis `public/icons/icon.svg` par `apps/web/scripts/icons.mjs`. À relancer après tout changement de la source : `npx -y -p playwright-core node apps/web/scripts/icons.mjs`.
-  - iPhone : `apple-touch-icon` 180 et 1024 px, carré plein sans transparence (iOS arrondit lui-même).
-  - Android : 192 et 512 px arrondis, plus une version masquable dont l'emblème tient dans la zone sûre de 80 %.
-  - `favicon.svg`, en tuile arrondie.
+- **Source** : `apps/web/brand/logo.webp` (1024 px, carré arrondi sur fond blanc). On ne le redessine pas : on remplace ce fichier.
+- **Rendus** : `apps/web/scripts/icons.mjs` en tire toutes les tailles ; les coins blancs de la source deviennent le brun du logo (`#73371E`). À relancer après tout changement de la source : `npx -y -p playwright-core node apps/web/scripts/icons.mjs`.
+  - iPhone : `apple-touch-icon` 180 et 1024 px, carré plein sans transparence (iOS arrondit lui-même). Le 1024 px et les icônes Android ne sont pas mis en cache par le service worker (le système les télécharge à l'installation).
+  - Android : 192 et 512 px arrondis, plus une version masquable dont le logo tient dans la zone sûre de 80 %.
+  - `favicon.png` (64 px) et `icons/logo-256.webp`, le logo affiché dans le jeu.
 - **Composants** (`apps/web/src/art/logo.tsx`) :
-  - `Emblem` : l'emblème en couleur sur sa tuile arrondie. Écran de connexion, introduction, chargement, cérémonie de fin de saison, en-tête du Comptoir sur mobile.
-  - `Logotype` : l'emblème et « Fondaco » côte à côte, dans la barre latérale sur PC.
-  - `Sign` : le lion en une seule couleur (un sceau, découpé par un masque), pour les petites tailles et les fonds colorés : sceau du Pass dans les classements, Pass Négociant sur fond or.
-- **Ducat** : pièce or frappée du lion ailé (`Coin`), comme le ducat de Venise.
+  - `Emblem` : le logo. Écran de connexion, introduction, chargement, cérémonie de fin de saison, en-tête du Comptoir sur mobile, Pass Négociant, sceau du Pass à côté du nom dans les classements.
+  - `Logotype` : le logo et « Fondaco » côte à côte, dans la barre latérale sur PC.
+- **Ducat** : pièce or frappée du galion du logo sur ses vagues (`Coin`).
 
 ## Palettes
 
