@@ -128,24 +128,35 @@ export function MapHud({
   return (
     <>
       <div className="pointer-events-none absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex flex-col items-start gap-2 lg:left-5 lg:top-5">
-        <button
-          type="button"
-          aria-label={fr.game.tabs.profil}
-          onClick={onProfile}
-          className="pointer-events-auto flex items-center gap-2.5 text-left transition active:scale-[0.97]"
-        >
-          <SeasonRing progress={seasonProgress}>
-            <Crest crest={crest} size={32} />
-          </SeasonRing>
+        <div className="pointer-events-auto flex items-center gap-2.5">
+          <button
+            type="button"
+            aria-label={fr.game.tabs.profil}
+            onClick={onProfile}
+            className="shrink-0 transition active:scale-95"
+          >
+            <SeasonRing progress={seasonProgress}>
+              <Crest crest={crest} size={32} />
+            </SeasonRing>
+          </button>
           <span className="min-w-0 [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
-            <span className="block max-w-[46vw] truncate font-display text-xl font-extrabold leading-tight text-cream lg:max-w-xs">
+            <button
+              type="button"
+              onClick={onProfile}
+              className="block max-w-[46vw] truncate text-left font-display text-xl font-extrabold leading-tight text-cream lg:max-w-xs"
+            >
               {pseudo}
-            </span>
-            <span className="block font-mono text-[10.5px] uppercase tracking-[0.1em] text-cream-dim">
-              {title} · #{rank ?? "—"}
-            </span>
+            </button>
+            <button
+              type="button"
+              aria-label={fr.game.tabs.top}
+              onClick={onRanking}
+              className="block text-left font-mono text-[10.5px] uppercase tracking-[0.1em] text-cream-dim"
+            >
+              {title} · <span className="text-gold">#{rank ?? "—"}</span>
+            </button>
           </span>
-        </button>
+        </div>
         <div className="flex gap-2 pl-[7px]">
           <Orb label={m.notices} onClick={onNotices} badge={notices} coach="hud-notices">
             {Icon.bell()}

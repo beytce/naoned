@@ -13,6 +13,7 @@ import { CounterSheets, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import type { GameProps } from "../Game.js";
 import { RialtoSheet } from "../Marche.js";
+import { RankingSheet } from "../Top.js";
 import { onBack } from "../back.js";
 import { d, minutesLabel } from "../format.js";
 import { BuyVehicleSheet, canServe, capacityOf, total, vehicleName } from "../roadKit.js";
@@ -371,7 +372,7 @@ export function MapScreen(
         onNotices={() => props.setSheet("notices")}
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
-        onRanking={() => props.goTo("top")}
+        onRanking={() => props.setSheet("ranking")}
         onFamily={() => props.goTo("famille")}
         onHelp={props.openHelp}
       />
@@ -379,6 +380,7 @@ export function MapScreen(
 
       <CounterSheets {...props} />
       <RialtoSheet {...props} />
+      <RankingSheet {...props} />
       <ActCard {...props} />
       <NoticesSheet
         {...props}

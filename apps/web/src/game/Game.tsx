@@ -13,7 +13,6 @@ import { Intro } from "./Intro.js";
 import { Port } from "./Port.js";
 import { Profil } from "./Profil.js";
 import { Region } from "./Region.js";
-import { Top } from "./Top.js";
 import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
 import { onBack } from "./back.js";
@@ -49,12 +48,12 @@ import type {
 } from "./types.js";
 
 /** What opens over the map, full screen. */
-export type Page = "port" | "famille" | "top" | "profil";
+export type Page = "port" | "famille" | "profil";
 /**
  * Where the merchant is: the map (around their counter, or with a cart chosen), or a page over it.
  * Kept as the name every screen uses to send the merchant somewhere.
  */
-export type Tab = "comptoir" | "routes" | "marche" | Page;
+export type Tab = "comptoir" | "routes" | "marche" | "top" | Page;
 
 export interface Names {
   resource: (code: string) => string;
@@ -207,10 +206,10 @@ export function Game(props: {
       setSelection(cart ? { kind: "cart", id: cart.id } : { kind: "home" });
       return;
     }
-    if (t === "marche") {
-      // The Rialto is a sheet of Venice, over the map.
+    if (t === "marche" || t === "top") {
+      // The Rialto (a sheet of Venice) and the ranking open over the map.
       setPage(null);
-      setSheet("rialto");
+      setSheet(t === "marche" ? "rialto" : "ranking");
       return;
     }
     setPage(t);
@@ -476,7 +475,6 @@ function PageOverlay({ page, gp, onClose }: { page: Page; gp: GameProps; onClose
       <main className="mx-auto w-full max-w-md px-4 pb-40 pt-4 lg:max-w-6xl lg:px-8 lg:pb-16 lg:pt-6">
         {page === "port" && <Port {...gp} />}
         {page === "famille" && <Famille {...gp} />}
-        {page === "top" && <Top {...gp} />}
         {page === "profil" && <Profil {...gp} />}
       </main>
     </div>
