@@ -1,27 +1,14 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Crest } from "../art/crest.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Badge, Big, Label, Panel, Qty, Sheet, Slab, Sparkline, clock } from "../ui.js";
+import { Badge, Label, Qty, Sheet, Slab, Sparkline, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import { DecreeBanner } from "./Famille.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
-import {
-  Chip,
-  Chips,
-  Drawer,
-  HelpButton,
-  Hud,
-  HudBar,
-  HudStat,
-  Segmented,
-  Stage,
-  Tray,
-  useDrawer,
-} from "./stage.js";
+import { Segmented } from "./stage.js";
 import type { BookLine, MarketLine, OrderView } from "./types.js";
-import { useWide } from "./useWide.js";
 
 function series(props: GameProps, resource: string): number[] {
   return (props.prices[resource] ?? []).map((p) => Number(p.price));
@@ -36,7 +23,7 @@ function change(points: number[]): number {
 }
 
 function ChangeTag({ value }: { value: number }) {
-  if (value === 0) return <span className="label">—</span>;
+  if (value === 0) return null;
   const up = value > 0;
   return (
     <span className={`font-mono text-xs font-bold ${up ? "text-lagoon" : "text-vermilion"}`}>
@@ -63,8 +50,11 @@ function Row({
         <p className="font-display text-sm font-semibold uppercase">
           {props.names.resource(line.resource)}
         </p>
-        <p className="label mt-0.5">
-          {fr.game.inStock} {have(props.view, line.resource)}
+        <p className="label mt-0.5 flex items-center gap-2">
+          <span>
+            {fr.game.inStock} {have(props.view, line.resource)}
+          </span>
+          <ChangeTag value={change(points)} />
         </p>
       </div>
       <Sparkline points={points} width={64} height={26} />
@@ -168,8 +158,9 @@ function TradeSheet({
   const q = Math.min(qty, max);
   const points = series(props, line.resource);
   const mine = props.view.openOrders.filter((o) => o.resource === line.resource);
-  // In the computer's side panel the sheet stays open on the same resource.
-  const done = () => (inline ? undefined : props.setSheet(null));
+  // In the computer's side panel the sheet stays open on the same resource; in the Rialto's sheet,
+  // a trade made goes back to the board.
+  const done = () => (inline ? undefined : props.setSheet("rialto"));
   const quota = book?.quota;
   return (
     <div className="space-y-5">
@@ -366,244 +357,121 @@ function MyOffers({ orders, props }: { orders: OrderView[]; props: GameProps }) 
   );
 }
 
-function CityCard({ resource, props }: { resource: string; props: GameProps }) {
-  const quotes = props.view.cityQuotes
-    .filter((q) => q.resource === resource)
-    .sort((a, b) => (BigInt(b.unitPrice) > BigInt(a.unitPrice) ? 1 : -1));
-  const best = quotes[0];
-  const stock = have(props.view, resource);
-  const [qty, setQty] = useState(Math.max(1, stock));
-  if (!best) return null;
-  const q = Math.min(qty, Math.max(1, stock));
-  return (
-    <Panel glow={stock > 0 ? "gold" : undefined}>
-      <div className="flex items-center gap-3">
-        <ResourceIcon code={resource} size={48} />
-        <div className="flex-1">
-          <h3 className="font-display text-base font-extrabold uppercase">
-            {props.names.resource(resource)}
-          </h3>
-          <p className="label mt-1">
-            {fr.game.inStock} {stock}
-          </p>
-        </div>
-        <div className="text-right">
-          <Label>{fr.game.cityPays}</Label>
-          <Big className="mt-1 text-2xl text-gold">{d(best.unitPrice)}</Big>
-        </div>
-      </div>
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        {quotes.map((c) => (
-          <div
-            key={c.city}
-            className={`p-2 text-center ring-1 ${c === best ? "bg-gold/10 ring-gold/60" : "bg-night-2 ring-line"}`}
-          >
-            <p className="font-mono text-[10px] uppercase tracking-wider text-muted">
-              {props.names.city(c.city)}
-            </p>
-            <p className="font-display text-sm font-semibold tabular-nums">{d(c.unitPrice)}</p>
-          </div>
-        ))}
-      </div>
-      {stock > 0 && (
-        <div className="mt-4 flex items-center justify-between gap-2">
-          <Qty value={q} max={stock} onChange={setQty} />
-          <Slab
-            coach={`city-sell-${resource}`}
-            disabled={props.busy}
-            onClick={() =>
-              props.act({ type: "sellToCity", city: best.city, resource, quantity: q })
-            }
-          >
-            {fr.game.sellToCity}
-          </Slab>
-        </div>
-      )}
-    </Panel>
-  );
-}
-
-type MarketDrawer = "negoce" | "offres" | "villes" | "decrets";
+type Filter = "all" | "stock" | "rising";
 
 /**
- * The Rialto's board as the market's scene: one line per good, its trend and its two prices,
- * scrolling under the head bar; a touched line opens its trade.
+ * The Rialto, opened from Venice on the map: one sheet. The board first (sorts, the tax, the
+ * decrees, the merchant's offers), then a touched good's trade in the same sheet, a back arrow to
+ * the board. Keys: `rialto`, `trade:<resource>`, `offers`.
  */
-function PriceBoard({
-  lines,
-  props,
-  selected,
-}: { lines: MarketLine[]; props: GameProps; selected?: string }) {
-  return (
-    <div className="h-full overflow-y-auto overscroll-contain bg-night-2 px-3 pb-24 pt-[6.5rem]">
-      {/* The two prices of each row: what buying costs now, what selling brings now. */}
-      <div className="flex items-end justify-between gap-3 border-b border-line/70 pb-2">
-        <p className="label">{fr.game.market.goods}</p>
-        <div className="w-20 text-right">
-          <p className="label">{fr.game.buyAt}</p>
-          <p className="label text-lagoon">{fr.game.sellAt}</p>
-        </div>
-      </div>
-      {lines.map((l) => (
-        <Row key={l.resource} line={l} props={props} selected={selected === l.resource} />
-      ))}
-    </div>
-  );
-}
-
-export function Marche(props: GameProps) {
+export function RialtoSheet(props: GameProps) {
+  const [kind, id] = (props.sheet ?? "").split(":");
+  const open = kind === "rialto" || kind === "offers" || (kind === "trade" && !!id);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [decreesOpen, setDecreesOpen] = useState(false);
   const lines = props.view.market;
-  const wide = useWide();
-  const drawer = useDrawer<MarketDrawer>(
-    wide ? "negoce" : props.marketTab === "villes" ? "villes" : "offres",
-    props.marketTab === "villes",
-  );
-  const [help, setHelp] = useState(false);
-  const featured = [...lines].sort(
-    (a, b) => change(series(props, b.resource)) - change(series(props, a.resource)),
-  )[0];
-  // Only a real rise earns the spotlight.
-  const rising = featured && change(series(props, featured.resource)) > 0 ? featured : undefined;
-  const cityGoods = [...new Set(props.view.cityQuotes.map((q) => q.resource))];
-  const sheetResource = props.sheet?.startsWith("trade:") ? props.sheet.slice(6) : null;
-  const sheetLine = lines.find((l) => l.resource === sheetResource);
-  // Computer: the trade stays open in the side column, on the chosen (or featured) resource.
-  const sideLine = wide ? (sheetLine ?? featured) : undefined;
-  const offers = props.view.openOrders.length;
-  const stock = props.view.inventory.reduce((n, i) => n + i.available, 0);
+  const line = kind === "trade" ? lines.find((l) => l.resource === id) : undefined;
+  const offers = props.view.openOrders;
   const decrees = props.view.families?.decrees;
   const ours = decrees && props.view.families?.mine === decrees.family;
-  // The guide reads which market is on screen: the cities' when their tab is open.
-  const villes = drawer.open && drawer.tab === "villes";
-  const { setMarketTab } = props;
-  useEffect(() => {
-    setMarketTab(villes ? "villes" : "joueurs");
-  }, [villes, setMarketTab]);
   const m = fr.game.market;
-  return (
-    <Stage
-      label={fr.game.tabs.marche}
-      scene={<PriceBoard lines={lines} props={props} selected={sideLine?.resource} />}
-      top={
-        <Hud>
-          <HudBar>
-            <HudStat
-              icon={
-                <span aria-hidden="true" className="text-lg leading-none">
-                  ⚖
-                </span>
-              }
-              value={lines.length}
-              caption={fr.game.marketTabs.joueurs}
-              coach="mtab-joueurs"
-              onClick={() => drawer.setOpen(false)}
-              label={fr.game.marketTabs.joueurs}
-            />
-            <HudStat
-              value={offers}
-              caption={m.offers}
-              onClick={() => drawer.show("offres")}
-              label={fr.game.book.myOffers}
-            />
-            <HudStat value={stock} caption={m.stock} />
-            <HelpButton onClick={() => setHelp(true)} label={fr.game.stage.help} />
-          </HudBar>
-          <Chips>
-            <Chip>{m.tax(props.catalog.rules.marketTaxBps / 100)}</Chip>
-            {decrees && decrees.items.length > 0 && (
-              <Chip tone={ours ? "lagoon" : "vermilion"} onClick={() => drawer.show("decrets")}>
-                ⚑ {m.decrees(decrees.items.length)}
-              </Chip>
-            )}
-          </Chips>
-        </Hud>
-      }
-      bottom={
-        rising && !wide ? (
-          <Tray>
-            <span className="flex min-w-0 flex-1 items-center gap-2 pl-1">
-              <ResourceIcon code={rising.resource} size={30} />
-              <span className="min-w-0 leading-tight">
-                <span className="block truncate font-display text-sm font-extrabold uppercase">
-                  {props.names.resource(rising.resource)}
-                </span>
-                <ChangeTag value={change(series(props, rising.resource))} />
-              </span>
-            </span>
-            <Slab
-              size="sm"
-              className="shrink-0 whitespace-nowrap !px-3"
-              onClick={() => props.setSheet(`trade:${rising.resource}`)}
-            >
-              {m.trade(d(rising.bestAsk))}
-            </Slab>
-          </Tray>
-        ) : undefined
-      }
-      drawer={
-        <Drawer<MarketDrawer>
-          {...drawer.props}
-          tabs={[
-            ...(wide ? [{ key: "negoce" as const, label: m.tabs.negoce }] : []),
-            { key: "offres", label: m.tabs.offres, dot: offers > 0 && drawer.tab !== "offres" },
-            { key: "villes", label: fr.game.marketTabs.villes, coach: "mtab-villes" },
-            { key: "decrets", label: m.tabs.decrets },
-          ]}
-        >
-          {drawer.tab === "negoce" && sideLine && (
-            <TradeSheet key={sideLine.resource} line={sideLine} props={props} inline />
-          )}
-          {drawer.tab === "offres" &&
-            (offers > 0 ? (
-              <MyOffers orders={props.view.openOrders} props={props} />
-            ) : (
-              <p className="text-sm text-cream-dim">{m.noOffers}</p>
-            ))}
-          {drawer.tab === "villes" && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="font-display text-xl font-extrabold uppercase leading-tight">
-                  {fr.game.cityTitle}
-                </h2>
-                <p className="mt-2 text-sm text-cream-dim">
-                  {props.view.road ? fr.game.road.cityClosed : fr.game.cityHelp}
-                </p>
-              </div>
-              {props.view.road ? (
-                <Slab onClick={() => props.goTo("routes")}>{fr.game.road.seeRoutes}</Slab>
-              ) : (
-                <div className="grid gap-4">
-                  {cityGoods.map((r) => (
-                    <CityCard key={r} resource={r} props={props} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          {drawer.tab === "decrets" &&
-            (decrees ? (
-              <DecreeBanner props={props} />
-            ) : (
-              <p className="text-sm text-cream-dim">{fr.game.families.decrees.none}</p>
-            ))}
-        </Drawer>
-      }
+  const r = fr.game.map.rialto;
+  const back = (
+    <button
+      type="button"
+      onClick={() => props.setSheet("rialto")}
+      className="label -ml-1 mb-3 flex h-9 items-center gap-1 text-gold"
     >
-      <Sheet open={!!sheetLine && !wide} onClose={() => props.setSheet(null)}>
-        {sheetLine && <TradeSheet key={sheetLine.resource} line={sheetLine} props={props} />}
-      </Sheet>
-      <Sheet open={help} onClose={() => setHelp(false)}>
-        <div className="space-y-3 pt-4">
-          <h3 className="font-display text-2xl font-extrabold uppercase">{fr.game.tabs.marche}</h3>
-          <p className="text-sm text-cream-dim">
-            {fr.game.marketHelp(
-              props.catalog.rules.instantOrderSlippageBps / 100,
-              props.catalog.rules.marketTaxBps / 100,
-            )}{" "}
-            {fr.game.book.fondacoHelp}
-          </p>
+      ← {fr.game.map.buttons.rialto}
+    </button>
+  );
+  const shown = lines
+    .filter((l) =>
+      filter === "stock"
+        ? have(props.view, l.resource) > 0
+        : filter === "rising"
+          ? change(series(props, l.resource)) > 0
+          : true,
+    )
+    .sort((a, b) =>
+      filter === "rising"
+        ? change(series(props, b.resource)) - change(series(props, a.resource))
+        : 0,
+    );
+  return (
+    <Sheet open={open} onClose={() => props.setSheet(null)}>
+      {line ? (
+        <div>
+          {back}
+          <TradeSheet key={line.resource} line={line} props={props} />
         </div>
-      </Sheet>
-    </Stage>
+      ) : kind === "offers" ? (
+        <div>
+          {back}
+          {offers.length > 0 ? (
+            <MyOffers orders={offers} props={props} />
+          ) : (
+            <p className="text-sm text-cream-dim">{m.noOffers}</p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="pr-12">
+            <h3 className="font-display text-2xl font-extrabold uppercase">
+              {fr.game.map.buttons.rialto}
+            </h3>
+            <p className="label mt-1 text-lagoon">{r.kicker}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Segmented<Filter>
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: "all", label: r.filters.all },
+                { value: "stock", label: r.filters.stock },
+                { value: "rising", label: r.filters.rising },
+              ]}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="rounded-full bg-night-3 px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.08em] text-cream-dim ring-1 ring-inset ring-line/70">
+              {m.tax(props.catalog.rules.marketTaxBps / 100)}
+            </span>
+            <button
+              type="button"
+              onClick={() => props.setSheet("offers")}
+              className={`rounded-full px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.08em] ring-1 ring-inset ${offers.length > 0 ? "bg-gold/15 text-gold ring-gold/60" : "bg-night-3 text-cream-dim ring-line/70"}`}
+            >
+              {r.offers(offers.length)}
+            </button>
+            {decrees && decrees.items.length > 0 && (
+              <button
+                type="button"
+                aria-expanded={decreesOpen}
+                onClick={() => setDecreesOpen(!decreesOpen)}
+                className={`rounded-full px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.08em] ring-1 ring-inset ${ours ? "bg-lagoon/15 text-lagoon ring-lagoon/60" : "bg-vermilion/15 text-vermilion ring-vermilion/60"}`}
+              >
+                ⚑ {m.decrees(decrees.items.length)}
+              </button>
+            )}
+          </div>
+          {decreesOpen && <DecreeBanner props={props} />}
+          <div className="flex items-end justify-between gap-3 border-b border-line/70 pb-2">
+            <p className="label">{m.goods}</p>
+            <div className="w-20 text-right">
+              <p className="label">{fr.game.buyAt}</p>
+              <p className="label text-lagoon">{fr.game.sellAt}</p>
+            </div>
+          </div>
+          <div>
+            {shown.length === 0 ? (
+              <p className="py-6 text-center text-sm text-cream-dim">{r.none}</p>
+            ) : (
+              shown.map((l) => <Row key={l.resource} line={l} props={props} />)
+            )}
+          </div>
+        </div>
+      )}
+    </Sheet>
   );
 }

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Crest, type CrestData } from "../../art/crest.js";
 import { CityGlyph, VehicleGlyph } from "../../art/veneto.js";
+import { WorkGlyph } from "../../art/workIcon.js";
 
 /**
  * What stands on the map: the cities as glowing medallions (each with its own hue, like planets),
@@ -198,6 +199,82 @@ export function CartMarker({
         <svg viewBox="-19 -15 38 26" className="cart-glyph h-6 w-8" aria-hidden="true">
           <VehicleGlyph type={type} load={load} />
         </svg>
+      </span>
+    </button>
+  );
+}
+
+/**
+ * A land of the campaign: a disc in its holder's colour with its garrison (⚑ for a family's seat),
+ * a dotted gold ring when the merchant's lances can reach it, a beating red one when an enemy
+ * marches on it, a gold edge when the merchant's own lances hold it, its work in the corner.
+ */
+export function LandMarker({
+  code,
+  name,
+  color,
+  label,
+  seat,
+  city,
+  reach,
+  threatened,
+  mine,
+  work,
+  dim,
+  named,
+  onTap,
+}: {
+  code: string;
+  name: string;
+  /** Its name written under it (the seats, cities and fortresses; the others once chosen). */
+  named: boolean;
+  color: string;
+  /** The garrison, or ⚑ for a seat. */
+  label: string;
+  seat: boolean;
+  city: boolean;
+  reach: boolean;
+  threatened: boolean;
+  mine: boolean;
+  work: { kind: string; color: string; ready: boolean } | null;
+  dim: boolean;
+  onTap: () => void;
+}) {
+  const size = seat ? 40 : city ? 36 : 30;
+  return (
+    <button
+      type="button"
+      data-coach={`land-${code}`}
+      aria-label={name}
+      onClick={onTap}
+      className={`marker-hit relative -ml-6 -mt-6 flex h-12 w-12 items-center justify-center transition-opacity duration-300 ${dim ? "opacity-45" : ""}`}
+    >
+      <span className="marker-ring absolute inset-0 rounded-full" />
+      {threatened && (
+        <span className="absolute inset-0.5 animate-ping rounded-full ring-2 ring-vermilion" />
+      )}
+      {reach && !threatened && (
+        <span className="absolute inset-0.5 rounded-full border-2 border-dashed border-gold/80" />
+      )}
+      <span
+        className={`marker-orb relative flex items-center justify-center rounded-full font-display text-[13px] font-extrabold text-cream shadow-[0_4px_12px_rgb(0_0_0/0.55),inset_-3px_-4px_8px_rgb(0_0_0/0.3)] [text-shadow:0_1px_2px_rgb(0_0_0/0.8)] ${mine ? "ring-2 ring-gold" : "ring-1 ring-black/50"}`}
+        style={{
+          width: size,
+          height: size,
+          background: `radial-gradient(circle at 34% 30%, color-mix(in srgb, ${color} 55%, white) 0%, ${color} 55%, color-mix(in srgb, ${color} 55%, black) 100%)`,
+        }}
+      >
+        {label}
+      </span>
+      {work && (
+        <span className="absolute -right-1 -top-1 rounded-full bg-night/85 p-0.5">
+          <WorkGlyph kind={work.kind} color={work.color} ready={work.ready} size={14} />
+        </span>
+      )}
+      <span
+        className={`land-name pointer-events-none absolute left-1/2 top-[calc(100%-6px)] -translate-x-1/2 whitespace-nowrap font-display text-[10px] font-extrabold uppercase tracking-wider [text-shadow:0_1px_3px_rgb(0_0_0/0.95)] ${named ? "" : "hidden"} ${city ? "text-gold-soft" : seat ? "text-cream" : "text-cream/80"}`}
+      >
+        {name}
       </span>
     </button>
   );

@@ -12,12 +12,22 @@ import { Coach } from "../Coach.js";
 import { CounterSheets, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import type { GameProps } from "../Game.js";
+import { RialtoSheet } from "../Marche.js";
+import { RankingSheet } from "../Top.js";
 import { onBack } from "../back.js";
 import { d, minutesLabel } from "../format.js";
 import { BuyVehicleSheet, canServe, capacityOf, total, vehicleName } from "../roadKit.js";
 import type { DeliveryView, VehicleView } from "../types.js";
 import { useWide } from "../useWide.js";
 import { have, readyOf } from "../workshops.js";
+import {
+  CampaignHud,
+  CampaignOverlay,
+  CampaignPanel,
+  CampaignSheets,
+  campaignMarkers,
+  familyCalls,
+} from "./CampaignLayer.js";
 import { MapHud } from "./Hud.js";
 import { CartMarker, CityMarker, HomeMarker } from "./Markers.js";
 import { NoticesSheet } from "./Notices.js";
@@ -31,7 +41,9 @@ const DEPART_SECONDS = 10;
 /** The key of a selection on the map. */
 export function selectionKey(s: Selection | null): string | null {
   if (!s) return null;
-  return s.kind === "home" ? "home" : s.kind === "city" ? `city:${s.code}` : `cart:${s.id}`;
+  if (s.kind === "home") return "home";
+  if (s.kind === "cart") return `cart:${s.id}`;
+  return `${s.kind}:${s.code}`;
 }
 
 /** The trip a vehicle is on now, if any. */
@@ -248,15 +260,28 @@ export function MapScreen(
     }),
   ];
   const parked = vehicles.filter((v) => !tripOf(deliveries, v, now)).map((v) => v.id);
+  // The families' campaign, when its layer is shown.
+  const families = view.families;
+  const campaign = props.layer === "campaign" && families ? families : null;
+  const campaignPanel = campaign ? (
+    <CampaignPanel props={props} f={campaign} sel={sel} select={select} />
+  ) : null;
+  const panelUp = !!sel;
 
   const insets = wide
-    ? { top: 110, right: sel ? 460 : 40, bottom: 40, left: 40 }
-    : { top: 150, right: 12, bottom: sel ? 200 : 100, left: 12 };
+    ? { top: 110, right: panelUp ? 460 : 40, bottom: 40, left: 40 }
+    : {
+        top: campaign ? 160 : 150,
+        right: 12,
+        bottom: panelUp ? 200 : 100,
+        left: 12,
+      };
 
   // The panel of the selection.
-  let panel: ReactNode = null;
-  if (sel?.kind === "home") panel = <HomePanel props={props} onClose={() => select(null)} />;
-  if (sel?.kind === "city") {
+  let panel: ReactNode = campaignPanel;
+  if (!campaign && sel?.kind === "home")
+    panel = <HomePanel props={props} onClose={() => select(null)} />;
+  if (!campaign && sel?.kind === "city") {
     const i = cities.indexOf(sel.code);
     const step = (k: number) =>
       select({ kind: "city", code: cities[(i + k + cities.length) % cities.length] ?? sel.code });
@@ -276,7 +301,7 @@ export function MapScreen(
       />
     );
   }
-  if (selectedCart) {
+  if (!campaign && selectedCart) {
     const i = vehicles.findIndex((v) => v.id === selectedCart.id);
     const step = (k: number) => {
       setDeparture(null);
@@ -339,11 +364,16 @@ export function MapScreen(
         ref={map}
         region={region}
         cities={cities}
-        markers={markers}
-        parked={parked}
-        roads={roads}
-        litRoads={litCities}
-        planned={departure?.city ?? (cartFree && cartHold?.city ? cartHold.city : null)}
+        layer={campaign ? "campaign" : "trade"}
+        lands={families?.lands ?? []}
+        overlay={campaign ? <CampaignOverlay f={campaign} now={now} /> : undefined}
+        markers={campaign ? campaignMarkers(props, campaign, select) : markers}
+        parked={campaign ? [] : parked}
+        roads={campaign ? [] : roads}
+        litRoads={campaign ? [] : litCities}
+        planned={
+          campaign ? null : (departure?.city ?? (cartFree && cartHold?.city ? cartHold.city : null))
+        }
         clockOffset={props.clockOffset}
         insets={insets}
         selectedKey={key}
@@ -364,19 +394,25 @@ export function MapScreen(
         canBuyCart={!!road && vehicles.length < maxCarts}
         notices={notice > 0 ? notice : view.player.upkeepDefaultUntil > now || !!criee}
         guidePaused={props.guidePaused}
-        bottom={!sel}
+        bottom={!panelUp}
         hasFamily={!!view.families}
+        layer={campaign ? "campaign" : "trade"}
+        familyCalls={familyCalls(props)}
+        right={campaign ? <CampaignHud f={campaign} now={now} /> : undefined}
         onProfile={() => props.goTo("profil")}
         onNotices={() => props.setSheet("notices")}
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
-        onRanking={() => props.goTo("top")}
-        onFamily={() => props.goTo("famille")}
+        onRanking={() => props.setSheet("ranking")}
+        onFamily={() => (campaign ? props.setLayer("trade") : props.goTo("famille"))}
         onHelp={props.openHelp}
       />
       {panel}
 
       <CounterSheets {...props} />
+      {families && <CampaignSheets props={props} f={families} select={select} />}
+      <RialtoSheet {...props} />
+      <RankingSheet {...props} />
       <ActCard {...props} />
       <NoticesSheet
         {...props}

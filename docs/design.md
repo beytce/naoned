@@ -58,7 +58,7 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
 
 - La carte ne bouge que sous le doigt : glisser la déplace (avec élan), deux doigts ou la molette zooment autour de leur milieu, un double toucher dans le vide la recadre. Un objet choisi glisse dans le champ s'il est caché sous le panneau, sans plus.
 - Le panneau de la sélection monte du pied de l'écran ; un médaillon choisi s'entoure de vert d'eau, une ville que la charrette peut servir respire, les autres s'estompent. Les routes en cours défilent en pointillés vers leur ville.
-- Une page (Rialto, Port, Famille, Classement, Profil) se pose par-dessus la carte, sa croix ramène à la carte.
+- Le Rialto et le Classement sont des feuilles posées sur la carte ; le Port et le Profil, des pages plein écran dont la croix ramène à la carte. La Famille n'est pas une page : un calque de la même carte.
 - Tout s'arrête pour qui demande moins de mouvement (`prefers-reduced-motion`).
 
 ## Gestes (`game/gestures.ts`)
@@ -74,10 +74,11 @@ Un seul écran, la carte de la Vénétie la nuit, inspirée des jeux de commerce
 | --- | --- | --- |
 | **Carte** | Le sol (une couche que le processeur graphique déplace), les routes du comptoir en pointillés, les repères placés à la main à chaque image, sans rendu React. Les images ne tournent que si quelque chose bouge (caméra, élan, charrette en route) | `WorldMap`, `NightTerrain`, `geometry.ts` |
 | **Repères** | Les villes en médaillons à leur teinte (pastille or : commandes couvertes par le stock ; vert d'eau : commandes ; vermillon : Criée), le comptoir doré au blason (anneau du prochain lot, pastille des lots prêts), les charrettes en jetons (vert d'eau en route, vermillon battant si arrêtées). Elles se garent dans le secteur libre autour du comptoir, côté terre, et partent du bord du médaillon | `CityMarker`, `HomeMarker`, `CartMarker` |
-| **HUD** | En haut à gauche, le blason dans l'anneau de la saison, le nom, le titre et le rang ; dessous la cloche des Avis et Lorenzo quand le guide est en pause. En haut à droite, les ducats, les charrettes libres, « + » pour en acheter. Au pied, sans sélection, trois portes rondes : Classement, Famille, Aide | `MapHud` |
+| **HUD** | En haut à gauche, le blason dans l'anneau de la saison, le nom, le titre et le rang ; dessous la cloche des Avis et Lorenzo quand le guide est en pause. En haut à droite, les ducats, les charrettes libres, « + » pour en acheter. Au pied, sans sélection, trois portes rondes : Classement, Famille (Commerce sur le calque de la Campagne ; point vermillon quand la famille appelle), Aide. Toucher son rang ouvre le Classement | `MapHud` |
 | **Panneau** | Ce qui est choisi : titre, une ligne d'état (et sa barre), de grosses actions carrées, flèches vers l'objet suivant du même genre, croix. Sur ordinateur, flottant en bas à droite | `ContextPanel`, `ActionButton` |
 | **Feuilles** | Le détail : ateliers, entrepôt, bâtir, cargaisons, Criée, brigands, Avis | `Sheet` |
-| **Pages** | Rialto, Port, Famille, Classement, Profil, en plein écran au-dessus de la carte ; elles gardent leur cadre (`Stage`, `Drawer` replié sur ses propres onglets) | `PageOverlay` |
+| **Feuilles de lieu** | Le Rialto (clés `rialto`, `trade:<r>`, `offers`) : le tableau des cours (Tout, En stock, En hausse ; taxe, décrets, mes offres), puis le négoce d'une marchandise dans la même feuille, ← retour. Le Classement (`ranking`) : semaine ou saison avec leur clôture, podium, liste, sa ligne épinglée au pied ; semaine passée et règles dans la même feuille | `RialtoSheet`, `RankingSheet` |
+| **Pages** | Port et Profil, en plein écran au-dessus de la carte ; ils gardent leur cadre (`Stage`, `Drawer` replié sur ses propres onglets) | `PageOverlay` |
 
 | Lieu choisi | État | Actions |
 | --- | --- | --- |
@@ -124,17 +125,18 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 ## Famille et Campagne
 
 - **Couleurs des familles** (`art/familyCrest.tsx`) : Contarini vert d'eau et tour, Morosini émeraude et épi, Mocenigo vermillon et ancre, Dandolo violet et lion, Milan encre et couronne ; jamais l'or, réservé à l'argent et au Pass. Les milices en vert-gris. Blason en bannière (`FamilyCrest`).
-- **Onglet Famille** (`Famille.tsx`), carte d'abord. Sans famille : la carte en tête (46 % de l'écran, le titre en dégradé sur son pied), puis les quatre cartes (membres, levée selon la taille, Gloire, terres), la plus petite mise en avant, l'allégeance confirmée en deux temps. Avec une famille, sur téléphone, une seule page sans défilement : la carte d'un bord à l'autre entre la barre du jeu et la navigation (hauteur mesurée, `useStageHeight`).
-  - **En haut** (`Scoreboard`) : un bandeau translucide, les quatre familles classées (blason, Gloire, rang ; la sienne cerclée d'or, un filet à sa couleur proportionnel à la Gloire) et « ? » pour l'aide ; dessous, des puces : fin de semaine, trêve (vert d'eau), Milan (vermillon).
-  - **En bas** (`ActionBar`) : la réserve de lances, « Lever n » (vert d'eau), « Engager » (or, ouvre la feuille des lances), les ouvrages « n/max » ; au-dessus, l'invitation à glisser ses lances.
-  - **Tiroir** (`Drawer`) : replié sur ses quatre onglets (Campagne, Décrets, Famille, Fil ; point vermillon pour une menace ou un message non lu), tiré vers le haut ou touché il couvre deux tiers de l'écran ; les lances ne se glissent plus tant qu'il est ouvert. Sur grand écran, une colonne de 400 px à côté de la carte.
+- **Calque de la Campagne** (`map/CampaignLayer.tsx`) : la porte Famille bascule la carte du monde sur la Campagne, les terres ayant le même repère que les villes. La caméra glisse vers la Terraferme et cadre la partie dessinée ; la Lombardie de Milan, à l'ouest, est à un glissé. Villes, routes et charrettes laissent la place aux terres.
+  - **Sol** : chaque terre dans la couleur de son détenteur (milices presque transparentes), frontières où deux détenteurs se touchent (`territory.ts`), marches en pointillés qui défilent avec leur colonne en pastille.
+  - **Terres** (`LandMarker`) : disque à la couleur du détenteur, garnison au centre (⚑ pour un fief), bord or si ses lances y sont, anneau or pointillé à portée, anneau vermillon qui bat sous une marche ennemie, ouvrage en médaillon. Les noms : villes, forteresses et son fief ; les autres quand on les choisit.
+  - **HUD** : les ducats, puis les quatre familles en rangée (blason et Gloire, la sienne cerclée d'or), et dessous la fin de semaine, la trêve, Milan.
+  - **Son fief** ouvre le panneau de la famille : rang et Gloire, réserve et levée (sa barre), Lances (lever, engager), Marches (les marches à rejoindre, les ouvrages), Décrets (en vigueur, programme et vote), Famille (classement des familles, membres, semaines passées, fil).
+  - **Une terre** : détenteur, garnison, défense, marche ennemie ou amie en cours ; Attaquer ou Renforcer (la fiche de la terre et son nombre de lances), Rejoindre une marche, Fiche ; ‹ › vers la terre suivante à portée.
+  - **Sans famille** : le panneau des quatre familles, Allégeance (les quatre cartes, la plus petite mise en avant, confirmation en deux temps) et Règles.
 - **Ouvrages** (`art/workIcon.tsx`) : rocca en tour crénelée, campo en tente à fanion vermillon, dogana en porte à la pièce d'or, à la couleur de la famille ; en contour pointillé tant qu'ils sont en chantier. Sur la carte, en médaillon au coin de la pastille de garnison. Dans la fiche d'une terre de sa famille : les trois ouvrages en lignes (icône, nom, rôle, effet, « Bâtir · prix ») ; sur une terre qui en porte un : l'ouvrage, son état et son bâtisseur, sur fond vermillon s'il est ennemi, avec le Mérite promis à qui le rase.
-- **Carte de la Terraferme** : SVG carré, terres reliées en pointillés ; fiefs et forteresses en carrés, autres terres en ronds, à la couleur du détenteur, la garnison au centre (⚑ pour un fief), les villes du jeu nommées en or pâle. Contour or pointillé : à portée ; anneau vert d'eau : une marche de sa famille ; anneau vermillon qui bat : une marche ennemie, avec « ⚔ lances » au-dessus. Une terre touchée ouvre sa fiche (garnison, défense, Gloire, lances nécessaires, marches, attaquer ou renforcer) ; les terres à portée sont aussi listées sous la carte.
-- **Bandeau des décrets** (`DecreeBanner`) : au Rialto et au Port ; lueur vert d'eau quand ils jouent pour le marchand, vermillon contre lui.
+- **Bandeau des décrets** (`DecreeBanner`) : au Rialto, dans les Décrets de la famille et au Port ; lueur vert d'eau quand ils jouent pour le marchand, vermillon contre lui.
 
 ## Charger et partir
 
 - **Charrette choisie** (`CartPanel`) : bord vert d'eau et croix en onglet ; nom, cale « 12/40 » et sa jauge, état (au comptoir, chargée pour…). Les villes qu'elle peut servir s'éclairent et leur route se dore, les autres s'estompent. Toucher une ville éclairée ouvre ses cargaisons ; toucher la ville de la cale prépare le départ.
 - **Cargaisons** (`CargoSheet`) : feuille avec onglets Récompense, Distance, Ville ; une ligne par commande (pastille à cocher, marchandise, ville et durée, récompense en or), grisée avec sa raison quand elle ne va pas (autre ville, trop lourd, stock) ; la cale en bas avec sa jauge et ses commandes cochées ; « Prêt pour Vicence · 63 d ».
 - **Départ** (`DeparturePanel`) : la route en pointillés vert d'eau jusqu'à la ville, « Départ vers Padoue · 10 s » et sa barre, les escortes en puces avec leur risque (choisir relance le compte), ✓ Partir et ✕ Annuler ; à zéro, la charrette part d'elle-même. Elle reste choisie : on la voit quitter le comptoir.
-- **Glisser** (`CarrierDrag`) : à la Campagne, les lances (jeton cerclé d'or) se tirent du fief vers une terre, une ligne en pointillé et une bulle disent ce qui partirait.

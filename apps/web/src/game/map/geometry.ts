@@ -60,6 +60,16 @@ export function boxOf(points: Point[], margin = 0): Box {
   return { x0: x0 - margin, y0: y0 - margin, x1: x1 + margin, y1: y1 + margin };
 }
 
+/**
+ * The campaign's frames, from its lands (world pixels): `box` holds them all, to keep the map in
+ * reach; `fitBox` only those within the drawn map (`width` wide), where the camera opens, so that
+ * the lands beyond its edge (Lombardy) are a pan away instead of shrinking the whole map.
+ */
+export function landFrames(lands: Point[], width: number): { box: Box; fitBox: Box } {
+  const inside = lands.filter((p) => p.x >= 0 && p.x <= width);
+  return { box: boxOf(lands), fitBox: boxOf(inside.length > 0 ? inside : lands) };
+}
+
 /** The camera that shows the whole box, centred, in the screen minus the insets. */
 export function fitCamera(box: Box, view: Viewport, insets: Insets): Camera {
   const w = Math.max(1, view.w - insets.left - insets.right);

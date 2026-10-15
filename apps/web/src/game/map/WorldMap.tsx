@@ -28,6 +28,7 @@ import {
   boxOf,
   clampCamera,
   fitCamera,
+  landFrames,
   parkingAngle,
   parkingSpots,
   project,
@@ -49,7 +50,8 @@ import {
 export type Selection =
   | { kind: "home" }
   | { kind: "city"; code: string }
-  | { kind: "cart"; id: string };
+  | { kind: "cart"; id: string }
+  | { kind: "land"; code: string };
 
 export interface CartTrip {
   route: string;
@@ -94,9 +96,10 @@ const TAP_SLOP = 8;
 const HOME_EDGE_PX = 58;
 const CITY_EDGE_PX = 46;
 
-/** Room for the markers' size around the places. */
-function padded(i: Insets): Insets {
-  return { top: i.top + 34, right: i.right + 34, bottom: i.bottom + 46, left: i.left + 34 };
+/** Room for the markers' size around the places (the lands are smaller than the cities). */
+function padded(i: Insets, small = false): Insets {
+  const k = small ? 22 : 34;
+  return { top: i.top + k, right: i.right + k, bottom: i.bottom + k + 12, left: i.left + k };
 }
 
 export const WorldMap = forwardRef<
@@ -104,6 +107,12 @@ export const WorldMap = forwardRef<
   {
     region: string;
     cities: string[];
+    /** Which map is shown: the trade's (cities, counter, carts) or the campaign's (lands). */
+    layer: "trade" | "campaign";
+    /** The campaign's lands, in map units (Lombardy beyond the drawn map's western edge). */
+    lands: { code: string; x: number; y: number }[];
+    /** Drawn under the markers, in map units (the campaign's territories and marches). */
+    overlay?: ReactNode;
     markers: MapMarker[];
     /** Parked carts, in their order beside the counter. */
     parked: string[];
@@ -133,7 +142,7 @@ export const WorldMap = forwardRef<
   live.current = props;
 
   const cityKey = props.cities.join(",");
-  const { homeW, fixedPlaces, box, parkAngle } = useMemo(() => {
+  const { homeW, fixedPlaces, tradeBox, parkAngle } = useMemo(() => {
     const homeW = toWorld(PLACES[props.region] ?? [180, 260]);
     const fixedPlaces: Record<string, Point> = { home: homeW };
     for (const c of cityKey.split(",")) {
@@ -156,10 +165,24 @@ export const WorldMap = forwardRef<
       x: (box.x0 + box.x1) / 2,
       y: (box.y0 + box.y1) / 2,
     });
-    return { homeW, fixedPlaces, box, parkAngle };
+    return { homeW, fixedPlaces, tradeBox: box, parkAngle };
   }, [props.region, cityKey]);
-  const places = useRef(fixedPlaces);
-  places.current = fixedPlaces;
+  // The campaign's lands: the camera frames those of the drawn Veneto, Lombardy is a pan away.
+  const landKey = props.lands.map((l) => `${l.code}:${l.x}:${l.y}`).join("|");
+  const campaign = useMemo(() => {
+    const places: Record<string, Point> = {};
+    for (const part of landKey ? landKey.split("|") : []) {
+      const [code = "", x = "0", y = "0"] = part.split(":");
+      places[`land:${code}`] = toWorld([Number(x), Number(y)]);
+    }
+    return { places, ...landFrames(Object.values(places), MAP_W * RES) };
+  }, [landKey]);
+  const onCampaign = props.layer === "campaign" && props.lands.length > 0;
+  const box = onCampaign ? campaign.box : tradeBox;
+  const fitBox = onCampaign ? campaign.fitBox : tradeBox;
+  const activePlaces = onCampaign ? campaign.places : fixedPlaces;
+  const places = useRef(activePlaces);
+  places.current = activePlaces;
 
   const viewport = useCallback(
     () => ({
@@ -267,10 +290,10 @@ export const WorldMap = forwardRef<
 
   const fit = useCallback(() => {
     const v = viewport();
-    const f = fitCamera(box, v, padded(live.current.insets));
+    const f = fitCamera(fitBox, v, padded(live.current.insets, live.current.layer === "campaign"));
     fitted.current = f;
     return f;
-  }, [box, viewport]);
+  }, [fitBox, viewport]);
 
   useImperativeHandle(
     ref,
@@ -279,7 +302,13 @@ export const WorldMap = forwardRef<
         const now = Date.now() + live.current.clockOffset;
         const at = where(key, now);
         if (!at) return;
-        const next = reveal(cam.current, at.p, viewport(), padded(live.current.insets), 8);
+        const next = reveal(
+          cam.current,
+          at.p,
+          viewport(),
+          padded(live.current.insets, live.current.layer === "campaign"),
+          8,
+        );
         if (next !== cam.current) easeTo(next);
       },
       fit: () => easeTo(fit()),
@@ -287,17 +316,22 @@ export const WorldMap = forwardRef<
     [where, easeTo, fit, viewport],
   );
 
-  // First fit, and again when the screen turns or resizes.
+  // First fit; a new layer glides to its own frame; again when the screen turns or resizes.
+  const framed = useRef(false);
   useLayoutEffect(() => {
-    cam.current = fit();
-    paint();
+    if (framed.current) easeTo(fit(), 560);
+    else {
+      cam.current = fit();
+      paint();
+      framed.current = true;
+    }
     const onResize = () => {
       cam.current = fit();
       paint();
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [fit, paint]);
+  }, [fit, paint, easeTo]);
 
   // New markers, trips or selection: place them, and keep the frames going if carts roll.
   useEffect(() => {
@@ -475,6 +509,11 @@ export const WorldMap = forwardRef<
         className="pointer-events-none absolute left-0 top-0 origin-top-left overflow-visible will-change-transform"
         aria-hidden="true"
       >
+        {props.overlay && (
+          <g key={props.layer} className="animate-fade">
+            {props.overlay}
+          </g>
+        )}
         {props.roads.map((c) => {
           const curve = roadCurve(route(c));
           if (!curve) return null;
@@ -533,7 +572,7 @@ export const WorldMap = forwardRef<
           ref={register(m.key)}
           data-marker={m.key}
           data-selected={props.selectedKey === m.key ? "1" : undefined}
-          className={`map-marker absolute left-0 top-0 ${m.key.startsWith("cart:") ? "z-[3]" : "z-[2]"}`}
+          className={`map-marker animate-fade absolute left-0 top-0 ${m.key.startsWith("cart:") ? "z-[3]" : "z-[2]"}`}
           style={{ visibility: "hidden" }}
         >
           {m.node}

@@ -1,5 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
-import { P } from "../art/palette.js";
+import { useState } from "react";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Slab, clock } from "../ui.js";
@@ -11,9 +10,8 @@ import { Segmented } from "./stage.js";
 import type { DeliveryOrderView, RoadView, VehicleView } from "./types.js";
 
 /**
- * Loading a vehicle and sending it, as on a space station's dock: the cargo list (tick the orders
- * to load, the hold fills), then the vehicle is dragged from the depot to its city on the map (or
- * the city touched), and a short countdown lets the merchant change their mind.
+ * Loading a cart, as on a space station's dock: the cargo list (tick the orders to load, the hold
+ * fills); the map then sends it, with a short countdown to change one's mind.
  */
 
 const t = () => fr.game.cargo;
@@ -194,162 +192,6 @@ export function CargoSheet({
         {s.city ? t().ready(props.names.city(s.city), d(s.value)) : t().pick}
       </Slab>
       <p className="label text-center">{t().nextOrders(clock(nextDay - props.now))}</p>
-    </div>
-  );
-}
-
-/** A spot on the map where a vehicle may be dropped (css pixels in the map's box). */
-export interface DropSpot {
-  code: string;
-  x: number;
-  y: number;
-}
-
-const SNAP_PX = 46;
-const CANCEL_PX = 34;
-
-/**
- * The selected vehicle on its depot, to be dragged with a finger to a city: a dotted line follows
- * the finger, a bubble tells where it would go (or why not), the depot turns into "cancel" when
- * the finger comes back. `origin` and `spots` are read each frame (the 3D scene may move them).
- */
-export function CarrierDrag({
-  origin,
-  spots,
-  info,
-  onDrop,
-  onTap,
-  token,
-}: {
-  origin: () => { x: number; y: number } | null;
-  spots: () => DropSpot[];
-  info: (code: string) => { ok: boolean; title: string; sub: string };
-  onDrop: (code: string) => void;
-  /** A tap without dragging (opens the hold). */
-  onTap?: () => void;
-  token: ReactNode;
-}) {
-  const box = useRef<HTMLDivElement>(null);
-  const handle = useRef<HTMLButtonElement>(null);
-  const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
-  const [from, setFrom] = useState<{ x: number; y: number } | null>(null);
-  const start = useRef<{ x: number; y: number } | null>(null);
-  // The handle follows its depot on every frame (the scene may resize or move).
-  useEffect(() => {
-    let raf = 0;
-    const step = () => {
-      raf = requestAnimationFrame(step);
-      const o = origin();
-      const el = handle.current;
-      if (!el) return;
-      el.style.visibility = o ? "visible" : "hidden";
-      if (o) el.style.transform = `translate3d(${o.x.toFixed(1)}px, ${o.y.toFixed(1)}px, 0)`;
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [origin]);
-  const local = (e: { clientX: number; clientY: number }) => {
-    const r = box.current?.getBoundingClientRect();
-    return r ? { x: e.clientX - r.left, y: e.clientY - r.top } : { x: 0, y: 0 };
-  };
-  const nearest = (p: { x: number; y: number }) => {
-    let best: DropSpot | null = null;
-    let gap = SNAP_PX;
-    for (const s of spots()) {
-      const g = Math.hypot(s.x - p.x, s.y - p.y);
-      if (g < gap) {
-        gap = g;
-        best = s;
-      }
-    }
-    return best;
-  };
-  const target = drag ? nearest(drag) : null;
-  const cancel = drag && from ? Math.hypot(drag.x - from.x, drag.y - from.y) < CANCEL_PX : false;
-  const shown = target && !cancel ? info(target.code) : null;
-  return (
-    <div ref={box} className="pointer-events-none absolute inset-0 z-30">
-      {drag && from && (
-        <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
-          <line
-            x1={from.x}
-            y1={from.y}
-            x2={target && !cancel ? target.x : drag.x}
-            y2={target && !cancel ? target.y : drag.y}
-            stroke={shown?.ok === false ? P.vermilion : P.cream}
-            strokeWidth="3"
-            strokeDasharray="2 7"
-            strokeLinecap="round"
-          />
-          {target && !cancel && (
-            <circle
-              cx={target.x}
-              cy={target.y}
-              r="26"
-              fill="none"
-              stroke={shown?.ok ? P.gold : P.vermilion}
-              strokeWidth="3"
-            />
-          )}
-        </svg>
-      )}
-      {drag && from && cancel && (
-        <span
-          className="absolute -translate-y-14 whitespace-nowrap font-display text-lg font-extrabold uppercase text-vermilion [text-shadow:0_2px_4px_rgb(15_27_30)]"
-          style={{ left: from.x + 26, top: from.y + 40 }}
-        >
-          ✕ {t().cancel}
-        </span>
-      )}
-      {drag && shown && (
-        <div
-          className={`absolute w-56 -translate-x-1/2 rounded-xl bg-night/95 px-3 py-2 text-center shadow-xl ring-1 ${shown.ok ? "ring-gold/70" : "ring-vermilion/70"}`}
-          style={{
-            left: Math.min(Math.max(drag.x, 120), (box.current?.clientWidth ?? 240) - 120),
-            // Above the finger, or below it near the top of the map.
-            top: drag.y < 110 ? drag.y + 44 : drag.y - 92,
-          }}
-        >
-          <p className={`text-sm font-semibold ${shown.ok ? "text-cream" : "text-vermilion"}`}>
-            {shown.title}
-          </p>
-          <p className="mt-0.5 font-mono text-[11px] text-cream-dim">{shown.sub}</p>
-        </div>
-      )}
-      <button
-        ref={handle}
-        type="button"
-        aria-label={t().dragLabel}
-        className="pointer-events-auto absolute left-0 top-0 -ml-7 -mt-7 h-14 w-14 touch-none"
-        style={{ visibility: "hidden" }}
-        onPointerDown={(e) => {
-          e.currentTarget.setPointerCapture(e.pointerId);
-          const o = origin();
-          setFrom(o);
-          start.current = local(e);
-          setDrag(local(e));
-        }}
-        onPointerMove={(e) => {
-          if (drag) setDrag(local(e));
-        }}
-        onPointerUp={(e) => {
-          const p = local(e);
-          const spot = nearest(p);
-          const s0 = start.current ?? p;
-          const moved = Math.hypot(p.x - s0.x, p.y - s0.y);
-          const back = from ? Math.hypot(p.x - from.x, p.y - from.y) < CANCEL_PX : true;
-          setDrag(null);
-          if (moved < 8) onTap?.();
-          else if (spot && !back && info(spot.code).ok) onDrop(spot.code);
-        }}
-        onPointerCancel={() => setDrag(null)}
-      >
-        <span
-          className={`flex h-full w-full items-center justify-center rounded-full transition ${drag ? "scale-90 opacity-40" : "animate-pulse"}`}
-        >
-          {token}
-        </span>
-      </button>
     </div>
   );
 }

@@ -1,8 +1,6 @@
 import {
   type ReactNode,
   type RefObject,
-  createContext,
-  useContext,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -17,14 +15,13 @@ import { useWide } from "./useWide.js";
  * The frame every section of the game shares, born on the Famille tab: a scene from edge to edge
  * (a map, the domain, a board) between the page's top bar and the bottom navigation, the state
  * of the moment over its head, the main gestures at its foot, and everything else in a drawer of
- * tabs folded over the foot of the screen. Folded, the drawer carries the game's sections: the
- * foot of a phone is one row. On a wide screen the drawer becomes a column beside the scene.
+ * tabs folded over the foot of the screen, its tabs in sight. On a wide screen the drawer becomes a
+ * column beside the scene. Only the port's page uses it now; the map has its own panel.
  * Details open in sheets.
  */
 
 /**
- * Height of the folded drawer on a phone: its border, its handle (0.625 rem) over the row of
- * sections (3.5 rem),
+ * Height of the folded drawer on a phone: its border, its handle (0.625 rem) over its row of tabs,
  * safe area included.
  */
 const FOLDED = "h-[calc(4.125rem+1px+env(safe-area-inset-bottom))]";
@@ -264,129 +261,12 @@ export function TrayStat({
   );
 }
 
-/** A small outlined button at the right of the foot bar (an icon and a count). */
-export function TrayButton({
-  children,
-  onClick,
-  label,
-  coach,
-}: {
-  children: ReactNode;
-  onClick: () => void;
-  label: string;
-  coach?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      data-coach={coach}
-      className="flex shrink-0 items-center gap-1 rounded-xl px-2 py-1.5 font-mono text-[11px] tabular-nums ring-1 ring-inset ring-line/70 active:bg-night-3"
-    >
-      {children}
-    </button>
-  );
-}
-
 export interface DrawerTab<T extends string> {
   key: T;
   label: string;
   /** Something waits there (a threat, an unread message, a reward). */
   dot?: boolean;
   coach?: string;
-}
-
-/** One of the game's sections, as the folded drawer shows it. */
-export interface SectionItem {
-  key: string;
-  label: string;
-  icon: ReactNode;
-  /** Something waits there. */
-  dot?: boolean;
-  /** Not open yet (the port before its day). */
-  dim?: boolean;
-}
-
-/** The game's sections and the way to them, given by the game to every section's drawer. */
-export const SectionNav = createContext<{
-  items: SectionItem[];
-  current: string;
-  go: (key: string) => void;
-  /** A drawer carries the sections while it is mounted; returns its release. */
-  hold: () => () => void;
-} | null>(null);
-
-/**
- * The row of the game's sections at the foot of a phone. Another section is one touch away; the
- * current one, marked by a chevron when it has a drawer, pulls that drawer up (`onCurrent`).
- */
-export function SectionBar({
-  onCurrent,
-  blocked,
-}: {
-  onCurrent?: () => void;
-  /** A drag is going on: the touch that ends it is not a choice. */
-  blocked?: () => boolean;
-}) {
-  const nav = useContext(SectionNav);
-  if (!nav) return null;
-  return (
-    <div
-      className="mx-auto grid max-w-md"
-      style={{ gridTemplateColumns: `repeat(${nav.items.length}, minmax(0, 1fr))` }}
-    >
-      {nav.items.map(({ key, label, icon, dot, dim }) => {
-        const on = nav.current === key;
-        return (
-          <button
-            key={key}
-            type="button"
-            data-coach={`tab-${key}`}
-            aria-current={on ? "page" : undefined}
-            aria-expanded={on && onCurrent ? false : undefined}
-            onClick={() => {
-              if (blocked?.()) return;
-              if (on && onCurrent) onCurrent();
-              else nav.go(key);
-            }}
-            className={`relative flex h-14 flex-col items-center justify-center gap-1 pb-1.5 pt-2 transition-colors active:bg-night-3 ${on ? "text-gold" : "text-muted"} ${dim ? "opacity-50" : ""}`}
-          >
-            {on &&
-              (onCurrent ? (
-                // Its drawer pulls up from here.
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 12 6"
-                  className="absolute left-1/2 top-0 h-1.5 w-3 -translate-x-1/2 fill-gold"
-                >
-                  <path d="M0 6 6 0l6 6z" />
-                </svg>
-              ) : (
-                <span className="bevel absolute inset-x-4 top-0 h-[3px] bg-gold" />
-              ))}
-            {on && (
-              // The pennant on the chosen section's corner.
-              <span className="absolute right-[24%] top-1.5 h-0 w-0 border-l-[7px] border-t-[7px] border-l-transparent border-t-gold" />
-            )}
-            <span
-              className={`transition-transform duration-200 ${on ? "-translate-y-px scale-110" : ""}`}
-            >
-              {icon}
-            </span>
-            <span
-              className={`max-w-full truncate px-0.5 font-mono text-[9.5px] uppercase tracking-[0.08em] ${on ? "font-bold" : ""}`}
-            >
-              {label}
-            </span>
-            {dot && !on && (
-              <span className="absolute right-[30%] top-2 h-2 w-2 rounded-full bg-vermilion" />
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
 }
 
 /**
@@ -422,9 +302,6 @@ export function Drawer<T extends string>({
   );
   const waiting = tabs.some((t) => t.dot);
   // While this drawer is there, the game shows no bar of its own.
-  const nav = useContext(SectionNav);
-  const hold = nav?.hold;
-  useEffect(() => hold?.(), [hold]);
   return (
     <div
       className={`absolute inset-x-0 bottom-0 z-20 flex flex-col overflow-hidden rounded-t-3xl border-t border-line bg-night-2/95 shadow-[0_-12px_30px_rgb(0_0_0/0.35)] backdrop-blur transition-[height] duration-300 ease-out lg:static lg:h-full lg:rounded-3xl lg:border lg:shadow-none ${open ? "h-[68%]" : FOLDED}`}
@@ -464,15 +341,10 @@ export function Drawer<T extends string>({
             <span className="absolute left-[calc(50%+1.75rem)] top-0.5 h-2 w-2 rounded-full bg-vermilion" />
           )}
         </button>
-        {!open && nav && (
-          <div className="pb-[env(safe-area-inset-bottom)] lg:hidden">
-            <SectionBar onCurrent={() => onOpen(true)} blocked={() => !!drag.current?.moved} />
-          </div>
-        )}
-        {/* A page over the map has no sections: folded, the drawer shows its own tabs. */}
+        {/* Folded, the drawer shows its own tabs. */}
         <div
           role="tablist"
-          className={`grid gap-1 px-2 pb-1.5 pt-1 lg:grid lg:pt-2 ${open || !nav ? "" : "hidden"}`}
+          className="grid gap-1 px-2 pb-1.5 pt-1 lg:grid lg:pt-2"
           style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
         >
           {tabs.map(({ key, label, dot, coach }) => {

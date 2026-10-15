@@ -168,7 +168,7 @@ function nextStep(props: CoachProps): CoachStep {
     if (!material) return { text: fr.game.coach.emptyMarket, skip: "skipMarketBuy" };
     if (props.sheet === `trade:${material}`)
       return { text: fr.game.coach.buy(names.resource(material)), target: "sheet-buy" };
-    if (props.tab === "marche")
+    if (props.sheet === "rialto")
       return { text: fr.game.coach.buy(names.resource(material)), target: `row-${material}` };
     if (props.selection?.kind === "city" && props.selection.code === "venezia")
       return { text: fr.game.coach.goRialto, target: "panel-rialto" };
@@ -196,7 +196,11 @@ export function Coach(props: CoachProps) {
   const [finished, setFinished] = useState(() => store.get("guideDone") === "1");
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [onFollow, setOnFollow] = useState(false);
-  const step = nextStep(props);
+  // On the campaign's layer the guide's places are not on the map: back to the trade first.
+  const step: CoachStep =
+    props.layer === "campaign"
+      ? { text: fr.game.map.campaign.backToTrade, target: "door-layer" }
+      : nextStep(props);
   const index = Math.min(STEPS.length, props.view.tutorial.length + 1);
 
   useLayoutEffect(() => {
