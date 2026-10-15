@@ -13,6 +13,7 @@ import { CounterSheets, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import type { GameProps } from "../Game.js";
 import { RialtoSheet } from "../Marche.js";
+import { ProfileSheet } from "../Profil.js";
 import { RankingSheet } from "../Top.js";
 import { onBack } from "../back.js";
 import { d, minutesLabel } from "../format.js";
@@ -399,7 +400,7 @@ export function MapScreen(
         layer={campaign ? "campaign" : "trade"}
         familyCalls={familyCalls(props)}
         right={campaign ? <CampaignHud f={campaign} now={now} /> : undefined}
-        onProfile={() => props.goTo("profil")}
+        onProfile={() => props.setSheet("profile")}
         onNotices={() => props.setSheet("notices")}
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
@@ -413,6 +414,7 @@ export function MapScreen(
       {families && <CampaignSheets props={props} f={families} select={select} />}
       <RialtoSheet {...props} />
       <RankingSheet {...props} />
+      <ProfileSheet {...props} />
       <ActCard {...props} />
       <NoticesSheet
         {...props}

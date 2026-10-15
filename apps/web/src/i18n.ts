@@ -143,6 +143,7 @@ export const fr = {
         news: "Nouvelles",
       },
       page: { back: "Retour à la carte" },
+      settings: "Réglages",
       campaign: {
         toCampaign: "Famille",
         toTrade: "Commerce",
