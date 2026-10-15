@@ -143,6 +143,12 @@ export const fr = {
         news: "Nouvelles",
       },
       page: { back: "Retour à la carte" },
+      rialto: {
+        kicker: "Le marché des joueurs, à Venise",
+        filters: { all: "Tout", stock: "En stock", rising: "En hausse" },
+        offers: (n: number) => (n > 0 ? `Mes offres · ${n}` : "Mes offres"),
+        none: "Rien ici pour l'instant.",
+      },
       ambushHere: "Convoi attaqué !",
     },
     tabs: {

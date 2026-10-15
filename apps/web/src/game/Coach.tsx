@@ -168,7 +168,7 @@ function nextStep(props: CoachProps): CoachStep {
     if (!material) return { text: fr.game.coach.emptyMarket, skip: "skipMarketBuy" };
     if (props.sheet === `trade:${material}`)
       return { text: fr.game.coach.buy(names.resource(material)), target: "sheet-buy" };
-    if (props.tab === "marche")
+    if (props.sheet === "rialto")
       return { text: fr.game.coach.buy(names.resource(material)), target: `row-${material}` };
     if (props.selection?.kind === "city" && props.selection.code === "venezia")
       return { text: fr.game.coach.goRialto, target: "panel-rialto" };

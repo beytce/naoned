@@ -10,7 +10,6 @@ import { Ceremony } from "./Ceremony.js";
 import { Famille } from "./Famille.js";
 import { Help } from "./Help.js";
 import { Intro } from "./Intro.js";
-import { Marche } from "./Marche.js";
 import { Port } from "./Port.js";
 import { Profil } from "./Profil.js";
 import { Region } from "./Region.js";
@@ -50,13 +49,12 @@ import type {
 } from "./types.js";
 
 /** What opens over the map, full screen. */
-export type Page = "marche" | "port" | "famille" | "top" | "profil";
+export type Page = "port" | "famille" | "top" | "profil";
 /**
  * Where the merchant is: the map (around their counter, or with a cart chosen), or a page over it.
  * Kept as the name every screen uses to send the merchant somewhere.
  */
-export type Tab = "comptoir" | "routes" | Page;
-export type MarketTab = "joueurs" | "villes";
+export type Tab = "comptoir" | "routes" | "marche" | Page;
 
 export interface Names {
   resource: (code: string) => string;
@@ -86,8 +84,6 @@ export interface GameProps {
   /** What is chosen on the map. */
   selection: Selection | null;
   select: (selection: Selection | null) => void;
-  marketTab: MarketTab;
-  setMarketTab: (tab: MarketTab) => void;
   prices: PriceSeries;
   /** Sheets opened by the guide (so it can point inside them). */
   sheet: string | null;
@@ -124,7 +120,6 @@ export function Game(props: {
     if (new URLSearchParams(window.location.search).has("ambush"))
       window.history.replaceState(null, "", "/");
   }, []);
-  const [marketTab, setMarketTab] = useState<MarketTab>("joueurs");
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [prices, setPrices] = useState<PriceSeries>({});
@@ -210,6 +205,12 @@ export function Game(props: {
       const any = viewRef.current?.road?.vehicles[0];
       const cart = free ?? any;
       setSelection(cart ? { kind: "cart", id: cart.id } : { kind: "home" });
+      return;
+    }
+    if (t === "marche") {
+      // The Rialto is a sheet of Venice, over the map.
+      setPage(null);
+      setSheet("rialto");
       return;
     }
     setPage(t);
@@ -380,8 +381,6 @@ export function Game(props: {
     goTo,
     selection,
     select,
-    marketTab,
-    setMarketTab,
     prices,
     sheet,
     setSheet,
@@ -471,11 +470,10 @@ function PageOverlay({ page, gp, onClose }: { page: Page; gp: GameProps; onClose
       <div className="mx-auto flex max-w-md items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] lg:max-w-6xl lg:px-8">
         <CloseButton onClick={onClose} />
         <h1 className="font-display text-lg font-extrabold uppercase tracking-wide">
-          {page === "marche" ? fr.game.map.buttons.rialto : fr.game.tabs[page]}
+          {fr.game.tabs[page]}
         </h1>
       </div>
       <main className="mx-auto w-full max-w-md px-4 pb-40 pt-4 lg:max-w-6xl lg:px-8 lg:pb-16 lg:pt-6">
-        {page === "marche" && <Marche {...gp} />}
         {page === "port" && <Port {...gp} />}
         {page === "famille" && <Famille {...gp} />}
         {page === "top" && <Top {...gp} />}

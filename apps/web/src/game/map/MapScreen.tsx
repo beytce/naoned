@@ -12,6 +12,7 @@ import { Coach } from "../Coach.js";
 import { CounterSheets, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import type { GameProps } from "../Game.js";
+import { RialtoSheet } from "../Marche.js";
 import { onBack } from "../back.js";
 import { d, minutesLabel } from "../format.js";
 import { BuyVehicleSheet, canServe, capacityOf, total, vehicleName } from "../roadKit.js";
@@ -377,6 +378,7 @@ export function MapScreen(
       {panel}
 
       <CounterSheets {...props} />
+      <RialtoSheet {...props} />
       <ActCard {...props} />
       <NoticesSheet
         {...props}
