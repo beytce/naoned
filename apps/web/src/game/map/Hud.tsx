@@ -120,7 +120,7 @@ export function MapHud({
   bottom: boolean;
   hasFamily: boolean;
   /** The map shown: the family door switches between the two. */
-  layer: "trade" | "campaign";
+  layer: "trade" | "campaign" | "sea";
   /** Something waits at the family (a levy, a threat, a message, an invitation). */
   familyCalls: boolean;
   /** Replaces the purse's column on the right (the families' glory on the campaign). */
@@ -210,15 +210,15 @@ export function MapHud({
           <Door label={m.buttons.ranking} onClick={onRanking}>
             {Icon.trophy()}
           </Door>
-          {hasFamily && (
+          {(hasFamily || layer !== "trade") && (
             <Door
-              label={layer === "campaign" ? m.campaign.toTrade : m.campaign.toCampaign}
+              label={layer !== "trade" ? m.campaign.toTrade : m.campaign.toCampaign}
               onClick={onFamily}
               dot={layer === "trade" && familyCalls}
-              active={layer === "campaign"}
+              active={layer !== "trade"}
               coach="door-layer"
             >
-              {layer === "campaign" ? Icon.rialto() : Icon.family()}
+              {layer !== "trade" ? Icon.rialto() : Icon.family()}
             </Door>
           )}
           <Door label={m.buttons.help} onClick={onHelp}>

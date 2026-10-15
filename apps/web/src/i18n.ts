@@ -169,6 +169,31 @@ export const fr = {
         backToTrade: "Revenez au commerce : touchez « Commerce » au pied de la carte.",
         chooseLine: "Choisissez votre famille pour la saison",
       },
+      sea: {
+        arsenal: "Arsenal de Venise",
+        arsenalLabel: "Arsenal",
+        galleys: "Galères en mer",
+        ships: "Navires prêts",
+        atSea: (n: number, max: number) => `${n}/${max} galère${max > 1 ? "s" : ""} en mer`,
+        shipsReady: (n: number, all: number) =>
+          `${n}/${all} navire${all > 1 ? "s" : ""} prêt${n > 1 ? "s" : ""}`,
+        docked: (port: string) => `Retour de ${port} : à décharger`,
+        portLine: (hours: number, risk: string, what: string) =>
+          `${hours} h · pirates ${risk} · rapporte ${what.toLowerCase()}`,
+        out: (port: string, left: string) => `Vers ${port} · retour dans ${left}`,
+        home: (left: string) => `Sur le retour · à quai dans ${left}`,
+        atQuay: "À quai : déchargez",
+        buttons: {
+          send: "Envoyer",
+          card: "Fiche",
+          unload: "Décharger",
+          fleet: "Flotte",
+          corsairs: "Corsaires",
+          log: "Journal",
+          follow: "Suivre",
+        },
+        port: "Port",
+      },
       rialto: {
         kicker: "Le marché des joueurs, à Venise",
         filters: { all: "Tout", stock: "En stock", rising: "En hausse" },

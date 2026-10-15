@@ -9,7 +9,6 @@ import { AmbushAlert } from "./AmbushAlert.js";
 import { Ceremony } from "./Ceremony.js";
 import { Help } from "./Help.js";
 import { Intro } from "./Intro.js";
-import { Port } from "./Port.js";
 import { Region } from "./Region.js";
 import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
@@ -46,14 +45,13 @@ import type {
 } from "./types.js";
 
 /** What opens over the map, full screen. */
-export type Page = "port";
 /**
  * Where the merchant is: the map (around their counter, or with a cart chosen), or a page over it.
  * Kept as the name every screen uses to send the merchant somewhere.
  */
-export type Tab = "comptoir" | "routes" | "marche" | "top" | "famille" | "profil" | Page;
+export type Tab = "comptoir" | "routes" | "marche" | "top" | "famille" | "profil" | "port";
 /** The map shown: the trade (cities, counter, carts) or the families' campaign (lands). */
-export type Layer = "trade" | "campaign";
+export type Layer = "trade" | "campaign" | "sea";
 
 export interface Names {
   resource: (code: string) => string;
@@ -115,7 +113,6 @@ export function Game(props: {
   const [view, setView] = useState<PlayerView | null | undefined>(undefined);
   const [offset, setOffset] = useState(0);
   const [now, setNow] = useState(Date.now());
-  const [page, setPage] = useState<Page | null>(null);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [layer, setLayerState] = useState<Layer>("trade");
   const setLayer = useCallback((l: Layer) => {
@@ -198,49 +195,48 @@ export function Game(props: {
     };
   }, [refresh, loadCatalog]);
 
-  /** Sends the merchant somewhere: a page over the map, or a place on it. */
+  /**
+   * Sends the merchant somewhere, always on the map: a place of the trade, another layer (the
+   * family's campaign, the sea), or a sheet over it (the Rialto, the ranking, the profile).
+   */
   const goTo = useCallback((t: Tab) => {
     setSheet(null);
     haptic("tap");
-    if (t === "famille") {
-      // The families' campaign is a layer of the same map.
-      setPage(null);
-      setSelection(null);
-      setLayerState("campaign");
+    if (t === "famille" || t === "port") {
+      setSelection(t === "port" ? { kind: "port", code: "venezia" } : null);
+      setLayerState(t === "port" ? "sea" : "campaign");
       return;
     }
-    if (t !== "profil" && t !== "port" && t !== "top") setLayerState("trade");
+    if (t === "top" || t === "profil") {
+      setSheet(t === "top" ? "ranking" : "profile");
+      return;
+    }
+    setLayerState("trade");
     if (t === "comptoir") {
-      setPage(null);
       setSelection({ kind: "home" });
       return;
     }
     if (t === "routes") {
-      setPage(null);
       const free = viewRef.current?.road?.vehicles.find((v) => v.status === "free");
       const any = viewRef.current?.road?.vehicles[0];
       const cart = free ?? any;
       setSelection(cart ? { kind: "cart", id: cart.id } : { kind: "home" });
       return;
     }
-    if (t === "marche" || t === "top" || t === "profil") {
-      // The Rialto (a sheet of Venice), the ranking and the profile open over the map.
-      setPage(null);
-      setSheet(t === "marche" ? "rialto" : t === "top" ? "ranking" : "profile");
-      return;
-    }
-    setPage(t);
+    // The Rialto, a sheet of Venice.
+    setSheet("rialto");
   }, []);
   const select = useCallback((s: Selection | null) => setSelection(s), []);
 
-  // Back button: a page closes back to the map.
+  // Back button: another layer goes back to the trade's map.
   useEffect(() => {
-    if (!page) return;
+    if (layer === "trade") return;
     return onBack(() => {
-      setPage(null);
+      setLayerState("trade");
+      setSelection(null);
       return true;
     });
-  }, [page]);
+  }, [layer]);
 
   // The Pass's palette goes back to the default when the Pass ends.
   const passActive = view?.pass.active;
@@ -392,7 +388,14 @@ export function Game(props: {
     people,
     familyLatestAt,
     bots,
-    tab: page ?? (selection?.kind === "cart" ? "routes" : "comptoir"),
+    tab:
+      layer === "campaign"
+        ? "famille"
+        : layer === "sea"
+          ? "port"
+          : selection?.kind === "cart"
+            ? "routes"
+            : "comptoir",
     passInfo,
     goTo,
     selection,
@@ -412,7 +415,6 @@ export function Game(props: {
       store.set("guideHidden", "0");
       store.set("skipMarketBuy", "0");
       setGuideKey((k) => k + 1);
-      setPage(null);
       setSelection(null);
     },
     resetGame: async () => {
@@ -421,7 +423,6 @@ export function Game(props: {
         for (const key of ["introSeen", "guideDone", "guideHidden", "skipMarketBuy"])
           store.set(key, "0");
         setSheet(null);
-        setPage(null);
         setSelection(null);
         setIntroSeen(false);
         apply(res.serverTime, res.view);
@@ -447,11 +448,9 @@ export function Game(props: {
         guideKey={guideKey}
         onResumeGuide={() => {
           store.set("guideHidden", "0");
-          setPage(null);
           setGuideKey((k) => k + 1);
         }}
       />
-      {page && <PageOverlay page={page} gp={gp} onClose={() => setPage(null)} />}
 
       {toast && (
         <div
@@ -475,26 +474,6 @@ export function Game(props: {
       {help && <Help {...gp} onClose={() => setHelp(false)} />}
       {welcome && <Welcome {...gp} data={welcome} onClose={() => setWelcome(null)} />}
     </>
-  );
-}
-
-/**
- * A page over the map (the Rialto, the port, the family, the ranking, the profile): full screen,
- * its name and a way back to the map, nothing else around it.
- */
-function PageOverlay({ page, gp, onClose }: { page: Page; gp: GameProps; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-30 animate-screen overflow-y-auto overscroll-contain bg-night">
-      <div className="mx-auto flex max-w-md items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] lg:max-w-6xl lg:px-8">
-        <CloseButton onClick={onClose} />
-        <h1 className="font-display text-lg font-extrabold uppercase tracking-wide">
-          {fr.game.tabs[page]}
-        </h1>
-      </div>
-      <main className="mx-auto w-full max-w-md px-4 pb-40 pt-4 lg:max-w-6xl lg:px-8 lg:pb-16 lg:pt-6">
-        {page === "port" && <Port {...gp} />}
-      </main>
-    </div>
   );
 }
 
