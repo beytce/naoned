@@ -7,7 +7,6 @@ import { DEFAULT_PALETTE, applyPalette, currentPalette, needsPass } from "../the
 import { CloseButton, Slab } from "../ui.js";
 import { AmbushAlert } from "./AmbushAlert.js";
 import { Ceremony } from "./Ceremony.js";
-import { Famille } from "./Famille.js";
 import { Help } from "./Help.js";
 import { Intro } from "./Intro.js";
 import { Port } from "./Port.js";
@@ -48,12 +47,14 @@ import type {
 } from "./types.js";
 
 /** What opens over the map, full screen. */
-export type Page = "port" | "famille" | "profil";
+export type Page = "port" | "profil";
 /**
  * Where the merchant is: the map (around their counter, or with a cart chosen), or a page over it.
  * Kept as the name every screen uses to send the merchant somewhere.
  */
-export type Tab = "comptoir" | "routes" | "marche" | "top" | Page;
+export type Tab = "comptoir" | "routes" | "marche" | "top" | "famille" | Page;
+/** The map shown: the trade (cities, counter, carts) or the families' campaign (lands). */
+export type Layer = "trade" | "campaign";
 
 export interface Names {
   resource: (code: string) => string;
@@ -82,6 +83,8 @@ export interface GameProps {
   goTo: (tab: Tab) => void;
   /** What is chosen on the map. */
   selection: Selection | null;
+  layer: Layer;
+  setLayer: (layer: Layer) => void;
   select: (selection: Selection | null) => void;
   prices: PriceSeries;
   /** Sheets opened by the guide (so it can point inside them). */
@@ -115,6 +118,13 @@ export function Game(props: {
   const [now, setNow] = useState(Date.now());
   const [page, setPage] = useState<Page | null>(null);
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [layer, setLayerState] = useState<Layer>("trade");
+  const setLayer = useCallback((l: Layer) => {
+    haptic("tap");
+    setSheet(null);
+    setSelection(null);
+    setLayerState(l);
+  }, []);
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has("ambush"))
       window.history.replaceState(null, "", "/");
@@ -193,6 +203,14 @@ export function Game(props: {
   const goTo = useCallback((t: Tab) => {
     setSheet(null);
     haptic("tap");
+    if (t === "famille") {
+      // The families' campaign is a layer of the same map.
+      setPage(null);
+      setSelection(null);
+      setLayerState("campaign");
+      return;
+    }
+    if (t !== "profil" && t !== "port") setLayerState("trade");
     if (t === "comptoir") {
       setPage(null);
       setSelection({ kind: "home" });
@@ -380,6 +398,8 @@ export function Game(props: {
     goTo,
     selection,
     select,
+    layer,
+    setLayer,
     prices,
     sheet,
     setSheet,
@@ -474,7 +494,6 @@ function PageOverlay({ page, gp, onClose }: { page: Page; gp: GameProps; onClose
       </div>
       <main className="mx-auto w-full max-w-md px-4 pb-40 pt-4 lg:max-w-6xl lg:px-8 lg:pb-16 lg:pt-6">
         {page === "port" && <Port {...gp} />}
-        {page === "famille" && <Famille {...gp} />}
         {page === "profil" && <Profil {...gp} />}
       </main>
     </div>

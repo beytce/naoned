@@ -5,6 +5,7 @@ import {
   boxOf,
   clampCamera,
   fitCamera,
+  landFrames,
   parkingAngle,
   parkingSpots,
   project,
@@ -127,5 +128,17 @@ describe("map geometry", () => {
     const c = { x: 1000, y: 500 };
     const a = parkingAngle(c, [{ x: 1000, y: 380 }], 300, { x: 500, y: 500 });
     expect(Math.cos(a)).toBeLessThan(-0.5);
+  });
+
+  it("frames the campaign on the drawn map, the lands beyond it a pan away", () => {
+    const lands = [
+      { x: -450, y: 600 },
+      { x: 100, y: 200 },
+      { x: 900, y: 1000 },
+    ];
+    const { box, fitBox } = landFrames(lands, 1080);
+    expect(box.x0).toBe(-450);
+    expect(fitBox).toEqual({ x0: 100, y0: 200, x1: 900, y1: 1000 });
+    expect(landFrames([{ x: -10, y: 0 }], 1080).fitBox.x0).toBe(-10);
   });
 });

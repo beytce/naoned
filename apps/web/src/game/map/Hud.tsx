@@ -94,6 +94,9 @@ export function MapHud({
   guidePaused,
   bottom,
   hasFamily,
+  layer,
+  familyCalls,
+  right,
   onProfile,
   onNotices,
   onBuyCart,
@@ -116,6 +119,12 @@ export function MapHud({
   /** The round doors at the foot (hidden while a panel is up). */
   bottom: boolean;
   hasFamily: boolean;
+  /** The map shown: the family door switches between the two. */
+  layer: "trade" | "campaign";
+  /** Something waits at the family (a levy, a threat, a message, an invitation). */
+  familyCalls: boolean;
+  /** Replaces the purse's column on the right (the families' glory on the campaign). */
+  right?: ReactNode;
   onProfile: () => void;
   onNotices: () => void;
   onBuyCart: () => void;
@@ -178,7 +187,7 @@ export function MapHud({
             <Coin size={24} />
           </span>
         </span>
-        {carts > 0 && (
+        {!right && carts > 0 && (
           <span className="flex items-center gap-2" aria-label={m.carts}>
             <span className="font-display text-lg font-extrabold tabular-nums text-lagoon [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
               {freeCarts} / {carts}
@@ -188,21 +197,28 @@ export function MapHud({
             </span>
           </span>
         )}
-        {canBuyCart && (
+        {!right && canBuyCart && (
           <Orb label={m.buyCart} onClick={onBuyCart} size={36} tone="lagoon">
             {Icon.plus()}
           </Orb>
         )}
       </div>
 
+      {right}
       {bottom && (
         <nav className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex justify-center gap-7 lg:bottom-6">
           <Door label={m.buttons.ranking} onClick={onRanking}>
             {Icon.trophy()}
           </Door>
           {hasFamily && (
-            <Door label={m.buttons.family} onClick={onFamily}>
-              {Icon.family()}
+            <Door
+              label={layer === "campaign" ? m.campaign.toTrade : m.campaign.toCampaign}
+              onClick={onFamily}
+              dot={layer === "trade" && familyCalls}
+              active={layer === "campaign"}
+              coach="door-layer"
+            >
+              {layer === "campaign" ? Icon.rialto() : Icon.family()}
             </Door>
           )}
           <Door label={m.buttons.help} onClick={onHelp}>
@@ -218,15 +234,33 @@ function Door({
   children,
   label,
   onClick,
-}: { children: ReactNode; label: string; onClick: () => void }) {
+  dot,
+  active,
+  coach,
+}: {
+  children: ReactNode;
+  label: string;
+  onClick: () => void;
+  /** Something waits behind it. */
+  dot?: boolean;
+  /** The door leads back (its layer is the one shown). */
+  active?: boolean;
+  coach?: string;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="pointer-events-auto flex flex-col items-center gap-1 text-cream-dim transition active:scale-90"
+      data-coach={coach}
+      className={`pointer-events-auto flex flex-col items-center gap-1 transition active:scale-90 ${active ? "text-gold" : "text-cream-dim"}`}
     >
-      <span className="hud-orb flex h-12 w-12 items-center justify-center rounded-full">
+      <span
+        className={`hud-orb relative flex h-12 w-12 items-center justify-center rounded-full ${active ? "ring-2 ring-gold/70" : ""}`}
+      >
         {children}
+        {dot && (
+          <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full bg-vermilion ring-2 ring-night" />
+        )}
       </span>
       <span className="font-mono text-[9px] uppercase tracking-[0.1em] [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
         {label}

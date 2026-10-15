@@ -152,7 +152,7 @@ export function DecreeBanner({ props }: { props: GameProps }) {
 }
 
 /** The four families' glory this week, side by side. */
-function Standings({ f }: { f: FamiliesView }) {
+export function Standings({ f }: { f: FamiliesView }) {
   const top = Math.max(1, ...f.families.map((x) => x.glory));
   const ranked = [...f.families].sort((a, b) => b.glory - a.glory);
   return (
@@ -201,282 +201,8 @@ export function marchOrigin(f: FamiliesView, m: MarchView): string | null {
   return f.lands.find((l) => l.seat === m.family)?.code ?? null;
 }
 
-/** What a drop of the seat's lances on a land would do (the bubble of the drag). */
-function dropInfo(f: FamiliesView, code: string) {
-  const land = f.lands.find((l) => l.code === code);
-  if (!land) return { ok: false, title: "", sub: "" };
-  const name = landName(code);
-  if (land.seat) return { ok: false, title: name, sub: t().land.seat(familyName(land.seat)) };
-  if (!land.open) return { ok: false, title: name, sub: t().land.notAdjacent };
-  const ours = land.holder !== null && land.holder === f.mine;
-  const needed = land.defense + 1;
-  return {
-    ok: true,
-    title: ours ? t().drag.reinforce(name) : t().drag.attack(name),
-    sub: ours
-      ? t().drag.reinforceSub(land.minutes ?? 0, land.garrison)
-      : t().drag.attackSub(land.minutes ?? 0, needed, f.me?.reserve ?? 0),
-  };
-}
-
-/** The lances of the seat, as a token to drag. */
-function LancesToken({ n }: { n: number }) {
-  return (
-    <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-night/85 ring-[3px] ring-gold shadow-[0_0_18px_rgb(var(--gold)/0.6)]">
-      <span className="text-xl" aria-hidden="true">
-        ⚔
-      </span>
-      <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gold px-1.5 font-mono text-[9px] font-bold text-night">
-        {n}
-      </span>
-    </span>
-  );
-}
-
-/**
- * The Terraferma as a map: each land's ground in its holder's colour (the drawn map of the roads
- * underneath, Lombardy to the west), borders where holders meet, the lands and their garrisons,
- * the marches.
- */
-function CampaignMap({
-  f,
-  props,
-  onPick,
-  className = "h-[62svh] min-h-[400px]",
-  covered = false,
-}: {
-  f: FamiliesView;
-  props: GameProps;
-  onPick: (land: string) => void;
-  className?: string;
-  /** Something lies over the map (the drawer): no lances to drag then. */
-  covered?: boolean;
-}) {
-  const colors = holderColors();
-  const seat = f.lands.find((l) => l.seat === f.mine)?.code ?? null;
-  const reserve = f.me?.reserve ?? 0;
-  const carrier =
-    f.mine && seat && reserve > 0 && !f.closed && !covered
-      ? {
-          from: seat,
-          token: <LancesToken n={reserve} />,
-          info: (code: string) => dropInfo(f, code),
-          onDrop: (code: string) => onPick(code),
-          onTap: () => {
-            if ((f.me?.levy ?? 0) > 0) void props.act({ type: "collectLevy" });
-          },
-        }
-      : null;
-  const marches = f.marches.map((m) => {
-    const target = f.lands.find((l) => l.code === m.target);
-    return {
-      ...m,
-      from: marchOrigin(f, m),
-      hostile: m.family !== f.mine && target?.holder === f.mine && f.mine !== null,
-      label: `⚔ ${m.lances} · ${clock(m.arriveAt - props.now)}`,
-    };
-  });
-  return (
-    <DrawnMap
-      f={f}
-      colors={colors}
-      marches={marches}
-      carrier={carrier}
-      onPick={onPick}
-      className={className}
-    />
-  );
-}
-
-/** The drawn map (no 3D): the Veneto of the roads, the territories over it. */
-function DrawnMap({
-  f,
-  colors,
-  marches,
-  carrier,
-  onPick,
-  className,
-}: {
-  f: FamiliesView;
-  className: string;
-  colors: Record<string, string>;
-  marches: (MarchView & { from: string | null; hostile: boolean; label: string })[];
-  carrier: {
-    from: string;
-    token: ReactNode;
-    info: (code: string) => { ok: boolean; title: string; sub: string };
-    onDrop: (code: string) => void;
-    onTap: () => void;
-  } | null;
-  onPick: (land: string) => void;
-}) {
-  const box = useRef<HTMLDivElement>(null);
-  const svg = useRef<SVGSVGElement>(null);
-  const xs = f.lands.map((l) => l.x);
-  const ys = f.lands.map((l) => l.y);
-  const pad = 40;
-  const vb = {
-    x: Math.min(...xs) - pad,
-    y: Math.min(...ys) - pad,
-    w: Math.max(...xs) - Math.min(...xs) + 2 * pad,
-    h: Math.max(...ys) - Math.min(...ys) + 2 * pad,
-  };
-  const t0 = territories(
-    f.lands.map((l) => ({ code: l.code, x: l.x, y: l.y, holder: l.holder })),
-    46,
-  );
-  const at = (x: number, y: number) => {
-    const r = svg.current?.getBoundingClientRect();
-    const b = box.current?.getBoundingClientRect();
-    if (!r || !b) return null;
-    // The drawing is fitted whole in its box, centred (letterboxed on the long side).
-    const scale = Math.min(r.width / vb.w, r.height / vb.h);
-    const ox = (r.width - vb.w * scale) / 2;
-    const oy = (r.height - vb.h * scale) / 2;
-    return {
-      x: r.left - b.left + ox + (x - vb.x) * scale,
-      y: r.top - b.top + oy + (y - vb.y) * scale,
-    };
-  };
-  const origin = () => {
-    const l = f.lands.find((x) => x.code === carrier?.from);
-    return l ? at(l.x, l.y) : null;
-  };
-  const spots = () =>
-    f.lands.flatMap((l) => {
-      const p = at(l.x, l.y);
-      return p ? [{ code: l.code, ...p }] : [];
-    });
-  const byCode = new Map(f.lands.map((l) => [l.code, l]));
-  return (
-    <div ref={box} className={`relative bg-[#1B2E26] ${className}`}>
-      <svg
-        ref={svg}
-        viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
-        className="block h-full w-full select-none"
-        role="img"
-        aria-label={t().map}
-      >
-        <rect x={vb.x} y={vb.y} width={vb.w} height={vb.h} fill="#1B2E26" />
-        <VenetoTerrain />
-        {f.lands.map((l) => {
-          const cell = t0.cells[l.code] ?? [];
-          return (
-            <polygon
-              key={`cell-${l.code}`}
-              points={cell.map(([x, y]) => `${x},${y}`).join(" ")}
-              fill={colors[l.holder ?? ""] ?? MILITIA_HEX}
-              fillOpacity={l.holder ? 0.42 : 0.14}
-            />
-          );
-        })}
-        {t0.borders
-          .filter((e) => e.holder)
-          .map((e) => (
-            <line
-              key={`${e.code}-${e.from[0]}-${e.from[1]}`}
-              x1={e.from[0]}
-              y1={e.from[1]}
-              x2={e.to[0]}
-              y2={e.to[1]}
-              stroke={colors[e.holder ?? ""] ?? MILITIA_HEX}
-              strokeWidth="2.2"
-              strokeLinecap="round"
-            />
-          ))}
-        {marches.map((m) => {
-          const a = m.from ? byCode.get(m.from) : undefined;
-          const b = byCode.get(m.target);
-          if (!a || !b) return null;
-          return (
-            <line
-              key={m.id}
-              x1={a.x}
-              y1={a.y}
-              x2={b.x}
-              y2={b.y}
-              stroke={m.hostile ? P.vermilion : (colors[m.family] ?? P.cream)}
-              strokeWidth="2.5"
-              strokeDasharray="3 4"
-              className="map-march"
-            />
-          );
-        })}
-        {f.lands.map((l) => {
-          const r = l.seat || l.kind === "fortress" ? 9 : l.city ? 8 : 6.5;
-          return (
-            // biome-ignore lint/a11y/useKeyWithClickEvents: the lands within reach are listed below the map
-            <g
-              key={l.code}
-              transform={`translate(${l.x} ${l.y})`}
-              onClick={() => onPick(l.code)}
-              className="cursor-pointer"
-            >
-              {l.open && (
-                <circle
-                  r={r + 3}
-                  fill="none"
-                  stroke={P.gold}
-                  strokeWidth="1.2"
-                  strokeDasharray="2 2"
-                />
-              )}
-              <circle
-                r={r}
-                fill={colors[l.holder ?? ""] ?? MILITIA_HEX}
-                stroke={l.mine > 0 ? P.gold : P.night}
-                strokeWidth={l.mine > 0 ? 2 : 1.4}
-              />
-              <text
-                y="3.2"
-                textAnchor="middle"
-                fontSize="8.5"
-                fontWeight="800"
-                fill={P.cream}
-                style={{ paintOrder: "stroke", stroke: P.night, strokeWidth: 2 }}
-              >
-                {l.seat ? "⚑" : l.garrison}
-              </text>
-              {l.work && (
-                <g transform={`translate(${r - 1} ${-r - 9}) scale(0.6)`}>
-                  <WorkShape
-                    kind={l.work.kind}
-                    fill={l.work.ready ? (colors[l.work.family] ?? P.cream) : "none"}
-                    stroke={l.work.ready ? P.night : (colors[l.work.family] ?? P.cream)}
-                    dashed={!l.work.ready}
-                  />
-                </g>
-              )}
-              <text
-                y={r + 10}
-                textAnchor="middle"
-                fontSize="8"
-                fontWeight="700"
-                fill={l.city ? P.goldSoft : P.cream}
-                style={{ paintOrder: "stroke", stroke: P.night, strokeWidth: 2.5 }}
-              >
-                {landName(l.code)}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-      {carrier && (
-        <CarrierDrag
-          origin={origin}
-          spots={spots}
-          info={carrier.info}
-          onDrop={carrier.onDrop}
-          onTap={carrier.onTap}
-          token={carrier.token}
-        />
-      )}
-    </div>
-  );
-}
-
 /** One land: what holds it, what taking it needs, and the march to send. */
-function LandSheet({
+export function LandSheet({
   land,
   f,
   props,
@@ -669,7 +395,7 @@ function LandWork({ land, f, props }: { land: LandView; f: FamiliesView; props: 
 }
 
 /** The merchant's lances: the levy to collect, lances to engage, those about to leave. */
-function Lances({ f, props }: { f: FamiliesView; props: GameProps }) {
+export function Lances({ f, props }: { f: FamiliesView; props: GameProps }) {
   const rules = props.catalog.families;
   const me = f.me;
   const room = me ? Math.max(0, me.hireLimit - me.hired) : 0;
@@ -728,7 +454,7 @@ function Lances({ f, props }: { f: FamiliesView; props: GameProps }) {
 }
 
 /** Marches under way: the family's assaults to join, the enemy's to see coming. */
-function Marches({ f, props }: { f: FamiliesView; props: GameProps }) {
+export function Marches({ f, props }: { f: FamiliesView; props: GameProps }) {
   const [joining, setJoining] = useState<string | null>(null);
   const [count, setCount] = useState(1);
   const reserve = f.me?.reserve ?? 0;
@@ -798,7 +524,7 @@ function Marches({ f, props }: { f: FamiliesView; props: GameProps }) {
 }
 
 /** The family's programme: the decrees it imposes if it wins, and the merchant's vote. */
-function Programme({ f, props }: { f: FamiliesView; props: GameProps }) {
+export function Programme({ f, props }: { f: FamiliesView; props: GameProps }) {
   const rules = props.catalog.families?.decrees;
   const [picks, setPicks] = useState<DecreePick[]>(() => f.me?.ballot ?? []);
   if (!rules || !f.mine) return null;
@@ -908,7 +634,7 @@ function Programme({ f, props }: { f: FamiliesView; props: GameProps }) {
 }
 
 /** No family yet: the four to choose from (and the map to watch). */
-function Choose({ f, props }: { f: FamiliesView; props: GameProps }) {
+export function Choose({ f, props }: { f: FamiliesView; props: GameProps }) {
   const [chosen, setChosen] = useState<string | null>(null);
   const open = f.opensAt <= props.now;
   const smallest = [...f.families].sort((a, b) => a.active - b.active)[0]?.code;
@@ -973,7 +699,7 @@ function Choose({ f, props }: { f: FamiliesView; props: GameProps }) {
 const THREAD_POLL_MS = 15_000;
 
 /** The family's thread: members plan their assaults, report what should not be there. */
-function Thread() {
+export function Thread() {
   const [messages, setMessages] = useState<FamilyMessage[]>([]);
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -1077,7 +803,7 @@ function clockTime(at: number): string {
 }
 
 /** The family's members by merit, the captain first. */
-function Roll({ f, props }: { f: FamiliesView; props: GameProps }) {
+export function Roll({ f, props }: { f: FamiliesView; props: GameProps }) {
   const per = props.catalog.families?.campaign?.garrisonLancesPerPoint ?? 10;
   return (
     <Panel>
@@ -1100,7 +826,7 @@ function Roll({ f, props }: { f: FamiliesView; props: GameProps }) {
 }
 
 /** The weeks already decided: who won, with what glory and which decrees. */
-function History({ f, props }: { f: FamiliesView; props: GameProps }) {
+export function History({ f, props }: { f: FamiliesView; props: GameProps }) {
   if (f.history.length === 0) return null;
   return (
     <Panel>
@@ -1127,109 +853,8 @@ function History({ f, props }: { f: FamiliesView; props: GameProps }) {
   );
 }
 
-type DrawerTab = "campagne" | "decrets" | "famille" | "fil";
-
-/** The four families' glory over the map, the week's clock and what is coming. */
-function Scoreboard({
-  f,
-  props,
-  onFamily,
-  onHelp,
-}: {
-  f: FamiliesView;
-  props: GameProps;
-  onFamily: () => void;
-  onHelp: () => void;
-}) {
-  const ranked = [...f.families].sort((a, b) => b.glory - a.glory);
-  const top = Math.max(1, ranked[0]?.glory ?? 0);
-  return (
-    <Hud>
-      <HudBar>
-        {ranked.map((x, i) => (
-          <HudStat
-            key={x.code}
-            onClick={onFamily}
-            active={x.code === f.mine}
-            label={`${familyName(x.code)} · ${t().glory} ${x.glory}`}
-            icon={<FamilyCrest family={x.code} size={22} />}
-            value={x.glory}
-            caption={
-              i === 0 && x.glory > 0 ? `★ ${t().first}` : x.code === f.mine ? t().you : `${i + 1}e`
-            }
-          />
-        ))}
-        <HelpButton onClick={onHelp} label={t().helpTitle} />
-      </HudBar>
-      {/* The glory of each, as a thin line of its colour under the bar. */}
-      <div className="-mt-1 flex gap-1 px-2">
-        {ranked.map((x) => (
-          <span key={x.code} className="h-[2px] flex-1 overflow-hidden rounded-full bg-night/60">
-            <span
-              className="block h-full origin-left rounded-full transition-transform duration-500"
-              style={{ background: familyHex(x.code), transform: `scaleX(${x.glory / top})` }}
-            />
-          </span>
-        ))}
-        <span className="w-8 shrink-0" />
-      </div>
-      <Chips>
-        <Chip>{f.closed ? t().closed : t().weekShort(clock(f.weekEndsAt - props.now))}</Chip>
-        {!f.open && !f.closed && (
-          <Chip tone="lagoon">
-            ☾ {t().truce} {clock(f.nextOpenAt - props.now)}
-          </Chip>
-        )}
-        {f.nextMilanAt !== null && f.nextMilanAt > props.now && !f.closed && (
-          <Chip tone="vermilion">{t().milanShort(clock(f.nextMilanAt - props.now))}</Chip>
-        )}
-      </Chips>
-    </Hud>
-  );
-}
-
-/** At the foot of the map: the reserve, the levy to collect, lances to engage, the works. */
-function ActionBar({
-  f,
-  props,
-  onHire,
-  onWorks,
-}: {
-  f: FamiliesView;
-  props: GameProps;
-  onHire: () => void;
-  onWorks: () => void;
-}) {
-  const me = f.me;
-  if (!me || f.closed) return null;
-  const works = props.catalog.families?.campaign?.works;
-  return (
-    <Tray hint={me.reserve > 0 ? t().drag.hint : undefined}>
-      <TrayStat icon="⚔" value={me.reserve} caption={t().reserveShort} />
-      <Slab
-        size="sm"
-        tone="lagoon"
-        className="min-w-0 flex-1 whitespace-nowrap !px-2"
-        disabled={props.busy || me.levy <= 0}
-        onClick={() => props.act({ type: "collectLevy" })}
-      >
-        {t().levyShort(me.levy)}
-      </Slab>
-      <Slab size="sm" className="min-w-0 flex-1 whitespace-nowrap !px-2" onClick={onHire}>
-        {t().hireOpen}
-      </Slab>
-      {works && (
-        <TrayButton onClick={onWorks} label={t().works.count(me.works, me.worksAllowed)}>
-          <WorkGlyph kind="rocca" color={familyHex(f.mine)} size={18} />
-          {me.works}/{me.worksAllowed}
-        </TrayButton>
-      )}
-    </Tray>
-  );
-}
-
 /** The family's works standing on the map, and what they do. */
-function Works({
+export function Works({
   f,
   props,
   onLand,
@@ -1289,42 +914,8 @@ function Works({
   );
 }
 
-/** The lands the merchant's lances can reach now, as chips (the map's list for the keyboard). */
-function InReach({ f, onLand }: { f: FamiliesView; onLand: (code: string) => void }) {
-  const lands = f.lands.filter((l) => l.open);
-  if (lands.length === 0) return null;
-  return (
-    <Panel>
-      <Label>{t().inReach}</Label>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {lands.map((l) => (
-          <button
-            key={l.code}
-            type="button"
-            onClick={() => onLand(l.code)}
-            className="rounded-lg bg-night-2 px-2 py-1 text-xs ring-1 ring-inset ring-line/70"
-            style={{ borderLeft: `3px solid ${familyHex(l.holder)}` }}
-          >
-            <span className="inline-flex items-center gap-1">
-              {landName(l.code)} · {l.garrison}
-              {l.work && (
-                <WorkGlyph
-                  kind={l.work.kind}
-                  color={familyHex(l.work.family)}
-                  ready={l.work.ready}
-                  size={12}
-                />
-              )}
-            </span>
-          </button>
-        ))}
-      </div>
-    </Panel>
-  );
-}
-
 /** The merchant's family, the week's standings, its members and the weeks gone by. */
-function FamilyTab({ f, props }: { f: FamiliesView; props: GameProps }) {
+export function FamilyTab({ f, props }: { f: FamiliesView; props: GameProps }) {
   const mine = f.mine ?? "";
   const last = props.view.acts.length > 0 && f.weekEndsAt >= props.catalog.world.endsAt;
   return (
@@ -1354,55 +945,8 @@ function FamilyTab({ f, props }: { f: FamiliesView; props: GameProps }) {
   );
 }
 
-/** The drawer under the map: the campaign's lists, the decrees, the family, its thread. */
-function FamilyDrawer({
-  f,
-  props,
-  drawer,
-  onLand,
-}: {
-  f: FamiliesView;
-  props: GameProps;
-  drawer: ReturnType<typeof useDrawer<DrawerTab>>;
-  onLand: (code: string) => void;
-}) {
-  const unread =
-    props.familyLatestAt !== null && props.familyLatestAt > Number(store.get("familySeen") ?? 0);
-  const threats = f.marches.filter(
-    (m) => m.family !== f.mine && f.lands.find((l) => l.code === m.target)?.holder === f.mine,
-  ).length;
-  const tab = drawer.tab;
-  return (
-    <Drawer<DrawerTab>
-      {...drawer.props}
-      tabs={[
-        { key: "campagne", label: t().tabs.campagne, dot: threats > 0 },
-        { key: "decrets", label: t().tabs.decrets },
-        { key: "famille", label: t().tabs.famille },
-        { key: "fil", label: t().tabs.fil, dot: unread && tab !== "fil" },
-      ]}
-    >
-      {tab === "campagne" && (
-        <>
-          <Marches f={f} props={props} />
-          <Works f={f} props={props} onLand={onLand} />
-          <InReach f={f} onLand={onLand} />
-        </>
-      )}
-      {tab === "decrets" && (
-        <>
-          <DecreeBanner props={props} />
-          <Programme f={f} props={props} />
-        </>
-      )}
-      {tab === "famille" && <FamilyTab f={f} props={props} />}
-      {tab === "fil" && <Thread />}
-    </Drawer>
-  );
-}
-
 /** How the campaign is played, out of the way until asked for. */
-function HowTo({ props }: { props: GameProps }) {
+export function HowTo({ props }: { props: GameProps }) {
   const works = props.catalog.families?.campaign?.works;
   return (
     <div className="space-y-3">
@@ -1431,88 +975,5 @@ function HowTo({ props }: { props: GameProps }) {
         </div>
       )}
     </div>
-  );
-}
-
-/** A family of the merchant's: the map on the whole screen, everything else at hand around it. */
-function Mine({ f, props }: { f: FamiliesView; props: GameProps }) {
-  const drawer = useDrawer<DrawerTab>("campagne");
-  const [land, setLand] = useState<string | null>(null);
-  const [hire, setHire] = useState(false);
-  const [help, setHelp] = useState(false);
-  const picked = f.lands.find((l) => l.code === land) ?? null;
-  return (
-    <Stage
-      label={t().title}
-      scene={
-        <CampaignMap
-          f={f}
-          props={props}
-          onPick={(code) => setLand(code)}
-          className="h-full w-full"
-          covered={drawer.covering}
-        />
-      }
-      top={
-        <Scoreboard
-          f={f}
-          props={props}
-          onFamily={() => drawer.show("famille")}
-          onHelp={() => setHelp(true)}
-        />
-      }
-      bottom={
-        <ActionBar
-          f={f}
-          props={props}
-          onHire={() => setHire(true)}
-          onWorks={() => drawer.show("campagne")}
-        />
-      }
-      drawer={<FamilyDrawer f={f} props={props} drawer={drawer} onLand={setLand} />}
-    >
-      <Sheet open={picked !== null} onClose={() => setLand(null)}>
-        {picked && (
-          <LandSheet
-            key={picked.code}
-            land={picked}
-            f={f}
-            props={props}
-            onClose={() => setLand(null)}
-          />
-        )}
-      </Sheet>
-      <Sheet open={hire} onClose={() => setHire(false)}>
-        <Lances f={f} props={props} />
-      </Sheet>
-      <Sheet open={help} onClose={() => setHelp(false)}>
-        <HowTo props={props} />
-      </Sheet>
-    </Stage>
-  );
-}
-
-/** The four families and the week's campaign in the Terraferma. */
-export function Famille(props: GameProps) {
-  const f = props.view.families;
-  if (!f) return null;
-  if (f.mine) {
-    // The map takes the screen from edge to edge, under the page's top bar.
-    return <Mine f={f} props={props} />;
-  }
-  return (
-    <section className="space-y-4">
-      <div className="relative -mx-4 -mt-4 overflow-hidden border-b border-line lg:mx-0 lg:mt-0 lg:rounded-3xl lg:border">
-        <CampaignMap f={f} props={props} onPick={() => {}} className="h-[46svh] min-h-[320px]" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-night via-night/80 to-transparent px-4 pb-3 pt-10">
-          <Label className="text-gold">⚑ {t().kicker}</Label>
-          <h1 className="mt-1 font-display text-[1.75rem] font-extrabold uppercase leading-[1.05]">
-            {t().title}
-          </h1>
-        </div>
-      </div>
-      <p className="text-sm text-cream-dim">{t().help}</p>
-      <Choose f={f} props={props} />
-    </section>
   );
 }

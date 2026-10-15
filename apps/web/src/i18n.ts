@@ -143,6 +143,31 @@ export const fr = {
         news: "Nouvelles",
       },
       page: { back: "Retour à la carte" },
+      campaign: {
+        toCampaign: "Famille",
+        toTrade: "Commerce",
+        lances: "Lances",
+        marches: "Marches",
+        decrees: "Décrets",
+        family: "Famille",
+        attack: "Attaquer",
+        reinforce: "Renforcer",
+        details: "Fiche",
+        join: "Rejoindre",
+        pledge: "Allégeance",
+        howTo: "Règles",
+        families: "Les quatre familles",
+        rankGlory: (rank: number, glory: number) =>
+          `${rank}${rank === 1 ? "re" : "e"} · ${glory} Gloire`,
+        reserveLine: (reserve: number, levy: number, max: number) =>
+          `Réserve ⚔ ${reserve} · levée ${levy}/${max}`,
+        landLine: (holder: string, garrison: number, defense: number) =>
+          `${holder} · garnison ${garrison} · défense ${defense}`,
+        threat: (time: string) => `Marche ennemie, arrivée dans ${time}`,
+        ours: (time: string) => `Votre famille y marche · ${time}`,
+        backToTrade: "Revenez au commerce : touchez « Commerce » au pied de la carte.",
+        chooseLine: "Choisissez votre famille pour la saison",
+      },
       rialto: {
         kicker: "Le marché des joueurs, à Venise",
         filters: { all: "Tout", stock: "En stock", rising: "En hausse" },

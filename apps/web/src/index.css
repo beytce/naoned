@@ -657,3 +657,6 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
+.map-marker[data-selected] .land-name {
+  display: block;
+}
