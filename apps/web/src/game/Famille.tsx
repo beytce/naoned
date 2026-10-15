@@ -1,17 +1,15 @@
-import { type ReactNode, Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "../api.js";
 import { FAMILY_LOOK, FamilyCrest, MILITIA_HEX, familyHex } from "../art/familyCrest.js";
 import { P } from "../art/palette.js";
 import { VenetoTerrain } from "../art/veneto.js";
 import { WorkGlyph, WorkShape } from "../art/workIcon.js";
-import { territories } from "../campaign3d/territory.js";
 import { fr } from "../i18n.js";
 import { Badge, Big, Label, Panel, Qty, Sheet, Slab, Stat, clock } from "../ui.js";
 import { CarrierDrag } from "./Cargo.js";
 import type { GameProps } from "./Game.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
-import { scenePhase, use3d } from "./scene3d.js";
 import {
   Chip,
   Chips,
@@ -27,8 +25,8 @@ import {
   useDrawer,
 } from "./stage.js";
 import { store } from "./store.js";
+import { territories } from "./territory.js";
 
-const Terraferma3D = lazy(() => import("../campaign3d/Terraferma3D.js"));
 import type {
   DecreePick,
   DecreeRules,
@@ -238,7 +236,7 @@ function LancesToken({ n }: { n: number }) {
 /**
  * The Terraferma as a map: each land's ground in its holder's colour (the drawn map of the roads
  * underneath, Lombardy to the west), borders where holders meet, the lands and their garrisons,
- * the marches. On the 3D model when the device can draw it.
+ * the marches.
  */
 function CampaignMap({
   f,
@@ -278,35 +276,6 @@ function CampaignMap({
       label: `⚔ ${m.lances} · ${clock(m.arriveAt - props.now)}`,
     };
   });
-  if (use3d) {
-    return (
-      <Suspense fallback={<div className={`w-full animate-pulse bg-night-3 ${className}`} />}>
-        <Terraferma3D
-          phase={scenePhase(props.now)}
-          still={
-            typeof window !== "undefined" &&
-            window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
-          }
-          clockOffset={props.now - Date.now()}
-          className={className}
-          title={t().map}
-          colors={colors}
-          focus={seat}
-          lands={f.lands.map((l) => ({
-            ...l,
-            name: landName(l.code),
-            city: l.city ?? null,
-            seat: l.seat ?? null,
-            threatened: marches.some((m) => m.target === l.code && m.hostile),
-            work: l.work ? { kind: l.work.kind, ready: l.work.ready, family: l.work.family } : null,
-          }))}
-          marches={marches}
-          onLand={onPick}
-          carrier={carrier}
-        />
-      </Suspense>
-    );
-  }
   return (
     <DrawnMap
       f={f}

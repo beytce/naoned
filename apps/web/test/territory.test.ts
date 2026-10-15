@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { territories } from "../src/campaign3d/territory.js";
+import { territories } from "../src/game/territory.js";
 
 const sites = [
   { code: "a", x: 0, y: 0, holder: "rossi" },

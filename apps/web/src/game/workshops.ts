@@ -1,4 +1,5 @@
-import type { PlotState } from "../art/domain.js";
+/** How a workshop stands: something to collect, working, waiting for work, lacking, at rest. */
+export type PlotState = "ready" | "running" | "idle" | "blocked" | "still";
 import type { GameProps } from "./Game.js";
 import type { BuildingView, PlayerView, Recipe } from "./types.js";
 
