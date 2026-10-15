@@ -212,30 +212,26 @@ export function CampaignPanel({
   const now = props.now;
 
   if (!f.mine && !land) {
-    // No family yet: the four, and the way in.
+    // No family yet: an invitation floating over the doors (they stay, to go back to the trade).
     return (
-      <ContextPanel
-        title={c().families}
-        status={f.opensAt > now ? t().opensIn(clock(f.opensAt - now)) : c().chooseLine}
-        tone="gold"
-        onClose={() => props.goTo("comptoir")}
-        actions={
-          <>
-            <ActionButton
-              icon={Icon.family()}
-              label={c().pledge}
-              tone="gold"
-              coach="panel-pledge"
-              onClick={() => props.setSheet("fam:choose")}
-            />
-            <ActionButton
-              icon={Icon.help()}
-              label={c().howTo}
-              onClick={() => props.setSheet("fam:howto")}
-            />
-          </>
-        }
-      />
+      <div className="pointer-events-none absolute inset-x-0 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 flex flex-col items-center gap-1 lg:bottom-28">
+        <button
+          type="button"
+          data-coach="panel-pledge"
+          onClick={() => props.setSheet("fam:choose")}
+          className="pointer-events-auto flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 font-display text-sm font-extrabold uppercase tracking-wide text-ink shadow-[0_6px_20px_rgb(0_0_0/0.45)] transition active:scale-95"
+        >
+          {Icon.family()}
+          {t().pledge}
+        </button>
+        <button
+          type="button"
+          onClick={() => props.setSheet("fam:howto")}
+          className="pointer-events-auto font-mono text-[10px] uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
+        >
+          {f.opensAt > now ? t().opensIn(clock(f.opensAt - now)) : c().howTo}
+        </button>
+      </div>
     );
   }
 
@@ -358,6 +354,14 @@ export function CampaignPanel({
             label={c().details}
             onClick={() => props.setSheet(`land:${land.code}`)}
           />
+          {!f.mine && (
+            <ActionButton
+              icon={Icon.family()}
+              label={c().pledge}
+              tone="gold"
+              onClick={() => props.setSheet("fam:choose")}
+            />
+          )}
         </>
       }
     />

@@ -266,7 +266,7 @@ export function MapScreen(
   const campaignPanel = campaign ? (
     <CampaignPanel props={props} f={campaign} sel={sel} select={select} />
   ) : null;
-  const panelUp = campaign ? !!(sel || !campaign.mine) : !!sel;
+  const panelUp = !!sel;
 
   const insets = wide
     ? { top: 110, right: panelUp ? 460 : 40, bottom: 40, left: 40 }
