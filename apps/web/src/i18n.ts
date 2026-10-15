@@ -74,6 +74,77 @@ export const fr = {
   },
 
   game: {
+    map: {
+      home: (pseudo: string) => (pseudo ? `Maison ${pseudo}` : "Votre maison"),
+      homeLabel: "Comptoir",
+      close: "Fermer",
+      prev: "Précédent",
+      next: "Suivant",
+      notices: "Avis",
+      buyCart: "Acheter une charrette",
+      carts: "Charrettes libres",
+      resumeGuide: "Reprendre le guide",
+      buttons: {
+        harvest: "Récolter",
+        restart: "Relancer",
+        workshops: "Ateliers",
+        store: "Entrepôt",
+        build: "Bâtir",
+        cargo: "Cargaisons",
+        send: "Partir",
+        go: "Partir",
+        cancel: "Annuler",
+        react: "Riposter",
+        follow: "Suivre",
+        rialto: "Rialto",
+        port: "Port",
+        criee: "Criée",
+        bandits: "Brigands",
+        ranking: "Classement",
+        family: "Famille",
+        help: "Aide",
+      },
+      homeStatus: {
+        ready: (n: number) => `${n} lot${n > 1 ? "s" : ""} prêt${n > 1 ? "s" : ""} à récolter`,
+        next: (building: string, left: string) => `${building} : prochain lot dans ${left}`,
+        idle: "Des ateliers attendent du travail",
+        rest: "Ateliers au repos",
+      },
+      stockChip: (n: number) => `Stock ${n}`,
+      city: {
+        orders: (n: number) => (n > 0 ? `${n} commande${n > 1 ? "s" : ""}` : "Aucune commande"),
+        deliverable: (n: number) =>
+          n > 0
+            ? `${n} livrable${n > 1 ? "s" : ""} avec votre stock`
+            : "Votre stock ne couvre aucune commande",
+        none: (time: string) => `Nouvelles commandes dans ${time}`,
+        criee: (resource: string, pct: string, left: string) =>
+          `Criée : ${resource.toLowerCase()} payé +${pct} · ${left}`,
+        noCart: "Aucune charrette libre",
+        venice: "Le Rialto et le Port",
+      },
+      cart: {
+        atHome: "Au comptoir",
+        loaded: (city: string) => `Chargée pour ${city}`,
+        outbound: (city: string, left: string) => `Vers ${city} · ${left}`,
+        inbound: (left: string) => `Retour au comptoir · ${left}`,
+        halted: (left: string) => `Arrêtée par des brigands · ripostez dans ${left}`,
+        leaving: (city: string) => `Départ vers ${city}`,
+        pickCity: "Touchez une ville éclairée",
+        nothing: "Rien à livrer avec votre stock pour l'instant",
+      },
+      notice: {
+        title: "Avis",
+        season: (day: number, of: number) => `Jour ${day} sur ${of}`,
+        daysLeft: (n: number) => `${n} jour${n > 1 ? "s" : ""} avant la fin de la saison`,
+        event: "La gazette",
+        carnet: "Carnet du jour",
+        yourSeason: "Votre saison",
+        news: "Nouvelles",
+      },
+      page: { back: "Retour à la carte" },
+      ambushHere: "Convoi attaqué !",
+    },
     tabs: {
       comptoir: "Comptoir",
       marche: "Marché",
@@ -850,7 +921,7 @@ export const fr = {
       rewards: (n: number) => `${n} récompense${n > 1 ? "s" : ""} à réclamer`,
       left: (n: number) =>
         n > 0 ? `${n} tâche${n > 1 ? "s" : ""} du jour à faire` : "Tâches du jour faites",
-      open: "Ouvrez votre carnet du jour : vos objectifs et leurs récompenses s'y trouvent.",
+      open: "Touchez la cloche : votre carnet du jour et ses récompenses s'y trouvent.",
       vehicle: (name: string) => `+ 1 ${name.toLowerCase()}`,
     },
     daily: {
@@ -1360,27 +1431,30 @@ export const fr = {
       resume: "Guide",
       step: (n: number, total: number) => `Étape ${n}/${total}`,
       produceTap: (building: string) =>
-        `Lançons votre ${building.toLowerCase()} ! Touchez cet atelier sur votre domaine : la bulle ▶ dit qu'il attend du travail.`,
+        `Lançons votre ${building.toLowerCase()} ! Touchez « Produire » : il attend du travail.`,
+      tapHome: "Touchez votre comptoir, au centre de la carte : vos ateliers s'y trouvent.",
+      openWorkshops: (building: string) =>
+        `Lançons votre ${building.toLowerCase()} ! Ouvrez vos ateliers.`,
       produce: (building: string) =>
         `Touchez « Produire » : ce premier lot de votre ${building.toLowerCase()} sera prêt en 30 secondes.`,
       wait: "Vos ouvriers s'activent. Patientez quelques secondes…",
-      harvest:
-        "C'est prêt ! Touchez l'atelier à la bulle dorée, ou glissez le doigt d'un atelier prêt à l'autre : la marchandise rentre en stock.",
+      harvest: "C'est prêt ! Touchez « Récolter » : la marchandise rentre en stock.",
       transform: (building: string) =>
         `Une matière brute vaut peu. Transformez-la : lancez votre ${building.toLowerCase()}.`,
       goMarket: "Votre marchandise est prête à vendre. Ouvrez le Marché.",
       goCities: "Les villes achètent les produits finis. Ouvrez l'onglet « Villes ».",
       sellCity: (resource: string) =>
         `Vendez vos ${resource.toLowerCase()} à la ville qui paie le mieux.`,
-      goRoutes: "Les villes passent commande. Ouvrez l'onglet « Routes ».",
+      goRoutes:
+        "Les villes passent commande : les pastilles dorées montrent celles que votre stock couvre. Touchez une charrette.",
       goList: "Passez en « Liste » : chaque commande y montre ce qu'elle rapporte.",
       deliver:
-        "Votre stock couvre cette commande. Touchez-la, chargez la charrette et partez : la ville paie à l'arrivée.",
+        "Ouvrez les cargaisons : cochez une commande que votre stock couvre, la ville paie à l'arrivée.",
       dispatch:
-        "La charrette est choisie, et les premiers jours les routes sont sûres : pas besoin d'escorte. Touchez « Charger et partir ».",
+        "Les premiers jours, les routes sont sûres : pas besoin d'escorte. Touchez « Partir » (ou laissez filer le compte à rebours).",
       deliveryUnderway: "Votre charrette est en route. La ville paiera à l'arrivée.",
       goRialto:
-        "Pour grandir, il faut les matériaux d'une autre région. Ouvrez l'onglet « Rialto ».",
+        "Pour grandir, il faut les matériaux d'une autre région. Touchez Venise, puis le Rialto.",
       buy: (resource: string) =>
         `Achetez quelques ${resource.toLowerCase()} : ils servent à améliorer vos ateliers.`,
       emptyMarket:
@@ -1391,7 +1465,7 @@ export const fr = {
       ledger:
         "Voici votre Livre de compte : chaque jour, de nouveaux objectifs et leur récompense. Encaissez la première !",
       ledgerLater:
-        "Votre Livre de compte, sur le comptoir, vous donne vos objectifs du jour. Remplissez-les pour gagner des récompenses.",
+        "Votre Livre de compte, sous la cloche des Avis, vous donne vos objectifs du jour. Remplissez-les pour gagner des récompenses.",
       investLater:
         "Il vous faut encore des briques et des planches pour améliorer un atelier. Produisez, vendez, achetez : c'est la boucle du marchand !",
       done: "Bravo, vous connaissez la boucle : produire, vendre, réinvestir. Revenez récolter au moins toutes les 12 heures : lancez la production le soir, elle tourne toute la nuit.",

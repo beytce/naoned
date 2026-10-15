@@ -545,3 +545,115 @@
     animation: none;
   }
 }
+
+/*
+ * The world map: a night sky behind the Veneto, markers that light up when chosen, carts that turn
+ * to face their road, roads whose dots march toward the city.
+ */
+.world-sky {
+  background: radial-gradient(1px 1px at 12% 18%, rgb(var(--cream) / 0.5), transparent 100%),
+    radial-gradient(1px 1px at 78% 9%, rgb(var(--cream) / 0.4), transparent 100%),
+    radial-gradient(1.5px 1.5px at 64% 82%, rgb(var(--gold-soft) / 0.45), transparent 100%),
+    radial-gradient(1px 1px at 26% 88%, rgb(var(--cream) / 0.35), transparent 100%),
+    radial-gradient(1px 1px at 90% 58%, rgb(var(--cream) / 0.35), transparent 100%),
+    radial-gradient(1.5px 1.5px at 6% 62%, rgb(var(--gold-soft) / 0.35), transparent 100%),
+    radial-gradient(1px 1px at 46% 96%, rgb(var(--cream) / 0.3), transparent 100%),
+    radial-gradient(42rem 30rem at 50% 45%, rgb(var(--gold) / 0.08), transparent 70%),
+    radial-gradient(26rem 26rem at 90% 80%, rgb(var(--lagoon) / 0.1), transparent 70%),
+    radial-gradient(22rem 22rem at 8% 92%, rgb(var(--vermilion) / 0.06), transparent 70%),
+    rgb(var(--night));
+}
+/* The drawn land fades into the night at its edges: no frame around the world. */
+.world-ground {
+  -webkit-mask-image: radial-gradient(ellipse 54% 50% at 50% 54%, #000 72%, transparent 100%);
+  mask-image: radial-gradient(ellipse 54% 50% at 50% 54%, #000 72%, transparent 100%);
+}
+.map-marker {
+  will-change: transform;
+}
+.map-marker .marker-hit {
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.map-marker .marker-hit:active {
+  transform: scale(0.94);
+}
+.map-marker[data-selected] .marker-ring {
+  --tw-ring-color: rgb(var(--lagoon));
+  box-shadow: 0 0 22px rgb(var(--lagoon) / 0.45);
+  animation: marker-select 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.map-marker[data-selected] .marker-orb {
+  outline: 2px solid rgb(var(--lagoon));
+  outline-offset: 3px;
+}
+.map-marker[data-selected] .cart-face {
+  --tw-ring-color: rgb(var(--lagoon));
+  box-shadow: 0 0 18px rgb(var(--lagoon) / 0.75);
+  transform: scale(1.12);
+}
+.cart-face {
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s;
+}
+.cart-glyph {
+  transition: transform 0.25s ease-out;
+}
+.map-marker[data-flip="1"] .cart-glyph {
+  transform: scaleX(-1);
+}
+@keyframes marker-select {
+  0% {
+    transform: scale(0.82);
+    opacity: 0.2;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+.marker-halo {
+  background: radial-gradient(circle, rgb(var(--lagoon) / 0.45) 0%, transparent 68%);
+  animation: marker-halo 2.2s ease-in-out infinite;
+}
+.marker-halo-gold {
+  background: radial-gradient(circle, rgb(var(--gold) / 0.55) 0%, transparent 68%);
+}
+@keyframes marker-halo {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+.route-march {
+  animation: route-march 0.9s linear infinite;
+}
+@keyframes route-march {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+/* The selection's panel at the foot of the map, and the HUD's round buttons. */
+.panel-rise {
+  animation: panel-rise 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes panel-rise {
+  0% {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+.hud-orb {
+  background: rgb(var(--night) / 0.72);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.45), inset 0 0 0 1px rgb(var(--cream) / 0.12);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
