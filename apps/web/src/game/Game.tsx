@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type Account, ApiError } from "../api.js";
 import { Emblem } from "../art/logo.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { DEFAULT_PALETTE, applyPalette, currentPalette, needsPass } from "../theme.js";
-import { CloseButton, Slab } from "../ui.js";
+import { Slab } from "../ui.js";
 import { AmbushAlert } from "./AmbushAlert.js";
 import { Ceremony } from "./Ceremony.js";
 import { Help } from "./Help.js";
