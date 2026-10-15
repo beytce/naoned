@@ -51,7 +51,9 @@ export type Selection =
   | { kind: "home" }
   | { kind: "city"; code: string }
   | { kind: "cart"; id: string }
-  | { kind: "land"; code: string };
+  | { kind: "land"; code: string }
+  | { kind: "port"; code: string }
+  | { kind: "galley"; id: string };
 
 export interface CartTrip {
   route: string;
@@ -69,6 +71,8 @@ export interface MapMarker {
   node: ReactNode;
   /** A cart on the road follows its trip; otherwise the marker stays at its place. */
   trip?: CartTrip | null;
+  /** Where it stands now, in map units, when the screen places it (a galley at sea). */
+  at?: { x: number; y: number; flip?: boolean } | null;
 }
 
 export interface WorldMapHandle {
@@ -107,10 +111,16 @@ export const WorldMap = forwardRef<
   {
     region: string;
     cities: string[];
-    /** Which map is shown: the trade's (cities, counter, carts) or the campaign's (lands). */
-    layer: "trade" | "campaign";
-    /** The campaign's lands, in map units (Lombardy beyond the drawn map's western edge). */
-    lands: { code: string; x: number; y: number }[];
+    /**
+     * Which map is shown: the trade's (cities, counter, carts), the campaign's (lands) or the
+     * sea's (ports, galleys).
+     */
+    layer: "trade" | "campaign" | "sea";
+    /**
+     * The places of the campaign or the sea, in map units, by marker key; those beyond the drawn
+     * map's western edge (Lombardy, Bruges) are a pan away.
+     */
+    spots: { key: string; x: number; y: number }[];
     /** Drawn under the markers, in map units (the campaign's territories and marches). */
     overlay?: ReactNode;
     markers: MapMarker[];
@@ -167,20 +177,20 @@ export const WorldMap = forwardRef<
     });
     return { homeW, fixedPlaces, tradeBox: box, parkAngle };
   }, [props.region, cityKey]);
-  // The campaign's lands: the camera frames those of the drawn Veneto, Lombardy is a pan away.
-  const landKey = props.lands.map((l) => `${l.code}:${l.x}:${l.y}`).join("|");
-  const campaign = useMemo(() => {
+  // Another layer's places: the camera frames those on the drawn map, the others a pan away.
+  const spotKey = props.spots.map((l) => `${l.key}|${l.x}|${l.y}`).join(";");
+  const other = useMemo(() => {
     const places: Record<string, Point> = {};
-    for (const part of landKey ? landKey.split("|") : []) {
-      const [code = "", x = "0", y = "0"] = part.split(":");
-      places[`land:${code}`] = toWorld([Number(x), Number(y)]);
+    for (const part of spotKey ? spotKey.split(";") : []) {
+      const [key = "", x = "0", y = "0"] = part.split("|");
+      places[key] = toWorld([Number(x), Number(y)]);
     }
     return { places, ...landFrames(Object.values(places), MAP_W * RES) };
-  }, [landKey]);
-  const onCampaign = props.layer === "campaign" && props.lands.length > 0;
-  const box = onCampaign ? campaign.box : tradeBox;
-  const fitBox = onCampaign ? campaign.fitBox : tradeBox;
-  const activePlaces = onCampaign ? campaign.places : fixedPlaces;
+  }, [spotKey]);
+  const onOther = props.layer !== "trade" && props.spots.length > 0;
+  const box = onOther ? other.box : tradeBox;
+  const fitBox = onOther ? other.fitBox : tradeBox;
+  const activePlaces = onOther ? other.places : fixedPlaces;
   const places = useRef(activePlaces);
   places.current = activePlaces;
 
@@ -198,6 +208,7 @@ export const WorldMap = forwardRef<
       const fixed = places.current[key];
       if (fixed) return { p: fixed, flip: false };
       const marker = live.current.markers.find((m) => m.key === key);
+      if (marker?.at) return { p: toWorld([marker.at.x, marker.at.y]), flip: !!marker.at.flip };
       const trip = marker?.trip;
       if (trip) {
         const c = roadCurve(trip.route);
@@ -290,7 +301,7 @@ export const WorldMap = forwardRef<
 
   const fit = useCallback(() => {
     const v = viewport();
-    const f = fitCamera(fitBox, v, padded(live.current.insets, live.current.layer === "campaign"));
+    const f = fitCamera(fitBox, v, padded(live.current.insets, live.current.layer !== "trade"));
     fitted.current = f;
     return f;
   }, [fitBox, viewport]);
@@ -302,14 +313,16 @@ export const WorldMap = forwardRef<
         const now = Date.now() + live.current.clockOffset;
         const at = where(key, now);
         if (!at) return;
+        // During a glide (a new layer), from where it is going, not from where it passes.
+        const base = anim.current?.to ?? cam.current;
         const next = reveal(
-          cam.current,
+          base,
           at.p,
           viewport(),
-          padded(live.current.insets, live.current.layer === "campaign"),
+          padded(live.current.insets, live.current.layer !== "trade"),
           8,
         );
-        if (next !== cam.current) easeTo(next);
+        if (next !== base) easeTo(next);
       },
       fit: () => easeTo(fit()),
     }),
@@ -501,6 +514,11 @@ export const WorldMap = forwardRef<
       >
         <NightTerrain />
       </div>
+      {/* At sea the Veneto gives way to open water. */}
+      <div
+        className={`world-sea pointer-events-none absolute inset-0 transition-opacity duration-500 ${props.layer === "sea" ? "opacity-100" : "opacity-0"}`}
+        aria-hidden="true"
+      />
       <svg
         ref={lines}
         viewBox={`0 0 ${MAP_W} ${MAP_H}`}

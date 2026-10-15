@@ -2,12 +2,11 @@ import { useState } from "react";
 import { Crest } from "../art/crest.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Badge, Label, Qty, Sheet, Slab, Sparkline, clock } from "../ui.js";
+import { Badge, Label, Qty, Segmented, Sheet, Slab, Sparkline, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import { DecreeBanner } from "./Famille.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
-import { Segmented } from "./stage.js";
 import type { BookLine, MarketLine, OrderView } from "./types.js";
 
 function series(props: GameProps, resource: string): number[] {

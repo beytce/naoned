@@ -603,3 +603,33 @@ export function clock(ms: number): string {
   if (h > 0) return `${h} h ${m.toString().padStart(2, "0")}`;
   return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
 }
+
+/** A choice among a few, inside a sheet: a row of small pills (sorts, periods). */
+export function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+  coach,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (value: T) => void;
+  coach?: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          aria-pressed={value === o.value}
+          data-coach={coach ? `${coach}-${o.value}` : undefined}
+          onClick={() => onChange(o.value)}
+          className={`rounded-full px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.08em] ring-1 ring-inset transition-colors ${value === o.value ? "bg-gold/15 font-bold text-gold ring-gold/60" : "bg-night-3 text-cream-dim ring-line/70"}`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}

@@ -13,6 +13,8 @@ import { CounterSheets, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import type { GameProps } from "../Game.js";
 import { RialtoSheet } from "../Marche.js";
+import { portOpensAt } from "../Port.js";
+import { ProfileSheet } from "../Profil.js";
 import { RankingSheet } from "../Top.js";
 import { onBack } from "../back.js";
 import { d, minutesLabel } from "../format.js";
@@ -32,6 +34,7 @@ import { MapHud } from "./Hud.js";
 import { CartMarker, CityMarker, HomeMarker } from "./Markers.js";
 import { NoticesSheet } from "./Notices.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
+import { SeaHud, SeaOverlay, SeaPanel, SeaSheets, seaMarkers, seaSpots } from "./SeaLayer.js";
 import { type MapMarker, type Selection, WorldMap, type WorldMapHandle } from "./WorldMap.js";
 import { Icon } from "./icons.js";
 
@@ -42,7 +45,7 @@ const DEPART_SECONDS = 10;
 export function selectionKey(s: Selection | null): string | null {
   if (!s) return null;
   if (s.kind === "home") return "home";
-  if (s.kind === "cart") return `cart:${s.id}`;
+  if (s.kind === "cart" || s.kind === "galley") return `${s.kind}:${s.id}`;
   return `${s.kind}:${s.code}`;
 }
 
@@ -266,22 +269,23 @@ export function MapScreen(
   const campaignPanel = campaign ? (
     <CampaignPanel props={props} f={campaign} sel={sel} select={select} />
   ) : null;
+  const sea = props.layer === "sea";
   const panelUp = !!sel;
 
   const insets = wide
     ? { top: 110, right: panelUp ? 460 : 40, bottom: 40, left: 40 }
     : {
-        top: campaign ? 160 : 150,
+        top: campaign ? 160 : sea ? 175 : 150,
         right: 12,
         bottom: panelUp ? 200 : 100,
         left: 12,
       };
 
   // The panel of the selection.
-  let panel: ReactNode = campaignPanel;
+  let panel: ReactNode = sea ? <SeaPanel props={props} sel={sel} select={select} /> : campaignPanel;
   if (!campaign && sel?.kind === "home")
     panel = <HomePanel props={props} onClose={() => select(null)} />;
-  if (!campaign && sel?.kind === "city") {
+  if (!campaign && !sea && sel?.kind === "city") {
     const i = cities.indexOf(sel.code);
     const step = (k: number) =>
       select({ kind: "city", code: cities[(i + k + cities.length) % cities.length] ?? sel.code });
@@ -301,7 +305,7 @@ export function MapScreen(
       />
     );
   }
-  if (!campaign && selectedCart) {
+  if (!campaign && !sea && selectedCart) {
     const i = vehicles.findIndex((v) => v.id === selectedCart.id);
     const step = (k: number) => {
       setDeparture(null);
@@ -364,15 +368,35 @@ export function MapScreen(
         ref={map}
         region={region}
         cities={cities}
-        layer={campaign ? "campaign" : "trade"}
-        lands={families?.lands ?? []}
-        overlay={campaign ? <CampaignOverlay f={campaign} now={now} /> : undefined}
-        markers={campaign ? campaignMarkers(props, campaign, select) : markers}
-        parked={campaign ? [] : parked}
-        roads={campaign ? [] : roads}
-        litRoads={campaign ? [] : litCities}
+        layer={sea ? "sea" : campaign ? "campaign" : "trade"}
+        spots={
+          sea
+            ? seaSpots(props)
+            : campaign
+              ? campaign.lands.map((l) => ({ key: `land:${l.code}`, x: l.x, y: l.y }))
+              : []
+        }
+        overlay={
+          sea ? (
+            <SeaOverlay props={props} />
+          ) : campaign ? (
+            <CampaignOverlay f={campaign} now={now} />
+          ) : undefined
+        }
+        markers={
+          sea
+            ? seaMarkers(props, select)
+            : campaign
+              ? campaignMarkers(props, campaign, select)
+              : markers
+        }
+        parked={campaign || sea ? [] : parked}
+        roads={campaign || sea ? [] : roads}
+        litRoads={campaign || sea ? [] : litCities}
         planned={
-          campaign ? null : (departure?.city ?? (cartFree && cartHold?.city ? cartHold.city : null))
+          campaign || sea
+            ? null
+            : (departure?.city ?? (cartFree && cartHold?.city ? cartHold.city : null))
         }
         clockOffset={props.clockOffset}
         insets={insets}
@@ -396,23 +420,31 @@ export function MapScreen(
         guidePaused={props.guidePaused}
         bottom={!panelUp}
         hasFamily={!!view.families}
-        layer={campaign ? "campaign" : "trade"}
+        layer={sea ? "sea" : campaign ? "campaign" : "trade"}
         familyCalls={familyCalls(props)}
-        right={campaign ? <CampaignHud f={campaign} now={now} /> : undefined}
-        onProfile={() => props.goTo("profil")}
+        right={
+          sea ? (
+            <SeaHud props={props} />
+          ) : campaign ? (
+            <CampaignHud f={campaign} now={now} />
+          ) : undefined
+        }
+        onProfile={() => props.setSheet("profile")}
         onNotices={() => props.setSheet("notices")}
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
         onRanking={() => props.setSheet("ranking")}
-        onFamily={() => (campaign ? props.setLayer("trade") : props.goTo("famille"))}
+        onFamily={() => (campaign || sea ? props.setLayer("trade") : props.goTo("famille"))}
         onHelp={props.openHelp}
       />
       {panel}
 
       <CounterSheets {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}
+      <SeaSheets {...props} />
       <RialtoSheet {...props} />
       <RankingSheet {...props} />
+      <ProfileSheet {...props} />
       <ActCard {...props} />
       <NoticesSheet
         {...props}
@@ -634,7 +666,10 @@ function CityPanel({
             <ActionButton
               icon={Icon.port()}
               label={m.buttons.port}
-              onClick={() => props.goTo("port")}
+              coach="panel-port"
+              onClick={() =>
+                portOpensAt(view) > now ? props.setSheet("port:locked") : props.goTo("port")
+              }
             />
           )}
           {banditsOpen && (

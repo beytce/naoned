@@ -198,7 +198,7 @@ export function Coach(props: CoachProps) {
   const [onFollow, setOnFollow] = useState(false);
   // On the campaign's layer the guide's places are not on the map: back to the trade first.
   const step: CoachStep =
-    props.layer === "campaign"
+    props.layer !== "trade"
       ? { text: fr.game.map.campaign.backToTrade, target: "door-layer" }
       : nextStep(props);
   const index = Math.min(STEPS.length, props.view.tutorial.length + 1);

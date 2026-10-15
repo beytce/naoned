@@ -8,8 +8,10 @@ import {
   landFrames,
   parkingAngle,
   parkingSpots,
+  pointAlong,
   project,
   reveal,
+  roundTrip,
   toWorld,
   unproject,
   zoomAt,
@@ -140,5 +142,26 @@ describe("map geometry", () => {
     expect(box.x0).toBe(-450);
     expect(fitBox).toEqual({ x0: 100, y0: 200, x1: 900, y1: 1000 });
     expect(landFrames([{ x: -10, y: 0 }], 1080).fitBox.x0).toBe(-10);
+  });
+
+  it("moves along a broken line by length", () => {
+    const line = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 10, y: 30 },
+    ];
+    expect(pointAlong(line, 0).p).toEqual({ x: 0, y: 0 });
+    expect(pointAlong(line, 0.25).p).toEqual({ x: 10, y: 0 });
+    expect(pointAlong(line, 0.5).p).toEqual({ x: 10, y: 10 });
+    expect(pointAlong(line, 1).p).toEqual({ x: 10, y: 30 });
+    expect(pointAlong(line, 0.1).dx).toBeGreaterThan(0);
+  });
+
+  it("sails out then back on a round trip", () => {
+    expect(roundTrip(0)).toEqual({ t: 0, back: false });
+    expect(roundTrip(0.25)).toEqual({ t: 0.5, back: false });
+    expect(roundTrip(0.5).t).toBe(1);
+    expect(roundTrip(0.75)).toEqual({ t: 0.5, back: true });
+    expect(roundTrip(2)).toEqual({ t: 0, back: true });
   });
 });

@@ -197,7 +197,17 @@ function PalettePicker({ pass }: { pass: boolean }) {
   );
 }
 
-export function Profil(props: GameProps) {
+/** The merchant's profile, a sheet over the map (from their arms or name in the HUD). */
+export function ProfileSheet(props: GameProps) {
+  const open = props.sheet === "profile";
+  return (
+    <Sheet open={open} onClose={() => props.setSheet(null)}>
+      {open && <ProfileBody {...props} />}
+    </Sheet>
+  );
+}
+
+function ProfileBody(props: GameProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [palmares, setPalmares] = useState<Palmares | null>(null);
   const [editing, setEditing] = useState(false);
@@ -223,13 +233,8 @@ export function Profil(props: GameProps) {
   ];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
-      <div className="flex justify-end">
-        <Slab tone="ghost" size="sm" onClick={() => setEditing(true)}>
-          {fr.game.editCrest}
-        </Slab>
-      </div>
-      <header className="-mt-4 flex items-center gap-5">
+    <div className="space-y-8 pt-2">
+      <header className="flex items-center gap-5 pr-12">
         <div className="relative">
           <div className="rounded-full bg-night-3 p-3 ring-4 ring-gold/70">
             <Crest crest={crest} size={96} />
@@ -243,6 +248,9 @@ export function Profil(props: GameProps) {
         <div className="min-w-0">
           <h1 className="truncate font-display text-3xl font-extrabold">{props.account.pseudo}</h1>
           <p className="label mt-2 text-lagoon">{props.names.region(props.view.player.region)}</p>
+          <button type="button" className="label mt-2 text-gold" onClick={() => setEditing(true)}>
+            ✎ {fr.game.editCrest}
+          </button>
         </div>
       </header>
 
@@ -342,57 +350,66 @@ export function Profil(props: GameProps) {
 
       <PassPanel props={props} extra={props.passInfo} />
 
-      <PalettePicker pass={props.view.pass.active} />
+      {/* The settings, folded: the profile reads first. */}
+      <details className="group space-y-6 border-t border-line pt-5">
+        <summary className="flex cursor-pointer list-none items-center justify-between font-display text-lg font-extrabold uppercase">
+          {fr.game.map.settings}
+          <span className="text-gold transition group-open:rotate-90">›</span>
+        </summary>
+        <div className="mt-6 space-y-8">
+          <PalettePicker pass={props.view.pass.active} />
 
-      <HapticsSetting />
+          <HapticsSetting />
 
-      <PushSettings />
+          <PushSettings />
 
-      <section className="space-y-3">
-        <Slab tone="ghost" className="w-full" onClick={props.openHelp}>
-          {fr.game.help}
-        </Slab>
-        <div className="grid grid-cols-2 gap-3">
-          <Slab tone="ghost" size="sm" onClick={props.replayIntro}>
-            {fr.game.replayIntro}
-          </Slab>
-          <Slab tone="ghost" size="sm" onClick={props.replayGuide}>
-            {fr.game.replayGuide}
-          </Slab>
+          <section className="space-y-3">
+            <Slab tone="ghost" className="w-full" onClick={props.openHelp}>
+              {fr.game.help}
+            </Slab>
+            <div className="grid grid-cols-2 gap-3">
+              <Slab tone="ghost" size="sm" onClick={props.replayIntro}>
+                {fr.game.replayIntro}
+              </Slab>
+              <Slab tone="ghost" size="sm" onClick={props.replayGuide}>
+                {fr.game.replayGuide}
+              </Slab>
+            </div>
+            <button
+              type="button"
+              onClick={props.onLogout}
+              className="label w-full pt-2 text-center text-cream-dim"
+            >
+              {fr.logout}
+            </button>
+          </section>
+
+          <section className="space-y-3">
+            <div>
+              <Label>{fr.game.data.title}</Label>
+              <p className="mt-1 text-xs text-cream-dim">{fr.game.data.help}</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <a
+                href="/api/me/export"
+                download
+                className="rounded-xl bg-night-4 px-3 py-2 text-center font-display text-xs font-extrabold uppercase tracking-wide text-cream ring-1 ring-inset ring-line hover:ring-cream-dim/40"
+              >
+                {fr.game.data.export}
+              </a>
+              <Slab tone="ghost" size="sm" onClick={() => setDeleting(true)}>
+                {fr.game.data.delete}
+              </Slab>
+            </div>
+          </section>
+
+          <section className="border-t border-vermilion/40 pt-6">
+            <Slab tone="vermilion" size="sm" className="w-full" onClick={() => setResetting(true)}>
+              {fr.game.reset.title}
+            </Slab>
+          </section>
         </div>
-        <button
-          type="button"
-          onClick={props.onLogout}
-          className="label w-full pt-2 text-center text-cream-dim"
-        >
-          {fr.logout}
-        </button>
-      </section>
-
-      <section className="space-y-3">
-        <div>
-          <Label>{fr.game.data.title}</Label>
-          <p className="mt-1 text-xs text-cream-dim">{fr.game.data.help}</p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <a
-            href="/api/me/export"
-            download
-            className="rounded-xl bg-night-4 px-3 py-2 text-center font-display text-xs font-extrabold uppercase tracking-wide text-cream ring-1 ring-inset ring-line hover:ring-cream-dim/40"
-          >
-            {fr.game.data.export}
-          </a>
-          <Slab tone="ghost" size="sm" onClick={() => setDeleting(true)}>
-            {fr.game.data.delete}
-          </Slab>
-        </div>
-      </section>
-
-      <section className="border-t border-vermilion/40 pt-6">
-        <Slab tone="vermilion" size="sm" className="w-full" onClick={() => setResetting(true)}>
-          {fr.game.reset.title}
-        </Slab>
-      </section>
+      </details>
 
       <Sheet open={resetting} onClose={() => setResetting(false)}>
         <div className="space-y-5">

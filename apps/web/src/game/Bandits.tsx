@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Label, Panel, Slab, clock } from "../ui.js";
+import { Label, Panel, Segmented, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
-import { Segmented } from "./stage.js";
 import type { RoadView } from "./types.js";
 
 /**

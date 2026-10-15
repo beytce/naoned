@@ -143,6 +143,12 @@ export const Icon = {
       <path d="M9 5 L16 12 L9 19" />
     </I>
   ),
+  anchor: () => (
+    <I size={20}>
+      <circle cx="12" cy="5" r="2" />
+      <path d="M12 7 V20 M8 10 H16 M4 13 Q5 20 12 20 Q19 20 20 13" />
+    </I>
+  ),
   cart: () => (
     <I size={18}>
       <path d="M3 13 H17 V8 H3 Z M17 10 L21 11 V13 H17" />

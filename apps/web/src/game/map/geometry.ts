@@ -223,3 +223,35 @@ export function parkingSpots(
 function round(v: number): number {
   return Math.round(v * 100) / 100;
 }
+
+/** The point at `t` (0 to 1) along a broken line, by length; the direction it heads there. */
+export function pointAlong(points: Point[], t: number): { p: Point; dx: number } {
+  const first = points[0] ?? { x: 0, y: 0 };
+  if (points.length < 2) return { p: first, dx: 0 };
+  const lengths = points.slice(1).map((q, i) => {
+    const a = points[i] ?? q;
+    return Math.hypot(q.x - a.x, q.y - a.y);
+  });
+  const total = lengths.reduce((s, l) => s + l, 0);
+  let left = Math.min(1, Math.max(0, t)) * total;
+  for (let i = 0; i < lengths.length; i++) {
+    const a = points[i] ?? first;
+    const b = points[i + 1] ?? a;
+    const l = lengths[i] ?? 0;
+    if (left <= l || i === lengths.length - 1) {
+      const k = l > 0 ? Math.min(1, left / l) : 0;
+      return { p: { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k }, dx: b.x - a.x };
+    }
+    left -= l;
+  }
+  return { p: points[points.length - 1] ?? first, dx: 0 };
+}
+
+/**
+ * A round trip's place on its route from the share of the time gone (0 to 1): out to the far end
+ * at half time, then back; `back` once it has turned.
+ */
+export function roundTrip(share: number): { t: number; back: boolean } {
+  const s = Math.min(1, Math.max(0, share));
+  return s <= 0.5 ? { t: s * 2, back: false } : { t: (1 - s) * 2, back: true };
+}

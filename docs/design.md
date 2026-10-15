@@ -58,13 +58,13 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
 
 - La carte ne bouge que sous le doigt : glisser la déplace (avec élan), deux doigts ou la molette zooment autour de leur milieu, un double toucher dans le vide la recadre. Un objet choisi glisse dans le champ s'il est caché sous le panneau, sans plus.
 - Le panneau de la sélection monte du pied de l'écran ; un médaillon choisi s'entoure de vert d'eau, une ville que la charrette peut servir respire, les autres s'estompent. Les routes en cours défilent en pointillés vers leur ville.
-- Le Rialto et le Classement sont des feuilles posées sur la carte ; le Port et le Profil, des pages plein écran dont la croix ramène à la carte. La Famille n'est pas une page : un calque de la même carte.
+- Il n'y a plus de page : le Rialto, le Classement et le Profil sont des feuilles posées sur la carte ; la Famille et le Port sont des calques de la même carte (Campagne, Mer), que la porte « Commerce » ou le bouton retour ramènent au commerce.
 - Tout s'arrête pour qui demande moins de mouvement (`prefers-reduced-motion`).
 
-## Gestes (`game/gestures.ts`)
+## Gestes
 
-- **Feuilles** : tirées vers le bas depuis le haut de leur défilement, elles suivent le doigt (avec résistance). Au-delà d'un tiers de leur hauteur ou d'un geste vif, elles se ferment ; sinon elles reviennent.
-- **Tiroir** : un glissé horizontal sur son contenu passe à l'onglet suivant ou précédent. Il ne joue pas depuis une carte (`data-no-swipe`) ou un champ de saisie.
+- **Carte** : glisser, pincer, molette, double toucher (voir Mouvement).
+- **Feuilles** (`ui.tsx`) : tirées vers le bas depuis le haut de leur défilement, elles suivent le doigt (avec résistance). Au-delà d'un tiers de leur hauteur ou d'un geste vif, elles se ferment ; sinon elles reviennent.
 
 ## Disposition : la carte d'abord (`game/map/`)
 
@@ -78,12 +78,12 @@ Un seul écran, la carte de la Vénétie la nuit, inspirée des jeux de commerce
 | **Panneau** | Ce qui est choisi : titre, une ligne d'état (et sa barre), de grosses actions carrées, flèches vers l'objet suivant du même genre, croix. Sur ordinateur, flottant en bas à droite | `ContextPanel`, `ActionButton` |
 | **Feuilles** | Le détail : ateliers, entrepôt, bâtir, cargaisons, Criée, brigands, Avis | `Sheet` |
 | **Feuilles de lieu** | Le Rialto (clés `rialto`, `trade:<r>`, `offers`) : le tableau des cours (Tout, En stock, En hausse ; taxe, décrets, mes offres), puis le négoce d'une marchandise dans la même feuille, ← retour. Le Classement (`ranking`) : semaine ou saison avec leur clôture, podium, liste, sa ligne épinglée au pied ; semaine passée et règles dans la même feuille | `RialtoSheet`, `RankingSheet` |
-| **Pages** | Port et Profil, en plein écran au-dessus de la carte ; ils gardent leur cadre (`Stage`, `Drawer` replié sur ses propres onglets) | `PageOverlay` |
+| **Profil** | Feuille (`profile`) ouverte par le blason ou le nom : blason et « Modifier », titre et paliers, patrimoine, chiffres, trophées, palmarès, Pass ; les réglages repliés au pied (palette, notifications, retours haptiques, aide, données, réinitialisation) | `ProfileSheet` |
 
 | Lieu choisi | État | Actions |
 | --- | --- | --- |
 | **Comptoir** | Lots prêts, prochain lot et sa barre, ouvriers affamés | Récolter (ou Relancer) · Ateliers · Entrepôt · Bâtir |
-| **Ville** | Commandes couvertes par le stock, Criée en cours, renouvellement | Cargaisons · Criée · Brigands (après leur ouverture) ; Venise : Rialto · Port |
+| **Ville** | Commandes couvertes par le stock, Criée en cours, renouvellement | Cargaisons · Criée · Brigands (après leur ouverture) ; Venise : Rialto · Port (le calque Mer, ou la feuille « le port s'ouvre bientôt » avant son jour) |
 | **Charrette au comptoir** | Au comptoir, chargée pour…, jauge de cale | Cargaisons · Partir |
 | **Charrette en route** | Vers la ville ou retour, temps restant ; arrêtée par des brigands | Riposter · Suivre |
 
@@ -122,6 +122,13 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 - **Pass Négociant** (`PassPanel`) : statut, avantages, comment le gagner, prix (paiement à venir). Sceau (le lion ailé) à côté du nom dans les classements ; palette « Or de Venise » réservée.
 - **Retours haptiques** (`haptics.ts`) : léger à chaque sélection sur la carte, double pour une action qui rapporte, long pour une erreur, alarme pour une Criée ; réglables dans le Profil. Sur iPhone, Safari ne vibre pas : un interrupteur natif caché donne un petit clic.
 
+## Le Port : calque de la Mer (`map/SeaLayer.tsx`)
+
+- Venise → Port bascule la carte sur la mer, comme la porte Famille sur la Campagne : la Vénétie s'efface sous l'eau, la caméra glisse sur la Méditerranée. Carte stylisée, posée pour un téléphone tenu droit (la vraie est large) : la géographie est gardée, Bruges à un glissé vers l'ouest.
+- **Repères** : l'Arsenal de Venise en médaillon doré (pastille des galères à décharger) ; chaque port en médaillon lagune avec ce qu'il rapporte et sa plus-value ; les galères en jetons qui sortent du bord de l'Arsenal, vont au port et reviennent, dorées à quai, vermillon abordées. Les routes en pointillés suivent la mer par escales, rouges si des corsaires guettent, animées quand une galère y navigue.
+- **Panneaux** : l'Arsenal (galères en mer, navires prêts ; Décharger, Flotte, Corsaires, Journal) ; un port (durée, pirates, ce qu'il rapporte ; Envoyer un convoi, Fiche ; ‹ › entre les ports) ; une galère (vers où, retour dans…, sa barre ; Décharger à quai, abordage).
+- **HUD** : les galères en mer et les navires prêts prennent la place des charrettes.
+
 ## Famille et Campagne
 
 - **Couleurs des familles** (`art/familyCrest.tsx`) : Contarini vert d'eau et tour, Morosini émeraude et épi, Mocenigo vermillon et ancre, Dandolo violet et lion, Milan encre et couronne ; jamais l'or, réservé à l'argent et au Pass. Les milices en vert-gris. Blason en bannière (`FamilyCrest`).
@@ -133,7 +140,7 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
   - **Une terre** : détenteur, garnison, défense, marche ennemie ou amie en cours ; Attaquer ou Renforcer (la fiche de la terre et son nombre de lances), Rejoindre une marche, Fiche ; ‹ › vers la terre suivante à portée.
   - **Sans famille** : le panneau des quatre familles, Allégeance (les quatre cartes, la plus petite mise en avant, confirmation en deux temps) et Règles.
 - **Ouvrages** (`art/workIcon.tsx`) : rocca en tour crénelée, campo en tente à fanion vermillon, dogana en porte à la pièce d'or, à la couleur de la famille ; en contour pointillé tant qu'ils sont en chantier. Sur la carte, en médaillon au coin de la pastille de garnison. Dans la fiche d'une terre de sa famille : les trois ouvrages en lignes (icône, nom, rôle, effet, « Bâtir · prix ») ; sur une terre qui en porte un : l'ouvrage, son état et son bâtisseur, sur fond vermillon s'il est ennemi, avec le Mérite promis à qui le rase.
-- **Bandeau des décrets** (`DecreeBanner`) : au Rialto, dans les Décrets de la famille et au Port ; lueur vert d'eau quand ils jouent pour le marchand, vermillon contre lui.
+- **Bandeau des décrets** (`DecreeBanner`) : au Rialto, dans les Décrets de la famille et dans le Journal de l'Arsenal ; lueur vert d'eau quand ils jouent pour le marchand, vermillon contre lui.
 
 ## Charger et partir
 

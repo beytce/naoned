@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { Crest, type CrestData } from "../../art/crest.js";
+import { ResourceIcon } from "../../art/resources.js";
+import { Galley } from "../../art/scenes.js";
 import { CityGlyph, VehicleGlyph } from "../../art/veneto.js";
 import { WorkGlyph } from "../../art/workIcon.js";
 
@@ -275,6 +277,113 @@ export function LandMarker({
         className={`land-name pointer-events-none absolute left-1/2 top-[calc(100%-6px)] -translate-x-1/2 whitespace-nowrap font-display text-[10px] font-extrabold uppercase tracking-wider [text-shadow:0_1px_3px_rgb(0_0_0/0.95)] ${named ? "" : "hidden"} ${city ? "text-gold-soft" : seat ? "text-cream" : "text-cream/80"}`}
       >
         {name}
+      </span>
+    </button>
+  );
+}
+
+/**
+ * A port of the sea: a lagoon orb with what it brings back, its gain as a pill, a dotted red ring
+ * when corsairs watch its route. Venice, the Arsenal, is the gold one.
+ */
+export function PortMarker({
+  code,
+  name,
+  returns,
+  gain,
+  watched,
+  arsenal,
+  docked,
+  onTap,
+}: {
+  code: string;
+  name: string;
+  /** What it brings back (the Arsenal: none). */
+  returns: string | null;
+  gain: string | null;
+  watched: boolean;
+  arsenal: boolean;
+  /** Galleys back at the quay, to unload (the Arsenal). */
+  docked: number;
+  onTap: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      data-coach={`port-${code}`}
+      aria-label={name}
+      onClick={onTap}
+      className={`marker-hit relative flex items-center justify-center ${arsenal ? "-ml-[40px] -mt-[40px] h-20 w-20" : "-ml-8 -mt-8 h-16 w-16"}`}
+    >
+      <span
+        className={`marker-ring absolute inset-0 rounded-full ring-1 ${watched ? "ring-vermilion/70" : arsenal ? "ring-gold/25" : "ring-cream/15"}`}
+      />
+      {watched && (
+        <span className="absolute inset-1 rounded-full border-2 border-dashed border-vermilion/80" />
+      )}
+      {docked > 0 && (
+        <span className="marker-halo marker-halo-gold absolute inset-1 rounded-full" />
+      )}
+      <span
+        className={`marker-orb relative flex items-center justify-center rounded-full shadow-[0_6px_18px_rgb(0_0_0/0.55),inset_-4px_-6px_10px_rgb(0_0_0/0.35)] ${arsenal ? "h-14 w-14" : "h-10 w-10"}`}
+        style={{
+          background: arsenal
+            ? "radial-gradient(circle at 34% 30%, rgb(var(--gold-soft)) 0%, rgb(var(--gold)) 45%, rgb(var(--gold-deep)) 80%, #5A3D12 100%)"
+            : "radial-gradient(circle at 34% 30%, #B4E0D2 0%, #3F8C80 50%, #102C2E 100%)",
+        }}
+      >
+        {arsenal ? (
+          <Galley className="h-9 w-12" />
+        ) : (
+          returns && <ResourceIcon code={returns} size={22} />
+        )}
+      </span>
+      {(gain || docked > 0) && (
+        <span className="absolute -right-1 top-0">
+          <Pill tone={docked > 0 ? "gold" : "lagoon"}>{docked > 0 ? docked : gain}</Pill>
+        </span>
+      )}
+      <span
+        className={`pointer-events-none absolute left-1/2 top-[calc(100%-6px)] -translate-x-1/2 whitespace-nowrap font-display text-[11px] font-extrabold uppercase tracking-wider [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] ${arsenal ? "text-gold" : "text-cream/90"}`}
+      >
+        {name}
+      </span>
+    </button>
+  );
+}
+
+/** A galley at sea: lagoon on its way, gold back at the quay, red when boarded. */
+export function GalleyMarker({
+  id,
+  label,
+  state,
+  onTap,
+}: {
+  id: string;
+  label: string;
+  state: "sea" | "docked" | "boarded";
+  onTap: () => void;
+}) {
+  const ring =
+    state === "boarded"
+      ? "ring-vermilion shadow-[0_0_16px_rgb(var(--vermilion)/0.7)]"
+      : state === "docked"
+        ? "ring-gold shadow-[0_0_16px_rgb(var(--gold)/0.7)] animate-pulse"
+        : "ring-lagoon/80";
+  return (
+    <button
+      type="button"
+      data-coach={`galley-${id}`}
+      aria-label={label}
+      onClick={onTap}
+      className="marker-hit relative -ml-[22px] -mt-[22px] flex h-11 w-11 items-center justify-center"
+    >
+      <span
+        className={`cart-face flex h-8 w-10 items-center justify-center rounded-[10px] bg-night-2/95 ring-[1.5px] ${ring}`}
+      >
+        <span className="cart-glyph flex">
+          <Galley className="h-6 w-9" sailing={state === "sea"} />
+        </span>
       </span>
     </button>
   );
