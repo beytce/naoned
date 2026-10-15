@@ -81,6 +81,7 @@ export function CargoSheet({
   load,
   setLoad,
   onReady,
+  city,
 }: {
   props: GameProps;
   road: RoadView;
@@ -88,11 +89,15 @@ export function CargoSheet({
   load: string[];
   setLoad: (ids: string[]) => void;
   onReady: () => void;
+  /** Opened from a city of the map: its orders only. */
+  city?: string | null;
 }) {
   const [sort, setSort] = useState<Sort>("reward");
   const loaded = loadOrders(road, load);
   const s = loadSummary(props, vehicle, loaded);
-  const open = road.orders.filter((o) => o.status === "open" && !load.includes(o.id));
+  const open = road.orders.filter(
+    (o) => o.status === "open" && !load.includes(o.id) && (!city || o.city === city),
+  );
   const minutes = (o: DeliveryOrderView) => o.minutes[vehicle.type] ?? Number.POSITIVE_INFINITY;
   const sorted = [...open].sort((a, b) => {
     if (sort === "distance") return minutes(a) - minutes(b);
@@ -113,6 +118,7 @@ export function CargoSheet({
       <li key={o.id}>
         <button
           type="button"
+          data-coach={inHold ? undefined : `cargo-order-${o.id}`}
           disabled={!inHold && why !== null}
           onClick={() => setLoad(inHold ? load.filter((x) => x !== o.id) : [...load, o.id])}
           className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left ring-1 ring-inset transition ${inHold ? "bg-lagoon/15 ring-lagoon/60" : why ? "bg-night-2/60 opacity-50 ring-line/50" : "bg-night-2 ring-line/70 active:scale-[0.99]"}`}
@@ -151,7 +157,10 @@ export function CargoSheet({
     <div className="space-y-3">
       <div className="text-center">
         <h3 className="font-display text-2xl font-extrabold uppercase">{t().title}</h3>
-        <p className="label mt-1 text-lagoon">{vehicleName(vehicle.type)}</p>
+        <p className="label mt-1 text-lagoon">
+          {vehicleName(vehicle.type)}
+          {city ? ` · ${props.names.city(city)}` : ""}
+        </p>
       </div>
       <Segmented<Sort>
         value={sort}
@@ -181,7 +190,7 @@ export function CargoSheet({
           <p className="mt-2 text-center text-xs text-cream-dim">{t().empty}</p>
         )}
       </div>
-      <Slab className="w-full" disabled={loaded.length === 0} onClick={onReady}>
+      <Slab className="w-full" coach="cargo-ready" disabled={loaded.length === 0} onClick={onReady}>
         {s.city ? t().ready(props.names.city(s.city), d(s.value)) : t().pick}
       </Slab>
       <p className="label text-center">{t().nextOrders(clock(nextDay - props.now))}</p>
@@ -342,214 +351,5 @@ export function CarrierDrag({
         </span>
       </button>
     </div>
-  );
-}
-
-/** The selected vehicle at the depot, as a token: its hold, ready to be dragged. */
-export function CarrierToken({ units, capacity }: { units: number; capacity: number }) {
-  return (
-    <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-night/85 ring-[3px] ring-lagoon shadow-[0_0_18px_rgb(var(--lagoon)/0.7)]">
-      <svg viewBox="-12 -12 24 24" className="h-8 w-8" aria-hidden="true">
-        <rect x="-9" y="-5" width="13" height="8" rx="1.5" fill={P.woodLight} stroke={P.night} />
-        <rect x="-8" y="-9" width="11" height="5" rx="1" fill={P.gold} stroke={P.night} />
-        <path d="M4 -1 L9 1 L9 3 L4 3 Z" fill={P.wood} stroke={P.night} />
-        <circle cx="-5" cy="5" r="3" fill={P.night} stroke={P.cream} />
-        <circle cx="4" cy="5" r="3" fill={P.night} stroke={P.cream} />
-      </svg>
-      <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-lagoon px-1.5 font-mono text-[9px] font-bold text-night">
-        {units}/{capacity}
-      </span>
-    </span>
-  );
-}
-
-/** The bottom bar of the selected vehicle, as on the dock: its state and its actions. */
-export function VehicleBar({
-  props,
-  road,
-  vehicle,
-  load,
-  onPrev,
-  onNext,
-  onCargo,
-  onSend,
-  onClose,
-}: {
-  props: GameProps;
-  road: RoadView;
-  vehicle: VehicleView;
-  load: string[];
-  onPrev: () => void;
-  onNext: () => void;
-  onCargo: () => void;
-  onSend: () => void;
-  onClose: () => void;
-}) {
-  const loaded = loadOrders(road, load);
-  const s = loadSummary(props, vehicle, loaded);
-  const busy = vehicle.status !== "free";
-  return (
-    <Dock onClose={onClose}>
-      <p className="font-display text-base font-extrabold uppercase">{vehicleName(vehicle.type)}</p>
-      <div className="mt-1 flex items-center gap-3 text-xs text-lagoon">
-        <span className="shrink-0">
-          {busy
-            ? t().busy(clock(vehicle.busyUntil - props.now))
-            : s.city
-              ? t().bound(props.names.city(s.city))
-              : t().atDepot}
-        </span>
-        <HoldGauge units={s.units} capacity={s.capacity} />
-      </div>
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <DockButton label={t().prev} onClick={onPrev}>
-          ‹
-        </DockButton>
-        <DockButton label={t().load} onClick={onCargo} disabled={busy} wide>
-          ▤ {t().load}
-        </DockButton>
-        <DockButton label={t().send} onClick={onSend} disabled={busy || loaded.length === 0} wide>
-          → {t().send}
-        </DockButton>
-        <DockButton label={t().next} onClick={onNext}>
-          ›
-        </DockButton>
-      </div>
-      {!busy && loaded.length > 0 && (
-        <p className="label mt-2 text-center text-gold">{t().dragHint}</p>
-      )}
-    </Dock>
-  );
-}
-
-/** "Départ vers Padoue": a few seconds to confirm, cancel or choose an escort. */
-export function DepartureBar({
-  props,
-  vehicle,
-  orders,
-  city,
-  escort,
-  setEscort,
-  seconds,
-  onGo,
-  onCancel,
-}: {
-  props: GameProps;
-  vehicle: VehicleView;
-  orders: DeliveryOrderView[];
-  city: string;
-  escort: string;
-  setEscort: (e: string) => void;
-  seconds: number;
-  onGo: () => void;
-  onCancel: () => void;
-}) {
-  const [left, setLeft] = useState(seconds);
-  const go = useRef(onGo);
-  go.current = onGo;
-  useEffect(() => {
-    if (left <= 0) {
-      go.current();
-      return;
-    }
-    const id = setTimeout(() => setLeft((x) => x - 1), 1_000);
-    return () => clearTimeout(id);
-  }, [left]);
-  const escorts = Object.keys(props.catalog.road?.escorts ?? {});
-  const costOf = (e: string) => orders.reduce((a, o) => a + BigInt(o.escorts[e] ?? 0), 0n);
-  const minutes = orders[0]?.minutes[vehicle.type] ?? 0;
-  const watched = props.view.road?.watchedRoutes.includes(`${props.view.player.region}:${city}`);
-  return (
-    <Dock onClose={onCancel}>
-      <p className="font-display text-base font-extrabold uppercase">{vehicleName(vehicle.type)}</p>
-      <div className="mt-1 flex items-center gap-3 text-xs">
-        <span className="shrink-0 text-lagoon">{t().leaving(props.names.city(city))}</span>
-        <span className="relative h-5 flex-1 overflow-hidden rounded-full bg-night ring-1 ring-line">
-          <span
-            className="absolute inset-y-0 left-0 bg-lagoon/40 transition-all duration-1000 ease-linear"
-            style={{ width: `${((seconds - left) / seconds) * 100}%` }}
-          />
-          <span className="absolute inset-0 flex items-center px-2 font-mono text-[11px] text-cream">
-            {left} s
-          </span>
-        </span>
-      </div>
-      <p className="mt-1 text-xs text-cream-dim">
-        {t().summary(
-          orders.length,
-          minutesLabel(minutes),
-          d(orders.reduce((a, o) => a + total(o), 0n)),
-        )}
-      </p>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {["none", ...escorts].map((e) => (
-          <button
-            key={e}
-            type="button"
-            aria-pressed={escort === e}
-            onClick={() => setEscort(e)}
-            className={`rounded-lg px-2.5 py-1 text-xs ring-1 ${escort === e ? "bg-gold/15 text-gold ring-gold" : "bg-night-2 text-cream-dim ring-line"}`}
-          >
-            {e === "none"
-              ? t().noEscort
-              : `${fr.game.road.sheet.escorts[e] ?? e} · ${d(costOf(e))}`}
-          </button>
-        ))}
-      </div>
-      {watched && <p className="mt-1 text-xs text-vermilion">⚔ {fr.game.road.watchedWarning}</p>}
-      <div className="mt-3 flex items-center justify-center gap-3">
-        <DockButton label={t().go} onClick={onGo} wide>
-          ✓ {t().go}
-        </DockButton>
-        <DockButton label={t().cancel} onClick={onCancel} wide tone="vermilion">
-          ✕ {t().cancel}
-        </DockButton>
-      </div>
-    </Dock>
-  );
-}
-
-/** The dock at the bottom of the map: a panel with a lagoon edge and its close cross. */
-function Dock({ children, onClose }: { children: ReactNode; onClose: () => void }) {
-  return (
-    <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-40 animate-sheet border-t-2 border-lagoon bg-night-2/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur">
-      <button
-        type="button"
-        aria-label={t().close}
-        onClick={onClose}
-        className="absolute -top-0.5 right-0 flex h-8 w-10 items-center justify-center bg-lagoon font-black text-night [clip-path:polygon(25%_0,100%_0,100%_100%,0_100%)]"
-      >
-        ✕
-      </button>
-      {children}
-    </div>
-  );
-}
-
-function DockButton({
-  children,
-  label,
-  onClick,
-  disabled,
-  wide,
-  tone,
-}: {
-  children: ReactNode;
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-  wide?: boolean;
-  tone?: "vermilion";
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-      className={`flex h-12 items-center justify-center rounded-xl font-display text-sm font-extrabold uppercase ring-1 transition active:scale-95 disabled:opacity-35 ${wide ? "flex-1 px-3" : "w-10 text-xl"} ${tone === "vermilion" ? "text-vermilion ring-vermilion/60" : "text-cream ring-lagoon/60"} bg-night`}
-    >
-      {children}
-    </button>
   );
 }

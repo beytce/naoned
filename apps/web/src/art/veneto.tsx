@@ -301,24 +301,6 @@ export function CityGlyph({ dim }: { dim?: boolean }) {
   );
 }
 
-/** The merchant's depot: a glowing hexagon with a warehouse door. */
-export function DepotGlyph() {
-  return (
-    <g>
-      <circle r="20" fill={P.gold} opacity="0.12" />
-      <circle r="14" fill={P.gold} opacity="0.18" />
-      <path
-        d="M0 -11 L9.5 -5.5 V5.5 L0 11 L-9.5 5.5 V-5.5 Z"
-        fill={P.night}
-        stroke={P.gold}
-        strokeWidth="2"
-      />
-      <path d="M-5 5 V-1 L0 -4 L5 -1 V5 Z" fill={P.gold} />
-      <rect x="-2" y="1" width="4" height="4" fill={P.night} />
-    </g>
-  );
-}
-
 /**
  * A vehicle seen from the side, facing right (the caller mirrors it). Loaded: crates on the bed,
  * coloured like the goods.
@@ -396,14 +378,3 @@ export const GOODS_COLOUR: Record<string, string> = {
   furs: "#8A6A4A",
   cloth: P.lagoon,
 };
-
-/** A bandits' camp: a tent and a little fire. */
-export function CampGlyph() {
-  return (
-    <g>
-      <path d="M-8 5 L0 -8 L8 5 Z" fill={P.vermilionDeep} stroke={P.night} strokeWidth="1" />
-      <path d="M0 -8 L0 5" stroke={P.night} strokeWidth="1" />
-      <path d="M9 5 Q11 0 12 4 Q13 1 14 5 Z" fill={P.gold} />
-    </g>
-  );
-}

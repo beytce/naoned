@@ -422,7 +422,8 @@ export function Drawer<T extends string>({
   );
   const waiting = tabs.some((t) => t.dot);
   // While this drawer is there, the game shows no bar of its own.
-  const hold = useContext(SectionNav)?.hold;
+  const nav = useContext(SectionNav);
+  const hold = nav?.hold;
   useEffect(() => hold?.(), [hold]);
   return (
     <div
@@ -463,14 +464,15 @@ export function Drawer<T extends string>({
             <span className="absolute left-[calc(50%+1.75rem)] top-0.5 h-2 w-2 rounded-full bg-vermilion" />
           )}
         </button>
-        {!open && (
+        {!open && nav && (
           <div className="pb-[env(safe-area-inset-bottom)] lg:hidden">
             <SectionBar onCurrent={() => onOpen(true)} blocked={() => !!drag.current?.moved} />
           </div>
         )}
+        {/* A page over the map has no sections: folded, the drawer shows its own tabs. */}
         <div
           role="tablist"
-          className={`grid gap-1 px-2 pb-1.5 pt-1 lg:grid lg:pt-2 ${open ? "" : "hidden"}`}
+          className={`grid gap-1 px-2 pb-1.5 pt-1 lg:grid lg:pt-2 ${open || !nav ? "" : "hidden"}`}
           style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
         >
           {tabs.map(({ key, label, dot, coach }) => {

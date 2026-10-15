@@ -687,7 +687,14 @@ export function Port(props: GameProps) {
         <p className="text-sm text-cream-dim">
           {fr.game.portLocked.text(clock(opensAt - props.now))}
         </p>
-        <Slab tone="ghost" className="w-full" onClick={() => props.goTo("comptoir")}>
+        <Slab
+          tone="ghost"
+          className="w-full"
+          onClick={() => {
+            props.goTo("comptoir");
+            props.setSheet("notices");
+          }}
+        >
           {fr.game.ledger.title}
         </Slab>
       </div>

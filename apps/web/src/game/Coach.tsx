@@ -1,10 +1,10 @@
 import { useEffect, useLayoutEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Lorenzo } from "../art/scenes.js";
 import { fr } from "../i18n.js";
 import { Big, Label, Slab, clock } from "../ui.js";
 import { affordable, have } from "./Comptoir.js";
-import type { GameProps, MarketTab, Tab } from "./Game.js";
-import { roadViewOf } from "./Routes.js";
+import type { GameProps } from "./Game.js";
 import { store } from "./store.js";
 
 const STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "mission"] as const;
@@ -50,19 +50,30 @@ function toBuy(props: GameProps): string | null {
   return wanted.find((r) => onSale.has(r)) ?? null;
 }
 
-function goTab(props: GameProps, tab: Tab, text: string): CoachStep | null {
-  return props.tab === tab ? null : { text, target: `tab-${tab}` };
+/** The counter on the map, then its panel's button `target`. */
+function atHome(props: GameProps, step: CoachStep): CoachStep {
+  if (props.tab !== "comptoir" || props.selection?.kind !== "home")
+    return { text: fr.game.coach.tapHome, target: "home" };
+  return step;
 }
 
-function goMarketTab(props: GameProps, tab: MarketTab, text: string): CoachStep | null {
-  return props.marketTab === tab ? null : { text, target: `mtab-${tab}` };
+/** A workshop's production: the counter, its workshops, the workshop, then "Produire". */
+function produceAt(props: GameProps, id: string, building: string, text?: string): CoachStep {
+  const c = fr.game.coach;
+  if (props.sheet === `produce:${id}`)
+    return { text: text ?? c.produce(building), target: "sheet-produce" };
+  if (props.sheet === "workshops")
+    return { text: text ?? c.produceTap(building), target: `produce-${id}` };
+  return atHome(props, { text: text ?? c.openWorkshops(building), target: "panel-workshops" });
 }
+
+type CoachProps = GameProps & { departing: boolean };
 
 /**
  * What to do next, read from the live game: the guide follows the player instead of a script,
  * so it never gets stuck if they do things in another order.
  */
-function nextStep(props: GameProps): CoachStep {
+function nextStep(props: CoachProps): CoachStep {
   const { view, now, names } = props;
   const done = new Set(view.tutorial);
   const ready = view.buildings.find(
@@ -82,72 +93,62 @@ function nextStep(props: GameProps): CoachStep {
       : undefined;
 
   if (ready && !done.has("mission") && !deliverable) {
-    return (
-      goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
-        text: fr.game.coach.harvest,
-        target: `harvest-${ready.id}`,
-      }
-    );
+    if (props.sheet === "workshops")
+      return { text: fr.game.coach.harvest, target: `harvest-${ready.id}` };
+    return atHome(props, { text: fr.game.coach.harvest, target: "panel-harvest" });
   }
 
   if (!done.has("produce")) {
     const raw = view.buildings.find((b) => recipeOf(b.type) && isRaw(b.type));
     if (!raw) return { text: fr.game.coach.done, final: true };
-    if (props.sheet === `produce:${raw.id}`)
-      return { text: fr.game.coach.produce(names.building(raw.type)), target: "sheet-produce" };
-    return (
-      goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
-        text: fr.game.coach.produceTap(names.building(raw.type)),
-        target: `produce-${raw.id}`,
-      }
-    );
+    return produceAt(props, raw.id, names.building(raw.type));
   }
 
   if (!done.has("sell_city")) {
-    // With deliveries by road: an order of the board the stock covers, loaded on the cart.
+    // With deliveries by road: an order the stock covers, loaded on a cart and sent.
     if (road) {
       if (road.deliveries.some((dv) => now < dv.arriveAt))
         return { text: fr.game.coach.deliveryUnderway };
       if (deliverable) {
-        return (
-          goTab(props, "routes", fr.game.coach.goRoutes) ??
-          (roadViewOf(props) !== "liste"
-            ? { text: fr.game.coach.goList, target: "road-view-liste" }
-            : {
-                text: fr.game.coach.deliver,
-                target: `road-order-${deliverable.id}`,
-                follow: "road-dispatch",
-                followText: fr.game.coach.dispatch,
-              })
-        );
+        if (props.departing) return { text: fr.game.coach.dispatch, target: "panel-go" };
+        if (props.sheet?.startsWith("cargo:"))
+          return {
+            text: fr.game.coach.deliver,
+            target: `cargo-order-${deliverable.id}`,
+            follow: "cargo-ready",
+            followText: fr.game.coach.dispatch,
+          };
+        const chosen = props.selection?.kind === "cart" ? props.selection.id : null;
+        if (road.vehicles.some((v) => v.status === "free" && v.id === chosen))
+          return { text: fr.game.coach.deliver, target: "panel-cargo" };
+        const free = road.vehicles.find((v) => v.status === "free");
+        if (free) return { text: fr.game.coach.goRoutes, target: `cart-${free.id}` };
       }
     }
     const good = road ? undefined : CITY_GOODS.find((r) => have(view, r) > 0);
     if (good) {
-      return (
-        goTab(props, "marche", fr.game.coach.goMarket) ??
-        goMarketTab(props, "villes", fr.game.coach.goCities) ?? {
-          text: fr.game.coach.sellCity(names.resource(good)),
-          target: `city-sell-${good}`,
-        }
-      );
+      const quote = view.cityQuotes
+        .filter((q) => q.resource === good)
+        .sort((a, b) => (BigInt(b.unitPrice) > BigInt(a.unitPrice) ? 1 : -1))[0];
+      if (quote) {
+        if (props.sheet === `sell:${quote.city}`)
+          return {
+            text: fr.game.coach.sellCity(names.resource(good)),
+            target: `city-sell-${good}`,
+          };
+        return { text: fr.game.coach.sellCity(names.resource(good)), target: `city-${quote.city}` };
+      }
     }
     const next = view.buildings.find(
       (b) => !b.job && b.canStart > 0 && !isRaw(b.type) && recipeOf(b.type),
     );
-    if (next) {
-      if (props.sheet === `produce:${next.id}`)
-        return {
-          text: fr.game.coach.transform(names.building(next.type)),
-          target: "sheet-produce",
-        };
-      return (
-        goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
-          text: fr.game.coach.transform(names.building(next.type)),
-          target: `produce-${next.id}`,
-        }
+    if (next)
+      return produceAt(
+        props,
+        next.id,
+        names.building(next.type),
+        fr.game.coach.transform(names.building(next.type)),
       );
-    }
     const running = view.buildings
       .filter((b) => b.job)
       .map((b) =>
@@ -159,13 +160,7 @@ function nextStep(props: GameProps): CoachStep {
       .sort((a, b) => a - b)[0];
     if (running) return { text: fr.game.coach.wait, waitUntil: running };
     const raw = view.buildings.find((b) => !b.job && b.canStart > 0 && isRaw(b.type));
-    if (raw)
-      return (
-        goTab(props, "comptoir", fr.game.coach.goComptoir) ?? {
-          text: fr.game.coach.produceTap(names.building(raw.type)),
-          target: `produce-${raw.id}`,
-        }
-      );
+    if (raw) return produceAt(props, raw.id, names.building(raw.type));
   }
 
   if (!done.has("market_buy") && store.get("skipMarketBuy") !== "1") {
@@ -173,32 +168,30 @@ function nextStep(props: GameProps): CoachStep {
     if (!material) return { text: fr.game.coach.emptyMarket, skip: "skipMarketBuy" };
     if (props.sheet === `trade:${material}`)
       return { text: fr.game.coach.buy(names.resource(material)), target: "sheet-buy" };
-    return (
-      goTab(props, "marche", fr.game.coach.goMarket) ??
-      goMarketTab(props, "joueurs", fr.game.coach.goRialto) ?? {
-        text: fr.game.coach.buy(names.resource(material)),
-        target: `row-${material}`,
-      }
-    );
+    if (props.tab === "marche")
+      return { text: fr.game.coach.buy(names.resource(material)), target: `row-${material}` };
+    if (props.selection?.kind === "city" && props.selection.code === "venezia")
+      return { text: fr.game.coach.goRialto, target: "panel-rialto" };
+    return { text: fr.game.coach.goRialto, target: "city-venezia" };
   }
 
   if (!done.has("mission")) {
     // The tutorial ends on the merchant's ledger: a reward now, goals for the days to come.
     const claimable = view.missions.find((m) => m.unlocked && m.done && !m.claimed);
     if (!claimable) return { text: fr.game.coach.ledgerLater, final: true };
-    return (
-      goTab(props, "comptoir", fr.game.coach.goComptoir) ??
-      (props.sheet !== "carnet"
-        ? { text: fr.game.carnet.open, target: "carnet" }
-        : { text: fr.game.coach.ledger, target: `claim-${claimable.id}` })
-    );
+    return {
+      text: fr.game.carnet.open,
+      target: "hud-notices",
+      follow: `claim-${claimable.id}`,
+      followText: fr.game.coach.ledger,
+    };
   }
 
   return { text: fr.game.coach.done, final: true };
 }
 
 /** Spotlight on the element to touch, with Lorenzo explaining why. */
-export function Coach(props: GameProps) {
+export function Coach(props: CoachProps) {
   const [hidden, setHidden] = useState(() => store.get("guideHidden") === "1");
   const [finished, setFinished] = useState(() => store.get("guideDone") === "1");
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -242,15 +235,15 @@ export function Coach(props: GameProps) {
   // A message with nothing to point at stays on the counter.
   if (!step.target && !step.waitUntil && props.tab !== "comptoir") return null;
 
-  // The bubble goes where it does not hide the target (or the open sheet). A target in the tab
-  // bar keeps it just above the bar, so the header (purse, notices) stays in sight.
-  const inTabBar = rect !== null && rect.top > window.innerHeight - 96;
+  // The bubble goes where it does not hide the target (or the open sheet): at the top for a target
+  // in the lower half (the panel, the cities of the south), at the bottom otherwise.
   const atTop =
     props.sheet !== null ||
     onFollow ||
-    (!inTabBar && rect !== null && rect.top + rect.height / 2 > window.innerHeight * 0.55);
+    (rect !== null && rect.top + rect.height / 2 > window.innerHeight * 0.5);
   const pad = 6;
-  return (
+  // On the body: the map is its own layer, the sheets open over it; the guide stays on top.
+  return createPortal(
     <>
       {rect && (
         <div
@@ -267,7 +260,7 @@ export function Coach(props: GameProps) {
         />
       )}
       <div
-        className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-[calc(5.25rem+env(safe-area-inset-bottom))] lg:bottom-8"}`}
+        className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-[calc(1rem+env(safe-area-inset-bottom))] lg:bottom-8"}`}
       >
         <div className="relative rounded-2xl bg-night-2 p-4 shadow-xl shadow-black/40 ring-2 ring-gold">
           <div className="flex gap-3">
@@ -332,6 +325,7 @@ export function Coach(props: GameProps) {
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 }
