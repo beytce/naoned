@@ -1,5 +1,6 @@
 import { placeOrder, playerQuota, removeMarketMakerOrders } from "./market.js";
 import { type Deniers, applyBpsCeil, applyBpsFloor, bigMax } from "./money.js";
+import { isMudaGood, mudaPrice } from "./muda.js";
 import {
   DAY_MS,
   MARKET_MAKER,
@@ -87,14 +88,17 @@ export function requoteMarketMaker(tx: Tx): void {
         quantity: bidQty,
       });
     }
-    if (askQty > 0) {
+    // Goods from overseas: the Dogana sells only what the galleys of the Muda brought.
+    const muda = isMudaGood(ctx, resource);
+    const lot = muda ? (state.muda?.stock[resource] ?? 0) : askQty;
+    if (lot > 0) {
       placeOrder(tx, {
         playerId: MARKET_MAKER,
         resource,
         side: "sell",
         kind: "limit",
-        price: ask,
-        quantity: askQty,
+        price: muda ? mudaPrice(ctx, state, resource) : ask,
+        quantity: lot,
       });
     }
   }

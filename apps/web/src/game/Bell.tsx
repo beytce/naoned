@@ -10,9 +10,6 @@ import type { Notice } from "./types.js";
 const ICON = {
   harvest: NavIcon.comptoir,
   order: NavIcon.marche,
-  galley: NavIcon.port,
-  raid: NavIcon.port,
-  corsairs: NavIcon.port,
   event: NavIcon.bell,
   act: NavIcon.bell,
   week: NavIcon.top,
@@ -21,18 +18,12 @@ const ICON = {
   deal: NavIcon.marche,
   family: NavIcon.famille,
   siege: NavIcon.famille,
-  ambush: NavIcon.routes,
   delivery: NavIcon.routes,
-  robbed: NavIcon.routes,
-  defended: NavIcon.routes,
-  band_over: NavIcon.routes,
+  muda: NavIcon.marche,
 } as const;
 const TONE: Record<string, string> = {
   harvest: "text-lagoon",
   order: "text-gold",
-  galley: "text-lagoon",
-  raid: "text-vermilion",
-  corsairs: "text-vermilion",
   event: "text-gold",
   act: "text-gold",
   week: "text-gold",
@@ -41,11 +32,8 @@ const TONE: Record<string, string> = {
   deal: "text-lagoon",
   family: "text-gold",
   siege: "text-vermilion",
-  ambush: "text-vermilion",
   delivery: "text-lagoon",
-  robbed: "text-vermilion",
-  defended: "text-lagoon",
-  band_over: "text-gold",
+  muda: "text-gold",
 };
 
 function text(n: Notice, props: GameProps): string {
@@ -53,10 +41,6 @@ function text(n: Notice, props: GameProps): string {
   switch (n.kind) {
     case "harvest":
       return t.harvest;
-    case "galley": {
-      const port = props.catalog.ports.find((p) => p.code === n.data.destination)?.name ?? "";
-      return t.galley(port);
-    }
     case "order": {
       const who = n.data.counterpartyName ? String(n.data.counterpartyName) : fr.game.book.fondaco;
       return t.order(
@@ -66,15 +50,6 @@ function text(n: Notice, props: GameProps): string {
         props.names.resource(String(n.data.resource)),
       );
     }
-    case "raid": {
-      const route = props.catalog.ports.find((p) => p.code === n.data.route)?.name ?? "";
-      const ok = n.data.success === true;
-      return n.data.role === "victim"
-        ? t.raidVictim(String(n.data.raiderName ?? fr.game.anonymous), ok, route)
-        : t.raidCorsair(String(n.data.victimName ?? fr.game.anonymous), ok);
-    }
-    case "corsairs":
-      return t.corsairs(props.catalog.ports.find((p) => p.code === n.data.route)?.name ?? "");
     case "event": {
       const e = fr.game.gazette.events[String(n.data.code)];
       return e ? `${e[0]} : ${e[1]}` : t.event;
@@ -133,8 +108,6 @@ function text(n: Notice, props: GameProps): string {
         award ?? null,
       );
     }
-    case "ambush":
-      return t.ambush(roadCity(n.data.route, props));
     case "delivery":
       return t.delivery(
         Number(n.data.quantity),
@@ -142,19 +115,12 @@ function text(n: Notice, props: GameProps): string {
         roadCity(n.data.route, props),
         d(String(n.data.amount ?? "0")),
       );
-    case "robbed":
-    case "defended": {
-      const ok = n.kind === "robbed";
-      return n.data.role === "victim"
-        ? t.roadVictim(
-            n.data.banditName ? String(n.data.banditName) : null,
-            ok,
-            roadCity(n.data.route, props),
-          )
-        : t.roadBandit(String(n.data.victimName ?? fr.game.anonymous), ok, n.data.reacted === true);
+    case "muda": {
+      const goods = Object.entries((n.data.stock ?? {}) as Record<string, number>)
+        .filter(([, q]) => q > 0)
+        .map(([r]) => props.names.resource(r).toLowerCase());
+      return t.muda(goods.join(", "));
     }
-    case "band_over":
-      return t.bandOver(roadCity(n.data.route, props));
     default:
       return "";
   }

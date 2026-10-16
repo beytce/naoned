@@ -29,7 +29,7 @@ export function ContextPanel({
   onPrev?: () => void;
   onNext?: () => void;
   onClose: () => void;
-  /** A line under the actions (escorts, a warning). */
+  /** A line under the actions (a hint, a warning). */
   extra?: ReactNode;
 }) {
   const edge =

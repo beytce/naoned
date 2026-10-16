@@ -112,67 +112,24 @@ export interface Project {
   unitPrice: Record<ResourceCode, Deniers>;
 }
 
-export interface Expedition {
-  id: string;
-  playerId: PlayerId;
-  destination: string;
-  departAt: number;
-  returnAt: number;
-  cargo: Record<ResourceCode, number>;
-  escort: boolean;
-  /** Cargo at the port's prices of the week, fixed at departure. */
-  cargoValue: Deniers;
-  outcome: "pending" | "returned" | "lost";
-  /** Own ships: the merchant ship first, then the escorts (none for a chartered galley). */
-  ships?: string[];
-  /** Strength against pirates and privateers (1 for a chartered galley, 3 escorted). */
-  defense?: number;
-  /** Mid-voyage passed and privateers on the route resolved. */
-  crossed?: boolean;
-  /** Exotic goods brought back (0 when lost or pending). */
-  brought: number;
-}
-
-export interface RaidHit {
-  expeditionId: string;
-  victimId: PlayerId;
-  /** When the convoy crossed the corsairs (mid-voyage). */
-  at: number;
-  /** When the engine resolved it (the next tick or unloading). */
-  resolvedAt: number;
-  chanceBps: number;
-  success: boolean;
-  taken: Record<ResourceCode, number>;
-}
-
-/** Privateers cruising a route under a letter of marque. */
-export interface Raid {
-  id: string;
-  playerId: PlayerId;
-  route: string;
-  ships: string[];
-  attack: number;
-  /** Booty the corsairs can carry, at reference prices. */
-  hold: Deniers;
-  startAt: number;
-  endAt: number;
-  outcome: "cruising" | "returned";
-  /** Repelled once: the corsairs limp home and hunt no more. */
-  beaten: boolean;
-  booty: Record<ResourceCode, number>;
-  hits: RaidHit[];
-}
-
-export interface Ship {
-  id: string;
-  playerId: PlayerId;
-  type: string;
-  /** Cost at reference prices, counted in net worth like a building. */
-  investedValue: Deniers;
-  /** Damaged by pirates or privateers: stays in port until repaired. */
-  damaged: boolean;
-  /** In the shipyard until then (repairs). */
-  readyAt: number;
+/**
+ * The sea and the bandits of states saved before they were removed (October 2026): settled at the
+ * next tick (`retireSeaAndBandits`) and gone. Only what the settling reads is kept.
+ */
+export interface LegacySeaState {
+  expeditions?: Record<
+    string,
+    { playerId: PlayerId; cargo: Record<ResourceCode, number>; outcome: string }
+  >;
+  ships?: Record<string, { playerId: PlayerId; investedValue: Deniers }>;
+  raids?: Record<
+    string,
+    { playerId: PlayerId; booty: Record<ResourceCode, number>; outcome: string }
+  >;
+  bands?: Record<
+    string,
+    { playerId: PlayerId | null; booty: Record<ResourceCode, number>; collected: boolean }
+  >;
 }
 
 /** A cart, mule or wagon: carries one delivery at a time, there and back. */
@@ -180,7 +137,7 @@ export interface Vehicle {
   id: string;
   playerId: PlayerId;
   type: string;
-  /** Cost at reference prices, counted in net worth like a ship. */
+  /** Cost at reference prices, counted in net worth like a building. */
   investedValue: Deniers;
   /** End of the way back of its last delivery (0 when free). */
   busyUntil: number;
@@ -190,7 +147,6 @@ export interface Vehicle {
 
 /** "family": orders of the former patrician families, kept for deliveries saved then. */
 export type DeliveryKind = "city" | "doge" | "family" | "urgent";
-export type EscortKind = "none" | string;
 
 /** An order on a merchant's board (computed, never stored, like a Contract). */
 export interface DeliveryOrder {
@@ -223,23 +179,6 @@ export interface BoardOrder {
   expiresAt: number;
 }
 
-export interface DeliveryAttack {
-  bandId: string;
-  /** Null for a band of the computer. */
-  banditId: PlayerId | null;
-  /** When the band struck (mid-way). */
-  at: number;
-  chanceBps: number;
-  /** Without escort: the merchant may fight back until then. */
-  reactBy: number;
-  reacted: boolean;
-  resolvedAt?: number;
-  success?: boolean;
-  taken: Record<ResourceCode, number>;
-  /** The Doge's bounty paid to the merchant for beating the band off. */
-  bounty?: Deniers;
-}
-
 /** One order of a load (a vehicle may carry several orders for the same city). */
 export interface DeliveryLine {
   id: string;
@@ -264,41 +203,18 @@ export interface Delivery {
   resource: ResourceCode;
   /** Units loaded at departure. */
   loaded: number;
-  /** One resource, kept as a table like a convoy's cargo. */
+  /** The goods aboard, by resource. */
   cargo: Record<ResourceCode, number>;
   /** Price of the whole load, fixed at departure; paid on arrival, pro rata of what arrives. */
   payment: Deniers;
   /** The orders carried, when there are several (the first one is `orderId`). */
   orders?: DeliveryLine[];
-  escort: EscortKind;
   departAt: number;
   arriveAt: number;
   backAt: number;
-  /** When a band on the route may strike. */
-  midAt: number;
-  /** Mid-way passed and bands on the route considered. */
-  crossed?: boolean;
-  attack?: DeliveryAttack;
-  outcome: "en_route" | "delivered" | "robbed_delivered";
+  outcome: "en_route" | "delivered";
   /** Paid on arrival. */
   paid?: Deniers;
-}
-
-/** Bandits posted on a road for a few hours. */
-export interface BanditBand {
-  id: string;
-  /** Null for a band of the computer. */
-  playerId: PlayerId | null;
-  route: string;
-  startAt: number;
-  endAt: number;
-  /** Ambushes attempted (at most `maxAttacksPerBand`). */
-  attacks: number;
-  /** Beaten off by a merchant who fought back: the band stops. */
-  dispersed: boolean;
-  /** To be collected by the bandit. */
-  booty: Record<ResourceCode, number>;
-  collected: boolean;
 }
 
 export interface DailyPriceStat {
@@ -317,6 +233,17 @@ export interface MarketMakerUsage {
   >;
 }
 
+/** The galleys of the Muda at the quay (see muda.ts). */
+export interface MudaState {
+  /** Index of the last arrival (0 = the first, on the first day). */
+  arrival: number;
+  stock: Record<string, number>;
+  /** The last arrival's lot: the price rises with the share of it that is gone. */
+  lot: Record<string, number>;
+  /** Units bought by each merchant since the last arrival. */
+  bought: Record<PlayerId, Record<string, number>>;
+}
+
 export interface WorldState {
   seq: number;
   players: Record<PlayerId, Player>;
@@ -326,6 +253,8 @@ export interface WorldState {
   accounts: Record<AccountId, Deniers>;
   orders: Record<OrderId, Order>;
   marketMaker: MarketMakerUsage;
+  /** The Muda's lot on the quay, from the first galleys on. */
+  muda?: MudaState;
   cities: Record<string, Record<ResourceCode, CityDemandState>>;
   projects: Record<ProjectId, Project>;
   nextProjectAt: number;
@@ -338,9 +267,10 @@ export interface WorldState {
   contractsDone?: Record<PlayerId, { day: number; ids: string[] }>;
   /** Doge's orders swapped today with the Pass: slot index → number of swaps. */
   contractRerolls?: Record<PlayerId, { day: number; slots: Record<number, number> }>;
-  expeditions?: Record<string, Expedition>;
-  ships?: Record<string, Ship>;
-  raids?: Record<string, Raid>;
+  /** The sea of states saved before it was removed (see `LegacySeaState`). */
+  expeditions?: LegacySeaState["expeditions"];
+  ships?: LegacySeaState["ships"];
+  raids?: LegacySeaState["raids"];
   /** The merchant's ledger, per player: progress per mission and missions already rewarded. */
   missions?: Record<PlayerId, { progress: Record<string, number>; claimed: string[] }>;
   /** Units sold at each Criée (by its index), in all and per merchant. */
@@ -365,7 +295,7 @@ export interface WorldState {
   turnover?: Record<PlayerId, Deniers>;
   vehicles?: Record<string, Vehicle>;
   deliveries?: Record<string, Delivery>;
-  bands?: Record<string, BanditBand>;
+  bands?: LegacySeaState["bands"];
   /** The world's board of the day (shared demand): its orders, and who took each. */
   board?: {
     day: number;
@@ -376,13 +306,10 @@ export interface WorldState {
   };
   /** Orders of the board dispatched today, per player. */
   deliveriesDone?: Record<PlayerId, { day: number; ids: string[] }>;
-  /** Last day the computer's bands were posted. */
+  /** Of the time of the bandits (settled with the sea). */
   npcBandsDay?: number;
-  /** Last successful boarding or ambush suffered, per player (cooldown). */
   plunderedAt?: Record<PlayerId, number>;
-  /** Successful ambushes of each bandit this season: their infamy. */
   infamy?: Record<PlayerId, number>;
-  /** Bounties received this season, per merchant. */
   bounties?: Record<PlayerId, Deniers>;
   /** Resets used per player this season (absent in states saved before resets existed). */
   resets?: Record<PlayerId, number>;
@@ -593,10 +520,6 @@ export function createWorldState(ctx: WorldContext): WorldState {
     lastUpkeepDay: 0,
     resets: {},
     contractsDone: {},
-    expeditions: {},
-    ships: {},
-    raids: {},
-    plunderedAt: {},
     weekly: { week: 0, start: {} },
   };
 }

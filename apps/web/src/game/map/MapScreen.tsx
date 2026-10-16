@@ -6,14 +6,12 @@ import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
 import { Big, Label, Panel, Qty, Sheet, Slab, clock } from "../../ui.js";
 import { ActCard } from "../Acts.js";
-import { Bandits } from "../Bandits.js";
 import { CargoSheet, loadOrders, loadSummary } from "../Cargo.js";
 import { Coach } from "../Coach.js";
 import { CounterSheets, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import type { GameProps } from "../Game.js";
 import { RialtoSheet } from "../Marche.js";
-import { portOpensAt } from "../Port.js";
 import { ProfileSheet } from "../Profil.js";
 import { RankingSheet } from "../Top.js";
 import { onBack } from "../back.js";
@@ -41,7 +39,6 @@ import { MapHud } from "./Hud.js";
 import { CartMarker, CityMarker, HomeMarker } from "./Markers.js";
 import { NoticesSheet } from "./Notices.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
-import { SeaHud, SeaOverlay, SeaPanel, SeaSheets, seaMarkers, seaSpots } from "./SeaLayer.js";
 import { type MapMarker, type Selection, WorldMap, type WorldMapHandle } from "./WorldMap.js";
 import { Icon } from "./icons.js";
 
@@ -52,7 +49,7 @@ const DEPART_SECONDS = 10;
 export function selectionKey(s: Selection | null): string | null {
   if (!s) return null;
   if (s.kind === "home") return "home";
-  if (s.kind === "cart" || s.kind === "galley") return `${s.kind}:${s.id}`;
+  if (s.kind === "cart") return `${s.kind}:${s.id}`;
   return `${s.kind}:${s.code}`;
 }
 
@@ -88,7 +85,6 @@ export function MapScreen(
   // The dock: what each cart has been loaded with, the departure being confirmed.
   const [loads, setLoads] = useState<Record<string, string[]>>({});
   const [departure, setDeparture] = useState<{ vehicleId: string; city: string } | null>(null);
-  const [escort, setEscort] = useState("none");
   const [cargoCity, setCargoCity] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
   const [upgrading, setUpgrading] = useState<string | null>(null);
@@ -172,7 +168,6 @@ export function MapScreen(
   };
   const startDeparture = (vehicleId: string, city: string) => {
     haptic("tap");
-    setEscort("none");
     setDeparture({ vehicleId, city });
     select({ kind: "cart", id: vehicleId });
   };
@@ -236,7 +231,6 @@ export function MapScreen(
     }),
     ...vehicles.map((v) => {
       const dv = tripOf(deliveries, v, now);
-      const halted = !!dv?.attack?.pending && now <= (dv.attack?.reactBy ?? 0);
       const loaded = dv
         ? dv.resource
         : road
@@ -250,7 +244,7 @@ export function MapScreen(
               departAt: dv.departAt,
               arriveAt: dv.arriveAt,
               backAt: dv.backAt,
-              halted,
+              halted: false,
             }
           : null,
         node: (
@@ -259,7 +253,7 @@ export function MapScreen(
             type={v.type}
             label={vehicleName(v.type)}
             load={loaded && (!dv || now < dv.arriveAt) ? (GOODS_COLOUR[loaded] ?? null) : null}
-            state={halted ? "ambushed" : dv ? "road" : "parked"}
+            state={dv ? "road" : "parked"}
             onTap={() => {
               haptic("tap");
               if (departure && departure.vehicleId !== v.id) setDeparture(null);
@@ -277,23 +271,22 @@ export function MapScreen(
   const campaignPanel = campaign ? (
     <CampaignPanel props={props} f={campaign} sel={sel} select={select} />
   ) : null;
-  const sea = props.layer === "sea";
   const panelUp = !!sel;
 
   const insets = wide
     ? { top: 110, right: panelUp ? 460 : 40, bottom: 40, left: 40 }
     : {
-        top: campaign ? 160 : sea ? 175 : 150,
+        top: campaign ? 160 : 150,
         right: 12,
         bottom: panelUp ? 200 : 100,
         left: 12,
       };
 
   // The panel of the selection.
-  let panel: ReactNode = sea ? <SeaPanel props={props} sel={sel} select={select} /> : campaignPanel;
+  let panel: ReactNode = campaignPanel;
   if (!campaign && sel?.kind === "home")
     panel = <HomePanel props={props} onClose={() => select(null)} />;
-  if (!campaign && !sea && sel?.kind === "city") {
+  if (!campaign && sel?.kind === "city") {
     const i = cities.indexOf(sel.code);
     const step = (k: number) =>
       select({ kind: "city", code: cities[(i + k + cities.length) % cities.length] ?? sel.code });
@@ -313,7 +306,7 @@ export function MapScreen(
       />
     );
   }
-  if (!campaign && !sea && selectedCart) {
+  if (!campaign && selectedCart) {
     const i = vehicles.findIndex((v) => v.id === selectedCart.id);
     const step = (k: number) => {
       setDeparture(null);
@@ -327,8 +320,6 @@ export function MapScreen(
           props={props}
           vehicle={selectedCart}
           city={departure.city}
-          escort={escort}
-          setEscort={setEscort}
           onCancel={() => setDeparture(null)}
           onGo={async () => {
             const ids = cartLoad.map((o) => o.id);
@@ -337,7 +328,6 @@ export function MapScreen(
               orderId: ids[0] ?? "",
               ...(ids.length > 1 ? { orderIds: ids } : {}),
               vehicleId: selectedCart.id,
-              escort,
             });
             setDeparture(null);
             if (ok) setLoads((all) => ({ ...all, [selectedCart.id]: [] }));
@@ -365,7 +355,6 @@ export function MapScreen(
 
   const [sheetKind, sheetId] = (props.sheet ?? "").split(":");
   const cargoVehicle = sheetKind === "cargo" ? vehicles.find((v) => v.id === sheetId) : undefined;
-  const banditsCity = sheetKind === "bandits" ? (sheetId ?? null) : null;
   const notice = props.unread + carnetRewards(props);
   const days = Math.max(1, (catalog.world.endsAt - catalog.world.startsAt) / 86_400_000);
   const seasonProgress = Math.min(1, (now - catalog.world.startsAt) / (days * 86_400_000));
@@ -377,35 +366,17 @@ export function MapScreen(
         ref={map}
         region={region}
         cities={cities}
-        layer={sea ? "sea" : campaign ? "campaign" : "trade"}
+        layer={campaign ? "campaign" : "trade"}
         spots={
-          sea
-            ? seaSpots(props)
-            : campaign
-              ? campaign.lands.map((l) => ({ key: `land:${l.code}`, x: l.x, y: l.y }))
-              : []
+          campaign ? campaign.lands.map((l) => ({ key: `land:${l.code}`, x: l.x, y: l.y })) : []
         }
-        overlay={
-          sea ? (
-            <SeaOverlay props={props} />
-          ) : campaign ? (
-            <CampaignOverlay f={campaign} now={now} />
-          ) : undefined
-        }
-        markers={
-          sea
-            ? seaMarkers(props, select)
-            : campaign
-              ? campaignMarkers(props, campaign, select)
-              : markers
-        }
-        parked={campaign || sea ? [] : parked}
-        roads={campaign || sea ? [] : roads}
-        litRoads={campaign || sea ? [] : litCities}
+        overlay={campaign ? <CampaignOverlay f={campaign} now={now} /> : undefined}
+        markers={campaign ? campaignMarkers(props, campaign, select) : markers}
+        parked={campaign ? [] : parked}
+        roads={campaign ? [] : roads}
+        litRoads={campaign ? [] : litCities}
         planned={
-          campaign || sea
-            ? null
-            : (departure?.city ?? (cartFree && cartHold?.city ? cartHold.city : null))
+          campaign ? null : (departure?.city ?? (cartFree && cartHold?.city ? cartHold.city : null))
         }
         clockOffset={props.clockOffset}
         insets={insets}
@@ -431,16 +402,10 @@ export function MapScreen(
         guidePaused={props.guidePaused}
         bottom={!panelUp}
         hasFamily={!!view.families}
-        layer={sea ? "sea" : campaign ? "campaign" : "trade"}
+        layer={campaign ? "campaign" : "trade"}
         familyCalls={familyCalls(props)}
         workshopsReady={ready > 0}
-        right={
-          sea ? (
-            <SeaHud props={props} />
-          ) : campaign ? (
-            <CampaignHud f={campaign} now={now} />
-          ) : undefined
-        }
+        right={campaign ? <CampaignHud f={campaign} now={now} /> : undefined}
         onProfile={() => props.setSheet("profile")}
         onNotices={() => props.setSheet("notices")}
         onBales={() => props.setSheet("bales")}
@@ -448,7 +413,7 @@ export function MapScreen(
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
         onRanking={() => props.setSheet("ranking")}
-        onFamily={() => (campaign || sea ? props.setLayer("trade") : props.goTo("famille"))}
+        onFamily={() => (campaign ? props.setLayer("trade") : props.goTo("famille"))}
         onWorkshops={() => props.setSheet("workshops")}
         onHelp={props.openHelp}
       />
@@ -456,7 +421,6 @@ export function MapScreen(
 
       <CounterSheets {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}
-      <SeaSheets {...props} />
       <RialtoSheet {...props} />
       <RankingSheet {...props} />
       <ProfileSheet {...props} />
@@ -510,13 +474,6 @@ export function MapScreen(
       </Sheet>
       <Sheet open={sheetKind === "sell" && !!sheetId} onClose={() => props.setSheet(null)}>
         {sheetKind === "sell" && sheetId && <CitySellSheet props={props} city={sheetId} />}
-      </Sheet>
-      <Sheet open={banditsCity !== null && !!road} onClose={() => props.setSheet(null)}>
-        {road && banditsCity !== null && (
-          <div className="pt-4">
-            <Bandits {...props} road={road} city={banditsCity || undefined} />
-          </div>
-        )}
       </Sheet>
       <Coach key={props.guideKey} {...props} departing={departure !== null} />
     </div>
@@ -623,7 +580,6 @@ function CityPanel({
     view.criee && view.criee.city === code && view.criee.endsAt > now ? view.criee : null;
   const nextDay = props.catalog.world.startsAt + view.day * 86_400_000;
   const venice = code === "venezia";
-  const banditsOpen = !!road && now >= road.banditsOpenAt;
   const status = criee
     ? m.city.criee(
         props.names.resource(criee.resource),
@@ -684,23 +640,6 @@ function CityPanel({
               onClick={() => props.goTo("marche")}
             />
           )}
-          {venice && (
-            <ActionButton
-              icon={Icon.port()}
-              label={m.buttons.port}
-              coach="panel-port"
-              onClick={() =>
-                portOpensAt(view) > now ? props.setSheet("port:locked") : props.goTo("port")
-              }
-            />
-          )}
-          {banditsOpen && (
-            <ActionButton
-              icon={Icon.bandits()}
-              label={m.buttons.bandits}
-              onClick={() => onSheet(`bandits:${code}`)}
-            />
-          )}
         </>
       }
       extra={
@@ -757,7 +696,6 @@ function CartPanel({
   );
   if (trip) {
     const city = props.names.city(trip.route.split(":")[1] ?? "");
-    const halted = !!trip.attack?.pending && now <= (trip.attack?.reactBy ?? 0);
     const out = now < trip.arriveAt;
     const share = out
       ? (now - trip.departAt) / Math.max(1, trip.arriveAt - trip.departAt)
@@ -774,31 +712,16 @@ function CartPanel({
         }
         chip={<span className="font-mono text-xs text-gold">{d(trip.paid ?? trip.payment)}</span>}
         status={
-          halted
-            ? m.cart.halted(clock((trip.attack?.reactBy ?? 0) - now))
-            : out
-              ? m.cart.outbound(city, clock(trip.arriveAt - now))
-              : m.cart.inbound(clock(trip.backAt - now))
+          out
+            ? m.cart.outbound(city, clock(trip.arriveAt - now))
+            : m.cart.inbound(clock(trip.backAt - now))
         }
-        tone={halted ? "vermilion" : "lagoon"}
-        progress={halted ? null : share}
+        tone="lagoon"
+        progress={share}
         onClose={onClose}
         onPrev={onPrev}
         onNext={onNext}
-        actions={
-          <>
-            {halted && (
-              <ActionButton
-                icon={Icon.bandits()}
-                label={m.buttons.react}
-                tone="vermilion"
-                disabled={props.busy}
-                onClick={() => props.act({ type: "reactToAmbush", deliveryId: trip.id })}
-              />
-            )}
-            <ActionButton icon={Icon.follow()} label={m.buttons.follow} onClick={onFollow} />
-          </>
-        }
+        actions={<ActionButton icon={Icon.follow()} label={m.buttons.follow} onClick={onFollow} />}
       />
     );
   }
@@ -848,16 +771,12 @@ function DeparturePanel({
   props,
   vehicle,
   city,
-  escort,
-  setEscort,
   onGo,
   onCancel,
 }: {
   props: GameProps;
   vehicle: VehicleView;
   city: string;
-  escort: string;
-  setEscort: (e: string) => void;
   onGo: () => void;
   onCancel: () => void;
 }) {
@@ -883,9 +802,6 @@ function DeparturePanel({
     orders[0]?.minutes[vehicle.type] ??
     props.catalog.road?.routes[props.view.player.region]?.[city] ??
     0;
-  const escorts = ["none", ...Object.keys(props.catalog.road?.escorts ?? {})];
-  const watched = road?.watchedRoutes.includes(`${props.view.player.region}:${city}`);
-  const chance = (e: string) => Math.round((road?.ambushChance[e] ?? 0) / 100);
   return (
     <ContextPanel
       title={vehicleName(vehicle.type)}
@@ -910,30 +826,6 @@ function DeparturePanel({
           />
           <ActionButton icon={Icon.cross()} label={m.buttons.cancel} onClick={onCancel} />
         </>
-      }
-      extra={
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap justify-center gap-1.5">
-            {escorts.map((e) => (
-              <button
-                key={e}
-                type="button"
-                aria-pressed={escort === e}
-                onClick={() => {
-                  setEscort(e);
-                  setLeft(DEPART_SECONDS);
-                }}
-                className={`rounded-lg px-2.5 py-1 text-xs ring-1 ${escort === e ? "bg-gold/15 text-gold ring-gold" : "bg-night text-cream-dim ring-line"}`}
-              >
-                {e === "none" ? fr.game.cargo.noEscort : (fr.game.road.sheet.escorts[e] ?? e)}
-                <span className="ml-1 font-mono text-[10px] opacity-75">{chance(e)} %</span>
-              </button>
-            ))}
-          </div>
-          {watched && (
-            <p className="text-center text-xs text-vermilion">⚔ {fr.game.road.watchedWarning}</p>
-          )}
-        </div>
       }
     />
   );

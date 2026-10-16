@@ -46,7 +46,9 @@ export type LedgerReason =
   | "escort"
   | "delivery"
   | "bandits"
-  | "bounty";
+  | "bounty"
+  // The sea closed (October 2026): ships of saves of its time paid back at cost.
+  | "sea_closed";
 
 /**
  * Double-entry ledger line: `amount` leaves `from` and enters `to`.

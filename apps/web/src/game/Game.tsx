@@ -5,7 +5,6 @@ import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { DEFAULT_PALETTE, applyPalette, currentPalette, needsPass } from "../theme.js";
 import { Slab } from "../ui.js";
-import { AmbushAlert } from "./AmbushAlert.js";
 import { Ceremony } from "./Ceremony.js";
 import { Help } from "./Help.js";
 import { Intro } from "./Intro.js";
@@ -28,11 +27,7 @@ const REWARDING = new Set<string>([
   "sellToCity",
   "fulfillContract",
   "deliverToProject",
-  "collectExpedition",
-  "collectRaid",
-  "buildShip",
   "dispatchDelivery",
-  "collectBooty",
 ]);
 import type {
   Action,
@@ -50,9 +45,9 @@ import type {
  * Where the merchant is: the map (around their counter, or with a cart chosen), or a page over it.
  * Kept as the name every screen uses to send the merchant somewhere.
  */
-export type Tab = "comptoir" | "routes" | "marche" | "top" | "famille" | "profil" | "port";
+export type Tab = "comptoir" | "routes" | "marche" | "top" | "famille" | "profil";
 /** The map shown: the trade (cities, counter, carts) or the families' campaign (lands). */
-export type Layer = "trade" | "campaign" | "sea";
+export type Layer = "trade" | "campaign";
 
 export interface Names {
   resource: (code: string) => string;
@@ -73,7 +68,7 @@ export interface GameProps {
   act: (action: Action) => Promise<boolean>;
   busy: boolean;
   names: Names;
-  /** Pseudos of merchants met at sea, by player id. */
+  /** Pseudos of merchants met (family, order book), by player id. */
   people: Record<string, string | null>;
   /** Computer-run houses among them. */
   bots: Set<string>;
@@ -124,10 +119,6 @@ export function Game(props: {
     setSelection(null);
     setLayerState(l);
   }, []);
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).has("ambush"))
-      window.history.replaceState(null, "", "/");
-  }, []);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [prices, setPrices] = useState<PriceSeries>({});
@@ -162,7 +153,7 @@ export function Game(props: {
       setViewFailed(null);
       apply(res.serverTime, res.view);
       setUnread((before) => {
-        // A notice arrived while playing: a light cue (convoys, offers taken, boardings).
+        // A notice arrived while playing: a light cue (deliveries, offers taken).
         if (loaded.current && (res.unread ?? 0) > before) haptic("success");
         loaded.current = true;
         return res.unread ?? 0;
@@ -201,15 +192,15 @@ export function Game(props: {
   }, [refresh, loadCatalog]);
 
   /**
-   * Sends the merchant somewhere, always on the map: a place of the trade, another layer (the
-   * family's campaign, the sea), or a sheet over it (the Rialto, the ranking, the profile).
+   * Sends the merchant somewhere, always on the map: a place of the trade, the family's campaign,
+   * or a sheet over it (the Rialto, the ranking, the profile).
    */
   const goTo = useCallback((t: Tab) => {
     setSheet(null);
     haptic("tap");
-    if (t === "famille" || t === "port") {
-      setSelection(t === "port" ? { kind: "port", code: "venezia" } : null);
-      setLayerState(t === "port" ? "sea" : "campaign");
+    if (t === "famille") {
+      setSelection(null);
+      setLayerState("campaign");
       return;
     }
     if (t === "top" || t === "profil") {
@@ -394,14 +385,7 @@ export function Game(props: {
     familyLatestAt,
     level,
     bots,
-    tab:
-      layer === "campaign"
-        ? "famille"
-        : layer === "sea"
-          ? "port"
-          : selection?.kind === "cart"
-            ? "routes"
-            : "comptoir",
+    tab: layer === "campaign" ? "famille" : selection?.kind === "cart" ? "routes" : "comptoir",
     passInfo,
     goTo,
     selection,
@@ -476,7 +460,6 @@ export function Game(props: {
         </div>
       )}
 
-      <AmbushAlert {...gp} />
       {help && <Help {...gp} onClose={() => setHelp(false)} />}
       {welcome && <Welcome {...gp} data={welcome} onClose={() => setWelcome(null)} />}
     </>

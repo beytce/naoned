@@ -100,6 +100,37 @@ describe("profile and visuals", () => {
     expect(p.badges.find((b: { code: string }) => b.code === "first_trade").earned).toBe(true);
   });
 
+  it("sells the Muda's lot at the Dogana, a few units per merchant, with a trophy", async () => {
+    const cookie = await login("ada@example.org");
+    await post(cookie, "/api/game/join", { region: "lagoon" });
+    // The galleys come in 9 h into the season (this world opened at 8 h).
+    now += 10 * 3_600_000;
+    await world.execute({ type: "tick" });
+    const v = (await get(cookie)).json().view;
+    expect(v.muda.goods).toContain("spices");
+    expect(v.muda.stock.spices).toBeGreaterThan(0);
+    const quota = v.muda.left.spices;
+    expect(quota).toBeGreaterThan(0);
+    const spices = v.market.find((l: { resource: string }) => l.resource === "spices");
+    expect(spices.marketMaker.ask).toBe(v.muda.price.spices);
+    const res = await act(cookie, {
+      type: "instantOrder",
+      resource: "spices",
+      side: "buy",
+      quantity: quota + 2,
+    });
+    expect(res.statusCode).toBe(200);
+    const after = (await get(cookie)).json().view;
+    // As much as the quota and the quay allow.
+    const got = Math.min(quota, v.muda.stock.spices);
+    expect(after.muda.left.spices).toBe(quota - got);
+    expect(after.muda.stock.spices).toBe(v.muda.stock.spices - got);
+    const stock = after.inventory.find((l: { resource: string }) => l.resource === "spices");
+    expect(stock.available).toBe(got);
+    const p = (await get(cookie, "/api/game/profile")).json().profile;
+    expect(p.badges.find((b: { code: string }) => b.code === "muda_1").earned).toBe(true);
+  });
+
   it("returns hourly price history", async () => {
     const cookie = await login("ada@example.org");
     await post(cookie, "/api/game/join", { region: "lagoon" });
@@ -116,7 +147,6 @@ describe("living world", () => {
     const res = (await app.inject({ method: "GET", url: "/api/game/catalog" })).json();
     expect(res.world.id).toBeUndefined();
     expect(JSON.stringify(res)).not.toContain(world.id);
-    expect(res.destinations.alexandria.returns).toBe("spices");
   });
 
   it("shows today's contracts and the gazette; home goods go by road", async () => {
@@ -132,27 +162,6 @@ describe("living world", () => {
       const res = await act(cookie, { type: "fulfillContract", contractId: home.id });
       expect(res.json().error).toBe("city_sales_closed");
     }
-  });
-
-  it("sends a galley east and unloads it on return", async () => {
-    const cookie = await login("ada@example.org");
-    await post(cookie, "/api/game/join", { region: "lagoon" });
-    const launch = await act(cookie, {
-      type: "launchExpedition",
-      destination: "constantinople",
-      cargo: { wood: 5 },
-      escort: true,
-    });
-    expect(launch.statusCode).toBe(200);
-    const [g] = launch.json().view.expeditions;
-    expect(g.outcome).toBe("pending");
-    expect(
-      (await act(cookie, { type: "collectExpedition", expeditionId: g.id })).json().error,
-    ).toBe("expedition_not_back");
-    now += 12 * 3_600_000;
-    const back = (await act(cookie, { type: "collectExpedition", expeditionId: g.id })).json().view;
-    expect(["returned", "lost"]).toContain(back.expeditions[0].outcome);
-    expect(await world.checkInvariants()).toEqual([]);
   });
 });
 

@@ -35,7 +35,6 @@ mkdirSync(outDir, { recursive: true });
 
 const CREATED = [
   "starting_capital",
-  "bounty",
   "city_sale",
   "criee_sale",
   "daily_reward",
@@ -53,15 +52,10 @@ const DESTROYED = [
   "upkeep",
   "construction",
   "market_maker_sell",
-  "expedition_charter",
-  "ship_repair",
-  "privateer_letter",
   "campaign_hire",
   "campaign_work",
   "vehicle",
   "vehicle_upkeep",
-  "escort",
-  "bandits",
 ];
 
 /** One column per money source and sink, so the CSV stays flat. */

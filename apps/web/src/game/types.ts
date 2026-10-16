@@ -24,13 +24,7 @@ export interface Catalog {
   };
   /** The Doge of the season before, honoured on the Dogana's façade. */
   previousDoge?: { pseudo: string | null; crest: CrestData | null; season: string } | null;
-  ports: { code: string; name: string }[];
-  destinations: Record<string, Destination>;
-  maxGalleys: number;
-  ships: ShipType[];
-  fleet: { maxPerPlayer: number; portDuesBps: number };
-  privateers: PrivateerRules;
-  /** Deliveries by road and bandits (null when the world has none). */
+  /** Deliveries by road (null when the world has none). */
   road: RoadRules | null;
   /** The four families, their campaign and their decrees (null: off in this world). */
   families: FamilyRules | null;
@@ -44,11 +38,10 @@ export interface Catalog {
         transformYieldBps: number;
         vehicleSpeedBps: number;
         extraVehicles: number;
+        mudaQuotaBps: number;
         marketMakerQuotaBps: number;
         taxDiscountBps: number;
         extraOpenOrders: number;
-        portDuesDiscountBps: number;
-        holdBps: number;
       }
     >;
   };
@@ -97,19 +90,6 @@ export interface RoadRules {
   maxDeliveryMinutes: number;
   /** Orders a vehicle may carry together, all for the same city. */
   maxOrdersPerLoad: number;
-  escorts: Record<string, { costBps: number; defense: number }>;
-  bandits: {
-    hoursOptions: number[];
-    feePerHour: Money;
-    provisionsPerHour: Record<string, number>;
-    maxAttacksPerBand: number;
-    maxBandsPerRoute: number;
-    reactionMinutes: number;
-    takeBps: number;
-    keepBps: number;
-    quietHours: { from: number; to: number };
-    openDay: number;
-  };
 }
 
 export type DeliveryKind = "city" | "doge" | "family" | "urgent";
@@ -132,8 +112,6 @@ export interface DeliveryOrderView {
   rivals?: number;
   /** Minutes one way, per vehicle type (null: no road). */
   minutes: Record<string, number | null>;
-  /** Cost of each escort for this order. */
-  escorts: Record<string, Money>;
 }
 
 export interface VehicleView {
@@ -158,35 +136,10 @@ export interface DeliveryView {
   /** The orders carried, when there are several. */
   orders?: { id: string; kind: string; resource: string; quantity: number; payment: Money }[];
   paid?: Money;
-  escort: string;
   departAt: number;
   arriveAt: number;
   backAt: number;
-  midAt: number;
-  outcome: "en_route" | "delivered" | "robbed_delivered";
-  attack: {
-    at: number;
-    reactBy: number;
-    reacted: boolean;
-    pending: boolean;
-    success: boolean | null;
-    taken: Record<string, number>;
-    /** Told once settled; null for a band of the computer. */
-    bandit: string | null;
-  } | null;
-}
-
-export interface BandView {
-  id: string;
-  route: string;
-  startAt: number;
-  endAt: number;
-  attacks: number;
-  dispersed: boolean;
-  booty: Record<string, number>;
-  collected: boolean;
-  active: boolean;
-  collectable: boolean;
+  outcome: "en_route" | "delivered";
 }
 
 export interface RoadView {
@@ -201,31 +154,6 @@ export interface RoadView {
   }[];
   vehicles: VehicleView[];
   deliveries: DeliveryView[];
-  bands: BandView[];
-  /** Roads where bandits lie in wait (who they are stays hidden). */
-  watchedRoutes: string[];
-  banditsOpenAt: number;
-  /** Successful ambushes of the merchant this season, and the bounty on their head. */
-  infamy: number;
-  bountyOnHead: Money;
-  /** Bounties received this season. */
-  bounties: Money;
-  /** Chance of an ambush succeeding, by escort ("none" included), in bps. */
-  ambushChance: Record<string, number>;
-}
-
-export interface Destination {
-  hours: number;
-  charter: Money;
-  escort: Money;
-  provisions: Record<string, number>;
-  riskBps: number;
-  escortRiskBps: number;
-  returns: string;
-  gainBps: number;
-  maxCargoValue: Money;
-  /** Standing premium (bps) the port pays for some of our goods. */
-  wants: Record<string, number>;
 }
 
 export interface BookLine {
@@ -254,68 +182,6 @@ export interface OrderView {
   expiresAt: number;
 }
 
-export interface ShipType {
-  type: string;
-  name: string;
-  costDucats: Money;
-  costMaterials: Record<string, number>;
-  holdValue: Money;
-  speedBps: number;
-  defense: number;
-  upkeepPerDay: Money;
-  repairCost: Money;
-  repairHours: number;
-}
-
-export interface PrivateerRules {
-  maxActive: number;
-  letterFee: Money;
-  hours: number;
-  provisions: Record<string, number>;
-  shareBps: number;
-  minChanceBps: number;
-  maxChanceBps: number;
-  newcomerDays: number;
-  minTargetWorthBps: number;
-  cooldownHours: number;
-}
-
-export interface ShipView {
-  id: string;
-  type: string;
-  damaged: boolean;
-  readyAt: number;
-  status: "ready" | "at_sea" | "damaged" | "repairing";
-}
-
-export interface RaidView {
-  id: string;
-  route: string;
-  ships: string[];
-  attack: number;
-  startAt: number;
-  endAt: number;
-  outcome: "cruising" | "returned";
-  beaten: boolean;
-  booty: Record<string, number>;
-  hits: {
-    expeditionId: string;
-    victimId: string;
-    at: number;
-    chanceBps: number;
-    success: boolean;
-    taken: Record<string, number>;
-  }[];
-}
-
-export interface SeaNews {
-  raider: string;
-  victim: string;
-  route: string;
-  at: number;
-  taken: Record<string, number>;
-}
-
 export interface ContractView {
   id: string;
   day: number;
@@ -342,7 +208,7 @@ export interface DecreeRules {
   gabelle: { extraTaxBps: number };
   faveur: { premiumBps: number; reservedMinutes: number };
   peage: { tollBps: number };
-  levant: { memberDiscountBps: number; othersSurchargeBps: number };
+  levant: { memberQuotaBps: number; othersCutBps: number };
   calmiere: { capBps: number };
   franchise: { upkeepDiscountBps: number };
 }
@@ -490,21 +356,6 @@ export interface GazetteEvent {
   endsAt: number;
 }
 
-export interface ExpeditionView {
-  id: string;
-  destination: string;
-  departAt: number;
-  returnAt: number;
-  cargo: Record<string, number>;
-  escort: boolean;
-  cargoValue: Money;
-  outcome: "pending" | "returned" | "lost";
-  brought: number;
-  ships?: string[];
-  defense?: number;
-  boarding: { raider: string; success: boolean; taken: Record<string, number> } | null;
-}
-
 export interface BuildingView {
   id: string;
   type: string;
@@ -585,19 +436,12 @@ export interface PlayerView {
   contracts: ContractView[];
   families: FamiliesView | null;
   gazette: { current: GazetteEvent | null; next: GazetteEvent | null };
-  expeditions: ExpeditionView[];
   book: Record<string, BookView>;
   openOrders: OrderView[];
-  ships: ShipView[];
-  raids: RaidView[];
-  /** This week's port prices (bps of reference), per port and resource. */
-  ports: Record<string, Record<string, number>>;
-  watchedRoutes: string[];
-  seaNews: SeaNews[];
   /** Deliveries by road (null when the world has none). */
   road: RoadView | null;
-  /** The latest successful ambushes on the roads (no names). */
-  roadNews: { route: string; at: number; resource: string }[];
+  /** The galleys of the Muda (null when the world has none). */
+  muda: MudaView | null;
   rations: { resource: string; perDay: number; hungryUntil: number; nextMealAt: number };
   tutorial: string[];
   missions: MissionView[];
@@ -619,8 +463,6 @@ export interface PassView {
   };
   maxOpenOrders: number;
   rerollsLeft: number;
-  /** Corsairs on each route (Pass only). */
-  lookout: Record<string, { corsairs: number; until: number }> | null;
 }
 
 export interface DailyView {
@@ -696,8 +538,8 @@ export interface Welcome {
   readyBatches: number;
   notices: Record<string, number>;
   slept: boolean;
-  /** The road while away: deliveries arrived, ambushes suffered and beaten off, booty to collect. */
-  road?: { arrived: number; robbed: number; repelled: number; booty: Record<string, number> };
+  /** The road while away: deliveries arrived. */
+  road?: { arrived: number };
 }
 
 export interface GameResponse {
@@ -709,7 +551,7 @@ export interface GameResponse {
   /** Newest message of the family's thread (null: no family or no message). */
   familyLatestAt?: number | null;
   welcome?: Welcome;
-  /** Pseudos of merchants met at sea or in the order book. */
+  /** Pseudos of merchants met in the family or the order book. */
   names?: Record<string, string | null>;
   /** Which of them are computer-run houses. */
   bots?: string[];
@@ -786,12 +628,20 @@ export interface Palmares {
   };
 }
 
+/** The galleys of the Muda: the lot on the quay, its price, and what the merchant may still buy. */
+export interface MudaView {
+  nextAt: number | null;
+  arrivedAt: number | null;
+  goods: string[];
+  stock: Record<string, number>;
+  price: Record<string, Money>;
+  left: Record<string, number>;
+  quota: Record<string, number>;
+}
+
 export type NotificationKind =
   | "harvest"
   | "order"
-  | "galley"
-  | "raid"
-  | "corsairs"
   | "event"
   | "act"
   | "week"
@@ -800,11 +650,8 @@ export type NotificationKind =
   | "deal"
   | "family"
   | "siege"
-  | "ambush"
   | "delivery"
-  | "robbed"
-  | "defended"
-  | "band_over";
+  | "muda";
 
 export interface Notice {
   id: number;
@@ -931,20 +778,8 @@ export type Action =
   | { type: "sendMarch"; land: string; lances: number }
   | { type: "joinMarch"; marchId: string; lances: number }
   | { type: "voteProgramme"; picks: DecreePick[] }
-  | {
-      type: "launchExpedition";
-      destination: string;
-      cargo: Record<string, number>;
-      escort: boolean;
-      ships?: string[];
-    }
-  | { type: "collectExpedition"; expeditionId: string }
   | { type: "limitOrder"; resource: string; side: "buy" | "sell"; price: string; quantity: number }
   | { type: "cancelOrder"; orderId: string }
-  | { type: "buildShip"; shipType: string }
-  | { type: "repairShip"; shipId: string }
-  | { type: "commissionPrivateers"; route: string; ships: string[] }
-  | { type: "collectRaid"; raidId: string }
   | { type: "buyVehicle"; vehicleType: string }
   | { type: "upgradeVehicle"; vehicleId: string }
   | {
@@ -952,11 +787,7 @@ export type Action =
       orderId: string;
       orderIds?: string[];
       vehicleId: string;
-      escort: string;
-    }
-  | { type: "reactToAmbush"; deliveryId: string }
-  | { type: "postBand"; route: string; hours: number }
-  | { type: "collectBooty"; bandId: string };
+    };
 
 /** A message of the family's thread. */
 export interface FamilyMessage {

@@ -20,18 +20,15 @@ describe("settings", () => {
     expect(() => parseSettings({ ...venice1450Settings, marketTaxBps: -1 })).toThrow();
   });
 
-  it("leaves deliveries and bandits off when absent", () => {
+  it("leaves deliveries off when absent", () => {
     const s = parseSettings(testSettings);
     expect(s.deliveries.ordersPerDay.max).toBe(0);
     expect(s.deliveries.routes).toEqual({});
-    expect(s.bandits.hoursOptions).toEqual([]);
   });
 
   it("parses the deliveries of the test fixture, money as bigint", () => {
     const s = parseSettings({ ...testSettings, ...deliverySettings });
     expect(s.deliveries.vehicles.cart?.costDucats).toBe(10_000n);
-    expect(s.bandits.feePerHour).toBe(1_000n);
-    expect(s.bandits.attackChanceBps["2"]).toBe(5_000);
   });
 
   it("pays every Venetian order of a made good well above the cost of its inputs", () => {

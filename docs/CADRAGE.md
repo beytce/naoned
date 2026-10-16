@@ -60,9 +60,11 @@ Chaque métier dépend désormais des deux autres : le boulanger vend son pain �
 | **Transparence** | Un badge « PNJ » les signale dans le classement. Ils n'ont pas d'adresse e-mail réelle et ne peuvent pas ouvrir de session. Ils sont exclus des récompenses hebdomadaires |
 | **Retrait** | Quand un joueur réel devient actif, une maison se retire (au plus une par heure) : ses ordres sont annulés, elle cesse de jouer et quitte le classement. Si le monde se vide, une maison retirée revient avant qu'on en crée une nouvelle |
 | **Classement hebdomadaire** | Ventes nettes de la semaine, en ducats (voir « Fin de saison »). Une semaine = 7 jours depuis l'ouverture du monde (mêmes bornes que les grands chantiers), la dernière court jusqu'à la fin du mois ; un nouveau venu part de zéro. Titres de la semaine pour le podium, Pass Négociant 7 jours pour le top 10 (joueurs réels) |
-| **Notifications** | Dans le jeu (cloche) et en push (PWA) : récolte prête, galère rentrée, ordre exécuté, événement, résultat de la semaine. Chaque type peut être coupé ; pas de push entre 22 h et 8 h (heure de Paris) |
+| **Notifications** | Dans le jeu (cloche) et en push (PWA) : récolte prête, livraison arrivée, galères de la Muda à quai, ordre exécuté, événement, résultat de la semaine. Chaque type peut être coupé ; pas de push entre 22 h et 8 h (heure de Paris) |
 
-### La mer : neuf ports, flotte et corsaires
+### La mer : neuf ports, flotte et corsaires (retirée le 16 octobre 2026)
+
+> Retirée après l'audit du 16 octobre 2026 : elle ne pesait presque rien dans l'économie et les bots ne la jouaient plus. Les marchandises d'outre-mer arrivent désormais par les galères de la Muda (voir « Resserrer » plus bas). Les sauvegardes antérieures sont soldées au tick suivant : navires remboursés à leur coût, cargaisons et butins rendus à leurs marchands.
 
 Inspiré de Mercato Venezia : du risque et de l'affrontement entre joueurs, sans jamais tout perdre.
 
@@ -120,7 +122,7 @@ Plan complet et phases suivantes (mariages, commandite, enchère des galères, p
 | **Fil de la famille** | Les membres d'une famille s'écrivent dans l'onglet Familles : 280 caractères, un message toutes les 10 s et 50 par jour, filtre de mots, pas de liens. Trois signalements masquent un message ; les signalements sont sur la page `/admin` |
 | **PNJ** | Les maisons marchandes prêtent allégeance, livrent les commandes et font du mécénat, pour qu'un petit monde ait des familles vivantes |
 
-### Les routes et les brigands (le pendant terrestre de la mer)
+### Les routes et les brigands (le pendant terrestre de la mer ; brigands et escortes retirés le 16 octobre 2026)
 
 Note d'implémentation : `docs/plan-livraisons.md` ; réglages calibrés : `docs/calibration.md`. Constat de départ : une session se résumait à « Tout récolter et relancer », et vendre aux villes ne demandait aucun choix.
 
@@ -146,7 +148,7 @@ Constat : le jeu devient vite redondant et on a peu l'impression de se développ
 | Mécanique | Règle |
 | --- | --- |
 | **Domaine** | En tête du Comptoir, la Maison dessinée sur la terre de sa région. Les ateliers occupent douze parcelles, le palais la place d'honneur. Chaque niveau ajoute un ornement (bannière, socle, tour, couronne dorée). Ciel selon l'heure de Paris. Purement visuel |
-| **Maîtrises** | À 5 niveaux d'ateliers, le marchand choisit une maîtrise pour toute la saison : Maître d'atelier (+10 % sur ce qui se transforme), Roulier (véhicules 25 % plus rapides, un de plus), Négociant (quotas Dogana +25 %, taxe −2 points, 3 offres de plus) ou Armateur (droits de port −50 %, cales +25 %). Réglages `specialties` |
+| **Maîtrises** | À 5 niveaux d'ateliers, le marchand choisit une maîtrise pour toute la saison : Maître d'atelier (+10 % sur ce qui se transforme), Roulier (véhicules 25 % plus rapides, un de plus), Négociant (quotas Dogana +25 %, taxe −2 points, 3 offres de plus) ou Marchand du Levant (quota doublé aux galères de la Muda ; l'Armateur jusqu'au 16 octobre 2026). Réglages `specialties` |
 | **Saison en actes** | Quatre actes, un par semaine, comprimés si le monde ouvre tard (`acts`). I l'installation ; II une crise tirée du secret du monde (guerre de Chioggia, peste ou embargo du Levant) ; III la guerre de Lombardie (Milan moitié plus fort dans la Campagne ; auparavant l'Arsenal, un chantier disputé) ; IV la Sensa, commandes +15 % et plus nombreuses. Le modificateur d'acte se multiplie avec l'événement du jour |
 | **Demande commune** | Les commandes des villes forment un tableau du monde, tiré chaque jour et ouvert par vagues (une toutes les 4 h, chaque commande ouverte 8 h, `deliveries.waves`) : 10 commandes de ville et 2 urgentes par marchand actif (`sharedOrdersPerActivePlayer`), complété si un marchand arrive dans la journée. Les commandes de ville sont payées la référence +10 % (`cityPriceBps`, contre +25 % sur le tableau personnel), plus le bonus de route. Le premier qui envoie un véhicule prend la commande ; le prix dépend de la route depuis sa région. Les matières premières restent réservées à leurs producteurs ; les commandes du Doge, de la famille et de bienvenue restent personnelles. Le bouton « Meilleur choix » disparaît |
 
@@ -187,7 +189,7 @@ Constat du porteur : le système de guilde ne lui plaît pas. Il veut quatre gra
 | **Gloire** | Chaque heure ouverte, une terre rapporte sa valeur à la famille qui la tient (village 1, bourg 2, ville 3, forteresse 4) |
 | **Milan (PvE)** | Toutes les 4 heures ouvertes, Milan chevauche contre la famille en tête : sa terre la plus faible sur la frontière de Milan, avec 10 lances + 2 par marchand actif, doublées à 100 % d'avance. Ses forteresses se regarnissent chaque jour. L'acte III (la guerre de Lombardie) le rend moitié plus fort |
 | **Mérite** | Une lance par bataille gagnée (attaque ou défense), un point pour 10 lances tenues une heure en garnison. Il pèse le vote du programme (aucun membre au-delà de 25 %) et partage la gabelle et le péage. Le premier de chaque famille est son capitaine |
-| **Décrets** | Pendant la semaine, chaque famille vote son programme de deux décrets, public. La gagnante l'impose la semaine suivante ; jamais le même décret deux semaines de suite. Catalogue (`decrees`) : Privilège du Fondaco (taxe du Rialto 1 %, quotas de la Dogana +50 % pour les membres), Gabelle sur un bien (+4 points de taxe sur les ventes des autres, partagés entre les membres), Faveur d'une ville (livraisons des membres +10 %, ses commandes urgentes à eux la première demi-heure), Péage de Terraferme (3 % des livraisons des autres vers les villes que la famille tenait en fin de semaine), Lettres de course (seuls ses membres postent des brigands, contre les autres familles), Tarif du Levant (droits de port −50 % pour les membres, +25 % pour les autres), Calmiere (aucune offre d'un bien au-dessus de 115 % de la référence), Franchise (entretien −20 % pour les membres) |
+| **Décrets** | Pendant la semaine, chaque famille vote son programme de deux décrets, public. La gagnante l'impose la semaine suivante ; jamais le même décret deux semaines de suite. Catalogue (`decrees`) : Privilège du Fondaco (taxe du Rialto 1 %, quotas de la Dogana +50 % pour les membres), Gabelle sur un bien (+4 points de taxe sur les ventes des autres, partagés entre les membres), Faveur d'une ville (livraisons des membres +10 %, ses commandes urgentes à eux la première demi-heure), Péage de Terraferme (3 % des livraisons des autres vers les villes que la famille tenait en fin de semaine), Charte du Levant (quota aux galères de la Muda +50 % pour les membres, −25 % pour les autres ; Lettres de course et Tarif du Levant retirés avec la mer et les brigands), Calmiere (aucune offre d'un bien au-dessus de 115 % de la référence), Franchise (entretien −20 % pour les membres) |
 | **Ouvrages** | Sur une terre que sa famille tient (pas un fief), un membre bâtit seul un ouvrage, payé en ducats **détruits** (`campaign.works`) : **rocca** (garnison +60 % en défense, 40 d), **campo** (les marches de la famille partent du camp le plus proche plutôt que du fief, 30 d), **dogana** (Gloire de la terre +50 %, 50 d). Un par terre ; deux heures ouvertes de chantier avant qu'il serve ; deux par famille, un de plus par cinq membres actifs. Une terre prise rase son ouvrage (+10 de Mérite à chaque assaillant, avis à son bâtisseur) ; la carte qui rouvre chaque semaine les efface tous |
 | **Dernière semaine** | Pas de décrets : la famille gagnante remporte la saison |
 | **Monnaie** | Lances : un puits. Gabelle et péage : un transfert entre joueurs par le compte de la famille (`family:<code>`), partagé à la clôture de la semaine. Faveur : seule création, bornée |
@@ -211,6 +213,20 @@ Inspiré des quais d'un jeu de commerce spatial : on remplit un véhicule, puis 
 | **Chargement** | Un véhicule emporte jusqu'à 4 commandes du jour, toutes pour la même ville, dans sa capacité (`deliveries.maxOrdersPerLoad`). Chaque commande est payée à l'arrivée pour ce qui reste de sa marchandise ; l'escorte se paie sur tout le chargement |
 | **Geste** | Toucher le dépôt ou un véhicule le sélectionne (barre du véhicule en bas de la carte). « Charger » ouvre les Cargaisons : on coche les commandes, la cale se remplit. On glisse ensuite le véhicule du dépôt jusqu'à la ville (ou on la touche) ; une barre « Départ vers… » laisse six secondes pour choisir l'escorte, partir ou annuler |
 | **Équilibre** | 4 commandes de ville par marchand actif au tableau commun (au lieu de 10), villes à +10 %, +30 % par heure de route : la monnaie payée reste dans sa cible (`docs/calibration.md`) |
+
+### Resserrer : sans la mer ni les brigands, les galères de la Muda (audit du 16 octobre 2026)
+
+Constat de l'audit (`docs/audit-2026-10-16.md`) : trop de systèmes pour une boucle mobile de 3 à 5 minutes, et la mer comme le brigandage ne pesaient presque rien sans que la simulation les mesure encore. Choix du porteur : les supprimer, et trouver une autre manière d'amener les marchandises d'outre-mer dans l'économie.
+
+| Mécanique | Règle |
+| --- | --- |
+| **Retraits** | Plus de Port, de flotte, de lettres de marque, de brigands ni d'escortes. Une livraison part sans risque ; le véhicule revient toujours. Décrets Lettres de course et Tarif du Levant, maîtrise Armateur, missions de la mer et vigie du Pass retirés |
+| **Galères de la Muda** | Tous les 3 jours à 9 h, les galères d'État arrivent à Venise. La Dogana vend leur lot au Rialto : 1 épice, 1 soie, 1 fourrure, 1 drap, 4 sels et 2 vins par marchand actif (`muda.lotPerActivePlayer`) ; ce qui reste attend les galères suivantes, jusqu'à 2 lots (`muda.maxStockLots`) |
+| **Prix de la rareté** | Au prix de référence quand le lot est plein, jusqu'à +60 % quand il est épuisé, à proportion de ce qui est parti (`muda.priceRiseBps`) : premiers arrivés, meilleurs prix. L'argent payé est détruit (puits), les marchandises entrent dans l'économie |
+| **Quota par arrivée** | Chaque marchand achète au plus quelques unités par arrivée (3 épices, 3 soies, 2 fourrures, 2 draps, 10 sels, 6 vins : `muda.quotaPerPlayer`), remis à zéro aux galères suivantes. Le Pass n'y change rien |
+| **Commandes d'exotiques** | Une commande de ville sur treize, au tableau commun, demande une marchandise d'outre-mer (`deliveries.weights`, `deliveries.quantity`), aux villes qui en achètent. Elle se livre comme les autres ; s'approvisionner à la Muda tôt est la marge |
+| **Marchand du Levant** | Maîtrise qui double le quota à la Muda. La Charte du Levant, décret de famille, donne +50 % de quota aux membres et −25 % aux autres |
+| **Notification** | « Galères de la Muda à quai », dans la cloche et en push (coupable comme les autres) |
 
 ## Vision et positionnement
 
@@ -307,7 +323,7 @@ Les briques et les planches servent à construire et à améliorer tous les bât
 - moins ce que la vente a coûté : taxe du marché, gabelles, péages ;
 - moins tout ce qu'il a payé pour des marchandises (achats au Rialto, aux joueurs et à la Dogana).
 
-Le stock, les bâtiments, les cadeaux (ballots, tâches, missions) et les primes ne comptent pas : il faut vendre sa production. Racheter puis revendre ne fait que perdre les taxes. Le compteur est tenu dans l'état du monde à chaque écriture du grand livre ; une sauvegarde antérieure le reconstitue depuis `ledger_entries`. Le patrimoine (trésorerie, stocks au plus bas du prix de référence et du prix moyen sur 7 jours, bâtiments à leur coût) reste affiché sur le profil, enregistré en fin de saison et sert aux garde-fous des brigands et corsaires.
+Le stock, les bâtiments, les cadeaux (ballots, tâches, missions) et les primes ne comptent pas : il faut vendre sa production. Racheter puis revendre ne fait que perdre les taxes. Le compteur est tenu dans l'état du monde à chaque écriture du grand livre ; une sauvegarde antérieure le reconstitue depuis `ledger_entries`. Le patrimoine (trésorerie, stocks au plus bas du prix de référence et du prix moyen sur 7 jours, bâtiments à leur coût) reste affiché sur le profil et enregistré en fin de saison.
 
 Récompenses de fin de saison, entre joueurs réels (les PNJ ne prennent pas de place) :
 
@@ -485,7 +501,7 @@ Le jeu est gratuit et ne vend jamais de ressources, de monnaie de jeu ni de prod
 
 | Offre | Contenu | Phase |
 | --- | --- | --- |
-| Pass Négociant (3,99 € la saison, 1,49 € la semaine) | Quota Dogana +20 %, 2 offres ouvertes de plus, produits frais +8 % au lieu de +5 %, une commande du Doge échangée par jour, carnet à 10 offres, 7 jours d'historique des prix, vigie des corsaires, alertes des Criées et des bonnes affaires, sceau et palette « Or de Venise ». Gagné par le top 10 de la semaine (7 jours) et selon le rang final de la saison | Fait (paiement Stripe à brancher) |
+| Pass Négociant (3,99 € la saison, 1,49 € la semaine) | Quota Dogana +20 %, 2 offres ouvertes de plus, produits frais +8 % au lieu de +5 %, une commande du Doge échangée par jour, carnet à 10 offres, 7 jours d'historique des prix, alertes des Criées et des bonnes affaires, sceau et palette « Or de Venise ». Gagné par le top 10 de la semaine (7 jours) et selon le rang final de la saison | Fait (paiement Stripe à brancher) |
 | Cosmétiques à l'unité | Blasons, façades, bannières de guilde | V1 |
 | Mondes privés | Monde dédié pour une communauté, une école ou une entreprise, facturé par saison | V2 |
 

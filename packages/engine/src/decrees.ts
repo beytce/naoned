@@ -8,7 +8,7 @@ import { weekIndex } from "./weekly.js";
  * Laws and decrees. During the week, each family votes its programme (weighted by merit, no
  * member above a share); the family that wins the week imposes it for the next one. A family may
  * not impose the same decree two weeks in a row. The effects are read here by the market, the
- * roads, the port and the upkeep.
+ * roads, the Muda and the upkeep.
  */
 
 export type DecreeCode =
@@ -16,7 +16,6 @@ export type DecreeCode =
   | "gabelle"
   | "faveur"
   | "peage"
-  | "course"
   | "levant"
   | "calmiere"
   | "franchise";
@@ -220,19 +219,17 @@ export function tollOn(
   return { family: d.family, bps: ctx.settings.decrees.peage.tollBps };
 }
 
-/** Port dues under the Levant's tariff: lighter for the members, heavier for the others. */
-export function levantDuesBps(
+/** The Levant's charter at the Muda: a larger quota for the members, a smaller one for the others. */
+export function levantQuotaBps(
   ctx: WorldContext,
   state: WorldState,
   playerId: PlayerId,
   at: number,
 ): number {
   const d = decreeInForce(ctx, state, "levant", at);
-  if (!d) return 10_000;
+  if (!d) return 0;
   const r = ctx.settings.decrees.levant;
-  return memberOf(state, playerId, d.family)
-    ? 10_000 - r.memberDiscountBps
-    : 10_000 + r.othersSurchargeBps;
+  return memberOf(state, playerId, d.family) ? r.memberQuotaBps : -r.othersCutBps;
 }
 
 /** Highest price of an offer of a good under the calmiere, if any. */
@@ -259,9 +256,4 @@ export function upkeepDiscountBps(
   return d && memberOf(state, playerId, d.family)
     ? ctx.settings.decrees.franchise.upkeepDiscountBps
     : 0;
-}
-
-/** The family allowed to post bands under the letters of marque, if any. */
-export function corsairFamily(ctx: WorldContext, state: WorldState, at: number): string | null {
-  return decreeInForce(ctx, state, "course", at)?.family ?? null;
 }

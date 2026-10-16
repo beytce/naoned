@@ -199,7 +199,7 @@
   }
 }
 
-/* The road map: urgent cities and ambushed vehicles pulse, watched roads march. */
+/* The road map: urgent cities pulse. */
 .map-pulse {
   transform-box: fill-box;
   transform-origin: center;
@@ -659,13 +659,4 @@
 }
 .map-marker[data-selected] .land-name {
   display: block;
-}
-/* The sea's layer: open water over the land, its waves drawn faintly. */
-.world-sea {
-  background: repeating-radial-gradient(
-      circle at 30% 20%,
-      transparent 0 22px,
-      rgb(var(--lagoon) / 0.035) 22px 23px
-    ), radial-gradient(60rem 40rem at 45% 40%, rgb(var(--lagoon) / 0.14), transparent 70%),
-    linear-gradient(180deg, #0f2326 0%, #0b1a1d 100%);
 }

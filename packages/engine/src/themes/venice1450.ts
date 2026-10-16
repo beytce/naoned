@@ -18,22 +18,6 @@ export const venice1450: Theme = {
     { code: "furs", name: "Fourrures", chain: "orient", tier: "luxury" },
     { code: "cloth", name: "Draps", chain: "orient", tier: "luxury" },
   ],
-  ports: [
-    { code: "ragusa", name: "Raguse" },
-    { code: "corfu", name: "Corfou" },
-    { code: "candia", name: "Candie" },
-    { code: "constantinople", name: "Constantinople" },
-    { code: "cyprus", name: "Chypre" },
-    { code: "acre", name: "Acre" },
-    { code: "alexandria", name: "Alexandrie" },
-    { code: "caffa", name: "Caffa" },
-    { code: "bruges", name: "Bruges" },
-  ],
-  ships: [
-    { type: "cog", name: "Cogue" },
-    { type: "galley", name: "Galère" },
-    { type: "carrack", name: "Caraque" },
-  ],
   regions: [
     { code: "terraferma", name: "Terraferma", bonusResource: "wheat" },
     { code: "lagoon", name: "Lagune", bonusResource: "clay" },

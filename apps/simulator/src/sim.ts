@@ -1,11 +1,11 @@
 import {
-  type BanditBand,
   Bot,
   type Command,
   DAY_MS,
   type Delivery,
   type Deniers,
   type Effects,
+  MARKET_MAKER,
   MINUTE_MS,
   MarketView,
   PROFILES,
@@ -20,6 +20,7 @@ import {
   decide,
   deliveryOrdersFor,
   emptyTotals,
+  isMudaGood,
   parseSettings,
   venice1450,
 } from "@comptoirs/engine";
@@ -93,8 +94,22 @@ export interface SimulationResult {
     /** At each session, orders the stock covered but another merchant had already taken. */
     lostPerSession: number;
   };
-  /** The road: deliveries, vehicles, ambushes and bands (see `roadStats`). */
+  /** The road: deliveries and vehicles (see `roadStats`). */
   road?: RoadStats;
+  /**
+   * The galleys of the Muda: arrivals, units brought and sold by the Dogana (and its takings),
+   * the board's orders of goods from overseas and their share of the money paid on arrival.
+   */
+  muda?: {
+    arrivals: number;
+    brought: number;
+    sold: number;
+    takings: Deniers;
+    buyers: number;
+    exoticOrders: number;
+    exoticTaken: number;
+    exoticPaidShare: number;
+  };
   /** Faraj's bales: opened, cards by rarity, value at reference prices by player (deniers). */
   bales?: { opened: number; cards: Record<string, number>; valueBy: Record<string, number> };
   /** The families and the week's campaign: members, lances, battles, weeks won, decrees. */
@@ -228,7 +243,9 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
   } as NonNullable<SimulationResult["families"]>;
   const bales = { opened: 0, cards: {}, valueBy: {} } as NonNullable<SimulationResult["bales"]>;
   let now = START;
+  const muda = { arrivals: 0, brought: 0, sold: 0, takings: 0n, buyers: new Set<string>() };
   const run = (cmd: Command): boolean => {
+    const before = state.muda;
     const res = decide(ctx, state, cmd, now);
     if (!res.ok) {
       result.commands.rejected++;
@@ -238,11 +255,24 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     }
     result.commands.accepted++;
     state = res.state;
+    if (state.muda && state.muda.arrival !== before?.arrival) {
+      for (const [r, q] of Object.entries(state.muda.stock)) {
+        muda.brought += Math.max(0, q - (before?.stock[r] ?? 0));
+      }
+    }
     accumulate(totals, res.effects);
-    for (const t of res.effects.trades) if (raw.has(t.resource)) rawBuyers.add(t.buyerId);
+    for (const t of res.effects.trades) {
+      if (raw.has(t.resource)) rawBuyers.add(t.buyerId);
+      if (t.sellerId === MARKET_MAKER && isMudaGood(ctx, t.resource)) {
+        muda.sold += t.quantity;
+        muda.takings += t.price * BigInt(t.quantity);
+        muda.buyers.add(t.buyerId);
+      }
+    }
     recordFlows(flows, res.effects);
     for (const e of res.effects.events) {
       if (e.type === "harvest") activity.harvests++;
+      if (e.type === "muda_arrived") muda.arrivals++;
       if (e.type === "delivery_dispatched" && e.playerId) {
         activity.deliveries++;
         if (!delivered.has(e.playerId)) {
@@ -314,14 +344,10 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
   const botInfo = bots.map((b) => ({ id: b.id, profile: b.profile.name, region: b.region }));
   let currentDay = 0;
 
-  // Deliveries and bands leave the state a few days after they end: keep their last look.
-  const roadSeen = {
-    deliveries: new Map<string, Delivery>(),
-    bands: new Map<string, BanditBand>(),
-  };
+  // Deliveries leave the state a few days after they end: keep their last look.
+  const roadSeen = { deliveries: new Map<string, Delivery>() };
   const sweepRoad = () => {
     for (const d of Object.values(state.deliveries ?? {})) roadSeen.deliveries.set(d.id, d);
-    for (const b of Object.values(state.bands ?? {})) roadSeen.bands.set(b.id, b);
   };
   // How playable the board is: at each session, the open orders the stock already covers.
   const activity = {
@@ -404,8 +430,6 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
         observeBoard(bot.id);
         bot.play(session);
       }
-      // An ambush on the road: fought back if the merchant is at the screen, or back in time.
-      bot.respond(session, times[0]);
     }
     for (const v of checkInvariants(state, totals)) {
       if (result.violations.length < 50)
@@ -482,15 +506,34 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
       lostPerSession: activity.lost / Math.max(1, activity.sessions),
     };
   }
-  result.road = roadStats(
-    ctx,
-    state,
-    [...roadSeen.deliveries.values()],
-    [...roadSeen.bands.values()],
-    botInfo,
-    START,
-    end,
-  );
+  if (ctx.settings.muda) {
+    let exoticOrders = 0;
+    let exoticTaken = 0;
+    for (const b of boards.values()) {
+      for (const o of b.orders) {
+        if (!isMudaGood(ctx, o.resource)) continue;
+        exoticOrders++;
+        if (b.takenBy[o.id]) exoticTaken++;
+      }
+    }
+    let paid = 0n;
+    let exoticPaid = 0n;
+    for (const d of roadSeen.deliveries.values()) {
+      paid += d.paid ?? 0n;
+      if (isMudaGood(ctx, d.resource)) exoticPaid += d.paid ?? 0n;
+    }
+    result.muda = {
+      arrivals: muda.arrivals,
+      brought: muda.brought,
+      sold: muda.sold,
+      takings: muda.takings,
+      buyers: muda.buyers.size,
+      exoticOrders,
+      exoticTaken,
+      exoticPaidShare: paid > 0n ? Number((exoticPaid * 10_000n) / paid) / 10_000 : 0,
+    };
+  }
+  result.road = roadStats(ctx, state, [...roadSeen.deliveries.values()], botInfo, START, end);
   result.durationMs = performance.now() - started;
   return result;
 }

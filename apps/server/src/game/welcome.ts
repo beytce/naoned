@@ -48,21 +48,11 @@ export async function welcomeBack(
     if (b.playerId !== playerId || !b.job) continue;
     ready += Math.min(b.job.batches, Math.floor((now - b.job.startedAt) / b.job.batchMs));
   }
-  // The road: deliveries arrived, ambushes suffered or beaten off, booty waiting to be collected.
+  // The road: deliveries arrived.
   const from = since.getTime();
-  const road = { arrived: 0, robbed: 0, repelled: 0, booty: {} as Record<string, number> };
+  const road = { arrived: 0 };
   for (const d of Object.values(state.deliveries ?? {})) {
-    if (d.playerId !== playerId) continue;
-    if (d.outcome !== "en_route" && d.arriveAt > from) road.arrived++;
-    const a = d.attack;
-    if (a?.resolvedAt !== undefined && a.resolvedAt > from) {
-      if (a.success) road.robbed++;
-      else road.repelled++;
-    }
-  }
-  for (const b of Object.values(state.bands ?? {})) {
-    if (b.playerId !== playerId || b.collected || (!b.dispersed && now < b.endAt)) continue;
-    for (const [r, q] of Object.entries(b.booty)) road.booty[r] = (road.booty[r] ?? 0) + q;
+    if (d.playerId === playerId && d.outcome !== "en_route" && d.arriveAt > from) road.arrived++;
   }
   const dormantAfter = ctx.settings.dormancy.afterHours * 3_600_000;
   return {

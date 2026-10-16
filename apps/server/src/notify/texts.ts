@@ -36,6 +36,12 @@ const RESOURCES: Record<string, string> = {
   bricks: "briques",
   wood: "bois",
   planks: "planches",
+  spices: "épices",
+  silk: "soie",
+  salt: "sel",
+  wine: "vin",
+  furs: "fourrures",
+  cloth: "draps",
 };
 
 /** The families, the lands of the campaign and the decrees, by their codes. */
@@ -80,8 +86,7 @@ const DECREES: Record<string, string> = {
   gabelle: "une gabelle",
   faveur: "la faveur d'une ville",
   peage: "le péage de Terraferme",
-  course: "les lettres de course",
-  levant: "le tarif du Levant",
+  levant: "la charte du Levant",
   calmiere: "un calmiere",
   franchise: "la franchise",
 };
@@ -110,60 +115,24 @@ const road = (route: unknown, cities: Record<string, string>) =>
 export function pushText(
   kind: string,
   data: Record<string, unknown>,
-  ports: Record<string, string>,
   cities: Record<string, string> = {},
   now = 0,
 ): { title: string; body: string } {
   switch (kind) {
-    case "ambush": {
-      const minutes = Math.max(1, Math.round((Number(data.reactBy) - now) / 60_000));
-      return {
-        title: "Brigands sur la route !",
-        body: `Votre convoi est attaqué sur ${road(data.route, cities)}. Ripostez dans les ${minutes} minutes !`,
-      };
-    }
     case "delivery":
       return {
         title: "Livraison arrivée",
         body: `${data.quantity} ${RESOURCES[String(data.resource)] ?? String(data.resource)} livrés par ${road(data.route, cities)} : ${ducats(String(data.amount ?? "0"))} ducats encaissés.`,
       };
-    case "robbed":
-    case "defended": {
-      const ok = kind === "robbed";
-      if (data.role === "victim") {
-        const who = data.banditName ? String(data.banditName) : "des brigands";
-        return ok
-          ? {
-              title: "Convoi détroussé",
-              body: `${who} ont pris une part de votre cargaison sur ${road(data.route, cities)}.`,
-            }
-          : {
-              title: "Attaque repoussée",
-              body: `Votre convoi a repoussé ${who} sur ${road(data.route, cities)}.${
-                data.bounty
-                  ? ` Le Doge vous verse une prime de ${ducats(String(data.bounty))} ducats.`
-                  : ""
-              }`,
-            };
-      }
-      const who = String(data.victimName ?? "un marchand");
-      return ok
-        ? {
-            title: "Belle prise !",
-            body: `Votre bande a détroussé le convoi de ${who}. Votre infamie monte à ${Number(data.infamy ?? 0)} : votre tête vaut plus cher.`,
-          }
-        : {
-            title: data.reacted ? "Bande dispersée" : "Attaque manquée",
-            body: data.reacted
-              ? `${who} a riposté : votre bande est dispersée. Encaissez son butin.`
-              : `Le convoi de ${who} a repoussé votre bande.`,
-          };
-    }
-    case "band_over":
+    case "muda": {
+      const goods = Object.entries((data.stock ?? {}) as Record<string, number>)
+        .filter(([, q]) => q > 0)
+        .map(([r]) => RESOURCES[r] ?? r);
       return {
-        title: "Bande de retour",
-        body: `Votre bande quitte ${road(data.route, cities)}. Encaissez le butin !`,
+        title: "Les galères de la Muda sont à quai",
+        body: `La Dogana vend au Rialto ${goods.length > 0 ? goods.join(", ") : "les marchandises d'outre-mer"} : premiers arrivés, meilleurs prix.`,
       };
+    }
     case "harvest":
       return {
         title: "Récolte prête",
@@ -176,32 +145,6 @@ export function pushText(
         ? { title: "Offre conclue", body: `${who} a acheté ${what} de votre offre.` }
         : { title: "Offre conclue", body: `${who} vous a vendu ${what}.` };
     }
-    case "galley":
-      return {
-        title: "Galère rentrée",
-        body: `Votre galère est de retour de ${ports[String(data.destination)] ?? "l'Orient"}. Déchargez la cargaison !`,
-      };
-    case "raid": {
-      const route = ports[String(data.route)] ?? "";
-      if (data.role === "victim") {
-        const who = String(data.raiderName ?? "des corsaires");
-        return data.success
-          ? { title: "Convoi arraisonné !", body: `${who} a pillé votre convoi vers ${route}.` }
-          : {
-              title: "Abordage repoussé",
-              body: `Votre escorte a repoussé ${who} sur la route de ${route}.`,
-            };
-      }
-      const who = String(data.victimName ?? "un marchand");
-      return data.success
-        ? { title: "Prise !", body: `Vos corsaires ont arraisonné le convoi de ${who}.` }
-        : { title: "Abordage manqué", body: `Le convoi de ${who} a repoussé vos corsaires.` };
-    }
-    case "corsairs":
-      return {
-        title: "Corsaires de retour",
-        body: `Vos corsaires sont rentrés de la route de ${ports[String(data.route)] ?? "l'Orient"}. Déchargez le butin !`,
-      };
     case "event":
       return {
         title: "La gazette",

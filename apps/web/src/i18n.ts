@@ -68,7 +68,7 @@ export const fr = {
       },
       dolomites: {
         name: "Charpentier",
-        text: "Bois et planches : vous fournissez navires et chantiers. Tout le monde a besoin de vos planches.",
+        text: "Bois et planches : vous fournissez bâtiments et chantiers. Tout le monde a besoin de vos planches.",
       },
     } as Record<string, { name: string; text: string }>,
   },
@@ -95,13 +95,10 @@ export const fr = {
         send: "Partir",
         go: "Partir",
         cancel: "Annuler",
-        react: "Riposter",
         follow: "Suivre",
         upgrade: "Améliorer",
         rialto: "Rialto",
-        port: "Port",
         criee: "Criée",
-        bandits: "Brigands",
         ranking: "Classement",
         family: "Famille",
         help: "Aide",
@@ -123,14 +120,13 @@ export const fr = {
         criee: (resource: string, pct: string, left: string) =>
           `Criée : ${resource.toLowerCase()} payé +${pct} · ${left}`,
         noCart: "Aucune charrette libre",
-        venice: "Le Rialto et le Port",
+        venice: "Le Rialto et la Muda",
       },
       cart: {
         atHome: "Au comptoir",
         loaded: (city: string) => `Chargée pour ${city}`,
         outbound: (city: string, left: string) => `Vers ${city} · ${left}`,
         inbound: (left: string) => `Retour au comptoir · ${left}`,
-        halted: (left: string) => `Arrêtée par des brigands · ripostez dans ${left}`,
         leaving: (city: string) => `Départ vers ${city}`,
         pickCity: "Touchez une ville éclairée",
         nothing: "Rien à livrer avec votre stock pour l'instant",
@@ -171,45 +167,18 @@ export const fr = {
         backToTrade: "Revenez au commerce : touchez « Commerce » au pied de la carte.",
         chooseLine: "Choisissez votre famille pour la saison",
       },
-      sea: {
-        arsenal: "Arsenal de Venise",
-        arsenalLabel: "Arsenal",
-        galleys: "Galères en mer",
-        ships: "Navires prêts",
-        atSea: (n: number, max: number) => `${n}/${max} galère${max > 1 ? "s" : ""} en mer`,
-        shipsReady: (n: number, all: number) =>
-          `${n}/${all} navire${all > 1 ? "s" : ""} prêt${n > 1 ? "s" : ""}`,
-        docked: (port: string) => `Retour de ${port} : à décharger`,
-        portLine: (hours: number, risk: string, what: string) =>
-          `${hours} h · pirates ${risk} · rapporte ${what.toLowerCase()}`,
-        out: (port: string, left: string) => `Vers ${port} · retour dans ${left}`,
-        home: (left: string) => `Sur le retour · à quai dans ${left}`,
-        atQuay: "À quai : déchargez",
-        buttons: {
-          send: "Envoyer",
-          card: "Fiche",
-          unload: "Décharger",
-          fleet: "Flotte",
-          corsairs: "Corsaires",
-          log: "Journal",
-          follow: "Suivre",
-        },
-        port: "Port",
-      },
       rialto: {
         kicker: "Le marché des joueurs, à Venise",
         filters: { all: "Tout", stock: "En stock", rising: "En hausse" },
         offers: (n: number) => (n > 0 ? `Mes offres · ${n}` : "Mes offres"),
         none: "Rien ici pour l'instant.",
       },
-      ambushHere: "Convoi attaqué !",
     },
     tabs: {
       comptoir: "Comptoir",
       marche: "Marché",
       famille: "Famille",
       routes: "Routes",
-      port: "Port",
       top: "Classement",
       profil: "Profil",
     },
@@ -244,20 +213,17 @@ export const fr = {
     road: {
       kicker: "Les routes de terre ferme",
       title: "Commandes à livrer",
-      help: "Chaque jour, les villes publient leurs commandes pour tous les marchands, et le Doge vous passe les siennes. Chargez une charrette, choisissez votre escorte et partez : la ville paie à l'arrivée. Plus la route est longue, mieux elle paie.",
-      tabs: { livraisons: "Livraisons", brigands: "Brigands" },
+      help: "Chaque jour, les villes publient leurs commandes pour tous les marchands, et le Doge vous passe les siennes. Chargez une charrette et partez : la ville paie à l'arrivée. Plus la route est longue, mieux elle paie.",
       frame: {
         tabs: {
           commandes: "Commandes",
           enroute: "En route",
           garage: "Garage",
-          brigands: "Brigands",
         },
         toDeliver: "à livrer",
         underway: "en route",
         free: "libres",
         orders: (n: number) => `${n} commande${n > 1 ? "s" : ""}`,
-        watched: (n: number) => `brigands sur ${n} route${n > 1 ? "s" : ""}`,
         noneUnderway: "Aucun véhicule sur les routes.",
       },
       sort: { gain: "Gain/h", price: "Prix", distance: "Distance", deadline: "Échéance" },
@@ -284,9 +250,6 @@ export const fr = {
       oneWay: (time: string) => `${time} aller`,
       done: "Livrée",
       expired: "Expirée",
-      watched: "Route guettée",
-      watchedWarning:
-        "Des brigands guettent cette route. Une escorte vous protège même absent ; sans escorte, vous aurez quelques minutes pour riposter.",
       vehicles: "Vos véhicules",
       vehicleNames: {
         mule: "Mule",
@@ -314,13 +277,6 @@ export const fr = {
         payment: "Paiement à l'arrivée",
         vehicle: "Véhicule",
         noVehicle: "Aucun véhicule libre assez grand pour cette commande.",
-        escort: "Escorte",
-        escorts: { none: "Sans escorte", guards: "Gardes", company: "Compagnie" } as Record<
-          string,
-          string
-        >,
-        escortCost: (cost: string) => `Coût ${cost}`,
-        chance: (pct: number) => `Une attaque réussit ${pct} fois sur 100`,
         missing: (n: number) => `Il vous en manque ${n}.`,
         go: "Charger et partir",
       },
@@ -328,45 +284,15 @@ export const fr = {
       arrivesIn: (time: string) => `Arrivée dans ${time}`,
       backHome: (time: string) => `Retour à vide dans ${time}`,
       arrived: (amount: string) => `Livrée : ${amount}`,
-      robbed: (n: number) => `Détroussée (${n} pris), payée au prorata`,
-      repelled: "Attaque repoussée",
-      ambushed: "Attaquée !",
-      react: "Riposter",
       shortcut: (orders: number, free: number) =>
         `${orders} commande${orders > 1 ? "s" : ""} à livrer, ${free} véhicule${free > 1 ? "s" : ""} libre${free > 1 ? "s" : ""}`,
       newsTitle: "Nouvelles des routes",
       take: (who: string, q: number, res: string, city: string, amount: string) =>
         `${who} a raflé ${q} ${res} pour ${city} (${amount}).`,
-      news: (city: string) => `Des brigands ont détroussé un convoi sur la route de ${city}.`,
       cityClosed:
         "Les villes ne rachètent plus au comptoir : elles passent commande. Livrez-les depuis l'onglet Routes.",
       byRoad: "À livrer par la route",
       seeRoutes: "Voir les routes",
-    },
-    bandits: {
-      title: "Poster une bande",
-      help: (attacks: number, takePct: number, keptPct: number) =>
-        `Sous les lettres de course seulement : quand votre famille a imposé ce décret, vos brigands ne s'en prennent qu'aux convois des autres familles. Postez-les pour quelques heures. Ils tentent ${attacks} attaques au plus et prennent ${takePct} % de la cargaison${keptPct < 100 ? `, dont vous gardez ${keptPct} %` : ", que vous gardez entière"}. Chaque prise accroît votre infamie, et la prime que le Doge verse à qui vous repousse. Une victime qui riposte disperse votre bande ; une escorte vous repousse souvent. Personne n'attaque entre 22 h et 8 h, ni les nouveaux venus, ni les marchands de votre famille.`,
-      infamy: (n: number) =>
-        n > 0 ? `Infamie : ${n} prise${n > 1 ? "s" : ""} cette saison` : "Infamie : aucune prise",
-      bountyOnHead: (amount: string) => `Prime sur votre tête : ${amount}`,
-      bountiesWon: (amount: string) => `Primes du Doge reçues : ${amount}`,
-      route: "Route",
-      hours: "Durée",
-      hoursLabel: (h: number) => `${h} h`,
-      cost: (amount: string) => `Mise : ${amount}, détruite`,
-      full: "Route pleine",
-      post: "Poster la bande",
-      mine: "Vos bandes",
-      none: "Aucune bande pour l'instant.",
-      active: (time: string) => `En embuscade · encore ${time}`,
-      over: "Terminée",
-      dispersed: "Dispersée",
-      attempts: (n: number, max: number) => `${n} / ${max} attaques`,
-      booty: "Butin",
-      collect: "Encaisser",
-      collected: "Encaissé",
-      locked: (time: string) => `Le brigandage ouvre dans ${time}.`,
     },
     cargo: {
       title: "Cargaisons",
@@ -398,7 +324,6 @@ export const fr = {
       leaving: (city: string) => `Départ vers ${city}`,
       summary: (n: number, time: string, value: string) =>
         `${n} commande${n > 1 ? "s" : ""} · ${time} de route · ${value}`,
-      noEscort: "Sans escorte",
       go: "Partir",
       close: "Fermer",
       dropOk: (city: string) => `Livrer à ${city}`,
@@ -418,7 +343,6 @@ export const fr = {
       view: { carte: "Carte", liste: "Liste" },
       focusHint: (vehicle: string) =>
         `${vehicle} : touchez une ville en surbrillance pour la charger.`,
-      pickRoad: "Touchez une route pour y poster votre bande.",
       cityKicker: "Commandes de la ville",
       noOrder: "Pas de commande de cette ville aujourd'hui.",
       back: (city: string) => `Commandes de ${city}`,
@@ -431,20 +355,10 @@ export const fr = {
         chosen: "Chargez-le, puis glissez-le vers une ville",
         outbound: (city: string) => `En route vers ${city}`,
         inbound: (city: string) => `Sur le retour de ${city}`,
-        stopped: (city: string) => `Arrêté par des brigands vers ${city}`,
         arrivesIn: (time: string) => `Arrivée dans ${time}`,
         freeIn: (time: string) => `Au dépôt dans ${time}`,
-        reactIn: (time: string) => `Ripostez dans ${time}`,
         buy: "Acheter un véhicule",
       },
-    },
-    alert: {
-      title: "Brigands sur la route !",
-      body: (city: string) =>
-        `Votre convoi vers ${city} est arrêté par une bande. Ripostez avant la fin du délai : l'attaque échouera et la bande sera dispersée.`,
-      left: "Temps pour riposter",
-      react: "Riposter !",
-      later: "Laisser faire",
     },
     batchNow: (time: string) => `Lot en cours : ${time}`,
     batchNext: (time: string) => `prochains : ${time}`,
@@ -648,8 +562,7 @@ export const fr = {
           gabelle: "Gabelle",
           faveur: "Faveur d'une ville",
           peage: "Péage de Terraferme",
-          course: "Lettres de course",
-          levant: "Tarif du Levant",
+          levant: "Charte du Levant",
           calmiere: "Calmiere",
           franchise: "Franchise",
         } as Record<string, string>,
@@ -662,9 +575,8 @@ export const fr = {
             `Membres : livraisons à ${city} payées +${pct}, ses commandes urgentes à eux les ${minutes} premières minutes.`,
           peage: (pct: string, cities: string) =>
             `Les autres paient ${pct} de leurs livraisons à ${cities || "leurs villes"} aux membres.`,
-          course: "Seuls les membres postent des brigands, contre les convois des autres familles.",
-          levant: (lighter: string, heavier: string) =>
-            `Droits de port : −${lighter} pour les membres, +${heavier} pour les autres.`,
+          levant: (more: string, less: string) =>
+            `Galères de la Muda : quota +${more} pour les membres, −${less} pour les autres.`,
           calmiere: (good: string, pct: string) =>
             `Aucune offre de ${good} au-dessus de ${pct} du prix de référence.`,
           franchise: (pct: string) => `Membres : entretien des bâtiments −${pct}.`,
@@ -697,97 +609,6 @@ export const fr = {
           other: "Le message n'est pas parti. Réessayez.",
         } as Record<string, string>,
       },
-    },
-    port: {
-      kicker: "Port de Venise",
-      title: "La mer et ses routes",
-      help: "Chargez vos marchandises vers l'un des neuf ports : chacun les paie à ses prix de la semaine et vous rend ses produits (sel, vin, soie, épices, fourrures, draps). Escortez vos convois : pirates et corsaires rôdent.",
-      tabs: { routes: "Routes", flotte: "Flotte", corsaires: "Corsaires" },
-      frame: {
-        tabs: { convois: "Convois", ports: "Ports", flotte: "Flotte", corsaires: "Corsaires" },
-        atSea: "en mer",
-        ships: "navires prêts",
-        free: "galères libres",
-        docked: "à quai !",
-        watched: (n: number) => `corsaires sur ${n} route${n > 1 ? "s" : ""}`,
-        unload: (port: string) => `Décharger · ${port}`,
-        hint: "Touchez un port sur la carte pour y envoyer un convoi",
-        none: "Aucun convoi en mer. Touchez un port sur la carte.",
-      },
-      duration: "Traversée",
-      risk: "Pirates",
-      gain: "Plus-value",
-      charter: "Affrètement",
-      dues: "Droits de port",
-      provisions: "Vivres",
-      brings: "Rapporte",
-      wantsThisWeek: "Paie le mieux cette semaine",
-      sendConvoy: "Envoyer un convoi",
-      convoyTo: "Convoi vers",
-      merchantShip: "Navire marchand",
-      chartered: "Galère louée",
-      ownShips: (n: number) => (n > 1 ? `${n} navires` : "1 navire"),
-      escorts: "Escorte (jusqu'à 3 navires)",
-      withEscort: "Louer une escorte",
-      defense: "Défense",
-      attack: "Attaque",
-      hold: "Cale",
-      speed: "Vitesse",
-      upkeep: "Entretien/j",
-      expected: "Retour attendu",
-      sail: "Lever l'ancre",
-      atSea: "En mer",
-      back: "De retour !",
-      unload: "Décharger",
-      returned: (n: number, what: string) => `Revenu avec ${n} ${what.toLowerCase()}`,
-      lost: "Pris par les pirates",
-      history: "Journal de bord",
-      busy: "Vous avez déjà un convoi en mer : attendez son retour.",
-      nothing: "Rien à charger : produisez ou achetez d'abord des marchandises.",
-      watched: "Des corsaires guettent cette route.",
-      watchedWarning:
-        "Des corsaires guettent cette route : une escorte augmente vos chances de les repousser.",
-      chartHelp:
-        "Touchez un port sur la carte. En pointillé rouge : routes guettées par des corsaires.",
-      allPorts: "Tous les ports",
-      raided: (who: string) => `Arraisonné par ${who} :`,
-      repelled: (who: string) => `Votre escorte a repoussé ${who}.`,
-      fleetHelp:
-        "Vos navires vous évitent l'affrètement (seuls des droits de port sont dus) et escortent vos convois. Un navire n'est jamais coulé : endommagé, il se répare à l'Arsenal.",
-      noShip: "Aucun navire pour l'instant : construisez une cogue à l'Arsenal.",
-      arsenal: "Arsenal",
-      build: "Construire",
-      repair: (cost: string) => `Réparer (${cost})`,
-      repairingFor: (left: string) => `Au chantier · ${left}`,
-      status: {
-        ready: "Au port",
-        at_sea: "En mer",
-        damaged: "Endommagé",
-        repairing: "Au chantier",
-      },
-      noPrivateers: "Les lettres de marque ne sont pas ouvertes dans ce monde.",
-      letterTitle: "Lettre de marque",
-      letterHelp: (hours: number, share: string, min: string, max: string) =>
-        `Envoyez vos navires croiser ${hours} h sur une route. Chaque convoi d'un autre marchand qui passe à mi-voyage peut être abordé : vos chances (de ${min} à ${max}) dépendent de votre attaque face à son escorte. Une prise rapporte ${share} de sa cargaison.`,
-      ruleNewcomers: (days: number) =>
-        `Les marchands arrivés depuis moins de ${days} jours sont épargnés.`,
-      ruleWorth: (share: string) =>
-        `On ne pille pas un marchand dont le patrimoine est inférieur à ${share} du vôtre.`,
-      ruleCooldown: (hours: number) => `Un marchand pillé est laissé en paix ${hours} h.`,
-      ruleFail: "Si l'abordage échoue, vos navires rentrent endommagés et cessent la chasse.",
-      route: "Route à guetter",
-      corsairShips: "Navires corsaires",
-      needShips: "Il vous faut au moins un navire au port.",
-      letterFee: "Lettre",
-      commission: "Armer les corsaires",
-      noPrey: "Aucune proie croisée pour l'instant.",
-      caught: (who: string) => `Prise sur ${who}`,
-      missed: (who: string) => `Repoussés par ${who}`,
-      raidDone: "Rentrés",
-      unloadBooty: "Décharger le butin",
-      seaNews: "Nouvelles du large",
-      news: (raider: string, victim: string, route: string) =>
-        `${raider} a arraisonné un convoi de ${victim} sur la route de ${route}.`,
     },
     day: (day: number, total: number) => `Jour ${day}/${total}`,
     shortDay: (day: number, total: number) => `J${day}/${total}`,
@@ -876,20 +697,20 @@ export const fr = {
       confirm: (name: string) => `Devenir ${name}`,
       forGood: "Un seul choix pour toute la saison.",
       ready: "Votre Maison peut choisir sa maîtrise",
-      readyHelp: "Maître d'atelier, roulier, négociant ou armateur",
+      readyHelp: "Maître d'atelier, roulier, négociant ou marchand du Levant",
       locked: (levels: number, need: number) =>
         `Maîtrise à ${need} niveaux d'ateliers (vous en avez ${levels}) : améliorez ou bâtissez.`,
       names: {
         master: "Maître d'atelier",
         carter: "Roulier",
         trader: "Négociant",
-        shipowner: "Armateur",
+        levant: "Marchand du Levant",
       } as Record<string, string>,
       mottos: {
         master: "Qui transforme bien vend mieux.",
         carter: "Les routes sont à qui va vite.",
         trader: "Le Rialto est mon atelier.",
-        shipowner: "La mer paie ceux qui l'osent.",
+        levant: "Les galères de la Muda ne viennent pas pour rien.",
       } as Record<string, string>,
       effects: {
         transform: (n: number) => `+${n} % de rendement sur ce qui se transforme`,
@@ -898,8 +719,7 @@ export const fr = {
         quota: (n: number) => `quotas de la Dogana +${n} %`,
         tax: (n: number) => `taxe de marché −${n} point${n > 1 ? "s" : ""} sur vos ventes`,
         offers: (n: number) => `${n} offres de plus au Rialto`,
-        dues: (n: number) => `droits de port −${n} %`,
-        hold: (n: number) => `cales +${n} %`,
+        muda: (n: number) => `quota aux galères de la Muda +${n} %`,
       },
     },
     /** Words shared by every section's frame (the scene, its bars, its drawer). */
@@ -917,6 +737,17 @@ export const fr = {
       trade: (price: string) => `Négocier · ${price}`,
       noOffers: "Aucune offre posée. Touchez une marchandise et choisissez « À mon prix ».",
       tabs: { negoce: "Négoce", offres: "Offres", decrets: "Décrets" },
+      muda: {
+        title: "Galères de la Muda",
+        next: (time: string) => `Prochaines dans ${time}`,
+        first: "Les premières galères d'État arrivent bientôt d'Alexandrie et de Beyrouth.",
+        help: "Leurs marchandises d'outre-mer sont vendues par la Dogana, plus cher à mesure que le lot s'épuise : premiers arrivés, meilleurs prix.",
+        empty: "Le quai est vide : tout est parti. Attendez les prochaines galères.",
+        stock: (n: number) => `${n} à quai`,
+        left: (n: number) => (n > 0 ? `vous ${n}` : "pris"),
+        quota: (left: number, stock: number, next: string) =>
+          `Galères de la Muda : encore ${left} à acheter pour vous, ${stock} à quai. Nouveau lot dans ${next}.`,
+      },
     },
     top: {
       tabs: { passee: "Semaine passée", regles: "Règles" },
@@ -966,7 +797,6 @@ export const fr = {
       loadShort: (n: number) => `Charger ${n}`,
       buildShort: "Bâtir",
       hungry: "Ouvriers affamés",
-      ambush: "Convoi attaqué !",
       hint: "Touchez un atelier pour récolter ou produire, une charrette pour la charger, l'entrepôt pour votre stock, un ouvrier pour ses rations. Glissez le doigt sur les ateliers prêts pour tout récolter d'un geste.",
       title: (n: number, levels: number) =>
         `Votre domaine : ${n} atelier${n > 1 ? "s" : ""}, ${levels} niveau${levels > 1 ? "x" : ""} en tout`,
@@ -1089,7 +919,6 @@ export const fr = {
         fresh: (pct: number) => `Produits frais à +${pct} % au lieu de +5 %`,
         reroll: "Échanger une commande du Doge par jour",
         info: "Carnet d'ordres à 10 offres, 7 jours d'historique des prix",
-        lookout: "La vigie : corsaires en guet sur chaque route",
         alerts: "Alertes des Criées et des bonnes affaires",
         cosmetics: "Sceau à côté de votre nom, palette « Or de Venise »",
       },
@@ -1099,9 +928,6 @@ export const fr = {
       seal: "Pass Négociant",
       reroll: "Échanger",
       rerollHelp: "Pass Négociant : une commande échangée par jour.",
-      lookoutLine: (n: number, until: string) =>
-        `Vigie : ${n} corsaire${n > 1 ? "s" : ""} en guet jusqu'à ${until}`,
-      lookoutClear: "Vigie : route dégagée",
       paletteLocked: "Réservée au Pass Négociant",
     },
     fresh: (pct: number, t: string) => `Frais : +${pct} % encore ${t}`,
@@ -1124,23 +950,17 @@ export const fr = {
           "Premier véhicule",
           "Routes → Vos véhicules : livrez plusieurs commandes à la fois.",
         ],
-        first_band: ["Première bande", "Routes → Brigands : postez une bande sur une route."],
         first_contract: [
           "Honorer un contrat du Doge",
           "Onglet Contrats : livrez une commande, prime de 20 %.",
         ],
         first_offer: ["Laisser une offre au Rialto", "Fiche d'une ressource → « À mon prix »."],
         offer_taken: ["Conclure une offre", "Un marchand achète ou vend sur votre offre."],
-        first_convoy: [
-          "Envoyer un convoi",
-          "Le Port est ouvert : chargez une galère vers l'un des neuf ports.",
-        ],
         first_upgrade: [
           "Améliorer un atelier",
           "+25 % de rendement par niveau : spécialisez-vous.",
         ],
         five_contracts: ["Honorer cinq contrats", "Les commandes du Doge changent chaque jour."],
-        first_ship: ["Construire un navire", "Port → Flotte : finis les frais d'affrètement."],
         first_project: [
           "Livrer au grand chantier",
           "Briques et planches pour la ville, payées 10 % de plus.",
@@ -1180,42 +1000,24 @@ export const fr = {
         decree_favour: "Faveur d'une ville",
         decree_share: "Part des décrets",
         delivery: "Livraisons",
-        bounty: "Primes du Doge",
       } as Record<string, string>,
       road: {
         arrived: (n: number) => `${n} livraison${n > 1 ? "s" : ""} arrivée${n > 1 ? "s" : ""}`,
-        robbed: (n: number) => `${n} convoi${n > 1 ? "s" : ""} détroussé${n > 1 ? "s" : ""}`,
-        repelled: (n: number) => `${n} attaque${n > 1 ? "s" : ""} repoussée${n > 1 ? "s" : ""}`,
-        booty: (what: string) => `Butin à encaisser : ${what}`,
       },
       notices: (kind: string, n: number) =>
         ({
           order: `${n} offre${n > 1 ? "s" : ""} conclue${n > 1 ? "s" : ""}`,
           harvest: "Récoltes prêtes",
-          galley: `${n} convoi${n > 1 ? "s" : ""} rentré${n > 1 ? "s" : ""}`,
-          raid: `${n} abordage${n > 1 ? "s" : ""}`,
-          corsairs: "Corsaires de retour",
           event: `${n} nouvelle${n > 1 ? "s" : ""} à la gazette`,
           act: "Un nouvel acte de la saison",
           week: "Résultats de la semaine",
           family: "Nouvelles de la famille",
           siege: `${n} terre${n > 1 ? "s" : ""} menacée${n > 1 ? "s" : ""}`,
-          ambush: `${n} attaque${n > 1 ? "s" : ""} de brigands`,
           delivery: `${n} livraison${n > 1 ? "s" : ""} payée${n > 1 ? "s" : ""}`,
-          robbed: `${n} prise${n > 1 ? "s" : ""} sur la route`,
-          defended: `${n} attaque${n > 1 ? "s" : ""} repoussée${n > 1 ? "s" : ""}`,
-          band_over: "Votre bande est rentrée",
         })[kind] ?? `${n} × ${kind}`,
       collect: (n: number) => `Tout récolter et relancer · ${n} lot${n > 1 ? "s" : ""}`,
       restart: "Relancer mes ateliers",
     },
-    portLocked: {
-      title: "Le port s'ouvre bientôt",
-      text: (inTime: string) =>
-        `Les galères partiront de votre comptoir dans ${inTime}. D'ici là, faites tourner vos ateliers et le Rialto : le Livre de compte vous guide.`,
-    },
-    corsairsLocked: (inTime: string) =>
-      `Les lettres de marque s'ouvrent à vous dans ${inTime}, avec votre premier navire.`,
     stock: "Mon stock",
     workshops: "Mes ateliers",
     level: (n: number) => `Niv. ${n}`,
@@ -1301,47 +1103,24 @@ export const fr = {
     notices: {
       title: "Nouvelles du comptoir",
       empty:
-        "Rien de neuf pour l'instant. Les récoltes, les galères, la gazette et les résultats de la semaine s'afficheront ici.",
+        "Rien de neuf pour l'instant. Les récoltes, les livraisons, la gazette et les résultats de la semaine s'afficheront ici.",
       now: "à l'instant",
       settings: "Régler les notifications",
       harvest: "Récolte prête : vos ateliers ont terminé leur production.",
-      galley: (port: string) =>
-        `Votre galère est rentrée${port ? ` de ${port}` : ""} : déchargez la cargaison.`,
       event: "Un événement agite les marchés.",
       seasonEnding: "Dernier sprint : la saison se termine dans 3 jours.",
       seasonOpened: (name: string) => `${name} commence : venez voir vos récompenses.`,
       criee: (city: string, what: string, pct: number) =>
         `Criée : ${city} achète ${what} à +${pct} % pendant 20 minutes.`,
       deal: (what: string, price: string) => `Bonne affaire : ${what} à ${price} au Rialto.`,
-      raidVictim: (who: string, ok: boolean, route: string) =>
-        ok
-          ? `${who} a pillé votre convoi vers ${route}.`
-          : `Votre escorte a repoussé ${who} sur la route de ${route}.`,
-      raidCorsair: (who: string, ok: boolean) =>
-        ok
-          ? `Vos corsaires ont arraisonné le convoi de ${who}.`
-          : `Le convoi de ${who} a repoussé vos corsaires.`,
       order: (who: string, sold: boolean, qty: number, what: string) =>
         sold
           ? `Offre conclue : ${who} a acheté ${qty} ${what.toLowerCase()}.`
           : `Offre conclue : ${who} vous a vendu ${qty} ${what.toLowerCase()}.`,
-      corsairs: (route: string) =>
-        `Vos corsaires sont rentrés de la route de ${route} : déchargez le butin.`,
-      ambush: (city: string) =>
-        `Brigands sur la route de ${city} ! Ripostez avant la fin du délai.`,
       delivery: (qty: number, what: string, city: string, amount: string) =>
         `${qty} ${what} livrés à ${city} : ${amount} encaissés.`,
-      roadVictim: (who: string | null, ok: boolean, city: string) =>
-        ok
-          ? `${who ?? "Des brigands"} ont détroussé votre convoi sur la route de ${city}.`
-          : `Votre convoi a repoussé ${who ?? "des brigands"} sur la route de ${city}.`,
-      roadBandit: (who: string, ok: boolean, reacted: boolean) =>
-        ok
-          ? `Votre bande a détroussé le convoi de ${who}.`
-          : reacted
-            ? `${who} a riposté : votre bande est dispersée. Encaissez son butin.`
-            : `Le convoi de ${who} a repoussé votre bande.`,
-      bandOver: (city: string) => `Votre bande quitte la route de ${city} : encaissez le butin.`,
+      muda: (goods: string) =>
+        `Les galères de la Muda sont à quai : la Dogana vend ${goods || "les marchandises d'outre-mer"} au Rialto.`,
       siege: (land: string, by: string, lances: number, time: string) =>
         `${land} menacée : ${lances} lances ${by} arrivent à ${time}. Renforcez la garnison !`,
       family: (event: string, data: Record<string, string>) =>
@@ -1358,7 +1137,7 @@ export const fr = {
         `Semaine ${week} : vous terminez ${rank}${rank === 1 ? "er" : "e"} (${gain}).${award ? ` Vous êtes ${award} !` : ""}`,
       push: {
         title: "Notifications",
-        help: "Recevez une alerte sur ce téléphone ou cet ordinateur, même jeu fermé. Jamais entre 22 h et 8 h, et au plus une par type et par heure, sauf les attaques de brigands, envoyées tout de suite.",
+        help: "Recevez une alerte sur ce téléphone ou cet ordinateur, même jeu fermé. Jamais entre 22 h et 8 h, et au plus une par type et par heure, sauf les terres menacées, envoyées tout de suite.",
         enable: "Activer sur cet appareil",
         disable: "Couper sur cet appareil",
         on: "Activées sur cet appareil",
@@ -1370,10 +1149,7 @@ export const fr = {
         unavailable: "Les notifications ne sont pas encore activées sur ce serveur.",
         kinds: {
           harvest: "Récolte prête",
-          galley: "Convoi rentré",
-          raid: "Abordages (subis ou réussis)",
           order: "Offres conclues au marché",
-          corsairs: "Retour des corsaires",
           event: "Gazette (nouvel événement)",
           act: "Nouvel acte de la saison",
           week: "Résultats de la semaine",
@@ -1382,11 +1158,8 @@ export const fr = {
           deal: "Bonnes affaires (Pass Négociant)",
           family: "Résultats de la Campagne et terres perdues",
           siege: "Terre menacée (alerte immédiate)",
-          ambush: "Attaque de brigands (alerte immédiate)",
           delivery: "Livraison arrivée",
-          robbed: "Convoi détroussé (subi ou réussi)",
-          defended: "Attaque repoussée (subie ou réussie)",
-          band_over: "Fin de votre bande",
+          muda: "Galères de la Muda à quai",
         } as Record<string, string>,
       },
     },
@@ -1538,8 +1311,7 @@ export const fr = {
       goList: "Passez en « Liste » : chaque commande y montre ce qu'elle rapporte.",
       deliver:
         "Ouvrez les cargaisons : cochez une commande que votre stock couvre, la ville paie à l'arrivée.",
-      dispatch:
-        "Les premiers jours, les routes sont sûres : pas besoin d'escorte. Touchez « Partir » (ou laissez filer le compte à rebours).",
+      dispatch: "Touchez « Partir » (ou laissez filer le compte à rebours).",
       deliveryUnderway: "Votre charrette est en route. La ville paiera à l'arrivée.",
       goRialto:
         "Pour grandir, il faut les matériaux d'une autre région. Touchez Venise, puis le Rialto.",
@@ -1563,8 +1335,13 @@ export const fr = {
     howTo: [
       {
         icon: "routes",
-        title: "Les routes et les brigands",
-        text: "Les villes ne rachètent plus au comptoir : chaque jour, elles vous passent 22 à 28 commandes, dont la moitié portent sur votre propre production. Les matières premières ne sont commandées qu'à ceux qui les produisent ; les produits transformés, à tous. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge y figurent, les urgentes ne restent ouvertes que trois heures. Des brigands guettent parfois une route (en rouge sur la carte) : une escorte vous protège même absent ; sans escorte, vous avez 20 minutes pour riposter, et une riposte disperse la bande. Repousser la bande d'un marchand vous vaut une prime du Doge, d'autant plus forte que le brigand est connu. Une prise coûte au plus 30 % de la cargaison, le véhicule revient toujours, et personne n'attaque entre 22 h et 8 h. À partir du jour 6, vous pouvez vous-même poster une bande sur une route : trois attaques au plus, vous gardez tout le butin, mais chaque prise fait monter votre infamie.",
+        title: "Les routes",
+        text: "Les villes ne rachètent plus au comptoir : elles publient leurs commandes par vagues, toutes les 4 heures, pour tous les marchands. Les matières premières ne sont commandées qu'à ceux qui les produisent ; les produits transformés, à tous. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge y figurent, les urgentes ne restent ouvertes que trois heures.",
+      },
+      {
+        icon: "marche",
+        title: "Les galères de la Muda",
+        text: "Tous les trois jours à 9 h, les galères d'État rapportent d'outre-mer épices, soie, sel, vin, fourrures et draps. La Dogana les vend au Rialto, quelques unités par marchand jusqu'aux galères suivantes, de plus en plus cher à mesure que le lot s'épuise. Quelques commandes de villes demandent ces marchandises : achetez tôt, livrez avec profit.",
       },
       {
         icon: "comptoir",
@@ -1575,11 +1352,6 @@ export const fr = {
         icon: "famille",
         title: "Le Doge et les familles",
         text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). L'onglet Famille : prêtez allégeance à l'une des quatre grandes familles, levez et engagez des lances, prenez des terres dans la Campagne de la semaine. La famille la plus glorieuse impose ses décrets la semaine suivante.",
-      },
-      {
-        icon: "port",
-        title: "Galères",
-        text: "Neuf ports, de Raguse (6 h) à Bruges (48 h), paient vos marchandises à leurs prix de la semaine et vous rendent sel, vin, soie, épices, fourrures ou draps. Construisez vos navires à l'Arsenal, escortez vos convois : pirates et corsaires rôdent, et vous pouvez vous-même armer des corsaires.",
       },
       {
         icon: "comptoir",
@@ -1634,23 +1406,6 @@ export const fr = {
       unknown_contract: "Ce contrat n'existe pas.",
       contract_expired: "Ce contrat a expiré.",
       contract_done: "Contrat déjà honoré.",
-      unknown_destination: "Destination inconnue.",
-      too_many_galleys: "Vous avez déjà un convoi en mer.",
-      unknown_ship_type: "Navire inconnu.",
-      unknown_ship: "Navire introuvable.",
-      max_ships: "Votre flotte est au complet.",
-      ship_busy: "Ce navire n'est pas au port (en mer ou au chantier).",
-      ship_damaged: "Ce navire est endommagé : réparez-le à l'Arsenal.",
-      ship_not_damaged: "Ce navire n'a pas besoin de réparation.",
-      invalid_fleet: "Composition du convoi invalide.",
-      no_privateers: "Les lettres de marque ne sont pas ouvertes.",
-      too_many_raids: "Vos corsaires sont déjà en mer.",
-      unknown_raid: "Croisière introuvable.",
-      raid_not_back: "Vos corsaires ne sont pas encore rentrés.",
-      invalid_cargo: "Cargaison invalide.",
-      cargo_too_valuable: "La cargaison dépasse la cale du navire marchand.",
-      unknown_expedition: "Galère introuvable.",
-      expedition_not_back: "La galère n'est pas encore rentrée.",
       families_off: "Pas de familles dans ce monde.",
       family_locked: "Les familles ne vous reçoivent pas encore.",
       family_chosen: "Vous avez déjà prêté allégeance pour la saison.",
@@ -1669,7 +1424,6 @@ export const fr = {
       hire_limit: "Plafond de lances du jour atteint.",
       unknown_march: "Cette marche est déjà arrivée.",
       invalid_programme: "Programme invalide.",
-      no_decree: "Le brigandage n'est permis qu'à la famille qui a imposé les lettres de course.",
       order_reserved:
         "Cette commande est réservée un moment à la famille qui a la faveur de la ville.",
     } as Record<string, string>,

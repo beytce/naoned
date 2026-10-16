@@ -41,23 +41,6 @@ const eventDef = z.object({
   yieldBps: z.record(signedBps).default({}),
 });
 
-/** A sea route: cargo leaves, exotic goods come back, unless pirates strike. */
-const destinationDef = z.object({
-  hours: positive,
-  charter: money,
-  escort: money,
-  provisions: z.record(qty).default({}),
-  riskBps: bps.max(10_000),
-  escortRiskBps: bps.max(10_000),
-  /** Exotic resource brought back. */
-  returns: z.string(),
-  /** Value brought back = cargo value at reference prices × (1 + gain). */
-  gainBps: bps,
-  maxCargoValue: money,
-  /** What the port pays for our goods, above (or below) the reference price. */
-  wants: z.record(signedBps).default({}),
-});
-
 export const worldSettingsSchema = z.object({
   seasonDays: positive,
   registrationClosesDay: positive,
@@ -80,6 +63,21 @@ export const worldSettingsSchema = z.object({
   rations: z
     .object({ resource: z.string(), perLevelPerDay: qty, slowdownBps: bps })
     .default({ resource: "bread", perLevelPerDay: 0, slowdownBps: 0 }),
+  /**
+   * The galleys of the Muda bring the goods from overseas to Venice every `everyDays` days at
+   * `hour`: the Dogana sells a lot in proportion to active merchants, dearer as it runs out
+   * (up to `priceRiseBps` more when all is gone), a few units per merchant and per arrival.
+   */
+  muda: z
+    .object({
+      everyDays: positive,
+      hour: qty.max(23),
+      lotPerActivePlayer: z.record(qty),
+      quotaPerPlayer: z.record(qty),
+      priceRiseBps: bps,
+      maxStockLots: positive,
+    })
+    .optional(),
   /** Daily orders from the Doge, per player: deliver goods to a city at a premium. */
   contracts: z
     .object({
@@ -95,14 +93,6 @@ export const worldSettingsSchema = z.object({
   events: z
     .object({ everyDays: positive, durationHours: positive, catalog: z.array(eventDef) })
     .default({ everyDays: 2, durationHours: 24, catalog: [] }),
-  expeditions: z
-    .object({
-      maxActive: positive,
-      /** Port prices move each week by up to this much, drawn from the world's secret seed. */
-      weeklySwingBps: bps.default(0),
-      destinations: z.record(destinationDef),
-    })
-    .default({ maxActive: 1, weeklySwingBps: 0, destinations: {} }),
   /** Computer-run merchants keep the world at this many active merchants while players are few. */
   bots: z.object({ population: qty }).default({ population: 0 }),
   /**
@@ -112,60 +102,6 @@ export const worldSettingsSchema = z.object({
   buildingRegions: z.record(z.array(z.string())).default({}),
   /** Yield bonus per building level above the first: specialising pays. */
   levelYieldBonusBps: bps.default(0),
-  /** Ships built at the arsenal: they carry convoys and escort them. */
-  ships: z
-    .object({
-      maxPerPlayer: qty,
-      /** Port dues for a convoy on one's own ships, as a share of the route's charter. */
-      portDuesBps: bps.default(0),
-      types: z.record(
-        z.object({
-          costDucats: money,
-          costMaterials: z.record(qty).default({}),
-          /** Most cargo the ship carries as the merchant ship, at reference prices. */
-          holdValue: money,
-          /** Voyage duration factor: below 10 000 is faster. */
-          speedBps: positive,
-          defense: positive,
-          upkeepPerDay: money,
-          repairCost: money,
-          repairHours: positive,
-        }),
-      ),
-    })
-    .default({ maxPerPlayer: 0, portDuesBps: 0, types: {} }),
-  /** Letters of marque: privateers hunt other players' convoys on a route. */
-  privateers: z
-    .object({
-      /** Privateer cruises per player at once; 0 turns the feature off. */
-      maxActive: qty,
-      letterFee: money,
-      hours: positive,
-      /** Per ship. */
-      provisions: z.record(qty).default({}),
-      /** Share of each cargo line taken by a successful boarding. */
-      shareBps: bps.max(10_000),
-      minChanceBps: bps.max(10_000),
-      maxChanceBps: bps.max(10_000),
-      /** New merchants cannot be boarded for this many days. */
-      newcomerDays: qty,
-      /** Only merchants worth at least this share of the corsair's net worth are hunted. */
-      minTargetWorthBps: bps,
-      /** After a successful boarding, the victim is left alone this long. */
-      cooldownHours: qty,
-    })
-    .default({
-      maxActive: 0,
-      letterFee: 0,
-      hours: 12,
-      provisions: {},
-      shareBps: 0,
-      minChanceBps: 0,
-      maxChanceBps: 0,
-      newcomerDays: 0,
-      minTargetWorthBps: 0,
-      cooldownHours: 0,
-    }),
   /**
    * A counting house left alone this long is dormant: it pays a share of its upkeep and its
    * workers do not go hungry, so a returning player finds it intact. 0 turns it off.
@@ -424,8 +360,8 @@ export const worldSettingsSchema = z.object({
       faveur: z.object({ premiumBps: bps, reservedMinutes: qty }),
       /** Paid by others' deliveries to the cities the family held, shared out among members. */
       peage: z.object({ tollBps: bps }),
-      /** Members' port dues lighter, others' heavier. */
-      levant: z.object({ memberDiscountBps: bps.max(10_000), othersSurchargeBps: bps }),
+      /** Members' quota at the Muda larger, others' smaller. */
+      levant: z.object({ memberQuotaBps: bps, othersCutBps: bps.max(10_000) }),
       /** No offer of a good above this share of its reference price. */
       calmiere: z.object({ capBps: bps }),
       /** Members' building upkeep lighter. */
@@ -440,7 +376,7 @@ export const worldSettingsSchema = z.object({
       gabelle: { extraTaxBps: 0 },
       faveur: { premiumBps: 0, reservedMinutes: 0 },
       peage: { tollBps: 0 },
-      levant: { memberDiscountBps: 0, othersSurchargeBps: 0 },
+      levant: { memberQuotaBps: 0, othersCutBps: 0 },
       calmiere: { capBps: 10_000 },
       franchise: { upkeepDiscountBps: 0 },
     }),
@@ -529,8 +465,6 @@ export const worldSettingsSchema = z.object({
       /** Given on joining, counted in net worth. */
       startingVehicles: z.array(z.string()).default([]),
       maxVehicles: qty,
-      /** Escorts: cost in bps of the cargo's value at the order's price, destroyed. */
-      escorts: z.record(z.object({ costBps: bps, defense: positive })).default({}),
     })
     .default({
       ordersPerDay: { min: 0, max: 0 },
@@ -545,70 +479,6 @@ export const worldSettingsSchema = z.object({
       maxDeliveryMinutes: 120,
       vehicles: {},
       maxVehicles: 0,
-    }),
-  /**
-   * Bandits on the roads: a merchant (or the computer) posts a band on a route for a few hours;
-   * it may ambush deliveries passing by. No duration options turns them off.
-   */
-  bandits: z
-    .object({
-      /** Hours a band may be posted for. */
-      hoursOptions: z.array(positive),
-      /** Ducats paid in advance per hour, destroyed. */
-      feePerHour: money,
-      /** Provisions eaten in advance per hour. */
-      provisionsPerHour: z.record(qty).default({}),
-      maxActivePerPlayer: qty,
-      /** Attempts a band makes at most, successful or not. */
-      maxAttacksPerBand: positive,
-      /** Bands at once on a route: beyond, the route is full. */
-      maxBandsPerRoute: positive,
-      /** Chance that an ambush succeeds, by the escort's defense (largest key ≤ defense). */
-      attackChanceBps: z.record(bps.max(10_000)),
-      /** Without escort, the merchant has this long to fight back. */
-      reactionMinutes: positive,
-      /** Share of each cargo line taken by a successful ambush. */
-      takeBps: bps.max(10_000),
-      /** Share of what is taken that the bandit keeps; the rest is lost in flight. */
-      keepBps: bps.max(10_000),
-      /** No ambush between these hours (Paris). */
-      quietHours: z.object({ from: qty.max(24), to: qty.max(24) }),
-      newcomerDays: qty,
-      minTargetWorthBps: bps,
-      cooldownHours: qty,
-      sameFamilyImmune: z.boolean().default(true),
-      /**
-       * Bands only under the decree of the letters of marque: by the members of the family that
-       * imposed it, against the convoys of the others.
-       */
-      decreeOnly: z.boolean().default(false),
-      /** Days after joining before a merchant may post a band. */
-      openDay: qty,
-      /** Bands of the computer, so that a small world has some risk. */
-      npcBands: z.object({ perDay: qty, hours: positive }).default({ perDay: 0, hours: 3 }),
-      /**
-       * The Doge's bounty (taglia) to a merchant who beats off a player's band, by escort or by
-       * fighting back: base × (1 + infamy × perInfamyBps), at most `max`. Created money.
-       */
-      bounty: z
-        .object({ base: money, perInfamyBps: bps, max: money })
-        .default({ base: 0, perInfamyBps: 0, max: 0 }),
-    })
-    .default({
-      hoursOptions: [],
-      feePerHour: 0,
-      maxActivePerPlayer: 0,
-      maxAttacksPerBand: 1,
-      maxBandsPerRoute: 1,
-      attackChanceBps: {},
-      reactionMinutes: 10,
-      takeBps: 0,
-      keepBps: 0,
-      quietHours: { from: 22, to: 8 },
-      newcomerDays: 0,
-      minTargetWorthBps: 0,
-      cooldownHours: 0,
-      openDay: 0,
     }),
   /** How many times a player may restart from scratch during a season. */
   maxResetsPerPlayer: qty.default(1),
@@ -629,15 +499,13 @@ export const worldSettingsSchema = z.object({
           /** Vehicles go faster by this much. */
           vehicleSpeedBps: bps.default(0),
           extraVehicles: qty.default(0),
+          /** A larger quota at the galleys of the Muda. */
+          mudaQuotaBps: bps.default(0),
           /** A larger share of the market maker's daily quota. */
           marketMakerQuotaBps: bps.default(0),
           /** Taken off the market tax on the merchant's sales. */
           taxDiscountBps: bps.default(0),
           extraOpenOrders: qty.default(0),
-          /** Taken off the port dues of the merchant's own convoys. */
-          portDuesDiscountBps: bps.max(10_000).default(0),
-          /** Larger holds. */
-          holdBps: bps.default(0),
         }),
       ),
     })

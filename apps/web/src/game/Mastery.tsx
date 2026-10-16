@@ -18,11 +18,10 @@ export function masteryEffects(catalog: Catalog, code: string): string[] {
     o.transformYieldBps > 0 ? e.transform(pct(o.transformYieldBps)) : null,
     o.vehicleSpeedBps > 0 ? e.speed(pct(o.vehicleSpeedBps)) : null,
     o.extraVehicles > 0 ? e.vehicles(o.extraVehicles) : null,
+    o.mudaQuotaBps > 0 ? e.muda(pct(o.mudaQuotaBps)) : null,
     o.marketMakerQuotaBps > 0 ? e.quota(pct(o.marketMakerQuotaBps)) : null,
     o.taxDiscountBps > 0 ? e.tax(pct(o.taxDiscountBps)) : null,
     o.extraOpenOrders > 0 ? e.offers(o.extraOpenOrders) : null,
-    o.portDuesDiscountBps > 0 ? e.dues(pct(o.portDuesDiscountBps)) : null,
-    o.holdBps > 0 ? e.hold(pct(o.holdBps)) : null,
   ].filter((x): x is string => x !== null);
 }
 

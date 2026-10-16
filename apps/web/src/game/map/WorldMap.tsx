@@ -51,9 +51,7 @@ export type Selection =
   | { kind: "home" }
   | { kind: "city"; code: string }
   | { kind: "cart"; id: string }
-  | { kind: "land"; code: string }
-  | { kind: "port"; code: string }
-  | { kind: "galley"; id: string };
+  | { kind: "land"; code: string };
 
 export interface CartTrip {
   route: string;
@@ -71,7 +69,7 @@ export interface MapMarker {
   node: ReactNode;
   /** A cart on the road follows its trip; otherwise the marker stays at its place. */
   trip?: CartTrip | null;
-  /** Where it stands now, in map units, when the screen places it (a galley at sea). */
+  /** Where it stands now, in map units, when the screen places it. */
   at?: { x: number; y: number; flip?: boolean } | null;
 }
 
@@ -112,12 +110,11 @@ export const WorldMap = forwardRef<
     region: string;
     cities: string[];
     /**
-     * Which map is shown: the trade's (cities, counter, carts), the campaign's (lands) or the
-     * sea's (ports, galleys).
+     * Which map is shown: the trade's (cities, counter, carts) or the campaign's (lands).
      */
-    layer: "trade" | "campaign" | "sea";
+    layer: "trade" | "campaign";
     /**
-     * The places of the campaign or the sea, in map units, by marker key; those beyond the drawn
+     * The places of the campaign, in map units, by marker key; those beyond the drawn
      * map's western edge (Lombardy, Bruges) are a pan away.
      */
     spots: { key: string; x: number; y: number }[];
@@ -514,11 +511,6 @@ export const WorldMap = forwardRef<
       >
         <NightTerrain />
       </div>
-      {/* At sea the Veneto gives way to open water. */}
-      <div
-        className={`world-sea pointer-events-none absolute inset-0 transition-opacity duration-500 ${props.layer === "sea" ? "opacity-100" : "opacity-0"}`}
-        aria-hidden="true"
-      />
       <svg
         ref={lines}
         viewBox={`0 0 ${MAP_W} ${MAP_H}`}

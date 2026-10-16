@@ -118,14 +118,15 @@ export function checkInvariants(state: WorldState, totals: JournalTotals): Invar
     }
   }
 
-  // 7. Goods on the road: what is left plus what bandits took is what was loaded.
+  // 7. Goods on the road: what is left is what was loaded (less what bandits took, in saves of
+  // their time).
   for (const d of Object.values(state.deliveries ?? {})) {
     // A load may carry several orders, of several goods.
     const loadedBy: Record<string, number> = {};
     for (const l of d.orders ?? [{ resource: d.resource, quantity: d.loaded }])
       loadedBy[l.resource] = (loadedBy[l.resource] ?? 0) + l.quantity;
     for (const [res, qty] of Object.entries(d.cargo)) {
-      const taken = d.attack?.taken[res] ?? 0;
+      const taken = (d as { attack?: { taken: Record<string, number> } }).attack?.taken[res] ?? 0;
       const loaded = loadedBy[res] ?? 0;
       if (qty < 0 || qty + taken !== loaded) {
         out.push({
@@ -133,11 +134,6 @@ export function checkInvariants(state: WorldState, totals: JournalTotals): Invar
           detail: `delivery ${d.id}|${res}: ${qty} + ${taken} ≠ ${loaded}`,
         });
       }
-    }
-  }
-  for (const b of Object.values(state.bands ?? {})) {
-    for (const [res, qty] of Object.entries(b.booty)) {
-      if (qty < 0) out.push({ invariant: 7, detail: `band ${b.id}|${res} negative` });
     }
   }
   return out;

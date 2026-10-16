@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeEvent, contractsFor, dayIndex, portPrices, quoteCitySale } from "../src/index.js";
+import { activeEvent, contractsFor, dayIndex, quoteCitySale } from "../src/index.js";
 import { testSettings } from "./fixture.js";
 import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
 
@@ -11,25 +11,12 @@ const famine = {
   yieldBps: { wheat: -5_000 },
 };
 
-const alexandria = {
-  hours: 24,
-  charter: 10_000,
-  escort: 5_000,
-  provisions: { bread: 5 },
-  riskBps: 2_000,
-  escortRiskBps: 500,
-  returns: "spices",
-  gainBps: 6_000,
-  maxCargoValue: 200_000,
-};
-
 const living = (overrides: Record<string, unknown> = {}) =>
   makeContext({
     startingStock: { terraferma: { bread: 10, wood: 4 } },
     rations: { resource: "bread", perLevelPerDay: 2, slowdownBps: 5_000 },
     contracts: { perDay: 3, premiumBps: 2_000, quantities: { wheat: 20, clay: 15, wood: 15 } },
     events: { everyDays: 2, durationHours: 24, catalog: [famine] },
-    expeditions: { maxActive: 1, destinations: { alexandria } },
     referencePrices: { ...testSettings.referencePrices, spices: 1_500 },
     ...overrides,
   });
@@ -137,139 +124,6 @@ describe("contracts of the Doge", () => {
     const late = w.try({ type: "fulfillContract", playerId: "a", contractId: c.id });
     expect(late.ok).toBe(false);
     if (!late.ok) expect(late.error).toBe("contract_expired");
-  });
-});
-
-describe("galleys", () => {
-  const launch = (w: World, escort = false) =>
-    w.try({
-      type: "launchExpedition",
-      playerId: "a",
-      destination: "alexandria",
-      cargo: { wheat: 500 },
-      escort,
-    });
-
-  it("take the cargo, provisions and charter, then bring back exotic goods", () => {
-    const w = new World(
-      living({
-        expeditions: {
-          maxActive: 1,
-          destinations: { alexandria: { ...alexandria, riskBps: 0, escortRiskBps: 0 } },
-        },
-      }),
-    );
-    w.do({ type: "join", playerId: "a", region: "terraferma" });
-    w.give("a", "wheat", 500);
-    expect(launch(w).ok).toBe(true);
-    expect(w.stock("a", "wheat").available).toBe(0);
-    expect(w.stock("a", "bread").available).toBe(5);
-    expect(w.cash("a")).toBe(100_000n - 10_000n);
-    const id = Object.keys(w.state.expeditions ?? {})[0] ?? "";
-
-    expect(w.try({ type: "collectExpedition", playerId: "a", expeditionId: id }).ok).toBe(false);
-    w.advance(24 * HOUR);
-    w.do({ type: "collectExpedition", playerId: "a", expeditionId: id });
-    // 500 wheat × 100 = 50 000 deniers, × 1.6 = 80 000, / 1 500 per spice
-    expect(w.stock("a", "spices").available).toBe(53);
-    expect(w.state.expeditions?.[id]?.outcome).toBe("returned");
-  });
-
-  it("can be lost to pirates", () => {
-    const w = new World(
-      living({
-        expeditions: {
-          maxActive: 1,
-          destinations: { alexandria: { ...alexandria, riskBps: 10_000 } },
-        },
-      }),
-    );
-    w.do({ type: "join", playerId: "a", region: "terraferma" });
-    w.give("a", "wheat", 500);
-    launch(w);
-    const id = Object.keys(w.state.expeditions ?? {})[0] ?? "";
-    w.advance(24 * HOUR);
-    w.do({ type: "collectExpedition", playerId: "a", expeditionId: id });
-    expect(w.state.expeditions?.[id]?.outcome).toBe("lost");
-    expect(w.stock("a", "spices").available).toBe(0);
-  });
-
-  it("charges the escort, limits active galleys, cargo value and exotic cargo", () => {
-    const w = new World(living());
-    w.do({ type: "join", playerId: "a", region: "terraferma" });
-    w.give("a", "wheat", 5_000).give("a", "spices", 10).give("a", "bread", 50);
-    expect(launch(w, true).ok).toBe(true);
-    expect(w.cash("a")).toBe(100_000n - 15_000n);
-    const second = launch(w);
-    expect(second.ok).toBe(false);
-    if (!second.ok) expect(second.error).toBe("too_many_galleys");
-
-    const w2 = new World(living());
-    w2.do({ type: "join", playerId: "a", region: "terraferma" });
-    w2.give("a", "wheat", 5_000).give("a", "spices", 10);
-    const tooBig = w2.try({
-      type: "launchExpedition",
-      playerId: "a",
-      destination: "alexandria",
-      cargo: { wheat: 3_000 },
-      escort: false,
-    });
-    expect(tooBig.ok).toBe(false);
-    const exotic = w2.try({
-      type: "launchExpedition",
-      playerId: "a",
-      destination: "alexandria",
-      cargo: { spices: 5 },
-      escort: false,
-    });
-    expect(exotic.ok).toBe(false);
-  });
-});
-
-describe("ports", () => {
-  const port = (wants: Record<string, number>, weeklySwingBps = 0) =>
-    living({
-      expeditions: {
-        maxActive: 1,
-        weeklySwingBps,
-        destinations: { alexandria: { ...alexandria, riskBps: 0, escortRiskBps: 0, wants } },
-      },
-    });
-
-  it("pay more for the goods they want", () => {
-    const w = new World(port({ wheat: 5_000 }));
-    w.do({ type: "join", playerId: "a", region: "terraferma" });
-    w.give("a", "wheat", 500);
-    w.do({
-      type: "launchExpedition",
-      playerId: "a",
-      destination: "alexandria",
-      cargo: { wheat: 500 },
-      escort: false,
-    });
-    const id = Object.keys(w.state.expeditions ?? {})[0] ?? "";
-    w.advance(24 * HOUR);
-    w.do({ type: "collectExpedition", playerId: "a", expeditionId: id });
-    // 500 × 100 × 1.5 = 75 000, × 1.6 = 120 000, / 1 500 per spice
-    expect(w.stock("a", "spices").available).toBe(80);
-  });
-
-  it("change their prices every week, within the swing, the same for everyone", () => {
-    const ctx = port({ wood: 4_000 }, 3_000);
-    const week0 = portPrices(ctx, "alexandria", ctx.startAt + HOUR);
-    expect(portPrices(ctx, "alexandria", ctx.startAt + 6 * DAY)).toEqual(week0);
-    const weeks = [0, 1, 2, 3, 4].map((k) =>
-      portPrices(ctx, "alexandria", ctx.startAt + k * 7 * DAY),
-    );
-    expect(new Set(weeks.map((p) => p.wheat)).size).toBeGreaterThan(1);
-    for (const p of weeks) {
-      expect(p.wheat).toBeGreaterThanOrEqual(7_000);
-      expect(p.wheat).toBeLessThanOrEqual(13_000);
-      expect(p.wood).toBeGreaterThanOrEqual(11_000);
-      expect(p.wood).toBeLessThanOrEqual(17_000);
-    }
-    // Exotic goods are never bought by a port.
-    expect(week0.spices).toBeUndefined();
   });
 });
 

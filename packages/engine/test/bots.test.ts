@@ -111,13 +111,8 @@ describe("bots in a live world", () => {
 });
 
 describe("bots on the road", () => {
-  it("deliver their board, buy a vehicle, post bands and fight back when online", () => {
-    const w = new World(
-      makeContext({
-        ...deliverySettings,
-        bandits: { ...deliverySettings.bandits, npcBands: { perDay: 4, hours: 3 } } as never,
-      }),
-    );
+  it("deliver their board and buy vehicles", () => {
+    const w = new World(makeContext({ ...deliverySettings }));
     const rng = new Rng(5);
     // Finished deliveries leave the state after a few days: count them from the events.
     const events: string[] = [];
@@ -159,7 +154,6 @@ describe("bots on the road", () => {
         // Play every 2 h in the daytime (UTC 7 h to 21 h).
         const hour = Math.floor((w.now % DAY) / HOUR);
         if (step % 8 === 0 && hour >= 7 && hour <= 21) b.play(session);
-        b.respond(session);
       }
       w.advance(15 * MIN);
       step++;
@@ -167,8 +161,5 @@ describe("bots on the road", () => {
     const count = (type: string) => events.filter((e) => e === type).length;
     expect(count("delivery_arrived")).toBeGreaterThan(20);
     expect(Object.values(w.state.vehicles ?? {}).length).toBeGreaterThan(bots.length);
-    expect(count("band_posted")).toBeGreaterThan(0);
-    expect(count("delivery_ambushed")).toBeGreaterThan(0);
-    expect(count("delivery_defended")).toBeGreaterThan(0);
   });
 });

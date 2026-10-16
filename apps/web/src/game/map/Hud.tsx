@@ -131,7 +131,7 @@ export function MapHud({
   bottom: boolean;
   hasFamily: boolean;
   /** The map shown: the family door switches between the two. */
-  layer: "trade" | "campaign" | "sea";
+  layer: "trade" | "campaign";
   /** Something waits at the family (a levy, a threat, a message, an invitation). */
   familyCalls: boolean;
   /** Batches waiting at the workshops (a dot on their door). */

@@ -25,7 +25,7 @@ Quatre palettes, mêmes rôles aux mêmes endroits, au choix du joueur dans le P
 | Fond (`night`) | `#1E1611` | `#0F1B1E` | `#1C1016` | `#F3E9D4` | Application, panneaux (`night-2/3/4`) |
 | Or (`gold`) | `#E8B24C` | `#E0AD4B` | `#DDB054` | `#C9952F` | Argent et action principale uniquement |
 | Lagune (`lagoon`) | `#7DB596` | `#6DB3A2` | `#6FB5AA` | `#2D5486` | Gains, production, routes sûres |
-| Cinabre (`vermilion`) | `#E36A4A` | `#E2694F` | `#F07A5C` | `#B2412D` | Corsaires, pertes, alertes |
+| Cinabre (`vermilion`) | `#E36A4A` | `#E2694F` | `#F07A5C` | `#B2412D` | Pertes, alertes |
 | Texte (`cream`) | `#F6E8CC` | `#F1E4C6` | `#F4E6D0` | `#2B2016` | Texte |
 | Encre (`ink`) | fond | fond | fond | texte | Texte posé sur l'or ou la lagune |
 
@@ -47,9 +47,9 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
 - `Badge`, puces du stock, pastilles de tri : petits biseaux (`.slab`).
 - `Tabs` :
   - `pills` : choix d'une valeur, par exemple le tri ;
-  - `underline` : parties d'un écran (Livraisons et Brigands, Joueurs et Villes, Port). Capitales sur un double trait crème et lagune qui glisse d'un onglet à l'autre.
+  - `underline` : parties d'un écran (Joueurs et Villes). Capitales sur un double trait crème et lagune qui glisse d'un onglet à l'autre.
 - `CountUp` : un nombre qui court vers sa nouvelle valeur en 400 ms, comme la bourse de l'en-tête.
-- `Stat` : tuile chiffrée (Traversée, Pirates en cinabre, Plus-value en lagune).
+- `Stat` : tuile chiffrée (une durée, un gain en lagune, une perte en cinabre).
 - `Switch` : interrupteur (escorte, navires, notifications), à la place des cases à cocher.
 - `Sheet` : feuille du bas sur mobile, fenêtre centrée sur PC, fermeture par ×.
 - `Ribbon` : barre de progression rayée ; `Big` : grands chiffres.
@@ -58,7 +58,7 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
 
 - La carte ne bouge que sous le doigt : glisser la déplace (avec élan), deux doigts ou la molette zooment autour de leur milieu, un double toucher dans le vide la recadre. Un objet choisi glisse dans le champ s'il est caché sous le panneau, sans plus.
 - Le panneau de la sélection monte du pied de l'écran ; un médaillon choisi s'entoure de vert d'eau, une ville que la charrette peut servir respire, les autres s'estompent. Les routes en cours défilent en pointillés vers leur ville.
-- Il n'y a plus de page : le Rialto, le Classement et le Profil sont des feuilles posées sur la carte ; la Famille et le Port sont des calques de la même carte (Campagne, Mer), que la porte « Commerce » ou le bouton retour ramènent au commerce.
+- Il n'y a plus de page : le Rialto, le Classement et le Profil sont des feuilles posées sur la carte ; la Famille est un calque de la même carte (la Campagne), que la porte « Commerce » ou le bouton retour ramène au commerce.
 - Tout s'arrête pour qui demande moins de mouvement (`prefers-reduced-motion`).
 
 ## Gestes
@@ -73,19 +73,19 @@ Un seul écran, la carte de la Vénétie la nuit, inspirée des jeux de commerce
 | Pièce | Rôle | Composants |
 | --- | --- | --- |
 | **Carte** | Le sol (une couche que le processeur graphique déplace), les routes du comptoir en pointillés, les repères placés à la main à chaque image, sans rendu React. Les images ne tournent que si quelque chose bouge (caméra, élan, charrette en route) | `WorldMap`, `NightTerrain`, `geometry.ts` |
-| **Repères** | Les villes en médaillons à leur teinte (pastille or : commandes couvertes par le stock ; vert d'eau : commandes ; vermillon : Criée), le comptoir doré au blason (anneau du prochain lot, pastille des lots prêts), les charrettes en jetons (vert d'eau en route, vermillon battant si arrêtées). Elles se garent dans le secteur libre autour du comptoir, côté terre, et partent du bord du médaillon | `CityMarker`, `HomeMarker`, `CartMarker` |
+| **Repères** | Les villes en médaillons à leur teinte (pastille or : commandes couvertes par le stock ; vert d'eau : commandes ; vermillon : Criée), le comptoir doré au blason (anneau du prochain lot, pastille des lots prêts), les véhicules en jetons (vert d'eau en route). Elles se garent dans le secteur libre autour du comptoir, côté terre, et partent du bord du médaillon | `CityMarker`, `HomeMarker`, `CartMarker` |
 | **HUD** | En haut à gauche, le blason dans l'anneau de la saison, le nom, le titre et le rang ; dessous la cloche des Avis et Lorenzo quand le guide est en pause. En haut à droite, les ducats, les charrettes libres, « + » pour en acheter. Au pied, sans sélection, trois portes rondes : Classement, Famille (Commerce sur le calque de la Campagne ; point vermillon quand la famille appelle), Aide. Toucher son rang ouvre le Classement | `MapHud` |
 | **Panneau** | Ce qui est choisi : titre, une ligne d'état (et sa barre), de grosses actions carrées, flèches vers l'objet suivant du même genre, croix. Sur ordinateur, flottant en bas à droite | `ContextPanel`, `ActionButton` |
-| **Feuilles** | Le détail : ateliers, entrepôt, bâtir, cargaisons, Criée, brigands, Avis | `Sheet` |
+| **Feuilles** | Le détail : ateliers, entrepôt, bâtir, cargaisons, Criée, Avis | `Sheet` |
 | **Feuilles de lieu** | Le Rialto (clés `rialto`, `trade:<r>`, `offers`) : le tableau des cours (Tout, En stock, En hausse ; taxe, décrets, mes offres), puis le négoce d'une marchandise dans la même feuille, ← retour. Le Classement (`ranking`) : semaine ou saison avec leur clôture, podium, liste, sa ligne épinglée au pied ; semaine passée et règles dans la même feuille | `RialtoSheet`, `RankingSheet` |
 | **Profil** | Feuille (`profile`) ouverte par le blason ou le nom : blason et « Modifier », titre et paliers, patrimoine, chiffres, trophées, palmarès, Pass ; les réglages repliés au pied (palette, notifications, retours haptiques, aide, données, réinitialisation) | `ProfileSheet` |
 
 | Lieu choisi | État | Actions |
 | --- | --- | --- |
 | **Comptoir** | Lots prêts, prochain lot et sa barre, ouvriers affamés | Récolter (ou Relancer) · Ateliers · Entrepôt · Bâtir |
-| **Ville** | Commandes couvertes par le stock, Criée en cours, renouvellement | Cargaisons · Criée · Brigands (après leur ouverture) ; Venise : Rialto · Port (le calque Mer, ou la feuille « le port s'ouvre bientôt » avant son jour) |
+| **Ville** | Commandes couvertes par le stock, Criée en cours, renouvellement | Cargaisons · Criée ; Venise : Rialto (et les galères de la Muda en tête du Rialto) |
 | **Charrette au comptoir** | Au comptoir, chargée pour…, jauge de cale | Cargaisons · Partir |
-| **Charrette en route** | Vers la ville ou retour, temps restant ; arrêtée par des brigands | Riposter · Suivre |
+| **Charrette en route** | Vers la ville ou retour, temps restant | Suivre |
 
 Les **Avis** (la cloche) rassemblent ce qui était en bandeaux : jour et acte de la saison, dernier sprint, entretien impayé, Criée, gazette ; puis le carnet du jour (premiers pas, tâches, Livre de compte), la saison (palier, maîtrise, ballots) et les nouvelles.
 
@@ -93,7 +93,7 @@ Le guide de Lorenzo vise des objets de la carte (`home`, `city-<code>`, `cart-<i
 
 ## Illustrations
 
-Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le moulin et la scierie tournent pendant la production), panorama de Venise, carte marine, scènes des régions, blasons (3 formes × 6 émaux × 8 meubles), Lorenzo le facteur qui guide le joueur, médailles des trophées. Pas d'image externe.
+Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le moulin et la scierie tournent pendant la production), panorama de Venise, scènes des régions, blasons (3 formes × 6 émaux × 8 meubles), Lorenzo le facteur qui guide le joueur, médailles des trophées. Pas d'image externe.
 
 ## Guide du joueur
 
@@ -109,25 +109,18 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 - **Maîtrise** (`Mastery`, `art/mastery.tsx`) :
   - **Avis** : une tuile de progression vers le palier (niveaux d'ateliers), puis l'appel à choisir.
   - **Choix** : feuille ouverte d'elle-même la première fois, avec quatre cartes (emblème, devise, effets lus dans les réglages) et une confirmation « pour toute la saison ».
-  - **Emblèmes** : marteau et enclume, roue, balance, ancre, sous le blason du Domaine et dans le classement.
+  - **Emblèmes** : marteau et enclume, roue, balance, sac d'épices, sous le blason du Domaine et dans le classement.
 - **Actes de la saison** (`Acts`) : l'acte en cours dans les Avis ; sa carte s'ouvre d'elle-même à la première visite de chaque acte, après les premiers pas.
 - **Notification d'acte** : à l'ouverture des actes II à IV, une notification « Acte II : la peste » (cloche et push), réglable comme les autres.
 - **Fil de la guilde** (`Guilde`, `Thread`) : messages des membres, les miens à droite sur fond lagune, « Signaler » sous ceux des autres, saisie en bas ; pastille sur l'onglet Guilde quand un message n'a pas été lu ou qu'un vote attend.
 - **Objectif de saison** (`SeasonGoal`, dans les Avis) : titre actuel et Renommée assurée, prochain palier et sa barre ; affiché après la première livraison.
-- **Brigands** (`Bandits`, depuis une ville) : la route et la durée, le coût, l'encadré d'infamie (prises de la saison, prime sur la tête, primes reçues), les bandes en cours et leur butin.
+- **Galères de la Muda** (`MudaPanel`, en tête du Rialto) : le délai des prochaines galères, puis une ligne par marchandise à quai (quantité, ce qu'il reste au marchand, prix du moment) qui ouvre son négoce ; le négoce rappelle le quota de la Muda.
 - **Criée** (`Criee`) : la ville qui crie porte une pastille vermillon ; son panneau et les Avis ouvrent la vente, avec la quantité vendable et un retour haptique « alarme » quand elle s'ouvre.
 - **Tâches du jour** (`Daily`) : trois tâches, la série de jours et le coffre, dans les Avis.
 - **Produits frais** : sous un atelier prêt, « Frais : +5 % encore 23 min ».
 - **Ballots de Faraj** (`Bales`) : tuile des Avis après les premiers pas, puis écran plein : la balle de toile flotte sur le quai, tremble et luit, le sceau de cire (marque de Faraj : croissant, mât, fanion, orbe) éclate, trois connaissements sortent face cachée. Une carte rare ou mieux luit avant d'être retournée ; cadres parchemin, lagune, lapis, pourpre et or (seul usage de l'or hors argent et action principale) ; éclat doré et reflet pour une légendaire. Probabilités et histoire de Faraj sous le ballot.
 - **Pass Négociant** (`PassPanel`) : statut, avantages, comment le gagner, prix (paiement à venir). Sceau (le lion ailé) à côté du nom dans les classements ; palette « Or de Venise » réservée.
 - **Retours haptiques** (`haptics.ts`) : léger à chaque sélection sur la carte, double pour une action qui rapporte, long pour une erreur, alarme pour une Criée ; réglables dans le Profil. Sur iPhone, Safari ne vibre pas : un interrupteur natif caché donne un petit clic.
-
-## Le Port : calque de la Mer (`map/SeaLayer.tsx`)
-
-- Venise → Port bascule la carte sur la mer, comme la porte Famille sur la Campagne : la Vénétie s'efface sous l'eau, la caméra glisse sur la Méditerranée. Carte stylisée, posée pour un téléphone tenu droit (la vraie est large) : la géographie est gardée, Bruges à un glissé vers l'ouest.
-- **Repères** : l'Arsenal de Venise en médaillon doré (pastille des galères à décharger) ; chaque port en médaillon lagune avec ce qu'il rapporte et sa plus-value ; les galères en jetons qui sortent du bord de l'Arsenal, vont au port et reviennent, dorées à quai, vermillon abordées. Les routes en pointillés suivent la mer par escales, rouges si des corsaires guettent, animées quand une galère y navigue.
-- **Panneaux** : l'Arsenal (galères en mer, navires prêts ; Décharger, Flotte, Corsaires, Journal) ; un port (durée, pirates, ce qu'il rapporte ; Envoyer un convoi, Fiche ; ‹ › entre les ports) ; une galère (vers où, retour dans…, sa barre ; Décharger à quai, abordage).
-- **HUD** : les galères en mer et les navires prêts prennent la place des charrettes.
 
 ## Famille et Campagne
 

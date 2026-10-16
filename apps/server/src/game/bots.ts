@@ -223,16 +223,6 @@ export class BotRunner {
       await this.retire(now);
     }
 
-    // Ambushes on the road: a bot at the screen (or back in time) fights back.
-    const ambushed = new Set(
-      Object.values(state.deliveries ?? {})
-        .filter((d) => d.attack && d.attack.success === undefined && !d.attack.reacted)
-        .map((d) => d.playerId),
-    );
-    for (const r of this.running.values()) {
-      if (ambushed.has(r.bot.id)) await this.respond(r.bot, r.sessions[0]);
-    }
-
     for (const r of this.running.values()) {
       if (r.sessions.length === 0) r.sessions = this.plan(r.bot, now);
       if ((r.sessions[0] ?? Number.POSITIVE_INFINITY) > now) continue;
@@ -258,22 +248,6 @@ export class BotRunner {
         rng: this.rng,
         act,
       });
-    });
-  }
-
-  private async respond(bot: Bot, comingBackAt?: number): Promise<void> {
-    await this.world.batch(({ act, state, now }) => {
-      bot.respond(
-        {
-          ctx: this.world.ctx,
-          state,
-          now,
-          market: new MarketView(this.world.ctx, state, () => now),
-          rng: this.rng,
-          act,
-        },
-        comingBackAt,
-      );
     });
   }
 

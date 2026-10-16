@@ -9,7 +9,6 @@ import {
   boardRivals,
   boardTakes,
   bookSide,
-  bountyFor,
   cashAccount,
   costForLevel,
   dayIndex,
@@ -17,26 +16,24 @@ import {
   fastBatchNext,
   freeBatches,
   houseLevels,
+  isMudaGood,
   marketMakerQuotaLeft,
   marketMakerQuotes,
   marketMakerReference,
   missionsFor,
+  mudaPrice,
+  mudaView,
   netWorth,
   openProjects,
-  portPrices,
   quoteCitySale,
   recipesFor,
   seasonActs,
   seasonEnd,
-  shipStatus,
-  shipUpkeep,
-  shipsOf,
   specialtyUnlocked,
   stockUnitValue,
   turnoverOf,
   upkeepPerDay,
   vwap,
-  watchedRoutes,
 } from "@comptoirs/engine";
 import {
   activeEvent,
@@ -81,31 +78,15 @@ import {
   worksOf,
 } from "@comptoirs/engine";
 import {
-  ambushChanceBps,
   deliveriesDoneToday,
   deliveriesOn,
   deliveryOrdersFor,
-  escortCost,
   travelMinutesFor,
   vehicleFree,
   vehicleUpkeep,
   vehiclesOf,
-  watchedRoads,
 } from "@comptoirs/engine";
 import { titleFor } from "./profile.js";
-
-/** Corsairs cruising on each route, and the end of the last cruise. */
-function lookout(state: WorldState, now: number) {
-  const out: Record<string, { corsairs: number; until: number }> = {};
-  for (const r of Object.values(state.raids ?? {})) {
-    if (r.outcome !== "cruising" || r.beaten || r.startAt > now || now >= r.endAt) continue;
-    const line = out[r.route] ?? { corsairs: 0, until: 0 };
-    line.corsairs += 1;
-    line.until = Math.max(line.until, r.endAt);
-    out[r.route] = line;
-  }
-  return out;
-}
 
 /** The Criée under way (players only learn of one once it has started). */
 function crieeView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {
@@ -260,9 +241,8 @@ function familiesView(ctx: WorldContext, state: WorldState, playerId: string, no
 }
 
 /**
- * The road as one merchant sees it: today's board, vehicles, deliveries under way (an ambush
- * waiting for an answer included), their own bands, and the roads where bandits lie in wait.
- * Never the draws, nor other merchants' bands or who lies in wait.
+ * The road as one merchant sees it: today's board, vehicles and deliveries under way. Never the
+ * draws.
  */
 function roadView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {
   if (!deliveriesOn(ctx)) return null;
@@ -296,9 +276,6 @@ function roadView(ctx: WorldContext, state: WorldState, playerId: string, now: n
     minutes: Object.fromEntries(
       types.map((t) => [t, travelMinutesFor(ctx, state, playerId, o.city, t) ?? null]),
     ),
-    escorts: Object.fromEntries(
-      Object.keys(ctx.settings.deliveries.escorts).map((e) => [e, escortCost(ctx, o, e)]),
-    ),
   }));
   const vehicles = vehiclesOf(state, playerId).map((v) => ({
     ...v,
@@ -307,74 +284,14 @@ function roadView(ctx: WorldContext, state: WorldState, playerId: string, now: n
   const deliveries = Object.values(state.deliveries ?? {})
     .filter((d) => d.playerId === playerId)
     .sort((a, b) => b.departAt - a.departAt)
-    .slice(0, 20)
-    .map((d) => {
-      const a = d.attack;
-      return {
-        ...d,
-        attack: a
-          ? {
-              at: a.at,
-              reactBy: a.reactBy,
-              reacted: a.reacted,
-              pending: a.success === undefined,
-              success: a.success ?? null,
-              taken: a.taken,
-              // Who struck is told once the ambush is settled (a band of the computer: null).
-              bandit: a.success === undefined ? null : a.banditId,
-            }
-          : null,
-      };
-    });
-  const bands = Object.values(state.bands ?? {})
-    .filter((b) => b.playerId === playerId)
-    .sort((a, b) => b.startAt - a.startAt)
-    .slice(0, 10)
-    .map((b) => ({
-      ...b,
-      active: !b.dispersed && now < b.endAt,
-      collectable:
-        !b.collected &&
-        (b.dispersed || now >= b.endAt) &&
-        !Object.values(state.deliveries ?? {}).some(
-          (d) => d.attack?.bandId === b.id && d.attack.success === undefined,
-        ),
-    }));
+    .slice(0, 20);
   return {
     orders,
     /** The day's biggest takes on the world's board, for the road news. */
     boardNews: boardTakes(state, 3),
     vehicles,
     deliveries,
-    bands,
-    watchedRoutes: watchedRoads(ctx, state, now),
-    banditsOpenAt: player.joinedAt + ctx.settings.bandits.openDay * 86_400_000,
-    /** The merchant's infamy (successful ambushes this season) and the bounty on their head. */
-    infamy: state.infamy?.[playerId] ?? 0,
-    bountyOnHead: bountyFor(ctx, state, playerId).toString(),
-    /** Bounties received this season. */
-    bounties: (state.bounties?.[playerId] ?? 0n).toString(),
-    /** Chance of an ambush succeeding, by escort (what a merchant may know of the rules). */
-    ambushChance: Object.fromEntries(
-      ["none", ...Object.keys(ctx.settings.deliveries.escorts)].map((e) => [
-        e,
-        ambushChanceBps(ctx, e === "none" ? 0 : (ctx.settings.deliveries.escorts[e]?.defense ?? 0)),
-      ]),
-    ),
   };
-}
-
-/** The gazette's road news: the latest successful ambushes in the world (no names). */
-function roadNews(state: WorldState) {
-  return Object.values(state.deliveries ?? {})
-    .filter((d) => d.attack?.success)
-    .map((d) => ({
-      route: d.route,
-      at: d.attack?.resolvedAt ?? d.attack?.at ?? 0,
-      resource: d.resource,
-    }))
-    .sort((a, b) => b.at - a.at)
-    .slice(0, 5);
 }
 
 /** Static data of a world, for the client: names, recipes, costs. */
@@ -405,15 +322,6 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
       regions: settings.buildingRegions[b.type] ?? null,
       upkeepPerDay: settings.buildings[b.type]?.upkeepPerDay ?? 0n,
     })),
-    ports: theme.ports ?? [],
-    destinations: settings.expeditions.destinations,
-    maxGalleys: settings.expeditions.maxActive,
-    ships: (theme.ships ?? []).flatMap((t) => {
-      const def = settings.ships.types[t.type];
-      return def ? [{ ...t, ...def }] : [];
-    }),
-    fleet: { maxPerPlayer: settings.ships.maxPerPlayer, portDuesBps: settings.ships.portDuesBps },
-    privateers: settings.privateers,
     road: deliveriesOn(ctx)
       ? {
           routes: settings.deliveries.routes,
@@ -427,19 +335,6 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
           maxDeliveryMinutes: settings.deliveries.maxDeliveryMinutes,
           /** Orders a vehicle may carry together, all for the same city. */
           maxOrdersPerLoad: settings.deliveries.maxOrdersPerLoad,
-          escorts: settings.deliveries.escorts,
-          bandits: {
-            hoursOptions: settings.bandits.hoursOptions,
-            feePerHour: settings.bandits.feePerHour,
-            provisionsPerHour: settings.bandits.provisionsPerHour,
-            maxAttacksPerBand: settings.bandits.maxAttacksPerBand,
-            maxBandsPerRoute: settings.bandits.maxBandsPerRoute,
-            reactionMinutes: settings.bandits.reactionMinutes,
-            takeBps: settings.bandits.takeBps,
-            keepBps: settings.bandits.keepBps,
-            quietHours: settings.bandits.quietHours,
-            openDay: settings.bandits.openDay,
-          },
         }
       : null,
     families: familiesOn(ctx)
@@ -554,7 +449,9 @@ export function playerView(
 
   const market = ctx.theme.resources.map((r) => {
     const reference = ctx.settings.referencePrices[r.code] ?? 0n;
-    const mm = marketMakerQuotes(ctx, marketMakerReference(ctx, state, r.code, now), now);
+    const quotes = marketMakerQuotes(ctx, marketMakerReference(ctx, state, r.code, now), now);
+    // Goods from overseas: the Dogana sells the Muda's lot at its own price.
+    const mm = isMudaGood(ctx, r.code) ? { ...quotes, ask: mudaPrice(ctx, state, r.code) } : quotes;
     return {
       resource: r.code,
       reference,
@@ -612,52 +509,9 @@ export function playerView(
   const levels = buildings.filter((b) => b.type !== "palazzo").reduce((n, b) => n + b.level, 0);
   const describe = (e: ReturnType<typeof activeEvent>) =>
     e && { code: e.code, city: e.city ?? null, startsAt: e.startsAt, endsAt: e.endsAt };
-  // Boardings that touched this player, as victim or corsair.
-  const hitsOn = new Map<
-    string,
-    { raider: string; success: boolean; taken: Record<string, number> }
-  >();
-  for (const r of Object.values(state.raids ?? {})) {
-    for (const h of r.hits) {
-      if (h.victimId === playerId)
-        hitsOn.set(h.expeditionId, { raider: r.playerId, success: h.success, taken: h.taken });
-    }
-  }
-  const expeditions = Object.values(state.expeditions ?? {})
-    .filter((e) => e.playerId === playerId)
-    .sort((a, b) => b.departAt - a.departAt)
-    .slice(0, 10)
-    .map((e) => ({ ...e, boarding: hitsOn.get(e.id) ?? null }));
-  const ships = shipsOf(state, playerId).map((s) => ({
-    ...s,
-    status: shipStatus(state, s, now),
-  }));
-  const raids = Object.values(state.raids ?? {})
-    .filter((r) => r.playerId === playerId)
-    .sort((a, b) => b.startAt - a.startAt)
-    .slice(0, 10);
-  const ports = Object.fromEntries(
-    Object.keys(ctx.settings.expeditions.destinations).map((p) => [p, portPrices(ctx, p, now)]),
-  );
-  // The gazette's sea news: the latest successful boardings in the world.
-  const seaNews = Object.values(state.raids ?? {})
-    .flatMap((r) =>
-      r.hits
-        .filter((h) => h.success)
-        .map((h) => ({
-          raider: r.playerId,
-          victim: h.victimId,
-          route: r.route,
-          at: h.at,
-          taken: h.taken,
-        })),
-    )
-    .sort((a, b) => b.at - a.at)
-    .slice(0, 5);
 
   let upkeep = 0n;
   for (const b of buildings) upkeep += upkeepPerDay(ctx, b);
-  for (const s of shipsOf(state, playerId)) upkeep += shipUpkeep(ctx, s);
   for (const v of vehiclesOf(state, playerId)) upkeep += vehicleUpkeep(ctx, v);
 
   return {
@@ -709,14 +563,9 @@ export function playerView(
     contracts,
     families: familiesView(ctx, state, playerId, now),
     gazette: { current: describe(activeEvent(ctx, now)), next: describe(nextEvent(ctx, now)) },
-    expeditions,
-    ships,
-    raids,
-    ports,
-    watchedRoutes: watchedRoutes(state, now),
-    seaNews,
     road: roadView(ctx, state, playerId, now),
-    roadNews: roadNews(state),
+    /** The galleys of the Muda: what is on the quay, at what price, and the merchant's quota. */
+    muda: ctx.settings.muda ? mudaView(ctx, state, playerId, now) : null,
     rations: {
       resource: ctx.settings.rations.resource,
       perDay: levels * ctx.settings.rations.perLevelPerDay,
@@ -738,8 +587,6 @@ export function playerView(
               Object.values(rerolls).reduce((a, b) => a + b, 0),
           )
         : 0,
-      // The lookout: corsairs on each route and when their cruise ends (Pass only).
-      lookout: pass ? lookout(state, now) : null,
     },
     daily: ctx.settings.daily.perDay > 0 ? dailyFor(ctx, state, playerId, now) : null,
     bales: balesFor(ctx, state, playerId, now),

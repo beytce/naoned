@@ -26,7 +26,6 @@ export function PassPanel({
     p.freshBonusBps > 0 && t.perks.fresh(p.freshBonusBps / 100),
     p.contractRerollsPerDay > 0 && t.perks.reroll,
     t.perks.info,
-    t.perks.lookout,
     t.perks.alerts,
     t.perks.cosmetics,
   ].filter((x): x is string => typeof x === "string");

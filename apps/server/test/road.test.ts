@@ -75,27 +75,17 @@ const get = async (cookie: string) =>
   (await app.inject({ method: "GET", url: "/api/game", headers: { cookie } })).json();
 
 describe("the road", () => {
-  it("delivers through the API: board, departure, ambush, fighting back, arrival", async () => {
+  it("delivers through the API: board, departure, arrival", async () => {
     smallOrders(world);
-    world.ctx.settings.bandits.openDay = 0;
-    // Bands at any time, not only under the letters of marque: what is tested here is the ambush.
-    world.ctx.settings.bandits.decreeOnly = false;
-    world.ctx.settings.bandits.newcomerDays = 0;
     const ada = await player("ada@example.org");
-    const bob = await player("bob@example.org");
     const view = (await get(ada)).view;
-    expect(view.road.orders.length).toBeGreaterThanOrEqual(12);
+    expect(view.road.orders.length).toBeGreaterThan(0);
     expect(view.road.vehicles).toHaveLength(2);
     const order = view.road.orders.find(
       (o: { kind: string; resource: string; status: string }) =>
         o.kind === "city" && o.resource === "bread" && o.status === "open",
     );
-    const route = `terraferma:${order.city}`;
-    const posted = await act(bob, { type: "postBand", route, hours: 2 });
-    expect(posted.error).toBeUndefined();
-    expect(posted.view.road.bands).toHaveLength(1);
-    expect((await get(ada)).view.road.watchedRoutes).toEqual([route]);
-
+    // An older client still sends an escort: it is ignored.
     const sent = await act(ada, {
       type: "dispatchDelivery",
       orderId: order.id,
@@ -107,30 +97,13 @@ describe("the road", () => {
     expect(d.outcome).toBe("en_route");
     expect(sent.view.road.vehicles[0].status).toBe("busy");
 
-    now = d.midAt;
-    await world.execute({ type: "tick" });
-    const held = (await get(ada)).view.road.deliveries[0];
-    expect(held.attack.pending).toBe(true);
-    expect(held.attack.bandit).toBeNull();
-    expect(held.attack.reactBy).toBe(d.midAt + world.ctx.settings.bandits.reactionMinutes * 60_000);
-
-    now += 5 * 60_000;
-    const fought = await act(ada, { type: "reactToAmbush", deliveryId: d.id });
-    expect(fought.error).toBeUndefined();
-    expect(fought.view.road.deliveries[0].attack.success).toBe(false);
-
     const cash = BigInt((await get(ada)).view.cash);
-    now = fought.view.road.deliveries[0].arriveAt;
+    now = d.arriveAt;
     await world.execute({ type: "tick" });
     const after = (await get(ada)).view;
     expect(after.road.deliveries[0].outcome).toBe("delivered");
     expect(BigInt(after.cash)).toBe(cash + BigInt(d.payment));
     expect(await world.checkInvariants()).toEqual([]);
-
-    // The band broke up: its (empty) booty can be collected.
-    const band = (await get(bob)).view.road.bands[0];
-    expect(band.dispersed).toBe(true);
-    expect((await act(bob, { type: "collectBooty", bandId: band.id })).error).toBeUndefined();
   });
 
   it("buys a mule, upgrades it, and lists the road in the catalog", async () => {

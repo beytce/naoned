@@ -63,26 +63,17 @@ export function netWorth(
     const unit = unitValues?.[resource] ?? stockUnitValue(ctx, state, resource, now);
     stock += unit * BigInt(line.available + line.escrow);
   }
-  // Goods on the road and booty not yet collected still belong to the merchant.
+  // Goods on the road still belong to the merchant.
   const unit = (resource: string) =>
     unitValues?.[resource] ?? stockUnitValue(ctx, state, resource, now);
   for (const d of Object.values(state.deliveries ?? {})) {
     if (d.playerId !== playerId || d.outcome !== "en_route") continue;
     for (const [resource, qty] of Object.entries(d.cargo)) stock += unit(resource) * BigInt(qty);
   }
-  for (const b of Object.values(state.bands ?? {})) {
-    if (b.playerId !== playerId || b.collected) continue;
-    for (const [resource, qty] of Object.entries(b.booty)) stock += unit(resource) * BigInt(qty);
-  }
   let buildings = 0n;
   for (const b of Object.values(state.buildings)) {
     if (b.playerId === playerId) {
       buildings += applyBpsFloor(b.investedValue, ctx.settings.valuation.buildingValueBps);
-    }
-  }
-  for (const ship of Object.values(state.ships ?? {})) {
-    if (ship.playerId === playerId) {
-      buildings += applyBpsFloor(ship.investedValue, ctx.settings.valuation.buildingValueBps);
     }
   }
   for (const v of Object.values(state.vehicles ?? {})) {
