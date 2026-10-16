@@ -578,6 +578,8 @@ export function playerView(
     tutorial: tutorialSteps,
     missions: missionsFor(ctx, state, playerId, now),
     pass: {
+      /** Off until it comes back: the profile only announces it. */
+      enabled: ctx.settings.pass.enabled,
       active: pass,
       until: player.passUntil ?? 0,
       perks: ctx.settings.pass,

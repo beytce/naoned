@@ -19,6 +19,20 @@ export function PassPanel({
 }) {
   const t = fr.game.pass;
   const pass = props.view.pass;
+  // Off until it comes back: only its announcement.
+  if (!pass.enabled) {
+    return (
+      <Panel glow="gold">
+        <div className="flex items-center gap-3">
+          <Emblem size={44} className="shrink-0" />
+          <div>
+            <Label className="text-gold">{t.title}</Label>
+            <p className="mt-0.5 text-sm">{t.coming}</p>
+          </div>
+        </div>
+      </Panel>
+    );
+  }
   const p = pass.perks;
   const perks = [
     p.marketMakerQuotaBps > 0 && t.perks.quota(p.marketMakerQuotaBps / 100),

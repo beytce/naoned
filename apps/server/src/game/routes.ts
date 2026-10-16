@@ -550,7 +550,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       .where(eq(accounts.id, account.id));
     return {
       publicKey: notifier.publicKey,
-      kinds: NOTIFICATION_KINDS,
+      // The Criée and good-deal alerts are the Pass's: not offered while it is off.
+      kinds: world.ctx.settings.pass.enabled
+        ? NOTIFICATION_KINDS
+        : NOTIFICATION_KINDS.filter((k) => k !== "criee" && k !== "deal"),
       off: row?.off ?? [],
     };
   });

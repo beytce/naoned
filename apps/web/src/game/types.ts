@@ -455,6 +455,8 @@ export interface PlayerView {
 }
 
 export interface PassView {
+  /** Off until it comes back: the profile only announces it. */
+  enabled: boolean;
   active: boolean;
   until: number;
   perks: {
