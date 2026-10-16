@@ -28,8 +28,8 @@ export const fr = {
     slides: [
       {
         kicker: "Le but du jeu",
-        title: "Devenez le marchand le plus riche de Venise",
-        text: "Une saison dure un mois : elle s'ouvre le 1er et se termine le dernier jour du mois. À la fin, le classement se fige : le plus gros chiffre de ventes nettes l'emporte. Vous partez avec 1 000 ducats et deux ou trois ateliers.",
+        title: "Devenez le premier marchand de Venise",
+        text: "Une saison dure un mois : elle s'ouvre le 1er et se termine le dernier jour du mois. À la fin, le classement se fige : le plus gros chiffre de ventes nettes l'emporte (ce que vous avez vendu, moins ce que vous avez acheté ; le stock ne compte pas). Vous partez avec 1 000 ducats et deux ou trois ateliers.",
       },
       {
         kicker: "Comment",
