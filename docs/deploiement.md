@@ -55,6 +55,19 @@ Les saisons suivent les mois civils (heure de Paris). Au premier démarrage, le 
 - **Pages légales** : mentions légales (`/mentions-legales`), politique de confidentialité (`/confidentialite`) et conditions d'utilisation (`/conditions`), liées depuis l'écran de connexion et le profil. **Avant d'ouvrir le jeu au public**, remplir dans `apps/web/src/legal/info.ts` ce qui s'affiche en rouge « à compléter » : adresse postale de l'éditeur, e-mail de contact, adresse de l'hébergeur, région d'hébergement choisie dans Railway, garanties des transferts de Railway et de Resend, durée de conservation des journaux. Faire relire les textes avant une diffusion large.
 - **Pass Négociant** : désactivé (`pass.enabled` à `false` dans les réglages du monde) ; le profil annonce son arrivée la saison prochaine.
 
+## Sécurité
+
+Voir `docs/audit-securite-2026-10.md`. En production, le serveur :
+
+- envoie une politique de sécurité du contenu (scripts du site seulement, jamais dans le cadre d'un autre site), `nosniff`, `Referrer-Policy` et HSTS ;
+- ne fait confiance qu'au **dernier** proxy pour l'adresse du client (`X-Forwarded-For`), celui de Railway. **Si l'on ajoute un proxy devant Railway (Cloudflare…)**, toutes les requêtes sembleraient venir de lui et partageraient les limites de connexion : il faudra alors faire confiance à un saut de plus dans `apps/server/src/app.ts` (`trustProxy`) ;
+- refuse les écritures et la ligne en direct ouvertes depuis une autre origine que `APP_URL` : `APP_URL` doit être exactement l'adresse publique du jeu ;
+- masque les jetons de connexion dans les journaux ;
+- limite le rythme par session (300 actions et 300 vues par minute, 60 messages, 30 abonnements push) et à 5 parties ouvertes par marchand ;
+- n'envoie les notifications push qu'aux services des navigateurs (Google, Mozilla, Microsoft, Apple).
+
+L'image tourne sous l'utilisateur `node`, pas `root`. La CI échoue si `pnpm audit --prod` signale une vulnérabilité haute.
+
 ## En local
 
 ```sh
@@ -91,4 +104,4 @@ docker build -t comptoirs .
 docker run -p 3000:3000 -e DATABASE_URL=… -e APP_URL=http://localhost:3000 -e RESEND_API_KEY=… comptoirs
 ```
 
-En cas de limite de téléchargement sur Docker Hub, l'image de base se change avec `--build-arg NODE_IMAGE=…`.
+En cas de limite de téléchargement sur Docker Hub, l'image de base se change avec `--build-arg NODE_IMAGE=…` (par exemple `mirror.gcr.io/library/node:22-slim`).

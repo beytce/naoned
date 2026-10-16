@@ -28,11 +28,17 @@ Périmètre : `apps/server` (Fastify, authentification, routes du jeu, WebSocket
 | 10 | Info | **Usurpation de pseudo** : les lettres Unicode autorisent des homoglyphes (« Contarіni » avec un і cyrillique). | Normaliser (NFKC) et refuser les mélanges d'alphabets, ou se limiter à l'alphabet latin étendu. |
 | 11 | Info | `esbuild` ≤ 0.24.2 (via Vite 5) : le serveur de développement répond à n'importe quel site. Sans effet en production. | Monter Vite à une version qui embarque esbuild ≥ 0.25 lors d'une prochaine mise à jour. |
 
-## Ordre conseillé
+## Corrigé le 16 octobre 2026
 
-1. Dépendances (#1) et SSRF push (#2) : une demi-journée, risque concret.
-2. `trustProxy` (#3), en-têtes (#4), journaux (#5) : quelques lignes dans `apps/server/src/app.ts`.
-3. Limites de débit du jeu et origine WebSocket (#6, #7, #8).
-4. Image Docker (#9) au prochain chantier de déploiement.
+| # | Correctif | Vérification |
+| --- | --- | --- |
+| 1 | `fastify` 5.12.7, `@fastify/static` 10.1.6, `drizzle-orm` 0.45.4, `drizzle-kit` 0.31.11, autres plugins Fastify et `tsx` à jour ; `pnpm audit --prod --audit-level high` dans la CI | `pnpm audit --prod` : aucune vulnérabilité ; `db:generate` : aucun changement de schéma |
+| 2 | `isPushEndpoint` : HTTPS, port par défaut, hôtes des services push uniquement ; 10 appareils par personne | `test/push.test.ts`, `test/notify.test.ts` |
+| 3 | `trustProxy` : seul le saut voisin (le proxy de Railway) est cru | `test/hardening.test.ts` (une adresse inventée en tête de `X-Forwarded-For` ne remet pas le compteur à zéro) |
+| 4 | CSP, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Cross-Origin-Opener-Policy`, HSTS en production | `test/hardening.test.ts` ; application construite servie par le serveur et parcourue dans Chromium (Rialto, carte, familles, ligne en direct) sans aucune violation de CSP |
+| 5 | Jetons masqués dans les URL journalisées (`redactUrl`) | `test/hardening.test.ts`, journaux du serveur |
+| 6 | Rythme par session : actions et vue 300 / min, messages de famille 60, adhésion et remise à zéro 30, abonnements push 30 ; 5 sockets par marchand, la plus ancienne fermée | `test/live.test.ts`, `test/hardening.test.ts` |
+| 7, 8 | Écritures et `/api/live` refusées (403) si l'en-tête `Origin` diffère de `APP_URL` | `test/hardening.test.ts` |
+| 9 | Image : `USER node`, serveur lancé sans pnpm (reçoit le signal d'arrêt) | image construite et lancée contre PostgreSQL 16 : `whoami` = `node`, `/api/health` OK, arrêt immédiat |
 
-Chaque correctif est petit, testable par un test d'intégration du serveur (Vitest + `app.inject`), et ne touche ni au moteur ni à l'équilibrage.
+Restent ouverts : #10 (homoglyphes dans les pseudos, à trancher) et #11 (Vite 5 en développement seulement). L'image embarque encore les dépendances de développement : l'alléger (`pnpm deploy --prod`) est un chantier à part, sans gain de sécurité immédiat maintenant qu'elle ne tourne plus en `root`.
