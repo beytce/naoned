@@ -725,3 +725,30 @@ Le tableau commun n'arrive plus en une fois à minuit : une vague de commandes d
 | Masse monétaire par joueur actif (maximum) | 0,91 × | 0,98 × | 0,88 × | 0,87 × | 0,90 × |
 
 **Lecture.** Autant de commandes prises qu'avant (environ neuf sur dix), mais deux fois plus vite après leur ouverture (un tiers dans l'heure, contre 15 %) et deux fois moins de commandes perdues au profit d'un autre à chaque session (26 à 30 contre environ 60) : chaque visite trouve des commandes fraîches au lieu d'un tableau vidé le matin. La monnaie payée baisse un peu (166 à 170 contre 175 à 180 ducats) : les commandes de la dernière vague, coupées à minuit, ont moins de temps.
+
+## Sans la mer ni les brigands : les galères de la Muda (16 octobre 2026)
+
+La mer (ports, flotte, corsaires) et le brigandage (bandes, escortes) sont retirés ; les marchandises d'outre-mer arrivent par les galères de la Muda : tous les 3 jours à 9 h, la Dogana vend au Rialto un lot par marchand actif (1 épice, 1 soie, 1 fourrure, 1 drap, 4 sels, 2 vins), au prix de référence lot plein et jusqu'à +60 % lot épuisé, avec un quota par marchand et par arrivée (`muda`). Une commande de ville sur treize demande une marchandise d'outre-mer (`deliveries.weights` 10 pour les biens du Veneto, 1 pour ceux d'outre-mer). L'Armateur devient le Marchand du Levant (quota doublé à la Muda), le Tarif du Levant la Charte du Levant (quota +50 % pour les membres, −25 % pour les autres).
+
+`pnpm sim`, 5 graines, **toutes conformes** ; `pnpm sim --players 40 --live`, 5 graines conformes.
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Lots de la Muda vendus | 91,3 % | 89,4 % | 92,6 % | 92,1 % | 90,1 % |
+| Marchands qui achètent à la Muda | 59 / 60 | 55 / 60 | 60 / 60 | 59 / 60 | 58 / 60 |
+| Ducats détruits par la Muda | 30 191 | 32 097 | 30 840 | 30 259 | 30 424 |
+| Commandes d'exotiques prises | 91,3 % | 91,1 % | 88,5 % | 89,2 % | 90,8 % |
+| Part des exotiques dans l'argent des livraisons | 21,3 % | 21,3 % | 20,8 % | 21,1 % | 21,2 % |
+| Monnaie payée (ducats / joueur actif / jour) | 178,7 | 183,7 | 182,8 | 181,1 | 179,0 |
+| Indice des prix du panier | 88 à 122 | 90 à 125 | 89 à 123 | 88 à 125 | 86 à 122 |
+| Ventes nettes médianes de la saison | 1 967 | 3 161 | 3 908 | 3 601 | 2 803 |
+| Avance d'une maîtrise à profil égal | 11,0 % | 127,2 % | 26,4 % | 188,2 % | 16,9 % |
+
+Petit monde (`--players 40 --live`) : 89 à 95 % des lots vendus, 38 à 40 acheteurs sur 40, 20 à 22 % de l'argent des livraisons pour les exotiques, indice des prix 90 à 128, ventes nettes médianes 3 700 à 4 600 ducats.
+
+**Lecture.**
+- Les galères trouvent preneur : neuf lots sur dix partent avant les suivantes, presque tous les marchands y achètent, et les commandes d'exotiques sont prises comme les autres. Une commande sur treize, mais un cinquième de l'argent des livraisons : ce sont les commandes chères du tableau.
+- La Muda est un nouveau puits (environ 30 000 ducats par saison sur 60 marchands) ; la monnaie payée pour les marchandises monte un peu (179 à 184 contre 166 à 170 ducats), parce que les exotiques se livrent avec une marge.
+- L'indice des prix bouge davantage (86 à 128 contre 93 à 100) : les exotiques, qui renchérissent à mesure que le lot s'épuise, entrent dans le panier. C'est un effet de la Muda, pas encore le marché vivant de la recommandation 2 de l'audit.
+- Les ventes nettes médianes baissent (2 000 à 3 900 contre 4 500 à 5 600) : les achats à la Muda se déduisent des ventes, seule la marge compte. Les paliers des titres (500 à 20 000 ducats) sont à revoir avec la progression des ateliers.
+- Le Marchand du Levant reste devant le Maître d'atelier sur deux graines sur cinq, souvent sur 2 ou 3 maisons seulement : même défaut que l'Armateur, à rééquilibrer avec les maîtrises (recommandation 5 de l'audit).
