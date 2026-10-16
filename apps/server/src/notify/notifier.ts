@@ -37,6 +37,7 @@ export const NOTIFICATION_KINDS = [
   "family",
   "siege",
   "delivery",
+  "muda",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -77,6 +78,7 @@ export class Notifier {
    */
   async fromEffects(fx: Effects, now: number): Promise<void> {
     await this.familyNews(fx, now);
+    await this.mudaNews(fx, now);
     const fills = fx.events.filter((e) => e.type === "order_filled" && e.playerId);
     if (fills.length === 0) return;
     const people = await this.people();
@@ -117,6 +119,18 @@ export class Notifier {
       n.data.counterpartyName = who === "market_maker" ? null : (name.get(who) ?? null);
     }
     await this.send([...grouped.values()], now);
+  }
+
+  /** The galleys of the Muda are in: everyone hears it, with what they brought. */
+  private async mudaNews(fx: Effects, now: number): Promise<void> {
+    const arrived = fx.events.find((e) => e.type === "muda_arrived");
+    if (!arrived) return;
+    const people = await this.people();
+    const stock = (arrived.data?.stock ?? {}) as Record<string, number>;
+    await this.send(
+      [...people].map((accountId) => ({ accountId, kind: "muda" as const, data: { stock } })),
+      now,
+    );
   }
 
   /**

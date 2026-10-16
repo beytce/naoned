@@ -36,6 +36,12 @@ const RESOURCES: Record<string, string> = {
   bricks: "briques",
   wood: "bois",
   planks: "planches",
+  spices: "épices",
+  silk: "soie",
+  salt: "sel",
+  wine: "vin",
+  furs: "fourrures",
+  cloth: "draps",
 };
 
 /** The families, the lands of the campaign and the decrees, by their codes. */
@@ -80,7 +86,7 @@ const DECREES: Record<string, string> = {
   gabelle: "une gabelle",
   faveur: "la faveur d'une ville",
   peage: "le péage de Terraferme",
-  levant: "le tarif du Levant",
+  levant: "la charte du Levant",
   calmiere: "un calmiere",
   franchise: "la franchise",
 };
@@ -118,6 +124,15 @@ export function pushText(
         title: "Livraison arrivée",
         body: `${data.quantity} ${RESOURCES[String(data.resource)] ?? String(data.resource)} livrés par ${road(data.route, cities)} : ${ducats(String(data.amount ?? "0"))} ducats encaissés.`,
       };
+    case "muda": {
+      const goods = Object.entries((data.stock ?? {}) as Record<string, number>)
+        .filter(([, q]) => q > 0)
+        .map(([r]) => RESOURCES[r] ?? r);
+      return {
+        title: "Les galères de la Muda sont à quai",
+        body: `La Dogana vend au Rialto ${goods.length > 0 ? goods.join(", ") : "les marchandises d'outre-mer"} : premiers arrivés, meilleurs prix.`,
+      };
+    }
     case "harvest":
       return {
         title: "Récolte prête",

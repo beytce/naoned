@@ -1,7 +1,9 @@
 import {
   type Deniers,
+  MARKET_MAKER,
   type WorldContext,
   type WorldState,
+  mudaGoods,
   netWorth,
   turnoverOf,
 } from "@comptoirs/engine";
@@ -46,10 +48,19 @@ interface Counts {
   days: number;
   builds: number;
   contracts: number;
-  voyages: number;
+  /** Purchases from the galleys of the Muda. */
+  muda: number;
 }
 
-async function counts(db: Db, worldId: string, playerId: string): Promise<Counts> {
+async function counts(db: Db, worldId: string, playerId: string, goods: string[]): Promise<Counts> {
+  const muda =
+    goods.length > 0
+      ? sql`(select count(*) from trades where world_id = ${worldId} and buyer_id = ${playerId}
+        and seller_id = ${MARKET_MAKER} and resource in (${sql.join(
+          goods.map((g) => sql`${g}`),
+          sql`, `,
+        )}))::int`
+      : sql`0`;
   const rows = await db.execute(sql`
     select
       (select count(*) from trades where world_id = ${worldId}
@@ -64,8 +75,7 @@ async function counts(db: Db, worldId: string, playerId: string): Promise<Counts
         and account_id = ${playerId}::uuid and type in ('build', 'upgrade'))::int as builds,
       (select count(*) from telemetry where world_id = ${worldId}
         and account_id = ${playerId}::uuid and type = 'contract_fulfilled')::int as contracts,
-      (select count(*) from telemetry where world_id = ${worldId}
-        and account_id = ${playerId}::uuid and type = 'expedition_returned')::int as voyages`);
+      ${muda} as muda`);
   const r = ((rows as { rows?: Record<string, number>[] }).rows ?? [])[0] ?? {};
   return {
     trades: Number(r.trades ?? 0),
@@ -74,7 +84,7 @@ async function counts(db: Db, worldId: string, playerId: string): Promise<Counts
     days: Number(r.days ?? 0),
     builds: Number(r.builds ?? 0),
     contracts: Number(r.contracts ?? 0),
-    voyages: Number(r.voyages ?? 0),
+    muda: Number(r.muda ?? 0),
   };
 }
 
@@ -91,7 +101,7 @@ export async function profile(
   if (!player) return null;
   const worth = netWorth(ctx, state, playerId, now);
   const buildings = Object.values(state.buildings).filter((b) => b.playerId === playerId);
-  const c = await counts(db, worldId, playerId);
+  const c = await counts(db, worldId, playerId, mudaGoods(ctx));
   const maxLevel = buildings.reduce((m, b) => Math.max(m, b.level), 0);
   const palazzo = buildings.find((b) => b.type === "palazzo")?.level ?? 0;
   const weekly = await weeklyRecord(db, worldId, playerId);
@@ -116,7 +126,7 @@ export async function profile(
     badge("palazzo", "Palais sur le Grand Canal", palazzo, 1),
     badge("days_7", "Fidèle au comptoir", c.days, 7),
     badge("contracts_10", "Fournisseur du Doge", c.contracts, 10),
-    badge("voyage_1", "Retour d'Orient", c.voyages, 1),
+    badge("muda_1", "Client de la Muda", c.muda, 1),
     badge("weekly_podium", "Sur le podium de la semaine", podiums, 1),
     badge("weekly_doge", "Doge de la semaine", wins, 1),
   ];

@@ -100,6 +100,37 @@ describe("profile and visuals", () => {
     expect(p.badges.find((b: { code: string }) => b.code === "first_trade").earned).toBe(true);
   });
 
+  it("sells the Muda's lot at the Dogana, a few units per merchant, with a trophy", async () => {
+    const cookie = await login("ada@example.org");
+    await post(cookie, "/api/game/join", { region: "lagoon" });
+    // The galleys come in 9 h into the season (this world opened at 8 h).
+    now += 10 * 3_600_000;
+    await world.execute({ type: "tick" });
+    const v = (await get(cookie)).json().view;
+    expect(v.muda.goods).toContain("spices");
+    expect(v.muda.stock.spices).toBeGreaterThan(0);
+    const quota = v.muda.left.spices;
+    expect(quota).toBeGreaterThan(0);
+    const spices = v.market.find((l: { resource: string }) => l.resource === "spices");
+    expect(spices.marketMaker.ask).toBe(v.muda.price.spices);
+    const res = await act(cookie, {
+      type: "instantOrder",
+      resource: "spices",
+      side: "buy",
+      quantity: quota + 2,
+    });
+    expect(res.statusCode).toBe(200);
+    const after = (await get(cookie)).json().view;
+    // As much as the quota and the quay allow.
+    const got = Math.min(quota, v.muda.stock.spices);
+    expect(after.muda.left.spices).toBe(quota - got);
+    expect(after.muda.stock.spices).toBe(v.muda.stock.spices - got);
+    const stock = after.inventory.find((l: { resource: string }) => l.resource === "spices");
+    expect(stock.available).toBe(got);
+    const p = (await get(cookie, "/api/game/profile")).json().profile;
+    expect(p.badges.find((b: { code: string }) => b.code === "muda_1").earned).toBe(true);
+  });
+
   it("returns hourly price history", async () => {
     const cookie = await login("ada@example.org");
     await post(cookie, "/api/game/join", { region: "lagoon" });

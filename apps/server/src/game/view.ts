@@ -16,10 +16,13 @@ import {
   fastBatchNext,
   freeBatches,
   houseLevels,
+  isMudaGood,
   marketMakerQuotaLeft,
   marketMakerQuotes,
   marketMakerReference,
   missionsFor,
+  mudaPrice,
+  mudaView,
   netWorth,
   openProjects,
   quoteCitySale,
@@ -446,7 +449,9 @@ export function playerView(
 
   const market = ctx.theme.resources.map((r) => {
     const reference = ctx.settings.referencePrices[r.code] ?? 0n;
-    const mm = marketMakerQuotes(ctx, marketMakerReference(ctx, state, r.code, now), now);
+    const quotes = marketMakerQuotes(ctx, marketMakerReference(ctx, state, r.code, now), now);
+    // Goods from overseas: the Dogana sells the Muda's lot at its own price.
+    const mm = isMudaGood(ctx, r.code) ? { ...quotes, ask: mudaPrice(ctx, state, r.code) } : quotes;
     return {
       resource: r.code,
       reference,
@@ -559,6 +564,8 @@ export function playerView(
     families: familiesView(ctx, state, playerId, now),
     gazette: { current: describe(activeEvent(ctx, now)), next: describe(nextEvent(ctx, now)) },
     road: roadView(ctx, state, playerId, now),
+    /** The galleys of the Muda: what is on the quay, at what price, and the merchant's quota. */
+    muda: ctx.settings.muda ? mudaView(ctx, state, playerId, now) : null,
     rations: {
       resource: ctx.settings.rations.resource,
       perDay: levels * ctx.settings.rations.perLevelPerDay,
