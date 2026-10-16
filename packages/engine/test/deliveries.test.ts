@@ -583,6 +583,45 @@ describe("a board shared by the world", () => {
     }
   });
 
+  it("asks for goods from overseas only when the galleys of the Muda bring them", () => {
+    const exotic = (muda: boolean) =>
+      shared({
+        referencePrices: { ...deliverySettings.referencePrices, spices: 1_500 },
+        cities: {
+          ...deliverySettings.cities,
+          padova: {
+            bread: { basePrice: 210, dailyCapacityPerPlayer: 45, maxDropBps: 5_000 },
+            spices: { basePrice: 1_700, dailyCapacityPerPlayer: 4, maxDropBps: 5_000 },
+          },
+        },
+        deliveries: {
+          ...testDeliveries,
+          quantity: { ...testDeliveries.quantity, spices: [2, 4] },
+          sharedOrdersPerActivePlayer: 12,
+        },
+        ...(muda
+          ? {
+              muda: {
+                everyDays: 3,
+                hour: 9,
+                lotPerActivePlayer: { spices: 2 },
+                quotaPerPlayer: { spices: 3 },
+                priceRiseBps: 5_000,
+                maxStockLots: 2,
+              },
+            }
+          : {}),
+      } as never).state.board?.orders.filter((o) => o.resource === "spices") ?? [];
+    expect(exotic(false)).toHaveLength(0);
+    const orders = exotic(true);
+    expect(orders.length).toBeGreaterThan(0);
+    for (const o of orders) {
+      expect(o.city).toBe("padova");
+      expect(o.quantity).toBeGreaterThanOrEqual(2);
+      expect(o.quantity).toBeLessThanOrEqual(4);
+    }
+  });
+
   it("goes to the first who sends a vehicle", () => {
     const w = shared();
     const o = common(w, "a").find((x) => x.kind === "city" && x.quantity <= 40) as DeliveryOrder;

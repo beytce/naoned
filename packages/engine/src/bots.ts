@@ -33,6 +33,7 @@ import { familiesOn, familiesOpenAt, familyCodes, membersOf, seatOf } from "./fa
 import { bestPrice, marketMakerQuotaLeft, maxOpenOrdersFor, openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
 import type { Deniers } from "./money.js";
+import { isMudaGood } from "./muda.js";
 import { freeBatches } from "./production.js";
 import { openProjects } from "./projects.js";
 import type { Rng } from "./rng.js";
@@ -213,7 +214,7 @@ export class Bot {
 
   /**
    * The mastery of the season, once the house has grown enough: by play style, and one house in
-   * four goes to sea.
+   * four trades with the Levant.
    */
   private chooseMastery(s: Session): void {
     const state = s.state();
@@ -228,7 +229,7 @@ export class Bot {
       speculator: "trader",
       casual: "master",
     };
-    const wanted = hash % 4 === 0 ? "shipowner" : (byProfile[this.profile.name] ?? "master");
+    const wanted = hash % 4 === 0 ? "levant" : (byProfile[this.profile.name] ?? "master");
     const specialty = options.includes(wanted) ? wanted : options[0];
     if (specialty) s.act({ type: "chooseSpecialty", playerId: this.id, specialty });
   }
@@ -350,6 +351,12 @@ export class Bot {
       if (o.kind === "doge" || o.kind === "family") {
         const missing = o.quantity - spare();
         if (missing > 0) this.buy(s, o.resource, missing, 1.15);
+      } else if (isMudaGood(s.ctx, o.resource) && spare() < o.quantity) {
+        // Goods from overseas: bought at the Muda when the order pays a tenth more.
+        const ask = this.bestAsk(s, o.resource);
+        if (ask !== undefined && scale(ask, 1.1) <= o.unitPrice) {
+          this.buy(s, o.resource, o.quantity - spare(), 1.6);
+        }
       }
       if (spare() < o.quantity) continue;
       // Fill the vehicle with the best other orders for the same city the stock covers.

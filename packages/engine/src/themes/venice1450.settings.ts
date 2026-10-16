@@ -123,6 +123,16 @@ export const venice1450Settings: WorldSettingsInput = {
   rations: { resource: "bread", perLevelPerDay: 2, slowdownBps: 5_000 },
   // Computer-run merchants fill the world up to this many active merchants (beta).
   bots: { population: 40 },
+  // The galleys of the Muda: every three days at 9 h, a lot of goods from overseas sold by the
+  // Dogana, up to 60 % dearer as it runs out, a few units per merchant and per arrival.
+  muda: {
+    everyDays: 3,
+    hour: 9,
+    lotPerActivePlayer: { spices: 1, silk: 1, furs: 1, cloth: 1, salt: 4, wine: 2 },
+    quotaPerPlayer: { spices: 3, silk: 3, furs: 2, cloth: 2, salt: 10, wine: 6 },
+    priceRiseBps: 6_000,
+    maxStockLots: 2,
+  },
   // Two orders of the Doge a day.
   contracts: {
     perDay: 2,
@@ -346,6 +356,29 @@ export const venice1450Settings: WorldSettingsInput = {
       flour: [8, 18],
       clay: [10, 25],
       wood: [10, 25],
+      // Goods from overseas, brought by the galleys of the Muda.
+      spices: [2, 4],
+      silk: [2, 4],
+      furs: [1, 3],
+      cloth: [1, 3],
+      salt: [5, 12],
+      wine: [3, 8],
+    },
+    // One city order in thirteen asks for goods from overseas.
+    weights: {
+      bread: 10,
+      bricks: 10,
+      planks: 10,
+      wheat: 10,
+      flour: 10,
+      clay: 10,
+      wood: 10,
+      spices: 1,
+      silk: 1,
+      furs: 1,
+      cloth: 1,
+      salt: 1,
+      wine: 1,
     },
     // Half the city orders are for the merchant's own chain, the rest for the others' goods.
     homeShareBps: 5_000,
@@ -615,6 +648,8 @@ export const venice1450Settings: WorldSettingsInput = {
       master: { transformYieldBps: 1_000 },
       carter: { vehicleSpeedBps: 2_500, extraVehicles: 1 },
       trader: { marketMakerQuotaBps: 2_500, taxDiscountBps: 200, extraOpenOrders: 3 },
+      // Marchand du Levant: twice the quota at the galleys of the Muda.
+      levant: { mudaQuotaBps: 10_000 },
     },
   },
   // Level 2 asks half the materials: a first upgrade within reach in the first days.

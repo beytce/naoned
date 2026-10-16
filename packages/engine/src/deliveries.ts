@@ -7,6 +7,7 @@ import { contractsDoneToday, contractsFor } from "./contracts.js";
 import { favourBps, tollOn, urgentReservedUntil } from "./decrees.js";
 import { draw, pickWeighted } from "./draw.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
+import { isMudaGood } from "./muda.js";
 import { maxVehiclesFor, specialtyEffects } from "./specialties.js";
 import {
   type BoardOrder,
@@ -551,8 +552,9 @@ export function ensureBoard(tx: Tx): void {
   const tier = (r: string) => ctx.theme.resources.find((x) => x.code === r)?.tier;
   const citiesBuying = (r: string) =>
     ctx.theme.cities.map((c) => c.code).filter((c) => ctx.settings.cities[c]?.[r]);
+  // Goods from overseas only while the galleys of the Muda bring them.
   const resources = Object.keys(cfg.quantity).filter(
-    (r) => tier(r) !== "luxury" && citiesBuying(r).length > 0,
+    (r) => (tier(r) !== "luxury" || isMudaGood(ctx, r)) && citiesBuying(r).length > 0,
   );
   const orders: BoardOrder[] = [];
   if (resources.length > 0) {

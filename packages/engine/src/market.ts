@@ -191,6 +191,9 @@ export function marketMakerQuotaLeft(
   const today = state.marketMaker.day === dayIndex(ctx, now);
   const mine = today ? state.marketMaker.byPlayer?.[playerId] : undefined;
   const left = (dir: "bought" | "sold") => {
+    if (dir === "bought" && isMudaGood(ctx, resource)) {
+      return mudaRoom(ctx, state, playerId, resource, now);
+    }
     const quota = playerQuota(ctx, state, resource, dir, now, playerId);
     return quota === undefined ? null : Math.max(0, quota - (mine?.[dir][resource] ?? 0));
   };
