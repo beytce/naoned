@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
+import { CityIcon } from "../../art/cities.js";
 import { Crest, type CrestData } from "../../art/crest.js";
 import { ResourceIcon } from "../../art/resources.js";
 import { Galley } from "../../art/scenes.js";
-import { CityGlyph, VehicleGlyph } from "../../art/veneto.js";
+import { VehicleGlyph } from "../../art/veneto.js";
 import { WorkGlyph } from "../../art/workIcon.js";
 
 /**
@@ -13,8 +14,8 @@ import { WorkGlyph } from "../../art/workIcon.js";
 
 /** Each city's stone, from its light side to its shadow. */
 const HUES: Record<string, [string, string, string]> = {
-  venezia: ["#9ED9C4", "#3F8C80", "#123536"],
-  padova: ["#F2B48A", "#B5603A", "#3D1A10"],
+  venezia: ["#A9CFF2", "#3F72B0", "#122640"],
+  padova: ["#9ED9C4", "#3F8C80", "#123536"],
   verona: ["#F4C2B8", "#B86E6A", "#3B1C1E"],
   vicenza: ["#F3DA9A", "#B88C3A", "#3A2A0E"],
   treviso: ["#C9E2A6", "#6E9A4E", "#1F2E14"],
@@ -84,9 +85,7 @@ export function CityMarker({
         className="marker-orb relative flex h-11 w-11 items-center justify-center rounded-full shadow-[0_6px_18px_rgb(0_0_0/0.55),inset_-4px_-6px_10px_rgb(0_0_0/0.35)]"
         style={orbStyle(code)}
       >
-        <svg viewBox="-14 -18 28 28" className="h-6 w-6 opacity-80" aria-hidden="true">
-          <CityGlyph />
-        </svg>
+        <CityIcon code={code} className="h-8 w-8 drop-shadow-[0_1px_1px_rgb(0_0_0/0.5)]" />
       </span>
       {(orders > 0 || criee) && (
         <span className="absolute -right-0.5 top-0.5 flex gap-0.5">

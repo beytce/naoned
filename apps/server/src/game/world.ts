@@ -4,8 +4,11 @@ import {
   type Effects,
   type GameEvent,
   type JournalTotals,
+  type LedgerEntry,
+  type LedgerReason,
   type WorldContext,
   type WorldState,
+  adoptTurnover,
   checkInvariants,
   createWorldState,
   decide,
@@ -550,7 +553,8 @@ async function loadWorld(
   const [saved] = await db.select().from(worldStates).where(eq(worldStates.worldId, world.id));
   if (saved) {
     // Saves from earlier versions are brought up to date before anything reads them.
-    const state = upgradeLegacyState(decode<WorldState>(saved.state));
+    const legacy = upgradeLegacyState(decode<WorldState>(saved.state));
+    const state = legacy.turnover ? legacy : await withTurnover(db, ctx, world.id, legacy);
     return { ctx, state, version: saved.version };
   }
   const state = createWorldState(ctx);
@@ -558,6 +562,37 @@ async function loadWorld(
     .insert(worldStates)
     .values({ worldId: world.id, version: 0, state: encode(state), owner });
   return { ctx, state, version: 0 };
+}
+
+/**
+ * A save from before the ranking by net sales: they are rebuilt from the season's ledger, summed
+ * per accounts and reason, before and after the start of the current week.
+ */
+async function withTurnover(
+  db: Db,
+  ctx: WorldContext,
+  worldId: string,
+  state: WorldState,
+): Promise<WorldState> {
+  const weekStartAt = ctx.startAt + (state.weekly?.week ?? 0) * 7 * 86_400_000;
+  const result = await db.execute(sql`
+    select from_account as "from", to_account as "to", reason,
+      at < ${new Date(weekStartAt)} as before, sum(amount)::text as amount
+    from ledger_entries where world_id = ${worldId}
+    group by 1, 2, 3, 4`);
+  const rows = (
+    result as unknown as {
+      rows: { from: string; to: string; reason: string; before: boolean; amount: string }[];
+    }
+  ).rows;
+  const entries: LedgerEntry[] = rows.map((r) => ({
+    from: r.from,
+    to: r.to,
+    reason: r.reason as LedgerReason,
+    amount: BigInt(r.amount),
+    at: r.before ? weekStartAt - 1 : weekStartAt,
+  }));
+  return adoptTurnover(state, entries, weekStartAt);
 }
 
 /** The saved state was written by another instance, or changed behind this one's back. */

@@ -128,6 +128,11 @@ export const Icon = {
       <path d="M6 16 V11 A6 6 0 0 1 18 11 V16 L20 18 H4 Z M10 21 H14" />
     </I>
   ),
+  upgrade: () => (
+    <I size={22}>
+      <path d="M12 19 V6 M6 11 L12 5 L18 11 M6 19 H18" />
+    </I>
+  ),
   plus: () => (
     <I size={22}>
       <path d="M12 5 V19 M5 12 H19" />

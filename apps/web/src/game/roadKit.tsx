@@ -29,19 +29,22 @@ export function canServe(props: GameProps, o: DeliveryOrderView, capacity: numbe
   );
 }
 
-/** The cartwright: vehicles for sale, their capacity, upkeep and cost. */
+/** The cartwright: vehicles for sale (a mule), their capacity, upkeep and cost. */
 export function BuyVehicleSheet({
   props,
   open,
   onClose,
 }: { props: GameProps; open: boolean; onClose: () => void }) {
-  const types = props.catalog.road?.vehicles ?? [];
-  const max = props.catalog.road?.maxVehicles ?? 0;
+  const road = props.catalog.road;
+  const types = (road?.vehicles ?? []).filter((v) => road?.forSale.includes(v.type) ?? true);
+  const max = road?.maxVehicles ?? 0;
   return (
     <Sheet open={open} onClose={onClose}>
       <div className="space-y-3">
         <h3 className="font-display text-xl font-extrabold uppercase">{t().buyTitle}</h3>
-        <p className="text-sm text-cream-dim">{t().maxVehicles(max)}</p>
+        <p className="text-sm text-cream-dim">
+          {t().maxVehicles(max)} {t().buyHint}
+        </p>
         {types.map((v) => (
           <Panel key={v.type} className="p-3">
             <div className="flex items-center justify-between gap-3">
@@ -70,6 +73,61 @@ export function BuyVehicleSheet({
           </Panel>
         ))}
       </div>
+    </Sheet>
+  );
+}
+
+/** The cartwright's yard: the next step of a vehicle (mule, cart, wagon, great wagon), for ducats. */
+export function UpgradeVehicleSheet({
+  props,
+  vehicle,
+  onClose,
+}: { props: GameProps; vehicle: VehicleView | null; onClose: () => void }) {
+  const types = props.catalog.road?.vehicles ?? [];
+  const def = vehicle ? types.find((x) => x.type === vehicle.type) : undefined;
+  const next = def?.upgrade ? types.find((x) => x.type === def.upgrade?.to) : undefined;
+  const cost = def?.upgrade ? BigInt(def.upgrade.costDucats) : 0n;
+  const home = !!vehicle && vehicle.busyUntil <= props.now;
+  const afford = BigInt(props.view.cash) >= cost;
+  const pct = (bps: number) => Math.round(bps / 100);
+  return (
+    <Sheet open={!!vehicle} onClose={onClose}>
+      {vehicle && def && (
+        <div className="space-y-3">
+          <h3 className="font-display text-xl font-extrabold uppercase">
+            {t().upgradeTitle(vehicleName(vehicle.type))}
+          </h3>
+          <p className="text-sm text-cream-dim">{t().upgradeHint}</p>
+          {next ? (
+            <Panel className="space-y-2 p-3">
+              <p className="font-display font-extrabold uppercase">
+                {t().upgradeTo(vehicleName(next.type))}
+              </p>
+              <p className="label">
+                {t().capacity(def.capacity)} → {t().capacity(next.capacity)}
+              </p>
+              <p className="label">
+                {t().speed(pct(def.speedBps))} → {t().speed(pct(next.speedBps))}
+              </p>
+              <p className="label">
+                {t().upkeep(d(def.upkeepPerDay))} → {t().upkeep(d(next.upkeepPerDay))}
+              </p>
+              {!home && <p className="text-sm text-cream-dim">{t().away}</p>}
+              <Slab
+                className="w-full"
+                disabled={props.busy || !home || !afford}
+                onClick={async () => {
+                  if (await props.act({ type: "upgradeVehicle", vehicleId: vehicle.id })) onClose();
+                }}
+              >
+                {t().upgrade(d(cost))}
+              </Slab>
+            </Panel>
+          ) : (
+            <p className="text-sm text-gold">{t().maxLevel}</p>
+          )}
+        </div>
+      )}
     </Sheet>
   );
 }

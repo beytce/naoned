@@ -14,7 +14,7 @@ import {
   travelMinutes,
 } from "../src/index.js";
 import { deliverySettings, testDeliveries, testSettings } from "./fixture.js";
-import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
+import { DAY, HOUR, MIN, T0, World, makeContext } from "./helpers.js";
 
 const ctx = (more: Partial<WorldSettingsInput> = {}) =>
   makeContext({ ...deliverySettings, ...more });
@@ -107,6 +107,88 @@ describe("vehicles", () => {
     const paid = (w: World, i: number) => (before[i] ?? 0n) - w.cash("a");
     // Cart 2 ducats and mule 1 ducat a day.
     expect(paid(withVehicles, 0) - paid(without, 1)).toBe(300n);
+  });
+});
+
+describe("upgrading vehicles", () => {
+  // Bought, a vehicle is always a mule; three upgrades for ducats make it bigger and faster.
+  const ladderAt = (muleUpgrade: number) =>
+    ({
+      deliveries: {
+        ...deliverySettings.deliveries,
+        vehicles: {
+          mule: {
+            ...testDeliveries.vehicles.mule,
+            upgrade: { to: "cart", costDucats: muleUpgrade },
+          },
+          cart: { ...testDeliveries.vehicles.cart, upgrade: { to: "wagon", costDucats: 8_000 } },
+          wagon: {
+            costDucats: 0,
+            capacity: 90,
+            speedBps: 13_000,
+            upkeepPerDay: 400,
+            upgrade: { to: "great_wagon", costDucats: 16_000 },
+          },
+          great_wagon: { costDucats: 0, capacity: 150, speedBps: 16_000, upkeepPerDay: 800 },
+        },
+        forSale: ["mule"],
+        startingVehicles: ["mule", "mule"],
+      },
+    }) as never;
+  const ladder = ladderAt(4_000);
+  const upgrade = (w: World, vehicleId: string, playerId = "a") =>
+    w.try({ type: "upgradeVehicle", playerId, vehicleId });
+
+  it("buys only what is for sale: a mule", () => {
+    const w = world(ladder);
+    expect(vehiclesOf(w, "a").map((v) => v.type)).toEqual(["mule", "mule"]);
+    expect(error(w.try({ type: "buyVehicle", playerId: "a", vehicleType: "cart" }))).toBe(
+      "vehicle_not_for_sale",
+    );
+    expect(error(w.try({ type: "buyVehicle", playerId: "a", vehicleType: "mule" }))).toBe("ok");
+  });
+
+  it("climbs mule, cart, wagon, great wagon for ducats, which leave the game", () => {
+    const w = world(ladder);
+    const [mule] = vehiclesOf(w, "a");
+    const id = mule?.id ?? "";
+    const invested = mule?.investedValue ?? 0n;
+    const cash = w.cash("a");
+    const sink = w.state.accounts["system:sink"] ?? 0n;
+    const first = upgrade(w, id);
+    expect(first.ok && first.effects.events.map((e) => e.type)).toContain("vehicle_upgraded");
+    expect(w.state.vehicles?.[id]?.type).toBe("cart");
+    expect(w.cash("a")).toBe(cash - 4_000n);
+    expect(w.state.accounts["system:sink"]).toBe(sink + 4_000n);
+    // Counted in net worth at what it cost.
+    expect(w.state.vehicles?.[id]?.investedValue).toBe(invested + 4_000n);
+    expect(error(upgrade(w, id))).toBe("ok");
+    expect(error(upgrade(w, id))).toBe("ok");
+    expect(w.state.vehicles?.[id]?.type).toBe("great_wagon");
+    expect(w.cash("a")).toBe(cash - 28_000n);
+    expect(error(upgrade(w, id))).toBe("vehicle_max_level");
+    expect(checkInvariants(w.state, w.totals)).toEqual([]);
+  });
+
+  it("goes faster once upgraded", () => {
+    const w = world(ladder);
+    const before = travelMinutes(w.ctx, "terraferma", "padova", "mule");
+    const after = travelMinutes(w.ctx, "terraferma", "padova", "great_wagon");
+    expect(after ?? 0).toBeLessThan(before ?? 0);
+  });
+
+  it("only at home, by its owner, with the ducats", () => {
+    const w = world(ladder);
+    const [mule] = vehiclesOf(w, "a");
+    const id = mule?.id ?? "";
+    expect(error(upgrade(w, id, "b"))).toBe("not_owner");
+    expect(error(upgrade(w, "v999"))).toBe("unknown_vehicle");
+    expect(error(dispatch(w, pick(w).id, "none", "a", id))).toBe("ok");
+    expect(error(upgrade(w, id))).toBe("vehicle_busy");
+
+    const poor = world(ladderAt(1_000_000_000));
+    const [other] = vehiclesOf(poor, "a");
+    expect(error(upgrade(poor, other?.id ?? ""))).toBe("insufficient_funds");
   });
 });
 
@@ -438,6 +520,33 @@ describe("a board shared by the world", () => {
   };
   const common = (w: World, playerId: string, day = 0) =>
     deliveryOrdersFor(w.ctx, w.state, playerId, day).filter((o) => o.shared);
+
+  it("comes in waves through the day when set, each order open for a while", () => {
+    const waves = {
+      ...testDeliveries,
+      quantity: { ...testDeliveries.quantity, wheat: [10, 20] },
+      sharedOrdersPerActivePlayer: 6,
+      waves: { everyHours: 4, openHours: 8 },
+    };
+    const w = shared({ deliveries: waves } as never);
+    const city = w.state.board?.orders.filter((o) => o.kind === "city") ?? [];
+    // As many orders a day as without waves, spread over six waves.
+    expect(city).toHaveLength(18);
+    const opens = [...new Set(city.map((o) => (o.opensAt - T0) / HOUR))].sort((a, b) => a - b);
+    expect(opens).toEqual([0, 4, 8, 12, 16, 20]);
+    for (const o of city) {
+      expect(city.filter((x) => x.opensAt === o.opensAt)).toHaveLength(3);
+      // Eight hours, cut at midnight when the next board is drawn.
+      expect(o.expiresAt).toBe(Math.min(o.opensAt + 8 * HOUR, T0 + DAY));
+    }
+    // At 9 h, the waves of 0 h (closed at 8 h), 12 h and later are not open.
+    const open = common(w, "a").filter(
+      (o) => o.kind === "city" && o.opensAt <= w.now && w.now < o.expiresAt,
+    );
+    expect(open.map((o) => (o.opensAt - T0) / HOUR).sort()).toEqual([4, 4, 4, 8, 8, 8]);
+    const later = common(w, "a").find((o) => o.kind === "city" && o.opensAt > w.now);
+    expect(error(dispatch(w, later?.id ?? ""))).toBe("order_not_open");
+  });
 
   it("is drawn once a day for the whole world, in proportion to the active merchants", () => {
     const w = shared();

@@ -48,6 +48,7 @@ import {
   type Building,
   type DecreePick,
   MARKET_MAKER,
+  type Vehicle,
   type WorldContext,
   type WorldState,
   cashAccount,
@@ -308,11 +309,13 @@ export class Bot {
   private garage(s: Session, waiting: number): void {
     const { deliveries } = s.ctx.settings;
     const mine = vehiclesOf(s.state(), this.id);
-    if (waiting === 0 || mine.length >= Math.min(this.profile.vehicles, deliveries.maxVehicles))
+    // Enough vehicles: the purse goes into a bigger, faster one.
+    if (waiting === 0 || mine.length >= Math.min(this.profile.vehicles, deliveries.maxVehicles)) {
+      this.upgradeOne(s, mine);
       return;
-    const type = Object.keys(deliveries.vehicles).includes("cart")
-      ? "cart"
-      : Object.keys(deliveries.vehicles)[0];
+    }
+    const forSale = deliveries.forSale ?? Object.keys(deliveries.vehicles);
+    const type = forSale.includes("cart") ? "cart" : forSale[0];
     const def = type ? deliveries.vehicles[type] : undefined;
     if (!type || !def || this.cash(s) < def.costDucats * 3n) return;
     for (const [res, qty] of Object.entries(def.costMaterials)) {
@@ -320,6 +323,17 @@ export class Bot {
       if (missing > 0) this.buy(s, res, missing, 1.15);
     }
     if (s.act({ type: "buyVehicle", playerId: this.id, vehicleType: type })) this.deliver(s);
+  }
+
+  /** The smallest vehicle at home goes up a step, if the purse allows (three times its cost). */
+  private upgradeOne(s: Session, mine: Vehicle[]): void {
+    const types = s.ctx.settings.deliveries.vehicles;
+    const candidate = mine
+      .filter((v) => vehicleFree(v, s.now) && types[v.type]?.upgrade)
+      .sort((a, b) => (types[a.type]?.capacity ?? 0) - (types[b.type]?.capacity ?? 0))[0];
+    const step = candidate ? types[candidate.type]?.upgrade : undefined;
+    if (!candidate || !step || this.cash(s) < step.costDucats * 3n) return;
+    s.act({ type: "upgradeVehicle", playerId: this.id, vehicleId: candidate.id });
   }
 
   /**

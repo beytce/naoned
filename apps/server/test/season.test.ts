@@ -94,12 +94,15 @@ describe("seasons on calendar months", () => {
     world.onSeasonOpened((id) => void notifier.seasonOpened(id));
     const ada = await player("ada@example.org");
     const bob = await player("bob@example.org", "lagoon");
-    await app.inject({
+    // Ada sells at the Dogana: net sales rank the season.
+    await world.execute({ type: "tick" });
+    const sold = await app.inject({
       method: "POST",
       url: "/api/game/actions",
       headers: { cookie: ada },
-      payload: { type: "sellToCity", city: "venezia", resource: "bread", quantity: 10 },
+      payload: { type: "instantOrder", resource: "bread", side: "sell", quantity: 10 },
     });
+    expect(sold.json().error).toBeUndefined();
     const first = world.id;
 
     now = Date.parse("2026-10-31T23:30:00Z");
@@ -142,6 +145,11 @@ describe("seasons on calendar months", () => {
     const prof = await get(ada, "/api/game/profile");
     expect(prof.palmares.renown.points).toBe(back.ceremony.renown);
     expect(prof.palmares.seasons[0]).toMatchObject({ rank: 1, award: "Doge de la saison" });
+    // The level carries the net sales of the season over: it never starts again.
+    const sales = Number(BigInt(prof.palmares.seasons[0].turnover) / 100n);
+    expect(sales).toBeGreaterThan(0);
+    expect(joined.level.xp).toBe(sales);
+    expect(prof.level.xp).toBe(sales);
 
     await new Promise((r) => setTimeout(r, 50));
     const bell = await get(bob, "/api/notifications");
@@ -203,21 +211,24 @@ describe("rehearsing the end of a season", () => {
 describe("season milestones", () => {
   const ducats = (n: number) => BigInt(n) * 100n;
 
+  // Thresholds in ducats of net sales of the season.
   it("give renown for the title reached, whatever the rank", () => {
-    expect(milestoneFor(ducats(2_000))).toMatchObject({ code: "peddler", renown: 0 });
-    expect(milestoneFor(ducats(5_000))).toMatchObject({ code: "merchant", renown: 5 });
-    expect(milestoneFor(ducats(9_000))).toMatchObject({ code: "trader", renown: 10 });
-    expect(milestoneFor(ducats(60_000))).toMatchObject({ code: "doge", renown: 30 });
+    expect(milestoneFor(ducats(400))).toMatchObject({ code: "peddler", renown: 0 });
+    expect(milestoneFor(ducats(2_000))).toMatchObject({ code: "merchant", renown: 5 });
+    expect(milestoneFor(ducats(3_500))).toMatchObject({ code: "trader", renown: 10 });
+    expect(milestoneFor(ducats(25_000))).toMatchObject({ code: "doge", renown: 30 });
+    // A season sold at a loss holds no title.
+    expect(milestoneFor(ducats(-500))).toMatchObject({ code: "peddler", renown: 0 });
   });
 
   it("add to the renown of the rank, even far from the podium", () => {
     // 51st of 200 after two days: no tier, but a Négociant.
-    expect(seasonReward(51, 200, 2, ducats(9_000))).toEqual({
+    expect(seasonReward(51, 200, 2, ducats(3_500))).toEqual({
       tier: "none",
       milestone: "trader",
       renown: 10,
     });
-    expect(seasonReward(1, 200, 30, ducats(60_000))).toEqual({
+    expect(seasonReward(1, 200, 30, ducats(25_000))).toEqual({
       tier: "doge",
       milestone: "doge",
       renown: 130,

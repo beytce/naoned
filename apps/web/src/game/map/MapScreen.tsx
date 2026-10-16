@@ -18,7 +18,14 @@ import { ProfileSheet } from "../Profil.js";
 import { RankingSheet } from "../Top.js";
 import { onBack } from "../back.js";
 import { d, minutesLabel } from "../format.js";
-import { BuyVehicleSheet, canServe, capacityOf, total, vehicleName } from "../roadKit.js";
+import {
+  BuyVehicleSheet,
+  UpgradeVehicleSheet,
+  canServe,
+  capacityOf,
+  total,
+  vehicleName,
+} from "../roadKit.js";
 import type { DeliveryView, VehicleView } from "../types.js";
 import { useWide } from "../useWide.js";
 import { have, readyOf } from "../workshops.js";
@@ -84,6 +91,7 @@ export function MapScreen(
   const [escort, setEscort] = useState("none");
   const [cargoCity, setCargoCity] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
+  const [upgrading, setUpgrading] = useState<string | null>(null);
 
   const cities = useMemo(
     () => catalog.cities.map((c) => c.code).filter((c) => PLACES[c] !== undefined),
@@ -348,6 +356,7 @@ export function MapScreen(
           onPrev={vehicles.length > 1 ? () => step(-1) : undefined}
           onNext={vehicles.length > 1 ? () => step(1) : undefined}
           onCargo={() => openCargo(selectedCart.id, null)}
+          onUpgrade={() => setUpgrading(selectedCart.id)}
           onSend={() => cartHold?.city && startDeparture(selectedCart.id, cartHold.city)}
           onFollow={() => map.current?.show(`cart:${selectedCart.id}`)}
         />
@@ -410,6 +419,7 @@ export function MapScreen(
         pseudo={pseudo || m.home("")}
         crest={crest}
         title={view.standing.title.current.name}
+        level={props.level?.level ?? null}
         rank={view.standing.rank}
         seasonProgress={seasonProgress}
         cash={view.cash}
@@ -417,11 +427,13 @@ export function MapScreen(
         carts={vehicles.length}
         canBuyCart={!!road && vehicles.length < maxCarts}
         notices={notice > 0 ? notice : view.player.upkeepDefaultUntil > now || !!criee}
+        bales={view.tutorial.includes("mission") ? (view.bales?.available ?? 0) : 0}
         guidePaused={props.guidePaused}
         bottom={!panelUp}
         hasFamily={!!view.families}
         layer={sea ? "sea" : campaign ? "campaign" : "trade"}
         familyCalls={familyCalls(props)}
+        workshopsReady={ready > 0}
         right={
           sea ? (
             <SeaHud props={props} />
@@ -431,10 +443,12 @@ export function MapScreen(
         }
         onProfile={() => props.setSheet("profile")}
         onNotices={() => props.setSheet("notices")}
+        onBales={() => props.setSheet("bales")}
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
         onRanking={() => props.setSheet("ranking")}
         onFamily={() => (campaign || sea ? props.setLayer("trade") : props.goTo("famille"))}
+        onWorkshops={() => props.setSheet("workshops")}
         onHelp={props.openHelp}
       />
       {panel}
@@ -453,6 +467,13 @@ export function MapScreen(
         onRead={props.onRead}
       />
       {road && <BuyVehicleSheet props={props} open={buying} onClose={() => setBuying(false)} />}
+      {road && (
+        <UpgradeVehicleSheet
+          props={props}
+          vehicle={vehicles.find((v) => v.id === upgrading) ?? null}
+          onClose={() => setUpgrading(null)}
+        />
+      )}
       <Sheet
         open={!!cargoVehicle && !!road}
         onClose={() => {
@@ -703,6 +724,7 @@ function CartPanel({
   onPrev,
   onNext,
   onCargo,
+  onUpgrade,
   onSend,
   onFollow,
 }: {
@@ -717,11 +739,13 @@ function CartPanel({
   onPrev?: () => void;
   onNext?: () => void;
   onCargo: () => void;
+  onUpgrade: () => void;
   onSend: () => void;
   onFollow: () => void;
 }) {
   const { now } = props;
   const m = fr.game.map;
+  const canUpgrade = !!props.catalog.road?.vehicles.find((x) => x.type === vehicle.type)?.upgrade;
   const title = (
     <>
       {vehicleName(vehicle.type)}{" "}
@@ -809,6 +833,9 @@ function CartPanel({
             disabled={!loadCity}
             onClick={onSend}
           />
+          {canUpgrade && (
+            <ActionButton icon={Icon.upgrade()} label={m.buttons.upgrade} onClick={onUpgrade} />
+          )}
         </>
       }
     />

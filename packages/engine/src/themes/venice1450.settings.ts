@@ -122,7 +122,7 @@ export const venice1450Settings: WorldSettingsInput = {
   },
   rations: { resource: "bread", perLevelPerDay: 2, slowdownBps: 5_000 },
   // Computer-run merchants fill the world up to this many active merchants (beta).
-  bots: { population: 15 },
+  bots: { population: 40 },
   // Two orders of the Doge a day.
   contracts: {
     perDay: 2,
@@ -424,7 +424,7 @@ export const venice1450Settings: WorldSettingsInput = {
       day: 3,
       event: "vehicle_bought",
       count: 1,
-      reward: { goods: { planks: 10 } },
+      reward: { goods: {}, ducats: 3_000 },
     },
     { id: "first_ship", day: 5, event: "ship_built", count: 1, reward: { goods: { planks: 15 } } },
     // Opens with the bandits (`bandits.openDay`).
@@ -479,6 +479,8 @@ export const venice1450Settings: WorldSettingsInput = {
     // Shared demand: the cities' orders form one board for the world, first come first served
     // (four city orders per active merchant: vehicles fill up with several of them).
     sharedOrdersPerActivePlayer: 4,
+    // In waves: new city orders every 4 hours, each open 8 hours, rather than all at midnight.
+    waves: { everyHours: 4, openHours: 8 },
     welcome: {
       terraferma: { resource: "bread", quantity: 12 },
       lagoon: { resource: "bricks", quantity: 8 },
@@ -516,13 +518,16 @@ export const venice1450Settings: WorldSettingsInput = {
     maxDeliveryMinutes: 120,
     // A vehicle carries up to four orders together, all for the same city.
     maxOrdersPerLoad: 4,
+    // Bought, a vehicle is always a mule; three upgrades for ducats (destroyed), made at home, make
+    // it carry more and go faster. The costs of the upper steps value the vehicles won.
     vehicles: {
       mule: {
         costDucats: 8_000,
         costMaterials: {},
-        capacity: 15,
+        capacity: 25,
         speedBps: 7_500,
         upkeepPerDay: 300,
+        upgrade: { to: "cart", costDucats: 8_000 },
       },
       cart: {
         costDucats: 15_000,
@@ -530,6 +535,7 @@ export const venice1450Settings: WorldSettingsInput = {
         capacity: 40,
         speedBps: 10_000,
         upkeepPerDay: 600,
+        upgrade: { to: "wagon", costDucats: 16_000 },
       },
       wagon: {
         costDucats: 30_000,
@@ -537,10 +543,19 @@ export const venice1450Settings: WorldSettingsInput = {
         capacity: 90,
         speedBps: 13_000,
         upkeepPerDay: 1_200,
+        upgrade: { to: "great_wagon", costDucats: 32_000 },
+      },
+      great_wagon: {
+        costDucats: 64_000,
+        costMaterials: {},
+        capacity: 150,
+        speedBps: 16_000,
+        upkeepPerDay: 2_000,
       },
     },
-    // A cart and a mule: two orders on the road from the first day.
-    startingVehicles: ["cart", "mule"],
+    forSale: ["mule"],
+    // Two mules: two orders on the road from the first day, to be upgraded.
+    startingVehicles: ["mule", "mule"],
     maxVehicles: 4,
     escorts: {
       guards: { costBps: 400, defense: 2 },

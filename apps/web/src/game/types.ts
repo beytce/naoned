@@ -83,6 +83,8 @@ export interface VehicleType {
   capacity: number;
   speedBps: number;
   upkeepPerDay: Money;
+  /** The next step, for ducats, made at home. */
+  upgrade?: { to: string; costDucats: Money };
 }
 
 export interface RoadRules {
@@ -90,6 +92,8 @@ export interface RoadRules {
   routes: Record<string, Record<string, number>>;
   vehicles: VehicleType[];
   maxVehicles: number;
+  /** Types that may be bought (a mule); the others are reached by upgrading. */
+  forSale: string[];
   maxDeliveryMinutes: number;
   /** Orders a vehicle may carry together, all for the same city. */
   maxOrdersPerLoad: number;
@@ -556,6 +560,8 @@ export interface PlayerView {
   standing: {
     rank: number | null;
     players: number;
+    /** Net sales of the season (sales less purchases): what the ranking counts. */
+    turnover: Money;
     title: { index: number; current: Title; next: Title | null; progress: number };
     seasonEndsAt: number;
   };
@@ -713,6 +719,17 @@ export interface GameResponse {
   passPrices?: { season: number; week: number };
   /** The closing ceremony of the last season, until watched. */
   ceremony?: Ceremony;
+  /** The merchant's permanent level (honorary). */
+  level?: Level;
+}
+
+/** Permanent level: one point per ducat of net sales, every season; it never goes back. */
+export interface Level {
+  level: number;
+  xp: number;
+  from: number;
+  to: number;
+  progress: number;
 }
 
 export interface Ceremony {
@@ -721,6 +738,8 @@ export interface Ceremony {
   rank: number;
   players: number;
   worth: Money;
+  /** Net sales of the season, which ranked it (absent for seasons ranked by net worth). */
+  turnover: Money | null;
   tier: string;
   award: string;
   /** Title held at the close and the renown it added (included in `renown`). */
@@ -728,7 +747,13 @@ export interface Ceremony {
   renown: number;
   passDays: number | "season";
   totalRenown: Renown;
-  podium: { rank: number; pseudo: string | null; crest: CrestData | null; worth: Money }[];
+  podium: {
+    rank: number;
+    pseudo: string | null;
+    crest: CrestData | null;
+    worth: Money;
+    turnover: Money | null;
+  }[];
 }
 
 export interface Renown {
@@ -745,6 +770,7 @@ export interface Palmares {
     rank: number;
     players: number;
     worth: Money;
+    turnover: Money | null;
     tier: string;
     award: string;
     milestone: { name: string; renown: number };
@@ -811,6 +837,10 @@ export interface RankingRow {
   /** Mastery of the season, if chosen. */
   specialty?: string | null;
   netWorth: Money;
+  /** Net sales of the season (sales less purchases): what ranks it. */
+  turnover: Money;
+  /** Permanent level (honorary). */
+  level: number;
   crest: CrestData | null;
   me: boolean;
   /** Computer-run merchant. */
@@ -826,7 +856,9 @@ export interface WeekRow {
   crest: CrestData | null;
   bot: boolean;
   me: boolean;
-  /** Net worth gained this week, in deniers (may be negative). */
+  /** Permanent level (honorary). */
+  level?: number;
+  /** Net sales this week (sales less purchases), in deniers (may be negative). */
   gain: Money;
 }
 
@@ -862,6 +894,8 @@ export interface Profile {
   title: { index: number; current: Title; next: Title | null; progress: number };
   titles: Title[];
   netWorth: { cash: Money; stock: Money; buildings: Money; total: Money };
+  /** Net sales of the season: the ranking and the titles. */
+  turnover: Money;
   rank: number | null;
   players: number;
   buildings: number;
@@ -912,6 +946,7 @@ export type Action =
   | { type: "commissionPrivateers"; route: string; ships: string[] }
   | { type: "collectRaid"; raidId: string }
   | { type: "buyVehicle"; vehicleType: string }
+  | { type: "upgradeVehicle"; vehicleId: string }
   | {
       type: "dispatchDelivery";
       orderId: string;

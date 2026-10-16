@@ -39,6 +39,7 @@ import type {
   Catalog,
   Ceremony as CeremonyData,
   GameResponse,
+  Level,
   PlayerView,
   PriceSeries,
   Welcome as WelcomeData,
@@ -96,6 +97,8 @@ export interface GameProps {
   onGuidePaused: () => void;
   /** The latest message of the family's thread (to tell whether it was read). */
   familyLatestAt: number | null;
+  /** The merchant's permanent level (honorary). */
+  level: Level | null;
 }
 
 const POLL_MS = 15_000;
@@ -134,6 +137,7 @@ export function Game(props: {
   const [guideKey, setGuideKey] = useState(0);
   const [unread, setUnread] = useState(0);
   const [familyLatestAt, setFamilyLatestAt] = useState<number | null>(null);
+  const [level, setLevel] = useState<Level | null>(null);
   const loaded = useRef(false);
   const [welcome, setWelcome] = useState<WelcomeData | null>(null);
   const [ceremony, setCeremony] = useState<CeremonyData | null>(null);
@@ -164,6 +168,7 @@ export function Game(props: {
         return res.unread ?? 0;
       });
       setFamilyLatestAt(res.familyLatestAt ?? null);
+      setLevel(res.level ?? null);
       if (res.welcome) setWelcome(res.welcome);
       setCeremony(res.ceremony ?? null);
       setPassInfo({ upcomingPass: res.upcomingPass, passPrices: res.passPrices });
@@ -387,6 +392,7 @@ export function Game(props: {
     names,
     people,
     familyLatestAt,
+    level,
     bots,
     tab:
       layer === "campaign"

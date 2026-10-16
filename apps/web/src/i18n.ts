@@ -29,7 +29,7 @@ export const fr = {
       {
         kicker: "Le but du jeu",
         title: "Devenez le marchand le plus riche de Venise",
-        text: "Une saison dure un mois : elle s'ouvre le 1er et se termine le dernier jour du mois. À la fin, le classement se fige : le plus gros patrimoine l'emporte. Vous partez avec 1 000 ducats et deux ou trois ateliers.",
+        text: "Une saison dure un mois : elle s'ouvre le 1er et se termine le dernier jour du mois. À la fin, le classement se fige : le plus gros chiffre de ventes nettes l'emporte. Vous partez avec 1 000 ducats et deux ou trois ateliers.",
       },
       {
         kicker: "Comment",
@@ -81,7 +81,8 @@ export const fr = {
       prev: "Précédent",
       next: "Suivant",
       notices: "Avis",
-      buyCart: "Acheter une charrette",
+      bales: (n: number) => (n > 1 ? `${n} ballots à ouvrir` : "Un ballot à ouvrir"),
+      buyCart: "Acheter une mule",
       carts: "Charrettes libres",
       resumeGuide: "Reprendre le guide",
       buttons: {
@@ -96,6 +97,7 @@ export const fr = {
         cancel: "Annuler",
         react: "Riposter",
         follow: "Suivre",
+        upgrade: "Améliorer",
         rialto: "Rialto",
         port: "Port",
         criee: "Criée",
@@ -286,12 +288,26 @@ export const fr = {
       watchedWarning:
         "Des brigands guettent cette route. Une escorte vous protège même absent ; sans escorte, vous aurez quelques minutes pour riposter.",
       vehicles: "Vos véhicules",
-      vehicleNames: { mule: "Mule", cart: "Charrette", wagon: "Chariot" } as Record<string, string>,
+      vehicleNames: {
+        mule: "Mule",
+        cart: "Charrette",
+        wagon: "Chariot",
+        great_wagon: "Grand chariot",
+      } as Record<string, string>,
       free: "Libre",
       backIn: (time: string) => `De retour dans ${time}`,
       capacity: (n: number) => `${n} unités`,
       buy: "Acheter",
       buyTitle: "Acheter un véhicule",
+      buyHint: "Tout véhicule s'achète mule ; améliorez-le ensuite au comptoir.",
+      upgradeTitle: (name: string) => `Améliorer : ${name}`,
+      upgradeHint:
+        "Mule, charrette, chariot, grand chariot : chaque amélioration porte plus et va plus vite. Le véhicule doit être au comptoir.",
+      upgradeTo: (name: string) => `Devient : ${name}`,
+      speed: (pct: number) => `Vitesse ${pct} %`,
+      upgrade: (cost: string) => `Améliorer · ${cost}`,
+      maxLevel: "Plus haut niveau atteint.",
+      away: "De retour au comptoir, il pourra être amélioré.",
       upkeep: (amount: string) => `Entretien ${amount} / jour`,
       maxVehicles: (n: number) => `${n} véhicules au plus.`,
       sheet: {
@@ -782,9 +798,9 @@ export const fr = {
 
     goal: {
       kicker: "Objectif de la saison",
-      title: "Le plus gros patrimoine de Venise",
+      title: "Les plus grosses ventes de Venise",
       rank: (rank: number, total: number) => `Rang ${rank} / ${total}`,
-      worth: "Votre patrimoine",
+      worth: "Vos ventes nettes",
       nextTitle: (name: string, amount: string) => `${name} à ${amount}`,
       left: "Fin de saison dans",
     },
@@ -954,6 +970,14 @@ export const fr = {
       hint: "Touchez un atelier pour récolter ou produire, une charrette pour la charger, l'entrepôt pour votre stock, un ouvrier pour ses rations. Glissez le doigt sur les ateliers prêts pour tout récolter d'un geste.",
       title: (n: number, levels: number) =>
         `Votre domaine : ${n} atelier${n > 1 ? "s" : ""}, ${levels} niveau${levels > 1 ? "x" : ""} en tout`,
+    },
+    workshopsSheet: {
+      ready: "prêts",
+      running: "en cours",
+      idle: "à l'arrêt",
+      collectAll: (n: number) => (n > 1 ? `Tout récolter (${n} lots)` : "Récolter"),
+      restartAll: "Tout relancer",
+      whatsMissing: "Voir ce qui manque",
     },
     workshop: {
       ready: (q: number, res: string) => `Prêt : ${q} ${res.toLowerCase()} à récolter`,
@@ -1377,13 +1401,13 @@ export const fr = {
         procurator: "Procurateur",
         senator: "Sénateur",
       } as Record<string, string>,
-      help: "Gain de patrimoine depuis le début de la semaine (ou depuis votre arrivée), en ducats. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
+      help: "Ventes nettes depuis le début de la semaine (ou depuis votre arrivée), en ducats : ce que vous avez vendu, moins ce que vous avez acheté. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
     },
     season: {
       closed: (name: string) => `La saison ${name} est close`,
       rankOf: (rank: number, players: number) =>
         `${rank}${rank === 1 ? "er" : "e"} sur ${players} marchand${players > 1 ? "s" : ""}`,
-      worth: "Patrimoine final",
+      worth: "Ventes nettes de la saison",
       podium: "Le podium",
       rewards: "Vos récompenses",
       passSeason: "Pass Négociant pour toute la nouvelle saison",
@@ -1397,7 +1421,7 @@ export const fr = {
             ? `${name} : +${n} de Renommée assurés à la fin du mois.`
             : `${name} : pas encore de Renommée de palier.`,
         next: (name: string, worth: string, n: number) =>
-          `Prochain palier : ${name}, à ${worth} de patrimoine (+${n} de Renommée), quel que soit votre rang.`,
+          `Prochain palier : ${name}, à ${worth} de ventes nettes (+${n} de Renommée), quel que soit votre rang.`,
         top: "Plus haut palier atteint : tenez-le jusqu'à la fin du mois.",
       },
       renownTotal: (name: string, points: number) => `${name} · ${points} points de Renommée`,
@@ -1432,12 +1456,19 @@ export const fr = {
       "PNJ : maisons marchandes tenues par l'ordinateur, avec les mêmes règles que vous. Elles animent le monde tant qu'il compte peu de joueurs et se retirent à mesure que de vrais marchands arrivent.",
     anonymous: "Marchand anonyme",
     rankingHelp:
-      "Patrimoine = caisse + stocks (au plus bas du prix de référence et du prix moyen sur 7 jours) + bâtiments à leur coût.",
+      "Ventes nettes = tout ce que vous avez vendu (Rialto, Dogana, livraisons, commandes du Doge), taxes et péages déduits, moins tout ce que vous avez acheté. Le stock et les bâtiments ne comptent pas.",
 
     profileTitle: "Ma progression",
     nextTitle: (name: string) => `Prochain titre : ${name}`,
     maxTitle: "Titre suprême atteint",
     netWorth: "Patrimoine",
+    turnover: "Ventes nettes",
+    merchantLevel: {
+      short: (n: number) => `Niv. ${n}`,
+      title: (n: number) => `Niveau ${n}`,
+      progress: (xp: string, to: string) => `${xp} / ${to} points`,
+      help: "Votre niveau ne redescend jamais : chaque ducat de ventes nettes vous rapporte un point, saison après saison. Il est honorifique : aucun avantage en jeu, chaque saison tout le monde repart à égalité.",
+    },
     cash: "Caisse",
     stockValue: "Stocks",
     buildingsValue: "Bâtiments",
@@ -1568,7 +1599,7 @@ export const fr = {
       {
         icon: "top",
         title: "Classement",
-        text: "Votre patrimoine compte votre caisse, vos stocks et vos bâtiments. Les meilleurs reçoivent des récompenses cosmétiques à la fin de la saison.",
+        text: "Le classement compte vos ventes nettes : ce que vous vendez, moins ce que vous achetez. Un stock qui dort ne compte pas : vendez votre production. Les meilleurs reçoivent des récompenses cosmétiques à la fin de la saison.",
       },
       {
         icon: "profil",
@@ -1581,6 +1612,8 @@ export const fr = {
       no_bale: "Aucun ballot au quai pour l'instant : le prochain est en route.",
       bales_off: "Pas de ballot de Faraj dans ce monde.",
       insufficient_funds: "Pas assez de ducats.",
+      vehicle_not_for_sale: "Seules les mules s'achètent : améliorez-les ensuite.",
+      vehicle_max_level: "Ce véhicule est déjà au plus haut niveau.",
       insufficient_stock: "Pas assez de stock.",
       building_busy: "Cet atelier produit déjà : attendez la fin de la file.",
       queue_full: "La file de production est pleine (12 h maximum).",

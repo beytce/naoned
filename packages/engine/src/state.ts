@@ -361,6 +361,8 @@ export interface WorldState {
   >;
   /** Faraj's bales, per player (absent: none opened yet, see `bales.ts`). */
   bales?: Record<PlayerId, BaleState>;
+  /** Net sales of the season, per merchant: the ranking (see `turnover.ts`). */
+  turnover?: Record<PlayerId, Deniers>;
   vehicles?: Record<string, Vehicle>;
   deliveries?: Record<string, Delivery>;
   bands?: Record<string, BanditBand>;

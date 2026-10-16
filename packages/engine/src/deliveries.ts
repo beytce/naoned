@@ -101,6 +101,7 @@ export function buyVehicle(tx: Tx, playerId: PlayerId, type: string): Vehicle {
   const { deliveries } = tx.ctx.settings;
   const def = deliveries.vehicles[type];
   if (!def) fail("unknown_vehicle_type");
+  if (deliveries.forSale && !deliveries.forSale.includes(type)) fail("vehicle_not_for_sale");
   const state = tx.s as WorldState;
   if (vehiclesOf(state, playerId).length >= maxVehiclesFor(tx.ctx, state, playerId))
     fail("max_vehicles");
@@ -111,6 +112,23 @@ export function buyVehicle(tx: Tx, playerId: PlayerId, type: string): Vehicle {
   }
   emit(tx, "vehicle_bought", playerId, { vehicle: vehicle.id, type });
   return vehicle;
+}
+
+/** One step up the ladder (mule, cart, wagon…) for ducats, which leave the game; at home only. */
+export function upgradeVehicle(tx: Tx, playerId: PlayerId, vehicleId: string): Vehicle {
+  const vehicle = tx.s.vehicles?.[vehicleId];
+  if (!vehicle) fail("unknown_vehicle");
+  if (vehicle.playerId !== playerId) fail("not_owner");
+  if (!vehicleFree(vehicle as Vehicle, tx.now)) fail("vehicle_busy");
+  const step = tx.ctx.settings.deliveries.vehicles[vehicle.type]?.upgrade;
+  if (!step) fail("vehicle_max_level");
+  if (!tx.ctx.settings.deliveries.vehicles[step.to]) fail("unknown_vehicle_type");
+  transfer(tx, cashAccount(playerId), SINK_ACCOUNT, step.costDucats, "vehicle", vehicle.id);
+  const from = vehicle.type;
+  vehicle.type = step.to;
+  vehicle.investedValue += step.costDucats;
+  emit(tx, "vehicle_upgraded", playerId, { vehicle: vehicle.id, from, type: step.to });
+  return vehicle as Vehicle;
 }
 
 // ——— Roads ———
@@ -572,6 +590,15 @@ export function ensureBoard(tx: Tx): void {
       return { resource, city: list[(h >>> 8) % list.length] ?? "" };
     };
     const total = cfg.sharedOrdersPerActivePlayer * active;
+    // City orders by rank: the n-th goes to wave n modulo the waves of the day.
+    const every = (cfg.waves?.everyHours ?? 24) * HOUR_MS;
+    const perDay = Math.max(1, Math.floor(DAY_MS / every));
+    let rank = 0;
+    const wave = (): [number, number] => {
+      const opensAt = dayStart + (rank++ % perDay) * every;
+      const open = cfg.waves ? cfg.waves.openHours * HOUR_MS : DAY_MS;
+      return [opensAt, Math.min(expiresAt, opensAt + open)];
+    };
     // Where the market asks for more: the same share of the board as on a personal board.
     const asked = resources.flatMap((resource) =>
       citiesBuying(resource)
@@ -588,13 +615,13 @@ export function ensureBoard(tx: Tx): void {
     for (let i = 0; i < askedCount; i++) {
       const key = `board-event:${day}:${i}`;
       const pair = asked[draw(ctx, key) % asked.length] as (typeof asked)[number];
-      add(`e${i}`, "city", pair.resource, pair.city, key, dayStart, expiresAt);
+      add(`e${i}`, "city", pair.resource, pair.city, key, ...wave());
     }
     // Keyed by rank: a larger board holds the smaller one of the same day.
     for (let i = 0; i < total - askedCount; i++) {
       const key = `board:${day}:${i}`;
       const o = random(key);
-      add(`w${i}`, "city", o.resource, o.city, key, dayStart, expiresAt);
+      add(`w${i}`, "city", o.resource, o.city, key, ...wave());
     }
     for (let i = 0; i < cfg.urgentPerDay * active; i++) {
       const key = `board-urgent:${day}:${i}`;

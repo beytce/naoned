@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BaleArt } from "../../art/bale.js";
 import { Crest, type CrestData } from "../../art/crest.js";
 import { Coin } from "../../art/icons.js";
 import { Lorenzo } from "../../art/scenes.js";
@@ -84,6 +85,7 @@ export function MapHud({
   pseudo,
   crest,
   title,
+  level,
   rank,
   seasonProgress,
   cash,
@@ -91,23 +93,29 @@ export function MapHud({
   carts,
   canBuyCart,
   notices,
+  bales,
   guidePaused,
   bottom,
   hasFamily,
   layer,
   familyCalls,
+  workshopsReady,
   right,
   onProfile,
   onNotices,
+  onBales,
   onBuyCart,
   onResumeGuide,
   onRanking,
   onFamily,
+  onWorkshops,
   onHelp,
 }: {
   pseudo: string;
   crest: CrestData;
   title: string;
+  /** Permanent level (honorary), once known. */
+  level: number | null;
   rank: number | null;
   seasonProgress: number;
   cash: string;
@@ -115,6 +123,8 @@ export function MapHud({
   carts: number;
   canBuyCart: boolean;
   notices: number | boolean;
+  /** Bales of Faraj waiting to be opened: a small round under the bell while there are any. */
+  bales: number;
   guidePaused: boolean;
   /** The round doors at the foot (hidden while a panel is up). */
   bottom: boolean;
@@ -123,14 +133,18 @@ export function MapHud({
   layer: "trade" | "campaign" | "sea";
   /** Something waits at the family (a levy, a threat, a message, an invitation). */
   familyCalls: boolean;
+  /** Batches waiting at the workshops (a dot on their door). */
+  workshopsReady: boolean;
   /** Replaces the purse's column on the right (the families' glory on the campaign). */
   right?: ReactNode;
   onProfile: () => void;
   onNotices: () => void;
+  onBales: () => void;
   onBuyCart: () => void;
   onResumeGuide: () => void;
   onRanking: () => void;
   onFamily: () => void;
+  onWorkshops: () => void;
   onHelp: () => void;
 }) {
   const m = fr.game.map;
@@ -162,14 +176,22 @@ export function MapHud({
               onClick={onRanking}
               className="block text-left font-mono text-[10.5px] uppercase tracking-[0.1em] text-cream-dim"
             >
+              {level !== null && <>{fr.game.merchantLevel.short(level)} · </>}
               {title} · <span className="text-gold">#{rank ?? "—"}</span>
             </button>
           </span>
         </div>
         <div className="flex gap-2 pl-[7px]">
-          <Orb label={m.notices} onClick={onNotices} badge={notices} coach="hud-notices">
-            {Icon.bell()}
-          </Orb>
+          <span className="flex flex-col items-center gap-1.5">
+            <Orb label={m.notices} onClick={onNotices} badge={notices} coach="hud-notices">
+              {Icon.bell()}
+            </Orb>
+            {bales > 0 && (
+              <Orb label={m.bales(bales)} onClick={onBales} badge={bales} size={34} tone="gold">
+                <BaleArt size={26} className="bale-float" />
+              </Orb>
+            )}
+          </span>
           {guidePaused && (
             <Orb label={m.resumeGuide} onClick={onResumeGuide} tone="gold">
               <Lorenzo size={30} />
@@ -207,6 +229,16 @@ export function MapHud({
       {right}
       {bottom && (
         <nav className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex justify-center gap-7 lg:bottom-6">
+          {layer === "trade" && (
+            <Door
+              label={m.buttons.workshops}
+              onClick={onWorkshops}
+              dot={workshopsReady}
+              coach="door-workshops"
+            >
+              {Icon.workshops()}
+            </Door>
+          )}
           <Door label={m.buttons.ranking} onClick={onRanking}>
             {Icon.trophy()}
           </Door>

@@ -33,6 +33,7 @@ import {
   shipsOf,
   specialtyUnlocked,
   stockUnitValue,
+  turnoverOf,
   upkeepPerDay,
   vwap,
   watchedRoutes,
@@ -421,6 +422,8 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
             ...v,
           })),
           maxVehicles: settings.deliveries.maxVehicles,
+          /** Types that may be bought; the others are reached by upgrading. */
+          forSale: settings.deliveries.forSale ?? Object.keys(settings.deliveries.vehicles),
           maxDeliveryMinutes: settings.deliveries.maxDeliveryMinutes,
           /** Orders a vehicle may carry together, all for the same city. */
           maxOrdersPerLoad: settings.deliveries.maxOrdersPerLoad,
@@ -673,7 +676,9 @@ export function playerView(
     standing: {
       rank: mine?.rank ?? null,
       players: table.length,
-      title: titleFor(worth.total),
+      /** Net sales of the season (sales less purchases): what the ranking counts. */
+      turnover: turnoverOf(state, playerId),
+      title: titleFor(turnoverOf(state, playerId)),
       seasonEndsAt: seasonEnd(ctx),
     },
     /** The season's acts (the variant of each one is told once it has begun). */
@@ -753,15 +758,19 @@ export function ranking(
 ) {
   const unitValues: Record<string, Deniers> = {};
   for (const r of ctx.theme.resources) unitValues[r.code] = stockUnitValue(ctx, state, r.code, now);
-  return Object.keys(state.players)
-    .filter((id) => id !== MARKET_MAKER && !hidden.has(id))
-    .map((id) => ({
-      playerId: id,
-      pseudo: pseudos.get(id) ?? null,
-      region: state.players[id]?.region ?? "",
-      specialty: state.players[id]?.specialty ?? null,
-      netWorth: netWorth(ctx, state, id, now, unitValues).total,
-    }))
-    .sort((a, b) => (a.netWorth > b.netWorth ? -1 : a.netWorth < b.netWorth ? 1 : 0))
-    .map((row, i) => ({ rank: i + 1, ...row }));
+  return (
+    Object.keys(state.players)
+      .filter((id) => id !== MARKET_MAKER && !hidden.has(id))
+      .map((id) => ({
+        playerId: id,
+        pseudo: pseudos.get(id) ?? null,
+        region: state.players[id]?.region ?? "",
+        specialty: state.players[id]?.specialty ?? null,
+        netWorth: netWorth(ctx, state, id, now, unitValues).total,
+        turnover: turnoverOf(state, id),
+      }))
+      // Net sales rank the season; stock and buildings do not.
+      .sort((a, b) => (a.turnover > b.turnover ? -1 : a.turnover < b.turnover ? 1 : 0))
+      .map((row, i) => ({ rank: i + 1, ...row }))
+  );
 }

@@ -48,7 +48,7 @@ export function Ceremony({
       </Big>
       <p className="mt-2 text-cream-dim">{t.rankOf(data.rank, data.players)}</p>
       <p className="label mt-1">
-        {t.worth} · {d(data.worth)}
+        {data.turnover === null ? fr.game.netWorth : t.worth} · {d(data.turnover ?? data.worth)}
       </p>
 
       {podium.length > 0 && (

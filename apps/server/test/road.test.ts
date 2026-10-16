@@ -133,21 +133,23 @@ describe("the road", () => {
     expect((await act(bob, { type: "collectBooty", bandId: band.id })).error).toBeUndefined();
   });
 
-  it("buys a vehicle and lists the road in the catalog", async () => {
+  it("buys a mule, upgrades it, and lists the road in the catalog", async () => {
     const ada = await player("ada@example.org");
-    await app.inject({
-      method: "POST",
-      url: "/api/game/actions",
-      headers: { cookie: ada },
-      payload: { type: "instantOrder", resource: "planks", side: "buy", quantity: 10 },
-    });
-    await world.execute({ type: "tick" });
-    await act(ada, { type: "instantOrder", resource: "planks", side: "buy", quantity: 10 });
-    const bought = await act(ada, { type: "buyVehicle", vehicleType: "cart" });
+    const cart = await act(ada, { type: "buyVehicle", vehicleType: "cart" });
+    expect(cart.error).toBe("vehicle_not_for_sale");
+    const bought = await act(ada, { type: "buyVehicle", vehicleType: "mule" });
     expect(bought.error).toBeUndefined();
     expect(bought.view.road.vehicles).toHaveLength(3);
+    const mule = bought.view.road.vehicles[2] as { id: string; type: string };
+    expect(mule.type).toBe("mule");
+    const upgraded = await act(ada, { type: "upgradeVehicle", vehicleId: mule.id });
+    expect(upgraded.error).toBeUndefined();
+    expect(upgraded.view.road.vehicles.find((v: { id: string }) => v.id === mule.id)?.type).toBe(
+      "cart",
+    );
     const catalog = (await app.inject({ method: "GET", url: "/api/game/catalog" })).json();
-    expect(catalog.road.vehicles.map((v: { type: string }) => v.type)).toContain("cart");
+    expect(catalog.road.vehicles.map((v: { type: string }) => v.type)).toContain("great_wagon");
+    expect(catalog.road.forSale).toEqual(["mule"]);
     expect(catalog.road.routes.terraferma.padova).toBe(30);
     expect(catalog.cities.map((c: { code: string }) => c.code)).toContain("ferrara");
   });
@@ -156,6 +158,8 @@ describe("the road", () => {
     smallOrders(world);
     // A fuller board, so that some city asks for bread twice whatever the world's draw.
     world.ctx.settings.deliveries.sharedOrdersPerActivePlayer = 12;
+    // All of them open at once (no waves through the day).
+    world.ctx.settings.deliveries.waves = undefined;
     const ada = await player("ada@example.org");
     const view = (await get(ada)).view;
     expect(
@@ -169,7 +173,7 @@ describe("the road", () => {
     for (const o of open) byCity.set(o.city, [...(byCity.get(o.city) ?? []), o]);
     const same = [...byCity.values()].sort((a, b) => b.length - a.length)[0]?.slice(0, 2) ?? [];
     expect(same.length).toBe(2);
-    const cart = view.road.vehicles.find((v: { type: string }) => v.type === "cart");
+    const cart = view.road.vehicles[0];
     const sent = await act(ada, {
       type: "dispatchDelivery",
       orderId: same[0]?.id,

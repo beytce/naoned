@@ -13,6 +13,7 @@ import {
   isActive,
   netWorth,
   stockUnitValue,
+  turnoverOf,
 } from "@comptoirs/engine";
 
 export interface DayFlows {
@@ -114,6 +115,8 @@ export interface PlayerRow {
   specialty: string;
   cash: Deniers;
   netWorth: Deniers;
+  /** Net sales of the season (sales less purchases): the ranking. */
+  turnover: Deniers;
 }
 
 export function gini(values: number[]): number {
@@ -185,6 +188,7 @@ export function snapshot(
       specialty: p.specialty ?? "",
       cash: state.accounts[cashAccount(bot.id)] ?? 0n,
       netWorth: nw,
+      turnover: turnoverOf(state, bot.id),
     });
   }
 

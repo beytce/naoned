@@ -10,6 +10,7 @@ import {
   type WorldState,
 } from "./state.js";
 import type { ResourceCode } from "./theme.js";
+import { recordTurnover } from "./turnover.js";
 
 export type EngineErrorCode =
   | "unknown_player"
@@ -103,6 +104,8 @@ export type EngineErrorCode =
   | "unknown_vehicle"
   | "max_vehicles"
   | "vehicle_busy"
+  | "vehicle_not_for_sale"
+  | "vehicle_max_level"
   | "over_capacity"
   | "several_cities"
   | "too_many_orders"
@@ -177,7 +180,9 @@ export function transfer(
   if (fromBalance < 0n && from !== SOURCE_ACCOUNT) fail("insufficient_funds");
   tx.s.accounts[from] = fromBalance;
   tx.s.accounts[to] = balance(tx, to) + amount;
-  tx.fx.ledger.push({ from, to, amount, reason, ref, at: tx.now });
+  const entry = { from, to, amount, reason, ref, at: tx.now };
+  tx.fx.ledger.push(entry);
+  recordTurnover(tx.s as WorldState, entry);
 }
 
 export function inventoryLine(tx: Tx, playerId: PlayerId, resource: ResourceCode): InventoryLine {
