@@ -587,7 +587,9 @@ export const venice1450Settings: WorldSettingsInput = {
   levelYieldBonusBps: 2_500,
   maxBuildings: 12,
   maxBuildingLevel: 5,
-  levelCostGrowthBps: 5_000,
+  // Each level costs 35 % of the first more (it adds more than that with the yield bonus): an
+  // upgrade is a better buy than a new workshop, so houses grow in depth.
+  levelCostGrowthBps: 3_500,
   // The season in four acts, one a week (the last runs to the end of the month).
   acts: [
     { code: "installation", week: 0, variants: [] },
@@ -649,11 +651,11 @@ export const venice1450Settings: WorldSettingsInput = {
   specialties: {
     unlockLevels: 5,
     options: {
-      master: { transformYieldBps: 1_000 },
+      master: { transformYieldBps: 1_500 },
       carter: { vehicleSpeedBps: 2_500, extraVehicles: 1 },
       trader: { marketMakerQuotaBps: 2_500, taxDiscountBps: 200, extraOpenOrders: 3 },
-      // Marchand du Levant: twice the quota at the galleys of the Muda.
-      levant: { mudaQuotaBps: 10_000 },
+      // Marchand du Levant: half as much again at the galleys of the Muda.
+      levant: { mudaQuotaBps: 5_000 },
     },
   },
   // Level 2 asks half the materials: a first upgrade within reach in the first days.
