@@ -64,7 +64,7 @@ export function PalmaresView({ data }: { data: Palmares }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{s.season}</p>
                 <p className="text-xs text-cream-dim">
-                  {fr.game.season.rankOf(s.rank, s.players)} · {d(s.worth)}
+                  {fr.game.season.rankOf(s.rank, s.players)} · {d(s.turnover ?? s.worth)}
                   {s.milestone.renown > 0 && ` · ${s.milestone.name}`}
                 </p>
               </div>

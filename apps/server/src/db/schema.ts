@@ -199,7 +199,8 @@ export const weeklyResults = pgTable(
 );
 
 /**
- * Final ranking of a season (people only): rank among people, net worth, reward tier and renown
+ * Final ranking of a season (people only): rank among people (by net sales), net sales and net
+ * worth, reward tier and renown
  * earned. `seenAt` is set once the player has watched the closing ceremony.
  */
 export const seasonResults = pgTable(
@@ -214,6 +215,8 @@ export const seasonResults = pgTable(
     rank: integer("rank").notNull(),
     players: integer("players").notNull(),
     worth: bigint("worth", { mode: "bigint" }).notNull(),
+    /** Net sales of the season (sales less purchases), which rank it; absent before them. */
+    turnover: bigint("turnover", { mode: "bigint" }),
     /** doge, podium, top10, elite, notable, participant or none. */
     tier: text("tier").notNull(),
     /** Title held at the close (season milestone); its renown is included in `renown`. */

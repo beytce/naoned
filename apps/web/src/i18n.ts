@@ -29,7 +29,7 @@ export const fr = {
       {
         kicker: "Le but du jeu",
         title: "Devenez le marchand le plus riche de Venise",
-        text: "Une saison dure un mois : elle s'ouvre le 1er et se termine le dernier jour du mois. À la fin, le classement se fige : le plus gros patrimoine l'emporte. Vous partez avec 1 000 ducats et deux ou trois ateliers.",
+        text: "Une saison dure un mois : elle s'ouvre le 1er et se termine le dernier jour du mois. À la fin, le classement se fige : le plus gros chiffre de ventes nettes l'emporte. Vous partez avec 1 000 ducats et deux ou trois ateliers.",
       },
       {
         kicker: "Comment",
@@ -798,9 +798,9 @@ export const fr = {
 
     goal: {
       kicker: "Objectif de la saison",
-      title: "Le plus gros patrimoine de Venise",
+      title: "Les plus grosses ventes de Venise",
       rank: (rank: number, total: number) => `Rang ${rank} / ${total}`,
-      worth: "Votre patrimoine",
+      worth: "Vos ventes nettes",
       nextTitle: (name: string, amount: string) => `${name} à ${amount}`,
       left: "Fin de saison dans",
     },
@@ -1393,13 +1393,13 @@ export const fr = {
         procurator: "Procurateur",
         senator: "Sénateur",
       } as Record<string, string>,
-      help: "Gain de patrimoine depuis le début de la semaine (ou depuis votre arrivée), en ducats. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
+      help: "Ventes nettes depuis le début de la semaine (ou depuis votre arrivée), en ducats : ce que vous avez vendu, moins ce que vous avez acheté. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
     },
     season: {
       closed: (name: string) => `La saison ${name} est close`,
       rankOf: (rank: number, players: number) =>
         `${rank}${rank === 1 ? "er" : "e"} sur ${players} marchand${players > 1 ? "s" : ""}`,
-      worth: "Patrimoine final",
+      worth: "Ventes nettes de la saison",
       podium: "Le podium",
       rewards: "Vos récompenses",
       passSeason: "Pass Négociant pour toute la nouvelle saison",
@@ -1413,7 +1413,7 @@ export const fr = {
             ? `${name} : +${n} de Renommée assurés à la fin du mois.`
             : `${name} : pas encore de Renommée de palier.`,
         next: (name: string, worth: string, n: number) =>
-          `Prochain palier : ${name}, à ${worth} de patrimoine (+${n} de Renommée), quel que soit votre rang.`,
+          `Prochain palier : ${name}, à ${worth} de ventes nettes (+${n} de Renommée), quel que soit votre rang.`,
         top: "Plus haut palier atteint : tenez-le jusqu'à la fin du mois.",
       },
       renownTotal: (name: string, points: number) => `${name} · ${points} points de Renommée`,
@@ -1448,7 +1448,7 @@ export const fr = {
       "PNJ : maisons marchandes tenues par l'ordinateur, avec les mêmes règles que vous. Elles animent le monde tant qu'il compte peu de joueurs et se retirent à mesure que de vrais marchands arrivent.",
     anonymous: "Marchand anonyme",
     rankingHelp:
-      "Patrimoine = caisse + stocks (au plus bas du prix de référence et du prix moyen sur 7 jours) + bâtiments à leur coût.",
+      "Ventes nettes = tout ce que vous avez vendu (Rialto, Dogana, livraisons, commandes du Doge), taxes et péages déduits, moins tout ce que vous avez acheté. Le stock et les bâtiments ne comptent pas.",
 
     profileTitle: "Ma progression",
     nextTitle: (name: string) => `Prochain titre : ${name}`,
@@ -1584,7 +1584,7 @@ export const fr = {
       {
         icon: "top",
         title: "Classement",
-        text: "Votre patrimoine compte votre caisse, vos stocks et vos bâtiments. Les meilleurs reçoivent des récompenses cosmétiques à la fin de la saison.",
+        text: "Le classement compte vos ventes nettes : ce que vous vendez, moins ce que vous achetez. Un stock qui dort ne compte pas : vendez votre production. Les meilleurs reçoivent des récompenses cosmétiques à la fin de la saison.",
       },
       {
         icon: "profil",

@@ -1,10 +1,17 @@
-import { type Deniers, type WorldContext, type WorldState, netWorth } from "@comptoirs/engine";
+import {
+  type Deniers,
+  type WorldContext,
+  type WorldState,
+  netWorth,
+  turnoverOf,
+} from "@comptoirs/engine";
 import { sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { weeklyRecord } from "./weekly.js";
 
 /**
- * Merchant titles, from net worth (ducats). Cosmetic only: a title never changes the economy.
+ * Merchant titles, from the net sales of the season (ducats), like the ranking. Cosmetic only: a
+ * title never changes the economy.
  * The title held when the season closes is its milestone: it adds `renown`, whatever the rank.
  * Thresholds are a first guess, to be tuned with the beta.
  */
@@ -116,9 +123,10 @@ export async function profile(
   return {
     region: player.region,
     joinedAt: player.joinedAt,
-    title: titleFor(worth.total),
+    title: titleFor(turnoverOf(state, playerId)),
     titles: TITLES,
     netWorth: worth,
+    turnover: turnoverOf(state, playerId),
     rank: rank.rank,
     players: rank.total,
     buildings: buildings.length,

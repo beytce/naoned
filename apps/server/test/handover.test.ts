@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { type Database, openDatabase } from "../src/db/client.js";
+import { accounts } from "../src/db/schema.js";
 import { GameWorld } from "../src/game/world.js";
 import { testDatabase } from "./db.js";
 
@@ -64,6 +65,34 @@ describe("a save from an earlier version", () => {
     const fresh = await GameWorld.open(database.db, () => now + 60_000);
     expect(fresh.current.families).toBeUndefined();
     expect((await fresh.execute({ type: "tick" })).ok).toBe(true);
+  });
+});
+
+describe("a save from before the ranking by net sales", () => {
+  it("rebuilds them from the ledger", async () => {
+    const old = await GameWorld.open(database.db, () => now);
+    const [ada] = await database.db
+      .insert(accounts)
+      .values({ email: "ada@example.org", pseudo: "Ada" })
+      .returning({ id: accounts.id });
+    const id = ada?.id ?? "";
+    await old.execute({ type: "join", playerId: id, region: "terraferma" });
+    await old.execute({ type: "tick" });
+    const sold = await old.execute({
+      type: "placeOrder",
+      playerId: id,
+      resource: "bread",
+      side: "sell",
+      kind: "instant",
+      quantity: 10,
+    });
+    expect(sold).toMatchObject({ ok: true });
+    const sales = old.current.turnover?.[id] ?? 0n;
+    expect(sales).toBeGreaterThan(0n);
+    await database.db.execute(sql`update world_states set state = state::jsonb - 'turnover'`);
+    const fresh = await GameWorld.open(database.db, () => now + 60_000);
+    expect(fresh.current.turnover?.[id]).toBe(sales);
+    expect(fresh.current.weekly?.start[id]).toBe(0n);
   });
 });
 

@@ -124,7 +124,7 @@ function Podium({
   );
 }
 
-/** The period's rows, with their value: the week's gain or the season's worth. */
+/** The period's rows, with their value: the week's or the season's net sales. */
 function rowsOf(
   period: Period,
   week: WeekRanking | null,
@@ -132,7 +132,7 @@ function rowsOf(
 ): (Who & { value: ReactNode })[] | null {
   return period === "week"
     ? (week?.rows.map((r) => ({ ...r, value: <Gain value={r.gain} /> })) ?? null)
-    : (season?.map((r) => ({ ...r, value: d(r.netWorth) })) ?? null);
+    : (season?.map((r) => ({ ...r, value: <Gain value={r.turnover} /> })) ?? null);
 }
 
 type View = "board" | "last" | "rules";
@@ -174,7 +174,7 @@ export function RankingSheet(props: GameProps) {
         : undefined
       : (() => {
           const r = season?.find((x) => x.me);
-          return r ? { ...r, value: d(r.netWorth) } : undefined;
+          return r ? { ...r, value: <Gain value={r.turnover} /> } : undefined;
         })();
   const rows = rowsOf(period, week, season);
   const tp = fr.game.top;

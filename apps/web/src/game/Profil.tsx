@@ -261,7 +261,7 @@ function ProfileBody(props: GameProps) {
             value={profile.title.progress}
             label={
               profile.title.next
-                ? `${d(worth.total).replace(" d", "")} / ${profile.title.next.from.toLocaleString("fr-FR")} d`
+                ? `${d(profile.turnover).replace(" d", "")} / ${profile.title.next.from.toLocaleString("fr-FR")} d`
                 : fr.game.maxTitle
             }
           />

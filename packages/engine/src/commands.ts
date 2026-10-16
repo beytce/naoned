@@ -207,6 +207,7 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
     if (v.playerId === playerId) delete tx.s.vehicles?.[v.id];
   }
   if (tx.s.weekly) delete tx.s.weekly.start[playerId];
+  if (tx.s.turnover) delete tx.s.turnover[playerId];
   if (tx.s.missions) delete tx.s.missions[playerId];
   if (tx.s.bales) delete tx.s.bales[playerId];
   leaveFamily(tx, playerId);

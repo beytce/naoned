@@ -94,12 +94,15 @@ describe("seasons on calendar months", () => {
     world.onSeasonOpened((id) => void notifier.seasonOpened(id));
     const ada = await player("ada@example.org");
     const bob = await player("bob@example.org", "lagoon");
-    await app.inject({
+    // Ada sells at the Dogana: net sales rank the season.
+    await world.execute({ type: "tick" });
+    const sold = await app.inject({
       method: "POST",
       url: "/api/game/actions",
       headers: { cookie: ada },
-      payload: { type: "sellToCity", city: "venezia", resource: "bread", quantity: 10 },
+      payload: { type: "instantOrder", resource: "bread", side: "sell", quantity: 10 },
     });
+    expect(sold.json().error).toBeUndefined();
     const first = world.id;
 
     now = Date.parse("2026-10-31T23:30:00Z");

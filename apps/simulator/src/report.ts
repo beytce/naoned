@@ -1,3 +1,4 @@
+import type { PlayerRow } from "./metrics.js";
 import type { SimulationResult } from "./sim.js";
 
 export interface Check {
@@ -466,6 +467,13 @@ export function budgetChecks(r: SimulationResult): Check[] {
   const mCasual = median(
     final.filter((p) => p.profile === "casual").map((p) => Number(p.netWorth)),
   );
+  const sFrequent = median(
+    final.filter((p) => frequent.has(p.profile)).map((p) => Number(p.turnover)),
+  );
+  const sCasual = median(
+    final.filter((p) => p.profile === "casual").map((p) => Number(p.turnover)),
+  );
+  const sales = final.map((p) => Number(p.turnover));
   return [
     {
       name: "Monnaie payée pour les marchandises, par joueur actif et par jour",
@@ -483,7 +491,28 @@ export function budgetChecks(r: SimulationResult): Check[] {
       pass: true,
       blocking: false,
     },
+    {
+      name: "Assidus devant occasionnels (ventes nettes médianes en fin de saison)",
+      target: "diagnostic : le classement récompense l'activité",
+      value: Number.isNaN(sCasual) ? "—" : pct(sFrequent / sCasual - 1),
+      pass: true,
+      blocking: false,
+    },
+    {
+      name: "Ventes nettes de la saison par marchand actif (titres)",
+      target: "diagnostic : médiane, 75e et 90e centiles, meilleur",
+      value: [0.5, 0.75, 0.9, 1]
+        .map((q) => ducats(BigInt(Math.round(quantile(sales, q)))))
+        .join(" · "),
+      pass: true,
+      blocking: false,
+    },
   ];
+}
+
+function quantile(xs: number[], q: number): number {
+  const s = [...xs].sort((a, b) => a - b);
+  return s.length === 0 ? Number.NaN : (s[Math.min(s.length - 1, Math.floor(q * s.length))] ?? 0);
 }
 
 /**
@@ -559,19 +588,35 @@ function finalWorth(r: SimulationResult) {
  * itself, and the Pass's effect is what holders gain beyond what everyone else gains.
  */
 export function passChecks(r: SimulationResult, twin?: SimulationResult): Check[] {
+  return [
+    ...passChecksOn(r, twin, "patrimoine", (p) => p.netWorth),
+    ...passChecksOn(r, twin, "ventes nettes", (p) => p.turnover),
+  ];
+}
+
+/** The same three guard rails on one measure: net worth (the rule) or net sales (the ranking). */
+function passChecksOn(
+  r: SimulationResult,
+  twin: SimulationResult | undefined,
+  measure: string,
+  value: (p: PlayerRow) => bigint,
+): Check[] {
   const holders = new Set(r.passHolders ?? []);
   if (holders.size === 0) return [];
   const final = finalWorth(r);
   const checks: Check[] = [];
   if (twin) {
-    const before = new Map(finalWorth(twin).map((p) => [p.playerId, Number(p.netWorth)]));
+    const before = new Map(finalWorth(twin).map((p) => [p.playerId, Number(value(p))]));
     const ratios = (paid: boolean) =>
       final
-        .filter((p) => holders.has(p.playerId) === paid && (before.get(p.playerId) ?? 0) > 0)
-        .map((p) => Number(p.netWorth) / (before.get(p.playerId) ?? 1));
+        .filter(
+          (p) =>
+            holders.has(p.playerId) === paid && (before.get(p.playerId) ?? 0) > 0 && value(p) > 0n,
+        )
+        .map((p) => Number(value(p)) / (before.get(p.playerId) ?? 1));
     const gap = median(ratios(true)) / median(ratios(false)) - 1;
     checks.push({
-      name: "Pass : avance des abonnés (même saison rejouée sans Pass)",
+      name: `Pass : avance des abonnés en ${measure} (même saison rejouée sans Pass)`,
       target: "≤ +5 % (médiane, au-delà de l'effet sur les non-abonnés)",
       value: Number.isNaN(gap) ? "—" : pct(gap),
       pass: Number.isNaN(gap) || gap <= 0.05,
@@ -579,30 +624,30 @@ export function passChecks(r: SimulationResult, twin?: SimulationResult): Check[
     });
   }
   const frequent = new Set(["producer", "artisan", "builder", "speculator"]);
-  const top = [...final].sort((a, b) => Number(b.netWorth - a.netWorth)).slice(0, 10);
+  const top = [...final].sort((a, b) => Number(value(b) - value(a))).slice(0, 10);
   const topShare = top.filter((p) => holders.has(p.playerId)).length / Math.max(1, top.length);
   const share = final.filter((p) => holders.has(p.playerId)).length / Math.max(1, final.length);
   const freeFrequent = median(
     final
       .filter((p) => frequent.has(p.profile) && !holders.has(p.playerId))
-      .map((p) => Number(p.netWorth)),
+      .map((p) => Number(value(p))),
   );
   const paidCasual = median(
     final
       .filter((p) => p.profile === "casual" && holders.has(p.playerId))
-      .map((p) => Number(p.netWorth)),
+      .map((p) => Number(value(p))),
   );
   checks.push(
     {
-      name: "Pass : part des abonnés dans le top 10",
+      name: `Pass : part des abonnés dans le top 10 (${measure})`,
       target: `≤ 35 % (ils sont ${pct(share)} des marchands)`,
       value: pct(topShare),
       pass: topShare <= 0.35,
       blocking: true,
     },
     {
-      name: "Pass : un gratuit assidu devant un abonné occasionnel",
-      target: "patrimoine médian supérieur",
+      name: `Pass : un gratuit assidu devant un abonné occasionnel (${measure})`,
+      target: `${measure} médian supérieur`,
       value: Number.isNaN(paidCasual)
         ? "pas d'abonné occasionnel"
         : `${ducats(BigInt(Math.round(freeFrequent)))} contre ${ducats(BigInt(Math.round(paidCasual)))}`,

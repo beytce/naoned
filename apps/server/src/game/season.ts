@@ -36,8 +36,8 @@ export function tierFor(rank: number, people: number, daysPlayed: number): Seaso
 }
 
 /** The season's milestone: the merchant title held at the close, and the renown it adds. */
-export function milestoneFor(worth: bigint) {
-  return titleFor(worth).current;
+export function milestoneFor(turnover: bigint) {
+  return titleFor(turnover).current;
 }
 
 export function milestoneInfo(code: string) {
@@ -45,9 +45,9 @@ export function milestoneInfo(code: string) {
 }
 
 /** What a merchant earns at the close: the tier of the rank plus the milestone of the title. */
-export function seasonReward(rank: number, people: number, daysPlayed: number, worth: bigint) {
+export function seasonReward(rank: number, people: number, daysPlayed: number, turnover: bigint) {
   const tier = tierFor(rank, people, daysPlayed);
-  const milestone = milestoneFor(worth);
+  const milestone = milestoneFor(turnover);
   return { tier, milestone: milestone.code, renown: tierInfo(tier).renown + milestone.renown };
 }
 
@@ -86,7 +86,12 @@ export async function recordSeason(
   /** End of this season: the Pass won is held during the next one. */
   endsAt?: number,
 ) {
-  const standings = (data.standings ?? []) as { playerId: string; worth: string }[];
+  // Ranked by net sales; standings saved before them carry net worth only.
+  const standings = (data.standings ?? []) as {
+    playerId: string;
+    worth: string;
+    turnover?: string;
+  }[];
   if (standings.length === 0) return [];
   const ids = standings.map((s) => s.playerId);
   const people = await db
@@ -106,13 +111,15 @@ export async function recordSeason(
     ]),
   );
   const rows = ranked.map((s, i) => {
-    const reward = seasonReward(i + 1, ranked.length, days.get(s.playerId) ?? 0, BigInt(s.worth));
+    const score = BigInt(s.turnover ?? s.worth);
+    const reward = seasonReward(i + 1, ranked.length, days.get(s.playerId) ?? 0, score);
     return {
       worldId,
       accountId: s.playerId,
       rank: i + 1,
       players: ranked.length,
       worth: BigInt(s.worth),
+      turnover: s.turnover === undefined ? null : BigInt(s.turnover),
       ...reward,
     };
   });
@@ -147,6 +154,7 @@ export async function seasonRecord(db: Db, accountId: string) {
       rank: seasonResults.rank,
       players: seasonResults.players,
       worth: seasonResults.worth,
+      turnover: seasonResults.turnover,
       tier: seasonResults.tier,
       milestone: seasonResults.milestone,
       renown: seasonResults.renown,
@@ -161,6 +169,7 @@ export async function seasonRecord(db: Db, accountId: string) {
     rank: r.rank,
     players: r.players,
     worth: r.worth.toString(),
+    turnover: r.turnover?.toString() ?? null,
     tier: r.tier,
     award: tierInfo(r.tier).name,
     milestone: { name: milestoneInfo(r.milestone).name, renown: milestoneInfo(r.milestone).renown },
@@ -177,6 +186,7 @@ export async function pendingCeremony(db: Db, accountId: string) {
       rank: seasonResults.rank,
       players: seasonResults.players,
       worth: seasonResults.worth,
+      turnover: seasonResults.turnover,
       tier: seasonResults.tier,
       milestone: seasonResults.milestone,
       renown: seasonResults.renown,
@@ -193,6 +203,7 @@ export async function pendingCeremony(db: Db, accountId: string) {
       pseudo: accounts.pseudo,
       crest: accounts.crest,
       worth: seasonResults.worth,
+      turnover: seasonResults.turnover,
     })
     .from(seasonResults)
     .innerJoin(accounts, eq(accounts.id, seasonResults.accountId))
@@ -205,6 +216,7 @@ export async function pendingCeremony(db: Db, accountId: string) {
     rank: row.rank,
     players: row.players,
     worth: row.worth.toString(),
+    turnover: row.turnover?.toString() ?? null,
     tier: row.tier,
     award: info.name,
     milestone: {
@@ -214,7 +226,11 @@ export async function pendingCeremony(db: Db, accountId: string) {
     renown: row.renown,
     passDays: info.passDays,
     totalRenown: renownTitle(await renownOf(db, accountId)),
-    podium: podium.map((p) => ({ ...p, worth: p.worth.toString() })),
+    podium: podium.map((p) => ({
+      ...p,
+      worth: p.worth.toString(),
+      turnover: p.turnover?.toString() ?? null,
+    })),
   };
 }
 

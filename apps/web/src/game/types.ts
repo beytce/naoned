@@ -560,6 +560,8 @@ export interface PlayerView {
   standing: {
     rank: number | null;
     players: number;
+    /** Net sales of the season (sales less purchases): what the ranking counts. */
+    turnover: Money;
     title: { index: number; current: Title; next: Title | null; progress: number };
     seasonEndsAt: number;
   };
@@ -725,6 +727,8 @@ export interface Ceremony {
   rank: number;
   players: number;
   worth: Money;
+  /** Net sales of the season, which ranked it (absent for seasons ranked by net worth). */
+  turnover: Money | null;
   tier: string;
   award: string;
   /** Title held at the close and the renown it added (included in `renown`). */
@@ -732,7 +736,13 @@ export interface Ceremony {
   renown: number;
   passDays: number | "season";
   totalRenown: Renown;
-  podium: { rank: number; pseudo: string | null; crest: CrestData | null; worth: Money }[];
+  podium: {
+    rank: number;
+    pseudo: string | null;
+    crest: CrestData | null;
+    worth: Money;
+    turnover: Money | null;
+  }[];
 }
 
 export interface Renown {
@@ -749,6 +759,7 @@ export interface Palmares {
     rank: number;
     players: number;
     worth: Money;
+    turnover: Money | null;
     tier: string;
     award: string;
     milestone: { name: string; renown: number };
@@ -815,6 +826,8 @@ export interface RankingRow {
   /** Mastery of the season, if chosen. */
   specialty?: string | null;
   netWorth: Money;
+  /** Net sales of the season (sales less purchases): what ranks it. */
+  turnover: Money;
   crest: CrestData | null;
   me: boolean;
   /** Computer-run merchant. */
@@ -866,6 +879,8 @@ export interface Profile {
   title: { index: number; current: Title; next: Title | null; progress: number };
   titles: Title[];
   netWorth: { cash: Money; stock: Money; buildings: Money; total: Money };
+  /** Net sales of the season: the ranking and the titles. */
+  turnover: Money;
   rank: number | null;
   players: number;
   buildings: number;

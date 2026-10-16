@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { netWorth, weekIndex, weeklyStandings } from "../src/index.js";
+import { weekIndex, weeklyStandings } from "../src/index.js";
 import { DAY, HOUR, World } from "./helpers.js";
 
 const WEEK = 7 * DAY;
@@ -18,16 +18,16 @@ describe("weekly ranking", () => {
     expect(weeklyStandings(w.ctx, w.state, w.now)).toEqual([{ playerId: "a", gain: 0n }]);
   });
 
-  it("measures the gain in deniers of net worth since the start of the week", () => {
+  it("measures the net sales in deniers since the start of the week", () => {
     const w = new World();
     w.do({ type: "join", playerId: "a", region: "terraferma" });
     w.do({ type: "join", playerId: "b", region: "lagoon" });
-    const start = netWorth(w.ctx, w.state, "a", w.now).total;
+    const cash = w.cash("a");
     w.advance(HOUR).give("a", "bread", 20);
     w.do({ type: "sellToCity", playerId: "a", city: "venezia", resource: "bread", quantity: 20 });
     const standings = weeklyStandings(w.ctx, w.state, w.now);
     expect(standings[0]?.playerId).toBe("a");
-    expect(standings[0]?.gain).toBe(netWorth(w.ctx, w.state, "a", w.now).total - start);
+    expect(standings[0]?.gain).toBe(w.cash("a") - cash);
     expect(standings[0]?.gain).toBeGreaterThan(0n);
   });
 
@@ -44,7 +44,7 @@ describe("weekly ranking", () => {
     expect(closed?.data?.week).toBe(0);
     const standings = closed?.data?.standings as { playerId: string; gain: string }[];
     expect(standings.map((s) => s.playerId)).toEqual(["b", "a"]);
-    // Upkeep weighs on both; the bread sale makes the difference.
+    // Upkeep is no sale: only the bread sale counts.
     expect(BigInt(standings[0]?.gain ?? "0")).toBeGreaterThan(BigInt(standings[1]?.gain ?? "0"));
     expect(w.state.weekly?.week).toBe(1);
     expect(weeklyStandings(w.ctx, w.state, w.now).every((s) => s.gain === 0n)).toBe(true);

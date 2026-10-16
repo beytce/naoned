@@ -1,5 +1,6 @@
 import type { Deniers } from "./money.js";
 import { DAY_MS, type PlayerId, type WorldContext, type WorldState, seasonEnd } from "./state.js";
+import { turnoverOf } from "./turnover.js";
 import { type Tx, emit } from "./tx.js";
 import { netWorth } from "./valuation.js";
 
@@ -7,7 +8,7 @@ const WEEK_MS = 7 * DAY_MS;
 
 export interface WeeklyStanding {
   playerId: PlayerId;
-  /** Net worth gained since the start of the week (or since joining), in deniers. */
+  /** Net sales since the start of the week (or since joining), in deniers. */
   gain: Deniers;
 }
 
@@ -29,24 +30,32 @@ export function weeklyStandings(
   const start = state.weekly?.start ?? {};
   return Object.keys(state.players)
     .map((playerId) => {
-      const worth = netWorth(ctx, state, playerId, now).total;
-      return { playerId, gain: worth - (start[playerId] ?? worth) };
+      const sales = turnoverOf(state, playerId);
+      return { playerId, gain: sales - (start[playerId] ?? sales) };
     })
     .sort((a, b) =>
       a.gain === b.gain ? a.playerId.localeCompare(b.playerId) : a.gain > b.gain ? -1 : 1,
     );
 }
 
-/** Final ranking of the season: net worth, best first. */
+/** Final ranking of the season: net sales, best first (net worth reported beside them). */
 export function seasonStandings(
   ctx: WorldContext,
   state: WorldState,
   now: number,
-): { playerId: PlayerId; worth: Deniers }[] {
+): { playerId: PlayerId; turnover: Deniers; worth: Deniers }[] {
   return Object.keys(state.players)
-    .map((playerId) => ({ playerId, worth: netWorth(ctx, state, playerId, now).total }))
+    .map((playerId) => ({
+      playerId,
+      turnover: turnoverOf(state, playerId),
+      worth: netWorth(ctx, state, playerId, now).total,
+    }))
     .sort((a, b) =>
-      a.worth === b.worth ? a.playerId.localeCompare(b.playerId) : a.worth > b.worth ? -1 : 1,
+      a.turnover === b.turnover
+        ? a.playerId.localeCompare(b.playerId)
+        : a.turnover > b.turnover
+          ? -1
+          : 1,
     );
 }
 
@@ -61,30 +70,29 @@ export function closeSeason(tx: Tx): void {
   emit(tx, "season_closed", undefined, {
     standings: seasonStandings(tx.ctx, tx.s, at).map((s) => ({
       playerId: s.playerId,
+      turnover: s.turnover.toString(),
       worth: s.worth.toString(),
     })),
   });
   tx.s.seasonClosed = true;
 }
 
-/** Worth a player starts the week with: now, on joining or restarting. */
+/** Net sales a player starts the week with: now, on joining or restarting. */
 export function startWeek(tx: Tx, playerId: PlayerId): void {
   const weekly = tx.s.weekly;
   if (!weekly) return;
-  weekly.start[playerId] = netWorth(tx.ctx, tx.s, playerId, tx.now).total;
+  weekly.start[playerId] = turnoverOf(tx.s as WorldState, playerId);
 }
 
 function snapshot(tx: Tx): Record<PlayerId, Deniers> {
   const start: Record<PlayerId, Deniers> = {};
-  for (const id of Object.keys(tx.s.players)) {
-    start[id] = netWorth(tx.ctx, tx.s, id, tx.now).total;
-  }
+  for (const id of Object.keys(tx.s.players)) start[id] = turnoverOf(tx.s as WorldState, id);
   return start;
 }
 
 /**
  * Scheduled: on the first tick after a week boundary, publishes the ranking of the week that ended
- * (event `week_closed`) and starts the new week from everyone's current worth.
+ * (event `week_closed`) and starts the new week from everyone's current net sales.
  */
 export function closeWeek(tx: Tx): void {
   // Once the season is over, the last week closes too.
