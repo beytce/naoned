@@ -433,6 +433,7 @@ export function MapScreen(
         hasFamily={!!view.families}
         layer={sea ? "sea" : campaign ? "campaign" : "trade"}
         familyCalls={familyCalls(props)}
+        workshopsReady={ready > 0}
         right={
           sea ? (
             <SeaHud props={props} />
@@ -447,6 +448,7 @@ export function MapScreen(
         onResumeGuide={props.onResumeGuide}
         onRanking={() => props.setSheet("ranking")}
         onFamily={() => (campaign || sea ? props.setLayer("trade") : props.goTo("famille"))}
+        onWorkshops={() => props.setSheet("workshops")}
         onHelp={props.openHelp}
       />
       {panel}

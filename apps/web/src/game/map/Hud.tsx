@@ -99,6 +99,7 @@ export function MapHud({
   hasFamily,
   layer,
   familyCalls,
+  workshopsReady,
   right,
   onProfile,
   onNotices,
@@ -107,6 +108,7 @@ export function MapHud({
   onResumeGuide,
   onRanking,
   onFamily,
+  onWorkshops,
   onHelp,
 }: {
   pseudo: string;
@@ -131,6 +133,8 @@ export function MapHud({
   layer: "trade" | "campaign" | "sea";
   /** Something waits at the family (a levy, a threat, a message, an invitation). */
   familyCalls: boolean;
+  /** Batches waiting at the workshops (a dot on their door). */
+  workshopsReady: boolean;
   /** Replaces the purse's column on the right (the families' glory on the campaign). */
   right?: ReactNode;
   onProfile: () => void;
@@ -140,6 +144,7 @@ export function MapHud({
   onResumeGuide: () => void;
   onRanking: () => void;
   onFamily: () => void;
+  onWorkshops: () => void;
   onHelp: () => void;
 }) {
   const m = fr.game.map;
@@ -224,6 +229,16 @@ export function MapHud({
       {right}
       {bottom && (
         <nav className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex justify-center gap-7 lg:bottom-6">
+          {layer === "trade" && (
+            <Door
+              label={m.buttons.workshops}
+              onClick={onWorkshops}
+              dot={workshopsReady}
+              coach="door-workshops"
+            >
+              {Icon.workshops()}
+            </Door>
+          )}
           <Door label={m.buttons.ranking} onClick={onRanking}>
             {Icon.trophy()}
           </Door>
