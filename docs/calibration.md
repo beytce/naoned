@@ -706,6 +706,6 @@ Trois changements demandés pendant la bêta :
 
 **Lecture.**
 - Les améliorations sont un nouveau puits (environ 7 % des destructions) : la masse monétaire par joueur actif baisse un peu (≤ 0,97 × le capital, contre 1,03 ×) et la monnaie payée pour les marchandises monte légèrement (176 à 180 contre 165 à 170 ducats) parce que des véhicules plus gros livrent plus loin.
-- Le classement récompense l'activité : les assidus finissent 50 à 180 % devant les occasionnels en ventes nettes (diagnostic).
+- Le classement récompense l'activité : les assidus finissent 180 à 430 % devant les occasionnels en ventes nettes (diagnostic ; pas d'occasionnel actif en fin de saison sur la graine 2).
 
 **Pass Négociant (`pnpm sim --pass 0.2`) : non conforme, comme avant ce changement.** Le code d'origine (commit 211b933) échoue déjà sur les graines 1 et 3 (avance des abonnés en patrimoine de 22,3 % et 6,5 %). Après le changement, les mêmes graines échouent (patrimoine 26,0 % et 28,5 % ; ventes nettes 29,8 % et 47,4 % ; graine 1 : 40 % du top 10 en patrimoine) ; les graines 2, 4 et 5 sont conformes, avec des avances négatives. La mesure par saison rejouée diverge fortement d'une graine à l'autre (de −70 % à +47 %) : elle mesure surtout le bruit de deux parties qui divergent. Conformément à CLAUDE.md, **le paiement du Pass reste débranché** ; le simulateur vérifie désormais les trois garde-fous sur les deux mesures (patrimoine, la règle, et ventes nettes, le classement).
