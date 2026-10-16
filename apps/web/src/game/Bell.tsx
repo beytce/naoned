@@ -19,6 +19,7 @@ const ICON = {
   family: NavIcon.famille,
   siege: NavIcon.famille,
   delivery: NavIcon.routes,
+  muda: NavIcon.marche,
 } as const;
 const TONE: Record<string, string> = {
   harvest: "text-lagoon",
@@ -32,6 +33,7 @@ const TONE: Record<string, string> = {
   family: "text-gold",
   siege: "text-vermilion",
   delivery: "text-lagoon",
+  muda: "text-gold",
 };
 
 function text(n: Notice, props: GameProps): string {
@@ -113,6 +115,12 @@ function text(n: Notice, props: GameProps): string {
         roadCity(n.data.route, props),
         d(String(n.data.amount ?? "0")),
       );
+    case "muda": {
+      const goods = Object.entries((n.data.stock ?? {}) as Record<string, number>)
+        .filter(([, q]) => q > 0)
+        .map(([r]) => props.names.resource(r).toLowerCase());
+      return t.muda(goods.join(", "));
+    }
     default:
       return "";
   }

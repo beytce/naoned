@@ -562,7 +562,7 @@ export const fr = {
           gabelle: "Gabelle",
           faveur: "Faveur d'une ville",
           peage: "Péage de Terraferme",
-          levant: "Tarif du Levant",
+          levant: "Charte du Levant",
           calmiere: "Calmiere",
           franchise: "Franchise",
         } as Record<string, string>,
@@ -575,8 +575,8 @@ export const fr = {
             `Membres : livraisons à ${city} payées +${pct}, ses commandes urgentes à eux les ${minutes} premières minutes.`,
           peage: (pct: string, cities: string) =>
             `Les autres paient ${pct} de leurs livraisons à ${cities || "leurs villes"} aux membres.`,
-          levant: (lighter: string, heavier: string) =>
-            `Droits de port : −${lighter} pour les membres, +${heavier} pour les autres.`,
+          levant: (more: string, less: string) =>
+            `Galères de la Muda : quota +${more} pour les membres, −${less} pour les autres.`,
           calmiere: (good: string, pct: string) =>
             `Aucune offre de ${good} au-dessus de ${pct} du prix de référence.`,
           franchise: (pct: string) => `Membres : entretien des bâtiments −${pct}.`,
@@ -697,20 +697,20 @@ export const fr = {
       confirm: (name: string) => `Devenir ${name}`,
       forGood: "Un seul choix pour toute la saison.",
       ready: "Votre Maison peut choisir sa maîtrise",
-      readyHelp: "Maître d'atelier, roulier, négociant ou armateur",
+      readyHelp: "Maître d'atelier, roulier, négociant ou marchand du Levant",
       locked: (levels: number, need: number) =>
         `Maîtrise à ${need} niveaux d'ateliers (vous en avez ${levels}) : améliorez ou bâtissez.`,
       names: {
         master: "Maître d'atelier",
         carter: "Roulier",
         trader: "Négociant",
-        shipowner: "Armateur",
+        levant: "Marchand du Levant",
       } as Record<string, string>,
       mottos: {
         master: "Qui transforme bien vend mieux.",
         carter: "Les routes sont à qui va vite.",
         trader: "Le Rialto est mon atelier.",
-        shipowner: "La mer paie ceux qui l'osent.",
+        levant: "Les galères de la Muda ne viennent pas pour rien.",
       } as Record<string, string>,
       effects: {
         transform: (n: number) => `+${n} % de rendement sur ce qui se transforme`,
@@ -719,8 +719,7 @@ export const fr = {
         quota: (n: number) => `quotas de la Dogana +${n} %`,
         tax: (n: number) => `taxe de marché −${n} point${n > 1 ? "s" : ""} sur vos ventes`,
         offers: (n: number) => `${n} offres de plus au Rialto`,
-        dues: (n: number) => `droits de port −${n} %`,
-        hold: (n: number) => `cales +${n} %`,
+        muda: (n: number) => `quota aux galères de la Muda +${n} %`,
       },
     },
     /** Words shared by every section's frame (the scene, its bars, its drawer). */
@@ -738,6 +737,17 @@ export const fr = {
       trade: (price: string) => `Négocier · ${price}`,
       noOffers: "Aucune offre posée. Touchez une marchandise et choisissez « À mon prix ».",
       tabs: { negoce: "Négoce", offres: "Offres", decrets: "Décrets" },
+      muda: {
+        title: "Galères de la Muda",
+        next: (time: string) => `Prochaines dans ${time}`,
+        first: "Les premières galères d'État arrivent bientôt d'Alexandrie et de Beyrouth.",
+        help: "Leurs marchandises d'outre-mer sont vendues par la Dogana, plus cher à mesure que le lot s'épuise : premiers arrivés, meilleurs prix.",
+        empty: "Le quai est vide : tout est parti. Attendez les prochaines galères.",
+        stock: (n: number) => `${n} à quai`,
+        left: (n: number) => (n > 0 ? `vous ${n}` : "pris"),
+        quota: (left: number, stock: number, next: string) =>
+          `Galères de la Muda : encore ${left} à acheter pour vous, ${stock} à quai. Nouveau lot dans ${next}.`,
+      },
     },
     top: {
       tabs: { passee: "Semaine passée", regles: "Règles" },
@@ -1109,6 +1119,8 @@ export const fr = {
           : `Offre conclue : ${who} vous a vendu ${qty} ${what.toLowerCase()}.`,
       delivery: (qty: number, what: string, city: string, amount: string) =>
         `${qty} ${what} livrés à ${city} : ${amount} encaissés.`,
+      muda: (goods: string) =>
+        `Les galères de la Muda sont à quai : la Dogana vend ${goods || "les marchandises d'outre-mer"} au Rialto.`,
       siege: (land: string, by: string, lances: number, time: string) =>
         `${land} menacée : ${lances} lances ${by} arrivent à ${time}. Renforcez la garnison !`,
       family: (event: string, data: Record<string, string>) =>
@@ -1147,6 +1159,7 @@ export const fr = {
           family: "Résultats de la Campagne et terres perdues",
           siege: "Terre menacée (alerte immédiate)",
           delivery: "Livraison arrivée",
+          muda: "Galères de la Muda à quai",
         } as Record<string, string>,
       },
     },
@@ -1324,6 +1337,11 @@ export const fr = {
         icon: "routes",
         title: "Les routes",
         text: "Les villes ne rachètent plus au comptoir : elles publient leurs commandes par vagues, toutes les 4 heures, pour tous les marchands. Les matières premières ne sont commandées qu'à ceux qui les produisent ; les produits transformés, à tous. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge y figurent, les urgentes ne restent ouvertes que trois heures.",
+      },
+      {
+        icon: "marche",
+        title: "Les galères de la Muda",
+        text: "Tous les trois jours à 9 h, les galères d'État rapportent d'outre-mer épices, soie, sel, vin, fourrures et draps. La Dogana les vend au Rialto, quelques unités par marchand jusqu'aux galères suivantes, de plus en plus cher à mesure que le lot s'épuise. Quelques commandes de villes demandent ces marchandises : achetez tôt, livrez avec profit.",
       },
       {
         icon: "comptoir",

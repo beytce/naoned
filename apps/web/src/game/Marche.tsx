@@ -161,6 +161,7 @@ function TradeSheet({
   // a trade made goes back to the board.
   const done = () => (inline ? undefined : props.setSheet("rialto"));
   const quota = book?.quota;
+  const muda = props.view.muda;
   return (
     <div className="space-y-5">
       {/* Room on the right for the window's close button. */}
@@ -183,10 +184,21 @@ function TradeSheet({
         <BookSide lines={book?.asks ?? []} title={t.sellers} tone="text-gold" props={props} />
         <BookSide lines={book?.bids ?? []} title={t.buyers} tone="text-lagoon" props={props} />
       </div>
-      {quota && quota.buy !== null && (
+      {muda?.goods.includes(line.resource) ? (
         <p className="text-xs text-cream-dim">
-          {t.quota(String(quota.buy), String(quota.sell ?? "—"))}
+          {fr.game.market.muda.quota(
+            muda.left[line.resource] ?? 0,
+            muda.stock[line.resource] ?? 0,
+            muda.nextAt !== null ? clock(muda.nextAt - props.now) : "—",
+          )}
         </p>
+      ) : (
+        quota &&
+        quota.buy !== null && (
+          <p className="text-xs text-cream-dim">
+            {t.quota(String(quota.buy), String(quota.sell ?? "—"))}
+          </p>
+        )
       )}
 
       <Segmented<"now" | "price">
@@ -363,6 +375,60 @@ type Filter = "all" | "stock" | "rising";
  * decrees, the merchant's offers), then a touched good's trade in the same sheet, a back arrow to
  * the board. Keys: `rialto`, `trade:<resource>`, `offers`.
  */
+/**
+ * The galleys of the Muda, on top of the Rialto: what they brought is on the quay, sold by the
+ * Dogana dearer as it runs out, a few units per merchant until the next galleys.
+ */
+function MudaPanel({ props }: { props: GameProps }) {
+  const muda = props.view.muda;
+  if (!muda) return null;
+  const t = fr.game.market.muda;
+  const next = muda.nextAt !== null ? clock(muda.nextAt - props.now) : null;
+  const goods = muda.goods.filter((r) => (muda.stock[r] ?? 0) > 0);
+  return (
+    <section className="cut border border-gold/50 bg-gold/5 p-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="font-display text-sm font-extrabold uppercase text-gold">{t.title}</p>
+        {next && <p className="label shrink-0">{t.next(next)}</p>}
+      </div>
+      <p className="mt-1 text-xs text-cream-dim">
+        {muda.arrivedAt === null ? t.first : goods.length > 0 ? t.help : t.empty}
+      </p>
+      {goods.length > 0 && (
+        <div className="mt-2 divide-y divide-line/60">
+          {goods.map((r) => {
+            const left = muda.left[r] ?? 0;
+            return (
+              <button
+                key={r}
+                type="button"
+                onClick={() => props.setSheet(`trade:${r}`)}
+                className="flex w-full items-center gap-2.5 py-1.5 text-left"
+              >
+                <ResourceIcon code={r} size={26} />
+                <span className="min-w-0 flex-1 truncate font-display text-xs font-semibold uppercase">
+                  {props.names.resource(r)}
+                </span>
+                <span className="whitespace-nowrap text-[11px] text-cream-dim">
+                  {t.stock(muda.stock[r] ?? 0)}
+                </span>
+                <span
+                  className={`whitespace-nowrap text-right text-[11px] ${left > 0 ? "text-lagoon" : "text-muted"}`}
+                >
+                  {t.left(left)}
+                </span>
+                <span className="w-16 shrink-0 whitespace-nowrap text-right font-display text-sm font-semibold tabular-nums">
+                  {d(muda.price[r] ?? "0")}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function RialtoSheet(props: GameProps) {
   const [kind, id] = (props.sheet ?? "").split(":");
   const open = kind === "rialto" || kind === "offers" || (kind === "trade" && !!id);
@@ -455,6 +521,7 @@ export function RialtoSheet(props: GameProps) {
             )}
           </div>
           {decreesOpen && <DecreeBanner props={props} />}
+          <MudaPanel props={props} />
           <div className="flex items-end justify-between gap-3 border-b border-line/70 pb-2">
             <p className="label">{m.goods}</p>
             <div className="w-20 text-right">

@@ -38,6 +38,7 @@ export interface Catalog {
         transformYieldBps: number;
         vehicleSpeedBps: number;
         extraVehicles: number;
+        mudaQuotaBps: number;
         marketMakerQuotaBps: number;
         taxDiscountBps: number;
         extraOpenOrders: number;
@@ -207,7 +208,7 @@ export interface DecreeRules {
   gabelle: { extraTaxBps: number };
   faveur: { premiumBps: number; reservedMinutes: number };
   peage: { tollBps: number };
-  levant: { memberDiscountBps: number; othersSurchargeBps: number };
+  levant: { memberQuotaBps: number; othersCutBps: number };
   calmiere: { capBps: number };
   franchise: { upkeepDiscountBps: number };
 }
@@ -439,6 +440,8 @@ export interface PlayerView {
   openOrders: OrderView[];
   /** Deliveries by road (null when the world has none). */
   road: RoadView | null;
+  /** The galleys of the Muda (null when the world has none). */
+  muda: MudaView | null;
   rations: { resource: string; perDay: number; hungryUntil: number; nextMealAt: number };
   tutorial: string[];
   missions: MissionView[];
@@ -625,6 +628,17 @@ export interface Palmares {
   };
 }
 
+/** The galleys of the Muda: the lot on the quay, its price, and what the merchant may still buy. */
+export interface MudaView {
+  nextAt: number | null;
+  arrivedAt: number | null;
+  goods: string[];
+  stock: Record<string, number>;
+  price: Record<string, Money>;
+  left: Record<string, number>;
+  quota: Record<string, number>;
+}
+
 export type NotificationKind =
   | "harvest"
   | "order"
@@ -636,7 +650,8 @@ export type NotificationKind =
   | "deal"
   | "family"
   | "siege"
-  | "delivery";
+  | "delivery"
+  | "muda";
 
 export interface Notice {
   id: number;

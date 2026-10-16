@@ -75,7 +75,7 @@ export function decreeEffect(
     case "peage":
       return e.peage(pct(rules.peage.tollBps), cities.map((c) => props.names.city(c)).join(", "));
     case "levant":
-      return e.levant(pct(rules.levant.memberDiscountBps), pct(rules.levant.othersSurchargeBps));
+      return e.levant(pct(rules.levant.memberQuotaBps), pct(rules.levant.othersCutBps));
     case "calmiere":
       return e.calmiere(good(pick.target), pct(rules.calmiere.capBps));
     case "franchise":

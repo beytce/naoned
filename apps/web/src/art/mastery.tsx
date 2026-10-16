@@ -4,10 +4,10 @@ const FIELD: Record<string, string> = {
   master: P.vermilion,
   carter: P.woodLight,
   trader: P.gold,
-  shipowner: P.lagoon,
+  levant: P.lagoon,
 };
 
-/** The sign of each mastery: hammer and anvil, wheel, scales, anchor. */
+/** The sign of each mastery: hammer and anvil, wheel, scales, a sack of spices. */
 const SIGN: Record<string, JSX.Element> = {
   master: (
     <g>
@@ -35,11 +35,11 @@ const SIGN: Record<string, JSX.Element> = {
       <rect x="17" y="37" width="14" height="3" rx="1" />
     </g>
   ),
-  shipowner: (
-    <g fill="none" strokeWidth="2.6" strokeLinecap="round">
-      <circle cx="24" cy="11" r="3.5" />
-      <path d="M24 15 V39 M16 21 H32" />
-      <path d="M11 29 Q13 39 24 39 Q35 39 37 29" />
+  levant: (
+    <g>
+      <path d="M17 17 Q12 25 13 33 Q14 39 24 39 Q34 39 35 33 Q36 25 31 17 Z" />
+      <path d="M17 17 L15 11 Q20 13 24 11 Q28 13 33 11 L31 17" fill="none" strokeWidth="2.4" />
+      <path d="M16 17 H32" strokeWidth="2.8" strokeLinecap="round" fill="none" />
     </g>
   ),
 };
