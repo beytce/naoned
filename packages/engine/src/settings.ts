@@ -514,8 +514,12 @@ export const worldSettingsSchema = z.object({
           /** Above 10 000 is faster. */
           speedBps: positive,
           upkeepPerDay: money,
+          /** The next step for ducats (destroyed), made at home: bigger, faster. */
+          upgrade: z.object({ to: z.string(), costDucats: money }).optional(),
         }),
       ),
+      /** Types that may be bought (the others are reached by upgrading). Absent: all. */
+      forSale: z.array(z.string()).optional(),
       /** Given on joining, counted in net worth. */
       startingVehicles: z.array(z.string()).default([]),
       maxVehicles: qty,

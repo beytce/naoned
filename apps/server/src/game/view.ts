@@ -421,6 +421,8 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
             ...v,
           })),
           maxVehicles: settings.deliveries.maxVehicles,
+          /** Types that may be bought; the others are reached by upgrading. */
+          forSale: settings.deliveries.forSale ?? Object.keys(settings.deliveries.vehicles),
           maxDeliveryMinutes: settings.deliveries.maxDeliveryMinutes,
           /** Orders a vehicle may carry together, all for the same city. */
           maxOrdersPerLoad: settings.deliveries.maxOrdersPerLoad,

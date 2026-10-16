@@ -110,6 +110,88 @@ describe("vehicles", () => {
   });
 });
 
+describe("upgrading vehicles", () => {
+  // Bought, a vehicle is always a mule; three upgrades for ducats make it bigger and faster.
+  const ladderAt = (muleUpgrade: number) =>
+    ({
+      deliveries: {
+        ...deliverySettings.deliveries,
+        vehicles: {
+          mule: {
+            ...testDeliveries.vehicles.mule,
+            upgrade: { to: "cart", costDucats: muleUpgrade },
+          },
+          cart: { ...testDeliveries.vehicles.cart, upgrade: { to: "wagon", costDucats: 8_000 } },
+          wagon: {
+            costDucats: 0,
+            capacity: 90,
+            speedBps: 13_000,
+            upkeepPerDay: 400,
+            upgrade: { to: "great_wagon", costDucats: 16_000 },
+          },
+          great_wagon: { costDucats: 0, capacity: 150, speedBps: 16_000, upkeepPerDay: 800 },
+        },
+        forSale: ["mule"],
+        startingVehicles: ["mule", "mule"],
+      },
+    }) as never;
+  const ladder = ladderAt(4_000);
+  const upgrade = (w: World, vehicleId: string, playerId = "a") =>
+    w.try({ type: "upgradeVehicle", playerId, vehicleId });
+
+  it("buys only what is for sale: a mule", () => {
+    const w = world(ladder);
+    expect(vehiclesOf(w, "a").map((v) => v.type)).toEqual(["mule", "mule"]);
+    expect(error(w.try({ type: "buyVehicle", playerId: "a", vehicleType: "cart" }))).toBe(
+      "vehicle_not_for_sale",
+    );
+    expect(error(w.try({ type: "buyVehicle", playerId: "a", vehicleType: "mule" }))).toBe("ok");
+  });
+
+  it("climbs mule, cart, wagon, great wagon for ducats, which leave the game", () => {
+    const w = world(ladder);
+    const [mule] = vehiclesOf(w, "a");
+    const id = mule?.id ?? "";
+    const invested = mule?.investedValue ?? 0n;
+    const cash = w.cash("a");
+    const sink = w.state.accounts["system:sink"] ?? 0n;
+    const first = upgrade(w, id);
+    expect(first.ok && first.effects.events.map((e) => e.type)).toContain("vehicle_upgraded");
+    expect(w.state.vehicles?.[id]?.type).toBe("cart");
+    expect(w.cash("a")).toBe(cash - 4_000n);
+    expect(w.state.accounts["system:sink"]).toBe(sink + 4_000n);
+    // Counted in net worth at what it cost.
+    expect(w.state.vehicles?.[id]?.investedValue).toBe(invested + 4_000n);
+    expect(error(upgrade(w, id))).toBe("ok");
+    expect(error(upgrade(w, id))).toBe("ok");
+    expect(w.state.vehicles?.[id]?.type).toBe("great_wagon");
+    expect(w.cash("a")).toBe(cash - 28_000n);
+    expect(error(upgrade(w, id))).toBe("vehicle_max_level");
+    expect(checkInvariants(w.state, w.totals)).toEqual([]);
+  });
+
+  it("goes faster once upgraded", () => {
+    const w = world(ladder);
+    const before = travelMinutes(w.ctx, "terraferma", "padova", "mule");
+    const after = travelMinutes(w.ctx, "terraferma", "padova", "great_wagon");
+    expect(after ?? 0).toBeLessThan(before ?? 0);
+  });
+
+  it("only at home, by its owner, with the ducats", () => {
+    const w = world(ladder);
+    const [mule] = vehiclesOf(w, "a");
+    const id = mule?.id ?? "";
+    expect(error(upgrade(w, id, "b"))).toBe("not_owner");
+    expect(error(upgrade(w, "v999"))).toBe("unknown_vehicle");
+    expect(error(dispatch(w, pick(w).id, "none", "a", id))).toBe("ok");
+    expect(error(upgrade(w, id))).toBe("vehicle_busy");
+
+    const poor = world(ladderAt(1_000_000_000));
+    const [other] = vehiclesOf(poor, "a");
+    expect(error(upgrade(poor, other?.id ?? ""))).toBe("insufficient_funds");
+  });
+});
+
 describe("the board of orders", () => {
   it("is drawn the same way every time, with the Doge's and urgent orders first", () => {
     const w = world();

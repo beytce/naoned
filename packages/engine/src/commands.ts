@@ -14,6 +14,7 @@ import {
   grantStartingVehicles,
   postBand,
   reactToAmbush,
+  upgradeVehicle,
 } from "./deliveries.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { collectExpedition, launchExpedition } from "./expeditions.js";
@@ -108,6 +109,7 @@ export type Command =
   | { type: "grantPass"; playerId: PlayerId; until: number }
   | { type: "collectExpedition"; playerId: PlayerId; expeditionId: string }
   | { type: "buyVehicle"; playerId: PlayerId; vehicleType: string }
+  | { type: "upgradeVehicle"; playerId: PlayerId; vehicleId: string }
   | {
       type: "dispatchDelivery";
       playerId: PlayerId;
@@ -336,6 +338,9 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "buyVehicle":
       buyVehicle(tx, cmd.playerId, cmd.vehicleType);
+      break;
+    case "upgradeVehicle":
+      upgradeVehicle(tx, cmd.playerId, cmd.vehicleId);
       break;
     case "dispatchDelivery":
       dispatchDelivery(tx, cmd.playerId, cmd.orderIds ?? cmd.orderId, cmd.vehicleId, cmd.escort);

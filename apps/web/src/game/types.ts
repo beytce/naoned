@@ -83,6 +83,8 @@ export interface VehicleType {
   capacity: number;
   speedBps: number;
   upkeepPerDay: Money;
+  /** The next step, for ducats, made at home. */
+  upgrade?: { to: string; costDucats: Money };
 }
 
 export interface RoadRules {
@@ -90,6 +92,8 @@ export interface RoadRules {
   routes: Record<string, Record<string, number>>;
   vehicles: VehicleType[];
   maxVehicles: number;
+  /** Types that may be bought (a mule); the others are reached by upgrading. */
+  forSale: string[];
   maxDeliveryMinutes: number;
   /** Orders a vehicle may carry together, all for the same city. */
   maxOrdersPerLoad: number;
@@ -912,6 +916,7 @@ export type Action =
   | { type: "commissionPrivateers"; route: string; ships: string[] }
   | { type: "collectRaid"; raidId: string }
   | { type: "buyVehicle"; vehicleType: string }
+  | { type: "upgradeVehicle"; vehicleId: string }
   | {
       type: "dispatchDelivery";
       orderId: string;

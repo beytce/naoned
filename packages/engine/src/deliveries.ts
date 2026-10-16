@@ -101,6 +101,7 @@ export function buyVehicle(tx: Tx, playerId: PlayerId, type: string): Vehicle {
   const { deliveries } = tx.ctx.settings;
   const def = deliveries.vehicles[type];
   if (!def) fail("unknown_vehicle_type");
+  if (deliveries.forSale && !deliveries.forSale.includes(type)) fail("vehicle_not_for_sale");
   const state = tx.s as WorldState;
   if (vehiclesOf(state, playerId).length >= maxVehiclesFor(tx.ctx, state, playerId))
     fail("max_vehicles");
@@ -111,6 +112,23 @@ export function buyVehicle(tx: Tx, playerId: PlayerId, type: string): Vehicle {
   }
   emit(tx, "vehicle_bought", playerId, { vehicle: vehicle.id, type });
   return vehicle;
+}
+
+/** One step up the ladder (mule, cart, wagon…) for ducats, which leave the game; at home only. */
+export function upgradeVehicle(tx: Tx, playerId: PlayerId, vehicleId: string): Vehicle {
+  const vehicle = tx.s.vehicles?.[vehicleId];
+  if (!vehicle) fail("unknown_vehicle");
+  if (vehicle.playerId !== playerId) fail("not_owner");
+  if (!vehicleFree(vehicle as Vehicle, tx.now)) fail("vehicle_busy");
+  const step = tx.ctx.settings.deliveries.vehicles[vehicle.type]?.upgrade;
+  if (!step) fail("vehicle_max_level");
+  if (!tx.ctx.settings.deliveries.vehicles[step.to]) fail("unknown_vehicle_type");
+  transfer(tx, cashAccount(playerId), SINK_ACCOUNT, step.costDucats, "vehicle", vehicle.id);
+  const from = vehicle.type;
+  vehicle.type = step.to;
+  vehicle.investedValue += step.costDucats;
+  emit(tx, "vehicle_upgraded", playerId, { vehicle: vehicle.id, from, type: step.to });
+  return vehicle as Vehicle;
 }
 
 // ——— Roads ———

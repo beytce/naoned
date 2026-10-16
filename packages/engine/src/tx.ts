@@ -103,6 +103,8 @@ export type EngineErrorCode =
   | "unknown_vehicle"
   | "max_vehicles"
   | "vehicle_busy"
+  | "vehicle_not_for_sale"
+  | "vehicle_max_level"
   | "over_capacity"
   | "several_cities"
   | "too_many_orders"
