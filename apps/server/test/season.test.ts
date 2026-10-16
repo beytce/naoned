@@ -145,6 +145,11 @@ describe("seasons on calendar months", () => {
     const prof = await get(ada, "/api/game/profile");
     expect(prof.palmares.renown.points).toBe(back.ceremony.renown);
     expect(prof.palmares.seasons[0]).toMatchObject({ rank: 1, award: "Doge de la saison" });
+    // The level carries the net sales of the season over: it never starts again.
+    const sales = Number(BigInt(prof.palmares.seasons[0].turnover) / 100n);
+    expect(sales).toBeGreaterThan(0);
+    expect(joined.level.xp).toBe(sales);
+    expect(prof.level.xp).toBe(sales);
 
     await new Promise((r) => setTimeout(r, 50));
     const bell = await get(bob, "/api/notifications");

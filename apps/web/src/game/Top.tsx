@@ -24,6 +24,8 @@ interface Who {
   crest: RankingRow["crest"];
   bot: boolean;
   specialty?: string | null;
+  /** Permanent level (honorary). */
+  level?: number;
 }
 
 function Line(props: {
@@ -53,6 +55,9 @@ function Line(props: {
         </p>
         <div className="mt-1 flex items-center gap-2">
           {mine && <Badge>{fr.game.you}</Badge>}
+          {r.level !== undefined && (
+            <Badge tone="ghost">{fr.game.merchantLevel.short(r.level)}</Badge>
+          )}
           {r.bot && <Badge tone="ghost">{fr.game.npc}</Badge>}
           {r.pass && (
             <span title={fr.game.pass.seal} className="inline-flex">

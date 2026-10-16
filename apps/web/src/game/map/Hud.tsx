@@ -85,6 +85,7 @@ export function MapHud({
   pseudo,
   crest,
   title,
+  level,
   rank,
   seasonProgress,
   cash,
@@ -111,6 +112,8 @@ export function MapHud({
   pseudo: string;
   crest: CrestData;
   title: string;
+  /** Permanent level (honorary), once known. */
+  level: number | null;
   rank: number | null;
   seasonProgress: number;
   cash: string;
@@ -168,6 +171,7 @@ export function MapHud({
               onClick={onRanking}
               className="block text-left font-mono text-[10.5px] uppercase tracking-[0.1em] text-cream-dim"
             >
+              {level !== null && <>{fr.game.merchantLevel.short(level)} · </>}
               {title} · <span className="text-gold">#{rank ?? "—"}</span>
             </button>
           </span>

@@ -16,6 +16,7 @@ import {
   reportMessage,
   reportedMessages,
 } from "./familyChat.js";
+import { levelsOf } from "./level.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
 import { priceHistory, profile } from "./profile.js";
 import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
@@ -218,6 +219,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       passPrices: PASS_PRICES,
       ...(v ? await namesFor(v) : { names: {}, bots: [] }),
       unread: v ? await notifier.unread(account.id) : 0,
+      level: (await levelsOf(db, world.current, [account.id])).get(account.id),
       familyLatestAt: v ? await latestMessageAt(db, world, account.id) : null,
     });
   }
@@ -310,7 +312,11 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       .from(accounts)
       .where(eq(accounts.id, accountId));
     if (!who) return reply.code(404).send({ error: "unknown_player" });
-    return toJson({ ...who, palmares: await palmares(db, accountId) });
+    return toJson({
+      ...who,
+      level: (await levelsOf(db, world.current, [accountId])).get(accountId),
+      palmares: await palmares(db, accountId),
+    });
   });
 
   app.post("/api/game/join", async (req, reply) => {
@@ -371,10 +377,12 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const crests = new Map(rows.map((r) => [r.id, r.crest]));
     const bots = new Set(rows.filter((r) => r.bot).map((r) => r.id));
     const hidden = await retiredBots();
+    const levels = await levelsOf(db, world.current, ids);
     return ranking(world.ctx, world.current, world.now(), pseudos, hidden).map((r) => ({
       ...r,
       crest: crests.get(r.playerId) ?? null,
       bot: bots.has(r.playerId),
+      level: levels.get(r.playerId)?.level ?? 1,
     }));
   }
 
@@ -391,6 +399,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return toJson({
       account: { pseudo: account.pseudo, crest: account.crest },
       profile: p,
+      level: (await levelsOf(db, world.current, [account.id])).get(account.id),
       palmares: await palmares(db, account.id),
     });
   });
@@ -600,11 +609,17 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     if (!account) return;
     const table = await weeklyTable(db, world.id, world.ctx, world.current, world.now());
     const me = table.rows.find((r) => r.playerId === account.id);
+    const levels = await levelsOf(
+      db,
+      world.current,
+      table.rows.map((r) => r.playerId),
+    );
     const strip = ({ playerId, ...rest }: (typeof table.rows)[number]) => ({
       ...rest,
       id: playerId,
       me: playerId === account.id,
       pass: hasPass(world.current, playerId, world.now()),
+      level: levels.get(playerId)?.level ?? 1,
     });
     return toJson({
       week: table.week,

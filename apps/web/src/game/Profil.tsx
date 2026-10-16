@@ -254,6 +254,22 @@ function ProfileBody(props: GameProps) {
         </div>
       </header>
 
+      {props.level && (
+        <section className="space-y-3">
+          <h2 className="font-display text-2xl font-extrabold">
+            {fr.game.merchantLevel.title(props.level.level)}
+          </h2>
+          <Ribbon
+            value={props.level.progress}
+            label={fr.game.merchantLevel.progress(
+              props.level.xp.toLocaleString("fr-FR"),
+              props.level.to.toLocaleString("fr-FR"),
+            )}
+          />
+          <p className="text-sm text-cream-dim">{fr.game.merchantLevel.help}</p>
+        </section>
+      )}
+
       {profile && (
         <section className="space-y-4">
           <h2 className="font-display text-2xl font-extrabold">{fr.game.profileTitle}</h2>

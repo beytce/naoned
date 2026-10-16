@@ -719,6 +719,17 @@ export interface GameResponse {
   passPrices?: { season: number; week: number };
   /** The closing ceremony of the last season, until watched. */
   ceremony?: Ceremony;
+  /** The merchant's permanent level (honorary). */
+  level?: Level;
+}
+
+/** Permanent level: one point per ducat of net sales, every season; it never goes back. */
+export interface Level {
+  level: number;
+  xp: number;
+  from: number;
+  to: number;
+  progress: number;
 }
 
 export interface Ceremony {
@@ -828,6 +839,8 @@ export interface RankingRow {
   netWorth: Money;
   /** Net sales of the season (sales less purchases): what ranks it. */
   turnover: Money;
+  /** Permanent level (honorary). */
+  level: number;
   crest: CrestData | null;
   me: boolean;
   /** Computer-run merchant. */
@@ -843,7 +856,9 @@ export interface WeekRow {
   crest: CrestData | null;
   bot: boolean;
   me: boolean;
-  /** Net worth gained this week, in deniers (may be negative). */
+  /** Permanent level (honorary). */
+  level?: number;
+  /** Net sales this week (sales less purchases), in deniers (may be negative). */
   gain: Money;
 }
 

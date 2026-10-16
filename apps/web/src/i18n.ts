@@ -1454,6 +1454,13 @@ export const fr = {
     nextTitle: (name: string) => `Prochain titre : ${name}`,
     maxTitle: "Titre suprême atteint",
     netWorth: "Patrimoine",
+    turnover: "Ventes nettes",
+    merchantLevel: {
+      short: (n: number) => `Niv. ${n}`,
+      title: (n: number) => `Niveau ${n}`,
+      progress: (xp: string, to: string) => `${xp} / ${to} points`,
+      help: "Votre niveau ne redescend jamais : chaque ducat de ventes nettes vous rapporte un point, saison après saison. Il est honorifique : aucun avantage en jeu, chaque saison tout le monde repart à égalité.",
+    },
     cash: "Caisse",
     stockValue: "Stocks",
     buildingsValue: "Bâtiments",

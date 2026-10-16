@@ -419,6 +419,7 @@ export function MapScreen(
         pseudo={pseudo || m.home("")}
         crest={crest}
         title={view.standing.title.current.name}
+        level={props.level?.level ?? null}
         rank={view.standing.rank}
         seasonProgress={seasonProgress}
         cash={view.cash}

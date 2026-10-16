@@ -5,6 +5,7 @@ import type {
   CrestData,
   FamilyMessage,
   GameResponse,
+  Level,
   Notice,
   NotificationKind,
   Palmares,
@@ -46,6 +47,7 @@ export const gameApi = {
     call<{
       account: { pseudo: string | null; crest: CrestData | null };
       profile: Profile;
+      level?: Level;
       palmares: Palmares;
     }>("GET", "/api/game/profile"),
   palmares: (accountId: string) =>
