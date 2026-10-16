@@ -148,7 +148,7 @@ Constat : le jeu devient vite redondant et on a peu l'impression de se développ
 | Mécanique | Règle |
 | --- | --- |
 | **Domaine** | En tête du Comptoir, la Maison dessinée sur la terre de sa région. Les ateliers occupent douze parcelles, le palais la place d'honneur. Chaque niveau ajoute un ornement (bannière, socle, tour, couronne dorée). Ciel selon l'heure de Paris. Purement visuel |
-| **Maîtrises** | À 5 niveaux d'ateliers, le marchand choisit une maîtrise pour toute la saison : Maître d'atelier (+10 % sur ce qui se transforme), Roulier (véhicules 25 % plus rapides, un de plus), Négociant (quotas Dogana +25 %, taxe −2 points, 3 offres de plus) ou Marchand du Levant (quota doublé aux galères de la Muda ; l'Armateur jusqu'au 16 octobre 2026). Réglages `specialties` |
+| **Maîtrises** | À 5 niveaux d'ateliers, le marchand choisit une maîtrise pour toute la saison : Maître d'atelier (+15 % sur ce qui se transforme ; +10 % jusqu'au 16 octobre 2026), Roulier (véhicules 25 % plus rapides, un de plus), Négociant (quotas Dogana +25 %, taxe −2 points, 3 offres de plus) ou Marchand du Levant (quota doublé aux galères de la Muda ; l'Armateur jusqu'au 16 octobre 2026). Réglages `specialties` |
 | **Saison en actes** | Quatre actes, un par semaine, comprimés si le monde ouvre tard (`acts`). I l'installation ; II une crise tirée du secret du monde (guerre de Chioggia, peste ou embargo du Levant) ; III la guerre de Lombardie (Milan moitié plus fort dans la Campagne ; auparavant l'Arsenal, un chantier disputé) ; IV la Sensa, commandes +15 % et plus nombreuses. Le modificateur d'acte se multiplie avec l'événement du jour |
 | **Demande commune** | Les commandes des villes forment un tableau du monde, tiré chaque jour et ouvert par vagues (une toutes les 4 h, chaque commande ouverte 8 h, `deliveries.waves`) : 10 commandes de ville et 2 urgentes par marchand actif (`sharedOrdersPerActivePlayer`), complété si un marchand arrive dans la journée. Les commandes de ville sont payées la référence +10 % (`cityPriceBps`, contre +25 % sur le tableau personnel), plus le bonus de route. Le premier qui envoie un véhicule prend la commande ; le prix dépend de la route depuis sa région. Les matières premières restent réservées à leurs producteurs ; les commandes du Doge, de la famille et de bienvenue restent personnelles. Le bouton « Meilleur choix » disparaît |
 
@@ -169,7 +169,7 @@ La boucle : produire (Comptoir) → livrer (Routes) → s'approvisionner et reve
 | **Guerre commerciale** | Déclarée par vote : un trésor de guerre de 150 d quitte le trésor, une offensive à la fois par guilde. Pendant 48 h, chaque unité du bien livrée à la ville compte pour son camp ; celles du défenseur comptent 20 % de plus ; la Seigneurie défend par un seuil d'une unité par marchand actif. La ville commande davantage ce bien (un quart de commande par marchand actif et par jour). Le camp qui a le plus livré tient la concession, protégée 72 h (`wars`) |
 | **Fournisseurs** | Un marchand sans guilde s'engage auprès d'un camp : ses livraisons comptent pour lui, et la guilde de ce camp lui paie sa prime par unité tant que son trésor le permet |
 | **Brigandage de guerre** | Une bande ne se poste que sur la route d'une ville en guerre, par un marchand de l'un des camps, et ne frappe que les convois de l'autre camp portant le bien de la guerre (`bandits.warOnly`). Plus de bandes de l'ordinateur |
-| **Rialto nécessaire** | Le prix des commandes des villes suit le Rialto : moitié prix de référence, moitié prix moyen échangé jusqu'à la veille (avec un volume suffisant), entre 80 et 150 % de la référence (`deliveries.marketIndex`). Un prix fixé pour la journée et borné : vendre à perte un jour ne fait baisser les villes que de moitié, et pas sous 80 %. La Dogana devient un filet de sécurité : 10 achats et 5 ventes par jour et par bien |
+| **Rialto nécessaire** | Le prix des commandes des villes suit le Rialto : moitié prix de référence, moitié prix moyen échangé jusqu'à la veille (avec un volume suffisant), entre 80 et 150 % de la référence (`deliveries.marketIndex` ; depuis le 16 octobre 2026 : 70 % le prix échangé, entre 60 et 150 %, voir « Des prix qui bougent »). Un prix fixé pour la journée et borné : vendre à perte un jour ne fait baisser les villes que de moitié, et pas sous 80 %. La Dogana devient un filet de sécurité : 10 achats et 5 ventes par jour et par bien |
 | **Le monument** | Le chantier de l'Arsenal (Acte III) se dispute entre guildes : la gagnante reçoit 300 d à son trésor et son monument sur la carte |
 | **Pass Négociant** | Aucun avantage de guilde ni de guerre : ni carat, ni voix, ni péage, ni prime |
 | **Écrans** | Onglet Guilde (fonder, rejoindre, investir, voter, concessions, guerres, fil de guilde). Routes en 3D : blasons des détenteurs sous les villes, minuteur et rapport de force d'une guerre. Fiche de ville : la guerre et ses concessions. Marché : « Demandes de guerre » |
@@ -225,8 +225,20 @@ Constat de l'audit (`docs/audit-2026-10-16.md`) : trop de systèmes pour une bou
 | **Prix de la rareté** | Au prix de référence quand le lot est plein, jusqu'à +60 % quand il est épuisé, à proportion de ce qui est parti (`muda.priceRiseBps`) : premiers arrivés, meilleurs prix. L'argent payé est détruit (puits), les marchandises entrent dans l'économie |
 | **Quota par arrivée** | Chaque marchand achète au plus quelques unités par arrivée (3 épices, 3 soies, 2 fourrures, 2 draps, 10 sels, 6 vins : `muda.quotaPerPlayer`), remis à zéro aux galères suivantes. Le Pass n'y change rien |
 | **Commandes d'exotiques** | Une commande de ville sur treize, au tableau commun, demande une marchandise d'outre-mer (`deliveries.weights`, `deliveries.quantity`), aux villes qui en achètent. Elle se livre comme les autres ; s'approvisionner à la Muda tôt est la marge |
-| **Marchand du Levant** | Maîtrise qui double le quota à la Muda. La Charte du Levant, décret de famille, donne +50 % de quota aux membres et −25 % aux autres |
+| **Marchand du Levant** | Maîtrise qui double le quota à la Muda (+50 % depuis le rééquilibrage, plus bas). La Charte du Levant, décret de famille, donne +50 % de quota aux membres et −25 % aux autres |
 | **Notification** | « Galères de la Muda à quai », dans la cloche et en push (coupable comme les autres) |
+
+### Des prix qui bougent, des ateliers qui grandissent (audit du 16 octobre 2026)
+
+Constat de l'audit : un marché collé au prix de référence (indice 93 à 100) et des ateliers qui restent au niveau 1 (niveau moyen 1,3). Ces règles font vivre ce qui existe, sans mécanique nouvelle.
+
+| Mécanique | Règle |
+| --- | --- |
+| **Cours de la Dogana** | Il suit l'offre et la demande : chaque jour, il monte de ce que les marchands lui ont acheté de plus qu'ils ne lui ont vendu (en part de sa profondeur du jour, 6 % au plus), baisse dans le cas contraire, revient d'un quart vers la référence, entre 60 et 150 % de la référence (`marketMaker.drift`). Une vente soutenue le tient vers 76 %, un achat soutenu vers 124 %. Le négoce d'une marchandise au Rialto affiche son cours en % de la référence |
+| **Commandes indexées** | Le prix des commandes des villes suit le Rialto à 70 % (contre 50 %), entre 60 et 150 % de la référence (`deliveries.marketIndex`) |
+| **Demande élastique** | Une marchandise bon marché au Rialto est commandée plus souvent, une chère moins souvent (`deliveries.elasticityBps`) ; le tableau grandit avec les marchandises bon marché, jusqu'à deux fois sa taille (`deliveries.elasticMaxBps`) |
+| **Niveaux d'ateliers** | Chaque niveau coûte 35 % du premier de plus (contre 50 %) : avec le rendement de +25 % par niveau, un niveau rapporte plus par ducat qu'un nouvel atelier (`levelCostGrowthBps`) |
+| **Maîtrises** | Maître d'atelier +15 % sur ce qui se transforme (contre +10 %), Marchand du Levant +50 % de quota à la Muda (contre +100 %) |
 
 ## Vision et positionnement
 
@@ -367,7 +379,7 @@ L'économie repose sur un carnet d'ordres par ressource et par monde (pas par r�
 - Il place des ordres d'achat et de vente autour du prix de référence de chaque ressource.
 - Son écart part de 4 % au lancement et s'élargit jusqu'à 20 % à J+14, puis reste à 20 %. Il sert alors de plancher et de plafond : les joueurs font mieux entre eux, mais le jeu reste jouable avec peu de monde connecté.
 - Sa profondeur est plafonnée : une quantité maximale par ressource et par jour, réglée dans les paramètres du monde.
-- Son prix de référence est fixé dans les paramètres du monde et ajustable sans redéploiement. Il suit le marché **à la baisse uniquement** : il cote autour du plus bas du prix de référence et du prix moyen pondéré sur 7 jours (comme la valorisation), sans descendre sous 50 % du prix de référence. Il ne peut donc pas être poussé à acheter cher, et il ne soutient pas un prix que les joueurs ont abandonné.
+- Son prix de référence est fixé dans les paramètres du monde et ajustable sans redéploiement. Depuis le 16 octobre 2026, son cours suit l'offre et la demande (voir « Des prix qui bougent » plus haut) : chaque jour, il monte de ce que les marchands lui ont acheté de plus qu'ils ne lui ont vendu (en part de sa profondeur, 6 % au plus), baisse dans le cas contraire, revient d'un quart vers la référence, et reste entre 60 et 150 % de la référence. Auparavant, il ne suivait le marché qu'à la baisse.
 - Ses achats créent de la monnaie et ses ventes en détruisent ; tout passe par le grand livre, sur un compte système dédié.
 
 **Sources de monnaie** (création)
