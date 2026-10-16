@@ -570,7 +570,10 @@ export const venice1450Settings: WorldSettingsInput = {
   // Pass Négociant: a fifth more at the Dogana, two more open offers, fresher produce (+8 %
   // instead of +5 %). No order swapped: the board of deliveries is the same for everyone.
   // Nothing for an absent merchant.
+  // The Pass Négociant is off until it comes back (announced for the next season): nobody holds
+  // it, nothing grants it. Its perks stay set for when it returns.
   pass: {
+    enabled: false,
     marketMakerQuotaBps: 2_000,
     extraOpenOrders: 2,
     freshBonusBps: 800,

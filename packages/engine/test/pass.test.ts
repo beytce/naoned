@@ -41,12 +41,12 @@ function world() {
 describe("the Pass Négociant", () => {
   it("is held until a date, granted by the server (bought or won)", () => {
     const w = world();
-    expect(hasPass(w.state, "paid", w.now)).toBe(true);
-    expect(hasPass(w.state, "free", w.now)).toBe(false);
-    expect(hasPass(w.state, "paid", w.now + 7 * DAY)).toBe(false);
+    expect(hasPass(w.ctx, w.state, "paid", w.now)).toBe(true);
+    expect(hasPass(w.ctx, w.state, "free", w.now)).toBe(false);
+    expect(hasPass(w.ctx, w.state, "paid", w.now + 7 * DAY)).toBe(false);
     // A later grant extends it, an earlier one never shortens it.
     w.do({ type: "grantPass", playerId: "paid", until: w.now + DAY });
-    expect(hasPass(w.state, "paid", w.now + 6 * DAY)).toBe(true);
+    expect(hasPass(w.ctx, w.state, "paid", w.now + 6 * DAY)).toBe(true);
   });
 
   it("raises the daily quota at the Dogana by a fifth", () => {
@@ -127,5 +127,24 @@ describe("the Pass Négociant", () => {
     expect(w.try({ type: "fulfillContract", playerId: "paid", contractId: swapped.id }).ok).toBe(
       true,
     );
+  });
+
+  it("gives nothing while it is switched off, even to a merchant who holds one", () => {
+    const off = new World(
+      makeContext({ ...pass, pass: { ...pass.pass, enabled: false } } as never),
+    );
+    off.do({ type: "join", playerId: "paid", region: "terraferma" });
+    off.do({ type: "grantPass", playerId: "paid", until: off.now + 7 * DAY });
+    off.do({ type: "tick" });
+    expect(hasPass(off.ctx, off.state, "paid", off.now)).toBe(false);
+    expect(marketMakerQuotaLeft(off.ctx, off.state, "paid", "wheat", off.now).buy).toBe(10);
+    const day = dayIndex(off.ctx, off.now);
+    const first = contractsFor(off.ctx, "paid", day)[0];
+    const refused = off.try({
+      type: "rerollContract",
+      playerId: "paid",
+      contractId: first?.id ?? "",
+    });
+    expect(refused.ok ? "" : refused.error).toBe("pass_required");
   });
 });

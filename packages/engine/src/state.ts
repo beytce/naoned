@@ -485,7 +485,14 @@ export function escrowAccount(playerId: PlayerId): AccountId {
 }
 
 /** Whether a merchant holds the Pass Négociant at `at`. */
-export function hasPass(state: WorldState, playerId: PlayerId, at: number): boolean {
+export function hasPass(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  at: number,
+): boolean {
+  // Switched off (until it comes back): nobody holds it, whatever was granted.
+  if (!ctx.settings.pass.enabled) return false;
   return (state.players[playerId]?.passUntil ?? 0) > at;
 }
 

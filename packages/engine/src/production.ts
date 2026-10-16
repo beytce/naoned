@@ -64,7 +64,7 @@ export function collect(tx: Tx, building: Building): void {
       const fresh = tx.ctx.settings.fresh;
       const passFresh = tx.ctx.settings.pass.freshBonusBps;
       const freshBps =
-        passFresh > 0 && hasPass(tx.s as WorldState, building.playerId, tx.now)
+        passFresh > 0 && hasPass(tx.ctx, tx.s as WorldState, building.playerId, tx.now)
           ? passFresh
           : fresh.bonusBps;
       const freshBonus =
