@@ -12,6 +12,7 @@ import { Region } from "./Region.js";
 import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
 import { onBack } from "./back.js";
+import { connectLive } from "./live.js";
 import { MapScreen } from "./map/MapScreen.js";
 import type { Selection } from "./map/WorldMap.js";
 import { store } from "./store.js";
@@ -96,7 +97,13 @@ export interface GameProps {
   level: Level | null;
 }
 
+/** Polling without the live line; with it, a safety net now and then. */
 const POLL_MS = 15_000;
+const POLL_LIVE_MS = 60_000;
+/** On the minute's tick, everyone fetches within this span, not all at once. */
+const TICK_SPREAD_MS = 20_000;
+/** Price history: at most this often. */
+const PRICES_MS = 60_000;
 
 export function Game(props: {
   account: Account;
@@ -140,6 +147,11 @@ export function Game(props: {
   const acting = useRef(false);
   /** Where each section was scrolled to, so coming back to it finds the same place. */
   const viewRef = useRef<PlayerView | null | undefined>(undefined);
+  /** The world's version of the view on screen, and when it was fetched. */
+  const versionRef = useRef(0);
+  const fetchedAt = useRef(0);
+  const pricesAt = useRef(0);
+  const liveOpen = useRef(false);
 
   const apply = useCallback((serverTime: number, v: PlayerView | null) => {
     setOffset(serverTime - Date.now());
@@ -149,7 +161,9 @@ export function Game(props: {
 
   const refresh = useCallback(async () => {
     try {
+      fetchedAt.current = Date.now();
       const res = await gameApi.view();
+      versionRef.current = Math.max(versionRef.current, res.version ?? 0);
       setViewFailed(null);
       apply(res.serverTime, res.view);
       setUnread((before) => {
@@ -165,7 +179,10 @@ export function Game(props: {
       setPassInfo({ upcomingPass: res.upcomingPass, passPrices: res.passPrices });
       setPeople(res.names ?? {});
       setBots(new Set(res.bots ?? []));
-      if (res.view) setPrices((await gameApi.prices()).series);
+      if (res.view && Date.now() - pricesAt.current >= PRICES_MS) {
+        pricesAt.current = Date.now();
+        setPrices((await gameApi.prices()).series);
+      }
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) onLogout();
       else setViewFailed(err instanceof ApiError ? `${err.status || ""} ${err.code}`.trim() : "?");
@@ -183,11 +200,49 @@ export function Game(props: {
   useEffect(() => {
     loadCatalog();
     refresh();
-    const poll = setInterval(refresh, POLL_MS);
+    // Polling, as a safety net once the live line is open; nothing while the game is hidden.
+    const poll = setInterval(() => {
+      if (document.hidden) return;
+      const every = liveOpen.current ? POLL_LIVE_MS : POLL_MS;
+      if (Date.now() - fetchedAt.current >= every - 1_000) refresh();
+    }, POLL_MS);
     const clock = setInterval(() => setNow(Date.now()), 1000);
+    // Back on the game after a while: fetch at once.
+    const visible = () => {
+      if (!document.hidden && Date.now() - fetchedAt.current >= POLL_MS) refresh();
+    };
+    document.addEventListener("visibilitychange", visible);
+    // Live: the server says when the view changed.
+    let pending: ReturnType<typeof setTimeout> | undefined;
+    let pendingAt = Number.POSITIVE_INFINITY;
+    const fetchIn = (ms: number) => {
+      const at = Date.now() + ms;
+      if (pending && pendingAt <= at) return;
+      if (pending) clearTimeout(pending);
+      pendingAt = at;
+      pending = setTimeout(() => {
+        pending = undefined;
+        pendingAt = Number.POSITIVE_INFINITY;
+        refresh();
+      }, ms);
+    };
+    const close = connectLive(
+      (message) => {
+        // A view built from this version or a later one is already on screen.
+        if (message.version <= versionRef.current) return;
+        if (message.type === "changed") fetchIn(250);
+        else fetchIn(Math.floor(Math.random() * TICK_SPREAD_MS));
+      },
+      (open) => {
+        liveOpen.current = open;
+      },
+    );
     return () => {
       clearInterval(poll);
       clearInterval(clock);
+      if (pending) clearTimeout(pending);
+      document.removeEventListener("visibilitychange", visible);
+      close();
     };
   }, [refresh, loadCatalog]);
 
@@ -276,6 +331,7 @@ export function Game(props: {
       setBusy(true);
       try {
         const res = await gameApi.act(action);
+        versionRef.current = Math.max(versionRef.current, res.version ?? 0);
         apply(res.serverTime, res.view);
         if (res.names) setPeople(res.names);
         if (res.bots) setBots(new Set(res.bots));
@@ -286,6 +342,7 @@ export function Game(props: {
         }
         haptic(REWARDING.has(action.type) ? "success" : "tap");
         if (action.type === "instantOrder" || action.type === "sellToCity") {
+          pricesAt.current = Date.now();
           gameApi
             .prices()
             .then((p) => setPrices(p.series))

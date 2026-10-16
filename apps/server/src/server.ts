@@ -60,6 +60,8 @@ const shutdown = async () => {
   bots.stop();
   notifier.stop();
   await app.close();
+  // The next start replays nothing (a lost world writes nothing).
+  await world.snapshot().catch(console.error);
   await database.close();
   process.exit(0);
 };

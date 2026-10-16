@@ -80,8 +80,9 @@ export const worlds = pgTable("worlds", {
 });
 
 /**
- * Engine state of a world, saved after every command (milestone 3). Milestones 4 and 5 replace
- * it with relational tables; the journals below are already final.
+ * Engine state of a world: a snapshot, written about once a minute; the commands since are in
+ * `world_commands` and replayed on loading (the engine is deterministic). Milestones 4 and 5
+ * replace it with relational tables; the journals below are already final.
  */
 export const worldStates = pgTable("world_states", {
   worldId: uuid("world_id")
@@ -96,6 +97,25 @@ export const worldStates = pgTable("world_states", {
    */
   owner: text("owner"),
 });
+
+/**
+ * The commands applied since the last snapshot, one row per saved version (a bot's session is
+ * several commands): what loading replays on the snapshot. Written with the ledger, in the same
+ * transaction; rows up to the snapshot's version are deleted when it is written.
+ */
+export const worldCommands = pgTable(
+  "world_commands",
+  {
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    version: integer("version").notNull(),
+    /** The time the commands were decided at (ms). */
+    at: bigint("at", { mode: "number" }).notNull(),
+    commands: jsonb("commands").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.version] })],
+);
 
 export const players = pgTable(
   "players",

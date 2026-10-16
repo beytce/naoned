@@ -546,6 +546,8 @@ export interface Welcome {
 
 export interface GameResponse {
   serverTime: number;
+  /** The world's saved version the view was built from. */
+  version?: number;
   view: PlayerView | null;
   error?: string;
   /** Unread notifications (the bell). */

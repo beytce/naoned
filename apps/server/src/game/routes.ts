@@ -17,6 +17,7 @@ import {
   reportedMessages,
 } from "./familyChat.js";
 import { levelsOf } from "./level.js";
+import { LiveHub } from "./live.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
 import { priceHistory, profile } from "./profile.js";
 import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
@@ -123,6 +124,22 @@ export interface GameRouteDeps {
 export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): void {
   const { db, world, auth, notifier } = deps;
 
+  // Push: the open games hear when to fetch their view again (polling stays as a fallback).
+  const live = new LiveHub();
+  live.start();
+  world.onEffects((fx, _now, saved) => live.onEffects(fx, saved.version, saved.tick));
+  app.addHook("onClose", async () => live.stop());
+  app.get("/api/live", { websocket: true }, async (socket, req) => {
+    const account = await auth.accountForSession(req.cookies[deps.sessionCookie]);
+    if (!account) {
+      socket.close(4401, "unauthenticated");
+      return;
+    }
+    live.add(account.id, socket);
+    // Ignored: the game only listens.
+    socket.on("message", () => undefined);
+  });
+
   async function requireAccount(req: FastifyRequest, reply: FastifyReply) {
     const account = await auth.accountForSession(req.cookies[deps.sessionCookie]);
     if (!account) {
@@ -186,6 +203,8 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     );
     return toJson({
       serverTime: now,
+      /** The world's saved version the view was built from: a push older than it is stale. */
+      version: world.savedVersion,
       view: v,
       upcomingPass: await upcomingPass(db, account.id, now),
       passPrices: PASS_PRICES,

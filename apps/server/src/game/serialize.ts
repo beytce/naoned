@@ -30,5 +30,15 @@ function revive(value: unknown): unknown {
 
 /** For API responses: bigint amounts become strings of deniers. */
 export function toJson(value: unknown): unknown {
-  return JSON.parse(JSON.stringify(value, (_k, v) => (typeof v === "bigint" ? v.toString() : v)));
+  if (typeof value === "bigint") return value.toString();
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(toJson);
+  // As JSON would: undefined and functions are left out, dates become strings.
+  if (value instanceof Date) return value.toJSON();
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (v === undefined || typeof v === "function") continue;
+    out[k] = toJson(v);
+  }
+  return out;
 }
