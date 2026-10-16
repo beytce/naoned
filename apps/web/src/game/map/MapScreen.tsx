@@ -444,6 +444,7 @@ export function MapScreen(
         onProfile={() => props.setSheet("profile")}
         onNotices={() => props.setSheet("notices")}
         onBales={() => props.setSheet("bales")}
+        onRialto={() => props.goTo("marche")}
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
         onRanking={() => props.setSheet("ranking")}
