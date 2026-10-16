@@ -498,6 +498,12 @@ export const worldSettingsSchema = z.object({
        * sends a vehicle. The Doge's, family and welcome orders stay personal.
        */
       sharedOrdersPerActivePlayer: qty.default(0),
+      /**
+       * The cities' orders of the shared board come in waves through the day instead of all at
+       * midnight: a wave every `everyHours`, each order open `openHours` (cut at midnight). The
+       * day's count is unchanged. Absent: one board at midnight, open all day.
+       */
+      waves: z.object({ everyHours: positive, openHours: positive }).optional(),
       /** On the day of joining, a first order the starting stock covers, by region. */
       welcome: z.record(z.object({ resource: z.string(), quantity: positive })).default({}),
       /** Minutes of road one way at normal speed: region → city → minutes. */

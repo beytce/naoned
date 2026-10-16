@@ -158,6 +158,8 @@ describe("the road", () => {
     smallOrders(world);
     // A fuller board, so that some city asks for bread twice whatever the world's draw.
     world.ctx.settings.deliveries.sharedOrdersPerActivePlayer = 12;
+    // All of them open at once (no waves through the day).
+    world.ctx.settings.deliveries.waves = undefined;
     const ada = await player("ada@example.org");
     const view = (await get(ada)).view;
     expect(

@@ -590,6 +590,15 @@ export function ensureBoard(tx: Tx): void {
       return { resource, city: list[(h >>> 8) % list.length] ?? "" };
     };
     const total = cfg.sharedOrdersPerActivePlayer * active;
+    // City orders by rank: the n-th goes to wave n modulo the waves of the day.
+    const every = (cfg.waves?.everyHours ?? 24) * HOUR_MS;
+    const perDay = Math.max(1, Math.floor(DAY_MS / every));
+    let rank = 0;
+    const wave = (): [number, number] => {
+      const opensAt = dayStart + (rank++ % perDay) * every;
+      const open = cfg.waves ? cfg.waves.openHours * HOUR_MS : DAY_MS;
+      return [opensAt, Math.min(expiresAt, opensAt + open)];
+    };
     // Where the market asks for more: the same share of the board as on a personal board.
     const asked = resources.flatMap((resource) =>
       citiesBuying(resource)
@@ -606,13 +615,13 @@ export function ensureBoard(tx: Tx): void {
     for (let i = 0; i < askedCount; i++) {
       const key = `board-event:${day}:${i}`;
       const pair = asked[draw(ctx, key) % asked.length] as (typeof asked)[number];
-      add(`e${i}`, "city", pair.resource, pair.city, key, dayStart, expiresAt);
+      add(`e${i}`, "city", pair.resource, pair.city, key, ...wave());
     }
     // Keyed by rank: a larger board holds the smaller one of the same day.
     for (let i = 0; i < total - askedCount; i++) {
       const key = `board:${day}:${i}`;
       const o = random(key);
-      add(`w${i}`, "city", o.resource, o.city, key, dayStart, expiresAt);
+      add(`w${i}`, "city", o.resource, o.city, key, ...wave());
     }
     for (let i = 0; i < cfg.urgentPerDay * active; i++) {
       const key = `board-urgent:${day}:${i}`;

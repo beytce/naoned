@@ -479,6 +479,8 @@ export const venice1450Settings: WorldSettingsInput = {
     // Shared demand: the cities' orders form one board for the world, first come first served
     // (four city orders per active merchant: vehicles fill up with several of them).
     sharedOrdersPerActivePlayer: 4,
+    // In waves: new city orders every 4 hours, each open 8 hours, rather than all at midnight.
+    waves: { everyHours: 4, openHours: 8 },
     welcome: {
       terraferma: { resource: "bread", quantity: 12 },
       lagoon: { resource: "bricks", quantity: 8 },

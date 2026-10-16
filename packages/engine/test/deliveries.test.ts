@@ -14,7 +14,7 @@ import {
   travelMinutes,
 } from "../src/index.js";
 import { deliverySettings, testDeliveries, testSettings } from "./fixture.js";
-import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
+import { DAY, HOUR, MIN, T0, World, makeContext } from "./helpers.js";
 
 const ctx = (more: Partial<WorldSettingsInput> = {}) =>
   makeContext({ ...deliverySettings, ...more });
@@ -520,6 +520,33 @@ describe("a board shared by the world", () => {
   };
   const common = (w: World, playerId: string, day = 0) =>
     deliveryOrdersFor(w.ctx, w.state, playerId, day).filter((o) => o.shared);
+
+  it("comes in waves through the day when set, each order open for a while", () => {
+    const waves = {
+      ...testDeliveries,
+      quantity: { ...testDeliveries.quantity, wheat: [10, 20] },
+      sharedOrdersPerActivePlayer: 6,
+      waves: { everyHours: 4, openHours: 8 },
+    };
+    const w = shared({ deliveries: waves } as never);
+    const city = w.state.board?.orders.filter((o) => o.kind === "city") ?? [];
+    // As many orders a day as without waves, spread over six waves.
+    expect(city).toHaveLength(18);
+    const opens = [...new Set(city.map((o) => (o.opensAt - T0) / HOUR))].sort((a, b) => a - b);
+    expect(opens).toEqual([0, 4, 8, 12, 16, 20]);
+    for (const o of city) {
+      expect(city.filter((x) => x.opensAt === o.opensAt)).toHaveLength(3);
+      // Eight hours, cut at midnight when the next board is drawn.
+      expect(o.expiresAt).toBe(Math.min(o.opensAt + 8 * HOUR, T0 + DAY));
+    }
+    // At 9 h, the waves of 0 h (closed at 8 h), 12 h and later are not open.
+    const open = common(w, "a").filter(
+      (o) => o.kind === "city" && o.opensAt <= w.now && w.now < o.expiresAt,
+    );
+    expect(open.map((o) => (o.opensAt - T0) / HOUR).sort()).toEqual([4, 4, 4, 8, 8, 8]);
+    const later = common(w, "a").find((o) => o.kind === "city" && o.opensAt > w.now);
+    expect(error(dispatch(w, later?.id ?? ""))).toBe("order_not_open");
+  });
 
   it("is drawn once a day for the whole world, in proportion to the active merchants", () => {
     const w = shared();
