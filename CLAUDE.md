@@ -27,4 +27,5 @@ Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage complet 
 - Tout changement d'équilibrage se valide avec `pnpm sim` (toutes les graines conformes) et se documente dans docs/calibration.md.
 - Petits commits, un par fonctionnalité.
 - Hors périmètre MVP : noter dans IDEAS.md, ne pas coder.
+- Gel des mécaniques jusqu'aux mesures de la bêta (docs/CADRAGE.md) : régler, corriger, simplifier, mesurer ; toute nouvelle mécanique va dans IDEAS.md.
 - Langue du code : anglais. Langue de l'interface : français (i18n prévu).
