@@ -709,3 +709,19 @@ Trois changements demandés pendant la bêta :
 - Le classement récompense l'activité : les assidus finissent 180 à 430 % devant les occasionnels en ventes nettes (diagnostic ; pas d'occasionnel actif en fin de saison sur la graine 2).
 
 **Pass Négociant (`pnpm sim --pass 0.2`) : non conforme, comme avant ce changement.** Le code d'origine (commit 211b933) échoue déjà sur les graines 1 et 3 (avance des abonnés en patrimoine de 22,3 % et 6,5 %). Après le changement, les mêmes graines échouent (patrimoine 26,0 % et 28,5 % ; ventes nettes 29,8 % et 47,4 % ; graine 1 : 40 % du top 10 en patrimoine) ; les graines 2, 4 et 5 sont conformes, avec des avances négatives. La mesure par saison rejouée diverge fortement d'une graine à l'autre (de −70 % à +47 %) : elle mesure surtout le bruit de deux parties qui divergent. Conformément à CLAUDE.md, **le paiement du Pass reste débranché** ; le simulateur vérifie désormais les trois garde-fous sur les deux mesures (patrimoine, la règle, et ventes nettes, le classement).
+
+## Commandes des villes par vagues (16 octobre 2026)
+
+Le tableau commun n'arrive plus en une fois à minuit : une vague de commandes de ville toutes les 4 heures, chacune ouverte 8 heures (coupée à minuit), pour le même nombre de commandes par jour (`deliveries.waves`).
+
+`pnpm sim`, 5 graines, **toutes conformes** ; `pnpm sim --players 40 --live`, 5 graines conformes.
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Commandes du tableau prises | 88,0 % | 89,1 % | 87,6 % | 89,5 % | 89,5 % |
+| Prises dans l'heure de l'ouverture | 31,9 % | 34,5 % | 33,7 % | 33,0 % | 34,7 % |
+| Commandes perdues au profit d'un autre, par session | 26,1 | 27,7 | 27,1 | 26,4 | 30,0 |
+| Monnaie payée (ducats / joueur actif / jour) | 168,2 | 168,8 | 165,9 | 169,8 | 169,9 |
+| Masse monétaire par joueur actif (maximum) | 0,91 × | 0,98 × | 0,88 × | 0,87 × | 0,90 × |
+
+**Lecture.** Autant de commandes prises qu'avant (environ neuf sur dix), mais deux fois plus vite après leur ouverture (un tiers dans l'heure, contre 15 %) et deux fois moins de commandes perdues au profit d'un autre à chaque session (26 à 30 contre environ 60) : chaque visite trouve des commandes fraîches au lieu d'un tableau vidé le matin. La monnaie payée baisse un peu (166 à 170 contre 175 à 180 ducats) : les commandes de la dernière vague, coupées à minuit, ont moins de temps.
