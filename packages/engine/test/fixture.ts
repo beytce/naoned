@@ -262,7 +262,7 @@ export const testCampaign = {
 };
 
 export const testDecrees = {
-  catalog: ["fondaco", "gabelle", "faveur", "peage", "course", "levant", "calmiere", "franchise"],
+  catalog: ["fondaco", "gabelle", "faveur", "peage", "levant", "calmiere", "franchise"],
   perWinner: 2,
   maxVoteBps: 5_000,
   defaults: [{ code: "fondaco" }, { code: "franchise" }],
@@ -270,7 +270,7 @@ export const testDecrees = {
   gabelle: { extraTaxBps: 400 },
   faveur: { premiumBps: 1_000, reservedMinutes: 30 },
   peage: { tollBps: 300 },
-  levant: { memberDiscountBps: 5_000, othersSurchargeBps: 2_500 },
+  levant: { memberQuotaBps: 5_000, othersCutBps: 2_500 },
   calmiere: { capBps: 11_500 },
   franchise: { upkeepDiscountBps: 2_000 },
 };

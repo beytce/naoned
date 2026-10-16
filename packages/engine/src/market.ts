@@ -1,6 +1,7 @@
 import { familyAccount } from "./campaign.js";
 import { calmiereCap, decreeQuotaBps, decreeTaxBps, gabelleOn } from "./decrees.js";
 import { type Deniers, applyBpsCeil, applyBpsFloor } from "./money.js";
+import { isMudaGood, mudaRoom, useMuda } from "./muda.js";
 import { specialtyEffects } from "./specialties.js";
 import {
   HOUR_MS,
@@ -155,6 +156,10 @@ export function playerQuota(
 }
 
 function quotaRoom(tx: Tx, playerId: PlayerId, resource: string, dir: "bought" | "sold"): number {
+  // The Muda's lot: so many units per merchant and per arrival, not per day.
+  if (dir === "bought" && isMudaGood(tx.ctx, resource)) {
+    return mudaRoom(tx.ctx, tx.s as WorldState, playerId, resource, tx.now);
+  }
   const quota = playerQuota(tx.ctx, tx.s as WorldState, resource, dir, tx.now, playerId);
   if (quota === undefined) return Number.POSITIVE_INFINITY;
   const used = usageToday(tx).byPlayer?.[playerId]?.[dir][resource] ?? 0;
@@ -209,7 +214,8 @@ function settle(tx: Tx, buy: Order, sell: Order, price: Deniers, qty: number): v
     transfer(tx, escrowAccount(buy.playerId), SINK_ACCOUNT, gross, "market_maker_sell", tradeId);
     addStock(tx, buy.playerId, buy.resource, qty, "trade_buy", tradeId);
     tx.s.marketMaker.sold[buy.resource] = (tx.s.marketMaker.sold[buy.resource] ?? 0) + qty;
-    useQuota(tx, buy.playerId, buy.resource, "bought", qty);
+    if (isMudaGood(tx.ctx, buy.resource)) useMuda(tx, buy.playerId, buy.resource, qty);
+    else useQuota(tx, buy.playerId, buy.resource, "bought", qty);
   } else {
     removeEscrowedStock(tx, sell.playerId, sell.resource, qty, "trade_sell", tradeId);
     addStock(tx, buy.playerId, buy.resource, qty, "trade_buy", tradeId);

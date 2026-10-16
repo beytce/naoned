@@ -8,6 +8,7 @@ const NONE: SpecialtyEffects = {
   transformYieldBps: 0,
   vehicleSpeedBps: 0,
   extraVehicles: 0,
+  mudaQuotaBps: 0,
   marketMakerQuotaBps: 0,
   taxDiscountBps: 0,
   extraOpenOrders: 0,

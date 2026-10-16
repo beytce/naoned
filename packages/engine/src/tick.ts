@@ -6,6 +6,7 @@ import { dissolveLegacyGuilds } from "./families.js";
 import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
 import { bigMin } from "./money.js";
+import { arriveMuda } from "./muda.js";
 import { openDueProjects } from "./projects.js";
 import { retireSeaAndBandits } from "./retired.js";
 import { DAY_MS, HOUR_MS, SINK_ACCOUNT, type WorldState, cashAccount, dayIndex } from "./state.js";
@@ -94,5 +95,7 @@ export function tick(tx: Tx): void {
   openDueProjects(tx);
   // Shared demand: the world's board of the day, drawn once the day's active merchants are known.
   ensureBoard(tx);
+  // The galleys of the Muda, before the Dogana quotes their lot.
+  arriveMuda(tx);
   requoteMarketMaker(tx);
 }

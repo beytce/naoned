@@ -219,19 +219,17 @@ export function tollOn(
   return { family: d.family, bps: ctx.settings.decrees.peage.tollBps };
 }
 
-/** Port dues under the Levant's tariff: lighter for the members, heavier for the others. */
-export function levantDuesBps(
+/** The Levant's charter at the Muda: a larger quota for the members, a smaller one for the others. */
+export function levantQuotaBps(
   ctx: WorldContext,
   state: WorldState,
   playerId: PlayerId,
   at: number,
 ): number {
   const d = decreeInForce(ctx, state, "levant", at);
-  if (!d) return 10_000;
+  if (!d) return 0;
   const r = ctx.settings.decrees.levant;
-  return memberOf(state, playerId, d.family)
-    ? 10_000 - r.memberDiscountBps
-    : 10_000 + r.othersSurchargeBps;
+  return memberOf(state, playerId, d.family) ? r.memberQuotaBps : -r.othersCutBps;
 }
 
 /** Highest price of an offer of a good under the calmiere, if any. */

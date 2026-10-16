@@ -193,7 +193,7 @@ export const venice1450Settings: WorldSettingsInput = {
     gabelle: { extraTaxBps: 400 },
     faveur: { premiumBps: 1_000, reservedMinutes: 30 },
     peage: { tollBps: 300 },
-    levant: { memberDiscountBps: 5_000, othersSurchargeBps: 2_500 },
+    levant: { memberQuotaBps: 5_000, othersCutBps: 2_500 },
     calmiere: { capBps: 11_500 },
     franchise: { upkeepDiscountBps: 2_000 },
   },

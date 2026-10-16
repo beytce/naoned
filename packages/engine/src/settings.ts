@@ -63,6 +63,21 @@ export const worldSettingsSchema = z.object({
   rations: z
     .object({ resource: z.string(), perLevelPerDay: qty, slowdownBps: bps })
     .default({ resource: "bread", perLevelPerDay: 0, slowdownBps: 0 }),
+  /**
+   * The galleys of the Muda bring the goods from overseas to Venice every `everyDays` days at
+   * `hour`: the Dogana sells a lot in proportion to active merchants, dearer as it runs out
+   * (up to `priceRiseBps` more when all is gone), a few units per merchant and per arrival.
+   */
+  muda: z
+    .object({
+      everyDays: positive,
+      hour: qty.max(23),
+      lotPerActivePlayer: z.record(qty),
+      quotaPerPlayer: z.record(qty),
+      priceRiseBps: bps,
+      maxStockLots: positive,
+    })
+    .optional(),
   /** Daily orders from the Doge, per player: deliver goods to a city at a premium. */
   contracts: z
     .object({
@@ -345,8 +360,8 @@ export const worldSettingsSchema = z.object({
       faveur: z.object({ premiumBps: bps, reservedMinutes: qty }),
       /** Paid by others' deliveries to the cities the family held, shared out among members. */
       peage: z.object({ tollBps: bps }),
-      /** Members' port dues lighter, others' heavier. */
-      levant: z.object({ memberDiscountBps: bps.max(10_000), othersSurchargeBps: bps }),
+      /** Members' quota at the Muda larger, others' smaller. */
+      levant: z.object({ memberQuotaBps: bps, othersCutBps: bps.max(10_000) }),
       /** No offer of a good above this share of its reference price. */
       calmiere: z.object({ capBps: bps }),
       /** Members' building upkeep lighter. */
@@ -361,7 +376,7 @@ export const worldSettingsSchema = z.object({
       gabelle: { extraTaxBps: 0 },
       faveur: { premiumBps: 0, reservedMinutes: 0 },
       peage: { tollBps: 0 },
-      levant: { memberDiscountBps: 0, othersSurchargeBps: 0 },
+      levant: { memberQuotaBps: 0, othersCutBps: 0 },
       calmiere: { capBps: 10_000 },
       franchise: { upkeepDiscountBps: 0 },
     }),
@@ -484,6 +499,8 @@ export const worldSettingsSchema = z.object({
           /** Vehicles go faster by this much. */
           vehicleSpeedBps: bps.default(0),
           extraVehicles: qty.default(0),
+          /** A larger quota at the galleys of the Muda. */
+          mudaQuotaBps: bps.default(0),
           /** A larger share of the market maker's daily quota. */
           marketMakerQuotaBps: bps.default(0),
           /** Taken off the market tax on the merchant's sales. */

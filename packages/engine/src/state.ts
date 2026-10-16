@@ -233,6 +233,17 @@ export interface MarketMakerUsage {
   >;
 }
 
+/** The galleys of the Muda at the quay (see muda.ts). */
+export interface MudaState {
+  /** Index of the last arrival (0 = the first, on the first day). */
+  arrival: number;
+  stock: Record<string, number>;
+  /** The last arrival's lot: the price rises with the share of it that is gone. */
+  lot: Record<string, number>;
+  /** Units bought by each merchant since the last arrival. */
+  bought: Record<PlayerId, Record<string, number>>;
+}
+
 export interface WorldState {
   seq: number;
   players: Record<PlayerId, Player>;
@@ -242,6 +253,8 @@ export interface WorldState {
   accounts: Record<AccountId, Deniers>;
   orders: Record<OrderId, Order>;
   marketMaker: MarketMakerUsage;
+  /** The Muda's lot on the quay, from the first galleys on. */
+  muda?: MudaState;
   cities: Record<string, Record<ResourceCode, CityDemandState>>;
   projects: Record<ProjectId, Project>;
   nextProjectAt: number;

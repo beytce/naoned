@@ -92,3 +92,4 @@ export * from "./valuation.js";
 export * from "./weekly.js";
 export * from "./bots.js";
 export { MarketView, scale } from "./marketView.js";
+export * from "./muda.js";
