@@ -163,7 +163,9 @@ const size = JSON.stringify(encode(world.current)).length;
 console.log(
   `\n${MINUTES} minutes simulées en ${wall.toFixed(1)} s · ${requests} requêtes (${(requests / wall).toFixed(0)}/s) · ${errors} erreurs`,
 );
-console.log(`État du monde sauvegardé à chaque commande : ${(size / 1024).toFixed(0)} Ko\n`);
+console.log(
+  `Instantané de l'état du monde (écrit une fois par minute) : ${(size / 1024).toFixed(0)} Ko\n`,
+);
 console.log("| Requête | Nombre | p50 (ms) | p95 (ms) | p99 (ms) | max (ms) |");
 console.log("| --- | --- | --- | --- | --- | --- |");
 for (const [kind, list] of [...timings].sort()) {

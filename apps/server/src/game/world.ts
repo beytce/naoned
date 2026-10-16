@@ -20,7 +20,7 @@ import {
   venice1450,
   venice1450Settings,
 } from "@comptoirs/engine";
-import { and, eq, sql } from "drizzle-orm";
+import { and, asc, eq, gt, lte, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import {
   ledgerEntries,
@@ -28,6 +28,7 @@ import {
   stockMovements,
   telemetry,
   trades,
+  worldCommands,
   worldStates,
   worlds,
 } from "../db/schema.js";
@@ -41,10 +42,20 @@ const THEMES = { venice1450 } as const;
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
+export interface WorldOptions {
+  settingsFromTheme?: boolean;
+  /** A snapshot of the state at least this often (ms) … */
+  snapshotEveryMs?: number;
+  /** … or after this many saved versions, whichever comes first. */
+  snapshotEveryVersions?: number;
+}
+
 /**
  * One running world. Commands are serialised in memory (one server instance), applied by the
- * pure engine, then saved in a single SQL transaction: new state, ledger entries, stock movements,
- * trades and telemetry. If saving fails, the in-memory state is left unchanged.
+ * pure engine, then saved in a single SQL transaction: the commands themselves (`world_commands`),
+ * ledger entries, stock movements, trades and telemetry; the whole state only now and then (a
+ * snapshot), the commands since being replayed on loading. If saving fails, the in-memory state
+ * is left unchanged.
  */
 export class GameWorld {
   private queue: Promise<unknown> = Promise.resolve();
@@ -76,14 +87,21 @@ export class GameWorld {
     private state: WorldState,
     private version: number,
     private readonly clock: () => number,
-    private readonly options: { settingsFromTheme?: boolean },
-  ) {}
+    private readonly options: WorldOptions,
+  ) {
+    this.snapshotVersion = version;
+    this.snapshotAt = clock();
+  }
+
+  /** Version and time of the last snapshot written. */
+  private snapshotVersion: number;
+  private snapshotAt: number;
 
   /** Loads the open world, creating the first one (Venice 1450, until the end of the month). */
   static async open(
     db: Db,
     clock: () => number = Date.now,
-    options: { settingsFromTheme?: boolean } = {},
+    options: WorldOptions = {},
   ): Promise<GameWorld> {
     let [world] = await db.select().from(worlds).where(eq(worlds.status, "open")).limit(1);
     if (!world) {
@@ -131,6 +149,8 @@ export class GameWorld {
     this.ctx = loaded.ctx;
     this.state = loaded.state;
     this.version = loaded.version;
+    this.snapshotVersion = loaded.version;
+    this.snapshotAt = now;
     for (const l of this.seasonListeners) {
       try {
         l(closedId);
@@ -219,8 +239,28 @@ export class GameWorld {
       .where(eq(worldStates.worldId, this.id));
     if (!saved) return;
     if (saved.owner !== this.instance) throw new StaleState(true);
-    this.state = decode<WorldState>(saved.state);
-    this.version = saved.version;
+    const replayed = await replayJournal(
+      this.db,
+      this.ctx,
+      this.id,
+      decode<WorldState>(saved.state),
+      saved.version,
+    );
+    this.state = replayed.state;
+    this.version = replayed.version;
+    this.snapshotVersion = saved.version;
+  }
+
+  /** Writes a snapshot now (on shutdown): the next start replays nothing. */
+  snapshot(): Promise<void> {
+    return this.serial(async () => {
+      if (this.lost || this.version === this.snapshotVersion) return;
+      const version = this.version;
+      const state = this.state;
+      await this.db.transaction((tx) => writeSnapshot(tx, this.id, this.instance, state, version));
+      this.snapshotVersion = version;
+      this.snapshotAt = this.clock();
+    });
   }
 
   execute(command: Command): Promise<ActionResult> {
@@ -231,7 +271,7 @@ export class GameWorld {
       const saved = await this.guarded(async () => {
         now = this.clock();
         res = decide(this.ctx, this.state, command, now);
-        if (res.ok) await this.persist(res.state, res.effects, now, command);
+        if (res.ok) await this.persist(res.state, res.effects, now, command, [command]);
       }).catch((err) => {
         if (err instanceof StaleState && err.lost) {
           this.loseOwnership();
@@ -270,6 +310,7 @@ export class GameWorld {
       let state = this.state;
       const fx = emptyEffects();
       let accepted = 0;
+      const journal: Command[] = [];
       play({
         now,
         state: () => state,
@@ -281,6 +322,7 @@ export class GameWorld {
           fx.stock.push(...res.effects.stock);
           fx.trades.push(...res.effects.trades);
           fx.events.push(...res.effects.events);
+          journal.push(command);
           accepted++;
           return true;
         },
@@ -294,6 +336,7 @@ export class GameWorld {
             fx,
             now,
             playerId ? { type: "collect", playerId, buildingId: "" } : null,
+            journal,
           ),
         false,
       ).catch(() => false);
@@ -305,28 +348,41 @@ export class GameWorld {
     });
   }
 
-  private async persist(next: WorldState, fx: Effects, now: number, command: Command | null) {
+  private async persist(
+    next: WorldState,
+    fx: Effects,
+    now: number,
+    command: Command | null,
+    /** The commands that made `next`, replayed on loading. */
+    journal: Command[],
+  ) {
     const at = new Date(now);
     const worldId = this.id;
+    const version = this.version + 1;
+    const snapshot =
+      now - this.snapshotAt >= (this.options.snapshotEveryMs ?? 60_000) ||
+      version - this.snapshotVersion >= (this.options.snapshotEveryVersions ?? 200);
     await this.db.transaction(async (tx) => {
-      const updated = await tx
-        .update(worldStates)
-        .set({ state: encode(next), version: this.version + 1, updatedAt: at })
-        .where(
-          and(
-            eq(worldStates.worldId, worldId),
-            eq(worldStates.version, this.version),
-            eq(worldStates.owner, this.instance),
-          ),
-        )
-        .returning({ version: worldStates.version });
-      if (updated.length !== 1) {
+      // The commands, as the next version, while this instance still owns the world: another
+      // writer (a version taken, an instance that took over) stops it here.
+      const inserted = rowsOf(
+        await tx.execute(sql`
+          insert into world_commands (world_id, version, at, commands)
+          select ${worldId}, ${version}, ${now}, ${JSON.stringify(encode(journal))}::jsonb
+          where exists (
+            select 1 from world_states where world_id = ${worldId} and owner = ${this.instance}
+          )
+          on conflict do nothing
+          returning version`),
+      );
+      if (inserted.length !== 1) {
         const [row] = await tx
           .select({ owner: worldStates.owner })
           .from(worldStates)
           .where(eq(worldStates.worldId, worldId));
         throw new StaleState(row?.owner !== this.instance);
       }
+      if (snapshot) await writeSnapshot(tx, worldId, this.instance, next, version);
 
       if (fx.ledger.length > 0) {
         await tx.insert(ledgerEntries).values(
@@ -419,6 +475,10 @@ export class GameWorld {
         }
       }
     });
+    if (snapshot) {
+      this.snapshotVersion = version;
+      this.snapshotAt = now;
+    }
   }
 
   private async recordTutorial(tx: Db, accountId: string, events: GameEvent[], at: Date) {
@@ -505,6 +565,55 @@ export class GameWorld {
 
 type WorldRow = typeof worlds.$inferSelect;
 
+/** The whole state as `version`, and the commands it already holds forgotten. */
+async function writeSnapshot(
+  tx: Db,
+  worldId: string,
+  owner: string,
+  state: WorldState,
+  version: number,
+): Promise<void> {
+  const written = await tx
+    .update(worldStates)
+    .set({ state: encode(state), version, updatedAt: new Date() })
+    .where(and(eq(worldStates.worldId, worldId), eq(worldStates.owner, owner)))
+    .returning({ version: worldStates.version });
+  if (written.length !== 1) throw new StaleState(true);
+  await tx
+    .delete(worldCommands)
+    .where(and(eq(worldCommands.worldId, worldId), lte(worldCommands.version, version)));
+}
+
+/**
+ * The commands saved after a snapshot, applied to it again: the engine is deterministic, so this
+ * is the state they made. Stops at a gap in the versions (never written).
+ */
+async function replayJournal(
+  db: Db,
+  ctx: WorldContext,
+  worldId: string,
+  snapshot: WorldState,
+  snapshotVersion: number,
+): Promise<{ state: WorldState; version: number; replayed: number }> {
+  const rows = await db
+    .select()
+    .from(worldCommands)
+    .where(and(eq(worldCommands.worldId, worldId), gt(worldCommands.version, snapshotVersion)))
+    .orderBy(asc(worldCommands.version));
+  let state = snapshot;
+  let version = snapshotVersion;
+  for (const row of rows) {
+    if (row.version !== version + 1) break;
+    for (const command of decode<Command[]>(row.commands)) {
+      const res = decide(ctx, state, command, row.at);
+      if (res.ok) state = res.state;
+      else console.warn(`replay of ${command.type} at version ${row.version}: ${res.error}`);
+    }
+    version = row.version;
+  }
+  return { state, version, replayed: version - snapshotVersion };
+}
+
 async function createWorld(db: Db, bounds: { startsAt: number; endsAt: number }) {
   const [world] = await db
     .insert(worlds)
@@ -521,12 +630,7 @@ async function createWorld(db: Db, bounds: { startsAt: number; endsAt: number })
 }
 
 /** Engine context and saved state of a world (a fresh state for a new one). */
-async function loadWorld(
-  db: Db,
-  world: WorldRow,
-  options: { settingsFromTheme?: boolean },
-  owner: string,
-) {
+async function loadWorld(db: Db, world: WorldRow, options: WorldOptions, owner: string) {
   const theme = THEMES[world.theme as keyof typeof THEMES];
   if (!theme) throw new Error(`unknown theme ${world.theme}`);
   let stored: unknown = world.settings;
@@ -554,8 +658,19 @@ async function loadWorld(
   if (saved) {
     // Saves from earlier versions are brought up to date before anything reads them.
     const legacy = upgradeLegacyState(decode<WorldState>(saved.state));
-    const state = legacy.turnover ? legacy : await withTurnover(db, ctx, world.id, legacy);
-    return { ctx, state, version: saved.version };
+    const snapshot = legacy.turnover ? legacy : await withTurnover(db, ctx, world.id, legacy);
+    // The commands since the snapshot, under the settings they were decided with.
+    const before: WorldContext = {
+      ...ctx,
+      settings: parseSettings(mergeDefaults(venice1450Settings, world.settings)),
+    };
+    const replay = await replayJournal(db, before, world.id, snapshot, saved.version);
+    if (replay.replayed > 0) {
+      await db.transaction((tx) =>
+        writeSnapshot(tx, world.id, owner, replay.state, replay.version),
+      );
+    }
+    return { ctx, state: replay.state, version: replay.version };
   }
   const state = createWorldState(ctx);
   await db

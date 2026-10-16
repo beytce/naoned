@@ -54,10 +54,76 @@ describe("a deploy: the new server takes over from the old one", () => {
   });
 });
 
+describe("a light save: the commands, and a snapshot now and then", () => {
+  const count = async (table: "world_commands") =>
+    Number(
+      (
+        (await database.db.execute(sql.raw(`select count(*)::int as n from ${table}`))) as {
+          rows: { n: number }[];
+        }
+      ).rows[0]?.n,
+    );
+  const savedVersion = async () =>
+    Number(
+      (
+        (await database.db.execute(sql`select version from world_states`)) as {
+          rows: { version: number }[];
+        }
+      ).rows[0]?.version,
+    );
+
+  it("replays the commands saved since the last snapshot on loading", async () => {
+    const old = await GameWorld.open(database.db, () => now, { snapshotEveryMs: 3_600_000 });
+    const [ada] = await database.db
+      .insert(accounts)
+      .values({ email: "ada@example.org", pseudo: "Ada" })
+      .returning({ id: accounts.id });
+    const id = ada?.id ?? "";
+    await old.execute({ type: "join", playerId: id, region: "terraferma" });
+    await old.execute({ type: "tick" });
+    await old.execute({
+      type: "placeOrder",
+      playerId: id,
+      resource: "bread",
+      side: "sell",
+      kind: "instant",
+      quantity: 10,
+    });
+    // Three commands, no snapshot yet.
+    expect(await count("world_commands")).toBe(3);
+    expect(await savedVersion()).toBe(0);
+
+    const fresh = await GameWorld.open(database.db, () => now + 60_000);
+    expect(fresh.current).toEqual(old.current);
+    expect(await fresh.checkInvariants()).toEqual([]);
+    // Loading wrote a snapshot: nothing left to replay.
+    expect(await count("world_commands")).toBe(0);
+    expect(await savedVersion()).toBe(3);
+    expect((await fresh.execute({ type: "tick" })).ok).toBe(true);
+  });
+
+  it("writes a snapshot every so many versions and forgets the commands it holds", async () => {
+    const w = await GameWorld.open(database.db, () => now, {
+      snapshotEveryMs: 3_600_000,
+      snapshotEveryVersions: 2,
+    });
+    await w.execute({ type: "tick" });
+    expect(await count("world_commands")).toBe(1);
+    await w.execute({ type: "tick" });
+    expect(await count("world_commands")).toBe(0);
+    expect(await savedVersion()).toBe(2);
+    await w.execute({ type: "tick" });
+    await w.snapshot();
+    expect(await savedVersion()).toBe(3);
+    expect(await count("world_commands")).toBe(0);
+  });
+});
+
 describe("a save from an earlier version", () => {
   it("opens with the first families' tallies dropped", async () => {
     const old = await GameWorld.open(database.db, () => now);
     await old.execute({ type: "tick" });
+    await old.snapshot();
     // A world opened in the time of the first families (influence, family orders).
     await database.db.execute(
       sql`update world_states set state = jsonb_set(state::jsonb, '{families}', '{"week":1,"members":{},"weekInfluence":{},"seasonInfluence":{},"ordersDone":{},"patronage":{},"inPower":null}'::jsonb)`,
@@ -89,6 +155,7 @@ describe("a save from before the ranking by net sales", () => {
     expect(sold).toMatchObject({ ok: true });
     const sales = old.current.turnover?.[id] ?? 0n;
     expect(sales).toBeGreaterThan(0n);
+    await old.snapshot();
     await database.db.execute(sql`update world_states set state = state::jsonb - 'turnover'`);
     const fresh = await GameWorld.open(database.db, () => now + 60_000);
     expect(fresh.current.turnover?.[id]).toBe(sales);
