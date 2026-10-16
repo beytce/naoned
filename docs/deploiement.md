@@ -35,12 +35,13 @@ Coût indicatif : l'offre Hobby de Railway (environ 5 $ par mois, usage inclus) 
 
 ## Monde de jeu
 
-Les saisons suivent les mois civils (heure de Paris). Au premier démarrage, le serveur crée le monde « Venise 1450 · <mois> », qui commence à cet instant et se termine à la fin du mois (ou du mois suivant s'il reste moins de 14 jours). Les mises à jour reprennent le même monde : son état est enregistré en base après chaque action, avec le grand livre, les mouvements de stock et les échanges.
+Les saisons suivent les mois civils (heure de Paris). Au premier démarrage, le serveur crée le monde « Venise 1450 · <mois> », qui commence à cet instant et se termine à la fin du mois (ou du mois suivant s'il reste moins de 14 jours). Les mises à jour reprennent le même monde. Chaque action enregistre en base ses commandes (`world_commands`), avec le grand livre, les mouvements de stock et les échanges, dans la même transaction ; l'état complet (`world_states`) n'est réécrit qu'une fois par minute (ou toutes les 200 versions) et à l'arrêt du service. Au démarrage, le serveur reprend le dernier état complet et rejoue les commandes enregistrées depuis : le moteur est déterministe.
 
 - **Fin de saison** : le premier tick après minuit le 1er du mois fige le classement, distribue les récompenses (Renommée, Pass Négociant), ferme le monde et ouvre le mois suivant. Pour répéter une clôture sur un monde de test : `/admin` → « Fin de saison (répétition) ».
-- Un seul exemplaire du service doit tourner (pas de mise à l'échelle horizontale dans Railway) : le monde est tenu en mémoire et les actions sont traitées une par une. Lors d'un déploiement, Railway démarre la nouvelle instance avant d'arrêter l'ancienne : la nouvelle prend la main sur le monde (colonne `world_states.owner`) et l'ancienne s'arrête à sa prochaine écriture.
+- Un seul exemplaire du service doit tourner (pas de mise à l'échelle horizontale dans Railway) : le monde est tenu en mémoire et les actions sont traitées une par une. Lors d'un déploiement, Railway démarre la nouvelle instance avant d'arrêter l'ancienne : la nouvelle prend la main sur le monde (colonne `world_states.owner`) et l'ancienne s'arrête à sa prochaine écriture. Les parties ouvertes perdent leur ligne en direct et se reconnectent d'elles-mêmes à la nouvelle instance.
 - Le marché du PNJ, l'entretien et les chantiers avancent chaque minute ; la production est calculée à la lecture.
-- Des maisons marchandes PNJ complètent le monde jusqu'à 15 marchands actifs (`bots.population` dans les réglages du monde) ; elles se retirent à mesure que des joueurs arrivent. Mettre `bots.population` à 0 les arrête.
+- Des maisons marchandes PNJ complètent le monde jusqu'à 40 marchands actifs (`bots.population` dans les réglages du monde) ; elles se retirent à mesure que des joueurs arrivent. Mettre `bots.population` à 0 les arrête.
+- **En direct** : chaque partie ouverte garde une ligne WebSocket (`/api/live`, sur le même port que l'API, rien à régler dans Railway). Le serveur y dit à un marchand quand une action a touché ses affaires, et à tous à chaque tick ; la partie relit alors sa vue. Sans cette ligne (réseau qui la coupe), elle relit toutes les 15 s comme avant ; avec, toutes les 60 s par précaution.
 - Les notifications (cloche, push) sont calculées chaque minute ; la semaine se clôt à la première minute après chaque période de 7 jours depuis l'ouverture du monde.
 - Les six invariants du grand livre sont vérifiés au démarrage puis toutes les heures ; un écart apparaît dans les journaux sous « invariant violations » (et en alerte si `ALERT_WEBHOOK_URL` est réglé).
 
@@ -62,6 +63,24 @@ pnpm dev   # serveur sur :3000 (PGlite dans apps/server/.data), web sur :5173
 Ouvrir http://localhost:5173. Sans `RESEND_API_KEY`, l'e-mail de connexion est affiché dans le terminal du serveur : copier le lien dans le navigateur.
 
 Pour utiliser un PostgreSQL local : `DATABASE_URL=postgres://… pnpm dev`. Les tests du serveur tournent sur PGlite, ou sur PostgreSQL avec `TEST_DATABASE_URL=postgres://… pnpm test`.
+
+## Test de charge
+
+```sh
+LOAD_DATABASE_URL=postgres://… pnpm --filter @comptoirs/server load -- --players 200 --minutes 10 --push
+```
+
+N marchands jouent par l'API (en processus) sur une base créée pour l'occasion : un tick et les PNJ chaque minute, les vues relues comme le ferait l'application (sans `--push`, tous les marchands en ligne toutes les 15 s à la fois), une action par minute environ. Le script affiche les temps de réponse par requête et la taille de l'état complet. Sans `LOAD_DATABASE_URL`, il tourne sur PGlite.
+
+Mesures du 16 octobre 2026, 200 marchands dont 30 % en ligne, PostgreSQL 16 local :
+
+| | Avant | Vue moins chère | + commandes journalisées | + en direct (`--push`) |
+| --- | --- | --- | --- | --- |
+| Vue (GET /api/game), p50 · p95 | 2,0 s · 2,6 s | 1,1 s · 1,5 s | 1,0 s · 1,4 s | 0,24 s · 0,33 s |
+| Action, p50 · p95 | 1,2 s · 2,1 s | 1,0 s · 1,8 s | 0,75 s · 1,4 s | 0,21 s · 0,45 s |
+| Commande enregistrée, p50 | 0,40 s | 0,06 s | 0,03 s | 0,02 s |
+
+L'état complet pèse environ 450 Ko pour 200 marchands. La vue d'un marchand coûte 6 ms de calcul (20 ms avant que le classement soit gardé pour la minute).
 
 ## Image Docker
 

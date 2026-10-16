@@ -447,14 +447,14 @@ Un seul code web sert PC et mobile ; la logique de jeu vit dans un paquet pur et
                                    Power BI
 ```
 
-Le moteur n'accède jamais à la base : il reçoit un état, renvoie un nouvel état et la liste des écritures à passer ; c'est l'appelant qui écrit en base dans une transaction. Le simulateur utilise exactement le même moteur, ce qui garantit que l'équilibrage réglé en simulation est celui du jeu.
+Le moteur n'accède jamais à la base : il reçoit un état, renvoie un nouvel état et la liste des écritures à passer ; c'est l'appelant qui écrit en base dans une transaction. Depuis le 16 octobre 2026, cette transaction enregistre les commandes elles-mêmes (`world_commands`) plutôt que tout l'état ; l'état complet est écrit une fois par minute, et le démarrage rejoue les commandes depuis (mesures : `docs/deploiement.md`, « Test de charge »). Le simulateur utilise exactement le même moteur, ce qui garantit que l'équilibrage réglé en simulation est celui du jeu.
 
 | Brique | Choix | Raison |
 | --- | --- | --- |
 | Interface | React + Vite + Tailwind, en PWA | Un seul code, installable sur mobile |
 | Serveur | Node + Fastify, TypeScript | Même langage que l'interface et le moteur |
 | Base | PostgreSQL + Drizzle ORM | Transactions fiables, verrous transactionnels pour le marché |
-| Temps réel | WebSocket | Carnet d'ordres et prix en direct |
+| Temps réel | WebSocket (`/api/live`, depuis le 16 octobre 2026) | Le serveur dit à une partie ouverte quand relire sa vue : après une action qui touche le marchand, et à chaque tick (relue dans les 20 s) ; la relecture toutes les 15 s ne sert plus que de secours (60 s) |
 | Tâche planifiée | Tick toutes les 60 s | Expirations, PNJ, villes, entretien, chantiers (pas la production) |
 | Simulateur | Script Node en mémoire | Équilibrage avant d'avoir des joueurs, sortie CSV |
 | Hébergement | Railway, un seul service (API + web) depuis le Dockerfile | Déploiement depuis GitHub, PostgreSQL intégré ; quelques euros par mois au départ (à vérifier) |
