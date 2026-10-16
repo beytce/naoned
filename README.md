@@ -2,7 +2,7 @@
 
 *(anciennement Comptoirs)*
 
-Jeu de commerce multijoueur 2D (web/PWA, PC et mobile), en saisons historiques de 6 semaines. Nom de code du dépôt : `naoned`.
+Jeu de commerce multijoueur 2D (web/PWA, PC et mobile), en saisons d'un mois civil (du 1er au dernier jour du mois, heure de Paris). Nom de code du dépôt : `naoned`.
 
 - Cadrage : [docs/CADRAGE.md](docs/CADRAGE.md)
 - Calibrage de l'économie : [docs/calibration.md](docs/calibration.md)
@@ -28,7 +28,8 @@ pnpm dev         # serveur :3000 + web :5173 ; le lien de connexion s'affiche da
 pnpm test        # tests du moteur, du simulateur, du serveur et du web
 pnpm typecheck
 pnpm lint
-pnpm sim         # 5 graines × 42 jours ; rapport dans apps/simulator/out/report.md
+pnpm sim         # 5 graines × 30 jours ; rapport dans apps/simulator/out/report.md
+pnpm sim --players 40 --live   # le petit monde de la bêta : 40 maisons PNJ
 pnpm sim --seeds 1 --scenario scenarios/high-tax.json   # chemin relatif à apps/simulator
 ```
 

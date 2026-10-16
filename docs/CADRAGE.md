@@ -240,6 +240,10 @@ Constat de l'audit : un marché collé au prix de référence (indice 93 à 100)
 | **Niveaux d'ateliers** | Chaque niveau coûte 35 % du premier de plus (contre 50 %) : avec le rendement de +25 % par niveau, un niveau rapporte plus par ducat qu'un nouvel atelier (`levelCostGrowthBps`) |
 | **Maîtrises** | Maître d'atelier +15 % sur ce qui se transforme (contre +10 %), Marchand du Levant +50 % de quota à la Muda (contre +100 %) |
 
+### Gel des mécaniques jusqu'aux mesures de la bêta (16 octobre 2026)
+
+Décision du porteur après l'audit du 16 octobre : **aucune nouvelle mécanique tant que la bêta n'a pas mesuré la rétention** (J1, J7, J30, durée et nombre de sessions, voir « KPIs et télémétrie »). Jusque-là, on règle, on corrige, on simplifie, on mesure ; une idée de mécanique va dans `IDEAS.md` avec la mesure qui la justifierait. Seules exceptions : ce qui remplace une mécanique retirée (les galères de la Muda pour la mer) et ce que l'audit demande pour rendre vivant ce qui existe (prix qui bougent, progression des ateliers). Le gel se lève sur décision du porteur, chiffres de la bêta en main.
+
 ## Vision et positionnement
 
 Fondaco est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.
