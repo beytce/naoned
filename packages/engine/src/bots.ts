@@ -309,8 +309,8 @@ export class Bot {
   private garage(s: Session, waiting: number): void {
     const { deliveries } = s.ctx.settings;
     const mine = vehiclesOf(s.state(), this.id);
-    if (waiting === 0) return;
-    if (mine.length >= Math.min(this.profile.vehicles, deliveries.maxVehicles)) {
+    // Enough vehicles: the purse goes into a bigger, faster one.
+    if (waiting === 0 || mine.length >= Math.min(this.profile.vehicles, deliveries.maxVehicles)) {
       this.upgradeOne(s, mine);
       return;
     }
@@ -325,7 +325,7 @@ export class Bot {
     if (s.act({ type: "buyVehicle", playerId: this.id, vehicleType: type })) this.deliver(s);
   }
 
-  /** With every vehicle bought, the smallest one at home goes up a step, if the purse allows. */
+  /** The smallest vehicle at home goes up a step, if the purse allows (three times its cost). */
   private upgradeOne(s: Session, mine: Vehicle[]): void {
     const types = s.ctx.settings.deliveries.vehicles;
     const candidate = mine
