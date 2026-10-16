@@ -83,7 +83,8 @@ export function rerollContract(tx: Tx, playerId: PlayerId, contractId: string): 
   // The board of deliveries is never swapped, Pass or not.
   if (tx.ctx.settings.deliveries.ordersPerDay.max > 0) fail("city_sales_closed");
   const allowed = tx.ctx.settings.pass.contractRerollsPerDay;
-  if (allowed === 0 || !hasPass(tx.s as WorldState, playerId, tx.now)) fail("pass_required");
+  if (allowed === 0 || !hasPass(tx.ctx, tx.s as WorldState, playerId, tx.now))
+    fail("pass_required");
   const today = dayIndex(tx.ctx, tx.now);
   const slots = rerollsOf(tx.s as WorldState, playerId, today);
   const used = Object.values(slots).reduce((a, b) => a + b, 0);

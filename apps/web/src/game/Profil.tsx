@@ -12,6 +12,7 @@ import { Medal } from "../art/icons.js";
 import { P } from "../art/palette.js";
 import { hapticsEnabled, setHapticsEnabled } from "../haptics.js";
 import { fr } from "../i18n.js";
+import { LegalLinks } from "../legal/Legal.js";
 import { PALETTES, type PaletteId, choosePalette, currentPalette, needsPass } from "../theme.js";
 import { Big, Donut, Label, Panel, Ribbon, Sheet, Slab, Switch } from "../ui.js";
 import type { GameProps } from "./Game.js";
@@ -150,7 +151,7 @@ function HapticsSetting() {
   );
 }
 
-function PalettePicker({ pass }: { pass: boolean }) {
+function PalettePicker({ pass, offered }: { pass: boolean; offered: boolean }) {
   const [chosen, setChosen] = useState<PaletteId>(currentPalette());
   return (
     <section className="space-y-3">
@@ -159,7 +160,8 @@ function PalettePicker({ pass }: { pass: boolean }) {
         <p className="mt-1 text-xs text-cream-dim">{fr.game.paletteHint}</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        {PALETTES.map((p) => {
+        {/* The Pass's palette is not offered while the Pass is off. */}
+        {PALETTES.filter((p) => offered || !needsPass(p.id)).map((p) => {
           const on = p.id === chosen;
           const locked = needsPass(p.id) && !pass;
           return (
@@ -373,7 +375,7 @@ function ProfileBody(props: GameProps) {
           <span className="text-gold transition group-open:rotate-90">›</span>
         </summary>
         <div className="mt-6 space-y-8">
-          <PalettePicker pass={props.view.pass.active} />
+          <PalettePicker pass={props.view.pass.active} offered={props.view.pass.enabled} />
 
           <HapticsSetting />
 
@@ -417,6 +419,7 @@ function ProfileBody(props: GameProps) {
                 {fr.game.data.delete}
               </Slab>
             </div>
+            <LegalLinks className="pt-2" />
           </section>
 
           <section className="border-t border-vermilion/40 pt-6">

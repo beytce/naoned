@@ -517,7 +517,7 @@ Le jeu est gratuit et ne vend jamais de ressources, de monnaie de jeu ni de prod
 
 | Offre | Contenu | Phase |
 | --- | --- | --- |
-| Pass Négociant (3,99 € la saison, 1,49 € la semaine) | Quota Dogana +20 %, 2 offres ouvertes de plus, produits frais +8 % au lieu de +5 %, une commande du Doge échangée par jour, carnet à 10 offres, 7 jours d'historique des prix, alertes des Criées et des bonnes affaires, sceau et palette « Or de Venise ». Gagné par le top 10 de la semaine (7 jours) et selon le rang final de la saison | Fait (paiement Stripe à brancher) |
+| Pass Négociant (3,99 € la saison, 1,49 € la semaine) | Quota Dogana +20 %, 2 offres ouvertes de plus, produits frais +8 % au lieu de +5 %, une commande du Doge échangée par jour, carnet à 10 offres, 7 jours d'historique des prix, alertes des Criées et des bonnes affaires, sceau et palette « Or de Venise ». Gagné par le top 10 de la semaine (7 jours) et selon le rang final de la saison | Désactivé le 16 octobre 2026 (`pass.enabled`), annoncé pour la saison prochaine : ni attribution, ni avantage, ni mention hors de l'annonce du profil. Paiement Stripe à brancher |
 | Cosmétiques à l'unité | Blasons, façades, bannières de guilde | V1 |
 | Mondes privés | Monde dédié pour une communauté, une école ou une entreprise, facturé par saison | V2 |
 

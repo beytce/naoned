@@ -52,6 +52,8 @@ Les saisons suivent les mois civils (heure de Paris). Au premier démarrage, le 
 - **Intégration continue** : `.github/workflows/ci.yml` lance le lint, les types, les tests et la construction de l'application à chaque push. Ne déployer qu'une branche au vert.
 - **Triche** : `/admin` liste les paires de marchands qui échangent souvent entre eux loin du prix de référence. Les offres entre joueurs sont de toute façon limitées au quart et au quadruple du prix de référence.
 - **Données personnelles** : chaque joueur peut télécharger ses données et supprimer son compte depuis son profil.
+- **Pages légales** : mentions légales (`/mentions-legales`), politique de confidentialité (`/confidentialite`) et conditions d'utilisation (`/conditions`), liées depuis l'écran de connexion et le profil. **Avant d'ouvrir le jeu au public**, remplir dans `apps/web/src/legal/info.ts` ce qui s'affiche en rouge « à compléter » : adresse postale de l'éditeur, e-mail de contact, adresse de l'hébergeur, région d'hébergement choisie dans Railway, garanties des transferts de Railway et de Resend, durée de conservation des journaux. Faire relire les textes avant une diffusion large.
+- **Pass Négociant** : désactivé (`pass.enabled` à `false` dans les réglages du monde) ; le profil annonce son arrivée la saison prochaine.
 
 ## En local
 

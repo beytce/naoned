@@ -94,7 +94,7 @@ export function maxOpenOrdersFor(
   playerId: PlayerId,
   now: number,
 ): number {
-  const extra = hasPass(state, playerId, now) ? ctx.settings.pass.extraOpenOrders : 0;
+  const extra = hasPass(ctx, state, playerId, now) ? ctx.settings.pass.extraOpenOrders : 0;
   return (
     ctx.settings.maxOpenOrders + extra + specialtyEffects(ctx, state, playerId).extraOpenOrders
   );
@@ -148,7 +148,7 @@ export function playerQuota(
   const share = cap === undefined ? base : Math.min(base, Math.max(1, Math.floor(cap / players)));
   // Pass Négociant: a fifth more of the merchant's own share; a trader's mastery adds its own.
   const pass =
-    playerId && hasPass(state, playerId, now) ? ctx.settings.pass.marketMakerQuotaBps : 0;
+    playerId && hasPass(ctx, state, playerId, now) ? ctx.settings.pass.marketMakerQuotaBps : 0;
   const mastery = specialtyEffects(ctx, state, playerId).marketMakerQuotaBps;
   // The Fondaco's privilege: a larger share for the members of the family that imposed it.
   const bonus = pass + mastery + decreeQuotaBps(ctx, state, playerId, now);

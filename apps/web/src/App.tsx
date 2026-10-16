@@ -5,6 +5,7 @@ import { Emblem } from "./art/logo.js";
 import { Skyline } from "./art/scenes.js";
 import { Game } from "./game/Game.js";
 import { fr } from "./i18n.js";
+import { LegalLinks, LegalPage, legalPageAt } from "./legal/Legal.js";
 import { Label, Slab } from "./ui.js";
 
 type Screen =
@@ -52,6 +53,9 @@ export function App() {
     setScreen({ name: "login" });
   };
 
+  // The legal pages are read with or without an account.
+  const legal = legalPageAt(window.location.pathname);
+  if (legal) return <LegalPage page={legal} />;
   if (screen.name === "home" && window.location.pathname === "/admin") return <Admin />;
   if (screen.name === "home") {
     return (
@@ -99,6 +103,7 @@ function Hero({ children }: { children: ReactNode }) {
       </header>
       <Skyline className="-mx-5 mt-4 w-[calc(100%+2.5rem)] max-w-none animate-floaty" />
       <section className="flex flex-1 flex-col justify-start pt-2">{children}</section>
+      <LegalLinks className="mt-8" />
     </main>
   );
 }
@@ -158,6 +163,17 @@ function Login(props: { sentTo?: string; onSent: (email: string) => void; onRese
         {busy ? fr.sending : fr.sendLink}
       </Slab>
       <p className="text-center text-xs text-muted">{fr.noPassword}</p>
+      <p className="text-center text-xs text-muted">
+        {fr.accept[0]}
+        <a href="/conditions" className="underline">
+          {fr.accept[1]}
+        </a>
+        {fr.accept[2]}
+        <a href="/confidentialite" className="underline">
+          {fr.accept[3]}
+        </a>
+        {fr.accept[4]}
+      </p>
     </form>
   );
 }

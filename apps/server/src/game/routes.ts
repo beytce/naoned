@@ -206,8 +206,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       /** The world's saved version the view was built from: a push older than it is stale. */
       version: world.savedVersion,
       view: v,
-      upcomingPass: await upcomingPass(db, account.id, now),
-      passPrices: PASS_PRICES,
+      // The Pass is off until it comes back: nothing to show but its announcement.
+      ...(world.ctx.settings.pass.enabled
+        ? { upcomingPass: await upcomingPass(db, account.id, now), passPrices: PASS_PRICES }
+        : {}),
       ...(v ? await namesFor(v) : { names: {}, bots: [] }),
       unread: v ? await notifier.unread(account.id) : 0,
       level: (await levelsOf(db, world.current, [account.id])).get(account.id),
@@ -276,7 +278,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       await syncPass(db, world, account.id);
     }
     const body = (await view(account)) as Record<string, unknown>;
-    const ceremony = await pendingCeremony(db, account.id);
+    const ceremony = await pendingCeremony(db, account.id, world.ctx.settings.pass.enabled);
     return {
       ...body,
       ...(welcome ? { welcome: toJson(welcome) } : {}),
@@ -399,7 +401,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const account = await requireAccount(req, reply);
     if (!account) return;
     // Pass Négociant: seven days of prices instead of two.
-    const hours = hasPass(world.current, account.id, world.now()) ? 168 : 48;
+    const hours = hasPass(world.ctx, world.current, account.id, world.now()) ? 168 : 48;
     return { series: await priceHistory(db, world.id, world.now(), hours) };
   });
 
@@ -517,6 +519,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       .from(accounts)
       .where(eq(accounts.email, body.email.toLowerCase()));
     if (!target) return reply.code(404).send({ error: "unknown_account" });
+    if (!world.ctx.settings.pass.enabled) return reply.code(409).send({ error: "pass_disabled" });
     const now = world.now();
     const from = Math.max(now, await passUntil(db, target.id, now));
     await grantPass(db, target.id, "admin", from, from + body.days * 86_400_000, account.email);
@@ -547,7 +550,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       .where(eq(accounts.id, account.id));
     return {
       publicKey: notifier.publicKey,
-      kinds: NOTIFICATION_KINDS,
+      // The Criée and good-deal alerts are the Pass's: not offered while it is off.
+      kinds: world.ctx.settings.pass.enabled
+        ? NOTIFICATION_KINDS
+        : NOTIFICATION_KINDS.filter((k) => k !== "criee" && k !== "deal"),
       off: row?.off ?? [],
     };
   });
@@ -614,7 +620,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       ...rest,
       id: playerId,
       me: playerId === account.id,
-      pass: hasPass(world.current, playerId, world.now()),
+      pass: hasPass(world.ctx, world.current, playerId, world.now()),
       level: levels.get(playerId)?.level ?? 1,
     });
     return toJson({
@@ -636,7 +642,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
         ...rest,
         id: playerId,
         me: playerId === account.id,
-        pass: hasPass(world.current, playerId, world.now()),
+        pass: hasPass(world.ctx, world.current, playerId, world.now()),
       })),
       me: table.find((r) => r.playerId === account.id)?.rank ?? null,
       total: table.length,

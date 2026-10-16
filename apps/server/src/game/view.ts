@@ -440,7 +440,7 @@ export function playerView(
 ) {
   const player = state.players[playerId];
   if (!player) return null;
-  const pass = hasPass(state, playerId, now);
+  const pass = hasPass(ctx, state, playerId, now);
   // Pass Négociant: a deeper order book.
   const depth = pass ? 10 : 5;
   const buildings = Object.values(state.buildings)
@@ -578,6 +578,8 @@ export function playerView(
     tutorial: tutorialSteps,
     missions: missionsFor(ctx, state, playerId, now),
     pass: {
+      /** Off until it comes back: the profile only announces it. */
+      enabled: ctx.settings.pass.enabled,
       active: pass,
       until: player.passUntil ?? 0,
       perks: ctx.settings.pass,

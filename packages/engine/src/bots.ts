@@ -572,7 +572,7 @@ export class Bot {
     const done = s.state().contractsDone?.[this.id];
     const doneIds = done && done.day === day ? done.ids : [];
     // With the Pass: an order the bot cannot cover is swapped for another, once a day.
-    if (hasPass(s.state(), this.id, s.now) && !deliveriesOn(s.ctx)) {
+    if (hasPass(s.ctx, s.state(), this.id, s.now) && !deliveriesOn(s.ctx)) {
       const today = contractsFor(s.ctx, this.id, day, rerollsOf(s.state(), this.id, day));
       const stuck = today.find(
         (c) =>

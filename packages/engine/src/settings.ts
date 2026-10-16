@@ -227,6 +227,8 @@ export const worldSettingsSchema = z.object({
    */
   pass: z
     .object({
+      /** Off: no merchant holds the Pass, whatever was granted (it comes back later). */
+      enabled: z.boolean().default(true),
       /** Extra share of the daily quota at the Dogana (2 000 = a fifth more). */
       marketMakerQuotaBps: bps,
       extraOpenOrders: qty,
@@ -235,6 +237,7 @@ export const worldSettingsSchema = z.object({
       contractRerollsPerDay: qty,
     })
     .default({
+      enabled: true,
       marketMakerQuotaBps: 0,
       extraOpenOrders: 0,
       freshBonusBps: 0,

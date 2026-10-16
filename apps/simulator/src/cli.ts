@@ -24,9 +24,12 @@ const { values } = parseArgs({
   },
 });
 
-const settings = values.scenario
+const base = values.scenario
   ? { ...venice1450Settings, ...JSON.parse(readFileSync(resolve(values.scenario), "utf8")) }
   : venice1450Settings;
+// The Pass is off in Venice until it comes back; --pass measures it as it would be, switched on.
+const settings =
+  Number(values.pass) > 0 ? { ...base, pass: { ...base.pass, enabled: true } } : base;
 const players = values.players ? Number(values.players) : undefined;
 const mix = players ? scaleMix(DEFAULT_MIX, players) : DEFAULT_MIX;
 const seeds = (values.seeds ?? "1").split(",").map(Number);

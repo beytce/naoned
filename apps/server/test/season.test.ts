@@ -34,7 +34,10 @@ beforeEach(async () => {
   );
   mailer = new MemoryMailer();
   now = Date.parse("2026-10-05T08:00:00Z");
-  world = await GameWorld.open(database.db, () => now);
+  // The Pass is off in Venice until it comes back: switched on here to test it.
+  world = await GameWorld.open(database.db, () => now, {
+    settingsOverride: { pass: { enabled: true } },
+  });
   app = await buildApp({
     db: database.db,
     mailer,

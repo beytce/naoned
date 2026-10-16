@@ -55,6 +55,8 @@ export interface WorldOptions {
   snapshotEveryMs?: number;
   /** … or after this many saved versions, whichever comes first. */
   snapshotEveryVersions?: number;
+  /** Settings forced on every world opened (tests: the Pass switched on). */
+  settingsOverride?: Record<string, unknown>;
 }
 
 /**
@@ -439,9 +441,13 @@ export class GameWorld {
       }
 
       for (const e of fx.events) {
-        if (e.type === "week_closed") await recordWeek(tx, worldId, e.data ?? {}, now);
+        // The Pass is won only while it is on.
+        const passOn = this.ctx.settings.pass.enabled;
+        if (e.type === "week_closed") {
+          await recordWeek(tx, worldId, e.data ?? {}, passOn ? now : undefined);
+        }
         if (e.type === "season_closed") {
-          await recordSeason(tx, worldId, e.data ?? {}, seasonEnd(this.ctx));
+          await recordSeason(tx, worldId, e.data ?? {}, passOn ? seasonEnd(this.ctx) : undefined);
         }
       }
 
@@ -654,6 +660,7 @@ async function loadWorld(db: Db, world: WorldRow, options: WorldOptions, owner: 
     // New mechanics get their defaults; values already set in the world are kept.
     stored = mergeDefaults(venice1450Settings, world.settings);
   }
+  if (options.settingsOverride) stored = mergeDefaults(stored, options.settingsOverride);
   if (JSON.stringify(stored) !== JSON.stringify(world.settings)) {
     await db.update(worlds).set({ settings: stored }).where(eq(worlds.id, world.id));
   }

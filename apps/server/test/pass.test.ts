@@ -33,7 +33,10 @@ beforeEach(async () => {
   );
   mailer = new MemoryMailer();
   now = Date.parse("2026-10-05T08:00:00Z");
-  world = await GameWorld.open(database.db, () => now);
+  // The Pass is off in Venice until it comes back: switched on here to test it.
+  world = await GameWorld.open(database.db, () => now, {
+    settingsOverride: { pass: { enabled: true } },
+  });
   app = await buildApp({
     db: database.db,
     mailer,
@@ -122,5 +125,37 @@ describe("the Pass Négociant", () => {
     expect(back.view.pass.active).toBe(true);
     const rows = (await get(ada, "/api/game/ranking")).rows;
     expect(rows[0].pass).toBe(true);
+  });
+
+  it("is off in Venice until it comes back: nothing granted, nothing shown", async () => {
+    // A new world with the theme's settings as they are.
+    await app.close();
+    await database.db.execute(sql`truncate worlds cascade`);
+    world = await GameWorld.open(database.db, () => now);
+    app = await buildApp({
+      db: database.db,
+      mailer,
+      appUrl: "https://fondaco.test",
+      production: false,
+      world,
+      adminEmails: ["boss@example.org"],
+      now: () => new Date(now),
+    });
+    const ada = await player("ada@example.org");
+    const boss = await login("boss@example.org");
+    const granted = await app.inject({
+      method: "POST",
+      url: "/api/admin/pass",
+      headers: { cookie: boss },
+      payload: { email: "ada@example.org", days: 7 },
+    });
+    expect(granted.json().error).toBe("pass_disabled");
+    const view = await get(ada);
+    expect(view.passPrices).toBeUndefined();
+    expect(view.view.pass.active).toBe(false);
+    const [account] = (await get(ada, "/api/game/ranking")).rows;
+    now += 7 * DAY + 60_000;
+    await world.execute({ type: "tick" });
+    expect(await passUntil(database.db, account.id, now)).toBe(0);
   });
 });

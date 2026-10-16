@@ -8,6 +8,13 @@ export const fr = {
   sendLink: "Recevoir mon lien",
   sending: "Envoi…",
   noPassword: "Pas de mot de passe : un lien de connexion vous est envoyé par e-mail.",
+  accept: [
+    "En recevant votre lien, vous acceptez les ",
+    "conditions d'utilisation",
+    " et la ",
+    "politique de confidentialité",
+    ".",
+  ],
   checkInbox: "Regardez vos e-mails",
   linkSentTo: (email: string) =>
     `Un lien de connexion vient de partir vers ${email}. Il est valable 15 minutes. Pensez à regarder dans les spams.`,
@@ -882,7 +889,7 @@ export const fr = {
       odds: "Probabilités",
       oddsTitle: "Ce que contient un ballot",
       oddsIntro: (cards: number, hours: number, max: number) =>
-        `${cards} cartes par ballot, de 1 à 5 unités chacune. Un ballot toutes les ${hours} heures, ${max} au plus en attente au quai. Les ballots ne s'achètent pas et le Pass Négociant n'y change rien.`,
+        `${cards} cartes par ballot, de 1 à 5 unités chacune. Un ballot toutes les ${hours} heures, ${max} au plus en attente au quai. Les ballots ne s'achètent pas.`,
       oddsOwn: "Votre propre matière première vient deux fois moins souvent.",
       perCard: "par carte",
       units: (q: number) => `×${q}`,
@@ -908,6 +915,7 @@ export const fr = {
     },
     pass: {
       title: "Pass Négociant",
+      coming: "Le Pass Négociant arrivera la saison prochaine.",
       active: (until: string) => `Actif jusqu'au ${until}`,
       upcoming: (from: string) => `Gagné : actif à partir du ${from}`,
       inactive: "Vous ne l'avez pas encore.",
@@ -1199,13 +1207,12 @@ export const fr = {
         top: "Plus haut palier atteint : tenez-le jusqu'à la fin du mois.",
       },
       renownTotal: (name: string, points: number) => `${name} · ${points} points de Renommée`,
-      nothing:
-        "Jouez au moins 7 jours dans une saison pour recevoir l'écusson de participant, et visez le top 25 % pour du Pass Négociant.",
+      nothing: "Jouez au moins 7 jours dans une saison pour recevoir l'écusson de participant.",
       start: "Ouvrir mon nouveau comptoir",
       newSeason: (name: string) =>
         `${name} commence : tout le monde repart de zéro. Votre palmarès et votre Renommée vous suivent.`,
       lastSprint: (days: number) =>
-        `Dernier sprint : la saison se termine dans ${days} jour${days > 1 ? "s" : ""}. Le top 10 gagne le Pass Négociant pour la saison suivante.`,
+        `Dernier sprint : la saison se termine dans ${days} jour${days > 1 ? "s" : ""}.`,
       honoured: (pseudo: string, season: string) => `${pseudo}, Doge de ${season}`,
     },
     palmares: {
