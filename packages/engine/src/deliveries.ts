@@ -196,6 +196,40 @@ export function orderUnitPrice(
  * The reference price of a good, blended with yesterday's traded price at the Rialto and kept
  * within bounds; the reference alone without trades enough or without the setting.
  */
+/**
+ * The cities' demand of the day on the shared board: per resource, how much more (or less) often
+ * it is ordered as its price at the Rialto falls under (or rises over) its reference, and how much
+ * larger the board is (bps; 10 000 = as set).
+ */
+export function boardDemand(
+  ctx: WorldContext,
+  state: WorldState,
+  day: number,
+): { factorBps: Record<string, number>; totalBps: number } {
+  const cfg = ctx.settings.deliveries;
+  const factorBps: Record<string, number> = {};
+  let weighted = 0;
+  let weights = 0;
+  for (const resource of Object.keys(cfg.quantity)) {
+    const reference = ctx.settings.referencePrices[resource] ?? 0n;
+    const price = indexedPrice(ctx, state, resource, day);
+    let factor = 10_000;
+    if (cfg.elasticityBps > 0 && reference > 0n && price > 0n) {
+      const ratio = Number((reference * 10_000n) / price);
+      factor = Math.min(
+        30_000,
+        Math.max(2_500, 10_000 + Math.trunc((cfg.elasticityBps * (ratio - 10_000)) / 10_000)),
+      );
+    }
+    factorBps[resource] = factor;
+    const weight = cfg.weights[resource] ?? 1;
+    weighted += weight * factor;
+    weights += weight;
+  }
+  const average = weights > 0 ? Math.round(weighted / weights) : 10_000;
+  return { factorBps, totalBps: Math.min(cfg.elasticMaxBps, Math.max(5_000, average)) };
+}
+
 export function indexedPrice(
   ctx: WorldContext,
   state: WorldState,
@@ -557,8 +591,13 @@ export function ensureBoard(tx: Tx): void {
     (r) => (tier(r) !== "luxury" || isMudaGood(ctx, r)) && citiesBuying(r).length > 0,
   );
   const orders: BoardOrder[] = [];
+  // Elastic demand: cheap goods are ordered more, dear ones less.
+  const demand = boardDemand(ctx, tx.s as WorldState, day);
   if (resources.length > 0) {
-    const weighted = resources.map((code) => ({ code, weight: cfg.weights[code] ?? 1 }));
+    const weighted = resources.map((code) => ({
+      code,
+      weight: (cfg.weights[code] ?? 1) * (demand.factorBps[code] ?? 10_000),
+    }));
     const quantityOf = (resource: string, key: string) => {
       const [lo, hi] = cfg.quantity[resource] ?? [1, 1];
       return Math.min(capacity, lo + (draw(ctx, `${key}:q`) % (Math.max(0, hi - lo) + 1)));
@@ -587,7 +626,7 @@ export function ensureBoard(tx: Tx): void {
       const list = citiesBuying(resource);
       return { resource, city: list[(h >>> 8) % list.length] ?? "" };
     };
-    const total = cfg.sharedOrdersPerActivePlayer * active;
+    const total = Math.floor((cfg.sharedOrdersPerActivePlayer * active * demand.totalBps) / 10_000);
     // City orders by rank: the n-th goes to wave n modulo the waves of the day.
     const every = (cfg.waves?.everyHours ?? 24) * HOUR_MS;
     const perDay = Math.max(1, Math.floor(DAY_MS / every));

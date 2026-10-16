@@ -3,6 +3,7 @@ import {
   type Command,
   type DeliveryOrder,
   type WorldSettingsInput,
+  boardDemand,
   boardRivals,
   boardTakes,
   checkInvariants,
@@ -620,6 +621,45 @@ describe("a board shared by the world", () => {
       expect(o.quantity).toBeGreaterThanOrEqual(2);
       expect(o.quantity).toBeLessThanOrEqual(4);
     }
+  });
+
+  it("asks more of what is cheap and less of what is dear, when demand is elastic", () => {
+    const elastic = (elasticityBps: number) =>
+      shared({
+        deliveries: {
+          ...testDeliveries,
+          quantity: { ...testDeliveries.quantity, wheat: [10, 20] },
+          sharedOrdersPerActivePlayer: 6,
+          marketIndex: { weightBps: 10_000, floorBps: 5_000, capBps: 20_000 },
+          elasticityBps,
+        },
+        valuation: { ...testSettings.valuation, minVolume: 10 },
+      } as never);
+    // Yesterday at the Rialto: wheat at half its reference, bread at 1.5 times its own.
+    const traded = (w: World) => {
+      w.state = {
+        ...w.state,
+        priceStats: {
+          wheat: { 0: { volume: 100, value: 5_000n } },
+          bread: { 0: { volume: 100, value: 27_000n } },
+        },
+      };
+      return w;
+    };
+    const flat = traded(elastic(0));
+    expect(boardDemand(flat.ctx, flat.state, 1).totalBps).toBe(10_000);
+    const w = traded(elastic(10_000));
+    const demand = boardDemand(w.ctx, w.state, 1);
+    expect(demand.factorBps.wheat).toBe(20_000);
+    expect(demand.factorBps.bread).toBe(6_666);
+    expect(demand.totalBps).toBeGreaterThan(10_000);
+    w.at(DAY + HOUR).do({ type: "tick" });
+    const city = (x: World) => x.state.board?.orders.filter((o) => o.kind === "city") ?? [];
+    flat.at(DAY + HOUR).do({ type: "tick" });
+    expect(city(w).length).toBeGreaterThan(city(flat).length);
+    const share = (x: World, r: string) =>
+      city(x).filter((o) => o.resource === r).length / Math.max(1, city(x).length);
+    expect(share(w, "wheat")).toBeGreaterThan(share(flat, "wheat"));
   });
 
   it("goes to the first who sends a vehicle", () => {
