@@ -752,3 +752,41 @@ Petit monde (`--players 40 --live`) : 89 à 95 % des lots vendus, 38 à 40 achet
 - L'indice des prix bouge davantage (86 à 128 contre 93 à 100) : les exotiques, qui renchérissent à mesure que le lot s'épuise, entrent dans le panier. C'est un effet de la Muda, pas encore le marché vivant de la recommandation 2 de l'audit.
 - Les ventes nettes médianes baissent (2 000 à 3 900 contre 4 500 à 5 600) : les achats à la Muda se déduisent des ventes, seule la marge compte. Les paliers des titres (500 à 20 000 ducats) sont à revoir avec la progression des ateliers.
 - Le Marchand du Levant reste devant le Maître d'atelier sur deux graines sur cinq, souvent sur 2 ou 3 maisons seulement : même défaut que l'Armateur, à rééquilibrer avec les maîtrises (recommandation 5 de l'audit).
+
+## Des prix qui bougent (16 octobre 2026)
+
+Trois règles du moteur : le cours de la Dogana suit l'offre et la demande (6 % par jour au plus, retour d'un quart vers la référence chaque jour, entre 60 et 150 %, `marketMaker.drift`) ; les commandes des villes suivent le Rialto à 70 % entre 60 et 150 % (`deliveries.marketIndex`) ; la demande des villes est élastique (`deliveries.elasticityBps` 20 000, le tableau jusqu'à deux fois sa taille). Deux corrections des bots, qui faussaient la mesure : un bot qui avait tout vendu reposait son offre 3 % plus bas, jamais plus haut (le cliquet ne descendait que) ; il produisait même quand sa marchandise s'entassait sous 90 % de la référence. Le rapport donne désormais les cours du Veneto au Rialto et l'étendue du cours de la Dogana.
+
+`pnpm sim`, 5 graines, **toutes conformes** ; `pnpm sim --players 40 --live`, 5 graines conformes.
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Cours du Veneto au Rialto (% de la référence), plus bas et plus haut | 50 à 111 | 50 à 108 | 50 à 115 | 50 à 115 | 50 à 109 |
+| Cours de la Dogana | 76 à 111 | 76 à 110 | 76 à 110 | 76 à 111 | 76 à 108 |
+| Monnaie payée (ducats / joueur actif / jour) | 194,3 | 201,3 | 192,8 | 190,4 | 195,5 |
+| Ventes nettes médianes de la saison | 4 123 | 4 907 | 5 045 | 4 966 | 5 000 |
+
+Petit monde (`--players 40 --live`, les maisons PNJ laissent leurs surplus aux joueurs au lieu de les vendre à la Dogana) : cours du Veneto entre 90 et 116 % de la référence, Dogana entre 100 et 114 %, sur les 5 graines.
+
+**Lecture.**
+- Dans le petit monde de la bêta, les prix bougent dans les deux sens et restent dans la cible de l'audit (80 à 130).
+- Dans le monde de 60 marchands tous bots, les cours du Veneto glissent de la référence à environ 50 % au fil du mois, comme avant ces changements (la glissade existait déjà ; l'indice du panier, dominé par les marchandises d'outre-mer, la cachait). La cause est une surproduction : sur la graine 1, les bots ont produit 654 000 blés pour 268 000 consommés (transformation, livraisons, rations), et dans les mêmes proportions pour les autres biens. Aucune demande ne rattrape un tel écart ; la Dogana, elle, ne descend pas sous 76 %.
+- C'est un point de conception à trancher avec la bêta : la capacité de production d'un marchand assidu dépasse de loin ce que le monde achète. Des vrais marchands cesseraient de produire à perte plus tôt que les bots.
+
+## Des ateliers qui grandissent (16 octobre 2026)
+
+Constat : un niveau coûtait exactement autant par unité produite qu'un nouvel atelier (coût +50 % par niveau, rendement +25 % par niveau au-dessus du premier), et les bots choisissaient toujours l'étape la moins chère : ils bâtissaient. Chaque niveau coûte désormais 35 % du premier de plus (`levelCostGrowthBps` 3 500) et les bots comparent le coût d'une unité de production ajoutée (`costPerOutput`), à égalité au profit du niveau.
+
+`pnpm sim`, 5 graines, **toutes conformes** ; `pnpm sim --players 40 --live`, 5 graines conformes.
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Niveau moyen des ateliers en fin de saison | 2,22 | 2,12 | 2,17 | 2,13 | 2,10 |
+| Ateliers au niveau maximal | 13 % | 12 % | 13 % | 7 % | 11 % |
+| Niveau moyen, petit monde (`--players 40 --live`) | 2,37 | 2,34 | 2,28 | 2,31 | 2,33 |
+| Ventes nettes médianes de la saison | 5 912 | 5 137 | 5 061 | 5 300 | 5 675 |
+| Masse monétaire par joueur actif (maximum) | 0,88 × | 0,87 × | 0,87 × | 0,87 × | 0,86 × |
+
+**Lecture.** L'objectif de l'audit (niveau moyen ≥ 2 en fin de mois) est atteint sur toutes les graines, contre 1,3 avant ; un atelier sur dix atteint le niveau 5. Les ventes nettes médianes montent (5 100 à 5 900 contre 4 100 à 5 000) sans gonfler la masse monétaire.
+
+**Maîtrises.** Maître d'atelier +15 % sur ce qui se transforme (contre +10 %), Marchand du Levant +50 % de quota à la Muda (contre +100 %). Avance d'une maîtrise sur une autre à profil égal : 44,5 %, 5,0 %, 109,0 %, 122,2 % et 64,5 % selon la graine (60 marchands) ; 0 à 62 % dans le petit monde. Elle n'est pas conforme sur la plupart des graines, mais la mesure ne suit pas la force de la maîtrise : avec le Levant à +25 %, l'écart passe de 109 % à 201 % sur la graine 3 et de 122 % à 22 % sur la graine 4. Le Levant y est porté par 2 ou 3 maisons seulement, tirées par le hasard du nom (une maison sur quatre) : l'écart dit surtout quelles maisons l'ont choisi. Pour trancher, il faudrait rejouer les mêmes maisons avec chaque maîtrise ; en attendant, l'Armateur (22 à 218 % devant) est remplacé par une maîtrise plus modeste, et les réglages restent ceux-ci.

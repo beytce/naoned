@@ -184,6 +184,12 @@ function TradeSheet({
         <BookSide lines={book?.asks ?? []} title={t.sellers} tone="text-gold" props={props} />
         <BookSide lines={book?.bids ?? []} title={t.buyers} tone="text-lagoon" props={props} />
       </div>
+      {!muda?.goods.includes(line.resource) && line.doganaBps !== 10_000 && (
+        <p className="text-xs text-cream-dim">
+          {t.dogana(Math.round(line.doganaBps / 100))}{" "}
+          <ChangeTag value={(line.doganaBps - 10_000) / 100} />
+        </p>
+      )}
       {muda?.goods.includes(line.resource) ? (
         <p className="text-xs text-cream-dim">
           {fr.game.market.muda.quota(

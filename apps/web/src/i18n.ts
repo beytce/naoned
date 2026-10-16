@@ -1067,8 +1067,9 @@ export const fr = {
       you: "Vous",
       quota: (buy: string, sell: string) =>
         `Dogana aujourd'hui : encore ${buy} à acheter, ${sell} à lui vendre.`,
+      dogana: (pct: number) => `Cours de la Dogana : ${pct} % du prix de référence`,
       fondacoHelp:
-        "La Dogana, la douane de la République, achète et vend chaque ressource de base en quantité limitée par marchand et par jour.",
+        "La Dogana, la douane de la République, achète et vend chaque ressource de base en quantité limitée par marchand et par jour. Son cours suit l'offre et la demande : il monte quand les marchands lui achètent plus qu'ils ne lui vendent, baisse dans le cas contraire, et revient peu à peu au prix de référence.",
       now: "Tout de suite",
       myPrice: "À mon prix",
       price: "Prix unitaire (ducats)",

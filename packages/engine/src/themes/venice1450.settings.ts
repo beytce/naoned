@@ -344,9 +344,9 @@ export const venice1450Settings: WorldSettingsInput = {
     // Vehicles carry several orders at once: city orders at +10 %, +30 % per hour of road.
     cityPriceBps: 11_000,
     distanceBonusBpsPerHour: 3_000,
-    // City prices follow the Rialto: half the reference, half yesterday's traded price, between
-    // 80 % and 150 % of the reference.
-    marketIndex: { weightBps: 5_000, floorBps: 8_000, capBps: 15_000 },
+    // City prices follow the Rialto: 70 % yesterday's traded price, 30 % the reference, between
+    // 60 % and 150 % of the reference.
+    marketIndex: { weightBps: 7_000, floorBps: 6_000, capBps: 15_000 },
     // One or two batches of a workshop: an order is within reach of a session or two.
     quantity: {
       bread: [8, 20],
@@ -380,6 +380,10 @@ export const venice1450Settings: WorldSettingsInput = {
       salt: 1,
       wine: 1,
     },
+    // Elastic demand: a good at 80 % of its reference at the Rialto is ordered half as often again,
+    // and the board grows with the average (up to twice its size).
+    elasticityBps: 20_000,
+    elasticMaxBps: 20_000,
     // Half the city orders are for the merchant's own chain, the rest for the others' goods.
     homeShareBps: 5_000,
     // On a market event day, three city orders go where the event asks for more.
@@ -583,7 +587,9 @@ export const venice1450Settings: WorldSettingsInput = {
   levelYieldBonusBps: 2_500,
   maxBuildings: 12,
   maxBuildingLevel: 5,
-  levelCostGrowthBps: 5_000,
+  // Each level costs 35 % of the first more (it adds more than that with the yield bonus): an
+  // upgrade is a better buy than a new workshop, so houses grow in depth.
+  levelCostGrowthBps: 3_500,
   // The season in four acts, one a week (the last runs to the end of the month).
   acts: [
     { code: "installation", week: 0, variants: [] },
@@ -645,11 +651,11 @@ export const venice1450Settings: WorldSettingsInput = {
   specialties: {
     unlockLevels: 5,
     options: {
-      master: { transformYieldBps: 1_000 },
+      master: { transformYieldBps: 1_500 },
       carter: { vehicleSpeedBps: 2_500, extraVehicles: 1 },
       trader: { marketMakerQuotaBps: 2_500, taxDiscountBps: 200, extraOpenOrders: 3 },
-      // Marchand du Levant: twice the quota at the galleys of the Muda.
-      levant: { mudaQuotaBps: 10_000 },
+      // Marchand du Levant: half as much again at the galleys of the Muda.
+      levant: { mudaQuotaBps: 5_000 },
     },
   },
   // Level 2 asks half the materials: a first upgrade within reach in the first days.
@@ -750,6 +756,10 @@ export const venice1450Settings: WorldSettingsInput = {
       wood: 250,
       planks: 250,
     },
+    // Supply and demand: the Dogana's price moves up to 6 % a day with what merchants bought from
+    // it less what they sold it, and comes back a quarter of the way to the reference each day:
+    // steady selling holds it near 76 % of the reference, steady buying near 124 %.
+    drift: { stepBps: 600, minBps: 6_000, maxBps: 15_000, revertBps: 2_500 },
   },
   // Seven cities share the demand of the three first ones (bread 130, bricks 35, planks 35 per
   // active merchant and per day); the new ones also buy raw goods. With deliveries by road, the

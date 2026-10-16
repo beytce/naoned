@@ -109,6 +109,8 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
     blocking: true,
   });
 
+  checks.push(...venetoPrices(r));
+
   const gHalf = r.daily[half]?.gini ?? Number.NaN;
   checks.push({
     name: `Gini du patrimoine à J+${half}`,
@@ -272,6 +274,47 @@ export function createdPerActiveDay(r: SimulationResult): Record<string, number>
   }
   for (const k of Object.keys(out)) out[k] = (out[k] ?? 0) / Math.max(1, activeDays) / 100;
   return out;
+}
+
+/**
+ * The goods of the Veneto at the Rialto: each one's lowest, highest and last traded price of the
+ * season (in % of its reference), and the range of the Dogana's price.
+ */
+function venetoPrices(r: SimulationResult): Check[] {
+  const refs = r.referencePrices ?? {};
+  const goods = ["wheat", "flour", "bread", "clay", "bricks", "wood", "planks"].filter(
+    (g) => refs[g],
+  );
+  const lines: string[] = [];
+  let low = Number.POSITIVE_INFINITY;
+  let high = 0;
+  for (const g of goods) {
+    const ref = Number(refs[g] ?? 1n);
+    const series = r.prices
+      .filter((p) => p.resource === g && p.vwap !== undefined)
+      .sort((a, b) => a.day - b.day)
+      .map((p) => (Number(p.vwap) * 100) / ref);
+    if (series.length === 0) continue;
+    const min = Math.min(...series);
+    const max = Math.max(...series);
+    low = Math.min(low, min);
+    high = Math.max(high, max);
+    lines.push(`${g} ${min.toFixed(0)}–${max.toFixed(0)} (fin ${(series.at(-1) ?? 0).toFixed(0)})`);
+  }
+  const dogana = Object.entries(r.doganaRange ?? {})
+    .filter(([g]) => goods.includes(g))
+    .map(([, [a, b]]) => [a / 100, b / 100]);
+  const dLow = Math.min(...dogana.map(([a]) => a ?? 100));
+  const dHigh = Math.max(...dogana.map(([, b]) => b ?? 100));
+  return [
+    {
+      name: "Cours du Veneto au Rialto (% de la référence)",
+      target: "diagnostic : des prix qui bougent, dans 80 à 130 de préférence",
+      value: `${lines.join(" · ")} ; Dogana ${dLow.toFixed(0)} à ${dHigh.toFixed(0)}`,
+      pass: low >= 80 && high <= 130,
+      blocking: false,
+    },
+  ];
 }
 
 /** The galleys of the Muda: the only source of goods from overseas since the sea was removed. */

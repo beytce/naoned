@@ -231,6 +231,8 @@ export interface MarketMakerUsage {
     PlayerId,
     { bought: Record<ResourceCode, number>; sold: Record<ResourceCode, number> }
   >;
+  /** The Dogana's price per resource, in bps of the reference (10 000 when absent). */
+  anchorBps?: Record<ResourceCode, number>;
 }
 
 /** The galleys of the Muda at the quay (see muda.ts). */

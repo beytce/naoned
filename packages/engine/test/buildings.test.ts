@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { costForLevel, upkeepPerDay } from "../src/index.js";
+import { addedOutputBps, costForLevel, costPerOutput, upkeepPerDay } from "../src/index.js";
 import { World, makeContext } from "./helpers.js";
 
 describe("buildings", () => {
@@ -61,5 +61,28 @@ describe("buildings", () => {
     });
     // Without the setting, as before.
     expect(costForLevel(makeContext(), "farm", 2).materials).toEqual({ bricks: 40, planks: 40 });
+  });
+});
+
+describe("what a level is worth", () => {
+  const ctx = (levelCostGrowthBps: number, levelYieldBonusBps: number) =>
+    makeContext({ levelCostGrowthBps, levelYieldBonusBps });
+
+  it("counts the output a level adds, with the yield bonus of the levels above the first", () => {
+    const c = ctx(5_000, 2_500);
+    // Level 1: 1; level 2: 2 × 1.25 = 2.5; level 3: 3 × 1.5 = 4.5 (in ten-thousandths).
+    expect(addedOutputBps(c, 0)).toBe(10_000);
+    expect(addedOutputBps(c, 1)).toBe(15_000);
+    expect(addedOutputBps(c, 2)).toBe(20_000);
+  });
+
+  it("makes an upgrade a better buy than a new workshop when levels cost less than they add", () => {
+    const cheaper = ctx(3_500, 2_500);
+    const farm = (from: number) => costPerOutput(cheaper, "farm", from);
+    expect(farm(1)).toBeLessThan(farm(0));
+    expect(farm(2)).toBeLessThan(farm(1));
+    // Without a yield bonus and with steep costs, a new workshop is the better buy.
+    const steep = ctx(10_000, 0);
+    expect(costPerOutput(steep, "farm", 1)).toBeGreaterThan(costPerOutput(steep, "farm", 0));
   });
 });

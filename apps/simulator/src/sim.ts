@@ -96,6 +96,10 @@ export interface SimulationResult {
   };
   /** The road: deliveries and vehicles (see `roadStats`). */
   road?: RoadStats;
+  /** Reference prices of the world, to read the prices against. */
+  referencePrices?: Record<string, Deniers>;
+  /** The Dogana's price over the season, per resource: lowest and highest, in bps of the reference. */
+  doganaRange?: Record<string, [number, number]>;
   /**
    * The galleys of the Muda: arrivals, units brought and sold by the Dogana (and its takings),
    * the board's orders of goods from overseas and their share of the money paid on arrival.
@@ -385,8 +389,14 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
   };
   // The world's board of each day, as it last stood.
   const boards = new Map<number, NonNullable<WorldState["board"]>>();
+  const doganaRange: Record<string, [number, number]> = {};
   const closeDay = () => {
     sweepRoad();
+    for (const r of Object.keys(ctx.settings.referencePrices)) {
+      const bps = state.marketMaker.anchorBps?.[r] ?? 10_000;
+      const seen = doganaRange[r] ?? [bps, bps];
+      doganaRange[r] = [Math.min(seen[0], bps), Math.max(seen[1], bps)];
+    }
     const snap = snapshot(ctx, state, now, currentDay, flows, index, botInfo);
     result.daily.push(snap.daily);
     result.prices.push(...snap.prices);
@@ -438,6 +448,8 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
   }
   closeDay();
   result.finalState = state;
+  result.referencePrices = ctx.settings.referencePrices;
+  result.doganaRange = doganaRange;
   const merchants = Object.keys(state.players);
   const workshops = Object.values(state.buildings).filter((b) => b.type !== "palazzo");
   const types = merchants.map(

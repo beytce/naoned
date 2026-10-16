@@ -419,6 +419,14 @@ export const worldSettingsSchema = z.object({
       /** How often each resource is ordered, relative to the others (1 when absent). */
       weights: z.record(positive).default({}),
       /**
+       * Elastic demand on the shared board: a good priced at the Rialto under its reference is
+       * ordered more often (over it, less), by this share of the gap (10 000: in proportion), and
+       * the board grows (or shrinks) with the average, from half its size to `elasticMaxBps`.
+       */
+      elasticityBps: bps.default(0),
+      /** Largest the board grows with cheap goods (bps of its set size). */
+      elasticMaxBps: bps.min(10_000).default(15_000),
+      /**
        * Share of city orders drawn among the goods of the merchant's own chain (what the starting
        * buildings of their region make), so that the board speaks to their trade.
        */
@@ -557,6 +565,22 @@ export const worldSettingsSchema = z.object({
      * fills up, each player's quota shrinks to their share of it (never below 1).
      */
     maxDailyDepth: z.record(qty).default({}),
+    /**
+     * The Dogana's price follows supply and demand: each day, what merchants bought from it more
+     * than they sold it (as a share of its daily depth) moves its price up by up to `stepBps` of
+     * the reference, and the reverse down, between `minBps` and `maxBps` of the reference.
+     * Each day it also comes back `revertBps` of the way to the reference.
+     * Absent: its price follows the market down only (`referenceFloorBps`).
+     */
+    drift: z
+      .object({
+        stepBps: bps,
+        minBps: bps.max(10_000),
+        maxBps: bps.min(10_000),
+        /** Share of the gap to the reference closed each day: prices come back when trade stops. */
+        revertBps: bps.max(10_000).default(0),
+      })
+      .optional(),
   }),
   cities: z.record(z.record(cityDemand)),
   /** Weekly city projects; no needs turns them off. */
