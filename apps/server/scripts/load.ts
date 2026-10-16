@@ -1,7 +1,7 @@
 /**
  * Load test: N merchants on one world, through the HTTP API (in process), as in the beta.
- * Each simulated minute: the tick and the bots; every 15 s, the merchants online poll their view;
- * about once a minute, an online merchant acts. Prints latencies per request kind, throughput and
+ * Each simulated minute: the tick and the bots; every 15 s, the merchants online poll their view
+ * (with --push, once a minute, spread out); about once a minute, an online merchant acts. Prints latencies per request kind, throughput and
  * the size of the saved world.
  *
  *   pnpm --filter @comptoirs/server load -- --players 200 --minutes 60
@@ -27,6 +27,11 @@ const { values } = parseArgs({
     /** Share of merchants online at a time. */
     online: { type: "string", default: "0.3" },
     seed: { type: "string", default: "1" },
+    /**
+     * Games on the live line: one fetch a minute, spread over the tick's 20 s, instead of everyone
+     * polling every 15 s (and a fetch after each change of theirs, which an action's answer holds).
+     */
+    push: { type: "boolean", default: false },
   },
 });
 const N = Number(values.players);
@@ -136,12 +141,14 @@ for (let minute = 0; minute < MINUTES; minute++) {
   await timed("bots", () => bots.step());
   const online = cookies.filter(() => random() < ONLINE);
   for (let poll = 0; poll < 4; poll++) {
-    // Everyone online polls at once: the worst case of the 15 s polling.
-    const burst = online.map(async (cookie) => {
+    // Polling: everyone online at once, the worst case of the 15 s polling. Pushed: a quarter of
+    // them in each quarter of the minute's spread.
+    const group = values.push ? online.filter((_, i) => i % 4 === poll) : online;
+    const burst = group.map(async (cookie) => {
       const res = await get(cookie, "/api/game");
       requests++;
       if (res.statusCode !== 200) errors++;
-      if (poll === 0 && random() < 0.5) {
+      if ((values.push || poll === 0) && random() < 0.5) {
         const r = random();
         const payload =
           r < 0.5

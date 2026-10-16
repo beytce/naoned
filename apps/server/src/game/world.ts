@@ -42,6 +42,13 @@ const THEMES = { venice1450 } as const;
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
+/** After a saved command or batch: its effects, its time, the version it made, and if a tick. */
+export type EffectsListener = (
+  fx: Effects,
+  now: number,
+  saved: { version: number; tick: boolean },
+) => void;
+
 export interface WorldOptions {
   settingsFromTheme?: boolean;
   /** A snapshot of the state at least this often (ms) … */
@@ -59,17 +66,18 @@ export interface WorldOptions {
  */
 export class GameWorld {
   private queue: Promise<unknown> = Promise.resolve();
-  private listeners: ((fx: Effects, now: number) => void)[] = [];
+  private listeners: EffectsListener[] = [];
 
-  /** Called after every saved command or batch, with what it wrote (notifications). */
-  onEffects(listener: (fx: Effects, now: number) => void): void {
+  /** Called after every saved command or batch, with what it wrote (notifications, push). */
+  onEffects(listener: EffectsListener): void {
     this.listeners.push(listener);
   }
 
-  private notify(fx: Effects, now: number): void {
+  private notify(fx: Effects, now: number, tick = false): void {
+    const saved = { version: this.version, tick };
     for (const l of this.listeners) {
       try {
-        l(fx, now);
+        l(fx, now, saved);
       } catch {
         // A listener never breaks the game.
       }
@@ -285,7 +293,7 @@ export class GameWorld {
       if (!saved) return { ok: false, error: "stale_state" };
       this.state = res.state;
       this.version += 1;
-      this.notify(res.effects, now);
+      this.notify(res.effects, now, command.type === "tick");
       if (command.type === "tick" && this.state.seasonClosed) await this.rollover(now);
       return { ok: true };
     });
@@ -555,6 +563,11 @@ export class GameWorld {
       totals.stock.set(`${row.player_id}|${row.resource}`, Number(row.qty));
     }
     return totals;
+  }
+
+  /** The version saved last (one per command or batch): what a view was built from. */
+  get savedVersion(): number {
+    return this.version;
   }
 
   /** The six invariants, checked between the saved state and the journals in the database. */

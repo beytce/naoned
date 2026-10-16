@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import cookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
+import websocket from "@fastify/websocket";
 import { sql } from "drizzle-orm";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import { ZodError, z } from "zod";
@@ -42,6 +43,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
 
   await app.register(cookie);
   await app.register(rateLimit, { global: false });
+  await app.register(websocket, { options: { maxPayload: 1_024 } });
 
   const setSession = (reply: FastifyReply, token: string) =>
     reply.setCookie(SESSION_COOKIE, token, {

@@ -40,6 +40,10 @@ export default defineConfig({
     }),
   ],
   server: {
-    proxy: { "/api": "http://localhost:3000" },
+    // The live line first (WebSocket), then the API.
+    proxy: {
+      "/api/live": { target: "ws://localhost:3000", ws: true },
+      "/api": "http://localhost:3000",
+    },
   },
 });
