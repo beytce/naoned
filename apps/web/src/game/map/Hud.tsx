@@ -104,6 +104,7 @@ export function MapHud({
   onProfile,
   onNotices,
   onBales,
+  onRialto,
   onBuyCart,
   onResumeGuide,
   onRanking,
@@ -140,6 +141,8 @@ export function MapHud({
   onProfile: () => void;
   onNotices: () => void;
   onBales: () => void;
+  /** The Rialto, a round under the bell (absent where there is no market). */
+  onRialto?: () => void;
   onBuyCart: () => void;
   onResumeGuide: () => void;
   onRanking: () => void;
@@ -186,6 +189,11 @@ export function MapHud({
             <Orb label={m.notices} onClick={onNotices} badge={notices} coach="hud-notices">
               {Icon.bell()}
             </Orb>
+            {onRialto && (
+              <Orb label={m.buttons.rialto} onClick={onRialto} coach="hud-rialto">
+                {Icon.rialto()}
+              </Orb>
+            )}
             {bales > 0 && (
               <Orb label={m.bales(bales)} onClick={onBales} badge={bales} size={34} tone="gold">
                 <BaleArt size={26} className="bale-float" />
