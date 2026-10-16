@@ -417,6 +417,7 @@ export function MapScreen(
         carts={vehicles.length}
         canBuyCart={!!road && vehicles.length < maxCarts}
         notices={notice > 0 ? notice : view.player.upkeepDefaultUntil > now || !!criee}
+        bales={view.tutorial.includes("mission") ? (view.bales?.available ?? 0) : 0}
         guidePaused={props.guidePaused}
         bottom={!panelUp}
         hasFamily={!!view.families}
@@ -431,6 +432,7 @@ export function MapScreen(
         }
         onProfile={() => props.setSheet("profile")}
         onNotices={() => props.setSheet("notices")}
+        onBales={() => props.setSheet("bales")}
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
         onRanking={() => props.setSheet("ranking")}

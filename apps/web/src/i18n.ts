@@ -81,6 +81,7 @@ export const fr = {
       prev: "Précédent",
       next: "Suivant",
       notices: "Avis",
+      bales: (n: number) => (n > 1 ? `${n} ballots à ouvrir` : "Un ballot à ouvrir"),
       buyCart: "Acheter une charrette",
       carts: "Charrettes libres",
       resumeGuide: "Reprendre le guide",

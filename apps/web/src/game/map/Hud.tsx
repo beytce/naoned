@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BaleArt } from "../../art/bale.js";
 import { Crest, type CrestData } from "../../art/crest.js";
 import { Coin } from "../../art/icons.js";
 import { Lorenzo } from "../../art/scenes.js";
@@ -91,6 +92,7 @@ export function MapHud({
   carts,
   canBuyCart,
   notices,
+  bales,
   guidePaused,
   bottom,
   hasFamily,
@@ -99,6 +101,7 @@ export function MapHud({
   right,
   onProfile,
   onNotices,
+  onBales,
   onBuyCart,
   onResumeGuide,
   onRanking,
@@ -115,6 +118,8 @@ export function MapHud({
   carts: number;
   canBuyCart: boolean;
   notices: number | boolean;
+  /** Bales of Faraj waiting to be opened: a small round under the bell while there are any. */
+  bales: number;
   guidePaused: boolean;
   /** The round doors at the foot (hidden while a panel is up). */
   bottom: boolean;
@@ -127,6 +132,7 @@ export function MapHud({
   right?: ReactNode;
   onProfile: () => void;
   onNotices: () => void;
+  onBales: () => void;
   onBuyCart: () => void;
   onResumeGuide: () => void;
   onRanking: () => void;
@@ -167,9 +173,16 @@ export function MapHud({
           </span>
         </div>
         <div className="flex gap-2 pl-[7px]">
-          <Orb label={m.notices} onClick={onNotices} badge={notices} coach="hud-notices">
-            {Icon.bell()}
-          </Orb>
+          <span className="flex flex-col items-center gap-1.5">
+            <Orb label={m.notices} onClick={onNotices} badge={notices} coach="hud-notices">
+              {Icon.bell()}
+            </Orb>
+            {bales > 0 && (
+              <Orb label={m.bales(bales)} onClick={onBales} badge={bales} size={34} tone="gold">
+                <BaleArt size={26} className="bale-float" />
+              </Orb>
+            )}
+          </span>
           {guidePaused && (
             <Orb label={m.resumeGuide} onClick={onResumeGuide} tone="gold">
               <Lorenzo size={30} />
