@@ -12,6 +12,7 @@ import { Medal } from "../art/icons.js";
 import { P } from "../art/palette.js";
 import { hapticsEnabled, setHapticsEnabled } from "../haptics.js";
 import { fr } from "../i18n.js";
+import { LegalLinks } from "../legal/Legal.js";
 import { PALETTES, type PaletteId, choosePalette, currentPalette, needsPass } from "../theme.js";
 import { Big, Donut, Label, Panel, Ribbon, Sheet, Slab, Switch } from "../ui.js";
 import type { GameProps } from "./Game.js";
@@ -418,6 +419,7 @@ function ProfileBody(props: GameProps) {
                 {fr.game.data.delete}
               </Slab>
             </div>
+            <LegalLinks className="pt-2" />
           </section>
 
           <section className="border-t border-vermilion/40 pt-6">

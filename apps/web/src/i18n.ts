@@ -8,6 +8,13 @@ export const fr = {
   sendLink: "Recevoir mon lien",
   sending: "Envoi…",
   noPassword: "Pas de mot de passe : un lien de connexion vous est envoyé par e-mail.",
+  accept: [
+    "En recevant votre lien, vous acceptez les ",
+    "conditions d'utilisation",
+    " et la ",
+    "politique de confidentialité",
+    ".",
+  ],
   checkInbox: "Regardez vos e-mails",
   linkSentTo: (email: string) =>
     `Un lien de connexion vient de partir vers ${email}. Il est valable 15 minutes. Pensez à regarder dans les spams.`,
