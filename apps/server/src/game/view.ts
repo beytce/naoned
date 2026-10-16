@@ -598,28 +598,56 @@ export function playerView(
   };
 }
 
+/** The ranking's rows of a world state, kept for the minute: every view shows it. */
+const RANKS = new WeakMap<
+  WorldState,
+  { minute: number; hidden: string; rows: Omit<RankRow, "pseudo" | "rank">[] }
+>();
+type RankRow = {
+  rank: number;
+  playerId: string;
+  pseudo: string | null;
+  region: string;
+  specialty: string | null;
+  netWorth: Deniers;
+  turnover: Deniers;
+};
+
 export function ranking(
   ctx: WorldContext,
   state: WorldState,
   now: number,
   pseudos: Map<string, string | null>,
   hidden: Set<string> = new Set(),
-) {
-  const unitValues: Record<string, Deniers> = {};
-  for (const r of ctx.theme.resources) unitValues[r.code] = stockUnitValue(ctx, state, r.code, now);
-  return (
-    Object.keys(state.players)
+): RankRow[] {
+  const minute = Math.floor(now / 60_000);
+  const hiddenKey = [...hidden].sort().join(",");
+  let cached = RANKS.get(state);
+  if (!cached || cached.minute !== minute || cached.hidden !== hiddenKey) {
+    const unitValues: Record<string, Deniers> = {};
+    for (const r of ctx.theme.resources)
+      unitValues[r.code] = stockUnitValue(ctx, state, r.code, now);
+    const rows = Object.keys(state.players)
       .filter((id) => id !== MARKET_MAKER && !hidden.has(id))
       .map((id) => ({
         playerId: id,
-        pseudo: pseudos.get(id) ?? null,
         region: state.players[id]?.region ?? "",
         specialty: state.players[id]?.specialty ?? null,
         netWorth: netWorth(ctx, state, id, now, unitValues).total,
         turnover: turnoverOf(state, id),
       }))
       // Net sales rank the season; stock and buildings do not.
-      .sort((a, b) => (a.turnover > b.turnover ? -1 : a.turnover < b.turnover ? 1 : 0))
-      .map((row, i) => ({ rank: i + 1, ...row }))
-  );
+      .sort((a, b) => (a.turnover > b.turnover ? -1 : a.turnover < b.turnover ? 1 : 0));
+    cached = { minute, hidden: hiddenKey, rows };
+    RANKS.set(state, cached);
+  }
+  return cached.rows.map((row, i) => ({
+    rank: i + 1,
+    playerId: row.playerId,
+    pseudo: pseudos.get(row.playerId) ?? null,
+    region: row.region,
+    specialty: row.specialty,
+    netWorth: row.netWorth,
+    turnover: row.turnover,
+  }));
 }

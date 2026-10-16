@@ -8,7 +8,8 @@
     "start": "tsx src/server.ts",
     "db:generate": "drizzle-kit generate",
     "vapid": "web-push generate-vapid-keys",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "load": "tsx scripts/load.ts"
   },
   "dependencies": {
     "@comptoirs/engine": "workspace:*",
