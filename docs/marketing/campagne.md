@@ -19,7 +19,7 @@ Ton : sobre, historique, un peu de panache. On ne promet rien que le jeu ne tien
 
 | Quand | Quoi |
 | --- | --- |
-| **16 → 24 oct.** | Corriger la carte « Famille » sur PC et les points 1 à 3 de l'audit de sécurité. Remplir `apps/web/src/legal/info.ts` (adresse, contact, site). Choisir le domaine et y pointer `APP_URL`. Créer le serveur Discord (salons : #annonces, #aide, #rialto, une salle par famille, #bugs). |
+| **16 → 24 oct.** | ~~Corriger la carte « Famille » et l'audit de sécurité~~ (fait le 16). Remplir `apps/web/src/legal/info.ts` (adresse, contact, site). Choisir le domaine et y pointer `APP_URL`. Créer le serveur Discord (salons : #annonces, #aide, #rialto, une salle par famille, #bugs). |
 | **25 → 31 oct.** | Teasing : un visuel par jour sur X/Bluesky/Instagram (posts 01 à 05), bannière Discord. Page itch.io (jeu HTML « lien externe ») avec la key art et les captures. Messages aux modérateurs des subreddits pour vérifier les règles d'autopromotion. |
 | **1er nov. (ouverture)** | Posts Reddit et forums (textes ci-dessous), annonce Discord, story « Jouer gratuitement ». Être présent toute la journée pour répondre. |
 | **2 nov.** | Ouverture des familles (jour 2) : post 04 « Prêtez allégeance ». |
@@ -110,7 +110,7 @@ Pour les refaire après un changement d'interface : `docs/marketing/outils/` (`c
 
 ## Avant de publier
 
-- [ ] Carte « Famille » fluide sur PC (voir le correctif proposé) et points 1 à 3 de l'audit de sécurité corrigés.
+- [x] Carte « Famille » fluide sur PC et audit de sécurité corrigé (16 octobre).
 - [ ] Pages légales complètes (`apps/web/src/legal/info.ts` : adresse, contact, site, région d'hébergement).
 - [ ] Domaine définitif dans `APP_URL` ; balise `og:image` pointant vers `og-1200x630.jpg`.
 - [ ] Envoi d'e-mails Resend sur un domaine vérifié (pas `onboarding@resend.dev`), sinon les liens magiques finissent en indésirables.
