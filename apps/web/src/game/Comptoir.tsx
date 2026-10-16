@@ -207,97 +207,173 @@ export function StockStrip(props: GameProps) {
   );
 }
 
+/** The tone of a workshop's state: gold to collect, lagoon at work, vermilion when it lacks. */
+const STATE_TONE = {
+  ready: { glow: "gold", dot: "bg-gold", text: "text-gold", ring: "ring-gold/60" },
+  running: { glow: "lagoon", dot: "bg-lagoon", text: "text-lagoon", ring: "ring-lagoon/50" },
+  idle: { glow: undefined, dot: "bg-cream-dim", text: "text-cream-dim", ring: "ring-line" },
+  blocked: { glow: undefined, dot: "bg-vermilion", text: "text-vermilion", ring: "ring-line" },
+  still: { glow: undefined, dot: "bg-line", text: "text-muted", ring: "ring-line" },
+} as const;
+
+/**
+ * A workshop in the list: its state first (a coloured line), what a batch takes and gives, and
+ * one big button that does the right thing (collect, produce, see what it lacks); upgrading is
+ * the small level chip at the top.
+ */
 function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
   const recipe = recipeOf(props, b.type);
+  const st = workshopState(props, b);
   const job = b.job;
-  const ready = readyOf(b, props.now);
-  const running = job !== null && ready < job.batches;
-  const current =
-    job && running ? (props.now - job.startedAt - ready * job.batchMs) / job.batchMs : 0;
-  const nextIn = job && running ? job.startedAt + (ready + 1) * job.batchMs - props.now : 0;
+  const ready = st.ready;
+  const tone = STATE_TONE[st.state];
+  const t = fr.game.workshop;
   // Fresh produce: the latest batch done, collected soon, yields a little more.
   const fresh = props.view.fresh;
   const freshLeft =
     job && ready > 0 && fresh.minutes > 0
       ? job.startedAt + ready * job.batchMs + fresh.minutes * 60_000 - props.now
       : 0;
+  const status =
+    st.state === "ready"
+      ? t.ready(st.quantity ?? 0, props.names.resource(st.resource ?? ""))
+      : st.state === "running" && job
+        ? t.running(ready + 1, job.batches, clock(st.left ?? 0))
+        : st.state === "idle"
+          ? t.idle
+          : st.state === "blocked"
+            ? b.outOfRegion
+              ? fr.game.outOfRegion
+              : t.blocked
+            : fr.game.palazzoHelp;
 
   return (
-    <Panel glow={ready > 0 ? "gold" : running ? "lagoon" : undefined}>
-      <div className="flex gap-3">
-        <div className="-my-1 -ml-1 w-20 shrink-0 min-[360px]:w-28">
-          <BuildingArt type={b.type} active={running} className="h-24 w-full" />
+    <Panel glow={tone.glow}>
+      <div className="flex items-center gap-3">
+        <div
+          className={`flex h-[72px] w-[84px] shrink-0 items-center justify-center rounded-2xl bg-night-3 ring-1 ${tone.ring}`}
+        >
+          <BuildingArt type={b.type} active={st.state === "running"} className="h-16 w-20" />
         </div>
-        <div className="min-w-0 flex-1 space-y-2">
+        <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-display text-sm font-extrabold uppercase leading-tight">
+            <h3 className="font-display text-base font-extrabold uppercase leading-tight">
               {props.names.building(b.type)}
             </h3>
-            <Badge tone={b.level >= 3 ? "lagoon" : "gold"}>{fr.game.level(b.level)}</Badge>
+            {b.upgradeCost ? (
+              <button
+                type="button"
+                data-coach={`upgrade-${b.id}`}
+                aria-label={fr.game.upgrade}
+                onClick={() => props.setSheet(`upgrade:${b.id}`)}
+                className="flex shrink-0 items-center gap-1 rounded-full bg-gold px-2 py-0.5 font-mono text-[11px] font-bold text-ink transition active:scale-95"
+              >
+                {fr.game.level(b.level)} <span aria-hidden="true">↑</span>
+              </button>
+            ) : (
+              <Badge tone={b.level >= 3 ? "lagoon" : "gold"}>{fr.game.level(b.level)}</Badge>
+            )}
           </div>
-          {recipe && (
-            <RecipeFlow
-              recipe={recipe}
-              level={b.level}
-              props={props}
-              runningMs={b.job ? b.job.batchMs : undefined}
-            />
-          )}
-          {job && running && (
-            <Ribbon
-              value={current}
-              tone="lagoon"
-              label={`${fr.game.batch(ready + 1, job.batches)} · ${clock(nextIn)}`}
-            />
-          )}
-          {freshLeft > 0 && (
-            <p className="label text-lagoon">
-              {fr.game.fresh(fresh.bonusBps / 100, clock(freshLeft))}
-            </p>
-          )}
-          {!job && recipe && <p className="label">{fr.game.idle}</p>}
-          {!recipe && <p className="text-xs text-muted">{fr.game.palazzoHelp}</p>}
+          <p className={`mt-1.5 flex items-center gap-1.5 text-xs font-semibold ${tone.text}`}>
+            <span className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} />
+            <span className="min-w-0">{status}</span>
+          </p>
         </div>
       </div>
-      <div className="mt-3 flex flex-wrap gap-3">
-        {ready > 0 && (
-          <Slab
-            className="flex-1"
-            coach={`harvest-${b.id}`}
-            disabled={props.busy}
-            onClick={() => props.act({ type: "collect", buildingId: b.id })}
-          >
-            {fr.game.harvest(ready)}
-          </Slab>
-        )}
-        {recipe && b.canStart > 0 && ready === 0 && (
-          <Slab
-            className="flex-1"
+
+      {recipe && (
+        <div className="mt-3 rounded-xl bg-night-3/60 px-3 py-2">
+          <RecipeFlow
+            recipe={recipe}
+            level={b.level}
+            props={props}
+            runningMs={job ? job.batchMs : undefined}
+          />
+        </div>
+      )}
+      {st.state === "running" && job && (
+        <div className="mt-3">
+          <Ribbon
+            value={st.progress ?? 0}
             tone="lagoon"
-            coach={`produce-${b.id}`}
-            onClick={() => props.setSheet(`produce:${b.id}`)}
-          >
-            {fr.game.produce}
-          </Slab>
-        )}
-        {recipe && b.canStart === 0 && !job && Object.keys(recipe.inputs).length > 0 && (
-          <p className="flex-1 self-center text-xs text-muted">{fr.game.missingInputs}</p>
-        )}
-        {b.outOfRegion && (
-          <p className="flex-1 self-center text-xs text-muted">{fr.game.outOfRegion}</p>
-        )}
-        {b.upgradeCost && (
-          <Slab
-            tone="ghost"
-            size="sm"
-            coach={`upgrade-${b.id}`}
-            onClick={() => props.setSheet(`upgrade:${b.id}`)}
-          >
-            {fr.game.upgrade}
-          </Slab>
-        )}
-      </div>
+            label={`${fr.game.batch(ready + 1, job.batches)} · ${clock(st.left ?? 0)}`}
+          />
+        </div>
+      )}
+      {freshLeft > 0 && (
+        <p className="label mt-2 text-lagoon">
+          {fr.game.fresh(fresh.bonusBps / 100, clock(freshLeft))}
+        </p>
+      )}
+
+      {st.state === "ready" && (
+        <Slab
+          className="mt-3 w-full"
+          coach={`harvest-${b.id}`}
+          disabled={props.busy}
+          onClick={() => props.act({ type: "collect", buildingId: b.id })}
+        >
+          {fr.game.harvest(ready)}
+        </Slab>
+      )}
+      {st.state === "idle" && (
+        <Slab
+          className="mt-3 w-full"
+          tone="lagoon"
+          coach={`produce-${b.id}`}
+          onClick={() => props.setSheet(`produce:${b.id}`)}
+        >
+          {fr.game.produce}
+        </Slab>
+      )}
+      {st.state === "blocked" && recipe && Object.keys(recipe.inputs).length > 0 && (
+        <Slab
+          className="mt-3 w-full"
+          tone="ghost"
+          coach={`produce-${b.id}`}
+          onClick={() => props.setSheet(`produce:${b.id}`)}
+        >
+          {fr.game.workshopsSheet.whatsMissing}
+        </Slab>
+      )}
     </Panel>
+  );
+}
+
+/** The top of the workshops' window: how many are ready, at work, idle; one tap for them all. */
+function WorkshopsSummary(props: GameProps) {
+  const states = props.view.buildings.map((b) => workshopState(props, b));
+  const count = (s: string) => states.filter((x) => x.state === s).length;
+  const ready = states.reduce((n, x) => n + (x.state === "ready" ? x.ready : 0), 0);
+  const t = fr.game.workshopsSheet;
+  const chips = [
+    { n: count("ready"), label: t.ready, cls: "bg-gold/15 text-gold" },
+    { n: count("running"), label: t.running, cls: "bg-lagoon/15 text-lagoon" },
+    { n: count("idle") + count("blocked"), label: t.idle, cls: "bg-night-3 text-cream-dim" },
+  ].filter((c) => c.n > 0);
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {chips.map((c) => (
+          <span
+            key={c.label}
+            className={`rounded-full px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-wide ${c.cls}`}
+          >
+            {c.n} {c.label}
+          </span>
+        ))}
+      </div>
+      {(ready > 0 || count("idle") > 0) && (
+        <Slab
+          className="w-full"
+          tone={ready > 0 ? "gold" : "lagoon"}
+          disabled={props.busy}
+          onClick={() => props.act({ type: "collectAndRestart" })}
+        >
+          {ready > 0 ? t.collectAll(ready) : t.restartAll}
+        </Slab>
+      )}
+    </div>
   );
 }
 
@@ -641,6 +717,7 @@ export function CounterSheets(props: GameProps) {
           <h3 className="font-display text-xl font-extrabold uppercase">
             {fr.game.map.buttons.workshops}
           </h3>
+          <WorkshopsSummary {...props} />
           {view.buildings.map((b) => (
             <Workshop key={b.id} b={b} props={props} />
           ))}

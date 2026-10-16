@@ -971,6 +971,15 @@ export const fr = {
       title: (n: number, levels: number) =>
         `Votre domaine : ${n} atelier${n > 1 ? "s" : ""}, ${levels} niveau${levels > 1 ? "x" : ""} en tout`,
     },
+    workshopsSheet: {
+      ready: "prêts",
+      running: "en cours",
+      idle: "à l'arrêt",
+      collectAll: (n: number) =>
+        n > 1 ? `Tout récolter (${n} lots) et relancer` : "Récolter et relancer",
+      restartAll: "Relancer les ateliers à l'arrêt",
+      whatsMissing: "Voir ce qui manque",
+    },
     workshop: {
       ready: (q: number, res: string) => `Prêt : ${q} ${res.toLowerCase()} à récolter`,
       running: (batch: number, of: number, left: string) =>
