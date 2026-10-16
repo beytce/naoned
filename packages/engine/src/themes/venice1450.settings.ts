@@ -122,7 +122,7 @@ export const venice1450Settings: WorldSettingsInput = {
   },
   rations: { resource: "bread", perLevelPerDay: 2, slowdownBps: 5_000 },
   // Computer-run merchants fill the world up to this many active merchants (beta).
-  bots: { population: 15 },
+  bots: { population: 40 },
   // Two orders of the Doge a day.
   contracts: {
     perDay: 2,
