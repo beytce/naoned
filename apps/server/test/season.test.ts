@@ -211,21 +211,24 @@ describe("rehearsing the end of a season", () => {
 describe("season milestones", () => {
   const ducats = (n: number) => BigInt(n) * 100n;
 
+  // Thresholds in ducats of net sales of the season.
   it("give renown for the title reached, whatever the rank", () => {
-    expect(milestoneFor(ducats(2_000))).toMatchObject({ code: "peddler", renown: 0 });
-    expect(milestoneFor(ducats(5_000))).toMatchObject({ code: "merchant", renown: 5 });
-    expect(milestoneFor(ducats(9_000))).toMatchObject({ code: "trader", renown: 10 });
-    expect(milestoneFor(ducats(60_000))).toMatchObject({ code: "doge", renown: 30 });
+    expect(milestoneFor(ducats(400))).toMatchObject({ code: "peddler", renown: 0 });
+    expect(milestoneFor(ducats(2_000))).toMatchObject({ code: "merchant", renown: 5 });
+    expect(milestoneFor(ducats(3_500))).toMatchObject({ code: "trader", renown: 10 });
+    expect(milestoneFor(ducats(25_000))).toMatchObject({ code: "doge", renown: 30 });
+    // A season sold at a loss holds no title.
+    expect(milestoneFor(ducats(-500))).toMatchObject({ code: "peddler", renown: 0 });
   });
 
   it("add to the renown of the rank, even far from the podium", () => {
     // 51st of 200 after two days: no tier, but a Négociant.
-    expect(seasonReward(51, 200, 2, ducats(9_000))).toEqual({
+    expect(seasonReward(51, 200, 2, ducats(3_500))).toEqual({
       tier: "none",
       milestone: "trader",
       renown: 10,
     });
-    expect(seasonReward(1, 200, 30, ducats(60_000))).toEqual({
+    expect(seasonReward(1, 200, 30, ducats(25_000))).toEqual({
       tier: "doge",
       milestone: "doge",
       renown: 130,
