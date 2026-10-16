@@ -182,6 +182,8 @@ export class Bot {
   onlineUntil = 0;
   /** Last limit price used per side and resource, to walk prices when orders do not fill. */
   private lastPrice = new Map<string, Deniers>();
+  /** Offers withdrawn after a day without (full) taker, by "side:resource": the price must move. */
+  private unsold = new Set<string>();
   /** Last week it voted its family's programme. */
   private votedWeek = -1;
 
@@ -437,8 +439,10 @@ export class Bot {
   /** Cancels orders older than a day; the next placement walks the price. */
   private refreshOrders(s: Session): void {
     for (const o of this.myOrders(s)) {
-      if (s.now - o.createdAt >= DAY)
+      if (s.now - o.createdAt >= DAY) {
         s.act({ type: "cancelOrder", playerId: this.id, orderId: o.id });
+        this.unsold.add(`${o.side}:${o.resource}`);
+      }
     }
   }
 
@@ -464,6 +468,14 @@ export class Bot {
       if (!recipe) continue;
       const room = freeBatches(s.ctx, b, recipe.code, s.now);
       if (room <= 0) continue;
+      // A glut: the goods sell under 90 % of their reference and the stock already holds a few
+      // batches beyond what is kept aside. The workshop rests until prices recover.
+      const glut = Object.entries(recipe.outputs).some(
+        ([res, perBatch]) =>
+          s.market.fair(res) < scale(s.market.reference(res), 0.9) &&
+          this.available(s, res) - this.reserve(s, res) > (perBatch ?? 0) * b.level * 4,
+      );
+      if (glut) continue;
       let batches = room;
       for (const [res, perBatch] of Object.entries(recipe.inputs)) {
         const need = (perBatch ?? 0) * b.level;
@@ -953,11 +965,10 @@ export class Bot {
       return;
     const key = `buy:${resource}`;
     const previous = this.lastPrice.get(key);
-    const price = previous
-      ? scale(previous, 1.03) > cap
-        ? cap
-        : scale(previous, 1.03)
-      : scale(fair, 0.97);
+    // A bid that found no seller goes up; one that was filled tries a little lower next time.
+    const stale = this.unsold.delete(key);
+    const next = previous ? scale(previous, stale ? 1.03 : 0.99) : scale(fair, 0.97);
+    const price = next > cap ? cap : next;
     const q = Math.min(qty, Number(budget / (price > 0n ? price : 1n)));
     if (q <= 0) return;
     if (
@@ -1012,7 +1023,9 @@ export class Bot {
         )?.price;
         if (mmBid !== undefined && mmBid + 1n > floorPrice) floorPrice = mmBid + 1n;
       }
-      let price = previous ? scale(previous, 0.97) : scale(fair, 1.02);
+      // An offer that found no taker comes down; one that sold out asks a little more next time.
+      const stale = this.unsold.delete(key);
+      let price = previous ? scale(previous, stale ? 0.97 : 1.03) : scale(fair, 1.02);
       if (price < floorPrice) price = floorPrice;
       if (
         s.act({
