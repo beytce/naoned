@@ -56,10 +56,10 @@ Chaque métier dépend désormais des deux autres : le boulanger vend son pain �
 
 | Fonction | Règle |
 | --- | --- |
-| **Maisons marchandes (PNJ)** | Des marchands tenus par l'ordinateur complètent le monde jusqu'à 15 marchands actifs (`worlds.settings.bots.population`). Ce sont les bots du simulateur, qui jouent avec les mêmes commandes et les mêmes limites que les joueurs : tout passe par le grand livre et le journal des stocks. Ils jouent 1 à 5 sessions par jour, entre 7 h et 23 h (UTC) |
+| **Maisons marchandes (PNJ)** | Des marchands tenus par l'ordinateur complètent le monde jusqu'à 40 marchands actifs (`worlds.settings.bots.population`). Ce sont les bots du simulateur, qui jouent avec les mêmes commandes et les mêmes limites que les joueurs : tout passe par le grand livre et le journal des stocks. Ils jouent 1 à 5 sessions par jour, entre 7 h et 23 h (UTC) |
 | **Transparence** | Un badge « PNJ » les signale dans le classement. Ils n'ont pas d'adresse e-mail réelle et ne peuvent pas ouvrir de session. Ils sont exclus des récompenses hebdomadaires |
 | **Retrait** | Quand un joueur réel devient actif, une maison se retire (au plus une par heure) : ses ordres sont annulés, elle cesse de jouer et quitte le classement. Si le monde se vide, une maison retirée revient avant qu'on en crée une nouvelle |
-| **Classement hebdomadaire** | Gain de patrimoine de la semaine, en ducats. Une semaine = 7 jours depuis l'ouverture du monde (mêmes bornes que les grands chantiers), la dernière court jusqu'à la fin du mois ; un nouveau venu part de son patrimoine à l'arrivée. Titres de la semaine pour le podium, Pass Négociant 7 jours pour le top 10 (joueurs réels) |
+| **Classement hebdomadaire** | Ventes nettes de la semaine, en ducats (voir « Fin de saison »). Une semaine = 7 jours depuis l'ouverture du monde (mêmes bornes que les grands chantiers), la dernière court jusqu'à la fin du mois ; un nouveau venu part de zéro. Titres de la semaine pour le podium, Pass Négociant 7 jours pour le top 10 (joueurs réels) |
 | **Notifications** | Dans le jeu (cloche) et en push (PWA) : récolte prête, galère rentrée, ordre exécuté, événement, résultat de la semaine. Chaque type peut être coupé ; pas de push entre 22 h et 8 h (heure de Paris) |
 
 ### La mer : neuf ports, flotte et corsaires
@@ -99,7 +99,7 @@ Inspiré de Mercato Venezia : du risque et de l'affrontement entre joueurs, sans
 | **Comptoir en sommeil** | Sans visite depuis 24 h, l'entretien tombe à 25 % et les ouvriers ne connaissent pas la faim. Le joueur qui revient retrouve un comptoir intact |
 | **Bon retour** | Après 4 h d'absence, un récapitulatif tiré des journaux : gains par source, entretien payé, lots prêts, nouvelles reçues, et un bouton pour tout récolter et relancer |
 | **Un geste** | « Tout récolter et relancer » récolte chaque atelier et remplit chaque file selon le stock, en une seule transaction |
-| **Ballots de Faraj** | Faraj d'Alexandrie, dont le grand-père du joueur a sauvé la cargaison, envoie un ballot toutes les 6 h (2 au plus en attente) : 3 cartes de 1 à 5 unités, du blé commun à la soie légendaire (0,25 % par carte). Probabilités publiques, rien à acheter, rien de plus avec le Pass. Environ 11,5 % de matière en plus (`docs/calibration.md`) |
+| **Ballots de Faraj** | Faraj d'Alexandrie, dont le grand-père du joueur a sauvé la cargaison, envoie un ballot toutes les 6 h (2 au plus en attente) : 3 cartes de 1 à 5 unités, du blé commun à la soie légendaire (0,25 % par carte). Probabilités publiques, rien à acheter, rien de plus avec le Pass. Environ 11,5 % de matière en plus (`docs/calibration.md`). Une petite pastille ronde sous la cloche de la carte signale un ballot à ouvrir et disparaît sinon |
 | **Livre de compte** | Dix missions ouvertes sur sept jours (première vente à une ville, premier contrat, première offre, premier convoi, première amélioration…), récompensées en marchandises ou en quelques ducats. Le tutoriel se termine en encaissant la première |
 | **Ouverture progressive** | Le Port s'ouvre au jour 3 (mission « premier convoi »), les lettres de marque au jour 6 (« premier navire ») ; un joueur déjà en mer n'est jamais bloqué |
 | **Tableau de rétention** | Page `/admin` réservée aux adresses `ADMIN_EMAILS` : retour à J+1, 3, 7, 14, 30, sessions par jour, entonnoir du tutoriel, dernière visite. PNJ exclus |
@@ -130,7 +130,7 @@ Note d'implémentation : `docs/plan-livraisons.md` ; réglages calibrés : `docs
 | **Événements sur la route** | Un événement de marché agit sur le tableau de commandes de son jour : prix des commandes qu'il touche (ville et marchandise, Doge et familles compris) et 3 commandes de ville envoyées là où il demande davantage (`deliveries.eventOrdersPerDay`), dans le total du jour |
 | **Tableau de commandes** | (Avant la demande commune, ci-dessous.) 12 à 16 commandes personnelles par jour, tirées du secret du monde, que personne d'autre ne peut prendre : les deux commandes du Doge et celle de la famille (à leur prime), deux urgentes (ouvertes une heure entre 8 h et 21 h, +15 %), le reste en commandes de ville. Une ville commande ce qu'elle demande ; le prix vaut la référence +50 % par heure de route. Les commandes expirent à minuit. Les marchandises d'outre-mer peuvent être commandées par les villes ; les commandes d'outre-mer du Doge et des familles se remettent toujours au comptoir |
 | **Sept villes** | Venise, Padoue, Vérone, Vicence, Trévise, Mantoue, Ferrare ; de 20 min à 1 h 50 de route selon la région de départ |
-| **Véhicules** | Mule (15 unités, lente), charrette (40, donnée à l'arrivée), chariot (90, rapide) ; 4 au plus, achetés en ducats et planches (détruits), avec entretien, comptés au patrimoine. Un trajet aller dure 2 h au plus ; le véhicule revient à vide, la ville paie à l'arrivée |
+| **Véhicules** | Tout véhicule s'achète mule (25 unités, lente) ; deux mules sont données à l'arrivée. Trois améliorations payées en ducats (détruits), au comptoir seulement, le font porter plus et aller plus vite : charrette (40), chariot (90, rapide), grand chariot (150, le plus rapide) (`deliveries.vehicles.*.upgrade`, `deliveries.forSale`). 4 au plus, avec un entretien qui croît avec le niveau, comptés au patrimoine. Un trajet aller dure 2 h au plus ; le véhicule revient à vide, la ville paie à l'arrivée |
 | **Escortes** | Gardes (4 % de la valeur de la cargaison) ou compagnie (9 %), détruits. Une escorte protège sans qu'il soit besoin d'être là |
 | **Brigands** | Dès le jour 6, un joueur poste une bande sur une route pour 2, 4 ou 6 h (une mise détruite). À mi-parcours d'une livraison, la plus ancienne bande de la route tente sa chance, deux fois au plus par bande. Sans escorte, la livraison s'arrête et le joueur a 10 minutes pour riposter : une riposte fait échouer l'attaque et disperse la bande. Une prise emporte 30 % de chaque ligne ; le brigand en garde la moitié, le reste se perd dans la fuite. La livraison est payée au prorata de ce qui arrive. Des bandes de l'ordinateur guettent aussi, pour qu'un petit monde ait du risque |
 | **Garde-fous** | Aucune attaque entre 22 h et 8 h (heure de Paris), ni contre un nouveau venu (3 jours), un marchand deux fois moins riche que le brigand, un membre de sa famille, ni deux fois en 24 h contre la même victime (délai partagé avec la mer). Le véhicule revient toujours |
@@ -246,7 +246,7 @@ Le MVP vise un seul monde de 200 à 500 joueurs, des saisons d'un mois civil sur
 | PNJ teneur de marché permanent + demande des villes | Événements pilotés par le chat Twitch |
 | Grands chantiers de ville par guilde | Cartels, entrepôts partagés |
 | Guildes simples (nom, membres, chat texte modéré) | Classement inter-saisons |
-| Classement par patrimoine | API publique |
+| Classement par ventes nettes | API publique |
 | Tableau de bord joueur + graphiques de prix | Application en magasin (Capacitor), notifications push |
 | Télémétrie dans PostgreSQL + vues pour Power BI | Boutique, pass saisonnier, abonnement |
 
@@ -301,11 +301,13 @@ Les briques et les planches servent à construire et à améliorer tous les bât
 
 **Arrivée en cours de saison** : les inscriptions restent ouvertes jusqu'au dernier jour du mois. Un joueur qui arrive après J+5 reçoit un bonus de rendement de +50 % pendant 72 h. Pas de second monde en parallèle au MVP : la liquidité prime.
 
-**Fin de saison** : le dernier jour du mois à minuit (heure de Paris), le classement se fige sur le patrimoine, calculé selon le principe de prudence :
+**Fin de saison** : le dernier jour du mois à minuit (heure de Paris), le classement se fige sur les **ventes nettes** de la saison (octobre 2026 ; avant, le patrimoine) :
 
-- trésorerie, y compris le séquestre ;
-- stocks valorisés au **plus bas** du prix de référence et du prix moyen pondéré par les volumes sur 7 jours (avec un volume minimum ; à défaut, le prix de référence) ;
-- bâtiments, palais compris, à leur coût de construction cumulé (matériaux au prix de référence), pour que l'investissement ne pénalise pas le classement.
+- tout ce que le marchand a été payé pour des marchandises : ventes au Rialto (aux joueurs et à la Dogana), livraisons payées par les villes et le Doge (faveurs comprises), commandes, Criées, chantiers ;
+- moins ce que la vente a coûté : taxe du marché, gabelles, péages ;
+- moins tout ce qu'il a payé pour des marchandises (achats au Rialto, aux joueurs et à la Dogana).
+
+Le stock, les bâtiments, les cadeaux (ballots, tâches, missions) et les primes ne comptent pas : il faut vendre sa production. Racheter puis revendre ne fait que perdre les taxes. Le compteur est tenu dans l'état du monde à chaque écriture du grand livre ; une sauvegarde antérieure le reconstitue depuis `ledger_entries`. Le patrimoine (trésorerie, stocks au plus bas du prix de référence et du prix moyen sur 7 jours, bâtiments à leur coût) reste affiché sur le profil, enregistré en fin de saison et sert aux garde-fous des brigands et corsaires.
 
 Récompenses de fin de saison, entre joueurs réels (les PNJ ne prennent pas de place) :
 
@@ -318,9 +320,11 @@ Récompenses de fin de saison, entre joueurs réels (les PNJ ne prennent pas de 
 | Top 25 % | 1 semaine de Pass | 15 |
 | Au moins 7 jours joués | Marchand de la saison | 5 |
 
-**Paliers de saison** : le titre de marchand tenu à la clôture (selon le patrimoine) ajoute de la Renommée, quel que soit le rang : Boutiquier +3, Marchand +5, Négociant +10, Armateur +15, Patricien +20, Sénateur +25, Doge +30. L'objectif de saison (prochain palier) est affiché au Comptoir.
+**Paliers de saison** : le titre de marchand tenu à la clôture (selon les ventes nettes de la saison) ajoute de la Renommée, quel que soit le rang : Boutiquier (500 ducats) +3, Marchand (1 500) +5, Négociant (3 000) +10, Armateur (5 000) +15, Patricien (8 000) +20, Sénateur (12 000) +25, Doge (20 000) +30. L'objectif de saison (prochain palier) est affiché au Comptoir.
 
 La Renommée s'additionne de saison en saison (titres : Habitué du Rialto, Marchand notable, Marchand illustre, Légende de Venise, Lion de Saint-Marc). Elle ne donne jamais d'avance économique : chaque saison, tout le monde repart à égalité. Le palmarès (saisons, semaines, Renommée) est visible sur le profil et depuis le classement.
+
+**Niveau permanent** : un point par ducat de ventes nettes, saison après saison (une saison à perte ne retire rien) ; le niveau n + 1 demande 300 × n points de plus que le niveau n. Il s'affiche à côté du pseudo (carte, classements, profil). Honorifique, comme la Renommée : aucun avantage en jeu.
 
 **Enchaînement** : le premier tick après minuit clôt la saison (classement final, récompenses), ferme le monde et ouvre le mois suivant ; les joueurs choisissent leur région et repartent de zéro après une cérémonie de clôture. Trois jours avant la fin, une notification « dernier sprint » ; à l'ouverture, une invitation à revenir. Un monde ouvert en cours de mois court jusqu'à la fin du mois (ou du suivant s'il reste moins de 14 jours).
 
