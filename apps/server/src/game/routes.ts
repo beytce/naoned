@@ -1,11 +1,12 @@
 import { type Command, freeBatches, hasPass } from "@comptoirs/engine";
-import { and, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { AuthService, PublicAccount } from "../auth/service.js";
 import type { Db } from "../db/client.js";
 import { accounts, players, pushSubscriptions, telemetry } from "../db/schema.js";
 import { NOTIFICATION_KINDS, type NotificationKind, type Notifier } from "../notify/notifier.js";
+import { isPushEndpoint } from "../notify/push.js";
 import { retention, suspiciousPairs } from "./admin.js";
 import {
   ChatError,
@@ -29,6 +30,8 @@ import type { GameWorld } from "./world.js";
 
 /** A visit after this much inactivity counts as a new session (KPI: sessions per day). */
 const SESSION_GAP_MS = 30 * 60_000;
+/** Devices a person receives pushes on (phones, computers). */
+const PUSH_DEVICES_MAX = 10;
 
 const action = z.discriminatedUnion("type", [
   z.object({
@@ -580,6 +583,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
         keys: z.object({ p256dh: z.string().max(200), auth: z.string().max(100) }),
       })
       .parse(req.body);
+    if (!isPushEndpoint(sub.endpoint)) return reply.code(400).send({ error: "invalid_endpoint" });
     const values = {
       endpoint: sub.endpoint,
       accountId: account.id,
@@ -591,6 +595,16 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       .insert(pushSubscriptions)
       .values(values)
       .onConflictDoUpdate({ target: pushSubscriptions.endpoint, set: values });
+    // A few devices per person: the oldest go.
+    const devices = await db
+      .select({ endpoint: pushSubscriptions.endpoint })
+      .from(pushSubscriptions)
+      .where(eq(pushSubscriptions.accountId, account.id))
+      .orderBy(desc(pushSubscriptions.createdAt));
+    const stale = devices.slice(PUSH_DEVICES_MAX).map((d) => d.endpoint);
+    if (stale.length > 0) {
+      await db.delete(pushSubscriptions).where(inArray(pushSubscriptions.endpoint, stale));
+    }
     return { ok: true };
   });
 

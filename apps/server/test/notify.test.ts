@@ -74,7 +74,7 @@ async function player(email: string, region = "terraferma") {
   return { cookie, id: res.json().account.id as string };
 }
 
-const subscribe = (cookie: string, endpoint = "https://push.example/1") =>
+const subscribe = (cookie: string, endpoint = "https://fcm.googleapis.com/fcm/send/1") =>
   app.inject({
     method: "POST",
     url: "/api/notifications/push/subscribe",
@@ -175,10 +175,29 @@ describe("notifications", () => {
     expect(bell.unread).toBe(4);
   });
 
+  it("refuses a push endpoint outside the browsers' push services", async () => {
+    const ada = await player("ada@example.org");
+    const res = await subscribe(ada.cookie, "https://10.0.0.1/internal");
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toBe("invalid_endpoint");
+  });
+
+  it("keeps a few devices per person, the latest ones", async () => {
+    const ada = await player("ada@example.org");
+    for (let i = 0; i < 12; i++) {
+      now += MIN;
+      await subscribe(ada.cookie, `https://fcm.googleapis.com/fcm/send/d${i}`);
+    }
+    const rows = await database.db.select().from(pushSubscriptions);
+    expect(rows.map((r) => r.endpoint).sort()).toEqual(
+      Array.from({ length: 10 }, (_, i) => `https://fcm.googleapis.com/fcm/send/d${i + 2}`).sort(),
+    );
+  });
+
   it("forgets devices that unsubscribed", async () => {
     const ada = await player("ada@example.org");
-    await subscribe(ada.cookie, "https://push.example/old");
-    pusher.gone.add("https://push.example/old");
+    await subscribe(ada.cookie, "https://fcm.googleapis.com/fcm/send/old");
+    pusher.gone.add("https://fcm.googleapis.com/fcm/send/old");
     await notifier.send([{ accountId: ada.id, kind: "harvest", data: {} }], now);
     expect(await database.db.select().from(pushSubscriptions)).toEqual([]);
   });
