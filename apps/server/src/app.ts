@@ -5,7 +5,12 @@ import rateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
 import websocket from "@fastify/websocket";
 import { sql } from "drizzle-orm";
-import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
+import Fastify, {
+  type FastifyInstance,
+  type FastifyReply,
+  type FastifyRequest,
+  type FastifyServerOptions,
+} from "fastify";
 import { ZodError, z } from "zod";
 import { deleteAccount, exportAccount } from "./account.js";
 import { AuthError, AuthService, SESSION_DAYS } from "./auth/service.js";
@@ -37,9 +42,79 @@ export interface AppOptions {
   alerts?: Alerts;
 }
 
+/** A request's URL as logged: a sign-in link's token never reaches the logs. */
+export function redactUrl(url: string): string {
+  return url.replace(/([?&]token=)[^&]*/g, "$1…");
+}
+
+/**
+ * The headers of every answer: the page's own scripts and styles only, never inside another
+ * site's frame, HTTPS remembered in production.
+ */
+function securityHeaders(appUrl: string, production: boolean): Record<string, string> {
+  const live = new URL(appUrl);
+  live.protocol = live.protocol === "https:" ? "wss:" : "ws:";
+  const headers: Record<string, string> = {
+    "content-security-policy": [
+      "default-src 'self'",
+      "script-src 'self'",
+      // React sets styles on elements (the map's markers, the panels).
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob:",
+      "font-src 'self' data:",
+      `connect-src 'self' ${live.origin}`,
+      "worker-src 'self'",
+      "manifest-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ].join("; "),
+    "x-frame-options": "DENY",
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "same-origin",
+    "cross-origin-opener-policy": "same-origin",
+  };
+  if (production) headers["strict-transport-security"] = "max-age=31536000; includeSubDomains";
+  return headers;
+}
+
 export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
-  const app = Fastify({ logger: options.logger ?? false, trustProxy: options.production });
+  const logger: FastifyServerOptions["logger"] = options.logger
+    ? {
+        serializers: {
+          req: (req: FastifyRequest) => ({
+            method: req.method,
+            url: redactUrl(req.url),
+            remoteAddress: req.ip,
+          }),
+        },
+      }
+    : false;
+  const app = Fastify({
+    logger,
+    // Behind Railway's proxy: only the hop next to the server is trusted, so the client's address
+    // is the last one of X-Forwarded-For; the ones before are whatever the client wrote.
+    trustProxy: options.production ? (_address: string, hop: number) => hop < 1 : false,
+  });
   const auth = new AuthService(options);
+  const appOrigin = new URL(options.appUrl).origin;
+  const headers = securityHeaders(options.appUrl, options.production);
+
+  app.addHook("onSend", async (_req, reply) => {
+    reply.headers(headers);
+  });
+
+  // A write (or the live line) opened from another site is refused: the session cookie is
+  // already kept from them (SameSite), this holds even where it would not be.
+  app.addHook("onRequest", async (req, reply) => {
+    const origin = req.headers.origin;
+    const writes = req.method !== "GET" && req.method !== "HEAD" && req.method !== "OPTIONS";
+    const live = req.url.startsWith("/api/live");
+    if (origin && (writes || live) && origin !== appOrigin) {
+      return reply.code(403).send({ error: "forbidden_origin" });
+    }
+  });
 
   await app.register(cookie);
   await app.register(rateLimit, { global: false });

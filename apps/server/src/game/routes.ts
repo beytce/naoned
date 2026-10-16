@@ -126,6 +126,16 @@ export interface GameRouteDeps {
 
 export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): void {
   const { db, world, auth, notifier } = deps;
+  /** A merchant's pace: far above anyone's taps, low enough that no script floods the world. */
+  const perMerchant = (max: number) => ({
+    config: {
+      rateLimit: {
+        max,
+        timeWindow: "1 minute",
+        keyGenerator: (req: FastifyRequest) => req.cookies[deps.sessionCookie] ?? req.ip,
+      },
+    },
+  });
 
   // Push: the open games hear when to fetch their view again (polling stays as a fallback).
   const live = new LiveHub();
@@ -256,7 +266,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     toJson({ ...catalog(world.ctx, world), previousDoge: await previousDoge(db, world.id) }),
   );
 
-  app.get("/api/game", async (req, reply) => {
+  app.get("/api/game", perMerchant(300), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     let welcome = null;
@@ -315,7 +325,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     });
   });
 
-  app.post("/api/game/join", async (req, reply) => {
+  app.post("/api/game/join", perMerchant(30), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     const { region } = z.object({ region: z.string() }).parse(req.body);
@@ -325,7 +335,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return view(account);
   });
 
-  app.post("/api/game/reset", async (req, reply) => {
+  app.post("/api/game/reset", perMerchant(30), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     const res = await world.execute({ type: "resetPlayer", playerId: account.id });
@@ -333,7 +343,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return view(account);
   });
 
-  app.post("/api/game/actions", async (req, reply) => {
+  app.post("/api/game/actions", perMerchant(300), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     if (!world.current.players[account.id]) return reply.code(409).send({ error: "not_joined" });
@@ -424,7 +434,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return chat(reply, () => familyThread(db, world, account.id));
   });
 
-  app.post("/api/game/family/messages", async (req, reply) => {
+  app.post("/api/game/family/messages", perMerchant(60), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     const parsed = z.object({ body: z.string().max(2_000) }).safeParse(req.body);
@@ -574,7 +584,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return { off };
   });
 
-  app.post("/api/notifications/push/subscribe", async (req, reply) => {
+  app.post("/api/notifications/push/subscribe", perMerchant(30), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     const sub = z
