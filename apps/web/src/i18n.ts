@@ -975,9 +975,8 @@ export const fr = {
       ready: "prêts",
       running: "en cours",
       idle: "à l'arrêt",
-      collectAll: (n: number) =>
-        n > 1 ? `Tout récolter (${n} lots) et relancer` : "Récolter et relancer",
-      restartAll: "Relancer les ateliers à l'arrêt",
+      collectAll: (n: number) => (n > 1 ? `Tout récolter (${n} lots)` : "Récolter"),
+      restartAll: "Tout relancer",
       whatsMissing: "Voir ce qui manque",
     },
     workshop: {
