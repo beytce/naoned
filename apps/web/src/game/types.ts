@@ -388,6 +388,8 @@ export interface MarketLine {
   bestBid: Money | null;
   bestAsk: Money | null;
   unitValue: Money;
+  /** The Dogana's price, in bps of the reference (it follows supply and demand). */
+  doganaBps: number;
 }
 
 export interface Project {

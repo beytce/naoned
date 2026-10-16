@@ -459,6 +459,8 @@ export function playerView(
       bestBid: bestPrice(state, r.code, "buy", { excludePlayer: playerId }) ?? null,
       bestAsk: bestPrice(state, r.code, "sell", { excludePlayer: playerId }) ?? null,
       marketMaker: mm,
+      /** The Dogana's price, in bps of the reference: it follows what merchants buy and sell there. */
+      doganaBps: state.marketMaker.anchorBps?.[r.code] ?? 10_000,
       unitValue: stockUnitValue(ctx, state, r.code, now),
     };
   });
