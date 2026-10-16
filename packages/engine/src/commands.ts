@@ -8,23 +8,17 @@ import { fulfillContract, rerollContract } from "./contracts.js";
 import { voteProgramme } from "./decrees.js";
 import {
   buyVehicle,
-  collectBooty,
   dispatchDelivery,
   ensureBoard,
   grantStartingVehicles,
-  postBand,
-  reactToAmbush,
   upgradeVehicle,
 } from "./deliveries.js";
 import { type Effects, emptyEffects } from "./effects.js";
-import { collectExpedition, launchExpedition } from "./expeditions.js";
 import { joinFamily, leaveFamily } from "./families.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { claimMission, trackMissions } from "./missions.js";
-import { collectRaid, commissionPrivateers } from "./privateers.js";
 import { collect, startProduction } from "./production.js";
 import { deliverToProject } from "./projects.js";
-import { buildShip, repairShip } from "./ships.js";
 import { chooseSpecialty } from "./specialties.js";
 import {
   type Building,
@@ -79,19 +73,6 @@ export type Command =
     }
   | { type: "resetPlayer"; playerId: PlayerId }
   | { type: "fulfillContract"; playerId: PlayerId; contractId: string }
-  | {
-      type: "launchExpedition";
-      playerId: PlayerId;
-      destination: string;
-      cargo: Record<string, number>;
-      escort: boolean;
-      /** Own ships, merchant ship first; none to charter a galley. */
-      ships?: string[];
-    }
-  | { type: "buildShip"; playerId: PlayerId; shipType: string }
-  | { type: "repairShip"; playerId: PlayerId; shipId: string }
-  | { type: "commissionPrivateers"; playerId: PlayerId; route: string; ships: string[] }
-  | { type: "collectRaid"; playerId: PlayerId; raidId: string }
   | { type: "claimMission"; playerId: PlayerId; missionId: string }
   | { type: "chooseSpecialty"; playerId: PlayerId; specialty: string }
   | { type: "sellToCriee"; playerId: PlayerId; quantity: number }
@@ -107,7 +88,6 @@ export type Command =
   | { type: "voteProgramme"; playerId: PlayerId; picks: DecreePick[] }
   /** From the server: the Pass Négociant until this time (a later date never shortens it). */
   | { type: "grantPass"; playerId: PlayerId; until: number }
-  | { type: "collectExpedition"; playerId: PlayerId; expeditionId: string }
   | { type: "buyVehicle"; playerId: PlayerId; vehicleType: string }
   | { type: "upgradeVehicle"; playerId: PlayerId; vehicleId: string }
   | {
@@ -117,12 +97,7 @@ export type Command =
       /** Several orders for the same city, carried together (`orderId` alone otherwise). */
       orderIds?: string[];
       vehicleId: string;
-      /** "none" or an escort of the settings. */
-      escort: string;
     }
-  | { type: "reactToAmbush"; playerId: PlayerId; deliveryId: string }
-  | { type: "postBand"; playerId: PlayerId; route: string; hours: number }
-  | { type: "collectBooty"; playerId: PlayerId; bandId: string }
   | { type: "tick" };
 
 export type DecideResult =
@@ -197,12 +172,6 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
   delete tx.s.accounts[cash];
   delete tx.s.accounts[escrowAccount(playerId)];
   delete tx.s.players[playerId];
-  for (const ship of Object.values(tx.s.ships ?? {})) {
-    if (ship.playerId === playerId) delete tx.s.ships?.[ship.id];
-  }
-  for (const raid of Object.values(tx.s.raids ?? {})) {
-    if (raid.playerId === playerId) delete tx.s.raids?.[raid.id];
-  }
   for (const v of Object.values(tx.s.vehicles ?? {})) {
     if (v.playerId === playerId) delete tx.s.vehicles?.[v.id];
   }
@@ -280,21 +249,6 @@ function apply(tx: Tx, cmd: Command): void {
     case "fulfillContract":
       fulfillContract(tx, cmd.playerId, cmd.contractId);
       break;
-    case "launchExpedition":
-      launchExpedition(tx, cmd.playerId, cmd.destination, cmd.cargo, cmd.escort, cmd.ships);
-      break;
-    case "buildShip":
-      buildShip(tx, cmd.playerId, cmd.shipType);
-      break;
-    case "repairShip":
-      repairShip(tx, cmd.playerId, cmd.shipId);
-      break;
-    case "commissionPrivateers":
-      commissionPrivateers(tx, cmd.playerId, cmd.route, cmd.ships);
-      break;
-    case "collectRaid":
-      collectRaid(tx, cmd.playerId, cmd.raidId);
-      break;
     case "chooseSpecialty":
       chooseSpecialty(tx, cmd.playerId, cmd.specialty);
       break;
@@ -334,9 +288,6 @@ function apply(tx: Tx, cmd: Command): void {
     case "voteProgramme":
       voteProgramme(tx, cmd.playerId, cmd.picks);
       break;
-    case "collectExpedition":
-      collectExpedition(tx, cmd.playerId, cmd.expeditionId);
-      break;
     case "buyVehicle":
       buyVehicle(tx, cmd.playerId, cmd.vehicleType);
       break;
@@ -344,16 +295,7 @@ function apply(tx: Tx, cmd: Command): void {
       upgradeVehicle(tx, cmd.playerId, cmd.vehicleId);
       break;
     case "dispatchDelivery":
-      dispatchDelivery(tx, cmd.playerId, cmd.orderIds ?? cmd.orderId, cmd.vehicleId, cmd.escort);
-      break;
-    case "reactToAmbush":
-      reactToAmbush(tx, cmd.playerId, cmd.deliveryId);
-      break;
-    case "postBand":
-      postBand(tx, cmd.playerId, cmd.route, cmd.hours);
-      break;
-    case "collectBooty":
-      collectBooty(tx, cmd.playerId, cmd.bandId);
+      dispatchDelivery(tx, cmd.playerId, cmd.orderIds ?? cmd.orderId, cmd.vehicleId);
       break;
     case "deliverToProject":
       deliverToProject(tx, cmd.playerId, cmd.projectId, cmd.resource, cmd.quantity);

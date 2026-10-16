@@ -21,8 +21,6 @@ export function masteryEffects(catalog: Catalog, code: string): string[] {
     o.marketMakerQuotaBps > 0 ? e.quota(pct(o.marketMakerQuotaBps)) : null,
     o.taxDiscountBps > 0 ? e.tax(pct(o.taxDiscountBps)) : null,
     o.extraOpenOrders > 0 ? e.offers(o.extraOpenOrders) : null,
-    o.portDuesDiscountBps > 0 ? e.dues(pct(o.portDuesDiscountBps)) : null,
-    o.holdBps > 0 ? e.hold(pct(o.holdBps)) : null,
   ].filter((x): x is string => x !== null);
 }
 

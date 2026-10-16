@@ -39,21 +39,12 @@ export interface BuildingDef {
   name: string;
 }
 
-export interface PortDef {
-  code: string;
-  name: string;
-}
-
 export interface Theme {
   code: string;
   name: string;
   resources: ResourceDef[];
   regions: RegionDef[];
   cities: CityDef[];
-  /** Overseas ports reached by galleys. */
-  ports?: PortDef[];
-  /** Ship types built at the arsenal (names; numbers live in the world settings). */
-  ships?: { type: string; name: string }[];
   buildings: BuildingDef[];
   recipes: RecipeDef[];
 }

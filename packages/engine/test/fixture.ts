@@ -132,7 +132,7 @@ export const testSettings: WorldSettingsInput = {
 };
 
 /**
- * Deliveries by road and bandits, for their own tests (off in `testSettings`, so that the other
+ * Deliveries by road, for their own tests (off in `testSettings`, so that the other
  * tests keep selling to cities).
  */
 export const testDeliveries = {
@@ -168,31 +168,9 @@ export const testDeliveries = {
   },
   startingVehicles: ["cart"],
   maxVehicles: 3,
-  escorts: { guards: { costBps: 400, defense: 2 }, company: { costBps: 900, defense: 5 } },
 };
 
-export const testBandits = {
-  hoursOptions: [2, 4],
-  feePerHour: 1_000,
-  provisionsPerHour: { bread: 1 },
-  maxActivePerPlayer: 1,
-  maxAttacksPerBand: 2,
-  maxBandsPerRoute: 2,
-  attackChanceBps: { "0": 10_000, "2": 5_000, "5": 0 },
-  reactionMinutes: 10,
-  takeBps: 3_000,
-  keepBps: 5_000,
-  quietHours: { from: 22, to: 8 },
-  newcomerDays: 0,
-  minTargetWorthBps: 5_000,
-  cooldownHours: 24,
-  sameFamilyImmune: true,
-  openDay: 0,
-  npcBands: { perDay: 0, hours: 3 },
-  bounty: { base: 0, perInfamyBps: 0, max: 0 },
-};
-
-/** Overrides of `testSettings` for a world with deliveries and bandits. */
+/** Overrides of `testSettings` for a world with deliveries. */
 export const deliverySettings: Partial<WorldSettingsInput> = {
   cities: {
     venezia: {
@@ -204,7 +182,6 @@ export const deliverySettings: Partial<WorldSettingsInput> = {
   },
   contracts: { perDay: 2, premiumBps: 2_000, quantities: { bread: 20, bricks: 10 } },
   deliveries: testDeliveries,
-  bandits: testBandits,
 };
 
 /**

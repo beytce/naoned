@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { AuthService, PublicAccount } from "../auth/service.js";
 import type { Db } from "../db/client.js";
 import { accounts, players, pushSubscriptions, telemetry } from "../db/schema.js";
-import { NOTIFICATION_KINDS, type Notifier } from "../notify/notifier.js";
+import { NOTIFICATION_KINDS, type NotificationKind, type Notifier } from "../notify/notifier.js";
 import { retention, suspiciousPairs } from "./admin.js";
 import {
   ChatError,
@@ -84,13 +84,6 @@ const action = z.discriminatedUnion("type", [
       .max(4),
   }),
   z.object({
-    type: z.literal("launchExpedition"),
-    destination: z.string(),
-    cargo: z.record(z.number().int().positive().max(100_000)),
-    escort: z.boolean(),
-    ships: z.array(z.string()).max(4).optional(),
-  }),
-  z.object({
     type: z.literal("limitOrder"),
     resource: z.string(),
     side: z.enum(["buy", "sell"]),
@@ -98,15 +91,6 @@ const action = z.discriminatedUnion("type", [
     quantity: z.number().int().positive().max(100_000),
   }),
   z.object({ type: z.literal("cancelOrder"), orderId: z.string() }),
-  z.object({ type: z.literal("buildShip"), shipType: z.string() }),
-  z.object({ type: z.literal("repairShip"), shipId: z.string() }),
-  z.object({
-    type: z.literal("commissionPrivateers"),
-    route: z.string(),
-    ships: z.array(z.string()).min(1).max(4),
-  }),
-  z.object({ type: z.literal("collectRaid"), raidId: z.string() }),
-  z.object({ type: z.literal("collectExpedition"), expeditionId: z.string() }),
   z.object({ type: z.literal("buyVehicle"), vehicleType: z.string() }),
   z.object({ type: z.literal("upgradeVehicle"), vehicleId: z.string() }),
   z.object({
@@ -115,15 +99,9 @@ const action = z.discriminatedUnion("type", [
     /** Several orders for the same city, carried together. */
     orderIds: z.array(z.string()).min(1).max(8).optional(),
     vehicleId: z.string(),
-    escort: z.string(),
+    /** Older clients still send an escort: there are none any more. */
+    escort: z.string().optional(),
   }),
-  z.object({ type: z.literal("reactToAmbush"), deliveryId: z.string() }),
-  z.object({
-    type: z.literal("postBand"),
-    route: z.string(),
-    hours: z.number().int().positive().max(48),
-  }),
-  z.object({ type: z.literal("collectBooty"), bandId: z.string() }),
   z.object({
     type: z.literal("deliverToProject"),
     projectId: z.string(),
@@ -171,15 +149,9 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return new Set(rows.map((r) => r.id));
   }
 
-  /** Pseudos of the merchants met at sea (corsairs, victims, gazette). */
+  /** Pseudos of the merchants the player meets (family, order book, the board). */
   async function namesFor(v: NonNullable<ReturnType<typeof playerView>>) {
     const ids = new Set<string>();
-    for (const e of v.expeditions) if (e.boarding) ids.add(e.boarding.raider);
-    for (const r of v.raids) for (const h of r.hits) ids.add(h.victimId);
-    for (const n of v.seaNews) {
-      ids.add(n.raider);
-      ids.add(n.victim);
-    }
     // The family: its members, the captains of past weeks, who opened the marches.
     for (const m of v.families?.members ?? []) ids.add(m.playerId);
     for (const h of v.families?.history ?? [])
@@ -564,7 +536,12 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   app.patch("/api/notifications/push", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
-    const { off } = z.object({ off: z.array(z.enum(NOTIFICATION_KINDS)) }).parse(req.body);
+    // Kinds of notices that no longer exist (the sea, the bandits) are dropped, not refused.
+    const known = new Set<string>(NOTIFICATION_KINDS);
+    const off = z
+      .object({ off: z.array(z.string().max(32)).max(64) })
+      .parse(req.body)
+      .off.filter((k): k is NotificationKind => known.has(k));
     await db.update(accounts).set({ pushOff: off }).where(eq(accounts.id, account.id));
     return { off };
   });
@@ -759,17 +736,6 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
           ),
         },
       ];
-    case "launchExpedition":
-      return [
-        {
-          type: "launchExpedition",
-          playerId,
-          destination: a.destination,
-          cargo: a.cargo,
-          escort: a.escort,
-          ships: a.ships,
-        },
-      ];
     case "limitOrder":
       return [
         {
@@ -784,16 +750,6 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       ];
     case "cancelOrder":
       return [{ type: "cancelOrder", playerId, orderId: a.orderId }];
-    case "buildShip":
-      return [{ type: "buildShip", playerId, shipType: a.shipType }];
-    case "repairShip":
-      return [{ type: "repairShip", playerId, shipId: a.shipId }];
-    case "commissionPrivateers":
-      return [{ type: "commissionPrivateers", playerId, route: a.route, ships: a.ships }];
-    case "collectRaid":
-      return [{ type: "collectRaid", playerId, raidId: a.raidId }];
-    case "collectExpedition":
-      return [{ type: "collectExpedition", playerId, expeditionId: a.expeditionId }];
     case "buyVehicle":
       return [{ type: "buyVehicle", playerId, vehicleType: a.vehicleType }];
     case "upgradeVehicle":
@@ -806,15 +762,8 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
           orderId: a.orderId,
           ...(a.orderIds ? { orderIds: a.orderIds } : {}),
           vehicleId: a.vehicleId,
-          escort: a.escort,
         },
       ];
-    case "reactToAmbush":
-      return [{ type: "reactToAmbush", playerId, deliveryId: a.deliveryId }];
-    case "postBand":
-      return [{ type: "postBand", playerId, route: a.route, hours: a.hours }];
-    case "collectBooty":
-      return [{ type: "collectBooty", playerId, bandId: a.bandId }];
     case "deliverToProject":
       return [
         {

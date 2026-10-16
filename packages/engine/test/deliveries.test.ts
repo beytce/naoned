@@ -183,7 +183,7 @@ describe("upgrading vehicles", () => {
     const id = mule?.id ?? "";
     expect(error(upgrade(w, id, "b"))).toBe("not_owner");
     expect(error(upgrade(w, "v999"))).toBe("unknown_vehicle");
-    expect(error(dispatch(w, pick(w).id, "none", "a", id))).toBe("ok");
+    expect(error(dispatch(w, pick(w).id, "a", id))).toBe("ok");
     expect(error(upgrade(w, id))).toBe("vehicle_busy");
 
     const poor = world(ladderAt(1_000_000_000));
@@ -372,13 +372,12 @@ const pick = (w: World, kind: DeliveryOrder["kind"] = "city", playerId = "a") =>
 
 const cartOf = (w: World, playerId = "a") => vehiclesOf(w, playerId)[0]?.id ?? "";
 
-const dispatch = (w: World, orderId: string, escort = "none", playerId = "a", vehicleId?: string) =>
+const dispatch = (w: World, orderId: string, playerId = "a", vehicleId?: string) =>
   w.try({
     type: "dispatchDelivery",
     playerId,
     orderId,
     vehicleId: vehicleId ?? cartOf(w, playerId),
-    escort,
   } as Command);
 
 const error = (res: ReturnType<World["try"]>) => (res.ok ? "ok" : res.error);
@@ -559,7 +558,7 @@ describe("a board shared by the world", () => {
     expect(common(w, "a").map((o) => o.id)).toEqual(a);
     // A merchant arriving during the day grows the board; what was there stays, taken or not.
     const first = w.state.board?.orders.find((o) => o.kind === "city")?.id ?? "";
-    expect(error(dispatch(w, first, "none", "a"))).toBe("ok");
+    expect(error(dispatch(w, first, "a"))).toBe("ok");
     w.do({ type: "join", playerId: "d", region: "terraferma" });
     expect(w.state.board?.orders.filter((o) => o.kind === "city")).toHaveLength(24);
     expect(common(w, "b").map((o) => o.id)).toEqual(expect.arrayContaining(a));
@@ -587,10 +586,10 @@ describe("a board shared by the world", () => {
   it("goes to the first who sends a vehicle", () => {
     const w = shared();
     const o = common(w, "a").find((x) => x.kind === "city" && x.quantity <= 40) as DeliveryOrder;
-    expect(error(dispatch(w, o.id, "none", "a"))).toBe("ok");
+    expect(error(dispatch(w, o.id, "a"))).toBe("ok");
     expect(w.state.board?.takenBy[o.id]).toBe("a");
     expect(common(w, "b").find((x) => x.id === o.id)?.takenBy).toBe("a");
-    expect(error(dispatch(w, o.id, "none", "b"))).toBe("order_taken");
+    expect(error(dispatch(w, o.id, "b"))).toBe("order_taken");
     expect(checkInvariants(w.state, w.totals)).toEqual([]);
   });
 
@@ -619,7 +618,7 @@ describe("a board shared by the world", () => {
     const small = sorted[0] as DeliveryOrder;
     const big = sorted.at(-1) as DeliveryOrder;
     expect(value(big)).toBeGreaterThan(value(small));
-    expect(error(dispatch(w, small.id, "none", "a"))).toBe("ok");
+    expect(error(dispatch(w, small.id, "a"))).toBe("ok");
     expect(boardTakes(w.state, 3)).toEqual([
       {
         playerId: "a",
@@ -629,7 +628,7 @@ describe("a board shared by the world", () => {
         payment: small.unitPrice * BigInt(small.quantity),
       },
     ]);
-    expect(error(dispatch(w, big.id, "none", "b"))).toBe("ok");
+    expect(error(dispatch(w, big.id, "b"))).toBe("ok");
     expect(boardTakes(w.state, 3).map((t) => t.playerId)).toEqual(["b", "a"]);
     expect(boardTakes(w.state, 1)).toHaveLength(1);
   });
@@ -645,7 +644,6 @@ describe("dispatching a delivery", () => {
       playerId: "a",
       orderId: o.id,
       vehicleId: cartOf(w),
-      escort: "none",
     });
     expect(w.stock("a", o.resource).available).toBe(before.stock - o.quantity);
     expect(w.cash("a")).toBe(before.cash);
@@ -674,31 +672,30 @@ describe("dispatching a delivery", () => {
     w.do({ type: "buyVehicle", playerId: "a", vehicleType: "cart" });
     const [first, second] = vehiclesOf(w, "a");
     const o = pick(w);
-    expect(error(dispatch(w, o.id, "none", "a", first?.id))).toBe("ok");
-    expect(error(dispatch(w, o.id, "none", "a", second?.id))).toBe("order_done");
-    expect(error(dispatch(w, "0:99", "none", "a", second?.id))).toBe("unknown_delivery_order");
+    expect(error(dispatch(w, o.id, "a", first?.id))).toBe("ok");
+    expect(error(dispatch(w, o.id, "a", second?.id))).toBe("order_done");
+    expect(error(dispatch(w, "0:99", "a", second?.id))).toBe("unknown_delivery_order");
 
     const urgent = pick(w, "urgent");
     w.at(urgent.opensAt - w.ctx.startAt - MIN);
-    expect(error(dispatch(w, urgent.id, "none", "a", second?.id))).toBe("order_not_open");
+    expect(error(dispatch(w, urgent.id, "a", second?.id))).toBe("order_not_open");
     w.at(urgent.expiresAt - w.ctx.startAt);
-    expect(error(dispatch(w, urgent.id, "none", "a", second?.id))).toBe("order_expired");
+    expect(error(dispatch(w, urgent.id, "a", second?.id))).toBe("order_expired");
 
     // Yesterday's orders are gone.
     const late = board(w).find((x) => x.kind === "city" && x.id !== o.id) as DeliveryOrder;
     w.at(DAY + 9 * HOUR);
-    expect(error(dispatch(w, late.id, "none", "a", second?.id))).toBe("order_expired");
+    expect(error(dispatch(w, late.id, "a", second?.id))).toBe("order_expired");
   });
 
-  it("refuses a load over capacity, short stock, someone else's vehicle or an unknown escort", () => {
+  it("refuses a load over capacity, short stock or someone else's vehicle", () => {
     const w = world({
       deliveries: { ...deliverySettings.deliveries, startingVehicles: ["mule"] } as never,
     });
     const big = board(w).find((x) => x.kind === "city" && x.quantity > 15) as DeliveryOrder;
     expect(error(dispatch(w, big.id))).toBe("over_capacity");
     const small = board(w).find((x) => x.kind === "city" && x.quantity <= 15) as DeliveryOrder;
-    expect(error(dispatch(w, small.id, "none", "a", cartOf(w, "b")))).toBe("not_owner");
-    expect(error(dispatch(w, small.id, "dragoons"))).toBe("unknown_escort");
+    expect(error(dispatch(w, small.id, "a", cartOf(w, "b")))).toBe("not_owner");
     w.do({
       type: "placeOrder",
       playerId: "a",
@@ -709,16 +706,6 @@ describe("dispatching a delivery", () => {
       quantity: w.stock("a", small.resource).available - small.quantity + 1,
     });
     expect(error(dispatch(w, small.id))).toBe("insufficient_stock");
-  });
-
-  it("pays the escort into the sink, a share of the load at the order's price", () => {
-    const w = world();
-    const o = pick(w);
-    const cash = w.cash("a");
-    expect(error(dispatch(w, o.id, "guards"))).toBe("ok");
-    const fee = (o.unitPrice * BigInt(o.quantity) * 400n) / 10_000n;
-    expect(w.cash("a")).toBe(cash - fee);
-    expect(w.state.accounts["system:sink"]).toBe(fee);
   });
 
   it("is forgotten a few days after the vehicle is back", () => {
@@ -760,14 +747,13 @@ describe("loading several orders on one vehicle", () => {
     }
     throw new Error("no pair");
   }
-  const load = (w: World, orderIds: string[], escort = "none") =>
+  const load = (w: World, orderIds: string[]) =>
     w.try({
       type: "dispatchDelivery",
       playerId: "a",
       orderId: orderIds[0] ?? "",
       orderIds,
       vehicleId: cartOf(w),
-      escort,
     } as Command);
 
   it("carries orders for the same city together and pays them all on arrival", () => {
@@ -827,15 +813,6 @@ describe("loading several orders on one vehicle", () => {
     expect(d?.cargo).toEqual({ [o1.resource]: o1.quantity, [o2.resource]: o2.quantity });
     w.at((d?.arriveAt ?? 0) - w.ctx.startAt).do({ type: "tick" });
     expect(w.cash("a")).toBe(cash + total(o1) + total(o2));
-  });
-
-  it("pays the escort on the whole load", () => {
-    const w = loads();
-    const [o1, o2] = pair(w);
-    const cash = w.cash("a");
-    expect(error(load(w, [o1.id, o2.id], "guards"))).toBe("ok");
-    const value = o1.unitPrice * BigInt(o1.quantity) + o2.unitPrice * BigInt(o2.quantity);
-    expect(w.cash("a")).toBe(cash - (value * 400n) / 10_000n);
   });
 
   it("fulfils a Doge's order carried with others", () => {

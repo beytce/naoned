@@ -1,5 +1,4 @@
 import {
-  type BanditBand,
   Bot,
   type Command,
   DAY_MS,
@@ -93,7 +92,7 @@ export interface SimulationResult {
     /** At each session, orders the stock covered but another merchant had already taken. */
     lostPerSession: number;
   };
-  /** The road: deliveries, vehicles, ambushes and bands (see `roadStats`). */
+  /** The road: deliveries and vehicles (see `roadStats`). */
   road?: RoadStats;
   /** Faraj's bales: opened, cards by rarity, value at reference prices by player (deniers). */
   bales?: { opened: number; cards: Record<string, number>; valueBy: Record<string, number> };
@@ -314,14 +313,10 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
   const botInfo = bots.map((b) => ({ id: b.id, profile: b.profile.name, region: b.region }));
   let currentDay = 0;
 
-  // Deliveries and bands leave the state a few days after they end: keep their last look.
-  const roadSeen = {
-    deliveries: new Map<string, Delivery>(),
-    bands: new Map<string, BanditBand>(),
-  };
+  // Deliveries leave the state a few days after they end: keep their last look.
+  const roadSeen = { deliveries: new Map<string, Delivery>() };
   const sweepRoad = () => {
     for (const d of Object.values(state.deliveries ?? {})) roadSeen.deliveries.set(d.id, d);
-    for (const b of Object.values(state.bands ?? {})) roadSeen.bands.set(b.id, b);
   };
   // How playable the board is: at each session, the open orders the stock already covers.
   const activity = {
@@ -404,8 +399,6 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
         observeBoard(bot.id);
         bot.play(session);
       }
-      // An ambush on the road: fought back if the merchant is at the screen, or back in time.
-      bot.respond(session, times[0]);
     }
     for (const v of checkInvariants(state, totals)) {
       if (result.violations.length < 50)
@@ -482,15 +475,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
       lostPerSession: activity.lost / Math.max(1, activity.sessions),
     };
   }
-  result.road = roadStats(
-    ctx,
-    state,
-    [...roadSeen.deliveries.values()],
-    [...roadSeen.bands.values()],
-    botInfo,
-    START,
-    end,
-  );
+  result.road = roadStats(ctx, state, [...roadSeen.deliveries.values()], botInfo, START, end);
   result.durationMs = performance.now() - started;
   return result;
 }

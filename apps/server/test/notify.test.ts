@@ -145,8 +145,8 @@ describe("notifications", () => {
     const ada = await player("ada@example.org");
     await subscribe(ada.cookie);
     await notifier.scan();
-    const send = (kind: "harvest" | "galley") =>
-      notifier.send([{ accountId: ada.id, kind, data: { destination: "alexandria" } }], now);
+    const send = (kind: "harvest" | "delivery") =>
+      notifier.send([{ accountId: ada.id, kind, data: {} }], now);
 
     await send("harvest");
     await send("harvest");
@@ -156,9 +156,9 @@ describe("notifications", () => {
       method: "PATCH",
       url: "/api/notifications/push",
       headers: { cookie: ada.cookie },
-      payload: { off: ["galley"] },
+      payload: { off: ["delivery"] },
     });
-    await send("galley");
+    await send("delivery");
     expect(pusher.sent).toHaveLength(1);
 
     // 23:30 in Paris.
@@ -238,20 +238,9 @@ describe("notifications", () => {
 });
 
 describe("notifications of the road", () => {
-  it("pushes an ambush at once, then the outcome to both sides and the arrival", async () => {
+  it("tells the merchant that goods arrived", async () => {
     smallOrders(world);
-    world.ctx.settings.bandits.openDay = 0;
-    // Bands at any time, not only under the letters of marque: what is tested here is the ambush.
-    world.ctx.settings.bandits.decreeOnly = false;
-    world.ctx.settings.bandits.newcomerDays = 0;
     const ada = await player("ada@example.org");
-    const bob = await player("bob@example.org");
-    await app.inject({
-      method: "PATCH",
-      url: "/api/me",
-      headers: { cookie: bob.cookie },
-      payload: { pseudo: "Bob" },
-    });
     await subscribe(ada.cookie);
     await notifier.scan();
     const view = (
@@ -260,47 +249,21 @@ describe("notifications of the road", () => {
     const order = view.road.orders.find(
       (o: { kind: string; status: string }) => o.kind === "city" && o.status === "open",
     );
-    const act = (cookie: string, payload: object) =>
-      app.inject({ method: "POST", url: "/api/game/actions", headers: { cookie }, payload });
-    await act(bob.cookie, { type: "postBand", route: `terraferma:${order.city}`, hours: 2 });
-    await act(ada.cookie, {
-      type: "dispatchDelivery",
-      orderId: order.id,
-      vehicleId: view.road.vehicles[0].id,
-      escort: "none",
+    await app.inject({
+      method: "POST",
+      url: "/api/game/actions",
+      headers: { cookie: ada.cookie },
+      payload: { type: "dispatchDelivery", orderId: order.id, vehicleId: view.road.vehicles[0].id },
     });
     const d = Object.values(world.current.deliveries ?? {})[0];
     if (!d) throw new Error("no delivery");
-    now = d.midAt;
-    await world.execute({ type: "tick" });
-    now += 30_000;
-    await notifier.scan();
-    const alert = pusher.sent.find((p) => p.payload.kind === "ambush");
-    expect(alert?.payload.title).toBe("Brigands sur la route !");
-    expect(alert?.payload.body).toContain(`${world.ctx.settings.bandits.reactionMinutes} minutes`);
-    expect(alert?.payload.url).toBe(`/?ambush=${d.id}`);
-
-    now += 2 * MIN;
-    await act(ada.cookie, { type: "reactToAmbush", deliveryId: d.id });
-    await notifier.scan();
-    const kinds = async (id: string) =>
-      (await database.db.select().from(notifications).where(eq(notifications.accountId, id))).map(
-        (n) => n.kind,
-      );
-    expect(await kinds(ada.id)).toContain("defended");
-    expect(await kinds(bob.id)).toContain("defended");
-    const toBob = (
-      await database.db.select().from(notifications).where(eq(notifications.accountId, bob.id))
-    ).find((n) => n.kind === "defended");
-    expect(toBob?.data.victimName).toBe(null);
-
-    now = (world.current.deliveries?.[d.id]?.arriveAt ?? 0) + 10_000;
+    now = d.arriveAt + 10_000;
     await world.execute({ type: "tick" });
     await notifier.scan();
-    expect(await kinds(ada.id)).toContain("delivery");
-    now = (Object.values(world.current.bands ?? {})[0]?.endAt ?? 0) + 10_000;
-    await notifier.scan();
-    // A band broken up hears it with the defeat, not again at the end.
-    expect((await kinds(bob.id)).filter((k) => k === "band_over")).toHaveLength(0);
+    const kinds = (
+      await database.db.select().from(notifications).where(eq(notifications.accountId, ada.id))
+    ).map((n) => n.kind);
+    expect(kinds).toContain("delivery");
+    expect(pusher.sent.some((p) => p.payload.title === "Livraison arrivée")).toBe(true);
   });
 });

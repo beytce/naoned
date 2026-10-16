@@ -6,9 +6,8 @@ import { dissolveLegacyGuilds } from "./families.js";
 import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
 import { bigMin } from "./money.js";
-import { resolveCrossings } from "./privateers.js";
 import { openDueProjects } from "./projects.js";
-import { shipUpkeep } from "./ships.js";
+import { retireSeaAndBandits } from "./retired.js";
 import { DAY_MS, HOUR_MS, SINK_ACCOUNT, type WorldState, cashAccount, dayIndex } from "./state.js";
 import { type Tx, balance, emit, removeStock, transfer } from "./tx.js";
 import { closeSeason, closeWeek } from "./weekly.js";
@@ -36,9 +35,6 @@ export function chargeUpkeep(tx: Tx): void {
       // The franchise: the family that imposed it pays less for its workshops.
       const franchise = upkeepDiscountBps(ctx, tx.s as WorldState, player.id, boundary);
       if (franchise > 0) due = (due * BigInt(10_000 - franchise)) / 10_000n;
-      for (const ship of Object.values(tx.s.ships ?? {})) {
-        if (ship.playerId === player.id) due += shipUpkeep(ctx, ship);
-      }
       let road = 0n;
       for (const v of Object.values(tx.s.vehicles ?? {})) {
         if (v.playerId === player.id) road += vehicleUpkeep(ctx, v);
@@ -83,7 +79,8 @@ export function chargeUpkeep(tx: Tx): void {
 
 /** Scheduled job, every 60 s in production. Does not advance production (it is lazy). */
 export function tick(tx: Tx): void {
-  resolveCrossings(tx);
+  // States of the time of the sea and the bandits: settled, then forgotten.
+  retireSeaAndBandits(tx);
   resolveDeliveries(tx);
   pruneRoad(tx);
   expireOrders(tx);

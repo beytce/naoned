@@ -4,7 +4,6 @@ import {
   marketMakerQuotaLeft,
   maxOpenOrdersFor,
   maxVehiclesFor,
-  portDuesFor,
   specialtyUnlocked,
   travelMinutesFor,
 } from "../src/index.js";
@@ -17,7 +16,6 @@ const specialties = {
     master: { transformYieldBps: 1_500 },
     carter: { vehicleSpeedBps: 2_500, extraVehicles: 1 },
     trader: { marketMakerQuotaBps: 5_000, taxDiscountBps: 100, extraOpenOrders: 2 },
-    shipowner: { portDuesDiscountBps: 5_000, holdBps: 2_500 },
   },
 };
 
@@ -125,16 +123,5 @@ describe("masteries", () => {
       quantity: 100,
     });
     expect(w.cash("a") - cash).toBe(10_000n - 200n);
-  });
-
-  it("shipowner: half the port dues", () => {
-    const w = world();
-    expect(portDuesFor(w.ctx, w.state, "a", 10_000n, w.now)).toBe(
-      (10_000n * BigInt(w.ctx.settings.ships.portDuesBps)) / 10_000n,
-    );
-    choose(w, "shipowner");
-    expect(portDuesFor(w.ctx, w.state, "a", 10_000n, w.now)).toBe(
-      (10_000n * BigInt(w.ctx.settings.ships.portDuesBps)) / 20_000n,
-    );
   });
 });

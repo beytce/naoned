@@ -23,7 +23,6 @@ export async function deliverBread(world: GameWorld, playerId: string, now: numb
     playerId,
     orderId: order.id,
     vehicleId: vehicle.id,
-    escort: "none",
   });
   if (!res.ok) throw new Error(`dispatch refused: ${res.error}`);
   return Object.values(world.current.deliveries ?? {}).at(-1) as Delivery;

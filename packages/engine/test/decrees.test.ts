@@ -6,11 +6,10 @@ import {
   type WorldSettingsInput,
   deliveryOrdersFor,
   familyAccount,
-  portDuesFor,
   programmeOf,
   weekIndex,
 } from "../src/index.js";
-import { campaignSettings, deliverySettings, testBandits } from "./fixture.js";
+import { campaignSettings, deliverySettings } from "./fixture.js";
 import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
 
 const WEEK = 7 * DAY;
@@ -147,13 +146,6 @@ describe("the decrees", () => {
     expect(error(limit(w, "b", "sell", 207n))).toBe("ok");
   });
 
-  it("the Levant's tariff: lighter port dues for the members, heavier for the others", () => {
-    const w = world({ ships: { maxPerPlayer: 0, portDuesBps: 3_000, types: {} } });
-    impose(w, [{ code: "levant" }]);
-    expect(portDuesFor(w.ctx, w.state, "a", 10_000n, w.now)).toBe(1_500n);
-    expect(portDuesFor(w.ctx, w.state, "b", 10_000n, w.now)).toBe(3_750n);
-  });
-
   it("the franchise: the members' upkeep lighter", () => {
     const w = world();
     impose(w, [{ code: "franchise" }]);
@@ -177,8 +169,7 @@ describe("the decrees", () => {
 });
 
 describe("the decrees on the roads", () => {
-  const roads = (bandits = {}) =>
-    world({ ...deliverySettings, bandits: { ...testBandits, ...bandits } });
+  const roads = () => world({ ...deliverySettings });
   const day = (w: World) => Math.floor((w.now - w.ctx.startAt) / DAY);
   const cart = (w: World, id: string) =>
     Object.values(w.state.vehicles ?? {}).find((v) => v.playerId === id)?.id ?? "";
@@ -204,7 +195,6 @@ describe("the decrees on the roads", () => {
       playerId,
       orderId: o.id,
       vehicleId: cart(w, playerId),
-      escort: "none",
     });
     return Object.values(w.state.deliveries ?? {}).at(-1) as Delivery;
   }
@@ -233,22 +223,5 @@ describe("the decrees on the roads", () => {
     const toll = (d.payment * 300n) / 10_000n;
     expect(w.cash("b") - b).toBe(d.payment - toll);
     expect(w.state.accounts[familyAccount("rossi")]).toBe(toll);
-  });
-
-  it("the letters of marque: bands only by the family that imposed them, on others", () => {
-    const w = roads({ decreeOnly: true });
-    const city = orderFor(w, "b").city;
-    const post = (playerId: string) =>
-      w.try({ type: "postBand", playerId, route: `terraferma:${city}`, hours: 4 } as Command);
-    w.give("c", "bread", 10);
-    expect(error(post("c"))).toBe("no_decree");
-    impose(w, [{ code: "course" }]);
-    expect(error(post("b"))).toBe("no_decree");
-    expect(error(post("c"))).toBe("ok");
-    const ours = send(w, "a", city);
-    const theirs = send(w, "b", city);
-    w.at(theirs.midAt - w.ctx.startAt).do({ type: "tick" });
-    expect(w.state.deliveries?.[ours.id]?.attack).toBeUndefined();
-    expect(w.state.deliveries?.[theirs.id]?.attack).toBeDefined();
   });
 });

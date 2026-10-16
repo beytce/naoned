@@ -1,6 +1,3 @@
-import { levantDuesBps } from "./decrees.js";
-import { applyBpsFloor } from "./money.js";
-import type { Deniers } from "./money.js";
 import type { WorldSettings } from "./settings.js";
 import type { PlayerId, WorldContext, WorldState } from "./state.js";
 import { type Tx, emit, fail } from "./tx.js";
@@ -14,8 +11,6 @@ const NONE: SpecialtyEffects = {
   marketMakerQuotaBps: 0,
   taxDiscountBps: 0,
   extraOpenOrders: 0,
-  portDuesDiscountBps: 0,
-  holdBps: 0,
 };
 
 /** What the merchant's mastery changes (nothing before one is chosen). */
@@ -55,21 +50,6 @@ export function chooseSpecialty(tx: Tx, playerId: PlayerId, specialty: string): 
   if (!specialtyUnlocked(tx.ctx, tx.s as WorldState, playerId)) fail("specialty_locked");
   player.specialty = specialty;
   emit(tx, "specialty_chosen", playerId, { specialty });
-}
-
-/** Port dues of the merchant's own convoy: lighter for a shipowner. */
-export function portDuesFor(
-  ctx: WorldContext,
-  state: WorldState,
-  playerId: PlayerId,
-  charter: Deniers,
-  at: number,
-): Deniers {
-  const base = applyBpsFloor(charter, ctx.settings.ships.portDuesBps);
-  // The Levant's tariff: lighter for the family that imposed it, heavier for the others.
-  const dues = applyBpsFloor(base, levantDuesBps(ctx, state, playerId, at));
-  const discount = specialtyEffects(ctx, state, playerId).portDuesDiscountBps;
-  return discount > 0 ? applyBpsFloor(dues, 10_000 - discount) : dues;
 }
 
 /** Vehicles the merchant may own. */
