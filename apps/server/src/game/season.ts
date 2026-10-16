@@ -83,7 +83,7 @@ export async function recordSeason(
   db: Db,
   worldId: string,
   data: Record<string, unknown>,
-  /** End of this season: the Pass won is held during the next one. */
+  /** End of this season: the Pass won is held during the next one (none won if absent). */
   endsAt?: number,
 ) {
   // Ranked by net sales; standings saved before them carry net worth only.
@@ -178,7 +178,12 @@ export async function seasonRecord(db: Db, accountId: string) {
 }
 
 /** The closing ceremony not yet watched by this account, if any (latest season only). */
-export async function pendingCeremony(db: Db, accountId: string) {
+export async function pendingCeremony(
+  db: Db,
+  accountId: string,
+  /** The Pass is on: the ceremony tells the Pass won. */
+  passOn = true,
+) {
   const [row] = await db
     .select({
       worldId: seasonResults.worldId,
@@ -224,7 +229,7 @@ export async function pendingCeremony(db: Db, accountId: string) {
       renown: milestoneInfo(row.milestone).renown,
     },
     renown: row.renown,
-    passDays: info.passDays,
+    passDays: passOn ? info.passDays : 0,
     totalRenown: renownTitle(await renownOf(db, accountId)),
     podium: podium.map((p) => ({
       ...p,

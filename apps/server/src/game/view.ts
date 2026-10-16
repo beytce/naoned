@@ -440,7 +440,7 @@ export function playerView(
 ) {
   const player = state.players[playerId];
   if (!player) return null;
-  const pass = hasPass(state, playerId, now);
+  const pass = hasPass(ctx, state, playerId, now);
   // Pass Négociant: a deeper order book.
   const depth = pass ? 10 : 5;
   const buildings = Object.values(state.buildings)

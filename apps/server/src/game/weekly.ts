@@ -57,7 +57,7 @@ export async function recordWeek(
   db: Db,
   worldId: string,
   data: Record<string, unknown>,
-  /** When the week closed: the weekly top 10 hold the Pass for the next seven days. */
+  /** When the week closed: the weekly top 10 hold the Pass for the next seven days (none if absent). */
   at?: number,
 ) {
   const week = Number(data.week);

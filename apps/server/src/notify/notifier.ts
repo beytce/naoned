@@ -249,7 +249,7 @@ export class Notifier {
       }
     }
     // Pass Négociant: a Criée has just opened, and offers well below the reference price.
-    const holders = [...people].filter((id) => hasPass(state, id, now));
+    const holders = [...people].filter((id) => hasPass(this.world.ctx, state, id, now));
     const criee = currentCriee(this.world.ctx, now);
     if (criee && within(criee.startsAt)) {
       for (const id of holders) {

@@ -67,7 +67,7 @@ export async function upcomingPass(db: Db, accountId: string, now: number) {
 /** Tells the engine about a Pass the merchant holds (bought, won, granted) if it does not know. */
 export async function syncPass(db: Db, world: GameWorld, accountId: string): Promise<void> {
   const player = world.current.players[accountId];
-  if (!player) return;
+  if (!player || !world.ctx.settings.pass.enabled) return;
   const now = world.now();
   const until = await passUntil(db, accountId, now);
   if (until > (player.passUntil ?? 0)) {
