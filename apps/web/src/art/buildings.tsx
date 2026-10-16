@@ -66,34 +66,99 @@ const smoke = (x: number, y: number, active: boolean) =>
 
 const TEETH = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
 
+/**
+ * Flat volumes in three tones (top lit, front, side in shade), outlined in ink, seen a little from
+ * above and to the left: the depth runs up and to the right.
+ */
+type Tones = readonly [top: string, front: string, side: string];
+const T = {
+  brick: ["#E89A72", P.clay, "#8E4426"],
+  wood: [P.woodLight, P.wood, "#6B4022"],
+  stone: ["#FFF6E2", P.cream, "#CDB993"],
+  roof: ["#F08A6A", P.vermilion, P.vermilionDeep],
+  field: ["#B9D58A", "#7FA052", "#56743A"],
+  gold: [P.goldSoft, P.gold, P.goldDeep],
+} as const satisfies Record<string, Tones>;
+const outline = { stroke: P.night, strokeWidth: 1.6, strokeLinejoin: "round" as const };
+
+/** A box: front face at (x, y), w × h, `d` deep. */
+function block(x: number, y: number, w: number, h: number, d: number, c: Tones) {
+  const k = d / 2;
+  return (
+    <g {...outline}>
+      <path d={`M${x} ${y} L${x + d} ${y - k} H${x + w + d} L${x + w} ${y} Z`} fill={c[0]} />
+      <path
+        d={`M${x + w} ${y} L${x + w + d} ${y - k} V${y + h - k} L${x + w} ${y + h} Z`}
+        fill={c[2]}
+      />
+      <rect x={x} y={y} width={w} height={h} fill={c[1]} />
+    </g>
+  );
+}
+
+/** A gabled roof on a box of the same front: ridge `rh` high, gable wall in `wall`. */
+function gable(x: number, y: number, w: number, d: number, rh: number, wall: Tones, c: Tones) {
+  const k = d / 2;
+  const mx = x + w / 2;
+  return (
+    <g {...outline}>
+      <path
+        d={`M${x} ${y} L${x + d} ${y - k} L${mx + d} ${y - rh - k} L${mx} ${y - rh} Z`}
+        fill={c[0]}
+      />
+      <path
+        d={`M${mx} ${y - rh} L${mx + d} ${y - rh - k} L${x + w + d} ${y - k} L${x + w} ${y} Z`}
+        fill={c[2]}
+      />
+      <path d={`M${x} ${y} L${mx} ${y - rh} L${x + w} ${y} Z`} fill={wall[1]} />
+    </g>
+  );
+}
+
+/** An arched opening, dark. */
+const door = (x: number, y: number, w: number, h: number) => (
+  <path
+    d={`M${x} ${y + h} V${y + w / 2} A${w / 2} ${w / 2} 0 0 1 ${x + w} ${y + w / 2} V${y + h} Z`}
+    fill={P.night3}
+    {...outline}
+  />
+);
+
+/** A small stack of bricks (or planks) on the ground. */
+const stack = (x: number, y: number, c: Tones, rows = 2, w = 12, h = 4) => (
+  <g>
+    {[0, 1, 2, 3].slice(0, rows).map((row) => (
+      <g key={row}>{block(x + (row % 2) * 3, y - (row + 1) * h, w, h, 6, c)}</g>
+    ))}
+  </g>
+);
+
 const ART: Record<string, (active: boolean) => JSX.Element> = {
   farm: () => (
     <g>
-      {[0, 1, 2, 3].map((i) => (
+      {block(8, 66, 58, 12, 26, T.field)}
+      {[0, 1, 2, 3, 4].map((i) => (
         <path
           key={i}
-          d={`M${10 + i * 6} 80 L${40 + i * 4} ${58 + i * 5}`}
+          d={`M${14 + i * 10} 64 l12 -6`}
           stroke={P.gold}
           strokeWidth="3"
           strokeLinecap="round"
-          opacity={0.9 - i * 0.15}
         />
       ))}
-      <rect x="62" y="46" width="40" height="34" fill={P.vermilion} />
-      <path d="M58 48 L82 28 L106 48 Z" fill={P.vermilionDeep} />
-      <rect x="76" y="58" width="12" height="22" fill={P.night3} />
-      <path d="M76 58 L88 80 M88 58 L76 80" stroke={P.cream} strokeWidth="1.5" />
-      <circle cx="82" cy="40" r="3" fill={P.cream} />
+      {block(70, 52, 28, 26, 14, T.roof)}
+      {gable(70, 52, 28, 14, 14, T.roof, T.wood)}
+      {door(79, 62, 10, 16)}
     </g>
   ),
   clay_pit: () => (
     <g>
-      <path d="M8 80 L22 62 H44 L52 52 H78 L88 64 H104 L114 80 Z" fill={P.clay} />
-      <path d="M22 62 H44 L52 52 H78" stroke="#E89A72" strokeWidth="2" fill="none" />
-      <path d="M30 72 Q40 66 50 72" stroke={P.vermilionDeep} strokeWidth="2" fill="none" />
-      <path d="M86 34 L98 62" stroke={P.wood} strokeWidth="3" strokeLinecap="round" />
+      {block(12, 60, 72, 18, 30, T.brick)}
+      <path d="M24 58 L36 52 H76 L66 58 Z" fill="#6B3420" {...outline} />
+      {stack(40, 58, T.brick, 2, 12, 3)}
+      <path d="M92 64 L104 30" stroke={P.wood} strokeWidth="3.5" strokeLinecap="round" />
       <path
-        d="M78 38 Q88 28 100 32"
+        d="M92 30 Q102 22 114 30"
         stroke={P.cream}
         strokeWidth="4"
         strokeLinecap="round"
@@ -104,124 +169,114 @@ const ART: Record<string, (active: boolean) => JSX.Element> = {
   lumber_camp: () => (
     <g>
       {[
-        [26, 22],
-        [48, 14],
-        [70, 24],
+        [30, 18],
+        [52, 10],
       ].map(([x = 0, top = 0]) => (
-        <g key={x}>
-          <path d={`M${x} ${top} L${x - 14} ${top + 30} H${x + 14} Z`} fill={P.lagoonDeep} />
-          <path
-            d={`M${x} ${top + 14} L${x - 17} ${top + 46} H${x + 17} Z`}
-            fill={P.lagoon}
-            opacity="0.85"
-          />
-          <rect x={x - 3} y={top + 46} width="6" height={80 - top - 46} fill={P.wood} />
+        <g key={x} {...outline}>
+          <rect x={x - 3} y={top + 44} width="6" height={76 - top - 44} fill={P.wood} />
+          <path d={`M${x} ${top} L${x - 16} ${top + 28} H${x + 16} Z`} fill={P.lagoonDeep} />
+          <path d={`M${x} ${top + 14} L${x - 19} ${top + 46} H${x + 19} Z`} fill={P.lagoon} />
         </g>
       ))}
-      <rect x="86" y="66" width="22" height="14" rx="3" fill={P.wood} />
-      <ellipse cx="108" cy="73" rx="4" ry="7" fill={P.woodLight} />
-      <path d="M94 66 L100 48" stroke={P.wood} strokeWidth="3" strokeLinecap="round" />
-      <path d="M96 50 Q104 44 106 52 Z" fill={P.cream} />
+      {[0, 1, 2].map((i) => (
+        <g key={i} {...outline}>
+          <rect
+            x={68 + (i === 2 ? 7 : i * 14)}
+            y={i === 2 ? 56 : 66}
+            width="26"
+            height="11"
+            fill={P.wood}
+          />
+          <ellipse
+            cx={68 + (i === 2 ? 7 : i * 14)}
+            cy={i === 2 ? 61.5 : 71.5}
+            rx="4"
+            ry="5.5"
+            fill={P.woodLight}
+          />
+        </g>
+      ))}
     </g>
   ),
   mill: (active) => (
     <g>
-      <path d="M46 80 L52 36 H68 L74 80 Z" fill={P.cream} />
-      <path d="M48 38 L60 24 L72 38 Z" fill={P.vermilion} />
-      <rect x="56" y="62" width="8" height="18" rx="4" fill={P.night3} />
+      {block(46, 40, 22, 38, 12, T.stone)}
+      <path
+        d="M44 40 L57 20 L70 40 Z M57 20 L69 14 L80 34 L70 40"
+        fill={P.vermilion}
+        {...outline}
+      />
+      {door(52, 62, 10, 16)}
       <g>
         {[0, 90, 180, 270].map((r) => (
-          <g key={r} transform={`rotate(${r} 60 36)`}>
-            <path
-              d="M60 36 L62 6 H74 L64 36 Z"
-              fill={P.gold}
-              stroke={P.goldDeep}
-              strokeWidth="1"
-              opacity="0.95"
-            />
+          <g key={r} transform={`rotate(${r} 60 32)`}>
+            <path d="M60 32 L62 4 H73 L64 32 Z" fill={P.gold} {...outline} />
           </g>
         ))}
-        {spin(60, 36, active)}
+        {spin(60, 32, active, 6)}
       </g>
-      <circle cx="60" cy="36" r="4" fill={P.goldDeep} />
+      <circle cx="60" cy="32" r="3" fill={P.night} />
     </g>
   ),
   bakery: (active) => (
     <g>
-      <path d="M20 80 V52 Q60 14 100 52 V80 Z" fill={P.clay} />
-      <path d="M38 80 V62 Q60 42 82 62 V80 Z" fill={P.night} />
-      <ellipse cx="60" cy="74" rx="16" ry="5" fill={active ? P.vermilion : P.line}>
-        {active && (
-          <animate attributeName="opacity" values="0.6;1;0.6" dur="1.2s" repeatCount="indefinite" />
-        )}
-      </ellipse>
-      <ellipse cx="54" cy="70" rx="7" ry="3.5" fill={P.woodLight} />
-      <ellipse cx="66" cy="69" rx="6" ry="3" fill={P.gold} />
-      <rect x="84" y="20" width="9" height="22" fill={P.vermilionDeep} />
-      {smoke(88, 18, active)}
+      {smoke(86, 22, active)}
+      {block(80, 24, 10, 22, 6, T.brick)}
+      {block(16, 46, 70, 32, 20, T.brick)}
+      <path d="M30 78 V64 A16 16 0 0 1 62 64 V78 Z" fill={P.night3} {...outline} />
+      <path d="M36 78 V66 A10 10 0 0 1 56 66 V78 Z" fill={active ? P.gold : "#5A3D22"} />
+      <ellipse cx="46" cy="74" rx="7" ry="3" fill={P.goldSoft} stroke={P.night} strokeWidth="1" />
     </g>
   ),
   brickworks: (active) => (
     <g>
-      <rect x="24" y="44" width="48" height="36" fill={P.vermilionDeep} />
-      <path d="M24 44 Q48 26 72 44 Z" fill={P.vermilion} />
-      <rect x="38" y="60" width="20" height="20" rx="10" fill={P.night} />
-      <rect x="42" y="66" width="12" height="10" rx="5" fill={active ? P.gold : P.line} />
-      <rect x="76" y="14" width="10" height="66" fill={P.clay} />
-      <path d="M76 22 H86 M76 34 H86 M76 46 H86" stroke={P.vermilionDeep} strokeWidth="1.5" />
-      {smoke(81, 12, active)}
-      {[0, 1, 2].map((i) => (
-        <rect
-          key={i}
-          x={92 + (i % 2) * 4}
-          y={72 - i * 7}
-          width="18"
-          height="6"
-          fill={P.vermilion}
-          stroke={P.vermilionDeep}
-        />
+      {smoke(38, 12, active)}
+      {smoke(56, 18, active)}
+      {block(32, 14, 10, 34, 6, T.brick)}
+      {block(50, 20, 10, 28, 6, T.brick)}
+      {block(14, 46, 62, 32, 18, T.brick)}
+      {door(24, 60, 12, 18)}
+      <rect x="44" y="54" width="22" height="8" fill={P.night3} {...outline} />
+      <path d="M78 76 H112" stroke={P.night} strokeWidth="3" strokeLinecap="round" />
+      {[84, 94, 104].map((x) => (
+        <circle key={x} cx={x} cy="76" r="2.4" fill={P.cream} stroke={P.night} strokeWidth="1" />
       ))}
+      {stack(86, 74, T.brick, 2, 12, 4)}
     </g>
   ),
   sawmill: (active) => (
     <g>
-      <path d="M14 80 V46 L44 30 L74 46 V80 Z" fill={P.wood} />
-      <path d="M14 46 L44 30 L74 46" stroke={P.woodLight} strokeWidth="3" fill="none" />
-      <rect x="34" y="56" width="20" height="24" fill={P.night3} />
-      <g>
-        <circle cx="94" cy="56" r="16" fill={P.cream} stroke={P.line} strokeWidth="2" />
-        {TEETH.map((deg) => (
-          <path key={deg} d="M94 38 l3 4 h-6 z" fill={P.cream} transform={`rotate(${deg} 94 56)`} />
+      {block(10, 50, 48, 28, 18, T.wood)}
+      {gable(10, 50, 48, 18, 18, T.wood, T.roof)}
+      {door(26, 60, 14, 18)}
+      <g transform="translate(84 46)">
+        <circle r="16" fill={P.cream} {...outline} />
+        {TEETH.map((a) => (
+          <path
+            key={a}
+            d="M-3 -16 L0 -21 L3 -16 Z"
+            fill={P.cream}
+            transform={`rotate(${a})`}
+            {...outline}
+          />
         ))}
-        <circle cx="94" cy="56" r="4" fill={P.gold} />
-        {spin(94, 56, active, 1.5)}
+        <circle r="4" fill={P.night} />
+        {spin(0, 0, active, 2)}
       </g>
-      <rect x="76" y="72" width="40" height="8" fill={P.woodLight} />
+      {stack(66, 78, T.wood, 2, 30, 4)}
     </g>
   ),
   palazzo: () => (
     <g>
-      <rect x="18" y="26" width="84" height="54" fill={P.cream} />
-      <rect x="18" y="20" width="84" height="8" fill={P.gold} />
-      {[0, 1, 2, 3, 4].map((i) => (
-        <g key={i}>
-          <path
-            d={`M${26 + i * 15} 50 V40 Q${31 + i * 15} 32 ${36 + i * 15} 40 V50 Z`}
-            fill={P.lagoonDeep}
-          />
-          <path
-            d={`M${26 + i * 15} 76 V64 Q${31 + i * 15} 56 ${36 + i * 15} 64 V76 Z`}
-            fill={P.night3}
-          />
+      {block(10, 30, 88, 48, 16, T.stone)}
+      <path d="M10 30 L18 26 H106 L98 30 Z" fill={P.gold} {...outline} />
+      <rect x="10" y="44" width="88" height="3" fill={P.gold} {...outline} />
+      {[18, 34, 50, 66, 82].map((x) => (
+        <g key={x}>
+          {door(x, 32, 8, 10)}
+          {door(x, 56, 8, 22)}
         </g>
       ))}
-      <path d="M18 53 H102" stroke={P.gold} strokeWidth="2" />
-      <path
-        d="M4 84 Q20 80 36 84 T68 84 T100 84 T116 84"
-        stroke={P.lagoon}
-        strokeWidth="2"
-        fill="none"
-      />
     </g>
   ),
 };
