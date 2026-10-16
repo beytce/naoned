@@ -6,6 +6,30 @@ export interface PushTarget {
   auth: string;
 }
 
+/** The browsers' push services (Chrome, Firefox, Edge, Safari): the only hosts a push is sent to. */
+const PUSH_HOSTS = [
+  /^fcm\.googleapis\.com$/,
+  /^[a-z0-9-]+\.push\.services\.mozilla\.com$/,
+  /^[a-z0-9-]+\.notify\.windows\.com$/,
+  /^web\.push\.apple\.com$/,
+  /^[a-z0-9-]+\.push\.apple\.com$/,
+];
+
+/**
+ * Whether the server may send pushes to this address: HTTPS on the default port, to a known push
+ * service. Anything else would let a player aim the server at an internal address.
+ */
+export function isPushEndpoint(raw: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== "https:" || url.port !== "" || url.username || url.password) return false;
+  return PUSH_HOSTS.some((h) => h.test(url.hostname));
+}
+
 /** Sends Web Push messages. `gone` means the subscription no longer exists (to be deleted). */
 export interface Pusher {
   readonly publicKey: string | null;

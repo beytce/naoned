@@ -1,11 +1,12 @@
 import { type Command, freeBatches, hasPass } from "@comptoirs/engine";
-import { and, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { AuthService, PublicAccount } from "../auth/service.js";
 import type { Db } from "../db/client.js";
 import { accounts, players, pushSubscriptions, telemetry } from "../db/schema.js";
 import { NOTIFICATION_KINDS, type NotificationKind, type Notifier } from "../notify/notifier.js";
+import { isPushEndpoint } from "../notify/push.js";
 import { retention, suspiciousPairs } from "./admin.js";
 import {
   ChatError,
@@ -29,6 +30,8 @@ import type { GameWorld } from "./world.js";
 
 /** A visit after this much inactivity counts as a new session (KPI: sessions per day). */
 const SESSION_GAP_MS = 30 * 60_000;
+/** Devices a person receives pushes on (phones, computers). */
+const PUSH_DEVICES_MAX = 10;
 
 const action = z.discriminatedUnion("type", [
   z.object({
@@ -123,6 +126,16 @@ export interface GameRouteDeps {
 
 export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): void {
   const { db, world, auth, notifier } = deps;
+  /** A merchant's pace: far above anyone's taps, low enough that no script floods the world. */
+  const perMerchant = (max: number) => ({
+    config: {
+      rateLimit: {
+        max,
+        timeWindow: "1 minute",
+        keyGenerator: (req: FastifyRequest) => req.cookies[deps.sessionCookie] ?? req.ip,
+      },
+    },
+  });
 
   // Push: the open games hear when to fetch their view again (polling stays as a fallback).
   const live = new LiveHub();
@@ -253,7 +266,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     toJson({ ...catalog(world.ctx, world), previousDoge: await previousDoge(db, world.id) }),
   );
 
-  app.get("/api/game", async (req, reply) => {
+  app.get("/api/game", perMerchant(300), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     let welcome = null;
@@ -312,7 +325,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     });
   });
 
-  app.post("/api/game/join", async (req, reply) => {
+  app.post("/api/game/join", perMerchant(30), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     const { region } = z.object({ region: z.string() }).parse(req.body);
@@ -322,7 +335,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return view(account);
   });
 
-  app.post("/api/game/reset", async (req, reply) => {
+  app.post("/api/game/reset", perMerchant(30), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     const res = await world.execute({ type: "resetPlayer", playerId: account.id });
@@ -330,7 +343,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return view(account);
   });
 
-  app.post("/api/game/actions", async (req, reply) => {
+  app.post("/api/game/actions", perMerchant(300), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     if (!world.current.players[account.id]) return reply.code(409).send({ error: "not_joined" });
@@ -421,7 +434,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return chat(reply, () => familyThread(db, world, account.id));
   });
 
-  app.post("/api/game/family/messages", async (req, reply) => {
+  app.post("/api/game/family/messages", perMerchant(60), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     const parsed = z.object({ body: z.string().max(2_000) }).safeParse(req.body);
@@ -571,7 +584,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return { off };
   });
 
-  app.post("/api/notifications/push/subscribe", async (req, reply) => {
+  app.post("/api/notifications/push/subscribe", perMerchant(30), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     const sub = z
@@ -580,6 +593,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
         keys: z.object({ p256dh: z.string().max(200), auth: z.string().max(100) }),
       })
       .parse(req.body);
+    if (!isPushEndpoint(sub.endpoint)) return reply.code(400).send({ error: "invalid_endpoint" });
     const values = {
       endpoint: sub.endpoint,
       accountId: account.id,
@@ -591,6 +605,16 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       .insert(pushSubscriptions)
       .values(values)
       .onConflictDoUpdate({ target: pushSubscriptions.endpoint, set: values });
+    // A few devices per person: the oldest go.
+    const devices = await db
+      .select({ endpoint: pushSubscriptions.endpoint })
+      .from(pushSubscriptions)
+      .where(eq(pushSubscriptions.accountId, account.id))
+      .orderBy(desc(pushSubscriptions.createdAt));
+    const stale = devices.slice(PUSH_DEVICES_MAX).map((d) => d.endpoint);
+    if (stale.length > 0) {
+      await db.delete(pushSubscriptions).where(inArray(pushSubscriptions.endpoint, stale));
+    }
     return { ok: true };
   });
 

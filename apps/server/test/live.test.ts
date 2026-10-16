@@ -102,3 +102,15 @@ describe("the live game", () => {
     expect(await closed).toBe(4401);
   });
 });
+
+describe("the game's pace", () => {
+  it("limits each merchant's actions, not the others'", async () => {
+    const ada = await login("ada@example.org");
+    const bob = await login("bob@example.org");
+    const act = (cookie: string) =>
+      app.inject({ method: "POST", url: "/api/game/actions", headers: { cookie }, payload: {} });
+    for (let i = 0; i < 300; i++) expect((await act(ada)).statusCode).not.toBe(429);
+    expect((await act(ada)).statusCode).toBe(429);
+    expect((await act(bob)).statusCode).not.toBe(429);
+  });
+});

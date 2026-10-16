@@ -31,6 +31,13 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - Ouvrages en volume sur la maquette 3D (tour, tentes, porte de péage) plutôt qu'en médaillon ; ouvrages améliorables (rocca de pierre), réparation après un assaut repoussé.
 - Contribution de plusieurs membres à un même ouvrage (chantier collectif), écartée pour l'instant au profit de l'achat individuel.
 
+## PvE coopératif (voir docs/plan-pve.md)
+- Recommandé, après les mesures de la bêta : commandes de compagnie (grosses commandes du Doge à plusieurs marchandises, remplies à 2-4 marchands de régions différentes, payées contre livraison +10 %, lot de biens de la Muda au prorata). À valider au simulateur avant tout code.
+- Si la rétention à J7 est faible : rallumer les grands chantiers (moteur existant, `projects`) sous forme d'une crise de la République par saison (Acte II), objectif commun du serveur.
+- V1 : expéditions lointaines (Bruges, Constantinople) en différé, seul ou en groupe, récompensées en biens de la Muda.
+- Écarté pour l'instant : grande invasion de Milan en coopération des quatre familles (brouille le sens de la Campagne, non mesurée).
+- Garde-fous : jamais de ducats sans marchandises livrées, primes plafonnées dans `worlds.settings`, ressources offertes limitées aux biens de la Muda, parts au prorata plafonnées par compte.
+
 ## Affrontement (le retenu : la Campagne des familles ; les autres pistes)
 - Guerres de concessions entre guildes (abandonnées le 13 octobre 2026).
 - Corner du Rialto : accaparer une marchandise pour fixer son prix en ville ; les autres cassent le corner en vendant.

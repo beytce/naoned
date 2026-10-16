@@ -27,7 +27,7 @@ import {
   blend,
   boxOf,
   clampCamera,
-  fitCamera,
+  fitLands,
   landFrames,
   parkingAngle,
   parkingSpots,
@@ -298,10 +298,10 @@ export const WorldMap = forwardRef<
 
   const fit = useCallback(() => {
     const v = viewport();
-    const f = fitCamera(fitBox, v, padded(live.current.insets, live.current.layer !== "trade"));
+    const f = fitLands(box, fitBox, v, padded(live.current.insets, live.current.layer !== "trade"));
     fitted.current = f;
     return f;
-  }, [fitBox, viewport]);
+  }, [box, fitBox, viewport]);
 
   useImperativeHandle(
     ref,

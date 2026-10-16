@@ -17,6 +17,8 @@ export interface LiveSocket {
 }
 
 const OPEN = 1;
+/** Open games per merchant (a phone, a computer, a few tabs): the oldest close beyond. */
+const SOCKETS_PER_ACCOUNT = 5;
 
 /**
  * The open games, per merchant: after each saved command, the merchants it touched are told to
@@ -34,6 +36,10 @@ export class LiveHub {
       this.sockets.set(accountId, mine);
     }
     mine.add(socket);
+    for (const old of [...mine].slice(0, Math.max(0, mine.size - SOCKETS_PER_ACCOUNT))) {
+      mine.delete(old);
+      old.terminate();
+    }
     this.alive.add(socket);
     socket.on("pong", () => this.alive.add(socket));
     socket.on("close", () => this.remove(accountId, socket));

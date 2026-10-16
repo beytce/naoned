@@ -17,6 +17,10 @@ RUN pnpm --filter @comptoirs/web build
 
 FROM base AS runtime
 ENV NODE_ENV=production PORT=3000
-COPY --from=build /app /app
+# Not root: the image's own user, owning only the app.
+COPY --from=build --chown=node:node /app /app
+USER node
+WORKDIR /app/apps/server
 EXPOSE 3000
-CMD ["pnpm", "--filter", "@comptoirs/server", "start"]
+# The server itself, without pnpm in between, so that it receives the stop signal.
+CMD ["node_modules/.bin/tsx", "src/server.ts"]
