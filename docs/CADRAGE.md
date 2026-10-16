@@ -324,7 +324,7 @@ Récompenses de fin de saison, entre joueurs réels (les PNJ ne prennent pas de 
 
 La Renommée s'additionne de saison en saison (titres : Habitué du Rialto, Marchand notable, Marchand illustre, Légende de Venise, Lion de Saint-Marc). Elle ne donne jamais d'avance économique : chaque saison, tout le monde repart à égalité. Le palmarès (saisons, semaines, Renommée) est visible sur le profil et depuis le classement.
 
-**Niveau permanent** : un point par ducat de ventes nettes, saison après saison (une saison à perte ne retire rien) ; le niveau n + 1 demande 300 × n points de plus que le niveau n. Il s'affiche à côté du pseudo (carte, classements, profil). Honorifique, comme la Renommée : aucun avantage en jeu.
+**Niveau permanent** : un point par ducat de ventes nettes, saison après saison (une saison à perte ne retire rien) ; le niveau n + 1 demande 300 × n points de plus que le niveau n. Un marchand médian (environ 5 000 ducats de ventes nettes par saison dans la simulation) atteint le niveau 6 dès sa première saison. Il s'affiche à côté du pseudo (carte, classements, profil). Honorifique, comme la Renommée : aucun avantage en jeu.
 
 **Enchaînement** : le premier tick après minuit clôt la saison (classement final, récompenses), ferme le monde et ouvre le mois suivant ; les joueurs choisissent leur région et repartent de zéro après une cérémonie de clôture. Trois jours avant la fin, une notification « dernier sprint » ; à l'ouverture, une invitation à revenir. Un monde ouvert en cours de mois court jusqu'à la fin du mois (ou du suivant s'il reste moins de 14 jours).
 

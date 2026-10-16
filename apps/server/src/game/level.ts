@@ -8,8 +8,8 @@ import { seasonResults } from "../db/schema.js";
  * season after season (a season's losses count for nothing). Honorary only, like renown: it
  * never changes the economy, and every season everyone starts afresh.
  * Level n + 1 takes `LEVEL_STEP × n` more points than level n: a merchant of the median (about
- * 3 000 ducats of net sales a season in the simulation) reaches level 5 in a first season, one
- * of the best tenth level 9; the curve flattens over the seasons.
+ * 5 000 ducats of net sales a season in the simulation) reaches level 6 in a first season, one
+ * of the best tenth (about 12 000) level 9; the curve flattens over the seasons.
  */
 export const LEVEL_STEP = 300;
 

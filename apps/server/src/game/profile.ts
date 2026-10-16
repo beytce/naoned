@@ -13,8 +13,8 @@ import { weeklyRecord } from "./weekly.js";
  * Merchant titles, from the net sales of the season (ducats), like the ranking. Cosmetic only: a
  * title never changes the economy.
  * The title held when the season closes is its milestone: it adds `renown`, whatever the rank.
- * Thresholds follow the simulation (median of a season about 3 000 ducats of net sales, best tenth
- * about 11 000), to be tuned with the beta.
+ * Thresholds follow the simulation (median of a season about 5 000 ducats of net sales, best tenth
+ * about 12 000), to be tuned with the beta.
  */
 export const TITLES = [
   { code: "peddler", name: "Colporteur", from: 0, renown: 0 },

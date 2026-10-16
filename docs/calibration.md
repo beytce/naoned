@@ -683,3 +683,29 @@ Une famille peut consolider une terre tenue par un ouvrage, bâti par un membre 
 - Un petit puits de plus (3 à 4 ducats par marchand actif et par jour, à côté de 5 pour les lances) : la masse monétaire et la monnaie payée ne bougent pas.
 - Trois ouvrages sur quatre finissent rasés : ils consolident sans figer la carte, et deviennent des cibles.
 - Plus aucune famille ne gagne les trois semaines : la domination des Mocenigo de la graine 5 a disparu (une rocca adverse sur Legnago suffit à fermer le carrefour).
+
+## Véhicules à améliorer, classement par ventes nettes, 40 maisons PNJ (16 octobre 2026)
+
+Trois changements demandés pendant la bêta :
+
+- **Véhicules** : tout achat donne une mule (25 unités au lieu de 15, pour qu'une mule porte n'importe quelle commande seule) ; deux mules à l'arrivée au lieu d'une charrette et d'une mule. Trois améliorations en ducats détruits, au comptoir : charrette (+80 d), chariot (+160 d), grand chariot (+320 d ; 150 unités, vitesse 1,6). Les maisons PNJ améliorent leur plus petit véhicule libre quand elles ont trois fois le prix.
+- **Classement** : ventes nettes de la saison (ventes, taxes et péages déduits, moins les achats) au lieu du patrimoine. Seuils des titres recalés sur les ventes mesurées (Boutiquier 500 → Doge 20 000 ducats) ; niveau permanent à 300 × n points par niveau.
+- **PNJ** : population de 40 au lieu de 15.
+
+`pnpm sim`, 5 graines, **toutes conformes** :
+
+| | Graine 1 | Graine 2 | Graine 3 | Graine 4 | Graine 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie payée (ducats / joueur actif / jour) | 176,5 | 179,6 | 174,9 | 179,2 | 179,1 |
+| Masse monétaire par joueur actif (maximum) | 0,96 × | 0,95 × | 0,97 × | 0,93 × | 0,95 × |
+| Croissance de la monnaie (moyenne / jour) | 1,9 % | 4,5 % | 2,6 % | 5,7 % | 5,2 % |
+| Ducats détruits par les améliorations de véhicules | 22 480 | 20 560 | 18 080 | 21 840 | 20 240 |
+| Ventes nettes de la saison : médiane · 90e centile · meilleur | 5 185 · 10 327 · 31 685 | 4 503 · 14 213 · 38 913 | 5 413 · 13 907 · 35 094 | 5 639 · 13 082 · 32 196 | 4 467 · 8 845 · 36 397 |
+
+`pnpm sim --players 40 --live` (le petit monde de la bêta, 40 maisons) : 5 graines conformes, indice des prix 93 à 100, ventes nettes médianes 4 200 à 5 300 ducats.
+
+**Lecture.**
+- Les améliorations sont un nouveau puits (environ 7 % des destructions) : la masse monétaire par joueur actif baisse un peu (≤ 0,97 × le capital, contre 1,03 ×) et la monnaie payée pour les marchandises monte légèrement (176 à 180 contre 165 à 170 ducats) parce que des véhicules plus gros livrent plus loin.
+- Le classement récompense l'activité : les assidus finissent 50 à 180 % devant les occasionnels en ventes nettes (diagnostic).
+
+**Pass Négociant (`pnpm sim --pass 0.2`) : non conforme, comme avant ce changement.** Le code d'origine (commit 211b933) échoue déjà sur les graines 1 et 3 (avance des abonnés en patrimoine de 22,3 % et 6,5 %). Après le changement, les mêmes graines échouent (patrimoine 26,0 % et 28,5 % ; ventes nettes 29,8 % et 47,4 % ; graine 1 : 40 % du top 10 en patrimoine) ; les graines 2, 4 et 5 sont conformes, avec des avances négatives. La mesure par saison rejouée diverge fortement d'une graine à l'autre (de −70 % à +47 %) : elle mesure surtout le bruit de deux parties qui divergent. Conformément à CLAUDE.md, **le paiement du Pass reste débranché** ; le simulateur vérifie désormais les trois garde-fous sur les deux mesures (patrimoine, la règle, et ventes nettes, le classement).
