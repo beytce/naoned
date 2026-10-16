@@ -1,6 +1,6 @@
 import { crieeRoom, currentCriee, dailyFor } from "./activity.js";
 import { balesFor } from "./bales.js";
-import { costForLevel } from "./buildings.js";
+import { costForLevel, costPerOutput } from "./buildings.js";
 import {
   MILAN,
   defenseBpsOf,
@@ -822,6 +822,8 @@ export class Bot {
       type: string;
       building?: Building;
       cost: ReturnType<typeof costForLevel>;
+      /** What a unit of added output costs: upgrades and new workshops compared fairly. */
+      perOutput: Deniers;
       demand: number;
     }[] = [];
     for (const entry of this.profile.focus) {
@@ -838,18 +840,26 @@ export class Bot {
           type,
           building: lowest,
           cost: costForLevel(s.ctx, type, lowest.level + 1),
+          perOutput: costPerOutput(s.ctx, type, lowest.level),
           demand,
         });
       }
       if (ofType.length < MAX_PER_TYPE && mine.length < settings.maxBuildings) {
-        options.push({ kind: "build", type, cost: costForLevel(s.ctx, type, 1), demand });
+        options.push({
+          kind: "build",
+          type,
+          cost: costForLevel(s.ctx, type, 1),
+          perOutput: costPerOutput(s.ctx, type, 0),
+          demand,
+        });
       }
     }
     const bucket = (d: number) => Math.round(d * 20);
     options.sort(
       (a, b) =>
         bucket(b.demand) - bucket(a.demand) ||
-        (a.cost.ducats < b.cost.ducats ? -1 : a.cost.ducats > b.cost.ducats ? 1 : 0),
+        (a.perOutput < b.perOutput ? -1 : a.perOutput > b.perOutput ? 1 : 0) ||
+        (a.kind === b.kind ? 0 : a.kind === "upgrade" ? -1 : 1),
     );
     return options[0];
   }

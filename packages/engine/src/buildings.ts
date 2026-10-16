@@ -36,6 +36,26 @@ export function costValue(ctx: WorldContext, cost: BuildingCost): Deniers {
   return value;
 }
 
+/** Output of a workshop at `level`, in ten-thousandths of a level-1 workshop's (yield bonus included). */
+function outputBps(ctx: WorldContext, level: number): number {
+  if (level <= 0) return 0;
+  return level * (10_000 + (level - 1) * ctx.settings.levelYieldBonusBps);
+}
+
+/** Output a step from `level` adds (from 0: a new workshop), in ten-thousandths of a level 1's. */
+export function addedOutputBps(ctx: WorldContext, level: number): number {
+  return outputBps(ctx, level + 1) - outputBps(ctx, level);
+}
+
+/**
+ * What a unit of output costs when bought by a step from `level` (0: building), materials at
+ * reference prices: the lower, the better the investment.
+ */
+export function costPerOutput(ctx: WorldContext, type: string, level: number): Deniers {
+  const added = BigInt(Math.max(1, addedOutputBps(ctx, level)));
+  return (costValue(ctx, costForLevel(ctx, type, level + 1)) * 10_000n) / added;
+}
+
 export function upkeepPerDay(ctx: WorldContext, building: Building): Deniers {
   const def = ctx.settings.buildings[building.type];
   const level = BigInt(building.level);
