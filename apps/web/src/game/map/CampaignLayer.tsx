@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { FamilyCrest, MILITIA_HEX, familyHex } from "../../art/familyCrest.js";
 import { fr } from "../../i18n.js";
 import { Sheet, clock } from "../../ui.js";
@@ -85,12 +86,25 @@ export function campaignMarkers(
   }));
 }
 
+/**
+ * How far a land's ground reaches, in map units: enough for the cells of neighbouring lands to
+ * meet everywhere (at 46, a gap opened between Milan's fortresses).
+ */
+const TERRITORY_RADIUS = 50;
+
 /** Under the lands: each one's ground in its holder's colour, the borders, the marches. */
 export function CampaignOverlay({ f, now }: { f: FamiliesView; now: number }) {
   const colors = holderColors();
-  const cells = territories(
-    f.lands.map((l) => ({ code: l.code, x: l.x, y: l.y, holder: l.holder })),
-    46,
+  // The ground only changes when a land changes hands, not with the clock's every second.
+  const holders = f.lands.map((l) => `${l.code}|${l.x}|${l.y}|${l.holder ?? ""}`).join(";");
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `holders` is the lands' identity.
+  const cells = useMemo(
+    () =>
+      territories(
+        f.lands.map((l) => ({ code: l.code, x: l.x, y: l.y, holder: l.holder })),
+        TERRITORY_RADIUS,
+      ),
+    [holders],
   );
   const byCode = new Map(f.lands.map((l) => [l.code, l]));
   return (
@@ -139,7 +153,6 @@ export function CampaignOverlay({ f, now }: { f: FamiliesView; now: number }) {
               strokeWidth="2"
               strokeDasharray="1.5 3.5"
               strokeLinecap="round"
-              className="route-march"
             />
             <circle
               cx={a.x + (b.x - a.x) * share}

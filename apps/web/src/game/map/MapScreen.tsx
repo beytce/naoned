@@ -274,7 +274,13 @@ export function MapScreen(
   const panelUp = !!sel;
 
   const insets = wide
-    ? { top: 110, right: panelUp ? 460 : 40, bottom: 40, left: 40 }
+    ? // The doors at the foot of the screen (and the campaign's pledge above them) stay clear.
+      {
+        top: 110,
+        right: panelUp ? 460 : 40,
+        bottom: campaign && !campaign.mine ? 170 : 120,
+        left: 40,
+      }
     : {
         top: campaign ? 160 : 150,
         right: 12,

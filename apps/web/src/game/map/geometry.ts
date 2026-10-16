@@ -63,7 +63,8 @@ export function boxOf(points: Point[], margin = 0): Box {
 /**
  * The campaign's frames, from its lands (world pixels): `box` holds them all, to keep the map in
  * reach; `fitBox` only those within the drawn map (`width` wide), where the camera opens, so that
- * the lands beyond its edge (Lombardy) are a pan away instead of shrinking the whole map.
+ * the lands beyond its edge (Lombardy) are a pan away on a narrow screen instead of shrinking the
+ * whole map (see `fitLands`).
  */
 export function landFrames(lands: Point[], width: number): { box: Box; fitBox: Box } {
   const inside = lands.filter((p) => p.x >= 0 && p.x <= width);
@@ -84,6 +85,16 @@ export function fitCamera(box: Box, view: Viewport, insets: Insets): Camera {
     tx: insets.left + w / 2 - cx * s,
     ty: insets.top + h / 2 - cy * s,
   };
+}
+
+/**
+ * The camera of the campaign: all its lands when the screen has room for them (a wide screen,
+ * where the height sets the scale), the drawn map's alone when showing them all would shrink it.
+ */
+export function fitLands(box: Box, fitBox: Box, view: Viewport, insets: Insets): Camera {
+  const all = fitCamera(box, view, insets);
+  const drawn = fitCamera(fitBox, view, insets);
+  return all.s >= drawn.s * 0.85 ? all : drawn;
 }
 
 /** Where a world point lands on screen. */

@@ -5,6 +5,7 @@ import {
   boxOf,
   clampCamera,
   fitCamera,
+  fitLands,
   landFrames,
   parkingAngle,
   parkingSpots,
@@ -142,6 +143,17 @@ describe("map geometry", () => {
     expect(box.x0).toBe(-450);
     expect(fitBox).toEqual({ x0: 100, y0: 200, x1: 900, y1: 1000 });
     expect(landFrames([{ x: -10, y: 0 }], 1080).fitBox.x0).toBe(-10);
+  });
+
+  it("shows every land when the screen has room, the drawn map's alone otherwise", () => {
+    const box = { x0: -450, y0: 200, x1: 1060, y1: 1190 };
+    const fitBox = { x0: 100, y0: 200, x1: 1060, y1: 1190 };
+    const none = { top: 0, right: 0, bottom: 0, left: 0 };
+    // A wide screen: the height sets the scale, Lombardy fits at no cost.
+    const wide = fitLands(box, fitBox, { w: 1600, h: 900 }, none);
+    expect(wide).toEqual(fitCamera(box, { w: 1600, h: 900 }, none));
+    // A phone: the whole would shrink everything, the drawn map stays framed.
+    expect(fitLands(box, fitBox, view, insets)).toEqual(fitCamera(fitBox, view, insets));
   });
 
   it("moves along a broken line by length", () => {
