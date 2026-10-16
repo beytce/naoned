@@ -285,25 +285,46 @@ export const VenetoTerrain = memo(function VenetoTerrain() {
   );
 });
 
-/** A walled city seen from afar: ramparts and three towers. */
-export function CityGlyph({ dim }: { dim?: boolean }) {
-  const wall = dim ? "#3A4E4E" : P.cream;
-  const roof = dim ? "#2A3A3A" : P.vermilion;
+/** A beast of burden seen from the side, facing right, its body from x to x + 11. */
+function beast(x: number, coat: string, horned = false) {
   return (
     <g>
-      <path d="M-11 6 V-1 H-7 V-4 H-3 V-1 H3 V-4 H7 V-1 H11 V6 Z" fill={wall} />
-      <rect x="-2" y="-11" width="4" height="10" fill={wall} />
-      <path d="M-3 -11 L0 -16 L3 -11 Z" fill={roof} />
-      <path d="M-10 -1 L-8 -5 L-6 -1 Z" fill={roof} />
-      <path d="M6 -1 L8 -5 L10 -1 Z" fill={roof} />
-      <rect x="-1.5" y="1.5" width="3" height="4.5" rx="1.5" fill={P.night} />
+      <path
+        d={`M${x + 1} 1 V8 M${x + 3.5} 1 V8 M${x + 8} 1 V8 M${x + 10.5} 1 V8`}
+        stroke={coat}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path
+        d={`M${x} -1 Q${x} -5 ${x + 3} -5 H${x + 10} L${x + 13} -8 L${x + 16} -6.5 L${x + 13.5} -3 Q${x + 12} 2 ${x + 9} 2 H${x + 2} Q${x} 2 ${x} -1 Z`}
+        fill={coat}
+        stroke={P.night}
+        strokeWidth="0.8"
+        strokeLinejoin="round"
+      />
+      {horned ? (
+        <path
+          d={`M${x + 12.5} -7.5 Q${x + 12} -10.5 ${x + 14.5} -10.5`}
+          fill="none"
+          stroke={P.cream}
+          strokeWidth="1"
+        />
+      ) : (
+        <path
+          d={`M${x + 12.6} -7.6 L${x + 12} -10.5 L${x + 14} -8.2`}
+          fill={coat}
+          stroke={P.night}
+          strokeWidth="0.6"
+        />
+      )}
     </g>
   );
 }
 
 /**
- * A vehicle seen from the side, facing right (the caller mirrors it). Loaded: crates on the bed,
- * coloured like the goods.
+ * A vehicle seen from the side, facing right (the caller mirrors it), one drawing per step:
+ * the mule with its packs, the handcart, the ox wagon, the great wagon and its two horses.
+ * Loaded: the goods' colour on the packs or the crates.
  */
 export function VehicleGlyph({
   type,
@@ -315,49 +336,86 @@ export function VehicleGlyph({
 }) {
   const wheel = (cx: number, r: number) => (
     <g key={cx}>
-      <circle cx={cx} cy="4" r={r} fill={P.night} stroke={P.woodLight} strokeWidth="1.4" />
-      <circle cx={cx} cy="4" r="0.9" fill={P.woodLight} />
+      <circle cx={cx} cy={8 - r} r={r} fill={P.night} stroke={P.woodLight} strokeWidth="1.4" />
+      <circle cx={cx} cy={8 - r} r="0.9" fill={P.woodLight} />
     </g>
+  );
+  const goods = load ?? P.wood;
+  const cover = (x0: number, x1: number, top: number) => (
+    <path
+      d={`M${x0} -2 Q${x0} ${top} ${(x0 + x1) / 2} ${top} Q${x1} ${top} ${x1} -2 Z`}
+      fill={P.cream}
+      stroke={P.night}
+      strokeWidth="0.8"
+    />
   );
   if (type === "mule") {
     return (
       <g>
-        <path
-          d="M-8 -2 Q-8 -6 -3 -6 H5 L8 -10 L11 -9 L9 -4 Q9 0 6 0 L6 6 M-6 0 L-6 6 M-2 0 L-2 6 M3 0 L3 6"
-          fill="none"
-          stroke={P.woodLight}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path d="M-8 -2 Q-8 -6 -3 -6 H5 Q8 -2 6 0 H-6 Q-8 0 -8 -2 Z" fill={P.wood} />
-        {load && <rect x="-6" y="-11" width="9" height="5" rx="1" fill={load} stroke={P.night} />}
-      </g>
-    );
-  }
-  const wagon = type === "wagon";
-  return (
-    <g>
-      <path d="M-13 0 H-17" stroke={P.woodLight} strokeWidth="1.6" strokeLinecap="round" />
-      <rect x="-12" y="-3" width={wagon ? 25 : 20} height="5" rx="1" fill={P.wood} />
-      {wagon ? (
-        <path
-          d="M-11 -3 Q-11 -14 0.5 -14 Q12 -14 12 -3 Z"
-          fill={P.cream}
+        {beast(-8, P.woodLight)}
+        <rect
+          x="-7"
+          y="-9"
+          width="9"
+          height="5"
+          rx="1.5"
+          fill={goods}
           stroke={P.night}
           strokeWidth="0.8"
         />
-      ) : (
-        load && (
-          <g>
-            <rect x="-10" y="-9" width="7" height="6" rx="1" fill={load} stroke={P.night} />
-            <rect x="-2" y="-8" width="7" height="5" rx="1" fill={load} stroke={P.night} />
-          </g>
-        )
+        <rect
+          x="-5.5"
+          y="-4.5"
+          width="6"
+          height="5"
+          rx="1.5"
+          fill={goods}
+          stroke={P.night}
+          strokeWidth="0.8"
+        />
+      </g>
+    );
+  }
+  if (type === "wagon") {
+    return (
+      <g>
+        <path d="M-1 -1 H5" stroke={P.woodLight} strokeWidth="1.4" />
+        <rect x="-19" y="-2" width="18" height="4" rx="1" fill={P.wood} />
+        {cover(-18.5, -1.5, -12)}
+        {load && <rect x="-14" y="-6" width="8" height="4" rx="1" fill={load} />}
+        {wheel(-15, 4)}
+        {wheel(-5, 4)}
+        {beast(3, "#A8784A", true)}
+      </g>
+    );
+  }
+  if (type === "great_wagon") {
+    return (
+      <g>
+        <path d="M-3 -1 H2" stroke={P.woodLight} strokeWidth="1.4" />
+        <rect x="-19" y="-2" width="17" height="4.5" rx="1" fill={P.wood} />
+        {cover(-19, -2, -14)}
+        <path d="M-13.5 -2 V-11 M-7.5 -2 V-11" stroke={P.woodLight} strokeWidth="0.8" />
+        {load && <rect x="-14" y="-7" width="9" height="5" rx="1" fill={load} />}
+        {wheel(-15, 4.5)}
+        {wheel(-5.5, 4.5)}
+        <g opacity="0.75">{beast(3, P.wood)}</g>
+        {beast(0, "#5A3D22")}
+      </g>
+    );
+  }
+  // The cart: a bed on one big wheel, pulled by its shafts.
+  return (
+    <g>
+      <path d="M6 -1 L17 1" stroke={P.woodLight} strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M-13 -3 H7 L6 2 H-12 Z" fill={P.wood} stroke={P.night} strokeWidth="0.8" />
+      {load && (
+        <g>
+          <rect x="-11" y="-9" width="8" height="6" rx="1" fill={load} stroke={P.night} />
+          <rect x="-2" y="-8" width="7" height="5" rx="1" fill={load} stroke={P.night} />
+        </g>
       )}
-      {wagon && load && <rect x="-4" y="-9" width="9" height="5" rx="1" fill={load} />}
-      {wheel(-7, wagon ? 4 : 3.5)}
-      {wheel(wagon ? 9 : 5, wagon ? 4 : 3.5)}
+      {wheel(-3, 5.5)}
     </g>
   );
 }
