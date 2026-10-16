@@ -210,6 +210,7 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
   checks.push(...budgetChecks(r));
   checks.push(...baleChecks(r));
   checks.push(...roadChecks(r));
+  checks.push(...mudaChecks(r));
   checks.push(...masteryChecks(r));
   checks.push(...actChecks(r));
   const a = r.activity;
@@ -271,6 +272,36 @@ export function createdPerActiveDay(r: SimulationResult): Record<string, number>
   }
   for (const k of Object.keys(out)) out[k] = (out[k] ?? 0) / Math.max(1, activeDays) / 100;
   return out;
+}
+
+/** The galleys of the Muda: the only source of goods from overseas since the sea was removed. */
+export function mudaChecks(r: SimulationResult): Check[] {
+  const m = r.muda;
+  if (!m || m.arrivals === 0) return [];
+  const merchants = Object.keys(r.finalState?.players ?? {}).length;
+  return [
+    {
+      name: "Galères de la Muda : lots vendus",
+      target: "50 à 100 % de ce qu'elles apportent",
+      value: `${pct(m.sold / Math.max(1, m.brought))} (${m.sold} sur ${m.brought} unités, ${m.arrivals} arrivées, ${(Number(m.takings) / 100).toFixed(0)} ducats)`,
+      pass: m.sold >= 0.5 * m.brought,
+      blocking: false,
+    },
+    {
+      name: "Acheteurs à la Muda",
+      target: "au moins un marchand sur deux",
+      value: `${m.buyers} sur ${merchants}`,
+      pass: m.buyers * 2 >= merchants,
+      blocking: false,
+    },
+    {
+      name: "Commandes d'exotiques",
+      target: "diagnostic : prises, et part de l'argent des livraisons",
+      value: `${m.exoticTaken} prises sur ${m.exoticOrders} (${pct(m.exoticTaken / Math.max(1, m.exoticOrders))}), ${pct(m.exoticPaidShare)} de l'argent des livraisons`,
+      pass: true,
+      blocking: false,
+    },
+  ];
 }
 
 /** The road (deliveries and vehicles), with the targets of docs/plan-livraisons.md § 7. */
