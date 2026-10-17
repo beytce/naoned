@@ -796,6 +796,36 @@ export function hireLances(tx: Tx, playerId: PlayerId, count: number): void {
   emit(tx, "lances_hired", playerId, { family, lances: count, cost: cost.toString() });
 }
 
+/**
+ * Troops bought with Influence (the server took its price): into the reserve, besides those hired
+ * for ducats, up to `troopsPerDay` a day.
+ */
+export function buyTroops(tx: Tx, playerId: PlayerId, count: number, perDay: number): void {
+  const family = memberFamily(tx, playerId);
+  if (!Number.isInteger(count) || count <= 0) fail("invalid_quantity");
+  advanceCampaign(tx);
+  const today = dayIndex(tx.ctx, tx.now);
+  tx.s.houseSpent ??= {};
+  const spent = tx.s.houseSpent[playerId];
+  const mine = spent && spent.day === today ? spent : { day: today, rushes: 0, troops: 0 };
+  if (mine.troops + count > perDay) fail("troop_limit");
+  tx.s.houseSpent[playerId] = { ...mine, troops: mine.troops + count };
+  playerRecord(tx, playerId).reserve.push(newStack(tx, playerId, count));
+  emit(tx, "troops_bought", playerId, { family, lances: count });
+}
+
+/** A work of the merchant's family under way, finished at once (the server took its price). */
+export function finishWork(tx: Tx, playerId: PlayerId, landCode: string): void {
+  const family = memberFamily(tx, playerId);
+  advanceCampaign(tx);
+  const land = campaign(tx).lands[landCode];
+  const work = land?.work;
+  if (!land || !work || work.family !== family) fail("no_work");
+  if (work.readyAt <= tx.now) fail("work_ready");
+  work.readyAt = tx.now;
+  emit(tx, "work_rushed", playerId, { land: landCode, kind: work.kind });
+}
+
 /** Takes lances from a merchant's reserve, those leaving first first. */
 function takeLances(tx: Tx, playerId: PlayerId, count: number): LanceStack[] {
   if (!Number.isInteger(count) || count <= 0) fail("invalid_quantity");

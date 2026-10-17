@@ -1,6 +1,6 @@
 # La Maison dure, la fortune repart — plan de progression entre saisons
 
-Décision du porteur (17 octobre 2026) : le commerce garde ses saisons mensuelles, mais la **Maison** du joueur se développe d'une saison à l'autre. Elle **achète elle-même** ses droits — un second comptoir, le commerce du Levant, les villes de Lombardie… — avec une monnaie qui dure : **l'Influence**, gagnée par le commerce et par la Campagne des familles. Les ducats, les stocks, les ateliers et les véhicules repartent de zéro chaque mois, comme aujourd'hui. Les familles gardent leur saison.
+Décision du porteur (17 octobre 2026) : le commerce garde ses saisons mensuelles, mais la **Maison** du joueur se développe d'une saison à l'autre. Elle **achète elle-même** ses droits — un second comptoir, le commerce du Levant, les villes de Lombardie… — avec une monnaie qui dure : **l'Influence**, monnaie « premium » gagnée seulement par les **missions de la Maison** (révision du 17 octobre, voir plus bas). Les ducats, les stocks, les ateliers et les véhicules repartent de zéro chaque mois, comme aujourd'hui. Les familles gardent leur saison.
 
 **Statut : en jeu depuis le 17 octobre 2026** (Influence, Livre de la Maison, second comptoir) ; les autres routes attendent leur contenu.
 
@@ -21,7 +21,25 @@ Décision du porteur (17 octobre 2026) : le commerce garde ses saisons mensuelle
 5. **Patentes permanentes.** Une patente achetée sert à toutes les saisons suivantes. Elle prend effet tout de suite, sauf le second comptoir, qui se pose à l'ouverture de la saison.
 6. **Gains plafonnés par semaine.** Pour qu'un joueur très présent ne distance pas tout le monde, chaque source d'Influence a un plafond hebdomadaire (dans `worlds.settings`).
 
-## Gagner de l'Influence
+## L'Influence, monnaie premium (révision du porteur, 17 octobre 2026)
+
+L'Influence **ne se gagne plus en vendant** ni par la Campagne : seulement par les **missions de la Maison**, dix à aller chercher tous les trois jours et demi (`house.missions` : 84 h, 10 par tableau, tirées d'un réservoir de 17, 2 à 5 d'Influence chacune). Les mêmes pour tous les marchands d'un monde ; chacun avance les siennes et les reçoit d'un geste dans le Livre de la Maison. Elle se garde de saison en saison et achète toujours les patentes. Elle se dépense aussi dans le monde (`house.spend`, Venise) :
+
+| Usage | Prix | Limite |
+| --- | --- | --- |
+| **Accélérer une livraison** en route : elle arrive tout de suite, payée comme d'habitude, le véhicule garde la route du retour | 1 par 20 minutes de trajet restant (au moins 1) | 3 par jour |
+| **Troupes** de la Campagne, en plus de celles engagées en ducats | 1 pour 2 troupes | 20 par jour |
+| **Achever un ouvrage** en chantier sur une terre de sa famille | 5 | — |
+| **Déplacer le second comptoir** dans une autre région | 10 | — |
+| **Changer de maîtrise** (on la rechoisit aussitôt) | 15 | — |
+| **Changer une tâche du jour** contre une autre | 3 | — |
+| **Nom doré** dans les classements (patente cosmétique) | 40 | — |
+
+Le serveur prend le prix (journal `influence_entries`, source `spend`), passe la commande au moteur et rend l'Influence si le monde refuse. Le prix de l'accélération dépend du temps restant : peu cher en fin de trajet, assez pour qu'on ne le fasse pas à chaque fois.
+
+Pour plus tard (`IDEAS.md`) : de l'Influence offerte aux abonnés du Pass, à concilier avec la règle du Pass ; blasons, façades du palais et monument (il faut leurs dessins) ; proposer un décret, baptiser une nouvelle de la gazette.
+
+## Gagner de l'Influence (barème d'origine, remplacé par les missions)
 
 Ordres de grandeur pour la première calibration, à régler au simulateur :
 

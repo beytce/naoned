@@ -457,6 +457,10 @@ export interface PlayerView {
   tutorial: string[];
   missions: MissionView[];
   daily: DailyView | null;
+  /** The house's missions (null in a world without them). */
+  houseMissions: HouseMissionsView | null;
+  /** Prices in Influence, and what is left of today's limits (null in a world without them). */
+  houseSpend: HouseSpendView | null;
   bales: BalesView | null;
   pass: PassView;
   fresh: { minutes: number; bonusBps: number };
@@ -709,6 +713,8 @@ export interface RankingRow {
   me: boolean;
   /** Computer-run merchant. */
   bot: boolean;
+  /** Bought the gilded name with Influence. */
+  gilded?: boolean;
 }
 
 export interface WeekRow {
@@ -807,7 +813,46 @@ export type Action =
       /** From the house's second counter. */
       from?: "second";
     }
-  | { type: "chooseSecondCounter"; region: string };
+  | { type: "chooseSecondCounter"; region: string }
+  | { type: "claimHouseMission"; missionId: string };
+
+/** What Influence buys in the world (POST /api/house/spend). */
+export type Spend =
+  | { use: "rush"; deliveryId: string }
+  | { use: "troops"; count: number }
+  | { use: "work"; land: string }
+  | { use: "counter"; region: string }
+  | { use: "respec" }
+  | { use: "daily"; taskId: string };
+
+export interface HouseSpendView {
+  rushMinutesPerPoint: number;
+  rushPerDay: number;
+  troopsPerPoint: number;
+  troopsPerDay: number;
+  dailyReroll: number;
+  moveCounter: number;
+  respec: number;
+  rushWork: number;
+  rushesLeft: number;
+  troopsLeft: number;
+}
+
+/** The house's missions: a board of ten every three and a half days, paid in Influence. */
+export interface HouseMissionsView {
+  board: number;
+  endsAt: number;
+  missions: {
+    id: string;
+    event: string;
+    filter: Record<string, string>;
+    count: number;
+    influence: number;
+    progress: number;
+    done: boolean;
+    claimed: boolean;
+  }[];
+}
 
 /** The Livre de la Maison: Influence kept from season to season, and the patents it buys. */
 export type HouseView =
@@ -817,7 +862,7 @@ export type HouseView =
       influence: number;
       patents: string[];
       entries: {
-        source: "commerce" | "campaign" | "season" | "patent";
+        source: "commerce" | "campaign" | "season" | "patent" | "mission" | "spend";
         week: number | null;
         amount: number;
         patent: string | null;

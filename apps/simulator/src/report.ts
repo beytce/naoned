@@ -741,17 +741,18 @@ export function houseChecks(r: SimulationResult, twin?: SimulationResult): Check
   }
   if (r.influence) {
     const ids = finalWorth(r).map((p) => p.playerId);
-    const of = (id: string, k: "commerce" | "campaign" | "season") => r.influence?.[id]?.[k] ?? 0;
-    const all = ids.map((id) => of(id, "commerce") + of(id, "campaign") + of(id, "season"));
-    const commerceOnly = median(ids.map((id) => of(id, "commerce") + of(id, "season")));
-    const campaign = ids.reduce((n, id) => n + of(id, "campaign"), 0);
-    const total = all.reduce((n, v) => n + v, 0);
+    const of = (id: string, k: "mission" | "commerce" | "campaign" | "season") =>
+      r.influence?.[id]?.[k] ?? 0;
+    const all = ids.map(
+      (id) => of(id, "mission") + of(id, "commerce") + of(id, "campaign") + of(id, "season"),
+    );
+    const missions = median(ids.map((id) => of(id, "mission")));
     const sorted = [...all].sort((a, b) => a - b);
     const p90 = sorted[Math.floor(sorted.length * 0.9)] ?? 0;
     checks.push({
       name: "Maison : Influence gagnée dans la saison (marchands actifs)",
-      target: "Campagne ≈ 40 % ; le catalogue du plan (≈ 615) en six à dix saisons au médian",
-      value: `médiane ${median(all)} (sans la Campagne ${commerceOnly}), 9e décile ${p90}, part de la Campagne ${pct(total > 0 ? campaign / total : 0)}, catalogue en ${median(all) > 0 ? Math.ceil(CATALOGUE / median(all)) : "—"} saisons`,
+      target: "par les missions seules ; le catalogue du plan (≈ 615) en plusieurs saisons",
+      value: `médiane ${median(all)} (missions ${missions}), 9e décile ${p90}, catalogue en ${median(all) > 0 ? Math.ceil(CATALOGUE / median(all)) : "—"} saisons`,
       pass: true,
       blocking: false,
     });

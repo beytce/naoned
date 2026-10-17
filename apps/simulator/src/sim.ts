@@ -73,7 +73,10 @@ export interface SimulationResult {
   /** Bots whose house held patents. */
   patentHolders?: string[];
   /** Influence earned in the season, per merchant and source (the close's tier included). */
-  influence?: Record<string, { commerce: number; campaign: number; season: number }>;
+  influence?: Record<
+    string,
+    { mission: number; commerce: number; campaign: number; season: number }
+  >;
   /** World at the end of the run (debugging, extra analysis). */
   finalState?: WorldState;
   /** Do merchants depend on each other? Raw material buyers and building types per merchant. */
@@ -281,9 +284,19 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     for (const e of res.effects.events) {
       if (e.type !== "influence_earned" || !e.playerId) continue;
       result.influence ??= {};
-      const tally = result.influence[e.playerId] ?? { commerce: 0, campaign: 0, season: 0 };
+      const tally = result.influence[e.playerId] ?? {
+        mission: 0,
+        commerce: 0,
+        campaign: 0,
+        season: 0,
+      };
       result.influence[e.playerId] = tally;
-      const source = e.data?.source === "campaign" ? "campaign" : "commerce";
+      const source =
+        e.data?.source === "mission"
+          ? "mission"
+          : e.data?.source === "campaign"
+            ? "campaign"
+            : "commerce";
       tally[source] += Number(e.data?.amount ?? 0);
     }
     for (const t of res.effects.trades) {
@@ -497,7 +510,12 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
       const amount = seasonInfluence(ctx, seasonTier(i + 1, standings.length, days));
       if (amount === 0) return;
       result.influence ??= {};
-      const tally = result.influence[row.playerId] ?? { commerce: 0, campaign: 0, season: 0 };
+      const tally = result.influence[row.playerId] ?? {
+        mission: 0,
+        commerce: 0,
+        campaign: 0,
+        season: 0,
+      };
       tally.season += amount;
       result.influence[row.playerId] = tally;
     });

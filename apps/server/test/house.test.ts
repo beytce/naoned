@@ -146,6 +146,7 @@ describe("the house's Influence", () => {
     expect(b.influence).toBe(30);
     // The whole catalogue, with what each patent asks for first.
     expect(a.catalog).toEqual([
+      { code: "gilded_name", cost: 40, requires: [], owned: false },
       { code: "lombardy", cost: 80, requires: ["second_counter"], owned: false },
       { code: "second_counter", cost: 15, requires: [], owned: false },
     ]);
@@ -210,9 +211,10 @@ describe("the house's Influence", () => {
     expect(await botBuysPatents(database.db, world.ctx.settings, id, world.id, at)).toEqual([
       "second_counter",
     ]);
-    await earn("w1", 60);
+    await earn("w1", 120);
     expect(await botBuysPatents(database.db, world.ctx.settings, id, world.id, at)).toEqual([
       "second_counter",
+      "gilded_name",
       "lombardy",
     ]);
   });
@@ -234,5 +236,96 @@ describe("the house's Influence", () => {
     await expect(
       buyPatent(database.db, off, id, "second_counter", world.id, new Date(now)),
     ).rejects.toThrow("house_off");
+  });
+});
+
+/** Venice's house, with one mission anyone does at once: a trade at the Dogana. */
+const missions = {
+  house: {
+    missions: {
+      everyHours: 84,
+      perBoard: 1,
+      pool: [{ id: "trade", event: "order_placed", count: 1, influence: 4 }],
+    },
+  },
+};
+
+async function credit(cookie: string, amount: number) {
+  const id = (await get(cookie, "/api/me")).account.id as string;
+  await database.db.insert(influenceEntries).values({
+    accountId: id,
+    worldId: world.id,
+    source: "commerce",
+    amount,
+    key: "gift",
+    at: new Date(now),
+  });
+}
+
+const spend = (cookie: string, payload: Record<string, unknown>) =>
+  app.inject({ method: "POST", url: "/api/house/spend", headers: { cookie }, payload });
+
+describe("the house's missions and what Influence buys", () => {
+  it("pays a mission once, on the board the view shows", async () => {
+    await open(missions);
+    const ada = await player("ada@example.org");
+    const board = (await get(ada, "/api/game")).view.houseMissions;
+    expect(board.missions.map((m: { id: string }) => m.id)).toEqual(["trade"]);
+    expect((await act(ada, { type: "claimHouseMission", missionId: "trade" })).json().error).toBe(
+      "mission_not_done",
+    );
+    await world.execute({ type: "tick" });
+    const sold = await act(ada, {
+      type: "instantOrder",
+      resource: "bread",
+      side: "sell",
+      quantity: 1,
+    });
+    expect(sold.json().error).toBeUndefined();
+    const claimed = await act(ada, { type: "claimHouseMission", missionId: "trade" });
+    expect(claimed.json().error).toBeUndefined();
+    expect(claimed.json().view.houseMissions.missions[0].claimed).toBe(true);
+    const house = await get(ada);
+    expect(house.influence).toBe(4);
+    expect(house.entries[0].source).toBe("mission");
+    expect((await act(ada, { type: "claimHouseMission", missionId: "trade" })).json().error).toBe(
+      "mission_claimed",
+    );
+    expect((await get(ada)).influence).toBe(4);
+  });
+
+  it("takes Influence for a use, and gives it back when the world refuses", async () => {
+    await open();
+    const ada = await player("ada@example.org");
+    expect((await spend(ada, { use: "respec" })).json().error).toBe("not_enough_influence");
+    await credit(ada, 20);
+    // No mastery to change: refused, nothing taken.
+    const refused = await spend(ada, { use: "respec" });
+    expect(refused.statusCode).toBe(422);
+    expect(refused.json().error).toBe("no_specialty");
+    expect((await get(ada)).influence).toBe(20);
+    // A task of the day swapped for 3.
+    const [task] = (await get(ada, "/api/game")).view.daily.tasks;
+    const swapped = await spend(ada, { use: "daily", taskId: task.id });
+    expect(swapped.statusCode).toBe(200);
+    expect(swapped.json().view.daily.tasks.map((x: { id: string }) => x.id)).not.toContain(task.id);
+    expect((await get(ada)).influence).toBe(17);
+    expect((await spend(ada, { use: "rush", deliveryId: "nowhere" })).json().error).toBe(
+      "not_owner",
+    );
+  });
+
+  it("gilds the names of the houses that bought it in the ranking", async () => {
+    await open();
+    const ada = await player("ada@example.org");
+    await player("bob@example.org", "lagoon");
+    await credit(ada, 40);
+    expect((await buy(ada, "gilded_name")).statusCode).toBe(200);
+    const rows = (await get(ada, "/api/game/ranking")).rows as {
+      pseudo: string;
+      gilded?: boolean;
+    }[];
+    expect(rows.find((r) => r.pseudo === "ada")?.gilded).toBe(true);
+    expect(rows.find((r) => r.pseudo === "bob")?.gilded).toBeFalsy();
   });
 });

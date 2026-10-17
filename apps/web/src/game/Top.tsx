@@ -26,6 +26,8 @@ interface Who {
   specialty?: string | null;
   /** Permanent level (honorary). */
   level?: number;
+  /** The gilded name, bought with Influence. */
+  gilded?: boolean;
 }
 
 function Line(props: {
@@ -50,7 +52,7 @@ function Line(props: {
       </span>
       <Crest crest={r.crest ?? defaultCrest(`${r.rank}-${r.pseudo ?? ""}`)} size={40} />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-display text-sm font-semibold">
+        <p className={`truncate font-display text-sm font-semibold ${r.gilded ? "text-gold" : ""}`}>
           {r.pseudo ?? fr.game.anonymous}
         </p>
         <div className="mt-1 flex items-center gap-2">

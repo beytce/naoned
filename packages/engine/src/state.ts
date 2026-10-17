@@ -273,6 +273,13 @@ export interface WorldState {
   contractsDone?: Record<PlayerId, { day: number; ids: string[] }>;
   /** Doge's orders swapped today with the Pass: slot index → number of swaps. */
   contractRerolls?: Record<PlayerId, { day: number; slots: Record<number, number> }>;
+  /** The house's missions of the current board, per merchant (see `house.ts`). */
+  houseMissions?: Record<
+    PlayerId,
+    { board: number; progress: Record<string, number>; claimed: string[] }
+  >;
+  /** What each merchant bought with Influence today (rushed deliveries, troops). */
+  houseSpent?: Record<PlayerId, { day: number; rushes: number; troops: number }>;
   /** The sea of states saved before it was removed (see `LegacySeaState`). */
   expeditions?: LegacySeaState["expeditions"];
   ships?: LegacySeaState["ships"];
@@ -293,6 +300,8 @@ export interface WorldState {
       /** Last day a chest was opened. */
       lastChestDay: number;
       best: number;
+      /** Tasks of the day swapped for others (bought with Influence). */
+      rerolled?: string[];
     }
   >;
   /** Faraj's bales, per player (absent: none opened yet, see `bales.ts`). */

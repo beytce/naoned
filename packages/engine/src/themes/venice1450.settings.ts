@@ -824,17 +824,56 @@ export const venice1450Settings: WorldSettingsInput = {
       wood: { basePrice: 110, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
     },
   },
-  // The house between seasons (docs/plan-progression.md, docs/calibration.md): Influence kept
-  // from season to season, earned by net sales, the campaign and the season's tier; the patents
-  // it buys only add something new. Only the second counter so far: the others wait for their
-  // content (the Levant, Lombardy…).
+  // The house between seasons (docs/plan-progression.md): Influence, the game's premium coin,
+  // kept from season to season. Earned only by the house's missions (ten every three and a half
+  // days, about 3 each), spent on patents, rushed deliveries, troops and a few comforts.
   house: {
-    influence: {
-      commerce: { ducatsPerPoint: 100, weeklyCap: 25 },
-      campaign: { meritPerPoint: 20, winBonus: 3, weeklyCap: 10 },
-      season: { doge: 50, podium: 30, top10: 20, elite: 15, notable: 10, participant: 5 },
+    missions: {
+      everyHours: 84,
+      perBoard: 10,
+      pool: [
+        { id: "deliveries", event: "delivery_arrived", count: 10, influence: 3 },
+        { id: "many_deliveries", event: "delivery_arrived", count: 25, influence: 5 },
+        {
+          id: "urgent",
+          event: "delivery_arrived",
+          filter: { kind: "urgent" },
+          count: 2,
+          influence: 4,
+        },
+        { id: "doge", event: "contract_fulfilled", count: 3, influence: 4 },
+        { id: "offers", event: "order_placed", filter: { kind: "limit" }, count: 3, influence: 2 },
+        { id: "rialto", event: "order_filled", count: 5, influence: 3 },
+        { id: "harvests", event: "harvest", count: 20, influence: 2 },
+        { id: "upgrade", event: "upgrade", count: 1, influence: 4 },
+        { id: "build", event: "build", count: 1, influence: 3 },
+        { id: "vehicle", event: "vehicle_upgraded", count: 1, influence: 3 },
+        { id: "chests", event: "daily_chest", count: 2, influence: 3 },
+        { id: "bales", event: "bale_opened", count: 4, influence: 2 },
+        { id: "levy", event: "levy_collected", count: 3, influence: 2 },
+        { id: "marches", event: "march_sent", count: 3, influence: 3 },
+        { id: "assault", event: "assault_won", count: 1, influence: 4 },
+        { id: "defence", event: "land_defended", count: 1, influence: 4 },
+        { id: "work", event: "work_built", count: 1, influence: 3 },
+      ],
     },
-    patents: { second_counter: { cost: 15, requires: [] } },
+    spend: {
+      // A point per 20 minutes left: an hour's trip costs 3, a few a day at most.
+      rushMinutesPerPoint: 20,
+      rushPerDay: 3,
+      troopsPerPoint: 2,
+      troopsPerDay: 20,
+      dailyReroll: 3,
+      moveCounter: 10,
+      respec: 15,
+      rushWork: 5,
+    },
+    // The second counter; the gilded name in the rankings (cosmetic). The others wait for their
+    // content (the Levant, Lombardy…).
+    patents: {
+      second_counter: { cost: 15, requires: [] },
+      gilded_name: { cost: 40, requires: [] },
+    },
   },
   // No city projects: deliveries by road are the cities' demand.
   projects: { intervalDays: 7, durationDays: 7, needsPerPlayer: {}, premiumBps: 0 },

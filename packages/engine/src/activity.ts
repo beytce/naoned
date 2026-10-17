@@ -132,14 +132,36 @@ export function sellToCriee(tx: Tx, playerId: PlayerId, quantity: number): void 
 
 // ——— Tasks of the day ———
 
-/** Today's tasks: drawn from the pool, the same for every merchant. */
-function tasksOfDay(ctx: WorldContext, day: number) {
+/**
+ * Today's tasks: drawn from the pool, the same for every merchant, except those a merchant
+ * swapped (with Influence) for the next ones of the draw.
+ */
+function tasksOfDay(ctx: WorldContext, day: number, rerolled: string[] = []) {
   const { tasks, perDay } = ctx.settings.daily;
   const order = tasks
     .map((t) => ({ t, key: draw(ctx, `daily:${day}:${t.id}`) }))
     .sort((a, b) => a.key - b.key)
     .map((x) => x.t);
-  return order.slice(0, perDay);
+  const kept = order.slice(0, perDay).filter((t) => !rerolled.includes(t.id));
+  const spare = order.slice(perDay).filter((t) => !rerolled.includes(t.id));
+  return [...kept, ...spare.slice(0, perDay - kept.length)];
+}
+
+/** The merchant's tasks of the day (their swaps included). */
+function tasksOf(tx: Tx, playerId: PlayerId) {
+  const day = dayIndex(tx.ctx, tx.now);
+  const saved = tx.s.daily?.[playerId];
+  return tasksOfDay(tx.ctx, day, saved && saved.day === day ? saved.rerolled : []);
+}
+
+/** A task of the day swapped for the next of the draw (the server took its Influence). */
+export function rerollDaily(tx: Tx, playerId: PlayerId, taskId: string): void {
+  if (!tasksOf(tx, playerId).some((t) => t.id === taskId)) fail("unknown_daily");
+  const mine = dailyState(tx, playerId);
+  if (mine.claimed.includes(taskId)) fail("daily_claimed");
+  mine.rerolled = [...(mine.rerolled ?? []), taskId];
+  delete mine.progress[taskId];
+  emit(tx, "daily_rerolled", playerId, { task: taskId });
 }
 
 function dailyState(tx: Tx, playerId: PlayerId) {
@@ -161,6 +183,7 @@ function dailyState(tx: Tx, playerId: PlayerId) {
     mine.progress = {};
     mine.claimed = [];
     mine.chest = false;
+    mine.rerolled = [];
   }
   return mine;
 }
@@ -168,11 +191,10 @@ function dailyState(tx: Tx, playerId: PlayerId) {
 /** Counts this command's events towards today's tasks. */
 export function trackDaily(tx: Tx): void {
   if (tx.ctx.settings.daily.perDay === 0) return;
-  const today = tasksOfDay(tx.ctx, dayIndex(tx.ctx, tx.now));
   for (const e of tx.fx.events) {
     if (!e.playerId || !tx.s.players[e.playerId]) continue;
     const data = e.data ?? {};
-    for (const t of today) {
+    for (const t of tasksOf(tx, e.playerId)) {
       if (t.event !== e.type) continue;
       if (!Object.entries(t.filter).every(([k, v]) => data[k] === v)) continue;
       const mine = dailyState(tx, e.playerId);
@@ -196,7 +218,7 @@ export function dailyFor(ctx: WorldContext, state: WorldState, playerId: PlayerI
   const streak = saved && saved.lastChestDay >= day - 1 ? saved.streak : 0;
   return {
     day,
-    tasks: tasksOfDay(ctx, day).map((t) => {
+    tasks: tasksOfDay(ctx, day, mine?.rerolled).map((t) => {
       const progress = Math.min(t.count, mine?.progress[t.id] ?? 0);
       return {
         id: t.id,
@@ -220,7 +242,7 @@ export function dailyFor(ctx: WorldContext, state: WorldState, playerId: PlayerI
 
 /** Pays a finished task; the last one of the day opens the chest. */
 export function claimDaily(tx: Tx, playerId: PlayerId, taskId: string): void {
-  const today = tasksOfDay(tx.ctx, dayIndex(tx.ctx, tx.now));
+  const today = tasksOf(tx, playerId);
   const task = today.find((t) => t.id === taskId);
   if (!task) fail("unknown_daily");
   const mine = dailyState(tx, playerId);

@@ -11,7 +11,7 @@ Les quatre promesses, dans cet ordre (une par visuel) :
 1. **Un mois, une saison, tout le monde repart à zéro** — l'argument décisif face aux jeux par navigateur où les anciens écrasent les nouveaux. On peut arriver le 1er et gagner.
 2. **Un vrai marché tenu par les joueurs** — le Rialto, ses offres, les galères de la Muda. Les prix naissent des joueurs, pas d'une table.
 3. **Des sessions courtes** — on lance la production, on revient récolter, on charge les mules. Trois minutes sur mobile, une soirée sur PC.
-4. **Les grandes familles** — Contarini, Morosini, Mocenigo, Dandolo : l'allégeance, les lances, la Terraferme contre Milan, les décrets qui pèsent sur le marché.
+4. **Les grandes familles** — Contarini, Morosini, Mocenigo, Dandolo : l'allégeance, les troupes, la Terraferme contre Milan, les décrets qui pèsent sur le marché.
 
 Ton : sobre, historique, un peu de panache. On ne promet rien que le jeu ne tient pas : pas de « milliers de joueurs », pas de « gagnez de l'argent ». Le monde est complété par des maisons marchandes tenues par l'ordinateur (marquées PNJ) : le dire si on le demande, c'est un atout (« le monde est vivant dès le premier joueur »).
 

@@ -30,7 +30,7 @@ import {
   vehiclesOf,
 } from "./deliveries.js";
 import { familiesOn, familiesOpenAt, familyCodes, membersOf, seatOf } from "./families.js";
-import { hasPatent } from "./house.js";
+import { hasPatent, houseMissionsFor } from "./house.js";
 import { bestPrice, marketMakerQuotaLeft, maxOpenOrdersFor, openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
 import type { Deniers } from "./money.js";
@@ -262,6 +262,7 @@ export class Bot {
     if (this.profile.speculates) this.speculate(s);
     this.sellSurplus(s);
     this.claimDaily(s);
+    this.claimHouseMissions(s);
   }
 
   /** With the patent, the second counter where the roads to the cities are shortest overall. */
@@ -428,6 +429,15 @@ export class Bot {
   private claimDaily(s: Session): void {
     for (const t of dailyFor(s.ctx, s.state(), this.id, s.now).tasks) {
       if (t.done && !t.claimed) s.act({ type: "claimDaily", playerId: this.id, taskId: t.id });
+    }
+  }
+
+  /** The house's missions done: their Influence, as a merchant would claim it. */
+  private claimHouseMissions(s: Session): void {
+    for (const m of houseMissionsFor(s.ctx, s.state(), this.id, s.now).missions) {
+      if (m.done && !m.claimed) {
+        s.act({ type: "claimHouseMission", playerId: this.id, missionId: m.id });
+      }
     }
   }
 

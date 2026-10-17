@@ -152,7 +152,7 @@ export const fr = {
       campaign: {
         toCampaign: "Famille",
         toTrade: "Commerce",
-        lances: "Lances",
+        lances: "Troupes",
         marches: "Marches",
         decrees: "Décrets",
         family: "Famille",
@@ -396,7 +396,7 @@ export const fr = {
     families: {
       kicker: "Les quatre familles",
       title: "La Campagne de Terraferme",
-      help: "Chaque semaine, les quatre grandes familles se disputent la Terraferme. Levez des lances, engagez-en contre des ducats, prenez des terres aux milices, à Milan et aux autres familles. De 8 h à 22 h, chaque terre rapporte sa Gloire à qui la tient, heure après heure. La famille la plus glorieuse à la fin de la semaine impose ses décrets la semaine suivante.",
+      help: "Chaque semaine, les quatre grandes familles se disputent la Terraferme. Levez des troupes, engagez-en contre des ducats, prenez des terres aux milices, à Milan et aux autres familles. De 8 h à 22 h, chaque terre rapporte sa Gloire à qui la tient, heure après heure. La famille la plus glorieuse à la fin de la semaine impose ses décrets la semaine suivante.",
       names: {
         contarini: "Contarini",
         morosini: "Morosini",
@@ -442,7 +442,7 @@ export const fr = {
       opensIn: (inTime: string) => `Les familles vous recevront dans ${inTime}.`,
       chooseTitle: "Prêtez allégeance",
       chooseHelp:
-        "Une famille pour toute la saison. Une petite famille lève davantage de lances : rejoindre la plus grande ne suffit pas pour gagner.",
+        "Une famille pour toute la saison. Une petite famille lève davantage de troupes : rejoindre la plus grande ne suffit pas pour gagner.",
       members: (n: number, active: number) =>
         `${n} membre${n > 1 ? "s" : ""} · ${active} actif${active > 1 ? "s" : ""}`,
       levy: (bps: number) =>
@@ -462,23 +462,23 @@ export const fr = {
       milanNext: (time: string) =>
         `Prochaine chevauchée de Milan dans ${time}, contre la famille en tête.`,
       closed: "La Campagne de la saison est terminée.",
-      lances: "Vos lances",
+      lances: "Vos troupes",
       reserve: "En réserve",
       levyWaiting: "Levée à ramasser",
-      collect: (n: number) => `Lever ${n} lance${n > 1 ? "s" : ""}`,
+      collect: (n: number) => `Lever ${n} troupe${n > 1 ? "s" : ""}`,
       levyHelp: (perHour: number, max: number) =>
-        `Gratuit : ${perHour} lances par heure de 8 h à 22 h, ${max} en attente au plus. Revenez les ramasser.`,
-      hire: "Engager des lances",
+        `Gratuit : ${perHour} troupes par heure de 8 h à 22 h, ${max} en attente au plus. Revenez les ramasser.`,
+      hire: "Engager des troupes",
       hireHelp: (hours: number) =>
-        `Payées en ducats, qui quittent le jeu. Plus chères au-delà des premières, plafonnées chaque jour. Toute lance part ${hours} h après avoir été levée ou engagée.`,
+        `Payées en ducats, qui quittent le jeu. Plus chères au-delà des premières, plafonnées chaque jour. Toute troupe part ${hours} h après avoir été levée ou engagée.`,
       hireGo: (n: number, cost: string) => `Engager ${n} · ${cost}`,
       hireDone: "Plafond du jour atteint : revenez demain.",
       hiredToday: (n: number, max: number) => `${n} / ${max} engagées aujourd'hui`,
       leaving: (n: number, time: string) => `${n} partent dans ${time}`,
       map: "La Terraferme",
-      inReach: "À portée de vos lances",
+      inReach: "À portée de vos troupes",
       drag: {
-        hint: "Glissez vos lances depuis votre fief vers une terre",
+        hint: "Glissez vos troupes depuis votre fief vers une terre",
         attack: (land: string) => `Attaquer ${land}`,
         reinforce: (land: string) => `Renforcer ${land}`,
         attackSub: (minutes: number, needed: number, reserve: number) =>
@@ -487,7 +487,7 @@ export const fr = {
           `${minutes} min · garnison ${garrison}`,
       },
       mapHelp:
-        "Glissez vos lances de votre fief vers une terre, ou touchez-la : la vôtre pour la renforcer, une voisine pour l'attaquer. Une attaque prend la terre si ses lances dépassent la garnison fois sa défense.",
+        "Glissez vos troupes de votre fief vers une terre, ou touchez-la : la vôtre pour la renforcer, une voisine pour l'attaquer. Une attaque prend la terre si ses troupes dépassent la garnison fois sa défense.",
       land: {
         garrison: "Garnison",
         defense: "Défense",
@@ -495,13 +495,13 @@ export const fr = {
         glory: (n: number) => `${n} / heure`,
         heldBy: (who: string) => `Tenue par ${who}`,
         seat: (family: string) => `Fief des ${family} : imprenable.`,
-        mine: "Vos lances",
-        needed: (n: number) => `Il faut plus de ${n} lances pour la prendre.`,
+        mine: "Vos troupes",
+        needed: (n: number) => `Il faut plus de ${n} troupes pour la prendre.`,
         notAdjacent: "Trop loin : prenez d'abord une terre voisine.",
         march: (minutes: number) => `Marche de ${minutes} min`,
         reinforce: (n: number) => `Renforcer · ${n}`,
         attack: (n: number) => `Attaquer · ${n}`,
-        noLances: "Levez ou engagez des lances d'abord.",
+        noLances: "Levez ou engagez des troupes d'abord.",
         city: "Une ville du jeu : la famille qui la tient en fin de semaine peut y lever le péage.",
       },
       works: {
@@ -543,7 +543,7 @@ export const fr = {
       marches: "Les marches en cours",
       noMarch: "Aucune marche en cours.",
       marchLine: (who: string, lances: number, land: string) =>
-        `${who} · ${lances} lances → ${land}`,
+        `${who} · ${lances} troupes → ${land}`,
       arrives: (time: string) => `arrivée dans ${time}`,
       join: (n: number) => `Se joindre · ${n}`,
       yourLances: (n: number) => `dont ${n} à vous`,
@@ -591,7 +591,7 @@ export const fr = {
       },
       roll: "Les membres et leur Mérite",
       meritHelp: (per: number) =>
-        `Mérite : une lance par bataille gagnée, un point pour ${per} lances tenues une heure en garnison.`,
+        `Mérite : une troupe par bataille gagnée, un point pour ${per} troupes tenues une heure en garnison.`,
       captain: "capitaine",
       you: "vous",
       history: "Les semaines passées",
@@ -699,10 +699,10 @@ export const fr = {
     mastery: {
       kicker: "Maîtrise de la saison",
       title: "Choisissez votre voie",
-      help: "Votre Maison a grandi : elle peut se spécialiser. La maîtrise vaut pour toute la saison et ne se change pas.",
+      help: "Votre Maison a grandi : elle peut se spécialiser. La maîtrise vaut pour toute la saison ; seule l'Influence permet d'en changer.",
       pick: "Choisissez une maîtrise",
       confirm: (name: string) => `Devenir ${name}`,
-      forGood: "Un seul choix pour toute la saison.",
+      forGood: "Un seul choix pour la saison, sauf à le changer contre de l'Influence.",
       ready: "Votre Maison peut choisir sa maîtrise",
       readyHelp: "Maître d'atelier, roulier, négociant ou marchand du Levant",
       locked: (levels: number, need: number) =>
@@ -1131,7 +1131,7 @@ export const fr = {
       muda: (goods: string) =>
         `Les galères de la Muda sont à quai : la Dogana vend ${goods || "les marchandises d'outre-mer"} au Rialto.`,
       siege: (land: string, by: string, lances: number, time: string) =>
-        `${land} menacée : ${lances} lances ${by} arrivent à ${time}. Renforcez la garnison !`,
+        `${land} menacée : ${lances} troupes ${by} arrivent à ${time}. Renforcez la garnison !`,
       family: (event: string, data: Record<string, string>) =>
         event === "land_lost"
           ? `${data.land} est perdue, prise par ${data.by}.`
@@ -1244,7 +1244,7 @@ export const fr = {
       influence: "Influence",
       intro:
         "Votre fortune repart à zéro chaque saison, votre Maison non : l'Influence se garde de saison en saison et achète des patentes, qui ouvrent du neuf sans jamais rapporter plus.",
-      earn: "Elle se gagne chaque semaine par vos ventes nettes et par la Campagne de votre famille, et à la fin de chaque saison selon votre rang.",
+      earn: "Elle ne s'achète pas et ne se gagne pas en vendant : seulement par les missions de la Maison, dix tous les trois jours et demi.",
       open: "Ouvrir le livre",
       balance: (n: number) => `${n} d'Influence`,
       catalog: "Patentes",
@@ -1253,17 +1253,23 @@ export const fr = {
       requires: (names: string) => `D'abord : ${names}`,
       bought: (name: string) => `Patente acquise : ${name}`,
       history: "Derniers mouvements",
-      none: "Rien encore : la première semaine se clôt dans quelques jours.",
+      none: "Rien encore : accomplissez une mission de la Maison.",
       sources: {
         commerce: (week: number | null) => `Ventes nettes · semaine ${(week ?? 0) + 1}`,
         campaign: (week: number | null) => `Campagne · semaine ${(week ?? 0) + 1}`,
         season: () => "Fin de saison",
         patent: () => "Patente",
+        mission: () => "Mission de la Maison",
+        spend: () => "Dépense",
       } as Record<string, (week: number | null) => string>,
       patents: {
         second_counter: {
           name: "Second comptoir",
           text: "Un point de départ de vos véhicules dans une autre région, choisie à chaque saison. La commande garde son prix : seul le trajet change.",
+        },
+        gilded_name: {
+          name: "Nom doré",
+          text: "Votre nom en lettres d'or dans les classements, pour toujours.",
         },
         alexandria: {
           name: "Comptoir d'Alexandrie",
@@ -1281,6 +1287,52 @@ export const fr = {
         wool: { name: "Art de la laine", text: "La chaîne du drap : laine, puis drap." },
         glass: { name: "Art du verre", text: "La chaîne du verre de Murano." },
       } as Record<string, { name: string; text: string }>,
+      missions: {
+        title: "Missions de la Maison",
+        renews: (t: string) => `Nouvelles missions dans ${t}`,
+        claim: (n: number) => `Recevoir · ${n} ✦`,
+        claimed: "Reçue",
+        reward: (n: number) => `${n} ✦`,
+        names: {
+          deliveries: (n: number) => `Livrer ${n} commandes`,
+          many_deliveries: (n: number) => `Livrer ${n} commandes`,
+          urgent: (n: number) => `Livrer ${n} commandes urgentes`,
+          doge: (n: number) => `Honorer ${n} contrats du Doge`,
+          offers: (n: number) => `Laisser ${n} offres au Rialto`,
+          rialto: (n: number) => `Voir ${n} de vos offres prises au Rialto`,
+          harvests: (n: number) => `Récolter ${n} fois`,
+          upgrade: () => "Agrandir un atelier",
+          build: () => "Bâtir un atelier",
+          vehicle: () => "Améliorer un véhicule",
+          chests: (n: number) => `Ouvrir ${n} coffres du jour`,
+          bales: (n: number) => `Ouvrir ${n} ballots de Faraj`,
+          levy: (n: number) => `Lever ${n} fois l'impôt de la famille`,
+          marches: (n: number) => `Envoyer ${n} marches`,
+          assault: () => "Gagner un assaut",
+          defence: () => "Défendre une terre",
+          work: () => "Bâtir un ouvrage",
+        } as Record<string, (n: number) => string>,
+      },
+      spend: {
+        rush: (n: number) => `Accélérer · ${n} ✦`,
+        rushHelp: (left: number) =>
+          left > 0
+            ? `Arrive tout de suite, payée comme d'habitude. Encore ${left} aujourd'hui.`
+            : "Plus d'accélération aujourd'hui.",
+        troops: (count: number, cost: number) => `+${count} · ${cost} ✦`,
+        troopsTitle: "Troupes pour de l'Influence",
+        troopsHelp: (left: number) =>
+          left > 0
+            ? `En plus des ducats. Encore ${left} aujourd'hui.`
+            : "Plus de troupes aujourd'hui.",
+        work: (n: number) => `Achever · ${n} ✦`,
+        counter: (n: number) => `Déplacer · ${n} ✦`,
+        counterTitle: "Déplacer le second comptoir",
+        respec: (n: number) => `Changer de maîtrise · ${n} ✦`,
+        respecTitle: (name: string) => `Maîtrise : ${name}`,
+        respecHelp: "Vous la choisissez de nouveau aussitôt, parmi toutes.",
+        reroll: (n: number) => `Changer · ${n} ✦`,
+      },
       second: {
         choose: "Où poser votre second comptoir cette saison ?",
         chooseHelp:
@@ -1411,7 +1463,7 @@ export const fr = {
       {
         icon: "famille",
         title: "Le Doge et les familles",
-        text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). L'onglet Famille : prêtez allégeance à l'une des quatre grandes familles, levez et engagez des lances, prenez des terres dans la Campagne de la semaine. La famille la plus glorieuse impose ses décrets la semaine suivante.",
+        text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). L'onglet Famille : prêtez allégeance à l'une des quatre grandes familles, levez et engagez des troupes, prenez des terres dans la Campagne de la semaine. La famille la plus glorieuse impose ses décrets la semaine suivante.",
       },
       {
         icon: "comptoir",
@@ -1450,6 +1502,17 @@ export const fr = {
       same_region: "Le second comptoir se pose dans une autre région que la vôtre.",
       second_counter_set: "Votre second comptoir est déjà posé pour cette saison.",
       no_second_counter: "Pas de second comptoir posé cette saison.",
+      unknown_mission: "Cette mission n'est plus au tableau.",
+      mission_not_done: "Mission pas encore accomplie.",
+      mission_claimed: "Mission déjà reçue.",
+      not_en_route: "Ce véhicule n'est plus en route vers la ville.",
+      rush_limit: "Plus d'accélération possible aujourd'hui.",
+      troop_limit: "Plus de troupes à acheter aujourd'hui.",
+      no_specialty: "Pas de maîtrise choisie à changer.",
+      no_work: "Aucun ouvrage en chantier sur cette terre.",
+      work_ready: "Cet ouvrage est déjà achevé.",
+      unknown_use: "Usage inconnu.",
+      unknown_daily: "Cette tâche n'est plus au programme du jour.",
       no_bale: "Aucun ballot au quai pour l'instant : le prochain est en route.",
       bales_off: "Pas de ballot de Faraj dans ce monde.",
       insufficient_funds: "Pas assez de ducats.",
@@ -1488,9 +1551,9 @@ export const fr = {
       not_held: "Votre famille doit tenir cette terre.",
       work_exists: "Un ouvrage s'y dresse déjà.",
       too_many_works: "Votre famille a déjà tous ses ouvrages : il en faut plus de membres actifs.",
-      not_enough_lances: "Pas assez de lances en réserve.",
+      not_enough_lances: "Pas assez de troupes en réserve.",
       nothing_to_levy: "Rien à lever pour l'instant.",
-      hire_limit: "Plafond de lances du jour atteint.",
+      hire_limit: "Plafond de troupes du jour atteint.",
       unknown_march: "Cette marche est déjà arrivée.",
       invalid_programme: "Programme invalide.",
       order_reserved:

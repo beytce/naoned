@@ -883,6 +883,11 @@ function arrive(tx: Tx, d: Delivery): void {
   }
 }
 
+/** A delivery that arrives now, ahead of its time (rushed with Influence). */
+export function arriveNow(tx: Tx, d: Delivery): void {
+  if (d.outcome === "en_route") arrive(tx, d);
+}
+
 /** Scheduled (every tick) and before any delivery command: the goods due arrive, in time order. */
 export function resolveDeliveries(tx: Tx): void {
   const due = entries(tx.s.deliveries as Record<string, Delivery>)

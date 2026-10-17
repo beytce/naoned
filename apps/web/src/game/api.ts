@@ -14,6 +14,7 @@ import type {
   Profile,
   PushSettings,
   RankingRow,
+  Spend,
   WeekRanking,
 } from "./types.js";
 
@@ -79,6 +80,7 @@ export const gameApi = {
   house: () => call<HouseView>("GET", "/api/house"),
   buyPatent: (patent: string) =>
     call<{ influence: number; patents: string[] }>("POST", "/api/house/patents", { patent }),
+  spend: (spend: Spend) => call<GameResponse>("POST", "/api/house/spend", spend),
   weekRanking: () => call<WeekRanking>("GET", "/api/game/ranking/week"),
   ranking: () =>
     call<{ rows: RankingRow[]; me: number | null; total: number }>("GET", "/api/game/ranking"),

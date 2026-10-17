@@ -16,6 +16,8 @@ import {
   fastBatchNext,
   freeBatches,
   houseLevels,
+  houseMissionsFor,
+  houseSpendFor,
   isMudaGood,
   marketMakerQuotaLeft,
   marketMakerQuotes,
@@ -596,6 +598,12 @@ export function playerView(
         : 0,
     },
     daily: ctx.settings.daily.perDay > 0 ? dailyFor(ctx, state, playerId, now) : null,
+    // The house's missions of the board, paid in Influence.
+    houseMissions: ctx.settings.house?.missions
+      ? houseMissionsFor(ctx, state, playerId, now)
+      : null,
+    // What Influence buys, and what is left of today's limits.
+    houseSpend: houseSpendFor(ctx, state, playerId, now),
     bales: balesFor(ctx, state, playerId, now),
     fresh: ctx.settings.fresh,
     criee: crieeView(ctx, state, playerId, now),
