@@ -1239,6 +1239,58 @@ export const fr = {
     rankingHelp:
       "Ventes nettes = tout ce que vous avez vendu (Rialto, Dogana, livraisons, commandes du Doge), taxes et péages déduits, moins tout ce que vous avez acheté. Le stock et les bâtiments ne comptent pas.",
 
+    house: {
+      title: "Livre de la Maison",
+      influence: "Influence",
+      intro:
+        "Votre fortune repart à zéro chaque saison, votre Maison non : l'Influence se garde de saison en saison et achète des patentes, qui ouvrent du neuf sans jamais rapporter plus.",
+      earn: "Elle se gagne chaque semaine par vos ventes nettes et par la Campagne de votre famille, et à la fin de chaque saison selon votre rang.",
+      open: "Ouvrir le livre",
+      balance: (n: number) => `${n} d'Influence`,
+      catalog: "Patentes",
+      owned: "Acquise",
+      buy: (cost: number) => `Acheter · ${cost}`,
+      requires: (names: string) => `D'abord : ${names}`,
+      bought: (name: string) => `Patente acquise : ${name}`,
+      history: "Derniers mouvements",
+      none: "Rien encore : la première semaine se clôt dans quelques jours.",
+      sources: {
+        commerce: (week: number | null) => `Ventes nettes · semaine ${(week ?? 0) + 1}`,
+        campaign: (week: number | null) => `Campagne · semaine ${(week ?? 0) + 1}`,
+        season: () => "Fin de saison",
+        patent: () => "Patente",
+      } as Record<string, (week: number | null) => string>,
+      patents: {
+        second_counter: {
+          name: "Second comptoir",
+          text: "Un point de départ de vos véhicules dans une autre région, choisie à chaque saison. La commande garde son prix : seul le trajet change.",
+        },
+        alexandria: {
+          name: "Comptoir d'Alexandrie",
+          text: "Les commandes du Levant, à plusieurs marchandises.",
+        },
+        tedeschi: {
+          name: "Fondaco dei Tedeschi",
+          text: "Les marchands allemands achètent à Venise.",
+        },
+        lombardy: {
+          name: "Lombardie",
+          text: "Brescia et Bergame deviennent des villes de commerce.",
+        },
+        friuli: { name: "Frioul", text: "Udine et Pordenone deviennent des villes de commerce." },
+        wool: { name: "Art de la laine", text: "La chaîne du drap : laine, puis drap." },
+        glass: { name: "Art du verre", text: "La chaîne du verre de Murano." },
+      } as Record<string, { name: string; text: string }>,
+      second: {
+        choose: "Où poser votre second comptoir cette saison ?",
+        chooseHelp:
+          "Une fois par saison. Vos véhicules pourront partir de là quand la route y est plus courte.",
+        at: (region: string) => `Second comptoir : ${region}`,
+        marker: "2d comptoir",
+        from: "Depuis le 2d comptoir",
+        fromHome: "Depuis chez vous",
+      },
+    },
     profileTitle: "Ma progression",
     nextTitle: (name: string) => `Prochain titre : ${name}`,
     maxTitle: "Titre suprême atteint",
@@ -1389,6 +1441,15 @@ export const fr = {
     ],
 
     errors: {
+      no_patent: "Il faut d'abord la patente.",
+      unknown_patent: "Cette patente n'existe pas dans ce monde.",
+      patent_owned: "Votre Maison tient déjà cette patente.",
+      patent_requires: "Il faut d'abord les patentes qu'elle demande.",
+      not_enough_influence: "Pas assez d'Influence.",
+      house_off: "Pas de Livre de la Maison dans ce monde.",
+      same_region: "Le second comptoir se pose dans une autre région que la vôtre.",
+      second_counter_set: "Votre second comptoir est déjà posé pour cette saison.",
+      no_second_counter: "Pas de second comptoir posé cette saison.",
       no_bale: "Aucun ballot au quai pour l'instant : le prochain est en route.",
       bales_off: "Pas de ballot de Faraj dans ce monde.",
       insufficient_funds: "Pas assez de ducats.",

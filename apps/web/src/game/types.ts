@@ -405,7 +405,16 @@ export interface Project {
 export interface PlayerView {
   serverTime: number;
   day: number;
-  player: { id: string; region: string; joinedAt: number; upkeepDefaultUntil: number };
+  player: {
+    id: string;
+    region: string;
+    joinedAt: number;
+    upkeepDefaultUntil: number;
+    /** The house's patents in this world (absent: none, or no house in this world). */
+    patents?: string[];
+    /** Region of the second counter this season, once chosen. */
+    secondRegion?: string;
+  };
   cash: Money;
   escrow: Money;
   upkeepPerDay: Money;
@@ -793,6 +802,26 @@ export type Action =
       orderId: string;
       orderIds?: string[];
       vehicleId: string;
+      /** From the house's second counter. */
+      from?: "second";
+    }
+  | { type: "chooseSecondCounter"; region: string };
+
+/** The Livre de la Maison: Influence kept from season to season, and the patents it buys. */
+export type HouseView =
+  | { enabled: false }
+  | {
+      enabled: true;
+      influence: number;
+      patents: string[];
+      entries: {
+        source: "commerce" | "campaign" | "season" | "patent";
+        week: number | null;
+        amount: number;
+        patent: string | null;
+        at: string;
+      }[];
+      catalog: { code: string; cost: number; requires: string[]; owned: boolean }[];
     };
 
 /** A message of the family's thread. */

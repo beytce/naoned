@@ -12,6 +12,7 @@ import {
 import { and, eq, isNotNull } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { accounts, players } from "../db/schema.js";
+import { botBuysPatents } from "./house.js";
 import type { GameWorld } from "./world.js";
 
 /** The patrician families of earlier versions: no house is named after them. */
@@ -273,10 +274,19 @@ export class BotRunner {
 
     const veteran = this.veterans.shift();
     if (veteran) {
+      // Its Influence of the past seasons, spent as a merchant would before the new one.
+      const patents = await botBuysPatents(
+        this.db,
+        this.world.ctx.settings,
+        veteran.id,
+        this.world.id,
+        new Date(now),
+      );
       const res = await this.world.execute({
         type: "join",
         playerId: veteran.id,
         region: veteran.region,
+        ...(patents.length > 0 ? { patents } : {}),
       });
       if (!res.ok) return;
       await this.db

@@ -17,6 +17,7 @@ import {
   reportMessage,
   reportedMessages,
 } from "./familyChat.js";
+import { HouseRefused, buyPatent, houseOf, patentsFor } from "./house.js";
 import { levelsOf } from "./level.js";
 import { LiveHub } from "./live.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
@@ -105,7 +106,10 @@ const action = z.discriminatedUnion("type", [
     vehicleId: z.string(),
     /** Older clients still send an escort: there are none any more. */
     escort: z.string().optional(),
+    /** From the house's second counter. */
+    from: z.literal("second").optional(),
   }),
+  z.object({ type: z.literal("chooseSecondCounter"), region: z.string().max(32) }),
   z.object({
     type: z.literal("deliverToProject"),
     projectId: z.string(),
@@ -329,7 +333,13 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const account = await requireAccount(req, reply);
     if (!account) return;
     const { region } = z.object({ region: z.string() }).parse(req.body);
-    const res = await world.execute({ type: "join", playerId: account.id, region });
+    const patents = await patentsFor(db, world.ctx.settings, account.id);
+    const res = await world.execute({
+      type: "join",
+      playerId: account.id,
+      region,
+      ...(patents.length > 0 ? { patents } : {}),
+    });
     if (!res.ok) return reply.code(409).send({ error: res.error });
     await syncPass(db, world, account.id);
     return view(account);
@@ -540,6 +550,37 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return { ok: true, until: await passUntil(db, target.id, now) };
   });
 
+  /** The Livre de la Maison: Influence, its latest lines, the patents and the catalogue. */
+  app.get("/api/house", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return houseOf(db, world.ctx.settings, account.id);
+  });
+
+  /** Buys a patent with Influence; held in the world at once when the merchant plays there. */
+  app.post("/api/house/patents", perMerchant(30), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const { patent } = z.object({ patent: z.string().max(32) }).parse(req.body);
+    try {
+      const bought = await buyPatent(
+        db,
+        world.ctx.settings,
+        account.id,
+        patent,
+        world.id,
+        new Date(world.now()),
+      );
+      if (world.current.players[account.id]) {
+        await world.execute({ type: "grantPatent", playerId: account.id, patent });
+      }
+      return bought;
+    } catch (e) {
+      if (e instanceof HouseRefused) return reply.code(409).send({ error: e.code });
+      throw e;
+    }
+  });
+
   app.get("/api/notifications", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
@@ -728,6 +769,8 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "claimMission", playerId, missionId: a.missionId }];
     case "chooseSpecialty":
       return [{ type: "chooseSpecialty", playerId, specialty: a.specialty }];
+    case "chooseSecondCounter":
+      return [{ type: "chooseSecondCounter", playerId, region: a.region }];
     case "claimDaily":
       return [{ type: "claimDaily", playerId, taskId: a.taskId }];
     case "openBale":
@@ -811,6 +854,7 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
           orderId: a.orderId,
           ...(a.orderIds ? { orderIds: a.orderIds } : {}),
           vehicleId: a.vehicleId,
+          ...(a.from ? { from: a.from } : {}),
         },
       ];
     case "deliverToProject":

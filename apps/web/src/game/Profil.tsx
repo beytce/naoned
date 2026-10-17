@@ -16,6 +16,7 @@ import { LegalLinks } from "../legal/Legal.js";
 import { PALETTES, type PaletteId, choosePalette, currentPalette, needsPass } from "../theme.js";
 import { Big, Donut, Label, Panel, Ribbon, Sheet, Slab, Switch } from "../ui.js";
 import type { GameProps } from "./Game.js";
+import { HouseSummary } from "./House.js";
 import { PalmaresView } from "./Palmares.js";
 import { PassPanel } from "./PassPanel.js";
 import { PushSettings } from "./PushSettings.js";
@@ -271,6 +272,8 @@ function ProfileBody(props: GameProps) {
           <p className="text-sm text-cream-dim">{fr.game.merchantLevel.help}</p>
         </section>
       )}
+
+      <HouseSummary {...props} />
 
       {profile && (
         <section className="space-y-4">

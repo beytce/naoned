@@ -89,6 +89,7 @@ export type EngineErrorCode =
   | "vehicle_busy"
   | "vehicle_not_for_sale"
   | "no_patent"
+  | "unknown_patent"
   | "same_region"
   | "second_counter_set"
   | "no_second_counter"

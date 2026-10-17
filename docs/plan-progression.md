@@ -73,7 +73,7 @@ Contenu à créer : chaque route ouvre du neuf (lieux et routes de Lombardie et 
 ## Étapes proposées
 
 1. **Simulateur d'abord** (fait le 17 octobre, `docs/calibration.md`) : barème de l'Influence et second comptoir (la seule patente sans contenu nouveau à dessiner) dans les réglages et le moteur, bots qui gagnent et dépensent l'Influence. Critères : écart ≤ 15 % pour une Maison complète, KPIs des nouveaux inchangés, rythme d'acquisition proche des repères ci-dessus, toutes les graines conformes. Résultats dans `docs/calibration.md`.
-2. **Après les mesures de la bêta**, si le porteur lève le gel : l'Influence, le Livre de la Maison, les cosmétiques et le second comptoir.
+2. **Après les mesures de la bêta**, si le porteur lève le gel : l'Influence, le Livre de la Maison, les cosmétiques et le second comptoir. Le serveur est prêt (17 octobre) : journal `influence_entries`, `GET /api/house`, `POST /api/house/patents`, patentes passées au moteur à l'adhésion, achats des PNJ, export RGPD ; l'interface aussi (Livre de la Maison depuis le profil, achat des patentes, choix du second comptoir, son médaillon sur la carte, départ depuis lui proposé quand sa route est plus courte). Il reste l'activation : ajouter `house` aux réglages de Venise (`venice1450.settings.ts`, que le monde reprend à chaque démarrage pendant la bêta).
 3. Outre-mer (Alexandrie, puis le Fondaco dei Tedeschi) et Lombardie : nouvelles commandes, lieux et routes.
 4. Frioul, textile et verre avec la V1.
 

@@ -15,7 +15,7 @@ import {
 } from "./deliveries.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { joinFamily, leaveFamily } from "./families.js";
-import { chooseSecondCounter } from "./house.js";
+import { chooseSecondCounter, grantPatent } from "./house.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { claimMission, trackMissions } from "./missions.js";
 import { collect, startProduction } from "./production.js";
@@ -59,6 +59,8 @@ export type Command =
       patents?: string[];
     }
   | { type: "chooseSecondCounter"; playerId: PlayerId; region: string }
+  /** A patent bought with Influence (server only: it checked and took the price). */
+  | { type: "grantPatent"; playerId: PlayerId; patent: string }
   | {
       type: "startProduction";
       playerId: PlayerId;
@@ -265,6 +267,9 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "chooseSecondCounter":
       chooseSecondCounter(tx, cmd.playerId, cmd.region);
+      break;
+    case "grantPatent":
+      grantPatent(tx, cmd.playerId, cmd.patent);
       break;
     case "claimMission":
       claimMission(tx, cmd.playerId, cmd.missionId);

@@ -5,6 +5,7 @@ import type {
   CrestData,
   FamilyMessage,
   GameResponse,
+  HouseView,
   Level,
   Notice,
   NotificationKind,
@@ -75,6 +76,9 @@ export const gameApi = {
     call<{ ok: true }>("POST", "/api/notifications/push/subscribe", sub),
   unsubscribe: (endpoint: string) =>
     call<{ ok: true }>("POST", "/api/notifications/push/unsubscribe", { endpoint }),
+  house: () => call<HouseView>("GET", "/api/house"),
+  buyPatent: (patent: string) =>
+    call<{ influence: number; patents: string[] }>("POST", "/api/house/patents", { patent }),
   weekRanking: () => call<WeekRanking>("GET", "/api/game/ranking/week"),
   ranking: () =>
     call<{ rows: RankingRow[]; me: number | null; total: number }>("GET", "/api/game/ranking"),

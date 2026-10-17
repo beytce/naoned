@@ -33,6 +33,7 @@ import {
   worlds,
 } from "../db/schema.js";
 import { nextSeasonBounds, seasonBounds, seasonMonthName } from "./calendar.js";
+import { recordInfluence, recordSeasonInfluence } from "./house.js";
 import { recordSeason } from "./season.js";
 import { decode, encode } from "./serialize.js";
 import { TUTORIAL_STEPS, stepsReached } from "./tutorial.js";
@@ -447,9 +448,17 @@ export class GameWorld {
           await recordWeek(tx, worldId, e.data ?? {}, passOn ? now : undefined);
         }
         if (e.type === "season_closed") {
-          await recordSeason(tx, worldId, e.data ?? {}, passOn ? seasonEnd(this.ctx) : undefined);
+          const ranked = await recordSeason(
+            tx,
+            worldId,
+            e.data ?? {},
+            passOn ? seasonEnd(this.ctx) : undefined,
+          );
+          await recordSeasonInfluence(tx, worldId, this.ctx.settings, ranked, at);
         }
       }
+      // The house's Influence, kept from season to season.
+      await recordInfluence(tx, worldId, fx.events, at);
 
       if (!command) {
         // A batch (bot session): journals only.
