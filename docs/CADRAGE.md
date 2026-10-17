@@ -244,6 +244,10 @@ Constat de l'audit : un marché collé au prix de référence (indice 93 à 100)
 
 Décision du porteur après l'audit du 16 octobre : **aucune nouvelle mécanique tant que la bêta n'a pas mesuré la rétention** (J1, J7, J30, durée et nombre de sessions, voir « KPIs et télémétrie »). Jusque-là, on règle, on corrige, on simplifie, on mesure ; une idée de mécanique va dans `IDEAS.md` avec la mesure qui la justifierait. Seules exceptions : ce qui remplace une mécanique retirée (les galères de la Muda pour la mer) et ce que l'audit demande pour rendre vivant ce qui existe (prix qui bougent, progression des ateliers). Le gel se lève sur décision du porteur, chiffres de la bêta en main.
 
+### Une Maison qui progresse de saison en saison (17 octobre 2026)
+
+Décision du porteur, entre trois options (commerce persistant, ères longues, Maison persistante) : **la Maison dure, la fortune repart**. Chaque mois, ducats, stocks, ateliers et véhicules repartent de zéro comme aujourd'hui ; le niveau de marchand (ventes nettes de toutes les saisons) débloque d'une saison à l'autre des villes, des territoires, des maîtrises et des marchés, sans jamais donner plus de rendement. Les familles gardent leur saison. Plan, règles et étapes : `docs/plan-progression.md`. Soumis au gel : simulateur d'abord, mise en œuvre après les mesures de la bêta.
+
 ## Vision et positionnement
 
 Fondaco est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.
