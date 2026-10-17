@@ -28,13 +28,13 @@ import {
   netWorth,
   openProjects,
   quoteCitySale,
+  rationsPerDay,
   recipesFor,
   seasonActs,
   seasonEnd,
   specialtyUnlocked,
   stockUnitValue,
   turnoverOf,
-  upkeepPerDay,
   vwap,
 } from "@comptoirs/engine";
 import {
@@ -85,7 +85,6 @@ import {
   deliveryOrdersFor,
   travelMinutesFor,
   vehicleFree,
-  vehicleUpkeep,
   vehiclesOf,
 } from "@comptoirs/engine";
 import { titleFor } from "./profile.js";
@@ -322,7 +321,6 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
       cost: costForLevel(ctx, b.type, 1),
       /** Regions where it may be built (null: anywhere). */
       regions: settings.buildingRegions[b.type] ?? null,
-      upkeepPerDay: settings.buildings[b.type]?.upkeepPerDay ?? 0n,
     })),
     road: deliveriesOn(ctx)
       ? {
@@ -418,7 +416,6 @@ function buildingView(ctx: WorldContext, state: WorldState, b: Building, now: nu
         : null,
     /** Built before raw materials became local: still producing, no more upgrades. */
     outOfRegion: !local,
-    upkeepPerDay: upkeepPerDay(ctx, b),
   };
 }
 
@@ -510,13 +507,8 @@ export function playerView(
     ...c,
     done: doneIds.includes(c.id),
   }));
-  const levels = buildings.filter((b) => b.type !== "palazzo").reduce((n, b) => n + b.level, 0);
   const describe = (e: ReturnType<typeof activeEvent>) =>
     e && { code: e.code, city: e.city ?? null, startsAt: e.startsAt, endsAt: e.endsAt };
-
-  let upkeep = 0n;
-  for (const b of buildings) upkeep += upkeepPerDay(ctx, b);
-  for (const v of vehiclesOf(state, playerId)) upkeep += vehicleUpkeep(ctx, v);
 
   return {
     serverTime: now,
@@ -525,14 +517,12 @@ export function playerView(
       id: player.id,
       region: player.region,
       joinedAt: player.joinedAt,
-      upkeepDefaultUntil: player.upkeepDefaultUntil,
       // The house's patents in this world, and its second counter once chosen.
       ...(player.patents ? { patents: player.patents } : {}),
       ...(player.secondRegion ? { secondRegion: player.secondRegion } : {}),
     },
     cash: state.accounts[cashAccount(playerId)] ?? 0n,
     escrow: state.accounts[escrowAccount(playerId)] ?? 0n,
-    upkeepPerDay: upkeep,
     netWorth: worth,
     standing: {
       rank: mine?.rank ?? null,
@@ -575,7 +565,9 @@ export function playerView(
     muda: ctx.settings.muda ? mudaView(ctx, state, playerId, now) : null,
     rations: {
       resource: ctx.settings.rations.resource,
-      perDay: levels * ctx.settings.rations.perLevelPerDay,
+      perDay: rationsPerDay(ctx, buildings, playerId),
+      /** Loaves per workshop level: the need grows with every level built. */
+      perLevel: ctx.settings.rations.perLevelPerDay,
       hungryUntil: player.hungryUntil ?? 0,
       /** Workers eat at each day boundary of the world. */
       nextMealAt: ctx.startAt + (dayIndex(ctx, now) + 1) * 86_400_000,

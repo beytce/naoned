@@ -102,7 +102,6 @@ describe("coming back", () => {
     await world.execute({ type: "tick" });
     const back = await get(cookie);
     expect(back.welcome.readyBatches).toBeGreaterThan(0);
-    expect(BigInt(back.welcome.upkeep)).toBeGreaterThan(0n);
     expect(back.welcome.slept).toBe(true);
     // Only once.
     expect((await get(cookie)).welcome).toBeUndefined();

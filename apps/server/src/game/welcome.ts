@@ -10,8 +10,8 @@ function rowsOf<T>(result: unknown): T[] {
 }
 
 /**
- * What happened while the player was away: money earned by source, upkeep paid, batches ready to
- * collect and notices received. Read from the journals, so it is exact.
+ * What happened while the player was away: money earned by source, batches ready to collect and
+ * notices received. Read from the journals, so it is exact.
  */
 export async function welcomeBack(
   db: Db,
@@ -29,12 +29,6 @@ export async function welcomeBack(
       where world_id = ${worldId} and to_account = ${cash} and at > ${since.toISOString()}::timestamptz
         and reason in ('city_sale', 'delivery', 'trade', 'contract_reward', 'family_order_reward', 'project_delivery', 'market_maker_buy', 'mission_reward')
       group by reason`),
-  );
-  const [upkeep] = rowsOf<{ total: string | null }>(
-    await db.execute(sql`
-      select sum(amount)::text as total from ledger_entries
-      where world_id = ${worldId} and from_account = ${cash} and reason = 'upkeep'
-        and at > ${since.toISOString()}::timestamptz`),
   );
   const notices = rowsOf<{ kind: string; n: number }>(
     await db.execute(sql`
@@ -58,11 +52,10 @@ export async function welcomeBack(
   return {
     since: since.getTime(),
     income: Object.fromEntries(income.map((r) => [r.reason, r.total])),
-    upkeep: upkeep?.total ?? "0",
     readyBatches: ready,
     notices: Object.fromEntries(notices.map((r) => [r.kind, Number(r.n)])),
     road,
-    /** The counting house slept (reduced upkeep, no hunger) for part of the absence. */
+    /** The counting house slept (no hunger) for part of the absence. */
     slept: dormantAfter > 0 && now - since.getTime() > dormantAfter,
   };
 }
