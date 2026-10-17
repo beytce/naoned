@@ -242,7 +242,7 @@ Constat de l'audit : un marché collé au prix de référence (indice 93 à 100)
 
 ### Gel des mécaniques jusqu'aux mesures de la bêta (16 octobre 2026)
 
-Décision du porteur après l'audit du 16 octobre : **aucune nouvelle mécanique tant que la bêta n'a pas mesuré la rétention** (J1, J7, J30, durée et nombre de sessions, voir « KPIs et télémétrie »). Jusque-là, on règle, on corrige, on simplifie, on mesure ; une idée de mécanique va dans `IDEAS.md` avec la mesure qui la justifierait. Seules exceptions : ce qui remplace une mécanique retirée (les galères de la Muda pour la mer) et ce que l'audit demande pour rendre vivant ce qui existe (prix qui bougent, progression des ateliers). Le gel se lève sur décision du porteur, chiffres de la bêta en main.
+Décision du porteur après l'audit du 16 octobre : **aucune nouvelle mécanique tant que la bêta n'a pas mesuré la rétention** (J1, J7, J30, durée et nombre de sessions, voir « KPIs et télémétrie »). Jusque-là, on règle, on corrige, on simplifie, on mesure ; une idée de mécanique va dans `IDEAS.md` avec la mesure qui la justifierait. Seules exceptions : ce qui remplace une mécanique retirée (les galères de la Muda pour la mer) et ce que l'audit demande pour rendre vivant ce qui existe (prix qui bougent, progression des ateliers). Le gel se lève sur décision du porteur, chiffres de la bêta en main. Le porteur l'a levé le 17 octobre 2026 pour **la Terraferme**, conquête à la manière d'OpenFront qui remplacera la Campagne des familles (`docs/plan-terraferme.md`).
 
 ### Une Maison qui progresse de saison en saison (17 octobre 2026)
 

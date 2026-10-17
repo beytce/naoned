@@ -7,7 +7,15 @@ Décisions du porteur (17 octobre 2026), qui remplacent la Campagne des familles
 - **chacun pour soi**, avec des **alliances** entre joueurs, plus de familles imposées ;
 - **chaque joueur a son territoire** et ses troupes.
 
-Ce plan lève deux décisions du cadrage : « pas de guildes » (il n'y a pas non plus de guildes ici : seulement des alliances entre joueurs) et le gel des mécaniques jusqu'aux mesures de la bêta (à lever par le porteur pour ce mode, comme pour la Maison). **Statut : proposition, rien n'est codé.**
+Le porteur **lève le gel des mécaniques** pour ce mode (17 octobre 2026). Il n'y a pas de guildes : seulement des alliances entre joueurs. **Statut : plan validé ; prototype au simulateur en cours.**
+
+Réponses du porteur aux questions du plan (17 octobre 2026) :
+
+1. Le **classement de la semaine donne de l'Influence** à tous selon leur rang ; le **grand gagnant choisit un décret** parmi un catalogue de décrets **forts et impactants**.
+2. La carte **grandit avec le monde** (cases par marchand actif).
+3. Les ducats paient **le plafond de troupes et les bâtiments**.
+4. Le **fil d'alliance** est gardé.
+5. Les **familles disparaissent** tout à fait, blasons et noms compris : chaque joueur porte son propre blason.
 
 ## Ce qu'on prend à OpenFront, ce qu'on adapte
 
@@ -83,13 +91,27 @@ Payés en ducats, **détruits** (un puits de monnaie, dont le jeu manque depuis 
 | --- | --- |
 | **Gloire** | Personnelle : chaque heure ouverte, 1 par case tenue, 3 par ville. Calculée paresseusement (heure de prise mémorisée) |
 | **Victoire** | Le joueur qui tient **80 %** de la carte gagne tout de suite. Sinon, à la fin de la semaine, le premier en Gloire est le **Signore della Terraferma** |
-| **Décrets** | Le Signore choisit pendant la semaine son **programme** de deux décrets (public, comme aujourd'hui) ; à la clôture, il entre en vigueur pour la semaine suivante, avec pour « membres » le Signore et **ses alliés à la clôture** : s'allier au favori devient un pari. Même catalogue (`decrees`), mêmes garde-fous |
+| **Influence** | À la clôture, le classement de la semaine en Gloire donne de l'Influence à chacun selon son palier (barème de départ : Signore 20, podium 12, top 10 8, premier quart 5, participant 2 ; à calibrer). C'est la seconde source d'Influence après les missions de la Maison |
+| **Décret du Signore** | Le Signore **choisit un décret fort** pendant la semaine (public dès son choix, il change jusqu'à la clôture) ; il entre en vigueur la semaine suivante, pour le Signore et **ses alliés à la clôture** : s'allier au favori devient un pari. Jamais le même décret deux semaines de suite |
 | **Mérite** | Personnel : cases prises, défenses tenues, troupes envoyées aux alliés. Sert au classement de la semaine et à une petite Renommée. Jamais de ducats |
 | **Pass Négociant** | Aucun avantage sur la Terraferme |
 
+### Les décrets forts (première proposition, bornes à calibrer au simulateur)
+
+| Décret | Effet pour la semaine suivante | Monnaie |
+| --- | --- | --- |
+| **Monopole** sur un bien choisi | Les autres paient 15 points de taxe en plus quand ils vendent ce bien au Rialto ; la recette va au Signore et à ses alliés | Transfert entre joueurs |
+| **Embargo** sur une ville choisie | Les livraisons des autres vers cette ville sont payées 25 % de moins ; ses commandes urgentes sont au Signore et à ses alliés la première heure | Moins de création |
+| **Dîme de la Terraferme** | 3 % de chaque livraison des autres est versé au Signore et à ses alliés | Transfert entre joueurs |
+| **Faveur du Doge** | Contrats du Doge payés 40 % de plus pour le Signore et ses alliés, un contrat de plus par jour | Création bornée |
+| **Franchise du Rialto** | Pour eux : taxe du Rialto à 0 %, quotas de la Dogana doublés | Puits réduit |
+| **Calmiere** sur un bien choisi | Aucune offre de ce bien au-dessus de 105 % de la référence | Aucune |
+
+Garde-fou : un décret ne doit pas rapporter plus d'environ 15 % du revenu de la semaine d'un joueur actif (mesuré au simulateur), et l'écart de patrimoine du Pass reste mesuré par `pnpm sim --pass 0.2`.
+
 ## Ce qui disparaît
 
-Les quatre familles imposées et l'allégeance, les fiefs, la levée et les lances à 48 h, les marches et les assauts communs, les ouvrages de famille (remplacés par les bâtiments personnels), le vote du programme par famille, le fil de famille (devenu fil d'alliance). Les missions de la Maison liées à la Campagne (`levy_collected`, `march_sent`, `assault_won`, `land_defended`, `work_built`) deviennent : poser son comptoir, prendre N cases, tenir une ville, bâtir une Rocca, envoyer des troupes à un allié. L'Influence dépensée en troupes et en ouvrages achevés est remplacée par : relever son plafond, achever un bâtiment.
+Les quatre familles imposées et l'allégeance, les fiefs, la levée et les lances à 48 h, les marches et les assauts communs, les ouvrages de famille (remplacés par les bâtiments personnels), le vote du programme par famille, le fil de famille (devenu fil d'alliance), les blasons et les noms des quatre familles (chaque joueur porte son blason), l'ancien catalogue de décrets. Les missions de la Maison liées à la Campagne (`levy_collected`, `march_sent`, `assault_won`, `land_defended`, `work_built`) deviennent : poser son comptoir, prendre N cases, tenir une ville, bâtir une Rocca, envoyer des troupes à un allié. L'Influence dépensée en troupes et en ouvrages achevés est remplacée par : relever son plafond, achever un bâtiment.
 
 ## Écrans
 
@@ -114,11 +136,3 @@ Les quatre familles imposées et l'allégeance, les fiefs, la levée et les lanc
 4. Interface : la carte hexagonale, le HUD, le lancement d'un front, le panneau d'un joueur.
 5. Calibration : `pnpm sim` sur toutes les graines et `--pass 0.2`, `docs/calibration.md`.
 6. Bascule à une **ouverture de saison** (le 1er du mois), jamais en cours de saison ; `docs/CADRAGE.md`, `docs/design.md`.
-
-## Questions au porteur
-
-1. **Les décrets** au Signore et à ses alliés vous conviennent-ils, ou préférez-vous une récompense sans effet sur le marché (titre, monument sur la carte, Renommée) ?
-2. **Taille de la carte** : environ 10 cases par marchand actif, soit une carte qui grandit avec le monde ; ou une carte fixe de 400 cases ?
-3. **Les ducats** : relever le plafond de troupes (plafonné par jour) et payer les bâtiments, ou les bâtiments seulement ?
-4. **Le fil d'alliance** : le garder, ou laisser les joueurs se parler ailleurs ?
-5. Faut-il garder une **trace des familles** (blasons, noms) comme bannières que les joueurs choisissent, ou les retirer tout à fait ?
