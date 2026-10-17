@@ -21,7 +21,7 @@
     },
     "patents": {
       "second_counter": {
-        "cost": 40,
+        "cost": 15,
         "requires": []
       }
     }

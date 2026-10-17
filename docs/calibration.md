@@ -830,3 +830,5 @@ Le palier du classement final rapporte de l'Influence (`house.influence.season`)
 Toutes les graines conformes ; patentes : avance médiane +2,7 % et +1,6 % (deux lots de 5 graines), marchands sans patente +1,4 % et −1,4 %.
 
 **Lecture.** La prime ajoute ≈ 6 au médian (la plupart des marchands sont « participants ») et ≈ 15 au 9e décile : l'Influence médiane passe à ≈ 68 par saison, la Campagne en fait ≈ 38 % (cible du porteur : 40 %). Le catalogue complet demande toujours **une dizaine de saisons** au médian, six à sept au 9e décile ; un marchand qui ne fait que commercer (≈ 40 par saison) en demanderait seize. Ce qui s'achète tôt reste rapide : le second comptoir (40) dans la première saison, Alexandrie (50) dans la deuxième. Si la bêta montre que c'est trop long, la baisse d'un tiers des prix reste l'autre levier.
+
+**Second comptoir à 15** (au lieu de 40) : il ne fait gagner que du temps (+2 % de ventes nettes en médiane), c'est une patente de confort ; à 15 d'Influence, un marchand médian l'a en deux à trois semaines. Catalogue complet ≈ 615.

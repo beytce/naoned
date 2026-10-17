@@ -39,7 +39,7 @@ Les patentes **n'ajoutent que du neuf** (décision du porteur) : tout ce que le 
 
 | Route | Patente | Ce qu'elle ouvre | Coût | Pré-requis |
 | --- | --- | --- | --- | --- |
-| **Logistique** | Second comptoir | Un point de départ des véhicules dans une autre région, **rechoisie à chaque saison** : la commande garde son prix, seul le trajet change (simulateur : +2 % de ventes nettes en médiane, voir `docs/calibration.md`) ; sans le bonus régional des matières premières | 40 | — |
+| **Logistique** | Second comptoir | Un point de départ des véhicules dans une autre région, **rechoisie à chaque saison** : la commande garde son prix, seul le trajet change (simulateur : +2 % de ventes nettes en médiane, voir `docs/calibration.md`) ; sans le bonus régional des matières premières. Une patente de confort, d'où son prix | 15 | — |
 | **Outre-mer** | Comptoir d'Alexandrie | Commandes du Levant à plusieurs marchandises (épices, soie, draps), payées à l'heure de route comme les autres | 50 | — |
 | | Fondaco dei Tedeschi | Les marchands allemands achètent à Venise (draps, verre, sel) : une demande propre | 80 | Comptoir d'Alexandrie |
 | **Terre ferme** | Lombardie | Brescia et Bergame deviennent des villes de commerce (routes longues, commandes propres) | 80 | Second comptoir |
@@ -48,7 +48,7 @@ Les patentes **n'ajoutent que du neuf** (décision du porteur) : tout ce que le 
 | | Art du verre (Murano) | Chaîne du verre (sable → verre), contenu V1 | 150 | Art de la laine |
 | Cosmétique | Pièces de blason, façades du palais, monument de la Maison sur la carte | — | 10 à 60 | — |
 
-Repères : une première patente cosmétique dès la première ou la deuxième semaine (1 000 à 2 000 ducats de ventes nettes), le second comptoir en fin de première saison pour un marchand médian (plus tôt s'il joue la Campagne), la Lombardie (après le second comptoir, 120 en tout) vers la deuxième saison ; tout le catalogue (≈ 640 sans les cosmétiques) demande une dizaine de saisons au médian, six à sept aux plus actifs (mesuré au simulateur). Il faut choisir sa route.
+Repères : une première patente cosmétique dès la première ou la deuxième semaine (1 000 à 2 000 ducats de ventes nettes), le second comptoir en deux à trois semaines, la Lombardie (après le second comptoir, 95 en tout) vers la deuxième saison ; tout le catalogue (≈ 615 sans les cosmétiques) demande une dizaine de saisons au médian, six à sept aux plus actifs (mesuré au simulateur). Il faut choisir sa route.
 
 Contenu à créer : chaque route ouvre du neuf (lieux et routes de Lombardie et du Frioul, commandes du Levant et des Allemands, chaînes textile et verre). Les deux premières routes (Logistique, Outre-mer) se font avec ce qui existe presque déjà : comptoir et routes, biens de la Muda, commandes du Doge.
 

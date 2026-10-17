@@ -689,6 +689,9 @@ function passChecksOn(
   return checks;
 }
 
+/** Influence the plan's whole catalogue costs (docs/plan-progression.md), cosmetics aside. */
+const CATALOGUE = 615;
+
 /** What patents bring in a season, against the same season replayed without (medians). */
 export function houseGaps(
   r: SimulationResult,
@@ -747,8 +750,8 @@ export function houseChecks(r: SimulationResult, twin?: SimulationResult): Check
     const p90 = sorted[Math.floor(sorted.length * 0.9)] ?? 0;
     checks.push({
       name: "Maison : Influence gagnée dans la saison (marchands actifs)",
-      target: "Campagne ≈ 40 % ; le catalogue (≈ 640) en six à sept saisons au médian",
-      value: `médiane ${median(all)} (sans la Campagne ${commerceOnly}), 9e décile ${p90}, part de la Campagne ${pct(total > 0 ? campaign / total : 0)}, catalogue en ${median(all) > 0 ? Math.ceil(640 / median(all)) : "—"} saisons`,
+      target: "Campagne ≈ 40 % ; le catalogue du plan (≈ 615) en six à dix saisons au médian",
+      value: `médiane ${median(all)} (sans la Campagne ${commerceOnly}), 9e décile ${p90}, part de la Campagne ${pct(total > 0 ? campaign / total : 0)}, catalogue en ${median(all) > 0 ? Math.ceil(CATALOGUE / median(all)) : "—"} saisons`,
       pass: true,
       blocking: false,
     });
