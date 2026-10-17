@@ -274,6 +274,17 @@ export const worldSettingsSchema = z.object({
       milanBps: bps.max(10_000),
       /** City cells on the map, spread out: more glory and a higher cap for who holds them. */
       cities: qty,
+      /**
+       * The real land (coordinates of the drawn map, `art/veneto`): the frame, the waters (the sea,
+       * the lagoon, the lakes) as polygons, the cities where they stand. Absent: a plain rectangle.
+       */
+      geography: z
+        .object({
+          box: z.object({ x0: z.number(), y0: z.number(), x1: z.number(), y1: z.number() }),
+          water: z.array(z.array(z.tuple([z.number(), z.number()])).min(3)),
+          cities: z.array(z.object({ code: z.string(), x: z.number(), y: z.number() })),
+        })
+        .optional(),
       /** Fronts advance and troops come back only between these hours (Paris). */
       openHours: z.object({
         from: z.number().int().min(0).max(23),
@@ -309,6 +320,8 @@ export const worldSettingsSchema = z.object({
         minShareBps: bps.max(10_000),
         /** A front comes home after so many open hours (0: never): presence relaunches it. */
         maxHours: qty.default(0),
+        /** A neutral cell only every so many steps: the race for free land lasts. */
+        neutralEverySteps: positive.default(1),
       }),
       milan: z.object({
         troops: qty,

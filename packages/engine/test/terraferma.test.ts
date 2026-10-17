@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   EngineError,
+  MILAN,
   type TerraState,
+  type WorldSettingsInput,
   advanceTerra,
   capOf,
+  cellCenter,
   cellCost,
   cellsOf,
   hexDistance,
@@ -18,7 +21,7 @@ import { HOUR, MIN, makeContext } from "./helpers.js";
 
 const START = Date.UTC(2026, 9, 5, 0, 0); // a Monday, 2 h in Paris
 const STEP = 10 * MIN;
-const config = (more: Partial<typeof testTerraferma> = {}) => {
+const config = (more: Partial<NonNullable<WorldSettingsInput["terraferma"]>> = {}) => {
   const cfg = makeContext({ terraferma: { ...testTerraferma, ...more } }).settings.terraferma;
   if (!cfg) throw new Error("no terraferma");
   return cfg;
@@ -288,5 +291,98 @@ describe("glory and Milan", () => {
     expect(s.fronts.some((f) => f.owner === "milan") || cellsOf(s, "milan").length > before).toBe(
       true,
     );
+  });
+});
+
+describe("a map on the real geography", () => {
+  // A land of 150 × 100 with the sea along its eastern side, two cities.
+  const geography = {
+    box: { x0: 0, y0: 0, x1: 150, y1: 100 },
+    water: [
+      [
+        [120, 0],
+        [150, 0],
+        [150, 100],
+        [120, 100],
+      ] as [number, number][],
+    ],
+    cities: [
+      { code: "verona", x: 30, y: 50 },
+      { code: "padova", x: 90, y: 50 },
+    ],
+  };
+
+  it("lays its cells on the land only, finer as the world grows, the cities where they are", () => {
+    const cfg = config({ geography });
+    const small = newTerra(cfg, "seed", 4, START);
+    const big = newTerra(cfg, "seed", 12, START);
+    const land = (s: TerraState) => s.map.land.filter(Boolean).length;
+    // About 10 land cells a merchant, at least `minActive` counted.
+    expect(land(small)).toBeGreaterThanOrEqual(30);
+    expect(land(small)).toBeLessThanOrEqual(55);
+    expect(land(big)).toBeGreaterThan(land(small) * 2);
+    for (let i = 0; i < big.owner.length; i++) {
+      const [x] = cellCenter(big.map, i);
+      if (x > 121) expect(big.map.land[i]).toBe(false);
+    }
+    const verona = big.map.cityCode.indexOf("verona");
+    const [vx, vy] = cellCenter(big.map, verona);
+    expect(Math.hypot(vx - 30, vy - 50)).toBeLessThan(big.map.size * 2);
+    expect(big.map.city[verona]).toBe(true);
+  });
+
+  it("never sets anyone down on the water, nor lets a front take it", () => {
+    const cfg = config({ geography });
+    const s = newTerra(cfg, "seed", 4, START);
+    const water = s.map.land.indexOf(false);
+    expect(code(() => placeOnTerra(s, cfg, "a", water, START))).toBe("not_neutral");
+    expect(s.owner[water]).toBeNull();
+    s.owner.forEach((o, i) => {
+      if (!s.map.land[i]) expect(o).toBeNull();
+    });
+  });
+});
+
+describe("a merchant who comes late", () => {
+  it("sets down on the edge of Milan's land once no neutral place is left, and only then", () => {
+    const cfg = config();
+    const s = newTerra(cfg, "seed", 10, START);
+    const edge = s.owner.findIndex(
+      (o, i) => o === MILAN && hexNeighbors(s.map, i).some((n) => s.owner[n] === null),
+    );
+    expect(code(() => placeOnTerra(s, cfg, "late", edge, START))).toBe("neutral_left");
+    // The neutral land all taken.
+    for (let i = 0; i < s.owner.length; i++) if (s.owner[i] === null) s.owner[i] = "someone";
+    const inner = s.owner.findIndex(
+      (o, i) => o === MILAN && hexNeighbors(s.map, i).every((n) => s.owner[n] === MILAN),
+    );
+    if (inner >= 0)
+      expect(code(() => placeOnTerra(s, cfg, "late", inner, START))).toBe("not_neutral");
+    const free = s.owner.findIndex(
+      (o, i) =>
+        o === MILAN &&
+        hexNeighbors(s.map, i).some((n) => s.owner[n] === "someone") &&
+        s.owner.every((p, j) => p !== "someone" || hexDistance(s.map, i, j) >= 1),
+    );
+    placeOnTerra(s, cfg, "late", free, START + 3 * 24 * HOUR);
+    expect(s.owner[free]).toBe("late");
+    // Its ring is taken from Milan; it comes with more troops, later in the week.
+    expect(cellsOf(s, "late").length).toBeGreaterThan(1);
+    expect(s.players.late?.troops).toBe(30 + 3 * 10);
+  });
+});
+
+describe("neutral land", () => {
+  it("is taken more slowly than a neighbour's", () => {
+    const cfg = config({
+      fronts: { ...testTerraferma.fronts, cellsPerStep: 1, neutralEverySteps: 2 },
+    });
+    const s = newTerra(cfg, "seed", 10, START);
+    placeOnTerra(s, cfg, "a", freeCell(s), START);
+    (s.players.a as { troops: number }).troops = 10_000;
+    launchFront(s, cfg, "a", border(s, "a"), 5_000, START);
+    const before = cellsOf(s, "a").length;
+    advanceTerra(s, cfg, START + 4 * STEP);
+    expect(cellsOf(s, "a").length - before).toBe(2);
   });
 });

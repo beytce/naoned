@@ -20,9 +20,16 @@ export const MILAN = "milan";
 export interface TerraMap {
   width: number;
   height: number;
+  /** Centre of the first cell and the cells' radius, in the drawn map's coordinates. */
+  origin: [number, number];
+  size: number;
+  /** Land cells; the others are water, never held. */
+  land: boolean[];
   /** Terrain code, cell by cell (row by row, from the north-west). */
   terrain: string[];
   city: boolean[];
+  /** The city a cell stands for, when the map follows the real geography. */
+  cityCode: (string | null)[];
 }
 
 export interface TerraPlayer {
@@ -127,13 +134,81 @@ export function hexNeighbors(map: Pick<TerraMap, "width" | "height">, i: number)
   return out.sort((a, b) => a - b);
 }
 
-/** The map for so many active merchants: its terrain by bands from the north, its cities. */
+/** Centre of a cell, in the drawn map's coordinates (pointy hexagons, odd rows shifted). */
+export function cellCenter(map: TerraMap, i: number): [number, number] {
+  const row = Math.floor(i / map.width);
+  const col = i % map.width;
+  return [
+    map.origin[0] + map.size * Math.sqrt(3) * (col + 0.5 * (row & 1)),
+    map.origin[1] + map.size * 1.5 * row,
+  ];
+}
+
+function inPolygon(x: number, y: number, poly: [number, number][]): boolean {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i] as [number, number];
+    const [xj, yj] = poly[j] as [number, number];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * The map for so many active merchants: on the real land when the settings draw it (the cells
+ * finer as the world grows, the same shape), else a rectangle; the terrain by bands from the
+ * north, the cities.
+ */
 export function terraMap(cfg: TerraConfig, seed: string, active: number): TerraMap {
-  const cells = cfg.cellsPerActive * Math.max(cfg.minActive, active);
-  const height = Math.max(3, Math.round(Math.sqrt((cells * 10_000) / cfg.aspectBps)));
-  const width = Math.max(3, Math.ceil(cells / height));
-  const terrain: string[] = [];
+  const target = cfg.cellsPerActive * Math.max(cfg.minActive, active);
+  const geo = cfg.geography;
+  let width: number;
+  let height: number;
+  let size: number;
+  let origin: [number, number];
+  let isLand: (x: number, y: number) => boolean;
+  if (geo) {
+    const { x0, y0, x1, y1 } = geo.box;
+    isLand = (x, y) =>
+      x >= x0 && x <= x1 && y >= y0 && y <= y1 && !geo.water.some((w) => inPolygon(x, y, w));
+    // The land's area, sampled; then the radius that gives about `target` land cells.
+    let landSamples = 0;
+    for (let a = 0; a < 80; a++) {
+      for (let b = 0; b < 80; b++) {
+        if (isLand(x0 + ((a + 0.5) * (x1 - x0)) / 80, y0 + ((b + 0.5) * (y1 - y0)) / 80))
+          landSamples++;
+      }
+    }
+    const area = ((x1 - x0) * (y1 - y0) * landSamples) / 6_400;
+    size = Math.sqrt(area / (target * ((3 * Math.sqrt(3)) / 2)));
+    width = Math.max(3, Math.ceil((x1 - x0) / (size * Math.sqrt(3))));
+    height = Math.max(3, Math.floor((y1 - y0) / (size * 1.5)) + 1);
+    origin = [x0, y0];
+  } else {
+    height = Math.max(3, Math.round(Math.sqrt((target * 10_000) / cfg.aspectBps)));
+    width = Math.max(3, Math.ceil(target / height));
+    size = 1;
+    origin = [0, 0];
+    isLand = () => true;
+  }
+  const map: TerraMap = {
+    width,
+    height,
+    origin,
+    size,
+    land: [],
+    terrain: [],
+    city: Array.from({ length: width * height }, () => false),
+    cityCode: Array.from({ length: width * height }, () => null),
+  };
   for (let i = 0; i < width * height; i++) {
+    const [x, y] = cellCenter(map, i);
+    const land = isLand(x, y);
+    map.land.push(land);
+    if (!land) {
+      map.terrain.push("water");
+      continue;
+    }
     const row = Math.floor(i / width);
     const share = Math.floor(((row + 1) * 10_000) / height);
     const band = cfg.bands.find((b) => share <= b.untilBps) ?? cfg.bands.at(-1);
@@ -148,10 +223,31 @@ export function terraMap(cfg: TerraConfig, seed: string, active: number): TerraM
       }
       r -= w;
     }
-    terrain.push(pick);
+    map.terrain.push(pick);
   }
-  // Cities: spread over the land east of Milan, each the farthest from those already placed.
-  const city = Array.from({ length: width * height }, () => false);
+  if (geo) {
+    // Each city on the land cell nearest to where it stands.
+    for (const c of geo.cities) {
+      let best = -1;
+      let bestD = Number.POSITIVE_INFINITY;
+      for (let i = 0; i < map.land.length; i++) {
+        if (!map.land[i] || map.city[i]) continue;
+        const [x, y] = cellCenter(map, i);
+        const d = (x - c.x) ** 2 + (y - c.y) ** 2;
+        if (d < bestD) {
+          best = i;
+          bestD = d;
+        }
+      }
+      if (best >= 0) {
+        map.city[best] = true;
+        map.cityCode[best] = c.code;
+      }
+    }
+    return map;
+  }
+  // Without geography: cities spread over the land east of Milan, each the farthest from the
+  // ones already placed.
   const milanCols = Math.ceil((width * cfg.milanBps) / 10_000);
   const free = Array.from({ length: width * height }, (_, i) => i).filter(
     (i) => i % width >= milanCols,
@@ -167,9 +263,9 @@ export function terraMap(cfg: TerraConfig, seed: string, active: number): TerraM
             return d(i) > d(best) ? i : best;
           }, first);
     placed.push(next);
-    city[next] = true;
+    map.city[next] = true;
   }
-  return { width, height, terrain, city };
+  return map;
 }
 
 /** A fresh week: Milan in the west, the rest neutral. */
@@ -184,7 +280,7 @@ export function newTerra(
   return {
     map,
     startAt,
-    owner: map.terrain.map((_, i) => (i % map.width < milanCols ? MILAN : null)),
+    owner: map.terrain.map((_, i) => (map.land[i] && i % map.width < milanCols ? MILAN : null)),
     players: {
       [MILAN]: {
         troops: cfg.milan.troops + cfg.milan.troopsPerActive * active,
@@ -244,7 +340,25 @@ const borders = (s: TerraState, id: string, i: number) =>
 
 // ——— Acting ———
 
-/** A merchant sets down on a free cell, far enough from everyone, with the neutral ring around. */
+/** Whether a neutral land cell is still far enough from everyone to set down on. */
+function neutralSpotLeft(s: TerraState, cfg: TerraConfig): boolean {
+  const held: number[] = [];
+  s.owner.forEach((o, j) => {
+    if (o !== null) held.push(j);
+  });
+  return s.owner.some(
+    (o, i) =>
+      o === null &&
+      s.map.land[i] &&
+      held.every((j) => hexDistance(s.map, i, j) >= cfg.start.minDistance),
+  );
+}
+
+/**
+ * A merchant sets down: on a free land cell far enough from everyone, with the neutral ring
+ * around; or, once no such cell is left (the latecomer's case), on the edge of Milan's land,
+ * taking the ring from Milan.
+ */
 export function placeOnTerra(
   s: TerraState,
   cfg: TerraConfig,
@@ -253,13 +367,25 @@ export function placeOnTerra(
   now: number,
 ): void {
   if (s.players[id]) fail("already_placed");
-  if (cell < 0 || cell >= s.owner.length || s.owner[cell] !== null) fail("not_neutral");
-  for (let j = 0; j < s.owner.length; j++) {
-    if (s.owner[j] !== null && hexDistance(s.map, cell, j) < cfg.start.minDistance)
-      fail("too_close");
+  if (cell < 0 || cell >= s.owner.length || !s.map.land[cell]) fail("not_neutral");
+  const holder = s.owner[cell];
+  const onMilan = holder === MILAN;
+  if (onMilan) {
+    const edge = hexNeighbors(s.map, cell).some((n) => s.map.land[n] && s.owner[n] !== MILAN);
+    if (!edge) fail("not_neutral");
+    if (neutralSpotLeft(s, cfg)) fail("neutral_left");
+  } else {
+    if (holder !== null) fail("not_neutral");
+    for (let j = 0; j < s.owner.length; j++) {
+      if (s.owner[j] !== null && hexDistance(s.map, cell, j) < cfg.start.minDistance)
+        fail("too_close");
+    }
   }
+  const takes = (o: string | null | undefined) => o === null || (onMilan && o === MILAN);
   s.owner[cell] = id;
-  for (const n of hexNeighbors(s.map, cell)) if (s.owner[n] === null) s.owner[n] = id;
+  for (const n of hexNeighbors(s.map, cell)) {
+    if (s.map.land[n] && takes(s.owner[n])) s.owner[n] = id;
+  }
   const day = Math.max(0, Math.floor((now - s.startAt) / DAY_MS));
   s.players[id] = {
     troops: cfg.start.troops + cfg.start.troopsPerDay * day,
@@ -283,7 +409,7 @@ export function launchFront(
   if (!player) fail("not_placed");
   if (shareBps < cfg.fronts.minShareBps || shareBps > 10_000) fail("share_too_small");
   const against = s.owner[aim];
-  if (against === undefined) fail("not_adjacent");
+  if (against === undefined || !s.map.land[aim]) fail("not_adjacent");
   if (against === id) fail("own_cell");
   if (!borders(s, id, aim)) fail("not_adjacent");
   if (against !== null) {
@@ -365,12 +491,14 @@ function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront): void 
     endFront(s, front);
     return;
   }
+  // Free land is taken slowly: the race for it lasts.
+  if (front.against === null && front.steps % cfg.fronts.neutralEverySteps !== 0) return;
   for (let k = 0; k < cfg.fronts.cellsPerStep; k++) {
     let best = -1;
     let bestDistance = Number.POSITIVE_INFINITY;
     const capitals = new Set(Object.values(s.players).map((p) => p.capital));
     for (let i = 0; i < s.owner.length; i++) {
-      if (s.owner[i] !== front.against || !borders(s, front.owner, i)) continue;
+      if (!s.map.land[i] || s.owner[i] !== front.against || !borders(s, front.owner, i)) continue;
       if (capitals.has(i)) continue;
       const d = hexDistance(s.map, i, front.aim);
       if (d < bestDistance) {
@@ -411,7 +539,7 @@ function milanRides(s: TerraState, cfg: TerraConfig, at: number): void {
   const centre = Math.floor(s.map.height / 2) * s.map.width + Math.floor(s.map.width / 2);
   let best = -1;
   for (let i = 0; i < s.owner.length; i++) {
-    if (s.owner[i] !== null || !borders(s, MILAN, i)) continue;
+    if (!s.map.land[i] || s.owner[i] !== null || !borders(s, MILAN, i)) continue;
     if (best < 0 || hexDistance(s.map, i, centre) < hexDistance(s.map, best, centre)) best = i;
   }
   if (best >= 0) launchFront(s, cfg, MILAN, best, cfg.milan.shareBps, at);
