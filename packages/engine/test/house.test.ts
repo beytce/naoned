@@ -184,3 +184,20 @@ describe("the season's tier", () => {
     expect(seasonInfluence(makeContext(), "doge")).toBe(0);
   });
 });
+
+describe("a patent bought during the season", () => {
+  it("takes effect at once, once, and only if the world knows it", () => {
+    const w = road();
+    w.do({ type: "grantPatent", playerId: "b", patent: "second_counter" });
+    expect(w.state.players.b?.patents).toEqual(["second_counter"]);
+    w.do({ type: "grantPatent", playerId: "b", patent: "second_counter" });
+    expect(w.state.players.b?.patents).toEqual(["second_counter"]);
+    w.do({ type: "chooseSecondCounter", playerId: "b", region: "dolomites" });
+    expect(error(w.try({ type: "grantPatent", playerId: "b", patent: "lombardy" }))).toBe(
+      "unknown_patent",
+    );
+    expect(error(w.try({ type: "grantPatent", playerId: "z", patent: "second_counter" }))).toBe(
+      "unknown_player",
+    );
+  });
+});

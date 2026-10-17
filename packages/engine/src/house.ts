@@ -21,6 +21,16 @@ export function hasPatent(
   return state.players[playerId]?.patents?.includes(code) ?? false;
 }
 
+/** A patent the house bought (the server checked and took its price): it serves at once. */
+export function grantPatent(tx: Tx, playerId: PlayerId, patent: string): void {
+  const player = tx.s.players[playerId];
+  if (!player) fail("unknown_player");
+  if (!tx.ctx.settings.house?.patents[patent]) fail("unknown_patent");
+  if (player.patents?.includes(patent)) return;
+  player.patents = [...(player.patents ?? []), patent];
+  emit(tx, "patent_granted", playerId, { patent });
+}
+
 /** The second counter's region for the season: once, in another region than the house's. */
 export function chooseSecondCounter(tx: Tx, playerId: PlayerId, region: string): void {
   const player = tx.s.players[playerId];
