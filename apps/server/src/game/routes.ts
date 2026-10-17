@@ -17,7 +17,7 @@ import {
   reportMessage,
   reportedMessages,
 } from "./familyChat.js";
-import { HouseRefused, buyPatent, houseOf, patentsFor } from "./house.js";
+import { HouseRefused, balanceOf, buyPatent, houseOf, patentsFor } from "./house.js";
 import { levelsOf } from "./level.js";
 import { LiveHub } from "./live.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
@@ -231,6 +231,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       unread: v ? await notifier.unread(account.id) : 0,
       level: (await levelsOf(db, world.current, [account.id])).get(account.id),
       familyLatestAt: v ? await latestMessageAt(db, world, account.id) : null,
+      // The house's Influence, under the ducats (worlds with the house only).
+      ...(world.ctx.settings.house
+        ? { influence: (await balanceOf(db, account.id)).influence }
+        : {}),
     });
   }
 

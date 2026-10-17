@@ -565,6 +565,8 @@ export interface GameResponse {
   unread?: number;
   /** Newest message of the family's thread (null: no family or no message). */
   familyLatestAt?: number | null;
+  /** The house's Influence, kept from season to season (worlds with the house only). */
+  influence?: number;
   welcome?: Welcome;
   /** Pseudos of merchants met in the family or the order book. */
   names?: Record<string, string | null>;

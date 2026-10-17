@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
-import { accounts, influenceEntries } from "../src/db/schema.js";
+import { accounts, influenceEntries, telemetry } from "../src/db/schema.js";
 import { botBuysPatents, buyPatent, houseOf } from "../src/game/house.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
@@ -98,10 +98,25 @@ const act = (cookie: string, payload: Record<string, unknown>) =>
   app.inject({ method: "POST", url: "/api/game/actions", headers: { cookie }, payload });
 
 /** Ada sells at the Dogana, then the season closes: Influence for the week and the tier. */
-async function season() {
+async function season(playedWeek = true) {
   const ada = await player("ada@example.org");
   const bob = await player("bob@example.org", "lagoon");
   await world.execute({ type: "tick" });
+  if (playedWeek) {
+    // Both came back on seven days of the month: a week of play.
+    for (const cookie of [ada, bob]) {
+      const id = (await get(cookie, "/api/me")).account.id as string;
+      for (let day = 6; day <= 12; day++) {
+        await database.db.insert(telemetry).values({
+          accountId: id,
+          worldId: world.id,
+          type: "session_start",
+          at: new Date(Date.UTC(2026, 9, day, 12)),
+          props: {},
+        });
+      }
+    }
+  }
   const sold = await act(ada, {
     type: "instantOrder",
     resource: "bread",
@@ -136,6 +151,14 @@ describe("the house's Influence", () => {
     ]);
   });
 
+  it("brings no Influence for the season's tier without a week of play", async () => {
+    await open({ house });
+    const { ada, bob } = await season(false);
+    const a = await get(ada);
+    expect(a.entries.some((e: { source: string }) => e.source === "season")).toBe(false);
+    expect((await get(bob)).influence).toBe(0);
+  });
+
   it("buys patents: paid once, in order, within the balance", async () => {
     await open({ house });
     const { ada, bob } = await season();
@@ -156,7 +179,10 @@ describe("the house's Influence", () => {
     const { ada, bob } = await season();
     await buy(ada, "second_counter");
     await join(ada, "terraferma");
-    const view = (await get(ada, "/api/game")).view;
+    const game = await get(ada, "/api/game");
+    // The balance comes with the view, for the line under the ducats.
+    expect(game.influence).toBe((await get(ada)).influence);
+    const view = game.view;
     expect(view.player.patents).toEqual(["second_counter"]);
     const chosen = await act(ada, { type: "chooseSecondCounter", region: "lagoon" });
     expect(chosen.json().error).toBeUndefined();

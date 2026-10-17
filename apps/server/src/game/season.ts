@@ -126,7 +126,8 @@ export async function recordSeason(
       if (until > endsAt) await grantPass(db, r.accountId, "season", endsAt, until, r.tier);
     }
   }
-  return rows;
+  // Days of play beside each result: the house's Influence of the season asks for a week.
+  return rows.map((r) => ({ ...r, days: days.get(r.accountId) ?? 0 }));
 }
 
 /** Renown of an account: the sum over its seasons. */

@@ -18,6 +18,13 @@ await database.migrate();
 const mailer = config.RESEND_API_KEY
   ? new ResendMailer(config.RESEND_API_KEY, config.MAIL_FROM)
   : new ConsoleMailer();
+// Resend's test sender only delivers to the address of the Resend account itself: anyone else
+// asking for a sign-in link gets "mail_unavailable".
+if (config.RESEND_API_KEY && config.MAIL_FROM.includes("@resend.dev")) {
+  console.warn(
+    "[mail] MAIL_FROM uses resend.dev: links reach only the Resend account's own address. Verify a domain in Resend and set MAIL_FROM (docs/deploiement.md).",
+  );
+}
 const alerts = new Alerts(config.ALERT_WEBHOOK_URL);
 process.on("unhandledRejection", (reason) => {
   console.error(reason);

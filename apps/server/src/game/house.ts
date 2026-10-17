@@ -1,4 +1,4 @@
-import type { GameEvent, WorldSettings } from "@comptoirs/engine";
+import { type GameEvent, PARTICIPANT_DAYS, type WorldSettings } from "@comptoirs/engine";
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { accounts, influenceEntries } from "../db/schema.js";
@@ -49,16 +49,20 @@ export async function recordInfluence(
   if (rows.length > 0) await tx.insert(influenceEntries).values(rows).onConflictDoNothing();
 }
 
-/** Influence of the season's tier, for each person ranked at the close. */
+/**
+ * Influence of the season's tier, for each person ranked at the close who played a week of it:
+ * a season closed early (or a merchant who barely came) brings none, whatever the rank.
+ */
 export async function recordSeasonInfluence(
   tx: Db,
   worldId: string,
   settings: WorldSettings,
-  ranked: { accountId: string; tier: string }[],
+  ranked: { accountId: string; tier: string; days: number }[],
   at: Date,
 ): Promise<void> {
   const scale = settings.house?.influence.season ?? {};
   const rows = ranked
+    .filter((r) => r.days >= PARTICIPANT_DAYS)
     .map((r) => ({
       accountId: r.accountId,
       worldId,
