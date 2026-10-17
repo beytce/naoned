@@ -78,3 +78,4 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - Jeton Sceau (acheté en euros, revendable contre des ducats) : revient à vendre de la monnaie de jeu, contraire au garde-fou anti pay-to-win.
 - Production automatisée payante : achète du pouvoir économique.
 - Prix de référence du PNJ qui suit automatiquement les prix des joueurs : manipulable.
+- **Autres usages de l'Influence, gardés pour plus tard** : pièces de blason, façades du palais, monument de la Maison sur la carte (il faut leurs dessins) ; proposer un décret à sa famille ; baptiser une nouvelle de la gazette.
