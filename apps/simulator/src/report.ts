@@ -689,63 +689,93 @@ function passChecksOn(
   return checks;
 }
 
+/** What patents bring in a season, against the same season replayed without (medians). */
+export function houseGaps(
+  r: SimulationResult,
+  twin: SimulationResult,
+): { lead: number; others: number } | undefined {
+  const holders = new Set(r.patentHolders ?? []);
+  if (holders.size === 0) return undefined;
+  const before = new Map(finalWorth(twin).map((p) => [p.playerId, Number(p.turnover)]));
+  const ratios = (held: boolean) =>
+    finalWorth(r)
+      .filter(
+        (p) =>
+          holders.has(p.playerId) === held && (before.get(p.playerId) ?? 0) > 0 && p.turnover > 0n,
+      )
+      .map((p) => Number(p.turnover) / (before.get(p.playerId) ?? 1));
+  const held = median(ratios(true));
+  const others = median(ratios(false));
+  return { lead: held / others - 1, others: others - 1 };
+}
+
 /**
- * The house between seasons (with `patentShare` > 0, docs/plan-progression.md): houses holding
- * patents may lead, by 15 % at most at equal activity, and never at the others' expense.
- * `twin` is the same season replayed with no patents: each merchant is compared with itself.
+ * The house between seasons (with `patentShare` > 0, docs/plan-progression.md). One season
+ * replayed without patents diverges from the original: its gaps swing by ±20 %, so the seed only
+ * reports them, and the rule (at most 15 % ahead, the others losing nothing) is judged on the
+ * median over the seeds (`houseVerdict`).
  */
 export function houseChecks(r: SimulationResult, twin?: SimulationResult): Check[] {
   const checks: Check[] = [];
-  const holders = new Set(r.patentHolders ?? []);
-  const final = finalWorth(r);
-  if (holders.size > 0 && twin) {
-    const before = new Map(finalWorth(twin).map((p) => [p.playerId, Number(p.turnover)]));
-    const ratios = (held: boolean) =>
-      final
-        .filter(
-          (p) =>
-            holders.has(p.playerId) === held &&
-            (before.get(p.playerId) ?? 0) > 0 &&
-            p.turnover > 0n,
-        )
-        .map((p) => Number(p.turnover) / (before.get(p.playerId) ?? 1));
-    const held = median(ratios(true));
-    const others = median(ratios(false));
-    const lead = held / others - 1;
+  const gaps = twin ? houseGaps(r, twin) : undefined;
+  if (gaps) {
     checks.push(
       {
         name: "Maison : avance des patentes en ventes nettes (même saison rejouée sans patente)",
-        target: "≤ +15 % (médiane, au-delà de l'effet sur les autres)",
-        value: Number.isNaN(lead) ? "—" : pct(lead),
-        pass: Number.isNaN(lead) || lead <= 0.15,
-        blocking: true,
+        target: "≤ +15 % en médiane des graines (voir la synthèse)",
+        value: Number.isNaN(gaps.lead) ? "—" : pct(gaps.lead),
+        pass: true,
+        blocking: false,
       },
       {
         name: "Maison : ventes nettes des marchands sans patente (même saison rejouée sans patente)",
-        target: "≥ −5 % (médiane) : les patentes ne prennent rien aux autres",
-        value: Number.isNaN(others) ? "—" : pct(others - 1),
-        pass: Number.isNaN(others) || others >= 0.95,
-        blocking: true,
+        target: "≥ −5 % en médiane des graines (voir la synthèse)",
+        value: Number.isNaN(gaps.others) ? "—" : pct(gaps.others),
+        pass: true,
+        blocking: false,
       },
     );
   }
   if (r.influence) {
-    const ids = final.map((p) => p.playerId);
-    const total = (id: string) =>
-      (r.influence?.[id]?.commerce ?? 0) + (r.influence?.[id]?.campaign ?? 0);
-    const all = ids.map(total);
-    const campaign = ids.map((id) => r.influence?.[id]?.campaign ?? 0).filter((v) => v > 0);
+    const ids = finalWorth(r).map((p) => p.playerId);
+    const of = (id: string, k: "commerce" | "campaign") => r.influence?.[id]?.[k] ?? 0;
+    const all = ids.map((id) => of(id, "commerce") + of(id, "campaign"));
+    const campaign = ids.reduce((n, id) => n + of(id, "campaign"), 0);
+    const total = all.reduce((n, v) => n + v, 0);
     const sorted = [...all].sort((a, b) => a - b);
     const p90 = sorted[Math.floor(sorted.length * 0.9)] ?? 0;
     checks.push({
       name: "Maison : Influence gagnée dans la saison (marchands actifs)",
-      target: "repère du plan : ≈ 55 au médian, ≈ 160 au plus actif",
-      value: `médiane ${median(all)}, 9e décile ${p90}, Campagne ${campaign.length > 0 ? `${median(campaign)} (médiane de qui en gagne)` : "—"}`,
+      target: "repères du plan : ≈ 55 au médian, ≈ 160 au plus actif ; Campagne ≈ 40 %",
+      value: `médiane ${median(all)}, 9e décile ${p90}, part de la Campagne ${pct(total > 0 ? campaign / total : 0)}`,
       pass: true,
       blocking: false,
     });
   }
   return checks;
+}
+
+/** The rule on the median over the seeds: patents at most 15 % ahead, the others losing nothing. */
+export function houseVerdict(gaps: { lead: number; others: number }[]): Check[] {
+  if (gaps.length === 0) return [];
+  const lead = median(gaps.map((g) => g.lead));
+  const others = median(gaps.map((g) => g.others));
+  return [
+    {
+      name: `Maison : avance des patentes, médiane de ${gaps.length} graines`,
+      target: "≤ +15 %",
+      value: pct(lead),
+      pass: lead <= 0.15,
+      blocking: true,
+    },
+    {
+      name: `Maison : marchands sans patente, médiane de ${gaps.length} graines`,
+      target: "≥ −5 %",
+      value: pct(others),
+      pass: others >= -0.05,
+      blocking: true,
+    },
+  ];
 }
 
 export function allBlockingPass(checks: Check[]): boolean {

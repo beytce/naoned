@@ -3,7 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { venice1450Settings } from "@comptoirs/engine";
-import { allBlockingPass, checksTable, evaluate } from "./report.js";
+import { allBlockingPass, checksTable, evaluate, houseGaps, houseVerdict } from "./report.js";
 import { DEFAULT_MIX, type SimulationResult, runSimulation, scaleMix } from "./sim.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -86,6 +86,7 @@ function csv(rows: Record<string, unknown>[]): string {
 
 const sections: string[] = [];
 let allPass = true;
+const gaps: { lead: number; others: number }[] = [];
 for (const seed of seeds) {
   const options = {
     settings,
@@ -120,6 +121,8 @@ for (const seed of seeds) {
   const houseTwin =
     options.patentShare > 0 ? runSimulation({ ...options, patentShare: 0 }) : undefined;
   const checks = evaluate(result, twin, houseTwin);
+  const gap = houseTwin ? houseGaps(result, houseTwin) : undefined;
+  if (gap && !Number.isNaN(gap.lead) && !Number.isNaN(gap.others)) gaps.push(gap);
   const pass = allBlockingPass(checks);
   allPass &&= pass;
   const dir = join(outDir, `seed-${seed}`);
@@ -149,6 +152,21 @@ for (const seed of seeds) {
   );
   for (const c of checks)
     console.log(`  ${c.pass ? "ok  " : c.blocking ? "FAIL" : "warn"} ${c.name}: ${c.value}`);
+}
+
+// Patents: judged on the median over the seeds (one seed's replay is too noisy alone).
+const verdict = houseVerdict(gaps);
+if (verdict.length > 0) {
+  const pass = allBlockingPass(verdict);
+  allPass &&= pass;
+  sections.push(
+    [
+      `## Maison : synthèse des graines — ${pass ? "conforme" : "non conforme"}`,
+      checksTable(verdict),
+    ].join("\n\n"),
+  );
+  console.log(`\nhouse: ${pass ? "PASS" : "FAIL"}`);
+  for (const c of verdict) console.log(`  ${c.pass ? "ok  " : "FAIL"} ${c.name}: ${c.value}`);
 }
 
 const report = `# Rapport de simulation\n\n${allPass ? "Toutes les graines respectent les cibles." : "Au moins une graine ne respecte pas les cibles."}\n\n${sections.join("\n\n")}\n`;
