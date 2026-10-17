@@ -74,3 +74,23 @@ export function campaignInfluence(
     }
   }
 }
+
+/** Days of play a merchant needs to count as a participant of the season. */
+export const PARTICIPANT_DAYS = 7;
+
+export type SeasonTier = "doge" | "podium" | "top10" | "elite" | "notable" | "participant" | "none";
+
+/** The tier of a final rank among `people` merchants (the rewards and Influence of the close). */
+export function seasonTier(rank: number, people: number, daysPlayed: number): SeasonTier {
+  if (rank === 1) return "doge";
+  if (rank <= 3) return "podium";
+  if (rank <= 10) return "top10";
+  if (rank <= Math.ceil(people * 0.1)) return "elite";
+  if (rank <= Math.ceil(people * 0.25)) return "notable";
+  return daysPlayed >= PARTICIPANT_DAYS ? "participant" : "none";
+}
+
+/** Influence the house earns at the season's close for its tier. */
+export function seasonInfluence(ctx: WorldContext, tier: string): number {
+  return ctx.settings.house?.influence.season[tier] ?? 0;
+}

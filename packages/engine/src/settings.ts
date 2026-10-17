@@ -595,6 +595,8 @@ export const worldSettingsSchema = z.object({
       influence: z.object({
         commerce: z.object({ ducatsPerPoint: positive, weeklyCap: qty }),
         campaign: z.object({ meritPerPoint: positive, winBonus: qty, weeklyCap: qty }),
+        /** At the season's close, by tier of the ranking (`seasonTier`); none without. */
+        season: z.record(qty).default({}),
       }),
       /** Patent code → its price in Influence and the patents it asks for first. */
       patents: z.record(z.object({ cost: positive, requires: z.array(z.string()).default([]) })),

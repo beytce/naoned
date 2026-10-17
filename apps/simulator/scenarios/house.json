@@ -1,9 +1,29 @@
 {
   "house": {
     "influence": {
-      "commerce": { "ducatsPerPoint": 100, "weeklyCap": 25 },
-      "campaign": { "meritPerPoint": 20, "winBonus": 3, "weeklyCap": 10 }
+      "commerce": {
+        "ducatsPerPoint": 100,
+        "weeklyCap": 25
+      },
+      "campaign": {
+        "meritPerPoint": 20,
+        "winBonus": 3,
+        "weeklyCap": 10
+      },
+      "season": {
+        "doge": 50,
+        "podium": 30,
+        "top10": 20,
+        "elite": 15,
+        "notable": 10,
+        "participant": 5
+      }
     },
-    "patents": { "second_counter": { "cost": 40, "requires": [] } }
+    "patents": {
+      "second_counter": {
+        "cost": 40,
+        "requires": []
+      }
+    }
   }
 }

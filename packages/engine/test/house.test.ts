@@ -4,6 +4,8 @@ import {
   type DeliveryOrder,
   type WorldSettingsInput,
   deliveryOrdersFor,
+  seasonInfluence,
+  seasonTier,
 } from "../src/index.js";
 import { campaignSettings, deliverySettings, testDeliveries, testHouse } from "./fixture.js";
 import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
@@ -161,5 +163,24 @@ describe("influence", () => {
     w.do({ type: "sellToCity", playerId: "a", city: "venezia", resource: "bread", quantity: 20 });
     w.at(WEEK + MIN);
     expect(influence(w.do({ type: "tick" }), "commerce")).toEqual([]);
+  });
+});
+
+describe("the season's tier", () => {
+  it("follows the rank of the close, the participant's after a week of play", () => {
+    expect(seasonTier(1, 200, 0)).toBe("doge");
+    expect(seasonTier(3, 200, 0)).toBe("podium");
+    expect(seasonTier(10, 200, 0)).toBe("top10");
+    expect(seasonTier(20, 200, 0)).toBe("elite");
+    expect(seasonTier(50, 200, 0)).toBe("notable");
+    expect(seasonTier(51, 200, 9)).toBe("participant");
+    expect(seasonTier(51, 200, 2)).toBe("none");
+  });
+
+  it("brings the house its Influence, none without the setting", () => {
+    const ctx = makeContext({ house: testHouse });
+    expect(seasonInfluence(ctx, "doge")).toBe(testHouse.influence.season.doge);
+    expect(seasonInfluence(ctx, "none")).toBe(0);
+    expect(seasonInfluence(makeContext(), "doge")).toBe(0);
   });
 });

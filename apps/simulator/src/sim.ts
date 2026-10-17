@@ -22,6 +22,9 @@ import {
   emptyTotals,
   isMudaGood,
   parseSettings,
+  seasonInfluence,
+  seasonStandings,
+  seasonTier,
   venice1450,
 } from "@comptoirs/engine";
 import {
@@ -69,8 +72,8 @@ export interface SimulationResult {
   passHolders?: string[];
   /** Bots whose house held patents. */
   patentHolders?: string[];
-  /** Influence earned in the season, per merchant and source. */
-  influence?: Record<string, { commerce: number; campaign: number }>;
+  /** Influence earned in the season, per merchant and source (the close's tier included). */
+  influence?: Record<string, { commerce: number; campaign: number; season: number }>;
   /** World at the end of the run (debugging, extra analysis). */
   finalState?: WorldState;
   /** Do merchants depend on each other? Raw material buyers and building types per merchant. */
@@ -278,7 +281,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     for (const e of res.effects.events) {
       if (e.type !== "influence_earned" || !e.playerId) continue;
       result.influence ??= {};
-      const tally = result.influence[e.playerId] ?? { commerce: 0, campaign: 0 };
+      const tally = result.influence[e.playerId] ?? { commerce: 0, campaign: 0, season: 0 };
       result.influence[e.playerId] = tally;
       const source = e.data?.source === "campaign" ? "campaign" : "commerce";
       tally[source] += Number(e.data?.amount ?? 0);
@@ -485,6 +488,20 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     }
   }
   closeDay();
+  // The close: each merchant's tier of the final ranking brings its Influence (served by the
+  // server in the game).
+  if (ctx.settings.house) {
+    const standings = seasonStandings(ctx, state, end - 1);
+    standings.forEach((row, i) => {
+      const days = Math.floor((end - (state.players[row.playerId]?.joinedAt ?? end)) / DAY_MS);
+      const amount = seasonInfluence(ctx, seasonTier(i + 1, standings.length, days));
+      if (amount === 0) return;
+      result.influence ??= {};
+      const tally = result.influence[row.playerId] ?? { commerce: 0, campaign: 0, season: 0 };
+      tally.season += amount;
+      result.influence[row.playerId] = tally;
+    });
+  }
   result.finalState = state;
   result.referencePrices = ctx.settings.referencePrices;
   result.doganaRange = doganaRange;
