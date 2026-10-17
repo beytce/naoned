@@ -29,9 +29,9 @@ Ordres de grandeur pour la première calibration, à régler au simulateur :
 | --- | --- | --- |
 | **Commerce** : ventes nettes de la semaine | 1 par 100 ducats | 25 par semaine |
 | **Campagne** : le Mérite de la semaine | 1 par 20 de Mérite, +3 si la famille gagne la semaine | 10 par semaine |
-| **Fin de saison** : palier du classement | participant 5, notable 10, top 10 20, podium 30, Doge 50 | — |
+| **Fin de saison** : palier du classement (`seasonTier`) | participant 5, top 25 % 10, top 10 % 15, top 10 20, podium 30, Doge 50 | — |
 
-Mesuré au simulateur (10 graines) : **≈ 60 par saison au médian** (de 50 à 65), ≈ 90 au 9e décile, dont ≈ 44 % par la Campagne ; un marchand qui ne fait que commercer gagne ≈ 35, plus la prime de fin de saison (servie par le serveur, non simulée).
+Mesuré au simulateur (10 graines, prime de fin de saison comprise) : **≈ 68 par saison au médian** (de 56 à 75), ≈ 110 au 9e décile, dont ≈ 38 % par la Campagne ; un marchand qui ne fait que commercer gagne ≈ 40. Prix du catalogue gardés (décision du porteur) : tout le catalogue demande une dizaine de saisons au médian, six à sept au 9e décile.
 
 ## Le catalogue des patentes (première proposition)
 
@@ -48,7 +48,7 @@ Les patentes **n'ajoutent que du neuf** (décision du porteur) : tout ce que le 
 | | Art du verre (Murano) | Chaîne du verre (sable → verre), contenu V1 | 150 | Art de la laine |
 | Cosmétique | Pièces de blason, façades du palais, monument de la Maison sur la carte | — | 10 à 60 | — |
 
-Repères : une première patente cosmétique dès la première ou la deuxième semaine (1 000 à 2 000 ducats de ventes nettes), le second comptoir en fin de première saison pour un marchand médian (plus tôt s'il joue la Campagne), la Lombardie vers la troisième saison ; tout le catalogue (≈ 640 sans les cosmétiques) demande six à sept saisons au médian, quatre à cinq à qui joue aussi la Campagne. Il faut choisir sa route.
+Repères : une première patente cosmétique dès la première ou la deuxième semaine (1 000 à 2 000 ducats de ventes nettes), le second comptoir en fin de première saison pour un marchand médian (plus tôt s'il joue la Campagne), la Lombardie (après le second comptoir, 120 en tout) vers la deuxième saison ; tout le catalogue (≈ 640 sans les cosmétiques) demande une dizaine de saisons au médian, six à sept aux plus actifs (mesuré au simulateur). Il faut choisir sa route.
 
 Contenu à créer : chaque route ouvre du neuf (lieux et routes de Lombardie et du Frioul, commandes du Levant et des Allemands, chaînes textile et verre). Les deux premières routes (Logistique, Outre-mer) se font avec ce qui existe presque déjà : comptoir et routes, biens de la Muda, commandes du Doge.
 

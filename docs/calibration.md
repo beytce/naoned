@@ -814,3 +814,19 @@ Sur 10 graines : avance médiane **+2,2 %** (cible ≤ 15 %), marchands sans pat
 **Lecture.**
 - Le second comptoir, tel quel, ne donne presque rien (+2 %) : les véhicules attendent les commandes, pas l'inverse. Il reste une patente de confort (des livraisons plus rapides, des véhicules revenus plus tôt) ; il ne justifie pas seul 40 d'Influence. Les patentes qui ouvrent du neuf (Levant, Lombardie) porteront l'envie de progresser ; elles demandent leur contenu.
 - Rythme : avec ≈ 60 d'Influence par saison au médian (la prime de fin de saison, servie par le serveur, n'est pas simulée), le catalogue du plan (≈ 640) demanderait une dizaine de saisons, au lieu des six à sept prévues. À revoir avec le contenu des autres routes : baisser les prix d'environ un tiers ou garder une progression longue.
+
+### Prime de fin de saison (17 octobre 2026, décision du porteur : prix du catalogue inchangés)
+
+Le palier du classement final rapporte de l'Influence (`house.influence.season`) : Doge 50, podium 30, top 10 20, top 10 % 15, top 25 % 10, participant 5. La règle des paliers passe du serveur au moteur (`seasonTier`), que le serveur appelle désormais ; le simulateur l'applique à la clôture.
+
+| Graine | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Influence de la saison, médiane | 71,5 | 64 | 62 | 69 | 70 | 70,5 | 75 | 66 | 56 | 68 |
+| Sans la Campagne (commerce et prime) | 41,5 | 38 | 33,5 | 40 | 40 | 40,5 | 46 | 39 | 28 | 41,5 |
+| 9e décile | 125 | 113 | 111 | 105 | 107 | 109 | 126 | 119 | 107 | 113 |
+| Part de la Campagne | 37,1 % | 38,3 % | 37,1 % | 37,5 % | 40,0 % | 37,7 % | 36,1 % | 35,7 % | 42,4 % | 38,0 % |
+| Catalogue complet (≈ 640) au médian | 9 saisons | 10 | 11 | 10 | 10 | 10 | 9 | 10 | 12 | 10 |
+
+Toutes les graines conformes ; patentes : avance médiane +2,7 % et +1,6 % (deux lots de 5 graines), marchands sans patente +1,4 % et −1,4 %.
+
+**Lecture.** La prime ajoute ≈ 6 au médian (la plupart des marchands sont « participants ») et ≈ 15 au 9e décile : l'Influence médiane passe à ≈ 68 par saison, la Campagne en fait ≈ 38 % (cible du porteur : 40 %). Le catalogue complet demande toujours **une dizaine de saisons** au médian, six à sept au 9e décile ; un marchand qui ne fait que commercer (≈ 40 par saison) en demanderait seize. Ce qui s'achète tôt reste rapide : le second comptoir (40) dans la première saison, Alexandrie (50) dans la deuxième. Si la bêta montre que c'est trop long, la baisse d'un tiers des prix reste l'autre levier.
