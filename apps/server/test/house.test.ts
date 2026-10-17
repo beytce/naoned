@@ -4,7 +4,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
 import { accounts, influenceEntries } from "../src/db/schema.js";
-import { botBuysPatents } from "../src/game/house.js";
+import { botBuysPatents, buyPatent, houseOf } from "../src/game/house.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
@@ -198,10 +198,15 @@ describe("the house's Influence", () => {
     expect(data.influence.length).toBeGreaterThan(0);
   });
 
-  it("is off in a world without it", async () => {
+  it("is on in Venice, and off in a world without it", async () => {
     await open();
     const ada = await player("ada@example.org");
-    expect(await get(ada)).toEqual({ enabled: false });
-    expect((await buy(ada, "second_counter")).json().error).toBe("house_off");
+    expect((await get(ada)).enabled).toBe(true);
+    const id = (await get(ada, "/api/me")).account.id as string;
+    const off = { ...world.ctx.settings, house: undefined };
+    expect(await houseOf(database.db, off, id)).toEqual({ enabled: false });
+    await expect(
+      buyPatent(database.db, off, id, "second_counter", world.id, new Date(now)),
+    ).rejects.toThrow("house_off");
   });
 });

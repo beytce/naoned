@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { venice1450Settings } from "@comptoirs/engine";
 import { describe, expect, it } from "vitest";
 import { gini } from "../src/metrics.js";
@@ -29,11 +28,8 @@ describe("simulator", () => {
   });
 
   it("gives houses their patents, which choose a second counter and earn Influence", () => {
-    const house = JSON.parse(
-      readFileSync(new URL("../scenarios/house.json", import.meta.url), "utf8"),
-    );
     const r = runSimulation({
-      settings: { ...venice1450Settings, ...house },
+      settings: venice1450Settings,
       seed: 5,
       // Two weeks: the first one closes on day 7 (the last runs to the end of the season).
       days: 14,

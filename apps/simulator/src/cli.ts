@@ -20,7 +20,7 @@ const { values } = parseArgs({
     pass: { type: "string", default: "0" },
     /**
      * Share of bots whose house holds patents (0 to 1), compared with the same season without
-     * them. Needs a world with the house (`--scenario scenarios/house.json`).
+     * them (the house's settings of Venice).
      */
     patents: { type: "string", default: "0" },
     /** Bots as in the live world (next to people). */
