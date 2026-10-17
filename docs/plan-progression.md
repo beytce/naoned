@@ -1,6 +1,6 @@
 # La Maison dure, la fortune repart — plan de progression entre saisons
 
-Décision du porteur (17 octobre 2026) : le commerce garde ses saisons mensuelles, mais la **Maison** du joueur se développe d'une saison à l'autre. Elle **achète elle-même** ses droits — commercer dans une nouvelle ville, aux galères de la Muda, en Lombardie… — avec une monnaie qui dure : **l'Influence**, gagnée par le commerce et par la Campagne des familles. Les ducats, les stocks, les ateliers et les véhicules repartent de zéro chaque mois, comme aujourd'hui. Les familles gardent leur saison.
+Décision du porteur (17 octobre 2026) : le commerce garde ses saisons mensuelles, mais la **Maison** du joueur se développe d'une saison à l'autre. Elle **achète elle-même** ses droits — un second comptoir, le commerce du Levant, les villes de Lombardie… — avec une monnaie qui dure : **l'Influence**, gagnée par le commerce et par la Campagne des familles. Les ducats, les stocks, les ateliers et les véhicules repartent de zéro chaque mois, comme aujourd'hui. Les familles gardent leur saison.
 
 **Statut : plan, non codé.** Le gel des mécaniques tient jusqu'aux mesures de la bêta ; ce document prépare la mise en œuvre et le simulateur qui la validera.
 
@@ -14,7 +14,7 @@ Décision du porteur (17 octobre 2026) : le commerce garde ses saisons mensuelle
 
 ## Les règles
 
-1. **Des choix, pas du rendement.** Une patente ouvre une option (une ville, un marché, une maîtrise, un territoire). Elle ne donne jamais plus de production par lot, de meilleurs prix, plus de vitesse ou de capacité que ce qu'un nouveau peut acheter. Un vétéran fait autre chose, pas la même chose en plus fort.
+1. **Des choix, pas du rendement.** Une patente ouvre une option (un comptoir, un marché, des villes, une chaîne d'ateliers). Elle ne donne jamais plus de production par lot, de meilleurs prix, plus de vitesse ou de capacité que ce qu'un nouveau peut acheter. Un vétéran fait autre chose, pas la même chose en plus fort.
 2. **Pas de jeu à somme nulle avec les nouveaux.** La demande d'une ville ouverte par patente se calcule sur les marchands actifs qui y ont droit : ouvrir Brescia aux uns n'enlève aucune commande à Padoue.
 3. **Avantage borné et mesuré.** À activité égale, une Maison qui a toutes les patentes finit au plus **15 %** devant un nouveau (cible à confirmer, vérifiée par `pnpm sim` sur toutes les graines), et les cibles des nouveaux ne bougent pas (première livraison, commandes couvertes, J1).
 4. **L'Influence ne s'achète pas et ne s'échange pas.** Ni euros, ni Pass, ni ducats, ni transfert entre joueurs : elle se gagne en jouant, point. Elle ne se convertit jamais en ducats.
@@ -35,23 +35,22 @@ Ce que cela donne par saison : un marchand médian (≈ 5 000 ducats de ventes n
 
 ## Le catalogue des patentes (première proposition)
 
-Le nouveau commence avec la chaîne de sa région, **ses 4 villes les plus proches**, le Rialto complet (ordres immédiats et à cours limité, comme le veut le tutoriel), deux mules et deux maîtrises possibles (Maître d'atelier, Roulier). Le reste s'achète, en quatre routes :
+Les patentes **n'ajoutent que du neuf** (décision du porteur) : tout ce que le jeu offre aujourd'hui reste ouvert à tous dès le premier jour (la chaîne de sa région, les 7 villes de Vénétie, le Rialto, la Muda, les quatre maîtrises). Le premier mois d'un nouveau ne change pas ; ce qui s'achète vient en plus, en quatre routes :
 
-| Route | Patente | Coût | Pré-requis |
-| --- | --- | --- | --- |
-| **Vénétie** | Droit de commerce dans une ville de Vénétie (chacune des 3 restantes) | 15, puis 20, puis 25 | — |
-| **Outre-mer** | Charte du Levant : galères de la Muda, commandes du Doge en produits d'outre-mer, maîtrise Marchand du Levant | 40 | 1 ville achetée |
-| | Comptoir d'Alexandrie : commandes du Doge à plusieurs marchandises (épices, soie…) | 60 | Charte du Levant |
-| **Logistique** | Brevet de Négociant (maîtrise) | 30 | — |
-| | Second comptoir dans une autre région : un point de départ des véhicules, sans le bonus régional des matières premières | 80 | 2 villes achetées |
-| **Terre ferme** | Lombardie : Brescia et Bergame deviennent des villes de commerce (routes longues, commandes propres, payées à l'heure de route comme les autres) | 120 | les 7 villes de Vénétie |
-| | Frioul : Udine et Pordenone | 150 | Lombardie ou second comptoir |
-| **Ateliers** | Guilde de l'Art de la laine : chaîne textile (laine → drap), quand le contenu V1 existe | 150 | 1 maîtrise |
-| Cosmétique | Pièces de blason, façades du palais, monument de la Maison sur la carte | 10 à 60 | — |
+| Route | Patente | Ce qu'elle ouvre | Coût | Pré-requis |
+| --- | --- | --- | --- | --- |
+| **Logistique** | Second comptoir | Un point de départ des véhicules dans une autre région, **rechoisie à chaque saison** ; sans le bonus régional des matières premières | 40 | — |
+| **Outre-mer** | Comptoir d'Alexandrie | Commandes du Levant à plusieurs marchandises (épices, soie, draps), payées à l'heure de route comme les autres | 50 | — |
+| | Fondaco dei Tedeschi | Les marchands allemands achètent à Venise (draps, verre, sel) : une demande propre | 80 | Comptoir d'Alexandrie |
+| **Terre ferme** | Lombardie | Brescia et Bergame deviennent des villes de commerce (routes longues, commandes propres) | 80 | Second comptoir |
+| | Frioul | Udine et Pordenone, villes de commerce | 120 | Lombardie |
+| **Ateliers** | Art de la laine | Chaîne textile (laine → drap), contenu V1 | 120 | — |
+| | Art du verre (Murano) | Chaîne du verre (sable → verre), contenu V1 | 150 | Art de la laine |
+| Cosmétique | Pièces de blason, façades du palais, monument de la Maison sur la carte | — | 10 à 60 | — |
 
-Repères : un marchand médian achète sa première ville dans la première ou la deuxième semaine (1 500 ducats de ventes nettes), complète la Vénétie en une saison et demie, et ouvre la Lombardie vers la quatrième saison ; tout le catalogue (≈ 660 sans les cosmétiques) demande six à sept saisons au médian, quatre à cinq à qui joue aussi la Campagne. Personne ne peut tout avoir vite : il faut choisir sa route.
+Repères : une première patente cosmétique dès la première ou la deuxième semaine (1 000 à 2 000 ducats de ventes nettes), le second comptoir en fin de première saison pour un marchand médian (plus tôt s'il joue la Campagne), la Lombardie vers la troisième saison ; tout le catalogue (≈ 640 sans les cosmétiques) demande six à sept saisons au médian, quatre à cinq à qui joue aussi la Campagne. Il faut choisir sa route.
 
-Le départ retire au nouveau ses trois villes les plus lointaines (pour la Lagune : Vérone, Mantoue et l'une de Ferrare ou Vicence, à égale distance) et la Muda : c'est voulu (« une progression plus lente »), et cela simplifie ses premiers jours. À vérifier au simulateur : les commandes qu'un nouveau peut couvrir doivent rester dans la cible (aujourd'hui 58 à 63 % des commandes ouvertes).
+Contenu à créer : chaque route ouvre du neuf (lieux et routes de Lombardie et du Frioul, commandes du Levant et des Allemands, chaînes textile et verre). Les deux premières routes (Logistique, Outre-mer) se font avec ce qui existe presque déjà : comptoir et routes, biens de la Muda, commandes du Doge.
 
 ## Ce qui change pour le joueur
 
@@ -65,7 +64,7 @@ Le départ retire au nouveau ses trois villes les plus lointaines (pour la Lagun
 
 | Couche | Changement |
 | --- | --- |
-| `packages/engine` | Catalogue des patentes et barème de l'Influence dans `worlds.settings` (jamais en dur) ; les patentes de la Maison entrent dans l'état du joueur à l'adhésion ; contrôles purs dans les commandes (livrer une ville, acheter à la Muda, choisir une maîtrise, poser un second comptoir) ; demande des villes calculée sur les marchands qui y ont droit ; calcul de l'Influence gagnée à la clôture de la semaine (ventes nettes, Mérite) avec ses plafonds. Tests d'abord, sur la fixture. |
+| `packages/engine` | Catalogue des patentes et barème de l'Influence dans `worlds.settings` (jamais en dur) ; les patentes de la Maison entrent dans l'état du joueur à l'adhésion ; contrôles purs dans les commandes (livrer une ville ou une commande à patente, poser le second comptoir de la saison, bâtir un atelier de chaîne à patente) ; demande des villes calculée sur les marchands qui y ont droit ; calcul de l'Influence gagnée à la clôture de la semaine (ventes nettes, Mérite) avec ses plafonds. Tests d'abord, sur la fixture. |
 | `apps/server` | Deux tables au niveau du compte, hors couche monde : `influence_entries` (journal signé : source, monde et semaine d'origine, montant) et `house_patents` (patente, date, monde d'achat). Le solde est la somme du journal, comme le grand livre. Route d'achat d'une patente, transactionnelle. Bots dotés de patentes réparties comme une vraie population. |
 | `apps/web` | Livre de la Maison, villes verrouillées sur la carte, achat et cérémonie, Influence de la semaine dans la Campagne. |
 | `apps/simulator` | Population mêlée (nouveaux, Maisons à mi-parcours, Maisons complètes) ; bots qui achètent des patentes selon une route ; rapport : écart à activité égale, KPIs des nouveaux, rythme d'acquisition. |
@@ -73,16 +72,16 @@ Le départ retire au nouveau ses trois villes les plus lointaines (pour la Lagun
 
 ## Étapes proposées
 
-1. **Simulateur d'abord** (après validation de ce plan) : catalogue et barème dans les réglages, contrôles dans le moteur, bots aux patentes mêlées. Critères : écart ≤ 15 % pour une Maison complète, KPIs des nouveaux inchangés, rythme d'acquisition proche des repères ci-dessus, toutes les graines conformes. Résultats dans `docs/calibration.md`.
-2. **Après les mesures de la bêta**, si le porteur lève le gel : l'Influence, le Livre de la Maison et les routes Vénétie, Outre-mer et Logistique (sauf le second comptoir). Rien de nouveau à dessiner : villes, Muda et maîtrises existent déjà.
-3. Second comptoir et Lombardie.
-4. Frioul et textile avec la V1.
+1. **Simulateur d'abord** : barème de l'Influence et second comptoir (la seule patente sans contenu nouveau à dessiner) dans les réglages et le moteur, bots qui gagnent et dépensent l'Influence. Critères : écart ≤ 15 % pour une Maison complète, KPIs des nouveaux inchangés, rythme d'acquisition proche des repères ci-dessus, toutes les graines conformes. Résultats dans `docs/calibration.md`.
+2. **Après les mesures de la bêta**, si le porteur lève le gel : l'Influence, le Livre de la Maison, les cosmétiques et le second comptoir.
+3. Outre-mer (Alexandrie, puis le Fondaco dei Tedeschi) et Lombardie : nouvelles commandes, lieux et routes.
+4. Frioul, textile et verre avec la V1.
 
-## Questions ouvertes
+## Décisions du porteur (17 octobre 2026)
 
-- Le nom : « Influence » et « patentes » vous vont-ils ?
-- Le poids de la Campagne : environ 40 % de l'Influence pour qui y joue, est-ce assez pour donner envie, pas trop pour qui ne veut que commercer ?
-- Le seuil d'avantage d'une Maison complète : 15 %, plus, moins ?
-- Le départ retire-t-il vraiment trois villes au nouveau, ou les patentes ne font-elles qu'ajouter du neuf au-delà des 7 villes actuelles (progression plus douce, moins de choix au début) ?
-- Le second comptoir : une région rechoisie chaque saison, ou fixée une fois pour toutes ?
-- Les PNJ : patentes réparties comme la population réelle, ou aucune pour ne pas occuper les villes lointaines ?
+- La monnaie s'appelle **Influence** ; les droits achetés, des **patentes**.
+- La Campagne pèse environ 40 % de l'Influence de qui y joue.
+- Avantage d'une Maison complète, à activité égale : **15 %** au plus.
+- Les patentes **n'ajoutent que du neuf** ; le contenu actuel reste ouvert à tous.
+- Le second comptoir se **rechoisit à chaque saison**.
+- Les PNJ (laissé au choix) : ils gagnent et dépensent l'Influence **comme les joueurs**, avec les mêmes commandes et les mêmes limites, selon une route tirée au hasard par maison. Ils ne partent avec aucune patente : la première saison, personne n'en a, et ils n'avancent jamais plus vite qu'un joueur de même activité.
