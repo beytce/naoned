@@ -5,32 +5,34 @@ import { DAY, HOUR, World, makeContext } from "./helpers.js";
 describe("a dormant counting house", () => {
   const ctx = () =>
     makeContext({
-      dormancy: { afterHours: 24, upkeepBps: 2_500 },
+      dormancy: { afterHours: 24 },
       rations: { resource: "bread", perLevelPerDay: 2, slowdownBps: 5_000 },
     });
 
-  it("pays a quarter of its upkeep and its workers do not starve while the player is away", () => {
+  it("keeps its workers from starving while the player is away", () => {
     const w = new World(ctx());
     w.do({ type: "join", playerId: "a", region: "terraferma" });
+    w.give("a", "bread", 4);
     w.do({ type: "tick" });
-    // Day 1: the player was here less than 24 h ago, full upkeep (farm + mill = 2 500), no bread.
+    // Day 1: the player was here less than 24 h ago, the workers eat (farm + mill = 4 loaves).
     w.at(DAY + 60_000).do({ type: "tick" });
-    expect(w.cash("a")).toBe(100_000n - 2_500n);
-    expect(w.state.players.a?.hungryUntil ?? 0).toBeGreaterThan(w.now);
-    // Days 2 and 3: away for more than 24 h, a quarter of the upkeep, no hunger.
+    expect(w.stock("a", "bread").available).toBe(0);
+    expect(w.state.players.a?.hungryUntil ?? 0).toBeLessThan(w.now);
+    // Days 2 and 3: away for more than 24 h, no bread eaten, no hunger.
     w.at(3 * DAY + 60_000).do({ type: "tick" });
-    expect(w.cash("a")).toBe(100_000n - 2_500n - 2n * 625n);
     expect(w.state.players.a?.hungryUntil ?? 0).toBeLessThan(w.now);
   });
 
   it("wakes up with the next action", () => {
     const w = new World(ctx());
     w.do({ type: "join", playerId: "a", region: "terraferma" });
+    // Bread for day 1 only, before the player is gone for 24 h.
+    w.give("a", "bread", 4);
     w.at(3 * DAY + HOUR).do({ type: "tick" });
-    const cash = w.cash("a");
+    expect(w.state.players.a?.hungryUntil ?? 0).toBeLessThan(w.now);
     w.do({ type: "collect", playerId: "a", buildingId: w.buildingsOf("a")[0]?.id ?? "" });
     w.at(4 * DAY + 60_000).do({ type: "tick" });
-    expect(cash - w.cash("a")).toBe(2_500n);
+    expect(w.state.players.a?.hungryUntil ?? 0).toBeGreaterThan(w.now);
   });
 });
 

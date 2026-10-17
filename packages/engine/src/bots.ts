@@ -920,8 +920,9 @@ export class Bot {
     const next = this.nextInvestment(s) ?? this.prestigeInvestment(s);
     if (!next) return;
 
-    const upkeepReserve = 200_00n;
-    if (this.cash(s) < next.cost.ducats + upkeepReserve) return;
+    // Ducats kept back for the workers' bread.
+    const reserve = 200_00n;
+    if (this.cash(s) < next.cost.ducats + reserve) return;
     let ready = true;
     for (const [res, qty] of Object.entries(next.cost.materials)) {
       const missing = qty - this.available(s, res);
@@ -930,7 +931,7 @@ export class Bot {
         if (this.available(s, res) < qty) ready = false;
       }
     }
-    if (!ready || this.cash(s) < next.cost.ducats + upkeepReserve / 2n) return;
+    if (!ready || this.cash(s) < next.cost.ducats + reserve / 2n) return;
     if (next.kind === "build") s.act({ type: "build", playerId: this.id, buildingType: next.type });
     else if (next.building)
       s.act({ type: "upgrade", playerId: this.id, buildingId: next.building.id });

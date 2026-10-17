@@ -240,11 +240,10 @@ describe("production", () => {
     expect(w.stock("late", "planks").available).toBe(18); // 12 × 1.5
   });
 
-  it("charges upkeep daily and blocks production after a default", () => {
-    const w = new World(makeContext({ startingCapital: 1_000 }));
+  it("starts production with an empty purse: buildings cost nothing to keep", () => {
+    const w = new World(makeContext({ startingCapital: 0 }));
     w.do({ type: "join", playerId: "a", region: "terraferma" });
     w.at(DAY + MIN).do({ type: "tick" });
-    expect(w.cash("a")).toBe(0n); // owed 2 500, paid 1 000
     const res = w.try({
       type: "startProduction",
       playerId: "a",
@@ -252,7 +251,6 @@ describe("production", () => {
       recipe: "grow_wheat",
       batches: 1,
     });
-    expect(res.ok).toBe(false);
-    if (!res.ok) expect(res.error).toBe("upkeep_default");
+    expect(res.ok).toBe(true);
   });
 });

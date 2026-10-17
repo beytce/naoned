@@ -32,7 +32,6 @@ export type EngineErrorCode =
   | "insufficient_stock"
   | "building_busy"
   | "queue_full"
-  | "upkeep_default"
   | "max_buildings"
   | "max_level"
   | "max_open_orders"

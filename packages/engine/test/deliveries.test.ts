@@ -94,7 +94,7 @@ describe("vehicles", () => {
     expect(unknown.ok ? "ok" : unknown.error).toBe("unknown_vehicle_type");
   });
 
-  it("cost their upkeep every day", () => {
+  it("cost nothing to keep", () => {
     const withVehicles = world();
     withVehicles.do({ type: "buyVehicle", playerId: "a", vehicleType: "mule" });
     const without = world({
@@ -106,8 +106,8 @@ describe("vehicles", () => {
       w.do({ type: "tick" });
     }
     const paid = (w: World, i: number) => (before[i] ?? 0n) - w.cash("a");
-    // Cart 2 ducats and mule 1 ducat a day.
-    expect(paid(withVehicles, 0) - paid(without, 1)).toBe(300n);
+    expect(paid(withVehicles, 0)).toBe(0n);
+    expect(paid(without, 1)).toBe(0n);
   });
 });
 
@@ -127,10 +127,9 @@ describe("upgrading vehicles", () => {
             costDucats: 0,
             capacity: 90,
             speedBps: 13_000,
-            upkeepPerDay: 400,
             upgrade: { to: "great_wagon", costDucats: 16_000 },
           },
-          great_wagon: { costDucats: 0, capacity: 150, speedBps: 16_000, upkeepPerDay: 800 },
+          great_wagon: { costDucats: 0, capacity: 150, speedBps: 16_000 },
         },
         forSale: ["mule"],
         startingVehicles: ["mule", "mule"],
@@ -475,7 +474,7 @@ describe("market events on the board", () => {
 
   it("pays on arrival the price shown on the board", () => {
     const w = withEvents(fire);
-    // Upkeep of the new day first, so that only the payment moves the purse.
+    // The new day's board first, so that only the payment moves the purse.
     w.at(DAY + 10 * HOUR).do({ type: "tick" });
     w.give("a", "bread", 100);
     const o = board(w).find(

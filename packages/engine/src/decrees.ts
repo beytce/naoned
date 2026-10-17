@@ -8,17 +8,10 @@ import { weekIndex } from "./weekly.js";
  * Laws and decrees. During the week, each family votes its programme (weighted by merit, no
  * member above a share); the family that wins the week imposes it for the next one. A family may
  * not impose the same decree two weeks in a row. The effects are read here by the market, the
- * roads, the Muda and the upkeep.
+ * roads and the Muda.
  */
 
-export type DecreeCode =
-  | "fondaco"
-  | "gabelle"
-  | "faveur"
-  | "peage"
-  | "levant"
-  | "calmiere"
-  | "franchise";
+export type DecreeCode = "fondaco" | "gabelle" | "faveur" | "peage" | "levant" | "calmiere";
 
 /** What a decree is aimed at, if anything. */
 export function decreeTargetKind(code: string): "resource" | "city" | null {
@@ -243,17 +236,4 @@ export function calmiereCap(
   const ref = ctx.settings.referencePrices[resource];
   if (!d || d.target !== resource || ref === undefined) return null;
   return (ref * BigInt(ctx.settings.decrees.calmiere.capBps)) / 10_000n;
-}
-
-/** Share of the building upkeep a member is spared (franchise). */
-export function upkeepDiscountBps(
-  ctx: WorldContext,
-  state: WorldState,
-  playerId: PlayerId,
-  at: number,
-): number {
-  const d = decreeInForce(ctx, state, "franchise", at);
-  return d && memberOf(state, playerId, d.family)
-    ? ctx.settings.decrees.franchise.upkeepDiscountBps
-    : 0;
 }

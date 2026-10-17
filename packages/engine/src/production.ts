@@ -108,7 +108,6 @@ export function startProduction(
   if (!recipe || recipe.building !== building.type) fail("unknown_recipe");
   const player = tx.s.players[building.playerId];
   if (!player) fail("unknown_player");
-  if (tx.now < player.upkeepDefaultUntil) fail("upkeep_default");
 
   collect(tx, building);
   const normalMs = batchDuration(tx.ctx, player, recipe.durationMinutes, tx.now);

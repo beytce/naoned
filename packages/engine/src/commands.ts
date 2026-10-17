@@ -158,7 +158,6 @@ function join(tx: Tx, playerId: PlayerId, region: string, patents?: string[]): v
     region,
     joinedAt: tx.now,
     lastActionAt: tx.now,
-    upkeepDefaultUntil: 0,
     ...(patents && patents.length > 0 ? { patents: [...patents] } : {}),
   };
   tx.s.accounts[cashAccount(playerId)] = 0n;

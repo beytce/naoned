@@ -17,7 +17,6 @@ const positive = z.number().int().positive();
 const buildingSettings = z.object({
   costDucats: money,
   costMaterials: z.record(qty).default({}),
-  upkeepPerDay: money,
 });
 
 const cityDemand = z.object({
@@ -103,12 +102,10 @@ export const worldSettingsSchema = z.object({
   /** Yield bonus per building level above the first: specialising pays. */
   levelYieldBonusBps: bps.default(0),
   /**
-   * A counting house left alone this long is dormant: it pays a share of its upkeep and its
-   * workers do not go hungry, so a returning player finds it intact. 0 turns it off.
+   * A counting house left alone this long is dormant: its workers do not go hungry, so a
+   * returning player finds it intact. 0 turns it off.
    */
-  dormancy: z
-    .object({ afterHours: qty, upkeepBps: bps.max(10_000) })
-    .default({ afterHours: 0, upkeepBps: 10_000 }),
+  dormancy: z.object({ afterHours: qty }).default({ afterHours: 0 }),
   /** The merchant's ledger: short goals opening day after day, with a small reward. */
   missions: z
     .array(
@@ -367,8 +364,6 @@ export const worldSettingsSchema = z.object({
       levant: z.object({ memberQuotaBps: bps, othersCutBps: bps.max(10_000) }),
       /** No offer of a good above this share of its reference price. */
       calmiere: z.object({ capBps: bps }),
-      /** Members' building upkeep lighter. */
-      franchise: z.object({ upkeepDiscountBps: bps.max(10_000) }),
     })
     .default({
       catalog: [],
@@ -381,7 +376,6 @@ export const worldSettingsSchema = z.object({
       peage: { tollBps: 0 },
       levant: { memberQuotaBps: 0, othersCutBps: 0 },
       calmiere: { capBps: 10_000 },
-      franchise: { upkeepDiscountBps: 0 },
     }),
   /**
    * Offers between players must stay within this share of the reference price: a merchant
@@ -466,7 +460,6 @@ export const worldSettingsSchema = z.object({
           capacity: positive,
           /** Above 10 000 is faster. */
           speedBps: positive,
-          upkeepPerDay: money,
           /** The next step for ducats (destroyed), made at home: bigger, faster. */
           upgrade: z.object({ to: z.string(), costDucats: money }).optional(),
         }),
@@ -538,9 +531,6 @@ export const worldSettingsSchema = z.object({
     .default([]),
   /** Share of the materials asked for a level (level → bps; 10 000 when absent). */
   upgradeMaterialsBps: z.record(bps).default({}),
-  /** Extra upkeep per level above 1: a level-L building costs base × L × (1 + (L − 1) × growth). */
-  upkeepLevelGrowthBps: bps.default(0),
-  upkeepDefaultHours: positive,
   /** A player counts as active if they acted within this many hours. */
   activeWindowHours: positive,
   buildings: z.record(buildingSettings),

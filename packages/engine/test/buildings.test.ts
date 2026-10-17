@@ -1,20 +1,33 @@
 import { describe, expect, it } from "vitest";
-import { addedOutputBps, costForLevel, costPerOutput, upkeepPerDay } from "../src/index.js";
-import { World, makeContext } from "./helpers.js";
+import { addedOutputBps, costForLevel, costPerOutput, rationsPerDay } from "../src/index.js";
+import { DAY, MIN, World, makeContext } from "./helpers.js";
 
 describe("buildings", () => {
-  it("charges upkeep growing faster than the level", () => {
-    const ctx = makeContext({ upkeepLevelGrowthBps: 2_000 });
-    const farm = {
-      id: "b1",
-      playerId: "a",
-      type: "farm",
-      level: 3,
+  it("feeds workers by the level of the workshops, the palazzo apart", () => {
+    const ctx = makeContext({ rations: { resource: "bread", perLevelPerDay: 2, slowdownBps: 0 } });
+    const at = (id: string, playerId: string, type: string, level: number) => ({
+      id,
+      playerId,
+      type,
+      level,
       job: null,
       investedValue: 0n,
       fastBatchesLeft: 0,
-    };
-    expect(upkeepPerDay(ctx, farm)).toBe((1_000n * 3n * 14n) / 10n); // × (1 + 2 × 20 %)
+    });
+    const buildings = [
+      at("b1", "a", "farm", 3),
+      at("b2", "a", "mill", 1),
+      at("b3", "a", "palazzo", 2),
+      at("b4", "b", "farm", 5),
+    ];
+    expect(rationsPerDay(ctx, buildings, "a")).toBe(8); // (3 + 1) × 2
+  });
+
+  it("costs nothing to keep: a day boundary leaves the purse alone", () => {
+    const w = new World();
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    w.at(3 * DAY + MIN).do({ type: "tick" });
+    expect(w.cash("a")).toBe(100_000n);
   });
 
   it("builds with ducats and materials", () => {

@@ -38,8 +38,6 @@ export interface Player {
   region: string;
   joinedAt: number;
   lastActionAt: number;
-  /** While now < upkeepDefaultUntil, the player cannot start production. */
-  upkeepDefaultUntil: number;
   /** While now < hungryUntil, workers lack rations and new batches take longer. */
   hungryUntil?: number;
   /** Pass Négociant held until this time (bought, or won in the rankings). */
@@ -267,7 +265,7 @@ export interface WorldState {
   projectCount: number;
   /** Per resource, per day index: traded volume and value (all trades). */
   priceStats: Record<ResourceCode, Record<number, DailyPriceStat>>;
-  /** Last day index for which upkeep was charged. */
+  /** Last day index whose rations were served (named after the upkeep of earlier saves). */
   lastUpkeepDay: number;
   /** Contracts of the Doge fulfilled today, per player. */
   contractsDone?: Record<PlayerId, { day: number; ids: string[] }>;
