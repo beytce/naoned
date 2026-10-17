@@ -167,7 +167,7 @@ export function pushText(
     case "siege":
       return {
         title: `${landName(data.land)} menacée !`,
-        body: `${Number(data.lances)} lances ${data.by === "milan" ? "de Milan" : `des ${familyName(data.by)}`} arrivent à ${clock(data.arriveAt)}. Renforcez la garnison !`,
+        body: `${Number(data.lances)} troupes ${data.by === "milan" ? "de Milan" : `des ${familyName(data.by)}`} arrivent à ${clock(data.arriveAt)}. Renforcez la garnison !`,
       };
     case "family": {
       if (data.event === "land_lost")
