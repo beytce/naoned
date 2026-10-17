@@ -27,7 +27,7 @@ describe("simulator", () => {
     expect(r.daily.reduce((n, d) => n + d.trades, 0)).toBeGreaterThan(0);
   });
 
-  it("gives houses their patents, which choose a second counter and earn Influence", () => {
+  it("gives houses their patents, which choose a second counter and earn Influence by missions", () => {
     const r = runSimulation({
       settings: venice1450Settings,
       seed: 5,
@@ -45,8 +45,10 @@ describe("simulator", () => {
       expect(r.finalState?.players[id]?.patents).toEqual(["second_counter"]);
       expect(r.finalState?.players[id]?.secondRegion).toBeDefined();
     }
-    // The first week closed: net sales earned Influence.
-    expect(Object.values(r.influence ?? {}).some((i) => i.commerce > 0)).toBe(true);
+    // Influence comes from the house's missions only.
+    const earned = Object.values(r.influence ?? {});
+    expect(earned.some((i) => i.mission > 0)).toBe(true);
+    expect(earned.every((i) => i.commerce === 0 && i.campaign === 0)).toBe(true);
   });
 
   it("computes the Gini index", () => {
