@@ -592,12 +592,56 @@ export const worldSettingsSchema = z.object({
    */
   house: z
     .object({
-      influence: z.object({
-        commerce: z.object({ ducatsPerPoint: positive, weeklyCap: qty }),
-        campaign: z.object({ meritPerPoint: positive, winBonus: qty, weeklyCap: qty }),
-        /** At the season's close, by tier of the ranking (`seasonTier`); none without. */
-        season: z.record(qty).default({}),
-      }),
+      /**
+       * Influence earned without missions (each source optional): net sales, the campaign's
+       * merit, the season's tier. Venice earns it by its missions only.
+       */
+      influence: z
+        .object({
+          commerce: z.object({ ducatsPerPoint: positive, weeklyCap: qty }).optional(),
+          campaign: z.object({ meritPerPoint: positive, winBonus: qty, weeklyCap: qty }).optional(),
+          /** At the season's close, by tier of the ranking (`seasonTier`); none without. */
+          season: z.record(qty).default({}),
+        })
+        .default({}),
+      /**
+       * The house's missions: a board of `perBoard` drawn from the pool every `everyHours`, the
+       * same for every merchant, each paid in Influence once done.
+       */
+      missions: z
+        .object({
+          everyHours: positive,
+          perBoard: qty,
+          pool: z.array(
+            z.object({
+              id: z.string(),
+              event: z.string(),
+              filter: z.record(z.union([z.string(), z.number()])).default({}),
+              count: positive,
+              influence: positive,
+            }),
+          ),
+        })
+        .optional(),
+      /** What Influence buys in the world (absent: nothing but patents). */
+      spend: z
+        .object({
+          /** A delivery arrives at once: 1 Influence per this many minutes left, a few a day. */
+          rushMinutesPerPoint: positive,
+          rushPerDay: qty,
+          /** Troops for the campaign, besides the ducats: this many a point, so many a day. */
+          troopsPerPoint: positive,
+          troopsPerDay: qty,
+          /** Another task of the day in place of one. */
+          dailyReroll: positive,
+          /** The second counter moved to another region during the season. */
+          moveCounter: positive,
+          /** The mastery chosen again during the season. */
+          respec: positive,
+          /** A campaign work finished at once. */
+          rushWork: positive,
+        })
+        .optional(),
       /** Patent code → its price in Influence and the patents it asks for first. */
       patents: z.record(z.object({ cost: positive, requires: z.array(z.string()).default([]) })),
     })

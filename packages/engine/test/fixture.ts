@@ -290,4 +290,24 @@ export const testHouse = {
     season: { doge: 50, podium: 30, top10: 20, elite: 15, notable: 10, participant: 5 },
   },
   patents: { second_counter: { cost: 40, requires: [] as string[] } },
+  missions: {
+    everyHours: 84,
+    perBoard: 3,
+    pool: [
+      { id: "sell", event: "city_sale", count: 1, influence: 3 },
+      { id: "sell_more", event: "city_sale", count: 2, influence: 5 },
+      { id: "offer", event: "order_placed", count: 1, influence: 2 },
+      { id: "upgrade", event: "upgrade", count: 1, influence: 4 },
+    ],
+  },
+  spend: {
+    rushMinutesPerPoint: 20,
+    rushPerDay: 2,
+    troopsPerPoint: 2,
+    troopsPerDay: 10,
+    dailyReroll: 3,
+    moveCounter: 10,
+    respec: 15,
+    rushWork: 5,
+  },
 };

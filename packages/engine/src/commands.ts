@@ -1,8 +1,16 @@
 import { type Draft, enableMapSet, produce } from "immer";
-import { claimDaily, sellToCriee, trackDaily } from "./activity.js";
+import { claimDaily, rerollDaily, sellToCriee, trackDaily } from "./activity.js";
 import { grantStartingBales, openBale } from "./bales.js";
 import { build, grantBuilding, upgrade } from "./buildings.js";
-import { buildWork, collectLevy, hireLances, joinMarch, sendMarch } from "./campaign.js";
+import {
+  buildWork,
+  buyTroops,
+  collectLevy,
+  finishWork,
+  hireLances,
+  joinMarch,
+  sendMarch,
+} from "./campaign.js";
 import { sellToCity } from "./cities.js";
 import { fulfillContract, rerollContract } from "./contracts.js";
 import { voteProgramme } from "./decrees.js";
@@ -15,7 +23,15 @@ import {
 } from "./deliveries.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { joinFamily, leaveFamily } from "./families.js";
-import { chooseSecondCounter, grantPatent } from "./house.js";
+import {
+  chooseSecondCounter,
+  claimHouseMission,
+  grantPatent,
+  moveSecondCounter,
+  resetSpecialty,
+  rushDelivery,
+  trackHouseMissions,
+} from "./house.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { claimMission, trackMissions } from "./missions.js";
 import { collect, startProduction } from "./production.js";
@@ -61,6 +77,14 @@ export type Command =
   | { type: "chooseSecondCounter"; playerId: PlayerId; region: string }
   /** A patent bought with Influence (server only: it checked and took the price). */
   | { type: "grantPatent"; playerId: PlayerId; patent: string }
+  | { type: "claimHouseMission"; playerId: PlayerId; missionId: string }
+  // Bought with Influence (server only: it took the price first).
+  | { type: "rushDelivery"; playerId: PlayerId; deliveryId: string }
+  | { type: "buyTroops"; playerId: PlayerId; count: number }
+  | { type: "rushWork"; playerId: PlayerId; land: string }
+  | { type: "moveSecondCounter"; playerId: PlayerId; region: string }
+  | { type: "resetSpecialty"; playerId: PlayerId }
+  | { type: "rerollDaily"; playerId: PlayerId; taskId: string }
   | {
       type: "startProduction";
       playerId: PlayerId;
@@ -271,6 +295,27 @@ function apply(tx: Tx, cmd: Command): void {
     case "grantPatent":
       grantPatent(tx, cmd.playerId, cmd.patent);
       break;
+    case "claimHouseMission":
+      claimHouseMission(tx, cmd.playerId, cmd.missionId);
+      break;
+    case "rushDelivery":
+      rushDelivery(tx, cmd.playerId, cmd.deliveryId);
+      break;
+    case "buyTroops":
+      buyTroops(tx, cmd.playerId, cmd.count, ctx.settings.house?.spend?.troopsPerDay ?? 0);
+      break;
+    case "rushWork":
+      finishWork(tx, cmd.playerId, cmd.land);
+      break;
+    case "moveSecondCounter":
+      moveSecondCounter(tx, cmd.playerId, cmd.region);
+      break;
+    case "resetSpecialty":
+      resetSpecialty(tx, cmd.playerId);
+      break;
+    case "rerollDaily":
+      rerollDaily(tx, cmd.playerId, cmd.taskId);
+      break;
     case "claimMission":
       claimMission(tx, cmd.playerId, cmd.missionId);
       break;
@@ -339,6 +384,7 @@ export function decide(
       apply(tx, cmd);
       trackMissions(tx);
       trackDaily(tx);
+      trackHouseMissions(tx);
     });
     return { ok: true, state: next, effects: fx };
   } catch (err) {

@@ -1,5 +1,15 @@
+import { arriveNow, resolveDeliveries } from "./deliveries.js";
+import { draw } from "./draw.js";
 import type { Deniers } from "./money.js";
-import type { PlayerId, WorldContext, WorldState } from "./state.js";
+import {
+  type Delivery,
+  HOUR_MS,
+  MINUTE_MS,
+  type PlayerId,
+  type WorldContext,
+  type WorldState,
+  dayIndex,
+} from "./state.js";
 import { findRegion } from "./theme.js";
 import { type Tx, emit, fail } from "./tx.js";
 
@@ -103,4 +113,149 @@ export function seasonTier(rank: number, people: number, daysPlayed: number): Se
 /** Influence the house earns at the season's close for its tier. */
 export function seasonInfluence(ctx: WorldContext, tier: string): number {
   return ctx.settings.house?.influence.season[tier] ?? 0;
+}
+
+// ——— The house's missions: the Influence of the game ———
+
+/** Index of the missions' board at `now` (a new one every `everyHours`). */
+export function missionBoard(ctx: WorldContext, now: number): number {
+  const every = ctx.settings.house?.missions?.everyHours ?? 0;
+  if (every === 0) return 0;
+  return Math.max(0, Math.floor((now - ctx.startAt) / (every * HOUR_MS)));
+}
+
+/** The missions of a board, drawn from the pool, the same for every merchant. */
+function missionsOf(ctx: WorldContext, board: number) {
+  const cfg = ctx.settings.house?.missions;
+  if (!cfg) return [];
+  return cfg.pool
+    .map((m) => ({ m, key: draw(ctx, `house-missions:${board}:${m.id}`) }))
+    .sort((a, b) => a.key - b.key)
+    .slice(0, cfg.perBoard)
+    .map((x) => x.m);
+}
+
+function missionState(tx: Tx, playerId: PlayerId) {
+  const board = missionBoard(tx.ctx, tx.now);
+  tx.s.houseMissions ??= {};
+  const saved = tx.s.houseMissions[playerId];
+  if (!saved || saved.board !== board) {
+    tx.s.houseMissions[playerId] = { board, progress: {}, claimed: [] };
+  }
+  return tx.s.houseMissions[playerId] as NonNullable<WorldState["houseMissions"]>[string];
+}
+
+/** Counts this command's events towards the merchants' missions of the board. */
+export function trackHouseMissions(tx: Tx): void {
+  const missions = missionsOf(tx.ctx, missionBoard(tx.ctx, tx.now));
+  if (missions.length === 0) return;
+  for (const e of tx.fx.events) {
+    if (!e.playerId || !tx.s.players[e.playerId]) continue;
+    const data = e.data ?? {};
+    for (const m of missions) {
+      if (m.event !== e.type) continue;
+      if (!Object.entries(m.filter).every(([k, v]) => data[k] === v)) continue;
+      const mine = missionState(tx, e.playerId);
+      mine.progress[m.id] = (mine.progress[m.id] ?? 0) + 1;
+    }
+  }
+}
+
+/** The board of missions as the merchant sees it. */
+export function houseMissionsFor(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  now: number,
+) {
+  const board = missionBoard(ctx, now);
+  const saved = state.houseMissions?.[playerId];
+  const mine = saved && saved.board === board ? saved : undefined;
+  const every = (ctx.settings.house?.missions?.everyHours ?? 0) * HOUR_MS;
+  return {
+    board,
+    endsAt: ctx.startAt + (board + 1) * every,
+    missions: missionsOf(ctx, board).map((m) => {
+      const progress = Math.min(m.count, mine?.progress[m.id] ?? 0);
+      return {
+        id: m.id,
+        event: m.event,
+        filter: m.filter,
+        count: m.count,
+        influence: m.influence,
+        progress,
+        done: progress >= m.count,
+        claimed: mine?.claimed.includes(m.id) ?? false,
+      };
+    }),
+  };
+}
+
+/** Pays a mission done: its Influence, which the server keeps from season to season. */
+export function claimHouseMission(tx: Tx, playerId: PlayerId, missionId: string): void {
+  const board = missionBoard(tx.ctx, tx.now);
+  const mission = missionsOf(tx.ctx, board).find((m) => m.id === missionId);
+  if (!mission) fail("unknown_mission");
+  const mine = missionState(tx, playerId);
+  if ((mine.progress[missionId] ?? 0) < mission.count) fail("mission_not_done");
+  if (mine.claimed.includes(missionId)) fail("mission_claimed");
+  mine.claimed.push(missionId);
+  emit(tx, "influence_earned", playerId, {
+    source: "mission",
+    key: `mission:${board}:${missionId}`,
+    amount: mission.influence,
+  });
+}
+
+// ——— What Influence buys in the world (the server takes the price first) ———
+
+/** Influence a rushed delivery costs: a point per `rushMinutesPerPoint` minutes left. */
+export function rushCost(ctx: WorldContext, d: Pick<Delivery, "arriveAt">, now: number): number {
+  const per = ctx.settings.house?.spend?.rushMinutesPerPoint ?? 0;
+  if (per === 0) return 0;
+  return Math.max(1, Math.ceil(Math.max(0, d.arriveAt - now) / (per * MINUTE_MS)));
+}
+
+/** The delivery arrives now and is paid; the vehicle still has the road back. */
+export function rushDelivery(tx: Tx, playerId: PlayerId, deliveryId: string): void {
+  const spend = tx.ctx.settings.house?.spend;
+  if (!spend) fail("no_patent");
+  resolveDeliveries(tx);
+  const d = tx.s.deliveries?.[deliveryId];
+  if (!d) fail("unknown_delivery_order");
+  if (d.playerId !== playerId) fail("not_owner");
+  if (d.outcome !== "en_route" || d.arriveAt <= tx.now) fail("not_en_route");
+  const today = dayIndex(tx.ctx, tx.now);
+  tx.s.houseSpent ??= {};
+  const spent = tx.s.houseSpent[playerId];
+  const mine = spent && spent.day === today ? spent : { day: today, rushes: 0, troops: 0 };
+  if (mine.rushes >= spend.rushPerDay) fail("rush_limit");
+  tx.s.houseSpent[playerId] = { ...mine, rushes: mine.rushes + 1 };
+  const trip = d.arriveAt - d.departAt;
+  d.arriveAt = tx.now;
+  d.backAt = tx.now + trip;
+  const vehicle = tx.s.vehicles?.[d.vehicleId];
+  if (vehicle) vehicle.busyUntil = d.backAt;
+  emit(tx, "delivery_rushed", playerId, { delivery: deliveryId });
+  arriveNow(tx, d as Delivery);
+}
+
+/** The second counter moved to another region for the rest of the season. */
+export function moveSecondCounter(tx: Tx, playerId: PlayerId, region: string): void {
+  const player = tx.s.players[playerId];
+  if (!player) fail("unknown_player");
+  if (!player.secondRegion) fail("no_second_counter");
+  if (region === player.secondRegion || region === player.region) fail("same_region");
+  if (!findRegion(tx.ctx.theme, region)) fail("unknown_region");
+  player.secondRegion = region;
+  emit(tx, "second_counter", playerId, { region, moved: true });
+}
+
+/** The mastery forgotten: the merchant chooses one again. */
+export function resetSpecialty(tx: Tx, playerId: PlayerId): void {
+  const player = tx.s.players[playerId];
+  if (!player) fail("unknown_player");
+  if (!player.specialty) fail("no_specialty");
+  player.specialty = undefined;
+  emit(tx, "specialty_reset", playerId);
 }
