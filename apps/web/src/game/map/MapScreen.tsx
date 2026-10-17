@@ -11,6 +11,7 @@ import { Coach } from "../Coach.js";
 import { CounterSheets, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import type { GameProps } from "../Game.js";
+import { HouseSheet } from "../House.js";
 import { RialtoSheet } from "../Marche.js";
 import { ProfileSheet } from "../Profil.js";
 import { RankingSheet } from "../Top.js";
@@ -36,7 +37,7 @@ import {
   familyCalls,
 } from "./CampaignLayer.js";
 import { MapHud } from "./Hud.js";
-import { CartMarker, CityMarker, HomeMarker } from "./Markers.js";
+import { CartMarker, CityMarker, HomeMarker, SecondCounterMarker } from "./Markers.js";
 import { NoticesSheet } from "./Notices.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
 import { type MapMarker, type Selection, WorldMap, type WorldMapHandle } from "./WorldMap.js";
@@ -191,7 +192,24 @@ export function MapScreen(
     .sort((x, y) => x.at - y.at)[0];
   const criee = view.criee && view.criee.endsAt > now ? view.criee : null;
 
+  // The house's second counter of the season, where its region's depot stands.
+  const second = view.player.secondRegion ? PLACES[view.player.secondRegion] : undefined;
   const markers: MapMarker[] = [
+    ...(second
+      ? [
+          {
+            key: "second",
+            at: { x: second[0], y: second[1] },
+            node: (
+              <SecondCounterMarker
+                name={fr.game.house.second.marker}
+                crest={crest}
+                onTap={() => props.setSheet("house")}
+              />
+            ),
+          },
+        ]
+      : []),
     {
       key: "home",
       node: (
@@ -327,13 +345,14 @@ export function MapScreen(
           vehicle={selectedCart}
           city={departure.city}
           onCancel={() => setDeparture(null)}
-          onGo={async () => {
+          onGo={async (from) => {
             const ids = cartLoad.map((o) => o.id);
             const ok = await props.act({
               type: "dispatchDelivery",
               orderId: ids[0] ?? "",
               ...(ids.length > 1 ? { orderIds: ids } : {}),
               vehicleId: selectedCart.id,
+              ...(from ? { from } : {}),
             });
             setDeparture(null);
             if (ok) setLoads((all) => ({ ...all, [selectedCart.id]: [] }));
@@ -430,6 +449,7 @@ export function MapScreen(
       <RialtoSheet {...props} />
       <RankingSheet {...props} />
       <ProfileSheet {...props} />
+      <HouseSheet {...props} />
       <ActCard {...props} />
       <NoticesSheet
         {...props}
@@ -783,18 +803,31 @@ function DeparturePanel({
   props: GameProps;
   vehicle: VehicleView;
   city: string;
-  onGo: () => void;
+  /** `second`: from the house's second counter. */
+  onGo: (from?: "second") => void;
   onCancel: () => void;
 }) {
   const [left, setLeft] = useState(DEPART_SECONDS);
+  // The second counter of the season: chosen by default when its road is shorter.
+  const routes = props.catalog.road?.routes ?? {};
+  const home = props.view.player.region;
+  const secondRegion = props.view.player.secondRegion;
+  const homeRoad = routes[home]?.[city];
+  const secondRoad = secondRegion ? routes[secondRegion]?.[city] : undefined;
+  const [fromSecond, setFromSecond] = useState(
+    secondRoad !== undefined && homeRoad !== undefined && secondRoad < homeRoad,
+  );
+  const from = fromSecond ? ("second" as const) : undefined;
   const go = useRef(onGo);
   go.current = onGo;
+  const fromRef = useRef(from);
+  fromRef.current = from;
   const fired = useRef(false);
   useEffect(() => {
     if (left <= 0) {
       if (!fired.current) {
         fired.current = true;
-        go.current();
+        go.current(fromRef.current);
       }
       return;
     }
@@ -804,15 +837,17 @@ function DeparturePanel({
   const road = props.view.road;
   const m = fr.game.map;
   const orders = road ? road.orders.filter((o) => o.city === city && o.status === "open") : [];
+  const homeMinutes = orders[0]?.minutes[vehicle.type] ?? homeRoad ?? 0;
+  // From the second counter: the same vehicle on that road (in proportion to the home one).
   const minutes =
-    orders[0]?.minutes[vehicle.type] ??
-    props.catalog.road?.routes[props.view.player.region]?.[city] ??
-    0;
+    fromSecond && secondRoad !== undefined && homeRoad
+      ? Math.max(1, Math.round((homeMinutes * secondRoad) / homeRoad))
+      : homeMinutes;
   return (
     <ContextPanel
       title={vehicleName(vehicle.type)}
       chip={<span className="label">{minutesLabel(minutes)}</span>}
-      status={`${m.cart.leaving(props.names.city(city))} · ${left} s`}
+      status={`${m.cart.leaving(props.names.city(city))}${fromSecond ? ` · ${fr.game.house.second.from}` : ""} · ${left} s`}
       tone="lagoon"
       progress={(DEPART_SECONDS - left) / DEPART_SECONDS}
       onClose={onCancel}
@@ -827,9 +862,16 @@ function DeparturePanel({
             onClick={() => {
               if (fired.current) return;
               fired.current = true;
-              onGo();
+              onGo(from);
             }}
           />
+          {secondRoad !== undefined && (
+            <ActionButton
+              icon={Icon.send()}
+              label={fromSecond ? fr.game.house.second.fromHome : fr.game.house.second.from}
+              onClick={() => setFromSecond((x) => !x)}
+            />
+          )}
           <ActionButton icon={Icon.cross()} label={m.buttons.cancel} onClick={onCancel} />
         </>
       }
