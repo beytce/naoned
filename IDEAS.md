@@ -34,6 +34,9 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 ## Progression de la Maison entre saisons (retenue, voir docs/plan-progression.md)
 - Patentes achetées avec l'Influence (gagnée par le commerce et la Campagne, plafonnée par semaine) : seulement du neuf : second comptoir, Alexandrie, Fondaco dei Tedeschi, Lombardie, Frioul, laine, verre, cosmétiques. Simulateur d'abord, puis après la bêta.
 
+## Influence, monnaie premium (demande du porteur, 17 octobre 2026)
+- **Pass Négociant : de l'Influence offerte aux abonnés** (pour plus tard, quand le Pass reviendra). À trancher avant : CLAUDE.md interdit au Pass de donner de la vitesse ou un avantage qui creuse l'écart (≤ 5 % à activité égale). Si l'Influence accélère les livraisons ou achète des troupes, l'offrir aux abonnés revient à vendre de la vitesse et de la force. Pistes compatibles : Influence du Pass utilisable seulement pour les cosmétiques, ou montant faible et plafonné, mesuré par `pnpm sim --pass 0.2`.
+
 ## PvE coopératif (voir docs/plan-pve.md)
 - Recommandé, après les mesures de la bêta : commandes de compagnie (grosses commandes du Doge à plusieurs marchandises, remplies à 2-4 marchands de régions différentes, payées contre livraison +10 %, lot de biens de la Muda au prorata). À valider au simulateur avant tout code.
 - Si la rétention à J7 est faible : rallumer les grands chantiers (moteur existant, `projects`) sous forme d'une crise de la République par saison (Acte II), objectif commun du serveur.
