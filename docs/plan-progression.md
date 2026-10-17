@@ -28,10 +28,10 @@ Ordres de grandeur pour la première calibration, à régler au simulateur :
 | Source | Gain | Plafond |
 | --- | --- | --- |
 | **Commerce** : ventes nettes de la semaine | 1 par 100 ducats | 25 par semaine |
-| **Campagne** : terres tenues par sa famille à la clôture de la semaine, au prorata de son Mérite | 1 par 10 de Mérite, +5 si la famille gagne la semaine | 15 par semaine |
+| **Campagne** : le Mérite de la semaine | 1 par 20 de Mérite, +3 si la famille gagne la semaine | 10 par semaine |
 | **Fin de saison** : palier du classement | participant 5, notable 10, top 10 20, podium 30, Doge 50 | — |
 
-Ce que cela donne par saison : un marchand médian (≈ 5 000 ducats de ventes nettes) gagne ≈ 50 par le commerce et ≈ 5 à la clôture, soit **≈ 55** ; s'il joue aussi la Campagne, **≈ 90** ; un joueur très actif, commerce et Campagne au plafond, **≈ 160**.
+Mesuré au simulateur (10 graines) : **≈ 60 par saison au médian** (de 50 à 65), ≈ 90 au 9e décile, dont ≈ 44 % par la Campagne ; un marchand qui ne fait que commercer gagne ≈ 35, plus la prime de fin de saison (servie par le serveur, non simulée).
 
 ## Le catalogue des patentes (première proposition)
 
@@ -39,7 +39,7 @@ Les patentes **n'ajoutent que du neuf** (décision du porteur) : tout ce que le 
 
 | Route | Patente | Ce qu'elle ouvre | Coût | Pré-requis |
 | --- | --- | --- | --- | --- |
-| **Logistique** | Second comptoir | Un point de départ des véhicules dans une autre région, **rechoisie à chaque saison** ; sans le bonus régional des matières premières | 40 | — |
+| **Logistique** | Second comptoir | Un point de départ des véhicules dans une autre région, **rechoisie à chaque saison** : la commande garde son prix, seul le trajet change (simulateur : +2 % de ventes nettes en médiane, voir `docs/calibration.md`) ; sans le bonus régional des matières premières | 40 | — |
 | **Outre-mer** | Comptoir d'Alexandrie | Commandes du Levant à plusieurs marchandises (épices, soie, draps), payées à l'heure de route comme les autres | 50 | — |
 | | Fondaco dei Tedeschi | Les marchands allemands achètent à Venise (draps, verre, sel) : une demande propre | 80 | Comptoir d'Alexandrie |
 | **Terre ferme** | Lombardie | Brescia et Bergame deviennent des villes de commerce (routes longues, commandes propres) | 80 | Second comptoir |
@@ -72,7 +72,7 @@ Contenu à créer : chaque route ouvre du neuf (lieux et routes de Lombardie et 
 
 ## Étapes proposées
 
-1. **Simulateur d'abord** : barème de l'Influence et second comptoir (la seule patente sans contenu nouveau à dessiner) dans les réglages et le moteur, bots qui gagnent et dépensent l'Influence. Critères : écart ≤ 15 % pour une Maison complète, KPIs des nouveaux inchangés, rythme d'acquisition proche des repères ci-dessus, toutes les graines conformes. Résultats dans `docs/calibration.md`.
+1. **Simulateur d'abord** (fait le 17 octobre, `docs/calibration.md`) : barème de l'Influence et second comptoir (la seule patente sans contenu nouveau à dessiner) dans les réglages et le moteur, bots qui gagnent et dépensent l'Influence. Critères : écart ≤ 15 % pour une Maison complète, KPIs des nouveaux inchangés, rythme d'acquisition proche des repères ci-dessus, toutes les graines conformes. Résultats dans `docs/calibration.md`.
 2. **Après les mesures de la bêta**, si le porteur lève le gel : l'Influence, le Livre de la Maison, les cosmétiques et le second comptoir.
 3. Outre-mer (Alexandrie, puis le Fondaco dei Tedeschi) et Lombardie : nouvelles commandes, lieux et routes.
 4. Frioul, textile et verre avec la V1.
