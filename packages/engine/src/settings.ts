@@ -259,6 +259,69 @@ export const worldSettingsSchema = z.object({
     })
     .default({ openDay: 0, list: [], levyMinBps: 10_000, levyMaxBps: 10_000 }),
   /**
+   * The Terraferma after OpenFront (docs/plan-terraferme.md): a hexagonal map that grows with the
+   * world, each merchant's own territory, troops that come back with the land held, fronts that
+   * advance on their own a few cells an hour, Milan as a nation. Absent: no Terraferma.
+   */
+  terraferma: z
+    .object({
+      /** Land cells per active merchant (at least `minActive` merchants counted). */
+      cellsPerActive: positive,
+      minActive: positive,
+      /** Width over height of the map, in bps (16 000: half as wide again as high). */
+      aspectBps: positive,
+      /** Share of the columns, from the west, that Milan holds at the week's start. */
+      milanBps: bps.max(10_000),
+      /** City cells on the map, spread out: more glory and a higher cap for who holds them. */
+      cities: qty,
+      /** Fronts advance and troops come back only between these hours (Paris). */
+      openHours: z.object({
+        from: z.number().int().min(0).max(23),
+        to: z.number().int().min(0).max(24),
+      }),
+      /** Length of a step of resolution, in minutes. */
+      stepMinutes: positive,
+      /** Terrains: defense multiplier, militia of a neutral cell. */
+      terrains: z.record(z.object({ defenseBps: positive, militia: qty })),
+      /** Bands of rows from the north (up to `untilBps` of the height), each with its terrain weights. */
+      bands: z.array(z.object({ untilBps: bps.max(10_000), weights: z.record(qty) })).min(1),
+      /** A city cell's militia and defense, over its terrain's. */
+      city: z.object({ militiaBps: positive, defenseBps: positive }),
+      start: z.object({
+        /** No other territory within this many cells of the chosen one. */
+        minDistance: positive,
+        troops: qty,
+        /** More for whom comes later in the week, per day. */
+        troopsPerDay: qty,
+        protectionHours: qty,
+      }),
+      troops: z.object({
+        base: qty,
+        perCell: qty,
+        perCity: qty,
+        /** Share of the gap to the cap that comes back each step. */
+        regenBps: bps.max(10_000),
+        regenMin: qty,
+      }),
+      fronts: z.object({
+        max: positive,
+        cellsPerStep: positive,
+        minShareBps: bps.max(10_000),
+        /** A front comes home after so many open hours (0: never): presence relaunches it. */
+        maxHours: qty.default(0),
+      }),
+      milan: z.object({
+        troops: qty,
+        troopsPerActive: qty,
+        regenBps: bps.max(10_000),
+        /** Every so many open hours, a front against the leader (or into neutral land). */
+        everyHours: positive,
+        shareBps: bps.max(10_000),
+      }),
+      glory: z.object({ perCell: qty, perCity: qty }),
+    })
+    .optional(),
+  /**
    * The week's campaign in the Terraferma: lands held by militias and Milan, conquered with lances
    * (levied for free, or engaged for ducats destroyed), worth glory every open hour.
    */

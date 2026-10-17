@@ -108,7 +108,19 @@ export type EngineErrorCode =
   | "order_done"
   | "no_route"
   | "bales_off"
-  | "no_bale";
+  | "no_bale"
+  // The Terraferma.
+  | "already_placed"
+  | "not_placed"
+  | "not_neutral"
+  | "too_close"
+  | "not_adjacent"
+  | "own_cell"
+  | "protected"
+  | "too_many_fronts"
+  | "share_too_small"
+  | "no_troops"
+  | "unknown_front";
 
 export class EngineError extends Error {
   constructor(

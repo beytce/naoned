@@ -157,6 +157,36 @@ export const venice1450Settings: WorldSettingsInput = {
     levyMinBps: 7_500,
     levyMaxBps: 15_000,
   },
+  // The Terraferma after OpenFront (docs/plan-terraferme.md), a prototype played by the
+  // simulator (`pnpm --filter @comptoirs/simulator terra`): 20 cells a merchant, Milan in the west
+  // with a cap of its own, mountains in the north and marshes in the south, fronts of a cell per
+  // half hour that come home after 2 h, 8 h to 22 h (docs/calibration.md).
+  terraferma: {
+    cellsPerActive: 20,
+    minActive: 20,
+    aspectBps: 16_000,
+    milanBps: 1_500,
+    cities: 7,
+    openHours: { from: 8, to: 22 },
+    stepMinutes: 30,
+    terrains: {
+      plain: { defenseBps: 10_000, militia: 4 },
+      hill: { defenseBps: 13_000, militia: 6 },
+      marsh: { defenseBps: 15_000, militia: 7 },
+      mountain: { defenseBps: 20_000, militia: 10 },
+    },
+    bands: [
+      { untilBps: 2_500, weights: { mountain: 5, hill: 3, plain: 1 } },
+      { untilBps: 7_000, weights: { plain: 6, hill: 2, marsh: 1 } },
+      { untilBps: 10_000, weights: { plain: 4, marsh: 3 } },
+    ],
+    city: { militiaBps: 25_000, defenseBps: 15_000 },
+    start: { minDistance: 2, troops: 40, troopsPerDay: 15, protectionHours: 24 },
+    troops: { base: 30, perCell: 2, perCity: 30, regenBps: 1_200, regenMin: 1 },
+    fronts: { max: 3, cellsPerStep: 1, minShareBps: 1_000, maxHours: 2 },
+    milan: { troops: 100, troopsPerActive: 3, regenBps: 900, everyHours: 4, shareBps: 2_000 },
+    glory: { perCell: 1, perCity: 3 },
+  },
   // The week's campaign: the Terraferma where its lands really are (seats in the east, Milan in the
   // middle), lances levied 2 an hour from 8 h to 22 h (24 waiting at most) or engaged for ducats
   // (20 at 1 d, 20 at 2 d a day), leaving after 48 h; Milan rides every 4 open hours.
