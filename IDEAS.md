@@ -57,6 +57,13 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - Notification push « un ballot vous attend » (coupée par défaut, jamais la nuit).
 - Habillage cosmétique de la balle gagnable au classement.
 
+## Inspirées d'Hades' Star (17 octobre 2026, gel : après les mesures de la bêta)
+- **Le fattore** (le relais de cargaison) : un commis qui livre seul une commande du tableau quand un véhicule reste au comptoir, contre une commission (destruite) et sans prime. Justification mesurée : le simulateur voit les véhicules occupés 25 % de la journée (cible 50 à 80 %). Gratuit pour tous, jamais payant (la production automatisée payante est écartée) ; à borner pour qu'un assidu reste devant un occasionnel (un ou deux départs par jour). Mesure qui le déciderait : l'utilisation des véhicules des vrais joueurs.
+- **Le burchiello sur la Brenta** (la ligne de saut) : un ouvrage de famille qui raccourcit une route (Venise–Padoue par la Brenta) pour tous ses membres pendant quelques jours, dans la Campagne. Borné : une route, temporaire, la commande garde son prix.
+- **L'Arsenal arme une flotte** (les étoiles bleues) : pendant un acte, une grande commande que tous les marchands remplissent ensemble, récompense partagée au prorata. Le code des grands chantiers existe encore (`projects`, coupé par les réglages depuis que les livraisons sont la demande des villes) ; à rouvrir comme événement d'acte plutôt que chaque semaine. Mesure : la part de joueurs actifs qui livrent ensemble.
+- **Trêve entre deux familles** (la station diplomatique) : une semaine de Campagne sans assaut entre deux familles qui la signent. Risque : à quatre familles, une alliance fige la carte ; à n'ouvrir qu'avec plus de familles.
+- Écartées : étoiles rouges et station de recherche (les ballots de Faraj tiennent ce rôle), étoiles blanches (c'est la Campagne), station d'échange (le second comptoir, retiré), récolteur d'étoiles (du rendement en plus), scanners (rien de caché sur la carte).
+
 ## V1 (après la première saison)
 - Chaînes textile (laine, tissu, vêtements) et ameublement (meubles).
 - Paiement du Pass Négociant (Stripe Checkout + webhook, CGV) ; export CSV et conseiller détaillé pour les abonnés.

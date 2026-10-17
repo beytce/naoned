@@ -1081,6 +1081,37 @@ export const fr = {
     outOfRegion: "Hors de sa région : il produit encore, mais ne peut plus être amélioré.",
     build: "Construire",
     buildTitle: "Nouvel atelier",
+    /** The catalogue of what can be built, in cards (workshops, vehicles). */
+    catalog: {
+      title: "Construire",
+      tabs: { workshops: "Ateliers", vehicles: "Véhicules" },
+      plots: (used: number, max: number) => `Parcelles occupées : ${used}/${max}`,
+      fleet: (owned: number, max: number) => `Véhicules : ${owned}/${max}`,
+      built: (n: number) => `Bâtis ${n}`,
+      owned: (n: number) => `Possédés ${n}`,
+      batch: (time: string) => `Un lot : ${time}`,
+      onlyIn: (regions: string) => `Seulement en ${regions}`,
+      missing: "Il vous manque des ducats ou des matériaux.",
+      upgradeOf: (from: string, cost: string) => `S'obtient en améliorant : ${from} (${cost})`,
+      roles: {
+        farm: "Fait pousser le blé de la Terraferme : le début de la chaîne du pain.",
+        clay_pit: "Extrait l'argile de la Lagune, que la briqueterie cuit en briques.",
+        lumber_camp:
+          "Abat le bois des Dolomites : les planches, et le combustible des fours de tous.",
+        mill: "Moud le blé en farine pour les boulangers.",
+        bakery:
+          "Cuit le pain : la plus grosse demande des villes, et la ration de tous les ouvriers.",
+        brickworks: "Cuit l'argile en briques, qui servent à bâtir et agrandir tous les ateliers.",
+        sawmill: "Scie le bois en planches, qui servent à bâtir et agrandir tous les ateliers.",
+        palazzo: "Prestige : ne produit rien, compte à son coût dans le classement.",
+      } as Record<string, string>,
+      vehicleRoles: {
+        mule: "Lente mais bon marché : tout véhicule commence mule.",
+        cart: "Porte davantage, à bonne allure.",
+        wagon: "Pour les grosses commandes, et plus rapide.",
+        great_wagon: "Le plus grand et le plus rapide.",
+      } as Record<string, string>,
+    },
     maxBuildings: (n: number) => `Maximum de ${n} bâtiments atteint.`,
     palazzoHelp: "Prestige : ne produit rien, compte à son coût dans le classement.",
     rationsOfLevel: (loaves: number) => `Ouvriers : +${loaves} pains/jour`,
