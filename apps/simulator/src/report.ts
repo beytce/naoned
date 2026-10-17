@@ -24,7 +24,11 @@ export function rollingMoneyGrowth(r: SimulationResult): { day: number; growth: 
   return out;
 }
 
-export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] {
+export function evaluate(
+  r: SimulationResult,
+  twin?: SimulationResult,
+  houseTwin?: SimulationResult,
+): Check[] {
   const checks: Check[] = [];
   const dep = r.interdependence;
   if (dep) {
@@ -236,6 +240,7 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
     });
   }
   checks.push(...passChecks(r, twin));
+  checks.push(...houseChecks(r, houseTwin));
 
   const lastDay = r.daily[last];
   checks.push({
@@ -681,6 +686,65 @@ function passChecksOn(
       blocking: true,
     },
   );
+  return checks;
+}
+
+/**
+ * The house between seasons (with `patentShare` > 0, docs/plan-progression.md): houses holding
+ * patents may lead, by 15 % at most at equal activity, and never at the others' expense.
+ * `twin` is the same season replayed with no patents: each merchant is compared with itself.
+ */
+export function houseChecks(r: SimulationResult, twin?: SimulationResult): Check[] {
+  const checks: Check[] = [];
+  const holders = new Set(r.patentHolders ?? []);
+  const final = finalWorth(r);
+  if (holders.size > 0 && twin) {
+    const before = new Map(finalWorth(twin).map((p) => [p.playerId, Number(p.turnover)]));
+    const ratios = (held: boolean) =>
+      final
+        .filter(
+          (p) =>
+            holders.has(p.playerId) === held &&
+            (before.get(p.playerId) ?? 0) > 0 &&
+            p.turnover > 0n,
+        )
+        .map((p) => Number(p.turnover) / (before.get(p.playerId) ?? 1));
+    const held = median(ratios(true));
+    const others = median(ratios(false));
+    const lead = held / others - 1;
+    checks.push(
+      {
+        name: "Maison : avance des patentes en ventes nettes (même saison rejouée sans patente)",
+        target: "≤ +15 % (médiane, au-delà de l'effet sur les autres)",
+        value: Number.isNaN(lead) ? "—" : pct(lead),
+        pass: Number.isNaN(lead) || lead <= 0.15,
+        blocking: true,
+      },
+      {
+        name: "Maison : ventes nettes des marchands sans patente (même saison rejouée sans patente)",
+        target: "≥ −5 % (médiane) : les patentes ne prennent rien aux autres",
+        value: Number.isNaN(others) ? "—" : pct(others - 1),
+        pass: Number.isNaN(others) || others >= 0.95,
+        blocking: true,
+      },
+    );
+  }
+  if (r.influence) {
+    const ids = final.map((p) => p.playerId);
+    const total = (id: string) =>
+      (r.influence?.[id]?.commerce ?? 0) + (r.influence?.[id]?.campaign ?? 0);
+    const all = ids.map(total);
+    const campaign = ids.map((id) => r.influence?.[id]?.campaign ?? 0).filter((v) => v > 0);
+    const sorted = [...all].sort((a, b) => a - b);
+    const p90 = sorted[Math.floor(sorted.length * 0.9)] ?? 0;
+    checks.push({
+      name: "Maison : Influence gagnée dans la saison (marchands actifs)",
+      target: "repère du plan : ≈ 55 au médian, ≈ 160 au plus actif",
+      value: `médiane ${median(all)}, 9e décile ${p90}, Campagne ${campaign.length > 0 ? `${median(campaign)} (médiane de qui en gagne)` : "—"}`,
+      pass: true,
+      blocking: false,
+    });
+  }
   return checks;
 }
 

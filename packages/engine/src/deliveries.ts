@@ -6,7 +6,7 @@ import { hourIn, hourWithin } from "./clock.js";
 import { contractsDoneToday, contractsFor } from "./contracts.js";
 import { favourBps, tollOn, urgentReservedUntil } from "./decrees.js";
 import { draw, pickWeighted } from "./draw.js";
-import { counterPrice, hasPatent } from "./house.js";
+import { hasPatent } from "./house.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
 import { isMudaGood } from "./muda.js";
 import { maxVehiclesFor, specialtyEffects } from "./specialties.js";
@@ -703,7 +703,10 @@ export function dispatchDelivery(
   playerId: PlayerId,
   orderIds: string | string[],
   vehicleId: string,
-  /** From the house's second counter: its own road, paid by that road. */
+  /**
+   * From the house's second counter: its own road (shorter or longer), paid as from home, so a
+   * counter only ever saves time, never earns more per order.
+   */
   from?: "second",
 ): Delivery {
   const { ctx } = tx;
@@ -741,7 +744,7 @@ export function dispatchDelivery(
       const until = urgentReservedUntil(ctx, state, playerId, order.city, order.opensAt, tx.now);
       if (until !== null && tx.now < until) fail("order_reserved");
     }
-    orders.push({ ...order, unitPrice: counterPrice(ctx, order, player.region, region) });
+    orders.push(order);
   }
   const first = orders[0] as DeliveryOrder;
   if (orders.some((o) => o.city !== first.city)) fail("several_cities");

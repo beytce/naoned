@@ -3,7 +3,6 @@ import {
   type Command,
   type DeliveryOrder,
   type WorldSettingsInput,
-  counterPrice,
   deliveryOrdersFor,
 } from "../src/index.js";
 import { campaignSettings, deliverySettings, testDeliveries, testHouse } from "./fixture.js";
@@ -76,7 +75,7 @@ describe("the second counter", () => {
     );
   });
 
-  it("sends a vehicle along its own road, paid by that road", () => {
+  it("sends a vehicle along its own road, paid as from home", () => {
     const w = road();
     w.do({ type: "chooseSecondCounter", playerId: "a", region: "lagoon" });
     const o = order(w, "a");
@@ -86,17 +85,12 @@ describe("the second counter", () => {
     const d = Object.values(w.state.deliveries ?? {})[0];
     // A cart (full speed) takes the lagoon's road to the city, not the plain's.
     const routes = testDeliveries.routes as Record<string, Record<string, number>>;
-    const there = routes.lagoon?.[o.city] ?? 0;
-    const home = routes.terraferma?.[o.city] ?? 0;
     expect(d?.route).toBe(`lagoon:${o.city}`);
-    expect((d?.arriveAt ?? 0) - w.now).toBe(there * MIN);
-    // Paid by that road: the same pay per hour of road as from home.
-    const price = counterPrice(w.ctx, o, "terraferma", "lagoon");
-    const bps = (minutes: number) => 10_000n + BigInt(Math.floor((1_000 * minutes) / 60));
-    expect(price).toBe((o.unitPrice * bps(there)) / bps(home));
-    expect(d?.payment).toBe(price * BigInt(o.quantity));
+    expect((d?.arriveAt ?? 0) - w.now).toBe((routes.lagoon?.[o.city] ?? 0) * MIN);
+    // The price of the board, whatever the road: a counter saves time, never earns more.
+    expect(d?.payment).toBe(o.unitPrice * BigInt(o.quantity));
     w.at((d?.arriveAt ?? 0) - w.ctx.startAt).do({ type: "tick" });
-    expect(w.cash("a")).toBe(cash + price * BigInt(o.quantity));
+    expect(w.cash("a")).toBe(cash + o.unitPrice * BigInt(o.quantity));
   });
 
   it("keeps the home road when not asked, and is refused without a counter", () => {

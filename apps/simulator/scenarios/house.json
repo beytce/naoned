@@ -1,0 +1,9 @@
+{
+  "house": {
+    "influence": {
+      "commerce": { "ducatsPerPoint": 100, "weeklyCap": 25 },
+      "campaign": { "meritPerPoint": 10, "winBonus": 5, "weeklyCap": 15 }
+    },
+    "patents": { "second_counter": { "cost": 40, "requires": [] } }
+  }
+}

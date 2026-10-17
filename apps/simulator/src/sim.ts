@@ -45,6 +45,12 @@ export interface SimulationOptions {
   lateJoiners: number;
   /** Share of bots holding the Pass Négociant all season (0 to 1). */
   passShare?: number;
+  /**
+   * Share of bots whose house holds patents from earlier seasons (0 to 1): `patents` on joining.
+   * The world's settings must know them (`house`).
+   */
+  patentShare?: number;
+  patents?: string[];
   /** Bots behave as in the live world (leave the market maker to people, sell on the book). */
   live?: boolean;
   /** Optional observer of every accepted command's effects (debugging, extra analysis). */
@@ -61,6 +67,10 @@ export interface SimulationResult {
   durationMs: number;
   /** Bots that held the Pass Négociant. */
   passHolders?: string[];
+  /** Bots whose house held patents. */
+  patentHolders?: string[];
+  /** Influence earned in the season, per merchant and source. */
+  influence?: Record<string, { commerce: number; campaign: number }>;
   /** World at the end of the run (debugging, extra analysis). */
   finalState?: WorldState;
   /** Do merchants depend on each other? Raw material buyers and building types per merchant. */
@@ -265,6 +275,14 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
       }
     }
     accumulate(totals, res.effects);
+    for (const e of res.effects.events) {
+      if (e.type !== "influence_earned" || !e.playerId) continue;
+      result.influence ??= {};
+      const tally = result.influence[e.playerId] ?? { commerce: 0, campaign: 0 };
+      result.influence[e.playerId] = tally;
+      const source = e.data?.source === "campaign" ? "campaign" : "commerce";
+      tally[source] += Number(e.data?.amount ?? 0);
+    }
     for (const t of res.effects.trades) {
       if (raw.has(t.resource)) rawBuyers.add(t.buyerId);
       if (t.sellerId === MARKET_MAKER && isMudaGood(ctx, t.resource)) {
@@ -342,6 +360,20 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     }
   }
   result.passHolders = [...passHolders];
+  // Houses with patents: picked the same way, every k-th bot of each profile.
+  const patentHolders = new Set<string>();
+  const patentShare = options.patentShare ?? 0;
+  if (patentShare > 0) {
+    const seen: Record<string, number> = {};
+    for (const bot of bots) {
+      const n = (seen[bot.profile.name] ?? 0) + 1;
+      seen[bot.profile.name] = n;
+      if (Math.floor(n * patentShare) > Math.floor((n - 1) * patentShare))
+        patentHolders.add(bot.id);
+    }
+  }
+  result.patentHolders = [...patentHolders];
+  const patents = options.patents ?? ["second_counter"];
   const schedule = new Map<Bot, number[]>();
   const step = options.stepMinutes * MINUTE_MS;
   const end = START + options.days * DAY_MS;
@@ -428,7 +460,13 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     for (const bot of bots) {
       if (bot.churned) continue;
       if (!state.players[bot.id]) {
-        if (bot.joinAt <= now) run({ type: "join", playerId: bot.id, region: bot.region });
+        if (bot.joinAt <= now)
+          run({
+            type: "join",
+            playerId: bot.id,
+            region: bot.region,
+            ...(patentHolders.has(bot.id) ? { patents } : {}),
+          });
         if (!state.players[bot.id]) continue;
         if (passHolders.has(bot.id)) {
           run({ type: "grantPass", playerId: bot.id, until: end });

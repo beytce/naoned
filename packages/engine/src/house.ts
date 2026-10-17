@@ -1,5 +1,5 @@
 import type { Deniers } from "./money.js";
-import type { DeliveryOrder, PlayerId, WorldContext, WorldState } from "./state.js";
+import type { PlayerId, WorldContext, WorldState } from "./state.js";
 import { findRegion } from "./theme.js";
 import { type Tx, emit, fail } from "./tx.js";
 
@@ -31,27 +31,6 @@ export function chooseSecondCounter(tx: Tx, playerId: PlayerId, region: string):
   if (!findRegion(tx.ctx.theme, region)) fail("unknown_region");
   player.secondRegion = region;
   emit(tx, "second_counter", playerId, { region });
-}
-
-/** Share of the reference an order pays for its road: the base, plus a bonus per hour. */
-function roadBps(ctx: WorldContext, region: string, city: string): bigint {
-  const { cityPriceBps, distanceBonusBpsPerHour, routes } = ctx.settings.deliveries;
-  const minutes = routes[region]?.[city] ?? 0;
-  return BigInt(cityPriceBps + Math.floor((distanceBonusBpsPerHour * minutes) / 60));
-}
-
-/**
- * An order's price per unit when it leaves from a counter in `region` rather than from home: the
- * same pay per hour of road, so a shorter road pays less (whatever premium the order carries).
- */
-export function counterPrice(
-  ctx: WorldContext,
-  order: Pick<DeliveryOrder, "unitPrice" | "city">,
-  home: string,
-  region: string,
-): Deniers {
-  if (region === home) return order.unitPrice;
-  return (order.unitPrice * roadBps(ctx, region, order.city)) / roadBps(ctx, home, order.city);
 }
 
 /** At the close of the week: Influence for the net sales of the week (`gain`, in deniers). */

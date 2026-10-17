@@ -18,6 +18,11 @@ const { values } = parseArgs({
     players: { type: "string" },
     /** Share of bots holding the Pass Négociant (0 to 1). */
     pass: { type: "string", default: "0" },
+    /**
+     * Share of bots whose house holds patents (0 to 1), compared with the same season without
+     * them. Needs a world with the house (`--scenario scenarios/house.json`).
+     */
+    patents: { type: "string", default: "0" },
     /** Bots as in the live world (next to people). */
     live: { type: "boolean", default: false },
     out: { type: "string", default: join(here, "..", "out") },
@@ -91,6 +96,7 @@ for (const seed of seeds) {
     lateJoiners: players ? 0 : 10,
     live: values.live,
     passShare: Number(values.pass),
+    patentShare: Number(values.patents),
   };
   const result: SimulationResult = runSimulation(options);
   // With Pass holders, the same season again with the Pass's perks off: its effect, merchant by
@@ -110,7 +116,10 @@ for (const seed of seeds) {
           },
         })
       : undefined;
-  const checks = evaluate(result, twin);
+  // With patents, the same season again with none: what they bring, merchant by merchant.
+  const houseTwin =
+    options.patentShare > 0 ? runSimulation({ ...options, patentShare: 0 }) : undefined;
+  const checks = evaluate(result, twin, houseTwin);
   const pass = allBlockingPass(checks);
   allPass &&= pass;
   const dir = join(outDir, `seed-${seed}`);

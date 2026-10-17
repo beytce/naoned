@@ -30,6 +30,7 @@ import {
   vehiclesOf,
 } from "./deliveries.js";
 import { familiesOn, familiesOpenAt, familyCodes, membersOf, seatOf } from "./families.js";
+import { hasPatent } from "./house.js";
 import { bestPrice, marketMakerQuotaLeft, maxOpenOrdersFor, openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
 import type { Deniers } from "./money.js";
@@ -249,6 +250,7 @@ export class Bot {
     this.doContracts(s);
     this.serveFamily(s);
     this.deliverProjects(s);
+    this.chooseSecondCounter(s);
     if (deliveriesOn(s.ctx)) this.garage(s, this.deliver(s));
     else {
       this.sellToCriee(s);
@@ -260,6 +262,21 @@ export class Bot {
     if (this.profile.speculates) this.speculate(s);
     this.sellSurplus(s);
     this.claimDaily(s);
+  }
+
+  /** With the patent, the second counter where the roads to the cities are shortest overall. */
+  private chooseSecondCounter(s: Session): void {
+    const player = s.state().players[this.id];
+    if (!player || player.secondRegion) return;
+    if (!hasPatent(s.ctx, s.state(), this.id, "second_counter")) return;
+    const routes = s.ctx.settings.deliveries.routes;
+    const total = (region: string) =>
+      Object.values(routes[region] ?? {}).reduce((a, b) => a + b, 0);
+    const best = s.ctx.theme.regions
+      .map((r) => r.code)
+      .filter((r) => r !== player.region && routes[r])
+      .sort((a, b) => total(a) - total(b) || a.localeCompare(b))[0];
+    if (best) s.act({ type: "chooseSecondCounter", playerId: this.id, region: best });
   }
 
   /**
@@ -345,7 +362,13 @@ export class Bot {
         if (spareNow >= o.quantity && o.unitPrice >= (this.bestBid(s, o.resource) ?? 0n)) waiting++;
         continue;
       }
-      if (travelMinutes(s.ctx, player.region, o.city, vehicle.type) === undefined) continue;
+      const home = travelMinutes(s.ctx, player.region, o.city, vehicle.type);
+      if (home === undefined) continue;
+      // From the second counter when its road is shorter: the same pay, the vehicle back sooner.
+      const second = player.secondRegion
+        ? travelMinutes(s.ctx, player.secondRegion, o.city, vehicle.type)
+        : undefined;
+      const from = second !== undefined && second < home ? ("second" as const) : undefined;
       // The order must beat what the market pays.
       const bid = this.bestBid(s, o.resource) ?? 0n;
       if (o.unitPrice < bid) continue;
@@ -384,6 +407,7 @@ export class Bot {
         orderId: o.id,
         ...(load.length > 1 ? { orderIds: load.map((x) => x.id) } : {}),
         vehicleId: vehicle.id,
+        ...(from ? { from } : {}),
       });
       if (sent) for (const x of load) used.add(x.id);
     }
