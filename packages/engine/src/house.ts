@@ -210,6 +210,24 @@ export function claimHouseMission(tx: Tx, playerId: PlayerId, missionId: string)
 // ——— What Influence buys in the world (the server takes the price first) ———
 
 /** Influence a rushed delivery costs: a point per `rushMinutesPerPoint` minutes left. */
+/** What Influence buys and what is left of today's limits (null in a world without it). */
+export function houseSpendFor(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  now: number,
+) {
+  const spend = ctx.settings.house?.spend;
+  if (!spend) return null;
+  const spent = state.houseSpent?.[playerId];
+  const today = spent && spent.day === dayIndex(ctx, now) ? spent : { rushes: 0, troops: 0 };
+  return {
+    ...spend,
+    rushesLeft: Math.max(0, spend.rushPerDay - today.rushes),
+    troopsLeft: Math.max(0, spend.troopsPerDay - today.troops),
+  };
+}
+
 export function rushCost(ctx: WorldContext, d: Pick<Delivery, "arriveAt">, now: number): number {
   const per = ctx.settings.house?.spend?.rushMinutesPerPoint ?? 0;
   if (per === 0) return 0;

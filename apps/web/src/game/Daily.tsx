@@ -9,6 +9,7 @@ export function Daily(props: GameProps) {
   const t = fr.game.daily;
   const daily = props.view.daily;
   if (!daily || daily.tasks.length === 0) return null;
+  const spend = props.view.houseSpend;
   const ready = daily.tasks.some((task) => task.done && !task.claimed);
   return (
     <Panel glow={ready ? "gold" : undefined}>
@@ -40,6 +41,16 @@ export function Daily(props: GameProps) {
                 )}
               </span>
             </div>
+            {!task.done && !task.claimed && spend && (
+              <Slab
+                size="sm"
+                tone="ghost"
+                disabled={props.busy || (props.influence ?? 0) < spend.dailyReroll}
+                onClick={() => props.spend({ use: "daily", taskId: task.id })}
+              >
+                {fr.game.house.spend.reroll(spend.dailyReroll)}
+              </Slab>
+            )}
             {task.done && !task.claimed && (
               <Slab
                 size="sm"

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "../api.js";
 import { fr } from "../i18n.js";
-import { Badge, Big, Label, Panel, Sheet, Slab } from "../ui.js";
+import { Badge, Big, Label, Panel, Sheet, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { gameApi } from "./api.js";
 import type { HouseView } from "./types.js";
@@ -91,11 +91,14 @@ function HouseBody(props: GameProps) {
   };
   const player = props.view.player;
   const regions = props.catalog.regions.filter((r) => r.code !== player.region);
+  const balance = props.influence ?? house.influence;
+  const spend = props.view.houseSpend;
+  const elsewhere = regions.filter((r) => r.code !== player.secondRegion);
   return (
     <div className="space-y-6 pt-2">
       <header className="space-y-2 pr-12">
         <h1 className="font-display text-3xl font-extrabold">{t().title}</h1>
-        <Big className="text-gold">{t().balance(house.influence)}</Big>
+        <Big className="text-gold">{t().balance(balance)}</Big>
         <p className="text-sm text-cream-dim">{t().intro}</p>
         <p className="text-sm text-cream-dim">{t().earn}</p>
       </header>
@@ -127,6 +130,54 @@ function HouseBody(props: GameProps) {
         </p>
       )}
 
+      <Missions {...props} onClaimed={reload} />
+
+      {player.secondRegion && spend && (
+        <Panel>
+          <Label>{t().spend.counterTitle}</Label>
+          <div className="mt-3 flex flex-wrap gap-3">
+            {elsewhere.map((r) => (
+              <Slab
+                key={r.code}
+                size="sm"
+                tone="lagoon"
+                disabled={props.busy || balance < spend.moveCounter}
+                onClick={async () => {
+                  if (await props.spend({ use: "counter", region: r.code })) reload();
+                }}
+              >
+                {props.names.region(r.code)}
+              </Slab>
+            ))}
+          </div>
+          <p className="label mt-2">{t().spend.counter(spend.moveCounter)}</p>
+        </Panel>
+      )}
+
+      {props.view.mastery.chosen && spend && (
+        <Panel>
+          <Label>
+            {t().spend.respecTitle(
+              fr.game.mastery.names[props.view.mastery.chosen] ?? props.view.mastery.chosen,
+            )}
+          </Label>
+          <p className="mt-1 text-sm text-cream-dim">{t().spend.respecHelp}</p>
+          <Slab
+            size="sm"
+            className="mt-3"
+            disabled={props.busy || balance < spend.respec}
+            onClick={async () => {
+              if (await props.spend({ use: "respec" })) {
+                reload();
+                props.setSheet("mastery");
+              }
+            }}
+          >
+            {t().spend.respec(spend.respec)}
+          </Slab>
+        </Panel>
+      )}
+
       <section className="space-y-3">
         <h2 className="font-display text-2xl font-extrabold">{t().catalog}</h2>
         {[...house.catalog]
@@ -150,7 +201,7 @@ function HouseBody(props: GameProps) {
                   ) : (
                     <Slab
                       size="sm"
-                      disabled={buying !== null || missing.length > 0 || house.influence < p.cost}
+                      disabled={buying !== null || missing.length > 0 || balance < p.cost}
                       onClick={() => void buy(p.code)}
                     >
                       {t().buy(p.cost)}
@@ -187,5 +238,55 @@ function HouseBody(props: GameProps) {
         )}
       </section>
     </div>
+  );
+}
+
+/** The board of the house's missions: ten every three and a half days, paid in Influence. */
+function Missions(props: GameProps & { onClaimed: () => void }) {
+  const board = props.view.houseMissions;
+  if (!board || board.missions.length === 0) return null;
+  const m = t().missions;
+  return (
+    <section className="space-y-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-display text-2xl font-extrabold">{m.title}</h2>
+        <span className="label">{m.renews(clock(board.endsAt - props.now))}</span>
+      </div>
+      <ul className="space-y-2">
+        {board.missions.map((mission) => (
+          <li
+            key={mission.id}
+            className="flex items-center gap-3 rounded-xl bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70"
+          >
+            <span
+              className={`flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full px-1.5 font-mono text-[11px] font-bold ${mission.claimed ? "bg-lagoon text-on-lagoon" : mission.done ? "bg-gold text-ink" : "bg-night-4 text-cream-dim ring-1 ring-inset ring-line"}`}
+            >
+              {mission.claimed ? "✓" : `${mission.progress}/${mission.count}`}
+            </span>
+            <p
+              className={`min-w-0 flex-1 text-sm ${mission.claimed ? "text-cream-dim line-through" : ""}`}
+            >
+              {m.names[mission.id]?.(mission.count) ?? mission.id}
+            </p>
+            {mission.done && !mission.claimed ? (
+              <Slab
+                size="sm"
+                disabled={props.busy}
+                onClick={async () => {
+                  if (await props.act({ type: "claimHouseMission", missionId: mission.id }))
+                    props.onClaimed();
+                }}
+              >
+                {m.claim(mission.influence)}
+              </Slab>
+            ) : (
+              <span className="label shrink-0 text-gold">
+                {mission.claimed ? m.claimed : m.reward(mission.influence)}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

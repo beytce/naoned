@@ -699,10 +699,10 @@ export const fr = {
     mastery: {
       kicker: "Maîtrise de la saison",
       title: "Choisissez votre voie",
-      help: "Votre Maison a grandi : elle peut se spécialiser. La maîtrise vaut pour toute la saison et ne se change pas.",
+      help: "Votre Maison a grandi : elle peut se spécialiser. La maîtrise vaut pour toute la saison ; seule l'Influence permet d'en changer.",
       pick: "Choisissez une maîtrise",
       confirm: (name: string) => `Devenir ${name}`,
-      forGood: "Un seul choix pour toute la saison.",
+      forGood: "Un seul choix pour la saison, sauf à le changer contre de l'Influence.",
       ready: "Votre Maison peut choisir sa maîtrise",
       readyHelp: "Maître d'atelier, roulier, négociant ou marchand du Levant",
       locked: (levels: number, need: number) =>
@@ -1244,7 +1244,7 @@ export const fr = {
       influence: "Influence",
       intro:
         "Votre fortune repart à zéro chaque saison, votre Maison non : l'Influence se garde de saison en saison et achète des patentes, qui ouvrent du neuf sans jamais rapporter plus.",
-      earn: "Elle se gagne chaque semaine par vos ventes nettes et par la Campagne de votre famille, et à la fin de chaque saison selon votre rang.",
+      earn: "Elle ne s'achète pas et ne se gagne pas en vendant : seulement par les missions de la Maison, dix tous les trois jours et demi.",
       open: "Ouvrir le livre",
       balance: (n: number) => `${n} d'Influence`,
       catalog: "Patentes",
@@ -1253,17 +1253,23 @@ export const fr = {
       requires: (names: string) => `D'abord : ${names}`,
       bought: (name: string) => `Patente acquise : ${name}`,
       history: "Derniers mouvements",
-      none: "Rien encore : la première semaine se clôt dans quelques jours.",
+      none: "Rien encore : accomplissez une mission de la Maison.",
       sources: {
         commerce: (week: number | null) => `Ventes nettes · semaine ${(week ?? 0) + 1}`,
         campaign: (week: number | null) => `Campagne · semaine ${(week ?? 0) + 1}`,
         season: () => "Fin de saison",
         patent: () => "Patente",
+        mission: () => "Mission de la Maison",
+        spend: () => "Dépense",
       } as Record<string, (week: number | null) => string>,
       patents: {
         second_counter: {
           name: "Second comptoir",
           text: "Un point de départ de vos véhicules dans une autre région, choisie à chaque saison. La commande garde son prix : seul le trajet change.",
+        },
+        gilded_name: {
+          name: "Nom doré",
+          text: "Votre nom en lettres d'or dans les classements, pour toujours.",
         },
         alexandria: {
           name: "Comptoir d'Alexandrie",
@@ -1281,6 +1287,52 @@ export const fr = {
         wool: { name: "Art de la laine", text: "La chaîne du drap : laine, puis drap." },
         glass: { name: "Art du verre", text: "La chaîne du verre de Murano." },
       } as Record<string, { name: string; text: string }>,
+      missions: {
+        title: "Missions de la Maison",
+        renews: (t: string) => `Nouvelles missions dans ${t}`,
+        claim: (n: number) => `Recevoir · ${n} ✦`,
+        claimed: "Reçue",
+        reward: (n: number) => `${n} ✦`,
+        names: {
+          deliveries: (n: number) => `Livrer ${n} commandes`,
+          many_deliveries: (n: number) => `Livrer ${n} commandes`,
+          urgent: (n: number) => `Livrer ${n} commandes urgentes`,
+          doge: (n: number) => `Honorer ${n} contrats du Doge`,
+          offers: (n: number) => `Laisser ${n} offres au Rialto`,
+          rialto: (n: number) => `Voir ${n} de vos offres prises au Rialto`,
+          harvests: (n: number) => `Récolter ${n} fois`,
+          upgrade: () => "Agrandir un atelier",
+          build: () => "Bâtir un atelier",
+          vehicle: () => "Améliorer un véhicule",
+          chests: (n: number) => `Ouvrir ${n} coffres du jour`,
+          bales: (n: number) => `Ouvrir ${n} ballots de Faraj`,
+          levy: (n: number) => `Lever ${n} fois l'impôt de la famille`,
+          marches: (n: number) => `Envoyer ${n} marches`,
+          assault: () => "Gagner un assaut",
+          defence: () => "Défendre une terre",
+          work: () => "Bâtir un ouvrage",
+        } as Record<string, (n: number) => string>,
+      },
+      spend: {
+        rush: (n: number) => `Accélérer · ${n} ✦`,
+        rushHelp: (left: number) =>
+          left > 0
+            ? `Arrive tout de suite, payée comme d'habitude. Encore ${left} aujourd'hui.`
+            : "Plus d'accélération aujourd'hui.",
+        troops: (count: number, cost: number) => `+${count} · ${cost} ✦`,
+        troopsTitle: "Troupes pour de l'Influence",
+        troopsHelp: (left: number) =>
+          left > 0
+            ? `En plus des ducats. Encore ${left} aujourd'hui.`
+            : "Plus de troupes aujourd'hui.",
+        work: (n: number) => `Achever · ${n} ✦`,
+        counter: (n: number) => `Déplacer · ${n} ✦`,
+        counterTitle: "Déplacer le second comptoir",
+        respec: (n: number) => `Changer de maîtrise · ${n} ✦`,
+        respecTitle: (name: string) => `Maîtrise : ${name}`,
+        respecHelp: "Vous la choisissez de nouveau aussitôt, parmi toutes.",
+        reroll: (n: number) => `Changer · ${n} ✦`,
+      },
       second: {
         choose: "Où poser votre second comptoir cette saison ?",
         chooseHelp:
@@ -1450,6 +1502,17 @@ export const fr = {
       same_region: "Le second comptoir se pose dans une autre région que la vôtre.",
       second_counter_set: "Votre second comptoir est déjà posé pour cette saison.",
       no_second_counter: "Pas de second comptoir posé cette saison.",
+      unknown_mission: "Cette mission n'est plus au tableau.",
+      mission_not_done: "Mission pas encore accomplie.",
+      mission_claimed: "Mission déjà reçue.",
+      not_en_route: "Ce véhicule n'est plus en route vers la ville.",
+      rush_limit: "Plus d'accélération possible aujourd'hui.",
+      troop_limit: "Plus de troupes à acheter aujourd'hui.",
+      no_specialty: "Pas de maîtrise choisie à changer.",
+      no_work: "Aucun ouvrage en chantier sur cette terre.",
+      work_ready: "Cet ouvrage est déjà achevé.",
+      unknown_use: "Usage inconnu.",
+      unknown_daily: "Cette tâche n'est plus au programme du jour.",
       no_bale: "Aucun ballot au quai pour l'instant : le prochain est en route.",
       bales_off: "Pas de ballot de Faraj dans ce monde.",
       insufficient_funds: "Pas assez de ducats.",

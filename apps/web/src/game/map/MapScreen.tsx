@@ -725,6 +725,18 @@ function CartPanel({
   if (trip) {
     const city = props.names.city(trip.route.split(":")[1] ?? "");
     const out = now < trip.arriveAt;
+    // Influence brings it there at once, for a price by the time left.
+    const spend = props.view.houseSpend;
+    const rush =
+      spend && spend.rushMinutesPerPoint > 0
+        ? {
+            cost: Math.max(
+              1,
+              Math.ceil((trip.arriveAt - now) / (spend.rushMinutesPerPoint * 60_000)),
+            ),
+            left: spend.rushesLeft,
+          }
+        : null;
     const share = out
       ? (now - trip.departAt) / Math.max(1, trip.arriveAt - trip.departAt)
       : (now - trip.arriveAt) / Math.max(1, trip.backAt - trip.arriveAt);
@@ -749,7 +761,20 @@ function CartPanel({
         onClose={onClose}
         onPrev={onPrev}
         onNext={onNext}
-        actions={<ActionButton icon={Icon.follow()} label={m.buttons.follow} onClick={onFollow} />}
+        actions={
+          <>
+            <ActionButton icon={Icon.follow()} label={m.buttons.follow} onClick={onFollow} />
+            {out && rush && (
+              <ActionButton
+                icon={Icon.send()}
+                label={fr.game.house.spend.rush(rush.cost)}
+                tone="gold"
+                disabled={props.busy || rush.left === 0 || (props.influence ?? 0) < rush.cost}
+                onClick={() => void props.spend({ use: "rush", deliveryId: trip.id })}
+              />
+            )}
+          </>
+        }
       />
     );
   }

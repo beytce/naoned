@@ -5,6 +5,7 @@ import {
   dailyFor,
   deliveryOrdersFor,
   houseMissionsFor,
+  houseSpendFor,
   reserveOf,
   rushCost,
 } from "../src/index.js";
@@ -142,7 +143,9 @@ describe("a rushed delivery", () => {
     expect(error(w.try({ type: "rushDelivery", playerId: "a", deliveryId: d.id }))).toBe(
       "rush_limit",
     );
+    expect(houseSpendFor(w.ctx, w.state, "a", w.now)?.rushesLeft).toBe(0);
     w.advance(DAY);
+    expect(houseSpendFor(w.ctx, w.state, "a", w.now)?.rushesLeft).toBe(2);
     expect(error(w.try({ type: "rushDelivery", playerId: "a", deliveryId: d.id }))).not.toBe(
       "rush_limit",
     );
@@ -171,6 +174,11 @@ describe("troops bought with Influence", () => {
     expect(reserveOf(w.state, "a", w.now)).toBe(6);
     expect(error(w.try({ type: "buyTroops", playerId: "a", count: 5 }))).toBe("troop_limit");
     w.do({ type: "buyTroops", playerId: "a", count: 4 });
+    expect(houseSpendFor(w.ctx, w.state, "a", w.now)).toMatchObject({
+      troopsLeft: 0,
+      troopsPerPoint: 2,
+      rushWork: 5,
+    });
     w.advance(DAY);
     w.do({ type: "buyTroops", playerId: "a", count: 10 });
   });

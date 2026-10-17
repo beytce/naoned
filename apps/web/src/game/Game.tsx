@@ -23,6 +23,8 @@ const REWARDING = new Set<string>([
   "collectAll",
   "collectAndRestart",
   "claimMission",
+  "claimHouseMission",
+  "spend:rush",
   "build",
   "upgrade",
   "sellToCity",
@@ -38,6 +40,7 @@ import type {
   Level,
   PlayerView,
   PriceSeries,
+  Spend,
   Welcome as WelcomeData,
 } from "./types.js";
 
@@ -67,6 +70,8 @@ export interface GameProps {
   /** Server time now, ticking every second. */
   now: number;
   act: (action: Action) => Promise<boolean>;
+  /** Spends the house's Influence on something in the world. */
+  spend: (what: Spend) => Promise<boolean>;
   busy: boolean;
   names: Names;
   /** Pseudos of merchants met (family, order book), by player id. */
@@ -328,24 +333,26 @@ export function Game(props: {
     };
   }, [catalog]);
 
-  const act = useCallback(
-    async (action: Action) => {
+  /** Sends an action (or a use of Influence) and puts the answer on screen. */
+  const send = useCallback(
+    async (request: () => Promise<GameResponse>, type: string) => {
       if (acting.current) return false;
       acting.current = true;
       setBusy(true);
       try {
-        const res = await gameApi.act(action);
+        const res = await request();
         versionRef.current = Math.max(versionRef.current, res.version ?? 0);
         apply(res.serverTime, res.view);
         if (res.names) setPeople(res.names);
         if (res.bots) setBots(new Set(res.bots));
+        if (res.influence !== undefined) setInfluence(res.influence);
         if (res.error) {
           haptic("warn");
           setToast(fr.game.errors[res.error] ?? fr.errors.unknown ?? null);
           return false;
         }
-        haptic(REWARDING.has(action.type) ? "success" : "tap");
-        if (action.type === "instantOrder" || action.type === "sellToCity") {
+        haptic(REWARDING.has(type) ? "success" : "tap");
+        if (type === "instantOrder" || type === "sellToCity") {
           pricesAt.current = Date.now();
           gameApi
             .prices()
@@ -364,6 +371,11 @@ export function Game(props: {
       }
     },
     [apply],
+  );
+  const act = useCallback((action: Action) => send(() => gameApi.act(action), action.type), [send]);
+  const spend = useCallback(
+    (what: Spend) => send(() => gameApi.spend(what), `spend:${what.use}`),
+    [send],
   );
 
   if (!catalog || view === undefined) {
@@ -440,6 +452,7 @@ export function Game(props: {
     account: props.account,
     now: now + offset,
     act,
+    spend,
     busy,
     names,
     people,

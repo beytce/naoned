@@ -294,6 +294,7 @@ function LandWork({ land, f, props }: { land: LandView; f: FamiliesView; props: 
   const rules = props.catalog.families?.campaign?.works;
   if (!rules) return null;
   const w = t().works;
+  const spend = props.view.houseSpend;
   const ours = land.holder !== null && land.holder === f.mine;
   if (land.work) {
     const theirs = land.work.family !== f.mine;
@@ -323,6 +324,16 @@ function LandWork({ land, f, props }: { land: LandView; f: FamiliesView; props: 
           </p>
           {theirs && <p className="mt-1 text-xs text-cream-dim">{w.raze(rules.razeMerit)}</p>}
         </div>
+        {!theirs && !land.work.ready && spend && (
+          <Slab
+            size="sm"
+            tone="lagoon"
+            disabled={props.busy || (props.influence ?? 0) < spend.rushWork}
+            onClick={() => props.spend({ use: "work", land: land.code })}
+          >
+            {fr.game.house.spend.work(spend.rushWork)}
+          </Slab>
+        )}
       </div>
     );
   }
@@ -420,6 +431,7 @@ export function Lances({ f, props }: { f: FamiliesView; props: GameProps }) {
           <p className="mt-2 text-sm text-cream-dim">{t().hireDone}</p>
         )}
       </div>
+      <TroopsForInfluence {...props} />
       {me.leaving.length > 0 && (
         <ul className="mt-3 space-y-0.5">
           {me.leaving.slice(0, 3).map((l) => (
@@ -952,6 +964,40 @@ export function HowTo({ props }: { props: GameProps }) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Troops bought with the house's Influence: besides those hired for ducats, capped each day. */
+function TroopsForInfluence(props: GameProps) {
+  const spend = props.view.houseSpend;
+  if (!spend || props.influence === null) return null;
+  const h = fr.game.house.spend;
+  const left = spend.troopsLeft;
+  const counts = [...new Set([spend.troopsPerPoint, 10, left])]
+    .filter((c) => c > 0 && c <= left)
+    .sort((a, b) => a - b);
+  return (
+    <div className="mt-4">
+      <Label className="text-gold">{h.troopsTitle}</Label>
+      <p className="label mt-1">{h.troopsHelp(left)}</p>
+      {counts.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {counts.map((c) => {
+            const cost = Math.ceil(c / spend.troopsPerPoint);
+            return (
+              <Slab
+                key={c}
+                size="sm"
+                disabled={props.busy || (props.influence ?? 0) < cost}
+                onClick={() => props.spend({ use: "troops", count: c })}
+              >
+                {h.troops(c, cost)}
+              </Slab>
+            );
+          })}
         </div>
       )}
     </div>

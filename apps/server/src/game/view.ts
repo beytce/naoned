@@ -17,6 +17,7 @@ import {
   freeBatches,
   houseLevels,
   houseMissionsFor,
+  houseSpendFor,
   isMudaGood,
   marketMakerQuotaLeft,
   marketMakerQuotes,
@@ -601,6 +602,8 @@ export function playerView(
     houseMissions: ctx.settings.house?.missions
       ? houseMissionsFor(ctx, state, playerId, now)
       : null,
+    // What Influence buys, and what is left of today's limits.
+    houseSpend: houseSpendFor(ctx, state, playerId, now),
     bales: balesFor(ctx, state, playerId, now),
     fresh: ctx.settings.fresh,
     criee: crieeView(ctx, state, playerId, now),
