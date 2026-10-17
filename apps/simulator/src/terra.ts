@@ -94,7 +94,7 @@ export function runTerra(
 
   const result: TerraResult = {
     seed,
-    cells: s.owner.length,
+    cells: s.map.land.filter(Boolean).length,
     players: [],
     daily: [],
     firstContactHours: null,
@@ -119,11 +119,11 @@ export function runTerra(
     while (TERRA_START + day * DAY + 22 * HOUR <= until && day < 7) {
       advanceTerra(s, cfg, TERRA_START + day * DAY + 22 * HOUR);
       watchFronts();
-      const neutral = s.owner.filter((o) => o === null).length;
+      const neutral = s.owner.filter((o, i) => o === null && s.map.land[i]).length;
       const milan = s.owner.filter((o) => o === MILAN).length;
       result.daily.push({
-        neutralBps: Math.round((neutral * 10_000) / s.owner.length),
-        milanBps: Math.round((milan * 10_000) / s.owner.length),
+        neutralBps: Math.round((neutral * 10_000) / result.cells),
+        milanBps: Math.round((milan * 10_000) / result.cells),
         contested: s.fronts.filter((f) => f.against !== null).length,
       });
       onDay?.(day, s);
@@ -171,12 +171,25 @@ function play(
 ): void {
   const player = s.players[id];
   if (!player) {
-    // A free inner cell, tried in an order of its own.
+    // A free inner cell of land, tried in an order of its own; failing that, the edge of Milan.
+    const inner = (i: number) => hexNeighbors(s.map, i).filter((n) => s.map.land[n]).length === 6;
+    const order = (a: number, b: number) => hash(`${seed}:${id}:${a}`) - hash(`${seed}:${id}:${b}`);
     const cells = s.owner
       .map((_, i) => i)
-      .filter((i) => s.owner[i] === null && hexNeighbors(s.map, i).length === 6)
-      .sort((a, b) => hash(`${seed}:${id}:${a}`) - hash(`${seed}:${id}:${b}`));
+      .filter((i) => s.owner[i] === null && s.map.land[i] && inner(i))
+      .sort(order);
     for (const cell of cells.slice(0, 80)) {
+      if (tryAct(() => placeOnTerra(s, cfg, id, cell, now))) return;
+    }
+    const edge = s.owner
+      .map((_, i) => i)
+      .filter(
+        (i) =>
+          s.owner[i] === MILAN &&
+          hexNeighbors(s.map, i).some((n) => s.map.land[n] && s.owner[n] !== MILAN),
+      )
+      .sort(order);
+    for (const cell of edge.slice(0, 10)) {
       if (tryAct(() => placeOnTerra(s, cfg, id, cell, now))) return;
     }
     return;
@@ -188,7 +201,7 @@ function play(
   const border = new Map<string | null, number[]>();
   for (let i = 0; i < s.owner.length; i++) {
     const o = s.owner[i] ?? null;
-    if (o === id) continue;
+    if (o === id || !s.map.land[i]) continue;
     if (!hexNeighbors(s.map, i).some((n) => s.owner[n] === id)) continue;
     border.set(o, [...(border.get(o) ?? []), i]);
   }
