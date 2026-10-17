@@ -847,3 +847,18 @@ Décision du porteur : l'Influence devient une monnaie « premium » gagnée **s
 | Influence, 9e décile | 170 | 173 | 179 | 166 | 174 |
 
 **Lecture.** Les PNJ reçoivent chaque mission qu'ils accomplissent : ≈ 150 par saison au médian, plus du double de l'ancien barème (≈ 68), et un écart resserré entre assidus et moyens (les missions récompensent la présence régulière, pas le volume). Le second comptoir (15) vient dès le premier tableau, le nom doré (40) dans la première semaine ; le catalogue du plan (≈ 615) demanderait ≈ 5 saisons au médian, si l'Influence n'était pas aussi dépensée dans le monde. Les dépenses (accélérer une livraison, troupes, achever un ouvrage, déplacer le second comptoir, changer de maîtrise ou de tâche du jour) ne sont pas encore jouées par les PNJ du simulateur : elles sont plafonnées par jour (3 accélérations, 20 troupes) et à mesurer avec la bêta. À surveiller : si les patentes à contenu arrivent, les prix du catalogue devront peut-être monter d'un tiers.
+
+## Retrait des entretiens (17 octobre 2026, décision du porteur)
+
+Bâtiments et véhicules ne coûtent plus rien à garder : plus d'entretien en ducats, plus de production bloquée pour entretien impayé, plus de Franchise (programme par défaut : Fondaco, Faveur de Venise, Levant). Le seul coût quotidien d'un comptoir est le pain de ses ouvriers (rations, inchangées). `pnpm sim`, 5 graines, toutes conformes :
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie par joueur actif en fin de saison, avant → après (ducats) | 408 → 1 545 | 561 → 1 293 | 483 → 1 220 | 538 → 1 444 | 492 → 1 591 |
+| Croissance moyenne de la monnaie (%/jour), avant → après | 1,8 → 7,2 | 3,2 → 6,4 | 2,5 → 4,7 | 2,9 → 6,5 | 3,0 → 8,7 |
+| Jours hors plage du ratio créée / détruite (sur 23), avant → après | 0 → 9 | 1 → 7 | 1 → 8 | 3 → 9 | 0 → 13 |
+| Gini du patrimoine à J+15, avant → après | 0,43 → 0,49 | 0,42 → 0,49 | 0,46 → 0,53 | 0,41 → 0,45 | 0,45 → 0,50 |
+
+Indice des prix du panier inchangé (84 à 128), assidus toujours loin devant les occasionnels.
+
+**Lecture.** L'entretien était le premier puits de monnaie : sans lui, la masse monétaire par joueur actif triple en fin de saison (≈ 1 400 ducats au lieu de ≈ 500) et dépasse le plafond visé (jusqu'à 1,6 ×) ; le ratio créée / détruite sort de sa plage un jour sur trois. Les prix ne bougent pas encore (la Dogana et les villes les tiennent), mais la trésorerie de fin de saison n'a plus d'emploi, ce que le palais avait corrigé (constat 7). Aucun contrepoids n'est appliqué ici : le choix du levier (taxe du Rialto, prix du palais ou des améliorations, prix des véhicules) reste au porteur.
