@@ -836,3 +836,14 @@ Toutes les graines conformes ; patentes : avance médiane +2,7 % et +1,6 % (deux
 ### Activation (17 octobre 2026, décision du porteur)
 
 La section `house` entre dans les réglages de Venise (`venice1450.settings.ts`) avec le barème mesuré ci-dessus. Le catalogue ne contient que le second comptoir (15) : les autres patentes attendent leur contenu. Les marchands gagnent de l'Influence dès la prochaine clôture de semaine.
+
+## L'Influence par les missions de la Maison (17 octobre 2026)
+
+Décision du porteur : l'Influence devient une monnaie « premium » gagnée **seulement** par les missions de la Maison (`house.missions` de Venise : un tableau de 10 missions toutes les 84 heures, tirées d'un réservoir de 17, de 2 à 5 d'Influence). Plus rien par les ventes nettes, la Campagne ni le rang de fin de saison. `pnpm sim` (5 graines, toutes conformes) :
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Influence de la saison, médiane | 142,5 | 140 | 154 | 152 | 153,5 |
+| Influence, 9e décile | 170 | 173 | 179 | 166 | 174 |
+
+**Lecture.** Les PNJ reçoivent chaque mission qu'ils accomplissent : ≈ 150 par saison au médian, plus du double de l'ancien barème (≈ 68), et un écart resserré entre assidus et moyens (les missions récompensent la présence régulière, pas le volume). Le second comptoir (15) vient dès le premier tableau, le nom doré (40) dans la première semaine ; le catalogue du plan (≈ 615) demanderait ≈ 5 saisons au médian, si l'Influence n'était pas aussi dépensée dans le monde. Les dépenses (accélérer une livraison, troupes, achever un ouvrage, déplacer le second comptoir, changer de maîtrise ou de tâche du jour) ne sont pas encore jouées par les PNJ du simulateur : elles sont plafonnées par jour (3 accélérations, 20 troupes) et à mesurer avec la bêta. À surveiller : si les patentes à contenu arrivent, les prix du catalogue devront peut-être monter d'un tiers.
