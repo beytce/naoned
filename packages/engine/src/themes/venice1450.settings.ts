@@ -817,7 +817,7 @@ export const venice1450Settings: WorldSettingsInput = {
   },
   // The house between seasons (docs/plan-progression.md): Influence, the game's premium coin,
   // kept from season to season. Earned only by the house's missions (ten every three and a half
-  // days, about 3 each), spent on patents, rushed deliveries, troops and a few comforts.
+  // days, about 3 each), spent on privileges, rushed deliveries, troops and a few comforts.
   house: {
     missions: {
       everyHours: 84,
@@ -855,14 +855,12 @@ export const venice1450Settings: WorldSettingsInput = {
       troopsPerPoint: 2,
       troopsPerDay: 20,
       dailyReroll: 3,
-      moveCounter: 10,
       respec: 15,
       rushWork: 5,
     },
-    // The second counter; the gilded name in the rankings (cosmetic). The others wait for their
-    // content (the Levant, Lombardy…).
+    // Privileges: the gilded name in the rankings (cosmetic). The others wait for their content
+    // (the Levant, Lombardy…). The second counter is gone (October 2026), its price paid back.
     patents: {
-      second_counter: { cost: 15, requires: [] },
       gilded_name: { cost: 40, requires: [] },
     },
   },

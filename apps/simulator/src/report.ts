@@ -723,14 +723,14 @@ export function houseChecks(r: SimulationResult, twin?: SimulationResult): Check
   if (gaps) {
     checks.push(
       {
-        name: "Maison : avance des patentes en ventes nettes (même saison rejouée sans patente)",
+        name: "Maison : avance des privilèges en ventes nettes (même saison rejouée sans privilège)",
         target: "≤ +15 % en médiane des graines (voir la synthèse)",
         value: Number.isNaN(gaps.lead) ? "—" : pct(gaps.lead),
         pass: true,
         blocking: false,
       },
       {
-        name: "Maison : ventes nettes des marchands sans patente (même saison rejouée sans patente)",
+        name: "Maison : ventes nettes des marchands sans privilège (même saison rejouée sans privilège)",
         target: "≥ −5 % en médiane des graines (voir la synthèse)",
         value: Number.isNaN(gaps.others) ? "—" : pct(gaps.others),
         pass: true,
@@ -766,14 +766,14 @@ export function houseVerdict(gaps: { lead: number; others: number }[]): Check[] 
   const others = median(gaps.map((g) => g.others));
   return [
     {
-      name: `Maison : avance des patentes, médiane de ${gaps.length} graines`,
+      name: `Maison : avance des privilèges, médiane de ${gaps.length} graines`,
       target: "≤ +15 %",
       value: pct(lead),
       pass: lead <= 0.15,
       blocking: true,
     },
     {
-      name: `Maison : marchands sans patente, médiane de ${gaps.length} graines`,
+      name: `Maison : marchands sans privilège, médiane de ${gaps.length} graines`,
       target: "≥ −5 %",
       value: pct(others),
       pass: others >= -0.05,

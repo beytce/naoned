@@ -27,7 +27,7 @@ describe("simulator", () => {
     expect(r.daily.reduce((n, d) => n + d.trades, 0)).toBeGreaterThan(0);
   });
 
-  it("gives houses their patents, which choose a second counter and earn Influence by missions", () => {
+  it("gives houses their privileges, and Influence by missions", () => {
     const r = runSimulation({
       settings: venice1450Settings,
       seed: 5,
@@ -42,8 +42,7 @@ describe("simulator", () => {
     const holders = r.patentHolders ?? [];
     expect(holders.length).toBeGreaterThan(0);
     for (const id of holders) {
-      expect(r.finalState?.players[id]?.patents).toEqual(["second_counter"]);
-      expect(r.finalState?.players[id]?.secondRegion).toBeDefined();
+      expect(r.finalState?.players[id]?.patents).toEqual(["gilded_name"]);
     }
     // Influence comes from the house's missions only.
     const earned = Object.values(r.influence ?? {});

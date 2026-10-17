@@ -4,6 +4,7 @@ import {
   type DeliveryOrder,
   type WorldSettingsInput,
   deliveryOrdersFor,
+  hasPatent,
   seasonInfluence,
   seasonTier,
 } from "../src/index.js";
@@ -17,11 +18,11 @@ const influence = (res: ReturnType<World["do"]>, source: string) =>
     .filter((e) => e.type === "influence_earned" && e.data?.source === source)
     .map((e) => ({ playerId: e.playerId, ...e.data }) as Record<string, unknown>);
 
-/** a holds the second counter's patent, b none; both of the plain (terraferma). */
+/** a holds a privilege (the gilded name), b none; both of the plain (terraferma). */
 function road(more: Partial<WorldSettingsInput> = {}) {
   const w = new World(makeContext({ ...deliverySettings, house: testHouse, ...more }));
   w.at(9 * HOUR);
-  w.do({ type: "join", playerId: "a", region: "terraferma", patents: ["second_counter"] });
+  w.do({ type: "join", playerId: "a", region: "terraferma", patents: ["gilded_name"] });
   w.do({ type: "join", playerId: "b", region: "terraferma" });
   for (const id of ["a", "b"]) w.give(id, "bread", 200).give(id, "bricks", 100);
   return w;
@@ -34,77 +35,33 @@ const order = (w: World, playerId: string) =>
   ) as DeliveryOrder;
 const cartOf = (w: World, playerId: string) =>
   Object.values(w.state.vehicles ?? {}).find((v) => v.playerId === playerId)?.id ?? "";
-const dispatch = (w: World, playerId: string, o: DeliveryOrder, from?: "second") =>
+const dispatch = (w: World, playerId: string, o: DeliveryOrder) =>
   w.try({
     type: "dispatchDelivery",
     playerId,
     orderId: o.id,
     vehicleId: cartOf(w, playerId),
-    ...(from ? { from } : {}),
   } as Command);
 
-describe("patents", () => {
+describe("privileges", () => {
   it("come with the house on joining, and nothing without them", () => {
     const w = road();
-    expect(w.state.players.a?.patents).toEqual(["second_counter"]);
+    expect(w.state.players.a?.patents).toEqual(["gilded_name"]);
     expect(w.state.players.b?.patents).toBeUndefined();
-    expect(error(w.try({ type: "chooseSecondCounter", playerId: "b", region: "lagoon" }))).toBe(
-      "no_patent",
-    );
+    expect(hasPatent(w.ctx, w.state, "a", "gilded_name")).toBe(true);
+    expect(hasPatent(w.ctx, w.state, "b", "gilded_name")).toBe(false);
   });
 
   it("are ignored in a world without them", () => {
     const w = road({ house: undefined });
-    expect(error(w.try({ type: "chooseSecondCounter", playerId: "a", region: "lagoon" }))).toBe(
-      "no_patent",
-    );
-  });
-});
-
-describe("the second counter", () => {
-  it("stands in another region, chosen once for the season", () => {
-    const w = road();
-    expect(error(w.try({ type: "chooseSecondCounter", playerId: "a", region: "terraferma" }))).toBe(
-      "same_region",
-    );
-    expect(error(w.try({ type: "chooseSecondCounter", playerId: "a", region: "atlantis" }))).toBe(
-      "unknown_region",
-    );
-    w.do({ type: "chooseSecondCounter", playerId: "a", region: "lagoon" });
-    expect(w.state.players.a?.secondRegion).toBe("lagoon");
-    expect(error(w.try({ type: "chooseSecondCounter", playerId: "a", region: "dolomites" }))).toBe(
-      "second_counter_set",
-    );
+    expect(hasPatent(w.ctx, w.state, "a", "gilded_name")).toBe(false);
   });
 
-  it("sends a vehicle along its own road, paid as from home", () => {
-    const w = road();
-    w.do({ type: "chooseSecondCounter", playerId: "a", region: "lagoon" });
-    const o = order(w, "a");
-    expect(o).toBeDefined();
-    const cash = w.cash("a");
-    expect(error(dispatch(w, "a", o, "second"))).toBe("ok");
-    const d = Object.values(w.state.deliveries ?? {})[0];
-    // A cart (full speed) takes the lagoon's road to the city, not the plain's.
-    const routes = testDeliveries.routes as Record<string, Record<string, number>>;
-    expect(d?.route).toBe(`lagoon:${o.city}`);
-    expect((d?.arriveAt ?? 0) - w.now).toBe((routes.lagoon?.[o.city] ?? 0) * MIN);
-    // The price of the board, whatever the road: a counter saves time, never earns more.
-    expect(d?.payment).toBe(o.unitPrice * BigInt(o.quantity));
-    w.at((d?.arriveAt ?? 0) - w.ctx.startAt).do({ type: "tick" });
-    expect(w.cash("a")).toBe(cash + o.unitPrice * BigInt(o.quantity));
-  });
-
-  it("keeps the home road when not asked, and is refused without a counter", () => {
+  it("no longer include a second counter: every vehicle leaves from home", () => {
     const w = road();
     const o = order(w, "a");
-    expect(error(dispatch(w, "a", o, "second"))).toBe("no_second_counter");
-    const cash = w.cash("a");
     expect(error(dispatch(w, "a", o))).toBe("ok");
-    const d = Object.values(w.state.deliveries ?? {})[0];
-    expect(d?.route).toBe(`terraferma:${o.city}`);
-    expect(d?.payment).toBe(o.unitPrice * BigInt(o.quantity));
-    expect(w.cash("a")).toBe(cash);
+    expect(Object.values(w.state.deliveries ?? {})[0]?.route).toBe(`terraferma:${o.city}`);
   });
 });
 
@@ -185,18 +142,17 @@ describe("the season's tier", () => {
   });
 });
 
-describe("a patent bought during the season", () => {
+describe("a privilege bought during the season", () => {
   it("takes effect at once, once, and only if the world knows it", () => {
     const w = road();
-    w.do({ type: "grantPatent", playerId: "b", patent: "second_counter" });
-    expect(w.state.players.b?.patents).toEqual(["second_counter"]);
-    w.do({ type: "grantPatent", playerId: "b", patent: "second_counter" });
-    expect(w.state.players.b?.patents).toEqual(["second_counter"]);
-    w.do({ type: "chooseSecondCounter", playerId: "b", region: "dolomites" });
+    w.do({ type: "grantPatent", playerId: "b", patent: "gilded_name" });
+    expect(w.state.players.b?.patents).toEqual(["gilded_name"]);
+    w.do({ type: "grantPatent", playerId: "b", patent: "gilded_name" });
+    expect(w.state.players.b?.patents).toEqual(["gilded_name"]);
     expect(error(w.try({ type: "grantPatent", playerId: "b", patent: "lombardy" }))).toBe(
       "unknown_patent",
     );
-    expect(error(w.try({ type: "grantPatent", playerId: "z", patent: "second_counter" }))).toBe(
+    expect(error(w.try({ type: "grantPatent", playerId: "z", patent: "gilded_name" }))).toBe(
       "unknown_player",
     );
   });

@@ -88,14 +88,24 @@ export async function balanceOf(
     .select({ total: sql<number>`coalesce(sum(${influenceEntries.amount}), 0)::int` })
     .from(influenceEntries)
     .where(eq(influenceEntries.accountId, accountId));
-  const held = await db
-    .select({ patent: influenceEntries.patent })
+  const lines = await db
+    .select({ source: influenceEntries.source, patent: influenceEntries.patent })
     .from(influenceEntries)
-    .where(and(eq(influenceEntries.accountId, accountId), eq(influenceEntries.source, "patent")))
+    .where(
+      and(
+        eq(influenceEntries.accountId, accountId),
+        inArray(influenceEntries.source, ["patent", "refund"]),
+      ),
+    )
     .orderBy(influenceEntries.id);
+  // A privilege withdrawn from the game was paid back: no longer held.
+  const refunded = new Set(lines.filter((l) => l.source === "refund").map((l) => l.patent));
   return {
     influence: Number(row?.total ?? 0),
-    patents: held.map((h) => h.patent).filter((p): p is string => !!p),
+    patents: lines
+      .filter((l) => l.source === "patent" && !refunded.has(l.patent))
+      .map((l) => l.patent)
+      .filter((p): p is string => !!p),
   };
 }
 

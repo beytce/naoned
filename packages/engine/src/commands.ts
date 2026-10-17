@@ -24,10 +24,8 @@ import {
 import { type Effects, emptyEffects } from "./effects.js";
 import { joinFamily, leaveFamily } from "./families.js";
 import {
-  chooseSecondCounter,
   claimHouseMission,
   grantPatent,
-  moveSecondCounter,
   resetSpecialty,
   rushDelivery,
   trackHouseMissions,
@@ -71,10 +69,9 @@ export type Command =
       type: "join";
       playerId: PlayerId;
       region: string;
-      /** Patents the house holds (kept by the server from season to season). */
+      /** Privileges the house holds (kept by the server from season to season). */
       patents?: string[];
     }
-  | { type: "chooseSecondCounter"; playerId: PlayerId; region: string }
   /** A patent bought with Influence (server only: it checked and took the price). */
   | { type: "grantPatent"; playerId: PlayerId; patent: string }
   | { type: "claimHouseMission"; playerId: PlayerId; missionId: string }
@@ -82,7 +79,6 @@ export type Command =
   | { type: "rushDelivery"; playerId: PlayerId; deliveryId: string }
   | { type: "buyTroops"; playerId: PlayerId; count: number }
   | { type: "rushWork"; playerId: PlayerId; land: string }
-  | { type: "moveSecondCounter"; playerId: PlayerId; region: string }
   | { type: "resetSpecialty"; playerId: PlayerId }
   | { type: "rerollDaily"; playerId: PlayerId; taskId: string }
   | {
@@ -131,8 +127,6 @@ export type Command =
       /** Several orders for the same city, carried together (`orderId` alone otherwise). */
       orderIds?: string[];
       vehicleId: string;
-      /** From the house's second counter rather than from home. */
-      from?: "second";
     }
   | { type: "tick" };
 
@@ -288,9 +282,6 @@ function apply(tx: Tx, cmd: Command): void {
     case "chooseSpecialty":
       chooseSpecialty(tx, cmd.playerId, cmd.specialty);
       break;
-    case "chooseSecondCounter":
-      chooseSecondCounter(tx, cmd.playerId, cmd.region);
-      break;
     case "grantPatent":
       grantPatent(tx, cmd.playerId, cmd.patent);
       break;
@@ -305,9 +296,6 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "rushWork":
       finishWork(tx, cmd.playerId, cmd.land);
-      break;
-    case "moveSecondCounter":
-      moveSecondCounter(tx, cmd.playerId, cmd.region);
       break;
     case "resetSpecialty":
       resetSpecialty(tx, cmd.playerId);
@@ -358,7 +346,7 @@ function apply(tx: Tx, cmd: Command): void {
       upgradeVehicle(tx, cmd.playerId, cmd.vehicleId);
       break;
     case "dispatchDelivery":
-      dispatchDelivery(tx, cmd.playerId, cmd.orderIds ?? cmd.orderId, cmd.vehicleId, cmd.from);
+      dispatchDelivery(tx, cmd.playerId, cmd.orderIds ?? cmd.orderId, cmd.vehicleId);
       break;
     case "deliverToProject":
       deliverToProject(tx, cmd.playerId, cmd.projectId, cmd.resource, cmd.quantity);

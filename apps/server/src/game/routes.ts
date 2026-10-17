@@ -115,10 +115,9 @@ const action = z.discriminatedUnion("type", [
     vehicleId: z.string(),
     /** Older clients still send an escort: there are none any more. */
     escort: z.string().optional(),
-    /** From the house's second counter. */
+    /** Older clients may still ask for the second counter: there is none any more. */
     from: z.literal("second").optional(),
   }),
-  z.object({ type: z.literal("chooseSecondCounter"), region: z.string().max(32) }),
   z.object({ type: z.literal("claimHouseMission"), missionId: z.string().max(32) }),
   z.object({
     type: z.literal("deliverToProject"),
@@ -606,7 +605,6 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     z.object({ use: z.literal("rush"), deliveryId: z.string().max(32) }),
     z.object({ use: z.literal("troops"), count: z.number().int().positive().max(1_000) }),
     z.object({ use: z.literal("work"), land: z.string().max(32) }),
-    z.object({ use: z.literal("counter"), region: z.string().max(32) }),
     z.object({ use: z.literal("respec") }),
     z.object({ use: z.literal("daily"), taskId: z.string().max(32) }),
   ]);
@@ -635,10 +633,6 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       case "work":
         cost = spend.rushWork;
         cmd = { type: "rushWork", playerId, land: body.land };
-        break;
-      case "counter":
-        cost = spend.moveCounter;
-        cmd = { type: "moveSecondCounter", playerId, region: body.region };
         break;
       case "respec":
         cost = spend.respec;
@@ -853,8 +847,6 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "claimMission", playerId, missionId: a.missionId }];
     case "chooseSpecialty":
       return [{ type: "chooseSpecialty", playerId, specialty: a.specialty }];
-    case "chooseSecondCounter":
-      return [{ type: "chooseSecondCounter", playerId, region: a.region }];
     case "claimHouseMission":
       return [{ type: "claimHouseMission", playerId, missionId: a.missionId }];
     case "claimDaily":
@@ -940,7 +932,6 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
           orderId: a.orderId,
           ...(a.orderIds ? { orderIds: a.orderIds } : {}),
           vehicleId: a.vehicleId,
-          ...(a.from ? { from: a.from } : {}),
         },
       ];
     case "deliverToProject":

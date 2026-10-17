@@ -277,14 +277,14 @@ export const campaignSettings: Partial<WorldSettingsInput> = {
   decrees: testDecrees,
 };
 
-/** The house between seasons: Influence earned each week, and the second counter's patent. */
+/** The house between seasons: Influence earned each week, and a privilege (the gilded name). */
 export const testHouse = {
   influence: {
     commerce: { ducatsPerPoint: 10, weeklyCap: 12 },
     campaign: { meritPerPoint: 10, winBonus: 5, weeklyCap: 15 },
     season: { doge: 50, podium: 30, top10: 20, elite: 15, notable: 10, participant: 5 },
   },
-  patents: { second_counter: { cost: 40, requires: [] as string[] } },
+  patents: { gilded_name: { cost: 40, requires: [] as string[] } },
   missions: {
     everyHours: 84,
     perBoard: 3,
@@ -301,7 +301,6 @@ export const testHouse = {
     troopsPerPoint: 2,
     troopsPerDay: 10,
     dailyReroll: 3,
-    moveCounter: 10,
     respec: 15,
     rushWork: 5,
   },

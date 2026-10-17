@@ -624,8 +624,6 @@ export const worldSettingsSchema = z.object({
           troopsPerDay: qty,
           /** Another task of the day in place of one. */
           dailyReroll: positive,
-          /** The second counter moved to another region during the season. */
-          moveCounter: positive,
           /** The mastery chosen again during the season. */
           respec: positive,
           /** A campaign work finished at once. */

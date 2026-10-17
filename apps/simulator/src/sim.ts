@@ -389,7 +389,8 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     }
   }
   result.patentHolders = [...patentHolders];
-  const patents = options.patents ?? ["second_counter"];
+  // By default, every privilege of the world's catalogue.
+  const patents = options.patents ?? Object.keys(options.settings.house?.patents ?? {});
   const schedule = new Map<Bot, number[]>();
   const step = options.stepMinutes * MINUTE_MS;
   const end = START + options.days * DAY_MS;

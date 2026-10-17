@@ -274,27 +274,3 @@ export function LandMarker({
     </button>
   );
 }
-
-/** The house's second counter this season: a smaller gold medallion with its coat of arms. */
-export function SecondCounterMarker({
-  name,
-  crest,
-  onTap,
-}: { name: string; crest: CrestData; onTap: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-label={name}
-      onClick={onTap}
-      className="marker-hit relative -ml-7 -mt-7 flex h-14 w-14 items-center justify-center"
-    >
-      <span className="marker-ring absolute inset-0 rounded-full ring-1 ring-gold/25" />
-      <span className="marker-orb flex h-10 w-10 items-center justify-center rounded-full bg-night-3 ring-2 ring-gold/70 shadow-[0_4px_12px_rgb(0_0_0/0.55)]">
-        <Crest crest={crest} size={22} />
-      </span>
-      <span className="pointer-events-none absolute left-1/2 top-[calc(100%-4px)] -translate-x-1/2 whitespace-nowrap font-display text-[10px] font-extrabold uppercase tracking-wider text-gold-soft [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]">
-        {name}
-      </span>
-    </button>
-  );
-}

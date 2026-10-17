@@ -8,8 +8,8 @@ import type { HouseView } from "./types.js";
 
 /**
  * The Livre de la Maison (docs/plan-progression.md): the Influence the house keeps from season
- * to season, the patents it buys with it, and the second counter of the season. Nothing shows in
- * a world without the house.
+ * to season and the privileges (`patents`) it buys with it. Nothing shows in a world without the
+ * house.
  */
 
 const t = () => fr.game.house;
@@ -37,14 +37,12 @@ export function useHouse(): [Extract<HouseView, { enabled: true }> | null, () =>
 export function HouseSummary(props: GameProps) {
   const [house] = useHouse();
   if (!house) return null;
-  const toChoose = needsSecondCounter(props);
   return (
-    <Panel glow={toChoose ? "gold" : undefined}>
+    <Panel>
       <div className="flex items-center justify-between gap-3">
         <div>
           <Label>{t().title}</Label>
           <Big className="mt-1 text-gold">{t().balance(house.influence)}</Big>
-          {toChoose && <p className="mt-1 text-sm text-gold">{t().second.choose}</p>}
         </div>
         <Slab size="sm" onClick={() => props.setSheet("house")}>
           {t().open}
@@ -52,12 +50,6 @@ export function HouseSummary(props: GameProps) {
       </div>
     </Panel>
   );
-}
-
-/** The house holds the second counter but has not set it down this season. */
-export function needsSecondCounter(props: GameProps): boolean {
-  const p = props.view.player;
-  return !!p.patents?.includes("second_counter") && !p.secondRegion;
 }
 
 export function HouseSheet(props: GameProps) {
@@ -89,11 +81,8 @@ function HouseBody(props: GameProps) {
       setBuying(null);
     }
   };
-  const player = props.view.player;
-  const regions = props.catalog.regions.filter((r) => r.code !== player.region);
   const balance = props.influence ?? house.influence;
   const spend = props.view.houseSpend;
-  const elsewhere = regions.filter((r) => r.code !== player.secondRegion);
   return (
     <div className="space-y-6 pt-2">
       <header className="space-y-2 pr-12">
@@ -105,54 +94,7 @@ function HouseBody(props: GameProps) {
 
       {message && <p className="text-sm text-lagoon">{message}</p>}
 
-      {needsSecondCounter(props) && (
-        <Panel glow="gold">
-          <Label className="text-gold">{t().second.choose}</Label>
-          <p className="mt-1 text-sm text-cream-dim">{t().second.chooseHelp}</p>
-          <div className="mt-3 flex flex-wrap gap-3">
-            {regions.map((r) => (
-              <Slab
-                key={r.code}
-                size="sm"
-                tone="lagoon"
-                disabled={props.busy}
-                onClick={() => void props.act({ type: "chooseSecondCounter", region: r.code })}
-              >
-                {props.names.region(r.code)}
-              </Slab>
-            ))}
-          </div>
-        </Panel>
-      )}
-      {player.secondRegion && (
-        <p className="label text-lagoon">
-          {t().second.at(props.names.region(player.secondRegion))}
-        </p>
-      )}
-
       <Missions {...props} onClaimed={reload} />
-
-      {player.secondRegion && spend && (
-        <Panel>
-          <Label>{t().spend.counterTitle}</Label>
-          <div className="mt-3 flex flex-wrap gap-3">
-            {elsewhere.map((r) => (
-              <Slab
-                key={r.code}
-                size="sm"
-                tone="lagoon"
-                disabled={props.busy || balance < spend.moveCounter}
-                onClick={async () => {
-                  if (await props.spend({ use: "counter", region: r.code })) reload();
-                }}
-              >
-                {props.names.region(r.code)}
-              </Slab>
-            ))}
-          </div>
-          <p className="label mt-2">{t().spend.counter(spend.moveCounter)}</p>
-        </Panel>
-      )}
 
       {props.view.mastery.chosen && spend && (
         <Panel>
