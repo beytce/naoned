@@ -524,6 +524,9 @@ export function playerView(
       region: player.region,
       joinedAt: player.joinedAt,
       upkeepDefaultUntil: player.upkeepDefaultUntil,
+      // The house's patents in this world, and its second counter once chosen.
+      ...(player.patents ? { patents: player.patents } : {}),
+      ...(player.secondRegion ? { secondRegion: player.secondRegion } : {}),
     },
     cash: state.accounts[cashAccount(playerId)] ?? 0n,
     escrow: state.accounts[escrowAccount(playerId)] ?? 0n,

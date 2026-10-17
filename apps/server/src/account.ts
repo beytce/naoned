@@ -2,6 +2,7 @@ import { and, desc, eq, or, sql } from "drizzle-orm";
 import type { Db } from "./db/client.js";
 import {
   accounts,
+  influenceEntries,
   ledgerEntries,
   loginTokens,
   notifications,
@@ -55,6 +56,10 @@ export async function exportAccount(db: Db, accountId: string) {
       .from(weeklyResults)
       .where(eq(weeklyResults.accountId, accountId)),
     pass: await db.select().from(passGrants).where(eq(passGrants.accountId, accountId)),
+    influence: await db
+      .select()
+      .from(influenceEntries)
+      .where(eq(influenceEntries.accountId, accountId)),
     notifications: await db
       .select()
       .from(notifications)

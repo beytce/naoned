@@ -269,6 +269,33 @@ export const passGrants = pgTable(
   (t) => [index("pass_grants_account_idx").on(t.accountId, t.endsAt)],
 );
 
+/**
+ * The house between seasons (docs/plan-progression.md): its Influence, a signed journal kept from
+ * season to season — earned (+) by net sales, the campaign and the season's tier, spent (−) on
+ * patents. The balance is the sum; the patents held are its `patent` lines. `key` makes each line
+ * unique per account (`<world>:<source>:<week>`, `patent:<code>`), so nothing is counted twice.
+ */
+export const influenceEntries = pgTable(
+  "influence_entries",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    /** The world it was earned or spent in; kept when the world goes. */
+    worldId: uuid("world_id").references(() => worlds.id, { onDelete: "set null" }),
+    /** commerce, campaign, season or patent. */
+    source: text("source").notNull(),
+    week: integer("week"),
+    amount: integer("amount").notNull(),
+    /** The patent bought. */
+    patent: text("patent"),
+    key: text("key").notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull(),
+  },
+  (t) => [uniqueIndex("influence_entries_key").on(t.accountId, t.key)],
+);
+
 /** In-game notifications (the bell); some are also pushed to the player's devices. */
 export const notifications = pgTable(
   "notifications",
