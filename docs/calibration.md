@@ -862,3 +862,18 @@ Bâtiments et véhicules ne coûtent plus rien à garder : plus d'entretien en d
 Indice des prix du panier inchangé (84 à 128), assidus toujours loin devant les occasionnels.
 
 **Lecture.** L'entretien était le premier puits de monnaie : sans lui, la masse monétaire par joueur actif triple en fin de saison (≈ 1 400 ducats au lieu de ≈ 500) et dépasse le plafond visé (jusqu'à 1,6 ×) ; le ratio créée / détruite sort de sa plage un jour sur trois. Les prix ne bougent pas encore (la Dogana et les villes les tiennent), mais la trésorerie de fin de saison n'a plus d'emploi, ce que le palais avait corrigé (constat 7). Aucun contrepoids n'est appliqué ici : le choix du levier (taxe du Rialto, prix du palais ou des améliorations, prix des véhicules) reste au porteur.
+
+### Contrepoids : ducats des bâtiments +40 % (17 octobre 2026, décision du porteur)
+
+Essais sur la graine 1 (et 5), par `--scenario` : palais ×2 (masse 1 216 ducats, croissance 6,1 %/jour), palais ×2 avec moins de matériaux (1 223, 6,1), palais ×3 (1 533, 6,7), coût des niveaux +50 % avec palais ×2 (1 629, 6,8), bâtiments +25 %, palais ×2 et améliorations de véhicules +50 % (1 318, 5,7), **ducats de tous les bâtiments +40 %** (1 117, 3,5). Le palais seul ne sert à rien : les PNJ manquent de briques et de planches, pas de ducats, et un palais plus cher les fait thésauriser plus longtemps (ils l'achètent avec 125 % de son prix en caisse). Retenu : la part en ducats de chaque construction et amélioration +40 % (ferme 294 ducats, boulangerie 588, palais 784), soit à peu près le prix des saisons de six semaines.
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie par joueur actif en fin de saison, sans contrepoids → avec (ducats) | 1 545 → 1 117 | 1 293 → 1 165 | 1 220 → 1 258 | 1 444 → 1 588 | 1 591 → 1 341 |
+| Croissance moyenne de la monnaie (%/jour) | 7,2 → 3,5 | 6,4 → 4,5 | 4,7 → 5,2 | 6,5 → 6,3 | 8,7 → 6,4 |
+| Jours hors plage du ratio créée / détruite (sur 23) | 9 → 10 | 7 → 6 | 8 → 5 | 9 → 8 | 13 → 8 |
+| Niveaux d'ateliers par marchand en fin de saison | 8,4 → 7,6 | 8,6 → 6,8 | — → 6,8 | — → 6,4 | — → 6,9 |
+
+Toutes les graines conformes ; indice des prix 86 à 126.
+
+**Lecture.** Le contrepoids rend aux ateliers le rythme d'avant le retrait de l'entretien (≈ 6,2 à 7,6 niveaux par marchand) et ramène la croissance moyenne de ≈ 6,7 à ≈ 5,2 %/jour, mais la masse monétaire reste ≈ 2,5 fois celle d'avant (≈ 1 300 ducats au lieu de ≈ 500), sous le plafond bloquant (2,5 × le capital de départ). L'entretien n'a pas d'équivalent parmi les coûts ponctuels : il frappait aussi les marchands qui n'investissaient plus. À mesurer avec la bêta ; si la trésorerie de fin de saison se révèle sans emploi chez les vrais joueurs, la taxe du Rialto (3 %) reste le levier proportionnel.
