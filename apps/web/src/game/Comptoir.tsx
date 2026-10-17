@@ -4,6 +4,7 @@ import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Panel, Qty, Ribbon, Sheet, Slab, clock } from "../ui.js";
 import { BaleScreen, BaleTile } from "./Bales.js";
+import { BuildCatalog } from "./Catalog.js";
 import { Daily } from "./Daily.js";
 import type { GameProps } from "./Game.js";
 import { Ledger } from "./Ledger.js";
@@ -608,49 +609,6 @@ function WorkshopSheet({
   );
 }
 
-/** What can be built on a free plot of the domain. */
-function BuildHereSheet(props: GameProps) {
-  const { view, catalog } = props;
-  const full = view.buildings.length >= catalog.rules.maxBuildings;
-  return (
-    <div className="space-y-4">
-      <h3 className="font-display text-lg font-extrabold uppercase">
-        {fr.game.workshop.buildHere}
-      </h3>
-      <p className="text-xs text-muted">
-        {fr.game.localRaw(
-          catalog.buildings
-            .filter((b) => b.regions?.includes(view.player.region))
-            .flatMap((b) => Object.keys(b.recipe?.outputs ?? {}))
-            .map((r) => props.names.resource(r).toLowerCase())
-            .join(", ") || "—",
-        )}
-      </p>
-      {full && (
-        <p className="text-sm text-muted">{fr.game.maxBuildings(catalog.rules.maxBuildings)}</p>
-      )}
-      <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 ${full ? "hidden" : ""}`}>
-        {catalog.buildings
-          .filter((b) => !b.regions || b.regions.includes(view.player.region))
-          .map((b) => (
-            <button
-              key={b.type}
-              type="button"
-              onClick={() => props.setSheet(`build:${b.type}`)}
-              className={`cut border border-line bg-night-3 p-2 text-left transition hover:border-gold/60 ${affordable(view, b.cost) ? "" : "opacity-60"}`}
-            >
-              <BuildingArt type={b.type} className="h-16 w-full" />
-              <p className="mt-1 font-display text-[11px] font-extrabold uppercase leading-tight">
-                {b.name}
-              </p>
-              <p className="font-mono text-[11px] text-gold">{d(b.cost.ducats)}</p>
-            </button>
-          ))}
-      </div>
-    </div>
-  );
-}
-
 function BuildSheet({ type, props }: { type: string; props: GameProps }) {
   const def = props.catalog.buildings.find((b) => b.type === type);
   if (!def) return null;
@@ -767,7 +725,7 @@ export function CounterSheets(props: GameProps) {
         )}
       </Sheet>
       <Sheet open={props.sheet === "buildHere"} onClose={close}>
-        <BuildHereSheet {...props} />
+        <BuildCatalog {...props} />
       </Sheet>
       <Sheet open={kind === "build"} onClose={() => props.setSheet("buildHere")}>
         {kind === "build" && id && <BuildSheet type={id} props={props} />}
