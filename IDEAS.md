@@ -31,6 +31,9 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - Ouvrages en volume sur la maquette 3D (tour, tentes, porte de péage) plutôt qu'en médaillon ; ouvrages améliorables (rocca de pierre), réparation après un assaut repoussé.
 - Contribution de plusieurs membres à un même ouvrage (chantier collectif), écartée pour l'instant au profit de l'achat individuel.
 
+## Progression de la Maison entre saisons (retenue, voir docs/plan-progression.md)
+- Patentes achetées avec l'Influence (gagnée par le commerce et la Campagne, plafonnée par semaine) : seulement du neuf : second comptoir, Alexandrie, Fondaco dei Tedeschi, Lombardie, Frioul, laine, verre, cosmétiques. Simulateur d'abord, puis après la bêta.
+
 ## PvE coopératif (voir docs/plan-pve.md)
 - Recommandé, après les mesures de la bêta : commandes de compagnie (grosses commandes du Doge à plusieurs marchandises, remplies à 2-4 marchands de régions différentes, payées contre livraison +10 %, lot de biens de la Muda au prorata). À valider au simulateur avant tout code.
 - Si la rétention à J7 est faible : rallumer les grands chantiers (moteur existant, `projects`) sous forme d'une crise de la République par saison (Acte II), objectif commun du serveur.

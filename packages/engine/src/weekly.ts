@@ -1,3 +1,4 @@
+import { commerceInfluence } from "./house.js";
 import type { Deniers } from "./money.js";
 import { DAY_MS, type PlayerId, type WorldContext, type WorldState, seasonEnd } from "./state.js";
 import { turnoverOf } from "./turnover.js";
@@ -108,5 +109,6 @@ export function closeWeek(tx: Tx): void {
     week: weekly.week,
     standings: standings.map((s) => ({ playerId: s.playerId, gain: s.gain.toString() })),
   });
+  commerceInfluence(tx, weekly.week, standings);
   tx.s.weekly = { week, start: snapshot(tx) };
 }

@@ -1,3 +1,4 @@
+import { seasonTier } from "@comptoirs/engine";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { accounts, players, seasonResults, weeklyResults, worlds } from "../db/schema.js";
@@ -23,16 +24,9 @@ const NO_REWARD = { tier: "none", name: "", renown: 0, passDays: 0 } as const;
 
 export type SeasonTier = (typeof SEASON_TIERS)[number]["tier"];
 
-/** Days of play needed for the participant's crest. */
-export const PARTICIPANT_DAYS = 7;
-
+/** The tier of a rank: the engine's rule (a participant has played a week). */
 export function tierFor(rank: number, people: number, daysPlayed: number): SeasonTier {
-  if (rank === 1) return "doge";
-  if (rank <= 3) return "podium";
-  if (rank <= 10) return "top10";
-  if (rank <= Math.ceil(people * 0.1)) return "elite";
-  if (rank <= Math.ceil(people * 0.25)) return "notable";
-  return daysPlayed >= PARTICIPANT_DAYS ? "participant" : "none";
+  return seasonTier(rank, people, daysPlayed);
 }
 
 /** The season's milestone: the merchant title held at the close, and the renown it adds. */

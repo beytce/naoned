@@ -9,6 +9,7 @@ import {
   membersOf,
   seatOf,
 } from "./families.js";
+import { campaignInfluence } from "./house.js";
 import {
   type AccountId,
   type CampaignLand,
@@ -635,6 +636,18 @@ function closeCampaignWeek(tx: Tx, end: number): void {
     c.decrees = undefined;
   }
   emit(tx, "campaign_closed", undefined, { week, winner, glory, decrees: items, final, captains });
+  campaignInfluence(
+    tx,
+    week,
+    winner,
+    familyCodes(ctx).flatMap((family) =>
+      membersOf(state, family).map((playerId) => ({
+        playerId,
+        family,
+        merit: meritPoints(ctx, state, playerId),
+      })),
+    ),
+  );
   if (final) {
     c.closed = true;
     return;

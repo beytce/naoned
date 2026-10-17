@@ -281,3 +281,13 @@ export const campaignSettings: Partial<WorldSettingsInput> = {
   campaign: testCampaign,
   decrees: testDecrees,
 };
+
+/** The house between seasons: Influence earned each week, and the second counter's patent. */
+export const testHouse = {
+  influence: {
+    commerce: { ducatsPerPoint: 10, weeklyCap: 12 },
+    campaign: { meritPerPoint: 10, winBonus: 5, weeklyCap: 15 },
+    season: { doge: 50, podium: 30, top10: 20, elite: 15, notable: 10, participant: 5 },
+  },
+  patents: { second_counter: { cost: 40, requires: [] as string[] } },
+};

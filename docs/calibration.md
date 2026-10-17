@@ -790,3 +790,45 @@ Constat : un niveau coûtait exactement autant par unité produite qu'un nouvel 
 **Lecture.** L'objectif de l'audit (niveau moyen ≥ 2 en fin de mois) est atteint sur toutes les graines, contre 1,3 avant ; un atelier sur dix atteint le niveau 5. Les ventes nettes médianes montent (5 100 à 5 900 contre 4 100 à 5 000) sans gonfler la masse monétaire.
 
 **Maîtrises.** Maître d'atelier +15 % sur ce qui se transforme (contre +10 %), Marchand du Levant +50 % de quota à la Muda (contre +100 %). Avance d'une maîtrise sur une autre à profil égal : 44,5 %, 5,0 %, 109,0 %, 122,2 % et 64,5 % selon la graine (60 marchands) ; 0 à 62 % dans le petit monde. Elle n'est pas conforme sur la plupart des graines, mais la mesure ne suit pas la force de la maîtrise : avec le Levant à +25 %, l'écart passe de 109 % à 201 % sur la graine 3 et de 122 % à 22 % sur la graine 4. Le Levant y est porté par 2 ou 3 maisons seulement, tirées par le hasard du nom (une maison sur quatre) : l'écart dit surtout quelles maisons l'ont choisi. Pour trancher, il faudrait rejouer les mêmes maisons avec chaque maîtrise ; en attendant, l'Armateur (22 à 218 % devant) est remplacé par une maîtrise plus modeste, et les réglages restent ceux-ci.
+
+## La Maison entre les saisons : Influence et second comptoir (17 octobre 2026)
+
+Plan : `docs/plan-progression.md`. Réglages d'essai : `apps/simulator/scenarios/house.json` (le monde de Venise ne les porte pas : rien ne change en jeu). Mesure : `pnpm sim --scenario scenarios/house.json --patents 0.3` ; 30 % des maisons PNJ (une sur trois de chaque profil) tiennent la patente du second comptoir, choisissent la région aux routes les plus courtes et en partent quand sa route est plus courte ; la même saison est rejouée sans patente et chaque maison est comparée à elle-même.
+
+**Règle du second comptoir corrigée.** Premier essai : une livraison partie du second comptoir payée selon sa propre route (même prix par heure de route). Les maisons qui l'avaient finissaient 21 % **derrière** (graine 1) : les véhicules ne sont occupés qu'à 25 %, une route plus courte ne fait rien gagner et paie moins. Pire, un joueur averti serait parti du comptoir le plus éloigné pour être payé plus par unité. Règle retenue : **le prix de la commande ne change pas, seul le trajet change**. Un comptoir fait gagner du temps, jamais plus d'argent par commande.
+
+**Mesure bruitée.** Une saison rejouée diverge de l'originale dès la première décision différente : l'avance mesurée va de −17 % à +42 % selon la graine (graine 4), sans lien avec la force de la patente. Chaque graine rapporte donc son écart, et la règle se juge sur la **médiane des graines**.
+
+| Graine | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Avance des maisons au second comptoir (ventes nettes) | −17,0 % | −1,3 % | +2,7 % | +42,1 % | +7,0 % | +1,6 % | +12,5 % | −5,7 % | +7,4 % | −5,3 % |
+| Marchands sans patente | +2,3 % | +1,4 % | +9,6 % | −14,5 % | −0,4 % | +0,5 % | −5,6 % | −1,4 % | −2,9 % | −0,7 % |
+| Influence de la saison, médiane | 63,5 | 59 | 55 | 61 | 64 | 65,5 | 64 | 59 | 50 | 62,5 |
+| Influence, 9e décile | 95 | 90 | 91 | 85 | 87 | 89 | 96 | 97 | 87 | 93 |
+| Part de la Campagne | 43,9 % | 44,8 % | 43,9 % | 44,7 % | 47,5 % | 43,5 % | 43,0 % | 42,1 % | 49,7 % | 44,9 % |
+
+Sur 10 graines : avance médiane **+2,2 %** (cible ≤ 15 %), marchands sans patente **−0,6 %** (cible ≥ −5 %) ; les 10 graines conformes à toutes les autres cibles, KPIs des nouveaux inchangés (commandes couvertes 53 à 57 %, première livraison médiane 0 à 3,3 h).
+
+**Barème.** Premier essai de la Campagne (1 point par 10 de Mérite, +5 à la famille gagnante, 15 par semaine) : elle faisait 58 % de l'Influence, au-dessus des 40 % voulus par le porteur. Retenu : 1 point par 20 de Mérite, +3, plafond 10 ; commerce inchangé (1 point par 100 ducats de ventes nettes, plafond 25). Tous les bots du monde simulé jouent la Campagne : un marchand qui ne fait que commercer gagne environ 35 par saison.
+
+**Lecture.**
+- Le second comptoir, tel quel, ne donne presque rien (+2 %) : les véhicules attendent les commandes, pas l'inverse. Il reste une patente de confort (des livraisons plus rapides, des véhicules revenus plus tôt) ; il ne justifie pas seul 40 d'Influence. Les patentes qui ouvrent du neuf (Levant, Lombardie) porteront l'envie de progresser ; elles demandent leur contenu.
+- Rythme : avec ≈ 60 d'Influence par saison au médian (la prime de fin de saison, servie par le serveur, n'est pas simulée), le catalogue du plan (≈ 640) demanderait une dizaine de saisons, au lieu des six à sept prévues. À revoir avec le contenu des autres routes : baisser les prix d'environ un tiers ou garder une progression longue.
+
+### Prime de fin de saison (17 octobre 2026, décision du porteur : prix du catalogue inchangés)
+
+Le palier du classement final rapporte de l'Influence (`house.influence.season`) : Doge 50, podium 30, top 10 20, top 10 % 15, top 25 % 10, participant 5. La règle des paliers passe du serveur au moteur (`seasonTier`), que le serveur appelle désormais ; le simulateur l'applique à la clôture.
+
+| Graine | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Influence de la saison, médiane | 71,5 | 64 | 62 | 69 | 70 | 70,5 | 75 | 66 | 56 | 68 |
+| Sans la Campagne (commerce et prime) | 41,5 | 38 | 33,5 | 40 | 40 | 40,5 | 46 | 39 | 28 | 41,5 |
+| 9e décile | 125 | 113 | 111 | 105 | 107 | 109 | 126 | 119 | 107 | 113 |
+| Part de la Campagne | 37,1 % | 38,3 % | 37,1 % | 37,5 % | 40,0 % | 37,7 % | 36,1 % | 35,7 % | 42,4 % | 38,0 % |
+| Catalogue complet (≈ 640) au médian | 9 saisons | 10 | 11 | 10 | 10 | 10 | 9 | 10 | 12 | 10 |
+
+Toutes les graines conformes ; patentes : avance médiane +2,7 % et +1,6 % (deux lots de 5 graines), marchands sans patente +1,4 % et −1,4 %.
+
+**Lecture.** La prime ajoute ≈ 6 au médian (la plupart des marchands sont « participants ») et ≈ 15 au 9e décile : l'Influence médiane passe à ≈ 68 par saison, la Campagne en fait ≈ 38 % (cible du porteur : 40 %). Le catalogue complet demande toujours **une dizaine de saisons** au médian, six à sept au 9e décile ; un marchand qui ne fait que commercer (≈ 40 par saison) en demanderait seize. Ce qui s'achète tôt reste rapide : le second comptoir (40) dans la première saison, Alexandrie (50) dans la deuxième. Si la bêta montre que c'est trop long, la baisse d'un tiers des prix reste l'autre levier.
+
+**Second comptoir à 15** (au lieu de 40) : il ne fait gagner que du temps (+2 % de ventes nettes en médiane), c'est une patente de confort ; à 15 d'Influence, un marchand médian l'a en deux à trois semaines. Catalogue complet ≈ 615.

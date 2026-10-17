@@ -6,6 +6,7 @@ import { hourIn, hourWithin } from "./clock.js";
 import { contractsDoneToday, contractsFor } from "./contracts.js";
 import { favourBps, tollOn, urgentReservedUntil } from "./decrees.js";
 import { draw, pickWeighted } from "./draw.js";
+import { hasPatent } from "./house.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
 import { isMudaGood } from "./muda.js";
 import { maxVehiclesFor, specialtyEffects } from "./specialties.js";
@@ -702,6 +703,11 @@ export function dispatchDelivery(
   playerId: PlayerId,
   orderIds: string | string[],
   vehicleId: string,
+  /**
+   * From the house's second counter: its own road (shorter or longer), paid as from home, so a
+   * counter only ever saves time, never earns more per order.
+   */
+  from?: "second",
 ): Delivery {
   const { ctx } = tx;
   if (!deliveriesOn(ctx)) fail("unknown_delivery_order");
@@ -713,6 +719,12 @@ export function dispatchDelivery(
   const state = tx.s as WorldState;
   const player = state.players[playerId];
   if (!player) fail("unknown_player");
+  let region = player.region;
+  if (from === "second") {
+    if (!hasPatent(ctx, state, playerId, "second_counter") || !player.secondRegion)
+      fail("no_second_counter");
+    region = player.secondRegion;
+  }
   const today = dayIndex(ctx, tx.now);
   const done = deliveriesDoneToday(state, playerId, today);
   const orders: DeliveryOrder[] = [];
@@ -745,7 +757,8 @@ export function dispatchDelivery(
   if (!def) fail("unknown_vehicle_type");
   const units = orders.reduce((n, o) => n + o.quantity, 0);
   if (units > def.capacity) fail("over_capacity");
-  const minutes = travelMinutesFor(ctx, state, playerId, first.city, vehicle.type);
+  const speedBonus = specialtyEffects(ctx, state, playerId).vehicleSpeedBps;
+  const minutes = travelMinutes(ctx, region, first.city, vehicle.type, speedBonus);
   if (minutes === undefined) fail("no_route");
 
   // Shared demand: the first who sends a vehicle takes the order.
@@ -772,7 +785,7 @@ export function dispatchDelivery(
     kind: first.kind,
     vehicleId,
     ...(first.ref ? { ref: first.ref } : {}),
-    route: routeId(player.region, first.city),
+    route: routeId(region, first.city),
     resource: first.resource,
     loaded: units,
     cargo,

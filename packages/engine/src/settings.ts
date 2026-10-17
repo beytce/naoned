@@ -586,6 +586,22 @@ export const worldSettingsSchema = z.object({
       .optional(),
   }),
   cities: z.record(z.record(cityDemand)),
+  /**
+   * The house between seasons: the Influence it earns each week (net sales, the campaign's merit,
+   * each capped) and the patents it may hold. Absent: no Influence, and no patent has effect.
+   */
+  house: z
+    .object({
+      influence: z.object({
+        commerce: z.object({ ducatsPerPoint: positive, weeklyCap: qty }),
+        campaign: z.object({ meritPerPoint: positive, winBonus: qty, weeklyCap: qty }),
+        /** At the season's close, by tier of the ranking (`seasonTier`); none without. */
+        season: z.record(qty).default({}),
+      }),
+      /** Patent code → its price in Influence and the patents it asks for first. */
+      patents: z.record(z.object({ cost: positive, requires: z.array(z.string()).default([]) })),
+    })
+    .optional(),
   /** Weekly city projects; no needs turns them off. */
   projects: z
     .object({

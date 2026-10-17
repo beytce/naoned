@@ -15,6 +15,7 @@ import {
 } from "./deliveries.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { joinFamily, leaveFamily } from "./families.js";
+import { chooseSecondCounter } from "./house.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { claimMission, trackMissions } from "./missions.js";
 import { collect, startProduction } from "./production.js";
@@ -50,7 +51,14 @@ import { startWeek } from "./weekly.js";
 enableMapSet();
 
 export type Command =
-  | { type: "join"; playerId: PlayerId; region: string }
+  | {
+      type: "join";
+      playerId: PlayerId;
+      region: string;
+      /** Patents the house holds (kept by the server from season to season). */
+      patents?: string[];
+    }
+  | { type: "chooseSecondCounter"; playerId: PlayerId; region: string }
   | {
       type: "startProduction";
       playerId: PlayerId;
@@ -97,6 +105,8 @@ export type Command =
       /** Several orders for the same city, carried together (`orderId` alone otherwise). */
       orderIds?: string[];
       vehicleId: string;
+      /** From the house's second counter rather than from home. */
+      from?: "second";
     }
   | { type: "tick" };
 
@@ -111,7 +121,7 @@ function ownBuilding(tx: Tx, playerId: PlayerId, buildingId: string): Draft<Buil
   return building;
 }
 
-function join(tx: Tx, playerId: PlayerId, region: string): void {
+function join(tx: Tx, playerId: PlayerId, region: string, patents?: string[]): void {
   const { ctx } = tx;
   if (tx.s.players[playerId]) fail("player_exists");
   if (!findRegion(ctx.theme, region)) fail("unknown_region");
@@ -123,6 +133,7 @@ function join(tx: Tx, playerId: PlayerId, region: string): void {
     joinedAt: tx.now,
     lastActionAt: tx.now,
     upkeepDefaultUntil: 0,
+    ...(patents && patents.length > 0 ? { patents: [...patents] } : {}),
   };
   tx.s.accounts[cashAccount(playerId)] = 0n;
   tx.s.accounts[escrowAccount(playerId)] = 0n;
@@ -202,7 +213,7 @@ function apply(tx: Tx, cmd: Command): void {
     return;
   }
   if (cmd.type === "join") {
-    join(tx, cmd.playerId, cmd.region);
+    join(tx, cmd.playerId, cmd.region, cmd.patents);
     // A newcomer finds the day's board of the world at once.
     ensureBoard(tx);
     return;
@@ -252,6 +263,9 @@ function apply(tx: Tx, cmd: Command): void {
     case "chooseSpecialty":
       chooseSpecialty(tx, cmd.playerId, cmd.specialty);
       break;
+    case "chooseSecondCounter":
+      chooseSecondCounter(tx, cmd.playerId, cmd.region);
+      break;
     case "claimMission":
       claimMission(tx, cmd.playerId, cmd.missionId);
       break;
@@ -295,7 +309,7 @@ function apply(tx: Tx, cmd: Command): void {
       upgradeVehicle(tx, cmd.playerId, cmd.vehicleId);
       break;
     case "dispatchDelivery":
-      dispatchDelivery(tx, cmd.playerId, cmd.orderIds ?? cmd.orderId, cmd.vehicleId);
+      dispatchDelivery(tx, cmd.playerId, cmd.orderIds ?? cmd.orderId, cmd.vehicleId, cmd.from);
       break;
     case "deliverToProject":
       deliverToProject(tx, cmd.playerId, cmd.projectId, cmd.resource, cmd.quantity);

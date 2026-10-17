@@ -24,7 +24,11 @@ export function rollingMoneyGrowth(r: SimulationResult): { day: number; growth: 
   return out;
 }
 
-export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] {
+export function evaluate(
+  r: SimulationResult,
+  twin?: SimulationResult,
+  houseTwin?: SimulationResult,
+): Check[] {
   const checks: Check[] = [];
   const dep = r.interdependence;
   if (dep) {
@@ -236,6 +240,7 @@ export function evaluate(r: SimulationResult, twin?: SimulationResult): Check[] 
     });
   }
   checks.push(...passChecks(r, twin));
+  checks.push(...houseChecks(r, houseTwin));
 
   const lastDay = r.daily[last];
   checks.push({
@@ -682,6 +687,99 @@ function passChecksOn(
     },
   );
   return checks;
+}
+
+/** Influence the plan's whole catalogue costs (docs/plan-progression.md), cosmetics aside. */
+const CATALOGUE = 615;
+
+/** What patents bring in a season, against the same season replayed without (medians). */
+export function houseGaps(
+  r: SimulationResult,
+  twin: SimulationResult,
+): { lead: number; others: number } | undefined {
+  const holders = new Set(r.patentHolders ?? []);
+  if (holders.size === 0) return undefined;
+  const before = new Map(finalWorth(twin).map((p) => [p.playerId, Number(p.turnover)]));
+  const ratios = (held: boolean) =>
+    finalWorth(r)
+      .filter(
+        (p) =>
+          holders.has(p.playerId) === held && (before.get(p.playerId) ?? 0) > 0 && p.turnover > 0n,
+      )
+      .map((p) => Number(p.turnover) / (before.get(p.playerId) ?? 1));
+  const held = median(ratios(true));
+  const others = median(ratios(false));
+  return { lead: held / others - 1, others: others - 1 };
+}
+
+/**
+ * The house between seasons (with `patentShare` > 0, docs/plan-progression.md). One season
+ * replayed without patents diverges from the original: its gaps swing by ±20 %, so the seed only
+ * reports them, and the rule (at most 15 % ahead, the others losing nothing) is judged on the
+ * median over the seeds (`houseVerdict`).
+ */
+export function houseChecks(r: SimulationResult, twin?: SimulationResult): Check[] {
+  const checks: Check[] = [];
+  const gaps = twin ? houseGaps(r, twin) : undefined;
+  if (gaps) {
+    checks.push(
+      {
+        name: "Maison : avance des patentes en ventes nettes (même saison rejouée sans patente)",
+        target: "≤ +15 % en médiane des graines (voir la synthèse)",
+        value: Number.isNaN(gaps.lead) ? "—" : pct(gaps.lead),
+        pass: true,
+        blocking: false,
+      },
+      {
+        name: "Maison : ventes nettes des marchands sans patente (même saison rejouée sans patente)",
+        target: "≥ −5 % en médiane des graines (voir la synthèse)",
+        value: Number.isNaN(gaps.others) ? "—" : pct(gaps.others),
+        pass: true,
+        blocking: false,
+      },
+    );
+  }
+  if (r.influence) {
+    const ids = finalWorth(r).map((p) => p.playerId);
+    const of = (id: string, k: "commerce" | "campaign" | "season") => r.influence?.[id]?.[k] ?? 0;
+    const all = ids.map((id) => of(id, "commerce") + of(id, "campaign") + of(id, "season"));
+    const commerceOnly = median(ids.map((id) => of(id, "commerce") + of(id, "season")));
+    const campaign = ids.reduce((n, id) => n + of(id, "campaign"), 0);
+    const total = all.reduce((n, v) => n + v, 0);
+    const sorted = [...all].sort((a, b) => a - b);
+    const p90 = sorted[Math.floor(sorted.length * 0.9)] ?? 0;
+    checks.push({
+      name: "Maison : Influence gagnée dans la saison (marchands actifs)",
+      target: "Campagne ≈ 40 % ; le catalogue du plan (≈ 615) en six à dix saisons au médian",
+      value: `médiane ${median(all)} (sans la Campagne ${commerceOnly}), 9e décile ${p90}, part de la Campagne ${pct(total > 0 ? campaign / total : 0)}, catalogue en ${median(all) > 0 ? Math.ceil(CATALOGUE / median(all)) : "—"} saisons`,
+      pass: true,
+      blocking: false,
+    });
+  }
+  return checks;
+}
+
+/** The rule on the median over the seeds: patents at most 15 % ahead, the others losing nothing. */
+export function houseVerdict(gaps: { lead: number; others: number }[]): Check[] {
+  if (gaps.length === 0) return [];
+  const lead = median(gaps.map((g) => g.lead));
+  const others = median(gaps.map((g) => g.others));
+  return [
+    {
+      name: `Maison : avance des patentes, médiane de ${gaps.length} graines`,
+      target: "≤ +15 %",
+      value: pct(lead),
+      pass: lead <= 0.15,
+      blocking: true,
+    },
+    {
+      name: `Maison : marchands sans patente, médiane de ${gaps.length} graines`,
+      target: "≥ −5 %",
+      value: pct(others),
+      pass: others >= -0.05,
+      blocking: true,
+    },
+  ];
 }
 
 export function allBlockingPass(checks: Check[]): boolean {
