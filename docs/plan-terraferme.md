@@ -7,7 +7,7 @@ Décisions du porteur (17 octobre 2026), qui remplacent la Campagne des familles
 - **chacun pour soi**, avec des **alliances** entre joueurs, plus de familles imposées ;
 - **chaque joueur a son territoire** et ses troupes.
 
-Le porteur **lève le gel des mécaniques** pour ce mode (17 octobre 2026). Il n'y a pas de guildes : seulement des alliances entre joueurs. **Statut : plan validé ; prototype au simulateur en cours.**
+Le porteur **lève le gel des mécaniques** pour ce mode (17 octobre 2026). Il n'y a pas de guildes : seulement des alliances entre joueurs. **Statut : plan validé ; prototype au simulateur fait (`pnpm --filter @comptoirs/simulator terra`).**
 
 Réponses du porteur aux questions du plan (17 octobre 2026) :
 
@@ -127,6 +127,16 @@ Les quatre familles imposées et l'allégeance, les fiefs, la levée et les lanc
 - **État** : environ 400 cases × (propriétaire, heure de prise, bâtiment) par monde, plus les fronts et les alliances : petit, dans l'état du monde comme la Campagne.
 - **Carte** : un SVG de ~400 hexagones regroupés par propriétaire (un tracé par territoire, pas par case) pour rester fluide sur mobile.
 - **Réglages** : `worlds.settings.terraferma` (carte, terrains, troupes, fronts, alliances, bâtiments, Milan, Gloire) ; rien en dur.
+
+## Ce que le prototype a appris (17 octobre 2026)
+
+Mesures et réglage dans `docs/calibration.md`. Le prototype a ajouté trois règles au plan :
+
+- **Le comptoir de départ est imprenable** : un marchand peut tout perdre sauf lui, et repart de là. Sans cette règle, la semaine finit avec un seul grand et des dizaines d'éliminés.
+- **Milan a un plafond de troupes fixe**, qui ne suit pas ses terres : sinon il fait boule de neige.
+- **Un front rentre après 2 heures ouvertes** : il faut revenir le relancer, ce qui récompense la présence.
+
+Restent à trancher : l'arrivée d'un retardataire quand il n'y a plus de terre neutre, et une expansion pacifique qui dure plus d'une journée.
 
 ## Livraison proposée (après validation)
 

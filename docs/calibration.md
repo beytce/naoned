@@ -877,3 +877,36 @@ Essais sur la graine 1 (et 5), par `--scenario` : palais ×2 (masse 1 216 ducats
 Toutes les graines conformes ; indice des prix 86 à 126.
 
 **Lecture.** Le contrepoids rend aux ateliers le rythme d'avant le retrait de l'entretien (≈ 6,2 à 7,6 niveaux par marchand) et ramène la croissance moyenne de ≈ 6,7 à ≈ 5,2 %/jour, mais la masse monétaire reste ≈ 2,5 fois celle d'avant (≈ 1 300 ducats au lieu de ≈ 500), sous le plafond bloquant (2,5 × le capital de départ). L'entretien n'a pas d'équivalent parmi les coûts ponctuels : il frappait aussi les marchands qui n'investissaient plus. À mesurer avec la bêta ; si la trésorerie de fin de saison se révèle sans emploi chez les vrais joueurs, la taxe du Rialto (3 %) reste le levier proportionnel.
+
+## La Terraferme : prototype au simulateur (17 octobre 2026)
+
+`pnpm --filter @comptoirs/simulator terra` fait jouer une semaine de la Terraferme (`docs/plan-terraferme.md`) à 40 marchands PNJ : 12 assidus (7 sessions par jour), 14 réguliers (4), 10 occasionnels (2), 4 retardataires (3, dès le jeudi). Chacun se pose, puis lance des fronts vers la terre neutre, sinon vers le voisin le plus mince, sinon vers Milan. Rapport : `apps/simulator/out/terraferma.md`.
+
+**Premier réglage (10 cases par marchand, écart de départ 4, fronts de 2 cases toutes les 10 minutes, Milan au plafond suivant ses terres)** : 9 marchands sur 40 seulement trouvent où se poser ; Milan fait boule de neige et prend toute la carte dès le jeudi.
+
+**Ce que le prototype a changé** :
+
+| Changement | Pourquoi |
+| --- | --- |
+| Milan a un **plafond fixe** (`milan.troops` + `troopsPerActive` par marchand actif) | Avec un plafond qui suit les terres, Milan avale la carte |
+| Le **comptoir de départ est imprenable** | Sans lui, un marchand tient 40 à 77 % de la carte en fin de semaine et 30 sur 36 sont rayés de la carte : personne ne revient jouer après avoir été éliminé le mardi |
+| 20 cases par marchand, écart de départ 2 | Tous les marchands du lundi trouvent leur place (36 sur 36) |
+| Fronts d'**une case par demi-heure**, qui **rentrent après 2 h** (`fronts.maxHours`) | Plus lents et à relancer : la présence compte |
+
+**Réglage retenu, 5 graines** :
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Terre neutre à 22 h le lundi | 13 % | 14 % | 16 % | 18 % | 16 % |
+| Milan en fin de semaine | 25 % | 28 % | 27 % | 27 % | 26 % |
+| Premier front entre marchands | 33 h | 33 h | 34 h | 33 h | 33 h |
+| Le premier tient (de la carte) | 8 % | 7 % | 6 % | 6 % | 10 % |
+| Marchands sans terre | 0 | 0 | 0 | 0 | 0 |
+| Assidus devant occasionnels (Gloire médiane) | 119 % | 153 % | 125 % | 96 % | — |
+
+**Lecture et problèmes ouverts** :
+- **La terre neutre part le premier jour** : l'expansion pacifique, le meilleur moment d'OpenFront, dure moins d'une journée. Pistes : moins de cases prises par front sur le neutre, ou une carte plus grande.
+- **Les retardataires ne peuvent plus se poser** (0 sur 4) : il faut une règle d'arrivée en cours de semaine (se poser sur les terres de Milan, qui servent de réserve, ou un comptoir accordé à la lisière du plus grand).
+- **L'avance des assidus est faible** (96 à 153 %) : les PNJ jouent naïvement et les fronts continuent sans eux ; à remesurer avec des PNJ plus fins avant de toucher aux règles.
+- **Milan grandit doucement** jusqu'à un quart de la carte : c'est le rôle voulu (le tampon et le frein au meneur), à surveiller.
+- Les alliances, l'encerclement, les bâtiments, l'Influence du classement et les décrets ne sont pas encore dans le prototype.
