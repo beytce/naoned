@@ -910,3 +910,29 @@ Toutes les graines conformes ; indice des prix 86 à 126.
 - **L'avance des assidus est faible** (96 à 153 %) : les PNJ jouent naïvement et les fronts continuent sans eux ; à remesurer avec des PNJ plus fins avant de toucher aux règles.
 - **Milan grandit doucement** jusqu'à un quart de la carte : c'est le rôle voulu (le tampon et le frein au meneur), à surveiller.
 - Les alliances, l'encerclement, les bâtiments, l'Influence du classement et les décrets ne sont pas encore dans le prototype.
+
+### La Terraferme sur la vraie Vénétie, retardataires et expansion plus lente (17 octobre 2026, décisions du porteur)
+
+La carte suit désormais la géographie dessinée (`terraferma.geography` : le cadre, la mer, la lagune et le lac de Garde en polygones, les villes à leur place) ; les cases s'affinent quand le monde grandit. Décisions du porteur : un retardataire se pose **à la lisière des terres de Milan** quand plus aucune terre neutre ne l'accueille ; la terre neutre se prend **plus lentement** (une case par heure, `fronts.neutralEverySteps`).
+
+Sur la vraie carte, Milan tenait d'abord toute la Lombardie (35 % de la terre) et les comptoirs de départ 35 % de plus : la terre neutre partait encore le lundi. Essais (graines 1 à 3, terre neutre à 22 h du lundi au dimanche) :
+
+| Variante | Terre neutre | Assidus devant occasionnels |
+| --- | --- | --- |
+| Régénération 400 (au lieu de 1 200) | 12 · 2 · 1 · 0 % | 71 à 78 % |
+| Milice ×2 | 16 · 6 · 3 · 2 % | 102 à 132 % |
+| Régénération 400, milice ×2, neutre toutes les 4 étapes | 22 · 13 · 8 · 5 % | 112 à 122 % |
+| **Milan à 18 % des colonnes, 25 cases par marchand, régénération 400, milice ×2, neutre toutes les 2 étapes** | **41 · 30 · 23 · 13 %** | **130 à 135 %** |
+
+**Retenu** (dernière ligne), 5 graines :
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Terre neutre à 22 h, lundi → jeudi | 41 · 31 · 23 · 13 % | 41 · 30 · 24 · 15 % | 41 · 29 · 21 · 11 % | 41 · 30 · 23 · 15 % | 41 · 30 · 23 · 14 % |
+| Milan en fin de semaine | 29 % | 28 % | 29 % | 29 % | 29 % |
+| Premier front entre marchands | 37 h | 37 h | 37 h | 35 h | 35 h |
+| Marchands posés (retardataires compris) | 40 / 40 | 40 / 40 | 40 / 40 | 40 / 40 | 40 / 40 |
+| Le premier tient | 5 % | 5 % | 4 % | 5 % | 5 % |
+| Assidus devant occasionnels (Gloire médiane) | 131 % | 130 % | 135 % | 121 % | 163 % |
+
+**Lecture.** La course à la terre libre dure jusqu'au jeudi ; les retardataires arrivent sur de la terre neutre, ou à la lisière de Milan à la fin ; personne n'est rayé de la carte ; l'avance des assidus monte à 121 à 163 %. Restent à jouer au prototype : les alliances, l'encerclement, les bâtiments, l'Influence du classement et les décrets.

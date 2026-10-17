@@ -149,7 +149,7 @@ La Terraferme n'est pas un autre jeu posé à côté : c'est **le calque de la m
 - Les territoires se dessinent en **un tracé par marchand** (pas un par case), recalculé seulement quand une case change de main ; le sol reste sur la couche que déplace le processeur graphique.
 - Cible : 60 images par seconde sur un téléphone moyen avec 800 cases et 40 marchands ; mesurée sur l'aperçu avant d'écrire l'écran.
 
-**Aperçus (17 octobre 2026).** Deux rendus d'une semaine simulée ont fixé ces règles : le premier, toutes couleurs dehors et frontières en escalier, était criard et illisible ; le second (mise au point sur le joueur, frontières lissées, autres en liserés crème) se fond dans la carte de nuit. Il manque encore la vraie géographie : le prototype tire une carte rectangulaire.
+**Aperçus (17 octobre 2026).** Deux rendus d'une semaine simulée ont fixé ces règles : le premier, toutes couleurs dehors et frontières en escalier, était criard et illisible ; le second (mise au point sur le joueur, frontières lissées, autres en liserés crème) se fond dans la carte de nuit. Le troisième, sur la vraie géographie (côte, lagune, Garde, fleuves et Alpes de la carte du commerce, villes à leur place, Venise imprenable dans sa lagune), confirme l'harmonie avec le commerce. À reprendre en écrivant l'écran : les petits territoires lointains, en liserés arrondis, font encore un semis de bulles ; les estomper davantage ou les fondre au-delà d'une certaine distance.
 
 ## Écrans
 
@@ -174,7 +174,7 @@ Mesures et réglage dans `docs/calibration.md`. Le prototype a ajouté trois rè
 - **Milan a un plafond de troupes fixe**, qui ne suit pas ses terres : sinon il fait boule de neige.
 - **Un front rentre après 2 heures ouvertes** : il faut revenir le relancer, ce qui récompense la présence.
 
-Restent à trancher : l'arrivée d'un retardataire quand il n'y a plus de terre neutre, et une expansion pacifique qui dure plus d'une journée.
+Décisions du porteur ensuite (17 octobre 2026) : un **retardataire** se pose sur de la terre neutre tant qu'il en reste une place, sinon **à la lisière des terres de Milan**, dont il prend son anneau de départ ; la **terre neutre se prend plus lentement** (une case par heure). Avec Milan réduit à la Lombardie lointaine et 25 cases par marchand, la course à la terre libre dure jusqu'au jeudi. La carte suit désormais **la vraie Vénétie** de la carte du commerce.
 
 ## Livraison proposée (après validation)
 
