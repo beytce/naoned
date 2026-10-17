@@ -824,6 +824,18 @@ export const venice1450Settings: WorldSettingsInput = {
       wood: { basePrice: 110, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
     },
   },
+  // The house between seasons (docs/plan-progression.md, docs/calibration.md): Influence kept
+  // from season to season, earned by net sales, the campaign and the season's tier; the patents
+  // it buys only add something new. Only the second counter so far: the others wait for their
+  // content (the Levant, Lombardy…).
+  house: {
+    influence: {
+      commerce: { ducatsPerPoint: 100, weeklyCap: 25 },
+      campaign: { meritPerPoint: 20, winBonus: 3, weeklyCap: 10 },
+      season: { doge: 50, podium: 30, top10: 20, elite: 15, notable: 10, participant: 5 },
+    },
+    patents: { second_counter: { cost: 15, requires: [] } },
+  },
   // No city projects: deliveries by road are the cities' demand.
   projects: { intervalDays: 7, durationDays: 7, needsPerPlayer: {}, premiumBps: 0 },
   valuation: {

@@ -793,7 +793,7 @@ Constat : un niveau coûtait exactement autant par unité produite qu'un nouvel 
 
 ## La Maison entre les saisons : Influence et second comptoir (17 octobre 2026)
 
-Plan : `docs/plan-progression.md`. Réglages d'essai : `apps/simulator/scenarios/house.json` (le monde de Venise ne les porte pas : rien ne change en jeu). Mesure : `pnpm sim --scenario scenarios/house.json --patents 0.3` ; 30 % des maisons PNJ (une sur trois de chaque profil) tiennent la patente du second comptoir, choisissent la région aux routes les plus courtes et en partent quand sa route est plus courte ; la même saison est rejouée sans patente et chaque maison est comparée à elle-même.
+Plan : `docs/plan-progression.md`. Réglages d'essai, depuis versés dans ceux de Venise (section `house`). Mesure : `pnpm sim --patents 0.3` ; 30 % des maisons PNJ (une sur trois de chaque profil) tiennent la patente du second comptoir, choisissent la région aux routes les plus courtes et en partent quand sa route est plus courte ; la même saison est rejouée sans patente et chaque maison est comparée à elle-même.
 
 **Règle du second comptoir corrigée.** Premier essai : une livraison partie du second comptoir payée selon sa propre route (même prix par heure de route). Les maisons qui l'avaient finissaient 21 % **derrière** (graine 1) : les véhicules ne sont occupés qu'à 25 %, une route plus courte ne fait rien gagner et paie moins. Pire, un joueur averti serait parti du comptoir le plus éloigné pour être payé plus par unité. Règle retenue : **le prix de la commande ne change pas, seul le trajet change**. Un comptoir fait gagner du temps, jamais plus d'argent par commande.
 
@@ -832,3 +832,7 @@ Toutes les graines conformes ; patentes : avance médiane +2,7 % et +1,6 % (deux
 **Lecture.** La prime ajoute ≈ 6 au médian (la plupart des marchands sont « participants ») et ≈ 15 au 9e décile : l'Influence médiane passe à ≈ 68 par saison, la Campagne en fait ≈ 38 % (cible du porteur : 40 %). Le catalogue complet demande toujours **une dizaine de saisons** au médian, six à sept au 9e décile ; un marchand qui ne fait que commercer (≈ 40 par saison) en demanderait seize. Ce qui s'achète tôt reste rapide : le second comptoir (40) dans la première saison, Alexandrie (50) dans la deuxième. Si la bêta montre que c'est trop long, la baisse d'un tiers des prix reste l'autre levier.
 
 **Second comptoir à 15** (au lieu de 40) : il ne fait gagner que du temps (+2 % de ventes nettes en médiane), c'est une patente de confort ; à 15 d'Influence, un marchand médian l'a en deux à trois semaines. Catalogue complet ≈ 615.
+
+### Activation (17 octobre 2026, décision du porteur)
+
+La section `house` entre dans les réglages de Venise (`venice1450.settings.ts`) avec le barème mesuré ci-dessus. Le catalogue ne contient que le second comptoir (15) : les autres patentes attendent leur contenu. Les marchands gagnent de l'Influence dès la prochaine clôture de semaine.

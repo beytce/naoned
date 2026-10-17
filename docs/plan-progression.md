@@ -2,7 +2,7 @@
 
 Décision du porteur (17 octobre 2026) : le commerce garde ses saisons mensuelles, mais la **Maison** du joueur se développe d'une saison à l'autre. Elle **achète elle-même** ses droits — un second comptoir, le commerce du Levant, les villes de Lombardie… — avec une monnaie qui dure : **l'Influence**, gagnée par le commerce et par la Campagne des familles. Les ducats, les stocks, les ateliers et les véhicules repartent de zéro chaque mois, comme aujourd'hui. Les familles gardent leur saison.
 
-**Statut : plan, non codé.** Le gel des mécaniques tient jusqu'aux mesures de la bêta ; ce document prépare la mise en œuvre et le simulateur qui la validera.
+**Statut : en jeu depuis le 17 octobre 2026** (Influence, Livre de la Maison, second comptoir) ; les autres routes attendent leur contenu.
 
 ## Pourquoi cette forme
 
@@ -73,7 +73,7 @@ Contenu à créer : chaque route ouvre du neuf (lieux et routes de Lombardie et 
 ## Étapes proposées
 
 1. **Simulateur d'abord** (fait le 17 octobre, `docs/calibration.md`) : barème de l'Influence et second comptoir (la seule patente sans contenu nouveau à dessiner) dans les réglages et le moteur, bots qui gagnent et dépensent l'Influence. Critères : écart ≤ 15 % pour une Maison complète, KPIs des nouveaux inchangés, rythme d'acquisition proche des repères ci-dessus, toutes les graines conformes. Résultats dans `docs/calibration.md`.
-2. **Après les mesures de la bêta**, si le porteur lève le gel : l'Influence, le Livre de la Maison, les cosmétiques et le second comptoir. Le serveur est prêt (17 octobre) : journal `influence_entries`, `GET /api/house`, `POST /api/house/patents`, patentes passées au moteur à l'adhésion, achats des PNJ, export RGPD ; l'interface aussi (Livre de la Maison depuis le profil, achat des patentes, choix du second comptoir, son médaillon sur la carte, départ depuis lui proposé quand sa route est plus courte). Il reste l'activation : ajouter `house` aux réglages de Venise (`venice1450.settings.ts`, que le monde reprend à chaque démarrage pendant la bêta).
+2. **Après les mesures de la bêta**, si le porteur lève le gel : l'Influence, le Livre de la Maison, les cosmétiques et le second comptoir. Le serveur est prêt (17 octobre) : journal `influence_entries`, `GET /api/house`, `POST /api/house/patents`, patentes passées au moteur à l'adhésion, achats des PNJ, export RGPD ; l'interface aussi (Livre de la Maison depuis le profil, achat des patentes, choix du second comptoir, son médaillon sur la carte, départ depuis lui proposé quand sa route est plus courte). **Activé le 17 octobre** (décision du porteur) : `house` est dans les réglages de Venise, avec le second comptoir seul au catalogue.
 3. Outre-mer (Alexandrie, puis le Fondaco dei Tedeschi) et Lombardie : nouvelles commandes, lieux et routes.
 4. Frioul, textile et verre avec la V1.
 
