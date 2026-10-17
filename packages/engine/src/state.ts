@@ -46,6 +46,10 @@ export interface Player {
   passUntil?: number;
   /** Mastery chosen for the season (see `specialties.ts`). */
   specialty?: string;
+  /** Patents the house holds, kept from season to season by the server (see `house.ts`). */
+  patents?: string[];
+  /** Region of the house's second counter this season, once chosen. */
+  secondRegion?: string;
 }
 
 export interface ProductionJob {
