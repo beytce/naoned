@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -25,8 +27,8 @@ const house = {
     season: { doge: 50, podium: 30, top10: 20, elite: 15, notable: 10, participant: 5 },
   },
   patents: {
-    second_counter: { cost: 15, requires: [] },
-    lombardy: { cost: 80, requires: ["second_counter"] },
+    levant: { cost: 15, requires: [] },
+    lombardy: { cost: 80, requires: ["levant"] },
   },
 };
 
@@ -147,8 +149,8 @@ describe("the house's Influence", () => {
     // The whole catalogue, with what each patent asks for first.
     expect(a.catalog).toEqual([
       { code: "gilded_name", cost: 40, requires: [], owned: false },
-      { code: "lombardy", cost: 80, requires: ["second_counter"], owned: false },
-      { code: "second_counter", cost: 15, requires: [], owned: false },
+      { code: "levant", cost: 15, requires: [], owned: false },
+      { code: "lombardy", cost: 80, requires: ["levant"], owned: false },
     ]);
   });
 
@@ -166,11 +168,11 @@ describe("the house's Influence", () => {
     expect((await buy(bob, "lombardy")).json().error).toBe("patent_requires");
     expect((await buy(bob, "atlantis")).json().error).toBe("unknown_patent");
     const before = (await get(ada)).influence;
-    const res = await buy(ada, "second_counter");
+    const res = await buy(ada, "levant");
     expect(res.statusCode).toBe(200);
     expect(res.json().influence).toBe(before - 15);
-    expect(res.json().patents).toEqual(["second_counter"]);
-    expect((await buy(ada, "second_counter")).json().error).toBe("patent_owned");
+    expect(res.json().patents).toEqual(["levant"]);
+    expect((await buy(ada, "levant")).json().error).toBe("patent_owned");
     expect((await buy(ada, "lombardy")).json().error).toBe("not_enough_influence");
     expect((await get(ada)).influence).toBe(before - 15);
   });
@@ -178,21 +180,18 @@ describe("the house's Influence", () => {
   it("brings the patents into the world: on joining, and at once when bought there", async () => {
     await open({ house });
     const { ada, bob } = await season();
-    await buy(ada, "second_counter");
+    await buy(ada, "levant");
     await join(ada, "terraferma");
     const game = await get(ada, "/api/game");
     // The balance comes with the view, for the line under the ducats.
     expect(game.influence).toBe((await get(ada)).influence);
     const view = game.view;
-    expect(view.player.patents).toEqual(["second_counter"]);
-    const chosen = await act(ada, { type: "chooseSecondCounter", region: "lagoon" });
-    expect(chosen.json().error).toBeUndefined();
-    expect(chosen.json().view.player.secondRegion).toBe("lagoon");
+    expect(view.player.patents).toEqual(["levant"]);
 
     await join(bob, "lagoon");
     expect((await get(bob, "/api/game")).view.player.patents).toBeUndefined();
-    expect((await buy(bob, "second_counter")).statusCode).toBe(200);
-    expect((await get(bob, "/api/game")).view.player.patents).toEqual(["second_counter"]);
+    expect((await buy(bob, "levant")).statusCode).toBe(200);
+    expect((await get(bob, "/api/game")).view.player.patents).toEqual(["levant"]);
   });
 
   it("is spent by the computer's houses as a merchant would, cheapest first", async () => {
@@ -209,14 +208,41 @@ describe("the house's Influence", () => {
         .values({ accountId: id, worldId: world.id, source: "commerce", amount, key, at });
     await earn("w0", 50);
     expect(await botBuysPatents(database.db, world.ctx.settings, id, world.id, at)).toEqual([
-      "second_counter",
+      "levant",
     ]);
     await earn("w1", 120);
     expect(await botBuysPatents(database.db, world.ctx.settings, id, world.id, at)).toEqual([
-      "second_counter",
+      "levant",
       "gilded_name",
       "lombardy",
     ]);
+  });
+
+  it("pays back the second counter, withdrawn: Influence returned, no longer held", async () => {
+    await open({ house });
+    const { ada } = await season();
+    const id = (await get(ada, "/api/me")).account.id as string;
+    const before = (await get(ada)).influence;
+    await database.db.insert(influenceEntries).values({
+      accountId: id,
+      worldId: world.id,
+      source: "patent",
+      amount: -15,
+      patent: "second_counter",
+      key: "patent:second_counter",
+      at: new Date(now),
+    });
+    expect((await get(ada)).influence).toBe(before - 15);
+    // The migration that paid it back, run again: once only, whatever the number of runs.
+    const refund = readFileSync(
+      fileURLToPath(new URL("../drizzle/0014_refund_second_counter.sql", import.meta.url)),
+      "utf8",
+    );
+    await database.db.execute(sql.raw(refund));
+    await database.db.execute(sql.raw(refund));
+    const after = await get(ada);
+    expect(after.influence).toBe(before);
+    expect(after.patents).toEqual([]);
   });
 
   it("is in the account's data export", async () => {
@@ -234,7 +260,7 @@ describe("the house's Influence", () => {
     const off = { ...world.ctx.settings, house: undefined };
     expect(await houseOf(database.db, off, id)).toEqual({ enabled: false });
     await expect(
-      buyPatent(database.db, off, id, "second_counter", world.id, new Date(now)),
+      buyPatent(database.db, off, id, "levant", world.id, new Date(now)),
     ).rejects.toThrow("house_off");
   });
 });

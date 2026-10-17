@@ -405,10 +405,8 @@ export interface PlayerView {
     id: string;
     region: string;
     joinedAt: number;
-    /** The house's patents in this world (absent: none, or no house in this world). */
+    /** The house's privileges in this world (absent: none, or no house in this world). */
     patents?: string[];
-    /** Region of the second counter this season, once chosen. */
-    secondRegion?: string;
   };
   cash: Money;
   escrow: Money;
@@ -810,10 +808,7 @@ export type Action =
       orderId: string;
       orderIds?: string[];
       vehicleId: string;
-      /** From the house's second counter. */
-      from?: "second";
     }
-  | { type: "chooseSecondCounter"; region: string }
   | { type: "claimHouseMission"; missionId: string };
 
 /** What Influence buys in the world (POST /api/house/spend). */
@@ -821,7 +816,6 @@ export type Spend =
   | { use: "rush"; deliveryId: string }
   | { use: "troops"; count: number }
   | { use: "work"; land: string }
-  | { use: "counter"; region: string }
   | { use: "respec" }
   | { use: "daily"; taskId: string };
 
@@ -831,7 +825,6 @@ export interface HouseSpendView {
   troopsPerPoint: number;
   troopsPerDay: number;
   dailyReroll: number;
-  moveCounter: number;
   respec: number;
   rushWork: number;
   rushesLeft: number;

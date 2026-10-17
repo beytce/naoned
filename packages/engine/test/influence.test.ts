@@ -201,23 +201,6 @@ describe("a work finished at once", () => {
 });
 
 describe("choices made again during the season", () => {
-  it("move the second counter to a third region", () => {
-    const w = onTheRoad();
-    w.do({ type: "grantPatent", playerId: "a", patent: "second_counter" });
-    expect(error(w.try({ type: "moveSecondCounter", playerId: "a", region: "lagoon" }))).toBe(
-      "no_second_counter",
-    );
-    w.do({ type: "chooseSecondCounter", playerId: "a", region: "lagoon" });
-    expect(error(w.try({ type: "moveSecondCounter", playerId: "a", region: "lagoon" }))).toBe(
-      "same_region",
-    );
-    expect(error(w.try({ type: "moveSecondCounter", playerId: "a", region: "terraferma" }))).toBe(
-      "same_region",
-    );
-    w.do({ type: "moveSecondCounter", playerId: "a", region: "dolomites" });
-    expect(w.state.players.a?.secondRegion).toBe("dolomites");
-  });
-
   it("let the mastery be chosen again", () => {
     const w = onTheRoad();
     expect(error(w.try({ type: "resetSpecialty", playerId: "a" }))).toBe("no_specialty");

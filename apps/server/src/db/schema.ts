@@ -284,7 +284,7 @@ export const influenceEntries = pgTable(
       .references(() => accounts.id, { onDelete: "cascade" }),
     /** The world it was earned or spent in; kept when the world goes. */
     worldId: uuid("world_id").references(() => worlds.id, { onDelete: "set null" }),
-    /** commerce, campaign, season or patent. */
+    /** commerce, campaign, season, mission, spend, patent or refund (a privilege withdrawn, paid back). */
     source: text("source").notNull(),
     week: integer("week"),
     amount: integer("amount").notNull(),

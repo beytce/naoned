@@ -15,8 +15,8 @@ import { type Tx, emit, fail } from "./tx.js";
 
 /**
  * The house between seasons (see docs/plan-progression.md): its fortune starts afresh every
- * month, but it keeps the patents it bought with Influence, which only ever add something new
- * (a second counter, the Levant, Lombardy…), never more yield. Influence is earned each week by
+ * month, but it keeps the privileges (`patents`) it bought with Influence, which only ever add
+ * something new (the gilded name, later the Levant, Lombardy…), never more yield. Influence is earned each week by
  * net sales and by the families' campaign, each capped; the server keeps it from season to season.
  */
 
@@ -39,18 +39,6 @@ export function grantPatent(tx: Tx, playerId: PlayerId, patent: string): void {
   if (player.patents?.includes(patent)) return;
   player.patents = [...(player.patents ?? []), patent];
   emit(tx, "patent_granted", playerId, { patent });
-}
-
-/** The second counter's region for the season: once, in another region than the house's. */
-export function chooseSecondCounter(tx: Tx, playerId: PlayerId, region: string): void {
-  const player = tx.s.players[playerId];
-  if (!player) fail("unknown_player");
-  if (!hasPatent(tx.ctx, tx.s as WorldState, playerId, "second_counter")) fail("no_patent");
-  if (player.secondRegion) fail("second_counter_set");
-  if (region === player.region) fail("same_region");
-  if (!findRegion(tx.ctx.theme, region)) fail("unknown_region");
-  player.secondRegion = region;
-  emit(tx, "second_counter", playerId, { region });
 }
 
 /** At the close of the week: Influence for the net sales of the week (`gain`, in deniers). */
@@ -256,17 +244,6 @@ export function rushDelivery(tx: Tx, playerId: PlayerId, deliveryId: string): vo
   if (vehicle) vehicle.busyUntil = d.backAt;
   emit(tx, "delivery_rushed", playerId, { delivery: deliveryId });
   arriveNow(tx, d as Delivery);
-}
-
-/** The second counter moved to another region for the rest of the season. */
-export function moveSecondCounter(tx: Tx, playerId: PlayerId, region: string): void {
-  const player = tx.s.players[playerId];
-  if (!player) fail("unknown_player");
-  if (!player.secondRegion) fail("no_second_counter");
-  if (region === player.secondRegion || region === player.region) fail("same_region");
-  if (!findRegion(tx.ctx.theme, region)) fail("unknown_region");
-  player.secondRegion = region;
-  emit(tx, "second_counter", playerId, { region, moved: true });
 }
 
 /** The mastery forgotten: the merchant chooses one again. */

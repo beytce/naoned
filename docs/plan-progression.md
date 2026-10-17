@@ -2,7 +2,9 @@
 
 Décision du porteur (17 octobre 2026) : le commerce garde ses saisons mensuelles, mais la **Maison** du joueur se développe d'une saison à l'autre. Elle **achète elle-même** ses droits — un second comptoir, le commerce du Levant, les villes de Lombardie… — avec une monnaie qui dure : **l'Influence**, monnaie « premium » gagnée seulement par les **missions de la Maison** (révision du 17 octobre, voir plus bas). Les ducats, les stocks, les ateliers et les véhicules repartent de zéro chaque mois, comme aujourd'hui. Les familles gardent leur saison.
 
-**Statut : en jeu depuis le 17 octobre 2026** (Influence, Livre de la Maison, second comptoir) ; les autres routes attendent leur contenu.
+**Statut : en jeu depuis le 17 octobre 2026** (Influence, Livre de la Maison, nom doré) ; les autres routes attendent leur contenu.
+
+**17 octobre 2026, décision du porteur** : les patentes s'appellent désormais **privilèges** dans le jeu (`patents` dans le code), et le **second comptoir** est retiré, jugé incompréhensible : ses acheteurs ont retrouvé leurs 15 d'Influence. Ce qui suit le mentionne encore comme proposition d'origine.
 
 ## Pourquoi cette forme
 
@@ -30,7 +32,6 @@ L'Influence **ne se gagne plus en vendant** ni par la Campagne : seulement par l
 | **Accélérer une livraison** en route : elle arrive tout de suite, payée comme d'habitude, le véhicule garde la route du retour | 1 par 20 minutes de trajet restant (au moins 1) | 3 par jour |
 | **Troupes** de la Campagne, en plus de celles engagées en ducats | 1 pour 2 troupes | 20 par jour |
 | **Achever un ouvrage** en chantier sur une terre de sa famille | 5 | — |
-| **Déplacer le second comptoir** dans une autre région | 10 | — |
 | **Changer de maîtrise** (on la rechoisit aussitôt) | 15 | — |
 | **Changer une tâche du jour** contre une autre | 3 | — |
 | **Nom doré** dans les classements (patente cosmétique) | 40 | — |
@@ -60,7 +61,7 @@ Les patentes **n'ajoutent que du neuf** (décision du porteur) : tout ce que le 
 | **Logistique** | Second comptoir | Un point de départ des véhicules dans une autre région, **rechoisie à chaque saison** : la commande garde son prix, seul le trajet change (simulateur : +2 % de ventes nettes en médiane, voir `docs/calibration.md`) ; sans le bonus régional des matières premières. Une patente de confort, d'où son prix | 15 | — |
 | **Outre-mer** | Comptoir d'Alexandrie | Commandes du Levant à plusieurs marchandises (épices, soie, draps), payées à l'heure de route comme les autres | 50 | — |
 | | Fondaco dei Tedeschi | Les marchands allemands achètent à Venise (draps, verre, sel) : une demande propre | 80 | Comptoir d'Alexandrie |
-| **Terre ferme** | Lombardie | Brescia et Bergame deviennent des villes de commerce (routes longues, commandes propres) | 80 | Second comptoir |
+| **Terre ferme** | Lombardie | Brescia et Bergame deviennent des villes de commerce (routes longues, commandes propres) | 80 | — |
 | | Frioul | Udine et Pordenone, villes de commerce | 120 | Lombardie |
 | **Ateliers** | Art de la laine | Chaîne textile (laine → drap), contenu V1 | 120 | — |
 | | Art du verre (Murano) | Chaîne du verre (sable → verre), contenu V1 | 150 | Art de la laine |
