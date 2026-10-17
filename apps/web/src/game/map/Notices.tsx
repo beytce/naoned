@@ -8,7 +8,7 @@ import type { GameProps } from "../Game.js";
 
 /**
  * The notices, behind the bell of the HUD: everything that used to be a banner over the screens
- * (the season and its act, the gazette's event, a Criée, an unpaid upkeep, the last sprint), the
+ * (the season and its act, the gazette's event, a Criée, the last sprint), the
  * day's notebook with its rewards, the season's goals, then the news.
  */
 export function NoticesSheet(
@@ -43,11 +43,6 @@ export function NoticesSheet(
             </p>
           ) : (
             daysLeft > 0 && <p className="text-xs text-cream-dim">{t.daysLeft(daysLeft)}</p>
-          )}
-          {view.player.upkeepDefaultUntil > now && (
-            <p className="rounded-xl bg-vermilion/15 p-3 text-sm text-vermilion ring-1 ring-vermilion/60">
-              {fr.game.upkeepDefault}
-            </p>
           )}
         </section>
 

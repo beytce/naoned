@@ -15,7 +15,7 @@ const r = runSimulation({
   onEffects: (fx) => {
     for (const e of fx.events) {
       ev.set(e.type, (ev.get(e.type) ?? 0) + 1);
-      if ((e.type === "hungry" || e.type === "upkeep_default") && e.playerId)
+      if (e.type === "hungry" && e.playerId)
         hungryBy.set(`${e.type} ${e.playerId}`, (hungryBy.get(`${e.type} ${e.playerId}`) ?? 0) + 1);
     }
     for (const t of fx.trades) {
@@ -32,9 +32,7 @@ const r = runSimulation({
 console.log(
   "events",
   Object.fromEntries(
-    [...ev].filter(([k]) =>
-      /contract|delivery|hungry|upkeep_default|build|upgrade|vehicle/.test(k),
-    ),
+    [...ev].filter(([k]) => /contract|delivery|hungry|build|upgrade|vehicle/.test(k)),
   ),
 );
 console.log("trades", Object.fromEntries([...trades].sort()));

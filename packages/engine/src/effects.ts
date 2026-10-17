@@ -12,7 +12,6 @@ export type LedgerReason =
   | "market_maker_buy"
   | "market_maker_sell"
   | "market_tax"
-  | "upkeep"
   | "construction"
   | "escrow_lock"
   | "escrow_release"
@@ -30,6 +29,9 @@ export type LedgerReason =
   | "decree_toll"
   | "decree_favour"
   | "decree_share"
+  // Kept for the entries of the time of the upkeep (October 2026).
+  | "upkeep"
+  | "vehicle_upkeep"
   // Kept for the entries of the time of the guilds.
   | "guild_founding"
   | "guild_stake"
@@ -42,7 +44,6 @@ export type LedgerReason =
   | "war_bounty"
   | "concession_premium"
   | "vehicle"
-  | "vehicle_upkeep"
   | "escort"
   | "delivery"
   | "bandits"

@@ -65,10 +65,9 @@ export const testTheme: Theme = {
   ],
 };
 
-const building = (costDucats: number, bricks: number, planks: number, upkeepPerDay: number) => ({
+const building = (costDucats: number, bricks: number, planks: number) => ({
   costDucats,
   costMaterials: { bricks, planks },
-  upkeepPerDay,
 });
 
 export const testSettings: WorldSettingsInput = {
@@ -90,16 +89,15 @@ export const testSettings: WorldSettingsInput = {
   maxBuildings: 12,
   maxBuildingLevel: 5,
   levelCostGrowthBps: 10_000,
-  upkeepDefaultHours: 24,
   activeWindowHours: 72,
   buildings: {
-    farm: building(30_000, 20, 20, 1_000),
-    clay_pit: building(30_000, 20, 20, 1_000),
-    lumber_camp: building(30_000, 20, 20, 1_000),
-    mill: building(40_000, 30, 30, 1_500),
-    bakery: building(60_000, 40, 40, 2_000),
-    brickworks: building(50_000, 20, 40, 1_500),
-    sawmill: building(50_000, 40, 20, 1_500),
+    farm: building(30_000, 20, 20),
+    clay_pit: building(30_000, 20, 20),
+    lumber_camp: building(30_000, 20, 20),
+    mill: building(40_000, 30, 30),
+    bakery: building(60_000, 40, 40),
+    brickworks: building(50_000, 20, 40),
+    sawmill: building(50_000, 40, 20),
   },
   referencePrices: {
     wheat: 100,
@@ -156,14 +154,12 @@ export const testDeliveries = {
       costMaterials: {},
       capacity: 15,
       speedBps: 5_000,
-      upkeepPerDay: 100,
     },
     cart: {
       costDucats: 10_000,
       costMaterials: { planks: 10 },
       capacity: 40,
       speedBps: 10_000,
-      upkeepPerDay: 200,
     },
   },
   startingVehicles: ["cart"],
@@ -262,17 +258,16 @@ export const testCampaign = {
 };
 
 export const testDecrees = {
-  catalog: ["fondaco", "gabelle", "faveur", "peage", "levant", "calmiere", "franchise"],
+  catalog: ["fondaco", "gabelle", "faveur", "peage", "levant", "calmiere"],
   perWinner: 2,
   maxVoteBps: 5_000,
-  defaults: [{ code: "fondaco" }, { code: "franchise" }],
+  defaults: [{ code: "fondaco" }, { code: "levant" }],
   fondaco: { taxBps: 100, quotaBps: 5_000 },
   gabelle: { extraTaxBps: 400 },
   faveur: { premiumBps: 1_000, reservedMinutes: 30 },
   peage: { tollBps: 300 },
   levant: { memberQuotaBps: 5_000, othersCutBps: 2_500 },
   calmiere: { capBps: 11_500 },
-  franchise: { upkeepDiscountBps: 2_000 },
 };
 
 /** Overrides of `testSettings` for a world with the families and their campaign. */

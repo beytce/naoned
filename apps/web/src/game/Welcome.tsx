@@ -24,15 +24,9 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
           <h3 className="mt-1 font-display text-2xl font-extrabold uppercase">{t.title}</h3>
         </div>
         {data.slept && <p className="text-sm text-lagoon">{t.slept}</p>}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-night-3 p-3 ring-1 ring-inset ring-line">
-            <Label>{t.earned}</Label>
-            <Big className="mt-1 text-2xl text-lagoon">+{d(total)}</Big>
-          </div>
-          <div className="rounded-xl bg-night-3 p-3 ring-1 ring-inset ring-line">
-            <Label>{t.upkeep}</Label>
-            <Big className="mt-1 text-2xl text-vermilion">−{d(data.upkeep)}</Big>
-          </div>
+        <div className="rounded-xl bg-night-3 p-3 ring-1 ring-inset ring-line">
+          <Label>{t.earned}</Label>
+          <Big className="mt-1 text-2xl text-lagoon">+{d(total)}</Big>
         </div>
         {income.length > 0 && (
           <ul className="space-y-1 text-sm">

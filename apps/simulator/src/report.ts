@@ -358,8 +358,7 @@ export function roadChecks(r: SimulationResult): Check[] {
   if (!road || road.dispatched === 0) return [];
   const destroyed = r.daily.reduce(
     (acc, d) => {
-      for (const k of ["vehicle", "vehicle_upkeep"])
-        acc[k] = (acc[k] ?? 0) + Number(d.destroyedBy[k] ?? 0n);
+      for (const k of ["vehicle"]) acc[k] = (acc[k] ?? 0) + Number(d.destroyedBy[k] ?? 0n);
       return acc;
     },
     {} as Record<string, number>,
@@ -390,7 +389,7 @@ export function roadChecks(r: SimulationResult): Check[] {
     },
     {
       name: "Monnaie détruite par le transport",
-      target: "diagnostic : véhicules et entretien",
+      target: "diagnostic : achats et améliorations de véhicules",
       value: `${(transport / 100).toFixed(0)} ducats (${pct(transport / Math.max(1, allDestroyed))} des destructions) : ${Object.entries(
         destroyed,
       )

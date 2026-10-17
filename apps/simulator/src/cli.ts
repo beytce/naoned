@@ -57,13 +57,11 @@ const CREATED = [
 ];
 const DESTROYED = [
   "market_tax",
-  "upkeep",
   "construction",
   "market_maker_sell",
   "campaign_hire",
   "campaign_work",
   "vehicle",
-  "vehicle_upkeep",
 ];
 
 /** One column per money source and sink, so the CSV stays flat. */

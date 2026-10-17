@@ -56,11 +56,17 @@ export function costPerOutput(ctx: WorldContext, type: string, level: number): D
   return (costValue(ctx, costForLevel(ctx, type, level + 1)) * 10_000n) / added;
 }
 
-export function upkeepPerDay(ctx: WorldContext, building: Building): Deniers {
-  const def = ctx.settings.buildings[building.type];
-  const level = BigInt(building.level);
-  const growthBps = 10_000 + (building.level - 1) * ctx.settings.upkeepLevelGrowthBps;
-  return applyBpsFloor((def?.upkeepPerDay ?? 0n) * level, growthBps);
+/** Bread the player's workers eat a day: so much per level of a workshop (the palazzo eats none). */
+export function rationsPerDay(
+  ctx: WorldContext,
+  buildings: Building[],
+  playerId: PlayerId,
+): number {
+  let levels = 0;
+  for (const b of buildings) {
+    if (b.playerId === playerId && b.type !== "palazzo") levels += b.level;
+  }
+  return levels * ctx.settings.rations.perLevelPerDay;
 }
 
 function payCost(tx: Tx, playerId: PlayerId, cost: BuildingCost, ref: string): void {

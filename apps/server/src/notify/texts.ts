@@ -88,7 +88,6 @@ const DECREES: Record<string, string> = {
   peage: "le péage de Terraferme",
   levant: "la charte du Levant",
   calmiere: "un calmiere",
-  franchise: "la franchise",
 };
 const familyName = (code: unknown) => FAMILIES[String(code)] ?? String(code ?? "");
 const landName = (code: unknown) => LANDS[String(code)] ?? String(code ?? "");

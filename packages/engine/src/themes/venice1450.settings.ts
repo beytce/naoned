@@ -195,17 +195,16 @@ export const venice1450Settings: WorldSettingsInput = {
   },
   // Laws and decrees: the family that wins the week imposes two of them on the next one.
   decrees: {
-    catalog: ["fondaco", "gabelle", "faveur", "peage", "levant", "calmiere", "franchise"],
+    catalog: ["fondaco", "gabelle", "faveur", "peage", "levant", "calmiere"],
     perWinner: 2,
     maxVoteBps: 2_500,
-    defaults: [{ code: "fondaco" }, { code: "franchise" }, { code: "faveur", target: "venezia" }],
+    defaults: [{ code: "fondaco" }, { code: "faveur", target: "venezia" }, { code: "levant" }],
     fondaco: { taxBps: 100, quotaBps: 5_000 },
     gabelle: { extraTaxBps: 400 },
     faveur: { premiumBps: 1_000, reservedMinutes: 30 },
     peage: { tollBps: 300 },
     levant: { memberQuotaBps: 5_000, othersCutBps: 2_500 },
     calmiere: { capBps: 11_500 },
-    franchise: { upkeepDiscountBps: 2_000 },
   },
   events: {
     everyDays: 2,
@@ -252,9 +251,9 @@ export const venice1450Settings: WorldSettingsInput = {
       },
     ],
   },
-  // Left alone for 24 h, a counting house pays a quarter of its upkeep and its workers do not
-  // starve: a returning player finds it intact.
-  dormancy: { afterHours: 24, upkeepBps: 2_500 },
+  // Left alone for 24 h, a counting house's workers do not starve: a returning player finds it
+  // intact.
+  dormancy: { afterHours: 24 },
   // The merchant's ledger: one or two short goals a day for the first week.
   missions: [
     {
@@ -438,7 +437,6 @@ export const venice1450Settings: WorldSettingsInput = {
         costMaterials: {},
         capacity: 25,
         speedBps: 7_500,
-        upkeepPerDay: 300,
         upgrade: { to: "cart", costDucats: 8_000 },
       },
       cart: {
@@ -446,7 +444,6 @@ export const venice1450Settings: WorldSettingsInput = {
         costMaterials: { planks: 10 },
         capacity: 40,
         speedBps: 10_000,
-        upkeepPerDay: 600,
         upgrade: { to: "wagon", costDucats: 16_000 },
       },
       wagon: {
@@ -454,7 +451,6 @@ export const venice1450Settings: WorldSettingsInput = {
         costMaterials: { planks: 25 },
         capacity: 90,
         speedBps: 13_000,
-        upkeepPerDay: 1_200,
         upgrade: { to: "great_wagon", costDucats: 32_000 },
       },
       great_wagon: {
@@ -462,7 +458,6 @@ export const venice1450Settings: WorldSettingsInput = {
         costMaterials: {},
         capacity: 150,
         speedBps: 16_000,
-        upkeepPerDay: 2_000,
       },
     },
     forSale: ["mule"],
@@ -663,33 +658,29 @@ export const venice1450Settings: WorldSettingsInput = {
   },
   // Level 2 asks half the materials: a first upgrade within reach in the first days.
   upgradeMaterialsBps: { "2": 5_000 },
-  upkeepLevelGrowthBps: 2_000,
-  upkeepDefaultHours: 24,
   activeWindowHours: 72,
-  // A month to grow: buildings cost 30 % fewer ducats and 25 % fewer materials than in the
-  // six-week seasons, so merchants end a month a little further than they ended six weeks.
+  // A month to grow: buildings cost 25 % fewer materials than in the six-week seasons. Their
+  // ducats, destroyed, are the first sink of money since the upkeep is gone (40 % more than
+  // before it went, see docs/calibration.md).
   buildings: {
-    farm: { costDucats: 21_000, costMaterials: { bricks: 15, planks: 15 }, upkeepPerDay: 1_500 },
+    farm: { costDucats: 29_400, costMaterials: { bricks: 15, planks: 15 } },
     clay_pit: {
-      costDucats: 21_000,
+      costDucats: 29_400,
       costMaterials: { bricks: 15, planks: 15 },
-      upkeepPerDay: 1_500,
     },
     lumber_camp: {
-      costDucats: 21_000,
+      costDucats: 29_400,
       costMaterials: { bricks: 15, planks: 15 },
-      upkeepPerDay: 1_500,
     },
-    mill: { costDucats: 28_000, costMaterials: { bricks: 25, planks: 25 }, upkeepPerDay: 1_900 },
-    bakery: { costDucats: 42_000, costMaterials: { bricks: 30, planks: 30 }, upkeepPerDay: 2_200 },
+    mill: { costDucats: 39_200, costMaterials: { bricks: 25, planks: 25 } },
+    bakery: { costDucats: 58_800, costMaterials: { bricks: 30, planks: 30 } },
     brickworks: {
-      costDucats: 35_000,
+      costDucats: 49_000,
       costMaterials: { bricks: 15, planks: 30 },
-      upkeepPerDay: 1_900,
     },
-    sawmill: { costDucats: 35_000, costMaterials: { bricks: 30, planks: 15 }, upkeepPerDay: 1_900 },
+    sawmill: { costDucats: 49_000, costMaterials: { bricks: 30, planks: 15 } },
     // Prestige sink: produces nothing, counts at cost in the ranking.
-    palazzo: { costDucats: 56_000, costMaterials: { bricks: 30, planks: 30 }, upkeepPerDay: 1_000 },
+    palazzo: { costDucats: 78_400, costMaterials: { bricks: 30, planks: 30 } },
   },
   referencePrices: {
     wheat: 100,

@@ -63,17 +63,17 @@ describe("the programme", () => {
     expect(error(vote(w, "a", [{ code: "fondaco" }, { code: "fondaco" }]))).toBe(
       "invalid_programme",
     );
-    expect(
-      error(vote(w, "a", [{ code: "fondaco" }, { code: "franchise" }, { code: "levant" }])),
-    ).toBe("invalid_programme");
+    expect(error(vote(w, "a", [{ code: "fondaco" }, { code: "peage" }, { code: "levant" }]))).toBe(
+      "invalid_programme",
+    );
     expect(error(vote(w, "a", [{ code: "doge" }]))).toBe("invalid_programme");
     expect(error(vote(w, "a", [{ code: "gabelle", target: "bread" }]))).toBe("ok");
   });
 
   it("weighs each ballot by merit, no member above half the family's", () => {
     const w = world();
-    vote(w, "a", [{ code: "gabelle", target: "bread" }, { code: "franchise" }]);
-    vote(w, "c", [{ code: "levant" }, { code: "franchise" }]);
+    vote(w, "a", [{ code: "gabelle", target: "bread" }, { code: "peage" }]);
+    vote(w, "c", [{ code: "levant" }, { code: "peage" }]);
     const c = w.state.campaign;
     if (!c) throw new Error("no campaign");
     w.state = {
@@ -83,22 +83,19 @@ describe("the programme", () => {
         merit: { a: { battle: 30, garrisonMs: 0 }, c: { battle: 10, garrisonMs: 0 } },
       },
     };
-    // a weighs 20 (half of 40), c 10: franchise 30, gabelle 20, levant 10.
+    // a weighs 20 (half of 40), c 10: péage 30, gabelle 20, levant 10.
     expect(programmeOf(w.ctx, w.state, "rossi")).toEqual([
-      { code: "franchise" },
+      { code: "peage" },
       { code: "gabelle", target: "bread" },
     ]);
   });
 
   it("falls back on the defaults, never a decree the family imposes this week", () => {
     const w = world();
-    expect(programmeOf(w.ctx, w.state, "verdi")).toEqual([
-      { code: "fondaco" },
-      { code: "franchise" },
-    ]);
+    expect(programmeOf(w.ctx, w.state, "verdi")).toEqual([{ code: "fondaco" }, { code: "levant" }]);
     impose(w, [{ code: "fondaco" }]);
     vote(w, "a", [{ code: "fondaco" }]);
-    expect(programmeOf(w.ctx, w.state, "rossi")).toEqual([{ code: "franchise" }]);
+    expect(programmeOf(w.ctx, w.state, "rossi")).toEqual([{ code: "levant" }]);
   });
 });
 
@@ -144,17 +141,6 @@ describe("the decrees", () => {
     expect(error(limit(w, "b", "sell", 208n))).toBe("price_out_of_band");
     expect(error(limit(w, "a", "buy", 208n))).toBe("price_out_of_band");
     expect(error(limit(w, "b", "sell", 207n))).toBe("ok");
-  });
-
-  it("the franchise: the members' upkeep lighter", () => {
-    const w = world();
-    impose(w, [{ code: "franchise" }]);
-    const a = w.cash("a");
-    const b = w.cash("b");
-    w.at(DAY + MIN).do({ type: "tick" });
-    // A farm (10 d) and a mill (15 d) a day; a fifth less for the Rossi.
-    expect(a - w.cash("a")).toBe(2_000n);
-    expect(b - w.cash("b")).toBe(2_500n);
   });
 
   it("lapse with their week", () => {

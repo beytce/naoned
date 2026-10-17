@@ -44,7 +44,7 @@ describe("weekly ranking", () => {
     expect(closed?.data?.week).toBe(0);
     const standings = closed?.data?.standings as { playerId: string; gain: string }[];
     expect(standings.map((s) => s.playerId)).toEqual(["b", "a"]);
-    // Upkeep is no sale: only the bread sale counts.
+    // Only the bread sale counts.
     expect(BigInt(standings[0]?.gain ?? "0")).toBeGreaterThan(BigInt(standings[1]?.gain ?? "0"));
     expect(w.state.weekly?.week).toBe(1);
     expect(weeklyStandings(w.ctx, w.state, w.now).every((s) => s.gain === 0n)).toBe(true);
