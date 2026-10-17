@@ -67,7 +67,13 @@ function hash(key: string): number {
   return (h ^ (h >>> 12)) >>> 0;
 }
 
-export function runTerra(cfg: TerraConfig, seed: number, mix = TERRA_MIX): TerraResult {
+export function runTerra(
+  cfg: TerraConfig,
+  seed: number,
+  mix = TERRA_MIX,
+  /** Called at 22 h each day with the state (for a picture of the map). */
+  onDay?: (day: number, s: TerraState) => void,
+): TerraResult {
   const bots = Object.entries(mix).flatMap(([profile, n]) =>
     Array.from({ length: n }, (_, k) => ({ id: `${profile}${k}`, profile })),
   );
@@ -120,6 +126,7 @@ export function runTerra(cfg: TerraConfig, seed: number, mix = TERRA_MIX): Terra
         milanBps: Math.round((milan * 10_000) / s.owner.length),
         contested: s.fronts.filter((f) => f.against !== null).length,
       });
+      onDay?.(day, s);
       day++;
     }
   };

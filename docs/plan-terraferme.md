@@ -113,6 +113,44 @@ Garde-fou : un décret ne doit pas rapporter plus d'environ 15 % du revenu de la
 
 Les quatre familles imposées et l'allégeance, les fiefs, la levée et les lances à 48 h, les marches et les assauts communs, les ouvrages de famille (remplacés par les bâtiments personnels), le vote du programme par famille, le fil de famille (devenu fil d'alliance), les blasons et les noms des quatre familles (chaque joueur porte son blason), l'ancien catalogue de décrets. Les missions de la Maison liées à la Campagne (`levy_collected`, `march_sent`, `assault_won`, `land_defended`, `work_built`) deviennent : poser son comptoir, prendre N cases, tenir une ville, bâtir une Rocca, envoyer des troupes à un allié. L'Influence dépensée en troupes et en ouvrages achevés est remplacée par : relever son plafond, achever un bâtiment.
 
+## Direction artistique : la même nuit, la même main
+
+La Terraferme n'est pas un autre jeu posé à côté : c'est **le calque de la même carte**, comme la Campagne aujourd'hui (`docs/design.md`). Tout ce qui fait la carte du commerce s'y retrouve, et rien d'autre ne s'ajoute sans remplacer.
+
+**Le sol.**
+- La **même Vénétie la nuit** (`NightTerrain`), ses reliefs en petits triangles, ses fleuves et la lagune : on reconnaît le pays du commerce. **La grille épouse la vraie géographie** : les cases couvrent la terre de `art/veneto` (ni la mer ni la lagune), les Alpes au nord donnent les montagnes, les marais du Pô et de la lagune les marais, et les sept villes sont à leur vraie place, celle de la carte du commerce. La carte grandit avec le monde en resserrant ses cases, pas en changeant de forme. Les cases hexagonales **ne se dessinent pas** en temps normal ; elles n'apparaissent, en fin liseré crème, que pendant qu'on vise un front (pour voir où il ira), puis s'effacent.
+- Les **territoires** sont des nappes translucides aux **frontières lissées en courbes** (les contours des cases adoucis), sans un angle d'hexagone : le langage des terres de la Campagne d'aujourd'hui. La terre neutre reste la nuit nue.
+- **La carte est mise au point sur le joueur.** Quarante couleurs côte à côte font un manteau d'Arlequin illisible (premier aperçu). Donc :
+  - **son territoire** : sa couleur, plus dense, cerclée d'or ;
+  - **ses voisins directs** (ceux qu'il peut attaquer ou qui peuvent l'attaquer) : leur couleur, translucide, liseré de leur teinte ;
+  - **ses alliés** : liseré vert d'eau ;
+  - **tous les autres** : de simples liserés crème très discrets sur la nuit, leur couleur n'apparaissant qu'au toucher ou en zoomant ;
+  - **Milan** : un sang-de-bœuf hachuré, le seul territoire texturé.
+- **Les teintes** : douze tons de bijou sourds tirés de la palette (émeraude, violet, sarcelle, argile, prune, ardoise, olive, rose, ciel, noyer, lavande, jade), attribués pour que **deux voisins n'aient jamais la même** ; jamais l'or ni le cinabre purs, gardés pour leurs rôles. Le blason du joueur reste son emblème, sur son comptoir.
+
+**Les repères.**
+- Les **sept villes** gardent leurs médaillons et leurs noms ; celle que tient un marchand prend un anneau à sa couleur.
+- Le **comptoir de guerre** de chacun est un médaillon à son blason, comme le comptoir du commerce (`HomeMarker`), plus petit pour les autres ; le sien porte l'anneau de la régénération des troupes.
+- Les **fronts** sont des flèches en pointillés qui défilent vers leur cible (le langage des routes de charrettes), avec leur force en pastille ; les siens en or, ceux qui le menacent en cinabre.
+
+**Le mouvement : sobre et lisible.**
+- La carte ne bouge que sous le doigt. Une case prise **se teinte en 400 ms** (un fondu, pas une explosion) ; la ligne de front avance ainsi, case par case, à chaque visite rattrapée en accéléré au retour du joueur (« pendant votre absence », rejoué en deux secondes, comme le récapitulatif « Bon retour »).
+- Rien ne clignote en permanence : seuls bougent les pointillés des fronts actifs et l'anneau d'un comptoir menacé, qui **respire en cinabre** comme le pain qui manque.
+- La nuit, une voile bleutée et la lune ☾ du HUD : les fronts s'arrêtent, la carte se repose.
+- Tout s'arrête pour qui demande moins de mouvement.
+
+**Les gestes et le HUD : ceux d'aujourd'hui.**
+- **Lancer un front** : toucher la terre voisine visée, puis le **panneau du bas** (`ContextPanel`) : la cible, ce qu'elle coûte par case, un curseur en biseau de 10 à 100 % des troupes avec ce que le front prendra environ, et « Attaquer » en or (`Slab`). Pas de fenêtre de plus.
+- **HUD** : à droite, sous la bourse et l'Influence, **les troupes** (« 120 / 180 », la fiche dépliée dit le plafond, la régénération, la nuit) et **la Gloire avec son rang** ; ce qui ne sert pas sur ce calque (pain, véhicules) s'efface, comme aujourd'hui. Au pied, la porte « Terraferme » remplace « Famille ».
+- **Panneau d'un marchand** (toucher son territoire) : son blason, ses cases, sa force, ses alliés ; « Proposer l'alliance », « Envoyer des troupes ».
+- Les **cartes à coins coupés**, les **boutons en biseau**, les trois typographies et les palettes du joueur s'appliquent sans exception.
+
+**La fluidité, budget tenu.**
+- Les territoires se dessinent en **un tracé par marchand** (pas un par case), recalculé seulement quand une case change de main ; le sol reste sur la couche que déplace le processeur graphique.
+- Cible : 60 images par seconde sur un téléphone moyen avec 800 cases et 40 marchands ; mesurée sur l'aperçu avant d'écrire l'écran.
+
+**Aperçus (17 octobre 2026).** Deux rendus d'une semaine simulée ont fixé ces règles : le premier, toutes couleurs dehors et frontières en escalier, était criard et illisible ; le second (mise au point sur le joueur, frontières lissées, autres en liserés crème) se fond dans la carte de nuit. Il manque encore la vraie géographie : le prototype tire une carte rectangulaire.
+
 ## Écrans
 
 - **La carte de la Terraferme**, en plein écran, à la place du calque de la Campagne : les cases à la couleur du blason de chaque joueur (ses alliés cerclés d'or), les fronts en flèches animées, Milan en rouge sombre. Pincer pour zoomer, comme la carte du commerce.
