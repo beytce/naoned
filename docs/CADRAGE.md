@@ -246,7 +246,7 @@ Décision du porteur après l'audit du 16 octobre : **aucune nouvelle mécanique
 
 ### Une Maison qui progresse de saison en saison (17 octobre 2026)
 
-Décision du porteur, entre trois options (commerce persistant, ères longues, Maison persistante) : **la Maison dure, la fortune repart**. Chaque mois, ducats, stocks, ateliers et véhicules repartent de zéro comme aujourd'hui ; le niveau de marchand (ventes nettes de toutes les saisons) débloque d'une saison à l'autre des villes, des territoires, des maîtrises et des marchés, sans jamais donner plus de rendement. Les familles gardent leur saison. Plan, règles et étapes : `docs/plan-progression.md`. Soumis au gel : simulateur d'abord, mise en œuvre après les mesures de la bêta.
+Décision du porteur, entre trois options (commerce persistant, ères longues, Maison persistante) : **la Maison dure, la fortune repart**. Chaque mois, ducats, stocks, ateliers et véhicules repartent de zéro comme aujourd'hui ; la Maison **achète** des patentes permanentes (droit de commerce dans une ville, Muda, maîtrises, second comptoir, Lombardie…) avec l'**Influence**, une monnaie à part gagnée par le commerce et par la Campagne des familles, jamais achetable ni convertible en ducats ; une patente ouvre des choix, jamais plus de rendement. Les familles gardent leur saison. Plan, règles et étapes : `docs/plan-progression.md`. Soumis au gel : simulateur d'abord, mise en œuvre après les mesures de la bêta.
 
 ## Vision et positionnement
 
