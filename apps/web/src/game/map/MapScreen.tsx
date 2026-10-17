@@ -419,6 +419,8 @@ export function MapScreen(
         rank={view.standing.rank}
         seasonProgress={seasonProgress}
         cash={view.cash}
+        influence={props.influence}
+        onHouse={() => props.setSheet("house")}
         freeCarts={freeVehicles.length}
         carts={vehicles.length}
         canBuyCart={!!road && vehicles.length < maxCarts}

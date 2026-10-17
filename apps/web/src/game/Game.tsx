@@ -93,6 +93,8 @@ export interface GameProps {
   onGuidePaused: () => void;
   /** The latest message of the family's thread (to tell whether it was read). */
   familyLatestAt: number | null;
+  /** The house's Influence (null in a world without the house). */
+  influence: number | null;
   /** The merchant's permanent level (honorary). */
   level: Level | null;
 }
@@ -135,6 +137,7 @@ export function Game(props: {
   const [guideKey, setGuideKey] = useState(0);
   const [unread, setUnread] = useState(0);
   const [familyLatestAt, setFamilyLatestAt] = useState<number | null>(null);
+  const [influence, setInfluence] = useState<number | null>(null);
   const [level, setLevel] = useState<Level | null>(null);
   const loaded = useRef(false);
   const [welcome, setWelcome] = useState<WelcomeData | null>(null);
@@ -173,6 +176,7 @@ export function Game(props: {
         return res.unread ?? 0;
       });
       setFamilyLatestAt(res.familyLatestAt ?? null);
+      setInfluence(res.influence ?? null);
       setLevel(res.level ?? null);
       if (res.welcome) setWelcome(res.welcome);
       setCeremony(res.ceremony ?? null);
@@ -440,6 +444,7 @@ export function Game(props: {
     names,
     people,
     familyLatestAt,
+    influence,
     level,
     bots,
     tab: layer === "campaign" ? "famille" : selection?.kind === "cart" ? "routes" : "comptoir",

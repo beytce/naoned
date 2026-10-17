@@ -33,6 +33,16 @@ Le serveur refuse de démarrer en production sans `RESEND_API_KEY` ou avec une b
 
 Coût indicatif : l'offre Hobby de Railway (environ 5 $ par mois, usage inclus) suffit au jalon 2 ; Resend est gratuit jusqu'à 3 000 e-mails par mois. Ces tarifs évoluent : vérifier sur les sites.
 
+## E-mails de connexion (Resend)
+
+Sans domaine vérifié, Resend n'envoie qu'à l'adresse du compte Resend lui-même (`onboarding@resend.dev`, l'expéditeur par défaut) : toute autre personne qui demande un lien de connexion voit « L'e-mail n'a pas pu être envoyé », et le journal du serveur montre `Resend: 403 …`. Pour ouvrir le jeu à tous :
+
+1. Sur resend.com, *Domains → Add Domain* : un domaine (ou sous-domaine, par exemple `mail.mondomaine.fr`) qui vous appartient.
+2. Ajouter chez le registraire du domaine les enregistrements DNS que Resend affiche (SPF, DKIM), attendre que le domaine passe à *Verified*.
+3. Dans Railway, régler `MAIL_FROM`, par exemple `Fondaco <connexion@mail.mondomaine.fr>` (l'adresse doit être sur le domaine vérifié), puis redéployer.
+
+Au démarrage, le serveur avertit dans ses journaux tant que `MAIL_FROM` utilise `resend.dev`.
+
 ## Monde de jeu
 
 Les saisons suivent les mois civils (heure de Paris). Au premier démarrage, le serveur crée le monde « Venise 1450 · <mois> », qui commence à cet instant et se termine à la fin du mois (ou du mois suivant s'il reste moins de 14 jours). Les mises à jour reprennent le même monde. Chaque action enregistre en base ses commandes (`world_commands`), avec le grand livre, les mouvements de stock et les échanges, dans la même transaction ; l'état complet (`world_states`) n'est réécrit qu'une fois par minute (ou toutes les 200 versions) et à l'arrêt du service. Au démarrage, le serveur reprend le dernier état complet et rejoue les commandes enregistrées depuis : le moteur est déterministe.

@@ -89,6 +89,8 @@ export function MapHud({
   rank,
   seasonProgress,
   cash,
+  influence,
+  onHouse,
   freeCarts,
   carts,
   canBuyCart,
@@ -120,6 +122,9 @@ export function MapHud({
   rank: number | null;
   seasonProgress: number;
   cash: string;
+  /** The house's Influence, under the ducats (null: no house in this world). */
+  influence: number | null;
+  onHouse: () => void;
   freeCarts: number;
   carts: number;
   canBuyCart: boolean;
@@ -217,6 +222,21 @@ export function MapHud({
             <Coin size={24} />
           </span>
         </span>
+        {influence !== null && (
+          <button
+            type="button"
+            onClick={onHouse}
+            aria-label={fr.game.house.title}
+            className="pointer-events-auto flex items-center gap-2"
+          >
+            <span className="font-display text-lg font-extrabold tabular-nums text-gold-soft [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
+              {influence}
+            </span>
+            <span className="hud-orb flex h-9 w-9 items-center justify-center rounded-full font-display text-sm font-extrabold text-gold-soft">
+              ✦
+            </span>
+          </button>
+        )}
         {!right && carts > 0 && (
           <span className="flex items-center gap-2" aria-label={m.carts}>
             <span className="font-display text-lg font-extrabold tabular-nums text-lagoon [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
