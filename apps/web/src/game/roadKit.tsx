@@ -29,7 +29,7 @@ export function canServe(props: GameProps, o: DeliveryOrderView, capacity: numbe
   );
 }
 
-/** The cartwright: vehicles for sale (a mule), their capacity, upkeep and cost. */
+/** The cartwright: vehicles for sale (a mule), their capacity and cost. */
 export function BuyVehicleSheet({
   props,
   open,
@@ -50,9 +50,7 @@ export function BuyVehicleSheet({
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="font-display font-extrabold uppercase">{vehicleName(v.type)}</p>
-                <p className="label mt-1">
-                  {t().capacity(v.capacity)} · {t().upkeep(d(v.upkeepPerDay))}
-                </p>
+                <p className="label mt-1">{t().capacity(v.capacity)}</p>
                 <p className="mt-1 text-sm">
                   {d(v.costDucats)}
                   {Object.entries(v.costMaterials).map(
@@ -108,9 +106,6 @@ export function UpgradeVehicleSheet({
               </p>
               <p className="label">
                 {t().speed(pct(def.speedBps))} → {t().speed(pct(next.speedBps))}
-              </p>
-              <p className="label">
-                {t().upkeep(d(def.upkeepPerDay))} → {t().upkeep(d(next.upkeepPerDay))}
               </p>
               {!home && <p className="text-sm text-cream-dim">{t().away}</p>}
               <Slab

@@ -25,7 +25,7 @@ import {
   total,
   vehicleName,
 } from "../roadKit.js";
-import type { DeliveryView, VehicleView } from "../types.js";
+import type { DeliveryView, PlayerView, VehicleView } from "../types.js";
 import { useWide } from "../useWide.js";
 import { have, readyOf } from "../workshops.js";
 import {
@@ -64,6 +64,16 @@ function tripOf(deliveries: DeliveryView[], v: VehicleView, now: number): Delive
  * opens. Everything the merchant does starts from a place: their counter (workshops, store), a
  * city (its orders, Venice's Rialto and port), a cart (load, send).
  */
+/** The workers' bread for the HUD: the reserve, what they eat a day, and how it stands. */
+function breadOf(view: PlayerView, now: number) {
+  const { rations } = view;
+  if (rations.perDay === 0) return null;
+  const stock = have(view, rations.resource);
+  const state: "ok" | "low" | "hungry" =
+    rations.hungryUntil > now ? "hungry" : stock < rations.perDay ? "low" : "ok";
+  return { stock, perDay: rations.perDay, state };
+}
+
 export function MapScreen(
   props: GameProps & {
     clockOffset: number;
@@ -421,10 +431,12 @@ export function MapScreen(
         cash={view.cash}
         influence={props.influence}
         onHouse={() => props.setSheet("house")}
+        bread={breadOf(view, now)}
+        onBread={() => props.setSheet("store")}
         freeCarts={freeVehicles.length}
         carts={vehicles.length}
         canBuyCart={!!road && vehicles.length < maxCarts}
-        notices={notice > 0 ? notice : view.player.upkeepDefaultUntil > now || !!criee}
+        notices={notice > 0 ? notice : !!criee}
         bales={view.tutorial.includes("mission") ? (view.bales?.available ?? 0) : 0}
         guidePaused={props.guidePaused}
         bottom={!panelUp}

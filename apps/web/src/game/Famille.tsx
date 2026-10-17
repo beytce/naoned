@@ -78,8 +78,6 @@ export function decreeEffect(
       return e.levant(pct(rules.levant.memberQuotaBps), pct(rules.levant.othersCutBps));
     case "calmiere":
       return e.calmiere(good(pick.target), pct(rules.calmiere.capBps));
-    case "franchise":
-      return e.franchise(pct(rules.franchise.upkeepDiscountBps));
     default:
       return "";
   }

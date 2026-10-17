@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { BaleArt } from "../../art/bale.js";
 import { Crest, type CrestData } from "../../art/crest.js";
 import { Coin } from "../../art/icons.js";
+import { ResourceIcon } from "../../art/resources.js";
 import { Lorenzo } from "../../art/scenes.js";
 import { fr } from "../../i18n.js";
 import { CountUp } from "../../ui.js";
@@ -10,8 +11,8 @@ import { Icon } from "./icons.js";
 
 /**
  * The map's heads-up display, floating on the night without any bar: who the merchant is (the
- * season's progress as a ring around their arms), their purse and their carts, the notices, and
- * three round doors at the foot while nothing is selected.
+ * season's progress as a ring around their arms), their purse, the workers' bread and their
+ * carts, the notices, and three round doors at the foot while nothing is selected.
  */
 
 function Orb({
@@ -91,6 +92,8 @@ export function MapHud({
   cash,
   influence,
   onHouse,
+  bread,
+  onBread,
   freeCarts,
   carts,
   canBuyCart,
@@ -125,6 +128,12 @@ export function MapHud({
   /** The house's Influence, under the ducats (null: no house in this world). */
   influence: number | null;
   onHouse: () => void;
+  /**
+   * The workers' bread: the reserve and what they eat a day, quiet while it lasts, gold under a
+   * day's worth, vermilion while they go hungry (null: workers who eat nothing).
+   */
+  bread: { stock: number; perDay: number; state: "ok" | "low" | "hungry" } | null;
+  onBread: () => void;
   freeCarts: number;
   carts: number;
   canBuyCart: boolean;
@@ -234,6 +243,42 @@ export function MapHud({
             </span>
             <span className="hud-orb flex h-9 w-9 items-center justify-center rounded-full font-display text-sm font-extrabold text-gold-soft">
               ✦
+            </span>
+          </button>
+        )}
+        {!right && bread && (
+          <button
+            type="button"
+            onClick={onBread}
+            aria-label={fr.game.rations.hud(bread.stock, bread.perDay)}
+            className="pointer-events-auto flex items-center gap-2"
+          >
+            <span className="flex items-baseline gap-1.5 [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
+              <span className="font-mono text-[10.5px] text-cream-dim">
+                {fr.game.rations.perDay(bread.perDay)}
+              </span>
+              <span
+                className={`font-display text-lg font-extrabold tabular-nums ${
+                  bread.state === "hungry"
+                    ? "text-vermilion"
+                    : bread.state === "low"
+                      ? "text-gold"
+                      : "text-cream"
+                }`}
+              >
+                {bread.stock}
+              </span>
+            </span>
+            <span
+              className={`hud-orb flex h-9 w-9 items-center justify-center rounded-full ${
+                bread.state === "hungry"
+                  ? "ring-2 ring-vermilion"
+                  : bread.state === "low"
+                    ? "ring-2 ring-gold/70"
+                    : ""
+              }`}
+            >
+              <ResourceIcon code="bread" size={24} />
             </span>
           </button>
         )}

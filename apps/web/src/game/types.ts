@@ -53,7 +53,6 @@ export interface Catalog {
     name: string;
     recipe: Recipe | null;
     cost: Cost;
-    upkeepPerDay: Money;
     /** Regions where it may be built (null: anywhere). */
     regions: string[] | null;
   }[];
@@ -75,7 +74,6 @@ export interface VehicleType {
   costMaterials: Record<string, number>;
   capacity: number;
   speedBps: number;
-  upkeepPerDay: Money;
   /** The next step, for ducats, made at home. */
   upgrade?: { to: string; costDucats: Money };
 }
@@ -210,7 +208,6 @@ export interface DecreeRules {
   peage: { tollBps: number };
   levant: { memberQuotaBps: number; othersCutBps: number };
   calmiere: { capBps: number };
-  franchise: { upkeepDiscountBps: number };
 }
 
 export interface WorkRules {
@@ -376,7 +373,6 @@ export interface BuildingView {
   /** Seconds of the next single batch when it is a tutorial one, otherwise null. */
   fastSeconds: number | null;
   upgradeCost: Cost | null;
-  upkeepPerDay: Money;
   /** Extractor built outside its region before the rule: produces, cannot be upgraded. */
   outOfRegion: boolean;
 }
@@ -409,7 +405,6 @@ export interface PlayerView {
     id: string;
     region: string;
     joinedAt: number;
-    upkeepDefaultUntil: number;
     /** The house's patents in this world (absent: none, or no house in this world). */
     patents?: string[];
     /** Region of the second counter this season, once chosen. */
@@ -417,7 +412,6 @@ export interface PlayerView {
   };
   cash: Money;
   escrow: Money;
-  upkeepPerDay: Money;
   netWorth: { cash: Money; stock: Money; buildings: Money; total: Money };
   standing: {
     rank: number | null;
@@ -453,7 +447,14 @@ export interface PlayerView {
   road: RoadView | null;
   /** The galleys of the Muda (null when the world has none). */
   muda: MudaView | null;
-  rations: { resource: string; perDay: number; hungryUntil: number; nextMealAt: number };
+  rations: {
+    resource: string;
+    perDay: number;
+    /** Loaves per workshop level. */
+    perLevel: number;
+    hungryUntil: number;
+    nextMealAt: number;
+  };
   tutorial: string[];
   missions: MissionView[];
   daily: DailyView | null;
@@ -551,7 +552,6 @@ export interface MissionView {
 export interface Welcome {
   since: number;
   income: Record<string, Money>;
-  upkeep: Money;
   readyBatches: number;
   notices: Record<string, number>;
   slept: boolean;

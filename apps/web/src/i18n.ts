@@ -278,7 +278,6 @@ export const fr = {
       upgrade: (cost: string) => `Améliorer · ${cost}`,
       maxLevel: "Plus haut niveau atteint.",
       away: "De retour au comptoir, il pourra être amélioré.",
-      upkeep: (amount: string) => `Entretien ${amount} / jour`,
       maxVehicles: (n: number) => `${n} véhicules au plus.`,
       sheet: {
         payment: "Paiement à l'arrivée",
@@ -374,11 +373,18 @@ export const fr = {
         `Vos ouvriers mangent ${perDay} pains par jour · réserve : ${days} j`,
       nextMeal: (inTime: string, need: number, have: number) =>
         `Prochain repas dans ${inTime} : il faut ${need} pains, vous en avez ${have}.`,
+      why: (perLevel: number) =>
+        `${perLevel} pains par niveau d'atelier : chaque niveau construit en ajoute.`,
       hungry: (left: string) =>
-        `Ouvriers affamés encore ${left} : les lots lancés maintenant durent 50 % de plus. Achetez du pain au Marché.`,
+        `Ouvriers affamés encore ${left} : les lots lancés maintenant durent 50 % de plus. Achetez du pain au Rialto.`,
       low: (missing: number) =>
         `Il manque ${missing} pains pour le prochain repas : sans eux, vos lots dureront 50 % de plus pendant 24 h.`,
       slower: "+50 % (faim)",
+      buy: "Acheter du pain",
+      /** The HUD's line: the reserve and what the workers eat a day. */
+      hud: (stock: number, perDay: number) =>
+        `Pain : ${stock} en réserve, vos ouvriers en mangent ${perDay} par jour`,
+      perDay: (perDay: number) => `−${perDay}/j`,
     },
     contracts: {
       kicker: "Contrats du Doge",
@@ -571,7 +577,6 @@ export const fr = {
           peage: "Péage de Terraferme",
           levant: "Charte du Levant",
           calmiere: "Calmiere",
-          franchise: "Franchise",
         } as Record<string, string>,
         effects: {
           fondaco: (tax: string, quota: string) =>
@@ -586,7 +591,6 @@ export const fr = {
             `Galères de la Muda : quota +${more} pour les membres, −${less} pour les autres.`,
           calmiere: (good: string, pct: string) =>
             `Aucune offre de ${good} au-dessus de ${pct} du prix de référence.`,
-          franchise: (pct: string) => `Membres : entretien des bâtiments −${pct}.`,
         },
       },
       roll: "Les membres et leur Mérite",
@@ -621,8 +625,6 @@ export const fr = {
     shortDay: (day: number, total: number) => `J${day}/${total}`,
     dayOf: (day: number, total: number) => `Jour ${day} sur ${total}`,
     perDay: "/ jour",
-    upkeepDefault:
-      "Entretien impayé : production bloquée 24 h. Vendez du stock pour renflouer la caisse.",
 
     goal: {
       kicker: "Objectif de la saison",
@@ -991,10 +993,8 @@ export const fr = {
     welcome: {
       kicker: (away: string) => `Absent ${away}`,
       title: "Bon retour au comptoir",
-      slept:
-        "Votre comptoir s'est mis en sommeil : entretien réduit et ouvriers épargnés par la faim.",
+      slept: "Votre comptoir s'est mis en sommeil : vos ouvriers n'ont pas mangé ni connu la faim.",
       earned: "Gagné",
-      upkeep: "Entretien",
       sources: {
         city_sale: "Ventes aux villes",
         trade: "Ventes au Rialto",
@@ -1040,7 +1040,7 @@ export const fr = {
     upgrade: "Améliorer",
     upgradeTo: (level: number) => `Passer au niveau ${level}`,
     upgradeEffect: (bonus: number) =>
-      `Chaque lot produit davantage, avec une prime de rendement de +${bonus} % : à matières égales, un grand atelier rapporte plus que plusieurs petits. L'entretien augmente aussi.`,
+      `Chaque lot produit davantage, avec une prime de rendement de +${bonus} % : à matières égales, un grand atelier rapporte plus que plusieurs petits. Vos ouvriers mangent aussi davantage de pain.`,
     localRaw: (raw: string) =>
       `Matière première de votre région : ${raw}. Les autres ne s'extraient pas ici : achetez-les au Rialto.`,
     outOfRegion: "Hors de sa région : il produit encore, mais ne peut plus être amélioré.",
@@ -1048,7 +1048,7 @@ export const fr = {
     buildTitle: "Nouvel atelier",
     maxBuildings: (n: number) => `Maximum de ${n} bâtiments atteint.`,
     palazzoHelp: "Prestige : ne produit rien, compte à son coût dans le classement.",
-    upkeep: (amount: string) => `Entretien ${amount}/j`,
+    rationsOfLevel: (loaves: number) => `Ouvriers : +${loaves} pains/jour`,
     cost: "Coût",
     missing: "manque",
     close: "Fermer",
@@ -1487,8 +1487,8 @@ export const fr = {
       },
       {
         icon: "profil",
-        title: "Entretien",
-        text: "Chaque bâtiment coûte un entretien quotidien. Sans ducats pour le payer, la production est bloquée 24 heures.",
+        title: "Le pain des ouvriers",
+        text: "Chaque niveau d'atelier nourrit ses ouvriers : quelques pains par jour, mangés à minuit. La réserve s'affiche en haut à droite, sous la bourse. Sans pain, les lots durent 50 % de plus pendant 24 heures : achetez-en au Rialto ou cuisez-le vous-même.",
       },
     ],
 
@@ -1521,7 +1521,6 @@ export const fr = {
       insufficient_stock: "Pas assez de stock.",
       building_busy: "Cet atelier produit déjà : attendez la fin de la file.",
       queue_full: "La file de production est pleine (12 h maximum).",
-      upkeep_default: "Entretien impayé : production bloquée pendant 24 h.",
       max_buildings: "Nombre maximal de bâtiments atteint.",
       max_level: "Niveau maximal atteint.",
       no_liquidity: "Personne ne vend ou n'achète cette ressource pour le moment.",

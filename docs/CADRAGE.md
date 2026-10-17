@@ -98,8 +98,8 @@ Inspiré de Mercato Venezia : du risque et de l'affrontement entre joueurs, sans
 
 | Fonction | Règle |
 | --- | --- |
-| **Comptoir en sommeil** | Sans visite depuis 24 h, l'entretien tombe à 25 % et les ouvriers ne connaissent pas la faim. Le joueur qui revient retrouve un comptoir intact |
-| **Bon retour** | Après 4 h d'absence, un récapitulatif tiré des journaux : gains par source, entretien payé, lots prêts, nouvelles reçues, et un bouton pour tout récolter et relancer |
+| **Comptoir en sommeil** | Sans visite depuis 24 h, les ouvriers ne mangent pas et ne connaissent pas la faim. Le joueur qui revient retrouve un comptoir intact |
+| **Bon retour** | Après 4 h d'absence, un récapitulatif tiré des journaux : gains par source, lots prêts, nouvelles reçues, et un bouton pour tout récolter et relancer |
 | **Un geste** | « Tout récolter et relancer » récolte chaque atelier et remplit chaque file selon le stock, en une seule transaction |
 | **Ballots de Faraj** | Faraj d'Alexandrie, dont le grand-père du joueur a sauvé la cargaison, envoie un ballot toutes les 6 h (2 au plus en attente) : 3 cartes de 1 à 5 unités, du blé commun à la soie légendaire (0,25 % par carte). Probabilités publiques, rien à acheter, rien de plus avec le Pass. Environ 11,5 % de matière en plus (`docs/calibration.md`). Une petite pastille ronde sous la cloche de la carte signale un ballot à ouvrir et disparaît sinon |
 | **Livre de compte** | Dix missions ouvertes sur sept jours (première vente à une ville, premier contrat, première offre, premier convoi, première amélioration…), récompensées en marchandises ou en quelques ducats. Le tutoriel se termine en encaissant la première |
@@ -132,7 +132,7 @@ Note d'implémentation : `docs/plan-livraisons.md` ; réglages calibrés : `docs
 | **Événements sur la route** | Un événement de marché agit sur le tableau de commandes de son jour : prix des commandes qu'il touche (ville et marchandise, Doge et familles compris) et 3 commandes de ville envoyées là où il demande davantage (`deliveries.eventOrdersPerDay`), dans le total du jour |
 | **Tableau de commandes** | (Avant la demande commune, ci-dessous.) 12 à 16 commandes personnelles par jour, tirées du secret du monde, que personne d'autre ne peut prendre : les deux commandes du Doge et celle de la famille (à leur prime), deux urgentes (ouvertes une heure entre 8 h et 21 h, +15 %), le reste en commandes de ville. Une ville commande ce qu'elle demande ; le prix vaut la référence +50 % par heure de route. Les commandes expirent à minuit. Les marchandises d'outre-mer peuvent être commandées par les villes ; les commandes d'outre-mer du Doge et des familles se remettent toujours au comptoir |
 | **Sept villes** | Venise, Padoue, Vérone, Vicence, Trévise, Mantoue, Ferrare ; de 20 min à 1 h 50 de route selon la région de départ |
-| **Véhicules** | Tout véhicule s'achète mule (25 unités, lente) ; deux mules sont données à l'arrivée. Trois améliorations payées en ducats (détruits), au comptoir seulement, le font porter plus et aller plus vite : charrette (40), chariot (90, rapide), grand chariot (150, le plus rapide) (`deliveries.vehicles.*.upgrade`, `deliveries.forSale`). 4 au plus, avec un entretien qui croît avec le niveau, comptés au patrimoine. Un trajet aller dure 2 h au plus ; le véhicule revient à vide, la ville paie à l'arrivée |
+| **Véhicules** | Tout véhicule s'achète mule (25 unités, lente) ; deux mules sont données à l'arrivée. Trois améliorations payées en ducats (détruits), au comptoir seulement, le font porter plus et aller plus vite : charrette (40), chariot (90, rapide), grand chariot (150, le plus rapide) (`deliveries.vehicles.*.upgrade`, `deliveries.forSale`). 4 au plus, sans entretien, comptés au patrimoine. Un trajet aller dure 2 h au plus ; le véhicule revient à vide, la ville paie à l'arrivée |
 | **Escortes** | Gardes (4 % de la valeur de la cargaison) ou compagnie (9 %), détruits. Une escorte protège sans qu'il soit besoin d'être là |
 | **Brigands** | Dès le jour 6, un joueur poste une bande sur une route pour 2, 4 ou 6 h (une mise détruite). À mi-parcours d'une livraison, la plus ancienne bande de la route tente sa chance, deux fois au plus par bande. Sans escorte, la livraison s'arrête et le joueur a 10 minutes pour riposter : une riposte fait échouer l'attaque et disperse la bande. Une prise emporte 30 % de chaque ligne ; le brigand en garde la moitié, le reste se perd dans la fuite. La livraison est payée au prorata de ce qui arrive. Des bandes de l'ordinateur guettent aussi, pour qu'un petit monde ait du risque |
 | **Garde-fous** | Aucune attaque entre 22 h et 8 h (heure de Paris), ni contre un nouveau venu (3 jours), un marchand deux fois moins riche que le brigand, un membre de sa famille, ni deux fois en 24 h contre la même victime (délai partagé avec la mer). Le véhicule revient toujours |
@@ -189,7 +189,7 @@ Constat du porteur : le système de guilde ne lui plaît pas. Il veut quatre gra
 | **Gloire** | Chaque heure ouverte, une terre rapporte sa valeur à la famille qui la tient (village 1, bourg 2, ville 3, forteresse 4) |
 | **Milan (PvE)** | Toutes les 4 heures ouvertes, Milan chevauche contre la famille en tête : sa terre la plus faible sur la frontière de Milan, avec 10 lances + 2 par marchand actif, doublées à 100 % d'avance. Ses forteresses se regarnissent chaque jour. L'acte III (la guerre de Lombardie) le rend moitié plus fort |
 | **Mérite** | Une lance par bataille gagnée (attaque ou défense), un point pour 10 lances tenues une heure en garnison. Il pèse le vote du programme (aucun membre au-delà de 25 %) et partage la gabelle et le péage. Le premier de chaque famille est son capitaine |
-| **Décrets** | Pendant la semaine, chaque famille vote son programme de deux décrets, public. La gagnante l'impose la semaine suivante ; jamais le même décret deux semaines de suite. Catalogue (`decrees`) : Privilège du Fondaco (taxe du Rialto 1 %, quotas de la Dogana +50 % pour les membres), Gabelle sur un bien (+4 points de taxe sur les ventes des autres, partagés entre les membres), Faveur d'une ville (livraisons des membres +10 %, ses commandes urgentes à eux la première demi-heure), Péage de Terraferme (3 % des livraisons des autres vers les villes que la famille tenait en fin de semaine), Charte du Levant (quota aux galères de la Muda +50 % pour les membres, −25 % pour les autres ; Lettres de course et Tarif du Levant retirés avec la mer et les brigands), Calmiere (aucune offre d'un bien au-dessus de 115 % de la référence), Franchise (entretien −20 % pour les membres) |
+| **Décrets** | Pendant la semaine, chaque famille vote son programme de deux décrets, public. La gagnante l'impose la semaine suivante ; jamais le même décret deux semaines de suite. Catalogue (`decrees`) : Privilège du Fondaco (taxe du Rialto 1 %, quotas de la Dogana +50 % pour les membres), Gabelle sur un bien (+4 points de taxe sur les ventes des autres, partagés entre les membres), Faveur d'une ville (livraisons des membres +10 %, ses commandes urgentes à eux la première demi-heure), Péage de Terraferme (3 % des livraisons des autres vers les villes que la famille tenait en fin de semaine), Charte du Levant (quota aux galères de la Muda +50 % pour les membres, −25 % pour les autres ; Lettres de course et Tarif du Levant retirés avec la mer et les brigands), Calmiere (aucune offre d'un bien au-dessus de 115 % de la référence) ; la Franchise (entretien −20 %) est retirée avec l'entretien |
 | **Ouvrages** | Sur une terre que sa famille tient (pas un fief), un membre bâtit seul un ouvrage, payé en ducats **détruits** (`campaign.works`) : **rocca** (garnison +60 % en défense, 40 d), **campo** (les marches de la famille partent du camp le plus proche plutôt que du fief, 30 d), **dogana** (Gloire de la terre +50 %, 50 d). Un par terre ; deux heures ouvertes de chantier avant qu'il serve ; deux par famille, un de plus par cinq membres actifs. Une terre prise rase son ouvrage (+10 de Mérite à chaque assaillant, avis à son bâtisseur) ; la carte qui rouvre chaque semaine les efface tous |
 | **Dernière semaine** | Pas de décrets : la famille gagnante remporte la saison |
 | **Monnaie** | Lances : un puits. Gabelle et péage : un transfert entre joueurs par le compte de la famille (`family:<code>`), partagé à la clôture de la semaine. Faveur : seule création, bornée |
@@ -401,7 +401,7 @@ L'économie repose sur un carnet d'ordres par ressource et par monde (pas par r�
 **Puits de monnaie** (destruction)
 
 - Taxe de marché de 3 % sur chaque transaction entre joueurs, payée par le vendeur.
-- Entretien des bâtiments en ducats, prélevé chaque jour ; il croît plus vite que le niveau (un bâtiment de niveau L coûte base × L × (1 + 20 % × (L − 1))). Un joueur qui ne peut pas payer ne peut plus lancer de production pendant 24 h.
+- Plus d'entretien en ducats (retiré en octobre 2026, voir `docs/calibration.md`) : bâtiments et véhicules ne coûtent rien à garder. Le coût quotidien d'un comptoir est le pain de ses ouvriers (rations), payé en marchandises.
 - Part en ducats du coût de construction et d'amélioration, palais compris (le reste se paie en briques et en planches, qui ne sont pas un puits de monnaie).
 - Ventes nettes du PNJ teneur de marché.
 - Mécénat des familles (plafonné par jour).
@@ -422,7 +422,7 @@ L'économie repose sur un carnet d'ordres par ressource et par monde (pas par r�
 
 Chaque mouvement de monnaie passe par un grand livre en partie double ; chaque mouvement de stock passe par un journal des stocks. Aucun solde n'est modifié sans écriture correspondante, ce qui rend la triche et les bugs traçables.
 
-**Comptes du grand livre** : un compte de trésorerie et un compte de séquestre par joueur, un compte par guilde (V1), et des comptes système par monde : création (villes, chantiers, PNJ acheteur, capital de départ), destruction (taxes, entretien, construction, PNJ vendeur).
+**Comptes du grand livre** : un compte de trésorerie et un compte de séquestre par joueur, un compte par guilde (V1), et des comptes système par monde : création (villes, chantiers, PNJ acheteur, capital de départ), destruction (taxes, construction, PNJ vendeur).
 
 **Journal des stocks** : chaque entrée ou sortie (production, consommation, achat, vente, séquestre, livraison de chantier) écrit une ligne avec le joueur, la ressource, la quantité signée et le motif.
 
@@ -450,7 +450,7 @@ Un seul code web sert PC et mobile ; la logique de jeu vit dans un paquet pur et
           ▼                      │
   packages/engine                │      Tâche planifiée (tick 60 s)
   production, marché,            │      expirations, PNJ, villes,
-  grand livre, invariants        │      entretien, chantiers
+  grand livre, invariants        │      rations, chantiers  
   (fonctions pures,              │             │ écritures
    sans accès base)              ▼             ▼
           ▲         ┌──────────── PostgreSQL ────────────┐
@@ -475,7 +475,7 @@ Le moteur n'accède jamais à la base : il reçoit un état, renvoie un nouvel �
 | Serveur | Node + Fastify, TypeScript | Même langage que l'interface et le moteur |
 | Base | PostgreSQL + Drizzle ORM | Transactions fiables, verrous transactionnels pour le marché |
 | Temps réel | WebSocket (`/api/live`, depuis le 16 octobre 2026) | Le serveur dit à une partie ouverte quand relire sa vue : après une action qui touche le marchand, et à chaque tick (relue dans les 20 s) ; la relecture toutes les 15 s ne sert plus que de secours (60 s) |
-| Tâche planifiée | Tick toutes les 60 s | Expirations, PNJ, villes, entretien, chantiers (pas la production) |
+| Tâche planifiée | Tick toutes les 60 s | Expirations, PNJ, villes, rations, chantiers (pas la production) |
 | Simulateur | Script Node en mémoire | Équilibrage avant d'avoir des joueurs, sortie CSV |
 | Hébergement | Railway, un seul service (API + web) depuis le Dockerfile | Déploiement depuis GitHub, PostgreSQL intégré ; quelques euros par mois au départ (à vérifier) |
 | E-mails | Resend | Envoi des liens de connexion par API ; offre gratuite suffisante pour la bêta |

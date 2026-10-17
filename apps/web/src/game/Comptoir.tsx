@@ -152,13 +152,23 @@ function FirstSteps(props: GameProps & { inSheet?: boolean }) {
   );
 }
 
-/** Workers eat: how much bread per day, how many days left, and a warning when short. */
+/** Where the merchant buys the workers' bread: its trade at the Rialto, or the Rialto itself. */
+export function buyRationsSheet(view: PlayerView): string {
+  const r = view.rations.resource;
+  return view.market.some((l) => l.resource === r) ? `trade:${r}` : "rialto";
+}
+
+/**
+ * Workers eat: how much bread per day and why, how many days left, a warning when short, and
+ * the way to the Rialto to buy more.
+ */
 export function Rations(props: GameProps) {
   const { rations } = props.view;
   if (rations.perDay === 0) return null;
   const stock = have(props.view, rations.resource);
   const days = Math.floor(stock / rations.perDay);
   const hungry = rations.hungryUntil > props.now;
+  const short = hungry || days < 1;
   const tone = hungry ? "text-vermilion" : days < 1 ? "text-gold" : "text-cream-dim";
   return (
     <div
@@ -178,6 +188,17 @@ export function Rations(props: GameProps) {
         {!hungry && days < 1 && (
           <p className="mt-1 text-gold">{fr.game.rations.low(rations.perDay - stock)}</p>
         )}
+        {rations.perLevel > 0 && (
+          <p className="label mt-1">{fr.game.rations.why(rations.perLevel)}</p>
+        )}
+        <Slab
+          size="sm"
+          tone={hungry ? "vermilion" : short ? "gold" : "lagoon"}
+          className="mt-2"
+          onClick={() => props.setSheet(buyRationsSheet(props.view))}
+        >
+          {fr.game.rations.buy}
+        </Slab>
       </div>
     </div>
   );
@@ -640,7 +661,11 @@ function BuildSheet({ type, props }: { type: string; props: GameProps }) {
         <div>
           <Label>{fr.game.buildTitle}</Label>
           <h3 className="font-display text-lg font-extrabold uppercase">{def.name}</h3>
-          <p className="label mt-1">{fr.game.upkeep(d(def.upkeepPerDay))}</p>
+          {def.recipe && props.catalog.rations.perLevelPerDay > 0 && (
+            <p className="label mt-1">
+              {fr.game.rationsOfLevel(props.catalog.rations.perLevelPerDay)}
+            </p>
+          )}
         </div>
       </div>
       {def.recipe ? (
