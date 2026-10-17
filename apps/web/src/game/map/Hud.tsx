@@ -157,7 +157,7 @@ export function MapHud({
   familyCalls: boolean;
   /** Batches waiting at the workshops (a dot on their door). */
   workshopsReady: boolean;
-  /** Replaces the purse's column on the right (the families' glory on the campaign). */
+  /** Under the purse on the right, in place of the bread and the carts (the families' glory on the campaign). */
   right?: ReactNode;
   onProfile: () => void;
   onNotices: () => void;
@@ -323,9 +323,8 @@ export function MapHud({
             {Icon.plus()}
           </Orb>
         )}
+        {right}
       </div>
-
-      {right}
       {bottom && (
         <nav className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex justify-center gap-7 lg:bottom-6">
           {layer === "trade" && (

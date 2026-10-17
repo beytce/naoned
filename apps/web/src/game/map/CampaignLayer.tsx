@@ -173,8 +173,8 @@ export function CampaignOverlay({ f, now }: { f: FamiliesView; now: number }) {
 export function CampaignHud({ f, now }: { f: FamiliesView; now: number }) {
   const ranked = [...f.families].sort((a, b) => b.glory - a.glory);
   return (
-    <div className="pointer-events-none absolute right-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.6rem)] z-10 flex flex-col items-end gap-1 lg:right-5 lg:top-[4.6rem]">
-      <div className="flex gap-1.5">
+    <div className="flex flex-col items-end gap-1">
+      <div className="grid grid-cols-2 gap-1.5">
         {ranked.map((x) => (
           <span
             key={x.code}
