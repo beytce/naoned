@@ -6,7 +6,8 @@
   "scripts": {
     "sim": "tsx src/cli.ts",
     "typecheck": "tsc -p tsconfig.json",
-    "inspect": "tsx src/inspect.ts"
+    "inspect": "tsx src/inspect.ts",
+    "terra": "tsx src/terra-cli.ts"
   },
   "dependencies": {
     "@comptoirs/engine": "workspace:*"
