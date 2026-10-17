@@ -92,6 +92,41 @@ export const fr = {
       buyCart: "Acheter une mule",
       carts: "Charrettes libres",
       resumeGuide: "Reprendre le guide",
+      /** The cards that unfold beside the HUD's counters. */
+      tips: {
+        cash: {
+          title: "Ducats",
+          text: "La monnaie de la République : elle paie les marchandises, les ateliers, les véhicules et le Palais. Le classement compte vos ventes nettes.",
+          purse: "En caisse",
+          escrow: "Engagés dans vos offres",
+          turnover: "Ventes nettes de la saison",
+          action: "Aller au Rialto",
+        },
+        influence: {
+          title: "Influence",
+          text: "Gardée de saison en saison, elle achète les patentes de votre Maison. Elle se gagne seulement par les missions de la Maison.",
+          action: "Ouvrir le livre",
+        },
+        bread: {
+          title: "Pain des ouvriers",
+          text: (perLevel: number) =>
+            `Chaque niveau d'atelier nourrit ses ouvriers : ${perLevel} pains par jour, mangés à minuit. Sans pain, vos lots durent 50 % de plus pendant 24 h.`,
+          eaten: "Mangés par jour",
+          reserve: "Réserve",
+          reserveValue: (stock: number, days: number) => `${stock} · ${days} j`,
+          nextMeal: "Prochain repas",
+          hungry: (left: string) => `Ouvriers affamés encore ${left}.`,
+          low: (missing: number) => `Il manque ${missing} pains pour le prochain repas.`,
+        },
+      },
+      fleet: {
+        title: "Tous les véhicules",
+        open: "Voir les véhicules",
+        home: "Au comptoir",
+        out: (city: string, time: string) => `Vers ${city} · ${time}`,
+        back: (time: string) => `Retour · ${time}`,
+        capacity: (units: number) => `${units} u.`,
+      },
       buttons: {
         harvest: "Récolter",
         restart: "Relancer",

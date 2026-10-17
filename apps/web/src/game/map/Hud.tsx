@@ -7,6 +7,7 @@ import { Lorenzo } from "../../art/scenes.js";
 import { fr } from "../../i18n.js";
 import { CountUp } from "../../ui.js";
 import { amount } from "../format.js";
+import { HudCounter, type TipContent, type TipKey, usePresence, useTip } from "./HudTips.js";
 import { Icon } from "./icons.js";
 
 /**
@@ -91,12 +92,14 @@ export function MapHud({
   seasonProgress,
   cash,
   influence,
-  onHouse,
+  tips,
   bread,
-  onBread,
   freeCarts,
   carts,
   canBuyCart,
+  fleet,
+  fleetOpen,
+  onFleet,
   notices,
   bales,
   guidePaused,
@@ -127,16 +130,20 @@ export function MapHud({
   cash: string;
   /** The house's Influence, under the ducats (null: no house in this world). */
   influence: number | null;
-  onHouse: () => void;
+  /** The cards unfolded by the counters (absent: the counter has none). */
+  tips: Partial<Record<TipKey, TipContent>>;
   /**
    * The workers' bread: the reserve and what they eat a day, quiet while it lasts, gold under a
    * day's worth, vermilion while they go hungry (null: workers who eat nothing).
    */
   bread: { stock: number; perDay: number; state: "ok" | "low" | "hungry" } | null;
-  onBread: () => void;
   freeCarts: number;
   carts: number;
   canBuyCart: boolean;
+  /** The drawer of all the vehicles, under their counter. */
+  fleet: ReactNode;
+  fleetOpen: boolean;
+  onFleet: () => void;
   notices: number | boolean;
   /** Bales of Faraj waiting to be opened: a small round under the bell while there are any. */
   bales: number;
@@ -165,8 +172,21 @@ export function MapHud({
   onHelp: () => void;
 }) {
   const m = fr.game.map;
+  const tipsT = m.tips;
+  const [tip, setTip] = useTip();
+  const { shown: shownTip, leaving: tipLeaving } = usePresence(tip, 120);
+  const toggle = (key: TipKey) => setTip((t) => (t === key ? null : key));
   return (
     <>
+      {tip && (
+        // The map touched closes the card first.
+        <button
+          type="button"
+          aria-label={m.close}
+          onClick={() => setTip(null)}
+          className="absolute inset-0 z-[9] cursor-default"
+        />
+      )}
       <div className="pointer-events-none absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex flex-col items-start gap-2 lg:left-5 lg:top-5">
         <div className="pointer-events-auto flex items-center gap-2.5">
           <button
@@ -223,76 +243,82 @@ export function MapHud({
       </div>
 
       <div className="pointer-events-none absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex flex-col items-end gap-1.5 lg:right-5 lg:top-5">
-        <span className="flex items-center gap-2">
-          <span className="font-display text-xl font-extrabold tabular-nums text-gold [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
-            <CountUp value={Number(cash)} format={(v) => amount(BigInt(Math.round(v)))} />
-          </span>
-          <span className="hud-orb flex h-9 w-9 items-center justify-center rounded-full">
-            <Coin size={24} />
-          </span>
-        </span>
+        <HudCounter
+          label={tipsT.cash.title}
+          value={<CountUp value={Number(cash)} format={(v) => amount(BigInt(Math.round(v)))} />}
+          valueClass="text-xl text-gold"
+          icon={<Coin size={24} />}
+          open={tip === "cash"}
+          onToggle={() => toggle("cash")}
+          tip={shownTip === "cash" ? (tips.cash ?? null) : null}
+          leaving={tipLeaving}
+        />
         {influence !== null && (
-          <button
-            type="button"
-            onClick={onHouse}
-            aria-label={fr.game.house.title}
-            className="pointer-events-auto flex items-center gap-2"
-          >
-            <span className="font-display text-lg font-extrabold tabular-nums text-gold-soft [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
-              {influence}
-            </span>
-            <span className="hud-orb flex h-9 w-9 items-center justify-center rounded-full font-display text-sm font-extrabold text-gold-soft">
-              ✦
-            </span>
-          </button>
+          <HudCounter
+            label={tipsT.influence.title}
+            value={influence}
+            valueClass="text-lg text-gold-soft"
+            icon={<span className="font-display text-sm font-extrabold">✦</span>}
+            iconClass="text-gold-soft"
+            open={tip === "influence"}
+            onToggle={() => toggle("influence")}
+            tip={shownTip === "influence" ? (tips.influence ?? null) : null}
+            leaving={tipLeaving}
+          />
         )}
         {!right && bread && (
-          <button
-            type="button"
-            onClick={onBread}
-            aria-label={fr.game.rations.hud(bread.stock, bread.perDay)}
-            className="pointer-events-auto flex items-center gap-2"
-          >
-            <span className="flex items-baseline gap-1.5 [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
+          <HudCounter
+            label={fr.game.rations.hud(bread.stock, bread.perDay)}
+            side={
               <span className="font-mono text-[10.5px] text-cream-dim">
                 {fr.game.rations.perDay(bread.perDay)}
               </span>
-              <span
-                className={`font-display text-lg font-extrabold tabular-nums ${
-                  bread.state === "hungry"
-                    ? "text-vermilion"
-                    : bread.state === "low"
-                      ? "text-gold"
-                      : "text-cream"
-                }`}
-              >
-                {bread.stock}
-              </span>
-            </span>
-            <span
-              className={`hud-orb flex h-9 w-9 items-center justify-center rounded-full ${
-                bread.state === "hungry"
-                  ? "ring-2 ring-vermilion"
-                  : bread.state === "low"
-                    ? "ring-2 ring-gold/70"
-                    : ""
-              }`}
-            >
-              <ResourceIcon code="bread" size={24} />
-            </span>
-          </button>
+            }
+            value={bread.stock}
+            valueClass={`text-lg ${
+              bread.state === "hungry"
+                ? "text-vermilion"
+                : bread.state === "low"
+                  ? "text-gold"
+                  : "text-cream"
+            }`}
+            icon={<ResourceIcon code="bread" size={24} />}
+            alert={
+              bread.state === "hungry" ? "vermilion" : bread.state === "low" ? "gold" : undefined
+            }
+            open={tip === "bread"}
+            onToggle={() => toggle("bread")}
+            tip={shownTip === "bread" ? (tips.bread ?? null) : null}
+            leaving={tipLeaving}
+          />
         )}
         {!right && carts > 0 && (
-          <span className="flex items-center gap-2" aria-label={m.carts}>
-            <span className="font-display text-lg font-extrabold tabular-nums text-lagoon [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
-              {freeCarts} / {carts}
-            </span>
-            <span className="hud-orb flex h-9 w-9 items-center justify-center rounded-full text-lagoon">
-              {Icon.cart()}
-            </span>
+          <span className="relative flex justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setTip(null);
+                onFleet();
+              }}
+              aria-label={fr.game.map.fleet.open}
+              aria-expanded={fleetOpen}
+              className="pointer-events-auto flex items-center gap-2 transition active:scale-95"
+            >
+              <span className="font-display text-lg font-extrabold tabular-nums text-lagoon [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
+                {freeCarts} / {carts}
+              </span>
+              <span
+                className={`hud-orb flex h-9 w-9 items-center justify-center rounded-full text-lagoon ${
+                  fleetOpen ? "ring-2 ring-lagoon/80" : ""
+                }`}
+              >
+                {Icon.cart()}
+              </span>
+            </button>
+            {fleet}
           </span>
         )}
-        {!right && canBuyCart && (
+        {!right && canBuyCart && !fleetOpen && (
           <Orb label={m.buyCart} onClick={onBuyCart} size={36} tone="lagoon">
             {Icon.plus()}
           </Orb>

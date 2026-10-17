@@ -657,6 +657,85 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
+
+/*
+ * The HUD's cards: one unfolds beside the counter touched, fast, sliding a little out of its
+ * icon; it fades away a little faster, sinking a few pixels. The fleet drawer slides in from the
+ * right edge. A counter in trouble breathes a ring.
+ */
+@keyframes hud-tip-in {
+  0% {
+    opacity: 0;
+    transform: translateX(10px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes hud-tip-out {
+  0% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.hud-tip {
+  transform-origin: right top;
+  animation: hud-tip-in 0.14s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hud-tip[data-leaving] {
+  animation: hud-tip-out 0.12s ease-in both;
+}
+@keyframes hud-drawer-in {
+  0% {
+    opacity: 0.4;
+    transform: translateX(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes hud-drawer-out {
+  0% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+.hud-drawer {
+  animation: hud-drawer-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hud-drawer[data-leaving] {
+  animation: hud-drawer-out 0.16s ease-in both;
+}
+@keyframes hud-alert {
+  0%,
+  100% {
+    box-shadow: 0 4px 14px rgb(0 0 0 / 0.45), 0 0 0 2px rgb(var(--hud-alert) / 0.9), 0 0 6px 2px
+      rgb(var(--hud-alert) / 0.35);
+  }
+  50% {
+    box-shadow: 0 4px 14px rgb(0 0 0 / 0.45), 0 0 0 2px rgb(var(--hud-alert) / 0.9), 0 0 14px 5px
+      rgb(var(--hud-alert) / 0.6);
+  }
+}
+.hud-alert {
+  animation: hud-alert 1.6s ease-in-out infinite;
+}
+.hud-alert[data-tone="gold"] {
+  --hud-alert: var(--gold);
+}
+.hud-alert[data-tone="vermilion"] {
+  --hud-alert: var(--vermilion);
+}
 .map-marker[data-selected] .land-name {
   display: block;
 }

@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { defaultCrest } from "../../art/crest.js";
 import { ResourceIcon } from "../../art/resources.js";
 import { GOODS_COLOUR, PLACES } from "../../art/veneto.js";
@@ -8,7 +8,7 @@ import { Big, Label, Panel, Qty, Sheet, Slab, clock } from "../../ui.js";
 import { ActCard } from "../Acts.js";
 import { CargoSheet, loadOrders, loadSummary } from "../Cargo.js";
 import { Coach } from "../Coach.js";
-import { CounterSheets, carnetRewards } from "../Comptoir.js";
+import { CounterSheets, buyRationsSheet, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import type { GameProps } from "../Game.js";
 import { HouseSheet } from "../House.js";
@@ -37,6 +37,13 @@ import {
   familyCalls,
 } from "./CampaignLayer.js";
 import { MapHud } from "./Hud.js";
+import {
+  FleetDrawer,
+  type FleetLine,
+  type TipContent,
+  type TipKey,
+  usePresence,
+} from "./HudTips.js";
 import { CartMarker, CityMarker, HomeMarker, SecondCounterMarker } from "./Markers.js";
 import { NoticesSheet } from "./Notices.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
@@ -64,6 +71,83 @@ function tripOf(deliveries: DeliveryView[], v: VehicleView, now: number): Delive
  * opens. Everything the merchant does starts from a place: their counter (workshops, store), a
  * city (its orders, Venice's Rialto and port), a cart (load, send).
  */
+/** The cards of the HUD's counters: the ducats, the Influence, the workers' bread. */
+function hudTips(props: GameProps): Partial<Record<TipKey, TipContent>> {
+  const { view, now } = props;
+  const t = fr.game.map.tips;
+  const tips: Partial<Record<TipKey, TipContent>> = {
+    cash: {
+      title: t.cash.title,
+      tone: "gold",
+      text: t.cash.text,
+      lines: [
+        { label: t.cash.purse, value: d(view.cash) },
+        ...(BigInt(view.escrow) > 0n ? [{ label: t.cash.escrow, value: d(view.escrow) }] : []),
+        { label: t.cash.turnover, value: d(view.standing.turnover) },
+      ],
+      action: { label: t.cash.action, onClick: () => props.goTo("marche") },
+    },
+  };
+  if (props.influence !== null) {
+    tips.influence = {
+      title: t.influence.title,
+      tone: "gold-soft",
+      text: t.influence.text,
+      action: { label: t.influence.action, onClick: () => props.setSheet("house") },
+    };
+  }
+  const { rations } = view;
+  if (rations.perDay > 0) {
+    const stock = have(view, rations.resource);
+    const hungry = rations.hungryUntil > now;
+    tips.bread = {
+      title: t.bread.title,
+      tone: "cream",
+      text: t.bread.text(rations.perLevel),
+      lines: [
+        { label: t.bread.eaten, value: rations.perDay },
+        {
+          label: t.bread.reserve,
+          value: t.bread.reserveValue(stock, Math.floor(stock / rations.perDay)),
+          tone: hungry ? "vermilion" : stock < rations.perDay ? "gold" : undefined,
+        },
+        { label: t.bread.nextMeal, value: clock(rations.nextMealAt - now) },
+      ],
+      alert: hungry
+        ? { text: t.bread.hungry(clock(rations.hungryUntil - now)), tone: "vermilion" }
+        : stock < rations.perDay
+          ? { text: t.bread.low(rations.perDay - stock), tone: "gold" }
+          : undefined,
+      action: {
+        label: fr.game.rations.buy,
+        onClick: () => props.setSheet(buyRationsSheet(view)),
+      },
+    };
+  }
+  return tips;
+}
+
+/** A line of the fleet drawer: the vehicle, where it is, what it carries. */
+function fleetLine(props: GameProps, v: VehicleView, trip: DeliveryView | null): FleetLine {
+  const t = fr.game.map.fleet;
+  const { now } = props;
+  let status = t.home;
+  if (trip) {
+    const city = props.names.city(trip.route.split(":")[1] ?? "");
+    status =
+      now < trip.arriveAt
+        ? t.out(city, clock(trip.arriveAt - now))
+        : t.back(clock(Math.max(0, trip.backAt - now)));
+  }
+  return {
+    id: v.id,
+    name: vehicleName(v.type),
+    status,
+    away: !!trip,
+    capacity: capacityOf(props, v),
+  };
+}
+
 /** The workers' bread for the HUD: the reserve, what they eat a day, and how it stands. */
 function breadOf(view: PlayerView, now: number) {
   const { rations } = view;
@@ -99,6 +183,9 @@ export function MapScreen(
   const [cargoCity, setCargoCity] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
   const [upgrading, setUpgrading] = useState<string | null>(null);
+  const [fleetOpen, setFleetOpen] = useState(false);
+  const { shown: fleetShown, leaving: fleetLeaving } = usePresence(fleetOpen || null, 160);
+  const closeFleet = useCallback(() => setFleetOpen(false), []);
 
   const cities = useMemo(
     () => catalog.cities.map((c) => c.code).filter((c) => PLACES[c] !== undefined),
@@ -430,9 +517,29 @@ export function MapScreen(
         seasonProgress={seasonProgress}
         cash={view.cash}
         influence={props.influence}
-        onHouse={() => props.setSheet("house")}
+        tips={hudTips(props)}
         bread={breadOf(view, now)}
-        onBread={() => props.setSheet("store")}
+        fleet={
+          fleetShown && (
+            <FleetDrawer
+              lines={vehicles.map((v) => fleetLine(props, v, tripOf(deliveries, v, now)))}
+              open={fleetOpen}
+              leaving={fleetLeaving}
+              canBuy={!!road && vehicles.length < maxCarts}
+              onPick={(id) => {
+                setFleetOpen(false);
+                select({ kind: "cart", id });
+              }}
+              onBuy={() => {
+                setFleetOpen(false);
+                setBuying(true);
+              }}
+              onClose={closeFleet}
+            />
+          )
+        }
+        fleetOpen={fleetOpen}
+        onFleet={() => setFleetOpen((o) => !o)}
         freeCarts={freeVehicles.length}
         carts={vehicles.length}
         canBuyCart={!!road && vehicles.length < maxCarts}
