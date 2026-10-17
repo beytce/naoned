@@ -1,5 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { type GameEvent, PARTICIPANT_DAYS, type WorldSettings } from "@comptoirs/engine";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { accounts, influenceEntries } from "../db/schema.js";
 
@@ -11,6 +12,7 @@ import { accounts, influenceEntries } from "../db/schema.js";
  */
 
 export type HouseError =
+  | "unknown_use"
   | "house_off"
   | "unknown_patent"
   | "patent_owned"
@@ -34,14 +36,16 @@ export async function recordInfluence(
     .filter((e) => e.type === "influence_earned" && e.playerId)
     .map((e) => {
       const source = String(e.data?.source ?? "commerce");
-      const week = Number(e.data?.week ?? 0);
+      const week = e.data?.week === undefined ? null : Number(e.data.week);
+      // A mission carries its own key (board and mission); a week's earning, its week.
+      const key = e.data?.key ? String(e.data.key) : `${source}:${week}`;
       return {
         accountId: e.playerId as string,
         worldId,
         source,
         week,
         amount: Number(e.data?.amount ?? 0),
-        key: `${worldId}:${source}:${week}`,
+        key: `${worldId}:${key}`,
         at,
       };
     })
@@ -193,4 +197,55 @@ export async function botBuysPatents(
     if (!next) return patentsFor(db, settings, accountId);
     await buyPatent(db, settings, accountId, next[0], worldId, at);
   }
+}
+
+/**
+ * Takes Influence for something bought in the world, in a transaction serialised per account.
+ * Returns the line's key, to give the Influence back if the world then refuses.
+ */
+export async function spendInfluence(
+  db: Db,
+  accountId: string,
+  use: string,
+  cost: number,
+  worldId: string,
+  at: Date,
+): Promise<string> {
+  const key = `spend:${use}:${randomUUID()}`;
+  await db.transaction(async (tx) => {
+    await tx
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(eq(accounts.id, accountId))
+      .for("update");
+    const { influence } = await balanceOf(tx, accountId);
+    if (influence < cost) throw new HouseRefused("not_enough_influence");
+    await tx
+      .insert(influenceEntries)
+      .values({ accountId, worldId, source: "spend", amount: -cost, patent: use, key, at });
+  });
+  return key;
+}
+
+/** Gives back Influence taken for something the world refused. */
+export async function refundInfluence(db: Db, accountId: string, key: string): Promise<void> {
+  await db
+    .delete(influenceEntries)
+    .where(and(eq(influenceEntries.accountId, accountId), eq(influenceEntries.key, key)));
+}
+
+/** Accounts among `ids` holding a patent (the gilded name in the rankings). */
+export async function holdersOf(db: Db, ids: string[], patent: string): Promise<Set<string>> {
+  if (ids.length === 0) return new Set();
+  const rows = await db
+    .select({ id: influenceEntries.accountId })
+    .from(influenceEntries)
+    .where(
+      and(
+        inArray(influenceEntries.accountId, ids),
+        eq(influenceEntries.source, "patent"),
+        eq(influenceEntries.patent, patent),
+      ),
+    );
+  return new Set(rows.map((r) => r.id));
 }

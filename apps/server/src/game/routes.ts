@@ -1,4 +1,4 @@
-import { type Command, freeBatches, hasPass } from "@comptoirs/engine";
+import { type Command, freeBatches, hasPass, rushCost } from "@comptoirs/engine";
 import { and, desc, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -17,7 +17,16 @@ import {
   reportMessage,
   reportedMessages,
 } from "./familyChat.js";
-import { HouseRefused, balanceOf, buyPatent, houseOf, patentsFor } from "./house.js";
+import {
+  HouseRefused,
+  balanceOf,
+  buyPatent,
+  holdersOf,
+  houseOf,
+  patentsFor,
+  refundInfluence,
+  spendInfluence,
+} from "./house.js";
 import { levelsOf } from "./level.js";
 import { LiveHub } from "./live.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
@@ -110,6 +119,7 @@ const action = z.discriminatedUnion("type", [
     from: z.literal("second").optional(),
   }),
   z.object({ type: z.literal("chooseSecondCounter"), region: z.string().max(32) }),
+  z.object({ type: z.literal("claimHouseMission"), missionId: z.string().max(32) }),
   z.object({
     type: z.literal("deliverToProject"),
     projectId: z.string(),
@@ -398,11 +408,14 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const bots = new Set(rows.filter((r) => r.bot).map((r) => r.id));
     const hidden = await retiredBots();
     const levels = await levelsOf(db, world.current, ids);
+    const gilded = await holdersOf(db, ids, "gilded_name");
     return ranking(world.ctx, world.current, world.now(), pseudos, hidden).map((r) => ({
       ...r,
       crest: crests.get(r.playerId) ?? null,
       bot: bots.has(r.playerId),
       level: levels.get(r.playerId)?.level ?? 1,
+      // A cosmetic bought with Influence.
+      gilded: gilded.has(r.playerId),
     }));
   }
 
@@ -583,6 +596,73 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       if (e instanceof HouseRefused) return reply.code(409).send({ error: e.code });
       throw e;
     }
+  });
+
+  /**
+   * Spends Influence in the world: the price set by the engine's rules, taken first, given back
+   * if the world refuses. Returns the fresh view and balance.
+   */
+  const spendBody = z.discriminatedUnion("use", [
+    z.object({ use: z.literal("rush"), deliveryId: z.string().max(32) }),
+    z.object({ use: z.literal("troops"), count: z.number().int().positive().max(1_000) }),
+    z.object({ use: z.literal("work"), land: z.string().max(32) }),
+    z.object({ use: z.literal("counter"), region: z.string().max(32) }),
+    z.object({ use: z.literal("respec") }),
+    z.object({ use: z.literal("daily"), taskId: z.string().max(32) }),
+  ]);
+  app.post("/api/house/spend", perMerchant(60), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const body = spendBody.parse(req.body);
+    const spend = world.ctx.settings.house?.spend;
+    if (!spend) return reply.code(409).send({ error: "house_off" });
+    if (!world.current.players[account.id]) return reply.code(409).send({ error: "not_joined" });
+    const playerId = account.id;
+    let cost: number;
+    let cmd: Command;
+    switch (body.use) {
+      case "rush": {
+        const d = world.current.deliveries?.[body.deliveryId];
+        if (!d || d.playerId !== playerId) return reply.code(409).send({ error: "not_owner" });
+        cost = rushCost(world.ctx, d, world.now());
+        cmd = { type: "rushDelivery", playerId, deliveryId: body.deliveryId };
+        break;
+      }
+      case "troops":
+        cost = Math.ceil(body.count / spend.troopsPerPoint);
+        cmd = { type: "buyTroops", playerId, count: body.count };
+        break;
+      case "work":
+        cost = spend.rushWork;
+        cmd = { type: "rushWork", playerId, land: body.land };
+        break;
+      case "counter":
+        cost = spend.moveCounter;
+        cmd = { type: "moveSecondCounter", playerId, region: body.region };
+        break;
+      case "respec":
+        cost = spend.respec;
+        cmd = { type: "resetSpecialty", playerId };
+        break;
+      case "daily":
+        cost = spend.dailyReroll;
+        cmd = { type: "rerollDaily", playerId, taskId: body.taskId };
+        break;
+    }
+    const at = new Date(world.now());
+    let key: string;
+    try {
+      key = await spendInfluence(db, playerId, body.use, cost, world.id, at);
+    } catch (e) {
+      if (e instanceof HouseRefused) return reply.code(409).send({ error: e.code });
+      throw e;
+    }
+    const res = await world.execute(cmd);
+    if (!res.ok) {
+      await refundInfluence(db, playerId, key);
+      return reply.code(422).send({ error: res.error, ...((await view(account)) as object) });
+    }
+    return view(account);
   });
 
   app.get("/api/notifications", async (req, reply) => {
@@ -775,6 +855,8 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "chooseSpecialty", playerId, specialty: a.specialty }];
     case "chooseSecondCounter":
       return [{ type: "chooseSecondCounter", playerId, region: a.region }];
+    case "claimHouseMission":
+      return [{ type: "claimHouseMission", playerId, missionId: a.missionId }];
     case "claimDaily":
       return [{ type: "claimDaily", playerId, taskId: a.taskId }];
     case "openBale":
