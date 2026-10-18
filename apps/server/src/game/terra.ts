@@ -179,6 +179,17 @@ export function terraView(
           traitorUntil: me.traitorUntil ?? 0,
           eliminatedAt: me.eliminatedAt ?? null,
           recruit: recruitClock(s, cfg, playerId, me.troops, capOf(s, cfg, playerId)),
+          /** Its fronts come home in the last day: what each took, spent and brought back. */
+          returns: (s.returns ?? [])
+            .filter((r) => r.owner === playerId)
+            .map((r) => ({
+              front: r.front,
+              against: at(r.against),
+              cells: r.cells,
+              spent: r.spent,
+              back: r.back,
+              at: r.at,
+            })),
           allies: [...allies].map(at),
           requestsIn: (s.requests ?? []).filter((r) => r.to === playerId).map((r) => at(r.from)),
           requestsOut: (s.requests ?? []).filter((r) => r.from === playerId).map((r) => at(r.to)),
@@ -218,6 +229,9 @@ export function terraView(
         cap: cfg.capRaise.price,
       },
       capRaise: cfg.capRaise.amount,
+      /** Minutes a front takes for a cell of free land, and of a rival's. */
+      neutralMinutes: cfg.stepMinutes * cfg.fronts.neutralEverySteps,
+      cellMinutes: Math.max(1, Math.floor(cfg.stepMinutes / cfg.fronts.cellsPerStep)),
     },
   };
 }

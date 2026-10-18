@@ -891,6 +891,15 @@ export interface TerraView {
     eliminatedAt: number | null;
     /** Troops recruited an open hour, when the next come in, when the maximum is reached. */
     recruit: { perHour: number; nextAt: number | null; fullAt: number | null };
+    /** Its fronts come home in the last day: what each took, spent and brought back. */
+    returns: {
+      front: string;
+      against: number;
+      cells: number;
+      spent: number;
+      back: number;
+      at: number;
+    }[];
     allies: number[];
     requestsIn: number[];
     requestsOut: number[];
@@ -915,6 +924,9 @@ export interface TerraView {
     decrees: string[];
     prices: { rocca: string; borgo: string | null; cap: string };
     capRaise: number;
+    /** Minutes a front takes for a cell of free land, and of a rival's. */
+    neutralMinutes: number;
+    cellMinutes: number;
   };
 }
 

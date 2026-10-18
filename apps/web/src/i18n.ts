@@ -444,6 +444,13 @@ export const fr = {
       troops: "Troupes",
       troopsLine: (troops: number, cap: number) => `${troops} / ${cap}`,
       perHour: (n: number) => `+${n}/h`,
+      perHourAt: (n: number, from: number) => `☾ +${n}/h à ${from} h`,
+      returns: {
+        title: "Fronts rentrés",
+        line: (against: string, cells: number, spent: number, back: number) =>
+          `${against} : ${cells} case${cells > 1 ? "s" : ""} prise${cells > 1 ? "s" : ""}, −${spent} troupes, ${back} revenue${back > 1 ? "s" : ""}`,
+        ok: "Compris",
+      },
       glory: (glory: number, rank: number) => `${glory} Gloire · ${rank}${rank === 1 ? "er" : "e"}`,
       milan: "Milan",
       neutral: "Terre libre",
@@ -473,17 +480,18 @@ export const fr = {
       target: {
         cost: (cost: number) => `${cost} troupes pour prendre cette terre`,
         tooWeak: (cost: number) => `Il faut au moins ${cost} troupes : montez le curseur`,
+        plan: (troops: number, cells: number, spent: number, back: number) =>
+          `${troops} troupes → ${cells} case${cells > 1 ? "s" : ""} (−${spent}) · ${back} revien${back > 1 ? "nent" : "t"}`,
+        pace: (hours: number, night: boolean) =>
+          `${night ? "Part à l'aube, puis e" : "E"}nviron ${hours} h de marche (de jour seulement) ; chaque case prise coûte ses troupes`,
         notEnough: (cost: number, troops: number) =>
           `Il faut ${cost} troupes, vous en avez ${troops} : attendez vos recrues`,
-        share: (pct: number, troops: number, cells: number) =>
-          `${pct} % · ${troops} soldats · ≈ ${cells} case${cells > 1 ? "s" : ""}`,
         attack: "Attaquer",
         allied: "Votre allié : pas de front entre vous",
         far: "Trop loin : touchez une terre au bord des vôtres",
-        night: "Le front partira au lever du jour",
         eta: (hour: string, wait: string) => `Vos troupes y seront vers ${hour} (dans ${wait})`,
         defense: (after: number, before: number) =>
-          `Vos terres gardent ${after} défenseurs par case (au lieu de ${before})`,
+          `Chez vous, il restera ${after} défenseur${after > 1 ? "s" : ""} par case au lieu de ${before}`,
       },
       holder: {
         line: (cells: number, troops: number) => `${cells} cases · ⚔ ${troops}`,
@@ -501,11 +509,11 @@ export const fr = {
         line: (cells: number, troops: number, cap: number) =>
           `${cells} cases · ⚔ ${troops} / ${cap}`,
         rocca: "Fort",
-        raise: "+ Troupes",
+        raise: (amount: number) => `Max +${amount}`,
         recruit: (perHour: number, full: string | null, from: number, to: number) =>
-          `Vos terres recrutent ${perHour} troupes par heure (de ${from} h à ${to} h)${full ? ` : maximum dans ${full}` : ""}. Plus de terres, plus de recrues.`,
+          `Vos terres recrutent ${perHour} troupes par heure (de ${from} h à ${to} h)${full ? ` : maximum dans ${full}` : ""}. Plus de terres, plus de recrues ; « Max » relève le maximum, pas vos troupes.`,
         full: (amount: number) =>
-          `Troupes au maximum. Seuls les ducats l'augmentent : + Troupes ajoute ${amount} au maximum.`,
+          `Troupes au maximum. « Max +${amount} » relève ce maximum pour des ducats (il ne donne pas de troupes).`,
         decree: "Décret",
         fronts: "Fronts",
         recall: "Rappeler",

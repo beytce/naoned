@@ -82,6 +82,20 @@ export interface TerraFront {
   launchedAt: number;
   /** Open steps it has advanced. */
   steps?: number;
+  /** Troops it left with, and the cells it has taken. */
+  sent?: number;
+  taken?: number;
+}
+
+/** A front come home: what it took, spent and brought back (kept a day). */
+export interface TerraReturn {
+  front: string;
+  owner: string;
+  against: string | null;
+  cells: number;
+  spent: number;
+  back: number;
+  at: number;
 }
 
 export interface TerraState {
@@ -111,6 +125,8 @@ export interface TerraState {
   closedSeen?: boolean;
   /** When each cell last changed hands, and from whom (null: neutral land). */
   taken?: Record<number, { at: number; from: string | null }>;
+  /** The fronts come home in the last day, oldest first. */
+  returns?: TerraReturn[];
   /** Only on a forecast's copy: each cell a front takes, when the step that takes it ends. */
   trace?: { front: string; cell: number; at: number }[];
 }
@@ -530,6 +546,8 @@ export function launchFront(
     aim,
     troops,
     launchedAt: now,
+    sent: troops,
+    taken: 0,
   };
   s.fronts.push(front);
   return front;
@@ -547,6 +565,21 @@ function endFront(s: TerraState, front: TerraFront): void {
   const owner = s.players[front.owner];
   if (owner) owner.troops += front.troops;
   s.fronts = s.fronts.filter((f) => f.id !== front.id);
+  // Its account, for the merchant who was away (Milan's are not kept).
+  if (front.owner === MILAN) return;
+  const sent = front.sent ?? front.troops;
+  s.returns = [
+    ...(s.returns ?? []).filter((r) => r.at > s.clock - DAY_MS),
+    {
+      front: front.id,
+      owner: front.owner,
+      against: front.against,
+      cells: front.taken ?? 0,
+      spent: sent - front.troops,
+      back: front.troops,
+      at: s.clock,
+    },
+  ];
 }
 
 // ——— Alliances ———
@@ -905,6 +938,7 @@ function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront, at: nu
     }
     seize(s, best, front.owner, at);
     razeAt(s, best);
+    front.taken = (front.taken ?? 0) + 1;
     s.trace?.push({ front: front.id, cell: best, at: at + cfg.stepMinutes * MINUTE_MS });
   }
   // A front that can no longer pay its next cell comes home at once, what is left of it.

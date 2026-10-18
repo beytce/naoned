@@ -578,3 +578,31 @@ describe("troops a merchant understands", () => {
     expect(s.players.a?.troops).toBe(rate + 1);
   });
 });
+
+describe("a front's account", () => {
+  it("is kept when it comes home: the cells it took, the troops it spent, those it brought back", () => {
+    const cfg = config({
+      terrains: { plain: { defenseBps: 10_000, militia: 3 } },
+      bands: [{ untilBps: 10_000, weights: { plain: 1 } }],
+      city: { militiaBps: 10_000, defenseBps: 10_000 },
+      fronts: { ...testTerraferma.fronts, cellsPerStep: 1 },
+    });
+    const s = newTerra(cfg, "seed", 10, START);
+    placeOnTerra(s, cfg, "a", freeCell(s), START);
+    (s.players.a as { troops: number }).troops = 10;
+    const front = launchFront(s, cfg, "a", border(s, "a"), 10_000, START);
+    advanceTerra(s, cfg, START + HOUR);
+    // 10 troops, 3 a cell: three cells, one troop home.
+    expect(s.returns).toEqual([
+      {
+        front: front.id,
+        owner: "a",
+        against: null,
+        cells: 3,
+        spent: 9,
+        back: 1,
+        at: START + 3 * STEP,
+      },
+    ]);
+  });
+});

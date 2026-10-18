@@ -814,8 +814,12 @@ export function TerraHud({ v, now }: { v: TerraView; now: number }) {
               {t().troopsLine(me.troops, me.cap)}
             </span>
             {me.troops < me.cap && me.recruit.perHour > 0 && (
-              <span className="font-mono text-[10px] font-bold text-lagoon">
-                {t().perHour(me.recruit.perHour)}
+              <span
+                className={`font-mono text-[10px] font-bold ${v.open ? "text-lagoon" : "text-cream-dim"}`}
+              >
+                {v.open
+                  ? t().perHour(me.recruit.perHour)
+                  : t().perHourAt(me.recruit.perHour, v.openHours.from)}
               </span>
             )}
             {/* How full the troops are: a thread of light at the foot of the pill. */}
@@ -881,7 +885,7 @@ export function TerraPanel({
         </div>
       );
     }
-    if (me) return null;
+    if (me) return <Returns v={v} />;
     return (
       <div className="pointer-events-none absolute inset-x-0 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 flex flex-col items-center gap-1 lg:bottom-28">
         <span className="whitespace-nowrap rounded-full bg-gold px-4 py-2 font-display text-[13px] font-extrabold uppercase tracking-wide text-ink shadow-[0_6px_20px_rgb(0_0_0/0.45)]">
@@ -957,7 +961,7 @@ export function TerraPanel({
           <>
             <ActionButton
               icon={Icon.upgrade()}
-              label={t().mine.raise}
+              label={t().mine.raise(v.rules.capRaise)}
               tone="gold"
               badge={me.raisesLeft > 0 ? d(v.rules.prices.cap) : undefined}
               disabled={me.raisesLeft === 0 || !!v.closed}
@@ -1134,10 +1138,20 @@ export function TerraPanel({
                 ? me.troops >= (cost ?? 0)
                   ? t().target.tooWeak(cost ?? 0)
                   : t().target.notEnough(cost ?? 0, me.troops)
-                : t().target.share(Math.round(shareBps / 100), troops, cells)}
-              {cells > 0 && !v.open && ` · ${t().target.night}`}
+                : t().target.plan(troops, cells, cells * (cost ?? 0), troops - cells * (cost ?? 0))}
             </p>
             {cells > 0 && (
+              <p className="text-center font-mono text-[11px] text-cream-dim">
+                {t().target.pace(
+                  Math.ceil(
+                    (cells * (holder < 0 ? v.rules.neutralMinutes : v.rules.cellMinutes)) / 60,
+                  ),
+                  !v.open,
+                )}
+              </p>
+            )}
+            {/* Against a merchant only, and when it changes something: what stays home. */}
+            {cells > 0 && merchant && density(me.troops - troops) < density(me.troops) && (
               <p className="text-center font-mono text-[11px] text-cream-dim">
                 {t().target.defense(density(me.troops - troops), density(me.troops))}
               </p>
@@ -1150,6 +1164,38 @@ export function TerraPanel({
         ) : undefined
       }
     />
+  );
+}
+
+/**
+ * The merchant's fronts come home since the last look: what each took, spent and brought back,
+ * one line each, until dismissed.
+ */
+function Returns({ v }: { v: TerraView }) {
+  const key = `terraReturnsSeen:${v.week}`;
+  const [seen, setSeen] = useState(() => Number(store.get(key) ?? 0));
+  const fresh = (v.me?.returns ?? []).filter((r) => r.at > seen).slice(-3);
+  if (fresh.length === 0) return null;
+  const last = fresh.at(-1)?.at ?? 0;
+  return (
+    <div className="absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 mx-auto max-w-md rounded-2xl bg-night-2/95 p-3 shadow-[0_6px_20px_rgb(0_0_0/0.45)] ring-1 ring-line lg:bottom-28">
+      <p className="label text-gold">{t().returns.title}</p>
+      {fresh.map((r) => (
+        <p key={r.front} className="mt-1 text-[13px] text-cream">
+          {t().returns.line(holderName(v, r.against), r.cells, r.spent, r.back)}
+        </p>
+      ))}
+      <button
+        type="button"
+        className="label mt-2 rounded-full px-3 py-1 text-cream ring-1 ring-inset ring-line"
+        onClick={() => {
+          store.set(key, String(last));
+          setSeen(last);
+        }}
+      >
+        {t().returns.ok}
+      </button>
+    </div>
   );
 }
 
