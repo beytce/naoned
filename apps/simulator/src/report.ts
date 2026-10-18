@@ -216,6 +216,7 @@ export function evaluate(
   checks.push(...budgetChecks(r));
   checks.push(...baleChecks(r));
   checks.push(...roadChecks(r));
+  checks.push(...terraChecks(r));
   checks.push(...mudaChecks(r));
   checks.push(...masteryChecks(r));
   checks.push(...actChecks(r));
@@ -353,6 +354,27 @@ export function mudaChecks(r: SimulationResult): Check[] {
 }
 
 /** The road (deliveries and vehicles), with the targets of docs/plan-livraisons.md § 7. */
+/** The Terraferma played in the world: the ducats its buildings and cap destroy. */
+export function terraChecks(r: SimulationResult): Check[] {
+  const days = r.daily.filter((d) => d.active > 0);
+  const spent = days.reduce((a, d) => a + Number(d.destroyedBy.terraferma ?? 0n), 0);
+  if (spent === 0) return [];
+  const perActiveDay = days.reduce(
+    (a, d) => a + Number(d.destroyedBy.terraferma ?? 0n) / d.active,
+    0,
+  );
+  const allDestroyed = r.daily.reduce((a, d) => a + Number(d.destroyed), 0);
+  return [
+    {
+      name: "Monnaie détruite par la Terraferme",
+      target: "diagnostic : le puits qui remplace l'entretien",
+      value: `${(spent / 100).toFixed(0)} ducats (${pct(spent / Math.max(1, allDestroyed))} des destructions), ${(perActiveDay / 100 / Math.max(1, days.length)).toFixed(1)} d par joueur actif et par jour`,
+      pass: true,
+      blocking: false,
+    },
+  ];
+}
+
 export function roadChecks(r: SimulationResult): Check[] {
   const road = r.road;
   if (!road || road.dispatched === 0) return [];

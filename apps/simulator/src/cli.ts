@@ -25,6 +25,8 @@ const { values } = parseArgs({
     patents: { type: "string", default: "0" },
     /** Bots as in the live world (next to people). */
     live: { type: "boolean", default: false },
+    /** The Terraferma played in the world (docs/plan-terraferme.md), as at its opening. */
+    terra: { type: "boolean", default: false },
     out: { type: "string", default: join(here, "..", "out") },
   },
 });
@@ -33,8 +35,12 @@ const base = values.scenario
   ? { ...venice1450Settings, ...JSON.parse(readFileSync(resolve(values.scenario), "utf8")) }
   : venice1450Settings;
 // The Pass is off in Venice until it comes back; --pass measures it as it would be, switched on.
-const settings =
+const withPass =
   Number(values.pass) > 0 ? { ...base, pass: { ...base.pass, enabled: true } } : base;
+const settings =
+  values.terra && withPass.terraferma
+    ? { ...withPass, terraferma: { ...withPass.terraferma, live: true } }
+    : withPass;
 const players = values.players ? Number(values.players) : undefined;
 const mix = players ? scaleMix(DEFAULT_MIX, players) : DEFAULT_MIX;
 const seeds = (values.seeds ?? "1").split(",").map(Number);
@@ -62,6 +68,7 @@ const DESTROYED = [
   "campaign_hire",
   "campaign_work",
   "vehicle",
+  "terraferma",
 ];
 
 /** One column per money source and sink, so the CSV stays flat. */
