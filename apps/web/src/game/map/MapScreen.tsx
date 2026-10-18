@@ -56,6 +56,7 @@ import {
   terraMarkers,
   terraSpots,
   terraTap,
+  useAbsence,
   useTerra,
   useTerraShapes,
 } from "./TerraLayer.js";
@@ -202,7 +203,8 @@ export function MapScreen(
 
   // The Terraferma, once live in this world: its door replaces the families'.
   const { terra: terraView, refresh: refreshTerra } = useTerra(props.layer === "terra");
-  const shapes = useTerraShapes(terraView);
+  const absence = useAbsence(terraView, props.layer === "terra", now);
+  const shapes = useTerraShapes(absence.view);
   const act = props.act;
   const terraAct = useCallback(
     async (a: TerraAction) => {
@@ -392,7 +394,7 @@ export function MapScreen(
   // The families' campaign, when its layer is shown.
   const families = view.families;
   const campaign = props.layer === "campaign" && families ? families : null;
-  const terra = props.layer === "terra" && terraView && shapes ? terraView : null;
+  const terra = props.layer === "terra" && absence.view && shapes ? absence.view : null;
   const terraCell = terra && sel?.kind === "terra" ? sel.cell : null;
   const campaignPanel = campaign ? (
     <CampaignPanel props={props} f={campaign} sel={sel} select={select} />
@@ -621,6 +623,11 @@ export function MapScreen(
         onHelp={props.openHelp}
       />
       {panel}
+      {terra && absence.replaying && (
+        <span className="pointer-events-none absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+7.5rem)] z-10 -translate-x-1/2 animate-fade whitespace-nowrap rounded-full bg-night/80 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line">
+          {fr.game.terra.away}
+        </span>
+      )}
 
       <CounterSheets {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}

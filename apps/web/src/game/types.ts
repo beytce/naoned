@@ -867,6 +867,8 @@ export interface TerraView {
   }[];
   /** What a front pays for each cell along the merchant's border. */
   costs: Record<string, number>;
+  /** The last day's cells that changed hands, oldest first (`from`: who held it before). */
+  changes: { cell: number; at: number; from: number }[];
   buildings: { cell: number; kind: "rocca" | "borgo"; owner: number }[];
   me: {
     troops: number;

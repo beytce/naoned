@@ -122,6 +122,10 @@ describe("the Terraferma on the server", () => {
     const border = Object.values(after.costs) as number[];
     expect(border.length).toBeGreaterThan(0);
     expect(border.every((c) => c >= 1)).toBe(true);
+    // Her ring of cells, just taken from neutral land.
+    expect(after.changes.filter((c: { from: number }) => c.from === -1).length).toBe(
+      after.me.cells,
+    );
     const cash = BigInt((await get(ada, "/api/game")).view.cash);
     expect((await act(ada, { type: "terraRaise" })).json().error).toBeUndefined();
     expect(BigInt((await get(ada, "/api/game")).view.cash)).toBe(cash - 10_000n);

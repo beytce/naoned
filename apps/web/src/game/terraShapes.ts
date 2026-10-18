@@ -225,3 +225,20 @@ export function cellAt(map: HexMap, land: boolean[], x: number, y: number): numb
   }
   return best;
 }
+
+/**
+ * The map as it stood with only the first `shown` of the changes made (the others undone, back
+ * to who held the cell before): the frames of the replay of what a merchant missed.
+ */
+export function replayed(
+  owner: number[],
+  missed: { cell: number; from: number }[],
+  shown: number,
+): number[] {
+  const out = owner.slice();
+  for (let j = missed.length - 1; j >= shown; j--) {
+    const c = missed[j];
+    if (c) out[c.cell] = c.from;
+  }
+  return out;
+}

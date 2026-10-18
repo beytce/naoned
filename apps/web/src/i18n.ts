@@ -436,6 +436,7 @@ export const fr = {
     },
     terra: {
       door: "Terraferme",
+      away: "Pendant votre absence",
       title: "La Terraferme",
       closesIn: (time: string) => `fin dans ${time}`,
       closed: "Semaine close",

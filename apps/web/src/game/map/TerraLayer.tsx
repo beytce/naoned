@@ -8,6 +8,7 @@ import { Segmented, Sheet, Slab, clock } from "../../ui.js";
 import type { GameProps } from "../Game.js";
 import { gameApi } from "../api.js";
 import { d } from "../format.js";
+import { store } from "../store.js";
 import {
   type HexMap,
   cellAt,
@@ -16,6 +17,7 @@ import {
   hexCorners,
   neighbours,
   outline,
+  replayed,
   tones,
 } from "../terraShapes.js";
 import type { TerraAction, TerraView } from "../types.js";
@@ -61,6 +63,67 @@ export function terraCalls(v: TerraView): boolean {
   if (v.closed) return false;
   if (!v.me) return true;
   return v.fronts.some((f) => f.threat) || v.me.requestsIn.length > 0;
+}
+
+const REPLAY_MS = 2_000;
+const REPLAY_FRAME_MS = 100;
+const REPLAY_HOLD_MS = 600;
+
+function reducedMotion(): boolean {
+  return (
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
+/**
+ * What changed hands while the merchant was away, replayed in two seconds when the layer opens,
+ * like the "welcome back" summary: the map as it stood at their last look, then the cells taken
+ * since, in their order. The first look of a week, and those who ask for less motion, see the
+ * map as it is.
+ */
+export function useAbsence(
+  v: TerraView | null | undefined,
+  shown: boolean,
+  now: number,
+): { view: TerraView | null | undefined; replaying: boolean } {
+  const [frame, setFrame] = useState<{ owner: number[] } | null>(null);
+  const started = useRef(false);
+  const live = useRef({ v, now });
+  live.current = { v, now };
+  const ready = !!v;
+  useEffect(() => {
+    if (!shown) {
+      started.current = false;
+      setFrame(null);
+      return;
+    }
+    const current = live.current.v;
+    if (!ready || !current || started.current) return;
+    started.current = true;
+    const key = `terraSeen:${current.week}`;
+    const seen = Number(store.get(key) ?? 0);
+    const missed = current.changes.filter((c) => c.at > seen);
+    if (seen === 0 || missed.length === 0 || reducedMotion()) return;
+    // The map as it was, held while the camera glides to the layer.
+    const start = Date.now() + REPLAY_HOLD_MS;
+    setFrame({ owner: replayed(current.owner, missed, 0) });
+    const id = setInterval(() => {
+      const k = Math.max(0, Math.ceil((missed.length * (Date.now() - start)) / REPLAY_MS));
+      if (k >= missed.length) {
+        clearInterval(id);
+        setFrame(null);
+        return;
+      }
+      setFrame({ owner: replayed(live.current.v?.owner ?? current.owner, missed, k) });
+    }, REPLAY_FRAME_MS);
+    return () => clearInterval(id);
+  }, [shown, ready]);
+  // What the merchant has seen: the map up to now, while the layer is shown and not replaying.
+  useEffect(() => {
+    if (shown && v && !frame) store.set(`terraSeen:${v.week}`, String(now));
+  }, [shown, v, frame, now]);
+  return { view: v && frame ? { ...v, owner: frame.owner } : v, replaying: !!frame };
 }
 
 export interface TerraShapes {

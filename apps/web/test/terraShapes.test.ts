@@ -6,6 +6,7 @@ import {
   hexNeighbors,
   neighbours,
   outline,
+  replayed,
   tones,
 } from "../src/game/terraShapes.js";
 
@@ -49,5 +50,16 @@ describe("the Terraferma's shapes", () => {
     const [wx, wy] = hexCenter(map, 8);
     expect(cellAt(map, land, wx, wy)).toBeNull();
     expect(cellAt(map, land, -50, -50)).toBeNull();
+  });
+
+  it("replays the changes missed, from the map as it stood before them", () => {
+    const owner = [0, 0, 1, 1, -1];
+    const missed = [
+      { cell: 1, from: -1 },
+      { cell: 3, from: 0 },
+    ];
+    expect(replayed(owner, missed, 0)).toEqual([0, -1, 1, 0, -1]);
+    expect(replayed(owner, missed, 1)).toEqual([0, 0, 1, 0, -1]);
+    expect(replayed(owner, missed, 2)).toEqual(owner);
   });
 });

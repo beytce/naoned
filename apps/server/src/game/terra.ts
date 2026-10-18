@@ -109,6 +109,11 @@ export function terraView(
       threat: f.against === playerId,
     })),
     costs,
+    // The last day's cells that changed hands, for the screen to replay what a merchant missed.
+    changes: Object.entries(s.taken ?? {})
+      .filter(([, c]) => c.at > now - 86_400_000)
+      .map(([cell, c]) => ({ cell: Number(cell), at: c.at, from: at(c.from) }))
+      .sort((a, b) => a.at - b.at || a.cell - b.cell),
     buildings: Object.entries(s.buildings ?? {}).map(([cell, b]) => ({
       cell: Number(cell),
       kind: b.kind,

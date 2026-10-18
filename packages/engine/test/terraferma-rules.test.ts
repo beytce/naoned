@@ -186,6 +186,22 @@ describe("buildings and the cap", () => {
   });
 });
 
+describe("what changed hands", () => {
+  it("keeps, for each cell, when it last changed hands and from whom", () => {
+    const { cfg, s } = three();
+    const a = s.players.a?.capital ?? -1;
+    expect(s.taken?.[a]).toEqual({ at: START, from: null });
+    const aim = borderOf(s, "b", "a");
+    launchFront(s, cfg, "b", aim, 10_000, START);
+    advanceTerra(s, cfg, START + 2 * HOUR);
+    const lost = s.owner.findIndex((o, i) => o === "b" && s.taken?.[i]?.from === "a");
+    expect(lost).toBeGreaterThanOrEqual(0);
+    const when = s.taken?.[lost]?.at ?? 0;
+    expect(when).toBeGreaterThan(START);
+    expect(when).toBeLessThanOrEqual(START + 2 * HOUR);
+  });
+});
+
 describe("pockets", () => {
   it("fall to the rival that rings them, a share an hour", () => {
     const { cfg, s } = three();

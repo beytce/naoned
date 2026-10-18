@@ -107,6 +107,17 @@ export interface TerraState {
   closed?: TerraClose;
   /** Its Influence and decree handed out to the world. */
   closedSeen?: boolean;
+  /** When each cell last changed hands, and from whom (null: neutral land). */
+  taken?: Record<number, { at: number; from: string | null }>;
+}
+
+/** A cell changing hands, remembered for the merchants who were away. */
+function seize(s: TerraState, cell: number, id: string, at: number): void {
+  const from = s.owner[cell] ?? null;
+  if (from === id) return;
+  s.owner[cell] = id;
+  s.taken ??= {};
+  s.taken[cell] = { at, from };
 }
 
 // ——— The map ———
@@ -456,9 +467,9 @@ export function placeOnTerra(
     }
   }
   const takes = (o: string | null | undefined) => o === null || (onMilan && o === MILAN);
-  s.owner[cell] = id;
+  seize(s, cell, id, now);
   for (const n of hexNeighbors(s.map, cell)) {
-    if (s.map.land[n] && takes(s.owner[n])) s.owner[n] = id;
+    if (s.map.land[n] && takes(s.owner[n])) seize(s, n, id, now);
   }
   const day = Math.max(0, Math.floor((now - s.startAt) / DAY_MS));
   s.players[id] = {
@@ -754,12 +765,12 @@ function step(s: TerraState, cfg: TerraConfig, at: number): void {
     p.troops = Math.min(cap, p.troops + back);
   }
   // Fronts, in the order they were launched.
-  for (const front of [...s.fronts]) advanceFront(s, cfg, front);
+  for (const front of [...s.fronts]) advanceFront(s, cfg, front, at);
   // Every open hour, the pockets cut off from their capital fall a little.
   s.hourSteps = (s.hourSteps ?? 0) + 1;
   if (s.hourSteps * cfg.stepMinutes >= 60) {
     s.hourSteps = 0;
-    fallPockets(s, cfg);
+    fallPockets(s, cfg, at);
   }
   // Glory for the land held.
   for (const [id, p] of Object.entries(s.players)) {
@@ -786,7 +797,7 @@ function step(s: TerraState, cfg: TerraConfig, at: number): void {
   }
 }
 
-function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront): void {
+function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront, at: number): void {
   front.steps = (front.steps ?? 0) + 1;
   if (cfg.fronts.maxHours > 0 && front.steps * cfg.stepMinutes > cfg.fronts.maxHours * 60) {
     endFront(s, front);
@@ -817,7 +828,7 @@ function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront): void 
       const defender = s.players[front.against];
       if (defender) defender.troops = Math.max(0, defender.troops - densityOf(s, front.against));
     }
-    s.owner[best] = front.owner;
+    seize(s, best, front.owner, at);
     razeAt(s, best);
   }
 }
@@ -849,7 +860,7 @@ function component(s: TerraState, id: string, from: number): Set<number> {
  * A pocket of a merchant's land, cut off from its capital and ringed by a single rival (not
  * neutral land, not an ally), loses a share of its cells to that rival.
  */
-function fallPockets(s: TerraState, cfg: TerraConfig): void {
+function fallPockets(s: TerraState, cfg: TerraConfig, at: number): void {
   for (const [id, p] of Object.entries(s.players)) {
     if (id === MILAN || p.capital === undefined || s.owner[p.capital] !== id) continue;
     const main = component(s, id, p.capital);
@@ -869,7 +880,7 @@ function fallPockets(s: TerraState, cfg: TerraConfig): void {
       if (rival === null || rival === undefined || allied(s, id, rival)) continue;
       const lost = Math.max(1, Math.ceil((pocket.size * cfg.encircle.lossBps) / 10_000));
       for (const c of [...pocket].sort((a, b) => a - b).slice(0, lost)) {
-        s.owner[c] = rival;
+        seize(s, c, rival, at);
         razeAt(s, c);
       }
     }
