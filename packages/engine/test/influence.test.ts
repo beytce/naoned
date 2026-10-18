@@ -107,11 +107,12 @@ function send(w: World) {
 }
 
 describe("a rushed delivery", () => {
-  it("arrives at once, paid as usual, for Influence by the time left", () => {
+  it("arrives at once, paid as usual, its vehicle home at once, for Influence by the time left", () => {
     const w = onTheRoad();
     const { d, o } = send(w);
     w.advance(5 * MIN);
-    const left = d.arriveAt - w.now;
+    // The time left until the vehicle is home, the road back included.
+    const left = d.backAt - w.now;
     expect(rushCost(w.ctx, w.state.deliveries?.[d.id] ?? d, w.now)).toBe(
       Math.ceil(left / (20 * MIN)),
     );
@@ -123,8 +124,26 @@ describe("a rushed delivery", () => {
     const after = w.state.deliveries?.[d.id];
     expect(after?.outcome).toBe("delivered");
     expect(w.cash("a")).toBe(cash + o.unitPrice * BigInt(o.quantity));
-    // The vehicle still has the road back.
-    expect(after?.backAt).toBe(w.now + (d.arriveAt - d.departAt));
+    // The vehicle is home, free to leave again.
+    expect(after?.backAt).toBe(w.now);
+    expect(w.state.vehicles?.[d.vehicleId]?.busyUntil).toBe(w.now);
+    expect(error(w.try({ type: "rushDelivery", playerId: "a", deliveryId: d.id }))).toBe(
+      "not_en_route",
+    );
+  });
+
+  it("brings the vehicle home at once on its road back, for the time left", () => {
+    const w = onTheRoad();
+    const { d } = send(w);
+    w.advance(d.arriveAt - w.now + 5 * MIN);
+    expect(rushCost(w.ctx, w.state.deliveries?.[d.id] ?? d, w.now)).toBe(
+      Math.ceil((d.backAt - w.now) / (20 * MIN)),
+    );
+    w.do({ type: "rushDelivery", playerId: "a", deliveryId: d.id });
+    expect(w.state.deliveries?.[d.id]?.outcome).toBe("delivered");
+    expect(w.state.deliveries?.[d.id]?.backAt).toBe(w.now);
+    expect(w.state.vehicles?.[d.vehicleId]?.busyUntil).toBe(w.now);
+    w.advance(d.backAt - w.now + MIN);
     expect(error(w.try({ type: "rushDelivery", playerId: "a", deliveryId: d.id }))).toBe(
       "not_en_route",
     );

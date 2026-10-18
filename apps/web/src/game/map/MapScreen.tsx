@@ -909,14 +909,14 @@ function CartPanel({
   if (trip) {
     const city = props.names.city(trip.route.split(":")[1] ?? "");
     const out = now < trip.arriveAt;
-    // Influence brings it there at once, for a price by the time left.
+    // Influence brings it there and its vehicle home at once, for a price by the time left.
     const spend = props.view.houseSpend;
     const rush =
-      spend && spend.rushMinutesPerPoint > 0
+      spend && spend.rushMinutesPerPoint > 0 && now < trip.backAt
         ? {
             cost: Math.max(
               1,
-              Math.ceil((trip.arriveAt - now) / (spend.rushMinutesPerPoint * 60_000)),
+              Math.ceil((trip.backAt - now) / (spend.rushMinutesPerPoint * 60_000)),
             ),
             left: spend.rushesLeft,
           }
@@ -940,6 +940,13 @@ function CartPanel({
             ? m.cart.outbound(city, clock(trip.arriveAt - now))
             : m.cart.inbound(clock(trip.backAt - now))
         }
+        extra={
+          rush ? (
+            <p className="text-center font-mono text-[11px] text-gold">
+              {fr.game.house.spend.rushLine(out, rush.cost)}
+            </p>
+          ) : undefined
+        }
         tone="lagoon"
         progress={share}
         onClose={onClose}
@@ -948,10 +955,11 @@ function CartPanel({
         actions={
           <>
             <ActionButton icon={Icon.follow()} label={m.buttons.follow} onClick={onFollow} />
-            {out && rush && (
+            {rush && (
               <ActionButton
                 icon={Icon.send()}
-                label={fr.game.house.spend.rush(rush.cost)}
+                label={fr.game.house.spend.rush}
+                badge={`${rush.cost} ✦`}
                 tone="gold"
                 disabled={props.busy || rush.left === 0 || (props.influence ?? 0) < rush.cost}
                 onClick={() => void props.spend({ use: "rush", deliveryId: trip.id })}

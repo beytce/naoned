@@ -197,7 +197,6 @@ export function claimHouseMission(tx: Tx, playerId: PlayerId, missionId: string)
 
 // ——— What Influence buys in the world (the server takes the price first) ———
 
-/** Influence a rushed delivery costs: a point per `rushMinutesPerPoint` minutes left. */
 /** What Influence buys and what is left of today's limits (null in a world without it). */
 export function houseSpendFor(
   ctx: WorldContext,
@@ -216,13 +215,14 @@ export function houseSpendFor(
   };
 }
 
-export function rushCost(ctx: WorldContext, d: Pick<Delivery, "arriveAt">, now: number): number {
+/** Influence a rush costs: a point per `rushMinutesPerPoint` minutes until the vehicle is home. */
+export function rushCost(ctx: WorldContext, d: Pick<Delivery, "backAt">, now: number): number {
   const per = ctx.settings.house?.spend?.rushMinutesPerPoint ?? 0;
   if (per === 0) return 0;
-  return Math.max(1, Math.ceil(Math.max(0, d.arriveAt - now) / (per * MINUTE_MS)));
+  return Math.max(1, Math.ceil(Math.max(0, d.backAt - now) / (per * MINUTE_MS)));
 }
 
-/** The delivery arrives now and is paid; the vehicle still has the road back. */
+/** The delivery arrives now and is paid (if still on its way), and its vehicle is home at once. */
 export function rushDelivery(tx: Tx, playerId: PlayerId, deliveryId: string): void {
   const spend = tx.ctx.settings.house?.spend;
   if (!spend) fail("no_patent");
@@ -230,18 +230,17 @@ export function rushDelivery(tx: Tx, playerId: PlayerId, deliveryId: string): vo
   const d = tx.s.deliveries?.[deliveryId];
   if (!d) fail("unknown_delivery_order");
   if (d.playerId !== playerId) fail("not_owner");
-  if (d.outcome !== "en_route" || d.arriveAt <= tx.now) fail("not_en_route");
+  if (d.backAt <= tx.now) fail("not_en_route");
   const today = dayIndex(tx.ctx, tx.now);
   tx.s.houseSpent ??= {};
   const spent = tx.s.houseSpent[playerId];
   const mine = spent && spent.day === today ? spent : { day: today, rushes: 0, troops: 0 };
   if (mine.rushes >= spend.rushPerDay) fail("rush_limit");
   tx.s.houseSpent[playerId] = { ...mine, rushes: mine.rushes + 1 };
-  const trip = d.arriveAt - d.departAt;
-  d.arriveAt = tx.now;
-  d.backAt = tx.now + trip;
+  if (d.outcome === "en_route") d.arriveAt = tx.now;
+  d.backAt = tx.now;
   const vehicle = tx.s.vehicles?.[d.vehicleId];
-  if (vehicle) vehicle.busyUntil = d.backAt;
+  if (vehicle) vehicle.busyUntil = tx.now;
   emit(tx, "delivery_rushed", playerId, { delivery: deliveryId });
   arriveNow(tx, d as Delivery);
 }

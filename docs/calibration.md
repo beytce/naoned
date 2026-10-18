@@ -993,3 +993,7 @@ La Faveur du Doge donne aussi son contrat de plus par jour (`effects.faveur_doge
 | Influence médiane de la saison (dont missions) | 109 (99) | 121 (109) | 122 (113) | 121 (106) | 120 (107) |
 
 **Lecture.** Les ateliers retrouvent leur croissance (6,7 à 7,4 niveaux par marchand, au lieu de 4,8 à 5,7 avec les +40 %), la monnaie reste sous son plafond (0,8 à 1,1 ×) et la Terraferme en détruit toujours 40 %. La croissance de la monnaie (3,5 à 6,2 %/jour) revient près de son niveau sans entretien : c'est le prix d'ateliers qui grandissent ; si la bêta la trouve trop forte, le premier levier est le prix des bâtiments de la Terraferme (Rocca, Borgo, plafond), pas celui des ateliers. Les indicateurs de la Campagne disparaissent du rapport quand les familles sont éteintes.
+
+## Accélérer une livraison : livraison et retour immédiats (18 octobre 2026, décision du porteur)
+
+Payer en Influence livre la marchandise tout de suite **et** ramène le véhicule aussitôt ; on peut aussi accélérer un véhicule sur la route du retour. Le prix reste d'un point par 20 minutes (`house.spend.rushMinutesPerPoint`), mais compté jusqu'au retour du véhicule : une accélération à l'aller coûte environ deux fois plus qu'avant, pour un véhicule qui repart aussitôt. La limite reste de trois par jour (`rushPerDay`). Les PNJ du simulateur n'accélèrent pas : `pnpm sim` n'en est pas changé ; à mesurer à la bêta (Influence dépensée en accélérations, livraisons par véhicule et par jour).

@@ -1485,10 +1485,14 @@ export const fr = {
         } as Record<string, (n: number) => string>,
       },
       spend: {
-        rush: (n: number) => `Accélérer · ${n} ✦`,
+        rush: "Accélérer",
+        rushLine: (out: boolean, n: number) =>
+          out
+            ? `Accélérer : livraison et retour immédiats · ${n} ✦`
+            : `Accélérer : retour immédiat · ${n} ✦`,
         rushHelp: (left: number) =>
           left > 0
-            ? `Arrive tout de suite, payée comme d'habitude. Encore ${left} aujourd'hui.`
+            ? `Livrée tout de suite, payée comme d'habitude, et le véhicule rentre aussitôt. Encore ${left} aujourd'hui.`
             : "Plus d'accélération aujourd'hui.",
         troops: (count: number, cost: number) => `+${count} · ${cost} ✦`,
         troopsTitle: "Troupes pour de l'Influence",
