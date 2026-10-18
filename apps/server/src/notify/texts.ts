@@ -164,11 +164,18 @@ export function pushText(
       };
     }
     case "siege":
+      if (data.event === "terra_attacked")
+        return {
+          title: "Vos terres sont attaquées !",
+          body: `Un voisin lance ${Number(data.troops)} troupes contre votre territoire. Contre-attaquez, bâtissez une rocca ou appelez un allié.`,
+        };
       return {
         title: `${landName(data.land)} menacée !`,
         body: `${Number(data.lances)} troupes ${data.by === "milan" ? "de Milan" : `des ${familyName(data.by)}`} arrivent à ${clock(data.arriveAt)}. Renforcez la garnison !`,
       };
     case "family": {
+      const terra = terraText(data);
+      if (terra) return terra;
       if (data.event === "land_lost")
         return {
           title: `${landName(data.land)} est perdue`,
@@ -231,5 +238,52 @@ export function pushText(
       };
     default:
       return { title: "Fondaco", body: "Du nouveau à votre comptoir." };
+  }
+}
+
+const TERRA_DECREES: Record<string, string> = {
+  monopole: "le Monopole",
+  embargo: "l'Embargo",
+  dime: "la Dîme de la Terraferme",
+  faveur_doge: "la Faveur du Doge",
+  franchise_rialto: "la Franchise du Rialto",
+  calmiere: "le Calmiere",
+};
+
+/** The Terraferma's news (docs/plan-terraferme.md), or null for another event. */
+function terraText(data: Record<string, unknown>): { title: string; body: string } | null {
+  switch (data.event) {
+    case "terra_alliance_asked":
+      return {
+        title: "Une alliance vous est proposée",
+        body: "Un voisin de la Terraferme demande votre alliance.",
+      };
+    case "terra_alliance_made":
+      return {
+        title: "Alliance conclue",
+        body: "Votre alliance est acceptée : plus de front entre vous.",
+      };
+    case "terra_alliance_broken":
+      return {
+        title: "Votre allié rompt l'alliance",
+        body: "Dans deux heures, ses troupes pourront marcher sur vos terres.",
+      };
+    case "terra_troops_received":
+      return { title: "Renforts", body: `Un allié vous envoie ${Number(data.count)} troupes.` };
+    case "terra_result": {
+      const influence = Number(data.influence ?? 0);
+      const decree = TERRA_DECREES[String(data.decree)] ?? "son décret";
+      if (data.signore)
+        return {
+          title: "Vous êtes Signore della Terraferma !",
+          body: `${data.conquest ? "La Terraferme est à vous. " : ""}Vous imposez ${decree} la semaine qui vient (+${influence} d'Influence).`,
+        };
+      return {
+        title: "La Terraferme se referme",
+        body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"}${influence > 0 ? ` (+${influence} d'Influence)` : ""}. Une nouvelle carte s'ouvre.`,
+      };
+    }
+    default:
+      return null;
   }
 }

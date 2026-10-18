@@ -102,10 +102,19 @@ function payClose(tx: Tx, cfg: TerraConfig, week: number, map: TerraState): void
   const close = map.closed;
   if (!close) return;
   map.closedSeen = true;
-  for (const r of close.ranking) {
+  close.ranking.forEach((r, k) => {
     if (r.influence > 0)
       emit(tx, "influence_earned", r.id, { source: "terraferma", week, amount: r.influence });
-  }
+    emit(tx, "terra_result", r.id, {
+      week,
+      rank: k + 1,
+      tier: r.tier,
+      influence: r.influence,
+      signore: r.id === close.signore,
+      conquest: close.conquest,
+      decree: close.decree?.code ?? null,
+    });
+  });
   emit(tx, "terra_closed", undefined, {
     week,
     signore: close.signore,

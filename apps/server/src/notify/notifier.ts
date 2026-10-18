@@ -42,6 +42,15 @@ export const NOTIFICATION_KINDS = [
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 const HOUR_MS = 3_600_000;
+/** The Terraferma's events a merchant is told of (not its own commands). */
+const TERRA_NEWS: ReadonlySet<string> = new Set([
+  "terra_attacked",
+  "terra_alliance_asked",
+  "terra_alliance_made",
+  "terra_alliance_broken",
+  "terra_troops_received",
+  "terra_result",
+]);
 /** Pushed at once, never held back by the hourly limit per kind: the merchant has minutes. */
 const URGENT: ReadonlySet<NotificationKind> = new Set(["siege"]);
 const DAY_MS = 24 * HOUR_MS;
@@ -144,7 +153,9 @@ export class Notifier {
         e.type === "land_lost" ||
         e.type === "work_razed" ||
         e.type === "campaign_closed" ||
-        e.type === "decree_share",
+        e.type === "decree_share" ||
+        // The Terraferma: an attack is urgent, the rest is the family's kind of news.
+        TERRA_NEWS.has(e.type),
     );
     if (news.length === 0) return;
     const people = await this.people();
@@ -174,7 +185,7 @@ export class Notifier {
       if (!people.has(accountId)) continue;
       notices.push({
         accountId,
-        kind: e.type === "land_threatened" ? "siege" : "family",
+        kind: e.type === "land_threatened" || e.type === "terra_attacked" ? "siege" : "family",
         data: { event: e.type, ...d },
       });
     }
