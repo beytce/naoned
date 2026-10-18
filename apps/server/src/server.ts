@@ -32,6 +32,7 @@ process.on("unhandledRejection", (reason) => {
 });
 const world = await GameWorld.open(database.db, Date.now, {
   settingsFromTheme: config.WORLD_SETTINGS_FROM_THEME,
+  ...(config.WORLD_SETTINGS_OVERRIDE ? { settingsOverride: config.WORLD_SETTINGS_OVERRIDE } : {}),
 });
 world.startTicking();
 const bots = new BotRunner(database.db, world);

@@ -37,8 +37,23 @@ const schema = z
       .enum(["true", "false"])
       .default("true")
       .transform((v) => v === "true"),
+    /**
+     * Development only: JSON merged over the world's settings at start, e.g.
+     * `{"terraferma":{"live":true}}` to play the Terraferma before its season opens.
+     */
+    WORLD_SETTINGS_OVERRIDE: z
+      .string()
+      .optional()
+      .transform((v) => (v ? (JSON.parse(v) as Record<string, unknown>) : undefined)),
   })
   .superRefine((env, ctx) => {
+    if (env.NODE_ENV === "production" && env.WORLD_SETTINGS_OVERRIDE) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["WORLD_SETTINGS_OVERRIDE"],
+        message: "development only",
+      });
+    }
     if (env.NODE_ENV === "production" && !env.RESEND_API_KEY) {
       ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "required in production" });
     }

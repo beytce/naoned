@@ -5,7 +5,11 @@ import {
   alliesOf,
   campaignWeekEnd,
   capOf,
+  cellCost,
   cellsOf,
+  hexNeighbors,
+  hourIn,
+  hourWithin,
   terraOn,
 } from "@comptoirs/engine";
 
@@ -58,10 +62,20 @@ export function terraView(
   const day = Math.floor((now - s.startAt) / 86_400_000);
   const today = me?.today && me.today.day === day ? me.today : { raises: 0, gifts: 0 };
   const decree = state.terraDecree;
+  // What a front pays for each cell it could take next: those along the merchant's border.
+  const costs: Record<number, number> = {};
+  if (me) {
+    for (const i of cellsOf(s, playerId))
+      for (const n of hexNeighbors(s.map, i))
+        if (s.map.land[n] && s.owner[n] !== playerId && !(n in costs))
+          costs[n] = cellCost(s, cfg, n);
+  }
   return {
     week: t.week,
     closesAt: campaignWeekEnd(ctx, t.week),
     openHours: cfg.openHours,
+    /** Whether the fronts march now (they rest at night). */
+    open: hourWithin(hourIn(now), cfg.openHours),
     map: {
       width: s.map.width,
       height: s.map.height,
@@ -73,12 +87,16 @@ export function terraView(
         .filter((c) => c !== null),
     },
     holders: holders.map((id) => ({
+      // Milan has no merchant behind it; the others' ids name them in alliances and gifts.
+      id: id === MILAN ? null : id,
       pseudo: id === MILAN ? null : (names.get(id)?.pseudo ?? null),
       crest: id === MILAN ? null : (names.get(id)?.crest ?? null),
       me: id === playerId,
       ally: allies.has(id),
       milan: id === MILAN,
       capital: s.players[id]?.capital ?? null,
+      troops: s.players[id]?.troops ?? 0,
+      cells: cellsOf(s, id).length,
     })),
     owner: s.owner.map((o) => at(o)),
     fronts: s.fronts.map((f) => ({
@@ -90,6 +108,7 @@ export function terraView(
       mine: f.owner === playerId,
       threat: f.against === playerId,
     })),
+    costs,
     buildings: Object.entries(s.buildings ?? {}).map(([cell, b]) => ({
       cell: Number(cell),
       kind: b.kind,

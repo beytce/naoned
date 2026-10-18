@@ -116,6 +116,12 @@ describe("the Terraferma on the server", () => {
     expect(after.me.cells).toBeGreaterThan(1);
     const me = after.holders.findIndex((h: { me: boolean }) => h.me);
     expect(after.holders[me].pseudo).toBe("ada");
+    expect(after.holders[me].id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(after.holders[me].cells).toBe(after.me.cells);
+    // The cells along her border, with what a front pays for each.
+    const border = Object.values(after.costs) as number[];
+    expect(border.length).toBeGreaterThan(0);
+    expect(border.every((c) => c >= 1)).toBe(true);
     const cash = BigInt((await get(ada, "/api/game")).view.cash);
     expect((await act(ada, { type: "terraRaise" })).json().error).toBeUndefined();
     expect(BigInt((await get(ada, "/api/game")).view.cash)).toBe(cash - 10_000n);
