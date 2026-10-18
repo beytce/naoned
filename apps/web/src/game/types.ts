@@ -741,6 +741,8 @@ export interface PodiumRow {
 
 export interface WeekRanking {
   week: number;
+  /** What the ranking counts: the week's glory on the Terraferma, or its net sales. */
+  unit: "glory" | "sales";
   endsAt: number;
   rows: WeekRow[];
   me: WeekRow | null;
@@ -887,6 +889,8 @@ export interface TerraView {
     traitorUntil: number;
     /** When it lost its last cell: out of the week. */
     eliminatedAt: number | null;
+    /** Troops recruited an open hour, when the next come in, when the maximum is reached. */
+    recruit: { perHour: number; nextAt: number | null; fullAt: number | null };
     allies: number[];
     requestsIn: number[];
     requestsOut: number[];
@@ -909,7 +913,7 @@ export interface TerraView {
     minShareBps: number;
     alliesMax: number;
     decrees: string[];
-    prices: { rocca: string; borgo: string; cap: string };
+    prices: { rocca: string; borgo: string | null; cap: string };
     capRaise: number;
   };
 }

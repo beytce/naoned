@@ -79,8 +79,9 @@ function Line(props: {
   );
 }
 
-function Gain({ value }: { value: string }) {
+function Gain({ value, glory }: { value: string; glory?: boolean }) {
   const n = BigInt(value);
+  if (glory) return <span className="text-gold">{fr.game.week.glory(Number(n))}</span>;
   return (
     <span className={n > 0n ? "text-lagoon" : n < 0n ? "text-vermilion" : "text-cream-dim"}>
       {n > 0n ? "+" : ""}
@@ -138,7 +139,10 @@ function rowsOf(
   season: RankingRow[] | null,
 ): (Who & { value: ReactNode })[] | null {
   return period === "week"
-    ? (week?.rows.map((r) => ({ ...r, value: <Gain value={r.gain} /> })) ?? null)
+    ? (week?.rows.map((r) => ({
+        ...r,
+        value: <Gain value={r.gain} glory={week.unit === "glory"} />,
+      })) ?? null)
     : (season?.map((r) => ({ ...r, value: <Gain value={r.turnover} /> })) ?? null);
 }
 
@@ -177,7 +181,7 @@ export function RankingSheet(props: GameProps) {
   const me: (Who & { value: ReactNode }) | undefined =
     period === "week"
       ? week?.me
-        ? { ...week.me, value: <Gain value={week.me.gain} /> }
+        ? { ...week.me, value: <Gain value={week.me.gain} glory={week.unit === "glory"} /> }
         : undefined
       : (() => {
           const r = season?.find((x) => x.me);
@@ -226,7 +230,9 @@ export function RankingSheet(props: GameProps) {
         ) : view === "rules" ? (
           <div className="space-y-3">
             {back}
-            <p className="text-sm text-cream-dim">{fr.game.week.help}</p>
+            <p className="text-sm text-cream-dim">
+              {week?.unit === "glory" ? fr.game.week.helpGlory : fr.game.week.help}
+            </p>
             <p className="text-sm text-cream-dim">{fr.game.rankingHelp}</p>
             <p className="text-sm text-cream-dim">{fr.game.npcHelp}</p>
           </div>

@@ -102,6 +102,14 @@ function payClose(tx: Tx, cfg: TerraConfig, week: number, map: TerraState): void
   const close = map.closed;
   if (!close) return;
   map.closedSeen = true;
+  tx.s.terraLast = {
+    week,
+    glory: Object.fromEntries(
+      Object.entries(map.players)
+        .filter(([id]) => id !== MILAN)
+        .map(([id, p]) => [id, p.glory]),
+    ),
+  };
   close.ranking.forEach((r, k) => {
     if (r.influence > 0)
       emit(tx, "influence_earned", r.id, { source: "terraferma", week, amount: r.influence });

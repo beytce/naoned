@@ -52,9 +52,10 @@ export function tick(tx: Tx): void {
   pruneRoad(tx);
   expireOrders(tx);
   serveRations(tx);
-  closeWeek(tx);
-  // The Terraferma: its fronts up to now, and its week closed when it turns.
+  // The Terraferma: its fronts up to now, and its week closed when it turns (before the weekly
+  // ranking, which is its glory).
   advanceTerraWorld(tx);
+  closeWeek(tx);
   // States of the time of the guilds: their treasuries go back to their members.
   dissolveLegacyGuilds(tx);
   // The week's campaign: marches arrive, Milan rides, glory is counted, the week closes.

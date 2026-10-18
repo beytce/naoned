@@ -16,6 +16,7 @@ import {
   hexNeighbors,
   tollOn,
   urgentReservedUntil,
+  weeklyRanking,
 } from "../src/index.js";
 import { campaignSettings, deliverySettings, testTerraferma } from "./fixture.js";
 import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
@@ -201,5 +202,29 @@ describe("the Signore's strong decrees", () => {
     const a = w.cash("a");
     w.at(WEEK + MIN).do({ type: "tick" });
     expect(w.cash("a")).toBe(a + 900n);
+  });
+});
+
+describe("the weekly ranking, once the Terraferma is live", () => {
+  it("ranks the week's glory, live and at the close; the commerce's Influence still counts sales", () => {
+    const w = live();
+    joined(w, "a", "b");
+    // The state is frozen between commands: glory set on a copy.
+    w.state = structuredClone(w.state);
+    const map = w.state.terra?.map;
+    if (!map) throw new Error("no map");
+    (map.players.a as { glory: number }).glory = 5;
+    (map.players.b as { glory: number }).glory = 100_000;
+    expect(weeklyRanking(w.ctx, w.state, w.now).map((r) => [r.playerId, r.gain])).toEqual([
+      ["b", 100_000n],
+      ["a", 5n],
+    ]);
+    w.at(WEEK + MIN);
+    const closed = w.do({ type: "tick" }).effects.events.find((e) => e.type === "week_closed");
+    const standings = (closed?.data as { standings: { playerId: string; gain: string }[] })
+      .standings;
+    expect(standings[0]?.playerId).toBe("b");
+    expect(Number(standings[0]?.gain)).toBeGreaterThanOrEqual(100_000);
+    expect(Number(standings[1]?.gain)).toBeGreaterThanOrEqual(5);
   });
 });

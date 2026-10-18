@@ -194,7 +194,15 @@ Le porteur veut une partie à la OpenFront, sans garde-fou du jeu :
 - **Placement le premier jour** : on ne pose son camp que pendant les 24 premières heures de la semaine (`start.placementHours`), en sûreté jusque-là (on peut s'étendre sur la terre libre, pas attaquer un marchand). Ensuite, plus personne n'entre jusqu'à la semaine suivante : le retardataire regarde la carte et attend. La règle du retardataire posé à la lisière de Milan et la dotation qui grandit avec le jour disparaissent de Venise.
 - **Plus de frein** : le comptoir de départ se prend (`fronts.capitalSafe`), un marchand qui perd sa dernière case est **éliminé** pour la semaine (il garde sa Gloire au classement) ; un front ne rentre plus après 2 h (`fronts.maxHours` 0), il avance tant qu'il a des troupes ; Milan ne vise plus le premier en Gloire mais **son voisin le plus faible** (`milan.target`), sans protection de 24 h (remplacée par le placement).
 - Restent : la nuit, la terre libre lente, les alliances, les poches encerclées (autour du comptoir, ou du plus grand morceau une fois le comptoir pris), la victoire à 80 %, la Gloire, le Signore et son décret.
-- **Écart connu** : la semaine du jeu commence au premier jour de la saison, par tranches de 7 jours, et non le lundi : le jour de placement est le premier jour de cette tranche. Aligner les semaines sur le lundi toucherait aussi le classement hebdomadaire et les décrets : à décider à part.
+- **Les semaines vont du lundi au dimanche** (heure de Paris, `weekStart` « monday ») : le placement est le lundi. Un bout de semaine de moins de trois jours au début ou à la fin du mois rejoint la semaine voisine ; un bout plus long (le jeudi 1er au dimanche 4, par exemple) est une semaine courte, dont le placement est le jour d'ouverture.
+
+## Des troupes simples à comprendre (18 octobre 2026, décision du porteur)
+
+- **Le classement de la semaine est celui de la Terraferme** : la Gloire de la semaine, ses titres (Doge, Procurateur, Sénateur de la semaine) et sa notification. L'Influence du commerce de la semaine reste comptée sur les ventes, sans classement affiché.
+- **Le maximum de troupes ne monte qu'avec les ducats** (« + Troupes », +20 pour 100 d, trois fois par jour) ; les cases, les villes ne le relèvent plus, et **le Village disparaît** (un seul bâtiment : le Fort).
+- **Le recrutement grandit avec les terres**, comme sur OpenFront : 6 troupes par heure ouverte, plus 1 par case et 3 par ville, jusqu'au maximum. Le HUD montre « 20 / 60 +13/h » et une barre qui se remplit ; le panneau de ses terres dit quand le maximum sera atteint.
+- **Plus de front bloqué** : un front qui ne paie pas sa première case est refusé (« Il faut au moins 18 troupes »), et un front qui ne peut plus payer sa prochaine case rentre aussitôt avec ce qui lui reste.
+- **Un écran épuré** : trois boutons avec leur prix dans « Vos terres » (+ Troupes, Fort, Décret), un front par ligne (« ⚔ 20 → Terre libre · 59 min »), le panneau d'attaque réduit à la cible, au curseur, aux cases prises et à la défense qui reste.
 
 Mesures dans `docs/calibration.md`.
 

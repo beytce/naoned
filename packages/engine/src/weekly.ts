@@ -92,6 +92,32 @@ export function weeklyStandings(
     );
 }
 
+/**
+ * The weekly ranking shown to the merchants: the week's glory on the Terraferma when it is live
+ * (the week closed, or the one being played), else the week's net sales.
+ */
+export function weeklyRanking(
+  ctx: WorldContext,
+  state: WorldState,
+  now: number,
+  week = weekIndex(ctx, now),
+): WeeklyStanding[] {
+  if (!ctx.settings.terraferma?.live) return weeklyStandings(ctx, state, now);
+  const glory =
+    state.terraLast?.week === week
+      ? state.terraLast.glory
+      : state.terra?.week === week
+        ? Object.fromEntries(
+            Object.entries(state.terra.map.players).map(([id, p]) => [id, p.glory]),
+          )
+        : {};
+  return Object.keys(state.players)
+    .map((playerId) => ({ playerId, gain: BigInt(glory[playerId] ?? 0) }))
+    .sort((a, b) =>
+      a.gain === b.gain ? a.playerId.localeCompare(b.playerId) : a.gain > b.gain ? -1 : 1,
+    );
+}
+
 /** Final ranking of the season: net sales, best first (net worth reported beside them). */
 export function seasonStandings(
   ctx: WorldContext,
@@ -157,11 +183,12 @@ export function closeWeek(tx: Tx): void {
     return;
   }
   if (weekly.week >= week) return;
-  const standings = weeklyStandings(tx.ctx, tx.s, tx.now);
+  const standings = weeklyRanking(tx.ctx, tx.s, tx.now, weekly.week);
   emit(tx, "week_closed", undefined, {
     week: weekly.week,
     standings: standings.map((s) => ({ playerId: s.playerId, gain: s.gain.toString() })),
   });
-  commerceInfluence(tx, weekly.week, standings);
+  // The commerce's Influence counts the week's sales, whatever the ranking shown.
+  commerceInfluence(tx, weekly.week, weeklyStandings(tx.ctx, tx.s, tx.now));
   tx.s.weekly = { week, start: snapshot(tx) };
 }

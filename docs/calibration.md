@@ -1017,3 +1017,22 @@ Pour Venise : on se pose pendant les 24 premières heures de la semaine (`start.
 `pnpm sim`, 5 graines, toutes conformes ; la Terraferme détruit 36 à 40 % de la monnaie (86 à 96 d par joueur actif et par jour), la masse monétaire reste sous son plafond (0,80 à 0,91 ×).
 
 **Lecture.** La partie est plus dure, comme voulu : 4 à 8 marchands sur 36 sont rayés de la carte avant dimanche (aucun avant), le premier tient jusqu'à 9 % de la carte (5 % avant) et l'avance des assidus passe de 121 à 163 % à 181 à 226 %. Milan, qui ne freine plus le favori, mange les faibles et finit à 23 à 33 % de la carte. À surveiller à la bêta : les éliminés reviennent-ils la semaine suivante, et la part de Milan (si elle gêne, baisser `milan.shareBps` ou son plafond fixe).
+
+## La Terraferme : semaines du lundi, troupes payées en ducats, recrutement par les terres (18 octobre 2026, décision du porteur)
+
+Les semaines vont du lundi au dimanche (heure de Paris) ; le classement de la semaine est la Gloire de la Terraferme (l'Influence du commerce reste comptée sur les ventes). Pour Venise, le maximum de troupes ne monte plus qu'avec les ducats (`troops.base` 60, `perCell` et `perCity` 0 ; `capRaise` +20 pour 100 d, trois fois par jour), le Borgo disparaît, et les terres recrutent par heure ouverte (`troops.recruit` : 6, plus 1 par case et 3 par ville). Un front qui ne paie pas sa première case est refusé ; un front qui ne paie plus la suivante rentre aussitôt. `pnpm --filter @comptoirs/simulator terra`, 5 graines :
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Milan en fin de semaine | 30 % | 20 % | 18 % | 20 % | 25 % |
+| Premier front entre marchands | 33 h | 33 h | 33 h | 33 h | 33 h |
+| Fronts lancés (contre des marchands) | 1 015 (736) | 1 018 (726) | 1 005 (727) | 1 002 (702) | 1 013 (730) |
+| Éliminés en fin de semaine (sur 36) | 2 | 1 | 1 | 4 | 2 |
+| Le premier tient | 6 % | 5 % | 7 % | 7 % | 5 % |
+| Cases médianes : assidu · régulier · occasionnel | 33 · 15 · 9 | 28 · 22 · 8 | 41 · 19 · 6 | 37 · 25 · 2 | 31 · 22 · 7 |
+| Assidus devant occasionnels (Gloire médiane) | 280 % | 246 % | 295 % | 313 % | 250 % |
+| Ducats détruits (d par marchand et par jour) | 82 | 80 | 79 | 78 | 80 |
+
+`pnpm sim`, 5 graines, toutes conformes : la Terraferme détruit 37 à 44 % de la monnaie (88 à 102 d par joueur actif et par jour), la masse monétaire finit à 657 à 1 036 ducats par joueur actif (0,79 à 1,04 × son plafond).
+
+**Lecture.** Les fronts entre marchands triplent (700 au lieu de 200 à 250) : le recrutement par les terres rend les troupes rapidement, la guerre est plus vive. Moins d'éliminés (1 à 4 au lieu de 4 à 8) : un grand territoire n'a pas plus de troupes qu'un petit (le maximum ne suit plus les terres), il défend donc plus mince, ce qui freine naturellement le premier (5 à 7 % de la carte). La présence paie fort (assidus 246 à 313 % des occasionnels) : c'est elle qui relance les fronts. Milan, sans plafond qui le gonfle, reste à 18 à 30 %.

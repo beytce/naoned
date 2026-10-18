@@ -368,9 +368,17 @@ export function capOf(s: TerraState, cfg: TerraConfig, id: string): number {
     cfg.troops.base +
     cfg.troops.perCell * cells.length +
     cfg.troops.perCity * cities +
-    cfg.buildings.borgo.capBonus * terraBuildingsOf(s, id, "borgo").length +
+    (cfg.buildings.borgo?.capBonus ?? 0) * terraBuildingsOf(s, id, "borgo").length +
     (s.players[id]?.boughtCap ?? 0)
   );
+}
+
+/** Troops a merchant recruits each open hour (with `troops.recruit`): more with more land. */
+export function recruitPerHour(s: TerraState, cfg: TerraConfig, id: string): number {
+  const r = cfg.troops.recruit;
+  if (!r) return 0;
+  const cells = cellsOf(s, id);
+  return r.base + r.perCell * cells.length + r.perCity * cells.filter((i) => s.map.city[i]).length;
 }
 
 export function terraBuildingsOf(s: TerraState, id: string, kind?: TerraBuilding): number[] {
@@ -512,6 +520,8 @@ export function launchFront(
   if (s.fronts.filter((f) => f.owner === id).length >= cfg.fronts.max) fail("too_many_fronts");
   const troops = Math.floor((player.troops * shareBps) / 10_000);
   if (troops <= 0) fail("no_troops");
+  // Not even the cell aimed at: the front would come straight home (Milan rides as it can).
+  if (id !== MILAN && troops < cellCost(s, cfg, aim)) fail("too_weak");
   player.troops -= troops;
   const front: TerraFront = {
     id: `t${s.nextFront++}`,
@@ -660,6 +670,7 @@ export function buildOnTerra(
   if (s.owner[cell] !== id) fail("not_owner");
   if (s.buildings?.[cell]) fail("built");
   const def = cfg.buildings[kind];
+  if (!def) fail("no_room");
   const room = Math.floor(cellsOf(s, id).length / def.perCells);
   if (terraBuildingsOf(s, id, kind).length >= room) fail("no_room");
   s.buildings = { ...(s.buildings ?? {}), [cell]: { owner: id, kind } };
@@ -757,17 +768,24 @@ function step(s: TerraState, cfg: TerraConfig, at: number): void {
   // Alliances whose break has come.
   if (s.alliances?.some((a) => a.endsAt !== undefined && a.endsAt <= at))
     s.alliances = s.alliances.filter((a) => a.endsAt === undefined || a.endsAt > at);
-  // Troops come back toward the cap (the borgos bring them back faster).
+  // Troops come back toward the cap: recruited by the hour, or a share of the gap (the borgos
+  // bring them back faster).
   for (const [id, p] of Object.entries(s.players)) {
     if (p.eliminatedAt !== undefined) continue;
     const cap = capOf(s, cfg, id);
     if (p.troops >= cap) continue;
+    if (cfg.troops.recruit && id !== MILAN) {
+      const back = Math.floor((recruitPerHour(s, cfg, id) * cfg.stepMinutes) / 60);
+      p.troops = Math.min(cap, p.troops + back);
+      continue;
+    }
     const borgos = terraBuildingsOf(s, id, "borgo").length;
     const rate =
       id === MILAN
         ? cfg.milan.regenBps
         : Math.floor(
-            (cfg.troops.regenBps * (10_000 + borgos * cfg.buildings.borgo.regenBonusBps)) / 10_000,
+            (cfg.troops.regenBps * (10_000 + borgos * (cfg.buildings.borgo?.regenBonusBps ?? 0))) /
+              10_000,
           );
     const back = Math.max(cfg.troops.regenMin, Math.floor(((cap - p.troops) * rate) / 10_000));
     p.troops = Math.min(cap, p.troops + back);
@@ -843,6 +861,31 @@ export function forecastFronts(
   return out;
 }
 
+/** The next cell a front takes: its target's cell along the border nearest its aim (-1: none). */
+function nextCell(s: TerraState, cfg: TerraConfig, front: TerraFront): number {
+  let best = -1;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  const capitals = new Set(
+    cfg.fronts.capitalSafe ? Object.values(s.players).map((p) => p.capital) : [],
+  );
+  for (let i = 0; i < s.owner.length; i++) {
+    if (!s.map.land[i] || s.owner[i] !== front.against || !borders(s, front.owner, i)) continue;
+    if (capitals.has(i)) continue;
+    const d = hexDistance(s.map, i, front.aim);
+    if (d < bestDistance) {
+      best = i;
+      bestDistance = d;
+    }
+  }
+  return best;
+}
+
+/** Whether a front can still pay its next cell. */
+function canGoOn(s: TerraState, cfg: TerraConfig, front: TerraFront): boolean {
+  const next = nextCell(s, cfg, front);
+  return next >= 0 && front.troops >= cellCost(s, cfg, next);
+}
+
 function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront, at: number): void {
   front.steps = (front.steps ?? 0) + 1;
   if (cfg.fronts.maxHours > 0 && front.steps * cfg.stepMinutes > cfg.fronts.maxHours * 60) {
@@ -850,27 +893,11 @@ function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront, at: nu
     return;
   }
   // Free land is taken slowly: the race for it lasts.
-  if (front.against === null && front.steps % cfg.fronts.neutralEverySteps !== 0) return;
-  for (let k = 0; k < cfg.fronts.cellsPerStep; k++) {
-    let best = -1;
-    let bestDistance = Number.POSITIVE_INFINITY;
-    const capitals = new Set(
-      cfg.fronts.capitalSafe ? Object.values(s.players).map((p) => p.capital) : [],
-    );
-    for (let i = 0; i < s.owner.length; i++) {
-      if (!s.map.land[i] || s.owner[i] !== front.against || !borders(s, front.owner, i)) continue;
-      if (capitals.has(i)) continue;
-      const d = hexDistance(s.map, i, front.aim);
-      if (d < bestDistance) {
-        best = i;
-        bestDistance = d;
-      }
-    }
+  const waits = front.against === null && front.steps % cfg.fronts.neutralEverySteps !== 0;
+  for (let k = 0; !waits && k < cfg.fronts.cellsPerStep; k++) {
+    const best = nextCell(s, cfg, front);
     const cost = best < 0 ? 0 : cellCost(s, cfg, best);
-    if (best < 0 || front.troops < cost) {
-      endFront(s, front);
-      return;
-    }
+    if (best < 0 || front.troops < cost) break;
     front.troops -= cost;
     if (front.against !== null) {
       const defender = s.players[front.against];
@@ -880,6 +907,8 @@ function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront, at: nu
     razeAt(s, best);
     s.trace?.push({ front: front.id, cell: best, at: at + cfg.stepMinutes * MINUTE_MS });
   }
+  // A front that can no longer pay its next cell comes home at once, what is left of it.
+  if (!canGoOn(s, cfg, front)) endFront(s, front);
 }
 
 /** Merchants left without a cell are out of the week: no troops, no fronts. */

@@ -244,7 +244,17 @@ export const venice1450Settings: WorldSettingsInput = {
     city: { militiaBps: 25_000, defenseBps: 15_000 },
     // Everyone sets down on the week's first day, safe from each other until its end; then war.
     start: { minDistance: 2, troops: 40, troopsPerDay: 0, protectionHours: 0, placementHours: 24 },
-    troops: { base: 30, perCell: 2, perCity: 30, regenBps: 400, regenMin: 1 },
+    // The maximum of troops is raised by ducats only; the land recruits by the hour up to it.
+    troops: {
+      base: 60,
+      perCell: 0,
+      perCity: 0,
+      regenBps: 400,
+      regenMin: 1,
+      recruit: { base: 6, perCell: 1, perCity: 3 },
+    },
+    buildings: { rocca: { price: 4_000, defenseBps: 16_000, perCells: 15 } },
+    capRaise: { amount: 20, price: 10_000, perDay: 3 },
     // No limit set by the game: fronts march until their troops run out, capitals fall, Milan
     // preys on the weak rather than braking the leader.
     fronts: {

@@ -129,7 +129,9 @@ describe("the Terraferma on the server", () => {
     const cash = BigInt((await get(ada, "/api/game")).view.cash);
     expect((await act(ada, { type: "terraRaise" })).json().error).toBeUndefined();
     expect(BigInt((await get(ada, "/api/game")).view.cash)).toBe(cash - 10_000n);
-    expect((await get(ada, "/api/game/terra")).terra.me.cap).toBe(after.me.cap + 10);
+    expect((await get(ada, "/api/game/terra")).terra.me.cap).toBe(
+      after.me.cap + after.rules.capRaise,
+    );
   });
 
   it("closes the week: the Influence of the ranking goes to the house", async () => {

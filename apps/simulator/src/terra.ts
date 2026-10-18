@@ -281,7 +281,8 @@ function play(
   if (borderCell !== undefined && purse.left >= cfg.buildings.rocca.price)
     spend(() => buildOnTerra(s, cfg, id, borderCell, "rocca"));
   const inner = cellsOf(s, id).find((c) => !s.buildings?.[c]);
-  if (inner !== undefined && purse.left >= cfg.buildings.borgo.price)
+  const borgo = cfg.buildings.borgo;
+  if (inner !== undefined && borgo && purse.left >= borgo.price)
     spend(() => buildOnTerra(s, cfg, id, inner, "borgo"));
   if (purse.left >= cfg.capRaise.price) spend(() => raiseCap(s, cfg, id, now));
   const cap = capOf(s, cfg, id);

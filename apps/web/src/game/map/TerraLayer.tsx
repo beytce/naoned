@@ -807,12 +807,22 @@ export function TerraHud({ v, now }: { v: TerraView; now: number }) {
         <>
           <span
             title={t().troops}
-            className="hud-orb flex h-9 items-center gap-1.5 rounded-full pl-2 pr-2.5"
+            className="hud-orb relative flex h-9 items-center gap-1.5 overflow-hidden rounded-full pl-2 pr-2.5"
           >
             <span className="text-[15px] leading-none">⚔</span>
             <span className="font-display text-sm font-extrabold tabular-nums text-cream">
               {t().troopsLine(me.troops, me.cap)}
             </span>
+            {me.troops < me.cap && me.recruit.perHour > 0 && (
+              <span className="font-mono text-[10px] font-bold text-lagoon">
+                {t().perHour(me.recruit.perHour)}
+              </span>
+            )}
+            {/* How full the troops are: a thread of light at the foot of the pill. */}
+            <span
+              className="absolute bottom-0 left-0 h-[3px] bg-lagoon transition-[width] duration-700"
+              style={{ width: `${Math.min(100, (me.troops / Math.max(1, me.cap)) * 100)}%` }}
+            />
           </span>
           <span className="hud-orb flex h-8 items-center rounded-full px-2.5 font-display text-[12px] font-extrabold tabular-nums text-gold">
             {t().glory(me.glory, me.rank)}
@@ -946,23 +956,19 @@ export function TerraPanel({
         actions={
           <>
             <ActionButton
-              icon={Icon.build()}
-              label={t().mine.rocca}
-              disabled={!!built || !!v.closed}
-              onClick={() => act({ type: "terraBuild", cell, kind: "rocca" })}
-            />
-            <ActionButton
-              icon={Icon.harvest()}
-              label={t().mine.borgo}
-              disabled={!!built || !!v.closed}
-              onClick={() => act({ type: "terraBuild", cell, kind: "borgo" })}
-            />
-            <ActionButton
               icon={Icon.upgrade()}
               label={t().mine.raise}
-              badge={me.raisesLeft > 0 ? `+${v.rules.capRaise}` : undefined}
+              tone="gold"
+              badge={me.raisesLeft > 0 ? d(v.rules.prices.cap) : undefined}
               disabled={me.raisesLeft === 0 || !!v.closed}
               onClick={() => act({ type: "terraRaise" })}
+            />
+            <ActionButton
+              icon={Icon.build()}
+              label={t().mine.rocca}
+              badge={built ? undefined : d(v.rules.prices.rocca)}
+              disabled={!!built || !!v.closed}
+              onClick={() => act({ type: "terraBuild", cell, kind: "rocca" })}
             />
             <ActionButton
               icon={Icon.trophy()}
@@ -974,18 +980,17 @@ export function TerraPanel({
         }
         extra={
           <div className="space-y-1.5 text-[12px] text-cream-dim">
-            {built ? (
-              <p>{t().mine.built[built.kind]}</p>
-            ) : (
-              <p>
-                {t().mine.buildHint(
-                  d(v.rules.prices.rocca),
-                  d(v.rules.prices.borgo),
-                  d(v.rules.prices.cap),
-                  v.rules.capRaise,
-                )}
-              </p>
-            )}
+            <p>
+              {me.troops >= me.cap
+                ? t().mine.full(v.rules.capRaise)
+                : t().mine.recruit(
+                    me.recruit.perHour,
+                    me.recruit.fullAt === null ? null : wait(me.recruit.fullAt, now),
+                    v.openHours.from,
+                    v.openHours.to,
+                  )}
+            </p>
+            {built && <p>{t().mine.built[built.kind]}</p>}
             {traitor && (
               <p className="text-vermilion">{t().mine.traitor(clock(me.traitorUntil - now))}</p>
             )}
@@ -998,15 +1003,9 @@ export function TerraPanel({
               <p key={f.id} className="flex items-center justify-between gap-2">
                 <span className="text-gold">
                   {t().mine.frontLine(f.troops, holderName(v, f.against))}
-                  <span className="block text-[11px] text-cream-dim">
-                    {f.takes[0]
-                      ? t().mine.frontEta(
-                          wait(f.takes[0].at, now),
-                          f.takes.length,
-                          f.endsAt === null ? null : hour(f.endsAt),
-                        )
-                      : t().mine.frontStuck}
-                  </span>
+                  {f.takes[0] && (
+                    <span className="text-cream-dim"> · {wait(f.takes[0].at, now)}</span>
+                  )}
                 </span>
                 <button
                   type="button"
@@ -1080,7 +1079,7 @@ export function TerraPanel({
               icon={Icon.bandits()}
               label={t().target.attack}
               tone="gold"
-              disabled={troops <= 0}
+              disabled={cells === 0}
               onClick={async () => {
                 haptic("tap");
                 await act({ type: "terraFront", aim: cell, shareBps });
@@ -1129,14 +1128,20 @@ export function TerraPanel({
               className="terra-share w-full accent-gold"
             />
             <p
-              className={`text-center font-mono text-[11px] ${cells === 0 ? "text-vermilion" : "text-cream-dim"}`}
+              className={`text-center font-mono text-[11px] ${cells === 0 ? "text-vermilion" : "text-cream"}`}
             >
-              {t().target.share(Math.round(shareBps / 100), troops, cells)}
-              {!v.open && ` · ${t().target.night}`}
+              {cells === 0
+                ? me.troops >= (cost ?? 0)
+                  ? t().target.tooWeak(cost ?? 0)
+                  : t().target.notEnough(cost ?? 0, me.troops)
+                : t().target.share(Math.round(shareBps / 100), troops, cells)}
+              {cells > 0 && !v.open && ` · ${t().target.night}`}
             </p>
-            <p className="text-center font-mono text-[11px] text-cream-dim">
-              {t().target.defense(density(me.troops - troops), density(me.troops))}
-            </p>
+            {cells > 0 && (
+              <p className="text-center font-mono text-[11px] text-cream-dim">
+                {t().target.defense(density(me.troops - troops), density(me.troops))}
+              </p>
+            )}
           </div>
         ) : merchant && ally ? (
           <p className="text-center font-mono text-[11px] text-cream-dim">

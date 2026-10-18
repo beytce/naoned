@@ -333,7 +333,8 @@ export class Bot {
     if (border !== undefined && spare(cfg.buildings.rocca.price))
       act({ type: "terraBuild", cell: border, kind: "rocca" });
     const inner = mine.find((c) => !map.buildings?.[c]);
-    if (inner !== undefined && spare(cfg.buildings.borgo.price))
+    const borgo = cfg.buildings.borgo;
+    if (inner !== undefined && borgo && spare(borgo.price))
       act({ type: "terraBuild", cell: inner, kind: "borgo" });
     if (spare(cfg.capRaise.price)) act({ type: "terraRaise" });
     // A front, when the troops are worth it.

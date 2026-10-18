@@ -328,6 +328,11 @@ export const worldSettingsSchema = z.object({
         /** Share of the gap to the cap that comes back each step. */
         regenBps: bps.max(10_000),
         regenMin: qty,
+        /**
+         * When set, troops are recruited by the hour instead (in place of `regenBps`): so many,
+         * plus so many per cell and per city held, up to the cap.
+         */
+        recruit: z.object({ base: qty, perCell: qty, perCity: qty.default(0) }).optional(),
       }),
       fronts: z.object({
         max: positive,
@@ -378,12 +383,15 @@ export const worldSettingsSchema = z.object({
       buildings: z
         .object({
           rocca: z.object({ price: money, defenseBps: positive, perCells: positive }),
-          borgo: z.object({
-            price: money,
-            capBonus: qty,
-            regenBonusBps: bps,
-            perCells: positive,
-          }),
+          /** Absent: no borgo to build (the maximum of troops is raised by ducats only). */
+          borgo: z
+            .object({
+              price: money,
+              capBonus: qty,
+              regenBonusBps: bps,
+              perCells: positive,
+            })
+            .optional(),
         })
         .default({
           rocca: { price: 4_000, defenseBps: 16_000, perCells: 15 },

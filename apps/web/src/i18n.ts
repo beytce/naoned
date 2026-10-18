@@ -443,6 +443,7 @@ export const fr = {
       night: "Nuit : les fronts reposent",
       troops: "Troupes",
       troopsLine: (troops: number, cap: number) => `${troops} / ${cap}`,
+      perHour: (n: number) => `+${n}/h`,
       glory: (glory: number, rank: number) => `${glory} Gloire · ${rank}${rank === 1 ? "er" : "e"}`,
       milan: "Milan",
       neutral: "Terre libre",
@@ -470,7 +471,10 @@ export const fr = {
           `${terrain} · personne ne vous attaque avant la fin du placement`,
       },
       target: {
-        cost: (cost: number) => `${cost} troupes par case`,
+        cost: (cost: number) => `${cost} troupes pour prendre cette terre`,
+        tooWeak: (cost: number) => `Il faut au moins ${cost} troupes : montez le curseur`,
+        notEnough: (cost: number, troops: number) =>
+          `Il faut ${cost} troupes, vous en avez ${troops} : attendez vos recrues`,
         share: (pct: number, troops: number, cells: number) =>
           `${pct} % · ${troops} soldats · ≈ ${cells} case${cells > 1 ? "s" : ""}`,
         attack: "Attaquer",
@@ -479,7 +483,7 @@ export const fr = {
         night: "Le front partira au lever du jour",
         eta: (hour: string, wait: string) => `Vos troupes y seront vers ${hour} (dans ${wait})`,
         defense: (after: number, before: number) =>
-          `Les troupes qui partent ne défendent plus : vos terres tiendront à ${after} par case (au lieu de ${before})`,
+          `Vos terres gardent ${after} défenseurs par case (au lieu de ${before})`,
       },
       holder: {
         line: (cells: number, troops: number) => `${cells} cases · ⚔ ${troops}`,
@@ -497,23 +501,20 @@ export const fr = {
         line: (cells: number, troops: number, cap: number) =>
           `${cells} cases · ⚔ ${troops} / ${cap}`,
         rocca: "Fort",
-        borgo: "Village",
-        raise: "Troupes max",
+        raise: "+ Troupes",
+        recruit: (perHour: number, full: string | null, from: number, to: number) =>
+          `Vos terres recrutent ${perHour} troupes par heure (de ${from} h à ${to} h)${full ? ` : maximum dans ${full}` : ""}. Plus de terres, plus de recrues.`,
+        full: (amount: number) =>
+          `Troupes au maximum. Seuls les ducats l'augmentent : + Troupes ajoute ${amount} au maximum.`,
         decree: "Décret",
         fronts: "Fronts",
         recall: "Rappeler",
-        frontLine: (troops: number, against: string) => `⚔ ${troops} vers ${against}`,
-        frontEta: (wait: string, cells: number, end: string | null) =>
-          `Prochaine case dans ${wait} · ≈ ${cells}${cells >= 12 ? "+" : ""} case${cells > 1 ? "s" : ""} à venir${end ? ` · rentre vers ${end}` : ""}`,
-        frontStuck: "Ne prendra plus de case : rappelez-le",
+        frontLine: (troops: number, against: string) => `⚔ ${troops} → ${against}`,
         threatEta: (hour: string, wait: string) =>
           `Un front ennemi prendra cette terre vers ${hour} (dans ${wait})`,
         built: {
           rocca: "Un fort défend cette terre et ses voisines",
-          borgo: "Un village recrute pour vous : plus de troupes, plus vite",
         } as Record<string, string>,
-        buildHint: (rocca: string, borgo: string, cap: string, amount: number) =>
-          `Fort ${rocca} : défense ×1,6 ici et autour · Village ${borgo} : +troupes max, recrutement plus rapide · +${amount} troupes max ${cap}`,
         traitor: (time: string) => `Traître encore ${time} : vos terres défendent moins bien`,
       },
       decree: {
@@ -1366,6 +1367,9 @@ export const fr = {
         procurator: "Procurateur",
         senator: "Sénateur",
       } as Record<string, string>,
+      glory: (n: number) => `${n.toLocaleString("fr-FR")} Gloire`,
+      helpGlory:
+        "La Gloire de la Terraferme cette semaine, du lundi au dimanche : chaque heure de jeu, vos terres en rapportent (une par case, trois par ville). Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
       help: "Ventes nettes depuis le début de la semaine (ou depuis votre arrivée), en ducats : ce que vous avez vendu, moins ce que vous avez acheté. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
     },
     season: {
@@ -1636,7 +1640,7 @@ export const fr = {
       {
         icon: "famille",
         title: "Le Doge et la Terraferme",
-        text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). La porte Terraferme, au pied de la carte : le premier jour de la semaine, posez votre camp de départ sur une terre libre (après, plus personne n'entre jusqu'à la semaine suivante). Puis lancez des fronts sur les terres voisines avec une part de vos troupes ; ils avancent seuls, case par case, de 8 h à 22 h, tant qu'il leur reste des troupes. Qui perd toutes ses terres est éliminé jusqu'à la semaine suivante. Alliez-vous à vos voisins, bâtissez forts (défense) et villages (troupes). Chaque semaine, la Gloire donne de l'Influence, et le premier, Signore della Terraferma, impose un décret fort la semaine suivante.",
+        text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). La porte Terraferme, au pied de la carte : le premier jour de la semaine, posez votre camp de départ sur une terre libre (après, plus personne n'entre jusqu'à la semaine suivante). Puis lancez des fronts sur les terres voisines avec une part de vos troupes ; ils avancent seuls, case par case, de 8 h à 22 h, tant qu'il leur reste des troupes. Qui perd toutes ses terres est éliminé jusqu'à la semaine suivante. Vos terres recrutent des troupes chaque heure jusqu'à votre maximum, que seuls les ducats augmentent ; un fort renforce la défense. Alliez-vous à vos voisins. Chaque semaine, la Gloire donne de l'Influence, et le premier, Signore della Terraferma, impose un décret fort la semaine suivante.",
       },
       {
         icon: "comptoir",

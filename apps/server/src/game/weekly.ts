@@ -4,7 +4,7 @@ import {
   seasonEnd,
   weekEnd,
   weekIndex,
-  weeklyStandings,
+  weeklyRanking,
 } from "@comptoirs/engine";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { Db } from "../db/client.js";
@@ -108,7 +108,7 @@ export async function weeklyTable(
   now: number,
 ) {
   const week = weekIndex(ctx, now);
-  const standings = weeklyStandings(ctx, state, now);
+  const standings = weeklyRanking(ctx, state, now);
   const info = await who(
     db,
     worldId,
@@ -152,6 +152,8 @@ export async function weeklyTable(
 
   return {
     week: week + 1,
+    /** What the ranking counts: the week's glory on the Terraferma, or its net sales. */
+    unit: ctx.settings.terraferma?.live ? ("glory" as const) : ("sales" as const),
     // The last week of the month runs to the end of the season.
     endsAt: weekEnd(ctx, week),
     rows,

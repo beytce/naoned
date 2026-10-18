@@ -1,5 +1,7 @@
 import {
   MILAN,
+  type TerraConfig,
+  type TerraState,
   type WorldContext,
   type WorldState,
   alliesOf,
@@ -11,6 +13,7 @@ import {
   hexNeighbors,
   hourIn,
   hourWithin,
+  recruitPerHour,
   terraOn,
 } from "@comptoirs/engine";
 
@@ -28,6 +31,35 @@ const TERRAIN_LETTER: Record<string, string> = {
   mountain: "M",
   water: "w",
 };
+
+/**
+ * The merchant's recruits: so many an open hour, when the next come in (the end of the next open
+ * step), and when the troops reach their maximum if nothing else happens (null: already there).
+ */
+function recruitClock(
+  s: TerraState,
+  cfg: TerraConfig,
+  id: string,
+  troops: number,
+  cap: number,
+): { perHour: number; nextAt: number | null; fullAt: number | null } {
+  const perHour = recruitPerHour(s, cfg, id);
+  const stepMs = cfg.stepMinutes * 60_000;
+  const perStep = Math.floor((perHour * cfg.stepMinutes) / 60);
+  let nextAt: number | null = null;
+  let fullAt: number | null = null;
+  let t = s.clock;
+  let n = troops;
+  for (let k = 0; perStep > 0 && n < cap && k < (7 * 24 * 60) / cfg.stepMinutes; k++) {
+    const from = t;
+    t += stepMs;
+    if (!hourWithin(hourIn(from), cfg.openHours)) continue;
+    nextAt ??= t;
+    n += perStep;
+    if (n >= cap) fullAt = t;
+  }
+  return { perHour, nextAt, fullAt };
+}
 
 /** How far ahead a front's march is forecast, and how many of its cells are sent. */
 const FORECAST_MS = 24 * 3_600_000;
@@ -146,6 +178,7 @@ export function terraView(
           protectedUntil: me.protectedUntil,
           traitorUntil: me.traitorUntil ?? 0,
           eliminatedAt: me.eliminatedAt ?? null,
+          recruit: recruitClock(s, cfg, playerId, me.troops, capOf(s, cfg, playerId)),
           allies: [...allies].map(at),
           requestsIn: (s.requests ?? []).filter((r) => r.to === playerId).map((r) => at(r.from)),
           requestsOut: (s.requests ?? []).filter((r) => r.from === playerId).map((r) => at(r.to)),
@@ -181,7 +214,7 @@ export function terraView(
       decrees: cfg.close.decrees,
       prices: {
         rocca: cfg.buildings.rocca.price,
-        borgo: cfg.buildings.borgo.price,
+        borgo: cfg.buildings.borgo?.price ?? null,
         cap: cfg.capRaise.price,
       },
       capRaise: cfg.capRaise.amount,

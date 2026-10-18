@@ -160,7 +160,7 @@ export function pushText(
       const award = data.award ? ` Vous êtes ${AWARDS[String(data.award)]} !` : "";
       return {
         title: "Résultats de la semaine",
-        body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${sign}${ducats(gain)} ducats).${award}`,
+        body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${data.glory ? `${gain} de Gloire` : `${sign}${ducats(gain)} ducats`}).${award}`,
       };
     }
     case "siege":

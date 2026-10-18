@@ -392,7 +392,14 @@ export class Notifier {
       rows.map((r) => ({
         accountId: r.accountId,
         kind: "week" as const,
-        data: { week, rank: r.rank, gain: r.gain.toString(), award: r.award },
+        data: {
+          week,
+          rank: r.rank,
+          gain: r.gain.toString(),
+          award: r.award,
+          // The week's glory on the Terraferma when it is live, else its net sales.
+          glory: !!this.world.ctx.settings.terraferma?.live,
+        },
       })),
       now,
     );

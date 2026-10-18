@@ -15,7 +15,9 @@ import {
   launchFront,
   newTerra,
   placeOnTerra,
+  raiseCap,
   recallFront,
+  recruitPerHour,
 } from "../src/index.js";
 import { testTerraferma } from "./fixture.js";
 import { HOUR, MIN, makeContext } from "./helpers.js";
@@ -186,6 +188,7 @@ describe("fronts", () => {
     const cfg = config();
     const s = newTerra(cfg, "seed", 10, START);
     placeOnTerra(s, cfg, "a", freeCell(s), START);
+    (s.players.a as { troops: number }).troops = 1_000;
     expect(code(() => launchFront(s, cfg, "a", border(s, "a"), 500, START))).toBe(
       "share_too_small",
     );
@@ -414,9 +417,8 @@ describe("a front's forecast", () => {
       advanceTerra(s, cfg, take.at);
       expect(s.owner[take.cell]).toBe("a");
     }
-    advanceTerra(s, cfg, (forecast?.endsAt ?? 0) - STEP);
-    expect(s.fronts.some((f) => f.id === front.id)).toBe(true);
-    advanceTerra(s, cfg, forecast?.endsAt ?? 0);
+    // It comes home with its last cell, as soon as it can no longer pay the next.
+    expect(forecast?.endsAt).toBe(forecast?.takes.at(-1)?.at);
     expect(s.fronts.some((f) => f.id === front.id)).toBe(false);
   });
 
@@ -481,16 +483,17 @@ describe("a week of war: everyone sets down on Monday, then no limit", () => {
     const { b } = pair(s, cfg, START);
     advanceTerra(s, cfg, START + 24 * HOUR);
     (s.players.a as { troops: number }).troops = 100_000;
-    (s.players.b as { troops: number }).troops = 1;
+    (s.players.b as { troops: number }).troops = 10_000;
     launchFront(s, cfg, "a", border(s, "a", "b"), 10_000, s.clock);
-    launchFront(s, cfg, "b", border(s, "b"), 10_000, s.clock);
+    launchFront(s, cfg, "b", border(s, "b"), 1_000, s.clock);
+    (s.players.b as { troops: number }).troops = 1;
     advanceTerra(s, cfg, s.clock + 6 * HOUR);
     expect(s.owner[b]).toBe("a");
     expect(cellsOf(s, "b")).toEqual([]);
     expect(s.players.b?.eliminatedAt).toBeGreaterThan(START);
     expect(s.players.b?.troops).toBe(0);
     expect(s.fronts.some((f) => f.owner === "b")).toBe(false);
-    expect(code(() => placeOnTerra(s, cfg, "b", freeCell(s, 2), s.clock))).toBe("already_placed");
+    expect(code(() => placeOnTerra(s, cfg, "b", 0, s.clock))).toBe("already_placed");
   });
 
   it("sends Milan at its weakest neighbour, not at the leader", () => {
@@ -522,5 +525,56 @@ describe("a week of war: everyone sets down on Monday, then no limit", () => {
     for (let k = 0; k < 48 && !s.fronts.some((f) => f.owner === MILAN); k++)
       advanceTerra(s, cfg, s.clock + step);
     expect(s.fronts.find((f) => f.owner === MILAN)?.against).toBe("weak");
+  });
+});
+
+describe("troops a merchant understands", () => {
+  const plain = (more: Partial<NonNullable<WorldSettingsInput["terraferma"]>> = {}) =>
+    config({
+      stepMinutes: 60,
+      terrains: { plain: { defenseBps: 10_000, militia: 3 } },
+      bands: [{ untilBps: 10_000, weights: { plain: 1 } }],
+      city: { militiaBps: 10_000, defenseBps: 10_000 },
+      troops: {
+        ...testTerraferma.troops,
+        base: 50,
+        perCell: 0,
+        perCity: 0,
+        recruit: { base: 6, perCell: 1 },
+      },
+      ...more,
+    });
+
+  it("have a maximum raised by ducats only, and are recruited by the hour, faster with more land", () => {
+    const cfg = plain();
+    const s = newTerra(cfg, "seed", 10, START);
+    placeOnTerra(s, cfg, "a", freeCell(s), START);
+    const cells = cellsOf(s, "a").length;
+    expect(capOf(s, cfg, "a")).toBe(50);
+    expect(recruitPerHour(s, cfg, "a")).toBe(6 + cells);
+    (s.players.a as { troops: number }).troops = 0;
+    advanceTerra(s, cfg, START + HOUR);
+    expect(s.players.a?.troops).toBe(6 + cells);
+    // Never past the maximum; ducats raise it.
+    advanceTerra(s, cfg, START + 10 * HOUR);
+    expect(s.players.a?.troops).toBe(50);
+    raiseCap(s, cfg, "a", START + 10 * HOUR);
+    expect(capOf(s, cfg, "a")).toBe(50 + cfg.capRaise.amount);
+  });
+
+  it("refuse a front that cannot take its first cell, and bring one home as soon as it no longer can", () => {
+    const cfg = plain({ fronts: { ...testTerraferma.fronts, cellsPerStep: 1 } });
+    const s = newTerra(cfg, "seed", 10, START);
+    placeOnTerra(s, cfg, "a", freeCell(s), START);
+    (s.players.a as { troops: number }).troops = 2;
+    expect(code(() => launchFront(s, cfg, "a", border(s, "a"), 10_000, START))).toBe("too_weak");
+    // Enough for one cell of 3 and a troop more: it takes one, then comes home with the troop.
+    (s.players.a as { troops: number }).troops = 4;
+    const rate = recruitPerHour(s, cfg, "a");
+    launchFront(s, cfg, "a", border(s, "a"), 10_000, START);
+    advanceTerra(s, cfg, START + HOUR);
+    expect(s.fronts.filter((f) => f.owner === "a")).toHaveLength(0);
+    // The hour's recruits (counted on the land before the take) and the troop come home.
+    expect(s.players.a?.troops).toBe(rate + 1);
   });
 });
