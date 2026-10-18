@@ -7,7 +7,7 @@ Décisions du porteur (17 octobre 2026), qui remplacent la Campagne des familles
 - **chacun pour soi**, avec des **alliances** entre joueurs, plus de familles imposées ;
 - **chaque joueur a son territoire** et ses troupes.
 
-Le porteur **lève le gel des mécaniques** pour ce mode (17 octobre 2026). Il n'y a pas de guildes : seulement des alliances entre joueurs. **Statut : plan validé ; le moteur joue toutes les règles au simulateur (`pnpm --filter @comptoirs/simulator terra`) ; restent les effets des décrets, le branchement au monde (serveur, ducats, Influence) et l'écran.**
+Le porteur **lève le gel des mécaniques** pour ce mode (17 octobre 2026). Il n'y a pas de guildes : seulement des alliances entre joueurs. **Statut : plan validé. Moteur, décrets, serveur (actions, vue `GET /api/game/terra`, notifications) et PNJ faits, derrière `terraferma.live` (éteint pour Venise jusqu'à la bascule d'une saison) ; mesuré au simulateur (`pnpm sim --terra`). Reste l'écran.**
 
 Réponses du porteur aux questions du plan (17 octobre 2026) :
 

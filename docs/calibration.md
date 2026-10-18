@@ -953,3 +953,26 @@ Les PNJ du simulateur acceptent toute alliance et en demandent une au voisin le 
 | Ducats dépensés sur la Terraferme | 76 d par marchand et par jour | 76 | 75 | 76 | 76 |
 
 **Lecture.** L'activité paie enfin nettement (×2 en Gloire) sans éliminer personne : l'occasionnel garde un petit territoire autour de son comptoir. Presque tout le monde s'allie quand les PNJ acceptent tout : avec de vrais joueurs, à mesurer à la bêta. La conquête à 80 % reste un horizon. La Terraferme détruirait environ 75 d par marchand actif et par jour, soit à peu près 40 % de ce que rapportent les livraisons : **c'est le puits de monnaie qui manquait depuis le retrait de l'entretien**, à confirmer quand la Terraferme sera jouée dans le simulateur du commerce (le vrai budget des marchands). Le palier « premier quart » ne sert pas à 40 marchands (le top 10 le couvre) : il servira dans les mondes plus grands.
+
+### La Terraferme jouée dans le monde : le puits de monnaie (18 octobre 2026)
+
+`pnpm sim --terra` fait jouer la Terraferme au simulateur du commerce (les PNJ du moteur s'y posent, s'allient, se battent et y dépensent leurs ducats en trop : quatre fois le prix en caisse), avec les décrets du Signore et l'Influence du classement. 5 graines, toutes conformes :
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie par joueur actif en fin de saison (ducats) | 609 | 682 | 835 | 620 | 613 |
+| Croissance moyenne de la monnaie (%/jour) | 1,8 | 2,2 | 4,4 | 2,4 | 2,7 |
+| Jours hors plage du ratio créée / détruite (sur 23) | 1 | 4 | 1 | 0 | 1 |
+| Détruit par la Terraferme (d par joueur actif et par jour) | 95 | 100 | 100 | 105 | 103 |
+| Part des destructions | 40 % | 42 % | 42 % | 44 % | 43 % |
+| Niveaux d'ateliers par marchand | 5,7 | 5,1 | 5,3 | 4,8 | 5,3 |
+| Assidus devant occasionnels (patrimoine médian) | 119 % | 214 % | 190 % | 189 % | 77 % |
+| Influence médiane de la saison (dont missions) | 173 (158) | 163 (151) | 163 (153) | 169 (155) | 162 (148) |
+
+Pour comparer : sans entretien et sans Terraferme, 1 117 à 1 588 ducats et 3,5 à 6,4 %/jour ; avec l'entretien (avant octobre), 408 à 561 ducats et 1,8 à 3,2 %/jour.
+
+**Lecture.** La Terraferme est le puits qui manquait : la monnaie revient presque à son niveau d'avant le retrait de l'entretien, et la croissance aussi. Deux effets à surveiller :
+- **les ateliers grandissent moins** (4,8 à 5,7 niveaux par marchand, au lieu de 6,4 à 7,6) : les ducats vont à la guerre plutôt qu'aux ateliers. À la bascule, les **ducats des bâtiments pourraient revenir à leur prix d'avant (−40 %)**, le contrepoids de la Terraferme rendant celui-là inutile ; à mesurer alors ;
+- le **patrimoine des assidus** baisse quand ils dépensent sur la Terraferme (graine 5 : 77 %) : le classement compte les ventes nettes, pas le patrimoine, et l'Influence du classement de la Terraferme récompense cette dépense ; l'indicateur de patrimoine ne dit plus tout.
+
+La Faveur du Doge ne donne pas encore son contrat de plus par jour (seulement +40 % de paie) : à faire avec l'écran.
