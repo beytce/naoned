@@ -161,8 +161,8 @@ export const venice1450Settings: WorldSettingsInput = {
   // season opened on 18 October 2026: the real Veneto of the drawn map
   // (Lombardy, Milan's, beyond its western edge; the sea, the lagoon and Lake Garda as water),
   // 25 cells a merchant, Milan in far Lombardy, the Alps in the north and the Po's marshes in the
-  // south, fronts of a cell per half hour (an hour on free land) that come home after 2 h, 8 h to
-  // 22 h: the race for free land lasts until Thursday (docs/calibration.md).
+  // south, fronts of a cell per half hour (an hour on free land), 8 h to 22 h; everyone sets down
+  // on the week's first day, then a week of war without a brake (docs/calibration.md).
   terraferma: {
     live: true,
     cellsPerActive: 25,
@@ -240,10 +240,27 @@ export const venice1450Settings: WorldSettingsInput = {
       { untilBps: 10_000, weights: { plain: 4, marsh: 4 } },
     ],
     city: { militiaBps: 25_000, defenseBps: 15_000 },
-    start: { minDistance: 2, troops: 40, troopsPerDay: 15, protectionHours: 24 },
+    // Everyone sets down on the week's first day, safe from each other until its end; then war.
+    start: { minDistance: 2, troops: 40, troopsPerDay: 0, protectionHours: 0, placementHours: 24 },
     troops: { base: 30, perCell: 2, perCity: 30, regenBps: 400, regenMin: 1 },
-    fronts: { max: 3, cellsPerStep: 1, minShareBps: 1_000, maxHours: 2, neutralEverySteps: 2 },
-    milan: { troops: 100, troopsPerActive: 3, regenBps: 900, everyHours: 4, shareBps: 2_000 },
+    // No limit set by the game: fronts march until their troops run out, capitals fall, Milan
+    // preys on the weak rather than braking the leader.
+    fronts: {
+      max: 3,
+      cellsPerStep: 1,
+      minShareBps: 1_000,
+      maxHours: 0,
+      neutralEverySteps: 2,
+      capitalSafe: false,
+    },
+    milan: {
+      troops: 100,
+      troopsPerActive: 3,
+      regenBps: 900,
+      everyHours: 4,
+      shareBps: 2_000,
+      target: "weakest",
+    },
     glory: { perCell: 1, perCity: 3 },
   },
   // The week's campaign: the Terraferma where its lands really are (seats in the east, Milan in the

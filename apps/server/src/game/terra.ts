@@ -83,6 +83,9 @@ export function terraView(
   return {
     week: t.week,
     closesAt: campaignWeekEnd(ctx, t.week),
+    /** Until when merchants may set down (null: any time); nobody comes in after it. */
+    placementEndsAt:
+      cfg.start.placementHours > 0 ? s.startAt + cfg.start.placementHours * 3_600_000 : null,
     openHours: cfg.openHours,
     /** Whether the fronts march now (they rest at night). */
     open: hourWithin(hourIn(now), cfg.openHours),
@@ -142,6 +145,7 @@ export function terraView(
           capital: me.capital ?? null,
           protectedUntil: me.protectedUntil,
           traitorUntil: me.traitorUntil ?? 0,
+          eliminatedAt: me.eliminatedAt ?? null,
           allies: [...allies].map(at),
           requestsIn: (s.requests ?? []).filter((r) => r.to === playerId).map((r) => at(r.from)),
           requestsOut: (s.requests ?? []).filter((r) => r.from === playerId).map((r) => at(r.to)),

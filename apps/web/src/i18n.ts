@@ -454,11 +454,20 @@ export const fr = {
         m: "Marais",
         M: "Montagne",
       } as Record<string, string>,
+      eliminated: "Éliminé cette semaine",
+      placing: (time: string) => `Placement · la guerre dans ${time}`,
+      out: {
+        late: "La partie de la semaine a commencé",
+        eliminated: "Vous avez perdu toutes vos terres",
+        next: (time: string) => `Prochaine partie dans ${time} : posez-vous dès son premier jour`,
+      },
       place: {
         invite: "Posez votre camp de départ",
         hint: "Touchez une terre libre de la carte",
+        until: (time: string) => `encore ${time}`,
         here: "M'installer ici",
-        line: (terrain: string) => `${terrain} · votre camp de départ y sera imprenable`,
+        line: (terrain: string) =>
+          `${terrain} · personne ne vous attaque avant la fin du placement`,
       },
       target: {
         cost: (cost: number) => `${cost} troupes par case`,
@@ -1627,7 +1636,7 @@ export const fr = {
       {
         icon: "famille",
         title: "Le Doge et la Terraferme",
-        text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). La porte Terraferme, au pied de la carte : posez votre camp de départ sur une terre libre, puis lancez des fronts sur les terres voisines avec une part de vos troupes ; ils avancent seuls, case par case, de 8 h à 22 h. Alliez-vous à vos voisins, bâtissez forts (défense) et villages (troupes). Chaque semaine, la Gloire donne de l'Influence, et le premier, Signore della Terraferma, impose un décret fort la semaine suivante.",
+        text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). La porte Terraferme, au pied de la carte : le premier jour de la semaine, posez votre camp de départ sur une terre libre (après, plus personne n'entre jusqu'à la semaine suivante). Puis lancez des fronts sur les terres voisines avec une part de vos troupes ; ils avancent seuls, case par case, de 8 h à 22 h, tant qu'il leur reste des troupes. Qui perd toutes ses terres est éliminé jusqu'à la semaine suivante. Alliez-vous à vos voisins, bâtissez forts (défense) et villages (troupes). Chaque semaine, la Gloire donne de l'Influence, et le premier, Signore della Terraferma, impose un décret fort la semaine suivante.",
       },
       {
         icon: "comptoir",
@@ -1725,6 +1734,8 @@ export const fr = {
       not_neutral: "Il faut une terre libre.",
       too_close: "Trop près d'un autre marchand.",
       neutral_left: "Il reste de la terre libre : posez-vous là.",
+      placement_closed:
+        "La partie de la semaine a commencé : prochaine partie au début de la semaine prochaine.",
       own_cell: "Cette terre est déjà à vous.",
       allied: "Pas de front contre un allié.",
       protected: "Ce marchand vient d'arriver : il est encore protégé.",

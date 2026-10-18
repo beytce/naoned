@@ -279,7 +279,11 @@ export class Bot {
     const act = (cmd: Record<string, unknown>) =>
       s.act({ playerId: id, ...cmd } as unknown as Command);
     const me = map.players[id];
+    if (me?.eliminatedAt !== undefined) return;
     if (!me) {
+      // Too late: the week's game has begun without it.
+      const end = map.startAt + cfg.start.placementHours * 3_600_000;
+      if (cfg.start.placementHours > 0 && s.now >= end) return;
       const inner = (i: number) =>
         hexNeighbors(map.map, i).filter((n) => map.map.land[n]).length === 6;
       const free = map.owner

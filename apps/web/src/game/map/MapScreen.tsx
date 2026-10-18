@@ -596,7 +596,7 @@ export function MapScreen(
         hasFamily={!!view.families || !!terraView}
         layer={campaign ? "campaign" : terra ? "terra" : "trade"}
         doorLabel={terraView ? fr.game.terra.door : undefined}
-        familyCalls={terraView ? terraCalls(terraView) : familyCalls(props)}
+        familyCalls={terraView ? terraCalls(terraView, now) : familyCalls(props)}
         workshopsReady={ready > 0}
         right={
           campaign ? (

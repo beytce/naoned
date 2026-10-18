@@ -310,6 +310,11 @@ export const worldSettingsSchema = z.object({
         /** More for whom comes later in the week, per day. */
         troopsPerDay: qty,
         protectionHours: qty,
+        /**
+         * Merchants set down only in the week's first hours (0: any time), all of them safe from
+         * each other until then: the week's game is played by those who came.
+         */
+        placementHours: qty.default(0),
       }),
       troops: z.object({
         base: qty,
@@ -327,14 +332,18 @@ export const worldSettingsSchema = z.object({
         maxHours: qty.default(0),
         /** A neutral cell only every so many steps: the race for free land lasts. */
         neutralEverySteps: positive.default(1),
+        /** A merchant's capital is never taken (false: a merchant may be wiped off the map). */
+        capitalSafe: z.boolean().default(true),
       }),
       milan: z.object({
         troops: qty,
         troopsPerActive: qty,
         regenBps: bps.max(10_000),
-        /** Every so many open hours, a front against the leader (or into neutral land). */
+        /** Every so many open hours, a front against a merchant it borders (or into neutral land). */
         everyHours: positive,
         shareBps: bps.max(10_000),
+        /** At whom it rides: the leader in glory (a brake on the favourite) or its weakest neighbour. */
+        target: z.enum(["leader", "weakest"]).default("leader"),
       }),
       glory: z.object({ perCell: qty, perCity: qty }),
       /** Alliances between merchants: how many, how long a break takes, the traitor's lot. */

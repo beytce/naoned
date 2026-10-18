@@ -49,6 +49,8 @@ export interface TerraPlayer {
   /** Alliances broken this week, and until when it is a traitor. */
   breaks?: number;
   traitorUntil?: number;
+  /** When it lost its last cell: out of the week. */
+  eliminatedAt?: number;
 }
 
 export type TerraBuilding = "rocca" | "borgo";
@@ -454,6 +456,9 @@ export function placeOnTerra(
   now: number,
 ): void {
   if (s.players[id]) fail("already_placed");
+  const placementEnd =
+    cfg.start.placementHours > 0 ? s.startAt + cfg.start.placementHours * 3_600_000 : 0;
+  if (placementEnd > 0 && now >= placementEnd) fail("placement_closed");
   if (cell < 0 || cell >= s.owner.length || !s.map.land[cell]) fail("not_neutral");
   const holder = s.owner[cell];
   const onMilan = holder === MILAN;
@@ -477,7 +482,7 @@ export function placeOnTerra(
   s.players[id] = {
     troops: cfg.start.troops + cfg.start.troopsPerDay * day,
     placedAt: now,
-    protectedUntil: now + cfg.start.protectionHours * 3_600_000,
+    protectedUntil: Math.max(placementEnd, now + cfg.start.protectionHours * 3_600_000),
     glory: 0,
     capital: cell,
   };
@@ -754,6 +759,7 @@ function step(s: TerraState, cfg: TerraConfig, at: number): void {
     s.alliances = s.alliances.filter((a) => a.endsAt === undefined || a.endsAt > at);
   // Troops come back toward the cap (the borgos bring them back faster).
   for (const [id, p] of Object.entries(s.players)) {
+    if (p.eliminatedAt !== undefined) continue;
     const cap = capOf(s, cfg, id);
     if (p.troops >= cap) continue;
     const borgos = terraBuildingsOf(s, id, "borgo").length;
@@ -768,6 +774,7 @@ function step(s: TerraState, cfg: TerraConfig, at: number): void {
   }
   // Fronts, in the order they were launched.
   for (const front of [...s.fronts]) advanceFront(s, cfg, front, at);
+  eliminate(s, at);
   // Every open hour, the pockets cut off from their capital fall a little.
   s.hourSteps = (s.hourSteps ?? 0) + 1;
   if (s.hourSteps * cfg.stepMinutes >= 60) {
@@ -847,7 +854,9 @@ function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront, at: nu
   for (let k = 0; k < cfg.fronts.cellsPerStep; k++) {
     let best = -1;
     let bestDistance = Number.POSITIVE_INFINITY;
-    const capitals = new Set(Object.values(s.players).map((p) => p.capital));
+    const capitals = new Set(
+      cfg.fronts.capitalSafe ? Object.values(s.players).map((p) => p.capital) : [],
+    );
     for (let i = 0; i < s.owner.length; i++) {
       if (!s.map.land[i] || s.owner[i] !== front.against || !borders(s, front.owner, i)) continue;
       if (capitals.has(i)) continue;
@@ -870,6 +879,16 @@ function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront, at: nu
     seize(s, best, front.owner, at);
     razeAt(s, best);
     s.trace?.push({ front: front.id, cell: best, at: at + cfg.stepMinutes * MINUTE_MS });
+  }
+}
+
+/** Merchants left without a cell are out of the week: no troops, no fronts. */
+function eliminate(s: TerraState, at: number): void {
+  for (const [id, p] of Object.entries(s.players)) {
+    if (id === MILAN || p.eliminatedAt !== undefined || s.owner.includes(id)) continue;
+    p.eliminatedAt = at;
+    p.troops = 0;
+    s.fronts = s.fronts.filter((f) => f.owner !== id);
   }
 }
 
@@ -902,8 +921,18 @@ function component(s: TerraState, id: string, from: number): Set<number> {
  */
 function fallPockets(s: TerraState, cfg: TerraConfig, at: number): void {
   for (const [id, p] of Object.entries(s.players)) {
-    if (id === MILAN || p.capital === undefined || s.owner[p.capital] !== id) continue;
-    const main = component(s, id, p.capital);
+    if (id === MILAN || p.capital === undefined) continue;
+    // The main land: around the capital, or, once it is taken, the largest piece left.
+    let main = s.owner[p.capital] === id ? component(s, id, p.capital) : new Set<number>();
+    if (main.size === 0) {
+      const seen = new Set<number>();
+      for (const c of cellsOf(s, id)) {
+        if (seen.has(c)) continue;
+        const piece = component(s, id, c);
+        for (const x of piece) seen.add(x);
+        if (piece.size > main.size) main = piece;
+      }
+    }
     const done = new Set(main);
     for (const start of cellsOf(s, id)) {
       if (done.has(start)) continue;
@@ -927,14 +956,22 @@ function fallPockets(s: TerraState, cfg: TerraConfig, at: number): void {
   }
 }
 
-/** Milan's ride: at the leader in glory it borders (not protected), else into neutral land. */
+/**
+ * Milan's ride: at a merchant it borders (not protected), the leader in glory or the weakest
+ * (fewest troops a cell), as the settings say; else into neutral land.
+ */
 function milanRides(s: TerraState, cfg: TerraConfig, at: number): void {
   if (s.fronts.some((f) => f.owner === MILAN)) return;
   const milan = cellsOf(s, MILAN);
   if (milan.length === 0) return;
+  const weakest = cfg.milan.target === "weakest";
   const leaders = Object.entries(s.players)
-    .filter(([id, p]) => id !== MILAN && p.protectedUntil <= at)
-    .sort((a, b) => b[1].glory - a[1].glory || (a[0] < b[0] ? -1 : 1));
+    .filter(([id, p]) => id !== MILAN && p.protectedUntil <= at && p.eliminatedAt === undefined)
+    .sort(
+      (a, b) =>
+        (weakest ? densityOf(s, a[0]) - densityOf(s, b[0]) : b[1].glory - a[1].glory) ||
+        (a[0] < b[0] ? -1 : 1),
+    );
   for (const [id] of leaders) {
     const target = s.owner.findIndex((o, i) => o === id && borders(s, MILAN, i));
     if (target >= 0) {

@@ -47,7 +47,7 @@ function section(r: TerraResult): string {
     `| Milan à 22 h, jour par jour | ${r.daily.map((d) => pct(d.milanBps)).join(" · ")} |`,
     `| Premier front entre marchands | ${r.firstContactHours === null ? "jamais" : `${r.firstContactHours} h après l'ouverture`} |`,
     `| Fronts lancés | ${r.fronts.launched} (contre des marchands ${r.fronts.againstMerchants}, de Milan ${r.fronts.byMilan}) |`,
-    `| Marchands posés | ${placed.length} / ${r.players.length} ; sans terre en fin de semaine : ${out} |`,
+    `| Marchands posés | ${placed.length} / ${r.players.length} ; éliminés (sans terre en fin de semaine) : ${out} |`,
     `| Le premier tient | ${top[0]?.cells ?? 0} cases (${pct(Math.round(((top[0]?.cells ?? 0) * 10_000) / r.cells))} de la carte) ; les trois premiers ${pct(Math.round((top.slice(0, 3).reduce((n, p) => n + p.cells, 0) * 10_000) / r.cells))} |`,
     `| Cases médianes par profil | ${byProfile.map((x) => `${TERRA_PROFILES[x.k]?.name} ${x.cells}`).join(" · ")} |`,
     `| Gloire médiane par profil | ${byProfile.map((x) => `${TERRA_PROFILES[x.k]?.name} ${x.glory}`).join(" · ")} |`,

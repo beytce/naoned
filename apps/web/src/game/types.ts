@@ -832,6 +832,8 @@ export type TerraAction =
 export interface TerraView {
   week: number;
   closesAt: number;
+  /** Until when merchants may set down (null: any time); nobody comes in after it. */
+  placementEndsAt: number | null;
   openHours: { from: number; to: number };
   /** Whether the fronts march now (they rest at night). */
   open: boolean;
@@ -883,6 +885,8 @@ export interface TerraView {
     capital: number | null;
     protectedUntil: number;
     traitorUntil: number;
+    /** When it lost its last cell: out of the week. */
+    eliminatedAt: number | null;
     allies: number[];
     requestsIn: number[];
     requestsOut: number[];

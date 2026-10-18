@@ -431,3 +431,96 @@ describe("a front's forecast", () => {
     expect(forecast?.endsAt).toBeNull();
   });
 });
+
+describe("a week of war: everyone sets down on Monday, then no limit", () => {
+  const war = (more: Partial<NonNullable<WorldSettingsInput["terraferma"]>> = {}) =>
+    config({
+      start: { ...testTerraferma.start, minDistance: 2, protectionHours: 0, placementHours: 24 },
+      fronts: { ...testTerraferma.fronts, capitalSafe: false },
+      ...more,
+    });
+  /** a, and b three cells away: their lands touch. */
+  const pair = (s: TerraState, cfg: ReturnType<typeof war>, at: number) => {
+    const a = freeCell(s, 2);
+    placeOnTerra(s, cfg, "a", a, at);
+    const b = s.owner.findIndex(
+      (o, i) =>
+        o === null &&
+        hexDistance(s.map, a, i) === 3 &&
+        hexNeighbors(s.map, i).every(
+          (n) => s.owner[n] === null || s.owner[n] === "a" || hexDistance(s.map, a, n) >= 2,
+        ),
+    );
+    placeOnTerra(s, cfg, "b", b, at);
+    return { a, b };
+  };
+
+  it("lets merchants set down only during the first day, all safe from each other until then", () => {
+    const cfg = war();
+    const s = newTerra(cfg, "seed", 10, START);
+    pair(s, cfg, START + 20 * HOUR);
+    expect(s.players.a?.protectedUntil).toBe(START + 24 * HOUR);
+    expect(
+      code(() => launchFront(s, cfg, "a", border(s, "a", "b"), 5_000, START + 20 * HOUR)),
+    ).toBe("protected");
+    // Free land may be taken while setting down.
+    expect(code(() => launchFront(s, cfg, "a", border(s, "a"), 2_000, START + 20 * HOUR))).toBe(
+      "ok",
+    );
+    expect(code(() => placeOnTerra(s, cfg, "c", freeCell(s, 2), START + 24 * HOUR))).toBe(
+      "placement_closed",
+    );
+    expect(
+      code(() => launchFront(s, cfg, "a", border(s, "a", "b"), 5_000, START + 24 * HOUR)),
+    ).toBe("ok");
+  });
+
+  it("takes even a capital: a merchant left without land is out of the week", () => {
+    const cfg = war();
+    const s = newTerra(cfg, "seed", 10, START);
+    const { b } = pair(s, cfg, START);
+    advanceTerra(s, cfg, START + 24 * HOUR);
+    (s.players.a as { troops: number }).troops = 100_000;
+    (s.players.b as { troops: number }).troops = 1;
+    launchFront(s, cfg, "a", border(s, "a", "b"), 10_000, s.clock);
+    launchFront(s, cfg, "b", border(s, "b"), 10_000, s.clock);
+    advanceTerra(s, cfg, s.clock + 6 * HOUR);
+    expect(s.owner[b]).toBe("a");
+    expect(cellsOf(s, "b")).toEqual([]);
+    expect(s.players.b?.eliminatedAt).toBeGreaterThan(START);
+    expect(s.players.b?.troops).toBe(0);
+    expect(s.fronts.some((f) => f.owner === "b")).toBe(false);
+    expect(code(() => placeOnTerra(s, cfg, "b", freeCell(s, 2), s.clock))).toBe("already_placed");
+  });
+
+  it("sends Milan at its weakest neighbour, not at the leader", () => {
+    const cfg = war({ milan: { ...testTerraferma.milan, target: "weakest" } });
+    const s = newTerra(cfg, "seed", 10, START);
+    // Two merchants along Milan's land, far from each other.
+    const edge = (away: string[]) =>
+      s.owner.findIndex(
+        (o, i) =>
+          o === null &&
+          s.owner.every(
+            (p, j) =>
+              p === null ||
+              (p === MILAN ? hexDistance(s.map, i, j) >= 2 : hexDistance(s.map, i, j) >= 4),
+          ) &&
+          s.owner.some((p, j) => p === MILAN && hexDistance(s.map, i, j) === 2) &&
+          away.every((id) => cellsOf(s, id).every((j) => hexDistance(s.map, i, j) >= 4)),
+      );
+    placeOnTerra(s, cfg, "strong", edge([]), START);
+    placeOnTerra(s, cfg, "weak", edge(["strong"]), START);
+    advanceTerra(s, cfg, START + 24 * HOUR);
+    (s.players.strong as { troops: number; glory: number }).troops = 1_000;
+    (s.players.strong as { glory: number }).glory = 1_000;
+    (s.players.weak as { troops: number }).troops = 1;
+    s.milanSteps = 0;
+    s.fronts = [];
+    // Step by step until Milan rides out.
+    const step = cfg.stepMinutes * MIN;
+    for (let k = 0; k < 48 && !s.fronts.some((f) => f.owner === MILAN); k++)
+      advanceTerra(s, cfg, s.clock + step);
+    expect(s.fronts.find((f) => f.owner === MILAN)?.against).toBe("weak");
+  });
+});

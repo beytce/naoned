@@ -115,6 +115,7 @@ export type EngineErrorCode =
   | "not_neutral"
   | "too_close"
   | "neutral_left"
+  | "placement_closed"
   | "not_adjacent"
   | "own_cell"
   | "protected"

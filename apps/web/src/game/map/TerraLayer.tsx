@@ -59,10 +59,18 @@ export function useTerra(shown: boolean): {
   return { terra, refresh };
 }
 
-/** Whether the Terraferma calls: no war counter yet, a front marching on the merchant, an ally asking. */
-export function terraCalls(v: TerraView): boolean {
+/** Whether merchants may still set down this week. */
+export const placementOpen = (v: TerraView, now: number) =>
+  v.placementEndsAt === null || now < v.placementEndsAt;
+
+/**
+ * Whether the Terraferma calls: a camp still to set down while the week lets it, a front marching
+ * on the merchant, an ally asking.
+ */
+export function terraCalls(v: TerraView, now: number): boolean {
   if (v.closed) return false;
-  if (!v.me) return true;
+  if (!v.me) return placementOpen(v, now);
+  if (v.me.eliminatedAt !== null) return false;
   return v.fronts.some((f) => f.threat) || v.me.requestsIn.length > 0;
 }
 
@@ -812,6 +820,10 @@ export function TerraHud({ v, now }: { v: TerraView; now: number }) {
         </>
       )}
       <span className="flex flex-col items-end font-mono text-[10px] uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+        {me?.eliminatedAt != null && <span className="text-vermilion">{t().eliminated}</span>}
+        {!v.closed && v.placementEndsAt !== null && now < v.placementEndsAt && (
+          <span className="text-gold">{t().placing(clock(v.placementEndsAt - now))}</span>
+        )}
         <span>{v.closed ? t().closed : t().closesIn(clock(v.closesAt - now))}</span>
         {!v.open && !v.closed && <span className="text-lagoon">☾ {t().night}</span>}
       </span>
@@ -843,8 +855,23 @@ export function TerraPanel({
   const me = v.me;
   const close = () => select(null);
 
+  const open = placementOpen(v, now);
   if (cell === null) {
-    if (me || !!v.closed) return null;
+    if (v.closed) return null;
+    // Out of the week: too late to set down, or wiped off the map.
+    if ((!me && !open) || (me && me.eliminatedAt !== null)) {
+      return (
+        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 flex flex-col items-center gap-1 px-4 text-center lg:bottom-28">
+          <span className="rounded-full bg-night/90 px-4 py-2 font-display text-[13px] font-extrabold uppercase tracking-wide text-cream ring-1 ring-line shadow-[0_6px_20px_rgb(0_0_0/0.45)]">
+            {me ? t().out.eliminated : t().out.late}
+          </span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+            {t().out.next(clock(v.closesAt - now))}
+          </span>
+        </div>
+      );
+    }
+    if (me) return null;
     return (
       <div className="pointer-events-none absolute inset-x-0 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 flex flex-col items-center gap-1 lg:bottom-28">
         <span className="whitespace-nowrap rounded-full bg-gold px-4 py-2 font-display text-[13px] font-extrabold uppercase tracking-wide text-ink shadow-[0_6px_20px_rgb(0_0_0/0.45)]">
@@ -852,6 +879,7 @@ export function TerraPanel({
         </span>
         <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
           {t().place.hint}
+          {v.placementEndsAt !== null && ` · ${t().place.until(clock(v.placementEndsAt - now))}`}
         </span>
       </div>
     );
@@ -865,13 +893,21 @@ export function TerraPanel({
   const chip = <span className="label">{city ? holderName(v, holder) : terrain}</span>;
 
   // Not set down yet: a neutral cell to settle on.
-  if (!me) {
-    const free = holder < 0 && !v.closed;
+  if (!me || me.eliminatedAt !== null) {
+    const free = !me && holder < 0 && !v.closed && open;
     return (
       <ContextPanel
         title={title}
         chip={chip}
-        status={free ? t().place.line(terrain) : h ? t().holder.line(h.cells, h.troops) : terrain}
+        status={
+          free
+            ? t().place.line(terrain)
+            : h
+              ? t().holder.line(h.cells, h.troops)
+              : !v.closed && !open
+                ? t().out.late
+                : terrain
+        }
         tone="gold"
         onClose={close}
         actions={

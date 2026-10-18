@@ -997,3 +997,23 @@ La Faveur du Doge donne aussi son contrat de plus par jour (`effects.faveur_doge
 ## Accélérer une livraison : livraison et retour immédiats (18 octobre 2026, décision du porteur)
 
 Payer en Influence livre la marchandise tout de suite **et** ramène le véhicule aussitôt ; on peut aussi accélérer un véhicule sur la route du retour. Le prix reste d'un point par 20 minutes (`house.spend.rushMinutesPerPoint`), mais compté jusqu'au retour du véhicule : une accélération à l'aller coûte environ deux fois plus qu'avant, pour un véhicule qui repart aussitôt. La limite reste de trois par jour (`rushPerDay`). Les PNJ du simulateur n'accélèrent pas : `pnpm sim` n'en est pas changé ; à mesurer à la bêta (Influence dépensée en accélérations, livraisons par véhicule et par jour).
+
+## La Terraferme : placement le premier jour, puis la guerre sans frein (18 octobre 2026, décision du porteur)
+
+Pour Venise : on se pose pendant les 24 premières heures de la semaine (`start.placementHours` 24, en sûreté jusque-là ; `protectionHours` et `troopsPerDay` à 0), puis plus personne n'entre ; le comptoir se prend (`fronts.capitalSafe` false) et qui perd sa dernière case est éliminé ; les fronts ne rentrent plus après 2 h (`maxHours` 0) ; Milan frappe son voisin le plus faible au lieu du premier en Gloire (`milan.target` « weakest »). `pnpm --filter @comptoirs/simulator terra`, 5 graines (les 4 retardataires, qui arrivent le jeudi, ne jouent plus la semaine) :
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Milan en fin de semaine | 29 % | 29 % | 23 % | 32 % | 33 % |
+| Premier front entre marchands | 39 h | 37 h | 37 h | 33 h | 33 h |
+| Marchands posés | 36 / 40 | 36 / 40 | 36 / 40 | 36 / 40 | 36 / 40 |
+| Éliminés en fin de semaine | 4 | 8 | 5 | 4 | 5 |
+| Le premier tient | 9 % | 8 % | 9 % | 5 % | 8 % |
+| Les trois premiers tiennent | 19 % | 18 % | 22 % | 14 % | 17 % |
+| Assidus devant occasionnels (Gloire médiane) | 197 % | 226 % | 218 % | 181 % | 198 % |
+| Signore | assidu | assidu | assidu | assidu | assidu |
+| Ducats détruits (d par marchand et par jour) | 79 | 78 | 79 | 78 | 78 |
+
+`pnpm sim`, 5 graines, toutes conformes ; la Terraferme détruit 36 à 40 % de la monnaie (86 à 96 d par joueur actif et par jour), la masse monétaire reste sous son plafond (0,80 à 0,91 ×).
+
+**Lecture.** La partie est plus dure, comme voulu : 4 à 8 marchands sur 36 sont rayés de la carte avant dimanche (aucun avant), le premier tient jusqu'à 9 % de la carte (5 % avant) et l'avance des assidus passe de 121 à 163 % à 181 à 226 %. Milan, qui ne freine plus le favori, mange les faibles et finit à 23 à 33 % de la carte. À surveiller à la bêta : les éliminés reviennent-ils la semaine suivante, et la part de Milan (si elle gêne, baisser `milan.shareBps` ou son plafond fixe).
