@@ -52,6 +52,8 @@ import {
   hasPass,
   seasonEnd,
 } from "./state.js";
+import { terraOn } from "./terraWorld.js";
+import { alliesOf, capOf, cellCost, cellsOf, hexNeighbors } from "./terraferma.js";
 import { findRegion, recipesFor } from "./theme.js";
 
 /**
@@ -262,6 +264,105 @@ export class Bot {
     this.sellSurplus(s);
     this.claimDaily(s);
     this.claimHouseMissions(s);
+    this.playTerra(s);
+  }
+
+  /**
+   * The Terraferma, when it is live: set down, keep an ally, spend spare ducats on a rocca, a
+   * borgo or the cap, then a front at free land, else at the thinnest neighbour, else at Milan.
+   */
+  private playTerra(s: Session): void {
+    const cfg = terraOn(s.ctx);
+    const map = s.state().terra?.map;
+    if (!cfg || !map || map.closed) return;
+    const id = this.id;
+    const act = (cmd: Record<string, unknown>) =>
+      s.act({ playerId: id, ...cmd } as unknown as Command);
+    const me = map.players[id];
+    if (!me) {
+      const inner = (i: number) =>
+        hexNeighbors(map.map, i).filter((n) => map.map.land[n]).length === 6;
+      const free = map.owner
+        .map((o, i) => (o === null && map.map.land[i] && inner(i) ? i : -1))
+        .filter((i) => i >= 0);
+      const start = free.length > 0 ? Math.floor(s.rng.next() * free.length) : 0;
+      for (let k = 0; k < Math.min(40, free.length); k++) {
+        if (act({ type: "terraPlace", cell: free[(start + k) % free.length] })) return;
+      }
+      // No free land: the edge of Milan's.
+      const edge = map.owner.findIndex(
+        (o, i) =>
+          o === MILAN &&
+          hexNeighbors(map.map, i).some((n) => map.map.land[n] && map.owner[n] !== MILAN),
+      );
+      if (edge >= 0) act({ type: "terraPlace", cell: edge });
+      return;
+    }
+    if (!map.programme?.[id]) {
+      const decrees = cfg.close.decrees;
+      const code = decrees[Math.floor(s.rng.next() * decrees.length)];
+      if (code) act({ type: "terraDecree", code });
+    }
+    for (const r of (map.requests ?? []).filter((x) => x.to === id))
+      act({ type: "terraAccept", from: r.from });
+    const mine = cellsOf(map, id);
+    const allies = alliesOf(map, id);
+    if (allies.length === 0 && !(map.requests ?? []).some((r) => r.from === id)) {
+      const next = new Set<string>();
+      for (const c of mine) {
+        for (const n of hexNeighbors(map.map, c)) {
+          const o = map.owner[n];
+          if (o && o !== id && o !== MILAN) next.add(o);
+        }
+      }
+      const pick = [...next].sort()[0];
+      if (pick) act({ type: "terraAlly", other: pick });
+    }
+    // Spare ducats only: four times the price in hand.
+    const spare = (price: bigint) => this.cash(s) >= price * 4n;
+    const border = mine.find((c) =>
+      hexNeighbors(map.map, c).some((n) => {
+        const o = map.owner[n];
+        return !!o && o !== id && o !== MILAN && !allies.includes(o);
+      }),
+    );
+    if (border !== undefined && spare(cfg.buildings.rocca.price))
+      act({ type: "terraBuild", cell: border, kind: "rocca" });
+    const inner = mine.find((c) => !map.buildings?.[c]);
+    if (inner !== undefined && spare(cfg.buildings.borgo.price))
+      act({ type: "terraBuild", cell: inner, kind: "borgo" });
+    if (spare(cfg.capRaise.price)) act({ type: "terraRaise" });
+    // A front, when the troops are worth it.
+    const after = s.state().terra?.map ?? map;
+    const self = after.players[id];
+    if (!self || self.troops * 10 < capOf(after, cfg, id) * 3) return;
+    if (after.fronts.filter((f) => f.owner === id).length >= cfg.fronts.max) return;
+    const targets = new Map<string | null, number[]>();
+    for (let i = 0; i < after.owner.length; i++) {
+      const o = after.owner[i] ?? null;
+      if (o === id || !after.map.land[i]) continue;
+      if (!hexNeighbors(after.map, i).some((n) => after.owner[n] === id)) continue;
+      targets.set(o, [...(targets.get(o) ?? []), i]);
+    }
+    const attacked = new Set(after.fronts.filter((f) => f.owner === id).map((f) => f.against));
+    const density = (o: string) =>
+      (after.players[o]?.troops ?? 0) / Math.max(1, cellsOf(after, o).length);
+    const rank = (o: string | null) => (o === null ? 0 : o === MILAN ? 2 : 1);
+    const against = [...targets.keys()]
+      .filter((o) => !attacked.has(o) && (o === null || o === MILAN || !allies.includes(o)))
+      .filter(
+        (o) =>
+          o === null ||
+          o === MILAN ||
+          (self.protectedUntil <= s.now && (after.players[o]?.protectedUntil ?? 0) <= s.now),
+      )
+      .sort((a, b) => rank(a) - rank(b) || (a && b ? density(a) - density(b) : 0))[0];
+    if (against === undefined) return;
+    const aim = (targets.get(against) ?? []).sort(
+      (a, b) => cellCost(after, cfg, a) - cellCost(after, cfg, b) || a - b,
+    )[0];
+    const share = this.profile.name === "casual" ? 7_000 : 5_000;
+    if (aim !== undefined) act({ type: "terraFront", aim, shareBps: share });
   }
 
   /**
