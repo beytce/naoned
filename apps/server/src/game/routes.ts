@@ -33,6 +33,7 @@ import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pas
 import { priceHistory, profile } from "./profile.js";
 import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
 import { toJson } from "./serialize.js";
+import { terraView } from "./terra.js";
 import { catalog, playerView, ranking } from "./view.js";
 import { weeklyTable } from "./weekly.js";
 import { WELCOME_AFTER_MS, welcomeBack } from "./welcome.js";
@@ -119,6 +120,33 @@ const action = z.discriminatedUnion("type", [
     from: z.literal("second").optional(),
   }),
   z.object({ type: z.literal("claimHouseMission"), missionId: z.string().max(32) }),
+  // The Terraferma (docs/plan-terraferme.md): live only once the world's settings switch it on.
+  z.object({ type: z.literal("terraPlace"), cell: z.number().int().nonnegative() }),
+  z.object({
+    type: z.literal("terraFront"),
+    aim: z.number().int().nonnegative(),
+    shareBps: z.number().int().min(1).max(10_000),
+  }),
+  z.object({ type: z.literal("terraRecall"), frontId: z.string().max(32) }),
+  z.object({ type: z.literal("terraAlly"), other: z.string().uuid() }),
+  z.object({ type: z.literal("terraAccept"), from: z.string().uuid() }),
+  z.object({ type: z.literal("terraBreak"), other: z.string().uuid() }),
+  z.object({
+    type: z.literal("terraSend"),
+    to: z.string().uuid(),
+    count: z.number().int().positive().max(100_000),
+  }),
+  z.object({
+    type: z.literal("terraBuild"),
+    cell: z.number().int().nonnegative(),
+    kind: z.enum(["rocca", "borgo"]),
+  }),
+  z.object({ type: z.literal("terraRaise") }),
+  z.object({
+    type: z.literal("terraDecree"),
+    code: z.string().max(32),
+    target: z.string().max(32).optional(),
+  }),
   z.object({
     type: z.literal("deliverToProject"),
     projectId: z.string(),
@@ -776,6 +804,25 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     });
   });
 
+  /** The Terraferma's map and the merchant's state on it (null while it is not live). */
+  app.get("/api/game/terra", perMerchant(300), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const map = world.current.terra?.map;
+    const ids = map ? Object.keys(map.players).filter((id) => id !== "milan") : [];
+    const rows =
+      ids.length === 0
+        ? []
+        : await db
+            .select({ id: accounts.id, pseudo: accounts.pseudo, crest: accounts.crest })
+            .from(accounts)
+            .where(inArray(accounts.id, ids));
+    const names = new Map(rows.map((r) => [r.id, { pseudo: r.pseudo, crest: r.crest }]));
+    return toJson({
+      terra: terraView(world.ctx, world.current, account.id, world.now(), names),
+    });
+  });
+
   app.get("/api/game/ranking", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
@@ -849,6 +896,33 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "chooseSpecialty", playerId, specialty: a.specialty }];
     case "claimHouseMission":
       return [{ type: "claimHouseMission", playerId, missionId: a.missionId }];
+    case "terraPlace":
+      return [{ type: "terraPlace", playerId, cell: a.cell }];
+    case "terraFront":
+      return [{ type: "terraFront", playerId, aim: a.aim, shareBps: a.shareBps }];
+    case "terraRecall":
+      return [{ type: "terraRecall", playerId, frontId: a.frontId }];
+    case "terraAlly":
+      return [{ type: "terraAlly", playerId, other: a.other }];
+    case "terraAccept":
+      return [{ type: "terraAccept", playerId, from: a.from }];
+    case "terraBreak":
+      return [{ type: "terraBreak", playerId, other: a.other }];
+    case "terraSend":
+      return [{ type: "terraSend", playerId, to: a.to, count: a.count }];
+    case "terraBuild":
+      return [{ type: "terraBuild", playerId, cell: a.cell, kind: a.kind }];
+    case "terraRaise":
+      return [{ type: "terraRaise", playerId }];
+    case "terraDecree":
+      return [
+        {
+          type: "terraDecree",
+          playerId,
+          code: a.code,
+          ...(a.target ? { target: a.target } : {}),
+        },
+      ];
     case "claimDaily":
       return [{ type: "claimDaily", playerId, taskId: a.taskId }];
     case "openBale":
