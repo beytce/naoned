@@ -3,14 +3,21 @@ import {
   MILAN,
   type TerraConfig,
   type TerraState,
+  acceptAlliance,
   advanceTerra,
+  alliesOf,
+  buildOnTerra,
   capOf,
   cellCost,
   cellsOf,
+  chooseDecree,
+  closeTerra,
   hexNeighbors,
   launchFront,
   newTerra,
   placeOnTerra,
+  proposeAlliance,
+  raiseCap,
 } from "@comptoirs/engine";
 
 /**
@@ -34,13 +41,15 @@ export interface TerraProfile {
   shareBps: number;
   /** First day it comes (0: Monday). */
   fromDay: number;
+  /** Ducats (in deniers) it spends on the Terraferma a day: cap raised, roccas, borgos. */
+  budget: bigint;
 }
 
 export const TERRA_PROFILES: Record<string, TerraProfile> = {
-  active: { name: "assidu", sessions: 7, shareBps: 4_000, fromDay: 0 },
-  regular: { name: "régulier", sessions: 4, shareBps: 5_000, fromDay: 0 },
-  casual: { name: "occasionnel", sessions: 2, shareBps: 7_000, fromDay: 0 },
-  late: { name: "retardataire", sessions: 3, shareBps: 5_000, fromDay: 3 },
+  active: { name: "assidu", sessions: 7, shareBps: 4_000, fromDay: 0, budget: 15_000n },
+  regular: { name: "régulier", sessions: 4, shareBps: 5_000, fromDay: 0, budget: 10_000n },
+  casual: { name: "occasionnel", sessions: 2, shareBps: 7_000, fromDay: 0, budget: 5_000n },
+  late: { name: "retardataire", sessions: 3, shareBps: 5_000, fromDay: 3, budget: 10_000n },
 };
 
 export const TERRA_MIX: Record<string, number> = { active: 12, regular: 14, casual: 10, late: 4 };
@@ -48,7 +57,20 @@ export const TERRA_MIX: Record<string, number> = { active: 12, regular: 14, casu
 export interface TerraResult {
   seed: number;
   cells: number;
-  players: { id: string; profile: string; cells: number; glory: number; placed: boolean }[];
+  players: {
+    id: string;
+    profile: string;
+    cells: number;
+    glory: number;
+    placed: boolean;
+    influence: number;
+    tier: string;
+    allies: number;
+  }[];
+  /** The week's Signore, its profile, and whether it took the land before the end. */
+  signore: { id: string | null; profile: string | null; conquest: boolean; decree: string | null };
+  /** Ducats spent on the Terraferma (destroyed), in deniers. */
+  spent: bigint;
   /** Share of the land still neutral, and held by Milan, at 22 h each day. */
   daily: { neutralBps: number; milanBps: number; contested: number }[];
   /** Hours from the week's start to the first front between merchants. */
@@ -99,7 +121,10 @@ export function runTerra(
     daily: [],
     firstContactHours: null,
     fronts: { launched: 0, againstMerchants: 0, byMilan: 0 },
+    signore: { id: null, profile: null, conquest: false, decree: null },
+    spent: 0n,
   };
+  const wallet = new Map<string, { day: number; left: bigint }>();
   const seen = new Set<string>();
   const watchFronts = () => {
     for (const f of s.fronts) {
@@ -135,18 +160,36 @@ export function runTerra(
     closeDay(at);
     advanceTerra(s, cfg, at);
     watchFronts();
-    play(s, cfg, bot.id, TERRA_PROFILES[bot.profile] as TerraProfile, at, seed);
+    const profile = TERRA_PROFILES[bot.profile] as TerraProfile;
+    const today = Math.floor((at - TERRA_START) / DAY);
+    const w = wallet.get(bot.id);
+    if (!w || w.day !== today) wallet.set(bot.id, { day: today, left: profile.budget });
+    const purse = wallet.get(bot.id) as { day: number; left: bigint };
+    const before = purse.left;
+    play(s, cfg, bot.id, profile, at, seed, purse);
+    result.spent += before - purse.left;
     watchFronts();
   }
   closeDay(TERRA_START + 7 * DAY);
   advanceTerra(s, cfg, TERRA_START + 7 * DAY);
+  const close = closeTerra(s, cfg, TERRA_START + 7 * DAY);
+  const rank = new Map(close.ranking.map((r) => [r.id, r]));
   result.players = bots.map((b) => ({
     id: b.id,
     profile: b.profile,
     cells: cellsOf(s, b.id).length,
     glory: s.players[b.id]?.glory ?? 0,
     placed: !!s.players[b.id],
+    influence: rank.get(b.id)?.influence ?? 0,
+    tier: rank.get(b.id)?.tier ?? "none",
+    allies: alliesOf(s, b.id).length,
   }));
+  result.signore = {
+    id: close.signore,
+    profile: bots.find((b) => b.id === close.signore)?.profile ?? null,
+    conquest: close.conquest,
+    decree: close.decree?.code ?? null,
+  };
   return result;
 }
 
@@ -168,6 +211,7 @@ function play(
   profile: TerraProfile,
   now: number,
   seed: number,
+  purse: { left: bigint },
 ): void {
   const player = s.players[id];
   if (!player) {
@@ -194,6 +238,52 @@ function play(
     }
     return;
   }
+  // The decree it would impose, once.
+  if (!s.programme?.[id]) {
+    const decrees = cfg.close.decrees;
+    tryAct(() =>
+      chooseDecree(s, cfg, id, {
+        code: decrees[hash(`${seed}:${id}:decree`) % decrees.length] ?? "",
+      }),
+    );
+  }
+  // Allies: accept who asks, else ask the neighbouring merchant with the most glory.
+  for (const r of (s.requests ?? []).filter((x) => x.to === id))
+    tryAct(() => acceptAlliance(s, cfg, id, r.from, now));
+  if (alliesOf(s, id).length === 0 && (s.requests ?? []).every((r) => r.from !== id)) {
+    const neighbours = new Set<string>();
+    for (const c of cellsOf(s, id)) {
+      for (const n of hexNeighbors(s.map, c)) {
+        const o = s.owner[n];
+        if (o && o !== id && o !== MILAN) neighbours.add(o);
+      }
+    }
+    const pick = [...neighbours].sort(
+      (a, b) => (s.players[b]?.glory ?? 0) - (s.players[a]?.glory ?? 0) || (a < b ? -1 : 1),
+    )[0];
+    if (pick) tryAct(() => proposeAlliance(s, cfg, id, pick, now));
+  }
+  // Ducats: a rocca on the border facing a merchant, a borgo, else a higher cap.
+  const spend = (f: () => bigint) => {
+    try {
+      const price = f();
+      purse.left -= price;
+    } catch (e) {
+      if (!(e instanceof EngineError)) throw e;
+    }
+  };
+  const borderCell = cellsOf(s, id).find((c) =>
+    hexNeighbors(s.map, c).some((n) => {
+      const o = s.owner[n];
+      return o && o !== id && o !== MILAN && !alliesOf(s, id).includes(o);
+    }),
+  );
+  if (borderCell !== undefined && purse.left >= cfg.buildings.rocca.price)
+    spend(() => buildOnTerra(s, cfg, id, borderCell, "rocca"));
+  const inner = cellsOf(s, id).find((c) => !s.buildings?.[c]);
+  if (inner !== undefined && purse.left >= cfg.buildings.borgo.price)
+    spend(() => buildOnTerra(s, cfg, id, inner, "borgo"));
+  if (purse.left >= cfg.capRaise.price) spend(() => raiseCap(s, cfg, id, now));
   const cap = capOf(s, cfg, id);
   if (player.troops * 10 < cap * 3) return;
   if (s.fronts.filter((f) => f.owner === id).length >= cfg.fronts.max) return;
@@ -209,6 +299,7 @@ function play(
   const density = (o: string) => (s.players[o]?.troops ?? 0) / Math.max(1, cellsOf(s, o).length);
   const targets = [...border.keys()]
     .filter((o) => !attacked.has(o))
+    .filter((o) => o === null || o === MILAN || !alliesOf(s, id).includes(o))
     // Merchants only once neither side is protected any more.
     .filter(
       (o) =>

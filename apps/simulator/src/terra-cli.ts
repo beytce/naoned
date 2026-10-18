@@ -53,6 +53,10 @@ function section(r: TerraResult): string {
     `| Gloire médiane par profil | ${byProfile.map((x) => `${TERRA_PROFILES[x.k]?.name} ${x.glory}`).join(" · ")} |`,
     `| Assidus devant occasionnels (Gloire médiane) | ${((active / Math.max(1, casual)) * 100).toFixed(0)} % |`,
     `| Terre tenue par les marchands en fin de semaine | ${pct(Math.round((land * 10_000) / r.cells))} |`,
+    `| Alliés en fin de semaine | ${placed.filter((p) => p.allies > 0).length} marchands sur ${placed.length} ont au moins un allié |`,
+    `| Signore | ${r.signore.id ?? "aucun"} (${r.signore.profile ? TERRA_PROFILES[r.signore.profile]?.name : "—"})${r.signore.conquest ? ", par conquête" : ""} ; décret : ${r.signore.decree ?? "aucun"} |`,
+    `| Influence médiane par profil | ${byProfile.map((x) => `${TERRA_PROFILES[x.k]?.name} ${median(placed.filter((p) => p.profile === x.k).map((p) => p.influence))}`).join(" · ")} |`,
+    `| Ducats dépensés sur la Terraferme | ${(Number(r.spent) / 100 / Math.max(1, placed.length) / 7).toFixed(0)} d par marchand et par jour |`,
     "",
   ];
   return lines.join("\n");
