@@ -25,7 +25,7 @@ import {
   total,
   vehicleName,
 } from "../roadKit.js";
-import type { DeliveryView, PlayerView, VehicleView } from "../types.js";
+import type { DeliveryView, PlayerView, TerraAction, VehicleView } from "../types.js";
 import { useWide } from "../useWide.js";
 import { have, readyOf } from "../workshops.js";
 import {
@@ -47,6 +47,19 @@ import {
 import { CartMarker, CityMarker, HomeMarker } from "./Markers.js";
 import { NoticesSheet } from "./Notices.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
+import {
+  TerraHud,
+  TerraOverlay,
+  TerraPanel,
+  TerraSheets,
+  terraCalls,
+  terraMarkers,
+  terraSpots,
+  terraTap,
+  useAbsence,
+  useTerra,
+  useTerraShapes,
+} from "./TerraLayer.js";
 import { type MapMarker, type Selection, WorldMap, type WorldMapHandle } from "./WorldMap.js";
 import { Icon } from "./icons.js";
 
@@ -58,6 +71,7 @@ export function selectionKey(s: Selection | null): string | null {
   if (!s) return null;
   if (s.kind === "home") return "home";
   if (s.kind === "cart") return `${s.kind}:${s.id}`;
+  if (s.kind === "terra") return `terra:${s.cell}`;
   return `${s.kind}:${s.code}`;
 }
 
@@ -186,6 +200,20 @@ export function MapScreen(
   const [fleetOpen, setFleetOpen] = useState(false);
   const { shown: fleetShown, leaving: fleetLeaving } = usePresence(fleetOpen || null, 160);
   const closeFleet = useCallback(() => setFleetOpen(false), []);
+
+  // The Terraferma, once live in this world: its door replaces the families'.
+  const { terra: terraView, refresh: refreshTerra } = useTerra(props.layer === "terra");
+  const absence = useAbsence(terraView, props.layer === "terra", now);
+  const shapes = useTerraShapes(absence.view);
+  const act = props.act;
+  const terraAct = useCallback(
+    async (a: TerraAction) => {
+      const ok = await act(a);
+      refreshTerra();
+      return ok;
+    },
+    [act, refreshTerra],
+  );
 
   const cities = useMemo(
     () => catalog.cities.map((c) => c.code).filter((c) => PLACES[c] !== undefined),
@@ -366,6 +394,8 @@ export function MapScreen(
   // The families' campaign, when its layer is shown.
   const families = view.families;
   const campaign = props.layer === "campaign" && families ? families : null;
+  const terra = props.layer === "terra" && absence.view && shapes ? absence.view : null;
+  const terraCell = terra && sel?.kind === "terra" ? sel.cell : null;
   const campaignPanel = campaign ? (
     <CampaignPanel props={props} f={campaign} sel={sel} select={select} />
   ) : null;
@@ -376,11 +406,11 @@ export function MapScreen(
       {
         top: 110,
         right: panelUp ? 460 : 40,
-        bottom: campaign && !campaign.mine ? 170 : 120,
+        bottom: (campaign && !campaign.mine) || (terra && !terra.me) ? 170 : 120,
         left: 40,
       }
     : {
-        top: campaign ? 160 : 150,
+        top: campaign || terra ? 160 : 150,
         right: 12,
         bottom: panelUp ? 200 : 100,
         left: 12,
@@ -388,9 +418,22 @@ export function MapScreen(
 
   // The panel of the selection.
   let panel: ReactNode = campaignPanel;
-  if (!campaign && sel?.kind === "home")
+  if (terra && shapes)
+    panel = (
+      <TerraPanel
+        key={terraCell ?? "none"}
+        props={props}
+        v={terra}
+        s={shapes}
+        cell={terraCell}
+        select={select}
+        act={terraAct}
+      />
+    );
+  const trade = !campaign && !terra;
+  if (trade && sel?.kind === "home")
     panel = <HomePanel props={props} onClose={() => select(null)} />;
-  if (!campaign && sel?.kind === "city") {
+  if (trade && sel?.kind === "city") {
     const i = cities.indexOf(sel.code);
     const step = (k: number) =>
       select({ kind: "city", code: cities[(i + k + cities.length) % cities.length] ?? sel.code });
@@ -410,7 +453,7 @@ export function MapScreen(
       />
     );
   }
-  if (!campaign && selectedCart) {
+  if (trade && selectedCart) {
     const i = vehicles.findIndex((v) => v.id === selectedCart.id);
     const step = (k: number) => {
       setDeparture(null);
@@ -470,22 +513,43 @@ export function MapScreen(
         ref={map}
         region={region}
         cities={cities}
-        layer={campaign ? "campaign" : "trade"}
+        layer={campaign ? "campaign" : terra ? "terra" : "trade"}
         spots={
-          campaign ? campaign.lands.map((l) => ({ key: `land:${l.code}`, x: l.x, y: l.y })) : []
+          campaign
+            ? campaign.lands.map((l) => ({ key: `land:${l.code}`, x: l.x, y: l.y }))
+            : terra && shapes
+              ? terraSpots(terra, shapes)
+              : []
         }
-        overlay={campaign ? <CampaignOverlay f={campaign} now={now} /> : undefined}
-        markers={campaign ? campaignMarkers(props, campaign, select) : markers}
-        parked={campaign ? [] : parked}
-        roads={campaign ? [] : roads}
-        litRoads={campaign ? [] : litCities}
+        overlay={
+          campaign ? (
+            <CampaignOverlay f={campaign} now={now} />
+          ) : terra && shapes ? (
+            <TerraOverlay v={terra} s={shapes} cell={terraCell} />
+          ) : undefined
+        }
+        markers={
+          campaign
+            ? campaignMarkers(props, campaign, select)
+            : terra && shapes
+              ? terraMarkers(props, terra, shapes, select)
+              : markers
+        }
+        parked={trade ? parked : []}
+        roads={trade ? roads : []}
+        litRoads={trade ? litCities : []}
         planned={
-          campaign ? null : (departure?.city ?? (cartFree && cartHold?.city ? cartHold.city : null))
+          trade ? (departure?.city ?? (cartFree && cartHold?.city ? cartHold.city : null)) : null
         }
         clockOffset={props.clockOffset}
         insets={insets}
         selectedKey={key}
-        onEmptyTap={() => {
+        onEmptyTap={(at) => {
+          if (terra && shapes) {
+            const cell = terraTap(terra, shapes, at.x, at.y);
+            select(cell === null || cell === terraCell ? null : { kind: "terra", cell });
+            return;
+          }
           if (departure) setDeparture(null);
           else if (sel) select(null);
         }}
@@ -529,11 +593,18 @@ export function MapScreen(
         bales={view.tutorial.includes("mission") ? (view.bales?.available ?? 0) : 0}
         guidePaused={props.guidePaused}
         bottom={!panelUp}
-        hasFamily={!!view.families}
-        layer={campaign ? "campaign" : "trade"}
-        familyCalls={familyCalls(props)}
+        hasFamily={!!view.families || !!terraView}
+        layer={campaign ? "campaign" : terra ? "terra" : "trade"}
+        doorLabel={terraView ? fr.game.terra.door : undefined}
+        familyCalls={terraView ? terraCalls(terraView) : familyCalls(props)}
         workshopsReady={ready > 0}
-        right={campaign ? <CampaignHud f={campaign} now={now} /> : undefined}
+        right={
+          campaign ? (
+            <CampaignHud f={campaign} now={now} />
+          ) : terra ? (
+            <TerraHud v={terra} now={now} />
+          ) : undefined
+        }
         onProfile={() => props.setSheet("profile")}
         onNotices={() => props.setSheet("notices")}
         onBales={() => props.setSheet("bales")}
@@ -541,14 +612,26 @@ export function MapScreen(
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
         onRanking={() => props.setSheet("ranking")}
-        onFamily={() => (campaign ? props.setLayer("trade") : props.goTo("famille"))}
+        onFamily={() =>
+          campaign || terra
+            ? props.setLayer("trade")
+            : terraView
+              ? props.setLayer("terra")
+              : props.goTo("famille")
+        }
         onWorkshops={() => props.setSheet("workshops")}
         onHelp={props.openHelp}
       />
       {panel}
+      {terra && absence.replaying && (
+        <span className="pointer-events-none absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+7.5rem)] z-10 -translate-x-1/2 animate-fade whitespace-nowrap rounded-full bg-night/80 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line">
+          {fr.game.terra.away}
+        </span>
+      )}
 
       <CounterSheets {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}
+      {terraView && <TerraSheets props={props} v={terraView} act={terraAct} />}
       <RialtoSheet {...props} />
       <RankingSheet {...props} />
       <ProfileSheet {...props} />

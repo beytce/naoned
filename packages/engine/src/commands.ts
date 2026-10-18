@@ -48,6 +48,7 @@ import {
   escrowAccount,
   seasonEnd,
 } from "./state.js";
+import { type TerraCommand, applyTerra } from "./terraWorld.js";
 import { findRegion } from "./theme.js";
 import { tick } from "./tick.js";
 import {
@@ -128,6 +129,7 @@ export type Command =
       orderIds?: string[];
       vehicleId: string;
     }
+  | TerraCommand
   | { type: "tick" };
 
 export type DecideResult =
@@ -278,6 +280,18 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "fulfillContract":
       fulfillContract(tx, cmd.playerId, cmd.contractId);
+      break;
+    case "terraPlace":
+    case "terraFront":
+    case "terraRecall":
+    case "terraAlly":
+    case "terraAccept":
+    case "terraBreak":
+    case "terraSend":
+    case "terraBuild":
+    case "terraRaise":
+    case "terraDecree":
+      applyTerra(tx, cmd);
       break;
     case "chooseSpecialty":
       chooseSpecialty(tx, cmd.playerId, cmd.specialty);

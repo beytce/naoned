@@ -108,7 +108,33 @@ export type EngineErrorCode =
   | "order_done"
   | "no_route"
   | "bales_off"
-  | "no_bale";
+  | "no_bale"
+  // The Terraferma.
+  | "already_placed"
+  | "not_placed"
+  | "not_neutral"
+  | "too_close"
+  | "neutral_left"
+  | "not_adjacent"
+  | "own_cell"
+  | "protected"
+  | "too_many_fronts"
+  | "share_too_small"
+  | "no_troops"
+  | "unknown_front"
+  | "allied"
+  | "not_allied"
+  | "traitor"
+  | "too_many_allies"
+  | "no_request"
+  | "breaking"
+  | "gift_limit"
+  | "built"
+  | "no_room"
+  | "raise_limit"
+  | "terra_off"
+  | "terra_closed"
+  | "decree_repeat";
 
 export class EngineError extends Error {
   constructor(

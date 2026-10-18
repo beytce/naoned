@@ -174,7 +174,9 @@ La boucle : produire (Comptoir) → livrer (Routes) → s'approvisionner et reve
 | **Pass Négociant** | Aucun avantage de guilde ni de guerre : ni carat, ni voix, ni péage, ni prime |
 | **Écrans** | Onglet Guilde (fonder, rejoindre, investir, voter, concessions, guerres, fil de guilde). Routes en 3D : blasons des détenteurs sous les villes, minuteur et rapport de force d'une guerre. Fiche de ville : la guerre et ses concessions. Marché : « Demandes de guerre » |
 
-### Les quatre familles et la Campagne de Terraferme (retour du porteur, octobre 2026)
+### Les quatre familles et la Campagne de Terraferme (retour du porteur, octobre 2026) — remplacées par la Terraferme le 18 octobre 2026
+
+> **Remplacées le 18 octobre 2026**, à la réinitialisation de la saison, par **la Terraferme** à la manière d'OpenFront (`docs/plan-terraferme.md`) : chacun pour soi avec des alliances, une carte par semaine, l'Influence au classement et un décret fort pour le Signore. Les familles s'éteignent dès que `terraferma.live` est allumé (leur code reste, pour les mondes d'avant). Pour mémoire :
 
 Constat du porteur : le système de guilde ne lui plaît pas. Il veut quatre grandes familles qui s'affrontent, où l'on investit seulement avec des ducats (aucune livraison pour la famille), un affrontement continu chaque semaine qui oblige à participer toute la semaine, et des lois et décrets imposés par la famille gagnante, qui pèsent sur le marché et sur le jeu. Choix retenu : une conquête territoriale asynchrone « à la OpenFront », au rythme des sessions mobiles (proposition : `docs/plan-campagne.md`).
 
@@ -242,7 +244,7 @@ Constat de l'audit : un marché collé au prix de référence (indice 93 à 100)
 
 ### Gel des mécaniques jusqu'aux mesures de la bêta (16 octobre 2026)
 
-Décision du porteur après l'audit du 16 octobre : **aucune nouvelle mécanique tant que la bêta n'a pas mesuré la rétention** (J1, J7, J30, durée et nombre de sessions, voir « KPIs et télémétrie »). Jusque-là, on règle, on corrige, on simplifie, on mesure ; une idée de mécanique va dans `IDEAS.md` avec la mesure qui la justifierait. Seules exceptions : ce qui remplace une mécanique retirée (les galères de la Muda pour la mer) et ce que l'audit demande pour rendre vivant ce qui existe (prix qui bougent, progression des ateliers). Le gel se lève sur décision du porteur, chiffres de la bêta en main.
+Décision du porteur après l'audit du 16 octobre : **aucune nouvelle mécanique tant que la bêta n'a pas mesuré la rétention** (J1, J7, J30, durée et nombre de sessions, voir « KPIs et télémétrie »). Jusque-là, on règle, on corrige, on simplifie, on mesure ; une idée de mécanique va dans `IDEAS.md` avec la mesure qui la justifierait. Seules exceptions : ce qui remplace une mécanique retirée (les galères de la Muda pour la mer) et ce que l'audit demande pour rendre vivant ce qui existe (prix qui bougent, progression des ateliers). Le gel se lève sur décision du porteur, chiffres de la bêta en main. Le porteur l'a levé le 17 octobre 2026 pour **la Terraferme**, conquête à la manière d'OpenFront qui remplace la Campagne des familles depuis la saison réinitialisée le 18 octobre 2026 (`docs/plan-terraferme.md`).
 
 ### Une Maison qui progresse de saison en saison (17 octobre 2026)
 

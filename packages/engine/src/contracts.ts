@@ -32,8 +32,11 @@ export function contractsFor(
   day: number,
   /** Slots swapped with the Pass today: slot index → number of swaps. */
   rerolls: Record<number, number> = {},
+  /** More slots than the settings' (the favour of the Doge). */
+  count?: number,
 ): Contract[] {
-  const { perDay, premiumBps, quantities, luxury } = ctx.settings.contracts;
+  const { premiumBps, quantities, luxury } = ctx.settings.contracts;
+  const perDay = count ?? ctx.settings.contracts.perDay;
   const resources = Object.keys(quantities);
   const exotic = Object.keys(luxury.quantities);
   const cities = ctx.theme.cities;

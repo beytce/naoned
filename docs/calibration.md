@@ -877,3 +877,119 @@ Essais sur la graine 1 (et 5), par `--scenario` : palais ×2 (masse 1 216 ducats
 Toutes les graines conformes ; indice des prix 86 à 126.
 
 **Lecture.** Le contrepoids rend aux ateliers le rythme d'avant le retrait de l'entretien (≈ 6,2 à 7,6 niveaux par marchand) et ramène la croissance moyenne de ≈ 6,7 à ≈ 5,2 %/jour, mais la masse monétaire reste ≈ 2,5 fois celle d'avant (≈ 1 300 ducats au lieu de ≈ 500), sous le plafond bloquant (2,5 × le capital de départ). L'entretien n'a pas d'équivalent parmi les coûts ponctuels : il frappait aussi les marchands qui n'investissaient plus. À mesurer avec la bêta ; si la trésorerie de fin de saison se révèle sans emploi chez les vrais joueurs, la taxe du Rialto (3 %) reste le levier proportionnel.
+
+## La Terraferme : prototype au simulateur (17 octobre 2026)
+
+`pnpm --filter @comptoirs/simulator terra` fait jouer une semaine de la Terraferme (`docs/plan-terraferme.md`) à 40 marchands PNJ : 12 assidus (7 sessions par jour), 14 réguliers (4), 10 occasionnels (2), 4 retardataires (3, dès le jeudi). Chacun se pose, puis lance des fronts vers la terre neutre, sinon vers le voisin le plus mince, sinon vers Milan. Rapport : `apps/simulator/out/terraferma.md`.
+
+**Premier réglage (10 cases par marchand, écart de départ 4, fronts de 2 cases toutes les 10 minutes, Milan au plafond suivant ses terres)** : 9 marchands sur 40 seulement trouvent où se poser ; Milan fait boule de neige et prend toute la carte dès le jeudi.
+
+**Ce que le prototype a changé** :
+
+| Changement | Pourquoi |
+| --- | --- |
+| Milan a un **plafond fixe** (`milan.troops` + `troopsPerActive` par marchand actif) | Avec un plafond qui suit les terres, Milan avale la carte |
+| Le **comptoir de départ est imprenable** | Sans lui, un marchand tient 40 à 77 % de la carte en fin de semaine et 30 sur 36 sont rayés de la carte : personne ne revient jouer après avoir été éliminé le mardi |
+| 20 cases par marchand, écart de départ 2 | Tous les marchands du lundi trouvent leur place (36 sur 36) |
+| Fronts d'**une case par demi-heure**, qui **rentrent après 2 h** (`fronts.maxHours`) | Plus lents et à relancer : la présence compte |
+
+**Réglage retenu, 5 graines** :
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Terre neutre à 22 h le lundi | 13 % | 14 % | 16 % | 18 % | 16 % |
+| Milan en fin de semaine | 25 % | 28 % | 27 % | 27 % | 26 % |
+| Premier front entre marchands | 33 h | 33 h | 34 h | 33 h | 33 h |
+| Le premier tient (de la carte) | 8 % | 7 % | 6 % | 6 % | 10 % |
+| Marchands sans terre | 0 | 0 | 0 | 0 | 0 |
+| Assidus devant occasionnels (Gloire médiane) | 119 % | 153 % | 125 % | 96 % | — |
+
+**Lecture et problèmes ouverts** :
+- **La terre neutre part le premier jour** : l'expansion pacifique, le meilleur moment d'OpenFront, dure moins d'une journée. Pistes : moins de cases prises par front sur le neutre, ou une carte plus grande.
+- **Les retardataires ne peuvent plus se poser** (0 sur 4) : il faut une règle d'arrivée en cours de semaine (se poser sur les terres de Milan, qui servent de réserve, ou un comptoir accordé à la lisière du plus grand).
+- **L'avance des assidus est faible** (96 à 153 %) : les PNJ jouent naïvement et les fronts continuent sans eux ; à remesurer avec des PNJ plus fins avant de toucher aux règles.
+- **Milan grandit doucement** jusqu'à un quart de la carte : c'est le rôle voulu (le tampon et le frein au meneur), à surveiller.
+- Les alliances, l'encerclement, les bâtiments, l'Influence du classement et les décrets ne sont pas encore dans le prototype.
+
+### La Terraferme sur la vraie Vénétie, retardataires et expansion plus lente (17 octobre 2026, décisions du porteur)
+
+La carte suit désormais la géographie dessinée (`terraferma.geography` : le cadre, la mer, la lagune et le lac de Garde en polygones, les villes à leur place) ; les cases s'affinent quand le monde grandit. Décisions du porteur : un retardataire se pose **à la lisière des terres de Milan** quand plus aucune terre neutre ne l'accueille ; la terre neutre se prend **plus lentement** (une case par heure, `fronts.neutralEverySteps`).
+
+Sur la vraie carte, Milan tenait d'abord toute la Lombardie (35 % de la terre) et les comptoirs de départ 35 % de plus : la terre neutre partait encore le lundi. Essais (graines 1 à 3, terre neutre à 22 h du lundi au dimanche) :
+
+| Variante | Terre neutre | Assidus devant occasionnels |
+| --- | --- | --- |
+| Régénération 400 (au lieu de 1 200) | 12 · 2 · 1 · 0 % | 71 à 78 % |
+| Milice ×2 | 16 · 6 · 3 · 2 % | 102 à 132 % |
+| Régénération 400, milice ×2, neutre toutes les 4 étapes | 22 · 13 · 8 · 5 % | 112 à 122 % |
+| **Milan à 18 % des colonnes, 25 cases par marchand, régénération 400, milice ×2, neutre toutes les 2 étapes** | **41 · 30 · 23 · 13 %** | **130 à 135 %** |
+
+**Retenu** (dernière ligne), 5 graines :
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Terre neutre à 22 h, lundi → jeudi | 41 · 31 · 23 · 13 % | 41 · 30 · 24 · 15 % | 41 · 29 · 21 · 11 % | 41 · 30 · 23 · 15 % | 41 · 30 · 23 · 14 % |
+| Milan en fin de semaine | 29 % | 28 % | 29 % | 29 % | 29 % |
+| Premier front entre marchands | 37 h | 37 h | 37 h | 35 h | 35 h |
+| Marchands posés (retardataires compris) | 40 / 40 | 40 / 40 | 40 / 40 | 40 / 40 | 40 / 40 |
+| Le premier tient | 5 % | 5 % | 4 % | 5 % | 5 % |
+| Assidus devant occasionnels (Gloire médiane) | 131 % | 130 % | 135 % | 121 % | 163 % |
+
+**Lecture.** La course à la terre libre dure jusqu'au jeudi ; les retardataires arrivent sur de la terre neutre, ou à la lisière de Milan à la fin ; personne n'est rayé de la carte ; l'avance des assidus monte à 121 à 163 %. Restent à jouer au prototype : les alliances, l'encerclement, les bâtiments, l'Influence du classement et les décrets.
+
+### La Terraferme : alliances, encerclement, bâtiments, clôture (18 octobre 2026)
+
+Le moteur joue désormais les alliances (deux au plus, rupture effective après 2 h, Traître au troisième bris de la semaine : défense ×0,75 et plus d'alliance pendant 24 h, troupes envoyées à un allié dans la limite de 30 % du plafond par jour), l'encerclement (une poche coupée de son comptoir et entourée d'un seul rival perd 10 % de ses cases par heure), la Rocca (défense ×1,6 sur sa case et ses voisines, une pour 15 cases, 40 d) et le Borgo (plafond +20 et régénération +10 %, un pour 20 cases, 50 d), le plafond relevé pour des ducats (+10 pour 100 d, deux fois par jour), le décret choisi par chacun pour le cas où il serait Signore, et la clôture (classement en Gloire, Influence par palier, Signore, victoire immédiate à 80 % de la terre). Les ducats sont pris par l'appelant : le moteur rend le prix.
+
+Les PNJ du simulateur acceptent toute alliance et en demandent une au voisin le plus glorieux, dépensent un budget du jour (assidus 150 d, réguliers et retardataires 100 d, occasionnels 50 d : une hypothèse, le simulateur de la Terraferme n'a pas encore l'économie du commerce), choisissent un décret au hasard.
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Assidus devant occasionnels (Gloire médiane) | 199 % | 194 % | 197 % | 198 % | 206 % |
+| Cases médianes : assidus / occasionnels | 23 / 5 | 21 / 3 | 29 / 6 | 23 / 4 | 21 / 5 |
+| Marchands avec au moins un allié | 36 / 40 | 38 / 40 | 36 / 40 | 40 / 40 | 37 / 40 |
+| Signore | assidu | assidu | régulier | régulier | assidu |
+| Victoire par conquête (80 %) | non | non | non | non | non |
+| Ducats dépensés sur la Terraferme | 76 d par marchand et par jour | 76 | 75 | 76 | 76 |
+
+**Lecture.** L'activité paie enfin nettement (×2 en Gloire) sans éliminer personne : l'occasionnel garde un petit territoire autour de son comptoir. Presque tout le monde s'allie quand les PNJ acceptent tout : avec de vrais joueurs, à mesurer à la bêta. La conquête à 80 % reste un horizon. La Terraferme détruirait environ 75 d par marchand actif et par jour, soit à peu près 40 % de ce que rapportent les livraisons : **c'est le puits de monnaie qui manquait depuis le retrait de l'entretien**, à confirmer quand la Terraferme sera jouée dans le simulateur du commerce (le vrai budget des marchands). Le palier « premier quart » ne sert pas à 40 marchands (le top 10 le couvre) : il servira dans les mondes plus grands.
+
+### La Terraferme jouée dans le monde : le puits de monnaie (18 octobre 2026)
+
+`pnpm sim --terra` fait jouer la Terraferme au simulateur du commerce (les PNJ du moteur s'y posent, s'allient, se battent et y dépensent leurs ducats en trop : quatre fois le prix en caisse), avec les décrets du Signore et l'Influence du classement. 5 graines, toutes conformes :
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie par joueur actif en fin de saison (ducats) | 609 | 682 | 835 | 620 | 613 |
+| Croissance moyenne de la monnaie (%/jour) | 1,8 | 2,2 | 4,4 | 2,4 | 2,7 |
+| Jours hors plage du ratio créée / détruite (sur 23) | 1 | 4 | 1 | 0 | 1 |
+| Détruit par la Terraferme (d par joueur actif et par jour) | 95 | 100 | 100 | 105 | 103 |
+| Part des destructions | 40 % | 42 % | 42 % | 44 % | 43 % |
+| Niveaux d'ateliers par marchand | 5,7 | 5,1 | 5,3 | 4,8 | 5,3 |
+| Assidus devant occasionnels (patrimoine médian) | 119 % | 214 % | 190 % | 189 % | 77 % |
+| Influence médiane de la saison (dont missions) | 173 (158) | 163 (151) | 163 (153) | 169 (155) | 162 (148) |
+
+Pour comparer : sans entretien et sans Terraferme, 1 117 à 1 588 ducats et 3,5 à 6,4 %/jour ; avec l'entretien (avant octobre), 408 à 561 ducats et 1,8 à 3,2 %/jour.
+
+**Lecture.** La Terraferme est le puits qui manquait : la monnaie revient presque à son niveau d'avant le retrait de l'entretien, et la croissance aussi. Deux effets à surveiller :
+- **les ateliers grandissent moins** (4,8 à 5,7 niveaux par marchand, au lieu de 6,4 à 7,6) : les ducats vont à la guerre plutôt qu'aux ateliers. À la bascule, les **ducats des bâtiments pourraient revenir à leur prix d'avant (−40 %)**, le contrepoids de la Terraferme rendant celui-là inutile ; à mesurer alors ;
+- le **patrimoine des assidus** baisse quand ils dépensent sur la Terraferme (graine 5 : 77 %) : le classement compte les ventes nettes, pas le patrimoine, et l'Influence du classement de la Terraferme récompense cette dépense ; l'indicateur de patrimoine ne dit plus tout.
+
+La Faveur du Doge donne aussi son contrat de plus par jour (`effects.faveur_doge.extraOrders`, 1), tiré comme les autres et payé +40 %.
+
+## Bascule : la Terraferme à la place des familles, les bâtiments à leur prix (18 octobre 2026, décision du porteur)
+
+À la réinitialisation de la saison du 18 octobre, la Terraferme est allumée pour Venise (`terraferma.live`) et éteint les familles. Les ducats des bâtiments reviennent à leur prix d'avant le retrait de l'entretien (ferme 210 d, moulin 280, briqueterie et scierie 350, boulangerie 420, palais 560) : la Terraferme est le contrepoids, les +40 % ne servent plus. `pnpm sim`, 5 graines, toutes conformes :
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie par joueur actif en fin de saison (ducats) | 987 | 1 086 | 841 | 883 | 783 |
+| Croissance moyenne de la monnaie (%/jour) | 6,2 | 5,2 | 4,7 | 4,7 | 3,5 |
+| Jours hors plage du ratio créée / détruite (sur 23) | 0 | 6 | 0 | 0 | 5 |
+| Détruit par la Terraferme (d par joueur actif et par jour) | 89 | 97 | 93 | 92 | 96 |
+| Part des destructions | 39 % | 42 % | 38 % | 40 % | 42 % |
+| Niveaux d'ateliers par marchand | 6,7 | 6,7 | 7,4 | 7,2 | 6,9 |
+| Assidus devant occasionnels (patrimoine médian) | 82 % | — | 244 % | 162 % | 206 % |
+| Influence médiane de la saison (dont missions) | 109 (99) | 121 (109) | 122 (113) | 121 (106) | 120 (107) |
+
+**Lecture.** Les ateliers retrouvent leur croissance (6,7 à 7,4 niveaux par marchand, au lieu de 4,8 à 5,7 avec les +40 %), la monnaie reste sous son plafond (0,8 à 1,1 ×) et la Terraferme en détruit toujours 40 %. La croissance de la monnaie (3,5 à 6,2 %/jour) revient près de son niveau sans entretien : c'est le prix d'ateliers qui grandissent ; si la bêta la trouve trop forte, le premier levier est le prix des bâtiments de la Terraferme (Rocca, Borgo, plafond), pas celui des ateliers. Les indicateurs de la Campagne disparaissent du rapport quand les familles sont éteintes.

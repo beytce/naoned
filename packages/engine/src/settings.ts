@@ -259,6 +259,171 @@ export const worldSettingsSchema = z.object({
     })
     .default({ openDay: 0, list: [], levyMinBps: 10_000, levyMaxBps: 10_000 }),
   /**
+   * The Terraferma after OpenFront (docs/plan-terraferme.md): a hexagonal map that grows with the
+   * world, each merchant's own territory, troops that come back with the land held, fronts that
+   * advance on their own a few cells an hour, Milan as a nation. Absent: no Terraferma.
+   */
+  terraferma: z
+    .object({
+      /**
+       * Played in the world (its weeks, commands and decrees); off, only the simulator plays it.
+       * Switched on at a season's opening, never during one.
+       */
+      live: z.boolean().default(false),
+      /** Land cells per active merchant (at least `minActive` merchants counted). */
+      cellsPerActive: positive,
+      minActive: positive,
+      /** Width over height of the map, in bps (16 000: half as wide again as high). */
+      aspectBps: positive,
+      /** Share of the columns, from the west, that Milan holds at the week's start. */
+      milanBps: bps.max(10_000),
+      /** City cells on the map, spread out: more glory and a higher cap for who holds them. */
+      cities: qty,
+      /**
+       * The real land (coordinates of the drawn map, `art/veneto`): the frame, the waters (the sea,
+       * the lagoon, the lakes) as polygons, the cities where they stand. Absent: a plain rectangle.
+       */
+      geography: z
+        .object({
+          box: z.object({ x0: z.number(), y0: z.number(), x1: z.number(), y1: z.number() }),
+          water: z.array(z.array(z.tuple([z.number(), z.number()])).min(3)),
+          cities: z.array(z.object({ code: z.string(), x: z.number(), y: z.number() })),
+        })
+        .optional(),
+      /** Fronts advance and troops come back only between these hours (Paris). */
+      openHours: z.object({
+        from: z.number().int().min(0).max(23),
+        to: z.number().int().min(0).max(24),
+      }),
+      /** Length of a step of resolution, in minutes. */
+      stepMinutes: positive,
+      /** Terrains: defense multiplier, militia of a neutral cell. */
+      terrains: z.record(z.object({ defenseBps: positive, militia: qty })),
+      /** Bands of rows from the north (up to `untilBps` of the height), each with its terrain weights. */
+      bands: z.array(z.object({ untilBps: bps.max(10_000), weights: z.record(qty) })).min(1),
+      /** A city cell's militia and defense, over its terrain's. */
+      city: z.object({ militiaBps: positive, defenseBps: positive }),
+      start: z.object({
+        /** No other territory within this many cells of the chosen one. */
+        minDistance: positive,
+        troops: qty,
+        /** More for whom comes later in the week, per day. */
+        troopsPerDay: qty,
+        protectionHours: qty,
+      }),
+      troops: z.object({
+        base: qty,
+        perCell: qty,
+        perCity: qty,
+        /** Share of the gap to the cap that comes back each step. */
+        regenBps: bps.max(10_000),
+        regenMin: qty,
+      }),
+      fronts: z.object({
+        max: positive,
+        cellsPerStep: positive,
+        minShareBps: bps.max(10_000),
+        /** A front comes home after so many open hours (0: never): presence relaunches it. */
+        maxHours: qty.default(0),
+        /** A neutral cell only every so many steps: the race for free land lasts. */
+        neutralEverySteps: positive.default(1),
+      }),
+      milan: z.object({
+        troops: qty,
+        troopsPerActive: qty,
+        regenBps: bps.max(10_000),
+        /** Every so many open hours, a front against the leader (or into neutral land). */
+        everyHours: positive,
+        shareBps: bps.max(10_000),
+      }),
+      glory: z.object({ perCell: qty, perCity: qty }),
+      /** Alliances between merchants: how many, how long a break takes, the traitor's lot. */
+      alliances: z
+        .object({
+          max: qty,
+          breakHours: qty,
+          /** Troops a merchant may send its allies in a day, as a share of its cap. */
+          giftShareBps: bps.max(10_000),
+          /** Breaking more often than this in the week makes a traitor. */
+          traitorBreaks: qty,
+          traitorHours: qty,
+          /** A traitor's land is this much easier to take. */
+          traitorDefenseBps: bps.max(10_000),
+        })
+        .default({
+          max: 2,
+          breakHours: 2,
+          giftShareBps: 3_000,
+          traitorBreaks: 2,
+          traitorHours: 24,
+          traitorDefenseBps: 7_500,
+        }),
+      /** A pocket cut off from its capital and ringed by one rival falls to it, a share an hour. */
+      encircle: z.object({ lossBps: bps.max(10_000) }).default({ lossBps: 1_000 }),
+      /** Buildings, paid in ducats (destroyed) by the caller, one per so many cells held. */
+      buildings: z
+        .object({
+          rocca: z.object({ price: money, defenseBps: positive, perCells: positive }),
+          borgo: z.object({
+            price: money,
+            capBonus: qty,
+            regenBonusBps: bps,
+            perCells: positive,
+          }),
+        })
+        .default({
+          rocca: { price: 4_000, defenseBps: 16_000, perCells: 15 },
+          borgo: { price: 5_000, capBonus: 20, regenBonusBps: 1_000, perCells: 20 },
+        }),
+      /** The cap raised for ducats (destroyed by the caller), a few times a day. */
+      capRaise: z
+        .object({ amount: qty, price: money, perDay: qty })
+        .default({ amount: 10, price: 10_000, perDay: 2 }),
+      /** The week's close: the land that wins at once, Influence by tier, the decrees. */
+      close: z
+        .object({
+          winBps: bps.max(10_000),
+          influence: z.object({
+            signore: qty,
+            podium: qty,
+            top10: qty,
+            quarter: qty,
+            participant: qty,
+          }),
+          /** The strong decrees the Signore chooses from. */
+          decrees: z.array(z.string()),
+          /** Their strength, for the Signore and its allies at the close (the members). */
+          effects: z.object({
+            /** Members: market tax and a larger share of the Dogana. */
+            franchise_rialto: z.object({ taxBps: bps, quotaBps: bps }),
+            /** Others' sales of a good pay more tax, shared out among the members. */
+            monopole: z.object({ extraTaxBps: bps }),
+            /** Others' deliveries to a city paid less; its urgent orders the members' a while. */
+            embargo: z.object({ cutBps: bps.max(10_000), reservedMinutes: qty }),
+            /** A share of every delivery of the others, shared out among the members. */
+            dime: z.object({ tollBps: bps }),
+            /** Members' contracts of the Doge paid more, and more of them a day. */
+            faveur_doge: z.object({ premiumBps: bps, extraOrders: qty.default(1) }),
+            /** No offer of a good above this share of its reference. */
+            calmiere: z.object({ capBps: bps }),
+          }),
+        })
+        .default({
+          winBps: 8_000,
+          influence: { signore: 20, podium: 12, top10: 8, quarter: 5, participant: 2 },
+          decrees: ["monopole", "embargo", "dime", "faveur_doge", "franchise_rialto", "calmiere"],
+          effects: {
+            franchise_rialto: { taxBps: 0, quotaBps: 10_000 },
+            monopole: { extraTaxBps: 1_500 },
+            embargo: { cutBps: 2_500, reservedMinutes: 60 },
+            dime: { tollBps: 300 },
+            faveur_doge: { premiumBps: 4_000, extraOrders: 1 },
+            calmiere: { capBps: 10_500 },
+          },
+        }),
+    })
+    .optional(),
+  /**
    * The week's campaign in the Terraferma: lands held by militias and Milan, conquered with lances
    * (levied for free, or engaged for ducats destroyed), worth glory every open hour.
    */

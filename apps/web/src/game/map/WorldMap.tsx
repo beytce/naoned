@@ -34,6 +34,7 @@ import {
   project,
   reveal,
   toWorld,
+  unproject,
   zoomAt,
 } from "./geometry.js";
 
@@ -51,7 +52,8 @@ export type Selection =
   | { kind: "home" }
   | { kind: "city"; code: string }
   | { kind: "cart"; id: string }
-  | { kind: "land"; code: string };
+  | { kind: "land"; code: string }
+  | { kind: "terra"; cell: number };
 
 export interface CartTrip {
   route: string;
@@ -110,9 +112,10 @@ export const WorldMap = forwardRef<
     region: string;
     cities: string[];
     /**
-     * Which map is shown: the trade's (cities, counter, carts) or the campaign's (lands).
+     * Which map is shown: the trade's (cities, counter, carts), the campaign's (lands) or the
+     * Terraferma's.
      */
-    layer: "trade" | "campaign";
+    layer: "trade" | "campaign" | "terra";
     /**
      * The places of the campaign, in map units, by marker key; those beyond the drawn
      * map's western edge (Lombardy, Bruges) are a pan away.
@@ -133,7 +136,8 @@ export const WorldMap = forwardRef<
     clockOffset: number;
     insets: Insets;
     selectedKey: string | null;
-    onEmptyTap: () => void;
+    /** A tap off the markers, with the point of the map under it (map units). */
+    onEmptyTap: (at: { x: number; y: number }) => void;
   }
 >(function WorldMap(props, ref) {
   const root = useRef<HTMLDivElement>(null);
@@ -449,7 +453,8 @@ export const WorldMap = forwardRef<
       const t = performance.now();
       if (t - lastTap < 300) easeTo(fit());
       lastTap = t;
-      live.current.onEmptyTap();
+      const w = unproject(cam.current, local(e));
+      live.current.onEmptyTap({ x: w.x / RES, y: w.y / RES });
     };
     // A drag that started on a marker is not a tap on it.
     const click = (e: MouseEvent) => {

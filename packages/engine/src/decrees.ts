@@ -122,14 +122,40 @@ export function decreeInForce(
   at: number,
 ): { family: string; target?: string } | null {
   const d = state.campaign?.decrees;
-  if (!d || d.week !== weekIndex(ctx, at) || state.campaign?.closed) return null;
-  const item = d.items.find((i) => i.code === code);
-  if (!item) return null;
-  return item.target ? { family: d.family, target: item.target } : { family: d.family };
+  if (d && d.week === weekIndex(ctx, at) && !state.campaign?.closed) {
+    const item = d.items.find((i) => i.code === code);
+    if (item) return item.target ? { family: d.family, target: item.target } : { family: d.family };
+  }
+  // The Signore's decree of the Terraferma, where it works like one of the families'.
+  const t = terraDecreeNow(ctx, state, at);
+  if (t && TERRA_AS[t.code] === code)
+    return t.target ? { family: TERRA_FAMILY, target: t.target } : { family: TERRA_FAMILY };
+  return null;
 }
 
+/** The pseudo-family of the Terraferma's decree: the Signore and his allies at the close. */
+export const TERRA_FAMILY = "terra";
+
+/** The Terraferma's strong decrees that work like the families' ones, stronger. */
+const TERRA_AS: Record<string, DecreeCode> = {
+  franchise_rialto: "fondaco",
+  monopole: "gabelle",
+  dime: "peage",
+  calmiere: "calmiere",
+};
+
+/** The Terraferma's decree in force at `at`, if any. */
+export function terraDecreeNow(ctx: WorldContext, state: WorldState, at: number) {
+  const d = state.terraDecree;
+  return d && d.week === weekIndex(ctx, at) ? d : null;
+}
+
+const terraEffects = (ctx: WorldContext) => ctx.settings.terraferma?.close.effects;
+
 const memberOf = (state: WorldState, playerId: PlayerId, family: string) =>
-  state.families?.memberOf[playerId] === family;
+  family === TERRA_FAMILY
+    ? (state.terraDecree?.members.includes(playerId) ?? false)
+    : state.families?.memberOf[playerId] === family;
 
 /** Market tax on a merchant's sales: the Fondaco's privilege lightens its members'. */
 export function decreeTaxBps(
@@ -140,9 +166,11 @@ export function decreeTaxBps(
   at: number,
 ): number {
   const d = decreeInForce(ctx, state, "fondaco", at);
-  return d && memberOf(state, seller, d.family)
-    ? Math.min(base, ctx.settings.decrees.fondaco.taxBps)
-    : base;
+  const rate =
+    d?.family === TERRA_FAMILY
+      ? (terraEffects(ctx)?.franchise_rialto.taxBps ?? base)
+      : ctx.settings.decrees.fondaco.taxBps;
+  return d && memberOf(state, seller, d.family) ? Math.min(base, rate) : base;
 }
 
 /** Added share of the Dogana's quota (Fondaco's privilege). */
@@ -154,7 +182,11 @@ export function decreeQuotaBps(
 ): number {
   if (!playerId) return 0;
   const d = decreeInForce(ctx, state, "fondaco", at);
-  return d && memberOf(state, playerId, d.family) ? ctx.settings.decrees.fondaco.quotaBps : 0;
+  const quota =
+    d?.family === TERRA_FAMILY
+      ? (terraEffects(ctx)?.franchise_rialto.quotaBps ?? 0)
+      : ctx.settings.decrees.fondaco.quotaBps;
+  return d && memberOf(state, playerId, d.family) ? quota : 0;
 }
 
 /** The gabelle on others' sales of a good: its rate and the family it goes to. */
@@ -167,7 +199,11 @@ export function gabelleOn(
 ): { family: string; bps: number } | null {
   const d = decreeInForce(ctx, state, "gabelle", at);
   if (!d || d.target !== resource || memberOf(state, seller, d.family)) return null;
-  return { family: d.family, bps: ctx.settings.decrees.gabelle.extraTaxBps };
+  const bps =
+    d.family === TERRA_FAMILY
+      ? (terraEffects(ctx)?.monopole.extraTaxBps ?? 0)
+      : ctx.settings.decrees.gabelle.extraTaxBps;
+  return { family: d.family, bps };
 }
 
 /** The favour of a city: extra pay for the members' deliveries there. */
@@ -194,8 +230,19 @@ export function urgentReservedUntil(
   at: number,
 ): number | null {
   const d = decreeInForce(ctx, state, "faveur", at);
-  if (!d || d.target !== city || memberOf(state, playerId, d.family)) return null;
-  return opensAt + ctx.settings.decrees.faveur.reservedMinutes * 60_000;
+  if (d && d.target === city && !memberOf(state, playerId, d.family))
+    return opensAt + ctx.settings.decrees.faveur.reservedMinutes * 60_000;
+  // The embargo: the city's urgent orders are the Signore's and his allies' for a while.
+  const t = terraDecreeNow(ctx, state, at);
+  const embargo = terraEffects(ctx)?.embargo;
+  if (
+    t?.code === "embargo" &&
+    t.target === city &&
+    embargo &&
+    !memberOf(state, playerId, TERRA_FAMILY)
+  )
+    return opensAt + embargo.reservedMinutes * 60_000;
+  return null;
 }
 
 /** The toll on others' deliveries to the cities the family held: its rate and the family. */
@@ -207,8 +254,12 @@ export function tollOn(
   at: number,
 ): { family: string; bps: number } | null {
   const d = decreeInForce(ctx, state, "peage", at);
+  if (!d || memberOf(state, playerId, d.family)) return null;
+  // The Terraferma's dime takes from every delivery of the others, wherever it goes.
+  if (d.family === TERRA_FAMILY)
+    return { family: d.family, bps: terraEffects(ctx)?.dime.tollBps ?? 0 };
   const cities = state.campaign?.decrees?.cities ?? [];
-  if (!d || !cities.includes(city) || memberOf(state, playerId, d.family)) return null;
+  if (!cities.includes(city)) return null;
   return { family: d.family, bps: ctx.settings.decrees.peage.tollBps };
 }
 
@@ -235,5 +286,47 @@ export function calmiereCap(
   const d = decreeInForce(ctx, state, "calmiere", at);
   const ref = ctx.settings.referencePrices[resource];
   if (!d || d.target !== resource || ref === undefined) return null;
-  return (ref * BigInt(ctx.settings.decrees.calmiere.capBps)) / 10_000n;
+  const cap =
+    d.family === TERRA_FAMILY
+      ? (terraEffects(ctx)?.calmiere.capBps ?? 10_000)
+      : ctx.settings.decrees.calmiere.capBps;
+  return (ref * BigInt(cap)) / 10_000n;
+}
+
+/** The Terraferma's embargo: what the others' deliveries to the city lose of their pay. */
+export function embargoCutBps(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  city: string,
+  at: number,
+): number {
+  const t = terraDecreeNow(ctx, state, at);
+  if (t?.code !== "embargo" || t.target !== city || memberOf(state, playerId, TERRA_FAMILY))
+    return 0;
+  return terraEffects(ctx)?.embargo.cutBps ?? 0;
+}
+
+/** The Terraferma's favour of the Doge: the contracts of the Doge its members get more a day. */
+export function dogeFavourOrders(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  at: number,
+): number {
+  const t = terraDecreeNow(ctx, state, at);
+  if (t?.code !== "faveur_doge" || !memberOf(state, playerId, TERRA_FAMILY)) return 0;
+  return terraEffects(ctx)?.faveur_doge.extraOrders ?? 0;
+}
+
+/** The Terraferma's favour of the Doge: what its members' contracts of the Doge earn more. */
+export function dogeFavourBps(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  at: number,
+): number {
+  const t = terraDecreeNow(ctx, state, at);
+  if (t?.code !== "faveur_doge" || !memberOf(state, playerId, TERRA_FAMILY)) return 0;
+  return terraEffects(ctx)?.faveur_doge.premiumBps ?? 0;
 }

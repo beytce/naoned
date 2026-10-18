@@ -305,3 +305,25 @@ export const testHouse = {
     rushWork: 5,
   },
 };
+
+/** The Terraferma on a small map: 10 cells a merchant, always open unless a test says otherwise. */
+export const testTerraferma = {
+  cellsPerActive: 10,
+  minActive: 4,
+  aspectBps: 15_000,
+  milanBps: 2_000,
+  cities: 2,
+  openHours: { from: 0, to: 24 },
+  stepMinutes: 10,
+  terrains: {
+    plain: { defenseBps: 10_000, militia: 3 },
+    hill: { defenseBps: 15_000, militia: 6 },
+  },
+  bands: [{ untilBps: 10_000, weights: { plain: 3, hill: 1 } }],
+  city: { militiaBps: 20_000, defenseBps: 15_000 },
+  start: { minDistance: 3, troops: 30, troopsPerDay: 10, protectionHours: 24 },
+  troops: { base: 20, perCell: 3, perCity: 10, regenBps: 1_000, regenMin: 1 },
+  fronts: { max: 3, cellsPerStep: 2, minShareBps: 1_000, maxHours: 0 },
+  milan: { troops: 60, troopsPerActive: 5, regenBps: 500, everyHours: 4, shareBps: 3_000 },
+  glory: { perCell: 1, perCity: 3 },
+};

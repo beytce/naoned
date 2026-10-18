@@ -44,10 +44,11 @@ describe("simulator", () => {
     for (const id of holders) {
       expect(r.finalState?.players[id]?.patents).toEqual(["gilded_name"]);
     }
-    // Influence comes from the house's missions only.
+    // Influence comes from the house's missions and the Terraferma's weeks, never from trade.
     const earned = Object.values(r.influence ?? {});
     expect(earned.some((i) => i.mission > 0)).toBe(true);
-    expect(earned.every((i) => i.commerce === 0 && i.campaign === 0)).toBe(true);
+    expect(earned.some((i) => i.campaign > 0)).toBe(true);
+    expect(earned.every((i) => i.commerce === 0)).toBe(true);
   });
 
   it("computes the Gini index", () => {

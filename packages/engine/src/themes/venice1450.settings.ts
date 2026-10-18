@@ -157,6 +157,95 @@ export const venice1450Settings: WorldSettingsInput = {
     levyMinBps: 7_500,
     levyMaxBps: 15_000,
   },
+  // The Terraferma after OpenFront (docs/plan-terraferme.md), in place of the families from the
+  // season opened on 18 October 2026: the real Veneto of the drawn map
+  // (Lombardy, Milan's, beyond its western edge; the sea, the lagoon and Lake Garda as water),
+  // 25 cells a merchant, Milan in far Lombardy, the Alps in the north and the Po's marshes in the
+  // south, fronts of a cell per half hour (an hour on free land) that come home after 2 h, 8 h to
+  // 22 h: the race for free land lasts until Thursday (docs/calibration.md).
+  terraferma: {
+    live: true,
+    cellsPerActive: 25,
+    minActive: 20,
+    aspectBps: 16_000,
+    milanBps: 1_800,
+    cities: 0,
+    geography: {
+      box: { x0: -170, y0: 30, x1: 360, y1: 430 },
+      water: [
+        // The Adriatic, along the coast.
+        [
+          [360, 30],
+          [360, 120],
+          [340, 165],
+          [342, 210],
+          [338, 236],
+          [330, 256],
+          [319, 282],
+          [322, 312],
+          [326, 352],
+          [316, 392],
+          [309, 420],
+          [312, 430],
+          [360, 430],
+        ],
+        // The lagoon of Venice.
+        [
+          [326, 222],
+          [308, 240],
+          [307, 262],
+          [306, 290],
+          [300, 320],
+          [290, 304],
+          [284, 276],
+          [284, 248],
+          [302, 228],
+        ],
+        // Lake Garda.
+        [
+          [30, 130],
+          [44, 152],
+          [42, 190],
+          [38, 210],
+          [26, 206],
+          [20, 178],
+          [22, 150],
+        ],
+      ],
+      cities: [
+        { code: "verona", x: 70, y: 226 },
+        { code: "vicenza", x: 158, y: 192 },
+        { code: "padova", x: 218, y: 262 },
+        { code: "treviso", x: 270, y: 158 },
+        { code: "mantova", x: 56, y: 344 },
+        { code: "ferrara", x: 192, y: 396 },
+        { code: "brescia", x: -40, y: 196 },
+        { code: "bergamo", x: -96, y: 150 },
+        { code: "cremona", x: -46, y: 312 },
+      ],
+    },
+    openHours: { from: 8, to: 22 },
+    stepMinutes: 30,
+    terrains: {
+      plain: { defenseBps: 10_000, militia: 8 },
+      hill: { defenseBps: 13_000, militia: 12 },
+      marsh: { defenseBps: 15_000, militia: 18 },
+      mountain: { defenseBps: 20_000, militia: 28 },
+    },
+    // From the north: the Alps, the hills at their foot, the plain, the Po's marshes.
+    bands: [
+      { untilBps: 2_000, weights: { mountain: 6, hill: 2, plain: 1 } },
+      { untilBps: 3_500, weights: { hill: 5, plain: 3, mountain: 1 } },
+      { untilBps: 7_500, weights: { plain: 7, hill: 1, marsh: 1 } },
+      { untilBps: 10_000, weights: { plain: 4, marsh: 4 } },
+    ],
+    city: { militiaBps: 25_000, defenseBps: 15_000 },
+    start: { minDistance: 2, troops: 40, troopsPerDay: 15, protectionHours: 24 },
+    troops: { base: 30, perCell: 2, perCity: 30, regenBps: 400, regenMin: 1 },
+    fronts: { max: 3, cellsPerStep: 1, minShareBps: 1_000, maxHours: 2, neutralEverySteps: 2 },
+    milan: { troops: 100, troopsPerActive: 3, regenBps: 900, everyHours: 4, shareBps: 2_000 },
+    glory: { perCell: 1, perCity: 3 },
+  },
   // The week's campaign: the Terraferma where its lands really are (seats in the east, Milan in the
   // middle), lances levied 2 an hour from 8 h to 22 h (24 waiting at most) or engaged for ducats
   // (20 at 1 d, 20 at 2 d a day), leaving after 48 h; Milan rides every 4 open hours.
@@ -659,28 +748,28 @@ export const venice1450Settings: WorldSettingsInput = {
   // Level 2 asks half the materials: a first upgrade within reach in the first days.
   upgradeMaterialsBps: { "2": 5_000 },
   activeWindowHours: 72,
-  // A month to grow: buildings cost 25 % fewer materials than in the six-week seasons. Their
-  // ducats, destroyed, are the first sink of money since the upkeep is gone (40 % more than
-  // before it went, see docs/calibration.md).
+  // A month to grow: buildings cost 30 % fewer ducats and 25 % fewer materials than in the
+  // six-week seasons. The Terraferma's ducats are the sink of money since the upkeep is gone
+  // (the 40 % added to buildings meanwhile taken back at its opening, see docs/calibration.md).
   buildings: {
-    farm: { costDucats: 29_400, costMaterials: { bricks: 15, planks: 15 } },
+    farm: { costDucats: 21_000, costMaterials: { bricks: 15, planks: 15 } },
     clay_pit: {
-      costDucats: 29_400,
+      costDucats: 21_000,
       costMaterials: { bricks: 15, planks: 15 },
     },
     lumber_camp: {
-      costDucats: 29_400,
+      costDucats: 21_000,
       costMaterials: { bricks: 15, planks: 15 },
     },
-    mill: { costDucats: 39_200, costMaterials: { bricks: 25, planks: 25 } },
-    bakery: { costDucats: 58_800, costMaterials: { bricks: 30, planks: 30 } },
+    mill: { costDucats: 28_000, costMaterials: { bricks: 25, planks: 25 } },
+    bakery: { costDucats: 42_000, costMaterials: { bricks: 30, planks: 30 } },
     brickworks: {
-      costDucats: 49_000,
+      costDucats: 35_000,
       costMaterials: { bricks: 15, planks: 30 },
     },
-    sawmill: { costDucats: 49_000, costMaterials: { bricks: 30, planks: 15 } },
+    sawmill: { costDucats: 35_000, costMaterials: { bricks: 30, planks: 15 } },
     // Prestige sink: produces nothing, counts at cost in the ranking.
-    palazzo: { costDucats: 78_400, costMaterials: { bricks: 30, planks: 30 } },
+    palazzo: { costDucats: 56_000, costMaterials: { bricks: 30, planks: 30 } },
   },
   referencePrices: {
     wheat: 100,

@@ -4,7 +4,14 @@ import { costValue } from "./buildings.js";
 import { familyAccount } from "./campaign.js";
 import { hourIn, hourWithin } from "./clock.js";
 import { contractsDoneToday, contractsFor } from "./contracts.js";
-import { favourBps, tollOn, urgentReservedUntil } from "./decrees.js";
+import {
+  dogeFavourBps,
+  dogeFavourOrders,
+  embargoCutBps,
+  favourBps,
+  tollOn,
+  urgentReservedUntil,
+} from "./decrees.js";
 import { draw, pickWeighted } from "./draw.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
 import { isMudaGood } from "./muda.js";
@@ -346,8 +353,10 @@ export function deliveryOrdersFor(
     }
   }
 
-  // The Doge's orders (their own draw), at the Doge's premium.
-  for (const c of contractsFor(ctx, playerId, day).slice(0, cfg.dogeOrdersPerDay)) {
+  // The Doge's orders (their own draw), at the Doge's premium; one more under his favour.
+  const dogeOrders = cfg.dogeOrdersPerDay + dogeFavourOrders(ctx, state, playerId, dayStart);
+  const drawn = Math.max(ctx.settings.contracts.perDay, dogeOrders);
+  for (const c of contractsFor(ctx, playerId, day, {}, drawn).slice(0, dogeOrders)) {
     if (!mayOrder(c.resource)) continue;
     const city = routeMinutes(ctx, region, c.city) !== undefined ? c.city : anyCity[0];
     if (!city) continue;
@@ -829,25 +838,38 @@ function arrive(tx: Tx, d: Delivery): void {
   const loadedBy: Record<string, number> = {};
   for (const l of lines) loadedBy[l.resource] = (loadedBy[l.resource] ?? 0) + l.quantity;
   let amount = 0n;
+  let doge = 0n;
   let left = 0;
   for (const l of lines) {
     const of = loadedBy[l.resource] ?? 0;
     const there = d.cargo[l.resource] ?? 0;
-    if (of > 0) amount += (l.payment * BigInt(there)) / BigInt(of);
+    const paid = of > 0 ? (l.payment * BigInt(there)) / BigInt(of) : 0n;
+    amount += paid;
+    if (l.kind === "doge") doge += paid;
   }
   for (const qty of Object.values(d.cargo)) left += qty;
+  const city = d.route.split(":")[1] ?? "";
+  const state = tx.s as WorldState;
+  // The Terraferma's embargo: the city pays the others less.
+  const cut = embargoCutBps(tx.ctx, state, d.playerId, city, tx.now);
+  if (cut > 0) amount -= applyBpsFloor(amount, cut);
   transfer(tx, SOURCE_ACCOUNT, cashAccount(d.playerId), amount, "delivery", d.id);
   d.paid = amount;
   d.outcome = "delivered";
-  const city = d.route.split(":")[1] ?? "";
+  // The Terraferma's favour of the Doge: his contracts pay the Signore and his allies more.
+  const dogeBps = dogeFavourBps(tx.ctx, state, d.playerId, tx.now);
+  if (dogeBps > 0 && doge > 0n) {
+    const premium = applyBpsFloor(doge, dogeBps);
+    transfer(tx, SOURCE_ACCOUNT, cashAccount(d.playerId), premium, "decree_favour", d.id);
+    d.paid += premium;
+  }
   // The decrees of the week: the favour of a city pays its family's members more, the toll of
   // the cities it held takes a share from the others.
-  const state = tx.s as WorldState;
   const favour = favourBps(tx.ctx, state, d.playerId, city, tx.now);
   if (favour > 0 && amount > 0n) {
     const premium = applyBpsFloor(amount, favour);
     transfer(tx, SOURCE_ACCOUNT, cashAccount(d.playerId), premium, "decree_favour", d.id);
-    d.paid = amount + premium;
+    d.paid += premium;
   }
   const toll = tollOn(tx.ctx, state, d.playerId, city, tx.now);
   if (toll && amount > 0n) {

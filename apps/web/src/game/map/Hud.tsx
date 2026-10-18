@@ -106,6 +106,7 @@ export function MapHud({
   bottom,
   hasFamily,
   layer,
+  doorLabel,
   familyCalls,
   workshopsReady,
   right,
@@ -152,12 +153,14 @@ export function MapHud({
   bottom: boolean;
   hasFamily: boolean;
   /** The map shown: the family door switches between the two. */
-  layer: "trade" | "campaign";
+  layer: "trade" | "campaign" | "terra";
+  /** The other layer's door, when it is not the families' (the Terraferma). */
+  doorLabel?: string;
   /** Something waits at the family (a levy, a threat, a message, an invitation). */
   familyCalls: boolean;
   /** Batches waiting at the workshops (a dot on their door). */
   workshopsReady: boolean;
-  /** Replaces the purse's column on the right (the families' glory on the campaign). */
+  /** Under the purse on the right, in place of the bread and the carts (the families' glory on the campaign). */
   right?: ReactNode;
   onProfile: () => void;
   onNotices: () => void;
@@ -323,9 +326,8 @@ export function MapHud({
             {Icon.plus()}
           </Orb>
         )}
+        {right}
       </div>
-
-      {right}
       {bottom && (
         <nav className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex justify-center gap-7 lg:bottom-6">
           {layer === "trade" && (
@@ -343,7 +345,7 @@ export function MapHud({
           </Door>
           {(hasFamily || layer !== "trade") && (
             <Door
-              label={layer !== "trade" ? m.campaign.toTrade : m.campaign.toCampaign}
+              label={layer !== "trade" ? m.campaign.toTrade : (doorLabel ?? m.campaign.toCampaign)}
               onClick={onFamily}
               dot={layer === "trade" && familyCalls}
               active={layer !== "trade"}
