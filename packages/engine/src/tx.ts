@@ -121,7 +121,17 @@ export type EngineErrorCode =
   | "too_many_fronts"
   | "share_too_small"
   | "no_troops"
-  | "unknown_front";
+  | "unknown_front"
+  | "allied"
+  | "not_allied"
+  | "traitor"
+  | "too_many_allies"
+  | "no_request"
+  | "breaking"
+  | "gift_limit"
+  | "built"
+  | "no_room"
+  | "raise_limit";
 
 export class EngineError extends Error {
   constructor(

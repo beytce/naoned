@@ -332,6 +332,67 @@ export const worldSettingsSchema = z.object({
         shareBps: bps.max(10_000),
       }),
       glory: z.object({ perCell: qty, perCity: qty }),
+      /** Alliances between merchants: how many, how long a break takes, the traitor's lot. */
+      alliances: z
+        .object({
+          max: qty,
+          breakHours: qty,
+          /** Troops a merchant may send its allies in a day, as a share of its cap. */
+          giftShareBps: bps.max(10_000),
+          /** Breaking more often than this in the week makes a traitor. */
+          traitorBreaks: qty,
+          traitorHours: qty,
+          /** A traitor's land is this much easier to take. */
+          traitorDefenseBps: bps.max(10_000),
+        })
+        .default({
+          max: 2,
+          breakHours: 2,
+          giftShareBps: 3_000,
+          traitorBreaks: 2,
+          traitorHours: 24,
+          traitorDefenseBps: 7_500,
+        }),
+      /** A pocket cut off from its capital and ringed by one rival falls to it, a share an hour. */
+      encircle: z.object({ lossBps: bps.max(10_000) }).default({ lossBps: 1_000 }),
+      /** Buildings, paid in ducats (destroyed) by the caller, one per so many cells held. */
+      buildings: z
+        .object({
+          rocca: z.object({ price: money, defenseBps: positive, perCells: positive }),
+          borgo: z.object({
+            price: money,
+            capBonus: qty,
+            regenBonusBps: bps,
+            perCells: positive,
+          }),
+        })
+        .default({
+          rocca: { price: 4_000, defenseBps: 16_000, perCells: 15 },
+          borgo: { price: 5_000, capBonus: 20, regenBonusBps: 1_000, perCells: 20 },
+        }),
+      /** The cap raised for ducats (destroyed by the caller), a few times a day. */
+      capRaise: z
+        .object({ amount: qty, price: money, perDay: qty })
+        .default({ amount: 10, price: 10_000, perDay: 2 }),
+      /** The week's close: the land that wins at once, Influence by tier, the decrees. */
+      close: z
+        .object({
+          winBps: bps.max(10_000),
+          influence: z.object({
+            signore: qty,
+            podium: qty,
+            top10: qty,
+            quarter: qty,
+            participant: qty,
+          }),
+          /** The strong decrees the Signore chooses from. */
+          decrees: z.array(z.string()),
+        })
+        .default({
+          winBps: 8_000,
+          influence: { signore: 20, podium: 12, top10: 8, quarter: 5, participant: 2 },
+          decrees: ["monopole", "embargo", "dime", "faveur_doge", "franchise_rialto", "calmiere"],
+        }),
     })
     .optional(),
   /**

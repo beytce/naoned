@@ -42,6 +42,31 @@ export interface TerraPlayer {
   fixedCap?: number;
   /** The cell it set down on: never taken, so a merchant is never wiped off the map. */
   capital?: number;
+  /** Troops of cap bought with ducats this week. */
+  boughtCap?: number;
+  /** Cap raises and troops sent to allies, on the day they were counted. */
+  today?: { day: number; raises: number; gifts: number };
+  /** Alliances broken this week, and until when it is a traitor. */
+  breaks?: number;
+  traitorUntil?: number;
+}
+
+export type TerraBuilding = "rocca" | "borgo";
+
+export interface TerraAlliance {
+  a: string;
+  b: string;
+  /** Once broken: when the break takes effect. */
+  endsAt?: number;
+}
+
+export interface TerraClose {
+  at: number;
+  signore: string | null;
+  /** Took the land before the week's end. */
+  conquest: boolean;
+  ranking: { id: string; glory: number; cells: number; tier: string; influence: number }[];
+  decree: { code: string; target?: string } | null;
 }
 
 export interface TerraFront {
@@ -70,6 +95,16 @@ export interface TerraState {
   clock: number;
   /** Open steps since Milan last rode out. */
   milanSteps: number;
+  /** Open steps since pockets last fell. */
+  hourSteps?: number;
+  alliances?: TerraAlliance[];
+  /** Alliances asked for, not yet accepted: from → to. */
+  requests?: { from: string; to: string }[];
+  buildings?: Record<number, { owner: string; kind: TerraBuilding }>;
+  /** The decree each merchant would impose as Signore (public). */
+  programme?: Record<string, { code: string; target?: string }>;
+  /** The week closed: no step any more. */
+  closed?: TerraClose;
 }
 
 // ——— The map ———
@@ -312,8 +347,30 @@ export function capOf(s: TerraState, cfg: TerraConfig, id: string): number {
   if (fixed !== undefined) return fixed;
   const cells = cellsOf(s, id);
   const cities = cells.filter((i) => s.map.city[i]).length;
-  return cfg.troops.base + cfg.troops.perCell * cells.length + cfg.troops.perCity * cities;
+  return (
+    cfg.troops.base +
+    cfg.troops.perCell * cells.length +
+    cfg.troops.perCity * cities +
+    cfg.buildings.borgo.capBonus * terraBuildingsOf(s, id, "borgo").length +
+    (s.players[id]?.boughtCap ?? 0)
+  );
 }
+
+export function terraBuildingsOf(s: TerraState, id: string, kind?: TerraBuilding): number[] {
+  return Object.entries(s.buildings ?? {})
+    .filter(([, b]) => b.owner === id && (kind === undefined || b.kind === kind))
+    .map(([cell]) => Number(cell));
+}
+
+export function alliesOf(s: TerraState, id: string): string[] {
+  return (s.alliances ?? [])
+    .filter((a) => a.a === id || a.b === id)
+    .map((a) => (a.a === id ? a.b : a.a))
+    .sort();
+}
+
+const allied = (s: TerraState, x: string, y: string) => alliesOf(s, x).includes(y);
+const traitor = (s: TerraState, id: string, at: number) => (s.players[id]?.traitorUntil ?? 0) > at;
 
 /** What a front pays for a cell: the militia of neutral land, else its holder's density. */
 export function cellCost(s: TerraState, cfg: TerraConfig, i: number): number {
@@ -327,7 +384,22 @@ export function cellCost(s: TerraState, cfg: TerraConfig, i: number): number {
     return Math.max(1, militia);
   }
   const defenseBps = city ? cfg.city.defenseBps : 10_000;
-  return Math.max(1, Math.ceil((densityOf(s, holder) * terrain.defenseBps * defenseBps) / 1e8));
+  // A rocca guards its cell and the six around it.
+  const rocca = [i, ...hexNeighbors(s.map, i)].some((c) => {
+    const b = s.buildings?.[c];
+    return b?.kind === "rocca" && b.owner === holder;
+  });
+  const roccaBps = rocca ? cfg.buildings.rocca.defenseBps : 10_000;
+  const traitorBps = traitor(s, holder, s.clock) ? cfg.alliances.traitorDefenseBps : 10_000;
+  // Exact: density × four multipliers in bps, rounded up.
+  const num =
+    BigInt(densityOf(s, holder)) *
+    BigInt(terrain.defenseBps) *
+    BigInt(defenseBps) *
+    BigInt(roccaBps) *
+    BigInt(traitorBps);
+  const den = 10_000n ** 4n;
+  return Math.max(1, Number((num + den - 1n) / den));
 }
 
 function densityOf(s: TerraState, id: string): number {
@@ -413,6 +485,7 @@ export function launchFront(
   if (against === id) fail("own_cell");
   if (!borders(s, id, aim)) fail("not_adjacent");
   if (against !== null) {
+    if (allied(s, id, against)) fail("allied");
     if (id !== MILAN && player.protectedUntil > now && against !== MILAN) fail("protected");
     if ((s.players[against]?.protectedUntil ?? 0) > now) fail("protected");
   }
@@ -446,12 +519,214 @@ function endFront(s: TerraState, front: TerraFront): void {
   s.fronts = s.fronts.filter((f) => f.id !== front.id);
 }
 
+// ——— Alliances ———
+
+const merchant = (s: TerraState, id: string) => {
+  if (id === MILAN || !s.players[id]) fail("not_placed");
+};
+
+/** Asks another merchant for an alliance; if it had asked first, the alliance is made. */
+export function proposeAlliance(
+  s: TerraState,
+  cfg: TerraConfig,
+  from: string,
+  to: string,
+  now: number,
+): void {
+  merchant(s, from);
+  merchant(s, to);
+  if (from === to) fail("own_cell");
+  if (allied(s, from, to)) fail("allied");
+  if (traitor(s, from, now) || traitor(s, to, now)) fail("traitor");
+  if ((s.requests ?? []).some((r) => r.from === to && r.to === from)) {
+    acceptAlliance(s, cfg, from, to, now);
+    return;
+  }
+  if (alliesOf(s, from).length >= cfg.alliances.max) fail("too_many_allies");
+  s.requests = [
+    ...(s.requests ?? []).filter((r) => !(r.from === from && r.to === to)),
+    { from, to },
+  ];
+}
+
+/** Accepts an alliance asked for: no more fronts between the two, none to come. */
+export function acceptAlliance(
+  s: TerraState,
+  cfg: TerraConfig,
+  id: string,
+  from: string,
+  now: number,
+): void {
+  merchant(s, id);
+  if (!(s.requests ?? []).some((r) => r.from === from && r.to === id)) fail("no_request");
+  if (traitor(s, id, now) || traitor(s, from, now)) fail("traitor");
+  if (alliesOf(s, id).length >= cfg.alliances.max || alliesOf(s, from).length >= cfg.alliances.max)
+    fail("too_many_allies");
+  s.requests = (s.requests ?? []).filter(
+    (r) => !((r.from === from && r.to === id) || (r.from === id && r.to === from)),
+  );
+  const [a, b] = from < id ? [from, id] : [id, from];
+  s.alliances = [...(s.alliances ?? []), { a, b }];
+  for (const f of [...s.fronts]) {
+    if ((f.owner === a && f.against === b) || (f.owner === b && f.against === a)) endFront(s, f);
+  }
+}
+
+/**
+ * Breaks an alliance: it ends after `breakHours`, which the other sees. Breaking too often in
+ * the week makes a traitor: weaker land, and nobody may ally with it for a while.
+ */
+export function breakAlliance(
+  s: TerraState,
+  cfg: TerraConfig,
+  id: string,
+  other: string,
+  now: number,
+): void {
+  const alliance = (s.alliances ?? []).find(
+    (x) => (x.a === id && x.b === other) || (x.a === other && x.b === id),
+  );
+  if (!alliance) fail("not_allied");
+  if (alliance.endsAt !== undefined) fail("breaking");
+  alliance.endsAt = now + cfg.alliances.breakHours * 3_600_000;
+  const player = s.players[id];
+  if (!player) fail("not_placed");
+  player.breaks = (player.breaks ?? 0) + 1;
+  if (player.breaks > cfg.alliances.traitorBreaks)
+    player.traitorUntil = now + cfg.alliances.traitorHours * 3_600_000;
+}
+
+/** Counters of the day (cap raises, troops sent), started afresh each day. */
+function todayOf(s: TerraState, p: TerraPlayer, now: number) {
+  const day = Math.floor((now - s.startAt) / DAY_MS);
+  if (!p.today || p.today.day !== day) p.today = { day, raises: 0, gifts: 0 };
+  return p.today;
+}
+
+/** Troops sent to an ally, within a share of the sender's cap a day. */
+export function sendTroops(
+  s: TerraState,
+  cfg: TerraConfig,
+  from: string,
+  to: string,
+  count: number,
+  now: number,
+): void {
+  merchant(s, from);
+  merchant(s, to);
+  if (!allied(s, from, to)) fail("not_allied");
+  if (!Number.isInteger(count) || count <= 0) fail("invalid_quantity");
+  const sender = s.players[from] as TerraPlayer;
+  const today = todayOf(s, sender, now);
+  const limit = Math.floor((capOf(s, cfg, from) * cfg.alliances.giftShareBps) / 10_000);
+  if (today.gifts + count > limit) fail("gift_limit");
+  if (sender.troops < count) fail("no_troops");
+  sender.troops -= count;
+  today.gifts += count;
+  (s.players[to] as TerraPlayer).troops += count;
+}
+
+// ——— Ducats: buildings and the cap (the caller takes the price) ———
+
+/** A rocca or a borgo on one of the merchant's cells. Returns its price in deniers. */
+export function buildOnTerra(
+  s: TerraState,
+  cfg: TerraConfig,
+  id: string,
+  cell: number,
+  kind: TerraBuilding,
+): bigint {
+  merchant(s, id);
+  if (s.owner[cell] !== id) fail("not_owner");
+  if (s.buildings?.[cell]) fail("built");
+  const def = cfg.buildings[kind];
+  const room = Math.floor(cellsOf(s, id).length / def.perCells);
+  if (terraBuildingsOf(s, id, kind).length >= room) fail("no_room");
+  s.buildings = { ...(s.buildings ?? {}), [cell]: { owner: id, kind } };
+  return def.price;
+}
+
+/** The cap of troops raised for the week, a few times a day. Returns its price in deniers. */
+export function raiseCap(s: TerraState, cfg: TerraConfig, id: string, now: number): bigint {
+  merchant(s, id);
+  const player = s.players[id] as TerraPlayer;
+  const today = todayOf(s, player, now);
+  if (today.raises >= cfg.capRaise.perDay) fail("raise_limit");
+  today.raises++;
+  player.boughtCap = (player.boughtCap ?? 0) + cfg.capRaise.amount;
+  return cfg.capRaise.price;
+}
+
+/** The decree the merchant would impose as Signore: public, it may change until the close. */
+export function chooseDecree(
+  s: TerraState,
+  cfg: TerraConfig,
+  id: string,
+  pick: { code: string; target?: string },
+): void {
+  merchant(s, id);
+  if (!cfg.close.decrees.includes(pick.code)) fail("invalid_programme");
+  s.programme = { ...(s.programme ?? {}), [id]: pick };
+}
+
+// ——— The close ———
+
+/**
+ * The week closed (or the land taken): the merchants ranked by glory, Influence by tier, the
+ * Signore and the decree it chose. Steps stop.
+ */
+export function closeTerra(
+  s: TerraState,
+  cfg: TerraConfig,
+  at: number,
+  winner?: string,
+): TerraClose {
+  if (s.closed) return s.closed;
+  const ranked = Object.entries(s.players)
+    .filter(([id]) => id !== MILAN)
+    .map(([id, p]) => ({ id, glory: p.glory, cells: cellsOf(s, id).length }))
+    .sort(
+      (a, b) =>
+        (winner ? (a.id === winner ? -1 : b.id === winner ? 1 : 0) : 0) ||
+        b.glory - a.glory ||
+        (a.id < b.id ? -1 : 1),
+    );
+  const n = ranked.length;
+  const t = cfg.close.influence;
+  const ranking = ranked.map((r, k) => {
+    const rank = k + 1;
+    const tier =
+      rank === 1 && r.glory > 0
+        ? "signore"
+        : rank <= 3
+          ? "podium"
+          : rank <= 10
+            ? "top10"
+            : rank <= Math.ceil(n / 4)
+              ? "quarter"
+              : r.glory > 0
+                ? "participant"
+                : "none";
+    const influence = tier === "none" ? 0 : t[tier as keyof typeof t];
+    return { ...r, tier, influence };
+  });
+  const signore = ranking[0]?.tier === "signore" ? (ranking[0]?.id ?? null) : null;
+  s.closed = {
+    at,
+    signore,
+    conquest: winner !== undefined,
+    ranking,
+    decree: signore ? (s.programme?.[signore] ?? null) : null,
+  };
+  return s.closed;
+}
+
 // ——— Time ———
 
 /** Resolves every whole step up to `until`; closed steps (the night) change nothing. */
 export function advanceTerra(s: TerraState, cfg: TerraConfig, until: number): void {
   const stepMs = cfg.stepMinutes * MINUTE_MS;
-  while (s.clock + stepMs <= until) {
+  while (!s.closed && s.clock + stepMs <= until) {
     const from = s.clock;
     s.clock += stepMs;
     if (hourWithin(hourIn(from), cfg.openHours)) step(s, cfg, from);
@@ -459,16 +734,31 @@ export function advanceTerra(s: TerraState, cfg: TerraConfig, until: number): vo
 }
 
 function step(s: TerraState, cfg: TerraConfig, at: number): void {
-  // Troops come back toward the cap.
+  // Alliances whose break has come.
+  if (s.alliances?.some((a) => a.endsAt !== undefined && a.endsAt <= at))
+    s.alliances = s.alliances.filter((a) => a.endsAt === undefined || a.endsAt > at);
+  // Troops come back toward the cap (the borgos bring them back faster).
   for (const [id, p] of Object.entries(s.players)) {
     const cap = capOf(s, cfg, id);
     if (p.troops >= cap) continue;
-    const rate = id === MILAN ? cfg.milan.regenBps : cfg.troops.regenBps;
+    const borgos = terraBuildingsOf(s, id, "borgo").length;
+    const rate =
+      id === MILAN
+        ? cfg.milan.regenBps
+        : Math.floor(
+            (cfg.troops.regenBps * (10_000 + borgos * cfg.buildings.borgo.regenBonusBps)) / 10_000,
+          );
     const back = Math.max(cfg.troops.regenMin, Math.floor(((cap - p.troops) * rate) / 10_000));
     p.troops = Math.min(cap, p.troops + back);
   }
   // Fronts, in the order they were launched.
   for (const front of [...s.fronts]) advanceFront(s, cfg, front);
+  // Every open hour, the pockets cut off from their capital fall a little.
+  s.hourSteps = (s.hourSteps ?? 0) + 1;
+  if (s.hourSteps * cfg.stepMinutes >= 60) {
+    s.hourSteps = 0;
+    fallPockets(s, cfg);
+  }
   // Glory for the land held.
   for (const [id, p] of Object.entries(s.players)) {
     if (id === MILAN) continue;
@@ -476,6 +766,15 @@ function step(s: TerraState, cfg: TerraConfig, at: number): void {
     p.glory +=
       cfg.glory.perCell * cells.length +
       cfg.glory.perCity * cells.filter((i) => s.map.city[i]).length;
+  }
+  // The land taken: the week is won at once.
+  const land = s.map.land.filter(Boolean).length;
+  for (const id of Object.keys(s.players)) {
+    if (id === MILAN) continue;
+    if (cellsOf(s, id).length * 10_000 >= cfg.close.winBps * land) {
+      closeTerra(s, cfg, at + cfg.stepMinutes * MINUTE_MS, id);
+      return;
+    }
   }
   // Milan rides out.
   s.milanSteps++;
@@ -517,6 +816,61 @@ function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront): void 
       if (defender) defender.troops = Math.max(0, defender.troops - densityOf(s, front.against));
     }
     s.owner[best] = front.owner;
+    razeAt(s, best);
+  }
+}
+
+function razeAt(s: TerraState, cell: number): void {
+  if (s.buildings?.[cell]) {
+    const { [cell]: _gone, ...rest } = s.buildings;
+    s.buildings = rest;
+  }
+}
+
+/** Cells of `id` connected to `from` through its own land. */
+function component(s: TerraState, id: string, from: number): Set<number> {
+  const seen = new Set<number>([from]);
+  const queue = [from];
+  while (queue.length > 0) {
+    const c = queue.pop() as number;
+    for (const n of hexNeighbors(s.map, c)) {
+      if (!seen.has(n) && s.owner[n] === id) {
+        seen.add(n);
+        queue.push(n);
+      }
+    }
+  }
+  return seen;
+}
+
+/**
+ * A pocket of a merchant's land, cut off from its capital and ringed by a single rival (not
+ * neutral land, not an ally), loses a share of its cells to that rival.
+ */
+function fallPockets(s: TerraState, cfg: TerraConfig): void {
+  for (const [id, p] of Object.entries(s.players)) {
+    if (id === MILAN || p.capital === undefined || s.owner[p.capital] !== id) continue;
+    const main = component(s, id, p.capital);
+    const done = new Set(main);
+    for (const start of cellsOf(s, id)) {
+      if (done.has(start)) continue;
+      const pocket = component(s, id, start);
+      for (const c of pocket) done.add(c);
+      const ring = new Set<string | null>();
+      for (const c of pocket) {
+        for (const n of hexNeighbors(s.map, c)) {
+          if (s.map.land[n] && s.owner[n] !== id) ring.add(s.owner[n] ?? null);
+        }
+      }
+      if (ring.size !== 1) continue;
+      const [rival] = [...ring];
+      if (rival === null || rival === undefined || allied(s, id, rival)) continue;
+      const lost = Math.max(1, Math.ceil((pocket.size * cfg.encircle.lossBps) / 10_000));
+      for (const c of [...pocket].sort((a, b) => a - b).slice(0, lost)) {
+        s.owner[c] = rival;
+        razeAt(s, c);
+      }
+    }
   }
 }
 
