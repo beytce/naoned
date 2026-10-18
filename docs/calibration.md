@@ -975,4 +975,4 @@ Pour comparer : sans entretien et sans Terraferme, 1 117 à 1 588 ducats et 3,5 
 - **les ateliers grandissent moins** (4,8 à 5,7 niveaux par marchand, au lieu de 6,4 à 7,6) : les ducats vont à la guerre plutôt qu'aux ateliers. À la bascule, les **ducats des bâtiments pourraient revenir à leur prix d'avant (−40 %)**, le contrepoids de la Terraferme rendant celui-là inutile ; à mesurer alors ;
 - le **patrimoine des assidus** baisse quand ils dépensent sur la Terraferme (graine 5 : 77 %) : le classement compte les ventes nettes, pas le patrimoine, et l'Influence du classement de la Terraferme récompense cette dépense ; l'indicateur de patrimoine ne dit plus tout.
 
-La Faveur du Doge ne donne pas encore son contrat de plus par jour (seulement +40 % de paie) : à faire avec l'écran.
+La Faveur du Doge donne aussi son contrat de plus par jour (`effects.faveur_doge.extraOrders`, 1), tiré comme les autres et payé +40 %.

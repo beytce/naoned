@@ -61,6 +61,7 @@ export {
   decreeTargetKind,
   decreeTaxBps,
   dogeFavourBps,
+  dogeFavourOrders,
   embargoCutBps,
   gabelleOn,
   programmeOf,

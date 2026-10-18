@@ -9,7 +9,7 @@ Décisions du porteur (17 octobre 2026), qui remplacent la Campagne des familles
 
 Le porteur **lève le gel des mécaniques** pour ce mode (17 octobre 2026). Il n'y a pas de guildes : seulement des alliances entre joueurs. **Statut : plan validé. Moteur, décrets, serveur (actions, vue `GET /api/game/terra`, notifications) et PNJ faits, derrière `terraferma.live` (éteint pour Venise jusqu'à la bascule d'une saison) ; mesuré au simulateur (`pnpm sim --terra`) ; l'écran est fait (`docs/design.md`, « Terraferme »). Reste la bascule à une ouverture de saison.**
 
-Pour la jouer en local avant la bascule : `WORLD_SETTINGS_OVERRIDE='{"terraferma":{"live":true}}' pnpm dev` (refusé en production). Pas encore à l'écran : le rejeu « pendant votre absence » des cases prises (il faudrait leur historique) ; la Faveur du Doge ne donne pas encore de contrat de plus.
+Pour la jouer en local avant la bascule : `WORLD_SETTINGS_OVERRIDE='{"terraferma":{"live":true}}' pnpm dev` (refusé en production). Pas encore à l'écran : le rejeu « pendant votre absence » des cases prises (il faudrait leur historique).
 
 Réponses du porteur aux questions du plan (17 octobre 2026) :
 

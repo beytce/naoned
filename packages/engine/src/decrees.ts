@@ -307,6 +307,18 @@ export function embargoCutBps(
   return terraEffects(ctx)?.embargo.cutBps ?? 0;
 }
 
+/** The Terraferma's favour of the Doge: the contracts of the Doge its members get more a day. */
+export function dogeFavourOrders(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  at: number,
+): number {
+  const t = terraDecreeNow(ctx, state, at);
+  if (t?.code !== "faveur_doge" || !memberOf(state, playerId, TERRA_FAMILY)) return 0;
+  return terraEffects(ctx)?.faveur_doge.extraOrders ?? 0;
+}
+
 /** The Terraferma's favour of the Doge: what its members' contracts of the Doge earn more. */
 export function dogeFavourBps(
   ctx: WorldContext,

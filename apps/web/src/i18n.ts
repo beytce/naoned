@@ -519,7 +519,8 @@ export const fr = {
           embargo:
             "Une ville paie moins les autres marchands ; ses commandes urgentes vont d'abord au Signore.",
           dime: "Une part de chaque livraison des autres revient au Signore et à ses alliés.",
-          faveur_doge: "Les contrats du Doge paient bien davantage au Signore et à ses alliés.",
+          faveur_doge:
+            "Un contrat du Doge de plus chaque jour, et tous mieux payés, pour le Signore et ses alliés.",
           franchise_rialto:
             "Ni taxe du marché, et des quotas de la Dogana doublés, pour le Signore et ses alliés.",
           calmiere: "Le prix d'une marchandise est plafonné au Rialto, pour tous.",

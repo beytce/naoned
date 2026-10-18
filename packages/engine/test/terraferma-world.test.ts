@@ -4,8 +4,10 @@ import {
   TERRA_FAMILY,
   calmiereCap,
   cellsOf,
+  dayIndex,
   decreeQuotaBps,
   decreeTaxBps,
+  deliveryOrdersFor,
   dogeFavourBps,
   embargoCutBps,
   gabelleOn,
@@ -14,14 +16,15 @@ import {
   tollOn,
   urgentReservedUntil,
 } from "../src/index.js";
-import { testTerraferma } from "./fixture.js";
+import { deliverySettings, testTerraferma } from "./fixture.js";
 import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
 
 const WEEK = 7 * DAY;
 const error = (res: ReturnType<World["try"]>) => (res.ok ? "ok" : res.error);
-const live = (more = {}) =>
+const live = (more = {}, top = {}) =>
   new World(
     makeContext({
+      ...top,
       terraferma: {
         ...testTerraferma,
         live: true,
@@ -110,7 +113,7 @@ describe("the Terraferma in the world", () => {
 
 describe("the Signore's strong decrees", () => {
   const withDecree = (code: string, target?: string) => {
-    const w = live();
+    const w = live({}, deliverySettings);
     joined(w, "a", "b");
     w.state = {
       ...w.state,
@@ -163,6 +166,16 @@ describe("the Signore's strong decrees", () => {
     const c = withDecree("calmiere", "bread");
     const ref = c.ctx.settings.referencePrices.bread ?? 0n;
     expect(calmiereCap(c.ctx, c.state, "bread", c.now)).toBe((ref * 10_500n) / 10_000n);
+  });
+
+  it("favour of the Doge: one more contract of the Doge a day for its members", () => {
+    const w = withDecree("faveur_doge");
+    const doge = (p: string) =>
+      deliveryOrdersFor(w.ctx, w.state, p, dayIndex(w.ctx, w.now)).filter((o) => o.kind === "doge")
+        .length;
+    const usual = w.ctx.settings.deliveries.dogeOrdersPerDay;
+    expect(doge("b")).toBe(usual);
+    expect(doge("a")).toBe(usual + 1);
   });
 
   it("shares what it collected among its members at the week's close", () => {

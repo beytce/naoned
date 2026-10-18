@@ -402,8 +402,8 @@ export const worldSettingsSchema = z.object({
             embargo: z.object({ cutBps: bps.max(10_000), reservedMinutes: qty }),
             /** A share of every delivery of the others, shared out among the members. */
             dime: z.object({ tollBps: bps }),
-            /** Members' contracts of the Doge paid more. */
-            faveur_doge: z.object({ premiumBps: bps }),
+            /** Members' contracts of the Doge paid more, and more of them a day. */
+            faveur_doge: z.object({ premiumBps: bps, extraOrders: qty.default(1) }),
             /** No offer of a good above this share of its reference. */
             calmiere: z.object({ capBps: bps }),
           }),
@@ -417,7 +417,7 @@ export const worldSettingsSchema = z.object({
             monopole: { extraTaxBps: 1_500 },
             embargo: { cutBps: 2_500, reservedMinutes: 60 },
             dime: { tollBps: 300 },
-            faveur_doge: { premiumBps: 4_000 },
+            faveur_doge: { premiumBps: 4_000, extraOrders: 1 },
             calmiere: { capBps: 10_500 },
           },
         }),

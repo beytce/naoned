@@ -4,7 +4,14 @@ import { costValue } from "./buildings.js";
 import { familyAccount } from "./campaign.js";
 import { hourIn, hourWithin } from "./clock.js";
 import { contractsDoneToday, contractsFor } from "./contracts.js";
-import { dogeFavourBps, embargoCutBps, favourBps, tollOn, urgentReservedUntil } from "./decrees.js";
+import {
+  dogeFavourBps,
+  dogeFavourOrders,
+  embargoCutBps,
+  favourBps,
+  tollOn,
+  urgentReservedUntil,
+} from "./decrees.js";
 import { draw, pickWeighted } from "./draw.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
 import { isMudaGood } from "./muda.js";
@@ -346,8 +353,10 @@ export function deliveryOrdersFor(
     }
   }
 
-  // The Doge's orders (their own draw), at the Doge's premium.
-  for (const c of contractsFor(ctx, playerId, day).slice(0, cfg.dogeOrdersPerDay)) {
+  // The Doge's orders (their own draw), at the Doge's premium; one more under his favour.
+  const dogeOrders = cfg.dogeOrdersPerDay + dogeFavourOrders(ctx, state, playerId, dayStart);
+  const drawn = Math.max(ctx.settings.contracts.perDay, dogeOrders);
+  for (const c of contractsFor(ctx, playerId, day, {}, drawn).slice(0, dogeOrders)) {
     if (!mayOrder(c.resource)) continue;
     const city = routeMinutes(ctx, region, c.city) !== undefined ? c.city : anyCity[0];
     if (!city) continue;
