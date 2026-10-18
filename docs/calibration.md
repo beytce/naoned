@@ -936,3 +936,20 @@ Sur la vraie carte, Milan tenait d'abord toute la Lombardie (35 % de la terre) e
 | Assidus devant occasionnels (Gloire médiane) | 131 % | 130 % | 135 % | 121 % | 163 % |
 
 **Lecture.** La course à la terre libre dure jusqu'au jeudi ; les retardataires arrivent sur de la terre neutre, ou à la lisière de Milan à la fin ; personne n'est rayé de la carte ; l'avance des assidus monte à 121 à 163 %. Restent à jouer au prototype : les alliances, l'encerclement, les bâtiments, l'Influence du classement et les décrets.
+
+### La Terraferme : alliances, encerclement, bâtiments, clôture (18 octobre 2026)
+
+Le moteur joue désormais les alliances (deux au plus, rupture effective après 2 h, Traître au troisième bris de la semaine : défense ×0,75 et plus d'alliance pendant 24 h, troupes envoyées à un allié dans la limite de 30 % du plafond par jour), l'encerclement (une poche coupée de son comptoir et entourée d'un seul rival perd 10 % de ses cases par heure), la Rocca (défense ×1,6 sur sa case et ses voisines, une pour 15 cases, 40 d) et le Borgo (plafond +20 et régénération +10 %, un pour 20 cases, 50 d), le plafond relevé pour des ducats (+10 pour 100 d, deux fois par jour), le décret choisi par chacun pour le cas où il serait Signore, et la clôture (classement en Gloire, Influence par palier, Signore, victoire immédiate à 80 % de la terre). Les ducats sont pris par l'appelant : le moteur rend le prix.
+
+Les PNJ du simulateur acceptent toute alliance et en demandent une au voisin le plus glorieux, dépensent un budget du jour (assidus 150 d, réguliers et retardataires 100 d, occasionnels 50 d : une hypothèse, le simulateur de la Terraferme n'a pas encore l'économie du commerce), choisissent un décret au hasard.
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Assidus devant occasionnels (Gloire médiane) | 199 % | 194 % | 197 % | 198 % | 206 % |
+| Cases médianes : assidus / occasionnels | 23 / 5 | 21 / 3 | 29 / 6 | 23 / 4 | 21 / 5 |
+| Marchands avec au moins un allié | 36 / 40 | 38 / 40 | 36 / 40 | 40 / 40 | 37 / 40 |
+| Signore | assidu | assidu | régulier | régulier | assidu |
+| Victoire par conquête (80 %) | non | non | non | non | non |
+| Ducats dépensés sur la Terraferme | 76 d par marchand et par jour | 76 | 75 | 76 | 76 |
+
+**Lecture.** L'activité paie enfin nettement (×2 en Gloire) sans éliminer personne : l'occasionnel garde un petit territoire autour de son comptoir. Presque tout le monde s'allie quand les PNJ acceptent tout : avec de vrais joueurs, à mesurer à la bêta. La conquête à 80 % reste un horizon. La Terraferme détruirait environ 75 d par marchand actif et par jour, soit à peu près 40 % de ce que rapportent les livraisons : **c'est le puits de monnaie qui manquait depuis le retrait de l'entretien**, à confirmer quand la Terraferme sera jouée dans le simulateur du commerce (le vrai budget des marchands). Le palier « premier quart » ne sert pas à 40 marchands (le top 10 le couvre) : il servira dans les mondes plus grands.
