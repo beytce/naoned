@@ -178,6 +178,15 @@ Mesures et réglage dans `docs/calibration.md`. Le prototype a ajouté trois rè
 
 Décisions du porteur ensuite (17 octobre 2026) : un **retardataire** se pose sur de la terre neutre tant qu'il en reste une place, sinon **à la lisière des terres de Milan**, dont il prend son anneau de départ ; la **terre neutre se prend plus lentement** (une case par heure). Avec Milan réduit à la Lombardie lointaine et 25 cases par marchand, la course à la terre libre dure jusqu'au jeudi. La carte suit désormais **la vraie Vénétie** de la carte du commerce.
 
+## Lisibilité à la manière d'OpenFront (18 octobre 2026)
+
+Retours du porteur : les termes rocca et borgo ne parlent pas au joueur, la carte ne montre ni les cases ni les troupes, et l'on ne voit pas où en sont ses troupes. Donc, sans toucher aux règles :
+
+- à l'écran, la Rocca devient le **Fort** et le Borgo le **Village** ; le comptoir de guerre devient le **camp de départ**, le plafond les **troupes max** ;
+- la **grille** des cases est toujours visible, et les cases attaquables au bord de ses terres sont pointillées d'or (ce qui revient sur « les cases ne se dessinent pas », plus haut) ;
+- chaque territoire porte **le nom et les troupes en réserve** de son marchand ;
+- un front montre **la prochaine case qu'il prendra et dans combien de temps**, les cases suivantes et son heure de retour ; le panneau d'attaque dit **la défense qui restera** à ses terres, car les troupes parties ne défendent plus (règle déjà là : la densité ne compte que la réserve).
+
 ## Livraison proposée (après validation)
 
 1. **Prototype au simulateur** : moteur minimal (carte, placement, troupes, fronts, Milan) et des PNJ qui jouent ; mesurer la durée d'une semaine, la vitesse des fronts, l'avance des assidus, la monnaie détruite par les bâtiments.

@@ -643,6 +643,24 @@
     fill-opacity: 0.42;
   }
 }
+/* The next cell a front will take breathes, slowly, until it falls. */
+.terra-next {
+  animation: terra-next 1.6s ease-in-out infinite;
+}
+@keyframes terra-next {
+  0%,
+  100% {
+    fill-opacity: 0.12;
+  }
+  50% {
+    fill-opacity: 0.38;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .terra-next {
+    animation: none;
+  }
+}
 .route-march {
   animation: route-march 0.9s linear infinite;
 }

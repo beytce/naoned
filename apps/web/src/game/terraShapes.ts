@@ -242,3 +242,64 @@ export function replayed(
   }
   return out;
 }
+
+/**
+ * Where a holder's name and troops are written, as OpenFront does: in its largest piece of land,
+ * the cell farthest from its borders (the nearest its middle among equals), avoiding the cells
+ * kept for a marker (its war counter, the cities) while another will do.
+ */
+export function labelCell(
+  map: HexMap,
+  cells: number[],
+  avoid: Set<number> = new Set(),
+): number | null {
+  const set = new Set(cells);
+  // The largest piece.
+  let piece: number[] = [];
+  const seen = new Set<number>();
+  for (const start of cells) {
+    if (seen.has(start)) continue;
+    const part = [start];
+    seen.add(start);
+    for (let k = 0; k < part.length; k++) {
+      for (const n of hexNeighbors(map, part[k] as number)) {
+        if (set.has(n) && !seen.has(n)) {
+          seen.add(n);
+          part.push(n);
+        }
+      }
+    }
+    if (part.length > piece.length) piece = part;
+  }
+  if (piece.length === 0) return null;
+  // Each cell's distance to the border: from the cells along it, inwards.
+  const inside = new Set(piece);
+  const depth = new Map<number, number>();
+  let ring = piece.filter((i) => {
+    const around = hexNeighbors(map, i);
+    return around.length < 6 || around.some((n) => !inside.has(n));
+  });
+  for (const i of ring) depth.set(i, 0);
+  for (let level = 1; ring.length > 0; level++) {
+    const next: number[] = [];
+    for (const i of ring) {
+      for (const n of hexNeighbors(map, i)) {
+        if (inside.has(n) && !depth.has(n)) {
+          depth.set(n, level);
+          next.push(n);
+        }
+      }
+    }
+    ring = next;
+  }
+  const mx = piece.reduce((s, i) => s + hexCenter(map, i)[0], 0) / piece.length;
+  const my = piece.reduce((s, i) => s + hexCenter(map, i)[1], 0) / piece.length;
+  const far = (i: number) => Math.hypot(hexCenter(map, i)[0] - mx, hexCenter(map, i)[1] - my);
+  const free = piece.filter((i) => !avoid.has(i));
+  const pool = free.length > 0 ? free : piece;
+  return pool.reduce((best, i) => {
+    const di = depth.get(i) ?? 0;
+    const db = depth.get(best) ?? 0;
+    return di > db || (di === db && far(i) < far(best)) ? i : best;
+  });
+}

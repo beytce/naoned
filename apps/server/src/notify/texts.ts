@@ -167,7 +167,7 @@ export function pushText(
       if (data.event === "terra_attacked")
         return {
           title: "Vos terres sont attaquées !",
-          body: `Un voisin lance ${Number(data.troops)} troupes contre votre territoire. Contre-attaquez, bâtissez une rocca ou appelez un allié.`,
+          body: `Un voisin lance ${Number(data.troops)} troupes contre votre territoire. Contre-attaquez, bâtissez un fort ou appelez un allié.`,
         };
       return {
         title: `${landName(data.land)} menacée !`,

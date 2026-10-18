@@ -4,6 +4,7 @@ import {
   cellAt,
   hexCenter,
   hexNeighbors,
+  labelCell,
   neighbours,
   outline,
   replayed,
@@ -61,5 +62,19 @@ describe("the Terraferma's shapes", () => {
     expect(replayed(owner, missed, 0)).toEqual([0, -1, 1, 0, -1]);
     expect(replayed(owner, missed, 1)).toEqual([0, 0, 1, 0, -1]);
     expect(replayed(owner, missed, 2)).toEqual(owner);
+  });
+
+  it("writes a holder's troops in the middle of its largest piece, off its markers", () => {
+    const big = { width: 9, height: 9, origin: [0, 0] as [number, number], size: 5 };
+    // A blob: the cell 40 and the two rings around it; an island far away.
+    const ring1 = hexNeighbors(big, 40);
+    const ring2 = [...new Set(ring1.flatMap((i) => hexNeighbors(big, i)))];
+    const blob = [...new Set([40, ...ring1, ...ring2])];
+    expect(labelCell(big, [...blob, 8])).toBe(40);
+    // The middle kept for the war counter: the label goes next to it, still inside.
+    const off = labelCell(big, blob, new Set([40]));
+    expect(ring1).toContain(off);
+    expect(labelCell(big, [])).toBeNull();
+    expect(labelCell(big, [8], new Set([8]))).toBe(8);
   });
 });

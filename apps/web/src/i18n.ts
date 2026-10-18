@@ -447,6 +447,7 @@ export const fr = {
       milan: "Milan",
       neutral: "Terre libre",
       someone: "Un marchand",
+      soon: "imminent",
       terrains: {
         p: "Plaine",
         h: "Collines",
@@ -454,10 +455,10 @@ export const fr = {
         M: "Montagne",
       } as Record<string, string>,
       place: {
-        invite: "Posez votre comptoir de guerre",
+        invite: "Posez votre camp de départ",
         hint: "Touchez une terre libre de la carte",
         here: "M'installer ici",
-        line: (terrain: string) => `${terrain} · votre comptoir y sera imprenable`,
+        line: (terrain: string) => `${terrain} · votre camp de départ y sera imprenable`,
       },
       target: {
         cost: (cost: number) => `${cost} troupes par case`,
@@ -467,6 +468,9 @@ export const fr = {
         allied: "Votre allié : pas de front entre vous",
         far: "Trop loin : touchez une terre au bord des vôtres",
         night: "Le front partira au lever du jour",
+        eta: (hour: string, wait: string) => `Vos troupes y seront vers ${hour} (dans ${wait})`,
+        defense: (after: number, before: number) =>
+          `Les troupes qui partent ne défendent plus : vos terres tiendront à ${after} par case (au lieu de ${before})`,
       },
       holder: {
         line: (cells: number, troops: number) => `${cells} cases · ⚔ ${troops}`,
@@ -483,19 +487,24 @@ export const fr = {
         title: "Vos terres",
         line: (cells: number, troops: number, cap: number) =>
           `${cells} cases · ⚔ ${troops} / ${cap}`,
-        rocca: "Rocca",
-        borgo: "Borgo",
-        raise: "Plafond",
+        rocca: "Fort",
+        borgo: "Village",
+        raise: "Troupes max",
         decree: "Décret",
         fronts: "Fronts",
         recall: "Rappeler",
         frontLine: (troops: number, against: string) => `⚔ ${troops} vers ${against}`,
+        frontEta: (wait: string, cells: number, end: string | null) =>
+          `Prochaine case dans ${wait} · ≈ ${cells}${cells >= 12 ? "+" : ""} case${cells > 1 ? "s" : ""} à venir${end ? ` · rentre vers ${end}` : ""}`,
+        frontStuck: "Ne prendra plus de case : rappelez-le",
+        threatEta: (hour: string, wait: string) =>
+          `Un front ennemi prendra cette terre vers ${hour} (dans ${wait})`,
         built: {
-          rocca: "Une rocca garde cette terre",
-          borgo: "Un borgo nourrit vos troupes",
+          rocca: "Un fort défend cette terre et ses voisines",
+          borgo: "Un village recrute pour vous : plus de troupes, plus vite",
         } as Record<string, string>,
         buildHint: (rocca: string, borgo: string, cap: string, amount: number) =>
-          `Rocca ${rocca} (défense) · Borgo ${borgo} (troupes) · +${amount} au plafond ${cap}`,
+          `Fort ${rocca} : défense ×1,6 ici et autour · Village ${borgo} : +troupes max, recrutement plus rapide · +${amount} troupes max ${cap}`,
         traitor: (time: string) => `Traître encore ${time} : vos terres défendent moins bien`,
       },
       decree: {
@@ -1614,7 +1623,7 @@ export const fr = {
       {
         icon: "famille",
         title: "Le Doge et la Terraferme",
-        text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). La porte Terraferme, au pied de la carte : posez votre comptoir de guerre sur une terre libre, puis lancez des fronts sur les terres voisines avec une part de vos troupes ; ils avancent seuls, case par case, de 8 h à 22 h. Alliez-vous à vos voisins, bâtissez rocca et borgo. Chaque semaine, la Gloire donne de l'Influence, et le premier, Signore della Terraferma, impose un décret fort la semaine suivante.",
+        text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). La porte Terraferme, au pied de la carte : posez votre camp de départ sur une terre libre, puis lancez des fronts sur les terres voisines avec une part de vos troupes ; ils avancent seuls, case par case, de 8 h à 22 h. Alliez-vous à vos voisins, bâtissez forts (défense) et villages (troupes). Chaque semaine, la Gloire donne de l'Influence, et le premier, Signore della Terraferma, impose un décret fort la semaine suivante.",
       },
       {
         icon: "comptoir",
@@ -1707,8 +1716,8 @@ export const fr = {
         "Cette commande est réservée un moment à la famille qui a la faveur de la ville.",
       terra_off: "La Terraferme n'est pas ouverte dans ce monde.",
       terra_closed: "La semaine de la Terraferme est close : une nouvelle carte s'ouvre bientôt.",
-      already_placed: "Votre comptoir de guerre est déjà posé.",
-      not_placed: "Posez d'abord votre comptoir de guerre.",
+      already_placed: "Votre camp de départ est déjà posé.",
+      not_placed: "Posez d'abord votre camp de départ.",
       not_neutral: "Il faut une terre libre.",
       too_close: "Trop près d'un autre marchand.",
       neutral_left: "Il reste de la terre libre : posez-vous là.",
@@ -1728,7 +1737,7 @@ export const fr = {
       not_owner: "Cette terre n'est pas à vous.",
       built: "Un bâtiment s'y dresse déjà.",
       no_room: "Il vous faut plus de terres pour bâtir encore.",
-      raise_limit: "Plus de hausse du plafond aujourd'hui.",
+      raise_limit: "Plus de hausse des troupes max aujourd'hui.",
       decree_repeat:
         "Ce décret est déjà en vigueur : il ne peut pas l'être deux semaines de suite.",
     } as Record<string, string>,

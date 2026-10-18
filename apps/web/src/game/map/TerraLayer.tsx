@@ -7,7 +7,7 @@ import { fr } from "../../i18n.js";
 import { Segmented, Sheet, Slab, clock } from "../../ui.js";
 import type { GameProps } from "../Game.js";
 import { gameApi } from "../api.js";
-import { d } from "../format.js";
+import { d, duration } from "../format.js";
 import { store } from "../store.js";
 import {
   type HexMap,
@@ -15,6 +15,7 @@ import {
   cellsByHolder,
   hexCenter,
   hexCorners,
+  labelCell,
   neighbours,
   outline,
   replayed,
@@ -138,8 +139,10 @@ export interface TerraShapes {
   }[];
   tone: string[];
   me: number;
-  /** Every land cell's edge, drawn only while aiming. */
+  /** Every land cell's edge: the map's grid. */
   grid: string;
+  /** Where each holder's name and troops are written, and how large. */
+  labels: { i: number; x: number; y: number; size: number }[];
   /** The land's corners, for the camera. */
   edges: { x: number; y: number }[];
 }
@@ -196,15 +199,44 @@ export function useTerraShapes(v: TerraView | null | undefined): TerraShapes | n
       y0 = Math.min(y0, y);
       y1 = Math.max(y1, y);
     });
+    // Off the war counters and the cities, which carry their own markers.
+    const kept = new Set<number>([
+      ...v.map.cities.map((c) => c.cell),
+      ...v.holders.flatMap((h) => (h.capital === null ? [] : [h.capital])),
+    ]);
+    const labels = holders.flatMap((h) => {
+      const cells = by.get(h.i) ?? [];
+      // A small land is covered by its war counter, which then carries the troops itself.
+      if (h.focus === "faint" || (h.focus !== "milan" && cells.length < LABEL_MIN_CELLS)) return [];
+      const cell = labelCell(map, cells, kept);
+      if (cell === null) return [];
+      const [x, y] = hexCenter(map, cell);
+      const size = Math.min(2.4, Math.max(0.8, 0.42 * Math.sqrt(cells.length))) * map.size;
+      return [{ i: h.i, x, y, size }];
+    });
     const edges = [
       { x: x0, y: y0 },
       { x: x1, y: y0 },
       { x: x0, y: y1 },
       { x: x1, y: y1 },
     ];
-    return { map, land, holders, tone, me, grid, edges };
+    return { map, land, holders, tone, me, grid, labels, edges };
   }, [owners, ids]);
 }
+
+/** "14:20", Paris time: when a front will reach a cell. */
+const hour = (at: number) =>
+  new Date(at).toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Paris",
+  });
+
+/** How long until a front takes its next cell (already due: at the next resolution). */
+const wait = (at: number, now: number) => (at > now ? duration(at - now) : t().soon);
+
+/** Below so many cells, a holder's troops are written on its war counter rather than its land. */
+const LABEL_MIN_CELLS = 12;
 
 /** The holder of a cell (-1: neutral land). */
 const holderAt = (v: TerraView, cell: number) => v.owner[cell] ?? -1;
@@ -255,7 +287,24 @@ export function terraTap(v: TerraView, s: TerraShapes, x: number, y: number): nu
   return best ?? under;
 }
 
-/** Under the markers: the territories, the night's veil, the grid while aiming, the fronts. */
+const hexPath = (map: HexMap, cells: Iterable<number>, scale: number) => {
+  let d = "";
+  for (const i of cells)
+    d += `M${hexCorners(map, i, scale)
+      .map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`)
+      .join("L")}Z`;
+  return d;
+};
+
+/** The fronts the merchant follows (his own, those marching on him), with their next cells. */
+function followed(v: TerraView) {
+  return v.fronts.filter((f) => (f.mine || f.threat) && f.takes.length > 0);
+}
+
+/**
+ * Under the markers: the territories, the grid, the cells along the border a front can take,
+ * the cells the fronts will take next, each holder's troops, the night's veil, the fronts.
+ */
 export function TerraOverlay({
   v,
   s,
@@ -268,6 +317,13 @@ export function TerraOverlay({
 }) {
   const fresh = useFresh(v);
   const aiming = cell !== null && cell in v.costs;
+  const costKeys = Object.keys(v.costs).join(",");
+  const playing = !!v.me && !v.closed;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `costKeys` is the border's identity.
+  const reach = useMemo(
+    () => (playing ? hexPath(s.map, Object.keys(v.costs).map(Number), 0.78) : ""),
+    [costKeys, s.map, playing],
+  );
   return (
     <g>
       <defs>
@@ -310,16 +366,101 @@ export function TerraOverlay({
           className="terra-take"
         />
       ))}
-      {aiming && (
+      {/* The grid, as on OpenFront: every cell's edge, brighter while aiming. */}
+      <path
+        d={s.grid}
+        fill="none"
+        stroke={P.cream}
+        strokeOpacity={aiming ? 0.2 : 0.1}
+        strokeWidth="0.3"
+      />
+      {/* The cells a front can take, along the merchant's border. */}
+      {reach && (
         <path
-          d={s.grid}
+          d={reach}
           fill="none"
-          stroke={P.cream}
-          strokeOpacity="0.14"
+          stroke={P.gold}
+          strokeOpacity="0.5"
           strokeWidth="0.35"
-          className="animate-fade"
+          strokeDasharray="1 1"
         />
       )}
+      {/* Where the fronts go next, and in what order: the next cell breathes. */}
+      {followed(v).map((f) => {
+        const color = f.mine ? P.gold : P.vermilion;
+        const [next, ...later] = f.takes;
+        return (
+          <g key={`path-${f.id}`}>
+            {later.length > 0 && (
+              <path
+                d={hexPath(
+                  s.map,
+                  later.map((t) => t.cell),
+                  0.82,
+                )}
+                fill={color}
+                fillOpacity="0.1"
+                stroke={color}
+                strokeOpacity="0.55"
+                strokeWidth="0.35"
+                strokeDasharray="0.8 0.8"
+              />
+            )}
+            {next && (
+              <path
+                d={hexPath(s.map, [next.cell], 0.86)}
+                fill={color}
+                stroke={color}
+                strokeWidth="0.6"
+                className="terra-next"
+              />
+            )}
+          </g>
+        );
+      })}
+      {/* Each holder's troops, written on its land as on OpenFront. */}
+      {s.labels.map((l) => {
+        const h = v.holders[l.i];
+        const focus = s.holders.find((x) => x.i === l.i)?.focus;
+        if (!h) return null;
+        const strong = focus === "me" || focus === "neighbour" || focus === "ally";
+        const name = h.milan ? t().milan : h.me ? null : (h.pseudo ?? t().someone);
+        return (
+          <g
+            key={`label-${l.i}`}
+            pointerEvents="none"
+            textAnchor="middle"
+            opacity={strong || focus === "milan" ? 1 : 0.6}
+            style={{ paintOrder: "stroke" }}
+            stroke="#0B1626"
+            strokeOpacity="0.85"
+            strokeLinejoin="round"
+          >
+            {name && (
+              <text
+                x={l.x}
+                y={l.y - l.size * 0.55}
+                fontSize={l.size * 0.55}
+                strokeWidth={l.size * 0.14}
+                fill={P.cream}
+                className="font-display font-extrabold"
+              >
+                {name}
+              </text>
+            )}
+            <text
+              x={l.x}
+              y={l.y + l.size * (name ? 0.45 : 0.35)}
+              fontSize={l.size}
+              strokeWidth={l.size * 0.16}
+              fill={h.me ? P.gold : P.cream}
+              className="font-display font-extrabold tabular-nums"
+            >
+              {h.troops}
+            </text>
+          </g>
+        );
+      })}
       {cell !== null && (
         <path
           d={`M${hexCorners(s.map, cell)
@@ -488,6 +629,7 @@ export function terraMarkers(
           mine={h.me}
           tone={s.tone[i] ?? P.cream}
           share={h.me && v.me ? v.me.troops / Math.max(1, v.me.cap) : null}
+          troops={s.labels.some((l) => l.i === i) ? null : h.troops}
           threatened={h.me && threatened}
           small={!h.me && !h.ally && s.holders.find((x) => x.i === i)?.focus !== "neighbour"}
           onTap={() => select({ kind: "terra", cell })}
@@ -495,22 +637,34 @@ export function terraMarkers(
       ),
     });
   });
+  // Each front's strength where it stands now: on the next cell it will take, with the time left.
   for (const f of v.fronts) {
     if (!f.mine && !f.threat) continue;
-    const from = frontFrom(v, s.map, f.owner, f.aim);
-    if (!from) continue;
-    const [x, y] = hexCenter(s.map, f.aim);
+    const next = f.takes[0];
+    let at: { x: number; y: number };
+    if (next) {
+      const [x, y] = hexCenter(s.map, next.cell);
+      at = { x, y };
+    } else {
+      const from = frontFrom(v, s.map, f.owner, f.aim);
+      if (!from) continue;
+      const [x, y] = hexCenter(s.map, f.aim);
+      at = { x: (from[0] + x) / 2, y: (from[1] + y) / 2 };
+    }
     out.push({
       key: `front:${f.id}`,
-      at: { x: (from[0] + x) / 2, y: (from[1] + y) / 2 },
+      at,
       node: (
-        <button
-          type="button"
-          onClick={() => select({ kind: "terra", cell: f.aim })}
-          className={`marker-hit -ml-4 -mt-3 flex h-6 min-w-8 items-center justify-center rounded-full px-1.5 font-mono text-[11px] font-bold shadow-md shadow-black/40 ${f.mine ? "bg-gold text-ink" : "bg-vermilion text-cream"}`}
-        >
-          ⚔ {f.troops}
-        </button>
+        <div className="-mt-3 -translate-x-1/2">
+          <button
+            type="button"
+            onClick={() => select({ kind: "terra", cell: next?.cell ?? f.aim })}
+            className={`marker-hit flex h-6 items-center justify-center gap-1 whitespace-nowrap rounded-full px-2 font-mono text-[11px] font-bold shadow-md shadow-black/40 ${f.mine ? "bg-gold text-ink" : "bg-vermilion text-cream"}`}
+          >
+            ⚔ {f.troops}
+            {next && <span className="font-normal opacity-80">· {wait(next.at, props.now)}</span>}
+          </button>
+        </div>
       ),
     });
   }
@@ -552,6 +706,7 @@ function WarCounter({
   share,
   threatened,
   small,
+  troops,
   onTap,
 }: {
   name: string;
@@ -561,6 +716,8 @@ function WarCounter({
   share: number | null;
   threatened: boolean;
   small: boolean;
+  /** Its troops, when its land is too small to carry them. */
+  troops: number | null;
   onTap: () => void;
 }) {
   const box = mine ? 56 : small ? 22 : 34;
@@ -617,10 +774,17 @@ function WarCounter({
       >
         <Crest crest={crest} size={mine ? 26 : small ? 12 : 20} />
       </span>
-      {mine && (
+      {mine ? (
         <span className="pointer-events-none absolute left-1/2 top-[calc(100%-2px)] -translate-x-1/2 whitespace-nowrap font-display text-[10px] font-extrabold uppercase tracking-wider text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
           {name}
+          {troops !== null && <span className="tabular-nums text-cream"> · ⚔ {troops}</span>}
         </span>
+      ) : (
+        troops !== null && (
+          <span className="pointer-events-none absolute left-1/2 top-[calc(100%-3px)] -translate-x-1/2 whitespace-nowrap font-display text-[10px] font-extrabold tabular-nums text-cream [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]">
+            {troops}
+          </span>
+        )
       )}
     </button>
   );
@@ -731,6 +895,10 @@ export function TerraPanel({
     const built = v.buildings.find((b) => b.cell === cell);
     const mine = v.fronts.filter((f) => f.mine);
     const traitor = me.traitorUntil > now;
+    const threat = v.fronts
+      .filter((f) => f.threat)
+      .flatMap((f) => f.takes.filter((x) => x.cell === cell))
+      .sort((a, b) => a.at - b.at)[0];
     return (
       <ContextPanel
         title={t().mine.title}
@@ -785,10 +953,24 @@ export function TerraPanel({
             {traitor && (
               <p className="text-vermilion">{t().mine.traitor(clock(me.traitorUntil - now))}</p>
             )}
+            {threat && (
+              <p className="text-vermilion">
+                {t().mine.threatEta(hour(threat.at), wait(threat.at, now))}
+              </p>
+            )}
             {mine.map((f) => (
               <p key={f.id} className="flex items-center justify-between gap-2">
                 <span className="text-gold">
                   {t().mine.frontLine(f.troops, holderName(v, f.against))}
+                  <span className="block text-[11px] text-cream-dim">
+                    {f.takes[0]
+                      ? t().mine.frontEta(
+                          wait(f.takes[0].at, now),
+                          f.takes.length,
+                          f.endsAt === null ? null : hour(f.endsAt),
+                        )
+                      : t().mine.frontStuck}
+                  </span>
                 </span>
                 <button
                   type="button"
@@ -815,6 +997,12 @@ export function TerraPanel({
   const troops = Math.floor((me.troops * shareBps) / 10_000);
   const cells = cost ? Math.max(0, Math.floor(troops / cost)) : 0;
   const gift = Math.min(me.giftsLeft, Math.floor(me.troops / 4));
+  // When the merchant's fronts will reach this cell; what his land keeps to defend itself.
+  const eta = v.fronts
+    .filter((f) => f.mine)
+    .flatMap((f) => f.takes.filter((x) => x.cell === cell))
+    .sort((a, b) => a.at - b.at)[0];
+  const density = (left: number) => Math.floor(left / Math.max(1, me.cells));
 
   const allyButton = merchant && !ally && (
     <ActionButton
@@ -837,13 +1025,15 @@ export function TerraPanel({
       title={title}
       chip={ally ? <span className="label text-lagoon">{t().holder.allyChip}</span> : chip}
       status={
-        attackable
-          ? t().target.cost(cost)
-          : ally
-            ? t().target.allied
-            : h
-              ? t().holder.line(h.cells, h.troops)
-              : t().target.far
+        eta
+          ? t().target.eta(hour(eta.at), wait(eta.at, now))
+          : attackable
+            ? t().target.cost(cost)
+            : ally
+              ? t().target.allied
+              : h
+                ? t().holder.line(h.cells, h.troops)
+                : t().target.far
       }
       tone={attackable ? "gold" : "lagoon"}
       onClose={close}
@@ -907,6 +1097,9 @@ export function TerraPanel({
             >
               {t().target.share(Math.round(shareBps / 100), troops, cells)}
               {!v.open && ` · ${t().target.night}`}
+            </p>
+            <p className="text-center font-mono text-[11px] text-cream-dim">
+              {t().target.defense(density(me.troops - troops), density(me.troops))}
             </p>
           </div>
         ) : merchant && ally ? (
