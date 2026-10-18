@@ -39,7 +39,7 @@ const schema = z
       .transform((v) => v === "true"),
     /**
      * Development only: JSON merged over the world's settings at start, e.g.
-     * `{"terraferma":{"live":true}}` to play the Terraferma before its season opens.
+     * `{"terraferma":{"live":false}}` to play the families of the worlds before the Terraferma.
      */
     WORLD_SETTINGS_OVERRIDE: z
       .string()

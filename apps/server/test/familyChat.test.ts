@@ -32,7 +32,10 @@ beforeEach(async () => {
   );
   mailer = new MemoryMailer();
   now = Date.parse("2026-10-05T08:00:00Z");
-  world = await GameWorld.open(database.db, () => now);
+  // The families, as before the Terraferma replaced them.
+  world = await GameWorld.open(database.db, () => now, {
+    settingsOverride: { terraferma: { live: false } },
+  });
   app = await buildApp({
     db: database.db,
     mailer,

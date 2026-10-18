@@ -16,6 +16,8 @@ import { type Tx, emit, fail, transfer } from "./tx.js";
  */
 
 export function familiesOn(ctx: WorldContext): boolean {
+  // The Terraferma replaces the families (docs/plan-terraferme.md).
+  if (ctx.settings.terraferma?.live) return false;
   return ctx.settings.families.list.length > 0 && ctx.settings.campaign !== undefined;
 }
 

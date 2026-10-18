@@ -10,13 +10,14 @@ import {
   deliveryOrdersFor,
   dogeFavourBps,
   embargoCutBps,
+  familiesOn,
   gabelleOn,
   hexDistance,
   hexNeighbors,
   tollOn,
   urgentReservedUntil,
 } from "../src/index.js";
-import { deliverySettings, testTerraferma } from "./fixture.js";
+import { campaignSettings, deliverySettings, testTerraferma } from "./fixture.js";
 import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
 
 const WEEK = 7 * DAY;
@@ -62,6 +63,11 @@ describe("the Terraferma in the world", () => {
     w.do({ type: "tick" });
     expect(w.state.terra).toBeUndefined();
     expect(error(act(w, { type: "terraPlace", playerId: "a", cell: 0 }))).toBe("terra_off");
+  });
+
+  it("replaces the families once live", () => {
+    expect(familiesOn(makeContext({ ...campaignSettings, terraferma: testTerraferma }))).toBe(true);
+    expect(familiesOn(live({}, campaignSettings).ctx)).toBe(false);
   });
 
   it("makes the week's map at the first tick and plays it at each command", () => {

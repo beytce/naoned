@@ -96,7 +96,7 @@ async function place(cookie: string) {
 
 describe("the Terraferma on the server", () => {
   it("is off while the world's settings keep it so", async () => {
-    await open();
+    await open({ terraferma: { live: false } });
     const ada = await player("ada@example.org");
     await world.execute({ type: "tick" });
     expect((await get(ada, "/api/game/terra")).terra).toBeNull();

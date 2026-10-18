@@ -157,13 +157,14 @@ export const venice1450Settings: WorldSettingsInput = {
     levyMinBps: 7_500,
     levyMaxBps: 15_000,
   },
-  // The Terraferma after OpenFront (docs/plan-terraferme.md), a prototype played by the
-  // simulator (`pnpm --filter @comptoirs/simulator terra`): the real Veneto of the drawn map
+  // The Terraferma after OpenFront (docs/plan-terraferme.md), in place of the families from the
+  // season opened on 18 October 2026: the real Veneto of the drawn map
   // (Lombardy, Milan's, beyond its western edge; the sea, the lagoon and Lake Garda as water),
   // 25 cells a merchant, Milan in far Lombardy, the Alps in the north and the Po's marshes in the
   // south, fronts of a cell per half hour (an hour on free land) that come home after 2 h, 8 h to
   // 22 h: the race for free land lasts until Thursday (docs/calibration.md).
   terraferma: {
+    live: true,
     cellsPerActive: 25,
     minActive: 20,
     aspectBps: 16_000,
@@ -747,28 +748,28 @@ export const venice1450Settings: WorldSettingsInput = {
   // Level 2 asks half the materials: a first upgrade within reach in the first days.
   upgradeMaterialsBps: { "2": 5_000 },
   activeWindowHours: 72,
-  // A month to grow: buildings cost 25 % fewer materials than in the six-week seasons. Their
-  // ducats, destroyed, are the first sink of money since the upkeep is gone (40 % more than
-  // before it went, see docs/calibration.md).
+  // A month to grow: buildings cost 30 % fewer ducats and 25 % fewer materials than in the
+  // six-week seasons. The Terraferma's ducats are the sink of money since the upkeep is gone
+  // (the 40 % added to buildings meanwhile taken back at its opening, see docs/calibration.md).
   buildings: {
-    farm: { costDucats: 29_400, costMaterials: { bricks: 15, planks: 15 } },
+    farm: { costDucats: 21_000, costMaterials: { bricks: 15, planks: 15 } },
     clay_pit: {
-      costDucats: 29_400,
+      costDucats: 21_000,
       costMaterials: { bricks: 15, planks: 15 },
     },
     lumber_camp: {
-      costDucats: 29_400,
+      costDucats: 21_000,
       costMaterials: { bricks: 15, planks: 15 },
     },
-    mill: { costDucats: 39_200, costMaterials: { bricks: 25, planks: 25 } },
-    bakery: { costDucats: 58_800, costMaterials: { bricks: 30, planks: 30 } },
+    mill: { costDucats: 28_000, costMaterials: { bricks: 25, planks: 25 } },
+    bakery: { costDucats: 42_000, costMaterials: { bricks: 30, planks: 30 } },
     brickworks: {
-      costDucats: 49_000,
+      costDucats: 35_000,
       costMaterials: { bricks: 15, planks: 30 },
     },
-    sawmill: { costDucats: 49_000, costMaterials: { bricks: 30, planks: 15 } },
+    sawmill: { costDucats: 35_000, costMaterials: { bricks: 30, planks: 15 } },
     // Prestige sink: produces nothing, counts at cost in the ranking.
-    palazzo: { costDucats: 78_400, costMaterials: { bricks: 30, planks: 30 } },
+    palazzo: { costDucats: 56_000, costMaterials: { bricks: 30, planks: 30 } },
   },
   referencePrices: {
     wheat: 100,

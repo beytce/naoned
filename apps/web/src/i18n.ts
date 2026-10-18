@@ -1613,8 +1613,8 @@ export const fr = {
       },
       {
         icon: "famille",
-        title: "Le Doge et les familles",
-        text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). L'onglet Famille : prêtez allégeance à l'une des quatre grandes familles, levez et engagez des troupes, prenez des terres dans la Campagne de la semaine. La famille la plus glorieuse impose ses décrets la semaine suivante.",
+        title: "Le Doge et la Terraferme",
+        text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). La porte Terraferme, au pied de la carte : posez votre comptoir de guerre sur une terre libre, puis lancez des fronts sur les terres voisines avec une part de vos troupes ; ils avancent seuls, case par case, de 8 h à 22 h. Alliez-vous à vos voisins, bâtissez rocca et borgo. Chaque semaine, la Gloire donne de l'Influence, et le premier, Signore della Terraferma, impose un décret fort la semaine suivante.",
       },
       {
         icon: "comptoir",

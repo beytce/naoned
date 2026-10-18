@@ -294,7 +294,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
       const source =
         e.data?.source === "mission"
           ? "mission"
-          : e.data?.source === "campaign"
+          : e.data?.source === "campaign" || e.data?.source === "terraferma"
             ? "campaign"
             : "commerce";
       tally[source] += Number(e.data?.amount ?? 0);
