@@ -42,6 +42,11 @@ const eventDef = z.object({
 
 export const worldSettingsSchema = z.object({
   seasonDays: positive,
+  /**
+   * Where the weeks of the season (weekly ranking, Terraferma, decrees) begin: every seven days
+   * from the season's start, or on Mondays at midnight in Paris.
+   */
+  weekStart: z.enum(["season", "monday"]).default("season"),
   registrationClosesDay: positive,
   startingCapital: money,
   startingBuildings: z.record(z.array(z.string())),

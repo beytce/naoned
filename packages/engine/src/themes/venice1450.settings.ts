@@ -98,6 +98,8 @@ export const venice1450Settings: WorldSettingsInput = {
   // Seasons follow calendar months: the world says when it ends; 30 days is the nominal month
   // (simulator). Merchants may join until the last day.
   seasonDays: 30,
+  // The weeks run from Monday to Sunday, Paris time: the Terraferma's game and the weekly ranking.
+  weekStart: "monday",
   registrationClosesDay: 31,
   startingCapital: 100_000,
   startingBuildings: {

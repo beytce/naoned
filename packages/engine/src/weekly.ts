@@ -1,3 +1,4 @@
+import { dayStartIn } from "./clock.js";
 import { commerceInfluence } from "./house.js";
 import type { Deniers } from "./money.js";
 import { DAY_MS, type PlayerId, type WorldContext, type WorldState, seasonEnd } from "./state.js";
@@ -6,6 +7,7 @@ import { type Tx, emit } from "./tx.js";
 import { netWorth } from "./valuation.js";
 
 const WEEK_MS = 7 * DAY_MS;
+const HOUR_MS = 3_600_000;
 
 export interface WeeklyStanding {
   playerId: PlayerId;
@@ -13,13 +15,64 @@ export interface WeeklyStanding {
   gain: Deniers;
 }
 
-/** Whole weeks in the season (at least one); the last one runs to the end of the month. */
+/** A piece of week shorter than this, at either end of the season, joins its neighbour. */
+const SHORT_WEEK_MS = 3 * DAY_MS;
+
+const boundsCache = new WeakMap<WorldContext, number[]>();
+
+/**
+ * Where the season's weeks begin, and the season's end: every seven days from the start (the
+ * last week running to the end of the month), or on Mondays at midnight in Paris, a piece of
+ * fewer than three days at either end joined to the week beside it.
+ */
+export function weekBounds(ctx: WorldContext): number[] {
+  const known = boundsCache.get(ctx);
+  if (known) return known;
+  const start = ctx.startAt;
+  const end = seasonEnd(ctx);
+  const bounds = [start];
+  if (ctx.settings.weekStart === "monday") {
+    let day = dayStartIn(start).start;
+    while (dayStartIn(day + 12 * HOUR_MS).weekday !== 1 || day <= start)
+      day = dayStartIn(day + 36 * HOUR_MS).start;
+    const mondays: number[] = [];
+    for (; day < end; day = dayStartIn(day + WEEK_MS + 12 * HOUR_MS).start) mondays.push(day);
+    if (mondays.length > 0 && (mondays[0] as number) - start < SHORT_WEEK_MS) mondays.shift();
+    if (mondays.length > 0 && end - (mondays.at(-1) as number) < SHORT_WEEK_MS) mondays.pop();
+    bounds.push(...mondays);
+  } else {
+    const weeks = Math.max(1, Math.floor((end - start) / WEEK_MS));
+    for (let k = 1; k < weeks; k++) bounds.push(start + k * WEEK_MS);
+  }
+  bounds.push(end);
+  boundsCache.set(ctx, bounds);
+  return bounds;
+}
+
+/** Weeks in the season (at least one); the last one runs to the end of the month. */
 export function seasonWeeks(ctx: WorldContext): number {
-  return Math.max(1, Math.floor((seasonEnd(ctx) - ctx.startAt) / WEEK_MS));
+  return weekBounds(ctx).length - 1;
 }
 
 export function weekIndex(ctx: WorldContext, at: number): number {
-  return Math.min(Math.floor((at - ctx.startAt) / WEEK_MS), seasonWeeks(ctx) - 1);
+  const bounds = weekBounds(ctx);
+  // Before the season: weeks counted back from its start.
+  if (at < ctx.startAt) return Math.floor((at - ctx.startAt) / WEEK_MS);
+  let k = 0;
+  while (k < bounds.length - 2 && at >= (bounds[k + 1] as number)) k++;
+  return k;
+}
+
+/** Start of a week of the season (a week past the season: seven days a week after its end). */
+export function weekStart(ctx: WorldContext, week: number): number {
+  const bounds = weekBounds(ctx);
+  if (week < bounds.length - 1) return bounds[Math.max(0, week)] as number;
+  return (bounds.at(-1) as number) + (week - (bounds.length - 1)) * WEEK_MS;
+}
+
+/** End of a week of the season: the last one runs to the end of the season. */
+export function weekEnd(ctx: WorldContext, week: number): number {
+  return weekStart(ctx, week + 1);
 }
 
 /** Live weekly ranking, best gain first. */

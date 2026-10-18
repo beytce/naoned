@@ -32,3 +32,41 @@ export function hourWithin(hour: number, span: { from: number; to: number }): bo
     ? hour >= span.from || hour < span.to
     : hour >= span.from && hour < span.to;
 }
+
+const dayFormatters = new Map<string, Intl.DateTimeFormat>();
+
+/** Midnight (in a time zone) of the day `at` falls on, and that day's weekday (0: Sunday). */
+export function dayStartIn(
+  at: number,
+  timeZone = GAME_TIME_ZONE,
+): { start: number; weekday: number } {
+  let f = dayFormatters.get(timeZone);
+  if (!f) {
+    f = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      hourCycle: "h23",
+    });
+    dayFormatters.set(timeZone, f);
+  }
+  const parts = (t: number) => {
+    const p = Object.fromEntries(f.formatToParts(t).map((x) => [x.type, x.value]));
+    return {
+      y: Number(p.year),
+      m: Number(p.month),
+      d: Number(p.day),
+      h: Number(p.hour),
+      min: Number(p.minute),
+    };
+  };
+  const { y, m, d } = parts(at);
+  const midnightUtc = Date.UTC(y, m - 1, d);
+  // The zone's offset at that midnight (changes of time happen at night, never at midnight).
+  const q = parts(midnightUtc);
+  const offset = Date.UTC(q.y, q.m - 1, q.d, q.h, q.min) - midnightUtc;
+  return { start: midnightUtc - offset, weekday: new Date(midnightUtc).getUTCDay() };
+}

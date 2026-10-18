@@ -2,7 +2,7 @@ import {
   type WorldContext,
   type WorldState,
   seasonEnd,
-  seasonWeeks,
+  weekEnd,
   weekIndex,
   weeklyStandings,
 } from "@comptoirs/engine";
@@ -153,7 +153,7 @@ export async function weeklyTable(
   return {
     week: week + 1,
     // The last week of the month runs to the end of the season.
-    endsAt: week >= seasonWeeks(ctx) - 1 ? seasonEnd(ctx) : ctx.startAt + (week + 1) * WEEK_MS,
+    endsAt: weekEnd(ctx, week),
     rows,
     lastWeek: podium,
   };

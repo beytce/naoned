@@ -29,10 +29,9 @@ import {
   activePlayerCount,
   cashAccount,
   dayIndex,
-  seasonEnd,
 } from "./state.js";
 import { type Tx, emit, fail, nextId, transfer } from "./tx.js";
-import { seasonWeeks, weekIndex } from "./weekly.js";
+import { seasonWeeks, weekEnd, weekIndex, weekStart } from "./weekly.js";
 
 /**
  * The week's campaign in the Terraferma. Every week the map opens again: each family holds its
@@ -45,7 +44,6 @@ import { seasonWeeks, weekIndex } from "./weekly.js";
  */
 
 export const MILAN = "milan";
-const WEEK_MS = 7 * DAY_MS;
 
 type CampaignSettings = NonNullable<WorldContext["settings"]["campaign"]>;
 
@@ -74,12 +72,12 @@ function kindOf(ctx: WorldContext, land: string) {
 }
 
 export function campaignWeekStart(ctx: WorldContext, week: number): number {
-  return ctx.startAt + week * WEEK_MS;
+  return weekStart(ctx, week);
 }
 
 /** End of a week of the campaign: the last one runs to the end of the season. */
 export function campaignWeekEnd(ctx: WorldContext, week: number): number {
-  return week >= seasonWeeks(ctx) - 1 ? seasonEnd(ctx) : ctx.startAt + (week + 1) * WEEK_MS;
+  return weekEnd(ctx, week);
 }
 
 // ——— Open hours ———

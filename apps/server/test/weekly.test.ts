@@ -1,3 +1,4 @@
+import { weekEnd } from "@comptoirs/engine";
 import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -84,7 +85,7 @@ describe("weekly ranking", () => {
     });
     const body = (await weekRanking(ada.cookie)).json();
     expect(body.week).toBe(1);
-    expect(body.endsAt).toBe(world.ctx.startAt + 7 * DAY);
+    expect(body.endsAt).toBe(weekEnd(world.ctx, 0));
     expect(body.total).toBe(2);
     expect(body.me.me).toBe(true);
     expect(body.rows.some((r: { bot: boolean }) => r.bot)).toBe(true);

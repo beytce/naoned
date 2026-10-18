@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { weekIndex, weeklyStandings } from "../src/index.js";
+import {
+  type WorldContext,
+  campaignWeekEnd,
+  campaignWeekStart,
+  parseSettings,
+  seasonWeeks,
+  weekIndex,
+  weeklyStandings,
+} from "../src/index.js";
+import { testSettings, testTheme } from "./fixture.js";
 import { DAY, HOUR, World } from "./helpers.js";
 
 const WEEK = 7 * DAY;
@@ -80,5 +89,38 @@ describe("weekly ranking", () => {
     const res = w.do({ type: "tick" });
     expect(res.effects.events.some((e) => e.type === "week_closed")).toBe(false);
     expect(weeklyStandings(w.ctx, w.state, w.now)).toEqual([{ playerId: "a", gain: 0n }]);
+  });
+});
+
+describe("weeks from Monday to Sunday (Paris)", () => {
+  /** A calendar season, as the worlds have: from `start` to `end`, weeks on Mondays. */
+  const season = (start: number, end: number): WorldContext => ({
+    theme: testTheme,
+    settings: parseSettings({ ...testSettings, weekStart: "monday" }),
+    startAt: start,
+    endAt: end,
+  });
+  // Midnight in Paris (UTC+2 in summer, UTC+1 in winter).
+  const paris = (y: number, m: number, d: number, offset: number) =>
+    Date.UTC(y, m - 1, d) - offset * HOUR;
+
+  it("cut the month on Mondays at midnight, a short first piece joined to the next week", () => {
+    // Thursday 1 October 2026 to Sunday 1 November: Mondays 5, 12, 19, 26 October.
+    const ctx = season(paris(2026, 10, 1, 2), paris(2026, 11, 1, 1));
+    // 1–4 October is four days: a week of its own.
+    expect(seasonWeeks(ctx)).toBe(5);
+    expect(campaignWeekStart(ctx, 1)).toBe(paris(2026, 10, 5, 2));
+    expect(campaignWeekStart(ctx, 4)).toBe(paris(2026, 10, 26, 1));
+    expect(campaignWeekEnd(ctx, 4)).toBe(paris(2026, 11, 1, 1));
+    expect(weekIndex(ctx, paris(2026, 10, 5, 2) - 1)).toBe(0);
+    expect(weekIndex(ctx, paris(2026, 10, 5, 2))).toBe(1);
+    // Sunday 1 to Monday 30 November: the lone Sunday joins the first week.
+    const nov = season(paris(2026, 11, 1, 1), paris(2026, 12, 1, 1));
+    expect(campaignWeekStart(nov, 0)).toBe(paris(2026, 11, 1, 1));
+    expect(campaignWeekEnd(nov, 0)).toBe(paris(2026, 11, 9, 1));
+    // And the lone Monday 30 November joins the last week.
+    const last = seasonWeeks(nov) - 1;
+    expect(campaignWeekStart(nov, last)).toBe(paris(2026, 11, 23, 1));
+    expect(campaignWeekEnd(nov, last)).toBe(paris(2026, 12, 1, 1));
   });
 });
