@@ -628,6 +628,21 @@
     transform: scale(1.12);
   }
 }
+.marker-halo-vermilion {
+  background: radial-gradient(circle, rgb(var(--vermilion) / 0.6) 0%, transparent 68%);
+}
+/* The Terraferma: a cell just taken tints in, then joins its holder's ground. */
+.terra-take {
+  animation: terra-take 0.4s ease-out both;
+}
+@keyframes terra-take {
+  0% {
+    fill-opacity: 0;
+  }
+  100% {
+    fill-opacity: 0.42;
+  }
+}
 .route-march {
   animation: route-march 0.9s linear infinite;
 }

@@ -809,7 +809,100 @@ export type Action =
       orderIds?: string[];
       vehicleId: string;
     }
-  | { type: "claimHouseMission"; missionId: string };
+  | { type: "claimHouseMission"; missionId: string }
+  | TerraAction;
+
+/** The Terraferma's commands (docs/plan-terraferme.md). */
+export type TerraAction =
+  | { type: "terraPlace"; cell: number }
+  | { type: "terraFront"; aim: number; shareBps: number }
+  | { type: "terraRecall"; frontId: string }
+  | { type: "terraAlly"; other: string }
+  | { type: "terraAccept"; from: string }
+  | { type: "terraBreak"; other: string }
+  | { type: "terraSend"; to: string; count: number }
+  | { type: "terraBuild"; cell: number; kind: "rocca" | "borgo" }
+  | { type: "terraRaise" }
+  | { type: "terraDecree"; code: string; target?: string };
+
+/**
+ * The Terraferma's week as the merchant sees it (GET /api/game/terra). Holders are named by
+ * their index in `holders`; -1 is neutral land.
+ */
+export interface TerraView {
+  week: number;
+  closesAt: number;
+  openHours: { from: number; to: number };
+  /** Whether the fronts march now (they rest at night). */
+  open: boolean;
+  map: {
+    width: number;
+    height: number;
+    origin: [number, number];
+    size: number;
+    /** One letter a cell: p plain, h hill, m marsh, M mountain, w water. */
+    terrain: string;
+    cities: { cell: number; code: string }[];
+  };
+  holders: {
+    id: string | null;
+    pseudo: string | null;
+    crest: CrestData | null;
+    me: boolean;
+    ally: boolean;
+    milan: boolean;
+    capital: number | null;
+    troops: number;
+    cells: number;
+  }[];
+  owner: number[];
+  fronts: {
+    id: string;
+    owner: number;
+    against: number;
+    aim: number;
+    troops: number;
+    mine: boolean;
+    threat: boolean;
+  }[];
+  /** What a front pays for each cell along the merchant's border. */
+  costs: Record<string, number>;
+  buildings: { cell: number; kind: "rocca" | "borgo"; owner: number }[];
+  me: {
+    troops: number;
+    cap: number;
+    cells: number;
+    glory: number;
+    rank: number;
+    capital: number | null;
+    protectedUntil: number;
+    traitorUntil: number;
+    allies: number[];
+    requestsIn: number[];
+    requestsOut: number[];
+    raisesLeft: number;
+    giftsLeft: number;
+    programme: { code: string; target?: string } | null;
+  } | null;
+  ranking: { holder: number; glory: number; cells: number }[];
+  players: number;
+  decree: {
+    week: number;
+    code: string;
+    target: string | null;
+    members: (string | null)[];
+    mine: boolean;
+  } | null;
+  closed: { signore: number; conquest: boolean } | null;
+  rules: {
+    frontsMax: number;
+    minShareBps: number;
+    alliesMax: number;
+    decrees: string[];
+    prices: { rocca: string; borgo: string; cap: string };
+    capRaise: number;
+  };
+}
 
 /** What Influence buys in the world (POST /api/house/spend). */
 export type Spend =

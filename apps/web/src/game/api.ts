@@ -15,6 +15,7 @@ import type {
   PushSettings,
   RankingRow,
   Spend,
+  TerraView,
   WeekRanking,
 } from "./types.js";
 
@@ -81,6 +82,8 @@ export const gameApi = {
   buyPatent: (patent: string) =>
     call<{ influence: number; patents: string[] }>("POST", "/api/house/patents", { patent }),
   spend: (spend: Spend) => call<GameResponse>("POST", "/api/house/spend", spend),
+  /** The Terraferma's week (null while it is not live in this world). */
+  terra: () => call<{ terra: TerraView | null }>("GET", "/api/game/terra"),
   weekRanking: () => call<WeekRanking>("GET", "/api/game/ranking/week"),
   ranking: () =>
     call<{ rows: RankingRow[]; me: number | null; total: number }>("GET", "/api/game/ranking"),

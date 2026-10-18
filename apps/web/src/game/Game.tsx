@@ -50,8 +50,11 @@ import type {
  * Kept as the name every screen uses to send the merchant somewhere.
  */
 export type Tab = "comptoir" | "routes" | "marche" | "top" | "famille" | "profil";
-/** The map shown: the trade (cities, counter, carts) or the families' campaign (lands). */
-export type Layer = "trade" | "campaign";
+/**
+ * The map shown: the trade (cities, counter, carts), the families' campaign (lands) or the
+ * Terraferma (the merchants' territories, docs/plan-terraferme.md).
+ */
+export type Layer = "trade" | "campaign" | "terra";
 
 export interface Names {
   resource: (code: string) => string;

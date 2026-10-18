@@ -1,0 +1,227 @@
+/**
+ * The Terraferma's map drawn (docs/plan-terraferme.md, "Direction artistique"): the hexagonal
+ * cells never drawn one by one, but each holder's ground as one outline with its corners
+ * rounded, the colours given so that two neighbours never share one. Map units, pure.
+ */
+
+export interface HexMap {
+  width: number;
+  height: number;
+  /** Centre of the first cell and the cells' radius. */
+  origin: [number, number];
+  size: number;
+}
+
+/** The six cells around one (odd rows shifted right), as the engine counts them. */
+export function hexNeighbors(map: Pick<HexMap, "width" | "height">, i: number): number[] {
+  const row = Math.floor(i / map.width);
+  const col = i % map.width;
+  const steps =
+    row & 1
+      ? [
+          [1, 0],
+          [-1, 0],
+          [0, -1],
+          [1, -1],
+          [0, 1],
+          [1, 1],
+        ]
+      : [
+          [1, 0],
+          [-1, 0],
+          [-1, -1],
+          [0, -1],
+          [-1, 1],
+          [0, 1],
+        ];
+  const out: number[] = [];
+  for (const [dc = 0, dr = 0] of steps) {
+    const c = col + dc;
+    const r = row + dr;
+    if (c >= 0 && c < map.width && r >= 0 && r < map.height) out.push(r * map.width + c);
+  }
+  return out;
+}
+
+export function hexCenter(map: HexMap, i: number): [number, number] {
+  const row = Math.floor(i / map.width);
+  const col = i % map.width;
+  return [
+    map.origin[0] + map.size * Math.sqrt(3) * (col + 0.5 * (row & 1)),
+    map.origin[1] + map.size * 1.5 * row,
+  ];
+}
+
+/** The corners of a pointed-top cell, clockwise on screen from the upper right. */
+export function hexCorners(map: HexMap, i: number, scale = 1): [number, number][] {
+  const [x, y] = hexCenter(map, i);
+  return Array.from({ length: 6 }, (_, k) => {
+    const a = ((60 * k - 30) * Math.PI) / 180;
+    return [x + Math.cos(a) * map.size * scale, y + Math.sin(a) * map.size * scale];
+  });
+}
+
+/** Which neighbour lies across each of a cell's six edges (edge k joins corners k and k+1). */
+function across(map: HexMap, i: number): (number | null)[] {
+  const [x, y] = hexCenter(map, i);
+  const out: (number | null)[] = [null, null, null, null, null, null];
+  for (const n of hexNeighbors(map, i)) {
+    const [nx, ny] = hexCenter(map, n);
+    const deg = (Math.atan2(ny - y, nx - x) * 180) / Math.PI;
+    out[(Math.round(deg / 60) + 6) % 6] = n;
+  }
+  return out;
+}
+
+const key = ([x, y]: [number, number]) => `${x.toFixed(2)},${y.toFixed(2)}`;
+
+/**
+ * The outline of a set of cells, its corners rounded: one SVG path (every loop of it, islands
+ * and holes alike), drawn through the middles of the border's edges.
+ */
+export function outline(map: HexMap, cells: Iterable<number>): string {
+  const set = new Set(cells);
+  // The border's edges, each from one corner to the next, keyed by where they start. Around a
+  // corner three cells meet: at most one border edge leaves it.
+  const next = new Map<string, { from: [number, number]; to: [number, number] }>();
+  for (const i of set) {
+    const corners = hexCorners(map, i);
+    across(map, i).forEach((n, k) => {
+      if (n !== null && set.has(n)) return;
+      const from = corners[k] as [number, number];
+      next.set(key(from), { from, to: corners[(k + 1) % 6] as [number, number] });
+    });
+  }
+  const parts: string[] = [];
+  const mid = (a: [number, number], b: [number, number]) =>
+    `${((a[0] + b[0]) / 2).toFixed(2)} ${((a[1] + b[1]) / 2).toFixed(2)}`;
+  for (const first of next.keys()) {
+    const loop: [number, number][] = [];
+    // Follow the edges until back at the start.
+    for (let k = first, e = next.get(k); e; e = next.get(k)) {
+      next.delete(k);
+      loop.push(e.from);
+      k = key(e.to);
+    }
+    if (loop.length < 3) continue;
+    const n = loop.length;
+    // The hexagons' zigzag halved: each corner drawn towards its two neighbours. Two holders
+    // walk their shared border's corners alike, so their outlines still meet.
+    const soft = loop.map((p, j) => {
+      const a = loop[(j + n - 1) % n] as [number, number];
+      const b = loop[(j + 1) % n] as [number, number];
+      return [(a[0] + 2 * p[0] + b[0]) / 4, (a[1] + 2 * p[1] + b[1]) / 4] as [number, number];
+    });
+    let d = `M${mid(soft[n - 1] as [number, number], soft[0] as [number, number])}`;
+    for (let j = 0; j < n; j++) {
+      const p = soft[j] as [number, number];
+      const q = soft[(j + 1) % n] as [number, number];
+      d += `Q${p[0].toFixed(2)} ${p[1].toFixed(2)} ${mid(p, q)}`;
+    }
+    parts.push(`${d}Z`);
+  }
+  return parts.join("");
+}
+
+/** The cells of each holder (by its index; -1 is neutral land, never drawn). */
+export function cellsByHolder(owner: number[]): Map<number, number[]> {
+  const out = new Map<number, number[]>();
+  owner.forEach((o, i) => {
+    if (o < 0) return;
+    const list = out.get(o) ?? [];
+    list.push(i);
+    out.set(o, list);
+  });
+  return out;
+}
+
+/** Holders whose ground touches, by index. */
+export function neighbours(map: HexMap, owner: number[]): Map<number, Set<number>> {
+  const out = new Map<number, Set<number>>();
+  owner.forEach((o, i) => {
+    if (o < 0) return;
+    for (const n of hexNeighbors(map, i)) {
+      const p = owner[n] ?? -1;
+      if (p < 0 || p === o) continue;
+      const a = out.get(o) ?? new Set<number>();
+      a.add(p);
+      out.set(o, a);
+    }
+  });
+  return out;
+}
+
+/**
+ * Twelve muted jewel tones from the palette's family (never pure gold nor vermilion, kept for
+ * their roles): emerald, violet, teal, clay, plum, slate, olive, rose, sky, walnut, lavender, jade.
+ */
+export const TERRA_TONES = [
+  "#3FA36B",
+  "#8E6BD8",
+  "#3E9C9C",
+  "#C8693F",
+  "#A0558A",
+  "#6B7FA6",
+  "#8C9440",
+  "#C97B95",
+  "#6FA8D6",
+  "#A8743F",
+  "#A99BD9",
+  "#5DBF9A",
+];
+
+function hash(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+/**
+ * A tone for each holder, two neighbours never the same: the largest first, each taking its own
+ * tone (from its name, so it keeps it from one visit to the next) unless a neighbour has it.
+ */
+export function tones(
+  names: string[],
+  sizes: number[],
+  touching: Map<number, Set<number>>,
+): string[] {
+  const out: string[] = names.map(() => "");
+  const order = names.map((_, i) => i).sort((a, b) => (sizes[b] ?? 0) - (sizes[a] ?? 0) || a - b);
+  for (const i of order) {
+    const taken = new Set([...(touching.get(i) ?? [])].map((n) => out[n]).filter(Boolean));
+    const own = hash(names[i] ?? String(i)) % TERRA_TONES.length;
+    let pick = TERRA_TONES[own] as string;
+    for (let k = 0; k < TERRA_TONES.length; k++) {
+      const tone = TERRA_TONES[(own + k) % TERRA_TONES.length] as string;
+      if (!taken.has(tone)) {
+        pick = tone;
+        break;
+      }
+    }
+    out[i] = pick;
+  }
+  return out;
+}
+
+/** The land cell under a point of the map, if any (within a cell's radius of its centre). */
+export function cellAt(map: HexMap, land: boolean[], x: number, y: number): number | null {
+  const row = Math.round((y - map.origin[1]) / (map.size * 1.5));
+  let best: number | null = null;
+  let bestD = map.size;
+  for (let r = row - 1; r <= row + 1; r++) {
+    if (r < 0 || r >= map.height) continue;
+    const col = Math.round((x - map.origin[0]) / (map.size * Math.sqrt(3)) - 0.5 * (r & 1));
+    for (let c = col - 1; c <= col + 1; c++) {
+      if (c < 0 || c >= map.width) continue;
+      const i = r * map.width + c;
+      if (!land[i]) continue;
+      const [cx, cy] = hexCenter(map, i);
+      const d = Math.hypot(cx - x, cy - y);
+      if (d <= bestD) {
+        bestD = d;
+        best = i;
+      }
+    }
+  }
+  return best;
+}

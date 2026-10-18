@@ -106,6 +106,7 @@ export function MapHud({
   bottom,
   hasFamily,
   layer,
+  doorLabel,
   familyCalls,
   workshopsReady,
   right,
@@ -152,7 +153,9 @@ export function MapHud({
   bottom: boolean;
   hasFamily: boolean;
   /** The map shown: the family door switches between the two. */
-  layer: "trade" | "campaign";
+  layer: "trade" | "campaign" | "terra";
+  /** The other layer's door, when it is not the families' (the Terraferma). */
+  doorLabel?: string;
   /** Something waits at the family (a levy, a threat, a message, an invitation). */
   familyCalls: boolean;
   /** Batches waiting at the workshops (a dot on their door). */
@@ -342,7 +345,7 @@ export function MapHud({
           </Door>
           {(hasFamily || layer !== "trade") && (
             <Door
-              label={layer !== "trade" ? m.campaign.toTrade : m.campaign.toCampaign}
+              label={layer !== "trade" ? m.campaign.toTrade : (doorLabel ?? m.campaign.toCampaign)}
               onClick={onFamily}
               dot={layer === "trade" && familyCalls}
               active={layer !== "trade"}
