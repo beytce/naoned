@@ -976,3 +976,20 @@ Pour comparer : sans entretien et sans Terraferme, 1 117 à 1 588 ducats et 3,5 
 - le **patrimoine des assidus** baisse quand ils dépensent sur la Terraferme (graine 5 : 77 %) : le classement compte les ventes nettes, pas le patrimoine, et l'Influence du classement de la Terraferme récompense cette dépense ; l'indicateur de patrimoine ne dit plus tout.
 
 La Faveur du Doge donne aussi son contrat de plus par jour (`effects.faveur_doge.extraOrders`, 1), tiré comme les autres et payé +40 %.
+
+## Bascule : la Terraferme à la place des familles, les bâtiments à leur prix (18 octobre 2026, décision du porteur)
+
+À la réinitialisation de la saison du 18 octobre, la Terraferme est allumée pour Venise (`terraferma.live`) et éteint les familles. Les ducats des bâtiments reviennent à leur prix d'avant le retrait de l'entretien (ferme 210 d, moulin 280, briqueterie et scierie 350, boulangerie 420, palais 560) : la Terraferme est le contrepoids, les +40 % ne servent plus. `pnpm sim`, 5 graines, toutes conformes :
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie par joueur actif en fin de saison (ducats) | 987 | 1 086 | 841 | 883 | 783 |
+| Croissance moyenne de la monnaie (%/jour) | 6,2 | 5,2 | 4,7 | 4,7 | 3,5 |
+| Jours hors plage du ratio créée / détruite (sur 23) | 0 | 6 | 0 | 0 | 5 |
+| Détruit par la Terraferme (d par joueur actif et par jour) | 89 | 97 | 93 | 92 | 96 |
+| Part des destructions | 39 % | 42 % | 38 % | 40 % | 42 % |
+| Niveaux d'ateliers par marchand | 6,7 | 6,7 | 7,4 | 7,2 | 6,9 |
+| Assidus devant occasionnels (patrimoine médian) | 82 % | — | 244 % | 162 % | 206 % |
+| Influence médiane de la saison (dont missions) | 109 (99) | 121 (109) | 122 (113) | 121 (106) | 120 (107) |
+
+**Lecture.** Les ateliers retrouvent leur croissance (6,7 à 7,4 niveaux par marchand, au lieu de 4,8 à 5,7 avec les +40 %), la monnaie reste sous son plafond (0,8 à 1,1 ×) et la Terraferme en détruit toujours 40 %. La croissance de la monnaie (3,5 à 6,2 %/jour) revient près de son niveau sans entretien : c'est le prix d'ateliers qui grandissent ; si la bêta la trouve trop forte, le premier levier est le prix des bâtiments de la Terraferme (Rocca, Borgo, plafond), pas celui des ateliers. Les indicateurs de la Campagne disparaissent du rapport quand les familles sont éteintes.

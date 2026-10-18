@@ -20,6 +20,7 @@ import {
   decide,
   deliveryOrdersFor,
   emptyTotals,
+  familiesOn,
   isMudaGood,
   parseSettings,
   seasonInfluence,
@@ -555,7 +556,8 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     glory: h.glory,
     decrees: h.decrees.map((d) => (d.target ? `${d.code}:${d.target}` : d.code)),
   }));
-  result.families = families;
+  // The families' figures only while they play (the Terraferma replaces them).
+  if (familiesOn(ctx)) result.families = families;
   result.bales = bales;
   const playerDays = result.daily.reduce((a, d) => a + d.active, 0);
   const sortedFirst = [...activity.firstDelivery].sort((a, b) => a - b);
