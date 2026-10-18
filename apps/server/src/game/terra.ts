@@ -7,6 +7,7 @@ import {
   capOf,
   cellCost,
   cellsOf,
+  forecastFronts,
   hexNeighbors,
   hourIn,
   hourWithin,
@@ -27,6 +28,10 @@ const TERRAIN_LETTER: Record<string, string> = {
   mountain: "M",
   water: "w",
 };
+
+/** How far ahead a front's march is forecast, and how many of its cells are sent. */
+const FORECAST_MS = 24 * 3_600_000;
+const FORECAST_CELLS = 12;
 
 export interface TerraName {
   pseudo: string | null;
@@ -70,6 +75,11 @@ export function terraView(
         if (s.map.land[n] && s.owner[n] !== playerId && !(n in costs))
           costs[n] = cellCost(s, cfg, n);
   }
+  // Where the merchant's fronts, and those marching on him, will go and when, if nobody acts.
+  const watched = s.fronts
+    .filter((f) => f.owner === playerId || f.against === playerId)
+    .map((f) => f.id);
+  const forecast = forecastFronts(s, cfg, watched, now + FORECAST_MS);
   return {
     week: t.week,
     closesAt: campaignWeekEnd(ctx, t.week),
@@ -107,6 +117,9 @@ export function terraView(
       troops: f.troops,
       mine: f.owner === playerId,
       threat: f.against === playerId,
+      /** The cells it will take next and when, a few; when it will stop (null: not known). */
+      takes: (forecast[f.id]?.takes ?? []).slice(0, FORECAST_CELLS),
+      endsAt: forecast[f.id]?.endsAt ?? null,
     })),
     costs,
     // The last day's cells that changed hands, for the screen to replay what a merchant missed.

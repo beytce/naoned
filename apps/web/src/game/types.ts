@@ -864,6 +864,10 @@ export interface TerraView {
     troops: number;
     mine: boolean;
     threat: boolean;
+    /** The cells it will take next and when, if nobody acts (the merchant's fronts and threats). */
+    takes: { cell: number; at: number }[];
+    /** When it will stop and come home (null: not known). */
+    endsAt: number | null;
   }[];
   /** What a front pays for each cell along the merchant's border. */
   costs: Record<string, number>;

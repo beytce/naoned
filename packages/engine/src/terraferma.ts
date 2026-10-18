@@ -109,6 +109,8 @@ export interface TerraState {
   closedSeen?: boolean;
   /** When each cell last changed hands, and from whom (null: neutral land). */
   taken?: Record<number, { at: number; from: string | null }>;
+  /** Only on a forecast's copy: each cell a front takes, when the step that takes it ends. */
+  trace?: { front: string; cell: number; at: number }[];
 }
 
 /** A cell changing hands, remembered for the merchants who were away. */
@@ -797,6 +799,43 @@ function step(s: TerraState, cfg: TerraConfig, at: number): void {
   }
 }
 
+export interface FrontForecast {
+  /** The cells the front will take, in order, and when each will be its owner's. */
+  takes: { cell: number; at: number }[];
+  /** When it will stop and come home (null: still marching at the horizon). */
+  endsAt: number | null;
+}
+
+/**
+ * Where some fronts will go and when, if nobody acts: the map played on a copy, step by step,
+ * up to `horizon` or until they have all stopped. The map itself is not touched.
+ */
+export function forecastFronts(
+  s: TerraState,
+  cfg: TerraConfig,
+  ids: string[],
+  horizon: number,
+): Record<string, FrontForecast> {
+  const out: Record<string, FrontForecast> = {};
+  for (const id of ids)
+    if (s.fronts.some((f) => f.id === id)) out[id] = { takes: [], endsAt: null };
+  const copy: TerraState = structuredClone(s);
+  copy.trace = [];
+  const stepMs = cfg.stepMinutes * MINUTE_MS;
+  const marching = new Set(Object.keys(out));
+  while (marching.size > 0 && !copy.closed && copy.clock + stepMs <= horizon) {
+    advanceTerra(copy, cfg, copy.clock + stepMs);
+    for (const t of copy.trace) out[t.front]?.takes.push({ cell: t.cell, at: t.at });
+    copy.trace = [];
+    for (const id of [...marching]) {
+      if (copy.fronts.some((f) => f.id === id)) continue;
+      marching.delete(id);
+      (out[id] as FrontForecast).endsAt = copy.clock;
+    }
+  }
+  return out;
+}
+
 function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront, at: number): void {
   front.steps = (front.steps ?? 0) + 1;
   if (cfg.fronts.maxHours > 0 && front.steps * cfg.stepMinutes > cfg.fronts.maxHours * 60) {
@@ -830,6 +869,7 @@ function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront, at: nu
     }
     seize(s, best, front.owner, at);
     razeAt(s, best);
+    s.trace?.push({ front: front.id, cell: best, at: at + cfg.stepMinutes * MINUTE_MS });
   }
 }
 

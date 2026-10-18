@@ -9,6 +9,7 @@ import {
   cellCenter,
   cellCost,
   cellsOf,
+  forecastFronts,
   hexDistance,
   hexNeighbors,
   launchFront,
@@ -384,5 +385,49 @@ describe("neutral land", () => {
     const before = cellsOf(s, "a").length;
     advanceTerra(s, cfg, START + 4 * STEP);
     expect(cellsOf(s, "a").length - before).toBe(2);
+  });
+});
+
+describe("a front's forecast", () => {
+  it("tells which cells it will take and when, and when it will stop, without touching the map", () => {
+    const cfg = config({
+      openHours: { from: 8, to: 22 },
+      fronts: { ...testTerraferma.fronts, cellsPerStep: 1, neutralEverySteps: 3 },
+    });
+    // 6 h in Paris: the front waits for the morning.
+    const at = START + 4 * HOUR;
+    const s = newTerra(cfg, "seed", 10, at);
+    placeOnTerra(s, cfg, "a", freeCell(s), at);
+    (s.players.a as { troops: number }).troops = 20;
+    const front = launchFront(s, cfg, "a", border(s, "a"), 10_000, at);
+    const before = JSON.stringify(s);
+    const forecast = forecastFronts(s, cfg, [front.id], at + 2 * 24 * HOUR)[front.id];
+    expect(JSON.stringify(s)).toBe(before);
+    // 20 troops on 3-troop plains (6 on hills): a few cells, one every 3 open steps from 8 h.
+    expect(forecast?.takes.length).toBeGreaterThanOrEqual(2);
+    expect(forecast?.takes[0]?.at).toBe(at + 2 * HOUR + 3 * STEP);
+    expect(forecast?.endsAt).not.toBeNull();
+    // What the map then does, step by step.
+    for (const take of forecast?.takes ?? []) {
+      advanceTerra(s, cfg, take.at - STEP);
+      expect(s.owner[take.cell]).toBeNull();
+      advanceTerra(s, cfg, take.at);
+      expect(s.owner[take.cell]).toBe("a");
+    }
+    advanceTerra(s, cfg, (forecast?.endsAt ?? 0) - STEP);
+    expect(s.fronts.some((f) => f.id === front.id)).toBe(true);
+    advanceTerra(s, cfg, forecast?.endsAt ?? 0);
+    expect(s.fronts.some((f) => f.id === front.id)).toBe(false);
+  });
+
+  it("stops at its horizon, the front still marching", () => {
+    const cfg = config();
+    const s = newTerra(cfg, "seed", 10, START);
+    placeOnTerra(s, cfg, "a", freeCell(s), START);
+    (s.players.a as { troops: number }).troops = 10_000;
+    const front = launchFront(s, cfg, "a", border(s, "a"), 10_000, START);
+    const forecast = forecastFronts(s, cfg, [front.id], START + 2 * STEP)[front.id];
+    expect(forecast?.takes.length).toBe(4);
+    expect(forecast?.endsAt).toBeNull();
   });
 });
