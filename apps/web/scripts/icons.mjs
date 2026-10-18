@@ -1,5 +1,5 @@
 // Renders the app icons and the logo used in the game from the official logo, brand/logo.webp
-// (1024 px, a rounded square on white): the white corners become the logo's brown.
+// (1024 px, square: the gold medal of the winged lion on its dark ground, edge to edge).
 // Run: npx -y -p playwright-core@1.49.1 node apps/web/scripts/icons.mjs
 // (Chromium from PLAYWRIGHT_BROWSERS_PATH or CHROMIUM_PATH.)
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -12,11 +12,11 @@ const { chromium } = require("playwright-core");
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const source = readFileSync(join(web, "brand/logo.webp")).toString("base64");
 
-/** The logo's ground, under its white corners and around a shrunk logo. */
-const BROWN = "#73371E";
-/** The rounded corners of the source and their thin rim, as a share of its side: cut away. */
-const SOURCE_RADIUS = 0.1;
-const SOURCE_INSET = 0.008;
+/** The logo's ground, around a shrunk logo: the source's own dark olive. */
+const BROWN = "#16140C";
+/** The source is a full square: no corners of its own to cut away. */
+const SOURCE_RADIUS = 0;
+const SOURCE_INSET = 0;
 
 function chromiumPath() {
   if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;

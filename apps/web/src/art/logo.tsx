@@ -1,6 +1,6 @@
 /**
- * Fondaco's official logo: the winged lion of Saint Mark gripping a gold ducat struck with a
- * galleon, on a brown tile. Source: brand/logo.webp; scripts/icons.mjs renders the app icons and
+ * Fondaco's official logo: the winged lion of Saint Mark roaring on the waves, struck on a gold
+ * medal, on a dark tile. Source: brand/logo.webp; scripts/icons.mjs renders the app icons and
  * the in-game logo (public/icons/logo-256.webp) from it.
  */
 const LOGO = "/icons/logo-256.webp";

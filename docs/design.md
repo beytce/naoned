@@ -4,10 +4,10 @@ Le jeu s'appelle **Fondaco**, du nom des entrepôts où les marchands étrangers
 
 ## Logo : le lion ailé
 
-Logo officiel : le lion ailé de saint Marc, de face, rugissant, ailes déployées, qui tient dans ses griffes un ducat d'or frappé d'un galion sur les vagues, sur une tuile brune aux coins arrondis. Pas de nom dans le logo.
+Logo officiel (depuis le 18 octobre 2026) : le lion ailé de saint Marc, de face, rugissant, ailes déployées, debout sur les vagues, frappé en relief sur une médaille d'or à frise tressée, sur un fond olive très sombre. Pas de nom dans le logo.
 
-- **Source** : `apps/web/brand/logo.webp` (1024 px, carré arrondi sur fond blanc). On ne le redessine pas : on remplace ce fichier.
-- **Rendus** : `apps/web/scripts/icons.mjs` en tire toutes les tailles ; les coins blancs de la source deviennent le brun du logo (`#73371E`). À relancer après tout changement de la source : `npx -y -p playwright-core node apps/web/scripts/icons.mjs`.
+- **Source** : `apps/web/brand/logo.webp` (1024 px, carré : la médaille sur son fond sombre, bord à bord). On ne le redessine pas : on remplace ce fichier.
+- **Rendus** : `apps/web/scripts/icons.mjs` en tire toutes les tailles ; le fond autour d'un logo réduit (version masquable) est l'olive sombre de la source (`#16140C`). À relancer après tout changement de la source : `npx -y -p playwright-core node apps/web/scripts/icons.mjs`.
   - iPhone : `apple-touch-icon` 180 et 1024 px, carré plein sans transparence (iOS arrondit lui-même). Le 1024 px et les icônes Android ne sont pas mis en cache par le service worker (le système les télécharge à l'installation).
   - Android : 192 et 512 px arrondis, plus une version masquable dont le logo tient dans la zone sûre de 80 %.
   - `favicon.png` (64 px) et `icons/logo-256.webp`, le logo affiché dans le jeu.
