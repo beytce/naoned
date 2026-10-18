@@ -8,6 +8,7 @@ import { arriveMuda } from "./muda.js";
 import { openDueProjects } from "./projects.js";
 import { retireSeaAndBandits } from "./retired.js";
 import { DAY_MS, HOUR_MS, dayIndex } from "./state.js";
+import { advanceTerraWorld } from "./terraWorld.js";
 import { type Tx, emit, removeStock } from "./tx.js";
 import { closeSeason, closeWeek } from "./weekly.js";
 
@@ -52,6 +53,8 @@ export function tick(tx: Tx): void {
   expireOrders(tx);
   serveRations(tx);
   closeWeek(tx);
+  // The Terraferma: its fronts up to now, and its week closed when it turns.
+  advanceTerraWorld(tx);
   // States of the time of the guilds: their treasuries go back to their members.
   dissolveLegacyGuilds(tx);
   // The week's campaign: marches arrive, Milan rides, glory is counted, the week closes.

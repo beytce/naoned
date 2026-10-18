@@ -265,6 +265,11 @@ export const worldSettingsSchema = z.object({
    */
   terraferma: z
     .object({
+      /**
+       * Played in the world (its weeks, commands and decrees); off, only the simulator plays it.
+       * Switched on at a season's opening, never during one.
+       */
+      live: z.boolean().default(false),
       /** Land cells per active merchant (at least `minActive` merchants counted). */
       cellsPerActive: positive,
       minActive: positive,
@@ -387,11 +392,34 @@ export const worldSettingsSchema = z.object({
           }),
           /** The strong decrees the Signore chooses from. */
           decrees: z.array(z.string()),
+          /** Their strength, for the Signore and its allies at the close (the members). */
+          effects: z.object({
+            /** Members: market tax and a larger share of the Dogana. */
+            franchise_rialto: z.object({ taxBps: bps, quotaBps: bps }),
+            /** Others' sales of a good pay more tax, shared out among the members. */
+            monopole: z.object({ extraTaxBps: bps }),
+            /** Others' deliveries to a city paid less; its urgent orders the members' a while. */
+            embargo: z.object({ cutBps: bps.max(10_000), reservedMinutes: qty }),
+            /** A share of every delivery of the others, shared out among the members. */
+            dime: z.object({ tollBps: bps }),
+            /** Members' contracts of the Doge paid more. */
+            faveur_doge: z.object({ premiumBps: bps }),
+            /** No offer of a good above this share of its reference. */
+            calmiere: z.object({ capBps: bps }),
+          }),
         })
         .default({
           winBps: 8_000,
           influence: { signore: 20, podium: 12, top10: 8, quarter: 5, participant: 2 },
           decrees: ["monopole", "embargo", "dime", "faveur_doge", "franchise_rialto", "calmiere"],
+          effects: {
+            franchise_rialto: { taxBps: 0, quotaBps: 10_000 },
+            monopole: { extraTaxBps: 1_500 },
+            embargo: { cutBps: 2_500, reservedMinutes: 60 },
+            dime: { tollBps: 300 },
+            faveur_doge: { premiumBps: 4_000 },
+            calmiere: { capBps: 10_500 },
+          },
         }),
     })
     .optional(),

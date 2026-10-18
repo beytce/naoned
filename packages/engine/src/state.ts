@@ -1,5 +1,6 @@
 import type { Deniers } from "./money.js";
 import type { WorldSettings } from "./settings.js";
+import type { TerraState } from "./terraferma.js";
 import type { BuildingType, ResourceCode, Theme } from "./theme.js";
 
 export type PlayerId = string;
@@ -330,6 +331,10 @@ export interface WorldState {
   families?: FamiliesState;
   /** The week's campaign in the Terraferma, and the decrees in force. */
   campaign?: CampaignState;
+  /** The Terraferma after OpenFront: the week's map (docs/plan-terraferme.md). */
+  terra?: { week: number; map: TerraState };
+  /** The Signore's decree, in force for its week, for him and his allies at the close. */
+  terraDecree?: { week: number; code: string; target?: string; members: PlayerId[] };
   /**
    * The merchants' guilds of states saved before the families came back: their treasuries are
    * paid back by carats at the next tick, then they are gone (with concessions and wars).

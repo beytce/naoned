@@ -105,6 +105,8 @@ export interface TerraState {
   programme?: Record<string, { code: string; target?: string }>;
   /** The week closed: no step any more. */
   closed?: TerraClose;
+  /** Its Influence and decree handed out to the world. */
+  closedSeen?: boolean;
 }
 
 // ——— The map ———

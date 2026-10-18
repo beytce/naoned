@@ -131,7 +131,10 @@ export type EngineErrorCode =
   | "gift_limit"
   | "built"
   | "no_room"
-  | "raise_limit";
+  | "raise_limit"
+  | "terra_off"
+  | "terra_closed"
+  | "decree_repeat";
 
 export class EngineError extends Error {
   constructor(

@@ -29,6 +29,7 @@ export type LedgerReason =
   | "decree_toll"
   | "decree_favour"
   | "decree_share"
+  | "terraferma"
   // Kept for the entries of the time of the upkeep (October 2026).
   | "upkeep"
   | "vehicle_upkeep"
