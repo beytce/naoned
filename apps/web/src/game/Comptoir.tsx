@@ -300,7 +300,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
             )}
           </div>
           <p className={`mt-1.5 flex items-center gap-1.5 text-xs font-semibold ${tone.text}`}>
-            <span className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} />
+            <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} />
             <span className="min-w-0">{status}</span>
           </p>
         </div>

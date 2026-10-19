@@ -95,6 +95,15 @@ export const fr = {
       notices: "Avis",
       bales: (n: number) => (n > 1 ? `${n} ballots à ouvrir` : "Un ballot à ouvrir"),
       buyCart: "Acheter une mule",
+      cityLabel: (name: string, orders: number, covered: number, criee: boolean) =>
+        [
+          name,
+          orders > 0 ? `${orders} commande${orders > 1 ? "s" : ""}` : "aucune commande",
+          covered > 0 ? `${covered} couverte${covered > 1 ? "s" : ""} par votre stock` : null,
+          criee ? "criée en cours" : null,
+        ]
+          .filter(Boolean)
+          .join(", "),
       carts: "Charrettes libres",
       resumeGuide: "Reprendre le guide",
       /** The cards that unfold beside the HUD's counters. */

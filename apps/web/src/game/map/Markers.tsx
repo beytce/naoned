@@ -4,6 +4,7 @@ import { Crest, type CrestData } from "../../art/crest.js";
 import { ResourceIcon } from "../../art/resources.js";
 import { VehicleGlyph } from "../../art/veneto.js";
 import { WorkGlyph } from "../../art/workIcon.js";
+import { fr } from "../../i18n.js";
 
 /**
  * What stands on the map: the cities as plaques of the portolan, each with its monument drawn
@@ -78,7 +79,7 @@ export function CityMarker({
     <button
       type="button"
       data-coach={`city-${code}`}
-      aria-label={name}
+      aria-label={fr.game.map.cityLabel(name, orders, deliverable, criee)}
       onClick={onTap}
       className={`marker-hit group relative -ml-9 -mt-9 flex h-[72px] w-[72px] items-center justify-center transition-opacity duration-300 ${dim ? "opacity-40" : ""}`}
     >
