@@ -1052,3 +1052,25 @@ Correctif de comportement, aucun paramètre touché. Sur le serveur, une maison 
 | Assidus devant occasionnels (patrimoine médian) | 171 % | 184 % |
 
 **Lecture.** Les PNJ dépensent un peu plus sur la Terraferme et la gagnent mieux ; l'économie bouge dans le bruit des graines, sauf le ratio monnaie créée / détruite, qui sort plus souvent de sa plage (graine 4 : 9 jours, en avertissement seulement). À revoir si cela persiste.
+
+## Première session : commande de bienvenue à 150 ducats, ouvriers nourris le premier jour, plus d'accélération (19 octobre 2026, décisions du porteur après l'audit UX)
+
+Après l'audit UX (`docs/audit-ux-2026-10-19.md`), trois réglages ont changé :
+- La commande de bienvenue paie un total fixe de 150 ducats (`deliveries.welcome[region].reward`, 15 000 deniers), au lieu du prix d'une commande ordinaire (26 d pour 12 pains). La Terraferma livre 10 blés, son premier lot, au lieu du pain que mangent ses ouvriers ; la Lagune livre 8 briques et les Dolomites 8 planches, comme avant.
+- Les ouvriers d'un nouveau venu ne mangent pas avant 24 h (`rations.graceHours`).
+- L'accélération d'une livraison contre de l'Influence est retirée (`house.spend.rushPerDay` à 0 ; le barème est gardé).
+
+`pnpm sim`, 5 graines, toutes conformes, avant (référence) et après :
+
+| Graine | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie payée (d par joueur actif et par jour), avant → après | 200,8 → 195,9 | 201,1 → 200,9 | 203,2 → 200,6 | 200,1 → 201,2 | 193,2 → 196,3 |
+| Masse monétaire max (× plafond), avant → après | 0,86 → 0,86 | 0,83 → 0,83 | 0,78 → 0,83 | 1,20 → 0,83 | 0,78 → 0,84 |
+| Indice des prix, après | 86–125 | 87–121 | 85–119 | 86–127 | 85–119 |
+| Première livraison (médiane), avant → après | 2,8 h → 4,3 h | 1,3 h → 3,3 h | 0 → 0 | 0,5 h → 0,5 h | 0,5 h → 0,5 h |
+| Niveau moyen des ateliers, après | 2,33 | 2,34 | 2,40 | 2,50 | 2,40 |
+| Joueurs actifs en fin de saison, avant → après | 37 → 35 | 45 → 44 | 42 → 38 | 39 → 41 | 39 → 40 |
+
+**Lecture.** La bienvenue crée 150 ducats une fois par marchand, soit 5 ducats par jour et par marchand sur un mois : c'est noyé dans les 200 ducats payés chaque jour pour les marchandises, qui ne bougent pas au-delà du bruit des graines. La masse monétaire reste sous son plafond, et la graine 4, qui le dépassait (1,20 ×), revient à 0,83 ×. Les prix gardent leur amplitude.
+
+La première livraison des bots arrive plus tard sur les graines 1 et 2 (3 à 4 h au lieu de 1 à 3 h). Le bot du Terraferma attend la récolte de son blé avant de livrer la bienvenue, alors qu'il livrait le pain de départ. Une vraie personne guidée par Lorenzo la livre dans les cinq premières minutes : c'est ce que vérifie le test de bout en bout (`pnpm --filter @comptoirs/web e2e`). La grâce sur le pain ne pèse que sur le premier jour d'un nouveau venu.
