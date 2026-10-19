@@ -1594,6 +1594,9 @@ export const fr = {
     palette: "Palette",
     paletteHint: "Change les couleurs du jeu sur cet appareil.",
 
+    unlocks: {
+      afterDelivery: "S'ouvre après votre première livraison.",
+    },
     coach: {
       name: "Lorenzo, votre facteur",
       later: "Plus tard",

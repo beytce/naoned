@@ -26,6 +26,7 @@ import {
   vehicleName,
 } from "../roadKit.js";
 import type { DeliveryView, PlayerView, TerraAction, VehicleView } from "../types.js";
+import { unlocksOf } from "../unlocks.js";
 import { useWide } from "../useWide.js";
 import { have, readyOf } from "../workshops.js";
 import {
@@ -504,6 +505,7 @@ export function MapScreen(
   const cargoVehicle = sheetKind === "cargo" ? vehicles.find((v) => v.id === sheetId) : undefined;
   const notice = props.unread + carnetRewards(props);
   const days = Math.max(1, (catalog.world.endsAt - catalog.world.startsAt) / 86_400_000);
+  const open = unlocksOf(view.tutorial);
   const seasonProgress = Math.min(1, (now - catalog.world.startsAt) / (days * 86_400_000));
   const maxCarts = catalog.road?.maxVehicles ?? 0;
 
@@ -562,7 +564,7 @@ export function MapScreen(
         rank={view.standing.rank}
         seasonProgress={seasonProgress}
         cash={view.cash}
-        influence={props.influence}
+        influence={open.house ? props.influence : null}
         tips={hudTips(props)}
         bread={breadOf(view, now)}
         fleet={
@@ -598,6 +600,10 @@ export function MapScreen(
         doorLabel={terraView ? fr.game.terra.door : undefined}
         familyCalls={terraView ? terraCalls(terraView, now) : familyCalls(props)}
         workshopsReady={ready > 0}
+        locks={{
+          ranking: open.ranking ? undefined : fr.game.unlocks.afterDelivery,
+          layer: open.terraferma ? undefined : fr.game.unlocks.afterDelivery,
+        }}
         right={
           campaign ? (
             <CampaignHud f={campaign} now={now} />
@@ -608,7 +614,7 @@ export function MapScreen(
         onProfile={() => props.setSheet("profile")}
         onNotices={() => props.setSheet("notices")}
         onBales={() => props.setSheet("bales")}
-        onRialto={() => props.goTo("marche")}
+        onRialto={open.rialto ? () => props.goTo("marche") : undefined}
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
         onRanking={() => props.setSheet("ranking")}
@@ -619,7 +625,10 @@ export function MapScreen(
               ? props.setLayer("terra")
               : props.goTo("famille")
         }
-        onWorkshops={() => props.setSheet("workshops")}
+        onWorkshops={() => {
+          if (campaign || terra) props.setLayer("trade");
+          props.setSheet("workshops");
+        }}
         onHelp={props.openHelp}
       />
       {panel}

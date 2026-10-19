@@ -12,6 +12,7 @@ import { MasteryTile } from "./Mastery.js";
 import { d, duration, minutesLabel } from "./format.js";
 import { store } from "./store.js";
 import type { BuildingView, Cost, PlayerView, Recipe } from "./types.js";
+import { unlocksOf } from "./unlocks.js";
 import { have, outputQty, readyOf, recipeOf, workshopState } from "./workshops.js";
 
 export { have };
@@ -746,11 +747,13 @@ export function CounterSheets(props: GameProps) {
 
 /** The day's notebook: first steps (while the guide is paused), the day's tasks, the missions. */
 export function Carnet(props: GameProps) {
+  // The day's tasks and the ledger wait until the market is learned (first session).
+  const house = unlocksOf(props.view.tutorial).house;
   return (
     <>
       <FirstSteps {...props} inSheet />
-      <Daily {...props} />
-      <Ledger {...props} />
+      {house && <Daily {...props} />}
+      {house && <Ledger {...props} />}
     </>
   );
 }
