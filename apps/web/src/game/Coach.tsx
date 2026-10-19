@@ -69,6 +69,22 @@ function produceAt(props: GameProps, id: string, building: string, text?: string
 
 type CoachProps = GameProps & { departing: boolean };
 
+/** Room the bubble takes at the top of the screen: a target above it sends the bubble down. */
+const BUBBLE_ROOM = 190;
+
+/**
+ * Something lies over the target (a sheet, a window): the element under its centre is neither
+ * the target, inside it, nor the guide's own bubble. Off screen, it is not covered (it scrolls).
+ */
+function isCovered(el: HTMLElement, box: DOMRect): boolean {
+  const x = box.left + box.width / 2;
+  const y = box.top + box.height / 2;
+  if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) return false;
+  const top = document.elementFromPoint(x, y);
+  if (!top) return false;
+  return !el.contains(top) && !top.contains(el) && !top.closest("[data-coach-bubble]");
+}
+
 /**
  * What to do next, read from the live game: the guide follows the player instead of a script,
  * so it never gets stuck if they do things in another order.
@@ -89,7 +105,13 @@ function nextStep(props: CoachProps): CoachStep {
     done.has("produce") && !done.has("sell_city") && road
       ? road.deliveries.some((dv) => now < dv.arriveAt)
         ? undefined
-        : road.orders.find((o) => o.status === "open" && have(view, o.resource) >= o.quantity)
+        : road.orders.find(
+            (o) =>
+              o.status === "open" &&
+              // Never the workers' bread: the first delivery is the merchant's own goods.
+              o.resource !== view.rations.resource &&
+              have(view, o.resource) >= o.quantity,
+          )
       : undefined;
 
   if (ready && !done.has("mission") && !deliverable) {
@@ -196,6 +218,8 @@ export function Coach(props: CoachProps) {
   const [finished, setFinished] = useState(() => store.get("guideDone") === "1");
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [onFollow, setOnFollow] = useState(false);
+  // The target is on the page but something (a sheet, a window) lies over it.
+  const [covered, setCovered] = useState(false);
   // On the campaign's layer the guide's places are not on the map: back to the trade first.
   const step: CoachStep =
     props.layer !== "trade"
@@ -217,7 +241,10 @@ export function Coach(props: CoachProps) {
       const follow = step.follow ? visible(step.follow) : null;
       const el = follow ?? visible(step.target ?? "");
       setOnFollow(follow !== null);
-      setRect(el ? el.getBoundingClientRect() : null);
+      const box = el ? el.getBoundingClientRect() : null;
+      const hidden = el && box ? isCovered(el, box) : false;
+      setCovered(hidden);
+      setRect(hidden ? null : box);
       return el;
     };
     const el = find();
@@ -225,6 +252,11 @@ export function Coach(props: CoachProps) {
     const t = setInterval(find, 250);
     return () => clearInterval(t);
   }, [step.target, step.follow, hidden, finished]);
+  const text = covered
+    ? fr.game.coach.covered
+    : onFollow && step.followText
+      ? step.followText
+      : step.text;
 
   useEffect(() => {
     if (step.final && props.view.tutorial.length >= STEPS.length) {
@@ -239,93 +271,105 @@ export function Coach(props: CoachProps) {
   // A message with nothing to point at stays on the counter.
   if (!step.target && !step.waitUntil && props.tab !== "comptoir") return null;
 
-  // The bubble goes where it does not hide the target (or the open sheet): at the top for a target
-  // in the lower half (the panel, the cities of the south), at the bottom otherwise.
+  // The bubble goes where it hides neither the target nor the panel or sheet the player works in:
+  // at the top while a sheet or a place's panel is up, or for a target in the lower half; at the
+  // bottom otherwise, and always at the bottom for a target under where it would sit at the top.
+  const lowTarget = rect !== null && rect.top + rect.height / 2 > window.innerHeight * 0.5;
+  const highTarget = rect !== null && rect.top < BUBBLE_ROOM;
   const atTop =
-    props.sheet !== null ||
-    onFollow ||
-    (rect !== null && rect.top + rect.height / 2 > window.innerHeight * 0.5);
+    !highTarget && (props.sheet !== null || props.selection !== null || onFollow || lowTarget);
   const pad = 6;
+  // Kept inside the screen: the tab bar's end tabs touch its edges.
+  const box = rect
+    ? {
+        left: Math.max(2, rect.left - pad),
+        top: Math.max(2, rect.top - pad),
+        width: Math.min(window.innerWidth - 2, rect.right + pad) - Math.max(2, rect.left - pad),
+        height: Math.min(window.innerHeight - 2, rect.bottom + pad) - Math.max(2, rect.top - pad),
+      }
+    : undefined;
   // On the body: the map is its own layer, the sheets open over it; the guide stays on top.
   return createPortal(
     <>
       {rect && (
-        <div
-          className="pointer-events-none fixed z-[45] animate-pulsering rounded-md ring-2 ring-gold transition-all duration-200"
-          style={{
-            // Kept inside the screen: the tab bar's end tabs touch its edges.
-            left: Math.max(2, rect.left - pad),
-            top: Math.max(2, rect.top - pad),
-            width: Math.min(window.innerWidth - 2, rect.right + pad) - Math.max(2, rect.left - pad),
-            height:
-              Math.min(window.innerHeight - 2, rect.bottom + pad) - Math.max(2, rect.top - pad),
-            boxShadow: "0 0 0 9999px rgba(10, 8, 14, 0.62)",
-          }}
-        />
+        <>
+          {/* The room around the target dimmed: a cut-out whose shadow covers the screen. */}
+          <div
+            className="pointer-events-none fixed z-[45] rounded-md transition-all duration-200"
+            style={{ ...box, boxShadow: "0 0 0 9999px rgba(10, 8, 14, 0.62)" }}
+          />
+          {/* The ring on its own element: its pulse must not wipe the dimming's shadow. */}
+          <div
+            className="coach-ring pointer-events-none fixed z-[45] rounded-md border-[3px] border-info"
+            style={box}
+          />
+        </>
       )}
       <div
         className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-[calc(1rem+env(safe-area-inset-bottom))] lg:bottom-8"}`}
       >
-        <div className="relative rounded-2xl bg-night-2 p-4 shadow-xl shadow-black/40 ring-2 ring-gold">
-          <div className="flex gap-3">
-            <Lorenzo size={52} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-2">
-                <Label className="text-gold">{fr.game.coach.name}</Label>
-                <span className="label shrink-0 whitespace-nowrap">
-                  {fr.game.coach.step(index, STEPS.length)}
-                </span>
+        <div className="cut bg-info p-0.5 shadow-xl shadow-black/40" data-coach-bubble>
+          <div className="cut bg-night-2 px-3.5 pb-2.5 pt-3">
+            <div className="flex gap-3">
+              <Lorenzo size={40} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <Label className="text-info">{fr.game.coach.name}</Label>
+                  <span className="label shrink-0 whitespace-nowrap">
+                    {fr.game.coach.step(index, STEPS.length)}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm leading-snug">{text}</p>
+                {step.waitUntil && (
+                  <Big className="mt-2 text-3xl text-lagoon">
+                    {clock(step.waitUntil - props.now)}
+                  </Big>
+                )}
               </div>
-              <p className="mt-1.5 text-[15px] leading-snug">
-                {onFollow && step.followText ? step.followText : step.text}
-              </p>
-              {step.waitUntil && (
-                <Big className="mt-2 text-3xl text-lagoon">{clock(step.waitUntil - props.now)}</Big>
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <div className="flex gap-1">
+                {STEPS.map((s, k) => (
+                  <span
+                    key={s}
+                    className={`slab h-1.5 w-6 ${k < props.view.tutorial.length ? "bg-lagoon" : k === props.view.tutorial.length ? "bg-info" : "bg-line"}`}
+                  />
+                ))}
+              </div>
+              {step.skip ? (
+                <Slab
+                  size="sm"
+                  onClick={() => {
+                    if (step.skip) store.set(step.skip, "1");
+                    props.onGuidePaused();
+                  }}
+                >
+                  {fr.game.coach.skip}
+                </Slab>
+              ) : step.final ? (
+                <Slab
+                  size="sm"
+                  onClick={() => {
+                    store.set("guideDone", "1");
+                    setFinished(true);
+                  }}
+                >
+                  {fr.game.coach.finish}
+                </Slab>
+              ) : (
+                <button
+                  type="button"
+                  className="label -my-2 -mr-2 h-11 px-2 text-cream-dim"
+                  onClick={() => {
+                    store.set("guideHidden", "1");
+                    setHidden(true);
+                    props.onGuidePaused();
+                  }}
+                >
+                  {fr.game.coach.later}
+                </button>
               )}
             </div>
-          </div>
-          <div className="mt-3 flex items-center justify-between">
-            <div className="flex gap-1">
-              {STEPS.map((s, k) => (
-                <span
-                  key={s}
-                  className={`slab h-1.5 w-6 ${k < props.view.tutorial.length ? "bg-lagoon" : k === props.view.tutorial.length ? "bg-gold" : "bg-line"}`}
-                />
-              ))}
-            </div>
-            {step.skip ? (
-              <Slab
-                size="sm"
-                onClick={() => {
-                  if (step.skip) store.set(step.skip, "1");
-                  props.onGuidePaused();
-                }}
-              >
-                {fr.game.coach.skip}
-              </Slab>
-            ) : step.final ? (
-              <Slab
-                size="sm"
-                onClick={() => {
-                  store.set("guideDone", "1");
-                  setFinished(true);
-                }}
-              >
-                {fr.game.coach.finish}
-              </Slab>
-            ) : (
-              <button
-                type="button"
-                className="label -my-2 -mr-2 h-11 px-2 text-cream-dim"
-                onClick={() => {
-                  store.set("guideHidden", "1");
-                  setHidden(true);
-                  props.onGuidePaused();
-                }}
-              >
-                {fr.game.coach.later}
-              </button>
-            )}
           </div>
         </div>
       </div>

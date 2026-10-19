@@ -571,6 +571,24 @@
     opacity: 1;
   }
 }
+/* Lorenzo's ring around the element to touch: it breathes, it never moves. */
+.coach-ring {
+  animation: coach-ring 1.4s ease-in-out infinite;
+}
+@keyframes coach-ring {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coach-ring {
+    animation: none;
+  }
+}
 .marker-halo {
   background: radial-gradient(circle, rgb(var(--lagoon) / 0.45) 0%, transparent 68%);
   animation: marker-halo 2.2s ease-in-out infinite;

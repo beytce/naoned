@@ -187,7 +187,12 @@ export function CargoSheet({
           <p className="mt-2 text-center text-xs text-cream-dim">{t().empty}</p>
         )}
       </div>
-      <Slab className="w-full" coach="cargo-ready" disabled={loaded.length === 0} onClick={onReady}>
+      <Slab
+        className="w-full"
+        coach={loaded.length > 0 ? "cargo-ready" : undefined}
+        disabled={loaded.length === 0}
+        onClick={onReady}
+      >
         {s.city ? t().ready(props.names.city(s.city), d(s.value)) : t().pick}
       </Slab>
       <p className="label text-center">{t().nextOrders(clock(nextDay - props.now))}</p>

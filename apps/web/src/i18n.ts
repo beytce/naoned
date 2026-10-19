@@ -1598,7 +1598,8 @@ export const fr = {
       name: "Lorenzo, votre facteur",
       later: "Plus tard",
       resume: "Guide",
-      step: (n: number, total: number) => `Étape ${n}/${total}`,
+      step: (n: number, total: number) => `Objectif ${n}/${total}`,
+      covered: "Fermez cette fenêtre pour continuer : ce que je vous montre est dessous.",
       produceTap: (building: string) =>
         `Lançons votre ${building.toLowerCase()} ! Touchez « Produire » : il attend du travail.`,
       tapHome: "Touchez votre comptoir, au centre de la carte : vos ateliers s'y trouvent.",

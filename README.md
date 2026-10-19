@@ -31,6 +31,9 @@ pnpm lint
 pnpm sim         # 5 graines × 30 jours ; rapport dans apps/simulator/out/report.md
 pnpm sim --players 40 --live   # le petit monde de la bêta : 40 maisons PNJ
 pnpm sim --seeds 1 --scenario scenarios/high-tax.json   # chemin relatif à apps/simulator
+SERVER_LOG=server.log pnpm --filter @comptoirs/web e2e  # joue le tutoriel jusqu'à la première livraison
 ```
+
+Le test du tutoriel (`apps/web/e2e/tutorial.mjs`) tourne contre `pnpm dev` dont la sortie est enregistrée dans `server.log` (il y lit le lien de connexion). Il touche ce que Lorenzo entoure et échoue si la bulle cache sa cible ou si le guide ne montre plus rien. `CHROMIUM` donne le navigateur (sinon celui de Playwright), `SHOTS` un dossier où garder une capture par étape. À lancer après tout changement du guide, des feuilles ou du panneau.
 
 Un scénario (exemple : `apps/simulator/scenarios/high-tax.json`) est un fichier JSON qui remplace des clés des paramètres de Venise 1450 (`packages/engine/src/themes/venice1450.settings.ts`), par exemple `{ "marketTaxBps": 500 }`.
