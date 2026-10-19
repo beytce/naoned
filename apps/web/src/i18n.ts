@@ -1450,6 +1450,12 @@ export const fr = {
       "Ventes nettes = tout ce que vous avez vendu (Rialto, Dogana, livraisons, commandes du Doge), taxes et péages déduits, moins tout ce que vous avez acheté. Le stock et les bâtiments ne comptent pas.",
 
     house: {
+      card: "Votre Maison",
+      titleOf: (name: string) => `Titre de la saison : ${name}`,
+      renownOf: (n: number) => `Renommée ${n.toLocaleString("fr-FR")}`,
+      influenceOf: (n: number) => `${n.toLocaleString("fr-FR")} d'Influence`,
+      more: "Voir le détail",
+      less: "Replier",
       title: "Livre de la Maison",
       influence: "Influence",
       intro:
