@@ -833,7 +833,7 @@ export function TerraHud({ v, now }: { v: TerraView; now: number }) {
           </span>
         </>
       )}
-      <span className="flex flex-col items-end font-mono text-xs uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+      <span className="note flex max-w-[58vw] flex-col items-end text-right [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] lg:max-w-xs">
         {me?.eliminatedAt != null && <span className="text-vermilion">{t().eliminated}</span>}
         {!v.closed && v.placementEndsAt !== null && now < v.placementEndsAt && (
           <span className="text-gold">{t().placing(clock(v.placementEndsAt - now))}</span>
