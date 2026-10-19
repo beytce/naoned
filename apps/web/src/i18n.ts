@@ -25,6 +25,8 @@ export const fr = {
   choosePseudo: "Votre nom de marchand",
   pseudoHelp: "3 à 20 caractères : lettres, chiffres, _ ou -. Il sera visible des autres joueurs.",
   pseudoLabel: "Nom de marchand",
+  pseudoInvalid:
+    "De 3 à 20 caractères, avec seulement des lettres, des chiffres, _ ou - (pas d'espace ni de ponctuation).",
   confirm: "Valider",
   logout: "Se déconnecter",
 
@@ -44,7 +46,7 @@ export const fr = {
         text: "Vos ateliers fabriquent des marchandises, même quand vous dormez. Les villes vous passent commande : chargez une charrette et livrez-les par la route, ou vendez aux autres marchands au Rialto. Puis réinvestissez pour produire plus.",
       },
       {
-        kicker: "Le piège",
+        kicker: "Le commerce",
         title: "Vous ne pouvez pas tout faire seul",
         text: "Vos ouvriers mangent du pain, vos fours brûlent du bois, et pour grandir il faut des briques ET des planches. Votre métier n'en produit qu'une partie : le reste, vous l'achèterez aux autres marchands.",
       },
@@ -59,7 +61,10 @@ export const fr = {
   region: {
     title: "Choisissez votre métier",
     help: "Chaque région n'extrait que sa propre matière première : le blé en Terraferma, l'argile dans la Lagune, le bois dans les Dolomites. Pour le reste, il faudra commercer.",
-    bonus: (pct: number, resource: string) => `+${pct} % de ${resource.toLowerCase()}`,
+    bonus: (pct: number, resource: string) => {
+      const name = resource.toLowerCase();
+      return `+${pct} % ${/^[aeiouyéèêh]/.test(name) ? "d'" : "de "}${name}`;
+    },
     kit: "Ateliers de départ",
     sells: "Vous vendez",
     needs: "Vous achèterez",
@@ -972,9 +977,9 @@ export const fr = {
         `Votre domaine : ${n} atelier${n > 1 ? "s" : ""}, ${levels} niveau${levels > 1 ? "x" : ""} en tout`,
     },
     workshopsSheet: {
-      ready: "prêts",
-      running: "en cours",
-      idle: "à l'arrêt",
+      ready: (n: number) => (n > 1 ? "prêts" : "prêt"),
+      running: (_n: number) => "en cours",
+      idle: (_n: number) => "à l'arrêt",
       collectAll: (n: number) => (n > 1 ? `Tout récolter (${n} lots)` : "Récolter"),
       restartAll: "Tout relancer",
       whatsMissing: "Voir ce qui manque",
@@ -1312,7 +1317,7 @@ export const fr = {
     topKicker: "Saison en cours",
     topTitle: "Classement des marchands",
     closesIn: "Clôture dans",
-    myRank: "Ton rang",
+    myRank: "Votre rang",
     you: "Toi",
     notices: {
       title: "Nouvelles du comptoir",

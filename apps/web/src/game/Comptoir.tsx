@@ -67,7 +67,7 @@ function RecipeFlow({
               ? `${runningMs / 1000} s`
               : minutesLabel(running);
           return (
-            <span className="label ml-1">
+            <span className="note ml-1">
               {fr.game.batchNow(now)}
               <span className={hungry ? "text-vermilion" : "text-lagoon"}>
                 {" · "}
@@ -78,7 +78,7 @@ function RecipeFlow({
           );
         }
         return (
-          <span className={`label ml-1 ${hungry ? "text-vermilion" : ""}`}>
+          <span className={`note ml-1 ${hungry ? "text-vermilion" : ""}`}>
             {minutesLabel(nextMinutes)}
             {hungry && ` · ${fr.game.rations.slower}`}
           </span>
@@ -276,13 +276,13 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
     <Panel glow={tone.glow}>
       <div className="flex items-center gap-3">
         <div
-          className={`flex h-[72px] w-[84px] shrink-0 items-center justify-center rounded-2xl bg-night-3 ring-1 ${tone.ring}`}
+          className={`cut flex h-[72px] w-[84px] shrink-0 items-center justify-center bg-night-2 ring-1 ring-inset ${tone.ring}`}
         >
           <BuildingArt type={b.type} active={st.state === "running"} className="h-16 w-20" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-display text-base font-extrabold uppercase leading-tight">
+            <h3 className="min-w-0 break-words font-display text-base font-extrabold uppercase leading-tight [font-stretch:110%]">
               {props.names.building(b.type)}
             </h3>
             {b.upgradeCost ? (
@@ -377,10 +377,10 @@ function WorkshopsSummary(props: GameProps) {
       <div className="flex flex-wrap gap-2">
         {chips.map((c) => (
           <span
-            key={c.label}
-            className={`rounded-full px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-wide ${c.cls}`}
+            key={c.cls}
+            className={`slab px-3 py-1 font-mono text-xs font-bold uppercase tracking-wide ${c.cls}`}
           >
-            {c.n} {c.label}
+            {c.n} {c.label(c.n)}
           </span>
         ))}
       </div>

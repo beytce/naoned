@@ -31,7 +31,7 @@ export function Region(props: {
     <main className="mx-auto max-w-md space-y-5 px-4 pb-10 pt-[max(1.5rem,env(safe-area-inset-top))]">
       <header className="space-y-2">
         <Label className="text-cream-dim">{props.catalog.world.name}</Label>
-        <h1 className="font-display text-2xl font-extrabold uppercase leading-tight">
+        <h1 className="font-display text-[1.75rem] font-extrabold leading-[1.1] [font-stretch:105%]">
           {fr.region.title}
         </h1>
         <p className="text-cream-dim">{fr.region.help}</p>
@@ -41,7 +41,7 @@ export function Region(props: {
           <Panel glow={k === 0 ? "gold" : k === 1 ? "lagoon" : undefined}>
             <RegionArt
               code={r.code}
-              className="-mx-4 -mt-4 mb-3 h-28 w-[calc(100%+2rem)] max-w-none rounded-t-2xl bg-night-2"
+              className="-mx-4 -mt-4 mb-3 h-28 w-[calc(100%+2rem)] max-w-none bg-night-2"
             />
             <h2 className="font-display text-2xl font-extrabold uppercase leading-tight">
               {fr.region.jobs[r.code]?.name ?? r.name}
@@ -57,38 +57,35 @@ export function Region(props: {
               {r.startingBuildings.map((b) => (
                 <div key={b} className="flex-1 text-center">
                   <BuildingArt type={b} className="mx-auto h-14 w-20" />
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-muted">
+                  <p className="font-mono text-xs uppercase tracking-wider text-muted">
                     {props.names.building(b)}
                   </p>
                 </div>
               ))}
             </div>
             <div className="mt-3 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
-              <div className="flex items-center gap-2 rounded-xl bg-night-2 p-2.5 ring-1 ring-inset ring-gold/50">
-                <ResourceIcon code={SELLS[r.code] ?? "bread"} size={30} />
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-gold">
-                    {fr.region.sells}
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {props.names.resource(SELLS[r.code] ?? "bread")}
-                  </p>
-                </div>
+              {/* Icons above the words: three goods never squeeze their names. */}
+              <div className="cut space-y-1 bg-night-2 p-2.5">
+                <ResourceIcon code={SELLS[r.code] ?? "bread"} size={28} />
+                <p className="font-mono text-xs uppercase tracking-wider text-cream-dim">
+                  {fr.region.sells}
+                </p>
+                <p className="text-sm font-semibold">
+                  {props.names.resource(SELLS[r.code] ?? "bread")}
+                </p>
               </div>
-              <div className="flex min-w-0 items-center gap-2 rounded-xl bg-night-2 p-2.5 ring-1 ring-inset ring-line">
-                <div className="flex">
+              <div className="cut min-w-0 space-y-1 bg-night-2 p-2.5">
+                <div className="flex gap-1">
                   {(NEEDS[r.code] ?? []).map((n) => (
-                    <ResourceIcon key={n} code={n} size={26} />
+                    <ResourceIcon key={n} code={n} size={28} />
                   ))}
                 </div>
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-muted">
-                    {fr.region.needs}
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {(NEEDS[r.code] ?? []).map((n) => props.names.resource(n)).join(", ")}
-                  </p>
-                </div>
+                <p className="font-mono text-xs uppercase tracking-wider text-cream-dim">
+                  {fr.region.needs}
+                </p>
+                <p className="text-sm font-semibold">
+                  {(NEEDS[r.code] ?? []).map((n) => props.names.resource(n)).join(", ")}
+                </p>
               </div>
             </div>
             <Slab

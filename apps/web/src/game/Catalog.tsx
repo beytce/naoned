@@ -185,7 +185,7 @@ function Card(props: {
     <div className={`flex gap-3 ${props.dim ? "opacity-55" : ""}`}>
       <div className="flex w-24 shrink-0 flex-col items-center gap-2">
         {props.art}
-        <span className="text-center font-mono text-[10.5px] uppercase tracking-[0.06em] text-cream-dim">
+        <span className="text-center font-mono text-xs uppercase tracking-[0.06em] text-cream-dim">
           {props.count}
         </span>
       </div>

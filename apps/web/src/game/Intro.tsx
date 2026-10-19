@@ -166,7 +166,7 @@ export function Intro({ onDone }: { onDone: () => void }) {
         <Illustration index={i} />
         <div className="space-y-3">
           <Label className="text-cream-dim">{slide.kicker}</Label>
-          <h1 className="font-display text-3xl font-extrabold uppercase leading-tight">
+          <h1 className="font-display text-[1.75rem] font-extrabold leading-[1.1] [font-stretch:105%]">
             {slide.title}
           </h1>
           <p className="text-lg leading-snug text-cream-dim">{slide.text}</p>

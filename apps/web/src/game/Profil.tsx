@@ -49,7 +49,7 @@ function Titles({ profile }: { profile: Profile }) {
                   <span className="font-display text-xs font-extrabold uppercase leading-tight [font-stretch:100%] [overflow-wrap:anywhere]">
                     {t.name}
                   </span>
-                  <span className="mt-1 font-mono text-[10px] text-muted">
+                  <span className="mt-1 font-mono text-xs text-muted">
                     {t.from.toLocaleString("fr-FR")} d
                   </span>
                 </span>
@@ -249,7 +249,9 @@ function ProfileBody(props: GameProps) {
           )}
         </div>
         <div className="min-w-0">
-          <h1 className="truncate font-display text-3xl font-extrabold">{props.account.pseudo}</h1>
+          <h1 className="break-words font-display text-2xl font-extrabold leading-tight [font-stretch:105%]">
+            {props.account.pseudo}
+          </h1>
           <p className="label mt-2 text-cream-dim">
             {props.names.region(props.view.player.region)}
           </p>
@@ -289,7 +291,7 @@ function ProfileBody(props: GameProps) {
             }
           />
           {profile.title.next && (
-            <p className="label">{fr.game.nextTitle(profile.title.next.name)}</p>
+            <p className="note">{fr.game.nextTitle(profile.title.next.name)}</p>
           )}
           <Titles profile={profile} />
         </section>
@@ -330,7 +332,7 @@ function ProfileBody(props: GameProps) {
             ].map(([label, value]) => (
               <div key={String(label)} className="rounded-xl bg-night-3 p-3 ring-1 ring-line">
                 <Big className="text-2xl text-gold">{value}</Big>
-                <p className="mt-2 font-mono text-[10px] uppercase leading-tight tracking-wider text-muted">
+                <p className="mt-2 font-mono text-xs uppercase leading-tight tracking-wider text-muted">
                   {label}
                 </p>
               </div>
@@ -349,12 +351,12 @@ function ProfileBody(props: GameProps) {
                   <Medal earned={b.earned} size={40} />
                 </div>
                 <p
-                  className={`mt-1 text-[11px] leading-tight ${b.earned ? "text-cream" : "text-muted"}`}
+                  className={`mt-1 text-xs leading-tight ${b.earned ? "text-cream" : "text-muted"}`}
                 >
                   {b.name}
                 </p>
                 {!b.earned && (
-                  <p className="font-mono text-[10px] text-muted">
+                  <p className="font-mono text-xs text-muted">
                     {b.value}/{b.goal}
                   </p>
                 )}

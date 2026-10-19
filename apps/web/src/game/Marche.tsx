@@ -358,7 +358,7 @@ function MyOffers({ orders, props }: { orders: OrderView[]; props: GameProps }) 
             <p className={o.side === "sell" ? "text-lagoon" : "text-gold"}>
               {t.offerLine(o.side, o.remaining, props.names.resource(o.resource), d(o.price))}
             </p>
-            <p className="label">{t.expires(clock(o.expiresAt - props.now))}</p>
+            <p className="note">{t.expires(clock(o.expiresAt - props.now))}</p>
           </div>
           <Slab
             size="sm"
@@ -395,7 +395,7 @@ function MudaPanel({ props }: { props: GameProps }) {
     <section className="cut border border-gold/50 bg-gold/5 p-3">
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-display text-sm font-extrabold uppercase text-gold">{t.title}</p>
-        {next && <p className="label shrink-0">{t.next(next)}</p>}
+        {next && <p className="note shrink-0">{t.next(next)}</p>}
       </div>
       <p className="mt-1 text-xs text-cream-dim">
         {muda.arrivedAt === null ? t.first : goods.length > 0 ? t.help : t.empty}
@@ -415,11 +415,11 @@ function MudaPanel({ props }: { props: GameProps }) {
                 <span className="min-w-0 flex-1 truncate font-display text-xs font-semibold uppercase">
                   {props.names.resource(r)}
                 </span>
-                <span className="whitespace-nowrap text-[11px] text-cream-dim">
+                <span className="whitespace-nowrap text-xs text-cream-dim">
                   {t.stock(muda.stock[r] ?? 0)}
                 </span>
                 <span
-                  className={`whitespace-nowrap text-right text-[11px] ${left > 0 ? "text-lagoon" : "text-muted"}`}
+                  className={`whitespace-nowrap text-right text-xs ${left > 0 ? "text-lagoon" : "text-muted"}`}
                 >
                   {t.left(left)}
                 </span>
@@ -521,7 +521,7 @@ export function RialtoSheet(props: GameProps) {
                 type="button"
                 aria-expanded={decreesOpen}
                 onClick={() => setDecreesOpen(!decreesOpen)}
-                className={`rounded-full px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.08em] ring-1 ring-inset ${ours ? "bg-lagoon/15 text-lagoon ring-lagoon/60" : "bg-vermilion/15 text-vermilion ring-vermilion/60"}`}
+                className={`rounded-full px-2.5 py-1 font-mono text-xs uppercase tracking-[0.08em] ring-1 ring-inset ${ours ? "bg-lagoon/15 text-lagoon ring-lagoon/60" : "bg-vermilion/15 text-vermilion ring-vermilion/60"}`}
               >
                 ⚑ {m.decrees(decrees.items.length)}
               </button>

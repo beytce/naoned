@@ -143,19 +143,19 @@ export function ActionButton({
       data-coach={coach}
       disabled={disabled}
       onClick={onClick}
-      className="group flex w-[62px] shrink-0 flex-col items-center gap-1 disabled:opacity-35"
+      className="group flex w-[72px] shrink-0 flex-col items-center gap-1 disabled:opacity-35"
     >
       <span
-        className={`relative flex h-14 w-14 items-center justify-center rounded-xl ring-[1.5px] transition group-active:scale-90 ${face}`}
+        className={`relative flex h-14 w-14 items-center justify-center rounded-md ring-[1.5px] transition group-active:scale-90 ${face}`}
       >
         {icon}
         {badge !== undefined && badge !== null && badge !== false && (
-          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 font-mono text-[10px] font-bold text-ink ring-2 ring-night-2">
+          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 font-mono text-xs font-bold text-ink ring-2 ring-night-2">
             {badge}
           </span>
         )}
       </span>
-      <span className="max-w-full truncate font-mono text-[9.5px] uppercase tracking-[0.06em] text-cream-dim">
+      <span className="max-w-full whitespace-nowrap text-xs font-semibold text-cream-dim">
         {label}
       </span>
     </button>

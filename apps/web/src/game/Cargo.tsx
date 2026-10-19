@@ -123,7 +123,7 @@ export function CargoSheet({
           <span
             className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ring-2 ${inHold ? "bg-lagoon ring-lagoon" : "ring-cream-dim/60"}`}
           >
-            {inHold && <span className="text-[11px] font-black text-night">✓</span>}
+            {inHold && <span className="text-xs font-black text-night">✓</span>}
           </span>
           <ResourceIcon code={o.resource} size={26} />
           <span className="min-w-0 flex-1">
@@ -195,7 +195,7 @@ export function CargoSheet({
       >
         {s.city ? t().ready(props.names.city(s.city), d(s.value)) : t().pick}
       </Slab>
-      <p className="label text-center">{t().nextOrders(clock(nextDay - props.now))}</p>
+      <p className="note text-center">{t().nextOrders(clock(nextDay - props.now))}</p>
     </div>
   );
 }

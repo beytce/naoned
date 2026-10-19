@@ -83,7 +83,7 @@ export function PalmaresView({ data }: { data: Palmares }) {
                 key={`${w.season}-${w.week}`}
                 className={`min-w-[7.5rem] rounded-xl p-2.5 ring-1 ring-inset ${w.award ? "bg-gold/15 ring-gold/60" : "bg-night-2 ring-line"}`}
               >
-                <p className="font-mono text-[10px] uppercase tracking-wider text-muted">
+                <p className="font-mono text-xs uppercase tracking-wider text-muted">
                   {t.weekOf(w.week, w.season.replace(/^.*· /, ""))}
                 </p>
                 <p className="font-display text-lg font-extrabold">{place(w.rank)}</p>

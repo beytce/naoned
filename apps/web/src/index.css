@@ -119,7 +119,14 @@
 @layer components {
   /* Spaced uppercase labels: kickers and small captions. */
   .label {
-    @apply font-mono text-[11px] uppercase leading-snug tracking-[0.2em] text-muted;
+    @apply font-mono text-xs uppercase leading-snug tracking-[0.12em] text-muted;
+  }
+  /*
+   * A sentence or a time left, small but read: the plain face, aligned figures. Space Mono
+   * capitals (.label) stay for kickers of one to three words.
+   */
+  .note {
+    @apply font-sans text-[13px] leading-snug text-cream-dim tabular-nums;
   }
   /* Card: deep water, a thin foam line, rounded corners. */
   .cartouche {

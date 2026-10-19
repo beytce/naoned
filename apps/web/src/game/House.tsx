@@ -192,7 +192,7 @@ function Missions(props: GameProps & { onClaimed: () => void }) {
     <section className="space-y-3">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-display text-2xl font-extrabold">{m.title}</h2>
-        <span className="label">{m.renews(clock(board.endsAt - props.now))}</span>
+        <span className="note">{m.renews(clock(board.endsAt - props.now))}</span>
       </div>
       <ul className="space-y-2">
         {board.missions.map((mission) => (
@@ -201,7 +201,7 @@ function Missions(props: GameProps & { onClaimed: () => void }) {
             className="flex items-center gap-3 rounded-xl bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70"
           >
             <span
-              className={`flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full px-1.5 font-mono text-[11px] font-bold ${mission.claimed ? "bg-lagoon text-on-lagoon" : mission.done ? "bg-gold text-ink" : "bg-night-4 text-cream-dim ring-1 ring-inset ring-line"}`}
+              className={`flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full px-1.5 font-mono text-xs font-bold ${mission.claimed ? "bg-lagoon text-on-lagoon" : mission.done ? "bg-gold text-ink" : "bg-night-4 text-cream-dim ring-1 ring-inset ring-line"}`}
             >
               {mission.claimed ? "✓" : `${mission.progress}/${mission.count}`}
             </span>

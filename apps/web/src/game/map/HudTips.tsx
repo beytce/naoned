@@ -103,11 +103,11 @@ export function HudTip({
           <dl className="space-y-0.5 border-t border-line pt-2">
             {content.lines.map((l) => (
               <div key={l.label} className="flex items-baseline justify-between gap-3">
-                <dt className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-cream-dim">
+                <dt className="font-mono text-xs uppercase tracking-[0.06em] text-cream-dim">
                   {l.label}
                 </dt>
                 <dd
-                  className={`font-mono text-[11px] tabular-nums ${
+                  className={`font-mono text-xs tabular-nums ${
                     l.tone === "vermilion"
                       ? "text-vermilion"
                       : l.tone === "gold"
@@ -253,7 +253,7 @@ export function FleetDrawer({
       className="hud-drawer pointer-events-auto absolute -right-3 top-full z-20 mt-2 w-[min(15rem,70vw)] lg:-right-5"
     >
       <div className="flex items-center justify-between bg-night-2/95 pl-3 ring-1 ring-inset ring-line backdrop-blur">
-        <span className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-cream-dim">
+        <span className="font-mono text-xs uppercase tracking-[0.1em] text-cream-dim">
           {t.title}
         </span>
         <button
@@ -279,9 +279,9 @@ export function FleetDrawer({
               />
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-display text-sm font-semibold">{l.name}</span>
-                <span className="block truncate text-[11px] text-cream-dim">{l.status}</span>
+                <span className="block truncate text-xs text-cream-dim">{l.status}</span>
               </span>
-              <span className="shrink-0 font-mono text-[10.5px] text-cream-dim">
+              <span className="shrink-0 font-mono text-xs text-cream-dim">
                 {t.capacity(l.capacity)}
               </span>
             </button>

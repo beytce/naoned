@@ -170,7 +170,7 @@ export function Admin() {
             <div key={r.day}>
               <p className="label">J+{r.day}</p>
               <Big className="mt-1 text-lg">{pct(r.returned, r.eligible)}</Big>
-              <p className="font-mono text-[10px] text-muted">
+              <p className="font-mono text-xs text-muted">
                 {r.returned}/{r.eligible}
               </p>
             </div>

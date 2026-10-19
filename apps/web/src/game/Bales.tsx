@@ -345,7 +345,7 @@ function Card(props: {
           }}
         >
           <span
-            className="w-full rounded-md py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-night"
+            className="w-full rounded-md py-0.5 font-mono text-xs font-bold uppercase tracking-wider text-night"
             style={{ background: look.frame }}
           >
             {label}
@@ -355,7 +355,7 @@ function Card(props: {
             {card.rarity === "legendary" && turned && <Sparks />}
           </span>
           <span className="w-full">
-            <span className="block truncate font-display text-[11px] font-extrabold uppercase leading-tight">
+            <span className="block truncate font-display text-xs font-extrabold uppercase leading-tight">
               {props.name}
             </span>
             <span
@@ -458,7 +458,7 @@ function Odds({ bales, props }: { bales: BalesView; props: GameProps }) {
                   </span>
                 ))}
               </div>
-              <p className="mt-1 font-mono text-[10px] text-muted">
+              <p className="mt-1 font-mono text-xs text-muted">
                 {o.quantities
                   .filter((q) => q.chanceBps > 0)
                   .map((q) => `${t.units(q.quantity)} ${pct(q.chanceBps)}`)

@@ -667,7 +667,7 @@ export function terraMarkers(
           <button
             type="button"
             onClick={() => select({ kind: "terra", cell: next?.cell ?? f.aim })}
-            className={`marker-hit flex h-6 items-center justify-center gap-1 whitespace-nowrap rounded-full px-2 font-mono text-[11px] font-bold shadow-md shadow-black/40 ${f.mine ? "bg-gold text-ink" : "bg-vermilion text-cream"}`}
+            className={`marker-hit flex h-6 items-center justify-center gap-1 whitespace-nowrap rounded-full px-2 font-mono text-xs font-bold shadow-md shadow-black/40 ${f.mine ? "bg-gold text-ink" : "bg-vermilion text-cream"}`}
           >
             ⚔ {f.troops}
             {next && <span className="font-normal opacity-80">· {wait(next.at, props.now)}</span>}
@@ -698,7 +698,7 @@ function TerraCity({
       >
         <CityIcon code={code} className="h-6 w-6" />
       </span>
-      <span className="pointer-events-none absolute left-1/2 top-[calc(100%-8px)] -translate-x-1/2 whitespace-nowrap font-display text-[10px] font-extrabold uppercase tracking-wider text-cream/85 [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]">
+      <span className="pointer-events-none absolute left-1/2 top-[calc(100%-8px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-cream/85 [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]">
         {name}
       </span>
     </button>
@@ -783,13 +783,13 @@ function WarCounter({
         <Crest crest={crest} size={mine ? 26 : small ? 12 : 20} />
       </span>
       {mine ? (
-        <span className="pointer-events-none absolute left-1/2 top-[calc(100%-2px)] -translate-x-1/2 whitespace-nowrap font-display text-[10px] font-extrabold uppercase tracking-wider text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+        <span className="pointer-events-none absolute left-1/2 top-[calc(100%-2px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
           {name}
           {troops !== null && <span className="tabular-nums text-cream"> · ⚔ {troops}</span>}
         </span>
       ) : (
         troops !== null && (
-          <span className="pointer-events-none absolute left-1/2 top-[calc(100%-3px)] -translate-x-1/2 whitespace-nowrap font-display text-[10px] font-extrabold tabular-nums text-cream [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]">
+          <span className="pointer-events-none absolute left-1/2 top-[calc(100%-3px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold tabular-nums text-cream [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]">
             {troops}
           </span>
         )
@@ -815,7 +815,7 @@ export function TerraHud({ v, now }: { v: TerraView; now: number }) {
             </span>
             {me.troops < me.cap && me.recruit.perHour > 0 && (
               <span
-                className={`font-mono text-[10px] font-bold ${v.open ? "text-lagoon" : "text-cream-dim"}`}
+                className={`font-mono text-xs font-bold ${v.open ? "text-lagoon" : "text-cream-dim"}`}
               >
                 {v.open
                   ? t().perHour(me.recruit.perHour)
@@ -833,7 +833,7 @@ export function TerraHud({ v, now }: { v: TerraView; now: number }) {
           </span>
         </>
       )}
-      <span className="flex flex-col items-end font-mono text-[10px] uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+      <span className="flex flex-col items-end font-mono text-xs uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
         {me?.eliminatedAt != null && <span className="text-vermilion">{t().eliminated}</span>}
         {!v.closed && v.placementEndsAt !== null && now < v.placementEndsAt && (
           <span className="text-gold">{t().placing(clock(v.placementEndsAt - now))}</span>
@@ -879,7 +879,7 @@ export function TerraPanel({
           <span className="rounded-full bg-night/90 px-4 py-2 font-display text-[13px] font-extrabold uppercase tracking-wide text-cream ring-1 ring-line shadow-[0_6px_20px_rgb(0_0_0/0.45)]">
             {me ? t().out.eliminated : t().out.late}
           </span>
-          <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+          <span className="font-mono text-xs uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
             {t().out.next(clock(v.closesAt - now))}
           </span>
         </div>
@@ -888,10 +888,10 @@ export function TerraPanel({
     if (me) return <Returns v={v} />;
     return (
       <div className="pointer-events-none absolute inset-x-0 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 flex flex-col items-center gap-1 lg:bottom-28">
-        <span className="whitespace-nowrap rounded-full bg-gold px-4 py-2 font-display text-[13px] font-extrabold uppercase tracking-wide text-ink shadow-[0_6px_20px_rgb(0_0_0/0.45)]">
+        <span className="slab whitespace-nowrap bg-gold px-4 py-2 font-display text-[13px] font-extrabold uppercase tracking-wide text-ink shadow-[0_6px_20px_rgb(0_0_0/0.45)]">
           {t().place.invite}
         </span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+        <span className="note [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
           {t().place.hint}
           {v.placementEndsAt !== null && ` · ${t().place.until(clock(v.placementEndsAt - now))}`}
         </span>
@@ -1132,7 +1132,7 @@ export function TerraPanel({
               className="terra-share w-full accent-gold"
             />
             <p
-              className={`text-center font-mono text-[11px] ${cells === 0 ? "text-vermilion" : "text-cream"}`}
+              className={`text-center font-mono text-xs ${cells === 0 ? "text-vermilion" : "text-cream"}`}
             >
               {cells === 0
                 ? me.troops >= (cost ?? 0)
@@ -1141,7 +1141,7 @@ export function TerraPanel({
                 : t().target.plan(troops, cells, cells * (cost ?? 0), troops - cells * (cost ?? 0))}
             </p>
             {cells > 0 && (
-              <p className="text-center font-mono text-[11px] text-cream-dim">
+              <p className="text-center font-mono text-xs text-cream-dim">
                 {t().target.pace(
                   Math.ceil(
                     (cells * (holder < 0 ? v.rules.neutralMinutes : v.rules.cellMinutes)) / 60,
@@ -1152,13 +1152,13 @@ export function TerraPanel({
             )}
             {/* Against a merchant only, and when it changes something: what stays home. */}
             {cells > 0 && merchant && density(me.troops - troops) < density(me.troops) && (
-              <p className="text-center font-mono text-[11px] text-cream-dim">
+              <p className="text-center font-mono text-xs text-cream-dim">
                 {t().target.defense(density(me.troops - troops), density(me.troops))}
               </p>
             )}
           </div>
         ) : merchant && ally ? (
-          <p className="text-center font-mono text-[11px] text-cream-dim">
+          <p className="text-center font-mono text-xs text-cream-dim">
             {t().holder.sendLine(gift, me.giftsLeft)}
           </p>
         ) : undefined

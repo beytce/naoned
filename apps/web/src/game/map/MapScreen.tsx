@@ -633,7 +633,7 @@ export function MapScreen(
       />
       {panel}
       {terra && absence.replaying && (
-        <span className="pointer-events-none absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+7.5rem)] z-10 -translate-x-1/2 animate-fade whitespace-nowrap rounded-full bg-night/80 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line">
+        <span className="pointer-events-none absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+7.5rem)] z-10 -translate-x-1/2 animate-fade whitespace-nowrap rounded-full bg-night/80 px-3 py-1 font-mono text-xs uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line">
           {fr.game.terra.away}
         </span>
       )}
@@ -910,7 +910,7 @@ function CartPanel({
   const title = (
     <>
       {vehicleName(vehicle.type)}{" "}
-      <span className="font-mono text-[11px] font-normal normal-case tracking-normal text-cream-dim">
+      <span className="font-mono text-xs font-normal normal-case tracking-normal text-cream-dim">
         {units}/{capacity}
       </span>
     </>
@@ -938,7 +938,7 @@ function CartPanel({
         title={
           <>
             {vehicleName(vehicle.type)}{" "}
-            <span className="font-mono text-[11px] font-normal normal-case tracking-normal text-cream-dim">
+            <span className="font-mono text-xs font-normal normal-case tracking-normal text-cream-dim">
               {trip.loaded} {props.names.resource(trip.resource).toLowerCase()}
             </span>
           </>
@@ -951,7 +951,7 @@ function CartPanel({
         }
         extra={
           rush ? (
-            <p className="text-center font-mono text-[11px] text-gold">
+            <p className="text-center font-mono text-xs text-gold">
               {fr.game.house.spend.rushLine(out, rush.cost)}
             </p>
           ) : undefined
