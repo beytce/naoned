@@ -306,7 +306,7 @@ export function Coach(props: CoachProps) {
         </>
       )}
       <div
-        className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-[calc(1rem+env(safe-area-inset-bottom))] lg:bottom-8"}`}
+        className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-[calc(1rem+env(safe-area-inset-bottom))] lg:bottom-28"}`}
       >
         <div className="cut bg-info p-0.5 shadow-xl shadow-black/40" data-coach-bubble>
           <div className="cut bg-night-2 px-3.5 pb-2.5 pt-3">
