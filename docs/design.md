@@ -162,3 +162,8 @@ Le mode qui remplace la Campagne depuis le 18 octobre 2026 (`docs/plan-terraferm
 - **Charrette choisie** (`CartPanel`) : bord vert d'eau et croix en onglet ; nom, cale « 12/40 » et sa jauge, état (au comptoir, chargée pour…). Les villes qu'elle peut servir s'éclairent et leur route se dore, les autres s'estompent. Toucher une ville éclairée ouvre ses cargaisons ; toucher la ville de la cale prépare le départ.
 - **Cargaisons** (`CargoSheet`) : feuille avec onglets Récompense, Distance, Ville ; une ligne par commande (pastille à cocher, marchandise, ville et durée, récompense en or), grisée avec sa raison quand elle ne va pas (autre ville, trop lourd, stock) ; la cale en bas avec sa jauge et ses commandes cochées ; « Prêt pour Vicence · 63 d ».
 - **Départ** (`DeparturePanel`) : la route en pointillés vert d'eau jusqu'à la ville, « Départ vers Padoue · 10 s » et sa barre, les escortes en puces avec leur risque (choisir relance le compte), ✓ Partir et ✕ Annuler ; à zéro, la charrette part d'elle-même. Elle reste choisie : on la voit quitter le comptoir.
+
+## Bon retour : le rapport de chaque visite
+
+À chaque nouvelle session (après 30 minutes d'absence), une feuille « Bon retour au comptoir » dit ce qui s'est passé, en deux cartes : **Commerce** (le gagné en grand, puis une ligne par source et les livraisons arrivées ; « Rien de vendu » sinon) et **Terraferme** (la Gloire et le rang en tête ; les cases prises en vert d'eau, perdues en vermillon, les fronts rentrés et ce qu'ils ont coûté, les troupes « 40 / 60 · +13/h sur 7 cases », ou l'élimination). Le bouton du pied récolte et relance les ateliers. Les cases viennent du dernier changement de main de chaque case (`taken`), les fronts de leur compte (`returns`).
+

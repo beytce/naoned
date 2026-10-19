@@ -555,6 +555,20 @@ export interface Welcome {
   slept: boolean;
   /** The road while away: deliveries arrived. */
   road?: { arrived: number };
+  /** The Terraferma while away, and where the merchant stands now (null: not on the map). */
+  terra?: {
+    gained: number;
+    lost: number;
+    fronts: number;
+    spent: number;
+    cells: number;
+    troops: number;
+    cap: number;
+    perHour: number;
+    glory: number;
+    rank: number;
+    eliminated: boolean;
+  } | null;
 }
 
 export interface GameResponse {

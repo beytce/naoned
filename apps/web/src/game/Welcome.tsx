@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { fr } from "../i18n.js";
 import { Big, Label, Sheet, Slab } from "../ui.js";
 import type { GameProps } from "./Game.js";
@@ -6,7 +7,22 @@ import type { Welcome as WelcomeData } from "./types.js";
 
 function hoursAway(ms: number): string {
   const h = Math.round(ms / 3_600_000);
+  if (h < 1) return `${Math.max(1, Math.round(ms / 60_000))} min`;
   return h >= 48 ? `${Math.round(h / 24)} jours` : `${h} h`;
+}
+
+/** One line of the report: a mark, what happened, in its colour. */
+function Line({
+  mark,
+  tone = "text-cream",
+  children,
+}: { mark: string; tone?: string; children: ReactNode }) {
+  return (
+    <li className="flex items-center gap-2.5 rounded-lg bg-night-2/70 px-3 py-2 text-sm">
+      <span className="w-5 text-center text-base leading-none">{mark}</span>
+      <span className={tone}>{children}</span>
+    </li>
+  );
 }
 
 /** "While you were away": shown once when the player comes back after a while. */
@@ -24,24 +40,68 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
           <h3 className="mt-1 font-display text-2xl font-extrabold uppercase">{t.title}</h3>
         </div>
         {data.slept && <p className="text-sm text-lagoon">{t.slept}</p>}
-        <div className="rounded-xl bg-night-3 p-3 ring-1 ring-inset ring-line">
-          <Label>{t.earned}</Label>
-          <Big className="mt-1 text-2xl text-lagoon">+{d(total)}</Big>
-        </div>
-        {income.length > 0 && (
-          <ul className="space-y-1 text-sm">
-            {income.map(([reason, v]) => (
-              <li key={reason} className="flex justify-between">
-                <span className="text-cream-dim">{t.sources[reason] ?? reason}</span>
-                <span className="font-semibold">+{d(v)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-        {data.road && data.road.arrived > 0 && (
-          <ul className="space-y-1 text-sm">
-            <li>· {t.road.arrived(data.road.arrived)}</li>
-          </ul>
+        {/* The commerce: what the counting house earned, by source. */}
+        <section className="space-y-2 rounded-xl bg-night-3 p-3 ring-1 ring-inset ring-line">
+          <div className="flex items-baseline justify-between">
+            <Label>{t.commerce}</Label>
+            <Big className="text-2xl text-lagoon">+{d(total)}</Big>
+          </div>
+          {income.length > 0 || (data.road && data.road.arrived > 0) ? (
+            <ul className="space-y-1.5">
+              {income.map(([reason, v]) => (
+                <Line key={reason} mark="◎" tone="text-cream">
+                  <span className="font-semibold text-gold">+{d(v)}</span>{" "}
+                  {t.sources[reason] ?? reason}
+                </Line>
+              ))}
+              {data.road && data.road.arrived > 0 && (
+                <Line mark="➜">{t.road.arrived(data.road.arrived)}</Line>
+              )}
+            </ul>
+          ) : (
+            <p className="text-sm text-cream-dim">{t.nothing}</p>
+          )}
+        </section>
+        {/* The Terraferma: the land taken and lost, the fronts come home, where it stands. */}
+        {data.terra && (
+          <section className="space-y-2 rounded-xl bg-night-3 p-3 ring-1 ring-inset ring-line">
+            <div className="flex items-baseline justify-between">
+              <Label>{t.terra.title}</Label>
+              <span className="font-display text-sm font-extrabold text-gold">
+                {t.terra.glory(data.terra.glory, data.terra.rank)}
+              </span>
+            </div>
+            <ul className="space-y-1.5">
+              {data.terra.eliminated && (
+                <Line mark="✕" tone="text-vermilion">
+                  {t.terra.eliminated}
+                </Line>
+              )}
+              {data.terra.gained > 0 && (
+                <Line mark="▲" tone="text-lagoon">
+                  {t.terra.gained(data.terra.gained)}
+                </Line>
+              )}
+              {data.terra.lost > 0 && (
+                <Line mark="▼" tone="text-vermilion">
+                  {t.terra.lost(data.terra.lost)}
+                </Line>
+              )}
+              {data.terra.fronts > 0 && (
+                <Line mark="⚑">{t.terra.fronts(data.terra.fronts, data.terra.spent)}</Line>
+              )}
+              {!data.terra.eliminated && (
+                <Line mark="⚔">
+                  {t.terra.troops(
+                    data.terra.troops,
+                    data.terra.cap,
+                    data.terra.perHour,
+                    data.terra.cells,
+                  )}
+                </Line>
+              )}
+            </ul>
+          </section>
         )}
         {notices.length > 0 && (
           <ul className="space-y-1 text-sm text-cream-dim">

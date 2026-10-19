@@ -1156,6 +1156,20 @@ export const fr = {
       title: "Bon retour au comptoir",
       slept: "Votre comptoir s'est mis en sommeil : vos ouvriers n'ont pas mangé ni connu la faim.",
       earned: "Gagné",
+      commerce: "Commerce",
+      nothing: "Rien de vendu depuis votre dernière visite.",
+      terra: {
+        title: "Terraferme",
+        glory: (glory: number, rank: number) =>
+          `${glory} Gloire · ${rank}${rank === 1 ? "er" : "e"}`,
+        gained: (n: number) => `${n} case${n > 1 ? "s" : ""} prise${n > 1 ? "s" : ""}`,
+        lost: (n: number) => `${n} case${n > 1 ? "s" : ""} perdue${n > 1 ? "s" : ""}`,
+        fronts: (n: number, spent: number) =>
+          `${n} front${n > 1 ? "s" : ""} rentré${n > 1 ? "s" : ""}${spent > 0 ? ` (−${spent} troupes dépensées)` : ""}`,
+        troops: (troops: number, cap: number, perHour: number, cells: number) =>
+          `${troops} / ${cap} troupes · +${perHour}/h sur ${cells} case${cells > 1 ? "s" : ""}`,
+        eliminated: "Vous avez perdu toutes vos terres : revenez lundi pour la prochaine partie.",
+      },
       sources: {
         city_sale: "Ventes aux villes",
         trade: "Ventes au Rialto",
