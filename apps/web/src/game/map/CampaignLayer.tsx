@@ -190,7 +190,7 @@ export function CampaignHud({ f, now }: { f: FamiliesView; now: number }) {
           </span>
         ))}
       </div>
-      <span className="flex flex-col items-end font-mono text-[10px] uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+      <span className="flex flex-col items-end font-mono text-xs uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
         <span>{f.closed ? t().closed : t().weekShort(clock(f.weekEndsAt - now))}</span>
         {!f.open && !f.closed && (
           <span className="text-lagoon">
@@ -240,7 +240,7 @@ export function CampaignPanel({
         <button
           type="button"
           onClick={() => props.setSheet("fam:howto")}
-          className="pointer-events-auto font-mono text-[10px] uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
+          className="pointer-events-auto font-mono text-xs uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
         >
           {f.opensAt > now ? t().opensIn(clock(f.opensAt - now)) : c().howTo}
         </button>
@@ -350,7 +350,7 @@ export function CampaignPanel({
             <ActionButton
               icon={Icon.bandits()}
               label={ours ? c().reinforce : c().attack}
-              tone={ours ? "lagoon" : "gold"}
+              tone={ours ? "plain" : "gold"}
               coach="panel-march"
               onClick={() => props.setSheet(`land:${land.code}`)}
             />

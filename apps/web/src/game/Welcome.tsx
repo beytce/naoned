@@ -41,7 +41,7 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
         </div>
         {data.slept && <p className="text-sm text-lagoon">{t.slept}</p>}
         {/* The commerce: what the counting house earned, by source. */}
-        <section className="space-y-2 rounded-xl bg-night-3 p-3 ring-1 ring-inset ring-line">
+        <section className="space-y-2 cut bg-night-3 p-3 ring-1 ring-inset ring-line">
           <div className="flex items-baseline justify-between">
             <Label>{t.commerce}</Label>
             <Big className="text-2xl text-lagoon">+{d(total)}</Big>
@@ -64,7 +64,7 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
         </section>
         {/* The Terraferma: the land taken and lost, the fronts come home, where it stands. */}
         {data.terra && (
-          <section className="space-y-2 rounded-xl bg-night-3 p-3 ring-1 ring-inset ring-line">
+          <section className="space-y-2 cut bg-night-3 p-3 ring-1 ring-inset ring-line">
             <div className="flex items-baseline justify-between">
               <Label>{t.terra.title}</Label>
               <span className="font-display text-sm font-extrabold text-gold">

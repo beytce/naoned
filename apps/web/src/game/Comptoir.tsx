@@ -12,6 +12,7 @@ import { MasteryTile } from "./Mastery.js";
 import { d, duration, minutesLabel } from "./format.js";
 import { store } from "./store.js";
 import type { BuildingView, Cost, PlayerView, Recipe } from "./types.js";
+import { unlocksOf } from "./unlocks.js";
 import { have, outputQty, readyOf, recipeOf, workshopState } from "./workshops.js";
 
 export { have };
@@ -66,7 +67,7 @@ function RecipeFlow({
               ? `${runningMs / 1000} s`
               : minutesLabel(running);
           return (
-            <span className="label ml-1">
+            <span className="note ml-1">
               {fr.game.batchNow(now)}
               <span className={hungry ? "text-vermilion" : "text-lagoon"}>
                 {" · "}
@@ -77,7 +78,7 @@ function RecipeFlow({
           );
         }
         return (
-          <span className={`label ml-1 ${hungry ? "text-vermilion" : ""}`}>
+          <span className={`note ml-1 ${hungry ? "text-vermilion" : ""}`}>
             {minutesLabel(nextMinutes)}
             {hungry && ` · ${fr.game.rations.slower}`}
           </span>
@@ -118,7 +119,7 @@ function FirstSteps(props: GameProps & { inSheet?: boolean }) {
   return (
     <Panel>
       <div className="flex items-center justify-between">
-        <Label className="text-lagoon">{fr.game.firstSteps.title}</Label>
+        <Label className="text-cream-dim">{fr.game.firstSteps.title}</Label>
         <span className="label">
           {FIRST_STEPS.filter((s) => done.has(s)).length}/{FIRST_STEPS.length}
         </span>
@@ -173,7 +174,7 @@ export function Rations(props: GameProps) {
   const tone = hungry ? "text-vermilion" : days < 1 ? "text-gold" : "text-cream-dim";
   return (
     <div
-      className={`flex items-start gap-3 ${hungry ? "rounded-2xl bg-vermilion/15 p-3 ring-1 ring-vermilion/60" : ""}`}
+      className={`flex items-start gap-3 ${hungry ? "cut bg-vermilion/15 p-3 ring-1 ring-vermilion/60" : ""}`}
     >
       <ResourceIcon code={rations.resource} size={30} />
       <div className="text-sm">
@@ -194,7 +195,7 @@ export function Rations(props: GameProps) {
         )}
         <Slab
           size="sm"
-          tone={hungry ? "vermilion" : short ? "gold" : "lagoon"}
+          tone={hungry ? "vermilion" : short ? "gold" : "ghost"}
           className="mt-2"
           onClick={() => props.setSheet(buyRationsSheet(props.view))}
         >
@@ -229,12 +230,20 @@ export function StockStrip(props: GameProps) {
   );
 }
 
-/** The tone of a workshop's state: gold to collect, lagoon at work, vermilion when it lacks. */
+/**
+ * The tone of a workshop's state: gold to collect, lagoon at work, quiet when it waits for goods
+ * (a normal state of a chain, not an alarm: a hollow dot, not a red one).
+ */
 const STATE_TONE = {
   ready: { glow: "gold", dot: "bg-gold", text: "text-gold", ring: "ring-gold/60" },
   running: { glow: "lagoon", dot: "bg-lagoon", text: "text-lagoon", ring: "ring-lagoon/50" },
   idle: { glow: undefined, dot: "bg-cream-dim", text: "text-cream-dim", ring: "ring-line" },
-  blocked: { glow: undefined, dot: "bg-vermilion", text: "text-vermilion", ring: "ring-line" },
+  blocked: {
+    glow: undefined,
+    dot: "border-[1.5px] border-cream-dim",
+    text: "text-cream-dim",
+    ring: "ring-line",
+  },
   still: { glow: undefined, dot: "bg-line", text: "text-muted", ring: "ring-line" },
 } as const;
 
@@ -250,12 +259,6 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
   const ready = st.ready;
   const tone = STATE_TONE[st.state];
   const t = fr.game.workshop;
-  // Fresh produce: the latest batch done, collected soon, yields a little more.
-  const fresh = props.view.fresh;
-  const freshLeft =
-    job && ready > 0 && fresh.minutes > 0
-      ? job.startedAt + ready * job.batchMs + fresh.minutes * 60_000 - props.now
-      : 0;
   const status =
     st.state === "ready"
       ? t.ready(st.quantity ?? 0, props.names.resource(st.resource ?? ""))
@@ -273,13 +276,13 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
     <Panel glow={tone.glow}>
       <div className="flex items-center gap-3">
         <div
-          className={`flex h-[72px] w-[84px] shrink-0 items-center justify-center rounded-2xl bg-night-3 ring-1 ${tone.ring}`}
+          className={`cut flex h-[72px] w-[84px] shrink-0 items-center justify-center bg-night-2 ring-1 ring-inset ${tone.ring}`}
         >
           <BuildingArt type={b.type} active={st.state === "running"} className="h-16 w-20" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-display text-base font-extrabold uppercase leading-tight">
+            <h3 className="min-w-0 break-words font-display text-base font-extrabold uppercase leading-tight [font-stretch:110%]">
               {props.names.building(b.type)}
             </h3>
             {b.upgradeCost ? (
@@ -288,12 +291,12 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
                 data-coach={`upgrade-${b.id}`}
                 aria-label={fr.game.upgrade}
                 onClick={() => props.setSheet(`upgrade:${b.id}`)}
-                className="flex shrink-0 items-center gap-1 rounded-full bg-gold px-2 py-0.5 font-mono text-[11px] font-bold text-ink transition active:scale-95"
+                className="slab flex shrink-0 items-center gap-1 whitespace-nowrap bg-night-4 px-2.5 py-0.5 font-mono text-xs font-bold text-cream transition active:scale-95"
               >
                 {fr.game.level(b.level)} <span aria-hidden="true">↑</span>
               </button>
             ) : (
-              <Badge tone={b.level >= 3 ? "lagoon" : "gold"}>{fr.game.level(b.level)}</Badge>
+              <Badge>{fr.game.level(b.level)}</Badge>
             )}
           </div>
           <p className={`mt-1.5 flex items-center gap-1.5 text-xs font-semibold ${tone.text}`}>
@@ -304,7 +307,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
       </div>
 
       {recipe && (
-        <div className="mt-3 rounded-xl bg-night-3/60 px-3 py-2">
+        <div className="mt-3 cut bg-night-3/60 px-3 py-2">
           <RecipeFlow
             recipe={recipe}
             level={b.level}
@@ -322,15 +325,11 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
           />
         </div>
       )}
-      {freshLeft > 0 && (
-        <p className="label mt-2 text-lagoon">
-          {fr.game.fresh(fresh.bonusBps / 100, clock(freshLeft))}
-        </p>
-      )}
 
       {st.state === "ready" && (
         <Slab
           className="mt-3 w-full"
+          tone="ghost"
           coach={`harvest-${b.id}`}
           disabled={props.busy}
           onClick={() => props.act({ type: "collect", buildingId: b.id })}
@@ -341,7 +340,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
       {st.state === "idle" && (
         <Slab
           className="mt-3 w-full"
-          tone="lagoon"
+          tone="ghost"
           coach={`produce-${b.id}`}
           onClick={() => props.setSheet(`produce:${b.id}`)}
         >
@@ -378,17 +377,16 @@ function WorkshopsSummary(props: GameProps) {
       <div className="flex flex-wrap gap-2">
         {chips.map((c) => (
           <span
-            key={c.label}
-            className={`rounded-full px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-wide ${c.cls}`}
+            key={c.cls}
+            className={`slab px-3 py-1 font-mono text-xs font-bold uppercase tracking-wide ${c.cls}`}
           >
-            {c.n} {c.label}
+            {c.n} {c.label(c.n)}
           </span>
         ))}
       </div>
       {(ready > 0 || count("idle") > 0) && (
         <Slab
           className="w-full"
-          tone={ready > 0 ? "gold" : "lagoon"}
           disabled={props.busy}
           onClick={() => props.act({ type: "collectAndRestart" })}
         >
@@ -493,7 +491,7 @@ function WorkshopSheet({
           </h3>
           {status && (
             <p
-              className={`text-sm ${st.state === "ready" ? "text-gold" : st.state === "blocked" ? "text-vermilion" : "text-lagoon"}`}
+              className={`text-sm ${st.state === "ready" ? "text-gold" : st.state === "blocked" ? "text-cream-dim" : "text-lagoon"}`}
             >
               {status}
             </p>
@@ -529,14 +527,14 @@ function WorkshopSheet({
                 type="button"
                 aria-pressed={q === o.n}
                 onClick={() => setQty(o.n)}
-                className={`rounded-xl border px-2 py-2 text-xs font-semibold ${q === o.n ? "border-lagoon bg-lagoon/15 text-lagoon" : "border-line"}`}
+                className={`cut border px-2 py-2 text-xs font-semibold ${q === o.n ? "border-info bg-info/15 text-info" : "border-line"}`}
               >
                 {o.label}
                 <span className="block font-display text-sm tabular-nums">{o.n}</span>
               </button>
             ))}
           </div>
-          <Qty value={q} max={b.canStart} onChange={setQty} />
+          <Qty value={q} max={b.canStart} onChange={setQty} maxButton={false} />
           <p className="text-sm text-cream-dim">
             {b.fastSeconds !== null && q === 1
               ? fr.game.fastBatch(b.fastSeconds)
@@ -544,7 +542,6 @@ function WorkshopSheet({
           </p>
           <Slab
             size="lg"
-            tone="lagoon"
             className="w-full"
             coach="sheet-produce"
             disabled={props.busy}
@@ -558,7 +555,7 @@ function WorkshopSheet({
         </div>
       )}
       {missing && recipe && (
-        <div className="space-y-2 rounded-2xl bg-night-3 p-3">
+        <div className="space-y-2 cut bg-night-3 p-3">
           <p className="flex items-center gap-2 text-sm">
             <ResourceIcon code={missing} size={24} />
             {t.missing(
@@ -746,11 +743,13 @@ export function CounterSheets(props: GameProps) {
 
 /** The day's notebook: first steps (while the guide is paused), the day's tasks, the missions. */
 export function Carnet(props: GameProps) {
+  // The day's tasks and the ledger wait until the market is learned (first session).
+  const house = unlocksOf(props.view.tutorial).house;
   return (
     <>
       <FirstSteps {...props} inSheet />
-      <Daily {...props} />
-      <Ledger {...props} />
+      {house && <Daily {...props} />}
+      {house && <Ledger {...props} />}
     </>
   );
 }

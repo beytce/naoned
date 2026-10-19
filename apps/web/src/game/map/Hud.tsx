@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { BaleArt } from "../../art/bale.js";
 import { Crest, type CrestData } from "../../art/crest.js";
 import { Coin } from "../../art/icons.js";
@@ -45,7 +45,7 @@ function Orb({
     >
       {children}
       {badge !== undefined && badge !== false && badge !== 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-vermilion px-1 font-mono text-[10px] font-bold text-cream ring-2 ring-night">
+        <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-vermilion px-1 font-mono text-xs font-bold text-cream ring-2 ring-night">
           {badge === true ? "" : badge > 9 ? "9+" : badge}
         </span>
       )}
@@ -109,6 +109,7 @@ export function MapHud({
   doorLabel,
   familyCalls,
   workshopsReady,
+  locks = {},
   right,
   onProfile,
   onNotices,
@@ -160,6 +161,8 @@ export function MapHud({
   familyCalls: boolean;
   /** Batches waiting at the workshops (a dot on their door). */
   workshopsReady: boolean;
+  /** Doors still closed in the first session, with what opens them. */
+  locks?: { ranking?: string; layer?: string };
   /** Under the purse on the right, in place of the bread and the carts (the families' glory on the campaign). */
   right?: ReactNode;
   onProfile: () => void;
@@ -214,7 +217,7 @@ export function MapHud({
               type="button"
               aria-label={fr.game.tabs.top}
               onClick={onRanking}
-              className="block text-left font-mono text-[10.5px] uppercase tracking-[0.1em] text-cream-dim"
+              className="block text-left font-mono text-xs uppercase tracking-[0.1em] text-cream-dim"
             >
               {level !== null && <>{fr.game.merchantLevel.short(level)} · </>}
               {title} · <span className="text-gold">#{rank ?? "—"}</span>
@@ -273,7 +276,7 @@ export function MapHud({
           <HudCounter
             label={fr.game.rations.hud(bread.stock, bread.perDay)}
             side={
-              <span className="font-mono text-[10.5px] text-cream-dim">
+              <span className="font-mono text-xs text-cream-dim">
                 {fr.game.rations.perDay(bread.perDay)}
               </span>
             }
@@ -329,29 +332,29 @@ export function MapHud({
         {right}
       </div>
       {bottom && (
-        <nav className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex justify-center gap-7 lg:bottom-6">
-          {layer === "trade" && (
-            <Door
-              label={m.buttons.workshops}
-              onClick={onWorkshops}
-              dot={workshopsReady}
-              coach="door-workshops"
-            >
-              {Icon.workshops()}
-            </Door>
-          )}
-          <Door label={m.buttons.ranking} onClick={onRanking}>
+        <nav className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex justify-center gap-4 lg:bottom-6">
+          {/* The same four doors at the same places on every layer. */}
+          <Door
+            label={m.buttons.workshops}
+            onClick={onWorkshops}
+            dot={workshopsReady}
+            coach="door-workshops"
+          >
+            {Icon.workshops()}
+          </Door>
+          <Door label={m.buttons.ranking} onClick={onRanking} locked={locks.ranking}>
             {Icon.trophy()}
           </Door>
           {(hasFamily || layer !== "trade") && (
             <Door
               label={layer !== "trade" ? m.campaign.toTrade : (doorLabel ?? m.campaign.toCampaign)}
               onClick={onFamily}
-              dot={layer === "trade" && familyCalls}
+              dot={layer === "trade" && familyCalls && !locks.layer}
               active={layer !== "trade"}
+              locked={layer === "trade" ? locks.layer : undefined}
               coach="door-layer"
             >
-              {layer !== "trade" ? Icon.rialto() : Icon.family()}
+              {layer !== "trade" ? Icon.home() : Icon.family()}
             </Door>
           )}
           <Door label={m.buttons.help} onClick={onHelp}>
@@ -369,6 +372,7 @@ function Door({
   onClick,
   dot,
   active,
+  locked,
   coach,
 }: {
   children: ReactNode;
@@ -378,24 +382,44 @@ function Door({
   dot?: boolean;
   /** The door leads back (its layer is the one shown). */
   active?: boolean;
+  /** Still closed: what opens it, said for a moment when it is touched. */
+  locked?: string;
   coach?: string;
 }) {
+  const [why, setWhy] = useState(false);
+  useEffect(() => {
+    if (!why) return;
+    const t = setTimeout(() => setWhy(false), 2600);
+    return () => clearTimeout(t);
+  }, [why]);
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => (locked ? setWhy(true) : onClick())}
       data-coach={coach}
-      className={`pointer-events-auto flex flex-col items-center gap-1 transition active:scale-90 ${active ? "text-gold" : "text-cream-dim"}`}
+      aria-label={locked ? `${label} : ${locked}` : label}
+      aria-disabled={locked ? true : undefined}
+      className={`pointer-events-auto relative flex w-16 flex-col items-center gap-1 transition active:scale-90 ${active ? "text-gold" : locked ? "text-muted" : "text-cream-dim"}`}
     >
+      {why && locked && (
+        <span className="absolute bottom-full mb-2 w-44 animate-fade bg-night-4 px-3 py-2 text-center text-xs leading-snug text-cream shadow-lg shadow-black/40 slab">
+          {locked}
+        </span>
+      )}
       <span
-        className={`hud-orb relative flex h-12 w-12 items-center justify-center rounded-full ${active ? "ring-2 ring-gold/70" : ""}`}
+        className={`hud-orb relative flex h-12 w-12 items-center justify-center rounded-full ${active ? "ring-2 ring-gold/70" : ""} ${locked ? "opacity-60" : ""}`}
       >
         {children}
         {dot && (
           <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full bg-vermilion ring-2 ring-night" />
         )}
+        {locked && (
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-night-4 text-cream-dim ring-2 ring-night">
+            {Icon.lock()}
+          </span>
+        )}
       </span>
-      <span className="font-mono text-[9px] uppercase tracking-[0.1em] [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+      <span className="whitespace-nowrap text-xs font-semibold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
         {label}
       </span>
     </button>

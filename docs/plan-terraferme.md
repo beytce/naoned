@@ -198,7 +198,7 @@ Le porteur veut une partie à la OpenFront, sans garde-fou du jeu :
 
 ## Des troupes simples à comprendre (18 octobre 2026, décision du porteur)
 
-- **Le classement de la semaine est celui de la Terraferme** : la Gloire de la semaine, ses titres (Doge, Procurateur, Sénateur de la semaine) et sa notification. L'Influence du commerce de la semaine reste comptée sur les ventes, sans classement affiché.
+- ~~**Le classement de la semaine est celui de la Terraferme**~~ : depuis le 19 octobre 2026 (audit UX), le classement de la semaine, ses titres et sa notification reviennent aux ventes nettes ; la Gloire reste sur le calque de la Terraferme, avec son Influence et le décret du Signore.
 - **Le maximum de troupes ne monte qu'avec les ducats** (« + Troupes », +20 pour 100 d, trois fois par jour) ; les cases, les villes ne le relèvent plus, et **le Village disparaît** (un seul bâtiment : le Fort).
 - **Le recrutement grandit avec les terres**, comme sur OpenFront : 6 troupes par heure ouverte, plus 1 par case et 3 par ville, jusqu'au maximum. Le HUD montre « 20 / 60 +13/h » et une barre qui se remplit ; le panneau de ses terres dit quand le maximum sera atteint.
 - **Plus de front bloqué** : un front qui ne paie pas sa première case est refusé (« Il faut au moins 18 troupes »), et un front qui ne peut plus payer sa prochaine case rentre aussitôt avec ce qui lui reste.

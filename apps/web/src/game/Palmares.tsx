@@ -58,7 +58,7 @@ export function PalmaresView({ data }: { data: Palmares }) {
           {seasons.map((s) => (
             <li
               key={s.endsAt}
-              className="flex items-center gap-3 rounded-2xl border border-line bg-night-3 p-3"
+              className="flex items-center gap-3 cut border border-line bg-night-3 p-3"
             >
               <Medal earned={tierTone(s.tier) === "gold"} size={30} />
               <div className="min-w-0 flex-1">
@@ -81,9 +81,9 @@ export function PalmaresView({ data }: { data: Palmares }) {
             {weekly.latest.map((w) => (
               <div
                 key={`${w.season}-${w.week}`}
-                className={`min-w-[7.5rem] rounded-xl p-2.5 ring-1 ring-inset ${w.award ? "bg-gold/15 ring-gold/60" : "bg-night-2 ring-line"}`}
+                className={`min-w-[7.5rem] cut p-2.5 ring-1 ring-inset ${w.award ? "bg-gold/15 ring-gold/60" : "bg-night-2 ring-line"}`}
               >
-                <p className="font-mono text-[10px] uppercase tracking-wider text-muted">
+                <p className="font-mono text-xs uppercase tracking-wider text-muted">
                   {t.weekOf(w.week, w.season.replace(/^.*· /, ""))}
                 </p>
                 <p className="font-display text-lg font-extrabold">{place(w.rank)}</p>

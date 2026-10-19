@@ -43,7 +43,7 @@ function MasteryChoice(props: GameProps & { onDone: () => void }) {
             type="button"
             aria-pressed={picked === code}
             onClick={() => setPicked(code)}
-            className={`flex gap-3 cut border p-3 text-left transition active:scale-[0.99] ${picked === code ? "border-gold bg-gold/10" : "border-line bg-night-3"}`}
+            className={`flex gap-3 cut border p-3 text-left transition active:scale-[0.99] ${picked === code ? "border-info bg-info/10" : "border-line bg-night-3"}`}
           >
             <MasteryEmblem code={code} size={48} />
             <div className="min-w-0">

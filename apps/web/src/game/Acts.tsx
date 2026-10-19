@@ -54,7 +54,7 @@ export function ActCard(props: GameProps) {
             </span>
           ))}
         </div>
-        <p className="label">
+        <p className="note">
           {next ? t().nextIn(clock(act.endsAt - now)) : t().endIn(clock(act.endsAt - now))}
         </p>
         {act.milanBps > 10_000 && view.families && (

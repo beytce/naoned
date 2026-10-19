@@ -89,7 +89,7 @@ function Loop() {
       </svg>
       {steps.map((s) => (
         <div key={s.label} className={`absolute flex flex-col items-center ${s.pos}`}>
-          <div className="flex h-20 w-24 items-center justify-center rounded-xl bg-night-3 ring-1 ring-line">
+          <div className="flex h-20 w-24 items-center justify-center cut bg-night-3 ring-1 ring-line">
             {s.icon}
           </div>
           <span className="mt-1 font-display text-xs font-extrabold uppercase">{s.label}</span>
@@ -165,8 +165,8 @@ export function Intro({ onDone }: { onDone: () => void }) {
       <div key={i} className="flex flex-1 animate-rise flex-col justify-center gap-8 py-6">
         <Illustration index={i} />
         <div className="space-y-3">
-          <Label className="text-lagoon">{slide.kicker}</Label>
-          <h1 className="font-display text-3xl font-extrabold uppercase leading-tight">
+          <Label className="text-cream-dim">{slide.kicker}</Label>
+          <h1 className="font-display text-[1.75rem] font-extrabold leading-[1.1] [font-stretch:105%]">
             {slide.title}
           </h1>
           <p className="text-lg leading-snug text-cream-dim">{slide.text}</p>

@@ -25,6 +25,8 @@ export const fr = {
   choosePseudo: "Votre nom de marchand",
   pseudoHelp: "3 à 20 caractères : lettres, chiffres, _ ou -. Il sera visible des autres joueurs.",
   pseudoLabel: "Nom de marchand",
+  pseudoInvalid:
+    "De 3 à 20 caractères, avec seulement des lettres, des chiffres, _ ou - (pas d'espace ni de ponctuation).",
   confirm: "Valider",
   logout: "Se déconnecter",
 
@@ -44,7 +46,7 @@ export const fr = {
         text: "Vos ateliers fabriquent des marchandises, même quand vous dormez. Les villes vous passent commande : chargez une charrette et livrez-les par la route, ou vendez aux autres marchands au Rialto. Puis réinvestissez pour produire plus.",
       },
       {
-        kicker: "Le piège",
+        kicker: "Le commerce",
         title: "Vous ne pouvez pas tout faire seul",
         text: "Vos ouvriers mangent du pain, vos fours brûlent du bois, et pour grandir il faut des briques ET des planches. Votre métier n'en produit qu'une partie : le reste, vous l'achèterez aux autres marchands.",
       },
@@ -59,7 +61,10 @@ export const fr = {
   region: {
     title: "Choisissez votre métier",
     help: "Chaque région n'extrait que sa propre matière première : le blé en Terraferma, l'argile dans la Lagune, le bois dans les Dolomites. Pour le reste, il faudra commercer.",
-    bonus: (pct: number, resource: string) => `+${pct} % de ${resource.toLowerCase()}`,
+    bonus: (pct: number, resource: string) => {
+      const name = resource.toLowerCase();
+      return `+${pct} % ${/^[aeiouyéèêh]/.test(name) ? "d'" : "de "}${name}`;
+    },
     kit: "Ateliers de départ",
     sells: "Vous vendez",
     needs: "Vous achèterez",
@@ -972,9 +977,9 @@ export const fr = {
         `Votre domaine : ${n} atelier${n > 1 ? "s" : ""}, ${levels} niveau${levels > 1 ? "x" : ""} en tout`,
     },
     workshopsSheet: {
-      ready: "prêts",
-      running: "en cours",
-      idle: "à l'arrêt",
+      ready: (n: number) => (n > 1 ? "prêts" : "prêt"),
+      running: (_n: number) => "en cours",
+      idle: (_n: number) => "à l'arrêt",
       collectAll: (n: number) => (n > 1 ? `Tout récolter (${n} lots)` : "Récolter"),
       restartAll: "Tout relancer",
       whatsMissing: "Voir ce qui manque",
@@ -1101,7 +1106,6 @@ export const fr = {
       rerollHelp: "Pass Négociant : une commande échangée par jour.",
       paletteLocked: "Réservée au Pass Négociant",
     },
-    fresh: (pct: number, t: string) => `Frais : +${pct} % encore ${t}`,
     ledger: {
       title: "Livre de compte",
       claim: "Encaisser",
@@ -1313,7 +1317,7 @@ export const fr = {
     topKicker: "Saison en cours",
     topTitle: "Classement des marchands",
     closesIn: "Clôture dans",
-    myRank: "Ton rang",
+    myRank: "Votre rang",
     you: "Toi",
     notices: {
       title: "Nouvelles du comptoir",
@@ -1389,9 +1393,6 @@ export const fr = {
         procurator: "Procurateur",
         senator: "Sénateur",
       } as Record<string, string>,
-      glory: (n: number) => `${n.toLocaleString("fr-FR")} Gloire`,
-      helpGlory:
-        "La Gloire de la Terraferme cette semaine, du lundi au dimanche : chaque heure de jeu, vos terres en rapportent (une par case, trois par ville). Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
       help: "Ventes nettes depuis le début de la semaine (ou depuis votre arrivée), en ducats : ce que vous avez vendu, moins ce que vous avez acheté. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
     },
     season: {
@@ -1597,11 +1598,15 @@ export const fr = {
     palette: "Palette",
     paletteHint: "Change les couleurs du jeu sur cet appareil.",
 
+    unlocks: {
+      afterDelivery: "S'ouvre après votre première livraison.",
+    },
     coach: {
       name: "Lorenzo, votre facteur",
       later: "Plus tard",
       resume: "Guide",
-      step: (n: number, total: number) => `Étape ${n}/${total}`,
+      step: (n: number, total: number) => `Objectif ${n}/${total}`,
+      covered: "Fermez cette fenêtre pour continuer : ce que je vous montre est dessous.",
       produceTap: (building: string) =>
         `Lançons votre ${building.toLowerCase()} ! Touchez « Produire » : il attend du travail.`,
       tapHome: "Touchez votre comptoir, au centre de la carte : vos ateliers s'y trouvent.",
@@ -1650,7 +1655,7 @@ export const fr = {
         text: "Les villes ne rachètent plus au comptoir : elles publient leurs commandes par vagues, toutes les 4 heures, pour tous les marchands. Les matières premières ne sont commandées qu'à ceux qui les produisent ; les produits transformés, à tous. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge y figurent, les urgentes ne restent ouvertes que trois heures.",
       },
       {
-        icon: "marche",
+        icon: "port",
         title: "Les galères de la Muda",
         text: "Tous les trois jours à 9 h, les galères d'État rapportent d'outre-mer épices, soie, sel, vin, fourrures et draps. La Dogana les vend au Rialto, quelques unités par marchand jusqu'aux galères suivantes, de plus en plus cher à mesure que le lot s'épuise. Quelques commandes de villes demandent ces marchandises : achetez tôt, livrez avec profit.",
       },

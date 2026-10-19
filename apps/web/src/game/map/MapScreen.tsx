@@ -26,6 +26,7 @@ import {
   vehicleName,
 } from "../roadKit.js";
 import type { DeliveryView, PlayerView, TerraAction, VehicleView } from "../types.js";
+import { unlocksOf } from "../unlocks.js";
 import { useWide } from "../useWide.js";
 import { have, readyOf } from "../workshops.js";
 import {
@@ -504,6 +505,7 @@ export function MapScreen(
   const cargoVehicle = sheetKind === "cargo" ? vehicles.find((v) => v.id === sheetId) : undefined;
   const notice = props.unread + carnetRewards(props);
   const days = Math.max(1, (catalog.world.endsAt - catalog.world.startsAt) / 86_400_000);
+  const open = unlocksOf(view.tutorial);
   const seasonProgress = Math.min(1, (now - catalog.world.startsAt) / (days * 86_400_000));
   const maxCarts = catalog.road?.maxVehicles ?? 0;
 
@@ -562,7 +564,7 @@ export function MapScreen(
         rank={view.standing.rank}
         seasonProgress={seasonProgress}
         cash={view.cash}
-        influence={props.influence}
+        influence={open.house ? props.influence : null}
         tips={hudTips(props)}
         bread={breadOf(view, now)}
         fleet={
@@ -598,6 +600,10 @@ export function MapScreen(
         doorLabel={terraView ? fr.game.terra.door : undefined}
         familyCalls={terraView ? terraCalls(terraView, now) : familyCalls(props)}
         workshopsReady={ready > 0}
+        locks={{
+          ranking: open.ranking ? undefined : fr.game.unlocks.afterDelivery,
+          layer: open.terraferma ? undefined : fr.game.unlocks.afterDelivery,
+        }}
         right={
           campaign ? (
             <CampaignHud f={campaign} now={now} />
@@ -608,7 +614,7 @@ export function MapScreen(
         onProfile={() => props.setSheet("profile")}
         onNotices={() => props.setSheet("notices")}
         onBales={() => props.setSheet("bales")}
-        onRialto={() => props.goTo("marche")}
+        onRialto={open.rialto ? () => props.goTo("marche") : undefined}
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
         onRanking={() => props.setSheet("ranking")}
@@ -619,12 +625,15 @@ export function MapScreen(
               ? props.setLayer("terra")
               : props.goTo("famille")
         }
-        onWorkshops={() => props.setSheet("workshops")}
+        onWorkshops={() => {
+          if (campaign || terra) props.setLayer("trade");
+          props.setSheet("workshops");
+        }}
         onHelp={props.openHelp}
       />
       {panel}
       {terra && absence.replaying && (
-        <span className="pointer-events-none absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+7.5rem)] z-10 -translate-x-1/2 animate-fade whitespace-nowrap rounded-full bg-night/80 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line">
+        <span className="pointer-events-none absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+7.5rem)] z-10 -translate-x-1/2 animate-fade whitespace-nowrap rounded-full bg-night/80 px-3 py-1 font-mono text-xs uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line">
           {fr.game.terra.away}
         </span>
       )}
@@ -732,7 +741,7 @@ function HomePanel({ props, onClose }: { props: GameProps; onClose: () => void }
             <ActionButton
               icon={ready > 0 ? Icon.harvest() : Icon.restart()}
               label={ready > 0 ? m.buttons.harvest : m.buttons.restart}
-              tone={ready > 0 ? "gold" : "lagoon"}
+              tone="gold"
               badge={ready > 0 ? ready : undefined}
               coach="panel-harvest"
               disabled={props.busy}
@@ -901,7 +910,7 @@ function CartPanel({
   const title = (
     <>
       {vehicleName(vehicle.type)}{" "}
-      <span className="font-mono text-[11px] font-normal normal-case tracking-normal text-cream-dim">
+      <span className="font-mono text-xs font-normal normal-case tracking-normal text-cream-dim">
         {units}/{capacity}
       </span>
     </>
@@ -912,7 +921,7 @@ function CartPanel({
     // Influence brings it there and its vehicle home at once, for a price by the time left.
     const spend = props.view.houseSpend;
     const rush =
-      spend && spend.rushMinutesPerPoint > 0 && now < trip.backAt
+      spend && spend.rushMinutesPerPoint > 0 && spend.rushPerDay > 0 && now < trip.backAt
         ? {
             cost: Math.max(
               1,
@@ -929,7 +938,7 @@ function CartPanel({
         title={
           <>
             {vehicleName(vehicle.type)}{" "}
-            <span className="font-mono text-[11px] font-normal normal-case tracking-normal text-cream-dim">
+            <span className="font-mono text-xs font-normal normal-case tracking-normal text-cream-dim">
               {trip.loaded} {props.names.resource(trip.resource).toLowerCase()}
             </span>
           </>
@@ -942,7 +951,7 @@ function CartPanel({
         }
         extra={
           rush ? (
-            <p className="text-center font-mono text-[11px] text-gold">
+            <p className="text-center font-mono text-xs text-gold">
               {fr.game.house.spend.rushLine(out, rush.cost)}
             </p>
           ) : undefined
@@ -997,7 +1006,7 @@ function CartPanel({
           <ActionButton
             icon={Icon.send()}
             label={m.buttons.send}
-            tone={loadCity ? "lagoon" : "plain"}
+            tone={loadCity ? "gold" : "plain"}
             coach="panel-send"
             disabled={!loadCity}
             onClick={onSend}
@@ -1058,7 +1067,7 @@ function DeparturePanel({
           <ActionButton
             icon={Icon.check()}
             label={m.buttons.go}
-            tone="lagoon"
+            tone="gold"
             coach="panel-go"
             disabled={props.busy || fired.current}
             onClick={() => {

@@ -265,8 +265,12 @@ describe("notifications of the road", () => {
     const view = (
       await app.inject({ method: "GET", url: "/api/game", headers: { cookie: ada.cookie } })
     ).json().view;
+    // A city order the starting stock covers (the welcome order waits for the first harvest).
+    const have = (r: string) =>
+      view.inventory.find((i: { resource: string }) => i.resource === r)?.available ?? 0;
     const order = view.road.orders.find(
-      (o: { kind: string; status: string }) => o.kind === "city" && o.status === "open",
+      (o: { kind: string; status: string; resource: string; quantity: number }) =>
+        o.kind === "city" && o.status === "open" && have(o.resource) >= o.quantity,
     );
     await app.inject({
       method: "POST",

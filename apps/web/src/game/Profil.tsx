@@ -43,13 +43,13 @@ function Titles({ profile }: { profile: Profile }) {
                 <span>{i + 1}</span>
               </span>
               <div
-                className={`slab mt-2 flex h-24 flex-col items-center justify-center px-1.5 text-center ring-1 ${current ? "bg-night-3 ring-2 ring-gold" : "bg-night-2 ring-line"}`}
+                className={`slab mt-2 flex h-24 flex-col items-center justify-center px-1.5 text-center ring-1 ${current ? "bg-night-3 ring-2 ring-info" : "bg-night-2 ring-line"}`}
               >
                 <span className="flex flex-col items-center">
                   <span className="font-display text-xs font-extrabold uppercase leading-tight [font-stretch:100%] [overflow-wrap:anywhere]">
                     {t.name}
                   </span>
-                  <span className="mt-1 font-mono text-[10px] text-muted">
+                  <span className="mt-1 font-mono text-xs text-muted">
                     {t.from.toLocaleString("fr-FR")} d
                   </span>
                 </span>
@@ -100,7 +100,7 @@ function CrestEditor({ props, onClose }: { props: GameProps; onClose: () => void
             key={v}
             type="button"
             onClick={() => setCrest({ ...crest, [key]: v })}
-            className={`rounded-lg p-1 ring-2 ${crest[key] === v ? "bg-night-4 ring-gold" : "ring-transparent"}`}
+            className={`rounded-lg p-1 ring-2 ${crest[key] === v ? "bg-night-4 ring-info" : "ring-transparent"}`}
           >
             <Crest crest={{ ...crest, [key]: v }} size={40} />
           </button>
@@ -176,10 +176,10 @@ function PalettePicker({ pass, offered }: { pass: boolean; offered: boolean }) {
                 choosePalette(p.id);
                 setChosen(p.id);
               }}
-              className={`flex items-center gap-3 rounded-2xl border bg-night-3 p-3 text-left transition disabled:opacity-50 ${on ? "border-gold" : "border-line hover:border-cream-dim/40"}`}
+              className={`flex items-center gap-3 cut border bg-night-3 p-3 text-left transition disabled:opacity-50 ${on ? "border-info" : "border-line hover:border-cream-dim/40"}`}
             >
               <span
-                className="flex h-10 w-10 shrink-0 items-end justify-center gap-0.5 overflow-hidden rounded-xl p-1.5"
+                className="flex h-10 w-10 shrink-0 items-end justify-center gap-0.5 overflow-hidden cut p-1.5"
                 style={{ background: p.swatch[0] }}
               >
                 {p.swatch.slice(1).map((c) => (
@@ -249,8 +249,12 @@ function ProfileBody(props: GameProps) {
           )}
         </div>
         <div className="min-w-0">
-          <h1 className="truncate font-display text-3xl font-extrabold">{props.account.pseudo}</h1>
-          <p className="label mt-2 text-lagoon">{props.names.region(props.view.player.region)}</p>
+          <h1 className="break-words font-display text-2xl font-extrabold leading-tight [font-stretch:105%]">
+            {props.account.pseudo}
+          </h1>
+          <p className="label mt-2 text-cream-dim">
+            {props.names.region(props.view.player.region)}
+          </p>
           <button type="button" className="label mt-2 text-gold" onClick={() => setEditing(true)}>
             ✎ {fr.game.editCrest}
           </button>
@@ -287,7 +291,7 @@ function ProfileBody(props: GameProps) {
             }
           />
           {profile.title.next && (
-            <p className="label">{fr.game.nextTitle(profile.title.next.name)}</p>
+            <p className="note">{fr.game.nextTitle(profile.title.next.name)}</p>
           )}
           <Titles profile={profile} />
         </section>
@@ -326,9 +330,9 @@ function ProfileBody(props: GameProps) {
               [fr.game.stats.delivered, profile.stats.delivered],
               [fr.game.stats.days, profile.stats.days],
             ].map(([label, value]) => (
-              <div key={String(label)} className="rounded-xl bg-night-3 p-3 ring-1 ring-line">
+              <div key={String(label)} className="cut bg-night-3 p-3 ring-1 ring-line">
                 <Big className="text-2xl text-gold">{value}</Big>
-                <p className="mt-2 font-mono text-[10px] uppercase leading-tight tracking-wider text-muted">
+                <p className="mt-2 font-mono text-xs uppercase leading-tight tracking-wider text-muted">
                   {label}
                 </p>
               </div>
@@ -347,12 +351,12 @@ function ProfileBody(props: GameProps) {
                   <Medal earned={b.earned} size={40} />
                 </div>
                 <p
-                  className={`mt-1 text-[11px] leading-tight ${b.earned ? "text-cream" : "text-muted"}`}
+                  className={`mt-1 text-xs leading-tight ${b.earned ? "text-cream" : "text-muted"}`}
                 >
                   {b.name}
                 </p>
                 {!b.earned && (
-                  <p className="font-mono text-[10px] text-muted">
+                  <p className="font-mono text-xs text-muted">
                     {b.value}/{b.goal}
                   </p>
                 )}
@@ -414,7 +418,7 @@ function ProfileBody(props: GameProps) {
               <a
                 href="/api/me/export"
                 download
-                className="rounded-xl bg-night-4 px-3 py-2 text-center font-display text-xs font-extrabold uppercase tracking-wide text-cream ring-1 ring-inset ring-line hover:ring-cream-dim/40"
+                className="cut bg-night-4 px-3 py-2 text-center font-display text-xs font-extrabold uppercase tracking-wide text-cream ring-1 ring-inset ring-line hover:ring-cream-dim/40"
               >
                 {fr.game.data.export}
               </a>
@@ -473,7 +477,7 @@ function ProfileBody(props: GameProps) {
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
             placeholder={fr.game.data.typeToConfirm}
-            className="w-full rounded-xl bg-night-3 px-4 py-3 text-cream ring-1 ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-vermilion"
+            className="w-full cut bg-night-3 px-4 py-3 text-cream ring-1 ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-vermilion"
           />
           <Slab
             tone="vermilion"

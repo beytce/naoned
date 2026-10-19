@@ -4,8 +4,9 @@
 
 /*
  * Fondaco palettes (identity guide): same roles, same places, so the player can switch between
- * them without any screen changing. Gold is for money and the main action only; lagoon for gains
- * and safe routes; cinnabar for pirates and losses. --glow-a/--glow-b tint the page's two halos.
+ * them without any screen changing. Gold is for money and the one main action of a screen; lagoon
+ * for gains and production; cinnabar for losses and urgency; info (lapis) for the selection, the
+ * guide and the active tab. --glow-a/--glow-b tint the page's two halos.
  */
 @layer base {
   /* Noyer & Ducat, the default: the fondaco's walnut and leather by lamplight. */
@@ -13,10 +14,10 @@
   [data-palette="noyer"] {
     color-scheme: dark;
     --night: 30 22 17;
-    --night-2: 37 27 21;
-    --night-3: 46 34 26;
-    --night-4: 58 43 33;
-    --line: 84 64 47;
+    --night-2: 42 31 24;
+    --night-3: 54 41 31;
+    --night-4: 68 51 39;
+    --line: 96 74 55;
     --cream: 246 232 204;
     --cream-dim: 207 188 156;
     --muted: 168 146 118;
@@ -28,65 +29,21 @@
     --lagoon: 125 181 150;
     --lagoon-deep: 76 131 102;
     --lagoon-soft: 180 216 192;
-    --vermilion: 227 106 74;
+    --vermilion: 234 118 88;
     --vermilion-deep: 170 71 47;
+    --info: 126 156 219;
+    --info-deep: 78 106 168;
     --glow-a: 232 178 76;
     --glow-b: 227 106 74;
-  }
-  [data-palette="lagune"] {
-    color-scheme: dark;
-    --night: 15 27 30;
-    --night-2: 19 35 42;
-    --night-3: 23 42 45;
-    --night-4: 31 54 56;
-    --line: 46 75 75;
-    --cream: 241 228 198;
-    --cream-dim: 194 187 166;
-    --muted: 134 160 154;
-    --ink: 15 27 30;
-    --on-lagoon: 15 27 30;
-    --gold: 224 173 75;
-    --gold-deep: 181 134 47;
-    --gold-soft: 240 208 143;
-    --lagoon: 109 179 162;
-    --lagoon-deep: 63 127 113;
-    --lagoon-soft: 168 214 202;
-    --vermilion: 226 105 79;
-    --vermilion-deep: 169 71 47;
-    --glow-a: 109 179 162;
-    --glow-b: 224 173 75;
-  }
-  [data-palette="pourpre"] {
-    color-scheme: dark;
-    --night: 28 16 22;
-    --night-2: 34 20 27;
-    --night-3: 42 24 32;
-    --night-4: 53 32 42;
-    --line: 74 46 54;
-    --cream: 244 230 208;
-    --cream-dim: 205 185 166;
-    --muted: 166 141 147;
-    --ink: 28 16 22;
-    --on-lagoon: 28 16 22;
-    --gold: 221 176 84;
-    --gold-deep: 176 136 53;
-    --gold-soft: 237 210 147;
-    --lagoon: 111 181 170;
-    --lagoon-deep: 67 133 123;
-    --lagoon-soft: 171 216 208;
-    --vermilion: 240 122 92;
-    --vermilion-deep: 181 81 58;
-    --glow-a: var(--lagoon);
-    --glow-b: var(--gold);
   }
   /* Or de Venise: the Pass Négociant's own palette (night lacquer and gold leaf). */
   [data-palette="or"] {
     color-scheme: dark;
     --night: 18 16 12;
-    --night-2: 25 22 16;
-    --night-3: 32 28 20;
-    --night-4: 42 37 26;
-    --line: 70 60 40;
+    --night-2: 29 26 19;
+    --night-3: 40 35 25;
+    --night-4: 52 46 32;
+    --line: 84 72 48;
     --cream: 247 236 210;
     --cream-dim: 207 192 160;
     --muted: 160 146 116;
@@ -100,6 +57,8 @@
     --lagoon-soft: 180 216 194;
     --vermilion: 222 104 76;
     --vermilion-deep: 170 72 50;
+    --info: 126 156 219;
+    --info-deep: 78 106 168;
     --glow-a: var(--lagoon);
     --glow-b: var(--gold);
   }
@@ -112,17 +71,19 @@
     --line: 220 205 174;
     --cream: 43 32 22;
     --cream-dim: 92 75 59;
-    --muted: 126 109 90;
-    --ink: 43 32 22;
+    --muted: 105 89 71;
+    --ink: 251 245 232;
     --on-lagoon: 251 245 232;
-    --gold: 201 149 47;
-    --gold-deep: 156 112 32;
-    --gold-soft: 228 194 122;
-    --lagoon: 45 84 134;
-    --lagoon-deep: 31 60 99;
-    --lagoon-soft: 126 156 196;
-    --vermilion: 178 65 45;
-    --vermilion-deep: 138 47 32;
+    --gold: 132 90 14;
+    --gold-deep: 96 64 8;
+    --gold-soft: 160 118 44;
+    --lagoon: 40 110 78;
+    --lagoon-deep: 28 82 57;
+    --lagoon-soft: 130 180 154;
+    --vermilion: 170 52 34;
+    --vermilion-deep: 128 38 24;
+    --info: 40 78 160;
+    --info-deep: 28 56 120;
     --glow-a: var(--lagoon);
     --glow-b: var(--gold);
   }
@@ -158,7 +119,14 @@
 @layer components {
   /* Spaced uppercase labels: kickers and small captions. */
   .label {
-    @apply font-mono text-[11px] uppercase leading-snug tracking-[0.2em] text-muted;
+    @apply font-mono text-xs uppercase leading-snug tracking-[0.12em] text-muted;
+  }
+  /*
+   * A sentence or a time left, small but read: the plain face, aligned figures. Space Mono
+   * capitals (.label) stay for kickers of one to three words.
+   */
+  .note {
+    @apply font-sans text-[13px] leading-snug text-cream-dim tabular-nums;
   }
   /* Card: deep water, a thin foam line, rounded corners. */
   .cartouche {
@@ -578,17 +546,17 @@
   transform: scale(0.94);
 }
 .map-marker[data-selected] .marker-ring {
-  --tw-ring-color: rgb(var(--lagoon));
-  box-shadow: 0 0 22px rgb(var(--lagoon) / 0.45);
+  --tw-ring-color: rgb(var(--info));
+  box-shadow: 0 0 22px rgb(var(--info) / 0.45);
   animation: marker-select 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .map-marker[data-selected] .marker-orb {
-  outline: 2px solid rgb(var(--lagoon));
+  outline: 2px solid rgb(var(--info));
   outline-offset: 3px;
 }
 .map-marker[data-selected] .cart-face {
-  --tw-ring-color: rgb(var(--lagoon));
-  box-shadow: 0 0 18px rgb(var(--lagoon) / 0.75);
+  --tw-ring-color: rgb(var(--info));
+  box-shadow: 0 0 18px rgb(var(--info) / 0.75);
   transform: scale(1.12);
 }
 .cart-face {
@@ -608,6 +576,24 @@
   100% {
     transform: none;
     opacity: 1;
+  }
+}
+/* Lorenzo's ring around the element to touch: it breathes, it never moves. */
+.coach-ring {
+  animation: coach-ring 1.4s ease-in-out infinite;
+}
+@keyframes coach-ring {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coach-ring {
+    animation: none;
   }
 }
 .marker-halo {

@@ -39,7 +39,7 @@ function Pill({ children, tone }: { children: ReactNode; tone: "gold" | "lagoon"
         : "bg-vermilion text-cream";
   return (
     <span
-      className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 font-mono text-[11px] font-bold leading-none shadow-md shadow-black/40 ${cls}`}
+      className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 font-mono text-xs font-bold leading-none shadow-md shadow-black/40 ${cls}`}
     >
       {children}
     </span>
@@ -92,7 +92,7 @@ export function CityMarker({
           {orders > 0 && <Pill tone={deliverable > 0 ? "gold" : "lagoon"}>{orders}</Pill>}
         </span>
       )}
-      <span className="pointer-events-none absolute left-1/2 top-[calc(100%-6px)] -translate-x-1/2 whitespace-nowrap font-display text-[11px] font-extrabold uppercase tracking-wider text-cream/90 [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+      <span className="pointer-events-none absolute left-1/2 top-[calc(100%-6px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-cream/90 [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
         {name}
       </span>
     </button>
@@ -156,7 +156,7 @@ export function HomeMarker({
           <Pill tone="gold">{ready}</Pill>
         </span>
       )}
-      <span className="pointer-events-none absolute left-1/2 top-[calc(100%-4px)] -translate-x-1/2 whitespace-nowrap font-display text-[11px] font-extrabold uppercase tracking-wider text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+      <span className="pointer-events-none absolute left-1/2 top-[calc(100%-4px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
         {name}
       </span>
     </button>
@@ -267,7 +267,7 @@ export function LandMarker({
         </span>
       )}
       <span
-        className={`land-name pointer-events-none absolute left-1/2 top-[calc(100%-6px)] -translate-x-1/2 whitespace-nowrap font-display text-[10px] font-extrabold uppercase tracking-wider [text-shadow:0_1px_3px_rgb(0_0_0/0.95)] ${named ? "" : "hidden"} ${city ? "text-gold-soft" : seat ? "text-cream" : "text-cream/80"}`}
+        className={`land-name pointer-events-none absolute left-1/2 top-[calc(100%-6px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider [text-shadow:0_1px_3px_rgb(0_0_0/0.95)] ${named ? "" : "hidden"} ${city ? "text-gold-soft" : seat ? "text-cream" : "text-cream/80"}`}
       >
         {name}
       </span>

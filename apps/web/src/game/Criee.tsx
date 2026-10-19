@@ -27,7 +27,7 @@ export function Criee(props: GameProps) {
   if (!c) return null;
   const pct = `${Math.round(c.premiumBps / 100)} %`;
   return (
-    <div className="mb-4 rounded-2xl border border-gold/70 bg-gold/10 p-4">
+    <div className="mb-4 cut border border-gold/70 bg-gold/10 p-4">
       <div className="flex items-start gap-3">
         <ResourceIcon code={c.resource} size={40} />
         <div className="min-w-0 flex-1">

@@ -42,7 +42,7 @@ function Row({
       type="button"
       data-coach={`row-${line.resource}`}
       onClick={() => props.setSheet(`trade:${line.resource}`)}
-      className={`flex w-full items-center gap-3 border-b border-line/70 py-3 text-left transition lg:rounded-xl lg:border-transparent lg:px-3 lg:hover:bg-night-3 ${selected ? "lg:bg-night-3 lg:ring-1 lg:ring-gold/60" : ""}`}
+      className={`flex w-full items-center gap-3 border-b border-line/70 py-3 text-left transition lg:cut lg:border-transparent lg:px-3 lg:hover:bg-night-3 ${selected ? "lg:bg-night-3 lg:ring-1 lg:ring-info/70" : ""}`}
     >
       <ResourceIcon code={line.resource} size={36} />
       <div className="min-w-0 flex-1">
@@ -166,7 +166,7 @@ function TradeSheet({
     <div className="space-y-5">
       {/* Room on the right for the window's close button. */}
       <div className={`flex items-center gap-4 ${inline ? "" : "pr-12"}`}>
-        <div className="shrink-0 rounded-xl bg-night-3 p-2 ring-1 ring-inset ring-line">
+        <div className="shrink-0 cut bg-night-3 p-2 ring-1 ring-inset ring-line">
           <ResourceIcon code={line.resource} size={56} />
         </div>
         <div className="min-w-0 flex-1">
@@ -180,7 +180,7 @@ function TradeSheet({
         <Sparkline points={points} width={90} height={36} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 rounded-2xl bg-night-3 p-3 ring-1 ring-inset ring-line">
+      <div className="grid grid-cols-2 gap-4 cut bg-night-3 p-3 ring-1 ring-inset ring-line">
         <BookSide lines={book?.asks ?? []} title={t.sellers} tone="text-gold" props={props} />
         <BookSide lines={book?.bids ?? []} title={t.buyers} tone="text-lagoon" props={props} />
       </div>
@@ -258,7 +258,7 @@ function TradeSheet({
           </Slab>
           <Slab
             size="lg"
-            tone="lagoon"
+            tone="ghost"
             disabled={props.busy || !bid || q > stock}
             onClick={async () => {
               if (
@@ -298,7 +298,7 @@ function TradeSheet({
           </Slab>
           <Slab
             size="md"
-            tone="lagoon"
+            tone="ghost"
             disabled={props.busy || !price || q > stock}
             onClick={async () => {
               if (
@@ -322,7 +322,7 @@ function TradeSheet({
       {mine.length > 0 && <MyOffers orders={mine} props={props} />}
 
       {props.catalog.previousDoge?.pseudo && (
-        <div className="flex items-center gap-3 rounded-2xl border border-gold/50 bg-night-3 p-3">
+        <div className="flex items-center gap-3 cut border border-gold/50 bg-night-3 p-3">
           {props.catalog.previousDoge.crest && (
             <Crest crest={props.catalog.previousDoge.crest} size={36} />
           )}
@@ -358,7 +358,7 @@ function MyOffers({ orders, props }: { orders: OrderView[]; props: GameProps }) 
             <p className={o.side === "sell" ? "text-lagoon" : "text-gold"}>
               {t.offerLine(o.side, o.remaining, props.names.resource(o.resource), d(o.price))}
             </p>
-            <p className="label">{t.expires(clock(o.expiresAt - props.now))}</p>
+            <p className="note">{t.expires(clock(o.expiresAt - props.now))}</p>
           </div>
           <Slab
             size="sm"
@@ -395,7 +395,7 @@ function MudaPanel({ props }: { props: GameProps }) {
     <section className="cut border border-gold/50 bg-gold/5 p-3">
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-display text-sm font-extrabold uppercase text-gold">{t.title}</p>
-        {next && <p className="label shrink-0">{t.next(next)}</p>}
+        {next && <p className="note shrink-0">{t.next(next)}</p>}
       </div>
       <p className="mt-1 text-xs text-cream-dim">
         {muda.arrivedAt === null ? t.first : goods.length > 0 ? t.help : t.empty}
@@ -415,11 +415,11 @@ function MudaPanel({ props }: { props: GameProps }) {
                 <span className="min-w-0 flex-1 truncate font-display text-xs font-semibold uppercase">
                   {props.names.resource(r)}
                 </span>
-                <span className="whitespace-nowrap text-[11px] text-cream-dim">
+                <span className="whitespace-nowrap text-xs text-cream-dim">
                   {t.stock(muda.stock[r] ?? 0)}
                 </span>
                 <span
-                  className={`whitespace-nowrap text-right text-[11px] ${left > 0 ? "text-lagoon" : "text-muted"}`}
+                  className={`whitespace-nowrap text-right text-xs ${left > 0 ? "text-lagoon" : "text-muted"}`}
                 >
                   {t.left(left)}
                 </span>
@@ -491,7 +491,7 @@ export function RialtoSheet(props: GameProps) {
             <h3 className="font-display text-2xl font-extrabold uppercase">
               {fr.game.map.buttons.rialto}
             </h3>
-            <p className="label mt-1 text-lagoon">{r.kicker}</p>
+            <p className="label mt-1 text-cream-dim">{r.kicker}</p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             <Segmented<Filter>
@@ -505,13 +505,14 @@ export function RialtoSheet(props: GameProps) {
             />
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="rounded-full bg-night-3 px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.08em] text-cream-dim ring-1 ring-inset ring-line/70">
+            {/* A fact, not a filter: plain text. */}
+            <span className="mr-1 text-xs text-cream-dim">
               {m.tax(props.catalog.rules.marketTaxBps / 100)}
             </span>
             <button
               type="button"
               onClick={() => props.setSheet("offers")}
-              className={`rounded-full px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.08em] ring-1 ring-inset ${offers.length > 0 ? "bg-gold/15 text-gold ring-gold/60" : "bg-night-3 text-cream-dim ring-line/70"}`}
+              className={`slab px-2.5 py-1 font-mono text-xs uppercase tracking-[0.06em] ${offers.length > 0 ? "bg-info/20 text-info" : "bg-night-3 text-cream-dim"}`}
             >
               {r.offers(offers.length)}
             </button>
@@ -520,7 +521,7 @@ export function RialtoSheet(props: GameProps) {
                 type="button"
                 aria-expanded={decreesOpen}
                 onClick={() => setDecreesOpen(!decreesOpen)}
-                className={`rounded-full px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.08em] ring-1 ring-inset ${ours ? "bg-lagoon/15 text-lagoon ring-lagoon/60" : "bg-vermilion/15 text-vermilion ring-vermilion/60"}`}
+                className={`rounded-full px-2.5 py-1 font-mono text-xs uppercase tracking-[0.08em] ring-1 ring-inset ${ours ? "bg-lagoon/15 text-lagoon ring-lagoon/60" : "bg-vermilion/15 text-vermilion ring-vermilion/60"}`}
               >
                 ⚑ {m.decrees(decrees.items.length)}
               </button>

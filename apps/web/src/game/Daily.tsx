@@ -63,7 +63,7 @@ export function Daily(props: GameProps) {
           </li>
         ))}
       </ul>
-      <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70">
+      <div className="mt-3 flex items-center justify-between gap-3 cut bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70">
         <div className="min-w-0">
           <p className="text-xs text-cream-dim">{t.chest}</p>
           <p className="text-xs text-muted">{daily.chestClaimed ? t.chestOpen : t.chestHint}</p>
@@ -74,7 +74,7 @@ export function Daily(props: GameProps) {
           {d(daily.chest)}
         </span>
       </div>
-      <p className="label mt-2">{t.resetsIn(clock(daily.resetsAt - props.now))}</p>
+      <p className="note mt-2">{t.resetsIn(clock(daily.resetsAt - props.now))}</p>
     </Panel>
   );
 }

@@ -15,6 +15,14 @@ type Period = "week" | "season";
 
 const RANK_COLOR = ["text-gold", "text-lagoon", "text-vermilion"];
 
+/**
+ * A merchant's crest; without one chosen, the default drawn from the account (as on the HUD and
+ * the profile), so a merchant keeps the same arms whatever the rank.
+ */
+function crestOf(r: Pick<Who, "id" | "rank" | "pseudo" | "crest">) {
+  return r.crest ?? defaultCrest(r.id ?? `${r.rank}-${r.pseudo ?? ""}`);
+}
+
 interface Who {
   id?: string;
   pass?: boolean;
@@ -43,20 +51,20 @@ function Line(props: {
       type="button"
       onClick={() => r.id && props.onOpen?.(r.id)}
       aria-label={fr.game.palmares.open}
-      className={`flex w-full items-center gap-3 py-3 text-left transition hover:bg-night-3/60 ${mine ? "rounded-r-xl border-l-4 border-gold bg-gold/10 px-3" : "border-b border-line/70"}`}
+      className={`flex w-full items-center gap-3 py-3 text-left transition hover:bg-night-3/60 ${mine ? "border-l-4 border-info bg-info/10 px-3" : "border-b border-line/70"}`}
     >
       <span
         className={`w-10 font-display text-xl font-extrabold tabular-nums ${RANK_COLOR[r.rank - 1] ?? "text-cream-dim"}`}
       >
         {r.rank}
       </span>
-      <Crest crest={r.crest ?? defaultCrest(`${r.rank}-${r.pseudo ?? ""}`)} size={40} />
+      <Crest crest={crestOf(r)} size={40} />
       <div className="min-w-0 flex-1">
         <p className={`truncate font-display text-sm font-semibold ${r.gilded ? "text-gold" : ""}`}>
           {r.pseudo ?? fr.game.anonymous}
         </p>
         <div className="mt-1 flex items-center gap-2">
-          {mine && <Badge>{fr.game.you}</Badge>}
+          {mine && <Badge tone="info">{fr.game.you}</Badge>}
           {r.level !== undefined && (
             <Badge tone="ghost">{fr.game.merchantLevel.short(r.level)}</Badge>
           )}
@@ -79,9 +87,8 @@ function Line(props: {
   );
 }
 
-function Gain({ value, glory }: { value: string; glory?: boolean }) {
+function Gain({ value }: { value: string }) {
   const n = BigInt(value);
-  if (glory) return <span className="text-gold">{fr.game.week.glory(Number(n))}</span>;
   return (
     <span className={n > 0n ? "text-lagoon" : n < 0n ? "text-vermilion" : "text-cream-dim"}>
       {n > 0n ? "+" : ""}
@@ -112,7 +119,7 @@ function Podium({
                 {r.pseudo ?? fr.game.anonymous}
               </p>
               {r.award && (
-                <span className="font-mono text-[10px] uppercase tracking-wider text-gold">
+                <span className="font-mono text-xs uppercase tracking-wider text-gold">
                   {fr.game.week.awards[r.award]}
                 </span>
               )}
@@ -141,7 +148,7 @@ function rowsOf(
   return period === "week"
     ? (week?.rows.map((r) => ({
         ...r,
-        value: <Gain value={r.gain} glory={week.unit === "glory"} />,
+        value: <Gain value={r.gain} />,
       })) ?? null)
     : (season?.map((r) => ({ ...r, value: <Gain value={r.turnover} /> })) ?? null);
 }
@@ -181,7 +188,7 @@ export function RankingSheet(props: GameProps) {
   const me: (Who & { value: ReactNode }) | undefined =
     period === "week"
       ? week?.me
-        ? { ...week.me, value: <Gain value={week.me.gain} glory={week.unit === "glory"} /> }
+        ? { ...week.me, value: <Gain value={week.me.gain} /> }
         : undefined
       : (() => {
           const r = season?.find((x) => x.me);
@@ -203,10 +210,10 @@ export function RankingSheet(props: GameProps) {
       type="button"
       aria-pressed={period === p}
       onClick={() => choose(p)}
-      className={`flex-1 rounded-xl px-3 py-2 text-left ring-1 ring-inset transition ${period === p ? "bg-gold/15 ring-gold/70" : "bg-night-3 ring-line/70"}`}
+      className={`flex-1 cut px-3 py-2 text-left ring-1 ring-inset transition ${period === p ? "bg-gold/15 ring-gold/70" : "bg-night-3 ring-line/70"}`}
     >
       <span
-        className={`block font-mono text-[10.5px] uppercase tracking-[0.08em] ${period === p ? "text-gold" : "text-cream-dim"}`}
+        className={`block font-mono text-xs uppercase tracking-[0.08em] ${period === p ? "text-gold" : "text-cream-dim"}`}
       >
         {label}
       </span>
@@ -230,9 +237,7 @@ export function RankingSheet(props: GameProps) {
         ) : view === "rules" ? (
           <div className="space-y-3">
             {back}
-            <p className="text-sm text-cream-dim">
-              {week?.unit === "glory" ? fr.game.week.helpGlory : fr.game.week.help}
-            </p>
+            <p className="text-sm text-cream-dim">{fr.game.week.help}</p>
             <p className="text-sm text-cream-dim">{fr.game.rankingHelp}</p>
             <p className="text-sm text-cream-dim">{fr.game.npcHelp}</p>
           </div>
@@ -265,10 +270,10 @@ export function RankingSheet(props: GameProps) {
               </>
             )}
             <div className="flex justify-center gap-6 pb-1">
-              <button type="button" className="label text-lagoon" onClick={() => setView("last")}>
+              <button type="button" className="label text-info" onClick={() => setView("last")}>
                 {tp.tabs.passee}
               </button>
-              <button type="button" className="label text-lagoon" onClick={() => setView("rules")}>
+              <button type="button" className="label text-info" onClick={() => setView("rules")}>
                 {tp.tabs.regles}
               </button>
             </div>
@@ -285,10 +290,7 @@ export function RankingSheet(props: GameProps) {
                   >
                     {me.rank}
                   </span>
-                  <Crest
-                    crest={me.crest ?? defaultCrest(`${me.rank}-${me.pseudo ?? ""}`)}
-                    size={30}
-                  />
+                  <Crest crest={crestOf(me)} size={30} />
                   <span className="min-w-0 flex-1 leading-tight">
                     <span className="block truncate font-display text-sm font-extrabold">
                       {me.pseudo ?? fr.game.anonymous}

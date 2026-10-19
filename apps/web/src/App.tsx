@@ -109,7 +109,7 @@ function Hero({ children }: { children: ReactNode }) {
 }
 
 const inputClass =
-  "w-full rounded-xl bg-night-3 px-4 py-4 text-base text-cream ring-1 ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gold";
+  "w-full rounded-md bg-night-3 px-4 py-4 text-base text-cream ring-1 ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gold";
 
 function Login(props: { sentTo?: string; onSent: (email: string) => void; onReset: () => void }) {
   const [email, setEmail] = useState("");
@@ -185,8 +185,13 @@ function PseudoForm({ onDone }: { onDone: (account: Account) => void }) {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    setBusy(true);
     setError(null);
+    // The server's rule, said precisely before asking it.
+    if (!/^[\p{L}\p{N}_-]{3,20}$/u.test(pseudo)) {
+      setError(fr.pseudoInvalid);
+      return;
+    }
+    setBusy(true);
     try {
       onDone(await api.setPseudo(pseudo));
     } catch (err) {
@@ -209,7 +214,8 @@ function PseudoForm({ onDone }: { onDone: (account: Account) => void }) {
           maxLength={20}
           autoComplete="nickname"
           value={pseudo}
-          onChange={(e) => setPseudo(e.target.value)}
+          // A space becomes "_" as it is typed: "Ser Marco" gives "Ser_Marco".
+          onChange={(e) => setPseudo(e.target.value.replace(/\s/g, "_"))}
           className={inputClass}
         />
       </label>

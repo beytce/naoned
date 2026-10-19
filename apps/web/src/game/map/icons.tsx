@@ -133,6 +133,20 @@ export const Icon = {
       <path d="M12 19 V6 M6 11 L12 5 L18 11 M6 19 H18" />
     </I>
   ),
+  /** The counter: the merchant's house with its awning, the way back to the trade. */
+  home: () => (
+    <I>
+      <path d="M3 10 L12 4 L21 10" />
+      <path d="M5 10 V20 H19 V10" />
+      <path d="M10 20 V14 H14 V20" />
+    </I>
+  ),
+  lock: () => (
+    <I size={14}>
+      <rect x="5" y="11" width="14" height="10" rx="1.5" />
+      <path d="M8 11 V8 A4 4 0 0 1 16 8 V11" />
+    </I>
+  ),
   plus: () => (
     <I size={22}>
       <path d="M12 5 V19 M5 12 H19" />

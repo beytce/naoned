@@ -43,7 +43,7 @@ export function ContextPanel({
       className="pointer-events-none absolute inset-x-0 bottom-0 z-20 lg:inset-x-auto lg:bottom-5 lg:right-5 lg:w-[420px]"
     >
       <div
-        className={`panel-rise pointer-events-auto relative border-t-2 ${edge} bg-night-2/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgb(0_0_0/0.45)] backdrop-blur-md lg:rounded-2xl lg:border-2 lg:pb-3`}
+        className={`panel-rise pointer-events-auto relative border-t-2 ${edge} bg-night-2/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgb(0_0_0/0.45)] backdrop-blur-md lg:rounded-md lg:border-2 lg:pb-3`}
       >
         <button
           type="button"
@@ -126,37 +126,36 @@ export function ActionButton({
   label: string;
   onClick: () => void;
   disabled?: boolean;
-  tone?: "plain" | "gold" | "lagoon" | "vermilion";
+  /** Gold for the panel's one main action; never lagoon (a gain, not a button). */
+  tone?: "plain" | "gold" | "vermilion";
   badge?: ReactNode;
   coach?: string;
 }) {
   const face =
     tone === "gold"
       ? "bg-gold text-ink ring-gold"
-      : tone === "lagoon"
-        ? "bg-lagoon text-on-lagoon ring-lagoon"
-        : tone === "vermilion"
-          ? "bg-vermilion text-cream ring-vermilion"
-          : "bg-night text-cream ring-lagoon/50";
+      : tone === "vermilion"
+        ? "bg-vermilion text-cream ring-vermilion"
+        : "bg-night text-cream ring-cream/30";
   return (
     <button
       type="button"
       data-coach={coach}
       disabled={disabled}
       onClick={onClick}
-      className="group flex w-[62px] shrink-0 flex-col items-center gap-1 disabled:opacity-35"
+      className="group flex w-[72px] shrink-0 flex-col items-center gap-1 disabled:opacity-35"
     >
       <span
-        className={`relative flex h-14 w-14 items-center justify-center rounded-xl ring-[1.5px] transition group-active:scale-90 ${face}`}
+        className={`relative flex h-14 w-14 items-center justify-center rounded-md ring-[1.5px] transition group-active:scale-90 ${face}`}
       >
         {icon}
         {badge !== undefined && badge !== null && badge !== false && (
-          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 font-mono text-[10px] font-bold text-ink ring-2 ring-night-2">
+          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 font-mono text-xs font-bold text-ink ring-2 ring-night-2">
             {badge}
           </span>
         )}
       </span>
-      <span className="max-w-full truncate font-mono text-[9.5px] uppercase tracking-[0.06em] text-cream-dim">
+      <span className="max-w-full whitespace-nowrap text-xs font-semibold text-cream-dim">
         {label}
       </span>
     </button>

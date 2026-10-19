@@ -59,7 +59,7 @@ export function PassPanel({
             </p>
           </div>
         </div>
-        {pass.active && <Badge>✓</Badge>}
+        {pass.active && <Badge tone="gold">✓</Badge>}
       </div>
       <p className="mt-3 text-xs text-cream-dim">{t.pitch}</p>
       <ul className="mt-3 grid gap-1.5 text-sm sm:grid-cols-2">
@@ -72,7 +72,7 @@ export function PassPanel({
       </ul>
       <p className="mt-3 text-xs text-lagoon">{t.earn}</p>
       {extra.passPrices && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 cut bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70">
           <span className="text-sm font-semibold">
             {t.price(euros(extra.passPrices.season), euros(extra.passPrices.week))}
           </span>

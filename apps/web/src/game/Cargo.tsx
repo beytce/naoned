@@ -118,12 +118,12 @@ export function CargoSheet({
           data-coach={inHold ? undefined : `cargo-order-${o.id}`}
           disabled={!inHold && why !== null}
           onClick={() => setLoad(inHold ? load.filter((x) => x !== o.id) : [...load, o.id])}
-          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left ring-1 ring-inset transition ${inHold ? "bg-lagoon/15 ring-lagoon/60" : why ? "bg-night-2/60 opacity-50 ring-line/50" : "bg-night-2 ring-line/70 active:scale-[0.99]"}`}
+          className={`flex w-full items-center gap-3 cut px-3 py-2.5 text-left ring-1 ring-inset transition ${inHold ? "bg-lagoon/15 ring-lagoon/60" : why ? "bg-night-2/60 opacity-50 ring-line/50" : "bg-night-2 ring-line/70 active:scale-[0.99]"}`}
         >
           <span
             className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ring-2 ${inHold ? "bg-lagoon ring-lagoon" : "ring-cream-dim/60"}`}
           >
-            {inHold && <span className="text-[11px] font-black text-night">✓</span>}
+            {inHold && <span className="text-xs font-black text-night">✓</span>}
           </span>
           <ResourceIcon code={o.resource} size={26} />
           <span className="min-w-0 flex-1">
@@ -131,7 +131,7 @@ export function CargoSheet({
               {o.quantity} {props.names.resource(o.resource).toLowerCase()}
               {o.kind !== "city" && (
                 <span className="ml-1 align-middle">
-                  <Badge tone={o.kind === "urgent" ? "vermilion" : "gold"}>
+                  <Badge tone={o.kind === "urgent" ? "vermilion" : "ghost"}>
                     {t().kinds[o.kind] ?? o.kind}
                   </Badge>
                 </span>
@@ -176,7 +176,7 @@ export function CargoSheet({
         )}
         {rows.map((o) => row(o, false))}
       </ul>
-      <div className="rounded-2xl bg-night p-3 ring-1 ring-line">
+      <div className="cut bg-night p-3 ring-1 ring-line">
         <div className="flex items-center gap-3">
           <Label>{t().hold}</Label>
           <HoldGauge units={s.units} capacity={s.capacity} />
@@ -187,10 +187,15 @@ export function CargoSheet({
           <p className="mt-2 text-center text-xs text-cream-dim">{t().empty}</p>
         )}
       </div>
-      <Slab className="w-full" coach="cargo-ready" disabled={loaded.length === 0} onClick={onReady}>
+      <Slab
+        className="w-full"
+        coach={loaded.length > 0 ? "cargo-ready" : undefined}
+        disabled={loaded.length === 0}
+        onClick={onReady}
+      >
         {s.city ? t().ready(props.names.city(s.city), d(s.value)) : t().pick}
       </Slab>
-      <p className="label text-center">{t().nextOrders(clock(nextDay - props.now))}</p>
+      <p className="note text-center">{t().nextOrders(clock(nextDay - props.now))}</p>
     </div>
   );
 }

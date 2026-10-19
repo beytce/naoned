@@ -15,14 +15,15 @@ const TONES: Record<Tone, { face: string; shadow: string }> = {
 };
 
 /**
- * Main button: a slanted slab on a solid offset shadow, gold for the action that matters. Pressed,
- * the face sinks onto its shadow.
+ * Button: a slanted slab on a solid offset shadow, gold for the one action that matters on the
+ * screen. Pressed, the face sinks onto its shadow.
  */
 export function Slab(props: {
   children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
-  tone?: Tone;
+  /** Gold for the one action that matters on the screen, ghost for the others; never lagoon. */
+  tone?: Exclude<Tone, "lagoon">;
   size?: "sm" | "md" | "lg";
   className?: string;
   type?: "button" | "submit";
@@ -102,7 +103,7 @@ export function Tabs<T extends string>(props: {
           style={{ left: `${(index * 100) / n}%`, width: `${100 / n}%` }}
         >
           <span className="absolute left-[30%] right-[30%] top-0 h-[3px] bg-cream" />
-          <span className="absolute left-[44%] right-[22%] top-[3px] h-[3px] bg-lagoon" />
+          <span className="absolute left-[44%] right-[22%] top-[3px] h-[3px] bg-info" />
         </span>
       </div>
     );
@@ -202,7 +203,7 @@ export function Switch(props: {
       role="switch"
       aria-checked={props.checked}
       onClick={() => props.onChange(!props.checked)}
-      className="flex w-full items-center gap-3 rounded-2xl border border-line bg-night-3 p-3 text-left"
+      className="flex w-full items-center gap-3 cut border border-line bg-night-3 p-3 text-left"
     >
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-semibold">{props.label}</span>
@@ -234,7 +235,7 @@ export function Stat({
           ? "text-vermilion"
           : "text-cream";
   return (
-    <div className="rounded-xl bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70">
+    <div className="cut bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70">
       <p className="text-xs text-cream-dim">{label}</p>
       <p className={`mt-0.5 font-display text-base font-extrabold tabular-nums ${color}`}>
         {value}
@@ -256,16 +257,18 @@ export function Big({ children, className = "" }: { children: ReactNode; classNa
   );
 }
 
-export function Badge({ children, tone = "gold" }: { children: ReactNode; tone?: Tone }) {
+/** A small tag. Neutral by default: gold is for money, not for a label. */
+export function Badge({ children, tone = "ghost" }: { children: ReactNode; tone?: Tone | "info" }) {
   const look = {
     gold: "bg-gold text-ink",
     lagoon: "bg-lagoon text-on-lagoon",
     vermilion: "bg-vermilion text-cream",
     ghost: "bg-night-4 text-cream",
+    info: "bg-info text-night",
   }[tone];
   return (
     <span
-      className={`slab inline-block px-2.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-widest ${look}`}
+      className={`slab inline-block shrink-0 whitespace-nowrap px-2.5 py-0.5 font-mono text-xs font-bold uppercase tracking-wider ${look}`}
     >
       <span>{children}</span>
     </span>
@@ -368,11 +371,17 @@ export function Donut({
   );
 }
 
-export function Qty(props: { value: number; max: number; onChange: (v: number) => void }) {
+export function Qty(props: {
+  value: number;
+  max: number;
+  onChange: (v: number) => void;
+  /** Off where presets already offer the most possible. */
+  maxButton?: boolean;
+}) {
   const set = (v: number) =>
     props.onChange(Math.max(1, Math.min(Math.max(1, props.max), Math.round(v))));
   const btn =
-    "h-11 w-11 rounded-xl bg-night-4 font-display text-lg ring-1 ring-inset ring-line transition hover:ring-cream-dim/40 active:scale-95 disabled:opacity-35";
+    "h-11 w-11 slab bg-night-4 font-display text-lg ring-1 ring-inset ring-line transition hover:ring-cream-dim/40 active:scale-95 disabled:opacity-35";
   return (
     <div className="flex items-center gap-2">
       <button
@@ -391,7 +400,7 @@ export function Qty(props: { value: number; max: number; onChange: (v: number) =
         value={props.value}
         onChange={(e) => set(Number(e.target.value) || 1)}
         aria-label="Quantité"
-        className="h-11 w-16 rounded-xl bg-night text-center font-display text-base ring-1 ring-line focus:outline-none focus:ring-gold"
+        className="h-11 w-16 rounded-md bg-night text-center font-display text-base ring-1 ring-line focus:outline-none focus:ring-info"
       />
       <button
         type="button"
@@ -402,13 +411,15 @@ export function Qty(props: { value: number; max: number; onChange: (v: number) =
       >
         <span>+</span>
       </button>
-      <button
-        type="button"
-        className="label h-11 rounded-xl px-3 text-gold ring-1 ring-inset ring-gold/40 transition hover:bg-gold/10 active:scale-95"
-        onClick={() => set(props.max)}
-      >
-        max
-      </button>
+      {props.maxButton !== false && (
+        <button
+          type="button"
+          className="label h-11 slab bg-night-4 px-3 text-cream transition hover:bg-night-3 active:scale-95"
+          onClick={() => set(props.max)}
+        >
+          max
+        </button>
+      )}
     </div>
   );
 }
@@ -625,7 +636,7 @@ export function Segmented<T extends string>({
           aria-pressed={value === o.value}
           data-coach={coach ? `${coach}-${o.value}` : undefined}
           onClick={() => onChange(o.value)}
-          className={`rounded-full px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.08em] ring-1 ring-inset transition-colors ${value === o.value ? "bg-gold/15 font-bold text-gold ring-gold/60" : "bg-night-3 text-cream-dim ring-line/70"}`}
+          className={`slab px-3 py-1.5 font-mono text-xs uppercase tracking-[0.06em] transition-colors ${value === o.value ? "bg-info/20 font-bold text-info" : "bg-night-3 text-cream-dim"}`}
         >
           {o.label}
         </button>

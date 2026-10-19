@@ -18,6 +18,8 @@ export default {
         gold: { DEFAULT: v("gold"), deep: v("gold-deep"), soft: v("gold-soft") },
         lagoon: { DEFAULT: v("lagoon"), deep: v("lagoon-deep"), soft: v("lagoon-soft") },
         vermilion: { DEFAULT: v("vermilion"), deep: v("vermilion-deep") },
+        /** Selection, the guide, the active tab: never money nor a gain. */
+        info: { DEFAULT: v("info"), deep: v("info-deep") },
       },
       fontFamily: {
         display: ["Archivo Variable", "Archivo", "system-ui", "sans-serif"],
