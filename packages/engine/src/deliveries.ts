@@ -350,6 +350,9 @@ export function deliveryOrdersFor(
         opensAt: dayStart,
         expiresAt,
       });
+      const order = out[out.length - 1];
+      if (order && welcome.reward !== undefined)
+        order.unitPrice = welcome.reward / BigInt(welcome.quantity);
     }
   }
 

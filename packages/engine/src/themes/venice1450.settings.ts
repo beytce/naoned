@@ -122,7 +122,8 @@ export const venice1450Settings: WorldSettingsInput = {
     lagoon: { bread: 20, wood: 20, clay: 20, bricks: 15 },
     dolomites: { bread: 20, wood: 30, planks: 15 },
   },
-  rations: { resource: "bread", perLevelPerDay: 2, slowdownBps: 5_000 },
+  // A newcomer's workers do not eat on their first day: the tutorial never costs bread.
+  rations: { resource: "bread", perLevelPerDay: 2, slowdownBps: 5_000, graceHours: 24 },
   // Computer-run merchants fill the world up to this many active merchants (beta).
   bots: { population: 40 },
   // The galleys of the Muda: every three days at 9 h, a lot of goods from overseas sold by the
@@ -510,10 +511,12 @@ export const venice1450Settings: WorldSettingsInput = {
     sharedOrdersPerActivePlayer: 4,
     // In waves: new city orders every 4 hours, each open 8 hours, rather than all at midnight.
     waves: { everyHours: 4, openHours: 8 },
+    // The first delivery is felt: 150 ducats, about a seventh of the starting capital. The
+    // Terraferma delivers its first batch of wheat, never the bread its workers eat.
     welcome: {
-      terraferma: { resource: "bread", quantity: 12 },
-      lagoon: { resource: "bricks", quantity: 8 },
-      dolomites: { resource: "planks", quantity: 8 },
+      terraferma: { resource: "wheat", quantity: 10, reward: 15_000 },
+      lagoon: { resource: "bricks", quantity: 8, reward: 15_000 },
+      dolomites: { resource: "planks", quantity: 8, reward: 15_000 },
     },
     routes: {
       terraferma: {
@@ -967,9 +970,10 @@ export const venice1450Settings: WorldSettingsInput = {
       ],
     },
     spend: {
-      // A point per 20 minutes left: an hour's trip costs 3, a few a day at most.
+      // No rush of a delivery since the UX audit of 19 October 2026: waiting is the game, not a
+      // cost to pay away (the rate is kept should it come back).
       rushMinutesPerPoint: 20,
-      rushPerDay: 3,
+      rushPerDay: 0,
       troopsPerPoint: 2,
       troopsPerDay: 20,
       dailyReroll: 3,

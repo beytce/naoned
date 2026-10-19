@@ -25,7 +25,7 @@ export function serveRations(tx: Tx): void {
     const dormancy = ctx.settings.dormancy;
     const rations = ctx.settings.rations;
     for (const player of Object.values(tx.s.players)) {
-      if (player.joinedAt >= boundary) continue;
+      if (player.joinedAt + rations.graceHours * HOUR_MS >= boundary) continue;
       // Left alone for a while: the workers do not starve.
       const dormant =
         dormancy.afterHours > 0 && player.lastActionAt < boundary - dormancy.afterHours * HOUR_MS;

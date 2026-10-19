@@ -63,10 +63,18 @@ export const worldSettingsSchema = z.object({
     .default({ minutes: 0, fastBatchSeconds: 30, fastBatchesPerBuilding: 0 }),
   /** Goods given to a new player, by region (resource → quantity). */
   startingStock: z.record(z.record(qty)).default({}),
-  /** Workers eat: each building level consumes rations every day; without, production slows. */
+  /**
+   * Workers eat: each building level consumes rations every day; without, production slows.
+   * `graceHours` after joining, a newcomer's workers do not eat yet.
+   */
   rations: z
-    .object({ resource: z.string(), perLevelPerDay: qty, slowdownBps: bps })
-    .default({ resource: "bread", perLevelPerDay: 0, slowdownBps: 0 }),
+    .object({
+      resource: z.string(),
+      perLevelPerDay: qty,
+      slowdownBps: bps,
+      graceHours: qty.default(0),
+    })
+    .default({ resource: "bread", perLevelPerDay: 0, slowdownBps: 0, graceHours: 0 }),
   /**
    * The galleys of the Muda bring the goods from overseas to Venice every `everyDays` days at
    * `hour`: the Dogana sells a lot in proportion to active merchants, dearer as it runs out
@@ -632,8 +640,13 @@ export const worldSettingsSchema = z.object({
        * day's count is unchanged. Absent: one board at midnight, open all day.
        */
       waves: z.object({ everyHours: positive, openHours: positive }).optional(),
-      /** On the day of joining, a first order the starting stock covers, by region. */
-      welcome: z.record(z.object({ resource: z.string(), quantity: positive })).default({}),
+      /**
+       * On the day of joining, a first order the starting stock (or the first batch) covers, by
+       * region. `reward`: deniers paid for the whole order, so the first delivery is felt.
+       */
+      welcome: z
+        .record(z.object({ resource: z.string(), quantity: positive, reward: money.optional() }))
+        .default({}),
       /** Minutes of road one way at normal speed: region → city → minutes. */
       routes: z.record(z.record(positive)),
       maxDeliveryMinutes: positive,

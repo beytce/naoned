@@ -912,7 +912,7 @@ function CartPanel({
     // Influence brings it there and its vehicle home at once, for a price by the time left.
     const spend = props.view.houseSpend;
     const rush =
-      spend && spend.rushMinutesPerPoint > 0 && now < trip.backAt
+      spend && spend.rushMinutesPerPoint > 0 && spend.rushPerDay > 0 && now < trip.backAt
         ? {
             cost: Math.max(
               1,

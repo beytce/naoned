@@ -305,6 +305,18 @@ describe("the board of orders", () => {
     expect(later?.kind).toBe("doge");
   });
 
+  it("pays the welcome order its set reward, whatever the day's prices", () => {
+    const w = world({
+      deliveries: {
+        ...deliverySettings.deliveries,
+        welcome: { terraferma: { resource: "bread", quantity: 12, reward: 15_000 } },
+      } as never,
+    });
+    const [first] = deliveryOrdersFor(w.ctx, w.state, "a", 0);
+    expect(first).toMatchObject({ kind: "city", resource: "bread", quantity: 12 });
+    expect(first?.unitPrice).toBe(1_250n);
+  });
+
   it("orders raw goods only from the merchants who produce them, never goods from overseas", () => {
     const w = world({
       cities: {

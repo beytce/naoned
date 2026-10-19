@@ -39,6 +39,19 @@ describe("rations", () => {
     expect(w.state.players.a?.hungryUntil ?? 0).toBeLessThanOrEqual(w.now);
   });
 
+  it("spares a newcomer's bread during the grace after joining", () => {
+    const w = new World(
+      living({
+        rations: { resource: "bread", perLevelPerDay: 2, slowdownBps: 5_000, graceHours: 36 },
+      }),
+    );
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    w.at(DAY + MIN).do({ type: "tick" });
+    expect(w.stock("a", "bread").available).toBe(10);
+    w.at(2 * DAY + MIN).do({ type: "tick" });
+    expect(w.stock("a", "bread").available).toBe(10 - 4);
+  });
+
   it("slows production down when there is not enough bread", () => {
     const w = new World(living({ startingStock: {} }));
     w.do({ type: "join", playerId: "a", region: "terraferma" });
