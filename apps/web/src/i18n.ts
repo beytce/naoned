@@ -1600,6 +1600,15 @@ export const fr = {
     palette: "Palette",
     paletteHint: "Change les couleurs du jeu sur cet appareil.",
 
+    side: {
+      title: "Le commerce du jour",
+      orders: "Commandes",
+      workshops: "Ateliers",
+      market: "Marché",
+      covered: "stock suffisant",
+      noOrders: "Aucune commande ouverte pour l'instant.",
+      keys: "Clavier : R récolter et relancer · A ateliers · M marché · C cargaisons · 1–9 un atelier · Échap fermer",
+    },
     unlocks: {
       afterDelivery: "S'ouvre après votre première livraison.",
     },

@@ -435,6 +435,24 @@ function MudaPanel({ props }: { props: GameProps }) {
   );
 }
 
+/** The prices of the Rialto, one line a good: the side column on a computer. */
+export function MarketBoard(props: GameProps) {
+  return (
+    <div>
+      <div className="flex items-end justify-between gap-3 border-b border-line/70 pb-2">
+        <p className="label">{fr.game.market.goods}</p>
+        <div className="w-20 text-right">
+          <p className="label">{fr.game.buyAt}</p>
+          <p className="label text-lagoon">{fr.game.sellAt}</p>
+        </div>
+      </div>
+      {props.view.market.map((l) => (
+        <Row key={l.resource} line={l} props={props} />
+      ))}
+    </div>
+  );
+}
+
 export function RialtoSheet(props: GameProps) {
   const [kind, id] = (props.sheet ?? "").split(":");
   const open = kind === "rialto" || kind === "offers" || (kind === "trade" && !!id);

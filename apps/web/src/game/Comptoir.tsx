@@ -282,7 +282,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="min-w-0 break-words font-display text-base font-extrabold uppercase leading-tight [font-stretch:110%]">
+            <h3 className="min-w-0 font-display text-[15px] font-extrabold uppercase leading-tight [font-stretch:100%]">
               {props.names.building(b.type)}
             </h3>
             {b.upgradeCost ? (
@@ -684,12 +684,29 @@ function SeasonGoal(props: GameProps) {
  * list, a workshop's production or upgrade, building, the store, the day's notebook, the bales.
  * A workshop's window goes back to the list when it closes.
  */
+/** Every workshop with one tap for them all, and a way to build: the sheet, and the side column. */
+export function WorkshopsList(props: GameProps) {
+  const room = props.view.buildings.length < props.catalog.rules.maxBuildings;
+  return (
+    <div className="space-y-3">
+      <WorkshopsSummary {...props} />
+      {props.view.buildings.map((b) => (
+        <Workshop key={b.id} b={b} props={props} />
+      ))}
+      {room && (
+        <Slab tone="ghost" className="w-full" onClick={() => props.setSheet("buildHere")}>
+          {fr.game.map.buttons.build}
+        </Slab>
+      )}
+    </div>
+  );
+}
+
 export function CounterSheets(props: GameProps) {
   const { view } = props;
   const [kind, id] = (props.sheet ?? "").split(":");
   const sheetBuilding = view.buildings.find((b) => b.id === id);
   const close = () => props.setSheet(null);
-  const room = view.buildings.length < props.catalog.rules.maxBuildings;
   return (
     <>
       <Sheet open={props.sheet === "workshops"} onClose={close}>
@@ -697,15 +714,7 @@ export function CounterSheets(props: GameProps) {
           <h3 className="font-display text-xl font-extrabold uppercase">
             {fr.game.map.buttons.workshops}
           </h3>
-          <WorkshopsSummary {...props} />
-          {view.buildings.map((b) => (
-            <Workshop key={b.id} b={b} props={props} />
-          ))}
-          {room && (
-            <Slab tone="ghost" className="w-full" onClick={() => props.setSheet("buildHere")}>
-              {fr.game.map.buttons.build}
-            </Slab>
-          )}
+          <WorkshopsList {...props} />
         </div>
       </Sheet>
       <Sheet

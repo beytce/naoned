@@ -248,7 +248,7 @@ export function MapHud({
         </div>
       </div>
 
-      <div className="pointer-events-none absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex flex-col items-end gap-1.5 lg:right-5 lg:top-5">
+      <div className="pointer-events-none absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex flex-col items-end gap-1.5 lg:right-[calc(var(--side,0px)+1.25rem)] lg:top-5">
         <HudCounter
           label={tipsT.cash.title}
           fx="purse"
@@ -333,7 +333,7 @@ export function MapHud({
         {right}
       </div>
       {bottom && (
-        <nav className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex justify-center gap-4 lg:bottom-6">
+        <nav className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex justify-center gap-4 lg:bottom-6 lg:right-[var(--side,0px)]">
           {/* The same four doors at the same places on every layer. */}
           <Door
             label={m.buttons.workshops}
