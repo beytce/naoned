@@ -1036,3 +1036,19 @@ Les semaines vont du lundi au dimanche (heure de Paris) ; le classement de la se
 `pnpm sim`, 5 graines, toutes conformes : la Terraferme détruit 37 à 44 % de la monnaie (88 à 102 d par joueur actif et par jour), la masse monétaire finit à 657 à 1 036 ducats par joueur actif (0,79 à 1,04 × son plafond).
 
 **Lecture.** Les fronts entre marchands triplent (700 au lieu de 200 à 250) : le recrutement par les terres rend les troupes rapidement, la guerre est plus vive. Moins d'éliminés (1 à 4 au lieu de 4 à 8) : un grand territoire n'a pas plus de troupes qu'un petit (le maximum ne suit plus les terres), il défend donc plus mince, ce qui freine naturellement le premier (5 à 7 % de la carte). La présence paie fort (assidus 246 à 313 % des occasionnels) : c'est elle qui relance les fronts. Milan, sans plafond qui le gonfle, reste à 18 à 30 %.
+
+## La Terraferme : les PNJ marchent dès qu'ils se posent, plusieurs fronts par session (19 octobre 2026)
+
+Correctif de comportement, aucun paramètre touché. Sur le serveur, une maison PNJ qui se posait finissait sa session aussitôt et ne lançait son premier front qu'à la session suivante (1 à 5 par jour) : le jour du placement, beaucoup restaient sur leur anneau de départ pendant qu'un joueur s'étendait sur la terre libre. Désormais le PNJ choisit son décret et marche dans la session même où il se pose, et lance des fronts l'un après l'autre (jusqu'à `fronts.max`) tant qu'il garde au moins 30 % de son maximum de troupes ; la terre libre peut recevoir plusieurs fronts, sur des cases différentes, un marchand ou Milan un seul. Le simulateur de la Terraferme (`pnpm --filter @comptoirs/simulator terra`) a ses propres PNJ et ne change pas.
+
+`pnpm sim`, 5 graines, toutes conformes avant comme après :
+
+| Moyenne des 5 graines | Avant | Après |
+| --- | --- | --- |
+| Monnaie détruite par la Terraferme (d par joueur actif et par jour) | 98 | 100 |
+| Croissance de la monnaie par joueur actif (moyenne, %/jour) | 3,6 | 4,3 |
+| Jours hors plage du ratio monnaie créée / détruite (sur 23) | 2,4 | 4,4 |
+| Gini du patrimoine à J+15 | 0,49 | 0,46 |
+| Assidus devant occasionnels (patrimoine médian) | 171 % | 184 % |
+
+**Lecture.** Les PNJ dépensent un peu plus sur la Terraferme et la gagnent mieux ; l'économie bouge dans le bruit des graines, sauf le ratio monnaie créée / détruite, qui sort plus souvent de sa plage (graine 4 : 9 jours, en avertissement seulement). À revoir si cela persiste.
