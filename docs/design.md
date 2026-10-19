@@ -102,7 +102,7 @@ La carte est l'écran de jeu : le HUD la borde sans la couvrir. Avant d'y ajoute
 4. **Les doubles chemins sont des raccourcis, pas des lieux.** Chaque lieu a sa place sur la carte (le Rialto à Venise, les ateliers au comptoir) ; une bulle ou une porte n'y mène que si le joueur y va à presque chaque session.
 5. **Sur 390 × 844, la carte garde au moins les deux tiers de l'écran** sans sélection.
 6. **Les mêmes quatre portes, aux mêmes places, sur chaque calque** : Ateliers · Classement · Terraferme/Commerce · Aide.
-7. **La première session s'ouvre par étapes** (`game/unlocks.ts`) : comptoir, villes et cargaisons d'abord ; la bulle du Rialto, le Classement et la Terraferme après la première livraison (porte grisée, cadenas et condition au toucher, pas de pastille) ; l'Influence, les tâches du jour et le Livre de compte une fois le marché appris. Pendant ce temps, chaque compteur porte sa légende (« ducats », « pain des ouvriers », « véhicules libres »). Un guide passé ou fini ouvre tout.
+7. **La première session s'ouvre par étapes** (`game/unlocks.ts`) : comptoir, villes et cargaisons d'abord ; la bulle du Rialto, le Classement et la Terraferme après la première livraison (porte grisée, cadenas et condition au toucher, pas de pastille) ; l'Influence, les tâches du jour et le Livre de compte une fois le marché appris. Un guide passé ou fini ouvre tout.
 
 Les **Avis** (la cloche) rassemblent ce qui était en bandeaux : jour et acte de la saison, dernier sprint, Criée, gazette ; puis le carnet du jour (premiers pas, tâches, Livre de compte), la saison (palier, maîtrise, ballots) et les nouvelles.
 
