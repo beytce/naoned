@@ -95,6 +95,15 @@ export const fr = {
       notices: "Avis",
       bales: (n: number) => (n > 1 ? `${n} ballots à ouvrir` : "Un ballot à ouvrir"),
       buyCart: "Acheter une mule",
+      cityLabel: (name: string, orders: number, covered: number, criee: boolean) =>
+        [
+          name,
+          orders > 0 ? `${orders} commande${orders > 1 ? "s" : ""}` : "aucune commande",
+          covered > 0 ? `${covered} couverte${covered > 1 ? "s" : ""} par votre stock` : null,
+          criee ? "criée en cours" : null,
+        ]
+          .filter(Boolean)
+          .join(", "),
       carts: "Charrettes libres",
       resumeGuide: "Reprendre le guide",
       /** The cards that unfold beside the HUD's counters. */
@@ -1450,6 +1459,12 @@ export const fr = {
       "Ventes nettes = tout ce que vous avez vendu (Rialto, Dogana, livraisons, commandes du Doge), taxes et péages déduits, moins tout ce que vous avez acheté. Le stock et les bâtiments ne comptent pas.",
 
     house: {
+      card: "Votre Maison",
+      titleOf: (name: string) => `Titre de la saison : ${name}`,
+      renownOf: (n: number) => `Renommée ${n.toLocaleString("fr-FR")}`,
+      influenceOf: (n: number) => `${n.toLocaleString("fr-FR")} d'Influence`,
+      more: "Voir le détail",
+      less: "Replier",
       title: "Livre de la Maison",
       influence: "Influence",
       intro:
@@ -1593,11 +1608,22 @@ export const fr = {
     replayIntro: "Revoir l'introduction",
     replayGuide: "Relancer le guide",
     haptics: "Vibrations",
+    sound: "Sons",
+    soundHint: "Une pièce qui sonne, une récolte, une charrette qui part, la cloche des avis.",
     hapticsHint:
       "Un léger retour quand une action réussit, une alerte en cas d'abordage. Sur iPhone, seulement un petit clic.",
     palette: "Palette",
     paletteHint: "Change les couleurs du jeu sur cet appareil.",
 
+    side: {
+      title: "Le commerce du jour",
+      orders: "Commandes",
+      workshops: "Ateliers",
+      market: "Marché",
+      covered: "stock suffisant",
+      noOrders: "Aucune commande ouverte pour l'instant.",
+      keys: "Clavier : R récolter et relancer · A ateliers · M marché · C cargaisons · 1–9 un atelier · Échap fermer",
+    },
     unlocks: {
       afterDelivery: "S'ouvre après votre première livraison.",
     },
@@ -1650,49 +1676,50 @@ export const fr = {
 
     howTo: [
       {
-        icon: "routes",
-        title: "Les routes",
-        text: "Les villes ne rachètent plus au comptoir : elles publient leurs commandes par vagues, toutes les 4 heures, pour tous les marchands. Les matières premières ne sont commandées qu'à ceux qui les produisent ; les produits transformés, à tous. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge y figurent, les urgentes ne restent ouvertes que trois heures.",
-      },
-      {
-        icon: "port",
-        title: "Les galères de la Muda",
-        text: "Tous les trois jours à 9 h, les galères d'État rapportent d'outre-mer épices, soie, sel, vin, fourrures et draps. La Dogana les vend au Rialto, quelques unités par marchand jusqu'aux galères suivantes, de plus en plus cher à mesure que le lot s'épuise. Quelques commandes de villes demandent ces marchandises : achetez tôt, livrez avec profit.",
-      },
-      {
-        icon: "comptoir",
-        title: "Pain et bois",
-        text: "Chaque niveau d'atelier mange 2 pains par jour. Sans pain, les nouveaux lots prennent 50 % de temps en plus. Les boulangeries et les briqueteries brûlent du bois.",
-      },
-      {
-        icon: "famille",
-        title: "Le Doge et la Terraferme",
-        text: "Chaque jour, le Doge vous passe deux commandes payées 20 % au-dessus du prix de référence, sur la carte des Routes (même les produits d'outre-mer). La porte Terraferme, au pied de la carte : le premier jour de la semaine, posez votre camp de départ sur une terre libre (après, plus personne n'entre jusqu'à la semaine suivante). Puis lancez des fronts sur les terres voisines avec une part de vos troupes ; ils avancent seuls, case par case, de 8 h à 22 h, tant qu'il leur reste des troupes. Qui perd toutes ses terres est éliminé jusqu'à la semaine suivante. Vos terres recrutent des troupes chaque heure jusqu'à votre maximum, que seuls les ducats augmentent ; un fort renforce la défense. Alliez-vous à vos voisins. Chaque semaine, la Gloire donne de l'Influence, et le premier, Signore della Terraferma, impose un décret fort la semaine suivante.",
-      },
-      {
         icon: "comptoir",
         title: "Produire",
-        text: "Chaque atelier transforme des matières en produits, par lots d'une demi-heure. Lancez jusqu'à 12 heures de production, puis revenez récolter. Rien ne se perd pendant votre absence.",
+        text: "Touchez votre comptoir, puis un atelier : il transforme des matières en produits, par lots d'une demi-heure. Lancez jusqu'à 12 heures de travail et revenez récolter ; rien ne se perd pendant votre absence.",
       },
       {
-        icon: "comptoir",
-        title: "Ballots de Faraj",
-        text: "Faraj d'Alexandrie, l'ami de votre famille, vous envoie un ballot toutes les six heures (deux au plus attendent au quai) : trois cartes de 1 à 5 unités, du blé commun à la soie légendaire. Les probabilités sont affichées ; les ballots ne s'achètent pas.",
-      },
-      {
-        icon: "marche",
-        title: "Vendre et acheter",
-        text: "Au Rialto, vous achetez et vendez aux autres marchands et à la Dogana, la douane de la République (en quantité limitée par jour) : tout de suite au meilleur prix, ou à votre prix en laissant une offre. Les villes, elles, passent commande : voyez l'onglet Routes.",
-      },
-      {
-        icon: "top",
-        title: "Classement",
-        text: "Le classement compte vos ventes nettes : ce que vous vendez, moins ce que vous achetez. Un stock qui dort ne compte pas : vendez votre production. Les meilleurs reçoivent des récompenses cosmétiques à la fin de la saison.",
+        icon: "routes",
+        title: "Livrer",
+        text: "Les villes publient des commandes toutes les 4 heures. Touchez une charrette, cochez des commandes pour une même ville, puis faites-la partir : la ville paie à l'arrivée, d'autant mieux que la route est longue. Le premier arrivé prend la commande.",
       },
       {
         icon: "profil",
         title: "Le pain des ouvriers",
-        text: "Chaque niveau d'atelier nourrit ses ouvriers : quelques pains par jour, mangés à minuit. La réserve s'affiche en haut à droite, sous la bourse. Sans pain, les lots durent 50 % de plus pendant 24 heures : achetez-en au Rialto ou cuisez-le vous-même.",
+        text: "Chaque niveau d'atelier mange 2 pains par jour, à minuit (rien le premier jour). Sans pain, les lots durent moitié plus longtemps pendant 24 heures. Les boulangeries et les briqueteries brûlent aussi du bois.",
+      },
+      {
+        icon: "marche",
+        title: "Le Rialto",
+        text: "À Venise, achetez et vendez aux autres marchands et à la Dogana : tout de suite au meilleur prix, ou à votre prix en laissant une offre. C'est là que vous trouvez ce que votre région ne produit pas.",
+      },
+      {
+        icon: "port",
+        title: "Les galères de la Muda",
+        text: "Tous les trois jours à 9 h, les galères d'État apportent épices, soie, sel, vin, fourrures et draps, vendus au Rialto en petites quantités, de plus en plus cher à mesure que le lot part. Quelques villes en commandent : achetez tôt.",
+      },
+      {
+        icon: "top",
+        title: "Classement",
+        text: "Chaque semaine et sur la saison, on compte vos ventes nettes : ce que vous vendez, moins ce que vous achetez. Un stock qui dort ne compte pas. Les trois premiers de la semaine reçoivent un titre.",
+      },
+      {
+        icon: "famille",
+        title: "La Terraferme",
+        text: "Une conquête d'une semaine, à côté du commerce. Le lundi, posez votre camp sur une terre libre ; puis lancez des fronts vers les terres voisines avec une part de vos troupes. Ils avancent seuls de 8 h à 22 h. Le premier en Gloire impose un décret la semaine suivante.",
+      },
+      {
+        icon: "comptoir",
+        title: "Ballots de Faraj",
+        text: "Toutes les six heures, Faraj d'Alexandrie vous envoie un ballot : trois cartes de 1 à 5 marchandises. Les probabilités sont affichées ; les ballots ne s'achètent pas.",
+      },
+      {
+        icon: "help",
+        title: "Au clavier",
+        text: "Sur ordinateur : R récolte et relance tout, A ouvre les ateliers, M le marché, C les cargaisons d'un véhicule libre, 1 à 9 un atelier, Échap ferme.",
+        wideOnly: true,
       },
     ],
 

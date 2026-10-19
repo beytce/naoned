@@ -3,6 +3,7 @@ import { type Account, ApiError } from "../api.js";
 import { Emblem } from "../art/logo.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
+import { type SoundKind, sound } from "../sound.js";
 import { DEFAULT_PALETTE, applyPalette, currentPalette, needsPass } from "../theme.js";
 import { Slab } from "../ui.js";
 import { Ceremony } from "./Ceremony.js";
@@ -12,6 +13,7 @@ import { Region } from "./Region.js";
 import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
 import { onBack } from "./back.js";
+import { FxLayer, flyCoins } from "./fx.js";
 import { connectLive } from "./live.js";
 import { MapScreen } from "./map/MapScreen.js";
 import type { Selection } from "./map/WorldMap.js";
@@ -32,6 +34,16 @@ const REWARDING = new Set<string>([
   "deliverToProject",
   "dispatchDelivery",
 ]);
+
+/** The sound of an action that went through (none for the small ones). */
+function soundOf(type: string): SoundKind | null {
+  if (type.startsWith("collect")) return "harvest";
+  if (type === "dispatchDelivery") return "cart";
+  if (["startProduction", "build", "upgrade", "placeOrder"].includes(type)) return "stamp";
+  if (REWARDING.has(type) || type === "instantOrder") return "coin";
+  return null;
+}
+
 import type {
   Action,
   Catalog,
@@ -166,6 +178,9 @@ export function Game(props: {
 
   const apply = useCallback((serverTime: number, v: PlayerView | null) => {
     setOffset(serverTime - Date.now());
+    // Ducats came in (a sale, a delivery paid, a reward): they fly to the purse.
+    const before = viewRef.current?.cash;
+    if (before && v) flyCoins(BigInt(v.cash) - BigInt(before));
     viewRef.current = v;
     setView(v);
   }, []);
@@ -176,10 +191,17 @@ export function Game(props: {
       const res = await gameApi.view();
       versionRef.current = Math.max(versionRef.current, res.version ?? 0);
       setViewFailed(null);
+      // Ducats come in between two actions (a delivery paid on arrival): the coin's ring.
+      const before = viewRef.current?.cash;
+      if (loaded.current && before && res.view && BigInt(res.view.cash) > BigInt(before))
+        sound("coin");
       apply(res.serverTime, res.view);
       setUnread((before) => {
         // A notice arrived while playing: a light cue (deliveries, offers taken).
-        if (loaded.current && (res.unread ?? 0) > before) haptic("success");
+        if (loaded.current && (res.unread ?? 0) > before) {
+          haptic("success");
+          sound("bell");
+        }
         loaded.current = true;
         return res.unread ?? 0;
       });
@@ -355,6 +377,8 @@ export function Game(props: {
           return false;
         }
         haptic(REWARDING.has(type) ? "success" : "tap");
+        const cue = soundOf(type);
+        if (cue) sound(cue);
         if (type === "instantOrder" || type === "sellToCity") {
           pricesAt.current = Date.now();
           gameApi
@@ -538,6 +562,7 @@ export function Game(props: {
         </div>
       )}
 
+      <FxLayer />
       {help && <Help {...gp} onClose={() => setHelp(false)} />}
       {welcome && <Welcome {...gp} data={welcome} onClose={() => setWelcome(null)} />}
     </>

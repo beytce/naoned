@@ -48,6 +48,7 @@ import {
 import { CartMarker, CityMarker, HomeMarker } from "./Markers.js";
 import { NoticesSheet } from "./Notices.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
+import { SIDE_W, SideColumn } from "./SideColumn.js";
 import {
   TerraHud,
   TerraOverlay,
@@ -277,6 +278,28 @@ export function MapScreen(
     };
   }, [sel, departure, select, props.sheet]);
 
+  // Keys on a computer: R harvests and restarts, A the workshops, M the market, C the cargoes of a
+  // free vehicle, 1 to 9 a workshop's production. Not while a sheet is open or a field is typed in.
+  useEffect(() => {
+    const keys = (e: KeyboardEvent) => {
+      if (props.sheet || e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable]")) return;
+      const k = e.key.toLowerCase();
+      if (k === "r") void props.act({ type: "collectAndRestart" });
+      else if (k === "a") props.setSheet("workshops");
+      else if (k === "m") props.goTo("marche");
+      else if (k === "c" && freeVehicles[0]) props.setSheet(`cargo:${freeVehicles[0].id}`);
+      else if (/^[1-9]$/.test(k)) {
+        const b = view.buildings[Number(k) - 1];
+        if (b) props.setSheet(`produce:${b.id}`);
+      } else return;
+      e.preventDefault();
+    };
+    window.addEventListener("keydown", keys);
+    return () => window.removeEventListener("keydown", keys);
+  }, [props, freeVehicles, view.buildings]);
+
   const goCity = (code: string) => {
     if (cartFree && selectedCart) {
       if (cartHold?.city === code && cartLoad.length > 0) {
@@ -402,11 +425,13 @@ export function MapScreen(
   ) : null;
   const panelUp = !!sel;
 
+  // On a computer, the trade's side column (orders, workshops, prices) beside the map.
+  const side = wide && !campaign && !terra;
   const insets = wide
     ? // The doors at the foot of the screen (and the campaign's pledge above them) stay clear.
       {
         top: 110,
-        right: panelUp ? 460 : 40,
+        right: (panelUp ? 460 : 40) + (side ? SIDE_W : 0),
         bottom: (campaign && !campaign.mine) || (terra && !terra.me) ? 170 : 120,
         left: 40,
       }
@@ -510,7 +535,10 @@ export function MapScreen(
   const maxCarts = catalog.road?.maxVehicles ?? 0;
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-night" style={{ overflow: "clip" }}>
+    <div
+      className="fixed inset-0 overflow-hidden bg-night"
+      style={{ overflow: "clip", ["--side" as string]: side ? `${SIDE_W}px` : "0px" }}
+    >
       <WorldMap
         ref={map}
         region={region}
@@ -632,6 +660,7 @@ export function MapScreen(
         onHelp={props.openHelp}
       />
       {panel}
+      {side && <SideColumn props={props} onCity={goCity} />}
       {terra && absence.replaying && (
         <span className="pointer-events-none absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+7.5rem)] z-10 -translate-x-1/2 animate-fade whitespace-nowrap rounded-full bg-night/80 px-3 py-1 font-mono text-xs uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line">
           {fr.game.terra.away}

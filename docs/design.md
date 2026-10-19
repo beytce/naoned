@@ -72,7 +72,9 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
 
 ## Disposition : la carte d'abord (`game/map/`)
 
-Un seul écran, la carte de la Vénétie la nuit, inspirée des jeux de commerce spatial sur mobile : les villes à la place des planètes, le comptoir du marchand parmi elles, ses charrettes garées à côté comme des vaisseaux. Aucun onglet, aucun bandeau : tout part d'un lieu.
+Un seul écran, la Vénétie en **portulan** à la lueur des lampes (`PortolanTerrain`, depuis l'audit UX du 19 octobre 2026) : parchemin chaud, Alpes à l'encre hachurée, fleuves en double trait, lagune et Adriatique lavées de vert, lignes de rhumb partant d'une rose des vents, régions nommées en capitales espacées. Les villes sont des **vignettes** de leurs monuments (`CityIcon` sur une plaque teintée de la couleur de la ville, Venise un peu plus grande) ; le comptoir doré du marchand est posé dans sa région ; ses charrettes sont garées à côté. Aucun onglet, aucun bandeau : tout part d'un lieu.
+
+**Sur ordinateur** (≥ 1024 px), une colonne de 384 px reste à droite de la carte du commerce (`SideColumn`) : Commandes du jour (les mieux payées d'abord, « stock suffisant » marqué ; toucher une ligne choisit la ville), Ateliers, Marché. Le HUD, le panneau et la caméra la laissent libre (`--side`). Raccourcis : R récolter et relancer, A ateliers, M marché, C cargaisons, 1 à 9 un atelier, Échap.
 
 | Pièce | Rôle | Composants |
 | --- | --- | --- |
@@ -137,6 +139,8 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 - **Produits frais** : sous un atelier prêt, « Frais : +5 % encore 23 min ».
 - **Ballots de Faraj** (`Bales`) : tuile des Avis après les premiers pas, puis écran plein : la balle de toile flotte sur le quai, tremble et luit, le sceau de cire (marque de Faraj : croissant, mât, fanion, orbe) éclate, trois connaissements sortent face cachée. Une carte rare ou mieux luit avant d'être retournée ; cadres parchemin, lagune, lapis, pourpre et or (seul usage de l'or hors argent et action principale) ; éclat doré et reflet pour une légendaire. Probabilités et histoire de Faraj sous le ballot.
 - **Pass Négociant** (`PassPanel`) : statut, avantages, comment le gagner, prix (paiement à venir). Sceau (le lion ailé) à côté du nom dans les classements ; palette « Or de Venise » réservée.
+- **Sons** (`sound.ts`) : pièce, récolte, charrette, tampon et cloche, synthétisés en WebAudio (aucun fichier), courts et discrets ; activés par défaut, coupables dans le Profil.
+- **Pièces vers la bourse** (`game/fx.tsx`) : quand les ducats montent, le gain s'élève là où le joueur a touché et des pièces filent jusqu'à la bourse du HUD ; rien sous `prefers-reduced-motion`.
 - **Retours haptiques** (`haptics.ts`) : léger à chaque sélection sur la carte, double pour une action qui rapporte, long pour une erreur, alarme pour une Criée ; réglables dans le Profil. Sur iPhone, Safari ne vibre pas : un interrupteur natif caché donne un petit clic.
 
 ## Famille et Campagne (jusqu'au 18 octobre 2026)

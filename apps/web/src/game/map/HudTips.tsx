@@ -160,8 +160,11 @@ export function HudCounter({
   onToggle,
   tip,
   leaving,
+  fx,
 }: {
   label: string;
+  /** A name the effects aim at (the coins fly to "purse"). */
+  fx?: string;
   value: ReactNode;
   valueClass: string;
   /** Small text before the value (what is eaten a day). */
@@ -189,6 +192,7 @@ export function HudCounter({
         </span>
         <span
           data-tone={alert}
+          data-fx={fx}
           className={`hud-orb flex h-9 w-9 items-center justify-center rounded-full ${iconClass} ${
             alert ? "hud-alert" : ""
           } ${open ? "ring-2 ring-cream/70" : ""}`}

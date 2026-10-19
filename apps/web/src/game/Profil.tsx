@@ -13,6 +13,7 @@ import { P } from "../art/palette.js";
 import { hapticsEnabled, setHapticsEnabled } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { LegalLinks } from "../legal/Legal.js";
+import { setSoundEnabled, soundEnabled } from "../sound.js";
 import { PALETTES, type PaletteId, choosePalette, currentPalette, needsPass } from "../theme.js";
 import { Big, Donut, Label, Panel, Ribbon, Sheet, Slab, Switch } from "../ui.js";
 import type { GameProps } from "./Game.js";
@@ -137,6 +138,21 @@ function CrestEditor({ props, onClose }: { props: GameProps; onClose: () => void
   );
 }
 
+function SoundSetting() {
+  const [on, setOn] = useState(soundEnabled());
+  return (
+    <Switch
+      checked={on}
+      onChange={(v) => {
+        setSoundEnabled(v);
+        setOn(v);
+      }}
+      label={fr.game.sound}
+      hint={fr.game.soundHint}
+    />
+  );
+}
+
 function HapticsSetting() {
   const [on, setOn] = useState(hapticsEnabled());
   return (
@@ -255,47 +271,69 @@ function ProfileBody(props: GameProps) {
           <p className="label mt-2 text-cream-dim">
             {props.names.region(props.view.player.region)}
           </p>
-          <button type="button" className="label mt-2 text-gold" onClick={() => setEditing(true)}>
+          <button type="button" className="label mt-2 text-info" onClick={() => setEditing(true)}>
             ✎ {fr.game.editCrest}
           </button>
         </div>
       </header>
 
-      {props.level && (
-        <section className="space-y-3">
-          <h2 className="font-display text-2xl font-extrabold">
-            {fr.game.merchantLevel.title(props.level.level)}
-          </h2>
-          <Ribbon
-            value={props.level.progress}
-            label={fr.game.merchantLevel.progress(
-              props.level.xp.toLocaleString("fr-FR"),
-              props.level.to.toLocaleString("fr-FR"),
+      {/* One house, one progression: the level that lasts, then the season's title, the renown
+          and the Influence on one line; their detail folded underneath. */}
+      <Panel glow="gold">
+        <Label>{fr.game.house.card}</Label>
+        {props.level && (
+          <>
+            <h2 className="mt-1 font-display text-2xl font-extrabold">
+              {fr.game.merchantLevel.title(props.level.level)}
+            </h2>
+            <div className="mt-2">
+              <Ribbon
+                value={props.level.progress}
+                label={fr.game.merchantLevel.progress(
+                  props.level.xp.toLocaleString("fr-FR"),
+                  props.level.to.toLocaleString("fr-FR"),
+                )}
+              />
+            </div>
+          </>
+        )}
+        <p className="note mt-3">
+          {[
+            profile ? fr.game.house.titleOf(profile.title.current.name) : null,
+            palmares ? fr.game.house.renownOf(palmares.renown.points) : null,
+            props.influence !== null ? fr.game.house.influenceOf(props.influence) : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+        <details className="group mt-3">
+          <summary className="label cursor-pointer list-none text-info">
+            <span className="group-open:hidden">▸ {fr.game.house.more}</span>
+            <span className="hidden group-open:inline">▾ {fr.game.house.less}</span>
+          </summary>
+          <div className="mt-4 space-y-6">
+            {props.level && <p className="text-sm text-cream-dim">{fr.game.merchantLevel.help}</p>}
+            <HouseSummary {...props} />
+            {profile && (
+              <section className="space-y-4">
+                <h3 className="font-display text-lg font-extrabold">{fr.game.profileTitle}</h3>
+                <Ribbon
+                  value={profile.title.progress}
+                  label={
+                    profile.title.next
+                      ? `${d(profile.turnover).replace(" d", "")} / ${profile.title.next.from.toLocaleString("fr-FR")} d`
+                      : fr.game.maxTitle
+                  }
+                />
+                {profile.title.next && (
+                  <p className="note">{fr.game.nextTitle(profile.title.next.name)}</p>
+                )}
+                <Titles profile={profile} />
+              </section>
             )}
-          />
-          <p className="text-sm text-cream-dim">{fr.game.merchantLevel.help}</p>
-        </section>
-      )}
-
-      <HouseSummary {...props} />
-
-      {profile && (
-        <section className="space-y-4">
-          <h2 className="font-display text-2xl font-extrabold">{fr.game.profileTitle}</h2>
-          <Ribbon
-            value={profile.title.progress}
-            label={
-              profile.title.next
-                ? `${d(profile.turnover).replace(" d", "")} / ${profile.title.next.from.toLocaleString("fr-FR")} d`
-                : fr.game.maxTitle
-            }
-          />
-          {profile.title.next && (
-            <p className="note">{fr.game.nextTitle(profile.title.next.name)}</p>
-          )}
-          <Titles profile={profile} />
-        </section>
-      )}
+          </div>
+        </details>
+      </Panel>
 
       <Panel>
         <Label>{fr.game.netWorth}</Label>
@@ -384,6 +422,7 @@ function ProfileBody(props: GameProps) {
         <div className="mt-6 space-y-8">
           <PalettePicker pass={props.view.pass.active} offered={props.view.pass.enabled} />
 
+          <SoundSetting />
           <HapticsSetting />
 
           <PushSettings />
