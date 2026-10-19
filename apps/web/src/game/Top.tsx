@@ -43,7 +43,7 @@ function Line(props: {
       type="button"
       onClick={() => r.id && props.onOpen?.(r.id)}
       aria-label={fr.game.palmares.open}
-      className={`flex w-full items-center gap-3 py-3 text-left transition hover:bg-night-3/60 ${mine ? "rounded-r-xl border-l-4 border-gold bg-gold/10 px-3" : "border-b border-line/70"}`}
+      className={`flex w-full items-center gap-3 py-3 text-left transition hover:bg-night-3/60 ${mine ? "border-l-4 border-info bg-info/10 px-3" : "border-b border-line/70"}`}
     >
       <span
         className={`w-10 font-display text-xl font-extrabold tabular-nums ${RANK_COLOR[r.rank - 1] ?? "text-cream-dim"}`}
@@ -56,7 +56,7 @@ function Line(props: {
           {r.pseudo ?? fr.game.anonymous}
         </p>
         <div className="mt-1 flex items-center gap-2">
-          {mine && <Badge>{fr.game.you}</Badge>}
+          {mine && <Badge tone="info">{fr.game.you}</Badge>}
           {r.level !== undefined && (
             <Badge tone="ghost">{fr.game.merchantLevel.short(r.level)}</Badge>
           )}
@@ -262,10 +262,10 @@ export function RankingSheet(props: GameProps) {
               </>
             )}
             <div className="flex justify-center gap-6 pb-1">
-              <button type="button" className="label text-lagoon" onClick={() => setView("last")}>
+              <button type="button" className="label text-info" onClick={() => setView("last")}>
                 {tp.tabs.passee}
               </button>
-              <button type="button" className="label text-lagoon" onClick={() => setView("rules")}>
+              <button type="button" className="label text-info" onClick={() => setView("rules")}>
                 {tp.tabs.regles}
               </button>
             </div>

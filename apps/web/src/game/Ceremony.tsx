@@ -38,7 +38,7 @@ export function Ceremony({
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-xl flex-col items-center px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] text-center">
       <Emblem size={64} />
-      <Label className="mt-4 text-lagoon">{t.closed(data.season)}</Label>
+      <Label className="mt-4 text-cream-dim">{t.closed(data.season)}</Label>
       <div className="mt-6 animate-rise">
         <Medal earned={top} size={64} />
       </div>

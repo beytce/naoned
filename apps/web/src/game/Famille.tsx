@@ -204,7 +204,7 @@ export function LandSheet({
       <div className="flex items-center gap-3">
         {land.holder ? <FamilyCrest family={land.holder} size={48} /> : null}
         <div className="min-w-0">
-          <p className="label text-lagoon">{t().kinds[land.kind] ?? land.kind}</p>
+          <p className="label text-cream-dim">{t().kinds[land.kind] ?? land.kind}</p>
           <h3 className="font-display text-2xl font-extrabold uppercase">{landName(land.code)}</h3>
           <p className="text-xs text-cream-dim">
             {t().land.heldBy(
@@ -244,7 +244,7 @@ export function LandSheet({
               <Qty value={n} max={reserve} onChange={setLances} />
               <Slab
                 className="w-full"
-                tone={ours ? "lagoon" : undefined}
+                tone={ours ? "ghost" : undefined}
                 disabled={props.busy}
                 onClick={async () => {
                   if (await props.act({ type: "sendMarch", land: land.code, lances: n })) onClose();
@@ -325,7 +325,7 @@ function LandWork({ land, f, props }: { land: LandView; f: FamiliesView; props: 
         {!theirs && !land.work.ready && spend && (
           <Slab
             size="sm"
-            tone="lagoon"
+            tone="ghost"
             disabled={props.busy || (props.influence ?? 0) < spend.rushWork}
             onClick={() => props.spend({ use: "work", land: land.code })}
           >
@@ -394,14 +394,14 @@ export function Lances({ f, props }: { f: FamiliesView; props: GameProps }) {
   const cost = hireCost(rules, me.hired, n);
   return (
     <div>
-      <Label className="text-lagoon">{t().lances}</Label>
+      <Label className="text-cream-dim">{t().lances}</Label>
       <div className="mt-2 grid grid-cols-2 gap-2">
         <Stat label={t().reserve} value={me.reserve} tone="lagoon" />
         <Stat label={t().levyWaiting} value={`${me.levy} / ${me.levyMax}`} />
       </div>
       <Slab
         className="mt-3 w-full"
-        tone="lagoon"
+        tone="ghost"
         disabled={props.busy || me.levy <= 0}
         onClick={() => props.act({ type: "collectLevy" })}
       >
@@ -729,7 +729,7 @@ export function Thread() {
   };
   return (
     <Panel>
-      <Label className="text-lagoon">{t().thread.title}</Label>
+      <Label className="text-cream-dim">{t().thread.title}</Label>
       <p className="mt-1 text-xs text-cream-dim">{t().thread.help}</p>
       <ul className="mt-3 max-h-80 space-y-2 overflow-y-auto">
         {messages.length === 0 && <li className="text-sm text-cream-dim">{t().thread.empty}</li>}

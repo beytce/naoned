@@ -126,18 +126,17 @@ export function ActionButton({
   label: string;
   onClick: () => void;
   disabled?: boolean;
-  tone?: "plain" | "gold" | "lagoon" | "vermilion";
+  /** Gold for the panel's one main action; never lagoon (a gain, not a button). */
+  tone?: "plain" | "gold" | "vermilion";
   badge?: ReactNode;
   coach?: string;
 }) {
   const face =
     tone === "gold"
       ? "bg-gold text-ink ring-gold"
-      : tone === "lagoon"
-        ? "bg-lagoon text-on-lagoon ring-lagoon"
-        : tone === "vermilion"
-          ? "bg-vermilion text-cream ring-vermilion"
-          : "bg-night text-cream ring-lagoon/50";
+      : tone === "vermilion"
+        ? "bg-vermilion text-cream ring-vermilion"
+        : "bg-night text-cream ring-cream/30";
   return (
     <button
       type="button"

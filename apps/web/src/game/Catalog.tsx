@@ -37,7 +37,7 @@ export function BuildCatalog(props: GameProps) {
               aria-selected={tab === k}
               onClick={() => setTab(k)}
               className={`-mb-px flex-1 border-b-2 py-2 font-display text-sm font-extrabold uppercase tracking-wide transition ${
-                tab === k ? "border-gold text-cream" : "border-transparent text-cream-dim"
+                tab === k ? "border-info text-cream" : "border-transparent text-cream-dim"
               }`}
             >
               {t().tabs[k]}

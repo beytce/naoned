@@ -59,7 +59,7 @@ export function PassPanel({
             </p>
           </div>
         </div>
-        {pass.active && <Badge>✓</Badge>}
+        {pass.active && <Badge tone="gold">✓</Badge>}
       </div>
       <p className="mt-3 text-xs text-cream-dim">{t.pitch}</p>
       <ul className="mt-3 grid gap-1.5 text-sm sm:grid-cols-2">

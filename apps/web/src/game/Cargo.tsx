@@ -131,7 +131,7 @@ export function CargoSheet({
               {o.quantity} {props.names.resource(o.resource).toLowerCase()}
               {o.kind !== "city" && (
                 <span className="ml-1 align-middle">
-                  <Badge tone={o.kind === "urgent" ? "vermilion" : "gold"}>
+                  <Badge tone={o.kind === "urgent" ? "vermilion" : "ghost"}>
                     {t().kinds[o.kind] ?? o.kind}
                   </Badge>
                 </span>

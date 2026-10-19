@@ -59,7 +59,7 @@ export function PushSettings() {
         ) : (
           <Slab
             className="mt-4 w-full"
-            tone={on ? "ghost" : "lagoon"}
+            tone={on ? "ghost" : "gold"}
             disabled={busy}
             onClick={async () => {
               setBusy(true);

@@ -165,7 +165,7 @@ export function Intro({ onDone }: { onDone: () => void }) {
       <div key={i} className="flex flex-1 animate-rise flex-col justify-center gap-8 py-6">
         <Illustration index={i} />
         <div className="space-y-3">
-          <Label className="text-lagoon">{slide.kicker}</Label>
+          <Label className="text-cream-dim">{slide.kicker}</Label>
           <h1 className="font-display text-3xl font-extrabold uppercase leading-tight">
             {slide.title}
           </h1>

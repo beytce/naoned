@@ -154,7 +154,7 @@ export function BaleScreen(props: GameProps) {
     >
       <header className="flex items-start justify-between gap-3 px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))]">
         <div>
-          <Label className="text-lagoon">{t.kicker}</Label>
+          <Label className="text-cream-dim">{t.kicker}</Label>
           <h2 className="font-display text-xl font-extrabold uppercase">{t.title}</h2>
         </div>
         <div className="flex items-center gap-2">

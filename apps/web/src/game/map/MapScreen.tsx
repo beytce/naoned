@@ -741,7 +741,7 @@ function HomePanel({ props, onClose }: { props: GameProps; onClose: () => void }
             <ActionButton
               icon={ready > 0 ? Icon.harvest() : Icon.restart()}
               label={ready > 0 ? m.buttons.harvest : m.buttons.restart}
-              tone={ready > 0 ? "gold" : "lagoon"}
+              tone="gold"
               badge={ready > 0 ? ready : undefined}
               coach="panel-harvest"
               disabled={props.busy}
@@ -1006,7 +1006,7 @@ function CartPanel({
           <ActionButton
             icon={Icon.send()}
             label={m.buttons.send}
-            tone={loadCity ? "lagoon" : "plain"}
+            tone={loadCity ? "gold" : "plain"}
             coach="panel-send"
             disabled={!loadCity}
             onClick={onSend}
@@ -1067,7 +1067,7 @@ function DeparturePanel({
           <ActionButton
             icon={Icon.check()}
             label={m.buttons.go}
-            tone="lagoon"
+            tone="gold"
             coach="panel-go"
             disabled={props.busy || fired.current}
             onClick={() => {

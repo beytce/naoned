@@ -119,7 +119,7 @@ function FirstSteps(props: GameProps & { inSheet?: boolean }) {
   return (
     <Panel>
       <div className="flex items-center justify-between">
-        <Label className="text-lagoon">{fr.game.firstSteps.title}</Label>
+        <Label className="text-cream-dim">{fr.game.firstSteps.title}</Label>
         <span className="label">
           {FIRST_STEPS.filter((s) => done.has(s)).length}/{FIRST_STEPS.length}
         </span>
@@ -195,7 +195,7 @@ export function Rations(props: GameProps) {
         )}
         <Slab
           size="sm"
-          tone={hungry ? "vermilion" : short ? "gold" : "lagoon"}
+          tone={hungry ? "vermilion" : short ? "gold" : "ghost"}
           className="mt-2"
           onClick={() => props.setSheet(buyRationsSheet(props.view))}
         >
@@ -230,12 +230,20 @@ export function StockStrip(props: GameProps) {
   );
 }
 
-/** The tone of a workshop's state: gold to collect, lagoon at work, vermilion when it lacks. */
+/**
+ * The tone of a workshop's state: gold to collect, lagoon at work, quiet when it waits for goods
+ * (a normal state of a chain, not an alarm: a hollow dot, not a red one).
+ */
 const STATE_TONE = {
   ready: { glow: "gold", dot: "bg-gold", text: "text-gold", ring: "ring-gold/60" },
   running: { glow: "lagoon", dot: "bg-lagoon", text: "text-lagoon", ring: "ring-lagoon/50" },
   idle: { glow: undefined, dot: "bg-cream-dim", text: "text-cream-dim", ring: "ring-line" },
-  blocked: { glow: undefined, dot: "bg-vermilion", text: "text-vermilion", ring: "ring-line" },
+  blocked: {
+    glow: undefined,
+    dot: "border-[1.5px] border-cream-dim",
+    text: "text-cream-dim",
+    ring: "ring-line",
+  },
   still: { glow: undefined, dot: "bg-line", text: "text-muted", ring: "ring-line" },
 } as const;
 
@@ -251,12 +259,6 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
   const ready = st.ready;
   const tone = STATE_TONE[st.state];
   const t = fr.game.workshop;
-  // Fresh produce: the latest batch done, collected soon, yields a little more.
-  const fresh = props.view.fresh;
-  const freshLeft =
-    job && ready > 0 && fresh.minutes > 0
-      ? job.startedAt + ready * job.batchMs + fresh.minutes * 60_000 - props.now
-      : 0;
   const status =
     st.state === "ready"
       ? t.ready(st.quantity ?? 0, props.names.resource(st.resource ?? ""))
@@ -289,12 +291,12 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
                 data-coach={`upgrade-${b.id}`}
                 aria-label={fr.game.upgrade}
                 onClick={() => props.setSheet(`upgrade:${b.id}`)}
-                className="flex shrink-0 items-center gap-1 rounded-full bg-gold px-2 py-0.5 font-mono text-[11px] font-bold text-ink transition active:scale-95"
+                className="slab flex shrink-0 items-center gap-1 whitespace-nowrap bg-night-4 px-2.5 py-0.5 font-mono text-xs font-bold text-cream transition active:scale-95"
               >
                 {fr.game.level(b.level)} <span aria-hidden="true">↑</span>
               </button>
             ) : (
-              <Badge tone={b.level >= 3 ? "lagoon" : "gold"}>{fr.game.level(b.level)}</Badge>
+              <Badge>{fr.game.level(b.level)}</Badge>
             )}
           </div>
           <p className={`mt-1.5 flex items-center gap-1.5 text-xs font-semibold ${tone.text}`}>
@@ -323,15 +325,11 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
           />
         </div>
       )}
-      {freshLeft > 0 && (
-        <p className="label mt-2 text-lagoon">
-          {fr.game.fresh(fresh.bonusBps / 100, clock(freshLeft))}
-        </p>
-      )}
 
       {st.state === "ready" && (
         <Slab
           className="mt-3 w-full"
+          tone="ghost"
           coach={`harvest-${b.id}`}
           disabled={props.busy}
           onClick={() => props.act({ type: "collect", buildingId: b.id })}
@@ -342,7 +340,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
       {st.state === "idle" && (
         <Slab
           className="mt-3 w-full"
-          tone="lagoon"
+          tone="ghost"
           coach={`produce-${b.id}`}
           onClick={() => props.setSheet(`produce:${b.id}`)}
         >
@@ -389,7 +387,6 @@ function WorkshopsSummary(props: GameProps) {
       {(ready > 0 || count("idle") > 0) && (
         <Slab
           className="w-full"
-          tone={ready > 0 ? "gold" : "lagoon"}
           disabled={props.busy}
           onClick={() => props.act({ type: "collectAndRestart" })}
         >
@@ -494,7 +491,7 @@ function WorkshopSheet({
           </h3>
           {status && (
             <p
-              className={`text-sm ${st.state === "ready" ? "text-gold" : st.state === "blocked" ? "text-vermilion" : "text-lagoon"}`}
+              className={`text-sm ${st.state === "ready" ? "text-gold" : st.state === "blocked" ? "text-cream-dim" : "text-lagoon"}`}
             >
               {status}
             </p>
@@ -545,7 +542,6 @@ function WorkshopSheet({
           </p>
           <Slab
             size="lg"
-            tone="lagoon"
             className="w-full"
             coach="sheet-produce"
             disabled={props.busy}

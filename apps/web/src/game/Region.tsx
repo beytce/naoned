@@ -30,7 +30,7 @@ export function Region(props: {
   return (
     <main className="mx-auto max-w-md space-y-5 px-4 pb-10 pt-[max(1.5rem,env(safe-area-inset-top))]">
       <header className="space-y-2">
-        <Label className="text-lagoon">{props.catalog.world.name}</Label>
+        <Label className="text-cream-dim">{props.catalog.world.name}</Label>
         <h1 className="font-display text-2xl font-extrabold uppercase leading-tight">
           {fr.region.title}
         </h1>
@@ -47,7 +47,7 @@ export function Region(props: {
               {fr.region.jobs[r.code]?.name ?? r.name}
             </h2>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              <p className="label text-lagoon">{r.name}</p>
+              <p className="label text-cream-dim">{r.name}</p>
               <span className="slab whitespace-nowrap bg-lagoon px-2 py-0.5 font-mono text-xs font-bold text-on-lagoon">
                 {fr.region.bonus(bonus, props.names.resource(r.bonusResource))}
               </span>
@@ -93,7 +93,6 @@ export function Region(props: {
             </div>
             <Slab
               className="mt-4 w-full"
-              tone={k === 1 ? "lagoon" : "gold"}
               disabled={busy !== null}
               onClick={async () => {
                 setBusy(r.code);

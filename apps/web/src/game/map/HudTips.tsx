@@ -36,11 +36,11 @@ const ARROW: Record<TipTone, string> = {
   cream: "bg-cream",
   lagoon: "bg-lagoon",
 };
-const SLAB: Record<TipTone, "gold" | "lagoon"> = {
+const SLAB: Record<TipTone, "gold" | "ghost"> = {
   gold: "gold",
   "gold-soft": "gold",
   cream: "gold",
-  lagoon: "lagoon",
+  lagoon: "ghost",
 };
 
 /**
@@ -289,7 +289,7 @@ export function FleetDrawer({
         ))}
         {canBuy && (
           <li className="px-3 pb-2 pt-1">
-            <Slab size="sm" tone="lagoon" className="w-full" onClick={onBuy}>
+            <Slab size="sm" tone="ghost" className="w-full" onClick={onBuy}>
               <span className="w-full text-center">{fr.game.map.buyCart}</span>
             </Slab>
           </li>

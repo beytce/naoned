@@ -1101,7 +1101,6 @@ export const fr = {
       rerollHelp: "Pass Négociant : une commande échangée par jour.",
       paletteLocked: "Réservée au Pass Négociant",
     },
-    fresh: (pct: number, t: string) => `Frais : +${pct} % encore ${t}`,
     ledger: {
       title: "Livre de compte",
       claim: "Encaisser",

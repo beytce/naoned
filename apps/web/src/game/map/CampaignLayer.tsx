@@ -350,7 +350,7 @@ export function CampaignPanel({
             <ActionButton
               icon={Icon.bandits()}
               label={ours ? c().reinforce : c().attack}
-              tone={ours ? "lagoon" : "gold"}
+              tone={ours ? "plain" : "gold"}
               coach="panel-march"
               onClick={() => props.setSheet(`land:${land.code}`)}
             />

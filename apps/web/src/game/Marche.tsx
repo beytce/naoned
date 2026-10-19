@@ -42,7 +42,7 @@ function Row({
       type="button"
       data-coach={`row-${line.resource}`}
       onClick={() => props.setSheet(`trade:${line.resource}`)}
-      className={`flex w-full items-center gap-3 border-b border-line/70 py-3 text-left transition lg:rounded-xl lg:border-transparent lg:px-3 lg:hover:bg-night-3 ${selected ? "lg:bg-night-3 lg:ring-1 lg:ring-gold/60" : ""}`}
+      className={`flex w-full items-center gap-3 border-b border-line/70 py-3 text-left transition lg:rounded-xl lg:border-transparent lg:px-3 lg:hover:bg-night-3 ${selected ? "lg:bg-night-3 lg:ring-1 lg:ring-info/70" : ""}`}
     >
       <ResourceIcon code={line.resource} size={36} />
       <div className="min-w-0 flex-1">
@@ -258,7 +258,7 @@ function TradeSheet({
           </Slab>
           <Slab
             size="lg"
-            tone="lagoon"
+            tone="ghost"
             disabled={props.busy || !bid || q > stock}
             onClick={async () => {
               if (
@@ -298,7 +298,7 @@ function TradeSheet({
           </Slab>
           <Slab
             size="md"
-            tone="lagoon"
+            tone="ghost"
             disabled={props.busy || !price || q > stock}
             onClick={async () => {
               if (
@@ -491,7 +491,7 @@ export function RialtoSheet(props: GameProps) {
             <h3 className="font-display text-2xl font-extrabold uppercase">
               {fr.game.map.buttons.rialto}
             </h3>
-            <p className="label mt-1 text-lagoon">{r.kicker}</p>
+            <p className="label mt-1 text-cream-dim">{r.kicker}</p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             <Segmented<Filter>
@@ -505,13 +505,14 @@ export function RialtoSheet(props: GameProps) {
             />
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="rounded-full bg-night-3 px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.08em] text-cream-dim ring-1 ring-inset ring-line/70">
+            {/* A fact, not a filter: plain text. */}
+            <span className="mr-1 text-xs text-cream-dim">
               {m.tax(props.catalog.rules.marketTaxBps / 100)}
             </span>
             <button
               type="button"
               onClick={() => props.setSheet("offers")}
-              className={`rounded-full px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.08em] ring-1 ring-inset ${offers.length > 0 ? "bg-gold/15 text-gold ring-gold/60" : "bg-night-3 text-cream-dim ring-line/70"}`}
+              className={`slab px-2.5 py-1 font-mono text-xs uppercase tracking-[0.06em] ${offers.length > 0 ? "bg-info/20 text-info" : "bg-night-3 text-cream-dim"}`}
             >
               {r.offers(offers.length)}
             </button>

@@ -15,14 +15,15 @@ const TONES: Record<Tone, { face: string; shadow: string }> = {
 };
 
 /**
- * Main button: a slanted slab on a solid offset shadow, gold for the action that matters. Pressed,
- * the face sinks onto its shadow.
+ * Button: a slanted slab on a solid offset shadow, gold for the one action that matters on the
+ * screen. Pressed, the face sinks onto its shadow.
  */
 export function Slab(props: {
   children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
-  tone?: Tone;
+  /** Gold for the one action that matters on the screen, ghost for the others; never lagoon. */
+  tone?: Exclude<Tone, "lagoon">;
   size?: "sm" | "md" | "lg";
   className?: string;
   type?: "button" | "submit";
@@ -102,7 +103,7 @@ export function Tabs<T extends string>(props: {
           style={{ left: `${(index * 100) / n}%`, width: `${100 / n}%` }}
         >
           <span className="absolute left-[30%] right-[30%] top-0 h-[3px] bg-cream" />
-          <span className="absolute left-[44%] right-[22%] top-[3px] h-[3px] bg-lagoon" />
+          <span className="absolute left-[44%] right-[22%] top-[3px] h-[3px] bg-info" />
         </span>
       </div>
     );
@@ -256,16 +257,18 @@ export function Big({ children, className = "" }: { children: ReactNode; classNa
   );
 }
 
-export function Badge({ children, tone = "gold" }: { children: ReactNode; tone?: Tone }) {
+/** A small tag. Neutral by default: gold is for money, not for a label. */
+export function Badge({ children, tone = "ghost" }: { children: ReactNode; tone?: Tone | "info" }) {
   const look = {
     gold: "bg-gold text-ink",
     lagoon: "bg-lagoon text-on-lagoon",
     vermilion: "bg-vermilion text-cream",
     ghost: "bg-night-4 text-cream",
+    info: "bg-info text-night",
   }[tone];
   return (
     <span
-      className={`slab inline-block px-2.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-widest ${look}`}
+      className={`slab inline-block shrink-0 whitespace-nowrap px-2.5 py-0.5 font-mono text-xs font-bold uppercase tracking-wider ${look}`}
     >
       <span>{children}</span>
     </span>
@@ -625,7 +628,7 @@ export function Segmented<T extends string>({
           aria-pressed={value === o.value}
           data-coach={coach ? `${coach}-${o.value}` : undefined}
           onClick={() => onChange(o.value)}
-          className={`rounded-full px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.08em] ring-1 ring-inset transition-colors ${value === o.value ? "bg-gold/15 font-bold text-gold ring-gold/60" : "bg-night-3 text-cream-dim ring-line/70"}`}
+          className={`slab px-3 py-1.5 font-mono text-xs uppercase tracking-[0.06em] transition-colors ${value === o.value ? "bg-info/20 font-bold text-info" : "bg-night-3 text-cream-dim"}`}
         >
           {o.label}
         </button>

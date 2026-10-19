@@ -50,7 +50,7 @@ export function NoticesSheet(
 
         {event && (
           <section className="space-y-1">
-            <Label className="text-lagoon">
+            <Label className="text-cream-dim">
               {t.event} ·{" "}
               {current
                 ? `${fr.game.gazette.endsIn} ${clock(event.endsAt - now)}`

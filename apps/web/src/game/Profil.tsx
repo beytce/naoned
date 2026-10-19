@@ -43,7 +43,7 @@ function Titles({ profile }: { profile: Profile }) {
                 <span>{i + 1}</span>
               </span>
               <div
-                className={`slab mt-2 flex h-24 flex-col items-center justify-center px-1.5 text-center ring-1 ${current ? "bg-night-3 ring-2 ring-gold" : "bg-night-2 ring-line"}`}
+                className={`slab mt-2 flex h-24 flex-col items-center justify-center px-1.5 text-center ring-1 ${current ? "bg-night-3 ring-2 ring-info" : "bg-night-2 ring-line"}`}
               >
                 <span className="flex flex-col items-center">
                   <span className="font-display text-xs font-extrabold uppercase leading-tight [font-stretch:100%] [overflow-wrap:anywhere]">
@@ -100,7 +100,7 @@ function CrestEditor({ props, onClose }: { props: GameProps; onClose: () => void
             key={v}
             type="button"
             onClick={() => setCrest({ ...crest, [key]: v })}
-            className={`rounded-lg p-1 ring-2 ${crest[key] === v ? "bg-night-4 ring-gold" : "ring-transparent"}`}
+            className={`rounded-lg p-1 ring-2 ${crest[key] === v ? "bg-night-4 ring-info" : "ring-transparent"}`}
           >
             <Crest crest={{ ...crest, [key]: v }} size={40} />
           </button>
@@ -176,7 +176,7 @@ function PalettePicker({ pass, offered }: { pass: boolean; offered: boolean }) {
                 choosePalette(p.id);
                 setChosen(p.id);
               }}
-              className={`flex items-center gap-3 rounded-2xl border bg-night-3 p-3 text-left transition disabled:opacity-50 ${on ? "border-gold" : "border-line hover:border-cream-dim/40"}`}
+              className={`flex items-center gap-3 rounded-2xl border bg-night-3 p-3 text-left transition disabled:opacity-50 ${on ? "border-info" : "border-line hover:border-cream-dim/40"}`}
             >
               <span
                 className="flex h-10 w-10 shrink-0 items-end justify-center gap-0.5 overflow-hidden rounded-xl p-1.5"
@@ -250,7 +250,9 @@ function ProfileBody(props: GameProps) {
         </div>
         <div className="min-w-0">
           <h1 className="truncate font-display text-3xl font-extrabold">{props.account.pseudo}</h1>
-          <p className="label mt-2 text-lagoon">{props.names.region(props.view.player.region)}</p>
+          <p className="label mt-2 text-cream-dim">
+            {props.names.region(props.view.player.region)}
+          </p>
           <button type="button" className="label mt-2 text-gold" onClick={() => setEditing(true)}>
             ✎ {fr.game.editCrest}
           </button>

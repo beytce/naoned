@@ -1047,7 +1047,7 @@ export function TerraPanel({
     <ActionButton
       icon={Icon.family()}
       label={asked ? t().holder.accept : offered ? t().holder.asked : t().holder.ally}
-      tone={asked ? "lagoon" : "plain"}
+      tone={asked ? "gold" : "plain"}
       disabled={offered || !!v.closed}
       onClick={() =>
         act(
@@ -1103,7 +1103,7 @@ export function TerraPanel({
               <ActionButton
                 icon={Icon.send()}
                 label={t().holder.send}
-                tone="lagoon"
+                tone="plain"
                 disabled={gift <= 0 || !!v.closed}
                 onClick={() => act({ type: "terraSend", to: merchant.id as string, count: gift })}
               />
