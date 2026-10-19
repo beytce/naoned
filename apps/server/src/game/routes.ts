@@ -796,6 +796,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     });
     return toJson({
       week: table.week,
+      unit: table.unit,
       endsAt: table.endsAt,
       rows: table.rows.slice(0, 50).map(strip),
       me: me ? strip(me) : null,

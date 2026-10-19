@@ -103,6 +103,13 @@ describe("the Terraferma on the server", () => {
     expect((await act(ada, { type: "terraPlace", cell: 0 })).json().error).toBe("terra_off");
   });
 
+  it("ranks the week by its glory, and says so", async () => {
+    await open({ terraferma: { live: true } });
+    const ada = await player("ada@example.org");
+    await world.execute({ type: "tick" });
+    expect((await get(ada, "/api/game/ranking/week")).unit).toBe("glory");
+  });
+
   it("shows the week's map, takes the merchant's commands and the ducats of the cap", async () => {
     await open({ terraferma: { live: true } });
     const ada = await player("ada@example.org");
