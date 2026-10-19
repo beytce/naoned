@@ -1,14 +1,12 @@
 import { store } from "./game/store.js";
 
-/** The palettes of the identity guide; the first one is the default. */
+/** The palettes of the identity guide, a dark and a light one; the first one is the default. */
 export const PALETTES = [
   { id: "noyer", name: "Noyer & Ducat", swatch: ["#1E1611", "#E8B24C", "#7DB596", "#E36A4A"] },
-  { id: "lagune", name: "Lagune & Ducat", swatch: ["#0F1B1E", "#E0AD4B", "#6DB3A2", "#E2694F"] },
-  { id: "pourpre", name: "Pourpre du Doge", swatch: ["#1C1016", "#DDB054", "#6FB5AA", "#F07A5C"] },
   {
     id: "parchemin",
     name: "Parchemin & Lapis",
-    swatch: ["#F3E9D4", "#C9952F", "#2D5486", "#B2412D"],
+    swatch: ["#F3E9D4", "#845A0E", "#284EA0", "#B2412D"],
   },
   // The Pass Négociant's own palette.
   {
@@ -29,9 +27,7 @@ export const DEFAULT_PALETTE: PaletteId = "noyer";
 
 export function currentPalette(): PaletteId {
   const saved = store.get("palette");
-  // Before Noyer, every device saved "lagune" without the player choosing it: only a choice made
-  // in the Profil (marked "paletteChosen") keeps it.
-  if (saved === "lagune" && store.get("paletteChosen") !== "1") return DEFAULT_PALETTE;
+  // Lagune and Pourpre are gone (UX audit of 19 October 2026): a device that kept one turns Noyer.
   return PALETTES.find((p) => p.id === saved)?.id ?? DEFAULT_PALETTE;
 }
 

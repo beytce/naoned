@@ -1,8 +1,8 @@
 /** Colours of the illustrations: the "Noyer & Ducat" palette (the default) of the identity guide. */
 export const P = {
   night: "#1E1611",
-  night3: "#2E221A",
-  line: "#54402F",
+  night3: "#36291F",
+  line: "#604A37",
   cream: "#F6E8CC",
   gold: "#E8B24C",
   goldDeep: "#BA8830",
