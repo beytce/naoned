@@ -13,6 +13,7 @@ import { Region } from "./Region.js";
 import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
 import { onBack } from "./back.js";
+import { FxLayer, flyCoins } from "./fx.js";
 import { connectLive } from "./live.js";
 import { MapScreen } from "./map/MapScreen.js";
 import type { Selection } from "./map/WorldMap.js";
@@ -177,6 +178,9 @@ export function Game(props: {
 
   const apply = useCallback((serverTime: number, v: PlayerView | null) => {
     setOffset(serverTime - Date.now());
+    // Ducats came in (a sale, a delivery paid, a reward): they fly to the purse.
+    const before = viewRef.current?.cash;
+    if (before && v) flyCoins(BigInt(v.cash) - BigInt(before));
     viewRef.current = v;
     setView(v);
   }, []);
@@ -558,6 +562,7 @@ export function Game(props: {
         </div>
       )}
 
+      <FxLayer />
       {help && <Help {...gp} onClose={() => setHelp(false)} />}
       {welcome && <Welcome {...gp} data={welcome} onClose={() => setWelcome(null)} />}
     </>

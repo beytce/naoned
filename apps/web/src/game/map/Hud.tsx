@@ -251,6 +251,7 @@ export function MapHud({
       <div className="pointer-events-none absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex flex-col items-end gap-1.5 lg:right-5 lg:top-5">
         <HudCounter
           label={tipsT.cash.title}
+          fx="purse"
           value={<CountUp value={Number(cash)} format={(v) => amount(BigInt(Math.round(v)))} />}
           valueClass="text-xl text-gold"
           icon={<Coin size={24} />}
