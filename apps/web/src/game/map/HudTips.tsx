@@ -160,11 +160,8 @@ export function HudCounter({
   onToggle,
   tip,
   leaving,
-  caption,
 }: {
   label: string;
-  /** A word under the figure, for the first session: what the counter counts. */
-  caption?: string;
   value: ReactNode;
   valueClass: string;
   /** Small text before the value (what is eaten a day). */
@@ -186,14 +183,9 @@ export function HudCounter({
         aria-expanded={open}
         className="pointer-events-auto flex items-center gap-2 transition active:scale-95"
       >
-        <span className="flex flex-col items-end [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
-          <span className="flex items-baseline gap-1.5">
-            {side}
-            <span className={`font-display font-extrabold tabular-nums ${valueClass}`}>
-              {value}
-            </span>
-          </span>
-          {caption && <span className="-mt-0.5 text-xs text-cream-dim">{caption}</span>}
+        <span className="flex items-baseline gap-1.5 [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
+          {side}
+          <span className={`font-display font-extrabold tabular-nums ${valueClass}`}>{value}</span>
         </span>
         <span
           data-tone={alert}

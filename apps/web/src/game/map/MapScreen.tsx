@@ -600,7 +600,6 @@ export function MapScreen(
         doorLabel={terraView ? fr.game.terra.door : undefined}
         familyCalls={terraView ? terraCalls(terraView, now) : familyCalls(props)}
         workshopsReady={ready > 0}
-        captions={!open.house}
         locks={{
           ranking: open.ranking ? undefined : fr.game.unlocks.afterDelivery,
           layer: open.terraferma ? undefined : fr.game.unlocks.afterDelivery,
