@@ -18,16 +18,19 @@ Logo officiel (depuis le 18 octobre 2026) : le lion ailé de saint Marc, de face
 
 ## Palettes
 
-Quatre palettes, mêmes rôles aux mêmes endroits, au choix du joueur dans le Profil (mémorisé sur l'appareil), plus « Or de Venise » réservée au Pass. Les couleurs sont des variables CSS (`index.css`, `[data-palette]`) lues par Tailwind (`tailwind.config.js`). « Noyer & Ducat » est la palette par défaut depuis octobre 2026 : l'intérieur du fondaco à la lueur des lampes, plus chaleureux que la lagune. Un appareil qui gardait « Lagune » sans l'avoir choisie passe à Noyer ; un choix fait dans le Profil est conservé.
+Deux palettes, mêmes rôles aux mêmes endroits, au choix du joueur dans le Profil (mémorisé sur l'appareil) : « Noyer & Ducat », sombre et par défaut (l'intérieur du fondaco à la lueur des lampes), et « Parchemin & Lapis », claire, pour le plein jour. « Or de Venise » reste réservée au Pass. Lagune et Pourpre ont été retirées après l'audit UX du 19 octobre 2026 (`docs/audit-ux-2026-10-19.md`) : un appareil qui les gardait passe à Noyer. Les couleurs sont des variables CSS (`index.css`, `[data-palette]`) lues par Tailwind (`tailwind.config.js`).
 
-| Rôle | Noyer & Ducat (défaut) | Lagune & Ducat | Pourpre du Doge | Parchemin & Lapis (clair) | Usage |
-| --- | --- | --- | --- | --- | --- |
-| Fond (`night`) | `#1E1611` | `#0F1B1E` | `#1C1016` | `#F3E9D4` | Application, panneaux (`night-2/3/4`) |
-| Or (`gold`) | `#E8B24C` | `#E0AD4B` | `#DDB054` | `#C9952F` | Argent et action principale uniquement |
-| Lagune (`lagoon`) | `#7DB596` | `#6DB3A2` | `#6FB5AA` | `#2D5486` | Gains, production, routes sûres |
-| Cinabre (`vermilion`) | `#E36A4A` | `#E2694F` | `#F07A5C` | `#B2412D` | Pertes, alertes |
-| Texte (`cream`) | `#F6E8CC` | `#F1E4C6` | `#F4E6D0` | `#2B2016` | Texte |
-| Encre (`ink`) | fond | fond | fond | texte | Texte posé sur l'or ou la lagune |
+| Rôle | Noyer & Ducat (défaut) | Parchemin & Lapis (clair) | Usage strict |
+| --- | --- | --- | --- |
+| Fond (`night`, `night-2/3/4`) | `#1E1611`, surfaces `#2A1F18` `#36291F` `#443327` | `#F3E9D4` | Application, cartes, feuilles : des surfaces assez écartées pour que les panneaux « montent » |
+| Or (`gold`) | `#E8B24C` | `#845A0E` | Les montants en ducats, et **un seul bouton par écran** : celui à toucher. Jamais un badge, un onglet ni un titre |
+| Lagune (`lagoon`) | `#7DB596` | `#286E4E` | Gains, production, « prêt ». Jamais un bouton ni un libellé neutre |
+| Cinabre (`vermilion`) | `#EA7658` | `#AA3422` | Pertes réelles et urgences. Une chaîne qui attend sa matière n'est pas une alerte (rond creux, crème) |
+| Lapis (`info`) | `#7E9CDB` | `#284EA0` | Sélection (anneau des repères), guide de Lorenzo, onglet et filtre actifs, liens, « vous » au classement |
+| Texte (`cream`, `cream-dim`, `muted`) | `#F6E8CC` | `#2B2016` | Texte, sur-titres (crème atténué), badges neutres |
+| Encre (`ink`) | fond | crème clair | Texte posé sur l'or |
+
+Les autres boutons sont « fantômes » (`Slab tone="ghost"`, `ActionButton tone="plain"`). Un test (`apps/web/test/theme.test.ts`) vérifie le contraste AA (4,5:1) de chaque couleur de texte sur `night`, `night-2` et `night-3`, pour chaque palette.
 
 Les deux halos du fond suivent la palette (`--glow-a`, `--glow-b`) : ambre et braise pour Noyer, vert d'eau et or pour les autres.
 
@@ -37,17 +40,18 @@ Les illustrations (ressources, bâtiments, blasons) et la carte gardent leurs pr
 
 - **Archivo Expanded** (Archivo variable, largeur 125 %) : titres et chiffres.
 - **Space Grotesk** : texte courant et boutons.
-- **Space Mono** : petits libellés et navigation (`.label`).
+- **Space Mono** : sur-titres de un à trois mots en capitales (`.label`, 12 px).
+- Toute phrase ou temps restant en petit : `.note` (Space Grotesk 13 px, chiffres alignés). Aucun texte sous 12 px.
 
 ## Composants (`apps/web/src/ui.tsx`)
 
-Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arrondis.
-- `Slab` : bouton en parallélogramme (`.bevel`) posé sur une ombre pleine décalée de sa teinte sombre. À l'appui, la face s'enfonce sur son ombre, avec un tick haptique. Or pour l'action qui compte.
+Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arrondis, partout (`.cut` pour les cartes et les lignes, `.slab` pour les puces et les badges). Le cercle est réservé aux médaillons, avatars, pastilles et jauges ; les feuilles gardent leur poignée arrondie.
+- `Slab` : bouton en parallélogramme (`.bevel`) posé sur une ombre pleine décalée de sa teinte sombre. À l'appui, la face s'enfonce sur son ombre, avec un tick haptique. Or pour l'unique action qui compte à l'écran, fantôme pour les autres ; jamais vert d'eau.
 - `Panel` : carte à coins coupés (`.cut`), haut gauche et bas droit, avec un liseré. Une lueur intérieure s'ajoute quand elle doit attirer l'œil. Les tuiles et cartes de commande suivent la même coupe.
 - `Badge`, puces du stock, pastilles de tri : petits biseaux (`.slab`).
 - `Tabs` :
   - `pills` : choix d'une valeur, par exemple le tri ;
-  - `underline` : parties d'un écran (Joueurs et Villes). Capitales sur un double trait crème et lagune qui glisse d'un onglet à l'autre.
+  - `underline` : parties d'un écran (Joueurs et Villes). Capitales sur un double trait crème et lapis qui glisse d'un onglet à l'autre.
 - `CountUp` : un nombre qui court vers sa nouvelle valeur en 400 ms, comme la bourse de l'en-tête.
 - `Stat` : tuile chiffrée (une durée, un gain en lagune, une perte en cinabre).
 - `Switch` : interrupteur (escorte, navires, notifications), à la place des cases à cocher.
@@ -57,7 +61,7 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
 ## Mouvement
 
 - La carte ne bouge que sous le doigt : glisser la déplace (avec élan), deux doigts ou la molette zooment autour de leur milieu, un double toucher dans le vide la recadre. Un objet choisi glisse dans le champ s'il est caché sous le panneau, sans plus.
-- Le panneau de la sélection monte du pied de l'écran ; un médaillon choisi s'entoure de vert d'eau, une ville que la charrette peut servir respire, les autres s'estompent. Les routes en cours défilent en pointillés vers leur ville.
+- Le panneau de la sélection monte du pied de l'écran ; un médaillon choisi s'entoure de lapis, une ville que la charrette peut servir respire, les autres s'estompent. Les routes en cours défilent en pointillés vers leur ville.
 - Il n'y a plus de page : le Rialto, le Classement et le Profil sont des feuilles posées sur la carte ; la Famille est un calque de la même carte (la Campagne), que la porte « Commerce » ou le bouton retour ramène au commerce.
 - Tout s'arrête pour qui demande moins de mouvement (`prefers-reduced-motion`).
 
@@ -97,6 +101,8 @@ La carte est l'écran de jeu : le HUD la borde sans la couvrir. Avant d'y ajoute
 3. **Une bulle conditionnelle n'apparaît que lorsqu'il y a quelque chose à faire** (le ballot à ouvrir, le guide en pause), et disparaît ensuite.
 4. **Les doubles chemins sont des raccourcis, pas des lieux.** Chaque lieu a sa place sur la carte (le Rialto à Venise, les ateliers au comptoir) ; une bulle ou une porte n'y mène que si le joueur y va à presque chaque session.
 5. **Sur 390 × 844, la carte garde au moins les deux tiers de l'écran** sans sélection.
+6. **Les mêmes quatre portes, aux mêmes places, sur chaque calque** : Ateliers · Classement · Terraferme/Commerce · Aide.
+7. **La première session s'ouvre par étapes** (`game/unlocks.ts`) : comptoir, villes et cargaisons d'abord ; la bulle du Rialto, le Classement et la Terraferme après la première livraison (porte grisée, cadenas et condition au toucher, pas de pastille) ; l'Influence, les tâches du jour et le Livre de compte une fois le marché appris. Pendant ce temps, chaque compteur porte sa légende (« ducats », « pain des ouvriers », « véhicules libres »). Un guide passé ou fini ouvre tout.
 
 Les **Avis** (la cloche) rassemblent ce qui était en bandeaux : jour et acte de la saison, dernier sprint, Criée, gazette ; puis le carnet du jour (premiers pas, tâches, Livre de compte), la saison (palier, maîtrise, ballots) et les nouvelles.
 
@@ -109,7 +115,7 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 ## Guide du joueur
 
 1. **Introduction** : 4 écrans illustrés avant le choix de la région (rejouable depuis le profil ou l'aide).
-2. **Lorenzo** : guide interactif qui assombrit l'écran, entoure en or l'élément à toucher et explique pourquoi. Il lit l'état réel du jeu, donc il suit le joueur même s'il fait les choses dans un autre ordre. Un élément ciblé porte un attribut `data-coach` (sur PC, la cible visible est choisie entre la barre latérale et la barre du bas).
+2. **Lorenzo** : guide interactif qui assombrit l'écran, entoure en lapis l'élément à toucher et explique pourquoi. Sa bulle ne couvre jamais sa cible ni le panneau ouvert ; si une fenêtre cache la cible, il demande de la fermer. Il ne fait jamais livrer le pain des ouvriers. `pnpm --filter @comptoirs/web e2e` joue le tutoriel jusqu'à la première livraison. Il lit l'état réel du jeu, donc il suit le joueur même s'il fait les choses dans un autre ordre. Un élément ciblé porte un attribut `data-coach` (sur PC, la cible visible est choisie entre la barre latérale et la barre du bas).
 3. **Comment jouer** : aide permanente (icône « ? » en haut).
 
 ## Saison, présence et Pass
