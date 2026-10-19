@@ -95,6 +95,13 @@ export const fr = {
       notices: "Avis",
       bales: (n: number) => (n > 1 ? `${n} ballots à ouvrir` : "Un ballot à ouvrir"),
       buyCart: "Acheter une mule",
+      buyMule: "Mule",
+      captions: {
+        cash: "ducats",
+        influence: "influence",
+        bread: "pain des ouvriers",
+        carts: "véhicules libres",
+      },
       carts: "Charrettes libres",
       resumeGuide: "Reprendre le guide",
       /** The cards that unfold beside the HUD's counters. */

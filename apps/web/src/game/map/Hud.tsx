@@ -110,6 +110,7 @@ export function MapHud({
   familyCalls,
   workshopsReady,
   locks = {},
+  captions = false,
   right,
   onProfile,
   onNotices,
@@ -161,6 +162,8 @@ export function MapHud({
   familyCalls: boolean;
   /** Batches waiting at the workshops (a dot on their door). */
   workshopsReady: boolean;
+  /** Words under the counters (the first session). */
+  captions?: boolean;
   /** Doors still closed in the first session, with what opens them. */
   locks?: { ranking?: string; layer?: string };
   /** Under the purse on the right, in place of the bread and the carts (the families' glory on the campaign). */
@@ -217,7 +220,7 @@ export function MapHud({
               type="button"
               aria-label={fr.game.tabs.top}
               onClick={onRanking}
-              className="block text-left font-mono text-xs uppercase tracking-[0.1em] text-cream-dim"
+              className="block max-w-[44vw] text-left font-mono text-xs uppercase tracking-[0.1em] text-cream-dim lg:max-w-xs"
             >
               {level !== null && <>{fr.game.merchantLevel.short(level)} · </>}
               {title} · <span className="text-gold">#{rank ?? "—"}</span>
@@ -251,6 +254,7 @@ export function MapHud({
       <div className="pointer-events-none absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex flex-col items-end gap-1.5 lg:right-5 lg:top-5">
         <HudCounter
           label={tipsT.cash.title}
+          caption={captions ? m.captions.cash : undefined}
           value={<CountUp value={Number(cash)} format={(v) => amount(BigInt(Math.round(v)))} />}
           valueClass="text-xl text-gold"
           icon={<Coin size={24} />}
@@ -262,6 +266,7 @@ export function MapHud({
         {influence !== null && (
           <HudCounter
             label={tipsT.influence.title}
+            caption={captions ? m.captions.influence : undefined}
             value={influence}
             valueClass="text-lg text-gold-soft"
             icon={<span className="font-display text-sm font-extrabold">✦</span>}
@@ -275,6 +280,7 @@ export function MapHud({
         {!right && bread && (
           <HudCounter
             label={fr.game.rations.hud(bread.stock, bread.perDay)}
+            caption={captions ? m.captions.bread : undefined}
             side={
               <span className="font-mono text-xs text-cream-dim">
                 {fr.game.rations.perDay(bread.perDay)}
@@ -310,12 +316,17 @@ export function MapHud({
               aria-expanded={fleetOpen}
               className="pointer-events-auto flex items-center gap-2 transition active:scale-95"
             >
-              <span className="font-display text-lg font-extrabold tabular-nums text-lagoon [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
-                {freeCarts} / {carts}
+              <span className="flex flex-col items-end [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
+                <span className="font-display text-lg font-extrabold tabular-nums text-cream">
+                  {freeCarts} / {carts}
+                </span>
+                {captions && (
+                  <span className="-mt-0.5 text-xs text-cream-dim">{m.captions.carts}</span>
+                )}
               </span>
               <span
-                className={`hud-orb flex h-9 w-9 items-center justify-center rounded-full text-lagoon ${
-                  fleetOpen ? "ring-2 ring-lagoon/80" : ""
+                className={`hud-orb flex h-9 w-9 items-center justify-center rounded-full text-cream ${
+                  fleetOpen ? "ring-2 ring-info/80" : ""
                 }`}
               >
                 {Icon.cart()}
@@ -325,9 +336,13 @@ export function MapHud({
           </span>
         )}
         {!right && canBuyCart && !fleetOpen && (
-          <Orb label={m.buyCart} onClick={onBuyCart} size={36} tone="lagoon">
-            {Icon.plus()}
-          </Orb>
+          <button
+            type="button"
+            onClick={onBuyCart}
+            className="slab pointer-events-auto flex items-center gap-1 bg-night-4/90 px-2.5 py-1.5 text-xs font-semibold text-cream transition active:scale-95"
+          >
+            <span aria-hidden="true">+</span> {m.buyMule}
+          </button>
         )}
         {right}
       </div>
