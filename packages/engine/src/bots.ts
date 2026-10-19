@@ -53,7 +53,15 @@ import {
   seasonEnd,
 } from "./state.js";
 import { terraOn } from "./terraWorld.js";
-import { alliesOf, capOf, cellCost, cellsOf, hexNeighbors } from "./terraferma.js";
+import {
+  type TerraConfig,
+  type TerraState,
+  alliesOf,
+  capOf,
+  cellCost,
+  cellsOf,
+  hexNeighbors,
+} from "./terraferma.js";
 import { findRegion, recipesFor } from "./theme.js";
 
 /**
@@ -269,7 +277,8 @@ export class Bot {
 
   /**
    * The Terraferma, when it is live: set down, keep an ally, spend spare ducats on a rocca, a
-   * borgo or the cap, then a front at free land, else at the thinnest neighbour, else at Milan.
+   * borgo or the cap, then fronts at free land, else at the thinnest neighbour, else at Milan,
+   * as many as the troops allow (all in the session that sets it down).
    */
   private playTerra(s: Session): void {
     const cfg = terraOn(s.ctx);
@@ -280,28 +289,47 @@ export class Bot {
       s.act({ playerId: id, ...cmd } as unknown as Command);
     const me = map.players[id];
     if (me?.eliminatedAt !== undefined) return;
-    if (!me) {
-      // Too late: the week's game has begun without it.
-      const end = map.startAt + cfg.start.placementHours * 3_600_000;
-      if (cfg.start.placementHours > 0 && s.now >= end) return;
-      const inner = (i: number) =>
-        hexNeighbors(map.map, i).filter((n) => map.map.land[n]).length === 6;
-      const free = map.owner
-        .map((o, i) => (o === null && map.map.land[i] && inner(i) ? i : -1))
-        .filter((i) => i >= 0);
-      const start = free.length > 0 ? Math.floor(s.rng.next() * free.length) : 0;
-      for (let k = 0; k < Math.min(40, free.length); k++) {
-        if (act({ type: "terraPlace", cell: free[(start + k) % free.length] })) return;
-      }
-      // No free land: the edge of Milan's.
-      const edge = map.owner.findIndex(
-        (o, i) =>
-          o === MILAN &&
-          hexNeighbors(map.map, i).some((n) => map.map.land[n] && map.owner[n] !== MILAN),
-      );
-      if (edge >= 0) act({ type: "terraPlace", cell: edge });
-      return;
+    if (!me && !this.setDown(s, cfg, map, act)) return;
+    this.terraPlay(s, cfg, act);
+  }
+
+  /** Sets down on a free inner cell, else on the edge of Milan's land; whether it did. */
+  private setDown(
+    s: Session,
+    cfg: TerraConfig,
+    map: TerraState,
+    act: (cmd: Record<string, unknown>) => boolean,
+  ): boolean {
+    // Too late: the week's game has begun without it.
+    const end = map.startAt + cfg.start.placementHours * 3_600_000;
+    if (cfg.start.placementHours > 0 && s.now >= end) return false;
+    const inner = (i: number) =>
+      hexNeighbors(map.map, i).filter((n) => map.map.land[n]).length === 6;
+    const free = map.owner
+      .map((o, i) => (o === null && map.map.land[i] && inner(i) ? i : -1))
+      .filter((i) => i >= 0);
+    const start = free.length > 0 ? Math.floor(s.rng.next() * free.length) : 0;
+    for (let k = 0; k < Math.min(40, free.length); k++) {
+      if (act({ type: "terraPlace", cell: free[(start + k) % free.length] })) return true;
     }
+    // No free land: the edge of Milan's.
+    const edge = map.owner.findIndex(
+      (o, i) =>
+        o === MILAN &&
+        hexNeighbors(map.map, i).some((n) => map.map.land[n] && map.owner[n] !== MILAN),
+    );
+    return edge >= 0 && act({ type: "terraPlace", cell: edge });
+  }
+
+  /** The decree, an ally, spare ducats spent, then the fronts. */
+  private terraPlay(
+    s: Session,
+    cfg: TerraConfig,
+    act: (cmd: Record<string, unknown>) => boolean,
+  ): void {
+    const id = this.id;
+    const map = s.state().terra?.map;
+    if (!map) return;
     if (!map.programme?.[id]) {
       const decrees = cfg.close.decrees;
       const code = decrees[Math.floor(s.rng.next() * decrees.length)];
@@ -337,19 +365,36 @@ export class Bot {
     if (inner !== undefined && borgo && spare(borgo.price))
       act({ type: "terraBuild", cell: inner, kind: "borgo" });
     if (spare(cfg.capRaise.price)) act({ type: "terraRaise" });
-    // A front, when the troops are worth it.
-    const after = s.state().terra?.map ?? map;
-    const self = after.players[id];
-    if (!self || self.troops * 10 < capOf(after, cfg, id) * 3) return;
-    if (after.fronts.filter((f) => f.owner === id).length >= cfg.fronts.max) return;
+    // Fronts, one after another while the troops are worth it.
+    for (let k = 0; k < cfg.fronts.max; k++) {
+      if (!this.launchFront(s, cfg, allies, act)) return;
+    }
+  }
+
+  /** A front at free land, else at the thinnest neighbour, else at Milan; whether it left. */
+  private launchFront(
+    s: Session,
+    cfg: TerraConfig,
+    allies: string[],
+    act: (cmd: Record<string, unknown>) => boolean,
+  ): boolean {
+    const id = this.id;
+    const after = s.state().terra?.map;
+    const self = after?.players[id];
+    if (!after || !self || self.troops * 10 < capOf(after, cfg, id) * 3) return false;
+    const mine = after.fronts.filter((f) => f.owner === id);
+    if (mine.length >= cfg.fronts.max) return false;
+    // A cell already aimed at is left to the front on its way.
+    const aimed = new Set(mine.map((f) => f.aim));
     const targets = new Map<string | null, number[]>();
     for (let i = 0; i < after.owner.length; i++) {
       const o = after.owner[i] ?? null;
-      if (o === id || !after.map.land[i]) continue;
+      if (o === id || !after.map.land[i] || aimed.has(i)) continue;
       if (!hexNeighbors(after.map, i).some((n) => after.owner[n] === id)) continue;
       targets.set(o, [...(targets.get(o) ?? []), i]);
     }
-    const attacked = new Set(after.fronts.filter((f) => f.owner === id).map((f) => f.against));
+    // Free land takes several fronts; a merchant or Milan one at a time.
+    const attacked = new Set<string | null>(mine.map((f) => f.against).filter((o) => o !== null));
     const density = (o: string) =>
       (after.players[o]?.troops ?? 0) / Math.max(1, cellsOf(after, o).length);
     const rank = (o: string | null) => (o === null ? 0 : o === MILAN ? 2 : 1);
@@ -362,12 +407,12 @@ export class Bot {
           (self.protectedUntil <= s.now && (after.players[o]?.protectedUntil ?? 0) <= s.now),
       )
       .sort((a, b) => rank(a) - rank(b) || (a && b ? density(a) - density(b) : 0))[0];
-    if (against === undefined) return;
+    if (against === undefined) return false;
     const aim = (targets.get(against) ?? []).sort(
       (a, b) => cellCost(after, cfg, a) - cellCost(after, cfg, b) || a - b,
     )[0];
     const share = this.profile.name === "casual" ? 7_000 : 5_000;
-    if (aim !== undefined) act({ type: "terraFront", aim, shareBps: share });
+    return aim !== undefined && act({ type: "terraFront", aim, shareBps: share });
   }
 
   /**

@@ -6,9 +6,10 @@ import {
   PROFILES,
   Rng,
   botsWanted,
+  cellsOf,
   parseSettings,
 } from "../src/index.js";
-import { deliverySettings, testSettings } from "./fixture.js";
+import { deliverySettings, testSettings, testTerraferma } from "./fixture.js";
 import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
 
 describe("bot population", () => {
@@ -161,5 +162,45 @@ describe("bots on the road", () => {
     const count = (type: string) => events.filter((e) => e === type).length;
     expect(count("delivery_arrived")).toBeGreaterThan(20);
     expect(Object.values(w.state.vehicles ?? {}).length).toBeGreaterThan(bots.length);
+  });
+});
+
+describe("bots on the Terraferma", () => {
+  it("set down and march on the free land in the same session, several fronts at once", () => {
+    const w = new World(
+      makeContext({
+        terraferma: {
+          ...testTerraferma,
+          live: true,
+          // Troops enough for more than one front from the start.
+          start: { ...testTerraferma.start, troops: 60, protectionHours: 0, placementHours: 24 },
+        },
+      }),
+    );
+    const bot = new Bot("b1", PROFILES.producer, "terraferma", w.now);
+    w.do({ type: "join", playerId: bot.id, region: bot.region });
+    w.do({ type: "tick" });
+    bot.play({
+      ctx: w.ctx,
+      state: () => w.state,
+      now: w.now,
+      market: new MarketView(
+        w.ctx,
+        () => w.state,
+        () => w.now,
+      ),
+      rng: new Rng(1),
+      act: (cmd) => w.try(cmd).ok,
+    });
+    const map = w.state.terra?.map;
+    expect(map?.players[bot.id]).toBeDefined();
+    const fronts = map?.fronts.filter((f) => f.owner === bot.id) ?? [];
+    expect(fronts.length).toBeGreaterThan(1);
+    expect(fronts.every((f) => f.against === null)).toBe(true);
+    // Each at a cell of its own.
+    expect(new Set(fronts.map((f) => f.aim)).size).toBe(fronts.length);
+    // Troops kept at home.
+    expect(map?.players[bot.id]?.troops).toBeGreaterThan(0);
+    expect(map && cellsOf(map, bot.id).length).toBeGreaterThan(1);
   });
 });
