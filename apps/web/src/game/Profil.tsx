@@ -13,6 +13,7 @@ import { P } from "../art/palette.js";
 import { hapticsEnabled, setHapticsEnabled } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { LegalLinks } from "../legal/Legal.js";
+import { setSoundEnabled, soundEnabled } from "../sound.js";
 import { PALETTES, type PaletteId, choosePalette, currentPalette, needsPass } from "../theme.js";
 import { Big, Donut, Label, Panel, Ribbon, Sheet, Slab, Switch } from "../ui.js";
 import type { GameProps } from "./Game.js";
@@ -134,6 +135,21 @@ function CrestEditor({ props, onClose }: { props: GameProps; onClose: () => void
         {fr.game.save}
       </Slab>
     </div>
+  );
+}
+
+function SoundSetting() {
+  const [on, setOn] = useState(soundEnabled());
+  return (
+    <Switch
+      checked={on}
+      onChange={(v) => {
+        setSoundEnabled(v);
+        setOn(v);
+      }}
+      label={fr.game.sound}
+      hint={fr.game.soundHint}
+    />
   );
 }
 
@@ -384,6 +400,7 @@ function ProfileBody(props: GameProps) {
         <div className="mt-6 space-y-8">
           <PalettePicker pass={props.view.pass.active} offered={props.view.pass.enabled} />
 
+          <SoundSetting />
           <HapticsSetting />
 
           <PushSettings />

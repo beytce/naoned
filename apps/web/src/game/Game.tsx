@@ -3,6 +3,7 @@ import { type Account, ApiError } from "../api.js";
 import { Emblem } from "../art/logo.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
+import { type SoundKind, sound } from "../sound.js";
 import { DEFAULT_PALETTE, applyPalette, currentPalette, needsPass } from "../theme.js";
 import { Slab } from "../ui.js";
 import { Ceremony } from "./Ceremony.js";
@@ -32,6 +33,16 @@ const REWARDING = new Set<string>([
   "deliverToProject",
   "dispatchDelivery",
 ]);
+
+/** The sound of an action that went through (none for the small ones). */
+function soundOf(type: string): SoundKind | null {
+  if (type.startsWith("collect")) return "harvest";
+  if (type === "dispatchDelivery") return "cart";
+  if (["startProduction", "build", "upgrade", "placeOrder"].includes(type)) return "stamp";
+  if (REWARDING.has(type) || type === "instantOrder") return "coin";
+  return null;
+}
+
 import type {
   Action,
   Catalog,
@@ -176,10 +187,17 @@ export function Game(props: {
       const res = await gameApi.view();
       versionRef.current = Math.max(versionRef.current, res.version ?? 0);
       setViewFailed(null);
+      // Ducats come in between two actions (a delivery paid on arrival): the coin's ring.
+      const before = viewRef.current?.cash;
+      if (loaded.current && before && res.view && BigInt(res.view.cash) > BigInt(before))
+        sound("coin");
       apply(res.serverTime, res.view);
       setUnread((before) => {
         // A notice arrived while playing: a light cue (deliveries, offers taken).
-        if (loaded.current && (res.unread ?? 0) > before) haptic("success");
+        if (loaded.current && (res.unread ?? 0) > before) {
+          haptic("success");
+          sound("bell");
+        }
         loaded.current = true;
         return res.unread ?? 0;
       });
@@ -355,6 +373,8 @@ export function Game(props: {
           return false;
         }
         haptic(REWARDING.has(type) ? "success" : "tap");
+        const cue = soundOf(type);
+        if (cue) sound(cue);
         if (type === "instantOrder" || type === "sellToCity") {
           pricesAt.current = Date.now();
           gameApi

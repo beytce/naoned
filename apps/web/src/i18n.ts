@@ -1593,6 +1593,8 @@ export const fr = {
     replayIntro: "Revoir l'introduction",
     replayGuide: "Relancer le guide",
     haptics: "Vibrations",
+    sound: "Sons",
+    soundHint: "Une pièce qui sonne, une récolte, une charrette qui part, la cloche des avis.",
     hapticsHint:
       "Un léger retour quand une action réussit, une alerte en cas d'abordage. Sur iPhone, seulement un petit clic.",
     palette: "Palette",
