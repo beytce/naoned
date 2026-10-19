@@ -397,8 +397,6 @@ export class Notifier {
           rank: r.rank,
           gain: r.gain.toString(),
           award: r.award,
-          // The week's glory on the Terraferma when it is live, else its net sales.
-          glory: !!this.world.ctx.settings.terraferma?.live,
         },
       })),
       now,

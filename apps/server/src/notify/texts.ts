@@ -157,6 +157,7 @@ export function pushText(
     case "week": {
       const gain = String(data.gain ?? "0");
       const sign = BigInt(gain) > 0n ? "+" : "";
+      // `glory`: the weeks ranked on the Terraferma's glory (18 and 19 October 2026).
       const award = data.award ? ` Vous êtes ${AWARDS[String(data.award)]} !` : "";
       return {
         title: "Résultats de la semaine",

@@ -1389,9 +1389,6 @@ export const fr = {
         procurator: "Procurateur",
         senator: "Sénateur",
       } as Record<string, string>,
-      glory: (n: number) => `${n.toLocaleString("fr-FR")} Gloire`,
-      helpGlory:
-        "La Gloire de la Terraferme cette semaine, du lundi au dimanche : chaque heure de jeu, vos terres en rapportent (une par case, trois par ville). Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
       help: "Ventes nettes depuis le début de la semaine (ou depuis votre arrivée), en ducats : ce que vous avez vendu, moins ce que vous avez acheté. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
     },
     season: {

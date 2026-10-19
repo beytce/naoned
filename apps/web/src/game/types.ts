@@ -755,8 +755,6 @@ export interface PodiumRow {
 
 export interface WeekRanking {
   week: number;
-  /** What the ranking counts: the week's glory on the Terraferma, or its net sales. */
-  unit: "glory" | "sales";
   endsAt: number;
   rows: WeekRow[];
   me: WeekRow | null;
