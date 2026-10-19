@@ -6,9 +6,9 @@ import { VehicleGlyph } from "../../art/veneto.js";
 import { WorkGlyph } from "../../art/workIcon.js";
 
 /**
- * What stands on the map: the cities as glowing medallions (each with its own hue, like planets),
- * the merchant's counter in gold with their coat of arms, and the carts as small tokens. Each one
- * is a button centred on its place; the map moves them.
+ * What stands on the map: the cities as plaques of the portolan, each with its monument drawn
+ * and a touch of its own hue, the merchant's counter in gold with their coat of arms, and the
+ * carts as small tokens. Each one is a button centred on its place; the map moves them.
  */
 
 /** Each city's stone, from its light side to its shadow. */
@@ -28,6 +28,12 @@ export function orbStyle(code: string): { background: string } {
   return {
     background: `radial-gradient(circle at 34% 30%, ${light} 0%, ${mid} 48%, ${dark} 100%)`,
   };
+}
+
+/** A city's plaque on the chart: dark parchment warmed by the city's hue, an ink edge. */
+function plaqueStyle(code: string): { background: string } {
+  const [, mid] = HUES[code] ?? DEFAULT_HUE;
+  return { background: `linear-gradient(160deg, ${mid}66 0%, #2E2219 62%, #241A13 100%)` };
 }
 
 function Pill({ children, tone }: { children: ReactNode; tone: "gold" | "lagoon" | "vermilion" }) {
@@ -76,15 +82,18 @@ export function CityMarker({
       onClick={onTap}
       className={`marker-hit group relative -ml-9 -mt-9 flex h-[72px] w-[72px] items-center justify-center transition-opacity duration-300 ${dim ? "opacity-40" : ""}`}
     >
-      <span className="marker-ring absolute inset-0 rounded-full ring-1 ring-cream/15" />
+      <span className="marker-ring absolute inset-1 rounded-xl ring-1 ring-cream/10" />
       {(lit || deliverable > 0) && !dim && (
         <span className="marker-halo absolute inset-1 rounded-full" />
       )}
       <span
-        className="marker-orb relative flex h-11 w-11 items-center justify-center rounded-full shadow-[0_6px_18px_rgb(0_0_0/0.55),inset_-4px_-6px_10px_rgb(0_0_0/0.35)]"
-        style={orbStyle(code)}
+        className={`marker-orb relative flex items-center justify-center rounded-lg shadow-[0_6px_16px_rgb(0_0_0/0.5)] ring-1 ring-[#D9B87A]/55 ${code === "venezia" ? "h-14 w-14" : "h-12 w-12"}`}
+        style={plaqueStyle(code)}
       >
-        <CityIcon code={code} className="h-8 w-8 drop-shadow-[0_1px_1px_rgb(0_0_0/0.5)]" />
+        <CityIcon
+          code={code}
+          className={`drop-shadow-[0_1px_1px_rgb(0_0_0/0.5)] ${code === "venezia" ? "h-11 w-11" : "h-9 w-9"}`}
+        />
       </span>
       {(orders > 0 || criee) && (
         <span className="absolute -right-0.5 top-0.5 flex gap-0.5">
@@ -92,7 +101,7 @@ export function CityMarker({
           {orders > 0 && <Pill tone={deliverable > 0 ? "gold" : "lagoon"}>{orders}</Pill>}
         </span>
       )}
-      <span className="pointer-events-none absolute left-1/2 top-[calc(100%-6px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-cream/90 [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+      <span className="pointer-events-none absolute left-1/2 top-[calc(100%-4px)] -translate-x-1/2 whitespace-nowrap bg-[#241A13]/80 px-1.5 font-display text-xs font-extrabold uppercase tracking-wider text-cream/95 [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
         {name}
       </span>
     </button>

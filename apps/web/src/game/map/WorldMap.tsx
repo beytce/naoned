@@ -17,7 +17,7 @@ import {
   pointOn,
   roadCurve,
 } from "../../art/veneto.js";
-import { NightTerrain } from "./Terrain.js";
+import { PortolanTerrain } from "./Terrain.js";
 import {
   type Box,
   type Camera,
@@ -514,7 +514,7 @@ export const WorldMap = forwardRef<
         className="world-ground pointer-events-none absolute left-0 top-0 origin-top-left will-change-transform"
         style={{ width: WORLD_W, height: WORLD_H }}
       >
-        <NightTerrain />
+        <PortolanTerrain />
       </div>
       <svg
         ref={lines}
