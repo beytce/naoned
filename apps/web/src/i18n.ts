@@ -1662,7 +1662,7 @@ export const fr = {
         text: "Les villes ne rachètent plus au comptoir : elles publient leurs commandes par vagues, toutes les 4 heures, pour tous les marchands. Les matières premières ne sont commandées qu'à ceux qui les produisent ; les produits transformés, à tous. Chargez une mule, une charrette ou un chariot (deux heures de route au plus) : la ville paie à l'arrivée, d'autant mieux que la route est longue. Les commandes du Doge y figurent, les urgentes ne restent ouvertes que trois heures.",
       },
       {
-        icon: "marche",
+        icon: "port",
         title: "Les galères de la Muda",
         text: "Tous les trois jours à 9 h, les galères d'État rapportent d'outre-mer épices, soie, sel, vin, fourrures et draps. La Dogana les vend au Rialto, quelques unités par marchand jusqu'aux galères suivantes, de plus en plus cher à mesure que le lot s'épuise. Quelques commandes de villes demandent ces marchandises : achetez tôt, livrez avec profit.",
       },

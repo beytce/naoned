@@ -15,6 +15,14 @@ type Period = "week" | "season";
 
 const RANK_COLOR = ["text-gold", "text-lagoon", "text-vermilion"];
 
+/**
+ * A merchant's crest; without one chosen, the default drawn from the account (as on the HUD and
+ * the profile), so a merchant keeps the same arms whatever the rank.
+ */
+function crestOf(r: Pick<Who, "id" | "rank" | "pseudo" | "crest">) {
+  return r.crest ?? defaultCrest(r.id ?? `${r.rank}-${r.pseudo ?? ""}`);
+}
+
 interface Who {
   id?: string;
   pass?: boolean;
@@ -50,7 +58,7 @@ function Line(props: {
       >
         {r.rank}
       </span>
-      <Crest crest={r.crest ?? defaultCrest(`${r.rank}-${r.pseudo ?? ""}`)} size={40} />
+      <Crest crest={crestOf(r)} size={40} />
       <div className="min-w-0 flex-1">
         <p className={`truncate font-display text-sm font-semibold ${r.gilded ? "text-gold" : ""}`}>
           {r.pseudo ?? fr.game.anonymous}
@@ -282,10 +290,7 @@ export function RankingSheet(props: GameProps) {
                   >
                     {me.rank}
                   </span>
-                  <Crest
-                    crest={me.crest ?? defaultCrest(`${me.rank}-${me.pseudo ?? ""}`)}
-                    size={30}
-                  />
+                  <Crest crest={crestOf(me)} size={30} />
                   <span className="min-w-0 flex-1 leading-tight">
                     <span className="block truncate font-display text-sm font-extrabold">
                       {me.pseudo ?? fr.game.anonymous}
