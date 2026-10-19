@@ -43,7 +43,7 @@ export function ContextPanel({
       className="pointer-events-none absolute inset-x-0 bottom-0 z-20 lg:inset-x-auto lg:bottom-5 lg:right-5 lg:w-[420px]"
     >
       <div
-        className={`panel-rise pointer-events-auto relative border-t-2 ${edge} bg-night-2/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgb(0_0_0/0.45)] backdrop-blur-md lg:rounded-2xl lg:border-2 lg:pb-3`}
+        className={`panel-rise pointer-events-auto relative border-t-2 ${edge} bg-night-2/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgb(0_0_0/0.45)] backdrop-blur-md lg:rounded-md lg:border-2 lg:pb-3`}
       >
         <button
           type="button"

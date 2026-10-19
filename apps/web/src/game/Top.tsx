@@ -202,7 +202,7 @@ export function RankingSheet(props: GameProps) {
       type="button"
       aria-pressed={period === p}
       onClick={() => choose(p)}
-      className={`flex-1 rounded-xl px-3 py-2 text-left ring-1 ring-inset transition ${period === p ? "bg-gold/15 ring-gold/70" : "bg-night-3 ring-line/70"}`}
+      className={`flex-1 cut px-3 py-2 text-left ring-1 ring-inset transition ${period === p ? "bg-gold/15 ring-gold/70" : "bg-night-3 ring-line/70"}`}
     >
       <span
         className={`block font-mono text-xs uppercase tracking-[0.08em] ${period === p ? "text-gold" : "text-cream-dim"}`}

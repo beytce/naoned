@@ -198,7 +198,7 @@ function Missions(props: GameProps & { onClaimed: () => void }) {
         {board.missions.map((mission) => (
           <li
             key={mission.id}
-            className="flex items-center gap-3 rounded-xl bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70"
+            className="flex items-center gap-3 cut bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70"
           >
             <span
               className={`flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full px-1.5 font-mono text-xs font-bold ${mission.claimed ? "bg-lagoon text-on-lagoon" : mission.done ? "bg-gold text-ink" : "bg-night-4 text-cream-dim ring-1 ring-inset ring-line"}`}

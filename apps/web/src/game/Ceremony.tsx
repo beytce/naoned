@@ -70,7 +70,7 @@ export function Ceremony({
         </section>
       )}
 
-      <section className="mt-8 w-full rounded-2xl border border-gold/60 bg-night-3 p-4 text-left">
+      <section className="mt-8 w-full cut border border-gold/60 bg-night-3 p-4 text-left">
         <Label className="text-gold">{t.rewards}</Label>
         {rewards.length > 0 ? (
           <ul className="mt-2 space-y-1.5">

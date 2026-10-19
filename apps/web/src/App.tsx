@@ -109,7 +109,7 @@ function Hero({ children }: { children: ReactNode }) {
 }
 
 const inputClass =
-  "w-full rounded-xl bg-night-3 px-4 py-4 text-base text-cream ring-1 ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gold";
+  "w-full rounded-md bg-night-3 px-4 py-4 text-base text-cream ring-1 ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gold";
 
 function Login(props: { sentTo?: string; onSent: (email: string) => void; onReset: () => void }) {
   const [email, setEmail] = useState("");

@@ -230,7 +230,7 @@ export function LandSheet({
       {marches.map((m) => (
         <p
           key={m.id}
-          className={`rounded-xl p-2 text-sm ring-1 ${m.family === f.mine ? "bg-lagoon/10 ring-lagoon/50" : "bg-vermilion/10 ring-vermilion/60"}`}
+          className={`cut p-2 text-sm ring-1 ${m.family === f.mine ? "bg-lagoon/10 ring-lagoon/50" : "bg-vermilion/10 ring-vermilion/60"}`}
         >
           ⚔ {t().marchLine(familyName(m.family), m.lances, landName(m.target))} ·{" "}
           {t().arrives(clock(m.arriveAt - props.now))}
@@ -298,7 +298,7 @@ function LandWork({ land, f, props }: { land: LandView; f: FamiliesView; props: 
     const theirs = land.work.family !== f.mine;
     return (
       <div
-        className={`flex items-start gap-3 rounded-2xl p-3 ring-1 ring-inset ${theirs ? "bg-vermilion/10 ring-vermilion/50" : "bg-night-3 ring-line/70"}`}
+        className={`flex items-start gap-3 cut p-3 ring-1 ring-inset ${theirs ? "bg-vermilion/10 ring-vermilion/50" : "bg-night-3 ring-line/70"}`}
       >
         <span className="mt-0.5 shrink-0">
           <WorkGlyph
@@ -355,7 +355,7 @@ function LandWork({ land, f, props }: { land: LandView; f: FamiliesView; props: 
               return (
                 <li
                   key={kind}
-                  className="flex items-center gap-3 rounded-2xl bg-night-3 p-2.5 ring-1 ring-inset ring-line/70"
+                  className="flex items-center gap-3 cut bg-night-3 p-2.5 ring-1 ring-inset ring-line/70"
                 >
                   <WorkGlyph kind={kind} color={familyHex(f.mine)} size={30} />
                   <div className="min-w-0 flex-1">
@@ -461,7 +461,7 @@ export function Marches({ f, props }: { f: FamiliesView; props: GameProps }) {
           return (
             <li
               key={m.id}
-              className={`rounded-xl p-2.5 text-sm ring-1 ring-inset ${threat ? "bg-vermilion/10 ring-vermilion/60" : ours ? "bg-lagoon/10 ring-lagoon/40" : "bg-night-2 ring-line/70"}`}
+              className={`cut p-2.5 text-sm ring-1 ring-inset ${threat ? "bg-vermilion/10 ring-vermilion/60" : ours ? "bg-lagoon/10 ring-lagoon/40" : "bg-night-2 ring-line/70"}`}
             >
               <div className="flex items-center gap-2">
                 <FamilyCrest family={m.family} size={22} />
@@ -538,7 +538,7 @@ export function Programme({ f, props }: { f: FamiliesView; props: GameProps }) {
         {t().programme.help(rules.perWinner, pct(rules.maxVoteBps))}
       </p>
       {mine && (
-        <div className="mt-3 rounded-xl bg-night-2 p-3 ring-1 ring-inset ring-line/70">
+        <div className="mt-3 cut bg-night-2 p-3 ring-1 ring-inset ring-line/70">
           <p className="label">{t().programme.current}</p>
           <ul className="mt-1 space-y-1">
             {mine.programme.map((p) => (
@@ -736,7 +736,7 @@ export function Thread() {
         {messages.map((m) => (
           <li
             key={m.id}
-            className={`rounded-xl px-3 py-2 text-sm ${m.mine ? "ml-6 bg-lagoon/15" : "mr-6 bg-night-3"}`}
+            className={`cut px-3 py-2 text-sm ${m.mine ? "ml-6 bg-lagoon/15" : "mr-6 bg-night-3"}`}
           >
             <div className="flex items-baseline justify-between gap-2">
               <span className="label text-gold">{m.mine ? t().thread.me : (m.pseudo ?? "—")}</span>
@@ -772,7 +772,7 @@ export function Thread() {
           onChange={(e) => setText(e.target.value)}
           placeholder={t().thread.placeholder}
           aria-label={t().thread.placeholder}
-          className="min-w-0 flex-1 rounded-xl border border-line bg-night-2 px-3 py-2.5 text-sm"
+          className="min-w-0 flex-1 cut border border-line bg-night-2 px-3 py-2.5 text-sm"
         />
         <Slab size="sm" disabled={sending || !text.trim()} onClick={() => void send()}>
           {t().thread.send}
@@ -875,7 +875,7 @@ export function Works({
                 <button
                   type="button"
                   onClick={() => onLand(l.code)}
-                  className="flex w-full items-center gap-2.5 rounded-xl bg-night-2 p-2 text-left ring-1 ring-inset ring-line/70"
+                  className="flex w-full items-center gap-2.5 cut bg-night-2 p-2 text-left ring-1 ring-inset ring-line/70"
                 >
                   <WorkGlyph
                     kind={work.kind}

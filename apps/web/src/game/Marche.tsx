@@ -42,7 +42,7 @@ function Row({
       type="button"
       data-coach={`row-${line.resource}`}
       onClick={() => props.setSheet(`trade:${line.resource}`)}
-      className={`flex w-full items-center gap-3 border-b border-line/70 py-3 text-left transition lg:rounded-xl lg:border-transparent lg:px-3 lg:hover:bg-night-3 ${selected ? "lg:bg-night-3 lg:ring-1 lg:ring-info/70" : ""}`}
+      className={`flex w-full items-center gap-3 border-b border-line/70 py-3 text-left transition lg:cut lg:border-transparent lg:px-3 lg:hover:bg-night-3 ${selected ? "lg:bg-night-3 lg:ring-1 lg:ring-info/70" : ""}`}
     >
       <ResourceIcon code={line.resource} size={36} />
       <div className="min-w-0 flex-1">
@@ -166,7 +166,7 @@ function TradeSheet({
     <div className="space-y-5">
       {/* Room on the right for the window's close button. */}
       <div className={`flex items-center gap-4 ${inline ? "" : "pr-12"}`}>
-        <div className="shrink-0 rounded-xl bg-night-3 p-2 ring-1 ring-inset ring-line">
+        <div className="shrink-0 cut bg-night-3 p-2 ring-1 ring-inset ring-line">
           <ResourceIcon code={line.resource} size={56} />
         </div>
         <div className="min-w-0 flex-1">
@@ -180,7 +180,7 @@ function TradeSheet({
         <Sparkline points={points} width={90} height={36} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 rounded-2xl bg-night-3 p-3 ring-1 ring-inset ring-line">
+      <div className="grid grid-cols-2 gap-4 cut bg-night-3 p-3 ring-1 ring-inset ring-line">
         <BookSide lines={book?.asks ?? []} title={t.sellers} tone="text-gold" props={props} />
         <BookSide lines={book?.bids ?? []} title={t.buyers} tone="text-lagoon" props={props} />
       </div>
@@ -322,7 +322,7 @@ function TradeSheet({
       {mine.length > 0 && <MyOffers orders={mine} props={props} />}
 
       {props.catalog.previousDoge?.pseudo && (
-        <div className="flex items-center gap-3 rounded-2xl border border-gold/50 bg-night-3 p-3">
+        <div className="flex items-center gap-3 cut border border-gold/50 bg-night-3 p-3">
           {props.catalog.previousDoge.crest && (
             <Crest crest={props.catalog.previousDoge.crest} size={36} />
           )}

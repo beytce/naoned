@@ -528,7 +528,7 @@ export function Game(props: {
           <button
             type="button"
             onClick={() => setToast(null)}
-            className="flex w-full items-start gap-3 rounded-2xl bg-vermilion px-4 py-3 text-left text-sm font-semibold text-cream shadow-lg shadow-black/40"
+            className="flex w-full items-start gap-3 cut bg-vermilion px-4 py-3 text-left text-sm font-semibold text-cream shadow-lg shadow-black/40"
           >
             <span aria-hidden="true" className="mt-px font-display font-extrabold">
               !

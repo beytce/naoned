@@ -203,7 +203,7 @@ export function Switch(props: {
       role="switch"
       aria-checked={props.checked}
       onClick={() => props.onChange(!props.checked)}
-      className="flex w-full items-center gap-3 rounded-2xl border border-line bg-night-3 p-3 text-left"
+      className="flex w-full items-center gap-3 cut border border-line bg-night-3 p-3 text-left"
     >
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-semibold">{props.label}</span>
@@ -235,7 +235,7 @@ export function Stat({
           ? "text-vermilion"
           : "text-cream";
   return (
-    <div className="rounded-xl bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70">
+    <div className="cut bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70">
       <p className="text-xs text-cream-dim">{label}</p>
       <p className={`mt-0.5 font-display text-base font-extrabold tabular-nums ${color}`}>
         {value}
@@ -371,11 +371,17 @@ export function Donut({
   );
 }
 
-export function Qty(props: { value: number; max: number; onChange: (v: number) => void }) {
+export function Qty(props: {
+  value: number;
+  max: number;
+  onChange: (v: number) => void;
+  /** Off where presets already offer the most possible. */
+  maxButton?: boolean;
+}) {
   const set = (v: number) =>
     props.onChange(Math.max(1, Math.min(Math.max(1, props.max), Math.round(v))));
   const btn =
-    "h-11 w-11 rounded-xl bg-night-4 font-display text-lg ring-1 ring-inset ring-line transition hover:ring-cream-dim/40 active:scale-95 disabled:opacity-35";
+    "h-11 w-11 slab bg-night-4 font-display text-lg ring-1 ring-inset ring-line transition hover:ring-cream-dim/40 active:scale-95 disabled:opacity-35";
   return (
     <div className="flex items-center gap-2">
       <button
@@ -394,7 +400,7 @@ export function Qty(props: { value: number; max: number; onChange: (v: number) =
         value={props.value}
         onChange={(e) => set(Number(e.target.value) || 1)}
         aria-label="Quantité"
-        className="h-11 w-16 rounded-xl bg-night text-center font-display text-base ring-1 ring-line focus:outline-none focus:ring-gold"
+        className="h-11 w-16 rounded-md bg-night text-center font-display text-base ring-1 ring-line focus:outline-none focus:ring-info"
       />
       <button
         type="button"
@@ -405,13 +411,15 @@ export function Qty(props: { value: number; max: number; onChange: (v: number) =
       >
         <span>+</span>
       </button>
-      <button
-        type="button"
-        className="label h-11 rounded-xl px-3 text-gold ring-1 ring-inset ring-gold/40 transition hover:bg-gold/10 active:scale-95"
-        onClick={() => set(props.max)}
-      >
-        max
-      </button>
+      {props.maxButton !== false && (
+        <button
+          type="button"
+          className="label h-11 slab bg-night-4 px-3 text-cream transition hover:bg-night-3 active:scale-95"
+          onClick={() => set(props.max)}
+        >
+          max
+        </button>
+      )}
     </div>
   );
 }

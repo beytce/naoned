@@ -176,10 +176,10 @@ function PalettePicker({ pass, offered }: { pass: boolean; offered: boolean }) {
                 choosePalette(p.id);
                 setChosen(p.id);
               }}
-              className={`flex items-center gap-3 rounded-2xl border bg-night-3 p-3 text-left transition disabled:opacity-50 ${on ? "border-info" : "border-line hover:border-cream-dim/40"}`}
+              className={`flex items-center gap-3 cut border bg-night-3 p-3 text-left transition disabled:opacity-50 ${on ? "border-info" : "border-line hover:border-cream-dim/40"}`}
             >
               <span
-                className="flex h-10 w-10 shrink-0 items-end justify-center gap-0.5 overflow-hidden rounded-xl p-1.5"
+                className="flex h-10 w-10 shrink-0 items-end justify-center gap-0.5 overflow-hidden cut p-1.5"
                 style={{ background: p.swatch[0] }}
               >
                 {p.swatch.slice(1).map((c) => (
@@ -330,7 +330,7 @@ function ProfileBody(props: GameProps) {
               [fr.game.stats.delivered, profile.stats.delivered],
               [fr.game.stats.days, profile.stats.days],
             ].map(([label, value]) => (
-              <div key={String(label)} className="rounded-xl bg-night-3 p-3 ring-1 ring-line">
+              <div key={String(label)} className="cut bg-night-3 p-3 ring-1 ring-line">
                 <Big className="text-2xl text-gold">{value}</Big>
                 <p className="mt-2 font-mono text-xs uppercase leading-tight tracking-wider text-muted">
                   {label}
@@ -418,7 +418,7 @@ function ProfileBody(props: GameProps) {
               <a
                 href="/api/me/export"
                 download
-                className="rounded-xl bg-night-4 px-3 py-2 text-center font-display text-xs font-extrabold uppercase tracking-wide text-cream ring-1 ring-inset ring-line hover:ring-cream-dim/40"
+                className="cut bg-night-4 px-3 py-2 text-center font-display text-xs font-extrabold uppercase tracking-wide text-cream ring-1 ring-inset ring-line hover:ring-cream-dim/40"
               >
                 {fr.game.data.export}
               </a>
@@ -477,7 +477,7 @@ function ProfileBody(props: GameProps) {
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
             placeholder={fr.game.data.typeToConfirm}
-            className="w-full rounded-xl bg-night-3 px-4 py-3 text-cream ring-1 ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-vermilion"
+            className="w-full cut bg-night-3 px-4 py-3 text-cream ring-1 ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-vermilion"
           />
           <Slab
             tone="vermilion"

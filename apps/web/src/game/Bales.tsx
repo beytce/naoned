@@ -320,7 +320,7 @@ function Card(props: {
       type="button"
       onClick={props.onTurn}
       aria-label={turned ? `${label} : ${props.name} ${t.units(card.quantity)}` : t.tapCard}
-      className={`bale-deal flip aspect-[5/7] w-full rounded-xl ${turned ? "is-flipped" : ""}`}
+      className={`bale-deal flip aspect-[5/7] w-full cut ${turned ? "is-flipped" : ""}`}
       style={
         {
           animationDelay: `${props.index * 130}ms`,
@@ -331,13 +331,13 @@ function Card(props: {
     >
       <div className="flip-inner">
         <div
-          className={`flip-face overflow-hidden rounded-xl ${tease ? "bale-tease" : "shadow-lg shadow-black/40"}`}
+          className={`flip-face overflow-hidden cut ${tease ? "bale-tease" : "shadow-lg shadow-black/40"}`}
           style={{ "--glow": look.glow } as CSSProperties}
         >
           <CardBack />
         </div>
         <div
-          className="flip-face flip-front flex flex-col items-center justify-between overflow-hidden rounded-xl border-[3px] p-1.5 text-center"
+          className="flip-face flip-front flex flex-col items-center justify-between overflow-hidden cut border-[3px] p-1.5 text-center"
           style={{
             borderColor: look.frame,
             background: `linear-gradient(170deg, ${look.glow}, rgb(var(--night-3)) 55%)`,
@@ -438,10 +438,7 @@ function Odds({ bales, props }: { bales: BalesView; props: GameProps }) {
         {bales.odds.map((o) => {
           const look = rarityOf(o.rarity);
           return (
-            <li
-              key={o.rarity}
-              className="rounded-xl bg-night-2 p-2.5 ring-1 ring-inset ring-line/70"
-            >
+            <li key={o.rarity} className="cut bg-night-2 p-2.5 ring-1 ring-inset ring-line/70">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold" style={{ color: look.frame }}>
                   {t.rarity[o.rarity] ?? o.rarity}

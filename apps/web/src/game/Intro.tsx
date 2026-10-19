@@ -89,7 +89,7 @@ function Loop() {
       </svg>
       {steps.map((s) => (
         <div key={s.label} className={`absolute flex flex-col items-center ${s.pos}`}>
-          <div className="flex h-20 w-24 items-center justify-center rounded-xl bg-night-3 ring-1 ring-line">
+          <div className="flex h-20 w-24 items-center justify-center cut bg-night-3 ring-1 ring-line">
             {s.icon}
           </div>
           <span className="mt-1 font-display text-xs font-extrabold uppercase">{s.label}</span>

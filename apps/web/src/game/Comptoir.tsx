@@ -174,7 +174,7 @@ export function Rations(props: GameProps) {
   const tone = hungry ? "text-vermilion" : days < 1 ? "text-gold" : "text-cream-dim";
   return (
     <div
-      className={`flex items-start gap-3 ${hungry ? "rounded-2xl bg-vermilion/15 p-3 ring-1 ring-vermilion/60" : ""}`}
+      className={`flex items-start gap-3 ${hungry ? "cut bg-vermilion/15 p-3 ring-1 ring-vermilion/60" : ""}`}
     >
       <ResourceIcon code={rations.resource} size={30} />
       <div className="text-sm">
@@ -307,7 +307,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
       </div>
 
       {recipe && (
-        <div className="mt-3 rounded-xl bg-night-3/60 px-3 py-2">
+        <div className="mt-3 cut bg-night-3/60 px-3 py-2">
           <RecipeFlow
             recipe={recipe}
             level={b.level}
@@ -527,14 +527,14 @@ function WorkshopSheet({
                 type="button"
                 aria-pressed={q === o.n}
                 onClick={() => setQty(o.n)}
-                className={`rounded-xl border px-2 py-2 text-xs font-semibold ${q === o.n ? "border-lagoon bg-lagoon/15 text-lagoon" : "border-line"}`}
+                className={`cut border px-2 py-2 text-xs font-semibold ${q === o.n ? "border-info bg-info/15 text-info" : "border-line"}`}
               >
                 {o.label}
                 <span className="block font-display text-sm tabular-nums">{o.n}</span>
               </button>
             ))}
           </div>
-          <Qty value={q} max={b.canStart} onChange={setQty} />
+          <Qty value={q} max={b.canStart} onChange={setQty} maxButton={false} />
           <p className="text-sm text-cream-dim">
             {b.fastSeconds !== null && q === 1
               ? fr.game.fastBatch(b.fastSeconds)
@@ -555,7 +555,7 @@ function WorkshopSheet({
         </div>
       )}
       {missing && recipe && (
-        <div className="space-y-2 rounded-2xl bg-night-3 p-3">
+        <div className="space-y-2 cut bg-night-3 p-3">
           <p className="flex items-center gap-2 text-sm">
             <ResourceIcon code={missing} size={24} />
             {t.missing(

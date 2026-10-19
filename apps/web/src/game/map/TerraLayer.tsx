@@ -1178,7 +1178,7 @@ function Returns({ v }: { v: TerraView }) {
   if (fresh.length === 0) return null;
   const last = fresh.at(-1)?.at ?? 0;
   return (
-    <div className="absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 mx-auto max-w-md rounded-2xl bg-night-2/95 p-3 shadow-[0_6px_20px_rgb(0_0_0/0.45)] ring-1 ring-line lg:bottom-28">
+    <div className="absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 mx-auto max-w-md cut bg-night-2/95 p-3 shadow-[0_6px_20px_rgb(0_0_0/0.45)] ring-1 ring-line lg:bottom-28">
       <p className="label text-gold">{t().returns.title}</p>
       {fresh.map((r) => (
         <p key={r.front} className="mt-1 text-[13px] text-cream">
@@ -1223,7 +1223,7 @@ export function TerraSheets({
     <Sheet open={open} onClose={close}>
       <div className="space-y-4">
         {v.decree && (
-          <div className="rounded-xl bg-night-3 p-3 ring-1 ring-line">
+          <div className="cut bg-night-3 p-3 ring-1 ring-line">
             <p className="label text-lagoon">{t().decree.inForce}</p>
             <p className="font-display text-base font-extrabold">
               {t().decree.names[v.decree.code] ?? v.decree.code}
@@ -1247,7 +1247,7 @@ export function TerraSheets({
               type="button"
               onClick={() => setCode(c)}
               aria-pressed={code === c}
-              className={`block w-full rounded-xl p-3 text-left ring-1 ring-inset transition ${code === c ? "bg-gold/10 ring-gold/70" : "bg-night-3 ring-line"} ${v.decree?.code === c ? "opacity-50" : ""}`}
+              className={`block w-full cut p-3 text-left ring-1 ring-inset transition ${code === c ? "bg-gold/10 ring-gold/70" : "bg-night-3 ring-line"} ${v.decree?.code === c ? "opacity-50" : ""}`}
             >
               <span className="flex items-center justify-between gap-2">
                 <span className="font-display text-[14px] font-extrabold">

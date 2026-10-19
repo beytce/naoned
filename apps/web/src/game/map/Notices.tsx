@@ -38,7 +38,7 @@ export function NoticesSheet(
             </p>
           )}
           {daysLeft > 0 && daysLeft <= 3 ? (
-            <p className="rounded-xl border border-gold/60 bg-gold/10 px-3 py-2 text-sm text-gold">
+            <p className="cut border border-gold/60 bg-gold/10 px-3 py-2 text-sm text-gold">
               {fr.game.season.lastSprint(daysLeft)}
             </p>
           ) : (
