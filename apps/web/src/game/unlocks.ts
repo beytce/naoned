@@ -30,9 +30,23 @@ export function unlocks(
   return {
     rialto: delivered,
     ranking: delivered,
-    terraferma: done.has("sell_city") && ageMs >= TERRA_AFTER_MS,
+    terraferma: (done.has("sell_city") && ageMs >= TERRA_AFTER_MS) || terraEarly(),
     house: marketLearned,
   };
+}
+
+/** The merchant opened the Terraferma before its first day (on this device). */
+function terraEarly(): boolean {
+  try {
+    return store.get("terraEarly") === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Opens the Terraferma now, whatever the first day says. */
+export function openTerraEarly(): void {
+  store.set("terraEarly", "1");
 }
 
 /** The guide paused ("Plus tard") or finished on this device. */

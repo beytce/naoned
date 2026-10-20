@@ -317,3 +317,41 @@ describe("a skirmish's glory", () => {
     expect(act(w, { type: "terraSkirmishGlory", playerId: "b", glory: 120 }).ok).toBe(false);
   });
 });
+
+describe("a week's map from before the nations", () => {
+  it("is drawn again at the next tick, with its nations and its history, everyone to set down anew", () => {
+    const w = live({
+      nations: [
+        {
+          id: "mantova",
+          atBps: { x: 6_000, y: 5_000 },
+          radius: 1,
+          troops: 100,
+          troopsPerActive: 0,
+          regenBps: 500,
+          everyHours: 2,
+          shareBps: 2_000,
+          behavior: "slow",
+        },
+      ],
+    });
+    joined(w, "a");
+    // As a map made by the version before: no history, no nation.
+    const old = structuredClone(w.state);
+    const map = old.terra?.map;
+    if (!map) throw new Error("no map");
+    map.initial = undefined;
+    map.history = undefined;
+    for (let i = 0; i < map.owner.length; i++)
+      if (map.owner[i] === "nation:mantova") map.owner[i] = null;
+    const { "nation:mantova": _gone, ...players } = map.players;
+    map.players = players;
+    w.state = old;
+    w.do({ type: "tick" });
+    const fresh = w.state.terra?.map;
+    expect(fresh?.history).toBeDefined();
+    expect(fresh?.players["nation:mantova"]).toBeDefined();
+    expect(fresh?.players.a).toBeUndefined();
+    expect(act(w, { type: "terraPlace", playerId: "a", cell: freeCell(w) }).ok).toBe(true);
+  });
+});

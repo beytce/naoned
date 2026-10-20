@@ -27,7 +27,7 @@ import {
   vehicleName,
 } from "../roadKit.js";
 import type { DeliveryView, PlayerView, TerraAction, VehicleView } from "../types.js";
-import { unlocksOf } from "../unlocks.js";
+import { openTerraEarly, unlocksOf } from "../unlocks.js";
 import { useWide } from "../useWide.js";
 import { have, readyOf } from "../workshops.js";
 import {
@@ -687,6 +687,14 @@ export function MapScreen(
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
         onRanking={() => props.setSheet("ranking")}
+        onOpenLayer={
+          terraView
+            ? () => {
+                openTerraEarly();
+                props.setLayer("terra");
+              }
+            : undefined
+        }
         onFamily={() =>
           campaign || terra
             ? props.setLayer("trade")

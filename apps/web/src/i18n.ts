@@ -1704,6 +1704,7 @@ export const fr = {
     },
     unlocks: {
       afterDelivery: "S'ouvre après votre première livraison.",
+      force: "Touchez encore pour l'ouvrir maintenant.",
       afterFirstDay:
         "La Terraferme, conquête de la semaine, s'ouvre après votre première journée de commerce. Facultative : on n'y perd jamais rien.",
     },

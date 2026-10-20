@@ -120,6 +120,7 @@ export function MapHud({
   onResumeGuide,
   onRanking,
   onFamily,
+  onOpenLayer,
   onWorkshops,
   onHelp,
 }: {
@@ -177,6 +178,8 @@ export function MapHud({
   onResumeGuide: () => void;
   onRanking: () => void;
   onFamily: () => void;
+  /** Opens the other layer's closed door early (the Terraferma before its first day). */
+  onOpenLayer?: () => void;
   onWorkshops: () => void;
   onHelp: () => void;
 }) {
@@ -225,7 +228,7 @@ export function MapHud({
               {level !== null && <>{fr.game.merchantLevel.short(level)} · </>}
               {title} · <span className="text-gold">#{rank ?? "—"}</span>
             </button>
-            {rival && (
+            {rival && layer === "trade" && (
               <button
                 type="button"
                 onClick={onRanking}
@@ -366,6 +369,7 @@ export function MapHud({
               dot={layer === "trade" && familyCalls && !locks.layer}
               active={layer !== "trade"}
               locked={layer === "trade" ? locks.layer : undefined}
+              onForce={onOpenLayer}
               coach="door-layer"
             >
               {layer !== "trade" ? Icon.home() : Icon.family()}
@@ -387,11 +391,14 @@ function Door({
   dot,
   active,
   locked,
+  onForce,
   coach,
 }: {
   children: ReactNode;
   label: string;
   onClick: () => void;
+  /** A closed door that may be opened early: touched again while it says why. */
+  onForce?: () => void;
   /** Something waits behind it. */
   dot?: boolean;
   /** The door leads back (its layer is the one shown). */
@@ -409,7 +416,11 @@ function Door({
   return (
     <button
       type="button"
-      onClick={() => (locked ? setWhy(true) : onClick())}
+      onClick={() => {
+        if (!locked) onClick();
+        else if (why && onForce) onForce();
+        else setWhy(true);
+      }}
       data-coach={coach}
       aria-label={locked ? `${label} : ${locked}` : label}
       aria-disabled={locked ? true : undefined}
@@ -418,6 +429,7 @@ function Door({
       {why && locked && (
         <span className="absolute bottom-full mb-2 w-44 animate-fade bg-night-4 px-3 py-2 text-center text-xs leading-snug text-cream shadow-lg shadow-black/40 slab">
           {locked}
+          {onForce && <span className="mt-1 block text-gold">{fr.game.unlocks.force}</span>}
         </span>
       )}
       <span

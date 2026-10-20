@@ -74,6 +74,9 @@ function terra(tx: Tx, cfg: TerraConfig): TerraState {
     closeTerraWeek(tx, cfg, t.week, t.map);
     t = undefined;
   }
+  // A map made before the nations, the water's history and the replay (20 October 2026): drawn
+  // again for the same week, so that they are played at once; everyone sets down anew.
+  if (t && !t.map.history && !t.map.closed) t = undefined;
   if (!t) {
     const active = Math.max(1, activePlayerCount(ctx, tx.s as WorldState, tx.now));
     const map = newTerra(
