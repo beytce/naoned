@@ -89,6 +89,16 @@ export function Help(props: GameProps & { onClose: () => void }) {
             {fr.game.replayGuide}
           </Slab>
         </div>
+        <p className="text-center font-mono text-xs text-muted">
+          {fr.game.version(
+            __BUILD__,
+            new Date(__BUILT_AT__).toLocaleString("fr-FR", {
+              timeZone: "Europe/Paris",
+              dateStyle: "short",
+              timeStyle: "short",
+            }),
+          )}
+        </p>
       </div>
     </div>
   );

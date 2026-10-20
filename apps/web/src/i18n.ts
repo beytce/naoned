@@ -1682,6 +1682,7 @@ export const fr = {
     symbol: "Meuble",
     save: "Enregistrer",
     help: "Comment jouer",
+    version: (build: string, at: string) => `Version ${build} · ${at}`,
     data: {
       title: "Mes données",
       help: "Téléchargez tout ce que le jeu conserve sur vous, ou supprimez votre compte.",

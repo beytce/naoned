@@ -1,12 +1,32 @@
+import { execSync } from "node:child_process";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+
+/** The commit built (Railway passes it to the build), to tell which version a device runs. */
+function buildId(): string {
+  const sha = process.env.RAILWAY_GIT_COMMIT_SHA;
+  if (sha) return sha.slice(0, 7);
+  try {
+    return execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] })
+      .toString()
+      .trim();
+  } catch {
+    return "dev";
+  }
+}
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  define: {
+    __BUILD__: JSON.stringify(buildId()),
+    __BUILT_AT__: JSON.stringify(new Date().toISOString()),
+  },
   plugins: [
     react(),
     VitePWA({
       registerType: "autoUpdate",
+      // Registered in main.tsx, which looks for a new version and reloads onto it.
+      injectRegister: false,
       includeAssets: ["favicon.png", "icons/apple-touch-icon.png", "icons/logo-256.webp"],
       manifest: {
         name: "Fondaco",

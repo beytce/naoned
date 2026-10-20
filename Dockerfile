@@ -6,6 +6,8 @@ RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 WORKDIR /app
 
 FROM base AS build
+# The commit Railway builds, shown in the help (apps/web/vite.config.ts).
+ARG RAILWAY_GIT_COMMIT_SHA
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
