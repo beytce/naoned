@@ -487,6 +487,13 @@ export const fr = {
       eliminated: "Éliminé cette semaine",
       placing: (time: string) => `Placement · la guerre dans ${time}`,
       truce: (time: string) => `Trêve · la guerre dans ${time}`,
+      buildings: {
+        rocca: "Fort",
+        borgo: "Bourg",
+        porto: "Port",
+        bombarda: "Bombarde",
+        mura: "Remparts",
+      } as Record<string, string>,
       peasants: {
         label: "Soldats ou paysans",
         soldiers: (pct: number) => `${pct} % soldats`,
@@ -531,6 +538,7 @@ export const fr = {
         notEnough: (cost: number, troops: number) =>
           `Il faut ${cost} troupes, vous en avez ${troops} : attendez vos recrues`,
         attack: "Attaquer",
+        sail: (minutes: number) => `Débarquer (${minutes} min de mer)`,
         allied: "Votre allié : pas de front entre vous",
         far: "Trop loin : touchez une terre au bord des vôtres",
         eta: (hour: string, wait: string) => `Vos troupes y seront vers ${hour} (dans ${wait})`,
@@ -553,6 +561,7 @@ export const fr = {
         line: (cells: number, troops: number, cap: number) =>
           `${cells} cases · ⚔ ${troops} / ${cap}`,
         rocca: "Fort",
+        porto: "Port",
         raise: (amount: number) => `Max +${amount}`,
         recruit: (perHour: number, full: string | null, from: number, to: number) =>
           `Vos terres recrutent ${perHour} troupes par heure (de ${from} h à ${to} h)${full ? ` : maximum dans ${full}` : ""}. Plus de terres, plus de recrues ; « Max » relève le maximum, pas vos troupes.`,
@@ -566,6 +575,8 @@ export const fr = {
           `Un front ennemi prendra cette terre vers ${hour} (dans ${wait})`,
         built: {
           rocca: "Un fort défend cette terre et ses voisines",
+          porto:
+            "Un port : vos barques débarquent sur les rives de ces eaux, vos galères les gardent",
         } as Record<string, string>,
         traitor: (time: string) => `Traître encore ${time} : vos terres défendent moins bien`,
       },
@@ -1823,6 +1834,7 @@ export const fr = {
         "Commandes de compagnie : une commande d'une ville remplie à plusieurs, avec une prime pour tous.",
         "Le fattore fait partir vos charrettes oubliées au comptoir, deux fois par jour.",
         "Terraferme : l'heure de bataille, chaque soir de 20 h à 21 h, les fronts avancent dix fois plus vite.",
+        "Terraferme : les ports, sur les rives de la lagune, du lac de Garde et de l'Adriatique ; les barques débarquent sur une autre rive, les galères gardent la vôtre.",
         "Terraferme : soldats ou paysans. Vos terres donnent du blé, de l'argile et du bois à votre comptoir, et les routes entre vos villes des ducats.",
         "La carte n'affiche plus que les ducats, le rang et les charrettes ; le pain quand il manque.",
         "Sept jours de cours pour chaque marchandise du Rialto, face à sa référence.",

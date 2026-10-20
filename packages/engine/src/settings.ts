@@ -431,6 +431,19 @@ export const worldSettingsSchema = z.object({
               perCells: positive,
             })
             .optional(),
+          /**
+           * The port, on a cell by the water: boats sail from it to any shore of the same water,
+           * `minutesPerWater` a cell of water; an enemy landing on a shore of a water where the
+           * merchant has a port loses `guardBps` of its troops to its galleys.
+           */
+          porto: z
+            .object({
+              price: money,
+              perCells: positive,
+              guardBps: bps.max(10_000),
+              minutesPerWater: positive,
+            })
+            .optional(),
         })
         .default({
           rocca: { price: 4_000, defenseBps: 16_000, perCells: 15 },

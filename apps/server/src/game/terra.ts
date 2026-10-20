@@ -16,6 +16,7 @@ import {
   inBattle,
   peasantsOf,
   recruitPerHour,
+  seaTargets,
   terraOn,
   yieldPerHour,
 } from "@comptoirs/engine";
@@ -189,6 +190,13 @@ export function terraView(
           peasantsBps: peasantsOf(s, playerId),
           /** What the land yields an open hour: goods in hundredths, route ducats in deniers. */
           yields: yieldPerHour(s, cfg, playerId),
+          /** The shores its boats may reach: minutes at sea and what the shore costs. */
+          sea: Object.fromEntries(
+            Object.entries(seaTargets(s, cfg, playerId)).map(([cell, minutes]) => [
+              cell,
+              { minutes, cost: cellCost(s, cfg, Number(cell)) },
+            ]),
+          ),
           traitorUntil: me.traitorUntil ?? 0,
           eliminatedAt: me.eliminatedAt ?? null,
           recruit: recruitClock(s, cfg, playerId, me.troops, capOf(s, cfg, playerId)),
@@ -239,6 +247,7 @@ export function terraView(
       prices: {
         rocca: cfg.buildings.rocca.price,
         borgo: cfg.buildings.borgo?.price ?? null,
+        porto: cfg.buildings.porto?.price ?? null,
         cap: cfg.capRaise.price,
       },
       capRaise: cfg.capRaise.amount,

@@ -25,6 +25,7 @@ import {
   chooseDecree,
   closeTerra,
   launchFront,
+  launchNaval,
   newTerra,
   placeOnTerra,
   proposeAlliance,
@@ -227,7 +228,8 @@ export type TerraCommand =
   | { type: "terraBuild"; playerId: PlayerId; cell: number; kind: TerraBuilding }
   | { type: "terraRaise"; playerId: PlayerId }
   | { type: "terraDecree"; playerId: PlayerId; code: string; target?: string }
-  | { type: "terraPeasants"; playerId: PlayerId; shareBps: number };
+  | { type: "terraPeasants"; playerId: PlayerId; shareBps: number }
+  | { type: "terraSail"; playerId: PlayerId; aim: number; shareBps: number };
 
 /** Ducats for the Terraferma: checked first, then destroyed. */
 function pay(tx: Tx, playerId: PlayerId, price: bigint, ref: string): void {
@@ -287,6 +289,18 @@ export function applyTerra(tx: Tx, cmd: TerraCommand): void {
       if (balance(tx, cashAccount(id)) < cfg.capRaise.price) fail("insufficient_funds");
       const price = raiseCap(map, cfg, id, now);
       pay(tx, id, price, "terra:cap");
+      break;
+    }
+    case "terraSail": {
+      const f = launchNaval(map, cfg, id, cmd.aim, cmd.shareBps, now);
+      emit(tx, "terra_front", id, {
+        against: f.against,
+        troops: f.troops,
+        aim: f.aim,
+        naval: true,
+      });
+      if (f.against && f.against !== MILAN)
+        emit(tx, "terra_attacked", f.against, { by: id, troops: f.troops, aim: f.aim });
       break;
     }
     case "terraPeasants":

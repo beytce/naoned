@@ -15,6 +15,7 @@ import {
   cellsByHolder,
   hexCenter,
   hexCorners,
+  hexNeighbors,
   labelCell,
   neighbours,
   outline,
@@ -65,6 +66,21 @@ export function useTerra(shown: boolean): {
 function safeHours(v: TerraView, now: number): number {
   const until = Math.max(v.truceEndsAt ?? 0, now + v.rules.protectionHours * 3_600_000);
   return Math.max(0, Math.ceil((until - now) / 3_600_000));
+}
+
+/** A glyph a building, drawn small on its cell. */
+const BUILDING_GLYPH: Record<string, string> = {
+  rocca: "♜",
+  borgo: "⌂",
+  porto: "⚓",
+  bombarda: "✹",
+  mura: "▦",
+};
+
+/** Whether a cell lies by the water (where a port may stand). */
+function coastalCell(v: TerraView, cell: number): boolean {
+  const { width, height, terrain } = v.map;
+  return hexNeighbors({ width, height }, cell).some((n) => terrain[n] === "w");
 }
 
 /** Whether merchants may still set down this week. */
@@ -655,6 +671,25 @@ export function terraMarkers(
       ),
     });
   });
+  // The buildings: a small glyph on their cell, in their holder's tone.
+  for (const b of v.buildings) {
+    const [x, y] = hexCenter(s.map, b.cell);
+    out.push({
+      key: `building:${b.cell}`,
+      at: { x, y },
+      node: (
+        <button
+          type="button"
+          aria-label={t().buildings[b.kind] ?? b.kind}
+          onClick={() => select({ kind: "terra", cell: b.cell })}
+          className="marker-hit -translate-x-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-night/85 text-[11px] leading-none ring-1"
+          style={{ color: s.tone[b.owner] ?? P.cream, borderColor: s.tone[b.owner] ?? P.cream }}
+        >
+          {BUILDING_GLYPH[b.kind] ?? "•"}
+        </button>
+      ),
+    });
+  }
   // Each front's strength where it stands now: on the next cell it will take, with the time left.
   for (const f of v.fronts) {
     if (!f.mine && !f.threat) continue;
@@ -1004,6 +1039,15 @@ export function TerraPanel({
               disabled={me.raisesLeft === 0 || !!v.closed}
               onClick={() => act({ type: "terraRaise" })}
             />
+            {v.rules.prices.porto !== null && coastalCell(v, cell) && (
+              <ActionButton
+                icon={Icon.build()}
+                label={t().mine.porto}
+                badge={built ? undefined : d(v.rules.prices.porto)}
+                disabled={!!built || !!v.closed}
+                onClick={() => act({ type: "terraBuild", cell, kind: "porto" })}
+              />
+            )}
             <ActionButton
               icon={Icon.build()}
               label={t().mine.rocca}
@@ -1068,7 +1112,9 @@ export function TerraPanel({
   const ally = !!merchant?.ally;
   const asked = merchant ? me.requestsIn.includes(holder) : false;
   const offered = merchant ? me.requestsOut.includes(holder) : false;
-  const cost = v.costs[String(cell)];
+  // A shore beyond the water, reached by boat from one of the merchant's ports.
+  const sea = v.costs[String(cell)] === undefined ? me.sea[String(cell)] : undefined;
+  const cost = v.costs[String(cell)] ?? sea?.cost;
   const attackable = cost !== undefined && !ally && !v.closed;
   const aimed = v.fronts.find((f) => f.mine && f.aim === cell);
   const troops = Math.floor((me.troops * shareBps) / 10_000);
@@ -1119,12 +1165,16 @@ export function TerraPanel({
           {attackable && (
             <ActionButton
               icon={Icon.bandits()}
-              label={t().target.attack}
+              label={sea ? t().target.sail(sea.minutes) : t().target.attack}
               tone="gold"
               disabled={cells === 0}
               onClick={async () => {
                 haptic("tap");
-                await act({ type: "terraFront", aim: cell, shareBps });
+                await act(
+                  sea
+                    ? { type: "terraSail", aim: cell, shareBps }
+                    : { type: "terraFront", aim: cell, shareBps },
+                );
               }}
             />
           )}

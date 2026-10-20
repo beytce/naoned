@@ -275,7 +275,12 @@ export const venice1450Settings: WorldSettingsInput = {
       regenMin: 1,
       recruit: { base: 6, perCell: 1, perCity: 3 },
     },
-    buildings: { rocca: { price: 4_000, defenseBps: 16_000, perCells: 15 } },
+    buildings: {
+      rocca: { price: 4_000, defenseBps: 16_000, perCells: 15 },
+      // Ports on the lagoon, Lake Garda and the Adriatic: boats land on another shore, 10 min a
+      // cell of water; a port's galleys sink 30 % of a landing on its water.
+      porto: { price: 3_000, perCells: 10, guardBps: 3_000, minutesPerWater: 10 },
+    },
     capRaise: { amount: 20, price: 10_000, perDay: 3 },
     // No limit set by the game: fronts march until their troops run out, capitals fall, Milan
     // preys on the weak rather than braking the leader.

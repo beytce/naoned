@@ -141,9 +141,14 @@ const action = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("terraBuild"),
     cell: z.number().int().nonnegative(),
-    kind: z.enum(["rocca", "borgo"]),
+    kind: z.enum(["rocca", "borgo", "porto"]),
   }),
   z.object({ type: z.literal("terraRaise") }),
+  z.object({
+    type: z.literal("terraSail"),
+    aim: z.number().int().nonnegative(),
+    shareBps: z.number().int().min(0).max(10_000),
+  }),
   z.object({
     type: z.literal("terraPeasants"),
     shareBps: z.number().int().min(0).max(10_000),
@@ -951,6 +956,8 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "terraBuild", playerId, cell: a.cell, kind: a.kind }];
     case "terraRaise":
       return [{ type: "terraRaise", playerId }];
+    case "terraSail":
+      return [{ type: "terraSail", playerId, aim: a.aim, shareBps: a.shareBps }];
     case "terraPeasants":
       return [{ type: "terraPeasants", playerId, shareBps: a.shareBps }];
     case "terraDecree":

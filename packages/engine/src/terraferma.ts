@@ -61,7 +61,7 @@ export interface TerraPlayer {
   eliminatedAt?: number;
 }
 
-export type TerraBuilding = "rocca" | "borgo";
+export type TerraBuilding = "rocca" | "borgo" | "porto";
 
 export interface TerraAlliance {
   a: string;
@@ -93,6 +93,10 @@ export interface TerraFront {
   /** Troops it left with, and the cells it has taken. */
   sent?: number;
   taken?: number;
+  /** A boat: it lands on its aim at this time, then marches as a front. */
+  landsAt?: number;
+  /** Landed (a boat that has taken the shore it aimed at). */
+  ashore?: boolean;
 }
 
 /** A front come home: what it took, spent and brought back (kept a day). */
@@ -640,6 +644,118 @@ export function launchFront(
   return front;
 }
 
+// ——— The water ———
+
+const coastal = (s: TerraState, i: number) =>
+  !!s.map.land[i] && hexNeighbors(s.map, i).some((n) => !s.map.land[n]);
+
+/** Water cells reachable from the water beside `from`, with their distance in cells. */
+function waterFrom(s: TerraState, from: number[]): Map<number, number> {
+  const dist = new Map<number, number>();
+  const queue: number[] = [];
+  for (const c of from)
+    for (const n of hexNeighbors(s.map, c))
+      if (!s.map.land[n] && !dist.has(n)) {
+        dist.set(n, 1);
+        queue.push(n);
+      }
+  for (let k = 0; k < queue.length; k++) {
+    const c = queue[k] as number;
+    for (const n of hexNeighbors(s.map, c))
+      if (!s.map.land[n] && !dist.has(n)) {
+        dist.set(n, (dist.get(c) ?? 0) + 1);
+        queue.push(n);
+      }
+  }
+  return dist;
+}
+
+/** The merchant's ports still standing on its land. */
+const portsOf = (s: TerraState, id: string) =>
+  terraBuildingsOf(s, id, "porto").filter((c) => s.owner[c] === id);
+
+/**
+ * A boat from one of the merchant's ports to a shore of the same water: a share of its troops
+ * sails, lands after so many cells of water, then marches on as a front.
+ */
+export function launchNaval(
+  s: TerraState,
+  cfg: TerraConfig,
+  id: string,
+  aim: number,
+  shareBps: number,
+  now: number,
+): TerraFront {
+  const porto = cfg.buildings.porto;
+  const player = s.players[id];
+  if (!player) fail("not_placed");
+  if (!porto) fail("no_port");
+  if (shareBps < cfg.fronts.minShareBps || shareBps > 10_000) fail("share_too_small");
+  if (aim < 0 || aim >= s.owner.length || !s.map.land[aim]) fail("not_adjacent");
+  const against = s.owner[aim] ?? null;
+  if (against === id) fail("own_cell");
+  if (!coastal(s, aim)) fail("not_coastal");
+  const ports = portsOf(s, id);
+  if (ports.length === 0) fail("no_port");
+  const sea = waterFrom(s, ports);
+  const landing = hexNeighbors(s.map, aim)
+    .map((n) => sea.get(n))
+    .filter((d): d is number => d !== undefined);
+  if (landing.length === 0) fail("no_sea_route");
+  if (against !== null) {
+    if (allied(s, id, against)) fail("allied");
+    if (id !== MILAN && player.protectedUntil > now && against !== MILAN) fail("protected");
+    if ((s.players[against]?.protectedUntil ?? 0) > now) fail("protected");
+  }
+  if (s.fronts.filter((f) => f.owner === id).length >= cfg.fronts.max) fail("too_many_fronts");
+  const troops = Math.floor((player.troops * shareBps) / 10_000);
+  if (troops <= 0) fail("no_troops");
+  if (troops < cellCost(s, cfg, aim)) fail("too_weak");
+  player.troops -= troops;
+  if (against !== null && against !== MILAN && id !== MILAN) player.aggressor = true;
+  const front: TerraFront = {
+    id: `t${s.nextFront++}`,
+    owner: id,
+    against,
+    aim,
+    troops,
+    launchedAt: now,
+    sent: troops,
+    taken: 0,
+    landsAt: now + Math.min(...landing) * porto.minutesPerWater * MINUTE_MS,
+  };
+  s.fronts.push(front);
+  return front;
+}
+
+/** The shores a merchant's boats may reach, with the minutes at sea to each. */
+export function seaTargets(s: TerraState, cfg: TerraConfig, id: string): Record<number, number> {
+  const porto = cfg.buildings.porto;
+  const ports = portsOf(s, id);
+  if (!porto || ports.length === 0) return {};
+  const sea = waterFrom(s, ports);
+  const out: Record<number, number> = {};
+  for (let i = 0; i < s.owner.length; i++) {
+    if (!s.map.land[i] || s.owner[i] === id || !coastal(s, i)) continue;
+    const d = hexNeighbors(s.map, i)
+      .map((n) => sea.get(n))
+      .filter((x): x is number => x !== undefined);
+    if (d.length > 0) out[i] = Math.min(...d) * porto.minutesPerWater;
+  }
+  return out;
+}
+
+/** A boat lands: the galleys of a defender with a port on the same water cut it down first. */
+function land(s: TerraState, cfg: TerraConfig, front: TerraFront): void {
+  const guard = cfg.buildings.porto?.guardBps ?? 0;
+  if (front.against === null || guard === 0) return;
+  const theirs = portsOf(s, front.against);
+  if (theirs.length === 0) return;
+  const sea = waterFrom(s, theirs);
+  if (hexNeighbors(s.map, front.aim).some((n) => sea.has(n)))
+    front.troops = Math.floor((front.troops * (10_000 - guard)) / 10_000);
+}
+
 /** The front called back: what is left of its troops comes home. */
 export function recallFront(s: TerraState, id: string, frontId: string): void {
   const front = s.fronts.find((f) => f.id === frontId);
@@ -789,6 +905,7 @@ export function buildOnTerra(
   merchant(s, id);
   if (s.owner[cell] !== id) fail("not_owner");
   if (s.buildings?.[cell]) fail("built");
+  if (kind === "porto" && !coastal(s, cell)) fail("not_coastal");
   const def = cfg.buildings[kind];
   if (!def) fail("no_room");
   const room = Math.floor(cellsOf(s, id).length / def.perCells);
@@ -1016,6 +1133,9 @@ function nextCell(s: TerraState, cfg: TerraConfig, front: TerraFront): number {
       .filter((p) => cfg.fronts.capitalSafe || (cfg.fronts.peacefulSafe && !p.aggressor))
       .map((p) => p.capital),
   );
+  // A boat takes its shore first.
+  if (front.landsAt !== undefined && !front.ashore)
+    return s.owner[front.aim] === front.against && !capitals.has(front.aim) ? front.aim : -1;
   for (let i = 0; i < s.owner.length; i++) {
     if (!s.map.land[i] || s.owner[i] !== front.against || !borders(s, front.owner, i)) continue;
     if (capitals.has(i)) continue;
@@ -1041,6 +1161,11 @@ function advanceFront(
   at: number,
   minutes: number,
 ): void {
+  // At sea until it lands.
+  if (front.landsAt !== undefined && !front.ashore) {
+    if (at + minutes * MINUTE_MS < front.landsAt) return;
+    if (front.steps === undefined) land(s, cfg, front);
+  }
   front.steps = (front.steps ?? 0) + 1;
   if (cfg.fronts.maxHours > 0 && front.steps * cfg.stepMinutes > cfg.fronts.maxHours * 60) {
     endFront(s, front);
@@ -1059,6 +1184,7 @@ function advanceFront(
     }
     seize(s, best, front.owner, at);
     razeAt(s, best);
+    front.ashore = true;
     front.taken = (front.taken ?? 0) + 1;
     s.trace?.push({ front: front.id, cell: best, at: at + minutes * MINUTE_MS });
   }

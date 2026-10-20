@@ -869,7 +869,8 @@ export type TerraAction =
   | { type: "terraAccept"; from: string }
   | { type: "terraBreak"; other: string }
   | { type: "terraSend"; to: string; count: number }
-  | { type: "terraBuild"; cell: number; kind: "rocca" | "borgo" }
+  | { type: "terraBuild"; cell: number; kind: "rocca" | "borgo" | "porto" }
+  | { type: "terraSail"; aim: number; shareBps: number }
   | { type: "terraRaise" }
   | { type: "terraDecree"; code: string; target?: string }
   | { type: "terraPeasants"; shareBps: number };
@@ -928,7 +929,7 @@ export interface TerraView {
   costs: Record<string, number>;
   /** The last day's cells that changed hands, oldest first (`from`: who held it before). */
   changes: { cell: number; at: number; from: number }[];
-  buildings: { cell: number; kind: "rocca" | "borgo"; owner: number }[];
+  buildings: { cell: number; kind: "rocca" | "borgo" | "porto"; owner: number }[];
   me: {
     troops: number;
     cap: number;
@@ -939,6 +940,8 @@ export interface TerraView {
     protectedUntil: number;
     /** Attacked a merchant this week: its capital may fall. */
     aggressor: boolean;
+    /** The shores its boats may reach: minutes at sea and the shore's cost. */
+    sea: Record<string, { minutes: number; cost: number }>;
     /** Share of its people working the land (bps). */
     peasantsBps: number;
     /** What its land yields an open hour: goods in hundredths of a unit, routes in deniers. */
@@ -979,7 +982,7 @@ export interface TerraView {
     minShareBps: number;
     alliesMax: number;
     decrees: string[];
-    prices: { rocca: string; borgo: string | null; cap: string };
+    prices: { rocca: string; borgo: string | null; porto: string | null; cap: string };
     capRaise: number;
     /** The capital of a merchant who attacked no merchant this week is never taken. */
     peacefulSafe: boolean;

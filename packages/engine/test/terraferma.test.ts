@@ -5,6 +5,7 @@ import {
   type TerraState,
   type WorldSettingsInput,
   advanceTerra,
+  buildOnTerra,
   capOf,
   cellCenter,
   cellCost,
@@ -13,6 +14,7 @@ import {
   hexDistance,
   hexNeighbors,
   launchFront,
+  launchNaval,
   newTerra,
   placeOnTerra,
   raiseCap,
@@ -723,5 +725,63 @@ describe("soldiers and peasants", () => {
     advanceTerra(s, cfg, START + HOUR);
     // 100 d an hour a city on the route, counted step by step (the land taken closes the week).
     expect(s.players.a?.routeOwed ?? 0n).toBe((BigInt(cities.length) * 100n * 10n) / 60n);
+  });
+});
+
+describe("the water", () => {
+  const porto = { price: 1_000, perCells: 1, guardBps: 5_000, minutesPerWater: 10 };
+  /** A lake down the middle of the map: two columns of water. */
+  const withLake = (cfg: ReturnType<typeof config>) => {
+    const s = newTerra(cfg, "seed", 10, START);
+    const mid = Math.floor(s.map.width / 2);
+    for (let i = 0; i < s.owner.length; i++) {
+      const col = i % s.map.width;
+      if (col === mid || col === mid + 1) {
+        s.map.land[i] = false;
+        s.map.terrain[i] = "water";
+        s.owner[i] = null;
+      }
+    }
+    return { s, mid };
+  };
+  const coastal = (s: TerraState, i: number) =>
+    s.map.land[i] && hexNeighbors(s.map, i).some((n) => !s.map.land[n]);
+
+  it("lets a port send a boat across the water to land on the far shore", () => {
+    const cfg = config({
+      buildings: { rocca: { price: 4_000, defenseBps: 16_000, perCells: 15 }, porto },
+      start: { ...testTerraferma.start, troops: 500, protectionHours: 0 },
+    });
+    const { s, mid } = withLake(cfg);
+    const row = Math.floor(s.map.height / 2);
+    const west = row * s.map.width + mid - 1;
+    const east = row * s.map.width + mid + 2;
+    expect(coastal(s, west) && coastal(s, east)).toBe(true);
+    placeOnTerra(s, cfg, "a", west, START);
+    buildOnTerra(s, cfg, "a", west, "porto");
+    const boat = launchNaval(s, cfg, "a", east, 5_000, START);
+    expect(boat.landsAt).toBeGreaterThan(START);
+    // At sea: nothing taken yet.
+    advanceTerra(s, cfg, START + STEP);
+    expect(s.owner[east]).toBe(null);
+    advanceTerra(s, cfg, START + 2 * HOUR);
+    expect(s.owner[east]).toBe("a");
+  });
+
+  it("refuses a boat without a port, or to a shore of another water", () => {
+    const cfg = config({
+      buildings: { rocca: { price: 4_000, defenseBps: 16_000, perCells: 15 }, porto },
+      start: { ...testTerraferma.start, troops: 500, protectionHours: 0 },
+    });
+    const { s, mid } = withLake(cfg);
+    const row = Math.floor(s.map.height / 2);
+    placeOnTerra(s, cfg, "a", row * s.map.width + mid - 1, START);
+    expect(code(() => launchNaval(s, cfg, "a", row * s.map.width + mid + 2, 5_000, START))).toBe(
+      "no_port",
+    );
+    // A port is built on the shore only.
+    const inland = row * s.map.width + mid - 3;
+    s.owner[inland] = "a";
+    expect(code(() => buildOnTerra(s, cfg, "a", inland, "porto"))).toBe("not_coastal");
   });
 });
