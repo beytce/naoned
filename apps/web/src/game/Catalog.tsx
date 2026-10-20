@@ -51,8 +51,15 @@ export function BuildCatalog(props: GameProps) {
 }
 
 /** Why a card cannot be taken yet, or null when it can. */
-function lockOf(props: GameProps, regions: string[] | null, cost: Cost): string | null {
+function lockOf(
+  props: GameProps,
+  regions: string[] | null,
+  cost: Cost,
+  unlock: { turnover: string; title: string } | null = null,
+): string | null {
   const { view, catalog } = props;
+  if (unlock && BigInt(view.standing.turnover) < BigInt(unlock.turnover))
+    return t().unlockAt(unlock.title);
   if (regions && !regions.includes(view.player.region))
     return t().onlyIn(regions.map((r) => props.names.region(r)).join(", "));
   if (view.buildings.length >= catalog.rules.maxBuildings)
@@ -67,7 +74,7 @@ function Workshops(props: GameProps) {
   const rank = (lock: string | null, regions: string[] | null) =>
     lock === null ? 0 : regions && !regions.includes(view.player.region) ? 2 : 1;
   const cards = catalog.buildings
-    .map((b) => ({ b, lock: lockOf(props, b.regions, b.cost) }))
+    .map((b) => ({ b, lock: lockOf(props, b.regions, b.cost, b.unlock) }))
     .sort((x, y) => rank(x.lock, x.b.regions) - rank(y.lock, y.b.regions));
   return (
     <div className="space-y-3">

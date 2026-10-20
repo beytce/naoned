@@ -12,8 +12,8 @@ import type { Db } from "../db/client.js";
 import { weeklyRecord } from "./weekly.js";
 
 /**
- * Merchant titles, from the net sales of the season (ducats), like the ranking. Cosmetic only: a
- * title never changes the economy.
+ * Merchant titles, from the net sales of the season (ducats), like the ranking. A title adds
+ * nothing by itself; the luxury chains open at some of these thresholds (`settings.unlocks`).
  * The title held when the season closes is its milestone: it adds `renown`, whatever the rank.
  * Thresholds follow the simulation (median of a season about 5 000 ducats of net sales, best tenth
  * about 12 000), to be tuned with the beta.

@@ -79,6 +79,8 @@ export interface Catalog {
     cost: Cost;
     /** Regions where it may be built (null: anywhere). */
     regions: string[] | null;
+    /** The luxury chains: the net sales, and the title, that open it (null: open). */
+    unlock: { turnover: Money; title: string } | null;
   }[];
   referencePrices: Record<string, Money>;
   rules: {

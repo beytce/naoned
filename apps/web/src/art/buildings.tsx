@@ -266,6 +266,99 @@ const ART: Record<string, (active: boolean) => JSX.Element> = {
       {stack(66, 78, T.wood, 2, 30, 4)}
     </g>
   ),
+  // The luxury chains.
+  sand_pit: () => (
+    <g>
+      <path d="M12 78 Q40 40 72 78 Z" fill="#E9D3A0" {...outline} />
+      <path d="M76 78 L92 52 L100 78 Z" fill="#D9BF88" {...outline} />
+      <path d="M94 74 L104 40" stroke={P.wood} strokeWidth="3.5" strokeLinecap="round" />
+      <path d="M100 38 L110 44 L104 48 Z" fill={P.cream} {...outline} />
+    </g>
+  ),
+  glassworks: (active) => (
+    <g>
+      {block(10, 46, 56, 32, 18, T.brick)}
+      {gable(10, 46, 56, 18, 16, T.brick, T.roof)}
+      {door(30, 58, 16, 20)}
+      <circle cx="38" cy="68" r="4" fill={P.gold} opacity={active ? 0.95 : 0.4} />
+      {block(78, 30, 12, 48, 8, T.stone)}
+      {smoke(86, 26, active)}
+    </g>
+  ),
+  mirrorworks: () => (
+    <g>
+      {block(10, 44, 60, 34, 16, T.stone)}
+      {gable(10, 44, 60, 16, 16, T.stone, T.roof)}
+      {door(32, 58, 14, 20)}
+      <ellipse cx="94" cy="54" rx="11" ry="16" fill={P.gold} {...outline} />
+      <ellipse cx="94" cy="54" rx="7" ry="11" fill="#DCEFFF" {...outline} />
+      <path d="M90 50 L96 44" stroke="#FFFFFF" strokeWidth="2" />
+      <path d="M88 76 L94 70 L100 76" fill="none" stroke={P.wood} strokeWidth="3" />
+    </g>
+  ),
+  sheepfold: () => (
+    <g>
+      {block(8, 56, 46, 22, 14, T.wood)}
+      {gable(8, 56, 46, 14, 14, T.wood, T.roof)}
+      {door(24, 62, 12, 16)}
+      {[70, 90].map((x) => (
+        <g key={x}>
+          <ellipse cx={x} cy="68" rx="9" ry="6" fill="#F4EEE2" {...outline} />
+          <circle cx={x + 9} cy="64" r="3.5" fill={P.night3} {...outline} />
+          <path d={`M${x - 5} 73 V78 M${x + 5} 73 V78`} stroke={P.night} strokeWidth="2" />
+        </g>
+      ))}
+    </g>
+  ),
+  loom: (active) => (
+    <g>
+      {block(10, 46, 54, 32, 16, T.wood)}
+      {gable(10, 46, 54, 16, 14, T.wood, T.roof)}
+      {door(28, 60, 14, 18)}
+      <g transform="translate(80 44)">
+        <rect x="0" y="0" width="28" height="34" fill="none" stroke={P.wood} strokeWidth="3" />
+        {[5, 10, 15, 20, 25].map((x) => (
+          <path key={x} d={`M${x} 2 V32`} stroke="#9C72B0" strokeWidth="1.4" />
+        ))}
+        <rect x="2" y="14" width="24" height="5" fill="#7A4E8E" {...outline}>
+          {active && (
+            <animate attributeName="y" values="10;20;10" dur="2s" repeatCount="indefinite" />
+          )}
+        </rect>
+      </g>
+    </g>
+  ),
+  tailor: () => (
+    <g>
+      {block(10, 40, 62, 38, 16, T.stone)}
+      {gable(10, 40, 62, 16, 16, T.stone, T.roof)}
+      {door(14, 58, 12, 20)}
+      <rect x="34" y="52" width="26" height="18" fill={P.night3} {...outline} />
+      <path d="M42 54 L47 57 L52 54 L57 58 L54 61 V68 H40 V61 L37 58 Z" fill={P.vermilion} />
+      <path d="M90 50 V78 M84 78 H96" stroke={P.wood} strokeWidth="3" />
+      <ellipse cx="90" cy="48" rx="8" ry="10" fill="#7A4E8E" {...outline} />
+    </g>
+  ),
+  spicery: () => (
+    <g>
+      {block(10, 42, 64, 36, 16, T.brick)}
+      <path d="M8 42 L16 36 H84 L74 42 Z" fill={P.gold} {...outline} />
+      {door(30, 56, 16, 22)}
+      {[84, 98].map((x, i) => (
+        <g key={x}>
+          <path d={`M${x} 60 H${x + 12} L${x + 10} 78 H${x + 2} Z`} fill="#B9653A" {...outline} />
+          <ellipse
+            cx={x + 6}
+            cy="60"
+            rx="6"
+            ry="2.5"
+            fill={i ? P.vermilion : P.gold}
+            {...outline}
+          />
+        </g>
+      ))}
+    </g>
+  ),
   palazzo: () => (
     <g>
       {block(10, 30, 88, 48, 16, T.stone)}

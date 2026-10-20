@@ -66,6 +66,7 @@ import {
   isNation,
 } from "./terraferma.js";
 import { findRegion, recipesFor } from "./theme.js";
+import { isUnlocked } from "./unlocks.js";
 
 /**
  * Computer-run merchants. They play through the same commands as people, with the same limits,
@@ -1037,7 +1038,20 @@ export class Bot {
       perOutput: Deniers;
       demand: number;
     }[] = [];
-    for (const entry of this.profile.focus) {
+    // The builder takes up the luxury chains its title opens, the earliest first.
+    const luxury =
+      this.profile.name === "builder"
+        ? Object.entries(settings.unlocks)
+            .sort(([, a], [, b]) => (a < b ? -1 : a > b ? 1 : 0))
+            .map(([type]) => type)
+            .filter(
+              (type) =>
+                isUnlocked(s.ctx, s.state(), this.id, type) &&
+                s.ctx.theme.buildings.some((b) => b.type === type),
+            )
+            .slice(0, 3)
+        : [];
+    for (const entry of [...this.profile.focus, ...luxury]) {
       const type = this.resolve(entry);
       const output = Object.keys(recipesFor(s.ctx.theme, type)[0]?.outputs ?? {})[0];
       const reference = output ? Number(s.market.reference(output)) : 0;

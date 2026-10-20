@@ -38,6 +38,7 @@ import {
 import { supplyArrived } from "./suppliers.js";
 import { terraEmbargoCutBps } from "./terraWorld.js";
 import { type Tx, emit, fail, nextId, removeStock, transfer } from "./tx.js";
+import { lockedGood, makesGood } from "./unlocks.js";
 import { vwap } from "./valuation.js";
 import { useWarehouse, warehouseHolders } from "./warehouses.js";
 
@@ -335,7 +336,10 @@ export function deliveryOrdersFor(
   // The merchant's own chain: what the starting buildings of the region make.
   const chain = regionChain(ctx, region);
   const tier = (resource: string) => ctx.theme.resources.find((r) => r.code === resource)?.tier;
-  const mayOrder = (resource: string) => tier(resource) !== "raw" || chain.has(resource);
+  // Goods of a luxury chain: only of those who make them.
+  const mayOrder = (resource: string) =>
+    (tier(resource) !== "raw" || chain.has(resource)) &&
+    (!lockedGood(ctx, resource) || makesGood(ctx, state, playerId, resource));
 
   // The welcome order: on the day of joining, to the nearest city buying the goods.
   const welcome = cfg.welcome[region];
@@ -598,8 +602,14 @@ export function ensureBoard(tx: Tx): void {
   const citiesBuying = (r: string) =>
     ctx.theme.cities.map((c) => c.code).filter((c) => ctx.settings.cities[c]?.[r]);
   // Goods from overseas only while the galleys of the Muda bring them.
+  // Goods of a luxury chain only once an active merchant makes them.
+  const made = (r: string) =>
+    !lockedGood(ctx, r) ||
+    Object.values(tx.s.players).some(
+      (p) => isActive(ctx, p, tx.now) && makesGood(ctx, tx.s as WorldState, p.id, r),
+    );
   const resources = Object.keys(cfg.quantity).filter(
-    (r) => (tier(r) !== "luxury" || isMudaGood(ctx, r)) && citiesBuying(r).length > 0,
+    (r) => (tier(r) !== "luxury" || isMudaGood(ctx, r)) && citiesBuying(r).length > 0 && made(r),
   );
   const orders: BoardOrder[] = [];
   // Elastic demand: cheap goods are ordered more, dear ones less.

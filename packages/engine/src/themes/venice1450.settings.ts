@@ -581,6 +581,10 @@ export const venice1450Settings: WorldSettingsInput = {
       cloth: [1, 3],
       salt: [5, 12],
       wine: [3, 8],
+      // The luxury chains: asked only of those who make them.
+      mirrors: [2, 6],
+      garments: [2, 6],
+      prepared_spices: [1, 4],
     },
     // One city order in thirteen asks for goods from overseas.
     weights: {
@@ -597,6 +601,9 @@ export const venice1450Settings: WorldSettingsInput = {
       cloth: 1,
       salt: 1,
       wine: 1,
+      mirrors: 3,
+      garments: 3,
+      prepared_spices: 2,
     },
     // Elastic demand: a good at 80 % of its reference at the Rialto is ordered half as often again,
     // and the board grows with the average (up to twice its size).
@@ -902,6 +909,26 @@ export const venice1450Settings: WorldSettingsInput = {
     sawmill: { costDucats: 35_000, costMaterials: { bricks: 30, planks: 15 } },
     // Prestige sink: produces nothing, counts at cost in the ranking.
     palazzo: { costDucats: 56_000, costMaterials: { bricks: 30, planks: 30 } },
+    // The luxury chains, opened by the titles (see `unlocks`).
+    sand_pit: { costDucats: 21_000, costMaterials: { bricks: 15, planks: 15 } },
+    glassworks: { costDucats: 42_000, costMaterials: { bricks: 40, planks: 20 } },
+    mirrorworks: { costDucats: 56_000, costMaterials: { bricks: 30, planks: 40 } },
+    sheepfold: { costDucats: 28_000, costMaterials: { bricks: 15, planks: 25 } },
+    loom: { costDucats: 49_000, costMaterials: { bricks: 25, planks: 40 } },
+    tailor: { costDucats: 63_000, costMaterials: { bricks: 30, planks: 40 } },
+    spicery: { costDucats: 70_000, costMaterials: { bricks: 40, planks: 40 } },
+  },
+  // The luxury chains (recommendations of 20 October 2026), opened by the merchant titles: the
+  // glass of Murano at Marchand (1 500 ducats of net sales), the drapery at Négociant (3 000),
+  // the prepared spices at Armateur (5 000).
+  unlocks: {
+    sand_pit: 150_000,
+    glassworks: 150_000,
+    mirrorworks: 150_000,
+    sheepfold: 300_000,
+    loom: 300_000,
+    tailor: 300_000,
+    spicery: 500_000,
   },
   referencePrices: {
     wheat: 100,
@@ -917,6 +944,13 @@ export const venice1450Settings: WorldSettingsInput = {
     wine: 600,
     furs: 1_400,
     cloth: 1_800,
+    sand: 100,
+    glass: 350,
+    mirrors: 1_200,
+    wool: 120,
+    drape: 400,
+    garments: 1_300,
+    prepared_spices: 2_600,
   },
   marketMaker: {
     spreadStartBps: 400,
@@ -990,6 +1024,9 @@ export const venice1450Settings: WorldSettingsInput = {
       wine: { basePrice: 680, dailyCapacityPerPlayer: 6, maxDropBps: 5_000 },
       furs: { basePrice: 1_600, dailyCapacityPerPlayer: 2, maxDropBps: 5_000 },
       cloth: { basePrice: 2_050, dailyCapacityPerPlayer: 2, maxDropBps: 5_000 },
+      mirrors: { basePrice: 1_400, dailyCapacityPerPlayer: 3, maxDropBps: 5_000 },
+      garments: { basePrice: 1_500, dailyCapacityPerPlayer: 3, maxDropBps: 5_000 },
+      prepared_spices: { basePrice: 3_000, dailyCapacityPerPlayer: 2, maxDropBps: 5_000 },
     },
     padova: {
       bread: { basePrice: 210, dailyCapacityPerPlayer: 20, maxDropBps: 5_000 },
@@ -998,6 +1035,9 @@ export const venice1450Settings: WorldSettingsInput = {
       silk: { basePrice: 1_350, dailyCapacityPerPlayer: 3, maxDropBps: 5_000 },
       wine: { basePrice: 670, dailyCapacityPerPlayer: 5, maxDropBps: 5_000 },
       cloth: { basePrice: 2_000, dailyCapacityPerPlayer: 2, maxDropBps: 5_000 },
+      mirrors: { basePrice: 1_350, dailyCapacityPerPlayer: 3, maxDropBps: 5_000 },
+      garments: { basePrice: 1_450, dailyCapacityPerPlayer: 3, maxDropBps: 5_000 },
+      prepared_spices: { basePrice: 2_900, dailyCapacityPerPlayer: 2, maxDropBps: 5_000 },
     },
     verona: {
       bread: { basePrice: 200, dailyCapacityPerPlayer: 20, maxDropBps: 5_000 },
@@ -1006,6 +1046,9 @@ export const venice1450Settings: WorldSettingsInput = {
       spices: { basePrice: 1_650, dailyCapacityPerPlayer: 3, maxDropBps: 5_000 },
       salt: { basePrice: 330, dailyCapacityPerPlayer: 10, maxDropBps: 5_000 },
       furs: { basePrice: 1_550, dailyCapacityPerPlayer: 2, maxDropBps: 5_000 },
+      mirrors: { basePrice: 1_350, dailyCapacityPerPlayer: 3, maxDropBps: 5_000 },
+      garments: { basePrice: 1_450, dailyCapacityPerPlayer: 3, maxDropBps: 5_000 },
+      prepared_spices: { basePrice: 2_900, dailyCapacityPerPlayer: 2, maxDropBps: 5_000 },
     },
     vicenza: {
       bread: { basePrice: 200, dailyCapacityPerPlayer: 20, maxDropBps: 5_000 },

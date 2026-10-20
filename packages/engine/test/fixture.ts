@@ -5,8 +5,18 @@ import { venice1450 } from "../src/index.js";
  * Frozen theme and settings for engine tests, so that balancing the real worlds never changes
  * what the tests check.
  */
+// The goods and buildings of Venice when the fixture was frozen (later ones stay out).
+const FROZEN_GOODS = new Set(
+  "wheat flour bread clay bricks wood planks spices silk salt wine furs cloth".split(" "),
+);
+const FROZEN_BUILDINGS = new Set(
+  "farm clay_pit lumber_camp mill bakery brickworks sawmill palazzo".split(" "),
+);
+
 export const testTheme: Theme = {
   ...venice1450,
+  resources: venice1450.resources.filter((r) => FROZEN_GOODS.has(r.code)),
+  buildings: venice1450.buildings.filter((b) => FROZEN_BUILDINGS.has(b.type)),
   cities: [
     { code: "venezia", name: "Venise" },
     { code: "padova", name: "Padoue" },

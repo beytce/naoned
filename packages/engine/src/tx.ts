@@ -47,6 +47,7 @@ export type EngineErrorCode =
   | "bid_too_low"
   | "unknown_city"
   | "no_warehouse"
+  | "locked"
   | "reset_limit"
   | "unknown_contract"
   | "contract_expired"

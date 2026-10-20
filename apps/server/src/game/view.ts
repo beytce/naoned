@@ -325,6 +325,14 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
       cost: costForLevel(ctx, b.type, 1),
       /** Regions where it may be built (null: anywhere). */
       regions: settings.buildingRegions[b.type] ?? null,
+      /** The luxury chains: the net sales, and the title, that open it (null: open). */
+      unlock:
+        settings.unlocks[b.type] !== undefined
+          ? {
+              turnover: settings.unlocks[b.type],
+              title: titleFor(settings.unlocks[b.type] ?? 0n).current.name,
+            }
+          : null,
     })),
     road: deliveriesOn(ctx)
       ? {

@@ -4,9 +4,11 @@ import {
   type PlayerId,
   SINK_ACCOUNT,
   type WorldContext,
+  type WorldState,
   cashAccount,
 } from "./state.js";
 import { type Tx, emit, fail, nextId, removeStock, transfer } from "./tx.js";
+import { isUnlocked } from "./unlocks.js";
 
 export interface BuildingCost {
   ducats: Deniers;
@@ -111,6 +113,7 @@ function checkRegion(tx: Tx, playerId: PlayerId, type: string): void {
 export function build(tx: Tx, playerId: PlayerId, type: string): Building {
   if (!tx.ctx.theme.buildings.some((b) => b.type === type)) fail("unknown_building_type");
   checkRegion(tx, playerId, type);
+  if (!isUnlocked(tx.ctx, tx.s as WorldState, playerId, type)) fail("locked");
   if (buildingsOf(tx, playerId).length >= tx.ctx.settings.maxBuildings) fail("max_buildings");
   const cost = costForLevel(tx.ctx, type, 1);
   const building = grantBuilding(tx, playerId, type);

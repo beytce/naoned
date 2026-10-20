@@ -1325,6 +1325,7 @@ export const fr = {
       owned: (n: number) => `Possédés ${n}`,
       batch: (time: string) => `Un lot : ${time}`,
       onlyIn: (regions: string) => `Seulement en ${regions}`,
+      unlockAt: (title: string) => `S'ouvre au titre de ${title}`,
       missing: "Il vous manque des ducats ou des matériaux.",
       upgradeOf: (from: string, cost: string) => `S'obtient en améliorant : ${from} (${cost})`,
       roles: {
@@ -1338,6 +1339,13 @@ export const fr = {
         brickworks: "Cuit l'argile en briques, qui servent à bâtir et agrandir tous les ateliers.",
         sawmill: "Scie le bois en planches, qui servent à bâtir et agrandir tous les ateliers.",
         palazzo: "Prestige : ne produit rien, compte à son coût dans le classement.",
+        sand_pit: "Tire le sable de la lagune, que la verrerie fond en verre.",
+        glassworks: "Le verre de Murano : sable et bois fondus, pour la miroiterie.",
+        mirrorworks: "Argente le verre en miroirs, que les palais des villes paient cher.",
+        sheepfold: "Tond la laine des troupeaux, pour le métier à tisser.",
+        loom: "Tisse la laine en drap, que le tailleur coupe.",
+        tailor: "Coupe le drap en vêtements, le luxe des villes de la Terraferme.",
+        spicery: "Prépare les épices de la Muda : les villes les paient presque le double.",
       } as Record<string, string>,
       vehicleRoles: {
         mule: "Lente mais bon marché : tout véhicule commence mule.",

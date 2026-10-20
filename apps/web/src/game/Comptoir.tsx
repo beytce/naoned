@@ -662,7 +662,11 @@ function BuildSheet({ type, props }: { type: string; props: GameProps }) {
       <Slab
         size="lg"
         className="w-full"
-        disabled={props.busy || !affordable(props.view, def.cost)}
+        disabled={
+          props.busy ||
+          !affordable(props.view, def.cost) ||
+          (!!def.unlock && BigInt(props.view.standing.turnover) < BigInt(def.unlock.turnover))
+        }
         onClick={async () => {
           if (await props.act({ type: "build", buildingType: type })) props.setSheet("workshops");
         }}

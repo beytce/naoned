@@ -965,6 +965,11 @@ export const worldSettingsSchema = z.object({
     })
     .optional(),
   /**
+   * The luxury chains: a workshop type opens once the merchant's net sales of the season reach
+   * this many deniers (its goods are then ordered only of those who make them).
+   */
+  unlocks: z.record(money).default({}),
+  /**
    * Warehouses in the cities: `perCity` places auctioned each week (at least `minBid`), each
    * letting its holder deliver the city's orders at once, `unitsPerDay`. Off when absent.
    */

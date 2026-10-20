@@ -24,6 +24,104 @@ const grain = (x: number, y: number, r: number) => (
 );
 
 const ICONS: Record<string, JSX.Element> = {
+  // The luxury chains.
+  sand: (
+    <g>
+      <path d="M6 38 Q24 14 42 38 Z" fill="#E9D3A0" stroke="#B89A5E" strokeWidth="1.5" />
+      {[
+        [16, 30],
+        [22, 32],
+        [28, 34],
+        [32, 30],
+        [20, 34],
+        [26, 30],
+      ].map(([x, y]) => (
+        <circle key={`${x}-${y}`} cx={x} cy={y} r="1.1" fill="#B89A5E" />
+      ))}
+    </g>
+  ),
+  glass: (
+    <g>
+      <path
+        d="M16 10 H32 L30 22 Q36 30 30 38 H18 Q12 30 18 22 Z"
+        fill="#BFE3FF"
+        fillOpacity="0.75"
+        stroke="#5C8DB8"
+        strokeWidth="1.5"
+      />
+      <path d="M20 26 Q19 32 22 35" stroke="#FFFFFF" strokeWidth="2" fill="none" />
+    </g>
+  ),
+  mirrors: (
+    <g>
+      <ellipse
+        cx="24"
+        cy="22"
+        rx="12"
+        ry="15"
+        fill={P.gold}
+        stroke={P.goldDeep}
+        strokeWidth="1.5"
+      />
+      <ellipse
+        cx="24"
+        cy="22"
+        rx="8.5"
+        ry="11"
+        fill="#DCEFFF"
+        stroke={P.goldDeep}
+        strokeWidth="1"
+      />
+      <path d="M19 16 L25 12 M18 22 L27 15" stroke="#FFFFFF" strokeWidth="1.6" />
+      <path d="M20 37 H28 L26 43 H22 Z" fill={P.gold} stroke={P.goldDeep} strokeWidth="1.2" />
+    </g>
+  ),
+  wool: (
+    <g fill="#F4EEE2" stroke="#BDB2A0" strokeWidth="1.4">
+      <circle cx="18" cy="24" r="8" />
+      <circle cx="30" cy="24" r="8" />
+      <circle cx="24" cy="17" r="8" />
+      <circle cx="24" cy="30" r="8" />
+    </g>
+  ),
+  drape: (
+    <g>
+      <path d="M8 14 H40 V36 H8 Z" fill="#7A4E8E" stroke="#4E2E5E" strokeWidth="1.5" />
+      <path d="M8 20 H40 M8 26 H40 M8 32 H40" stroke="#9C72B0" strokeWidth="1.2" />
+      <path d="M40 14 Q44 25 40 36" fill="#5E3A70" stroke="#4E2E5E" strokeWidth="1.2" />
+    </g>
+  ),
+  garments: (
+    <g>
+      <path
+        d="M16 8 L24 12 L32 8 L42 16 L36 22 L33 19 V40 H15 V19 L12 22 L6 16 Z"
+        fill={P.vermilion}
+        stroke={P.vermilionDeep}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path d="M24 12 V40" stroke={P.gold} strokeWidth="1.6" />
+      <circle cx="24" cy="20" r="1.3" fill={P.gold} />
+      <circle cx="24" cy="27" r="1.3" fill={P.gold} />
+    </g>
+  ),
+  prepared_spices: (
+    <g>
+      <path d="M12 18 H36 L33 40 H15 Z" fill="#B9653A" stroke="#7C3E1E" strokeWidth="1.5" />
+      <rect
+        x="10"
+        y="12"
+        width="28"
+        height="7"
+        rx="2"
+        fill={P.gold}
+        stroke={P.goldDeep}
+        strokeWidth="1.2"
+      />
+      <path d="M17 28 H31 M18 34 H30" stroke={P.goldSoft} strokeWidth="1.4" />
+      <path d="M24 12 Q22 6 27 4" stroke="#7FA052" strokeWidth="2" fill="none" />
+    </g>
+  ),
   salt: (
     <g>
       <path d="M10 38 L24 12 L38 38 Z" fill={P.cream} stroke="#CFC2B0" strokeWidth="1.5" />
