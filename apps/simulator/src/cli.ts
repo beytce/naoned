@@ -63,6 +63,7 @@ const CREATED = [
   "decree_favour",
   "supplier_bonus",
   "tender_delivery",
+  "quality_premium",
   "terraferma_route",
 ];
 const DESTROYED = [

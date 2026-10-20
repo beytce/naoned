@@ -918,6 +918,10 @@ export const venice1450Settings: WorldSettingsInput = {
     tailor: { costDucats: 63_000, costMaterials: { bricks: 30, planks: 40 } },
     spicery: { costDucats: 70_000, costMaterials: { bricks: 40, planks: 40 } },
   },
+  // The manufactures (recommendations of 20 October 2026): past level 5, a workshop climbs to 10
+  // from Négociant (3 000 ducats of net sales) on a path chosen once: volume (bigger batches) or
+  // quality (the same batches, the cities paying its goods 4 % more per level, 20 % at 10).
+  manufacture: { maxLevel: 10, qualityBpsPerLevel: 400, unlock: 300_000 },
   // The luxury chains (recommendations of 20 October 2026), opened by the merchant titles: the
   // glass of Murano at Marchand (1 500 ducats of net sales), the drapery at Négociant (3 000),
   // the prepared spices at Armateur (5 000).

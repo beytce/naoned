@@ -93,6 +93,8 @@ export interface Catalog {
     levelYieldBonusBps: number;
     /** The caution of a tender's bid, in percent of what it is worth. */
     tenderCautionPct?: number;
+    /** The manufactures past the last ordinary level (null: none). */
+    manufacture?: { maxLevel: number; qualityPct: number; title: string } | null;
   };
 }
 
@@ -406,6 +408,11 @@ export interface BuildingView {
   /** Extractor built outside its region before the rule: produces, cannot be upgraded. */
   outOfRegion: boolean;
   /** In figures: units and margin an hour, the next level's gain and payback. */
+  /** The manufacture's path (null: not chosen), the level its batches work at. */
+  path: "volume" | "quality" | null;
+  workLevel: number;
+  /** At the last ordinary level: the path may be chosen ("open") or awaits a title. */
+  pathChoice: "open" | "locked" | null;
   economics: {
     unitsPerHour: number;
     marginPerHour: Money;
@@ -869,6 +876,7 @@ export type Action =
   | { type: "tenderBid"; tenderId: string; price: string; quantity: number }
   | { type: "tenderDeliver"; tenderId: string }
   | { type: "warehouseBid"; city: string; amount: string }
+  | { type: "choosePath"; buildingId: string; path: "volume" | "quality" }
   | { type: "fulfillContract"; contractId: string }
   | { type: "joinFamily"; family: string }
   | { type: "collectLevy" }

@@ -37,6 +37,7 @@ export type LedgerReason =
   | "tender_refund"
   | "tender_forfeit"
   | "tender_delivery"
+  | "quality_premium"
   | "warehouse_bid"
   | "warehouse_refund"
   | "warehouse_rent"

@@ -66,6 +66,7 @@ import {
   isNation,
 } from "./terraferma.js";
 import { findRegion, recipesFor } from "./theme.js";
+import { turnoverOf } from "./turnover.js";
 import { isUnlocked } from "./unlocks.js";
 
 /**
@@ -1059,7 +1060,12 @@ export class Bot {
       if (demand < 0.8) continue;
       const ofType = mine.filter((b) => b.type === type).sort((a, b) => a.level - b.level);
       const lowest = ofType[0];
-      if (lowest && lowest.level < settings.maxBuildingLevel) {
+      // Past the last ordinary level, a manufacture once its path may be chosen.
+      const m = settings.manufacture;
+      const pathOpen =
+        !!m && turnoverOf(s.state(), this.id) >= m.unlock && lowest?.type !== "palazzo";
+      const top = lowest?.path || pathOpen ? (m?.maxLevel ?? 0) : settings.maxBuildingLevel;
+      if (lowest && lowest.level < Math.max(top, settings.maxBuildingLevel)) {
         options.push({
           kind: "upgrade",
           type,
@@ -1124,8 +1130,17 @@ export class Bot {
     }
     if (!ready || this.cash(s) < next.cost.ducats + reserve / 2n) return;
     if (next.kind === "build") s.act({ type: "build", playerId: this.id, buildingType: next.type });
-    else if (next.building)
+    else if (next.building) {
+      // The artisan seeks quality, the others volume.
+      if (next.building.level >= s.ctx.settings.maxBuildingLevel && !next.building.path)
+        s.act({
+          type: "choosePath",
+          playerId: this.id,
+          buildingId: next.building.id,
+          path: this.profile.name === "artisan" ? "quality" : "volume",
+        });
       s.act({ type: "upgrade", playerId: this.id, buildingId: next.building.id });
+    }
   }
 
   /** Best ask this bot can actually take: the market maker's only within today's quota. */

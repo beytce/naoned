@@ -1,6 +1,6 @@
 import { isDraft, original } from "immer";
 import { marketCityBps } from "./acts.js";
-import { costValue } from "./buildings.js";
+import { costValue, qualityBps } from "./buildings.js";
 import { familyAccount } from "./campaign.js";
 import { hourIn, hourWithin } from "./clock.js";
 import { contractsDoneToday, contractsFor } from "./contracts.js";
@@ -899,6 +899,16 @@ function arrive(tx: Tx, d: Delivery): void {
   d.outcome = "delivered";
   // The official supplier of the good in this city is paid more.
   d.paid += supplyArrived(tx, d.playerId, city, d.cargo, paidFor, d.id);
+  // So are the goods of a manufacture on the quality path.
+  let quality = 0n;
+  for (const [res, paid] of Object.entries(paidFor).sort(([a], [b]) => a.localeCompare(b))) {
+    const bps = qualityBps(tx.ctx, state, d.playerId, res);
+    if (bps > 0 && paid > 0n) quality += applyBpsFloor(paid, bps);
+  }
+  if (quality > 0n) {
+    transfer(tx, SOURCE_ACCOUNT, cashAccount(d.playerId), quality, "quality_premium", d.id);
+    d.paid += quality;
+  }
   // The Terraferma's favour of the Doge: his contracts pay the Signore and his allies more.
   const dogeBps = dogeFavourBps(tx.ctx, state, d.playerId, tx.now);
   if (dogeBps > 0 && doge > 0n) {

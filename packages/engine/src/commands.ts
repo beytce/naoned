@@ -1,7 +1,7 @@
 import { type Draft, enableMapSet, produce } from "immer";
 import { claimDaily, rerollDaily, sellToCriee, trackDaily } from "./activity.js";
 import { grantStartingBales, openBale } from "./bales.js";
-import { build, grantBuilding, upgrade } from "./buildings.js";
+import { build, choosePath, grantBuilding, upgrade } from "./buildings.js";
 import {
   buildWork,
   buyTroops,
@@ -96,6 +96,7 @@ export type Command =
   | { type: "tenderBid"; playerId: PlayerId; tenderId: string; price: Deniers; quantity: number }
   | { type: "tenderDeliver"; playerId: PlayerId; tenderId: string }
   | { type: "warehouseBid"; playerId: PlayerId; city: string; amount: Deniers }
+  | { type: "choosePath"; playerId: PlayerId; buildingId: string; path: "volume" | "quality" }
   | { type: "build"; playerId: PlayerId; buildingType: string }
   | { type: "upgrade"; playerId: PlayerId; buildingId: string }
   | ({ type: "placeOrder" } & PlaceOrderInput)
@@ -271,6 +272,11 @@ function apply(tx: Tx, cmd: Command): void {
       const building = ownBuilding(tx, cmd.playerId, cmd.buildingId);
       collect(tx, building);
       upgrade(tx, building);
+      break;
+    }
+    case "choosePath": {
+      const building = ownBuilding(tx, cmd.playerId, cmd.buildingId);
+      choosePath(tx, building, cmd.path);
       break;
     }
     case "placeOrder": {

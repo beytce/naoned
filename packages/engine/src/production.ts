@@ -1,4 +1,5 @@
 import { marketYieldBps } from "./acts.js";
+import { workLevel } from "./buildings.js";
 import { applyBonusToQuantity, applyBpsFloor } from "./money.js";
 import { specialtyEffects } from "./specialties.js";
 import {
@@ -114,7 +115,9 @@ export function startProduction(
   const job = building.job;
   if (
     job &&
-    (job.recipe !== recipeCode || job.level !== building.level || job.batchMs !== normalMs)
+    (job.recipe !== recipeCode ||
+      job.level !== workLevel(tx.ctx, building) ||
+      job.batchMs !== normalMs)
   ) {
     fail("building_busy");
   }
@@ -128,7 +131,7 @@ export function startProduction(
   if (newEnd - tx.now > tx.ctx.settings.productionQueueMaxHours * HOUR_MS) fail("queue_full");
 
   for (const [resource, perBatch] of Object.entries(recipe.inputs)) {
-    const qty = (perBatch ?? 0) * building.level * batches;
+    const qty = (perBatch ?? 0) * workLevel(tx.ctx, building) * batches;
     removeStock(tx, building.playerId, resource, qty, "production_input", building.id);
   }
 
@@ -139,7 +142,7 @@ export function startProduction(
       recipe: recipeCode,
       startedAt: tx.now,
       batches,
-      level: building.level,
+      level: workLevel(tx.ctx, building),
       batchMs,
     };
   }
@@ -177,7 +180,10 @@ export function freeBatches(
     : recipe.durationMinutes * MINUTE_MS;
   const job = building.job;
   const sameQueue =
-    job && job.recipe === recipeCode && job.level === building.level && job.batchMs === batchMs;
+    job &&
+    job.recipe === recipeCode &&
+    job.level === workLevel(ctx, building) &&
+    job.batchMs === batchMs;
   const jobEnd = job ? job.startedAt + job.batches * job.batchMs : now;
   if (job && !sameQueue && jobEnd > now) return 0;
   const queuedEnd = job && sameQueue ? Math.max(now, jobEnd) : now;

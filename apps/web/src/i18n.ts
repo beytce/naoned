@@ -1275,6 +1275,7 @@ export const fr = {
         decree_favour: "Faveur d'une ville",
         supplier_bonus: "Fournisseur officiel",
         tender_delivery: "Appels d'offres du Doge",
+        quality_premium: "Qualité des manufactures",
         decree_share: "Part des décrets",
         delivery: "Livraisons",
       } as Record<string, string>,
@@ -1975,6 +1976,28 @@ export const fr = {
       upgrade: (building: string, adds: string, payback: string) =>
         `Améliorez ${building} : +${adds} par heure, rentabilisé en ${payback}.`,
       upgradeGo: "Améliorer",
+    },
+    /** The manufactures, past the last ordinary level. */
+    manufacture: {
+      title: "Devenir manufacture",
+      help: (max: number) =>
+        `L'atelier est au dernier niveau ordinaire. Choisissez sa voie, une fois pour toutes, pour monter jusqu'au niveau ${max}.`,
+      locked: (title: string, max: number) =>
+        `Au titre de ${title}, cet atelier pourra devenir une manufacture et monter jusqu'au niveau ${max}.`,
+      paths: {
+        volume: {
+          name: "Volume",
+          text: (_: number) =>
+            "Chaque niveau grossit les lots, comme jusqu'ici : plus de marchandise.",
+        },
+        quality: {
+          name: "Qualité",
+          text: (pct: number) =>
+            `Les lots restent ceux du niveau 5, mais les villes paient ses marchandises ${pct} % de plus par niveau.`,
+        },
+      },
+      choose: (path: string) => `Choisir la voie ${path.toLowerCase()}`,
+      quality: (pct: number) => `Qualité : les villes paieront ses marchandises +${pct} %.`,
     },
     /** The Doge's tenders. */
     tenders: {

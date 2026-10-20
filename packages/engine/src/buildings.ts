@@ -7,6 +7,7 @@ import {
   type WorldState,
   cashAccount,
 } from "./state.js";
+import { turnoverOf } from "./turnover.js";
 import { type Tx, emit, fail, nextId, removeStock, transfer } from "./tx.js";
 import { isUnlocked } from "./unlocks.js";
 
@@ -122,8 +123,64 @@ export function build(tx: Tx, playerId: PlayerId, type: string): Building {
   return building;
 }
 
+/**
+ * The level a workshop works at: its level, but a manufacture on the quality path keeps the
+ * batches of the last ordinary level.
+ */
+export function workLevel(ctx: WorldContext, building: Building): number {
+  return building.path === "quality"
+    ? Math.min(building.level, ctx.settings.maxBuildingLevel)
+    : building.level;
+}
+
+/** The highest level a workshop may reach now. */
+export function topLevel(ctx: WorldContext, building: Building): number {
+  const m = ctx.settings.manufacture;
+  return m && building.path ? m.maxLevel : ctx.settings.maxBuildingLevel;
+}
+
+/**
+ * The cities pay a merchant's goods more for the quality of its manufactures: the best of the
+ * workshops making the good on the quality path, per level past the last ordinary one.
+ */
+export function qualityBps(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  resource: string,
+): number {
+  const m = ctx.settings.manufacture;
+  if (!m) return 0;
+  let best = 0;
+  for (const b of Object.values(state.buildings)) {
+    if (b.playerId !== playerId || b.path !== "quality") continue;
+    if (!ctx.theme.recipes.some((r) => r.building === b.type && (r.outputs[resource] ?? 0) > 0))
+      continue;
+    best = Math.max(best, (b.level - ctx.settings.maxBuildingLevel) * m.qualityBpsPerLevel);
+  }
+  return best;
+}
+
+/** A manufacture's path, chosen once at the last ordinary level. */
+export function choosePath(tx: Tx, building: Building, path: "volume" | "quality"): void {
+  const m = tx.ctx.settings.manufacture;
+  if (!m || building.type === "palazzo") fail("not_ready");
+  if (building.path) fail("path_chosen");
+  if (building.level < tx.ctx.settings.maxBuildingLevel) fail("not_ready");
+  if (turnoverOf(tx.s as WorldState, building.playerId) < m.unlock) fail("locked");
+  building.path = path;
+  emit(tx, "manufacture_path", building.playerId, { building: building.id, path });
+}
+
 export function upgrade(tx: Tx, building: Building): void {
-  if (building.level >= tx.ctx.settings.maxBuildingLevel) fail("max_level");
+  if (
+    building.level >= tx.ctx.settings.maxBuildingLevel &&
+    !building.path &&
+    tx.ctx.settings.manufacture &&
+    building.type !== "palazzo"
+  )
+    fail("choose_path");
+  if (building.level >= topLevel(tx.ctx, building)) fail("max_level");
   checkRegion(tx, building.playerId, building.type);
   const cost = costForLevel(tx.ctx, building.type, building.level + 1);
   payCost(tx, building.playerId, cost, building.id);

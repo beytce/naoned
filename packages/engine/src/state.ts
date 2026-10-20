@@ -71,6 +71,8 @@ export interface Building {
   investedValue: Deniers;
   /** Accelerated batches left for the first minutes of play (starting kit only). */
   fastBatchesLeft: number;
+  /** A manufacture's path past the last ordinary level (absent: not chosen). */
+  path?: "volume" | "quality";
 }
 
 export interface InventoryLine {

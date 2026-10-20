@@ -36,9 +36,11 @@ import {
   seasonEnd,
   specialtyUnlocked,
   stockUnitValue,
+  topLevel,
   turnoverOf,
   vwap,
   warehouseUnitsLeft,
+  workLevel,
   workshopEconomics,
 } from "@comptoirs/engine";
 import {
@@ -382,6 +384,13 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
       regionBonusBps: settings.regionBonusBps,
       levelYieldBonusBps: settings.levelYieldBonusBps,
       tenderCautionPct: (settings.tenders?.cautionBps ?? 0) / 100,
+      manufacture: settings.manufacture
+        ? {
+            maxLevel: settings.manufacture.maxLevel,
+            qualityPct: settings.manufacture.qualityBpsPerLevel / 100,
+            title: titleFor(settings.manufacture.unlock).current.name,
+          }
+        : null,
     },
   };
 }
@@ -391,7 +400,7 @@ function buildingView(ctx: WorldContext, state: WorldState, b: Building, now: nu
   const inv = state.inventories[b.playerId] ?? {};
   let affordable = Number.POSITIVE_INFINITY;
   for (const [res, perBatch] of Object.entries(recipe?.inputs ?? {})) {
-    const need = (perBatch ?? 0) * b.level;
+    const need = (perBatch ?? 0) * workLevel(ctx, b);
     if (need > 0) affordable = Math.min(affordable, Math.floor((inv[res]?.available ?? 0) / need));
   }
   const player = state.players[b.playerId];
@@ -424,9 +433,16 @@ function buildingView(ctx: WorldContext, state: WorldState, b: Building, now: nu
     fastSeconds:
       player && fastBatchNext(ctx, b, player, now) ? ctx.settings.tutorial.fastBatchSeconds : null,
     upgradeCost:
-      local && b.level < ctx.settings.maxBuildingLevel
-        ? costForLevel(ctx, b.type, b.level + 1)
-        : null,
+      local && b.level < topLevel(ctx, b) ? costForLevel(ctx, b.type, b.level + 1) : null,
+    /** The manufacture: its path, the level its batches work at, whether its path may be chosen. */
+    path: b.path ?? null,
+    workLevel: workLevel(ctx, b),
+    pathChoice: (() => {
+      const m = ctx.settings.manufacture;
+      if (!m || b.path || b.type === "palazzo" || !local) return null;
+      if (b.level < ctx.settings.maxBuildingLevel) return null;
+      return turnoverOf(state, b.playerId) >= m.unlock ? ("open" as const) : ("locked" as const);
+    })(),
     /** In figures: margin an hour, the next level's gain and payback (null: none). */
     economics: (() => {
       const e = workshopEconomics(ctx, state, b.playerId, b, now);

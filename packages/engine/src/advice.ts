@@ -1,9 +1,29 @@
-import { costForLevel, costValue } from "./buildings.js";
+import { costForLevel, costValue, topLevel, workLevel } from "./buildings.js";
 import type { Deniers } from "./money.js";
 import { yieldBonusBps } from "./production.js";
 import { openProjects } from "./projects.js";
 import type { Building, PlayerId, WorldContext, WorldState } from "./state.js";
 import { recipesFor } from "./theme.js";
+
+/** What a workshop's batches are worth an hour at reference prices, its inputs not taken off. */
+function outputValue(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  type: string,
+  level: number,
+  now: number,
+): Deniers {
+  const recipe = recipesFor(ctx.theme, type)[0];
+  if (!recipe) return 0n;
+  let inputs = 0n;
+  for (const [res, qty] of Object.entries(recipe.inputs))
+    inputs += (ctx.settings.referencePrices[res] ?? 0n) * BigInt((qty ?? 0) * level);
+  return (
+    marginAt(ctx, state, playerId, type, level, now) +
+    (inputs * 60n) / BigInt(Math.max(1, recipe.durationMinutes))
+  );
+}
 
 /** What one level of a workshop's recipe makes an hour, as margin at reference prices (deniers). */
 function marginAt(
@@ -53,23 +73,28 @@ export function workshopEconomics(
 ): WorkshopEconomics {
   const recipe = recipesFor(ctx.theme, building.type)[0];
   const player = state.players[playerId];
-  const margin = marginAt(ctx, state, playerId, building.type, building.level, now);
+  const level = workLevel(ctx, building);
+  const margin = marginAt(ctx, state, playerId, building.type, level, now);
   let unitsPerHour = 0;
   if (recipe && player) {
     const [res, qty] = Object.entries(recipe.outputs)[0] ?? ["", 0];
     const bonus =
-      10_000 +
-      yieldBonusBps(ctx, player, res, now) +
-      (building.level - 1) * ctx.settings.levelYieldBonusBps;
+      10_000 + yieldBonusBps(ctx, player, res, now) + (level - 1) * ctx.settings.levelYieldBonusBps;
     unitsPerHour = Math.floor(
-      ((qty ?? 0) * building.level * bonus * 60 * 100) /
-        (10_000 * Math.max(1, recipe.durationMinutes)),
+      ((qty ?? 0) * level * bonus * 60 * 100) / (10_000 * Math.max(1, recipe.durationMinutes)),
     );
   }
-  if (building.level >= ctx.settings.maxBuildingLevel || building.type === "palazzo")
+  // The last level, or a manufacture's path still to choose: nothing to add by an upgrade.
+  if (building.level >= topLevel(ctx, building) || building.type === "palazzo")
     return { unitsPerHour, marginPerHour: margin, next: null };
   const cost = costValue(ctx, costForLevel(ctx, building.type, building.level + 1));
-  const added = marginAt(ctx, state, playerId, building.type, building.level + 1, now) - margin;
+  // On the quality path, a level adds what the cities pay more for the same batches.
+  const added =
+    building.path === "quality"
+      ? (outputValue(ctx, state, playerId, building.type, level, now) *
+          BigInt(ctx.settings.manufacture?.qualityBpsPerLevel ?? 0)) /
+        10_000n
+      : marginAt(ctx, state, playerId, building.type, level + 1, now) - margin;
   const paybackMinutes = added > 0n ? Number((cost * 60n) / added) : Number.POSITIVE_INFINITY;
   return {
     unitsPerHour,
@@ -135,7 +160,7 @@ export function nextActions(
     const recipe = recipesFor(ctx.theme, b.type)[0];
     if (!recipe) continue;
     const can = Object.entries(recipe.inputs).every(
-      ([res, qty]) => stock(res) >= (qty ?? 0) * b.level,
+      ([res, qty]) => stock(res) >= (qty ?? 0) * workLevel(ctx, b),
     );
     if (can) out.push({ kind: "produce", buildingId: b.id });
   }

@@ -965,6 +965,14 @@ export const worldSettingsSchema = z.object({
     })
     .optional(),
   /**
+   * The manufactures: past `maxBuildingLevel`, a workshop climbs to `maxLevel` once its merchant
+   * (with net sales of `unlock`) chose a path: volume (bigger batches, as before) or quality (the
+   * batches stay, the cities pay its goods `qualityBpsPerLevel` more per level). Off when absent.
+   */
+  manufacture: z
+    .object({ maxLevel: positive, qualityBpsPerLevel: bps, unlock: money.default(0) })
+    .optional(),
+  /**
    * The luxury chains: a workshop type opens once the merchant's net sales of the season reach
    * this many deniers (its goods are then ordered only of those who make them).
    */

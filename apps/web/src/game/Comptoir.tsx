@@ -460,18 +460,54 @@ function WorkshopSheet({
   const maker = missing
     ? props.view.buildings.find((x) => recipeOf(props, x.type)?.outputs[missing] !== undefined)
     : undefined;
+  const m = fr.game.manufacture;
+  const rules = props.catalog.rules.manufacture;
+  const choice = b.pathChoice && rules && (
+    <div className="space-y-3 border-t border-line pt-4">
+      <Label>{m.title}</Label>
+      {b.pathChoice === "locked" ? (
+        <p className="note">{m.locked(rules.title, rules.maxLevel)}</p>
+      ) : (
+        <>
+          <p className="note">{m.help(rules.maxLevel)}</p>
+          {(["volume", "quality"] as const).map((path) => (
+            <div key={path} className="cut bg-night-3 px-3 py-2 ring-1 ring-inset ring-line">
+              <p className="font-semibold">{m.paths[path].name}</p>
+              <p className="text-sm text-cream-dim">{m.paths[path].text(rules.qualityPct)}</p>
+              <Slab
+                size="sm"
+                className="mt-2 w-full"
+                disabled={props.busy}
+                onClick={() => props.act({ type: "choosePath", buildingId: b.id, path })}
+              >
+                {m.choose(m.paths[path].name)}
+              </Slab>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+  const nextWork = b.path === "quality" ? b.workLevel : b.workLevel + 1;
   const upgrade = cost && (
     <div className="space-y-3">
       {recipe && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 opacity-60">
             <Badge tone="ghost">{fr.game.level(b.level)}</Badge>
-            <RecipeFlow recipe={recipe} level={b.level} props={props} />
+            <RecipeFlow recipe={recipe} level={b.workLevel} props={props} />
           </div>
           <div className="flex items-center gap-2">
             <Badge>{fr.game.level(b.level + 1)}</Badge>
-            <RecipeFlow recipe={recipe} level={b.level + 1} props={props} />
+            <RecipeFlow recipe={recipe} level={nextWork} props={props} />
           </div>
+          {b.path === "quality" && rules && (
+            <p className="text-sm text-gold">
+              {m.quality(
+                Math.round((b.level + 1 - props.catalog.rules.maxBuildingLevel) * rules.qualityPct),
+              )}
+            </p>
+          )}
         </div>
       )}
       <p className="text-sm text-cream-dim">
@@ -512,7 +548,10 @@ function WorkshopSheet({
       <div className="flex items-center gap-3">
         <BuildingArt type={b.type} active={st.state === "running"} className="h-20 w-24" />
         <div className="min-w-0">
-          <Label>{fr.game.level(b.level)}</Label>
+          <Label>
+            {fr.game.level(b.level)}
+            {b.path && ` · ${fr.game.manufacture.paths[b.path].name}`}
+          </Label>
           <h3 className="font-display text-lg font-extrabold uppercase">
             {props.names.building(b.type)}
           </h3>
@@ -539,7 +578,7 @@ function WorkshopSheet({
         </Slab>
       )}
       {!recipe && <p className="text-sm text-cream-dim">{fr.game.palazzoHelp}</p>}
-      {recipe && <RecipeFlow recipe={recipe} level={b.level} props={props} />}
+      {recipe && <RecipeFlow recipe={recipe} level={b.workLevel} props={props} />}
       {recipe && b.canStart > 0 && !(b.job && st.ready < b.job.batches) && (
         <div className="space-y-3">
           <Label>{fr.game.batchesLabel}</Label>
@@ -587,7 +626,7 @@ function WorkshopSheet({
             <ResourceIcon code={missing} size={24} />
             {t.missing(
               props.names.resource(missing),
-              (recipe.inputs[missing] ?? 0) * b.level,
+              (recipe.inputs[missing] ?? 0) * b.workLevel,
               have(props.view, missing),
             )}
           </p>
@@ -617,6 +656,7 @@ function WorkshopSheet({
         </div>
       )}
       {b.outOfRegion && <p className="text-xs text-muted">{fr.game.outOfRegion}</p>}
+      {choice}
       {upgrade &&
         (focus === "upgrade" || canUpgrade || !recipe ? (
           <div className="space-y-2 border-t border-line pt-4">
