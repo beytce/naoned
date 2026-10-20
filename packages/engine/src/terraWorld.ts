@@ -28,6 +28,7 @@ import {
   fireBombard,
   giftDucats,
   isNation,
+  joinTeam,
   launchFront,
   launchNaval,
   newTerra,
@@ -81,6 +82,7 @@ function terra(tx: Tx, cfg: TerraConfig): TerraState {
       active,
       campaignWeekStart(ctx, week),
     );
+    if (cfg.teams?.weeks.includes(week)) map.teamMode = true;
     tx.s.terra = { week, map };
     t = tx.s.terra;
   }
@@ -278,6 +280,7 @@ export function applyTerra(tx: Tx, cmd: TerraCommand): void {
   switch (cmd.type) {
     case "terraPlace":
       placeOnTerra(map, cfg, id, cmd.cell, now);
+      joinTeam(map, id, tx.s.players[id]?.region ?? "");
       emit(tx, "terra_placed", id, { cell: cmd.cell });
       break;
     case "terraFront": {

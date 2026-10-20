@@ -862,8 +862,18 @@ function WarCounter({
 }
 
 /** Under the purse on the right: the troops, the glory and rank, the week's clock. */
-export function TerraHud({ v, now }: { v: TerraView; now: number }) {
+export function TerraHud({
+  v,
+  now,
+  regions,
+}: {
+  v: TerraView;
+  now: number;
+  /** The regions' names (the teams of a week in teams). */
+  regions: { code: string; name: string }[];
+}) {
   const me = v.me;
+  const regionName = (code: string) => regions.find((r) => r.code === code)?.name ?? code;
   return (
     <div className="flex flex-col items-end gap-1">
       {me && (
@@ -906,6 +916,10 @@ export function TerraHud({ v, now }: { v: TerraView; now: number }) {
         )}
         <span>{v.closed ? t().closed : t().closesIn(clock(v.closesAt - now))}</span>
         {!v.open && !v.closed && <span className="text-lagoon">☾ {t().night}</span>}
+        {v.rules.team && <span className="text-info">{t().team(regionName(v.rules.team))}</span>}
+        {v.closed?.teams?.[0] && (
+          <span className="text-gold">{t().teamWon(regionName(v.closed.teams[0].team))}</span>
+        )}
         {v.battle && !v.closed && (
           <span
             className={

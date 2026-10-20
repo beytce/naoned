@@ -1006,7 +1006,12 @@ export interface TerraView {
     members: (string | null)[];
     mine: boolean;
   } | null;
-  closed: { signore: number; conquest: boolean } | null;
+  closed: {
+    signore: number;
+    conquest: boolean;
+    /** A week in teams: the teams by their summed glory. */
+    teams: { team: string; glory: number; cells: number }[] | null;
+  } | null;
   rules: {
     frontsMax: number;
     minShareBps: number;
@@ -1025,6 +1030,8 @@ export interface TerraView {
     peacefulSafe: boolean;
     /** Soldiers and peasants: the slider is played. */
     peasants: boolean;
+    /** A week in teams: the merchant's team (its region), null otherwise. */
+    team: string | null;
     /** Diplomacy: ducats to allies a day, the embargo's cut (null: off). */
     diplomacy: { ducatGiftPerDay: Money; embargoBps: number } | null;
     /** Hours a merchant who sets down is safe from the others (0: none). */

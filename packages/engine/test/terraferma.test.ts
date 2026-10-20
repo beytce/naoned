@@ -5,6 +5,7 @@ import {
   type TerraState,
   type WorldSettingsInput,
   advanceTerra,
+  alliesOf,
   buildOnTerra,
   capOf,
   cellCenter,
@@ -16,6 +17,7 @@ import {
   hexDistance,
   hexNeighbors,
   isNation,
+  joinTeam,
   launchFront,
   launchNaval,
   newTerra,
@@ -902,5 +904,28 @@ describe("bombards and walls", () => {
     const far = cellsOf(s, "b").find((c) => hexDistance(s.map, a, c) > 4);
     if (far !== undefined)
       expect(code(() => fireBombard(s, cfg, "a", far, START + HOUR))).toBe("out_of_range");
+  });
+});
+
+describe("a week in teams", () => {
+  it("makes teammates allies and ranks the teams, the best of the winning team its Signore", () => {
+    const cfg = config({ start: { ...testTerraferma.start, protectionHours: 0, minDistance: 2 } });
+    const s = newTerra(cfg, "seed", 10, START);
+    s.teamMode = true;
+    placeOnTerra(s, cfg, "a", freeCell(s, 2), START);
+    placeOnTerra(s, cfg, "b", freeCell(s, 2), START);
+    placeOnTerra(s, cfg, "c", freeCell(s, 2), START);
+    joinTeam(s, "a", "lagoon");
+    joinTeam(s, "b", "lagoon");
+    joinTeam(s, "c", "dolomites");
+    expect(alliesOf(s, "a")).toContain("b");
+    expect(alliesOf(s, "a")).not.toContain("c");
+    (s.players.a as { glory: number }).glory = 10;
+    (s.players.b as { glory: number }).glory = 10;
+    (s.players.c as { glory: number }).glory = 15;
+    const close = closeTerra(s, cfg, START + HOUR);
+    expect(close.teams?.[0]?.team).toBe("lagoon");
+    expect(close.teams?.[0]?.glory).toBe(20);
+    expect(close.signore === "a" || close.signore === "b").toBe(true);
   });
 });

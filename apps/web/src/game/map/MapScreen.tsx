@@ -652,7 +652,7 @@ export function MapScreen(
           campaign ? (
             <CampaignHud f={campaign} now={now} />
           ) : terra ? (
-            <TerraHud v={terra} now={now} />
+            <TerraHud v={terra} now={now} regions={props.catalog.regions} />
           ) : undefined
         }
         onProfile={() => props.setSheet("profile")}

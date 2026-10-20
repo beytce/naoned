@@ -123,6 +123,7 @@ export type EngineErrorCode =
   | "walled"
   | "out_of_range"
   | "too_soon"
+  | "team_week"
   | "placement_closed"
   | "not_adjacent"
   | "own_cell"

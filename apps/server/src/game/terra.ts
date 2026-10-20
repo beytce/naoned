@@ -257,7 +257,11 @@ export function terraView(
         }
       : null,
     closed: s.closed
-      ? { signore: s.closed.signore ? at(s.closed.signore) : -1, conquest: s.closed.conquest }
+      ? {
+          signore: s.closed.signore ? at(s.closed.signore) : -1,
+          conquest: s.closed.conquest,
+          teams: s.closed.teams ?? null,
+        }
       : null,
     rules: {
       frontsMax: cfg.fronts.max,
@@ -277,6 +281,10 @@ export function terraView(
       peacefulSafe: cfg.fronts.peacefulSafe && !cfg.fronts.capitalSafe,
       /** Soldiers and peasants: whether the slider is played. */
       peasants: !!cfg.peasants,
+      /** A week in teams: the merchant's team (its region), null otherwise. */
+      team: s.teamMode
+        ? (s.players[playerId]?.team ?? state.players[playerId]?.region ?? null)
+        : null,
       /** Diplomacy: signals, ducats to allies, embargo (null: off). */
       diplomacy: cfg.diplomacy
         ? { ducatGiftPerDay: cfg.diplomacy.ducatGiftPerDay, embargoBps: cfg.diplomacy.embargoBps }

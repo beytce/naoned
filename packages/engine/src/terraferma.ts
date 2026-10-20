@@ -54,6 +54,8 @@ export interface TerraPlayer {
   /** Alliances broken this week, and until when it is a traitor. */
   breaks?: number;
   traitorUntil?: number;
+  /** Its team, in a week in teams (its region). */
+  team?: string;
   /** Launched a front at another merchant this week: its capital may fall (`peacefulSafe`). */
   aggressor?: boolean;
   /** The rival its cities pay less for its deliveries (diplomacy). */
@@ -88,6 +90,8 @@ export interface TerraClose {
   conquest: boolean;
   ranking: { id: string; glory: number; cells: number; tier: string; influence: number }[];
   decree: { code: string; target?: string } | null;
+  /** A week in teams: the teams by their summed glory. */
+  teams?: { team: string; glory: number; cells: number }[];
 }
 
 export interface TerraFront {
@@ -162,6 +166,8 @@ export interface TerraState {
   taken?: Record<number, { at: number; from: string | null }>;
   /** The fronts come home in the last day, oldest first. */
   returns?: TerraReturn[];
+  /** A week in teams: teammates are allies, the teams are ranked. */
+  teamMode?: boolean;
   /** Quick signals on the map, the last two hours. */
   signals?: TerraSignal[];
   /** Only on a forecast's copy: each cell a front takes, when the step that takes it ends. */
@@ -549,10 +555,23 @@ export function terraBuildingsOf(s: TerraState, id: string, kind?: TerraBuilding
 }
 
 export function alliesOf(s: TerraState, id: string): string[] {
-  return (s.alliances ?? [])
+  const sworn = (s.alliances ?? [])
     .filter((a) => a.a === id || a.b === id)
-    .map((a) => (a.a === id ? a.b : a.a))
-    .sort();
+    .map((a) => (a.a === id ? a.b : a.a));
+  // A week in teams: one's team are one's allies.
+  const team = s.players[id]?.team;
+  const mates = team
+    ? Object.entries(s.players)
+        .filter(([o, p]) => o !== id && p.team === team)
+        .map(([o]) => o)
+    : [];
+  return [...new Set([...sworn, ...mates])].sort();
+}
+
+/** A merchant joins its team (its region) in a week in teams. */
+export function joinTeam(s: TerraState, id: string, team: string): void {
+  const p = s.players[id];
+  if (s.teamMode && p && !isNation(id)) p.team = team;
 }
 
 const allied = (s: TerraState, x: string, y: string) => alliesOf(s, x).includes(y);
@@ -959,6 +978,7 @@ export function proposeAlliance(
   merchant(s, from);
   merchant(s, to);
   if (from === to) fail("own_cell");
+  if (s.teamMode) fail("team_week");
   if (allied(s, from, to)) fail("allied");
   if (traitor(s, from, now) || traitor(s, to, now)) fail("traitor");
   if ((s.requests ?? []).some((r) => r.from === to && r.to === from)) {
@@ -1190,13 +1210,34 @@ export function closeTerra(
     const influence = tier === "none" ? 0 : t[tier as keyof typeof t];
     return { ...r, tier, influence };
   });
-  const signore = ranking[0]?.tier === "signore" ? (ranking[0]?.id ?? null) : null;
+  // A week in teams: the teams ranked by their summed glory; the Signore is the best of the
+  // winning team.
+  const byTeam = new Map<string, { team: string; glory: number; cells: number }>();
+  for (const r of ranked) {
+    const team = s.players[r.id]?.team;
+    if (!s.teamMode || !team) continue;
+    const t = byTeam.get(team) ?? { team, glory: 0, cells: 0 };
+    byTeam.set(team, { team, glory: t.glory + r.glory, cells: t.cells + r.cells });
+  }
+  const teams = [...byTeam.values()].sort(
+    (a, b) => b.glory - a.glory || (a.team < b.team ? -1 : 1),
+  );
+  const best = teams[0]
+    ? ranking.find((r) => s.players[r.id]?.team === teams[0]?.team && r.glory > 0)
+    : undefined;
+  const signore =
+    s.teamMode && teams.length > 0
+      ? (best?.id ?? null)
+      : ranking[0]?.tier === "signore"
+        ? (ranking[0]?.id ?? null)
+        : null;
   s.closed = {
     at,
     signore,
     conquest: winner !== undefined,
     ranking,
     decree: signore ? (s.programme?.[signore] ?? null) : null,
+    ...(teams.length > 0 ? { teams } : {}),
   };
   return s.closed;
 }

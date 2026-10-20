@@ -394,6 +394,8 @@ export const worldSettingsSchema = z.object({
         /** At whom it rides: the leader in glory (a brake on the favourite) or its weakest neighbour. */
         target: z.enum(["leader", "weakest"]).default("leader"),
       }),
+      /** Weeks of the season (from 0) played in teams: the merchants of a region together. */
+      teams: z.object({ weeks: z.array(qty) }).optional(),
       /**
        * Diplomacy: quick signals on the map (one each `signalMinutes`), ducats given to allies
        * (`ducatGiftPerDay` at most), and an embargo from the cities one holds: they pay the

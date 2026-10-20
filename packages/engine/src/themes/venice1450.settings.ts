@@ -304,6 +304,8 @@ export const venice1450Settings: WorldSettingsInput = {
       shareBps: 3_000,
       target: "weakest",
     },
+    // The third week of the month in teams, by region.
+    teams: { weeks: [2] },
     // Diplomacy: a signal each 5 minutes, up to 50 d a day to one's allies, an embargo from the
     // cities one holds that cuts 20 % of what they pay the rival.
     diplomacy: { ducatGiftPerDay: 5_000, embargoBps: 2_000, signalMinutes: 5 },
