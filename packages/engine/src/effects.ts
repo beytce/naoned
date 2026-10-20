@@ -12,6 +12,7 @@ export type LedgerReason =
   | "project_bonus"
   | "fattore"
   | "terraferma_route"
+  | "terra_gift"
   | "market_maker_buy"
   | "market_maker_sell"
   | "market_tax"

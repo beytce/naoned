@@ -146,6 +146,17 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("terraRaise") }),
   z.object({ type: z.literal("terraFire"), cell: z.number().int().nonnegative() }),
   z.object({
+    type: z.literal("terraSignal"),
+    kind: z.enum(["help", "attack", "thanks", "peace"]),
+    cell: z.number().int().nonnegative().optional(),
+  }),
+  z.object({
+    type: z.literal("terraGift"),
+    to: z.string().uuid(),
+    amount: z.string().regex(/^\d{1,9}$/),
+  }),
+  z.object({ type: z.literal("terraEmbargo"), target: z.string().uuid().nullable() }),
+  z.object({
     type: z.literal("terraSail"),
     aim: z.number().int().nonnegative(),
     shareBps: z.number().int().min(0).max(10_000),
@@ -959,6 +970,19 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "terraRaise", playerId }];
     case "terraFire":
       return [{ type: "terraFire", playerId, cell: a.cell }];
+    case "terraSignal":
+      return [
+        {
+          type: "terraSignal",
+          playerId,
+          kind: a.kind,
+          ...(a.cell !== undefined ? { cell: a.cell } : {}),
+        },
+      ];
+    case "terraGift":
+      return [{ type: "terraGift", playerId, to: a.to, amount: a.amount }];
+    case "terraEmbargo":
+      return [{ type: "terraEmbargo", playerId, target: a.target }];
     case "terraSail":
       return [{ type: "terraSail", playerId, aim: a.aim, shareBps: a.shareBps }];
     case "terraPeasants":

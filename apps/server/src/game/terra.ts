@@ -171,6 +171,11 @@ export function terraView(
       endsAt: forecast[f.id]?.endsAt ?? null,
     })),
     costs,
+    // Quick signals: everyone's, a target only from the merchant or its allies.
+    signals: (s.signals ?? [])
+      .filter((x) => x.at > now - 2 * 3_600_000)
+      .filter((x) => x.kind !== "attack" || x.from === playerId || allies.has(x.from))
+      .map((x) => ({ from: at(x.from), kind: x.kind, cell: x.cell ?? null, at: x.at })),
     // The last day's cells that changed hands, for the screen to replay what a merchant missed.
     changes: Object.entries(s.taken ?? {})
       .filter(([, c]) => c.at > now - 86_400_000)
@@ -192,6 +197,15 @@ export function terraView(
           protectedUntil: me.protectedUntil,
           aggressor: me.aggressor ?? false,
           peasantsBps: peasantsOf(s, playerId),
+          /** The rival its cities pay less (null: none), and the ducats it may still give today. */
+          embargo: me.embargo ? at(me.embargo) : -1,
+          ducatsLeft: (() => {
+            const max = cfg.diplomacy?.ducatGiftPerDay ?? 0n;
+            const used = me.today && me.today.day === day ? (me.today.ducats ?? 0n) : 0n;
+            return max > used ? max - used : 0n;
+          })(),
+          /** Whether it holds a city (an embargo needs one). */
+          holdsCity: cellsOf(s, playerId).some((i) => s.map.city[i]),
           /** The cells its bombards may hit now, and the shots left today. */
           bombard: bombardTargets(s, cfg, playerId, now),
           /** What the land yields an open hour: goods in hundredths, route ducats in deniers. */
@@ -263,6 +277,10 @@ export function terraView(
       peacefulSafe: cfg.fronts.peacefulSafe && !cfg.fronts.capitalSafe,
       /** Soldiers and peasants: whether the slider is played. */
       peasants: !!cfg.peasants,
+      /** Diplomacy: signals, ducats to allies, embargo (null: off). */
+      diplomacy: cfg.diplomacy
+        ? { ducatGiftPerDay: cfg.diplomacy.ducatGiftPerDay, embargoBps: cfg.diplomacy.embargoBps }
+        : null,
       /** Minutes a front takes for a cell of free land, and of a rival's. */
       neutralMinutes: cfg.stepMinutes * cfg.fronts.neutralEverySteps,
       cellMinutes: Math.max(1, Math.floor(cfg.stepMinutes / cfg.fronts.cellsPerStep)),

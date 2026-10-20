@@ -68,6 +68,9 @@ function safeHours(v: TerraView, now: number): number {
   return Math.max(0, Math.ceil((until - now) / 3_600_000));
 }
 
+/** A glyph a quick signal. */
+const SIGNAL_GLYPH: Record<string, string> = { help: "🆘", attack: "⚔", thanks: "🙏", peace: "🕊" };
+
 /** A glyph a building, drawn small on its cell. */
 const BUILDING_GLYPH: Record<string, string> = {
   rocca: "♜",
@@ -671,6 +674,21 @@ export function terraMarkers(
       ),
     });
   });
+  // Quick signals: a bubble over the sender's camp, a target on its cell.
+  v.signals.forEach((x, k) => {
+    const cell = x.kind === "attack" ? x.cell : (v.holders[x.from]?.capital ?? null);
+    if (cell === null) return;
+    const [cx, cy] = hexCenter(s.map, cell);
+    out.push({
+      key: `signal:${k}:${x.at}`,
+      at: { x: cx, y: cy },
+      node: (
+        <span className="pointer-events-none -translate-x-1/2 -translate-y-[160%] animate-pop whitespace-nowrap rounded-full bg-night/90 px-2 py-0.5 text-xs text-cream ring-1 ring-info">
+          {SIGNAL_GLYPH[x.kind]} {t().diplomacy.signals[x.kind]}
+        </span>
+      ),
+    });
+  });
   // The buildings: a small glyph on their cell, in their holder's tone.
   for (const b of v.buildings) {
     const [x, y] = hexCenter(s.map, b.cell);
@@ -1091,6 +1109,20 @@ export function TerraPanel({
                   )}
             </p>
             {v.rules.peasants && <PeasantsSlider v={v} props={props} act={act} />}
+            {v.rules.diplomacy && (
+              <p className="flex flex-wrap gap-1.5">
+                {(["help", "thanks", "peace"] as const).map((kind) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    className="label rounded-full px-2.5 py-1 text-cream ring-1 ring-inset ring-line"
+                    onClick={() => act({ type: "terraSignal", kind })}
+                  >
+                    {SIGNAL_GLYPH[kind]} {t().diplomacy.signals[kind]}
+                  </button>
+                ))}
+              </p>
+            )}
             {built && <p>{t().mine.built[built.kind]}</p>}
             {traitor && (
               <p className="text-vermilion">{t().mine.traitor(clock(me.traitorUntil - now))}</p>
@@ -1212,6 +1244,29 @@ export function TerraPanel({
             />
           )}
           {allyButton}
+          {merchant && !ally && v.rules.diplomacy && me.holdsCity && (
+            <ActionButton
+              icon={Icon.cross()}
+              label={me.embargo === holder ? t().diplomacy.lift : t().diplomacy.embargo}
+              tone="plain"
+              disabled={!!v.closed}
+              onClick={() =>
+                act({
+                  type: "terraEmbargo",
+                  target: me.embargo === holder ? null : (merchant.id as string),
+                })
+              }
+            />
+          )}
+          {v.rules.diplomacy && me.allies.length > 0 && !ally && holder !== -2 && (
+            <ActionButton
+              icon={Icon.bandits()}
+              label={t().diplomacy.target}
+              tone="plain"
+              disabled={!!v.closed}
+              onClick={() => act({ type: "terraSignal", kind: "attack", cell })}
+            />
+          )}
           {merchant && ally && (
             <>
               <ActionButton
@@ -1221,6 +1276,17 @@ export function TerraPanel({
                 disabled={gift <= 0 || !!v.closed}
                 onClick={() => act({ type: "terraSend", to: merchant.id as string, count: gift })}
               />
+              {v.rules.diplomacy && BigInt(me.ducatsLeft) >= 1_000n && (
+                <ActionButton
+                  icon={Icon.send()}
+                  label={t().diplomacy.give(d(1_000n))}
+                  tone="plain"
+                  disabled={!!v.closed}
+                  onClick={() =>
+                    act({ type: "terraGift", to: merchant.id as string, amount: "1000" })
+                  }
+                />
+              )}
               <ActionButton
                 icon={Icon.cross()}
                 label={t().holder.broken}

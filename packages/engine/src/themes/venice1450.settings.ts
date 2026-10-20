@@ -304,6 +304,9 @@ export const venice1450Settings: WorldSettingsInput = {
       shareBps: 3_000,
       target: "weakest",
     },
+    // Diplomacy: a signal each 5 minutes, up to 50 d a day to one's allies, an embargo from the
+    // cities one holds that cuts 20 % of what they pay the rival.
+    diplomacy: { ducatGiftPerDay: 5_000, embargoBps: 2_000, signalMinutes: 5 },
     // The other powers of 1450 (recommendations of 20 October 2026): the Gonzaga hold Mantua and
     // strike back at whoever attacks them, the Este of Ferrara fall on the weak, the Patriarch of
     // Aquileia spreads slowly in the north-east, the Empire raids from the Alps.

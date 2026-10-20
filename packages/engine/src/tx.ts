@@ -122,6 +122,7 @@ export type EngineErrorCode =
   | "no_shot"
   | "walled"
   | "out_of_range"
+  | "too_soon"
   | "placement_closed"
   | "not_adjacent"
   | "own_cell"

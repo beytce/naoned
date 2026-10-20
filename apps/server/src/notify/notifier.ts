@@ -52,6 +52,7 @@ const TERRA_NEWS: ReadonlySet<string> = new Set([
   "terra_result",
   "terra_battle_soon",
   "terra_bombarded",
+  "terra_ducats_received",
 ]);
 /** Pushed at once, never held back by the hourly limit per kind: the merchant has minutes. */
 const URGENT: ReadonlySet<NotificationKind> = new Set(["siege"]);

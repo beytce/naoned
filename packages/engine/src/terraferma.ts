@@ -49,13 +49,15 @@ export interface TerraPlayer {
   capital?: number;
   /** Troops of cap bought with ducats this week. */
   boughtCap?: number;
-  /** Cap raises, troops sent to allies and bombard shots, on the day they were counted. */
-  today?: { day: number; raises: number; gifts: number; shots?: number };
+  /** Cap raises, troops and ducats sent to allies, bombard shots, on the day they were counted. */
+  today?: { day: number; raises: number; gifts: number; shots?: number; ducats?: bigint };
   /** Alliances broken this week, and until when it is a traitor. */
   breaks?: number;
   traitorUntil?: number;
   /** Launched a front at another merchant this week: its capital may fall (`peacefulSafe`). */
   aggressor?: boolean;
+  /** The rival its cities pay less for its deliveries (diplomacy). */
+  embargo?: string;
   /** A nation: the merchants who attacked it this week. */
   wronged?: string[];
   /** A nation: open steps since it last rode out. */
@@ -119,6 +121,16 @@ export interface TerraReturn {
   at: number;
 }
 
+export type TerraSignalKind = "help" | "attack" | "thanks" | "peace";
+
+/** A quick signal: shown to all, a target (`attack`) only to the sender's allies. */
+export interface TerraSignal {
+  from: string;
+  kind: TerraSignalKind;
+  cell?: number;
+  at: number;
+}
+
 export interface TerraState {
   map: TerraMap;
   startAt: number;
@@ -150,6 +162,8 @@ export interface TerraState {
   taken?: Record<number, { at: number; from: string | null }>;
   /** The fronts come home in the last day, oldest first. */
   returns?: TerraReturn[];
+  /** Quick signals on the map, the last two hours. */
+  signals?: TerraSignal[];
   /** Only on a forecast's copy: each cell a front takes, when the step that takes it ends. */
   trace?: { front: string; cell: number; at: number }[];
 }
@@ -1033,6 +1047,61 @@ export function sendTroops(
   sender.troops -= count;
   today.gifts += count;
   (s.players[to] as TerraPlayer).troops += count;
+}
+
+// ——— Diplomacy ———
+
+/** A quick signal on the map: one each few minutes a merchant, kept two hours. */
+export function signal(
+  s: TerraState,
+  cfg: TerraConfig,
+  id: string,
+  kind: TerraSignalKind,
+  cell: number | undefined,
+  now: number,
+): void {
+  merchant(s, id);
+  const minutes = cfg.diplomacy?.signalMinutes ?? 5;
+  if (!["help", "attack", "thanks", "peace"].includes(kind)) fail("invalid_quantity");
+  if (cell !== undefined && (cell < 0 || cell >= s.owner.length)) fail("invalid_quantity");
+  const last = (s.signals ?? []).filter((x) => x.from === id).at(-1);
+  if (last && now - last.at < minutes * MINUTE_MS) fail("too_soon");
+  s.signals = [
+    ...(s.signals ?? []).filter((x) => x.at > now - 2 * 3_600_000),
+    { from: id, kind, ...(cell !== undefined ? { cell } : {}), at: now },
+  ];
+}
+
+/** Ducats given to an ally: counted for the day (the caller moves them through the books). */
+export function giftDucats(
+  s: TerraState,
+  cfg: TerraConfig,
+  from: string,
+  to: string,
+  amount: bigint,
+  now: number,
+): void {
+  merchant(s, from);
+  merchant(s, to);
+  const max = cfg.diplomacy?.ducatGiftPerDay ?? 0n;
+  if (!allied(s, from, to)) fail("not_allied");
+  if (amount <= 0n) fail("invalid_quantity");
+  const today = todayOf(s, s.players[from] as TerraPlayer, now);
+  if ((today.ducats ?? 0n) + amount > max) fail("gift_limit");
+  today.ducats = (today.ducats ?? 0n) + amount;
+}
+
+/** The rival whose deliveries the merchant's cities pay less (null: none). */
+export function setEmbargo(s: TerraState, id: string, target: string | null): void {
+  merchant(s, id);
+  if (target === null) {
+    const p = s.players[id] as TerraPlayer;
+    p.embargo = undefined;
+    return;
+  }
+  if (target === id || isNation(target)) fail("own_cell");
+  if (allied(s, id, target)) fail("allied");
+  (s.players[id] as TerraPlayer).embargo = target;
 }
 
 // ——— Ducats: buildings and the cap (the caller takes the price) ———

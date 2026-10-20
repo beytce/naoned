@@ -395,6 +395,14 @@ export const worldSettingsSchema = z.object({
         target: z.enum(["leader", "weakest"]).default("leader"),
       }),
       /**
+       * Diplomacy: quick signals on the map (one each `signalMinutes`), ducats given to allies
+       * (`ducatGiftPerDay` at most), and an embargo from the cities one holds: they pay the
+       * rival `embargoBps` less for its deliveries.
+       */
+      diplomacy: z
+        .object({ ducatGiftPerDay: money, embargoBps: bps.max(10_000), signalMinutes: positive })
+        .optional(),
+      /**
        * The other powers of 1450, beside Milan: each holds the land within `radius` of its seat
        * (a city of the map, or a point in bps of the map), a fixed cap of troops, and rides every
        * `everyHours` open hours as its `behavior` says: `defensive` strikes back at whoever

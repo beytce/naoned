@@ -495,6 +495,18 @@ export const fr = {
       eliminated: "Éliminé cette semaine",
       placing: (time: string) => `Placement · la guerre dans ${time}`,
       truce: (time: string) => `Trêve · la guerre dans ${time}`,
+      diplomacy: {
+        signals: {
+          help: "À l'aide",
+          attack: "Cible",
+          thanks: "Merci",
+          peace: "Paix",
+        } as Record<string, string>,
+        target: "Désigner aux alliés",
+        give: (amount: string) => `Donner ${amount}`,
+        embargo: "Embargo",
+        lift: "Lever l'embargo",
+      },
       buildings: {
         rocca: "Fort",
         borgo: "Bourg",
@@ -1847,6 +1859,7 @@ export const fr = {
         "Le fattore fait partir vos charrettes oubliées au comptoir, deux fois par jour.",
         "Terraferme : l'heure de bataille, chaque soir de 20 h à 21 h, les fronts avancent dix fois plus vite.",
         "Terraferme : les ports, sur les rives de la lagune, du lac de Garde et de l'Adriatique ; les barques débarquent sur une autre rive, les galères gardent la vôtre.",
+        "Terraferme : signaux sur la carte, cible désignée aux alliés, ducats entre alliés et embargo depuis les villes que vous tenez.",
         "Terraferme : bombardes (un tir par jour rend libres une terre ennemie et ses voisines) et remparts qui en protègent.",
         "Terraferme : Mantoue, Ferrare, le Patriarche d'Aquilée et l'Empire rejoignent Milan, chacun à sa manière.",
         "Terraferme : soldats ou paysans. Vos terres donnent du blé, de l'argile et du bois à votre comptoir, et les routes entre vos villes des ducats.",

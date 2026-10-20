@@ -35,6 +35,7 @@ import {
   dayIndex,
   isActive,
 } from "./state.js";
+import { terraEmbargoCutBps } from "./terraWorld.js";
 import { type Tx, emit, fail, nextId, removeStock, transfer } from "./tx.js";
 import { vwap } from "./valuation.js";
 
@@ -854,7 +855,10 @@ function arrive(tx: Tx, d: Delivery): void {
   const city = d.route.split(":")[1] ?? "";
   const state = tx.s as WorldState;
   // The Terraferma's embargo: the city pays the others less.
-  const cut = embargoCutBps(tx.ctx, state, d.playerId, city, tx.now);
+  const cut = Math.max(
+    embargoCutBps(tx.ctx, state, d.playerId, city, tx.now),
+    terraEmbargoCutBps(tx.ctx, state, d.playerId, city),
+  );
   if (cut > 0) amount -= applyBpsFloor(amount, cut);
   transfer(tx, SOURCE_ACCOUNT, cashAccount(d.playerId), amount, "delivery", d.id);
   d.paid = amount;

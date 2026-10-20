@@ -14,6 +14,7 @@ import {
   gabelleOn,
   hexDistance,
   hexNeighbors,
+  terraEmbargoCutBps,
   tollOn,
   urgentReservedUntil,
   weeklyStandings,
@@ -253,5 +254,54 @@ describe("the land's yield in the world", () => {
     const after = w.state.inventories.a?.wheat?.available ?? 0;
     expect(after).toBeGreaterThan(before);
     expect(act(w, { type: "terraPeasants", playerId: "a", shareBps: 10_001 }).ok).toBe(false);
+  });
+});
+
+describe("diplomacy on the Terraferma", () => {
+  const diplomacy = { ducatGiftPerDay: 5_000, embargoBps: 2_000, signalMinutes: 5 };
+
+  it("shows a signal to all, a target to the allies only, at most one each few minutes", () => {
+    const w = live({ diplomacy });
+    joined(w, "a", "b");
+    expect(act(w, { type: "terraSignal", playerId: "a", kind: "help" }).ok).toBe(true);
+    expect(act(w, { type: "terraSignal", playerId: "a", kind: "thanks" }).ok).toBe(false);
+    w.advance(6 * MIN);
+    const map = w.state.terra?.map;
+    const cell = map?.owner.findIndex((o) => o === "b") ?? 0;
+    expect(act(w, { type: "terraSignal", playerId: "a", kind: "attack", cell }).ok).toBe(true);
+    const signals = w.state.terra?.map.signals ?? [];
+    expect(signals.map((s) => s.kind)).toEqual(["help", "attack"]);
+  });
+
+  it("lets allies give each other ducats, through the books, within a day's limit", () => {
+    const w = live({ diplomacy });
+    joined(w, "a", "b");
+    act(w, { type: "terraAlly", playerId: "a", other: "b" });
+    act(w, { type: "terraAccept", playerId: "b", from: "a" });
+    const a = w.cash("a");
+    const b = w.cash("b");
+    expect(act(w, { type: "terraGift", playerId: "a", to: "b", amount: "4000" }).ok).toBe(true);
+    expect(w.cash("a")).toBe(a - 4_000n);
+    expect(w.cash("b")).toBe(b + 4_000n);
+    expect(act(w, { type: "terraGift", playerId: "a", to: "b", amount: "2000" }).ok).toBe(false);
+  });
+
+  it("an embargo from a held city cuts what it pays the rival", () => {
+    const w = live({ diplomacy });
+    joined(w, "a", "b");
+    const map = w.state.terra?.map;
+    if (!map) throw new Error("no map");
+    expect(act(w, { type: "terraEmbargo", playerId: "a", target: "b" }).ok).toBe(true);
+    expect(w.state.terra?.map.players.a?.embargo).toBe("b");
+    expect(act(w, { type: "terraEmbargo", playerId: "a", target: "a" }).ok).toBe(false);
+    // a holds Venice on the Terraferma: Venice pays b less, a as usual.
+    const state = structuredClone(w.state);
+    const t = state.terra?.map;
+    if (!t) throw new Error("no map");
+    const cell = t.owner.findIndex((o) => o === "a");
+    t.map.cityCode[cell] = "venezia";
+    expect(terraEmbargoCutBps(w.ctx, state, "b", "venezia")).toBe(2_000);
+    expect(terraEmbargoCutBps(w.ctx, state, "a", "venezia")).toBe(0);
+    expect(terraEmbargoCutBps(w.ctx, state, "b", "padova")).toBe(0);
   });
 });

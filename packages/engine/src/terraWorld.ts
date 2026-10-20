@@ -16,6 +16,7 @@ import {
   MILAN,
   type TerraBuilding,
   type TerraConfig,
+  type TerraSignalKind,
   type TerraState,
   acceptAlliance,
   advanceTerra,
@@ -25,6 +26,7 @@ import {
   chooseDecree,
   closeTerra,
   fireBombard,
+  giftDucats,
   isNation,
   launchFront,
   launchNaval,
@@ -34,7 +36,9 @@ import {
   raiseCap,
   recallFront,
   sendTroops,
+  setEmbargo,
   setPeasants,
+  signal,
 } from "./terraferma.js";
 import { type Tx, addStock, balance, emit, fail, transfer } from "./tx.js";
 import { seasonWeeks, weekIndex } from "./weekly.js";
@@ -81,6 +85,26 @@ function terra(tx: Tx, cfg: TerraConfig): TerraState {
     t = tx.s.terra;
   }
   return t.map;
+}
+
+/**
+ * The embargo of the Terraferma: a city held there by a merchant who embargoes this one pays it
+ * so much less (bps), the strongest if several.
+ */
+export function terraEmbargoCutBps(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  city: string,
+): number {
+  const cfg = terraOn(ctx);
+  const map = state.terra?.map;
+  if (!cfg?.diplomacy || !map || map.closed) return 0;
+  const cell = map.map.cityCode.indexOf(city);
+  if (cell < 0) return 0;
+  const holder = map.owner[cell];
+  if (!holder || holder === playerId) return 0;
+  return map.players[holder]?.embargo === playerId ? cfg.diplomacy.embargoBps : 0;
 }
 
 /** Scheduled (every tick) and before every command of the Terraferma: the map up to now. */
@@ -232,7 +256,10 @@ export type TerraCommand =
   | { type: "terraDecree"; playerId: PlayerId; code: string; target?: string }
   | { type: "terraPeasants"; playerId: PlayerId; shareBps: number }
   | { type: "terraSail"; playerId: PlayerId; aim: number; shareBps: number }
-  | { type: "terraFire"; playerId: PlayerId; cell: number };
+  | { type: "terraFire"; playerId: PlayerId; cell: number }
+  | { type: "terraSignal"; playerId: PlayerId; kind: TerraSignalKind; cell?: number }
+  | { type: "terraGift"; playerId: PlayerId; to: PlayerId; amount: string }
+  | { type: "terraEmbargo"; playerId: PlayerId; target: PlayerId | null };
 
 /** Ducats for the Terraferma: checked first, then destroyed. */
 function pay(tx: Tx, playerId: PlayerId, price: bigint, ref: string): void {
@@ -306,6 +333,21 @@ export function applyTerra(tx: Tx, cmd: TerraCommand): void {
         emit(tx, "terra_attacked", f.against, { by: id, troops: f.troops, aim: f.aim });
       break;
     }
+    case "terraSignal":
+      signal(map, cfg, id, cmd.kind, cmd.cell, now);
+      break;
+    case "terraGift": {
+      const amount = BigInt(cmd.amount);
+      if (!tx.s.players[cmd.to]) fail("unknown_player");
+      if (balance(tx, cashAccount(id)) < amount) fail("insufficient_funds");
+      giftDucats(map, cfg, id, cmd.to, amount, now);
+      transfer(tx, cashAccount(id), cashAccount(cmd.to), amount, "terra_gift", `terra:${id}`);
+      emit(tx, "terra_ducats_received", cmd.to, { from: id, amount: amount.toString() });
+      break;
+    }
+    case "terraEmbargo":
+      setEmbargo(map, id, cmd.target);
+      break;
     case "terraFire": {
       const target = map.owner[cmd.cell];
       fireBombard(map, cfg, id, cmd.cell, now);

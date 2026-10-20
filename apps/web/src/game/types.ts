@@ -879,6 +879,9 @@ export type TerraAction =
   | { type: "terraBuild"; cell: number; kind: "rocca" | "borgo" | "porto" | "bombarda" | "mura" }
   | { type: "terraSail"; aim: number; shareBps: number }
   | { type: "terraFire"; cell: number }
+  | { type: "terraSignal"; kind: "help" | "attack" | "thanks" | "peace"; cell?: number }
+  | { type: "terraGift"; to: string; amount: string }
+  | { type: "terraEmbargo"; target: string | null }
   | { type: "terraRaise" }
   | { type: "terraDecree"; code: string; target?: string }
   | { type: "terraPeasants"; shareBps: number };
@@ -936,6 +939,13 @@ export interface TerraView {
     endsAt: number | null;
   }[];
   /** What a front pays for each cell along the merchant's border. */
+  /** Quick signals of the last two hours (a target only from oneself or one's allies). */
+  signals: {
+    from: number;
+    kind: "help" | "attack" | "thanks" | "peace";
+    cell: number | null;
+    at: number;
+  }[];
   costs: Record<string, number>;
   /** The last day's cells that changed hands, oldest first (`from`: who held it before). */
   changes: { cell: number; at: number; from: number }[];
@@ -956,6 +966,10 @@ export interface TerraView {
     aggressor: boolean;
     /** The shores its boats may reach: minutes at sea and the shore's cost. */
     sea: Record<string, { minutes: number; cost: number }>;
+    /** The holder its cities embargo (-1: none), the ducats it may still give today. */
+    embargo: number;
+    ducatsLeft: Money;
+    holdsCity: boolean;
     /** The cells its bombards may hit now, and the shots left today. */
     bombard: { cells: number[]; shots: number };
     /** Share of its people working the land (bps). */
@@ -1011,6 +1025,8 @@ export interface TerraView {
     peacefulSafe: boolean;
     /** Soldiers and peasants: the slider is played. */
     peasants: boolean;
+    /** Diplomacy: ducats to allies a day, the embargo's cut (null: off). */
+    diplomacy: { ducatGiftPerDay: Money; embargoBps: number } | null;
     /** Hours a merchant who sets down is safe from the others (0: none). */
     protectionHours: number;
     /** Minutes a front takes for a cell of free land, and of a rival's. */
