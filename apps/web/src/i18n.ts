@@ -1811,6 +1811,10 @@ export const fr = {
         "Commandes de compagnie : une commande d'une ville remplie à plusieurs, avec une prime pour tous.",
         "Le fattore fait partir vos charrettes oubliées au comptoir, deux fois par jour.",
         "La carte n'affiche plus que les ducats, le rang et les charrettes ; le pain quand il manque.",
+        "Sept jours de cours pour chaque marchandise du Rialto, face à sa référence.",
+        "Le Journal du Rialto, dans les avis : les gros échanges et les conquêtes du jour.",
+        "Le Rapport de la Banque de Venise, au pied de l'Aide ; votre livre de compte en CSV dans le Profil.",
+        "En fin de saison, une chronique à partager.",
       ],
     },
     howTo: [

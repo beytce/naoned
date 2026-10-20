@@ -19,15 +19,15 @@
 
 | # | Recommandation | État |
 | --- | --- | --- |
-| P0-1 | Terraferme facultative, ouverte après la première journée de commerce | Fait |
-| P0-2 | Règles stables pendant une saison, notes de saison dans l'Aide | Fait |
-| P0-3 | Moins de compteurs sur le HUD | Voir le journal des commits |
+| P0-1 | Terraferme facultative, ouverte après la première journée de commerce (et une première livraison) | Fait |
+| P0-2 | Règles stables pendant une saison, notes de saison au pied de l'Aide | Fait |
+| P0-3 | Trois compteurs sur la carte : ducats, rang, charrettes ; le pain quand il manque, l'Influence dans le Profil | Fait |
 | P0-4 | Capitale imprenable pour qui n'attaque aucun marchand de la semaine (`peacefulSafe`) | Fait |
-| P0-5 | Télémétrie de rétention (J1, J7, J30, sessions) | Voir le journal des commits |
-| P1-6 | Rival de la semaine, caractère des maisons de l'ordinateur | Voir le journal des commits |
-| P1-7 | Commandes de compagnie (coopératif) | Voir le journal des commits |
-| P1-8 | Courbe des prix sur 7 jours | Voir le journal des commits |
-| P1-9 | Journal du Rialto, lien de la communauté | Voir le journal des commits |
-| P1-10 | Chronique de saison partageable | Voir le journal des commits |
-| P1-11 | Le fattore | Voir le journal des commits |
-| D | Rapport de la Banque, export CSV, « le jeu dort la nuit » | Voir le journal des commits |
+| P0-5 | Télémétrie de rétention (J1 à J30, sessions, tutoriel) | Existait déjà (`/admin`) |
+| P1-6 | Rival de la semaine sous le rang, caractère des maisons de l'ordinateur | Fait |
+| P1-7 | Commandes de compagnie : tous les 2 jours, pain + briques + planches, +10 % à la livraison, +10 % pour tous une fois remplie | Fait |
+| P1-8 | Courbe des prix sur 7 jours pour tous, face à la référence | Fait ; les rumeurs de la gazette ne sont pas faites (la gazette annonce déjà ses événements la veille) |
+| P1-9 | Journal du Rialto dans les avis, lien de la communauté (`COMMUNITY_URL`) | Fait |
+| P1-10 | Chronique de saison à partager (image) | Fait ; l'enchère des galères et l'élection du Doge restent dans IDEAS.md |
+| P1-11 | Le fattore : 2 départs par jour, 2 h après la dernière action, 15 % de commission détruite | Fait |
+| D | Rapport de la Banque (public, `/api/bank`), livre de compte en CSV, promesses sur l'accueil | Fait |
