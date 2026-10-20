@@ -10,9 +10,11 @@ import {
   cellCenter,
   cellCost,
   cellsOf,
+  closeTerra,
   forecastFronts,
   hexDistance,
   hexNeighbors,
+  isNation,
   launchFront,
   launchNaval,
   newTerra,
@@ -783,5 +785,60 @@ describe("the water", () => {
     const inland = row * s.map.width + mid - 3;
     s.owner[inland] = "a";
     expect(code(() => buildOnTerra(s, cfg, "a", inland, "porto"))).toBe("not_coastal");
+  });
+});
+
+describe("the nations of 1450", () => {
+  const nation = (behavior: "defensive" | "opportunist" | "raider" | "slow", more = {}) => ({
+    id: "mantova",
+    atBps: { x: 6_000, y: 5_000 },
+    radius: 1,
+    troops: 200,
+    troopsPerActive: 0,
+    regenBps: 500,
+    everyHours: 1,
+    shareBps: 3_000,
+    behavior,
+    ...more,
+  });
+
+  it("hold their land around their seat, never rank, and are not merchants", () => {
+    const cfg = config({ nations: [nation("slow")] });
+    const s = newTerra(cfg, "seed", 10, START);
+    const id = "nation:mantova";
+    expect(cellsOf(s, id).length).toBe(7);
+    expect(isNation(id)).toBe(true);
+    expect(isNation("a")).toBe(false);
+    placeOnTerra(s, cfg, "a", freeCell(s), START);
+    advanceTerra(s, cfg, START + 3 * HOUR);
+    // A slow nation spreads into free land only.
+    expect(cellsOf(s, id).length).toBeGreaterThan(7);
+    expect(s.fronts.every((f) => f.owner !== id || f.against === null)).toBe(true);
+    const close = closeTerra(s, cfg, START + 3 * HOUR);
+    expect(close.ranking.some((r) => r.id === id)).toBe(false);
+  });
+
+  it("a defensive nation strikes back only at the merchant who attacked it", () => {
+    const cfg = config({
+      nations: [nation("defensive")],
+      start: { ...testTerraferma.start, troops: 300, protectionHours: 0, minDistance: 2 },
+    });
+    const s = newTerra(cfg, "seed", 10, START);
+    const id = "nation:mantova";
+    // A merchant on the nation's border.
+    const seat = s.players[id]?.capital ?? 0;
+    const near = s.owner.findIndex(
+      (o, i) =>
+        o === null &&
+        hexDistance(s.map, i, seat) === 3 &&
+        hexNeighbors(s.map, i).filter((n) => s.map.land[n]).length === 6 &&
+        s.owner.every((p, j) => p === null || p === id || hexDistance(s.map, i, j) >= 2),
+    );
+    placeOnTerra(s, cfg, "a", near, START);
+    advanceTerra(s, cfg, START + 2 * HOUR);
+    expect(s.fronts.some((f) => f.owner === id && f.against === "a")).toBe(false);
+    launchFront(s, cfg, "a", border(s, "a", id), 5_000, s.clock);
+    advanceTerra(s, cfg, s.clock + 2 * HOUR);
+    expect(s.players[id]?.wronged).toContain("a");
   });
 });

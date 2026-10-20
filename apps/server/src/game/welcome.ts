@@ -1,10 +1,10 @@
 import {
-  MILAN,
   type WorldContext,
   type WorldState,
   capOf,
   cashAccount,
   cellsOf,
+  isNation,
   recruitPerHour,
   terraOn,
 } from "@comptoirs/engine";
@@ -89,7 +89,7 @@ function terraWhileAway(ctx: WorldContext, state: WorldState, playerId: string, 
   }
   const returns = (map.returns ?? []).filter((r) => r.owner === playerId && r.at > since);
   const ranking = Object.entries(map.players)
-    .filter(([id]) => id !== MILAN)
+    .filter(([id]) => !isNation(id))
     .sort((a, b) => b[1].glory - a[1].glory || (a[0] < b[0] ? -1 : 1));
   return {
     gained,

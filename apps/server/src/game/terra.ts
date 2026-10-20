@@ -14,6 +14,7 @@ import {
   hourIn,
   hourWithin,
   inBattle,
+  isNation,
   peasantsOf,
   recruitPerHour,
   seaTargets,
@@ -96,7 +97,7 @@ export function terraView(
   const index = new Map(holders.map((id, i) => [id, i]));
   const at = (id: string | null) => (id === null ? -1 : (index.get(id) ?? -1));
   const ranking = Object.entries(s.players)
-    .filter(([id]) => id !== MILAN)
+    .filter(([id]) => !isNation(id))
     .map(([id, p]) => ({ id, glory: p.glory, cells: cellsOf(s, id).length }))
     .sort((a, b) => b.glory - a.glory || (a.id < b.id ? -1 : 1));
   const rank = ranking.findIndex((r) => r.id === playerId);
@@ -143,12 +144,14 @@ export function terraView(
     },
     holders: holders.map((id) => ({
       // Milan has no merchant behind it; the others' ids name them in alliances and gifts.
-      id: id === MILAN ? null : id,
-      pseudo: id === MILAN ? null : (names.get(id)?.pseudo ?? null),
-      crest: id === MILAN ? null : (names.get(id)?.crest ?? null),
+      id: isNation(id) ? null : id,
+      pseudo: isNation(id) ? null : (names.get(id)?.pseudo ?? null),
+      crest: isNation(id) ? null : (names.get(id)?.crest ?? null),
       me: id === playerId,
       ally: allies.has(id),
-      milan: id === MILAN,
+      milan: isNation(id),
+      /** The nation it is (milan, mantova…), null for a merchant. */
+      nation: isNation(id) ? id.replace("nation:", "") : null,
       capital: s.players[id]?.capital ?? null,
       troops: s.players[id]?.troops ?? 0,
       cells: cellsOf(s, id).length,

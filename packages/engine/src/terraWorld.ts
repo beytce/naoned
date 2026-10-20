@@ -24,6 +24,7 @@ import {
   buildOnTerra,
   chooseDecree,
   closeTerra,
+  isNation,
   launchFront,
   launchNaval,
   newTerra,
@@ -101,7 +102,7 @@ export function advanceTerraWorld(tx: Tx): TerraState | null {
 /** The land's whole units go into the merchants' stock, the routes' ducats into their purse. */
 function payHarvests(tx: Tx, map: TerraState): void {
   for (const [id, p] of Object.entries(map.players).sort(([a], [b]) => (a < b ? -1 : 1))) {
-    if (id === MILAN || !tx.s.players[id]) continue;
+    if (isNation(id) || !tx.s.players[id]) continue;
     for (const [resource, owed] of Object.entries(p.harvest ?? {})) {
       const whole = Math.floor(owed / 10_000);
       if (whole <= 0) continue;
@@ -132,7 +133,7 @@ function warnBattle(tx: Tx, cfg: TerraConfig, map: TerraState): void {
   if (tx.s.terraBattleWarned === start) return;
   tx.s.terraBattleWarned = start;
   for (const [id, p] of Object.entries(map.players).sort(([a], [c]) => (a < c ? -1 : 1))) {
-    if (id === MILAN || p.eliminatedAt !== undefined) continue;
+    if (isNation(id) || p.eliminatedAt !== undefined) continue;
     emit(tx, "terra_battle_soon", id, { at: start });
   }
 }
@@ -153,7 +154,7 @@ function payClose(tx: Tx, cfg: TerraConfig, week: number, map: TerraState): void
     week,
     glory: Object.fromEntries(
       Object.entries(map.players)
-        .filter(([id]) => id !== MILAN)
+        .filter(([id]) => !isNation(id))
         .map(([id, p]) => [id, p.glory]),
     ),
   };
@@ -253,7 +254,7 @@ export function applyTerra(tx: Tx, cmd: TerraCommand): void {
     case "terraFront": {
       const f = launchFront(map, cfg, id, cmd.aim, cmd.shareBps, now);
       emit(tx, "terra_front", id, { against: f.against, troops: f.troops, aim: f.aim });
-      if (f.against && f.against !== MILAN)
+      if (f.against && !isNation(f.against))
         emit(tx, "terra_attacked", f.against, { by: id, troops: f.troops, aim: f.aim });
       break;
     }
@@ -299,7 +300,7 @@ export function applyTerra(tx: Tx, cmd: TerraCommand): void {
         aim: f.aim,
         naval: true,
       });
-      if (f.against && f.against !== MILAN)
+      if (f.against && !isNation(f.against))
         emit(tx, "terra_attacked", f.against, { by: id, troops: f.troops, aim: f.aim });
       break;
     }

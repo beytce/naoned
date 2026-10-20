@@ -61,6 +61,7 @@ import {
   cellCost,
   cellsOf,
   hexNeighbors,
+  isNation,
 } from "./terraferma.js";
 import { findRegion, recipesFor } from "./theme.js";
 
@@ -344,7 +345,7 @@ export class Bot {
       for (const c of mine) {
         for (const n of hexNeighbors(map.map, c)) {
           const o = map.owner[n];
-          if (o && o !== id && o !== MILAN) next.add(o);
+          if (o && o !== id && !isNation(o)) next.add(o);
         }
       }
       const pick = [...next].sort()[0];
@@ -355,7 +356,7 @@ export class Bot {
     const border = mine.find((c) =>
       hexNeighbors(map.map, c).some((n) => {
         const o = map.owner[n];
-        return !!o && o !== id && o !== MILAN && !allies.includes(o);
+        return !!o && o !== id && !isNation(o) && !allies.includes(o);
       }),
     );
     if (border !== undefined && spare(cfg.buildings.rocca.price))
@@ -402,13 +403,13 @@ export class Bot {
     const density = (o: string) =>
       (after.players[o]?.troops ?? 0) / Math.max(1, cellsOf(after, o).length);
     const onFree = mine.some((f) => f.against === null);
-    const rank = (o: string | null) => (o === null ? (onFree ? 1.5 : 0) : o === MILAN ? 2 : 1);
+    const rank = (o: string | null) => (o === null ? (onFree ? 1.5 : 0) : isNation(o) ? 2 : 1);
     const order = [...targets.keys()]
-      .filter((o) => !attacked.has(o) && (o === null || o === MILAN || !allies.includes(o)))
+      .filter((o) => !attacked.has(o) && (o === null || isNation(o) || !allies.includes(o)))
       .filter(
         (o) =>
           o === null ||
-          o === MILAN ||
+          isNation(o) ||
           (self.protectedUntil <= s.now && (after.players[o]?.protectedUntil ?? 0) <= s.now),
       )
       .sort((a, b) => rank(a) - rank(b) || (a && b ? density(a) - density(b) : 0));

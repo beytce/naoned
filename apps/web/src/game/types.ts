@@ -26,7 +26,14 @@ export type JournalEntry =
       value: Money;
     }
   | { kind: "company"; at: number; city: string; merchants: number }
-  | { kind: "conquest"; at: number; who: string | null; milan: boolean; cells: number }
+  | {
+      kind: "conquest";
+      at: number;
+      who: string | null;
+      milan: boolean;
+      nation: string | null;
+      cells: number;
+    }
   | { kind: "terra_week"; at: number; signore: string | null; conquest: boolean };
 
 export interface Catalog {
@@ -907,6 +914,8 @@ export interface TerraView {
     me: boolean;
     ally: boolean;
     milan: boolean;
+    /** The nation it is (milan, mantova…), null for a merchant. */
+    nation: string | null;
     capital: number | null;
     troops: number;
     cells: number;

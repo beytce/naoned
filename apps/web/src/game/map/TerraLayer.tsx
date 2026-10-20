@@ -190,7 +190,7 @@ export function useTerraShapes(v: TerraView | null | undefined): TerraShapes | n
     const land = [...v.map.terrain].map((c) => c !== "w");
     const by = cellsByHolder(v.owner);
     const touching = neighbours(map, v.owner);
-    const names = v.holders.map((h, i) => h.id ?? (h.milan ? "milan" : String(i)));
+    const names = v.holders.map((h, i) => h.id ?? (h.milan ? (h.nation ?? "milan") : String(i)));
     const tone = tones(
       names,
       v.holders.map((_, i) => by.get(i)?.length ?? 0),
@@ -277,7 +277,7 @@ function holderName(v: TerraView, i: number): string {
   if (i < 0) return t().neutral;
   const h = v.holders[i];
   if (!h) return t().neutral;
-  if (h.milan) return t().milan;
+  if (h.milan) return t().nations[h.nation ?? "milan"] ?? t().milan;
   return h.pseudo ?? t().someone;
 }
 
@@ -456,7 +456,7 @@ export function TerraOverlay({
         const focus = s.holders.find((x) => x.i === l.i)?.focus;
         if (!h) return null;
         const strong = focus === "me" || focus === "neighbour" || focus === "ally";
-        const name = h.milan ? t().milan : h.me ? null : (h.pseudo ?? t().someone);
+        const name = h.milan ? holderName(v, l.i) : h.me ? null : (h.pseudo ?? t().someone);
         return (
           <g
             key={`label-${l.i}`}
@@ -906,10 +906,13 @@ export function TerraHud({ v, now }: { v: TerraView; now: number }) {
         {!v.closed &&
           v.fronts
             .filter((f) => v.holders[f.owner]?.milan)
-            .slice(0, 1)
+            .slice(0, 2)
             .map((f) => (
               <span key={f.id} className={f.threat ? "text-vermilion" : "text-cream"}>
-                {t().milanRides(f.against < 0 ? null : holderName(v, f.against))}
+                {t().milanRides(
+                  holderName(v, f.owner),
+                  f.against < 0 ? null : holderName(v, f.against),
+                )}
               </span>
             ))}
       </span>

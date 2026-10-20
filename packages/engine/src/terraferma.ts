@@ -17,6 +17,11 @@ export type TerraConfig = NonNullable<WorldSettings["terraferma"]>;
 
 export const MILAN = "milan";
 
+/** A power held by the computer (Milan, Mantua…), never a merchant. */
+export function isNation(id: string | null | undefined): boolean {
+  return id === MILAN || (!!id && id.startsWith("nation:"));
+}
+
 export interface TerraMap {
   width: number;
   height: number;
@@ -51,6 +56,10 @@ export interface TerraPlayer {
   traitorUntil?: number;
   /** Launched a front at another merchant this week: its capital may fall (`peacefulSafe`). */
   aggressor?: boolean;
+  /** A nation: the merchants who attacked it this week. */
+  wronged?: string[];
+  /** A nation: open steps since it last rode out. */
+  rideSteps?: number;
   /** Share of its people working the land rather than under arms (bps; absent: half). */
   peasantsBps?: number;
   /** Goods its land has grown, not yet in its stock, in 1/10 000 of a unit. */
@@ -359,7 +368,7 @@ export function newTerra(
 ): TerraState {
   const map = terraMap(cfg, seed, active);
   const milanCols = Math.ceil((map.width * cfg.milanBps) / 10_000);
-  return {
+  const s: TerraState = {
     map,
     startAt,
     owner: map.terrain.map((_, i) => (map.land[i] && i % map.width < milanCols ? MILAN : null)),
@@ -377,6 +386,42 @@ export function newTerra(
     clock: startAt,
     milanSteps: 0,
   };
+  for (const n of cfg.nations) {
+    const seat = nationSeat(map, n);
+    if (seat < 0 || s.owner[seat] !== null) continue;
+    const id = `nation:${n.id}`;
+    for (let i = 0; i < s.owner.length; i++)
+      if (map.land[i] && s.owner[i] === null && hexDistance(map, i, seat) <= n.radius)
+        s.owner[i] = id;
+    const troops = n.troops + n.troopsPerActive * active;
+    s.players[id] = {
+      troops,
+      placedAt: startAt,
+      protectedUntil: startAt,
+      glory: 0,
+      fixedCap: troops,
+      capital: seat,
+    };
+  }
+  return s;
+}
+
+/** Where a nation sits: its city on the map, else the land cell nearest its point. */
+function nationSeat(map: TerraMap, n: TerraConfig["nations"][number]): number {
+  if (n.city) {
+    const i = map.cityCode.indexOf(n.city);
+    if (i >= 0) return i;
+  }
+  if (!n.atBps) return -1;
+  const col = Math.floor(((map.width - 1) * n.atBps.x) / 10_000);
+  const row = Math.floor(((map.height - 1) * n.atBps.y) / 10_000);
+  const target = row * map.width + col;
+  let best = -1;
+  for (let i = 0; i < map.land.length; i++) {
+    if (!map.land[i]) continue;
+    if (best < 0 || hexDistance(map, i, target) < hexDistance(map, best, target)) best = i;
+  }
+  return best;
 }
 
 // ——— Reading ———
@@ -452,7 +497,7 @@ export function yieldPerHour(
 /** The merchant moves the slider between soldiers and peasants. */
 export function setPeasants(s: TerraState, id: string, bps: number): void {
   const p = s.players[id];
-  if (!p || id === MILAN) fail("not_placed");
+  if (!p || isNation(id)) fail("not_placed");
   if (!Number.isInteger(bps) || bps < 0 || bps > 10_000) fail("invalid_quantity");
   p.peasantsBps = bps;
 }
@@ -466,7 +511,7 @@ function harvestStep(s: TerraState, cfg: TerraConfig, minutes: number): void {
   const pc = cfg.peasants;
   if (!pc) return;
   for (const [id, p] of Object.entries(s.players)) {
-    if (id === MILAN || p.eliminatedAt !== undefined) continue;
+    if (isNation(id) || p.eliminatedAt !== undefined) continue;
     const cells = cellsOf(s, id);
     const share = peasantsOf(s, id);
     for (const [terrain, y] of Object.entries(pc.yields)) {
@@ -620,16 +665,21 @@ export function launchFront(
   if (!borders(s, id, aim)) fail("not_adjacent");
   if (against !== null) {
     if (allied(s, id, against)) fail("allied");
-    if (id !== MILAN && player.protectedUntil > now && against !== MILAN) fail("protected");
+    if (!isNation(id) && player.protectedUntil > now && !isNation(against)) fail("protected");
     if ((s.players[against]?.protectedUntil ?? 0) > now) fail("protected");
   }
   if (s.fronts.filter((f) => f.owner === id).length >= cfg.fronts.max) fail("too_many_fronts");
   const troops = Math.floor((player.troops * shareBps) / 10_000);
   if (troops <= 0) fail("no_troops");
   // Not even the cell aimed at: the front would come straight home (Milan rides as it can).
-  if (id !== MILAN && troops < cellCost(s, cfg, aim)) fail("too_weak");
+  if (!isNation(id) && troops < cellCost(s, cfg, aim)) fail("too_weak");
   player.troops -= troops;
-  if (against !== null && against !== MILAN && id !== MILAN) player.aggressor = true;
+  if (against !== null && !isNation(against) && !isNation(id)) player.aggressor = true;
+  // A nation remembers who struck it.
+  const struck =
+    against !== null && against !== MILAN && isNation(against) ? s.players[against] : undefined;
+  if (struck && !isNation(id) && !(struck.wronged ?? []).includes(id))
+    struck.wronged = [...(struck.wronged ?? []), id];
   const front: TerraFront = {
     id: `t${s.nextFront++}`,
     owner: id,
@@ -704,7 +754,7 @@ export function launchNaval(
   if (landing.length === 0) fail("no_sea_route");
   if (against !== null) {
     if (allied(s, id, against)) fail("allied");
-    if (id !== MILAN && player.protectedUntil > now && against !== MILAN) fail("protected");
+    if (!isNation(id) && player.protectedUntil > now && !isNation(against)) fail("protected");
     if ((s.players[against]?.protectedUntil ?? 0) > now) fail("protected");
   }
   if (s.fronts.filter((f) => f.owner === id).length >= cfg.fronts.max) fail("too_many_fronts");
@@ -712,7 +762,12 @@ export function launchNaval(
   if (troops <= 0) fail("no_troops");
   if (troops < cellCost(s, cfg, aim)) fail("too_weak");
   player.troops -= troops;
-  if (against !== null && against !== MILAN && id !== MILAN) player.aggressor = true;
+  if (against !== null && !isNation(against) && !isNation(id)) player.aggressor = true;
+  // A nation remembers who struck it.
+  const struck =
+    against !== null && against !== MILAN && isNation(against) ? s.players[against] : undefined;
+  if (struck && !isNation(id) && !(struck.wronged ?? []).includes(id))
+    struck.wronged = [...(struck.wronged ?? []), id];
   const front: TerraFront = {
     id: `t${s.nextFront++}`,
     owner: id,
@@ -769,7 +824,7 @@ function endFront(s: TerraState, front: TerraFront): void {
   if (owner) owner.troops += front.troops;
   s.fronts = s.fronts.filter((f) => f.id !== front.id);
   // Its account, for the merchant who was away (Milan's are not kept).
-  if (front.owner === MILAN) return;
+  if (isNation(front.owner)) return;
   const sent = front.sent ?? front.troops;
   s.returns = [
     ...(s.returns ?? []).filter((r) => r.at > s.clock - DAY_MS),
@@ -788,7 +843,7 @@ function endFront(s: TerraState, front: TerraFront): void {
 // ——— Alliances ———
 
 const merchant = (s: TerraState, id: string) => {
-  if (id === MILAN || !s.players[id]) fail("not_placed");
+  if (isNation(id) || !s.players[id]) fail("not_placed");
 };
 
 /** Asks another merchant for an alliance; if it had asked first, the alliance is made. */
@@ -951,7 +1006,7 @@ export function closeTerra(
 ): TerraClose {
   if (s.closed) return s.closed;
   const ranked = Object.entries(s.players)
-    .filter(([id]) => id !== MILAN)
+    .filter(([id]) => !isNation(id))
     .map(([id, p]) => ({ id, glory: p.glory, cells: cellsOf(s, id).length }))
     .sort(
       (a, b) =>
@@ -1035,7 +1090,7 @@ function step(s: TerraState, cfg: TerraConfig, at: number, fronts = true): void 
     if (p.eliminatedAt !== undefined) continue;
     const cap = capOf(s, cfg, id);
     if (p.troops >= cap) continue;
-    if (cfg.troops.recruit && id !== MILAN) {
+    if (cfg.troops.recruit && !isNation(id)) {
       const back = Math.floor((recruitPerHour(s, cfg, id) * cfg.stepMinutes) / 60);
       p.troops = Math.min(cap, p.troops + back);
       continue;
@@ -1044,10 +1099,13 @@ function step(s: TerraState, cfg: TerraConfig, at: number, fronts = true): void 
     const rate =
       id === MILAN
         ? cfg.milan.regenBps
-        : Math.floor(
-            (cfg.troops.regenBps * (10_000 + borgos * (cfg.buildings.borgo?.regenBonusBps ?? 0))) /
-              10_000,
-          );
+        : isNation(id)
+          ? (cfg.nations.find((n) => `nation:${n.id}` === id)?.regenBps ?? 0)
+          : Math.floor(
+              (cfg.troops.regenBps *
+                (10_000 + borgos * (cfg.buildings.borgo?.regenBonusBps ?? 0))) /
+                10_000,
+            );
     const back = Math.max(cfg.troops.regenMin, Math.floor(((cap - p.troops) * rate) / 10_000));
     p.troops = Math.min(cap, p.troops + back);
   }
@@ -1064,7 +1122,7 @@ function step(s: TerraState, cfg: TerraConfig, at: number, fronts = true): void 
   harvestStep(s, cfg, cfg.stepMinutes);
   // Glory for the land held.
   for (const [id, p] of Object.entries(s.players)) {
-    if (id === MILAN) continue;
+    if (isNation(id)) continue;
     const cells = cellsOf(s, id);
     p.glory +=
       cfg.glory.perCell * cells.length +
@@ -1073,12 +1131,13 @@ function step(s: TerraState, cfg: TerraConfig, at: number, fronts = true): void 
   // The land taken: the week is won at once.
   const land = s.map.land.filter(Boolean).length;
   for (const id of Object.keys(s.players)) {
-    if (id === MILAN) continue;
+    if (isNation(id)) continue;
     if (cellsOf(s, id).length * 10_000 >= cfg.close.winBps * land) {
       closeTerra(s, cfg, at + cfg.stepMinutes * MINUTE_MS, id);
       return;
     }
   }
+  nationsRide(s, cfg, at);
   // Milan rides out.
   s.milanSteps++;
   if (s.milanSteps * cfg.stepMinutes >= cfg.milan.everyHours * 60) {
@@ -1129,8 +1188,12 @@ function nextCell(s: TerraState, cfg: TerraConfig, front: TerraFront): number {
   let best = -1;
   let bestDistance = Number.POSITIVE_INFINITY;
   const capitals = new Set(
-    Object.values(s.players)
-      .filter((p) => cfg.fronts.capitalSafe || (cfg.fronts.peacefulSafe && !p.aggressor))
+    Object.entries(s.players)
+      .filter(
+        ([id, p]) =>
+          cfg.fronts.capitalSafe || (cfg.fronts.peacefulSafe && !isNation(id) && !p.aggressor),
+      )
+      .map(([, p]) => p)
       .map((p) => p.capital),
   );
   // A boat takes its shore first.
@@ -1195,7 +1258,7 @@ function advanceFront(
 /** Merchants left without a cell are out of the week: no troops, no fronts. */
 function eliminate(s: TerraState, at: number): void {
   for (const [id, p] of Object.entries(s.players)) {
-    if (id === MILAN || p.eliminatedAt !== undefined || s.owner.includes(id)) continue;
+    if (isNation(id) || p.eliminatedAt !== undefined || s.owner.includes(id)) continue;
     p.eliminatedAt = at;
     p.troops = 0;
     s.fronts = s.fronts.filter((f) => f.owner !== id);
@@ -1231,7 +1294,7 @@ function component(s: TerraState, id: string, from: number): Set<number> {
  */
 function fallPockets(s: TerraState, cfg: TerraConfig, at: number): void {
   for (const [id, p] of Object.entries(s.players)) {
-    if (id === MILAN || p.capital === undefined) continue;
+    if (isNation(id) || p.capital === undefined) continue;
     // The main land: around the capital, or, once it is taken, the largest piece left.
     let main = s.owner[p.capital] === id ? component(s, id, p.capital) : new Set<number>();
     if (main.size === 0) {
@@ -1297,4 +1360,46 @@ function milanRides(s: TerraState, cfg: TerraConfig, at: number): void {
     if (best < 0 || hexDistance(s.map, i, centre) < hexDistance(s.map, best, centre)) best = i;
   }
   if (best >= 0) launchFront(s, cfg, MILAN, best, cfg.milan.shareBps, at);
+}
+
+/** The other nations ride, each at its pace and in its manner. */
+function nationsRide(s: TerraState, cfg: TerraConfig, at: number): void {
+  for (const n of cfg.nations) {
+    const id = `nation:${n.id}`;
+    const p = s.players[id];
+    if (!p || cellsOf(s, id).length === 0) continue;
+    p.rideSteps = (p.rideSteps ?? 0) + 1;
+    if (p.rideSteps * cfg.stepMinutes < n.everyHours * 60) continue;
+    p.rideSteps = 0;
+    if (s.fronts.some((f) => f.owner === id)) continue;
+    const neighbours = new Set<string>();
+    for (const c of cellsOf(s, id))
+      for (const x of hexNeighbors(s.map, c)) {
+        const o = s.owner[x];
+        if (o && o !== id && !isNation(o)) neighbours.add(o);
+      }
+    const open = [...neighbours].filter((o) => (s.players[o]?.protectedUntil ?? 0) <= at).sort();
+    const density = (o: string) => (s.players[o]?.troops ?? 0) / Math.max(1, cellsOf(s, o).length);
+    const mine = p.troops / Math.max(1, cellsOf(s, id).length);
+    const target =
+      n.behavior === "defensive"
+        ? open.find((o) => (p.wronged ?? []).includes(o))
+        : n.behavior === "opportunist"
+          ? open.find((o) => density(o) * 2 <= mine)
+          : n.behavior === "raider"
+            ? open[(s.nextFront + open.length) % Math.max(1, open.length)]
+            : undefined;
+    const aim =
+      target !== undefined
+        ? s.owner.findIndex((o, i) => o === target && borders(s, id, i))
+        : s.owner.findIndex(
+            (o, i) =>
+              o === null &&
+              s.map.land[i] &&
+              borders(s, id, i) &&
+              p.capital !== undefined &&
+              hexDistance(s.map, i, p.capital) <= n.radius * 3,
+          );
+    if (aim >= 0) launchFront(s, cfg, id, aim, n.shareBps, at);
+  }
 }

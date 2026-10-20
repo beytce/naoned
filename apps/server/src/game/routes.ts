@@ -1,4 +1,4 @@
-import { type Command, freeBatches, hasPass, rushCost } from "@comptoirs/engine";
+import { type Command, freeBatches, hasPass, isNation, rushCost } from "@comptoirs/engine";
 import { and, desc, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -851,7 +851,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const account = await requireAccount(req, reply);
     if (!account) return;
     const map = world.current.terra?.map;
-    const ids = map ? Object.keys(map.players).filter((id) => id !== "milan") : [];
+    const ids = map ? Object.keys(map.players).filter((id) => !isNation(id)) : [];
     const rows =
       ids.length === 0
         ? []

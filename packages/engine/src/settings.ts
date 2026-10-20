@@ -394,6 +394,29 @@ export const worldSettingsSchema = z.object({
         /** At whom it rides: the leader in glory (a brake on the favourite) or its weakest neighbour. */
         target: z.enum(["leader", "weakest"]).default("leader"),
       }),
+      /**
+       * The other powers of 1450, beside Milan: each holds the land within `radius` of its seat
+       * (a city of the map, or a point in bps of the map), a fixed cap of troops, and rides every
+       * `everyHours` open hours as its `behavior` says: `defensive` strikes back at whoever
+       * attacked it, `opportunist` at a neighbour half as dense, `raider` at any neighbour,
+       * `slow` only spreads into free land.
+       */
+      nations: z
+        .array(
+          z.object({
+            id: z.string(),
+            city: z.string().optional(),
+            atBps: z.object({ x: bps.max(10_000), y: bps.max(10_000) }).optional(),
+            radius: qty,
+            troops: qty,
+            troopsPerActive: qty,
+            regenBps: bps.max(10_000),
+            everyHours: positive,
+            shareBps: bps.max(10_000),
+            behavior: z.enum(["defensive", "opportunist", "raider", "slow"]),
+          }),
+        )
+        .default([]),
       glory: z.object({ perCell: qty, perCity: qty }),
       /** Alliances between merchants: how many, how long a break takes, the traitor's lot. */
       alliances: z

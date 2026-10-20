@@ -28,7 +28,9 @@ function line(props: GameProps, e: JournalEntry): string {
     case "company":
       return t.company(props.names.city(e.city), e.merchants);
     case "conquest":
-      return e.milan ? t.milan(e.cells) : t.conquest(e.who ?? someone, e.cells);
+      return e.nation
+        ? t.conquest(fr.game.terra.nations[e.nation] ?? fr.game.terra.milan, e.cells)
+        : t.conquest(e.who ?? someone, e.cells);
     case "terra_week":
       return e.signore ? t.signore(e.signore, e.conquest) : t.noSignore;
   }

@@ -1,4 +1,4 @@
-import { MILAN, type WorldState } from "@comptoirs/engine";
+import { MILAN, type WorldState, isNation } from "@comptoirs/engine";
 import { inArray, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { accounts } from "../db/schema.js";
@@ -20,7 +20,14 @@ export type JournalEntry =
       value: bigint;
     }
   | { kind: "company"; at: number; city: string; merchants: number }
-  | { kind: "conquest"; at: number; who: string | null; milan: boolean; cells: number }
+  | {
+      kind: "conquest";
+      at: number;
+      who: string | null;
+      milan: boolean;
+      nation: string | null;
+      cells: number;
+    }
   | { kind: "terra_week"; at: number; signore: string | null; conquest: boolean };
 
 /**
@@ -59,7 +66,7 @@ export async function journal(db: Db, worldId: string, state: WorldState, now: n
     ids.add(t.buyer_id);
     ids.add(t.seller_id);
   }
-  for (const [id] of conquerors) if (id !== MILAN) ids.add(id);
+  for (const [id] of conquerors) if (!isNation(id)) ids.add(id);
   const signore = state.terra?.map.closed?.signore ?? null;
   if (signore) ids.add(signore);
   const names = new Map<string, string | null>();
@@ -93,8 +100,9 @@ export async function journal(db: Db, worldId: string, state: WorldState, now: n
     ...conquerors.map(([id, t]) => ({
       kind: "conquest" as const,
       at: t.at,
-      who: id === MILAN ? null : (names.get(id) ?? null),
+      who: isNation(id) ? null : (names.get(id) ?? null),
       milan: id === MILAN,
+      nation: isNation(id) ? id.replace("nation:", "") : null,
       cells: t.cells,
     })),
   ];

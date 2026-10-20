@@ -475,6 +475,14 @@ export const fr = {
       },
       glory: (glory: number, rank: number) => `${glory} Gloire · ${rank}${rank === 1 ? "er" : "e"}`,
       milan: "Milan",
+      /** The powers of 1450 held by the computer. */
+      nations: {
+        milan: "Milan",
+        mantova: "Mantoue (Gonzague)",
+        ferrara: "Ferrare (Este)",
+        aquileia: "Aquilée (le Patriarche)",
+        impero: "L'Empire",
+      } as Record<string, string>,
       neutral: "Terre libre",
       someone: "Un marchand",
       soon: "imminent",
@@ -507,8 +515,8 @@ export const fr = {
         at: (from: number) => `Bataille chaque soir à ${from} h`,
       },
       marching: (n: number) => `${n} front${n > 1 ? "s" : ""} en marche`,
-      milanRides: (against: string | null) =>
-        against ? `Milan marche sur ${against}` : "Milan s'étend vers l'est",
+      milanRides: (who: string, against: string | null) =>
+        against ? `${who} marche sur ${against}` : `${who} s'étend`,
       out: {
         late: "La partie de la semaine a commencé",
         eliminated: "Vous avez perdu toutes vos terres",
@@ -1835,6 +1843,7 @@ export const fr = {
         "Le fattore fait partir vos charrettes oubliées au comptoir, deux fois par jour.",
         "Terraferme : l'heure de bataille, chaque soir de 20 h à 21 h, les fronts avancent dix fois plus vite.",
         "Terraferme : les ports, sur les rives de la lagune, du lac de Garde et de l'Adriatique ; les barques débarquent sur une autre rive, les galères gardent la vôtre.",
+        "Terraferme : Mantoue, Ferrare, le Patriarche d'Aquilée et l'Empire rejoignent Milan, chacun à sa manière.",
         "Terraferme : soldats ou paysans. Vos terres donnent du blé, de l'argile et du bois à votre comptoir, et les routes entre vos villes des ducats.",
         "La carte n'affiche plus que les ducats, le rang et les charrettes ; le pain quand il manque.",
         "Sept jours de cours pour chaque marchandise du Rialto, face à sa référence.",
