@@ -1142,3 +1142,19 @@ Heure de bataille, soldats ou paysans (récoltes de blé, d'argile et de bois, d
 | Masse monétaire par joueur actif (pic) | ≤ 0,97 × | ≤ 0,91 × |
 
 **Lecture.** Les récoltes de la Terraferme ajoutent des matières premières qui pèsent un peu sur leurs prix ; la monnaie croît moins vite, l'indice des prix reste dans sa plage (84 à 126). Les nations éliminent davantage de marchands dans le prototype où tous attaquent (8 sur 40 au lieu de 3) ; qui n'attaque aucun marchand garde sa capitale. À mesurer avec de vrais joueurs : le curseur, les ports et les bombardes, que les PNJ ne jouent pas.
+
+## La refonte du commerce (20 octobre 2026, décision du porteur)
+
+Ateliers chiffrés, tableau de bord, conseiller ; fournisseur officiel (+10 % la semaine suivante, dès 10 unités), appels d'offres du Doge (tous les deux jours, plafond 140 % de la référence, caution 20 %), entrepôts (2 places par ville, dès 50 ducats détruits, 40 unités par jour) ; chaînes de luxe aux seuils des titres (1 500, 3 000, 5 000 ducats de ventes nettes), manufactures jusqu'au niveau 10 dès Négociant (qualité +4 % par niveau), commandes entre marchands (3 jours), colleganza (7 jours, part ≤ 75 %), prêts de la Banque (30 % du patrimoine, 500 ducats, 1 %/jour, 7 jours, +20 % en retard). Voir `docs/recommandations-2026-10-20.md`, « La refonte du commerce ».
+
+`pnpm sim`, 5 graines, toutes conformes (les PNJ enchérissent aux appels d'offres, honorent les commandes, acceptent les colleganze, le bâtisseur monte les chaînes de luxe, tous passent en manufacture ; ni entrepôts ni prêts) :
+
+| Moyenne des 5 graines | Avant | Après |
+| --- | --- | --- |
+| Croissance de la monnaie par joueur actif (moyenne, %/jour) | 3,4 | 3,6 |
+| Jours hors plage du ratio monnaie créée / détruite (sur 23) | 2,4 | 2,4 |
+| Gini du patrimoine à J+15 | 0,44 | 0,45 |
+| Monnaie détruite par la Terraferme (d par joueur actif et par jour) | 110,0 | 109,4 |
+| Masse monétaire par joueur actif (pic) | ≤ 0,91 × | ≤ 0,91 × |
+
+**Lecture.** Les nouveautés créent un peu de monnaie (prime du fournisseur, appels d'offres, qualité) et en détruisent un peu (cautions perdues) : la croissance reste en avertissement comme avant, la masse par joueur actif loin du plafond. Les cours des matières premières finissent bas (50 à 60 % de la référence), comme avant la refonte. À mesurer avec de vrais joueurs : les entrepôts et les prêts, que les PNJ ne prennent pas, et le rythme d'ouverture des chaînes de luxe.
