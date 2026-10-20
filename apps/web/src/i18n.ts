@@ -1831,6 +1831,85 @@ export const fr = {
       noSignore: "La semaine de la Terraferme se clôt sans Signore",
       community: "Rejoindre la communauté des marchands →",
     },
+    /** Lorenzo's three bubbles at the first visit to the Terraferma. */
+    terraIntro: {
+      who: "Lorenzo",
+      steps: [
+        "Bienvenue en Terraferme ! Touchez une terre libre pour poser votre camp : il prend la case et ses voisines, et vous êtes à l'abri 12 heures.",
+        "Pour vous étendre, touchez une terre au bord des vôtres, choisissez vos troupes avec le curseur, puis « Attaquer » : le front avance seul, même quand vous partez.",
+        "Revenez voir vos fronts : leur pastille dorée dit quand ils prennent la prochaine case. Et ce soir à 20 h, l'heure de bataille : tout va dix fois plus vite !",
+      ],
+      next: "Suivant",
+      done: "Compris",
+      guide: "Lire le guide",
+    },
+    /** The Terraferma's guide, with its diagrams. */
+    terraGuide: {
+      kicker: "Guide",
+      title: "La Terraferme",
+      open: "Guide de la Terraferme",
+      openShort: "? Guide",
+      cardText: "Le mode conquête expliqué pas à pas, avec des schémas.",
+      intro:
+        "Une conquête d'une semaine, à côté du commerce, sur la carte de la Vénétie découpée en cases. Facultative : vous n'y perdez jamais vos ducats ni vos marchandises. Les fronts avancent seuls, de 8 h à 22 h, même quand vous n'êtes pas là.",
+      sections: [
+        {
+          diagram: "setDown",
+          title: "Se poser",
+          text: "Touchez une terre libre : votre camp prend la case et ses six voisines. Vous êtes à l'abri 12 heures (et tout le monde jusqu'à la fin du premier jour). Votre camp est votre capitale : tant que vous n'attaquez aucun marchand de la semaine, elle ne tombe jamais.",
+        },
+        {
+          diagram: "troops",
+          title: "Les troupes",
+          text: "Vos terres recrutent toutes seules, chaque heure de 8 h à 22 h : plus vous tenez de terres et de villes, plus vous recrutez, jusqu'à votre maximum. Le bouton « Max » relève ce maximum contre des ducats ; il ne donne pas de troupes.",
+        },
+        {
+          diagram: "front",
+          title: "Lancer un front",
+          text: "Touchez une terre au bord des vôtres, choisissez la part de vos troupes avec le curseur, puis « Attaquer ». Le front avance seul, une case toutes les 30 minutes (une heure en terre libre), en commençant par la plus proche de votre cible. Chaque case coûte des troupes selon son terrain ; le front rentre quand il ne peut plus payer.",
+        },
+        {
+          diagram: "defend",
+          title: "Défendre",
+          text: "Les troupes restées chez vous défendent toutes vos terres : prendre une de vos cases coûte vos troupes divisées par vos cases, multipliées par le terrain. Un fort défend 1,6 fois mieux sa case et ses voisines. Une poche coupée de votre capitale et entourée d'un seul rival tombe peu à peu.",
+        },
+        {
+          diagram: "peasants",
+          title: "Soldats ou paysans",
+          text: "Sur vos terres, un curseur partage vos gens : les soldats recrutent (jusqu'à deux fois plus), les paysans récoltent pour votre comptoir du blé dans les plaines, de l'argile dans les collines, du bois dans les montagnes. Deux villes ou plus reliées à votre capitale par vos terres rapportent des ducats chaque heure.",
+        },
+        {
+          diagram: "water",
+          title: "L'eau : ports et barques",
+          text: "Bâtissez un port sur une terre au bord de la lagune, du lac de Garde ou de l'Adriatique. Touchez ensuite une rive des mêmes eaux : « Débarquer » y envoie une barque, dix minutes par case d'eau, qui prend la rive puis avance comme un front. Les galères d'un port ennemi sur ces eaux coulent 30 % du débarquement.",
+        },
+        {
+          diagram: "bombard",
+          title: "Bombardes et remparts",
+          text: "Une bombarde tire une fois par jour sur une terre ennemie à quatre cases au plus : elle et ses voisines du même maître redeviennent libres, et leurs troupes meurent. Jamais une capitale. Des remparts mettent leur case et leurs voisines hors de portée.",
+        },
+        {
+          diagram: "nations",
+          title: "Milan et les nations",
+          text: "Cinq puissances de 1450 tenues par l'ordinateur occupent la carte et ne comptent pas au classement. Chacune a sa manière : sachez qui vous borde avant d'attaquer.",
+        },
+        {
+          diagram: "diplomacy",
+          title: "Alliances et diplomatie",
+          text: "Proposez une alliance à un voisin (deux au plus) : plus de front entre vous. Envoyez-lui des troupes ou des ducats, désignez-lui une cible, faites des signaux sur la carte. Depuis une ville que vous tenez, un embargo fait payer 20 % de moins un rival qui y livre. Rompre trop souvent fait de vous un traître.",
+        },
+        {
+          diagram: "win",
+          title: "Gagner la semaine",
+          text: "Chaque heure ouverte, chaque terre vous rapporte 1 de Gloire, chaque ville 3. À la fin de la semaine, le premier en Gloire est le Signore : le décret qu'il a choisi s'applique la semaine suivante, pour lui et ses alliés. Tout le classement gagne de l'Influence pour sa Maison.",
+        },
+        {
+          diagram: "battle",
+          title: "Bataille et escarmouches",
+          text: "Chaque soir de 20 h à 21 h, l'heure de bataille : les fronts avancent dix fois plus vite, venez les mener. À tout moment, « Escarmouche » lance une partie en direct d'un quart d'heure contre d'autres marchands et des condottieri ; votre rang rapporte de la Gloire à votre semaine.",
+        },
+      ],
+    },
     /** Skirmishes: live matches on the Terraferma. */
     skirmish: {
       title: "Escarmouche",
@@ -1889,6 +1968,7 @@ export const fr = {
         "Le fattore fait partir vos charrettes oubliées au comptoir, deux fois par jour.",
         "Terraferme : l'heure de bataille, chaque soir de 20 h à 21 h, les fronts avancent dix fois plus vite.",
         "Terraferme : les ports, sur les rives de la lagune, du lac de Garde et de l'Adriatique ; les barques débarquent sur une autre rive, les galères gardent la vôtre.",
+        "Le guide de la Terraferme, avec ses schémas, dans l'Aide et sur la carte de la Terraferme (« ? Guide »).",
         "Terraferme : les escarmouches, des parties en direct d'un quart d'heure dont le rang rapporte de la Gloire à la semaine.",
         "Terraferme : une semaine par mois en équipes, les marchands d'une même région ensemble.",
         "Terraferme : signaux sur la carte, cible désignée aux alliés, ducats entre alliés et embargo depuis les villes que vous tenez.",

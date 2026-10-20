@@ -22,6 +22,24 @@ export function Help(props: GameProps & { onClose: () => void }) {
           <CloseButton onClick={props.onClose} />
         </div>
         <h1 className="font-display text-3xl font-extrabold uppercase">{fr.game.help}</h1>
+        <button
+          type="button"
+          onClick={() => {
+            props.onClose();
+            props.openTerraGuide();
+          }}
+          className="flex w-full items-center gap-3 cut border border-info/60 bg-info/10 px-4 py-3 text-left transition active:scale-[0.99]"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block font-display font-extrabold uppercase text-info">
+              {fr.game.terraGuide.open}
+            </span>
+            <span className="block text-sm text-cream-dim">{fr.game.terraGuide.cardText}</span>
+          </span>
+          <span aria-hidden="true" className="text-info">
+            →
+          </span>
+        </button>
         {fr.game.howTo
           .filter((s) => wide || !("wideOnly" in s && s.wideOnly))
           .map((s) => {

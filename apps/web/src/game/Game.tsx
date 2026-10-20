@@ -10,6 +10,7 @@ import { Ceremony } from "./Ceremony.js";
 import { Help } from "./Help.js";
 import { Intro } from "./Intro.js";
 import { Region } from "./Region.js";
+import { TerraGuide } from "./TerraGuide.js";
 import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
 import { onBack } from "./back.js";
@@ -105,6 +106,8 @@ export interface GameProps {
   sheet: string | null;
   setSheet: (sheet: string | null) => void;
   openHelp: () => void;
+  /** The Terraferma's guide, with its diagrams. */
+  openTerraGuide: () => void;
   replayIntro: () => void;
   replayGuide: () => void;
   resetGame: () => Promise<void>;
@@ -154,6 +157,7 @@ export function Game(props: {
   const [toast, setToast] = useState<string | null>(null);
   const [prices, setPrices] = useState<PriceSeries>({});
   const [sheet, setSheet] = useState<string | null>(null);
+  const [terraGuide, setTerraGuide] = useState(false);
   const [help, setHelp] = useState(false);
   const [introSeen, setIntroSeen] = useState(() => store.get("introSeen") === "1");
   const [guideKey, setGuideKey] = useState(0);
@@ -504,6 +508,7 @@ export function Game(props: {
     sheet,
     setSheet,
     openHelp: () => setHelp(true),
+    openTerraGuide: () => setTerraGuide(true),
     replayIntro: () => {
       store.set("introSeen", "0");
       setIntroSeen(false);
@@ -570,6 +575,7 @@ export function Game(props: {
 
       <FxLayer />
       {help && <Help {...gp} onClose={() => setHelp(false)} />}
+      {terraGuide && <TerraGuide onClose={() => setTerraGuide(false)} />}
       {welcome && <Welcome {...gp} data={welcome} onClose={() => setWelcome(null)} />}
     </>
   );

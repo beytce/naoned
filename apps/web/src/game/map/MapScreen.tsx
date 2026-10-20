@@ -53,6 +53,7 @@ import { SIDE_W, SideColumn } from "./SideColumn.js";
 import {
   SkirmishBar,
   TerraHud,
+  TerraIntro,
   TerraOverlay,
   TerraPanel,
   TerraSheets,
@@ -712,6 +713,7 @@ export function MapScreen(
               regions={props.catalog.regions}
               onReplay={week.playing || skirmishOn ? undefined : week.start}
               onSkirmish={skirmishOn ? undefined : () => setSkirmishOn(true)}
+              onGuide={props.openTerraGuide}
             />
           ) : undefined
         }
@@ -744,6 +746,7 @@ export function MapScreen(
         onHelp={props.openHelp}
       />
       {panel}
+      {terra && !skirmishOn && <TerraIntro onGuide={props.openTerraGuide} />}
       {terra && skirmishOn && (
         <SkirmishBar
           status={skirmish.status}

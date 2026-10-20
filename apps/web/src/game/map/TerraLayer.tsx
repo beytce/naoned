@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CityIcon } from "../../art/cities.js";
 import { Crest, defaultCrest } from "../../art/crest.js";
 import { P } from "../../art/palette.js";
+import { Lorenzo } from "../../art/scenes.js";
 import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
 import { Segmented, Sheet, Slab, clock } from "../../ui.js";
@@ -1018,6 +1019,7 @@ export function TerraHud({
   regions,
   onReplay,
   onSkirmish,
+  onGuide,
 }: {
   v: TerraView;
   now: number;
@@ -1027,6 +1029,8 @@ export function TerraHud({
   onReplay?: () => void;
   /** Opens the skirmishes (absent in one). */
   onSkirmish?: () => void;
+  /** Opens the Terraferma's guide. */
+  onGuide?: () => void;
 }) {
   const me = v.me;
   const regionName = (code: string) => regions.find((r) => r.code === code)?.name ?? code;
@@ -1075,6 +1079,15 @@ export function TerraHud({
         {v.rules.team && <span className="text-info">{t().team(regionName(v.rules.team))}</span>}
         {v.closed?.teams?.[0] && (
           <span className="text-gold">{t().teamWon(regionName(v.closed.teams[0].team))}</span>
+        )}
+        {onGuide && (
+          <button
+            type="button"
+            onClick={onGuide}
+            className="pointer-events-auto font-display font-extrabold uppercase text-info underline underline-offset-2"
+          >
+            {fr.game.terraGuide.openShort}
+          </button>
         )}
         {onSkirmish && (
           <button
@@ -1716,6 +1729,57 @@ function PeasantsSlider({
           BigInt(me.yields.route) > 0n ? d(me.yields.route) : null,
         )}
       </p>
+    </div>
+  );
+}
+
+/**
+ * The first visit to the Terraferma: Lorenzo says, in three bubbles, how to set down, launch a
+ * front and come back; the guide is a touch away. Once on this device.
+ */
+export function TerraIntro({ onGuide }: { onGuide: () => void }) {
+  const k = fr.game.terraIntro;
+  const [step, setStep] = useState(() => {
+    try {
+      return store.get("terraIntroSeen") === "1" ? -1 : 0;
+    } catch {
+      return 0;
+    }
+  });
+  if (step < 0) return null;
+  const done = () => {
+    store.set("terraIntroSeen", "1");
+    setStep(-1);
+  };
+  const last = step >= k.steps.length - 1;
+  return (
+    <div className="pointer-events-auto absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+11rem)] z-30 mx-auto flex max-w-sm animate-pop gap-3 cut border border-info/70 bg-night-2/95 p-3 shadow-lg lg:bottom-32">
+      <Lorenzo size={44} />
+      <div className="min-w-0 flex-1 space-y-2">
+        <p className="label text-info">
+          {k.who} · {step + 1}/{k.steps.length}
+        </p>
+        <p className="text-sm">{k.steps[step]}</p>
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            className="label text-info underline underline-offset-2"
+            onClick={() => {
+              done();
+              onGuide();
+            }}
+          >
+            {k.guide}
+          </button>
+          <button
+            type="button"
+            className="label rounded-full bg-info px-3 py-1 text-ink"
+            onClick={() => (last ? done() : setStep(step + 1))}
+          >
+            {last ? k.done : k.next}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
