@@ -1074,3 +1074,33 @@ Après l'audit UX (`docs/audit-ux-2026-10-19.md`), trois réglages ont changé :
 **Lecture.** La bienvenue crée 150 ducats une fois par marchand, soit 5 ducats par jour et par marchand sur un mois : c'est noyé dans les 200 ducats payés chaque jour pour les marchandises, qui ne bougent pas au-delà du bruit des graines. La masse monétaire reste sous son plafond, et la graine 4, qui le dépassait (1,20 ×), revient à 0,83 ×. Les prix gardent leur amplitude.
 
 La première livraison des bots arrive plus tard sur les graines 1 et 2 (3 à 4 h au lieu de 1 à 3 h). Le bot du Terraferma attend la récolte de son blé avant de livrer la bienvenue, alors qu'il livrait le pain de départ. Une vraie personne guidée par Lorenzo la livre dans les cinq premières minutes : c'est ce que vérifie le test de bout en bout (`pnpm --filter @comptoirs/web e2e`). La grâce sur le pain ne pèse que sur le premier jour d'un nouveau venu.
+
+## La Terraferme ouverte toute la semaine, Milan plus fort, les PNJ se battent plus tôt (20 octobre 2026, retour du porteur)
+
+Retour de partie : « aucun PNJ n'attaque ni ne se développe ». Le moteur jouait bien (simulation d'octobre : 30 à 45 fronts par jour), mais un marchand arrivé après le lundi ne pouvait plus se poser de la semaine, et les PNJ ne marchaient sur un rival qu'une fois la terre libre épuisée (vers le 4ᵉ jour). Changements :
+
+- `start.placementHours` 24 → 0 : on se pose n'importe quel jour, avec `troopsPerDay` 10 troupes de plus par jour de retard ;
+- `start.truceHours` 24 (nouveau réglage) : tout le monde est à l'abri jusqu'à la fin du premier jour, comme avant ; un retardataire l'est `protectionHours` 12 h après son arrivée ;
+- `milan.everyHours` 4 → 2 et `milan.shareBps` 2 000 → 3 000 : des chevauchées plus fortes. Milan ne repart que quand son front précédent est rentré : le nombre de ses fronts ne change presque pas (12 à 17 par semaine), leur poids si ;
+- PNJ : une fois un front lancé sur la terre libre, le suivant va d'abord au voisin le plus mince (puis à la terre libre, puis à Milan) ; un rival trop fort pour la part envoyée passe au suivant.
+
+Une carte plus serrée (18 puis 22 cases par marchand) a été essayée et écartée : les occasionnels y étaient éliminés deux à trois fois plus souvent ; on garde 25.
+
+Prototype de la Terraferme (`pnpm --filter @comptoirs/simulator terra`, 40 marchands, 5 graines) :
+
+| | Avant | Après |
+| --- | --- | --- |
+| Marchands posés | 36 / 40 (les 4 retardataires refusés) | 40 / 40 |
+| Fronts contre des marchands (semaine) | 702 à 736 | 732 à 770 |
+| Éliminés en fin de semaine | 2 · 1 · 1 · 4 · 2 | 5 · 2 · 5 · 3 · 3 |
+
+`pnpm sim`, 5 graines, toutes conformes avant comme après :
+
+| Moyenne des 5 graines | Avant | Après |
+| --- | --- | --- |
+| Monnaie détruite par la Terraferme (d par joueur actif et par jour) | 101,9 | 109,6 |
+| Croissance de la monnaie par joueur actif (moyenne, %/jour) | 3,6 | 3,5 |
+| Jours hors plage du ratio monnaie créée / détruite (sur 23) | 2,0 | 2,8 |
+| Gini du patrimoine à J+15 | 0,48 | 0,47 |
+
+**Lecture.** Tout le monde joue, et la guerre entre marchands arrive plus tôt. Le prix à payer : un peu plus d'éliminés en fin de semaine, surtout des occasionnels. À suivre en bêta ; si cela gêne, le premier levier est `troopsPerDay` (des retardataires moins forts). L'économie reste dans le bruit des graines (graine 2 : 6 jours hors plage du ratio, en avertissement seulement).
