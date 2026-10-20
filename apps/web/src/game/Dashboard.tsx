@@ -107,7 +107,7 @@ function Curves({ data }: { data: DashboardView }) {
             key={day}
             x={x(i)}
             y={H - 4}
-            textAnchor="middle"
+            textAnchor={i === 0 ? "start" : i === data.days.length - 1 ? "end" : "middle"}
             fontSize="9"
             fill="rgb(var(--cream-dim))"
           >
