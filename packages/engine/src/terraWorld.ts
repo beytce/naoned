@@ -264,7 +264,8 @@ export type TerraCommand =
   | { type: "terraFire"; playerId: PlayerId; cell: number }
   | { type: "terraSignal"; playerId: PlayerId; kind: TerraSignalKind; cell?: number }
   | { type: "terraGift"; playerId: PlayerId; to: PlayerId; amount: string }
-  | { type: "terraEmbargo"; playerId: PlayerId; target: PlayerId | null };
+  | { type: "terraEmbargo"; playerId: PlayerId; target: PlayerId | null }
+  | { type: "terraSkirmishGlory"; playerId: PlayerId; glory: number };
 
 /** Ducats for the Terraferma: checked first, then destroyed. */
 function pay(tx: Tx, playerId: PlayerId, price: bigint, ref: string): void {
@@ -337,6 +338,16 @@ export function applyTerra(tx: Tx, cmd: TerraCommand): void {
       });
       if (f.against && !isNation(f.against))
         emit(tx, "terra_attacked", f.against, { by: id, troops: f.troops, aim: f.aim });
+      break;
+    }
+    case "terraSkirmishGlory": {
+      // A skirmish's rank, given by the server: the week's glory of a merchant set down.
+      const p = map.players[id];
+      if (!p || p.eliminatedAt !== undefined) fail("not_placed");
+      if (!Number.isInteger(cmd.glory) || cmd.glory < 0 || cmd.glory > 1_000)
+        fail("invalid_quantity");
+      p.glory += cmd.glory;
+      emit(tx, "terra_skirmish", id, { glory: cmd.glory });
       break;
     }
     case "terraSignal":

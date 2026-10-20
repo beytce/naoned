@@ -1103,3 +1103,16 @@ export interface FamilyMessage {
   at: number;
   mine: boolean;
 }
+
+/** A skirmish as the merchant sees it (GET /api/game/skirmish). */
+export type SkirmishStatus =
+  | { phase: "off" }
+  | { phase: "none"; minutes: number }
+  | { phase: "lobby"; opensAt: number; players: number; joined: boolean; minutes: number }
+  | {
+      phase: "playing" | "done";
+      endsAt: number;
+      playing: boolean;
+      view: TerraView | null;
+      result: { pseudo: string | null; me: boolean; cells: number; glory: number }[] | null;
+    };

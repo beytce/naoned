@@ -297,6 +297,7 @@ function apply(tx: Tx, cmd: Command): void {
     case "terraSignal":
     case "terraGift":
     case "terraEmbargo":
+    case "terraSkirmishGlory":
       applyTerra(tx, cmd);
       break;
     case "chooseSpecialty":

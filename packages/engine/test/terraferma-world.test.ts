@@ -305,3 +305,15 @@ describe("diplomacy on the Terraferma", () => {
     expect(terraEmbargoCutBps(w.ctx, state, "b", "padova")).toBe(0);
   });
 });
+
+describe("a skirmish's glory", () => {
+  it("goes to the week's map of a merchant set down there, else nowhere", () => {
+    const w = live();
+    joined(w, "a");
+    w.do({ type: "join", playerId: "b", region: "terraferma" });
+    const before = w.state.terra?.map.players.a?.glory ?? 0;
+    expect(act(w, { type: "terraSkirmishGlory", playerId: "a", glory: 120 }).ok).toBe(true);
+    expect(w.state.terra?.map.players.a?.glory).toBe(before + 120);
+    expect(act(w, { type: "terraSkirmishGlory", playerId: "b", glory: 120 }).ok).toBe(false);
+  });
+});

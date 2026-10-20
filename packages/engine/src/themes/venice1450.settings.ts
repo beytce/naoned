@@ -304,6 +304,19 @@ export const venice1450Settings: WorldSettingsInput = {
       shareBps: 3_000,
       target: "weakest",
     },
+    // Skirmishes: a live match of 15 minutes, its time 60 times as fast (a step every 5 seconds),
+    // 8 merchants and condottieri on 30 cells each, ranks worth 200, 120, 80 then 30 glory.
+    skirmish: {
+      minutes: 15,
+      speed: 60,
+      stepMinutes: 5,
+      players: 8,
+      cellsPerPlayer: 30,
+      lobbySeconds: 60,
+      troops: 60,
+      recruit: { base: 60, perCell: 6, perCity: 12 },
+      glory: [200, 120, 80, 30],
+    },
     // The third week of the month in teams, by region.
     teams: { weeks: [2] },
     // Diplomacy: a signal each 5 minutes, up to 50 d a day to one's allies, an embargo from the

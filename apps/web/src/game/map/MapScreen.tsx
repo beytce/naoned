@@ -15,6 +15,7 @@ import { HouseSheet } from "../House.js";
 import { RialtoSheet } from "../Marche.js";
 import { ProfileSheet } from "../Profil.js";
 import { RankingSheet } from "../Top.js";
+import { gameApi } from "../api.js";
 import { onBack } from "../back.js";
 import { d, minutesLabel } from "../format.js";
 import {
@@ -50,6 +51,7 @@ import { NoticesSheet } from "./Notices.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
 import { SIDE_W, SideColumn } from "./SideColumn.js";
 import {
+  SkirmishBar,
   TerraHud,
   TerraOverlay,
   TerraPanel,
@@ -59,6 +61,7 @@ import {
   terraSpots,
   terraTap,
   useAbsence,
+  useSkirmish,
   useTerra,
   useTerraShapes,
   useWeekReplay,
@@ -218,18 +221,32 @@ export function MapScreen(
   const closeFleet = useCallback(() => setFleetOpen(false), []);
 
   // The Terraferma, once live in this world: its door replaces the families'.
-  const { terra: terraView, refresh: refreshTerra } = useTerra(props.layer === "terra");
-  const absence = useAbsence(terraView, props.layer === "terra", now);
+  const { terra: weekView, refresh: refreshTerra } = useTerra(props.layer === "terra");
+  // A skirmish shown in place of the week: its own map, its own orders.
+  const [skirmishOn, setSkirmishOn] = useState(false);
+  const skirmish = useSkirmish(props.layer === "terra" && skirmishOn);
+  const skirmishView = skirmish.status && "view" in skirmish.status ? skirmish.status.view : null;
+  const terraView = skirmishOn && skirmishView ? skirmishView : weekView;
+  const absence = useAbsence(terraView, props.layer === "terra" && !skirmishOn, now);
   const week = useWeekReplay(absence.view);
   const shapes = useTerraShapes(week.view);
   const act = props.act;
+  const refreshSkirmish = skirmish.refresh;
   const terraAct = useCallback(
     async (a: TerraAction) => {
+      if (skirmishOn && skirmishView) {
+        const ok = await gameApi
+          .skirmishAct(a)
+          .then((r) => r.ok)
+          .catch(() => false);
+        refreshSkirmish();
+        return ok;
+      }
       const ok = await act(a);
       refreshTerra();
       return ok;
     },
-    [act, refreshTerra],
+    [act, refreshTerra, refreshSkirmish, skirmishOn, skirmishView],
   );
 
   const cities = useMemo(
@@ -658,7 +675,8 @@ export function MapScreen(
               v={terra}
               now={now}
               regions={props.catalog.regions}
-              onReplay={week.playing ? undefined : week.start}
+              onReplay={week.playing || skirmishOn ? undefined : week.start}
+              onSkirmish={skirmishOn ? undefined : () => setSkirmishOn(true)}
             />
           ) : undefined
         }
@@ -683,6 +701,19 @@ export function MapScreen(
         onHelp={props.openHelp}
       />
       {panel}
+      {terra && skirmishOn && (
+        <SkirmishBar
+          status={skirmish.status}
+          now={now}
+          onJoin={() => {
+            void gameApi
+              .skirmishJoin()
+              .catch(() => undefined)
+              .finally(refreshSkirmish);
+          }}
+          onLeave={() => setSkirmishOn(false)}
+        />
+      )}
       {side && <SideColumn props={props} onCity={goCity} />}
       {terra && absence.replaying && (
         <span className="pointer-events-none absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+7.5rem)] z-10 -translate-x-1/2 animate-fade whitespace-nowrap rounded-full bg-night/80 px-3 py-1 font-mono text-xs uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line">

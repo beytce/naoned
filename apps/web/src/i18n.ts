@@ -1830,6 +1830,24 @@ export const fr = {
       noSignore: "La semaine de la Terraferme se clôt sans Signore",
       community: "Rejoindre la communauté des marchands →",
     },
+    /** Skirmishes: live matches on the Terraferma. */
+    skirmish: {
+      title: "Escarmouche",
+      leave: "Revenir à la semaine",
+      off: "Pas d'escarmouche dans ce monde.",
+      pitch: (minutes: number) =>
+        `Une partie en direct de ${minutes} minutes, le temps soixante fois plus vite, contre d'autres marchands et des condottieri. Votre rang rapporte de la Gloire à votre semaine de Terraferme.`,
+      open: "Lancer une escarmouche",
+      join: "Rejoindre",
+      lobby: (players: number, time: string) =>
+        `${players} marchand${players > 1 ? "s" : ""} inscrit${players > 1 ? "s" : ""} · départ dans ${time} ; les places vides vont aux condottieri.`,
+      playing: (time: string) =>
+        `En cours · fin dans ${time}. Touchez une terre au bord des vôtres pour attaquer.`,
+      watching: "Une escarmouche est en cours : regardez-la, la prochaine s'ouvre ensuite.",
+      someone: "Un marchand",
+      cells: (n: number) => `${n} terre${n > 1 ? "s" : ""}`,
+      glory: "Gloire",
+    },
     /** The Terraferma's rating and last weeks, in the profile. */
     terraRecord: {
       title: "Terraferme",
@@ -1870,6 +1888,7 @@ export const fr = {
         "Le fattore fait partir vos charrettes oubliées au comptoir, deux fois par jour.",
         "Terraferme : l'heure de bataille, chaque soir de 20 h à 21 h, les fronts avancent dix fois plus vite.",
         "Terraferme : les ports, sur les rives de la lagune, du lac de Garde et de l'Adriatique ; les barques débarquent sur une autre rive, les galères gardent la vôtre.",
+        "Terraferme : les escarmouches, des parties en direct d'un quart d'heure dont le rang rapporte de la Gloire à la semaine.",
         "Terraferme : une semaine par mois en équipes, les marchands d'une même région ensemble.",
         "Terraferme : signaux sur la carte, cible désignée aux alliés, ducats entre alliés et embargo depuis les villes que vous tenez.",
         "Terraferme : bombardes (un tir par jour rend libres une terre ennemie et ses voisines) et remparts qui en protègent.",

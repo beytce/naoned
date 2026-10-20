@@ -394,6 +394,25 @@ export const worldSettingsSchema = z.object({
         /** At whom it rides: the leader in glory (a brake on the favourite) or its weakest neighbour. */
         target: z.enum(["leader", "weakest"]).default("leader"),
       }),
+      /**
+       * Skirmishes: a live match of `minutes`, its time running `speed` times as fast on the same
+       * engine (a step every `stepMinutes` of its time), `players` merchants and houses of the
+       * computer on a map of `cellsPerPlayer` cells each, opened after `lobbySeconds`; the ranks
+       * bring `glory` (first, second…) to the week's Terraferma.
+       */
+      skirmish: z
+        .object({
+          minutes: positive,
+          speed: positive,
+          stepMinutes: positive,
+          players: positive,
+          cellsPerPlayer: positive,
+          lobbySeconds: positive,
+          troops: positive,
+          recruit: z.object({ base: qty, perCell: qty, perCity: qty }),
+          glory: z.array(qty),
+        })
+        .optional(),
       /** Weeks of the season (from 0) played in teams: the merchants of a region together. */
       teams: z.object({ weeks: z.array(qty) }).optional(),
       /**

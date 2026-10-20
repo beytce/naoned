@@ -108,3 +108,4 @@ export * from "./bots.js";
 export { MarketView, scale } from "./marketView.js";
 export * from "./muda.js";
 export * from "./fattore.js";
+export * from "./skirmish.js";

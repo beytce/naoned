@@ -42,6 +42,7 @@ import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pas
 import { priceHistory, profile } from "./profile.js";
 import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
 import { toJson } from "./serialize.js";
+import { SkirmishHub } from "./skirmish.js";
 import { terraView } from "./terra.js";
 import { terraRecord } from "./terraRecord.js";
 import { catalog, playerView, ranking } from "./view.js";
@@ -535,6 +536,43 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
         steps: replay.steps,
       },
     };
+  });
+
+  // Skirmishes: a lobby and a live match, in memory.
+  const skirmishes = new SkirmishHub(db, world);
+  skirmishes.start();
+  app.addHook("onClose", async () => skirmishes.stop());
+
+  app.get("/api/game/skirmish", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    await skirmishes.step(world.now());
+    return toJson(await skirmishes.status(account.id, world.now()));
+  });
+
+  app.post("/api/game/skirmish/join", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    if (!world.current.players[account.id]) return reply.code(409).send({ error: "not_joined" });
+    const ok = skirmishes.join(account.id, world.now());
+    return ok ? { ok } : reply.code(409).send({ error: "skirmish_full" });
+  });
+
+  app.post("/api/game/skirmish/act", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const a = z
+      .discriminatedUnion("type", [
+        z.object({
+          type: z.literal("terraFront"),
+          aim: z.number().int().nonnegative(),
+          shareBps: z.number().int().min(0).max(10_000),
+        }),
+        z.object({ type: z.literal("terraRecall"), frontId: z.string().max(32) }),
+      ])
+      .parse(req.body);
+    const ok = skirmishes.act(account.id, a, world.now());
+    return ok ? { ok } : reply.code(409).send({ error: "refused" });
   });
 
   /** The Rapport de la Banque: the world's money in the open, for anyone (no account). */

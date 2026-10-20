@@ -159,4 +159,32 @@ describe("the Terraferma on the server", () => {
     expect(rows.length).toBe(1);
     expect(rows[0]?.amount).toBeGreaterThan(0);
   });
+
+  it("plays a skirmish: a lobby, a live match with condottieri, its ranks to the week's glory", async () => {
+    await open({ terraferma: { live: true } });
+    const ada = await player("ada@example.org");
+    await world.execute({ type: "tick" });
+    await place(ada);
+    const before = (await get(ada, "/api/game/terra")).terra.me.glory as number;
+    expect((await get(ada, "/api/game/skirmish")).phase).toBe("none");
+    const join = await app.inject({
+      method: "POST",
+      url: "/api/game/skirmish/join",
+      headers: { cookie: ada },
+    });
+    expect(join.statusCode).toBe(200);
+    expect((await get(ada, "/api/game/skirmish")).phase).toBe("lobby");
+    now += 61_000;
+    const live = await get(ada, "/api/game/skirmish");
+    expect(live.phase).toBe("playing");
+    expect(live.view.holders.length).toBeGreaterThan(8);
+    // A quarter of an hour later, the match is over and its rank paid on the week's map.
+    now += 16 * 60_000;
+    const done = await get(ada, "/api/game/skirmish");
+    expect(done.phase).toBe("done");
+    const mine = done.result.find((r: { me: boolean }) => r.me);
+    expect(mine).toBeDefined();
+    const after = (await get(ada, "/api/game/terra")).terra.me.glory as number;
+    expect(after).toBeGreaterThanOrEqual(before + mine.glory);
+  });
 });

@@ -15,7 +15,9 @@ import type {
   Profile,
   PushSettings,
   RankingRow,
+  SkirmishStatus,
   Spend,
+  TerraAction,
   TerraView,
   WeekRanking,
 } from "./types.js";
@@ -107,6 +109,9 @@ export const gameApi = {
         steps: [number, number, number][];
       } | null;
     }>("GET", "/api/game/terra/replay"),
+  skirmish: () => call<SkirmishStatus>("GET", "/api/game/skirmish"),
+  skirmishJoin: () => call<{ ok: boolean }>("POST", "/api/game/skirmish/join"),
+  skirmishAct: (a: TerraAction) => call<{ ok: boolean }>("POST", "/api/game/skirmish/act", a),
   journal: () => call<{ entries: JournalEntry[] }>("GET", "/api/game/journal"),
   ranking: () =>
     call<{ rows: RankingRow[]; me: number | null; total: number }>("GET", "/api/game/ranking"),

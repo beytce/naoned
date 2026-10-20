@@ -22,7 +22,7 @@ import {
   replayed,
   tones,
 } from "../terraShapes.js";
-import type { TerraAction, TerraView } from "../types.js";
+import type { SkirmishStatus, TerraAction, TerraView } from "../types.js";
 import { orbStyle } from "./Markers.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
 import type { MapMarker, Selection } from "./WorldMap.js";
@@ -84,6 +84,86 @@ const BUILDING_GLYPH: Record<string, string> = {
 function coastalCell(v: TerraView, cell: number): boolean {
   const { width, height, terrain } = v.map;
   return hexNeighbors({ width, height }, cell).some((n) => terrain[n] === "w");
+}
+
+/** A skirmish: its state, fetched each second while it is shown. */
+export function useSkirmish(shown: boolean): {
+  status: SkirmishStatus | null;
+  refresh: () => void;
+} {
+  const [status, setStatus] = useState<SkirmishStatus | null>(null);
+  const refresh = useCallback(() => {
+    gameApi
+      .skirmish()
+      .then(setStatus)
+      .catch(() => undefined);
+  }, []);
+  useEffect(() => {
+    if (!shown) return;
+    refresh();
+    const id = setInterval(refresh, 1_000);
+    return () => clearInterval(id);
+  }, [shown, refresh]);
+  return { status, refresh };
+}
+
+/** The skirmish's bar: the lobby to join, the time left, the result; and the way back. */
+export function SkirmishBar({
+  status,
+  now,
+  onJoin,
+  onLeave,
+}: {
+  status: SkirmishStatus | null;
+  now: number;
+  onJoin: () => void;
+  onLeave: () => void;
+}) {
+  const k = fr.game.skirmish;
+  return (
+    <div className="pointer-events-auto absolute inset-x-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+8.5rem)] z-20 mx-auto max-w-sm space-y-2 cut border border-vermilion/60 bg-night/95 p-3 text-sm shadow-lg lg:top-24">
+      <div className="flex items-center justify-between">
+        <span className="font-display font-extrabold uppercase text-vermilion">⚔ {k.title}</span>
+        <button type="button" className="label text-cream-dim" onClick={onLeave}>
+          {k.leave}
+        </button>
+      </div>
+      {!status || status.phase === "off" ? (
+        <p className="note">{k.off}</p>
+      ) : status.phase === "none" ? (
+        <>
+          <p className="note">{k.pitch(status.minutes)}</p>
+          <Slab size="sm" className="w-full" onClick={onJoin}>
+            {k.open}
+          </Slab>
+        </>
+      ) : status.phase === "lobby" ? (
+        <>
+          <p className="note">
+            {k.lobby(status.players, clock(Math.max(0, status.opensAt - now)))}
+          </p>
+          {!status.joined && (
+            <Slab size="sm" className="w-full" onClick={onJoin}>
+              {k.join}
+            </Slab>
+          )}
+        </>
+      ) : status.phase === "playing" ? (
+        <p className="note">
+          {status.playing ? k.playing(clock(Math.max(0, status.endsAt - now))) : k.watching}
+        </p>
+      ) : (
+        <ol className="space-y-0.5">
+          {(status.result ?? []).slice(0, 8).map((r, i) => (
+            <li key={`${i}:${r.pseudo}`} className={r.me ? "text-gold" : "text-cream-dim"}>
+              {i + 1}. {r.pseudo ?? k.someone} · {k.cells(r.cells)}
+              {r.glory > 0 && ` · +${r.glory} ${k.glory}`}
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
 }
 
 /** Whether merchants may still set down this week. */
@@ -915,6 +995,7 @@ export function TerraHud({
   now,
   regions,
   onReplay,
+  onSkirmish,
 }: {
   v: TerraView;
   now: number;
@@ -922,6 +1003,8 @@ export function TerraHud({
   regions: { code: string; name: string }[];
   /** Replays the week from its start (absent while it plays). */
   onReplay?: () => void;
+  /** Opens the skirmishes (absent in one). */
+  onSkirmish?: () => void;
 }) {
   const me = v.me;
   const regionName = (code: string) => regions.find((r) => r.code === code)?.name ?? code;
@@ -970,6 +1053,15 @@ export function TerraHud({
         {v.rules.team && <span className="text-info">{t().team(regionName(v.rules.team))}</span>}
         {v.closed?.teams?.[0] && (
           <span className="text-gold">{t().teamWon(regionName(v.closed.teams[0].team))}</span>
+        )}
+        {onSkirmish && (
+          <button
+            type="button"
+            onClick={onSkirmish}
+            className="pointer-events-auto font-display font-extrabold uppercase text-vermilion underline underline-offset-2"
+          >
+            ⚔ {fr.game.skirmish.title}
+          </button>
         )}
         {onReplay && (
           <button
