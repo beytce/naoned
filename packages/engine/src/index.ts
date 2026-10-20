@@ -101,7 +101,12 @@ export * from "./theme.js";
 export { venice1450 } from "./themes/venice1450.js";
 export { venice1450Settings } from "./themes/venice1450.settings.js";
 export { EngineError, type EngineErrorCode } from "./tx.js";
-export { adoptTurnover, turnoverOf } from "./turnover.js";
+export {
+  adoptTurnover,
+  turnoverOf,
+  SALES as TURNOVER_SALES,
+  COSTS as TURNOVER_COSTS,
+} from "./turnover.js";
 export * from "./valuation.js";
 export * from "./weekly.js";
 export * from "./bots.js";

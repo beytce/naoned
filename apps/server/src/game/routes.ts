@@ -16,6 +16,7 @@ import { NOTIFICATION_KINDS, type NotificationKind, type Notifier } from "../not
 import { isPushEndpoint } from "../notify/push.js";
 import { retention, suspiciousPairs } from "./admin.js";
 import { bankReport, ledgerCsv } from "./bank.js";
+import { dashboard } from "./dashboard.js";
 import {
   ChatError,
   familyThread,
@@ -594,6 +595,13 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const account = await requireAccount(req, reply);
     if (!account) return;
     return toJson(await journal(db, world.id, world.current, world.now()));
+  });
+
+  app.get("/api/game/dashboard", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    if (!world.current.players[account.id]) return reply.code(409).send({ error: "not_joined" });
+    return toJson(await dashboard(db, world.id, world.ctx, world.current, account.id, world.now()));
   });
 
   app.get("/api/game/prices", async (req, reply) => {

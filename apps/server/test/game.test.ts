@@ -228,6 +228,12 @@ describe("game API", () => {
     const after = (await get(cookie)).json().view;
     expect(BigInt(after.cash)).toBeGreaterThan(100_000n);
     expect(after.tutorial).toEqual(["produce", "harvest", "transform", "sell_city"]);
+    // The dashboard counts the delivery in the day's net sales, as the week's ranking does.
+    const board = (await get(cookie, "/api/game/dashboard")).json();
+    expect(board.days).toHaveLength(7);
+    expect(BigInt(board.today)).toBeGreaterThan(0n);
+    expect(board.lines[0].who).toBe("me");
+    expect(board.lines[0].daily.at(-1)).toBe(board.today);
 
     const steps = await database.db.select().from(telemetry).where(sql`type = 'tutorial_step'`);
     expect(steps).toHaveLength(4);

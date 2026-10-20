@@ -9,7 +9,7 @@ import type { AccountId, PlayerId, WorldState } from "./state.js";
  */
 
 /** Paid to the merchant for goods. */
-const SALES = new Set<LedgerReason>([
+export const SALES = new Set<LedgerReason>([
   "trade",
   "market_maker_buy",
   "city_sale",
@@ -23,7 +23,7 @@ const SALES = new Set<LedgerReason>([
 ]);
 
 /** Paid by the merchant for goods, or to sell them. */
-const COSTS = new Set<LedgerReason>([
+export const COSTS = new Set<LedgerReason>([
   "trade",
   "market_maker_sell",
   "market_tax",

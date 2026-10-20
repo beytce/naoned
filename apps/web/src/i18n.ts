@@ -1946,6 +1946,21 @@ export const fr = {
       adds: (amount: string) => `+${amount} de marge par heure`,
       payback: (time: string) => `rentabilisé en ${time}`,
     },
+    dashboard: {
+      title: "Tableau de bord",
+      help: "Vos ventes nettes comptées comme au classement : ce qui entre pour vos marchandises, moins ce qu'elles vous coûtent. La courbe additionne les sept derniers jours.",
+      perHour: (amount: string) => `≈ ${amount} de marge par heure`,
+      hour: "Par heure",
+      today: "Aujourd'hui",
+      week: "Cette semaine",
+      chart:
+        "Ventes nettes des sept derniers jours : vous, votre rival et le premier de la semaine",
+      who: {
+        me: (_: string) => "Vous",
+        rival: (name: string) => `Rival : ${name}`,
+        leader: (name: string) => `Premier : ${name}`,
+      },
+    },
     /** The rival of the week, under the rank on the map. */
     rival: {
       someone: "Un marchand",

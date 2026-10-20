@@ -7,6 +7,7 @@ import { BaleScreen, BaleTile } from "./Bales.js";
 import { BuildCatalog } from "./Catalog.js";
 import { CompanySheet, CompanyTile } from "./Company.js";
 import { Daily } from "./Daily.js";
+import { DashboardSheet, DashboardTile } from "./Dashboard.js";
 import type { GameProps } from "./Game.js";
 import { Ledger } from "./Ledger.js";
 import { MasteryTile } from "./Mastery.js";
@@ -771,6 +772,7 @@ export function CounterSheets(props: GameProps) {
       </Sheet>
       {props.sheet === "bales" && <BaleScreen {...props} />}
       <CompanySheet {...props} />
+      <DashboardSheet {...props} />
     </>
   );
 }
@@ -792,6 +794,7 @@ export function Carnet(props: GameProps) {
 export function SeasonTiles(props: GameProps) {
   return (
     <>
+      <DashboardTile {...props} />
       <CompanyTile {...props} />
       <SeasonGoal {...props} />
       <MasteryTile {...props} />

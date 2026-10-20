@@ -1126,3 +1126,13 @@ export type SkirmishStatus =
       view: TerraView | null;
       result: { pseudo: string | null; me: boolean; cells: number; glory: number }[] | null;
     };
+
+/** The counter's dashboard (GET /api/game/dashboard). */
+export interface DashboardView {
+  perHour: string;
+  today: string;
+  week: string;
+  /** Seven Paris days, YYYY-MM-DD, the last one today. */
+  days: string[];
+  lines: { who: "me" | "rival" | "leader"; pseudo: string | null; daily: string[] }[];
+}

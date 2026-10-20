@@ -3,6 +3,7 @@ import type {
   Action,
   Catalog,
   CrestData,
+  DashboardView,
   FamilyMessage,
   GameResponse,
   HouseView,
@@ -112,6 +113,7 @@ export const gameApi = {
   skirmish: () => call<SkirmishStatus>("GET", "/api/game/skirmish"),
   skirmishJoin: () => call<{ ok: boolean }>("POST", "/api/game/skirmish/join"),
   skirmishAct: (a: TerraAction) => call<{ ok: boolean }>("POST", "/api/game/skirmish/act", a),
+  dashboard: () => call<DashboardView>("GET", "/api/game/dashboard"),
   journal: () => call<{ entries: JournalEntry[] }>("GET", "/api/game/journal"),
   ranking: () =>
     call<{ rows: RankingRow[]; me: number | null; total: number }>("GET", "/api/game/ranking"),
