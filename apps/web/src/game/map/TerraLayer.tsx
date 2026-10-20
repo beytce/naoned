@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CityIcon } from "../../art/cities.js";
 import { Crest, defaultCrest } from "../../art/crest.js";
 import { P } from "../../art/palette.js";
@@ -45,10 +45,17 @@ export function useTerra(shown: boolean): {
   refresh: () => void;
 } {
   const [terra, setTerra] = useState<TerraView | null | undefined>(undefined);
+  // The same week as before keeps its object: nothing on the map is drawn again.
+  const last = useRef("");
   const refresh = useCallback(() => {
     gameApi
       .terra()
-      .then((r) => setTerra(r.terra))
+      .then((r) => {
+        const text = JSON.stringify(r.terra);
+        if (text === last.current) return;
+        last.current = text;
+        setTerra(r.terra);
+      })
       .catch(() => undefined);
   }, []);
   const battle = !!terra?.battle?.on;
@@ -468,7 +475,8 @@ function followed(v: TerraView) {
  * Under the markers: the territories, the grid, the cells along the border a front can take,
  * the cells the fronts will take next, each holder's troops, the night's veil, the fronts.
  */
-export function TerraOverlay({
+/** Drawn again only when the map, its shapes or the selected cell change (not each second). */
+export const TerraOverlay = memo(function TerraOverlay({
   v,
   s,
   cell,
@@ -518,7 +526,7 @@ export function TerraOverlay({
           {...look(h, h.i === selectedHolder(v, cell))}
         />
       ))}
-      {/* Cells just taken tint in, over 400 ms. */}
+      {/* Cells just taken flash and tint in, over a second. */}
       {fresh.map((f) => (
         <path
           key={`fresh-${f.cell}-${f.at}`}
@@ -671,7 +679,7 @@ export function TerraOverlay({
       )}
     </g>
   );
-}
+});
 
 function selectedHolder(v: TerraView, cell: number | null): number {
   return cell === null ? -2 : holderAt(v, cell);
@@ -734,7 +742,7 @@ function useFresh(v: TerraView): { cell: number; holder: number; at: number }[] 
     );
     if (taken.length === 0 || taken.length > 200) return;
     setFresh(taken);
-    const id = setTimeout(() => setFresh([]), 450);
+    const id = setTimeout(() => setFresh([]), 1_400);
     return () => clearTimeout(id);
   }, [owners]);
   return fresh;
@@ -858,16 +866,30 @@ export function terraMarkers(
           <button
             type="button"
             onClick={() => select({ kind: "terra", cell: next?.cell ?? f.aim })}
-            className={`marker-hit flex h-6 items-center justify-center gap-1 whitespace-nowrap rounded-full px-2 font-mono text-xs font-bold shadow-md shadow-black/40 ${f.mine ? "bg-gold text-ink" : "bg-vermilion text-cream"}`}
+            className={`marker-hit relative flex h-6 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full px-2 font-mono text-xs font-bold shadow-md shadow-black/40 ${f.mine ? "bg-gold text-ink" : "bg-vermilion text-cream"}`}
           >
             ⚔ {f.troops}
             {next && <span className="font-normal opacity-80">· {wait(next.at, props.now)}</span>}
+            {next && (
+              // How far toward its next cell, aimed ten seconds ahead and slid there.
+              <span
+                className="terra-progress absolute bottom-0 left-0 h-[3px] bg-night/45"
+                style={{ width: `${frontProgress(v, f.against, next.at, props.now + 10_000)}%` }}
+              />
+            )}
           </button>
         </div>
       ),
     });
   }
   return out;
+}
+
+/** How far a front has gone toward its next cell (0 to 100) at `at`. */
+function frontProgress(v: TerraView, against: number, nextAt: number, at: number): number {
+  const minutes = against < 0 ? v.rules.neutralMinutes : v.rules.cellMinutes;
+  const left = (nextAt - at) / (minutes * 60_000);
+  return Math.round(Math.min(1, Math.max(0, 1 - left)) * 100);
 }
 
 function TerraCity({

@@ -26,7 +26,7 @@ import {
   total,
   vehicleName,
 } from "../roadKit.js";
-import type { DeliveryView, PlayerView, TerraAction, VehicleView } from "../types.js";
+import type { DeliveryView, PlayerView, TerraAction, TerraView, VehicleView } from "../types.js";
 import { openTerraEarly, unlocksOf } from "../unlocks.js";
 import { useWide } from "../useWide.js";
 import { have, readyOf } from "../workshops.js";
@@ -226,7 +226,22 @@ export function MapScreen(
   const [skirmishOn, setSkirmishOn] = useState(false);
   const skirmish = useSkirmish(props.layer === "terra" && skirmishOn);
   const skirmishView = skirmish.status && "view" in skirmish.status ? skirmish.status.view : null;
-  const terraView = skirmishOn && skirmishView ? skirmishView : weekView;
+  const servedView = skirmishOn && skirmishView ? skirmishView : weekView;
+  // A front just ordered shows at once, before the server answers (dropped at its answer).
+  const [pending, setPending] = useState<TerraView["fronts"][number] | null>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a fresh view replaces the pending front.
+  useEffect(() => setPending(null), [servedView]);
+  const terraView = useMemo(
+    () =>
+      servedView && pending && servedView.me
+        ? {
+            ...servedView,
+            fronts: [...servedView.fronts, pending],
+            me: { ...servedView.me, troops: Math.max(0, servedView.me.troops - pending.troops) },
+          }
+        : servedView,
+    [servedView, pending],
+  );
   const absence = useAbsence(terraView, props.layer === "terra" && !skirmishOn, now);
   const week = useWeekReplay(absence.view);
   const shapes = useTerraShapes(week.view);
@@ -234,19 +249,35 @@ export function MapScreen(
   const refreshSkirmish = skirmish.refresh;
   const terraAct = useCallback(
     async (a: TerraAction) => {
+      const v = servedView;
+      const me = v?.holders.findIndex((h) => h.me) ?? -1;
+      if (v?.me && me >= 0 && (a.type === "terraFront" || a.type === "terraSail"))
+        setPending({
+          id: "pending",
+          owner: me,
+          against: v.owner[a.aim] ?? -1,
+          aim: a.aim,
+          troops: Math.floor((v.me.troops * a.shareBps) / 10_000),
+          mine: true,
+          threat: false,
+          takes: [],
+          endsAt: null,
+        });
       if (skirmishOn && skirmishView) {
         const ok = await gameApi
           .skirmishAct(a)
           .then((r) => r.ok)
           .catch(() => false);
+        if (!ok) setPending(null);
         refreshSkirmish();
         return ok;
       }
       const ok = await act(a);
+      if (!ok) setPending(null);
       refreshTerra();
       return ok;
     },
-    [act, refreshTerra, refreshSkirmish, skirmishOn, skirmishView],
+    [act, refreshTerra, refreshSkirmish, skirmishOn, skirmishView, servedView],
   );
 
   const cities = useMemo(
@@ -451,6 +482,18 @@ export function MapScreen(
   const families = view.families;
   const campaign = props.layer === "campaign" && families ? families : null;
   const terra = props.layer === "terra" && week.view && shapes ? week.view : null;
+  // The Terraferma's markers and spots, made again when the map changes or every ten seconds
+  // (their countdowns), never at each second's clock: the map stays smooth.
+  const tenSeconds = Math.floor(now / 10_000);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `tenSeconds` paces the countdowns.
+  const terraMarkerList = useMemo(
+    () => (terra && shapes ? terraMarkers(props, terra, shapes, select) : null),
+    [terra, shapes, select, tenSeconds],
+  );
+  const terraSpotList = useMemo(
+    () => (terra && shapes ? terraSpots(terra, shapes) : null),
+    [terra, shapes],
+  );
   const terraCell = terra && sel?.kind === "terra" ? sel.cell : null;
   const campaignPanel = campaign ? (
     <CampaignPanel props={props} f={campaign} sel={sel} select={select} />
@@ -579,9 +622,7 @@ export function MapScreen(
         spots={
           campaign
             ? campaign.lands.map((l) => ({ key: `land:${l.code}`, x: l.x, y: l.y }))
-            : terra && shapes
-              ? terraSpots(terra, shapes)
-              : []
+            : (terraSpotList ?? [])
         }
         overlay={
           campaign ? (
@@ -590,13 +631,7 @@ export function MapScreen(
             <TerraOverlay v={terra} s={shapes} cell={terraCell} />
           ) : undefined
         }
-        markers={
-          campaign
-            ? campaignMarkers(props, campaign, select)
-            : terra && shapes
-              ? terraMarkers(props, terra, shapes, select)
-              : markers
-        }
+        markers={campaign ? campaignMarkers(props, campaign, select) : (terraMarkerList ?? markers)}
         parked={trade ? parked : []}
         roads={trade ? roads : []}
         litRoads={trade ? litCities : []}

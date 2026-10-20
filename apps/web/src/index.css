@@ -648,15 +648,27 @@
 }
 /* The Terraferma: a cell just taken tints in, then joins its holder's ground. */
 .terra-take {
-  animation: terra-take 0.4s ease-out both;
+  stroke: rgb(var(--gold-soft));
+  stroke-width: 1.4;
+  animation: terra-take 1.3s ease-out both;
 }
 @keyframes terra-take {
   0% {
     fill-opacity: 0;
+    stroke-opacity: 1;
+  }
+  35% {
+    fill-opacity: 0.6;
+    stroke-opacity: 0.8;
   }
   100% {
     fill-opacity: 0.42;
+    stroke-opacity: 0;
   }
+}
+/* A front's pill: how far it is toward its next cell, filling smoothly between refreshes. */
+.terra-progress {
+  transition: width 10s linear;
 }
 /* The next cell a front will take breathes, slowly, until it falls. */
 .terra-next {
