@@ -4,6 +4,8 @@ import {
   hasPass,
   isNation,
   rushCost,
+  supplierOf,
+  supplierStandings,
   weekReplay,
 } from "@comptoirs/engine";
 import { and, desc, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
@@ -960,6 +962,60 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const names = new Map(rows.map((r) => [r.id, { pseudo: r.pseudo, crest: r.crest }]));
     return toJson({
       terra: terraView(world.ctx, world.current, account.id, world.now(), names),
+    });
+  });
+
+  /**
+   * The official suppliers of the cities: each good's holder this week (paid more there), and
+   * the week's ranking so far, three first and the merchant's own units.
+   */
+  app.get("/api/game/suppliers", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const state = world.current;
+    const rules = world.ctx.settings.suppliers;
+    if (!rules || !state.suppliers) return toJson({ bonusBps: rules?.bonusBps ?? 0, lines: [] });
+    const keys = [
+      ...new Set([...Object.keys(state.suppliers.holders), ...Object.keys(state.suppliers.units)]),
+    ].sort();
+    const lines = keys.map((key) => {
+      const [city = "", resource = ""] = key.split("|");
+      const standings = supplierStandings(state, city, resource);
+      return {
+        city,
+        resource,
+        holder: supplierOf(state, city, resource) ?? null,
+        top: standings.slice(0, 3),
+        mine: standings.find((x) => x.playerId === account.id)?.units ?? 0,
+      };
+    });
+    const ids = [
+      ...new Set(lines.flatMap((l) => [l.holder, ...l.top.map((x) => x.playerId)])),
+    ].filter((x): x is string => !!x);
+    const rows =
+      ids.length === 0
+        ? []
+        : await db
+            .select({ id: accounts.id, pseudo: accounts.pseudo, crest: accounts.crest })
+            .from(accounts)
+            .where(inArray(accounts.id, ids));
+    const who = new Map(rows.map((r) => [r.id, r]));
+    const person = (id: string) => ({
+      id,
+      me: id === account.id,
+      pseudo: who.get(id)?.pseudo ?? null,
+      crest: who.get(id)?.crest ?? null,
+    });
+    return toJson({
+      bonusBps: rules.bonusBps,
+      minUnits: rules.minUnits,
+      lines: lines.map((l) => ({
+        city: l.city,
+        resource: l.resource,
+        holder: l.holder ? person(l.holder) : null,
+        top: l.top.map((x) => ({ ...person(x.playerId), units: x.units })),
+        mine: l.mine,
+      })),
     });
   });
 

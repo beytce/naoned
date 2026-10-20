@@ -1086,6 +1086,9 @@ export const venice1450Settings: WorldSettingsInput = {
       gilded_name: { cost: 40, requires: [] },
     },
   },
+  // The official supplier (recommendations of 20 October 2026): the week's best deliverer of a
+  // good to a city, from 10 units, is paid 10 % more for it there all the next week.
+  suppliers: { bonusBps: 1_000, minUnits: 10 },
   // Company orders (recommendations of 20 October 2026): every two days a city orders bread,
   // bricks and planks from the three regions together, paid 10 % above the reference on
   // delivery, and 10 % more to everyone who delivered once the order is full.

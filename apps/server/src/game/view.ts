@@ -574,6 +574,13 @@ export function playerView(
     /** The upgrade that pays back first (null: none left). */
     bestUpgrade: bestUpgrade(ctx, state, playerId, now)?.buildingId ?? null,
     next: nextActions(ctx, state, playerId, now),
+    // The goods the merchant is the official supplier of, by city, this week.
+    supplies: Object.entries(state.suppliers?.holders ?? {})
+      .filter(([, id]) => id === playerId)
+      .map(([key]) => {
+        const [city = "", resource = ""] = key.split("|");
+        return { city, resource };
+      }),
     market,
     book,
     cityQuotes,

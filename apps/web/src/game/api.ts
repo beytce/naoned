@@ -18,6 +18,7 @@ import type {
   RankingRow,
   SkirmishStatus,
   Spend,
+  SuppliersView,
   TerraAction,
   TerraView,
   WeekRanking,
@@ -113,6 +114,7 @@ export const gameApi = {
   skirmish: () => call<SkirmishStatus>("GET", "/api/game/skirmish"),
   skirmishJoin: () => call<{ ok: boolean }>("POST", "/api/game/skirmish/join"),
   skirmishAct: (a: TerraAction) => call<{ ok: boolean }>("POST", "/api/game/skirmish/act", a),
+  suppliers: () => call<SuppliersView>("GET", "/api/game/suppliers"),
   dashboard: () => call<DashboardView>("GET", "/api/game/dashboard"),
   journal: () => call<{ entries: JournalEntry[] }>("GET", "/api/game/journal"),
   ranking: () =>

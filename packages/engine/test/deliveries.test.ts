@@ -12,6 +12,9 @@ import {
   hourIn,
   netWorth,
   orderUnitPrice,
+  supplierKey,
+  supplierOf,
+  supplierStandings,
   travelMinutes,
 } from "../src/index.js";
 import { deliverySettings, testDeliveries, testSettings } from "./fixture.js";
@@ -1062,5 +1065,75 @@ describe("the fattore", () => {
     const w = withFattore();
     w.advance(30 * HOUR).do({ type: "tick" });
     expect(Object.keys(w.state.deliveries ?? {})).toHaveLength(0);
+  });
+});
+
+describe("the official supplier of a city", () => {
+  const suppliers = { suppliers: { bonusBps: 1_000, minUnits: 1 } } as never;
+  const arriveAll = (w: World, playerId = "a") => {
+    const last = Math.max(...deliveriesOf(w, playerId).map((d) => d.arriveAt));
+    w.at(last - w.ctx.startAt).do({ type: "tick" });
+  };
+
+  it("ranks the week's deliverers of each good in each city, live", () => {
+    const w = world(suppliers);
+    const o = pick(w);
+    expect(error(dispatch(w, o.id))).toBe("ok");
+    expect(supplierStandings(w.state, o.city, o.resource)).toEqual([]);
+    arriveAll(w);
+    expect(supplierStandings(w.state, o.city, o.resource)).toEqual([
+      { playerId: "a", units: o.quantity },
+    ]);
+  });
+
+  it("names the week's best the official supplier at its close, and starts the ranking afresh", () => {
+    const w = world(suppliers);
+    const o = pick(w);
+    expect(error(dispatch(w, o.id))).toBe("ok");
+    arriveAll(w);
+    w.at(7 * DAY + 9 * HOUR);
+    const res = w.do({ type: "tick" });
+    expect(supplierOf(w.state, o.city, o.resource)).toBe("a");
+    const named = res.effects.events.find((e) => e.type === "suppliers_named");
+    expect(named?.data?.suppliers).toContainEqual({
+      city: o.city,
+      resource: o.resource,
+      playerId: "a",
+      units: o.quantity,
+    });
+    expect(supplierStandings(w.state, o.city, o.resource)).toEqual([]);
+  });
+
+  it("pays the official supplier more for that good in that city, the others as before", () => {
+    const w = world(suppliers);
+    const o = pick(w);
+    w.state = {
+      ...w.state,
+      suppliers: { units: {}, holders: { [supplierKey(o.city, o.resource)]: "a" } },
+    };
+    const before = w.cash("a");
+    expect(error(dispatch(w, o.id))).toBe("ok");
+    arriveAll(w);
+    const base = o.unitPrice * BigInt(o.quantity);
+    expect(w.cash("a") - before).toBe(base + base / 10n);
+    // Its holder is someone else: no premium.
+    const v = world(suppliers);
+    const p = pick(v);
+    v.state = {
+      ...v.state,
+      suppliers: { units: {}, holders: { [supplierKey(p.city, p.resource)]: "b" } },
+    };
+    const was = v.cash("a");
+    expect(error(dispatch(v, p.id))).toBe("ok");
+    arriveAll(v);
+    expect(v.cash("a") - was).toBe(p.unitPrice * BigInt(p.quantity));
+  });
+
+  it("is off without its settings", () => {
+    const w = world();
+    const o = pick(w);
+    expect(error(dispatch(w, o.id))).toBe("ok");
+    arriveAll(w);
+    expect(supplierStandings(w.state, o.city, o.resource)).toEqual([]);
   });
 });

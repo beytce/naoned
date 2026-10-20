@@ -20,6 +20,7 @@ export const SALES = new Set<LedgerReason>([
   "family_order_reward",
   "delivery",
   "decree_favour",
+  "supplier_bonus",
 ]);
 
 /** Paid by the merchant for goods, or to sell them. */

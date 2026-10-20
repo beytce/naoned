@@ -163,6 +163,7 @@ export const fr = {
         upgrade: "Améliorer",
         rialto: "Rialto",
         criee: "Criée",
+        suppliers: "Fournisseurs",
         ranking: "Classement",
         family: "Famille",
         help: "Aide",
@@ -1271,6 +1272,7 @@ export const fr = {
         guild_dividend: "Dividendes de guilde",
         guild_payout: "Trésor de guilde partagé",
         decree_favour: "Faveur d'une ville",
+        supplier_bonus: "Fournisseur officiel",
         decree_share: "Part des décrets",
         delivery: "Livraisons",
       } as Record<string, string>,
@@ -1963,6 +1965,17 @@ export const fr = {
       upgrade: (building: string, adds: string, payback: string) =>
         `Améliorez ${building} : +${adds} par heure, rentabilisé en ${payback}.`,
       upgradeGo: "Améliorer",
+    },
+    /** The official suppliers of a city. */
+    suppliers: {
+      title: (city: string) => `Fournisseurs de ${city}`,
+      help: (pct: number, min: number) =>
+        `Chaque semaine, qui livre le plus d'une marchandise dans une ville (au moins ${min}) en devient le fournisseur officiel : la ville la lui paie ${pct} % de plus toute la semaine suivante, et son blason flotte sur la carte.`,
+      none: "Personne n'a encore livré ici cette semaine.",
+      vacant: "à prendre",
+      you: "Vous",
+      units: (n: number) => `${n} livré${n > 1 ? "s" : ""}`,
+      held: (goods: string) => `Fournisseur officiel : ${goods}`,
     },
     dashboard: {
       title: "Tableau de bord",

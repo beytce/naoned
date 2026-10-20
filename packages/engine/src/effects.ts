@@ -32,6 +32,7 @@ export type LedgerReason =
   | "decree_gabelle"
   | "decree_toll"
   | "decree_favour"
+  | "supplier_bonus"
   | "decree_share"
   | "terraferma"
   // Kept for the entries of the time of the upkeep (October 2026).

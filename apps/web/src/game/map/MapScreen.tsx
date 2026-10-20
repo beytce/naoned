@@ -14,6 +14,7 @@ import type { GameProps } from "../Game.js";
 import { HouseSheet } from "../House.js";
 import { RialtoSheet } from "../Marche.js";
 import { ProfileSheet } from "../Profil.js";
+import { SuppliersSheet } from "../Suppliers.js";
 import { RankingSheet } from "../Top.js";
 import { gameApi } from "../api.js";
 import { onBack } from "../back.js";
@@ -436,6 +437,7 @@ export function MapScreen(
             orders={orders.length}
             deliverable={deliverable}
             criee={criee?.city === code}
+            supplier={view.supplies.some((s) => s.city === code) ? crest : null}
             lit={litCities.includes(code)}
             dim={cartFree && !litCities.includes(code)}
             onTap={() => goCity(code)}
@@ -768,6 +770,7 @@ export function MapScreen(
       )}
 
       <CounterSheets {...props} />
+      <SuppliersSheet {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}
       {terraView && <TerraSheets props={props} v={terraView} act={terraAct} />}
       <RialtoSheet {...props} />
@@ -944,6 +947,7 @@ function CityPanel({
         ? m.city.venice
         : "";
   const sells = !road && view.cityQuotes.some((q) => q.city === code);
+  const held = view.supplies.filter((s) => s.city === code);
   return (
     <ContextPanel
       title={props.names.city(code)}
@@ -982,6 +986,14 @@ function CityPanel({
               onClick={() => onSheet("criee")}
             />
           )}
+          {road && (
+            <ActionButton
+              icon={Icon.trophy()}
+              label={m.buttons.suppliers}
+              tone={held.length > 0 ? "gold" : "plain"}
+              onClick={() => onSheet(`suppliers:${code}`)}
+            />
+          )}
           {venice && (
             <ActionButton
               icon={Icon.rialto()}
@@ -995,6 +1007,10 @@ function CityPanel({
       extra={
         road && !freeCart && orders.length > 0 ? (
           <p className="text-center text-xs text-cream-dim">{m.city.noCart}</p>
+        ) : held.length > 0 ? (
+          <p className="text-center text-xs text-gold">
+            {fr.game.suppliers.held(held.map((s) => props.names.resource(s.resource)).join(", "))}
+          </p>
         ) : undefined
       }
     />

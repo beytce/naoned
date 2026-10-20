@@ -59,6 +59,7 @@ export function CityMarker({
   orders,
   deliverable,
   criee,
+  supplier,
   dim,
   lit,
   onTap,
@@ -71,6 +72,8 @@ export function CityMarker({
   deliverable: number;
   /** A Criée under way there. */
   criee: boolean;
+  /** The merchant's crest, where it is an official supplier this week. */
+  supplier?: CrestData | null;
   dim: boolean;
   lit: boolean;
   onTap: () => void;
@@ -100,6 +103,11 @@ export function CityMarker({
         <span className="absolute -right-0.5 top-0.5 flex gap-0.5">
           {criee && <Pill tone="vermilion">!</Pill>}
           {orders > 0 && <Pill tone={deliverable > 0 ? "gold" : "lagoon"}>{orders}</Pill>}
+        </span>
+      )}
+      {supplier && (
+        <span className="pointer-events-none absolute -left-0.5 top-0.5 drop-shadow-[0_1px_2px_rgb(0_0_0/0.8)]">
+          <Crest crest={supplier} size={22} />
         </span>
       )}
       <span className="pointer-events-none absolute left-1/2 top-[calc(100%-4px)] -translate-x-1/2 whitespace-nowrap bg-[#16263E]/80 px-1.5 font-display text-xs font-extrabold uppercase tracking-wider text-cream/95 [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">

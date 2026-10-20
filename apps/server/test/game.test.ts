@@ -234,6 +234,14 @@ describe("game API", () => {
     expect(BigInt(board.today)).toBeGreaterThan(0n);
     expect(board.lines[0].who).toBe("me");
     expect(board.lines[0].daily.at(-1)).toBe(board.today);
+    // The week's ranking of the city's suppliers counts the loaves.
+    const suppliers = (await get(cookie, "/api/game/suppliers")).json();
+    const line = suppliers.lines.find(
+      (l: { city: string; resource: string }) => l.city === d.route.split(":")[1],
+    );
+    expect(line.resource).toBe("bread");
+    expect(line.top[0]).toMatchObject({ me: true, pseudo: null });
+    expect(line.mine).toBeGreaterThan(0);
 
     const steps = await database.db.select().from(telemetry).where(sql`type = 'tutorial_step'`);
     expect(steps).toHaveLength(4);

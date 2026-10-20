@@ -35,6 +35,7 @@ import {
   dayIndex,
   isActive,
 } from "./state.js";
+import { supplyArrived } from "./suppliers.js";
 import { terraEmbargoCutBps } from "./terraWorld.js";
 import { type Tx, emit, fail, nextId, removeStock, transfer } from "./tx.js";
 import { vwap } from "./valuation.js";
@@ -844,11 +845,13 @@ function arrive(tx: Tx, d: Delivery): void {
   let amount = 0n;
   let doge = 0n;
   let left = 0;
+  const paidFor: Record<string, Deniers> = {};
   for (const l of lines) {
     const of = loadedBy[l.resource] ?? 0;
     const there = d.cargo[l.resource] ?? 0;
     const paid = of > 0 ? (l.payment * BigInt(there)) / BigInt(of) : 0n;
     amount += paid;
+    paidFor[l.resource] = (paidFor[l.resource] ?? 0n) + paid;
     if (l.kind === "doge") doge += paid;
   }
   for (const qty of Object.values(d.cargo)) left += qty;
@@ -870,6 +873,8 @@ function arrive(tx: Tx, d: Delivery): void {
     d.paid -= commission;
   }
   d.outcome = "delivered";
+  // The official supplier of the good in this city is paid more.
+  d.paid += supplyArrived(tx, d.playerId, city, d.cargo, paidFor, d.id);
   // The Terraferma's favour of the Doge: his contracts pay the Signore and his allies more.
   const dogeBps = dogeFavourBps(tx.ctx, state, d.playerId, tx.now);
   if (dogeBps > 0 && doge > 0n) {

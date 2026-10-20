@@ -2,6 +2,7 @@ import { dayStartIn } from "./clock.js";
 import { commerceInfluence } from "./house.js";
 import type { Deniers } from "./money.js";
 import { DAY_MS, type PlayerId, type WorldContext, type WorldState, seasonEnd } from "./state.js";
+import { nameSuppliers } from "./suppliers.js";
 import { turnoverOf } from "./turnover.js";
 import { type Tx, emit } from "./tx.js";
 import { netWorth } from "./valuation.js";
@@ -163,5 +164,6 @@ export function closeWeek(tx: Tx): void {
     standings: standings.map((s) => ({ playerId: s.playerId, gain: s.gain.toString() })),
   });
   commerceInfluence(tx, weekly.week, standings);
+  nameSuppliers(tx);
   tx.s.weekly = { week, start: snapshot(tx) };
 }

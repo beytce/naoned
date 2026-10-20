@@ -335,6 +335,14 @@ export interface WorldState {
   resets?: Record<PlayerId, number>;
   /** Weekly ranking: current week and each player's net worth when it started (or on joining). */
   weekly?: { week: number; start: Record<PlayerId, Deniers> };
+  /**
+   * The official suppliers: units delivered this week by `${city}|${resource}` and merchant, and
+   * the holders named at the last close.
+   */
+  suppliers?: {
+    units: Record<string, Record<PlayerId, number>>;
+    holders: Record<string, PlayerId>;
+  };
   /** The four great families: who swore allegiance to which. */
   families?: FamiliesState;
   /** The week's campaign in the Terraferma, and the decrees in force. */

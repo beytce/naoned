@@ -949,6 +949,11 @@ export const worldSettingsSchema = z.object({
       patents: z.record(z.object({ cost: positive, requires: z.array(z.string()).default([]) })),
     })
     .optional(),
+  /**
+   * The official supplier of a city: the week's best deliverer of a good to a city (at least
+   * `minUnits`) is paid `bonusBps` more for it there all the next week. Off when absent.
+   */
+  suppliers: z.object({ bonusBps: bps, minUnits: positive }).optional(),
   /** Weekly city projects; no needs turns them off. */
   projects: z
     .object({

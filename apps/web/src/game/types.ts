@@ -475,6 +475,8 @@ export interface PlayerView {
   bestUpgrade: string | null;
   /** The guide's next best actions, the most urgent first. */
   next: NextAction[];
+  /** The goods the merchant is the official supplier of this week, by city. */
+  supplies: { city: string; resource: string }[];
   market: MarketLine[];
   cityQuotes: { city: string; resource: string; unitPrice: Money }[];
   projects: Project[];
@@ -1144,3 +1146,23 @@ export type NextAction =
   | { kind: "produce"; buildingId: string }
   | { kind: "company"; projectId: string; resource: string; quantity: number }
   | { kind: "upgrade"; buildingId: string; paybackMinutes: number; addedPerHour: Money };
+
+/** The official suppliers of the cities (GET /api/game/suppliers). */
+export interface SuppliersView {
+  bonusBps: number;
+  minUnits?: number;
+  lines: {
+    city: string;
+    resource: string;
+    holder: SupplierPerson | null;
+    top: (SupplierPerson & { units: number })[];
+    mine: number;
+  }[];
+}
+
+export interface SupplierPerson {
+  id: string;
+  me: boolean;
+  pseudo: string | null;
+  crest: CrestData | null;
+}

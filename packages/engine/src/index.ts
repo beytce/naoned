@@ -115,3 +115,4 @@ export * from "./muda.js";
 export * from "./fattore.js";
 export * from "./skirmish.js";
 export * from "./advice.js";
+export * from "./suppliers.js";
