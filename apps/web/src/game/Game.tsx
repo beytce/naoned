@@ -115,6 +115,8 @@ export interface GameProps {
   familyLatestAt: number | null;
   /** The house's Influence (null in a world without the house). */
   influence: number | null;
+  /** The rival of the week (null: none). */
+  rival: GameResponse["rival"];
   /** The merchant's permanent level (honorary). */
   level: Level | null;
 }
@@ -158,6 +160,7 @@ export function Game(props: {
   const [unread, setUnread] = useState(0);
   const [familyLatestAt, setFamilyLatestAt] = useState<number | null>(null);
   const [influence, setInfluence] = useState<number | null>(null);
+  const [rival, setRival] = useState<GameResponse["rival"]>(null);
   const [level, setLevel] = useState<Level | null>(null);
   const loaded = useRef(false);
   const [welcome, setWelcome] = useState<WelcomeData | null>(null);
@@ -207,6 +210,7 @@ export function Game(props: {
       });
       setFamilyLatestAt(res.familyLatestAt ?? null);
       setInfluence(res.influence ?? null);
+      setRival(res.rival ?? null);
       setLevel(res.level ?? null);
       if (res.welcome) setWelcome(res.welcome);
       setCeremony(res.ceremony ?? null);
@@ -485,6 +489,7 @@ export function Game(props: {
     people,
     familyLatestAt,
     influence,
+    rival,
     level,
     bots,
     tab: layer === "campaign" ? "famille" : selection?.kind === "cart" ? "routes" : "comptoir",

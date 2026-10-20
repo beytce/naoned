@@ -584,6 +584,15 @@ export interface GameResponse {
   /** The house's Influence, kept from season to season (worlds with the house only). */
   influence?: number;
   welcome?: Welcome;
+  /** The rival of the week: the merchant just ahead (just behind for the leader). */
+  rival?: {
+    pseudo: string | null;
+    bot: boolean;
+    character: string | null;
+    gain: string;
+    mine: string;
+    ahead: boolean;
+  } | null;
   /** Pseudos of merchants met in the family or the order book. */
   names?: Record<string, string | null>;
   /** Which of them are computer-run houses. */

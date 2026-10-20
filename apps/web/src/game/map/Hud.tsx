@@ -87,6 +87,7 @@ export function MapHud({
   pseudo,
   crest,
   title,
+  rival,
   level,
   rank,
   seasonProgress,
@@ -125,6 +126,8 @@ export function MapHud({
   pseudo: string;
   crest: CrestData;
   title: string;
+  /** The rival of the week, a line under the rank (null: none yet). */
+  rival?: string | null;
   /** Permanent level (honorary), once known. */
   level: number | null;
   rank: number | null;
@@ -222,6 +225,15 @@ export function MapHud({
               {level !== null && <>{fr.game.merchantLevel.short(level)} · </>}
               {title} · <span className="text-gold">#{rank ?? "—"}</span>
             </button>
+            {rival && (
+              <button
+                type="button"
+                onClick={onRanking}
+                className="block max-w-[52vw] truncate text-left text-[13px] text-info lg:max-w-xs"
+              >
+                {rival}
+              </button>
+            )}
           </span>
         </div>
         <div className="flex gap-2 pl-[7px]">

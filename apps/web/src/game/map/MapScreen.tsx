@@ -77,6 +77,16 @@ export function selectionKey(s: Selection | null): string | null {
   return `${s.kind}:${s.code}`;
 }
 
+/** The rival of the week in a few words: who, and how far. */
+function rivalLine(r: GameProps["rival"]): string | null {
+  if (!r) return null;
+  const t = fr.game.rival;
+  const who = r.pseudo ?? t.someone;
+  const name = r.character ? `${who} ${t.characters[r.character] ?? ""}`.trim() : who;
+  const gap = BigInt(r.gain) - BigInt(r.mine);
+  return r.ahead ? t.chase(name, d(gap < 0n ? 0n : gap)) : t.chased(name, d(gap < 0n ? -gap : 0n));
+}
+
 /** The trip a vehicle is on now, if any. */
 function tripOf(deliveries: DeliveryView[], v: VehicleView, now: number): DeliveryView | null {
   return deliveries.find((dv) => dv.vehicleId === v.id && now < dv.backAt) ?? null;
@@ -590,6 +600,7 @@ export function MapScreen(
         title={view.standing.title.current.name}
         level={props.level?.level ?? null}
         rank={view.standing.rank}
+        rival={rivalLine(props.rival)}
         seasonProgress={seasonProgress}
         cash={view.cash}
         // Three counters on the map (recommendations of 20 October 2026): the ducats, the rank

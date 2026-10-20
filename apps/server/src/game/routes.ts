@@ -35,7 +35,7 @@ import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./sea
 import { toJson } from "./serialize.js";
 import { terraView } from "./terra.js";
 import { catalog, playerView, ranking } from "./view.js";
-import { weeklyTable } from "./weekly.js";
+import { weeklyRival, weeklyTable } from "./weekly.js";
 import { WELCOME_AFTER_MS, welcomeBack } from "./welcome.js";
 import type { GameWorld } from "./world.js";
 
@@ -337,8 +337,12 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     }
     const body = (await view(account)) as Record<string, unknown>;
     const ceremony = await pendingCeremony(db, account.id, world.ctx.settings.pass.enabled);
+    const rival = world.current.players[account.id]
+      ? await weeklyRival(db, world.id, world.ctx, world.current, world.now(), account.id)
+      : null;
     return {
       ...body,
+      rival: rival ? toJson(rival) : null,
       ...(welcome ? { welcome: toJson(welcome) } : {}),
       ...(ceremony ? { ceremony: toJson(ceremony) } : {}),
     };

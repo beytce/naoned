@@ -1686,6 +1686,19 @@ export const fr = {
       finish: "Terminer",
     },
 
+    /** The rival of the week, under the rank on the map. */
+    rival: {
+      someone: "Un marchand",
+      chase: (name: string, gap: string) => `Rival : ${name}, ${gap} devant vous`,
+      chased: (name: string, gap: string) => `Talonné par ${name}, ${gap} derrière`,
+      characters: {
+        producer: "le producteur",
+        artisan: "l'artisan",
+        builder: "le bâtisseur",
+        speculator: "le spéculateur",
+        casual: "le flâneur",
+      } as Record<string, string>,
+    },
     /**
      * What changed for this season, shown at the foot of the help: the rules change only from one
      * month to the next, and say so here (owner's decision of 20 October 2026).

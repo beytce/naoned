@@ -159,6 +159,59 @@ export async function weeklyTable(
   };
 }
 
+/**
+ * The merchant's rival of the week: the one just ahead in the weekly ranking (the one just behind
+ * for the leader), with both gains. A house of the computer says its character. Null alone.
+ */
+export async function weeklyRival(
+  db: Db,
+  worldId: string,
+  ctx: WorldContext,
+  state: WorldState,
+  now: number,
+  playerId: string,
+) {
+  const standings = weeklyStandings(ctx, state, now);
+  const at = standings.findIndex((s) => s.playerId === playerId);
+  if (at < 0 || standings.length < 2) return null;
+  // The nearest above first, then below; a retired house is skipped.
+  const order = [...standings.slice(0, at).reverse(), ...standings.slice(at + 1)].slice(0, 6);
+  const rows = await db
+    .select({
+      id: accounts.id,
+      pseudo: accounts.pseudo,
+      bot: accounts.isBot,
+      profile: players.botProfile,
+      retiredAt: players.retiredAt,
+    })
+    .from(accounts)
+    .innerJoin(players, and(eq(players.accountId, accounts.id), eq(players.worldId, worldId)))
+    .where(
+      inArray(
+        accounts.id,
+        order.map((s) => s.playerId),
+      ),
+    );
+  const info = new Map(rows.map((r) => [r.id, r]));
+  const rival = order.find((s) => {
+    const r = info.get(s.playerId);
+    return r && r.retiredAt === null;
+  });
+  const r = rival && info.get(rival.playerId);
+  if (!rival || !r) return null;
+  const mine = standings[at]?.gain ?? 0n;
+  return {
+    pseudo: r.pseudo,
+    bot: r.bot,
+    /** The house's play style, for a house of the computer. */
+    character: r.bot ? r.profile : null,
+    gain: rival.gain,
+    mine,
+    /** Whether the rival is ahead (the merchant chases) or behind (the leader is chased). */
+    ahead: standings.indexOf(rival) < at,
+  };
+}
+
 /** A player's weekly awards and podiums, for the profile. */
 export async function weeklyRecord(db: Db, worldId: string, accountId: string) {
   return db
