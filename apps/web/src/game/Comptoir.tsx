@@ -304,6 +304,15 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
             <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} />
             <span className="min-w-0">{status}</span>
           </p>
+          {/* What it earns, and whether its next level is the best placement of the ducats. */}
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 font-mono text-xs text-cream-dim">
+            {BigInt(b.economics.marginPerHour) > 0n && (
+              <span>{fr.game.economics.perHour(d(b.economics.marginPerHour))}</span>
+            )}
+            {props.view.bestUpgrade === b.id && b.economics.next && (
+              <span className="text-gold">★ {fr.game.economics.best}</span>
+            )}
+          </p>
         </div>
       </div>
 
@@ -467,6 +476,20 @@ function WorkshopSheet({
           Math.round((b.level * props.catalog.rules.levelYieldBonusBps) / 100),
         )}
       </p>
+      {b.economics.next && (
+        <p className="cut bg-night-3 px-3 py-2 text-sm">
+          <span className="text-lagoon">
+            {fr.game.economics.adds(d(b.economics.next.addedPerHour))}
+          </span>
+          <span className="text-cream-dim">
+            {" · "}
+            {fr.game.economics.payback(duration(b.economics.next.paybackMinutes * 60_000))}
+          </span>
+          {props.view.bestUpgrade === b.id && (
+            <span className="block text-gold">★ {fr.game.economics.bestLong}</span>
+          )}
+        </p>
+      )}
       <CostList cost={cost} props={props} />
       <Slab
         className="w-full"

@@ -401,6 +401,12 @@ export interface BuildingView {
   upgradeCost: Cost | null;
   /** Extractor built outside its region before the rule: produces, cannot be upgraded. */
   outOfRegion: boolean;
+  /** In figures: units and margin an hour, the next level's gain and payback. */
+  economics: {
+    unitsPerHour: number;
+    marginPerHour: Money;
+    next: { cost: Money; addedPerHour: Money; paybackMinutes: number } | null;
+  };
 }
 
 export interface MarketLine {
@@ -465,6 +471,8 @@ export interface PlayerView {
   mastery: { chosen: string | null; levels: number; unlocked: boolean };
   inventory: { resource: string; available: number; escrow: number }[];
   buildings: BuildingView[];
+  /** The upgrade that pays back first (null: none left). */
+  bestUpgrade: string | null;
   market: MarketLine[];
   cityQuotes: { city: string; resource: string; unitPrice: Money }[];
   projects: Project[];

@@ -1937,6 +1937,15 @@ export const fr = {
         `Semaine ${week} : ${rank}${rank === 1 ? "er" : "e"} sur ${of} · ${glory} Gloire · cote ${rating}`,
       replay: "Revoir la semaine",
     },
+    /** A workshop in figures (margins at reference prices). */
+    economics: {
+      perHour: (amount: string) => `≈ ${amount} de marge par heure`,
+      best: "meilleur placement",
+      bestLong:
+        "Le meilleur placement de vos ducats en ce moment : c'est l'amélioration la plus vite rentabilisée.",
+      adds: (amount: string) => `+${amount} de marge par heure`,
+      payback: (time: string) => `rentabilisé en ${time}`,
+    },
     /** The rival of the week, under the rank on the map. */
     rival: {
       someone: "Un marchand",

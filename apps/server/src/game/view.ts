@@ -6,6 +6,7 @@ import {
   type WorldState,
   allowedHere,
   bestPrice,
+  bestUpgrade,
   boardRivals,
   boardTakes,
   bookSide,
@@ -36,6 +37,7 @@ import {
   stockUnitValue,
   turnoverOf,
   vwap,
+  workshopEconomics,
 } from "@comptoirs/engine";
 import {
   activeEvent,
@@ -414,6 +416,22 @@ function buildingView(ctx: WorldContext, state: WorldState, b: Building, now: nu
       local && b.level < ctx.settings.maxBuildingLevel
         ? costForLevel(ctx, b.type, b.level + 1)
         : null,
+    /** In figures: margin an hour, the next level's gain and payback (null: none). */
+    economics: (() => {
+      const e = workshopEconomics(ctx, state, b.playerId, b, now);
+      return {
+        unitsPerHour: e.unitsPerHour,
+        marginPerHour: e.marginPerHour,
+        next:
+          e.next && local && Number.isFinite(e.next.paybackMinutes)
+            ? {
+                cost: e.next.cost,
+                addedPerHour: e.next.addedPerHour,
+                paybackMinutes: Math.round(e.next.paybackMinutes),
+              }
+            : null,
+      };
+    })(),
     /** Built before raw materials became local: still producing, no more upgrades. */
     outOfRegion: !local,
   };
@@ -552,6 +570,8 @@ export function playerView(
       escrow: state.inventories[playerId]?.[r.code]?.escrow ?? 0,
     })),
     buildings: buildings.map((b) => buildingView(ctx, state, b, now)),
+    /** The upgrade that pays back first (null: none left). */
+    bestUpgrade: bestUpgrade(ctx, state, playerId, now)?.buildingId ?? null,
     market,
     book,
     cityQuotes,
