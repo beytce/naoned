@@ -157,7 +157,7 @@ const CRAFT_BUILDING: Record<string, string> = {
 };
 const MAX_PER_TYPE = 3;
 const CITY_GOODS = ["bread", "bricks", "planks", "spices", "silk", "salt", "wine", "furs", "cloth"];
-const MATERIALS = ["bricks", "planks"];
+const MATERIALS = ["bread", "bricks", "planks"];
 const HOUR = 3_600_000;
 /** How long a merchant stays at the screen after a session starts. */
 const ONLINE_MS = 30 * 60_000;
@@ -668,10 +668,16 @@ export class Bot {
     }
   }
 
+  /**
+   * Company orders: its own share of each (the order's need per merchant), once per order, so
+   * that people find room in it too.
+   */
   private deliverProjects(s: Session): void {
+    const share = s.ctx.settings.projects.needsPerPlayer;
     for (const p of openProjects(s.state().projects, s.now)) {
+      if (p.by?.[this.id] !== undefined) continue;
       for (const res of MATERIALS) {
-        const room = (p.needs[res] ?? 0) - (p.delivered[res] ?? 0);
+        const room = Math.min(share[res] ?? 0, (p.needs[res] ?? 0) - (p.delivered[res] ?? 0));
         const have = this.available(s, res) - this.reserve(s, res);
         const price = p.unitPrice[res] ?? 0n;
         const bid = this.bestBid(s, res) ?? 0n;

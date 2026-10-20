@@ -111,6 +111,10 @@ export interface Project {
   needs: Record<ResourceCode, number>;
   delivered: Record<ResourceCode, number>;
   unitPrice: Record<ResourceCode, Deniers>;
+  /** What each merchant was paid for its deliveries: its share of the bonus. */
+  by?: Record<PlayerId, Deniers>;
+  /** When the last unit came in (the bonus paid then). */
+  completedAt?: number;
 }
 
 /**

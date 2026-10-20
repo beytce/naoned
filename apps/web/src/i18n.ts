@@ -1198,7 +1198,8 @@ export const fr = {
         trade: "Ventes au Rialto",
         market_maker_buy: "Ventes à la Dogana",
         contract_reward: "Contrats du Doge",
-        project_delivery: "Grands chantiers",
+        project_delivery: "Commandes de compagnie",
+        project_bonus: "Primes de compagnie",
         mission_reward: "Livre de compte",
         family_order_reward: "Commandes de famille",
         guild_dividend: "Dividendes de guilde",
@@ -1686,6 +1687,19 @@ export const fr = {
       finish: "Terminer",
     },
 
+    /** Company orders: a city's order filled by several merchants together. */
+    company: {
+      title: "Commande de compagnie",
+      of: (city: string) => `Commande de compagnie · ${city}`,
+      help: "Une ville commande du pain, des briques et des planches aux trois régions. Chaque unité livrée est payée 10 % au-dessus de la référence ; quand la commande est remplie, chaque marchand qui a livré touche 10 % de plus.",
+      endsIn: (time: string) => `se termine dans ${time}`,
+      filled: "Remplie : la prime est versée",
+      merchants: (n: number) => `${n} marchand${n > 1 ? "s" : ""} y ont livré`,
+      mine: (amount: string) => `Vous : ${amount}`,
+      deliver: (n: number) => `Livrer ${n}`,
+      have: (n: number) => `en stock : ${n}`,
+      none: "Aucune commande de compagnie en cours.",
+    },
     /** The rival of the week, under the rank on the map. */
     rival: {
       someone: "Un marchand",

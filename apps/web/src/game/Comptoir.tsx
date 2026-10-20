@@ -5,6 +5,7 @@ import { fr } from "../i18n.js";
 import { Badge, Label, Panel, Qty, Ribbon, Sheet, Slab, clock } from "../ui.js";
 import { BaleScreen, BaleTile } from "./Bales.js";
 import { BuildCatalog } from "./Catalog.js";
+import { CompanySheet, CompanyTile } from "./Company.js";
 import { Daily } from "./Daily.js";
 import type { GameProps } from "./Game.js";
 import { Ledger } from "./Ledger.js";
@@ -746,6 +747,7 @@ export function CounterSheets(props: GameProps) {
         </div>
       </Sheet>
       {props.sheet === "bales" && <BaleScreen {...props} />}
+      <CompanySheet {...props} />
     </>
   );
 }
@@ -767,6 +769,7 @@ export function Carnet(props: GameProps) {
 export function SeasonTiles(props: GameProps) {
   return (
     <>
+      <CompanyTile {...props} />
       <SeasonGoal {...props} />
       <MasteryTile {...props} />
       <BaleTile {...props} />

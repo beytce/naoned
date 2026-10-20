@@ -9,6 +9,7 @@ export type LedgerReason =
   | "daily_reward"
   | "daily_chest"
   | "project_delivery"
+  | "project_bonus"
   | "market_maker_buy"
   | "market_maker_sell"
   | "market_tax"

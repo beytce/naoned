@@ -68,6 +68,37 @@ describe("projects", () => {
   });
 });
 
+describe("company orders", () => {
+  it("share a bonus pro rata among those who filled the order, once it is full", () => {
+    const base = makeContext().settings.projects;
+    const w = new World(makeContext({ projects: { ...base, bonusBps: 1_000 } }));
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    w.do({ type: "join", playerId: "b", region: "lagoon" });
+    w.do({ type: "tick" });
+    const project = Object.values(w.state.projects)[0];
+    if (!project) throw new Error("no project");
+    const bricks = project.needs.bricks ?? 0;
+    const planks = project.needs.planks ?? 0;
+    w.give("a", "bricks", bricks);
+    w.give("b", "planks", planks);
+    const deliver = (playerId: string, resource: string, quantity: number) =>
+      w.do({ type: "deliverToProject", playerId, projectId: project.id, resource, quantity });
+    deliver("a", "bricks", bricks);
+    const a = w.cash("a");
+    const b = w.cash("b");
+    // Not full yet: no bonus.
+    deliver("b", "planks", planks - 1);
+    expect(w.cash("a")).toBe(a);
+    deliver("b", "planks", 1);
+    const done = w.state.projects[project.id];
+    const value = (r: string, q: number) => (done?.unitPrice[r] ?? 0n) * BigInt(q);
+    // 10 % of what each delivered, on top.
+    expect(w.cash("a") - a).toBe(value("bricks", bricks) / 10n);
+    expect(w.cash("b") - b).toBe(value("planks", planks) + value("planks", planks) / 10n);
+    expect(done?.completedAt).toBe(w.now);
+  });
+});
+
 describe("valuation", () => {
   it("values stock at the lower of reference and recent average price", () => {
     const w = new World();

@@ -555,7 +555,12 @@ export function playerView(
     market,
     book,
     cityQuotes,
-    projects: openProjects(state.projects, now),
+    // Company orders: what this merchant delivered and how many took part, not who.
+    projects: openProjects(state.projects, now).map(({ by, ...p }) => ({
+      ...p,
+      mine: by?.[playerId] ?? 0n,
+      merchants: Object.keys(by ?? {}).length,
+    })),
     contracts,
     families: familiesView(ctx, state, playerId, now),
     gazette: { current: describe(activeEvent(ctx, now)), next: describe(nextEvent(ctx, now)) },

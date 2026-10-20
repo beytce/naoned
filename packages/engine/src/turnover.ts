@@ -15,6 +15,7 @@ const SALES = new Set<LedgerReason>([
   "city_sale",
   "criee_sale",
   "project_delivery",
+  "project_bonus",
   "contract_reward",
   "family_order_reward",
   "delivery",

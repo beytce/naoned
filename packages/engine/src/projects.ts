@@ -83,5 +83,28 @@ export function deliverToProject(
     projectId,
   );
   project.delivered[resource] = (project.delivered[resource] ?? 0) + quantity;
+  project.by = {
+    ...project.by,
+    [playerId]: (project.by?.[playerId] ?? 0n) + price * BigInt(quantity),
+  };
   emit(tx, "project_delivery", playerId, { project: projectId, resource, quantity });
+  const full = Object.entries(project.needs).every(([r, n]) => (project.delivered[r] ?? 0) >= n);
+  if (full && project.completedAt === undefined) completeProject(tx, project);
+}
+
+/** The order filled: each merchant who delivered gets the bonus on what he was paid. */
+function completeProject(tx: Tx, project: Project): void {
+  project.completedAt = tx.now;
+  const bonusBps = tx.ctx.settings.projects.bonusBps;
+  const shares = Object.entries(project.by ?? {}).sort(([a], [b]) => (a < b ? -1 : 1));
+  for (const [playerId, paid] of shares) {
+    const bonus = applyBpsFloor(paid, bonusBps);
+    if (bonus <= 0n) continue;
+    transfer(tx, SOURCE_ACCOUNT, cashAccount(playerId), bonus, "project_bonus", project.id);
+  }
+  emit(tx, "project_completed", undefined, {
+    project: project.id,
+    city: project.city,
+    merchants: shares.length,
+  });
 }

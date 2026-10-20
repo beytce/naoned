@@ -54,6 +54,7 @@ const CREATED = [
   "daily_reward",
   "daily_chest",
   "project_delivery",
+  "project_bonus",
   "market_maker_buy",
   "contract_reward",
   "family_order_reward",

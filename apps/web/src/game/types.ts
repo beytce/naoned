@@ -396,6 +396,12 @@ export interface Project {
   needs: Record<string, number>;
   delivered: Record<string, number>;
   unitPrice: Record<string, Money>;
+  /** What the merchant was paid for his deliveries to it. */
+  mine: Money;
+  /** Merchants who delivered to it. */
+  merchants: number;
+  /** When it was filled (the bonus paid then). */
+  completedAt?: number;
 }
 
 export interface PlayerView {

@@ -848,8 +848,13 @@ export const worldSettingsSchema = z.object({
       durationDays: positive,
       needsPerPlayer: z.record(qty),
       premiumBps: bps,
+      /**
+       * Company orders: once every need is filled, each merchant who delivered gets this share
+       * of what he was paid on top, from the city.
+       */
+      bonusBps: bps.default(0),
     })
-    .default({ intervalDays: 7, durationDays: 7, needsPerPlayer: {}, premiumBps: 0 }),
+    .default({ intervalDays: 7, durationDays: 7, needsPerPlayer: {}, premiumBps: 0, bonusBps: 0 }),
   valuation: z.object({
     vwapDays: positive,
     minVolume: qty,

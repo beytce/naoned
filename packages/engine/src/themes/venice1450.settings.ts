@@ -995,8 +995,16 @@ export const venice1450Settings: WorldSettingsInput = {
       gilded_name: { cost: 40, requires: [] },
     },
   },
-  // No city projects: deliveries by road are the cities' demand.
-  projects: { intervalDays: 7, durationDays: 7, needsPerPlayer: {}, premiumBps: 0 },
+  // Company orders (recommendations of 20 October 2026): every two days a city orders bread,
+  // bricks and planks from the three regions together, paid 10 % above the reference on
+  // delivery, and 10 % more to everyone who delivered once the order is full.
+  projects: {
+    intervalDays: 2,
+    durationDays: 2,
+    needsPerPlayer: { bread: 4, bricks: 3, planks: 3 },
+    premiumBps: 1_000,
+    bonusBps: 1_000,
+  },
   valuation: {
     vwapDays: 7,
     minVolume: 200,
