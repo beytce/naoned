@@ -746,7 +746,8 @@ export function MapScreen(
           if (campaign || terra) props.setLayer("trade");
           props.setSheet("workshops");
         }}
-        onHelp={props.openHelp}
+        // On the Terraferma, the help is its guide with its diagrams.
+        onHelp={terra ? props.openTerraGuide : props.openHelp}
       />
       {panel}
       {terra && !skirmishOn && <TerraIntro onGuide={props.openTerraGuide} />}
