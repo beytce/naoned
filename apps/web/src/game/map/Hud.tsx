@@ -273,7 +273,8 @@ export function MapHud({
             leaving={tipLeaving}
           />
         )}
-        {!right && bread && (
+        {/* The bread only when it runs short: its steady use is no news. */}
+        {!right && bread && bread.state !== "ok" && (
           <HudCounter
             label={fr.game.rations.hud(bread.stock, bread.perDay)}
             side={

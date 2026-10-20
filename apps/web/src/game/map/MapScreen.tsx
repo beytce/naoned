@@ -592,7 +592,9 @@ export function MapScreen(
         rank={view.standing.rank}
         seasonProgress={seasonProgress}
         cash={view.cash}
-        influence={open.house ? props.influence : null}
+        // Three counters on the map (recommendations of 20 October 2026): the ducats, the rank
+        // and the carts; the Influence lives in the Profil.
+        influence={null}
         tips={hudTips(props)}
         bread={breadOf(view, now)}
         fleet={
