@@ -233,6 +233,16 @@ export const venice1450Settings: WorldSettingsInput = {
     // The battle hour (recommendations of 20 October 2026): from 20 h to 21 h the fronts march a
     // step every 3 minutes, ten times as fast, for those who come to lead them.
     battle: { from: 20, to: 21, stepMinutes: 3, warnMinutes: 15 },
+    // Soldiers and peasants: the plains grow wheat, the hills clay, the mountains wood, for the
+    // counter; two cities or more joined to the capital earn 3 d each an open hour.
+    peasants: {
+      yields: {
+        plain: { resource: "wheat", perCells: 4 },
+        hill: { resource: "clay", perCells: 4 },
+        mountain: { resource: "wood", perCells: 3 },
+      },
+      routeDucats: 300,
+    },
     terrains: {
       plain: { defenseBps: 10_000, militia: 8 },
       hill: { defenseBps: 13_000, militia: 12 },

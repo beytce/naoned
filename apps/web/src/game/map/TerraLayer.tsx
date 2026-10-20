@@ -1031,6 +1031,7 @@ export function TerraPanel({
                     v.openHours.to,
                   )}
             </p>
+            {v.rules.peasants && <PeasantsSlider v={v} props={props} act={act} />}
             {built && <p>{t().mine.built[built.kind]}</p>}
             {traitor && (
               <p className="text-vermilion">{t().mine.traitor(clock(me.traitorUntil - now))}</p>
@@ -1324,5 +1325,63 @@ export function TerraSheets({
         </Slab>
       </div>
     </Sheet>
+  );
+}
+
+/**
+ * Soldiers or peasants: the merchant's people under arms recruit, those on the land grow its
+ * goods for the counter and keep the city routes; a slider, sent when let go.
+ */
+function PeasantsSlider({
+  v,
+  props,
+  act,
+}: {
+  v: TerraView;
+  props: GameProps;
+  act: (a: TerraAction) => Promise<boolean>;
+}) {
+  const me = v.me;
+  const [bps, setBps] = useState(me?.peasantsBps ?? 5_000);
+  useEffect(() => setBps(me?.peasantsBps ?? 5_000), [me?.peasantsBps]);
+  if (!me) return null;
+  const goods = Object.entries(me.yields.goods)
+    .filter(([, n]) => n > 0)
+    .map(
+      ([r, n]) =>
+        `${(n / 100).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} ${props.names.resource(r).toLowerCase()}`,
+    )
+    .join(", ");
+  const send = () => {
+    if (bps !== me.peasantsBps) void act({ type: "terraPeasants", shareBps: bps });
+  };
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between font-mono text-xs">
+        <span className="text-vermilion">
+          ⚔ {t().peasants.soldiers(100 - Math.round(bps / 100))}
+        </span>
+        <span className="text-lagoon">{t().peasants.peasants(Math.round(bps / 100))} ✿</span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={10_000}
+        step={1_000}
+        value={bps}
+        onChange={(e) => setBps(Number(e.target.value))}
+        onPointerUp={send}
+        onKeyUp={send}
+        onBlur={send}
+        aria-label={t().peasants.label}
+        className="w-full accent-lagoon"
+      />
+      <p>
+        {t().peasants.yield(
+          goods || t().peasants.nothing,
+          BigInt(me.yields.route) > 0n ? d(me.yields.route) : null,
+        )}
+      </p>
+    </div>
   );
 }

@@ -18,6 +18,7 @@ import {
   raiseCap,
   recallFront,
   recruitPerHour,
+  setPeasants,
 } from "../src/index.js";
 import { testTerraferma } from "./fixture.js";
 import { HOUR, MIN, makeContext } from "./helpers.js";
@@ -687,5 +688,40 @@ describe("the battle hour", () => {
     expect(fight.cells).toBeGreaterThanOrEqual(calm.cells * 5);
     // Glory counts land held, step by economic step: the same number of steps.
     expect(fight.glory).toBeGreaterThan(0);
+  });
+});
+
+describe("soldiers and peasants", () => {
+  const peasants = {
+    yields: { plain: { resource: "wheat", perCells: 2 }, hill: { resource: "clay", perCells: 2 } },
+    routeDucats: 100,
+  };
+  const recruit = { base: 6, perCell: 1, perCity: 3 };
+
+  it("recruits more with more soldiers, harvests more with more peasants", () => {
+    const cfg = config({ peasants, troops: { ...testTerraferma.troops, recruit } });
+    const s = newTerra(cfg, "seed", 10, START);
+    placeOnTerra(s, cfg, "a", freeCell(s), START);
+    const half = recruitPerHour(s, cfg, "a");
+    setPeasants(s, "a", 0);
+    expect(recruitPerHour(s, cfg, "a")).toBe(half * 2);
+    setPeasants(s, "a", 10_000);
+    expect(recruitPerHour(s, cfg, "a")).toBe(0);
+    advanceTerra(s, cfg, START + 2 * HOUR);
+    const owed = s.players.a?.harvest ?? {};
+    expect(Object.values(owed).reduce((n, q) => n + q, 0)).toBeGreaterThan(0);
+  });
+
+  it("pays a route between two of the merchant's cities joined by its own land", () => {
+    const cfg = config({ peasants });
+    const s = newTerra(cfg, "seed", 10, START);
+    placeOnTerra(s, cfg, "a", freeCell(s), START);
+    // Give it a path to two cities.
+    const cities = s.map.city.map((c, i) => (c ? i : -1)).filter((i) => i >= 0);
+    for (let i = 0; i < s.owner.length; i++) if (s.map.land[i]) s.owner[i] = "a";
+    expect(cities.length).toBeGreaterThanOrEqual(2);
+    advanceTerra(s, cfg, START + HOUR);
+    // 100 d an hour a city on the route, counted step by step (the land taken closes the week).
+    expect(s.players.a?.routeOwed ?? 0n).toBe((BigInt(cities.length) * 100n * 10n) / 60n);
   });
 });

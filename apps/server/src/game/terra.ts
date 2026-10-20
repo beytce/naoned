@@ -14,8 +14,10 @@ import {
   hourIn,
   hourWithin,
   inBattle,
+  peasantsOf,
   recruitPerHour,
   terraOn,
+  yieldPerHour,
 } from "@comptoirs/engine";
 
 /**
@@ -184,6 +186,9 @@ export function terraView(
           capital: me.capital ?? null,
           protectedUntil: me.protectedUntil,
           aggressor: me.aggressor ?? false,
+          peasantsBps: peasantsOf(s, playerId),
+          /** What the land yields an open hour: goods in hundredths, route ducats in deniers. */
+          yields: yieldPerHour(s, cfg, playerId),
           traitorUntil: me.traitorUntil ?? 0,
           eliminatedAt: me.eliminatedAt ?? null,
           recruit: recruitClock(s, cfg, playerId, me.troops, capOf(s, cfg, playerId)),
@@ -239,6 +244,8 @@ export function terraView(
       capRaise: cfg.capRaise.amount,
       protectionHours: cfg.start.protectionHours,
       peacefulSafe: cfg.fronts.peacefulSafe && !cfg.fronts.capitalSafe,
+      /** Soldiers and peasants: whether the slider is played. */
+      peasants: !!cfg.peasants,
       /** Minutes a front takes for a cell of free land, and of a rival's. */
       neutralMinutes: cfg.stepMinutes * cfg.fronts.neutralEverySteps,
       cellMinutes: Math.max(1, Math.floor(cfg.stepMinutes / cfg.fronts.cellsPerStep)),

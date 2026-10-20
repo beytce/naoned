@@ -6,6 +6,7 @@ import {
   MINUTE_MS,
   type PlayerId,
   SINK_ACCOUNT,
+  SOURCE_ACCOUNT,
   type WorldContext,
   type WorldState,
   activePlayerCount,
@@ -30,8 +31,9 @@ import {
   raiseCap,
   recallFront,
   sendTroops,
+  setPeasants,
 } from "./terraferma.js";
-import { type Tx, balance, emit, fail, transfer } from "./tx.js";
+import { type Tx, addStock, balance, emit, fail, transfer } from "./tx.js";
 import { seasonWeeks, weekIndex } from "./weekly.js";
 
 /**
@@ -85,6 +87,7 @@ export function advanceTerraWorld(tx: Tx): TerraState | null {
   const map = terra(tx, cfg);
   const end = campaignWeekEnd(tx.ctx, tx.s.terra?.week ?? 0);
   advanceTerra(map, cfg, Math.min(tx.now, end));
+  payHarvests(tx, map);
   warnBattle(tx, cfg, map);
   if (map.closed && !map.closedSeen) {
     // Won by conquest before the week's end: the close is paid at once.
@@ -92,6 +95,31 @@ export function advanceTerraWorld(tx: Tx): TerraState | null {
     payClose(tx, cfg, tx.s.terra?.week ?? 0, map);
   }
   return map;
+}
+
+/** The land's whole units go into the merchants' stock, the routes' ducats into their purse. */
+function payHarvests(tx: Tx, map: TerraState): void {
+  for (const [id, p] of Object.entries(map.players).sort(([a], [b]) => (a < b ? -1 : 1))) {
+    if (id === MILAN || !tx.s.players[id]) continue;
+    for (const [resource, owed] of Object.entries(p.harvest ?? {})) {
+      const whole = Math.floor(owed / 10_000);
+      if (whole <= 0) continue;
+      addStock(tx, id, resource, whole, "terraferma_harvest", `terra:${map.startAt}`);
+      p.harvest = { ...p.harvest, [resource]: owed - whole * 10_000 };
+    }
+    const route = p.routeOwed ?? 0n;
+    if (route > 0n) {
+      transfer(
+        tx,
+        SOURCE_ACCOUNT,
+        cashAccount(id),
+        route,
+        "terraferma_route",
+        `terra:${map.startAt}`,
+      );
+      p.routeOwed = 0n;
+    }
+  }
 }
 
 /** A quarter of an hour before the battle hour, the merchants on the map are told, once. */
@@ -198,7 +226,8 @@ export type TerraCommand =
   | { type: "terraSend"; playerId: PlayerId; to: PlayerId; count: number }
   | { type: "terraBuild"; playerId: PlayerId; cell: number; kind: TerraBuilding }
   | { type: "terraRaise"; playerId: PlayerId }
-  | { type: "terraDecree"; playerId: PlayerId; code: string; target?: string };
+  | { type: "terraDecree"; playerId: PlayerId; code: string; target?: string }
+  | { type: "terraPeasants"; playerId: PlayerId; shareBps: number };
 
 /** Ducats for the Terraferma: checked first, then destroyed. */
 function pay(tx: Tx, playerId: PlayerId, price: bigint, ref: string): void {
@@ -260,6 +289,10 @@ export function applyTerra(tx: Tx, cmd: TerraCommand): void {
       pay(tx, id, price, "terra:cap");
       break;
     }
+    case "terraPeasants":
+      if (!cfg.peasants) fail("terra_off");
+      setPeasants(map, id, cmd.shareBps);
+      break;
     case "terraDecree": {
       const inForce = tx.s.terraDecree;
       if (inForce && inForce.week === weekIndex(tx.ctx, now) && inForce.code === cmd.code)

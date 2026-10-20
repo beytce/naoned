@@ -871,7 +871,8 @@ export type TerraAction =
   | { type: "terraSend"; to: string; count: number }
   | { type: "terraBuild"; cell: number; kind: "rocca" | "borgo" }
   | { type: "terraRaise" }
-  | { type: "terraDecree"; code: string; target?: string };
+  | { type: "terraDecree"; code: string; target?: string }
+  | { type: "terraPeasants"; shareBps: number };
 
 /**
  * The Terraferma's week as the merchant sees it (GET /api/game/terra). Holders are named by
@@ -938,6 +939,10 @@ export interface TerraView {
     protectedUntil: number;
     /** Attacked a merchant this week: its capital may fall. */
     aggressor: boolean;
+    /** Share of its people working the land (bps). */
+    peasantsBps: number;
+    /** What its land yields an open hour: goods in hundredths of a unit, routes in deniers. */
+    yields: { goods: Record<string, number>; route: Money };
     traitorUntil: number;
     /** When it lost its last cell: out of the week. */
     eliminatedAt: number | null;
@@ -978,6 +983,8 @@ export interface TerraView {
     capRaise: number;
     /** The capital of a merchant who attacked no merchant this week is never taken. */
     peacefulSafe: boolean;
+    /** Soldiers and peasants: the slider is played. */
+    peasants: boolean;
     /** Hours a merchant who sets down is safe from the others (0: none). */
     protectionHours: number;
     /** Minutes a front takes for a cell of free land, and of a rival's. */

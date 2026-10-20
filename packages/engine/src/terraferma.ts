@@ -51,6 +51,12 @@ export interface TerraPlayer {
   traitorUntil?: number;
   /** Launched a front at another merchant this week: its capital may fall (`peacefulSafe`). */
   aggressor?: boolean;
+  /** Share of its people working the land rather than under arms (bps; absent: half). */
+  peasantsBps?: number;
+  /** Goods its land has grown, not yet in its stock, in 1/10 000 of a unit. */
+  harvest?: Record<string, number>;
+  /** Ducats its city routes have earned, not yet paid (deniers). */
+  routeOwed?: bigint;
   /** When it lost its last cell: out of the week. */
   eliminatedAt?: number;
 }
@@ -398,7 +404,79 @@ export function recruitPerHour(s: TerraState, cfg: TerraConfig, id: string): num
   const r = cfg.troops.recruit;
   if (!r) return 0;
   const cells = cellsOf(s, id);
-  return r.base + r.perCell * cells.length + r.perCity * cells.filter((i) => s.map.city[i]).length;
+  const base =
+    r.base + r.perCell * cells.length + r.perCity * cells.filter((i) => s.map.city[i]).length;
+  // With peasants: soldiers recruit in proportion, twice as many when nobody works the land.
+  if (!cfg.peasants) return base;
+  return Math.floor((base * (10_000 - peasantsOf(s, id)) * 2) / 10_000);
+}
+
+/** The share of a merchant's people working the land (bps). */
+export function peasantsOf(s: TerraState, id: string): number {
+  return s.players[id]?.peasantsBps ?? 5_000;
+}
+
+/**
+ * What a merchant's land yields an open hour at its current slider: goods in hundredths of a
+ * unit, and the routes' ducats (deniers).
+ */
+export function yieldPerHour(
+  s: TerraState,
+  cfg: TerraConfig,
+  id: string,
+): { goods: Record<string, number>; route: bigint } {
+  const pc = cfg.peasants;
+  const p = s.players[id];
+  if (!pc || !p) return { goods: {}, route: 0n };
+  const cells = cellsOf(s, id);
+  const share = peasantsOf(s, id);
+  const goods: Record<string, number> = {};
+  for (const [terrain, y] of Object.entries(pc.yields)) {
+    const n = cells.filter((i) => s.map.terrain[i] === terrain).length;
+    if (n > 0)
+      goods[y.resource] =
+        (goods[y.resource] ?? 0) + Math.floor((n * 100 * share * 2) / (y.perCells * 10_000));
+  }
+  let route = 0n;
+  if (p.capital !== undefined && s.owner[p.capital] === id) {
+    const joined = [...component(s, id, p.capital)].filter((i) => s.map.city[i]).length;
+    if (joined >= 2) route = pc.routeDucats * BigInt(joined);
+  }
+  return { goods, route };
+}
+
+/** The merchant moves the slider between soldiers and peasants. */
+export function setPeasants(s: TerraState, id: string, bps: number): void {
+  const p = s.players[id];
+  if (!p || id === MILAN) fail("not_placed");
+  if (!Number.isInteger(bps) || bps < 0 || bps > 10_000) fail("invalid_quantity");
+  p.peasantsBps = bps;
+}
+
+/**
+ * The land's yield and the city routes, for an economic step of `minutes`: each terrain grows its
+ * good (one unit per `perCells` cells an hour, at half peasants, more with more), and the cities
+ * joined to the capital by the merchant's own land, two at least, earn their ducats.
+ */
+function harvestStep(s: TerraState, cfg: TerraConfig, minutes: number): void {
+  const pc = cfg.peasants;
+  if (!pc) return;
+  for (const [id, p] of Object.entries(s.players)) {
+    if (id === MILAN || p.eliminatedAt !== undefined) continue;
+    const cells = cellsOf(s, id);
+    const share = peasantsOf(s, id);
+    for (const [terrain, y] of Object.entries(pc.yields)) {
+      const n = cells.filter((i) => s.map.terrain[i] === terrain).length;
+      if (n === 0) continue;
+      const grown = Math.floor((n * 10_000 * minutes * share * 2) / (y.perCells * 60 * 10_000));
+      p.harvest = { ...p.harvest, [y.resource]: (p.harvest?.[y.resource] ?? 0) + grown };
+    }
+    if (pc.routeDucats > 0n && p.capital !== undefined && s.owner[p.capital] === id) {
+      const joined = [...component(s, id, p.capital)].filter((i) => s.map.city[i]).length;
+      if (joined >= 2)
+        p.routeOwed = (p.routeOwed ?? 0n) + (pc.routeDucats * BigInt(joined * minutes)) / 60n;
+    }
+  }
 }
 
 export function terraBuildingsOf(s: TerraState, id: string, kind?: TerraBuilding): number[] {
@@ -865,6 +943,8 @@ function step(s: TerraState, cfg: TerraConfig, at: number, fronts = true): void 
     s.hourSteps = 0;
     fallPockets(s, cfg, at);
   }
+  // The land's yield and the city routes.
+  harvestStep(s, cfg, cfg.stepMinutes);
   // Glory for the land held.
   for (const [id, p] of Object.entries(s.players)) {
     if (id === MILAN) continue;

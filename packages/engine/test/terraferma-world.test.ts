@@ -240,3 +240,18 @@ describe("the battle hour in the world", () => {
     expect(again.effects.events.some((e) => e.type === "terra_battle_soon")).toBe(false);
   });
 });
+
+describe("the land's yield in the world", () => {
+  it("brings the harvest into the stock and the routes' ducats into the purse, through the books", () => {
+    const w = live({
+      peasants: { yields: { plain: { resource: "wheat", perCells: 1 } }, routeDucats: 0 },
+    });
+    joined(w, "a");
+    const before = w.state.inventories.a?.wheat?.available ?? 0;
+    expect(act(w, { type: "terraPeasants", playerId: "a", shareBps: 10_000 }).ok).toBe(true);
+    w.advance(3 * HOUR).do({ type: "tick" });
+    const after = w.state.inventories.a?.wheat?.available ?? 0;
+    expect(after).toBeGreaterThan(before);
+    expect(act(w, { type: "terraPeasants", playerId: "a", shareBps: 10_001 }).ok).toBe(false);
+  });
+});

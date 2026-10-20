@@ -61,6 +61,7 @@ const CREATED = [
   "mission_reward",
   "delivery",
   "decree_favour",
+  "terraferma_route",
 ];
 const DESTROYED = [
   "market_tax",

@@ -311,6 +311,17 @@ export const worldSettingsSchema = z.object({
       /** Length of a step of resolution, in minutes. */
       stepMinutes: positive,
       /**
+       * Soldiers and peasants: a slider per merchant between recruits and the land's yield. Each
+       * terrain grows a good, one unit per `perCells` cells an hour at half peasants; cities
+       * joined to the capital by one's own land, two at least, earn `routeDucats` each an hour.
+       */
+      peasants: z
+        .object({
+          yields: z.record(z.object({ resource: z.string(), perCells: positive })),
+          routeDucats: money,
+        })
+        .optional(),
+      /**
        * The battle hour: from `from` to `to` (Paris), the fronts march a step every
        * `stepMinutes` (troops, glory and Milan keep their pace); merchants on the map are warned
        * `warnMinutes` before.

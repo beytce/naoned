@@ -487,6 +487,14 @@ export const fr = {
       eliminated: "Éliminé cette semaine",
       placing: (time: string) => `Placement · la guerre dans ${time}`,
       truce: (time: string) => `Trêve · la guerre dans ${time}`,
+      peasants: {
+        label: "Soldats ou paysans",
+        soldiers: (pct: number) => `${pct} % soldats`,
+        peasants: (pct: number) => `${pct} % paysans`,
+        nothing: "rien",
+        yield: (goods: string, route: string | null) =>
+          `Vos terres donnent par heure ouverte : ${goods}${route ? ` ; routes entre vos villes : ${route}` : ""}.`,
+      },
       battle: {
         on: (to: number) => `⚔ Bataille : fronts ×10 jusqu'à ${to} h`,
         at: (from: number) => `Bataille chaque soir à ${from} h`,
@@ -1815,6 +1823,7 @@ export const fr = {
         "Commandes de compagnie : une commande d'une ville remplie à plusieurs, avec une prime pour tous.",
         "Le fattore fait partir vos charrettes oubliées au comptoir, deux fois par jour.",
         "Terraferme : l'heure de bataille, chaque soir de 20 h à 21 h, les fronts avancent dix fois plus vite.",
+        "Terraferme : soldats ou paysans. Vos terres donnent du blé, de l'argile et du bois à votre comptoir, et les routes entre vos villes des ducats.",
         "La carte n'affiche plus que les ducats, le rang et les charrettes ; le pain quand il manque.",
         "Sept jours de cours pour chaque marchandise du Rialto, face à sa référence.",
         "Le Journal du Rialto, dans les avis : les gros échanges et les conquêtes du jour.",

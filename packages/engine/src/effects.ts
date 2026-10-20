@@ -11,6 +11,7 @@ export type LedgerReason =
   | "project_delivery"
   | "project_bonus"
   | "fattore"
+  | "terraferma_route"
   | "market_maker_buy"
   | "market_maker_sell"
   | "market_tax"
@@ -91,7 +92,8 @@ export type StockReason =
   | "delivery"
   | "bandits"
   | "booty"
-  | "bale_gift";
+  | "bale_gift"
+  | "terraferma_harvest";
 
 /** Change of a player's total holding (available + escrow) of one resource. */
 export interface StockMovement {
