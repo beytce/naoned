@@ -7,6 +7,8 @@ import {
   Rng,
   botsWanted,
   cellsOf,
+  hexDistance,
+  hexNeighbors,
   parseSettings,
 } from "../src/index.js";
 import { deliverySettings, testSettings, testTerraferma } from "./fixture.js";
@@ -202,5 +204,64 @@ describe("bots on the Terraferma", () => {
     // Troops kept at home.
     expect(map?.players[bot.id]?.troops).toBeGreaterThan(0);
     expect(map && cellsOf(map, bot.id).length).toBeGreaterThan(1);
+  });
+
+  it("march on a rival as soon as one front holds the free land, without waiting for it to run out", () => {
+    const w = new World(
+      makeContext({
+        terraferma: {
+          ...testTerraferma,
+          live: true,
+          start: { ...testTerraferma.start, troops: 90, protectionHours: 0, placementHours: 0 },
+        },
+      }),
+    );
+    const bot = new Bot("b1", PROFILES.producer, "terraferma", w.now);
+    w.do({ type: "join", playerId: bot.id, region: bot.region });
+    w.do({ type: "join", playerId: "rival", region: "terraferma" });
+    w.do({ type: "tick" });
+    const first = w.state.terra?.map;
+    if (!first) throw new Error("no map");
+    const home = first.owner.findIndex(
+      (o, i) =>
+        o === null &&
+        hexNeighbors(first.map, i).filter((n) => first.map.land[n]).length === 6 &&
+        first.owner.every((h, j) => h === null || hexDistance(first.map, i, j) >= 3),
+    );
+    w.do({ type: "terraPlace", playerId: bot.id, cell: home });
+    const after = w.state.terra?.map;
+    if (!after) throw new Error("no map");
+    const away = after.owner.findIndex(
+      (o, i) =>
+        o === null &&
+        after.map.land[i] &&
+        after.owner.every((h, j) => h === null || hexDistance(after.map, i, j) >= 3),
+    );
+    w.do({ type: "terraPlace", playerId: "rival", cell: away });
+    // The rival's land reaches the bot's border (a cell it took on its way).
+    const map = w.state.terra?.map;
+    if (!map) throw new Error("no map");
+    const edge = hexNeighbors(map.map, home).flatMap((n) =>
+      hexNeighbors(map.map, n).filter((m) => map.map.land[m] && map.owner[m] === null),
+    )[0];
+    if (edge === undefined) throw new Error("no edge");
+    const state = structuredClone(w.state);
+    if (state.terra) state.terra.map.owner[edge] = "rival";
+    w.state = state;
+    bot.play({
+      ctx: w.ctx,
+      state: () => w.state,
+      now: w.now,
+      market: new MarketView(
+        w.ctx,
+        () => w.state,
+        () => w.now,
+      ),
+      rng: new Rng(1),
+      act: (cmd) => w.try(cmd).ok,
+    });
+    const fronts = w.state.terra?.map.fronts.filter((f) => f.owner === bot.id) ?? [];
+    expect(fronts.some((f) => f.against === null)).toBe(true);
+    expect(fronts.some((f) => f.against === "rival")).toBe(true);
   });
 });

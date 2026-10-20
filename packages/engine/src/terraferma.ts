@@ -506,7 +506,11 @@ export function placeOnTerra(
   s.players[id] = {
     troops: cfg.start.troops + cfg.start.troopsPerDay * day,
     placedAt: now,
-    protectedUntil: Math.max(placementEnd, now + cfg.start.protectionHours * 3_600_000),
+    protectedUntil: Math.max(
+      placementEnd,
+      s.startAt + cfg.start.truceHours * 3_600_000,
+      now + cfg.start.protectionHours * 3_600_000,
+    ),
     glory: 0,
     capital: cell,
   };

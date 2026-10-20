@@ -371,7 +371,10 @@ export class Bot {
     }
   }
 
-  /** A front at free land, else at the thinnest neighbour, else at Milan; whether it left. */
+  /**
+   * A front at free land, else at the thinnest neighbour, else at Milan; with a front already on
+   * free land, the thinnest neighbour first. Whether it left.
+   */
   private launchFront(
     s: Session,
     cfg: TerraConfig,
@@ -393,12 +396,14 @@ export class Bot {
       if (!hexNeighbors(after.map, i).some((n) => after.owner[n] === id)) continue;
       targets.set(o, [...(targets.get(o) ?? []), i]);
     }
-    // Free land takes several fronts; a merchant or Milan one at a time.
+    // Free land takes several fronts; a merchant or Milan one at a time. Once a front holds the
+    // free land, the next goes at a rival first: the war starts on the first day, not the fourth.
     const attacked = new Set<string | null>(mine.map((f) => f.against).filter((o) => o !== null));
     const density = (o: string) =>
       (after.players[o]?.troops ?? 0) / Math.max(1, cellsOf(after, o).length);
-    const rank = (o: string | null) => (o === null ? 0 : o === MILAN ? 2 : 1);
-    const against = [...targets.keys()]
+    const onFree = mine.some((f) => f.against === null);
+    const rank = (o: string | null) => (o === null ? (onFree ? 1.5 : 0) : o === MILAN ? 2 : 1);
+    const order = [...targets.keys()]
       .filter((o) => !attacked.has(o) && (o === null || o === MILAN || !allies.includes(o)))
       .filter(
         (o) =>
@@ -406,13 +411,16 @@ export class Bot {
           o === MILAN ||
           (self.protectedUntil <= s.now && (after.players[o]?.protectedUntil ?? 0) <= s.now),
       )
-      .sort((a, b) => rank(a) - rank(b) || (a && b ? density(a) - density(b) : 0))[0];
-    if (against === undefined) return false;
-    const aim = (targets.get(against) ?? []).sort(
-      (a, b) => cellCost(after, cfg, a) - cellCost(after, cfg, b) || a - b,
-    )[0];
+      .sort((a, b) => rank(a) - rank(b) || (a && b ? density(a) - density(b) : 0));
     const share = this.profile.name === "casual" ? 7_000 : 5_000;
-    return aim !== undefined && act({ type: "terraFront", aim, shareBps: share });
+    // A rival too strong for the share sent: the next one in the order.
+    for (const against of order) {
+      const aim = (targets.get(against) ?? []).sort(
+        (a, b) => cellCost(after, cfg, a) - cellCost(after, cfg, b) || a - b,
+      )[0];
+      if (aim !== undefined && act({ type: "terraFront", aim, shareBps: share })) return true;
+    }
+    return false;
   }
 
   /**

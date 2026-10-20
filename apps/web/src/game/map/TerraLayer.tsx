@@ -53,10 +53,16 @@ export function useTerra(shown: boolean): {
   useEffect(() => {
     refresh();
     // Shown: the fronts move every few minutes; hidden: only to know the door is there.
-    const id = setInterval(refresh, shown ? 20_000 : 300_000);
+    const id = setInterval(refresh, shown ? 10_000 : 300_000);
     return () => clearInterval(id);
   }, [shown, refresh]);
   return { terra, refresh };
+}
+
+/** Hours a merchant setting down now is safe from the others: the truce, or his own hours. */
+function safeHours(v: TerraView, now: number): number {
+  const until = Math.max(v.truceEndsAt ?? 0, now + v.rules.protectionHours * 3_600_000);
+  return Math.max(0, Math.ceil((until - now) / 3_600_000));
 }
 
 /** Whether merchants may still set down this week. */
@@ -485,7 +491,9 @@ export function TerraOverlay({
         const from = frontFrom(v, s.map, f.owner, f.aim);
         if (!from) return null;
         const [x, y] = hexCenter(s.map, f.aim);
-        const color = f.mine ? P.gold : f.threat ? P.vermilion : P.cream;
+        const milan = v.holders[f.owner]?.milan;
+        const color = f.mine ? P.gold : f.threat || milan ? P.vermilion : P.cream;
+        const strong = f.mine || f.threat;
         return (
           <line
             key={f.id}
@@ -494,8 +502,8 @@ export function TerraOverlay({
             x2={x}
             y2={y}
             stroke={color}
-            strokeOpacity={f.mine || f.threat ? 0.9 : 0.35}
-            strokeWidth={f.mine || f.threat ? 1.6 : 0.9}
+            strokeOpacity={strong ? 0.9 : milan ? 0.75 : 0.6}
+            strokeWidth={strong ? 1.6 : 1.2}
             strokeDasharray="1.5 3.5"
             strokeLinecap="round"
             className={v.open ? "route-march" : undefined}
@@ -838,8 +846,24 @@ export function TerraHud({ v, now }: { v: TerraView; now: number }) {
         {!v.closed && v.placementEndsAt !== null && now < v.placementEndsAt && (
           <span className="text-gold">{t().placing(clock(v.placementEndsAt - now))}</span>
         )}
+        {!v.closed && v.truceEndsAt !== null && now < v.truceEndsAt && (
+          <span className="text-gold">{t().truce(clock(v.truceEndsAt - now))}</span>
+        )}
         <span>{v.closed ? t().closed : t().closesIn(clock(v.closesAt - now))}</span>
         {!v.open && !v.closed && <span className="text-lagoon">☾ {t().night}</span>}
+        {/* The map is alive: how many fronts march, and whom Milan rides against. */}
+        {!v.closed && v.fronts.length > 0 && (
+          <span className="text-info">{t().marching(v.fronts.length)}</span>
+        )}
+        {!v.closed &&
+          v.fronts
+            .filter((f) => v.holders[f.owner]?.milan)
+            .slice(0, 1)
+            .map((f) => (
+              <span key={f.id} className={f.threat ? "text-vermilion" : "text-cream"}>
+                {t().milanRides(f.against < 0 ? null : holderName(v, f.against))}
+              </span>
+            ))}
       </span>
     </div>
   );
@@ -915,7 +939,7 @@ export function TerraPanel({
         chip={chip}
         status={
           free
-            ? t().place.line(terrain)
+            ? t().place.line(terrain, v.placementEndsAt !== null ? null : safeHours(v, now))
             : h
               ? t().holder.line(h.cells, h.troops)
               : !v.closed && !open

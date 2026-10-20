@@ -328,6 +328,8 @@ export const worldSettingsSchema = z.object({
          * each other until then: the week's game is played by those who came.
          */
         placementHours: qty.default(0),
+        /** Hours from the week's start during which nobody may attack another merchant. */
+        truceHours: qty.default(0),
       }),
       troops: z.object({
         base: qty,

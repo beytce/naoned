@@ -478,18 +478,26 @@ export const fr = {
       } as Record<string, string>,
       eliminated: "Éliminé cette semaine",
       placing: (time: string) => `Placement · la guerre dans ${time}`,
+      truce: (time: string) => `Trêve · la guerre dans ${time}`,
+      marching: (n: number) => `${n} front${n > 1 ? "s" : ""} en marche`,
+      milanRides: (against: string | null) =>
+        against ? `Milan marche sur ${against}` : "Milan s'étend vers l'est",
       out: {
         late: "La partie de la semaine a commencé",
         eliminated: "Vous avez perdu toutes vos terres",
-        next: (time: string) => `Prochaine partie dans ${time} : posez-vous dès son premier jour`,
+        next: (time: string) => `Prochaine partie dans ${time}`,
       },
       place: {
         invite: "Posez votre camp de départ",
         hint: "Touchez une terre libre de la carte",
         until: (time: string) => `encore ${time}`,
         here: "M'installer ici",
-        line: (terrain: string) =>
-          `${terrain} · personne ne vous attaque avant la fin du placement`,
+        line: (terrain: string, hours: number | null) =>
+          hours === null
+            ? `${terrain} · personne ne vous attaque avant la fin du placement`
+            : hours > 0
+              ? `${terrain} · à l'abri des attaques pendant ${hours} h`
+              : terrain,
       },
       target: {
         cost: (cost: number) => `${cost} troupes pour prendre cette terre`,
@@ -1708,7 +1716,7 @@ export const fr = {
       {
         icon: "famille",
         title: "La Terraferme",
-        text: "Une conquête d'une semaine, à côté du commerce. Le lundi, posez votre camp sur une terre libre ; puis lancez des fronts vers les terres voisines avec une part de vos troupes. Ils avancent seuls de 8 h à 22 h. Le premier en Gloire impose un décret la semaine suivante.",
+        text: "Une conquête d'une semaine, à côté du commerce. Posez votre camp sur une terre libre, n'importe quel jour ; puis lancez des fronts vers les terres voisines avec une part de vos troupes. Ils avancent seuls de 8 h à 22 h. Le premier en Gloire impose un décret la semaine suivante.",
       },
       {
         icon: "comptoir",

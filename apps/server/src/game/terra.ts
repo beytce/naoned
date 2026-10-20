@@ -118,6 +118,8 @@ export function terraView(
     /** Until when merchants may set down (null: any time); nobody comes in after it. */
     placementEndsAt:
       cfg.start.placementHours > 0 ? s.startAt + cfg.start.placementHours * 3_600_000 : null,
+    /** Until when nobody may attack another merchant (null: no truce). */
+    truceEndsAt: cfg.start.truceHours > 0 ? s.startAt + cfg.start.truceHours * 3_600_000 : null,
     openHours: cfg.openHours,
     /** Whether the fronts march now (they rest at night). */
     open: hourWithin(hourIn(now), cfg.openHours),
@@ -229,6 +231,7 @@ export function terraView(
         cap: cfg.capRaise.price,
       },
       capRaise: cfg.capRaise.amount,
+      protectionHours: cfg.start.protectionHours,
       /** Minutes a front takes for a cell of free land, and of a rival's. */
       neutralMinutes: cfg.stepMinutes * cfg.fronts.neutralEverySteps,
       cellMinutes: Math.max(1, Math.floor(cfg.stepMinutes / cfg.fronts.cellsPerStep)),

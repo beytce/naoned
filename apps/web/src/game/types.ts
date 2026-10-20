@@ -848,6 +848,8 @@ export interface TerraView {
   closesAt: number;
   /** Until when merchants may set down (null: any time); nobody comes in after it. */
   placementEndsAt: number | null;
+  /** Until when nobody may attack another merchant (null: no truce). */
+  truceEndsAt: number | null;
   openHours: { from: number; to: number };
   /** Whether the fronts march now (they rest at night). */
   open: boolean;
@@ -936,6 +938,8 @@ export interface TerraView {
     decrees: string[];
     prices: { rocca: string; borgo: string | null; cap: string };
     capRaise: number;
+    /** Hours a merchant who sets down is safe from the others (0: none). */
+    protectionHours: number;
     /** Minutes a front takes for a cell of free land, and of a rival's. */
     neutralMinutes: number;
     cellMinutes: number;

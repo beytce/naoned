@@ -477,6 +477,26 @@ describe("a week of war: everyone sets down on Monday, then no limit", () => {
     ).toBe("ok");
   });
 
+  it("with a truce and no placement window: a latecomer sets down, safe for a while", () => {
+    const cfg = war({
+      start: {
+        ...testTerraferma.start,
+        minDistance: 2,
+        protectionHours: 12,
+        placementHours: 0,
+        truceHours: 24,
+      },
+    });
+    const s = newTerra(cfg, "seed", 10, START);
+    pair(s, cfg, START + 2 * HOUR);
+    // Everyone safe until the truce ends, even past their own 12 hours.
+    expect(s.players.a?.protectedUntil).toBe(START + 24 * HOUR);
+    // On the third day: no truce left, 12 hours of its own.
+    const late = START + 50 * HOUR;
+    expect(code(() => placeOnTerra(s, cfg, "c", freeCell(s, 2), late))).toBe("ok");
+    expect(s.players.c?.protectedUntil).toBe(late + 12 * HOUR);
+  });
+
   it("takes even a capital: a merchant left without land is out of the week", () => {
     const cfg = war();
     const s = newTerra(cfg, "seed", 10, START);

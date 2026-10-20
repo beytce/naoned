@@ -164,8 +164,9 @@ export const venice1450Settings: WorldSettingsInput = {
   // season opened on 18 October 2026: the real Veneto of the drawn map
   // (Lombardy, Milan's, beyond its western edge; the sea, the lagoon and Lake Garda as water),
   // 25 cells a merchant, Milan in far Lombardy, the Alps in the north and the Po's marshes in the
-  // south, fronts of a cell per half hour (an hour on free land), 8 h to 22 h; everyone sets down
-  // on the week's first day, then a week of war without a brake (docs/calibration.md).
+  // south, fronts of a cell per half hour (an hour on free land), 8 h to 22 h; a merchant sets
+  // down any day of the week (with more troops the later he comes), everyone safe until the first
+  // day's end and a latecomer for 12 h; Milan rides every 2 open hours (docs/calibration.md).
   terraferma: {
     live: true,
     cellsPerActive: 25,
@@ -243,8 +244,15 @@ export const venice1450Settings: WorldSettingsInput = {
       { untilBps: 10_000, weights: { plain: 4, marsh: 4 } },
     ],
     city: { militiaBps: 25_000, defenseBps: 15_000 },
-    // Everyone sets down on the week's first day, safe from each other until its end; then war.
-    start: { minDistance: 2, troops: 40, troopsPerDay: 0, protectionHours: 0, placementHours: 24 },
+    // Any day of the week: a latecomer still plays (playtest of 20 October).
+    start: {
+      minDistance: 2,
+      troops: 40,
+      troopsPerDay: 10,
+      protectionHours: 12,
+      placementHours: 0,
+      truceHours: 24,
+    },
     // The maximum of troops is raised by ducats only; the land recruits by the hour up to it.
     troops: {
       base: 60,
@@ -270,8 +278,8 @@ export const venice1450Settings: WorldSettingsInput = {
       troops: 100,
       troopsPerActive: 3,
       regenBps: 900,
-      everyHours: 4,
-      shareBps: 2_000,
+      everyHours: 2,
+      shareBps: 3_000,
       target: "weakest",
     },
     glory: { perCell: 1, perCity: 3 },
