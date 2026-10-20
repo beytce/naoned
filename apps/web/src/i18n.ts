@@ -1636,6 +1636,8 @@ export const fr = {
     },
     unlocks: {
       afterDelivery: "S'ouvre après votre première livraison.",
+      afterFirstDay:
+        "La Terraferme, conquête de la semaine, s'ouvre après votre première journée de commerce. Facultative : on n'y perd jamais rien.",
     },
     coach: {
       name: "Lorenzo, votre facteur",

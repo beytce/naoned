@@ -11,20 +11,29 @@ describe("the first session's unlocks", () => {
     });
   });
 
-  it("open the market, the ranking and the Terraferma after the first delivery", () => {
-    expect(unlocks(["produce", "harvest", "sell_city"], false)).toMatchObject({
+  it("open the market and the ranking after the first delivery", () => {
+    expect(unlocks(["produce", "harvest", "sell_city"], false, 0)).toMatchObject({
       rialto: true,
       ranking: true,
-      terraferma: true,
+      terraferma: false,
       house: false,
     });
+  });
+
+  it("open the Terraferma after a first day of trade, once a delivery is made", () => {
+    const day = 24 * 3_600_000;
+    expect(unlocks(["sell_city"], false, day - 1).terraferma).toBe(false);
+    expect(unlocks(["sell_city"], false, day).terraferma).toBe(true);
+    expect(unlocks([], true, day).terraferma).toBe(false);
   });
 
   it("open the house once the market is learned", () => {
     expect(unlocks(["produce", "harvest", "sell_city", "market_buy"], false).house).toBe(true);
   });
 
-  it("open everything when the guide is paused or done", () => {
-    expect(Object.values(unlocks([], true)).every(Boolean)).toBe(true);
+  it("open the rest when the guide is paused or done", () => {
+    const { terraferma, ...rest } = unlocks([], true);
+    expect(Object.values(rest).every(Boolean)).toBe(true);
+    expect(terraferma).toBe(false);
   });
 });

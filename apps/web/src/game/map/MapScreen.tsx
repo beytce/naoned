@@ -530,7 +530,7 @@ export function MapScreen(
   const cargoVehicle = sheetKind === "cargo" ? vehicles.find((v) => v.id === sheetId) : undefined;
   const notice = props.unread + carnetRewards(props);
   const days = Math.max(1, (catalog.world.endsAt - catalog.world.startsAt) / 86_400_000);
-  const open = unlocksOf(view.tutorial);
+  const open = unlocksOf(view.tutorial, now - view.player.joinedAt);
   const seasonProgress = Math.min(1, (now - catalog.world.startsAt) / (days * 86_400_000));
   const maxCarts = catalog.road?.maxVehicles ?? 0;
 
@@ -630,7 +630,7 @@ export function MapScreen(
         workshopsReady={ready > 0}
         locks={{
           ranking: open.ranking ? undefined : fr.game.unlocks.afterDelivery,
-          layer: open.terraferma ? undefined : fr.game.unlocks.afterDelivery,
+          layer: open.terraferma ? undefined : fr.game.unlocks.afterFirstDay,
         }}
         right={
           campaign ? (
