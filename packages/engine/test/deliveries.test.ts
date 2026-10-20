@@ -16,6 +16,7 @@ import {
   supplierOf,
   supplierStandings,
   travelMinutes,
+  warehouseHolders,
 } from "../src/index.js";
 import { deliverySettings, testDeliveries, testSettings } from "./fixture.js";
 import { DAY, HOUR, MIN, T0, World, makeContext } from "./helpers.js";
@@ -1135,5 +1136,58 @@ describe("the official supplier of a city", () => {
     expect(error(dispatch(w, o.id))).toBe("ok");
     arriveAll(w);
     expect(supplierStandings(w.state, o.city, o.resource)).toEqual([]);
+  });
+});
+
+describe("a warehouse in a city", () => {
+  const rules = {
+    warehouses: { perCity: 1, minBid: 1_000, unitsPerDay: 30 },
+  } as never;
+  const bidFor = (w: World, playerId: string, city: string, amount: bigint) =>
+    w.try({ type: "warehouseBid", playerId, city, amount });
+
+  it("is auctioned for the week: the ducats are locked, a new bid replaces the old", () => {
+    const w = world(rules);
+    const cash = w.cash("a");
+    expect(error(bidFor(w, "a", "venezia", 500n))).toBe("bid_too_low");
+    expect(error(bidFor(w, "a", "atlantis", 5_000n))).toBe("unknown_city");
+    expect(error(bidFor(w, "a", "venezia", 2_000n))).toBe("ok");
+    expect(error(bidFor(w, "a", "venezia", 3_000n))).toBe("ok");
+    expect(w.cash("a")).toBe(cash - 3_000n);
+  });
+
+  it("goes to the highest bids at the week's close, their ducats leave the game", () => {
+    const w = world(rules);
+    const cash = { a: w.cash("a"), b: w.cash("b") };
+    bidFor(w, "a", "venezia", 2_000n);
+    bidFor(w, "b", "venezia", 3_000n);
+    w.at(7 * DAY + 9 * HOUR);
+    const res = w.do({ type: "tick" });
+    expect(warehouseHolders(w.state, "venezia")).toEqual(["b"]);
+    expect(w.cash("a")).toBe(cash.a);
+    expect(w.cash("b")).toBe(cash.b - 3_000n);
+    expect(res.effects.ledger).toContainEqual(
+      expect.objectContaining({ reason: "warehouse_rent", amount: 3_000n }),
+    );
+    // A fresh auction for the week after.
+    expect(w.state.warehouses?.bids).toEqual({});
+  });
+
+  it("lets its holder deliver to its city at once, without a vehicle, so much a day", () => {
+    const w = world(rules);
+    w.state = { ...w.state, warehouses: { holders: { [pick(w).city]: ["a"] }, bids: {} } };
+    const o = pick(w);
+    const before = w.cash("a");
+    expect(error(dispatch(w, o.id, "a", "warehouse"))).toBe("ok");
+    expect(w.cash("a")).toBe(before + o.unitPrice * BigInt(o.quantity));
+    expect(vehiclesOf(w, "a")[0]?.busyUntil).toBe(0);
+    // Not for b, who has no warehouse there.
+    expect(error(dispatch(w, pick(w, "city", "b").id, "b", "warehouse"))).toBe("no_warehouse");
+    // Beyond the units of the day.
+    const more = board(w).filter(
+      (x) =>
+        x.kind === "city" && x.city === o.city && x.id !== o.id && x.quantity > 30 - o.quantity,
+    )[0];
+    if (more) expect(error(dispatch(w, more.id, "a", "warehouse"))).toBe("over_capacity");
   });
 });

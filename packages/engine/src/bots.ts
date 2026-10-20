@@ -29,6 +29,7 @@ import {
   vehicleFree,
   vehiclesOf,
 } from "./deliveries.js";
+import { draw } from "./draw.js";
 import { familiesOn, familiesOpenAt, familyCodes, membersOf, seatOf } from "./families.js";
 import { houseMissionsFor } from "./house.js";
 import { bestPrice, marketMakerQuotaLeft, maxOpenOrdersFor, openOrderCount } from "./market.js";
@@ -52,6 +53,7 @@ import {
   hasPass,
   seasonEnd,
 } from "./state.js";
+import { openTenders } from "./tenders.js";
 import { terraOn } from "./terraWorld.js";
 import {
   type TerraConfig,
@@ -261,6 +263,7 @@ export class Bot {
     this.doContracts(s);
     this.serveFamily(s);
     this.deliverProjects(s);
+    this.tenders(s);
     if (deliveriesOn(s.ctx)) this.garage(s, this.deliver(s));
     else {
       this.sellToCriee(s);
@@ -692,6 +695,36 @@ export class Bot {
           });
         }
       }
+    }
+  }
+
+  /**
+   * The Doge's tenders: a bid on a good it has spare, at 95 to 125 % of the reference (drawn per
+   * merchant and tender), for half its spare stock at most; then delivers what it won.
+   */
+  private tenders(s: Session): void {
+    const state = s.state();
+    for (const t of Object.values(state.tenders ?? {})) {
+      const won = t.awarded?.[this.id];
+      if (won && !won.delivered && !t.settled && this.available(s, t.resource) >= won.quantity)
+        s.act({ type: "tenderDeliver", playerId: this.id, tenderId: t.id });
+    }
+    for (const t of openTenders(state, s.now)) {
+      if (t.bids[this.id]) continue;
+      const spare = this.available(s, t.resource) - this.reserve(s, t.resource);
+      const quantity = Math.min(t.quantity, Math.floor(spare / 2));
+      if (quantity <= 0) continue;
+      const bps = 9_500 + (draw(s.ctx, `bid:${this.id}:${t.id}`) % 3_001);
+      const ref = s.ctx.settings.referencePrices[t.resource] ?? 0n;
+      const price = (ref * BigInt(bps)) / 10_000n;
+      if (price <= 0n) continue;
+      s.act({
+        type: "tenderBid",
+        playerId: this.id,
+        tenderId: t.id,
+        price: price > t.ceiling ? t.ceiling : price,
+        quantity,
+      });
     }
   }
 

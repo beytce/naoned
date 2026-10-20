@@ -9,6 +9,7 @@ import { arriveMuda } from "./muda.js";
 import { openDueProjects } from "./projects.js";
 import { retireSeaAndBandits } from "./retired.js";
 import { DAY_MS, HOUR_MS, dayIndex } from "./state.js";
+import { runTenders } from "./tenders.js";
 import { advanceTerraWorld } from "./terraWorld.js";
 import { type Tx, emit, removeStock } from "./tx.js";
 import { closeSeason, closeWeek } from "./weekly.js";
@@ -63,6 +64,7 @@ export function tick(tx: Tx): void {
   advanceCampaign(tx);
   closeSeason(tx);
   openDueProjects(tx);
+  runTenders(tx);
   // Shared demand: the world's board of the day, drawn once the day's active merchants are known.
   ensureBoard(tx);
   // The fattore sends the vehicles left at the counter.

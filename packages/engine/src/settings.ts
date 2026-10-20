@@ -950,6 +950,26 @@ export const worldSettingsSchema = z.object({
     })
     .optional(),
   /**
+   * The Doge's tenders: every `everyDays`, a good of `quantity` (its range) at most `ceilingBps`
+   * of its reference; bids for `bidHours` with a caution of `cautionBps` of the bid, delivery
+   * within `deliverHours` of the close. Off when absent.
+   */
+  tenders: z
+    .object({
+      everyDays: positive,
+      bidHours: positive,
+      deliverHours: positive,
+      quantity: z.record(z.tuple([positive, positive])),
+      ceilingBps: bps,
+      cautionBps: bps,
+    })
+    .optional(),
+  /**
+   * Warehouses in the cities: `perCity` places auctioned each week (at least `minBid`), each
+   * letting its holder deliver the city's orders at once, `unitsPerDay`. Off when absent.
+   */
+  warehouses: z.object({ perCity: positive, minBid: money, unitsPerDay: positive }).optional(),
+  /**
    * The official supplier of a city: the week's best deliverer of a good to a city (at least
    * `minUnits`) is paid `bonusBps` more for it there all the next week. Off when absent.
    */

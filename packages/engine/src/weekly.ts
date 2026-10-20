@@ -6,6 +6,7 @@ import { nameSuppliers } from "./suppliers.js";
 import { turnoverOf } from "./turnover.js";
 import { type Tx, emit } from "./tx.js";
 import { netWorth } from "./valuation.js";
+import { closeWarehouseAuctions } from "./warehouses.js";
 
 const WEEK_MS = 7 * DAY_MS;
 const HOUR_MS = 3_600_000;
@@ -165,5 +166,6 @@ export function closeWeek(tx: Tx): void {
   });
   commerceInfluence(tx, weekly.week, standings);
   nameSuppliers(tx);
+  closeWarehouseAuctions(tx);
   tx.s.weekly = { week, start: snapshot(tx) };
 }

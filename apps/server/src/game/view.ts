@@ -38,6 +38,7 @@ import {
   stockUnitValue,
   turnoverOf,
   vwap,
+  warehouseUnitsLeft,
   workshopEconomics,
 } from "@comptoirs/engine";
 import {
@@ -372,6 +373,7 @@ export function catalog(ctx: WorldContext, world: { name: string }) {
       instantOrderSlippageBps: settings.instantOrderSlippageBps,
       regionBonusBps: settings.regionBonusBps,
       levelYieldBonusBps: settings.levelYieldBonusBps,
+      tenderCautionPct: (settings.tenders?.cautionBps ?? 0) / 100,
     },
   };
 }
@@ -574,6 +576,30 @@ export function playerView(
     /** The upgrade that pays back first (null: none left). */
     bestUpgrade: bestUpgrade(ctx, state, playerId, now)?.buildingId ?? null,
     next: nextActions(ctx, state, playerId, now),
+    // The Doge's tenders open to bids, and those the merchant won and has yet to deliver. Sealed:
+    // only the number of bidders shows.
+    tenders: Object.values(state.tenders ?? {})
+      .filter(
+        (t) =>
+          (t.openedAt <= now && now < t.closeAt) ||
+          (t.awarded?.[playerId] && !t.awarded[playerId]?.delivered && now < t.deadline),
+      )
+      .sort((a, b) => a.closeAt - b.closeAt)
+      .map((t) => ({
+        id: t.id,
+        resource: t.resource,
+        quantity: t.quantity,
+        ceiling: t.ceiling,
+        closeAt: t.closeAt,
+        deadline: t.deadline,
+        open: now < t.closeAt,
+        bidders: Object.keys(t.bids).length,
+        mine: t.bids[playerId] ?? null,
+        won: t.awarded?.[playerId] ?? null,
+      })),
+    // The warehouses in the cities: those the merchant holds this week, its bids for the next,
+    // and for each city the bid that wins a place now (the auction is open).
+    warehouses: warehousesView(ctx, state, playerId, now),
     // The goods the merchant is the official supplier of, by city, this week.
     supplies: Object.entries(state.suppliers?.holders ?? {})
       .filter(([, id]) => id === playerId)
@@ -688,4 +714,28 @@ export function ranking(
     netWorth: row.netWorth,
     turnover: row.turnover,
   }));
+}
+
+function warehousesView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {
+  const rules = ctx.settings.warehouses;
+  if (!rules) return null;
+  const w = state.warehouses;
+  return {
+    perCity: rules.perCity,
+    minBid: rules.minBid,
+    unitsPerDay: rules.unitsPerDay,
+    unitsLeft: warehouseUnitsLeft({ ctx, s: state }, playerId, dayIndex(ctx, now)),
+    cities: ctx.theme.cities.map(({ code }) => {
+      const bids = Object.values(w?.bids[code] ?? {}).sort((a, b) => (a > b ? -1 : a < b ? 1 : 0));
+      const last = bids.length >= rules.perCity ? bids[rules.perCity - 1] : undefined;
+      return {
+        city: code,
+        held: (w?.holders[code] ?? []).includes(playerId),
+        holders: (w?.holders[code] ?? []).length,
+        bidders: bids.length,
+        toWin: last !== undefined ? last + 1n : rules.minBid,
+        mine: w?.bids[code]?.[playerId] ?? null,
+      };
+    }),
+  };
 }

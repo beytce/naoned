@@ -62,6 +62,7 @@ const CREATED = [
   "delivery",
   "decree_favour",
   "supplier_bonus",
+  "tender_delivery",
   "terraferma_route",
 ];
 const DESTROYED = [
@@ -72,6 +73,8 @@ const DESTROYED = [
   "campaign_work",
   "vehicle",
   "terraferma",
+  "tender_forfeit",
+  "warehouse_rent",
 ];
 
 /** One column per money source and sink, so the CSV stays flat. */

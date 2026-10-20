@@ -32,6 +32,7 @@ import {
 } from "./house.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { claimMission, trackMissions } from "./missions.js";
+import type { Deniers } from "./money.js";
 import { collect, startProduction } from "./production.js";
 import { deliverToProject } from "./projects.js";
 import { chooseSpecialty } from "./specialties.js";
@@ -48,6 +49,7 @@ import {
   escrowAccount,
   seasonEnd,
 } from "./state.js";
+import { bidTender, deliverTender } from "./tenders.js";
 import { type TerraCommand, applyTerra } from "./terraWorld.js";
 import { findRegion } from "./theme.js";
 import { tick } from "./tick.js";
@@ -61,6 +63,7 @@ import {
   removeStock,
   transfer,
 } from "./tx.js";
+import { bidWarehouse } from "./warehouses.js";
 import { startWeek } from "./weekly.js";
 
 enableMapSet();
@@ -90,6 +93,9 @@ export type Command =
       batches: number;
     }
   | { type: "collect"; playerId: PlayerId; buildingId: string }
+  | { type: "tenderBid"; playerId: PlayerId; tenderId: string; price: Deniers; quantity: number }
+  | { type: "tenderDeliver"; playerId: PlayerId; tenderId: string }
+  | { type: "warehouseBid"; playerId: PlayerId; city: string; amount: Deniers }
   | { type: "build"; playerId: PlayerId; buildingType: string }
   | { type: "upgrade"; playerId: PlayerId; buildingId: string }
   | ({ type: "placeOrder" } & PlaceOrderInput)
@@ -371,6 +377,15 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "deliverToProject":
       deliverToProject(tx, cmd.playerId, cmd.projectId, cmd.resource, cmd.quantity);
+      break;
+    case "tenderBid":
+      bidTender(tx, cmd.playerId, cmd.tenderId, cmd.price, cmd.quantity);
+      break;
+    case "tenderDeliver":
+      deliverTender(tx, cmd.playerId, cmd.tenderId);
+      break;
+    case "warehouseBid":
+      bidWarehouse(tx, cmd.playerId, cmd.city, cmd.amount);
       break;
   }
 }

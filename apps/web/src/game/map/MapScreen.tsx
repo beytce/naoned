@@ -16,6 +16,7 @@ import { RialtoSheet } from "../Marche.js";
 import { ProfileSheet } from "../Profil.js";
 import { SuppliersSheet } from "../Suppliers.js";
 import { RankingSheet } from "../Top.js";
+import { WarehouseSheet } from "../Warehouse.js";
 import { gameApi } from "../api.js";
 import { onBack } from "../back.js";
 import { d, minutesLabel } from "../format.js";
@@ -771,6 +772,7 @@ export function MapScreen(
 
       <CounterSheets {...props} />
       <SuppliersSheet {...props} />
+      <WarehouseSheet {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}
       {terraView && <TerraSheets props={props} v={terraView} act={terraAct} />}
       <RialtoSheet {...props} />
@@ -984,6 +986,16 @@ function CityPanel({
               label={m.buttons.criee}
               tone="vermilion"
               onClick={() => onSheet("criee")}
+            />
+          )}
+          {road && view.warehouses && (
+            <ActionButton
+              icon={Icon.store()}
+              label={m.buttons.warehouse}
+              tone={
+                view.warehouses.cities.some((c) => c.city === code && c.held) ? "gold" : "plain"
+              }
+              onClick={() => onSheet(`warehouse:${code}`)}
             />
           )}
           {road && (

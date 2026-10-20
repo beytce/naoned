@@ -89,6 +89,8 @@ export interface Catalog {
     instantOrderSlippageBps: number;
     regionBonusBps: number;
     levelYieldBonusBps: number;
+    /** The caution of a tender's bid, in percent of what it is worth. */
+    tenderCautionPct?: number;
   };
 }
 
@@ -475,6 +477,10 @@ export interface PlayerView {
   bestUpgrade: string | null;
   /** The guide's next best actions, the most urgent first. */
   next: NextAction[];
+  /** The Doge's tenders open to bids, and those won and not yet delivered. */
+  tenders: TenderView[];
+  /** The warehouses in the cities (null: none in this world). */
+  warehouses: WarehousesView | null;
   /** The goods the merchant is the official supplier of this week, by city. */
   supplies: { city: string; resource: string }[];
   market: MarketLine[];
@@ -858,6 +864,9 @@ export type Action =
   | { type: "instantOrder"; resource: string; side: "buy" | "sell"; quantity: number }
   | { type: "sellToCity"; city: string; resource: string; quantity: number }
   | { type: "deliverToProject"; projectId: string; resource: string; quantity: number }
+  | { type: "tenderBid"; tenderId: string; price: string; quantity: number }
+  | { type: "tenderDeliver"; tenderId: string }
+  | { type: "warehouseBid"; city: string; amount: string }
   | { type: "fulfillContract"; contractId: string }
   | { type: "joinFamily"; family: string }
   | { type: "collectLevy" }
@@ -1165,4 +1174,35 @@ export interface SupplierPerson {
   me: boolean;
   pseudo: string | null;
   crest: CrestData | null;
+}
+
+export interface TenderView {
+  id: string;
+  resource: string;
+  quantity: number;
+  ceiling: Money;
+  closeAt: number;
+  deadline: number;
+  /** Bids still taken. */
+  open: boolean;
+  bidders: number;
+  mine: { price: Money; quantity: number; caution: Money; at: number } | null;
+  won: { quantity: number; price: Money; caution: Money; delivered: boolean } | null;
+}
+
+export interface WarehousesView {
+  perCity: number;
+  minBid: Money;
+  unitsPerDay: number;
+  /** Units the merchant may still deliver from its warehouses today. */
+  unitsLeft: number;
+  cities: {
+    city: string;
+    held: boolean;
+    holders: number;
+    bidders: number;
+    /** The bid that wins a place now. */
+    toWin: Money;
+    mine: Money | null;
+  }[];
 }

@@ -39,6 +39,7 @@ import { supplyArrived } from "./suppliers.js";
 import { terraEmbargoCutBps } from "./terraWorld.js";
 import { type Tx, emit, fail, nextId, removeStock, transfer } from "./tx.js";
 import { vwap } from "./valuation.js";
+import { useWarehouse, warehouseHolders } from "./warehouses.js";
 
 /**
  * Deliveries by road. The cities' orders form a board for the world (and the Doge's are personal);
@@ -697,6 +698,9 @@ export function deliveriesDoneToday(state: WorldState, playerId: PlayerId, day: 
 
 // ——— Departure and arrival ———
 
+/** The vehicle id of a delivery made from the merchant's warehouse in the city. */
+export const WAREHOUSE = "warehouse";
+
 /** Value of a load at the order's price. */
 function loadValue(o: DeliveryOrder): Deniers {
   return o.unitPrice * BigInt(o.quantity);
@@ -748,17 +752,26 @@ export function dispatchDelivery(
   const first = orders[0] as DeliveryOrder;
   if (orders.some((o) => o.city !== first.city)) fail("several_cities");
 
-  const vehicle = tx.s.vehicles?.[vehicleId];
-  if (!vehicle) fail("unknown_vehicle");
-  if (vehicle.playerId !== playerId) fail("not_owner");
-  if (!vehicleFree(vehicle as Vehicle, tx.now)) fail("vehicle_busy");
-  const def = ctx.settings.deliveries.vehicles[vehicle.type];
-  if (!def) fail("unknown_vehicle_type");
   const units = orders.reduce((n, o) => n + o.quantity, 0);
-  if (units > def.capacity) fail("over_capacity");
-  const speedBonus = specialtyEffects(ctx, state, playerId).vehicleSpeedBps;
-  const minutes = travelMinutes(ctx, region, first.city, vehicle.type, speedBonus);
-  if (minutes === undefined) fail("no_route");
+  // From the merchant's warehouse in the city: at once, without a vehicle, so much a day.
+  const fromWarehouse = vehicleId === WAREHOUSE;
+  let minutes = 0;
+  const vehicle = fromWarehouse ? undefined : tx.s.vehicles?.[vehicleId];
+  if (fromWarehouse) {
+    if (!warehouseHolders(state, first.city).includes(playerId)) fail("no_warehouse");
+    useWarehouse(tx, playerId, today, units);
+  } else {
+    if (!vehicle) fail("unknown_vehicle");
+    if (vehicle.playerId !== playerId) fail("not_owner");
+    if (!vehicleFree(vehicle as Vehicle, tx.now)) fail("vehicle_busy");
+    const def = ctx.settings.deliveries.vehicles[vehicle.type];
+    if (!def) fail("unknown_vehicle_type");
+    if (units > def.capacity) fail("over_capacity");
+    const speedBonus = specialtyEffects(ctx, state, playerId).vehicleSpeedBps;
+    const road = travelMinutes(ctx, region, first.city, vehicle.type, speedBonus);
+    if (road === undefined) fail("no_route");
+    minutes = road;
+  }
 
   // Shared demand: the first who sends a vehicle takes the order.
   for (const o of orders) if (o.shared && tx.s.board) tx.s.board.takenBy[o.id] = playerId;
@@ -797,7 +810,7 @@ export function dispatchDelivery(
   };
   tx.s.deliveries ??= {};
   tx.s.deliveries[id] = delivery;
-  vehicle.busyUntil = delivery.backAt;
+  if (vehicle) vehicle.busyUntil = delivery.backAt;
   tx.s.deliveriesDone ??= {};
   tx.s.deliveriesDone[playerId] = { day: today, ids: [...done, ...ids] };
   // The Doge's orders cannot be served twice (at the counter, then by road).
@@ -817,6 +830,7 @@ export function dispatchDelivery(
     quantity: units,
     orders: ids.length,
   });
+  if (fromWarehouse) arrive(tx, delivery);
   return delivery;
 }
 

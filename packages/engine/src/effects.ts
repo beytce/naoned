@@ -33,6 +33,13 @@ export type LedgerReason =
   | "decree_toll"
   | "decree_favour"
   | "supplier_bonus"
+  | "tender_caution"
+  | "tender_refund"
+  | "tender_forfeit"
+  | "tender_delivery"
+  | "warehouse_bid"
+  | "warehouse_refund"
+  | "warehouse_rent"
   | "decree_share"
   | "terraferma"
   // Kept for the entries of the time of the upkeep (October 2026).
@@ -95,7 +102,8 @@ export type StockReason =
   | "bandits"
   | "booty"
   | "bale_gift"
-  | "terraferma_harvest";
+  | "terraferma_harvest"
+  | "tender_delivery";
 
 /** Change of a player's total holding (available + escrow) of one resource. */
 export interface StockMovement {

@@ -103,6 +103,28 @@ export interface CityDemandState {
   updatedAt: number;
 }
 
+/** A tender of the Doge (tenders.ts): sealed bids, then the winners' deliveries. */
+export interface Tender {
+  id: string;
+  resource: ResourceCode;
+  quantity: number;
+  /** The highest unit price the Doge accepts. */
+  ceiling: Deniers;
+  openedAt: number;
+  /** Bids close. */
+  closeAt: number;
+  /** Winners deliver before. */
+  deadline: number;
+  bids: Record<PlayerId, { price: Deniers; quantity: number; caution: Deniers; at: number }>;
+  /** Set at the close. */
+  awarded?: Record<
+    PlayerId,
+    { quantity: number; price: Deniers; caution: Deniers; delivered: boolean }
+  >;
+  /** Every caution returned or forfeited. */
+  settled?: boolean;
+}
+
 export interface Project {
   id: ProjectId;
   city: string;
@@ -343,6 +365,18 @@ export interface WorldState {
     units: Record<string, Record<PlayerId, number>>;
     holders: Record<string, PlayerId>;
   };
+  /**
+   * The warehouses in the cities: this week's holders by city, the bids for next week, and the
+   * units each merchant delivered from them on its last day.
+   */
+  warehouses?: {
+    holders: Record<string, PlayerId[]>;
+    bids: Record<string, Record<PlayerId, Deniers>>;
+    used?: Record<PlayerId, { day: number; units: number }>;
+  };
+  /** The Doge's tenders, by id, and when the next one opens (absent: at the season's start). */
+  tenders?: Record<string, Tender>;
+  nextTenderAt?: number;
   /** The four great families: who swore allegiance to which. */
   families?: FamiliesState;
   /** The week's campaign in the Terraferma, and the decrees in force. */

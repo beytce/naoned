@@ -164,6 +164,7 @@ export const fr = {
         rialto: "Rialto",
         criee: "Criée",
         suppliers: "Fournisseurs",
+        warehouse: "Entrepôt",
         ranking: "Classement",
         family: "Famille",
         help: "Aide",
@@ -1273,6 +1274,7 @@ export const fr = {
         guild_payout: "Trésor de guilde partagé",
         decree_favour: "Faveur d'une ville",
         supplier_bonus: "Fournisseur officiel",
+        tender_delivery: "Appels d'offres du Doge",
         decree_share: "Part des décrets",
         delivery: "Livraisons",
       } as Record<string, string>,
@@ -1965,6 +1967,50 @@ export const fr = {
       upgrade: (building: string, adds: string, payback: string) =>
         `Améliorez ${building} : +${adds} par heure, rentabilisé en ${payback}.`,
       upgradeGo: "Améliorer",
+    },
+    /** The Doge's tenders. */
+    tenders: {
+      title: "Appels d'offres du Doge",
+      help: (pct: number) =>
+        `Le Doge demande une quantité d'une marchandise sous un prix plafond. Proposez un prix et une quantité, sous pli scellé, en bloquant une caution de ${pct} % de l'offre. À la clôture, les moins chers l'emportent jusqu'à la quantité demandée ; les autres récupèrent leur caution. Le gagnant livre depuis son comptoir avant l'échéance, payé à son prix, caution rendue — sinon la caution est perdue.`,
+      none: "Aucun appel d'offres en cours. Le prochain s'ouvre bientôt.",
+      open: (n: number) => (n > 0 ? `${n} ouvert${n > 1 ? "s" : ""} aux offres` : "Offres closes"),
+      toDeliver: (n: number) => `${n} marché${n > 1 ? "s" : ""} gagné${n > 1 ? "s" : ""} à livrer`,
+      asks: (n: number, resource: string) => `${n} ${resource.toLowerCase()}`,
+      closesIn: (left: string, bidders: number) =>
+        `Clôture dans ${left} · ${bidders} offre${bidders > 1 ? "s" : ""} scellée${bidders > 1 ? "s" : ""}`,
+      deliverBefore: (left: string) => `À livrer dans ${left}`,
+      ceiling: "Plafond",
+      price: "Votre prix unitaire",
+      quantity: "Quantité",
+      summary: (total: string, caution: string, have: number) =>
+        `Offre ${total} · caution ${caution} · en stock ${have}`,
+      mine: (n: number, price: string, caution: string) =>
+        `Votre offre : ${n} à ${price} (caution ${caution}).`,
+      bid: "Déposer l'offre",
+      rebid: "Remplacer l'offre",
+      won: (n: number, price: string, total: string) =>
+        `Marché gagné : ${n} à ${price}, soit ${total}.`,
+      stock: (have: number, need: number, caution: string) =>
+        `En stock ${have} / ${need}. Caution en jeu : ${caution}.`,
+      deliver: "Livrer au Doge",
+    },
+    /** A city's warehouse. */
+    warehouse: {
+      title: (city: string) => `Entrepôt de ${city}`,
+      help: (places: number, units: number) =>
+        `${places} place${places > 1 ? "s" : ""} par ville, mise${places > 1 ? "s" : ""} aux enchères chaque semaine : les plus fortes offres l'emportent à la clôture du lundi et leurs ducats sortent du jeu, les autres sont rendues. Le titulaire livre les commandes de la ville sur-le-champ, sans charrette, jusqu'à ${units} unités par jour.`,
+      held: (left: number) =>
+        `Votre entrepôt cette semaine : encore ${left} unités livrables aujourd'hui.`,
+      noOrders: "Aucune commande ouverte dans cette ville pour l'instant.",
+      deliver: "Livrer",
+      auction: "Enchères de la semaine prochaine",
+      state: (bidders: number, toWin: string) =>
+        `${bidders} offre${bidders > 1 ? "s" : ""} · il faut ${toWin} pour l'emporter`,
+      mine: (amount: string) => `Votre offre : ${amount} (bloquée jusqu'à la clôture).`,
+      bid: "Votre offre",
+      place: "Enchérir",
+      rebid: "Remplacer l'offre",
     },
     /** The official suppliers of a city. */
     suppliers: {

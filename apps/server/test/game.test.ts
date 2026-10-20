@@ -247,6 +247,35 @@ describe("game API", () => {
     expect(steps).toHaveLength(4);
   });
 
+  it("takes a sealed bid on the Doge's tender, its caution locked", async () => {
+    const cookie = await login("ada@example.org");
+    await post(cookie, "/api/game/join", { region: "lagoon" });
+    await world.execute({ type: "tick" });
+    const v = (await get(cookie)).json().view;
+    const tender = v.tenders[0];
+    expect(tender.open).toBe(true);
+    const price = String(BigInt(tender.ceiling) - 10n);
+    const res = await act(cookie, { type: "tenderBid", tenderId: tender.id, price, quantity: 5 });
+    expect(res.json().error).toBeUndefined();
+    const after = res.json().view;
+    expect(after.tenders[0].mine).toMatchObject({ price, quantity: 5 });
+    expect(BigInt(after.cash)).toBe(BigInt(v.cash) - BigInt(after.tenders[0].mine.caution));
+  });
+
+  it("takes a bid for a city's warehouse, its ducats locked until the week's close", async () => {
+    const cookie = await login("ada@example.org");
+    await post(cookie, "/api/game/join", { region: "lagoon" });
+    const v = (await get(cookie)).json().view;
+    const venice = v.warehouses.cities.find((c: { city: string }) => c.city === "venezia");
+    const res = await act(cookie, { type: "warehouseBid", city: "venezia", amount: venice.toWin });
+    expect(res.json().error).toBeUndefined();
+    const after = res.json().view;
+    expect(BigInt(after.cash)).toBe(BigInt(v.cash) - BigInt(venice.toWin));
+    expect(after.warehouses.cities.find((c: { city: string }) => c.city === "venezia").mine).toBe(
+      venice.toWin,
+    );
+  });
+
   it("buys instantly from the market maker once the tick has quoted", async () => {
     const cookie = await login("ada@example.org");
     await post(cookie, "/api/game/join", { region: "terraferma" });

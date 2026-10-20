@@ -188,6 +188,18 @@ const action = z.discriminatedUnion("type", [
     resource: z.string(),
     quantity: z.number().int().positive().max(100_000),
   }),
+  z.object({
+    type: z.literal("tenderBid"),
+    tenderId: z.string().max(32),
+    price: z.string().regex(/^\d{1,12}$/),
+    quantity: z.number().int().positive().max(100_000),
+  }),
+  z.object({ type: z.literal("tenderDeliver"), tenderId: z.string().max(32) }),
+  z.object({
+    type: z.literal("warehouseBid"),
+    city: z.string().max(32),
+    amount: z.string().regex(/^\d{1,12}$/),
+  }),
 ]);
 type Action = z.infer<typeof action>;
 
@@ -1233,5 +1245,19 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
           quantity: a.quantity,
         },
       ];
+    case "tenderBid":
+      return [
+        {
+          type: "tenderBid",
+          playerId,
+          tenderId: a.tenderId,
+          price: BigInt(a.price),
+          quantity: a.quantity,
+        },
+      ];
+    case "tenderDeliver":
+      return [{ type: "tenderDeliver", playerId, tenderId: a.tenderId }];
+    case "warehouseBid":
+      return [{ type: "warehouseBid", playerId, city: a.city, amount: BigInt(a.amount) }];
   }
 }

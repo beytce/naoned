@@ -1086,6 +1086,20 @@ export const venice1450Settings: WorldSettingsInput = {
       gilded_name: { cost: 40, requires: [] },
     },
   },
+  // The Doge's tenders (recommendations of 20 October 2026): every two days, a quantity of a
+  // building good at most 140 % of its reference; sealed bids for a day with a caution of 20 %,
+  // two days to deliver. The cheapest win; a winner who does not deliver loses the caution.
+  tenders: {
+    everyDays: 2,
+    bidHours: 24,
+    deliverHours: 48,
+    quantity: { bread: [40, 80], bricks: [20, 40], planks: [20, 40] },
+    ceilingBps: 14_000,
+    cautionBps: 2_000,
+  },
+  // Warehouses in the cities (recommendations of 20 October 2026): two places a city, auctioned
+  // each week from 50 ducats (destroyed), each delivering 40 units a day at once.
+  warehouses: { perCity: 2, minBid: 5_000, unitsPerDay: 40 },
   // The official supplier (recommendations of 20 October 2026): the week's best deliverer of a
   // good to a city, from 10 units, is paid 10 % more for it there all the next week.
   suppliers: { bonusBps: 1_000, minUnits: 10 },
