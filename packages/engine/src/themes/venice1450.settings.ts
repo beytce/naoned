@@ -273,6 +273,7 @@ export const venice1450Settings: WorldSettingsInput = {
       maxHours: 0,
       neutralEverySteps: 2,
       capitalSafe: false,
+      peacefulSafe: true,
     },
     milan: {
       troops: 100,

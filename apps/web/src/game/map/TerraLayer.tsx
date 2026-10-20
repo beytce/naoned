@@ -1174,6 +1174,12 @@ export function TerraPanel({
                 )}
               </p>
             )}
+            {/* The first attack on a merchant gives up the capital's safety. */}
+            {merchant && v.rules.peacefulSafe && !me.aggressor && (
+              <p className="text-center font-mono text-xs text-vermilion">
+                {t().target.losesSafety}
+              </p>
+            )}
             {/* Against a merchant only, and when it changes something: what stays home. */}
             {cells > 0 && merchant && density(me.troops - troops) < density(me.troops) && (
               <p className="text-center font-mono text-xs text-cream-dim">

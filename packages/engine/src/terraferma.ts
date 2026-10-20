@@ -49,6 +49,8 @@ export interface TerraPlayer {
   /** Alliances broken this week, and until when it is a traitor. */
   breaks?: number;
   traitorUntil?: number;
+  /** Launched a front at another merchant this week: its capital may fall (`peacefulSafe`). */
+  aggressor?: boolean;
   /** When it lost its last cell: out of the week. */
   eliminatedAt?: number;
 }
@@ -543,6 +545,7 @@ export function launchFront(
   // Not even the cell aimed at: the front would come straight home (Milan rides as it can).
   if (id !== MILAN && troops < cellCost(s, cfg, aim)) fail("too_weak");
   player.troops -= troops;
+  if (against !== null && against !== MILAN && id !== MILAN) player.aggressor = true;
   const front: TerraFront = {
     id: `t${s.nextFront++}`,
     owner: id,
@@ -903,7 +906,9 @@ function nextCell(s: TerraState, cfg: TerraConfig, front: TerraFront): number {
   let best = -1;
   let bestDistance = Number.POSITIVE_INFINITY;
   const capitals = new Set(
-    cfg.fronts.capitalSafe ? Object.values(s.players).map((p) => p.capital) : [],
+    Object.values(s.players)
+      .filter((p) => cfg.fronts.capitalSafe || (cfg.fronts.peacefulSafe && !p.aggressor))
+      .map((p) => p.capital),
   );
   for (let i = 0; i < s.owner.length; i++) {
     if (!s.map.land[i] || s.owner[i] !== front.against || !borders(s, front.owner, i)) continue;

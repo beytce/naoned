@@ -900,6 +900,8 @@ export interface TerraView {
     rank: number;
     capital: number | null;
     protectedUntil: number;
+    /** Attacked a merchant this week: its capital may fall. */
+    aggressor: boolean;
     traitorUntil: number;
     /** When it lost its last cell: out of the week. */
     eliminatedAt: number | null;
@@ -938,6 +940,8 @@ export interface TerraView {
     decrees: string[];
     prices: { rocca: string; borgo: string | null; cap: string };
     capRaise: number;
+    /** The capital of a merchant who attacked no merchant this week is never taken. */
+    peacefulSafe: boolean;
     /** Hours a merchant who sets down is safe from the others (0: none). */
     protectionHours: number;
     /** Minutes a front takes for a cell of free land, and of a rival's. */

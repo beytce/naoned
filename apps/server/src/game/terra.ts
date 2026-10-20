@@ -178,6 +178,7 @@ export function terraView(
           rank: rank + 1,
           capital: me.capital ?? null,
           protectedUntil: me.protectedUntil,
+          aggressor: me.aggressor ?? false,
           traitorUntil: me.traitorUntil ?? 0,
           eliminatedAt: me.eliminatedAt ?? null,
           recruit: recruitClock(s, cfg, playerId, me.troops, capOf(s, cfg, playerId)),
@@ -232,6 +233,7 @@ export function terraView(
       },
       capRaise: cfg.capRaise.amount,
       protectionHours: cfg.start.protectionHours,
+      peacefulSafe: cfg.fronts.peacefulSafe && !cfg.fronts.capitalSafe,
       /** Minutes a front takes for a cell of free land, and of a rival's. */
       neutralMinutes: cfg.stepMinutes * cfg.fronts.neutralEverySteps,
       cellMinutes: Math.max(1, Math.floor(cfg.stepMinutes / cfg.fronts.cellsPerStep)),

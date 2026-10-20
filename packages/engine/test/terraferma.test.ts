@@ -516,6 +516,41 @@ describe("a week of war: everyone sets down on Monday, then no limit", () => {
     expect(code(() => placeOnTerra(s, cfg, "b", 0, s.clock))).toBe("already_placed");
   });
 
+  it("never takes the capital of a merchant who attacked no merchant this week", () => {
+    const cfg = war({
+      fronts: { ...testTerraferma.fronts, capitalSafe: false, peacefulSafe: true },
+    });
+    const s = newTerra(cfg, "seed", 10, START);
+    const { b } = pair(s, cfg, START);
+    advanceTerra(s, cfg, START + 24 * HOUR);
+    (s.players.a as { troops: number }).troops = 100_000;
+    launchFront(s, cfg, "a", border(s, "a", "b"), 10_000, s.clock);
+    (s.players.b as { troops: number }).troops = 1;
+    advanceTerra(s, cfg, s.clock + 6 * HOUR);
+    // Only its capital is left, and it stays.
+    expect(cellsOf(s, "b")).toEqual([b]);
+    expect(s.players.b?.eliminatedAt).toBeUndefined();
+  });
+
+  it("takes the capital of a merchant who attacked another", () => {
+    const cfg = war({
+      fronts: { ...testTerraferma.fronts, capitalSafe: false, peacefulSafe: true },
+    });
+    const s = newTerra(cfg, "seed", 10, START);
+    const { b } = pair(s, cfg, START);
+    advanceTerra(s, cfg, START + 24 * HOUR);
+    (s.players.b as { troops: number }).troops = 10_000;
+    const raid = launchFront(s, cfg, "b", border(s, "b", "a"), 1_000, s.clock);
+    // Called back at once: the attack is what counts.
+    recallFront(s, "b", raid.id);
+    expect(s.players.b?.aggressor).toBe(true);
+    (s.players.a as { troops: number }).troops = 100_000;
+    launchFront(s, cfg, "a", border(s, "a", "b"), 10_000, s.clock);
+    (s.players.b as { troops: number }).troops = 1;
+    advanceTerra(s, cfg, s.clock + 12 * HOUR);
+    expect(s.owner[b]).toBe("a");
+  });
+
   it("sends Milan at its weakest neighbour, not at the leader", () => {
     const cfg = war({ milan: { ...testTerraferma.milan, target: "weakest" } });
     const s = newTerra(cfg, "seed", 10, START);

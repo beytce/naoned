@@ -354,6 +354,11 @@ export const worldSettingsSchema = z.object({
         neutralEverySteps: positive.default(1),
         /** A merchant's capital is never taken (false: a merchant may be wiped off the map). */
         capitalSafe: z.boolean().default(true),
+        /**
+         * The capital of a merchant who has launched no front at another merchant this week is
+         * never taken: who does not make war is never wiped off the map.
+         */
+        peacefulSafe: z.boolean().default(false),
       }),
       milan: z.object({
         troops: qty,

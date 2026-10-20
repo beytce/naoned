@@ -501,6 +501,8 @@ export const fr = {
       },
       target: {
         cost: (cost: number) => `${cost} troupes pour prendre cette terre`,
+        losesSafety:
+          "Attaquer un marchand rend votre capitale prenable jusqu'à la fin de la semaine",
         tooWeak: (cost: number) => `Il faut au moins ${cost} troupes : montez le curseur`,
         plan: (troops: number, cells: number, spent: number, back: number) =>
           `${troops} troupes → ${cells} case${cells > 1 ? "s" : ""} (−${spent}) · ${back} revien${back > 1 ? "nent" : "t"}`,
