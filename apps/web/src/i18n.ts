@@ -1710,6 +1710,23 @@ export const fr = {
       have: (n: number) => `en stock : ${n}`,
       none: "Aucune commande de compagnie en cours.",
     },
+    /** The Journal du Rialto, in the notices. */
+    journal: {
+      title: "Journal du Rialto",
+      empty: "Rien de marquant depuis hier.",
+      someone: "un marchand",
+      trade: (buyer: string, seller: string, qty: number, good: string, value: string) =>
+        `${buyer} achète ${qty} ${good.toLowerCase()} à ${seller} pour ${value}`,
+      company: (city: string, n: number) =>
+        `La commande de compagnie de ${city} est remplie par ${n} marchand${n > 1 ? "s" : ""}`,
+      conquest: (who: string, cells: number) =>
+        `${who} prend ${cells} terre${cells > 1 ? "s" : ""} en Terraferme`,
+      milan: (cells: number) => `Milan prend ${cells} terre${cells > 1 ? "s" : ""} en Terraferme`,
+      signore: (who: string, conquest: boolean) =>
+        `${who} devient Signore de la Terraferme${conquest ? ", par conquête" : ""}`,
+      noSignore: "La semaine de la Terraferme se clôt sans Signore",
+      community: "Rejoindre la communauté des marchands →",
+    },
     /** The rival of the week, under the rank on the map. */
     rival: {
       someone: "Un marchand",

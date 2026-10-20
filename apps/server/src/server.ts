@@ -58,6 +58,7 @@ const app = await buildApp({
   adminEmails: config.ADMIN_EMAILS.split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean),
+  ...(config.COMMUNITY_URL ? { communityUrl: config.COMMUNITY_URL } : {}),
   webDist: config.WEB_DIST ?? (production ? join(here, "..", "..", "web", "dist") : undefined),
   logger: true,
   alerts,

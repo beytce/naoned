@@ -5,6 +5,7 @@ import { NoticeList } from "../Bell.js";
 import { Carnet, SeasonTiles, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import type { GameProps } from "../Game.js";
+import { JournalSection } from "../Journal.js";
 
 /**
  * The notices, behind the bell of the HUD: everything that used to be a banner over the screens
@@ -77,6 +78,8 @@ export function NoticesSheet(
           <Label>{t.yourSeason}</Label>
           <SeasonTiles {...props} />
         </section>
+
+        <JournalSection {...props} />
 
         <section className="space-y-2">
           <Label>{t.news}</Label>

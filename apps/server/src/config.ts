@@ -24,6 +24,8 @@ const schema = z
     VAPID_PUBLIC_KEY: z.string().optional(),
     /** Comma-separated e-mails allowed to see the retention dashboard (/admin). */
     ADMIN_EMAILS: z.string().default(""),
+    /** The players' community (a Discord invite, a forum): a link in the game. */
+    COMMUNITY_URL: z.string().url().optional(),
     /** Discord or Slack incoming webhook: alerts when the world stalls or something breaks. */
     ALERT_WEBHOOK_URL: z.string().url().optional(),
     VAPID_PRIVATE_KEY: z.string().optional(),

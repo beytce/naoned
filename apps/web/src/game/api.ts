@@ -6,6 +6,7 @@ import type {
   FamilyMessage,
   GameResponse,
   HouseView,
+  JournalEntry,
   Level,
   Notice,
   NotificationKind,
@@ -85,6 +86,7 @@ export const gameApi = {
   /** The Terraferma's week (null while it is not live in this world). */
   terra: () => call<{ terra: TerraView | null }>("GET", "/api/game/terra"),
   weekRanking: () => call<WeekRanking>("GET", "/api/game/ranking/week"),
+  journal: () => call<{ entries: JournalEntry[] }>("GET", "/api/game/journal"),
   ranking: () =>
     call<{ rows: RankingRow[]; me: number | null; total: number }>("GET", "/api/game/ranking"),
 };

@@ -14,6 +14,21 @@ export interface Recipe {
   durationMinutes: number;
 }
 
+/** The Journal du Rialto: the world's last day. */
+export type JournalEntry =
+  | {
+      kind: "trade";
+      at: number;
+      buyer: string | null;
+      seller: string | null;
+      resource: string;
+      quantity: number;
+      value: Money;
+    }
+  | { kind: "company"; at: number; city: string; merchants: number }
+  | { kind: "conquest"; at: number; who: string | null; milan: boolean; cells: number }
+  | { kind: "terra_week"; at: number; signore: string | null; conquest: boolean };
+
 export interface Catalog {
   world: {
     name: string;
@@ -24,6 +39,8 @@ export interface Catalog {
   };
   /** The Doge of the season before, honoured on the Dogana's façade. */
   previousDoge?: { pseudo: string | null; crest: CrestData | null; season: string } | null;
+  /** The players' community (a Discord invite, a forum), null when none. */
+  community?: string | null;
   /** Deliveries by road (null when the world has none). */
   road: RoadRules | null;
   /** The four families, their campaign and their decrees (null: off in this world). */

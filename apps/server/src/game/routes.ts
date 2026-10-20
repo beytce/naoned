@@ -27,6 +27,7 @@ import {
   refundInfluence,
   spendInfluence,
 } from "./house.js";
+import { journal } from "./journal.js";
 import { levelsOf } from "./level.js";
 import { LiveHub } from "./live.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
@@ -163,6 +164,8 @@ export interface GameRouteDeps {
   sessionCookie: string;
   notifier: Notifier;
   adminEmails: string[];
+  /** The players' community (null: none). */
+  communityUrl?: string | null;
 }
 
 export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): void {
@@ -308,7 +311,11 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   }
 
   app.get("/api/game/catalog", async () =>
-    toJson({ ...catalog(world.ctx, world), previousDoge: await previousDoge(db, world.id) }),
+    toJson({
+      ...catalog(world.ctx, world),
+      previousDoge: await previousDoge(db, world.id),
+      community: deps.communityUrl ?? null,
+    }),
   );
 
   app.get("/api/game", perMerchant(300), async (req, reply) => {
@@ -466,6 +473,13 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       level: (await levelsOf(db, world.current, [account.id])).get(account.id),
       palmares: await palmares(db, account.id),
     });
+  });
+
+  /** The Journal du Rialto: the world's last day, public. */
+  app.get("/api/game/journal", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return toJson(await journal(db, world.id, world.current, world.now()));
   });
 
   app.get("/api/game/prices", async (req, reply) => {

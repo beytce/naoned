@@ -33,6 +33,8 @@ export interface AppOptions {
   world?: GameWorld;
   /** E-mails allowed to see the retention dashboard. */
   adminEmails?: string[];
+  /** The players' community (a Discord invite, a forum). */
+  communityUrl?: string;
   /** Notifications (bell and push); in-game only by default. */
   notifier?: Notifier;
   /** Built web app to serve (production). */
@@ -236,6 +238,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
       sessionCookie: SESSION_COOKIE,
       notifier: options.notifier ?? new Notifier(options.db, options.world, new NoPusher()),
       adminEmails: options.adminEmails ?? [],
+      communityUrl: options.communityUrl ?? null,
     });
   }
 
