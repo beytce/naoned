@@ -1710,6 +1710,17 @@ export const fr = {
       have: (n: number) => `en stock : ${n}`,
       none: "Aucune commande de compagnie en cours.",
     },
+    /** The season's chronicle, a card to share at the closing ceremony. */
+    chronicle: {
+      share: "Partager ma chronique",
+      who: (pseudo: string, rank: number, of: number) =>
+        `${pseudo}, ${rank}${rank === 1 ? "er" : "e"} marchand sur ${of}`,
+      sales: (amount: string) => `${amount} de ventes nettes`,
+      title: (name: string) => `Titre : ${name}`,
+      award: (name: string) => `Distinction : ${name}`,
+      renown: (name: string) => `Renommée de la Maison : ${name}`,
+      footer: "Un jeu de commerce honnête · une saison par mois",
+    },
     /** The Journal du Rialto, in the notices. */
     journal: {
       title: "Journal du Rialto",

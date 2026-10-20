@@ -3,6 +3,7 @@ import { Medal } from "../art/icons.js";
 import { Emblem } from "../art/logo.js";
 import { fr } from "../i18n.js";
 import { Big, Label, Slab } from "../ui.js";
+import { shareChronicle } from "./chronicle.js";
 import { d } from "./format.js";
 import type { Ceremony as CeremonyData } from "./types.js";
 
@@ -13,10 +14,13 @@ import type { Ceremony as CeremonyData } from "./types.js";
 export function Ceremony({
   data,
   nextSeason,
+  pseudo,
   onDone,
 }: {
   data: CeremonyData;
   nextSeason: string;
+  /** The merchant's name, written on the chronicle. */
+  pseudo: string;
   onDone: () => void;
 }) {
   const t = fr.game.season;
@@ -88,6 +92,15 @@ export function Ceremony({
           {t.renownTotal(data.totalRenown.current.name, data.totalRenown.points)}
         </p>
       </section>
+
+      <Slab
+        tone="ghost"
+        size="md"
+        className="mt-6 w-full"
+        onClick={() => void shareChronicle(data, pseudo)}
+      >
+        {fr.game.chronicle.share}
+      </Slab>
 
       <p className="mt-6 text-sm text-cream-dim">{t.newSeason(nextSeason)}</p>
       <Slab size="lg" className="mt-4 w-full" onClick={onDone}>
