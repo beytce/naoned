@@ -1,6 +1,7 @@
 import { costForLevel, costValue } from "./buildings.js";
 import type { Deniers } from "./money.js";
 import { yieldBonusBps } from "./production.js";
+import { openProjects } from "./projects.js";
 import type { Building, PlayerId, WorldContext, WorldState } from "./state.js";
 import { recipesFor } from "./theme.js";
 
@@ -97,4 +98,66 @@ export function bestUpgrade(
       };
   }
   return best;
+}
+
+/** One piece of advice from the guide, the most urgent first (see `nextActions`). */
+export type NextAction =
+  | { kind: "harvest"; count: number }
+  | { kind: "produce"; buildingId: string }
+  | { kind: "company"; projectId: string; resource: string; quantity: number }
+  | { kind: "upgrade"; buildingId: string; paybackMinutes: number; addedPerHour: Deniers };
+
+/**
+ * The next best actions of a merchant (recommendations of 20 October 2026), most urgent first:
+ * batches waiting in the workshops, workshops standing idle that have what they need, goods in
+ * stock the company order asks for, then the upgrade that pays back first once it is affordable.
+ */
+export function nextActions(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  now: number,
+): NextAction[] {
+  const out: NextAction[] = [];
+  const stock = (res: string) => state.inventories[playerId]?.[res]?.available ?? 0;
+  const mine = Object.values(state.buildings)
+    .filter((b) => b.playerId === playerId)
+    .sort((x, y) => (x.id < y.id ? -1 : 1));
+  let ready = 0;
+  for (const b of mine) {
+    const job = b.job;
+    if (job && Math.floor((now - job.startedAt) / job.batchMs) > 0) ready += 1;
+  }
+  if (ready > 0) out.push({ kind: "harvest", count: ready });
+  for (const b of mine) {
+    const job = b.job;
+    if (job && job.startedAt + job.batches * job.batchMs > now) continue;
+    const recipe = recipesFor(ctx.theme, b.type)[0];
+    if (!recipe) continue;
+    const can = Object.entries(recipe.inputs).every(
+      ([res, qty]) => stock(res) >= (qty ?? 0) * b.level,
+    );
+    if (can) out.push({ kind: "produce", buildingId: b.id });
+  }
+  for (const p of openProjects(state.projects, now)) {
+    const resource = Object.keys(p.needs)
+      .sort()
+      .find((r) => (p.needs[r] ?? 0) > (p.delivered[r] ?? 0) && stock(r) > 0);
+    if (!resource) continue;
+    const quantity = Math.min(
+      stock(resource),
+      (p.needs[resource] ?? 0) - (p.delivered[resource] ?? 0),
+    );
+    out.push({ kind: "company", projectId: p.id, resource, quantity });
+    break;
+  }
+  const best = bestUpgrade(ctx, state, playerId, now);
+  const b = best && state.buildings[best.buildingId];
+  if (best && b) {
+    const cost = costForLevel(ctx, b.type, b.level + 1);
+    const cash = state.accounts[`cash:${playerId}`] ?? 0n;
+    const materials = Object.entries(cost.materials).every(([res, qty]) => stock(res) >= qty);
+    if (cash >= cost.ducats && materials) out.push({ kind: "upgrade", ...best });
+  }
+  return out;
 }

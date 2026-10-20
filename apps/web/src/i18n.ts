@@ -1946,6 +1946,24 @@ export const fr = {
       adds: (amount: string) => `+${amount} de marge par heure`,
       payback: (time: string) => `rentabilisé en ${time}`,
     },
+    /** Lorenzo's next best action, on the Comptoir's side. */
+    advice: {
+      title: "Lorenzo conseille",
+      none: "Tout tourne : vos ateliers travaillent. Revenez quand ils auront fini.",
+      harvest: (n: number) =>
+        n > 1
+          ? `${n} ateliers ont fini : récoltez et relancez.`
+          : "Un atelier a fini : récoltez et relancez.",
+      harvestGo: "Récolter",
+      produce: (building: string) => `${building} ne fait rien et a de quoi travailler.`,
+      produceGo: "Produire",
+      company: (n: number, resource: string) =>
+        `La commande de compagnie attend ${resource} : vous en avez ${n} à livrer.`,
+      companyGo: "Livrer",
+      upgrade: (building: string, adds: string, payback: string) =>
+        `Améliorez ${building} : +${adds} par heure, rentabilisé en ${payback}.`,
+      upgradeGo: "Améliorer",
+    },
     dashboard: {
       title: "Tableau de bord",
       help: "Vos ventes nettes comptées comme au classement : ce qui entre pour vos marchandises, moins ce qu'elles vous coûtent. La courbe additionne les sept derniers jours.",

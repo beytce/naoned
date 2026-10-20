@@ -3,6 +3,7 @@ import { BuildingArt } from "../art/buildings.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Panel, Qty, Ribbon, Sheet, Slab, clock } from "../ui.js";
+import { AdviceTile } from "./Advice.js";
 import { BaleScreen, BaleTile } from "./Bales.js";
 import { BuildCatalog } from "./Catalog.js";
 import { CompanySheet, CompanyTile } from "./Company.js";
@@ -794,6 +795,7 @@ export function Carnet(props: GameProps) {
 export function SeasonTiles(props: GameProps) {
   return (
     <>
+      <AdviceTile {...props} />
       <DashboardTile {...props} />
       <CompanyTile {...props} />
       <SeasonGoal {...props} />

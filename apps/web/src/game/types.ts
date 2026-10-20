@@ -473,6 +473,8 @@ export interface PlayerView {
   buildings: BuildingView[];
   /** The upgrade that pays back first (null: none left). */
   bestUpgrade: string | null;
+  /** The guide's next best actions, the most urgent first. */
+  next: NextAction[];
   market: MarketLine[];
   cityQuotes: { city: string; resource: string; unitPrice: Money }[];
   projects: Project[];
@@ -1136,3 +1138,9 @@ export interface DashboardView {
   days: string[];
   lines: { who: "me" | "rival" | "leader"; pseudo: string | null; daily: string[] }[];
 }
+
+export type NextAction =
+  | { kind: "harvest"; count: number }
+  | { kind: "produce"; buildingId: string }
+  | { kind: "company"; projectId: string; resource: string; quantity: number }
+  | { kind: "upgrade"; buildingId: string; paybackMinutes: number; addedPerHour: Money };

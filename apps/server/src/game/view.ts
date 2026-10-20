@@ -27,6 +27,7 @@ import {
   mudaPrice,
   mudaView,
   netWorth,
+  nextActions,
   openProjects,
   quoteCitySale,
   rationsPerDay,
@@ -572,6 +573,7 @@ export function playerView(
     buildings: buildings.map((b) => buildingView(ctx, state, b, now)),
     /** The upgrade that pays back first (null: none left). */
     bestUpgrade: bestUpgrade(ctx, state, playerId, now)?.buildingId ?? null,
+    next: nextActions(ctx, state, playerId, now),
     market,
     book,
     cityQuotes,
