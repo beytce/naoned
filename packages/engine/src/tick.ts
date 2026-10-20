@@ -3,6 +3,7 @@ import { advanceCampaign } from "./campaign.js";
 import { ensureBoard, pruneRoad, resolveDeliveries } from "./deliveries.js";
 import { dissolveLegacyGuilds } from "./families.js";
 import { runFattore } from "./fattore.js";
+import { collectLoans } from "./loans.js";
 import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
 import { arriveMuda } from "./muda.js";
@@ -67,6 +68,7 @@ export function tick(tx: Tx): void {
   openDueProjects(tx);
   runTenders(tx);
   settlePartners(tx);
+  collectLoans(tx);
   // Shared demand: the world's board of the day, drawn once the day's active merchants are known.
   ensureBoard(tx);
   // The fattore sends the vehicles left at the counter.

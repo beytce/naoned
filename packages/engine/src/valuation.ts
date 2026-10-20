@@ -56,8 +56,11 @@ export function netWorth(
   now: number,
   unitValues?: Record<string, Deniers>,
 ): NetWorth {
+  // Ducats held for its commissions and colleganze on offer are still the merchant's.
   const cash =
-    (state.accounts[cashAccount(playerId)] ?? 0n) + (state.accounts[escrowAccount(playerId)] ?? 0n);
+    (state.accounts[cashAccount(playerId)] ?? 0n) +
+    (state.accounts[escrowAccount(playerId)] ?? 0n) +
+    (state.accounts[`hold:${playerId}`] ?? 0n);
   let stock = 0n;
   for (const [resource, line] of Object.entries(state.inventories[playerId] ?? {})) {
     const unit = unitValues?.[resource] ?? stockUnitValue(ctx, state, resource, now);
@@ -81,5 +84,7 @@ export function netWorth(
       buildings += applyBpsFloor(v.investedValue, ctx.settings.valuation.buildingValueBps);
     }
   }
-  return { cash, stock, buildings, total: cash + stock + buildings };
+  // What it owes the Bank.
+  const debt = state.loans?.[playerId]?.owed ?? 0n;
+  return { cash, stock, buildings, total: cash + stock + buildings - debt };
 }

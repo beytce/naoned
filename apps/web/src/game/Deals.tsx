@@ -8,7 +8,7 @@ import { have } from "./workshops.js";
 
 const t = fr.game.deals;
 
-type Tab = "commissions" | "colleganze";
+type Tab = "commissions" | "colleganze" | "bank";
 
 const who = (props: GameProps, id: string) => props.people[id] ?? t.someone;
 
@@ -48,9 +48,16 @@ export function DealsSheet(props: GameProps) {
             options={[
               { value: "commissions", label: t.tabs.commissions },
               { value: "colleganze", label: t.tabs.colleganze },
+              ...(deals.bank ? [{ value: "bank" as const, label: t.tabs.bank }] : []),
             ]}
           />
-          {tab === "commissions" ? <Commissions {...props} /> : <Colleganze {...props} />}
+          {tab === "commissions" ? (
+            <Commissions {...props} />
+          ) : tab === "colleganze" ? (
+            <Colleganze {...props} />
+          ) : (
+            <Bank {...props} />
+          )}
         </div>
       )}
     </Sheet>
@@ -282,6 +289,84 @@ function Colleganze(props: GameProps) {
           {t.offerGo}
         </Slab>
       </section>
+    </div>
+  );
+}
+
+/** The Bank's loan: the merchant's own, or a new one within its limit. */
+function Bank(props: GameProps) {
+  const bank = props.view.deals?.bank;
+  const limit = Number(BigInt(bank?.limit ?? "0"));
+  const [amount, setAmount] = useState(Math.min(limit, 10_000));
+  const [days, setDays] = useState(3);
+  if (!bank) return null;
+  const b = t.bank;
+  const loan = bank.loan;
+  const interest = Math.ceil((amount * bank.interestBpsPerDay * days) / 10_000);
+  return (
+    <div className="space-y-4">
+      <p className="note">
+        {b.help(
+          Math.round(bank.maxShareBps / 100),
+          bank.interestBpsPerDay / 100,
+          bank.maxDays,
+          Math.round(bank.lateBps / 100),
+        )}
+      </p>
+      {loan ? (
+        <div className="space-y-2 cut bg-night-3 px-3 py-3 ring-1 ring-inset ring-line">
+          <p className={`text-sm ${loan.late ? "text-vermilion" : ""}`}>
+            {loan.late
+              ? b.late(d(loan.owed))
+              : b.current(d(loan.owed), clock(loan.dueAt - props.now))}
+          </p>
+          {!loan.late && (
+            <Slab
+              className="w-full"
+              disabled={props.busy}
+              onClick={() => props.act({ type: "repayLoan" })}
+            >
+              {b.repay}
+            </Slab>
+          )}
+        </div>
+      ) : limit <= 0 ? (
+        <p className="note">{b.none}</p>
+      ) : (
+        <section className="space-y-2">
+          <label className="block text-sm">
+            <span className="flex justify-between">
+              <span>{b.amount}</span>
+              <span className="font-mono">{d(BigInt(Math.min(amount, limit)))}</span>
+            </span>
+            <input
+              type="range"
+              min={Math.min(1_000, limit)}
+              max={limit}
+              step={100}
+              value={Math.min(amount, limit)}
+              onChange={(e) => setAmount(Number(e.target.value))}
+              className="mt-1 w-full accent-[rgb(var(--gold))]"
+            />
+          </label>
+          <div className="flex items-center justify-between text-sm">
+            <span>{t.days}</span>
+            <Qty value={days} max={bank.maxDays} onChange={setDays} />
+          </div>
+          <p className="note">
+            {b.cost(d(BigInt(interest)), d(BigInt(Math.min(amount, limit) + interest)))}
+          </p>
+          <Slab
+            className="w-full"
+            disabled={props.busy}
+            onClick={() =>
+              props.act({ type: "borrow", amount: String(Math.min(amount, limit)), days })
+            }
+          >
+            {b.borrow}
+          </Slab>
+        </section>
+      )}
     </div>
   );
 }

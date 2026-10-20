@@ -1278,6 +1278,7 @@ export const fr = {
         quality_premium: "Qualité des manufactures",
         commission: "Commandes entre marchands",
         colleganza_share: "Parts de colleganza",
+        loan: "Prêts de la Banque",
         decree_share: "Part des décrets",
         delivery: "Livraisons",
       } as Record<string, string>,
@@ -1984,7 +1985,19 @@ export const fr = {
       title: "Affaires entre marchands",
       tile: (n: number) =>
         n > 0 ? `${n} affaire${n > 1 ? "s" : ""} à saisir` : "Commandes et colleganze",
-      tabs: { commissions: "Commandes", colleganze: "Colleganza" },
+      tabs: { commissions: "Commandes", colleganze: "Colleganza", bank: "Banque" },
+      bank: {
+        help: (share: number, pct: number, days: number, late: number) =>
+          `La Banque prête jusqu'à ${share} % de votre patrimoine, ${days} jours au plus, à ${pct} % par jour. À l'échéance, elle se paie sur votre caisse ; ce qui manque est majoré de ${late} % et prélevé sur vos rentrées. Remboursé plus tôt, vous ne payez que les jours entamés.`,
+        none: "Votre patrimoine ne permet pas encore d'emprunter.",
+        current: (owed: string, left: string) =>
+          `Vous devez ${owed} à la Banque · échéance dans ${left}.`,
+        late: (owed: string) => `En retard : ${owed} restent dus, prélevés sur vos rentrées.`,
+        repay: "Rembourser maintenant",
+        amount: "Montant emprunté",
+        cost: (interest: string, total: string) => `Intérêts ${interest} · à rendre ${total}`,
+        borrow: "Emprunter",
+      },
       someone: "un marchand",
       you: "Vous",
       commissionHelp:

@@ -964,6 +964,19 @@ export const worldSettingsSchema = z.object({
       cautionBps: bps,
     })
     .optional(),
+  /**
+   * The Bank's loans: up to `maxShareBps` of the net worth and `maxAmount`, `maxDays` at most, at
+   * `interestBpsPerDay` simple; `lateBps` more on what is missing at term. Off when absent.
+   */
+  loans: z
+    .object({
+      maxShareBps: bps,
+      maxAmount: money,
+      interestBpsPerDay: bps,
+      maxDays: positive,
+      lateBps: bps,
+    })
+    .optional(),
   /** Commissions between merchants, open `maxDays` at most. Off when absent. */
   commissions: z.object({ maxDays: positive }).optional(),
   /** The colleganza: `maxDays` at most, the investor's share at most `maxShareBps`. */

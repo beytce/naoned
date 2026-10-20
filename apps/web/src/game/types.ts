@@ -891,6 +891,8 @@ export type Action =
   | { type: "cancelCommission"; commissionId: string }
   | { type: "offerColleganza"; amount: string; days: number; shareBps: number; to?: string }
   | { type: "acceptColleganza"; colleganzaId: string }
+  | { type: "borrow"; amount: string; days: number }
+  | { type: "repayLoan" }
   | { type: "cancelColleganza"; colleganzaId: string }
   | { type: "fulfillContract"; contractId: string }
   | { type: "joinFamily"; family: string }
@@ -1233,6 +1235,14 @@ export interface WarehousesView {
 }
 
 export interface DealsView {
+  bank: {
+    loan: { amount: Money; owed: Money; dueAt: number; late: boolean } | null;
+    limit: Money;
+    maxShareBps: number;
+    interestBpsPerDay: number;
+    maxDays: number;
+    lateBps: number;
+  } | null;
   commissionDays: number;
   colleganzaDays: number;
   maxShareBps: number;

@@ -768,7 +768,7 @@ function warehousesView(ctx: WorldContext, state: WorldState, playerId: string, 
 }
 
 function dealsView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {
-  if (!ctx.settings.commissions && !ctx.settings.colleganza) return null;
+  if (!ctx.settings.commissions && !ctx.settings.colleganza && !ctx.settings.loans) return null;
   const commissions = Object.values(state.commissions ?? {})
     .filter((c) =>
       c.buyer === playerId
@@ -806,7 +806,26 @@ function dealsView(ctx: WorldContext, state: WorldState, playerId: string, now: 
       settled: !!g.settled,
       paid: g.paid ?? null,
     }));
+  const rules = ctx.settings.loans;
+  const loan = state.loans?.[playerId];
+  const worth = netWorth(ctx, state, playerId, now).total;
   return {
+    // The Bank's loan: the merchant's own, and what it may borrow now.
+    bank: rules
+      ? {
+          loan: loan
+            ? { amount: loan.amount, owed: loan.owed, dueAt: loan.dueAt, late: !!loan.late }
+            : null,
+          limit: (() => {
+            const cap = ((worth > 0n ? worth : 0n) * BigInt(rules.maxShareBps)) / 10_000n;
+            return cap < rules.maxAmount ? cap : rules.maxAmount;
+          })(),
+          maxShareBps: rules.maxShareBps,
+          interestBpsPerDay: rules.interestBpsPerDay,
+          maxDays: rules.maxDays,
+          lateBps: rules.lateBps,
+        }
+      : null,
     commissionDays: ctx.settings.commissions?.maxDays ?? 0,
     colleganzaDays: ctx.settings.colleganza?.maxDays ?? 0,
     maxShareBps: ctx.settings.colleganza?.maxShareBps ?? 0,

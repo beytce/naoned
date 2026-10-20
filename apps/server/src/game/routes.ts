@@ -196,6 +196,12 @@ const action = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("tenderDeliver"), tenderId: z.string().max(32) }),
   z.object({
+    type: z.literal("borrow"),
+    amount: z.string().regex(/^\d{1,12}$/),
+    days: z.number().int().positive().max(30),
+  }),
+  z.object({ type: z.literal("repayLoan") }),
+  z.object({
     type: z.literal("postCommission"),
     resource: z.string().max(32),
     quantity: z.number().int().positive().max(10_000),
@@ -1281,6 +1287,10 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       ];
     case "tenderDeliver":
       return [{ type: "tenderDeliver", playerId, tenderId: a.tenderId }];
+    case "borrow":
+      return [{ type: "borrow", playerId, amount: BigInt(a.amount), days: a.days }];
+    case "repayLoan":
+      return [{ type: "repayLoan", playerId }];
     case "postCommission":
       return [
         {

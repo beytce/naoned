@@ -376,6 +376,19 @@ export interface WorldState {
     bids: Record<string, Record<PlayerId, Deniers>>;
     used?: Record<PlayerId, { day: number; units: number }>;
   };
+  /** The Bank's loans (loans.ts), by merchant: one at a time. */
+  loans?: Record<
+    PlayerId,
+    {
+      /** Principal not repaid yet. */
+      amount: Deniers;
+      /** All that is owed: the principal and the interest of the term (a penalty once late). */
+      owed: Deniers;
+      takenAt: number;
+      dueAt: number;
+      late?: boolean;
+    }
+  >;
   /** Commissions between merchants (partners.ts), by id. */
   commissions?: Record<
     string,

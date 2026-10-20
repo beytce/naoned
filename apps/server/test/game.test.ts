@@ -297,6 +297,13 @@ describe("game API", () => {
       shareBps: 5_000,
     });
     expect(g.json().view.deals.colleganze[0]).toMatchObject({ role: "investor", merchant: null });
+    // A loan of the Bank, within its limit, owed with its interest.
+    const bank = g.json().view.deals.bank;
+    const loan = await act(cookie, { type: "borrow", amount: "1000", days: 2 });
+    expect(loan.json().error).toBeUndefined();
+    expect(loan.json().view.deals.bank.loan.owed).toBe(
+      String(1000 + Math.ceil((1000 * bank.interestBpsPerDay * 2) / 10_000)),
+    );
   });
 
   it("buys instantly from the market maker once the tick has quoted", async () => {

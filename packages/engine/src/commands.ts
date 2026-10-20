@@ -30,6 +30,7 @@ import {
   rushDelivery,
   trackHouseMissions,
 } from "./house.js";
+import { borrow, repayLoan } from "./loans.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { claimMission, trackMissions } from "./missions.js";
 import type { Deniers } from "./money.js";
@@ -126,6 +127,8 @@ export type Command =
     }
   | { type: "acceptColleganza"; playerId: PlayerId; colleganzaId: string }
   | { type: "cancelColleganza"; playerId: PlayerId; colleganzaId: string }
+  | { type: "borrow"; playerId: PlayerId; amount: Deniers; days: number }
+  | { type: "repayLoan"; playerId: PlayerId }
   | { type: "build"; playerId: PlayerId; buildingType: string }
   | { type: "upgrade"; playerId: PlayerId; buildingId: string }
   | ({ type: "placeOrder" } & PlaceOrderInput)
@@ -439,6 +442,12 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "cancelColleganza":
       cancelColleganza(tx, cmd.playerId, cmd.colleganzaId);
+      break;
+    case "borrow":
+      borrow(tx, cmd.playerId, cmd.amount, cmd.days);
+      break;
+    case "repayLoan":
+      repayLoan(tx, cmd.playerId);
       break;
   }
 }

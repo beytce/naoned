@@ -120,3 +120,4 @@ export * from "./tenders.js";
 export * from "./warehouses.js";
 export * from "./unlocks.js";
 export * from "./partners.js";
+export * from "./loans.js";

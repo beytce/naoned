@@ -922,6 +922,15 @@ export const venice1450Settings: WorldSettingsInput = {
   // most; the colleganza a week at most, the investor taking at most three quarters of the gains
   // (the share of the Venetian stans).
   commissions: { maxDays: 3 },
+  // The Bank's loans (recommendations of 20 October 2026): up to 30 % of the net worth and 500
+  // ducats, a week at most, 1 % a day; 20 % more on what is missing at term.
+  loans: {
+    maxShareBps: 3_000,
+    maxAmount: 50_000,
+    interestBpsPerDay: 100,
+    maxDays: 7,
+    lateBps: 2_000,
+  },
   colleganza: { maxDays: 7, maxShareBps: 7_500 },
   // The manufactures (recommendations of 20 October 2026): past level 5, a workshop climbs to 10
   // from Négociant (3 000 ducats of net sales) on a path chosen once: volume (bigger batches) or
