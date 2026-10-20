@@ -31,3 +31,7 @@
 | P1-10 | Chronique de saison à partager (image) | Fait ; l'enchère des galères et l'élection du Doge restent dans IDEAS.md |
 | P1-11 | Le fattore : 2 départs par jour, 2 h après la dernière action, 15 % de commission détruite | Fait |
 | D | Rapport de la Banque (public, `/api/bank`), livre de compte en CSV, promesses sur l'accueil | Fait |
+
+## Suite : la Terraferme plus proche d'OpenFront (20 octobre 2026)
+
+Heure de bataille, escarmouches en direct, soldats ou paysans, ports et barques, nations de 1450, bombardes et remparts, diplomatie, semaines en équipes, rejeu et cote : voir `docs/plan-terraferme.md`, « Se rapprocher d'OpenFront ».

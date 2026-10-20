@@ -214,3 +214,21 @@ Mesures dans `docs/calibration.md`.
 4. Interface : la carte hexagonale, le HUD, le lancement d'un front, le panneau d'un joueur.
 5. Calibration : `pnpm sim` sur toutes les graines et `--pass 0.2`, `docs/calibration.md`.
 6. Bascule à une **ouverture de saison** (le 1er du mois), jamais en cours de saison ; `docs/CADRAGE.md`, `docs/design.md`.
+
+## Se rapprocher d'OpenFront (20 octobre 2026, décision du porteur)
+
+Après l'analyse des écarts avec OpenFront, le porteur demande tout le lot :
+
+| Écart | Ce qui est fait | Réglages (`worlds.settings.terraferma`) |
+| --- | --- | --- |
+| Rien ne bouge pendant une session | **L'heure de bataille** : de 20 h à 21 h, un pas de front toutes les 3 minutes (dix fois plus vite), troupes, Gloire et Milan au rythme habituel ; alerte poussée 15 min avant ; carte rafraîchie toutes les 3 s | `battle` |
+| Pas de partie en direct | **Les escarmouches** : une partie de 15 min sur le même moteur et la même carte, le temps soixante fois plus vite (un pas toutes les 5 s), salle d'attente d'une minute complétée par des condottieri ; le rang rapporte 200, 120, 80, 30 de Gloire à la semaine (commande `terraSkirmishGlory`, journalisée). Tenue en mémoire par le serveur : perdue à un redémarrage | `skirmish` |
+| Pas d'économie propre | **Soldats ou paysans** : un curseur par marchand ; les soldats recrutent (jusqu'à ×2), les paysans font pousser blé, argile et bois pour le comptoir (journal des stocks) ; deux villes au moins reliées à la capitale par ses terres rapportent des ducats de route (grand livre) | `peasants` |
+| L'eau ne se joue pas | **Ports, barques, galères** : un port sur une rive ; une barque débarque sur toute rive des mêmes eaux après 10 min par case d'eau ; les galères d'un défenseur qui a un port sur ces eaux coulent 30 % du débarquement | `buildings.porto` |
+| Milan seul | **Les nations de 1450** : Mantoue (défensive, rend les coups), Ferrare (opportuniste, tombe sur les faibles), Aquilée (lente), l'Empire (pillard, depuis les Alpes) ; jamais classées | `nations` |
+| Pas d'arme spectaculaire | **Bombardes et remparts** : un tir par jour rend libres une case ennemie à portée et ses voisines (jamais une capitale) ; des remparts en protègent | `buildings.bombarda`, `buildings.mura` |
+| Diplomatie pauvre | **Signaux** sur la carte (À l'aide, Merci, Paix ; une cible montrée aux seuls alliés), **ducats** entre alliés (50 d par jour), **embargo** depuis les villes tenues (20 % de moins sur les livraisons du rival) | `diplomacy` |
+| Une seule façon de jouer | **Une semaine par mois en équipes** : les marchands d'une région sont alliés, les équipes classées par leur Gloire, le meilleur de l'équipe gagnante est Signore | `teams` |
+| Rien après la partie | **Rejeu** de la semaine en dix secondes, **historique** des semaines (`terra_results`) et **cote** Elo au profil | — |
+
+Pas fait : d'autres cartes que la Vénétie (il faudrait leurs dessins), une carte plus fine (essayée, elle élimine davantage d'occasionnels), les ordinateurs ne jouent ni les ports, ni les bombardes, ni le curseur.
