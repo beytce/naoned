@@ -1126,3 +1126,19 @@ La Terraferme garde aussi la capitale de qui n'attaque aucun marchand (`peaceful
 | Masse monétaire par joueur actif (pic) | ≤ 0,9 × | ≤ 0,97 × |
 
 **Lecture.** Le fattore fait rouler les véhicules un peu plus (toujours sous la cible de 50 %), les commandes de compagnie créent un peu plus de monnaie ; la masse par joueur actif reste loin du plafond (2,5 ×) et l'indice des prix dans sa plage. La croissance de la monnaie reste en avertissement, comme avant. Le Gini baisse : les commandes de compagnie profitent à tous ceux qui livrent.
+
+## La Terraferme proche d'OpenFront (20 octobre 2026, décision du porteur)
+
+Heure de bataille, soldats ou paysans (récoltes de blé, d'argile et de bois, ducats des routes entre villes), ports et barques, nations de 1450, bombardes et remparts, diplomatie (dons de ducats, embargo), semaines en équipes, escarmouches : voir `docs/plan-terraferme.md`, « Se rapprocher d'OpenFront ». Ce qui touche la monnaie et les stocks : les récoltes (journal des stocks), les routes (grand livre, `terraferma_route`), les dons entre alliés (`terra_gift`), les bâtiments (ports, bombardes, remparts détruits en ducats), l'embargo.
+
+`pnpm sim`, 5 graines, toutes conformes (les PNJ gardent le curseur à moitié et ne jouent ni ports ni bombardes) :
+
+| Moyenne des 5 graines | Avant | Après |
+| --- | --- | --- |
+| Croissance de la monnaie par joueur actif (moyenne, %/jour) | 4,3 | 3,4 |
+| Jours hors plage du ratio monnaie créée / détruite (sur 23) | 2,6 | 2,4 |
+| Gini du patrimoine à J+15 | 0,44 | 0,44 |
+| Monnaie détruite par la Terraferme (d par joueur actif et par jour) | 114,7 | 110,0 |
+| Masse monétaire par joueur actif (pic) | ≤ 0,97 × | ≤ 0,91 × |
+
+**Lecture.** Les récoltes de la Terraferme ajoutent des matières premières qui pèsent un peu sur leurs prix ; la monnaie croît moins vite, l'indice des prix reste dans sa plage (84 à 126). Les nations éliminent davantage de marchands dans le prototype où tous attaquent (8 sur 40 au lieu de 3) ; qui n'attaque aucun marchand garde sa capitale. À mesurer avec de vrais joueurs : le curseur, les ports et les bombardes, que les PNJ ne jouent pas.
