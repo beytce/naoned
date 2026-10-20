@@ -1104,3 +1104,25 @@ Prototype de la Terraferme (`pnpm --filter @comptoirs/simulator terra`, 40 march
 | Gini du patrimoine à J+15 | 0,48 | 0,47 |
 
 **Lecture.** Tout le monde joue, et la guerre entre marchands arrive plus tôt. Le prix à payer : un peu plus d'éliminés en fin de semaine, surtout des occasionnels. À suivre en bêta ; si cela gêne, le premier levier est `troopsPerDay` (des retardataires moins forts). L'économie reste dans le bruit des graines (graine 2 : 6 jours hors plage du ratio, en avertissement seulement).
+
+## Commandes de compagnie et fattore (20 octobre 2026, recommandations du porteur)
+
+Deux mécaniques du lot de recommandations (`docs/recommandations-2026-10-20.md`) touchent la monnaie :
+
+- **Commandes de compagnie** (`projects`) : tous les 2 jours, une ville commande 4 pains, 3 briques et 3 planches par marchand actif, payés 10 % au-dessus de la référence à la livraison ; une fois remplie, chaque marchand qui a livré touche 10 % de plus (`bonusBps`). Les PNJ n'y livrent que leur part (le besoin par marchand), une fois par commande.
+- **Fattore** (`deliveries.fattore`) : un véhicule resté 2 h au comptoir part avec la meilleure commande que le stock couvre, 2 fois par jour, de 8 h à 22 h, pour un marchand passé dans les 24 h ; 15 % du paiement est détruit.
+
+La Terraferme garde aussi la capitale de qui n'attaque aucun marchand (`peacefulSafe`).
+
+`pnpm sim`, 5 graines, toutes conformes :
+
+| Moyenne des 5 graines | Avant | Après |
+| --- | --- | --- |
+| Croissance de la monnaie par joueur actif (moyenne, %/jour) | 3,5 | 4,3 |
+| Jours hors plage du ratio monnaie créée / détruite (sur 23) | 2,8 | 2,6 |
+| Gini du patrimoine à J+15 | 0,47 | 0,44 |
+| Monnaie détruite par la Terraferme (d par joueur actif et par jour) | 109,6 | 114,7 |
+| Utilisation des véhicules des assidus | 28 % (graine 5) | 32 à 34 % |
+| Masse monétaire par joueur actif (pic) | ≤ 0,9 × | ≤ 0,97 × |
+
+**Lecture.** Le fattore fait rouler les véhicules un peu plus (toujours sous la cible de 50 %), les commandes de compagnie créent un peu plus de monnaie ; la masse par joueur actif reste loin du plafond (2,5 ×) et l'indice des prix dans sa plage. La croissance de la monnaie reste en avertissement, comme avant. Le Gini baisse : les commandes de compagnie profitent à tous ceux qui livrent.
