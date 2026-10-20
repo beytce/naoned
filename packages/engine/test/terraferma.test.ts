@@ -11,6 +11,7 @@ import {
   cellCost,
   cellsOf,
   closeTerra,
+  fireBombard,
   forecastFronts,
   hexDistance,
   hexNeighbors,
@@ -840,5 +841,66 @@ describe("the nations of 1450", () => {
     launchFront(s, cfg, "a", border(s, "a", id), 5_000, s.clock);
     advanceTerra(s, cfg, s.clock + 2 * HOUR);
     expect(s.players[id]?.wronged).toContain("a");
+  });
+});
+
+describe("bombards and walls", () => {
+  const buildings = {
+    rocca: { price: 4_000, defenseBps: 16_000, perCells: 15 },
+    bombarda: { price: 8_000, perCells: 1, range: 4, shotsPerDay: 1 },
+    mura: { price: 3_000, perCells: 1, radius: 1 },
+  };
+  /** a and b, their lands within a bombard's range, the truce over. */
+  const pair = () => {
+    const cfg = config({
+      buildings,
+      start: { ...testTerraferma.start, troops: 200, protectionHours: 0, minDistance: 2 },
+    });
+    const s = newTerra(cfg, "seed", 10, START);
+    const a = freeCell(s, 2);
+    placeOnTerra(s, cfg, "a", a, START);
+    const b = s.owner.findIndex(
+      (o, i) =>
+        o === null &&
+        hexDistance(s.map, a, i) === 4 &&
+        s.owner.every((p, j) => p === null || hexDistance(s.map, i, j) >= 2),
+    );
+    placeOnTerra(s, cfg, "b", b, START);
+    return { cfg, s, a, b };
+  };
+
+  it("turns an enemy cell and its neighbours back to free land, once a day", () => {
+    const { cfg, s, a, b } = pair();
+    buildOnTerra(s, cfg, "a", a, "bombarda");
+    // A cell of b's next to its capital, within range.
+    const hit = hexNeighbors(s.map, b).find(
+      (n) => s.owner[n] === "b" && hexDistance(s.map, a, n) <= 4,
+    );
+    if (hit === undefined) throw new Error("no target");
+    const before = cellsOf(s, "b").length;
+    const troops = s.players.b?.troops ?? 0;
+    fireBombard(s, cfg, "a", hit, START + HOUR);
+    expect(s.owner[hit]).toBe(null);
+    expect(s.owner[b]).toBe("b"); // the capital stands
+    expect(cellsOf(s, "b").length).toBeLessThan(before);
+    expect(s.players.b?.troops ?? 0).toBeLessThan(troops);
+    expect(s.players.a?.aggressor).toBe(true);
+    const again = cellsOf(s, "b").find((c) => c !== b && hexDistance(s.map, a, c) <= 4);
+    if (again !== undefined)
+      expect(code(() => fireBombard(s, cfg, "a", again, START + 2 * HOUR))).toBe("no_shot");
+  });
+
+  it("cannot reach behind walls, nor beyond its range", () => {
+    const { cfg, s, a, b } = pair();
+    buildOnTerra(s, cfg, "a", a, "bombarda");
+    const hit = hexNeighbors(s.map, b).find(
+      (n) => s.owner[n] === "b" && hexDistance(s.map, a, n) <= 4,
+    );
+    if (hit === undefined) throw new Error("no target");
+    buildOnTerra(s, cfg, "b", hit, "mura");
+    expect(code(() => fireBombard(s, cfg, "a", hit, START + HOUR))).toBe("walled");
+    const far = cellsOf(s, "b").find((c) => hexDistance(s.map, a, c) > 4);
+    if (far !== undefined)
+      expect(code(() => fireBombard(s, cfg, "a", far, START + HOUR))).toBe("out_of_range");
   });
 });

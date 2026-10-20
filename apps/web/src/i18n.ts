@@ -547,6 +547,7 @@ export const fr = {
           `Il faut ${cost} troupes, vous en avez ${troops} : attendez vos recrues`,
         attack: "Attaquer",
         sail: (minutes: number) => `Débarquer (${minutes} min de mer)`,
+        fire: (shots: number) => `Bombarder (${shots})`,
         allied: "Votre allié : pas de front entre vous",
         far: "Trop loin : touchez une terre au bord des vôtres",
         eta: (hour: string, wait: string) => `Vos troupes y seront vers ${hour} (dans ${wait})`,
@@ -585,6 +586,9 @@ export const fr = {
           rocca: "Un fort défend cette terre et ses voisines",
           porto:
             "Un port : vos barques débarquent sur les rives de ces eaux, vos galères les gardent",
+          bombarda:
+            "Une bombarde : un tir par jour rend libres une terre ennemie à portée et ses voisines",
+          mura: "Des remparts : aucune bombarde n'atteint cette terre ni ses voisines",
         } as Record<string, string>,
         traitor: (time: string) => `Traître encore ${time} : vos terres défendent moins bien`,
       },
@@ -1843,6 +1847,7 @@ export const fr = {
         "Le fattore fait partir vos charrettes oubliées au comptoir, deux fois par jour.",
         "Terraferme : l'heure de bataille, chaque soir de 20 h à 21 h, les fronts avancent dix fois plus vite.",
         "Terraferme : les ports, sur les rives de la lagune, du lac de Garde et de l'Adriatique ; les barques débarquent sur une autre rive, les galères gardent la vôtre.",
+        "Terraferme : bombardes (un tir par jour rend libres une terre ennemie et ses voisines) et remparts qui en protègent.",
         "Terraferme : Mantoue, Ferrare, le Patriarche d'Aquilée et l'Empire rejoignent Milan, chacun à sa manière.",
         "Terraferme : soldats ou paysans. Vos terres donnent du blé, de l'argile et du bois à votre comptoir, et les routes entre vos villes des ducats.",
         "La carte n'affiche plus que les ducats, le rang et les charrettes ; le pain quand il manque.",

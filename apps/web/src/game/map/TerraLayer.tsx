@@ -1051,6 +1051,18 @@ export function TerraPanel({
                 onClick={() => act({ type: "terraBuild", cell, kind: "porto" })}
               />
             )}
+            {(["bombarda", "mura"] as const).map((kind) =>
+              v.rules.prices[kind] !== null ? (
+                <ActionButton
+                  key={kind}
+                  icon={Icon.build()}
+                  label={t().buildings[kind] ?? kind}
+                  badge={built ? undefined : d(v.rules.prices[kind])}
+                  disabled={!!built || !!v.closed}
+                  onClick={() => act({ type: "terraBuild", cell, kind })}
+                />
+              ) : null,
+            )}
             <ActionButton
               icon={Icon.build()}
               label={t().mine.rocca}
@@ -1178,6 +1190,17 @@ export function TerraPanel({
                     ? { type: "terraSail", aim: cell, shareBps }
                     : { type: "terraFront", aim: cell, shareBps },
                 );
+              }}
+            />
+          )}
+          {me.bombard.cells.includes(cell) && (
+            <ActionButton
+              icon={Icon.bandits()}
+              label={t().target.fire(me.bombard.shots)}
+              tone="plain"
+              onClick={async () => {
+                haptic("tap");
+                await act({ type: "terraFire", cell });
               }}
             />
           )}

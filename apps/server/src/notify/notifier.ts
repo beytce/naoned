@@ -51,6 +51,7 @@ const TERRA_NEWS: ReadonlySet<string> = new Set([
   "terra_troops_received",
   "terra_result",
   "terra_battle_soon",
+  "terra_bombarded",
 ]);
 /** Pushed at once, never held back by the hourly limit per kind: the merchant has minutes. */
 const URGENT: ReadonlySet<NotificationKind> = new Set(["siege"]);
@@ -186,7 +187,12 @@ export class Notifier {
       if (!people.has(accountId)) continue;
       notices.push({
         accountId,
-        kind: e.type === "land_threatened" || e.type === "terra_attacked" ? "siege" : "family",
+        kind:
+          e.type === "land_threatened" ||
+          e.type === "terra_attacked" ||
+          e.type === "terra_bombarded"
+            ? "siege"
+            : "family",
         data: { event: e.type, ...d },
       });
     }

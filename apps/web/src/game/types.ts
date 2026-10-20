@@ -876,8 +876,9 @@ export type TerraAction =
   | { type: "terraAccept"; from: string }
   | { type: "terraBreak"; other: string }
   | { type: "terraSend"; to: string; count: number }
-  | { type: "terraBuild"; cell: number; kind: "rocca" | "borgo" | "porto" }
+  | { type: "terraBuild"; cell: number; kind: "rocca" | "borgo" | "porto" | "bombarda" | "mura" }
   | { type: "terraSail"; aim: number; shareBps: number }
+  | { type: "terraFire"; cell: number }
   | { type: "terraRaise" }
   | { type: "terraDecree"; code: string; target?: string }
   | { type: "terraPeasants"; shareBps: number };
@@ -938,7 +939,11 @@ export interface TerraView {
   costs: Record<string, number>;
   /** The last day's cells that changed hands, oldest first (`from`: who held it before). */
   changes: { cell: number; at: number; from: number }[];
-  buildings: { cell: number; kind: "rocca" | "borgo" | "porto"; owner: number }[];
+  buildings: {
+    cell: number;
+    kind: "rocca" | "borgo" | "porto" | "bombarda" | "mura";
+    owner: number;
+  }[];
   me: {
     troops: number;
     cap: number;
@@ -951,6 +956,8 @@ export interface TerraView {
     aggressor: boolean;
     /** The shores its boats may reach: minutes at sea and the shore's cost. */
     sea: Record<string, { minutes: number; cost: number }>;
+    /** The cells its bombards may hit now, and the shots left today. */
+    bombard: { cells: number[]; shots: number };
     /** Share of its people working the land (bps). */
     peasantsBps: number;
     /** What its land yields an open hour: goods in hundredths of a unit, routes in deniers. */
@@ -991,7 +998,14 @@ export interface TerraView {
     minShareBps: number;
     alliesMax: number;
     decrees: string[];
-    prices: { rocca: string; borgo: string | null; porto: string | null; cap: string };
+    prices: {
+      rocca: string;
+      borgo: string | null;
+      porto: string | null;
+      bombarda: string | null;
+      mura: string | null;
+      cap: string;
+    };
     capRaise: number;
     /** The capital of a merchant who attacked no merchant this week is never taken. */
     peacefulSafe: boolean;

@@ -280,6 +280,9 @@ export const venice1450Settings: WorldSettingsInput = {
       // Ports on the lagoon, Lake Garda and the Adriatic: boats land on another shore, 10 min a
       // cell of water; a port's galleys sink 30 % of a landing on its water.
       porto: { price: 3_000, perCells: 10, guardBps: 3_000, minutesPerWater: 10 },
+      // Bombards, the artillery of the 1450s (three years before Constantinople), and walls.
+      bombarda: { price: 15_000, perCells: 25, range: 4, shotsPerDay: 1 },
+      mura: { price: 5_000, perCells: 10, radius: 1 },
     },
     capRaise: { amount: 20, price: 10_000, perDay: 3 },
     // No limit set by the game: fronts march until their troops run out, capitals fall, Milan

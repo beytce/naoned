@@ -24,6 +24,7 @@ import {
   buildOnTerra,
   chooseDecree,
   closeTerra,
+  fireBombard,
   isNation,
   launchFront,
   launchNaval,
@@ -230,7 +231,8 @@ export type TerraCommand =
   | { type: "terraRaise"; playerId: PlayerId }
   | { type: "terraDecree"; playerId: PlayerId; code: string; target?: string }
   | { type: "terraPeasants"; playerId: PlayerId; shareBps: number }
-  | { type: "terraSail"; playerId: PlayerId; aim: number; shareBps: number };
+  | { type: "terraSail"; playerId: PlayerId; aim: number; shareBps: number }
+  | { type: "terraFire"; playerId: PlayerId; cell: number };
 
 /** Ducats for the Terraferma: checked first, then destroyed. */
 function pay(tx: Tx, playerId: PlayerId, price: bigint, ref: string): void {
@@ -302,6 +304,13 @@ export function applyTerra(tx: Tx, cmd: TerraCommand): void {
       });
       if (f.against && !isNation(f.against))
         emit(tx, "terra_attacked", f.against, { by: id, troops: f.troops, aim: f.aim });
+      break;
+    }
+    case "terraFire": {
+      const target = map.owner[cmd.cell];
+      fireBombard(map, cfg, id, cmd.cell, now);
+      if (target && !isNation(target))
+        emit(tx, "terra_bombarded", target, { by: id, cell: cmd.cell });
       break;
     }
     case "terraPeasants":

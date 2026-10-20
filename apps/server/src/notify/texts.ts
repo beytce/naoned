@@ -165,6 +165,11 @@ export function pushText(
       };
     }
     case "siege":
+      if (data.event === "terra_bombarded")
+        return {
+          title: "Vos terres sont bombardées !",
+          body: "Une bombarde ennemie a rendu libres plusieurs de vos terres. Des remparts les en protègent.",
+        };
       if (data.event === "terra_attacked")
         return {
           title: "Vos terres sont attaquées !",

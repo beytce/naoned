@@ -49,8 +49,8 @@ export interface TerraPlayer {
   capital?: number;
   /** Troops of cap bought with ducats this week. */
   boughtCap?: number;
-  /** Cap raises and troops sent to allies, on the day they were counted. */
-  today?: { day: number; raises: number; gifts: number };
+  /** Cap raises, troops sent to allies and bombard shots, on the day they were counted. */
+  today?: { day: number; raises: number; gifts: number; shots?: number };
   /** Alliances broken this week, and until when it is a traitor. */
   breaks?: number;
   traitorUntil?: number;
@@ -70,7 +70,7 @@ export interface TerraPlayer {
   eliminatedAt?: number;
 }
 
-export type TerraBuilding = "rocca" | "borgo" | "porto";
+export type TerraBuilding = "rocca" | "borgo" | "porto" | "bombarda" | "mura";
 
 export interface TerraAlliance {
   a: string;
@@ -798,6 +798,94 @@ export function seaTargets(s: TerraState, cfg: TerraConfig, id: string): Record<
     if (d.length > 0) out[i] = Math.min(...d) * porto.minutesPerWater;
   }
   return out;
+}
+
+/**
+ * A bombard's shot at an enemy cell within its range: the cell and its neighbours of the same
+ * holder go back to free land (never a capital, never behind walls), and their troops die.
+ */
+export function fireBombard(
+  s: TerraState,
+  cfg: TerraConfig,
+  id: string,
+  cell: number,
+  now: number,
+): void {
+  const def = cfg.buildings.bombarda;
+  const player = s.players[id];
+  if (!def || !player || isNation(id)) fail("not_placed");
+  const target = s.owner[cell];
+  if (cell < 0 || cell >= s.owner.length || target === null || target === undefined)
+    fail("not_neutral");
+  if (target === id) fail("own_cell");
+  if (allied(s, id, target)) fail("allied");
+  if (
+    !isNation(target) &&
+    (player.protectedUntil > now || (s.players[target]?.protectedUntil ?? 0) > now)
+  )
+    fail("protected");
+  const guns = terraBuildingsOf(s, id, "bombarda").filter((c) => s.owner[c] === id);
+  if (!guns.some((g) => hexDistance(s.map, g, cell) <= def.range)) fail("out_of_range");
+  const walls = cfg.buildings.mura;
+  if (
+    walls &&
+    terraBuildingsOf(s, target, "mura").some(
+      (w) => s.owner[w] === target && hexDistance(s.map, w, cell) <= walls.radius,
+    )
+  )
+    fail("walled");
+  const today = todayOf(s, player, now);
+  if ((today.shots ?? 0) >= def.shotsPerDay * guns.length) fail("no_shot");
+  today.shots = (today.shots ?? 0) + 1;
+  const capitals = new Set(Object.values(s.players).map((p) => p.capital));
+  const hit = [cell, ...hexNeighbors(s.map, cell)].filter(
+    (c) => s.owner[c] === target && !capitals.has(c),
+  );
+  const holder = s.players[target];
+  if (holder) holder.troops = Math.max(0, holder.troops - densityOf(s, target) * hit.length);
+  for (const c of hit) {
+    s.owner[c] = null;
+    s.taken = { ...s.taken, [c]: { at: now, from: target } };
+    razeAt(s, c);
+  }
+  if (!isNation(target)) player.aggressor = true;
+  else if (target !== MILAN && holder && !(holder.wronged ?? []).includes(id))
+    holder.wronged = [...(holder.wronged ?? []), id];
+}
+
+/** The cells a merchant's bombards may hit now, and the shots left today. */
+export function bombardTargets(
+  s: TerraState,
+  cfg: TerraConfig,
+  id: string,
+  now: number,
+): { cells: number[]; shots: number } {
+  const def = cfg.buildings.bombarda;
+  const player = s.players[id];
+  if (!def || !player) return { cells: [], shots: 0 };
+  const guns = terraBuildingsOf(s, id, "bombarda").filter((c) => s.owner[c] === id);
+  const day = Math.floor((now - s.startAt) / DAY_MS);
+  const used = player.today?.day === day ? (player.today.shots ?? 0) : 0;
+  const shots = Math.max(0, def.shotsPerDay * guns.length - used);
+  if (shots === 0) return { cells: [], shots };
+  const cells: number[] = [];
+  for (let i = 0; i < s.owner.length; i++) {
+    const t = s.owner[i];
+    if (!t || t === id || allied(s, id, t)) continue;
+    if (!guns.some((g) => hexDistance(s.map, g, i) <= def.range)) continue;
+    if (!isNation(t) && (player.protectedUntil > now || (s.players[t]?.protectedUntil ?? 0) > now))
+      continue;
+    const walls = cfg.buildings.mura;
+    if (
+      walls &&
+      terraBuildingsOf(s, t, "mura").some(
+        (w) => s.owner[w] === t && hexDistance(s.map, w, i) <= walls.radius,
+      )
+    )
+      continue;
+    cells.push(i);
+  }
+  return { cells, shots };
 }
 
 /** A boat lands: the galleys of a defender with a port on the same water cut it down first. */

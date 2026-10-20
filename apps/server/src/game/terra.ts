@@ -5,6 +5,7 @@ import {
   type WorldContext,
   type WorldState,
   alliesOf,
+  bombardTargets,
   campaignWeekEnd,
   capOf,
   cellCost,
@@ -191,6 +192,8 @@ export function terraView(
           protectedUntil: me.protectedUntil,
           aggressor: me.aggressor ?? false,
           peasantsBps: peasantsOf(s, playerId),
+          /** The cells its bombards may hit now, and the shots left today. */
+          bombard: bombardTargets(s, cfg, playerId, now),
           /** What the land yields an open hour: goods in hundredths, route ducats in deniers. */
           yields: yieldPerHour(s, cfg, playerId),
           /** The shores its boats may reach: minutes at sea and what the shore costs. */
@@ -251,6 +254,8 @@ export function terraView(
         rocca: cfg.buildings.rocca.price,
         borgo: cfg.buildings.borgo?.price ?? null,
         porto: cfg.buildings.porto?.price ?? null,
+        bombarda: cfg.buildings.bombarda?.price ?? null,
+        mura: cfg.buildings.mura?.price ?? null,
         cap: cfg.capRaise.price,
       },
       capRaise: cfg.capRaise.amount,

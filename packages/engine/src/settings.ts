@@ -467,6 +467,16 @@ export const worldSettingsSchema = z.object({
               minutesPerWater: positive,
             })
             .optional(),
+          /**
+           * The bombard: `shotsPerDay` shots at an enemy cell within `range`, which turns it and
+           * its neighbours of the same holder back to free land (never a capital) and kills the
+           * troops that held them.
+           */
+          bombarda: z
+            .object({ price: money, perCells: positive, range: positive, shotsPerDay: positive })
+            .optional(),
+          /** Walls: no bombard reaches the cells within `radius` of them. */
+          mura: z.object({ price: money, perCells: positive, radius: qty }).optional(),
         })
         .default({
           rocca: { price: 4_000, defenseBps: 16_000, perCells: 15 },
