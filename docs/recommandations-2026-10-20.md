@@ -35,3 +35,25 @@
 ## Suite : la Terraferme plus proche d'OpenFront (20 octobre 2026)
 
 Heure de bataille, escarmouches en direct, soldats ou paysans, ports et barques, nations de 1450, bombardes et remparts, diplomatie, semaines en équipes, rejeu et cote : voir `docs/plan-terraferme.md`, « Se rapprocher d'OpenFront ».
+
+## Suite : la refonte du commerce (20 octobre 2026)
+
+Constat du porteur : le commerce était faible à côté de la Terraferme — quelques livraisons, des ateliers qui grandissent lentement, sans que l'intérêt de chaque choix soit clair. Trois phases, dans le lot du gel levé :
+
+**Phase 1 — rendre les choix lisibles**
+- **C1 Fiche d'atelier chiffrée** : marge par heure aux prix de référence, ce qu'ajoute le niveau suivant et en combien de temps il se rembourse ; le « meilleur placement » marqué (`advice.ts`, `workshopEconomics`, `bestUpgrade`).
+- **C2 Tableau de bord du comptoir** : marge par heure, ventes nettes du jour et de la semaine, courbe des sept derniers jours face au rival et au premier (`GET /api/game/dashboard`).
+- **C3 Lorenzo conseille** la prochaine meilleure action : récolter, relancer un atelier oisif, livrer la commande de compagnie, l'amélioration abordable la plus vite remboursée (`nextActions`).
+
+**Phase 2 — la compétition entre marchands**
+- **C4 Fournisseur officiel** : par ville et par marchandise, qui livre le plus dans la semaine (au moins `minUnits`) est payé `bonusBps` de plus la semaine suivante ; blason sur la carte, classement en direct (`suppliers.ts`).
+- **C5 Appels d'offres du Doge** : tous les deux jours, une quantité sous un plafond ; offres scellées avec caution, les moins chers l'emportent, la caution du gagnant qui ne livre pas sort du jeu (`tenders.ts`).
+- **C6 Entrepôts des villes** : deux places par ville aux enchères chaque semaine (ducats détruits) ; le titulaire livre les commandes de la ville sur-le-champ, sans charrette, `unitsPerDay` par jour (`warehouses.ts`).
+
+**Phase 3 — de quoi grandir**
+- **C7 Chaînes de luxe** ouvertes par les titres (`settings.unlocks`, aux seuils des titres) : verre de Murano (sable → verre → miroirs) au Marchand, draperie (laine → drap → vêtements) au Négociant, épices préparées (épices de la Muda) à l'Armateur. Leurs marchandises ne sont demandées qu'à qui les fabrique (`unlocks.ts`).
+- **C8 Manufactures** : au-delà du niveau 5, jusqu'au 10, sur une voie choisie une fois — volume (lots plus gros) ou qualité (mêmes lots, payés `qualityBpsPerLevel` de plus par niveau par les villes).
+- **C9 Affaires entre marchands** : commandes sous séquestre (ducats bloqués, taxe du marché comme au Rialto, comptées dans les ventes nettes comme une vente au Rialto) et colleganza (capital avancé, rendu à l'échéance avec une part des ventes nettes du marchand, qui passe de son classement à celui de l'investisseur) (`partners.ts`).
+- **C10 Prêts de la Banque** : jusqu'à une part du patrimoine, quelques jours, intérêt simple détruit ; à l'échéance la Banque se paie sur la caisse, le reste majoré est prélevé sur les rentrées ; la dette se déduit du patrimoine (`loans.ts`).
+
+Tout passe par le grand livre (nouvelles causes : `supplier_bonus`, `tender_*`, `warehouse_*`, `quality_premium`, `commission*`, `colleganza_*`, `loan*`) et le journal des stocks (`tender_delivery`, `commission`). Les PNJ enchérissent aux appels d'offres, honorent les commandes, acceptent les colleganze, le bâtisseur monte les chaînes de luxe et tous passent en manufacture (l'artisan en qualité) ; ils ne prennent ni entrepôts ni prêts. Calibrage : `docs/calibration.md`, « La refonte du commerce ».
