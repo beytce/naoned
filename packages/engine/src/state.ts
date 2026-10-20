@@ -343,6 +343,8 @@ export interface WorldState {
   terra?: { week: number; map: TerraState };
   /** The glory of the last Terraferma week closed: the weekly ranking of that week. */
   terraLast?: { week: number; glory: Record<PlayerId, number> };
+  /** The battle hour the merchants were last warned of (its start). */
+  terraBattleWarned?: number;
   /** The Signore's decree, in force for its week, for him and his allies at the close. */
   terraDecree?: { week: number; code: string; target?: string; members: PlayerId[] };
   /**

@@ -661,3 +661,31 @@ describe("a front's account", () => {
     ]);
   });
 });
+
+describe("the battle hour", () => {
+  // 4 h to 5 h in Paris: START + 2 h to START + 3 h.
+  const battle = { from: 4, to: 5, stepMinutes: 1, warnMinutes: 15 };
+  /** A merchant alone on the map, a front at the free land; cells taken and glory in 30 min. */
+  const run = (at: number) => {
+    const cfg = config({ battle, start: { ...testTerraferma.start, troops: 5_000 } });
+    const s = newTerra(cfg, "seed", 10, START);
+    placeOnTerra(s, cfg, "a", freeCell(s), START);
+    advanceTerra(s, cfg, at);
+    const before = { cells: cellsOf(s, "a").length, glory: s.players.a?.glory ?? 0 };
+    launchFront(s, cfg, "a", border(s, "a"), 10_000, s.clock);
+    advanceTerra(s, cfg, at + 30 * MIN);
+    return {
+      cells: cellsOf(s, "a").length - before.cells,
+      glory: (s.players.a?.glory ?? 0) - before.glory,
+    };
+  };
+
+  it("makes the fronts march ten times as fast, the glory and the troops at their usual pace", () => {
+    const calm = run(START + 30 * MIN);
+    const fight = run(START + 2 * HOUR);
+    expect(calm.cells).toBeGreaterThan(0);
+    expect(fight.cells).toBeGreaterThanOrEqual(calm.cells * 5);
+    // Glory counts land held, step by economic step: the same number of steps.
+    expect(fight.glory).toBeGreaterThan(0);
+  });
+});

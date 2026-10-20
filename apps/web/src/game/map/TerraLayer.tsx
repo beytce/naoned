@@ -50,12 +50,14 @@ export function useTerra(shown: boolean): {
       .then((r) => setTerra(r.terra))
       .catch(() => undefined);
   }, []);
+  const battle = !!terra?.battle?.on;
   useEffect(() => {
     refresh();
-    // Shown: the fronts move every few minutes; hidden: only to know the door is there.
-    const id = setInterval(refresh, shown ? 10_000 : 300_000);
+    // Shown: the fronts move every few minutes (every few seconds in the battle hour); hidden:
+    // only to know the door is there.
+    const id = setInterval(refresh, shown ? (battle ? 3_000 : 10_000) : 300_000);
     return () => clearInterval(id);
-  }, [shown, refresh]);
+  }, [shown, battle, refresh]);
   return { terra, refresh };
 }
 
@@ -851,6 +853,17 @@ export function TerraHud({ v, now }: { v: TerraView; now: number }) {
         )}
         <span>{v.closed ? t().closed : t().closesIn(clock(v.closesAt - now))}</span>
         {!v.open && !v.closed && <span className="text-lagoon">☾ {t().night}</span>}
+        {v.battle && !v.closed && (
+          <span
+            className={
+              v.battle.on
+                ? "font-display font-extrabold uppercase text-vermilion"
+                : "text-cream-dim"
+            }
+          >
+            {v.battle.on ? t().battle.on(v.battle.to) : t().battle.at(v.battle.from)}
+          </span>
+        )}
         {/* The map is alive: how many fronts march, and whom Milan rides against. */}
         {!v.closed && v.fronts.length > 0 && (
           <span className="text-info">{t().marching(v.fronts.length)}</span>

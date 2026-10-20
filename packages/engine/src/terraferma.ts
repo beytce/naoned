@@ -115,6 +115,8 @@ export interface TerraState {
   milanSteps: number;
   /** Open steps since pockets last fell. */
   hourSteps?: number;
+  /** Minutes of battle steps since the last step of troops and glory. */
+  battleMinutes?: number;
   alliances?: TerraAlliance[];
   /** Alliances asked for, not yet accepted: from → to. */
   requests?: { from: string; to: string }[];
@@ -796,15 +798,39 @@ export function closeTerra(
 
 /** Resolves every whole step up to `until`; closed steps (the night) change nothing. */
 export function advanceTerra(s: TerraState, cfg: TerraConfig, until: number): void {
-  const stepMs = cfg.stepMinutes * MINUTE_MS;
-  while (!s.closed && s.clock + stepMs <= until) {
+  while (!s.closed) {
+    const minutes = stepMinutesAt(cfg, s.clock);
+    if (s.clock + minutes * MINUTE_MS > until) break;
     const from = s.clock;
-    s.clock += stepMs;
-    if (hourWithin(hourIn(from), cfg.openHours)) step(s, cfg, from);
+    s.clock += minutes * MINUTE_MS;
+    if (!hourWithin(hourIn(from), cfg.openHours)) continue;
+    if (minutes >= cfg.stepMinutes) {
+      step(s, cfg, from);
+      continue;
+    }
+    // The battle hour: the fronts march at each short step, the rest at the usual pace.
+    for (const front of [...s.fronts]) advanceFront(s, cfg, front, from, minutes);
+    eliminate(s, from);
+    s.battleMinutes = (s.battleMinutes ?? 0) + minutes;
+    if (s.battleMinutes >= cfg.stepMinutes) {
+      s.battleMinutes -= cfg.stepMinutes;
+      step(s, cfg, from, false);
+    }
   }
 }
 
-function step(s: TerraState, cfg: TerraConfig, at: number): void {
+/** Whether the battle hour is on at `at`. */
+export function inBattle(cfg: TerraConfig, at: number): boolean {
+  const b = cfg.battle;
+  return !!b && b.stepMinutes < cfg.stepMinutes && hourWithin(hourIn(at), b);
+}
+
+/** Minutes of the step starting at `at`: short in the battle hour. */
+function stepMinutesAt(cfg: TerraConfig, at: number): number {
+  return inBattle(cfg, at) ? (cfg.battle?.stepMinutes ?? cfg.stepMinutes) : cfg.stepMinutes;
+}
+
+function step(s: TerraState, cfg: TerraConfig, at: number, fronts = true): void {
   // Alliances whose break has come.
   if (s.alliances?.some((a) => a.endsAt !== undefined && a.endsAt <= at))
     s.alliances = s.alliances.filter((a) => a.endsAt === undefined || a.endsAt > at);
@@ -830,8 +856,8 @@ function step(s: TerraState, cfg: TerraConfig, at: number): void {
     const back = Math.max(cfg.troops.regenMin, Math.floor(((cap - p.troops) * rate) / 10_000));
     p.troops = Math.min(cap, p.troops + back);
   }
-  // Fronts, in the order they were launched.
-  for (const front of [...s.fronts]) advanceFront(s, cfg, front, at);
+  // Fronts, in the order they were launched (in the battle hour, they march on their own pace).
+  if (fronts) for (const front of [...s.fronts]) advanceFront(s, cfg, front, at, cfg.stepMinutes);
   eliminate(s, at);
   // Every open hour, the pockets cut off from their capital fall a little.
   s.hourSteps = (s.hourSteps ?? 0) + 1;
@@ -928,7 +954,13 @@ function canGoOn(s: TerraState, cfg: TerraConfig, front: TerraFront): boolean {
   return next >= 0 && front.troops >= cellCost(s, cfg, next);
 }
 
-function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront, at: number): void {
+function advanceFront(
+  s: TerraState,
+  cfg: TerraConfig,
+  front: TerraFront,
+  at: number,
+  minutes: number,
+): void {
   front.steps = (front.steps ?? 0) + 1;
   if (cfg.fronts.maxHours > 0 && front.steps * cfg.stepMinutes > cfg.fronts.maxHours * 60) {
     endFront(s, front);
@@ -948,7 +980,7 @@ function advanceFront(s: TerraState, cfg: TerraConfig, front: TerraFront, at: nu
     seize(s, best, front.owner, at);
     razeAt(s, best);
     front.taken = (front.taken ?? 0) + 1;
-    s.trace?.push({ front: front.id, cell: best, at: at + cfg.stepMinutes * MINUTE_MS });
+    s.trace?.push({ front: front.id, cell: best, at: at + minutes * MINUTE_MS });
   }
   // A front that can no longer pay its next cell comes home at once, what is left of it.
   if (!canGoOn(s, cfg, front)) endFront(s, front);

@@ -1,6 +1,9 @@
 import { campaignWeekEnd, campaignWeekStart, familyAccount } from "./campaign.js";
+import { dayStartIn } from "./clock.js";
 import { TERRA_FAMILY } from "./decrees.js";
 import {
+  HOUR_MS,
+  MINUTE_MS,
   type PlayerId,
   SINK_ACCOUNT,
   type WorldContext,
@@ -82,12 +85,27 @@ export function advanceTerraWorld(tx: Tx): TerraState | null {
   const map = terra(tx, cfg);
   const end = campaignWeekEnd(tx.ctx, tx.s.terra?.week ?? 0);
   advanceTerra(map, cfg, Math.min(tx.now, end));
+  warnBattle(tx, cfg, map);
   if (map.closed && !map.closedSeen) {
     // Won by conquest before the week's end: the close is paid at once.
     map.closedSeen = true;
     payClose(tx, cfg, tx.s.terra?.week ?? 0, map);
   }
   return map;
+}
+
+/** A quarter of an hour before the battle hour, the merchants on the map are told, once. */
+function warnBattle(tx: Tx, cfg: TerraConfig, map: TerraState): void {
+  const b = cfg.battle;
+  if (!b || map.closed) return;
+  const start = dayStartIn(tx.now).start + b.from * HOUR_MS;
+  if (tx.now < start - b.warnMinutes * MINUTE_MS || tx.now >= start) return;
+  if (tx.s.terraBattleWarned === start) return;
+  tx.s.terraBattleWarned = start;
+  for (const [id, p] of Object.entries(map.players).sort(([a], [c]) => (a < c ? -1 : 1))) {
+    if (id === MILAN || p.eliminatedAt !== undefined) continue;
+    emit(tx, "terra_battle_soon", id, { at: start });
+  }
 }
 
 function closeTerraWeek(tx: Tx, cfg: TerraConfig, week: number, map: TerraState): void {

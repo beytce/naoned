@@ -223,3 +223,20 @@ describe("the weekly ranking, once the Terraferma is live", () => {
     expect(standings.map((s) => s.gain)).toEqual(["0", "0"]);
   });
 });
+
+describe("the battle hour in the world", () => {
+  it("warns the merchants on the map a quarter of an hour before, once", () => {
+    const w = live({ battle: { from: 20, to: 21, stepMinutes: 3, warnMinutes: 15 } });
+    joined(w, "a");
+    w.do({ type: "join", playerId: "b", region: "terraferma" });
+    // 19 h 50 in Paris on the first day (UTC+1 in January): 18 h 50 UTC.
+    const day = Math.floor(w.now / DAY) * DAY;
+    w.now = day + 18 * HOUR + 50 * MIN;
+    const res = w.do({ type: "tick" });
+    const warned = res.effects.events.filter((e) => e.type === "terra_battle_soon");
+    expect(warned.map((e) => e.playerId)).toEqual(["a"]);
+    w.now += 2 * MIN;
+    const again = w.do({ type: "tick" });
+    expect(again.effects.events.some((e) => e.type === "terra_battle_soon")).toBe(false);
+  });
+});

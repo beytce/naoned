@@ -13,6 +13,7 @@ import {
   hexNeighbors,
   hourIn,
   hourWithin,
+  inBattle,
   recruitPerHour,
   terraOn,
 } from "@comptoirs/engine";
@@ -121,6 +122,10 @@ export function terraView(
     /** Until when nobody may attack another merchant (null: no truce). */
     truceEndsAt: cfg.start.truceHours > 0 ? s.startAt + cfg.start.truceHours * 3_600_000 : null,
     openHours: cfg.openHours,
+    /** The battle hour: when it is, whether it is on now. */
+    battle: cfg.battle
+      ? { from: cfg.battle.from, to: cfg.battle.to, on: inBattle(cfg, now) }
+      : null,
     /** Whether the fronts march now (they rest at night). */
     open: hourWithin(hourIn(now), cfg.openHours),
     map: {

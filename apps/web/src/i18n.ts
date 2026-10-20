@@ -487,6 +487,10 @@ export const fr = {
       eliminated: "Éliminé cette semaine",
       placing: (time: string) => `Placement · la guerre dans ${time}`,
       truce: (time: string) => `Trêve · la guerre dans ${time}`,
+      battle: {
+        on: (to: number) => `⚔ Bataille : fronts ×10 jusqu'à ${to} h`,
+        at: (from: number) => `Bataille chaque soir à ${from} h`,
+      },
       marching: (n: number) => `${n} front${n > 1 ? "s" : ""} en marche`,
       milanRides: (against: string | null) =>
         against ? `Milan marche sur ${against}` : "Milan s'étend vers l'est",
@@ -1810,6 +1814,7 @@ export const fr = {
         "Le rival de la semaine, sous votre rang.",
         "Commandes de compagnie : une commande d'une ville remplie à plusieurs, avec une prime pour tous.",
         "Le fattore fait partir vos charrettes oubliées au comptoir, deux fois par jour.",
+        "Terraferme : l'heure de bataille, chaque soir de 20 h à 21 h, les fronts avancent dix fois plus vite.",
         "La carte n'affiche plus que les ducats, le rang et les charrettes ; le pain quand il manque.",
         "Sept jours de cours pour chaque marchandise du Rialto, face à sa référence.",
         "Le Journal du Rialto, dans les avis : les gros échanges et les conquêtes du jour.",

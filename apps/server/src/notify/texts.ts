@@ -254,6 +254,11 @@ const TERRA_DECREES: Record<string, string> = {
 /** The Terraferma's news (docs/plan-terraferme.md), or null for another event. */
 function terraText(data: Record<string, unknown>): { title: string; body: string } | null {
   switch (data.event) {
+    case "terra_battle_soon":
+      return {
+        title: "La bataille commence dans 15 minutes",
+        body: "Pendant une heure, les fronts de la Terraferme avancent dix fois plus vite : venez les mener.",
+      };
     case "terra_alliance_asked":
       return {
         title: "Une alliance vous est proposée",

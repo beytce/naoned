@@ -310,6 +310,19 @@ export const worldSettingsSchema = z.object({
       }),
       /** Length of a step of resolution, in minutes. */
       stepMinutes: positive,
+      /**
+       * The battle hour: from `from` to `to` (Paris), the fronts march a step every
+       * `stepMinutes` (troops, glory and Milan keep their pace); merchants on the map are warned
+       * `warnMinutes` before.
+       */
+      battle: z
+        .object({
+          from: qty.max(24),
+          to: qty.max(24),
+          stepMinutes: positive,
+          warnMinutes: qty.default(15),
+        })
+        .optional(),
       /** Terrains: defense multiplier, militia of a neutral cell. */
       terrains: z.record(z.object({ defenseBps: positive, militia: qty })),
       /** Bands of rows from the north (up to `untilBps` of the height), each with its terrain weights. */

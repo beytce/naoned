@@ -230,6 +230,9 @@ export const venice1450Settings: WorldSettingsInput = {
     },
     openHours: { from: 8, to: 22 },
     stepMinutes: 30,
+    // The battle hour (recommendations of 20 October 2026): from 20 h to 21 h the fronts march a
+    // step every 3 minutes, ten times as fast, for those who come to lead them.
+    battle: { from: 20, to: 21, stepMinutes: 3, warnMinutes: 15 },
     terrains: {
       plain: { defenseBps: 10_000, militia: 8 },
       hill: { defenseBps: 13_000, militia: 12 },

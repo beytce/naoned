@@ -885,6 +885,8 @@ export interface TerraView {
   /** Until when nobody may attack another merchant (null: no truce). */
   truceEndsAt: number | null;
   openHours: { from: number; to: number };
+  /** The battle hour (null: none): the fronts march ten times as fast. */
+  battle: { from: number; to: number; on: boolean } | null;
   /** Whether the fronts march now (they rest at night). */
   open: boolean;
   map: {
