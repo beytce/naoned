@@ -138,6 +138,8 @@ export interface DeliveryView {
   arriveAt: number;
   backAt: number;
   outcome: "en_route" | "delivered";
+  /** Sent by the fattore while the merchant was away. */
+  fattore?: boolean;
 }
 
 export interface RoadView {

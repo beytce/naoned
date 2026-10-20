@@ -29,6 +29,7 @@ const COSTS = new Set<LedgerReason>([
   "market_tax",
   "decree_gabelle",
   "decree_toll",
+  "fattore",
 ]);
 
 /** The merchant behind a cash or escrow account. */

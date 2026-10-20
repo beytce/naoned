@@ -858,6 +858,13 @@ function arrive(tx: Tx, d: Delivery): void {
   if (cut > 0) amount -= applyBpsFloor(amount, cut);
   transfer(tx, SOURCE_ACCOUNT, cashAccount(d.playerId), amount, "delivery", d.id);
   d.paid = amount;
+  // The fattore's commission, destroyed.
+  const commissionBps = d.fattore ? (tx.ctx.settings.deliveries.fattore?.commissionBps ?? 0) : 0;
+  if (commissionBps > 0 && amount > 0n) {
+    const commission = applyBpsFloor(amount, commissionBps);
+    transfer(tx, cashAccount(d.playerId), SINK_ACCOUNT, commission, "fattore", d.id);
+    d.paid -= commission;
+  }
   d.outcome = "delivered";
   // The Terraferma's favour of the Doge: his contracts pay the Signore and his allies more.
   const dogeBps = dogeFavourBps(tx.ctx, state, d.playerId, tx.now);

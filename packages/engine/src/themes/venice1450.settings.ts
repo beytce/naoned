@@ -462,6 +462,9 @@ export const venice1450Settings: WorldSettingsInput = {
   // carried to the cities with one's own vehicles and paid on arrival. They replace the instant
   // sale to cities and the Criées.
   deliveries: {
+    // The fattore (recommendations of 20 October 2026): a vehicle left two hours at the counter
+    // leaves with the best order the stock covers, twice a day, 15 % of its pay as commission.
+    fattore: { perDay: 2, idleMinutes: 120, commissionBps: 1_500, activeHours: 24 },
     ordersPerDay: { min: 22, max: 28 },
     dogeOrdersPerDay: 2,
     urgentPerDay: 2,

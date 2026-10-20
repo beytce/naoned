@@ -164,6 +164,7 @@ function fleetLine(props: GameProps, v: VehicleView, trip: DeliveryView | null):
       now < trip.arriveAt
         ? t.out(city, clock(trip.arriveAt - now))
         : t.back(clock(Math.max(0, trip.backAt - now)));
+    if (trip.fattore) status = `${status} · ${t.byFattore}`;
   }
   return {
     id: v.id,

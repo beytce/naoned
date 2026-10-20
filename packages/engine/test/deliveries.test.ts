@@ -1029,3 +1029,38 @@ describe("city prices and the Rialto", () => {
     expect(o.price).toBe(o.plain);
   });
 });
+
+describe("the fattore", () => {
+  const fattore = { perDay: 2, idleMinutes: 60, commissionBps: 2_000, activeHours: 24 };
+  const withFattore = () =>
+    world({ deliveries: { ...testDeliveries, fattore } as WorldSettingsInput["deliveries"] });
+
+  it("sends an idle vehicle with the best order the stock covers, twice a day at most", () => {
+    const w = withFattore();
+    // The merchant acts, then leaves its vehicles at the counter.
+    w.do({ type: "tick" });
+    expect(Object.keys(w.state.deliveries ?? {})).toHaveLength(0);
+    w.advance(61 * MIN).do({ type: "tick" });
+    const sent = Object.values(w.state.deliveries ?? {}).filter((d) => d.playerId === "a");
+    expect(sent).toHaveLength(1);
+    expect(sent[0]?.fattore).toBe(true);
+    // Paid on arrival, less the commission (destroyed).
+    const before = w.cash("a");
+    const delivery = sent[0];
+    if (!delivery) throw new Error("no delivery");
+    w.at(delivery.arriveAt - T0).do({ type: "tick" });
+    const paid = w.state.deliveries?.[delivery.id]?.paid ?? 0n;
+    expect(w.cash("a") - before).toBe(paid);
+    expect(paid).toBe(delivery.payment - delivery.payment / 5n);
+    // Two runs a day, then it waits for tomorrow.
+    for (let k = 0; k < 6; k++) w.advance(3 * HOUR).do({ type: "tick" });
+    const day = Math.floor((w.now - T0) / DAY);
+    expect(w.state.fattore?.a?.day === day ? w.state.fattore.a.runs : 0).toBeLessThanOrEqual(2);
+  });
+
+  it("does nothing for a merchant gone longer than its active hours", () => {
+    const w = withFattore();
+    w.advance(30 * HOUR).do({ type: "tick" });
+    expect(Object.keys(w.state.deliveries ?? {})).toHaveLength(0);
+  });
+});

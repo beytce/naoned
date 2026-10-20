@@ -138,6 +138,7 @@ export const fr = {
         open: "Voir les véhicules",
         home: "Au comptoir",
         out: (city: string, time: string) => `Vers ${city} · ${time}`,
+        byFattore: "envoyé par le fattore",
         back: (time: string) => `Retour · ${time}`,
         capacity: (units: number) => `${units} u.`,
       },
@@ -1724,6 +1725,10 @@ export const fr = {
         "La Terraferme s'ouvre après votre première journée de commerce ; on s'y pose n'importe quel jour, tous à l'abri jusqu'à la fin du premier jour.",
         "Qui n'attaque aucun marchand de la semaine garde toujours sa capitale.",
         "Milan chevauche plus souvent et plus fort ; les maisons de l'ordinateur attaquent leurs voisins plus tôt.",
+        "Le rival de la semaine, sous votre rang.",
+        "Commandes de compagnie : une commande d'une ville remplie à plusieurs, avec une prime pour tous.",
+        "Le fattore fait partir vos charrettes oubliées au comptoir, deux fois par jour.",
+        "La carte n'affiche plus que les ducats, le rang et les charrettes ; le pain quand il manque.",
       ],
     },
     howTo: [
@@ -1736,6 +1741,16 @@ export const fr = {
         icon: "routes",
         title: "Livrer",
         text: "Les villes publient des commandes toutes les 4 heures. Touchez une charrette, cochez des commandes pour une même ville, puis faites-la partir : la ville paie à l'arrivée, d'autant mieux que la route est longue. Le premier arrivé prend la commande.",
+      },
+      {
+        icon: "routes",
+        title: "Le fattore",
+        text: "Votre commis : quand une charrette reste deux heures au comptoir, il la fait partir avec la meilleure commande que votre stock couvre, deux fois par jour, de 8 h à 22 h, en gardant le pain des ouvriers. Il prend 15 % du paiement. Il ne travaille que si vous êtes passé dans les dernières 24 heures.",
+      },
+      {
+        icon: "comptoir",
+        title: "Commandes de compagnie",
+        text: "Tous les deux jours, une ville commande du pain, des briques et des planches aux trois régions. Livrez depuis votre stock : 10 % au-dessus de la référence, et 10 % de plus pour chacun quand la commande est remplie.",
       },
       {
         icon: "profil",

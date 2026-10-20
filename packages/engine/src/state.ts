@@ -220,6 +220,8 @@ export interface Delivery {
   outcome: "en_route" | "delivered";
   /** Paid on arrival. */
   paid?: Deniers;
+  /** Sent by the fattore: its commission is taken on arrival. */
+  fattore?: boolean;
 }
 
 export interface DailyPriceStat {
@@ -322,6 +324,8 @@ export interface WorldState {
   };
   /** Orders of the board dispatched today, per player. */
   deliveriesDone?: Record<PlayerId, { day: number; ids: string[] }>;
+  /** The fattore's runs of the day, per merchant. */
+  fattore?: Record<PlayerId, { day: number; runs: number }>;
   /** Of the time of the bandits (settled with the sea). */
   npcBandsDay?: number;
   plunderedAt?: Record<PlayerId, number>;

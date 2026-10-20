@@ -2,6 +2,7 @@ import { rationsPerDay } from "./buildings.js";
 import { advanceCampaign } from "./campaign.js";
 import { ensureBoard, pruneRoad, resolveDeliveries } from "./deliveries.js";
 import { dissolveLegacyGuilds } from "./families.js";
+import { runFattore } from "./fattore.js";
 import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
 import { arriveMuda } from "./muda.js";
@@ -64,6 +65,8 @@ export function tick(tx: Tx): void {
   openDueProjects(tx);
   // Shared demand: the world's board of the day, drawn once the day's active merchants are known.
   ensureBoard(tx);
+  // The fattore sends the vehicles left at the counter.
+  runFattore(tx);
   // The galleys of the Muda, before the Dogana quotes their lot.
   arriveMuda(tx);
   requoteMarketMaker(tx);

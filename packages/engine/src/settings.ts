@@ -601,6 +601,15 @@ export const worldSettingsSchema = z.object({
       urgentOpenMinutes: positive,
       /** Hours of the day (Paris) when an urgent order may open: [from, to). */
       urgentHours: z.object({ from: qty.max(23), to: qty.max(24) }).default({ from: 8, to: 21 }),
+      /**
+       * The fattore: a clerk who sends a vehicle left at the counter (`idleMinutes` after the
+       * merchant's last action, or its return) with the best order the stock covers, `perDay`
+       * times a day, from 8 h to 22 h, for a merchant seen in the last `activeHours`; the city's
+       * payment loses `commissionBps` (destroyed). Off when absent.
+       */
+      fattore: z
+        .object({ perDay: qty, idleMinutes: positive, commissionBps: bps, activeHours: positive })
+        .optional(),
       /** A city order pays the reference price × this… */
       cityPriceBps: bps,
       /** … plus this much per hour of road (one way, normal speed). */
