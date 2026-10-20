@@ -22,7 +22,7 @@ export const FAMILY_NAMES = ["Contarini", "Morosini", "Mocenigo", "Dandolo"];
  * Great Venetian families: the bots' trading houses. The patrician families players swear
  * allegiance to (theme.families) are left out, so that a house is never taken for one of them.
  */
-const HOUSES = [
+export const HOUSES = [
   "Grimani",
   "Foscari",
   "Loredan",
@@ -147,15 +147,42 @@ export class BotRunner {
 
   /** The first house name nobody has taken, never a patrician family's. */
   private async freeHouseName(): Promise<string | undefined> {
-    const taken = new Set(
-      (await this.db.select({ pseudo: accounts.pseudo }).from(accounts)).map((r) =>
-        r.pseudo?.toLowerCase(),
-      ),
-    );
+    const taken = await this.takenNames();
     const families = new Set(FAMILY_NAMES.map((f) => f.toLowerCase()));
     return HOUSES.filter((h) => !families.has(h.toLowerCase()))
       .map((h) => `Casa ${h}`)
       .find((name) => !taken.has(name.toLowerCase()));
+  }
+
+  /** Pseudos taken, lower case (they are unique whatever the case). */
+  private async takenNames(): Promise<Set<string | undefined>> {
+    return new Set(
+      (await this.db.select({ pseudo: accounts.pseudo }).from(accounts)).map((r) =>
+        r.pseudo?.toLowerCase(),
+      ),
+    );
+  }
+
+  /**
+   * A name and an address for a new house: a name of the roster, or else the first "Casa N" and
+   * bot address nobody has (a numbered name may already be someone's, an address a bot's of a
+   * restart).
+   */
+  private async newHouse(from: number): Promise<{ pseudo: string; email: string }> {
+    const emails = new Set(
+      (
+        await this.db
+          .select({ email: accounts.email })
+          .from(accounts)
+          .where(eq(accounts.isBot, true))
+      ).map((r) => r.email),
+    );
+    const taken = await this.takenNames();
+    const roster = await this.freeHouseName();
+    let k = from;
+    const emailOf = (i: number) => `bot-${this.world.id}-${i}@bots.comptoirs.invalid`;
+    while (emails.has(emailOf(k)) || (!roster && taken.has(`casa ${k}`))) k++;
+    return { pseudo: roster ?? `Casa ${k}`, email: emailOf(k) };
   }
 
   /**
@@ -301,12 +328,12 @@ export class BotRunner {
 
     const n = this.ids.size;
     const slot = ROSTER[n % ROSTER.length] ?? { profile: "producer", region: "terraferma" };
-    const house = (await this.freeHouseName()) ?? `Casa ${n + 1}`;
+    const house = await this.newHouse(n + 1);
     const [account] = await this.db
       .insert(accounts)
       .values({
-        email: `bot-${this.world.id}-${n + 1}@bots.comptoirs.invalid`,
-        pseudo: house,
+        email: house.email,
+        pseudo: house.pseudo,
         isBot: true,
         createdAt: new Date(now),
       })

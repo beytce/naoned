@@ -4,7 +4,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
 import { accounts, players } from "../src/db/schema.js";
-import { BotRunner, FAMILY_NAMES } from "../src/game/bots.js";
+import { BotRunner, FAMILY_NAMES, HOUSES } from "../src/game/bots.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
@@ -128,6 +128,23 @@ describe("bots in a live world", () => {
     expect(await database.db.select().from(accounts).where(eq(accounts.isBot, true))).toHaveLength(
       2,
     );
+  });
+
+  it("still recruits once every house name and the numbered one are taken", async () => {
+    setPopulation(1);
+    // Every name of the roster taken, and "Casa 1" too, by people; the bot's usual address as well.
+    await database.db
+      .insert(accounts)
+      .values([
+        ...HOUSES.map((h, i) => ({ email: `p${i}@example.org`, pseudo: `Casa ${h}` })),
+        { email: "casa1@example.org", pseudo: "casa 1" },
+        { email: `bot-${world.id}-1@bots.comptoirs.invalid`, pseudo: "Zorzi" },
+      ]);
+    await runner.step();
+    const bots = await database.db.select().from(accounts).where(eq(accounts.isBot, true));
+    expect(bots).toHaveLength(1);
+    expect(bots[0]?.pseudo).toBe("Casa 2");
+    expect(world.current.players[bots[0]?.id ?? ""]).toBeDefined();
   });
 
   it("never names a house after a patrician family, and renames the old ones", async () => {
