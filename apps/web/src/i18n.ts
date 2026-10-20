@@ -1686,6 +1686,19 @@ export const fr = {
       finish: "Terminer",
     },
 
+    /**
+     * What changed for this season, shown at the foot of the help: the rules change only from one
+     * month to the next, and say so here (owner's decision of 20 October 2026).
+     */
+    seasonNotes: {
+      title: "Nouveautés de la saison",
+      items: [
+        "Nouvelle palette bleue « Lagune », et la carte en bleu (l'ancienne reste dans le Profil).",
+        "La Terraferme s'ouvre après votre première journée de commerce ; on s'y pose n'importe quel jour, tous à l'abri jusqu'à la fin du premier jour.",
+        "Qui n'attaque aucun marchand de la semaine garde toujours sa capitale.",
+        "Milan chevauche plus souvent et plus fort ; les maisons de l'ordinateur attaquent leurs voisins plus tôt.",
+      ],
+    },
     howTo: [
       {
         icon: "comptoir",

@@ -27,5 +27,6 @@ Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage complet 
 - Tout changement d'équilibrage se valide avec `pnpm sim` (toutes les graines conformes) et se documente dans docs/calibration.md.
 - Petits commits, un par fonctionnalité.
 - Hors périmètre MVP : noter dans IDEAS.md, ne pas coder.
-- Gel des mécaniques jusqu'aux mesures de la bêta (docs/CADRAGE.md) : régler, corriger, simplifier, mesurer ; toute nouvelle mécanique va dans IDEAS.md.
+- Gel des mécaniques levé le 20 octobre 2026 par le porteur (conception pure, pas encore de joueurs) pour le lot de recommandations de docs/recommandations-2026-10-20.md ; hors de ce lot, une nouvelle mécanique va toujours dans IDEAS.md.
+- Règles stables pendant une saison (dès qu'il y a des joueurs) : un changement de règle prend effet au changement de mois et s'écrit dans les notes de saison (`fr.game.seasonNotes`, au pied de l'Aide).
 - Langue du code : anglais. Langue de l'interface : français (i18n prévu).

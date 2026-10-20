@@ -37,6 +37,16 @@ export function Help(props: GameProps & { onClose: () => void }) {
               </section>
             );
           })}
+        <section className="cartouche-line space-y-2 p-4">
+          <h2 className="font-display text-base font-extrabold uppercase text-info">
+            {fr.game.seasonNotes.title}
+          </h2>
+          <ul className="list-disc space-y-1 pl-5 text-cream-dim">
+            {fr.game.seasonNotes.items.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ul>
+        </section>
         <div className="grid grid-cols-2 gap-3 pt-4">
           <Slab
             tone="ghost"
