@@ -159,11 +159,12 @@ function realTimes(
   m: Skirmish,
   v: NonNullable<ReturnType<typeof terraView>>,
   endsAt: number,
-): NonNullable<ReturnType<typeof terraView>> {
+): NonNullable<ReturnType<typeof terraView>> & { skirmish: true } {
   const r = (t: number) => toReal(m, t);
   const rn = (t: number | null) => (t === null ? null : r(t));
   return {
     ...v,
+    skirmish: true,
     closesAt: endsAt,
     placementEndsAt: null,
     truceEndsAt: null,

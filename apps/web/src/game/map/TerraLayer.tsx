@@ -1145,6 +1145,8 @@ export function TerraPanel({
       );
     }
     if (me) return <Returns v={v} />;
+    // A skirmish sets everyone down itself: a spectator only watches.
+    if (v.skirmish) return null;
     return (
       <div className="pointer-events-none absolute inset-x-0 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 flex flex-col items-center gap-1 lg:bottom-28">
         <span className="slab whitespace-nowrap bg-gold px-4 py-2 font-display text-[13px] font-extrabold uppercase tracking-wide text-ink shadow-[0_6px_20px_rgb(0_0_0/0.45)]">
@@ -1217,50 +1219,52 @@ export function TerraPanel({
         tone={v.fronts.some((f) => f.threat) ? "vermilion" : "gold"}
         onClose={close}
         actions={
-          <>
-            <ActionButton
-              icon={Icon.upgrade()}
-              label={t().mine.raise(v.rules.capRaise)}
-              tone="gold"
-              badge={me.raisesLeft > 0 ? d(v.rules.prices.cap) : undefined}
-              disabled={me.raisesLeft === 0 || !!v.closed}
-              onClick={() => act({ type: "terraRaise" })}
-            />
-            {v.rules.prices.porto !== null && coastalCell(v, cell) && (
+          v.skirmish ? undefined : (
+            <>
+              <ActionButton
+                icon={Icon.upgrade()}
+                label={t().mine.raise(v.rules.capRaise)}
+                tone="gold"
+                badge={me.raisesLeft > 0 ? d(v.rules.prices.cap) : undefined}
+                disabled={me.raisesLeft === 0 || !!v.closed}
+                onClick={() => act({ type: "terraRaise" })}
+              />
+              {v.rules.prices.porto !== null && coastalCell(v, cell) && (
+                <ActionButton
+                  icon={Icon.build()}
+                  label={t().mine.porto}
+                  badge={built ? undefined : d(v.rules.prices.porto)}
+                  disabled={!!built || !!v.closed}
+                  onClick={() => act({ type: "terraBuild", cell, kind: "porto" })}
+                />
+              )}
+              {(["bombarda", "mura"] as const).map((kind) =>
+                v.rules.prices[kind] !== null ? (
+                  <ActionButton
+                    key={kind}
+                    icon={Icon.build()}
+                    label={t().buildings[kind] ?? kind}
+                    badge={built ? undefined : d(v.rules.prices[kind])}
+                    disabled={!!built || !!v.closed}
+                    onClick={() => act({ type: "terraBuild", cell, kind })}
+                  />
+                ) : null,
+              )}
               <ActionButton
                 icon={Icon.build()}
-                label={t().mine.porto}
-                badge={built ? undefined : d(v.rules.prices.porto)}
+                label={t().mine.rocca}
+                badge={built ? undefined : d(v.rules.prices.rocca)}
                 disabled={!!built || !!v.closed}
-                onClick={() => act({ type: "terraBuild", cell, kind: "porto" })}
+                onClick={() => act({ type: "terraBuild", cell, kind: "rocca" })}
               />
-            )}
-            {(["bombarda", "mura"] as const).map((kind) =>
-              v.rules.prices[kind] !== null ? (
-                <ActionButton
-                  key={kind}
-                  icon={Icon.build()}
-                  label={t().buildings[kind] ?? kind}
-                  badge={built ? undefined : d(v.rules.prices[kind])}
-                  disabled={!!built || !!v.closed}
-                  onClick={() => act({ type: "terraBuild", cell, kind })}
-                />
-              ) : null,
-            )}
-            <ActionButton
-              icon={Icon.build()}
-              label={t().mine.rocca}
-              badge={built ? undefined : d(v.rules.prices.rocca)}
-              disabled={!!built || !!v.closed}
-              onClick={() => act({ type: "terraBuild", cell, kind: "rocca" })}
-            />
-            <ActionButton
-              icon={Icon.trophy()}
-              label={t().mine.decree}
-              tone={me.programme ? "plain" : "gold"}
-              onClick={() => props.setSheet("terra:decree")}
-            />
-          </>
+              <ActionButton
+                icon={Icon.trophy()}
+                label={t().mine.decree}
+                tone={me.programme ? "plain" : "gold"}
+                onClick={() => props.setSheet("terra:decree")}
+              />
+            </>
+          )
         }
         extra={
           <div className="space-y-1.5 text-[12px] text-cream-dim">
@@ -1340,7 +1344,7 @@ export function TerraPanel({
     .sort((a, b) => a.at - b.at)[0];
   const density = (left: number) => Math.floor(left / Math.max(1, me.cells));
 
-  const allyButton = merchant && !ally && (
+  const allyButton = merchant && !ally && !v.skirmish && (
     <ActionButton
       icon={Icon.family()}
       label={asked ? t().holder.accept : offered ? t().holder.asked : t().holder.ally}

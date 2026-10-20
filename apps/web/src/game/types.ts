@@ -891,6 +891,8 @@ export type TerraAction =
  * their index in `holders`; -1 is neutral land.
  */
 export interface TerraView {
+  /** A skirmish's map (no building, no alliance, no placement). */
+  skirmish?: boolean;
   week: number;
   closesAt: number;
   /** Until when merchants may set down (null: any time); nobody comes in after it. */
