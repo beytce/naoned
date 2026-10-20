@@ -38,6 +38,14 @@ export type LedgerReason =
   | "tender_forfeit"
   | "tender_delivery"
   | "quality_premium"
+  | "commission"
+  | "commission_lock"
+  | "commission_refund"
+  | "colleganza_lock"
+  | "colleganza_refund"
+  | "colleganza_fund"
+  | "colleganza_return"
+  | "colleganza_share"
   | "warehouse_bid"
   | "warehouse_refund"
   | "warehouse_rent"
@@ -104,7 +112,8 @@ export type StockReason =
   | "booty"
   | "bale_gift"
   | "terraferma_harvest"
-  | "tender_delivery";
+  | "tender_delivery"
+  | "commission";
 
 /** Change of a player's total holding (available + escrow) of one resource. */
 export interface StockMovement {

@@ -1276,6 +1276,8 @@ export const fr = {
         supplier_bonus: "Fournisseur officiel",
         tender_delivery: "Appels d'offres du Doge",
         quality_premium: "Qualité des manufactures",
+        commission: "Commandes entre marchands",
+        colleganza_share: "Parts de colleganza",
         decree_share: "Part des décrets",
         delivery: "Livraisons",
       } as Record<string, string>,
@@ -1976,6 +1978,50 @@ export const fr = {
       upgrade: (building: string, adds: string, payback: string) =>
         `Améliorez ${building} : +${adds} par heure, rentabilisé en ${payback}.`,
       upgradeGo: "Améliorer",
+    },
+    /** Deals between merchants: commissions and colleganze. */
+    deals: {
+      title: "Affaires entre marchands",
+      tile: (n: number) =>
+        n > 0 ? `${n} affaire${n > 1 ? "s" : ""} à saisir` : "Commandes et colleganze",
+      tabs: { commissions: "Commandes", colleganze: "Colleganza" },
+      someone: "un marchand",
+      you: "Vous",
+      commissionHelp:
+        "Commandez une marchandise aux autres marchands à votre prix : vos ducats sont bloqués jusqu'à la livraison, rendus si personne ne livre à temps. Le vendeur paie la taxe du marché, comme au Rialto.",
+      noCommission: "Aucune commande ouverte.",
+      asks: (who: string, n: number, resource: string, price: string) =>
+        `${who} : ${n} ${resource} à ${price}`,
+      left: (time: string) => `Expire dans ${time}`,
+      filled: "Livrée",
+      closed: "Close",
+      deliver: "Livrer",
+      cancel: "Annuler",
+      newCommission: "Passer une commande",
+      quantity: "Quantité",
+      price: "Prix unitaire",
+      days: "Jours",
+      locks: (total: string) => `${total} bloqués jusqu'à la livraison.`,
+      post: "Passer la commande",
+      colleganzaHelp: (max: number) =>
+        `La colleganza vénitienne : avancez des ducats à un autre marchand pour quelques jours. À l'échéance, il vous rend le capital et une part (jusqu'à ${max} %) des ventes nettes qu'il a faites entre-temps — autant que sa caisse le permet. Cette part passe de son classement au vôtre.`,
+      noColleganza: "Aucune colleganza en cours.",
+      offer: (who: string, amount: string, days: number, pct: number) =>
+        `${who} avance ${amount} pour ${days} j, contre ${pct} % des gains`,
+      invested: (amount: string, merchant: string | null, pct: number) =>
+        merchant
+          ? `Vous avez avancé ${amount} à ${merchant} (${pct} % des gains)`
+          : `Votre offre : ${amount} contre ${pct} % des gains`,
+      funded: (who: string, amount: string, pct: number) =>
+        `${who} vous a avancé ${amount} (${pct} % de vos gains lui reviendront)`,
+      settled: (paid: string) => `Réglée : ${paid} rendus`,
+      term: (time: string) => `Échéance dans ${time}`,
+      waiting: "En attente d'un marchand",
+      accept: "Accepter",
+      newColleganza: "Proposer une colleganza",
+      amount: "Capital avancé",
+      share: "Votre part des gains",
+      offerGo: "Proposer",
     },
     /** The manufactures, past the last ordinary level. */
     manufacture: {

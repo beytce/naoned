@@ -6,6 +6,7 @@ import { runFattore } from "./fattore.js";
 import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
 import { arriveMuda } from "./muda.js";
+import { settlePartners } from "./partners.js";
 import { openDueProjects } from "./projects.js";
 import { retireSeaAndBandits } from "./retired.js";
 import { DAY_MS, HOUR_MS, dayIndex } from "./state.js";
@@ -65,6 +66,7 @@ export function tick(tx: Tx): void {
   closeSeason(tx);
   openDueProjects(tx);
   runTenders(tx);
+  settlePartners(tx);
   // Shared demand: the world's board of the day, drawn once the day's active merchants are known.
   ensureBoard(tx);
   // The fattore sends the vehicles left at the counter.

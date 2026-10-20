@@ -276,6 +276,29 @@ describe("game API", () => {
     );
   });
 
+  it("posts a commission to the other merchants, its ducats held, and a colleganza", async () => {
+    const cookie = await login("ada@example.org");
+    const v = (await post(cookie, "/api/game/join", { region: "lagoon" })).json().view;
+    const res = await act(cookie, {
+      type: "postCommission",
+      resource: "planks",
+      quantity: 10,
+      unitPrice: "250",
+      days: 2,
+    });
+    expect(res.json().error).toBeUndefined();
+    const after = res.json().view;
+    expect(BigInt(after.cash)).toBe(BigInt(v.cash) - 2_500n);
+    expect(after.deals.commissions[0]).toMatchObject({ mine: true, status: "open", quantity: 10 });
+    const g = await act(cookie, {
+      type: "offerColleganza",
+      amount: "5000",
+      days: 3,
+      shareBps: 5_000,
+    });
+    expect(g.json().view.deals.colleganze[0]).toMatchObject({ role: "investor", merchant: null });
+  });
+
   it("buys instantly from the market maker once the tick has quoted", async () => {
     const cookie = await login("ada@example.org");
     await post(cookie, "/api/game/join", { region: "terraferma" });

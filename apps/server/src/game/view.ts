@@ -621,6 +621,9 @@ export function playerView(
         mine: t.bids[playerId] ?? null,
         won: t.awarded?.[playerId] ?? null,
       })),
+    // Deals between merchants: the commissions open to the merchant and its own, the colleganze
+    // on offer and those it is part of.
+    deals: dealsView(ctx, state, playerId, now),
     // The warehouses in the cities: those the merchant holds this week, its bids for the next,
     // and for each city the bid that wins a place now (the auction is open).
     warehouses: warehousesView(ctx, state, playerId, now),
@@ -761,5 +764,53 @@ function warehousesView(ctx: WorldContext, state: WorldState, playerId: string, 
         mine: w?.bids[code]?.[playerId] ?? null,
       };
     }),
+  };
+}
+
+function dealsView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {
+  if (!ctx.settings.commissions && !ctx.settings.colleganza) return null;
+  const commissions = Object.values(state.commissions ?? {})
+    .filter((c) =>
+      c.buyer === playerId
+        ? c.expiresAt + 86_400_000 > now
+        : !c.filledBy && !c.closed && now < c.expiresAt && (!c.to || c.to === playerId),
+    )
+    .sort((a, b) => b.postedAt - a.postedAt)
+    .map((c) => ({
+      id: c.id,
+      buyer: c.buyer,
+      mine: c.buyer === playerId,
+      resource: c.resource,
+      quantity: c.quantity,
+      unitPrice: c.unitPrice,
+      to: c.to ?? null,
+      expiresAt: c.expiresAt,
+      status: c.filledBy ? "filled" : c.closed || now >= c.expiresAt ? "closed" : "open",
+    }));
+  const colleganze = Object.values(state.colleganze ?? {})
+    .filter((g) =>
+      g.investor === playerId || g.merchant === playerId
+        ? !g.settled || (g.startedAt ?? g.offeredAt) + (g.days + 1) * 86_400_000 > now
+        : !g.merchant && !g.settled && (!g.to || g.to === playerId),
+    )
+    .sort((a, b) => b.offeredAt - a.offeredAt)
+    .map((g) => ({
+      id: g.id,
+      investor: g.investor,
+      merchant: g.merchant ?? null,
+      role: g.investor === playerId ? "investor" : g.merchant === playerId ? "merchant" : "offer",
+      amount: g.amount,
+      days: g.days,
+      shareBps: g.shareBps,
+      endsAt: g.startedAt !== undefined ? g.startedAt + g.days * 86_400_000 : null,
+      settled: !!g.settled,
+      paid: g.paid ?? null,
+    }));
+  return {
+    commissionDays: ctx.settings.commissions?.maxDays ?? 0,
+    colleganzaDays: ctx.settings.colleganza?.maxDays ?? 0,
+    maxShareBps: ctx.settings.colleganza?.maxShareBps ?? 0,
+    commissions,
+    colleganze,
   };
 }

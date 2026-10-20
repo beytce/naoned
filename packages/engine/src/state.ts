@@ -376,6 +376,43 @@ export interface WorldState {
     bids: Record<string, Record<PlayerId, Deniers>>;
     used?: Record<PlayerId, { day: number; units: number }>;
   };
+  /** Commissions between merchants (partners.ts), by id. */
+  commissions?: Record<
+    string,
+    {
+      id: string;
+      buyer: PlayerId;
+      resource: ResourceCode;
+      quantity: number;
+      unitPrice: Deniers;
+      /** Addressed to one merchant only. */
+      to?: PlayerId;
+      postedAt: number;
+      expiresAt: number;
+      filledBy?: PlayerId;
+      /** Cancelled or expired, the ducats given back. */
+      closed?: boolean;
+    }
+  >;
+  /** Colleganze (partners.ts), by id. */
+  colleganze?: Record<
+    string,
+    {
+      id: string;
+      investor: PlayerId;
+      amount: Deniers;
+      days: number;
+      shareBps: number;
+      to?: PlayerId;
+      offeredAt: number;
+      merchant?: PlayerId;
+      startedAt?: number;
+      /** The merchant's net sales when it took the ducats. */
+      startTurnover?: Deniers;
+      settled?: boolean;
+      paid?: Deniers;
+    }
+  >;
   /** The Doge's tenders, by id, and when the next one opens (absent: at the season's start). */
   tenders?: Record<string, Tender>;
   nextTenderAt?: number;

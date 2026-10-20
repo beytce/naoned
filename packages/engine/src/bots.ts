@@ -266,6 +266,7 @@ export class Bot {
     this.serveFamily(s);
     this.deliverProjects(s);
     this.tenders(s);
+    this.partners(s);
     if (deliveriesOn(s.ctx)) this.garage(s, this.deliver(s));
     else {
       this.sellToCriee(s);
@@ -697,6 +698,28 @@ export class Bot {
           });
         }
       }
+    }
+  }
+
+  /**
+   * Deals between merchants: fills a commission its spare stock covers at 90 % of the reference or
+   * more, and takes a colleganza on offer (the capital works for it until the term).
+   */
+  private partners(s: Session): void {
+    const state = s.state();
+    for (const c of Object.values(state.commissions ?? {})) {
+      if (c.filledBy || c.closed || s.now >= c.expiresAt || c.buyer === this.id) continue;
+      if (c.to && c.to !== this.id) continue;
+      const spare = this.available(s, c.resource) - this.reserve(s, c.resource);
+      const ref = s.ctx.settings.referencePrices[c.resource] ?? 0n;
+      if (spare >= c.quantity && c.unitPrice * 10n >= ref * 9n)
+        s.act({ type: "fillCommission", playerId: this.id, commissionId: c.id });
+    }
+    for (const g of Object.values(state.colleganze ?? {})) {
+      if (g.merchant || g.settled || g.investor === this.id) continue;
+      if (g.to && g.to !== this.id) continue;
+      s.act({ type: "acceptColleganza", playerId: this.id, colleganzaId: g.id });
+      break;
     }
   }
 

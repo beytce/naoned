@@ -33,6 +33,14 @@ import {
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { claimMission, trackMissions } from "./missions.js";
 import type { Deniers } from "./money.js";
+import {
+  acceptColleganza,
+  cancelColleganza,
+  cancelCommission,
+  fillCommission,
+  offerColleganza,
+  postCommission,
+} from "./partners.js";
 import { collect, startProduction } from "./production.js";
 import { deliverToProject } from "./projects.js";
 import { chooseSpecialty } from "./specialties.js";
@@ -97,6 +105,27 @@ export type Command =
   | { type: "tenderDeliver"; playerId: PlayerId; tenderId: string }
   | { type: "warehouseBid"; playerId: PlayerId; city: string; amount: Deniers }
   | { type: "choosePath"; playerId: PlayerId; buildingId: string; path: "volume" | "quality" }
+  | {
+      type: "postCommission";
+      playerId: PlayerId;
+      resource: string;
+      quantity: number;
+      unitPrice: Deniers;
+      days: number;
+      to?: PlayerId;
+    }
+  | { type: "fillCommission"; playerId: PlayerId; commissionId: string }
+  | { type: "cancelCommission"; playerId: PlayerId; commissionId: string }
+  | {
+      type: "offerColleganza";
+      playerId: PlayerId;
+      amount: Deniers;
+      days: number;
+      shareBps: number;
+      to?: PlayerId;
+    }
+  | { type: "acceptColleganza"; playerId: PlayerId; colleganzaId: string }
+  | { type: "cancelColleganza"; playerId: PlayerId; colleganzaId: string }
   | { type: "build"; playerId: PlayerId; buildingType: string }
   | { type: "upgrade"; playerId: PlayerId; buildingId: string }
   | ({ type: "placeOrder" } & PlaceOrderInput)
@@ -392,6 +421,24 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "warehouseBid":
       bidWarehouse(tx, cmd.playerId, cmd.city, cmd.amount);
+      break;
+    case "postCommission":
+      postCommission(tx, cmd.playerId, cmd.resource, cmd.quantity, cmd.unitPrice, cmd.days, cmd.to);
+      break;
+    case "fillCommission":
+      fillCommission(tx, cmd.playerId, cmd.commissionId);
+      break;
+    case "cancelCommission":
+      cancelCommission(tx, cmd.playerId, cmd.commissionId);
+      break;
+    case "offerColleganza":
+      offerColleganza(tx, cmd.playerId, cmd.amount, cmd.days, cmd.shareBps, cmd.to);
+      break;
+    case "acceptColleganza":
+      acceptColleganza(tx, cmd.playerId, cmd.colleganzaId);
+      break;
+    case "cancelColleganza":
+      cancelColleganza(tx, cmd.playerId, cmd.colleganzaId);
       break;
   }
 }

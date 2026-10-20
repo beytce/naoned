@@ -964,6 +964,10 @@ export const worldSettingsSchema = z.object({
       cautionBps: bps,
     })
     .optional(),
+  /** Commissions between merchants, open `maxDays` at most. Off when absent. */
+  commissions: z.object({ maxDays: positive }).optional(),
+  /** The colleganza: `maxDays` at most, the investor's share at most `maxShareBps`. */
+  colleganza: z.object({ maxDays: positive, maxShareBps: bps.max(10_000) }).optional(),
   /**
    * The manufactures: past `maxBuildingLevel`, a workshop climbs to `maxLevel` once its merchant
    * (with net sales of `unlock`) chose a path: volume (bigger batches, as before) or quality (the

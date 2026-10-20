@@ -488,6 +488,8 @@ export interface PlayerView {
   next: NextAction[];
   /** The Doge's tenders open to bids, and those won and not yet delivered. */
   tenders: TenderView[];
+  /** Deals between merchants: commissions and colleganze (null: none in this world). */
+  deals: DealsView | null;
   /** The warehouses in the cities (null: none in this world). */
   warehouses: WarehousesView | null;
   /** The goods the merchant is the official supplier of this week, by city. */
@@ -877,6 +879,19 @@ export type Action =
   | { type: "tenderDeliver"; tenderId: string }
   | { type: "warehouseBid"; city: string; amount: string }
   | { type: "choosePath"; buildingId: string; path: "volume" | "quality" }
+  | {
+      type: "postCommission";
+      resource: string;
+      quantity: number;
+      unitPrice: string;
+      days: number;
+      to?: string;
+    }
+  | { type: "fillCommission"; commissionId: string }
+  | { type: "cancelCommission"; commissionId: string }
+  | { type: "offerColleganza"; amount: string; days: number; shareBps: number; to?: string }
+  | { type: "acceptColleganza"; colleganzaId: string }
+  | { type: "cancelColleganza"; colleganzaId: string }
   | { type: "fulfillContract"; contractId: string }
   | { type: "joinFamily"; family: string }
   | { type: "collectLevy" }
@@ -1214,5 +1229,34 @@ export interface WarehousesView {
     /** The bid that wins a place now. */
     toWin: Money;
     mine: Money | null;
+  }[];
+}
+
+export interface DealsView {
+  commissionDays: number;
+  colleganzaDays: number;
+  maxShareBps: number;
+  commissions: {
+    id: string;
+    buyer: string;
+    mine: boolean;
+    resource: string;
+    quantity: number;
+    unitPrice: Money;
+    to: string | null;
+    expiresAt: number;
+    status: "open" | "filled" | "closed";
+  }[];
+  colleganze: {
+    id: string;
+    investor: string;
+    merchant: string | null;
+    role: "investor" | "merchant" | "offer";
+    amount: Money;
+    days: number;
+    shareBps: number;
+    endsAt: number | null;
+    settled: boolean;
+    paid: Money | null;
   }[];
 }

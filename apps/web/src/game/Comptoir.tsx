@@ -9,6 +9,7 @@ import { BuildCatalog } from "./Catalog.js";
 import { CompanySheet, CompanyTile } from "./Company.js";
 import { Daily } from "./Daily.js";
 import { DashboardSheet, DashboardTile } from "./Dashboard.js";
+import { DealsSheet, DealsTile } from "./Deals.js";
 import type { GameProps } from "./Game.js";
 import { Ledger } from "./Ledger.js";
 import { MasteryTile } from "./Mastery.js";
@@ -820,6 +821,7 @@ export function CounterSheets(props: GameProps) {
       <CompanySheet {...props} />
       <DashboardSheet {...props} />
       <TendersSheet {...props} />
+      <DealsSheet {...props} />
     </>
   );
 }
@@ -844,6 +846,7 @@ export function SeasonTiles(props: GameProps) {
       <AdviceTile {...props} />
       <DashboardTile {...props} />
       <TendersTile {...props} />
+      <DealsTile {...props} />
       <CompanyTile {...props} />
       <SeasonGoal {...props} />
       <MasteryTile {...props} />

@@ -23,6 +23,8 @@ export const SALES = new Set<LedgerReason>([
   "supplier_bonus",
   "tender_delivery",
   "quality_premium",
+  "commission",
+  "colleganza_share",
 ]);
 
 /** Paid by the merchant for goods, or to sell them. */
@@ -33,12 +35,16 @@ export const COSTS = new Set<LedgerReason>([
   "decree_gabelle",
   "decree_toll",
   "fattore",
+  "commission",
+  "colleganza_share",
 ]);
 
-/** The merchant behind a cash or escrow account. */
+/** The merchant behind a cash, escrow or hold account. */
 function merchantOf(account: AccountId): PlayerId | undefined {
   const [kind] = account.split(":", 1);
-  return kind === "cash" || kind === "escrow" ? account.slice(kind.length + 1) : undefined;
+  return kind === "cash" || kind === "escrow" || kind === "hold"
+    ? account.slice(kind.length + 1)
+    : undefined;
 }
 
 /** Called for every ledger entry (see `transfer`). */

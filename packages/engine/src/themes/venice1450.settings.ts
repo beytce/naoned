@@ -918,6 +918,11 @@ export const venice1450Settings: WorldSettingsInput = {
     tailor: { costDucats: 63_000, costMaterials: { bricks: 30, planks: 40 } },
     spicery: { costDucats: 70_000, costMaterials: { bricks: 40, planks: 40 } },
   },
+  // Deals between merchants (recommendations of 20 October 2026): commissions open three days at
+  // most; the colleganza a week at most, the investor taking at most three quarters of the gains
+  // (the share of the Venetian stans).
+  commissions: { maxDays: 3 },
+  colleganza: { maxDays: 7, maxShareBps: 7_500 },
   // The manufactures (recommendations of 20 October 2026): past level 5, a workshop climbs to 10
   // from Négociant (3 000 ducats of net sales) on a path chosen once: volume (bigger batches) or
   // quality (the same batches, the cities paying its goods 4 % more per level, 20 % at 10).

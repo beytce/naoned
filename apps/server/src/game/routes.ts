@@ -196,6 +196,25 @@ const action = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("tenderDeliver"), tenderId: z.string().max(32) }),
   z.object({
+    type: z.literal("postCommission"),
+    resource: z.string().max(32),
+    quantity: z.number().int().positive().max(10_000),
+    unitPrice: z.string().regex(/^\d{1,12}$/),
+    days: z.number().int().positive().max(30),
+    to: z.string().uuid().optional(),
+  }),
+  z.object({ type: z.literal("fillCommission"), commissionId: z.string().max(32) }),
+  z.object({ type: z.literal("cancelCommission"), commissionId: z.string().max(32) }),
+  z.object({
+    type: z.literal("offerColleganza"),
+    amount: z.string().regex(/^\d{1,12}$/),
+    days: z.number().int().positive().max(30),
+    shareBps: z.number().int().positive().max(10_000),
+    to: z.string().uuid().optional(),
+  }),
+  z.object({ type: z.literal("acceptColleganza"), colleganzaId: z.string().max(32) }),
+  z.object({ type: z.literal("cancelColleganza"), colleganzaId: z.string().max(32) }),
+  z.object({
     type: z.literal("choosePath"),
     buildingId: z.string().max(32),
     path: z.enum(["volume", "quality"]),
@@ -1262,6 +1281,35 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       ];
     case "tenderDeliver":
       return [{ type: "tenderDeliver", playerId, tenderId: a.tenderId }];
+    case "postCommission":
+      return [
+        {
+          type: "postCommission",
+          playerId,
+          resource: a.resource,
+          quantity: a.quantity,
+          unitPrice: BigInt(a.unitPrice),
+          days: a.days,
+          ...(a.to ? { to: a.to } : {}),
+        },
+      ];
+    case "fillCommission":
+    case "cancelCommission":
+      return [{ type: a.type, playerId, commissionId: a.commissionId }];
+    case "offerColleganza":
+      return [
+        {
+          type: "offerColleganza",
+          playerId,
+          amount: BigInt(a.amount),
+          days: a.days,
+          shareBps: a.shareBps,
+          ...(a.to ? { to: a.to } : {}),
+        },
+      ];
+    case "acceptColleganza":
+    case "cancelColleganza":
+      return [{ type: a.type, playerId, colleganzaId: a.colleganzaId }];
     case "choosePath":
       return [{ type: "choosePath", playerId, buildingId: a.buildingId, path: a.path }];
     case "warehouseBid":
