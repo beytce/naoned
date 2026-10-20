@@ -924,6 +924,15 @@ export const fr = {
       fold: "Replier le tiroir",
     },
     market: {
+      chart: {
+        empty: "Pas encore d'échange cette semaine : la courbe viendra avec les premiers.",
+        reference: "référence",
+        since: "il y a 7 j",
+        low: "bas",
+        high: "haut",
+        label: (good: string, last: string, vsRef: number) =>
+          `${good} : ${last} au dernier échange, ${vsRef >= 0 ? "+" : ""}${vsRef} % de la référence`,
+      },
       goods: "Marchandise",
       offers: "mes offres",
       stock: "en stock",
@@ -1114,7 +1123,7 @@ export const fr = {
         orders: (n: number) => `${n} offres ouvertes de plus au Rialto`,
         fresh: (pct: number) => `Produits frais à +${pct} % au lieu de +5 %`,
         reroll: "Échanger une commande du Doge par jour",
-        info: "Carnet d'ordres à 10 offres, 7 jours d'historique des prix",
+        info: "Carnet d'ordres à 10 offres",
         alerts: "Alertes des Criées et des bonnes affaires",
         cosmetics: "Sceau à côté de votre nom, palette « Or de Venise »",
       },

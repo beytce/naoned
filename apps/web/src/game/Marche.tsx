@@ -180,6 +180,8 @@ function TradeSheet({
         <Sparkline points={points} width={90} height={36} />
       </div>
 
+      <PriceChart props={props} resource={line.resource} reference={line.reference} />
+
       <div className="grid grid-cols-2 gap-4 cut bg-night-3 p-3 ring-1 ring-inset ring-line">
         <BookSide lines={book?.asks ?? []} title={t.sellers} tone="text-gold" props={props} />
         <BookSide lines={book?.bids ?? []} title={t.buyers} tone="text-lagoon" props={props} />
@@ -564,5 +566,77 @@ export function RialtoSheet(props: GameProps) {
         </div>
       )}
     </Sheet>
+  );
+}
+
+/**
+ * Seven days of the Rialto's price for a good, hour by hour, against its reference: where it
+ * stands now, its low and its high, to buy low and sell high.
+ */
+function PriceChart({
+  props,
+  resource,
+  reference,
+}: { props: GameProps; resource: string; reference: string }) {
+  const c = fr.game.market.chart;
+  const raw = props.prices[resource] ?? [];
+  const W = 320;
+  const H = 110;
+  if (raw.length < 2) return <p className="note">{c.empty}</p>;
+  const ref = Number(reference);
+  const values = raw.map((p) => Number(p.price));
+  const lo = Math.min(...values, ref);
+  const hi = Math.max(...values, ref);
+  const span = hi - lo || 1;
+  const t0 = raw[0]?.t ?? 0;
+  const t1 = props.now;
+  const x = (t: number) => 4 + ((t - t0) / Math.max(1, t1 - t0)) * (W - 8);
+  const y = (v: number) => H - 14 - ((v - lo) / span) * (H - 28);
+  const path = raw
+    .map((p, i) => `${i ? "L" : "M"}${x(p.t).toFixed(1)} ${y(Number(p.price)).toFixed(1)}`)
+    .join(" ");
+  const last = values.at(-1) ?? ref;
+  const vsRef = Math.round(((last - ref) / Math.max(1, ref)) * 100);
+  return (
+    <figure className="space-y-1">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        width="100%"
+        role="img"
+        aria-label={c.label(props.names.resource(resource), d(BigInt(last)), vsRef)}
+        className="block cut bg-night-3 ring-1 ring-inset ring-line"
+      >
+        <line
+          x1="4"
+          x2={W - 4}
+          y1={y(ref)}
+          y2={y(ref)}
+          stroke="rgb(var(--cream-dim))"
+          strokeOpacity="0.5"
+          strokeDasharray="4 4"
+        />
+        <text x={W - 6} y={y(ref) - 4} textAnchor="end" fontSize="10" fill="rgb(var(--cream-dim))">
+          {c.reference}
+        </text>
+        <path
+          d={path}
+          fill="none"
+          stroke={last >= ref ? "rgb(var(--lagoon))" : "rgb(var(--vermilion))"}
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <circle cx={x(raw.at(-1)?.t ?? t1)} cy={y(last)} r="3.5" fill="rgb(var(--gold))" />
+      </svg>
+      <figcaption className="flex justify-between font-mono text-xs text-cream-dim">
+        <span>{c.since}</span>
+        <span>
+          {c.low} {d(BigInt(Math.min(...values)))} · {c.high} {d(BigInt(Math.max(...values)))}
+        </span>
+        <span className={vsRef >= 0 ? "text-lagoon" : "text-vermilion"}>
+          {vsRef >= 0 ? "+" : ""}
+          {vsRef} %
+        </span>
+      </figcaption>
+    </figure>
   );
 }

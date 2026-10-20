@@ -471,9 +471,9 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   app.get("/api/game/prices", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
-    // Pass Négociant: seven days of prices instead of two.
-    const hours = hasPass(world.ctx, world.current, account.id, world.now()) ? 168 : 48;
-    return { series: await priceHistory(db, world.id, world.now(), hours) };
+    // Seven days of prices for everyone (recommendations of 20 October 2026: a decision to make
+    // at each session, read on the curve).
+    return { series: await priceHistory(db, world.id, world.now(), 168) };
   });
 
   /** The family's thread: the call, mapped to a status and an error code when refused. */
