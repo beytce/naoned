@@ -461,6 +461,13 @@ function ProfileBody(props: GameProps) {
               >
                 {fr.game.data.export}
               </a>
+              <a
+                href="/api/game/ledger.csv"
+                download
+                className="cut bg-night-4 px-3 py-2 text-center font-display text-xs font-extrabold uppercase tracking-wide text-cream ring-1 ring-inset ring-line hover:ring-cream-dim/40"
+              >
+                {fr.game.data.ledgerCsv}
+              </a>
               <Slab tone="ghost" size="sm" onClick={() => setDeleting(true)}>
                 {fr.game.data.delete}
               </Slab>

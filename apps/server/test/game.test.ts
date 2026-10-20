@@ -131,6 +131,27 @@ describe("profile and visuals", () => {
     expect(p.badges.find((b: { code: string }) => b.code === "muda_1").earned).toBe(true);
   });
 
+  it("publishes the bank's report, the journal and the merchant's ledger as CSV", async () => {
+    const cookie = await login("ada@example.org");
+    await post(cookie, "/api/game/join", { region: "lagoon" });
+    await world.execute({ type: "tick" });
+    await act(cookie, { type: "instantOrder", resource: "planks", side: "buy", quantity: 2 });
+    // Public: no account needed.
+    const bank = (await app.inject({ method: "GET", url: "/api/bank" })).json();
+    expect(bank.activeMerchants).toBeGreaterThan(0);
+    expect(BigInt(bank.moneyPerMerchant)).toBeGreaterThan(0n);
+    expect(bank.week.created.some((c: { reason: string }) => c.reason === "starting_capital")).toBe(
+      true,
+    );
+    const journal = (await get(cookie, "/api/game/journal")).json();
+    expect(Array.isArray(journal.entries)).toBe(true);
+    const csv = await get(cookie, "/api/game/ledger.csv");
+    expect(csv.headers["content-type"]).toContain("text/csv");
+    const lines = csv.body.replace(/^\uFEFF/, "").split("\n");
+    expect(lines[0]).toBe("date;cause;entree;sortie;reference");
+    expect(lines.some((l) => l.includes(";starting_capital;"))).toBe(true);
+  });
+
   it("returns hourly price history", async () => {
     const cookie = await login("ada@example.org");
     await post(cookie, "/api/game/join", { region: "lagoon" });

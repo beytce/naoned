@@ -8,6 +8,7 @@ import { accounts, players, pushSubscriptions, telemetry } from "../db/schema.js
 import { NOTIFICATION_KINDS, type NotificationKind, type Notifier } from "../notify/notifier.js";
 import { isPushEndpoint } from "../notify/push.js";
 import { retention, suspiciousPairs } from "./admin.js";
+import { bankReport, ledgerCsv } from "./bank.js";
 import {
   ChatError,
   familyThread,
@@ -473,6 +474,20 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       level: (await levelsOf(db, world.current, [account.id])).get(account.id),
       palmares: await palmares(db, account.id),
     });
+  });
+
+  /** The Rapport de la Banque: the world's money in the open, for anyone (no account). */
+  app.get("/api/bank", async () =>
+    toJson(await bankReport(db, world.id, world.ctx, world.current, world.now())),
+  );
+
+  /** The merchant's ledger in this world, as a CSV file (a spreadsheet's tab). */
+  app.get("/api/game/ledger.csv", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    reply.header("content-type", "text/csv; charset=utf-8");
+    reply.header("content-disposition", 'attachment; filename="fondaco-livre-de-compte.csv"');
+    return `\uFEFF${await ledgerCsv(db, world.id, account.id)}`;
   });
 
   /** The Journal du Rialto: the world's last day, public. */

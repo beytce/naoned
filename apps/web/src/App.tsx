@@ -145,6 +145,14 @@ function Login(props: { sentTo?: string; onSent: (email: string) => void; onRese
   return (
     <form onSubmit={submit} className="animate-rise space-y-5">
       <p className="text-center text-lg leading-snug text-cream-dim">{fr.tagline}</p>
+      <ul className="space-y-1 text-sm text-cream-dim">
+        {fr.promises.map((p) => (
+          <li key={p} className="flex gap-2">
+            <span className="text-info">✦</span>
+            {p}
+          </li>
+        ))}
+      </ul>
       <label className="block space-y-2">
         <Label>{fr.emailLabel}</Label>
         <input

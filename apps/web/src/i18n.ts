@@ -3,6 +3,13 @@ export const fr = {
   appName: "Fondaco",
   season: "Saison 1 · Venise 1450",
   tagline: "Bâtissez une maison de commerce en un mois, sur un marché tenu par les joueurs.",
+  /** What sets the game apart, under the tagline. */
+  promises: [
+    "Le jeu dort la nuit : rien ne se perd entre 22 h et 8 h.",
+    "Rien à acheter qui fasse gagner : ni ducats, ni marchandises, ni vitesse.",
+    "Une saison par mois : tout le monde repart à égalité.",
+    "Une économie honnête : la Banque publie sa monnaie chaque jour.",
+  ],
   emailLabel: "Adresse e-mail",
   emailPlaceholder: "vous@exemple.fr",
   sendLink: "Recevoir mon lien",
@@ -1614,6 +1621,7 @@ export const fr = {
       title: "Mes données",
       help: "Téléchargez tout ce que le jeu conserve sur vous, ou supprimez votre compte.",
       export: "Télécharger mes données",
+      ledgerCsv: "Livre de compte (CSV, pour un tableur)",
       delete: "Supprimer mon compte",
       deleteText:
         "Votre adresse, votre nom, votre blason, vos notifications et votre historique d'activité seront effacés, et vous serez déconnecté. Votre comptoir reste dans la saison en cours sous le nom « Marchand anonyme », pour que les échanges des autres joueurs restent justes. C'est définitif.",
@@ -1709,6 +1717,34 @@ export const fr = {
       deliver: (n: number) => `Livrer ${n}`,
       have: (n: number) => `en stock : ${n}`,
       none: "Aucune commande de compagnie en cours.",
+    },
+    /** The Rapport de la Banque de Venise, in the help. */
+    bank: {
+      title: "Rapport de la Banque de Venise",
+      help: "La monnaie du monde, publiée : ce que les marchands détiennent et ce que la semaine a créé et détruit. Rien ne s'achète en euros qui fasse gagner.",
+      perMerchant: (held: string, start: string, n: number) =>
+        `${held} par marchand actif (capital de départ : ${start}), ${n} marchands actifs`,
+      created: "Créé en 7 jours :",
+      destroyed: "Détruit en 7 jours :",
+      net: (net: string) => `Solde de la semaine : ${net}`,
+      reasons: {
+        delivery: "livraisons",
+        city_sale: "villes",
+        contract_reward: "contrats",
+        project_delivery: "compagnie",
+        project_bonus: "primes",
+        mission_reward: "missions",
+        daily_reward: "tâches",
+        starting_capital: "capitaux",
+        market_maker_buy: "Dogana",
+        market_maker_sell: "Dogana",
+        market_tax: "taxe",
+        construction: "chantiers",
+        vehicle: "véhicules",
+        terraferma: "Terraferme",
+        fattore: "fattore",
+        decree_favour: "faveurs",
+      } as Record<string, string>,
     },
     /** The season's chronicle, a card to share at the closing ceremony. */
     chronicle: {

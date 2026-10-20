@@ -1,6 +1,7 @@
 import { NavIcon } from "../art/icons.js";
 import { fr } from "../i18n.js";
 import { CloseButton, Label, Slab, useOverlay } from "../ui.js";
+import { BankSection } from "./Bank.js";
 import type { GameProps } from "./Game.js";
 import { useWide } from "./useWide.js";
 
@@ -47,6 +48,7 @@ export function Help(props: GameProps & { onClose: () => void }) {
             ))}
           </ul>
         </section>
+        <BankSection />
         <div className="grid grid-cols-2 gap-3 pt-4">
           <Slab
             tone="ghost"
