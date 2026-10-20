@@ -31,8 +31,8 @@ const contrast = (a: [number, number, number], b: [number, number, number]) => {
 describe("the palettes", () => {
   const all = palettes();
 
-  it("are the dark Noyer, the light Parchemin and the Pass's gold", () => {
-    expect(Object.keys(all).sort()).toEqual(["noyer", "or", "parchemin"]);
+  it("are the blue Lagune, the dark Noyer, the light Parchemin and the Pass's gold", () => {
+    expect(Object.keys(all).sort()).toEqual(["lagune", "noyer", "or", "parchemin"]);
   });
 
   // WCAG AA for text (4.5:1): every colour that writes text, on every surface it sits on.

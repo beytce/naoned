@@ -22,7 +22,7 @@ const HUES: Record<string, [string, string, string]> = {
   mantova: ["#B9CDEB", "#5A78A8", "#18233A"],
   ferrara: ["#EFA08A", "#A8483A", "#38130E"],
 };
-const DEFAULT_HUE: [string, string, string] = ["#E9D8B8", "#9A8466", "#2A2016"];
+const DEFAULT_HUE: [string, string, string] = ["#D6E8FA", "#6E8EB4", "#1A2A42"];
 
 export function orbStyle(code: string): { background: string } {
   const [light, mid, dark] = HUES[code] ?? DEFAULT_HUE;
@@ -34,7 +34,7 @@ export function orbStyle(code: string): { background: string } {
 /** A city's plaque on the chart: dark parchment warmed by the city's hue, an ink edge. */
 function plaqueStyle(code: string): { background: string } {
   const [, mid] = HUES[code] ?? DEFAULT_HUE;
-  return { background: `linear-gradient(160deg, ${mid}66 0%, #2E2219 62%, #241A13 100%)` };
+  return { background: `linear-gradient(160deg, ${mid}66 0%, #1D3150 62%, #16263E 100%)` };
 }
 
 function Pill({ children, tone }: { children: ReactNode; tone: "gold" | "lagoon" | "vermilion" }) {
@@ -88,7 +88,7 @@ export function CityMarker({
         <span className="marker-halo absolute inset-1 rounded-full" />
       )}
       <span
-        className={`marker-orb relative flex items-center justify-center rounded-lg shadow-[0_6px_16px_rgb(0_0_0/0.5)] ring-1 ring-[#D9B87A]/55 ${code === "venezia" ? "h-14 w-14" : "h-12 w-12"}`}
+        className={`marker-orb relative flex items-center justify-center rounded-lg shadow-[0_6px_16px_rgb(0_0_0/0.5)] ring-1 ring-[#BFE3FF]/55 ${code === "venezia" ? "h-14 w-14" : "h-12 w-12"}`}
         style={plaqueStyle(code)}
       >
         <CityIcon
@@ -102,7 +102,7 @@ export function CityMarker({
           {orders > 0 && <Pill tone={deliverable > 0 ? "gold" : "lagoon"}>{orders}</Pill>}
         </span>
       )}
-      <span className="pointer-events-none absolute left-1/2 top-[calc(100%-4px)] -translate-x-1/2 whitespace-nowrap bg-[#241A13]/80 px-1.5 font-display text-xs font-extrabold uppercase tracking-wider text-cream/95 [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+      <span className="pointer-events-none absolute left-1/2 top-[calc(100%-4px)] -translate-x-1/2 whitespace-nowrap bg-[#16263E]/80 px-1.5 font-display text-xs font-extrabold uppercase tracking-wider text-cream/95 [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
         {name}
       </span>
     </button>

@@ -18,21 +18,21 @@ Logo officiel (depuis le 18 octobre 2026) : le lion ailé de saint Marc, de face
 
 ## Palettes
 
-Deux palettes, mêmes rôles aux mêmes endroits, au choix du joueur dans le Profil (mémorisé sur l'appareil) : « Noyer & Ducat », sombre et par défaut (l'intérieur du fondaco à la lueur des lampes), et « Parchemin & Lapis », claire, pour le plein jour. « Or de Venise » reste réservée au Pass. Lagune et Pourpre ont été retirées après l'audit UX du 19 octobre 2026 (`docs/audit-ux-2026-10-19.md`) : un appareil qui les gardait passe à Noyer. Les couleurs sont des variables CSS (`index.css`, `[data-palette]`) lues par Tailwind (`tailwind.config.js`).
+Trois palettes, mêmes rôles aux mêmes endroits, au choix du joueur dans le Profil (mémorisé sur l'appareil) : « Lagune & Ducat », bleu nuit et par défaut depuis le 20 octobre 2026 (le brun de Noyer était jugé trop sombre et peu accueillant par le porteur, qui demandait de se rapprocher du bleu des jeux spatiaux mobiles), « Noyer & Ducat », sombre (l'intérieur du fondaco à la lueur des lampes), et « Parchemin & Lapis », claire, pour le plein jour. « Or de Venise » reste réservée au Pass. Seule une palette choisie par le joueur est gardée : un appareil qui avait seulement retenu l'ancien défaut passe à Lagune. La carte (portulan, `Terrain.tsx`) est elle aussi passée au bleu : terres ardoise, eaux bleu profond, encre cyan pâle. Les couleurs sont des variables CSS (`index.css`, `[data-palette]`) lues par Tailwind (`tailwind.config.js`).
 
-| Rôle | Noyer & Ducat (défaut) | Parchemin & Lapis (clair) | Usage strict |
-| --- | --- | --- | --- |
-| Fond (`night`, `night-2/3/4`) | `#1E1611`, surfaces `#2A1F18` `#36291F` `#443327` | `#F3E9D4` | Application, cartes, feuilles : des surfaces assez écartées pour que les panneaux « montent » |
-| Or (`gold`) | `#E8B24C` | `#845A0E` | Les montants en ducats, et **un seul bouton par écran** : celui à toucher. Jamais un badge, un onglet ni un titre |
-| Lagune (`lagoon`) | `#7DB596` | `#286E4E` | Gains, production, « prêt ». Jamais un bouton ni un libellé neutre |
-| Cinabre (`vermilion`) | `#EA7658` | `#AA3422` | Pertes réelles et urgences. Une chaîne qui attend sa matière n'est pas une alerte (rond creux, crème) |
-| Lapis (`info`) | `#7E9CDB` | `#284EA0` | Sélection (anneau des repères), guide de Lorenzo, onglet et filtre actifs, liens, « vous » au classement |
-| Texte (`cream`, `cream-dim`, `muted`) | `#F6E8CC` | `#2B2016` | Texte, sur-titres (crème atténué), badges neutres |
-| Encre (`ink`) | fond | crème clair | Texte posé sur l'or |
+| Rôle | Lagune & Ducat (défaut) | Noyer & Ducat | Parchemin & Lapis (clair) | Usage strict |
+| --- | --- | --- | --- | --- |
+| Fond (`night`, `night-2/3/4`) | `#16263E`, surfaces `#1D304D` `#243A5C` `#2E486E` | `#1E1611`, surfaces `#2A1F18` `#36291F` `#443327` | `#F3E9D4` | Application, cartes, feuilles : des surfaces assez écartées pour que les panneaux « montent » |
+| Or (`gold`) | `#F4C554` | `#E8B24C` | `#845A0E` | Les montants en ducats, et **un seul bouton par écran** : celui à toucher. Jamais un badge, un onglet ni un titre |
+| Lagune (`lagoon`) | `#6EE0B8` | `#7DB596` | `#286E4E` | Gains, production, « prêt ». Jamais un bouton ni un libellé neutre |
+| Cinabre (`vermilion`) | `#FF8070` | `#EA7658` | `#AA3422` | Pertes réelles et urgences. Une chaîne qui attend sa matière n'est pas une alerte (rond creux, crème) |
+| Lapis (`info`) | `#6EC8F5` | `#7E9CDB` | `#284EA0` | Sélection (anneau des repères), guide de Lorenzo, onglet et filtre actifs, liens, « vous » au classement |
+| Texte (`cream`, `cream-dim`, `muted`) | `#ECF5FF` | `#F6E8CC` | `#2B2016` | Texte, sur-titres (crème atténué), badges neutres |
+| Encre (`ink`) | fond | fond | crème clair | Texte posé sur l'or |
 
 Les autres boutons sont « fantômes » (`Slab tone="ghost"`, `ActionButton tone="plain"`). Un test (`apps/web/test/theme.test.ts`) vérifie le contraste AA (4,5:1) de chaque couleur de texte sur `night`, `night-2` et `night-3`, pour chaque palette.
 
-Les deux halos du fond suivent la palette (`--glow-a`, `--glow-b`) : ambre et braise pour Noyer, vert d'eau et or pour les autres.
+Les deux halos du fond suivent la palette (`--glow-a`, `--glow-b`) : cyan et vert d'eau pour Lagune, ambre et braise pour Noyer, vert d'eau et or pour les autres.
 
 Les illustrations (ressources, bâtiments, blasons) et la carte gardent leurs propres couleurs dans toutes les palettes, réglées sur la palette par défaut (`art/palette.ts`).
 

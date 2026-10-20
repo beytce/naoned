@@ -28,9 +28,9 @@ export const NightTerrain = memo(function NightTerrain() {
     >
       <defs>
         <radialGradient id="nt-land" cx="48%" cy="58%" r="70%">
-          <stop offset="0%" stopColor="#3A2C21" />
-          <stop offset="60%" stopColor="#2A2019" />
-          <stop offset="100%" stopColor="#1E1611" stopOpacity="0" />
+          <stop offset="0%" stopColor="#2E4766" />
+          <stop offset="60%" stopColor="#223853" />
+          <stop offset="100%" stopColor="#16263E" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="nt-sea" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#173B3D" />
@@ -63,7 +63,7 @@ export const NightTerrain = memo(function NightTerrain() {
           key={`m${x}-${y}`}
           transform={`translate(${x} ${y}) scale(${s})`}
           d="M-17 0 L-4 -23 L3 -13 L9 -19 L21 0"
-          fill="#2A2019"
+          fill="#223853"
           stroke={P.goldSoft}
           strokeOpacity="0.16"
           strokeWidth="0.8"
@@ -108,19 +108,23 @@ export const NightTerrain = memo(function NightTerrain() {
   );
 });
 
-/** Ink and washes of the portolan: a sepia chart by lamplight, its own colours in every palette. */
-const INK = "#D9B87A";
-const PARCHMENT = "#4A3826";
-const PARCHMENT_DEEP = "#3A2B1D";
-const WATER = "#2B4A47";
-const WATER_DEEP = "#1F3836";
+/**
+ * Ink and washes of the portolan: a blue chart at dusk (slate land, deep blue water, pale cyan
+ * ink), its own colours in every palette. The sepia one read as too dark (playtest, 20 October).
+ */
+const INK = "#BFE3FF";
+const LAND = "#3A5677";
+const LAND_DEEP = "#2B4463";
+const WATER = "#174A78";
+const WATER_DEEP = "#103A62";
+const WOOD = "#5FA88E";
 
 /** Where the rhumb lines of the chart start: the wind rose, out in the Adriatic. */
 const ROSE: [number, number] = [334, 420];
 
 /**
- * The Veneto as a Quattrocento portolan: warm parchment, the Alps in hatched ink, the rivers in a
- * double line, the sea and the lagoon washed in green, rhumb lines from a wind rose, the regions
+ * The Veneto as a Quattrocento portolan: slate-blue land, the Alps in hatched ink, the rivers in a
+ * double line, the sea and the lagoon washed in deep blue, rhumb lines from a wind rose, the regions
  * named in spaced capitals. Lit enough to be read; the cities and the carts stay what the eye
  * finds first. Drawn once.
  */
@@ -136,8 +140,8 @@ export const PortolanTerrain = memo(function PortolanTerrain() {
     >
       <defs>
         <radialGradient id="pt-land" cx="46%" cy="55%" r="72%">
-          <stop offset="0%" stopColor={PARCHMENT} />
-          <stop offset="70%" stopColor={PARCHMENT_DEEP} />
+          <stop offset="0%" stopColor={LAND} />
+          <stop offset="70%" stopColor={LAND_DEEP} />
           <stop offset="100%" stopColor={P.night} stopOpacity="0" />
         </radialGradient>
         <linearGradient id="pt-sea" x1="0" y1="0" x2="1" y2="0">
@@ -181,7 +185,7 @@ export const PortolanTerrain = memo(function PortolanTerrain() {
       {/* The Alps: ink peaks, hatched on their shaded side. */}
       {MOUNTAINS.map(([x, y, s]) => (
         <g key={`m${x}-${y}`} transform={`translate(${x} ${y}) scale(${s})`}>
-          <path d="M-17 0 L-4 -23 L3 -13 L9 -19 L21 0 Z" fill={PARCHMENT_DEEP} />
+          <path d="M-17 0 L-4 -23 L3 -13 L9 -19 L21 0 Z" fill={LAND_DEEP} />
           <path
             d="M-17 0 L-4 -23 L3 -13 L9 -19 L21 0"
             fill="none"
@@ -211,7 +215,7 @@ export const PortolanTerrain = memo(function PortolanTerrain() {
       ))}
       {WOODS.map(([x, y]) => (
         <g key={`w${x}-${y}`} transform={`translate(${x} ${y})`}>
-          <circle cy="-3" r="3.2" fill="#556B45" opacity="0.55" />
+          <circle cy="-3" r="3.2" fill={WOOD} opacity="0.5" />
           <path d="M0 -1 V3" stroke={INK} strokeOpacity="0.4" strokeWidth="0.6" />
         </g>
       ))}

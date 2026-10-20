@@ -1,7 +1,8 @@
 import { store } from "./game/store.js";
 
-/** The palettes of the identity guide, a dark and a light one; the first one is the default. */
+/** The palettes of the identity guide, two dark and a light one; the first one is the default. */
 export const PALETTES = [
+  { id: "lagune", name: "Lagune & Ducat", swatch: ["#16263E", "#F4C554", "#6EE0B8", "#6EC8F5"] },
   { id: "noyer", name: "Noyer & Ducat", swatch: ["#1E1611", "#E8B24C", "#7DB596", "#E36A4A"] },
   {
     id: "parchemin",
@@ -23,11 +24,12 @@ export function needsPass(id: PaletteId): boolean {
   return PALETTES.some((p) => p.id === id && "pass" in p && p.pass);
 }
 
-export const DEFAULT_PALETTE: PaletteId = "noyer";
+export const DEFAULT_PALETTE: PaletteId = "lagune";
 
 export function currentPalette(): PaletteId {
-  const saved = store.get("palette");
-  // Lagune and Pourpre are gone (UX audit of 19 October 2026): a device that kept one turns Noyer.
+  // Only a palette the player picked is kept: a device that merely remembered the old default
+  // (Noyer, until 20 October 2026) takes the new one.
+  const saved = store.get("paletteChosen") ? store.get("palette") : null;
   return PALETTES.find((p) => p.id === saved)?.id ?? DEFAULT_PALETTE;
 }
 
@@ -35,7 +37,7 @@ export function currentPalette(): PaletteId {
 export function applyPalette(id: PaletteId = currentPalette()): void {
   document.documentElement.dataset.palette = id;
   const meta = document.querySelector('meta[name="theme-color"]');
-  meta?.setAttribute("content", PALETTES.find((p) => p.id === id)?.swatch[0] ?? "#1E1611");
+  meta?.setAttribute("content", PALETTES.find((p) => p.id === id)?.swatch[0] ?? "#16263E");
   store.set("palette", id);
 }
 

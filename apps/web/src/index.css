@@ -9,8 +9,37 @@
  * guide and the active tab. --glow-a/--glow-b tint the page's two halos.
  */
 @layer base {
-  /* Noyer & Ducat, the default: the fondaco's walnut and leather by lamplight. */
+  /*
+   * Lagune & Ducat, the default: the lagoon at dusk, slate-blue surfaces, cyan for the selection,
+   * gold kept for money (the brown of Noyer read as too dark and closed: playtest, 20 October).
+   */
   :root,
+  [data-palette="lagune"] {
+    color-scheme: dark;
+    --night: 22 38 62;
+    --night-2: 29 48 77;
+    --night-3: 36 58 92;
+    --night-4: 46 72 110;
+    --line: 66 98 140;
+    --cream: 236 245 255;
+    --cream-dim: 194 212 234;
+    --muted: 156 180 210;
+    --ink: 22 38 62;
+    --on-lagoon: 22 38 62;
+    --gold: 244 197 84;
+    --gold-deep: 200 150 50;
+    --gold-soft: 250 222 150;
+    --lagoon: 110 224 184;
+    --lagoon-deep: 60 160 130;
+    --lagoon-soft: 170 236 212;
+    --vermilion: 255 128 112;
+    --vermilion-deep: 190 72 60;
+    --info: 110 200 245;
+    --info-deep: 60 140 200;
+    --glow-a: 110 200 245;
+    --glow-b: 110 224 184;
+  }
+  /* Noyer & Ducat: the fondaco's walnut and leather by lamplight. */
   [data-palette="noyer"] {
     color-scheme: dark;
     --night: 30 22 17;
@@ -92,9 +121,9 @@
     -webkit-tap-highlight-color: transparent;
     background-image: radial-gradient(
         60rem 30rem at 85% -10%,
-        rgb(var(--glow-a) / 0.08),
+        rgb(var(--glow-a) / 0.14),
         transparent 60%
-      ), radial-gradient(50rem 30rem at -10% 110%, rgb(var(--glow-b) / 0.07), transparent 60%);
+      ), radial-gradient(50rem 30rem at -10% 110%, rgb(var(--glow-b) / 0.1), transparent 60%);
     background-attachment: fixed;
   }
   /* Archivo, widened: the expanded cut of the identity guide. */
