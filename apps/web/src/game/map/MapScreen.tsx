@@ -84,7 +84,9 @@ function rivalLine(r: GameProps["rival"]): string | null {
   const who = r.pseudo ?? t.someone;
   const name = r.character ? `${who} ${t.characters[r.character] ?? ""}`.trim() : who;
   const gap = BigInt(r.gain) - BigInt(r.mine);
-  return r.ahead ? t.chase(name, d(gap < 0n ? 0n : gap)) : t.chased(name, d(gap < 0n ? -gap : 0n));
+  const abs = gap < 0n ? -gap : gap;
+  const shown = abs === 0n ? null : d(abs);
+  return r.ahead ? t.chase(name, shown) : t.chased(name, shown);
 }
 
 /** The trip a vehicle is on now, if any. */

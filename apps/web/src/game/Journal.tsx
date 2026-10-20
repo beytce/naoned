@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { fr } from "../i18n.js";
-import { Label, clock } from "../ui.js";
+import { Label } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
 import type { JournalEntry } from "./types.js";
 
 const t = fr.game.journal;
+
+/** How long ago, in minutes then hours. */
+function ago(ms: number): string {
+  const minutes = Math.max(0, Math.round(ms / 60_000));
+  return minutes < 60 ? t.minutes(minutes) : t.hours(Math.round(minutes / 60));
+}
 
 function line(props: GameProps, e: JournalEntry): string {
   const someone = t.someone;
@@ -52,7 +58,7 @@ export function JournalSection(props: GameProps & { open: boolean }) {
           {entries.slice(0, 8).map((e) => (
             <li key={`${e.kind}:${e.at}:${line(props, e)}`} className="flex gap-2 text-sm">
               <span className="w-12 shrink-0 font-mono text-xs text-muted">
-                {clock(Math.max(0, props.now - e.at))}
+                {ago(props.now - e.at)}
               </span>
               <span className="text-cream-dim">{line(props, e)}</span>
             </li>

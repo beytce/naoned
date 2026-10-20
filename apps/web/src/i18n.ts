@@ -1712,7 +1712,12 @@ export const fr = {
       help: "Une ville commande du pain, des briques et des planches aux trois régions. Chaque unité livrée est payée 10 % au-dessus de la référence ; quand la commande est remplie, chaque marchand qui a livré touche 10 % de plus.",
       endsIn: (time: string) => `se termine dans ${time}`,
       filled: "Remplie : la prime est versée",
-      merchants: (n: number) => `${n} marchand${n > 1 ? "s" : ""} y ont livré`,
+      merchants: (n: number) =>
+        n === 0
+          ? "personne n'y a encore livré"
+          : n === 1
+            ? "1 marchand y a livré"
+            : `${n} marchands y ont livré`,
       mine: (amount: string) => `Vous : ${amount}`,
       deliver: (n: number) => `Livrer ${n}`,
       have: (n: number) => `en stock : ${n}`,
@@ -1761,6 +1766,8 @@ export const fr = {
     journal: {
       title: "Journal du Rialto",
       empty: "Rien de marquant depuis hier.",
+      minutes: (n: number) => `${n} min`,
+      hours: (n: number) => `${n} h`,
       someone: "un marchand",
       trade: (buyer: string, seller: string, qty: number, good: string, value: string) =>
         `${buyer} achète ${qty} ${good.toLowerCase()} à ${seller} pour ${value}`,
@@ -1777,8 +1784,10 @@ export const fr = {
     /** The rival of the week, under the rank on the map. */
     rival: {
       someone: "Un marchand",
-      chase: (name: string, gap: string) => `Rival : ${name}, ${gap} devant vous`,
-      chased: (name: string, gap: string) => `Talonné par ${name}, ${gap} derrière`,
+      chase: (name: string, gap: string | null) =>
+        gap ? `Rival : ${name}, +${gap}` : `Rival : ${name}, à égalité`,
+      chased: (name: string, gap: string | null) =>
+        gap ? `Talonné par ${name}, −${gap}` : `Talonné par ${name}, à égalité`,
       characters: {
         producer: "le producteur",
         artisan: "l'artisan",

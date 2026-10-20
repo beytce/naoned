@@ -45,7 +45,9 @@ function Line({ props, p, resource }: { props: GameProps; p: Project; resource: 
   const need = p.needs[resource] ?? 0;
   const done = p.delivered[resource] ?? 0;
   const have = stockOf(props, resource);
-  const give = Math.min(have, need - done);
+  // The workers' bread of the day stays home.
+  const keep = resource === props.view.rations.resource ? props.view.rations.perDay : 0;
+  const give = Math.max(0, Math.min(have - keep, need - done));
   const name = props.catalog.resources.find((r) => r.code === resource)?.name ?? resource;
   return (
     <li className="flex items-center gap-3">
