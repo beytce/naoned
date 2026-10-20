@@ -191,6 +191,9 @@ function payClose(tx: Tx, cfg: TerraConfig, week: number, map: TerraState): void
     emit(tx, "terra_result", r.id, {
       week,
       rank: k + 1,
+      of: close.ranking.length,
+      glory: r.glory,
+      cells: r.cells,
       tier: r.tier,
       influence: r.influence,
       signore: r.id === close.signore,

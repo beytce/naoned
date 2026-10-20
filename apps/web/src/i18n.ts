@@ -1830,6 +1830,15 @@ export const fr = {
       noSignore: "La semaine de la Terraferme se clôt sans Signore",
       community: "Rejoindre la communauté des marchands →",
     },
+    /** The Terraferma's rating and last weeks, in the profile. */
+    terraRecord: {
+      title: "Terraferme",
+      rating: (r: number) => `Cote : ${r}`,
+      none: "Aucune semaine jouée pour l'instant.",
+      week: (week: number, rank: number, of: number, glory: number, rating: number) =>
+        `Semaine ${week} : ${rank}${rank === 1 ? "er" : "e"} sur ${of} · ${glory} Gloire · cote ${rating}`,
+      replay: "Revoir la semaine",
+    },
     /** The rival of the week, under the rank on the map. */
     rival: {
       someone: "Un marchand",

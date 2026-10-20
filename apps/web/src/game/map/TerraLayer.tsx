@@ -162,6 +162,54 @@ export function useAbsence(
   return { view: v && frame ? { ...v, owner: frame.owner } : v, replaying: !!frame };
 }
 
+/**
+ * The week replayed from its start in about ten seconds, at the merchant's asking: the map as it
+ * opened, then each cell taken, in their order.
+ */
+export function useWeekReplay(v: TerraView | null | undefined): {
+  view: TerraView | null | undefined;
+  start: () => void;
+  playing: boolean;
+} {
+  const [frame, setFrame] = useState<number[] | null>(null);
+  const live = useRef(v);
+  live.current = v;
+  const start = useCallback(() => {
+    void gameApi
+      .terraReplay()
+      .then(({ replay }) => {
+        const current = live.current;
+        if (!replay || !current || replay.steps.length === 0) return;
+        // The replay's holders, as the view numbers them.
+        const at = replay.holders.map((h) =>
+          current.holders.findIndex((x) => (h.id ? x.id === h.id : x.nation === h.nation)),
+        );
+        const holderOf = (k: number) => (k < 0 ? -1 : (at[k] ?? -1));
+        const owner = replay.initial.map(holderOf);
+        const steps = replay.steps;
+        const frames = reducedMotion() ? 1 : 60;
+        let i = 0;
+        let f = 0;
+        setFrame([...owner]);
+        const id = setInterval(() => {
+          f++;
+          const until = Math.ceil((steps.length * f) / frames);
+          for (; i < until; i++) {
+            const [cell, holder] = steps[i] ?? [0, -1];
+            owner[cell] = holderOf(holder);
+          }
+          setFrame([...owner]);
+          if (f >= frames) {
+            clearInterval(id);
+            setTimeout(() => setFrame(null), 1_500);
+          }
+        }, 160);
+      })
+      .catch(() => undefined);
+  }, []);
+  return { view: v && frame ? { ...v, owner: frame } : v, start, playing: !!frame };
+}
+
 export interface TerraShapes {
   map: HexMap;
   land: boolean[];
@@ -866,11 +914,14 @@ export function TerraHud({
   v,
   now,
   regions,
+  onReplay,
 }: {
   v: TerraView;
   now: number;
   /** The regions' names (the teams of a week in teams). */
   regions: { code: string; name: string }[];
+  /** Replays the week from its start (absent while it plays). */
+  onReplay?: () => void;
 }) {
   const me = v.me;
   const regionName = (code: string) => regions.find((r) => r.code === code)?.name ?? code;
@@ -919,6 +970,15 @@ export function TerraHud({
         {v.rules.team && <span className="text-info">{t().team(regionName(v.rules.team))}</span>}
         {v.closed?.teams?.[0] && (
           <span className="text-gold">{t().teamWon(regionName(v.closed.teams[0].team))}</span>
+        )}
+        {onReplay && (
+          <button
+            type="button"
+            onClick={onReplay}
+            className="pointer-events-auto text-info underline underline-offset-2"
+          >
+            ⟲ {fr.game.terraRecord.replay}
+          </button>
         )}
         {v.battle && !v.closed && (
           <span

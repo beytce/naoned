@@ -26,6 +26,7 @@ import {
   recallFront,
   recruitPerHour,
   setPeasants,
+  weekReplay,
 } from "../src/index.js";
 import { testTerraferma } from "./fixture.js";
 import { HOUR, MIN, makeContext } from "./helpers.js";
@@ -927,5 +928,21 @@ describe("a week in teams", () => {
     expect(close.teams?.[0]?.team).toBe("lagoon");
     expect(close.teams?.[0]?.glory).toBe(20);
     expect(close.signore === "a" || close.signore === "b").toBe(true);
+  });
+});
+
+describe("the week's history", () => {
+  it("records every cell that changes hands, enough to replay the map from its start", () => {
+    const cfg = config({ start: { ...testTerraferma.start, troops: 400 } });
+    const s = newTerra(cfg, "seed", 10, START);
+    placeOnTerra(s, cfg, "a", freeCell(s), START);
+    launchFront(s, cfg, "a", border(s, "a"), 10_000, START);
+    advanceTerra(s, cfg, START + 3 * HOUR);
+    const replay = weekReplay(s);
+    expect(replay.steps.length).toBeGreaterThan(7);
+    // Played to the end, the history gives the map as it is.
+    const owner = [...replay.initial];
+    for (const [cell, holder] of replay.steps) owner[cell] = holder;
+    expect(owner.map((o) => (o < 0 ? null : replay.ids[o]))).toEqual(s.owner);
   });
 });

@@ -168,19 +168,61 @@ export interface TerraState {
   returns?: TerraReturn[];
   /** A week in teams: teammates are allies, the teams are ranked. */
   teamMode?: boolean;
+  /** The map as the week opened, and every change since (the replay). */
+  initial?: (string | null)[];
+  history?: { ids: string[]; cell: number[]; holder: number[]; minute: number[] };
   /** Quick signals on the map, the last two hours. */
   signals?: TerraSignal[];
   /** Only on a forecast's copy: each cell a front takes, when the step that takes it ends. */
   trace?: { front: string; cell: number; at: number }[];
 }
 
-/** A cell changing hands, remembered for the merchants who were away. */
-function seize(s: TerraState, cell: number, id: string, at: number): void {
+/** A cell changing hands, remembered for the merchants who were away and for the replay. */
+function seize(s: TerraState, cell: number, id: string | null, at: number): void {
   const from = s.owner[cell] ?? null;
   if (from === id) return;
   s.owner[cell] = id;
   s.taken ??= {};
   s.taken[cell] = { at, from };
+  record(s, cell, id, at);
+}
+
+/** One line of the week's history: the cell, its new holder, the minute of the week. */
+function record(s: TerraState, cell: number, id: string | null, at: number): void {
+  if (!s.history) return;
+  let k = id === null ? -1 : s.history.ids.indexOf(id);
+  if (id !== null && k < 0) {
+    s.history.ids.push(id);
+    k = s.history.ids.length - 1;
+  }
+  s.history.cell.push(cell);
+  s.history.holder.push(k);
+  s.history.minute.push(Math.max(0, Math.floor((at - s.startAt) / MINUTE_MS)));
+}
+
+/** The week from its start, to replay: holders by index, the first map, then each change. */
+export function weekReplay(s: TerraState): {
+  ids: string[];
+  initial: number[];
+  steps: [cell: number, holder: number, minute: number][];
+} {
+  const h = s.history ?? { ids: [], cell: [], holder: [], minute: [] };
+  const ids = [...h.ids];
+  const index = (o: string | null) => {
+    if (o === null) return -1;
+    let k = ids.indexOf(o);
+    if (k < 0) {
+      ids.push(o);
+      k = ids.length - 1;
+    }
+    return k;
+  };
+  const initial = (s.initial ?? s.owner).map(index);
+  return {
+    ids,
+    initial,
+    steps: h.cell.map((c, i) => [c, h.holder[i] ?? -1, h.minute[i] ?? 0]),
+  };
 }
 
 // ——— The map ———
@@ -423,6 +465,8 @@ export function newTerra(
       capital: seat,
     };
   }
+  s.initial = [...s.owner];
+  s.history = { ids: [], cell: [], holder: [], minute: [] };
   return s;
 }
 
@@ -877,8 +921,7 @@ export function fireBombard(
   const holder = s.players[target];
   if (holder) holder.troops = Math.max(0, holder.troops - densityOf(s, target) * hit.length);
   for (const c of hit) {
-    s.owner[c] = null;
-    s.taken = { ...s.taken, [c]: { at: now, from: target } };
+    seize(s, c, null, now);
     razeAt(s, c);
   }
   if (!isNation(target)) player.aggressor = true;

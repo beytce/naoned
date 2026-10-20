@@ -229,6 +229,10 @@ export function ProfileSheet(props: GameProps) {
 function ProfileBody(props: GameProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [palmares, setPalmares] = useState<Palmares | null>(null);
+  const [terra, setTerra] = useState<{
+    rating: number;
+    weeks: { week: number; rank: number; of: number; glory: number; rating: number }[];
+  } | null>(null);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [typed, setTyped] = useState("");
@@ -240,6 +244,7 @@ function ProfileBody(props: GameProps) {
       .then((r) => {
         setProfile(r.profile);
         setPalmares(r.palmares);
+        setTerra(r.terra ?? null);
       })
       .catch(() => setProfile(null));
   }, []);
@@ -401,6 +406,24 @@ function ProfileBody(props: GameProps) {
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {terra && (
+        <section className="space-y-2">
+          <h2 className="font-display text-2xl font-extrabold">{fr.game.terraRecord.title}</h2>
+          <p className="text-sm">{fr.game.terraRecord.rating(terra.rating)}</p>
+          {terra.weeks.length === 0 ? (
+            <p className="note">{fr.game.terraRecord.none}</p>
+          ) : (
+            <ul className="space-y-1 text-sm text-cream-dim">
+              {terra.weeks.map((w) => (
+                <li key={w.week}>
+                  {fr.game.terraRecord.week(w.week + 1, w.rank, w.of, w.glory, w.rating)}
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
 

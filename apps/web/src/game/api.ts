@@ -53,6 +53,18 @@ export const gameApi = {
       profile: Profile;
       level?: Level;
       palmares: Palmares;
+      terra?: {
+        rating: number;
+        weeks: {
+          week: number;
+          rank: number;
+          of: number;
+          glory: number;
+          cells: number;
+          rating: number;
+          at: number;
+        }[];
+      };
     }>("GET", "/api/game/profile"),
   palmares: (accountId: string) =>
     call<{ pseudo: string | null; crest: CrestData | null; bot: boolean; palmares: Palmares }>(
@@ -86,6 +98,15 @@ export const gameApi = {
   /** The Terraferma's week (null while it is not live in this world). */
   terra: () => call<{ terra: TerraView | null }>("GET", "/api/game/terra"),
   weekRanking: () => call<WeekRanking>("GET", "/api/game/ranking/week"),
+  terraReplay: () =>
+    call<{
+      replay: {
+        startAt: number;
+        holders: { id: string | null; me: boolean; nation: string | null; pseudo: string | null }[];
+        initial: number[];
+        steps: [number, number, number][];
+      } | null;
+    }>("GET", "/api/game/terra/replay"),
   journal: () => call<{ entries: JournalEntry[] }>("GET", "/api/game/journal"),
   ranking: () =>
     call<{ rows: RankingRow[]; me: number | null; total: number }>("GET", "/api/game/ranking"),

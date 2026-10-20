@@ -1,4 +1,11 @@
-import { type Command, freeBatches, hasPass, isNation, rushCost } from "@comptoirs/engine";
+import {
+  type Command,
+  freeBatches,
+  hasPass,
+  isNation,
+  rushCost,
+  weekReplay,
+} from "@comptoirs/engine";
 import { and, desc, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -36,6 +43,7 @@ import { priceHistory, profile } from "./profile.js";
 import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
 import { toJson } from "./serialize.js";
 import { terraView } from "./terra.js";
+import { terraRecord } from "./terraRecord.js";
 import { catalog, playerView, ranking } from "./view.js";
 import { weeklyRival, weeklyTable } from "./weekly.js";
 import { WELCOME_AFTER_MS, welcomeBack } from "./welcome.js";
@@ -494,7 +502,39 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       profile: p,
       level: (await levelsOf(db, world.current, [account.id])).get(account.id),
       palmares: await palmares(db, account.id),
+      terra: await terraRecord(db, account.id),
     });
+  });
+
+  /** The Terraferma's week from its start: holders, the first map and each change, to replay. */
+  app.get("/api/game/terra/replay", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const map = world.current.terra?.map;
+    if (!map) return { replay: null };
+    const replay = weekReplay(map);
+    const known = replay.ids.filter((id) => !isNation(id));
+    const rows =
+      known.length === 0
+        ? []
+        : await db
+            .select({ id: accounts.id, pseudo: accounts.pseudo })
+            .from(accounts)
+            .where(inArray(accounts.id, known));
+    const names = new Map(rows.map((r) => [r.id, r.pseudo]));
+    return {
+      replay: {
+        startAt: map.startAt,
+        holders: replay.ids.map((id) => ({
+          id: isNation(id) ? null : id,
+          me: id === account.id,
+          nation: isNation(id) ? id.replace("nation:", "") : null,
+          pseudo: names.get(id) ?? null,
+        })),
+        initial: replay.initial,
+        steps: replay.steps,
+      },
+    };
   });
 
   /** The Rapport de la Banque: the world's money in the open, for anyone (no account). */

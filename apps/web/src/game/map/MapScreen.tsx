@@ -61,6 +61,7 @@ import {
   useAbsence,
   useTerra,
   useTerraShapes,
+  useWeekReplay,
 } from "./TerraLayer.js";
 import { type MapMarker, type Selection, WorldMap, type WorldMapHandle } from "./WorldMap.js";
 import { Icon } from "./icons.js";
@@ -219,7 +220,8 @@ export function MapScreen(
   // The Terraferma, once live in this world: its door replaces the families'.
   const { terra: terraView, refresh: refreshTerra } = useTerra(props.layer === "terra");
   const absence = useAbsence(terraView, props.layer === "terra", now);
-  const shapes = useTerraShapes(absence.view);
+  const week = useWeekReplay(absence.view);
+  const shapes = useTerraShapes(week.view);
   const act = props.act;
   const terraAct = useCallback(
     async (a: TerraAction) => {
@@ -431,7 +433,7 @@ export function MapScreen(
   // The families' campaign, when its layer is shown.
   const families = view.families;
   const campaign = props.layer === "campaign" && families ? families : null;
-  const terra = props.layer === "terra" && absence.view && shapes ? absence.view : null;
+  const terra = props.layer === "terra" && week.view && shapes ? week.view : null;
   const terraCell = terra && sel?.kind === "terra" ? sel.cell : null;
   const campaignPanel = campaign ? (
     <CampaignPanel props={props} f={campaign} sel={sel} select={select} />
@@ -652,7 +654,12 @@ export function MapScreen(
           campaign ? (
             <CampaignHud f={campaign} now={now} />
           ) : terra ? (
-            <TerraHud v={terra} now={now} regions={props.catalog.regions} />
+            <TerraHud
+              v={terra}
+              now={now}
+              regions={props.catalog.regions}
+              onReplay={week.playing ? undefined : week.start}
+            />
           ) : undefined
         }
         onProfile={() => props.setSheet("profile")}

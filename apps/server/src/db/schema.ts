@@ -33,6 +33,8 @@ export const accounts = pgTable(
     isBot: boolean("is_bot").notNull().default(false),
     /** Push notification kinds turned off by the player (all on by default). */
     pushOff: jsonb("push_off").$type<string[]>().notNull().default([]),
+    /** The Terraferma's rating (Elo, from 1 000), kept from week to week and season to season. */
+    terraRating: integer("terra_rating").notNull().default(1000),
   },
   (t) => [
     uniqueIndex("accounts_email_key").on(t.email),
@@ -214,6 +216,27 @@ export const weeklyResults = pgTable(
     gain: bigint("gain", { mode: "bigint" }).notNull(),
     /** doge, procurator or senator for the three best people; null otherwise (and for bots). */
     award: text("award"),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.week, t.accountId] })],
+);
+
+/** A week of the Terraferma, one row a merchant: its rank, glory, land and rating after it. */
+export const terraResults = pgTable(
+  "terra_results",
+  {
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    week: integer("week").notNull(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    rank: integer("rank").notNull(),
+    of: integer("of").notNull(),
+    glory: integer("glory").notNull(),
+    cells: integer("cells").notNull(),
+    rating: integer("rating").notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull(),
   },
   (t) => [primaryKey({ columns: [t.worldId, t.week, t.accountId] })],
 );
