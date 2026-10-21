@@ -666,18 +666,8 @@ export function playerView(
       active: pass,
       until: player.passUntil ?? 0,
       /** Exactly what the Pass gives, read from the settings (the profile lists these). */
-      perks: {
-        ...ctx.settings.pass.perks,
-        contractRerollsPerDay: ctx.settings.pass.contractRerollsPerDay,
-      },
+      perks: ctx.settings.pass.perks,
       maxOpenOrders: maxOpenOrdersFor(ctx, state, playerId, now),
-      rerollsLeft: pass
-        ? Math.max(
-            0,
-            ctx.settings.pass.contractRerollsPerDay -
-              Object.values(rerolls).reduce((a, b) => a + b, 0),
-          )
-        : 0,
     },
     daily: ctx.settings.daily.perDay > 0 ? dailyFor(ctx, state, playerId, now) : null,
     // The house's missions of the board, paid in Influence.

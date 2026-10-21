@@ -1180,7 +1180,6 @@ export const fr = {
         history: "Cours du Rialto sur 30 jours (7 pour tous)",
         dashboard: "Tableau de bord sur 30 jours (7 pour tous)",
         book: "Carnet d'ordres à 10 offres (5 pour tous)",
-        reroll: "Échanger une commande du Doge par jour",
         cosmetics: "Sceau à côté de votre nom, palette « Or de Venise »",
       },
       trust:
@@ -1189,8 +1188,6 @@ export const fr = {
       price: (season: string, week: string) => `${season} la saison · ${week} la semaine`,
       soon: "Achat bientôt disponible",
       seal: "Pass Négociant",
-      reroll: "Échanger",
-      rerollHelp: "Pass Négociant : une commande échangée par jour.",
       paletteLocked: "Réservée au Pass Négociant",
     },
     ledger: {

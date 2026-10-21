@@ -50,7 +50,6 @@ import {
   type WorldState,
   cashAccount,
   dayIndex,
-  hasPass,
   seasonEnd,
 } from "./state.js";
 import { openTenders } from "./tenders.js";
@@ -807,16 +806,6 @@ export class Bot {
     const day = dayIndex(s.ctx, s.now);
     const done = s.state().contractsDone?.[this.id];
     const doneIds = done && done.day === day ? done.ids : [];
-    // With the Pass: an order the bot cannot cover is swapped for another, once a day.
-    if (hasPass(s.ctx, s.state(), this.id, s.now) && !deliveriesOn(s.ctx)) {
-      const today = contractsFor(s.ctx, this.id, day, rerollsOf(s.state(), this.id, day));
-      const stuck = today.find(
-        (c) =>
-          !doneIds.includes(c.id) &&
-          this.available(s, c.resource) - this.reserve(s, c.resource) < c.quantity,
-      );
-      if (stuck) s.act({ type: "rerollContract", playerId: this.id, contractId: stuck.id });
-    }
     const byRoad = deliveriesOn(s.ctx);
     for (const c of contractsFor(s.ctx, this.id, day, rerollsOf(s.state(), this.id, day))) {
       if (doneIds.includes(c.id)) continue;

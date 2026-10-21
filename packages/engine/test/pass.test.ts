@@ -10,7 +10,7 @@ import {
 import { DAY, World, makeContext } from "./helpers.js";
 
 const pass: Partial<WorldSettingsInput> = {
-  pass: { contractRerollsPerDay: 1 },
+  pass: { enabled: true },
   fresh: { minutes: 30, bonusBps: 500 },
   marketMaker: {
     spreadStartBps: 400,
@@ -44,32 +44,15 @@ describe("the Pass Négociant", () => {
     expect(hasPass(w.ctx, w.state, "paid", w.now + 6 * DAY)).toBe(true);
   });
 
-  it("swaps one of the Doge's orders a day", () => {
+  it("never swaps the Doge's orders: no perk on the game", () => {
     const w = world();
     const day = dayIndex(w.ctx, w.now);
     const before = contractsFor(w.ctx, "paid", day, rerollsOf(w.state, "paid", day));
     const first = before[0];
     if (!first) throw new Error("no contract");
-    w.do({ type: "rerollContract", playerId: "paid", contractId: first.id });
-    const after = contractsFor(w.ctx, "paid", day, rerollsOf(w.state, "paid", day));
-    expect(after[0]?.id).not.toBe(first.id);
-    expect(after.slice(1)).toEqual(before.slice(1));
-    const again = w.try({
-      type: "rerollContract",
-      playerId: "paid",
-      contractId: after[1]?.id ?? "",
-    });
-    expect(again.ok ? "" : again.error).toBe("no_reroll_left");
-    const free = contractsFor(w.ctx, "free", day)[0];
-    const refused = w.try({ type: "rerollContract", playerId: "free", contractId: free?.id ?? "" });
+    const refused = w.try({ type: "rerollContract", playerId: "paid", contractId: first.id });
     expect(refused.ok ? "" : refused.error).toBe("pass_required");
-    // The new order can be fulfilled.
-    const swapped = after[0];
-    if (!swapped) throw new Error("no contract");
-    w.give("paid", swapped.resource, swapped.quantity);
-    expect(w.try({ type: "fulfillContract", playerId: "paid", contractId: swapped.id }).ok).toBe(
-      true,
-    );
+    expect(contractsFor(w.ctx, "paid", day, rerollsOf(w.state, "paid", day))).toEqual(before);
   });
 
   it("gives nothing while it is switched off, even to a merchant who holds one", () => {

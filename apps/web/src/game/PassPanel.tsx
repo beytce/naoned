@@ -39,7 +39,6 @@ export function PassPanel({
     p.history30Days && t.perks.history,
     p.dashboardDetail && t.perks.dashboard,
     p.deepBook && t.perks.book,
-    p.contractRerollsPerDay > 0 && t.perks.reroll,
     p.cosmetics && t.perks.cosmetics,
   ].filter((x): x is string => typeof x === "string");
   return (

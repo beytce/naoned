@@ -109,7 +109,6 @@ describe("the Pass Négociant", () => {
     // No more open offers than anyone: the Pass gives nothing on the market.
     expect(view.pass.maxOpenOrders).toBe(10);
     // With deliveries by road, the board is never swapped: no Pass perk there.
-    expect(view.pass.rerollsLeft).toBe(0);
     const contract = view.contracts[0];
     const swapped = await act(ada, { type: "rerollContract", contractId: contract.id });
     expect(swapped.error).toBe("city_sales_closed");
@@ -135,7 +134,6 @@ describe("the Pass Négociant", () => {
       dashboardDetail: true,
       deepBook: true,
       cosmetics: true,
-      contractRerollsPerDay: 0,
     });
     // Nothing on the market: the same number of open offers as anyone.
     expect(paid.pass.maxOpenOrders).toBe(free.pass.maxOpenOrders);

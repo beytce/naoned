@@ -233,8 +233,8 @@ export const worldSettingsSchema = z.object({
     }),
   /**
    * Pass Négociant: information to read and cosmetics, nothing more. Never ducats, goods,
-   * production, the Dogana's quota, a longer queue or time (CLAUDE.md): the three perks that
-   * once sold some are kept for the schema and refused unless zero.
+   * production, the Dogana's quota, a longer queue, time or a swapped order (CLAUDE.md): the
+   * four perks that once sold some are kept for the schema and refused unless zero.
    */
   pass: z
     .object({
@@ -246,6 +246,7 @@ export const worldSettingsSchema = z.object({
       extraOpenOrders: qty.default(0),
       /** Refused unless zero: once fresher produce. */
       freshBonusBps: bps.default(0),
+      /** Refused unless zero: once one of the Doge's orders swapped a day. */
       contractRerollsPerDay: qty.default(0),
       /**
        * What the Pass gives, all read-only or for show; the profile lists exactly these. Prices
@@ -262,8 +263,12 @@ export const worldSettingsSchema = z.object({
         .default({}),
     })
     .refine(
-      (p) => p.marketMakerQuotaBps === 0 && p.extraOpenOrders === 0 && p.freshBonusBps === 0,
-      "Pass Négociant: no perk on production, the Dogana's quota or the open offers",
+      (p) =>
+        p.marketMakerQuotaBps === 0 &&
+        p.extraOpenOrders === 0 &&
+        p.freshBonusBps === 0 &&
+        p.contractRerollsPerDay === 0,
+      "Pass Négociant: no perk on production, the Dogana's quota, the open offers or the orders",
     )
     .default({
       enabled: true,
@@ -1052,12 +1057,17 @@ export function parseSettings(input: unknown): WorldSettings {
   return worldSettingsSchema.parse(input);
 }
 
-/** The Pass's perks that once sold production, the Dogana's quota or open offers. */
-const RETIRED_PASS_PERKS = ["marketMakerQuotaBps", "extraOpenOrders", "freshBonusBps"] as const;
+/** The Pass's perks that once sold production, the Dogana's quota, open offers or orders. */
+const RETIRED_PASS_PERKS = [
+  "marketMakerQuotaBps",
+  "extraOpenOrders",
+  "freshBonusBps",
+  "contractRerollsPerDay",
+] as const;
 
 /**
  * Settings saved by a world before live-2 (21 October 2026) are brought within the rule: the
- * Pass's three retired perks go to zero (the engine no longer reads them), the rest is kept.
+ * Pass's four retired perks go to zero (the engine no longer reads them), the rest is kept.
  */
 export function upgradeLegacySettings(input: unknown): unknown {
   if (!input || typeof input !== "object") return input;

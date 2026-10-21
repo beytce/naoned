@@ -83,14 +83,20 @@ describe("settings", () => {
 });
 
 describe("the Pass Négociant's settings", () => {
-  it("refuse any perk on production, the Dogana's quota or the open offers", () => {
-    for (const perk of ["freshBonusBps", "marketMakerQuotaBps", "extraOpenOrders"]) {
+  it("refuse any perk on production, the Dogana's quota, the open offers or the orders", () => {
+    for (const perk of [
+      "freshBonusBps",
+      "marketMakerQuotaBps",
+      "extraOpenOrders",
+      "contractRerollsPerDay",
+    ]) {
       expect(() => parseSettings({ ...testSettings, pass: { [perk]: 1 } }), perk).toThrow(/Pass/);
     }
     expect(parseSettings({ ...testSettings, pass: { enabled: true } }).pass).toMatchObject({
       freshBonusBps: 0,
       marketMakerQuotaBps: 0,
       extraOpenOrders: 0,
+      contractRerollsPerDay: 0,
     });
   });
 
@@ -107,7 +113,13 @@ describe("the Pass Négociant's settings", () => {
   it("of a world saved before are brought within the rule, the rest kept", () => {
     const stored = {
       ...testSettings,
-      pass: { enabled: false, marketMakerQuotaBps: 2_000, extraOpenOrders: 2, freshBonusBps: 800 },
+      pass: {
+        enabled: false,
+        marketMakerQuotaBps: 2_000,
+        extraOpenOrders: 2,
+        freshBonusBps: 800,
+        contractRerollsPerDay: 1,
+      },
     };
     const pass = parseSettings(upgradeLegacySettings(stored)).pass;
     expect(pass).toMatchObject({
@@ -115,6 +127,7 @@ describe("the Pass Négociant's settings", () => {
       marketMakerQuotaBps: 0,
       extraOpenOrders: 0,
       freshBonusBps: 0,
+      contractRerollsPerDay: 0,
     });
     expect(upgradeLegacySettings(testSettings)).toEqual(testSettings);
   });

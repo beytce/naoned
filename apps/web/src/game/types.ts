@@ -538,10 +538,8 @@ export interface PassView {
     dashboardDetail: boolean;
     deepBook: boolean;
     cosmetics: boolean;
-    contractRerollsPerDay: number;
   };
   maxOpenOrders: number;
-  rerollsLeft: number;
 }
 
 export interface DailyView {

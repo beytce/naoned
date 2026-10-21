@@ -8,7 +8,6 @@ import {
   type WorldState,
   cashAccount,
   dayIndex,
-  hasPass,
 } from "./state.js";
 import { type Tx, emit, fail, removeStock, transfer } from "./tx.js";
 
@@ -81,27 +80,14 @@ export function rerollsOf(state: WorldState, playerId: PlayerId, day: number) {
   return entry && entry.day === day ? entry.slots : {};
 }
 
-/** Pass Négociant: swaps one of today's orders (not yet fulfilled) for another. */
-export function rerollContract(tx: Tx, playerId: PlayerId, contractId: string): void {
+/**
+ * Once a perk of the Pass Négociant; refused since live-2 (21 October 2026): the Pass gives
+ * nothing on the game, so no merchant swaps an order. Kept so an old client gets an answer.
+ */
+export function rerollContract(tx: Tx, _playerId: PlayerId, _contractId: string): void {
   // The board of deliveries is never swapped, Pass or not.
   if (tx.ctx.settings.deliveries.ordersPerDay.max > 0) fail("city_sales_closed");
-  const allowed = tx.ctx.settings.pass.contractRerollsPerDay;
-  if (allowed === 0 || !hasPass(tx.ctx, tx.s as WorldState, playerId, tx.now))
-    fail("pass_required");
-  const today = dayIndex(tx.ctx, tx.now);
-  const slots = rerollsOf(tx.s as WorldState, playerId, today);
-  const used = Object.values(slots).reduce((a, b) => a + b, 0);
-  if (used >= allowed) fail("no_reroll_left");
-  const list = contractsFor(tx.ctx, playerId, today, slots);
-  const index = list.findIndex((c) => c.id === contractId);
-  if (index < 0) fail("unknown_contract");
-  if (contractsDoneToday(tx, playerId, today).includes(contractId)) fail("contract_done");
-  tx.s.contractRerolls ??= {};
-  tx.s.contractRerolls[playerId] = {
-    day: today,
-    slots: { ...slots, [index]: (slots[index] ?? 0) + 1 },
-  };
-  emit(tx, "contract_rerolled", playerId, { contract: contractId });
+  fail("pass_required");
 }
 
 export function fulfillContract(tx: Tx, playerId: PlayerId, contractId: string): void {
