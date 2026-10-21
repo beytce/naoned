@@ -5,6 +5,21 @@ import { parseArgs } from "node:util";
 import { parseSettings, venice1450Settings } from "@comptoirs/engine";
 import { TERRA_PROFILES, type TerraResult, runTerra } from "./terra.js";
 
+/** The placebo controls: other draws of the skirmish ranks, and of the minutes of the sessions. */
+const DRAWS = ["b", "c", "d"];
+
+interface Runs {
+  r: TerraResult;
+  first: TerraResult;
+  off: TerraResult;
+  /** The same week, the ranks of the skirmishes drawn with another key. */
+  draws: TerraResult[];
+  /** Without skirmishes, the sessions shifted by another draw of their minutes. */
+  shifted: TerraResult[];
+  /** The ranks of `r`, the merchants leaving the glory of the skirmishes out of their alliances. */
+  blind: TerraResult;
+}
+
 /**
  * `pnpm --filter @comptoirs/simulator terra`: a week of the Terraferma prototype per seed, played
  * by 40 merchants of the computer; the report goes to out/terraferma.md.
@@ -29,9 +44,10 @@ const median = (xs: number[]) => {
 
 /**
  * A seed's week: `r` with the merchants ranked among themselves in their skirmishes, `first`
- * the same week each of them first every day (the ceiling), `off` without any skirmish.
+ * the same week each of them first every day (the ceiling), `off` without any skirmish, and the
+ * controls of the Signore.
  */
-function section(r: TerraResult, first: TerraResult, off: TerraResult): string {
+function section({ r, first, off, draws, shifted, blind }: Runs): string {
   const placed = r.players.filter((p) => p.placed);
   const land = placed.reduce((n, p) => n + p.cells, 0);
   const top = [...placed].sort((a, b) => b.cells - a.cells);
@@ -63,6 +79,8 @@ function section(r: TerraResult, first: TerraResult, off: TerraResult): string {
   };
   const sameSignore = (x: TerraResult) =>
     `${x.signore.id ?? "aucun"}${x.signore.id === off.signore.id ? " (le même)" : " (un autre)"}`;
+  const others = (xs: TerraResult[], than: TerraResult) =>
+    `${xs.map((x) => x.signore.id ?? "aucun").join(" · ")} (${xs.filter((x) => x.signore.id !== than.signore.id).length} / ${xs.length} différents)`;
   const active = byProfile.find((x) => x.k === "active")?.glory ?? 0;
   const casual = byProfile.find((x) => x.k === "casual")?.glory ?? 1;
   const lines = [
@@ -89,26 +107,52 @@ function section(r: TerraResult, first: TerraResult, off: TerraResult): string {
     `| Plafond : premier chaque jour, contre la semaine médiane d'un régulier sans escarmouches | ${ceiling} / ${regularGlory(off)} = ${pct(Math.round((ceiling * 10_000) / Math.max(1, regularGlory(off))))} |`,
     `| Signore de la même semaine, sa Gloire moins celle des escarmouches | rang parmi les marchands : ${lessSkirmishes(r)} ; premier chaque jour : ${lessSkirmishes(first)} |`,
     `| Signore de la semaine rejouée sans escarmouches | ${off.signore.id ?? "aucun"} ; avec, rang parmi les marchands : ${sameSignore(r)} ; premier chaque jour : ${sameSignore(first)} |`,
+    `| Placebo : Signore de la semaine, les rangs tirés d'une autre clé | ${others(draws, r)} de ${r.signore.id ?? "aucun"} ; ${draws.filter((x) => x.signore.id !== off.signore.id).length} / ${draws.length} de la semaine sans escarmouches |`,
+    `| Placebo hors escarmouches : sans escarmouches, les sessions décalées d'un autre tirage | ${others(shifted, off)} de la semaine sans escarmouches |`,
+    `| Marchands aveugles à la Gloire des escarmouches pour choisir un allié | ${sameSignore(blind)} |`,
     `| Ducats dépensés sur la Terraferme | ${(Number(r.spent) / 100 / Math.max(1, placed.length) / 7).toFixed(0)} d par marchand et par jour |`,
     "",
   ];
   return lines.join("\n");
 }
 
-const results = seeds.map((seed) => {
+const results = seeds.map((seed): Runs => {
   const t = Date.now();
-  const runs = [
-    runTerra(cfg, seed),
-    runTerra(cfg, seed, undefined, undefined, "first"),
-    runTerra(cfg, seed, undefined, undefined, "off"),
-  ] as const;
+  const runs: Runs = {
+    r: runTerra(cfg, seed),
+    first: runTerra(cfg, seed, undefined, undefined, "first"),
+    off: runTerra(cfg, seed, undefined, undefined, "off"),
+    draws: DRAWS.map((draw) => runTerra(cfg, seed, undefined, undefined, "merchants", { draw })),
+    shifted: DRAWS.map((sessions) =>
+      runTerra(cfg, seed, undefined, undefined, "off", { sessions }),
+    ),
+    blind: runTerra(cfg, seed, undefined, undefined, "merchants", { blind: true }),
+  };
   console.log(`seed ${seed}: ${((Date.now() - t) / 1000).toFixed(1)} s`);
   return runs;
 });
+// Over every seed: how often the Signore changes with the skirmishes, with another draw of their
+// ranks, and with a gap that owes nothing to them.
+const count = (pairs: [TerraResult, TerraResult][]) =>
+  `${pairs.filter(([a, b]) => a.signore.id !== b.signore.id).length} / ${pairs.length}`;
+const summary = [
+  "## Le Signore et les escarmouches, toutes graines",
+  "",
+  "| Comparaison | Signore différent |",
+  "| --- | --- |",
+  `| Avec escarmouches (rang parmi les marchands) contre sans | ${count(results.map((x) => [x.r, x.off]))} |`,
+  `| Autres tirages des rangs contre le premier tirage | ${count(results.flatMap((x) => x.draws.map((d): [TerraResult, TerraResult] => [d, x.r])))} |`,
+  `| Autres tirages des rangs contre sans escarmouches | ${count(results.flatMap((x) => x.draws.map((d): [TerraResult, TerraResult] => [d, x.off])))} |`,
+  `| Sans escarmouches, sessions décalées contre sans escarmouches | ${count(results.flatMap((x) => x.shifted.map((d): [TerraResult, TerraResult] => [d, x.off])))} |`,
+  `| Marchands aveugles à la Gloire des escarmouches contre sans escarmouches | ${count(results.map((x) => [x.blind, x.off]))} |`,
+  `| Premier chaque jour contre sans escarmouches | ${count(results.map((x) => [x.first, x.off]))} |`,
+  "",
+];
 const report = [
   "# La Terraferme : rapport du prototype",
   "",
-  ...results.map((runs) => section(...runs)),
+  ...summary,
+  ...results.map(section),
 ].join("\n");
 const out = values.out ?? join(here, "..", "out");
 mkdirSync(out, { recursive: true });

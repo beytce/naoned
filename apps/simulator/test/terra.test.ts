@@ -45,4 +45,15 @@ describe("the Terraferma prototype", () => {
     const without = new Map(off.players.map((p) => [p.id, p.glory]));
     for (const p of first.players) expect(p.glory - p.skirmishGlory).toBe(without.get(p.id));
   });
+
+  it("moves nothing but the alliances: blind to the skirmishes' glory, the week is the same", () => {
+    // The ranks drawn among the merchants change who asks whom for an alliance (the bots ask the
+    // most glorious neighbour); merchants who leave that glory out play the week without them.
+    const blind = runTerra(cfg, 1, undefined, undefined, "merchants", { blind: true });
+    const off = runTerra(cfg, 1, undefined, undefined, "off");
+    const without = new Map(off.players.map((p) => [p.id, p.glory]));
+    expect(blind.players.some((p) => p.skirmishGlory > 0)).toBe(true);
+    for (const p of blind.players) expect(p.glory - p.skirmishGlory).toBe(without.get(p.id));
+    expect(blind.signore.id).toBe(off.signore.id);
+  });
 });

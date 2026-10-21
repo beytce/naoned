@@ -129,6 +129,17 @@ function hash(key: string): number {
  */
 export type SkirmishRanks = "merchants" | "first" | "off";
 
+/**
+ * The controls of a run: `draw` another draw of the skirmish ranks (another key of the hash),
+ * `blind` merchants who leave the glory of the skirmishes out when they choose an ally, `sessions`
+ * another draw of the minutes of their sessions (a gap that owes nothing to the skirmishes).
+ */
+export interface TerraControls {
+  draw?: string;
+  blind?: boolean;
+  sessions?: string;
+}
+
 /** The rank (from 0) of a merchant in one of its skirmishes. */
 export function skirmishRank(mode: SkirmishRanks, key: string): number {
   if (mode !== "merchants") return 0;
@@ -143,6 +154,7 @@ export function runTerra(
   /** Called at 22 h each day with the state (for a picture of the map). */
   onDay?: (day: number, s: TerraState) => void,
   ranks: SkirmishRanks = "merchants",
+  controls: TerraControls = {},
 ): TerraResult {
   const bots = Object.entries(mix).flatMap(([profile, n]) =>
     Array.from({ length: n }, (_, k) => ({ id: `${profile}${k}`, profile })),
@@ -155,7 +167,8 @@ export function runTerra(
     for (let day = p.fromDay; day < 7; day++) {
       for (let k = 0; k < p.sessions; k++) {
         const slot = 8 * HOUR + Math.floor(((k + 0.5) * 14 * HOUR) / p.sessions);
-        const jitter = (hash(`${seed}:${bot.id}:${day}:${k}`) % 60) - 30;
+        const salt = controls.sessions ? `${controls.sessions}:` : "";
+        const jitter = (hash(`${salt}${seed}:${bot.id}:${day}:${k}`) % 60) - 30;
         sessions.push({ at: TERRA_START + day * DAY + slot + jitter * 60_000, bot });
       }
     }
@@ -174,6 +187,9 @@ export function runTerra(
   };
   const wallet = new Map<string, { day: number; left: bigint }>();
   const skirmishGlory = new Map<string, number>();
+  // Blind merchants rank their neighbours on their glory less that of the skirmishes.
+  const fame = (id: string) =>
+    (s.players[id]?.glory ?? 0) - (controls.blind ? (skirmishGlory.get(id) ?? 0) : 0);
   const sessionsToday = new Map<string, number>();
   const seen = new Set<string>();
   const watchFronts = () => {
@@ -216,7 +232,7 @@ export function runTerra(
     if (!w || w.day !== today) wallet.set(bot.id, { day: today, left: profile.budget });
     const purse = wallet.get(bot.id) as { day: number; left: bigint };
     const before = purse.left;
-    play(s, cfg, bot.id, profile, at, seed, purse);
+    play(s, cfg, bot.id, profile, at, seed, purse, fame);
     result.spent += before - purse.left;
     // Its skirmishes of the day, at its second session: its rank as `ranks` says; the first of
     // the day ranked, the others friendly.
@@ -224,7 +240,8 @@ export function runTerra(
     sessionsToday.set(`${bot.id}:${today}`, nth);
     if (ranks !== "off" && cfg.skirmish && nth === 2) {
       for (let k = 0; k < profile.skirmishes; k++) {
-        const rank = skirmishRank(ranks, `${seed}:${bot.id}:${today}:skirmish:${k}`);
+        const draw = controls.draw ? `:${controls.draw}` : "";
+        const rank = skirmishRank(ranks, `${seed}:${bot.id}:${today}:skirmish:${k}${draw}`);
         const glory = cfg.skirmish.glory[rank] ?? 0;
         const me = s.players[bot.id];
         if (!me || me.eliminatedAt !== undefined) break;
@@ -278,6 +295,8 @@ function play(
   now: number,
   seed: number,
   purse: { left: bigint },
+  /** The glory it reads on a neighbour when it chooses an ally. */
+  fame: (id: string) => number,
 ): void {
   const player = s.players[id];
   if (!player) {
@@ -324,9 +343,7 @@ function play(
         if (o && o !== id && o !== MILAN) neighbours.add(o);
       }
     }
-    const pick = [...neighbours].sort(
-      (a, b) => (s.players[b]?.glory ?? 0) - (s.players[a]?.glory ?? 0) || (a < b ? -1 : 1),
-    )[0];
+    const pick = [...neighbours].sort((a, b) => fame(b) - fame(a) || (a < b ? -1 : 1))[0];
     if (pick) tryAct(() => proposeAlliance(s, cfg, id, pick, now));
   }
   // Ducats: a rocca on the border facing a merchant, a borgo, else a higher cap.
