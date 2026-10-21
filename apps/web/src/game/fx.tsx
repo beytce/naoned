@@ -59,10 +59,15 @@ export function FxLayer() {
             },
             { transform: `translate(${end.x}px, ${end.y}px) scale(0.7)`, opacity: 0.9 },
           ],
-          { duration: 720, delay: i * 60, easing: "cubic-bezier(0.5, 0, 0.2, 1)", fill: "both" },
-        ).onfinish = () => {
-          coin.style.opacity = "0";
-        };
+          // Held before its start only (its delay): once landed, the coin goes back to its
+          // hidden style, instead of the last frame staying over the purse and what lies above.
+          {
+            duration: 720,
+            delay: i * 60,
+            easing: "cubic-bezier(0.5, 0, 0.2, 1)",
+            fill: "backwards",
+          },
+        );
       }
       const label = root.querySelector<HTMLElement>("[data-gain]");
       if (label) {
@@ -75,7 +80,7 @@ export function FxLayer() {
             { transform: `translate(${x}px, ${from.y - 40}px)`, opacity: 1, offset: 0.2 },
             { transform: `translate(${x}px, ${from.y - 80}px)`, opacity: 0 },
           ],
-          { duration: 1_400, easing: "ease-out", fill: "both" },
+          { duration: 1_400, easing: "ease-out", fill: "backwards" },
         );
       }
     };
@@ -83,7 +88,12 @@ export function FxLayer() {
     return () => window.removeEventListener(EVENT, onCoins);
   }, []);
   return createPortal(
-    <div ref={layer} className="pointer-events-none fixed inset-0 z-[60]" aria-hidden="true">
+    <div
+      ref={layer}
+      data-fx-layer
+      className="pointer-events-none fixed inset-0 z-[60]"
+      aria-hidden="true"
+    >
       {Array.from({ length: COINS }, (_, i) => (
         <span
           // biome-ignore lint/suspicious/noArrayIndexKey: a fixed set of coins.
