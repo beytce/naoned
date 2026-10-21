@@ -434,6 +434,42 @@ describe("a skirmish's payment", () => {
     expect(glory(w, "a")).toBeGreaterThanOrEqual(before + 60);
   });
 
+  it("pays the others when one merchant has already played its ranked match of the day", () => {
+    const w = live({ skirmish });
+    joined(w, "a", "b");
+    // a plays its ranked match of the day with c, a merchant off the week's map.
+    w.do({ type: "join", playerId: "c", region: "terraferma" });
+    act(
+      w,
+      pay([
+        ["a", 10],
+        ["c", 0],
+      ]),
+    );
+    expect(skirmishRankedLeft(w.ctx, w.state, "a", w.now)).toBe(0);
+    expect(skirmishRankedLeft(w.ctx, w.state, "b", w.now)).toBe(1);
+    const before = { a: glory(w, "a"), b: glory(w, "b") };
+    const res = act(
+      w,
+      pay(
+        [
+          ["a", 60],
+          ["b", 40],
+        ],
+        "m-mixed",
+      ),
+    );
+    if (!res.ok) throw new Error(res.error);
+    // a's ranked match was spent: nothing for it; b is paid its rank and spends its own.
+    expect(glory(w, "a")).toBe(before.a);
+    expect(glory(w, "b")).toBe(before.b + 40);
+    expect(w.state.terra?.map.skirmishPaid?.["m-mixed"]).toEqual({ b: 40 });
+    expect(skirmishRankedLeft(w.ctx, w.state, "b", w.now)).toBe(0);
+    expect(
+      res.effects.events.filter((e) => e.type === "terra_skirmish").map((e) => e.playerId),
+    ).toEqual(["b"]);
+  });
+
   it("is never paid at night", () => {
     const w = live({ skirmish, openHours: { from: 8, to: 22 } });
     // T0 is 1 h in Paris: 9 h, then 23 h.
