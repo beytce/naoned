@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
  * any datum (a price, a time left, a stock, a count) goes in .meta. A `.label` element (or
  * <Label>) breaks the rule as soon as it shows a value that is neither a literal, a text of fr nor
  * one of the TITLES below, or calls a title with a formatted datum: "1,98 D · EN STOCK : 40",
- * "ABSENT 14 H".
+ * "ABSENT 14 H". A prop a component shows in a label is checked where it is passed (FORWARDED).
  */
 
 const SRC = join(__dirname, "..", "src");
@@ -73,13 +73,29 @@ const TITLES = new Set([
   // An act's numeral, a signal's glyph.
   "numeral",
   "SIGNAL_GLYPH",
-  // Props that carry a kicker from their caller, who passes a text of fr.
+  // Props forwarded into a label: their callers are checked instead (FORWARDED).
   "Label.children",
   "Figure.label",
   "BookSide.title",
   "Podium.title",
   "row.label",
 ]);
+
+/**
+ * Components that show one of their props in a label: every call site's value is held to the
+ * label's rule, as if it were written inside it (`<Figure label={d(x)} />` is a datum).
+ */
+const FORWARDED: Record<string, string> = {
+  Figure: "label",
+  BookSide: "title",
+  Podium: "title",
+};
+
+/**
+ * Local helpers that show an argument in a label, by the function they are declared in (the crest
+ * editor's rows): checked where called.
+ */
+const FORWARDED_ARGS: Record<string, number> = { "CrestEditor.row": 0 };
 
 /** Calls that format a datum, wherever they stand, even inside a title's arguments. */
 const FORMATTERS = new Set([
@@ -94,8 +110,19 @@ const FORMATTERS = new Set([
   "hoursAway",
 ]);
 
-/** Files left out of the scan: dead code the plan removes (« Ménage du code mort »). */
-const DEAD = new Set(["game/Famille.tsx"]);
+/**
+ * Dead code the plan removes (« Ménage du code mort »), left as it stands: of Famille.tsx only
+ * DecreeBanner is still shown (the Rialto's decrees), and it alone is scanned.
+ */
+const DEAD: Record<string, Set<string>> = { "game/Famille.tsx": new Set(["DecreeBanner"]) };
+
+/** The name of the top-level function a node stands in. */
+function topFunction(n: ts.Node): string | null {
+  let name: string | null = null;
+  for (let p: ts.Node | undefined = n; p; p = p.parent)
+    if (ts.isFunctionDeclaration(p) && p.name) name = p.name.text;
+  return name;
+}
 
 /** The declaration of `name` seen from `from`: the nearest enclosing `const name = …`. */
 function declared(name: string, from: ts.Node): ts.Expression | undefined {
@@ -270,17 +297,38 @@ function children(list: ts.NodeArray<ts.JsxChild>): string | null {
   return null;
 }
 
-/** The first datum among an element's children, if any. */
-const datum = (node: ts.JsxElement): string | null => children(node.children);
+/** The first datum a node shows in a label, if any: a label's children, a forwarded prop. */
+function datum(node: ts.Node): string | null {
+  if (ts.isJsxElement(node) && isLabel(node.openingElement)) return children(node.children);
+  if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
+    const at = FORWARDED_ARGS[`${topFunction(node)}.${node.expression.text}`];
+    const arg = at === undefined ? undefined : node.arguments[at];
+    return arg ? shown(arg) : null;
+  }
+  const opening = ts.isJsxElement(node)
+    ? node.openingElement
+    : ts.isJsxSelfClosingElement(node)
+      ? node
+      : null;
+  const prop = opening && FORWARDED[opening.tagName.getText()];
+  if (!opening || !prop) return null;
+  for (const p of opening.attributes.properties) {
+    if (!ts.isJsxAttribute(p) || p.name.getText() !== prop || !p.initializer) continue;
+    if (ts.isJsxExpression(p.initializer) && p.initializer.expression)
+      return shown(p.initializer.expression);
+  }
+  return null;
+}
 
 function offenders(): string[] {
   const out: string[] = [];
   for (const file of tsxFiles(SRC)) {
-    if (DEAD.has(relative(SRC, file))) continue;
+    const live = DEAD[relative(SRC, file)];
     const text = readFileSync(file, "utf8");
     const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
     const visit = (n: ts.Node) => {
-      if (ts.isJsxElement(n) && isLabel(n.openingElement)) {
+      const skipped = live && !live.has(topFunction(n) ?? "");
+      if (!skipped) {
         const hit = datum(n);
         if (hit) {
           const line = source.getLineAndCharacterOfPosition(n.getStart()).line + 1;
@@ -307,10 +355,7 @@ describe("typography", () => {
       true,
       ts.ScriptKind.TSX,
     );
-    const visit = (n: ts.Node): string | null =>
-      (ts.isJsxElement(n) && isLabel(n.openingElement) ? datum(n) : null) ??
-      ts.forEachChild(n, visit) ??
-      null;
+    const visit = (n: ts.Node): string | null => datum(n) ?? ts.forEachChild(n, visit) ?? null;
     return visit(source);
   };
 
@@ -336,6 +381,12 @@ describe("typography", () => {
     // A title by a bare name only is no title: the list holds qualified paths.
     expect(hit("<Label>{other.kicker(n)}</Label>")).toBe("other.kicker(n)");
     expect(hit("<Label>{t.level(n)}</Label>")).toBe("t.level(n)");
+    // A prop shown in a label by its component, held to the rule where it is passed.
+    expect(hit("<Figure label={d(x)} value={v} />")).toBe("d(x)");
+    expect(hit("<Podium rows={r} title={`S${week}`} />")).toBe("week");
+    expect(hit("<Figure label={fr.game.dashboard.hour} value={d(x)} />")).toBeNull();
+    expect(hit("function CrestEditor() { row(clock(ms), xs, k); }")).toBe("clock(ms)");
+    expect(hit("function CrestEditor() { row(fr.game.shape, xs, k); }")).toBeNull();
     // Out of a label, or a title.
     expect(hit('<p className="meta">{t.have(d(x))}</p>')).toBeNull();
     expect(hit("const t = () => fr.game.acts; <Label>{t().kicker(numeral(i))}</Label>")).toBeNull();

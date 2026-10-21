@@ -253,7 +253,7 @@ export function LandSheet({
                 {ours ? t().land.reinforce(n) : t().land.attack(n)}
               </Slab>
               {land.minutes !== null && (
-                <p className="meta text-center">
+                <p className="label text-center">
                   {t().land.march(land.minutes)}
                   {land.from ? ` · ${t().works.from(landName(land.from))}` : ""}
                   {!f.open ? ` · ${t().night(clock(f.nextOpenAt - props.now))}` : ""}
@@ -316,7 +316,7 @@ function LandWork({ land, f, props }: { land: LandView; f: FamiliesView; props: 
             <span className="label ml-2 text-cream-dim">{w.kinds[land.work.kind]}</span>
           </p>
           <p className="text-sm text-cream-dim">{workEffect(rules, land.work.kind)}</p>
-          <p className={`meta mt-1 ${land.work.ready ? "text-lagoon" : "text-gold"}`}>
+          <p className={`label mt-1 ${land.work.ready ? "text-lagoon" : "text-gold"}`}>
             {land.work.ready ? w.ready : w.building(clock(land.work.readyAt - props.now))}
             {!theirs ? ` · ${w.by(personName(props, land.work.by))}` : ""}
           </p>
@@ -342,7 +342,7 @@ function LandWork({ land, f, props }: { land: LandView; f: FamiliesView; props: 
     <div className="space-y-2">
       <div className="flex items-baseline justify-between gap-2">
         <Label className="text-gold">{w.title}</Label>
-        {me && <span className="meta">{w.count(me.works, me.worksAllowed)}</span>}
+        {me && <span className="label">{w.count(me.works, me.worksAllowed)}</span>}
       </div>
       {full ? (
         <p className="text-sm text-cream-dim">{w.full(rules.perMembers)}</p>
@@ -413,7 +413,7 @@ export function Lances({ f, props }: { f: FamiliesView; props: GameProps }) {
       <div className="mt-4">
         <Label>{t().hire}</Label>
         <p className="mt-1 text-xs text-cream-dim">{t().hireHelp(rules.campaign.lanceHours)}</p>
-        <p className="meta mt-1">{t().hiredToday(me.hired, me.hireLimit)}</p>
+        <p className="label mt-1">{t().hiredToday(me.hired, me.hireLimit)}</p>
         {room > 0 ? (
           <div className="mt-2 space-y-2">
             <Qty value={n} max={room} onChange={setCount} />
@@ -433,7 +433,7 @@ export function Lances({ f, props }: { f: FamiliesView; props: GameProps }) {
       {me.leaving.length > 0 && (
         <ul className="mt-3 space-y-0.5">
           {me.leaving.slice(0, 3).map((l) => (
-            <li key={l.expiresAt} className="meta">
+            <li key={l.expiresAt} className="label">
               {t().leaving(l.count, clock(l.expiresAt - props.now))}
             </li>
           ))}
@@ -473,7 +473,7 @@ export function Marches({ f, props }: { f: FamiliesView; props: GameProps }) {
                   )}
                   {m.mine > 0 ? ` (${t().yourLances(m.mine)})` : ""}
                 </span>
-                <span className="meta shrink-0">{clock(m.arriveAt - props.now)}</span>
+                <span className="label shrink-0">{clock(m.arriveAt - props.now)}</span>
               </div>
               {assault &&
                 reserve > 0 &&
@@ -496,7 +496,7 @@ export function Marches({ f, props }: { f: FamiliesView; props: GameProps }) {
                 ) : (
                   <button
                     type="button"
-                    className="meta mt-1 text-gold"
+                    className="label mt-1 text-gold"
                     onClick={() => {
                       setCount(reserve);
                       setJoining(m.id);
@@ -550,7 +550,7 @@ export function Programme({ f, props }: { f: FamiliesView; props: GameProps }) {
           </ul>
         </div>
       )}
-      <p className="meta mt-3">{t().programme.pick(rules.perWinner)}</p>
+      <p className="label mt-3">{t().programme.pick(rules.perWinner)}</p>
       <ul className="mt-2 space-y-1.5">
         {rules.catalog.map((code) => {
           const on = picks.find((p) => p.code === code);
@@ -740,7 +740,7 @@ export function Thread() {
           >
             <div className="flex items-baseline justify-between gap-2">
               <span className="label text-gold">{m.mine ? t().thread.me : (m.pseudo ?? "—")}</span>
-              <span className="meta">{clockTime(m.at)}</span>
+              <span className="label">{clockTime(m.at)}</span>
             </div>
             <p className="mt-1 whitespace-pre-wrap break-words">{m.body}</p>
             {!m.mine && (
@@ -860,7 +860,7 @@ export function Works({
     <Panel>
       <div className="flex items-baseline justify-between gap-2">
         <Label className="text-gold">{t().works.title}</Label>
-        {f.me && <span className="meta">{t().works.count(f.me.works, f.me.worksAllowed)}</span>}
+        {f.me && <span className="label">{t().works.count(f.me.works, f.me.worksAllowed)}</span>}
       </div>
       <p className="mt-1 text-xs text-cream-dim">{t().works.help}</p>
       {mine.length === 0 ? (
@@ -891,7 +891,7 @@ export function Works({
                       {workEffect(rules, work.kind)}
                     </span>
                   </span>
-                  <span className={`meta shrink-0 ${work.ready ? "text-lagoon" : "text-gold"}`}>
+                  <span className={`label shrink-0 ${work.ready ? "text-lagoon" : "text-gold"}`}>
                     {work.ready ? `${l.garrison} ⚔` : clock(work.readyAt - props.now)}
                   </span>
                 </button>
@@ -980,7 +980,7 @@ function TroopsForInfluence(props: GameProps) {
   return (
     <div className="mt-4">
       <Label className="text-gold">{h.troopsTitle}</Label>
-      <p className="meta mt-1">{h.troopsHelp(left)}</p>
+      <p className="label mt-1">{h.troopsHelp(left)}</p>
       {counts.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-2">
           {counts.map((c) => {
