@@ -532,10 +532,12 @@ export interface PassView {
   enabled: boolean;
   active: boolean;
   until: number;
+  /** Exactly what the Pass gives, from the settings: information to read and cosmetics. */
   perks: {
-    marketMakerQuotaBps: number;
-    extraOpenOrders: number;
-    freshBonusBps: number;
+    history30Days: boolean;
+    dashboardDetail: boolean;
+    deepBook: boolean;
+    cosmetics: boolean;
     contractRerollsPerDay: number;
   };
   maxOpenOrders: number;

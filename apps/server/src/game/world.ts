@@ -16,6 +16,7 @@ import {
   emptyTotals,
   parseSettings,
   seasonEnd,
+  upgradeLegacySettings,
   upgradeLegacyState,
   venice1450,
   venice1450Settings,
@@ -673,6 +674,8 @@ async function loadWorld(db: Db, world: WorldRow, options: WorldOptions, owner: 
     stored = mergeDefaults(venice1450Settings, world.settings);
   }
   if (options.settingsOverride) stored = mergeDefaults(stored, options.settingsOverride);
+  // A world saved before live-2: the Pass's retired perks go to zero, and are saved so.
+  stored = upgradeLegacySettings(stored);
   if (JSON.stringify(stored) !== JSON.stringify(world.settings)) {
     await db.update(worlds).set({ settings: stored }).where(eq(worlds.id, world.id));
   }
@@ -694,7 +697,9 @@ async function loadWorld(db: Db, world: WorldRow, options: WorldOptions, owner: 
     // The commands since the snapshot, under the settings they were decided with.
     const before: WorldContext = {
       ...ctx,
-      settings: parseSettings(mergeDefaults(venice1450Settings, world.settings)),
+      settings: parseSettings(
+        upgradeLegacySettings(mergeDefaults(venice1450Settings, world.settings)),
+      ),
     };
     const replay = await replayJournal(db, before, world.id, snapshot, saved.version);
     if (replay.replayed > 0) {

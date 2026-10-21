@@ -33,15 +33,14 @@ export function PassPanel({
       </Panel>
     );
   }
+  // Only the perks the settings give: information to read and cosmetics.
   const p = pass.perks;
   const perks = [
-    p.marketMakerQuotaBps > 0 && t.perks.quota(p.marketMakerQuotaBps / 100),
-    p.extraOpenOrders > 0 && t.perks.orders(p.extraOpenOrders),
-    p.freshBonusBps > 0 && t.perks.fresh(p.freshBonusBps / 100),
+    p.history30Days && t.perks.history,
+    p.dashboardDetail && t.perks.dashboard,
+    p.deepBook && t.perks.book,
     p.contractRerollsPerDay > 0 && t.perks.reroll,
-    t.perks.info,
-    t.perks.alerts,
-    t.perks.cosmetics,
+    p.cosmetics && t.perks.cosmetics,
   ].filter((x): x is string => typeof x === "string");
   return (
     <Panel glow="gold">
@@ -70,7 +69,8 @@ export function PassPanel({
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-xs text-lagoon">{t.earn}</p>
+      <p className="mt-3 text-xs text-cream-dim">{t.trust}</p>
+      <p className="mt-2 text-xs text-lagoon">{t.earn}</p>
       {extra.passPrices && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 cut bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70">
           <span className="text-sm font-semibold">

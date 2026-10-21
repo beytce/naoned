@@ -485,8 +485,8 @@ export function playerView(
   const player = state.players[playerId];
   if (!player) return null;
   const pass = hasPass(ctx, state, playerId, now);
-  // Pass Négociant: a deeper order book.
-  const depth = pass ? 10 : 5;
+  // Pass Négociant: a deeper order book when its settings give one (read-only information).
+  const depth = pass && ctx.settings.pass.perks.deepBook ? 10 : 5;
   const buildings = Object.values(state.buildings)
     .filter((b) => b.playerId === playerId)
     .sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1)));
@@ -665,7 +665,11 @@ export function playerView(
       enabled: ctx.settings.pass.enabled,
       active: pass,
       until: player.passUntil ?? 0,
-      perks: ctx.settings.pass,
+      /** Exactly what the Pass gives, read from the settings (the profile lists these). */
+      perks: {
+        ...ctx.settings.pass.perks,
+        contractRerollsPerDay: ctx.settings.pass.contractRerollsPerDay,
+      },
       maxOpenOrders: maxOpenOrdersFor(ctx, state, playerId, now),
       rerollsLeft: pass
         ? Math.max(

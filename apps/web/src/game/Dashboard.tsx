@@ -55,7 +55,7 @@ export function DashboardSheet(props: GameProps) {
     <Sheet open={open} onClose={() => props.setSheet(null)}>
       <div className="space-y-4 pt-6">
         <h3 className="font-display text-xl font-extrabold uppercase">{t.title}</h3>
-        <p className="note">{t.help}</p>
+        <p className="note">{t.help(data?.days.length ?? 7)}</p>
         <dl className="grid grid-cols-3 gap-2 text-center">
           <Figure label={t.hour} value={d(perHour(props))} />
           <Figure label={t.today} value={data ? d(data.today) : "…"} />
@@ -76,7 +76,7 @@ function Figure({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** Seven days of net sales added up, one line per merchant. */
+/** Seven days (thirty with the Pass) of net sales added up, one line per merchant. */
 function Curves({ data }: { data: DashboardView }) {
   const W = 320;
   const H = 130;
@@ -90,30 +90,38 @@ function Curves({ data }: { data: DashboardView }) {
   const hi = Math.max(1, ...all);
   const x = (i: number) => 6 + (i / Math.max(1, data.days.length - 1)) * (W - 12);
   const y = (v: number) => H - 18 - ((v - lo) / (hi - lo)) * (H - 30);
+  // Seven days: each weekday; thirty: the date, one week apart (the last one always).
+  const long = data.days.length > 7;
   const dayLabel = (day: string) =>
-    new Date(`${day}T12:00:00Z`).toLocaleDateString("fr-FR", { weekday: "short" });
+    new Date(`${day}T12:00:00Z`).toLocaleDateString(
+      "fr-FR",
+      long ? { day: "numeric", month: "short" } : { weekday: "short" },
+    );
+  const shown = (i: number) => !long || (data.days.length - 1 - i) % 7 === 0;
   return (
     <figure className="space-y-2">
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
         role="img"
-        aria-label={t.chart}
+        aria-label={t.chart(data.days.length)}
         className="block cut bg-night-3 ring-1 ring-inset ring-line"
       >
         <line x1="6" x2={W - 6} y1={y(0)} y2={y(0)} stroke="rgb(var(--line))" />
-        {data.days.map((day, i) => (
-          <text
-            key={day}
-            x={x(i)}
-            y={H - 4}
-            textAnchor={i === 0 ? "start" : i === data.days.length - 1 ? "end" : "middle"}
-            fontSize="9"
-            fill="rgb(var(--cream-dim))"
-          >
-            {dayLabel(day)}
-          </text>
-        ))}
+        {data.days.map((day, i) =>
+          shown(i) ? (
+            <text
+              key={day}
+              x={x(i)}
+              y={H - 4}
+              textAnchor={i === 0 ? "start" : i === data.days.length - 1 ? "end" : "middle"}
+              fontSize="9"
+              fill="rgb(var(--cream-dim))"
+            >
+              {dayLabel(day)}
+            </text>
+          ) : null,
+        )}
         {lines
           .slice()
           .reverse()

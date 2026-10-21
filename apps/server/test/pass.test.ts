@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
-import { passUntil } from "../src/game/pass.js";
+import { PassClosedError, passUntil, purchasePass } from "../src/game/pass.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 
@@ -113,6 +113,65 @@ describe("the Pass Négociant", () => {
     const contract = view.contracts[0];
     const swapped = await act(ada, { type: "rerollContract", contractId: contract.id });
     expect(swapped.error).toBe("city_sales_closed");
+  });
+
+  it("gives information to read only: thirty days of prices and of dashboard", async () => {
+    const ada = await player("ada@example.org");
+    const bob = await player("bob@example.org");
+    const boss = await login("boss@example.org");
+    await app.inject({
+      method: "POST",
+      url: "/api/admin/pass",
+      headers: { cookie: boss },
+      payload: { email: "ada@example.org", days: 7 },
+    });
+    expect((await get(ada, "/api/game/prices")).days).toBe(30);
+    expect((await get(bob, "/api/game/prices")).days).toBe(7);
+    expect((await get(ada, "/api/game/dashboard")).days).toHaveLength(30);
+    expect((await get(bob, "/api/game/dashboard")).days).toHaveLength(7);
+    const [paid, free] = [(await get(ada)).view, (await get(bob)).view];
+    expect(paid.pass.perks).toEqual({
+      history30Days: true,
+      dashboardDetail: true,
+      deepBook: true,
+      cosmetics: true,
+      contractRerollsPerDay: 0,
+    });
+    // Nothing on the market: the same number of open offers as anyone.
+    expect(paid.pass.maxOpenOrders).toBe(free.pass.maxOpenOrders);
+  });
+
+  it("cannot be bought while the payment is unplugged or the Pass is off", async () => {
+    const ada = await player("ada@example.org");
+    const [account] = (await get(ada, "/api/game/ranking")).rows;
+    const on = world.ctx.settings;
+    const off = { pass: { ...on.pass, enabled: false } };
+    await expect(purchasePass(database.db, on, account.id, now, now + DAY)).rejects.toThrow(
+      PassClosedError,
+    );
+    await expect(
+      purchasePass(database.db, off, account.id, now, now + DAY, undefined, true),
+    ).rejects.toThrow(PassClosedError);
+    expect(await passUntil(database.db, account.id, now)).toBe(0);
+    await purchasePass(database.db, on, account.id, now, now + DAY, undefined, true);
+    expect(await passUntil(database.db, account.id, now)).toBe(now + DAY);
+  });
+
+  it("brings a world saved with the retired perks within the rule at its opening", async () => {
+    await database.db.execute(
+      sql`update worlds set settings = jsonb_set(settings::jsonb, '{pass}',
+        '{"enabled": true, "marketMakerQuotaBps": 2000, "extraOpenOrders": 2, "freshBonusBps": 800}')`,
+    );
+    const reopened = await GameWorld.open(database.db, () => now);
+    expect(reopened.ctx.settings.pass).toMatchObject({
+      enabled: true,
+      marketMakerQuotaBps: 0,
+      extraOpenOrders: 0,
+      freshBonusBps: 0,
+    });
+    const rows = await database.db.execute(sql`select settings->'pass' as pass from worlds`);
+    const [row] = (rows as unknown as { rows: { pass: Record<string, unknown> }[] }).rows;
+    expect(row?.pass.freshBonusBps).toBe(0);
   });
 
   it("goes to the weekly top 10 for the next seven days", async () => {

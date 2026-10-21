@@ -652,8 +652,16 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const account = await requireAccount(req, reply);
     if (!account) return;
     // Seven days of prices for everyone (recommendations of 20 October 2026: a decision to make
-    // at each session, read on the curve).
-    return { series: await priceHistory(db, world.id, world.now(), 168) };
+    // at each session, read on the curve); thirty for a holder of the Pass Négociant when its
+    // settings give them (read-only information).
+    const now = world.now();
+    const days =
+      world.current.players[account.id] &&
+      hasPass(world.ctx, world.current, account.id, now) &&
+      world.ctx.settings.pass.perks.history30Days
+        ? 30
+        : 7;
+    return { days, series: await priceHistory(db, world.id, now, days * 24) };
   });
 
   /** The family's thread: the call, mapped to a status and an error code when refused. */
@@ -975,7 +983,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       ...rest,
       id: playerId,
       me: playerId === account.id,
-      pass: hasPass(world.ctx, world.current, playerId, world.now()),
+      // The seal is a cosmetic of the Pass, shown when its settings give it.
+      pass:
+        world.ctx.settings.pass.perks.cosmetics &&
+        hasPass(world.ctx, world.current, playerId, world.now()),
       level: levels.get(playerId)?.level ?? 1,
     });
     return toJson({
@@ -1070,7 +1081,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
         ...rest,
         id: playerId,
         me: playerId === account.id,
-        pass: hasPass(world.ctx, world.current, playerId, world.now()),
+        // The seal is a cosmetic of the Pass, shown when its settings give it.
+        pass:
+          world.ctx.settings.pass.perks.cosmetics &&
+          hasPass(world.ctx, world.current, playerId, world.now()),
       })),
       me: table.find((r) => r.playerId === account.id)?.rank ?? null,
       total: table.length,

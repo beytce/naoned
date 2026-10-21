@@ -443,7 +443,10 @@ function ProfileBody(props: GameProps) {
           <span className="text-gold transition group-open:rotate-90">›</span>
         </summary>
         <div className="mt-6 space-y-8">
-          <PalettePicker pass={props.view.pass.active} offered={props.view.pass.enabled} />
+          <PalettePicker
+            pass={props.view.pass.active && props.view.pass.perks.cosmetics}
+            offered={props.view.pass.enabled && props.view.pass.perks.cosmetics}
+          />
 
           <SoundSetting />
           <HapticsSetting />

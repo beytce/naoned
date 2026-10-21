@@ -77,7 +77,7 @@ export const gameApi = {
     ),
   ceremonySeen: (worldId: string) =>
     call<{ ok: true }>("POST", "/api/game/ceremony/seen", { worldId }),
-  prices: () => call<{ series: PriceSeries }>("GET", "/api/game/prices"),
+  prices: () => call<{ days: number; series: PriceSeries }>("GET", "/api/game/prices"),
   familyThread: () =>
     call<{ family: string; messages: FamilyMessage[] }>("GET", "/api/game/family/messages"),
   sayToFamily: (body: string) =>

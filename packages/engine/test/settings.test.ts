@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { expectedBaleValue, parseSettings, venice1450, venice1450Settings } from "../src/index.js";
+import {
+  expectedBaleValue,
+  parseSettings,
+  upgradeLegacySettings,
+  venice1450,
+  venice1450Settings,
+} from "../src/index.js";
 import { deliverySettings, testSettings } from "./fixture.js";
 
 describe("settings", () => {
@@ -88,7 +94,37 @@ describe("the Pass Négociant's settings", () => {
     });
   });
 
-  it("are within the rule in Venice", () => {
-    expect(() => parseSettings(venice1450Settings)).not.toThrow();
+  it("are within the rule in Venice, with information and cosmetics only", () => {
+    const pass = parseSettings(venice1450Settings).pass;
+    expect(pass.perks).toEqual({
+      history30Days: true,
+      dashboardDetail: true,
+      deepBook: true,
+      cosmetics: true,
+    });
+  });
+
+  it("of a world saved before are brought within the rule, the rest kept", () => {
+    const stored = {
+      ...testSettings,
+      pass: { enabled: false, marketMakerQuotaBps: 2_000, extraOpenOrders: 2, freshBonusBps: 800 },
+    };
+    const pass = parseSettings(upgradeLegacySettings(stored)).pass;
+    expect(pass).toMatchObject({
+      enabled: false,
+      marketMakerQuotaBps: 0,
+      extraOpenOrders: 0,
+      freshBonusBps: 0,
+    });
+    expect(upgradeLegacySettings(testSettings)).toEqual(testSettings);
+  });
+
+  it("give nothing to read or to show unless listed", () => {
+    expect(parseSettings({ ...testSettings, pass: { enabled: true } }).pass.perks).toEqual({
+      history30Days: false,
+      dashboardDetail: false,
+      deepBook: false,
+      cosmetics: false,
+    });
   });
 });

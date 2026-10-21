@@ -5,6 +5,7 @@ import {
   type WorldContext,
   type WorldState,
   dayStartIn,
+  hasPass,
   weeklyStandings,
   workshopEconomics,
 } from "@comptoirs/engine";
@@ -21,7 +22,8 @@ function rowsOf<T>(result: unknown): T[] {
 /**
  * The counter's dashboard (recommendations of 20 October 2026): what the workshops earn an hour,
  * the net sales of the day, the week and the season, and the last seven days of net sales of the
- * merchant, its rival of the week and the week's leader, day by day.
+ * merchant, its rival of the week and the week's leader, day by day. Thirty days for a holder of
+ * the Pass Négociant when its settings give the detail (read-only information).
  */
 export async function dashboard(
   db: Db,
@@ -39,7 +41,9 @@ export async function dashboard(
   const leader = standings[0]?.playerId ?? null;
   const rival = at > 0 ? standings[at - 1]?.playerId : standings[1]?.playerId;
   const ids = [...new Set([playerId, rival, leader].filter((x): x is string => !!x))];
-  const since = dayStartIn(now - 6 * DAY).start;
+  const span =
+    hasPass(ctx, state, playerId, now) && ctx.settings.pass.perks.dashboardDetail ? 30 : 7;
+  const since = dayStartIn(now - (span - 1) * DAY).start;
   const accountsOf = ids.flatMap((id) => [`cash:${id}`, `escrow:${id}`]);
   const list = sql.join(
     accountsOf.map((a) => sql`${a}`),
@@ -59,10 +63,13 @@ export async function dashboard(
       where world_id = ${worldId} and at >= ${new Date(since).toISOString()}::timestamptz
         and (to_account in (${list}) or from_account in (${list}))`),
   );
-  const days = Array.from({ length: 7 }, (_, k) =>
-    new Date(dayStartIn(now - (6 - k) * DAY).start + 12 * 3_600_000).toLocaleDateString("fr-CA", {
-      timeZone: "Europe/Paris",
-    }),
+  const days = Array.from({ length: span }, (_, k) =>
+    new Date(dayStartIn(now - (span - 1 - k) * DAY).start + 12 * 3_600_000).toLocaleDateString(
+      "fr-CA",
+      {
+        timeZone: "Europe/Paris",
+      },
+    ),
   );
   // Net sales per merchant and day, counted as the ranking counts them (see turnover.ts).
   const net = new Map<string, bigint>();

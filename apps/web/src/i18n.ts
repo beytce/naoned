@@ -985,7 +985,7 @@ export const fr = {
       chart: {
         empty: "Pas encore d'échange cette semaine : la courbe viendra avec les premiers.",
         reference: "référence",
-        since: "il y a 7 j",
+        since: (days: number) => `il y a ${days} j`,
         low: "bas",
         high: "haut",
         label: (good: string, last: string, vsRef: number) =>
@@ -1175,16 +1175,16 @@ export const fr = {
       upcoming: (from: string) => `Gagné : actif à partir du ${from}`,
       inactive: "Vous ne l'avez pas encore.",
       pitch:
-        "Des avantages légers, utiles seulement à qui joue : ils ne produisent rien à votre place et ne donnent ni ducats ni marchandises.",
+        "De l'information à lire et de quoi se distinguer, rien de plus : ni ducats, ni marchandises, ni production, ni quota, ni offre de plus.",
       perks: {
-        quota: (pct: number) => `+${pct} % de quota quotidien à la Dogana`,
-        orders: (n: number) => `${n} offres ouvertes de plus au Rialto`,
-        fresh: (pct: number) => `Produits frais à +${pct} % au lieu de +5 %`,
+        history: "Cours du Rialto sur 30 jours (7 pour tous)",
+        dashboard: "Tableau de bord sur 30 jours (7 pour tous)",
+        book: "Carnet d'ordres à 10 offres (5 pour tous)",
         reroll: "Échanger une commande du Doge par jour",
-        info: "Carnet d'ordres à 10 offres",
-        alerts: "Alertes des Criées et des bonnes affaires",
         cosmetics: "Sceau à côté de votre nom, palette « Or de Venise »",
       },
+      trust:
+        "Un abonné ne produit pas un grain de plus que vous : la simulation le vérifie chaque saison (Rapport de la Banque).",
       earn: "Le gagner sans payer : top 10 de la semaine (7 jours), top 10 de la saison (toute la saison suivante), top 10 % et 25 % (3 semaines, 1 semaine).",
       price: (season: string, week: string) => `${season} la saison · ${week} la semaine`,
       soon: "Achat bientôt disponible",
@@ -2116,13 +2116,14 @@ export const fr = {
     },
     dashboard: {
       title: "Tableau de bord",
-      help: "Vos ventes nettes comptées comme au classement : ce qui entre pour vos marchandises, moins ce qu'elles vous coûtent. La courbe additionne les sept derniers jours.",
+      help: (days: number) =>
+        `Vos ventes nettes comptées comme au classement : ce qui entre pour vos marchandises, moins ce qu'elles vous coûtent. La courbe additionne les ${days} derniers jours.`,
       perHour: (amount: string) => `≈ ${amount} de marge par heure`,
       hour: "Par heure",
       today: "Aujourd'hui",
       week: "Cette semaine",
-      chart:
-        "Ventes nettes des sept derniers jours : vous, votre rival et le premier de la semaine",
+      chart: (days: number) =>
+        `Ventes nettes des ${days} derniers jours : vous, votre rival et le premier de la semaine`,
       who: {
         me: (_: string) => "Vous",
         rival: (name: string) => `Rival : ${name}`,

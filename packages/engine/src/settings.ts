@@ -247,6 +247,19 @@ export const worldSettingsSchema = z.object({
       /** Refused unless zero: once fresher produce. */
       freshBonusBps: bps.default(0),
       contractRerollsPerDay: qty.default(0),
+      /**
+       * What the Pass gives, all read-only or for show; the profile lists exactly these. Prices
+       * of the Rialto over 30 days (7 for everyone), the dashboard over 30 days (7 for
+       * everyone), an order book 10 offers deep (5 for everyone), the seal and the palette.
+       */
+      perks: z
+        .object({
+          history30Days: z.boolean().default(false),
+          dashboardDetail: z.boolean().default(false),
+          deepBook: z.boolean().default(false),
+          cosmetics: z.boolean().default(false),
+        })
+        .default({}),
     })
     .refine(
       (p) => p.marketMakerQuotaBps === 0 && p.extraOpenOrders === 0 && p.freshBonusBps === 0,
@@ -258,6 +271,7 @@ export const worldSettingsSchema = z.object({
       extraOpenOrders: 0,
       freshBonusBps: 0,
       contractRerollsPerDay: 0,
+      perks: {},
     }),
   /**
    * The four great families: each merchant swears allegiance to one for the season. No family
@@ -1036,4 +1050,23 @@ export type WorldSettings = z.output<typeof worldSettingsSchema>;
 
 export function parseSettings(input: unknown): WorldSettings {
   return worldSettingsSchema.parse(input);
+}
+
+/** The Pass's perks that once sold production, the Dogana's quota or open offers. */
+const RETIRED_PASS_PERKS = ["marketMakerQuotaBps", "extraOpenOrders", "freshBonusBps"] as const;
+
+/**
+ * Settings saved by a world before live-2 (21 October 2026) are brought within the rule: the
+ * Pass's three retired perks go to zero (the engine no longer reads them), the rest is kept.
+ */
+export function upgradeLegacySettings(input: unknown): unknown {
+  if (!input || typeof input !== "object") return input;
+  const pass = (input as { pass?: unknown }).pass;
+  if (!pass || typeof pass !== "object") return input;
+  const p = pass as Record<string, unknown>;
+  if (RETIRED_PASS_PERKS.every((k) => p[k] === undefined || p[k] === 0)) return input;
+  const zeroed = Object.fromEntries(
+    RETIRED_PASS_PERKS.filter((k) => p[k] !== undefined).map((k) => [k, 0]),
+  );
+  return { ...input, pass: { ...p, ...zeroed } };
 }

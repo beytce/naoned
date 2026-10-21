@@ -1,3 +1,4 @@
+import type { WorldSettings } from "@comptoirs/engine";
 import { and, eq, gt, lte } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { passGrants } from "../db/schema.js";
@@ -11,7 +12,45 @@ export const PASS_PRICES = { season: 399, week: 149 } as const;
 /** Days of Pass won by the weekly top 10 (people only). */
 export const WEEKLY_PASS_DAYS = 7;
 
+/**
+ * Payment stays unplugged (live-2, 21 October 2026): it opens only once `pnpm sim --pass 0.2`
+ * passes on ten seeds, and never while the Pass is off in the world's settings.
+ */
+export const PASS_PAYMENT_OPEN = false;
+
+export class PassClosedError extends Error {
+  constructor() {
+    super("pass_closed");
+  }
+}
+
+/** A Pass bought: refused while the Pass is off or the payment unplugged. */
+export async function purchasePass(
+  db: Db,
+  settings: Pick<WorldSettings, "pass">,
+  accountId: string,
+  startsAt: number,
+  endsAt: number,
+  note?: string,
+  paymentOpen = PASS_PAYMENT_OPEN,
+) {
+  if (!settings.pass.enabled || !paymentOpen) throw new PassClosedError();
+  await insertGrant(db, accountId, "purchase", startsAt, endsAt, note);
+}
+
+/** A Pass won (weekly or season ranking) or granted by an admin. Never bought: see purchasePass. */
 export async function grantPass(
+  db: Db,
+  accountId: string,
+  source: "weekly_top10" | "season" | "admin",
+  startsAt: number,
+  endsAt: number,
+  note?: string,
+) {
+  await insertGrant(db, accountId, source, startsAt, endsAt, note);
+}
+
+async function insertGrant(
   db: Db,
   accountId: string,
   source: "purchase" | "weekly_top10" | "season" | "admin",
