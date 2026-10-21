@@ -66,7 +66,7 @@ function Line({ props, p, resource }: { props: GameProps; p: Project; resource: 
           />
         </span>
         <span className="meta mt-1 block">
-          {d(p.unitPrice[resource])} · {t.have(have)}
+          {d(p.unitPrice[resource])} · {fr.game.inStock(have)}
         </span>
       </span>
       <Slab

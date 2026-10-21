@@ -50,9 +50,7 @@ function Row({
           {props.names.resource(line.resource)}
         </p>
         <p className="meta mt-0.5 flex items-center gap-2">
-          <span>
-            {fr.game.inStock} {have(props.view, line.resource)}
-          </span>
+          <span>{fr.game.inStock(have(props.view, line.resource))}</span>
           <ChangeTag value={change(points)} />
         </p>
       </div>
@@ -173,11 +171,12 @@ function TradeSheet({
           <h3 className="font-display text-xl font-extrabold uppercase">
             {props.names.resource(line.resource)}
           </h3>
-          <p className="meta mt-1">
-            {fr.game.inStock} {stock}
-          </p>
+          <p className="meta mt-1 whitespace-nowrap">{fr.game.inStock(stock)}</p>
         </div>
-        <Sparkline points={points} width={90} height={36} />
+        {/* Under 360 px the chart below says it all: the name and its stock keep the room. */}
+        <div className="hidden shrink-0 min-[360px]:block">
+          <Sparkline points={points} width={90} height={36} />
+        </div>
       </div>
 
       <PriceChart props={props} resource={line.resource} reference={line.reference} />

@@ -1281,9 +1281,7 @@ function SellLine({
           <p className="font-display text-sm font-extrabold uppercase">
             {props.names.resource(resource)}
           </p>
-          <p className="meta">
-            {fr.game.inStock} {stock}
-          </p>
+          <p className="meta">{fr.game.inStock(stock)}</p>
         </div>
         <Big className="text-xl text-gold">{d(price)}</Big>
       </div>
