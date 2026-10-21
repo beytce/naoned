@@ -169,7 +169,7 @@ export function SkirmishBar({
       </div>
       {status && status.phase !== "off" && status.interrupted && (
         <p className="cut border border-gold/50 bg-gold/10 px-2 py-1.5 text-xs text-gold">
-          {k.interrupted(status.rankedLeft > 0 && status.onMap)}
+          {k.interrupted(status.rankedLater && status.onMap)}
         </p>
       )}
       {stake && (

@@ -6,6 +6,7 @@ import {
   type WorldState,
   advanceSkirmish,
   createSkirmish,
+  dayStartIn,
   hourIn,
   hourWithin,
   skirmishAct,
@@ -22,8 +23,11 @@ import type { GameWorld } from "./world.js";
 
 /** How long a finished match stays on show. */
 const SHOWN_AFTER_MS = 3 * 60_000;
-/** How long the merchants of a match lost to a restart are told so. */
-const INTERRUPTED_SHOWN_MS = 12 * 3_600_000;
+/** The day of Paris after the one `at` falls on: a match lost to a restart is told until then. */
+function nextDayStart(at: number): number {
+  // 36 hours past midnight: within the next day, whatever its length (changes of time).
+  return dayStartIn(dayStartIn(at).start + 36 * 3_600_000).start;
+}
 
 /** Why a merchant may not join: the lobby is full, or it is night (no skirmish then). */
 export type JoinRefusal = "skirmish_full" | "night";
@@ -75,7 +79,7 @@ export class SkirmishHub {
   /**
    * At start-up, before the first step: the lobbies and matches the last run left open are lost,
    * nothing paid and no quota spent. Their merchants are notified, and told on the skirmish's bar
-   * for a while (those of an earlier restart too).
+   * until the end of that day in Paris (those of an earlier restart that day too).
    */
   async recover(now: number): Promise<void> {
     const worldId = this.world.id;
@@ -96,7 +100,7 @@ export class SkirmishHub {
         and(
           eq(skirmishMatches.worldId, worldId),
           eq(skirmishMatches.status, "aborted"),
-          gt(skirmishMatches.endedAt, new Date(now - INTERRUPTED_SHOWN_MS)),
+          gt(skirmishMatches.endedAt, new Date(dayStartIn(now).start)),
         ),
       );
     for (const r of recent)
@@ -125,11 +129,11 @@ export class SkirmishHub {
             data: {
               event: "skirmish_aborted",
               ranked: r.ranked,
-              // Whether its ranked match of the day is still to play (nothing was spent), on the
-              // week's map.
-              rankedLeft: this.onMap(accountId)
-                ? skirmishRankedLeft(this.world.ctx, this.world.current, accountId, now)
-                : 0,
+              // Whether a ranked match is still to play today (nothing was spent): on the week's
+              // map, and a match launched now ends before the closing hour; and until when one
+              // may be launched (the bell keeps the notice: no promise once past).
+              rankedLater: this.rankedLater(accountId, now),
+              rankedUntil: this.rankedUntil(now),
             },
           })),
       ),
@@ -276,6 +280,34 @@ export class SkirmishHub {
     return true;
   }
 
+  /**
+   * Whether the merchant may still play a ranked match today, launched now (the lobby free): set
+   * down on the week's map, its ranked match of the day not played, and a match ending before the
+   * closing hour. What `status` tells as `rankedLater && onMap`.
+   */
+  private rankedLater(accountId: string, now: number): boolean {
+    const cfg = this.cfg;
+    if (!cfg?.skirmish || !this.onMap(accountId)) return false;
+    return (
+      skirmishRankedLeft(this.world.ctx, this.world.current, accountId, now) > 0 &&
+      skirmishRanked(cfg, cfg.skirmish.minHumans, now + cfg.skirmish.lobbySeconds * 1_000)
+    );
+  }
+
+  /**
+   * Until when, on the day of `now`, a ranked match may be launched (its lobby, then its match,
+   * over before the closing hour), to the minute; `now` itself if none may.
+   */
+  private rankedUntil(now: number): number {
+    const cfg = this.cfg;
+    if (!cfg?.skirmish) return now;
+    const lobbyMs = cfg.skirmish.lobbySeconds * 1_000;
+    const end = nextDayStart(now);
+    let t = now;
+    while (t < end && skirmishRanked(cfg, cfg.skirmish.minHumans, t + lobbyMs)) t += 60_000;
+    return t;
+  }
+
   /** Set down on the week's map, and still on it. */
   private onMap(accountId: string): boolean {
     const me = this.world.current.terra?.map.players[accountId];
@@ -323,8 +355,8 @@ export class SkirmishHub {
     const lostAt = this.interrupted.get(accountId);
     const day = {
       rankedLeft,
-      // A match of the merchant's lost to a restart lately: no glory, its quota untouched.
-      interrupted: lostAt !== undefined && now - lostAt < INTERRUPTED_SHOWN_MS,
+      // A match of the merchant's lost to a restart this day: no glory, its quota untouched.
+      interrupted: lostAt !== undefined && now < nextDayStart(lostAt),
       // Whether a ranked match may still be played today, after the one under way if any.
       rankedLater: rankedLeft > 0 && skirmishRanked(cfg, cfg.skirmish.minHumans, nextAt),
       // Glory is paid only to a merchant set down on the week's map, and still on it.

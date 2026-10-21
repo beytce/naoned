@@ -213,7 +213,9 @@ describe("a skirmish's row", () => {
     expect(after.interrupted).toBe(true);
     expect(after.rankedLeft).toBe(1);
     expect(after.ranked).toBe(true);
-    expect(await glory(ada)).toBeLessThan(before + 45);
+    // Its ranked match still to play today, on the week's map: promised on the bar.
+    expect(after.rankedLater && after.onMap).toBe(true);
+    expect(await glory(ada)).toBe(before);
     expect((await paidLines(row?.id ?? "")).length).toBe(0);
     const told = await database.db
       .select()
@@ -221,8 +223,16 @@ describe("a skirmish's row", () => {
       .where(sql`${notifications.data}->>'event' = 'skirmish_aborted'`);
     expect(told.length).toBe(2);
     expect(
-      told.every((n) => n.kind === "family" && n.data.ranked === true && n.data.rankedLeft === 1),
+      told.every(
+        (n) => n.kind === "family" && n.data.ranked === true && n.data.rankedLater === true,
+      ),
     ).toBe(true);
+    // The bell promises it until the last ranked match of the day may be launched: before 22 h.
+    for (const n of told) {
+      const until = Number(n.data.rankedUntil);
+      expect(until).toBeGreaterThan(Date.parse("2026-10-05T19:30:00Z"));
+      expect(until).toBeLessThan(Date.parse("2026-10-05T20:00:00Z"));
+    }
     // A new match: the interruption is told no more, and the ranked match is still to play.
     expect((await join(ada)).statusCode).toBe(200);
     const lobby = await get(ada, "/api/game/skirmish");
@@ -233,6 +243,53 @@ describe("a skirmish's row", () => {
     expect(m.weeks).toEqual([{ week: "2026-10-05", paid: 0, done: 0, aborted: 1 }]);
     expect(m.duplicates).toBe(0);
     expect(m.abortedPaid).toBe(0);
+  });
+
+  it("promises no ranked match after the closing hour, and tells of the match that day only", async () => {
+    // 21 h 35 in Paris: a ranked match, ending before 22 h.
+    now = Date.parse("2026-10-05T19:35:00Z");
+    await open();
+    const { ada, bob } = await two();
+    await join(ada);
+    await join(bob);
+    now += 61_000;
+    const playing = await get(ada, "/api/game/skirmish");
+    expect(playing.phase).toBe("playing");
+    expect(playing.ranked).toBe(true);
+    const before = await glory(ada);
+    // A deployment at 21 h 50: a match launched now would end past 22 h, friendly.
+    now = Date.parse("2026-10-05T19:50:00Z");
+    await world.snapshot();
+    await app.close();
+    await open();
+    const cut = await get(ada, "/api/game/skirmish");
+    expect(cut.interrupted).toBe(true);
+    expect(cut.rankedLeft).toBe(1);
+    expect(cut.rankedLater && cut.onMap).toBe(false);
+    const told = await database.db
+      .select()
+      .from(notifications)
+      .where(sql`${notifications.data}->>'event' = 'skirmish_aborted'`);
+    expect(told.length).toBe(2);
+    expect(
+      told.every(
+        (n) =>
+          n.data.rankedLater === false && n.data.rankedUntil === Date.parse("2026-10-05T19:50:00Z"),
+      ),
+    ).toBe(true);
+    // 22 h 10: night, the interruption still told, no promise.
+    now = Date.parse("2026-10-05T20:10:00Z");
+    const night = await get(ada, "/api/game/skirmish");
+    expect(night.phase).toBe("night");
+    expect(night.interrupted).toBe(true);
+    expect(night.rankedLater && night.onMap).toBe(false);
+    expect(await glory(ada)).toBe(before);
+    // The next morning, 8 h 30: another day, the interruption told no more (after a restart too).
+    now = Date.parse("2026-10-06T06:30:00Z");
+    expect((await get(ada, "/api/game/skirmish")).interrupted).toBe(false);
+    await app.close();
+    await open();
+    expect((await get(bob, "/api/game/skirmish")).interrupted).toBe(false);
   });
 
   it("settles a friendly match, or a ranked one paying no one, as done, never paid", async () => {

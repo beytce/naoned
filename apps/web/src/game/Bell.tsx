@@ -96,7 +96,8 @@ function text(n: Notice, props: GameProps): string {
         won: n.data.won ? "1" : "",
         winner: n.data.winner ? familyName(String(n.data.winner)) : "",
         decrees,
-        left: Number(n.data.rankedLeft ?? 0) > 0 ? "1" : "",
+        // The ranked match of the day promised only while one may still be launched.
+        left: n.data.rankedLater === true && props.now < Number(n.data.rankedUntil ?? 0) ? "1" : "",
       });
     }
     case "week": {

@@ -22,11 +22,15 @@ describe("the Terraferma's notices", () => {
   });
 
   it("tell the merchants of a skirmish cut short by a restart what they kept", () => {
-    const kept = pushText("family", { event: "skirmish_aborted", ranked: true, rankedLeft: 1 });
+    // The same words as the skirmish's bar and the bell (apps/web/src/i18n.ts).
+    const kept = pushText("family", { event: "skirmish_aborted", ranked: true, rankedLater: true });
     expect(kept.title).toBe("Escarmouche interrompue");
-    expect(kept.body).toContain("votre partie classée du jour reste disponible");
+    expect(kept.body).toBe(
+      "Escarmouche interrompue par une maintenance : aucune Gloire, rien n'est compté ; votre partie classée du jour reste à jouer.",
+    );
+    // No ranked match left today (played, off the map, or past the closing hour): no promise.
     expect(
-      pushText("family", { event: "skirmish_aborted", ranked: false, rankedLeft: 0 }).body,
-    ).not.toContain("reste disponible");
+      pushText("family", { event: "skirmish_aborted", ranked: true, rankedLater: false }).body,
+    ).toBe("Escarmouche interrompue par une maintenance : aucune Gloire, rien n'est compté.");
   });
 });
