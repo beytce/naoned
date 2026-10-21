@@ -296,9 +296,12 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
                 data-coach={`upgrade-${b.id}`}
                 aria-label={fr.game.upgrade}
                 onClick={() => props.setSheet(`upgrade:${b.id}`)}
-                className="slab flex shrink-0 items-center gap-1 whitespace-nowrap bg-night-4 px-2.5 py-0.5 font-mono text-xs font-bold text-cream transition active:scale-95"
+                className="hit flex shrink-0 transition active:scale-95"
               >
-                {fr.game.level(b.level)} <span aria-hidden="true">↑</span>
+                {/* The slab is clipped: drawn inside, the button keeps its 44 px of touch. */}
+                <span className="slab flex items-center gap-1 whitespace-nowrap bg-night-4 px-2.5 py-0.5 font-mono text-xs font-bold text-cream">
+                  {fr.game.level(b.level)} <span aria-hidden="true">↑</span>
+                </span>
               </button>
             ) : (
               <Badge>{fr.game.level(b.level)}</Badge>

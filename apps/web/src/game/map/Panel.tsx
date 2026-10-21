@@ -4,8 +4,8 @@ import { Icon } from "./icons.js";
 
 /**
  * The selection's panel at the foot of the map, the only one the game shows: a title, one line of
- * state, a row of big square actions, arrows to the next object of the same kind, a cross to let
- * go. On a computer it floats at the bottom right.
+ * state, a row of big square actions, arrows to the next object of the same kind beside the title,
+ * a cross to let go. On a computer it floats at the bottom right.
  */
 export function ContextPanel({
   title,
@@ -49,15 +49,34 @@ export function ContextPanel({
           type="button"
           aria-label={fr.game.map.close}
           onClick={onClose}
-          className={`absolute -top-[2px] right-0 flex h-9 w-12 items-center justify-center ${bar} text-night [clip-path:polygon(28%_0,100%_0,100%_100%,0_100%)] lg:right-3 lg:rounded-b-lg`}
+          className="absolute -top-[2px] right-0 h-11 w-12 lg:right-3"
         >
-          <span className="scale-90">{Icon.cross()}</span>
+          {/* The tab is clipped and 36 px high: drawn inside, the button is touched at 44 px. */}
+          <span
+            className={`flex h-9 w-12 items-center justify-center ${bar} text-night [clip-path:polygon(28%_0,100%_0,100%_100%,0_100%)] lg:rounded-b-lg`}
+          >
+            <span className="scale-90">{Icon.cross()}</span>
+          </span>
         </button>
         <div className="flex items-center gap-2 pr-14">
           <h2 className="min-w-0 truncate font-display text-[15px] font-extrabold uppercase tracking-wide">
             {title}
           </h2>
           {chip && <span className="shrink-0">{chip}</span>}
+          {(onPrev || onNext) && (
+            <span className="ml-auto flex shrink-0 gap-1">
+              {onPrev && (
+                <ArrowButton label={fr.game.map.prev} onClick={onPrev}>
+                  {Icon.chevronLeft()}
+                </ArrowButton>
+              )}
+              {onNext && (
+                <ArrowButton label={fr.game.map.next} onClick={onNext}>
+                  {Icon.chevronRight()}
+                </ArrowButton>
+              )}
+            </span>
+          )}
         </div>
         {status && (
           <div className={`mt-1 flex min-h-5 items-center gap-2 text-[13px] ${ink}`}>
@@ -72,22 +91,12 @@ export function ContextPanel({
             )}
           </div>
         )}
-        <div className="mt-3 flex items-center gap-1.5">
-          {onPrev ? (
-            <ArrowButton label={fr.game.map.prev} onClick={onPrev}>
-              {Icon.chevronLeft()}
-            </ArrowButton>
-          ) : (
-            <span className="w-7" />
-          )}
-          <div className="flex min-w-0 flex-1 items-start justify-center gap-2">{actions}</div>
-          {onNext ? (
-            <ArrowButton label={fr.game.map.next} onClick={onNext}>
-              {Icon.chevronRight()}
-            </ArrowButton>
-          ) : (
-            <span className="w-7" />
-          )}
+        {/*
+          The whole width for the actions: four of them side by side on a 320 px phone, more
+          scrolled sideways, never under the arrows. Its top margin is padding, for the badges.
+        */}
+        <div className="-mx-3 mt-1 flex justify-[safe_center] gap-0.5 overflow-x-auto px-3 pt-2 [scrollbar-width:none] min-[360px]:gap-2">
+          {actions}
         </div>
         {extra && <div className="mt-2">{extra}</div>}
       </div>
@@ -105,7 +114,9 @@ function ArrowButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex h-14 w-7 shrink-0 items-center justify-center text-cream-dim transition active:scale-90"
+      // 44 × 44 px of touch on the title's line, which keeps its height: above it the panel's
+      // margin, below it the line of state, under the button.
+      className="relative z-10 -my-3 flex h-11 w-11 shrink-0 items-center justify-center text-cream-dim transition active:scale-90"
     >
       {children}
     </button>

@@ -163,6 +163,23 @@
   .meta {
     @apply font-sans text-[13px] leading-snug text-cream-dim tabular-nums;
   }
+  /*
+   * A control drawn small, touched at 44 × 44 px: its hit area reaches past the drawing, centred
+   * on it. Not on a clipped element (.slab, .bevel): clip-path cuts the hit area too, the
+   * drawing goes in a child then.
+   */
+  .hit {
+    position: relative;
+  }
+  .hit::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
   /* Card: deep water, a thin foam line, rounded corners. */
   .cartouche {
     @apply relative rounded-2xl bg-night-3;

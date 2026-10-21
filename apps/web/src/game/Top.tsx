@@ -200,7 +200,7 @@ export function RankingSheet(props: GameProps) {
     <button
       type="button"
       onClick={() => setView("board")}
-      className="label -ml-1 mb-3 flex h-9 items-center gap-1 text-gold"
+      className="label -ml-1 mb-3 flex h-11 items-center gap-1 text-gold"
     >
       ← {fr.game.tabs.top}
     </button>

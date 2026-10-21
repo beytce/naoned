@@ -1517,7 +1517,7 @@ export function TerraPanel({
                   <button
                     key={kind}
                     type="button"
-                    className="label rounded-full px-2.5 py-1 text-cream ring-1 ring-inset ring-line"
+                    className="label inline-flex min-h-11 items-center rounded-full px-3 text-cream ring-1 ring-inset ring-line"
                     onClick={() => act({ type: "terraSignal", kind })}
                   >
                     {SIGNAL_GLYPH[kind]} {t().diplomacy.signals[kind]}
@@ -1544,7 +1544,7 @@ export function TerraPanel({
                 </span>
                 <button
                   type="button"
-                  className="label rounded-full px-2.5 py-1 text-cream ring-1 ring-inset ring-line"
+                  className="hit label shrink-0 rounded-full px-2.5 py-1 text-cream ring-1 ring-inset ring-line"
                   onClick={() => act({ type: "terraRecall", frontId: f.id })}
                 >
                   {t().mine.recall}
@@ -1775,7 +1775,7 @@ function Returns({ v }: { v: TerraView }) {
       ))}
       <button
         type="button"
-        className="label mt-2 rounded-full px-3 py-1 text-cream ring-1 ring-inset ring-line"
+        className="hit label mt-2 rounded-full px-3 py-1 text-cream ring-1 ring-inset ring-line"
         onClick={() => {
           store.set(key, String(last));
           setSeen(last);
@@ -1950,7 +1950,10 @@ export function TerraIntro({ onGuide }: { onGuide: () => void }) {
   };
   const last = step >= k.steps.length - 1;
   return (
-    <div className="pointer-events-auto absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+11rem)] z-30 mx-auto flex max-w-sm animate-pop gap-3 cut border border-info/70 bg-night-2/95 p-3 shadow-lg lg:bottom-32">
+    <div
+      data-panel
+      className="pointer-events-auto absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+11rem)] z-30 mx-auto flex max-w-sm animate-pop gap-3 cut border border-info/70 bg-night-2/95 p-3 shadow-lg lg:bottom-32"
+    >
       <Lorenzo size={44} />
       <div className="min-w-0 flex-1 space-y-2">
         <p className="flex items-baseline justify-between gap-2">
@@ -1963,7 +1966,7 @@ export function TerraIntro({ onGuide }: { onGuide: () => void }) {
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
-            className="label text-info underline underline-offset-2"
+            className="hit label text-info underline underline-offset-2"
             onClick={() => {
               done();
               onGuide();
@@ -1973,7 +1976,7 @@ export function TerraIntro({ onGuide }: { onGuide: () => void }) {
           </button>
           <button
             type="button"
-            className="label rounded-full bg-info px-3 py-1 text-ink"
+            className="hit label rounded-full bg-info px-3 py-1 text-ink"
             onClick={() => (last ? done() : setStep(step + 1))}
           >
             {last ? k.done : k.next}

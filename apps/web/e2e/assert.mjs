@@ -8,6 +8,12 @@
 // - map: a block of the HUD (a round: its disc) covers a name, a medallion or a figure of the
 //   map (`data-map-label`);
 // - target: a block of the HUD that can be touched is smaller than 44 × 44 px;
+// - touch: a button or a link of an open window (`aria-modal`), a panel (`data-panel`: a place's
+//   panel, Lorenzo's cards on the Terraferma) or Lorenzo's bubble is touched on less than
+//   44 × 44 px; its real hit area is measured (a pseudo-element reaching past the drawing
+//   counts) by what the page finds under the points 21.5 px from its centre, the element brought
+//   into view first, its window's scroll put back after (another layer laid over a side, as
+//   Lorenzo's bubble over a panel, is left to the guide's check);
 // - line: a line of the HUD that gives way item by item (`data-hud-meta`) shows one cut;
 // - guide: Lorenzo's ring is drawn where its target is not the element touched under its centre
 //   (a sheet over it), or something is left over his bubble (a coin of the effects, still shown
@@ -29,7 +35,12 @@ export async function assertNoOverlap(page) {
 /** All at once, all that is wrong in one message. */
 export async function assertLayout(page) {
   await settled(page);
-  fail([...(await overflows(page)), ...(await overlaps(page)), ...(await guide(page))]);
+  fail([
+    ...(await overflows(page)),
+    ...(await overlaps(page)),
+    ...(await touches(page)),
+    ...(await guide(page)),
+  ]);
 }
 
 /** The merchant's name shows `min` letters at least (all of it when shorter), on any layer. */
@@ -177,6 +188,75 @@ function overlaps(page) {
       return wrong;
     },
     { slack: SLACK, target: TARGET },
+  );
+}
+
+/** The buttons and links of the windows and panels open: 44 × 44 px of touch, measured. */
+function touches(page) {
+  return page.evaluate(
+    ({ target }) => {
+      const half = target / 2 - 0.5;
+      const shown = (el) => {
+        if (el.getClientRects().length === 0) return false;
+        for (let e = el; e; e = e.parentElement) {
+          const s = getComputedStyle(e);
+          if (s.visibility === "hidden" || s.display === "none" || Number(s.opacity) === 0)
+            return false;
+        }
+        return true;
+      };
+      const name = (el) =>
+        `${el.tagName.toLowerCase()} « ${(el.getAttribute("aria-label") || el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 40)} »`;
+      const scope = '[aria-modal="true"], [data-panel], [data-coach-bubble]';
+      const touch = "button, a, [role=button]";
+      const targets = [...document.querySelectorAll(`:is(${scope}) :is(${touch})`)]
+        // The HUD has its own check; a disabled control is measured once it can be touched.
+        .filter((el) => !el.closest("[data-hud], [data-hud-overlay]"))
+        .filter((el) => !el.disabled && el.getAttribute("aria-disabled") !== "true")
+        .filter(shown);
+      // Every scroll put back as it was once measured: the step's picture is taken after.
+      const scrolled = new Map();
+      const keep = (el) => {
+        for (let e = el.parentElement; e; e = e.parentElement)
+          if (e.scrollHeight > e.clientHeight || e.scrollWidth > e.clientWidth)
+            if (!scrolled.has(e)) scrolled.set(e, [e.scrollLeft, e.scrollTop]);
+      };
+      const wrong = [];
+      for (const el of targets) {
+        keep(el);
+        el.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
+        const r = el.getBoundingClientRect();
+        const x = r.left + r.width / 2;
+        const y = r.top + r.height / 2;
+        const root = el.closest(scope);
+        const on = (px, py) => {
+          // The screen's edge: a finger cannot miss beyond it.
+          if (px < 0 || py < 0 || px >= innerWidth || py >= innerHeight) return true;
+          const hit = document.elementFromPoint(px, py);
+          if (!hit) return false;
+          if (el.contains(hit)) return true;
+          // Another layer laid over it for a while (Lorenzo's bubble over a panel): not this
+          // control's own size, the guide's check looks at what it covers.
+          const layer = hit.closest(`${scope}, [data-hud], [data-hud-overlay]`);
+          return !!layer && layer !== root && !layer.contains(root) && !root.contains(layer);
+        };
+        // Under something else at its very centre (a bubble, a sticky foot): not this check's.
+        if (!on(x, y)) continue;
+        const short = [
+          ["above", x, y - half],
+          ["below", x, y + half],
+          ["left", x - half, y],
+          ["right", x + half, y],
+        ].filter(([, px, py]) => !on(px, py));
+        if (short.length > 0)
+          wrong.push(
+            `${name(el)} is touched on less than ${target} × ${target} px (drawn ${Math.round(r.width)} × ${Math.round(r.height)}, short ${short.map(([side]) => side).join(", ")})`,
+          );
+      }
+      for (const [e, [left, top]] of scrolled) e.scrollTo({ left, top, behavior: "instant" });
+      return wrong;
+    },
+    { target: TARGET },
   );
 }
 

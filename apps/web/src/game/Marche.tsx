@@ -470,7 +470,7 @@ export function RialtoSheet(props: GameProps) {
     <button
       type="button"
       onClick={() => props.setSheet("rialto")}
-      className="label -ml-1 mb-3 flex h-9 items-center gap-1 text-gold"
+      className="label -ml-1 mb-3 flex h-11 items-center gap-1 text-gold"
     >
       ← {fr.game.map.buttons.rialto}
     </button>
@@ -523,24 +523,25 @@ export function RialtoSheet(props: GameProps) {
               ]}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-1.5">
+          {/* Rows 20 px apart when they wrap: the chips' 44 px of touch do not meet. */}
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-5">
             {/* A fact, not a filter: plain text. */}
             <span className="mr-1 text-xs text-cream-dim">
               {m.tax(props.catalog.rules.marketTaxBps / 100)}
             </span>
-            <button
-              type="button"
-              onClick={() => props.setSheet("offers")}
-              className={`slab px-2.5 py-1 font-mono text-xs uppercase tracking-[0.06em] ${offers.length > 0 ? "bg-info/20 text-info" : "bg-night-3 text-cream-dim"}`}
-            >
-              {r.offers(offers.length)}
+            <button type="button" onClick={() => props.setSheet("offers")} className="hit">
+              <span
+                className={`slab block px-2.5 py-1 font-mono text-xs uppercase tracking-[0.06em] ${offers.length > 0 ? "bg-info/20 text-info" : "bg-night-3 text-cream-dim"}`}
+              >
+                {r.offers(offers.length)}
+              </span>
             </button>
             {decrees && decrees.items.length > 0 && (
               <button
                 type="button"
                 aria-expanded={decreesOpen}
                 onClick={() => setDecreesOpen(!decreesOpen)}
-                className={`rounded-full px-2.5 py-1 font-mono text-xs uppercase tracking-[0.08em] ring-1 ring-inset ${ours ? "bg-lagoon/15 text-lagoon ring-lagoon/60" : "bg-vermilion/15 text-vermilion ring-vermilion/60"}`}
+                className={`hit rounded-full px-2.5 py-1 font-mono text-xs uppercase tracking-[0.08em] ring-1 ring-inset ${ours ? "bg-lagoon/15 text-lagoon ring-lagoon/60" : "bg-vermilion/15 text-vermilion ring-vermilion/60"}`}
               >
                 ⚑ {m.decrees(decrees.items.length)}
               </button>

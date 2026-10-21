@@ -28,6 +28,8 @@ export function Slab(props: {
   className?: string;
   type?: "button" | "submit";
   coach?: string;
+  /** The whole action, when the slab only shows a sign of it. */
+  label?: string;
 }) {
   const size = {
     // Drawn small, touched at 44 px: the hit area reaches 8 px above and below the slab.
@@ -45,6 +47,7 @@ export function Slab(props: {
       }}
       disabled={props.disabled}
       data-coach={props.coach}
+      aria-label={props.label}
       className={`group relative isolate inline-flex pb-1 pr-1 font-display font-extrabold uppercase tracking-wide disabled:pointer-events-none disabled:opacity-35 ${props.size === "sm" ? "before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']" : ""} ${props.className ?? ""}`}
     >
       <span
@@ -382,8 +385,11 @@ export function Qty(props: {
 }) {
   const set = (v: number) =>
     props.onChange(Math.max(1, Math.min(Math.max(1, props.max), Math.round(v))));
+  // The slab is drawn inside: its slant would cut 3 px off each side of a 44 px button's touch.
   const btn =
-    "h-11 w-11 slab bg-night-4 font-display text-lg ring-1 ring-inset ring-line transition hover:ring-cream-dim/40 active:scale-95 disabled:opacity-35";
+    "group grid h-11 w-11 place-items-center font-display text-lg transition active:scale-95 disabled:opacity-35";
+  const face =
+    "slab col-start-1 row-start-1 h-full w-full bg-night-4 ring-1 ring-inset ring-line group-hover:ring-cream-dim/40";
   return (
     <div className="flex items-center gap-2">
       <button
@@ -393,7 +399,8 @@ export function Qty(props: {
         disabled={props.value <= 1}
         onClick={() => set(props.value - 1)}
       >
-        <span>−</span>
+        <span aria-hidden="true" className={face} />
+        <span className="col-start-1 row-start-1">−</span>
       </button>
       <input
         type="number"
@@ -411,7 +418,8 @@ export function Qty(props: {
         disabled={props.value >= props.max}
         onClick={() => set(props.value + 1)}
       >
-        <span>+</span>
+        <span aria-hidden="true" className={face} />
+        <span className="col-start-1 row-start-1">+</span>
       </button>
       {props.maxButton !== false && (
         <button

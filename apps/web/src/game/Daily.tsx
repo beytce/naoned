@@ -26,7 +26,9 @@ export function Daily(props: GameProps) {
               {task.claimed ? "✓" : `${task.progress}/${task.count}`.replace(/^(\d)\/1$/, "$1")}
             </span>
             <div className="min-w-0 flex-1">
-              <p className={`text-sm ${task.claimed ? "text-cream-dim line-through" : ""}`}>
+              <p
+                className={`text-sm [overflow-wrap:anywhere] ${task.claimed ? "text-cream-dim line-through" : ""}`}
+              >
                 {t.tasks[task.id] ?? task.id}
               </p>
               <span className="inline-flex flex-wrap items-center gap-2 text-xs text-cream-dim">
@@ -42,18 +44,22 @@ export function Daily(props: GameProps) {
               </span>
             </div>
             {!task.done && !task.claimed && spend && (
+              // A short sign, the whole action read aloud: the task's words keep the room.
               <Slab
                 size="sm"
                 tone="ghost"
+                className="shrink-0"
+                label={fr.game.house.spend.reroll(spend.dailyReroll)}
                 disabled={props.busy || (props.influence ?? 0) < spend.dailyReroll}
                 onClick={() => props.spend({ use: "daily", taskId: task.id })}
               >
-                {fr.game.house.spend.reroll(spend.dailyReroll)}
+                {fr.game.house.spend.rerollShort(spend.dailyReroll)}
               </Slab>
             )}
             {task.done && !task.claimed && (
               <Slab
                 size="sm"
+                className="shrink-0"
                 disabled={props.busy}
                 onClick={() => props.act({ type: "claimDaily", taskId: task.id })}
               >

@@ -1664,7 +1664,9 @@ export const fr = {
         respec: (n: number) => `Changer de maîtrise · ${n} ✦`,
         respecTitle: (name: string) => `Maîtrise : ${name}`,
         respecHelp: "Vous la choisissez de nouveau aussitôt, parmi toutes.",
-        reroll: (n: number) => `Changer · ${n} ✦`,
+        reroll: (n: number) => `Changer de tâche · ${n} ✦`,
+        /** The same on a phone's narrow line: the sign of a change and its price. */
+        rerollShort: (n: number) => `↻ ${n} ✦`,
       },
     },
     profileTitle: "Ma progression",
