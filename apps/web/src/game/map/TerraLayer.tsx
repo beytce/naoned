@@ -179,19 +179,19 @@ export function SkirmishBar({
         </p>
       )}
       {!status || status.phase === "off" ? (
-        <p className="note">{k.off}</p>
+        <p className="meta">{k.off}</p>
       ) : status.phase === "night" ? (
-        <p className="note text-lagoon">{k.night(status.opensAtHour, status.closesAtHour)}</p>
+        <p className="meta text-lagoon">{k.night(status.opensAtHour, status.closesAtHour)}</p>
       ) : status.phase === "none" ? (
         <>
-          <p className="note">{k.pitch(status.minutes)}</p>
+          <p className="meta">{k.pitch(status.minutes)}</p>
           <Slab size="sm" className="w-full" onClick={onJoin}>
             {k.open}
           </Slab>
         </>
       ) : status.phase === "lobby" ? (
         <>
-          <p className="note">
+          <p className="meta">
             {k.lobby(status.players, clock(Math.max(0, status.opensAt - now)))}
           </p>
           {!status.joined && (
@@ -201,7 +201,7 @@ export function SkirmishBar({
           )}
         </>
       ) : status.phase === "playing" ? (
-        <p className="note">
+        <p className="meta">
           {status.playing ? k.playing(clock(Math.max(0, status.endsAt - now))) : k.watching}
         </p>
       ) : (
@@ -1184,7 +1184,7 @@ export function TerraHud({
       )}
       <span
         data-hud="terra-note"
-        className="note hidden min-w-0 max-w-full flex-col items-end text-right [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] lg:flex"
+        className="meta hidden min-w-0 max-w-full flex-col items-end text-right [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] lg:flex"
       >
         {me?.eliminatedAt != null && <span className="text-vermilion">{t().eliminated}</span>}
         {!v.closed && v.placementEndsAt !== null && now < v.placementEndsAt && (
@@ -1384,7 +1384,7 @@ export function TerraPanel({
         <span className="slab whitespace-nowrap bg-gold px-4 py-2 font-display text-[13px] font-extrabold uppercase tracking-wide text-ink shadow-[0_6px_20px_rgb(0_0_0/0.45)]">
           {t().place.invite}
         </span>
-        <span className="note [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+        <span className="meta [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
           {t().place.hint}
           {v.placementEndsAt !== null && ` · ${t().place.until(clock(v.placementEndsAt - now))}`}
         </span>

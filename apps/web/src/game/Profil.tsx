@@ -302,7 +302,7 @@ function ProfileBody(props: GameProps) {
             </div>
           </>
         )}
-        <p className="note mt-3">
+        <p className="meta mt-3">
           {[
             profile ? fr.game.house.titleOf(profile.title.current.name) : null,
             palmares ? fr.game.house.renownOf(palmares.renown.points) : null,
@@ -331,7 +331,7 @@ function ProfileBody(props: GameProps) {
                   }
                 />
                 {profile.title.next && (
-                  <p className="note">{fr.game.nextTitle(profile.title.next.name)}</p>
+                  <p className="meta">{fr.game.nextTitle(profile.title.next.name)}</p>
                 )}
                 <Titles profile={profile} />
               </section>
@@ -414,7 +414,7 @@ function ProfileBody(props: GameProps) {
           <h2 className="font-display text-2xl font-extrabold">{fr.game.terraRecord.title}</h2>
           <p className="text-sm">{fr.game.terraRecord.rating(terra.rating)}</p>
           {terra.weeks.length === 0 ? (
-            <p className="note">{fr.game.terraRecord.none}</p>
+            <p className="meta">{fr.game.terraRecord.none}</p>
           ) : (
             <ul className="space-y-1 text-sm text-cream-dim">
               {terra.weeks.map((w) => (

@@ -217,7 +217,7 @@ export function BaleScreen(props: GameProps) {
 
         {phase === "idle" && (
           <div className="w-full space-y-4 text-center">
-            <p className="meta text-cream-dim">{status(b, props.now)}</p>
+            <p className="meta">{status(b, props.now)}</p>
             {b.available > 0 && (
               <>
                 <p className="text-sm italic text-cream-dim">{t.lorenzo}</p>

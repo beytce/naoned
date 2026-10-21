@@ -101,10 +101,10 @@ export function UpgradeVehicleSheet({
               <p className="font-display font-extrabold uppercase">
                 {t().upgradeTo(vehicleName(next.type))}
               </p>
-              <p className="note">
+              <p className="meta">
                 {t().capacity(def.capacity)} → {t().capacity(next.capacity)}
               </p>
-              <p className="note">
+              <p className="meta">
                 {t().speed(pct(def.speedBps))} → {t().speed(pct(next.speedBps))}
               </p>
               {!home && <p className="text-sm text-cream-dim">{t().away}</p>}

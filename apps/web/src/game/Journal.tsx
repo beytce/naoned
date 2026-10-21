@@ -54,7 +54,7 @@ export function JournalSection(props: GameProps & { open: boolean }) {
     <section className="space-y-2">
       <Label className="text-info">{t.title}</Label>
       {entries === null ? null : entries.length === 0 ? (
-        <p className="note">{t.empty}</p>
+        <p className="meta">{t.empty}</p>
       ) : (
         <ul className="space-y-1.5">
           {entries.slice(0, 8).map((e) => (

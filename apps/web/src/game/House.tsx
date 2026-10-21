@@ -192,7 +192,7 @@ function Missions(props: GameProps & { onClaimed: () => void }) {
     <section className="space-y-3">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-display text-2xl font-extrabold">{m.title}</h2>
-        <span className="note">{m.renews(clock(board.endsAt - props.now))}</span>
+        <span className="meta">{m.renews(clock(board.endsAt - props.now))}</span>
       </div>
       <ul className="space-y-2">
         {board.missions.map((mission) => (

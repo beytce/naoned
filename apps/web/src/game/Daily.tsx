@@ -74,7 +74,7 @@ export function Daily(props: GameProps) {
           {d(daily.chest)}
         </span>
       </div>
-      <p className="note mt-2">{t.resetsIn(clock(daily.resetsAt - props.now))}</p>
+      <p className="meta mt-2">{t.resetsIn(clock(daily.resetsAt - props.now))}</p>
     </Panel>
   );
 }

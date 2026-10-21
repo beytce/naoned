@@ -195,7 +195,7 @@ export function CargoSheet({
       >
         {s.city ? t().ready(props.names.city(s.city), d(s.value)) : t().pick}
       </Slab>
-      <p className="note text-center">{t().nextOrders(clock(nextDay - props.now))}</p>
+      <p className="meta text-center">{t().nextOrders(clock(nextDay - props.now))}</p>
     </div>
   );
 }

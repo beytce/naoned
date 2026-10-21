@@ -42,11 +42,11 @@ function Body({
       <h3 className="font-display text-xl font-extrabold uppercase">
         {t.title(props.names.city(city))}
       </h3>
-      <p className="note">{t.help(w.perCity, w.unitsPerDay)}</p>
+      <p className="meta">{t.help(w.perCity, w.unitsPerDay)}</p>
       {line.held && (
         <section className="space-y-2">
           <p className="text-sm text-gold">{t.held(w.unitsLeft)}</p>
-          {orders.length === 0 && <p className="note">{t.noOrders}</p>}
+          {orders.length === 0 && <p className="meta">{t.noOrders}</p>}
           <ul className="space-y-2">
             {orders.map((o) => {
               const can = have(props.view, o.resource) >= o.quantity && o.quantity <= w.unitsLeft;

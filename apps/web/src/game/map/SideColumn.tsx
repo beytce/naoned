@@ -55,7 +55,7 @@ export function SideColumn({
         {pane === "workshops" && <WorkshopsList {...props} />}
         {pane === "market" && <MarketBoard {...props} />}
       </div>
-      <p className="note border-t border-line px-5 py-3">{t.keys}</p>
+      <p className="meta border-t border-line px-5 py-3">{t.keys}</p>
     </aside>
   );
 }
@@ -68,7 +68,7 @@ function Orders({ props, onCity }: { props: GameProps; onCity: (code: string) =>
     .filter((o) => o.status === "open" && o.opensAt <= now && now < o.expiresAt)
     .map((o) => ({ o, total: BigInt(o.unitPrice) * BigInt(o.quantity) }))
     .sort((a, b) => (a.total === b.total ? 0 : a.total > b.total ? -1 : 1));
-  if (open.length === 0) return <p className="note py-6 text-center">{fr.game.side.noOrders}</p>;
+  if (open.length === 0) return <p className="meta py-6 text-center">{fr.game.side.noOrders}</p>;
   return (
     <ul className="space-y-1.5">
       {open.map(({ o, total }) => {
@@ -85,7 +85,7 @@ function Orders({ props, onCity }: { props: GameProps; onCity: (code: string) =>
                 <span className="block truncate text-sm font-semibold">
                   {o.quantity} {props.names.resource(o.resource).toLowerCase()}
                 </span>
-                <span className="note block truncate">
+                <span className="meta block truncate">
                   {props.names.city(o.city)}
                   {covered ? ` · ${fr.game.side.covered}` : ""}
                 </span>

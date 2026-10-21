@@ -76,9 +76,9 @@ function Commissions(props: GameProps) {
   const price = Math.max(1, Math.round((ref * pct) / 100));
   return (
     <div className="space-y-4">
-      <p className="note">{t.commissionHelp}</p>
+      <p className="meta">{t.commissionHelp}</p>
       <ul className="space-y-2">
-        {deals.commissions.length === 0 && <li className="note">{t.noCommission}</li>}
+        {deals.commissions.length === 0 && <li className="meta">{t.noCommission}</li>}
         {deals.commissions.map((c) => (
           <li key={c.id} className="flex items-center gap-2 cut bg-night-3 px-3 py-2 text-sm">
             <ResourceIcon code={c.resource} size={28} />
@@ -158,7 +158,7 @@ function Commissions(props: GameProps) {
           <span>{t.days}</span>
           <Qty value={days} max={deals.commissionDays} onChange={setDays} />
         </div>
-        <p className="note">{t.locks(d(BigInt(price * quantity)))}</p>
+        <p className="meta">{t.locks(d(BigInt(price * quantity)))}</p>
         <Slab
           className="w-full"
           disabled={props.busy}
@@ -189,9 +189,9 @@ function Colleganze(props: GameProps) {
   const maxShare = Math.floor(deals.maxShareBps / 100);
   return (
     <div className="space-y-4">
-      <p className="note">{t.colleganzaHelp(maxShare)}</p>
+      <p className="meta">{t.colleganzaHelp(maxShare)}</p>
       <ul className="space-y-2">
-        {deals.colleganze.length === 0 && <li className="note">{t.noColleganza}</li>}
+        {deals.colleganze.length === 0 && <li className="meta">{t.noColleganza}</li>}
         {deals.colleganze.map((g) => (
           <li key={g.id} className="flex items-center gap-2 cut bg-night-3 px-3 py-2 text-sm">
             <span className="min-w-0 flex-1">
@@ -305,7 +305,7 @@ function Bank(props: GameProps) {
   const interest = Math.ceil((amount * bank.interestBpsPerDay * days) / 10_000);
   return (
     <div className="space-y-4">
-      <p className="note">
+      <p className="meta">
         {b.help(
           Math.round(bank.maxShareBps / 100),
           bank.interestBpsPerDay / 100,
@@ -331,7 +331,7 @@ function Bank(props: GameProps) {
           )}
         </div>
       ) : limit <= 0 ? (
-        <p className="note">{b.none}</p>
+        <p className="meta">{b.none}</p>
       ) : (
         <section className="space-y-2">
           <label className="block text-sm">
@@ -353,7 +353,7 @@ function Bank(props: GameProps) {
             <span>{t.days}</span>
             <Qty value={days} max={bank.maxDays} onChange={setDays} />
           </div>
-          <p className="note">
+          <p className="meta">
             {b.cost(d(BigInt(interest)), d(BigInt(Math.min(amount, limit) + interest)))}
           </p>
           <Slab

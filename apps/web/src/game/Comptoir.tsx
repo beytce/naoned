@@ -72,7 +72,7 @@ function RecipeFlow({
               ? `${runningMs / 1000} s`
               : minutesLabel(running);
           return (
-            <span className="note ml-1">
+            <span className="meta ml-1">
               {fr.game.batchNow(now)}
               <span className={hungry ? "text-vermilion" : "text-lagoon"}>
                 {" · "}
@@ -83,7 +83,7 @@ function RecipeFlow({
           );
         }
         return (
-          <span className={`note ml-1 ${hungry ? "text-vermilion" : ""}`}>
+          <span className={`meta ml-1 ${hungry ? "text-vermilion" : ""}`}>
             {minutesLabel(nextMinutes)}
             {hungry && ` · ${fr.game.rations.slower}`}
           </span>
@@ -470,10 +470,10 @@ function WorkshopSheet({
     <div className="space-y-3 border-t border-line pt-4">
       <Label>{m.title}</Label>
       {b.pathChoice === "locked" ? (
-        <p className="note">{m.locked(rules.title, rules.maxLevel)}</p>
+        <p className="meta">{m.locked(rules.title, rules.maxLevel)}</p>
       ) : (
         <>
-          <p className="note">{m.help(rules.maxLevel)}</p>
+          <p className="meta">{m.help(rules.maxLevel)}</p>
           {(["volume", "quality"] as const).map((path) => (
             <div key={path} className="cut bg-night-3 px-3 py-2 ring-1 ring-inset ring-line">
               <p className="font-semibold">{m.paths[path].name}</p>

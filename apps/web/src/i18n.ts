@@ -184,7 +184,6 @@ export const fr = {
         idle: "Des ateliers attendent du travail",
         rest: "Ateliers au repos",
       },
-      stockChip: (n: number) => `Stock ${n}`,
       city: {
         orders: (n: number) => (n > 0 ? `${n} commande${n > 1 ? "s" : ""}` : "Aucune commande"),
         deliverable: (n: number) =>
@@ -377,7 +376,7 @@ export const fr = {
         otherCity: (city: string) => `pour ${city} seulement`,
         full: (n: number) => `${n} commandes au plus`,
         heavy: "trop lourd",
-        stock: (have: number, need: number) => `stock ${have} / ${need}`,
+        stock: (have: number, need: number) => `${have} / ${need} en stock`,
       },
       hold: "Cale",
       empty: "Touchez des commandes pour remplir la cale. Une seule ville par voyage.",
@@ -1013,7 +1012,6 @@ export const fr = {
       },
       goods: "Marchandise",
       offers: "mes offres",
-      stock: "en stock",
       tax: (pct: number) => `Taxe ${pct.toLocaleString("fr-FR")} %`,
       decrees: (n: number) => `${n} décret${n > 1 ? "s" : ""} en vigueur`,
       trade: (price: string) => `Négocier · ${price}`,
@@ -1388,7 +1386,7 @@ export const fr = {
     featured: "Plus forte hausse",
     buyAt: "Achat",
     sellAt: "Vente",
-    /** A stock under a name: « 40 en stock ». */
+    /** A stock under a name: « 40 en stock » (« 3 / 5 en stock » against a need). */
     inStock: (n: number) => `${n} en stock`,
     buy: "Acheter",
     sell: "Vendre",
@@ -2110,7 +2108,7 @@ export const fr = {
       price: "Votre prix unitaire",
       quantity: "Quantité",
       summary: (total: string, caution: string, have: number) =>
-        `Offre ${total} · caution ${caution} · en stock ${have}`,
+        `Offre ${total} · caution ${caution} · ${have} en stock`,
       mine: (n: number, price: string, caution: string) =>
         `Votre offre : ${n} à ${price} (caution ${caution}).`,
       bid: "Déposer l'offre",
@@ -2118,7 +2116,7 @@ export const fr = {
       won: (n: number, price: string, total: string) =>
         `Marché gagné : ${n} à ${price}, soit ${total}.`,
       stock: (have: number, need: number, caution: string) =>
-        `En stock ${have} / ${need}. Caution en jeu : ${caution}.`,
+        `${have} / ${need} en stock. Caution en jeu : ${caution}.`,
       deliver: "Livrer au Doge",
     },
     /** A city's warehouse. */

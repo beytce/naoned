@@ -37,7 +37,7 @@ export function BankSection() {
   return (
     <section className="cartouche-line space-y-2 p-4">
       <h2 className="font-display text-base font-extrabold uppercase text-info">{t.title}</h2>
-      <p className="note">{t.help}</p>
+      <p className="meta">{t.help}</p>
       <p className="text-sm">
         {t.perMerchant(
           d(report.moneyPerMerchant),

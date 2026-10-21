@@ -869,7 +869,7 @@ function HomePanel({ props, onClose }: { props: GameProps; onClose: () => void }
   return (
     <ContextPanel
       title={m.home(props.account.pseudo ?? "")}
-      chip={<span className="meta">{m.stockChip(stock)}</span>}
+      chip={<span className="meta">{fr.game.inStock(stock)}</span>}
       status={hungry ? fr.game.domain.hungry : status}
       tone={hungry ? "vermilion" : ready > 0 ? "gold" : "lagoon"}
       progress={ready === 0 && next ? next.share : null}

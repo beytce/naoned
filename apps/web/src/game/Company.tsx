@@ -92,9 +92,9 @@ export function CompanySheet(props: GameProps) {
         <h3 className="font-display text-xl font-extrabold uppercase">
           {p ? t.of(cityName(props, p.city)) : t.title}
         </h3>
-        <p className="note">{t.help}</p>
+        <p className="meta">{t.help}</p>
         {!p ? (
-          <p className="note">{t.none}</p>
+          <p className="meta">{t.none}</p>
         ) : (
           <>
             <p className="meta">

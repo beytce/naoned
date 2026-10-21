@@ -39,8 +39,8 @@ export function TendersSheet(props: GameProps) {
     <Sheet open={props.sheet === "tenders"} onClose={() => props.setSheet(null)}>
       <div className="space-y-4 pt-6">
         <h3 className="font-display text-xl font-extrabold uppercase">{t.title}</h3>
-        <p className="note">{t.help(props.catalog.rules.tenderCautionPct ?? 0)}</p>
-        {props.view.tenders.length === 0 && <p className="note">{t.none}</p>}
+        <p className="meta">{t.help(props.catalog.rules.tenderCautionPct ?? 0)}</p>
+        {props.view.tenders.length === 0 && <p className="meta">{t.none}</p>}
         <ul className="space-y-3">
           {props.view.tenders.map((x) => (
             <Tender key={x.id} props={props} x={x} />
@@ -85,7 +85,7 @@ function Tender({ props, x }: { props: GameProps; x: TenderView }) {
           <p className="text-sm text-gold">
             {t.won(x.won.quantity, d(x.won.price), d(BigInt(x.won.price) * BigInt(x.won.quantity)))}
           </p>
-          <p className="note">{t.stock(have, x.won.quantity, d(x.won.caution))}</p>
+          <p className="meta">{t.stock(have, x.won.quantity, d(x.won.caution))}</p>
           <Slab
             className="w-full"
             disabled={props.busy || have < x.won.quantity}
@@ -120,7 +120,7 @@ function Tender({ props, x }: { props: GameProps; x: TenderView }) {
               <span>{t.quantity}</span>
               <Qty value={quantity} max={x.quantity} onChange={setQuantity} />
             </div>
-            <p className="note">
+            <p className="meta">
               {t.summary(d(BigInt(price * quantity)), d(BigInt(caution)), have)}
             </p>
             <Slab

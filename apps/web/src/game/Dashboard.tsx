@@ -55,7 +55,7 @@ export function DashboardSheet(props: GameProps) {
     <Sheet open={open} onClose={() => props.setSheet(null)}>
       <div className="space-y-4 pt-6">
         <h3 className="font-display text-xl font-extrabold uppercase">{t.title}</h3>
-        <p className="note">{t.help(data?.days.length ?? 7)}</p>
+        <p className="meta">{t.help(data?.days.length ?? 7)}</p>
         <dl className="grid grid-cols-3 gap-2 text-center">
           <Figure label={t.hour} value={d(perHour(props))} />
           <Figure label={t.today} value={data ? d(data.today) : "…"} />

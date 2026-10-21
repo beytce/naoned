@@ -156,15 +156,11 @@
     @apply font-mono text-xs uppercase leading-snug tracking-[0.12em] text-muted;
   }
   /*
-   * Two plain faces at 13 px with aligned figures, never capitals:
-   * .meta, muted, for data set under a name and glanced at (« 1,98 d · 40 en stock »,
-   * « Se termine dans 1 j 21 h »); .note, brighter, for a sentence the player reads through
-   * (a hint, what happens next).
+   * The one plain face of small text, never capitals: a datum set under a name and glanced at
+   * (« 1,98 d · 40 en stock », « Se termine dans 1 j 21 h ») or a short sentence read through (a
+   * hint, what happens next). 13 px, aligned figures, a step brighter than the kickers above it.
    */
   .meta {
-    @apply font-sans text-[13px] leading-snug text-muted tabular-nums;
-  }
-  .note {
     @apply font-sans text-[13px] leading-snug text-cream-dim tabular-nums;
   }
   /* Card: deep water, a thin foam line, rounded corners. */

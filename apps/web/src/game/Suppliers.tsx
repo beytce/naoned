@@ -38,8 +38,8 @@ export function SuppliersSheet(props: GameProps) {
         <h3 className="font-display text-xl font-extrabold uppercase">
           {t.title(props.names.city(city ?? ""))}
         </h3>
-        <p className="note">{t.help(pct, data?.minUnits ?? 0)}</p>
-        {data && lines.length === 0 && <p className="note">{t.none}</p>}
+        <p className="meta">{t.help(pct, data?.minUnits ?? 0)}</p>
+        {data && lines.length === 0 && <p className="meta">{t.none}</p>}
         <ul className="space-y-3">
           {lines.map((l) => (
             <li key={l.resource} className="cut bg-night-3 px-3 py-2 ring-1 ring-inset ring-line">

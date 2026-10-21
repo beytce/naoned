@@ -359,7 +359,7 @@ function MyOffers({ orders, props }: { orders: OrderView[]; props: GameProps }) 
             <p className={o.side === "sell" ? "text-lagoon" : "text-gold"}>
               {t.offerLine(o.side, o.remaining, props.names.resource(o.resource), d(o.price))}
             </p>
-            <p className="note">{t.expires(clock(o.expiresAt - props.now))}</p>
+            <p className="meta">{t.expires(clock(o.expiresAt - props.now))}</p>
           </div>
           <Slab
             size="sm"
@@ -396,7 +396,7 @@ function MudaPanel({ props }: { props: GameProps }) {
     <section className="cut border border-gold/50 bg-gold/5 p-3">
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-display text-sm font-extrabold uppercase text-gold">{t.title}</p>
-        {next && <p className="note shrink-0">{t.next(next)}</p>}
+        {next && <p className="meta shrink-0">{t.next(next)}</p>}
       </div>
       <p className="mt-1 text-xs text-cream-dim">
         {muda.arrivedAt === null ? t.first : goods.length > 0 ? t.help : t.empty}
@@ -582,7 +582,7 @@ function PriceChart({
   const raw = props.prices[resource] ?? [];
   const W = 320;
   const H = 110;
-  if (raw.length < 2) return <p className="note">{c.empty(props.priceDays)}</p>;
+  if (raw.length < 2) return <p className="meta">{c.empty(props.priceDays)}</p>;
   const ref = Number(reference);
   const values = raw.map((p) => Number(p.price));
   const lo = Math.min(...values, ref);
