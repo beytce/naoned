@@ -1,8 +1,5 @@
 import {
-  MARKET_MAKER,
   activeEvent,
-  currentCriee,
-  hasPass,
   hourIn,
   hourWithin,
   seasonActs,
@@ -32,6 +29,7 @@ export const NOTIFICATION_KINDS = [
   "act",
   "week",
   "season",
+  // Once the Pass's (live-2): no longer sent, kept for the preferences already saved.
   "criee",
   "deal",
   "family",
@@ -267,47 +265,6 @@ export class Notifier {
         });
       }
     }
-    // Pass Négociant: a Criée has just opened, and offers well below the reference price.
-    const holders = [...people].filter((id) => hasPass(this.world.ctx, state, id, now));
-    const criee = currentCriee(this.world.ctx, now);
-    if (criee && within(criee.startsAt)) {
-      for (const id of holders) {
-        notices.push({
-          accountId: id,
-          kind: "criee",
-          data: {
-            city: criee.city,
-            resource: criee.resource,
-            premiumBps: criee.premiumBps,
-            endsAt: criee.endsAt,
-          },
-        });
-      }
-    }
-    if (holders.length > 0) {
-      const refs = this.world.ctx.settings.referencePrices;
-      const deals = new Map<string, bigint>();
-      for (const o of Object.values(state.orders)) {
-        if (o.side !== "sell" || o.kind !== "limit" || o.playerId === MARKET_MAKER) continue;
-        if (!within(o.createdAt)) continue;
-        const ref = refs[o.resource] ?? 0n;
-        // An offer at least 10 % below the reference price.
-        if (ref > 0n && o.price * 10n <= ref * 9n) {
-          const best = deals.get(o.resource);
-          if (best === undefined || o.price < best) deals.set(o.resource, o.price);
-        }
-      }
-      for (const [resource, price] of deals) {
-        for (const id of holders) {
-          notices.push({
-            accountId: id,
-            kind: "deal",
-            data: { resource, price: price.toString() },
-          });
-        }
-      }
-    }
-
     // Last sprint: three days before the end of the season, everyone hears about it once.
     if (within(seasonEnd(this.world.ctx) - 3 * DAY_MS)) {
       for (const id of people) {

@@ -1473,8 +1473,6 @@ export const fr = {
           act: "Nouvel acte de la saison",
           week: "Résultats de la semaine",
           season: "Fin et ouverture de saison",
-          criee: "Criées (Pass Négociant)",
-          deal: "Bonnes affaires (Pass Négociant)",
           family: "Résultats de la Campagne et terres perdues",
           siege: "Terre menacée (alerte immédiate)",
           delivery: "Livraison arrivée",
@@ -2179,7 +2177,7 @@ export const fr = {
         "Commerce : les chaînes de luxe s'ouvrent avec les titres — verre de Murano au Marchand, draperie au Négociant, épices préparées à l'Armateur.",
         "Commerce : au-delà du niveau 5, les manufactures montent jusqu'au niveau 10, en volume ou en qualité.",
         "Commerce : affaires entre marchands — commandes sous séquestre, colleganza, et prêts de la Banque.",
-        "Pass Négociant : plus aucun avantage de jeu (ni quota à la Dogana, ni offre ouverte, ni produits frais en plus, ni commande du Doge échangée) ; il ne donne que de l'information à lire et du cosmétique.",
+        "Pass Négociant : plus aucun avantage de jeu (ni quota à la Dogana, ni offre ouverte, ni produits frais en plus, ni commande du Doge échangée, ni alerte de bonne affaire) ; il ne donne que de l'information à lire et du cosmétique.",
       ],
     },
     howTo: [
