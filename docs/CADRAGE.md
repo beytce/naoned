@@ -20,7 +20,7 @@ Cette version tranche les points ouverts de la v1. Chaque décision est reprise 
 | Guildes | Nom, membres, chat | + **Grands chantiers** hebdomadaires | Le multijoueur doit se voir, pas seulement exister dans le carnet |
 | Référentiel | Sans `world_id`, sans thème | Ressources et recettes rattachées à un **thème** | Les recettes changent d'une saison historique à l'autre |
 | Jeton Sceau | V2 | **Abandonné** | Revient à vendre de la monnaie de jeu |
-| Abonnement | Production automatisée, 20 ordres | **Pass Négociant : avantages légers et plafonnés, gagnables au classement** | La production automatisée achète du pouvoir économique ; un léger avantage pour qui joue, mesuré par le simulateur, reste acceptable |
+| Abonnement | Production automatisée, 20 ordres | **Pass Négociant : information à lire et cosmétique seulement, gagnable au classement** | La production automatisée achète du pouvoir économique ; depuis le 21 octobre 2026 (`live-2`), le Pass ne touche plus ni quantités, ni quota, ni nombre d'offres, ni temps |
 | Roadmap | Interface au jalon 6 | **Simulateur au jalon 1, tranche jouable au jalon 3** | Valider l'équilibrage et le plaisir de jeu avant de durcir le moteur |
 | Critère de sortie | 50 testeurs, 30 % à J+14 | 100 inscrits **venus de communautés**, 25 % à J+14 | Des amis testeurs ne mesurent pas la rétention réelle |
 
@@ -273,7 +273,7 @@ Fondaco est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et m
 - Des saisons d'un mois civil (Venise 1450 pour la première), remises à zéro, pour qu'aucun nouveau venu ne soit écrasé.
 - Une économie lisible : carnet d'ordres visuel, graphiques simples, conseiller qui explique les prix, journal de bourse public.
 - Une économie saine par construction : grand livre en partie double, indicateurs publics de masse monétaire et d'inflation.
-- Pas de pay-to-win écrasant : on ne vend jamais de ressources, de monnaie de jeu ni de production ; le Pass Négociant donne un léger avantage à qui joue, et se gagne aussi au classement.
+- Pas de pay-to-win : on ne vend jamais de ressources, de monnaie de jeu ni de production ; le Pass Négociant ne donne que de l'information à lire et du cosmétique, et se gagne aussi au classement.
 
 **Cible** : adultes de 25 à 55 ans, amateurs de gestion, de stratégie et de tableurs, qui jouent en sessions courtes sur mobile et longues sur PC.
 
@@ -527,11 +527,11 @@ Les prix de référence ne sont pas dans `resources` mais dans `worlds.settings`
 
 ## Monétisation
 
-Le jeu est gratuit et ne vend jamais de ressources, de monnaie de jeu ni de production. Le Pass Négociant donne un léger avantage à qui joue ; il se gagne aussi au classement.
+Le jeu est gratuit et ne vend jamais de ressources, de monnaie de jeu ni de production. Le Pass Négociant ne donne que de l'information à lire et du cosmétique ; il se gagne aussi au classement.
 
 | Offre | Contenu | Phase |
 | --- | --- | --- |
-| Pass Négociant (3,99 € la saison, 1,49 € la semaine) | Quota Dogana +20 %, 2 offres ouvertes de plus, produits frais +8 % au lieu de +5 %, une commande du Doge échangée par jour, carnet à 10 offres, 7 jours d'historique des prix, alertes des Criées et des bonnes affaires, sceau et palette « Or de Venise ». Gagné par le top 10 de la semaine (7 jours) et selon le rang final de la saison | Désactivé le 16 octobre 2026 (`pass.enabled`), annoncé pour la saison prochaine : ni attribution, ni avantage, ni mention hors de l'annonce du profil. Paiement Stripe à brancher |
+| Pass Négociant (3,99 € la saison, 1,49 € la semaine) | Depuis le 21 octobre 2026 (`live-2`), uniquement ce que liste `settings.pass.perks` : cours du Rialto sur 30 jours (7 pour tous), tableau de bord sur 30 jours (7 pour tous), carnet d'ordres à 10 offres (5 pour tous), sceau et palette « Or de Venise ». Plus de quota Dogana, d'offres ouvertes ni de produits frais en plus : le schéma refuse ces trois réglages s'ils ne valent pas 0 ; plus d'alertes des Criées (coupées). L'export CSV du livre de compte reste gratuit pour tous. Gagné par le top 10 de la semaine (7 jours) et selon le rang final de la saison | Désactivé le 16 octobre 2026 (`pass.enabled`), annoncé pour la saison prochaine : ni attribution, ni avantage, ni mention hors de l'annonce du profil. Paiement débranché (`purchasePass` refuse tout achat) jusqu'à un `pnpm sim --pass 0.2` conforme sur 10 graines |
 | Cosmétiques à l'unité | Blasons, façades, bannières de guilde | V1 |
 | Mondes privés | Monde dédié pour une communauté, une école ou une entreprise, facturé par saison | V2 |
 
