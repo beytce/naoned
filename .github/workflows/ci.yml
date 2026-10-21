@@ -23,3 +23,27 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @comptoirs/web build
+
+  # The first session on two phones (apps/web/e2e/layout.mjs): fails on anything written over
+  # something else in the HUD, a target under 44 px, or a page scrolling sideways.
+  e2e:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @comptoirs/web exec playwright-core install --with-deps chromium
+      - run: pnpm --filter @comptoirs/web build
+      - run: pnpm --filter @comptoirs/web e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-shots
+          path: apps/web/e2e-shots
+          retention-days: 14

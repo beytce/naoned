@@ -3,7 +3,7 @@
 // long, when its ring sits under its own bubble, or when the bubble hides the target.
 //
 // Run against the dev servers (`pnpm dev`, the server's mails printed in its log):
-//   SERVER_LOG=server.log pnpm --filter @comptoirs/web e2e
+//   SERVER_LOG=server.log pnpm --filter @comptoirs/web e2e:tutorial
 // Env: BASE_URL (http://localhost:5173), SERVER_LOG (where the magic link is printed),
 // CHROMIUM (a Chromium or headless shell), SHOTS (a folder to keep a picture of every step).
 import { mkdirSync, readFileSync } from "node:fs";

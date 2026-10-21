@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json",
-    "e2e": "node e2e/tutorial.mjs"
+    "e2e": "node e2e/layout.mjs",
+    "e2e:tutorial": "node e2e/tutorial.mjs"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "5.2.6",

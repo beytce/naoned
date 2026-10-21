@@ -31,9 +31,12 @@ pnpm lint
 pnpm sim         # 5 graines × 30 jours ; rapport dans apps/simulator/out/report.md
 pnpm sim --players 40 --live   # le petit monde de la bêta : 40 maisons PNJ
 pnpm sim --seeds 1 --scenario scenarios/high-tax.json   # chemin relatif à apps/simulator
-SERVER_LOG=server.log pnpm --filter @comptoirs/web e2e  # joue le tutoriel jusqu'à la première livraison
+pnpm --filter @comptoirs/web build && pnpm --filter @comptoirs/web e2e  # la première session à 390×844 et 320×568
+SERVER_LOG=server.log pnpm --filter @comptoirs/web e2e:tutorial  # le tutoriel jusqu'à la première livraison
 ```
 
-Le test du tutoriel (`apps/web/e2e/tutorial.mjs`) tourne contre `pnpm dev` dont la sortie est enregistrée dans `server.log` (il y lit le lien de connexion). Il touche ce que Lorenzo entoure et échoue si la bulle cache sa cible ou si le guide ne montre plus rien. `CHROMIUM` donne le navigateur (sinon celui de Playwright), `SHOTS` un dossier où garder une capture par étape. À lancer après tout changement du guide, des feuilles ou du panneau.
+Le test de mise en page (`apps/web/e2e/layout.mjs`, lancé par le CI après le build) démarre lui-même le serveur sur une base PGlite en mémoire qui sert l'application construite, son horloge partie un lundi matin à Paris (la trêve de la Terraferme en cours) et ses mules rapides. Il joue la première session sur deux téléphones, 390×844 et 320×568 : connexion, nom, tout le guide de Lorenzo (produire, récolter, livrer, le Rialto, le Livre de compte), la Terraferme pendant la trêve, les Avis. Après chaque étape, il échoue si la page défile de côté, si deux blocs du HUD (`data-hud`) se recouvrent de plus de 2 px ou si une cible tactile du HUD fait moins de 44 px (`apps/web/e2e/assert.mjs`). Les captures vont dans `apps/web/e2e-shots` (artefact du CI en cas d'échec) ; `REPORT=1` liste tous les défauts sans s'arrêter au premier, `SIZES=320x568` ne joue qu'un format. Les parcours suivants (tiroir, porte Affaires, code à 6 chiffres) s'ajoutent à ce script, pas dans un second.
+
+Le test du tutoriel (`apps/web/e2e/tutorial.mjs`, à la main) tourne contre `pnpm dev` dont la sortie est enregistrée dans `server.log` (il y lit le lien de connexion). Il touche ce que Lorenzo entoure et échoue si la bulle cache sa cible ou si le guide ne montre plus rien. `CHROMIUM` donne le navigateur (sinon celui de Playwright), `SHOTS` un dossier où garder une capture par étape. À lancer après tout changement du guide, des feuilles ou du panneau.
 
 Un scénario (exemple : `apps/simulator/scenarios/high-tax.json`) est un fichier JSON qui remplace des clés des paramètres de Venise 1450 (`packages/engine/src/themes/venice1450.settings.ts`), par exemple `{ "marketTaxBps": 500 }`.
