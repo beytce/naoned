@@ -155,14 +155,15 @@
   .label {
     @apply font-mono text-xs uppercase leading-snug tracking-[0.12em] text-muted;
   }
-  /* A line of data under a name: « 1,98 d · 40 en stock », plain face, aligned figures. */
+  /*
+   * Two plain faces at 13 px with aligned figures, never capitals:
+   * .meta, muted, for data set under a name and glanced at (« 1,98 d · 40 en stock »,
+   * « Se termine dans 1 j 21 h »); .note, brighter, for a sentence the player reads through
+   * (a hint, what happens next).
+   */
   .meta {
     @apply font-sans text-[13px] leading-snug text-muted tabular-nums;
   }
-  /*
-   * A sentence or a time left, small but read: the plain face, aligned figures. Space Mono
-   * capitals (.label) stay for kickers of one to three words.
-   */
   .note {
     @apply font-sans text-[13px] leading-snug text-cream-dim tabular-nums;
   }

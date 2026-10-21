@@ -72,7 +72,7 @@ function Reports() {
         <ul className="mt-3 space-y-3">
           {rows.map((m) => (
             <li key={m.id} className="rounded-xl bg-night-3 p-3 text-sm">
-              <p className="label">
+              <p className="meta">
                 {m.family} · {m.pseudo ?? "—"} · {m.reports} signalement{m.reports > 1 ? "s" : ""}
                 {m.hidden ? " · masqué" : ""}
               </p>
@@ -174,7 +174,7 @@ export function Admin() {
         <div className="mt-3 grid grid-cols-5 gap-2 text-center">
           {data.retention.map((r) => (
             <div key={r.day}>
-              <p className="label">J+{r.day}</p>
+              <p className="meta">J+{r.day}</p>
               <Big className="mt-1 text-lg">{pct(r.returned, r.eligible)}</Big>
               <p className="font-mono text-xs text-muted">
                 {r.returned}/{r.eligible}

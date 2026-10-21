@@ -293,7 +293,7 @@ export function LegalPage({ page }: { page: LegalPageName }) {
       <h1 className="mt-6 font-display text-3xl font-extrabold uppercase leading-tight text-cream">
         {TITLES[page]}
       </h1>
-      <p className="label mt-2">Dernière mise à jour : {LEGAL.updated}</p>
+      <p className="meta mt-2">Dernière mise à jour : {LEGAL.updated}</p>
       {page === "mentions" ? <Mentions /> : page === "privacy" ? <Privacy /> : <Terms />}
       <LegalLinks className="mt-10 border-t border-line pt-5" />
     </main>

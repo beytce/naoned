@@ -36,7 +36,10 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
     <Sheet open onClose={props.onClose}>
       <div className="space-y-4">
         <div>
-          <Label className="text-gold">{t.kicker(hoursAway(props.now - data.since))}</Label>
+          <div className="flex flex-wrap items-baseline gap-x-2">
+            <Label className="text-gold">{t.kicker}</Label>
+            <span className="meta">{hoursAway(props.now - data.since)}</span>
+          </div>
           <h3 className="mt-1 font-display text-2xl font-extrabold uppercase">{t.title}</h3>
         </div>
         {data.slept && <p className="text-sm text-lagoon">{t.slept}</p>}

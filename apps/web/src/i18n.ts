@@ -1260,7 +1260,7 @@ export const fr = {
       } as Record<string, [string, string]>,
     },
     welcome: {
-      kicker: (away: string) => `Absent ${away}`,
+      kicker: "Absent",
       title: "Bon retour au comptoir",
       slept: "Votre comptoir s'est mis en sommeil : vos ouvriers n'ont pas mangé ni connu la faim.",
       earned: "Gagné",

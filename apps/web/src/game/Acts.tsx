@@ -7,6 +7,8 @@ import type { PlayerView } from "./types.js";
 
 const t = () => fr.game.acts;
 const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
+/** An act's numeral: « III ». */
+const numeral = (index: number) => ROMAN[index] ?? String(index + 1);
 
 type Act = PlayerView["acts"][number];
 
@@ -41,7 +43,7 @@ export function ActCard(props: GameProps) {
   return (
     <Sheet open={props.sheet === "act"} onClose={() => props.setSheet(null)}>
       <div className="space-y-4 text-center">
-        <Label className="text-gold">{t().kicker(ROMAN[act.index] ?? String(act.index + 1))}</Label>
+        <Label className="text-gold">{t().kicker(numeral(act.index))}</Label>
         <h3 className="font-display text-3xl font-extrabold uppercase leading-tight">{title}</h3>
         <p className="text-sm leading-relaxed text-cream-dim">{text}</p>
         <div className="flex justify-center gap-1.5">
@@ -50,7 +52,7 @@ export function ActCard(props: GameProps) {
               key={a.index}
               className={`label rounded-md px-2 py-1 ${a.index === act.index ? "bg-gold text-ink" : a.index < act.index ? "bg-lagoon/30" : "bg-night-4"}`}
             >
-              {ROMAN[a.index] ?? a.index + 1}
+              {numeral(a.index)}
             </span>
           ))}
         </div>
