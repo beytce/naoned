@@ -65,6 +65,7 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - Écartées : étoiles rouges et station de recherche (les ballots de Faraj tiennent ce rôle), étoiles blanches (c'est la Campagne), station d'échange (le second comptoir, retiré), récolteur d'étoiles (du rendement en plus), scanners (rien de caché sur la carte).
 
 ## V1 (après la première saison)
+- Escarmouches : reprendre une partie en cours après un redémarrage du serveur (aujourd'hui elle est interrompue, sans Gloire ni quota consommé, terra-m1) ; demande d'enregistrer l'état de la partie à chaque pas.
 - Chaînes textile (laine, tissu, vêtements) et ameublement (meubles).
 - Paiement du Pass Négociant (Stripe Checkout + webhook, CGV) ; export CSV et conseiller détaillé pour les abonnés.
 - Cosmétiques à l'unité ; le Doge de la saison nomme un événement de la gazette de la saison suivante.

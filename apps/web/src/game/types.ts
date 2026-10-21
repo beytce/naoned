@@ -1163,6 +1163,8 @@ interface SkirmishDay {
   minHumans: number;
   opensAtHour: number;
   closesAtHour: number;
+  /** A match of the merchant's lost to a restart lately: no glory, its quota untouched. */
+  interrupted: boolean;
 }
 
 /**

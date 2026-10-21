@@ -220,7 +220,9 @@ describe("a skirmish's row", () => {
       .from(notifications)
       .where(sql`${notifications.data}->>'event' = 'skirmish_aborted'`);
     expect(told.length).toBe(2);
-    expect(told.every((n) => n.kind === "family" && n.data.ranked === true)).toBe(true);
+    expect(
+      told.every((n) => n.kind === "family" && n.data.ranked === true && n.data.rankedLeft === 1),
+    ).toBe(true);
     // A new match: the interruption is told no more, and the ranked match is still to play.
     expect((await join(ada)).statusCode).toBe(200);
     const lobby = await get(ada, "/api/game/skirmish");

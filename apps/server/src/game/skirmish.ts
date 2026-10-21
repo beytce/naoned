@@ -125,8 +125,11 @@ export class SkirmishHub {
             data: {
               event: "skirmish_aborted",
               ranked: r.ranked,
-              // Whether its ranked match of the day is still to play (nothing was spent).
-              rankedLeft: skirmishRankedLeft(this.world.ctx, this.world.current, accountId, now),
+              // Whether its ranked match of the day is still to play (nothing was spent), on the
+              // week's map.
+              rankedLeft: this.onMap(accountId)
+                ? skirmishRankedLeft(this.world.ctx, this.world.current, accountId, now)
+                : 0,
             },
           })),
       ),
@@ -272,6 +275,12 @@ export class SkirmishHub {
     return true;
   }
 
+  /** Set down on the week's map, and still on it. */
+  private onMap(accountId: string): boolean {
+    const me = this.world.current.terra?.map.players[accountId];
+    return !!me && me.eliminatedAt === undefined;
+  }
+
   /** Waits for the rows' writes queued so far (tests, shutdown). */
   flush(): Promise<void> {
     return this.writes.then(() => undefined);
@@ -288,8 +297,7 @@ export class SkirmishHub {
   private friendlyWhy(accountId: string, humans: number, startAt: number): FriendlyWhy | null {
     const cfg = this.cfg;
     if (!cfg?.skirmish) return "few";
-    const me = this.world.current.terra?.map.players[accountId];
-    if (!me || me.eliminatedAt !== undefined) return "off_map";
+    if (!this.onMap(accountId)) return "off_map";
     if (skirmishRankedLeft(this.world.ctx, this.world.current, accountId, startAt) === 0)
       return "quota";
     if (!skirmishRanked(cfg, Math.max(humans, cfg.skirmish.minHumans), startAt)) return "late";
@@ -301,7 +309,6 @@ export class SkirmishHub {
     const cfg = this.cfg;
     if (!cfg?.skirmish) return { phase: "off" as const };
     // The ranked matches the merchant may still play today, and when the skirmishes open.
-    const onMap = this.world.current.terra?.map.players[accountId];
     const rankedLeft = skirmishRankedLeft(this.world.ctx, this.world.current, accountId, now);
     // The next match the merchant could launch: after the lobby's and the match's, if any.
     const lobbyMs = cfg.skirmish.lobbySeconds * 1_000;
@@ -320,7 +327,7 @@ export class SkirmishHub {
       // Whether a ranked match may still be played today, after the one under way if any.
       rankedLater: rankedLeft > 0 && skirmishRanked(cfg, cfg.skirmish.minHumans, nextAt),
       // Glory is paid only to a merchant set down on the week's map, and still on it.
-      onMap: !!onMap && onMap.eliminatedAt === undefined,
+      onMap: this.onMap(accountId),
       minHumans: cfg.skirmish.minHumans,
       opensAtHour: cfg.openHours.from,
       closesAtHour: cfg.openHours.to,

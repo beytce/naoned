@@ -1443,15 +1443,17 @@ export const fr = {
       siege: (land: string, by: string, lances: number, time: string) =>
         `${land} menacée : ${lances} troupes ${by} arrivent à ${time}. Renforcez la garnison !`,
       family: (event: string, data: Record<string, string>) =>
-        event === "land_lost"
-          ? `${data.land} est perdue, prise par ${data.by}.`
-          : event === "decree_share"
-            ? `Votre part des décrets : ${data.amount}.`
-            : data.won === "1"
-              ? `Votre famille gagne la semaine${data.decrees ? ` et impose ${data.decrees}` : ""} !`
-              : data.winner
-                ? `Les ${data.winner} gagnent la semaine${data.decrees ? ` et imposent ${data.decrees}` : ""}.`
-                : "La semaine se termine sans vainqueur.",
+        event === "skirmish_aborted"
+          ? `Escarmouche : partie interrompue par une maintenance, aucune Gloire${data.left ? ", votre partie classée du jour reste disponible" : ""}.`
+          : event === "land_lost"
+            ? `${data.land} est perdue, prise par ${data.by}.`
+            : event === "decree_share"
+              ? `Votre part des décrets : ${data.amount}.`
+              : data.won === "1"
+                ? `Votre famille gagne la semaine${data.decrees ? ` et impose ${data.decrees}` : ""} !`
+                : data.winner
+                  ? `Les ${data.winner} gagnent la semaine${data.decrees ? ` et imposent ${data.decrees}` : ""}.`
+                  : "La semaine se termine sans vainqueur.",
       week: (week: number, rank: number, gain: string, award: string | null) =>
         `Semaine ${week} : vous terminez ${rank}${rank === 1 ? "er" : "e"} (${gain}).${award ? ` Vous êtes ${award} !` : ""}`,
       push: {
@@ -1946,6 +1948,9 @@ export const fr = {
       night: (opensAt: number, closesAt: number) =>
         `☾ Pas d'escarmouche la nuit : elles reprennent à ${opensAt} h. Une partie classée par jour, de ${opensAt} h à ${closesAt} h.`,
       nightShort: (hour: number) => `☾ Escarmouches dès ${hour} h`,
+      /** A match lost to a restart of the server. */
+      interrupted: (rankedLeft: boolean) =>
+        `Partie interrompue par une maintenance : aucune Gloire${rankedLeft ? ", votre partie classée du jour reste disponible" : ", rien n'est compté"}.`,
       open: "Lancer une escarmouche",
       join: "Rejoindre",
       lobby: (players: number, time: string) =>
@@ -2174,7 +2179,7 @@ export const fr = {
         "Terraferme : l'heure de bataille, chaque soir de 20 h à 21 h, les fronts avancent dix fois plus vite.",
         "Terraferme : les ports, sur les rives de la lagune, du lac de Garde et de l'Adriatique ; les barques débarquent sur une autre rive, les galères gardent la vôtre.",
         "Le guide de la Terraferme, avec ses schémas, dans l'Aide et sur la carte de la Terraferme (« ? Guide »).",
-        "Terraferme : les escarmouches, des parties en direct d'un quart d'heure, de 8 h à 22 h. Une seule par jour est classée : la première avec au moins un autre marchand, si votre camp est posé sur la carte de la semaine et qu'elle finit avant 22 h ; son rang rapporte 45, 30, 20 ou 10 de Gloire à la semaine. Les autres parties sont amicales, sans Gloire.",
+        "Terraferme : les escarmouches, des parties en direct d'un quart d'heure, de 8 h à 22 h. Une seule par jour est classée : la première avec au moins un autre marchand, si votre camp est posé sur la carte de la semaine et qu'elle finit avant 22 h ; son rang rapporte 45, 30, 20 ou 10 de Gloire à la semaine. Les autres parties sont amicales, sans Gloire. Une partie interrompue par une maintenance ne rapporte rien et ne compte pas : votre partie classée du jour reste à jouer.",
         "Terraferme : une semaine par mois en équipes, les marchands d'une même région ensemble.",
         "Terraferme : signaux sur la carte, cible désignée aux alliés, ducats entre alliés et embargo depuis les villes que vous tenez.",
         "Terraferme : bombardes (un tir par jour rend libres une terre ennemie et ses voisines) et remparts qui en protègent.",

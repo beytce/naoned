@@ -19,6 +19,11 @@ interface Retention {
   retention: { day: number; eligible: number; returned: number }[];
   sessions: { day: string; sessions: number; players: number }[];
   skirmishes: { day: string; ranked: number; friendly: number; night: number }[];
+  skirmishMatches: {
+    weeks: { week: string; paid: number; done: number; aborted: number }[];
+    duplicates: number;
+    abortedPaid: number;
+  };
   tutorial: { step: string; players: number }[];
   lastSeen: Record<string, number>;
 }
@@ -256,6 +261,46 @@ export function Admin() {
                   <td className="text-right">{s.ranked}</td>
                   <td className="text-right">{s.friendly}</td>
                   <td className={`text-right ${s.night > 0 ? "text-vermilion" : ""}`}>{s.night}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Panel>
+      <Panel>
+        <Label>Parties d'escarmouche</Label>
+        <p className="mt-1 text-xs text-cream-dim">
+          Par semaine : payées (classées), terminées sans Gloire, interrompues par un redémarrage.
+          Contrôles toujours à 0 : Gloire d'une même partie versée deux fois à un marchand, Gloire
+          versée pour une partie interrompue.
+        </p>
+        <p
+          className={`mt-2 text-sm ${
+            data.skirmishMatches.duplicates + data.skirmishMatches.abortedPaid > 0
+              ? "text-vermilion"
+              : "text-lagoon"
+          }`}
+        >
+          Payées deux fois : {data.skirmishMatches.duplicates} · payées après interruption :{" "}
+          {data.skirmishMatches.abortedPaid}
+        </p>
+        {data.skirmishMatches.weeks.length > 0 && (
+          <table className="mt-3 w-full text-sm">
+            <thead>
+              <tr className="label text-left">
+                <th>Semaine</th>
+                <th className="text-right">Payées</th>
+                <th className="text-right">Sans Gloire</th>
+                <th className="text-right">Interrompues</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.skirmishMatches.weeks.map((w) => (
+                <tr key={w.week} className="border-b border-line/70">
+                  <td className="py-1">{w.week.slice(5)}</td>
+                  <td className="text-right">{w.paid}</td>
+                  <td className="text-right">{w.done}</td>
+                  <td className="text-right">{w.aborted}</td>
                 </tr>
               ))}
             </tbody>

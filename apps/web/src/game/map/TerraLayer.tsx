@@ -167,6 +167,11 @@ export function SkirmishBar({
           {k.leave}
         </button>
       </div>
+      {status && status.phase !== "off" && status.interrupted && (
+        <p className="cut border border-gold/50 bg-gold/10 px-2 py-1.5 text-xs text-gold">
+          {k.interrupted(status.rankedLeft > 0 && status.onMap)}
+        </p>
+      )}
       {stake && (
         <p className={`text-xs font-semibold ${stake.ranked ? "text-gold" : "text-cream-dim"}`}>
           {stake.ranked ? "★ " : ""}

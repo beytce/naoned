@@ -96,6 +96,7 @@ function text(n: Notice, props: GameProps): string {
         won: n.data.won ? "1" : "",
         winner: n.data.winner ? familyName(String(n.data.winner)) : "",
         decrees,
+        left: Number(n.data.rankedLeft ?? 0) > 0 ? "1" : "",
       });
     }
     case "week": {
