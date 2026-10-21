@@ -7,7 +7,9 @@ vérifiée), une semaine en équipes avec Milan contre le joueur puis sa clôtur
 `GET /api/game/terra` réécrite au passage : « Équipe · Terraferma », « sur vous », « Bataille à
 20 h », « Terraferma l'emporte » vérifiés sur la plaque), les Avis (plus de « Premiers pas »). Après chaque étape, `e2e/assert.mjs` échoue sur :
 une page qui défile de côté, deux blocs du HUD l'un sur l'autre, le HUD sur un nom ou un médaillon
-de la carte (`data-map-label`), une cible de moins de 44 px, une ligne d'identité coupée, un nom
+de la carte (`data-map-label`), une cible de moins de 44 px (celles du HUD, et tout bouton ou
+lien d'une fenêtre, d'un panneau ou de la bulle du guide, mesuré au doigt autour de son centre),
+une ligne de données (`.meta` sans point final) sur deux lignes, une ligne d'identité coupée, un nom
 réduit à moins de dix lettres, l'anneau de Lorenzo posé ailleurs que sur ce qu'un doigt touche sous
 son centre, une pièce des effets restée à l'écran (sur la bulle du guide comprise).
 

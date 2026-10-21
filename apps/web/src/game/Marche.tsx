@@ -50,11 +50,16 @@ function Row({
           {props.names.resource(line.resource)}
         </p>
         <p className="meta mt-0.5 flex items-center gap-2">
-          <span>{fr.game.inStock(have(props.view, line.resource))}</span>
+          <span className="whitespace-nowrap">
+            {fr.game.inStock(have(props.view, line.resource))}
+          </span>
           <ChangeTag value={change(points)} />
         </p>
       </div>
-      <Sparkline points={points} width={64} height={26} />
+      {/* Under 360 px the curve gives way to the stock: the trade sheet draws it bigger. */}
+      <span className="hidden shrink-0 min-[360px]:block">
+        <Sparkline points={points} width={64} height={26} />
+      </span>
       <div className="w-20 text-right">
         <p
           className="font-display text-sm font-semibold tabular-nums"

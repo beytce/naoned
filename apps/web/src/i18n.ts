@@ -1213,7 +1213,7 @@ export const fr = {
       claim: "Encaisser",
       reward: "Récompense",
       allDone: "Objectifs du jour remplis. Revenez demain pour la suite.",
-      next: (title: string, inTime: string) => `Prochain objectif « ${title} » dans ${inTime}`,
+      next: (title: string, inTime: string) => `Prochain objectif « ${title} » dans ${inTime}.`,
       items: {
         first_city_sale: [
           "Vendre à une ville",

@@ -620,8 +620,9 @@ export function clock(ms: number): string {
   const h = Math.floor((s % 86_400) / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
-  if (d > 0) return `${d} j ${h} h`;
-  if (h > 0) return `${h} h ${m.toString().padStart(2, "0")}`;
+  // Non-breaking spaces: a time left never ends a line on « 21 » with its « h » on the next.
+  if (d > 0) return `${d}\u00a0j\u00a0${h}\u00a0h`;
+  if (h > 0) return `${h}\u00a0h\u00a0${m.toString().padStart(2, "0")}`;
   return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
 }
 

@@ -15,6 +15,8 @@
 //   into view first, its window's scroll put back after (another layer laid over a side, as
 //   Lorenzo's bubble over a panel, is left to the guide's check);
 // - line: a line of the HUD that gives way item by item (`data-hud-meta`) shows one cut;
+// - wrap: a line of data (`.meta` that is not a sentence: no full stop, « 1,98 d · 40 en
+//   stock », « Se termine dans 1 j 21 h ») takes more than one line on the screen;
 // - guide: Lorenzo's ring is drawn where its target is not the element touched under its centre
 //   (a sheet over it), or something is left over his bubble (a coin of the effects, still shown
 //   once their flights have ended).
@@ -39,6 +41,7 @@ export async function assertLayout(page) {
     ...(await overflows(page)),
     ...(await overlaps(page)),
     ...(await touches(page)),
+    ...(await wraps(page)),
     ...(await guide(page)),
   ]);
 }
@@ -258,6 +261,34 @@ function touches(page) {
     },
     { target: TARGET },
   );
+}
+
+/** A line of data reads on one line: never « 21 » at the end of one, « h » on the next. */
+function wraps(page) {
+  return page.evaluate(() => {
+    const wrong = [];
+    for (const el of document.querySelectorAll(".meta")) {
+      const text = (el.textContent ?? "").replace(/\s+/g, " ").trim();
+      // A sentence, read through, may run over several lines.
+      if (text === "" || /[.!?:]( |$)/.test(text)) continue;
+      if (el.getClientRects().length === 0) continue;
+      const r = el.getBoundingClientRect();
+      if (r.bottom <= 0 || r.top >= innerHeight || r.width < 1) continue;
+      const s = getComputedStyle(el);
+      if (s.visibility === "hidden" || Number(s.opacity) === 0) continue;
+      const line = Number.parseFloat(s.lineHeight) || Number.parseFloat(s.fontSize) * 1.375;
+      // Its text's own boxes: one line is one height of line, whatever the box around it.
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const tops = new Set([...range.getClientRects()].map((b) => Math.round(b.top / (line / 2))));
+      const rows = Math.round(range.getBoundingClientRect().height / line);
+      if (rows > 1 && tops.size > 1)
+        wrong.push(
+          `.meta « ${text.slice(0, 50)} » wraps on ${rows} lines (${Math.round(r.width)} px wide)`,
+        );
+    }
+    return wrong;
+  });
 }
 
 /** Lorenzo's ring on what is touched under it; nothing left over his bubble. */

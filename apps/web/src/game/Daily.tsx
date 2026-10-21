@@ -13,9 +13,10 @@ export function Daily(props: GameProps) {
   const ready = daily.tasks.some((task) => task.done && !task.claimed);
   return (
     <Panel glow={ready ? "gold" : undefined}>
-      <div className="flex items-center justify-between gap-2">
-        <Label className="text-gold">{t.title}</Label>
-        <span className="meta text-lagoon">{t.streak(daily.streak)}</span>
+      {/* On a narrow phone the streak goes under the kicker, whole, rather than both cut in two. */}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+        <Label className="whitespace-nowrap text-gold">{t.title}</Label>
+        <span className="meta whitespace-nowrap text-lagoon">{t.streak(daily.streak)}</span>
       </div>
       <ul className="mt-3 space-y-2">
         {daily.tasks.map((task) => (
