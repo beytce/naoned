@@ -30,6 +30,7 @@ export function Slab(props: {
   coach?: string;
 }) {
   const size = {
+    // Drawn small, touched at 44 px: the hit area reaches 8 px above and below the slab.
     sm: "px-4 py-2 text-xs",
     md: "px-6 py-3 text-sm",
     lg: "px-7 py-4 text-base",
@@ -44,7 +45,7 @@ export function Slab(props: {
       }}
       disabled={props.disabled}
       data-coach={props.coach}
-      className={`group relative isolate inline-flex pb-1 pr-1 font-display font-extrabold uppercase tracking-wide disabled:pointer-events-none disabled:opacity-35 ${props.className ?? ""}`}
+      className={`group relative isolate inline-flex pb-1 pr-1 font-display font-extrabold uppercase tracking-wide disabled:pointer-events-none disabled:opacity-35 ${props.size === "sm" ? "before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']" : ""} ${props.className ?? ""}`}
     >
       <span
         aria-hidden="true"
@@ -91,7 +92,8 @@ export function Tabs<T extends string>(props: {
                 if (!on) haptic("tap");
                 props.onChange(o.value);
               }}
-              className={`flex-1 pb-2.5 pt-1 font-display text-xs font-extrabold uppercase tracking-[0.12em] transition-colors ${on ? "text-cream" : "text-muted hover:text-cream-dim"}`}
+              // The hit area climbs 14 px above the word: 44 px under the thumb.
+              className={`relative flex-1 pb-2.5 pt-1 font-display text-xs font-extrabold uppercase tracking-[0.12em] transition-colors before:absolute before:inset-x-0 before:-top-3.5 before:bottom-0 before:content-[''] ${on ? "text-cream" : "text-muted hover:text-cream-dim"}`}
             >
               {o.label}
             </button>
@@ -118,7 +120,7 @@ export function Tabs<T extends string>(props: {
             type="button"
             data-coach={props.coach ? `${props.coach}-${o.value}` : undefined}
             onClick={() => props.onChange(o.value)}
-            className={`slab flex-1 px-3 py-2.5 font-display text-xs font-extrabold uppercase tracking-wide transition ${on ? "bg-cream text-night" : "bg-night-3 text-cream-dim hover:text-cream"}`}
+            className={`slab min-h-11 flex-1 px-3 py-2.5 font-display text-xs font-extrabold uppercase tracking-wide transition ${on ? "bg-cream text-night" : "bg-night-3 text-cream-dim hover:text-cream"}`}
           >
             {o.label}
           </button>
@@ -628,7 +630,7 @@ export function Segmented<T extends string>({
   coach?: string;
 }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap gap-2">
       {options.map((o) => (
         <button
           key={o.value}
@@ -636,7 +638,7 @@ export function Segmented<T extends string>({
           aria-pressed={value === o.value}
           data-coach={coach ? `${coach}-${o.value}` : undefined}
           onClick={() => onChange(o.value)}
-          className={`slab px-3 py-1.5 font-mono text-xs uppercase tracking-[0.06em] transition-colors ${value === o.value ? "bg-info/20 font-bold text-info" : "bg-night-3 text-cream-dim"}`}
+          className={`slab min-h-11 px-4 py-2.5 font-mono text-xs uppercase tracking-[0.06em] transition-colors ${value === o.value ? "bg-info/20 font-bold text-info" : "bg-night-3 text-cream-dim"}`}
         >
           {o.label}
         </button>
