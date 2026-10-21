@@ -427,7 +427,9 @@ Ce second tour est enfin un plan, et plus un catalogue. J'ai vérifié les point
 
 **Le chef.** Approuvée au premier tour et maintenue. Elle est placée après ux-1 et loop-1 pour réutiliser la liste et les avis, sans nouvelle surface.
 
-### 20. Jouer en invité, rattacher son e-mail ensuite, code à 6 chiffres (`ftue-3` · effort L · impact critique)
+### 20. ~~Jouer en invité, rattacher son e-mail ensuite, code à 6 chiffres (`ftue-3` · effort L · impact critique)~~
+
+**Refusé par le porteur le 21 octobre 2026 : pas de jeu en invité.** Tout ce qui en dépend (anti-multi-compte des invités, purge des invités, classement filtré sur les e-mails vérifiés pour les invités) tombe avec lui ; le code à 6 chiffres (`ux-m2`) reste.
 
 *Experte premières minutes et onboarding*
 
