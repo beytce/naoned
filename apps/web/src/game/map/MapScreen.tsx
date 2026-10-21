@@ -506,6 +506,8 @@ export function MapScreen(
 
   // On a computer, the trade's side column (orders, workshops, prices) beside the map.
   const side = wide && !campaign && !terra;
+  // Where the HUD's band across the top ends: the map is framed under it on a phone.
+  const [hudBand, setHudBand] = useState(0);
   const insets = wide
     ? // The doors at the foot of the screen (and the campaign's pledge above them) stay clear.
       {
@@ -515,7 +517,7 @@ export function MapScreen(
         left: 40,
       }
     : {
-        top: campaign || terra ? 160 : 150,
+        top: Math.max(campaign || terra ? 160 : 150, hudBand),
         right: 12,
         bottom: panelUp ? 200 : 100,
         left: 12,
@@ -656,6 +658,7 @@ export function MapScreen(
         }}
       />
       <MapHud
+        onBand={setHudBand}
         pseudo={pseudo || m.home("")}
         crest={crest}
         title={view.standing.title.current.name}

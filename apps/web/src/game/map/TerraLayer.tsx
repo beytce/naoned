@@ -644,6 +644,7 @@ export const TerraOverlay = memo(function TerraOverlay({
         return (
           <g
             key={`label-${l.i}`}
+            data-map-label
             pointerEvents="none"
             textAnchor="middle"
             opacity={strong || focus === "milan" ? 1 : 0.6}
@@ -910,6 +911,7 @@ export function terraMarkers(
         <div className="-mt-3 -translate-x-1/2">
           <button
             type="button"
+            data-map-label
             onClick={() => select({ kind: "terra", cell: next?.cell ?? f.aim })}
             className={`marker-hit relative flex h-6 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full px-2 font-mono text-xs font-bold shadow-md shadow-black/40 ${f.mine ? "bg-gold text-ink" : "bg-vermilion text-cream"}`}
           >
@@ -951,12 +953,16 @@ function TerraCity({
       className="marker-hit relative -ml-6 -mt-6 flex h-12 w-12 items-center justify-center"
     >
       <span
+        data-map-label
         className="marker-orb relative flex h-8 w-8 items-center justify-center rounded-full shadow-[0_4px_12px_rgb(0_0_0/0.55),inset_-3px_-4px_8px_rgb(0_0_0/0.3)]"
         style={{ ...orbStyle(code), boxShadow: ring ? `0 0 0 2px ${ring}` : undefined }}
       >
         <CityIcon code={code} className="h-6 w-6" />
       </span>
-      <span className="pointer-events-none absolute left-1/2 top-[calc(100%-8px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-cream/85 [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]">
+      <span
+        data-map-label
+        className="pointer-events-none absolute left-1/2 top-[calc(100%-8px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-cream/85 [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]"
+      >
         {name}
       </span>
     </button>
@@ -1028,6 +1034,7 @@ function WarCounter({
         </svg>
       )}
       <span
+        data-map-label
         className="relative flex items-center justify-center rounded-full shadow-[0_4px_12px_rgb(0_0_0/0.55)]"
         style={{
           width: mine ? 42 : box - 4,
@@ -1041,13 +1048,19 @@ function WarCounter({
         <Crest crest={crest} size={mine ? 26 : small ? 12 : 20} />
       </span>
       {mine ? (
-        <span className="pointer-events-none absolute left-1/2 top-[calc(100%-2px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+        <span
+          data-map-label
+          className="pointer-events-none absolute left-1/2 top-[calc(100%-2px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
+        >
           {name}
           {troops !== null && <span className="tabular-nums text-cream"> · ⚔ {troops}</span>}
         </span>
       ) : (
         troops !== null && (
-          <span className="pointer-events-none absolute left-1/2 top-[calc(100%-3px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold tabular-nums text-cream [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]">
+          <span
+            data-map-label
+            className="pointer-events-none absolute left-1/2 top-[calc(100%-3px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold tabular-nums text-cream [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]"
+          >
             {troops}
           </span>
         )
@@ -1085,8 +1098,9 @@ export function TerraHud({
   const me = v.me;
   const regionName = (code: string) => regions.find((r) => r.code === code)?.name ?? code;
   return (
-    // In the HUD's right column, under the purse: its lines wrap there, never over the left one.
-    <div className="flex min-w-0 max-w-full flex-col items-end gap-1">
+    // In the HUD's right column, under the purse, as wide as it and 7rem at least (the week's
+    // clock on two lines; the name keeps its ten letters at 320 px): never over the left one.
+    <div className="flex min-w-[7rem] max-w-full flex-col items-end gap-1 self-stretch lg:min-w-0">
       {me && (
         <>
           <span
@@ -1121,9 +1135,55 @@ export function TerraHud({
           </span>
         </>
       )}
+      {/*
+        On a phone, the week's clock on a plaque that opens the guide, and the skirmishes and the
+        replay as two rounds: a column no taller than the purse's two neighbours, never written
+        over the map. The plaque takes the column's width without widening it (the purse sets
+        it), so the merchant's name keeps its room. The rest of the note (the battle hour, the
+        fronts) is the guide's and the map's to say.
+      */}
+      {!folded && (
+        <>
+          <NotePlaque v={v} now={now} onGuide={onGuide} />
+          {(onSkirmish || onReplay) && (
+            <span className="flex justify-end gap-1 lg:hidden">
+              {onSkirmish && (
+                <button
+                  type="button"
+                  data-hud="terra-skirmish"
+                  aria-label={
+                    v.open ? fr.game.skirmish.title : fr.game.skirmish.nightShort(v.openHours.from)
+                  }
+                  onClick={onSkirmish}
+                  className="pointer-events-auto flex h-11 w-11 items-center justify-center"
+                >
+                  <span
+                    className={`hud-orb flex h-9 w-9 items-center justify-center rounded-full text-[17px] leading-none ${v.open ? "text-vermilion" : "text-cream-dim"}`}
+                  >
+                    ⚔
+                  </span>
+                </button>
+              )}
+              {onReplay && (
+                <button
+                  type="button"
+                  data-hud="terra-replay"
+                  aria-label={fr.game.terraRecord.replay}
+                  onClick={onReplay}
+                  className="pointer-events-auto flex h-11 w-11 items-center justify-center"
+                >
+                  <span className="hud-orb flex h-9 w-9 items-center justify-center rounded-full text-[17px] leading-none text-info">
+                    ⟲
+                  </span>
+                </button>
+              )}
+            </span>
+          )}
+        </>
+      )}
       <span
         data-hud="terra-note"
-        className={`note min-w-0 max-w-full flex-col items-end text-right [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] lg:flex ${folded ? "hidden" : "flex"}`}
+        className="note hidden min-w-0 max-w-full flex-col items-end text-right [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] lg:flex"
       >
         {me?.eliminatedAt != null && <span className="text-vermilion">{t().eliminated}</span>}
         {!v.closed && v.placementEndsAt !== null && now < v.placementEndsAt && (
@@ -1194,6 +1254,69 @@ export function TerraHud({
             ))}
       </span>
     </div>
+  );
+}
+
+/**
+ * The week's clock on a phone: what comes next (the war, the battle, the night) and when the week
+ * ends, on a dark plaque legible over any land, opening the guide when touched.
+ */
+function NotePlaque({
+  v,
+  now,
+  onGuide,
+}: {
+  v: TerraView;
+  now: number;
+  onGuide?: () => void;
+}) {
+  const me = v.me;
+  const head =
+    me?.eliminatedAt != null ? (
+      <span className="text-vermilion">{t().eliminated}</span>
+    ) : !v.closed && v.placementEndsAt !== null && now < v.placementEndsAt ? (
+      <span className="text-gold">
+        {t().placingShort(unbroken(clock(v.placementEndsAt - now)))}
+      </span>
+    ) : !v.closed && v.truceEndsAt !== null && now < v.truceEndsAt ? (
+      <span className="text-gold">{t().truceShort(unbroken(clock(v.truceEndsAt - now)))}</span>
+    ) : v.battle?.on && !v.closed ? (
+      <span className="font-extrabold text-vermilion">{t().battle.onShort(v.battle.to)}</span>
+    ) : !v.open && !v.closed ? (
+      <span className="text-lagoon">☾ {t().nightShort}</span>
+    ) : null;
+  const body = (
+    <>
+      {head}
+      <span>{v.closed ? t().closed : t().closesIn(unbroken(clock(v.closesAt - now)))}</span>
+    </>
+  );
+  // As wide as the column, never widening it: the purse sets its width.
+  const plaque =
+    "flex w-0 min-w-full flex-col items-end rounded-lg bg-night/85 px-1.5 py-1 text-right text-[13px] leading-snug text-cream ring-1 ring-line/70 lg:hidden";
+  if (!onGuide)
+    return (
+      <span data-hud="terra-note" className={plaque}>
+        {body}
+      </span>
+    );
+  return (
+    <button
+      type="button"
+      data-hud="terra-note"
+      aria-label={fr.game.terraGuide.open}
+      onClick={onGuide}
+      className={`pointer-events-auto relative min-h-11 justify-center ${plaque}`}
+    >
+      {body}
+      {/* The guide behind it, on a small round at its corner: no room taken from the lines. */}
+      <span
+        aria-hidden="true"
+        className="absolute -left-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-info font-display text-[11px] font-extrabold leading-none text-ink"
+      >
+        ?
+      </span>
+    </button>
   );
 }
 

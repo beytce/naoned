@@ -506,6 +506,10 @@ export const fr = {
       eliminated: "Éliminé cette semaine",
       placing: (time: string) => `Placement · la guerre dans ${time}`,
       truce: (time: string) => `Trêve · la guerre dans ${time}`,
+      /** On a phone's plaque: the same, in a few words. */
+      placingShort: (time: string) => `Placement · ${time}`,
+      truceShort: (time: string) => `Trêve · ${time}`,
+      nightShort: "Nuit",
       team: (region: string) => `Semaine en équipes · vous êtes de ${region}`,
       teamWon: (region: string) => `${region} gagne la semaine`,
       diplomacy: {
@@ -538,6 +542,7 @@ export const fr = {
       battle: {
         on: (to: number) => `⚔ Bataille : fronts ×10 jusqu'à ${to} h`,
         at: (from: number) => `Bataille chaque soir à ${from} h`,
+        onShort: (to: number) => `⚔ Bataille → ${to} h`,
       },
       marching: (n: number) => `${n} front${n > 1 ? "s" : ""} en marche`,
       milanRides: (who: string, against: string | null) =>

@@ -347,6 +347,23 @@ export const WorldMap = forwardRef<
     return () => window.removeEventListener("resize", onResize);
   }, [fit, paint, easeTo]);
 
+  // The HUD grew or shrank over the map (the rival's line came, a line of the Terraferma's note
+  // wrapped): the map framed again in the room left, unless the player has moved it.
+  const topInset = props.insets.top;
+  const lastTop = useRef(topInset);
+  useEffect(() => {
+    if (lastTop.current === topInset) return;
+    lastTop.current = topInset;
+    const before = fitted.current;
+    const at = anim.current?.to ?? cam.current;
+    const framedThere =
+      !before ||
+      (Math.abs(at.s - before.s) <= before.s * 0.001 &&
+        Math.abs(at.tx - before.tx) < 1 &&
+        Math.abs(at.ty - before.ty) < 1);
+    if (framedThere) easeTo(fit(), 300);
+  }, [topInset, fit, easeTo]);
+
   // New markers, trips or selection: place them, and keep the frames going if carts roll.
   useEffect(() => {
     paint();

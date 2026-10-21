@@ -185,7 +185,7 @@ export function HudCounter({
         aria-label={label}
         aria-expanded={open}
         data-hud="counter"
-        className="pointer-events-auto flex min-h-11 items-center gap-2 transition active:scale-95"
+        className="pointer-events-auto flex min-h-11 items-center gap-1.5 transition active:scale-95 min-[360px]:gap-2"
       >
         <span className="flex items-baseline gap-1.5 [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
           {side}
@@ -194,7 +194,7 @@ export function HudCounter({
         <span
           data-tone={alert}
           data-fx={fx}
-          className={`hud-orb flex h-9 w-9 items-center justify-center rounded-full ${iconClass} ${
+          className={`hud-orb flex h-8 w-8 shrink-0 items-center justify-center rounded-full min-[360px]:h-9 min-[360px]:w-9 ${iconClass} ${
             alert ? "hud-alert" : ""
           } ${open ? "ring-2 ring-cream/70" : ""}`}
         >

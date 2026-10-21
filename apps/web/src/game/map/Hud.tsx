@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { BaleArt } from "../../art/bale.js";
 import { Crest, type CrestData } from "../../art/crest.js";
 import { Coin } from "../../art/icons.js";
@@ -65,8 +65,8 @@ function SeasonRing({ progress, children }: { progress: number; children: ReactN
   const r = 25;
   const c = 2 * Math.PI * r;
   return (
-    // A little smaller on the narrowest phones, to leave the name its room.
-    <span className="relative flex h-[50px] w-[50px] shrink-0 items-center justify-center min-[400px]:h-[58px] min-[400px]:w-[58px]">
+    // A little smaller on the narrow phones, to leave the name its room.
+    <span className="relative flex h-11 w-11 shrink-0 items-center justify-center min-[360px]:h-[50px] min-[360px]:w-[50px] min-[400px]:h-[58px] min-[400px]:w-[58px]">
       <svg viewBox="0 0 58 58" className="absolute inset-0 -rotate-90" aria-hidden="true">
         <circle
           cx="29"
@@ -132,6 +132,7 @@ export function MapHud({
   onOpenLayer,
   onWorkshops,
   onHelp,
+  onBand,
 }: {
   pseudo: string;
   crest: CrestData;
@@ -191,8 +192,15 @@ export function MapHud({
   onOpenLayer?: () => void;
   onWorkshops: () => void;
   onHelp: () => void;
+  /**
+   * Where the HUD's band across the top ends (its identity, the rival's line, the rounds on the
+   * left and the right column), in px from the top of the screen: the map frames itself under it.
+   */
+  onBand?: (bottom: number) => void;
 }) {
   const m = fr.game.map;
+  const grid = useRef<HTMLDivElement>(null);
+  useBand(grid, onBand);
   const tipsT = m.tips;
   const [tip, setTip] = useTip();
   const { shown: shownTip, leaving: tipLeaving } = usePresence(tip, 120);
@@ -215,26 +223,42 @@ export function MapHud({
         the purse is never cut); the left one takes the rest and truncates. The rival has a line
         of its own under them.
       */}
-      <div className="pointer-events-none absolute inset-x-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 grid grid-cols-[minmax(0,1fr)_fit-content(46%)] items-start gap-x-2 gap-y-1.5 lg:left-5 lg:right-[calc(var(--side,0px)+1.25rem)] lg:top-5 lg:grid-cols-[minmax(0,1fr)_fit-content(20rem)]">
+      <div
+        ref={grid}
+        className="pointer-events-none absolute inset-x-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 grid grid-cols-[minmax(0,1fr)_fit-content(46%)] items-start gap-x-2 gap-y-1.5 lg:left-5 lg:right-[calc(var(--side,0px)+1.25rem)] lg:top-5 lg:grid-cols-[minmax(0,1fr)_fit-content(20rem)]"
+      >
         <button
           type="button"
           data-hud="identity"
           aria-label={`${fr.game.tabs.profil} · ${pseudo}`}
           onClick={onProfile}
-          className="pointer-events-auto flex min-w-0 max-w-full items-center gap-2.5 justify-self-start text-left transition active:scale-95 lg:max-w-xs"
+          className="pointer-events-auto flex min-w-0 max-w-full items-center gap-2 justify-self-start text-left transition active:scale-95 min-[360px]:gap-2.5 lg:max-w-xs"
         >
           <SeasonRing progress={seasonProgress}>
             <Crest crest={crest} size={32} />
           </SeasonRing>
           <span className="min-w-0 [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
-            <span className="block truncate font-display text-lg font-extrabold leading-tight text-cream min-[400px]:text-xl">
+            {/* Under 360 px, upright and a size down: ten letters of the name at least. */}
+            <span
+              data-hud-name
+              className="block truncate font-display text-[17px] font-extrabold leading-tight text-cream [font-stretch:100%] min-[360px]:text-lg min-[360px]:[font-stretch:125%] min-[400px]:text-xl"
+            >
               {pseudo}
             </span>
-            {/* The rank first: on a narrow phone, the title gives way, never the rank. */}
-            <span className="block truncate font-mono text-xs uppercase tracking-[0.1em] text-cream-dim">
-              <span className="text-gold">#{rank ?? "—"}</span> ·{" "}
-              {level !== null && <>{fr.game.merchantLevel.short(level)} · </>}
-              {title}
+            {/*
+              The rank first: on a narrow phone, the level then the title give way whole, each
+              with its dot (a line one high, what does not fit wraps out of sight): never a dot
+              left alone before an ellipsis.
+            */}
+            <span
+              data-hud-meta
+              className="flex h-4 flex-wrap gap-x-[0.6em] overflow-hidden font-mono text-xs uppercase leading-4 tracking-[0.1em] text-cream-dim"
+            >
+              <span className="whitespace-nowrap text-gold">#{rank ?? "—"}</span>
+              {level !== null && (
+                <span className="whitespace-nowrap">· {fr.game.merchantLevel.short(level)}</span>
+              )}
+              <span className="whitespace-nowrap">· {title}</span>
             </span>
           </span>
         </button>
@@ -243,7 +267,7 @@ export function MapHud({
             label={tipsT.cash.title}
             fx="purse"
             value={<CountUp value={Number(cash)} format={(v) => amount(BigInt(Math.round(v)))} />}
-            valueClass="text-lg text-gold min-[400px]:text-xl"
+            valueClass="text-lg text-gold [font-stretch:100%] min-[360px]:[font-stretch:125%] min-[400px]:text-xl"
             icon={<Coin size={24} />}
             open={tip === "cash"}
             onToggle={() => toggle("cash")}
@@ -274,6 +298,10 @@ export function MapHud({
             <span className="truncate">{rival}</span>
           </button>
         )}
+        {/*
+          Two rounds high at most, never further down the map: the bell and the Rialto, then
+          beside them the bales and Lorenzo when the guide is paused.
+        */}
         <div className="flex gap-2">
           <span className="flex flex-col items-center gap-1.5">
             <Orb label={m.notices} onClick={onNotices} badge={notices} coach="hud-notices">
@@ -284,16 +312,20 @@ export function MapHud({
                 {Icon.rialto()}
               </Orb>
             )}
-            {bales > 0 && (
-              <Orb label={m.bales(bales)} onClick={onBales} badge={bales} size={34} tone="gold">
-                <BaleArt size={26} className="bale-float" />
-              </Orb>
-            )}
           </span>
-          {guidePaused && (
-            <Orb label={m.resumeGuide} onClick={onResumeGuide} tone="gold">
-              <Lorenzo size={30} />
-            </Orb>
+          {(bales > 0 || guidePaused) && (
+            <span className="flex flex-col items-center gap-1.5">
+              {guidePaused && (
+                <Orb label={m.resumeGuide} onClick={onResumeGuide} tone="gold">
+                  <Lorenzo size={30} />
+                </Orb>
+              )}
+              {bales > 0 && (
+                <Orb label={m.bales(bales)} onClick={onBales} badge={bales} size={34} tone="gold">
+                  <BaleArt size={26} className="bale-float" />
+                </Orb>
+              )}
+            </span>
           )}
         </div>
         <div className="flex flex-col items-end gap-1.5">
@@ -393,6 +425,39 @@ export function MapHud({
       )}
     </>
   );
+}
+
+/** Reports the bottom of the HUD's band across the top, again whenever one of its blocks moves. */
+function useBand(
+  grid: { current: HTMLElement | null },
+  onBand: ((bottom: number) => void) | undefined,
+) {
+  useEffect(() => {
+    const el = grid.current;
+    if (!el || !onBand || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      let bottom = 0;
+      for (const c of el.children) bottom = Math.max(bottom, c.getBoundingClientRect().bottom);
+      onBand(Math.round(bottom));
+    };
+    const sizes = new ResizeObserver(measure);
+    const watch = () => {
+      sizes.disconnect();
+      sizes.observe(el);
+      for (const c of el.children) sizes.observe(c);
+    };
+    watch();
+    // A block that comes or goes (the rival's line, the bread): watched too.
+    const blocks = new MutationObserver(() => {
+      watch();
+      measure();
+    });
+    blocks.observe(el, { childList: true });
+    return () => {
+      sizes.disconnect();
+      blocks.disconnect();
+    };
+  }, [grid, onBand]);
 }
 
 function Door({
