@@ -276,6 +276,37 @@ describe("a skirmish's row", () => {
     }
   });
 
+  it("tells an interruption no more after a new match, through a second restart", async () => {
+    await open();
+    const { ada, bob } = await two();
+    await join(ada);
+    await join(bob);
+    now += 61_000;
+    await get(ada, "/api/game/skirmish");
+    // 10 h 06: a deployment cuts the match short.
+    now += 5 * 60_000;
+    await world.snapshot();
+    await app.close();
+    await open();
+    expect((await get(ada, "/api/game/skirmish")).interrupted).toBe(true);
+    // 10 h 30: ada joins a new match, played to its end; bob does not.
+    now = Date.parse("2026-10-05T08:30:00Z");
+    await join(ada);
+    expect((await get(ada, "/api/game/skirmish")).interrupted).toBe(false);
+    now += 61_000;
+    await get(ada, "/api/game/skirmish");
+    now += 16 * 60_000;
+    expect((await get(ada, "/api/game/skirmish")).phase).toBe("done");
+    // 14 h: another deployment, no match under way.
+    now = Date.parse("2026-10-05T12:00:00Z");
+    await world.snapshot();
+    await app.close();
+    await open();
+    expect((await get(ada, "/api/game/skirmish")).interrupted).toBe(false);
+    // Bob has not played since: still told, until the end of the day.
+    expect((await get(bob, "/api/game/skirmish")).interrupted).toBe(true);
+  });
+
   it("promises no ranked match after the closing hour, and tells of the match that day only", async () => {
     // 21 h 35 in Paris: a ranked match, ending before 22 h.
     now = Date.parse("2026-10-05T19:35:00Z");

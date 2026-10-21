@@ -79,7 +79,8 @@ export class SkirmishHub {
   /**
    * At start-up, before the first step: the lobbies and matches the last run left open are lost,
    * nothing paid and no quota spent. Their merchants are notified, and told on the skirmish's bar
-   * until the end of that day in Paris (those of an earlier restart that day too).
+   * until the end of that day in Paris (those of an earlier restart that day too, unless they have
+   * joined a match since: that one is told no more).
    */
   async recover(now: number): Promise<void> {
     const worldId = this.world.id;
@@ -93,6 +94,7 @@ export class SkirmishHub {
         ),
       )
       .returning({ players: skirmishMatches.players, ranked: skirmishMatches.ranked });
+    const dayStart = new Date(dayStartIn(now).start);
     const recent = await this.db
       .select({ players: skirmishMatches.players, endedAt: skirmishMatches.endedAt })
       .from(skirmishMatches)
@@ -100,7 +102,7 @@ export class SkirmishHub {
         and(
           eq(skirmishMatches.worldId, worldId),
           eq(skirmishMatches.status, "aborted"),
-          gt(skirmishMatches.endedAt, new Date(dayStartIn(now).start)),
+          gt(skirmishMatches.endedAt, dayStart),
         ),
       );
     for (const r of recent)
@@ -109,6 +111,16 @@ export class SkirmishHub {
           id,
           Math.max(this.interrupted.get(id) ?? 0, r.endedAt?.getTime() ?? 0),
         );
+    // A merchant who joined a match opened after its interruption has moved on: told no more.
+    const since = await this.db
+      .select({ players: skirmishMatches.players, openedAt: skirmishMatches.openedAt })
+      .from(skirmishMatches)
+      .where(and(eq(skirmishMatches.worldId, worldId), gt(skirmishMatches.openedAt, dayStart)));
+    for (const r of since)
+      for (const id of r.players) {
+        const lostAt = this.interrupted.get(id);
+        if (lostAt !== undefined && r.openedAt.getTime() > lostAt) this.interrupted.delete(id);
+      }
     const ids = [...new Set(lost.flatMap((r) => r.players))];
     if (!this.notifier || ids.length === 0) return;
     const people = new Set(
