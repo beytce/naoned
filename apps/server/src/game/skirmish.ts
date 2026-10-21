@@ -43,9 +43,9 @@ export type FriendlyWhy = "off_map" | "quota" | "late" | "few";
  * time, played in memory, each with its row in `skirmish_matches`. A ranked match is paid to all
  * its merchants by one command of the world, `terraSkirmishPay`, once per match (so it is in the
  * journal, and the day's quota is spent only there); its row turns `paid` in the same
- * transaction (`done` if no merchant was credited). None open at night. A match under way is lost on a restart, like a game of
- * OpenFront when its server falls: `recover` marks it aborted, nothing paid nor spent, and its
- * merchants are told so.
+ * transaction (`done` if no merchant was credited). None open at night. A match under way is
+ * lost on a restart, like a game of OpenFront when its server falls: `recover` marks it aborted,
+ * nothing paid nor spent, and its merchants are told so.
  */
 export class SkirmishHub {
   private lobby: { id: string; players: string[]; opensAt: number } | null = null;

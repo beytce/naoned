@@ -244,7 +244,9 @@ export const terraResults = pgTable(
 /**
  * The skirmishes of a world, one row a match: its merchants, ranked or not, and where it stands
  * (open: the lobby; playing; paid: settled by the world's command `terraSkirmishPay`, in the same
- * transaction; done: a friendly match over; aborted: lost to a restart, nothing paid nor spent).
+ * transaction, glory credited; done: over with no glory credited, a friendly match, a ranked one
+ * where no merchant is credited, or one the world refuses to pay; aborted: lost to a restart,
+ * nothing paid nor spent).
  */
 export const skirmishMatches = pgTable(
   "skirmish_matches",
