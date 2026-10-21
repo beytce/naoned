@@ -122,14 +122,27 @@ function hash(key: string): number {
   return (h ^ (h >>> 12)) >>> 0;
 }
 
+/**
+ * How a merchant ranks in its skirmishes: among the merchants of the match only, two or three
+ * who take the top places ahead of the condottieri (a merchant beats the computer's houses);
+ * always first (the ceiling); or no skirmish at all (the same week without them).
+ */
+export type SkirmishRanks = "merchants" | "first" | "off";
+
+/** The rank (from 0) of a merchant in one of its skirmishes. */
+export function skirmishRank(mode: SkirmishRanks, key: string): number {
+  if (mode !== "merchants") return 0;
+  const merchants = 2 + (hash(`${key}:merchants`) % 2);
+  return hash(key) % merchants;
+}
+
 export function runTerra(
   cfg: TerraConfig,
   seed: number,
   mix = TERRA_MIX,
   /** Called at 22 h each day with the state (for a picture of the map). */
   onDay?: (day: number, s: TerraState) => void,
-  /** Whether the merchants play their skirmishes (off: the same week without them). */
-  skirmishes = true,
+  ranks: SkirmishRanks = "merchants",
 ): TerraResult {
   const bots = Object.entries(mix).flatMap(([profile, n]) =>
     Array.from({ length: n }, (_, k) => ({ id: `${profile}${k}`, profile })),
@@ -205,13 +218,13 @@ export function runTerra(
     const before = purse.left;
     play(s, cfg, bot.id, profile, at, seed, purse);
     result.spent += before - purse.left;
-    // Its skirmishes of the day, at its second session: a match of eight among merchants and
-    // condottieri, its rank drawn; the first of the day ranked, the others friendly.
+    // Its skirmishes of the day, at its second session: its rank as `ranks` says; the first of
+    // the day ranked, the others friendly.
     const nth = (sessionsToday.get(`${bot.id}:${today}`) ?? 0) + 1;
     sessionsToday.set(`${bot.id}:${today}`, nth);
-    if (skirmishes && cfg.skirmish && nth === 2) {
+    if (ranks !== "off" && cfg.skirmish && nth === 2) {
       for (let k = 0; k < profile.skirmishes; k++) {
-        const rank = hash(`${seed}:${bot.id}:${today}:skirmish:${k}`) % cfg.skirmish.players;
+        const rank = skirmishRank(ranks, `${seed}:${bot.id}:${today}:skirmish:${k}`);
         const glory = cfg.skirmish.glory[rank] ?? 0;
         const me = s.players[bot.id];
         if (!me || me.eliminatedAt !== undefined) break;

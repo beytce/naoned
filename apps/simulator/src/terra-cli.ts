@@ -27,7 +27,11 @@ const median = (xs: number[]) => {
   return v.length === 0 ? 0 : (v[Math.floor((v.length - 1) / 2)] as number);
 };
 
-function section(r: TerraResult): string {
+/**
+ * A seed's week: `r` with the merchants ranked among themselves in their skirmishes, `first`
+ * the same week each of them first every day (the ceiling), `off` without any skirmish.
+ */
+function section(r: TerraResult, first: TerraResult, off: TerraResult): string {
   const placed = r.players.filter((p) => p.placed);
   const land = placed.reduce((n, p) => n + p.cells, 0);
   const top = [...placed].sort((a, b) => b.cells - a.cells);
@@ -36,13 +40,29 @@ function section(r: TerraResult): string {
     const ps = placed.filter((p) => p.profile === k);
     return { k, cells: median(ps.map((p) => p.cells)), glory: median(ps.map((p) => p.glory)) };
   });
-  // The week ranked on its glory less what the skirmishes brought (a conquest stands).
-  const withoutSkirmishes = r.signore.conquest
-    ? r.signore.id
-    : ([...placed]
-        .map((p) => ({ id: p.id, glory: p.glory - p.skirmishGlory }))
-        .filter((p) => p.glory > 0)
-        .sort((a, b) => b.glory - a.glory || (a.id < b.id ? -1 : 1))[0]?.id ?? null);
+  // The share of the skirmishes in a regular's and an active's median week, and the ceiling: a
+  // merchant first every day, against a regular's median week without skirmishes.
+  const regularGlory = (x: TerraResult) =>
+    median(x.players.filter((p) => p.placed && p.profile === "regular").map((p) => p.glory));
+  const share = (x: TerraResult, profile: string) => {
+    const ps = x.players.filter((p) => p.placed && p.profile === profile);
+    const week = median(ps.map((p) => p.glory));
+    return pct(Math.round((median(ps.map((p) => p.skirmishGlory)) * 10_000) / Math.max(1, week)));
+  };
+  const ceiling = Math.max(0, ...first.players.map((p) => p.skirmishGlory));
+  // The same week ranked on its glory less what the skirmishes brought (a conquest stands).
+  const lessSkirmishes = (x: TerraResult) => {
+    const id = x.signore.conquest
+      ? x.signore.id
+      : ([...x.players]
+          .filter((p) => p.placed)
+          .map((p) => ({ id: p.id, glory: p.glory - p.skirmishGlory }))
+          .filter((p) => p.glory > 0)
+          .sort((a, b) => b.glory - a.glory || (a.id < b.id ? -1 : 1))[0]?.id ?? null);
+    return id === x.signore.id ? "le même" : `${id ?? "aucun"} (les escarmouches ont décidé)`;
+  };
+  const sameSignore = (x: TerraResult) =>
+    `${x.signore.id ?? "aucun"}${x.signore.id === off.signore.id ? " (le même)" : " (un autre)"}`;
   const active = byProfile.find((x) => x.k === "active")?.glory ?? 0;
   const casual = byProfile.find((x) => x.k === "casual")?.glory ?? 1;
   const lines = [
@@ -64,8 +84,11 @@ function section(r: TerraResult): string {
     `| Signore | ${r.signore.id ?? "aucun"} (${r.signore.profile ? TERRA_PROFILES[r.signore.profile]?.name : "—"})${r.signore.conquest ? ", par conquête" : ""} ; décret : ${r.signore.decree ?? "aucun"} |`,
     `| Influence médiane par profil | ${byProfile.map((x) => `${TERRA_PROFILES[x.k]?.name} ${median(placed.filter((p) => p.profile === x.k).map((p) => p.influence))}`).join(" · ")} |`,
     `| Gloire médiane des escarmouches par profil | ${byProfile.map((x) => `${TERRA_PROFILES[x.k]?.name} ${median(placed.filter((p) => p.profile === x.k).map((p) => p.skirmishGlory))}`).join(" · ")} |`,
-    `| Part des escarmouches dans la Gloire médiane des réguliers | ${pct(Math.round((median(placed.filter((p) => p.profile === "regular").map((p) => p.skirmishGlory)) * 10_000) / Math.max(1, byProfile.find((x) => x.k === "regular")?.glory ?? 0)))} (assidus ${pct(Math.round((median(placed.filter((p) => p.profile === "active").map((p) => p.skirmishGlory)) * 10_000) / Math.max(1, active)))}) |`,
-    `| Signore sans la Gloire des escarmouches (même semaine) | ${withoutSkirmishes ?? "aucun"}${withoutSkirmishes === r.signore.id ? " (le même)" : " (un autre : les escarmouches ont décidé)"} |`,
+    `| Part des escarmouches dans la Gloire médiane, rang parmi les marchands | réguliers ${share(r, "regular")} · assidus ${share(r, "active")} |`,
+    `| Part des escarmouches, chaque marchand premier chaque jour | réguliers ${share(first, "regular")} · assidus ${share(first, "active")} |`,
+    `| Plafond : premier chaque jour, contre la semaine médiane d'un régulier sans escarmouches | ${ceiling} / ${regularGlory(off)} = ${pct(Math.round((ceiling * 10_000) / Math.max(1, regularGlory(off))))} |`,
+    `| Signore de la même semaine, sa Gloire moins celle des escarmouches | rang parmi les marchands : ${lessSkirmishes(r)} ; premier chaque jour : ${lessSkirmishes(first)} |`,
+    `| Signore de la semaine rejouée sans escarmouches | ${off.signore.id ?? "aucun"} ; avec, rang parmi les marchands : ${sameSignore(r)} ; premier chaque jour : ${sameSignore(first)} |`,
     `| Ducats dépensés sur la Terraferme | ${(Number(r.spent) / 100 / Math.max(1, placed.length) / 7).toFixed(0)} d par marchand et par jour |`,
     "",
   ];
@@ -74,11 +97,19 @@ function section(r: TerraResult): string {
 
 const results = seeds.map((seed) => {
   const t = Date.now();
-  const r = runTerra(cfg, seed);
+  const runs = [
+    runTerra(cfg, seed),
+    runTerra(cfg, seed, undefined, undefined, "first"),
+    runTerra(cfg, seed, undefined, undefined, "off"),
+  ] as const;
   console.log(`seed ${seed}: ${((Date.now() - t) / 1000).toFixed(1)} s`);
-  return r;
+  return runs;
 });
-const report = ["# La Terraferme : rapport du prototype", "", ...results.map(section)].join("\n");
+const report = [
+  "# La Terraferme : rapport du prototype",
+  "",
+  ...results.map((runs) => section(...runs)),
+].join("\n");
 const out = values.out ?? join(here, "..", "out");
 mkdirSync(out, { recursive: true });
 writeFileSync(join(out, "terraferma.md"), report);
