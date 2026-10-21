@@ -242,6 +242,9 @@ export function Coach(props: CoachProps) {
       const el = follow ?? visible(step.target ?? "");
       setOnFollow(follow !== null);
       const box = el ? el.getBoundingClientRect() : null;
+      // Out of sight (a sheet's list still filling when the step came): brought into view.
+      if (el && box && (box.top < 0 || box.bottom > window.innerHeight))
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
       const hidden = el && box ? isCovered(el, box) : false;
       setCovered(hidden);
       setRect(hidden ? null : box);
