@@ -3,7 +3,9 @@
 `apps/web/e2e/layout.mjs` joue la première session complète sur deux téléphones (390 × 844 et
 320 × 568) : connexion, nom, guide de Lorenzo jusqu'à « Bravo » (objectif 6/6, récompense du Livre
 de compte encaissée), une transformation au moulin, la Terraferme pendant sa trêve (note « Trêve »
-vérifiée), les Avis (plus de « Premiers pas »). Après chaque étape, `e2e/assert.mjs` échoue sur :
+vérifiée), une semaine en équipes avec Milan contre le joueur puis sa clôture (la réponse de
+`GET /api/game/terra` réécrite au passage : « Équipe · Terraferma », « sur vous », « Bataille à
+20 h », « Terraferma l'emporte » vérifiés sur la plaque), les Avis (plus de « Premiers pas »). Après chaque étape, `e2e/assert.mjs` échoue sur :
 une page qui défile de côté, deux blocs du HUD l'un sur l'autre, le HUD sur un nom ou un médaillon
 de la carte (`data-map-label`), une cible de moins de 44 px, une ligne d'identité coupée, un nom
 réduit à moins de dix lettres, l'anneau de Lorenzo posé ailleurs que sur ce qu'un doigt touche sous

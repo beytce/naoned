@@ -1,7 +1,9 @@
 // The first session in full, on two phones (390 × 844 and 320 × 568): the sign-in, the
 // merchant's name, Lorenzo's guide played to its last card (« Bravo », objective 6/6, the Livre
 // de compte's reward cashed: produce, harvest, deliver to a city, buy at the Rialto, the reward),
-// then a transformation in the workshops, the Terraferma during its truce, the notices. After
+// then a transformation in the workshops, the Terraferma during its truce, then a week in teams
+// with Milan riding against the merchant and its close (the week's view rewritten on its way:
+// the plaque's every line), the notices. After
 // every step, the page must not scroll sideways, no two blocks of the HUD may cover each other
 // nor the map's names and medallions, those that can be touched are 44 px at least, Lorenzo's
 // ring sits on what a finger touches under it, and no coin of the effects is left on screen
@@ -272,6 +274,7 @@ async function session(width, height, tag) {
     if (!/trêve/i.test(said))
       throw new Error(`${label}: the Terraferma's note says « ${said} », not its truce`);
     await check("terraferme-treve");
+    await teamWeek(page, door, check);
     await door.click();
     await page.waitForTimeout(1000);
 
@@ -381,6 +384,73 @@ async function transform(page, check) {
   if (after.some((r) => r.coach === mill2.coach && /^produire$/i.test(r.text)))
     throw new Error("the transformation did not start");
   await check("transformation-lancee");
+}
+
+/**
+ * A week in teams, the plaque's short lines on a phone: the team, Milan riding against the
+ * merchant and the battle's hour, then the team that won at the close. No world waits a week in
+ * teams: the week's view is rewritten on its way to the page, the layer opened again on it.
+ */
+async function teamWeek(page, door, check) {
+  const TEAM = "terraferma";
+  const show = async (edit) => {
+    await door.click();
+    await page.waitForTimeout(500);
+    await page.unroute("**/api/game/terra");
+    await page.route("**/api/game/terra", async (route) => {
+      const response = await route.fetch();
+      const json = await response.json();
+      if (json.terra) edit(json.terra);
+      await route.fulfill({ response, json });
+    });
+    await door.click();
+    await page.waitForTimeout(1500);
+    return page.evaluate(() => {
+      const shown = [...document.querySelectorAll("[data-hud=terra-note]")].find(
+        (el) => el.getClientRects().length > 0,
+      );
+      return shown ? (shown.textContent ?? "").replace(/\s+/g, " ") : "";
+    });
+  };
+  const expect = (said, what, pattern) => {
+    if (!pattern.test(said)) throw new Error(`the Terraferma's note says « ${said} », not ${what}`);
+  };
+
+  const riding = await show((v) => {
+    const milan = v.holders.findIndex((h) => h.milan);
+    if (milan < 0) throw new Error("no Milan on the Terraferma");
+    const aim = v.owner.findIndex((o, i) => o < 0 && v.map.terrain[i] !== "w");
+    Object.assign(v, {
+      placementEndsAt: null,
+      truceEndsAt: null,
+      open: true,
+      battle: { from: 20, to: 21, on: false },
+    });
+    v.rules.team = TEAM;
+    v.fronts.push({
+      id: "e2e-milan",
+      owner: milan,
+      against: v.holders.findIndex((h) => h.me),
+      aim,
+      troops: 120,
+      mine: false,
+      threat: true,
+      takes: [],
+      endsAt: null,
+    });
+  });
+  expect(riding, "the team", /équipe · terraferma/i);
+  expect(riding, "Milan riding against the merchant", /sur vous/i);
+  expect(riding, "the battle's hour", /bataille à 20 h/i);
+  await check("terraferme-equipes");
+
+  const won = await show((v) => {
+    v.rules.team = TEAM;
+    v.closed = { signore: -1, conquest: false, teams: [{ team: TEAM, glory: 40, cells: 12 }] };
+  });
+  expect(won, "the team that won", /terraferma l'emporte/i);
+  await check("terraferme-equipes-close");
+  await page.unroute("**/api/game/terra");
 }
 
 /** The workshops' window opened: each workshop's button, its recipe raw or transforming. */

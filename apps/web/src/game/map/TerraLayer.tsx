@@ -1139,12 +1139,13 @@ export function TerraHud({
         On a phone, the week's clock on a plaque that opens the guide, and the skirmishes and the
         replay as two rounds: a column no taller than the purse's two neighbours, never written
         over the map. The plaque takes the column's width without widening it (the purse sets
-        it), so the merchant's name keeps its room. The rest of the note (the battle hour, the
-        fronts) is the guide's and the map's to say.
+        it), so the merchant's name keeps its room. Short lines keep what the player must know:
+        the battle hour, the team and its win, Milan riding against him; the fronts' count and
+        the other rides are the map's to show.
       */}
       {!folded && (
         <>
-          <NotePlaque v={v} now={now} onGuide={onGuide} />
+          <NotePlaque v={v} now={now} onGuide={onGuide} regionName={regionName} />
           {(onSkirmish || onReplay) && (
             <span className="flex justify-end gap-1 lg:hidden">
               {onSkirmish && (
@@ -1259,16 +1260,19 @@ export function TerraHud({
 
 /**
  * The week's clock on a phone: what comes next (the war, the battle, the night) and when the week
- * ends, on a dark plaque legible over any land, opening the guide when touched.
+ * ends, the player's team and its win, Milan riding against him, on a dark plaque legible over
+ * any land, opening the guide when touched.
  */
 function NotePlaque({
   v,
   now,
   onGuide,
+  regionName,
 }: {
   v: TerraView;
   now: number;
   onGuide?: () => void;
+  regionName: (code: string) => string;
 }) {
   const me = v.me;
   const head =
@@ -1284,11 +1288,23 @@ function NotePlaque({
       <span className="font-extrabold text-vermilion">{t().battle.onShort(v.battle.to)}</span>
     ) : !v.open && !v.closed ? (
       <span className="text-lagoon">☾ {t().nightShort}</span>
+    ) : v.battle && !v.closed ? (
+      <span className="text-cream-dim">{t().battle.atShort(v.battle.from)}</span>
     ) : null;
+  // Milan riding against the player: the first such front, named once.
+  const ride = v.closed ? undefined : v.fronts.find((f) => f.threat && v.holders[f.owner]?.milan);
+  const won = v.closed?.teams?.[0];
   const body = (
     <>
       {head}
       <span>{v.closed ? t().closed : t().closesIn(unbroken(clock(v.closesAt - now)))}</span>
+      {ride && (
+        <span className="font-extrabold text-vermilion">
+          {t().milanOnMeShort(holderName(v, ride.owner))}
+        </span>
+      )}
+      {v.rules.team && <span className="text-info">{t().teamShort(regionName(v.rules.team))}</span>}
+      {won && <span className="text-gold">{t().teamWonShort(regionName(won.team))}</span>}
     </>
   );
   // As wide as the column, never widening it: the purse sets its width.

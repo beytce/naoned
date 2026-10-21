@@ -512,6 +512,10 @@ export const fr = {
       nightShort: "Nuit",
       team: (region: string) => `Semaine en équipes · vous êtes de ${region}`,
       teamWon: (region: string) => `${region} gagne la semaine`,
+      /** On a phone's plaque: the team, its win, Milan riding against the player. */
+      teamShort: (region: string) => `Équipe · ${region}`,
+      teamWonShort: (region: string) => `${region} l'emporte`,
+      milanOnMeShort: (who: string) => `⚔ ${who} sur vous`,
       diplomacy: {
         signals: {
           help: "À l'aide",
@@ -543,6 +547,7 @@ export const fr = {
         on: (to: number) => `⚔ Bataille : fronts ×10 jusqu'à ${to} h`,
         at: (from: number) => `Bataille chaque soir à ${from} h`,
         onShort: (to: number) => `⚔ Bataille → ${to} h`,
+        atShort: (from: number) => `Bataille à ${from} h`,
       },
       marching: (n: number) => `${n} front${n > 1 ? "s" : ""} en marche`,
       milanRides: (who: string, against: string | null) =>
