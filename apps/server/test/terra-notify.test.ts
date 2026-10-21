@@ -20,4 +20,13 @@ describe("the Terraferma's notices", () => {
       pushText("family", { event: "terra_result", rank: 4, signore: false, influence: 8 }).body,
     ).toBe("Vous terminez 4e (+8 d'Influence). Une nouvelle carte s'ouvre.");
   });
+
+  it("tell the merchants of a skirmish cut short by a restart what they kept", () => {
+    const kept = pushText("family", { event: "skirmish_aborted", ranked: true, rankedLeft: 1 });
+    expect(kept.title).toBe("Escarmouche interrompue");
+    expect(kept.body).toContain("votre partie classée du jour reste disponible");
+    expect(
+      pushText("family", { event: "skirmish_aborted", ranked: false, rankedLeft: 0 }).body,
+    ).not.toContain("reste disponible");
+  });
 });

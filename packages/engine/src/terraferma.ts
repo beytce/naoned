@@ -183,6 +183,11 @@ export interface TerraState {
   history?: { ids: string[]; cell: number[]; holder: number[]; minute: number[] };
   /** Quick signals on the map, the last two hours. */
   signals?: TerraSignal[];
+  /**
+   * The skirmishes paid this week, by match: the glory credited to each merchant (a match paid
+   * once, whatever the server sends again).
+   */
+  skirmishPaid?: Record<string, Record<string, number>>;
   /** Only on a forecast's copy: each cell a front takes, when the step that takes it ends. */
   trace?: { front: string; cell: number; at: number }[];
 }

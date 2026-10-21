@@ -16,6 +16,7 @@ import { deleteAccount, exportAccount } from "./account.js";
 import { AuthError, AuthService, SESSION_DAYS } from "./auth/service.js";
 import type { Db } from "./db/client.js";
 import { registerGameRoutes } from "./game/routes.js";
+import { SkirmishHub } from "./game/skirmish.js";
 import type { GameWorld } from "./game/world.js";
 import { MailError, type Mailer } from "./mail/mailer.js";
 import type { Alerts } from "./monitor.js";
@@ -231,12 +232,22 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   });
 
   if (options.world) {
+    const notifier = options.notifier ?? new Notifier(options.db, options.world, new NoPusher());
+    // The skirmishes a restart cut short are aborted (nothing paid nor spent) before any is played.
+    const skirmishes = new SkirmishHub(options.db, options.world, notifier);
+    await skirmishes.recover(options.world.now());
+    skirmishes.start();
+    app.addHook("onClose", async () => {
+      skirmishes.stop();
+      await skirmishes.flush();
+    });
     registerGameRoutes(app, {
       db: options.db,
       world: options.world,
       auth,
       sessionCookie: SESSION_COOKIE,
-      notifier: options.notifier ?? new Notifier(options.db, options.world, new NoPusher()),
+      notifier,
+      skirmishes,
       adminEmails: options.adminEmails ?? [],
       communityUrl: options.communityUrl ?? null,
     });

@@ -37,7 +37,7 @@ import { nextSeasonBounds, seasonBounds, seasonMonthName } from "./calendar.js";
 import { recordInfluence, recordSeasonInfluence } from "./house.js";
 import { recordSeason } from "./season.js";
 import { decode, encode } from "./serialize.js";
-import { recordTerra } from "./terraRecord.js";
+import { recordSkirmishesPaid, recordTerra } from "./terraRecord.js";
 import { TUTORIAL_STEPS, stepsReached } from "./tutorial.js";
 import { recordWeek } from "./weekly.js";
 
@@ -463,6 +463,8 @@ export class GameWorld {
       await recordInfluence(tx, worldId, fx.events, at);
       // The Terraferma's weeks: results and ratings.
       await recordTerra(tx, worldId, fx.events, new Date(now));
+      // The skirmishes paid: their rows settled with the glory.
+      await recordSkirmishesPaid(tx, worldId, fx.events, at);
 
       if (!command) {
         // A batch (bot session): journals only.
@@ -489,6 +491,8 @@ export class GameWorld {
             lastSeenAt: at,
           });
         }
+      } else if (command.type === "terraSkirmishPay") {
+        // A skirmish paid by the server: no one's step of the tutorial.
       } else if (command.type !== "tick") {
         await this.recordTutorial(tx, command.playerId, fx.events, at);
       } else {

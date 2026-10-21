@@ -242,6 +242,34 @@ export const terraResults = pgTable(
 );
 
 /**
+ * The skirmishes of a world, one row a match: its merchants, ranked or not, and where it stands
+ * (open: the lobby; playing; paid: settled by the world's command `terraSkirmishPay`, in the same
+ * transaction; done: a friendly match over; aborted: lost to a restart, nothing paid nor spent).
+ */
+export const skirmishMatches = pgTable(
+  "skirmish_matches",
+  {
+    id: uuid("id").primaryKey(),
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    players: text("players").array().notNull(),
+    ranked: boolean("ranked").notNull().default(false),
+    status: text("status").notNull(),
+    openedAt: timestamp("opened_at", { withTimezone: true }).notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("skirmish_matches_world_status").on(t.worldId, t.status),
+    check(
+      "skirmish_matches_status",
+      sql`${t.status} in ('open', 'playing', 'paid', 'done', 'aborted')`,
+    ),
+  ],
+);
+
+/**
  * Final ranking of a season (people only): rank among people (by net sales), net sales and net
  * worth, reward tier and renown
  * earned. `seenAt` is set once the player has watched the closing ceremony.

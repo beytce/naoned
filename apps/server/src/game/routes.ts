@@ -45,7 +45,7 @@ import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pas
 import { priceHistory, profile } from "./profile.js";
 import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
 import { toJson } from "./serialize.js";
-import { SkirmishHub } from "./skirmish.js";
+import type { SkirmishHub } from "./skirmish.js";
 import { terraView } from "./terra.js";
 import { terraRecord } from "./terraRecord.js";
 import { catalog, playerView, ranking } from "./view.js";
@@ -239,6 +239,8 @@ export interface GameRouteDeps {
   auth: AuthService;
   sessionCookie: string;
   notifier: Notifier;
+  /** The skirmishes, their lost matches already recovered. */
+  skirmishes: SkirmishHub;
   adminEmails: string[];
   /** The players' community (null: none). */
   communityUrl?: string | null;
@@ -583,10 +585,8 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     };
   });
 
-  // Skirmishes: a lobby and a live match, in memory.
-  const skirmishes = new SkirmishHub(db, world);
-  skirmishes.start();
-  app.addHook("onClose", async () => skirmishes.stop());
+  // Skirmishes: a lobby and a live match, each with its row (started by the app, after recover).
+  const { skirmishes } = deps;
 
   app.get("/api/game/skirmish", async (req, reply) => {
     const account = await requireAccount(req, reply);

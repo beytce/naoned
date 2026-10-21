@@ -59,7 +59,7 @@ import {
   seasonEnd,
 } from "./state.js";
 import { bidTender, deliverTender } from "./tenders.js";
-import { type TerraCommand, applyTerra } from "./terraWorld.js";
+import { type TerraCommand, applyTerra, paySkirmish } from "./terraWorld.js";
 import { findRegion } from "./theme.js";
 import { tick } from "./tick.js";
 import {
@@ -265,6 +265,11 @@ function apply(tx: Tx, cmd: Command): void {
     tick(tx);
     return;
   }
+  // A skirmish's match, paid by the server to all its merchants at once.
+  if (cmd.type === "terraSkirmishPay") {
+    paySkirmish(tx, cmd);
+    return;
+  }
   if (cmd.type === "grantPass") {
     const p = tx.s.players[cmd.playerId];
     if (!p) fail("unknown_player");
@@ -341,7 +346,6 @@ function apply(tx: Tx, cmd: Command): void {
     case "terraSignal":
     case "terraGift":
     case "terraEmbargo":
-    case "terraSkirmishGlory":
       applyTerra(tx, cmd);
       break;
     case "chooseSpecialty":

@@ -284,6 +284,14 @@ function terraText(data: Record<string, unknown>): { title: string; body: string
         title: "Votre allié rompt l'alliance",
         body: "Dans deux heures, ses troupes pourront marcher sur vos terres.",
       };
+    case "skirmish_aborted":
+      return {
+        title: "Escarmouche interrompue",
+        body:
+          Number(data.rankedLeft ?? 0) > 0
+            ? "Une maintenance a interrompu votre partie : aucune Gloire, votre partie classée du jour reste disponible."
+            : "Une maintenance a interrompu votre partie : aucune Gloire, rien n'est compté.",
+      };
     case "terra_troops_received":
       return { title: "Renforts", body: `Un allié vous envoie ${Number(data.count)} troupes.` };
     case "terra_result": {

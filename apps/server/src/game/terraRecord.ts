@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { accounts, terraResults } from "../db/schema.js";
+import { accounts, skirmishMatches, terraResults } from "../db/schema.js";
 
 /** How far one week moves a rating at most. */
 const K = 32;
@@ -117,4 +117,25 @@ export async function terraRecord(db: Db, accountId: string) {
     .orderBy(desc(terraResults.at))
     .limit(10);
   return { rating: row?.rating ?? 1000, weeks: weeks.map((w) => ({ ...w, at: w.at.getTime() })) };
+}
+
+/**
+ * Settles the rows of the skirmishes paid in this transaction (engine events
+ * `terra_skirmish_paid`): paid with the glory, or not at all.
+ */
+export async function recordSkirmishesPaid(
+  tx: Db,
+  worldId: string,
+  events: { type: string; data?: Record<string, unknown> }[],
+  at: Date,
+): Promise<void> {
+  const ids = events
+    .filter((e) => e.type === "terra_skirmish_paid")
+    .map((e) => String(e.data?.matchId ?? ""))
+    .filter((id) => /^[0-9a-f-]{36}$/.test(id));
+  if (ids.length === 0) return;
+  await tx
+    .update(skirmishMatches)
+    .set({ status: "paid", endedAt: at })
+    .where(and(eq(skirmishMatches.worldId, worldId), inArray(skirmishMatches.id, ids)));
 }

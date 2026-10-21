@@ -287,8 +287,18 @@ export type TerraCommand =
   | { type: "terraSignal"; playerId: PlayerId; kind: TerraSignalKind; cell?: number }
   | { type: "terraGift"; playerId: PlayerId; to: PlayerId; amount: string }
   | { type: "terraEmbargo"; playerId: PlayerId; target: PlayerId | null }
-  /** A ranked skirmish's rank, paid by the server: `humans` merchants played the match. */
-  | { type: "terraSkirmishGlory"; playerId: PlayerId; glory: number; humans: number };
+  | TerraSkirmishPay;
+
+/**
+ * A ranked skirmish paid by the server, once its match is over: the glory of each merchant who
+ * played it (the computer's houses get none). One command for the whole match, so that every
+ * merchant is credited or none.
+ */
+export interface TerraSkirmishPay {
+  type: "terraSkirmishPay";
+  matchId: string;
+  ranks: { playerId: PlayerId; glory: number }[];
+}
 
 /** Ducats for the Terraferma: checked first, then destroyed. */
 function pay(tx: Tx, playerId: PlayerId, price: bigint, ref: string): void {
@@ -296,7 +306,44 @@ function pay(tx: Tx, playerId: PlayerId, price: bigint, ref: string): void {
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, price, "terraferma", ref);
 }
 
-export function applyTerra(tx: Tx, cmd: TerraCommand): void {
+/**
+ * Pays a ranked skirmish: by day, between merchants, once per match. Each merchant set down on
+ * the week's map, its ranked match of the day not yet played, gets its rank's glory and spends
+ * its quota here, never before; the others get nothing (their match was friendly for them).
+ */
+export function paySkirmish(tx: Tx, cmd: TerraSkirmishPay): void {
+  const cfg = terraOn(tx.ctx);
+  const sk = cfg?.skirmish;
+  if (!cfg || !sk) fail("terra_off");
+  const map = advanceTerraWorld(tx) as TerraState;
+  if (map.closed) fail("terra_closed");
+  const now = tx.now;
+  if (typeof cmd.matchId !== "string" || cmd.matchId.length === 0 || cmd.matchId.length > 64)
+    fail("invalid_quantity");
+  if (map.skirmishPaid?.[cmd.matchId]) fail("already_paid");
+  if (!hourWithin(hourIn(now), cfg.openHours)) fail("night");
+  if (cmd.ranks.length < sk.minHumans) fail("too_few_humans");
+  const top = Math.max(0, ...sk.glory);
+  const ids = new Set(cmd.ranks.map((r) => r.playerId));
+  if (ids.size !== cmd.ranks.length) fail("invalid_quantity");
+  for (const r of cmd.ranks)
+    if (!Number.isInteger(r.glory) || r.glory < 0 || r.glory > top) fail("invalid_quantity");
+  const paid: Record<string, number> = {};
+  for (const r of cmd.ranks) {
+    const p = map.players[r.playerId];
+    if (!tx.s.players[r.playerId] || !p || p.eliminatedAt !== undefined) continue;
+    if (skirmishesLeft(map, cfg, r.playerId, now) <= 0) continue;
+    countRankedSkirmish(map, cfg, r.playerId, now);
+    p.glory += r.glory;
+    paid[r.playerId] = r.glory;
+    emit(tx, "terra_skirmish", r.playerId, { glory: r.glory, matchId: cmd.matchId });
+  }
+  map.skirmishPaid ??= {};
+  map.skirmishPaid[cmd.matchId] = paid;
+  emit(tx, "terra_skirmish_paid", undefined, { matchId: cmd.matchId, paid });
+}
+
+export function applyTerra(tx: Tx, cmd: Exclude<TerraCommand, TerraSkirmishPay>): void {
   const cfg = terraOn(tx.ctx);
   if (!cfg) fail("terra_off");
   if (!tx.s.players[cmd.playerId]) fail("unknown_player");
@@ -361,22 +408,6 @@ export function applyTerra(tx: Tx, cmd: TerraCommand): void {
       });
       if (f.against && !isNation(f.against))
         emit(tx, "terra_attacked", f.against, { by: id, troops: f.troops, aim: f.aim });
-      break;
-    }
-    case "terraSkirmishGlory": {
-      // A ranked skirmish's rank, given by the server: the week's glory of a merchant set down,
-      // by day, between merchants, once a day (the quota is spent here, when it is paid).
-      const sk = cfg.skirmish;
-      if (!sk) fail("terra_off");
-      const p = map.players[id];
-      if (!p || p.eliminatedAt !== undefined) fail("not_placed");
-      if (!hourWithin(hourIn(now), cfg.openHours)) fail("night");
-      if (!Number.isInteger(cmd.humans) || cmd.humans < sk.minHumans) fail("too_few_humans");
-      if (!Number.isInteger(cmd.glory) || cmd.glory < 0 || cmd.glory > Math.max(0, ...sk.glory))
-        fail("invalid_quantity");
-      countRankedSkirmish(map, cfg, id, now);
-      p.glory += cmd.glory;
-      emit(tx, "terra_skirmish", id, { glory: cmd.glory });
       break;
     }
     case "terraSignal":

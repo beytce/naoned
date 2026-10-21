@@ -71,6 +71,33 @@ export async function retention(db: Db, worldId: string, now: number) {
       group by 1 order by 1`),
   );
 
+  // The skirmishes' matches by week (Paris): paid, friendly or unpaid, lost to a restart; and the
+  // checks that must stay at 0: a match's glory paid twice to a merchant, glory paid for a match
+  // marked aborted (its quota spent).
+  const skirmishWeeks = rowsOf<{ week: string; paid: number; done: number; aborted: number }>(
+    await db.execute(sql`
+      select to_char(date_trunc('week', m.opened_at at time zone 'Europe/Paris'), 'YYYY-MM-DD')
+          as week,
+        count(*) filter (where m.status = 'paid')::int as paid,
+        count(*) filter (where m.status = 'done')::int as done,
+        count(*) filter (where m.status = 'aborted')::int as aborted
+      from skirmish_matches m
+      where m.world_id = ${worldId}
+      group by 1 order by 1`),
+  );
+  const [checks] = rowsOf<{ duplicates: number; aborted_paid: number }>(
+    await db.execute(sql`
+      select
+        (select count(*)::int from (
+          select t.props->>'matchId', t.account_id from telemetry t
+          where t.world_id = ${worldId} and t.type = 'terra_skirmish' and t.props ? 'matchId'
+          group by 1, 2 having count(*) > 1) d) as duplicates,
+        (select count(*)::int from telemetry t
+          join skirmish_matches m on m.id::text = t.props->>'matchId'
+          where t.world_id = ${worldId} and t.type = 'terra_skirmish' and m.status = 'aborted')
+          as aborted_paid`),
+  );
+
   const lastSeen = { today: 0, days1to3: 0, days3to7: 0, moreThan7: 0, never: 0 };
   for (const p of players) {
     if (!p.last_seen) {
@@ -89,6 +116,11 @@ export async function retention(db: Db, worldId: string, now: number) {
     retention: [1, 3, 7, 14, 30].map(retained),
     sessions,
     skirmishes,
+    skirmishMatches: {
+      weeks: skirmishWeeks,
+      duplicates: checks?.duplicates ?? 0,
+      abortedPaid: checks?.aborted_paid ?? 0,
+    },
     tutorial: TUTORIAL_STEPS.map((step) => ({
       step,
       players: players.filter((p) => (p.steps ?? []).includes(step)).length,

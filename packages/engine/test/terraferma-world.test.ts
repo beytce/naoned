@@ -308,7 +308,7 @@ describe("diplomacy on the Terraferma", () => {
   });
 });
 
-describe("a skirmish's glory", () => {
+describe("a skirmish's payment", () => {
   const skirmish = {
     minutes: 15,
     speed: 60,
@@ -322,46 +322,137 @@ describe("a skirmish's glory", () => {
     rankedPerDay: 1,
     minHumans: 2,
   };
-  const glory = (playerId: string, amount: number, humans = 2) => ({
-    type: "terraSkirmishGlory",
-    playerId,
-    glory: amount,
-    humans,
+  let matches = 0;
+  const pay = (ranks: [string, number][], matchId = `m${++matches}`) => ({
+    type: "terraSkirmishPay",
+    matchId,
+    ranks: ranks.map(([playerId, glory]) => ({ playerId, glory })),
   });
+  const glory = (w: World, id: string) => w.state.terra?.map.players[id]?.glory ?? 0;
 
-  it("goes to the week's map of a merchant set down there, else nowhere", () => {
+  it("credits every merchant of the match set down on the week's map, in one command", () => {
     const w = live({ skirmish });
-    joined(w, "a");
-    w.do({ type: "join", playerId: "b", region: "terraferma" });
-    const before = w.state.terra?.map.players.a?.glory ?? 0;
-    expect(act(w, glory("a", 40)).ok).toBe(true);
-    expect(w.state.terra?.map.players.a?.glory).toBe(before + 40);
-    expect(error(act(w, glory("b", 40)))).toBe("not_placed");
+    joined(w, "a", "b");
+    w.do({ type: "join", playerId: "c", region: "terraferma" });
+    const before = { a: glory(w, "a"), b: glory(w, "b") };
+    const res = act(
+      w,
+      pay(
+        [
+          ["a", 40],
+          ["b", 25],
+          ["c", 60],
+        ],
+        "m-one",
+      ),
+    );
+    if (!res.ok) throw new Error(res.error);
+    expect(glory(w, "a")).toBe(before.a + 40);
+    expect(glory(w, "b")).toBe(before.b + 25);
+    // c is not on the week's map: nothing, and nothing counted.
+    expect(w.state.terra?.map.players.c).toBeUndefined();
+    expect(w.state.terra?.map.skirmishPaid?.["m-one"]).toEqual({ a: 40, b: 25 });
+    const paid = res.effects.events.filter((e) => e.type === "terra_skirmish");
+    expect(paid.map((e) => [e.playerId, e.data?.matchId])).toEqual([
+      ["a", "m-one"],
+      ["b", "m-one"],
+    ]);
   });
 
-  it("is paid for one ranked match a day: the next ones are friendly", () => {
+  it("is paid once: the same match again is refused, nothing credited twice", () => {
+    const w = live({ skirmish });
+    joined(w, "a", "b");
+    expect(
+      act(
+        w,
+        pay(
+          [
+            ["a", 0],
+            ["b", 0],
+          ],
+          "m-twice",
+        ),
+      ).ok,
+    ).toBe(true);
+    w.advance(DAY);
+    const before = glory(w, "a");
+    expect(
+      error(
+        act(
+          w,
+          pay(
+            [
+              ["a", 60],
+              ["b", 40],
+            ],
+            "m-twice",
+          ),
+        ),
+      ),
+    ).toBe("already_paid");
+    expect(glory(w, "a")).toBe(before);
+    expect(skirmishRankedLeft(w.ctx, w.state, "a", w.now)).toBe(1);
+  });
+
+  it("spends the day's ranked match only when paid: the next ones go unpaid", () => {
     const w = live({ skirmish });
     joined(w, "a", "b");
     expect(skirmishRankedLeft(w.ctx, w.state, "a", w.now)).toBe(1);
-    expect(act(w, glory("a", 0)).ok).toBe(true);
+    act(
+      w,
+      pay([
+        ["a", 0],
+        ["b", 10],
+      ]),
+    );
     expect(skirmishRankedLeft(w.ctx, w.state, "a", w.now)).toBe(0);
-    expect(error(act(w, glory("a", 60)))).toBe("already_ranked");
-    // b has its own ranked match of the day.
-    expect(act(w, glory("b", 60)).ok).toBe(true);
+    // Both played their ranked match of the day: the next match is settled, paying no one.
+    const before = glory(w, "a");
+    expect(
+      act(
+        w,
+        pay(
+          [
+            ["a", 60],
+            ["b", 40],
+          ],
+          "m-next",
+        ),
+      ).ok,
+    ).toBe(true);
+    expect(glory(w, "a")).toBe(before);
+    expect(w.state.terra?.map.skirmishPaid?.["m-next"]).toEqual({});
     w.advance(DAY);
     expect(skirmishRankedLeft(w.ctx, w.state, "a", w.now)).toBe(1);
-    expect(act(w, glory("a", 60)).ok).toBe(true);
+    act(
+      w,
+      pay([
+        ["a", 60],
+        ["b", 40],
+      ]),
+    );
+    expect(glory(w, "a")).toBeGreaterThanOrEqual(before + 60);
   });
 
   it("is never paid at night", () => {
     const w = live({ skirmish, openHours: { from: 8, to: 22 } });
     // T0 is 1 h in Paris: 9 h, then 23 h.
     w.advance(8 * HOUR);
-    joined(w, "a");
+    joined(w, "a", "b");
     expect(skirmishRanked(w.ctx.settings.terraferma, 2, w.now)).toBe(true);
     w.advance(14 * HOUR);
     expect(skirmishRanked(w.ctx.settings.terraferma, 2, w.now)).toBe(false);
-    expect(error(act(w, glory("a", 60)))).toBe("night");
+    expect(
+      error(
+        act(
+          w,
+          pay([
+            ["a", 60],
+            ["b", 40],
+          ]),
+        ),
+      ),
+    ).toBe("night");
     expect(skirmishRankedLeft(w.ctx, w.state, "a", w.now)).toBe(1);
   });
 
@@ -374,13 +465,49 @@ describe("a skirmish's glory", () => {
     expect(skirmishRanked(w.ctx.settings.terraferma, 2, w.now)).toBe(true);
   });
 
-  it("needs at least two merchants in the match, and stays within the scale", () => {
+  it("needs two merchants, each once, within the scale: else no one is paid", () => {
     const w = live({ skirmish });
-    joined(w, "a");
+    joined(w, "a", "b");
     expect(skirmishRanked(w.ctx.settings.terraferma, 1, w.now)).toBe(false);
-    expect(error(act(w, glory("a", 60, 1)))).toBe("too_few_humans");
-    expect(error(act(w, glory("a", 61)))).toBe("invalid_quantity");
+    expect(error(act(w, pay([["a", 60]])))).toBe("too_few_humans");
+    expect(
+      error(
+        act(
+          w,
+          pay([
+            ["a", 60],
+            ["a", 40],
+          ]),
+        ),
+      ),
+    ).toBe("invalid_quantity");
+    expect(
+      error(
+        act(
+          w,
+          pay([
+            ["a", 61],
+            ["b", 40],
+          ]),
+        ),
+      ),
+    ).toBe("invalid_quantity");
+    expect(
+      error(
+        act(
+          w,
+          pay(
+            [
+              ["a", 60],
+              ["b", 40],
+            ],
+            "",
+          ),
+        ),
+      ),
+    ).toBe("invalid_quantity");
     expect(skirmishRankedLeft(w.ctx, w.state, "a", w.now)).toBe(1);
+    expect(skirmishRankedLeft(w.ctx, w.state, "b", w.now)).toBe(1);
   });
 });
 

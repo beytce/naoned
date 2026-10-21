@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   type Skirmish,
   type SkirmishAction,
@@ -12,14 +13,17 @@ import {
   skirmishRankedLeft,
   toReal,
 } from "@comptoirs/engine";
-import { inArray } from "drizzle-orm";
+import { and, eq, gt, inArray } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { accounts, telemetry } from "../db/schema.js";
+import { accounts, skirmishMatches, telemetry } from "../db/schema.js";
+import type { Notifier } from "../notify/notifier.js";
 import { type TerraName, terraView } from "./terra.js";
 import type { GameWorld } from "./world.js";
 
 /** How long a finished match stays on show. */
 const SHOWN_AFTER_MS = 3 * 60_000;
+/** How long the merchants of a match lost to a restart are told so. */
+const INTERRUPTED_SHOWN_MS = 12 * 3_600_000;
 
 /** Why a merchant may not join: the lobby is full, or it is night (no skirmish then). */
 export type JoinRefusal = "skirmish_full" | "night";
@@ -32,26 +36,103 @@ export type FriendlyWhy = "off_map" | "quota" | "late" | "few";
 
 /**
  * The skirmishes of the world (recommendations of 20 October 2026): one lobby, one match at a
- * time, held in memory; the ranks of the merchants who played a ranked match go to the week's
- * Terraferma through a command of the world (so they are in its journal, and the day's quota is
- * spent only there). None open at night. Lost on a restart, like a game of OpenFront when its
- * server falls.
+ * time, played in memory, each with its row in `skirmish_matches`. A ranked match is paid to all
+ * its merchants by one command of the world, `terraSkirmishPay`, once per match (so it is in the
+ * journal, and the day's quota is spent only there); its row turns `paid` in the same
+ * transaction. None open at night. A match under way is lost on a restart, like a game of
+ * OpenFront when its server falls: `recover` marks it aborted, nothing paid nor spent, and its
+ * merchants are told so.
  */
 export class SkirmishHub {
-  private lobby: { players: string[]; opensAt: number } | null = null;
+  private lobby: { id: string; players: string[]; opensAt: number } | null = null;
   private match: Skirmish | null = null;
+  private matchId = "";
   private paid = false;
   /** Glory credited to each merchant of the match (a friendly match, or past the quota: none). */
   private credited = new Map<string, number>();
   /** Why the match is friendly for each of its merchants, from its start (null: ranked). */
   private stakes = new Map<string, FriendlyWhy | null>();
+  /** Merchants of a match lost to a restart, and when it was lost. */
+  private interrupted = new Map<string, number>();
+  /** The rows' writes, one after the other (a join never overtakes the lobby's opening). */
+  private writes: Promise<unknown> = Promise.resolve();
   private timer: NodeJS.Timeout | undefined;
   private seq = 0;
 
   constructor(
     private readonly db: Db,
     private readonly world: GameWorld,
+    private readonly notifier?: Pick<Notifier, "send">,
   ) {}
+
+  /** Queues a write of the matches' rows; a failed one is logged, never thrown at a player. */
+  private write(fn: () => Promise<unknown>): Promise<void> {
+    const next = this.writes.then(fn);
+    this.writes = next.catch(console.error);
+    return this.writes.then(() => undefined);
+  }
+
+  /**
+   * At start-up, before the first step: the lobbies and matches the last run left open are lost,
+   * nothing paid and no quota spent. Their merchants are notified, and told on the skirmish's bar
+   * for a while (those of an earlier restart too).
+   */
+  async recover(now: number): Promise<void> {
+    const worldId = this.world.id;
+    const lost = await this.db
+      .update(skirmishMatches)
+      .set({ status: "aborted", endedAt: new Date(now) })
+      .where(
+        and(
+          eq(skirmishMatches.worldId, worldId),
+          inArray(skirmishMatches.status, ["open", "playing"]),
+        ),
+      )
+      .returning({ players: skirmishMatches.players, ranked: skirmishMatches.ranked });
+    const recent = await this.db
+      .select({ players: skirmishMatches.players, endedAt: skirmishMatches.endedAt })
+      .from(skirmishMatches)
+      .where(
+        and(
+          eq(skirmishMatches.worldId, worldId),
+          eq(skirmishMatches.status, "aborted"),
+          gt(skirmishMatches.endedAt, new Date(now - INTERRUPTED_SHOWN_MS)),
+        ),
+      );
+    for (const r of recent)
+      for (const id of r.players)
+        this.interrupted.set(
+          id,
+          Math.max(this.interrupted.get(id) ?? 0, r.endedAt?.getTime() ?? 0),
+        );
+    const ids = [...new Set(lost.flatMap((r) => r.players))];
+    if (!this.notifier || ids.length === 0) return;
+    const people = new Set(
+      (
+        await this.db
+          .select({ id: accounts.id })
+          .from(accounts)
+          .where(and(inArray(accounts.id, ids), eq(accounts.isBot, false)))
+      ).map((r) => r.id),
+    );
+    await this.notifier.send(
+      lost.flatMap((r) =>
+        r.players
+          .filter((id) => people.has(id))
+          .map((accountId) => ({
+            accountId,
+            kind: "family" as const,
+            data: {
+              event: "skirmish_aborted",
+              ranked: r.ranked,
+              // Whether its ranked match of the day is still to play (nothing was spent).
+              rankedLeft: skirmishRankedLeft(this.world.ctx, this.world.current, accountId, now),
+            },
+          })),
+      ),
+      now,
+    );
+  }
 
   private get cfg() {
     const cfg = this.world.ctx.settings.terraferma;
@@ -77,33 +158,65 @@ export class SkirmishHub {
     const cfg = this.cfg;
     if (!cfg) return;
     if (this.lobby && now >= this.lobby.opensAt) {
-      const humans = this.lobby.players;
-      this.match = createSkirmish(cfg, `${this.world.id}:${++this.seq}:${now}`, humans, now);
+      const { id, players: humans } = this.lobby;
+      const m = createSkirmish(cfg, `${this.world.id}:${++this.seq}:${now}`, humans, now);
+      this.match = m;
+      this.matchId = id;
       this.lobby = null;
       this.paid = false;
       this.credited = new Map();
       // The stake each merchant sees, kept from the start to the end of the match.
-      this.stakes = new Map(humans.map((id) => [id, this.friendlyWhy(id, humans.length, now)]));
+      this.stakes = new Map(humans.map((p) => [p, this.friendlyWhy(p, humans.length, now)]));
+      void this.write(() =>
+        this.db
+          .update(skirmishMatches)
+          .set({
+            status: "playing",
+            players: [...humans],
+            ranked: m.ranked,
+            startedAt: new Date(now),
+          })
+          .where(eq(skirmishMatches.id, id)),
+      );
     }
     const m = this.match;
     if (!m) return;
     advanceSkirmish(m, now);
     if (m.result && !this.paid) {
       this.paid = true;
+      const id = this.matchId;
+      const result = m.result;
+      // Its row exists and plays before it is paid.
+      await this.writes;
+      let paid = false;
       if (m.ranked) {
-        // Every merchant of a ranked match spends its quota of the day, whatever its rank; one
-        // who already played its ranked match today, or is not on the week's map, gets nothing.
-        for (const id of m.humans) {
-          const glory = m.result.ranking.find((r) => r.id === id)?.glory ?? 0;
-          const res = await this.world.execute({
-            type: "terraSkirmishGlory",
-            playerId: id,
-            glory,
-            humans: m.humans.length,
-          });
-          if (res.ok) this.credited.set(id, glory);
+        // One command for the whole match: every merchant on the week's map whose ranked match
+        // of the day is still to play gets its rank's glory and spends its quota, whatever its
+        // rank; the others get nothing. The row turns `paid` in the same transaction.
+        const res = await this.world.execute({
+          type: "terraSkirmishPay",
+          matchId: id,
+          ranks: m.humans.map((p) => ({
+            playerId: p,
+            glory: result.ranking.find((r) => r.id === p)?.glory ?? 0,
+          })),
+        });
+        if (res.ok) {
+          paid = true;
+          const credited = this.world.current.terra?.map.skirmishPaid?.[id] ?? {};
+          for (const [p, glory] of Object.entries(credited)) this.credited.set(p, glory);
         }
       }
+      // A friendly match, or one the world refused to pay: over, nothing paid.
+      if (!paid)
+        await this.write(() =>
+          this.db
+            .update(skirmishMatches)
+            .set({ status: "done", endedAt: new Date(now) })
+            .where(
+              and(eq(skirmishMatches.id, id), inArray(skirmishMatches.status, ["open", "playing"])),
+            ),
+        );
       // Each merchant's match, ranked (paid) or friendly, for the beta's dashboard.
       await this.db.insert(telemetry).values(
         m.humans.map((id) => ({
@@ -125,10 +238,43 @@ export class SkirmishHub {
     if (this.match && !this.match.result)
       return this.match.humans.includes(accountId) || "skirmish_full";
     if (!this.lobby && !hourWithin(hourIn(now), cfg.openHours)) return "night";
-    if (!this.lobby) this.lobby = { players: [], opensAt: now + cfg.skirmish.lobbySeconds * 1_000 };
-    if (this.lobby.players.length >= cfg.skirmish.players) return "skirmish_full";
-    if (!this.lobby.players.includes(accountId)) this.lobby.players.push(accountId);
+    if (!this.lobby) {
+      const lobby = {
+        id: randomUUID(),
+        players: [] as string[],
+        opensAt: now + cfg.skirmish.lobbySeconds * 1_000,
+      };
+      this.lobby = lobby;
+      void this.write(() =>
+        this.db.insert(skirmishMatches).values({
+          id: lobby.id,
+          worldId: this.world.id,
+          players: [],
+          status: "open",
+          openedAt: new Date(now),
+        }),
+      );
+    }
+    const lobby = this.lobby;
+    if (lobby.players.length >= cfg.skirmish.players) return "skirmish_full";
+    if (!lobby.players.includes(accountId)) {
+      lobby.players.push(accountId);
+      // A new match: the last one's interruption is told no more.
+      this.interrupted.delete(accountId);
+      const players = [...lobby.players];
+      void this.write(() =>
+        this.db
+          .update(skirmishMatches)
+          .set({ players })
+          .where(and(eq(skirmishMatches.id, lobby.id), eq(skirmishMatches.status, "open"))),
+      );
+    }
     return true;
+  }
+
+  /** Waits for the rows' writes queued so far (tests, shutdown). */
+  flush(): Promise<void> {
+    return this.writes.then(() => undefined);
   }
 
   act(accountId: string, action: SkirmishAction, now: number): boolean {
@@ -166,8 +312,11 @@ export class SkirmishHub {
         : this.lobby
           ? this.lobby.opensAt + cfg.skirmish.minutes * 60_000
           : now) + lobbyMs;
+    const lostAt = this.interrupted.get(accountId);
     const day = {
       rankedLeft,
+      // A match of the merchant's lost to a restart lately: no glory, its quota untouched.
+      interrupted: lostAt !== undefined && now - lostAt < INTERRUPTED_SHOWN_MS,
       // Whether a ranked match may still be played today, after the one under way if any.
       rankedLater: rankedLeft > 0 && skirmishRanked(cfg, cfg.skirmish.minHumans, nextAt),
       // Glory is paid only to a merchant set down on the week's map, and still on it.

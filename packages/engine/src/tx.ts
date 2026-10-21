@@ -168,7 +168,8 @@ export type EngineErrorCode =
   | "decree_repeat"
   | "night"
   | "too_few_humans"
-  | "already_ranked";
+  | "already_ranked"
+  | "already_paid";
 
 export class EngineError extends Error {
   constructor(
