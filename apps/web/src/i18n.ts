@@ -1183,7 +1183,7 @@ export const fr = {
         cosmetics: "Sceau à côté de votre nom, palette « Or de Venise »",
       },
       trust:
-        "Un abonné ne produit pas un grain de plus que vous : la simulation le vérifie chaque saison (Rapport de la Banque).",
+        "Un abonné ne produit pas un grain de plus que vous : le Pass ne donne que de l'information et du cosmétique, et la simulation de saison le vérifie avant toute ouverture du paiement.",
       earn: "Le gagner sans payer : top 10 de la semaine (7 jours), top 10 de la saison (toute la saison suivante), top 10 % et 25 % (3 semaines, 1 semaine).",
       price: (season: string, week: string) => `${season} la saison · ${week} la semaine`,
       soon: "Achat bientôt disponible",
