@@ -1,0 +1,116 @@
+/**
+ * What Lorenzo's guide sees of the page: whether the element it points at can be touched, and
+ * how it brings one into view. Written against the few calls it makes of the DOM, so the tests
+ * can play them with plain objects.
+ */
+
+export interface Rect {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+  width: number;
+  height: number;
+}
+
+/** A window over the page (a sheet, the help, the bales): `aria-modal`, scrolling its content. */
+export interface Modal {
+  contains(other: unknown): boolean;
+  getBoundingClientRect(): Rect;
+  scrollTop: number;
+  scrollTo(options: { top: number; behavior: "smooth" }): void;
+}
+
+/** The element pointed at, as the guide reads it. */
+export interface Target {
+  contains(other: unknown): boolean;
+  getBoundingClientRect(): Rect;
+  closest(selector: string): unknown;
+}
+
+/** What lies at a point of the screen: the element hit, and whether it is the guide's bubble. */
+export interface Hit {
+  contains(other: unknown): boolean;
+  closest(selector: string): unknown;
+}
+
+export interface Page {
+  width: number;
+  height: number;
+  /** The topmost element under a point (`document.elementFromPoint`). */
+  at(x: number, y: number): Hit | null;
+  /** The windows open over the page (`[aria-modal="true"]`). */
+  modals(): Modal[];
+}
+
+export const MODAL = '[aria-modal="true"]';
+
+/** The browser's page, for the guide. */
+export function browserPage(): Page {
+  return {
+    width: window.innerWidth,
+    height: window.innerHeight,
+    at: (x, y) => document.elementFromPoint(x, y),
+    modals: () => [...document.querySelectorAll<HTMLElement>(MODAL)],
+  };
+}
+
+/**
+ * Something lies over the target: a window open over the page that does not hold it (as soon as
+ * it opens, while it still slides in), or, under its centre, an element that is neither the
+ * target, inside it, nor the guide's own bubble. Off screen, it is not covered (it scrolls).
+ */
+export function isCovered(el: Target, box: Rect, page: Page): boolean {
+  if (page.modals().some((m) => !m.contains(el))) return true;
+  const x = box.left + box.width / 2;
+  const y = box.top + box.height / 2;
+  if (x < 0 || y < 0 || x > page.width || y > page.height) return false;
+  const top = page.at(x, y);
+  if (!top) return false;
+  return !el.contains(top) && !top.contains(el) && !top.closest("[data-coach-bubble]");
+}
+
+/**
+ * Brings a target out of sight in its window into view, by scrolling that window alone (never
+ * the page, nor the map): a list still filling when the step came, a reward under the fold.
+ * Returns whether it scrolled. A target outside a window (on the map, in a place's panel) stays
+ * where it is.
+ */
+export function bringIntoSheet(el: Target, viewHeight: number): boolean {
+  const sheet = el.closest(MODAL) as Modal | null;
+  if (!sheet) return false;
+  const s = sheet.getBoundingClientRect();
+  const b = el.getBoundingClientRect();
+  const top = Math.max(0, s.top);
+  const bottom = Math.min(viewHeight, s.bottom);
+  if (b.top >= top && b.bottom <= bottom) return false;
+  sheet.scrollTo({
+    top: Math.max(0, sheet.scrollTop + (b.top + b.height / 2) - (top + bottom) / 2),
+    behavior: "smooth",
+  });
+  return true;
+}
+
+/**
+ * Once per step: the guide brings its target into view the first time it finds it out of
+ * sight, then leaves the scroll to the player (who may read further down). A new step, or a new
+ * element pointed at within it, may be brought once again.
+ */
+export function bringOnce(): (step: string, el: Target, viewHeight: number) => void {
+  let done: string | null = null;
+  return (step, el, viewHeight) => {
+    if (done === step) return;
+    const b = el.getBoundingClientRect();
+    if (b.top >= 0 && b.bottom <= viewHeight && !outOfSheet(el, b, viewHeight)) return;
+    done = step;
+    bringIntoSheet(el, viewHeight);
+  };
+}
+
+/** Out of its window's visible part, though on the screen. */
+function outOfSheet(el: Target, b: Rect, viewHeight: number): boolean {
+  const sheet = el.closest(MODAL) as Modal | null;
+  if (!sheet) return false;
+  const s = sheet.getBoundingClientRect();
+  return b.top < Math.max(0, s.top) || b.bottom > Math.min(viewHeight, s.bottom);
+}

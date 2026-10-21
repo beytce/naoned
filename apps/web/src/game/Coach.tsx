@@ -1,10 +1,11 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Lorenzo } from "../art/scenes.js";
 import { fr } from "../i18n.js";
 import { Big, Label, Slab, clock } from "../ui.js";
 import { affordable, have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
+import { bringOnce, browserPage, isCovered } from "./coachSight.js";
 import { store } from "./store.js";
 
 const STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "mission"] as const;
@@ -71,19 +72,6 @@ type CoachProps = GameProps & { departing: boolean };
 
 /** Room the bubble takes at the top of the screen: a target above it sends the bubble down. */
 const BUBBLE_ROOM = 190;
-
-/**
- * Something lies over the target (a sheet, a window): the element under its centre is neither
- * the target, inside it, nor the guide's own bubble. Off screen, it is not covered (it scrolls).
- */
-function isCovered(el: HTMLElement, box: DOMRect): boolean {
-  const x = box.left + box.width / 2;
-  const y = box.top + box.height / 2;
-  if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) return false;
-  const top = document.elementFromPoint(x, y);
-  if (!top) return false;
-  return !el.contains(top) && !top.contains(el) && !top.closest("[data-coach-bubble]");
-}
 
 /**
  * What to do next, read from the live game: the guide follows the player instead of a script,
@@ -226,6 +214,8 @@ export function Coach(props: CoachProps) {
       ? { text: fr.game.map.campaign.backToTrade, target: "door-layer" }
       : nextStep(props);
   const index = Math.min(STEPS.length, props.view.tutorial.length + 1);
+  // A target out of sight in its sheet is brought into view once a step, never fought for.
+  const bring = useRef(bringOnce()).current;
 
   useLayoutEffect(() => {
     if (hidden || finished || !step.target) {
@@ -241,20 +231,17 @@ export function Coach(props: CoachProps) {
       const follow = step.follow ? visible(step.follow) : null;
       const el = follow ?? visible(step.target ?? "");
       setOnFollow(follow !== null);
+      if (el) bring(`${step.text}>${follow ? step.follow : step.target}`, el, window.innerHeight);
       const box = el ? el.getBoundingClientRect() : null;
-      // Out of sight (a sheet's list still filling when the step came): brought into view.
-      if (el && box && (box.top < 0 || box.bottom > window.innerHeight))
-        el.scrollIntoView({ block: "center", behavior: "smooth" });
-      const hidden = el && box ? isCovered(el, box) : false;
+      // Never a ring on what a window covers, even while it slides in.
+      const hidden = el && box ? isCovered(el, box, browserPage()) : false;
       setCovered(hidden);
       setRect(hidden ? null : box);
-      return el;
     };
-    const el = find();
-    el?.scrollIntoView({ block: "center", behavior: "smooth" });
+    find();
     const t = setInterval(find, 250);
     return () => clearInterval(t);
-  }, [step.target, step.follow, hidden, finished]);
+  }, [step.target, step.follow, step.text, hidden, finished, bring]);
   const text = covered
     ? fr.game.coach.covered
     : onFollow && step.followText
@@ -304,6 +291,7 @@ export function Coach(props: CoachProps) {
           {/* The ring on its own element: its pulse must not wipe the dimming's shadow. */}
           <div
             className="coach-ring pointer-events-none fixed z-[45] rounded-md border-[3px] border-info"
+            data-coach-target={onFollow ? step.follow : step.target}
             style={box}
           />
         </>
