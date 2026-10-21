@@ -102,45 +102,49 @@ function Curves({ data }: { data: DashboardView }) {
   const first = data.days.findIndex((_, i) => shown(i));
   return (
     <figure className="space-y-2">
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        width="100%"
-        role="img"
-        aria-label={t.chart(data.days.length)}
-        className="block cut bg-night-3 ring-1 ring-inset ring-line"
-      >
-        <line x1="6" x2={W - 6} y1={y(0)} y2={y(0)} stroke="rgb(var(--line))" />
-        {data.days.map((day, i) =>
-          shown(i) ? (
-            <text
-              key={day}
-              x={x(i)}
-              y={H - 4}
-              textAnchor={i === first ? "start" : i === data.days.length - 1 ? "end" : "middle"}
-              fontSize="9"
-              fill="rgb(var(--cream-dim))"
-            >
-              {dayLabel(day)}
-            </text>
-          ) : null,
-        )}
-        {lines
-          .slice()
-          .reverse()
-          .map((l) => (
-            <path
-              key={l.who}
-              d={l.points
-                .map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`)
-                .join(" ")}
-              fill="none"
-              stroke={COLOR[l.who]}
-              strokeWidth={l.who === "me" ? 2.5 : 1.5}
-              strokeDasharray={l.who === "leader" ? "4 3" : undefined}
-              strokeLinejoin="round"
-            />
-          ))}
-      </svg>
+      {/* The cut corners clip the frame, not the chart: its 14px side padding keeps
+          every label and curve out of the two cut triangles. */}
+      <div className="cut bg-night-3 px-3.5 ring-1 ring-inset ring-line">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          width="100%"
+          role="img"
+          aria-label={t.chart(data.days.length)}
+          className="block"
+        >
+          <line x1="6" x2={W - 6} y1={y(0)} y2={y(0)} stroke="rgb(var(--line))" />
+          {data.days.map((day, i) =>
+            shown(i) ? (
+              <text
+                key={day}
+                x={x(i)}
+                y={H - 4}
+                textAnchor={i === first ? "start" : i === data.days.length - 1 ? "end" : "middle"}
+                fontSize="9"
+                fill="rgb(var(--cream-dim))"
+              >
+                {dayLabel(day)}
+              </text>
+            ) : null,
+          )}
+          {lines
+            .slice()
+            .reverse()
+            .map((l) => (
+              <path
+                key={l.who}
+                d={l.points
+                  .map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`)
+                  .join(" ")}
+                fill="none"
+                stroke={COLOR[l.who]}
+                strokeWidth={l.who === "me" ? 2.5 : 1.5}
+                strokeDasharray={l.who === "leader" ? "4 3" : undefined}
+                strokeLinejoin="round"
+              />
+            ))}
+        </svg>
+      </div>
       <figcaption className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
         {lines.map((l) => (
           <span key={l.who} className="flex items-center gap-1.5">
