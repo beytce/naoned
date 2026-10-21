@@ -1158,3 +1158,24 @@ Ateliers chiffrés, tableau de bord, conseiller ; fournisseur officiel (+10 % la
 | Masse monétaire par joueur actif (pic) | ≤ 0,91 × | ≤ 0,91 × |
 
 **Lecture.** Les nouveautés créent un peu de monnaie (prime du fournisseur, appels d'offres, qualité) et en détruisent un peu (cautions perdues) : la croissance reste en avertissement comme avant, la masse par joueur actif loin du plafond. Les cours des matières premières finissent bas (50 à 60 % de la référence), comme avant la refonte. À mesurer avec de vrais joueurs : les entrepôts et les prêts, que les PNJ ne prennent pas, et le rythme d'ouverture des chaînes de luxe.
+
+## Pass Négociant — avantages à zéro (21 octobre 2026, chantier `live-2` du plan de finalisation)
+
+Les trois avantages du Pass qui vendaient de la production ou de l'accès au marché passent à 0 dans Venise : `pass.freshBonusBps` (800 → 0), `pass.marketMakerQuotaBps` (2 000 → 0) et `pass.extraOpenOrders` (2 → 0). Les champs restent dans le schéma, qui refuse désormais toute valeur non nulle (raffinement zod, test `settings.test.ts`) ; le moteur ne les lit plus (`production.ts`, `market.ts`), et un monde enregistré avec les anciennes valeurs est remis à zéro à son ouverture (`upgradeLegacySettings`). Le Pass ne donne plus que de l'information à lire et du cosmétique, listés dans `pass.perks` : cours du Rialto sur 30 jours, tableau de bord sur 30 jours, carnet à 10 offres, sceau et palette. Les effets des maîtrises (Marchand du Levant, trader) se gagnent au jeu et ne changent pas. Le Pass reste coupé dans Venise (`pass.enabled` faux) : `pnpm sim` sans `--pass` ne change pas, puisque personne n'y détient le Pass.
+
+`pnpm sim --pass 0.2`, graines 1 à 10, toutes conformes :
+
+| Graine | Avance des abonnés (patrimoine) | Avance (ventes nettes) | Part du top 10 (patrimoine / ventes nettes) | Gratuit assidu devant abonné occasionnel (patrimoine) |
+| --- | --- | --- | --- | --- |
+| 1 | 0,0 % | 0,0 % | 10 % / 20 % | pas d'abonné occasionnel |
+| 2 | 0,0 % | 0,0 % | 0 % / 20 % | pas d'abonné occasionnel |
+| 3 | 0,0 % | 0,0 % | 0 % / 0 % | pas d'abonné occasionnel |
+| 4 | 0,0 % | 0,0 % | 10 % / 20 % | pas d'abonné occasionnel |
+| 5 | 0,0 % | 0,0 % | 30 % / 30 % | 18 846 contre 10 256 ducats |
+| 6 | 0,0 % | 0,0 % | 0 % / 10 % | pas d'abonné occasionnel |
+| 7 | 0,0 % | 0,0 % | 0 % / 10 % | pas d'abonné occasionnel |
+| 8 | 0,0 % | 0,0 % | 0 % / 0 % | pas d'abonné occasionnel |
+| 9 | 0,0 % | 0,0 % | 10 % / 20 % | 25 409 contre 7 183 ducats |
+| 10 | 0,0 % | 0,0 % | 10 % / 10 % | pas d'abonné occasionnel |
+
+**Lecture.** La saison avec Pass et la même saison rejouée sans ses avantages sont désormais identiques : l'avance est exactement nulle, en médiane comme en moyenne, et l'écart de −70 % à +47 % relevé jusqu'ici (voir plus haut) n'était que la divergence de deux parties qui ne jouaient plus les mêmes coups. Le contrôle « gratuit assidu devant abonné occasionnel » n'a de sujet que sur 2 graines sur 10 (aucun occasionnel abonné encore actif en fin de saison ailleurs) ; il y est largement tenu, et il l'est par construction, le Pass ne changeant plus rien au jeu. La part des abonnés dans le top 10 (0 à 30 %) suit leur part des marchands (20 %). Les trois contrôles bloquants étant conformes sur 10 graines, la condition de simulation au branchement du paiement est remplie ; le paiement reste néanmoins débranché (`PASS_PAYMENT_OPEN` faux dans `apps/server/src/game/pass.ts`) jusqu'à la décision du porteur, et `purchasePass` refuse tout achat tant que `pass.enabled` est faux. À suivre en bêta : la part des abonnés dans le top 10 hebdomadaire face à leur part des joueurs actifs.
