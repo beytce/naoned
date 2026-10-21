@@ -91,6 +91,7 @@ export function CityMarker({
         <span className="marker-halo absolute inset-1 rounded-full" />
       )}
       <span
+        data-map-label
         className={`marker-orb relative flex items-center justify-center rounded-lg shadow-[0_6px_16px_rgb(0_0_0/0.5)] ring-1 ring-[#BFE3FF]/55 ${code === "venezia" ? "h-14 w-14" : "h-12 w-12"}`}
         style={plaqueStyle(code)}
       >
@@ -100,7 +101,7 @@ export function CityMarker({
         />
       </span>
       {(orders > 0 || criee) && (
-        <span className="absolute -right-0.5 top-0.5 flex gap-0.5">
+        <span data-map-label className="absolute -right-0.5 top-0.5 flex gap-0.5">
           {criee && <Pill tone="vermilion">!</Pill>}
           {orders > 0 && <Pill tone={deliverable > 0 ? "gold" : "lagoon"}>{orders}</Pill>}
         </span>
@@ -110,7 +111,10 @@ export function CityMarker({
           <Crest crest={supplier} size={22} />
         </span>
       )}
-      <span className="pointer-events-none absolute left-1/2 top-[calc(100%-4px)] -translate-x-1/2 whitespace-nowrap bg-[#16263E]/80 px-1.5 font-display text-xs font-extrabold uppercase tracking-wider text-cream/95 [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+      <span
+        data-map-label
+        className="pointer-events-none absolute left-1/2 top-[calc(100%-4px)] -translate-x-1/2 whitespace-nowrap bg-[#16263E]/80 px-1.5 font-display text-xs font-extrabold uppercase tracking-wider text-cream/95 [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
+      >
         {name}
       </span>
     </button>

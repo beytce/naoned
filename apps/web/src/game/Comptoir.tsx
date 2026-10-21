@@ -321,7 +321,10 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
       </div>
 
       {recipe && (
-        <div className="mt-3 cut bg-night-3/60 px-3 py-2">
+        <div
+          className="mt-3 cut bg-night-3/60 px-3 py-2"
+          data-recipe={Object.keys(recipe.inputs).length > 0 ? "transform" : "raw"}
+        >
           <RecipeFlow
             recipe={recipe}
             level={b.level}
