@@ -1,5 +1,5 @@
 import { campaignWeekEnd, campaignWeekStart, familyAccount } from "./campaign.js";
-import { dayStartIn } from "./clock.js";
+import { dayStartIn, hourIn, hourWithin } from "./clock.js";
 import { TERRA_FAMILY } from "./decrees.js";
 import {
   HOUR_MS,
@@ -25,6 +25,7 @@ import {
   buildOnTerra,
   chooseDecree,
   closeTerra,
+  countRankedSkirmish,
   fireBombard,
   giftDucats,
   isNation,
@@ -40,6 +41,7 @@ import {
   setEmbargo,
   setPeasants,
   signal,
+  skirmishesLeft,
 } from "./terraferma.js";
 import { type Tx, addStock, balance, emit, fail, transfer } from "./tx.js";
 import { seasonWeeks, weekIndex } from "./weekly.js";
@@ -96,6 +98,23 @@ function terra(tx: Tx, cfg: TerraConfig): TerraState {
  * The embargo of the Terraferma: a city held there by a merchant who embargoes this one pays it
  * so much less (bps), the strongest if several.
  */
+/**
+ * Ranked skirmishes a merchant may still be paid for today: the day's quota on the week's map
+ * (all of it before the week's map is drawn or once it has turned).
+ */
+export function skirmishRankedLeft(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  now: number,
+): number {
+  const cfg = terraOn(ctx);
+  if (!cfg?.skirmish) return 0;
+  const t = state.terra;
+  if (!t || t.week < weekIndex(ctx, now)) return cfg.skirmish.rankedPerDay;
+  return skirmishesLeft(t.map, cfg, playerId, now);
+}
+
 export function terraEmbargoCutBps(
   ctx: WorldContext,
   state: WorldState,
@@ -268,7 +287,8 @@ export type TerraCommand =
   | { type: "terraSignal"; playerId: PlayerId; kind: TerraSignalKind; cell?: number }
   | { type: "terraGift"; playerId: PlayerId; to: PlayerId; amount: string }
   | { type: "terraEmbargo"; playerId: PlayerId; target: PlayerId | null }
-  | { type: "terraSkirmishGlory"; playerId: PlayerId; glory: number };
+  /** A ranked skirmish's rank, paid by the server: `humans` merchants played the match. */
+  | { type: "terraSkirmishGlory"; playerId: PlayerId; glory: number; humans: number };
 
 /** Ducats for the Terraferma: checked first, then destroyed. */
 function pay(tx: Tx, playerId: PlayerId, price: bigint, ref: string): void {
@@ -344,11 +364,17 @@ export function applyTerra(tx: Tx, cmd: TerraCommand): void {
       break;
     }
     case "terraSkirmishGlory": {
-      // A skirmish's rank, given by the server: the week's glory of a merchant set down.
+      // A ranked skirmish's rank, given by the server: the week's glory of a merchant set down,
+      // by day, between merchants, once a day (the quota is spent here, when it is paid).
+      const sk = cfg.skirmish;
+      if (!sk) fail("terra_off");
       const p = map.players[id];
       if (!p || p.eliminatedAt !== undefined) fail("not_placed");
-      if (!Number.isInteger(cmd.glory) || cmd.glory < 0 || cmd.glory > 1_000)
+      if (!hourWithin(hourIn(now), cfg.openHours)) fail("night");
+      if (!Number.isInteger(cmd.humans) || cmd.humans < sk.minHumans) fail("too_few_humans");
+      if (!Number.isInteger(cmd.glory) || cmd.glory < 0 || cmd.glory > Math.max(0, ...sk.glory))
         fail("invalid_quantity");
+      countRankedSkirmish(map, cfg, id, now);
       p.glory += cmd.glory;
       emit(tx, "terra_skirmish", id, { glory: cmd.glory });
       break;

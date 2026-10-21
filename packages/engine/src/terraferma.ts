@@ -49,8 +49,18 @@ export interface TerraPlayer {
   capital?: number;
   /** Troops of cap bought with ducats this week. */
   boughtCap?: number;
-  /** Cap raises, troops and ducats sent to allies, bombard shots, on the day they were counted. */
-  today?: { day: number; raises: number; gifts: number; shots?: number; ducats?: bigint };
+  /**
+   * Cap raises, troops and ducats sent to allies, bombard shots, ranked skirmishes paid, on the
+   * day they were counted.
+   */
+  today?: {
+    day: number;
+    raises: number;
+    gifts: number;
+    shots?: number;
+    ducats?: bigint;
+    skirmishes?: number;
+  };
   /** Alliances broken this week, and until when it is a traitor. */
   breaks?: number;
   traitorUntil?: number;
@@ -1087,6 +1097,29 @@ function todayOf(s: TerraState, p: TerraPlayer, now: number) {
   const day = Math.floor((now - s.startAt) / DAY_MS);
   if (!p.today || p.today.day !== day) p.today = { day, raises: 0, gifts: 0 };
   return p.today;
+}
+
+/** Ranked skirmishes a merchant may still be paid for today (all of them off the map). */
+export function skirmishesLeft(s: TerraState, cfg: TerraConfig, id: string, now: number): number {
+  const perDay = cfg.skirmish?.rankedPerDay ?? 0;
+  const p = s.players[id];
+  const day = Math.floor((now - s.startAt) / DAY_MS);
+  const used = p?.today?.day === day ? (p.today.skirmishes ?? 0) : 0;
+  return Math.max(0, perDay - used);
+}
+
+/** A ranked skirmish paid to a merchant: counted on its day, refused past the day's quota. */
+export function countRankedSkirmish(
+  s: TerraState,
+  cfg: TerraConfig,
+  id: string,
+  now: number,
+): void {
+  const p = s.players[id];
+  if (!p) fail("not_placed");
+  if (skirmishesLeft(s, cfg, id, now) <= 0) fail("already_ranked");
+  const today = todayOf(s, p, now);
+  today.skirmishes = (today.skirmishes ?? 0) + 1;
 }
 
 /** Troops sent to an ally, within a share of the sender's cap a day. */

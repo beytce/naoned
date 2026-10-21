@@ -21,7 +21,7 @@ const skirmish = {
   lobbySeconds: 30,
   troops: 60,
   recruit: { base: 60, perCell: 6, perCity: 12 },
-  glory: [200, 120, 80, 30],
+  glory: [60, 40, 25, 10],
 };
 const config = () => {
   const cfg = makeContext({
@@ -55,8 +55,24 @@ describe("a skirmish", () => {
     expect(sk.result?.ranking.map((r) => r.id).sort()).toEqual(
       ["ada", "bob", "bot:1", "bot:2", "bot:3", "bot:4"].sort(),
     );
-    expect(sk.result?.ranking[0]?.glory).toBe(200);
+    expect(sk.result?.ranking[0]?.glory).toBe(60);
     // Times shown to people are real times.
     expect(toReal(sk, sk.virtualStart + 60 * 60_000)).toBe(START + 60 * SEC);
+  });
+
+  it("is ranked with two merchants or more, by day; friendly otherwise", () => {
+    expect(createSkirmish(config(), "seed", ["ada", "bob"], START).ranked).toBe(true);
+    expect(createSkirmish(config(), "seed", ["ada"], START).ranked).toBe(false);
+    const night = makeContext({
+      terraferma: {
+        ...testTerraferma,
+        openHours: { from: 8, to: 22 },
+        skirmish,
+      } as WorldSettingsInput["terraferma"],
+    }).settings.terraferma;
+    if (!night) throw new Error("no terraferma");
+    // 23 h in Paris.
+    expect(createSkirmish(night, "seed", ["ada", "bob"], START + 3 * 3_600_000).ranked).toBe(false);
+    expect(createSkirmish(night, "seed", ["ada", "bob"], START).ranked).toBe(true);
   });
 });

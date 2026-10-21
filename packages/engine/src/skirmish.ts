@@ -1,3 +1,4 @@
+import { hourIn, hourWithin } from "./clock.js";
 import { MINUTE_MS } from "./state.js";
 import {
   MILAN,
@@ -33,7 +34,20 @@ export interface Skirmish {
   virtualStart: number;
   speed: number;
   humans: string[];
+  /** Ranked (by day, between merchants): its ranks bring glory; friendly otherwise. */
+  ranked: boolean;
   result?: { ranking: { id: string; cells: number; glory: number }[] };
+}
+
+/**
+ * Whether a match started now with so many merchants is ranked: within the Terraferma's open
+ * hours from its start to its end (a minute's margin to pay it), with `minHumans` at least.
+ */
+export function skirmishRanked(cfg: TerraConfig | undefined, humans: number, now: number): boolean {
+  const sk = cfg?.skirmish;
+  if (!cfg || !sk || humans < sk.minHumans) return false;
+  const end = now + (sk.minutes + 1) * MINUTE_MS;
+  return hourWithin(hourIn(now), cfg.openHours) && hourWithin(hourIn(end), cfg.openHours);
 }
 
 /** The Terraferma's settings for a skirmish: all hours open, no truce, short steps. */
@@ -90,6 +104,7 @@ export function createSkirmish(
     virtualStart: now,
     speed: sk.speed,
     humans,
+    ranked: skirmishRanked(base, humans.length, now),
   };
 }
 

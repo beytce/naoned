@@ -1153,18 +1153,38 @@ export interface FamilyMessage {
   mine: boolean;
 }
 
+/** The merchant's day of skirmishes: ranked matches left, merchants needed, opening hour. */
+interface SkirmishDay {
+  rankedLeft: number;
+  /** Set down on the week's map (and still on it): only then is a ranked match paid. */
+  onMap: boolean;
+  minHumans: number;
+  opensAtHour: number;
+}
+
 /** A skirmish as the merchant sees it (GET /api/game/skirmish). */
 export type SkirmishStatus =
   | { phase: "off" }
-  | { phase: "none"; minutes: number }
-  | { phase: "lobby"; opensAt: number; players: number; joined: boolean; minutes: number }
-  | {
+  | ({ phase: "night" } & SkirmishDay)
+  | ({ phase: "none"; minutes: number } & SkirmishDay)
+  | ({
+      phase: "lobby";
+      opensAt: number;
+      players: number;
+      joined: boolean;
+      minutes: number;
+      /** Ranked if it opened now with the merchants in the lobby. */
+      ranked: boolean;
+    } & SkirmishDay)
+  | ({
       phase: "playing" | "done";
       endsAt: number;
       playing: boolean;
+      ranked: boolean;
       view: TerraView | null;
+      /** The glory each merchant was paid (none in a friendly match). */
       result: { pseudo: string | null; me: boolean; cells: number; glory: number }[] | null;
-    };
+    } & SkirmishDay);
 
 /** The counter's dashboard (GET /api/game/dashboard). */
 export interface DashboardView {

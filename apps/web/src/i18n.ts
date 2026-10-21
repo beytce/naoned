@@ -1919,7 +1919,7 @@ export const fr = {
         {
           diagram: "battle",
           title: "Bataille et escarmouches",
-          text: "Chaque soir de 20 h à 21 h, l'heure de bataille : les fronts avancent dix fois plus vite, venez les mener. À tout moment, « Escarmouche » lance une partie en direct d'un quart d'heure contre d'autres marchands et des condottieri ; votre rang rapporte de la Gloire à votre semaine.",
+          text: "Chaque soir de 20 h à 21 h, l'heure de bataille : les fronts avancent dix fois plus vite, venez les mener. De 8 h à 22 h, « Escarmouche » lance une partie en direct d'un quart d'heure contre d'autres marchands et des condottieri. Votre première partie du jour avec au moins un autre marchand est classée : votre rang rapporte de la Gloire à votre semaine. Les suivantes sont amicales, sans Gloire.",
         },
       ],
     },
@@ -1929,7 +1929,20 @@ export const fr = {
       leave: "Revenir à la semaine",
       off: "Pas d'escarmouche dans ce monde.",
       pitch: (minutes: number) =>
-        `Une partie en direct de ${minutes} minutes, le temps soixante fois plus vite, contre d'autres marchands et des condottieri. Votre rang rapporte de la Gloire à votre semaine de Terraferme.`,
+        `Une partie en direct de ${minutes} minutes, le temps soixante fois plus vite, contre d'autres marchands et des condottieri.`,
+      /** The day's ranked match, before it is played. */
+      rankedToday: (left: number, humans: number) =>
+        `Partie classée · ${left} aujourd'hui, dès ${humans} marchands : votre rang rapporte de la Gloire à votre semaine.`,
+      ranked: "Partie classée : votre rang rapporte de la Gloire à votre semaine.",
+      friendly: "Partie amicale : sans Gloire.",
+      friendlyFew: (humans: number) =>
+        `Partie amicale tant qu'il n'y a pas ${humans} marchands : sans Gloire.`,
+      friendlyDone: "Partie amicale : sans Gloire. Votre prochaine partie classée, demain.",
+      friendlyOffMap:
+        "Partie amicale : posez votre camp sur la Terraferme de la semaine pour que votre partie du jour soit classée.",
+      night: (hour: number) =>
+        `☾ Pas d'escarmouche la nuit : elles reprennent à ${hour} h. Une partie classée par jour, de ${hour} h à 22 h.`,
+      nightShort: (hour: number) => `☾ Escarmouches dès ${hour} h`,
       open: "Lancer une escarmouche",
       join: "Rejoindre",
       lobby: (players: number, time: string) =>
@@ -2158,7 +2171,7 @@ export const fr = {
         "Terraferme : l'heure de bataille, chaque soir de 20 h à 21 h, les fronts avancent dix fois plus vite.",
         "Terraferme : les ports, sur les rives de la lagune, du lac de Garde et de l'Adriatique ; les barques débarquent sur une autre rive, les galères gardent la vôtre.",
         "Le guide de la Terraferme, avec ses schémas, dans l'Aide et sur la carte de la Terraferme (« ? Guide »).",
-        "Terraferme : les escarmouches, des parties en direct d'un quart d'heure dont le rang rapporte de la Gloire à la semaine.",
+        "Terraferme : les escarmouches, des parties en direct d'un quart d'heure, de 8 h à 22 h. Une seule par jour est classée, la première avec au moins un autre marchand : son rang rapporte 60, 40, 25 ou 10 de Gloire à la semaine ; les suivantes sont amicales, sans Gloire.",
         "Terraferme : une semaine par mois en équipes, les marchands d'une même région ensemble.",
         "Terraferme : signaux sur la carte, cible désignée aux alliés, ducats entre alliés et embargo depuis les villes que vous tenez.",
         "Terraferme : bombardes (un tir par jour rend libres une terre ennemie et ses voisines) et remparts qui en protègent.",

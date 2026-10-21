@@ -18,6 +18,7 @@ interface Retention {
   players: number;
   retention: { day: number; eligible: number; returned: number }[];
   sessions: { day: string; sessions: number; players: number }[];
+  skirmishes: { day: string; ranked: number; friendly: number; night: number }[];
   tutorial: { step: string; players: number }[];
   lastSeen: Record<string, number>;
 }
@@ -229,6 +230,37 @@ export function Admin() {
             ))}
           </tbody>
         </table>
+      </Panel>
+      <Panel>
+        <Label>Escarmouches (14 derniers jours)</Label>
+        <p className="mt-1 text-xs text-cream-dim">
+          Parties jouées par marchand : classées (payées en Gloire, une par jour) ou amicales ; «
+          nuit » : Gloire d'escarmouche versée entre 22 h et 8 h (toujours 0).
+        </p>
+        {data.skirmishes.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">Aucune partie.</p>
+        ) : (
+          <table className="mt-3 w-full text-sm">
+            <thead>
+              <tr className="label text-left">
+                <th>Jour</th>
+                <th className="text-right">Classées</th>
+                <th className="text-right">Amicales</th>
+                <th className="text-right">Nuit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.skirmishes.map((s) => (
+                <tr key={s.day} className="border-b border-line/70">
+                  <td className="py-1">{s.day.slice(5)}</td>
+                  <td className="text-right">{s.ranked}</td>
+                  <td className="text-right">{s.friendly}</td>
+                  <td className={`text-right ${s.night > 0 ? "text-vermilion" : ""}`}>{s.night}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </Panel>
       <Panel>
         <Label>Échanges suspects</Label>

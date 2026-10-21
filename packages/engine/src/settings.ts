@@ -423,7 +423,9 @@ export const worldSettingsSchema = z.object({
        * Skirmishes: a live match of `minutes`, its time running `speed` times as fast on the same
        * engine (a step every `stepMinutes` of its time), `players` merchants and houses of the
        * computer on a map of `cellsPerPlayer` cells each, opened after `lobbySeconds`; the ranks
-       * bring `glory` (first, second…) to the week's Terraferma.
+       * bring `glory` (first, second…) to the week's Terraferma. Only a ranked match does: within
+       * the Terraferma's open hours, with `minHumans` merchants at least, `rankedPerDay` a day for
+       * each of them (the others are friendly, without glory).
        */
       skirmish: z
         .object({
@@ -436,6 +438,8 @@ export const worldSettingsSchema = z.object({
           troops: positive,
           recruit: z.object({ base: qty, perCell: qty, perCity: qty }),
           glory: z.array(qty),
+          rankedPerDay: qty.default(1),
+          minHumans: positive.default(2),
         })
         .optional(),
       /** Weeks of the season (from 0) played in teams: the merchants of a region together. */

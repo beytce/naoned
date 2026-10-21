@@ -305,7 +305,9 @@ export const venice1450Settings: WorldSettingsInput = {
       target: "weakest",
     },
     // Skirmishes: a live match of 15 minutes, its time 60 times as fast (a step every 5 seconds),
-    // 8 merchants and condottieri on 30 cells each, ranks worth 200, 120, 80 then 30 glory.
+    // 8 merchants and condottieri on 30 cells each. One ranked match a day, from 8 h to 22 h, with
+    // two merchants at least: its ranks worth 60, 40, 25 then 10 glory (a tenth at most of a
+    // regular player's week); the other matches are friendly.
     skirmish: {
       minutes: 15,
       speed: 60,
@@ -315,7 +317,9 @@ export const venice1450Settings: WorldSettingsInput = {
       lobbySeconds: 60,
       troops: 60,
       recruit: { base: 60, perCell: 6, perCity: 12 },
-      glory: [200, 120, 80, 30],
+      glory: [60, 40, 25, 10],
+      rankedPerDay: 1,
+      minHumans: 2,
     },
     // The third week of the month in teams, by region.
     teams: { weeks: [2] },

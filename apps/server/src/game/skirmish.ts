@@ -5,28 +5,38 @@ import {
   type WorldState,
   advanceSkirmish,
   createSkirmish,
+  hourIn,
+  hourWithin,
   skirmishAct,
+  skirmishRanked,
+  skirmishRankedLeft,
   toReal,
 } from "@comptoirs/engine";
 import { inArray } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { accounts } from "../db/schema.js";
+import { accounts, telemetry } from "../db/schema.js";
 import { type TerraName, terraView } from "./terra.js";
 import type { GameWorld } from "./world.js";
 
 /** How long a finished match stays on show. */
 const SHOWN_AFTER_MS = 3 * 60_000;
 
+/** Why a merchant may not join: the lobby is full, or it is night (no skirmish then). */
+export type JoinRefusal = "skirmish_full" | "night";
+
 /**
  * The skirmishes of the world (recommendations of 20 October 2026): one lobby, one match at a
- * time, held in memory; the ranks of the merchants who played go to the week's Terraferma
- * through a command of the world (so they are in its journal). Lost on a restart, like a game
- * of OpenFront when its server falls.
+ * time, held in memory; the ranks of the merchants who played a ranked match go to the week's
+ * Terraferma through a command of the world (so they are in its journal, and the day's quota is
+ * spent only there). None open at night. Lost on a restart, like a game of OpenFront when its
+ * server falls.
  */
 export class SkirmishHub {
   private lobby: { players: string[]; opensAt: number } | null = null;
   private match: Skirmish | null = null;
   private paid = false;
+  /** Glory credited to each merchant of the match (a friendly match, or past the quota: none). */
+  private credited = new Map<string, number>();
   private timer: NodeJS.Timeout | undefined;
   private seq = 0;
 
@@ -67,27 +77,50 @@ export class SkirmishHub {
       );
       this.lobby = null;
       this.paid = false;
+      this.credited = new Map();
     }
     const m = this.match;
     if (!m) return;
     advanceSkirmish(m, now);
     if (m.result && !this.paid) {
       this.paid = true;
-      for (const r of m.result.ranking) {
-        if (!m.humans.includes(r.id) || r.glory <= 0) continue;
-        await this.world.execute({ type: "terraSkirmishGlory", playerId: r.id, glory: r.glory });
+      if (m.ranked) {
+        // Every merchant of a ranked match spends its quota of the day, whatever its rank; one
+        // who already played its ranked match today, or is not on the week's map, gets nothing.
+        for (const id of m.humans) {
+          const glory = m.result.ranking.find((r) => r.id === id)?.glory ?? 0;
+          const res = await this.world.execute({
+            type: "terraSkirmishGlory",
+            playerId: id,
+            glory,
+            humans: m.humans.length,
+          });
+          if (res.ok) this.credited.set(id, glory);
+        }
       }
+      // Each merchant's match, ranked (paid) or friendly, for the beta's dashboard.
+      await this.db.insert(telemetry).values(
+        m.humans.map((id) => ({
+          accountId: id,
+          worldId: this.world.id,
+          type: "skirmish_played",
+          at: new Date(now),
+          props: { ranked: this.credited.has(id), glory: this.credited.get(id) ?? 0 },
+        })),
+      );
     }
     if (m.result && now > m.endsAt + SHOWN_AFTER_MS) this.match = null;
   }
 
   /** A merchant asks for the next match: the lobby opens, or it joins the one open. */
-  join(accountId: string, now: number): boolean {
+  join(accountId: string, now: number): true | JoinRefusal {
     const cfg = this.cfg;
-    if (!cfg?.skirmish) return false;
-    if (this.match && !this.match.result) return this.match.humans.includes(accountId);
+    if (!cfg?.skirmish) return "skirmish_full";
+    if (this.match && !this.match.result)
+      return this.match.humans.includes(accountId) || "skirmish_full";
+    if (!this.lobby && !hourWithin(hourIn(now), cfg.openHours)) return "night";
     if (!this.lobby) this.lobby = { players: [], opensAt: now + cfg.skirmish.lobbySeconds * 1_000 };
-    if (this.lobby.players.length >= cfg.skirmish.players) return false;
+    if (this.lobby.players.length >= cfg.skirmish.players) return "skirmish_full";
     if (!this.lobby.players.includes(accountId)) this.lobby.players.push(accountId);
     return true;
   }
@@ -100,17 +133,31 @@ export class SkirmishHub {
   async status(accountId: string, now: number) {
     const cfg = this.cfg;
     if (!cfg?.skirmish) return { phase: "off" as const };
+    // The ranked matches the merchant may still play today, and when the skirmishes open.
+    const onMap = this.world.current.terra?.map.players[accountId];
+    const day = {
+      rankedLeft: skirmishRankedLeft(this.world.ctx, this.world.current, accountId, now),
+      // Glory is paid only to a merchant set down on the week's map, and still on it.
+      onMap: !!onMap && onMap.eliminatedAt === undefined,
+      minHumans: cfg.skirmish.minHumans,
+      opensAtHour: cfg.openHours.from,
+    };
     const m = this.match;
     if (!m) {
-      return this.lobby
-        ? {
-            phase: "lobby" as const,
-            opensAt: this.lobby.opensAt,
-            players: this.lobby.players.length,
-            joined: this.lobby.players.includes(accountId),
-            minutes: cfg.skirmish.minutes,
-          }
-        : { phase: "none" as const, minutes: cfg.skirmish.minutes };
+      if (this.lobby)
+        return {
+          phase: "lobby" as const,
+          opensAt: this.lobby.opensAt,
+          players: this.lobby.players.length,
+          joined: this.lobby.players.includes(accountId),
+          minutes: cfg.skirmish.minutes,
+          // Ranked if it opened now with these merchants (more may come).
+          ranked: skirmishRanked(cfg, this.lobby.players.length, this.lobby.opensAt),
+          ...day,
+        };
+      return hourWithin(hourIn(now), cfg.openHours)
+        ? { phase: "none" as const, minutes: cfg.skirmish.minutes, ...day }
+        : { phase: "night" as const, ...day };
     }
     advanceSkirmish(m, now);
     const names = await this.names(m);
@@ -125,13 +172,16 @@ export class SkirmishHub {
       phase: m.result ? ("done" as const) : ("playing" as const),
       endsAt: m.endsAt,
       playing: m.humans.includes(accountId),
+      ranked: m.ranked,
+      ...day,
       view: view ? realTimes(m, view, m.endsAt) : null,
+      // The glory each merchant was paid: none to the computer's houses, nor in a friendly match.
       result: m.result
         ? m.result.ranking.map((r) => ({
             pseudo: names.get(r.id)?.pseudo ?? null,
             me: r.id === accountId,
             cells: r.cells,
-            glory: r.glory,
+            glory: this.credited.get(r.id) ?? 0,
           }))
         : null,
     };

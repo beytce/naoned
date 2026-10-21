@@ -115,6 +115,40 @@ export function useSkirmish(shown: boolean): {
   return { status, refresh };
 }
 
+/** Whether the merchant's match is ranked (it brings glory) or friendly, in a line; or nothing. */
+function skirmishStake(status: SkirmishStatus): { text: string; ranked: boolean } | null {
+  const k = fr.game.skirmish;
+  if (status.phase === "off" || status.phase === "night") return null;
+  if (!status.onMap && status.phase !== "done")
+    return status.phase === "none" || status.phase === "lobby" || status.playing
+      ? { text: k.friendlyOffMap, ranked: false }
+      : null;
+  if (status.phase === "none")
+    return status.rankedLeft > 0
+      ? { text: k.rankedToday(status.rankedLeft, status.minHumans), ranked: true }
+      : { text: k.friendlyDone, ranked: false };
+  if (status.phase === "lobby") {
+    if (!status.joined) return null;
+    if (status.rankedLeft === 0) return { text: k.friendlyDone, ranked: false };
+    if (status.ranked) return { text: k.ranked, ranked: true };
+    return status.players < status.minHumans
+      ? { text: k.friendlyFew(status.minHumans), ranked: false }
+      : { text: k.friendly, ranked: false };
+  }
+  if (!status.playing) return null;
+  if (status.phase === "done") {
+    const paid = (status.result ?? []).some((r) => r.me && r.glory > 0);
+    return paid
+      ? { text: k.ranked, ranked: true }
+      : status.ranked
+        ? null
+        : { text: k.friendly, ranked: false };
+  }
+  return status.ranked && status.rankedLeft > 0
+    ? { text: k.ranked, ranked: true }
+    : { text: status.ranked ? k.friendlyDone : k.friendly, ranked: false };
+}
+
 /** The skirmish's bar: the lobby to join, the time left, the result; and the way back. */
 export function SkirmishBar({
   status,
@@ -128,16 +162,27 @@ export function SkirmishBar({
   onLeave: () => void;
 }) {
   const k = fr.game.skirmish;
+  const stake = status ? skirmishStake(status) : null;
   return (
     <div className="pointer-events-auto absolute inset-x-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+8.5rem)] z-20 mx-auto max-w-sm space-y-2 cut border border-vermilion/60 bg-night/95 p-3 text-sm shadow-lg lg:top-24">
-      <div className="flex items-center justify-between">
-        <span className="font-display font-extrabold uppercase text-vermilion">⚔ {k.title}</span>
-        <button type="button" className="label text-cream-dim" onClick={onLeave}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="shrink-0 font-display font-extrabold uppercase text-vermilion">
+          ⚔ {k.title}
+        </span>
+        <button type="button" className="label min-w-0 text-right text-cream-dim" onClick={onLeave}>
           {k.leave}
         </button>
       </div>
+      {stake && (
+        <p className={`text-xs font-semibold ${stake.ranked ? "text-gold" : "text-cream-dim"}`}>
+          {stake.ranked ? "★ " : ""}
+          {stake.text}
+        </p>
+      )}
       {!status || status.phase === "off" ? (
         <p className="note">{k.off}</p>
+      ) : status.phase === "night" ? (
+        <p className="note text-lagoon">{k.night(status.opensAtHour)}</p>
       ) : status.phase === "none" ? (
         <>
           <p className="note">{k.pitch(status.minutes)}</p>
@@ -1095,7 +1140,7 @@ export function TerraHud({
             onClick={onSkirmish}
             className="pointer-events-auto font-display font-extrabold uppercase text-vermilion underline underline-offset-2"
           >
-            ⚔ {fr.game.skirmish.title}
+            {v.open ? `⚔ ${fr.game.skirmish.title}` : fr.game.skirmish.nightShort(v.openHours.from)}
           </button>
         )}
         {onReplay && (

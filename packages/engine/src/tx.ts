@@ -165,7 +165,10 @@ export type EngineErrorCode =
   | "raise_limit"
   | "terra_off"
   | "terra_closed"
-  | "decree_repeat";
+  | "decree_repeat"
+  | "night"
+  | "too_few_humans"
+  | "already_ranked";
 
 export class EngineError extends Error {
   constructor(

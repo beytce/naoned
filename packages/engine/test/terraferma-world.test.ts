@@ -14,6 +14,8 @@ import {
   gabelleOn,
   hexDistance,
   hexNeighbors,
+  skirmishRanked,
+  skirmishRankedLeft,
   terraEmbargoCutBps,
   tollOn,
   urgentReservedUntil,
@@ -307,14 +309,78 @@ describe("diplomacy on the Terraferma", () => {
 });
 
 describe("a skirmish's glory", () => {
+  const skirmish = {
+    minutes: 15,
+    speed: 60,
+    stepMinutes: 5,
+    players: 6,
+    cellsPerPlayer: 30,
+    lobbySeconds: 30,
+    troops: 60,
+    recruit: { base: 60, perCell: 6, perCity: 12 },
+    glory: [60, 40, 25, 10],
+    rankedPerDay: 1,
+    minHumans: 2,
+  };
+  const glory = (playerId: string, amount: number, humans = 2) => ({
+    type: "terraSkirmishGlory",
+    playerId,
+    glory: amount,
+    humans,
+  });
+
   it("goes to the week's map of a merchant set down there, else nowhere", () => {
-    const w = live();
+    const w = live({ skirmish });
     joined(w, "a");
     w.do({ type: "join", playerId: "b", region: "terraferma" });
     const before = w.state.terra?.map.players.a?.glory ?? 0;
-    expect(act(w, { type: "terraSkirmishGlory", playerId: "a", glory: 120 }).ok).toBe(true);
-    expect(w.state.terra?.map.players.a?.glory).toBe(before + 120);
-    expect(act(w, { type: "terraSkirmishGlory", playerId: "b", glory: 120 }).ok).toBe(false);
+    expect(act(w, glory("a", 40)).ok).toBe(true);
+    expect(w.state.terra?.map.players.a?.glory).toBe(before + 40);
+    expect(error(act(w, glory("b", 40)))).toBe("not_placed");
+  });
+
+  it("is paid for one ranked match a day: the next ones are friendly", () => {
+    const w = live({ skirmish });
+    joined(w, "a", "b");
+    expect(skirmishRankedLeft(w.ctx, w.state, "a", w.now)).toBe(1);
+    expect(act(w, glory("a", 0)).ok).toBe(true);
+    expect(skirmishRankedLeft(w.ctx, w.state, "a", w.now)).toBe(0);
+    expect(error(act(w, glory("a", 60)))).toBe("already_ranked");
+    // b has its own ranked match of the day.
+    expect(act(w, glory("b", 60)).ok).toBe(true);
+    w.advance(DAY);
+    expect(skirmishRankedLeft(w.ctx, w.state, "a", w.now)).toBe(1);
+    expect(act(w, glory("a", 60)).ok).toBe(true);
+  });
+
+  it("is never paid at night", () => {
+    const w = live({ skirmish, openHours: { from: 8, to: 22 } });
+    // T0 is 1 h in Paris: 9 h, then 23 h.
+    w.advance(8 * HOUR);
+    joined(w, "a");
+    expect(skirmishRanked(w.ctx.settings.terraferma, 2, w.now)).toBe(true);
+    w.advance(14 * HOUR);
+    expect(skirmishRanked(w.ctx.settings.terraferma, 2, w.now)).toBe(false);
+    expect(error(act(w, glory("a", 60)))).toBe("night");
+    expect(skirmishRankedLeft(w.ctx, w.state, "a", w.now)).toBe(1);
+  });
+
+  it("is not ranked when it would end after the closing hour", () => {
+    const w = live({ skirmish, openHours: { from: 8, to: 22 } });
+    // 21 h 50 in Paris: a quarter of an hour would end past 22 h.
+    w.advance(20 * HOUR + 50 * MIN);
+    expect(skirmishRanked(w.ctx.settings.terraferma, 2, w.now)).toBe(false);
+    w.advance(-20 * MIN);
+    expect(skirmishRanked(w.ctx.settings.terraferma, 2, w.now)).toBe(true);
+  });
+
+  it("needs at least two merchants in the match, and stays within the scale", () => {
+    const w = live({ skirmish });
+    joined(w, "a");
+    expect(skirmishRanked(w.ctx.settings.terraferma, 1, w.now)).toBe(false);
+    expect(error(act(w, glory("a", 60, 1)))).toBe("too_few_humans");
+    expect(error(act(w, glory("a", 61)))).toBe("invalid_quantity");
+    expect(skirmishRankedLeft(w.ctx, w.state, "a", w.now)).toBe(1);
   });
 });
 

@@ -52,6 +52,25 @@ export async function retention(db: Db, worldId: string, now: number) {
       group by 1 order by 1`),
   );
 
+  // Skirmishes: each merchant's match of the day, ranked or friendly; and any glory paid at
+  // night (22 h to 8 h in Paris), which the rules forbid.
+  const skirmishes = rowsOf<{ day: string; ranked: number; friendly: number; night: number }>(
+    await db.execute(sql`
+      select to_char(date_trunc('day', t.at at time zone 'Europe/Paris'), 'YYYY-MM-DD') as day,
+        count(*) filter (where t.type = 'skirmish_played' and (t.props->>'ranked')::boolean)::int
+          as ranked,
+        count(*) filter (where t.type = 'skirmish_played'
+          and not (t.props->>'ranked')::boolean)::int as friendly,
+        count(*) filter (where t.type = 'terra_skirmish' and (extract(hour from
+          t.at at time zone 'Europe/Paris') < 8 or extract(hour from
+          t.at at time zone 'Europe/Paris') >= 22))::int as night
+      from telemetry t join accounts a on a.id = t.account_id
+      where t.world_id = ${worldId} and a.is_bot = false
+        and t.type in ('skirmish_played', 'terra_skirmish')
+        and t.at > ${new Date(now - 14 * DAY).toISOString()}::timestamptz
+      group by 1 order by 1`),
+  );
+
   const lastSeen = { today: 0, days1to3: 0, days3to7: 0, moreThan7: 0, never: 0 };
   for (const p of players) {
     if (!p.last_seen) {
@@ -69,6 +88,7 @@ export async function retention(db: Db, worldId: string, now: number) {
     players: players.length,
     retention: [1, 3, 7, 14, 30].map(retained),
     sessions,
+    skirmishes,
     tutorial: TUTORIAL_STEPS.map((step) => ({
       step,
       players: players.filter((p) => (p.steps ?? []).includes(step)).length,

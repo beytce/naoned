@@ -599,8 +599,8 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const account = await requireAccount(req, reply);
     if (!account) return;
     if (!world.current.players[account.id]) return reply.code(409).send({ error: "not_joined" });
-    const ok = skirmishes.join(account.id, world.now());
-    return ok ? { ok } : reply.code(409).send({ error: "skirmish_full" });
+    const joined = skirmishes.join(account.id, world.now());
+    return joined === true ? { ok: true } : reply.code(409).send({ error: joined });
   });
 
   app.post("/api/game/skirmish/act", async (req, reply) => {
