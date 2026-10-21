@@ -790,16 +790,16 @@ export const venice1450Settings: WorldSettingsInput = {
   },
   // Offers between players: from a quarter to four times the reference price.
   priceBand: { minBps: 2_500, maxBps: 40_000 },
-  // Pass Négociant: a fifth more at the Dogana, two more open offers, fresher produce (+8 %
-  // instead of +5 %). No order swapped: the board of deliveries is the same for everyone.
-  // Nothing for an absent merchant.
+  // Pass Négociant: information to read and cosmetics only (live-2, 21 October 2026). The three
+  // perks that sold production, the Dogana's quota and open offers are zero, and the schema
+  // refuses them otherwise.
   // The Pass Négociant is off until it comes back (announced for the next season): nobody holds
-  // it, nothing grants it. Its perks stay set for when it returns.
+  // it, nothing grants it.
   pass: {
     enabled: false,
-    marketMakerQuotaBps: 2_000,
-    extraOpenOrders: 2,
-    freshBonusBps: 800,
+    marketMakerQuotaBps: 0,
+    extraOpenOrders: 0,
+    freshBonusBps: 0,
     contractRerollsPerDay: 0,
   },
   // Raw materials are local: wheat grows in the Terraferma, clay lies in the Lagoon, wood in the

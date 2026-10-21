@@ -75,3 +75,20 @@ describe("settings", () => {
     }
   });
 });
+
+describe("the Pass Négociant's settings", () => {
+  it("refuse any perk on production, the Dogana's quota or the open offers", () => {
+    for (const perk of ["freshBonusBps", "marketMakerQuotaBps", "extraOpenOrders"]) {
+      expect(() => parseSettings({ ...testSettings, pass: { [perk]: 1 } }), perk).toThrow(/Pass/);
+    }
+    expect(parseSettings({ ...testSettings, pass: { enabled: true } }).pass).toMatchObject({
+      freshBonusBps: 0,
+      marketMakerQuotaBps: 0,
+      extraOpenOrders: 0,
+    });
+  });
+
+  it("are within the rule in Venice", () => {
+    expect(() => parseSettings(venice1450Settings)).not.toThrow();
+  });
+});

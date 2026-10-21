@@ -232,20 +232,26 @@ export const worldSettingsSchema = z.object({
       rarities: [],
     }),
   /**
-   * Pass Négociant: light advantages that only help a merchant who plays. Never ducats, goods,
-   * production speed or a longer queue. All zero turns it off.
+   * Pass Négociant: information to read and cosmetics, nothing more. Never ducats, goods,
+   * production, the Dogana's quota, a longer queue or time (CLAUDE.md): the three perks that
+   * once sold some are kept for the schema and refused unless zero.
    */
   pass: z
     .object({
       /** Off: no merchant holds the Pass, whatever was granted (it comes back later). */
       enabled: z.boolean().default(true),
-      /** Extra share of the daily quota at the Dogana (2 000 = a fifth more). */
-      marketMakerQuotaBps: bps,
-      extraOpenOrders: qty,
-      /** Fresh produce bonus for Pass holders (instead of the usual one). */
-      freshBonusBps: bps,
-      contractRerollsPerDay: qty,
+      /** Refused unless zero: once a share of the Dogana's quota. */
+      marketMakerQuotaBps: bps.default(0),
+      /** Refused unless zero: once more open offers at the Rialto. */
+      extraOpenOrders: qty.default(0),
+      /** Refused unless zero: once fresher produce. */
+      freshBonusBps: bps.default(0),
+      contractRerollsPerDay: qty.default(0),
     })
+    .refine(
+      (p) => p.marketMakerQuotaBps === 0 && p.extraOpenOrders === 0 && p.freshBonusBps === 0,
+      "Pass Négociant: no perk on production, the Dogana's quota or the open offers",
+    )
     .default({
       enabled: true,
       marketMakerQuotaBps: 0,

@@ -253,4 +253,31 @@ describe("production", () => {
     });
     expect(res.ok).toBe(true);
   });
+
+  it("harvests exactly the same with or without the Pass Négociant, fresh or not", () => {
+    const harvest = (wait: number) => {
+      const w = new World(
+        makeContext({ pass: { enabled: true }, fresh: { minutes: 30, bonusBps: 500 } }),
+      );
+      w.do({ type: "join", playerId: "paid", region: "terraferma" });
+      w.do({ type: "join", playerId: "free", region: "terraferma" });
+      w.do({ type: "grantPass", playerId: "paid", until: w.now + 7 * DAY });
+      for (const id of ["paid", "free"])
+        w.do({
+          type: "startProduction",
+          playerId: id,
+          buildingId: farmOf(w, id).id,
+          recipe: "grow_wheat",
+          batches: 2,
+        });
+      w.advance(2 * HOUR + wait);
+      for (const id of ["paid", "free"])
+        w.do({ type: "collect", playerId: id, buildingId: farmOf(w, id).id });
+      return [w.stock("paid", "wheat").available, w.stock("free", "wheat").available];
+    };
+    // Collected at once: the second batch is fresh (20 × 1.35 = 27), the first is not (26).
+    expect(harvest(5 * MIN)).toEqual([53, 53]);
+    // Collected late: nothing fresh, for either.
+    expect(harvest(2 * HOUR)).toEqual([52, 52]);
+  });
 });

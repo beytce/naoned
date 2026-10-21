@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { marketMakerQuotaLeft } from "../src/index.js";
+import { hasPass, marketMakerQuotaLeft, maxOpenOrdersFor } from "../src/index.js";
 import { DAY, HOUR, World, makeContext } from "./helpers.js";
 
 function twoPlayers() {
@@ -411,5 +411,51 @@ describe("market maker quota in a growing world", () => {
       (o) => o.playerId === "market_maker" && o.side === "sell" && o.resource === "wheat",
     );
     expect(ask?.remaining).toBe(50);
+  });
+});
+
+describe("the Pass Négociant on the market", () => {
+  it("gives no more open offers and no more of the Dogana's quota", () => {
+    const w = new World(
+      makeContext({
+        pass: { enabled: true },
+        marketMaker: {
+          spreadStartBps: 400,
+          spreadEndBps: 2_000,
+          spreadRampDays: 14,
+          referenceFloorBps: 5_000,
+          dailyDepthPerPlayer: { wheat: 5 },
+          playerDailyQuota: { wheat: 10 },
+          playerDailySellQuota: { wheat: 10 },
+        },
+      }),
+    );
+    w.do({ type: "join", playerId: "paid", region: "terraferma" });
+    w.do({ type: "join", playerId: "free", region: "terraferma" });
+    w.do({ type: "grantPass", playerId: "paid", until: w.now + 7 * DAY });
+    w.do({ type: "tick" });
+    expect(hasPass(w.ctx, w.state, "paid", w.now)).toBe(true);
+    expect(maxOpenOrdersFor(w.ctx, w.state, "paid", w.now)).toBe(
+      maxOpenOrdersFor(w.ctx, w.state, "free", w.now),
+    );
+    expect(marketMakerQuotaLeft(w.ctx, w.state, "paid", "wheat", w.now)).toEqual(
+      marketMakerQuotaLeft(w.ctx, w.state, "free", "wheat", w.now),
+    );
+    const offer = (playerId: string) =>
+      w.try({
+        type: "placeOrder",
+        playerId,
+        resource: "wheat",
+        side: "buy",
+        kind: "limit",
+        price: 10n,
+        quantity: 1,
+      }).ok;
+    const placed = (playerId: string) => {
+      let n = 0;
+      while (offer(playerId) && n < 50) n++;
+      return n;
+    };
+    expect(placed("paid")).toBe(placed("free"));
   });
 });

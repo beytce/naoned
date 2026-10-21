@@ -106,7 +106,8 @@ describe("the Pass Négociant", () => {
     expect(res.statusCode).toBe(200);
     const view = (await get(ada)).view;
     expect(view.pass.active).toBe(true);
-    expect(view.pass.maxOpenOrders).toBe(12);
+    // No more open offers than anyone: the Pass gives nothing on the market.
+    expect(view.pass.maxOpenOrders).toBe(10);
     // With deliveries by road, the board is never swapped: no Pass perk there.
     expect(view.pass.rerollsLeft).toBe(0);
     const contract = view.contracts[0];

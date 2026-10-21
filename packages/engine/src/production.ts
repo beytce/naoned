@@ -9,7 +9,6 @@ import {
   type Player,
   type WorldContext,
   type WorldState,
-  hasPass,
 } from "./state.js";
 import { findRecipe, findRegion, recipesFor } from "./theme.js";
 import { type Tx, addStock, emit, fail, removeStock } from "./tx.js";
@@ -62,14 +61,10 @@ export function collect(tx: Tx, building: Building): void {
       // Specialisation: each level above the first adds to the yield.
       const levelBonus = (job.level - 1) * tx.ctx.settings.levelYieldBonusBps;
       // Fresh produce: collected soon after the batch was done.
+      // The same for everyone: the Pass Négociant never adds to a harvest.
       const fresh = tx.ctx.settings.fresh;
-      const passFresh = tx.ctx.settings.pass.freshBonusBps;
-      const freshBps =
-        passFresh > 0 && hasPass(tx.ctx, tx.s as WorldState, building.playerId, tx.now)
-          ? passFresh
-          : fresh.bonusBps;
       const freshBonus =
-        fresh.minutes > 0 && tx.now - completedAt <= fresh.minutes * 60_000 ? freshBps : 0;
+        fresh.minutes > 0 && tx.now - completedAt <= fresh.minutes * 60_000 ? fresh.bonusBps : 0;
       total += applyBonusToQuantity(
         base,
         yieldBonusBps(tx.ctx, player, resource, completedAt) + levelBonus + freshBonus + transform,

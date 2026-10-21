@@ -7,15 +7,10 @@ import {
   marketMakerQuotaLeft,
   rerollsOf,
 } from "../src/index.js";
-import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
+import { DAY, World, makeContext } from "./helpers.js";
 
 const pass: Partial<WorldSettingsInput> = {
-  pass: {
-    marketMakerQuotaBps: 2_000,
-    extraOpenOrders: 2,
-    freshBonusBps: 2_000,
-    contractRerollsPerDay: 1,
-  },
+  pass: { contractRerollsPerDay: 1 },
   fresh: { minutes: 30, bonusBps: 500 },
   marketMaker: {
     spreadStartBps: 400,
@@ -47,58 +42,6 @@ describe("the Pass Négociant", () => {
     // A later grant extends it, an earlier one never shortens it.
     w.do({ type: "grantPass", playerId: "paid", until: w.now + DAY });
     expect(hasPass(w.ctx, w.state, "paid", w.now + 6 * DAY)).toBe(true);
-  });
-
-  it("raises the daily quota at the Dogana by a fifth", () => {
-    const w = world();
-    expect(marketMakerQuotaLeft(w.ctx, w.state, "paid", "wheat", w.now).buy).toBe(12);
-    expect(marketMakerQuotaLeft(w.ctx, w.state, "free", "wheat", w.now).buy).toBe(10);
-  });
-
-  it("allows two more open offers", () => {
-    const w = world();
-    const offer = (playerId: string) =>
-      w.try({
-        type: "placeOrder",
-        playerId,
-        resource: "wheat",
-        side: "buy",
-        kind: "limit",
-        price: 10n,
-        quantity: 1,
-      });
-    for (let i = 0; i < 10; i++) {
-      expect(offer("free").ok).toBe(true);
-      expect(offer("paid").ok).toBe(true);
-    }
-    expect(offer("free").ok).toBe(false);
-    expect(offer("paid").ok).toBe(true);
-    expect(offer("paid").ok).toBe(true);
-    expect(offer("paid").ok).toBe(false);
-  });
-
-  it("makes fresh produce a little fresher", () => {
-    const w = world();
-    const harvest = (playerId: string) => {
-      const farm = w.buildingsOf(playerId).find((b) => b.type === "farm");
-      if (!farm) throw new Error("no farm");
-      w.do({
-        type: "startProduction",
-        playerId,
-        buildingId: farm.id,
-        recipe: "grow_wheat",
-        batches: 1,
-      });
-      return farm.id;
-    };
-    const a = harvest("paid");
-    const b = harvest("free");
-    w.advance(HOUR + 5 * MIN);
-    w.do({ type: "collect", playerId: "paid", buildingId: a });
-    w.do({ type: "collect", playerId: "free", buildingId: b });
-    // 20 × (1 + 30 % region + 20 % fresh with the Pass) = 30; without: 20 × 1.35 = 27.
-    expect(w.stock("paid", "wheat").available).toBe(30);
-    expect(w.stock("free", "wheat").available).toBe(27);
   });
 
   it("swaps one of the Doge's orders a day", () => {

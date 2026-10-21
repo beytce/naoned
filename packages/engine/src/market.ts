@@ -18,7 +18,6 @@ import {
   cashAccount,
   dayIndex,
   escrowAccount,
-  hasPass,
 } from "./state.js";
 import type { ResourceCode } from "./theme.js";
 import {
@@ -87,17 +86,14 @@ export function bestPrice(
   return bookSide(state, resource, side, options)[0]?.price;
 }
 
-/** Open offers allowed: two more with the Pass Négociant. */
+/** Open offers allowed: more with a trader's mastery (earned in play), never with the Pass. */
 export function maxOpenOrdersFor(
   ctx: WorldContext,
   state: WorldState,
   playerId: PlayerId,
-  now: number,
+  _now: number,
 ): number {
-  const extra = hasPass(ctx, state, playerId, now) ? ctx.settings.pass.extraOpenOrders : 0;
-  return (
-    ctx.settings.maxOpenOrders + extra + specialtyEffects(ctx, state, playerId).extraOpenOrders
-  );
+  return ctx.settings.maxOpenOrders + specialtyEffects(ctx, state, playerId).extraOpenOrders;
 }
 
 export function openOrderCount(state: WorldState, playerId: PlayerId): number {
@@ -146,12 +142,10 @@ export function playerQuota(
   const cap = mm.maxDailyDepth[resource];
   const players = Math.max(1, activePlayerCount(ctx, state, now));
   const share = cap === undefined ? base : Math.min(base, Math.max(1, Math.floor(cap / players)));
-  // Pass Négociant: a fifth more of the merchant's own share; a trader's mastery adds its own.
-  const pass =
-    playerId && hasPass(ctx, state, playerId, now) ? ctx.settings.pass.marketMakerQuotaBps : 0;
+  // A trader's mastery adds to the merchant's own share (the Pass Négociant never does).
   const mastery = specialtyEffects(ctx, state, playerId).marketMakerQuotaBps;
   // The Fondaco's privilege: a larger share for the members of the family that imposed it.
-  const bonus = pass + mastery + decreeQuotaBps(ctx, state, playerId, now);
+  const bonus = mastery + decreeQuotaBps(ctx, state, playerId, now);
   return bonus > 0 ? share + Math.floor((share * bonus) / 10_000) : share;
 }
 
