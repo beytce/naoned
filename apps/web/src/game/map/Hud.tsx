@@ -34,21 +34,29 @@ function Orb({
   coach?: string;
 }) {
   const ink = tone === "lagoon" ? "text-lagoon" : tone === "gold" ? "text-gold" : "text-cream";
+  // A small round keeps its look; the finger still gets 44 px around it.
+  const hit = Math.max(size, 44);
   return (
     <button
       type="button"
       aria-label={label}
       data-coach={coach}
+      data-hud="orb"
       onClick={onClick}
-      style={{ width: size, height: size }}
-      className={`hud-orb pointer-events-auto relative flex shrink-0 items-center justify-center rounded-full transition active:scale-90 ${ink}`}
+      style={{ width: hit, height: hit }}
+      className={`pointer-events-auto relative flex shrink-0 items-center justify-center transition active:scale-90 ${ink}`}
     >
-      {children}
-      {badge !== undefined && badge !== false && badge !== 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-vermilion px-1 font-mono text-xs font-bold text-cream ring-2 ring-night">
-          {badge === true ? "" : badge > 9 ? "9+" : badge}
-        </span>
-      )}
+      <span
+        style={{ width: size, height: size }}
+        className="hud-orb relative flex items-center justify-center rounded-full"
+      >
+        {children}
+        {badge !== undefined && badge !== false && badge !== 0 && (
+          <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-vermilion px-1 font-mono text-xs font-bold text-cream ring-2 ring-night">
+            {badge === true ? "" : badge > 9 ? "9+" : badge}
+          </span>
+        )}
+      </span>
     </button>
   );
 }
@@ -57,7 +65,8 @@ function SeasonRing({ progress, children }: { progress: number; children: ReactN
   const r = 25;
   const c = 2 * Math.PI * r;
   return (
-    <span className="relative flex h-[58px] w-[58px] shrink-0 items-center justify-center">
+    // A little smaller on the narrowest phones, to leave the name its room.
+    <span className="relative flex h-[50px] w-[50px] shrink-0 items-center justify-center min-[400px]:h-[58px] min-[400px]:w-[58px]">
       <svg viewBox="0 0 58 58" className="absolute inset-0 -rotate-90" aria-hidden="true">
         <circle
           cx="29"
@@ -199,47 +208,73 @@ export function MapHud({
           className="absolute inset-0 z-[9] cursor-default"
         />
       )}
-      <div className="pointer-events-none absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex flex-col items-start gap-2 lg:left-5 lg:top-5">
-        <div className="pointer-events-auto flex items-center gap-2.5">
+      {/*
+        Two columns kept apart (who the merchant is on the left, the purse and the state of things
+        on the right), each line held in its own: nothing written over the other at 320 px. The
+        right one takes at most 46 %, never less than its widest figure (no min-w-0 on its cells:
+        the purse is never cut); the left one takes the rest and truncates. The rival has a line
+        of its own under them.
+      */}
+      <div className="pointer-events-none absolute inset-x-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 grid grid-cols-[minmax(0,1fr)_fit-content(46%)] items-start gap-x-2 gap-y-1.5 lg:left-5 lg:right-[calc(var(--side,0px)+1.25rem)] lg:top-5 lg:grid-cols-[minmax(0,1fr)_fit-content(20rem)]">
+        <button
+          type="button"
+          data-hud="identity"
+          aria-label={`${fr.game.tabs.profil} · ${pseudo}`}
+          onClick={onProfile}
+          className="pointer-events-auto flex min-w-0 max-w-full items-center gap-2.5 justify-self-start text-left transition active:scale-95 lg:max-w-xs"
+        >
+          <SeasonRing progress={seasonProgress}>
+            <Crest crest={crest} size={32} />
+          </SeasonRing>
+          <span className="min-w-0 [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
+            <span className="block truncate font-display text-lg font-extrabold leading-tight text-cream min-[400px]:text-xl">
+              {pseudo}
+            </span>
+            {/* The rank first: on a narrow phone, the title gives way, never the rank. */}
+            <span className="block truncate font-mono text-xs uppercase tracking-[0.1em] text-cream-dim">
+              <span className="text-gold">#{rank ?? "—"}</span> ·{" "}
+              {level !== null && <>{fr.game.merchantLevel.short(level)} · </>}
+              {title}
+            </span>
+          </span>
+        </button>
+        <div className="flex flex-col items-end gap-1.5">
+          <HudCounter
+            label={tipsT.cash.title}
+            fx="purse"
+            value={<CountUp value={Number(cash)} format={(v) => amount(BigInt(Math.round(v)))} />}
+            valueClass="text-lg text-gold min-[400px]:text-xl"
+            icon={<Coin size={24} />}
+            open={tip === "cash"}
+            onToggle={() => toggle("cash")}
+            tip={shownTip === "cash" ? (tips.cash ?? null) : null}
+            leaving={tipLeaving}
+          />
+          {influence !== null && (
+            <HudCounter
+              label={tipsT.influence.title}
+              value={influence}
+              valueClass="text-lg text-gold-soft"
+              icon={<span className="font-display text-sm font-extrabold">✦</span>}
+              iconClass="text-gold-soft"
+              open={tip === "influence"}
+              onToggle={() => toggle("influence")}
+              tip={shownTip === "influence" ? (tips.influence ?? null) : null}
+              leaving={tipLeaving}
+            />
+          )}
+        </div>
+        {rival && layer === "trade" && (
           <button
             type="button"
-            aria-label={fr.game.tabs.profil}
-            onClick={onProfile}
-            className="shrink-0 transition active:scale-95"
+            data-hud="rival"
+            onClick={onRanking}
+            className="pointer-events-auto col-span-2 flex min-h-11 min-w-0 max-w-full items-center justify-self-start text-left text-[13px] text-info [text-shadow:0_1px_4px_rgb(0_0_0/0.9)] lg:max-w-xs"
           >
-            <SeasonRing progress={seasonProgress}>
-              <Crest crest={crest} size={32} />
-            </SeasonRing>
+            <span className="truncate">{rival}</span>
           </button>
-          <span className="min-w-0 [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
-            <button
-              type="button"
-              onClick={onProfile}
-              className="block max-w-[46vw] truncate text-left font-display text-xl font-extrabold leading-tight text-cream lg:max-w-xs"
-            >
-              {pseudo}
-            </button>
-            <button
-              type="button"
-              aria-label={fr.game.tabs.top}
-              onClick={onRanking}
-              className="block text-left font-mono text-xs uppercase tracking-[0.1em] text-cream-dim"
-            >
-              {level !== null && <>{fr.game.merchantLevel.short(level)} · </>}
-              {title} · <span className="text-gold">#{rank ?? "—"}</span>
-            </button>
-            {rival && layer === "trade" && (
-              <button
-                type="button"
-                onClick={onRanking}
-                className="block max-w-[52vw] truncate text-left text-[13px] text-info lg:max-w-xs"
-              >
-                {rival}
-              </button>
-            )}
-          </span>
-        </div>
-        <div className="flex gap-2 pl-[7px]">
+        )}
+        <div className="flex gap-2">
           <span className="flex flex-col items-center gap-1.5">
             <Orb label={m.notices} onClick={onNotices} badge={notices} coach="hud-notices">
               {Icon.bell()}
@@ -261,92 +296,68 @@ export function MapHud({
             </Orb>
           )}
         </div>
-      </div>
-
-      <div className="pointer-events-none absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex flex-col items-end gap-1.5 lg:right-[calc(var(--side,0px)+1.25rem)] lg:top-5">
-        <HudCounter
-          label={tipsT.cash.title}
-          fx="purse"
-          value={<CountUp value={Number(cash)} format={(v) => amount(BigInt(Math.round(v)))} />}
-          valueClass="text-xl text-gold"
-          icon={<Coin size={24} />}
-          open={tip === "cash"}
-          onToggle={() => toggle("cash")}
-          tip={shownTip === "cash" ? (tips.cash ?? null) : null}
-          leaving={tipLeaving}
-        />
-        {influence !== null && (
-          <HudCounter
-            label={tipsT.influence.title}
-            value={influence}
-            valueClass="text-lg text-gold-soft"
-            icon={<span className="font-display text-sm font-extrabold">✦</span>}
-            iconClass="text-gold-soft"
-            open={tip === "influence"}
-            onToggle={() => toggle("influence")}
-            tip={shownTip === "influence" ? (tips.influence ?? null) : null}
-            leaving={tipLeaving}
-          />
-        )}
-        {/* The bread only when it runs short: its steady use is no news. */}
-        {!right && bread && bread.state !== "ok" && (
-          <HudCounter
-            label={fr.game.rations.hud(bread.stock, bread.perDay)}
-            side={
-              <span className="font-mono text-xs text-cream-dim">
-                {fr.game.rations.perDay(bread.perDay)}
-              </span>
-            }
-            value={bread.stock}
-            valueClass={`text-lg ${
-              bread.state === "hungry"
-                ? "text-vermilion"
-                : bread.state === "low"
-                  ? "text-gold"
-                  : "text-cream"
-            }`}
-            icon={<ResourceIcon code="bread" size={24} />}
-            alert={
-              bread.state === "hungry" ? "vermilion" : bread.state === "low" ? "gold" : undefined
-            }
-            open={tip === "bread"}
-            onToggle={() => toggle("bread")}
-            tip={shownTip === "bread" ? (tips.bread ?? null) : null}
-            leaving={tipLeaving}
-          />
-        )}
-        {!right && carts > 0 && (
-          <span className="relative flex justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                setTip(null);
-                onFleet();
-              }}
-              aria-label={fr.game.map.fleet.open}
-              aria-expanded={fleetOpen}
-              className="pointer-events-auto flex items-center gap-2 transition active:scale-95"
-            >
-              <span className="font-display text-lg font-extrabold tabular-nums text-lagoon [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
-                {freeCarts} / {carts}
-              </span>
-              <span
-                className={`hud-orb flex h-9 w-9 items-center justify-center rounded-full text-lagoon ${
-                  fleetOpen ? "ring-2 ring-lagoon/80" : ""
-                }`}
+        <div className="flex flex-col items-end gap-1.5">
+          {/* The bread only when it runs short: its steady use is no news. */}
+          {!right && bread && bread.state !== "ok" && (
+            <HudCounter
+              label={fr.game.rations.hud(bread.stock, bread.perDay)}
+              side={
+                <span className="font-mono text-xs text-cream-dim">
+                  {fr.game.rations.perDay(bread.perDay)}
+                </span>
+              }
+              value={bread.stock}
+              valueClass={`text-lg ${
+                bread.state === "hungry"
+                  ? "text-vermilion"
+                  : bread.state === "low"
+                    ? "text-gold"
+                    : "text-cream"
+              }`}
+              icon={<ResourceIcon code="bread" size={24} />}
+              alert={
+                bread.state === "hungry" ? "vermilion" : bread.state === "low" ? "gold" : undefined
+              }
+              open={tip === "bread"}
+              onToggle={() => toggle("bread")}
+              tip={shownTip === "bread" ? (tips.bread ?? null) : null}
+              leaving={tipLeaving}
+            />
+          )}
+          {!right && carts > 0 && (
+            <span className="relative flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setTip(null);
+                  onFleet();
+                }}
+                aria-label={fr.game.map.fleet.open}
+                aria-expanded={fleetOpen}
+                data-hud="carts"
+                className="pointer-events-auto flex min-h-11 items-center gap-2 transition active:scale-95"
               >
-                {Icon.cart()}
-              </span>
-            </button>
-            {fleet}
-          </span>
-        )}
-        {!right && canBuyCart && !fleetOpen && (
-          <Orb label={m.buyCart} onClick={onBuyCart} size={36} tone="lagoon">
-            {Icon.plus()}
-          </Orb>
-        )}
-        {right}
+                <span className="font-display text-lg font-extrabold tabular-nums text-lagoon [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
+                  {freeCarts} / {carts}
+                </span>
+                <span
+                  className={`hud-orb flex h-9 w-9 items-center justify-center rounded-full text-lagoon ${
+                    fleetOpen ? "ring-2 ring-lagoon/80" : ""
+                  }`}
+                >
+                  {Icon.cart()}
+                </span>
+              </button>
+              {fleet}
+            </span>
+          )}
+          {!right && canBuyCart && !fleetOpen && (
+            <Orb label={m.buyCart} onClick={onBuyCart} size={36} tone="lagoon">
+              {Icon.plus()}
+            </Orb>
+          )}
+          {right}
+        </div>
       </div>
       {bottom && (
         <nav className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex justify-center gap-4 lg:bottom-6 lg:right-[var(--side,0px)]">
@@ -422,6 +433,7 @@ function Door({
         else setWhy(true);
       }}
       data-coach={coach}
+      data-hud="door"
       aria-label={locked ? `${label} : ${locked}` : label}
       aria-disabled={locked ? true : undefined}
       className={`pointer-events-auto relative flex w-16 flex-col items-center gap-1 transition active:scale-90 ${active ? "text-gold" : locked ? "text-muted" : "text-cream-dim"}`}

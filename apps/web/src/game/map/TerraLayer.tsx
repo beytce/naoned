@@ -1056,6 +1056,9 @@ function WarCounter({
   );
 }
 
+/** A time kept on one line when its sentence wraps (« 23 h 56 », never « 23 / h 56 »). */
+const unbroken = (time: string) => time.replace(/ /g, "\u00a0");
+
 /** Under the purse on the right: the troops, the glory and rank, the week's clock. */
 export function TerraHud({
   v,
@@ -1082,12 +1085,13 @@ export function TerraHud({
   const me = v.me;
   const regionName = (code: string) => regions.find((r) => r.code === code)?.name ?? code;
   return (
-    // Below the line of the merchant's level and rank, which runs under the purse on a phone.
-    <div className="mt-3 flex flex-col items-end gap-1 lg:mt-0">
+    // In the HUD's right column, under the purse: its lines wrap there, never over the left one.
+    <div className="flex min-w-0 max-w-full flex-col items-end gap-1">
       {me && (
         <>
           <span
             title={t().troops}
+            data-hud="troops"
             className="hud-orb relative flex h-9 items-center gap-1.5 overflow-hidden rounded-full pl-2 pr-2.5"
           >
             <span className="text-[15px] leading-none">⚔</span>
@@ -1109,22 +1113,26 @@ export function TerraHud({
               style={{ width: `${Math.min(100, (me.troops / Math.max(1, me.cap)) * 100)}%` }}
             />
           </span>
-          <span className="hud-orb flex h-8 items-center rounded-full px-2.5 font-display text-[12px] font-extrabold tabular-nums text-gold">
+          <span
+            data-hud="glory"
+            className="hud-orb flex h-8 items-center rounded-full px-2.5 font-display text-[12px] font-extrabold tabular-nums text-gold"
+          >
             {t().glory(me.glory, me.rank)}
           </span>
         </>
       )}
       <span
-        className={`note max-w-[58vw] flex-col items-end text-right [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] lg:flex lg:max-w-xs ${folded ? "hidden" : "flex"}`}
+        data-hud="terra-note"
+        className={`note min-w-0 max-w-full flex-col items-end text-right [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] lg:flex ${folded ? "hidden" : "flex"}`}
       >
         {me?.eliminatedAt != null && <span className="text-vermilion">{t().eliminated}</span>}
         {!v.closed && v.placementEndsAt !== null && now < v.placementEndsAt && (
-          <span className="text-gold">{t().placing(clock(v.placementEndsAt - now))}</span>
+          <span className="text-gold">{t().placing(unbroken(clock(v.placementEndsAt - now)))}</span>
         )}
         {!v.closed && v.truceEndsAt !== null && now < v.truceEndsAt && (
-          <span className="text-gold">{t().truce(clock(v.truceEndsAt - now))}</span>
+          <span className="text-gold">{t().truce(unbroken(clock(v.truceEndsAt - now)))}</span>
         )}
-        <span>{v.closed ? t().closed : t().closesIn(clock(v.closesAt - now))}</span>
+        <span>{v.closed ? t().closed : t().closesIn(unbroken(clock(v.closesAt - now)))}</span>
         {!v.open && !v.closed && <span className="text-lagoon">☾ {t().night}</span>}
         {v.rules.team && <span className="text-info">{t().team(regionName(v.rules.team))}</span>}
         {v.closed?.teams?.[0] && (
@@ -1134,7 +1142,7 @@ export function TerraHud({
           <button
             type="button"
             onClick={onGuide}
-            className="pointer-events-auto font-display font-extrabold uppercase text-info underline underline-offset-2"
+            className="pointer-events-auto inline-flex min-h-11 items-center justify-end font-display font-extrabold uppercase text-info underline underline-offset-2"
           >
             {fr.game.terraGuide.openShort}
           </button>
@@ -1143,7 +1151,7 @@ export function TerraHud({
           <button
             type="button"
             onClick={onSkirmish}
-            className="pointer-events-auto whitespace-nowrap font-display font-extrabold uppercase text-vermilion underline underline-offset-2"
+            className="pointer-events-auto inline-flex min-h-11 items-center justify-end whitespace-nowrap font-display font-extrabold uppercase text-vermilion underline underline-offset-2"
           >
             {v.open ? `⚔ ${fr.game.skirmish.title}` : fr.game.skirmish.nightShort(v.openHours.from)}
           </button>
@@ -1152,7 +1160,7 @@ export function TerraHud({
           <button
             type="button"
             onClick={onReplay}
-            className="pointer-events-auto text-info underline underline-offset-2"
+            className="pointer-events-auto inline-flex min-h-11 items-center justify-end text-info underline underline-offset-2"
           >
             ⟲ {fr.game.terraRecord.replay}
           </button>

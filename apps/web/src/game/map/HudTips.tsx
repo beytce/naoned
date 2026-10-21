@@ -184,7 +184,8 @@ export function HudCounter({
         onClick={onToggle}
         aria-label={label}
         aria-expanded={open}
-        className="pointer-events-auto flex items-center gap-2 transition active:scale-95"
+        data-hud="counter"
+        className="pointer-events-auto flex min-h-11 items-center gap-2 transition active:scale-95"
       >
         <span className="flex items-baseline gap-1.5 [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
           {side}
