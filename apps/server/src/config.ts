@@ -47,6 +47,16 @@ const schema = z
       .string()
       .optional()
       .transform((v) => (v ? (JSON.parse(v) as Record<string, unknown>) : undefined)),
+    /**
+     * Tests only: the instant the world's clock starts from (ISO), then runs at the normal pace,
+     * e.g. `2026-03-02T10:00:00+01:00` for the end-to-end test (a Monday morning in Paris, the
+     * Terraferma's truce on, the same day on every run).
+     */
+    CLOCK_START: z
+      .string()
+      .optional()
+      .refine((v) => v === undefined || Number.isFinite(Date.parse(v)), "an ISO date")
+      .transform((v) => (v ? Date.parse(v) : undefined)),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === "production" && env.WORLD_SETTINGS_OVERRIDE) {
@@ -55,6 +65,9 @@ const schema = z
         path: ["WORLD_SETTINGS_OVERRIDE"],
         message: "development only",
       });
+    }
+    if (env.NODE_ENV === "production" && env.CLOCK_START !== undefined) {
+      ctx.addIssue({ code: "custom", path: ["CLOCK_START"], message: "tests only" });
     }
     if (env.NODE_ENV === "production" && !env.RESEND_API_KEY) {
       ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "required in production" });

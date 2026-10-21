@@ -21,6 +21,22 @@ describe("config", () => {
     );
   });
 
+  it("starts the clock of a test at a chosen instant, never in production", () => {
+    expect(loadConfig({ CLOCK_START: "2026-03-02T10:00:00+01:00" }).CLOCK_START).toBe(
+      Date.UTC(2026, 2, 2, 9),
+    );
+    expect(loadConfig({}).CLOCK_START).toBeUndefined();
+    expect(() => loadConfig({ CLOCK_START: "lundi" })).toThrow();
+    expect(() =>
+      loadConfig({
+        NODE_ENV: "production",
+        RESEND_API_KEY: "re_x",
+        DATABASE_URL: "postgres://x",
+        CLOCK_START: "2026-03-02T10:00:00+01:00",
+      }),
+    ).toThrow(/CLOCK_START/);
+  });
+
   it("rejects a value that is not a URL", () => {
     expect(() => loadConfig({ APP_URL: "pas une url" })).toThrow();
   });

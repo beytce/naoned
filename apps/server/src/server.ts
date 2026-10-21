@@ -30,7 +30,10 @@ process.on("unhandledRejection", (reason) => {
   console.error(reason);
   void alerts.alert("Erreur non gérée", String((reason as Error)?.stack ?? reason));
 });
-const world = await GameWorld.open(database.db, Date.now, {
+// Tests may start the world's clock at a chosen instant; it runs at the normal pace from there.
+const clockShift = config.CLOCK_START !== undefined ? config.CLOCK_START - Date.now() : 0;
+const clock = clockShift === 0 ? Date.now : () => Date.now() + clockShift;
+const world = await GameWorld.open(database.db, clock, {
   settingsFromTheme: config.WORLD_SETTINGS_FROM_THEME,
   ...(config.WORLD_SETTINGS_OVERRIDE ? { settingsOverride: config.WORLD_SETTINGS_OVERRIDE } : {}),
 });
