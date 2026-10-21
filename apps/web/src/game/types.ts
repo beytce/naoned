@@ -868,7 +868,6 @@ export type Action =
   | { type: "claimDaily"; taskId: string }
   | { type: "openBale" }
   | { type: "sellToCriee"; quantity: number }
-  | { type: "rerollContract"; contractId: string }
   | { type: "collectAll" }
   | { type: "build"; buildingType: string }
   | { type: "upgrade"; buildingId: string }

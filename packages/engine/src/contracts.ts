@@ -29,7 +29,10 @@ export function contractsFor(
   ctx: WorldContext,
   playerId: PlayerId,
   day: number,
-  /** Slots swapped with the Pass today: slot index → number of swaps. */
+  /**
+   * Swaps recorded before live-2 (state.contractRerolls): slot index → number of swaps. Only
+   * read back so those days' orders stay the same; no swap can be made any more.
+   */
   rerolls: Record<number, number> = {},
   /** More slots than the settings' (the favour of the Doge). */
   count?: number,

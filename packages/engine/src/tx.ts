@@ -81,7 +81,6 @@ export type EngineErrorCode =
   | "daily_not_done"
   | "daily_claimed"
   | "pass_required"
-  | "no_reroll_left"
   | "price_out_of_band"
   | "families_off"
   | "family_locked"

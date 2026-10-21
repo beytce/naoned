@@ -790,9 +790,9 @@ export const venice1450Settings: WorldSettingsInput = {
   },
   // Offers between players: from a quarter to four times the reference price.
   priceBand: { minBps: 2_500, maxBps: 40_000 },
-  // Pass Négociant: information to read and cosmetics only (live-2, 21 October 2026). The three
-  // perks that sold production, the Dogana's quota and open offers are zero, and the schema
-  // refuses them otherwise.
+  // Pass Négociant: information to read and cosmetics only (live-2, 21 October 2026). The four
+  // perks that sold production, the Dogana's quota, open offers and the swapped Doge's order
+  // (contractRerollsPerDay) are zero, and the schema refuses them otherwise.
   // The Pass Négociant is off until it comes back (announced for the next season): nobody holds
   // it, nothing grants it.
   pass: {
