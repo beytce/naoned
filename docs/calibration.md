@@ -1187,18 +1187,28 @@ Jusqu'ici, chaque escarmouche rapportait 200, 120, 80 puis 30 de Gloire, à tout
 - `rankedPerDay` 1 : seule la première partie payée du jour (jour de la semaine de Terraferme, à Paris) est classée ; les suivantes sont amicales, sans Gloire. Le quota ne se consomme qu'au paiement (`terraSkirmishGlory`), pour chaque marchand de la partie, quel que soit son rang ;
 - `minHumans` 2 : une partie à un seul marchand est amicale ;
 - heures d'ouverture de la Terraferme (8 h à 22 h) : une partie n'est classée que si elle commence et finit dans ces heures, aucune salle ne s'ouvre la nuit, et la commande refuse toute Gloire la nuit (`night`) ;
-- barème 200/120/80/30 → 60/40/25/10.
+- barème 200/120/80/30 → 45/30/20/10 (60/40/25/10 au premier jet, revu ci-dessous).
 
-Prototype de la Terraferme (`pnpm --filter @comptoirs/simulator terra`, 40 marchands, 5 graines) : les assidus jouent trois escarmouches par jour, les réguliers une, les occasionnels et retardataires aucune ; le rang est tiré parmi 8 places. Seule la première du jour paie.
+Prototype de la Terraferme (`pnpm --filter @comptoirs/simulator terra`, 40 marchands, 5 graines) : les assidus jouent trois escarmouches par jour, les réguliers une, les occasionnels et retardataires aucune ; seule la première du jour paie. Chaque graine est jouée trois fois :
 
-| Graine | Gloire médiane des escarmouches (assidu · régulier) | Gloire médiane de la semaine (assidu · régulier) | Part des escarmouches (régulier · assidu) | Signore sans la Gloire des escarmouches |
-| --- | --- | --- | --- | --- |
-| 1 | 95 · 100 | 4 370 · 4 080 | 2 % · 2 % | le même |
-| 2 | 105 · 100 | 5 291 · 3 777 | 3 % · 2 % | le même |
-| 3 | 75 · 65 | 5 004 · 3 906 | 2 % · 2 % | le même |
-| 4 | 80 · 85 | 5 684 · 4 014 | 2 % · 1 % | le même |
-| 5 | 100 · 125 | 4 818 · 3 864 | 3 % · 2 % | le même |
+- **rang parmi les marchands** : un marchand bat les condottieri (c'est tout le problème de départ), donc les deux ou trois marchands de la partie prennent les premières places du barème et le rang est tiré entre eux seuls ;
+- **premier chaque jour** : le plafond, chaque marchand gagne chacune de ses parties classées (7 × 45 = 315 de Gloire par semaine) ;
+- **sans escarmouches** : la même semaine rejouée sans aucune partie.
 
-**Lecture.** Les escarmouches pèsent 1 à 3 % de la Gloire médiane de la semaine, sous la cible de 10 %, et ne décident jamais du Signore : classer la semaine sans leur Gloire donne le même Signore sur les 5 graines. Un assidu qui en joue trois par jour n'en tire pas plus qu'un régulier qui en joue une. Avec l'ancien barème et une seule partie par jour, la part aurait été d'environ 10 % ; sans limite, illimitée. À suivre dans `/admin` (« Escarmouches ») : parties classées et amicales par jour, et la colonne « nuit », qui doit rester à 0.
+Le premier jet tirait le rang parmi les 8 places de la partie, comme si les marchands finissaient au milieu des condottieri : il annonçait 1 à 3 % de la Gloire, un chiffre de complaisance. Rang parmi les marchands, le barème 60/40/25/10 pesait 7 à 8 % de la semaine médiane d'un régulier, et le plafond 420 de Gloire, soit 11 à 12 % de la semaine médiane d'un régulier sans escarmouches, au-dessus de la cible de 10 %. D'où 45/30/20/10 :
 
-`pnpm sim`, 5 graines, toutes conformes, sans changement (les marchands simulés ne jouent pas d'escarmouches, qui ne touchent ni la monnaie ni les stocks) : croissance de la monnaie par joueur actif 3,6 %/jour en moyenne, 2,4 jours hors plage du ratio monnaie créée / détruite sur 23, Gini du patrimoine à J+15 0,45, 109,4 d détruits par la Terraferme par joueur actif et par jour, les mêmes valeurs qu'après la refonte du commerce.
+| Graine | Gloire médiane des escarmouches, rang parmi les marchands (assidu · régulier) | Gloire médiane de la semaine (assidu · régulier) | Part des escarmouches, rang parmi les marchands (régulier · assidu) | Part des escarmouches, premier chaque jour (régulier · assidu) | Plafond : 315 contre la semaine médiane d'un régulier sans escarmouches | Signore, sa Gloire moins celle des escarmouches (les deux hypothèses) | Signore de la semaine rejouée sans escarmouches (rang parmi les marchands · premier chaque jour) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 245 · 240 | 5 275 · 4 042 | 6 % · 5 % | 8 % · 6 % | 315 / 3 416 = 9 % | le même | un autre · le même |
+| 2 | 225 · 225 | 5 451 · 3 886 | 6 % · 4 % | 8 % · 6 % | 315 / 3 661 = 9 % | le même | le même · le même |
+| 3 | 235 · 240 | 4 867 · 4 088 | 6 % · 5 % | 7 % · 6 % | 315 / 3 953 = 8 % | le même | un autre · le même |
+| 4 | 230 · 240 | 5 834 · 4 124 | 6 % · 4 % | 7 % · 5 % | 315 / 3 889 = 8 % | le même | le même · le même |
+| 5 | 230 · 230 | 5 670 · 3 799 | 6 % · 4 % | 8 % · 5 % | 315 / 3 579 = 9 % | le même | le même · le même |
+
+**Lecture.** Rang parmi les marchands, les escarmouches pèsent 6 % de la Gloire médiane d'un régulier ; même premier tous les jours, un marchand n'en tire que 315 de Gloire, 8 à 9 % de la semaine médiane d'un régulier sans escarmouches : la cible de 10 % tient dans l'hypothèse la plus dure. Un assidu qui en joue trois par jour n'en tire pas plus qu'un régulier qui en joue une. Ôter de la Gloire de la semaine ce que les escarmouches ont rapporté ne change jamais le Signore, sur les 5 graines et dans les deux hypothèses.
+
+Point ouvert : rejouée sans escarmouches, la semaine des graines 1 et 3 couronne un autre Signore quand le rang est tiré parmi les marchands, alors que « premier chaque jour » (la même Gloire pour tous) ne change rien. Ce n'est pas la Gloire des escarmouches qui fait la différence au classement (voir la soustraction), mais son effet en cours de semaine : les marchands simulés demandent l'alliance du voisin le plus glorieux. Changer l'ordre de la Gloire, même de quelques dizaines, change donc qui s'allie avec qui, puis qui attaque qui ; sur la graine 3, le Signore de la semaine rejouée sans escarmouches ne devance le deuxième que d'un point. C'est le jeu (des joueurs lisent aussi la Gloire de leurs voisins), et une Gloire de 6 % suffit à le provoquer comme n'importe quel autre écart. À suivre en bêta.
+
+À suivre dans `/admin` (« Escarmouches ») : parties classées et amicales par jour, et la colonne « nuit », qui doit rester à 0. Une partie lancée trop tard pour finir avant 22 h (à partir de 21 h 43 environ) est annoncée amicale, avec sa raison, et la barre garde le même badge du début à la fin de la partie.
+
+`pnpm sim`, 5 graines, toutes conformes, sans changement, relancé après le barème 45/30/20/10 (les marchands simulés ne jouent pas d'escarmouches, qui ne touchent ni la monnaie ni les stocks) : croissance de la monnaie par joueur actif 3,6 %/jour en moyenne, 2,4 jours hors plage du ratio monnaie créée / détruite sur 23, Gini du patrimoine à J+15 0,45, 109,4 d détruits par la Terraferme par joueur actif et par jour, les mêmes valeurs qu'après la refonte du commerce.
