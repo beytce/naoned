@@ -12,6 +12,7 @@ import {
   cellsOf,
   chooseDecree,
   closeTerra,
+  countRankedSkirmish,
   hexNeighbors,
   launchFront,
   newTerra,
@@ -43,13 +44,43 @@ export interface TerraProfile {
   fromDay: number;
   /** Ducats (in deniers) it spends on the Terraferma a day: cap raised, roccas, borgos. */
   budget: bigint;
+  /** Skirmishes it plays a day (at its second session): only the first is ranked. */
+  skirmishes: number;
 }
 
 export const TERRA_PROFILES: Record<string, TerraProfile> = {
-  active: { name: "assidu", sessions: 7, shareBps: 4_000, fromDay: 0, budget: 15_000n },
-  regular: { name: "régulier", sessions: 4, shareBps: 5_000, fromDay: 0, budget: 10_000n },
-  casual: { name: "occasionnel", sessions: 2, shareBps: 7_000, fromDay: 0, budget: 5_000n },
-  late: { name: "retardataire", sessions: 3, shareBps: 5_000, fromDay: 3, budget: 10_000n },
+  active: {
+    name: "assidu",
+    sessions: 7,
+    shareBps: 4_000,
+    fromDay: 0,
+    budget: 15_000n,
+    skirmishes: 3,
+  },
+  regular: {
+    name: "régulier",
+    sessions: 4,
+    shareBps: 5_000,
+    fromDay: 0,
+    budget: 10_000n,
+    skirmishes: 1,
+  },
+  casual: {
+    name: "occasionnel",
+    sessions: 2,
+    shareBps: 7_000,
+    fromDay: 0,
+    budget: 5_000n,
+    skirmishes: 0,
+  },
+  late: {
+    name: "retardataire",
+    sessions: 3,
+    shareBps: 5_000,
+    fromDay: 3,
+    budget: 10_000n,
+    skirmishes: 0,
+  },
 };
 
 export const TERRA_MIX: Record<string, number> = { active: 12, regular: 14, casual: 10, late: 4 };
@@ -62,6 +93,8 @@ export interface TerraResult {
     profile: string;
     cells: number;
     glory: number;
+    /** Of its glory, what its ranked skirmishes brought. */
+    skirmishGlory: number;
     placed: boolean;
     influence: number;
     tier: string;
@@ -95,6 +128,8 @@ export function runTerra(
   mix = TERRA_MIX,
   /** Called at 22 h each day with the state (for a picture of the map). */
   onDay?: (day: number, s: TerraState) => void,
+  /** Whether the merchants play their skirmishes (off: the same week without them). */
+  skirmishes = true,
 ): TerraResult {
   const bots = Object.entries(mix).flatMap(([profile, n]) =>
     Array.from({ length: n }, (_, k) => ({ id: `${profile}${k}`, profile })),
@@ -125,6 +160,8 @@ export function runTerra(
     spent: 0n,
   };
   const wallet = new Map<string, { day: number; left: bigint }>();
+  const skirmishGlory = new Map<string, number>();
+  const sessionsToday = new Map<string, number>();
   const seen = new Set<string>();
   const watchFronts = () => {
     for (const f of s.fronts) {
@@ -168,6 +205,21 @@ export function runTerra(
     const before = purse.left;
     play(s, cfg, bot.id, profile, at, seed, purse);
     result.spent += before - purse.left;
+    // Its skirmishes of the day, at its second session: a match of eight among merchants and
+    // condottieri, its rank drawn; the first of the day ranked, the others friendly.
+    const nth = (sessionsToday.get(`${bot.id}:${today}`) ?? 0) + 1;
+    sessionsToday.set(`${bot.id}:${today}`, nth);
+    if (skirmishes && cfg.skirmish && nth === 2) {
+      for (let k = 0; k < profile.skirmishes; k++) {
+        const rank = hash(`${seed}:${bot.id}:${today}:skirmish:${k}`) % cfg.skirmish.players;
+        const glory = cfg.skirmish.glory[rank] ?? 0;
+        const me = s.players[bot.id];
+        if (!me || me.eliminatedAt !== undefined) break;
+        if (!tryAct(() => countRankedSkirmish(s, cfg, bot.id, at))) continue;
+        me.glory += glory;
+        skirmishGlory.set(bot.id, (skirmishGlory.get(bot.id) ?? 0) + glory);
+      }
+    }
     watchFronts();
   }
   closeDay(TERRA_START + 7 * DAY);
@@ -179,6 +231,7 @@ export function runTerra(
     profile: b.profile,
     cells: cellsOf(s, b.id).length,
     glory: s.players[b.id]?.glory ?? 0,
+    skirmishGlory: skirmishGlory.get(b.id) ?? 0,
     placed: !!s.players[b.id],
     influence: rank.get(b.id)?.influence ?? 0,
     tier: rank.get(b.id)?.tier ?? "none",

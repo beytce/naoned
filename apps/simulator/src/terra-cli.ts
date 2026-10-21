@@ -36,6 +36,13 @@ function section(r: TerraResult): string {
     const ps = placed.filter((p) => p.profile === k);
     return { k, cells: median(ps.map((p) => p.cells)), glory: median(ps.map((p) => p.glory)) };
   });
+  // The week ranked on its glory less what the skirmishes brought (a conquest stands).
+  const withoutSkirmishes = r.signore.conquest
+    ? r.signore.id
+    : ([...placed]
+        .map((p) => ({ id: p.id, glory: p.glory - p.skirmishGlory }))
+        .filter((p) => p.glory > 0)
+        .sort((a, b) => b.glory - a.glory || (a.id < b.id ? -1 : 1))[0]?.id ?? null);
   const active = byProfile.find((x) => x.k === "active")?.glory ?? 0;
   const casual = byProfile.find((x) => x.k === "casual")?.glory ?? 1;
   const lines = [
@@ -56,6 +63,9 @@ function section(r: TerraResult): string {
     `| Alliés en fin de semaine | ${placed.filter((p) => p.allies > 0).length} marchands sur ${placed.length} ont au moins un allié |`,
     `| Signore | ${r.signore.id ?? "aucun"} (${r.signore.profile ? TERRA_PROFILES[r.signore.profile]?.name : "—"})${r.signore.conquest ? ", par conquête" : ""} ; décret : ${r.signore.decree ?? "aucun"} |`,
     `| Influence médiane par profil | ${byProfile.map((x) => `${TERRA_PROFILES[x.k]?.name} ${median(placed.filter((p) => p.profile === x.k).map((p) => p.influence))}`).join(" · ")} |`,
+    `| Gloire médiane des escarmouches par profil | ${byProfile.map((x) => `${TERRA_PROFILES[x.k]?.name} ${median(placed.filter((p) => p.profile === x.k).map((p) => p.skirmishGlory))}`).join(" · ")} |`,
+    `| Part des escarmouches dans la Gloire médiane des réguliers | ${pct(Math.round((median(placed.filter((p) => p.profile === "regular").map((p) => p.skirmishGlory)) * 10_000) / Math.max(1, byProfile.find((x) => x.k === "regular")?.glory ?? 0)))} (assidus ${pct(Math.round((median(placed.filter((p) => p.profile === "active").map((p) => p.skirmishGlory)) * 10_000) / Math.max(1, active)))}) |`,
+    `| Signore sans la Gloire des escarmouches (même semaine) | ${withoutSkirmishes ?? "aucun"}${withoutSkirmishes === r.signore.id ? " (le même)" : " (un autre : les escarmouches ont décidé)"} |`,
     `| Ducats dépensés sur la Terraferme | ${(Number(r.spent) / 100 / Math.max(1, placed.length) / 7).toFixed(0)} d par marchand et par jour |`,
     "",
   ];

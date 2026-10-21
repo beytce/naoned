@@ -1179,3 +1179,26 @@ Les trois avantages du Pass qui vendaient de la production ou de l'accès au mar
 | 10 | 0,0 % | 0,0 % | 10 % / 10 % | pas d'abonné occasionnel |
 
 **Lecture.** La saison avec Pass et la même saison rejouée sans ses avantages sont désormais identiques : l'avance est exactement nulle, en médiane comme en moyenne, et l'écart de −70 % à +47 % relevé jusqu'ici (voir plus haut) n'était que la divergence de deux parties qui ne jouaient plus les mêmes coups. Le contrôle « gratuit assidu devant abonné occasionnel » n'a de sujet que sur 2 graines sur 10 (aucun occasionnel abonné encore actif en fin de saison ailleurs) ; il y est largement tenu, et il l'est par construction, le Pass ne changeant plus rien au jeu. La part des abonnés dans le top 10 (0 à 30 %) suit leur part des marchands (20 %). Les trois contrôles bloquants étant conformes sur 10 graines, la condition de simulation au branchement du paiement est remplie ; le paiement reste néanmoins débranché (`PASS_PAYMENT_OPEN` faux dans `apps/server/src/game/pass.ts`) jusqu'à la décision du porteur, et `purchasePass` refuse tout achat tant que `pass.enabled` est faux. À suivre en bêta : la part des abonnés dans le top 10 hebdomadaire face à leur part des joueurs actifs.
+
+## Escarmouches : une partie classée par jour, entre marchands, jamais la nuit (21 octobre 2026, chantier `terra-1` du plan de finalisation)
+
+Jusqu'ici, chaque escarmouche rapportait 200, 120, 80 puis 30 de Gloire, à toute heure, sans limite, même seul contre sept condottieri : une victoire toutes les 16 minutes, et une semaine de Terraferme pliée en dix parties (un assidu fait environ 5 000 de Gloire médiane par semaine). Désormais (`terraferma.skirmish`) :
+
+- `rankedPerDay` 1 : seule la première partie payée du jour (jour de la semaine de Terraferme, à Paris) est classée ; les suivantes sont amicales, sans Gloire. Le quota ne se consomme qu'au paiement (`terraSkirmishGlory`), pour chaque marchand de la partie, quel que soit son rang ;
+- `minHumans` 2 : une partie à un seul marchand est amicale ;
+- heures d'ouverture de la Terraferme (8 h à 22 h) : une partie n'est classée que si elle commence et finit dans ces heures, aucune salle ne s'ouvre la nuit, et la commande refuse toute Gloire la nuit (`night`) ;
+- barème 200/120/80/30 → 60/40/25/10.
+
+Prototype de la Terraferme (`pnpm --filter @comptoirs/simulator terra`, 40 marchands, 5 graines) : les assidus jouent trois escarmouches par jour, les réguliers une, les occasionnels et retardataires aucune ; le rang est tiré parmi 8 places. Seule la première du jour paie.
+
+| Graine | Gloire médiane des escarmouches (assidu · régulier) | Gloire médiane de la semaine (assidu · régulier) | Part des escarmouches (régulier · assidu) | Signore sans la Gloire des escarmouches |
+| --- | --- | --- | --- | --- |
+| 1 | 95 · 100 | 4 370 · 4 080 | 2 % · 2 % | le même |
+| 2 | 105 · 100 | 5 291 · 3 777 | 3 % · 2 % | le même |
+| 3 | 75 · 65 | 5 004 · 3 906 | 2 % · 2 % | le même |
+| 4 | 80 · 85 | 5 684 · 4 014 | 2 % · 1 % | le même |
+| 5 | 100 · 125 | 4 818 · 3 864 | 3 % · 2 % | le même |
+
+**Lecture.** Les escarmouches pèsent 1 à 3 % de la Gloire médiane de la semaine, sous la cible de 10 %, et ne décident jamais du Signore : classer la semaine sans leur Gloire donne le même Signore sur les 5 graines. Un assidu qui en joue trois par jour n'en tire pas plus qu'un régulier qui en joue une. Avec l'ancien barème et une seule partie par jour, la part aurait été d'environ 10 % ; sans limite, illimitée. À suivre dans `/admin` (« Escarmouches ») : parties classées et amicales par jour, et la colonne « nuit », qui doit rester à 0.
+
+`pnpm sim`, 5 graines, toutes conformes, sans changement (les marchands simulés ne jouent pas d'escarmouches, qui ne touchent ni la monnaie ni les stocks) : croissance de la monnaie par joueur actif 3,6 %/jour en moyenne, 2,4 jours hors plage du ratio monnaie créée / détruite sur 23, Gini du patrimoine à J+15 0,45, 109,4 d détruits par la Terraferme par joueur actif et par jour, les mêmes valeurs qu'après la refonte du commerce.
