@@ -1445,7 +1445,7 @@ export function TerraPanel({
     return (
       <ContextPanel
         title={t().mine.title}
-        chip={<span className="label">{t().glory(me.glory, me.rank)}</span>}
+        chip={<span className="meta">{t().glory(me.glory, me.rank)}</span>}
         status={t().mine.line(me.cells, me.troops, me.cap)}
         progress={me.troops / Math.max(1, me.cap)}
         tone={v.fronts.some((f) => f.threat) ? "vermilion" : "gold"}
@@ -1953,8 +1953,11 @@ export function TerraIntro({ onGuide }: { onGuide: () => void }) {
     <div className="pointer-events-auto absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+11rem)] z-30 mx-auto flex max-w-sm animate-pop gap-3 cut border border-info/70 bg-night-2/95 p-3 shadow-lg lg:bottom-32">
       <Lorenzo size={44} />
       <div className="min-w-0 flex-1 space-y-2">
-        <p className="label text-info">
-          {k.who} · {step + 1}/{k.steps.length}
+        <p className="flex items-baseline justify-between gap-2">
+          <span className="label text-info">{k.who}</span>
+          <span className="meta">
+            {step + 1}/{k.steps.length}
+          </span>
         </p>
         <p className="text-sm">{k.steps[step]}</p>
         <div className="flex items-center justify-between gap-2">

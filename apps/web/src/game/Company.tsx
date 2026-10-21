@@ -30,7 +30,7 @@ export function CompanyTile(props: GameProps) {
     >
       <span className="min-w-0 flex-1">
         <span className="block font-semibold">{t.of(cityName(props, p.city))}</span>
-        <span className="label block">
+        <span className="meta block">
           {p.completedAt
             ? t.filled
             : `${done} / ${need} · ${t.endsIn(clock(p.deadline - props.now))}`}
@@ -65,7 +65,7 @@ function Line({ props, p, resource }: { props: GameProps; p: Project; resource: 
             style={{ width: `${Math.min(100, (done / Math.max(1, need)) * 100)}%` }}
           />
         </span>
-        <span className="label mt-1 block">
+        <span className="meta mt-1 block">
           {d(p.unitPrice[resource])} · {t.have(have)}
         </span>
       </span>
@@ -97,7 +97,7 @@ export function CompanySheet(props: GameProps) {
           <p className="note">{t.none}</p>
         ) : (
           <>
-            <p className="label">
+            <p className="meta">
               {p.completedAt ? t.filled : t.endsIn(clock(p.deadline - props.now))} ·{" "}
               {t.merchants(p.merchants)}
               {BigInt(p.mine) > 0n && <> · {t.mine(d(p.mine))}</>}

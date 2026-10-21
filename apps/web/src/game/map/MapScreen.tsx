@@ -4,7 +4,7 @@ import { ResourceIcon } from "../../art/resources.js";
 import { GOODS_COLOUR, PLACES } from "../../art/veneto.js";
 import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
-import { Big, Label, Panel, Qty, Sheet, Slab, clock } from "../../ui.js";
+import { Big, Panel, Qty, Sheet, Slab, clock } from "../../ui.js";
 import { ActCard } from "../Acts.js";
 import { CargoSheet, loadOrders, loadSummary } from "../Cargo.js";
 import { Coach } from "../Coach.js";
@@ -869,7 +869,7 @@ function HomePanel({ props, onClose }: { props: GameProps; onClose: () => void }
   return (
     <ContextPanel
       title={m.home(props.account.pseudo ?? "")}
-      chip={<span className="label">{m.stockChip(stock)}</span>}
+      chip={<span className="meta">{m.stockChip(stock)}</span>}
       status={hungry ? fr.game.domain.hungry : status}
       tone={hungry ? "vermilion" : ready > 0 ? "gold" : "lagoon"}
       progress={ready === 0 && next ? next.share : null}
@@ -958,7 +958,7 @@ function CityPanel({
   return (
     <ContextPanel
       title={props.names.city(code)}
-      chip={road ? <span className="label">{m.city.orders(orders.length)}</span> : undefined}
+      chip={road ? <span className="meta">{m.city.orders(orders.length)}</span> : undefined}
       status={status}
       tone={criee ? "vermilion" : covered > 0 ? "gold" : "lagoon"}
       onClose={onClose}
@@ -1219,7 +1219,7 @@ function DeparturePanel({
   return (
     <ContextPanel
       title={vehicleName(vehicle.type)}
-      chip={<span className="label">{minutesLabel(minutes)}</span>}
+      chip={<span className="meta">{minutesLabel(minutes)}</span>}
       status={`${m.cart.leaving(props.names.city(city))} · ${left} s`}
       tone="lagoon"
       progress={(DEPART_SECONDS - left) / DEPART_SECONDS}
@@ -1281,9 +1281,9 @@ function SellLine({
           <p className="font-display text-sm font-extrabold uppercase">
             {props.names.resource(resource)}
           </p>
-          <Label>
+          <p className="meta">
             {fr.game.inStock} {stock}
-          </Label>
+          </p>
         </div>
         <Big className="text-xl text-gold">{d(price)}</Big>
       </div>

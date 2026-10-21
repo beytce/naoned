@@ -49,7 +49,7 @@ function Row({
         <p className="font-display text-sm font-semibold uppercase">
           {props.names.resource(line.resource)}
         </p>
-        <p className="label mt-0.5 flex items-center gap-2">
+        <p className="meta mt-0.5 flex items-center gap-2">
           <span>
             {fr.game.inStock} {have(props.view, line.resource)}
           </span>
@@ -173,7 +173,7 @@ function TradeSheet({
           <h3 className="font-display text-xl font-extrabold uppercase">
             {props.names.resource(line.resource)}
           </h3>
-          <p className="label mt-1">
+          <p className="meta mt-1">
             {fr.game.inStock} {stock}
           </p>
         </div>

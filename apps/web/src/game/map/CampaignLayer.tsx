@@ -266,7 +266,7 @@ export function CampaignPanel({
             {familyName(f.mine)}
           </span>
         }
-        chip={<span className="label">{c().rankGlory(rank, mine?.glory ?? 0)}</span>}
+        chip={<span className="meta">{c().rankGlory(rank, mine?.glory ?? 0)}</span>}
         status={
           f.closed
             ? t().closed

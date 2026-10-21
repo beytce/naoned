@@ -24,7 +24,7 @@ export function TendersTile(props: GameProps) {
     >
       <span className="min-w-0 flex-1">
         <span className="block font-semibold text-cream">{t.title}</span>
-        <span className="label block">
+        <span className="meta block">
           {toDeliver > 0 ? t.toDeliver(toDeliver) : t.open(list.filter((x) => x.open).length)}
         </span>
       </span>
@@ -68,7 +68,7 @@ function Tender({ props, x }: { props: GameProps; x: TenderView }) {
         <ResourceIcon code={x.resource} size={32} />
         <span className="min-w-0 flex-1">
           <span className="block font-semibold">{t.asks(x.quantity, name)}</span>
-          <span className="label block">
+          <span className="meta block">
             {x.open
               ? t.closesIn(clock(x.closeAt - props.now), x.bidders)
               : t.deliverBefore(clock(x.deadline - props.now))}

@@ -31,7 +31,7 @@ export function NoticesSheet(
         <h3 className="font-display text-xl font-extrabold uppercase">{t.title}</h3>
 
         <section className="space-y-1">
-          <Label className="text-gold">{t.season(Math.min(view.day, days), days)}</Label>
+          <p className="meta font-semibold text-gold">{t.season(Math.min(view.day, days), days)}</p>
           {act && (
             <p className="text-sm">
               <span className="font-semibold">{actText(act).title}</span>
@@ -51,12 +51,14 @@ export function NoticesSheet(
 
         {event && (
           <section className="space-y-1">
-            <Label className="text-cream-dim">
-              {t.event} ·{" "}
-              {current
-                ? `${fr.game.gazette.endsIn} ${clock(event.endsAt - now)}`
-                : `${fr.game.gazette.startsIn} ${clock(event.startsAt - now)}`}
-            </Label>
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <Label className="text-cream-dim">{t.event}</Label>
+              <span className="meta">
+                {current
+                  ? `${fr.game.gazette.endsIn} ${clock(event.endsAt - now)}`
+                  : `${fr.game.gazette.startsIn} ${clock(event.startsAt - now)}`}
+              </span>
+            </div>
             <p className="font-display text-sm font-extrabold uppercase">
               {(fr.game.gazette.events[event.code] ?? [event.code])[0]}
             </p>
@@ -67,10 +69,12 @@ export function NoticesSheet(
         )}
 
         <section className="space-y-3">
-          <Label className="text-gold">
-            {t.carnet}
-            {carnetRewards(props) > 0 ? ` · ${fr.game.carnet.rewards(carnetRewards(props))}` : ""}
-          </Label>
+          <div className="flex flex-wrap items-baseline gap-x-2">
+            <Label className="text-gold">{t.carnet}</Label>
+            {carnetRewards(props) > 0 && (
+              <span className="meta text-gold">{fr.game.carnet.rewards(carnetRewards(props))}</span>
+            )}
+          </div>
           <Carnet {...props} />
         </section>
 

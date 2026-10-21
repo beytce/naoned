@@ -1804,7 +1804,7 @@ export const fr = {
             : `${n} marchands y ont livré`,
       mine: (amount: string) => `Vous : ${amount}`,
       deliver: (n: number) => `Livrer ${n}`,
-      have: (n: number) => `en stock : ${n}`,
+      have: (n: number) => `${n} en stock`,
       none: "Aucune commande de compagnie en cours.",
     },
     /** The Rapport de la Banque de Venise, in the help. */

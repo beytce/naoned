@@ -146,9 +146,18 @@
 }
 
 @layer components {
-  /* Spaced uppercase labels: kickers and small captions. */
+  /*
+   * Spaced Space Mono capitals: fixed kickers of one to three words only (« RÉCOMPENSE »,
+   * « VOTRE SAISON »). Any datum (a price, a time left, a stock, a count) goes in .meta, never
+   * here: capitals turn the denier's « d » into « D » and break « 21 H » across two lines.
+   * Guarded by apps/web/test/typography.test.ts.
+   */
   .label {
     @apply font-mono text-xs uppercase leading-snug tracking-[0.12em] text-muted;
+  }
+  /* A line of data under a name: « 1,98 d · 40 en stock », plain face, aligned figures. */
+  .meta {
+    @apply font-sans text-[13px] leading-snug text-muted tabular-nums;
   }
   /*
    * A sentence or a time left, small but read: the plain face, aligned figures. Space Mono

@@ -51,7 +51,7 @@ export function Ceremony({
         {data.rank === 1 ? "er" : "e"}
       </Big>
       <p className="mt-2 text-cream-dim">{t.rankOf(data.rank, data.players)}</p>
-      <p className="label mt-1">
+      <p className="meta mt-1">
         {data.turnover === null ? fr.game.netWorth : t.worth} · {d(data.turnover ?? data.worth)}
       </p>
 
@@ -88,7 +88,7 @@ export function Ceremony({
         ) : (
           <p className="mt-2 text-sm text-cream-dim">{t.nothing}</p>
         )}
-        <p className="label mt-3">
+        <p className="meta mt-3">
           {t.renownTotal(data.totalRenown.current.name, data.totalRenown.points)}
         </p>
       </section>

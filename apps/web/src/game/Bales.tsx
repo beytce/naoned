@@ -42,7 +42,7 @@ export function BaleTile(props: GameProps) {
       <BaleArt size={44} className={ready ? "bale-float shrink-0" : "shrink-0 opacity-70"} />
       <span className="min-w-0 flex-1">
         <span className="block font-semibold">{t.title}</span>
-        <span className="label block">{status(b, props.now)}</span>
+        <span className="meta block">{status(b, props.now)}</span>
       </span>
       {ready ? (
         <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-gold px-1.5 text-xs font-bold text-ink">
@@ -217,7 +217,7 @@ export function BaleScreen(props: GameProps) {
 
         {phase === "idle" && (
           <div className="w-full space-y-4 text-center">
-            <p className="label text-cream-dim">{status(b, props.now)}</p>
+            <p className="meta text-cream-dim">{status(b, props.now)}</p>
             {b.available > 0 && (
               <>
                 <p className="text-sm italic text-cream-dim">{t.lorenzo}</p>

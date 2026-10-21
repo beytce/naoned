@@ -15,7 +15,7 @@ export function Daily(props: GameProps) {
     <Panel glow={ready ? "gold" : undefined}>
       <div className="flex items-center justify-between gap-2">
         <Label className="text-gold">{t.title}</Label>
-        <span className="label text-lagoon">{t.streak(daily.streak)}</span>
+        <span className="meta text-lagoon">{t.streak(daily.streak)}</span>
       </div>
       <ul className="mt-3 space-y-2">
         {daily.tasks.map((task) => (

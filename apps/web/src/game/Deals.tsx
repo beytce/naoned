@@ -27,7 +27,7 @@ export function DealsTile(props: GameProps) {
     >
       <span className="min-w-0 flex-1">
         <span className="block font-semibold text-cream">{t.title}</span>
-        <span className="label block">{t.tile(open)}</span>
+        <span className="meta block">{t.tile(open)}</span>
       </span>
       <span aria-hidden="true">→</span>
     </button>
@@ -91,7 +91,7 @@ function Commissions(props: GameProps) {
                   d(c.unitPrice),
                 )}
               </span>
-              <span className="label block">
+              <span className="meta block">
                 {c.status === "open"
                   ? t.left(clock(c.expiresAt - props.now))
                   : c.status === "filled"
@@ -206,7 +206,7 @@ function Colleganze(props: GameProps) {
                       )
                     : t.funded(who(props, g.investor), d(g.amount), g.shareBps / 100)}
               </span>
-              <span className="label block">
+              <span className="meta block">
                 {g.settled
                   ? g.paid !== null
                     ? t.settled(d(g.paid))

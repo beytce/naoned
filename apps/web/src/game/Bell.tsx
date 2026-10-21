@@ -167,7 +167,7 @@ export function NoticeList(props: GameProps & { onRead: () => void }) {
         >
           <span className={TONE[n.kind] ?? "text-cream-dim"}>{ICON[n.kind]?.()}</span>
           <p className="flex-1 text-sm leading-snug">{text(n, props)}</p>
-          <span className="label whitespace-nowrap">{ago(props.now - n.createdAt)}</span>
+          <span className="meta whitespace-nowrap">{ago(props.now - n.createdAt)}</span>
         </li>
       ))}
     </ul>

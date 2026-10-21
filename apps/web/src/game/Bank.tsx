@@ -51,7 +51,7 @@ export function BankSection() {
       <p className="text-sm text-cream-dim">
         <span className="text-vermilion">{t.destroyed}</span> {top(report.week.destroyed)}
       </p>
-      <p className="label">{t.net(d(report.week.net))}</p>
+      <p className="meta">{t.net(d(report.week.net))}</p>
     </section>
   );
 }

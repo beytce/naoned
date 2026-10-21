@@ -125,7 +125,7 @@ function FirstSteps(props: GameProps & { inSheet?: boolean }) {
     <Panel>
       <div className="flex items-center justify-between">
         <Label className="text-cream-dim">{fr.game.firstSteps.title}</Label>
-        <span className="label">
+        <span className="meta">
           {FIRST_STEPS.filter((s) => done.has(s)).length}/{FIRST_STEPS.length}
         </span>
       </div>
@@ -196,7 +196,7 @@ export function Rations(props: GameProps) {
           <p className="mt-1 text-gold">{fr.game.rations.low(rations.perDay - stock)}</p>
         )}
         {rations.perLevel > 0 && (
-          <p className="label mt-1">{fr.game.rations.why(rations.perLevel)}</p>
+          <p className="meta mt-1">{fr.game.rations.why(rations.perLevel)}</p>
         )}
         <Slab
           size="sm"
@@ -688,7 +688,7 @@ function BuildSheet({ type, props }: { type: string; props: GameProps }) {
           <Label>{fr.game.buildTitle}</Label>
           <h3 className="font-display text-lg font-extrabold uppercase">{def.name}</h3>
           {def.recipe && props.catalog.rations.perLevelPerDay > 0 && (
-            <p className="label mt-1">
+            <p className="meta mt-1">
               {fr.game.rationsOfLevel(props.catalog.rations.perLevelPerDay)}
             </p>
           )}

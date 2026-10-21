@@ -133,7 +133,7 @@ function HouseBody(props: GameProps) {
                     <p className="font-display text-lg font-extrabold">{patentName(p.code)}</p>
                     <p className="text-sm text-cream-dim">{t().patents[p.code]?.text}</p>
                     {!p.owned && missing.length > 0 && (
-                      <p className="label mt-1 text-vermilion">
+                      <p className="meta mt-1 text-vermilion">
                         {t().requires(missing.map(patentName).join(", "))}
                       </p>
                     )}
@@ -222,7 +222,7 @@ function Missions(props: GameProps & { onClaimed: () => void }) {
                 {m.claim(mission.influence)}
               </Slab>
             ) : (
-              <span className="label shrink-0 text-gold">
+              <span className="meta shrink-0 text-gold">
                 {mission.claimed ? m.claimed : m.reward(mission.influence)}
               </span>
             )}

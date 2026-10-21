@@ -29,7 +29,7 @@ export function DashboardTile(props: GameProps) {
     >
       <span className="min-w-0 flex-1">
         <span className="block font-semibold text-cream">{t.title}</span>
-        <span className="label block">{t.perHour(d(perHour(props)))}</span>
+        <span className="meta block">{t.perHour(d(perHour(props)))}</span>
       </span>
       <span aria-hidden="true">→</span>
     </button>

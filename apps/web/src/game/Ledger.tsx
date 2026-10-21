@@ -40,7 +40,7 @@ export function Ledger(props: GameProps) {
     <Panel glow={open.some((m) => m.done) ? "gold" : "lagoon"}>
       <div className="flex items-center justify-between">
         <Label className="text-gold">{t.title}</Label>
-        <span className="label">
+        <span className="meta">
           {claimedCount}/{missions.length}
         </span>
       </div>
@@ -64,7 +64,7 @@ export function Ledger(props: GameProps) {
                     {t.claim}
                   </Slab>
                 ) : (
-                  <span className="label shrink-0">
+                  <span className="meta shrink-0">
                     {m.progress}/{m.count}
                   </span>
                 )}
@@ -80,7 +80,7 @@ export function Ledger(props: GameProps) {
       </ul>
       {open.length === 0 && <p className="mt-2 text-sm text-cream-dim">{t.allDone}</p>}
       {next && (
-        <p className="label mt-3 text-lagoon">
+        <p className="meta mt-3 text-lagoon">
           {t.next(t.items[next.id]?.[0] ?? next.id, clock(next.opensAt - props.now))}
         </p>
       )}

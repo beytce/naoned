@@ -307,7 +307,7 @@ export function Coach(props: CoachProps) {
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <Label className="text-info">{fr.game.coach.name}</Label>
-                  <span className="label shrink-0 whitespace-nowrap">
+                  <span className="meta shrink-0 whitespace-nowrap">
                     {fr.game.coach.step(index, STEPS.length)}
                   </span>
                 </div>

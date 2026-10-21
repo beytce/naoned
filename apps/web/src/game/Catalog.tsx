@@ -78,7 +78,7 @@ function Workshops(props: GameProps) {
     .sort((x, y) => rank(x.lock, x.b.regions) - rank(y.lock, y.b.regions));
   return (
     <div className="space-y-3">
-      <p className="label">{t().plots(view.buildings.length, catalog.rules.maxBuildings)}</p>
+      <p className="meta">{t().plots(view.buildings.length, catalog.rules.maxBuildings)}</p>
       {cards.map(({ b, lock }) => {
         const elsewhere = !!b.regions && !b.regions.includes(view.player.region);
         const built = view.buildings.filter((x) => x.type === b.type).length;
@@ -97,7 +97,7 @@ function Workshops(props: GameProps) {
                 {b.recipe && <RecipeLine recipe={b.recipe} />}
                 <p>{t().roles[b.type] ?? ""}</p>
                 {b.recipe && catalog.rations.perLevelPerDay > 0 && (
-                  <p className="label">{fr.game.rationsOfLevel(catalog.rations.perLevelPerDay)}</p>
+                  <p className="meta">{fr.game.rationsOfLevel(catalog.rations.perLevelPerDay)}</p>
                 )}
               </>
             }
@@ -117,7 +117,7 @@ function Vehicles(props: GameProps) {
   const room = owned.length < road.maxVehicles;
   return (
     <div className="space-y-3">
-      <p className="label">{t().fleet(owned.length, road.maxVehicles)}</p>
+      <p className="meta">{t().fleet(owned.length, road.maxVehicles)}</p>
       {road.vehicles.map((v) => {
         const forSale = road.forSale.includes(v.type);
         const from = road.vehicles.find((x) => x.upgrade?.to === v.type);
@@ -200,7 +200,7 @@ function Card(props: {
         <p className="font-display text-base font-extrabold uppercase leading-tight text-cream">
           {props.title}
         </p>
-        {props.time && <p className="label text-lagoon">{props.time}</p>}
+        {props.time && <p className="meta text-lagoon">{props.time}</p>}
         {props.body}
         {props.price}
       </div>

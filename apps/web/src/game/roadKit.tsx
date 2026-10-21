@@ -50,7 +50,7 @@ export function BuyVehicleSheet({
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="font-display font-extrabold uppercase">{vehicleName(v.type)}</p>
-                <p className="label mt-1">{t().capacity(v.capacity)}</p>
+                <p className="meta mt-1">{t().capacity(v.capacity)}</p>
                 <p className="mt-1 text-sm">
                   {d(v.costDucats)}
                   {Object.entries(v.costMaterials).map(

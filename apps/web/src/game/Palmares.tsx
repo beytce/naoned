@@ -36,7 +36,7 @@ export function PalmaresView({ data }: { data: Palmares }) {
         {renown.next && (
           <div className="mt-3 space-y-1">
             <Ribbon value={(renown.points - renown.current.from) / span} />
-            <p className="label">
+            <p className="meta">
               {t.nextRenown(renown.next.name, renown.next.from - renown.points)}
             </p>
           </div>
