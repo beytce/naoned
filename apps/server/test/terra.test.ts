@@ -172,6 +172,7 @@ describe("the Terraferma on the server", () => {
     const none = await get(ada, "/api/game/skirmish");
     expect(none.phase).toBe("none");
     expect(none.rankedLeft).toBe(1);
+    expect(none.ranked).toBe(true);
     const join = (cookie: string) =>
       app.inject({ method: "POST", url: "/api/game/skirmish/join", headers: { cookie } });
     expect((await join(ada)).statusCode).toBe(200);
@@ -183,12 +184,15 @@ describe("the Terraferma on the server", () => {
     const live = await get(ada, "/api/game/skirmish");
     expect(live.phase).toBe("playing");
     expect(live.ranked).toBe(true);
+    expect(live.why).toBeNull();
     expect(live.view.holders.length).toBeGreaterThan(8);
     // A quarter of an hour later, the match is over and its rank paid on the week's map.
     now += 16 * 60_000;
     const done = await get(ada, "/api/game/skirmish");
     expect(done.phase).toBe("done");
     expect(done.rankedLeft).toBe(0);
+    // The same badge at the end as at the start, though the quota is now spent.
+    expect(done.ranked).toBe(true);
     const mine = done.result.find((r: { me: boolean }) => r.me);
     expect(mine).toBeDefined();
     const after = (await get(ada, "/api/game/terra")).terra.me.glory as number;
@@ -200,12 +204,17 @@ describe("the Terraferma on the server", () => {
     expect((await join(ada)).statusCode).toBe(200);
     expect((await join(bob)).statusCode).toBe(200);
     now += 61_000;
-    await get(ada, "/api/game/skirmish");
+    const second = await get(ada, "/api/game/skirmish");
+    expect(second.phase).toBe("playing");
+    expect(second.ranked).toBe(false);
+    expect(second.why).toBe("quota");
     now += 16 * 60_000;
     const friendly = await get(ada, "/api/game/skirmish");
     expect(friendly.phase).toBe("done");
     expect(friendly.result.every((r: { glory: number }) => r.glory === 0)).toBe(true);
-    expect(friendly.ranked).toBe(true);
+    // Friendly for each of them, from the start to the end of the match.
+    expect(friendly.ranked).toBe(false);
+    expect(friendly.why).toBe("quota");
     expect(friendly.rankedLeft).toBe(0);
     // The beta's dashboard: two ranked and two friendly matches played, no glory at night.
     const { skirmishes } = await retention(database.db, world.id, now);
@@ -220,12 +229,15 @@ describe("the Terraferma on the server", () => {
     const join = () =>
       app.inject({ method: "POST", url: "/api/game/skirmish/join", headers: { cookie: ada } });
     expect((await join()).statusCode).toBe(200);
-    expect((await get(ada, "/api/game/skirmish")).ranked).toBe(false);
+    const alone = await get(ada, "/api/game/skirmish");
+    expect(alone.ranked).toBe(false);
+    expect(alone.why).toBe("few");
     now += 61_000;
     await get(ada, "/api/game/skirmish");
     now += 16 * 60_000;
     const done = await get(ada, "/api/game/skirmish");
     expect(done.ranked).toBe(false);
+    expect(done.why).toBe("few");
     expect(done.result.every((r: { glory: number }) => r.glory === 0)).toBe(true);
     expect(done.rankedLeft).toBe(1);
     // 23 h in Paris: no skirmish until 8 h.
@@ -236,5 +248,37 @@ describe("the Terraferma on the server", () => {
     const refused = await join();
     expect(refused.statusCode).toBe(409);
     expect(refused.json().error).toBe("night");
+  });
+  it("announces as friendly a match launched too late to end before 22 h", async () => {
+    await open({ terraferma: { live: true } });
+    const ada = await player("ada@example.org");
+    const bob = await player("bob@example.org");
+    await world.execute({ type: "tick" });
+    await place(ada);
+    await place(bob);
+    // 21 h 50 in Paris: the lobby is open, but a match launched now would end after 22 h.
+    now = Date.parse("2026-10-05T19:50:00Z");
+    const none = await get(ada, "/api/game/skirmish");
+    expect(none.phase).toBe("none");
+    expect(none.rankedLeft).toBe(1);
+    expect(none.ranked).toBe(false);
+    expect(none.why).toBe("late");
+    expect(none.closesAtHour).toBe(22);
+    const join = (cookie: string) =>
+      app.inject({ method: "POST", url: "/api/game/skirmish/join", headers: { cookie } });
+    expect((await join(ada)).statusCode).toBe(200);
+    expect((await join(bob)).statusCode).toBe(200);
+    const lobby = await get(ada, "/api/game/skirmish");
+    expect(lobby.ranked).toBe(false);
+    expect(lobby.why).toBe("late");
+    now += 61_000;
+    expect((await get(ada, "/api/game/skirmish")).why).toBe("late");
+    now += 16 * 60_000;
+    const done = await get(ada, "/api/game/skirmish");
+    expect(done.phase).toBe("done");
+    expect(done.ranked).toBe(false);
+    expect(done.why).toBe("late");
+    // Nothing paid: its quota of the day is untouched.
+    expect(done.rankedLeft).toBe(1);
   });
 });

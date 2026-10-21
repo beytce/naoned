@@ -115,38 +115,28 @@ export function useSkirmish(shown: boolean): {
   return { status, refresh };
 }
 
-/** Whether the merchant's match is ranked (it brings glory) or friendly, in a line; or nothing. */
+/** Whether the merchant's match is ranked (it brings glory) or friendly and why, in a line. */
 function skirmishStake(status: SkirmishStatus): { text: string; ranked: boolean } | null {
   const k = fr.game.skirmish;
   if (status.phase === "off" || status.phase === "night") return null;
-  if (!status.onMap && status.phase !== "done")
-    return status.phase === "none" || status.phase === "lobby" || status.playing
-      ? { text: k.friendlyOffMap, ranked: false }
-      : null;
-  if (status.phase === "none")
-    return status.rankedLeft > 0
+  // In the lobby or the match, only the merchants who play it; before, whoever may launch one.
+  if (status.phase === "lobby" && !status.joined && status.why !== "off_map") return null;
+  if ((status.phase === "playing" || status.phase === "done") && !status.playing) return null;
+  if (status.ranked)
+    return status.phase === "none"
       ? { text: k.rankedToday(status.rankedLeft, status.minHumans), ranked: true }
-      : { text: k.friendlyDone, ranked: false };
-  if (status.phase === "lobby") {
-    if (!status.joined) return null;
-    if (status.rankedLeft === 0) return { text: k.friendlyDone, ranked: false };
-    if (status.ranked) return { text: k.ranked, ranked: true };
-    return status.players < status.minHumans
-      ? { text: k.friendlyFew(status.minHumans), ranked: false }
-      : { text: k.friendly, ranked: false };
-  }
-  if (!status.playing) return null;
-  if (status.phase === "done") {
-    const paid = (status.result ?? []).some((r) => r.me && r.glory > 0);
-    return paid
-      ? { text: k.ranked, ranked: true }
-      : status.ranked
-        ? null
-        : { text: k.friendly, ranked: false };
-  }
-  return status.ranked && status.rankedLeft > 0
-    ? { text: k.ranked, ranked: true }
-    : { text: status.ranked ? k.friendlyDone : k.friendly, ranked: false };
+      : { text: k.ranked, ranked: true };
+  const text =
+    status.why === "off_map"
+      ? k.friendlyOffMap
+      : status.why === "quota"
+        ? k.friendlyDone
+        : status.why === "late"
+          ? k.friendlyLate(status.closesAtHour)
+          : status.phase === "none" || status.phase === "lobby"
+            ? k.friendlyFew(status.minHumans)
+            : k.friendlyAlone(status.minHumans);
+  return { text, ranked: false };
 }
 
 /** The skirmish's bar: the lobby to join, the time left, the result; and the way back. */

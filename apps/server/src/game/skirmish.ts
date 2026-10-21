@@ -25,6 +25,12 @@ const SHOWN_AFTER_MS = 3 * 60_000;
 export type JoinRefusal = "skirmish_full" | "night";
 
 /**
+ * Why a match is friendly for a merchant: not set down on the week's map, its ranked match of
+ * the day already played, a match that would end after the closing hour, or too few merchants.
+ */
+export type FriendlyWhy = "off_map" | "quota" | "late" | "few";
+
+/**
  * The skirmishes of the world (recommendations of 20 October 2026): one lobby, one match at a
  * time, held in memory; the ranks of the merchants who played a ranked match go to the week's
  * Terraferma through a command of the world (so they are in its journal, and the day's quota is
@@ -37,6 +43,8 @@ export class SkirmishHub {
   private paid = false;
   /** Glory credited to each merchant of the match (a friendly match, or past the quota: none). */
   private credited = new Map<string, number>();
+  /** Why the match is friendly for each of its merchants, from its start (null: ranked). */
+  private stakes = new Map<string, FriendlyWhy | null>();
   private timer: NodeJS.Timeout | undefined;
   private seq = 0;
 
@@ -69,15 +77,13 @@ export class SkirmishHub {
     const cfg = this.cfg;
     if (!cfg) return;
     if (this.lobby && now >= this.lobby.opensAt) {
-      this.match = createSkirmish(
-        cfg,
-        `${this.world.id}:${++this.seq}:${now}`,
-        this.lobby.players,
-        now,
-      );
+      const humans = this.lobby.players;
+      this.match = createSkirmish(cfg, `${this.world.id}:${++this.seq}:${now}`, humans, now);
       this.lobby = null;
       this.paid = false;
       this.credited = new Map();
+      // The stake each merchant sees, kept from the start to the end of the match.
+      this.stakes = new Map(humans.map((id) => [id, this.friendlyWhy(id, humans.length, now)]));
     }
     const m = this.match;
     if (!m) return;
@@ -129,6 +135,21 @@ export class SkirmishHub {
     return !!this.match && skirmishAct(this.match, accountId, action, now);
   }
 
+  /**
+   * Why a match of so many merchants starting at `startAt` would be friendly for this one, or
+   * null if ranked for it.
+   */
+  private friendlyWhy(accountId: string, humans: number, startAt: number): FriendlyWhy | null {
+    const cfg = this.cfg;
+    if (!cfg?.skirmish) return "few";
+    const me = this.world.current.terra?.map.players[accountId];
+    if (!me || me.eliminatedAt !== undefined) return "off_map";
+    if (skirmishRankedLeft(this.world.ctx, this.world.current, accountId, startAt) === 0)
+      return "quota";
+    if (!skirmishRanked(cfg, Math.max(humans, cfg.skirmish.minHumans), startAt)) return "late";
+    return humans < cfg.skirmish.minHumans ? "few" : null;
+  }
+
   /** What a merchant sees: the lobby, or the match as a map of the Terraferma in real times. */
   async status(accountId: string, now: number) {
     const cfg = this.cfg;
@@ -141,23 +162,38 @@ export class SkirmishHub {
       onMap: !!onMap && onMap.eliminatedAt === undefined,
       minHumans: cfg.skirmish.minHumans,
       opensAtHour: cfg.openHours.from,
+      closesAtHour: cfg.openHours.to,
     };
     const m = this.match;
     if (!m) {
-      if (this.lobby)
+      if (this.lobby) {
+        // Ranked for the merchant if it opened with these merchants (more may come).
+        const why = this.friendlyWhy(accountId, this.lobby.players.length, this.lobby.opensAt);
         return {
           phase: "lobby" as const,
           opensAt: this.lobby.opensAt,
           players: this.lobby.players.length,
           joined: this.lobby.players.includes(accountId),
           minutes: cfg.skirmish.minutes,
-          // Ranked if it opened now with these merchants (more may come).
-          ranked: skirmishRanked(cfg, this.lobby.players.length, this.lobby.opensAt),
+          ranked: why === null,
+          why,
           ...day,
         };
-      return hourWithin(hourIn(now), cfg.openHours)
-        ? { phase: "none" as const, minutes: cfg.skirmish.minutes, ...day }
-        : { phase: "night" as const, ...day };
+      }
+      if (!hourWithin(hourIn(now), cfg.openHours)) return { phase: "night" as const, ...day };
+      // A match launched now, with merchants enough: past the closing hour by its end, friendly.
+      const why = this.friendlyWhy(
+        accountId,
+        cfg.skirmish.minHumans,
+        now + cfg.skirmish.lobbySeconds * 1_000,
+      );
+      return {
+        phase: "none" as const,
+        minutes: cfg.skirmish.minutes,
+        ranked: why === null,
+        why,
+        ...day,
+      };
     }
     advanceSkirmish(m, now);
     const names = await this.names(m);
@@ -168,11 +204,23 @@ export class SkirmishHub {
     const state = { terra: { week: 0, map: m.state } } as unknown as WorldState;
     const virtual = m.state.clock;
     const view = terraView(ctx, state, accountId, virtual, names);
+    // Ranked for this merchant (one who watches plays none): as announced at the start, then as
+    // paid; a merchant put off the week's map meanwhile is not paid.
+    const playing = m.humans.includes(accountId);
+    const announced = this.stakes.get(accountId) ?? null;
+    const why: FriendlyWhy | null = !playing
+      ? null
+      : !this.paid
+        ? announced
+        : this.credited.has(accountId)
+          ? null
+          : (announced ?? "off_map");
     return {
       phase: m.result ? ("done" as const) : ("playing" as const),
       endsAt: m.endsAt,
-      playing: m.humans.includes(accountId),
-      ranked: m.ranked,
+      playing,
+      ranked: playing && why === null,
+      why,
       ...day,
       view: view ? realTimes(m, view, m.endsAt) : null,
       // The glory each merchant was paid: none to the computer's houses, nor in a friendly match.

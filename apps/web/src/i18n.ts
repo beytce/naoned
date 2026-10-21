@@ -1934,7 +1934,10 @@ export const fr = {
       rankedToday: (left: number, humans: number) =>
         `Partie classée · ${left} aujourd'hui, dès ${humans} marchands : votre rang rapporte de la Gloire à votre semaine.`,
       ranked: "Partie classée : votre rang rapporte de la Gloire à votre semaine.",
-      friendly: "Partie amicale : sans Gloire.",
+      friendlyLate: (hour: number) =>
+        `Partie amicale : elle finirait après ${hour} h, sans Gloire. Votre partie classée, demain.`,
+      friendlyAlone: (humans: number) =>
+        `Partie amicale : il fallait ${humans} marchands, sans Gloire. Votre partie classée du jour reste à jouer.`,
       friendlyFew: (humans: number) =>
         `Partie amicale tant qu'il n'y a pas ${humans} marchands : sans Gloire.`,
       friendlyDone: "Partie amicale : sans Gloire. Votre prochaine partie classée, demain.",
