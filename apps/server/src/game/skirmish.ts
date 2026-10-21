@@ -156,15 +156,26 @@ export class SkirmishHub {
     if (!cfg?.skirmish) return { phase: "off" as const };
     // The ranked matches the merchant may still play today, and when the skirmishes open.
     const onMap = this.world.current.terra?.map.players[accountId];
+    const rankedLeft = skirmishRankedLeft(this.world.ctx, this.world.current, accountId, now);
+    // The next match the merchant could launch: after the lobby's and the match's, if any.
+    const lobbyMs = cfg.skirmish.lobbySeconds * 1_000;
+    const m = this.match;
+    const nextAt =
+      (m && !m.result
+        ? m.endsAt
+        : this.lobby
+          ? this.lobby.opensAt + cfg.skirmish.minutes * 60_000
+          : now) + lobbyMs;
     const day = {
-      rankedLeft: skirmishRankedLeft(this.world.ctx, this.world.current, accountId, now),
+      rankedLeft,
+      // Whether a ranked match may still be played today, after the one under way if any.
+      rankedLater: rankedLeft > 0 && skirmishRanked(cfg, cfg.skirmish.minHumans, nextAt),
       // Glory is paid only to a merchant set down on the week's map, and still on it.
       onMap: !!onMap && onMap.eliminatedAt === undefined,
       minHumans: cfg.skirmish.minHumans,
       opensAtHour: cfg.openHours.from,
       closesAtHour: cfg.openHours.to,
     };
-    const m = this.match;
     if (!m) {
       if (this.lobby) {
         // Ranked for the merchant if it opened with these merchants (more may come).
@@ -182,11 +193,7 @@ export class SkirmishHub {
       }
       if (!hourWithin(hourIn(now), cfg.openHours)) return { phase: "night" as const, ...day };
       // A match launched now, with merchants enough: past the closing hour by its end, friendly.
-      const why = this.friendlyWhy(
-        accountId,
-        cfg.skirmish.minHumans,
-        now + cfg.skirmish.lobbySeconds * 1_000,
-      );
+      const why = this.friendlyWhy(accountId, cfg.skirmish.minHumans, now + lobbyMs);
       return {
         phase: "none" as const,
         minutes: cfg.skirmish.minutes,

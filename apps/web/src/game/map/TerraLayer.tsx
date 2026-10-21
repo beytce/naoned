@@ -135,7 +135,7 @@ function skirmishStake(status: SkirmishStatus): { text: string; ranked: boolean 
           ? k.friendlyLate(status.closesAtHour)
           : status.phase === "none" || status.phase === "lobby"
             ? k.friendlyFew(status.minHumans)
-            : k.friendlyAlone(status.minHumans);
+            : k.friendlyAlone(status.minHumans, status.rankedLater);
   return { text, ranked: false };
 }
 
@@ -172,7 +172,7 @@ export function SkirmishBar({
       {!status || status.phase === "off" ? (
         <p className="note">{k.off}</p>
       ) : status.phase === "night" ? (
-        <p className="note text-lagoon">{k.night(status.opensAtHour)}</p>
+        <p className="note text-lagoon">{k.night(status.opensAtHour, status.closesAtHour)}</p>
       ) : status.phase === "none" ? (
         <>
           <p className="note">{k.pitch(status.minutes)}</p>

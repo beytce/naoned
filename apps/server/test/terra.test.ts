@@ -249,6 +249,46 @@ describe("the Terraferma on the server", () => {
     expect(refused.statusCode).toBe(409);
     expect(refused.json().error).toBe("night");
   });
+  it("says whether the ranked match of the day may still be played after a match alone", async () => {
+    await open({ terraferma: { live: true } });
+    const ada = await player("ada@example.org");
+    await world.execute({ type: "tick" });
+    await place(ada);
+    const join = () =>
+      app.inject({ method: "POST", url: "/api/game/skirmish/join", headers: { cookie: ada } });
+    // 10 h in Paris, alone: friendly, and a ranked match may still be played today.
+    expect((await join()).statusCode).toBe(200);
+    const morning = await get(ada, "/api/game/skirmish");
+    expect(morning.why).toBe("few");
+    expect(morning.rankedLater).toBe(true);
+    now += 61_000;
+    await get(ada, "/api/game/skirmish");
+    now += 16 * 60_000;
+    await get(ada, "/api/game/skirmish");
+    now += 4 * 60_000;
+    await get(ada, "/api/game/skirmish");
+    // 21 h 30 in Paris, alone: the match ends at 21 h 46, and the next could not end before 22 h.
+    now = Date.parse("2026-10-05T19:30:00Z");
+    const before = await get(ada, "/api/game/skirmish");
+    expect(before.phase).toBe("none");
+    expect(before.ranked).toBe(true);
+    expect(before.rankedLater).toBe(true);
+    expect((await join()).statusCode).toBe(200);
+    const lobby = await get(ada, "/api/game/skirmish");
+    expect(lobby.why).toBe("few");
+    expect(lobby.rankedLater).toBe(false);
+    now += 61_000;
+    const live = await get(ada, "/api/game/skirmish");
+    expect(live.phase).toBe("playing");
+    expect(live.why).toBe("few");
+    expect(live.rankedLeft).toBe(1);
+    expect(live.rankedLater).toBe(false);
+    now += 16 * 60_000;
+    const done = await get(ada, "/api/game/skirmish");
+    expect(done.phase).toBe("done");
+    expect(done.why).toBe("few");
+    expect(done.rankedLater).toBe(false);
+  });
   it("announces as friendly a match launched too late to end before 22 h", async () => {
     await open({ terraferma: { live: true } });
     const ada = await player("ada@example.org");

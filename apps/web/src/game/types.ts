@@ -1156,6 +1156,8 @@ export interface FamilyMessage {
 /** The merchant's day of skirmishes: ranked matches left, merchants needed, open hours. */
 interface SkirmishDay {
   rankedLeft: number;
+  /** Whether a ranked match may still be played today, after the one under way if any. */
+  rankedLater: boolean;
   /** Set down on the week's map (and still on it): only then is a ranked match paid. */
   onMap: boolean;
   minHumans: number;
