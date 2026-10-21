@@ -17,7 +17,8 @@
 // Env: CHROMIUM (a Chromium or headless shell), SHOTS (a folder for a picture of every step,
 // e2e-shots by default), SIZES ("390x844,320x568" by default), REPORT=1 (every fault listed
 // without stopping at the first), REPEAT=n (the whole session n times over, the sizes side by
-// side, to measure its stability: every run's verdict printed, then how many passed).
+// side, each run on a server of its own, to measure its stability: every run's verdict
+// printed, then how many passed).
 import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -51,8 +52,8 @@ let server = null;
 let browser = null;
 let failed = false;
 try {
-  if (!base) ({ base, log, server } = await startServer());
-  if (!log) throw new Error("SERVER_LOG: the server's log, where the magic link is printed");
+  if (base && !log)
+    throw new Error("SERVER_LOG: the server's log, where the magic link is printed");
   browser = await chromium.launch({
     ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}),
   });
@@ -60,6 +61,12 @@ try {
   for (let run = 1; run <= REPEAT; run++) {
     const tag = REPEAT > 1 ? `run ${run}` : "";
     const started = Date.now();
+    // Each run on a server of its own, as in CI: an empty world, its clock at its start, the
+    // sign-in's limits per address and the Dogana's daily stock untouched by the runs before.
+    if (!process.env.BASE_URL) {
+      await stopServer(server);
+      ({ base, log, server } = await startServer());
+    }
     // Over several runs, the sizes side by side (each its own merchant), every run judged.
     const results = await (REPEAT > 1
       ? Promise.allSettled(SIZES.map(([w, h]) => session(w, h, tag)))
@@ -86,7 +93,7 @@ try {
   console.error(`✗ ${e.message}`);
 } finally {
   await browser?.close().catch(() => {});
-  server?.kill("SIGTERM");
+  await stopServer(server);
 }
 process.exit(failed || faults.length > 0 ? 1 : 0);
 
@@ -102,6 +109,15 @@ async function sequence(steps) {
     }
   }
   return out;
+}
+
+/** The server stopped, once it has exited (none left behind, whatever failed). */
+async function stopServer(child) {
+  if (!child || child.exitCode !== null) return;
+  const gone = new Promise((r) => child.once("exit", r));
+  child.kill("SIGTERM");
+  await Promise.race([gone, new Promise((r) => setTimeout(r, 5000))]);
+  if (child.exitCode === null) child.kill("SIGKILL");
 }
 
 /** The server on an empty database in memory, serving the built app, on a free port. */
