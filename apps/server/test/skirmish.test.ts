@@ -171,7 +171,7 @@ describe("a skirmish's row", () => {
       ranks: ids.map((playerId) => ({ playerId, glory: 45 })),
     });
     expect(again).toEqual({ ok: false, error: "already_paid" });
-    expect(await glory(ada)).toBeLessThan(before + 45);
+    expect(await glory(ada)).toBe(before);
     expect((await paidLines(id)).length).toBe(2);
     expect((await get(ada, "/api/game/skirmish")).rankedLeft).toBe(1);
   });
@@ -233,6 +233,54 @@ describe("a skirmish's row", () => {
     expect(m.weeks).toEqual([{ week: "2026-10-05", paid: 0, done: 0, aborted: 1 }]);
     expect(m.duplicates).toBe(0);
     expect(m.abortedPaid).toBe(0);
+  });
+
+  it("settles a friendly match, or a ranked one paying no one, as done, never paid", async () => {
+    await open();
+    const { ada, bob, ids } = await two();
+    // Alone: friendly.
+    await join(ada);
+    now += 61_000;
+    await get(ada, "/api/game/skirmish");
+    now += 16 * 60_000;
+    expect((await get(ada, "/api/game/skirmish")).phase).toBe("done");
+    expect((await rows())[0]?.status).toBe("done");
+    expect((await rows())[0]?.ranked).toBe(false);
+    // Together: ranked and paid, each spending its ranked match of the day.
+    now += 4 * 60_000;
+    await join(ada);
+    await join(bob);
+    now += 61_000;
+    await get(ada, "/api/game/skirmish");
+    now += 16 * 60_000;
+    await get(ada, "/api/game/skirmish");
+    const before = { ada: await glory(ada), bob: await glory(bob) };
+    // Again together: ranked by the hour, but both have played their ranked match: no one paid.
+    now += 4 * 60_000;
+    await join(ada);
+    await join(bob);
+    now += 61_000;
+    await get(ada, "/api/game/skirmish");
+    now += 16 * 60_000;
+    const last = await get(ada, "/api/game/skirmish");
+    expect(last.phase).toBe("done");
+    expect(last.ranked).toBe(false);
+    expect(last.why).toBe("quota");
+    expect(await glory(ada)).toBe(before.ada);
+    expect(await glory(bob)).toBe(before.bob);
+    const all = await rows();
+    const byStatus = (st: string) => all.filter((r) => r.status === st);
+    expect(byStatus("paid").length).toBe(1);
+    expect(byStatus("done").length).toBe(2);
+    const [unpaid] = byStatus("done").filter((r) => r.ranked);
+    expect(unpaid).toBeDefined();
+    expect((await paidLines(unpaid?.id ?? "")).length).toBe(0);
+    expect((await paidLines(byStatus("paid")[0]?.id ?? "")).map((l) => l.accountId).sort()).toEqual(
+      [...ids].sort(),
+    );
+    // The admin's dashboard: one paid, two without glory.
+    const { skirmishMatches: m } = await retention(database.db, world.id, now);
+    expect(m.weeks).toEqual([{ week: "2026-10-05", paid: 1, done: 2, aborted: 0 }]);
   });
 
   it("aborts a lobby cut short by a restart too", async () => {

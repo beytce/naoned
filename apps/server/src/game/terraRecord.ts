@@ -121,7 +121,8 @@ export async function terraRecord(db: Db, accountId: string) {
 
 /**
  * Settles the rows of the skirmishes paid in this transaction (engine events
- * `terra_skirmish_paid`): paid with the glory, or not at all.
+ * `terra_skirmish_paid`): `paid` if at least one merchant was credited its glory, else `done`
+ * (every merchant off the week's map or its ranked match of the day already played).
  */
 export async function recordSkirmishesPaid(
   tx: Db,
@@ -129,13 +130,19 @@ export async function recordSkirmishesPaid(
   events: { type: string; data?: Record<string, unknown> }[],
   at: Date,
 ): Promise<void> {
-  const ids = events
+  const settled = events
     .filter((e) => e.type === "terra_skirmish_paid")
-    .map((e) => String(e.data?.matchId ?? ""))
-    .filter((id) => /^[0-9a-f-]{36}$/.test(id));
-  if (ids.length === 0) return;
-  await tx
-    .update(skirmishMatches)
-    .set({ status: "paid", endedAt: at })
-    .where(and(eq(skirmishMatches.worldId, worldId), inArray(skirmishMatches.id, ids)));
+    .map((e) => ({
+      id: String(e.data?.matchId ?? ""),
+      credited: Object.keys((e.data?.paid as Record<string, number> | undefined) ?? {}).length > 0,
+    }))
+    .filter(({ id }) => /^[0-9a-f-]{36}$/.test(id));
+  for (const status of ["paid", "done"] as const) {
+    const ids = settled.filter((m) => m.credited === (status === "paid")).map((m) => m.id);
+    if (ids.length === 0) continue;
+    await tx
+      .update(skirmishMatches)
+      .set({ status, endedAt: at })
+      .where(and(eq(skirmishMatches.worldId, worldId), inArray(skirmishMatches.id, ids)));
+  }
 }
