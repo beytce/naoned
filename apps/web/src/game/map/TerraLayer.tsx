@@ -154,12 +154,16 @@ export function SkirmishBar({
   const k = fr.game.skirmish;
   const stake = status ? skirmishStake(status) : null;
   return (
-    <div className="pointer-events-auto absolute inset-x-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+8.5rem)] z-20 mx-auto max-w-sm space-y-2 cut border border-vermilion/60 bg-night/95 p-3 text-sm shadow-lg lg:top-24">
+    <div className="pointer-events-auto absolute inset-x-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+11rem)] z-20 mx-auto max-w-sm space-y-2 cut border border-vermilion/60 bg-night p-3 text-sm shadow-lg lg:top-24">
       <div className="flex items-center justify-between gap-3">
         <span className="shrink-0 font-display font-extrabold uppercase text-vermilion">
           ⚔ {k.title}
         </span>
-        <button type="button" className="label min-w-0 text-right text-cream-dim" onClick={onLeave}>
+        <button
+          type="button"
+          className="label whitespace-nowrap text-right text-cream-dim"
+          onClick={onLeave}
+        >
           {k.leave}
         </button>
       </div>
@@ -1055,6 +1059,7 @@ export function TerraHud({
   onReplay,
   onSkirmish,
   onGuide,
+  folded = false,
 }: {
   v: TerraView;
   now: number;
@@ -1066,11 +1071,14 @@ export function TerraHud({
   onSkirmish?: () => void;
   /** Opens the Terraferma's guide. */
   onGuide?: () => void;
+  /** Under the skirmish's bar: the troops and the glory only, the lines of the week folded. */
+  folded?: boolean;
 }) {
   const me = v.me;
   const regionName = (code: string) => regions.find((r) => r.code === code)?.name ?? code;
   return (
-    <div className="flex flex-col items-end gap-1">
+    // Below the line of the merchant's level and rank, which runs under the purse on a phone.
+    <div className="mt-3 flex flex-col items-end gap-1 lg:mt-0">
       {me && (
         <>
           <span
@@ -1101,7 +1109,9 @@ export function TerraHud({
           </span>
         </>
       )}
-      <span className="note flex max-w-[58vw] flex-col items-end text-right [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] lg:max-w-xs">
+      <span
+        className={`note max-w-[58vw] flex-col items-end text-right [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] lg:flex lg:max-w-xs ${folded ? "hidden" : "flex"}`}
+      >
         {me?.eliminatedAt != null && <span className="text-vermilion">{t().eliminated}</span>}
         {!v.closed && v.placementEndsAt !== null && now < v.placementEndsAt && (
           <span className="text-gold">{t().placing(clock(v.placementEndsAt - now))}</span>
@@ -1128,7 +1138,7 @@ export function TerraHud({
           <button
             type="button"
             onClick={onSkirmish}
-            className="pointer-events-auto font-display font-extrabold uppercase text-vermilion underline underline-offset-2"
+            className="pointer-events-auto whitespace-nowrap font-display font-extrabold uppercase text-vermilion underline underline-offset-2"
           >
             {v.open ? `⚔ ${fr.game.skirmish.title}` : fr.game.skirmish.nightShort(v.openHours.from)}
           </button>

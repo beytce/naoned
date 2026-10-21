@@ -1926,7 +1926,7 @@ export const fr = {
     /** Skirmishes: live matches on the Terraferma. */
     skirmish: {
       title: "Escarmouche",
-      leave: "Revenir à la semaine",
+      leave: "← La semaine",
       off: "Pas d'escarmouche dans ce monde.",
       pitch: (minutes: number) =>
         `Une partie en direct de ${minutes} minutes, le temps soixante fois plus vite, contre d'autres marchands et des condottieri.`,

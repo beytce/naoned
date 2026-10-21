@@ -717,6 +717,7 @@ export function MapScreen(
               onReplay={week.playing || skirmishOn ? undefined : week.start}
               onSkirmish={skirmishOn ? undefined : () => setSkirmishOn(true)}
               onGuide={props.openTerraGuide}
+              folded={skirmishOn}
             />
           ) : undefined
         }
