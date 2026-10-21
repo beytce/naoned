@@ -98,6 +98,8 @@ function Curves({ data }: { data: DashboardView }) {
       long ? { day: "numeric", month: "short" } : { weekday: "short" },
     );
   const shown = (i: number) => !long || (data.days.length - 1 - i) % 7 === 0;
+  // The first label shown and the last one hug the edges, so none is cut by the chart.
+  const first = data.days.findIndex((_, i) => shown(i));
   return (
     <figure className="space-y-2">
       <svg
@@ -114,7 +116,7 @@ function Curves({ data }: { data: DashboardView }) {
               key={day}
               x={x(i)}
               y={H - 4}
-              textAnchor={i === 0 ? "start" : i === data.days.length - 1 ? "end" : "middle"}
+              textAnchor={i === first ? "start" : i === data.days.length - 1 ? "end" : "middle"}
               fontSize="9"
               fill="rgb(var(--cream-dim))"
             >
