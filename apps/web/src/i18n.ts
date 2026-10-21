@@ -2178,7 +2178,7 @@ export const fr = {
         "Commerce : les chaînes de luxe s'ouvrent avec les titres — verre de Murano au Marchand, draperie au Négociant, épices préparées à l'Armateur.",
         "Commerce : au-delà du niveau 5, les manufactures montent jusqu'au niveau 10, en volume ou en qualité.",
         "Commerce : affaires entre marchands — commandes sous séquestre, colleganza, et prêts de la Banque.",
-        "Pass Négociant : plus aucun avantage de jeu (ni quota à la Dogana, ni offre ouverte, ni produits frais en plus) ; il ne donne que de l'information à lire et du cosmétique.",
+        "Pass Négociant : plus aucun avantage de jeu (ni quota à la Dogana, ni offre ouverte, ni produits frais en plus, ni commande du Doge échangée) ; il ne donne que de l'information à lire et du cosmétique.",
       ],
     },
     howTo: [
