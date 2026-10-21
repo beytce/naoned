@@ -95,10 +95,6 @@ function terra(tx: Tx, cfg: TerraConfig): TerraState {
 }
 
 /**
- * The embargo of the Terraferma: a city held there by a merchant who embargoes this one pays it
- * so much less (bps), the strongest if several.
- */
-/**
  * Ranked skirmishes a merchant may still be paid for today: the day's quota on the week's map
  * (all of it before the week's map is drawn or once it has turned).
  */
@@ -115,6 +111,10 @@ export function skirmishRankedLeft(
   return skirmishesLeft(t.map, cfg, playerId, now);
 }
 
+/**
+ * The embargo of the Terraferma: a city held there by a merchant who embargoes this one pays it
+ * so much less (bps), the strongest if several.
+ */
 export function terraEmbargoCutBps(
   ctx: WorldContext,
   state: WorldState,
