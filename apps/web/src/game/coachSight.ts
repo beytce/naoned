@@ -19,6 +19,8 @@ export interface Modal {
   getBoundingClientRect(): Rect;
   scrollTop: number;
   scrollTo(options: { top: number; behavior: "smooth" }): void;
+  /** Its own animations (a sheet sliding in): measured only once they are over. */
+  getAnimations?(): { playState: string }[];
 }
 
 /** The element pointed at, as the guide reads it. */
@@ -100,17 +102,29 @@ export function bringOnce(): (step: string, el: Target, viewHeight: number) => v
   let done: string | null = null;
   return (step, el, viewHeight) => {
     if (done === step) return;
+    // A sheet still sliding in: where things are is not yet where they will be.
+    if (sliding(el)) return;
     const b = el.getBoundingClientRect();
-    if (b.top >= 0 && b.bottom <= viewHeight && !outOfSheet(el, b, viewHeight)) return;
+    if (b.top >= 0 && b.bottom <= viewHeight && !outOfSheet(el, viewHeight)) return;
     done = step;
     bringIntoSheet(el, viewHeight);
   };
 }
 
-/** Out of its window's visible part, though on the screen. */
-function outOfSheet(el: Target, b: Rect, viewHeight: number): boolean {
+function sliding(el: Target): boolean {
+  const sheet = el.closest(MODAL) as Modal | null;
+  return !!sheet?.getAnimations?.().some((a) => a.playState === "running");
+}
+
+/**
+ * Out of its window's visible part (scrolled past its top or under its foot), though maybe on
+ * the screen: no ring there, a finger would touch what lies around the window.
+ */
+export function outOfSheet(el: Target, viewHeight: number): boolean {
   const sheet = el.closest(MODAL) as Modal | null;
   if (!sheet) return false;
   const s = sheet.getBoundingClientRect();
-  return b.top < Math.max(0, s.top) || b.bottom > Math.min(viewHeight, s.bottom);
+  const b = el.getBoundingClientRect();
+  const y = b.top + b.height / 2;
+  return y < Math.max(0, s.top) || y > Math.min(viewHeight, s.bottom);
 }

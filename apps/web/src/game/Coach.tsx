@@ -5,7 +5,7 @@ import { fr } from "../i18n.js";
 import { Big, Label, Slab, clock } from "../ui.js";
 import { affordable, have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
-import { bringOnce, browserPage, isCovered } from "./coachSight.js";
+import { bringOnce, browserPage, isCovered, outOfSheet } from "./coachSight.js";
 import { store } from "./store.js";
 
 const STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "mission"] as const;
@@ -233,10 +233,11 @@ export function Coach(props: CoachProps) {
       setOnFollow(follow !== null);
       if (el) bring(`${step.text}>${follow ? step.follow : step.target}`, el, window.innerHeight);
       const box = el ? el.getBoundingClientRect() : null;
-      // Never a ring on what a window covers, even while it slides in.
+      // Never a ring on what a window covers, even while it slides in, nor on a target its
+      // sheet has scrolled out of sight (the finger would touch what lies around the sheet).
       const hidden = el && box ? isCovered(el, box, browserPage()) : false;
       setCovered(hidden);
-      setRect(hidden ? null : box);
+      setRect(hidden || (el && outOfSheet(el, window.innerHeight)) ? null : box);
     };
     find();
     const t = setInterval(find, 250);

@@ -6,6 +6,7 @@ import {
   type Target,
   bringOnce,
   isCovered,
+  outOfSheet,
 } from "../src/game/coachSight.js";
 
 const H = 844;
@@ -15,12 +16,16 @@ function rect(top: number, height: number, left = 20, width = 100): Rect {
 }
 
 /** A sheet from y = 80 to the foot of the screen, scrolled by `scrollTop`. */
-function sheet(): Modal & { scrolls: number[]; holds: Set<unknown> } {
+function sheet(): Modal & { scrolls: number[]; holds: Set<unknown>; slides: boolean } {
   const holds = new Set<unknown>();
   const scrolls: number[] = [];
   return {
     holds,
     scrolls,
+    slides: false,
+    getAnimations() {
+      return this.slides ? [{ playState: "running" }] : [];
+    },
     scrollTop: 0,
     contains: (other) => holds.has(other),
     getBoundingClientRect: () => rect(80, H - 80, 0, 390),
@@ -108,6 +113,27 @@ describe("a target out of sight", () => {
     ledger.scrollTop = 600;
     bring("ledger>claim", reward, H);
     expect(ledger.scrolls).toHaveLength(1);
+  });
+
+  it("in a sheet still sliding in: brought once it has settled, not before", () => {
+    const workshops = sheet();
+    const produce = target(1200, workshops);
+    const bring = bringOnce();
+    workshops.slides = true;
+    bring("produce", produce, H);
+    expect(workshops.scrolls).toHaveLength(0);
+    workshops.slides = false;
+    bring("produce", produce, H);
+    expect(workshops.scrolls).toHaveLength(1);
+    expect(outOfSheet(produce, H)).toBe(false);
+  });
+
+  it("scrolled past its sheet's top: out of sight, though on the screen", () => {
+    const workshops = sheet();
+    const produce = target(400, workshops);
+    workshops.scrollTop = 360;
+    expect(produce.getBoundingClientRect().top).toBeGreaterThan(0);
+    expect(outOfSheet(produce, H)).toBe(true);
   });
 
   it("on the map: nothing is scrolled, neither the page nor the map", () => {
