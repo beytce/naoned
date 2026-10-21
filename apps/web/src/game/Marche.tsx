@@ -569,15 +569,10 @@ export function RialtoSheet(props: GameProps) {
   );
 }
 
-/** Days of prices shown: seven for everyone, thirty with the Pass when its settings give them. */
-function historyDays(props: GameProps): number {
-  const pass = props.view.pass;
-  return pass.active && pass.perks.history30Days ? 30 : 7;
-}
-
 /**
- * Seven days (thirty with the Pass) of the Rialto's price for a good, hour by hour, against its reference: where it
- * stands now, its low and its high, to buy low and sell high.
+ * The days of the Rialto's price for a good the server sends (seven, thirty with the Pass), hour
+ * by hour, against its reference: where it stands now, its low and its high, to buy low and sell
+ * high.
  */
 function PriceChart({
   props,
@@ -588,7 +583,7 @@ function PriceChart({
   const raw = props.prices[resource] ?? [];
   const W = 320;
   const H = 110;
-  if (raw.length < 2) return <p className="note">{c.empty}</p>;
+  if (raw.length < 2) return <p className="note">{c.empty(props.priceDays)}</p>;
   const ref = Number(reference);
   const values = raw.map((p) => Number(p.price));
   const lo = Math.min(...values, ref);
@@ -634,7 +629,7 @@ function PriceChart({
         <circle cx={x(raw.at(-1)?.t ?? t1)} cy={y(last)} r="3.5" fill="rgb(var(--gold))" />
       </svg>
       <figcaption className="flex justify-between font-mono text-xs text-cream-dim">
-        <span>{c.since(historyDays(props))}</span>
+        <span>{c.since(props.priceDays)}</span>
         <span>
           {c.low} {d(BigInt(Math.min(...values)))} · {c.high} {d(BigInt(Math.max(...values)))}
         </span>

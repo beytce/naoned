@@ -983,7 +983,8 @@ export const fr = {
     },
     market: {
       chart: {
-        empty: "Pas encore d'échange cette semaine : la courbe viendra avec les premiers.",
+        empty: (days: number) =>
+          `Pas encore d'échange ${days === 7 ? "cette semaine" : `ces ${days} derniers jours`} : la courbe viendra avec les premiers.`,
         reference: "référence",
         since: (days: number) => `il y a ${days} j`,
         low: "bas",

@@ -102,6 +102,8 @@ export interface GameProps {
   setLayer: (layer: Layer) => void;
   select: (selection: Selection | null) => void;
   prices: PriceSeries;
+  /** Days the server's price history covers (seven, thirty with the Pass): one source. */
+  priceDays: number;
   /** Sheets opened by the guide (so it can point inside them). */
   sheet: string | null;
   setSheet: (sheet: string | null) => void;
@@ -155,7 +157,10 @@ export function Game(props: {
   }, []);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [prices, setPrices] = useState<PriceSeries>({});
+  const [prices, setPrices] = useState<{ days: number; series: PriceSeries }>({
+    days: 7,
+    series: {},
+  });
   const [sheet, setSheet] = useState<string | null>(null);
   const [terraGuide, setTerraGuide] = useState(false);
   const [help, setHelp] = useState(false);
@@ -223,7 +228,7 @@ export function Game(props: {
       setBots(new Set(res.bots ?? []));
       if (res.view && Date.now() - pricesAt.current >= PRICES_MS) {
         pricesAt.current = Date.now();
-        setPrices((await gameApi.prices()).series);
+        setPrices(await gameApi.prices());
       }
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) onLogout();
@@ -391,7 +396,7 @@ export function Game(props: {
           pricesAt.current = Date.now();
           gameApi
             .prices()
-            .then((p) => setPrices(p.series))
+            .then(setPrices)
             .catch(() => undefined);
         }
         return true;
@@ -504,7 +509,8 @@ export function Game(props: {
     select,
     layer,
     setLayer,
-    prices,
+    prices: prices.series,
+    priceDays: prices.days,
     sheet,
     setSheet,
     openHelp: () => setHelp(true),
