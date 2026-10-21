@@ -129,11 +129,6 @@ export class SkirmishHub {
             data: {
               event: "skirmish_aborted",
               ranked: r.ranked,
-              // Whether a ranked match is still to play today (nothing was spent): on the week's
-              // map, and a match launched now ends before the closing hour; and until when one
-              // may be launched (the bell keeps the notice: no promise once past).
-              rankedLater: this.rankedLater(accountId, now),
-              rankedUntil: this.rankedUntil(now),
             },
           })),
       ),
@@ -278,34 +273,6 @@ export class SkirmishHub {
       );
     }
     return true;
-  }
-
-  /**
-   * Whether the merchant may still play a ranked match today, launched now (the lobby free): set
-   * down on the week's map, its ranked match of the day not played, and a match ending before the
-   * closing hour. What `status` tells as `rankedLater && onMap`.
-   */
-  private rankedLater(accountId: string, now: number): boolean {
-    const cfg = this.cfg;
-    if (!cfg?.skirmish || !this.onMap(accountId)) return false;
-    return (
-      skirmishRankedLeft(this.world.ctx, this.world.current, accountId, now) > 0 &&
-      skirmishRanked(cfg, cfg.skirmish.minHumans, now + cfg.skirmish.lobbySeconds * 1_000)
-    );
-  }
-
-  /**
-   * Until when, on the day of `now`, a ranked match may be launched (its lobby, then its match,
-   * over before the closing hour), to the minute; `now` itself if none may.
-   */
-  private rankedUntil(now: number): number {
-    const cfg = this.cfg;
-    if (!cfg?.skirmish) return now;
-    const lobbyMs = cfg.skirmish.lobbySeconds * 1_000;
-    const end = nextDayStart(now);
-    let t = now;
-    while (t < end && skirmishRanked(cfg, cfg.skirmish.minHumans, t + lobbyMs)) t += 60_000;
-    return t;
   }
 
   /** Set down on the week's map, and still on it. */

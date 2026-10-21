@@ -2,11 +2,11 @@
 
 /**
  * A skirmish lost to a restart of the server: the same words on the bar and in the bell (and in
- * the push, apps/server/src/notify/texts.ts); a ranked match promised only if one may still be
- * played today.
+ * the push, apps/server/src/notify/texts.ts). Told in the past, true for good: the bell keeps it
+ * after the merchant has played again, so it promises nothing.
  */
-const skirmishInterrupted = (rankedLater: boolean) =>
-  `Escarmouche interrompue par une maintenance : aucune Gloire, rien n'est compté${rankedLater ? " ; votre partie classée du jour reste à jouer" : ""}.`;
+const skirmishInterrupted =
+  "Escarmouche interrompue par une maintenance : aucune Gloire, rien n'est compté ; elle n'a pas consommé votre partie classée du jour.";
 
 export const fr = {
   appName: "Fondaco",
@@ -1453,7 +1453,7 @@ export const fr = {
         `${land} menacée : ${lances} troupes ${by} arrivent à ${time}. Renforcez la garnison !`,
       family: (event: string, data: Record<string, string>) =>
         event === "skirmish_aborted"
-          ? skirmishInterrupted(data.left === "1")
+          ? skirmishInterrupted
           : event === "land_lost"
             ? `${data.land} est perdue, prise par ${data.by}.`
             : event === "decree_share"

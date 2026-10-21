@@ -288,7 +288,7 @@ function terraText(data: Record<string, unknown>): { title: string; body: string
       return {
         title: "Escarmouche interrompue",
         // The same words as the skirmish's bar and the bell.
-        body: `Escarmouche interrompue par une maintenance : aucune Gloire, rien n'est compté${data.rankedLater === true ? " ; votre partie classée du jour reste à jouer" : ""}.`,
+        body: "Escarmouche interrompue par une maintenance : aucune Gloire, rien n'est compté ; elle n'a pas consommé votre partie classée du jour.",
       };
     case "terra_troops_received":
       return { title: "Renforts", body: `Un allié vous envoie ${Number(data.count)} troupes.` };
