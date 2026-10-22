@@ -24,3 +24,19 @@ export const ACTION_ICONS = {
   ranking: { icon: Icon.trophy, label: m.ranking },
   decree: { icon: Icon.decree, label: fr.game.terra.mine.decree },
 } as const;
+
+/** The four doors at the foot of the map, at the same places on every layer. */
+export const HUD_DOORS = [
+  { id: "workshops", label: m.workshops },
+  { id: "ranking", label: m.ranking },
+  // The Terraferma's door on the trade's map (« Commerce » back from it).
+  { id: "layer", label: fr.game.terra.door },
+  { id: "help", label: m.help },
+] as const;
+
+export type HudDoor = (typeof HUD_DOORS)[number]["id"];
+
+/** A door's word, from the one list. */
+export function doorLabel(id: HudDoor): string {
+  return HUD_DOORS.find((d) => d.id === id)?.label ?? id;
+}

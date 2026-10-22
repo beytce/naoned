@@ -2,33 +2,11 @@
  * Seasons follow calendar months, in Venice's time zone: a season opens on the 1st at midnight
  * and closes on the 1st of the next month.
  */
+import { monthStart, offsetAt } from "@comptoirs/engine";
+
+export { monthStart };
 export const SEASON_TIME_ZONE = "Europe/Paris";
 const DAY_MS = 86_400_000;
-
-/** Offset of the time zone from UTC at `at`, in ms (positive east of Greenwich). */
-function offsetAt(at: number, timeZone: string): number {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hourCycle: "h23",
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-  }).formatToParts(at);
-  const n = (type: string) => Number(parts.find((p) => p.type === type)?.value);
-  const local = Date.UTC(n("year"), n("month") - 1, n("day"), n("hour"), n("minute"), n("second"));
-  return local - Math.floor(at / 1000) * 1000;
-}
-
-/** Midnight on the 1st of the given month (month may overflow: 12 is January next year). */
-export function monthStart(year: number, month: number, timeZone = SEASON_TIME_ZONE): number {
-  const guess = Date.UTC(year, month, 1);
-  const first = guess - offsetAt(guess, timeZone);
-  // Across a change of time, the offset at the instant itself is the right one.
-  return guess - offsetAt(first, timeZone);
-}
 
 /** The month that contains `at`, in the season's time zone. */
 function monthOf(at: number, timeZone: string): { year: number; month: number } {

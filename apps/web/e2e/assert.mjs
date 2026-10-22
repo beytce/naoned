@@ -124,9 +124,29 @@ function fail(wrong) {
   if (wrong.length > 0) throw new Error(wrong.join("\n  "));
 }
 
-/** The coins of the effects landed: a step is judged once their flights are over. */
-function settled(page) {
-  return page.evaluate(() =>
+/**
+ * The windows' scroll at rest (the guide bringing its target into view), a scroll followed by
+ * one of the guide's ticks (250 ms) so that its ring is where the sheet came to rest; then the
+ * coins of the effects landed: a step is judged once both are over.
+ */
+async function settled(page) {
+  await page.evaluate(async () => {
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const tops = () =>
+      [...document.querySelectorAll('[aria-modal="true"]')].map((m) => m.scrollTop).join();
+    let last = tops();
+    let moved = false;
+    for (let i = 0; i < 30; i++) {
+      await wait(100);
+      const now = tops();
+      if (now === last) break;
+      moved = true;
+      last = now;
+    }
+    if (moved) await wait(300);
+  });
+  // Last: a payment may have started its flight while the scroll came to rest.
+  await page.evaluate(() =>
     Promise.all(
       document
         .getAnimations()

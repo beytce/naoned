@@ -3,6 +3,7 @@ import { fr } from "../i18n.js";
 import { Label, Panel, Ribbon, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
+import { missionGo } from "./missionGo.js";
 import { vehicleName } from "./roadKit.js";
 import type { MissionView } from "./types.js";
 
@@ -47,6 +48,7 @@ export function Ledger(props: GameProps) {
       <ul className="mt-3 space-y-3">
         {open.map((m) => {
           const [title, why] = t.items[m.id] ?? [m.id, ""];
+          const go = m.done ? null : missionGo(props, m.id);
           return (
             <li key={m.id} className="space-y-1.5">
               <div className="flex items-start justify-between gap-3">
@@ -63,16 +65,20 @@ export function Ledger(props: GameProps) {
                   >
                     {t.claim}
                   </Slab>
-                ) : (
-                  <span className="meta shrink-0">
-                    {m.progress}/{m.count}
-                  </span>
-                )}
+                ) : go ? (
+                  <Slab size="sm" tone="ghost" className="shrink-0 whitespace-nowrap" onClick={go}>
+                    {t.go}
+                  </Slab>
+                ) : null}
               </div>
               {!m.done && m.count > 1 && <Ribbon value={m.progress / m.count} tone="lagoon" />}
               <div className="flex items-center gap-2">
                 <span className="label">{t.reward}</span>
                 <Reward m={m} />
+                {/* Here in both states: a mission done keeps its height for the guide's ring. */}
+                <span className="meta ml-auto shrink-0">
+                  {Math.min(m.progress, m.count)}/{m.count}
+                </span>
               </div>
             </li>
           );

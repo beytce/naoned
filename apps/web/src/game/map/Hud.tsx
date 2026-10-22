@@ -8,6 +8,7 @@ import { fr } from "../../i18n.js";
 import { CountUp } from "../../ui.js";
 import { amount } from "../format.js";
 import { HudCounter, type TipContent, type TipKey, usePresence, useTip } from "./HudTips.js";
+import { doorLabel } from "./actions.js";
 import { Icon } from "./icons.js";
 
 /**
@@ -116,7 +117,7 @@ export function MapHud({
   bottom,
   hasFamily,
   layer,
-  doorLabel,
+  doorLabel: layerLabel,
   familyCalls,
   workshopsReady,
   locks = {},
@@ -288,6 +289,10 @@ export function MapHud({
             />
           )}
         </div>
+        {/* Its room kept while it waits for the first sale: the map is framed the same after. */}
+        {!rival && layer === "trade" && (
+          <span aria-hidden="true" className="col-span-2 block min-h-11" />
+        )}
         {rival && layer === "trade" && (
           <button
             type="button"
@@ -395,19 +400,19 @@ export function MapHud({
         <nav className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex justify-center gap-4 lg:bottom-6 lg:right-[var(--side,0px)]">
           {/* The same four doors at the same places on every layer. */}
           <Door
-            label={m.buttons.workshops}
+            label={doorLabel("workshops")}
             onClick={onWorkshops}
             dot={workshopsReady}
             coach="door-workshops"
           >
             {Icon.workshops()}
           </Door>
-          <Door label={m.buttons.ranking} onClick={onRanking} locked={locks.ranking}>
+          <Door label={doorLabel("ranking")} onClick={onRanking} locked={locks.ranking}>
             {Icon.trophy()}
           </Door>
           {(hasFamily || layer !== "trade") && (
             <Door
-              label={layer !== "trade" ? m.campaign.toTrade : (doorLabel ?? m.campaign.toCampaign)}
+              label={layer !== "trade" ? m.campaign.toTrade : (layerLabel ?? m.campaign.toCampaign)}
               onClick={onFamily}
               dot={layer === "trade" && familyCalls && !locks.layer}
               active={layer !== "trade"}
@@ -418,7 +423,7 @@ export function MapHud({
               {layer !== "trade" ? Icon.home() : Icon.family()}
             </Door>
           )}
-          <Door label={m.buttons.help} onClick={onHelp}>
+          <Door label={doorLabel("help")} onClick={onHelp}>
             {Icon.help()}
           </Door>
         </nav>

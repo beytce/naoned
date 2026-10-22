@@ -85,6 +85,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@comptoirs/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@fontsource-variable/archivo':
         specifier: 5.2.6
         version: 5.2.6

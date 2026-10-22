@@ -12,6 +12,7 @@
     "e2e:tutorial": "node e2e/tutorial.mjs"
   },
   "dependencies": {
+    "@comptoirs/engine": "workspace:*",
     "@fontsource-variable/archivo": "5.2.6",
     "@fontsource/space-grotesk": "5.3.0",
     "@fontsource/space-mono": "5.3.0",

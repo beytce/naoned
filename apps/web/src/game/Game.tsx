@@ -451,6 +451,7 @@ export function Game(props: {
     if (!introSeen) {
       return (
         <Intro
+          world={catalog.world}
           onDone={() => {
             store.set("introSeen", "1");
             setIntroSeen(true);
@@ -479,6 +480,7 @@ export function Game(props: {
   if (!introSeen) {
     return (
       <Intro
+        world={catalog.world}
         onDone={() => {
           store.set("introSeen", "1");
           setIntroSeen(true);
