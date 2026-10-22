@@ -1,15 +1,17 @@
-import { and, count, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "../db/client.js";
 import { accounts, loginTokens, sessions } from "../db/schema.js";
 import type { Mailer } from "../mail/mailer.js";
 import { magicLinkMail } from "../mail/templates.js";
-import { hashToken, newToken } from "./tokens.js";
+import { hashCode, hashToken, newCode, newToken, sameHash } from "./tokens.js";
 
 export const LINK_VALID_MINUTES = 15;
 export const SESSION_DAYS = 30;
 /** Magic links per e-mail address per hour, to avoid flooding an inbox. */
 export const LINKS_PER_HOUR = 5;
+/** Wrong codes a token takes: the fifth burns it (a new mail is needed). */
+export const CODE_TRIES = 5;
 
 export const emailSchema = z.string().trim().toLowerCase().email().max(254);
 export const pseudoSchema = z
@@ -58,7 +60,7 @@ const publicColumns = {
 
 export class AuthError extends Error {
   constructor(
-    readonly code: "invalid_token" | "pseudo_taken" | "too_many_requests",
+    readonly code: "invalid_token" | "invalid_code" | "pseudo_taken" | "too_many_requests",
     message?: string,
   ) {
     super(message ?? code);
@@ -91,14 +93,66 @@ export class AuthService {
     if ((recent?.n ?? 0) >= LINKS_PER_HOUR) throw new AuthError("too_many_requests");
 
     const token = newToken();
+    const tokenHash = hashToken(token);
+    // The same mail carries a code, for an installed app the link would open in the browser.
+    const code = newCode();
     await this.deps.db.insert(loginTokens).values({
-      tokenHash: hashToken(token),
+      tokenHash,
       email,
       createdAt: now,
       expiresAt: new Date(now.getTime() + LINK_VALID_MINUTES * 60_000),
+      codeHash: hashCode(code, tokenHash),
     });
     const link = `${this.deps.appUrl}/connexion?token=${encodeURIComponent(token)}`;
-    await this.deps.mailer.send(magicLinkMail(email, link, LINK_VALID_MINUTES));
+    await this.deps.mailer.send(magicLinkMail(email, link, code, LINK_VALID_MINUTES));
+  }
+
+  /**
+   * Opens a session with the code of the last mail sent to this address (the link and the code
+   * exclude each other: the first used consumes the token). A wrong code counts against the
+   * token, burned at the fifth. One answer, `invalid_code`, whatever went wrong, even for an
+   * address that never asked: nothing says whether it has an account.
+   */
+  async verifyCode(
+    rawEmail: string,
+    rawCode: string,
+  ): Promise<{ sessionToken: string; account: PublicAccount }> {
+    const parsed = emailSchema.safeParse(rawEmail);
+    const code = rawCode.replace(/\s+/g, "");
+    if (!parsed.success || !/^\d{6}$/.test(code)) throw new AuthError("invalid_code");
+    const email = parsed.data;
+    const now = this.now();
+    const opened = await this.deps.db.transaction(async (tx) => {
+      const [row] = await tx
+        .select()
+        .from(loginTokens)
+        .where(
+          and(
+            eq(loginTokens.email, email),
+            isNull(loginTokens.usedAt),
+            gt(loginTokens.expiresAt, now),
+          ),
+        )
+        .orderBy(desc(loginTokens.createdAt))
+        .limit(1)
+        .for("update");
+      if (!row?.codeHash) return false;
+      if (sameHash(row.codeHash, hashCode(code, row.tokenHash))) {
+        await tx
+          .update(loginTokens)
+          .set({ usedAt: now })
+          .where(eq(loginTokens.tokenHash, row.tokenHash));
+        return true;
+      }
+      const attempts = row.attempts + 1;
+      await tx
+        .update(loginTokens)
+        .set({ attempts, ...(attempts >= CODE_TRIES ? { usedAt: now } : {}) })
+        .where(eq(loginTokens.tokenHash, row.tokenHash));
+      return false;
+    });
+    if (!opened) throw new AuthError("invalid_code");
+    return this.openSession(email, now);
   }
 
   /**
@@ -119,16 +173,23 @@ export class AuthService {
       )
       .returning({ email: loginTokens.email });
     if (!used) throw new AuthError("invalid_token");
+    return this.openSession(used.email, now);
+  }
 
+  /** The session of a token consumed, by link or code; the account made on first login. */
+  private async openSession(
+    email: string,
+    now: Date,
+  ): Promise<{ sessionToken: string; account: PublicAccount }> {
     await this.deps.db
       .insert(accounts)
-      .values({ email: used.email, createdAt: now })
+      .values({ email, createdAt: now })
       .onConflictDoNothing({ target: accounts.email });
     const [account] = await this.deps.db
       .update(accounts)
       .set({ lastLoginAt: now })
       // Bots have no mailbox; their addresses can never open a session.
-      .where(and(eq(accounts.email, used.email), eq(accounts.isBot, false)))
+      .where(and(eq(accounts.email, email), eq(accounts.isBot, false)))
       .returning(publicColumns);
     if (!account) throw new AuthError("invalid_token");
 

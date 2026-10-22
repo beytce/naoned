@@ -42,7 +42,10 @@ export const accounts = pgTable(
   ],
 );
 
-/** Magic link tokens. Only the SHA-256 hash is stored; a token is single-use. */
+/**
+ * Magic link tokens. Only the SHA-256 hash is stored; a token is single-use. The six-digit code
+ * of the same mail is stored as sha256(code:tokenHash), its wrong tries counted (burned at 5).
+ */
 export const loginTokens = pgTable(
   "login_tokens",
   {
@@ -51,6 +54,8 @@ export const loginTokens = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     usedAt: timestamp("used_at", { withTimezone: true }),
+    codeHash: text("code_hash"),
+    attempts: integer("attempts").notNull().default(0),
   },
   (t) => [index("login_tokens_email_idx").on(t.email, t.createdAt)],
 );
