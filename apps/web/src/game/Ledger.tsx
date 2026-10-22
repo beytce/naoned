@@ -66,7 +66,7 @@ export function Ledger(props: GameProps) {
                     {t.claim}
                   </Slab>
                 ) : go ? (
-                  <Slab size="sm" tone="ghost" onClick={go}>
+                  <Slab size="sm" tone="ghost" className="shrink-0 whitespace-nowrap" onClick={go}>
                     {t.go}
                   </Slab>
                 ) : null}
