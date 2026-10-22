@@ -400,7 +400,7 @@ export function Qty(props: {
         onClick={() => set(props.value - 1)}
       >
         <span aria-hidden="true" className={face} />
-        <span className="col-start-1 row-start-1">−</span>
+        <span className="relative col-start-1 row-start-1">−</span>
       </button>
       <input
         type="number"
@@ -419,7 +419,7 @@ export function Qty(props: {
         onClick={() => set(props.value + 1)}
       >
         <span aria-hidden="true" className={face} />
-        <span className="col-start-1 row-start-1">+</span>
+        <span className="relative col-start-1 row-start-1">+</span>
       </button>
       {props.maxButton !== false && (
         <button
