@@ -125,19 +125,11 @@ function fail(wrong) {
 }
 
 /**
- * The coins of the effects landed and the windows' scroll at rest (the guide bringing its target
- * into view): a step is judged once both are over, and a scroll followed by one of the guide's
- * ticks (250 ms), its ring then where the sheet came to rest.
+ * The windows' scroll at rest (the guide bringing its target into view), a scroll followed by
+ * one of the guide's ticks (250 ms) so that its ring is where the sheet came to rest; then the
+ * coins of the effects landed: a step is judged once both are over.
  */
 async function settled(page) {
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.target?.closest?.("[data-fx-layer]"))
-        .map((a) => a.finished.catch(() => {})),
-    ),
-  );
   await page.evaluate(async () => {
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const tops = () =>
@@ -153,6 +145,15 @@ async function settled(page) {
     }
     if (moved) await wait(300);
   });
+  // Last: a payment may have started its flight while the scroll came to rest.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.target?.closest?.("[data-fx-layer]"))
+        .map((a) => a.finished.catch(() => {})),
+    ),
+  );
 }
 
 function overflows(page) {
