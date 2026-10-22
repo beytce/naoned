@@ -192,7 +192,20 @@ export function Game(props: {
     setOffset(serverTime - Date.now());
     // Ducats came in (a sale, a delivery paid, a reward): they fly to the purse.
     const before = viewRef.current?.cash;
-    if (before && v) flyCoins(BigInt(v.cash) - BigInt(before));
+    // The welcome order arrived: the first pay, from its city, said once.
+    const welcome = v?.road?.deliveries.find((dv) => dv.welcome && dv.outcome === "delivered");
+    const first = !!welcome && store.get("firstPaySeen") !== "1";
+    if (first) store.set("firstPaySeen", "1");
+    if (before && v)
+      flyCoins(
+        BigInt(v.cash) - BigInt(before),
+        first && welcome
+          ? {
+              note: fr.game.coach.firstPay,
+              from: `[data-coach="city-${welcome.route.split(":")[1]}"]`,
+            }
+          : {},
+      );
     viewRef.current = v;
     setView(v);
   }, []);
@@ -531,7 +544,13 @@ export function Game(props: {
     resetGame: async () => {
       try {
         const res = await gameApi.reset();
-        for (const key of ["introSeen", "guideDone", "guideHidden", "skipMarketBuy"])
+        for (const key of [
+          "introSeen",
+          "guideDone",
+          "guideHidden",
+          "skipMarketBuy",
+          "firstPaySeen",
+        ])
           store.set(key, "0");
         setSheet(null);
         setSelection(null);

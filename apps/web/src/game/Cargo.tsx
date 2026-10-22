@@ -139,7 +139,11 @@ export function CargoSheet({
             </span>
             <span className="block truncate text-xs text-cream-dim">
               {props.names.city(o.city)}
-              {Number.isFinite(minutes(o)) ? ` · ${minutesLabel(minutes(o))}` : ""}
+              {o.express
+                ? ` · ${fr.game.map.cart.express(clock(o.express * 1000))}`
+                : Number.isFinite(minutes(o))
+                  ? ` · ${minutesLabel(minutes(o))}`
+                  : ""}
               {why ? ` · ${why}` : ""}
             </span>
           </span>
