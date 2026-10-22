@@ -1215,49 +1215,54 @@ export const fr = {
     ledger: {
       title: "Livre de compte",
       claim: "Encaisser",
+      go: "Y aller",
       reward: "Récompense",
       allDone: "Objectifs du jour remplis. Revenez demain pour la suite.",
       next: (title: string, inTime: string) => `Prochain objectif « ${title} » dans ${inTime}.`,
       items: {
-        first_city_sale: [
-          "Vendre à une ville",
-          "Marché → Villes : les villes paient vos produits finis.",
-        ],
         first_delivery: [
           "Première livraison",
-          "Routes : chargez une commande, la ville paie à l'arrivée.",
+          "Touchez une charrette sur la carte, puis « Cargaisons » : cochez une commande et « Partir ». La ville paie à l'arrivée.",
         ],
         first_vehicle: [
           "Premier véhicule",
-          "Routes → Vos véhicules : livrez plusieurs commandes à la fois.",
+          "« Bâtir », onglet « Véhicules » : livrez plusieurs commandes à la fois.",
         ],
         first_contract: [
           "Honorer un contrat du Doge",
-          "Onglet Contrats : livrez une commande, prime de 20 %.",
+          "Dans « Cargaisons », les commandes marquées « Doge » paient 20 % de plus : livrez-en une.",
         ],
-        first_offer: ["Laisser une offre au Rialto", "Fiche d'une ressource → « À mon prix »."],
-        offer_taken: ["Conclure une offre", "Un marchand achète ou vend sur votre offre."],
+        first_offer: [
+          "Laisser une offre au Rialto",
+          "Au « Rialto », touchez une marchandise, puis « À mon prix ».",
+        ],
+        offer_taken: [
+          "Conclure une offre",
+          "Un marchand achète ou vend sur votre offre : suivez-la dans « Mes offres », au « Rialto ».",
+        ],
         first_upgrade: [
           "Améliorer un atelier",
-          "+25 % de rendement par niveau : spécialisez-vous.",
+          "« Ateliers », puis « Améliorer » : +25 % de rendement par niveau.",
         ],
-        five_contracts: ["Honorer cinq contrats", "Les commandes du Doge changent chaque jour."],
-        first_project: [
-          "Livrer au grand chantier",
-          "Briques et planches pour la ville, payées 10 % de plus.",
+        five_contracts: [
+          "Honorer cinq contrats",
+          "Le Doge passe de nouvelles commandes chaque jour, dans « Cargaisons ».",
         ],
-        new_workshop: ["Construire un nouvel atelier", "Agrandissez votre comptoir."],
+        new_workshop: [
+          "Construire un nouvel atelier",
+          "« Bâtir », au comptoir : agrandissez votre domaine.",
+        ],
         three_deliveries: [
           "Livrer trois commandes",
           "Une deuxième charrette vous attend : deux commandes à la fois.",
         ],
         three_upgrades: [
           "Améliorer trois fois",
-          "Chaque niveau produit plus : le niveau 2 coûte moitié moins de matériaux.",
+          "Dans « Ateliers », chaque niveau produit plus : le niveau 2 coûte moitié moins de matériaux.",
         ],
         first_palace: [
           "Bâtir un palais",
-          "Le palais compte à son coût dans le patrimoine et se voit de loin.",
+          "« Bâtir » : le palais compte à son coût dans le patrimoine et se voit de loin.",
         ],
       } as Record<string, [string, string]>,
     },
