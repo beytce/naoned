@@ -102,6 +102,7 @@ export const fr = {
   },
 
   game: {
+    ui: { howItWorks: "Comment ça marche ?" },
     map: {
       home: (pseudo: string) => (pseudo ? `Maison ${pseudo}` : "Votre maison"),
       homeLabel: "Comptoir",
@@ -1794,6 +1795,7 @@ export const fr = {
     company: {
       title: "Commande de compagnie",
       of: (city: string) => `Commande de compagnie · ${city}`,
+      line: "+10 % par unité · +10 % une fois remplie",
       help: "Une ville commande du pain, des briques et des planches aux trois régions. Chaque unité livrée est payée 10 % au-dessus de la référence ; quand la commande est remplie, chaque marchand qui a livré touche 10 % de plus.",
       endsIn: (time: string) => `se termine dans ${time}`,
       filled: "Remplie : la prime est versée",
@@ -2097,6 +2099,7 @@ export const fr = {
     /** The Doge's tenders. */
     tenders: {
       title: "Appels d'offres du Doge",
+      line: (pct: number) => `Pli scellé · caution ${pct} %`,
       help: (pct: number) =>
         `Le Doge demande une quantité d'une marchandise sous un prix plafond. Proposez un prix et une quantité, sous pli scellé, en bloquant une caution de ${pct} % de l'offre. À la clôture, les moins chers l'emportent jusqu'à la quantité demandée ; les autres récupèrent leur caution. Le gagnant livre depuis son comptoir avant l'échéance, payé à son prix, caution rendue — sinon la caution est perdue.`,
       none: "Aucun appel d'offres en cours. Le prochain s'ouvre bientôt.",
@@ -2124,6 +2127,8 @@ export const fr = {
     /** A city's warehouse. */
     warehouse: {
       title: (city: string) => `Entrepôt de ${city}`,
+      line: (places: number, units: number) =>
+        `${places} place${places > 1 ? "s" : ""} · ${units} unités par jour`,
       help: (places: number, units: number) =>
         `${places} place${places > 1 ? "s" : ""} par ville, mise${places > 1 ? "s" : ""} aux enchères chaque semaine : les plus fortes offres l'emportent à la clôture du lundi et leurs ducats sortent du jeu, les autres sont rendues. Le titulaire livre les commandes de la ville sur-le-champ, sans charrette, jusqu'à ${units} unités par jour.`,
       held: (left: number) =>
@@ -2141,6 +2146,7 @@ export const fr = {
     /** The official suppliers of a city. */
     suppliers: {
       title: (city: string) => `Fournisseurs de ${city}`,
+      line: (pct: number, min: number) => `+${pct} % au premier livreur · ${min} au moins`,
       help: (pct: number, min: number) =>
         `Chaque semaine, qui livre le plus d'une marchandise dans une ville (au moins ${min}) en devient le fournisseur officiel : la ville la lui paie ${pct} % de plus toute la semaine suivante, et son blason flotte sur la carte.`,
       none: "Personne n'a encore livré ici cette semaine.",
@@ -2151,6 +2157,7 @@ export const fr = {
     },
     dashboard: {
       title: "Tableau de bord",
+      line: (days: number) => `Ventes nettes · ${days} jours`,
       help: (days: number) =>
         `Vos ventes nettes comptées comme au classement : ce qui entre pour vos marchandises, moins ce qu'elles vous coûtent. La courbe additionne les ${days} derniers jours.`,
       perHour: (amount: string) => `≈ ${amount} de marge par heure`,

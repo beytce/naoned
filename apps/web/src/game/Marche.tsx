@@ -494,7 +494,12 @@ export function RialtoSheet(props: GameProps) {
         : 0,
     );
   return (
-    <Sheet open={open} onClose={() => props.setSheet(null)}>
+    <Sheet
+      open={open}
+      onClose={() => props.setSheet(null)}
+      title={!line && kind !== "offers" ? fr.game.map.buttons.rialto : undefined}
+      summary={!line && kind !== "offers" ? r.kicker : undefined}
+    >
       {line ? (
         <div>
           {back}
@@ -511,12 +516,6 @@ export function RialtoSheet(props: GameProps) {
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="pr-12">
-            <h3 className="font-display text-2xl font-extrabold uppercase">
-              {fr.game.map.buttons.rialto}
-            </h3>
-            <p className="label mt-1 text-cream-dim">{r.kicker}</p>
-          </div>
           <div className="flex flex-wrap items-center gap-1.5">
             <Segmented<Filter>
               value={filter}

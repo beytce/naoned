@@ -2,7 +2,9 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { P } from "./art/palette.js";
 import { onBack } from "./game/back.js";
+import { store } from "./game/store.js";
 import { haptic } from "./haptics.js";
+import { fr } from "./i18n.js";
 
 type Tone = "gold" | "lagoon" | "vermilion" | "ghost";
 
@@ -400,7 +402,7 @@ export function Qty(props: {
         onClick={() => set(props.value - 1)}
       >
         <span aria-hidden="true" className={face} />
-        <span className="col-start-1 row-start-1">−</span>
+        <span className="relative col-start-1 row-start-1">−</span>
       </button>
       <input
         type="number"
@@ -419,7 +421,7 @@ export function Qty(props: {
         onClick={() => set(props.value + 1)}
       >
         <span aria-hidden="true" className={face} />
-        <span className="col-start-1 row-start-1">+</span>
+        <span className="relative col-start-1 row-start-1">+</span>
       </button>
       {props.maxButton !== false && (
         <button
@@ -573,12 +575,26 @@ function useDragToClose(
   }, [panel, open]);
 }
 
-/** Bottom sheet on a phone, centred window on a computer, for focused actions. */
+/**
+ * Bottom sheet on a phone, centred window on a computer, for focused actions. Its head stays in
+ * sight while the content scrolls under it: the handle and the cross, and with a `title` the
+ * sheet's kicker, title and one-line summary, then its state and action, then its `Rules`.
+ */
 export function Sheet({
   open,
   onClose,
+  kicker,
+  title,
+  summary,
   children,
-}: { open: boolean; onClose: () => void; children: ReactNode }) {
+}: {
+  open: boolean;
+  onClose: () => void;
+  kicker?: ReactNode;
+  title?: ReactNode;
+  summary?: ReactNode;
+  children: ReactNode;
+}) {
   const panel = useRef<HTMLDialogElement>(null);
   useOverlay(open, onClose);
   useEffect(() => {
@@ -604,12 +620,72 @@ export function Sheet({
         tabIndex={-1}
         className="relative m-0 max-h-[92dvh] w-full max-w-md animate-sheet overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line bg-night-2 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 text-cream shadow-2xl shadow-black/50 focus:outline-none lg:max-w-lg lg:animate-pop lg:rounded-3xl lg:border lg:p-7"
       >
-        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-line lg:hidden" />
-        <CloseButton onClick={onClose} className="absolute right-3 top-3 lg:right-4 lg:top-4" />
+        {/* Sticky from the dialog's own edge, over its padding (a sticky box stops under it). */}
+        <div
+          data-sheet-head
+          className={`sticky -top-3 z-10 -mx-5 -mt-3 bg-night-2/90 px-5 pt-3 backdrop-blur lg:-top-7 lg:-mx-7 lg:-mt-7 lg:px-7 lg:pt-7 ${title ? "mb-4 border-b border-line/60 pb-3" : "mb-4 lg:mb-0"}`}
+        >
+          <div
+            className={`mx-auto h-1.5 w-12 rounded-full bg-line lg:hidden ${title ? "mb-3" : ""}`}
+          />
+          {title ? (
+            <>
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1 pt-1">
+                  {kicker && <p className="label text-cream-dim">{kicker}</p>}
+                  <h3 className="font-display text-xl font-extrabold uppercase">{title}</h3>
+                </div>
+                <CloseButton onClick={onClose} className="-mr-2 shrink-0" />
+              </div>
+              {summary && <p className="meta mt-1">{summary}</p>}
+            </>
+          ) : (
+            <CloseButton onClick={onClose} className="absolute right-3 top-3 lg:right-4 lg:top-4" />
+          )}
+        </div>
         {children}
       </dialog>
     </div>,
     document.body,
+  );
+}
+
+/**
+ * How a sheet works, folded under its action: open the first time the sheet is seen, folded
+ * after; the merchant's own choice (opened or folded) is kept, sheet by sheet.
+ */
+export function Rules({ id, children }: { id: string; children: ReactNode }) {
+  const key = `rules:${id}`;
+  const [open] = useState(() => (store.get(key) ?? "first") !== "closed");
+  // The state last kept: the toggle the browser fires as it draws an open fold is not a choice.
+  const kept = useRef(open);
+  useEffect(() => {
+    if (store.get(key) === null) store.set(key, "closed");
+  }, [key]);
+  return (
+    <details
+      open={open}
+      onToggle={(e) => {
+        if (e.currentTarget.open === kept.current) return;
+        kept.current = e.currentTarget.open;
+        store.set(key, kept.current ? "open" : "closed");
+      }}
+      className="group cut bg-night-3/60 ring-1 ring-inset ring-line"
+    >
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm text-cream-dim [&::-webkit-details-marker]:hidden">
+        {fr.game.ui.howItWorks}
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          aria-hidden="true"
+          className="shrink-0 transition-transform group-open:rotate-180"
+        >
+          <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.75" />
+        </svg>
+      </summary>
+      <div className="px-3 pb-3 text-sm leading-snug text-cream-dim">{children}</div>
+    </details>
   );
 }
 

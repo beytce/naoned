@@ -1,6 +1,6 @@
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Sheet, Slab, clock } from "../ui.js";
+import { Rules, Sheet, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
 import type { Project } from "./types.js";
@@ -87,12 +87,14 @@ function Line({ props, p, resource }: { props: GameProps; p: Project; resource: 
 export function CompanySheet(props: GameProps) {
   const p = props.view.projects[0];
   return (
-    <Sheet open={props.sheet === "company"} onClose={() => props.setSheet(null)}>
-      <div className="space-y-4 pt-6">
-        <h3 className="font-display text-xl font-extrabold uppercase">
-          {p ? t.of(cityName(props, p.city)) : t.title}
-        </h3>
-        <p className="meta">{t.help}</p>
+    <Sheet
+      open={props.sheet === "company"}
+      onClose={() => props.setSheet(null)}
+      kicker={p && props.names.city(p.city)}
+      title={t.title}
+      summary={t.line}
+    >
+      <div className="space-y-4">
         {!p ? (
           <p className="meta">{t.none}</p>
         ) : (
@@ -109,6 +111,7 @@ export function CompanySheet(props: GameProps) {
             </ul>
           </>
         )}
+        <Rules id="company">{t.help}</Rules>
       </div>
     </Sheet>
   );

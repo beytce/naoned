@@ -26,7 +26,6 @@ export function BuildCatalog(props: GameProps) {
   const road = props.catalog.road;
   return (
     <div className="space-y-4">
-      <h3 className="font-display text-xl font-extrabold uppercase">{t().title}</h3>
       {road && (
         <div className="flex border-b border-line" role="tablist">
           {(["workshops", "vehicles"] as const).map((k) => (

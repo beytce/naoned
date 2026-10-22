@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Qty, Segmented, Sheet, Slab, clock } from "../ui.js";
+import { Qty, Rules, Segmented, Sheet, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
 import { have } from "./workshops.js";
@@ -38,10 +38,13 @@ export function DealsSheet(props: GameProps) {
   const [tab, setTab] = useState<Tab>("commissions");
   const deals = props.view.deals;
   return (
-    <Sheet open={props.sheet === "deals" && !!deals} onClose={() => props.setSheet(null)}>
+    <Sheet
+      open={props.sheet === "deals" && !!deals}
+      onClose={() => props.setSheet(null)}
+      title={t.title}
+    >
       {deals && (
-        <div className="space-y-4 pt-6">
-          <h3 className="font-display text-xl font-extrabold uppercase">{t.title}</h3>
+        <div className="space-y-4">
           <Segmented
             value={tab}
             onChange={setTab}
@@ -76,7 +79,6 @@ function Commissions(props: GameProps) {
   const price = Math.max(1, Math.round((ref * pct) / 100));
   return (
     <div className="space-y-4">
-      <p className="meta">{t.commissionHelp}</p>
       <ul className="space-y-2">
         {deals.commissions.length === 0 && <li className="meta">{t.noCommission}</li>}
         {deals.commissions.map((c) => (
@@ -175,6 +177,7 @@ function Commissions(props: GameProps) {
           {t.post}
         </Slab>
       </section>
+      <Rules id="deals-commissions">{t.commissionHelp}</Rules>
     </div>
   );
 }
@@ -189,7 +192,6 @@ function Colleganze(props: GameProps) {
   const maxShare = Math.floor(deals.maxShareBps / 100);
   return (
     <div className="space-y-4">
-      <p className="meta">{t.colleganzaHelp(maxShare)}</p>
       <ul className="space-y-2">
         {deals.colleganze.length === 0 && <li className="meta">{t.noColleganza}</li>}
         {deals.colleganze.map((g) => (
@@ -289,6 +291,7 @@ function Colleganze(props: GameProps) {
           {t.offerGo}
         </Slab>
       </section>
+      <Rules id="deals-colleganze">{t.colleganzaHelp(maxShare)}</Rules>
     </div>
   );
 }
@@ -305,14 +308,6 @@ function Bank(props: GameProps) {
   const interest = Math.ceil((amount * bank.interestBpsPerDay * days) / 10_000);
   return (
     <div className="space-y-4">
-      <p className="meta">
-        {b.help(
-          Math.round(bank.maxShareBps / 100),
-          bank.interestBpsPerDay / 100,
-          bank.maxDays,
-          Math.round(bank.lateBps / 100),
-        )}
-      </p>
       {loan ? (
         <div className="space-y-2 cut bg-night-3 px-3 py-3 ring-1 ring-inset ring-line">
           <p className={`text-sm ${loan.late ? "text-vermilion" : ""}`}>
@@ -367,6 +362,14 @@ function Bank(props: GameProps) {
           </Slab>
         </section>
       )}
+      <Rules id="deals-bank">
+        {b.help(
+          Math.round(bank.maxShareBps / 100),
+          bank.interestBpsPerDay / 100,
+          bank.maxDays,
+          Math.round(bank.lateBps / 100),
+        )}
+      </Rules>
     </div>
   );
 }

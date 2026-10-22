@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fr } from "../i18n.js";
-import { Sheet } from "../ui.js";
+import { Rules, Sheet } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
@@ -52,16 +52,20 @@ export function DashboardSheet(props: GameProps) {
     };
   }, [open]);
   return (
-    <Sheet open={open} onClose={() => props.setSheet(null)}>
-      <div className="space-y-4 pt-6">
-        <h3 className="font-display text-xl font-extrabold uppercase">{t.title}</h3>
-        <p className="meta">{t.help(data?.days.length ?? 7)}</p>
+    <Sheet
+      open={open}
+      onClose={() => props.setSheet(null)}
+      title={t.title}
+      summary={t.line(data?.days.length ?? 7)}
+    >
+      <div className="space-y-4">
         <dl className="grid grid-cols-3 gap-2 text-center">
           <Figure label={t.hour} value={d(perHour(props))} />
           <Figure label={t.today} value={data ? d(data.today) : "…"} />
           <Figure label={t.week} value={data ? d(data.week) : "…"} />
         </dl>
         {data && <Curves data={data} />}
+        <Rules id="dashboard">{t.help(data?.days.length ?? 7)}</Rules>
       </div>
     </Sheet>
   );

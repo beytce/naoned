@@ -136,6 +136,19 @@ describe("a target out of sight", () => {
     expect(outOfSheet(produce, H)).toBe(true);
   });
 
+  it("under its sheet's sticky head: out of sight, and brought below the head", () => {
+    const tenders = sheet();
+    // The head: the handle, the title and the cross, from y = 80 to 160.
+    tenders.querySelector = () => ({ getBoundingClientRect: () => rect(80, 80, 0, 390) });
+    const bid = target(500, tenders);
+    tenders.scrollTop = 370;
+    expect(bid.getBoundingClientRect().top).toBeGreaterThan(80);
+    expect(outOfSheet(bid, H)).toBe(true);
+    bringOnce()("bid", bid, H);
+    // Centred in what the head leaves of the sheet: 160 to 844.
+    expect(tenders.scrolls).toEqual([370 + (130 + 22) - (160 + H) / 2]);
+  });
+
   it("on the map: nothing is scrolled, neither the page nor the map", () => {
     let scrolled = false;
     const city: Target & { scrollIntoView(): void } = {

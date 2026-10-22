@@ -3,7 +3,7 @@
 // de compte's reward cashed: produce, harvest, deliver to a city, buy at the Rialto, the reward),
 // then a transformation in the workshops, the Terraferma during its truce, then a week in teams
 // with Milan riding against the merchant and its close (the week's view rewritten on its way:
-// the plaque's every line), the notices. After
+// the plaque's every line), the notices (their head kept in sight to their foot). After
 // every step, the page must not scroll sideways, no two blocks of the HUD may cover each other
 // nor the map's names and medallions, those that can be touched are 44 px at least, Lorenzo's
 // ring sits on what a finger touches under it, and no coin of the effects is left on screen
@@ -27,7 +27,7 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
-import { assertLayout, assertName } from "./assert.mjs";
+import { assertLayout, assertName, assertSheetHead } from "./assert.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SHOTS = resolve(process.env.SHOTS ?? join(here, "..", "e2e-shots"));
@@ -283,6 +283,8 @@ async function session(width, height, tag) {
     await page.getByRole("button", { name: /^avis/i }).first().click();
     await page.waitForTimeout(600);
     await check("avis");
+    // Scrolled to its foot, the notices keep their title and their cross.
+    await assertSheetHead(page);
     if ((await page.getByText("Premiers pas", { exact: true }).count()) > 0)
       throw new Error(`${label}: the notices still list first steps to take`);
     await page.keyboard.press("Escape");

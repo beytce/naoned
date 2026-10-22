@@ -20,6 +20,9 @@
 // - guide: Lorenzo's ring is drawn where its target is not the element touched under its centre
 //   (a sheet over it), or something is left over his bubble (a coin of the effects, still shown
 //   once their flights have ended).
+//
+// And on demand, `assertSheetHead`: an open window scrolled to its foot keeps its head (the
+// cross, and its title when it has one) at its top, in sight and touched first.
 
 const SLACK = 2;
 const TARGET = 44;
@@ -44,6 +47,44 @@ export async function assertLayout(page) {
     ...(await wraps(page)),
     ...(await guide(page)),
   ]);
+}
+
+/**
+ * Every open window, scrolled to its foot, keeps its head at its top: the cross, and its title
+ * when it has one, in sight and the element found under their centre. The scroll is put back.
+ */
+export async function assertSheetHead(page) {
+  const faults = await page.evaluate(async () => {
+    const out = [];
+    for (const sheet of document.querySelectorAll('[aria-modal="true"]')) {
+      const head = sheet.querySelector("[data-sheet-head]");
+      if (!head) continue;
+      const before = sheet.scrollTop;
+      sheet.scrollTop = sheet.scrollHeight;
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const s = sheet.getBoundingClientRect();
+      const name = head.querySelector("h3")?.textContent?.trim() || "a window";
+      if (sheet.scrollTop === 0) {
+        sheet.scrollTop = before;
+        continue;
+      }
+      const h = head.getBoundingClientRect();
+      if (Math.abs(h.top - s.top) > 1)
+        out.push(`head: ${name}'s head at ${Math.round(h.top - s.top)} px from its top, scrolled`);
+      for (const el of [head.querySelector('[aria-label="Fermer"]'), head.querySelector("h3")]) {
+        if (!el) continue;
+        const b = el.getBoundingClientRect();
+        const at = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+        if (!at || !(el === at || el.contains(at)))
+          out.push(
+            `head: ${name}'s ${el.tagName === "H3" ? "title" : "cross"} out of sight, scrolled`,
+          );
+      }
+      sheet.scrollTop = before;
+    }
+    return out;
+  });
+  fail(faults);
 }
 
 /** The merchant's name shows `min` letters at least (all of it when shorter), on any layer. */
