@@ -70,3 +70,52 @@ export function dayStartIn(
   const offset = Date.UTC(q.y, q.m - 1, q.d, q.h, q.min) - midnightUtc;
   return { start: midnightUtc - offset, weekday: new Date(midnightUtc).getUTCDay() };
 }
+
+const DAY_MS = 86_400_000;
+
+/** Offset of the time zone from UTC at `at`, in ms (positive east of Greenwich). */
+export function offsetAt(at: number, timeZone = GAME_TIME_ZONE): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+  }).formatToParts(at);
+  const n = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  const local = Date.UTC(n("year"), n("month") - 1, n("day"), n("hour"), n("minute"), n("second"));
+  return local - Math.floor(at / 1000) * 1000;
+}
+
+/** Midnight on the 1st of the given month (month may overflow: 12 is January next year). */
+export function monthStart(year: number, month: number, timeZone = GAME_TIME_ZONE): number {
+  const guess = Date.UTC(year, month, 1);
+  const first = guess - offsetAt(guess, timeZone);
+  // Across a change of time, the offset at the instant itself is the right one.
+  return guess - offsetAt(first, timeZone);
+}
+
+/** The calendar day `at` falls on in a time zone, as a count of days since 1 January 1970. */
+function civilDay(at: number, timeZone: string): number {
+  return Math.floor((at + offsetAt(at, timeZone)) / DAY_MS);
+}
+
+/**
+ * The season's days on the calendar of its time zone: `day` (1 on the day it opened) of `total`
+ * (every calendar day it touches, its last one ending at `endsAt`), `left` counting today, so
+ * that day + left - 1 = total. Before its start it is day 1, after its end its last day.
+ */
+export function seasonDays(
+  startsAt: number,
+  endsAt: number,
+  now: number,
+  timeZone = GAME_TIME_ZONE,
+): { day: number; total: number; left: number } {
+  const first = civilDay(startsAt, timeZone);
+  const total = Math.max(1, civilDay(endsAt - 1, timeZone) - first + 1);
+  const day = Math.min(total, Math.max(1, civilDay(now, timeZone) - first + 1));
+  return { day, total, left: total - day + 1 };
+}
