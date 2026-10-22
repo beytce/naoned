@@ -92,6 +92,7 @@ import {
   travelMinutesFor,
   vehicleFree,
   vehiclesOf,
+  welcomeTripMs,
 } from "@comptoirs/engine";
 import { titleFor } from "./profile.js";
 
@@ -279,6 +280,10 @@ function roadView(ctx: WorldContext, state: WorldState, playerId: string, now: n
             : now >= o.expiresAt
               ? ("expired" as const)
               : ("open" as const),
+    /** The welcome order's express trip each way, in seconds, while the tutorial lasts. */
+    ...(o.welcome && welcomeTripMs(ctx, player, now) > 0
+      ? { express: welcomeTripMs(ctx, player, now) / 1000 }
+      : {}),
     /** Minutes one way, per vehicle type. */
     minutes: Object.fromEntries(
       types.map((t) => [t, travelMinutesFor(ctx, state, playerId, o.city, t) ?? null]),

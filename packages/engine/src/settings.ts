@@ -57,10 +57,24 @@ export const worldSettingsSchema = z.object({
   productionQueueMaxHours: positive,
   regionBonusBps: bps,
   lateJoiner: z.object({ afterDay: qty, bonusBps: bps, hours: positive }),
-  /** First minutes of play: a few one-batch jobs finish in seconds, so the tutorial can flow. */
+  /**
+   * First minutes of play: a few one-batch jobs finish in seconds, so the tutorial can flow; the
+   * welcome order, loaded alone, goes and comes back in `welcomeTripSeconds` each way (0: its
+   * road's length).
+   */
   tutorial: z
-    .object({ minutes: qty, fastBatchSeconds: positive, fastBatchesPerBuilding: qty })
-    .default({ minutes: 0, fastBatchSeconds: 30, fastBatchesPerBuilding: 0 }),
+    .object({
+      minutes: qty,
+      fastBatchSeconds: positive,
+      fastBatchesPerBuilding: qty,
+      welcomeTripSeconds: qty.default(0),
+    })
+    .default({
+      minutes: 0,
+      fastBatchSeconds: 30,
+      fastBatchesPerBuilding: 0,
+      welcomeTripSeconds: 0,
+    }),
   /** Goods given to a new player, by region (resource → quantity). */
   startingStock: z.record(z.record(qty)).default({}),
   /**

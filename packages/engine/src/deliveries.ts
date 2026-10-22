@@ -356,6 +356,7 @@ export function deliveryOrdersFor(
         unitPrice: orderUnitPrice(ctx, region, city, welcome.resource, 0, { state, day }),
         opensAt: dayStart,
         expiresAt,
+        welcome: true,
       });
       const order = out[out.length - 1];
       if (order && welcome.reward !== undefined)
@@ -717,6 +718,20 @@ function loadValue(o: DeliveryOrder): Deniers {
 }
 
 /**
+ * The welcome order's trip each way while the newcomer is in the tutorial's window, in ms (0:
+ * none, the road's length): `tutorial.welcomeTripSeconds`, loaded alone.
+ */
+export function welcomeTripMs(
+  ctx: WorldContext,
+  player: { joinedAt: number },
+  now: number,
+): number {
+  const t = ctx.settings.tutorial;
+  if (t.welcomeTripSeconds <= 0 || now >= player.joinedAt + t.minutes * MINUTE_MS) return 0;
+  return t.welcomeTripSeconds * 1000;
+}
+
+/**
  * Loads orders of today's board on a free vehicle and sets off: one order, or several for the same
  * city (up to `maxOrdersPerLoad`) within the vehicle's capacity. The goods leave the stock now; the
  * city pays on arrival.
@@ -791,7 +806,10 @@ export function dispatchDelivery(
     removeStock(tx, playerId, o.resource, o.quantity, "delivery", id);
     cargo[o.resource] = (cargo[o.resource] ?? 0) + o.quantity;
   }
-  const trip = minutes * MINUTE_MS;
+  // The welcome order alone, during the tutorial: the roads are clear this morning.
+  const express =
+    !fromWarehouse && orders.every((o) => o.welcome) ? welcomeTripMs(ctx, player, tx.now) : 0;
+  const trip = express > 0 ? express : minutes * MINUTE_MS;
   const lines = orders.map((o) => ({
     id: o.id,
     kind: o.kind,
@@ -817,6 +835,7 @@ export function dispatchDelivery(
     arriveAt: tx.now + trip,
     backAt: tx.now + 2 * trip,
     outcome: "en_route",
+    ...(express > 0 ? { welcome: true } : {}),
   };
   tx.s.deliveries ??= {};
   tx.s.deliveries[id] = delivery;
