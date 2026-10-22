@@ -8,6 +8,7 @@ import { Skyline } from "../art/scenes.js";
 import { fr } from "../i18n.js";
 import { Label, Slab } from "../ui.js";
 import { onBack } from "./back.js";
+import { seasonText } from "./seasonCount.js";
 
 function Goal() {
   return (
@@ -132,7 +133,10 @@ function Illustration({ index }: { index: number }) {
 }
 
 /** Four illustrated slides: the story and the loop, before the first step. */
-export function Intro({ onDone }: { onDone: () => void }) {
+export function Intro({
+  onDone,
+  world,
+}: { onDone: () => void; world: { startsAt: number; endsAt: number } }) {
   const [i, setI] = useState(0);
   const slides = fr.intro.slides;
   const slide = slides[i];
@@ -169,7 +173,9 @@ export function Intro({ onDone }: { onDone: () => void }) {
           <h1 className="font-display text-[1.75rem] font-extrabold leading-[1.1] [font-stretch:105%]">
             {slide.title}
           </h1>
-          <p className="text-lg leading-snug text-cream-dim">{slide.text}</p>
+          <p className="text-lg leading-snug text-cream-dim">
+            {i === 0 ? seasonText(world) : slide.text}
+          </p>
         </div>
       </div>
       <Slab size="lg" className="w-full" onClick={() => (last ? onDone() : setI(i + 1))}>

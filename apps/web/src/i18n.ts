@@ -50,6 +50,9 @@ export const fr = {
     skip: "Passer",
     next: "Suivant",
     start: "Choisir mon métier",
+    /** The first slide's text when the season runs past its first calendar month. */
+    longSeason: (until: string) =>
+      `Cette saison dure jusqu'au ${until} ; les suivantes, un mois chacune, du 1er au dernier jour du mois. À la fin, le classement se fige : le plus gros chiffre de ventes nettes l'emporte (ce que vous avez vendu, moins ce que vous avez acheté ; le stock ne compte pas). Vous partez avec 1 000 ducats et deux ou trois ateliers.`,
     slides: [
       {
         kicker: "Le but du jeu",

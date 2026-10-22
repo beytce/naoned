@@ -6,6 +6,7 @@ import { Carnet, SeasonTiles, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import type { GameProps } from "../Game.js";
 import { JournalSection } from "../Journal.js";
+import { seasonCount } from "../seasonCount.js";
 
 /**
  * The notices, behind the bell of the HUD: everything that used to be a banner over the screens
@@ -20,16 +21,12 @@ export function NoticesSheet(
   const act = currentAct(view, now);
   const { current, next } = view.gazette;
   const event = current ?? next;
-  const daysLeft = Math.ceil((catalog.world.endsAt - now) / 86_400_000);
-  const days = Math.max(
-    1,
-    Math.round((catalog.world.endsAt - catalog.world.startsAt) / 86_400_000),
-  );
+  const { label: seasonLabel, left: daysLeft } = seasonCount(catalog.world, now);
   return (
     <Sheet open={props.open} onClose={props.onClose} title={t.title}>
       <div className="space-y-5">
         <section className="space-y-1">
-          <p className="meta font-semibold text-gold">{t.season(Math.min(view.day, days), days)}</p>
+          <p className="meta font-semibold text-gold">{seasonLabel}</p>
           {act && (
             <p className="text-sm">
               <span className="font-semibold">{actText(act).title}</span>
