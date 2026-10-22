@@ -140,6 +140,9 @@ export interface DeliveryOrderView {
   rivals?: number;
   /** Minutes one way, per vehicle type (null: no road). */
   minutes: Record<string, number | null>;
+  /** The welcome order: its express trip each way, in seconds, while the tutorial lasts. */
+  welcome?: boolean;
+  express?: number;
 }
 
 export interface VehicleView {
@@ -170,6 +173,8 @@ export interface DeliveryView {
   outcome: "en_route" | "delivered";
   /** Sent by the fattore while the merchant was away. */
   fattore?: boolean;
+  /** The welcome order on its express trip of the tutorial. */
+  welcome?: boolean;
 }
 
 export interface RoadView {

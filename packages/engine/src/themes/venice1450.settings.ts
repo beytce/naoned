@@ -114,7 +114,12 @@ export const venice1450Settings: WorldSettingsInput = {
   productionQueueMaxHours: 12,
   regionBonusBps: 3_000,
   lateJoiner: { afterDay: 5, bonusBps: 5_000, hours: 72 },
-  tutorial: { minutes: 30, fastBatchSeconds: 30, fastBatchesPerBuilding: 1 },
+  tutorial: {
+    minutes: 30,
+    fastBatchSeconds: 30,
+    fastBatchesPerBuilding: 1,
+    welcomeTripSeconds: 45,
+  },
   // Enough to deliver twice in the first minutes (the welcome order and another), and to feed
   // the workers: a new merchant plays at once.
   startingStock: {

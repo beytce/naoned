@@ -30,7 +30,14 @@ import {
   vehicleName,
 } from "../roadKit.js";
 import { store } from "../store.js";
-import type { DeliveryView, PlayerView, TerraAction, TerraView, VehicleView } from "../types.js";
+import type {
+  DeliveryOrderView,
+  DeliveryView,
+  PlayerView,
+  TerraAction,
+  TerraView,
+  VehicleView,
+} from "../types.js";
 import { openTerraEarly, unlocksOf } from "../unlocks.js";
 import { useWide } from "../useWide.js";
 import { have, readyOf } from "../workshops.js";
@@ -565,6 +572,7 @@ export function MapScreen(
           props={props}
           vehicle={selectedCart}
           city={departure.city}
+          load={cartLoad}
           onCancel={() => setDeparture(null)}
           onGo={async () => {
             const ids = cartLoad.map((o) => o.id);
@@ -1195,12 +1203,15 @@ function DeparturePanel({
   props,
   vehicle,
   city,
+  load,
   onGo,
   onCancel,
 }: {
   props: GameProps;
   vehicle: VehicleView;
   city: string;
+  /** The orders loaded. */
+  load: DeliveryOrderView[];
   onGo: () => void;
   onCancel: () => void;
 }) {
@@ -1223,11 +1234,23 @@ function DeparturePanel({
   const road = props.view.road;
   const m = fr.game.map;
   const orders = road ? road.orders.filter((o) => o.city === city && o.status === "open") : [];
-  const minutes = orders[0]?.minutes[vehicle.type] ?? homeRoad ?? 0;
+  const minutes =
+    load[0]?.minutes[vehicle.type] ?? orders[0]?.minutes[vehicle.type] ?? homeRoad ?? 0;
+  // The welcome order alone, express; after it, the first normal trip says so.
+  const express = load.length > 0 && load.every((o) => o.express) ? load[0]?.express : undefined;
+  const afterWelcome = !express && (road?.deliveries.some((dv) => dv.welcome) ?? false);
   return (
     <ContextPanel
       title={vehicleName(vehicle.type)}
-      chip={<span className="meta">{minutesLabel(minutes)}</span>}
+      chip={
+        <span className="meta">
+          {express
+            ? m.cart.express(clock(express * 1000))
+            : afterWelcome
+              ? m.cart.normalTrip(minutesLabel(minutes))
+              : minutesLabel(minutes)}
+        </span>
+      }
       status={`${m.cart.leaving(props.names.city(city))} · ${left} s`}
       tone="lagoon"
       progress={(DEPART_SECONDS - left) / DEPART_SECONDS}

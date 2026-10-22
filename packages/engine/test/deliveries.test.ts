@@ -1191,3 +1191,100 @@ describe("a warehouse in a city", () => {
     if (more) expect(error(dispatch(w, more.id, "a", "warehouse"))).toBe("over_capacity");
   });
 });
+
+describe("the welcome order, express during the tutorial", () => {
+  const SECONDS = 45;
+  const express = (welcomeTripSeconds = SECONDS) =>
+    world({
+      tutorial: {
+        minutes: 30,
+        fastBatchSeconds: 30,
+        fastBatchesPerBuilding: 0,
+        welcomeTripSeconds,
+      },
+      deliveries: {
+        ...deliverySettings.deliveries,
+        maxOrdersPerLoad: 2,
+        welcome: { terraferma: { resource: "bread", quantity: 12, reward: 15_000 } },
+      } as never,
+    });
+  const welcomeOf = (w: World) => {
+    const o = board(w).find((x) => x.welcome);
+    if (!o) throw new Error("no welcome order");
+    return o;
+  };
+  const tripOf = (w: World) => {
+    const d = deliveriesOf(w)[0];
+    if (!d) throw new Error("no delivery");
+    return { d, there: d.arriveAt - d.departAt, back: d.backAt - d.departAt };
+  };
+  const roadMinutes = (w: World, city: string) =>
+    travelMinutes(w.ctx, "terraferma", city, vehiclesOf(w, "a")[0]?.type ?? "", 0) ?? 0;
+
+  it("is marked as such, and goes and comes back in 45 s each way", () => {
+    const w = express();
+    const o = welcomeOf(w);
+    expect(error(dispatch(w, o.id))).toBe("ok");
+    const { d, there, back } = tripOf(w);
+    expect(d.welcome).toBe(true);
+    expect(there).toBe(SECONDS * 1000);
+    expect(back).toBe(2 * SECONDS * 1000);
+    // Free at its return: a second delivery leaves at once.
+    w.at(d.backAt - w.ctx.startAt);
+    const next = board(w).find((x) => x.kind === "city" && !x.welcome && x.quantity <= 40);
+    expect(error(dispatch(w, next?.id ?? ""))).toBe("ok");
+  });
+
+  it("leaves any other order at its road's length", () => {
+    const w = express();
+    const o = board(w).find((x) => x.kind === "city" && !x.welcome && x.quantity <= 40);
+    if (!o) throw new Error("no city order");
+    expect(error(dispatch(w, o.id))).toBe("ok");
+    expect(tripOf(w).there).toBe(roadMinutes(w, o.city) * MIN);
+  });
+
+  it("takes the road's length once the tutorial's window has passed", () => {
+    const w = express();
+    const o = welcomeOf(w);
+    w.advance(31 * MIN);
+    expect(error(dispatch(w, o.id))).toBe("ok");
+    expect(tripOf(w).there).toBe(roadMinutes(w, o.city) * MIN);
+    expect(tripOf(w).d.welcome).toBeUndefined();
+  });
+
+  it("takes the road's length when loaded with another order", () => {
+    const w = express();
+    const o = welcomeOf(w);
+    const other = board(w).find(
+      (x) => x.city === o.city && !x.welcome && (x.kind === "city" || x.kind === "doge"),
+    );
+    if (!other) throw new Error(`no other order for ${o.city}`);
+    const res = w.try({
+      type: "dispatchDelivery",
+      playerId: "a",
+      orderId: o.id,
+      orderIds: [o.id, other.id],
+      vehicleId: cartOf(w),
+    } as Command);
+    expect(error(res)).toBe("ok");
+    expect(tripOf(w).there).toBe(roadMinutes(w, o.city) * MIN);
+  });
+
+  it("takes the road's length when the setting is 0", () => {
+    const w = express(0);
+    const o = welcomeOf(w);
+    expect(error(dispatch(w, o.id))).toBe("ok");
+    expect(tripOf(w).there).toBe(roadMinutes(w, o.city) * MIN);
+  });
+
+  it("pays its 150 d on arrival through the ledger", () => {
+    const w = express();
+    dispatch(w, welcomeOf(w).id);
+    const before = w.cash("a");
+    w.at(tripOf(w).d.arriveAt - w.ctx.startAt);
+    const res = w.do({ type: "tick" });
+    expect(res.effects.events.map((e) => e.type)).toContain("delivery_arrived");
+    expect(w.cash("a") - before).toBe(15_000n);
+    expect(res.effects.ledger.some((l) => l.amount === 15_000n)).toBe(true);
+  });
+});

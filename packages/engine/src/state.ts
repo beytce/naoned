@@ -195,6 +195,8 @@ export interface DeliveryOrder {
   shared?: boolean;
   /** Who took it (a shared order goes to the first who sends a vehicle). */
   takenBy?: PlayerId | null;
+  /** The newcomer's welcome order (express during the tutorial). */
+  welcome?: boolean;
 }
 
 /** An order of the world's board, before it is priced for a merchant's region. */
@@ -246,6 +248,8 @@ export interface Delivery {
   paid?: Deniers;
   /** Sent by the fattore: its commission is taken on arrival. */
   fattore?: boolean;
+  /** The welcome order on its express trip of the tutorial. */
+  welcome?: boolean;
 }
 
 export interface DailyPriceStat {

@@ -208,6 +208,8 @@ export const fr = {
         outbound: (city: string, left: string) => `Vers ${city} · ${left}`,
         inbound: (left: string) => `Retour au comptoir · ${left}`,
         leaving: (city: string) => `Départ vers ${city}`,
+        express: (left: string) => `routes dégagées · ${left}`,
+        normalTrip: (minutes: string) => `trajet normal · ${minutes}`,
         pickCity: "Touchez une ville éclairée",
         nothing: "Rien à livrer avec votre stock pour l'instant",
       },
@@ -1778,7 +1780,10 @@ export const fr = {
       deliver:
         "Ouvrez les cargaisons : cochez une commande que votre stock couvre, la ville paie à l'arrivée.",
       dispatch: "Touchez « Partir » (ou laissez filer le compte à rebours).",
-      deliveryUnderway: "Votre charrette est en route. La ville paiera à l'arrivée.",
+      welcomeEnRoute: (left: string) =>
+        `Les routes sont dégagées ce matin : arrivée dans ${left}. La ville paiera à l'arrivée.`,
+      enRoute: (left: string) => `Votre charrette est en route : arrivée dans ${left}.`,
+      firstPay: "Première paie",
       goRialto:
         "Pour grandir, il faut les matériaux d'une autre région. Touchez Venise, puis le Rialto.",
       buy: (resource: string) =>

@@ -24,10 +24,16 @@ if (typeof window !== "undefined") {
   );
 }
 
+/** How a gain flies: a word under its amount, and the element it starts from (a city). */
+export interface FlyOptions {
+  note?: string;
+  from?: string;
+}
+
 /** Ducats came in: show them flying to the purse. */
-export function flyCoins(gain: bigint): void {
+export function flyCoins(gain: bigint, options: FlyOptions = {}): void {
   if (gain <= 0n || typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent(EVENT, { detail: gain }));
+  window.dispatchEvent(new CustomEvent(EVENT, { detail: { gain, ...options } }));
 }
 
 function reduced(): boolean {
@@ -42,9 +48,13 @@ export function FxLayer() {
       const root = layer.current;
       const purse = document.querySelector<HTMLElement>('[data-fx="purse"]');
       if (!root || !purse || reduced()) return;
+      const { gain, note, from: origin } = (e as CustomEvent<FlyOptions & { gain: bigint }>).detail;
       const to = purse.getBoundingClientRect();
       const end = { x: to.left + to.width / 2, y: to.top + to.height / 2 };
-      const from = lastTouch ?? { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      const start = origin ? document.querySelector(origin)?.getBoundingClientRect() : undefined;
+      const from = start
+        ? { x: start.left + start.width / 2, y: start.top + start.height / 2 }
+        : (lastTouch ?? { x: window.innerWidth / 2, y: window.innerHeight / 2 });
       for (let i = 0; i < COINS; i++) {
         const coin = root.querySelector<HTMLElement>(`[data-coin="${i}"]`);
         if (!coin) continue;
@@ -70,8 +80,11 @@ export function FxLayer() {
         );
       }
       const label = root.querySelector<HTMLElement>("[data-gain]");
-      if (label) {
-        label.textContent = `+${amount((e as CustomEvent<bigint>).detail)}`;
+      const amountEl = root.querySelector<HTMLElement>("[data-gain-amount]");
+      const noteEl = root.querySelector<HTMLElement>("[data-gain-note]");
+      if (label && amountEl && noteEl) {
+        amountEl.textContent = `+${amount(gain)}`;
+        noteEl.textContent = note ?? "";
         // The gain rises where it was made, clear of the HUD's figures.
         const x = Math.min(Math.max(from.x - 55, 8), window.innerWidth - 118);
         label.animate(
@@ -106,8 +119,11 @@ export function FxLayer() {
       ))}
       <span
         data-gain
-        className="absolute left-0 top-0 w-[110px] text-center font-display text-xl font-extrabold text-gold opacity-0 [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]"
-      />
+        className="absolute left-0 top-0 w-[110px] text-center font-display text-gold opacity-0 [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]"
+      >
+        <span data-gain-amount className="block text-xl font-extrabold" />
+        <span data-gain-note className="block text-sm font-semibold empty:hidden" />
+      </span>
     </div>,
     document.body,
   );

@@ -117,8 +117,13 @@ function nextStep(props: CoachProps): CoachStep {
   if (!done.has("sell_city")) {
     // With deliveries by road: an order the stock covers, loaded on a cart and sent.
     if (road) {
-      if (road.deliveries.some((dv) => now < dv.arriveAt))
-        return { text: fr.game.coach.deliveryUnderway };
+      const going = road.deliveries.find((dv) => now < dv.arriveAt);
+      if (going) {
+        const left = clock(going.arriveAt - now);
+        return going.welcome
+          ? { text: fr.game.coach.welcomeEnRoute(left), target: `cart-${going.vehicleId}` }
+          : { text: fr.game.coach.enRoute(left) };
+      }
       if (deliverable) {
         if (props.departing) return { text: fr.game.coach.dispatch, target: "panel-go" };
         if (props.sheet?.startsWith("cargo:"))
