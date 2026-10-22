@@ -1,0 +1,17 @@
+import { describe, expect, it } from "vitest";
+import { ACTION_ICONS } from "../src/game/map/actions.js";
+
+describe("the panels' icons", () => {
+  it("never draw one icon for two words", () => {
+    const words = new Map<unknown, string[]>();
+    for (const a of Object.values(ACTION_ICONS))
+      words.set(a.icon, [...new Set([...(words.get(a.icon) ?? []), a.label])]);
+    const shared = [...words.values()].filter((w) => w.length > 1);
+    expect(shared).toEqual([]);
+  });
+
+  it("never give one word to two actions", () => {
+    const labels = Object.values(ACTION_ICONS).map((a) => a.label.toLowerCase());
+    expect(labels.filter((l, i) => labels.indexOf(l) !== i)).toEqual([]);
+  });
+});
