@@ -20,6 +20,7 @@ import { WarehouseSheet } from "../Warehouse.js";
 import { gameApi } from "../api.js";
 import { onBack } from "../back.js";
 import { d, minutesLabel } from "../format.js";
+import { rivalLine } from "../rival.js";
 import {
   BuyVehicleSheet,
   UpgradeVehicleSheet,
@@ -28,6 +29,7 @@ import {
   total,
   vehicleName,
 } from "../roadKit.js";
+import { store } from "../store.js";
 import type { DeliveryView, PlayerView, TerraAction, TerraView, VehicleView } from "../types.js";
 import { openTerraEarly, unlocksOf } from "../unlocks.js";
 import { useWide } from "../useWide.js";
@@ -83,18 +85,6 @@ export function selectionKey(s: Selection | null): string | null {
   if (s.kind === "cart") return `${s.kind}:${s.id}`;
   if (s.kind === "terra") return `terra:${s.cell}`;
   return `${s.kind}:${s.code}`;
-}
-
-/** The rival of the week in a few words: who, and how far. */
-function rivalLine(r: GameProps["rival"]): string | null {
-  if (!r) return null;
-  const t = fr.game.rival;
-  const who = r.pseudo ?? t.someone;
-  const name = r.character ? `${who} ${t.characters[r.character] ?? ""}`.trim() : who;
-  const gap = BigInt(r.gain) - BigInt(r.mine);
-  const abs = gap < 0n ? -gap : gap;
-  const shown = abs === 0n ? null : d(abs);
-  return r.ahead ? t.chase(name, shown) : t.chased(name, shown);
 }
 
 /** The trip a vehicle is on now, if any. */
@@ -956,6 +946,9 @@ function CityPanel({
         : "";
   const sells = !road && view.cityQuotes.some((q) => q.city === code);
   const held = view.supplies.filter((s) => s.city === code);
+  // Once, after the guide's first delivery: what the number on a city says.
+  const [pipsSeen, setPipsSeen] = useState(() => store.get("pipsSeen") === "1");
+  const pips = !pipsSeen && orders.length > 0 && view.tutorial.includes("sell_city");
   return (
     <ContextPanel
       title={props.names.city(code)}
@@ -1023,7 +1016,21 @@ function CityPanel({
         </>
       }
       extra={
-        road && !freeCart && orders.length > 0 ? (
+        pips ? (
+          <div className="flex items-center gap-3">
+            <p className="min-w-0 flex-1 text-xs text-cream-dim">{m.city.pips}</p>
+            <Slab
+              size="sm"
+              tone="ghost"
+              onClick={() => {
+                store.set("pipsSeen", "1");
+                setPipsSeen(true);
+              }}
+            >
+              {m.city.pipsOk}
+            </Slab>
+          </div>
+        ) : road && !freeCart && orders.length > 0 ? (
           <p className="text-center text-xs text-cream-dim">{m.city.noCart}</p>
         ) : held.length > 0 ? (
           <p className="text-center text-xs text-gold">

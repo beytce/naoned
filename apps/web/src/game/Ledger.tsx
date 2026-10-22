@@ -72,14 +72,13 @@ export function Ledger(props: GameProps) {
                 ) : null}
               </div>
               {!m.done && m.count > 1 && <Ribbon value={m.progress / m.count} tone="lagoon" />}
-              {!m.done && (
-                <p className="meta">
-                  {m.progress}/{m.count}
-                </p>
-              )}
               <div className="flex items-center gap-2">
                 <span className="label">{t.reward}</span>
                 <Reward m={m} />
+                {/* Here in both states: a mission done keeps its height for the guide's ring. */}
+                <span className="meta ml-auto shrink-0">
+                  {Math.min(m.progress, m.count)}/{m.count}
+                </span>
               </div>
             </li>
           );

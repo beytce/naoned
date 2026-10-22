@@ -198,6 +198,8 @@ export const fr = {
         criee: (resource: string, pct: string, left: string) =>
           `Criée : ${resource.toLowerCase()} payé +${pct} · ${left}`,
         noCart: "Aucune charrette libre",
+        pips: "Le chiffre sur une ville : ses commandes ouvertes. En or, votre stock en couvre ; en vert, pas encore.",
+        pipsOk: "Compris",
         venice: "Le Rialto et la Muda",
       },
       cart: {
@@ -1756,7 +1758,6 @@ export const fr = {
     coach: {
       name: "Lorenzo, votre facteur",
       later: "Plus tard",
-      resume: "Guide",
       step: (n: number, total: number) => `Objectif ${n}/${total}`,
       covered: "Fermez cette fenêtre pour continuer : ce que je vous montre est dessous.",
       produceTap: (building: string) =>
@@ -1770,13 +1771,10 @@ export const fr = {
       harvest: "C'est prêt ! Touchez « Récolter » : la marchandise rentre en stock.",
       transform: (building: string) =>
         `Une matière brute vaut peu. Transformez-la : lancez votre ${building.toLowerCase()}.`,
-      goMarket: "Votre marchandise est prête à vendre. Ouvrez le Marché.",
-      goCities: "Les villes achètent les produits finis. Ouvrez l'onglet « Villes ».",
       sellCity: (resource: string) =>
         `Vendez vos ${resource.toLowerCase()} à la ville qui paie le mieux.`,
       goRoutes:
         "Les villes passent commande : les pastilles dorées montrent celles que votre stock couvre. Touchez une charrette.",
-      goList: "Passez en « Liste » : chaque commande y montre ce qu'elle rapporte.",
       deliver:
         "Ouvrez les cargaisons : cochez une commande que votre stock couvre, la ville paie à l'arrivée.",
       dispatch: "Touchez « Partir » (ou laissez filer le compte à rebours).",

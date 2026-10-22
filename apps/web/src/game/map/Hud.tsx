@@ -289,6 +289,10 @@ export function MapHud({
             />
           )}
         </div>
+        {/* Its room kept while it waits for the first sale: the map is framed the same after. */}
+        {!rival && layer === "trade" && (
+          <span aria-hidden="true" className="col-span-2 block min-h-11" />
+        )}
         {rival && layer === "trade" && (
           <button
             type="button"
