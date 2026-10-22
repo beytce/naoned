@@ -26,10 +26,8 @@ export function NoticesSheet(
     Math.round((catalog.world.endsAt - catalog.world.startsAt) / 86_400_000),
   );
   return (
-    <Sheet open={props.open} onClose={props.onClose}>
+    <Sheet open={props.open} onClose={props.onClose} title={t.title}>
       <div className="space-y-5">
-        <h3 className="font-display text-xl font-extrabold uppercase">{t.title}</h3>
-
         <section className="space-y-1">
           <p className="meta font-semibold text-gold">{t.season(Math.min(view.day, days), days)}</p>
           {act && (

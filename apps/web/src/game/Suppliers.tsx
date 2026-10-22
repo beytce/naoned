@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Crest, defaultCrest } from "../art/crest.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Sheet } from "../ui.js";
+import { Rules, Sheet } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { gameApi } from "./api.js";
 import type { SupplierPerson, SuppliersView } from "./types.js";
@@ -33,12 +33,13 @@ export function SuppliersSheet(props: GameProps) {
   const lines = (data?.lines ?? []).filter((l) => l.city === city);
   const pct = Math.round((data?.bonusBps ?? 0) / 100);
   return (
-    <Sheet open={open} onClose={() => props.setSheet(null)}>
-      <div className="space-y-4 pt-6">
-        <h3 className="font-display text-xl font-extrabold uppercase">
-          {t.title(props.names.city(city ?? ""))}
-        </h3>
-        <p className="meta">{t.help(pct, data?.minUnits ?? 0)}</p>
+    <Sheet
+      open={open}
+      onClose={() => props.setSheet(null)}
+      title={t.title(props.names.city(city ?? ""))}
+      summary={data && t.line(pct, data.minUnits ?? 0)}
+    >
+      <div className="space-y-4">
         {data && lines.length === 0 && <p className="meta">{t.none}</p>}
         <ul className="space-y-3">
           {lines.map((l) => (
@@ -76,6 +77,7 @@ export function SuppliersSheet(props: GameProps) {
             </li>
           ))}
         </ul>
+        <Rules id="suppliers">{t.help(pct, data?.minUnits ?? 0)}</Rules>
       </div>
     </Sheet>
   );

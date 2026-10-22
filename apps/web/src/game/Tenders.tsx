@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Qty, Sheet, Slab, clock } from "../ui.js";
+import { Qty, Rules, Sheet, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
 import type { TenderView } from "./types.js";
@@ -36,16 +36,20 @@ export function TendersTile(props: GameProps) {
 /** The tenders: bid on those open (sealed, a caution locked), deliver those won. */
 export function TendersSheet(props: GameProps) {
   return (
-    <Sheet open={props.sheet === "tenders"} onClose={() => props.setSheet(null)}>
-      <div className="space-y-4 pt-6">
-        <h3 className="font-display text-xl font-extrabold uppercase">{t.title}</h3>
-        <p className="meta">{t.help(props.catalog.rules.tenderCautionPct ?? 0)}</p>
+    <Sheet
+      open={props.sheet === "tenders"}
+      onClose={() => props.setSheet(null)}
+      title={t.title}
+      summary={t.line(props.catalog.rules.tenderCautionPct ?? 0)}
+    >
+      <div className="space-y-4">
         {props.view.tenders.length === 0 && <p className="meta">{t.none}</p>}
         <ul className="space-y-3">
           {props.view.tenders.map((x) => (
             <Tender key={x.id} props={props} x={x} />
           ))}
         </ul>
+        <Rules id="tenders">{t.help(props.catalog.rules.tenderCautionPct ?? 0)}</Rules>
       </div>
     </Sheet>
   );

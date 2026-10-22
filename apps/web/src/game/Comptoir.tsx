@@ -787,13 +787,12 @@ export function CounterSheets(props: GameProps) {
   const close = () => props.setSheet(null);
   return (
     <>
-      <Sheet open={props.sheet === "workshops"} onClose={close}>
-        <div className="space-y-3">
-          <h3 className="font-display text-xl font-extrabold uppercase">
-            {fr.game.map.buttons.workshops}
-          </h3>
-          <WorkshopsList {...props} />
-        </div>
+      <Sheet
+        open={props.sheet === "workshops"}
+        onClose={close}
+        title={fr.game.map.buttons.workshops}
+      >
+        <WorkshopsList {...props} />
       </Sheet>
       <Sheet
         open={(kind === "produce" || kind === "upgrade") && !!sheetBuilding}
@@ -808,17 +807,14 @@ export function CounterSheets(props: GameProps) {
           />
         )}
       </Sheet>
-      <Sheet open={props.sheet === "buildHere"} onClose={close}>
+      <Sheet open={props.sheet === "buildHere"} onClose={close} title={fr.game.catalog.title}>
         <BuildCatalog {...props} />
       </Sheet>
       <Sheet open={kind === "build"} onClose={() => props.setSheet("buildHere")}>
         {kind === "build" && id && <BuildSheet type={id} props={props} />}
       </Sheet>
-      <Sheet open={props.sheet === "store"} onClose={close}>
-        <div className="space-y-4 pt-6">
-          <h3 className="font-display text-xl font-extrabold uppercase">
-            {fr.game.domain.store.title}
-          </h3>
+      <Sheet open={props.sheet === "store"} onClose={close} title={fr.game.domain.store.title}>
+        <div className="space-y-4">
           <StockStrip {...props} />
           <Rations {...props} />
         </div>
