@@ -41,10 +41,44 @@ export const Icon = {
       <path d="M17 13 V14 M17 20 V21 M13 17 H14 M20 17 H21" />
     </I>
   ),
-  store: () => (
+  /** The counter's store: crates stacked. */
+  crates: () => (
     <I>
-      <path d="M3 8 L12 3 L21 8 V20 H3 Z" />
-      <path d="M7 20 V12 H17 V20 M7 15 H17" />
+      <rect x="3" y="12" width="8" height="8" />
+      <rect x="13" y="12" width="8" height="8" />
+      <rect x="8" y="4" width="8" height="8" />
+      <path d="M7 12 V15 M17 12 V15 M12 4 V7" />
+    </I>
+  ),
+  /** A city's warehouse: an arcade shut, its key. */
+  vault: () => (
+    <I>
+      <path d="M4 21 V10 A8 8 0 0 1 20 10 V21 Z" />
+      <circle cx="12" cy="12.5" r="2" />
+      <path d="M12 14.5 V18.5 M12 17 H13.8" />
+    </I>
+  ),
+  /** The official suppliers: the banner their crest flies on. */
+  banner: () => (
+    <I>
+      <path d="M5 3 V21" />
+      <path d="M5 4.5 H19 L16 8.5 L19 12.5 H5" />
+    </I>
+  ),
+  /** Selling: a hand holding out a coin. */
+  sell: () => (
+    <I>
+      <circle cx="16" cy="6" r="3" />
+      <path d="M2 14 H6 L9.5 12.5 H13.5 A1.5 1.5 0 0 1 13.5 15.5 H10" />
+      <path d="M6 14 V20 H13 L21 15 A1.6 1.6 0 0 0 18.6 13.2 L14.8 15.4" />
+    </I>
+  ),
+  /** A decree: a sheet sealed. */
+  decree: () => (
+    <I>
+      <path d="M18 11 V3 H5 V21 H12" />
+      <path d="M8.5 7 H14.5 M8.5 10.5 H14.5 M8.5 14 H11" />
+      <circle cx="17" cy="17" r="3.5" />
     </I>
   ),
   build: () => (

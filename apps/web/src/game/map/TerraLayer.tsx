@@ -1490,7 +1490,7 @@ export function TerraPanel({
                 onClick={() => act({ type: "terraBuild", cell, kind: "rocca" })}
               />
               <ActionButton
-                icon={Icon.trophy()}
+                icon={Icon.decree()}
                 label={t().mine.decree}
                 tone={me.programme ? "plain" : "gold"}
                 onClick={() => props.setSheet("terra:decree")}

@@ -70,6 +70,7 @@ import {
   useWeekReplay,
 } from "./TerraLayer.js";
 import { type MapMarker, type Selection, WorldMap, type WorldMapHandle } from "./WorldMap.js";
+import { ACTION_ICONS as A } from "./actions.js";
 import { Icon } from "./icons.js";
 
 /** Seconds to change one's mind once a cart is sent, as at a space dock. */
@@ -894,8 +895,8 @@ function HomePanel({ props, onClose }: { props: GameProps; onClose: () => void }
             onClick={() => props.setSheet("workshops")}
           />
           <ActionButton
-            icon={Icon.store()}
-            label={m.buttons.store}
+            icon={A.store.icon()}
+            label={A.store.label}
             onClick={() => props.setSheet("store")}
           />
           {room && (
@@ -979,8 +980,8 @@ function CityPanel({
           )}
           {sells && (
             <ActionButton
-              icon={Icon.cargo()}
-              label={fr.game.sellToCity}
+              icon={A.sell.icon()}
+              label={A.sell.label}
               tone="gold"
               onClick={() => onSheet(`sell:${code}`)}
             />
@@ -995,8 +996,8 @@ function CityPanel({
           )}
           {road && view.warehouses && (
             <ActionButton
-              icon={Icon.store()}
-              label={m.buttons.warehouse}
+              icon={A.warehouse.icon()}
+              label={A.warehouse.label}
               tone={
                 view.warehouses.cities.some((c) => c.city === code && c.held) ? "gold" : "plain"
               }
@@ -1005,8 +1006,8 @@ function CityPanel({
           )}
           {road && (
             <ActionButton
-              icon={Icon.trophy()}
-              label={m.buttons.suppliers}
+              icon={A.suppliers.icon()}
+              label={A.suppliers.label}
               tone={held.length > 0 ? "gold" : "plain"}
               onClick={() => onSheet(`suppliers:${code}`)}
             />

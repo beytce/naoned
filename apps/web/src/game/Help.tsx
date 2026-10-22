@@ -3,6 +3,7 @@ import { fr } from "../i18n.js";
 import { CloseButton, Label, Slab, useOverlay } from "../ui.js";
 import { BankSection } from "./Bank.js";
 import type { GameProps } from "./Game.js";
+import { ACTION_ICONS } from "./map/actions.js";
 import { useWide } from "./useWide.js";
 
 export function Help(props: GameProps & { onClose: () => void }) {
@@ -56,6 +57,19 @@ export function Help(props: GameProps & { onClose: () => void }) {
               </section>
             );
           })}
+        <section className="space-y-3">
+          <h2 className="font-display text-base font-extrabold uppercase">{fr.game.iconsTitle}</h2>
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
+            {Object.entries(ACTION_ICONS).map(([key, a]) => (
+              <li key={key} className="flex items-center gap-3 text-sm text-cream-dim">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center text-gold">
+                  {a.icon()}
+                </span>
+                {a.label}
+              </li>
+            ))}
+          </ul>
+        </section>
         <section className="cartouche-line space-y-2 p-4">
           <h2 className="font-display text-base font-extrabold uppercase text-info">
             {fr.game.seasonNotes.title}
