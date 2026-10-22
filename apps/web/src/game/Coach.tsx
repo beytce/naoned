@@ -223,10 +223,15 @@ export function Coach(props: CoachProps) {
       return;
     }
     // The same target may exist twice (phone tab bar, computer side bar): take the visible one.
-    const visible = (name: string) =>
-      [...document.querySelectorAll<HTMLElement>(`[data-coach="${name}"]`)].find(
-        (e) => e.getClientRects().length > 0,
-      ) ?? null;
+    // A target in a sheet's folded rules is unfolded first.
+    const visible = (name: string) => {
+      const all = [...document.querySelectorAll<HTMLElement>(`[data-coach="${name}"]`)];
+      for (const e of all) {
+        const fold = e.closest<HTMLDetailsElement>("details:not([open])");
+        if (fold) fold.open = true;
+      }
+      return all.find((e) => e.getClientRects().length > 0) ?? null;
+    };
     const find = () => {
       const follow = step.follow ? visible(step.follow) : null;
       const el = follow ?? visible(step.target ?? "");
@@ -235,9 +240,11 @@ export function Coach(props: CoachProps) {
       const box = el ? el.getBoundingClientRect() : null;
       // Never a ring on what a window covers, even while it slides in, nor on a target its
       // sheet has scrolled out of sight (the finger would touch what lies around the sheet).
-      const hidden = el && box ? isCovered(el, box, browserPage()) : false;
+      // Under a sheet's own head, it is out of sight (brought back), not covered by a window.
+      const out = !!el && outOfSheet(el, window.innerHeight);
+      const hidden = el && box && !out ? isCovered(el, box, browserPage()) : false;
       setCovered(hidden);
-      setRect(hidden || (el && outOfSheet(el, window.innerHeight)) ? null : box);
+      setRect(hidden || out ? null : box);
     };
     find();
     const t = setInterval(find, 250);

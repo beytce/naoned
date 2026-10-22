@@ -21,6 +21,8 @@ export interface Modal {
   scrollTo(options: { top: number; behavior: "smooth" }): void;
   /** Its own animations (a sheet sliding in): measured only once they are over. */
   getAnimations?(): { playState: string }[];
+  /** Its sticky head (`[data-sheet-head]`), over what scrolls under it. */
+  querySelector?(selector: string): { getBoundingClientRect(): Rect } | null;
 }
 
 /** The element pointed at, as the guide reads it. */
@@ -46,6 +48,12 @@ export interface Page {
 }
 
 export const MODAL = '[aria-modal="true"]';
+
+/** Where a window's visible part begins: below the screen's top, and below its sticky head. */
+function sheetTop(sheet: Modal): number {
+  const head = sheet.querySelector?.("[data-sheet-head]");
+  return Math.max(0, sheet.getBoundingClientRect().top, head?.getBoundingClientRect().bottom ?? 0);
+}
 
 /** The browser's page, for the guide. */
 export function browserPage(): Page {
@@ -83,7 +91,7 @@ export function bringIntoSheet(el: Target, viewHeight: number): boolean {
   if (!sheet) return false;
   const s = sheet.getBoundingClientRect();
   const b = el.getBoundingClientRect();
-  const top = Math.max(0, s.top);
+  const top = sheetTop(sheet);
   const bottom = Math.min(viewHeight, s.bottom);
   if (b.top >= top && b.bottom <= bottom) return false;
   sheet.scrollTo({
@@ -117,8 +125,8 @@ function sliding(el: Target): boolean {
 }
 
 /**
- * Out of its window's visible part (scrolled past its top or under its foot), though maybe on
- * the screen: no ring there, a finger would touch what lies around the window.
+ * Out of its window's visible part (scrolled past its top, under its sticky head, or under its
+ * foot), though maybe on the screen: no ring there, a finger would touch what lies around it.
  */
 export function outOfSheet(el: Target, viewHeight: number): boolean {
   const sheet = el.closest(MODAL) as Modal | null;
@@ -126,5 +134,5 @@ export function outOfSheet(el: Target, viewHeight: number): boolean {
   const s = sheet.getBoundingClientRect();
   const b = el.getBoundingClientRect();
   const y = b.top + b.height / 2;
-  return y < Math.max(0, s.top) || y > Math.min(viewHeight, s.bottom);
+  return y < sheetTop(sheet) || y > Math.min(viewHeight, s.bottom);
 }

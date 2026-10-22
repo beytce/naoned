@@ -55,7 +55,7 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
 - `CountUp` : un nombre qui court vers sa nouvelle valeur en 400 ms, comme la bourse de l'en-tête.
 - `Stat` : tuile chiffrée (une durée, un gain en lagune, une perte en cinabre).
 - `Switch` : interrupteur (escorte, navires, notifications), à la place des cases à cocher.
-- `Sheet` : feuille du bas sur mobile, fenêtre centrée sur PC, fermeture par ×.
+- `Sheet` : feuille du bas sur mobile, fenêtre centrée sur PC, fermeture par ×. Une seule anatomie : un en-tête collant (surtitre, titre, croix, résumé d'une ligne) qui reste en vue au défilement, puis l'état et l'action, puis la règle dans `Rules` (« Comment ça marche ? »), ouverte la première fois, repliée ensuite, le choix du joueur gardé feuille par feuille. Le guide ouvre une règle repliée qui contient sa cible.
 - `Ribbon` : barre de progression rayée ; `Big` : grands chiffres.
 
 ## Mouvement

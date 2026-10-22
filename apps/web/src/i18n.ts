@@ -102,6 +102,7 @@ export const fr = {
   },
 
   game: {
+    ui: { howItWorks: "Comment ça marche ?" },
     map: {
       home: (pseudo: string) => (pseudo ? `Maison ${pseudo}` : "Votre maison"),
       homeLabel: "Comptoir",
