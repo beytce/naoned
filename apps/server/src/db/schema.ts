@@ -295,6 +295,8 @@ export const seasonResults = pgTable(
     worth: bigint("worth", { mode: "bigint" }).notNull(),
     /** Net sales of the season (sales less purchases), which rank it; absent before them. */
     turnover: bigint("turnover", { mode: "bigint" }),
+    /** The best net sales of the season, which the level counts; absent before them. */
+    turnoverPeak: bigint("turnover_peak", { mode: "bigint" }),
     /** doge, podium, top10, elite, notable, participant or none. */
     tier: text("tier").notNull(),
     /** Title held at the close (season milestone); its renown is included in `renown`. */

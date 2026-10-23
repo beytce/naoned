@@ -34,13 +34,16 @@ export function levelFor(xp: number): Level {
   return { level, xp, from, to, progress: (xp - from) / (to - from) };
 }
 
-/** Ducats of net sales of the closed seasons, per account. */
+/**
+ * Ducats of net sales of the closed seasons, per account: each season's best mark, as the level
+ * counted it while it lasted (its final net sales for seasons closed before the mark was kept).
+ */
 export async function pastSales(db: Db, accountIds: string[]): Promise<Map<string, number>> {
   if (accountIds.length === 0) return new Map();
   const rows = await db
     .select({
       id: seasonResults.accountId,
-      deniers: sql<string>`coalesce(sum(greatest(${seasonResults.turnover}, 0)), 0)::text`,
+      deniers: sql<string>`coalesce(sum(greatest(coalesce(${seasonResults.turnoverPeak}, ${seasonResults.turnover}), 0)), 0)::text`,
     })
     .from(seasonResults)
     .where(inArray(seasonResults.accountId, accountIds))

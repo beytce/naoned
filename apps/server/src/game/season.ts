@@ -85,6 +85,7 @@ export async function recordSeason(
     playerId: string;
     worth: string;
     turnover?: string;
+    turnoverPeak?: string;
   }[];
   if (standings.length === 0) return [];
   const ids = standings.map((s) => s.playerId);
@@ -114,6 +115,7 @@ export async function recordSeason(
       players: ranked.length,
       worth: BigInt(s.worth),
       turnover: s.turnover === undefined ? null : BigInt(s.turnover),
+      turnoverPeak: s.turnoverPeak === undefined ? null : BigInt(s.turnoverPeak),
       ...reward,
     };
   });

@@ -3,6 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
+import { levelsOf } from "../src/game/level.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
@@ -138,6 +139,36 @@ describe("harvesting", () => {
     const mill = res.outcome.started.find((s: { building: string }) => s.building === "mill");
     expect(mill.batches).toBeGreaterThan(0);
     expect(mill.inputs.wheat).toBeGreaterThan(0);
+  });
+});
+
+describe("the merchant's level", () => {
+  it("keeps the season's best net sales when the month closes after a purchase", async () => {
+    const cookie = await player("ada@example.org");
+    await world.execute({ type: "tick" });
+    const sold = await act(cookie, {
+      type: "instantOrder",
+      resource: "bread",
+      side: "sell",
+      quantity: 5,
+    });
+    const id = sold.view.player.id;
+    // Bought back after the best mark: the net sales go down, the level does not.
+    const bought = await act(cookie, {
+      type: "instantOrder",
+      resource: "wheat",
+      side: "buy",
+      quantity: 5,
+    });
+    expect(bought.outcome.filled).toBeGreaterThan(0);
+    const before = (await levelsOf(database.db, world.current, [id])).get(id);
+    expect(before?.xp).toBeGreaterThan(0);
+    const first = world.id;
+    now = Date.parse("2026-10-31T23:30:00Z");
+    await world.execute({ type: "tick" });
+    expect(world.id).not.toBe(first);
+    const after = (await levelsOf(database.db, world.current, [id])).get(id);
+    expect(after).toEqual(before);
   });
 });
 
