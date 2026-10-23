@@ -680,7 +680,12 @@ export type ActionOutcome =
   | {
       kind: "harvest";
       harvested: Record<string, number>;
-      started: { building: string; batches: number; inputs: Record<string, number> }[];
+      started: {
+        building: string;
+        output: string;
+        batches: number;
+        inputs: Record<string, number>;
+      }[];
     };
 
 export interface GameResponse {

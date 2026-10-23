@@ -15,6 +15,7 @@ import { Ledger } from "./Ledger.js";
 import { MasteryTile } from "./Mastery.js";
 import { TendersSheet, TendersTile } from "./Tenders.js";
 import { d, duration, minutesLabel } from "./format.js";
+import { harvestAll, harvestAndRestart } from "./harvest.js";
 import { store } from "./store.js";
 import type { BuildingView, Cost, PlayerView, Recipe } from "./types.js";
 import { unlocksOf } from "./unlocks.js";
@@ -433,12 +434,19 @@ function WorkshopsSummary(props: GameProps) {
         ))}
       </div>
       {(ready > 0 || count("idle") > 0) && (
+        <Slab className="w-full" disabled={props.busy} onClick={() => harvestAndRestart(props)}>
+          {ready > 0 ? t.collectAll(ready) : t.restartAll}
+        </Slab>
+      )}
+      {/* Restarting consumes the stock's inputs: harvesting alone keeps them for the orders. */}
+      {ready > 0 && (
         <Slab
           className="w-full"
+          tone="ghost"
           disabled={props.busy}
-          onClick={() => props.act({ type: "collectAndRestart" })}
+          onClick={() => harvestAll(props)}
         >
-          {ready > 0 ? t.collectAll(ready) : t.restartAll}
+          {t.harvestOnly}
         </Slab>
       )}
     </div>

@@ -1100,8 +1100,16 @@ export const fr = {
       ready: (n: number) => (n > 1 ? "prêts" : "prêt"),
       running: (_n: number) => "en cours",
       idle: (_n: number) => "à l'arrêt",
-      collectAll: (n: number) => (n > 1 ? `Tout récolter (${n} lots)` : "Récolter"),
+      collectAll: (n: number) => `Tout récolter et relancer (${n} lot${n > 1 ? "s" : ""})`,
+      harvestOnly: "Récolter seulement",
       restartAll: "Tout relancer",
+      /** What a harvest brought in and what restarting consumed, said after it. */
+      harvested: (gains: string) => gains || "Rien à récolter",
+      restarted: (batches: number, what: string, inputs: string) =>
+        `${batches} lot${batches > 1 ? "s" : ""} ${/^[aeiouyéèêh]/i.test(what) ? "d'" : "de "}${what.toLowerCase()}${inputs ? ` (${inputs})` : ""}`,
+      restartedLabel: "relancé",
+      ordersWaiting: (n: number, what: string) =>
+        `${n} commande${n > 1 ? "s" : ""} ${/^[aeiouyéèêh]/i.test(what) ? "d'" : "de "}${what.toLowerCase()} ouverte${n > 1 ? "s" : ""}`,
       whatsMissing: "Voir ce qui manque",
     },
     workshop: {
@@ -1437,6 +1445,31 @@ export const fr = {
         `${side === "sell" ? "Vends" : "Achète"} ${qty} ${what.toLowerCase()} à ${price}`,
       cancel: "Annuler",
       expires: (left: string) => `expire dans ${left}`,
+      /** What an order "right away" traded, said after it. */
+      instantDone: (
+        side: "buy" | "sell",
+        filled: number,
+        requested: number,
+        what: string,
+        amount: string,
+        reason: "quota" | "depth" | null,
+        slippage: number,
+      ) => {
+        const verb =
+          side === "sell" ? (filled > 1 ? "vendus" : "vendu") : filled > 1 ? "achetés" : "acheté";
+        if (filled >= requested) return `${filled} ${what.toLowerCase()} ${verb} pour ${amount}.`;
+        const why =
+          reason === "quota"
+            ? "quota de la Dogana atteint pour aujourd'hui"
+            : side === "sell"
+              ? `aucun autre acheteur dans l'écart de ${slippage} %`
+              : `aucun autre vendeur dans l'écart de ${slippage} %`;
+        return filled > 0
+          ? `${filled} ${verb} sur ${requested} (${amount}) : ${why}.`
+          : `0 ${side === "sell" ? "vendu" : "acheté"} : ${why}.`;
+      },
+      offerPosted: (side: "buy" | "sell", qty: number, what: string, price: string) =>
+        `Offre posée : ${side === "sell" ? "" : "achat de "}${qty} ${what.toLowerCase()} à ${price}.`,
     },
     cityTitle: "Les villes achètent",
     cityHelp:

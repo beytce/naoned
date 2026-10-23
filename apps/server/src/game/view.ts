@@ -5,7 +5,8 @@ import {
   type WorldContext,
   type WorldState,
   allowedHere,
-  bestPrice,
+  applyBpsCeil,
+  applyBpsFloor,
   bestUpgrade,
   boardRivals,
   boardTakes,
@@ -490,6 +491,65 @@ interface BookLine {
   mine: boolean;
 }
 
+/**
+ * The offers a merchant can trade with on one side of a good's book, best first: the Dogana's
+ * held to what its quota still allows the merchant today (gone at zero), as the market does.
+ */
+function tradableSide(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: string,
+  resource: string,
+  side: "buy" | "sell",
+  now: number,
+) {
+  const quota = marketMakerQuotaLeft(ctx, state, playerId, resource, now);
+  // The Dogana's asks are bought from it (the merchant's buy quota), its bids sold to it.
+  let room = side === "sell" ? quota.buy : quota.sell;
+  const out: { price: Deniers; quantity: number; by: string; capped: boolean }[] = [];
+  for (const o of bookSide(state, resource, side)) {
+    let quantity = o.remaining;
+    if (o.playerId === MARKET_MAKER && room !== null) {
+      quantity = Math.min(quantity, room);
+      room -= quantity;
+    }
+    out.push({ price: o.price, quantity, by: o.playerId, capped: quantity < o.remaining });
+  }
+  return out;
+}
+
+/**
+ * What an order "right away" can trade now (null: nobody on the other side): the units within the
+ * price protection from the best offer (the Dogana's held to the quota, as the market does), the
+ * price it reserves (buy) or accepts at worst (sell), and whether the quota held it back.
+ */
+export function instantDepth(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: string,
+  resource: string,
+  side: "buy" | "sell",
+  now: number,
+): { units: number; price: Deniers; quotaCapped: boolean } | null {
+  const makers = tradableSide(ctx, state, playerId, resource, side === "buy" ? "sell" : "buy", now)
+    // The market never matches the merchant with its own offers.
+    .filter((o) => o.by !== playerId);
+  // The protection counts from the best offer, even one of the Dogana's the quota closes.
+  const best = makers[0]?.price;
+  if (best === undefined) return null;
+  const bps = ctx.settings.instantOrderSlippageBps;
+  const price =
+    side === "buy" ? applyBpsFloor(best, 10_000 + bps) : applyBpsCeil(best, 10_000 - bps);
+  let units = 0;
+  let quotaCapped = false;
+  for (const o of makers) {
+    if (side === "buy" ? o.price > price : o.price < price) break;
+    units += o.quantity;
+    if (o.by === MARKET_MAKER && o.capped) quotaCapped = true;
+  }
+  return { units, price, quotaCapped };
+}
+
 /** Everything one player sees, computed from the engine state. Amounts in deniers. */
 export function playerView(
   ctx: WorldContext,
@@ -518,8 +578,15 @@ export function playerView(
       resource: r.code,
       reference,
       recentPrice: vwap(ctx, state, r.code, now, 3) ?? null,
-      bestBid: bestPrice(state, r.code, "buy", { excludePlayer: playerId }) ?? null,
-      bestAsk: bestPrice(state, r.code, "sell", { excludePlayer: playerId }) ?? null,
+      // The best offers the merchant can take: not its own, nor the Dogana's past its quota.
+      bestBid:
+        tradableSide(ctx, state, playerId, r.code, "buy", now).find(
+          (o) => o.quantity > 0 && o.by !== playerId,
+        )?.price ?? null,
+      bestAsk:
+        tradableSide(ctx, state, playerId, r.code, "sell", now).find(
+          (o) => o.quantity > 0 && o.by !== playerId,
+        )?.price ?? null,
       marketMaker: mm,
       /** The Dogana's price, in bps of the reference: it follows what merchants buy and sell there. */
       doganaBps: state.marketMaker.anchorBps?.[r.code] ?? 10_000,
@@ -535,25 +602,39 @@ export function playerView(
     }
   }
 
-  // The order book of each resource: best five offers on each side, with who makes them.
+  // The order book of each resource: best five offers on each side, with who makes them; the
+  // Dogana's line shows what the merchant may still trade with it today (none at zero), so that
+  // the book never looks crossed with an offer out of reach.
+  type Instant = { units: number; price: Deniers } | null;
   const book: Record<
     string,
-    { asks: BookLine[]; bids: BookLine[]; quota: { buy: number | null; sell: number | null } }
+    {
+      asks: BookLine[];
+      bids: BookLine[];
+      quota: { buy: number | null; sell: number | null };
+      instant: { buy: Instant; sell: Instant };
+    }
   > = {};
   for (const r of ctx.theme.resources) {
     const side = (s: "buy" | "sell") =>
-      bookSide(state, r.code, s)
+      tradableSide(ctx, state, playerId, r.code, s, now)
+        .filter((o) => o.quantity > 0)
         .slice(0, depth)
         .map((o) => ({
           price: o.price,
-          quantity: o.remaining,
-          by: o.playerId,
-          mine: o.playerId === playerId,
+          quantity: o.quantity,
+          by: o.by,
+          mine: o.by === playerId,
         }));
+    const instant = (s: "buy" | "sell"): Instant => {
+      const at = instantDepth(ctx, state, playerId, r.code, s, now);
+      return at ? { units: at.units, price: at.price } : null;
+    };
     book[r.code] = {
       asks: side("sell"),
       bids: side("buy"),
       quota: marketMakerQuotaLeft(ctx, state, playerId, r.code, now),
+      instant: { buy: instant("buy"), sell: instant("sell") },
     };
   }
 

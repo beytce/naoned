@@ -75,6 +75,72 @@ const act = async (cookie: string, payload: object) =>
 const get = async (cookie: string) =>
   (await app.inject({ method: "GET", url: "/api/game", headers: { cookie } })).json();
 
+describe("an order right away", () => {
+  it("says what it traded: nothing once the Dogana's quota is used up", async () => {
+    const cookie = await player("ada@example.org");
+    await world.execute({ type: "tick" });
+    const first = await act(cookie, {
+      type: "instantOrder",
+      resource: "bread",
+      side: "sell",
+      quantity: 30,
+    });
+    expect(first.error).toBeUndefined();
+    // The Dogana alone buys: five a day from each merchant.
+    expect(first.outcome).toMatchObject({ kind: "instant", side: "sell", requested: 30 });
+    expect(first.outcome.filled).toBeGreaterThan(0);
+    expect(first.outcome.filled).toBeLessThan(30);
+    expect(first.outcome.reason).toBe("quota");
+    expect(BigInt(first.outcome.amount)).toBeGreaterThan(0n);
+    // Its line is gone from the book once the quota is used, and the best bid with it.
+    expect(first.view.book.bread.bids.some((l: { by: string }) => l.by === "market_maker")).toBe(
+      false,
+    );
+    expect(first.view.book.bread.instant.sell.units).toBe(0);
+    const again = await act(cookie, {
+      type: "instantOrder",
+      resource: "bread",
+      side: "sell",
+      quantity: 30,
+    });
+    expect(again.error).toBeUndefined();
+    expect(again.outcome).toMatchObject({ requested: 30, filled: 0, reason: "quota" });
+  });
+});
+
+describe("harvesting", () => {
+  it("only harvests with « collectAll »: no input consumed, nothing started", async () => {
+    const cookie = await player("ada@example.org");
+    await act(cookie, { type: "collectAndRestart" });
+    now += 5 * HOUR;
+    const res = await act(cookie, { type: "collectAll" });
+    expect(res.error).toBeUndefined();
+    expect(res.outcome.kind).toBe("harvest");
+    expect(res.outcome.harvested.wheat).toBeGreaterThan(0);
+    expect(res.outcome.started).toEqual([]);
+    const id = res.view.player.id;
+    const inputs = await database.db.execute(
+      sql`select count(*)::int as n from stock_movements where player_id = ${id}
+        and reason = 'production_input' and at > ${new Date(now - HOUR).toISOString()}::timestamptz`,
+    );
+    expect((inputs as unknown as { rows: { n: number }[] }).rows[0]?.n).toBe(0);
+    // The harvested wheat stays in stock.
+    const wheat = res.view.inventory.find((i: { resource: string }) => i.resource === "wheat");
+    expect(wheat.available).toBeGreaterThanOrEqual(res.outcome.harvested.wheat);
+  });
+
+  it("tells what « collectAndRestart » harvested and what it started with which inputs", async () => {
+    const cookie = await player("ada@example.org");
+    await act(cookie, { type: "collectAndRestart" });
+    now += 5 * HOUR;
+    const res = await act(cookie, { type: "collectAndRestart" });
+    expect(res.outcome.harvested.wheat).toBeGreaterThan(0);
+    const mill = res.outcome.started.find((s: { building: string }) => s.building === "mill");
+    expect(mill.batches).toBeGreaterThan(0);
+    expect(mill.inputs.wheat).toBeGreaterThan(0);
+  });
+});
+
 describe("the profile's figures", () => {
   it("count a delivery arrived as sold to the cities, towards the trophy", async () => {
     smallOrders(world);

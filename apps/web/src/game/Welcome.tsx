@@ -3,6 +3,7 @@ import { fr } from "../i18n.js";
 import { Big, Label, Sheet, Slab } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
+import { harvestAndRestart } from "./harvest.js";
 import type { Welcome as WelcomeData } from "./types.js";
 
 function hoursAway(ms: number): string {
@@ -118,7 +119,7 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
           className="w-full"
           disabled={props.busy}
           onClick={async () => {
-            await props.act({ type: "collectAndRestart" });
+            await harvestAndRestart(props);
             props.onClose();
           }}
         >
