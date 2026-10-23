@@ -1499,7 +1499,8 @@ export const fr = {
       ) => {
         const verb =
           side === "sell" ? (filled > 1 ? "vendus" : "vendu") : filled > 1 ? "achetés" : "acheté";
-        if (filled >= requested) return `${filled} ${what.toLowerCase()} ${verb} pour ${amount}.`;
+        if (filled >= requested)
+          return `${side === "sell" ? "Vente" : "Achat"} : ${filled} ${what.toLowerCase()} pour ${amount}.`;
         const why =
           reason === "quota"
             ? "quota de la Dogana atteint pour aujourd'hui"

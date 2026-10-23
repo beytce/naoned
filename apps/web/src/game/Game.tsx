@@ -662,8 +662,13 @@ export function Game(props: {
 
       {toast && (
         <div
-          role="alert"
-          className="fixed inset-x-4 top-[max(5rem,calc(env(safe-area-inset-top)+4.5rem))] z-50 mx-auto max-w-md animate-rise"
+          role={toast.tone === "error" ? "alert" : "status"}
+          className={
+            toast.tone === "error"
+              ? "fixed inset-x-4 top-[max(5rem,calc(env(safe-area-inset-top)+4.5rem))] z-50 mx-auto max-w-md animate-rise"
+              : // News at the foot, over nothing it would keep from a tap: it goes by itself.
+                "pointer-events-none fixed inset-x-4 bottom-[max(6rem,calc(env(safe-area-inset-bottom)+5.5rem))] z-50 mx-auto max-w-md animate-rise"
+          }
         >
           <button
             type="button"

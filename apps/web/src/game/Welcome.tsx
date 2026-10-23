@@ -46,7 +46,7 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
         {/* The week closed while away: its ceremony comes first. */}
         {data.week && (
           <section className="space-y-1 cut border border-gold/60 bg-gold/10 p-3">
-            <Label className="text-gold">{t.week.title(data.week.week)}</Label>
+            <p className="text-sm font-semibold text-gold">{t.week.title(data.week.week)}</p>
             <p className="font-display text-lg font-extrabold">
               {t.week.rank(
                 data.week.rank,
