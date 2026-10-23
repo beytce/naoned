@@ -339,6 +339,8 @@ export interface WorldState {
   bales?: Record<PlayerId, BaleState>;
   /** Net sales of the season, per merchant: the ranking (see `turnover.ts`). */
   turnover?: Record<PlayerId, Deniers>;
+  /** The highest net sales of the season, per merchant: the level counts them (`turnoverPeakOf`). */
+  turnoverPeak?: Record<PlayerId, Deniers>;
   vehicles?: Record<string, Vehicle>;
   deliveries?: Record<string, Delivery>;
   bands?: LegacySeaState["bands"];

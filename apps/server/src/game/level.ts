@@ -1,4 +1,4 @@
-import { type WorldState, turnoverOf } from "@comptoirs/engine";
+import { type WorldState, turnoverPeakOf } from "@comptoirs/engine";
 import { inArray, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { seasonResults } from "../db/schema.js";
@@ -48,7 +48,10 @@ export async function pastSales(db: Db, accountIds: string[]): Promise<Map<strin
   return new Map(rows.map((r) => [r.id, Number(BigInt(r.deniers) / 100n)]));
 }
 
-/** Levels of these accounts: closed seasons plus the net sales of the season under way. */
+/**
+ * Levels of these accounts: closed seasons plus the best net sales of the season under way, so
+ * that a purchase, which lowers the net sales, never takes a level back.
+ */
 export async function levelsOf(
   db: Db,
   state: WorldState,
@@ -56,7 +59,7 @@ export async function levelsOf(
 ): Promise<Map<string, Level>> {
   const past = await pastSales(db, accountIds);
   const live = (id: string) => {
-    const t = turnoverOf(state, id);
+    const t = turnoverPeakOf(state, id);
     return t > 0n ? Number(t / 100n) : 0;
   };
   return new Map(accountIds.map((id) => [id, levelFor((past.get(id) ?? 0) + live(id))]));

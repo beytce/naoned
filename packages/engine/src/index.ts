@@ -104,6 +104,7 @@ export { EngineError, type EngineErrorCode } from "./tx.js";
 export {
   adoptTurnover,
   turnoverOf,
+  turnoverPeakOf,
   SALES as TURNOVER_SALES,
   COSTS as TURNOVER_COSTS,
 } from "./turnover.js";
