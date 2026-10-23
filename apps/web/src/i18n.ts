@@ -1131,9 +1131,49 @@ export const fr = {
       queueKeeps: (level: number, end: string) =>
         `Le niveau ${level} s'applique aux lots lancés après la file en cours (fin à ${end}).`,
       afterQueue: (level: number) => `niv. ${level} après la file`,
+      /**
+       * The article of each good, by code: m (le, du), f (la, de la), v (l', de l'), p (les, des).
+       * A good not listed is named bare, after a colon.
+       */
+      genders: {
+        wheat: "m",
+        flour: "f",
+        bread: "m",
+        clay: "v",
+        bricks: "p",
+        wood: "m",
+        planks: "p",
+        spices: "p",
+        silk: "f",
+        salt: "m",
+        wine: "m",
+        furs: "p",
+        cloth: "p",
+        sand: "m",
+        glass: "m",
+        mirrors: "p",
+        wool: "f",
+        drape: "m",
+        garments: "p",
+        prepared_spices: "p",
+      } as Record<string, "m" | "f" | "v" | "p">,
+      /** « le blé », « la farine », « l'argile », « les briques » (null: a good not listed). */
+      the: (code: string, name: string): string | null => {
+        const g = fr.game.workshop.genders[code];
+        const n = name.toLowerCase();
+        return g ? `${{ m: "le ", f: "la ", v: "l'", p: "les " }[g]}${n}` : null;
+      },
+      /** « du pain », « de la farine », « de l'argile », « des briques » (null: not listed). */
+      some: (code: string, name: string): string | null => {
+        const g = fr.game.workshop.genders[code];
+        const n = name.toLowerCase();
+        return g ? `${{ m: "du ", f: "de la ", v: "de l'", p: "des " }[g]}${n}` : null;
+      },
       /** What limits the batches that can be started. */
-      limitedBy: (n: number, res: string, have: number, perBatch: number) =>
-        `${n} lot${n > 1 ? "s" : ""} : limité par ${/^[aeiouyéèêh]/i.test(res) ? "l'" : "le "}${res.toLowerCase()} (${have} en stock, ${perBatch} par lot)`,
+      limitedBy: (n: number, code: string, res: string, have: number, perBatch: number) => {
+        const the = fr.game.workshop.the(code, res);
+        return `${n} lot${n > 1 ? "s" : ""} : limité par ${the ?? `: ${res.toLowerCase()}`} (${have} en stock, ${perBatch} par lot)`;
+      },
       limitedByQueue: (n: number, hours: number) =>
         `${n} lot${n > 1 ? "s" : ""} : limité par la file (${hours} h)`,
       /** The materials an upgrade lacks: bought right away at the Rialto. */
@@ -1329,6 +1369,7 @@ export const fr = {
       },
       sources: {
         city_sale: "Ventes aux villes",
+        criee_sale: "Ventes à la criée",
         trade: "Ventes au Rialto",
         market_maker_buy: "Ventes à la Dogana",
         contract_reward: "Contrats du Doge",
@@ -2107,20 +2148,15 @@ export const fr = {
         n > 1
           ? `${n} ateliers ont fini : récoltez et relancez.`
           : "Un atelier a fini : récoltez et relancez.",
-      harvestGo: "Récolter",
+      harvestGo: "Récolter et relancer",
       produce: (building: string) => `${building} ne fait rien et a de quoi travailler.`,
       produceGo: "Produire",
-      company: (n: number, resource: string) => {
-        // « du pain », « de la farine », « de l'argile », « des briques ».
-        const name = resource.toLowerCase();
-        const article = /^[aeiouyéèêh]/.test(name)
-          ? "de l'"
-          : /[sx]$/.test(name)
-            ? "des "
-            : ["farine", "soie", "laine"].includes(name)
-              ? "de la "
-              : "du ";
-        return `La commande de compagnie attend ${article}${name} : vous en avez ${n} à livrer.`;
+      company: (n: number, code: string, resource: string) => {
+        // « du pain », « de la farine », « de l'argile », « des briques » (see workshop.genders).
+        const some = fr.game.workshop.some(code, resource);
+        return some
+          ? `La commande de compagnie attend ${some} : vous en avez ${n} à livrer.`
+          : `La commande de compagnie attend : ${resource.toLowerCase()}. Vous en avez ${n} à livrer.`;
       },
       companyGo: "Livrer",
       upgrade: (building: string, adds: string, payback: string) =>

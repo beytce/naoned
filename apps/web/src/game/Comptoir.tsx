@@ -564,6 +564,7 @@ function limit(b: BuildingView, recipe: Recipe, props: GameProps): string | null
   if (by && by.n <= b.canStart)
     return t.limitedBy(
       b.canStart,
+      by.res,
       props.names.resource(by.res),
       have(props.view, by.res),
       by.perBatch,

@@ -29,7 +29,7 @@ function line(props: GameProps, a: NextAction): { text: string; button: string; 
       };
     case "company":
       return {
-        text: t.company(a.quantity, props.names.resource(a.resource)),
+        text: t.company(a.quantity, a.resource, props.names.resource(a.resource)),
         button: t.companyGo,
         go: () => props.setSheet("company"),
       };

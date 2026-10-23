@@ -12,6 +12,18 @@ import {
 import { sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 
+/**
+ * The ledger's reasons the summary counts as earned: every sale the ranking counts, and the
+ * rewards of the ledger and the guilds. Each has its label in the game (welcome.sources).
+ */
+export const INCOME_REASONS: string[] = [
+  ...TURNOVER_SALES,
+  "mission_reward",
+  "guild_dividend",
+  "guild_payout",
+  "decree_share",
+];
+
 /** A visit after this long (a new session) gets the "while you were away" summary. */
 export const WELCOME_AFTER_MS = 30 * 60_000;
 
@@ -33,14 +45,7 @@ export async function welcomeBack(
   now: number,
 ) {
   const cash = cashAccount(playerId);
-  // Every sale the ranking counts, and the rewards of the ledger and the guilds.
-  const reasons = [
-    ...TURNOVER_SALES,
-    "mission_reward",
-    "guild_dividend",
-    "guild_payout",
-    "decree_share",
-  ];
+  const reasons = INCOME_REASONS;
   const income = rowsOf<{ reason: string; total: string }>(
     await db.execute(sql`
       select reason, sum(amount)::text as total from ledger_entries
