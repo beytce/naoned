@@ -204,6 +204,15 @@ export interface BookView {
   bids: BookLine[];
   /** Units still allowed with the Dogana today (null: no quota). */
   quota: { buy: number | null; sell: number | null };
+  /**
+   * What an order "right away" can trade now on each side (null: nobody): the units within the
+   * price protection, the Dogana's held to the quota, and the price it reserves (buy) or accepts
+   * at worst (sell).
+   */
+  instant: {
+    buy: { units: number; price: Money } | null;
+    sell: { units: number; price: Money } | null;
+  };
 }
 
 export interface OrderView {
@@ -422,6 +431,14 @@ export interface BuildingView {
     unitsPerHour: number;
     marginPerHour: Money;
     next: { cost: Money; addedPerHour: Money; paybackMinutes: number } | null;
+    /** Its first output in stock, in hours of production. */
+    unsold: { stock: number; hoursOfOutput: number };
+    /** Inputs short of one batch. */
+    missingInputs: string[];
+    /** Whether the guide may advise upgrading it (goods that sell, inputs there). */
+    advisable: boolean;
+    /** What the Dogana buys of its goods a day from the merchant (null: no quota). */
+    doganaPerDay: number | null;
   };
 }
 
@@ -621,6 +638,16 @@ export interface Welcome {
   slept: boolean;
   /** The road while away: deliveries arrived. */
   road?: { arrived: number };
+  /** The week closed while away: where the merchant finished (null: none). */
+  week?: { week: number; rank: number; gain: Money; award: string | null } | null;
+  /** What the fattore sent while away, and what the cities paid for it (null: still on the road). */
+  fattore?: {
+    city: string;
+    resource: string;
+    quantity: number;
+    paid: Money | null;
+    commissionBps: number;
+  }[];
   /** The Terraferma while away, and where the merchant stands now (null: not on the map). */
   terra?: {
     gained: number;
@@ -637,8 +664,29 @@ export interface Welcome {
   } | null;
 }
 
+/** What an action did, beyond the view: told to the merchant in a few words. */
+export type ActionOutcome =
+  | {
+      kind: "instant";
+      side: "buy" | "sell";
+      resource: string;
+      requested: number;
+      filled: number;
+      /** Ducats paid (buy) or received (sell). */
+      amount: Money;
+      /** Why less than asked: the Dogana's quota, or nobody within the price protection. */
+      reason: "quota" | "depth" | null;
+    }
+  | {
+      kind: "harvest";
+      harvested: Record<string, number>;
+      started: { building: string; batches: number; inputs: Record<string, number> }[];
+    };
+
 export interface GameResponse {
   serverTime: number;
+  /** What the action did (some actions only). */
+  outcome?: ActionOutcome;
   /** The world's saved version the view was built from. */
   version?: number;
   view: PlayerView | null;

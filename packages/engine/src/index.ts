@@ -76,6 +76,7 @@ export {
   marketMakerQuotaLeft,
   maxOpenOrdersFor,
   openOrderCount,
+  playerQuota,
 } from "./market.js";
 export type { PlaceOrderInput } from "./market.js";
 export * from "./marketMaker.js";

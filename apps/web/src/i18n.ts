@@ -2012,7 +2012,11 @@ export const fr = {
     },
     /** A workshop in figures (margins at reference prices). */
     economics: {
-      perHour: (amount: string) => `≈ ${amount} de marge par heure`,
+      perHour: (amount: string) => `≈ ${amount} de marge théorique par heure`,
+      /** A workshop the guide does not advise upgrading: its goods pile up, or it lacks an input. */
+      unsold: (qty: number, res: string, hours: number, dogana: number | null) =>
+        `Stock invendu : ${qty} ${res.toLowerCase()}, ~${hours >= 48 ? `${Math.round(hours / 24)} j` : `${hours} h`} de production${dogana !== null ? ` ; la Dogana en prend ${dogana} par jour` : ""}.`,
+      missing: (list: string) => `Intrant manquant : ${list.toLowerCase()}.`,
       best: "meilleur placement",
       bestLong:
         "Le meilleur placement de vos ducats en ce moment : c'est l'amélioration la plus vite rentabilisée.",

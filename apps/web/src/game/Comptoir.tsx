@@ -253,6 +253,29 @@ const STATE_TONE = {
 } as const;
 
 /**
+ * Why the guide does not advise upgrading a workshop (null: it may): its goods pile up unsold, or
+ * it lacks an input for a single batch.
+ */
+function NotAdvised({ b, props }: { b: BuildingView; props: GameProps }) {
+  const e = b.economics;
+  if (e.advisable || !e.next) return null;
+  const output = Object.keys(recipeOf(props, b.type)?.outputs ?? {})[0];
+  const t = fr.game.economics;
+  return (
+    <span className="block text-gold">
+      {e.missingInputs.length > 0
+        ? t.missing(e.missingInputs.map(props.names.resource).join(", "))
+        : t.unsold(
+            e.unsold.stock,
+            props.names.resource(output ?? ""),
+            e.unsold.hoursOfOutput,
+            e.doganaPerDay,
+          )}
+    </span>
+  );
+}
+
+/**
  * A workshop in the list: its state first (a coloured line), what a batch takes and gives, and
  * one big button that does the right thing (collect, produce, see what it lacks); upgrading is
  * the small level chip at the top.
@@ -320,6 +343,11 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
               <span className="text-gold">★ {fr.game.economics.best}</span>
             )}
           </p>
+          {b.upgradeCost && !b.economics.advisable && b.economics.next && (
+            <p className="mt-1 font-mono text-xs">
+              <NotAdvised b={b} props={props} />
+            </p>
+          )}
         </div>
       </div>
 
@@ -534,6 +562,7 @@ function WorkshopSheet({
           {props.view.bestUpgrade === b.id && (
             <span className="block text-gold">★ {fr.game.economics.bestLong}</span>
           )}
+          <NotAdvised b={b} props={props} />
         </p>
       )}
       <CostList cost={cost} props={props} />

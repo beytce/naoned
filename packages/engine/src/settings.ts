@@ -133,6 +133,11 @@ export const worldSettingsSchema = z.object({
    * returning player finds it intact. 0 turns it off.
    */
   dormancy: z.object({ afterHours: qty }).default({ afterHours: 0 }),
+  /**
+   * The guide's advice (advice.ts): a workshop with this many hours of its output unsold in stock
+   * is not advised for an upgrade. 0 turns the check off.
+   */
+  advice: z.object({ glutHours: qty }).default({ glutHours: 0 }),
   /** The merchant's ledger: short goals opening day after day, with a small reward. */
   missions: z
     .array(

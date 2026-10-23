@@ -29,6 +29,7 @@ import {
   netWorth,
   nextActions,
   openProjects,
+  playerQuota,
   quoteCitySale,
   rationsPerDay,
   recipesFor,
@@ -38,6 +39,7 @@ import {
   stockUnitValue,
   topLevel,
   turnoverOf,
+  upgradeWorthAdvising,
   vwap,
   warehouseUnitsLeft,
   workLevel,
@@ -448,12 +450,23 @@ function buildingView(ctx: WorldContext, state: WorldState, b: Building, now: nu
       if (b.level < ctx.settings.maxBuildingLevel) return null;
       return turnoverOf(state, b.playerId) >= m.unlock ? ("open" as const) : ("locked" as const);
     })(),
-    /** In figures: margin an hour, the next level's gain and payback (null: none). */
+    /**
+     * In figures: margin an hour, the next level's gain and payback (null: none); its goods unsold
+     * and the inputs it lacks, which keep it from the guide's advice, and what the Dogana takes of
+     * its goods a day.
+     */
     economics: (() => {
       const e = workshopEconomics(ctx, state, b.playerId, b, now);
+      const output = Object.keys(recipe?.outputs ?? {})[0];
       return {
         unitsPerHour: e.unitsPerHour,
         marginPerHour: e.marginPerHour,
+        unsold: e.unsold,
+        missingInputs: e.missingInputs,
+        advisable: upgradeWorthAdvising(ctx, e),
+        doganaPerDay: output
+          ? (playerQuota(ctx, state, output, "sold", now, b.playerId) ?? null)
+          : null,
         next:
           e.next && local && Number.isFinite(e.next.paybackMinutes)
             ? {
