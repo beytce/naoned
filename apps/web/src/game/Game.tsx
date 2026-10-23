@@ -14,7 +14,9 @@ import { TerraGuide } from "./TerraGuide.js";
 import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
 import { onBack } from "./back.js";
+import { d } from "./format.js";
 import { FxLayer, flyCoins } from "./fx.js";
+import { harvestSummary } from "./harvest.js";
 import { connectLive } from "./live.js";
 import { MapScreen } from "./map/MapScreen.js";
 import type { Selection } from "./map/WorldMap.js";
@@ -124,7 +126,17 @@ export interface GameProps {
   rival: GameResponse["rival"];
   /** The merchant's permanent level (honorary). */
   level: Level | null;
+  /**
+   * Sends an action without telling its outcome (the caller sums several up), and returns the
+   * answer (null when refused: the error is said).
+   */
+  actQuiet: (action: Action) => Promise<GameResponse | null>;
+  /** Says something in the toast: news (info) or a warning. */
+  say: (text: string, tone?: ToastTone) => void;
 }
+
+/** The toast's tone: an error, a warning (partly done), or news. */
+export type ToastTone = "error" | "warn" | "info";
 
 /** Polling without the live line; with it, a safety net now and then. */
 const POLL_MS = 15_000;
@@ -156,7 +168,12 @@ export function Game(props: {
     setLayerState(l);
   }, []);
   const [busy, setBusy] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToastState] = useState<{ text: string; tone: ToastTone } | null>(null);
+  /** An error by default: most toasts say what went wrong. */
+  const setToast = useCallback(
+    (text: string | null, tone: ToastTone = "error") => setToastState(text ? { text, tone } : null),
+    [],
+  );
   const [prices, setPrices] = useState<{ days: number; series: PriceSeries }>({
     days: 7,
     series: {},
@@ -187,6 +204,10 @@ export function Game(props: {
   const fetchedAt = useRef(0);
   const pricesAt = useRef(0);
   const liveOpen = useRef(false);
+  /** What to say of an action that went through, with today's names (see `tell`). */
+  const tellRef = useRef<
+    (res: GameResponse, action?: Action) => { text: string; tone: ToastTone } | null
+  >(() => null);
 
   const apply = useCallback((serverTime: number, v: PlayerView | null) => {
     setOffset(serverTime - Date.now());
@@ -367,9 +388,9 @@ export function Game(props: {
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), 4000);
+    const t = setTimeout(() => setToast(null), toast.tone === "error" ? 4000 : 3500);
     return () => clearTimeout(t);
-  }, [toast]);
+  }, [toast, setToast]);
 
   const names = useMemo<Names>(() => {
     const pick = (
@@ -384,10 +405,18 @@ export function Game(props: {
     };
   }, [catalog]);
 
-  /** Sends an action (or a use of Influence) and puts the answer on screen. */
+  /**
+   * Sends an action (or a use of Influence) and puts the answer on screen; returns it (null when
+   * refused). Unless `quiet`, says what the action did when the server tells it (an order right
+   * away, a harvest) or an offer posted.
+   */
   const send = useCallback(
-    async (request: () => Promise<GameResponse>, type: string) => {
-      if (acting.current) return false;
+    async (
+      request: () => Promise<GameResponse>,
+      type: string,
+      options: { quiet?: boolean; action?: Action } = {},
+    ): Promise<GameResponse | null> => {
+      if (acting.current) return null;
       acting.current = true;
       setBusy(true);
       try {
@@ -400,11 +429,16 @@ export function Game(props: {
         if (res.error) {
           haptic("warn");
           setToast(fr.game.errors[res.error] ?? fr.errors.unknown ?? null);
-          return false;
+          return null;
         }
-        haptic(REWARDING.has(type) ? "success" : "tap");
-        const cue = soundOf(type);
+        const nothing = res.outcome?.kind === "instant" && res.outcome.filled === 0;
+        haptic(nothing ? "warn" : REWARDING.has(type) ? "success" : "tap");
+        const cue = nothing ? null : soundOf(type);
         if (cue) sound(cue);
+        if (!options.quiet) {
+          const told = tellRef.current(res, options.action);
+          if (told) setToast(told.text, told.tone);
+        }
         if (type === "instantOrder" || type === "sellToCity") {
           pricesAt.current = Date.now();
           gameApi
@@ -412,22 +446,64 @@ export function Game(props: {
             .then(setPrices)
             .catch(() => undefined);
         }
-        return true;
+        return res;
       } catch (err) {
         const code = err instanceof ApiError ? err.code : "unknown";
         haptic("warn");
         setToast(fr.game.errors[code] ?? fr.errors[code] ?? fr.errors.unknown ?? null);
-        return false;
+        return null;
       } finally {
         acting.current = false;
         setBusy(false);
       }
     },
-    [apply],
+    [apply, setToast],
   );
-  const act = useCallback((action: Action) => send(() => gameApi.act(action), action.type), [send]);
+
+  /** What to say of an action that went through (null: the screen says it). */
+  const tell = (res: GameResponse, action?: Action): { text: string; tone: ToastTone } | null => {
+    const o = res.outcome;
+    const slippage = (catalog?.rules.instantOrderSlippageBps ?? 0) / 100;
+    if (o?.kind === "instant") {
+      const text = fr.game.book.instantDone(
+        o.side,
+        o.filled,
+        o.requested,
+        names.resource(o.resource),
+        d(o.amount),
+        o.reason,
+        slippage,
+      );
+      return { text, tone: o.filled >= o.requested ? "info" : "warn" };
+    }
+    if (o?.kind === "harvest") return { text: harvestSummary(o, res.view, names), tone: "info" };
+    if (action?.type === "limitOrder") {
+      const text = fr.game.book.offerPosted(
+        action.side,
+        action.quantity,
+        names.resource(action.resource),
+        d(action.price),
+      );
+      return { text, tone: "info" };
+    }
+    return null;
+  };
+  tellRef.current = tell;
+
+  // An order right away that traded nothing is no success: the sheet stays open.
+  const act = useCallback(
+    async (action: Action) => {
+      const res = await send(() => gameApi.act(action), action.type, { action });
+      return !!res && !(res.outcome?.kind === "instant" && res.outcome.filled === 0);
+    },
+    [send],
+  );
+  const actQuiet = useCallback(
+    (action: Action) => send(() => gameApi.act(action), action.type, { quiet: true }),
+    [send],
+  );
   const spend = useCallback(
-    (what: Spend) => send(() => gameApi.spend(what), `spend:${what.use}`),
+    async (what: Spend) => !!(await send(() => gameApi.spend(what), `spend:${what.use}`)),
     [send],
   );
 
@@ -476,7 +552,7 @@ export function Game(props: {
       <Region
         catalog={catalog}
         names={names}
-        toast={toast}
+        toast={toast?.text ?? null}
         onJoin={async (region) => {
           try {
             const res = await gameApi.join(region);
@@ -508,6 +584,8 @@ export function Game(props: {
     account: props.account,
     now: now + offset,
     act,
+    actQuiet,
+    say: (text, tone = "info") => setToast(text, tone),
     spend,
     busy,
     names,
@@ -584,18 +662,24 @@ export function Game(props: {
 
       {toast && (
         <div
-          role="alert"
-          className="fixed inset-x-4 top-[max(5rem,calc(env(safe-area-inset-top)+4.5rem))] z-50 mx-auto max-w-md animate-rise"
+          role={toast.tone === "error" ? "alert" : "status"}
+          className={
+            toast.tone === "error"
+              ? "fixed inset-x-4 top-[max(5rem,calc(env(safe-area-inset-top)+4.5rem))] z-50 mx-auto max-w-md animate-rise"
+              : // News over the top of the screen, where a sheet has its title rather than its
+                // buttons; it keeps no tap and goes by itself.
+                "pointer-events-none fixed inset-x-4 top-[max(0.75rem,env(safe-area-inset-top))] z-50 mx-auto max-w-md animate-rise"
+          }
         >
           <button
             type="button"
             onClick={() => setToast(null)}
-            className="flex w-full items-start gap-3 cut bg-vermilion px-4 py-3 text-left text-sm font-semibold text-cream shadow-lg shadow-black/40"
+            className={`flex w-full items-start gap-3 cut px-4 py-3 text-left text-sm font-semibold shadow-lg shadow-black/40 ${TOAST_TONE[toast.tone]}`}
           >
             <span aria-hidden="true" className="mt-px font-display font-extrabold">
-              !
+              {toast.tone === "info" ? "✓" : "!"}
             </span>
-            <span className="flex-1">{toast}</span>
+            <span className="flex-1">{toast.text}</span>
           </button>
         </div>
       )}
@@ -607,6 +691,12 @@ export function Game(props: {
     </>
   );
 }
+
+const TOAST_TONE: Record<ToastTone, string> = {
+  error: "bg-vermilion text-cream",
+  warn: "bg-gold text-ink",
+  info: "bg-night-3 text-cream ring-1 ring-inset ring-gold/60",
+};
 
 /** Opening the game: the sign while it loads, and a way out when the network fails. */
 function Loading({

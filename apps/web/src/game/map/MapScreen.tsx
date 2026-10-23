@@ -20,6 +20,7 @@ import { WarehouseSheet } from "../Warehouse.js";
 import { gameApi } from "../api.js";
 import { onBack } from "../back.js";
 import { d, minutesLabel } from "../format.js";
+import { harvestAndRestart } from "../harvest.js";
 import { rivalLine } from "../rival.js";
 import {
   BuyVehicleSheet,
@@ -350,7 +351,7 @@ export function MapScreen(
       const target = e.target as HTMLElement | null;
       if (target?.closest("input, textarea, select, [contenteditable]")) return;
       const k = e.key.toLowerCase();
-      if (k === "r") void props.act({ type: "collectAndRestart" });
+      if (k === "r") void harvestAndRestart(props);
       else if (k === "a") props.setSheet("workshops");
       else if (k === "m") props.goTo("marche");
       else if (k === "c" && freeVehicles[0]) props.setSheet(`cargo:${freeVehicles[0].id}`);
@@ -883,7 +884,7 @@ function HomePanel({ props, onClose }: { props: GameProps; onClose: () => void }
               badge={ready > 0 ? ready : undefined}
               coach="panel-harvest"
               disabled={props.busy}
-              onClick={() => props.act({ type: "collectAndRestart" })}
+              onClick={() => harvestAndRestart(props)}
             />
           ) : null}
           <ActionButton

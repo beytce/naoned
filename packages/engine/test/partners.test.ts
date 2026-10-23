@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type WorldSettingsInput, turnoverOf } from "../src/index.js";
+import { type WorldSettingsInput, seasonEnd, turnoverOf } from "../src/index.js";
 import { DAY, HOUR, World, makeContext } from "./helpers.js";
 
 const rules = {
@@ -140,5 +140,27 @@ describe("the colleganza", () => {
     expect(error(offer(5_000, 2))).toBe("ok");
     w.do({ type: "cancelColleganza", playerId: "a", colleganzaId: lastId(w, "colleganze") });
     expect(w.cash("a")).toBe(cash);
+  });
+});
+
+describe("a colleganza taken late in the season", () => {
+  it("comes to term by the season's end at the latest, and is settled then", () => {
+    const w = world();
+    const end = seasonEnd(w.ctx);
+    w.at(end - DAY - w.ctx.startAt);
+    w.do({ type: "offerColleganza", playerId: "a", amount: 10_000n, days: 3, shareBps: 5_000 });
+    const id = lastId(w, "colleganze");
+    w.do({ type: "acceptColleganza", playerId: "b", colleganzaId: id });
+    expect(w.state.colleganze?.[id]?.endsAt).toBe(end);
+    w.at(end - w.ctx.startAt).do({ type: "tick" });
+    expect(w.state.colleganze?.[id]?.settled).toBe(true);
+  });
+
+  it("keeps its full term when the season lasts longer", () => {
+    const w = world();
+    w.do({ type: "offerColleganza", playerId: "a", amount: 10_000n, days: 3, shareBps: 5_000 });
+    const id = lastId(w, "colleganze");
+    w.do({ type: "acceptColleganza", playerId: "b", colleganzaId: id });
+    expect(w.state.colleganze?.[id]?.endsAt).toBe(w.now + 3 * DAY);
   });
 });

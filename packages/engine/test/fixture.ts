@@ -100,6 +100,7 @@ export const testSettings: WorldSettingsInput = {
   maxBuildingLevel: 5,
   levelCostGrowthBps: 10_000,
   activeWindowHours: 72,
+  advice: { glutHours: 24 },
   buildings: {
     farm: building(30_000, 20, 20),
     clay_pit: building(30_000, 20, 20),

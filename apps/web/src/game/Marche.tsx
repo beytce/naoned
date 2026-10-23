@@ -21,14 +21,36 @@ function change(points: number[]): number {
   return ((last - first) / first) * 100;
 }
 
+const percent = new Intl.NumberFormat("fr-FR", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
 function ChangeTag({ value }: { value: number }) {
   if (value === 0) return null;
   const up = value > 0;
+  // One piece: « ▼ 3,9 % » never breaks over two lines.
   return (
-    <span className={`font-mono text-xs font-bold ${up ? "text-lagoon" : "text-vermilion"}`}>
-      {up ? "▲" : "▼"} {Math.abs(value).toFixed(1)} %
+    <span
+      className={`whitespace-nowrap font-mono text-xs font-bold ${up ? "text-lagoon" : "text-vermilion"}`}
+    >
+      {`${up ? "▲" : "▼"}\u00a0${percent.format(Math.abs(value))}\u00a0%`}
     </span>
   );
+}
+
+/** What buying `q` units costs from these asks, best first (the merchant's own left out). */
+export function costOf(asks: BookLine[], q: number): bigint {
+  let left = q;
+  let cost = 0n;
+  for (const l of asks) {
+    if (left <= 0) break;
+    if (l.mine) continue;
+    const n = Math.min(left, l.quantity);
+    cost += BigInt(l.price) * BigInt(n);
+    left -= n;
+  }
+  return cost;
 }
 
 function Row({
@@ -138,26 +160,31 @@ function TradeSheet({
   const [qty, setQty] = useState(5);
   const book = props.view.book[line.resource];
   const stock = have(props.view, line.resource);
-  const slippage = 10_000 + props.catalog.rules.instantOrderSlippageBps;
   const ask = line.bestAsk ? BigInt(line.bestAsk) : null;
   const bid = line.bestBid ? BigInt(line.bestBid) : null;
   const [priceText, setPriceText] = useState(
     asDucats(ask ?? bid ?? BigInt(props.catalog.referencePrices[line.resource] ?? "100")),
   );
   const price = parseDucats(priceText);
-  // An instant buy reserves up to the best ask plus the price protection.
-  const worstAsk = ask ? (ask * BigInt(slippage)) / 10_000n : null;
   const cash = BigInt(props.view.cash);
-  const maxBuy =
-    mode === "now"
-      ? worstAsk && worstAsk > 0n
-        ? Number(cash / worstAsk)
-        : 0
-      : price
-        ? Number(cash / price)
-        : 0;
-  const max = Math.max(1, maxBuy, stock);
+  // Right away: as many as the book holds within the price protection (the Dogana's to its
+  // quota), as the cash pays at the price reserved, or as the stock holds.
+  const instant = book?.instant;
+  const buyLimit = instant?.buy ? BigInt(instant.buy.price) : null;
+  const sellLimit = instant?.sell ? BigInt(instant.sell.price) : null;
+  const buyNow =
+    instant?.buy && buyLimit && buyLimit > 0n
+      ? Math.min(Number(cash / buyLimit), instant.buy.units)
+      : 0;
+  const sellNow = instant?.sell ? Math.min(stock, instant.sell.units) : 0;
+  const maxBuy = mode === "now" ? buyNow : price ? Number(cash / price) : 0;
+  const maxSell = mode === "now" ? sellNow : stock;
+  const max = Math.max(1, maxBuy, maxSell);
   const q = Math.min(qty, max);
+  const tax = props.catalog.rules.marketTaxBps;
+  // What a purchase takes off the net sales: the book's asks, or the offer's price.
+  const purchase =
+    mode === "now" ? costOf(book?.asks ?? [], Math.min(q, buyNow)) : price ? price * BigInt(q) : 0n;
   const points = series(props, line.resource);
   const mine = props.view.openOrders.filter((o) => o.resource === line.resource);
   // In the computer's side panel the sheet stays open on the same resource; in the Rialto's sheet,
@@ -235,19 +262,27 @@ function TradeSheet({
       )}
 
       <Qty value={q} max={max} onChange={setQty} />
-      {mode === "now" && worstAsk !== null && (
-        <p className="text-xs text-muted">{fr.game.maxCost(d(worstAsk * BigInt(q)))}</p>
+      {mode === "now" && (instant?.buy || instant?.sell) && (
+        <p className="text-xs text-muted">
+          {t.bounds(
+            buyLimit ? d(buyLimit * BigInt(q)) : null,
+            sellLimit ? d((sellLimit * BigInt(q) * BigInt(10_000 - tax)) / 10_000n) : null,
+            tax / 100,
+          )}
+        </p>
       )}
+      {mode === "now" && <p className="text-xs text-muted">{t.nowMax(buyNow, sellNow)}</p>}
       {mode === "price" && price !== null && (
         <p className="text-xs text-muted">{t.reserved(d(price * BigInt(q)))}</p>
       )}
+      {purchase > 0n && <p className="text-xs text-muted">{t.rankCost(d(purchase))}</p>}
 
       {mode === "now" ? (
         <div className="grid grid-cols-2 gap-4">
           <Slab
             size="lg"
             coach="sheet-buy"
-            disabled={props.busy || !ask || q > maxBuy}
+            disabled={props.busy || !instant?.buy || q > buyNow}
             onClick={async () => {
               if (
                 await props.act({
@@ -265,7 +300,7 @@ function TradeSheet({
           <Slab
             size="lg"
             tone="ghost"
-            disabled={props.busy || !bid || q > stock}
+            disabled={props.busy || !instant?.sell || q > sellNow}
             onClick={async () => {
               if (
                 await props.act({
@@ -282,9 +317,10 @@ function TradeSheet({
           </Slab>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
+        <div className={`grid grid-cols-2 gap-4 ${stock > 0 ? "[&>*:first-child]:order-2" : ""}`}>
           <Slab
             size="md"
+            tone={stock > 0 ? "ghost" : undefined}
             disabled={props.busy || !price || price * BigInt(q) > cash}
             onClick={async () => {
               if (
@@ -304,7 +340,7 @@ function TradeSheet({
           </Slab>
           <Slab
             size="md"
-            tone="ghost"
+            tone={stock > 0 ? undefined : "ghost"}
             disabled={props.busy || !price || q > stock}
             onClick={async () => {
               if (
@@ -341,13 +377,19 @@ function TradeSheet({
         </div>
       )}
 
-      <p className="text-xs text-muted">
-        {fr.game.marketHelp(
-          props.catalog.rules.instantOrderSlippageBps / 100,
-          props.catalog.rules.marketTaxBps / 100,
-        )}{" "}
-        {t.fondacoHelp}
-      </p>
+      <div className="text-xs text-muted">
+        <p>{t.rules}</p>
+        <details className="mt-1">
+          <summary className="cursor-pointer text-cream-dim">{t.more}</summary>
+          <p className="mt-1">
+            {fr.game.marketHelp(
+              props.catalog.rules.instantOrderSlippageBps / 100,
+              props.catalog.rules.marketTaxBps / 100,
+            )}{" "}
+            {t.fondacoHelp}
+          </p>
+        </details>
+      </div>
     </div>
   );
 }

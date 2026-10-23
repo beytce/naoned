@@ -4,6 +4,7 @@ import {
   adoptTurnover,
   seasonStandings,
   turnoverOf,
+  turnoverPeakOf,
   weeklyStandings,
 } from "../src/index.js";
 import { DAY, HOUR, World } from "./helpers.js";
@@ -94,6 +95,23 @@ describe("net sales (sales less purchases)", () => {
     expect(second).toEqual({ playerId: "b", gain: 0n });
   });
 
+  it("keep their highest mark of the season, which a purchase does not take back", () => {
+    const w = world();
+    w.give("a", "wheat", 100);
+    w.give("b", "wheat", 100);
+    w.do(order("b", "buy", 100, 30));
+    w.do(order("a", "sell", 100, 30));
+    const peak = turnoverOf(w.state, "a");
+    expect(turnoverPeakOf(w.state, "a")).toBe(peak);
+    w.do(order("b", "sell", 100, 10));
+    w.do(order("a", "buy", 100, 10));
+    expect(turnoverOf(w.state, "a")).toBe(peak - 1_000n);
+    expect(turnoverPeakOf(w.state, "a")).toBe(peak);
+    // A merchant who only bought has a mark of zero, never below.
+    expect(turnoverOf(w.state, "b")).toBeLessThan(0n);
+    expect(turnoverPeakOf(w.state, "b")).toBe(0n);
+  });
+
   it("start again from zero for a merchant who restarts", () => {
     const w = world();
     w.advance(HOUR).give("a", "bread", 20);
@@ -101,6 +119,7 @@ describe("net sales (sales less purchases)", () => {
     w.do({ type: "resetPlayer", playerId: "a" });
     w.do({ type: "join", playerId: "a", region: "lagoon" });
     expect(turnoverOf(w.state, "a")).toBe(0n);
+    expect(turnoverPeakOf(w.state, "a")).toBe(0n);
   });
 
   it("are rebuilt from the ledger for a save made before them, the week included", () => {

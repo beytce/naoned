@@ -76,6 +76,7 @@ export {
   marketMakerQuotaLeft,
   maxOpenOrdersFor,
   openOrderCount,
+  playerQuota,
 } from "./market.js";
 export type { PlaceOrderInput } from "./market.js";
 export * from "./marketMaker.js";
@@ -104,6 +105,7 @@ export { EngineError, type EngineErrorCode } from "./tx.js";
 export {
   adoptTurnover,
   turnoverOf,
+  turnoverPeakOf,
   SALES as TURNOVER_SALES,
   COSTS as TURNOVER_COSTS,
 } from "./turnover.js";

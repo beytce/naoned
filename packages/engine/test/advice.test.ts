@@ -40,6 +40,45 @@ describe("a workshop's economics", () => {
   });
 });
 
+describe("honest advice", () => {
+  it("passes over a workshop whose goods pile up unsold", () => {
+    const w = new World();
+    w.do({ type: "join", playerId: "a", region: "lagoon" });
+    const pit = w.buildingsOf("a").find((b) => b.type === "clay_pit");
+    if (!pit) throw new Error("no clay pit");
+    const before = workshopEconomics(w.ctx, w.state, "a", pit, w.now);
+    expect(before.unsold.stock).toBe(w.stock("a", "clay").available);
+    w.give("a", "clay", 1_000);
+    const e = workshopEconomics(w.ctx, w.state, "a", pit, w.now);
+    expect(e.unsold.stock).toBe(w.stock("a", "clay").available);
+    // 20 clay an hour: a thousand in stock is fifty hours of digging.
+    expect(e.unsold.hoursOfOutput).toBeGreaterThanOrEqual(w.ctx.settings.advice.glutHours);
+    expect(bestUpgrade(w.ctx, w.state, "a", w.now)?.buildingId).not.toBe(pit.id);
+  });
+
+  it("names the input a workshop lacks for one batch, and does not advise upgrading it", () => {
+    const w = new World();
+    w.do({ type: "join", playerId: "a", region: "lagoon" });
+    const works = w.buildingsOf("a").find((b) => b.type === "brickworks");
+    if (!works) throw new Error("no brickworks");
+    const clay = w.stock("a", "clay").available;
+    if (clay > 0) {
+      w.do({
+        type: "sellToCity",
+        playerId: "a",
+        city: "venezia",
+        resource: "clay",
+        quantity: clay,
+      });
+    }
+    expect(w.stock("a", "clay").available).toBe(0);
+    expect(workshopEconomics(w.ctx, w.state, "a", works, w.now).missingInputs).toEqual(["clay"]);
+    expect(bestUpgrade(w.ctx, w.state, "a", w.now)?.buildingId).not.toBe(works.id);
+    w.give("a", "clay", 20);
+    expect(workshopEconomics(w.ctx, w.state, "a", works, w.now).missingInputs).toEqual([]);
+  });
+});
+
 describe("the next best action", () => {
   it("harvests first, then restarts idle workshops, then the best upgrade it can pay", () => {
     const w = new World();

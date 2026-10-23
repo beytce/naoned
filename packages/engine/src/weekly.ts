@@ -3,7 +3,7 @@ import { commerceInfluence } from "./house.js";
 import type { Deniers } from "./money.js";
 import { DAY_MS, type PlayerId, type WorldContext, type WorldState, seasonEnd } from "./state.js";
 import { nameSuppliers } from "./suppliers.js";
-import { turnoverOf } from "./turnover.js";
+import { turnoverOf, turnoverPeakOf } from "./turnover.js";
 import { type Tx, emit } from "./tx.js";
 import { netWorth } from "./valuation.js";
 import { closeWarehouseAuctions } from "./warehouses.js";
@@ -127,6 +127,8 @@ export function closeSeason(tx: Tx): void {
     standings: seasonStandings(tx.ctx, tx.s, at).map((s) => ({
       playerId: s.playerId,
       turnover: s.turnover.toString(),
+      // The best mark of the season: what the merchant's level keeps (see `turnoverPeakOf`).
+      turnoverPeak: turnoverPeakOf(tx.s as WorldState, s.playerId).toString(),
       worth: s.worth.toString(),
     })),
   });

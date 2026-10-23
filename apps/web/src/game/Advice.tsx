@@ -3,6 +3,7 @@ import { fr } from "../i18n.js";
 import { Slab } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { d, minutesLabel } from "./format.js";
+import { harvestAndRestart } from "./harvest.js";
 import type { NextAction } from "./types.js";
 
 const t = fr.game.advice;
@@ -18,7 +19,7 @@ function line(props: GameProps, a: NextAction): { text: string; button: string; 
       return {
         text: t.harvest(a.count),
         button: t.harvestGo,
-        go: () => props.act({ type: "collectAndRestart" }),
+        go: () => harvestAndRestart(props),
       };
     case "produce":
       return {
@@ -28,7 +29,7 @@ function line(props: GameProps, a: NextAction): { text: string; button: string; 
       };
     case "company":
       return {
-        text: t.company(a.quantity, props.names.resource(a.resource)),
+        text: t.company(a.quantity, a.resource, props.names.resource(a.resource)),
         button: t.companyGo,
         go: () => props.setSheet("company"),
       };

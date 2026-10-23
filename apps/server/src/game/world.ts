@@ -43,7 +43,8 @@ import { recordWeek } from "./weekly.js";
 
 const THEMES = { venice1450 } as const;
 
-export type ActionResult = { ok: true } | { ok: false; error: string };
+/** A command decided: on success, what it did (its trades, ledger and stock movements). */
+export type ActionResult = { ok: true; effects?: Effects } | { ok: false; error: string };
 
 /** After a saved command or batch: its effects, its time, the version it made, and if a tick. */
 export type EffectsListener = (
@@ -300,7 +301,7 @@ export class GameWorld {
       this.version += 1;
       this.notify(res.effects, now, command.type === "tick");
       if (command.type === "tick" && this.state.seasonClosed) await this.rollover(now);
-      return { ok: true };
+      return { ok: true, effects: res.effects };
     });
   }
 
