@@ -1127,6 +1127,18 @@ export const fr = {
       toMarket: "Au marché",
       makeAt: (building: string) => `Produire : ${building}`,
       upgradeLater: (level: number) => `Améliorer au niveau ${level}`,
+      /** An upgrade while a queue runs: the queue keeps its level. */
+      queueKeeps: (level: number, end: string) =>
+        `Le niveau ${level} s'applique aux lots lancés après la file en cours (fin à ${end}).`,
+      afterQueue: (level: number) => `niv. ${level} après la file`,
+      /** What limits the batches that can be started. */
+      limitedBy: (n: number, res: string, have: number, perBatch: number) =>
+        `${n} lot${n > 1 ? "s" : ""} : limité par ${/^[aeiouyéèêh]/i.test(res) ? "l'" : "le "}${res.toLowerCase()} (${have} en stock, ${perBatch} par lot)`,
+      limitedByQueue: (n: number, hours: number) =>
+        `${n} lot${n > 1 ? "s" : ""} : limité par la file (${hours} h)`,
+      /** The materials an upgrade lacks: bought right away at the Rialto. */
+      buyMissing: (cost: string) => `Acheter ce qui manque (≈ ${cost})`,
+      buyMissingNone: "Personne ne vend ce qui manque au Rialto pour l'instant.",
       buildHere: "Bâtir ici",
     },
     carnet: {

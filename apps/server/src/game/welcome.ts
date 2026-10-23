@@ -83,6 +83,7 @@ export async function welcomeBack(
     .filter((d) => d.playerId === playerId && d.fattore && d.departAt > from)
     .sort((a, b) => a.departAt - b.departAt)
     .map((d) => ({
+      id: d.id,
       city: d.route.split(":")[1] ?? "",
       resource: d.resource,
       quantity: d.loaded,

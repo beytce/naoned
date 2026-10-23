@@ -40,7 +40,7 @@ function ChangeTag({ value }: { value: number }) {
 }
 
 /** What buying `q` units costs from these asks, best first (the merchant's own left out). */
-function costOf(asks: BookLine[], q: number): bigint {
+export function costOf(asks: BookLine[], q: number): bigint {
   let left = q;
   let cost = 0n;
   for (const l of asks) {

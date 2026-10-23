@@ -439,6 +439,8 @@ export interface BuildingView {
     advisable: boolean;
     /** What the Dogana buys of its goods a day from the merchant (null: no quota). */
     doganaPerDay: number | null;
+    /** A queue started before an upgrade: its level and margin until it ends (null: none). */
+    queued: { level: number; marginPerHour: Money } | null;
   };
 }
 
@@ -642,6 +644,7 @@ export interface Welcome {
   week?: { week: number; rank: number; gain: Money; award: string | null } | null;
   /** What the fattore sent while away, and what the cities paid for it (null: still on the road). */
   fattore?: {
+    id: string;
     city: string;
     resource: string;
     quantity: number;

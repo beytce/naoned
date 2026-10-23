@@ -465,6 +465,20 @@ function buildingView(ctx: WorldContext, state: WorldState, b: Building, now: nu
         unsold: e.unsold,
         missingInputs: e.missingInputs,
         advisable: upgradeWorthAdvising(ctx, e),
+        // A queue started before an upgrade works at its old level until it ends.
+        queued:
+          job && job.level < workLevel(ctx, b) && job.endsAt > now && !b.path
+            ? {
+                level: job.level,
+                marginPerHour: workshopEconomics(
+                  ctx,
+                  state,
+                  b.playerId,
+                  { ...b, level: job.level },
+                  now,
+                ).marginPerHour,
+              }
+            : null,
         doganaPerDay: output
           ? (playerQuota(ctx, state, output, "sold", now, b.playerId) ?? null)
           : null,

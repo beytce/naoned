@@ -77,8 +77,8 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
               {data.road && data.road.arrived > 0 && (
                 <Line mark="➜">{t.road.arrived(data.road.arrived)}</Line>
               )}
-              {data.fattore?.map((f, i) => (
-                <Line key={`fattore-${i}`} mark="⚑" tone="text-cream-dim">
+              {data.fattore?.map((f) => (
+                <Line key={f.id} mark="⚑" tone="text-cream-dim">
                   {t.fattore(
                     f.quantity,
                     props.names.resource(f.resource),
