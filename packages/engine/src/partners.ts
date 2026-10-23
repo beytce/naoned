@@ -1,7 +1,14 @@
 import { decreeTaxBps } from "./decrees.js";
 import { type Deniers, applyBpsCeil, applyBpsFloor } from "./money.js";
 import { specialtyEffects } from "./specialties.js";
-import { DAY_MS, type PlayerId, SINK_ACCOUNT, type WorldState, cashAccount } from "./state.js";
+import {
+  DAY_MS,
+  type PlayerId,
+  SINK_ACCOUNT,
+  type WorldState,
+  cashAccount,
+  seasonEnd,
+} from "./state.js";
 import { turnoverOf } from "./turnover.js";
 import { type Tx, addStock, emit, fail, nextId, removeStock, transfer } from "./tx.js";
 
@@ -144,6 +151,8 @@ export function acceptColleganza(tx: Tx, playerId: PlayerId, id: string): void {
   transfer(tx, holdAccount(g.investor), cashAccount(playerId), g.amount, "colleganza_fund", id);
   g.merchant = playerId;
   g.startedAt = tx.now;
+  // Never past the season's end: the ducats come back before the books close.
+  g.endsAt = Math.min(tx.now + g.days * DAY_MS, seasonEnd(tx.ctx));
   g.startTurnover = turnoverOf(tx.s as WorldState, playerId);
   emit(tx, "colleganza_accepted", playerId, { colleganza: id, investor: g.investor });
 }
@@ -165,7 +174,7 @@ export function settlePartners(tx: Tx): void {
   }
   for (const g of Object.values(tx.s.colleganze ?? {}).sort((a, b) => (a.id < b.id ? -1 : 1))) {
     if (g.settled || !g.merchant || g.startedAt === undefined) continue;
-    if (tx.now < g.startedAt + g.days * DAY_MS) continue;
+    if (tx.now < (g.endsAt ?? g.startedAt + g.days * DAY_MS)) continue;
     const merchant = g.merchant;
     const cash = tx.s.accounts[cashAccount(merchant)] ?? 0n;
     const gain = turnoverOf(tx.s as WorldState, merchant) - (g.startTurnover ?? 0n);

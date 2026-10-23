@@ -801,7 +801,7 @@ function dealsView(ctx: WorldContext, state: WorldState, playerId: string, now: 
       amount: g.amount,
       days: g.days,
       shareBps: g.shareBps,
-      endsAt: g.startedAt !== undefined ? g.startedAt + g.days * 86_400_000 : null,
+      endsAt: g.startedAt !== undefined ? (g.endsAt ?? g.startedAt + g.days * 86_400_000) : null,
       settled: !!g.settled,
       paid: g.paid ?? null,
     }));

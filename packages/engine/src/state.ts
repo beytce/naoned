@@ -424,6 +424,8 @@ export interface WorldState {
       offeredAt: number;
       merchant?: PlayerId;
       startedAt?: number;
+      /** Its term: `days` after it was taken, the season's end at the latest (absent: older saves). */
+      endsAt?: number;
       /** The merchant's net sales when it took the ducats. */
       startTurnover?: Deniers;
       settled?: boolean;
