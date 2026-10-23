@@ -1039,10 +1039,17 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       ids.length === 0
         ? []
         : await db
-            .select({ id: accounts.id, pseudo: accounts.pseudo, crest: accounts.crest })
+            .select({
+              id: accounts.id,
+              pseudo: accounts.pseudo,
+              crest: accounts.crest,
+              bot: accounts.isBot,
+            })
             .from(accounts)
             .where(inArray(accounts.id, ids));
-    const names = new Map(rows.map((r) => [r.id, { pseudo: r.pseudo, crest: r.crest }]));
+    const names = new Map(
+      rows.map((r) => [r.id, { pseudo: r.pseudo, crest: r.crest, bot: r.bot }]),
+    );
     return toJson({
       terra: terraView(world.ctx, world.current, account.id, world.now(), names),
     });

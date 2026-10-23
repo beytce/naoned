@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
-import { influenceEntries } from "../src/db/schema.js";
+import { accounts, influenceEntries } from "../src/db/schema.js";
 import { retention } from "../src/game/admin.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
@@ -116,7 +116,7 @@ describe("the Terraferma on the server", () => {
   it("shows the week's map, takes the merchant's commands and the ducats of the cap", async () => {
     await open({ terraferma: { live: true } });
     const ada = await player("ada@example.org");
-    await player("bob@example.org", "lagoon");
+    const bob = await player("bob@example.org", "lagoon");
     await world.execute({ type: "tick" });
     const before = await get(ada, "/api/game/terra");
     expect(before.terra.me).toBeNull();
@@ -128,6 +128,17 @@ describe("the Terraferma on the server", () => {
     expect(after.holders[me].pseudo).toBe("ada");
     expect(after.holders[me].id).toMatch(/^[0-9a-f-]{36}$/);
     expect(after.holders[me].cells).toBe(after.me.cells);
+    expect(after.holders[me].bot).toBe(false);
+    // A house of the computer is told as one wherever its name shows; Milan is no house.
+    await database.db.update(accounts).set({ isBot: true }).where(eq(accounts.pseudo, "bob"));
+    await place(bob);
+    const houses = (await get(ada, "/api/game/terra")).terra.holders as {
+      pseudo: string | null;
+      bot: boolean;
+      milan: boolean;
+    }[];
+    expect(houses.find((h) => h.pseudo === "bob")?.bot).toBe(true);
+    expect(houses.find((h) => h.milan)?.bot).toBe(false);
     // The cells along her border, with what a front pays for each.
     const border = Object.values(after.costs) as number[];
     expect(border.length).toBeGreaterThan(0);
@@ -180,12 +191,20 @@ describe("the Terraferma on the server", () => {
     const lobby = await get(ada, "/api/game/skirmish");
     expect(lobby.phase).toBe("lobby");
     expect(lobby.ranked).toBe(true);
+    // Who it opens with, told before it starts: two merchants, the field filled by condottieri.
+    expect(lobby.humans).toBe(2);
+    expect(lobby.humans + lobby.bots).toBe(world.ctx.settings.terraferma?.skirmish?.players);
     now += 61_000;
     const live = await get(ada, "/api/game/skirmish");
     expect(live.phase).toBe("playing");
     expect(live.ranked).toBe(true);
     expect(live.why).toBeNull();
     expect(live.view.holders.length).toBeGreaterThan(8);
+    const condottieri = live.view.holders.filter((h: { pseudo: string | null }) =>
+      h.pseudo?.startsWith("Condottiere"),
+    );
+    expect(condottieri.length).toBe(lobby.bots);
+    expect(condottieri.every((h: { bot: boolean }) => h.bot)).toBe(true);
     // A quarter of an hour later, the match is over and its rank paid on the week's map.
     now += 16 * 60_000;
     const done = await get(ada, "/api/game/skirmish");
@@ -195,6 +214,8 @@ describe("the Terraferma on the server", () => {
     expect(done.ranked).toBe(true);
     const mine = done.result.find((r: { me: boolean }) => r.me);
     expect(mine).toBeDefined();
+    expect(mine.bot).toBe(false);
+    expect(done.result.filter((r: { bot: boolean }) => r.bot).length).toBe(lobby.bots);
     const after = (await get(ada, "/api/game/terra")).terra.me.glory as number;
     expect(after).toBeGreaterThanOrEqual(before + mine.glory);
 

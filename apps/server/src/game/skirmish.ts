@@ -348,10 +348,24 @@ export class SkirmishHub {
       if (this.lobby) {
         // Ranked for the merchant if it opened with these merchants (more may come).
         const why = this.friendlyWhy(accountId, this.lobby.players.length, this.lobby.opensAt);
+        // Who it opens with: the merchants in, the computer's houses among them and those that
+        // will fill the field (as things stand: more merchants may come).
+        const joined = this.lobby.players;
+        const houses =
+          joined.length === 0
+            ? 0
+            : (
+                await this.db
+                  .select({ id: accounts.id })
+                  .from(accounts)
+                  .where(and(inArray(accounts.id, joined), eq(accounts.isBot, true)))
+              ).length;
         return {
           phase: "lobby" as const,
           opensAt: this.lobby.opensAt,
-          players: this.lobby.players.length,
+          players: joined.length,
+          humans: joined.length - houses,
+          bots: houses + Math.max(0, cfg.skirmish.players - joined.length),
           joined: this.lobby.players.includes(accountId),
           minutes: cfg.skirmish.minutes,
           ranked: why === null,
@@ -402,6 +416,7 @@ export class SkirmishHub {
       result: m.result
         ? m.result.ranking.map((r) => ({
             pseudo: names.get(r.id)?.pseudo ?? null,
+            bot: names.get(r.id)?.bot ?? false,
             me: r.id === accountId,
             cells: r.cells,
             glory: this.credited.get(r.id) ?? 0,
@@ -416,13 +431,19 @@ export class SkirmishHub {
     const ids = Object.keys(m.state.players).filter((id) => /^[0-9a-f-]{36}$/.test(id));
     if (ids.length > 0) {
       const rows = await this.db
-        .select({ id: accounts.id, pseudo: accounts.pseudo, crest: accounts.crest })
+        .select({
+          id: accounts.id,
+          pseudo: accounts.pseudo,
+          crest: accounts.crest,
+          bot: accounts.isBot,
+        })
         .from(accounts)
         .where(inArray(accounts.id, ids));
-      for (const r of rows) out.set(r.id, { pseudo: r.pseudo, crest: r.crest });
+      for (const r of rows) out.set(r.id, { pseudo: r.pseudo, crest: r.crest, bot: r.bot });
     }
     for (const id of Object.keys(m.state.players))
-      if (id.startsWith("bot:")) out.set(id, { pseudo: `Condottiere ${id.slice(4)}`, crest: null });
+      if (id.startsWith("bot:"))
+        out.set(id, { pseudo: `Condottiere ${id.slice(4)}`, crest: null, bot: true });
     return out;
   }
 }
