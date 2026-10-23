@@ -1430,7 +1430,23 @@ export const fr = {
       fondaco: "Dogana",
       you: "Vous",
       quota: (buy: string, sell: string) =>
-        `Dogana aujourd'hui : encore ${buy} à acheter, ${sell} à lui vendre.`,
+        `Dogana aujourd'hui, pour cette marchandise : encore ${buy} à acheter, ${sell} à lui vendre.`,
+      /** What an order right away can take now, from the book and the Dogana's quota. */
+      nowMax: (buy: number, sell: number) =>
+        `Tout de suite : jusqu'à ${buy} à l'achat, ${sell} à la vente (offres du carnet dans l'écart et quota de la Dogana).`,
+      /** The bounds of an order right away, on each side. */
+      bounds: (cost: string | null, proceeds: string | null, tax: number) =>
+        [
+          cost ? `Coût max. à l'achat : ${cost}` : null,
+          proceeds ? `Recette min. à la vente : ${proceeds} (taxe ${tax} % déduite)` : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      /** A purchase lowers the net sales, the ranking. */
+      rankCost: (amount: string) => `Acheter : −${amount} sur vos ventes nettes (classement).`,
+      rules:
+        "Tout de suite : au meilleur prix du carnet. À mon prix : votre offre attend un preneur.",
+      more: "En savoir plus",
       dogana: (pct: number) => `Cours de la Dogana : ${pct} % du prix de référence`,
       fondacoHelp:
         "La Dogana, la douane de la République, achète et vend chaque ressource de base en quantité limitée par marchand et par jour. Son cours suit l'offre et la demande : il monte quand les marchands lui achètent plus qu'ils ne lui vendent, baisse dans le cas contraire, et revient peu à peu au prix de référence.",
