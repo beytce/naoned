@@ -388,7 +388,7 @@ export function Game(props: {
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), toast.tone === "error" ? 4000 : 6000);
+    const t = setTimeout(() => setToast(null), toast.tone === "error" ? 4000 : 3500);
     return () => clearTimeout(t);
   }, [toast, setToast]);
 
@@ -666,8 +666,9 @@ export function Game(props: {
           className={
             toast.tone === "error"
               ? "fixed inset-x-4 top-[max(5rem,calc(env(safe-area-inset-top)+4.5rem))] z-50 mx-auto max-w-md animate-rise"
-              : // News at the foot, over nothing it would keep from a tap: it goes by itself.
-                "pointer-events-none fixed inset-x-4 bottom-[max(6rem,calc(env(safe-area-inset-bottom)+5.5rem))] z-50 mx-auto max-w-md animate-rise"
+              : // News over the top of the screen, where a sheet has its title rather than its
+                // buttons; it keeps no tap and goes by itself.
+                "pointer-events-none fixed inset-x-4 top-[max(0.75rem,env(safe-area-inset-top))] z-50 mx-auto max-w-md animate-rise"
           }
         >
           <button

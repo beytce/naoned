@@ -1351,7 +1351,7 @@ export const fr = {
       },
       /** What the fattore sent while away. */
       fattore: (qty: number, what: string, city: string, paid: string | null, pct: number) =>
-        `Le fattore a envoyé ${qty} ${what.toLowerCase()} à ${city}${paid ? ` (${paid}, −${pct} %)` : " (en route)"}`,
+        `Le fattore a envoyé ${qty} unité${qty > 1 ? "s" : ""} ${/^[aeiouyéèêh]/i.test(what) ? "d'" : "de "}${what.toLowerCase()} à ${city}${paid ? ` (${paid}, −${pct} %)` : " (en route)"}`,
       earned: "Gagné",
       commerce: "Commerce",
       nothing: "Rien de vendu depuis votre dernière visite.",
@@ -1541,7 +1541,7 @@ export const fr = {
         const verb =
           side === "sell" ? (filled > 1 ? "vendus" : "vendu") : filled > 1 ? "achetés" : "acheté";
         if (filled >= requested)
-          return `${side === "sell" ? "Vente" : "Achat"} : ${filled} ${what.toLowerCase()} pour ${amount}.`;
+          return `${side === "sell" ? "Vente" : "Achat"} : ${filled} unité${filled > 1 ? "s" : ""} ${/^[aeiouyéèêh]/i.test(what) ? "d'" : "de "}${what.toLowerCase()} pour ${amount}.`;
         const why =
           reason === "quota"
             ? "quota de la Dogana atteint pour aujourd'hui"
