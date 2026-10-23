@@ -1,5 +1,6 @@
 import {
   type Command,
+  type Trade,
   freeBatches,
   hasPass,
   isNation,
@@ -494,29 +495,34 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const a = action.parse(req.body);
     if (a.type === "collectAndRestart" || a.type === "collectAll") {
       const outcome = await harvest(world, account.id, a.type === "collectAndRestart");
+      if (!outcome)
+        return reply.code(409).send({ error: "stale_state", ...((await view(account)) as object) });
       return { ...((await view(account)) as object), outcome: toJson(outcome) };
     }
     // An order "right away": what it really traded, told to the merchant (a partial fill or none
-    // at all goes through without an error).
-    const before = a.type === "instantOrder" ? tradeMark(world, account.id, a.resource) : null;
+    // at all goes through without an error). Why fewer is read from the book just before.
     const depth =
       a.type === "instantOrder"
         ? instantDepth(world.ctx, world.current, account.id, a.resource, a.side, world.now())
         : null;
     const commands = toCommands(a, account.id, world);
     let error: string | undefined;
+    const trades: Trade[] = [];
     for (const cmd of commands) {
       const res = await world.execute(cmd);
       if (!res.ok) {
         error = res.error;
         break;
       }
+      trades.push(...(res.effects?.trades ?? []));
     }
     if (error) return reply.code(422).send({ error, ...((await view(account)) as object) });
-    if (a.type === "instantOrder" && before) {
-      const after = tradeMark(world, account.id, a.resource);
-      const filled = Math.abs(after.stock - before.stock);
-      const amount = after.cash > before.cash ? after.cash - before.cash : before.cash - after.cash;
+    if (a.type === "instantOrder") {
+      // The order's own trades: units filled, and the ducats paid (or received, net of tax).
+      const mine = trades.filter((t) => (a.side === "buy" ? t.buyerId : t.sellerId) === account.id);
+      const filled = mine.reduce((n, t) => n + t.quantity, 0);
+      const gross = mine.reduce((n, t) => n + t.price * BigInt(t.quantity), 0n);
+      const amount = a.side === "buy" ? gross : gross - mine.reduce((n, t) => n + t.tax, 0n);
       const outcome = {
         kind: "instant" as const,
         side: a.side,
@@ -1116,15 +1122,6 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   });
 }
 
-/** A merchant's stock of a good and its cash, to tell what an order traded. */
-function tradeMark(world: GameWorld, playerId: string, resource: string) {
-  const s = world.current;
-  return {
-    stock: s.inventories[playerId]?.[resource]?.available ?? 0,
-    cash: s.accounts[`cash:${playerId}`] ?? 0n,
-  };
-}
-
 /**
  * One tap for a short session: collect every workshop, then (with `restart`) fill every queue
  * with what the stock allows (raw producers first). Saved as one transaction. Returns what was
@@ -1141,7 +1138,13 @@ async function harvest(world: GameWorld, playerId: string, restart: boolean) {
     batches: number;
     inputs: Record<string, number>;
   }[] = [];
-  await world.batch(({ act, state, now }) => {
+  let accepted = 0;
+  const saved = await world.batch(({ act: decide, state, now }) => {
+    const act = (command: Command) => {
+      const ok = decide(command);
+      if (ok) accepted++;
+      return ok;
+    };
     const mine = () => Object.values(state().buildings).filter((b) => b.playerId === playerId);
     const stockOf = () => state().inventories[playerId] ?? {};
     const before = stockOf();
@@ -1176,6 +1179,8 @@ async function harvest(world: GameWorld, playerId: string, restart: boolean) {
       }
     }
   }, playerId);
+  // Something was done but not saved (the state moved meanwhile): nothing happened.
+  if (accepted > 0 && saved === 0) return null;
   return { kind: "harvest" as const, harvested, started };
 }
 

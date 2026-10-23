@@ -93,6 +93,14 @@ describe("an order right away", () => {
     expect(first.outcome.filled).toBeLessThan(30);
     expect(first.outcome.reason).toBe("quota");
     expect(BigInt(first.outcome.amount)).toBeGreaterThan(0n);
+    // Told from the order's own trades, as journaled.
+    const sold = await database.db.execute(
+      sql`select coalesce(sum(quantity), 0)::int as n, coalesce(sum(price * quantity - tax), 0)::text as paid
+        from trades where seller_id = ${first.view.player.id}`,
+    );
+    const row = (sold as unknown as { rows: { n: number; paid: string }[] }).rows[0];
+    expect(first.outcome.filled).toBe(row?.n);
+    expect(first.outcome.amount).toBe(row?.paid);
     // Its line is gone from the book once the quota is used, and the best bid with it.
     expect(first.view.book.bread.bids.some((l: { by: string }) => l.by === "market_maker")).toBe(
       false,
