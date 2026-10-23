@@ -1288,7 +1288,18 @@ export const fr = {
     welcome: {
       kicker: "Absent",
       title: "Bon retour au comptoir",
-      slept: "Votre comptoir s'est mis en sommeil : vos ouvriers n'ont pas mangé ni connu la faim.",
+      slept: "Votre comptoir s'est mis en sommeil : vos ouvriers n'ont ni mangé ni connu la faim.",
+      /** The week closed while away: where the merchant finished, and its title. */
+      week: {
+        title: (n: number) => `Semaine ${n + 1}`,
+        rank: (rank: number, award: string | null) =>
+          `Vous terminez ${rank}${rank === 1 ? "er" : "e"}${award ? ` — ${award}` : ""}`,
+        gain: (amount: string) => `${amount} de ventes nettes dans la semaine`,
+        award: "Le titre entre à votre palmarès, visible de tous les marchands.",
+      },
+      /** What the fattore sent while away. */
+      fattore: (qty: number, what: string, city: string, paid: string | null, pct: number) =>
+        `Le fattore a envoyé ${qty} ${what.toLowerCase()} à ${city}${paid ? ` (${paid}, −${pct} %)` : " (en route)"}`,
       earned: "Gagné",
       commerce: "Commerce",
       nothing: "Rien de vendu depuis votre dernière visite.",

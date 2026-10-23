@@ -408,6 +408,9 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
         .where(and(eq(players.worldId, world.id), eq(players.accountId, account.id)));
       const now = world.now();
       if (row?.lastSeenAt && now - row.lastSeenAt.getTime() >= WELCOME_AFTER_MS) {
+        // What fell due while away (a delivery arrived, a week closed) is settled first, so the
+        // summary counts it rather than the next minute's tick.
+        await world.execute({ type: "tick" });
         welcome = await welcomeBack(
           db,
           world.id,

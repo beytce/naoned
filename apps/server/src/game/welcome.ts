@@ -1,4 +1,5 @@
 import {
+  TURNOVER_SALES,
   type WorldContext,
   type WorldState,
   capOf,
@@ -32,12 +33,31 @@ export async function welcomeBack(
   now: number,
 ) {
   const cash = cashAccount(playerId);
+  // Every sale the ranking counts, and the rewards of the ledger and the guilds.
+  const reasons = [
+    ...TURNOVER_SALES,
+    "mission_reward",
+    "guild_dividend",
+    "guild_payout",
+    "decree_share",
+  ];
   const income = rowsOf<{ reason: string; total: string }>(
     await db.execute(sql`
       select reason, sum(amount)::text as total from ledger_entries
       where world_id = ${worldId} and to_account = ${cash} and at > ${since.toISOString()}::timestamptz
-        and reason in ('city_sale', 'delivery', 'trade', 'contract_reward', 'family_order_reward', 'project_delivery', 'market_maker_buy', 'mission_reward')
+        and reason in (${sql.join(
+          reasons.map((r) => sql`${r}`),
+          sql`, `,
+        )})
       group by reason`),
+  );
+  // The week closed while away, if any: the latest results.
+  const [week] = rowsOf<{ data: { week: number; rank: number; gain: string; award?: string } }>(
+    await db.execute(sql`
+      select data from notifications
+      where world_id = ${worldId} and account_id = ${playerId}::uuid and kind = 'week'
+        and created_at > ${since.toISOString()}::timestamptz
+      order by created_at desc limit 1`),
   );
   const notices = rowsOf<{ kind: string; n: number }>(
     await db.execute(sql`
@@ -57,6 +77,18 @@ export async function welcomeBack(
   for (const d of Object.values(state.deliveries ?? {})) {
     if (d.playerId === playerId && d.outcome !== "en_route" && d.arriveAt > from) road.arrived++;
   }
+  // What the fattore sent meanwhile: the goods left the stock without the merchant.
+  const commissionBps = ctx.settings.deliveries.fattore?.commissionBps ?? 0;
+  const fattore = Object.values(state.deliveries ?? {})
+    .filter((d) => d.playerId === playerId && d.fattore && d.departAt > from)
+    .sort((a, b) => a.departAt - b.departAt)
+    .map((d) => ({
+      city: d.route.split(":")[1] ?? "",
+      resource: d.resource,
+      quantity: d.loaded,
+      paid: d.outcome === "delivered" ? (d.paid ?? 0n) : null,
+      commissionBps,
+    }));
   const dormantAfter = ctx.settings.dormancy.afterHours * 3_600_000;
   return {
     terra: terraWhileAway(ctx, state, playerId, from),
@@ -65,6 +97,15 @@ export async function welcomeBack(
     readyBatches: ready,
     notices: Object.fromEntries(notices.map((r) => [r.kind, Number(r.n)])),
     road,
+    week: week
+      ? {
+          week: Number(week.data.week),
+          rank: Number(week.data.rank),
+          gain: String(week.data.gain ?? "0"),
+          award: week.data.award ?? null,
+        }
+      : null,
+    fattore,
     /** The counting house slept (no hunger) for part of the absence. */
     slept: dormantAfter > 0 && now - since.getTime() > dormantAfter,
   };

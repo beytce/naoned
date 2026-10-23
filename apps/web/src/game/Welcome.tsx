@@ -43,6 +43,20 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
           </div>
           <h3 className="mt-1 font-display text-2xl font-extrabold uppercase">{t.title}</h3>
         </div>
+        {/* The week closed while away: its ceremony comes first. */}
+        {data.week && (
+          <section className="space-y-1 cut border border-gold/60 bg-gold/10 p-3">
+            <Label className="text-gold">{t.week.title(data.week.week)}</Label>
+            <p className="font-display text-lg font-extrabold">
+              {t.week.rank(
+                data.week.rank,
+                data.week.award ? (fr.game.week.awards[data.week.award] ?? null) : null,
+              )}
+            </p>
+            <p className="text-sm text-cream-dim">{t.week.gain(d(data.week.gain))}</p>
+            {data.week.award && <p className="text-sm text-gold">{t.week.award}</p>}
+          </section>
+        )}
         {data.slept && <p className="text-sm text-lagoon">{t.slept}</p>}
         {/* The commerce: what the counting house earned, by source. */}
         <section className="space-y-2 cut bg-night-3 p-3 ring-1 ring-inset ring-line">
@@ -50,7 +64,9 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
             <Label>{t.commerce}</Label>
             <Big className="text-2xl text-lagoon">+{d(total)}</Big>
           </div>
-          {income.length > 0 || (data.road && data.road.arrived > 0) ? (
+          {income.length > 0 ||
+          (data.road && data.road.arrived > 0) ||
+          (data.fattore?.length ?? 0) > 0 ? (
             <ul className="space-y-1.5">
               {income.map(([reason, v]) => (
                 <Line key={reason} mark="◎" tone="text-cream">
@@ -61,6 +77,17 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
               {data.road && data.road.arrived > 0 && (
                 <Line mark="➜">{t.road.arrived(data.road.arrived)}</Line>
               )}
+              {data.fattore?.map((f, i) => (
+                <Line key={`fattore-${i}`} mark="⚑" tone="text-cream-dim">
+                  {t.fattore(
+                    f.quantity,
+                    props.names.resource(f.resource),
+                    props.names.city(f.city),
+                    f.paid !== null ? d(f.paid) : null,
+                    f.commissionBps / 100,
+                  )}
+                </Line>
+              ))}
             </ul>
           ) : (
             <p className="text-sm text-cream-dim">{t.nothing}</p>
