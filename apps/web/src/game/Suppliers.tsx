@@ -4,6 +4,7 @@ import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { Rules, Sheet } from "../ui.js";
 import type { GameProps } from "./Game.js";
+import { MerchantName } from "./Name.js";
 import { gameApi } from "./api.js";
 import type { SupplierPerson, SuppliersView } from "./types.js";
 
@@ -48,11 +49,18 @@ export function SuppliersSheet(props: GameProps) {
                 <ResourceIcon code={l.resource} size={28} />
                 <span className="flex-1 font-semibold">{props.names.resource(l.resource)}</span>
                 {l.holder ? (
-                  <span className="flex items-center gap-1.5 text-sm">
+                  <span className="flex min-w-0 items-center gap-1.5 text-sm">
                     <Crest crest={crestOf(l.holder)} size={22} />
-                    <span className={l.holder.me ? "text-gold" : "text-cream"}>
-                      {l.holder.me ? t.you : (l.holder.pseudo ?? "—")}
-                    </span>
+                    {l.holder.me ? (
+                      <span className="text-gold">{t.you}</span>
+                    ) : (
+                      <MerchantName
+                        pseudo={l.holder.pseudo}
+                        bot={l.holder.bot}
+                        fallback="—"
+                        className="text-cream"
+                      />
+                    )}
                   </span>
                 ) : (
                   <span className="label">{t.vacant}</span>
@@ -61,8 +69,9 @@ export function SuppliersSheet(props: GameProps) {
               <ol className="mt-2 space-y-0.5 text-xs text-cream-dim">
                 {l.top.map((p, i) => (
                   <li key={p.id} className={`flex justify-between ${p.me ? "text-gold" : ""}`}>
-                    <span>
-                      {i + 1}. {p.me ? t.you : (p.pseudo ?? "—")}
+                    <span className="flex min-w-0 items-center gap-1">
+                      <span className="shrink-0">{i + 1}.</span>
+                      {p.me ? t.you : <MerchantName pseudo={p.pseudo} bot={p.bot} fallback="—" />}
                     </span>
                     <span className="tabular-nums">{t.units(p.units)}</span>
                   </li>

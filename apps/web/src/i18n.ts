@@ -2109,8 +2109,9 @@ export const fr = {
       interrupted: skirmishInterrupted,
       open: "Lancer une escarmouche",
       join: "Rejoindre",
-      lobby: (players: number, time: string) =>
-        `${players} marchand${players > 1 ? "s" : ""} inscrit${players > 1 ? "s" : ""} · départ dans ${time} ; les places vides vont aux condottieri.`,
+      /** Who it opens with, told before entering: « 2 marchands · 6 PNJ · départ dans 0:45 ». */
+      lobby: (humans: number, bots: number, time: string) =>
+        `${humans} marchand${humans > 1 ? "s" : ""} · ${bots} PNJ · départ dans ${time}${bots > 0 ? " ; un marchand qui arrive prend la place d'un condottiere." : "."}`,
       playing: (time: string) =>
         `En cours · fin dans ${time}. Touchez une terre au bord des vôtres pour attaquer.`,
       watching: "Une escarmouche est en cours : regardez-la, la prochaine s'ouvre ensuite.",
@@ -2320,10 +2321,11 @@ export const fr = {
     /** The rival of the week, under the rank on the map. */
     rival: {
       someone: "Un marchand",
-      chase: (name: string, gap: string | null) =>
-        gap ? `Rival : ${name}, +${gap}` : `Rival : ${name}, à égalité`,
-      chased: (name: string, gap: string | null) =>
-        gap ? `Talonné par ${name}, −${gap}` : `Talonné par ${name}, à égalité`,
+      /** Before the name, then after it: « Rival : Comm884 · PNJ, +120 D ». */
+      chase: "Rival :",
+      chased: "Talonné par",
+      gap: (ahead: boolean, gap: string | null) =>
+        gap ? `, ${ahead ? "+" : "−"}${gap}` : ", à égalité",
       characters: {
         producer: "le producteur",
         artisan: "l'artisan",

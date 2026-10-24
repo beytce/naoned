@@ -74,6 +74,8 @@ const FORECAST_CELLS = 12;
 export interface TerraName {
   pseudo: string | null;
   crest: unknown;
+  /** A house of the computer (a bot account, or a skirmish's condottiere). */
+  bot: boolean;
 }
 
 export function terraView(
@@ -148,6 +150,7 @@ export function terraView(
       id: isNation(id) ? null : id,
       pseudo: isNation(id) ? null : (names.get(id)?.pseudo ?? null),
       crest: isNation(id) ? null : (names.get(id)?.crest ?? null),
+      bot: !isNation(id) && (names.get(id)?.bot ?? false),
       me: id === playerId,
       ally: allies.has(id),
       milan: isNation(id),

@@ -3,6 +3,7 @@ import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { Qty, Rules, Segmented, Sheet, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
+import { merchantLabel } from "./Name.js";
 import { d } from "./format.js";
 import { have } from "./workshops.js";
 
@@ -10,7 +11,8 @@ const t = fr.game.deals;
 
 type Tab = "commissions" | "colleganze" | "bank";
 
-const who = (props: GameProps, id: string) => props.people[id] ?? t.someone;
+const who = (props: GameProps, id: string) =>
+  merchantLabel(props.people[id] ?? null, props.bots.has(id), t.someone);
 
 /** On the Comptoir: the deals between merchants, and a door to them. */
 export function DealsTile(props: GameProps) {

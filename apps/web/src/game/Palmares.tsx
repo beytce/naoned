@@ -3,6 +3,7 @@ import { Crest, type CrestData } from "../art/crest.js";
 import { Medal } from "../art/icons.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Panel, Ribbon, Sheet, Stat } from "../ui.js";
+import { MerchantName } from "./Name.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
 import type { Palmares } from "./types.js";
@@ -130,11 +131,10 @@ export function PlayerPalmares({
             {data.crest && <Crest crest={data.crest} size={52} />}
             <div className="min-w-0">
               <Label>{fr.game.palmares.title}</Label>
-              <h3 className="truncate font-display text-xl font-extrabold">
-                {data.pseudo ?? fr.game.anonymous}
+              <h3 className="flex font-display text-xl font-extrabold">
+                <MerchantName pseudo={data.pseudo} bot={data.bot} />
               </h3>
             </div>
-            {data.bot && <Badge tone="ghost">{fr.game.npc}</Badge>}
           </div>
           <PalmaresView data={data.palmares} />
         </div>
