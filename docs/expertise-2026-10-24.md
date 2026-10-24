@@ -95,6 +95,14 @@ Trois experts en jeux mobile et PC persistants, de la famille de Hades' Star, on
 
 **Peut partir à tout moment, car sans effet sur les règles :**
 - **E2-2, trois convocations d'escarmouche par jour.** Aujourd'hui, la salle d'attente dure 60 s et exige 2 humains : une partie classée n'arrive presque jamais.
+- **E2-5, la Condotta, une Étoile Rouge vénitienne.** Le chef l'avait refusée ; **le porteur l'a remise dans le plan le 24 octobre**. Elle passe après E2-2 et E2-4.
+  - **La partie :** de 1 à 4 marchands alliés, posés au centre, contre 2 ou 3 nations qui partent des bords. On joue sur le moteur des escarmouches (`skirmishConfig` avec `nations` et `teams`, `teamMode`). Pour gagner, il faut tenir Padoue et au moins 35 % des cases à la fin.
+  - **Les niveaux :** 12 par compte (`accounts.condottaLevel`). Les troupes des nations valent `base × (1 + 0,15 × (niveau − 1))`, et gagner un niveau ouvre le suivant. Un groupe joue au plus haut niveau ouvert à tous ses membres. Les niveaux 9 à 12 sont réglés pour 2 ou 3 joueurs : seul, on plafonne vers le niveau 8.
+  - **L'entrée :** par les convocations d'E2-2, avec l'option « avec ma compagnie » (E2-8). On peut aussi jouer seul à tout moment, sans attendre personne.
+  - **Ce que le chef reprochait, et la réponse :**
+    - *Une récompense économique gagnée par la guerre :* la « lettre de la Muda » est retirée. La Condotta ne donne ni ducats, ni marchandises, ni accès à la Muda, ni Gloire. Elle rapporte un grade cosmétique au profil, de *Condottiere di ventura* à *Capitano generale*, et l'événement `condotta_won` pour les missions de la Maison. Ce plafond est vérifié par un test.
+    - *12 minutes de guerre dans un jeu de sessions de 3 minutes :* la partie est réglée sur 8 minutes, dans `worlds.settings`.
+  - **Critères :** une partie dure au plus 8 minutes dans l'e2e. `pnpm sim --terra` montre qu'un joueur seul gagne au niveau 8 et perd au niveau 10 sur 5 graines. La Gloire et le classement de la semaine ne bougent pas.
 - **E2-4, des PNJ alliés qui secourent, ripostent et parlent.** Ils ne donnent jamais de ducats, et un humain a au plus un PNJ allié.
 - **E2-8, les compagnies.** De 2 à 6 amis, recrutés par lien d'invitation, sans trésor ni pouvoir économique. La compagnie survit au changement de mois.
 - **E2-10, les titres de fin de mois.** Capitano generale et Gonfalone.
@@ -134,7 +142,6 @@ Trois experts en jeux mobile et PC persistants, de la famille de Hades' Star, on
 | Idée | Se déclenche quand |
 | --- | --- |
 | Ligues hebdomadaires (E2-7, E1-9) | ≥ 60 humains actifs sur une semaine |
-| La Condotta, des Étoiles Rouges vénitiennes (E2-5) | ≥ 30 % des actifs jouent une escarmouche par semaine |
 | Théâtres de 40 marchands (E2-11) | 30 humains actifs dans la Terraferme, ou le test de charge |
 | Privilèges d'ouverture (E1-10) | Influence médiane non dépensée ≥ 100 à J30 |
 | L'élection du Doge (E2-10) | Alias normalisés et ≥ 50 votants |
@@ -146,14 +153,15 @@ Trois experts en jeux mobile et PC persistants, de la famille de Hades' Star, on
 
 | Règle | Levée par | Pourquoi |
 | --- | --- | --- |
-| Le gel des mécaniques | E1-3, E1-4, E1-6, E1-7, E2-6, E2-9, E3-10 | Sans croissance par la demande ni renouvellement mensuel, rien ne fait revenir à J30. |
+| Le gel des mécaniques | E1-3, E1-4, E1-6, E1-7, E2-5, E2-6, E2-9, E3-10 | Sans croissance par la demande ni renouvellement mensuel, rien ne fait revenir à J30. |
+| « Étoiles rouges écartées » (IDEAS.md) | E2-5, sur décision du porteur | Un ballot de Faraj est une minuterie de butin, pas une activité qu'on joue ensemble. La Condotta est le seul mode coopératif jouable sur un serveur vide. |
 | « Chacun pour soi, pas de guildes » (décision du 17 octobre) | E2-8 | Les groupes d'amis sont le premier moteur de rétention des jeux persistants. Ici, la compagnie n'a aucun pouvoir économique. |
 | Deux clauses du Pass dans CLAUDE.md : quota de Pass gagnable au classement, et `pnpm sim --pass 0.2` comme condition de paiement | E3-9 | Un Pass purement cosmétique (« Mécène ») rend la question du pay-to-win sans objet. Le Pass n'est plus donné au classement (au changement de mois s'il y a déjà des joueurs). |
 | Interface en français seulement | E3-8 | La campagne vise des communautés anglophones. |
 
-## Les 12 décisions qui reviennent au porteur
+## Les 12 décisions du porteur : toutes validées le 24 octobre 2026
 
-Chaque décision est donnée avec la recommandation du chef.
+Le porteur a suivi chaque recommandation du chef, rappelée ci-dessous. Il a aussi remis la Condotta (E2-5) dans le plan, contre l'avis du chef.
 
 1. **Les fondaci, et le retrait des entrepôts (E1-3) :** oui, avec le paquet de règles du lot 2.
 2. **Couper prêts et entrepôts avant le lancement (E1-5) :** oui.
