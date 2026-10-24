@@ -1256,3 +1256,25 @@ Mesure : `pnpm --filter @comptoirs/simulator terra --humans 5`, sur 5 graines. L
 | 5 | oui | non | 26 → 60 |
 
 Un Signore PNJ 5 semaines sur 5 avant, 0 sur 5 après. Les 5 marchands reçoivent 60 Influence par semaine (20 + 12 + 12 + 8 + 8) au lieu de 24,8 en moyenne, soit environ +7 chacun. L'écart se réduit quand le nombre de marchands grandit : à 40 marchands, il est nul. `pnpm sim` (commerce) ne change pas : ses marchands simulés ne sont pas marqués comme PNJ.
+
+## Les missions de la Maison ne parlent plus de l'ancienne Campagne (24 octobre 2026, lot 0, E2-3)
+
+Cinq missions du tableau de Venise attendaient des événements que seule l'ancienne Campagne envoyait : `levy_collected`, `march_sent`, `assault_won`, `land_defended` et `work_built`. Or la Campagne est éteinte depuis que la Terraferme est en service. En moyenne, 2,9 missions par tableau ne pouvaient donc pas être faites : 9,4 Influence perdues sur 31,8 espérées.
+
+Ces cinq missions sont remplacées par celles de la Terraferme prévues par docs/plan-terraferme.md, toutes du groupe `terra` :
+
+| Mission | Événement | Nombre | Influence |
+| --- | --- | --- | --- |
+| Poser son comptoir | `terra_placed` | 1 | 2 |
+| Prendre des cases | `terra_cells_taken`, somme de `count` | 15 | 3 |
+| Prendre une ville | `terra_cells_taken`, somme de `cities` | 1 | 4 |
+| Bâtir une Rocca | `terra_built`, `kind: rocca` | 1 | 3 |
+| Envoyer des troupes à un allié | `terra_troops_sent` | 1 | 3 |
+
+- **Deux nouveaux événements.** `terra_cells_taken` est un seul événement par marchand et par avance de la carte, avec le nombre de cases prises et le nombre de villes, et non un événement par case. `terra_troops_sent` est adressé à l'émetteur, à côté de `terra_troops_received`.
+- **Une mission peut maintenant additionner un champ de l'événement (`sum`)** au lieu de compter un par événement.
+- **Le tirage tient `groupMax`.** Au plus 2 missions de la Terraferme par tableau : un pur marchand en garde toujours 8 de commerce sur 10.
+- **L'espérance reste celle d'avant**, environ 31 Influence par tableau, mais tout est faisable désormais.
+- **Un test de réglages vérifie que chaque événement du tableau de Venise est bien émis** par le moteur, en dehors de la Campagne.
+
+`pnpm sim` ne change pas : les marchands simulés ne réclament pas l'Influence.

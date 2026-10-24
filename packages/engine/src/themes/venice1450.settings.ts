@@ -1134,12 +1134,36 @@ export const venice1450Settings: WorldSettingsInput = {
         { id: "vehicle", event: "vehicle_upgraded", count: 1, influence: 3 },
         { id: "chests", event: "daily_chest", count: 2, influence: 3 },
         { id: "bales", event: "bale_opened", count: 4, influence: 2 },
-        { id: "levy", event: "levy_collected", count: 3, influence: 2 },
-        { id: "marches", event: "march_sent", count: 3, influence: 3 },
-        { id: "assault", event: "assault_won", count: 1, influence: 4 },
-        { id: "defence", event: "land_defended", count: 1, influence: 4 },
-        { id: "work", event: "work_built", count: 1, influence: 3 },
+        // The Terraferma's, optional: two at most on a board, so that a pure merchant always has
+        // eight of trade (24 October 2026: five missions of the old campaign could not be done).
+        { id: "terra_place", event: "terra_placed", group: "terra", count: 1, influence: 2 },
+        {
+          id: "terra_cells",
+          event: "terra_cells_taken",
+          sum: "count",
+          group: "terra",
+          count: 15,
+          influence: 3,
+        },
+        {
+          id: "terra_city",
+          event: "terra_cells_taken",
+          sum: "cities",
+          group: "terra",
+          count: 1,
+          influence: 4,
+        },
+        {
+          id: "terra_rocca",
+          event: "terra_built",
+          filter: { kind: "rocca" },
+          group: "terra",
+          count: 1,
+          influence: 3,
+        },
+        { id: "terra_aid", event: "terra_troops_sent", group: "terra", count: 1, influence: 3 },
       ],
+      groupMax: { terra: 2 },
     },
     spend: {
       // No rush of a delivery since the UX audit of 19 October 2026: waiting is the game, not a

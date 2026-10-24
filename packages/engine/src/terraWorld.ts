@@ -138,7 +138,9 @@ export function advanceTerraWorld(tx: Tx): TerraState | null {
   if (!cfg) return null;
   const map = terra(tx, cfg);
   const end = campaignWeekEnd(tx.ctx, tx.s.terra?.week ?? 0);
+  const seen = map.history?.cell.length ?? 0;
   advanceTerra(map, cfg, Math.min(tx.now, end));
+  tellCellsTaken(tx, map, seen);
   payHarvests(tx, map);
   warnBattle(tx, cfg, map);
   if (map.closed && !map.closedSeen) {
@@ -147,6 +149,27 @@ export function advanceTerraWorld(tx: Tx): TerraState | null {
     payClose(tx, cfg, tx.s.terra?.week ?? 0, map);
   }
   return map;
+}
+
+/**
+ * The cells the merchants' fronts took since the history's line `from`, one event a merchant
+ * (cells and cities), for the house's missions.
+ */
+function tellCellsTaken(tx: Tx, map: TerraState, from: number): void {
+  const h = map.history;
+  if (!h || h.cell.length <= from) return;
+  const by = new Map<string, { count: number; cities: number }>();
+  for (let k = from; k < h.cell.length; k++) {
+    const id = h.ids[h.holder[k] ?? -1];
+    if (id === undefined || isNation(id) || !tx.s.players[id]) continue;
+    const t = by.get(id) ?? { count: 0, cities: 0 };
+    t.count += 1;
+    if (map.map.city[h.cell[k] ?? -1]) t.cities += 1;
+    by.set(id, t);
+  }
+  for (const [id, t] of [...by].sort(([a], [b]) => (a < b ? -1 : 1))) {
+    emit(tx, "terra_cells_taken", id, t);
+  }
 }
 
 /** The land's whole units go into the merchants' stock, the routes' ducats into their purse. */
@@ -422,6 +445,7 @@ export function applyTerra(
     case "terraSend":
       sendTroops(map, cfg, id, cmd.to, cmd.count, now);
       emit(tx, "terra_troops_received", cmd.to, { from: id, count: cmd.count });
+      emit(tx, "terra_troops_sent", id, { to: cmd.to, count: cmd.count });
       break;
     case "terraBuild": {
       const price = cfg.buildings[cmd.kind]?.price;

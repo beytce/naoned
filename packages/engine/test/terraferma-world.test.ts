@@ -54,6 +54,18 @@ function freeCell(w: World): number {
   return i;
 }
 
+/** A neutral cell next to the merchant's land. */
+function border(w: World, id: string): number {
+  const map = w.state.terra?.map;
+  if (!map) throw new Error("no map");
+  const i = map.owner.findIndex(
+    (o, k) =>
+      o === null && map.map.land[k] && hexNeighbors(map.map, k).some((n) => map.owner[n] === id),
+  );
+  if (i < 0) throw new Error("no border");
+  return i;
+}
+
 function joined(w: World, ...ids: string[]) {
   for (const id of ids) w.do({ type: "join", playerId: id, region: "terraferma" });
   w.do({ type: "tick" });
@@ -94,6 +106,19 @@ describe("the Terraferma in the world", () => {
     joined(poor, "b");
     expect(error(act(poor, { type: "terraRaise", playerId: "b" }))).toBe("insufficient_funds");
     expect(poor.state.terra?.map.players.b?.boughtCap).toBeUndefined();
+  });
+
+  it("counts the cells each merchant's fronts take, and the cities, once per merchant", () => {
+    const w = live();
+    w.at(10 * HOUR);
+    joined(w, "a");
+    act(w, { type: "terraFront", playerId: "a", aim: border(w, "a"), shareBps: 8_000 });
+    const res = w.advance(3 * HOUR).do({ type: "tick" });
+    const taken = res.effects.events.filter((e) => e.type === "terra_cells_taken");
+    expect(taken).toHaveLength(1);
+    expect(taken[0]?.playerId).toBe("a");
+    expect(Number(taken[0]?.data?.count)).toBeGreaterThan(0);
+    expect(Number(taken[0]?.data?.cities)).toBeGreaterThanOrEqual(0);
   });
 
   it("closes the week: Influence by tier, and the Signore's decree for the next one", () => {
@@ -336,6 +361,17 @@ describe("diplomacy on the Terraferma", () => {
     expect(act(w, { type: "terraSignal", playerId: "a", kind: "attack", cell }).ok).toBe(true);
     const signals = w.state.terra?.map.signals ?? [];
     expect(signals.map((s) => s.kind)).toEqual(["help", "attack"]);
+  });
+
+  it("tells the sender of troops, for the house's missions", () => {
+    const w = live();
+    joined(w, "a", "b");
+    act(w, { type: "terraAlly", playerId: "a", other: "b" });
+    act(w, { type: "terraAccept", playerId: "b", from: "a" });
+    const res = w.do({ type: "terraSend", playerId: "a", to: "b", count: 10 } as Command);
+    const sent = res.effects.events.find((e) => e.type === "terra_troops_sent");
+    expect(sent?.playerId).toBe("a");
+    expect(sent?.data).toEqual({ to: "b", count: 10 });
   });
 
   it("lets allies give each other ducats, through the books, within a day's limit", () => {

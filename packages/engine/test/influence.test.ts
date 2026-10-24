@@ -71,6 +71,35 @@ describe("the house's missions", () => {
     expect(next.missions.every((m) => m.progress === 0 && !m.claimed)).toBe(true);
   });
 
+  it("may count a quantity of the event rather than the event itself", () => {
+    const pool = [{ id: "sold", event: "city_sale", sum: "quantity", count: 3, influence: 2 }];
+    const house = { ...testHouse, missions: { ...testHouse.missions, perBoard: 1, pool } };
+    const w = new World(makeContext({ house }));
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    w.give("a", "bread", 3);
+    w.do({ type: "sellToCity", playerId: "a", city: "venezia", resource: "bread", quantity: 3 });
+    expect(houseMissionsFor(w.ctx, w.state, "a", w.now).missions[0]?.done).toBe(true);
+  });
+
+  it("never draw more of a group than its cap on a board", () => {
+    const pool = [
+      { id: "sell", event: "city_sale", count: 1, influence: 3 },
+      { id: "offer", event: "order_placed", count: 1, influence: 2 },
+      { id: "t1", event: "terra_placed", group: "terra", count: 1, influence: 2 },
+      { id: "t2", event: "terra_built", group: "terra", count: 1, influence: 3 },
+      { id: "t3", event: "terra_troops_sent", group: "terra", count: 1, influence: 3 },
+    ];
+    const missions = { ...testHouse.missions, perBoard: 3, pool, groupMax: { terra: 1 } };
+    const w = new World(makeContext({ house: { ...testHouse, missions } }));
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    for (let board = 0; board < 40; board++) {
+      const drawn = houseMissionsFor(w.ctx, w.state, "a", w.now).missions;
+      expect(drawn).toHaveLength(3);
+      expect(drawn.filter((m) => m.id.startsWith("t")).length).toBe(1);
+      w.advance(84 * HOUR);
+    }
+  });
+
   it("are none in a world without them", () => {
     const w = new World(makeContext());
     w.do({ type: "join", playerId: "a", region: "terraferma" });

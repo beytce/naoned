@@ -1,3 +1,6 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   expectedBaleValue,
@@ -79,6 +82,27 @@ describe("settings", () => {
       expect(value).toBeGreaterThan(700);
       expect(value).toBeLessThan(800);
     }
+  });
+});
+
+describe("the house's missions of Venice", () => {
+  it("listen only to events the engine still sends with the Terraferma live", () => {
+    const pool = parseSettings(venice1450Settings).house?.missions?.pool ?? [];
+    const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "src");
+    // The old campaign is off once the Terraferma is live: its events do not count.
+    const sources = readdirSync(dir)
+      .filter((f) => f.endsWith(".ts") && f !== "campaign.ts")
+      .map((f) => readFileSync(join(dir, f), "utf8"))
+      .join("\n");
+    const sent = new Set([...sources.matchAll(/emit\(\s*tx,\s*"([a-z_]+)"/g)].map((m) => m[1]));
+    for (const m of pool) expect(sent, m.id).toContain(m.event);
+  });
+
+  it("draw two of the Terraferma's at most, eight of trade at least", () => {
+    const missions = parseSettings(venice1450Settings).house?.missions;
+    expect(missions?.groupMax.terra).toBe(2);
+    const trade = (missions?.pool ?? []).filter((m) => m.group === undefined).length;
+    expect(trade).toBeGreaterThanOrEqual((missions?.perBoard ?? 0) - 2);
   });
 });
 
