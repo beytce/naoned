@@ -2,10 +2,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Lorenzo } from "../art/scenes.js";
 import { fr } from "../i18n.js";
-import { Big, Label, Slab, clock } from "../ui.js";
+import { LorenzoCard, Slab, clock } from "../ui.js";
 import { affordable, have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
 import { bringOnce, browserPage, isCovered, outOfSheet } from "./coachSight.js";
+import { minutesLabel } from "./format.js";
 import { store } from "./store.js";
 
 const STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "mission"] as const;
@@ -61,8 +62,15 @@ function atHome(props: GameProps, step: CoachStep): CoachStep {
 /** A workshop's production: the counter, its workshops, the workshop, then "Produire". */
 function produceAt(props: GameProps, id: string, building: string, text?: string): CoachStep {
   const c = fr.game.coach;
-  if (props.sheet === `produce:${id}`)
-    return { text: text ?? c.produce(building), target: "sheet-produce" };
+  if (props.sheet === `produce:${id}`) {
+    // The batch's own time: a few seconds in the guide's first ones, its recipe's after.
+    const b = props.view.buildings.find((x) => x.id === id);
+    const recipe = props.catalog.buildings.find((x) => x.type === b?.type)?.recipe;
+    const time = b?.fastSeconds
+      ? fr.game.coach.seconds(b.fastSeconds)
+      : minutesLabel(recipe?.durationMinutes ?? 0);
+    return { text: text ?? c.produce(building, time), target: "sheet-produce" };
+  }
   if (props.sheet === "workshops")
     return { text: text ?? c.produceTap(building), target: `produce-${id}` };
   return atHome(props, { text: text ?? c.openWorkshops(building), target: "panel-workshops" });
@@ -173,7 +181,7 @@ function nextStep(props: CoachProps): CoachStep {
           : 0,
       )
       .sort((a, b) => a - b)[0];
-    if (running) return { text: fr.game.coach.wait, waitUntil: running };
+    if (running) return { text: fr.game.coach.wait(running - now), waitUntil: running };
     const raw = view.buildings.find((b) => !b.job && b.canStart > 0 && isRaw(b.type));
     if (raw) return produceAt(props, raw.id, names.building(raw.type));
   }
@@ -182,9 +190,19 @@ function nextStep(props: CoachProps): CoachStep {
     const material = toBuy(props);
     if (!material) return { text: fr.game.coach.emptyMarket, skip: "skipMarketBuy" };
     if (props.sheet === `trade:${material}`)
-      return { text: fr.game.coach.buy(names.resource(material)), target: "sheet-buy" };
+      return {
+        text: fr.game.coach.buy(
+          fr.game.workshop.some(material, names.resource(material)) ?? names.resource(material),
+        ),
+        target: "sheet-buy",
+      };
     if (props.sheet === "rialto")
-      return { text: fr.game.coach.buy(names.resource(material)), target: `row-${material}` };
+      return {
+        text: fr.game.coach.buy(
+          fr.game.workshop.some(material, names.resource(material)) ?? names.resource(material),
+        ),
+        target: `row-${material}`,
+      };
     if (props.selection?.kind === "city" && props.selection.code === "venezia")
       return { text: fr.game.coach.goRialto, target: "panel-rialto" };
     return { text: fr.game.coach.goRialto, target: "city-venezia" };
@@ -250,10 +268,20 @@ export function Coach(props: CoachProps) {
       const hidden = el && box && !out ? isCovered(el, box, browserPage()) : false;
       setCovered(hidden);
       setRect(hidden || out ? null : box);
+      // The one gold button while the guide speaks is the one it points at (index.css).
+      for (const lit of document.querySelectorAll("[data-coach-lit]"))
+        if (lit !== el) lit.removeAttribute("data-coach-lit");
+      el?.setAttribute("data-coach-lit", "");
+      document.body.dataset.coaching = "1";
     };
     find();
     const t = setInterval(find, 250);
-    return () => clearInterval(t);
+    return () => {
+      clearInterval(t);
+      delete document.body.dataset.coaching;
+      for (const lit of document.querySelectorAll("[data-coach-lit]"))
+        lit.removeAttribute("data-coach-lit");
+    };
   }, [step.target, step.follow, step.text, hidden, finished, bring]);
   const text = covered
     ? fr.game.coach.covered
@@ -299,7 +327,8 @@ export function Coach(props: CoachProps) {
           {/* The room around the target dimmed: a cut-out whose shadow covers the screen. */}
           <div
             className="pointer-events-none fixed z-[45] rounded-md transition-all duration-200"
-            style={{ ...box, boxShadow: "0 0 0 9999px rgba(10, 8, 14, 0.62)" }}
+            // Light: the sheet it points into is dimmed already, its words must stay legible.
+            style={{ ...box, boxShadow: "0 0 0 9999px rgba(10, 8, 14, 0.35)" }}
           />
           {/* The ring on its own element: its pulse must not wipe the dimming's shadow. */}
           <div
@@ -312,25 +341,12 @@ export function Coach(props: CoachProps) {
       <div
         className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-[calc(1rem+env(safe-area-inset-bottom))] lg:bottom-28"}`}
       >
-        <div className="cut bg-info p-0.5 shadow-xl shadow-black/40" data-coach-bubble>
-          <div className="cut bg-night-2 px-3.5 pb-2.5 pt-3">
-            <div className="flex gap-3">
-              <Lorenzo size={40} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <Label className="text-info">{fr.game.coach.name}</Label>
-                  <span className="meta shrink-0 whitespace-nowrap">
-                    {fr.game.coach.step(index, STEPS.length)}
-                  </span>
-                </div>
-                <p className="mt-1 text-sm leading-snug">{text}</p>
-                {step.waitUntil && (
-                  <Big className="mt-2 text-3xl text-lagoon">
-                    {clock(step.waitUntil - props.now)}
-                  </Big>
-                )}
-              </div>
-            </div>
+        <LorenzoCard
+          bubble
+          portrait={<Lorenzo size={40} />}
+          name={fr.game.coach.name}
+          aside={fr.game.coach.step(index, STEPS.length)}
+          foot={
             <div className="mt-2 flex items-center justify-between">
               <div className="flex gap-1">
                 {STEPS.map((s, k) => (
@@ -374,8 +390,15 @@ export function Coach(props: CoachProps) {
                 </button>
               )}
             </div>
-          </div>
-        </div>
+          }
+        >
+          <p className="mt-1 text-sm leading-snug">{text}</p>
+          {step.waitUntil && (
+            <p className="meta mt-1">
+              {fr.game.coach.readyIn(clock(Math.max(0, step.waitUntil - props.now)))}
+            </p>
+          )}
+        </LorenzoCard>
       </div>
     </>,
     document.body,

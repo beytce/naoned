@@ -110,6 +110,8 @@ La carte est l'écran de jeu : le HUD la borde sans la couvrir. Avant d'y ajoute
 
 Les **Avis** (la cloche) rassemblent ce qui était en bandeaux : jour et acte de la saison, dernier sprint, Criée, gazette ; puis le carnet du jour (premiers pas, tâches, Livre de compte), la saison (palier, maîtrise, ballots) et les nouvelles.
 
+Lorenzo parle dans une seule carte (`LorenzoCard`, `ui.tsx`), dans le guide comme à la première visite de la Terraferme : un cadre lapis adouci, son portrait scellé d'un cachet de cire, son nom en crème. Le voile du guide est léger (0,35) : la fenêtre qu'il désigne reste lisible. Pendant qu'il parle, sa cible est le seul bouton doré de l'écran, les autres passent en fantôme (`data-coach-lit`). Ses textes disent vrai : la durée du lot (« 30 secondes » au premier, « 30 min » ensuite), « quelques secondes » seulement sous une minute.
+
 Le guide de Lorenzo vise des objets de la carte (`home`, `city-<code>`, `cart-<id>`) puis les boutons du panneau (`panel-harvest`, `panel-workshops`, `panel-cargo`, `panel-go`, `panel-rialto`) et la cloche (`hud-notices`) ; sa bulle passe au-dessus des feuilles.
 
 ## Illustrations

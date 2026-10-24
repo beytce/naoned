@@ -5,7 +5,7 @@ import { MAP_TEXT, P } from "../../art/palette.js";
 import { Lorenzo } from "../../art/scenes.js";
 import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
-import { HudChip, Segmented, Sheet, Slab, clock } from "../../ui.js";
+import { HudChip, LorenzoCard, Segmented, Sheet, Slab, clock } from "../../ui.js";
 import type { GameProps } from "../Game.js";
 import { MerchantName, merchantLabel } from "../Name.js";
 import { gameApi } from "../api.js";
@@ -2019,38 +2019,33 @@ export function TerraIntro({ onGuide, top }: { onGuide: () => void; top: number 
     <div
       data-panel
       style={{ top: top + 8 }}
-      className="pointer-events-auto absolute inset-x-3 z-30 mx-auto flex max-w-sm animate-pop gap-3 cut border border-info/70 bg-night-2/95 p-3 shadow-lg"
+      className="pointer-events-auto absolute inset-x-3 z-30 mx-auto max-w-sm animate-pop"
     >
-      <Lorenzo size={44} />
-      <div className="min-w-0 flex-1 space-y-2">
-        <p className="flex items-baseline justify-between gap-2">
-          <span className="label text-info">{k.who}</span>
-          <span className="meta">
-            {step + 1}/{k.steps.length}
-          </span>
-        </p>
-        <p className="text-sm">{k.steps[step]}</p>
-        <div className="flex items-center justify-between gap-2">
-          <Slab
-            tone="text"
-            size="sm"
-            className="-ml-2"
-            onClick={() => {
-              done();
-              onGuide();
-            }}
-          >
-            {k.guide}
-          </Slab>
-          <button
-            type="button"
-            className="hit label rounded-full bg-info px-3 py-1 text-ink"
-            onClick={() => (last ? done() : setStep(step + 1))}
-          >
-            {last ? k.done : k.next}
-          </button>
-        </div>
-      </div>
+      <LorenzoCard
+        portrait={<Lorenzo size={40} />}
+        name={k.who}
+        aside={`${step + 1}/${k.steps.length}`}
+        foot={
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <Slab
+              tone="text"
+              size="sm"
+              className="-ml-2"
+              onClick={() => {
+                done();
+                onGuide();
+              }}
+            >
+              {k.guide}
+            </Slab>
+            <Slab size="sm" tone="ghost" onClick={() => (last ? done() : setStep(step + 1))}>
+              {last ? k.done : k.next}
+            </Slab>
+          </div>
+        }
+      >
+        <p className="mt-1 text-sm leading-snug">{k.steps[step]}</p>
+      </LorenzoCard>
     </div>
   );
 }

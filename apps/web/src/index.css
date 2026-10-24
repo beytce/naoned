@@ -832,3 +832,22 @@
 [data-zoom="1"] .map-marker[data-tier="2"] {
   display: none;
 }
+
+/*
+ * While Lorenzo points at a button, it is the screen's one gold button: the others turn ghost
+ * (Coach.tsx marks its target data-coach-lit).
+ */
+body[data-coaching] button[data-slab="gold"]:not([data-coach-lit]) .slab-face {
+  background-color: rgb(var(--night-4));
+  color: rgb(var(--cream));
+}
+body[data-coaching] button[data-slab="gold"]:not([data-coach-lit]) .slab-shadow {
+  background-color: rgb(var(--line));
+}
+body[data-coaching] button[data-slab="ghost"][data-coach-lit] .slab-face {
+  background-color: rgb(var(--gold));
+  color: rgb(var(--ink));
+}
+body[data-coaching] button[data-slab="ghost"][data-coach-lit] .slab-shadow {
+  background-color: rgb(var(--gold-deep));
+}

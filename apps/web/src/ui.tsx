@@ -68,15 +68,16 @@ export function Slab(props: {
       }}
       disabled={props.disabled}
       data-coach={props.coach}
+      data-slab={props.tone ?? "gold"}
       aria-label={props.label}
       className={`group relative isolate inline-flex pb-1 pr-1 font-display font-extrabold uppercase tracking-wide disabled:pointer-events-none disabled:opacity-35 ${props.size === "sm" ? "before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']" : ""} ${props.className ?? ""}`}
     >
       <span
         aria-hidden="true"
-        className={`bevel absolute inset-0 left-1 top-1 -z-10 ${tone.shadow}`}
+        className={`slab-shadow bevel absolute inset-0 left-1 top-1 -z-10 ${tone.shadow}`}
       />
       <span
-        className={`bevel flex w-full items-center justify-center text-center transition-transform duration-100 ease-out group-hover:brightness-105 group-active:translate-x-[3px] group-active:translate-y-[3px] ${size} ${tone.face}`}
+        className={`slab-face bevel flex w-full items-center justify-center text-center transition-transform duration-100 ease-out group-hover:brightness-105 group-active:translate-x-[3px] group-active:translate-y-[3px] ${size} ${tone.face}`}
       >
         <span>{unitsKept(props.children)}</span>
       </span>
@@ -107,6 +108,59 @@ export function unitsKept(children: ReactNode): ReactNode {
   if (Array.isArray(children))
     return children.map((c, i) => (typeof c === "string" ? keep(c, i) : c));
   return children;
+}
+
+/**
+ * Lorenzo speaking, the same card wherever he does (the guide, the Terraferma's first visit): a
+ * thin lapis frame, his portrait sealed with red wax, his name in cream, his words, then the
+ * card's own foot.
+ */
+export function LorenzoCard({
+  portrait,
+  name,
+  aside,
+  children,
+  foot,
+  bubble,
+}: {
+  portrait: ReactNode;
+  name: ReactNode;
+  /** At the top right: the step, « 1/3 ». */
+  aside?: ReactNode;
+  children: ReactNode;
+  foot?: ReactNode;
+  /** Marks the guide's own bubble (data-coach-bubble). */
+  bubble?: boolean;
+}) {
+  return (
+    <div
+      className="cut bg-info/60 p-0.5 shadow-xl shadow-black/40"
+      data-coach-bubble={bubble ? "" : undefined}
+    >
+      <div className="cut bg-night-2 px-3.5 pb-2.5 pt-3">
+        <div className="flex gap-3">
+          <span className="relative h-fit shrink-0">
+            {portrait}
+            {/* His seal: red wax, an L pressed in. */}
+            <span
+              aria-hidden="true"
+              className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-vermilion-deep font-display text-[9px] font-extrabold text-cream ring-1 ring-vermilion"
+            >
+              L
+            </span>
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <Label className="text-cream">{name}</Label>
+              {aside && <span className="meta shrink-0 whitespace-nowrap">{aside}</span>}
+            </div>
+            {children}
+          </div>
+        </div>
+        {foot}
+      </div>
+    </div>
+  );
 }
 
 /**

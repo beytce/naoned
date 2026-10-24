@@ -1909,16 +1909,22 @@ export const fr = {
       tapHome: "Touchez votre comptoir, au centre de la carte : vos ateliers s'y trouvent.",
       openWorkshops: (building: string) =>
         `Lançons votre ${building.toLowerCase()} ! Ouvrez vos ateliers.`,
-      produce: (building: string) =>
-        `Touchez « Produire » : ce premier lot de votre ${building.toLowerCase()} sera prêt en 30 secondes.`,
-      wait: "Vos ouvriers s'activent. Patientez quelques secondes…",
+      /** The batch's own time: 30 seconds in the guide's first ones, 30 minutes after. */
+      produce: (building: string, time: string) =>
+        `Touchez « Produire » : ce lot de votre ${building.toLowerCase()} sera prêt dans ${time}.`,
+      seconds: (n: number) => `${n} secondes`,
+      readyIn: (time: string) => `Prêt dans ${time}`,
+      wait: (ms: number) =>
+        ms < 60_000
+          ? "Vos ouvriers s'activent. Patientez quelques secondes…"
+          : "Vos ouvriers s'activent : explorez la carte en attendant, je vous fais signe.",
       harvest: "C'est prêt ! Touchez « Récolter » : la marchandise rentre en stock.",
       transform: (building: string) =>
         `Une matière brute vaut peu. Transformez-la : lancez votre ${building.toLowerCase()}.`,
       sellCity: (resource: string) =>
         `Vendez vos ${resource.toLowerCase()} à la ville qui paie le mieux.`,
       goRoutes:
-        "Les villes passent commande : les pastilles dorées montrent celles que votre stock couvre. Touchez une charrette.",
+        "Les villes passent commande : la pastille d'une ville compte celles que votre stock couvre. Touchez une charrette.",
       deliver:
         "Ouvrez les cargaisons : cochez une commande que votre stock couvre, la ville paie à l'arrivée.",
       dispatch: "Touchez « Partir » (ou laissez filer le compte à rebours).",
@@ -1928,8 +1934,8 @@ export const fr = {
       firstPay: "Première paie",
       goRialto:
         "Pour grandir, il faut les matériaux d'une autre région. Touchez Venise, puis le Rialto.",
-      buy: (resource: string) =>
-        `Achetez quelques ${resource.toLowerCase()} : ils servent à améliorer vos ateliers.`,
+      /** « de l'argile », « des briques »: the good with its article. */
+      buy: (some: string) => `Achetez ${some} : cela sert à améliorer vos ateliers.`,
       emptyMarket:
         "Personne ne vend rien au Rialto pour l'instant et votre part de la Dogana est épuisée pour aujourd'hui. Passons, vous achèterez plus tard.",
       skip: "Passer",
