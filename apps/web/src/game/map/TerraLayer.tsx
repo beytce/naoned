@@ -1,11 +1,11 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CityIcon } from "../../art/cities.js";
 import { Crest, defaultCrest } from "../../art/crest.js";
 import { P } from "../../art/palette.js";
 import { Lorenzo } from "../../art/scenes.js";
 import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
-import { Segmented, Sheet, Slab, clock } from "../../ui.js";
+import { HudChip, Segmented, Sheet, Slab, clock } from "../../ui.js";
 import type { GameProps } from "../Game.js";
 import { MerchantName, merchantLabel } from "../Name.js";
 import { gameApi } from "../api.js";
@@ -26,6 +26,7 @@ import {
   tones,
 } from "../terraShapes.js";
 import type { SkirmishStatus, TerraAction, TerraView } from "../types.js";
+import { HudTip, usePresence, useTip } from "./HudTips.js";
 import { orbStyle } from "./Markers.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
 import type { MapMarker, Selection } from "./WorldMap.js";
@@ -1096,267 +1097,192 @@ function WarCounter({
 /** A time kept on one line when its sentence wraps (« 23 h 56 », never « 23 / h 56 »). */
 const unbroken = (time: string) => time.replace(/ /g, "\u00a0");
 
-/** Under the purse on the right: the troops, the glory and rank, the week's clock. */
+/**
+ * Under the purse on the right, two blocks at most (the owner's word of 24 October 2026: the top
+ * right was unreadable): the troops, which open a card with the glory and the rank, and a plaque of
+ * two lines, what presses and when the week ends. The skirmishes, the week's replay and the way
+ * back onto the merchant's land are actions, at the thumb (TerraActions); the guide is the Help
+ * door's.
+ */
 export function TerraHud({
   v,
   now,
   regions,
-  onReplay,
-  onSkirmish,
-  onGuide,
   folded = false,
 }: {
   v: TerraView;
   now: number;
   /** The regions' names (the teams of a week in teams). */
   regions: { code: string; name: string }[];
-  /** Replays the week from its start (absent while it plays). */
-  onReplay?: () => void;
-  /** Opens the skirmishes (absent in one). */
-  onSkirmish?: () => void;
-  /** Opens the Terraferma's guide. */
-  onGuide?: () => void;
-  /** Under the skirmish's bar: the troops and the glory only, the lines of the week folded. */
+  /** Under the skirmish's bar: the troops only, the week's plaque folded. */
   folded?: boolean;
 }) {
   const me = v.me;
   const regionName = (code: string) => regions.find((r) => r.code === code)?.name ?? code;
+  const [tip, setTip] = useTip();
+  const { shown, leaving } = usePresence(tip, 120);
   return (
-    // In the HUD's right column, under the purse, as wide as it and 7rem at least (the week's
-    // clock on two lines; the name keeps its ten letters at 320 px): never over the left one.
-    <div className="flex min-w-[7rem] max-w-full flex-col items-end gap-1 self-stretch lg:min-w-0">
+    // In the HUD's right column, under the purse and no wider: the name keeps its ten letters.
+    <div className="flex min-w-0 max-w-full flex-col items-end gap-1 self-stretch">
       {me && (
-        <>
-          <span
-            title={t().troops}
+        <span className="relative">
+          <button
+            type="button"
             data-hud="troops"
-            className="hud-orb relative flex h-9 items-center gap-1.5 overflow-hidden rounded-full pl-2 pr-2.5"
+            aria-label={t().troopsTip.title}
+            aria-expanded={tip === "troops"}
+            onClick={() => setTip((k) => (k === "troops" ? null : "troops"))}
+            className="pointer-events-auto flex min-h-11 items-center"
           >
-            <span className="text-[15px] leading-none">⚔</span>
-            <span className="font-display text-sm font-extrabold tabular-nums text-cream">
-              {t().troopsLine(me.troops, me.cap)}
-            </span>
-            {me.troops < me.cap && me.recruit.perHour > 0 && (
+            <span className="hud-orb relative flex h-9 items-center gap-1 overflow-hidden rounded-full pl-2 pr-2.5 text-cream">
+              <span className="flex h-5 w-5 shrink-0 [&>svg]:h-5 [&>svg]:w-5">
+                <Icon.troops />
+              </span>
+              <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
+                {t().troopsLine(me.troops, me.cap)}
+              </span>
+              {/* How full the troops are: a thread of light at the foot of the pill. */}
               <span
-                className={`font-mono text-xs font-bold ${v.open ? "text-lagoon" : "text-cream-dim"}`}
-              >
-                {v.open
-                  ? t().perHour(me.recruit.perHour)
-                  : t().perHourAt(me.recruit.perHour, v.openHours.from)}
-              </span>
-            )}
-            {/* How full the troops are: a thread of light at the foot of the pill. */}
-            <span
-              className="absolute bottom-0 left-0 h-[3px] bg-lagoon transition-[width] duration-700"
-              style={{ width: `${Math.min(100, (me.troops / Math.max(1, me.cap)) * 100)}%` }}
-            />
-          </span>
-          <span
-            data-hud="glory"
-            className="hud-orb flex h-8 items-center rounded-full px-2.5 font-display text-[12px] font-extrabold tabular-nums text-gold"
-          >
-            {t().glory(me.glory, me.rank)}
-          </span>
-        </>
-      )}
-      {/*
-        On a phone, the week's clock on a plaque that opens the guide, and the skirmishes and the
-        replay as two rounds: a column no taller than the purse's two neighbours, never written
-        over the map. The plaque takes the column's width without widening it (the purse sets
-        it), so the merchant's name keeps its room. Short lines keep what the player must know:
-        the battle hour, the team and its win, Milan riding against him; the fronts' count and
-        the other rides are the map's to show.
-      */}
-      {!folded && (
-        <>
-          <NotePlaque v={v} now={now} onGuide={onGuide} regionName={regionName} />
-          {(onSkirmish || onReplay) && (
-            <span className="flex justify-end gap-1 lg:hidden">
-              {onSkirmish && (
-                <button
-                  type="button"
-                  data-hud="terra-skirmish"
-                  aria-label={
-                    v.open ? fr.game.skirmish.title : fr.game.skirmish.nightShort(v.openHours.from)
-                  }
-                  onClick={onSkirmish}
-                  className="pointer-events-auto flex h-11 w-11 items-center justify-center"
-                >
-                  <span
-                    className={`hud-orb flex h-9 w-9 items-center justify-center rounded-full text-[17px] leading-none ${v.open ? "text-vermilion" : "text-cream-dim"}`}
-                  >
-                    ⚔
-                  </span>
-                </button>
-              )}
-              {onReplay && (
-                <button
-                  type="button"
-                  data-hud="terra-replay"
-                  aria-label={fr.game.terraRecord.replay}
-                  onClick={onReplay}
-                  className="pointer-events-auto flex h-11 w-11 items-center justify-center"
-                >
-                  <span className="hud-orb flex h-9 w-9 items-center justify-center rounded-full text-[17px] leading-none text-info">
-                    ⟲
-                  </span>
-                </button>
-              )}
+                className="absolute bottom-0 left-0 h-[3px] bg-lagoon transition-[width] duration-700"
+                style={{ width: `${Math.min(100, (me.troops / Math.max(1, me.cap)) * 100)}%` }}
+              />
             </span>
+          </button>
+          {shown === "troops" && (
+            <HudTip
+              leaving={leaving}
+              onClose={() => setTip(null)}
+              content={{
+                title: t().troopsTip.title,
+                tone: "lagoon",
+                text: t().troopsTip.text,
+                lines: [
+                  { label: t().troopsTip.troops, value: t().troopsLine(me.troops, me.cap) },
+                  {
+                    label: t().troopsTip.recruit,
+                    value: v.open
+                      ? t().perHour(me.recruit.perHour)
+                      : t().perHourAt(me.recruit.perHour, v.openHours.from),
+                  },
+                  { label: t().troopsTip.glory, value: me.glory, tone: "gold" },
+                  { label: t().troopsTip.rank, value: t().troopsTip.rankOf(me.rank, v.players) },
+                ],
+              }}
+            />
           )}
-        </>
+        </span>
       )}
-      <span
-        data-hud="terra-note"
-        className="meta hidden min-w-0 max-w-full flex-col items-end text-right [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] lg:flex"
-      >
-        {me?.eliminatedAt != null && <span className="text-vermilion">{t().eliminated}</span>}
-        {!v.closed && v.placementEndsAt !== null && now < v.placementEndsAt && (
-          <span className="text-gold">{t().placing(unbroken(clock(v.placementEndsAt - now)))}</span>
-        )}
-        {!v.closed && v.truceEndsAt !== null && now < v.truceEndsAt && (
-          <span className="text-gold">{t().truce(unbroken(clock(v.truceEndsAt - now)))}</span>
-        )}
-        <span>{v.closed ? t().closed : t().closesIn(unbroken(clock(v.closesAt - now)))}</span>
-        {!v.open && !v.closed && <span className="text-lagoon">☾ {t().night}</span>}
-        {v.rules.team && <span className="text-info">{t().team(regionName(v.rules.team))}</span>}
-        {v.closed?.teams?.[0] && (
-          <span className="text-gold">{t().teamWon(regionName(v.closed.teams[0].team))}</span>
-        )}
-        {onGuide && (
-          <button
-            type="button"
-            onClick={onGuide}
-            className="pointer-events-auto inline-flex min-h-11 items-center justify-end font-display font-extrabold uppercase text-info underline underline-offset-2"
-          >
-            {fr.game.terraGuide.openShort}
-          </button>
-        )}
-        {onSkirmish && (
-          <button
-            type="button"
-            onClick={onSkirmish}
-            className="pointer-events-auto inline-flex min-h-11 items-center justify-end whitespace-nowrap font-display font-extrabold uppercase text-vermilion underline underline-offset-2"
-          >
-            {v.open ? `⚔ ${fr.game.skirmish.title}` : fr.game.skirmish.nightShort(v.openHours.from)}
-          </button>
-        )}
-        {onReplay && (
-          <button
-            type="button"
-            onClick={onReplay}
-            className="pointer-events-auto inline-flex min-h-11 items-center justify-end text-info underline underline-offset-2"
-          >
-            ⟲ {fr.game.terraRecord.replay}
-          </button>
-        )}
-        {v.battle && !v.closed && (
-          <span
-            className={
-              v.battle.on
-                ? "font-display font-extrabold uppercase text-vermilion"
-                : "text-cream-dim"
-            }
-          >
-            {v.battle.on ? t().battle.on(v.battle.to) : t().battle.at(v.battle.from)}
-          </span>
-        )}
-        {/* The map is alive: how many fronts march, and whom Milan rides against. */}
-        {!v.closed && v.fronts.length > 0 && (
-          <span className="text-info">{t().marching(v.fronts.length)}</span>
-        )}
-        {!v.closed &&
-          v.fronts
-            .filter((f) => v.holders[f.owner]?.milan)
-            .slice(0, 2)
-            .map((f) => (
-              <span key={f.id} className={f.threat ? "text-vermilion" : "text-cream"}>
-                {t().milanRides(
-                  holderName(v, f.owner),
-                  f.against < 0 ? null : holderName(v, f.against),
-                )}
-              </span>
-            ))}
-      </span>
+      {!folded && <NotePlaque v={v} now={now} regionName={regionName} />}
     </div>
   );
 }
 
 /**
- * The week's clock on a phone: what comes next (the war, the battle, the night) and when the week
- * ends, the player's team and its win, Milan riding against him, on a dark plaque legible over
- * any land, opening the guide when touched.
+ * What presses on the Terraferma, on one line: the merchant out of the week, Milan riding against
+ * him, the battle under way, the placing or the truce, the night, the battle to come. Null when
+ * nothing does.
+ */
+function pressing(v: TerraView, now: number): { text: string; tone: string } | null {
+  const me = v.me;
+  if (v.closed) return null;
+  if (me?.eliminatedAt != null) return { text: t().eliminated, tone: "text-vermilion" };
+  const ride = v.fronts.find((f) => f.threat && v.holders[f.owner]?.milan);
+  if (ride) return { text: t().milanOnMeShort(holderName(v, ride.owner)), tone: "text-vermilion" };
+  if (v.battle?.on) return { text: t().battle.onShort(v.battle.to), tone: "text-vermilion" };
+  if (v.placementEndsAt !== null && now < v.placementEndsAt)
+    return { text: t().placingShort(unbroken(clock(v.placementEndsAt - now))), tone: "text-gold" };
+  if (v.truceEndsAt !== null && now < v.truceEndsAt)
+    return { text: t().truceShort(unbroken(clock(v.truceEndsAt - now))), tone: "text-gold" };
+  if (!v.open) return { text: `☾ ${t().nightShort}`, tone: "text-lagoon" };
+  if (v.battle) return { text: t().battle.atShort(v.battle.from), tone: "text-cream" };
+  return null;
+}
+
+/**
+ * The week on a dark plaque, two lines at most, legible over any land: what presses, then in
+ * smaller writing the team (a week in teams) and when the week ends, giving way item by item.
  */
 function NotePlaque({
   v,
   now,
-  onGuide,
   regionName,
 }: {
   v: TerraView;
   now: number;
-  onGuide?: () => void;
   regionName: (code: string) => string;
 }) {
-  const me = v.me;
-  const head =
-    me?.eliminatedAt != null ? (
-      <span className="text-vermilion">{t().eliminated}</span>
-    ) : !v.closed && v.placementEndsAt !== null && now < v.placementEndsAt ? (
-      <span className="text-gold">
-        {t().placingShort(unbroken(clock(v.placementEndsAt - now)))}
-      </span>
-    ) : !v.closed && v.truceEndsAt !== null && now < v.truceEndsAt ? (
-      <span className="text-gold">{t().truceShort(unbroken(clock(v.truceEndsAt - now)))}</span>
-    ) : v.battle?.on && !v.closed ? (
-      <span className="font-extrabold text-vermilion">{t().battle.onShort(v.battle.to)}</span>
-    ) : !v.open && !v.closed ? (
-      <span className="text-lagoon">☾ {t().nightShort}</span>
-    ) : v.battle && !v.closed ? (
-      <span className="text-cream-dim">{t().battle.atShort(v.battle.from)}</span>
-    ) : null;
-  // Milan riding against the player: the first such front, named once.
-  const ride = v.closed ? undefined : v.fronts.find((f) => f.threat && v.holders[f.owner]?.milan);
   const won = v.closed?.teams?.[0];
-  const body = (
-    <>
-      {head}
-      <span>{v.closed ? t().closed : t().closesIn(unbroken(clock(v.closesAt - now)))}</span>
-      {ride && (
-        <span className="font-extrabold text-vermilion">
-          {t().milanOnMeShort(holderName(v, ride.owner))}
-        </span>
-      )}
-      {v.rules.team && <span className="text-info">{t().teamShort(regionName(v.rules.team))}</span>}
-      {won && <span className="text-gold">{t().teamWonShort(regionName(won.team))}</span>}
-    </>
-  );
-  // As wide as the column, never widening it: the purse sets its width.
-  const plaque =
-    "flex w-0 min-w-full flex-col items-end rounded-lg bg-night/85 px-1.5 py-1 text-right text-[13px] leading-snug text-cream ring-1 ring-line/70 lg:hidden";
-  if (!onGuide)
-    return (
-      <span data-hud="terra-note" className={plaque}>
-        {body}
-      </span>
-    );
+  const head = won
+    ? { text: t().teamWonShort(regionName(won.team)), tone: "text-gold" }
+    : pressing(v, now);
+  const after = [
+    v.rules.team ? t().teamShort(regionName(v.rules.team)) : null,
+    v.closed ? t().closed : t().closesIn(unbroken(clock(v.closesAt - now))),
+  ].filter((x): x is string => x !== null);
   return (
-    <button
-      type="button"
+    <span
       data-hud="terra-note"
-      aria-label={fr.game.terraGuide.open}
-      onClick={onGuide}
-      className={`pointer-events-auto relative min-h-11 justify-center ${plaque}`}
+      // As wide as the column, never widening it: the purse sets it, the name keeps its letters.
+      className="flex w-0 min-w-full flex-col items-end rounded-lg bg-night/85 px-2 py-1 text-right leading-snug ring-1 ring-line/70"
     >
-      {body}
-      {/* The guide behind it, on a small round at its corner: no room taken from the lines. */}
+      {head && <span className={`text-[13px] font-semibold ${head.tone}`}>{head.text}</span>}
+      {/* One line high: what does not fit wraps out of sight, item by item. */}
       <span
-        aria-hidden="true"
-        className="absolute -left-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-info font-display text-[11px] font-extrabold leading-none text-ink"
+        data-hud-meta
+        className="flex h-[18px] flex-wrap justify-end gap-x-1.5 overflow-hidden text-[13px] leading-[18px] text-cream-dim tabular-nums"
       >
-        ?
+        {after.map((x, i) => (
+          <span key={x} className="whitespace-nowrap">
+            {i > 0 ? "· " : ""}
+            {x}
+          </span>
+        ))}
       </span>
-    </button>
+    </span>
+  );
+}
+
+/**
+ * The Terraferma's actions at the thumb, at the bottom right above the doors: the skirmishes and
+ * the week's replay, each a sign and a word, hidden as the doors are while a panel is up.
+ */
+export function TerraActions({
+  v,
+  onSkirmish,
+  onReplay,
+  extra,
+}: {
+  v: TerraView;
+  onSkirmish?: () => void;
+  onReplay?: () => void;
+  /** A round of the map's own (« Me centrer »). */
+  extra?: ReactNode;
+}) {
+  return (
+    <span className="flex items-center gap-2">
+      {extra}
+      {onSkirmish && (
+        <HudChip
+          hud="terra-skirmish"
+          icon={<Icon.skirmish />}
+          tone={v.open ? "vermilion" : "plain"}
+          label={v.open ? fr.game.skirmish.title : fr.game.skirmish.nightShort(v.openHours.from)}
+          onClick={onSkirmish}
+        >
+          {fr.game.skirmish.title}
+        </HudChip>
+      )}
+      {onReplay && (
+        <HudChip
+          hud="terra-replay"
+          icon={<Icon.week />}
+          label={fr.game.terraRecord.replay}
+          onClick={onReplay}
+        >
+          {fr.game.terraRecord.weekShort}
+        </HudChip>
+      )}
+    </span>
   );
 }
 
@@ -1788,7 +1714,7 @@ function Returns({ v }: { v: TerraView }) {
   const key = `terraReturnsSeen:${v.week}`;
   const [seen, setSeen] = useState(() => Number(store.get(key) ?? 0));
   const [folded, setFolded] = useState(false);
-  const fresh = (v.me?.returns ?? []).filter((r) => r.at > seen).slice(-3);
+  const fresh = (v.me?.returns ?? []).filter((r) => r.at > seen).slice(-2);
   const last = fresh.at(-1)?.at ?? 0;
   useEffect(() => {
     if (last === 0 || folded) return;
@@ -1796,8 +1722,9 @@ function Returns({ v }: { v: TerraView }) {
     return () => clearTimeout(id);
   }, [last, folded]);
   if (fresh.length === 0) return null;
+  // Above the doors and the actions at the thumb.
   const place =
-    "absolute bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 lg:bottom-28";
+    "absolute bottom-[calc(max(1rem,env(safe-area-inset-bottom))+9.5rem)] z-10 lg:bottom-28";
   if (folded)
     return (
       <button
@@ -2019,16 +1946,17 @@ export function TerraIntro({ onGuide, top }: { onGuide: () => void; top: number 
         </p>
         <p className="text-sm">{k.steps[step]}</p>
         <div className="flex items-center justify-between gap-2">
-          <button
-            type="button"
-            className="hit label text-info underline underline-offset-2"
+          <Slab
+            tone="text"
+            size="sm"
+            className="-ml-2"
             onClick={() => {
               done();
               onGuide();
             }}
           >
             {k.guide}
-          </button>
+          </Slab>
           <button
             type="button"
             className="hit label rounded-full bg-info px-3 py-1 text-ink"

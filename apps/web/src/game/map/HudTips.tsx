@@ -9,7 +9,7 @@ import { onBack } from "../back.js";
  * the map touched, the card fades away. One at a time.
  */
 
-export type TipKey = "cash" | "influence" | "bread";
+export type TipKey = "cash" | "influence" | "bread" | "troops";
 export type TipTone = "gold" | "gold-soft" | "cream" | "lagoon";
 
 export interface TipContent {

@@ -27,7 +27,7 @@ export const venice1450: Theme = {
     { code: "prepared_spices", name: "Épices préparées", chain: "spicery", tier: "finished" },
   ],
   regions: [
-    { code: "terraferma", name: "Terraferma", bonusResource: "wheat" },
+    { code: "terraferma", name: "Vénétie", bonusResource: "wheat" },
     { code: "lagoon", name: "Lagune", bonusResource: "clay" },
     { code: "dolomites", name: "Dolomites", bonusResource: "wood" },
   ],

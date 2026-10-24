@@ -64,6 +64,7 @@ import { ActionButton, ContextPanel } from "./Panel.js";
 import { SIDE_W, SideColumn } from "./SideColumn.js";
 import {
   SkirmishBar,
+  TerraActions,
   TerraHud,
   TerraIntro,
   TerraOverlay,
@@ -512,13 +513,14 @@ export function MapScreen(
       {
         top: 110,
         right: (panelUp ? 460 : 40) + (side ? SIDE_W : 0),
-        bottom: (campaign && !campaign.mine) || (terra && !terra.me) ? 170 : 120,
+        // The Terraferma's actions above the doors, at the right, stay clear too.
+        bottom: (campaign && !campaign.mine) || (terra && !terra.me) ? 170 : terra ? 180 : 120,
         left: 40,
       }
     : {
         top: Math.max(campaign || terra ? 160 : 150, hudBand),
         right: 12,
-        bottom: panelUp ? 200 : 100,
+        bottom: panelUp ? 200 : terra ? 156 : 100,
         left: 12,
       };
 
@@ -713,14 +715,16 @@ export function MapScreen(
           campaign ? (
             <CampaignHud f={campaign} now={now} />
           ) : terra ? (
-            <TerraHud
+            <TerraHud v={terra} now={now} regions={props.catalog.regions} folded={skirmishOn} />
+          ) : undefined
+        }
+        actions={
+          // Without a camp, the invitation to set one down is the only call at the foot.
+          terra?.me && !skirmishOn ? (
+            <TerraActions
               v={terra}
-              now={now}
-              regions={props.catalog.regions}
-              onReplay={week.playing || skirmishOn ? undefined : week.start}
-              onSkirmish={skirmishOn ? undefined : () => setSkirmishOn(true)}
-              onGuide={props.openTerraGuide}
-              folded={skirmishOn}
+              onSkirmish={() => setSkirmishOn(true)}
+              onReplay={week.playing ? undefined : week.start}
             />
           ) : undefined
         }
@@ -772,7 +776,10 @@ export function MapScreen(
       )}
       {side && <SideColumn props={props} onCity={goCity} />}
       {terra && absence.replaying && (
-        <span className="pointer-events-none absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+7.5rem)] z-10 -translate-x-1/2 animate-fade whitespace-nowrap rounded-full bg-night/80 px-3 py-1 font-mono text-xs uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line">
+        <span
+          style={{ top: Math.max(120, hudBand) + 8 }}
+          className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 animate-fade whitespace-nowrap rounded-full bg-night/80 px-3 py-1 font-mono text-xs uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line"
+        >
           {fr.game.terra.away}
         </span>
       )}
@@ -782,7 +789,8 @@ export function MapScreen(
           type="button"
           data-hud="terra-replaying"
           onClick={week.stop}
-          className="absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+7.5rem)] z-10 flex min-h-11 -translate-x-1/2 animate-fade items-center gap-2 whitespace-nowrap rounded-full bg-night/80 px-4 font-mono text-xs uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line"
+          style={{ top: Math.max(120, hudBand) + 8 }}
+          className="absolute left-1/2 z-10 flex min-h-11 -translate-x-1/2 animate-fade items-center gap-2 whitespace-nowrap rounded-full bg-night/80 px-4 font-mono text-xs uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line"
         >
           {fr.game.terraRecord.replaying}
           <span className="text-info">{fr.game.terraRecord.skip}</span>

@@ -86,7 +86,7 @@ export const fr = {
 
   region: {
     title: "Choisissez votre métier",
-    help: "Chaque région n'extrait que sa propre matière première : le blé en Terraferma, l'argile dans la Lagune, le bois dans les Dolomites. Pour le reste, il faudra commercer.",
+    help: "Chaque région n'extrait que sa propre matière première : le blé en Vénétie, l'argile dans la Lagune, le bois dans les Dolomites. Pour le reste, il faudra commercer.",
     bonus: (pct: number, resource: string) => {
       const name = resource.toLowerCase();
       return `+${pct} % ${/^[aeiouyéèêh]/.test(name) ? "d'" : "de "}${name}`;
@@ -489,13 +489,23 @@ export const fr = {
       closed: "Semaine close",
       night: "Nuit : les fronts reposent",
       troops: "Troupes",
-      troopsLine: (troops: number, cap: number) => `${troops} / ${cap}`,
+      /** The troops' card on the HUD: the glory and the rank live there. */
+      troopsTip: {
+        title: "Vos troupes",
+        text: "Vos terres recrutent chaque heure de jour, jusqu'au maximum. Chaque case prise rapporte de la Gloire.",
+        troops: "Troupes",
+        recruit: "Recrues",
+        glory: "Gloire",
+        rank: "Rang",
+        rankOf: (rank: number, of: number) => `${rank}${rank === 1 ? "er" : "e"} sur ${of}`,
+      },
+      troopsLine: (troops: number, cap: number) => `${troops}/${cap}`,
       perHour: (n: number) => `+${n}/h`,
       perHourAt: (n: number, from: number) => `☾ +${n}/h à ${from} h`,
       returns: {
         title: "Fronts rentrés",
         line: (against: string, cells: number, spent: number, back: number) =>
-          `${against} : ${cells} case${cells > 1 ? "s" : ""} prise${cells > 1 ? "s" : ""}, −${spent} troupes, ${back} revenue${back > 1 ? "s" : ""}`,
+          `${against} : +${cells} case${cells > 1 ? "s" : ""}, −${spent} troupes, ${back} rentrée${back > 1 ? "s" : ""}`,
         ok: "Compris",
       },
       glory: (glory: number, rank: number) => `${glory} Gloire · ${rank}${rank === 1 ? "er" : "e"}`,
@@ -2127,6 +2137,7 @@ export const fr = {
       week: (week: number, rank: number, of: number, glory: number, rating: number) =>
         `Semaine ${week} : ${rank}${rank === 1 ? "er" : "e"} sur ${of} · ${glory} Gloire · cote ${rating}`,
       replay: "Revoir la semaine",
+      weekShort: "Semaine",
       replaying: "Semaine rejouée",
       skip: "Passer",
     },

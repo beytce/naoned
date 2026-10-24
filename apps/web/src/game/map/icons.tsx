@@ -142,8 +142,8 @@ export const Icon = {
   /** The troops: a helmet (never the crossed swords, which are the bandits'). */
   troops: () => (
     <I>
-      <path d="M5 14 Q5 6 12 5 Q19 6 19 14 Z" />
-      <path d="M4 14 H20 M12 5 V3 M9.5 14 V18 Q12 20 14.5 18 V14" />
+      <path d="M6 16 V11 Q6 5 12 5 Q18 5 18 11 V16 L15 19 V13 H9 V19 Z" />
+      <path d="M12 13 V18 M12 5 Q14 2.5 18 3" />
     </I>
   ),
   /** A skirmish: a sword and its pennant. */

@@ -124,6 +124,7 @@ export function MapHud({
   workshopsReady,
   locks = {},
   right,
+  actions,
   onProfile,
   onNotices,
   onBales,
@@ -182,6 +183,8 @@ export function MapHud({
   locks?: { ranking?: string; layer?: string };
   /** Under the purse on the right, in place of the bread and the carts (the families' glory on the campaign). */
   right?: ReactNode;
+  /** A layer's actions at the thumb, at the bottom right above the doors, hidden with them. */
+  actions?: ReactNode;
   onProfile: () => void;
   onNotices: () => void;
   onBales: () => void;
@@ -311,8 +314,9 @@ export function MapHud({
           Two rounds high at most, never further down the map: the bell and the Rialto, then
           beside them the bales and Lorenzo when the guide is paused.
         */}
-        <div className="flex gap-2">
-          <span className="flex flex-col items-center gap-1.5">
+        {/* On the Terraferma, one row: the map starts higher. */}
+        <div className={`flex gap-2 ${layer === "terra" ? "items-start" : ""}`}>
+          <span className={`flex items-center gap-1.5 ${layer === "terra" ? "gap-2" : "flex-col"}`}>
             <Orb label={m.notices} onClick={onNotices} badge={notices} coach="hud-notices">
               {Icon.bell()}
             </Orb>
@@ -323,7 +327,9 @@ export function MapHud({
             )}
           </span>
           {(bales > 0 || guidePaused) && (
-            <span className="flex flex-col items-center gap-1.5">
+            <span
+              className={`flex items-center gap-1.5 ${layer === "terra" ? "gap-2" : "flex-col"}`}
+            >
               {guidePaused && (
                 <Orb label={m.resumeGuide} onClick={onResumeGuide} tone="gold">
                   <Lorenzo size={30} />
@@ -400,6 +406,14 @@ export function MapHud({
           {right}
         </div>
       </div>
+      {bottom && actions && (
+        <div
+          data-hud="actions"
+          className="pointer-events-none absolute bottom-[calc(max(1rem,env(safe-area-inset-bottom))+6.25rem)] right-3 z-10 lg:bottom-32 lg:right-[calc(var(--side,0px)+1.25rem)]"
+        >
+          {actions}
+        </div>
+      )}
       {bottom && (
         <nav className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex justify-center gap-4 lg:bottom-6 lg:right-[var(--side,0px)]">
           {/* The same four doors at the same places on every layer. */}
