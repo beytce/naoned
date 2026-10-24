@@ -227,6 +227,14 @@ export function cellAt(map: HexMap, land: boolean[], x: number, y: number): numb
 }
 
 /**
+ * Whether a replay of the week was recorded on the map shown: the same cells, one by one. Played on
+ * another (another week's, another world's), its cells would land anywhere.
+ */
+export function replayFits(initial: readonly number[], owner: readonly number[]): boolean {
+  return initial.length > 0 && initial.length === owner.length;
+}
+
+/**
  * The map as it stood with only the first `shown` of the changes made (the others undone, back
  * to who held the cell before): the frames of the replay of what a merchant missed.
  */

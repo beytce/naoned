@@ -560,6 +560,18 @@ async function midWeek(page, door, check, pseudo) {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.waitForTimeout(1200);
   await check("terraferme-jeudi-pc");
+  // A card of the HUD closes on Escape, as a window does.
+  const purse = page.locator("[data-hud] button[aria-label]").filter({ hasText: /\d/ }).first();
+  if ((await purse.count()) > 0) {
+    await purse.click();
+    await page.waitForTimeout(400);
+    if ((await page.locator(".hud-tip").count()) === 0)
+      throw new Error("terraferme-jeudi-pc: no card opened from the HUD");
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(400);
+    if ((await page.locator(".hud-tip").count()) > 0)
+      throw new Error("terraferme-jeudi-pc: Escape left the HUD's card open");
+  }
   if (phone) await page.setViewportSize(phone);
   await page.waitForTimeout(800);
   await page.unroute("**/api/game/terra");

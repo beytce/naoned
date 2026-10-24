@@ -2007,9 +2007,9 @@ export const fr = {
     terraIntro: {
       who: "Lorenzo",
       steps: [
-        "Bienvenue en Terraferme ! Touchez une terre libre pour poser votre camp : il prend la case et ses voisines, et vous êtes à l'abri 12 heures.",
-        "Pour vous étendre, touchez une terre au bord des vôtres, choisissez vos troupes avec le curseur, puis « Attaquer » : le front avance seul, même quand vous partez.",
-        "Revenez voir vos fronts : leur pastille dorée dit quand ils prennent la prochaine case. Et ce soir à 20 h, l'heure de bataille : tout va dix fois plus vite !",
+        "Touchez une terre libre pour poser votre camp : vous y êtes à l'abri 12 heures.",
+        "Touchez une terre au bord des vôtres, puis « Attaquer » : le front avance seul.",
+        "Ce soir à 20 h, l'heure de bataille : tout va dix fois plus vite !",
       ],
       next: "Suivant",
       done: "Compris",
@@ -2127,6 +2127,8 @@ export const fr = {
       week: (week: number, rank: number, of: number, glory: number, rating: number) =>
         `Semaine ${week} : ${rank}${rank === 1 ? "er" : "e"} sur ${of} · ${glory} Gloire · cote ${rating}`,
       replay: "Revoir la semaine",
+      replaying: "Semaine rejouée",
+      skip: "Passer",
     },
     /** A workshop in figures (margins at reference prices). */
     economics: {

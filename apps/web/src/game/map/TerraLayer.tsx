@@ -21,6 +21,7 @@ import {
   labelCell,
   neighbours,
   outline,
+  replayFits,
   replayed,
   tones,
 } from "../terraShapes.js";
@@ -310,17 +311,30 @@ export function useAbsence(
 export function useWeekReplay(v: TerraView | null | undefined): {
   view: TerraView | null | undefined;
   start: () => void;
+  /** Back to the map as it stands now. */
+  stop: () => void;
   playing: boolean;
 } {
   const [frame, setFrame] = useState<number[] | null>(null);
   const live = useRef(v);
   live.current = v;
+  const timers = useRef<{
+    tick?: ReturnType<typeof setInterval>;
+    end?: ReturnType<typeof setTimeout>;
+  }>({});
+  const stop = useCallback(() => {
+    clearInterval(timers.current.tick);
+    clearTimeout(timers.current.end);
+    setFrame(null);
+  }, []);
+  useEffect(() => stop, [stop]);
   const start = useCallback(() => {
     void gameApi
       .terraReplay()
       .then(({ replay }) => {
         const current = live.current;
         if (!replay || !current || replay.steps.length === 0) return;
+        if (!replayFits(replay.initial, current.owner)) return;
         // The replay's holders, as the view numbers them.
         const at = replay.holders.map((h) =>
           current.holders.findIndex((x) => (h.id ? x.id === h.id : x.nation === h.nation)),
@@ -342,13 +356,14 @@ export function useWeekReplay(v: TerraView | null | undefined): {
           setFrame([...owner]);
           if (f >= frames) {
             clearInterval(id);
-            setTimeout(() => setFrame(null), 1_500);
+            timers.current.end = setTimeout(() => setFrame(null), 1_500);
           }
         }, 160);
+        timers.current.tick = id;
       })
       .catch(() => undefined);
   }, []);
-  return { view: v && frame ? { ...v, owner: frame } : v, start, playing: !!frame };
+  return { view: v && frame ? { ...v, owner: frame } : v, start, stop, playing: !!frame };
 }
 
 export interface TerraShapes {
@@ -1766,32 +1781,61 @@ export function TerraPanel({
 
 /**
  * The merchant's fronts come home since the last look: what each took, spent and brought back,
- * one line each, until dismissed.
+ * one line each, in a short card above the doors. Left unread, it folds after a few seconds into
+ * a pill (« ↩ 2 ») that opens it again; « Compris » puts it away.
  */
 function Returns({ v }: { v: TerraView }) {
   const key = `terraReturnsSeen:${v.week}`;
   const [seen, setSeen] = useState(() => Number(store.get(key) ?? 0));
+  const [folded, setFolded] = useState(false);
   const fresh = (v.me?.returns ?? []).filter((r) => r.at > seen).slice(-3);
-  if (fresh.length === 0) return null;
   const last = fresh.at(-1)?.at ?? 0;
-  return (
-    <div className="absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 mx-auto max-w-md cut bg-night-2/95 p-3 shadow-[0_6px_20px_rgb(0_0_0/0.45)] ring-1 ring-line lg:bottom-28">
-      <p className="label text-gold">{t().returns.title}</p>
-      {fresh.map((r) => (
-        <p key={r.front} className="mt-1 text-[13px] text-cream">
-          {t().returns.line(holderName(v, r.against), r.cells, r.spent, r.back)}
-        </p>
-      ))}
+  useEffect(() => {
+    if (last === 0 || folded) return;
+    const id = setTimeout(() => setFolded(true), 8_000);
+    return () => clearTimeout(id);
+  }, [last, folded]);
+  if (fresh.length === 0) return null;
+  const place =
+    "absolute bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 lg:bottom-28";
+  if (folded)
+    return (
       <button
         type="button"
-        className="hit label mt-2 rounded-full px-3 py-1 text-cream ring-1 ring-inset ring-line"
-        onClick={() => {
-          store.set(key, String(last));
-          setSeen(last);
-        }}
+        data-hud-overlay="terra-returns"
+        aria-label={t().returns.title}
+        onClick={() => setFolded(false)}
+        className={`${place} left-3 flex min-h-11 items-center gap-1.5 rounded-full bg-night-2/95 px-4 font-display text-sm font-extrabold text-gold ring-1 ring-line`}
       >
-        {t().returns.ok}
+        ↩ {fresh.length}
       </button>
+    );
+  return (
+    <div
+      // Over the map, a moment: it may cover a name there, never the HUD.
+      data-hud-overlay="terra-returns"
+      className={`${place} inset-x-3 mx-auto max-w-sm cut bg-night-2/95 px-3 py-2 shadow-[0_6px_20px_rgb(0_0_0/0.45)] ring-1 ring-line`}
+    >
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="label text-gold">{t().returns.title}</p>
+          {fresh.map((r) => (
+            <p key={r.front} className="text-[13px] leading-snug text-cream">
+              {t().returns.line(holderName(v, r.against), r.cells, r.spent, r.back)}
+            </p>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="label min-h-11 shrink-0 rounded-full px-3 text-cream ring-1 ring-inset ring-line"
+          onClick={() => {
+            store.set(key, String(last));
+            setSeen(last);
+          }}
+        >
+          {t().returns.ok}
+        </button>
+      </div>
     </div>
   );
 }
@@ -1943,7 +1987,7 @@ function PeasantsSlider({
  * The first visit to the Terraferma: Lorenzo says, in three bubbles, how to set down, launch a
  * front and come back; the guide is a touch away. Once on this device.
  */
-export function TerraIntro({ onGuide }: { onGuide: () => void }) {
+export function TerraIntro({ onGuide, top }: { onGuide: () => void; top: number }) {
   const k = fr.game.terraIntro;
   const [step, setStep] = useState(() => {
     try {
@@ -1959,9 +2003,11 @@ export function TerraIntro({ onGuide }: { onGuide: () => void }) {
   };
   const last = step >= k.steps.length - 1;
   return (
+    // Under the HUD's band, the land where the camp is set down left free below.
     <div
       data-panel
-      className="pointer-events-auto absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+11rem)] z-30 mx-auto flex max-w-sm animate-pop gap-3 cut border border-info/70 bg-night-2/95 p-3 shadow-lg lg:bottom-32"
+      style={{ top: top + 8 }}
+      className="pointer-events-auto absolute inset-x-3 z-30 mx-auto flex max-w-sm animate-pop gap-3 cut border border-info/70 bg-night-2/95 p-3 shadow-lg"
     >
       <Lorenzo size={44} />
       <div className="min-w-0 flex-1 space-y-2">

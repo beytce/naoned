@@ -754,7 +754,9 @@ export function MapScreen(
         onHelp={terra ? props.openTerraGuide : props.openHelp}
       />
       {panel}
-      {terra && !skirmishOn && <TerraIntro onGuide={props.openTerraGuide} />}
+      {terra && !skirmishOn && (
+        <TerraIntro onGuide={props.openTerraGuide} top={Math.max(160, hudBand)} />
+      )}
       {terra && skirmishOn && (
         <SkirmishBar
           status={skirmish.status}
@@ -773,6 +775,18 @@ export function MapScreen(
         <span className="pointer-events-none absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+7.5rem)] z-10 -translate-x-1/2 animate-fade whitespace-nowrap rounded-full bg-night/80 px-3 py-1 font-mono text-xs uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line">
           {fr.game.terra.away}
         </span>
+      )}
+      {terra && week.playing && (
+        // The week replayed is said, as the absence is, and may be skipped.
+        <button
+          type="button"
+          data-hud="terra-replaying"
+          onClick={week.stop}
+          className="absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+7.5rem)] z-10 flex min-h-11 -translate-x-1/2 animate-fade items-center gap-2 whitespace-nowrap rounded-full bg-night/80 px-4 font-mono text-xs uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line"
+        >
+          {fr.game.terraRecord.replaying}
+          <span className="text-info">{fr.game.terraRecord.skip}</span>
+        </button>
       )}
 
       <CounterSheets {...props} />
