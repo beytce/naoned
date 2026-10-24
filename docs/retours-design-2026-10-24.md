@@ -488,3 +488,19 @@ Propositions rejetées :
 - **les routes plus épaisses selon le trafic des autres** : c'est une information sur le jeu adverse, donc une mécanique, et non de l'affichage ;
 - **un logo redessiné** ;
 - **un HUD qui retire le nom du marchand** pour gagner de la place.
+
+## Exécution (24 octobre 2026)
+
+Le porteur a validé le plan et les recommandations du chef pour ses six décisions : le bleu gardé (voie médiane), Cinzel pour les noms de lieux et les titres de fenêtre, le mode « Terraferme » et la région « Vénétie », la porte « ← Commerce » en crème, le logo en médaille ronde, « Venise 1450 · saison d'octobre ». Les seize items sont faits, chacun en petits commits sur `claude/design-lot`, avec `pnpm test`, `typecheck`, `lint` et le test de mise en page au vert aux deux formats de téléphone et sur PC.
+
+Écarts au plan, et pourquoi :
+- **Item 3, « Fronts rentrés »** : la carte est marquée `data-hud-overlay` (elle passe un instant sur la carte, comme le dit la règle d'`assert.mjs`), au lieu d'être comptée comme un bloc du HUD : posée au-dessus des portes, elle couvre forcément un nom de la carte. Elle se replie en « ↩ n » après 8 s.
+- **Item 5, la bande du HUD** : 160 px au plus sur téléphone, et non 140 / 150. La bourse, les troupes et une plaque de deux lignes demandent environ 152 px. C'était 235 px avant ; sur PC, la mesure est de 200 px, avec trois lignes à droite au plus.
+- **Item 5, les troupes** : leur rythme de recrutement est passé dans leur carte, avec la Gloire et le rang, pour que la pastille ne soit jamais plus large que la bourse (le nom garde ses dix lettres à 320 px).
+- **Item 7, la performance** : les étiquettes sont mesurées une fois par zoom, puis recalculées sans relire la page à chaque image du glissement. Les 60 i/s sur un Android d'entrée de gamme ne sont pas mesurés ici (pas d'appareil) : ils restent à vérifier avec le budget de `plan-finalisation.md` n° 30.
+- **Item 11, les cadres** : au lieu d'un composant `Frame` remplaçant 28 lignes, une seule règle de `index.css` retrace les diagonales des cartes `.cut` à bordure, dans la couleur et l'épaisseur de leur bordure (beaucoup ont un fond translucide, à travers lequel la couleur d'un `Frame` à deux couches aurait transparu). Un test garde la règle.
+- **Item 12, Space Mono** : la règle testée est « jamais sans `uppercase` », c'est-à-dire seulement les sur-titres, plutôt qu'une liste blanche ; seules exceptions, le code de connexion et l'admin.
+- **Item 13, les noms de villes** : séparés de leur tuile en marqueurs à eux, au-dessus des charrettes, comme le prévoyait le plan ; la tuile reste dessous, ce qui garde les charrettes garées touchables.
+- **Item 14, le Rialto** : la fiche d'une marchandise n'a pas été réécrite (ligne récapitulative, règles repliées) : à faire dans un lot suivant. Les marchandises sans cours viennent sous leur intertitre, sans repli.
+- **Item 16** : le formulaire est au-dessus du pli sur un écran court (moins de 700 px de haut) ; sur un téléphone de 844 px, l'accueil garde son ciel et le formulaire suit au défilement.
+- Le banc a aussi gagné deux corrections : jamais le port 3659, que Chromium refuse, et la relecture de la semaine servie avec la vue figée.
