@@ -59,7 +59,13 @@ import {
   seasonEnd,
 } from "./state.js";
 import { bidTender, deliverTender } from "./tenders.js";
-import { type TerraCommand, applyTerra, paySkirmish } from "./terraWorld.js";
+import {
+  type TerraCommand,
+  applyTerra,
+  markNpc,
+  paySkirmish,
+  withdrawTerra,
+} from "./terraWorld.js";
 import { findRegion } from "./theme.js";
 import { tick } from "./tick.js";
 import { markTurnoverPeaks } from "./turnover.js";
@@ -85,7 +91,11 @@ export type Command =
       region: string;
       /** Privileges the house holds (kept by the server from season to season). */
       patents?: string[];
+      /** A house run by the computer (server only: never read from a merchant's request). */
+      npc?: boolean;
     }
+  /** From the server: a house run by the computer that joined before houses were marked. */
+  | { type: "markNpc"; playerId: PlayerId }
   /** A patent bought with Influence (server only: it checked and took the price). */
   | { type: "grantPatent"; playerId: PlayerId; patent: string }
   | { type: "claimHouseMission"; playerId: PlayerId; missionId: string }
@@ -183,7 +193,7 @@ function ownBuilding(tx: Tx, playerId: PlayerId, buildingId: string): Draft<Buil
   return building;
 }
 
-function join(tx: Tx, playerId: PlayerId, region: string, patents?: string[]): void {
+function join(tx: Tx, playerId: PlayerId, region: string, patents?: string[], npc?: boolean): void {
   const { ctx } = tx;
   if (tx.s.players[playerId]) fail("player_exists");
   if (!findRegion(ctx.theme, region)) fail("unknown_region");
@@ -195,6 +205,7 @@ function join(tx: Tx, playerId: PlayerId, region: string, patents?: string[]): v
     joinedAt: tx.now,
     lastActionAt: tx.now,
     ...(patents && patents.length > 0 ? { patents: [...patents] } : {}),
+    ...(npc ? { npc: true as const } : {}),
   };
   tx.s.accounts[cashAccount(playerId)] = 0n;
   tx.s.accounts[escrowAccount(playerId)] = 0n;
@@ -279,8 +290,16 @@ function apply(tx: Tx, cmd: Command): void {
     emit(tx, "pass_granted", cmd.playerId, { until: cmd.until });
     return;
   }
+  if (cmd.type === "markNpc") {
+    markNpc(tx, cmd.playerId);
+    return;
+  }
+  if (cmd.type === "terraWithdraw") {
+    withdrawTerra(tx, cmd.playerId);
+    return;
+  }
   if (cmd.type === "join") {
-    join(tx, cmd.playerId, cmd.region, cmd.patents);
+    join(tx, cmd.playerId, cmd.region, cmd.patents, cmd.npc);
     // A newcomer finds the day's board of the world at once.
     ensureBoard(tx);
     return;

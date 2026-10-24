@@ -75,6 +75,8 @@ describe("bots in a live world", () => {
     expect(bots.every((b) => b.pseudo?.startsWith("Casa "))).toBe(true);
     const rows = await database.db.select().from(players);
     expect(rows.every((r) => r.botProfile)).toBe(true);
+    // Marked as the computer's in the engine too: never Signore of the Terraferma.
+    expect(bots.every((b) => world.current.players[b.id]?.npc === true)).toBe(true);
     // They played their first session: something beyond joining happened.
     const own = Object.values(world.current.buildings).filter((b) =>
       bots.some((a) => a.id === b.playerId),

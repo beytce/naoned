@@ -124,6 +124,8 @@ export class BotRunner {
     for (const row of rows) {
       const player = this.world.current.players[row.id];
       if (!player) continue;
+      // Houses that joined before the computer's were marked in the engine.
+      if (!player.npc) await this.world.execute({ type: "markNpc", playerId: row.id });
       if (row.retiredAt) this.retired.add(row.id);
       else this.running.set(row.id, this.wrap(row.id, row.profile, player.region));
     }
@@ -313,6 +315,7 @@ export class BotRunner {
         type: "join",
         playerId: veteran.id,
         region: veteran.region,
+        npc: true,
         ...(patents.length > 0 ? { patents } : {}),
       });
       if (!res.ok) return;
@@ -343,6 +346,7 @@ export class BotRunner {
       type: "join",
       playerId: account.id,
       region: slot.region,
+      npc: true,
     });
     if (!res.ok) {
       // Registration closed: no new houses this season.
@@ -369,6 +373,8 @@ export class BotRunner {
       for (const o of Object.values(state().orders)) {
         if (o.playerId === id) act({ type: "cancelOrder", playerId: id, orderId: o.id });
       }
+      // Its land on the Terraferma goes back to neutral, its alliances end.
+      act({ type: "terraWithdraw", playerId: id });
     });
     await this.db
       .update(players)

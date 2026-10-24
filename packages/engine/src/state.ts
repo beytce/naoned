@@ -47,6 +47,8 @@ export interface Player {
   specialty?: string;
   /** Privileges the house holds, kept from season to season by the server (see `house.ts`). */
   patents?: string[];
+  /** A house run by the computer, marked by the server: it never takes the Terraferma's tiers. */
+  npc?: true;
 }
 
 export interface ProductionJob {

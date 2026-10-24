@@ -280,6 +280,11 @@ function terraText(data: Record<string, unknown>): { title: string; body: string
         body: "Votre alliance est acceptée : plus de front entre vous.",
       };
     case "terra_alliance_broken":
+      if (data.reason === "withdrawn")
+        return {
+          title: "Votre allié quitte la Terraferme",
+          body: "Sa maison se retire : ses terres redeviennent libres et votre alliance prend fin.",
+        };
       return {
         title: "Votre allié rompt l'alliance",
         body: "Dans deux heures, ses troupes pourront marcher sur vos terres.",

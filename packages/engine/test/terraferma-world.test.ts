@@ -121,6 +121,69 @@ describe("the Terraferma in the world", () => {
   });
 });
 
+describe("the computer's houses on the Terraferma", () => {
+  it("are marked at their arrival by the server, never by a command of a merchant", () => {
+    const w = live();
+    w.do({ type: "join", playerId: "bot", region: "terraferma", npc: true } as Command);
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    expect(w.state.players.bot?.npc).toBe(true);
+    expect(w.state.players.a?.npc).toBeUndefined();
+    // Houses of an older version are marked afterwards, once.
+    w.do({ type: "join", playerId: "old", region: "terraferma" });
+    w.do({ type: "markNpc", playerId: "old" } as Command);
+    expect(w.state.players.old?.npc).toBe(true);
+  });
+
+  it("are never Signore: the week's tiers and decree go to the merchants", () => {
+    const w = live();
+    w.do({ type: "join", playerId: "bot", region: "terraferma", npc: true } as Command);
+    joined(w, "a");
+    w.do({ type: "terraPlace", playerId: "bot", cell: freeCell(w) } as Command);
+    expect(w.state.terra?.map.players.bot?.npc).toBe(true);
+    act(w, { type: "terraDecree", playerId: "bot", code: "dime" });
+    act(w, { type: "terraDecree", playerId: "a", code: "embargo", target: "verona" });
+    const terra = w.state.terra;
+    if (!terra) throw new Error("no map");
+    let more = 10;
+    const owner = terra.map.owner.map((o) => (o === null && more-- > 0 ? "bot" : o));
+    w.state = { ...w.state, terra: { ...terra, map: { ...terra.map, owner } } };
+    const res = w.at(WEEK + MIN).do({ type: "tick" });
+    const influence = res.effects.events.filter(
+      (e) => e.type === "influence_earned" && e.data?.source === "terraferma",
+    );
+    expect(influence.map((e) => [e.playerId, e.data?.amount])).toEqual([["a", 20]]);
+    expect(w.state.terraDecree?.code).toBe("embargo");
+  });
+
+  it("hand back their land, fronts and alliances when they retire, the allies told", () => {
+    const w = live();
+    joined(w, "a", "bot");
+    // A house of an older version, already on the map: marked there too.
+    w.do({ type: "markNpc", playerId: "bot" } as Command);
+    expect(w.state.terra?.map.players.bot?.npc).toBe(true);
+    act(w, { type: "terraAlly", playerId: "a", other: "bot" });
+    act(w, { type: "terraAccept", playerId: "bot", from: "a" });
+    expect(cellsOf(w.state.terra?.map as never, "bot").length).toBeGreaterThan(0);
+    const res = w.do({ type: "terraWithdraw", playerId: "bot" } as Command);
+    const map = w.state.terra?.map;
+    if (!map) throw new Error("no map");
+    expect(cellsOf(map, "bot")).toEqual([]);
+    expect(map.fronts.some((f) => f.owner === "bot" || f.against === "bot")).toBe(false);
+    expect((map.alliances ?? []).some((x) => x.a === "bot" || x.b === "bot")).toBe(false);
+    expect(
+      res.effects.events.some(
+        (e) =>
+          e.type === "terra_alliance_broken" &&
+          e.playerId === "a" &&
+          e.data?.reason === "withdrawn",
+      ),
+    ).toBe(true);
+    // Not on the map: nothing to hand back, and no error.
+    w.do({ type: "join", playerId: "away", region: "terraferma" });
+    expect(act(w, { type: "terraWithdraw", playerId: "away" }).ok).toBe(true);
+  });
+});
+
 describe("the Signore's strong decrees", () => {
   const withDecree = (code: string, target?: string) => {
     const w = live({}, deliverySettings);

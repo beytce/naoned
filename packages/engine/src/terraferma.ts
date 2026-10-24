@@ -39,6 +39,8 @@ export interface TerraMap {
 
 export interface TerraPlayer {
   troops: number;
+  /** A house run by the computer: on the board, never in the tiers nor Signore. */
+  npc?: true;
   placedAt: number;
   protectedUntil: number;
   /** Glory of the week, per open step: cells and cities held. */
@@ -1097,6 +1099,31 @@ export function breakAlliance(
     player.traitorUntil = now + cfg.alliances.traitorHours * 3_600_000;
 }
 
+/**
+ * A merchant leaves the map: its cells go back to neutral land (their buildings razed), its fronts
+ * and the fronts aimed at it stop, its alliances and requests end. Returns its allies of the
+ * moment, to be told.
+ */
+export function withdrawFromTerra(s: TerraState, id: string, at: number): string[] {
+  const p = s.players[id];
+  if (!p) return [];
+  const allies = alliesOf(s, id);
+  for (const cell of cellsOf(s, id)) {
+    razeAt(s, cell);
+    seize(s, cell, null, at);
+  }
+  s.fronts = s.fronts.filter((f) => f.owner !== id && f.against !== id);
+  s.alliances = (s.alliances ?? []).filter((x) => x.a !== id && x.b !== id);
+  s.requests = (s.requests ?? []).filter((r) => r.from !== id && r.to !== id);
+  if (s.programme?.[id]) {
+    const { [id]: _gone, ...rest } = s.programme;
+    s.programme = rest;
+  }
+  p.troops = 0;
+  p.eliminatedAt ??= at;
+  return allies;
+}
+
 /** Counters of the day (cap raises, troops sent), started afresh each day. */
 function todayOf(s: TerraState, p: TerraPlayer, now: number) {
   const day = Math.floor((now - s.startAt) / DAY_MS);
@@ -1254,13 +1281,17 @@ export function chooseDecree(
 
 /**
  * The week closed (or the land taken): the merchants ranked by glory, Influence by tier, the
- * Signore and the decree it chose. Steps stop.
+ * Signore and the decree it chose. Steps stop. The houses run by the computer (`npc`) keep their
+ * place on the board but take no tier: the tiers count the merchants alone, and the Signore is
+ * the first merchant with glory and land (24 October 2026: a house of the computer was Signore
+ * most weeks, its decree taking ducats from the people).
  */
 export function closeTerra(
   s: TerraState,
   cfg: TerraConfig,
   at: number,
   winner?: string,
+  npc: (id: string) => boolean = (id) => s.players[id]?.npc === true,
 ): TerraClose {
   if (s.closed) return s.closed;
   const ranked = Object.entries(s.players)
@@ -1272,12 +1303,16 @@ export function closeTerra(
         b.glory - a.glory ||
         (a.id < b.id ? -1 : 1),
     );
-  const n = ranked.length;
+  const n = ranked.filter((r) => !npc(r.id)).length;
   const t = cfg.close.influence;
-  const ranking = ranked.map((r, k) => {
-    const rank = k + 1;
+  const signoreOf = ranked.find((r) => !npc(r.id) && r.glory > 0 && r.cells > 0)?.id;
+  let merchants = 0;
+  const ranking = ranked.map((r) => {
+    if (npc(r.id)) return { ...r, tier: "none" as const, influence: 0 };
+    merchants += 1;
+    const rank = merchants;
     const tier =
-      rank === 1 && r.glory > 0
+      r.id === signoreOf
         ? "signore"
         : rank <= 3
           ? "podium"
@@ -1304,14 +1339,11 @@ export function closeTerra(
     (a, b) => b.glory - a.glory || (a.team < b.team ? -1 : 1),
   );
   const best = teams[0]
-    ? ranking.find((r) => s.players[r.id]?.team === teams[0]?.team && r.glory > 0)
+    ? ranking.find(
+        (r) => s.players[r.id]?.team === teams[0]?.team && !npc(r.id) && r.glory > 0 && r.cells > 0,
+      )
     : undefined;
-  const signore =
-    s.teamMode && teams.length > 0
-      ? (best?.id ?? null)
-      : ranking[0]?.tier === "signore"
-        ? (ranking[0]?.id ?? null)
-        : null;
+  const signore = s.teamMode && teams.length > 0 ? (best?.id ?? null) : (signoreOf ?? null);
   s.closed = {
     at,
     signore,

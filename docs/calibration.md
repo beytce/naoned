@@ -1235,3 +1235,24 @@ Le premier jet tirait le rang parmi les 8 places de la partie, comme si les marc
 Pendant la fenêtre du tutoriel (`tutorial.minutes`, 30 min après l'arrivée), la commande de bienvenue, chargée seule, fait l'aller en 45 s et le retour en 45 s (`tutorial.welcomeTripSeconds`, 0 par défaut, 45 dans le thème de Venise) : la première paie, 150 ducats, tombe dans la première minute au lieu de 27 à 60 min. Chargée avec une autre commande, après la fenêtre ou avec le réglage à 0, elle prend la longueur de sa route. Elle paie toujours à l'arrivée par le grand livre (`city_sale`), et le pas `sell_city` du tutoriel reste lié à `delivery_arrived`.
 
 `pnpm sim`, 5 graines, toutes conformes : croissance de la monnaie par joueur actif 3,2 %/jour en moyenne, 2,6 jours hors plage du ratio monnaie créée / détruite sur 23, Gini du patrimoine à J+15 0,45, 110,0 d détruits par la Terraferme par joueur actif et par jour, première livraison des bots après 0 à 2 h (médiane par graine). Les mêmes valeurs qu'aux escarmouches (3,6 %, 2,4 jours, 0,45, 109,4 d), dans le bruit des graines : les bots livrent leur bienvenue après leur première récolte, le plus souvent hors de la fenêtre du tutoriel, et la bienvenue ne crée de toute façon que 150 ducats une fois par marchand, express ou non. L'effet se mesure sur les vrais nouveaux venus : temps médian entre l'inscription et `sell_city` dans l'entonnoir du tutoriel (`/admin`), cible 5 min au plus.
+
+## Le Signore est un marchand, jamais une maison du PNJ (24 octobre 2026, lot 0 de l'équipe d'experts, E2-1)
+
+`closeTerra` classait les maisons du PNJ comme les marchands. Avec beaucoup de PNJ et peu de monde, une maison de l'ordinateur était Signore presque chaque semaine, et son décret, tiré au hasard (Dîme, Monopole…), prenait des ducats aux marchands. Désormais :
+- Le serveur marque les maisons du PNJ dans le moteur : `npc` à l'arrivée, et `markNpc` au chargement pour les maisons plus anciennes. Une commande d'un marchand ne peut pas poser ce drapeau.
+- Les maisons du PNJ gardent leur place au classement affiché, mais ne reçoivent ni palier ni Influence. Les paliers se comptent parmi les seuls marchands.
+- Le Signore est le premier marchand qui a de la Gloire et tient au moins une case. En semaine d'équipes, c'est le meilleur marchand de l'équipe gagnante. Sinon, il n'y a ni Signore ni décret.
+- Une maison du PNJ qui se retire rend ses terres (`terraWithdraw`) : ses cases redeviennent neutres, ses fronts et ceux qui la visent s'arrêtent, ses alliances prennent fin et chaque allié est prévenu.
+- Elle ne garde ni ne fait bouger aucune cote Elo.
+
+Mesure : `pnpm --filter @comptoirs/simulator terra --humans 5`, sur 5 graines. Le prototype de la semaine joue 40 marchands simulés, dont 5 tenus pour des personnes (deux assidus, deux réguliers, un occasionnel, tirés par la graine). La même semaine est jouée avant et après : le marquage ne change que la clôture.
+
+| Graine | Signore PNJ avant | après | Influence de la Terraferme des 5 marchands, avant → après |
+| --- | --- | --- | --- |
+| 1 | oui | non | 36 → 60 |
+| 2 | oui | non | 16 → 60 |
+| 3 | oui | non | 20 → 60 |
+| 4 | oui | non | 26 → 60 |
+| 5 | oui | non | 26 → 60 |
+
+Un Signore PNJ 5 semaines sur 5 avant, 0 sur 5 après. Les 5 marchands reçoivent 60 Influence par semaine (20 + 12 + 12 + 8 + 8) au lieu de 24,8 en moyenne, soit environ +7 chacun. L'écart se réduit quand le nombre de marchands grandit : à 40 marchands, il est nul. `pnpm sim` (commerce) ne change pas : ses marchands simulés ne sont pas marqués comme PNJ.
