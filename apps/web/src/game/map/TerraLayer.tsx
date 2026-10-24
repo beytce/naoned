@@ -562,9 +562,27 @@ export const TerraOverlay = memo(function TerraOverlay({
     () => (playing ? hexPath(s.map, Object.keys(v.costs).map(Number), 0.78) : ""),
     [costKeys, s.map, playing],
   );
+  // The land's edges fade into the night (6 % of its width): no frame left on a wide screen.
+  const xs = s.edges.map((e) => e.x);
+  const ys = s.edges.map((e) => e.y);
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const feather = (x1 - x0) * 0.06;
   return (
-    <g>
+    <g mask="url(#terra-fade)">
       <defs>
+        <filter id="terra-feather" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation={feather / 2} />
+        </filter>
+        <mask id="terra-fade" maskUnits="userSpaceOnUse">
+          <rect
+            x={x0 - s.map.size + feather}
+            y={y0 - s.map.size + feather}
+            width={x1 - x0 + 2 * s.map.size - 2 * feather}
+            height={y1 - y0 + 2 * s.map.size - 2 * feather}
+            fill="white"
+            filter="url(#terra-feather)"
+          />
+        </mask>
         <pattern
           id="terra-hatch"
           width="4"
@@ -756,7 +774,23 @@ export function terraSpots(v: TerraView, s: TerraShapes) {
   ];
 }
 
-/** The cities, the merchants' war counters, the fronts' strength. */
+/**
+ * Where the Terraferma opens: the merchant's own cells and four cells around them, so his
+ * neighbours are in sight (none without a camp).
+ */
+export function terraFocus(v: TerraView, s: TerraShapes): { x: number; y: number }[] | null {
+  const mine = v.owner.flatMap((o, cell) => (o === s.me && s.me >= 0 ? [cell] : []));
+  if (mine.length === 0) return null;
+  const pad = s.map.size * 4 * Math.sqrt(3);
+  return mine.flatMap((cell) => {
+    const [x, y] = hexCenter(s.map, cell);
+    return [
+      { x: x - pad, y: y - pad },
+      { x: x + pad, y: y + pad },
+    ];
+  });
+}
+
 /** Which labels give way first on a crowded map (declutter.ts): the merchant's own never. */
 const RANK: Record<Focus | "front" | "city" | "building", number> = {
   me: 0,
@@ -1306,29 +1340,33 @@ export function TerraActions({
   extra?: ReactNode;
 }) {
   return (
-    <span className="flex items-center gap-2">
-      {extra}
-      {onSkirmish && (
-        <HudChip
-          hud="terra-skirmish"
-          icon={<Icon.skirmish />}
-          tone={v.open ? "vermilion" : "plain"}
-          label={v.open ? fr.game.skirmish.title : fr.game.skirmish.nightShort(v.openHours.from)}
-          onClick={onSkirmish}
-        >
-          {fr.game.skirmish.title}
-        </HudChip>
-      )}
-      {onReplay && (
-        <HudChip
-          hud="terra-replay"
-          icon={<Icon.week />}
-          label={fr.game.terraRecord.replay}
-          onClick={onReplay}
-        >
-          {fr.game.terraRecord.weekShort}
-        </HudChip>
-      )}
+    // On a phone the round at the left, the chips at the right; on a computer side by side.
+    <span className="flex w-full items-center justify-between gap-2 lg:w-auto lg:justify-end">
+      <span className="flex">{extra}</span>
+      <span className="flex items-center gap-2">
+        {onSkirmish && (
+          <HudChip
+            hud="terra-skirmish"
+            icon={<Icon.skirmish />}
+            tone={v.open ? "vermilion" : "plain"}
+            label={v.open ? fr.game.skirmish.title : fr.game.skirmish.nightShort(v.openHours.from)}
+            onClick={onSkirmish}
+          >
+            {fr.game.skirmish.title}
+          </HudChip>
+        )}
+        {onReplay && (
+          <HudChip
+            hud="terra-replay"
+            icon={<Icon.week />}
+            label={fr.game.terraRecord.replay}
+            onClick={onReplay}
+          >
+            {/* Under 360 px its sign alone: the three hold on the narrowest phone. */}
+            <span className="max-[359px]:sr-only">{fr.game.terraRecord.weekShort}</span>
+          </HudChip>
+        )}
+      </span>
     </span>
   );
 }

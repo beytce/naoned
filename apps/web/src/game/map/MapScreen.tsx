@@ -71,6 +71,7 @@ import {
   TerraPanel,
   TerraSheets,
   terraCalls,
+  terraFocus,
   terraMarkers,
   terraSpots,
   terraTap,
@@ -498,6 +499,15 @@ export function MapScreen(
     () => (terra && shapes ? terraSpots(terra, shapes) : null),
     [terra, shapes],
   );
+  const terraFocusList = useMemo(
+    () => (terra && shapes ? terraFocus(terra, shapes) : null),
+    [terra, shapes],
+  );
+  // The Terraferma opens on the merchant's land; its round then shows the whole map, and back.
+  const [onMine, setOnMine] = useState(true);
+  useEffect(() => {
+    if (props.layer === "terra") setOnMine(true);
+  }, [props.layer]);
   const terraCell = terra && sel?.kind === "terra" ? sel.cell : null;
   const campaignPanel = campaign ? (
     <CampaignPanel props={props} f={campaign} sel={sel} select={select} />
@@ -632,6 +642,7 @@ export function MapScreen(
             ? campaign.lands.map((l) => ({ key: `land:${l.code}`, x: l.x, y: l.y }))
             : (terraSpotList ?? [])
         }
+        focus={terraFocusList ?? undefined}
         overlay={
           campaign ? (
             <CampaignOverlay f={campaign} now={now} />
@@ -723,6 +734,23 @@ export function MapScreen(
           terra?.me && !skirmishOn ? (
             <TerraActions
               v={terra}
+              extra={
+                terraFocusList && (
+                  <button
+                    type="button"
+                    data-hud="terra-locate"
+                    aria-label={onMine ? fr.game.terra.wholeMap : fr.game.terra.locate}
+                    onClick={() => {
+                      if (onMine) map.current?.fit();
+                      else map.current?.focus();
+                      setOnMine(!onMine);
+                    }}
+                    className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-night/85 text-info shadow-[0_4px_14px_rgb(0_0_0/0.45)] ring-1 ring-inset ring-info/45 backdrop-blur active:scale-95"
+                  >
+                    {onMine ? <Icon.wholeMap /> : <Icon.locate />}
+                  </button>
+                )
+              }
               onSkirmish={() => setSkirmishOn(true)}
               onReplay={week.playing ? undefined : week.start}
             />

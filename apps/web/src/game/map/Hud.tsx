@@ -409,7 +409,7 @@ export function MapHud({
       {bottom && actions && (
         <div
           data-hud="actions"
-          className="pointer-events-none absolute bottom-[calc(max(1rem,env(safe-area-inset-bottom))+6.25rem)] right-3 z-10 lg:bottom-32 lg:right-[calc(var(--side,0px)+1.25rem)]"
+          className="pointer-events-none absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+6.25rem)] z-10 flex justify-end lg:left-auto lg:bottom-32 lg:right-[calc(var(--side,0px)+1.25rem)]"
         >
           {actions}
         </div>

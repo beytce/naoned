@@ -160,6 +160,13 @@ export const Icon = {
       <path d="M19 12 A7 7 0 0 1 9.5 20 M19 12 L21 14.5 M19 12 L16.5 13.5" />
     </I>
   ),
+  /** The whole map: four corners pulled apart. */
+  wholeMap: () => (
+    <I>
+      <path d="M4 9 V4 H9 M15 4 H20 V9 M20 15 V20 H15 M9 20 H4 V15" />
+      <path d="M9 9 H15 V15 H9 Z" />
+    </I>
+  ),
   /** Back onto the merchant's own land: a sight. */
   locate: () => (
     <I>

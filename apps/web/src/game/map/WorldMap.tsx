@@ -29,6 +29,7 @@ import {
   boxOf,
   clampCamera,
   fitLands,
+  fitTerra,
   landFrames,
   parkingAngle,
   parkingSpots,
@@ -93,6 +94,8 @@ export interface WorldMapHandle {
   show: (key: string) => void;
   /** The whole map again. */
   fit: () => void;
+  /** The layer's opening frame again (the Terraferma: the merchant's own land). */
+  focus: () => void;
 }
 
 /** Where a delivery stands on its road: 0 at the counter, 1 at the city, back to 0. */
@@ -134,6 +137,11 @@ export const WorldMap = forwardRef<
      * map's western edge (Lombardy, Bruges) are a pan away.
      */
     spots: { key: string; x: number; y: number }[];
+    /**
+     * Where the Terraferma opens, in map units: the merchant's land and what lies around it (none:
+     * the whole map).
+     */
+    focus?: { x: number; y: number }[];
     /** Drawn under the markers, in map units (the campaign's territories and marches). */
     overlay?: ReactNode;
     markers: MapMarker[];
@@ -401,6 +409,25 @@ export const WorldMap = forwardRef<
     return f;
   }, [box, fitBox, viewport]);
 
+  // Where a layer opens: the Terraferma on the merchant's own land and around it (read when it
+  // opens, so that his land growing does not move the camera), any other on its whole map.
+  const opened = useRef<Camera | null>(null);
+  const opening = useCallback(() => {
+    const whole = fit();
+    const near = live.current.focus;
+    const cam =
+      live.current.layer === "terra" && near && near.length > 0
+        ? fitTerra(
+            boxOf(near.map((p) => toWorld([p.x, p.y]))),
+            box,
+            viewport(),
+            padded(live.current.insets, true),
+          )
+        : whole;
+    opened.current = cam;
+    return cam;
+  }, [fit, box, viewport]);
+
   useImperativeHandle(
     ref,
     () => ({
@@ -420,26 +447,27 @@ export const WorldMap = forwardRef<
         if (next !== base) easeTo(next);
       },
       fit: () => easeTo(fit()),
+      focus: () => easeTo(opening()),
     }),
-    [where, easeTo, fit, viewport],
+    [where, easeTo, fit, opening, viewport],
   );
 
   // First fit; a new layer glides to its own frame; again when the screen turns or resizes.
   const framed = useRef(false);
   useLayoutEffect(() => {
-    if (framed.current) easeTo(fit(), 560);
+    if (framed.current) easeTo(opening(), 560);
     else {
-      cam.current = fit();
+      cam.current = opening();
       paint();
       framed.current = true;
     }
     const onResize = () => {
-      cam.current = fit();
+      cam.current = opening();
       paint();
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [fit, paint, easeTo]);
+  }, [opening, paint, easeTo]);
 
   // The HUD grew or shrank over the map (the rival's line came, a line of the Terraferma's note
   // wrapped): the map framed again in the room left, unless the player has moved it.
@@ -448,15 +476,15 @@ export const WorldMap = forwardRef<
   useEffect(() => {
     if (lastTop.current === topInset) return;
     lastTop.current = topInset;
-    const before = fitted.current;
+    const before = opened.current;
     const at = anim.current?.to ?? cam.current;
     const framedThere =
       !before ||
       (Math.abs(at.s - before.s) <= before.s * 0.001 &&
         Math.abs(at.tx - before.tx) < 1 &&
         Math.abs(at.ty - before.ty) < 1);
-    if (framedThere) easeTo(fit(), 300);
-  }, [topInset, fit, easeTo]);
+    if (framedThere) easeTo(opening(), 300);
+  }, [topInset, opening, easeTo]);
 
   // New markers, trips or selection: place them, and keep the frames going if carts roll.
   useEffect(() => {

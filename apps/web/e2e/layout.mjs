@@ -618,6 +618,9 @@ async function lightHud(page, label) {
         (el) => visible(el) && getComputedStyle(el).textDecorationLine.includes("underline"),
       ).length,
       actions: actions ? actions.getBoundingClientRect().top / innerHeight : null,
+      cut: [...(actions?.querySelectorAll("button") ?? [])].filter(
+        (b) => b.getBoundingClientRect().right > innerWidth + 0.5,
+      ).length,
       width: innerWidth,
     };
   });
@@ -629,6 +632,7 @@ async function lightHud(page, label) {
       `${label}: the HUD's band ends at ${Math.round(seen.band)} px, ${most} at most`,
     );
   if (seen.underlined > 0) throw new Error(`${label}: ${seen.underlined} link(s) underlined`);
+  if (seen.cut > 0) throw new Error(`${label}: ${seen.cut} action(s) past the screen's edge`);
   if (seen.actions === null || seen.actions < 0.5)
     throw new Error(`${label}: the skirmishes and the week not at the thumb`);
 }

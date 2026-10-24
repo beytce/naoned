@@ -6,6 +6,7 @@ import {
   clampCamera,
   fitCamera,
   fitLands,
+  fitTerra,
   landFrames,
   parkingAngle,
   parkingSpots,
@@ -176,4 +177,42 @@ describe("map geometry", () => {
     expect(roundTrip(0.75)).toEqual({ t: 0.5, back: true });
     expect(roundTrip(2)).toEqual({ t: 0, back: true });
   });
+});
+
+describe("the Terraferma's camera", () => {
+  const land = { x0: 0, y0: 0, x1: 1400, y1: 1200 };
+  const me = { x0: 600, y0: 500, x1: 760, y1: 640 };
+  const screens = [
+    { w: 320, h: 568 },
+    { w: 390, h: 844 },
+    { w: 1440, h: 900 },
+  ];
+  const room = { top: 160, right: 12, bottom: 156, left: 12 };
+  const inside = (
+    cam: { s: number; tx: number; ty: number },
+    b: typeof land,
+    v: { w: number; h: number },
+  ) => {
+    const a = project(cam, { x: b.x0, y: b.y0 });
+    const z = project(cam, { x: b.x1, y: b.y1 });
+    return (
+      a.x >= room.left - 0.5 &&
+      a.y >= room.top - 0.5 &&
+      z.x <= v.w - room.right + 0.5 &&
+      z.y <= v.h - room.bottom + 0.5
+    );
+  };
+
+  for (const v of screens) {
+    it(`opens on the merchant's land, whole, at ${v.w} × ${v.h}`, () => {
+      const cam = fitTerra(me, land, v, room);
+      expect(inside(cam, me, v)).toBe(true);
+      // Closer than the whole map, never further.
+      expect(cam.s).toBeGreaterThanOrEqual(fitCamera(land, v, room).s);
+    });
+
+    it(`shows the four corners of the land without a camp, at ${v.w} × ${v.h}`, () => {
+      expect(inside(fitTerra(null, land, v, room), land, v)).toBe(true);
+    });
+  }
 });

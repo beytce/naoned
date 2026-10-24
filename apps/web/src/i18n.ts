@@ -519,6 +519,8 @@ export const fr = {
         impero: "L'Empire",
       } as Record<string, string>,
       /** A nation's house, under the name of the city it holds from: « MANTOUE · Gonzague ». */
+      locate: "Centrer sur mes terres",
+      wholeMap: "Toute la carte",
       nationHouses: {
         mantova: "Gonzague",
         ferrara: "Este",

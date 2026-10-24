@@ -97,6 +97,27 @@ export function fitLands(box: Box, fitBox: Box, view: Viewport, insets: Insets):
   return all.s >= drawn.s * 0.85 ? all : drawn;
 }
 
+/**
+ * The Terraferma's camera at the opening: the merchant's land and what lies around it, whole and
+ * as large as the screen allows, on every screen alike (never further than the whole land, never
+ * closer than three times it); the whole land when he has no camp.
+ */
+export function fitTerra(me: Box | null, land: Box, view: Viewport, insets: Insets): Camera {
+  const whole = fitCamera(land, view, insets);
+  if (!me) return whole;
+  const near = fitCamera(me, view, insets);
+  if (near.s <= whole.s) return whole;
+  if (near.s <= whole.s * 3) return near;
+  const s = whole.s * 3;
+  const w = view.w - insets.left - insets.right;
+  const h = view.h - insets.top - insets.bottom;
+  return {
+    s,
+    tx: insets.left + w / 2 - ((me.x0 + me.x1) / 2) * s,
+    ty: insets.top + h / 2 - ((me.y0 + me.y1) / 2) * s,
+  };
+}
+
 /** Where a world point lands on screen. */
 export function project(cam: Camera, p: Point): Point {
   return { x: p.x * cam.s + cam.tx, y: p.y * cam.s + cam.ty };
