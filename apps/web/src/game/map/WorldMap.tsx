@@ -235,7 +235,10 @@ export const WorldMap = forwardRef<
   /** Where a marker stands now, in world pixels. */
   const where = useCallback(
     (key: string, now: number): { p: Point; flip: boolean } | null => {
-      const fixed = places.current[key];
+      // A city's name stands where its city does.
+      const fixed =
+        places.current[key] ??
+        (key.startsWith("cityname:") ? places.current[`city:${key.slice(9)}`] : undefined);
       if (fixed) return { p: fixed, flip: false };
       const marker = live.current.markers.find((m) => m.key === key);
       if (marker?.at) return { p: toWorld([marker.at.x, marker.at.y]), flip: !!marker.at.flip };
@@ -727,7 +730,14 @@ export const WorldMap = forwardRef<
           data-marker={m.key}
           data-selected={props.selectedKey === m.key ? "1" : undefined}
           data-tier={m.tier}
-          className={`map-marker animate-fade absolute left-0 top-0 ${m.key.startsWith("cart:") ? "z-[3]" : m.priority === 0 ? "z-[4]" : "z-[2]"}`}
+          className={`map-marker animate-fade absolute left-0 top-0 ${
+            // A city and its name over the carts on their road: a cart never hides a name.
+            m.key.startsWith("cityname:") || m.priority === 0
+              ? "z-[4]"
+              : m.key.startsWith("cart:")
+                ? "z-[3]"
+                : "z-[2]"
+          }`}
           style={{ visibility: "hidden" }}
         >
           {m.node}

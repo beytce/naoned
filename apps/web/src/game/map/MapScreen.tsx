@@ -58,7 +58,7 @@ import {
   type TipKey,
   usePresence,
 } from "./HudTips.js";
-import { CartMarker, CityMarker, HomeMarker } from "./Markers.js";
+import { CartMarker, CityMarker, CityName, HomeMarker } from "./Markers.js";
 import { NoticesSheet } from "./Notices.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
 import { SIDE_W, SideColumn } from "./SideColumn.js";
@@ -425,27 +425,39 @@ export function MapScreen(
         />
       ),
     },
-    ...cities.map((code) => {
+    ...cities.flatMap((code) => {
       const orders = openOrders.filter((o) => o.city === code);
       const deliverable = orders.filter((o) =>
         freeVehicles.some((v) => canServe(props, o, capacityOf(props, v))),
       ).length;
-      return {
-        key: `city:${code}`,
-        node: (
-          <CityMarker
-            code={code}
-            name={names.city(code)}
-            orders={orders.length}
-            deliverable={deliverable}
-            criee={criee?.city === code}
-            supplier={view.supplies.some((s) => s.city === code) ? crest : null}
-            lit={litCities.includes(code)}
-            dim={cartFree && !litCities.includes(code)}
-            onTap={() => goCity(code)}
-          />
-        ),
-      };
+      return [
+        {
+          key: `city:${code}`,
+          node: (
+            <CityMarker
+              code={code}
+              name={names.city(code)}
+              orders={orders.length}
+              deliverable={deliverable}
+              criee={criee?.city === code}
+              supplier={view.supplies.some((s) => s.city === code) ? crest : null}
+              lit={litCities.includes(code)}
+              dim={cartFree && !litCities.includes(code)}
+              onTap={() => goCity(code)}
+            />
+          ),
+        },
+        {
+          key: `cityname:${code}`,
+          node: (
+            <CityName
+              code={code}
+              name={names.city(code)}
+              dim={cartFree && !litCities.includes(code)}
+            />
+          ),
+        },
+      ];
     }),
     ...vehicles.map((v) => {
       const dv = tripOf(deliveries, v, now);

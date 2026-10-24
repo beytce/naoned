@@ -47,6 +47,7 @@ export async function assertLayout(page) {
     ...(await wraps(page)),
     ...(await squeezed(page)),
     ...(await bubbleRoom(page)),
+    ...(await cartsUnder(page)),
     ...(await guide(page)),
   ]);
 }
@@ -391,6 +392,29 @@ function squeezed(page) {
       // More than four lines in a column under eight letters wide.
       if (r.height / line > 4.5 && r.width < font * 0.55 * 8)
         wrong.push(`« ${text.slice(0, 40)} » squeezed a word a line (${Math.round(r.width)} px)`);
+    }
+    return wrong;
+  });
+}
+
+/** A cart on its road passes under a city's name, never over it. */
+function cartsUnder(page) {
+  return page.evaluate(() => {
+    const z = (el) => Number.parseInt(getComputedStyle(el.closest(".map-marker")).zIndex) || 0;
+    const wrong = [];
+    const names = [
+      ...document.querySelectorAll('.map-marker[data-marker^="cityname:"] [data-map-label]'),
+    ];
+    for (const cart of document.querySelectorAll('.map-marker[data-marker^="cart:"]')) {
+      if (getComputedStyle(cart).visibility === "hidden") continue;
+      const c = cart.getBoundingClientRect();
+      for (const name of names) {
+        const r = name.getBoundingClientRect();
+        const w = Math.min(c.right, r.right) - Math.max(c.left, r.left);
+        const h = Math.min(c.bottom, r.bottom) - Math.max(c.top, r.top);
+        if (w > 2 && h > 2 && z(cart) >= z(name))
+          wrong.push(`a cart over « ${name.textContent?.trim()} »`);
+      }
     }
     return wrong;
   });

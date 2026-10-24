@@ -62,6 +62,10 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
 - `Sheet` : feuille du bas sur mobile, fenêtre centrée sur PC, fermeture par ×. Une seule anatomie : un en-tête collant (surtitre, titre, croix, résumé d'une ligne) qui reste en vue au défilement, puis l'état et l'action, puis la règle dans `Rules` (« Comment ça marche ? »), ouverte la première fois, repliée ensuite, le choix du joueur gardé feuille par feuille. Le guide ouvre une règle repliée qui contient sa cible.
 - `Ribbon` : barre de progression rayée ; `Big` : grands chiffres.
 
+### Carte du commerce : charrettes et noms
+
+Le nom d'une ville est un marqueur à part, posé au-dessus des charrettes (`CityName`, `z-[4]`) : une charrette sur sa route passe dessous et ne le cache jamais, tandis que la tuile reste sous les charrettes, qu'on touche toujours. Sous 360 px, les tuiles des villes et le comptoir sont réduits d'un cinquième. Le test de mise en page vérifie qu'aucune charrette ne couvre un nom de ville (`cartsUnder`).
+
 ## Mouvement
 
 - La carte ne bouge que sous le doigt : glisser la déplace (avec élan), deux doigts ou la molette zooment autour de leur milieu, un double toucher dans le vide la recadre. Un objet choisi glisse dans le champ s'il est caché sous le panneau, sans plus.

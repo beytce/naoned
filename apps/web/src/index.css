@@ -898,3 +898,10 @@ body[data-coach-top] [data-toast] {
   top: auto;
   bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 6rem);
 }
+
+/* On the narrowest phones the trade's tiles a fifth smaller: the counter's name kept whole. */
+@media (max-width: 359px) {
+  .map-marker:is([data-marker^="city:"], [data-marker="home"]) > button {
+    scale: 0.8;
+  }
+}

@@ -111,13 +111,23 @@ export function CityMarker({
           <Crest crest={supplier} size={22} />
         </span>
       )}
-      <span
-        data-map-label
-        className="pointer-events-none absolute left-1/2 top-[calc(100%-4px)] -translate-x-1/2 whitespace-nowrap bg-[#16263E]/80 px-1.5 font-display text-xs font-extrabold uppercase tracking-wider text-cream/95 [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
-      >
-        {name}
-      </span>
     </button>
+  );
+}
+
+/**
+ * A city's name under its tile, a marker of its own drawn over the carts (a cart on its road never
+ * hides it), while the tile stays under them so a parked cart can be touched.
+ */
+export function CityName({ code, name, dim }: { code: string; name: string; dim: boolean }) {
+  return (
+    <span
+      data-map-label
+      data-coach-with={`city-${code}`}
+      className={`pointer-events-none absolute left-0 top-[32px] -translate-x-1/2 whitespace-nowrap bg-[#16263E]/80 px-1.5 font-display text-xs font-extrabold uppercase tracking-wider text-cream/95 transition-opacity duration-300 [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] ${dim ? "opacity-40" : ""}`}
+    >
+      {name}
+    </span>
   );
 }
 
