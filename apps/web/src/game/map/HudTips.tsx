@@ -103,11 +103,11 @@ export function HudTip({
           <dl className="space-y-0.5 border-t border-line pt-2">
             {content.lines.map((l) => (
               <div key={l.label} className="flex items-baseline justify-between gap-3">
-                <dt className="font-mono text-xs uppercase tracking-[0.06em] text-cream-dim">
+                <dt className="min-w-0 font-mono text-xs uppercase tracking-[0.06em] text-cream-dim">
                   {l.label}
                 </dt>
                 <dd
-                  className={`font-mono text-xs tabular-nums ${
+                  className={`shrink-0 whitespace-nowrap font-mono text-xs tabular-nums ${
                     l.tone === "vermilion"
                       ? "text-vermilion"
                       : l.tone === "gold"

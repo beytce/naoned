@@ -537,7 +537,7 @@ export const fr = {
           thanks: "Merci",
           peace: "Paix",
         } as Record<string, string>,
-        target: "Désigner aux alliés",
+        target: "Désigner",
         give: (amount: string) => `Donner ${amount}`,
         embargo: "Embargo",
         lift: "Lever l'embargo",
@@ -605,9 +605,9 @@ export const fr = {
       },
       holder: {
         line: (cells: number, troops: number) => `${cells} cases · ⚔ ${troops}`,
-        ally: "Proposer l'alliance",
-        asked: "Alliance proposée",
-        accept: "Accepter l'alliance",
+        ally: "S'allier",
+        asked: "Proposée",
+        accept: "Accepter",
         broken: "Rompre",
         send: "Envoyer",
         sendLine: (count: number, left: number) =>

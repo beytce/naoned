@@ -52,16 +52,17 @@ export function AdviceTile(props: GameProps) {
   const first = props.view.next[0];
   const a = first ? line(props, first) : null;
   return (
-    <div className="flex items-center gap-3 cut border border-gold/40 bg-gold/10 px-3 py-2 text-sm">
+    // The button goes under the words when they would be left a word a line.
+    <div className="flex flex-wrap items-center gap-3 cut border border-gold/40 bg-gold/10 px-3 py-2 text-sm">
       <span className="shrink-0">
         <Lorenzo size={40} />
       </span>
-      <span className="min-w-0 flex-1">
+      <span className="min-w-[10rem] flex-1">
         <span className="label block text-gold">{t.title}</span>
         <span className="block">{a ? a.text : t.none}</span>
       </span>
       {a && (
-        <Slab size="sm" disabled={props.busy} onClick={a.go}>
+        <Slab size="sm" className="ml-auto" disabled={props.busy} onClick={a.go}>
           {a.button}
         </Slab>
       )}

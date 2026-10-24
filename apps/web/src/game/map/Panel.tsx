@@ -166,7 +166,8 @@ export function ActionButton({
           </span>
         )}
       </span>
-      <span className="max-w-full whitespace-nowrap text-xs font-semibold text-cream-dim">
+      {/* Two short lines at most, never written over its neighbour's. */}
+      <span className="line-clamp-2 max-w-full text-center text-xs font-semibold leading-tight text-cream-dim">
         {label}
       </span>
     </button>
