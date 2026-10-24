@@ -45,6 +45,7 @@ export async function assertLayout(page) {
     ...(await overlaps(page)),
     ...(await touches(page)),
     ...(await wraps(page)),
+    ...(await squeezed(page)),
     ...(await guide(page)),
   ]);
 }
@@ -347,6 +348,48 @@ function wraps(page) {
         wrong.push(
           `.meta « ${text.slice(0, 50)} » wraps on ${rows} lines (${Math.round(r.width)} px wide)`,
         );
+    }
+    return wrong;
+  });
+}
+
+/**
+ * Words with room to read: no button whose label runs past its edge (« Proposer l'alli… » over
+ * its neighbour), and no text squeezed a word a line into a column (« Lorenzo / conseille »).
+ */
+function squeezed(page) {
+  return page.evaluate(() => {
+    const wrong = [];
+    const seen = (el) => {
+      if (el.getClientRects().length === 0) return false;
+      const r = el.getBoundingClientRect();
+      if (r.bottom <= 0 || r.top >= innerHeight || r.width < 1) return false;
+      const s = getComputedStyle(el);
+      return s.visibility !== "hidden" && Number(s.opacity) !== 0;
+    };
+    for (const b of document.querySelectorAll("button")) {
+      if (!seen(b)) continue;
+      // A label held to its box (a city's name hung under its tile is not) whose words run past
+      // it, a cut one (truncate) aside.
+      for (const span of b.querySelectorAll("span")) {
+        if (!seen(span) || span.children.length > 0 || span.clientWidth === 0) continue;
+        if (getComputedStyle(span).overflow !== "visible") continue;
+        const text = (span.textContent ?? "").trim();
+        if (text !== "" && span.scrollWidth > span.clientWidth + 1)
+          wrong.push(`button « ${text.slice(0, 40)} » runs past its edge`);
+      }
+    }
+    for (const el of document.querySelectorAll("p, span, h3, li")) {
+      if (!seen(el) || el.children.length > 0) continue;
+      const text = (el.textContent ?? "").replace(/\s+/g, " ").trim();
+      if (text.split(" ").length < 3) continue;
+      const s = getComputedStyle(el);
+      const font = Number.parseFloat(s.fontSize);
+      const line = Number.parseFloat(s.lineHeight) || font * 1.375;
+      const r = el.getBoundingClientRect();
+      // More than four lines in a column under eight letters wide.
+      if (r.height / line > 4.5 && r.width < font * 0.55 * 8)
+        wrong.push(`« ${text.slice(0, 40)} » squeezed a word a line (${Math.round(r.width)} px)`);
     }
     return wrong;
   });
