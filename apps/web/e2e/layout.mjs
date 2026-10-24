@@ -133,7 +133,9 @@ async function stopServer(child) {
 async function startServer() {
   const serverDir = join(here, "..", "..", "server");
   const tsx = createRequire(join(serverDir, "package.json")).resolve("tsx/cli");
-  const port = 3100 + Math.floor(Math.random() * 800);
+  // Never 3659: Chromium refuses it (net::ERR_UNSAFE_PORT).
+  let port = 3659;
+  while (port === 3659) port = 3100 + Math.floor(Math.random() * 800);
   const url = `http://127.0.0.1:${port}`;
   mkdirSync(SHOTS, { recursive: true });
   const file = join(SHOTS, "server.log");
@@ -462,16 +464,27 @@ async function teamWeek(page, door, check) {
       endsAt: null,
     });
   });
-  expect(riding, "the team", /équipe · terraferma/i);
+  // Two lines: what presses most (Milan on the merchant), then the team.
+  expect(riding, "the team", /équipe · vénétie/i);
   expect(riding, "Milan riding against the merchant", /sur vous/i);
-  expect(riding, "the battle's hour", /bataille à 20 h/i);
   await check("terraferme-equipes");
+
+  const calm = await show((v) => {
+    Object.assign(v, {
+      placementEndsAt: null,
+      truceEndsAt: null,
+      open: true,
+      battle: { from: 20, to: 21, on: false },
+    });
+    v.fronts = v.fronts.filter((f) => !f.threat);
+  });
+  expect(calm, "the battle's hour", /bataille à 20 h/i);
 
   const won = await show((v) => {
     v.rules.team = TEAM;
     v.closed = { signore: -1, conquest: false, teams: [{ team: TEAM, glory: 40, cells: 12 }] };
   });
-  expect(won, "the team that won", /terraferma l'emporte/i);
+  expect(won, "the team that won", /vénétie l'emporte/i);
   await check("terraferme-equipes-close");
   await page.unroute("**/api/game/terra");
 }
@@ -555,11 +568,13 @@ async function midWeek(page, door, check, pseudo) {
   };
   await open();
   await check("terraferme-jeudi");
+  await lightHud(page, "terraferme-jeudi");
   // The same on a PC, then back to the phone.
   const phone = page.viewportSize();
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.waitForTimeout(1200);
   await check("terraferme-jeudi-pc");
+  await lightHud(page, "terraferme-jeudi-pc");
   // A card of the HUD closes on Escape, as a window does.
   const purse = page.locator("[data-hud] button[aria-label]").filter({ hasText: /\d/ }).first();
   if ((await purse.count()) > 0) {
@@ -576,6 +591,44 @@ async function midWeek(page, door, check, pseudo) {
   await page.waitForTimeout(800);
   await page.unroute("**/api/game/terra");
   await page.unroute("**/api/game/terra/replay");
+}
+
+/**
+ * The Terraferma's HUD kept light (the owner's word of 24 October 2026): its band ends high, two
+ * blocks at most under the purse, its actions at the thumb at the bottom right, no link
+ * underlined.
+ */
+async function lightHud(page, label) {
+  const seen = await page.evaluate(() => {
+    const visible = (el) => el.getClientRects().length > 0;
+    const right = ["troops", "terra-note"].filter((k) =>
+      [...document.querySelectorAll(`[data-hud="${k}"]`)].some(visible),
+    );
+    const top = [...document.querySelectorAll("[data-hud]")]
+      .filter((el) => visible(el) && !el.closest("[data-hud=actions]"))
+      .filter((el) => el.getBoundingClientRect().top < innerHeight / 2)
+      .map((el) => el.getBoundingClientRect().bottom);
+    const actions = document.querySelector("[data-hud=actions]");
+    return {
+      band: Math.max(0, ...top),
+      right,
+      underlined: [...document.querySelectorAll("[data-hud] *")].filter(
+        (el) => visible(el) && getComputedStyle(el).textDecorationLine.includes("underline"),
+      ).length,
+      actions: actions ? actions.getBoundingClientRect().top / innerHeight : null,
+      width: innerWidth,
+    };
+  });
+  // The purse, the troops and a plaque of two lines: from 235 px before (24 October 2026). On a
+  // PC the right column holds three lines of text at most.
+  const most = seen.width >= 1024 ? 200 : 160;
+  if (seen.band > most)
+    throw new Error(
+      `${label}: the HUD's band ends at ${Math.round(seen.band)} px, ${most} at most`,
+    );
+  if (seen.underlined > 0) throw new Error(`${label}: ${seen.underlined} link(s) underlined`);
+  if (seen.actions === null || seen.actions < 0.5)
+    throw new Error(`${label}: the skirmishes and the week not at the thumb`);
 }
 
 /** The workshops' window opened: each workshop's button, its recipe raw or transforming. */
