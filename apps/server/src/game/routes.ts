@@ -1086,7 +1086,12 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       ids.length === 0
         ? []
         : await db
-            .select({ id: accounts.id, pseudo: accounts.pseudo, crest: accounts.crest })
+            .select({
+              id: accounts.id,
+              pseudo: accounts.pseudo,
+              crest: accounts.crest,
+              bot: accounts.isBot,
+            })
             .from(accounts)
             .where(inArray(accounts.id, ids));
     const who = new Map(rows.map((r) => [r.id, r]));
@@ -1095,6 +1100,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       me: id === account.id,
       pseudo: who.get(id)?.pseudo ?? null,
       crest: who.get(id)?.crest ?? null,
+      bot: who.get(id)?.bot ?? false,
     });
     return toJson({
       bonusBps: rules.bonusBps,

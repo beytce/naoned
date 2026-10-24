@@ -91,13 +91,13 @@ export async function dashboard(
     if (from) add(from, r.day, -BigInt(r.amount));
   }
   const series = (id: string) => days.map((day) => net.get(`${id}|${day}`) ?? 0n);
-  const names = new Map<string, string | null>();
+  const names = new Map<string, { pseudo: string | null; bot: boolean }>();
   if (ids.length > 0) {
     const rs = await db
-      .select({ id: accounts.id, pseudo: accounts.pseudo })
+      .select({ id: accounts.id, pseudo: accounts.pseudo, bot: accounts.isBot })
       .from(accounts)
       .where(inArray(accounts.id, ids));
-    for (const r of rs) names.set(r.id, r.pseudo);
+    for (const r of rs) names.set(r.id, { pseudo: r.pseudo, bot: r.bot });
   }
   const today = series(playerId).at(-1) ?? 0n;
   return {
@@ -107,7 +107,8 @@ export async function dashboard(
     days,
     lines: ids.map((id) => ({
       who: id === playerId ? "me" : id === leader ? "leader" : "rival",
-      pseudo: names.get(id) ?? null,
+      pseudo: names.get(id)?.pseudo ?? null,
+      bot: names.get(id)?.bot ?? false,
       daily: series(id),
     })),
   };
