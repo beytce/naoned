@@ -10,6 +10,8 @@ Trois experts en jeux mobile et PC persistants, de la famille de Hades' Star, on
 | E2 | Multijoueur, social, live-ops, modes de jeu |
 | E3 | Mobile et PC, premières minutes, notifications, modèle économique, acquisition |
 
+**Les dates du chef (lancement au 1er novembre, date butoir au 31 octobre) sont retirées à la demande du porteur** : le lancement n'est pas daté. Dans `chef.md`, elles restent comme historique.
+
 **Rien n'est codé.** Ce document attend la validation du porteur, comme le veut CLAUDE.md.
 
 ## Ce que le chef a vérifié dans le code
@@ -31,10 +33,10 @@ Trois experts en jeux mobile et PC persistants, de la famille de Hades' Star, on
 
 ## La direction fixée par le chef
 
-1. **Le 1er novembre, un jeu de commerce honnête et qui dort la nuit.** Plus de commandes la nuit, plus de récompense captée par un PNJ, plus de système non simulé : prêts et entrepôts sont coupés.
-2. **En novembre, la croissance par la demande et la règle du mois.** On construit les *fondaci*, des agences en ville qui apportent des commandes personnelles. Le revenu plafonne aujourd'hui dès J+5, car la demande est fixe. On construit aussi la règle du mois (mutateur). Les deux partent ensemble le **1er décembre**.
+1. **Au lancement, un jeu de commerce honnête et qui dort la nuit.** Plus de commandes la nuit, plus de récompense captée par un PNJ, plus de système non simulé : prêts et entrepôts sont coupés.
+2. **Ensuite, la croissance par la demande et la règle du mois.** On construit les *fondaci*, des agences en ville qui apportent des commandes personnelles. Le revenu plafonne aujourd'hui dès J+5, car la demande est fixe. On construit aussi la règle du mois (mutateur). Les deux partent ensemble.
 3. **Le social se limite à une compagnie d'amis**, sans aucun pouvoir économique. Il n'y a pas de deuxième mode de guerre, et pas de ligue tant que la population manque.
-4. **La date butoir ne souffre aucune exception.** Une règle qui n'est pas fusionnée le **31 octobre à 18 h** (heure de Paris) part le 1er décembre, avec ses notes de saison. Les corrections de bogue et d'interface peuvent partir en cours de mois.
+4. **Pas de calendrier fixé.** La date de lancement n'est pas arrêtée (décision du porteur, 24 octobre), et les dates du chef sont donc retirées. Avant le lancement, tout peut partir dès que c'est prêt. Une fois qu'il y a des joueurs, la règle de CLAUDE.md s'applique : un changement de règle prend effet au changement de mois, avec ses notes de saison. Les corrections de bogue et d'interface peuvent partir en cours de mois.
 
 ## Le bilan des 32 propositions
 
@@ -46,7 +48,7 @@ Trois experts en jeux mobile et PC persistants, de la famille de Hades' Star, on
 
 ## Le plan, lot par lot
 
-### Lot 0 : corrections, avant le 28 octobre
+### Lot 0 : corrections, en premier
 
 | Sujet | Proposition | Ce qu'on fait |
 | --- | --- | --- |
@@ -65,12 +67,12 @@ Trois experts en jeux mobile et PC persistants, de la famille de Hades' Star, on
 - Une inscription avec `a+1@gmail.com` est refusée si `a@gmail.com` existe déjà.
 - L'e2e passe en 390×844 et en 320×568.
 
-### Lot 1 : avant le lancement du 1er novembre (date butoir des règles : 31 octobre, 18 h)
+### Lot 1 : avant le lancement
 
 1. **E1-1, des vagues de jour seulement.**
    - Vagues à 8, 11, 14, 17 et 20 h, heure de Paris, testées aux deux changements d'heure. Les commandes urgentes ferment à 19 h au plus tard.
    - E1 a mesuré qu'enlever les vagues de nuit pénalise les occasionnels : les PNJ, qui ne dorment pas, retrouvaient ces commandes le matin. Deux règles sont donc obligatoires : les vagues de 17 h et 20 h restent ouvertes jusqu'au lendemain 10 h, et personne ne prend au tableau commun entre 22 h et 8 h.
-   - **Condition de départ :** l'occasionnel prend au moins 0,37 fois ce que prend l'assidu, et l'écart entre assidus et occasionnels reste à 145 % au plus. Sinon, la règle part le 1er décembre.
+   - **Condition de départ :** l'occasionnel prend au moins 0,37 fois ce que prend l'assidu, et l'écart entre assidus et occasionnels reste à 145 % au plus. Sinon, on retravaille la règle avant de la livrer.
 2. **E1-5, couper prêts et entrepôts.** Ils ne sont pas simulés, et emprunter ne coûte rien au classement. La coupure rend aussi inutile le chantier `loop-m1`.
 3. **E3-4, la vitrine.** Balises `og:` pour les aperçus de lien, un manifeste complet (`id`, captures, raccourcis) et le suivi `?ref=`.
 4. **E3-2, point 2, l'entonnoir.** Une mesure anonyme dans `/admin` : `landing_view`, puis `first_produce`, par jour.
@@ -86,12 +88,12 @@ Trois experts en jeux mobile et PC persistants, de la famille de Hades' Star, on
 - Aucune vague ne s'ouvre entre 22 h et 8 h sur 31 jours.
 - Un lien collé dans Discord affiche l'image de l'aperçu.
 - Le premier lot de production part en 90 s au plus.
-- Une seule `seasonNotes` pour novembre.
-- **La porte de publication n'est pas négociable :** test de charge à 300 comptes, répétition du changement de saison et restauration de sauvegarde attestée. S'il en manque une, on ouvre le 1er novembre en bêta fermée, sur Discord seulement, sans post Reddit.
+- Une seule `seasonNotes` pour la première saison.
+- **La porte de publication n'est pas négociable :** test de charge à 300 comptes, répétition du changement de saison et restauration de sauvegarde attestée. S'il en manque une, on ouvre en bêta fermée, sur Discord seulement, sans post Reddit.
 
-### Lot 2 : novembre
+### Lot 2 : après le lot 1, avant ou après le lancement
 
-**Peut partir en cours de mois, car sans effet sur les règles :**
+**Peut partir à tout moment, car sans effet sur les règles :**
 - **E2-2, trois convocations d'escarmouche par jour.** Aujourd'hui, la salle d'attente dure 60 s et exige 2 humains : une partie classée n'arrive presque jamais.
 - **E2-4, des PNJ alliés qui secourent, ripostent et parlent.** Ils ne donnent jamais de ducats, et un humain a au plus un PNJ allié.
 - **E2-8, les compagnies.** De 2 à 6 amis, recrutés par lien d'invitation, sans trésor ni pouvoir économique. La compagnie survit au changement de mois.
@@ -101,7 +103,7 @@ Trois experts en jeux mobile et PC persistants, de la famille de Hades' Star, on
 - **E3-9, point 2 : l'information du Pass devient gratuite.**
 - **E3-11, daltonisme et taille du texte.** Des signes non colorés d'abord, puis le test, et la palette en dernier recours. La taille du texte passe en `rem`.
 
-**Développé en novembre, en ligne le 1er décembre, car ce sont des règles :**
+**Ce sont des règles : elles partent ensemble, dès que prêtes avant le lancement, ou au changement de mois s'il y a déjà des joueurs :**
 - **E1-3, les fondaci.**
   - Elles remplacent les entrepôts : une commande personnelle par niveau, 6 niveaux au plus.
   - Les PNJ doivent être simulés avant la mise en ligne.
@@ -113,15 +115,15 @@ Trois experts en jeux mobile et PC persistants, de la famille de Hades' Star, on
 - **E2-9, le mutateur du mois.**
   - Le catalogue de départ compte 3 mutateurs : Embargo ottoman, Grand gel, Guerre de Milan.
   - Une liste blanche, testée, limite les mutateurs aux clés de réglage qui existent déjà.
-  - Novembre se joue sans mutateur ; le premier est annoncé le 24 novembre.
+  - La première saison se joue sans mutateur ; chaque mutateur est annoncé une semaine avant le mois où il s'applique.
 - **E3-10, une série clémente.** Un jour de grâce par semaine, et un seul rappel.
 
 **Critère de réussite :**
-- Mesuré dans `/admin` sur les humains de novembre :
+- Mesuré dans `/admin` sur les humains de la première saison :
   - J1 ≥ 40 % et J7 ≥ 20 % ;
   - au moins 0,5 invitation par joueur ;
   - au moins 40 % des parties classées jouées en convocation.
-- Pour le paquet du 1er décembre :
+- Pour le paquet de règles :
   - 5 graines conformes avec tous les changements ensemble ;
   - cours du Veneto en fin de mois ≥ 65 % de la référence ;
   - masse monétaire ≤ 2,5 fois le capital ;
@@ -146,25 +148,25 @@ Trois experts en jeux mobile et PC persistants, de la famille de Hades' Star, on
 | --- | --- | --- |
 | Le gel des mécaniques | E1-3, E1-4, E1-6, E1-7, E2-6, E2-9, E3-10 | Sans croissance par la demande ni renouvellement mensuel, rien ne fait revenir à J30. |
 | « Chacun pour soi, pas de guildes » (décision du 17 octobre) | E2-8 | Les groupes d'amis sont le premier moteur de rétention des jeux persistants. Ici, la compagnie n'a aucun pouvoir économique. |
-| Deux clauses du Pass dans CLAUDE.md : quota de Pass gagnable au classement, et `pnpm sim --pass 0.2` comme condition de paiement | E3-9 | Un Pass purement cosmétique (« Mécène ») rend la question du pay-to-win sans objet. Le Pass n'est plus donné au classement à partir du 1er décembre. |
+| Deux clauses du Pass dans CLAUDE.md : quota de Pass gagnable au classement, et `pnpm sim --pass 0.2` comme condition de paiement | E3-9 | Un Pass purement cosmétique (« Mécène ») rend la question du pay-to-win sans objet. Le Pass n'est plus donné au classement (au changement de mois s'il y a déjà des joueurs). |
 | Interface en français seulement | E3-8 | La campagne vise des communautés anglophones. |
 
 ## Les 12 décisions qui reviennent au porteur
 
 Chaque décision est donnée avec la recommandation du chef.
 
-1. **Les fondaci, et le retrait des entrepôts (E1-3) :** oui, le 1er décembre.
+1. **Les fondaci, et le retrait des entrepôts (E1-3) :** oui, avec le paquet de règles du lot 2.
 2. **Couper prêts et entrepôts avant le lancement (E1-5) :** oui.
 3. **Les compagnies (E2-8) :** oui, sans pouvoir économique.
-4. **Le jeu en invité (E3-2) :** non en novembre ; décision fin novembre, sur au moins 300 `landing_view`.
-5. **Le mutateur du mois (E2-9) :** oui ; novembre sans mutateur, le premier le 1er décembre.
-6. **L'Arsenal de la semaine (E2-6) :** oui, le 1er décembre, à création de monnaie ≤ 1,5 fois celle d'aujourd'hui.
+4. **Le jeu en invité (E3-2) :** non pour l'instant ; décision sur l'entonnoir mesuré, après au moins 300 `landing_view`.
+5. **Le mutateur du mois (E2-9) :** oui ; la première saison sans mutateur, le premier à la saison suivante.
+6. **L'Arsenal de la semaine (E2-6) :** oui, avec le paquet de règles, à création de monnaie ≤ 1,5 fois celle d'aujourd'hui.
 7. **L'interface en anglais (E3-8) :** oui. Lancement francophone, les posts anglais viennent après.
 8. **Le Pass devient « Mécène » cosmétique, avec l'information gratuite pour tous (E3-9) :** oui ; le paiement arrive en V1.
 9. **Une nouvelle cible d'écart dans la course aux commandes (≤ 150 %), à écrire dans le CADRAGE :** oui.
-10. **La série clémente (E3-10) :** oui, le 1er décembre.
-11. **Lancement public le 1er novembre :** oui, seulement si le lot 0 et la porte de publication sont au vert ; sinon, bêta fermée sur Discord.
-12. **Le monde du 1er novembre :** vérifier `worlds.ends_at`. Si la première saison court jusqu'au 30 novembre, remettre le monde à zéro le 1er, puisque la campagne promet « la saison de novembre s'ouvre le 1er ».
+10. **La série clémente (E3-10) :** oui, avec le paquet de règles.
+11. **Lancement public :** à la date que tu choisiras, seulement si le lot 0 et la porte de publication sont au vert ; sinon, bêta fermée sur Discord.
+12. **Le monde du lancement :** vérifier `worlds.ends_at`. Remettre le monde à zéro au 1er du mois du lancement, pour que la première saison soit un mois complet. Mettre à jour le kit de campagne, qui promet « la saison de novembre s'ouvre le 1er ».
 
 ## Un écart entre le chef et la correction
 
