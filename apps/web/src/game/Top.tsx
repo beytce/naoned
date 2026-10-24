@@ -100,7 +100,10 @@ function Gain({ value }: { value: string }) {
 function Podium({
   rows,
   title,
-}: { rows: Pick<PodiumRow, "rank" | "pseudo" | "crest" | "bot" | "award">[]; title: string }) {
+}: {
+  rows: (Pick<PodiumRow, "rank" | "pseudo" | "crest" | "bot" | "award"> & { id?: string })[];
+  title: string;
+}) {
   // Second, first, third: the winner stands in the middle, higher.
   const places = [
     { slot: "second", r: rows[1], height: "h-14" },
@@ -113,13 +116,13 @@ function Podium({
       <div className="mt-4 grid grid-cols-3 items-end gap-2">
         {places.map(({ slot, r, height }) =>
           r ? (
-            <div key={slot} className="flex flex-col items-center gap-1 text-center">
-              <Crest crest={r.crest ?? defaultCrest(`${r.rank}-${r.pseudo ?? ""}`)} size={40} />
+            <div key={slot} className="flex min-w-0 flex-col items-center gap-1 px-1 text-center">
+              <Crest crest={crestOf(r)} size={40} />
               {/* A third of the width: the seal under the name, which keeps its letters. */}
               <MerchantName
                 pseudo={r.pseudo}
                 bot={r.bot}
-                className="flex-col font-display text-xs font-semibold"
+                className="w-full flex-col font-display text-xs font-semibold"
               />
               {r.award && (
                 <span className="font-mono text-xs uppercase tracking-wider text-gold">
@@ -226,7 +229,24 @@ export function RankingSheet(props: GameProps) {
   );
   return (
     <>
-      <Sheet open={open} onClose={() => props.setSheet(null)}>
+      <Sheet
+        open={open}
+        onClose={() => props.setSheet(null)}
+        title={view === "board" ? fr.game.tabs.top : undefined}
+        // The week before and the rules in the head, never hidden behind the merchant's own line.
+        summary={
+          view === "board" ? (
+            <span className="flex gap-5">
+              <button type="button" className="label text-info" onClick={() => setView("last")}>
+                {tp.tabs.passee}
+              </button>
+              <button type="button" className="label text-info" onClick={() => setView("rules")}>
+                {tp.tabs.regles}
+              </button>
+            </span>
+          ) : undefined
+        }
+      >
         {view === "last" ? (
           <div>
             {back}
@@ -245,9 +265,6 @@ export function RankingSheet(props: GameProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            <h3 className="pr-12 font-display text-2xl font-extrabold uppercase">
-              {fr.game.tabs.top}
-            </h3>
             <div className="flex gap-2">
               {tab(
                 "week",
@@ -271,14 +288,6 @@ export function RankingSheet(props: GameProps) {
                 </div>
               </>
             )}
-            <div className="flex justify-center gap-6 pb-1">
-              <button type="button" className="label text-info" onClick={() => setView("last")}>
-                {tp.tabs.passee}
-              </button>
-              <button type="button" className="label text-info" onClick={() => setView("rules")}>
-                {tp.tabs.regles}
-              </button>
-            </div>
             {me && (
               // The merchant's own line stays in sight at the foot of the sheet.
               <div className="sticky bottom-0 -mx-5 border-t border-gold/40 bg-night-2/95 px-5 py-2 backdrop-blur lg:-mx-7 lg:px-7">

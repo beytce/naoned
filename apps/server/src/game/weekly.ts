@@ -137,6 +137,7 @@ export async function weeklyTable(
       ? []
       : await db
           .select({
+            id: accounts.id,
             rank: weeklyResults.rank,
             gain: weeklyResults.gain,
             award: weeklyResults.award,

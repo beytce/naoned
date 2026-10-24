@@ -876,6 +876,8 @@ export interface WeekRow {
 }
 
 export interface PodiumRow {
+  /** The account: its default crest, the same as in the list. */
+  id: string;
   rank: number;
   pseudo: string | null;
   crest: CrestData | null;
