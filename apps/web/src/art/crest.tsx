@@ -128,3 +128,26 @@ export function Crest({ crest, size = 64 }: { crest: CrestData; size?: number })
     </svg>
   );
 }
+
+/**
+ * The crest where it is small (a holder's mark on the Terraferma, 14 to 18 px): a disc of its field
+ * with its charge in silhouette, read where the shield's outline and filet would blur.
+ */
+export function MiniCrest({ crest, size = 16 }: { crest: CrestData; size?: number }) {
+  const [fill, edge] = FIELD[crest.color] ?? FIELD.gold ?? [P.gold, P.goldDeep];
+  const ink = crest.color === "gold" ? P.night : P.cream;
+  return (
+    <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden="true">
+      <circle cx="50" cy="50" r="46" fill={fill} stroke={edge} strokeWidth="8" />
+      <g
+        fill={ink}
+        stroke={ink}
+        strokeWidth="0"
+        transform="translate(50 50) scale(1.1) translate(-50 -50)"
+        style={{ ["--crest-field" as string]: fill }}
+      >
+        {SYMBOLS[crest.symbol] ?? SYMBOLS.star}
+      </g>
+    </svg>
+  );
+}

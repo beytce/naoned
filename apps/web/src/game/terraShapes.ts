@@ -152,22 +152,19 @@ export function neighbours(map: HexMap, owner: number[]): Map<number, Set<number
 }
 
 /**
- * Twelve muted jewel tones from the palette's family (never pure gold nor vermilion, kept for
- * their roles): emerald, violet, teal, clay, plum, slate, olive, rose, sky, walnut, lavender, jade.
+ * Eight muted tones for the other merchants, kept away (ΔE ≥ 20) from the colours the map gives a
+ * role: gold for the merchant's own land, lagoon for allies, vermilion for enemies, lapis for the
+ * cell touched, and the water's blues. Violet, plum, olive, rose, walnut, sand, dusk, terracotta.
  */
 export const TERRA_TONES = [
-  "#3FA36B",
   "#8E6BD8",
-  "#3E9C9C",
-  "#C8693F",
   "#A0558A",
-  "#6B7FA6",
   "#8C9440",
   "#C97B95",
-  "#6FA8D6",
   "#A8743F",
-  "#A99BD9",
-  "#5DBF9A",
+  "#9A8466",
+  "#7E6A8C",
+  "#A36F6F",
 ];
 
 function hash(s: string): number {

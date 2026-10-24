@@ -24,8 +24,11 @@ export function Slab(props: {
   children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
-  /** Gold for the one action that matters on the screen, ghost for the others; never lagoon. */
-  tone?: Exclude<Tone, "lagoon">;
+  /**
+   * Gold for the one action that matters on the screen, ghost for the others, text for a quiet
+   * one (« Lire le guide »: the third level, never underlined); never lagoon.
+   */
+  tone?: Exclude<Tone, "lagoon"> | "text";
   size?: "sm" | "md" | "lg";
   className?: string;
   type?: "button" | "submit";
@@ -39,6 +42,22 @@ export function Slab(props: {
     md: "px-6 py-3 text-sm",
     lg: "px-7 py-4 text-base",
   }[props.size ?? "md"];
+  if (props.tone === "text")
+    return (
+      <button
+        type={props.type ?? "button"}
+        onClick={() => {
+          haptic("tap");
+          props.onClick?.();
+        }}
+        disabled={props.disabled}
+        data-coach={props.coach}
+        aria-label={props.label}
+        className={`inline-flex min-h-11 items-center justify-center px-2 font-display font-bold text-info transition hover:brightness-110 active:opacity-70 disabled:pointer-events-none disabled:opacity-35 ${props.size === "lg" ? "text-base" : "text-sm"} ${props.className ?? ""}`}
+      >
+        {props.children}
+      </button>
+    );
   const tone = TONES[props.tone ?? "gold"];
   return (
     <button
@@ -88,6 +107,43 @@ export function unitsKept(children: ReactNode): ReactNode {
   if (Array.isArray(children))
     return children.map((c, i) => (typeof c === "string" ? keep(c, i) : c));
   return children;
+}
+
+/**
+ * A chip of the map's HUD: a sign and a short word, 44 px high, for an action at hand (« Escarmouche
+ * », « Semaine ») or a state worth a glance. Lapis (info) by default, vermilion when it presses.
+ */
+export function HudChip(props: {
+  icon: ReactNode;
+  children: ReactNode;
+  onClick?: () => void;
+  tone?: "info" | "vermilion" | "plain";
+  /** The whole action, when the chip says it short. */
+  label?: string;
+  hud?: string;
+  disabled?: boolean;
+}) {
+  const tone = {
+    info: "text-info ring-info/45",
+    vermilion: "text-vermilion ring-vermilion/60",
+    plain: "text-cream ring-line",
+  }[props.tone ?? "info"];
+  return (
+    <button
+      type="button"
+      data-hud={props.hud}
+      aria-label={props.label}
+      disabled={props.disabled}
+      onClick={() => {
+        haptic("tap");
+        props.onClick?.();
+      }}
+      className={`pointer-events-auto flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-full bg-night/85 px-3.5 font-display text-sm font-bold shadow-[0_4px_14px_rgb(0_0_0/0.45)] ring-1 ring-inset backdrop-blur transition active:scale-95 disabled:opacity-35 ${tone}`}
+    >
+      <span className="shrink-0">{props.icon}</span>
+      <span>{props.children}</span>
+    </button>
+  );
 }
 
 /**

@@ -17,3 +17,21 @@ export const P = {
   emerald: "#3FA36B",
   violet: "#8E6BD8",
 };
+
+/**
+ * The map's writing, the same at every zoom (in CSS px): a name is never bigger than a city's, a
+ * figure never bigger than a name. Each sits on its halo, the map's ink.
+ */
+export const MAP_TEXT = {
+  /** A city, in capitals. */
+  city: 12,
+  /** A merchant's land. */
+  merchant: 11,
+  /** The merchant's own, and a land of many cells. */
+  mine: 12,
+  /** The troops, in a pill. */
+  troops: 11,
+  /** Behind each word: the map's ink. */
+  halo: "#0B1626",
+  ink: P.cream,
+} as const;

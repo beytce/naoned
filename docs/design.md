@@ -46,7 +46,9 @@ Les illustrations (ressources, bâtiments, blasons) et la carte gardent leurs pr
 ## Composants (`apps/web/src/ui.tsx`)
 
 Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arrondis, partout (`.cut` pour les cartes et les lignes, `.slab` pour les puces et les badges). Le cercle est réservé aux médaillons, avatars, pastilles et jauges ; les feuilles gardent leur poignée arrondie.
-- `Slab` : bouton en parallélogramme (`.bevel`) posé sur une ombre pleine décalée de sa teinte sombre. À l'appui, la face s'enfonce sur son ombre, avec un tick haptique. Or pour l'unique action qui compte à l'écran, fantôme pour les autres ; jamais vert d'eau.
+- `Slab` : bouton en parallélogramme (`.bevel`) posé sur une ombre pleine décalée de sa teinte sombre. À l'appui, la face s'enfonce sur son ombre, avec un tick haptique. Or pour l'unique action qui compte à l'écran, fantôme pour les autres ; jamais vert d'eau. Trois niveaux seulement : **or** (l'unique action), **fantôme** (les autres), **texte** (`Slab tone="text"`, en lapis, sans soulignement : « Lire le guide », « Passer »). Le lien souligné n'existe pas dans le jeu. Sous les capitales, l'unité d'un montant reste un petit « d ».
+- `HudChip` : sur la carte, une action à portée de pouce ou un état à lire d'un coup d'œil, un picto et un mot court (« Escarmouche », « Semaine »), 44 px de haut, lapis par défaut, vermillon quand elle presse.
+- `MiniCrest` (`art/crest.tsx`) : le blason réduit à un disque de son émail et son meuble en silhouette, pour les marques de 14 à 18 px de la Terraferme.
 - `Panel` : carte à coins coupés (`.cut`), haut gauche et bas droit, avec un liseré. Une lueur intérieure s'ajoute quand elle doit attirer l'œil. Les tuiles et cartes de commande suivent la même coupe.
 - `Badge`, puces du stock, pastilles de tri : petits biseaux (`.slab`).
 - `Tabs` :
@@ -157,6 +159,10 @@ Tout est en SVG maison, dans `apps/web/src/art` : ressources, bâtiments (le mou
 - **Bandeau des décrets** (`DecreeBanner`) : au Rialto, dans les Décrets de la famille et dans le Journal de l'Arsenal ; lueur vert d'eau quand ils jouent pour le marchand, vermillon contre lui.
 
 ## Terraferme
+
+- **Teintes** (`TERRA_TONES`, `terraShapes.ts`) : huit tons sourds pour les autres marchands (violet, prune, olive, rose, noyer, sable, mauve, terre cuite), tenus à un écart ΔE ≥ 20 des couleurs qui ont un rôle sur la carte : or (vos terres), vert d'eau (alliés), vermillon (ennemis), lapis (la case touchée), les bleus de l'eau. Deux voisins n'ont jamais le même (`test/terraTones.test.ts`, sur le jeudi figé).
+- **Écriture de la carte** (`MAP_TEXT`, `art/palette.ts`) : la même à tout zoom, ville 12 px en capitales, marchand 11 px (12 px pour vous et les grands territoires), effectif 11 px en pastille, sur un halo d'encre ; un nom n'est jamais plus gros qu'une ville, un chiffre jamais plus gros qu'un nom.
+- **Pictos** : les troupes ont un casque, l'escarmouche une épée et son fanion, les brigands leurs épées croisées ; un picto, un sens (`test/icons.test.ts`).
 
 Le mode qui remplace la Campagne depuis le 18 octobre 2026 (`docs/plan-terraferme.md`) ; quand `terraferma.live` est éteint (mondes d'avant), rien n'en paraît et les familles reviennent. Allumé, sa porte « Terraferme » prend la place de « Famille » au pied de la carte (point vermillon : pas encore de camp de départ, un front en marche contre soi, une alliance proposée).
 

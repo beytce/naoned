@@ -139,6 +139,35 @@ export const Icon = {
       <path d="M20 4 L9 15 M9 15 L11 17 M9 15 L7 13 M8 18 L5 21" />
     </I>
   ),
+  /** The troops: a helmet (never the crossed swords, which are the bandits'). */
+  troops: () => (
+    <I>
+      <path d="M5 14 Q5 6 12 5 Q19 6 19 14 Z" />
+      <path d="M4 14 H20 M12 5 V3 M9.5 14 V18 Q12 20 14.5 18 V14" />
+    </I>
+  ),
+  /** A skirmish: a sword and its pennant. */
+  skirmish: () => (
+    <I>
+      <path d="M6 21 L18 9 M15.5 6.5 L20 3 L17.5 7.5 M8 15 L10 17" />
+      <path d="M6 3 V12 M6 3 L12 5 L6 7" />
+    </I>
+  ),
+  /** The week again: a page of the calendar and its turn. */
+  week: () => (
+    <I>
+      <path d="M5 6 H15 V15 H5 Z M8 4 V7 M12 4 V7 M5 9.5 H15" />
+      <path d="M19 12 A7 7 0 0 1 9.5 20 M19 12 L21 14.5 M19 12 L16.5 13.5" />
+    </I>
+  ),
+  /** Back onto the merchant's own land: a sight. */
+  locate: () => (
+    <I>
+      <circle cx="12" cy="12" r="6.5" />
+      <circle cx="12" cy="12" r="1.8" />
+      <path d="M12 2.5 V5.5 M12 18.5 V21.5 M2.5 12 H5.5 M18.5 12 H21.5" />
+    </I>
+  ),
   trophy: () => (
     <I>
       <path d="M7 4 H17 V9 A5 5 0 0 1 7 9 Z" />
