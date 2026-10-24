@@ -20,7 +20,7 @@ import { harvestAll, harvestAndRestart } from "./harvest.js";
 import { store } from "./store.js";
 import type { BuildingView, Cost, PlayerView, Recipe } from "./types.js";
 import { unlocksOf } from "./unlocks.js";
-import { have, outputQty, readyOf, recipeOf, workshopState } from "./workshops.js";
+import { defaultBatches, have, outputQty, readyOf, recipeOf, workshopState } from "./workshops.js";
 
 export { have };
 
@@ -607,8 +607,7 @@ function WorkshopSheet({
   props,
   focus,
 }: { b: BuildingView; props: GameProps; focus: "produce" | "upgrade" }) {
-  const learning = !props.view.tutorial.includes("invest");
-  const [qty, setQty] = useState(learning ? 1 : Math.max(1, b.canStart));
+  const [qty, setQty] = useState(defaultBatches(props.view.tutorial, b.canStart));
   const recipe = recipeOf(props, b.type);
   const st = workshopState(props, b);
   const t = fr.game.workshop;
