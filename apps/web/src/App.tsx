@@ -76,6 +76,7 @@ export function App() {
           sentTo={screen.sentTo}
           onSent={(email) => setScreen({ name: "login", sentTo: email })}
           onReset={() => setScreen({ name: "login" })}
+          onSignedIn={(account) => setScreen(screenFor(account))}
         />
       )}
       {screen.name === "invalidLink" && (
@@ -111,20 +112,34 @@ function Hero({ children }: { children: ReactNode }) {
 const inputClass =
   "w-full rounded-md bg-night-3 px-4 py-4 text-base text-cream ring-1 ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gold";
 
-function Login(props: { sentTo?: string; onSent: (email: string) => void; onReset: () => void }) {
+/** The app installed on the home screen: its link would open in the browser, not here. */
+function standalone(): boolean {
+  return (
+    (navigator as { standalone?: boolean }).standalone === true ||
+    (window.matchMedia?.("(display-mode: standalone)").matches ?? false)
+  );
+}
+
+function Login(props: {
+  sentTo?: string;
+  onSent: (email: string) => void;
+  onReset: () => void;
+  onSignedIn: (account: Account) => void;
+}) {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (props.sentTo) {
     return (
-      <div className="animate-rise space-y-5 text-center">
-        <h2 className="font-display text-xl font-semibold uppercase">{fr.checkInbox}</h2>
-        <p className="text-cream-dim">{fr.linkSentTo(props.sentTo)}</p>
-        <button type="button" onClick={props.onReset} className="label text-gold">
-          {fr.otherAddress}
-        </button>
-      </div>
+      <CodeForm
+        email={props.sentTo}
+        onSignedIn={props.onSignedIn}
+        onReset={props.onReset}
+        onResend={async () => {
+          await api.requestLink(props.sentTo ?? "");
+        }}
+      />
     );
   }
 
@@ -182,6 +197,99 @@ function Login(props: { sentTo?: string; onSent: (email: string) => void; onRese
         </a>
         {fr.accept[4]}
       </p>
+    </form>
+  );
+}
+
+/**
+ * The mail is gone: its code typed here (one field, digits, pasted or filled in by the phone),
+ * sent at the sixth digit; or its link touched, in this browser.
+ */
+function CodeForm(props: {
+  email: string;
+  onSignedIn: (account: Account) => void;
+  onReset: () => void;
+  onResend: () => Promise<void>;
+}) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [resent, setResent] = useState(false);
+  const app = standalone();
+
+  const send = async (digits: string) => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      props.onSignedIn(await api.verifyCode(props.email, digits));
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.code === "invalid_code" ? fr.code.wrong : errorText(err),
+      );
+      setCode("");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form
+      className="animate-rise space-y-5 text-center"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (code.length === 6) void send(code);
+      }}
+    >
+      <h2 className="font-display text-xl font-semibold uppercase">{fr.checkInbox}</h2>
+      {/* The field first: on a small phone, the keyboard covers what lies below. */}
+      <label className="block space-y-2 text-left">
+        <Label>{fr.code.label}</Label>
+        <input
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          pattern="[0-9]*"
+          aria-label={fr.code.label}
+          placeholder="000 000"
+          value={code.length > 3 ? `${code.slice(0, 3)} ${code.slice(3)}` : code}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
+            setCode(digits);
+            if (digits.length === 6) void send(digits);
+          }}
+          className={`${inputClass} text-center font-mono text-3xl tracking-[0.3em]`}
+        />
+      </label>
+      <p className={`text-sm ${app ? "font-semibold text-gold" : "text-cream-dim"}`}>
+        {fr.code.iosHint}
+      </p>
+      {error && <p className="text-sm text-vermilion">{error}</p>}
+      <Slab type="submit" size="lg" className="w-full" disabled={busy || code.length < 6}>
+        {busy ? fr.signingIn : fr.code.submit}
+      </Slab>
+      <p className="text-sm text-cream-dim">{fr.linkSentTo(props.email)}</p>
+      <div className="flex flex-col items-center gap-1">
+        <button
+          type="button"
+          disabled={resent}
+          onClick={async () => {
+            setError(null);
+            try {
+              await props.onResend();
+              setResent(true);
+            } catch (err) {
+              setError(errorText(err));
+            }
+          }}
+          className="label min-h-11 text-gold disabled:opacity-40"
+        >
+          {fr.code.resend}
+        </button>
+        <button type="button" onClick={props.onReset} className="label min-h-11 text-gold">
+          {fr.otherAddress}
+        </button>
+      </div>
     </form>
   );
 }

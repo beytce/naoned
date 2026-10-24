@@ -42,7 +42,10 @@ export const accounts = pgTable(
   ],
 );
 
-/** Magic link tokens. Only the SHA-256 hash is stored; a token is single-use. */
+/**
+ * Magic link tokens. Only the SHA-256 hash is stored; a token is single-use. The six-digit code
+ * of the same mail is stored as sha256(code:tokenHash), its wrong tries counted (burned at 5).
+ */
 export const loginTokens = pgTable(
   "login_tokens",
   {
@@ -51,6 +54,8 @@ export const loginTokens = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     usedAt: timestamp("used_at", { withTimezone: true }),
+    codeHash: text("code_hash"),
+    attempts: integer("attempts").notNull().default(0),
   },
   (t) => [index("login_tokens_email_idx").on(t.email, t.createdAt)],
 );
@@ -290,6 +295,8 @@ export const seasonResults = pgTable(
     worth: bigint("worth", { mode: "bigint" }).notNull(),
     /** Net sales of the season (sales less purchases), which rank it; absent before them. */
     turnover: bigint("turnover", { mode: "bigint" }),
+    /** The best net sales of the season, which the level counts; absent before them. */
+    turnoverPeak: bigint("turnover_peak", { mode: "bigint" }),
     /** doge, podium, top10, elite, notable, participant or none. */
     tier: text("tier").notNull(),
     /** Title held at the close (season milestone); its renown is included in `renown`. */

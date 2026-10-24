@@ -216,15 +216,26 @@ async function session(width, height, tag) {
       if (!tag) console.log(`· ${size} ${name}`);
     };
 
-    // The sign-in by magic link, the merchant's name, the introduction, the trade.
+    // The sign-in (by the mail's code or its link), the merchant's name, the introduction, the
+    // trade.
     const email = `e2e-${width}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.org`;
     await page.goto(base);
     await check("connexion");
     await page.fill("input[type=email]", email);
     await page.keyboard.press("Enter");
-    const token = await magicLink(email);
-    await page.goto(`${base}/connexion?token=${token}`);
-    await page.waitForSelector("input");
+    // The narrow phone signs in with the mail's code, typed in the page (an installed app on an
+    // iPhone); the other one with its link.
+    if (width < 360) {
+      const code = await mailCode(email);
+      const field = page.getByLabel(/code à 6 chiffres/i);
+      await field.waitFor();
+      await check("code");
+      await field.fill(code);
+    } else {
+      const token = await magicLink(email);
+      await page.goto(`${base}/connexion?token=${token}`);
+    }
+    await page.waitForSelector("input[autocomplete=nickname]");
     await check("nom");
     // Longer than ten letters: its cut is measured on the map.
     await page.fill("input", `e2e_${width}_${Math.floor(Math.random() * 1e6)}`);
@@ -491,6 +502,18 @@ async function closeAll(page) {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);
   }
+}
+
+/** The mail's six-digit code, from the server's log. */
+async function mailCode(email) {
+  for (let i = 0; i < 50; i++) {
+    await new Promise((r) => setTimeout(r, 200));
+    const text = readFileSync(log, "utf8");
+    const at = text.lastIndexOf(email);
+    const code = at >= 0 ? text.slice(at).match(/connexion à Fondaco : (\d{3}) (\d{3})/) : null;
+    if (code) return `${code[1]}${code[2]}`;
+  }
+  throw new Error("no code in the server's log");
 }
 
 /** The magic link's token, from the server's log. */

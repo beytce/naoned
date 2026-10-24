@@ -37,6 +37,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 export const api = {
   me: () => call<{ account: Account }>("GET", "/api/me").then((r) => r.account),
   requestLink: (email: string) => call<void>("POST", "/api/auth/request", { email }),
+  verifyCode: (email: string, code: string) =>
+    call<{ account: Account }>("POST", "/api/auth/code", { email, code }).then((r) => r.account),
   verify: (token: string) =>
     call<{ account: Account }>("POST", "/api/auth/verify", { token }).then((r) => r.account),
   setPseudo: (pseudo: string) =>

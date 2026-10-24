@@ -1,5 +1,6 @@
 import {
   type Command,
+  type Trade,
   freeBatches,
   hasPass,
   isNation,
@@ -7,6 +8,7 @@ import {
   supplierOf,
   supplierStandings,
   weekReplay,
+  workLevel,
 } from "@comptoirs/engine";
 import { and, desc, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -48,7 +50,7 @@ import { toJson } from "./serialize.js";
 import type { SkirmishHub } from "./skirmish.js";
 import { terraView } from "./terra.js";
 import { terraRecord } from "./terraRecord.js";
-import { catalog, playerView, ranking } from "./view.js";
+import { catalog, instantDepth, playerView, ranking } from "./view.js";
 import { weeklyRival, weeklyTable } from "./weekly.js";
 import { WELCOME_AFTER_MS, welcomeBack } from "./welcome.js";
 import type { GameWorld } from "./world.js";
@@ -407,6 +409,9 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
         .where(and(eq(players.worldId, world.id), eq(players.accountId, account.id)));
       const now = world.now();
       if (row?.lastSeenAt && now - row.lastSeenAt.getTime() >= WELCOME_AFTER_MS) {
+        // What fell due while away (a delivery arrived, a week closed) is settled first, so the
+        // summary counts it rather than the next minute's tick.
+        await world.execute({ type: "tick" });
         welcome = await welcomeBack(
           db,
           world.id,
@@ -488,20 +493,47 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     if (!account) return;
     if (!world.current.players[account.id]) return reply.code(409).send({ error: "not_joined" });
     const a = action.parse(req.body);
-    if (a.type === "collectAndRestart") {
-      await collectAndRestart(world, account.id);
-      return view(account);
+    if (a.type === "collectAndRestart" || a.type === "collectAll") {
+      const outcome = await harvest(world, account.id, a.type === "collectAndRestart");
+      if (!outcome)
+        return reply.code(409).send({ error: "stale_state", ...((await view(account)) as object) });
+      return { ...((await view(account)) as object), outcome: toJson(outcome) };
     }
+    // An order "right away": what it really traded, told to the merchant (a partial fill or none
+    // at all goes through without an error). Why fewer is read from the book just before.
+    const depth =
+      a.type === "instantOrder"
+        ? instantDepth(world.ctx, world.current, account.id, a.resource, a.side, world.now())
+        : null;
     const commands = toCommands(a, account.id, world);
     let error: string | undefined;
+    const trades: Trade[] = [];
     for (const cmd of commands) {
       const res = await world.execute(cmd);
       if (!res.ok) {
         error = res.error;
         break;
       }
+      trades.push(...(res.effects?.trades ?? []));
     }
     if (error) return reply.code(422).send({ error, ...((await view(account)) as object) });
+    if (a.type === "instantOrder") {
+      // The order's own trades: units filled, and the ducats paid (or received, net of tax).
+      const mine = trades.filter((t) => (a.side === "buy" ? t.buyerId : t.sellerId) === account.id);
+      const filled = mine.reduce((n, t) => n + t.quantity, 0);
+      const gross = mine.reduce((n, t) => n + t.price * BigInt(t.quantity), 0n);
+      const amount = a.side === "buy" ? gross : gross - mine.reduce((n, t) => n + t.tax, 0n);
+      const outcome = {
+        kind: "instant" as const,
+        side: a.side,
+        resource: a.resource,
+        requested: a.quantity,
+        filled,
+        amount,
+        reason: filled >= a.quantity ? null : depth?.quotaCapped ? "quota" : "depth",
+      };
+      return { ...((await view(account)) as object), outcome: toJson(outcome) };
+    }
     return view(account);
   });
 
@@ -1091,16 +1123,37 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
 }
 
 /**
- * One tap for a short session: collect every workshop, then fill every queue with what the
- * stock allows (raw producers first). Saved as one transaction.
+ * One tap for a short session: collect every workshop, then (with `restart`) fill every queue
+ * with what the stock allows (raw producers first). Saved as one transaction. Returns what was
+ * harvested and what was started with which inputs, for the merchant to see what it consumed.
  */
-async function collectAndRestart(world: GameWorld, playerId: string): Promise<void> {
+async function harvest(world: GameWorld, playerId: string, restart: boolean) {
   const { ctx } = world;
   const raw = (type: string) =>
     Object.keys(ctx.theme.recipes.find((r) => r.building === type)?.inputs ?? {}).length === 0;
-  await world.batch(({ act, state, now }) => {
+  const harvested: Record<string, number> = {};
+  const started: {
+    building: string;
+    output: string;
+    batches: number;
+    inputs: Record<string, number>;
+  }[] = [];
+  let accepted = 0;
+  const saved = await world.batch(({ act: decide, state, now }) => {
+    const act = (command: Command) => {
+      const ok = decide(command);
+      if (ok) accepted++;
+      return ok;
+    };
     const mine = () => Object.values(state().buildings).filter((b) => b.playerId === playerId);
+    const stockOf = () => state().inventories[playerId] ?? {};
+    const before = stockOf();
     for (const b of mine()) if (b.job) act({ type: "collect", playerId, buildingId: b.id });
+    for (const [res, line] of Object.entries(stockOf())) {
+      const gained = line.available - (before[res]?.available ?? 0);
+      if (gained > 0) harvested[res] = gained;
+    }
+    if (!restart) return;
     const order = mine().sort((a, b) => Number(raw(b.type)) - Number(raw(a.type)));
     for (const { id } of order) {
       const b = state().buildings[id];
@@ -1108,16 +1161,27 @@ async function collectAndRestart(world: GameWorld, playerId: string): Promise<vo
       const recipe = b ? ctx.theme.recipes.find((r) => r.building === b.type) : undefined;
       if (!b || !player || !recipe) continue;
       let batches = freeBatches(ctx, b, recipe.code, now, player);
-      const stock = state().inventories[playerId] ?? {};
+      const stock = stockOf();
+      const level = workLevel(ctx, b);
       for (const [res, perBatch] of Object.entries(recipe.inputs)) {
-        const need = (perBatch ?? 0) * b.level;
+        const need = (perBatch ?? 0) * level;
         if (need > 0) batches = Math.min(batches, Math.floor((stock[res]?.available ?? 0) / need));
       }
-      if (batches > 0) {
-        act({ type: "startProduction", playerId, buildingId: id, recipe: recipe.code, batches });
+      if (
+        batches > 0 &&
+        act({ type: "startProduction", playerId, buildingId: id, recipe: recipe.code, batches })
+      ) {
+        const inputs: Record<string, number> = {};
+        for (const [res, perBatch] of Object.entries(recipe.inputs))
+          if ((perBatch ?? 0) > 0) inputs[res] = (perBatch ?? 0) * level * batches;
+        const output = Object.keys(recipe.outputs)[0] ?? "";
+        started.push({ building: b.type, output, batches, inputs });
       }
     }
   }, playerId);
+  // Something was done but not saved (the state moved meanwhile): nothing happened.
+  if (accepted > 0 && saved === 0) return null;
+  return { kind: "harvest" as const, harvested, started };
 }
 
 /** Turns a client action into engine commands, always for the logged-in player. */
@@ -1200,12 +1264,10 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "sellToCriee", playerId, quantity: a.quantity }];
     case "rerollContract":
       return [{ type: "rerollContract", playerId, contractId: a.contractId }];
+    // Both run as one batch (see `harvest`).
     case "collectAndRestart":
-      return [];
     case "collectAll":
-      return Object.values(world.current.buildings)
-        .filter((b) => b.playerId === playerId && b.job)
-        .map((b) => ({ type: "collect" as const, playerId, buildingId: b.id }));
+      return [];
     case "build":
       return [{ type: "build", playerId, buildingType: a.buildingType }];
     case "upgrade":

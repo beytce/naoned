@@ -479,6 +479,7 @@ export const venice1450Settings: WorldSettingsInput = {
   // Left alone for 24 h, a counting house's workers do not starve: a returning player finds it
   // intact.
   dormancy: { afterHours: 24 },
+  advice: { glutHours: 24 },
   // The merchant's ledger: one or two short goals a day for the first week.
   missions: [
     {

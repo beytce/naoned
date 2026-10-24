@@ -16,7 +16,7 @@ const positive = z.number().int().positive();
 
 const buildingSettings = z.object({
   costDucats: money,
-  costMaterials: z.record(qty).default({}),
+  costMaterials: z.record(z.string(), qty).prefault({}),
 });
 
 const cityDemand = z.object({
@@ -34,10 +34,10 @@ const eventDef = z.object({
   weight: positive,
   /** Only this city is affected (all cities when absent). */
   city: z.string().optional(),
-  cityPriceBps: z.record(bps).default({}),
-  cityCapacityBps: z.record(bps).default({}),
+  cityPriceBps: z.record(z.string(), bps).prefault({}),
+  cityCapacityBps: z.record(z.string(), bps).prefault({}),
   /** Added to the yield of a resource while the event lasts (may be negative). */
-  yieldBps: z.record(signedBps).default({}),
+  yieldBps: z.record(z.string(), signedBps).prefault({}),
 });
 
 export const worldSettingsSchema = z.object({
@@ -46,10 +46,10 @@ export const worldSettingsSchema = z.object({
    * Where the weeks of the season (weekly ranking, Terraferma, decrees) begin: every seven days
    * from the season's start, or on Mondays at midnight in Paris.
    */
-  weekStart: z.enum(["season", "monday"]).default("season"),
+  weekStart: z.enum(["season", "monday"]).prefault("season"),
   registrationClosesDay: positive,
   startingCapital: money,
-  startingBuildings: z.record(z.array(z.string())),
+  startingBuildings: z.record(z.string(), z.array(z.string())),
   marketTaxBps: bps,
   orderMaxHours: positive,
   maxOpenOrders: positive,
@@ -67,16 +67,16 @@ export const worldSettingsSchema = z.object({
       minutes: qty,
       fastBatchSeconds: positive,
       fastBatchesPerBuilding: qty,
-      welcomeTripSeconds: qty.default(0),
+      welcomeTripSeconds: qty.prefault(0),
     })
-    .default({
+    .prefault({
       minutes: 0,
       fastBatchSeconds: 30,
       fastBatchesPerBuilding: 0,
       welcomeTripSeconds: 0,
     }),
   /** Goods given to a new player, by region (resource → quantity). */
-  startingStock: z.record(z.record(qty)).default({}),
+  startingStock: z.record(z.string(), z.record(z.string(), qty)).prefault({}),
   /**
    * Workers eat: each building level consumes rations every day; without, production slows.
    * `graceHours` after joining, a newcomer's workers do not eat yet.
@@ -86,9 +86,9 @@ export const worldSettingsSchema = z.object({
       resource: z.string(),
       perLevelPerDay: qty,
       slowdownBps: bps,
-      graceHours: qty.default(0),
+      graceHours: qty.prefault(0),
     })
-    .default({ resource: "bread", perLevelPerDay: 0, slowdownBps: 0, graceHours: 0 }),
+    .prefault({ resource: "bread", perLevelPerDay: 0, slowdownBps: 0, graceHours: 0 }),
   /**
    * The galleys of the Muda bring the goods from overseas to Venice every `everyDays` days at
    * `hour`: the Dogana sells a lot in proportion to active merchants, dearer as it runs out
@@ -98,8 +98,8 @@ export const worldSettingsSchema = z.object({
     .object({
       everyDays: positive,
       hour: qty.max(23),
-      lotPerActivePlayer: z.record(qty),
-      quotaPerPlayer: z.record(qty),
+      lotPerActivePlayer: z.record(z.string(), qty),
+      quotaPerPlayer: z.record(z.string(), qty),
       priceRiseBps: bps,
       maxStockLots: positive,
     })
@@ -109,30 +109,35 @@ export const worldSettingsSchema = z.object({
     .object({
       perDay: qty,
       premiumBps: bps,
-      quantities: z.record(qty),
+      quantities: z.record(z.string(), qty),
       /** Some orders ask for goods from overseas instead (never needed for building). */
       luxury: z
-        .object({ chanceBps: bps.max(10_000), quantities: z.record(qty) })
-        .default({ chanceBps: 0, quantities: {} }),
+        .object({ chanceBps: bps.max(10_000), quantities: z.record(z.string(), qty) })
+        .prefault({ chanceBps: 0, quantities: {} }),
     })
-    .default({ perDay: 0, premiumBps: 0, quantities: {} }),
+    .prefault({ perDay: 0, premiumBps: 0, quantities: {} }),
   events: z
     .object({ everyDays: positive, durationHours: positive, catalog: z.array(eventDef) })
-    .default({ everyDays: 2, durationHours: 24, catalog: [] }),
+    .prefault({ everyDays: 2, durationHours: 24, catalog: [] }),
   /** Computer-run merchants keep the world at this many active merchants while players are few. */
-  bots: z.object({ population: qty }).default({ population: 0 }),
+  bots: z.object({ population: qty }).prefault({ population: 0 }),
   /**
    * Buildings that may only be built (or upgraded) in some regions: raw materials are local.
    * Building type → regions. Absent: anywhere.
    */
-  buildingRegions: z.record(z.array(z.string())).default({}),
+  buildingRegions: z.record(z.string(), z.array(z.string())).prefault({}),
   /** Yield bonus per building level above the first: specialising pays. */
-  levelYieldBonusBps: bps.default(0),
+  levelYieldBonusBps: bps.prefault(0),
   /**
    * A counting house left alone this long is dormant: its workers do not go hungry, so a
    * returning player finds it intact. 0 turns it off.
    */
-  dormancy: z.object({ afterHours: qty }).default({ afterHours: 0 }),
+  dormancy: z.object({ afterHours: qty }).prefault({ afterHours: 0 }),
+  /**
+   * The guide's advice (advice.ts): a workshop with this many hours of its output unsold in stock
+   * is not advised for an upgrade. 0 turns the check off.
+   */
+  advice: z.object({ glutHours: qty }).prefault({ glutHours: 0 }),
   /** The merchant's ledger: short goals opening day after day, with a small reward. */
   missions: z
     .array(
@@ -142,22 +147,22 @@ export const worldSettingsSchema = z.object({
         day: qty,
         /** Engine event that counts towards it, optionally only with these data values. */
         event: z.string(),
-        filter: z.record(z.union([z.string(), z.number()])).default({}),
+        filter: z.record(z.string(), z.union([z.string(), z.number()])).prefault({}),
         count: positive,
         reward: z.object({
-          goods: z.record(qty).default({}),
-          ducats: money.default(0),
+          goods: z.record(z.string(), qty).prefault({}),
+          ducats: money.prefault(0),
           /** Vehicles given (within the limit), counted in net worth at cost. */
-          vehicles: z.array(z.string()).default([]),
+          vehicles: z.array(z.string()).prefault([]),
         }),
       }),
     )
-    .default([]),
+    .prefault([]),
   /**
    * Fresh produce: batches collected within `minutes` of being done yield `bonusBps` more.
    * Rewards coming back on time, never punishes the absent. 0 minutes turns it off.
    */
-  fresh: z.object({ minutes: qty, bonusBps: bps }).default({ minutes: 0, bonusBps: 0 }),
+  fresh: z.object({ minutes: qty, bonusBps: bps }).prefault({ minutes: 0, bonusBps: 0 }),
   /**
    * The Criées of the Rialto: a few times a day, at hours drawn in advance but never shown before,
    * a city buys one resource at a premium for a few minutes, up to a share per merchant and a
@@ -177,7 +182,7 @@ export const worldSettingsSchema = z.object({
       minTotal: qty,
       resources: z.array(z.string()),
     })
-    .default({
+    .prefault({
       perDay: 0,
       fromHour: 0,
       toHour: 24,
@@ -201,14 +206,17 @@ export const worldSettingsSchema = z.object({
         z.object({
           id: z.string(),
           event: z.string(),
-          filter: z.record(z.union([z.string(), z.number()])).default({}),
+          filter: z.record(z.string(), z.union([z.string(), z.number()])).prefault({}),
           count: positive,
-          reward: z.object({ goods: z.record(qty).default({}), ducats: money.default(0) }),
+          reward: z.object({
+            goods: z.record(z.string(), qty).prefault({}),
+            ducats: money.prefault(0),
+          }),
         }),
       ),
       chest: z.object({ ducats: money, perStreakDay: money, maxStreak: positive }),
     })
-    .default({ perDay: 0, tasks: [], chest: { ducats: 0, perStreakDay: 0, maxStreak: 1 } }),
+    .prefault({ perDay: 0, tasks: [], chest: { ducats: 0, perStreakDay: 0, maxStreak: 1 } }),
   /**
    * Faraj's bales: a friend of Alexandria sends a sealed bale every `intervalHours`, kept up to
    * `maxStored`. Each holds `cardsPerBale` cards: a rarity drawn by weight, then one of its goods,
@@ -237,7 +245,7 @@ export const worldSettingsSchema = z.object({
         }),
       ),
     })
-    .default({
+    .prefault({
       intervalHours: 0,
       maxStored: 1,
       onJoin: 0,
@@ -253,15 +261,15 @@ export const worldSettingsSchema = z.object({
   pass: z
     .object({
       /** Off: no merchant holds the Pass, whatever was granted (it comes back later). */
-      enabled: z.boolean().default(true),
+      enabled: z.boolean().prefault(true),
       /** Refused unless zero: once a share of the Dogana's quota. */
-      marketMakerQuotaBps: bps.default(0),
+      marketMakerQuotaBps: bps.prefault(0),
       /** Refused unless zero: once more open offers at the Rialto. */
-      extraOpenOrders: qty.default(0),
+      extraOpenOrders: qty.prefault(0),
       /** Refused unless zero: once fresher produce. */
-      freshBonusBps: bps.default(0),
+      freshBonusBps: bps.prefault(0),
       /** Refused unless zero: once one of the Doge's orders swapped a day. */
-      contractRerollsPerDay: qty.default(0),
+      contractRerollsPerDay: qty.prefault(0),
       /**
        * What the Pass gives, all read-only or for show; the profile lists exactly these. Prices
        * of the Rialto over 30 days (7 for everyone), the dashboard over 30 days (7 for
@@ -269,12 +277,12 @@ export const worldSettingsSchema = z.object({
        */
       perks: z
         .object({
-          history30Days: z.boolean().default(false),
-          dashboardDetail: z.boolean().default(false),
-          deepBook: z.boolean().default(false),
-          cosmetics: z.boolean().default(false),
+          history30Days: z.boolean().prefault(false),
+          dashboardDetail: z.boolean().prefault(false),
+          deepBook: z.boolean().prefault(false),
+          cosmetics: z.boolean().prefault(false),
         })
-        .default({}),
+        .prefault({}),
     })
     .refine(
       (p) =>
@@ -284,7 +292,7 @@ export const worldSettingsSchema = z.object({
         p.contractRerollsPerDay === 0,
       "Pass Négociant: no perk on production, the Dogana's quota, the open offers or the orders",
     )
-    .default({
+    .prefault({
       enabled: true,
       marketMakerQuotaBps: 0,
       extraOpenOrders: 0,
@@ -309,7 +317,7 @@ export const worldSettingsSchema = z.object({
       levyMinBps: bps,
       levyMaxBps: bps,
     })
-    .default({ openDay: 0, list: [], levyMinBps: 10_000, levyMaxBps: 10_000 }),
+    .prefault({ openDay: 0, list: [], levyMinBps: 10_000, levyMaxBps: 10_000 }),
   /**
    * The Terraferma after OpenFront (docs/plan-terraferme.md): a hexagonal map that grows with the
    * world, each merchant's own territory, troops that come back with the land held, fronts that
@@ -321,7 +329,7 @@ export const worldSettingsSchema = z.object({
        * Played in the world (its weeks, commands and decrees); off, only the simulator plays it.
        * Switched on at a season's opening, never during one.
        */
-      live: z.boolean().default(false),
+      live: z.boolean().prefault(false),
       /** Land cells per active merchant (at least `minActive` merchants counted). */
       cellsPerActive: positive,
       minActive: positive,
@@ -356,7 +364,7 @@ export const worldSettingsSchema = z.object({
        */
       peasants: z
         .object({
-          yields: z.record(z.object({ resource: z.string(), perCells: positive })),
+          yields: z.record(z.string(), z.object({ resource: z.string(), perCells: positive })),
           routeDucats: money,
         })
         .optional(),
@@ -370,13 +378,15 @@ export const worldSettingsSchema = z.object({
           from: qty.max(24),
           to: qty.max(24),
           stepMinutes: positive,
-          warnMinutes: qty.default(15),
+          warnMinutes: qty.prefault(15),
         })
         .optional(),
       /** Terrains: defense multiplier, militia of a neutral cell. */
-      terrains: z.record(z.object({ defenseBps: positive, militia: qty })),
+      terrains: z.record(z.string(), z.object({ defenseBps: positive, militia: qty })),
       /** Bands of rows from the north (up to `untilBps` of the height), each with its terrain weights. */
-      bands: z.array(z.object({ untilBps: bps.max(10_000), weights: z.record(qty) })).min(1),
+      bands: z
+        .array(z.object({ untilBps: bps.max(10_000), weights: z.record(z.string(), qty) }))
+        .min(1),
       /** A city cell's militia and defense, over its terrain's. */
       city: z.object({ militiaBps: positive, defenseBps: positive }),
       start: z.object({
@@ -390,9 +400,9 @@ export const worldSettingsSchema = z.object({
          * Merchants set down only in the week's first hours (0: any time), all of them safe from
          * each other until then: the week's game is played by those who came.
          */
-        placementHours: qty.default(0),
+        placementHours: qty.prefault(0),
         /** Hours from the week's start during which nobody may attack another merchant. */
-        truceHours: qty.default(0),
+        truceHours: qty.prefault(0),
       }),
       troops: z.object({
         base: qty,
@@ -405,23 +415,23 @@ export const worldSettingsSchema = z.object({
          * When set, troops are recruited by the hour instead (in place of `regenBps`): so many,
          * plus so many per cell and per city held, up to the cap.
          */
-        recruit: z.object({ base: qty, perCell: qty, perCity: qty.default(0) }).optional(),
+        recruit: z.object({ base: qty, perCell: qty, perCity: qty.prefault(0) }).optional(),
       }),
       fronts: z.object({
         max: positive,
         cellsPerStep: positive,
         minShareBps: bps.max(10_000),
         /** A front comes home after so many open hours (0: never): presence relaunches it. */
-        maxHours: qty.default(0),
+        maxHours: qty.prefault(0),
         /** A neutral cell only every so many steps: the race for free land lasts. */
-        neutralEverySteps: positive.default(1),
+        neutralEverySteps: positive.prefault(1),
         /** A merchant's capital is never taken (false: a merchant may be wiped off the map). */
-        capitalSafe: z.boolean().default(true),
+        capitalSafe: z.boolean().prefault(true),
         /**
          * The capital of a merchant who has launched no front at another merchant this week is
          * never taken: who does not make war is never wiped off the map.
          */
-        peacefulSafe: z.boolean().default(false),
+        peacefulSafe: z.boolean().prefault(false),
       }),
       milan: z.object({
         troops: qty,
@@ -431,7 +441,7 @@ export const worldSettingsSchema = z.object({
         everyHours: positive,
         shareBps: bps.max(10_000),
         /** At whom it rides: the leader in glory (a brake on the favourite) or its weakest neighbour. */
-        target: z.enum(["leader", "weakest"]).default("leader"),
+        target: z.enum(["leader", "weakest"]).prefault("leader"),
       }),
       /**
        * Skirmishes: a live match of `minutes`, its time running `speed` times as fast on the same
@@ -452,8 +462,8 @@ export const worldSettingsSchema = z.object({
           troops: positive,
           recruit: z.object({ base: qty, perCell: qty, perCity: qty }),
           glory: z.array(qty),
-          rankedPerDay: qty.default(1),
-          minHumans: positive.default(2),
+          rankedPerDay: qty.prefault(1),
+          minHumans: positive.prefault(2),
         })
         .optional(),
       /** Weeks of the season (from 0) played in teams: the merchants of a region together. */
@@ -488,7 +498,7 @@ export const worldSettingsSchema = z.object({
             behavior: z.enum(["defensive", "opportunist", "raider", "slow"]),
           }),
         )
-        .default([]),
+        .prefault([]),
       glory: z.object({ perCell: qty, perCity: qty }),
       /** Alliances between merchants: how many, how long a break takes, the traitor's lot. */
       alliances: z
@@ -503,7 +513,7 @@ export const worldSettingsSchema = z.object({
           /** A traitor's land is this much easier to take. */
           traitorDefenseBps: bps.max(10_000),
         })
-        .default({
+        .prefault({
           max: 2,
           breakHours: 2,
           giftShareBps: 3_000,
@@ -512,7 +522,7 @@ export const worldSettingsSchema = z.object({
           traitorDefenseBps: 7_500,
         }),
       /** A pocket cut off from its capital and ringed by one rival falls to it, a share an hour. */
-      encircle: z.object({ lossBps: bps.max(10_000) }).default({ lossBps: 1_000 }),
+      encircle: z.object({ lossBps: bps.max(10_000) }).prefault({ lossBps: 1_000 }),
       /** Buildings, paid in ducats (destroyed) by the caller, one per so many cells held. */
       buildings: z
         .object({
@@ -550,14 +560,14 @@ export const worldSettingsSchema = z.object({
           /** Walls: no bombard reaches the cells within `radius` of them. */
           mura: z.object({ price: money, perCells: positive, radius: qty }).optional(),
         })
-        .default({
+        .prefault({
           rocca: { price: 4_000, defenseBps: 16_000, perCells: 15 },
           borgo: { price: 5_000, capBonus: 20, regenBonusBps: 1_000, perCells: 20 },
         }),
       /** The cap raised for ducats (destroyed by the caller), a few times a day. */
       capRaise: z
         .object({ amount: qty, price: money, perDay: qty })
-        .default({ amount: 10, price: 10_000, perDay: 2 }),
+        .prefault({ amount: 10, price: 10_000, perDay: 2 }),
       /** The week's close: the land that wins at once, Influence by tier, the decrees. */
       close: z
         .object({
@@ -582,12 +592,12 @@ export const worldSettingsSchema = z.object({
             /** A share of every delivery of the others, shared out among the members. */
             dime: z.object({ tollBps: bps }),
             /** Members' contracts of the Doge paid more, and more of them a day. */
-            faveur_doge: z.object({ premiumBps: bps, extraOrders: qty.default(1) }),
+            faveur_doge: z.object({ premiumBps: bps, extraOrders: qty.prefault(1) }),
             /** No offer of a good above this share of its reference. */
             calmiere: z.object({ capBps: bps }),
           }),
         })
-        .default({
+        .prefault({
           winBps: 8_000,
           influence: { signore: 20, podium: 12, top10: 8, quarter: 5, participant: 2 },
           decrees: ["monopole", "embargo", "dime", "faveur_doge", "franchise_rialto", "calmiere"],
@@ -616,13 +626,14 @@ export const worldSettingsSchema = z.object({
           neighbors: z.array(z.string()),
           city: z.string().optional(),
           /** Held by Milan when the week opens (by the militia otherwise). */
-          milan: z.boolean().default(false),
+          milan: z.boolean().prefault(false),
           /** Where it stands on the drawn map of the theme (x to the east, y to the south). */
-          x: z.number().int().default(0),
-          y: z.number().int().default(0),
+          x: z.number().int().prefault(0),
+          y: z.number().int().prefault(0),
         }),
       ),
       kinds: z.record(
+        z.string(),
         z.object({
           /** Glory per open hour to the family holding it. */
           glory: qty,
@@ -663,14 +674,15 @@ export const worldSettingsSchema = z.object({
       works: z
         .object({
           kinds: z.record(
+            z.string(),
             z.object({
               price: money,
               /** The garrison counts this much more in a battle. */
-              defenseBonusBps: bps.default(0),
+              defenseBonusBps: bps.prefault(0),
               /** The land's glory counts this much more. */
-              gloryBonusBps: bps.default(0),
+              gloryBonusBps: bps.prefault(0),
               /** The family's marches may leave from here rather than from the seat. */
-              staging: z.boolean().default(false),
+              staging: z.boolean().prefault(false),
             }),
           ),
           /** Open minutes of works before it serves. */
@@ -709,7 +721,7 @@ export const worldSettingsSchema = z.object({
       /** No offer of a good above this share of its reference price. */
       calmiere: z.object({ capBps: bps }),
     })
-    .default({
+    .prefault({
       catalog: [],
       perWinner: 0,
       maxVoteBps: 10_000,
@@ -725,7 +737,7 @@ export const worldSettingsSchema = z.object({
    * Offers between players must stay within this share of the reference price: a merchant
    * cannot hand ducats to another account by selling a loaf for a fortune. 0 turns it off.
    */
-  priceBand: z.object({ minBps: bps, maxBps: bps }).default({ minBps: 0, maxBps: 0 }),
+  priceBand: z.object({ minBps: bps, maxBps: bps }).prefault({ minBps: 0, maxBps: 0 }),
   /**
    * Deliveries by road: each merchant gets a board of personal orders every day (cities, the Doge,
    * their family, urgent ones) and carts them to the city with their own vehicles; payment is made
@@ -742,7 +754,7 @@ export const worldSettingsSchema = z.object({
       urgentPremiumBps: bps,
       urgentOpenMinutes: positive,
       /** Hours of the day (Paris) when an urgent order may open: [from, to). */
-      urgentHours: z.object({ from: qty.max(23), to: qty.max(24) }).default({ from: 8, to: 21 }),
+      urgentHours: z.object({ from: qty.max(23), to: qty.max(24) }).prefault({ from: 8, to: 21 }),
       /**
        * The fattore: a clerk who sends a vehicle left at the counter (`idleMinutes` after the
        * merchant's last action, or its return) with the best order the stock covers, `perDay`
@@ -763,35 +775,35 @@ export const worldSettingsSchema = z.object({
        */
       marketIndex: z
         .object({ weightBps: bps.max(10_000), floorBps: bps, capBps: bps })
-        .default({ weightBps: 0, floorBps: 10_000, capBps: 10_000 }),
+        .prefault({ weightBps: 0, floorBps: 10_000, capBps: 10_000 }),
       /** Quantity range of a city order, per resource (also the resources cities order). */
-      quantity: z.record(z.tuple([positive, positive])),
+      quantity: z.record(z.string(), z.tuple([positive, positive])),
       /** How often each resource is ordered, relative to the others (1 when absent). */
-      weights: z.record(positive).default({}),
+      weights: z.record(z.string(), positive).prefault({}),
       /**
        * Elastic demand on the shared board: a good priced at the Rialto under its reference is
        * ordered more often (over it, less), by this share of the gap (10 000: in proportion), and
        * the board grows (or shrinks) with the average, from half its size to `elasticMaxBps`.
        */
-      elasticityBps: bps.default(0),
+      elasticityBps: bps.prefault(0),
       /** Largest the board grows with cheap goods (bps of its set size). */
-      elasticMaxBps: bps.min(10_000).default(15_000),
+      elasticMaxBps: bps.min(10_000).prefault(15_000),
       /**
        * Share of city orders drawn among the goods of the merchant's own chain (what the starting
        * buildings of their region make), so that the board speaks to their trade.
        */
-      homeShareBps: bps.max(10_000).default(0),
+      homeShareBps: bps.max(10_000).prefault(0),
       /**
        * On the day of a market event, this many of the city orders go where the event asks for
        * more (a city and a resource whose capacity it raises), within the day's total.
        */
-      eventOrdersPerDay: qty.default(0),
+      eventOrdersPerDay: qty.prefault(0),
       /**
        * Shared demand: when above 0, the cities' orders form one board for the world, this many
        * city orders (and `urgentPerDay` urgent ones) per active merchant, taken by the first who
        * sends a vehicle. The Doge's, family and welcome orders stay personal.
        */
-      sharedOrdersPerActivePlayer: qty.default(0),
+      sharedOrdersPerActivePlayer: qty.prefault(0),
       /**
        * The cities' orders of the shared board come in waves through the day instead of all at
        * midnight: a wave every `everyHours`, each order open `openHours` (cut at midnight). The
@@ -803,17 +815,21 @@ export const worldSettingsSchema = z.object({
        * region. `reward`: deniers paid for the whole order, so the first delivery is felt.
        */
       welcome: z
-        .record(z.object({ resource: z.string(), quantity: positive, reward: money.optional() }))
-        .default({}),
+        .record(
+          z.string(),
+          z.object({ resource: z.string(), quantity: positive, reward: money.optional() }),
+        )
+        .prefault({}),
       /** Minutes of road one way at normal speed: region → city → minutes. */
-      routes: z.record(z.record(positive)),
+      routes: z.record(z.string(), z.record(z.string(), positive)),
       maxDeliveryMinutes: positive,
       /** Orders a vehicle may carry together, all to the same city. */
-      maxOrdersPerLoad: positive.default(1),
+      maxOrdersPerLoad: positive.prefault(1),
       vehicles: z.record(
+        z.string(),
         z.object({
           costDucats: money,
-          costMaterials: z.record(qty).default({}),
+          costMaterials: z.record(z.string(), qty).prefault({}),
           /** Units carried. */
           capacity: positive,
           /** Above 10 000 is faster. */
@@ -825,10 +841,10 @@ export const worldSettingsSchema = z.object({
       /** Types that may be bought (the others are reached by upgrading). Absent: all. */
       forSale: z.array(z.string()).optional(),
       /** Given on joining, counted in net worth. */
-      startingVehicles: z.array(z.string()).default([]),
+      startingVehicles: z.array(z.string()).prefault([]),
       maxVehicles: qty,
     })
-    .default({
+    .prefault({
       ordersPerDay: { min: 0, max: 0 },
       dogeOrdersPerDay: 0,
       urgentPerDay: 0,
@@ -843,7 +859,7 @@ export const worldSettingsSchema = z.object({
       maxVehicles: 0,
     }),
   /** How many times a player may restart from scratch during a season. */
-  maxResetsPerPlayer: qty.default(1),
+  maxResetsPerPlayer: qty.prefault(1),
   maxBuildings: positive,
   maxBuildingLevel: positive,
   levelCostGrowthBps: bps,
@@ -855,23 +871,24 @@ export const worldSettingsSchema = z.object({
     .object({
       unlockLevels: positive,
       options: z.record(
+        z.string(),
         z.object({
           /** Added to the yield of recipes with inputs (transformation). */
-          transformYieldBps: bps.default(0),
+          transformYieldBps: bps.prefault(0),
           /** Vehicles go faster by this much. */
-          vehicleSpeedBps: bps.default(0),
-          extraVehicles: qty.default(0),
+          vehicleSpeedBps: bps.prefault(0),
+          extraVehicles: qty.prefault(0),
           /** A larger quota at the galleys of the Muda. */
-          mudaQuotaBps: bps.default(0),
+          mudaQuotaBps: bps.prefault(0),
           /** A larger share of the market maker's daily quota. */
-          marketMakerQuotaBps: bps.default(0),
+          marketMakerQuotaBps: bps.prefault(0),
           /** Taken off the market tax on the merchant's sales. */
-          taxDiscountBps: bps.default(0),
-          extraOpenOrders: qty.default(0),
+          taxDiscountBps: bps.prefault(0),
+          extraOpenOrders: qty.prefault(0),
         }),
       ),
     })
-    .default({ unlockLevels: 5, options: {} }),
+    .prefault({ unlockLevels: 5, options: {} }),
   /**
    * The season in acts: from its week (0 = the first), each act may draw a market modifier among
    * its variants (like an event, for the whole act) and make Milan stronger in the campaign.
@@ -881,18 +898,18 @@ export const worldSettingsSchema = z.object({
       z.object({
         code: z.string(),
         week: qty,
-        variants: z.array(eventDef).default([]),
+        variants: z.array(eventDef).prefault([]),
         /** Milan's garrisons and rides during the act (10 000 = as usual). */
-        milanBps: bps.default(10_000),
+        milanBps: bps.prefault(10_000),
       }),
     )
-    .default([]),
+    .prefault([]),
   /** Share of the materials asked for a level (level → bps; 10 000 when absent). */
-  upgradeMaterialsBps: z.record(bps).default({}),
+  upgradeMaterialsBps: z.record(z.string(), bps).prefault({}),
   /** A player counts as active if they acted within this many hours. */
   activeWindowHours: positive,
-  buildings: z.record(buildingSettings),
-  referencePrices: z.record(money),
+  buildings: z.record(z.string(), buildingSettings),
+  referencePrices: z.record(z.string(), money),
   marketMaker: z.object({
     spreadStartBps: bps,
     spreadEndBps: bps,
@@ -900,22 +917,22 @@ export const worldSettingsSchema = z.object({
     /** The quoted reference follows the market down (never up), to this fraction at most. */
     referenceFloorBps: bps.max(10_000),
     /** Daily quantity per resource and per active player, in each direction. */
-    dailyDepthPerPlayer: z.record(qty),
+    dailyDepthPerPlayer: z.record(z.string(), qty),
     /** Floor of the daily quantity, so that a small world (beta) still has a market. */
-    minDailyDepth: z.record(qty).default({}),
+    minDailyDepth: z.record(z.string(), qty).prefault({}),
     /**
      * Units each player may buy from the market maker per resource and per day, so that nobody
      * can empty it for the others. Its daily stock grows to this × active players.
      * No entry: no quota per player.
      */
-    playerDailyQuota: z.record(qty).default({}),
+    playerDailyQuota: z.record(z.string(), qty).prefault({}),
     /** Same, for selling to the market maker (which creates money: kept tighter). */
-    playerDailySellQuota: z.record(qty).default({}),
+    playerDailySellQuota: z.record(z.string(), qty).prefault({}),
     /**
      * Most the market maker trades per resource and per day, all players together: as the world
      * fills up, each player's quota shrinks to their share of it (never below 1).
      */
-    maxDailyDepth: z.record(qty).default({}),
+    maxDailyDepth: z.record(z.string(), qty).prefault({}),
     /**
      * The Dogana's price follows supply and demand: each day, what merchants bought from it more
      * than they sold it (as a share of its daily depth) moves its price up by up to `stepBps` of
@@ -929,11 +946,11 @@ export const worldSettingsSchema = z.object({
         minBps: bps.max(10_000),
         maxBps: bps.min(10_000),
         /** Share of the gap to the reference closed each day: prices come back when trade stops. */
-        revertBps: bps.max(10_000).default(0),
+        revertBps: bps.max(10_000).prefault(0),
       })
       .optional(),
   }),
-  cities: z.record(z.record(cityDemand)),
+  cities: z.record(z.string(), z.record(z.string(), cityDemand)),
   /**
    * The house between seasons: the Influence it earns each week (net sales, the campaign's merit,
    * each capped) and the patents it may hold. Absent: no Influence, and no patent has effect.
@@ -949,9 +966,9 @@ export const worldSettingsSchema = z.object({
           commerce: z.object({ ducatsPerPoint: positive, weeklyCap: qty }).optional(),
           campaign: z.object({ meritPerPoint: positive, winBonus: qty, weeklyCap: qty }).optional(),
           /** At the season's close, by tier of the ranking (`seasonTier`); none without. */
-          season: z.record(qty).default({}),
+          season: z.record(z.string(), qty).prefault({}),
         })
-        .default({}),
+        .prefault({}),
       /**
        * The house's missions: a board of `perBoard` drawn from the pool every `everyHours`, the
        * same for every merchant, each paid in Influence once done.
@@ -964,7 +981,7 @@ export const worldSettingsSchema = z.object({
             z.object({
               id: z.string(),
               event: z.string(),
-              filter: z.record(z.union([z.string(), z.number()])).default({}),
+              filter: z.record(z.string(), z.union([z.string(), z.number()])).prefault({}),
               count: positive,
               influence: positive,
             }),
@@ -989,7 +1006,10 @@ export const worldSettingsSchema = z.object({
         })
         .optional(),
       /** Patent code → its price in Influence and the patents it asks for first. */
-      patents: z.record(z.object({ cost: positive, requires: z.array(z.string()).default([]) })),
+      patents: z.record(
+        z.string(),
+        z.object({ cost: positive, requires: z.array(z.string()).prefault([]) }),
+      ),
     })
     .optional(),
   /**
@@ -1002,7 +1022,7 @@ export const worldSettingsSchema = z.object({
       everyDays: positive,
       bidHours: positive,
       deliverHours: positive,
-      quantity: z.record(z.tuple([positive, positive])),
+      quantity: z.record(z.string(), z.tuple([positive, positive])),
       ceilingBps: bps,
       cautionBps: bps,
     })
@@ -1030,13 +1050,13 @@ export const worldSettingsSchema = z.object({
    * batches stay, the cities pay its goods `qualityBpsPerLevel` more per level). Off when absent.
    */
   manufacture: z
-    .object({ maxLevel: positive, qualityBpsPerLevel: bps, unlock: money.default(0) })
+    .object({ maxLevel: positive, qualityBpsPerLevel: bps, unlock: money.prefault(0) })
     .optional(),
   /**
    * The luxury chains: a workshop type opens once the merchant's net sales of the season reach
    * this many deniers (its goods are then ordered only of those who make them).
    */
-  unlocks: z.record(money).default({}),
+  unlocks: z.record(z.string(), money).prefault({}),
   /**
    * Warehouses in the cities: `perCity` places auctioned each week (at least `minBid`), each
    * letting its holder deliver the city's orders at once, `unitsPerDay`. Off when absent.
@@ -1052,15 +1072,15 @@ export const worldSettingsSchema = z.object({
     .object({
       intervalDays: positive,
       durationDays: positive,
-      needsPerPlayer: z.record(qty),
+      needsPerPlayer: z.record(z.string(), qty),
       premiumBps: bps,
       /**
        * Company orders: once every need is filled, each merchant who delivered gets this share
        * of what he was paid on top, from the city.
        */
-      bonusBps: bps.default(0),
+      bonusBps: bps.prefault(0),
     })
-    .default({ intervalDays: 7, durationDays: 7, needsPerPlayer: {}, premiumBps: 0, bonusBps: 0 }),
+    .prefault({ intervalDays: 7, durationDays: 7, needsPerPlayer: {}, premiumBps: 0, bonusBps: 0 }),
   valuation: z.object({
     vwapDays: positive,
     minVolume: qty,

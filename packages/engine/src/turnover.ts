@@ -61,8 +61,30 @@ export function recordTurnover(state: WorldState, entry: LedgerEntry): void {
   if (from) add(from, -entry.amount);
 }
 
+/**
+ * After each command that moved money: the highest net sales of the season are raised where they
+ * were passed (once the command is whole, so that a sale counts net of its tax).
+ */
+export function markTurnoverPeaks(state: WorldState): void {
+  for (const [playerId, now] of Object.entries(state.turnover ?? {})) {
+    if (now <= (state.turnoverPeak?.[playerId] ?? 0n)) continue;
+    state.turnoverPeak ??= {};
+    state.turnoverPeak[playerId] = now;
+  }
+}
+
 export function turnoverOf(state: WorldState, playerId: PlayerId): Deniers {
   return state.turnover?.[playerId] ?? 0n;
+}
+
+/**
+ * The highest net sales of the season so far (never below zero): what the merchant's level counts,
+ * so that buying goods never takes a level back. Saves from before it start from today's mark.
+ */
+export function turnoverPeakOf(state: WorldState, playerId: PlayerId): Deniers {
+  const peak = state.turnoverPeak?.[playerId] ?? 0n;
+  const now = turnoverOf(state, playerId);
+  return now > peak ? now : peak;
 }
 
 /**

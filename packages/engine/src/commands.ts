@@ -62,6 +62,7 @@ import { bidTender, deliverTender } from "./tenders.js";
 import { type TerraCommand, applyTerra, paySkirmish } from "./terraWorld.js";
 import { findRegion } from "./theme.js";
 import { tick } from "./tick.js";
+import { markTurnoverPeaks } from "./turnover.js";
 import {
   EngineError,
   type EngineErrorCode,
@@ -248,6 +249,7 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
   }
   if (tx.s.weekly) delete tx.s.weekly.start[playerId];
   if (tx.s.turnover) delete tx.s.turnover[playerId];
+  if (tx.s.turnoverPeak) delete tx.s.turnoverPeak[playerId];
   if (tx.s.missions) delete tx.s.missions[playerId];
   if (tx.s.bales) delete tx.s.bales[playerId];
   leaveFamily(tx, playerId);
@@ -474,6 +476,7 @@ export function decide(
       trackMissions(tx);
       trackDaily(tx);
       trackHouseMissions(tx);
+      if (fx.ledger.length > 0) markTurnoverPeaks(draft);
     });
     return { ok: true, state: next, effects: fx };
   } catch (err) {

@@ -21,11 +21,11 @@ export const fr = {
   ],
   emailLabel: "Adresse e-mail",
   emailPlaceholder: "vous@exemple.fr",
-  sendLink: "Recevoir mon lien",
+  sendLink: "Recevoir mon code",
   sending: "Envoi…",
-  noPassword: "Pas de mot de passe : un lien de connexion vous est envoyé par e-mail.",
+  noPassword: "Pas de mot de passe : un code et un lien de connexion vous sont envoyés par e-mail.",
   accept: [
-    "En recevant votre lien, vous acceptez les ",
+    "En recevant votre code, vous acceptez les ",
     "conditions d'utilisation",
     " et la ",
     "politique de confidentialité",
@@ -33,7 +33,14 @@ export const fr = {
   ],
   checkInbox: "Regardez vos e-mails",
   linkSentTo: (email: string) =>
-    `Un lien de connexion vient de partir vers ${email}. Il est valable 15 minutes. Pensez à regarder dans les spams.`,
+    `Un code et un lien de connexion viennent de partir vers ${email}. Ils sont valables 15 minutes. Pensez à regarder dans les spams.`,
+  code: {
+    label: "Code à 6 chiffres",
+    iosHint: "Sur iPhone, saisissez le code reçu ici plutôt que de toucher le lien.",
+    submit: "Se connecter",
+    wrong: "Code incorrect ou expiré. Au 5e essai faux, il faut un nouveau code.",
+    resend: "Recevoir un nouveau code",
+  },
   otherAddress: "Utiliser une autre adresse",
   signingIn: "Connexion en cours…",
   invalidLink: "Ce lien est invalide ou a expiré.",
@@ -1093,8 +1100,16 @@ export const fr = {
       ready: (n: number) => (n > 1 ? "prêts" : "prêt"),
       running: (_n: number) => "en cours",
       idle: (_n: number) => "à l'arrêt",
-      collectAll: (n: number) => (n > 1 ? `Tout récolter (${n} lots)` : "Récolter"),
+      collectAll: (n: number) => `Tout récolter et relancer (${n} lot${n > 1 ? "s" : ""})`,
+      harvestOnly: "Récolter seulement",
       restartAll: "Tout relancer",
+      /** What a harvest brought in and what restarting consumed, said after it. */
+      harvested: (gains: string) => gains || "Rien à récolter",
+      restarted: (batches: number, what: string, inputs: string) =>
+        `${batches} lot${batches > 1 ? "s" : ""} ${/^[aeiouyéèêh]/i.test(what) ? "d'" : "de "}${what.toLowerCase()}${inputs ? ` (${inputs})` : ""}`,
+      restartedLabel: "relancé",
+      ordersWaiting: (n: number, what: string) =>
+        `${n} commande${n > 1 ? "s" : ""} ${/^[aeiouyéèêh]/i.test(what) ? "d'" : "de "}${what.toLowerCase()} ouverte${n > 1 ? "s" : ""}`,
       whatsMissing: "Voir ce qui manque",
     },
     workshop: {
@@ -1112,6 +1127,58 @@ export const fr = {
       toMarket: "Au marché",
       makeAt: (building: string) => `Produire : ${building}`,
       upgradeLater: (level: number) => `Améliorer au niveau ${level}`,
+      /** An upgrade while a queue runs: the queue keeps its level. */
+      queueKeeps: (level: number, end: string) =>
+        `Le niveau ${level} s'applique aux lots lancés après la file en cours (fin à ${end}).`,
+      afterQueue: (level: number) => `niv. ${level} après la file`,
+      /**
+       * The article of each good, by code: m (le, du), f (la, de la), v (l', de l'), p (les, des).
+       * A good not listed is named bare, after a colon.
+       */
+      genders: {
+        wheat: "m",
+        flour: "f",
+        bread: "m",
+        clay: "v",
+        bricks: "p",
+        wood: "m",
+        planks: "p",
+        spices: "p",
+        silk: "f",
+        salt: "m",
+        wine: "m",
+        furs: "p",
+        cloth: "p",
+        sand: "m",
+        glass: "m",
+        mirrors: "p",
+        wool: "f",
+        drape: "m",
+        garments: "p",
+        prepared_spices: "p",
+      } as Record<string, "m" | "f" | "v" | "p">,
+      /** « le blé », « la farine », « l'argile », « les briques » (null: a good not listed). */
+      the: (code: string, name: string): string | null => {
+        const g = fr.game.workshop.genders[code];
+        const n = name.toLowerCase();
+        return g ? `${{ m: "le ", f: "la ", v: "l'", p: "les " }[g]}${n}` : null;
+      },
+      /** « du pain », « de la farine », « de l'argile », « des briques » (null: not listed). */
+      some: (code: string, name: string): string | null => {
+        const g = fr.game.workshop.genders[code];
+        const n = name.toLowerCase();
+        return g ? `${{ m: "du ", f: "de la ", v: "de l'", p: "des " }[g]}${n}` : null;
+      },
+      /** What limits the batches that can be started. */
+      limitedBy: (n: number, code: string, res: string, have: number, perBatch: number) => {
+        const the = fr.game.workshop.the(code, res);
+        return `${n} lot${n > 1 ? "s" : ""} : limité par ${the ?? `: ${res.toLowerCase()}`} (${have} en stock, ${perBatch} par lot)`;
+      },
+      limitedByQueue: (n: number, hours: number) =>
+        `${n} lot${n > 1 ? "s" : ""} : limité par la file (${hours} h)`,
+      /** The materials an upgrade lacks: bought right away at the Rialto. */
+      buyMissing: (cost: string) => `Acheter ce qui manque (≈ ${cost})`,
+      buyMissingNone: "Personne ne vend ce qui manque au Rialto pour l'instant.",
       buildHere: "Bâtir ici",
     },
     carnet: {
@@ -1230,7 +1297,7 @@ export const fr = {
         ],
         first_vehicle: [
           "Premier véhicule",
-          "« Bâtir », onglet « Véhicules » : livrez plusieurs commandes à la fois.",
+          "Achetez un véhicule dans « Bâtir », onglet « Véhicules » (améliorer une mule ne compte pas) : livrez plusieurs commandes à la fois.",
         ],
         first_contract: [
           "Honorer un contrat du Doge",
@@ -1246,7 +1313,7 @@ export const fr = {
         ],
         first_upgrade: [
           "Améliorer un atelier",
-          "« Ateliers », puis « Améliorer » : +25 % de rendement par niveau.",
+          "« Ateliers », puis « Améliorer » : le niveau 2 fait plus que doubler la production.",
         ],
         five_contracts: [
           "Honorer cinq contrats",
@@ -1273,7 +1340,18 @@ export const fr = {
     welcome: {
       kicker: "Absent",
       title: "Bon retour au comptoir",
-      slept: "Votre comptoir s'est mis en sommeil : vos ouvriers n'ont pas mangé ni connu la faim.",
+      slept: "Votre comptoir s'est mis en sommeil : vos ouvriers n'ont ni mangé ni connu la faim.",
+      /** The week closed while away: where the merchant finished, and its title. */
+      week: {
+        title: (n: number) => `Semaine ${n + 1}`,
+        rank: (rank: number, award: string | null) =>
+          `Vous terminez ${rank}${rank === 1 ? "er" : "e"}${award ? ` — ${award}` : ""}`,
+        gain: (amount: string) => `${amount} de ventes nettes dans la semaine`,
+        award: "Le titre entre à votre palmarès, visible de tous les marchands.",
+      },
+      /** What the fattore sent while away. */
+      fattore: (qty: number, what: string, city: string, paid: string | null, pct: number) =>
+        `Le fattore a envoyé ${qty} unité${qty > 1 ? "s" : ""} ${/^[aeiouyéèêh]/i.test(what) ? "d'" : "de "}${what.toLowerCase()} à ${city}${paid ? ` (${paid}, −${pct} %)` : " (en route)"}`,
       earned: "Gagné",
       commerce: "Commerce",
       nothing: "Rien de vendu depuis votre dernière visite.",
@@ -1291,6 +1369,7 @@ export const fr = {
       },
       sources: {
         city_sale: "Ventes aux villes",
+        criee_sale: "Ventes à la criée",
         trade: "Ventes au Rialto",
         market_maker_buy: "Ventes à la Dogana",
         contract_reward: "Contrats du Doge",
@@ -1357,7 +1436,8 @@ export const fr = {
       owned: (n: number) => `Possédés ${n}`,
       batch: (time: string) => `Un lot : ${time}`,
       onlyIn: (regions: string) => `Seulement en ${regions}`,
-      unlockAt: (title: string) => `S'ouvre au titre de ${title}`,
+      unlockAt: (title: string) =>
+        `S'ouvre au titre ${/^[aeiouyéèêh]/i.test(title) ? "d'" : "de "}${title}`,
       missing: "Il vous manque des ducats ou des matériaux.",
       upgradeOf: (from: string, cost: string) => `S'obtient en améliorant : ${from} (${cost})`,
       roles: {
@@ -1370,7 +1450,8 @@ export const fr = {
           "Cuit le pain : la plus grosse demande des villes, et la ration de tous les ouvriers.",
         brickworks: "Cuit l'argile en briques, qui servent à bâtir et agrandir tous les ateliers.",
         sawmill: "Scie le bois en planches, qui servent à bâtir et agrandir tous les ateliers.",
-        palazzo: "Prestige : ne produit rien, compte à son coût dans le classement.",
+        palazzo:
+          "Prestige : ne produit rien. Compte à son coût dans le patrimoine, pas dans le classement (ventes nettes).",
         sand_pit: "Tire le sable de la lagune, que la verrerie fond en verre.",
         glassworks: "Le verre de Murano : sable et bois fondus, pour la miroiterie.",
         mirrorworks: "Argente le verre en miroirs, que les palais des villes paient cher.",
@@ -1387,7 +1468,8 @@ export const fr = {
       } as Record<string, string>,
     },
     maxBuildings: (n: number) => `Maximum de ${n} bâtiments atteint.`,
-    palazzoHelp: "Prestige : ne produit rien, compte à son coût dans le classement.",
+    palazzoHelp:
+      "Prestige : ne produit rien. Compte à son coût dans le patrimoine, pas dans le classement (ventes nettes).",
     rationsOfLevel: (loaves: number) => `Ouvriers : +${loaves} pains/jour`,
     cost: "Coût",
     missing: "manque",
@@ -1415,7 +1497,23 @@ export const fr = {
       fondaco: "Dogana",
       you: "Vous",
       quota: (buy: string, sell: string) =>
-        `Dogana aujourd'hui : encore ${buy} à acheter, ${sell} à lui vendre.`,
+        `Dogana aujourd'hui, pour cette marchandise : encore ${buy} à acheter, ${sell} à lui vendre.`,
+      /** What an order right away can take now, from the book and the Dogana's quota. */
+      nowMax: (buy: number, sell: number) =>
+        `Tout de suite : jusqu'à ${buy} à l'achat, ${sell} à la vente (offres du carnet dans l'écart et quota de la Dogana).`,
+      /** The bounds of an order right away, on each side. */
+      bounds: (cost: string | null, proceeds: string | null, tax: number) =>
+        [
+          cost ? `Coût max. à l'achat : ${cost}` : null,
+          proceeds ? `Recette min. à la vente : ${proceeds} (taxe ${tax} % déduite)` : null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      /** A purchase lowers the net sales, the ranking. */
+      rankCost: (amount: string) => `Acheter : −${amount} sur vos ventes nettes (classement).`,
+      rules:
+        "Tout de suite : au meilleur prix du carnet. À mon prix : votre offre attend un preneur.",
+      more: "En savoir plus",
       dogana: (pct: number) => `Cours de la Dogana : ${pct} % du prix de référence`,
       fondacoHelp:
         "La Dogana, la douane de la République, achète et vend chaque ressource de base en quantité limitée par marchand et par jour. Son cours suit l'offre et la demande : il monte quand les marchands lui achètent plus qu'ils ne lui vendent, baisse dans le cas contraire, et revient peu à peu au prix de référence.",
@@ -1430,6 +1528,32 @@ export const fr = {
         `${side === "sell" ? "Vends" : "Achète"} ${qty} ${what.toLowerCase()} à ${price}`,
       cancel: "Annuler",
       expires: (left: string) => `expire dans ${left}`,
+      /** What an order "right away" traded, said after it. */
+      instantDone: (
+        side: "buy" | "sell",
+        filled: number,
+        requested: number,
+        what: string,
+        amount: string,
+        reason: "quota" | "depth" | null,
+        slippage: number,
+      ) => {
+        const verb =
+          side === "sell" ? (filled > 1 ? "vendus" : "vendu") : filled > 1 ? "achetés" : "acheté";
+        if (filled >= requested)
+          return `${side === "sell" ? "Vente" : "Achat"} : ${filled} unité${filled > 1 ? "s" : ""} ${/^[aeiouyéèêh]/i.test(what) ? "d'" : "de "}${what.toLowerCase()} pour ${amount}.`;
+        const why =
+          reason === "quota"
+            ? "quota de la Dogana atteint pour aujourd'hui"
+            : side === "sell"
+              ? `aucun autre acheteur dans l'écart de ${slippage} %`
+              : `aucun autre vendeur dans l'écart de ${slippage} %`;
+        return filled > 0
+          ? `${filled} ${verb} sur ${requested} (${amount}) : ${why}.`
+          : `0 ${side === "sell" ? "vendu" : "acheté"} : ${why}.`;
+      },
+      offerPosted: (side: "buy" | "sell", qty: number, what: string, price: string) =>
+        `Offre posée : ${side === "sell" ? "" : "achat de "}${qty} ${what.toLowerCase()} à ${price}.`,
     },
     cityTitle: "Les villes achètent",
     cityHelp:
@@ -2005,7 +2129,11 @@ export const fr = {
     },
     /** A workshop in figures (margins at reference prices). */
     economics: {
-      perHour: (amount: string) => `≈ ${amount} de marge par heure`,
+      perHour: (amount: string) => `≈ ${amount} de marge théorique par heure`,
+      /** A workshop the guide does not advise upgrading: its goods pile up, or it lacks an input. */
+      unsold: (qty: number, res: string, hours: number, dogana: number | null) =>
+        `Stock invendu : ${qty} ${res.toLowerCase()}, ~${hours >= 48 ? `${Math.round(hours / 24)} j` : `${hours} h`} de production${dogana !== null ? ` ; la Dogana en prend ${dogana} par jour` : ""}.`,
+      missing: (list: string) => `Intrant manquant : ${list.toLowerCase()}.`,
       best: "meilleur placement",
       bestLong:
         "Le meilleur placement de vos ducats en ce moment : c'est l'amélioration la plus vite rentabilisée.",
@@ -2020,11 +2148,16 @@ export const fr = {
         n > 1
           ? `${n} ateliers ont fini : récoltez et relancez.`
           : "Un atelier a fini : récoltez et relancez.",
-      harvestGo: "Récolter",
+      harvestGo: "Récolter et relancer",
       produce: (building: string) => `${building} ne fait rien et a de quoi travailler.`,
       produceGo: "Produire",
-      company: (n: number, resource: string) =>
-        `La commande de compagnie attend ${resource} : vous en avez ${n} à livrer.`,
+      company: (n: number, code: string, resource: string) => {
+        // « du pain », « de la farine », « de l'argile », « des briques » (see workshop.genders).
+        const some = fr.game.workshop.some(code, resource);
+        return some
+          ? `La commande de compagnie attend ${some} : vous en avez ${n} à livrer.`
+          : `La commande de compagnie attend : ${resource.toLowerCase()}. Vous en avez ${n} à livrer.`;
+      },
       companyGo: "Livrer",
       upgrade: (building: string, adds: string, payback: string) =>
         `Améliorez ${building} : +${adds} par heure, rentabilisé en ${payback}.`,

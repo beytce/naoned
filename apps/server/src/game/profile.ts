@@ -66,7 +66,7 @@ async function counts(db: Db, worldId: string, playerId: string, goods: string[]
       (select count(*) from trades where world_id = ${worldId}
         and (buyer_id = ${playerId} or seller_id = ${playerId}))::int as trades,
       (select coalesce(-sum(quantity), 0) from stock_movements where world_id = ${worldId}
-        and player_id = ${playerId} and reason = 'city_sale')::int as city_sold,
+        and player_id = ${playerId} and reason in ('city_sale', 'delivery'))::int as city_sold,
       (select coalesce(-sum(quantity), 0) from stock_movements where world_id = ${worldId}
         and player_id = ${playerId} and reason = 'project_delivery')::int as delivered,
       (select count(distinct date_trunc('day', at)) from telemetry where world_id = ${worldId}
@@ -102,6 +102,10 @@ export async function profile(
   const worth = netWorth(ctx, state, playerId, now);
   const buildings = Object.values(state.buildings).filter((b) => b.playerId === playerId);
   const c = await counts(db, worldId, playerId, mudaGoods(ctx));
+  // Sold to the cities: their purchases, and the deliveries once arrived (the goods leave the stock
+  // at departure: those still on the road do not count yet).
+  for (const d of Object.values(state.deliveries ?? {}))
+    if (d.playerId === playerId && d.outcome === "en_route") c.citySold -= d.loaded;
   const maxLevel = buildings.reduce((m, b) => Math.max(m, b.level), 0);
   const palazzo = buildings.find((b) => b.type === "palazzo")?.level ?? 0;
   const weekly = await weeklyRecord(db, worldId, playerId);

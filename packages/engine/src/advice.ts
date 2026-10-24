@@ -58,6 +58,10 @@ export interface WorkshopEconomics {
   marginPerHour: Deniers;
   /** The next level: its cost, what it adds an hour, how long it takes to pay back. */
   next: { cost: Deniers; addedPerHour: Deniers; paybackMinutes: number } | null;
+  /** Its first output in stock, and how many hours of production that is (whole hours). */
+  unsold: { stock: number; hoursOfOutput: number };
+  /** The inputs of its recipe short of one batch at its level. */
+  missingInputs: string[];
 }
 
 /**
@@ -76,6 +80,11 @@ export function workshopEconomics(
   const level = workLevel(ctx, building);
   const margin = marginAt(ctx, state, playerId, building.type, level, now);
   let unitsPerHour = 0;
+  const stock = (res: string) => state.inventories[playerId]?.[res]?.available ?? 0;
+  const output = Object.keys(recipe?.outputs ?? {})[0];
+  const missingInputs = Object.entries(recipe?.inputs ?? {})
+    .filter(([res, qty]) => stock(res) < (qty ?? 0) * level)
+    .map(([res]) => res);
   if (recipe && player) {
     const [res, qty] = Object.entries(recipe.outputs)[0] ?? ["", 0];
     const bonus =
@@ -84,9 +93,15 @@ export function workshopEconomics(
       ((qty ?? 0) * level * bonus * 60 * 100) / (10_000 * Math.max(1, recipe.durationMinutes)),
     );
   }
+  const inStock = output ? stock(output) : 0;
+  const unsold = {
+    stock: inStock,
+    hoursOfOutput: unitsPerHour > 0 ? Math.floor((inStock * 100) / unitsPerHour) : 0,
+  };
+  const base = { unitsPerHour, marginPerHour: margin, unsold, missingInputs };
   // The last level, or a manufacture's path still to choose: nothing to add by an upgrade.
   if (building.level >= topLevel(ctx, building) || building.type === "palazzo")
-    return { unitsPerHour, marginPerHour: margin, next: null };
+    return { ...base, next: null };
   const cost = costValue(ctx, costForLevel(ctx, building.type, building.level + 1));
   // On the quality path, a level adds what the cities pay more for the same batches.
   const added =
@@ -96,14 +111,23 @@ export function workshopEconomics(
         10_000n
       : marginAt(ctx, state, playerId, building.type, level + 1, now) - margin;
   const paybackMinutes = added > 0n ? Number((cost * 60n) / added) : Number.POSITIVE_INFINITY;
-  return {
-    unitsPerHour,
-    marginPerHour: margin,
-    next: { cost, addedPerHour: added, paybackMinutes },
-  };
+  return { ...base, next: { cost, addedPerHour: added, paybackMinutes } };
 }
 
-/** The merchant's upgrade that pays back first (null: none left). */
+/**
+ * Whether more of a workshop is worth advising: not while its goods pile up unsold (more would
+ * not sell either), nor while it lacks an input for a single batch.
+ */
+export function upgradeWorthAdvising(ctx: WorldContext, e: WorkshopEconomics): boolean {
+  const glut = ctx.settings.advice.glutHours;
+  if (glut > 0 && e.unsold.hoursOfOutput >= glut) return false;
+  return e.missingInputs.length === 0;
+}
+
+/**
+ * The merchant's upgrade that pays back first (null: none left), among the workshops whose goods
+ * sell and whose inputs are there (see `upgradeWorthAdvising`).
+ */
 export function bestUpgrade(
   ctx: WorldContext,
   state: WorldState,
@@ -113,8 +137,9 @@ export function bestUpgrade(
   let best: { buildingId: string; paybackMinutes: number; addedPerHour: Deniers } | null = null;
   for (const b of Object.values(state.buildings).sort((x, y) => (x.id < y.id ? -1 : 1))) {
     if (b.playerId !== playerId) continue;
-    const next = workshopEconomics(ctx, state, playerId, b, now).next;
-    if (!next || !Number.isFinite(next.paybackMinutes)) continue;
+    const e = workshopEconomics(ctx, state, playerId, b, now);
+    const next = e.next;
+    if (!next || !Number.isFinite(next.paybackMinutes) || !upgradeWorthAdvising(ctx, e)) continue;
     if (!best || next.paybackMinutes < best.paybackMinutes)
       best = {
         buildingId: b.id,

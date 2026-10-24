@@ -12,9 +12,11 @@ import { DashboardSheet, DashboardTile } from "./Dashboard.js";
 import { DealsSheet, DealsTile } from "./Deals.js";
 import type { GameProps } from "./Game.js";
 import { Ledger } from "./Ledger.js";
+import { costOf } from "./Marche.js";
 import { MasteryTile } from "./Mastery.js";
 import { TendersSheet, TendersTile } from "./Tenders.js";
 import { d, duration, minutesLabel } from "./format.js";
+import { harvestAll, harvestAndRestart } from "./harvest.js";
 import { store } from "./store.js";
 import type { BuildingView, Cost, PlayerView, Recipe } from "./types.js";
 import { unlocksOf } from "./unlocks.js";
@@ -93,22 +95,105 @@ function RecipeFlow({
   );
 }
 
-export function CostList({ cost, props }: { cost: Cost; props: GameProps }) {
+/**
+ * What something costs, the materials short in red; with `buyable`, a material short is a button
+ * that opens its trade at the Rialto.
+ */
+export function CostList({
+  cost,
+  props,
+  buyable = false,
+}: { cost: Cost; props: GameProps; buyable?: boolean }) {
   return (
     <div className="flex flex-wrap items-center gap-3">
       <span className="font-display text-sm font-semibold">{d(cost.ducats)}</span>
       {Object.entries(cost.materials).map(([r, q]) => {
         const ok = have(props.view, r) >= q;
-        return (
+        const inner = [
+          <ResourceIcon key="icon" code={r} size={20} />,
+          <span key="qty" className="font-display text-sm font-semibold tabular-nums">
+            {Math.min(have(props.view, r), q)}/{q}
+          </span>,
+        ];
+        return buyable && !ok && props.view.market.some((l) => l.resource === r) ? (
+          <button
+            key={r}
+            type="button"
+            aria-label={`${fr.game.buy} : ${props.names.resource(r)}`}
+            onClick={() => props.setSheet(`trade:${r}`)}
+            className="hit inline-flex items-center gap-1 text-vermilion underline decoration-dotted underline-offset-4"
+          >
+            {inner}
+          </button>
+        ) : (
           <span key={r} className={`inline-flex items-center gap-1 ${ok ? "" : "text-vermilion"}`}>
-            <ResourceIcon code={r} size={20} />
-            <span className="font-display text-sm font-semibold tabular-nums">
-              {Math.min(have(props.view, r), q)}/{q}
-            </span>
+            {inner}
           </span>
         );
       })}
     </div>
+  );
+}
+
+/** The materials an upgrade lacks, and what buying them right away at the Rialto costs. */
+function missingMaterials(props: GameProps, cost: Cost) {
+  const lines = Object.entries(cost.materials)
+    .map(([r, q]) => ({ resource: r, quantity: q - have(props.view, r) }))
+    .filter((l) => l.quantity > 0);
+  const estimate = lines.reduce(
+    (n, l) => n + costOf(props.view.book[l.resource]?.asks ?? [], l.quantity),
+    0n,
+  );
+  return { lines, estimate };
+}
+
+/**
+ * Buys what an upgrade lacks, one order right away per material, and says in one toast what was
+ * bought (or why less).
+ */
+function BuyMissing({ cost, props }: { cost: Cost; props: GameProps }) {
+  const { lines, estimate } = missingMaterials(props, cost);
+  if (lines.length === 0) return null;
+  const t = fr.game.workshop;
+  if (estimate === 0n) return <p className="meta">{t.buyMissingNone}</p>;
+  return (
+    <Slab
+      size="sm"
+      tone="ghost"
+      className="w-full"
+      disabled={props.busy}
+      onClick={async () => {
+        const said: string[] = [];
+        let short = false;
+        for (const l of lines) {
+          const res = await props.actQuiet({
+            type: "instantOrder",
+            resource: l.resource,
+            side: "buy",
+            quantity: l.quantity,
+          });
+          // Refused: the error is said, nothing more to buy.
+          if (!res) return;
+          const o = res.outcome;
+          if (o?.kind !== "instant") continue;
+          if (o.filled < o.requested) short = true;
+          said.push(
+            fr.game.book.instantDone(
+              "buy",
+              o.filled,
+              o.requested,
+              props.names.resource(l.resource),
+              d(o.amount),
+              o.reason,
+              props.catalog.rules.instantOrderSlippageBps / 100,
+            ),
+          );
+        }
+        if (said.length > 0) props.say(said.join(" "), short ? "warn" : "info");
+      }}
+    >
+      {t.buyMissing(d(estimate))}
+    </Slab>
   );
 }
 
@@ -253,6 +338,29 @@ const STATE_TONE = {
 } as const;
 
 /**
+ * Why the guide does not advise upgrading a workshop (null: it may): its goods pile up unsold, or
+ * it lacks an input for a single batch.
+ */
+function NotAdvised({ b, props }: { b: BuildingView; props: GameProps }) {
+  const e = b.economics;
+  if (e.advisable || !e.next) return null;
+  const output = Object.keys(recipeOf(props, b.type)?.outputs ?? {})[0];
+  const t = fr.game.economics;
+  return (
+    <span className="block text-gold">
+      {e.missingInputs.length > 0
+        ? t.missing(e.missingInputs.map(props.names.resource).join(", "))
+        : t.unsold(
+            e.unsold.stock,
+            props.names.resource(output ?? ""),
+            e.unsold.hoursOfOutput,
+            e.doganaPerDay,
+          )}
+    </span>
+  );
+}
+
+/**
  * A workshop in the list: its state first (a coloured line), what a batch takes and gives, and
  * one big button that does the right thing (collect, produce, see what it lacks); upgrading is
  * the small level chip at the top.
@@ -313,13 +421,22 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
           </p>
           {/* What it earns, and whether its next level is the best placement of the ducats. */}
           <p className="mt-1 flex flex-wrap items-center gap-x-2 font-mono text-xs text-cream-dim">
-            {BigInt(b.economics.marginPerHour) > 0n && (
-              <span>{fr.game.economics.perHour(d(b.economics.marginPerHour))}</span>
+            {BigInt(b.economics.queued?.marginPerHour ?? b.economics.marginPerHour) > 0n && (
+              <span>
+                {fr.game.economics.perHour(
+                  d(b.economics.queued?.marginPerHour ?? b.economics.marginPerHour),
+                )}
+              </span>
             )}
             {props.view.bestUpgrade === b.id && b.economics.next && (
               <span className="text-gold">★ {fr.game.economics.best}</span>
             )}
           </p>
+          {b.upgradeCost && !b.economics.advisable && b.economics.next && (
+            <p className="mt-1 font-mono text-xs">
+              <NotAdvised b={b} props={props} />
+            </p>
+          )}
         </div>
       </div>
 
@@ -330,10 +447,11 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
         >
           <RecipeFlow
             recipe={recipe}
-            level={b.level}
+            level={b.economics.queued?.level ?? b.level}
             props={props}
             runningMs={job ? job.batchMs : undefined}
           />
+          {b.economics.queued && <p className="meta mt-1 text-gold">{t.afterQueue(b.workLevel)}</p>}
         </div>
       )}
       {st.state === "running" && job && (
@@ -405,16 +523,53 @@ function WorkshopsSummary(props: GameProps) {
         ))}
       </div>
       {(ready > 0 || count("idle") > 0) && (
+        <Slab className="w-full" disabled={props.busy} onClick={() => harvestAndRestart(props)}>
+          {ready > 0 ? t.collectAll(ready) : t.restartAll}
+        </Slab>
+      )}
+      {/* Restarting consumes the stock's inputs: harvesting alone keeps them for the orders. */}
+      {ready > 0 && (
         <Slab
           className="w-full"
+          tone="ghost"
           disabled={props.busy}
-          onClick={() => props.act({ type: "collectAndRestart" })}
+          onClick={() => harvestAll(props)}
         >
-          {ready > 0 ? t.collectAll(ready) : t.restartAll}
+          {t.harvestOnly}
         </Slab>
       )}
     </div>
   );
+}
+
+/** « 22:05 », in Paris. */
+function timeOfDay(at: number): string {
+  return new Intl.DateTimeFormat("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Paris",
+  }).format(new Date(at));
+}
+
+/** What keeps a workshop from starting more batches: an input short, or the queue's length. */
+function limit(b: BuildingView, recipe: Recipe, props: GameProps): string | null {
+  const t = fr.game.workshop;
+  let by: { res: string; n: number; perBatch: number } | null = null;
+  for (const [res, perLot] of Object.entries(recipe.inputs)) {
+    const perBatch = perLot * b.workLevel;
+    if (perBatch <= 0) continue;
+    const n = Math.floor(have(props.view, res) / perBatch);
+    if (!by || n < by.n) by = { res, n, perBatch };
+  }
+  if (by && by.n <= b.canStart)
+    return t.limitedBy(
+      b.canStart,
+      by.res,
+      props.names.resource(by.res),
+      have(props.view, by.res),
+      by.perBatch,
+    );
+  return t.limitedByQueue(b.canStart, props.catalog.rules.productionQueueMaxHours);
 }
 
 /** Minutes from now to the evening (21 h in Paris), or to the morning (8 h) once evening has come. */
@@ -534,9 +689,14 @@ function WorkshopSheet({
           {props.view.bestUpgrade === b.id && (
             <span className="block text-gold">★ {fr.game.economics.bestLong}</span>
           )}
+          <NotAdvised b={b} props={props} />
         </p>
       )}
-      <CostList cost={cost} props={props} />
+      <CostList cost={cost} props={props} buyable />
+      <BuyMissing cost={cost} props={props} />
+      {b.job && b.job.endsAt > props.now && !b.path && (
+        <p className="text-sm text-gold">{t.queueKeeps(b.level + 1, timeOfDay(b.job.endsAt))}</p>
+      )}
       <Slab
         className="w-full"
         coach="sheet-upgrade"
@@ -608,6 +768,7 @@ function WorkshopSheet({
             ))}
           </div>
           <Qty value={q} max={b.canStart} onChange={setQty} maxButton={false} />
+          {limit(b, recipe, props) && <p className="meta">{limit(b, recipe, props)}</p>}
           <p className="text-sm text-cream-dim">
             {b.fastSeconds !== null && q === 1
               ? fr.game.fastBatch(b.fastSeconds)

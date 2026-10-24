@@ -139,7 +139,12 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
         .send({ error: "invalid_input", issues: err.issues.map((i) => i.message) });
     }
     if (err instanceof AuthError) {
-      const status = { invalid_token: 400, pseudo_taken: 409, too_many_requests: 429 }[err.code];
+      const status = {
+        invalid_token: 400,
+        invalid_code: 400,
+        pseudo_taken: 409,
+        too_many_requests: 429,
+      }[err.code];
       return reply.code(status).send({ error: err.code });
     }
     if (err instanceof MailError) {
@@ -180,6 +185,20 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     async (req, reply) => {
       const { token } = z.object({ token: z.string().min(1).max(200) }).parse(req.body);
       const { sessionToken, account } = await auth.verify(token);
+      setSession(reply, sessionToken);
+      return { account };
+    },
+  );
+
+  // The code of the mail, typed in the app: by address too, on top of each token's five tries.
+  app.post(
+    "/api/auth/code",
+    { config: { rateLimit: { max: 20, timeWindow: "15 minutes" } } },
+    async (req, reply) => {
+      const { email, code } = z
+        .object({ email: z.string().max(254), code: z.string().max(20) })
+        .parse(req.body);
+      const { sessionToken, account } = await auth.verifyCode(email, code);
       setSession(reply, sessionToken);
       return { account };
     },
