@@ -59,10 +59,35 @@ export function Slab(props: {
       <span
         className={`bevel flex w-full items-center justify-center text-center transition-transform duration-100 ease-out group-hover:brightness-105 group-active:translate-x-[3px] group-active:translate-y-[3px] ${size} ${tone.face}`}
       >
-        <span>{props.children}</span>
+        <span>{unitsKept(props.children)}</span>
       </span>
     </button>
   );
+}
+
+/**
+ * The slab writes in capitals, but an amount's unit stays a small « d »: « ACHETER · 150 d », never
+ * « 150 D ». The unit follows the no-break space of format.ts.
+ */
+export function unitsKept(children: ReactNode): ReactNode {
+  const keep = (text: string, key: number | string) => {
+    const parts = text.split(/(\u00a0(?:d|ducats)\b)/);
+    if (parts.length === 1) return text;
+    return parts.map((part, i) =>
+      i % 2 === 1 ? (
+        // biome-ignore lint/suspicious/noArrayIndexKey: the pieces of one fixed text
+        <span key={`${key}:${i}`} className="normal-case">
+          {part}
+        </span>
+      ) : (
+        part
+      ),
+    );
+  };
+  if (typeof children === "string") return keep(children, 0);
+  if (Array.isArray(children))
+    return children.map((c, i) => (typeof c === "string" ? keep(c, i) : c));
+  return children;
 }
 
 /**
