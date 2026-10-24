@@ -178,7 +178,10 @@ export function HomeMarker({
           <Pill tone="gold">{ready}</Pill>
         </span>
       )}
-      <span className="pointer-events-none absolute left-1/2 top-[calc(100%-4px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+      <span
+        data-coach-with="home"
+        className="pointer-events-none absolute left-1/2 top-[calc(100%-4px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
+      >
         {name}
       </span>
     </button>

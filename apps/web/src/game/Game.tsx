@@ -663,6 +663,8 @@ export function Game(props: {
       {toast && (
         <div
           role={toast.tone === "error" ? "alert" : "status"}
+          // Lorenzo's bubble at the top: the toast goes to the foot, never over his words.
+          data-toast
           className={
             toast.tone === "error"
               ? "fixed inset-x-4 top-[max(5rem,calc(env(safe-area-inset-top)+4.5rem))] z-50 mx-auto max-w-md animate-rise"

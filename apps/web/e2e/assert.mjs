@@ -46,6 +46,7 @@ export async function assertLayout(page) {
     ...(await touches(page)),
     ...(await wraps(page)),
     ...(await squeezed(page)),
+    ...(await bubbleRoom(page)),
     ...(await guide(page)),
   ]);
 }
@@ -391,6 +392,32 @@ function squeezed(page) {
       if (r.height / line > 4.5 && r.width < font * 0.55 * 8)
         wrong.push(`« ${text.slice(0, 40)} » squeezed a word a line (${Math.round(r.width)} px)`);
     }
+    return wrong;
+  });
+}
+
+/**
+ * Lorenzo's bubble leaves the gains in sight: on the map (no window open) never over the purse,
+ * where the coins fly; and no toast over his words.
+ */
+function bubbleRoom(page) {
+  return page.evaluate(() => {
+    const bubble = document.querySelector("[data-coach-bubble]");
+    if (!bubble || bubble.getClientRects().length === 0) return [];
+    const b = bubble.getBoundingClientRect();
+    const over = (el) => {
+      const r = el.getBoundingClientRect();
+      return (
+        Math.min(r.right, b.right) - Math.max(r.left, b.left) > 2 &&
+        Math.min(r.bottom, b.bottom) - Math.max(r.top, b.top) > 2
+      );
+    };
+    const wrong = [];
+    const windowOpen = !!document.querySelector('[aria-modal="true"]');
+    const purse = document.querySelector('[data-hud="counter"]');
+    if (!windowOpen && purse && over(purse)) wrong.push("Lorenzo's bubble over the purse");
+    for (const toast of document.querySelectorAll("[data-toast]"))
+      if (over(toast)) wrong.push("a toast over Lorenzo's bubble");
     return wrong;
   });
 }

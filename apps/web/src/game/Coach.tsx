@@ -5,7 +5,7 @@ import { fr } from "../i18n.js";
 import { LorenzoCard, Slab, clock } from "../ui.js";
 import { affordable, have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
-import { bringOnce, browserPage, isCovered, outOfSheet } from "./coachSight.js";
+import { bringOnce, browserPage, isCovered, outOfSheet, unionBox } from "./coachSight.js";
 import { minutesLabel } from "./format.js";
 import { store } from "./store.js";
 
@@ -85,9 +85,23 @@ const BUBBLE_ROOM = 190;
  * What to do next, read from the live game: the guide follows the player instead of a script,
  * so it never gets stuck if they do things in another order.
  */
+/**
+ * The guide's steps done, as the player sees them: a delivery arrived counts as sold to the city
+ * at once, though the server marks it at its next tick (else the guide fell back on « produce »).
+ */
+export function doneSteps(
+  tutorial: readonly string[],
+  deliveries: readonly { arriveAt: number }[],
+  now: number,
+): Set<string> {
+  const done = new Set(tutorial);
+  if (deliveries.some((d) => d.arriveAt <= now)) done.add("sell_city");
+  return done;
+}
+
 function nextStep(props: CoachProps): CoachStep {
   const { view, now, names } = props;
-  const done = new Set(view.tutorial);
+  const done = doneSteps(view.tutorial, view.road?.deliveries ?? [], now);
   const ready = view.buildings.find(
     (b) =>
       b.job && Math.min(b.job.batches, Math.floor((now - b.job.startedAt) / b.job.batchMs)) > 0,
@@ -228,6 +242,13 @@ export function Coach(props: CoachProps) {
   const [hidden, setHidden] = useState(() => store.get("guideHidden") === "1");
   const [finished, setFinished] = useState(() => store.get("guideDone") === "1");
   const [rect, setRect] = useState<DOMRect | null>(null);
+  // The bubble's height, measured once drawn: where it lies at the top of the screen.
+  const [bubbleH, setBubbleH] = useState(140);
+  const bubble = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const h = bubble.current?.offsetHeight;
+    if (h && Math.abs(h - bubbleH) > 2) setBubbleH(h);
+  });
   const [onFollow, setOnFollow] = useState(false);
   // The target is on the page but something (a sheet, a window) lies over it.
   const [covered, setCovered] = useState(false);
@@ -260,7 +281,16 @@ export function Coach(props: CoachProps) {
       const el = follow ?? visible(step.target ?? "");
       setOnFollow(follow !== null);
       if (el) bring(`${step.text}>${follow ? step.follow : step.target}`, el, window.innerHeight);
-      const box = el ? el.getBoundingClientRect() : null;
+      // The ring holds the target and what goes with it (the counter's name under it).
+      const name = follow ? step.follow : step.target;
+      const box = el
+        ? (unionBox([
+            el.getBoundingClientRect(),
+            ...[...document.querySelectorAll(`[data-coach-with="${name}"]`)]
+              .map((w) => w.getBoundingClientRect())
+              .filter((r) => r.width > 0),
+          ]) as DOMRect | null)
+        : null;
       // Never a ring on what a window covers, even while it slides in, nor on a target its
       // sheet has scrolled out of sight (the finger would touch what lies around the sheet).
       // Under a sheet's own head, it is out of sight (brought back), not covered by a window.
@@ -295,20 +325,30 @@ export function Coach(props: CoachProps) {
     }
   }, [step.final, props.view.tutorial.length]);
 
-  if (finished) return null;
-
-  if (hidden) return null;
-
-  // A message with nothing to point at stays on the counter.
-  if (!step.target && !step.waitUntil && props.tab !== "comptoir") return null;
+  if (finished || hidden || (!step.target && !step.waitUntil && props.tab !== "comptoir")) {
+    // Lorenzo silent: the toasts back at the top.
+    delete document.body.dataset.coachTop;
+    return null;
+  }
 
   // The bubble goes where it hides neither the target nor the panel or sheet the player works in:
   // at the top while a sheet or a place's panel is up, or for a target in the lower third; at the
   // bottom otherwise, and always at the bottom for a target under where it would sit at the top.
   const lowTarget = rect !== null && rect.top + rect.height / 2 > window.innerHeight * 0.65;
-  const highTarget = rect !== null && rect.top < BUBBLE_ROOM;
+  // At the top on the map, the bubble sits under the HUD's band: a target within its height there
+  // sends it down.
+  const hudTop =
+    props.sheet === null
+      ? Number.parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue("--hud-top"),
+        ) || 0
+      : 0;
+  const highTarget = rect !== null && rect.top < Math.max(BUBBLE_ROOM, hudTop + 8 + bubbleH);
   const atTop =
     !highTarget && (props.sheet !== null || props.selection !== null || onFollow || lowTarget);
+  // The bubble at the top: the toasts go to the foot (index.css).
+  if (atTop) document.body.dataset.coachTop = "1";
+  else delete document.body.dataset.coachTop;
   const pad = 6;
   // Kept inside the screen: the tab bar's end tabs touch its edges.
   const box = rect
@@ -339,6 +379,12 @@ export function Coach(props: CoachProps) {
         </>
       )}
       <div
+        // At the top, under the HUD's band on the map (the purse and its coins in sight), over a
+        // window's head when one is open.
+        ref={bubble}
+        style={
+          atTop && props.sheet === null ? { top: "calc(var(--hud-top, 0.75rem) + 8px)" } : undefined
+        }
         className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-[calc(1rem+env(safe-area-inset-bottom))] lg:bottom-28"}`}
       >
         <LorenzoCard

@@ -518,6 +518,10 @@ export function MapScreen(
   const side = wide && !campaign && !terra;
   // Where the HUD's band across the top ends: the map is framed under it on a phone.
   const [hudBand, setHudBand] = useState(0);
+  // The HUD's band for what sits under it outside the map (Lorenzo's bubble).
+  useEffect(() => {
+    if (hudBand > 0) document.documentElement.style.setProperty("--hud-top", `${hudBand}px`);
+  }, [hudBand]);
   const insets = wide
     ? // The doors at the foot of the screen (and the campaign's pledge above them) stay clear.
       {

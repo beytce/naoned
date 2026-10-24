@@ -851,3 +851,9 @@ body[data-coaching] button[data-slab="ghost"][data-coach-lit] .slab-face {
 body[data-coaching] button[data-slab="ghost"][data-coach-lit] .slab-shadow {
   background-color: rgb(var(--gold-deep));
 }
+
+/* Lorenzo's bubble at the top of the screen (Coach.tsx): the toasts go to the foot. */
+body[data-coach-top] [data-toast] {
+  top: auto;
+  bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 6rem);
+}
