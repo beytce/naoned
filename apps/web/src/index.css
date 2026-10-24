@@ -822,3 +822,13 @@
 .map-marker[data-selected] .land-name {
   display: block;
 }
+
+/*
+ * The map's zoom tiers (WorldMap sets data-zoom): a marker of a closer tier waits for the zoom.
+ * Hidden, it takes no room among the labels kept apart (declutter.ts).
+ */
+[data-zoom="0"] .map-marker[data-tier="1"],
+[data-zoom="0"] .map-marker[data-tier="2"],
+[data-zoom="1"] .map-marker[data-tier="2"] {
+  display: none;
+}

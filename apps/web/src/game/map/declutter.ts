@@ -1,8 +1,8 @@
 /**
  * The map's labels kept apart (the owner's word of 24 October 2026: the Terraferma's map could
  * not be read). Greedy, in order of importance: each label takes its place if free, else the first
- * free of three others (above, below, to the right), else it is hidden. Screen pixels, pure and
- * deterministic.
+ * free of three others (above, below, to the right), else it is hidden. Nothing goes under the
+ * HUD's blocks (`blocked`) but the merchant's own. Screen pixels, pure and deterministic.
  */
 
 export interface Label {
@@ -22,9 +22,17 @@ export type Placement = Map<string, { dx: number; dy: number } | null>;
 /** Two labels may touch by this much (px) without being said to cover each other. */
 const SLACK = 2;
 
-export function declutter(labels: Label[]): Placement {
+/** A rectangle no label may cover (a block of the HUD), in screen pixels. */
+export interface Rect {
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+}
+
+export function declutter(labels: Label[], blocked: Rect[] = []): Placement {
   const out: Placement = new Map();
-  const taken: { x0: number; x1: number; y0: number; y1: number }[] = [];
+  const taken: Rect[] = [...blocked];
   const order = [...labels].sort(
     (a, b) => a.priority - b.priority || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0),
   );

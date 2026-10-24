@@ -1,7 +1,7 @@
 import { type ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CityIcon } from "../../art/cities.js";
-import { Crest, defaultCrest } from "../../art/crest.js";
-import { P } from "../../art/palette.js";
+import { Crest, MiniCrest, defaultCrest } from "../../art/crest.js";
+import { MAP_TEXT, P } from "../../art/palette.js";
 import { Lorenzo } from "../../art/scenes.js";
 import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
@@ -669,51 +669,6 @@ export const TerraOverlay = memo(function TerraOverlay({
           </g>
         );
       })}
-      {/* Each holder's troops, written on its land as on OpenFront. */}
-      {s.labels.map((l) => {
-        const h = v.holders[l.i];
-        const focus = s.holders.find((x) => x.i === l.i)?.focus;
-        if (!h) return null;
-        const strong =
-          focus === "me" || focus === "neighbour" || focus === "ally" || focus === "enemy";
-        const name = h.milan || !h.me ? holderName(v, l.i) : null;
-        return (
-          <g
-            key={`label-${l.i}`}
-            data-map-label
-            pointerEvents="none"
-            textAnchor="middle"
-            opacity={strong || focus === "milan" ? 1 : 0.6}
-            style={{ paintOrder: "stroke" }}
-            stroke="#0B1626"
-            strokeOpacity="0.85"
-            strokeLinejoin="round"
-          >
-            {name && (
-              <text
-                x={l.x}
-                y={l.y - l.size * 0.55}
-                fontSize={l.size * 0.55}
-                strokeWidth={l.size * 0.14}
-                fill={P.cream}
-                className="font-display font-extrabold"
-              >
-                {name}
-              </text>
-            )}
-            <text
-              x={l.x}
-              y={l.y + l.size * (name ? 0.45 : 0.35)}
-              fontSize={l.size}
-              strokeWidth={l.size * 0.16}
-              fill={h.me ? P.gold : P.cream}
-              className="font-display font-extrabold tabular-nums"
-            >
-              {h.troops}
-            </text>
-          </g>
-        );
-      })}
       {cell !== null && (
         <path
           d={`M${hexCorners(s.map, cell)
@@ -802,6 +757,65 @@ export function terraSpots(v: TerraView, s: TerraShapes) {
 }
 
 /** The cities, the merchants' war counters, the fronts' strength. */
+/** Which labels give way first on a crowded map (declutter.ts): the merchant's own never. */
+const RANK: Record<Focus | "front" | "city" | "building", number> = {
+  me: 0,
+  front: 1,
+  city: 2,
+  ally: 3,
+  enemy: 4,
+  neighbour: 5,
+  milan: 6,
+  other: 7,
+  faint: 8,
+  building: 9,
+};
+/** From which zoom a land's label shows: the merchant's world first, the others closer. */
+const TIER: Record<Focus, 0 | 1 | 2> = {
+  me: 0,
+  ally: 0,
+  enemy: 0,
+  neighbour: 0,
+  milan: 0,
+  other: 1,
+  faint: 2,
+};
+
+/** How many cells a holder has. */
+function cellsOf(v: TerraView, i: number): number {
+  let n = 0;
+  for (const o of v.owner) if (o === i) n++;
+  return n;
+}
+
+/** A land's name and troops on the map, at a fixed size (MAP_TEXT), on the map's ink. */
+function TerraLabel({
+  name,
+  troops,
+  strong,
+  big,
+}: { name: string; troops: number; strong: boolean; big: boolean }) {
+  return (
+    <span
+      data-map-label
+      className={`pointer-events-none flex -translate-x-1/2 -translate-y-1/2 flex-col items-center leading-tight [text-shadow:0_1px_3px_rgb(0_0_0/0.95)] ${strong ? "" : "opacity-70"}`}
+    >
+      <span
+        className="whitespace-nowrap font-display font-bold text-cream"
+        style={{ fontSize: big ? MAP_TEXT.mine : MAP_TEXT.merchant }}
+      >
+        {name}
+      </span>
+      <span
+        className="mt-0.5 rounded-full px-1.5 font-display font-extrabold tabular-nums text-cream"
+        style={{ fontSize: MAP_TEXT.troops, background: `${MAP_TEXT.halo}CC` }}
+      >
+        {troops}
+      </span>
+    </span>
+  );
+}
+
 export function terraMarkers(
   props: GameProps,
   v: TerraView,
@@ -809,14 +823,21 @@ export function terraMarkers(
   select: (sel: Selection) => void,
 ): MapMarker[] {
   const cities = new Set(v.map.cities.map((c) => c.cell));
+  const focusOfHolder = (i: number) => s.holders.find((x) => x.i === i)?.focus ?? "faint";
   const out: MapMarker[] = v.map.cities.map((c) => {
     const holder = holderAt(v, c.cell);
+    const h = v.holders[holder];
+    // A nation whose capital is this city: its house under the city's name, no label of its own.
+    const house = h?.milan && h.capital === c.cell ? t().nationHouses[h.nation ?? ""] : undefined;
     return {
       key: `terra:${c.cell}`,
+      priority: RANK.city,
+      tier: 0,
       node: (
         <TerraCity
           code={c.code}
           name={props.names.city(c.code)}
+          house={house}
           ring={
             holder >= 0
               ? v.holders[holder]?.milan
@@ -834,9 +855,12 @@ export function terraMarkers(
     if (h.capital === null || h.milan || cities.has(h.capital)) return;
     const [x, y] = hexCenter(s.map, h.capital);
     const cell = h.capital;
+    const focus = focusOfHolder(i);
     out.push({
       key: `terra:${cell}`,
       at: { x, y },
+      priority: h.me ? 0 : RANK[focus] + 0.5,
+      tier: h.me ? 0 : TIER[focus],
       node: (
         <WarCounter
           name={merchantLabel(h.pseudo, h.bot, t().someone)}
@@ -844,7 +868,7 @@ export function terraMarkers(
           mine={h.me}
           tone={s.tone[i] ?? P.cream}
           share={h.me && v.me ? v.me.troops / Math.max(1, v.me.cap) : null}
-          troops={s.labels.some((l) => l.i === i) ? null : h.troops}
+          troops={h.me || !s.labels.some((l) => l.i === i) ? h.troops : null}
           threatened={h.me && threatened}
           small={
             !h.me &&
@@ -856,6 +880,29 @@ export function terraMarkers(
       ),
     });
   });
+  // Each land's name and troops, at a fixed size (MAP_TEXT): never bigger than a city's name. The
+  // merchant's own are on his camp; a nation's whose capital is a city, under the city's name.
+  for (const l of s.labels) {
+    const h = v.holders[l.i];
+    if (!h || h.me) continue;
+    if (h.milan && h.capital !== null && cities.has(h.capital)) continue;
+    const focus = focusOfHolder(l.i);
+    const big = cellsOf(v, l.i) >= 40;
+    out.push({
+      key: `label:${l.i}`,
+      at: { x: l.x, y: l.y },
+      priority: RANK[focus],
+      tier: focus === "milan" && !big ? 1 : TIER[focus],
+      node: (
+        <TerraLabel
+          name={holderName(v, l.i)}
+          troops={h.troops}
+          strong={focus !== "other" && focus !== "faint"}
+          big={big}
+        />
+      ),
+    });
+  }
   // Quick signals: a bubble over the sender's camp, a target on its cell.
   v.signals.forEach((x, k) => {
     const cell = x.kind === "attack" ? x.cell : (v.holders[x.from]?.capital ?? null);
@@ -864,6 +911,7 @@ export function terraMarkers(
     out.push({
       key: `signal:${k}:${x.at}`,
       at: { x: cx, y: cy },
+      priority: RANK.front,
       node: (
         <span className="pointer-events-none -translate-x-1/2 -translate-y-[160%] animate-pop whitespace-nowrap rounded-full bg-night/90 px-2 py-0.5 text-xs text-cream ring-1 ring-info">
           {SIGNAL_GLYPH[x.kind]} {t().diplomacy.signals[x.kind]}
@@ -877,6 +925,8 @@ export function terraMarkers(
     out.push({
       key: `building:${b.cell}`,
       at: { x, y },
+      priority: RANK.building,
+      tier: 1,
       node: (
         <button
           type="button"
@@ -890,23 +940,26 @@ export function terraMarkers(
       ),
     });
   }
-  // Each front's strength where it stands now: on the next cell it will take, with the time left.
+  // Each front's strength and the time to its next cell, at the middle of its line and set off to
+  // its side: never on the camp it leaves.
   for (const f of v.fronts) {
     if (!f.mine && !f.threat) continue;
     const next = f.takes[0];
-    let at: { x: number; y: number };
-    if (next) {
-      const [x, y] = hexCenter(s.map, next.cell);
-      at = { x, y };
-    } else {
-      const from = frontFrom(v, s.map, f.owner, f.aim);
-      if (!from) continue;
-      const [x, y] = hexCenter(s.map, f.aim);
-      at = { x: (from[0] + x) / 2, y: (from[1] + y) / 2 };
+    const from = frontFrom(v, s.map, f.owner, f.aim);
+    const [ax, ay] = hexCenter(s.map, next?.cell ?? f.aim);
+    let at = { x: ax, y: ay };
+    if (from) {
+      const dx = ax - from[0];
+      const dy = ay - from[1];
+      const len = Math.hypot(dx, dy) || 1;
+      const side = s.map.size * 0.9;
+      at = { x: (from[0] + ax) / 2 - (dy / len) * side, y: (from[1] + ay) / 2 + (dx / len) * side };
     }
     out.push({
       key: `front:${f.id}`,
       at,
+      priority: RANK.front,
+      tier: 0,
       node: (
         <div className="-mt-3 -translate-x-1/2">
           <button
@@ -942,9 +995,17 @@ function frontProgress(v: TerraView, against: number, nextAt: number, at: number
 function TerraCity({
   code,
   name,
+  house,
   ring,
   onTap,
-}: { code: string; name: string; ring: string | null; onTap: () => void }) {
+}: {
+  code: string;
+  name: string;
+  /** The nation holding it from its capital: « MANTOUE · Gonzague ». */
+  house?: string;
+  ring: string | null;
+  onTap: () => void;
+}) {
   return (
     <button
       type="button"
@@ -964,6 +1025,12 @@ function TerraCity({
         className="pointer-events-none absolute left-1/2 top-[calc(100%-8px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-cream/85 [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]"
       >
         {name}
+        {house && (
+          <span className="font-semibold normal-case tracking-normal text-vermilion">
+            {" "}
+            · {house}
+          </span>
+        )}
       </span>
     </button>
   );
@@ -1045,7 +1112,12 @@ function WarCounter({
           boxShadow: mine ? undefined : `0 0 0 1.5px ${tone}`,
         }}
       >
-        <Crest crest={crest} size={mine ? 26 : small ? 12 : 20} />
+        {/* The others' crests as small discs: their charge read at 14 to 18 px. */}
+        {mine ? (
+          <Crest crest={crest} size={26} />
+        ) : (
+          <MiniCrest crest={crest} size={small ? 14 : 22} />
+        )}
       </span>
       {mine ? (
         <span
@@ -1053,7 +1125,7 @@ function WarCounter({
           className="pointer-events-none absolute left-1/2 top-[calc(100%-2px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
         >
           {name}
-          {troops !== null && <span className="tabular-nums text-cream"> · ⚔ {troops}</span>}
+          {troops !== null && <span className="tabular-nums text-cream"> · {troops}</span>}
         </span>
       ) : (
         troops !== null && (

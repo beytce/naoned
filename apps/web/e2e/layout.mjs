@@ -569,12 +569,14 @@ async function midWeek(page, door, check, pseudo) {
   await open();
   await check("terraferme-jeudi");
   await lightHud(page, "terraferme-jeudi");
+  await uncluttered(page, "terraferme-jeudi", 30);
   // The same on a PC, then back to the phone.
   const phone = page.viewportSize();
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.waitForTimeout(1200);
   await check("terraferme-jeudi-pc");
   await lightHud(page, "terraferme-jeudi-pc");
+  await uncluttered(page, "terraferme-jeudi-pc", 80);
   // A card of the HUD closes on Escape, as a window does.
   const purse = page.locator("[data-hud] button[aria-label]").filter({ hasText: /\d/ }).first();
   if ((await purse.count()) > 0) {
@@ -629,6 +631,38 @@ async function lightHud(page, label) {
   if (seen.underlined > 0) throw new Error(`${label}: ${seen.underlined} link(s) underlined`);
   if (seen.actions === null || seen.actions < 0.5)
     throw new Error(`${label}: the skirmishes and the week not at the thumb`);
+}
+
+/**
+ * The Terraferma's map legible with 40 merchants: no two labels shown over each other (by more than
+ * 2 px; the words of one marker aside), and no more of them than a screen can read.
+ */
+async function uncluttered(page, label, most) {
+  const seen = await page.evaluate(() => {
+    const boxes = [...document.querySelectorAll(".map-marker")]
+      .filter((m) => getComputedStyle(m).visibility !== "hidden" && m.getClientRects().length > 0)
+      .flatMap((m) =>
+        [...m.querySelectorAll("[data-map-label]")]
+          .map((el) => ({ m, el, r: el.getBoundingClientRect() }))
+          .filter(({ r }) => r.width > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0),
+      );
+    const over = [];
+    for (let i = 0; i < boxes.length; i++)
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i];
+        const b = boxes[j];
+        if (a.m === b.m) continue;
+        const w = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left);
+        const h = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
+        if (w > 2 && h > 2)
+          over.push(`« ${a.el.textContent?.trim()} » over « ${b.el.textContent?.trim()} »`);
+      }
+    return { over, count: new Set(boxes.map((b) => b.m)).size };
+  });
+  if (seen.over.length > 0)
+    throw new Error(`${label}: labels over each other: ${seen.over.join(", ")}`);
+  if (seen.count > most)
+    throw new Error(`${label}: ${seen.count} labels on the map, ${most} at most`);
 }
 
 /** The workshops' window opened: each workshop's button, its recipe raw or transforming. */

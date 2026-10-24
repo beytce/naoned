@@ -75,3 +75,13 @@ describe("labels on a crowded map", () => {
     expect([...a.entries()].sort()).toEqual([...b.entries()].sort());
   });
 });
+
+describe("labels under the HUD", () => {
+  it("never go under one of its blocks, but the merchant's own stays", () => {
+    const hud = [{ x0: 200, x1: 300, y0: 0, y1: 60 }];
+    const placed = declutter([box("city", 250, 30, 2), box("me", 250, 40, 0)], hud);
+    expect(placed.get("city")).toBeNull();
+    expect(placed.get("me")).toEqual({ dx: 0, dy: 0 });
+    expect(declutter([box("city", 250, 70, 2)], hud).get("city")).toEqual({ dx: 0, dy: 0 });
+  });
+});

@@ -518,6 +518,12 @@ export const fr = {
         aquileia: "Aquilée (le Patriarche)",
         impero: "L'Empire",
       } as Record<string, string>,
+      /** A nation's house, under the name of the city it holds from: « MANTOUE · Gonzague ». */
+      nationHouses: {
+        mantova: "Gonzague",
+        ferrara: "Este",
+        aquileia: "le Patriarche",
+      } as Record<string, string>,
       neutral: "Terre libre",
       someone: "Un marchand",
       soon: "imminent",
