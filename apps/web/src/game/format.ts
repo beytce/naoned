@@ -3,22 +3,33 @@ const ducatsFormat = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 2,
 });
 
+/**
+ * The thin no-break space of French typography: between the thousands and before the unit, so an
+ * amount is never cut at the end of a line (« 10 » then « d »).
+ */
+const THIN = "\u202f";
+
+/** "1 000,5": the thousands always grouped by a thin no-break space, whatever the browser's. */
+function grouped(deniers: string | bigint): string {
+  return ducatsFormat.format(Number(BigInt(deniers)) / 100).replace(/[\s\u00a0\u202f]/g, THIN);
+}
+
 /** "12,5 ducats" from a string of deniers. */
 export function ducats(deniers: string | bigint | null | undefined): string {
   if (deniers === null || deniers === undefined) return "—";
-  return `${ducatsFormat.format(Number(BigInt(deniers)) / 100)} ducats`;
+  return `${grouped(deniers)}${THIN}ducats`;
 }
 
 /** Short form for tight spaces: "12,5 d". */
 export function d(deniers: string | bigint | null | undefined): string {
   if (deniers === null || deniers === undefined) return "—";
-  return `${ducatsFormat.format(Number(BigInt(deniers)) / 100)} d`;
+  return `${grouped(deniers)}${THIN}d`;
 }
 
 /** The bare number, for the purse next to its coin: "1 000". */
 export function amount(deniers: string | bigint | null | undefined): string {
   if (deniers === null || deniers === undefined) return "—";
-  return ducatsFormat.format(Number(BigInt(deniers)) / 100);
+  return grouped(deniers);
 }
 
 export function duration(ms: number): string {

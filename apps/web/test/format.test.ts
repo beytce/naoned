@@ -1,0 +1,22 @@
+import { describe, expect, it } from "vitest";
+import { amount, d, ducats } from "../src/game/format.js";
+
+/** A breaking space would cut « 10 d » into « 10 » and « d » at the end of a line. */
+const BREAKING = /[ \t\n]/;
+const THIN = " ";
+
+describe("amounts", () => {
+  it("never break between the number and its unit", () => {
+    for (const v of [0n, 1_000n, 1_100_000n, 12_855n, -250_000n]) {
+      expect(d(v)).not.toMatch(BREAKING);
+      expect(ducats(v)).not.toMatch(BREAKING);
+      expect(amount(v)).not.toMatch(BREAKING);
+    }
+  });
+
+  it("group thousands with a thin no-break space", () => {
+    expect(d(1_100_000n)).toBe(`11${THIN}000${THIN}d`);
+    expect(ducats(12_855n)).toBe(`128,55${THIN}ducats`);
+    expect(amount(100_000_000n)).toBe(`1${THIN}000${THIN}000`);
+  });
+});
