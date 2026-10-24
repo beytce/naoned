@@ -1033,6 +1033,7 @@ export const fr = {
       fold: "Replier le tiroir",
     },
     market: {
+      unpriced: (n: number) => `Pas encore échangées (${n})`,
       chart: {
         empty: (days: number) =>
           `Pas encore d'échange ${days === 7 ? "cette semaine" : `ces ${days} derniers jours`} : la courbe viendra avec les premiers.`,
@@ -2162,11 +2163,16 @@ export const fr = {
     },
     /** A workshop in figures (margins at reference prices). */
     economics: {
-      perHour: (amount: string) => `≈ ${amount} de marge théorique par heure`,
-      /** A workshop the guide does not advise upgrading: its goods pile up, or it lacks an input. */
+      /** The margin at reference prices, a chip: « ≈ 20,8 d/h ». */
+      perHour: (amount: string) => `≈ ${amount}/h`,
+      perHourLong: "Marge théorique par heure, aux prix de référence",
+      /**
+       * Why upgrading it is not advised (its state is told above): its goods pile up, or it lacks
+       * an input.
+       */
       unsold: (qty: number, res: string, hours: number, dogana: number | null) =>
-        `Stock invendu : ${qty} ${res.toLowerCase()}, ~${hours >= 48 ? `${Math.round(hours / 24)} j` : `${hours} h`} de production${dogana !== null ? ` ; la Dogana en prend ${dogana} par jour` : ""}.`,
-      missing: (list: string) => `Intrant manquant : ${list.toLowerCase()}.`,
+        `Amélioration déconseillée : ${qty} ${res.toLowerCase()} invendus, ~${hours >= 48 ? `${Math.round(hours / 24)} j` : `${hours} h`} de production${dogana !== null ? ` ; la Dogana en prend ${dogana} par jour` : ""}.`,
+      missing: (list: string) => `Amélioration déconseillée : il manque ${list}.`,
       best: "meilleur placement",
       bestLong:
         "Le meilleur placement de vos ducats en ce moment : c'est l'amélioration la plus vite rentabilisée.",

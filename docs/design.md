@@ -62,6 +62,10 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
 - `Sheet` : feuille du bas sur mobile, fenêtre centrée sur PC, fermeture par ×. Une seule anatomie : un en-tête collant (surtitre, titre, croix, résumé d'une ligne) qui reste en vue au défilement, puis l'état et l'action, puis la règle dans `Rules` (« Comment ça marche ? »), ouverte la première fois, repliée ensuite, le choix du joueur gardé feuille par feuille. Le guide ouvre une règle repliée qui contient sa cible.
 - `Ribbon` : barre de progression rayée ; `Big` : grands chiffres.
 
+### Rialto et Ateliers
+
+Au Rialto, deux colonnes « Achat » et « Vente », côte à côte sous leurs têtes ; les marchandises que personne n'a encore échangées viennent après, sous « Pas encore échangées (n) ». Une courbe n'est dessinée qu'à partir de deux prix (sa place reste vide avant). Dans les Ateliers, une seule ligne d'état colorée par carte ; la marge théorique est une puce (« ≈ 20,8 d/h ») ; une amélioration déconseillée le dit en `.meta` (« Amélioration déconseillée : il manque du blé. »), jamais en or. Sur ordinateur, la fenêtre des Ateliers est large (`Sheet size="wide"`), les cartes en deux colonnes. Toute fenêtre qui a encore du contenu sous le pli le montre par un fondu à son pied.
+
 ### Carte du commerce : charrettes et noms
 
 Le nom d'une ville est un marqueur à part, posé au-dessus des charrettes (`CityName`, `z-[4]`) : une charrette sur sa route passe dessous et ne le cache jamais, tandis que la tuile reste sous les charrettes, qu'on touche toujours. Sous 360 px, les tuiles des villes et le comptoir sont réduits d'un cinquième. Le test de mise en page vérifie qu'aucune charrette ne couvre un nom de ville (`cartsUnder`).

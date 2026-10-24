@@ -347,9 +347,17 @@ function NotAdvised({ b, props }: { b: BuildingView; props: GameProps }) {
   const output = Object.keys(recipeOf(props, b.type)?.outputs ?? {})[0];
   const t = fr.game.economics;
   return (
-    <span className="block text-gold">
+    <span className="meta block">
       {e.missingInputs.length > 0
-        ? t.missing(e.missingInputs.map(props.names.resource).join(", "))
+        ? t.missing(
+            e.missingInputs
+              .map(
+                (code) =>
+                  fr.game.workshop.some(code, props.names.resource(code)) ??
+                  props.names.resource(code).toLowerCase(),
+              )
+              .join(", "),
+          )
         : t.unsold(
             e.unsold.stock,
             props.names.resource(output ?? ""),
@@ -422,7 +430,10 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
           {/* What it earns, and whether its next level is the best placement of the ducats. */}
           <p className="mt-1 flex flex-wrap items-center gap-x-2 font-sans text-xs text-cream-dim">
             {BigInt(b.economics.queued?.marginPerHour ?? b.economics.marginPerHour) > 0n && (
-              <span>
+              <span
+                title={fr.game.economics.perHourLong}
+                className="rounded-full bg-night-3 px-2 py-0.5 font-display font-semibold tabular-nums text-cream"
+              >
                 {fr.game.economics.perHour(
                   d(b.economics.queued?.marginPerHour ?? b.economics.marginPerHour),
                 )}
@@ -433,9 +444,9 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
             )}
           </p>
           {b.upgradeCost && !b.economics.advisable && b.economics.next && (
-            <p className="mt-1 font-sans text-xs">
+            <div className="mt-1">
               <NotAdvised b={b} props={props} />
-            </p>
+            </div>
           )}
         </div>
       </div>
@@ -926,14 +937,17 @@ function SeasonGoal(props: GameProps) {
  * A workshop's window goes back to the list when it closes.
  */
 /** Every workshop with one tap for them all, and a way to build: the sheet, and the side column. */
-export function WorkshopsList(props: GameProps) {
+export function WorkshopsList(props: GameProps & { wide?: boolean }) {
   const room = props.view.buildings.length < props.catalog.rules.maxBuildings;
   return (
     <div className="space-y-3">
       <WorkshopsSummary {...props} />
-      {props.view.buildings.map((b) => (
-        <Workshop key={b.id} b={b} props={props} />
-      ))}
+      {/* In the wide window of a computer, two columns of cards. */}
+      <div className={`grid gap-3 ${props.wide ? "lg:grid-cols-2" : ""}`}>
+        {props.view.buildings.map((b) => (
+          <Workshop key={b.id} b={b} props={props} />
+        ))}
+      </div>
       {room && (
         <Slab tone="ghost" className="w-full" onClick={() => props.setSheet("buildHere")}>
           {fr.game.map.buttons.build}
@@ -954,8 +968,9 @@ export function CounterSheets(props: GameProps) {
         open={props.sheet === "workshops"}
         onClose={close}
         title={fr.game.map.buttons.workshops}
+        size="wide"
       >
-        <WorkshopsList {...props} />
+        <WorkshopsList {...props} wide />
       </Sheet>
       <Sheet
         open={(kind === "produce" || kind === "upgrade") && !!sheetBuilding}

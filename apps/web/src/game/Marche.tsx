@@ -81,15 +81,16 @@ function Row({
       <span className="hidden shrink-0 min-[360px]:block">
         <Sparkline points={points} width={64} height={26} />
       </span>
-      <div className="w-20 text-right">
+      {/* Two columns, as their heads: buying, selling. */}
+      <div className="flex shrink-0 gap-2 text-right">
         <p
-          className="font-display text-sm font-semibold tabular-nums"
+          className="w-14 font-display text-sm font-semibold tabular-nums"
           aria-label={`${fr.game.buyAt} ${d(line.bestAsk)}`}
         >
           {d(line.bestAsk)}
         </p>
         <p
-          className="font-display text-xs tabular-nums text-lagoon"
+          className="w-14 font-display text-sm tabular-nums text-lagoon"
           aria-label={`${fr.game.sellAt} ${d(line.bestBid)}`}
         >
           {d(line.bestBid)}
@@ -480,20 +481,48 @@ function MudaPanel({ props }: { props: GameProps }) {
   );
 }
 
+/** The heads of the price columns, side by side over their figures. */
+function PriceHeads() {
+  return (
+    <div className="flex shrink-0 gap-2 text-right">
+      <p className="label w-14">{fr.game.buyAt}</p>
+      <p className="label w-14 text-lagoon">{fr.game.sellAt}</p>
+    </div>
+  );
+}
+
+/** The goods with a price first; those nobody has traded yet after, under their own head. */
+function PricedRows({ lines, props }: { lines: MarketLine[]; props: GameProps }) {
+  const priced = lines.filter((l) => l.bestAsk !== null || l.bestBid !== null);
+  const unpriced = lines.filter((l) => l.bestAsk === null && l.bestBid === null);
+  return (
+    <>
+      {priced.map((l) => (
+        <Row key={l.resource} line={l} props={props} />
+      ))}
+      {unpriced.length > 0 && (
+        <>
+          <p className="pb-1 pt-4 font-display text-sm font-semibold text-cream-dim">
+            {fr.game.market.unpriced(unpriced.length)}
+          </p>
+          {unpriced.map((l) => (
+            <Row key={l.resource} line={l} props={props} />
+          ))}
+        </>
+      )}
+    </>
+  );
+}
+
 /** The prices of the Rialto, one line a good: the side column on a computer. */
 export function MarketBoard(props: GameProps) {
   return (
     <div>
       <div className="flex items-end justify-between gap-3 border-b border-line/70 pb-2">
         <p className="label">{fr.game.market.goods}</p>
-        <div className="w-20 text-right">
-          <p className="label">{fr.game.buyAt}</p>
-          <p className="label text-lagoon">{fr.game.sellAt}</p>
-        </div>
+        <PriceHeads />
       </div>
-      {props.view.market.map((l) => (
-        <Row key={l.resource} line={l} props={props} />
-      ))}
+      <PricedRows lines={props.view.market} props={props} />
     </div>
   );
 }
@@ -594,16 +623,13 @@ export function RialtoSheet(props: GameProps) {
           <MudaPanel props={props} />
           <div className="flex items-end justify-between gap-3 border-b border-line/70 pb-2">
             <p className="label">{m.goods}</p>
-            <div className="w-20 text-right">
-              <p className="label">{fr.game.buyAt}</p>
-              <p className="label text-lagoon">{fr.game.sellAt}</p>
-            </div>
+            <PriceHeads />
           </div>
           <div>
             {shown.length === 0 ? (
               <p className="py-6 text-center text-sm text-cream-dim">{r.none}</p>
             ) : (
-              shown.map((l) => <Row key={l.resource} line={l} props={props} />)
+              <PricedRows lines={shown} props={props} />
             )}
           </div>
         </div>

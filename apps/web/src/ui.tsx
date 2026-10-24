@@ -444,18 +444,9 @@ export function Sparkline({
   width = 96,
   height = 28,
 }: { points: number[]; width?: number; height?: number }) {
-  if (points.length < 2) {
-    return (
-      <svg width={width} height={height} aria-hidden="true">
-        <path
-          d={`M2 ${height / 2} H${width - 2}`}
-          stroke={P.line}
-          strokeWidth="2"
-          strokeDasharray="3 4"
-        />
-      </svg>
-    );
-  }
+  // Nothing drawn without two prices: an empty dashed line read as a broken chart. Its room kept.
+  if (points.length < 2)
+    return <span aria-hidden="true" style={{ width, height }} className="block" />;
   const min = Math.min(...points);
   const max = Math.max(...points);
   const span = max - min || 1;
@@ -721,6 +712,7 @@ export function Sheet({
   kicker,
   title,
   summary,
+  size,
   children,
 }: {
   open: boolean;
@@ -728,9 +720,27 @@ export function Sheet({
   kicker?: ReactNode;
   title?: ReactNode;
   summary?: ReactNode;
+  /** « wide »: twice the room on a computer (the workshops in two columns). */
+  size?: "wide";
   children: ReactNode;
 }) {
   const panel = useRef<HTMLDialogElement>(null);
+  // More below: a fade at the foot says so, until the end is reached.
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    const el = panel.current;
+    if (!open || !el) return;
+    const look = () => setMore(el.scrollHeight - el.scrollTop - el.clientHeight > 8);
+    look();
+    el.addEventListener("scroll", look, { passive: true });
+    const sizes = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(look);
+    sizes?.observe(el);
+    if (el.firstElementChild) sizes?.observe(el.firstElementChild);
+    return () => {
+      el.removeEventListener("scroll", look);
+      sizes?.disconnect();
+    };
+  }, [open]);
   useOverlay(open, onClose);
   useEffect(() => {
     if (open) panel.current?.focus({ preventScroll: true });
@@ -753,7 +763,7 @@ export function Sheet({
         ref={panel}
         aria-modal="true"
         tabIndex={-1}
-        className="relative m-0 max-h-[92dvh] w-full max-w-md animate-sheet overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line bg-night-2 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 text-cream shadow-2xl shadow-black/50 focus:outline-none lg:max-w-lg lg:animate-pop lg:rounded-3xl lg:border lg:p-7"
+        className={`relative m-0 max-h-[92dvh] w-full max-w-md animate-sheet overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line bg-night-2 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 text-cream shadow-2xl shadow-black/50 focus:outline-none lg:animate-pop lg:rounded-3xl lg:border lg:p-7 ${size === "wide" ? "lg:max-w-3xl" : "lg:max-w-lg"}`}
       >
         {/* Sticky from the dialog's own edge, over its padding (a sticky box stops under it). */}
         <div
@@ -779,6 +789,12 @@ export function Sheet({
           )}
         </div>
         {children}
+        {more && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none sticky -bottom-[max(1.5rem,env(safe-area-inset-bottom))] -mx-5 -mb-[max(1.5rem,env(safe-area-inset-bottom))] h-6 bg-gradient-to-t from-night-2 to-transparent lg:-bottom-7 lg:-mx-7 lg:-mb-7"
+          />
+        )}
       </dialog>
     </div>,
     document.body,
