@@ -50,7 +50,7 @@ function Titles({ profile }: { profile: Profile }) {
                   <span className="font-display text-xs font-extrabold uppercase leading-tight [font-stretch:100%] [overflow-wrap:anywhere]">
                     {t.name}
                   </span>
-                  <span className="mt-1 font-mono text-xs text-muted">
+                  <span className="mt-1 font-sans text-xs text-muted">
                     {t.from.toLocaleString("fr-FR")} d
                   </span>
                 </span>
@@ -399,7 +399,7 @@ function ProfileBody(props: GameProps) {
                   {b.name}
                 </p>
                 {!b.earned && (
-                  <p className="font-mono text-xs text-muted">
+                  <p className="font-sans text-xs text-muted">
                     {b.value}/{b.goal}
                   </p>
                 )}

@@ -25,6 +25,8 @@ export default {
         display: ["Archivo Variable", "Archivo", "system-ui", "sans-serif"],
         sans: ["Space Grotesk", "system-ui", "sans-serif"],
         mono: ["Space Mono", "ui-monospace", "monospace"],
+        /** Roman capitals for the places' names and the windows' titles (owner, 24 October 2026). */
+        place: ["Cinzel", "Georgia", "serif"],
       },
       keyframes: {
         floaty: {

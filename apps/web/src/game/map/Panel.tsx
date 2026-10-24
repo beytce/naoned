@@ -161,12 +161,13 @@ export function ActionButton({
       >
         {icon}
         {badge !== undefined && badge !== null && badge !== false && (
-          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 font-mono text-xs font-bold text-ink ring-2 ring-night-2">
+          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 font-display text-xs font-bold text-ink ring-2 ring-night-2">
             {badge}
           </span>
         )}
       </span>
-      <span className="max-w-full whitespace-nowrap text-xs font-semibold text-cream-dim">
+      {/* Two short lines at most, never written over its neighbour's. */}
+      <span className="line-clamp-2 max-w-full text-center text-xs font-semibold leading-tight text-cream-dim">
         {label}
       </span>
     </button>

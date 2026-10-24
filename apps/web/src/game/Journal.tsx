@@ -59,7 +59,7 @@ export function JournalSection(props: GameProps & { open: boolean }) {
         <ul className="space-y-1.5">
           {entries.slice(0, 8).map((e) => (
             <li key={`${e.kind}:${e.at}:${line(props, e)}`} className="flex gap-2 text-sm">
-              <span className="w-12 shrink-0 font-mono text-xs text-muted">
+              <span className="w-12 shrink-0 font-sans text-xs text-muted">
                 {ago(props.now - e.at)}
               </span>
               <span className="text-cream-dim">{line(props, e)}</span>

@@ -64,6 +64,19 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - **Trêve entre deux familles** (la station diplomatique) : une semaine de Campagne sans assaut entre deux familles qui la signent. Risque : à quatre familles, une alliance fige la carte ; à n'ouvrir qu'avec plus de familles.
 - Écartées : étoiles rouges et station de recherche (les ballots de Faraj tiennent ce rôle), étoiles blanches (c'est la Campagne), station d'échange (le second comptoir, retiré), récolteur d'étoiles (du rendement en plus), scanners (rien de caché sur la carte).
 
+## Retours design du 24 octobre 2026 (plus tard, avec leur mesure)
+Voir `docs/retours-design-2026-10-24.md`, « Idées waouh ». Aucune n'est une mécanique sauf mention.
+- Cycle jour et nuit sur la carte du commerce (fenêtres allumées de 22 h à 8 h) : si le playtest dit « le jeu dort, je ne le savais pas », et à 60 i/s.
+- Fronts résolus à l'encre à 20 h, page de chronique : selon la part des joueurs présents à 20 h et les ouvertures de « Semaine ».
+- Revoir la semaine parcourable au doigt : si « Passer » est touché souvent.
+- Avis en gazette (« avviso ») : après la « une », selon la profondeur de défilement des Avis au jour 1.
+- Territoires à l'aquarelle : si le budget de 60 i/s tient avec 30 % de marge sur un Android d'entrée de gamme.
+- Portulan complet (monstres marins, noms calligraphiés) : sur décision écrite du porteur (il a gardé le bleu le 24 octobre 2026).
+- Épis qui ondulent, fumée de la boulangerie, mule qui trottine : après la porte de publication.
+- Fiche d'un voisin enrichie (tendance, voisins) : demande des données serveur ; si moins de 20 % des fiches ouvertes mènent à une action.
+- Historique des « Fronts rentrés » dans la cloche : demande un stockage serveur ; si « Compris » est touché en moins de 2 s plus d'une fois sur deux.
+- Second lot rapide offert dans le tutoriel (une règle) : si plus de 15 % abandonnent à l'étape « transformation » au playtest.
+
 ## V1 (après la première saison)
 - Escarmouches : reprendre une partie en cours après un redémarrage du serveur (aujourd'hui elle est interrompue, sans Gloire ni quota consommé, terra-m1) ; demande d'enregistrer l'état de la partie à chaque pas.
 - Chaînes textile (laine, tissu, vêtements) et ameublement (meubles).

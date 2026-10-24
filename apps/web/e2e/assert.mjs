@@ -45,6 +45,9 @@ export async function assertLayout(page) {
     ...(await overlaps(page)),
     ...(await touches(page)),
     ...(await wraps(page)),
+    ...(await squeezed(page)),
+    ...(await bubbleRoom(page)),
+    ...(await cartsUnder(page)),
     ...(await guide(page)),
   ]);
 }
@@ -348,6 +351,97 @@ function wraps(page) {
           `.meta « ${text.slice(0, 50)} » wraps on ${rows} lines (${Math.round(r.width)} px wide)`,
         );
     }
+    return wrong;
+  });
+}
+
+/**
+ * Words with room to read: no button whose label runs past its edge (« Proposer l'alli… » over
+ * its neighbour), and no text squeezed a word a line into a column (« Lorenzo / conseille »).
+ */
+function squeezed(page) {
+  return page.evaluate(() => {
+    const wrong = [];
+    const seen = (el) => {
+      if (el.getClientRects().length === 0) return false;
+      const r = el.getBoundingClientRect();
+      if (r.bottom <= 0 || r.top >= innerHeight || r.width < 1) return false;
+      const s = getComputedStyle(el);
+      return s.visibility !== "hidden" && Number(s.opacity) !== 0;
+    };
+    for (const b of document.querySelectorAll("button")) {
+      if (!seen(b)) continue;
+      // A label held to its box (a city's name hung under its tile is not) whose words run past
+      // it, a cut one (truncate) aside.
+      for (const span of b.querySelectorAll("span")) {
+        if (!seen(span) || span.children.length > 0 || span.clientWidth === 0) continue;
+        if (getComputedStyle(span).overflow !== "visible") continue;
+        const text = (span.textContent ?? "").trim();
+        if (text !== "" && span.scrollWidth > span.clientWidth + 1)
+          wrong.push(`button « ${text.slice(0, 40)} » runs past its edge`);
+      }
+    }
+    for (const el of document.querySelectorAll("p, span, h3, li")) {
+      if (!seen(el) || el.children.length > 0) continue;
+      const text = (el.textContent ?? "").replace(/\s+/g, " ").trim();
+      if (text.split(" ").length < 3) continue;
+      const s = getComputedStyle(el);
+      const font = Number.parseFloat(s.fontSize);
+      const line = Number.parseFloat(s.lineHeight) || font * 1.375;
+      const r = el.getBoundingClientRect();
+      // More than four lines in a column under eight letters wide.
+      if (r.height / line > 4.5 && r.width < font * 0.55 * 8)
+        wrong.push(`« ${text.slice(0, 40)} » squeezed a word a line (${Math.round(r.width)} px)`);
+    }
+    return wrong;
+  });
+}
+
+/** A cart on its road passes under a city's name, never over it. */
+function cartsUnder(page) {
+  return page.evaluate(() => {
+    const z = (el) => Number.parseInt(getComputedStyle(el.closest(".map-marker")).zIndex) || 0;
+    const wrong = [];
+    const names = [
+      ...document.querySelectorAll('.map-marker[data-marker^="cityname:"] [data-map-label]'),
+    ];
+    for (const cart of document.querySelectorAll('.map-marker[data-marker^="cart:"]')) {
+      if (getComputedStyle(cart).visibility === "hidden") continue;
+      const c = cart.getBoundingClientRect();
+      for (const name of names) {
+        const r = name.getBoundingClientRect();
+        const w = Math.min(c.right, r.right) - Math.max(c.left, r.left);
+        const h = Math.min(c.bottom, r.bottom) - Math.max(c.top, r.top);
+        if (w > 2 && h > 2 && z(cart) >= z(name))
+          wrong.push(`a cart over « ${name.textContent?.trim()} »`);
+      }
+    }
+    return wrong;
+  });
+}
+
+/**
+ * Lorenzo's bubble leaves the gains in sight: on the map (no window open) never over the purse,
+ * where the coins fly; and no toast over his words.
+ */
+function bubbleRoom(page) {
+  return page.evaluate(() => {
+    const bubble = document.querySelector("[data-coach-bubble]");
+    if (!bubble || bubble.getClientRects().length === 0) return [];
+    const b = bubble.getBoundingClientRect();
+    const over = (el) => {
+      const r = el.getBoundingClientRect();
+      return (
+        Math.min(r.right, b.right) - Math.max(r.left, b.left) > 2 &&
+        Math.min(r.bottom, b.bottom) - Math.max(r.top, b.top) > 2
+      );
+    };
+    const wrong = [];
+    const windowOpen = !!document.querySelector('[aria-modal="true"]');
+    const purse = document.querySelector('[data-hud="counter"]');
+    if (!windowOpen && purse && over(purse)) wrong.push("Lorenzo's bubble over the purse");
+    for (const toast of document.querySelectorAll("[data-toast]"))
+      if (over(toast)) wrong.push("a toast over Lorenzo's bubble");
     return wrong;
   });
 }

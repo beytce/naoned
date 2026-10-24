@@ -3,22 +3,34 @@ const ducatsFormat = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 2,
 });
 
+/**
+ * A no-break space between the thousands and before the unit, so an amount is never cut at the end
+ * of a line (« 10 » then « d »). Not the thin one of French typography: the game's faces draw it
+ * with no width (« 11000 d »).
+ */
+const NBSP = "\u00a0";
+
+/** "1 000,5": the thousands always grouped by a no-break space, whatever the browser's. */
+function grouped(deniers: string | bigint): string {
+  return ducatsFormat.format(Number(BigInt(deniers)) / 100).replace(/[\s\u00a0\u202f]/g, NBSP);
+}
+
 /** "12,5 ducats" from a string of deniers. */
 export function ducats(deniers: string | bigint | null | undefined): string {
   if (deniers === null || deniers === undefined) return "—";
-  return `${ducatsFormat.format(Number(BigInt(deniers)) / 100)} ducats`;
+  return `${grouped(deniers)}${NBSP}ducats`;
 }
 
 /** Short form for tight spaces: "12,5 d". */
 export function d(deniers: string | bigint | null | undefined): string {
   if (deniers === null || deniers === undefined) return "—";
-  return `${ducatsFormat.format(Number(BigInt(deniers)) / 100)} d`;
+  return `${grouped(deniers)}${NBSP}d`;
 }
 
 /** The bare number, for the purse next to its coin: "1 000". */
 export function amount(deniers: string | bigint | null | undefined): string {
   if (deniers === null || deniers === undefined) return "—";
-  return ducatsFormat.format(Number(BigInt(deniers)) / 100);
+  return grouped(deniers);
 }
 
 export function duration(ms: number): string {

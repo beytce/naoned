@@ -2,10 +2,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Lorenzo } from "../art/scenes.js";
 import { fr } from "../i18n.js";
-import { Big, Label, Slab, clock } from "../ui.js";
+import { LorenzoCard, Slab, clock } from "../ui.js";
 import { affordable, have } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
-import { bringOnce, browserPage, isCovered, outOfSheet } from "./coachSight.js";
+import { bringOnce, browserPage, isCovered, outOfSheet, unionBox } from "./coachSight.js";
+import { minutesLabel } from "./format.js";
 import { store } from "./store.js";
 
 const STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "mission"] as const;
@@ -61,8 +62,15 @@ function atHome(props: GameProps, step: CoachStep): CoachStep {
 /** A workshop's production: the counter, its workshops, the workshop, then "Produire". */
 function produceAt(props: GameProps, id: string, building: string, text?: string): CoachStep {
   const c = fr.game.coach;
-  if (props.sheet === `produce:${id}`)
-    return { text: text ?? c.produce(building), target: "sheet-produce" };
+  if (props.sheet === `produce:${id}`) {
+    // The batch's own time: a few seconds in the guide's first ones, its recipe's after.
+    const b = props.view.buildings.find((x) => x.id === id);
+    const recipe = props.catalog.buildings.find((x) => x.type === b?.type)?.recipe;
+    const time = b?.fastSeconds
+      ? fr.game.coach.seconds(b.fastSeconds)
+      : minutesLabel(recipe?.durationMinutes ?? 0);
+    return { text: text ?? c.produce(building, time), target: "sheet-produce" };
+  }
   if (props.sheet === "workshops")
     return { text: text ?? c.produceTap(building), target: `produce-${id}` };
   return atHome(props, { text: text ?? c.openWorkshops(building), target: "panel-workshops" });
@@ -77,9 +85,23 @@ const BUBBLE_ROOM = 190;
  * What to do next, read from the live game: the guide follows the player instead of a script,
  * so it never gets stuck if they do things in another order.
  */
+/**
+ * The guide's steps done, as the player sees them: a delivery arrived counts as sold to the city
+ * at once, though the server marks it at its next tick (else the guide fell back on « produce »).
+ */
+export function doneSteps(
+  tutorial: readonly string[],
+  deliveries: readonly { arriveAt: number }[],
+  now: number,
+): Set<string> {
+  const done = new Set(tutorial);
+  if (deliveries.some((d) => d.arriveAt <= now)) done.add("sell_city");
+  return done;
+}
+
 function nextStep(props: CoachProps): CoachStep {
   const { view, now, names } = props;
-  const done = new Set(view.tutorial);
+  const done = doneSteps(view.tutorial, view.road?.deliveries ?? [], now);
   const ready = view.buildings.find(
     (b) =>
       b.job && Math.min(b.job.batches, Math.floor((now - b.job.startedAt) / b.job.batchMs)) > 0,
@@ -173,7 +195,7 @@ function nextStep(props: CoachProps): CoachStep {
           : 0,
       )
       .sort((a, b) => a - b)[0];
-    if (running) return { text: fr.game.coach.wait, waitUntil: running };
+    if (running) return { text: fr.game.coach.wait(running - now), waitUntil: running };
     const raw = view.buildings.find((b) => !b.job && b.canStart > 0 && isRaw(b.type));
     if (raw) return produceAt(props, raw.id, names.building(raw.type));
   }
@@ -182,9 +204,19 @@ function nextStep(props: CoachProps): CoachStep {
     const material = toBuy(props);
     if (!material) return { text: fr.game.coach.emptyMarket, skip: "skipMarketBuy" };
     if (props.sheet === `trade:${material}`)
-      return { text: fr.game.coach.buy(names.resource(material)), target: "sheet-buy" };
+      return {
+        text: fr.game.coach.buy(
+          fr.game.workshop.some(material, names.resource(material)) ?? names.resource(material),
+        ),
+        target: "sheet-buy",
+      };
     if (props.sheet === "rialto")
-      return { text: fr.game.coach.buy(names.resource(material)), target: `row-${material}` };
+      return {
+        text: fr.game.coach.buy(
+          fr.game.workshop.some(material, names.resource(material)) ?? names.resource(material),
+        ),
+        target: `row-${material}`,
+      };
     if (props.selection?.kind === "city" && props.selection.code === "venezia")
       return { text: fr.game.coach.goRialto, target: "panel-rialto" };
     return { text: fr.game.coach.goRialto, target: "city-venezia" };
@@ -210,6 +242,13 @@ export function Coach(props: CoachProps) {
   const [hidden, setHidden] = useState(() => store.get("guideHidden") === "1");
   const [finished, setFinished] = useState(() => store.get("guideDone") === "1");
   const [rect, setRect] = useState<DOMRect | null>(null);
+  // The bubble's height, measured once drawn: where it lies at the top of the screen.
+  const [bubbleH, setBubbleH] = useState(140);
+  const bubble = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const h = bubble.current?.offsetHeight;
+    if (h && Math.abs(h - bubbleH) > 2) setBubbleH(h);
+  });
   const [onFollow, setOnFollow] = useState(false);
   // The target is on the page but something (a sheet, a window) lies over it.
   const [covered, setCovered] = useState(false);
@@ -242,7 +281,16 @@ export function Coach(props: CoachProps) {
       const el = follow ?? visible(step.target ?? "");
       setOnFollow(follow !== null);
       if (el) bring(`${step.text}>${follow ? step.follow : step.target}`, el, window.innerHeight);
-      const box = el ? el.getBoundingClientRect() : null;
+      // The ring holds the target and what goes with it (the counter's name under it).
+      const name = follow ? step.follow : step.target;
+      const box = el
+        ? (unionBox([
+            el.getBoundingClientRect(),
+            ...[...document.querySelectorAll(`[data-coach-with="${name}"]`)]
+              .map((w) => w.getBoundingClientRect())
+              .filter((r) => r.width > 0),
+          ]) as DOMRect | null)
+        : null;
       // Never a ring on what a window covers, even while it slides in, nor on a target its
       // sheet has scrolled out of sight (the finger would touch what lies around the sheet).
       // Under a sheet's own head, it is out of sight (brought back), not covered by a window.
@@ -250,10 +298,20 @@ export function Coach(props: CoachProps) {
       const hidden = el && box && !out ? isCovered(el, box, browserPage()) : false;
       setCovered(hidden);
       setRect(hidden || out ? null : box);
+      // The one gold button while the guide speaks is the one it points at (index.css).
+      for (const lit of document.querySelectorAll("[data-coach-lit]"))
+        if (lit !== el) lit.removeAttribute("data-coach-lit");
+      el?.setAttribute("data-coach-lit", "");
+      document.body.dataset.coaching = "1";
     };
     find();
     const t = setInterval(find, 250);
-    return () => clearInterval(t);
+    return () => {
+      clearInterval(t);
+      delete document.body.dataset.coaching;
+      for (const lit of document.querySelectorAll("[data-coach-lit]"))
+        lit.removeAttribute("data-coach-lit");
+    };
   }, [step.target, step.follow, step.text, hidden, finished, bring]);
   const text = covered
     ? fr.game.coach.covered
@@ -267,20 +325,30 @@ export function Coach(props: CoachProps) {
     }
   }, [step.final, props.view.tutorial.length]);
 
-  if (finished) return null;
-
-  if (hidden) return null;
-
-  // A message with nothing to point at stays on the counter.
-  if (!step.target && !step.waitUntil && props.tab !== "comptoir") return null;
+  if (finished || hidden || (!step.target && !step.waitUntil && props.tab !== "comptoir")) {
+    // Lorenzo silent: the toasts back at the top.
+    delete document.body.dataset.coachTop;
+    return null;
+  }
 
   // The bubble goes where it hides neither the target nor the panel or sheet the player works in:
   // at the top while a sheet or a place's panel is up, or for a target in the lower third; at the
   // bottom otherwise, and always at the bottom for a target under where it would sit at the top.
   const lowTarget = rect !== null && rect.top + rect.height / 2 > window.innerHeight * 0.65;
-  const highTarget = rect !== null && rect.top < BUBBLE_ROOM;
+  // At the top on the map, the bubble sits under the HUD's band: a target within its height there
+  // sends it down.
+  const hudTop =
+    props.sheet === null
+      ? Number.parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue("--hud-top"),
+        ) || 0
+      : 0;
+  const highTarget = rect !== null && rect.top < Math.max(BUBBLE_ROOM, hudTop + 8 + bubbleH);
   const atTop =
     !highTarget && (props.sheet !== null || props.selection !== null || onFollow || lowTarget);
+  // The bubble at the top: the toasts go to the foot (index.css).
+  if (atTop) document.body.dataset.coachTop = "1";
+  else delete document.body.dataset.coachTop;
   const pad = 6;
   // Kept inside the screen: the tab bar's end tabs touch its edges.
   const box = rect
@@ -299,7 +367,8 @@ export function Coach(props: CoachProps) {
           {/* The room around the target dimmed: a cut-out whose shadow covers the screen. */}
           <div
             className="pointer-events-none fixed z-[45] rounded-md transition-all duration-200"
-            style={{ ...box, boxShadow: "0 0 0 9999px rgba(10, 8, 14, 0.62)" }}
+            // Light: the sheet it points into is dimmed already, its words must stay legible.
+            style={{ ...box, boxShadow: "0 0 0 9999px rgba(10, 8, 14, 0.35)" }}
           />
           {/* The ring on its own element: its pulse must not wipe the dimming's shadow. */}
           <div
@@ -310,27 +379,20 @@ export function Coach(props: CoachProps) {
         </>
       )}
       <div
+        // At the top, under the HUD's band on the map (the purse and its coins in sight), over a
+        // window's head when one is open.
+        ref={bubble}
+        style={
+          atTop && props.sheet === null ? { top: "calc(var(--hud-top, 0.75rem) + 8px)" } : undefined
+        }
         className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-[calc(1rem+env(safe-area-inset-bottom))] lg:bottom-28"}`}
       >
-        <div className="cut bg-info p-0.5 shadow-xl shadow-black/40" data-coach-bubble>
-          <div className="cut bg-night-2 px-3.5 pb-2.5 pt-3">
-            <div className="flex gap-3">
-              <Lorenzo size={40} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <Label className="text-info">{fr.game.coach.name}</Label>
-                  <span className="meta shrink-0 whitespace-nowrap">
-                    {fr.game.coach.step(index, STEPS.length)}
-                  </span>
-                </div>
-                <p className="mt-1 text-sm leading-snug">{text}</p>
-                {step.waitUntil && (
-                  <Big className="mt-2 text-3xl text-lagoon">
-                    {clock(step.waitUntil - props.now)}
-                  </Big>
-                )}
-              </div>
-            </div>
+        <LorenzoCard
+          bubble
+          portrait={<Lorenzo size={40} />}
+          name={fr.game.coach.name}
+          aside={fr.game.coach.step(index, STEPS.length)}
+          foot={
             <div className="mt-2 flex items-center justify-between">
               <div className="flex gap-1">
                 {STEPS.map((s, k) => (
@@ -374,8 +436,15 @@ export function Coach(props: CoachProps) {
                 </button>
               )}
             </div>
-          </div>
-        </div>
+          }
+        >
+          <p className="mt-1 text-sm leading-snug">{text}</p>
+          {step.waitUntil && (
+            <p className="meta mt-1">
+              {fr.game.coach.readyIn(clock(Math.max(0, step.waitUntil - props.now)))}
+            </p>
+          )}
+        </LorenzoCard>
       </div>
     </>,
     document.body,

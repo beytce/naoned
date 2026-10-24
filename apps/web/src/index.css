@@ -206,6 +206,47 @@
       0 14px
     );
   }
+  /*
+   * A cut card with a border keeps its filet on the cut corners too: clip-path cuts the border
+   * there, so each diagonal is drawn again, in the border's own colour and width (inherited).
+   */
+  .cut:is(.border, .border-2, [class*="border-["]):not(.absolute):not(.fixed):not(.sticky) {
+    position: relative;
+  }
+  /* Its border's width: the diagonals start on the border's outer edge, as the corner does. */
+  .cut:is(.border, .border-2, [class*="border-["]) {
+    --cut-bw: 1px;
+  }
+  .cut.border-2 {
+    --cut-bw: 2px;
+  }
+  .cut[class*="border-[3px]"] {
+    --cut-bw: 3px;
+  }
+  .cut:is(.border, .border-2, [class*="border-["])::before,
+  .cut:is(.border, .border-2, [class*="border-["])::after {
+    content: "";
+    position: absolute;
+    width: 19.8px;
+    height: 0;
+    border-top-style: solid;
+    border-top-color: inherit;
+    border-top-width: inherit;
+    transform-origin: 0 0;
+    pointer-events: none;
+  }
+  /* From (0, 14 px) up to (14 px, 0), its width inside the card. */
+  .cut:is(.border, .border-2, [class*="border-["])::before {
+    left: calc(-1 * var(--cut-bw));
+    top: calc(14px - var(--cut-bw));
+    transform: rotate(-45deg);
+  }
+  /* From (100 %, 100 % − 14 px) down to (100 % − 14 px, 100 %), its width inside. */
+  .cut:is(.border, .border-2, [class*="border-["])::after {
+    left: calc(100% + var(--cut-bw));
+    top: calc(100% + var(--cut-bw) - 14px);
+    transform: rotate(135deg);
+  }
   .stripes {
     background-image: repeating-linear-gradient(
       -45deg,
@@ -821,4 +862,46 @@
 }
 .map-marker[data-selected] .land-name {
   display: block;
+}
+
+/*
+ * The map's zoom tiers (WorldMap sets data-zoom): a marker of a closer tier waits for the zoom.
+ * Hidden, it takes no room among the labels kept apart (declutter.ts).
+ */
+[data-zoom="0"] .map-marker[data-tier="1"],
+[data-zoom="0"] .map-marker[data-tier="2"],
+[data-zoom="1"] .map-marker[data-tier="2"] {
+  display: none;
+}
+
+/*
+ * While Lorenzo points at a button, it is the screen's one gold button: the others turn ghost
+ * (Coach.tsx marks its target data-coach-lit).
+ */
+body[data-coaching] button[data-slab="gold"]:not([data-coach-lit]) .slab-face {
+  background-color: rgb(var(--night-4));
+  color: rgb(var(--cream));
+}
+body[data-coaching] button[data-slab="gold"]:not([data-coach-lit]) .slab-shadow {
+  background-color: rgb(var(--line));
+}
+body[data-coaching] button[data-slab="ghost"][data-coach-lit] .slab-face {
+  background-color: rgb(var(--gold));
+  color: rgb(var(--ink));
+}
+body[data-coaching] button[data-slab="ghost"][data-coach-lit] .slab-shadow {
+  background-color: rgb(var(--gold-deep));
+}
+
+/* Lorenzo's bubble at the top of the screen (Coach.tsx): the toasts go to the foot. */
+body[data-coach-top] [data-toast] {
+  top: auto;
+  bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 6rem);
+}
+
+/* On the narrowest phones the trade's tiles a fifth smaller: the counter's name kept whole. */
+@media (max-width: 359px) {
+  .map-marker:is([data-marker^="city:"], [data-marker="home"]) > button {
+    scale: 0.8;
+  }
 }

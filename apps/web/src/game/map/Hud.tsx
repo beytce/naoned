@@ -55,7 +55,7 @@ function Orb({
       >
         {children}
         {badge !== undefined && badge !== false && badge !== 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-vermilion px-1 font-mono text-xs font-bold text-cream ring-2 ring-night">
+          <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-vermilion px-1 font-display text-xs font-bold text-cream ring-2 ring-night">
             {badge === true ? "" : badge > 9 ? "9+" : badge}
           </span>
         )}
@@ -124,6 +124,7 @@ export function MapHud({
   workshopsReady,
   locks = {},
   right,
+  actions,
   onProfile,
   onNotices,
   onBales,
@@ -182,6 +183,8 @@ export function MapHud({
   locks?: { ranking?: string; layer?: string };
   /** Under the purse on the right, in place of the bread and the carts (the families' glory on the campaign). */
   right?: ReactNode;
+  /** A layer's actions at the thumb, at the bottom right above the doors, hidden with them. */
+  actions?: ReactNode;
   onProfile: () => void;
   onNotices: () => void;
   onBales: () => void;
@@ -311,8 +314,9 @@ export function MapHud({
           Two rounds high at most, never further down the map: the bell and the Rialto, then
           beside them the bales and Lorenzo when the guide is paused.
         */}
-        <div className="flex gap-2">
-          <span className="flex flex-col items-center gap-1.5">
+        {/* On the Terraferma, one row: the map starts higher. */}
+        <div className={`flex gap-2 ${layer === "terra" ? "items-start" : ""}`}>
+          <span className={`flex items-center gap-1.5 ${layer === "terra" ? "gap-2" : "flex-col"}`}>
             <Orb label={m.notices} onClick={onNotices} badge={notices} coach="hud-notices">
               {Icon.bell()}
             </Orb>
@@ -323,7 +327,9 @@ export function MapHud({
             )}
           </span>
           {(bales > 0 || guidePaused) && (
-            <span className="flex flex-col items-center gap-1.5">
+            <span
+              className={`flex items-center gap-1.5 ${layer === "terra" ? "gap-2" : "flex-col"}`}
+            >
               {guidePaused && (
                 <Orb label={m.resumeGuide} onClick={onResumeGuide} tone="gold">
                   <Lorenzo size={30} />
@@ -343,7 +349,7 @@ export function MapHud({
             <HudCounter
               label={fr.game.rations.hud(bread.stock, bread.perDay)}
               side={
-                <span className="font-mono text-xs text-cream-dim">
+                <span className="font-sans text-xs text-cream-dim">
                   {fr.game.rations.perDay(bread.perDay)}
                 </span>
               }
@@ -400,6 +406,14 @@ export function MapHud({
           {right}
         </div>
       </div>
+      {bottom && actions && (
+        <div
+          data-hud="actions"
+          className="pointer-events-none absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+6.25rem)] z-10 flex justify-end lg:left-auto lg:bottom-32 lg:right-[calc(var(--side,0px)+1.25rem)]"
+        >
+          {actions}
+        </div>
+      )}
       {bottom && (
         <nav className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex justify-center gap-4 lg:bottom-6 lg:right-[var(--side,0px)]">
           {/* The same four doors at the same places on every layer. */}
@@ -510,7 +524,8 @@ function Door({
       data-hud="door"
       aria-label={locked ? `${label} : ${locked}` : label}
       aria-disabled={locked ? true : undefined}
-      className={`pointer-events-auto relative flex w-16 flex-col items-center gap-1 transition active:scale-90 ${active ? "text-gold" : locked ? "text-muted" : "text-cream-dim"}`}
+      // The way back is written in cream, never gold: it reads as a door, not as the tab shown.
+      className={`pointer-events-auto relative flex w-16 flex-col items-center gap-1 transition active:scale-90 ${active ? "text-cream" : locked ? "text-muted" : "text-cream-dim"}`}
     >
       {why && locked && (
         <span className="absolute bottom-full mb-2 w-44 animate-fade bg-night-4 px-3 py-2 text-center text-xs leading-snug text-cream shadow-lg shadow-black/40 slab">
@@ -519,7 +534,7 @@ function Door({
         </span>
       )}
       <span
-        className={`hud-orb relative flex h-12 w-12 items-center justify-center rounded-full ${active ? "ring-2 ring-gold/70" : ""} ${locked ? "opacity-60" : ""}`}
+        className={`hud-orb relative flex h-12 w-12 items-center justify-center rounded-full ${active ? "ring-1 ring-cream/50" : ""} ${locked ? "opacity-60" : ""}`}
       >
         {children}
         {dot && (

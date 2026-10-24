@@ -10,7 +10,11 @@ const skirmishInterrupted =
 
 export const fr = {
   appName: "Fondaco",
-  season: "Saison 1 · Venise 1450",
+  /** « Venise 1450 · saison d'octobre »: a season is a calendar month (Paris), its year left out. */
+  seasonOf: (at: Date) => {
+    const month = at.toLocaleDateString("fr-FR", { month: "long", timeZone: "Europe/Paris" });
+    return `Venise 1450 · saison ${/^[aeiou]/i.test(month) ? "d'" : "de "}${month}`;
+  },
   tagline: "Bâtissez une maison de commerce en un mois, sur un marché tenu par les joueurs.",
   /** What sets the game apart, under the tagline. */
   promises: [
@@ -86,7 +90,7 @@ export const fr = {
 
   region: {
     title: "Choisissez votre métier",
-    help: "Chaque région n'extrait que sa propre matière première : le blé en Terraferma, l'argile dans la Lagune, le bois dans les Dolomites. Pour le reste, il faudra commercer.",
+    help: "Chaque région n'extrait que sa propre matière première : le blé en Vénétie, l'argile dans la Lagune, le bois dans les Dolomites. Pour le reste, il faudra commercer.",
     bonus: (pct: number, resource: string) => {
       const name = resource.toLowerCase();
       return `+${pct} % ${/^[aeiouyéèêh]/.test(name) ? "d'" : "de "}${name}`;
@@ -223,7 +227,7 @@ export const fr = {
       notice: {
         title: "Avis",
         season: (day: number, of: number) => `Jour ${day} sur ${of}`,
-        daysLeft: (n: number) => `${n} jour${n > 1 ? "s" : ""} avant la fin de la saison`,
+        daysLeft: (n: number) => `fin dans ${n} j`,
         event: "La gazette",
         carnet: "Carnet du jour",
         yourSeason: "Votre saison",
@@ -233,7 +237,7 @@ export const fr = {
       settings: "Réglages",
       campaign: {
         toCampaign: "Famille",
-        toTrade: "Commerce",
+        toTrade: "← Commerce",
         lances: "Troupes",
         marches: "Marches",
         decrees: "Décrets",
@@ -489,13 +493,23 @@ export const fr = {
       closed: "Semaine close",
       night: "Nuit : les fronts reposent",
       troops: "Troupes",
-      troopsLine: (troops: number, cap: number) => `${troops} / ${cap}`,
+      /** The troops' card on the HUD: the glory and the rank live there. */
+      troopsTip: {
+        title: "Vos troupes",
+        text: "Vos terres recrutent chaque heure de jour, jusqu'au maximum. Chaque case prise rapporte de la Gloire.",
+        troops: "Troupes",
+        recruit: "Recrues",
+        glory: "Gloire",
+        rank: "Rang",
+        rankOf: (rank: number, of: number) => `${rank}${rank === 1 ? "er" : "e"} sur ${of}`,
+      },
+      troopsLine: (troops: number, cap: number) => `${troops}/${cap}`,
       perHour: (n: number) => `+${n}/h`,
       perHourAt: (n: number, from: number) => `☾ +${n}/h à ${from} h`,
       returns: {
         title: "Fronts rentrés",
         line: (against: string, cells: number, spent: number, back: number) =>
-          `${against} : ${cells} case${cells > 1 ? "s" : ""} prise${cells > 1 ? "s" : ""}, −${spent} troupes, ${back} revenue${back > 1 ? "s" : ""}`,
+          `${against} : +${cells} case${cells > 1 ? "s" : ""}, −${spent} troupes, ${back} rentrée${back > 1 ? "s" : ""}`,
         ok: "Compris",
       },
       glory: (glory: number, rank: number) => `${glory} Gloire · ${rank}${rank === 1 ? "er" : "e"}`,
@@ -507,6 +521,14 @@ export const fr = {
         ferrara: "Ferrare (Este)",
         aquileia: "Aquilée (le Patriarche)",
         impero: "L'Empire",
+      } as Record<string, string>,
+      /** A nation's house, under the name of the city it holds from: « MANTOUE · Gonzague ». */
+      locate: "Centrer sur mes terres",
+      wholeMap: "Toute la carte",
+      nationHouses: {
+        mantova: "Gonzague",
+        ferrara: "Este",
+        aquileia: "le Patriarche",
       } as Record<string, string>,
       neutral: "Terre libre",
       someone: "Un marchand",
@@ -537,7 +559,7 @@ export const fr = {
           thanks: "Merci",
           peace: "Paix",
         } as Record<string, string>,
-        target: "Désigner aux alliés",
+        target: "Désigner",
         give: (amount: string) => `Donner ${amount}`,
         embargo: "Embargo",
         lift: "Lever l'embargo",
@@ -605,9 +627,9 @@ export const fr = {
       },
       holder: {
         line: (cells: number, troops: number) => `${cells} cases · ⚔ ${troops}`,
-        ally: "Proposer l'alliance",
-        asked: "Alliance proposée",
-        accept: "Accepter l'alliance",
+        ally: "S'allier",
+        asked: "Proposée",
+        accept: "Accepter",
         broken: "Rompre",
         send: "Envoyer",
         sendLine: (count: number, left: number) =>
@@ -1015,6 +1037,7 @@ export const fr = {
       fold: "Replier le tiroir",
     },
     market: {
+      unpriced: (n: number) => `Pas encore échangées (${n})`,
       chart: {
         empty: (days: number) =>
           `Pas encore d'échange ${days === 7 ? "cette semaine" : `ces ${days} derniers jours`} : la courbe viendra avec les premiers.`,
@@ -1804,7 +1827,9 @@ export const fr = {
         respecHelp: "Vous la choisissez de nouveau aussitôt, parmi toutes.",
         reroll: (n: number) => `Changer de tâche · ${n} ✦`,
         /** The same on a phone's narrow line: the sign of a change and its price. */
-        rerollShort: (n: number) => `↻ ${n} ✦`,
+        rerollShort: (n: number) => `Changer · ${n} ✦`,
+        /** Why the task cannot be changed yet. */
+        rerollNeed: (n: number) => `Il faut ${n} ✦ d'Influence pour la changer.`,
       },
     },
     profileTitle: "Ma progression",
@@ -1891,16 +1916,22 @@ export const fr = {
       tapHome: "Touchez votre comptoir, au centre de la carte : vos ateliers s'y trouvent.",
       openWorkshops: (building: string) =>
         `Lançons votre ${building.toLowerCase()} ! Ouvrez vos ateliers.`,
-      produce: (building: string) =>
-        `Touchez « Produire » : ce premier lot de votre ${building.toLowerCase()} sera prêt en 30 secondes.`,
-      wait: "Vos ouvriers s'activent. Patientez quelques secondes…",
+      /** The batch's own time: 30 seconds in the guide's first ones, 30 minutes after. */
+      produce: (building: string, time: string) =>
+        `Touchez « Produire » : ce lot de votre ${building.toLowerCase()} sera prêt dans ${time}.`,
+      seconds: (n: number) => `${n} secondes`,
+      readyIn: (time: string) => `Prêt dans ${time}`,
+      wait: (ms: number) =>
+        ms < 60_000
+          ? "Vos ouvriers s'activent. Patientez quelques secondes…"
+          : "Vos ouvriers s'activent : explorez la carte en attendant, je vous fais signe.",
       harvest: "C'est prêt ! Touchez « Récolter » : la marchandise rentre en stock.",
       transform: (building: string) =>
         `Une matière brute vaut peu. Transformez-la : lancez votre ${building.toLowerCase()}.`,
       sellCity: (resource: string) =>
         `Vendez vos ${resource.toLowerCase()} à la ville qui paie le mieux.`,
       goRoutes:
-        "Les villes passent commande : les pastilles dorées montrent celles que votre stock couvre. Touchez une charrette.",
+        "Les villes passent commande : la pastille d'une ville compte celles que votre stock couvre. Touchez une charrette.",
       deliver:
         "Ouvrez les cargaisons : cochez une commande que votre stock couvre, la ville paie à l'arrivée.",
       dispatch: "Touchez « Partir » (ou laissez filer le compte à rebours).",
@@ -1910,8 +1941,8 @@ export const fr = {
       firstPay: "Première paie",
       goRialto:
         "Pour grandir, il faut les matériaux d'une autre région. Touchez Venise, puis le Rialto.",
-      buy: (resource: string) =>
-        `Achetez quelques ${resource.toLowerCase()} : ils servent à améliorer vos ateliers.`,
+      /** « de l'argile », « des briques »: the good with its article. */
+      buy: (some: string) => `Achetez ${some} : cela sert à améliorer vos ateliers.`,
       emptyMarket:
         "Personne ne vend rien au Rialto pour l'instant et votre part de la Dogana est épuisée pour aujourd'hui. Passons, vous achèterez plus tard.",
       skip: "Passer",
@@ -2007,9 +2038,9 @@ export const fr = {
     terraIntro: {
       who: "Lorenzo",
       steps: [
-        "Bienvenue en Terraferme ! Touchez une terre libre pour poser votre camp : il prend la case et ses voisines, et vous êtes à l'abri 12 heures.",
-        "Pour vous étendre, touchez une terre au bord des vôtres, choisissez vos troupes avec le curseur, puis « Attaquer » : le front avance seul, même quand vous partez.",
-        "Revenez voir vos fronts : leur pastille dorée dit quand ils prennent la prochaine case. Et ce soir à 20 h, l'heure de bataille : tout va dix fois plus vite !",
+        "Touchez une terre libre pour poser votre camp : vous y êtes à l'abri 12 heures.",
+        "Touchez une terre au bord des vôtres, puis « Attaquer » : le front avance seul.",
+        "Ce soir à 20 h, l'heure de bataille : tout va dix fois plus vite !",
       ],
       next: "Suivant",
       done: "Compris",
@@ -2025,6 +2056,11 @@ export const fr = {
       intro:
         "Une conquête d'une semaine, à côté du commerce, sur la carte de la Vénétie découpée en cases. Facultative : vous n'y perdez jamais vos ducats ni vos marchandises. Les fronts avancent seuls, de 8 h à 22 h, même quand vous n'êtes pas là.",
       sections: [
+        {
+          diagram: "legend",
+          title: "Lire la carte",
+          text: "Vos terres sont dorées et cerclées d'or. Vos alliés sont en vert d'eau, en tirets ; ceux qui sont en guerre avec vous (un front contre vous, ou l'un des vôtres contre eux) sont cerclés de vermillon. Milan et les seigneurs sont hachurés. Les autres marchands restent discrets. La terre que vous touchez s'éclaire en bleu.",
+        },
         {
           diagram: "setDown",
           title: "Se poser",
@@ -2127,14 +2163,22 @@ export const fr = {
       week: (week: number, rank: number, of: number, glory: number, rating: number) =>
         `Semaine ${week} : ${rank}${rank === 1 ? "er" : "e"} sur ${of} · ${glory} Gloire · cote ${rating}`,
       replay: "Revoir la semaine",
+      weekShort: "Semaine",
+      replaying: "Semaine rejouée",
+      skip: "Passer",
     },
     /** A workshop in figures (margins at reference prices). */
     economics: {
-      perHour: (amount: string) => `≈ ${amount} de marge théorique par heure`,
-      /** A workshop the guide does not advise upgrading: its goods pile up, or it lacks an input. */
+      /** The margin at reference prices, a chip: « ≈ 20,8 d/h ». */
+      perHour: (amount: string) => `≈ ${amount}/h`,
+      perHourLong: "Marge théorique par heure, aux prix de référence",
+      /**
+       * Why upgrading it is not advised (its state is told above): its goods pile up, or it lacks
+       * an input.
+       */
       unsold: (qty: number, res: string, hours: number, dogana: number | null) =>
-        `Stock invendu : ${qty} ${res.toLowerCase()}, ~${hours >= 48 ? `${Math.round(hours / 24)} j` : `${hours} h`} de production${dogana !== null ? ` ; la Dogana en prend ${dogana} par jour` : ""}.`,
-      missing: (list: string) => `Intrant manquant : ${list.toLowerCase()}.`,
+        `Amélioration déconseillée : ${qty} ${res.toLowerCase()} invendus, ~${hours >= 48 ? `${Math.round(hours / 24)} j` : `${hours} h`} de production${dogana !== null ? ` ; la Dogana en prend ${dogana} par jour` : ""}.`,
+      missing: (list: string) => `Amélioration déconseillée : il manque ${list}.`,
       best: "meilleur placement",
       bestLong:
         "Le meilleur placement de vos ducats en ce moment : c'est l'amélioration la plus vite rentabilisée.",
@@ -2385,12 +2429,12 @@ export const fr = {
         text: "Les villes publient des commandes toutes les 4 heures. Touchez une charrette, cochez des commandes pour une même ville, puis faites-la partir : la ville paie à l'arrivée, d'autant mieux que la route est longue. Le premier arrivé prend la commande.",
       },
       {
-        icon: "routes",
+        icon: "steward",
         title: "Le fattore",
         text: "Votre commis : quand une charrette reste deux heures au comptoir, il la fait partir avec la meilleure commande que votre stock couvre, deux fois par jour, de 8 h à 22 h, en gardant le pain des ouvriers. Il prend 15 % du paiement. Il ne travaille que si vous êtes passé dans les dernières 24 heures.",
       },
       {
-        icon: "comptoir",
+        icon: "contrats",
         title: "Commandes de compagnie",
         text: "Tous les deux jours, une ville commande du pain, des briques et des planches aux trois régions. Livrez depuis votre stock : 10 % au-dessus de la référence, et 10 % de plus pour chacun quand la commande est remplie.",
       },
@@ -2420,7 +2464,7 @@ export const fr = {
         text: "Une conquête d'une semaine, à côté du commerce. Posez votre camp sur une terre libre, n'importe quel jour ; puis lancez des fronts vers les terres voisines avec une part de vos troupes. Ils avancent seuls de 8 h à 22 h. Le premier en Gloire impose un décret la semaine suivante.",
       },
       {
-        icon: "comptoir",
+        icon: "bale",
         title: "Ballots de Faraj",
         text: "Toutes les six heures, Faraj d'Alexandrie vous envoie un ballot : trois cartes de 1 à 5 marchandises. Les probabilités sont affichées ; les ballots ne s'achètent pas.",
       },

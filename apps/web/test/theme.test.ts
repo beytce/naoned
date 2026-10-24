@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { MAP_TEXT } from "../src/art/palette.js";
 
 /** The variables of each palette, read from index.css as "r g b" triples. */
 function palettes(): Record<string, Record<string, [number, number, number]>> {
@@ -51,4 +52,17 @@ describe("the palettes", () => {
       expect(low).toEqual([]);
     });
   }
+});
+
+describe("the map's writing", () => {
+  const rgb = (hex: string): [number, number, number] => [
+    Number.parseInt(hex.slice(1, 3), 16),
+    Number.parseInt(hex.slice(3, 5), 16),
+    Number.parseInt(hex.slice(5, 7), 16),
+  ];
+  it("reads on its halo (AA) and never writes a figure bigger than a name", () => {
+    expect(contrast(rgb(MAP_TEXT.ink), rgb(MAP_TEXT.halo))).toBeGreaterThanOrEqual(4.5);
+    expect(MAP_TEXT.troops).toBeLessThanOrEqual(MAP_TEXT.merchant);
+    expect(MAP_TEXT.mine).toBeLessThanOrEqual(MAP_TEXT.city);
+  });
 });

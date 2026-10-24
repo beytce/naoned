@@ -104,6 +104,10 @@ describe("weekly ranking", () => {
     const body = (await weekRanking(ada.cookie)).json();
     expect(body.week).toBe(2);
     expect(body.lastWeek).toHaveLength(2);
+    // The podium names its merchants as the list does: the same default crest.
+    expect(body.lastWeek.map((r: { id: string }) => r.id).sort()).toEqual(
+      body.rows.map((r: { id: string }) => r.id).sort(),
+    );
   });
 
   it("gives the awards to the three best people with a gain, never to a bot", async () => {

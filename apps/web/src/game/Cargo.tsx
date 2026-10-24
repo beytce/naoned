@@ -61,7 +61,7 @@ export function HoldGauge({ units, capacity }: { units: number; capacity: number
           style={{ width: `${share * 100}%` }}
         />
       </span>
-      <span className="font-mono text-xs tabular-nums text-cream">
+      <span className="font-sans text-xs tabular-nums text-cream">
         {units} / {capacity}
       </span>
     </span>

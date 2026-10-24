@@ -24,8 +24,11 @@ export function Slab(props: {
   children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
-  /** Gold for the one action that matters on the screen, ghost for the others; never lagoon. */
-  tone?: Exclude<Tone, "lagoon">;
+  /**
+   * Gold for the one action that matters on the screen, ghost for the others, text for a quiet
+   * one (« Lire le guide »: the third level, never underlined); never lagoon.
+   */
+  tone?: Exclude<Tone, "lagoon"> | "text";
   size?: "sm" | "md" | "lg";
   className?: string;
   type?: "button" | "submit";
@@ -39,6 +42,22 @@ export function Slab(props: {
     md: "px-6 py-3 text-sm",
     lg: "px-7 py-4 text-base",
   }[props.size ?? "md"];
+  if (props.tone === "text")
+    return (
+      <button
+        type={props.type ?? "button"}
+        onClick={() => {
+          haptic("tap");
+          props.onClick?.();
+        }}
+        disabled={props.disabled}
+        data-coach={props.coach}
+        aria-label={props.label}
+        className={`inline-flex min-h-11 items-center justify-center px-2 font-display font-bold text-info transition hover:brightness-110 active:opacity-70 disabled:pointer-events-none disabled:opacity-35 ${props.size === "lg" ? "text-base" : "text-sm"} ${props.className ?? ""}`}
+      >
+        {props.children}
+      </button>
+    );
   const tone = TONES[props.tone ?? "gold"];
   return (
     <button
@@ -49,18 +68,134 @@ export function Slab(props: {
       }}
       disabled={props.disabled}
       data-coach={props.coach}
+      data-slab={props.tone ?? "gold"}
       aria-label={props.label}
       className={`group relative isolate inline-flex pb-1 pr-1 font-display font-extrabold uppercase tracking-wide disabled:pointer-events-none disabled:opacity-35 ${props.size === "sm" ? "before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']" : ""} ${props.className ?? ""}`}
     >
       <span
         aria-hidden="true"
-        className={`bevel absolute inset-0 left-1 top-1 -z-10 ${tone.shadow}`}
+        className={`slab-shadow bevel absolute inset-0 left-1 top-1 -z-10 ${tone.shadow}`}
       />
       <span
-        className={`bevel flex w-full items-center justify-center text-center transition-transform duration-100 ease-out group-hover:brightness-105 group-active:translate-x-[3px] group-active:translate-y-[3px] ${size} ${tone.face}`}
+        className={`slab-face bevel flex w-full items-center justify-center text-center transition-transform duration-100 ease-out group-hover:brightness-105 group-active:translate-x-[3px] group-active:translate-y-[3px] ${size} ${tone.face}`}
       >
-        <span>{props.children}</span>
+        <span>{unitsKept(props.children)}</span>
       </span>
+    </button>
+  );
+}
+
+/**
+ * The slab writes in capitals, but an amount's unit stays a small « d »: « ACHETER · 150 d », never
+ * « 150 D ». The unit follows the no-break space of format.ts.
+ */
+export function unitsKept(children: ReactNode): ReactNode {
+  const keep = (text: string, key: number | string) => {
+    const parts = text.split(/(\u00a0(?:d|ducats)\b)/);
+    if (parts.length === 1) return text;
+    return parts.map((part, i) =>
+      i % 2 === 1 ? (
+        // biome-ignore lint/suspicious/noArrayIndexKey: the pieces of one fixed text
+        <span key={`${key}:${i}`} className="normal-case">
+          {part}
+        </span>
+      ) : (
+        part
+      ),
+    );
+  };
+  if (typeof children === "string") return keep(children, 0);
+  if (Array.isArray(children))
+    return children.map((c, i) => (typeof c === "string" ? keep(c, i) : c));
+  return children;
+}
+
+/**
+ * Lorenzo speaking, the same card wherever he does (the guide, the Terraferma's first visit): a
+ * thin lapis frame, his portrait sealed with red wax, his name in cream, his words, then the
+ * card's own foot.
+ */
+export function LorenzoCard({
+  portrait,
+  name,
+  aside,
+  children,
+  foot,
+  bubble,
+}: {
+  portrait: ReactNode;
+  name: ReactNode;
+  /** At the top right: the step, « 1/3 ». */
+  aside?: ReactNode;
+  children: ReactNode;
+  foot?: ReactNode;
+  /** Marks the guide's own bubble (data-coach-bubble). */
+  bubble?: boolean;
+}) {
+  return (
+    <div
+      className="cut bg-info/60 p-0.5 shadow-xl shadow-black/40"
+      data-coach-bubble={bubble ? "" : undefined}
+    >
+      <div className="cut bg-night-2 px-3.5 pb-2.5 pt-3">
+        <div className="flex gap-3">
+          <span className="relative h-fit shrink-0">
+            {portrait}
+            {/* His seal: red wax, an L pressed in. */}
+            <span
+              aria-hidden="true"
+              className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-vermilion-deep font-display text-[9px] font-extrabold text-cream ring-1 ring-vermilion"
+            >
+              L
+            </span>
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <Label className="text-cream">{name}</Label>
+              {aside && <span className="meta shrink-0 whitespace-nowrap">{aside}</span>}
+            </div>
+            {children}
+          </div>
+        </div>
+        {foot}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A chip of the map's HUD: a sign and a short word, 44 px high, for an action at hand (« Escarmouche
+ * », « Semaine ») or a state worth a glance. Lapis (info) by default, vermilion when it presses.
+ */
+export function HudChip(props: {
+  icon: ReactNode;
+  children: ReactNode;
+  onClick?: () => void;
+  tone?: "info" | "vermilion" | "plain";
+  /** The whole action, when the chip says it short. */
+  label?: string;
+  hud?: string;
+  disabled?: boolean;
+}) {
+  const tone = {
+    info: "text-info ring-info/45",
+    vermilion: "text-vermilion ring-vermilion/60",
+    plain: "text-cream ring-line",
+  }[props.tone ?? "info"];
+  return (
+    <button
+      type="button"
+      data-hud={props.hud}
+      aria-label={props.label}
+      disabled={props.disabled}
+      onClick={() => {
+        haptic("tap");
+        props.onClick?.();
+      }}
+      className={`pointer-events-auto flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-full bg-night/85 px-3.5 font-display text-sm font-bold shadow-[0_4px_14px_rgb(0_0_0/0.45)] ring-1 ring-inset backdrop-blur transition active:scale-95 disabled:opacity-35 ${tone}`}
+    >
+      <span className="shrink-0">{props.icon}</span>
+      <span>{props.children}</span>
     </button>
   );
 }
@@ -98,7 +233,7 @@ export function Tabs<T extends string>(props: {
                 props.onChange(o.value);
               }}
               // The hit area climbs 14 px above the word: 44 px under the thumb.
-              className={`relative flex-1 pb-2.5 pt-1 font-display text-xs font-extrabold uppercase tracking-[0.12em] transition-colors before:absolute before:inset-x-0 before:-top-3.5 before:bottom-0 before:content-[''] ${on ? "text-cream" : "text-muted hover:text-cream-dim"}`}
+              className={`relative flex-1 pb-2.5 pt-1 font-display text-sm font-bold transition-colors before:absolute before:inset-x-0 before:-top-3.5 before:bottom-0 before:content-[''] ${on ? "text-cream" : "text-muted hover:text-cream-dim"}`}
             >
               {o.label}
             </button>
@@ -125,7 +260,7 @@ export function Tabs<T extends string>(props: {
             type="button"
             data-coach={props.coach ? `${props.coach}-${o.value}` : undefined}
             onClick={() => props.onChange(o.value)}
-            className={`slab min-h-11 flex-1 px-3 py-2.5 font-display text-xs font-extrabold uppercase tracking-wide transition ${on ? "bg-cream text-night" : "bg-night-3 text-cream-dim hover:text-cream"}`}
+            className={`slab min-h-11 flex-1 px-3 py-2.5 font-display text-sm font-bold transition ${on ? "bg-cream text-night" : "bg-night-3 text-cream-dim hover:text-cream"}`}
           >
             {o.label}
           </button>
@@ -275,7 +410,7 @@ export function Badge({ children, tone = "ghost" }: { children: ReactNode; tone?
   }[tone];
   return (
     <span
-      className={`slab inline-block shrink-0 whitespace-nowrap px-2.5 py-0.5 font-mono text-xs font-bold uppercase tracking-wider ${look}`}
+      className={`slab inline-block shrink-0 whitespace-nowrap px-2.5 py-0.5 font-display text-xs font-bold ${look}`}
     >
       <span>{children}</span>
     </span>
@@ -296,7 +431,7 @@ export function Ribbon({
         style={{ width: `${v * 100}%` }}
       />
       {label && (
-        <span className="absolute inset-0 flex items-center justify-center font-mono text-xs font-bold tracking-widest text-cream [text-shadow:0_1px_2px_#000]">
+        <span className="absolute inset-0 flex items-center justify-center font-sans text-xs font-bold tracking-widest text-cream [text-shadow:0_1px_2px_#000]">
           {label}
         </span>
       )}
@@ -309,18 +444,9 @@ export function Sparkline({
   width = 96,
   height = 28,
 }: { points: number[]; width?: number; height?: number }) {
-  if (points.length < 2) {
-    return (
-      <svg width={width} height={height} aria-hidden="true">
-        <path
-          d={`M2 ${height / 2} H${width - 2}`}
-          stroke={P.line}
-          strokeWidth="2"
-          strokeDasharray="3 4"
-        />
-      </svg>
-    );
-  }
+  // Nothing drawn without two prices: an empty dashed line read as a broken chart. Its room kept.
+  if (points.length < 2)
+    return <span aria-hidden="true" style={{ width, height }} className="block" />;
   const min = Math.min(...points);
   const max = Math.max(...points);
   const span = max - min || 1;
@@ -586,6 +712,7 @@ export function Sheet({
   kicker,
   title,
   summary,
+  size,
   children,
 }: {
   open: boolean;
@@ -593,9 +720,27 @@ export function Sheet({
   kicker?: ReactNode;
   title?: ReactNode;
   summary?: ReactNode;
+  /** « wide »: twice the room on a computer (the workshops in two columns). */
+  size?: "wide";
   children: ReactNode;
 }) {
   const panel = useRef<HTMLDialogElement>(null);
+  // More below: a fade at the foot says so, until the end is reached.
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    const el = panel.current;
+    if (!open || !el) return;
+    const look = () => setMore(el.scrollHeight - el.scrollTop - el.clientHeight > 8);
+    look();
+    el.addEventListener("scroll", look, { passive: true });
+    const sizes = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(look);
+    sizes?.observe(el);
+    if (el.firstElementChild) sizes?.observe(el.firstElementChild);
+    return () => {
+      el.removeEventListener("scroll", look);
+      sizes?.disconnect();
+    };
+  }, [open]);
   useOverlay(open, onClose);
   useEffect(() => {
     if (open) panel.current?.focus({ preventScroll: true });
@@ -618,7 +763,7 @@ export function Sheet({
         ref={panel}
         aria-modal="true"
         tabIndex={-1}
-        className="relative m-0 max-h-[92dvh] w-full max-w-md animate-sheet overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line bg-night-2 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 text-cream shadow-2xl shadow-black/50 focus:outline-none lg:max-w-lg lg:animate-pop lg:rounded-3xl lg:border lg:p-7"
+        className={`relative m-0 max-h-[92dvh] w-full max-w-md animate-sheet overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line bg-night-2 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 text-cream shadow-2xl shadow-black/50 focus:outline-none lg:animate-pop lg:rounded-3xl lg:border lg:p-7 ${size === "wide" ? "lg:max-w-3xl" : "lg:max-w-lg"}`}
       >
         {/* Sticky from the dialog's own edge, over its padding (a sticky box stops under it). */}
         <div
@@ -633,7 +778,7 @@ export function Sheet({
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1 pt-1">
                   {kicker && <p className="label text-cream-dim">{kicker}</p>}
-                  <h3 className="font-display text-xl font-extrabold uppercase">{title}</h3>
+                  <h3 className="font-place text-xl font-bold uppercase">{title}</h3>
                 </div>
                 <CloseButton onClick={onClose} className="-mr-2 shrink-0" />
               </div>
@@ -644,6 +789,12 @@ export function Sheet({
           )}
         </div>
         {children}
+        {more && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none sticky -bottom-[max(1.5rem,env(safe-area-inset-bottom))] -mx-5 -mb-[max(1.5rem,env(safe-area-inset-bottom))] h-6 bg-gradient-to-t from-night-2 to-transparent lg:-bottom-7 lg:-mx-7 lg:-mb-7"
+          />
+        )}
       </dialog>
     </div>,
     document.body,
@@ -723,7 +874,7 @@ export function Segmented<T extends string>({
           aria-pressed={value === o.value}
           data-coach={coach ? `${coach}-${o.value}` : undefined}
           onClick={() => onChange(o.value)}
-          className={`slab min-h-11 px-4 py-2.5 font-mono text-xs uppercase tracking-[0.06em] transition-colors ${value === o.value ? "bg-info/20 font-bold text-info" : "bg-night-3 text-cream-dim"}`}
+          className={`slab min-h-11 px-4 py-2.5 font-display text-sm font-semibold transition-colors ${value === o.value ? "bg-info/20 font-bold text-info" : "bg-night-3 text-cream-dim"}`}
         >
           {o.label}
         </button>

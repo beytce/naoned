@@ -4,6 +4,8 @@
  * rounded, the colours given so that two neighbours never share one. Map units, pure.
  */
 
+import { P } from "../art/palette.js";
+
 export interface HexMap {
   width: number;
   height: number;
@@ -152,22 +154,19 @@ export function neighbours(map: HexMap, owner: number[]): Map<number, Set<number
 }
 
 /**
- * Twelve muted jewel tones from the palette's family (never pure gold nor vermilion, kept for
- * their roles): emerald, violet, teal, clay, plum, slate, olive, rose, sky, walnut, lavender, jade.
+ * Eight muted tones for the other merchants, kept away (ΔE ≥ 20) from the colours the map gives a
+ * role: gold for the merchant's own land, lagoon for allies, vermilion for enemies, lapis for the
+ * cell touched, and the water's blues. Violet, plum, olive, rose, walnut, sand, dusk, terracotta.
  */
 export const TERRA_TONES = [
-  "#3FA36B",
   "#8E6BD8",
-  "#3E9C9C",
-  "#C8693F",
   "#A0558A",
-  "#6B7FA6",
   "#8C9440",
   "#C97B95",
-  "#6FA8D6",
   "#A8743F",
-  "#A99BD9",
-  "#5DBF9A",
+  "#9A8466",
+  "#7E6A8C",
+  "#A36F6F",
 ];
 
 function hash(s: string): number {
@@ -224,6 +223,14 @@ export function cellAt(map: HexMap, land: boolean[], x: number, y: number): numb
     }
   }
   return best;
+}
+
+/**
+ * Whether a replay of the week was recorded on the map shown: the same cells, one by one. Played on
+ * another (another week's, another world's), its cells would land anywhere.
+ */
+export function replayFits(initial: readonly number[], owner: readonly number[]): boolean {
+  return initial.length > 0 && initial.length === owner.length;
 }
 
 /**
@@ -302,4 +309,133 @@ export function labelCell(
     const db = depth.get(best) ?? 0;
     return di > db || (di === db && far(i) < far(best)) ? i : best;
   });
+}
+
+/**
+ * A holder's place on the merchant's map, which sets how it is drawn: the merchant's own land,
+ * his allies, his enemies (a front of theirs against him, or of his against them), his
+ * neighbours, the others (« faint » when they hold almost nothing), Milan and the lords.
+ */
+export type Focus = "me" | "ally" | "enemy" | "neighbour" | "milan" | "other" | "faint";
+
+/** Drawn from the bottom up: Milan under everyone, the merchant over all. */
+export const FOCUS_ORDER: Record<Focus, number> = {
+  milan: 0,
+  faint: 1,
+  other: 2,
+  neighbour: 3,
+  enemy: 4,
+  ally: 5,
+  me: 6,
+};
+
+/** Who is at war with the merchant: who marches on him, and whom his fronts march on. */
+export function enemiesOf(
+  fronts: { owner: number; against: number; mine: boolean; threat: boolean }[],
+  me: number,
+): Set<number> {
+  const out = new Set<number>();
+  for (const f of fronts) {
+    if (f.threat || f.against === me) out.add(f.owner);
+    if ((f.mine || f.owner === me) && f.against >= 0) out.add(f.against);
+  }
+  out.delete(me);
+  out.delete(-1);
+  return out;
+}
+
+export function focusOf(
+  h: { me: boolean; ally: boolean; milan: boolean },
+  i: number,
+  cells: number,
+  around: Set<number>,
+  enemies: Set<number>,
+): Focus {
+  if (h.milan) return "milan";
+  if (h.me) return "me";
+  if (h.ally) return "ally";
+  if (enemies.has(i)) return "enemy";
+  if (around.has(i)) return "neighbour";
+  return cells <= 3 ? "faint" : "other";
+}
+
+/**
+ * How a territory is drawn: gold for the merchant's own land only (a dense wash, a thick rim kept
+ * at the same width on screen), lagoon for his allies only, a vermilion rim for his enemies, his
+ * neighbours in their tone, the others barely there, Milan and the lords hatched. The land a
+ * finger touched takes the lapis of a selection.
+ */
+export function territoryLook(
+  h: { focus: Focus; tone: string },
+  touched: boolean,
+): {
+  fill: string;
+  fillOpacity?: number;
+  stroke: string;
+  strokeOpacity: number;
+  strokeWidth: number;
+  strokeDasharray?: string;
+  vectorEffect?: "non-scaling-stroke";
+} {
+  const edge = { vectorEffect: "non-scaling-stroke" as const };
+  if (h.focus === "milan")
+    return {
+      fill: "url(#terra-hatch)",
+      stroke: P.vermilionDeep,
+      strokeOpacity: 0.7,
+      strokeWidth: 0.8,
+    };
+  if (h.focus === "me")
+    return {
+      fill: P.gold,
+      fillOpacity: 0.32,
+      stroke: P.gold,
+      strokeOpacity: 1,
+      strokeWidth: 2.5,
+      ...edge,
+    };
+  if (h.focus === "ally")
+    return {
+      fill: P.lagoon,
+      fillOpacity: 0.18,
+      stroke: P.lagoon,
+      strokeOpacity: 0.95,
+      strokeWidth: 1.6,
+      strokeDasharray: "5 3",
+      ...edge,
+    };
+  if (touched)
+    return {
+      fill: h.tone,
+      fillOpacity: 0.24,
+      stroke: P.info,
+      strokeOpacity: 1,
+      strokeWidth: 2,
+      ...edge,
+    };
+  if (h.focus === "enemy")
+    return {
+      fill: h.tone,
+      fillOpacity: 0.16,
+      stroke: P.vermilion,
+      strokeOpacity: 0.95,
+      strokeWidth: 1.5,
+      ...edge,
+    };
+  if (h.focus === "neighbour")
+    return {
+      fill: h.tone,
+      fillOpacity: 0.16,
+      stroke: h.tone,
+      strokeOpacity: 0.8,
+      strokeWidth: 1,
+      ...edge,
+    };
+  return {
+    fill: h.tone,
+    fillOpacity: h.focus === "faint" ? 0.04 : 0.08,
+    stroke: P.cream,
+    strokeOpacity: h.focus === "faint" ? 0.07 : 0.14,
+    strokeWidth: 0.6,
+  };
 }

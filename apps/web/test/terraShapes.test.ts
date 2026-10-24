@@ -7,6 +7,7 @@ import {
   labelCell,
   neighbours,
   outline,
+  replayFits,
   replayed,
   tones,
 } from "../src/game/terraShapes.js";
@@ -76,5 +77,14 @@ describe("the Terraferma's shapes", () => {
     expect(ring1).toContain(off);
     expect(labelCell(big, [])).toBeNull();
     expect(labelCell(big, [8], new Set([8]))).toBe(8);
+  });
+});
+
+describe("the week replayed", () => {
+  it("plays only on the map it was recorded on", () => {
+    expect(replayFits(Array(1085).fill(-1), Array(1085).fill(0))).toBe(true);
+    // A replay of another map (another week, another world) would draw bands across this one.
+    expect(replayFits(Array(550).fill(-1), Array(1085).fill(0))).toBe(false);
+    expect(replayFits([], [])).toBe(false);
   });
 });

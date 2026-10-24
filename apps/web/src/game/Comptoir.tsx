@@ -347,9 +347,17 @@ function NotAdvised({ b, props }: { b: BuildingView; props: GameProps }) {
   const output = Object.keys(recipeOf(props, b.type)?.outputs ?? {})[0];
   const t = fr.game.economics;
   return (
-    <span className="block text-gold">
+    <span className="meta block">
       {e.missingInputs.length > 0
-        ? t.missing(e.missingInputs.map(props.names.resource).join(", "))
+        ? t.missing(
+            e.missingInputs
+              .map(
+                (code) =>
+                  fr.game.workshop.some(code, props.names.resource(code)) ??
+                  props.names.resource(code).toLowerCase(),
+              )
+              .join(", "),
+          )
         : t.unsold(
             e.unsold.stock,
             props.names.resource(output ?? ""),
@@ -407,7 +415,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
                 className="hit flex shrink-0 transition active:scale-95"
               >
                 {/* The slab is clipped: drawn inside, the button keeps its 44 px of touch. */}
-                <span className="slab flex items-center gap-1 whitespace-nowrap bg-night-4 px-2.5 py-0.5 font-mono text-xs font-bold text-cream">
+                <span className="slab flex items-center gap-1 whitespace-nowrap bg-night-4 px-2.5 py-0.5 font-sans text-xs font-bold text-cream">
                   {fr.game.level(b.level)} <span aria-hidden="true">↑</span>
                 </span>
               </button>
@@ -420,9 +428,12 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
             <span className="min-w-0">{status}</span>
           </p>
           {/* What it earns, and whether its next level is the best placement of the ducats. */}
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 font-mono text-xs text-cream-dim">
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 font-sans text-xs text-cream-dim">
             {BigInt(b.economics.queued?.marginPerHour ?? b.economics.marginPerHour) > 0n && (
-              <span>
+              <span
+                title={fr.game.economics.perHourLong}
+                className="rounded-full bg-night-3 px-2 py-0.5 font-display font-semibold tabular-nums text-cream"
+              >
                 {fr.game.economics.perHour(
                   d(b.economics.queued?.marginPerHour ?? b.economics.marginPerHour),
                 )}
@@ -433,9 +444,9 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
             )}
           </p>
           {b.upgradeCost && !b.economics.advisable && b.economics.next && (
-            <p className="mt-1 font-mono text-xs">
+            <div className="mt-1">
               <NotAdvised b={b} props={props} />
-            </p>
+            </div>
           )}
         </div>
       </div>
@@ -760,8 +771,10 @@ function WorkshopSheet({
                 type="button"
                 aria-pressed={q === o.n}
                 onClick={() => setQty(o.n)}
-                className={`cut border px-2 py-2 text-xs font-semibold ${q === o.n ? "border-info bg-info/15 text-info" : "border-line"}`}
+                // The one chosen reads as chosen: lit, with its tick, never as switched off.
+                className={`cut border px-2 py-2 text-xs font-semibold ${q === o.n ? "border-info bg-night-4 text-cream" : "border-line text-cream-dim"}`}
               >
+                {q === o.n && <span className="text-info">✓ </span>}
                 {o.label}
                 <span className="block font-display text-sm tabular-nums">{o.n}</span>
               </button>
@@ -924,14 +937,17 @@ function SeasonGoal(props: GameProps) {
  * A workshop's window goes back to the list when it closes.
  */
 /** Every workshop with one tap for them all, and a way to build: the sheet, and the side column. */
-export function WorkshopsList(props: GameProps) {
+export function WorkshopsList(props: GameProps & { wide?: boolean }) {
   const room = props.view.buildings.length < props.catalog.rules.maxBuildings;
   return (
     <div className="space-y-3">
       <WorkshopsSummary {...props} />
-      {props.view.buildings.map((b) => (
-        <Workshop key={b.id} b={b} props={props} />
-      ))}
+      {/* In the wide window of a computer, two columns of cards. */}
+      <div className={`grid gap-3 ${props.wide ? "lg:grid-cols-2" : ""}`}>
+        {props.view.buildings.map((b) => (
+          <Workshop key={b.id} b={b} props={props} />
+        ))}
+      </div>
       {room && (
         <Slab tone="ghost" className="w-full" onClick={() => props.setSheet("buildHere")}>
           {fr.game.map.buttons.build}
@@ -952,8 +968,9 @@ export function CounterSheets(props: GameProps) {
         open={props.sheet === "workshops"}
         onClose={close}
         title={fr.game.map.buttons.workshops}
+        size="wide"
       >
-        <WorkshopsList {...props} />
+        <WorkshopsList {...props} wide />
       </Sheet>
       <Sheet
         open={(kind === "produce" || kind === "upgrade") && !!sheetBuilding}

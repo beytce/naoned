@@ -350,25 +350,56 @@ export function VehicleGlyph({
     />
   );
   if (type === "mule") {
+    // In profile, read at a glance: its two long ears, its head carried low, its tail, the pack
+    // saddle on its back and a bag hanging at its flank.
+    const coat = P.woodLight;
     return (
       <g>
-        {beast(-8, P.woodLight)}
+        <path
+          d="M-8 0 V8 M-5.5 0.5 V8 M1 0.5 V8 M3.5 0 V8"
+          stroke={coat}
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+        <path
+          d="M-9.5 -2.5 Q-11.5 0 -10.5 3.5"
+          fill="none"
+          stroke={P.night}
+          strokeWidth="1.2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M-9.5 -2 Q-9.5 -5 -6 -5 H2 Q4.5 -5 5.5 -7.5 L8.5 -8 Q10.5 -7 11 -3.8 L9.6 -2.8 L7.5 -4.4 Q6 -1.5 4 1.2 H-7 Q-9.5 1.2 -9.5 -2 Z"
+          fill={coat}
+          stroke={P.night}
+          strokeWidth="0.8"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M6.6 -7.6 L5.4 -12.5 L7.6 -8.1 M7.8 -7.9 L7.6 -12.8 L9 -7.8"
+          fill={coat}
+          stroke={P.night}
+          strokeWidth="0.7"
+          strokeLinejoin="round"
+        />
+        <circle cx="8.6" cy="-6.2" r="0.6" fill={P.night} />
         <rect
-          x="-7"
-          y="-9"
-          width="9"
-          height="5"
+          x="-7.5"
+          y="-10"
+          width="9.5"
+          height="5.5"
           rx="1.5"
           fill={goods}
           stroke={P.night}
           strokeWidth="0.8"
         />
+        <path d="M-7.5 -7.2 H2" stroke={P.night} strokeWidth="0.6" />
         <rect
           x="-5.5"
-          y="-4.5"
-          width="6"
+          y="-4.6"
+          width="5.5"
           height="5"
-          rx="1.5"
+          rx="1.6"
           fill={goods}
           stroke={P.night}
           strokeWidth="0.8"

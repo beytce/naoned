@@ -34,3 +34,18 @@ describe("Lorenzo's texts", () => {
     expect(dead).toEqual([]);
   });
 });
+
+describe("Lorenzo's promises", () => {
+  const c = fr.game.coach;
+  it("never promise seconds for a batch of more than a minute", () => {
+    expect(c.produce("Briqueterie", "30 min")).not.toMatch(/seconde/);
+    expect(c.produce("Ferme", "30 secondes")).toMatch(/30 secondes/);
+    expect(c.wait(29 * 60_000)).not.toMatch(/seconde/);
+    expect(c.wait(20_000)).toMatch(/quelques secondes/);
+  });
+
+  it("speak of a good in its own gender and number", () => {
+    expect(c.buy("de l'argile")).toContain("de l'argile");
+    expect(c.buy("des briques")).not.toMatch(/\bils\b/);
+  });
+});

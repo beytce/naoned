@@ -7,6 +7,7 @@ import {
   bringOnce,
   isCovered,
   outOfSheet,
+  unionBox,
 } from "../src/game/coachSight.js";
 
 const H = 844;
@@ -162,5 +163,13 @@ describe("a target out of sight", () => {
     const bring = bringOnce();
     for (let i = 0; i < 4; i++) bring("venezia", city, H);
     expect(scrolled).toBe(false);
+  });
+});
+
+describe("the guide's ring", () => {
+  it("holds the target and what goes with it", () => {
+    const u = unionBox([rect(100, 60, 150, 60), rect(156, 16, 130, 100)]);
+    expect(u).toEqual({ left: 130, top: 100, right: 230, bottom: 172, width: 100, height: 72 });
+    expect(unionBox([])).toBeNull();
   });
 });

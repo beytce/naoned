@@ -1,30 +1,37 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CityIcon } from "../../art/cities.js";
-import { Crest, defaultCrest } from "../../art/crest.js";
-import { P } from "../../art/palette.js";
+import { Crest, MiniCrest, defaultCrest } from "../../art/crest.js";
+import { MAP_TEXT, P } from "../../art/palette.js";
 import { Lorenzo } from "../../art/scenes.js";
 import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
-import { Segmented, Sheet, Slab, clock } from "../../ui.js";
+import { HudChip, LorenzoCard, Segmented, Sheet, Slab, clock } from "../../ui.js";
 import type { GameProps } from "../Game.js";
 import { MerchantName, merchantLabel } from "../Name.js";
 import { gameApi } from "../api.js";
 import { d, duration } from "../format.js";
 import { store } from "../store.js";
 import {
+  FOCUS_ORDER,
+  type Focus,
   type HexMap,
   cellAt,
   cellsByHolder,
+  enemiesOf,
+  focusOf,
   hexCenter,
   hexCorners,
   hexNeighbors,
   labelCell,
   neighbours,
   outline,
+  replayFits,
   replayed,
+  territoryLook,
   tones,
 } from "../terraShapes.js";
 import type { SkirmishStatus, TerraAction, TerraView } from "../types.js";
+import { HudTip, usePresence, useTip } from "./HudTips.js";
 import { orbStyle } from "./Markers.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
 import type { MapMarker, Selection } from "./WorldMap.js";
@@ -310,17 +317,30 @@ export function useAbsence(
 export function useWeekReplay(v: TerraView | null | undefined): {
   view: TerraView | null | undefined;
   start: () => void;
+  /** Back to the map as it stands now. */
+  stop: () => void;
   playing: boolean;
 } {
   const [frame, setFrame] = useState<number[] | null>(null);
   const live = useRef(v);
   live.current = v;
+  const timers = useRef<{
+    tick?: ReturnType<typeof setInterval>;
+    end?: ReturnType<typeof setTimeout>;
+  }>({});
+  const stop = useCallback(() => {
+    clearInterval(timers.current.tick);
+    clearTimeout(timers.current.end);
+    setFrame(null);
+  }, []);
+  useEffect(() => stop, [stop]);
   const start = useCallback(() => {
     void gameApi
       .terraReplay()
       .then(({ replay }) => {
         const current = live.current;
         if (!replay || !current || replay.steps.length === 0) return;
+        if (!replayFits(replay.initial, current.owner)) return;
         // The replay's holders, as the view numbers them.
         const at = replay.holders.map((h) =>
           current.holders.findIndex((x) => (h.id ? x.id === h.id : x.nation === h.nation)),
@@ -342,13 +362,14 @@ export function useWeekReplay(v: TerraView | null | undefined): {
           setFrame([...owner]);
           if (f >= frames) {
             clearInterval(id);
-            setTimeout(() => setFrame(null), 1_500);
+            timers.current.end = setTimeout(() => setFrame(null), 1_500);
           }
         }, 160);
+        timers.current.tick = id;
       })
       .catch(() => undefined);
   }, []);
-  return { view: v && frame ? { ...v, owner: frame } : v, start, playing: !!frame };
+  return { view: v && frame ? { ...v, owner: frame } : v, start, stop, playing: !!frame };
 }
 
 export interface TerraShapes {
@@ -359,7 +380,7 @@ export interface TerraShapes {
     i: number;
     d: string;
     tone: string;
-    focus: "me" | "neighbour" | "ally" | "milan" | "other" | "faint";
+    focus: Focus;
   }[];
   tone: string[];
   me: number;
@@ -375,7 +396,10 @@ export interface TerraShapes {
 export function useTerraShapes(v: TerraView | null | undefined): TerraShapes | null {
   const owners = v ? v.owner.join(",") : "";
   const ids = v ? v.holders.map((h) => `${h.id}:${h.ally ? 1 : 0}`).join(",") : "";
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `owners` and `ids` are the map's identity.
+  const me = v ? v.holders.findIndex((h) => h.me) : -1;
+  // Who is at war with the merchant: their outline turns vermilion as soon as a front starts.
+  const foes = v ? [...enemiesOf(v.fronts, me)].sort((a, b) => a - b).join(",") : "";
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `owners`, `ids` and `foes` are the map's identity.
   return useMemo(() => {
     if (!v) return null;
     const map: HexMap = v.map;
@@ -388,26 +412,15 @@ export function useTerraShapes(v: TerraView | null | undefined): TerraShapes | n
       v.holders.map((_, i) => by.get(i)?.length ?? 0),
       touching,
     );
-    const me = v.holders.findIndex((h) => h.me);
     const around = touching.get(me) ?? new Set<number>();
+    const enemies = new Set(foes ? foes.split(",").map(Number) : []);
     const holders = [...by.entries()].map(([i, cells]) => {
-      const h = v.holders[i];
-      const focus: TerraShapes["holders"][number]["focus"] = h?.milan
-        ? "milan"
-        : i === me
-          ? "me"
-          : h?.ally
-            ? "ally"
-            : around.has(i)
-              ? "neighbour"
-              : cells.length <= 3
-                ? "faint"
-                : "other";
+      const h = v.holders[i] ?? { me: false, ally: false, milan: false };
+      const focus = focusOf(h, i, cells.length, around, enemies);
       return { i, d: outline(map, cells), tone: tone[i] ?? P.cream, focus };
     });
-    // Milan under everyone, the merchant above.
-    const order = { milan: 0, faint: 1, other: 2, neighbour: 3, ally: 4, me: 5 };
-    holders.sort((a, b) => order[a.focus] - order[b.focus]);
+    // Milan under everyone, the merchant over all.
+    holders.sort((a, b) => FOCUS_ORDER[a.focus] - FOCUS_ORDER[b.focus]);
     let grid = "";
     let x0 = Number.POSITIVE_INFINITY;
     let x1 = Number.NEGATIVE_INFINITY;
@@ -445,7 +458,7 @@ export function useTerraShapes(v: TerraView | null | undefined): TerraShapes | n
       { x: x1, y: y1 },
     ];
     return { map, land, holders, tone, me, grid, labels, edges };
-  }, [owners, ids]);
+  }, [owners, ids, foes]);
 }
 
 /** "14:20", Paris time: when a front will reach a cell. */
@@ -549,9 +562,27 @@ export const TerraOverlay = memo(function TerraOverlay({
     () => (playing ? hexPath(s.map, Object.keys(v.costs).map(Number), 0.78) : ""),
     [costKeys, s.map, playing],
   );
+  // The land's edges fade into the night (6 % of its width): no frame left on a wide screen.
+  const xs = s.edges.map((e) => e.x);
+  const ys = s.edges.map((e) => e.y);
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const feather = (x1 - x0) * 0.06;
   return (
-    <g>
+    <g mask="url(#terra-fade)">
       <defs>
+        <filter id="terra-feather" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation={feather / 2} />
+        </filter>
+        <mask id="terra-fade" maskUnits="userSpaceOnUse">
+          <rect
+            x={x0 - s.map.size + feather}
+            y={y0 - s.map.size + feather}
+            width={x1 - x0 + 2 * s.map.size - 2 * feather}
+            height={y1 - y0 + 2 * s.map.size - 2 * feather}
+            fill="white"
+            filter="url(#terra-feather)"
+          />
+        </mask>
         <pattern
           id="terra-hatch"
           width="4"
@@ -559,7 +590,7 @@ export const TerraOverlay = memo(function TerraOverlay({
           patternUnits="userSpaceOnUse"
           patternTransform="rotate(45)"
         >
-          <rect width="4" height="4" fill="#4A1E16" fillOpacity="0.45" />
+          <rect width="4" height="4" fill="#4A1E16" fillOpacity="0.3" />
           <line
             x1="0"
             y1="0"
@@ -572,13 +603,26 @@ export const TerraOverlay = memo(function TerraOverlay({
         </pattern>
       </defs>
       {s.holders.map((h) => (
-        <path
-          key={h.i}
-          d={h.d}
-          fillRule="evenodd"
-          strokeLinejoin="round"
-          {...look(h, h.i === selectedHolder(v, cell))}
-        />
+        <g key={h.i}>
+          {/* The merchant's own land: a dark halo outside its gold rim, read over any tone. */}
+          {h.focus === "me" && (
+            <path
+              d={h.d}
+              fill="none"
+              stroke="#0B1626"
+              strokeOpacity="0.85"
+              strokeWidth="6"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
+          <path
+            d={h.d}
+            fillRule="evenodd"
+            strokeLinejoin="round"
+            {...territoryLook(h, h.i === selectedHolder(v, cell))}
+          />
+        </g>
       ))}
       {/* Cells just taken flash and tint in, over a second. */}
       {fresh.map((f) => (
@@ -596,7 +640,7 @@ export const TerraOverlay = memo(function TerraOverlay({
         d={s.grid}
         fill="none"
         stroke={P.cream}
-        strokeOpacity={aiming ? 0.2 : 0.1}
+        strokeOpacity={aiming ? 0.2 : 0.08}
         strokeWidth="0.3"
       />
       {/* The cells a front can take, along the merchant's border. */}
@@ -643,60 +687,17 @@ export const TerraOverlay = memo(function TerraOverlay({
           </g>
         );
       })}
-      {/* Each holder's troops, written on its land as on OpenFront. */}
-      {s.labels.map((l) => {
-        const h = v.holders[l.i];
-        const focus = s.holders.find((x) => x.i === l.i)?.focus;
-        if (!h) return null;
-        const strong = focus === "me" || focus === "neighbour" || focus === "ally";
-        const name = h.milan || !h.me ? holderName(v, l.i) : null;
-        return (
-          <g
-            key={`label-${l.i}`}
-            data-map-label
-            pointerEvents="none"
-            textAnchor="middle"
-            opacity={strong || focus === "milan" ? 1 : 0.6}
-            style={{ paintOrder: "stroke" }}
-            stroke="#0B1626"
-            strokeOpacity="0.85"
-            strokeLinejoin="round"
-          >
-            {name && (
-              <text
-                x={l.x}
-                y={l.y - l.size * 0.55}
-                fontSize={l.size * 0.55}
-                strokeWidth={l.size * 0.14}
-                fill={P.cream}
-                className="font-display font-extrabold"
-              >
-                {name}
-              </text>
-            )}
-            <text
-              x={l.x}
-              y={l.y + l.size * (name ? 0.45 : 0.35)}
-              fontSize={l.size}
-              strokeWidth={l.size * 0.16}
-              fill={h.me ? P.gold : P.cream}
-              className="font-display font-extrabold tabular-nums"
-            >
-              {h.troops}
-            </text>
-          </g>
-        );
-      })}
       {cell !== null && (
         <path
           d={`M${hexCorners(s.map, cell)
             .map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`)
             .join("L")}Z`}
-          fill={P.gold}
-          fillOpacity="0.18"
-          stroke={P.gold}
-          strokeWidth="0.9"
+          fill={P.info}
+          fillOpacity="0.2"
+          stroke={P.info}
+          strokeWidth="2"
           strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
         />
       )}
       {v.fronts.map((f) => {
@@ -740,47 +741,6 @@ function selectedHolder(v: TerraView, cell: number | null): number {
   return cell === null ? -2 : holderAt(v, cell);
 }
 
-/** How a territory is drawn, by its place in the focus. */
-function look(h: TerraShapes["holders"][number], touched: boolean) {
-  if (h.focus === "milan")
-    return {
-      fill: "url(#terra-hatch)",
-      stroke: P.vermilionDeep,
-      strokeOpacity: 0.7,
-      strokeWidth: 0.8,
-    };
-  if (h.focus === "me")
-    return {
-      fill: h.tone,
-      fillOpacity: 0.42,
-      stroke: P.gold,
-      strokeOpacity: 0.95,
-      strokeWidth: 1.3,
-    };
-  if (h.focus === "ally")
-    return {
-      fill: h.tone,
-      fillOpacity: 0.2,
-      stroke: P.lagoon,
-      strokeOpacity: 0.95,
-      strokeWidth: 1,
-    };
-  if (h.focus === "neighbour" || touched)
-    return {
-      fill: h.tone,
-      fillOpacity: 0.24,
-      stroke: h.tone,
-      strokeOpacity: 0.9,
-      strokeWidth: 0.9,
-    };
-  return {
-    fill: "none",
-    stroke: P.cream,
-    strokeOpacity: h.focus === "faint" ? 0.07 : 0.16,
-    strokeWidth: 0.6,
-  };
-}
-
 /** The cells that changed hands since the last fetch, for 450 ms. */
 function useFresh(v: TerraView): { cell: number; holder: number; at: number }[] {
   const last = useRef<{ week: number; owner: number[] } | null>(null);
@@ -814,7 +774,82 @@ export function terraSpots(v: TerraView, s: TerraShapes) {
   ];
 }
 
-/** The cities, the merchants' war counters, the fronts' strength. */
+/**
+ * Where the Terraferma opens: the merchant's own cells and four cells around them, so his
+ * neighbours are in sight (none without a camp).
+ */
+export function terraFocus(v: TerraView, s: TerraShapes): { x: number; y: number }[] | null {
+  const mine = v.owner.flatMap((o, cell) => (o === s.me && s.me >= 0 ? [cell] : []));
+  if (mine.length === 0) return null;
+  const pad = s.map.size * 4 * Math.sqrt(3);
+  return mine.flatMap((cell) => {
+    const [x, y] = hexCenter(s.map, cell);
+    return [
+      { x: x - pad, y: y - pad },
+      { x: x + pad, y: y + pad },
+    ];
+  });
+}
+
+/** Which labels give way first on a crowded map (declutter.ts): the merchant's own never. */
+const RANK: Record<Focus | "front" | "city" | "building", number> = {
+  me: 0,
+  front: 1,
+  city: 2,
+  ally: 3,
+  enemy: 4,
+  neighbour: 5,
+  milan: 6,
+  other: 7,
+  faint: 8,
+  building: 9,
+};
+/** From which zoom a land's label shows: the merchant's world first, the others closer. */
+const TIER: Record<Focus, 0 | 1 | 2> = {
+  me: 0,
+  ally: 0,
+  enemy: 0,
+  neighbour: 0,
+  milan: 0,
+  other: 1,
+  faint: 2,
+};
+
+/** How many cells a holder has. */
+function cellsOf(v: TerraView, i: number): number {
+  let n = 0;
+  for (const o of v.owner) if (o === i) n++;
+  return n;
+}
+
+/** A land's name and troops on the map, at a fixed size (MAP_TEXT), on the map's ink. */
+function TerraLabel({
+  name,
+  troops,
+  strong,
+  big,
+}: { name: string; troops: number; strong: boolean; big: boolean }) {
+  return (
+    <span
+      data-map-label
+      className={`pointer-events-none flex -translate-x-1/2 -translate-y-1/2 flex-col items-center leading-tight [text-shadow:0_1px_3px_rgb(0_0_0/0.95)] ${strong ? "" : "opacity-70"}`}
+    >
+      <span
+        className="whitespace-nowrap font-display font-bold text-cream"
+        style={{ fontSize: big ? MAP_TEXT.mine : MAP_TEXT.merchant }}
+      >
+        {name}
+      </span>
+      <span
+        className="mt-0.5 rounded-full px-1.5 font-display font-extrabold tabular-nums text-cream"
+        style={{ fontSize: MAP_TEXT.troops, background: `${MAP_TEXT.halo}CC` }}
+      >
+        {troops}
+      </span>
+    </span>
+  );
+}
+
 export function terraMarkers(
   props: GameProps,
   v: TerraView,
@@ -822,14 +857,21 @@ export function terraMarkers(
   select: (sel: Selection) => void,
 ): MapMarker[] {
   const cities = new Set(v.map.cities.map((c) => c.cell));
+  const focusOfHolder = (i: number) => s.holders.find((x) => x.i === i)?.focus ?? "faint";
   const out: MapMarker[] = v.map.cities.map((c) => {
     const holder = holderAt(v, c.cell);
+    const h = v.holders[holder];
+    // A nation whose capital is this city: its house under the city's name, no label of its own.
+    const house = h?.milan && h.capital === c.cell ? t().nationHouses[h.nation ?? ""] : undefined;
     return {
       key: `terra:${c.cell}`,
+      priority: RANK.city,
+      tier: 0,
       node: (
         <TerraCity
           code={c.code}
           name={props.names.city(c.code)}
+          house={house}
           ring={
             holder >= 0
               ? v.holders[holder]?.milan
@@ -847,9 +889,12 @@ export function terraMarkers(
     if (h.capital === null || h.milan || cities.has(h.capital)) return;
     const [x, y] = hexCenter(s.map, h.capital);
     const cell = h.capital;
+    const focus = focusOfHolder(i);
     out.push({
       key: `terra:${cell}`,
       at: { x, y },
+      priority: h.me ? 0 : RANK[focus] + 0.5,
+      tier: h.me ? 0 : TIER[focus],
       node: (
         <WarCounter
           name={merchantLabel(h.pseudo, h.bot, t().someone)}
@@ -857,14 +902,41 @@ export function terraMarkers(
           mine={h.me}
           tone={s.tone[i] ?? P.cream}
           share={h.me && v.me ? v.me.troops / Math.max(1, v.me.cap) : null}
-          troops={s.labels.some((l) => l.i === i) ? null : h.troops}
+          troops={h.me || !s.labels.some((l) => l.i === i) ? h.troops : null}
           threatened={h.me && threatened}
-          small={!h.me && !h.ally && s.holders.find((x) => x.i === i)?.focus !== "neighbour"}
+          small={
+            !h.me &&
+            !h.ally &&
+            !["neighbour", "enemy"].includes(s.holders.find((x) => x.i === i)?.focus ?? "")
+          }
           onTap={() => select({ kind: "terra", cell })}
         />
       ),
     });
   });
+  // Each land's name and troops, at a fixed size (MAP_TEXT): never bigger than a city's name. The
+  // merchant's own are on his camp; a nation's whose capital is a city, under the city's name.
+  for (const l of s.labels) {
+    const h = v.holders[l.i];
+    if (!h || h.me) continue;
+    if (h.milan && h.capital !== null && cities.has(h.capital)) continue;
+    const focus = focusOfHolder(l.i);
+    const big = cellsOf(v, l.i) >= 40;
+    out.push({
+      key: `label:${l.i}`,
+      at: { x: l.x, y: l.y },
+      priority: RANK[focus],
+      tier: focus === "milan" && !big ? 1 : TIER[focus],
+      node: (
+        <TerraLabel
+          name={holderName(v, l.i)}
+          troops={h.troops}
+          strong={focus !== "other" && focus !== "faint"}
+          big={big}
+        />
+      ),
+    });
+  }
   // Quick signals: a bubble over the sender's camp, a target on its cell.
   v.signals.forEach((x, k) => {
     const cell = x.kind === "attack" ? x.cell : (v.holders[x.from]?.capital ?? null);
@@ -873,6 +945,7 @@ export function terraMarkers(
     out.push({
       key: `signal:${k}:${x.at}`,
       at: { x: cx, y: cy },
+      priority: RANK.front,
       node: (
         <span className="pointer-events-none -translate-x-1/2 -translate-y-[160%] animate-pop whitespace-nowrap rounded-full bg-night/90 px-2 py-0.5 text-xs text-cream ring-1 ring-info">
           {SIGNAL_GLYPH[x.kind]} {t().diplomacy.signals[x.kind]}
@@ -886,6 +959,8 @@ export function terraMarkers(
     out.push({
       key: `building:${b.cell}`,
       at: { x, y },
+      priority: RANK.building,
+      tier: 1,
       node: (
         <button
           type="button"
@@ -899,30 +974,33 @@ export function terraMarkers(
       ),
     });
   }
-  // Each front's strength where it stands now: on the next cell it will take, with the time left.
+  // Each front's strength and the time to its next cell, at the middle of its line and set off to
+  // its side: never on the camp it leaves.
   for (const f of v.fronts) {
     if (!f.mine && !f.threat) continue;
     const next = f.takes[0];
-    let at: { x: number; y: number };
-    if (next) {
-      const [x, y] = hexCenter(s.map, next.cell);
-      at = { x, y };
-    } else {
-      const from = frontFrom(v, s.map, f.owner, f.aim);
-      if (!from) continue;
-      const [x, y] = hexCenter(s.map, f.aim);
-      at = { x: (from[0] + x) / 2, y: (from[1] + y) / 2 };
+    const from = frontFrom(v, s.map, f.owner, f.aim);
+    const [ax, ay] = hexCenter(s.map, next?.cell ?? f.aim);
+    let at = { x: ax, y: ay };
+    if (from) {
+      const dx = ax - from[0];
+      const dy = ay - from[1];
+      const len = Math.hypot(dx, dy) || 1;
+      const side = s.map.size * 0.9;
+      at = { x: (from[0] + ax) / 2 - (dy / len) * side, y: (from[1] + ay) / 2 + (dx / len) * side };
     }
     out.push({
       key: `front:${f.id}`,
       at,
+      priority: RANK.front,
+      tier: 0,
       node: (
         <div className="-mt-3 -translate-x-1/2">
           <button
             type="button"
             data-map-label
             onClick={() => select({ kind: "terra", cell: next?.cell ?? f.aim })}
-            className={`marker-hit relative flex h-6 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full px-2 font-mono text-xs font-bold shadow-md shadow-black/40 ${f.mine ? "bg-gold text-ink" : "bg-vermilion text-cream"}`}
+            className={`marker-hit relative flex h-6 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full px-2 font-display text-xs font-bold shadow-md shadow-black/40 ${f.mine ? "bg-gold text-ink" : "bg-vermilion text-cream"}`}
           >
             ⚔ {f.troops}
             {next && <span className="font-normal opacity-80">· {wait(next.at, props.now)}</span>}
@@ -951,9 +1029,17 @@ function frontProgress(v: TerraView, against: number, nextAt: number, at: number
 function TerraCity({
   code,
   name,
+  house,
   ring,
   onTap,
-}: { code: string; name: string; ring: string | null; onTap: () => void }) {
+}: {
+  code: string;
+  name: string;
+  /** The nation holding it from its capital: « MANTOUE · Gonzague ». */
+  house?: string;
+  ring: string | null;
+  onTap: () => void;
+}) {
   return (
     <button
       type="button"
@@ -970,9 +1056,15 @@ function TerraCity({
       </span>
       <span
         data-map-label
-        className="pointer-events-none absolute left-1/2 top-[calc(100%-8px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-cream/85 [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]"
+        className="pointer-events-none absolute left-1/2 top-[calc(100%-8px)] -translate-x-1/2 whitespace-nowrap font-place text-xs font-bold uppercase tracking-wide text-cream/85 [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]"
       >
         {name}
+        {house && (
+          <span className="font-semibold normal-case tracking-normal text-vermilion">
+            {" "}
+            · {house}
+          </span>
+        )}
       </span>
     </button>
   );
@@ -1054,7 +1146,12 @@ function WarCounter({
           boxShadow: mine ? undefined : `0 0 0 1.5px ${tone}`,
         }}
       >
-        <Crest crest={crest} size={mine ? 26 : small ? 12 : 20} />
+        {/* The others' crests as small discs: their charge read at 14 to 18 px. */}
+        {mine ? (
+          <Crest crest={crest} size={26} />
+        ) : (
+          <MiniCrest crest={crest} size={small ? 14 : 22} />
+        )}
       </span>
       {mine ? (
         <span
@@ -1062,7 +1159,7 @@ function WarCounter({
           className="pointer-events-none absolute left-1/2 top-[calc(100%-2px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
         >
           {name}
-          {troops !== null && <span className="tabular-nums text-cream"> · ⚔ {troops}</span>}
+          {troops !== null && <span className="tabular-nums text-cream"> · {troops}</span>}
         </span>
       ) : (
         troops !== null && (
@@ -1081,267 +1178,196 @@ function WarCounter({
 /** A time kept on one line when its sentence wraps (« 23 h 56 », never « 23 / h 56 »). */
 const unbroken = (time: string) => time.replace(/ /g, "\u00a0");
 
-/** Under the purse on the right: the troops, the glory and rank, the week's clock. */
+/**
+ * Under the purse on the right, two blocks at most (the owner's word of 24 October 2026: the top
+ * right was unreadable): the troops, which open a card with the glory and the rank, and a plaque of
+ * two lines, what presses and when the week ends. The skirmishes, the week's replay and the way
+ * back onto the merchant's land are actions, at the thumb (TerraActions); the guide is the Help
+ * door's.
+ */
 export function TerraHud({
   v,
   now,
   regions,
-  onReplay,
-  onSkirmish,
-  onGuide,
   folded = false,
 }: {
   v: TerraView;
   now: number;
   /** The regions' names (the teams of a week in teams). */
   regions: { code: string; name: string }[];
-  /** Replays the week from its start (absent while it plays). */
-  onReplay?: () => void;
-  /** Opens the skirmishes (absent in one). */
-  onSkirmish?: () => void;
-  /** Opens the Terraferma's guide. */
-  onGuide?: () => void;
-  /** Under the skirmish's bar: the troops and the glory only, the lines of the week folded. */
+  /** Under the skirmish's bar: the troops only, the week's plaque folded. */
   folded?: boolean;
 }) {
   const me = v.me;
   const regionName = (code: string) => regions.find((r) => r.code === code)?.name ?? code;
+  const [tip, setTip] = useTip();
+  const { shown, leaving } = usePresence(tip, 120);
   return (
-    // In the HUD's right column, under the purse, as wide as it and 7rem at least (the week's
-    // clock on two lines; the name keeps its ten letters at 320 px): never over the left one.
-    <div className="flex min-w-[7rem] max-w-full flex-col items-end gap-1 self-stretch lg:min-w-0">
+    // In the HUD's right column, under the purse and no wider: the name keeps its ten letters.
+    <div className="flex min-w-0 max-w-full flex-col items-end gap-1 self-stretch">
       {me && (
-        <>
-          <span
-            title={t().troops}
+        <span className="relative">
+          <button
+            type="button"
             data-hud="troops"
-            className="hud-orb relative flex h-9 items-center gap-1.5 overflow-hidden rounded-full pl-2 pr-2.5"
+            aria-label={t().troopsTip.title}
+            aria-expanded={tip === "troops"}
+            onClick={() => setTip((k) => (k === "troops" ? null : "troops"))}
+            className="pointer-events-auto flex min-h-11 items-center"
           >
-            <span className="text-[15px] leading-none">⚔</span>
-            <span className="font-display text-sm font-extrabold tabular-nums text-cream">
-              {t().troopsLine(me.troops, me.cap)}
-            </span>
-            {me.troops < me.cap && me.recruit.perHour > 0 && (
+            <span className="hud-orb relative flex h-9 items-center gap-1 overflow-hidden rounded-full pl-2 pr-2.5 text-cream">
+              <span className="flex h-5 w-5 shrink-0 [&>svg]:h-5 [&>svg]:w-5">
+                <Icon.troops />
+              </span>
+              <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
+                {t().troopsLine(me.troops, me.cap)}
+              </span>
+              {/* How full the troops are: a thread of light at the foot of the pill. */}
               <span
-                className={`font-mono text-xs font-bold ${v.open ? "text-lagoon" : "text-cream-dim"}`}
-              >
-                {v.open
-                  ? t().perHour(me.recruit.perHour)
-                  : t().perHourAt(me.recruit.perHour, v.openHours.from)}
-              </span>
-            )}
-            {/* How full the troops are: a thread of light at the foot of the pill. */}
-            <span
-              className="absolute bottom-0 left-0 h-[3px] bg-lagoon transition-[width] duration-700"
-              style={{ width: `${Math.min(100, (me.troops / Math.max(1, me.cap)) * 100)}%` }}
-            />
-          </span>
-          <span
-            data-hud="glory"
-            className="hud-orb flex h-8 items-center rounded-full px-2.5 font-display text-[12px] font-extrabold tabular-nums text-gold"
-          >
-            {t().glory(me.glory, me.rank)}
-          </span>
-        </>
-      )}
-      {/*
-        On a phone, the week's clock on a plaque that opens the guide, and the skirmishes and the
-        replay as two rounds: a column no taller than the purse's two neighbours, never written
-        over the map. The plaque takes the column's width without widening it (the purse sets
-        it), so the merchant's name keeps its room. Short lines keep what the player must know:
-        the battle hour, the team and its win, Milan riding against him; the fronts' count and
-        the other rides are the map's to show.
-      */}
-      {!folded && (
-        <>
-          <NotePlaque v={v} now={now} onGuide={onGuide} regionName={regionName} />
-          {(onSkirmish || onReplay) && (
-            <span className="flex justify-end gap-1 lg:hidden">
-              {onSkirmish && (
-                <button
-                  type="button"
-                  data-hud="terra-skirmish"
-                  aria-label={
-                    v.open ? fr.game.skirmish.title : fr.game.skirmish.nightShort(v.openHours.from)
-                  }
-                  onClick={onSkirmish}
-                  className="pointer-events-auto flex h-11 w-11 items-center justify-center"
-                >
-                  <span
-                    className={`hud-orb flex h-9 w-9 items-center justify-center rounded-full text-[17px] leading-none ${v.open ? "text-vermilion" : "text-cream-dim"}`}
-                  >
-                    ⚔
-                  </span>
-                </button>
-              )}
-              {onReplay && (
-                <button
-                  type="button"
-                  data-hud="terra-replay"
-                  aria-label={fr.game.terraRecord.replay}
-                  onClick={onReplay}
-                  className="pointer-events-auto flex h-11 w-11 items-center justify-center"
-                >
-                  <span className="hud-orb flex h-9 w-9 items-center justify-center rounded-full text-[17px] leading-none text-info">
-                    ⟲
-                  </span>
-                </button>
-              )}
+                className="absolute bottom-0 left-0 h-[3px] bg-lagoon transition-[width] duration-700"
+                style={{ width: `${Math.min(100, (me.troops / Math.max(1, me.cap)) * 100)}%` }}
+              />
             </span>
+          </button>
+          {shown === "troops" && (
+            <HudTip
+              leaving={leaving}
+              onClose={() => setTip(null)}
+              content={{
+                title: t().troopsTip.title,
+                tone: "lagoon",
+                text: t().troopsTip.text,
+                lines: [
+                  { label: t().troopsTip.troops, value: t().troopsLine(me.troops, me.cap) },
+                  {
+                    label: t().troopsTip.recruit,
+                    value: v.open
+                      ? t().perHour(me.recruit.perHour)
+                      : t().perHourAt(me.recruit.perHour, v.openHours.from),
+                  },
+                  { label: t().troopsTip.glory, value: me.glory, tone: "gold" },
+                  { label: t().troopsTip.rank, value: t().troopsTip.rankOf(me.rank, v.players) },
+                ],
+              }}
+            />
           )}
-        </>
+        </span>
       )}
-      <span
-        data-hud="terra-note"
-        className="meta hidden min-w-0 max-w-full flex-col items-end text-right [text-shadow:0_1px_3px_rgb(0_0_0/0.9)] lg:flex"
-      >
-        {me?.eliminatedAt != null && <span className="text-vermilion">{t().eliminated}</span>}
-        {!v.closed && v.placementEndsAt !== null && now < v.placementEndsAt && (
-          <span className="text-gold">{t().placing(unbroken(clock(v.placementEndsAt - now)))}</span>
-        )}
-        {!v.closed && v.truceEndsAt !== null && now < v.truceEndsAt && (
-          <span className="text-gold">{t().truce(unbroken(clock(v.truceEndsAt - now)))}</span>
-        )}
-        <span>{v.closed ? t().closed : t().closesIn(unbroken(clock(v.closesAt - now)))}</span>
-        {!v.open && !v.closed && <span className="text-lagoon">☾ {t().night}</span>}
-        {v.rules.team && <span className="text-info">{t().team(regionName(v.rules.team))}</span>}
-        {v.closed?.teams?.[0] && (
-          <span className="text-gold">{t().teamWon(regionName(v.closed.teams[0].team))}</span>
-        )}
-        {onGuide && (
-          <button
-            type="button"
-            onClick={onGuide}
-            className="pointer-events-auto inline-flex min-h-11 items-center justify-end font-display font-extrabold uppercase text-info underline underline-offset-2"
-          >
-            {fr.game.terraGuide.openShort}
-          </button>
-        )}
-        {onSkirmish && (
-          <button
-            type="button"
-            onClick={onSkirmish}
-            className="pointer-events-auto inline-flex min-h-11 items-center justify-end whitespace-nowrap font-display font-extrabold uppercase text-vermilion underline underline-offset-2"
-          >
-            {v.open ? `⚔ ${fr.game.skirmish.title}` : fr.game.skirmish.nightShort(v.openHours.from)}
-          </button>
-        )}
-        {onReplay && (
-          <button
-            type="button"
-            onClick={onReplay}
-            className="pointer-events-auto inline-flex min-h-11 items-center justify-end text-info underline underline-offset-2"
-          >
-            ⟲ {fr.game.terraRecord.replay}
-          </button>
-        )}
-        {v.battle && !v.closed && (
-          <span
-            className={
-              v.battle.on
-                ? "font-display font-extrabold uppercase text-vermilion"
-                : "text-cream-dim"
-            }
-          >
-            {v.battle.on ? t().battle.on(v.battle.to) : t().battle.at(v.battle.from)}
-          </span>
-        )}
-        {/* The map is alive: how many fronts march, and whom Milan rides against. */}
-        {!v.closed && v.fronts.length > 0 && (
-          <span className="text-info">{t().marching(v.fronts.length)}</span>
-        )}
-        {!v.closed &&
-          v.fronts
-            .filter((f) => v.holders[f.owner]?.milan)
-            .slice(0, 2)
-            .map((f) => (
-              <span key={f.id} className={f.threat ? "text-vermilion" : "text-cream"}>
-                {t().milanRides(
-                  holderName(v, f.owner),
-                  f.against < 0 ? null : holderName(v, f.against),
-                )}
-              </span>
-            ))}
-      </span>
+      {!folded && <NotePlaque v={v} now={now} regionName={regionName} />}
     </div>
   );
 }
 
 /**
- * The week's clock on a phone: what comes next (the war, the battle, the night) and when the week
- * ends, the player's team and its win, Milan riding against him, on a dark plaque legible over
- * any land, opening the guide when touched.
+ * What presses on the Terraferma, on one line: the merchant out of the week, Milan riding against
+ * him, the battle under way, the placing or the truce, the night, the battle to come. Null when
+ * nothing does.
+ */
+function pressing(v: TerraView, now: number): { text: string; tone: string } | null {
+  const me = v.me;
+  if (v.closed) return null;
+  if (me?.eliminatedAt != null) return { text: t().eliminated, tone: "text-vermilion" };
+  const ride = v.fronts.find((f) => f.threat && v.holders[f.owner]?.milan);
+  if (ride) return { text: t().milanOnMeShort(holderName(v, ride.owner)), tone: "text-vermilion" };
+  if (v.battle?.on) return { text: t().battle.onShort(v.battle.to), tone: "text-vermilion" };
+  if (v.placementEndsAt !== null && now < v.placementEndsAt)
+    return { text: t().placingShort(unbroken(clock(v.placementEndsAt - now))), tone: "text-gold" };
+  if (v.truceEndsAt !== null && now < v.truceEndsAt)
+    return { text: t().truceShort(unbroken(clock(v.truceEndsAt - now))), tone: "text-gold" };
+  if (!v.open) return { text: `☾ ${t().nightShort}`, tone: "text-lagoon" };
+  if (v.battle) return { text: t().battle.atShort(v.battle.from), tone: "text-cream" };
+  return null;
+}
+
+/**
+ * The week on a dark plaque, two lines at most, legible over any land: what presses, then in
+ * smaller writing the team (a week in teams) and when the week ends, giving way item by item.
  */
 function NotePlaque({
   v,
   now,
-  onGuide,
   regionName,
 }: {
   v: TerraView;
   now: number;
-  onGuide?: () => void;
   regionName: (code: string) => string;
 }) {
-  const me = v.me;
-  const head =
-    me?.eliminatedAt != null ? (
-      <span className="text-vermilion">{t().eliminated}</span>
-    ) : !v.closed && v.placementEndsAt !== null && now < v.placementEndsAt ? (
-      <span className="text-gold">
-        {t().placingShort(unbroken(clock(v.placementEndsAt - now)))}
-      </span>
-    ) : !v.closed && v.truceEndsAt !== null && now < v.truceEndsAt ? (
-      <span className="text-gold">{t().truceShort(unbroken(clock(v.truceEndsAt - now)))}</span>
-    ) : v.battle?.on && !v.closed ? (
-      <span className="font-extrabold text-vermilion">{t().battle.onShort(v.battle.to)}</span>
-    ) : !v.open && !v.closed ? (
-      <span className="text-lagoon">☾ {t().nightShort}</span>
-    ) : v.battle && !v.closed ? (
-      <span className="text-cream-dim">{t().battle.atShort(v.battle.from)}</span>
-    ) : null;
-  // Milan riding against the player: the first such front, named once.
-  const ride = v.closed ? undefined : v.fronts.find((f) => f.threat && v.holders[f.owner]?.milan);
   const won = v.closed?.teams?.[0];
-  const body = (
-    <>
-      {head}
-      <span>{v.closed ? t().closed : t().closesIn(unbroken(clock(v.closesAt - now)))}</span>
-      {ride && (
-        <span className="font-extrabold text-vermilion">
-          {t().milanOnMeShort(holderName(v, ride.owner))}
-        </span>
-      )}
-      {v.rules.team && <span className="text-info">{t().teamShort(regionName(v.rules.team))}</span>}
-      {won && <span className="text-gold">{t().teamWonShort(regionName(won.team))}</span>}
-    </>
-  );
-  // As wide as the column, never widening it: the purse sets its width.
-  const plaque =
-    "flex w-0 min-w-full flex-col items-end rounded-lg bg-night/85 px-1.5 py-1 text-right text-[13px] leading-snug text-cream ring-1 ring-line/70 lg:hidden";
-  if (!onGuide)
-    return (
-      <span data-hud="terra-note" className={plaque}>
-        {body}
-      </span>
-    );
+  const head = won
+    ? { text: t().teamWonShort(regionName(won.team)), tone: "text-gold" }
+    : pressing(v, now);
+  const after = [
+    v.rules.team ? t().teamShort(regionName(v.rules.team)) : null,
+    v.closed ? t().closed : t().closesIn(unbroken(clock(v.closesAt - now))),
+  ].filter((x): x is string => x !== null);
   return (
-    <button
-      type="button"
+    <span
       data-hud="terra-note"
-      aria-label={fr.game.terraGuide.open}
-      onClick={onGuide}
-      className={`pointer-events-auto relative min-h-11 justify-center ${plaque}`}
+      // As wide as the column, never widening it: the purse sets it, the name keeps its letters.
+      className="flex w-0 min-w-full flex-col items-end rounded-lg bg-night/85 px-2 py-1 text-right leading-snug ring-1 ring-line/70"
     >
-      {body}
-      {/* The guide behind it, on a small round at its corner: no room taken from the lines. */}
+      {head && <span className={`text-[13px] font-semibold ${head.tone}`}>{head.text}</span>}
+      {/* One line high: what does not fit wraps out of sight, item by item. */}
       <span
-        aria-hidden="true"
-        className="absolute -left-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-info font-display text-[11px] font-extrabold leading-none text-ink"
+        data-hud-meta
+        className="flex h-[18px] flex-wrap justify-end gap-x-1.5 overflow-hidden text-[13px] leading-[18px] text-cream-dim tabular-nums"
       >
-        ?
+        {after.map((x, i) => (
+          <span key={x} className="whitespace-nowrap">
+            {i > 0 ? "· " : ""}
+            {x}
+          </span>
+        ))}
       </span>
-    </button>
+    </span>
+  );
+}
+
+/**
+ * The Terraferma's actions at the thumb, at the bottom right above the doors: the skirmishes and
+ * the week's replay, each a sign and a word, hidden as the doors are while a panel is up.
+ */
+export function TerraActions({
+  v,
+  onSkirmish,
+  onReplay,
+  extra,
+}: {
+  v: TerraView;
+  onSkirmish?: () => void;
+  onReplay?: () => void;
+  /** A round of the map's own (« Me centrer »). */
+  extra?: ReactNode;
+}) {
+  return (
+    // On a phone the round at the left, the chips at the right; on a computer side by side.
+    <span className="flex w-full items-center justify-between gap-2 lg:w-auto lg:justify-end">
+      <span className="flex">{extra}</span>
+      <span className="flex items-center gap-2">
+        {onSkirmish && (
+          <HudChip
+            hud="terra-skirmish"
+            icon={<Icon.skirmish />}
+            tone={v.open ? "vermilion" : "plain"}
+            label={v.open ? fr.game.skirmish.title : fr.game.skirmish.nightShort(v.openHours.from)}
+            onClick={onSkirmish}
+          >
+            {fr.game.skirmish.title}
+          </HudChip>
+        )}
+        {onReplay && (
+          <HudChip
+            hud="terra-replay"
+            icon={<Icon.week />}
+            label={fr.game.terraRecord.replay}
+            onClick={onReplay}
+          >
+            {/* Under 360 px its sign alone: the three hold on the narrowest phone. */}
+            <span className="max-[359px]:sr-only">{fr.game.terraRecord.weekShort}</span>
+          </HudChip>
+        )}
+      </span>
+    </span>
   );
 }
 
@@ -1723,7 +1749,7 @@ export function TerraPanel({
               className="terra-share w-full accent-gold"
             />
             <p
-              className={`text-center font-mono text-xs ${cells === 0 ? "text-vermilion" : "text-cream"}`}
+              className={`text-center font-sans text-xs ${cells === 0 ? "text-vermilion" : "text-cream"}`}
             >
               {cells === 0
                 ? me.troops >= (cost ?? 0)
@@ -1732,7 +1758,7 @@ export function TerraPanel({
                 : t().target.plan(troops, cells, cells * (cost ?? 0), troops - cells * (cost ?? 0))}
             </p>
             {cells > 0 && (
-              <p className="text-center font-mono text-xs text-cream-dim">
+              <p className="text-center font-sans text-xs text-cream-dim">
                 {t().target.pace(
                   Math.ceil(
                     (cells * (holder < 0 ? v.rules.neutralMinutes : v.rules.cellMinutes)) / 60,
@@ -1743,19 +1769,19 @@ export function TerraPanel({
             )}
             {/* The first attack on a merchant gives up the capital's safety. */}
             {merchant && v.rules.peacefulSafe && !me.aggressor && (
-              <p className="text-center font-mono text-xs text-vermilion">
+              <p className="text-center font-sans text-xs text-vermilion">
                 {t().target.losesSafety}
               </p>
             )}
             {/* Against a merchant only, and when it changes something: what stays home. */}
             {cells > 0 && merchant && density(me.troops - troops) < density(me.troops) && (
-              <p className="text-center font-mono text-xs text-cream-dim">
+              <p className="text-center font-sans text-xs text-cream-dim">
                 {t().target.defense(density(me.troops - troops), density(me.troops))}
               </p>
             )}
           </div>
         ) : merchant && ally ? (
-          <p className="text-center font-mono text-xs text-cream-dim">
+          <p className="text-center font-sans text-xs text-cream-dim">
             {t().holder.sendLine(gift, me.giftsLeft)}
           </p>
         ) : undefined
@@ -1766,32 +1792,62 @@ export function TerraPanel({
 
 /**
  * The merchant's fronts come home since the last look: what each took, spent and brought back,
- * one line each, until dismissed.
+ * one line each, in a short card above the doors. Left unread, it folds after a few seconds into
+ * a pill (« ↩ 2 ») that opens it again; « Compris » puts it away.
  */
 function Returns({ v }: { v: TerraView }) {
   const key = `terraReturnsSeen:${v.week}`;
   const [seen, setSeen] = useState(() => Number(store.get(key) ?? 0));
-  const fresh = (v.me?.returns ?? []).filter((r) => r.at > seen).slice(-3);
-  if (fresh.length === 0) return null;
+  const [folded, setFolded] = useState(false);
+  const fresh = (v.me?.returns ?? []).filter((r) => r.at > seen).slice(-2);
   const last = fresh.at(-1)?.at ?? 0;
-  return (
-    <div className="absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 mx-auto max-w-md cut bg-night-2/95 p-3 shadow-[0_6px_20px_rgb(0_0_0/0.45)] ring-1 ring-line lg:bottom-28">
-      <p className="label text-gold">{t().returns.title}</p>
-      {fresh.map((r) => (
-        <p key={r.front} className="mt-1 text-[13px] text-cream">
-          {t().returns.line(holderName(v, r.against), r.cells, r.spent, r.back)}
-        </p>
-      ))}
+  useEffect(() => {
+    if (last === 0 || folded) return;
+    const id = setTimeout(() => setFolded(true), 8_000);
+    return () => clearTimeout(id);
+  }, [last, folded]);
+  if (fresh.length === 0) return null;
+  // Above the doors and the actions at the thumb.
+  const place =
+    "absolute bottom-[calc(max(1rem,env(safe-area-inset-bottom))+9.5rem)] z-10 lg:bottom-28";
+  if (folded)
+    return (
       <button
         type="button"
-        className="hit label mt-2 rounded-full px-3 py-1 text-cream ring-1 ring-inset ring-line"
-        onClick={() => {
-          store.set(key, String(last));
-          setSeen(last);
-        }}
+        data-hud-overlay="terra-returns"
+        aria-label={t().returns.title}
+        onClick={() => setFolded(false)}
+        className={`${place} left-3 flex min-h-11 items-center gap-1.5 rounded-full bg-night-2/95 px-4 font-display text-sm font-extrabold text-gold ring-1 ring-line`}
       >
-        {t().returns.ok}
+        ↩ {fresh.length}
       </button>
+    );
+  return (
+    <div
+      // Over the map, a moment: it may cover a name there, never the HUD.
+      data-hud-overlay="terra-returns"
+      className={`${place} inset-x-3 mx-auto max-w-sm cut bg-night-2/95 px-3 py-2 shadow-[0_6px_20px_rgb(0_0_0/0.45)] ring-1 ring-line`}
+    >
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="label text-gold">{t().returns.title}</p>
+          {fresh.map((r) => (
+            <p key={r.front} className="text-[13px] leading-snug text-cream">
+              {t().returns.line(holderName(v, r.against), r.cells, r.spent, r.back)}
+            </p>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="label min-h-11 shrink-0 rounded-full px-3 text-cream ring-1 ring-inset ring-line"
+          onClick={() => {
+            store.set(key, String(last));
+            setSeen(last);
+          }}
+        >
+          {t().returns.ok}
+        </button>
+      </div>
     </div>
   );
 }
@@ -1910,7 +1966,7 @@ function PeasantsSlider({
   };
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between font-mono text-xs">
+      <div className="flex items-center justify-between font-sans text-xs">
         <span className="text-vermilion">
           ⚔ {t().peasants.soldiers(100 - Math.round(bps / 100))}
         </span>
@@ -1943,7 +1999,7 @@ function PeasantsSlider({
  * The first visit to the Terraferma: Lorenzo says, in three bubbles, how to set down, launch a
  * front and come back; the guide is a touch away. Once on this device.
  */
-export function TerraIntro({ onGuide }: { onGuide: () => void }) {
+export function TerraIntro({ onGuide, top }: { onGuide: () => void; top: number }) {
   const k = fr.game.terraIntro;
   const [step, setStep] = useState(() => {
     try {
@@ -1959,39 +2015,37 @@ export function TerraIntro({ onGuide }: { onGuide: () => void }) {
   };
   const last = step >= k.steps.length - 1;
   return (
+    // Under the HUD's band, the land where the camp is set down left free below.
     <div
       data-panel
-      className="pointer-events-auto absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+11rem)] z-30 mx-auto flex max-w-sm animate-pop gap-3 cut border border-info/70 bg-night-2/95 p-3 shadow-lg lg:bottom-32"
+      style={{ top: top + 8 }}
+      className="pointer-events-auto absolute inset-x-3 z-30 mx-auto max-w-sm animate-pop"
     >
-      <Lorenzo size={44} />
-      <div className="min-w-0 flex-1 space-y-2">
-        <p className="flex items-baseline justify-between gap-2">
-          <span className="label text-info">{k.who}</span>
-          <span className="meta">
-            {step + 1}/{k.steps.length}
-          </span>
-        </p>
-        <p className="text-sm">{k.steps[step]}</p>
-        <div className="flex items-center justify-between gap-2">
-          <button
-            type="button"
-            className="hit label text-info underline underline-offset-2"
-            onClick={() => {
-              done();
-              onGuide();
-            }}
-          >
-            {k.guide}
-          </button>
-          <button
-            type="button"
-            className="hit label rounded-full bg-info px-3 py-1 text-ink"
-            onClick={() => (last ? done() : setStep(step + 1))}
-          >
-            {last ? k.done : k.next}
-          </button>
-        </div>
-      </div>
+      <LorenzoCard
+        portrait={<Lorenzo size={40} />}
+        name={k.who}
+        aside={`${step + 1}/${k.steps.length}`}
+        foot={
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <Slab
+              tone="text"
+              size="sm"
+              className="-ml-2"
+              onClick={() => {
+                done();
+                onGuide();
+              }}
+            >
+              {k.guide}
+            </Slab>
+            <Slab size="sm" tone="ghost" onClick={() => (last ? done() : setStep(step + 1))}>
+              {last ? k.done : k.next}
+            </Slab>
+          </div>
+        }
+      >
+        <p className="mt-1 text-sm leading-snug">{k.steps[step]}</p>
+      </LorenzoCard>
     </div>
   );
 }

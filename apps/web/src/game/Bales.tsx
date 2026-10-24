@@ -158,7 +158,7 @@ export function BaleScreen(props: GameProps) {
           <h2 className="font-display text-xl font-extrabold uppercase">{t.title}</h2>
         </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-night-3 px-3 py-1 font-mono text-xs text-cream-dim ring-1 ring-inset ring-line">
+          <span className="rounded-full bg-night-3 px-3 py-1 font-sans text-xs text-cream-dim ring-1 ring-inset ring-line">
             {t.count(b.available, b.max)}
           </span>
           <CloseButton onClick={close} />
@@ -443,7 +443,7 @@ function Odds({ bales, props }: { bales: BalesView; props: GameProps }) {
                 <span className="text-sm font-semibold" style={{ color: look.frame }}>
                   {t.rarity[o.rarity] ?? o.rarity}
                 </span>
-                <span className="font-mono text-xs text-cream">
+                <span className="font-sans text-xs text-cream">
                   {pct(o.chanceBps)} <span className="text-muted">{t.perCard}</span>
                 </span>
               </div>
@@ -455,7 +455,7 @@ function Odds({ bales, props }: { bales: BalesView; props: GameProps }) {
                   </span>
                 ))}
               </div>
-              <p className="mt-1 font-mono text-xs text-muted">
+              <p className="mt-1 font-sans text-xs text-muted">
                 {o.quantities
                   .filter((q) => q.chanceBps > 0)
                   .map((q) => `${t.units(q.quantity)} ${pct(q.chanceBps)}`)

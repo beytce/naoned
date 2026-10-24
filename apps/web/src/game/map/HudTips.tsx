@@ -9,7 +9,7 @@ import { onBack } from "../back.js";
  * the map touched, the card fades away. One at a time.
  */
 
-export type TipKey = "cash" | "influence" | "bread";
+export type TipKey = "cash" | "influence" | "bread" | "troops";
 export type TipTone = "gold" | "gold-soft" | "cream" | "lagoon";
 
 export interface TipContent {
@@ -60,15 +60,21 @@ export function usePresence<T>(value: T | null, ms: number): { shown: T | null; 
   return { shown: value ?? last, leaving: value === null && last !== null };
 }
 
-/** The open card: closes on the phone's back button too. */
+/** The open card: closes on the phone's back button and on Escape too, as a window does. */
 export function useTip() {
   const [tip, setTip] = useState<TipKey | null>(null);
   useEffect(() => {
     if (!tip) return;
-    return onBack(() => {
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setTip(null);
+    window.addEventListener("keydown", esc);
+    const stopBack = onBack(() => {
       setTip(null);
       return true;
     });
+    return () => {
+      window.removeEventListener("keydown", esc);
+      stopBack();
+    };
   }, [tip]);
   return [tip, setTip] as const;
 }
@@ -103,11 +109,11 @@ export function HudTip({
           <dl className="space-y-0.5 border-t border-line pt-2">
             {content.lines.map((l) => (
               <div key={l.label} className="flex items-baseline justify-between gap-3">
-                <dt className="font-mono text-xs uppercase tracking-[0.06em] text-cream-dim">
+                <dt className="min-w-0 font-mono text-xs uppercase tracking-[0.06em] text-cream-dim">
                   {l.label}
                 </dt>
                 <dd
-                  className={`font-mono text-xs tabular-nums ${
+                  className={`shrink-0 whitespace-nowrap font-sans text-xs tabular-nums ${
                     l.tone === "vermilion"
                       ? "text-vermilion"
                       : l.tone === "gold"
@@ -246,10 +252,16 @@ export function FleetDrawer({
   const t = fr.game.map.fleet;
   useEffect(() => {
     if (!open) return;
-    return onBack(() => {
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", esc);
+    const stopBack = onBack(() => {
       onClose();
       return true;
     });
+    return () => {
+      window.removeEventListener("keydown", esc);
+      stopBack();
+    };
   }, [open, onClose]);
   return (
     <section
@@ -286,7 +298,7 @@ export function FleetDrawer({
                 <span className="block truncate font-display text-sm font-semibold">{l.name}</span>
                 <span className="block truncate text-xs text-cream-dim">{l.status}</span>
               </span>
-              <span className="shrink-0 font-mono text-xs text-cream-dim">
+              <span className="shrink-0 font-sans text-xs text-cream-dim">
                 {t.capacity(l.capacity)}
               </span>
             </button>

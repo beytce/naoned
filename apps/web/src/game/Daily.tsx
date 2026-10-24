@@ -20,13 +20,13 @@ export function Daily(props: GameProps) {
       </div>
       <ul className="mt-3 space-y-2">
         {daily.tasks.map((task) => (
-          <li key={task.id} className="flex items-center gap-3">
+          <li key={task.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span
               className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${task.claimed ? "bg-lagoon text-on-lagoon" : task.done ? "bg-gold text-ink" : "bg-night-4 text-cream-dim ring-1 ring-inset ring-line"}`}
             >
               {task.claimed ? "✓" : `${task.progress}/${task.count}`.replace(/^(\d)\/1$/, "$1")}
             </span>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-[9rem] flex-1">
               <p
                 className={`text-sm [overflow-wrap:anywhere] ${task.claimed ? "text-cream-dim line-through" : ""}`}
               >
@@ -45,7 +45,7 @@ export function Daily(props: GameProps) {
               </span>
             </div>
             {!task.done && !task.claimed && spend && (
-              // A short sign, the whole action read aloud: the task's words keep the room.
+              // A short word, the whole action read aloud: the task's words keep the room.
               <Slab
                 size="sm"
                 tone="ghost"
@@ -66,6 +66,12 @@ export function Daily(props: GameProps) {
               >
                 {t.claim}
               </Slab>
+            )}
+            {/* The change switched off says why, never silent, across the whole line. */}
+            {!task.done && !task.claimed && spend && (props.influence ?? 0) < spend.dailyReroll && (
+              <span className="meta basis-full">
+                {fr.game.house.spend.rerollNeed(spend.dailyReroll)}
+              </span>
             )}
           </li>
         ))}

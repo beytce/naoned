@@ -136,3 +136,16 @@ export function outOfSheet(el: Target, viewHeight: number): boolean {
   const y = b.top + b.height / 2;
   return y < sheetTop(sheet) || y > Math.min(viewHeight, s.bottom);
 }
+
+/**
+ * The ring around a target and what goes with it (`data-coach-with`: the counter's name under its
+ * medallion): one box holding them all.
+ */
+export function unionBox(boxes: Rect[]): Rect | null {
+  if (boxes.length === 0) return null;
+  const left = Math.min(...boxes.map((b) => b.left));
+  const top = Math.min(...boxes.map((b) => b.top));
+  const right = Math.max(...boxes.map((b) => b.right));
+  const bottom = Math.max(...boxes.map((b) => b.bottom));
+  return { left, top, right, bottom, width: right - left, height: bottom - top };
+}

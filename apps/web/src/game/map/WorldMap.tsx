@@ -18,6 +18,7 @@ import {
   roadCurve,
 } from "../../art/veneto.js";
 import { PortolanTerrain } from "./Terrain.js";
+import { type Label, type Placement, declutter } from "./declutter.js";
 import {
   type Box,
   type Camera,
@@ -28,6 +29,7 @@ import {
   boxOf,
   clampCamera,
   fitLands,
+  fitTerra,
   landFrames,
   parkingAngle,
   parkingSpots,
@@ -73,6 +75,18 @@ export interface MapMarker {
   trip?: CartTrip | null;
   /** Where it stands now, in map units, when the screen places it. */
   at?: { x: number; y: number; flip?: boolean } | null;
+  /**
+   * Kept clear of the other labels (declutter.ts): 0 always shown where it stands, the larger the
+   * sooner moved aside or hidden. Without one, the marker is drawn as it is.
+   */
+  priority?: number;
+  /** Shown from this zoom on (0 the whole map, 1 closer, 2 closest): `data-tier` on its node. */
+  tier?: 0 | 1 | 2;
+}
+
+/** The zoom's tier, from the scale over the whole map's: 0 under 1.4, 1 under 2.2, else 2. */
+export function zoomTier(k: number): 0 | 1 | 2 {
+  return k < 1.4 ? 0 : k < 2.2 ? 1 : 2;
 }
 
 export interface WorldMapHandle {
@@ -80,6 +94,8 @@ export interface WorldMapHandle {
   show: (key: string) => void;
   /** The whole map again. */
   fit: () => void;
+  /** The layer's opening frame again (the Terraferma: the merchant's own land). */
+  focus: () => void;
 }
 
 /** Where a delivery stands on its road: 0 at the counter, 1 at the city, back to 0. */
@@ -121,6 +137,11 @@ export const WorldMap = forwardRef<
      * map's western edge (Lombardy, Bruges) are a pan away.
      */
     spots: { key: string; x: number; y: number }[];
+    /**
+     * Where the Terraferma opens, in map units: the merchant's land and what lies around it (none:
+     * the whole map).
+     */
+    focus?: { x: number; y: number }[];
     /** Drawn under the markers, in map units (the campaign's territories and marches). */
     overlay?: ReactNode;
     markers: MapMarker[];
@@ -146,6 +167,14 @@ export const WorldMap = forwardRef<
   const nodes = useRef(new Map<string, HTMLElement>());
   const cam = useRef<Camera>({ s: 0.4, tx: 0, ty: 0 });
   const fitted = useRef<Camera | null>(null);
+  // The labels kept apart: where each goes, measured again when the zoom changes.
+  const placement = useRef<Placement>(new Map());
+  const measured = useRef<{
+    s: number;
+    markers: unknown;
+    sizes: Map<string, { cx: number; cy: number; w: number; h: number }>;
+    hud: { x0: number; x1: number; y0: number; y1: number }[];
+  } | null>(null);
   const anim = useRef<{ from: Camera; to: Camera; start: number; ms: number } | null>(null);
   const velocity = useRef<{ x: number; y: number } | null>(null);
   const frame = useRef(0);
@@ -206,7 +235,10 @@ export const WorldMap = forwardRef<
   /** Where a marker stands now, in world pixels. */
   const where = useCallback(
     (key: string, now: number): { p: Point; flip: boolean } | null => {
-      const fixed = places.current[key];
+      // A city's name stands where its city does.
+      const fixed =
+        places.current[key] ??
+        (key.startsWith("cityname:") ? places.current[`city:${key.slice(9)}`] : undefined);
       if (fixed) return { p: fixed, flip: false };
       const marker = live.current.markers.find((m) => m.key === key);
       if (marker?.at) return { p: toWorld([marker.at.x, marker.at.y]), flip: !!marker.at.flip };
@@ -245,16 +277,89 @@ export const WorldMap = forwardRef<
     if (ground.current) ground.current.style.transform = t;
     if (lines.current) lines.current.style.transform = t;
     const now = Date.now() + live.current.clockOffset;
+    const tier = String(zoomTier(fitted.current ? c.s / fitted.current.s : 1));
+    if (root.current && root.current.dataset.zoom !== tier) root.current.dataset.zoom = tier;
+    const shown = new Map<string, Point>();
     for (const [key, el] of nodes.current) {
       const at = where(key, now);
       if (!at) {
         el.style.visibility = "hidden";
         continue;
       }
-      const q = project(c, at.p);
-      el.style.visibility = "visible";
-      el.style.transform = `translate3d(${q.x.toFixed(1)}px, ${q.y.toFixed(1)}px, 0)`;
+      shown.set(key, project(c, at.p));
       el.dataset.flip = at.flip ? "1" : "0";
+    }
+    const place = (key: string, el: HTMLElement, q: Point) => {
+      const p = placement.current.get(key);
+      el.style.visibility = p === null ? "hidden" : "visible";
+      el.style.transform = `translate3d(${(q.x + (p?.dx ?? 0)).toFixed(1)}px, ${(q.y + (p?.dy ?? 0)).toFixed(1)}px, 0)`;
+    };
+    // The labels kept apart. Their sizes (around their anchor) and the HUD's blocks are measured
+    // when the zoom or the labels change; a pan only moves them, laid out again from those.
+    const markers = live.current.markers;
+    const ranked = new Map(
+      markers.flatMap((m) => (m.priority === undefined ? [] : [[m.key, m.priority] as const])),
+    );
+    if (ranked.size === 0) {
+      placement.current = new Map();
+    } else {
+      const last = measured.current;
+      if (!last || last.markers !== markers || Math.abs(last.s - c.s) > c.s * 0.002) {
+        // Measured where they stand, none moved aside.
+        placement.current = new Map();
+        for (const [key, q] of shown) {
+          const el = nodes.current.get(key);
+          if (el) place(key, el, q);
+        }
+        const box = root.current?.getBoundingClientRect();
+        const ox = box?.left ?? 0;
+        const oy = box?.top ?? 0;
+        const sizes = new Map<string, { cx: number; cy: number; w: number; h: number }>();
+        for (const key of ranked.keys()) {
+          const el = nodes.current.get(key);
+          const q = shown.get(key);
+          if (!el || !q) continue;
+          // The marker and the words it hangs around it, as one box.
+          const parts = [el.firstElementChild, ...el.querySelectorAll("[data-map-label]")];
+          let x0 = Number.POSITIVE_INFINITY;
+          let y0 = Number.POSITIVE_INFINITY;
+          let x1 = Number.NEGATIVE_INFINITY;
+          let y1 = Number.NEGATIVE_INFINITY;
+          for (const part of parts) {
+            const r = part?.getBoundingClientRect();
+            if (!r || r.width === 0) continue;
+            x0 = Math.min(x0, r.left);
+            y0 = Math.min(y0, r.top);
+            x1 = Math.max(x1, r.right);
+            y1 = Math.max(y1, r.bottom);
+          }
+          if (x1 <= x0) continue;
+          sizes.set(key, {
+            cx: (x0 + x1) / 2 - ox - q.x,
+            cy: (y0 + y1) / 2 - oy - q.y,
+            w: x1 - x0,
+            h: y1 - y0,
+          });
+        }
+        const hud = [...document.querySelectorAll("[data-hud]")]
+          .map((el) => el.getBoundingClientRect())
+          .filter((r) => r.width > 0)
+          .map((r) => ({ x0: r.left - ox, x1: r.right - ox, y0: r.top - oy, y1: r.bottom - oy }));
+        measured.current = { s: c.s, markers, sizes, hud };
+      }
+      const { sizes, hud } = measured.current as NonNullable<typeof measured.current>;
+      const labels: Label[] = [];
+      for (const [key, size] of sizes) {
+        const q = shown.get(key);
+        const priority = ranked.get(key);
+        if (!q || priority === undefined) continue;
+        labels.push({ key, x: q.x + size.cx, y: q.y + size.cy, w: size.w, h: size.h, priority });
+      }
+      placement.current = declutter(labels, hud);
+    }
+    for (const [key, q] of shown) {
+      const el = nodes.current.get(key);
+      if (el) place(key, el, q);
     }
   }, [where]);
 
@@ -307,6 +412,25 @@ export const WorldMap = forwardRef<
     return f;
   }, [box, fitBox, viewport]);
 
+  // Where a layer opens: the Terraferma on the merchant's own land and around it (read when it
+  // opens, so that his land growing does not move the camera), any other on its whole map.
+  const opened = useRef<Camera | null>(null);
+  const opening = useCallback(() => {
+    const whole = fit();
+    const near = live.current.focus;
+    const cam =
+      live.current.layer === "terra" && near && near.length > 0
+        ? fitTerra(
+            boxOf(near.map((p) => toWorld([p.x, p.y]))),
+            box,
+            viewport(),
+            padded(live.current.insets, true),
+          )
+        : whole;
+    opened.current = cam;
+    return cam;
+  }, [fit, box, viewport]);
+
   useImperativeHandle(
     ref,
     () => ({
@@ -326,26 +450,27 @@ export const WorldMap = forwardRef<
         if (next !== base) easeTo(next);
       },
       fit: () => easeTo(fit()),
+      focus: () => easeTo(opening()),
     }),
-    [where, easeTo, fit, viewport],
+    [where, easeTo, fit, opening, viewport],
   );
 
   // First fit; a new layer glides to its own frame; again when the screen turns or resizes.
   const framed = useRef(false);
   useLayoutEffect(() => {
-    if (framed.current) easeTo(fit(), 560);
+    if (framed.current) easeTo(opening(), 560);
     else {
-      cam.current = fit();
+      cam.current = opening();
       paint();
       framed.current = true;
     }
     const onResize = () => {
-      cam.current = fit();
+      cam.current = opening();
       paint();
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [fit, paint, easeTo]);
+  }, [opening, paint, easeTo]);
 
   // The HUD grew or shrank over the map (the rival's line came, a line of the Terraferma's note
   // wrapped): the map framed again in the room left, unless the player has moved it.
@@ -354,15 +479,15 @@ export const WorldMap = forwardRef<
   useEffect(() => {
     if (lastTop.current === topInset) return;
     lastTop.current = topInset;
-    const before = fitted.current;
+    const before = opened.current;
     const at = anim.current?.to ?? cam.current;
     const framedThere =
       !before ||
       (Math.abs(at.s - before.s) <= before.s * 0.001 &&
         Math.abs(at.tx - before.tx) < 1 &&
         Math.abs(at.ty - before.ty) < 1);
-    if (framedThere) easeTo(fit(), 300);
-  }, [topInset, fit, easeTo]);
+    if (framedThere) easeTo(opening(), 300);
+  }, [topInset, opening, easeTo]);
 
   // New markers, trips or selection: place them, and keep the frames going if carts roll.
   useEffect(() => {
@@ -604,7 +729,15 @@ export const WorldMap = forwardRef<
           ref={register(m.key)}
           data-marker={m.key}
           data-selected={props.selectedKey === m.key ? "1" : undefined}
-          className={`map-marker animate-fade absolute left-0 top-0 ${m.key.startsWith("cart:") ? "z-[3]" : "z-[2]"}`}
+          data-tier={m.tier}
+          className={`map-marker animate-fade absolute left-0 top-0 ${
+            // A city and its name over the carts on their road: a cart never hides a name.
+            m.key.startsWith("cityname:") || m.priority === 0
+              ? "z-[4]"
+              : m.key.startsWith("cart:")
+                ? "z-[3]"
+                : "z-[2]"
+          }`}
           style={{ visibility: "hidden" }}
         >
           {m.node}

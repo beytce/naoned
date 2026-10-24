@@ -47,6 +47,13 @@ const COVERED = /fermez cette fenêtre/i;
 const LEDGER = /voici votre livre de compte/i;
 const LEDGER_LATER = /votre livre de compte, sous la cloche/i;
 const BRAVO = /bravo, vous connaissez la boucle/i;
+// A Thursday of 40 merchants on the Terraferma (e2e/fixtures/make-terra-midweek.ts).
+const MIDWEEK = JSON.parse(
+  readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "fixtures", "terra-midweek.json"),
+    "utf8",
+  ),
+);
 
 let base = process.env.BASE_URL;
 let log = process.env.SERVER_LOG;
@@ -126,7 +133,9 @@ async function stopServer(child) {
 async function startServer() {
   const serverDir = join(here, "..", "..", "server");
   const tsx = createRequire(join(serverDir, "package.json")).resolve("tsx/cli");
-  const port = 3100 + Math.floor(Math.random() * 800);
+  // Never 3659: Chromium refuses it (net::ERR_UNSAFE_PORT).
+  let port = 3659;
+  while (port === 3659) port = 3100 + Math.floor(Math.random() * 800);
   const url = `http://127.0.0.1:${port}`;
   mkdirSync(SHOTS, { recursive: true });
   const file = join(SHOTS, "server.log");
@@ -221,6 +230,15 @@ async function session(width, height, tag) {
     const email = `e2e-${width}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.org`;
     await page.goto(base);
     await check("connexion");
+    // On the short phone (an iPhone SE), the address field and its button above the fold; a tall
+    // one shows Venice's sky first.
+    const fold = await page.evaluate(() => {
+      const field = document.querySelector("input[type=email]")?.getBoundingClientRect();
+      const send = document.querySelector("form button[type=submit]")?.getBoundingClientRect();
+      return field && send ? Math.max(field.bottom, send.bottom) - innerHeight : 1;
+    });
+    if (height < 700 && fold > 0)
+      throw new Error(`${label}: the sign-in's button ${Math.round(fold)} px under the fold`);
     await page.fill("input[type=email]", email);
     await page.keyboard.press("Enter");
     // The narrow phone signs in with the mail's code, typed in the page (an installed app on an
@@ -238,7 +256,8 @@ async function session(width, height, tag) {
     await page.waitForSelector("input[autocomplete=nickname]");
     await check("nom");
     // Longer than ten letters: its cut is measured on the map.
-    await page.fill("input", `e2e_${width}_${Math.floor(Math.random() * 1e6)}`);
+    const pseudo = `e2e_${width}_${Math.floor(Math.random() * 1e6)}`;
+    await page.fill("input", pseudo);
     await page.keyboard.press("Enter");
     await page.getByRole("button", { name: /passer/i }).waitFor();
     await check("introduction");
@@ -286,6 +305,7 @@ async function session(width, height, tag) {
       throw new Error(`${label}: the Terraferma's note says « ${said} », not its truce`);
     await check("terraferme-treve");
     await teamWeek(page, door, check);
+    await midWeek(page, door, check, pseudo);
     await door.click();
     await page.waitForTimeout(1000);
 
@@ -453,16 +473,27 @@ async function teamWeek(page, door, check) {
       endsAt: null,
     });
   });
-  expect(riding, "the team", /équipe · terraferma/i);
+  // Two lines: what presses most (Milan on the merchant), then the team.
+  expect(riding, "the team", /équipe · vénétie/i);
   expect(riding, "Milan riding against the merchant", /sur vous/i);
-  expect(riding, "the battle's hour", /bataille à 20 h/i);
   await check("terraferme-equipes");
+
+  const calm = await show((v) => {
+    Object.assign(v, {
+      placementEndsAt: null,
+      truceEndsAt: null,
+      open: true,
+      battle: { from: 20, to: 21, on: false },
+    });
+    v.fronts = v.fronts.filter((f) => !f.threat);
+  });
+  expect(calm, "the battle's hour", /bataille à 20 h/i);
 
   const won = await show((v) => {
     v.rules.team = TEAM;
     v.closed = { signore: -1, conquest: false, teams: [{ team: TEAM, glory: 40, cells: 12 }] };
   });
-  expect(won, "the team that won", /terraferma l'emporte/i);
+  expect(won, "the team that won", /vénétie l'emporte/i);
   await check("terraferme-equipes-close");
   await page.unroute("**/api/game/terra");
 }
@@ -506,6 +537,145 @@ async function npcRival(page, check) {
   if (!/\+/.test(seen.text)) throw new Error(`the rival's gap is cut: « ${seen.text} »`);
   await check("rival-pnj");
   await page.unroute("**/api/game");
+}
+
+/**
+ * The Terraferma on a Thursday of 40 merchants, the merchant third by land: the map and the HUD
+ * where they are the most loaded, on the phone and on a PC. The frozen week (its view and its
+ * replay) is served in place of the server's, its times moved once onto the server's clock and its
+ * merchant named after the account.
+ */
+async function midWeek(page, door, check, pseudo) {
+  const serverNow = await page.evaluate(() =>
+    fetch("/api/game")
+      .then((r) => r.json())
+      .then((j) => j.serverTime),
+  );
+  const delta = serverNow - MIDWEEK.now;
+  const moved = (v) => {
+    if (Array.isArray(v)) return v.map(moved);
+    if (v && typeof v === "object")
+      return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, moved(x)]));
+    // Instants only: the week's are between 2001 and 2033.
+    return typeof v === "number" && v > 1e12 && v < 2e12 ? v + delta : v;
+  };
+  const named = (v) => {
+    for (const h of v.holders) if (h.me) h.pseudo = pseudo;
+    return v;
+  };
+  const terra = named(moved(MIDWEEK.terra));
+  const replay = named(moved(MIDWEEK.replay));
+  await page.unroute("**/api/game/terra");
+  await page.route("**/api/game/terra", (route) => route.fulfill({ json: { terra } }));
+  await page.route("**/api/game/terra/replay", (route) => route.fulfill({ json: { replay } }));
+  const open = async () => {
+    await closeAll(page);
+    await door.click();
+    await page.waitForTimeout(500);
+    await door.click();
+    await page.waitForTimeout(1500);
+  };
+  await open();
+  await check("terraferme-jeudi");
+  await lightHud(page, "terraferme-jeudi");
+  await uncluttered(page, "terraferme-jeudi", 30);
+  // The same on a PC, then back to the phone.
+  const phone = page.viewportSize();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.waitForTimeout(1200);
+  await check("terraferme-jeudi-pc");
+  await lightHud(page, "terraferme-jeudi-pc");
+  await uncluttered(page, "terraferme-jeudi-pc", 80);
+  // A card of the HUD closes on Escape, as a window does.
+  const purse = page.locator("[data-hud] button[aria-label]").filter({ hasText: /\d/ }).first();
+  if ((await purse.count()) > 0) {
+    await purse.click();
+    await page.waitForTimeout(400);
+    if ((await page.locator(".hud-tip").count()) === 0)
+      throw new Error("terraferme-jeudi-pc: no card opened from the HUD");
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(400);
+    if ((await page.locator(".hud-tip").count()) > 0)
+      throw new Error("terraferme-jeudi-pc: Escape left the HUD's card open");
+  }
+  if (phone) await page.setViewportSize(phone);
+  await page.waitForTimeout(800);
+  await page.unroute("**/api/game/terra");
+  await page.unroute("**/api/game/terra/replay");
+}
+
+/**
+ * The Terraferma's HUD kept light (the owner's word of 24 October 2026): its band ends high, two
+ * blocks at most under the purse, its actions at the thumb at the bottom right, no link
+ * underlined.
+ */
+async function lightHud(page, label) {
+  const seen = await page.evaluate(() => {
+    const visible = (el) => el.getClientRects().length > 0;
+    const right = ["troops", "terra-note"].filter((k) =>
+      [...document.querySelectorAll(`[data-hud="${k}"]`)].some(visible),
+    );
+    const top = [...document.querySelectorAll("[data-hud]")]
+      .filter((el) => visible(el) && !el.closest("[data-hud=actions]"))
+      .filter((el) => el.getBoundingClientRect().top < innerHeight / 2)
+      .map((el) => el.getBoundingClientRect().bottom);
+    const actions = document.querySelector("[data-hud=actions]");
+    return {
+      band: Math.max(0, ...top),
+      right,
+      underlined: [...document.querySelectorAll("[data-hud] *")].filter(
+        (el) => visible(el) && getComputedStyle(el).textDecorationLine.includes("underline"),
+      ).length,
+      actions: actions ? actions.getBoundingClientRect().top / innerHeight : null,
+      cut: [...(actions?.querySelectorAll("button") ?? [])].filter(
+        (b) => b.getBoundingClientRect().right > innerWidth + 0.5,
+      ).length,
+      width: innerWidth,
+    };
+  });
+  // The purse, the troops and a plaque of two lines: from 235 px before (24 October 2026). On a
+  // PC the right column holds three lines of text at most.
+  const most = seen.width >= 1024 ? 200 : 160;
+  if (seen.band > most)
+    throw new Error(
+      `${label}: the HUD's band ends at ${Math.round(seen.band)} px, ${most} at most`,
+    );
+  if (seen.underlined > 0) throw new Error(`${label}: ${seen.underlined} link(s) underlined`);
+  if (seen.cut > 0) throw new Error(`${label}: ${seen.cut} action(s) past the screen's edge`);
+  if (seen.actions === null || seen.actions < 0.5)
+    throw new Error(`${label}: the skirmishes and the week not at the thumb`);
+}
+
+/**
+ * The Terraferma's map legible with 40 merchants: no two labels shown over each other (by more than
+ * 2 px; the words of one marker aside), and no more of them than a screen can read.
+ */
+async function uncluttered(page, label, most) {
+  const seen = await page.evaluate(() => {
+    const boxes = [...document.querySelectorAll(".map-marker")]
+      .filter((m) => getComputedStyle(m).visibility !== "hidden" && m.getClientRects().length > 0)
+      .flatMap((m) =>
+        [...m.querySelectorAll("[data-map-label]")]
+          .map((el) => ({ m, el, r: el.getBoundingClientRect() }))
+          .filter(({ r }) => r.width > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0),
+      );
+    const over = [];
+    for (let i = 0; i < boxes.length; i++)
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i];
+        const b = boxes[j];
+        if (a.m === b.m) continue;
+        const w = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left);
+        const h = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
+        if (w > 2 && h > 2)
+          over.push(`« ${a.el.textContent?.trim()} » over « ${b.el.textContent?.trim()} »`);
+      }
+    return { over, count: new Set(boxes.map((b) => b.m)).size };
+  });
+  if (seen.over.length > 0)
+    throw new Error(`${label}: labels over each other: ${seen.over.join(", ")}`);
+  if (seen.count > most)
+    throw new Error(`${label}: ${seen.count} labels on the map, ${most} at most`);
 }
 
 /** The workshops' window opened: each workshop's button, its recipe raw or transforming. */

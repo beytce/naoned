@@ -7,6 +7,7 @@ import "@fontsource/space-grotesk/500.css";
 import "@fontsource/space-grotesk/700.css";
 import "@fontsource/space-mono/400.css";
 import "@fontsource/space-mono/700.css";
+import "@fontsource/cinzel/latin-700.css";
 import "./index.css";
 import { applyPalette } from "./theme.js";
 

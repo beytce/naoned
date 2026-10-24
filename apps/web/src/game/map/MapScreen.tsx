@@ -58,18 +58,20 @@ import {
   type TipKey,
   usePresence,
 } from "./HudTips.js";
-import { CartMarker, CityMarker, HomeMarker } from "./Markers.js";
+import { CartMarker, CityMarker, CityName, HomeMarker } from "./Markers.js";
 import { NoticesSheet } from "./Notices.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
 import { SIDE_W, SideColumn } from "./SideColumn.js";
 import {
   SkirmishBar,
+  TerraActions,
   TerraHud,
   TerraIntro,
   TerraOverlay,
   TerraPanel,
   TerraSheets,
   terraCalls,
+  terraFocus,
   terraMarkers,
   terraSpots,
   terraTap,
@@ -423,27 +425,39 @@ export function MapScreen(
         />
       ),
     },
-    ...cities.map((code) => {
+    ...cities.flatMap((code) => {
       const orders = openOrders.filter((o) => o.city === code);
       const deliverable = orders.filter((o) =>
         freeVehicles.some((v) => canServe(props, o, capacityOf(props, v))),
       ).length;
-      return {
-        key: `city:${code}`,
-        node: (
-          <CityMarker
-            code={code}
-            name={names.city(code)}
-            orders={orders.length}
-            deliverable={deliverable}
-            criee={criee?.city === code}
-            supplier={view.supplies.some((s) => s.city === code) ? crest : null}
-            lit={litCities.includes(code)}
-            dim={cartFree && !litCities.includes(code)}
-            onTap={() => goCity(code)}
-          />
-        ),
-      };
+      return [
+        {
+          key: `city:${code}`,
+          node: (
+            <CityMarker
+              code={code}
+              name={names.city(code)}
+              orders={orders.length}
+              deliverable={deliverable}
+              criee={criee?.city === code}
+              supplier={view.supplies.some((s) => s.city === code) ? crest : null}
+              lit={litCities.includes(code)}
+              dim={cartFree && !litCities.includes(code)}
+              onTap={() => goCity(code)}
+            />
+          ),
+        },
+        {
+          key: `cityname:${code}`,
+          node: (
+            <CityName
+              code={code}
+              name={names.city(code)}
+              dim={cartFree && !litCities.includes(code)}
+            />
+          ),
+        },
+      ];
     }),
     ...vehicles.map((v) => {
       const dv = tripOf(deliveries, v, now);
@@ -497,6 +511,15 @@ export function MapScreen(
     () => (terra && shapes ? terraSpots(terra, shapes) : null),
     [terra, shapes],
   );
+  const terraFocusList = useMemo(
+    () => (terra && shapes ? terraFocus(terra, shapes) : null),
+    [terra, shapes],
+  );
+  // The Terraferma opens on the merchant's land; its round then shows the whole map, and back.
+  const [onMine, setOnMine] = useState(true);
+  useEffect(() => {
+    if (props.layer === "terra") setOnMine(true);
+  }, [props.layer]);
   const terraCell = terra && sel?.kind === "terra" ? sel.cell : null;
   const campaignPanel = campaign ? (
     <CampaignPanel props={props} f={campaign} sel={sel} select={select} />
@@ -507,18 +530,23 @@ export function MapScreen(
   const side = wide && !campaign && !terra;
   // Where the HUD's band across the top ends: the map is framed under it on a phone.
   const [hudBand, setHudBand] = useState(0);
+  // The HUD's band for what sits under it outside the map (Lorenzo's bubble).
+  useEffect(() => {
+    if (hudBand > 0) document.documentElement.style.setProperty("--hud-top", `${hudBand}px`);
+  }, [hudBand]);
   const insets = wide
     ? // The doors at the foot of the screen (and the campaign's pledge above them) stay clear.
       {
         top: 110,
         right: (panelUp ? 460 : 40) + (side ? SIDE_W : 0),
-        bottom: (campaign && !campaign.mine) || (terra && !terra.me) ? 170 : 120,
+        // The Terraferma's actions above the doors, at the right, stay clear too.
+        bottom: (campaign && !campaign.mine) || (terra && !terra.me) ? 170 : terra ? 180 : 120,
         left: 40,
       }
     : {
         top: Math.max(campaign || terra ? 160 : 150, hudBand),
         right: 12,
-        bottom: panelUp ? 200 : 100,
+        bottom: panelUp ? 200 : terra ? 156 : 100,
         left: 12,
       };
 
@@ -630,6 +658,7 @@ export function MapScreen(
             ? campaign.lands.map((l) => ({ key: `land:${l.code}`, x: l.x, y: l.y }))
             : (terraSpotList ?? [])
         }
+        focus={terraFocusList ?? undefined}
         overlay={
           campaign ? (
             <CampaignOverlay f={campaign} now={now} />
@@ -713,14 +742,33 @@ export function MapScreen(
           campaign ? (
             <CampaignHud f={campaign} now={now} />
           ) : terra ? (
-            <TerraHud
+            <TerraHud v={terra} now={now} regions={props.catalog.regions} folded={skirmishOn} />
+          ) : undefined
+        }
+        actions={
+          // Without a camp, the invitation to set one down is the only call at the foot.
+          terra?.me && !skirmishOn ? (
+            <TerraActions
               v={terra}
-              now={now}
-              regions={props.catalog.regions}
-              onReplay={week.playing || skirmishOn ? undefined : week.start}
-              onSkirmish={skirmishOn ? undefined : () => setSkirmishOn(true)}
-              onGuide={props.openTerraGuide}
-              folded={skirmishOn}
+              extra={
+                terraFocusList && (
+                  <button
+                    type="button"
+                    data-hud="terra-locate"
+                    aria-label={onMine ? fr.game.terra.wholeMap : fr.game.terra.locate}
+                    onClick={() => {
+                      if (onMine) map.current?.fit();
+                      else map.current?.focus();
+                      setOnMine(!onMine);
+                    }}
+                    className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-night/85 text-info shadow-[0_4px_14px_rgb(0_0_0/0.45)] ring-1 ring-inset ring-info/45 backdrop-blur active:scale-95"
+                  >
+                    {onMine ? <Icon.wholeMap /> : <Icon.locate />}
+                  </button>
+                )
+              }
+              onSkirmish={() => setSkirmishOn(true)}
+              onReplay={week.playing ? undefined : week.start}
             />
           ) : undefined
         }
@@ -754,7 +802,9 @@ export function MapScreen(
         onHelp={terra ? props.openTerraGuide : props.openHelp}
       />
       {panel}
-      {terra && !skirmishOn && <TerraIntro onGuide={props.openTerraGuide} />}
+      {terra && !skirmishOn && (
+        <TerraIntro onGuide={props.openTerraGuide} top={Math.max(160, hudBand)} />
+      )}
       {terra && skirmishOn && (
         <SkirmishBar
           status={skirmish.status}
@@ -770,9 +820,25 @@ export function MapScreen(
       )}
       {side && <SideColumn props={props} onCity={goCity} />}
       {terra && absence.replaying && (
-        <span className="pointer-events-none absolute left-1/2 top-[calc(max(1rem,env(safe-area-inset-top))+7.5rem)] z-10 -translate-x-1/2 animate-fade whitespace-nowrap rounded-full bg-night/80 px-3 py-1 font-mono text-xs uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line">
+        <span
+          style={{ top: Math.max(120, hudBand) + 8 }}
+          className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 animate-fade whitespace-nowrap rounded-full bg-night/80 px-3 py-1 font-mono text-xs uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line"
+        >
           {fr.game.terra.away}
         </span>
+      )}
+      {terra && week.playing && (
+        // The week replayed is said, as the absence is, and may be skipped.
+        <button
+          type="button"
+          data-hud="terra-replaying"
+          onClick={week.stop}
+          style={{ top: Math.max(120, hudBand) + 8 }}
+          className="absolute left-1/2 z-10 flex min-h-11 -translate-x-1/2 animate-fade items-center gap-2 whitespace-nowrap rounded-full bg-night/80 px-4 font-mono text-xs uppercase tracking-[0.1em] text-cream-dim ring-1 ring-line"
+        >
+          {fr.game.terraRecord.replaying}
+          <span className="text-info">{fr.game.terraRecord.skip}</span>
+        </button>
       )}
 
       <CounterSheets {...props} />
@@ -1089,7 +1155,7 @@ function CartPanel({
   const title = (
     <>
       {vehicleName(vehicle.type)}{" "}
-      <span className="font-mono text-xs font-normal normal-case tracking-normal text-cream-dim">
+      <span className="font-sans text-xs font-normal normal-case tracking-normal text-cream-dim">
         {units}/{capacity}
       </span>
     </>
@@ -1117,12 +1183,12 @@ function CartPanel({
         title={
           <>
             {vehicleName(vehicle.type)}{" "}
-            <span className="font-mono text-xs font-normal normal-case tracking-normal text-cream-dim">
+            <span className="font-sans text-xs font-normal normal-case tracking-normal text-cream-dim">
               {trip.loaded} {props.names.resource(trip.resource).toLowerCase()}
             </span>
           </>
         }
-        chip={<span className="font-mono text-xs text-gold">{d(trip.paid ?? trip.payment)}</span>}
+        chip={<span className="font-sans text-xs text-gold">{d(trip.paid ?? trip.payment)}</span>}
         status={
           out
             ? m.cart.outbound(city, clock(trip.arriveAt - now))
@@ -1130,7 +1196,7 @@ function CartPanel({
         }
         extra={
           rush ? (
-            <p className="text-center font-mono text-xs text-gold">
+            <p className="text-center font-sans text-xs text-gold">
               {fr.game.house.spend.rushLine(out, rush.cost)}
             </p>
           ) : undefined
