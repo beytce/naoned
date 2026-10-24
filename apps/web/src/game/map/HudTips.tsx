@@ -60,15 +60,21 @@ export function usePresence<T>(value: T | null, ms: number): { shown: T | null; 
   return { shown: value ?? last, leaving: value === null && last !== null };
 }
 
-/** The open card: closes on the phone's back button too. */
+/** The open card: closes on the phone's back button and on Escape too, as a window does. */
 export function useTip() {
   const [tip, setTip] = useState<TipKey | null>(null);
   useEffect(() => {
     if (!tip) return;
-    return onBack(() => {
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setTip(null);
+    window.addEventListener("keydown", esc);
+    const stopBack = onBack(() => {
       setTip(null);
       return true;
     });
+    return () => {
+      window.removeEventListener("keydown", esc);
+      stopBack();
+    };
   }, [tip]);
   return [tip, setTip] as const;
 }
@@ -246,10 +252,16 @@ export function FleetDrawer({
   const t = fr.game.map.fleet;
   useEffect(() => {
     if (!open) return;
-    return onBack(() => {
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", esc);
+    const stopBack = onBack(() => {
       onClose();
       return true;
     });
+    return () => {
+      window.removeEventListener("keydown", esc);
+      stopBack();
+    };
   }, [open, onClose]);
   return (
     <section
