@@ -237,7 +237,7 @@ export const fr = {
       settings: "Réglages",
       campaign: {
         toCampaign: "Famille",
-        toTrade: "Commerce",
+        toTrade: "← Commerce",
         lances: "Troupes",
         marches: "Marches",
         decrees: "Décrets",

@@ -524,7 +524,8 @@ function Door({
       data-hud="door"
       aria-label={locked ? `${label} : ${locked}` : label}
       aria-disabled={locked ? true : undefined}
-      className={`pointer-events-auto relative flex w-16 flex-col items-center gap-1 transition active:scale-90 ${active ? "text-gold" : locked ? "text-muted" : "text-cream-dim"}`}
+      // The way back is written in cream, never gold: it reads as a door, not as the tab shown.
+      className={`pointer-events-auto relative flex w-16 flex-col items-center gap-1 transition active:scale-90 ${active ? "text-cream" : locked ? "text-muted" : "text-cream-dim"}`}
     >
       {why && locked && (
         <span className="absolute bottom-full mb-2 w-44 animate-fade bg-night-4 px-3 py-2 text-center text-xs leading-snug text-cream shadow-lg shadow-black/40 slab">
@@ -533,7 +534,7 @@ function Door({
         </span>
       )}
       <span
-        className={`hud-orb relative flex h-12 w-12 items-center justify-center rounded-full ${active ? "ring-2 ring-gold/70" : ""} ${locked ? "opacity-60" : ""}`}
+        className={`hud-orb relative flex h-12 w-12 items-center justify-center rounded-full ${active ? "ring-1 ring-cream/50" : ""} ${locked ? "opacity-60" : ""}`}
       >
         {children}
         {dot && (

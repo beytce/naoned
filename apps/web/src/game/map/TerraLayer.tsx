@@ -1056,7 +1056,7 @@ function TerraCity({
       </span>
       <span
         data-map-label
-        className="pointer-events-none absolute left-1/2 top-[calc(100%-8px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-cream/85 [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]"
+        className="pointer-events-none absolute left-1/2 top-[calc(100%-8px)] -translate-x-1/2 whitespace-nowrap font-place text-xs font-bold uppercase tracking-wide text-cream/85 [text-shadow:0_1px_3px_rgb(0_0_0/0.95)]"
       >
         {name}
         {house && (
