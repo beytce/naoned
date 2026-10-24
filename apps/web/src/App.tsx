@@ -94,15 +94,21 @@ export function App() {
 
 function Hero({ children }: { children: ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]">
+    // On a short screen (an iPhone SE) the form stays above the fold: a smaller medal and sky.
+    <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] [@media(max-height:700px)]:pt-4">
       <header className="flex flex-col items-center text-center">
-        <Emblem size={88} className="drop-shadow-xl" />
-        <h1 className="mt-3 font-display text-[2.6rem] font-extrabold uppercase leading-none tracking-tight text-cream">
+        <span className="hidden [@media(max-height:700px)]:block">
+          <Emblem size={56} className="drop-shadow-xl" />
+        </span>
+        <span className="[@media(max-height:700px)]:hidden">
+          <Emblem size={88} className="drop-shadow-xl" />
+        </span>
+        <h1 className="mt-3 font-display text-[2.6rem] font-extrabold uppercase leading-none tracking-tight text-cream [@media(max-height:700px)]:mt-2 [@media(max-height:700px)]:text-[2rem]">
           {fr.appName}
         </h1>
-        <Label className="mt-3">{fr.season}</Label>
+        <Label className="mt-3">{fr.seasonOf(new Date())}</Label>
       </header>
-      <Skyline className="-mx-5 mt-4 w-[calc(100%+2.5rem)] max-w-none animate-floaty" />
+      <Skyline className="-mx-5 mt-4 w-[calc(100%+2.5rem)] max-w-none animate-floaty [@media(max-height:700px)]:mt-2 [@media(max-height:700px)]:max-h-[120px]" />
       <section className="flex flex-1 flex-col justify-start pt-2">{children}</section>
       <LegalLinks className="mt-8" />
     </main>
@@ -158,9 +164,12 @@ function Login(props: {
   };
 
   return (
-    <form onSubmit={submit} className="animate-rise space-y-5">
-      <p className="text-center text-lg leading-snug text-cream-dim">{fr.tagline}</p>
-      <ul className="space-y-1 text-sm text-cream-dim">
+    // On a short screen the promises go under the button: the field and « Valider » in sight.
+    <form onSubmit={submit} className="flex animate-rise flex-col gap-5">
+      <p className="text-center text-lg leading-snug text-cream-dim [@media(max-height:700px)]:text-base">
+        {fr.tagline}
+      </p>
+      <ul className="space-y-1 text-sm text-cream-dim [@media(max-height:700px)]:order-last">
         {fr.promises.map((p) => (
           <li key={p} className="flex gap-2">
             <span className="text-info">✦</span>

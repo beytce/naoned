@@ -230,6 +230,15 @@ async function session(width, height, tag) {
     const email = `e2e-${width}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.org`;
     await page.goto(base);
     await check("connexion");
+    // On the short phone (an iPhone SE), the address field and its button above the fold; a tall
+    // one shows Venice's sky first.
+    const fold = await page.evaluate(() => {
+      const field = document.querySelector("input[type=email]")?.getBoundingClientRect();
+      const send = document.querySelector("form button[type=submit]")?.getBoundingClientRect();
+      return field && send ? Math.max(field.bottom, send.bottom) - innerHeight : 1;
+    });
+    if (height < 700 && fold > 0)
+      throw new Error(`${label}: the sign-in's button ${Math.round(fold)} px under the fold`);
     await page.fill("input[type=email]", email);
     await page.keyboard.press("Enter");
     // The narrow phone signs in with the mail's code, typed in the page (an installed app on an

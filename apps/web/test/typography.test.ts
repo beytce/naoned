@@ -57,6 +57,8 @@ const TITLES = new Set([
   "fr.game.acts.kicker",
   "fr.game.week.kicker",
   "fr.game.season.closed",
+  // « Venise 1450 · saison d'octobre »: the season's name, its month.
+  "fr.seasonOf",
   "fr.game.level",
   "fr.game.upgradeTo",
   "fr.game.workshop.upgradeLater",

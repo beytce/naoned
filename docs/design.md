@@ -16,6 +16,8 @@ Logo officiel (depuis le 18 octobre 2026) : le lion ailé de saint Marc, de face
   - `Logotype` : le logo et « Fondaco » côte à côte, dans la barre latérale sur PC.
 - **Ducat** : pièce or frappée du galion du logo sur ses vagues (`Coin`).
 
+Dans le jeu, le lion ailé se montre en **médaille ronde** (`Emblem`) : le cercle recadre le carré sombre de la source, qui n'est jamais redessinée. Sous le logo, « Venise 1450 · saison d'octobre » : une saison est un mois civil, l'année civile n'y figure pas. Sur un écran court (moins de 700 px de haut), l'accueil réduit la médaille et le ciel et passe les promesses sous le bouton : le champ et « Recevoir mon code » restent au-dessus du pli.
+
 ## Palettes
 
 Trois palettes, mêmes rôles aux mêmes endroits, au choix du joueur dans le Profil (mémorisé sur l'appareil) : « Lagune & Ducat », bleu nuit et par défaut depuis le 20 octobre 2026 (le brun de Noyer était jugé trop sombre et peu accueillant par le porteur, qui demandait de se rapprocher du bleu des jeux spatiaux mobiles), « Noyer & Ducat », sombre (l'intérieur du fondaco à la lueur des lampes), et « Parchemin & Lapis », claire, pour le plein jour. « Or de Venise » reste réservée au Pass. Seule une palette choisie par le joueur est gardée : un appareil qui avait seulement retenu l'ancien défaut passe à Lagune. La carte (portulan, `Terrain.tsx`) est elle aussi passée au bleu : terres ardoise, eaux bleu profond, encre cyan pâle. Les couleurs sont des variables CSS (`index.css`, `[data-palette]`) lues par Tailwind (`tailwind.config.js`).

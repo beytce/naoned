@@ -26,7 +26,7 @@ export function Daily(props: GameProps) {
             >
               {task.claimed ? "✓" : `${task.progress}/${task.count}`.replace(/^(\d)\/1$/, "$1")}
             </span>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-[9rem] flex-1">
               <p
                 className={`text-sm [overflow-wrap:anywhere] ${task.claimed ? "text-cream-dim line-through" : ""}`}
               >

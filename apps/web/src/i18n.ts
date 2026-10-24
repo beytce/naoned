@@ -10,7 +10,11 @@ const skirmishInterrupted =
 
 export const fr = {
   appName: "Fondaco",
-  season: "Saison 1 · Venise 1450",
+  /** « Venise 1450 · saison d'octobre »: a season is a calendar month (Paris), its year left out. */
+  seasonOf: (at: Date) => {
+    const month = at.toLocaleDateString("fr-FR", { month: "long", timeZone: "Europe/Paris" });
+    return `Venise 1450 · saison ${/^[aeiou]/i.test(month) ? "d'" : "de "}${month}`;
+  },
   tagline: "Bâtissez une maison de commerce en un mois, sur un marché tenu par les joueurs.",
   /** What sets the game apart, under the tagline. */
   promises: [

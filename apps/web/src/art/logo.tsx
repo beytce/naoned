@@ -6,18 +6,26 @@
 const LOGO = "/icons/logo-256.webp";
 
 /** The logo, on its rounded tile (as the app icon). */
+/**
+ * The winged lion's medal, round: the source's dark square cropped away by the circle (design.md:
+ * the logo is never redrawn, only framed).
+ */
 export function Emblem({ size = 64, className = "" }: { size?: number; className?: string }) {
   return (
-    <img
-      src={LOGO}
-      width={size}
-      height={size}
-      alt=""
+    <span
       aria-hidden="true"
-      draggable={false}
-      className={`select-none ${className}`}
+      className={`inline-block shrink-0 overflow-hidden rounded-full ${className}`}
       style={{ width: size, height: size }}
-    />
+    >
+      <img
+        src={LOGO}
+        width={size}
+        height={size}
+        alt=""
+        draggable={false}
+        className="h-full w-full scale-[1.18] select-none"
+      />
+    </span>
   );
 }
 

@@ -19,7 +19,7 @@ export function Help(props: GameProps & { onClose: () => void }) {
     >
       <div className="mx-auto max-w-md space-y-6 px-5 pb-12 pt-[max(1.5rem,env(safe-area-inset-top))]">
         <div className="flex items-center justify-between">
-          <Label className="text-cream-dim">{fr.season}</Label>
+          <Label className="text-cream-dim">{fr.seasonOf(new Date(props.now))}</Label>
           <CloseButton onClick={props.onClose} />
         </div>
         <h1 className="font-display text-3xl font-extrabold uppercase">{fr.game.help}</h1>
