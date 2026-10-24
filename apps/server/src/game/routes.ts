@@ -18,7 +18,7 @@ import type { Db } from "../db/client.js";
 import { accounts, players, pushSubscriptions, telemetry } from "../db/schema.js";
 import { NOTIFICATION_KINDS, type NotificationKind, type Notifier } from "../notify/notifier.js";
 import { isPushEndpoint } from "../notify/push.js";
-import { retention, suspiciousPairs } from "./admin.js";
+import { retention, sharedMailboxes, suspiciousPairs } from "./admin.js";
 import { bankReport, ledgerCsv } from "./bank.js";
 import { dashboard } from "./dashboard.js";
 import {
@@ -778,7 +778,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     if (!deps.adminEmails.includes(account.email.toLowerCase())) {
       return reply.code(403).send({ error: "forbidden" });
     }
-    return { pairs: await suspiciousPairs(db, world.id, world.ctx.settings.referencePrices) };
+    return {
+      pairs: await suspiciousPairs(db, world.id, world.ctx.settings.referencePrices),
+      sharedMailboxes: await sharedMailboxes(db),
+    };
   });
 
   /** Admin: moves the end of the current season (to rehearse the closing on a test world). */

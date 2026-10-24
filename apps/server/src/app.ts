@@ -144,6 +144,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
         invalid_code: 400,
         pseudo_taken: 409,
         too_many_requests: 429,
+        disposable_email: 400,
       }[err.code];
       return reply.code(status).send({ error: err.code });
     }

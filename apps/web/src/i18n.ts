@@ -2573,6 +2573,8 @@ export const fr = {
     invalid_input: "Vérifiez votre saisie.",
     pseudo_taken: "Ce nom est déjà pris.",
     too_many_requests: "Trop de demandes. Réessayez dans quelques minutes.",
+    disposable_email:
+      "Les adresses jetables ne sont pas acceptées : utilisez votre adresse habituelle.",
     network: "Le serveur ne répond pas. Vérifiez votre connexion.",
     mail_unavailable: "L'e-mail n'a pas pu être envoyé. Réessayez dans quelques minutes.",
     unknown: "Une erreur est survenue.",

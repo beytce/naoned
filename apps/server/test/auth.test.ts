@@ -1,10 +1,10 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { hashToken } from "../src/auth/tokens.js";
 import { type Database, openDatabase } from "../src/db/client.js";
-import { loginTokens } from "../src/db/schema.js";
+import { accounts, loginTokens } from "../src/db/schema.js";
 import { MailError, MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
 
@@ -120,6 +120,40 @@ describe("magic link", () => {
     await request("ada@example.org");
     const again = await verify(lastToken());
     expect(again.json().account.id).toBe(firstId);
+  });
+
+  it("keeps one account per mailbox: aliases and Gmail's dots lead to the same", async () => {
+    await request("ada@gmail.com");
+    const first = (await verify(lastToken())).json().account.id;
+    for (const alias of ["ada+fondaco@gmail.com", "a.d.a@googlemail.com", "Ada+2@Gmail.com"]) {
+      await request(alias);
+      const res = await verify(lastToken());
+      expect(res.statusCode).toBe(200);
+      expect(res.json().account.id).toBe(first);
+    }
+    // The mail goes to the address as typed.
+    expect(mailer.sent.at(-1)?.to).toBe("ada+2@gmail.com");
+    const rows = await database.db.select().from(accounts).where(eq(accounts.isBot, false));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.emailCanonical).toBe("ada@gmail.com");
+  });
+
+  it("refuses a throwaway mailbox, saying so", async () => {
+    const res = await request("x@yopmail.com");
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toBe("disposable_email");
+    expect(mailer.sent).toHaveLength(0);
+  });
+
+  it("never lets two accounts share a mailbox", async () => {
+    await database.db
+      .insert(accounts)
+      .values({ email: "bob@example.org", emailCanonical: "bob@example.org" });
+    await expect(
+      database.db
+        .insert(accounts)
+        .values({ email: "bob+2@example.org", emailCanonical: "bob@example.org" }),
+    ).rejects.toThrow();
   });
 
   it("accepts a token only once", async () => {
