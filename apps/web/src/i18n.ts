@@ -223,7 +223,7 @@ export const fr = {
       notice: {
         title: "Avis",
         season: (day: number, of: number) => `Jour ${day} sur ${of}`,
-        daysLeft: (n: number) => `${n} jour${n > 1 ? "s" : ""} avant la fin de la saison`,
+        daysLeft: (n: number) => `fin dans ${n} j`,
         event: "La gazette",
         carnet: "Carnet du jour",
         yourSeason: "Votre saison",
@@ -1823,7 +1823,9 @@ export const fr = {
         respecHelp: "Vous la choisissez de nouveau aussitôt, parmi toutes.",
         reroll: (n: number) => `Changer de tâche · ${n} ✦`,
         /** The same on a phone's narrow line: the sign of a change and its price. */
-        rerollShort: (n: number) => `↻ ${n} ✦`,
+        rerollShort: (n: number) => `Changer · ${n} ✦`,
+        /** Why the task cannot be changed yet. */
+        rerollNeed: (n: number) => `Il faut ${n} ✦ d'Influence pour la changer.`,
       },
     },
     profileTitle: "Ma progression",
@@ -2423,12 +2425,12 @@ export const fr = {
         text: "Les villes publient des commandes toutes les 4 heures. Touchez une charrette, cochez des commandes pour une même ville, puis faites-la partir : la ville paie à l'arrivée, d'autant mieux que la route est longue. Le premier arrivé prend la commande.",
       },
       {
-        icon: "routes",
+        icon: "steward",
         title: "Le fattore",
         text: "Votre commis : quand une charrette reste deux heures au comptoir, il la fait partir avec la meilleure commande que votre stock couvre, deux fois par jour, de 8 h à 22 h, en gardant le pain des ouvriers. Il prend 15 % du paiement. Il ne travaille que si vous êtes passé dans les dernières 24 heures.",
       },
       {
-        icon: "comptoir",
+        icon: "contrats",
         title: "Commandes de compagnie",
         text: "Tous les deux jours, une ville commande du pain, des briques et des planches aux trois régions. Livrez depuis votre stock : 10 % au-dessus de la référence, et 10 % de plus pour chacun quand la commande est remplie.",
       },
@@ -2458,7 +2460,7 @@ export const fr = {
         text: "Une conquête d'une semaine, à côté du commerce. Posez votre camp sur une terre libre, n'importe quel jour ; puis lancez des fronts vers les terres voisines avec une part de vos troupes. Ils avancent seuls de 8 h à 22 h. Le premier en Gloire impose un décret la semaine suivante.",
       },
       {
-        icon: "comptoir",
+        icon: "bale",
         title: "Ballots de Faraj",
         text: "Toutes les six heures, Faraj d'Alexandrie vous envoie un ballot : trois cartes de 1 à 5 marchandises. Les probabilités sont affichées ; les ballots ne s'achètent pas.",
       },

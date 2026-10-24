@@ -59,6 +59,22 @@ export const NavIcon = {
       <path d="M17 3 H21 V7" />
     </Line>
   ),
+  /** A bale of goods, its cord crossed: Faraj's bales. */
+  bale: () => (
+    <Line>
+      <path d="M4 8 L12 4 L20 8 V16 L12 20 L4 16 Z" />
+      <path d="M4 8 L12 12 L20 8 M12 12 V20 M8 6 L16 10" />
+    </Line>
+  ),
+  /** The fattore: a steward and his key. */
+  steward: () => (
+    <Line>
+      <circle cx="9" cy="7" r="3" />
+      <path d="M3 20 Q3 13 9 13 Q12 13 13.5 15" />
+      <circle cx="17" cy="15" r="2.5" />
+      <path d="M17 17.5 V21 M17 19.5 H19" />
+    </Line>
+  ),
   port: () => (
     <Line>
       <path d="M12 3 V15 M12 4 L18 13 H12" />

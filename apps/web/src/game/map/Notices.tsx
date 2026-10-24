@@ -26,19 +26,23 @@ export function NoticesSheet(
     <Sheet open={props.open} onClose={props.onClose} title={t.title}>
       <div className="space-y-5">
         <section className="space-y-1">
-          <p className="meta font-semibold text-gold">{seasonLabel}</p>
+          {/* One line for the season: its day, and how many are left. */}
+          <p className="meta font-semibold text-gold">
+            {seasonLabel}
+            {daysLeft > 3 && (
+              <span className="font-normal text-cream-dim"> · {t.daysLeft(daysLeft)}</span>
+            )}
+          </p>
           {act && (
             <p className="text-sm">
               <span className="font-semibold">{actText(act).title}</span>
               <span className="text-cream-dim"> · {actText(act).text}</span>
             </p>
           )}
-          {daysLeft > 0 && daysLeft <= 3 ? (
+          {daysLeft > 0 && daysLeft <= 3 && (
             <p className="cut border border-gold/60 bg-gold/10 px-3 py-2 text-sm text-gold">
               {fr.game.season.lastSprint(daysLeft)}
             </p>
-          ) : (
-            daysLeft > 0 && <p className="text-xs text-cream-dim">{t.daysLeft(daysLeft)}</p>
           )}
         </section>
 
