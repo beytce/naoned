@@ -12,9 +12,13 @@ import { gameApi } from "../api.js";
 import { d, duration } from "../format.js";
 import { store } from "../store.js";
 import {
+  FOCUS_ORDER,
+  type Focus,
   type HexMap,
   cellAt,
   cellsByHolder,
+  enemiesOf,
+  focusOf,
   hexCenter,
   hexCorners,
   hexNeighbors,
@@ -23,6 +27,7 @@ import {
   outline,
   replayFits,
   replayed,
+  territoryLook,
   tones,
 } from "../terraShapes.js";
 import type { SkirmishStatus, TerraAction, TerraView } from "../types.js";
@@ -375,7 +380,7 @@ export interface TerraShapes {
     i: number;
     d: string;
     tone: string;
-    focus: "me" | "neighbour" | "ally" | "milan" | "other" | "faint";
+    focus: Focus;
   }[];
   tone: string[];
   me: number;
@@ -391,7 +396,10 @@ export interface TerraShapes {
 export function useTerraShapes(v: TerraView | null | undefined): TerraShapes | null {
   const owners = v ? v.owner.join(",") : "";
   const ids = v ? v.holders.map((h) => `${h.id}:${h.ally ? 1 : 0}`).join(",") : "";
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `owners` and `ids` are the map's identity.
+  const me = v ? v.holders.findIndex((h) => h.me) : -1;
+  // Who is at war with the merchant: their outline turns vermilion as soon as a front starts.
+  const foes = v ? [...enemiesOf(v.fronts, me)].sort((a, b) => a - b).join(",") : "";
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `owners`, `ids` and `foes` are the map's identity.
   return useMemo(() => {
     if (!v) return null;
     const map: HexMap = v.map;
@@ -404,26 +412,15 @@ export function useTerraShapes(v: TerraView | null | undefined): TerraShapes | n
       v.holders.map((_, i) => by.get(i)?.length ?? 0),
       touching,
     );
-    const me = v.holders.findIndex((h) => h.me);
     const around = touching.get(me) ?? new Set<number>();
+    const enemies = new Set(foes ? foes.split(",").map(Number) : []);
     const holders = [...by.entries()].map(([i, cells]) => {
-      const h = v.holders[i];
-      const focus: TerraShapes["holders"][number]["focus"] = h?.milan
-        ? "milan"
-        : i === me
-          ? "me"
-          : h?.ally
-            ? "ally"
-            : around.has(i)
-              ? "neighbour"
-              : cells.length <= 3
-                ? "faint"
-                : "other";
+      const h = v.holders[i] ?? { me: false, ally: false, milan: false };
+      const focus = focusOf(h, i, cells.length, around, enemies);
       return { i, d: outline(map, cells), tone: tone[i] ?? P.cream, focus };
     });
-    // Milan under everyone, the merchant above.
-    const order = { milan: 0, faint: 1, other: 2, neighbour: 3, ally: 4, me: 5 };
-    holders.sort((a, b) => order[a.focus] - order[b.focus]);
+    // Milan under everyone, the merchant over all.
+    holders.sort((a, b) => FOCUS_ORDER[a.focus] - FOCUS_ORDER[b.focus]);
     let grid = "";
     let x0 = Number.POSITIVE_INFINITY;
     let x1 = Number.NEGATIVE_INFINITY;
@@ -461,7 +458,7 @@ export function useTerraShapes(v: TerraView | null | undefined): TerraShapes | n
       { x: x1, y: y1 },
     ];
     return { map, land, holders, tone, me, grid, labels, edges };
-  }, [owners, ids]);
+  }, [owners, ids, foes]);
 }
 
 /** "14:20", Paris time: when a front will reach a cell. */
@@ -575,7 +572,7 @@ export const TerraOverlay = memo(function TerraOverlay({
           patternUnits="userSpaceOnUse"
           patternTransform="rotate(45)"
         >
-          <rect width="4" height="4" fill="#4A1E16" fillOpacity="0.45" />
+          <rect width="4" height="4" fill="#4A1E16" fillOpacity="0.3" />
           <line
             x1="0"
             y1="0"
@@ -588,13 +585,26 @@ export const TerraOverlay = memo(function TerraOverlay({
         </pattern>
       </defs>
       {s.holders.map((h) => (
-        <path
-          key={h.i}
-          d={h.d}
-          fillRule="evenodd"
-          strokeLinejoin="round"
-          {...look(h, h.i === selectedHolder(v, cell))}
-        />
+        <g key={h.i}>
+          {/* The merchant's own land: a dark halo outside its gold rim, read over any tone. */}
+          {h.focus === "me" && (
+            <path
+              d={h.d}
+              fill="none"
+              stroke="#0B1626"
+              strokeOpacity="0.85"
+              strokeWidth="6"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
+          <path
+            d={h.d}
+            fillRule="evenodd"
+            strokeLinejoin="round"
+            {...territoryLook(h, h.i === selectedHolder(v, cell))}
+          />
+        </g>
       ))}
       {/* Cells just taken flash and tint in, over a second. */}
       {fresh.map((f) => (
@@ -612,7 +622,7 @@ export const TerraOverlay = memo(function TerraOverlay({
         d={s.grid}
         fill="none"
         stroke={P.cream}
-        strokeOpacity={aiming ? 0.2 : 0.1}
+        strokeOpacity={aiming ? 0.2 : 0.08}
         strokeWidth="0.3"
       />
       {/* The cells a front can take, along the merchant's border. */}
@@ -664,7 +674,8 @@ export const TerraOverlay = memo(function TerraOverlay({
         const h = v.holders[l.i];
         const focus = s.holders.find((x) => x.i === l.i)?.focus;
         if (!h) return null;
-        const strong = focus === "me" || focus === "neighbour" || focus === "ally";
+        const strong =
+          focus === "me" || focus === "neighbour" || focus === "ally" || focus === "enemy";
         const name = h.milan || !h.me ? holderName(v, l.i) : null;
         return (
           <g
@@ -708,11 +719,12 @@ export const TerraOverlay = memo(function TerraOverlay({
           d={`M${hexCorners(s.map, cell)
             .map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`)
             .join("L")}Z`}
-          fill={P.gold}
-          fillOpacity="0.18"
-          stroke={P.gold}
-          strokeWidth="0.9"
+          fill={P.info}
+          fillOpacity="0.2"
+          stroke={P.info}
+          strokeWidth="2"
           strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
         />
       )}
       {v.fronts.map((f) => {
@@ -754,47 +766,6 @@ export const TerraOverlay = memo(function TerraOverlay({
 
 function selectedHolder(v: TerraView, cell: number | null): number {
   return cell === null ? -2 : holderAt(v, cell);
-}
-
-/** How a territory is drawn, by its place in the focus. */
-function look(h: TerraShapes["holders"][number], touched: boolean) {
-  if (h.focus === "milan")
-    return {
-      fill: "url(#terra-hatch)",
-      stroke: P.vermilionDeep,
-      strokeOpacity: 0.7,
-      strokeWidth: 0.8,
-    };
-  if (h.focus === "me")
-    return {
-      fill: h.tone,
-      fillOpacity: 0.42,
-      stroke: P.gold,
-      strokeOpacity: 0.95,
-      strokeWidth: 1.3,
-    };
-  if (h.focus === "ally")
-    return {
-      fill: h.tone,
-      fillOpacity: 0.2,
-      stroke: P.lagoon,
-      strokeOpacity: 0.95,
-      strokeWidth: 1,
-    };
-  if (h.focus === "neighbour" || touched)
-    return {
-      fill: h.tone,
-      fillOpacity: 0.24,
-      stroke: h.tone,
-      strokeOpacity: 0.9,
-      strokeWidth: 0.9,
-    };
-  return {
-    fill: "none",
-    stroke: P.cream,
-    strokeOpacity: h.focus === "faint" ? 0.07 : 0.16,
-    strokeWidth: 0.6,
-  };
 }
 
 /** The cells that changed hands since the last fetch, for 450 ms. */
@@ -875,7 +846,11 @@ export function terraMarkers(
           share={h.me && v.me ? v.me.troops / Math.max(1, v.me.cap) : null}
           troops={s.labels.some((l) => l.i === i) ? null : h.troops}
           threatened={h.me && threatened}
-          small={!h.me && !h.ally && s.holders.find((x) => x.i === i)?.focus !== "neighbour"}
+          small={
+            !h.me &&
+            !h.ally &&
+            !["neighbour", "enemy"].includes(s.holders.find((x) => x.i === i)?.focus ?? "")
+          }
           onTap={() => select({ kind: "terra", cell })}
         />
       ),

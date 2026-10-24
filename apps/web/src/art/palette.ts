@@ -16,6 +16,8 @@ export const P = {
   clay: "#C8693F",
   emerald: "#3FA36B",
   violet: "#8E6BD8",
+  /** Lapis: the selection, what a finger touched. */
+  info: "#6EC8F5",
 };
 
 /**

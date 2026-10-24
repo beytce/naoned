@@ -2036,6 +2036,11 @@ export const fr = {
         "Une conquête d'une semaine, à côté du commerce, sur la carte de la Vénétie découpée en cases. Facultative : vous n'y perdez jamais vos ducats ni vos marchandises. Les fronts avancent seuls, de 8 h à 22 h, même quand vous n'êtes pas là.",
       sections: [
         {
+          diagram: "legend",
+          title: "Lire la carte",
+          text: "Vos terres sont dorées et cerclées d'or. Vos alliés sont en vert d'eau, en tirets ; ceux qui sont en guerre avec vous (un front contre vous, ou l'un des vôtres contre eux) sont cerclés de vermillon. Milan et les seigneurs sont hachurés. Les autres marchands restent discrets. La terre que vous touchez s'éclaire en bleu.",
+        },
+        {
           diagram: "setDown",
           title: "Se poser",
           text: "Touchez une terre libre : votre camp prend la case et ses six voisines. Vous êtes à l'abri 12 heures (et tout le monde jusqu'à la fin du premier jour). Votre camp est votre capitale : tant que vous n'attaquez aucun marchand de la semaine, elle ne tombe jamais.",

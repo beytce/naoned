@@ -162,6 +162,58 @@ const ring = (c: number, r: number, tone: Tone, centre?: Partial<Cell>): Cell[] 
 
 // ——— The diagrams ———
 
+/** The map's colours, as the map draws them: one land a line. */
+function Legend() {
+  const rows: { label: string; fill: string; opacity: number; stroke: string; dash?: string }[] = [
+    { label: "Vos terres", fill: "var(--gold)", opacity: 0.32, stroke: "var(--gold)" },
+    {
+      label: "Vos alliés",
+      fill: "var(--lagoon)",
+      opacity: 0.18,
+      stroke: "var(--lagoon)",
+      dash: "5 3",
+    },
+    {
+      label: "En guerre avec vous",
+      fill: "var(--cream)",
+      opacity: 0.08,
+      stroke: "var(--vermilion)",
+    },
+    {
+      label: "Milan et les seigneurs",
+      fill: "var(--vermilion-deep)",
+      opacity: 0.3,
+      stroke: "var(--vermilion-deep)",
+    },
+    { label: "Les autres marchands", fill: "var(--cream)", opacity: 0.08, stroke: "var(--line)" },
+  ];
+  return (
+    <Diagram height={rows.length * 22 + 14}>
+      {rows.map((row, k) => {
+        const y = 18 + k * 22;
+        const pts = Array.from({ length: 6 }, (_, j) => {
+          const a = (Math.PI / 180) * (60 * j - 30);
+          return `${(30 + 9 * Math.cos(a)).toFixed(1)},${(y + 9 * Math.sin(a)).toFixed(1)}`;
+        }).join(" ");
+        return (
+          <g key={row.label}>
+            <polygon
+              points={pts}
+              fill={`rgb(${row.fill} / ${row.opacity})`}
+              stroke={`rgb(${row.stroke})`}
+              strokeWidth={k === 0 ? 2.5 : 1.5}
+              strokeDasharray={row.dash}
+            />
+            <Note x={50} y={y + 3.5} tone={k === 0 ? "gold" : "cream"}>
+              {row.label}
+            </Note>
+          </g>
+        );
+      })}
+    </Diagram>
+  );
+}
+
 function SetDown() {
   return (
     <Diagram>
@@ -200,7 +252,7 @@ function Troops() {
       />
       <rect x="20" y="40" width="130" height="4" fill="rgb(var(--lagoon))" />
       <text x="34" y="37" fontSize="12" fontWeight="700" fill="rgb(var(--cream))">
-        ⚔ 60 / 80
+        60/80
       </text>
       <text x="120" y="37" fontSize="11" fill="rgb(var(--lagoon))">
         +13/h
@@ -529,6 +581,7 @@ function Battle() {
 }
 
 const DIAGRAMS: Record<string, () => ReactNode> = {
+  legend: Legend,
   setDown: SetDown,
   troops: Troops,
   front: Front,
