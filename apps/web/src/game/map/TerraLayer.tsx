@@ -7,6 +7,7 @@ import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
 import { Segmented, Sheet, Slab, clock } from "../../ui.js";
 import type { GameProps } from "../Game.js";
+import { MerchantName, merchantLabel } from "../Name.js";
 import { gameApi } from "../api.js";
 import { d, duration } from "../format.js";
 import { store } from "../store.js";
@@ -192,7 +193,7 @@ export function SkirmishBar({
       ) : status.phase === "lobby" ? (
         <>
           <p className="meta">
-            {k.lobby(status.players, clock(Math.max(0, status.opensAt - now)))}
+            {k.lobby(status.humans, status.bots, clock(Math.max(0, status.opensAt - now)))}
           </p>
           {!status.joined && (
             <Slab size="sm" className="w-full" onClick={onJoin}>
@@ -207,9 +208,17 @@ export function SkirmishBar({
       ) : (
         <ol className="space-y-0.5">
           {(status.result ?? []).slice(0, 8).map((r, i) => (
-            <li key={`${i}:${r.pseudo}`} className={r.me ? "text-gold" : "text-cream-dim"}>
-              {i + 1}. {r.pseudo ?? k.someone} · {k.cells(r.cells)}
-              {r.glory > 0 && ` · +${r.glory} ${k.glory}`}
+            <li
+              // biome-ignore lint/suspicious/noArrayIndexKey: the ranks of a finished match
+              key={i}
+              className={`flex min-w-0 items-center gap-1 ${r.me ? "text-gold" : "text-cream-dim"}`}
+            >
+              <span className="shrink-0">{i + 1}.</span>
+              <MerchantName pseudo={r.pseudo} bot={r.bot} fallback={k.someone} />
+              <span className="shrink-0 whitespace-nowrap">
+                · {k.cells(r.cells)}
+                {r.glory > 0 && ` · +${r.glory} ${k.glory}`}
+              </span>
             </li>
           ))}
         </ol>
@@ -461,7 +470,7 @@ function holderName(v: TerraView, i: number): string {
   const h = v.holders[i];
   if (!h) return t().neutral;
   if (h.milan) return t().nations[h.nation ?? "milan"] ?? t().milan;
-  return h.pseudo ?? t().someone;
+  return merchantLabel(h.pseudo, h.bot, t().someone);
 }
 
 /** Where a front starts from: its owner's cell nearest its aim. */
@@ -640,7 +649,7 @@ export const TerraOverlay = memo(function TerraOverlay({
         const focus = s.holders.find((x) => x.i === l.i)?.focus;
         if (!h) return null;
         const strong = focus === "me" || focus === "neighbour" || focus === "ally";
-        const name = h.milan ? holderName(v, l.i) : h.me ? null : (h.pseudo ?? t().someone);
+        const name = h.milan || !h.me ? holderName(v, l.i) : null;
         return (
           <g
             key={`label-${l.i}`}
@@ -843,7 +852,7 @@ export function terraMarkers(
       at: { x, y },
       node: (
         <WarCounter
-          name={h.pseudo ?? t().someone}
+          name={merchantLabel(h.pseudo, h.bot, t().someone)}
           crest={h.crest ?? defaultCrest(h.id ?? String(i))}
           mine={h.me}
           tone={s.tone[i] ?? P.cream}

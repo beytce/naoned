@@ -300,6 +300,7 @@ async function session(width, height, tag) {
       throw new Error(`${label}: the notices still list first steps to take`);
     await page.keyboard.press("Escape");
     await check("carte");
+    await npcRival(page, check);
 
     if (errors.length > 0) throw new Error(`${label}: errors on the page: ${errors.join(" / ")}`);
   } catch (e) {
@@ -464,6 +465,47 @@ async function teamWeek(page, door, check) {
   expect(won, "the team that won", /terraferma l'emporte/i);
   await check("terraferme-equipes-close");
   await page.unroute("**/api/game/terra");
+}
+
+/**
+ * The rival of the week, a house of the computer with a long name: the HUD's line truncates the
+ * name, never the « PNJ » seal nor the gap. No world has such a rival at its start: the game's
+ * response is rewritten on its way to the page.
+ */
+async function npcRival(page, check) {
+  await page.route("**/api/game", async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    json.rival = {
+      pseudo: "Commerciante884",
+      bot: true,
+      character: "speculator",
+      gain: "1200000",
+      mine: "100000",
+      ahead: true,
+    };
+    await route.fulfill({ response, json });
+  });
+  await page.reload();
+  await page.locator("[data-hud=rival]").waitFor();
+  await page.waitForTimeout(800);
+  const seen = await page.evaluate(() => {
+    const line = document.querySelector("[data-hud=rival]");
+    const seal = [...(line?.querySelectorAll("span") ?? [])].find((s) => s.textContent === "PNJ");
+    if (!line || !seal) return { text: line?.textContent ?? "", seal: false };
+    const l = line.getBoundingClientRect();
+    const b = seal.getBoundingClientRect();
+    return {
+      text: line.textContent ?? "",
+      seal: b.width > 0 && b.left >= l.left - 0.5 && b.right <= l.right + 0.5,
+      inside: b.right <= window.innerWidth,
+    };
+  });
+  if (!seen.seal || !seen.inside)
+    throw new Error(`the rival's « PNJ » seal is cut or missing: « ${seen.text} »`);
+  if (!/\+/.test(seen.text)) throw new Error(`the rival's gap is cut: « ${seen.text} »`);
+  await check("rival-pnj");
+  await page.unroute("**/api/game");
 }
 
 /** The workshops' window opened: each workshop's button, its recipe raw or transforming. */

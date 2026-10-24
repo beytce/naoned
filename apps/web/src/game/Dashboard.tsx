@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fr } from "../i18n.js";
 import { Rules, Sheet } from "../ui.js";
 import type { GameProps } from "./Game.js";
+import { merchantLabel } from "./Name.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
 import type { DashboardView } from "./types.js";
@@ -158,7 +159,8 @@ function Curves({ data }: { data: DashboardView }) {
               style={{ background: COLOR[l.who] }}
             />
             <span className="text-cream-dim">
-              {t.who[l.who](l.pseudo ?? "—")} · {d(BigInt(l.points.at(-1) ?? 0))}
+              {t.who[l.who](merchantLabel(l.pseudo, l.bot, "—"))} ·{" "}
+              {d(BigInt(l.points.at(-1) ?? 0))}
             </span>
           </span>
         ))}

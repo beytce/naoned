@@ -1025,6 +1025,8 @@ export interface TerraView {
     id: string | null;
     pseudo: string | null;
     crest: CrestData | null;
+    /** A house of the computer. */
+    bot: boolean;
     me: boolean;
     ally: boolean;
     milan: boolean;
@@ -1247,6 +1249,9 @@ export type SkirmishStatus =
       phase: "lobby";
       opensAt: number;
       players: number;
+      /** Who it opens with as things stand: merchants, and the computer's houses filling it. */
+      humans: number;
+      bots: number;
       joined: boolean;
       minutes: number;
     } & SkirmishStake &
@@ -1257,7 +1262,9 @@ export type SkirmishStatus =
       playing: boolean;
       view: TerraView | null;
       /** The glory each merchant was paid (none in a friendly match). */
-      result: { pseudo: string | null; me: boolean; cells: number; glory: number }[] | null;
+      result:
+        | { pseudo: string | null; bot: boolean; me: boolean; cells: number; glory: number }[]
+        | null;
     } & SkirmishStake &
       SkirmishDay);
 
@@ -1268,7 +1275,12 @@ export interface DashboardView {
   week: string;
   /** Seven Paris days, YYYY-MM-DD, the last one today. */
   days: string[];
-  lines: { who: "me" | "rival" | "leader"; pseudo: string | null; daily: string[] }[];
+  lines: {
+    who: "me" | "rival" | "leader";
+    pseudo: string | null;
+    bot: boolean;
+    daily: string[];
+  }[];
 }
 
 export type NextAction =
@@ -1295,6 +1307,7 @@ export interface SupplierPerson {
   me: boolean;
   pseudo: string | null;
   crest: CrestData | null;
+  bot: boolean;
 }
 
 export interface TenderView {

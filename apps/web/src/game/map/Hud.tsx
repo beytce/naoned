@@ -6,7 +6,9 @@ import { ResourceIcon } from "../../art/resources.js";
 import { Lorenzo } from "../../art/scenes.js";
 import { fr } from "../../i18n.js";
 import { CountUp } from "../../ui.js";
+import { MerchantName } from "../Name.js";
 import { amount } from "../format.js";
+import type { RivalLine } from "../rival.js";
 import { HudCounter, type TipContent, type TipKey, usePresence, useTip } from "./HudTips.js";
 import { doorLabel } from "./actions.js";
 import { Icon } from "./icons.js";
@@ -139,7 +141,7 @@ export function MapHud({
   crest: CrestData;
   title: string;
   /** The rival of the week, a line under the rank (null: none yet). */
-  rival?: string | null;
+  rival?: RivalLine | null;
   /** Permanent level (honorary), once known. */
   level: number | null;
   rank: number | null;
@@ -300,7 +302,9 @@ export function MapHud({
             onClick={onRanking}
             className="pointer-events-auto col-span-2 flex min-h-11 min-w-0 max-w-full items-center justify-self-start text-left text-[13px] text-info [text-shadow:0_1px_4px_rgb(0_0_0/0.9)] lg:max-w-xs"
           >
-            <span className="truncate">{rival}</span>
+            <span className="shrink-0 whitespace-pre">{`${rival.lead} `}</span>
+            <MerchantName pseudo={rival.name} bot={rival.bot} />
+            <span className="shrink-0 whitespace-nowrap">{rival.gap}</span>
           </button>
         )}
         {/*

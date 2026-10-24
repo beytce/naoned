@@ -5,7 +5,7 @@
 de compte encaissée), une transformation au moulin, la Terraferme pendant sa trêve (note « Trêve »
 vérifiée), une semaine en équipes avec Milan contre le joueur puis sa clôture (la réponse de
 `GET /api/game/terra` réécrite au passage : « Équipe · Terraferma », « sur vous », « Bataille à
-20 h », « Terraferma l'emporte » vérifiés sur la plaque), les Avis (plus de « Premiers pas »). Après chaque étape, `e2e/assert.mjs` échoue sur :
+20 h », « Terraferma l'emporte » vérifiés sur la plaque), les Avis (plus de « Premiers pas »), puis un rival de la semaine tenu par l'ordinateur au long pseudo (réponse de `GET /api/game` réécrite) : son nom se coupe, jamais le sceau « PNJ » ni l'écart. Après chaque étape, `e2e/assert.mjs` échoue sur :
 une page qui défile de côté, deux blocs du HUD l'un sur l'autre, le HUD sur un nom ou un médaillon
 de la carte (`data-map-label`), une cible de moins de 44 px (celles du HUD, et tout bouton ou
 lien d'une fenêtre, d'un panneau ou de la bulle du guide, mesuré au doigt autour de son centre),

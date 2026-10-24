@@ -5,6 +5,7 @@ import { MasteryEmblem } from "../art/mastery.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Panel, Sheet, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
+import { MerchantName } from "./Name.js";
 import { PlayerPalmares } from "./Palmares.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
@@ -60,15 +61,14 @@ function Line(props: {
       </span>
       <Crest crest={crestOf(r)} size={40} />
       <div className="min-w-0 flex-1">
-        <p className={`truncate font-display text-sm font-semibold ${r.gilded ? "text-gold" : ""}`}>
-          {r.pseudo ?? fr.game.anonymous}
+        <p className={`flex font-display text-sm font-semibold ${r.gilded ? "text-gold" : ""}`}>
+          <MerchantName pseudo={r.pseudo} bot={r.bot} />
         </p>
         <div className="mt-1 flex items-center gap-2">
           {mine && <Badge tone="info">{fr.game.you}</Badge>}
           {r.level !== undefined && (
             <Badge tone="ghost">{fr.game.merchantLevel.short(r.level)}</Badge>
           )}
-          {r.bot && <Badge tone="ghost">{fr.game.npc}</Badge>}
           {r.pass && (
             <span title={fr.game.pass.seal} className="inline-flex">
               <Emblem size={16} className="rounded-[4px]" />
@@ -115,15 +115,17 @@ function Podium({
           r ? (
             <div key={slot} className="flex flex-col items-center gap-1 text-center">
               <Crest crest={r.crest ?? defaultCrest(`${r.rank}-${r.pseudo ?? ""}`)} size={40} />
-              <p className="w-full truncate font-display text-xs font-semibold">
-                {r.pseudo ?? fr.game.anonymous}
-              </p>
+              {/* A third of the width: the seal under the name, which keeps its letters. */}
+              <MerchantName
+                pseudo={r.pseudo}
+                bot={r.bot}
+                className="flex-col font-display text-xs font-semibold"
+              />
               {r.award && (
                 <span className="font-mono text-xs uppercase tracking-wider text-gold">
                   {fr.game.week.awards[r.award]}
                 </span>
               )}
-              {r.bot && <Badge tone="ghost">{fr.game.npc}</Badge>}
               <div
                 className={`slab flex w-full items-start justify-center pt-1 ${height} ${slot === "first" ? "bg-gold text-ink" : "bg-night-4 text-cream"}`}
               >

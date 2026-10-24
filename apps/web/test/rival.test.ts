@@ -16,6 +16,14 @@ describe("the rival's line on the HUD", () => {
   });
 
   it("says who and how far once the merchant has sold", () => {
-    expect(rivalLine({ ...rival, mine: "2000" })).toContain("Comm884");
+    expect(rivalLine({ ...rival, mine: "2000" })).toMatchObject({ name: "Comm884", bot: true });
+    expect(rivalLine({ ...rival, mine: "2000" })?.lead).toBe("Rival :");
+  });
+
+  it("tells a person from a house of the computer", () => {
+    expect(rivalLine({ ...rival, bot: false, mine: "2000", ahead: false })).toMatchObject({
+      lead: "Talonné par",
+      bot: false,
+    });
   });
 });

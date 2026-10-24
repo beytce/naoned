@@ -6,6 +6,7 @@ import { Badge, Label, Qty, Segmented, Sheet, Slab, Sparkline, clock } from "../
 import { have } from "./Comptoir.js";
 import { DecreeBanner } from "./Famille.js";
 import type { GameProps } from "./Game.js";
+import { MerchantName } from "./Name.js";
 import { d } from "./format.js";
 import type { BookLine, MarketLine, OrderView } from "./types.js";
 
@@ -126,17 +127,15 @@ function BookSide({
       ) : (
         <ul className="mt-2 space-y-1.5">
           {lines.map((l, i) => {
-            const who =
-              l.by === "market_maker"
-                ? t.fondaco
-                : l.mine
-                  ? t.you
-                  : (props.people[l.by] ?? fr.game.anonymous);
+            const own = l.by === "market_maker" ? t.fondaco : l.mine ? t.you : null;
             return (
               <li key={`${l.by}-${l.price}-${i}`} className="text-xs leading-tight">
-                <p className="flex items-center gap-1 truncate font-semibold">
-                  <span className="truncate">{who}</span>
-                  {props.bots.has(l.by) && <Badge tone="ghost">{fr.game.npc}</Badge>}
+                <p className="flex font-semibold">
+                  {own !== null ? (
+                    <span className="truncate">{own}</span>
+                  ) : (
+                    <MerchantName pseudo={props.people[l.by] ?? null} bot={props.bots.has(l.by)} />
+                  )}
                 </p>
                 <p className="font-mono tabular-nums text-cream-dim">
                   {l.quantity} × {d(l.price)}
