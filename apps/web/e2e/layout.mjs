@@ -47,6 +47,13 @@ const COVERED = /fermez cette fenêtre/i;
 const LEDGER = /voici votre livre de compte/i;
 const LEDGER_LATER = /votre livre de compte, sous la cloche/i;
 const BRAVO = /bravo, vous connaissez la boucle/i;
+// A Thursday of 40 merchants on the Terraferma (e2e/fixtures/make-terra-midweek.ts).
+const MIDWEEK = JSON.parse(
+  readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "fixtures", "terra-midweek.json"),
+    "utf8",
+  ),
+);
 
 let base = process.env.BASE_URL;
 let log = process.env.SERVER_LOG;
@@ -238,7 +245,8 @@ async function session(width, height, tag) {
     await page.waitForSelector("input[autocomplete=nickname]");
     await check("nom");
     // Longer than ten letters: its cut is measured on the map.
-    await page.fill("input", `e2e_${width}_${Math.floor(Math.random() * 1e6)}`);
+    const pseudo = `e2e_${width}_${Math.floor(Math.random() * 1e6)}`;
+    await page.fill("input", pseudo);
     await page.keyboard.press("Enter");
     await page.getByRole("button", { name: /passer/i }).waitFor();
     await check("introduction");
@@ -286,6 +294,7 @@ async function session(width, height, tag) {
       throw new Error(`${label}: the Terraferma's note says « ${said} », not its truce`);
     await check("terraferme-treve");
     await teamWeek(page, door, check);
+    await midWeek(page, door, check, pseudo);
     await door.click();
     await page.waitForTimeout(1000);
 
@@ -506,6 +515,55 @@ async function npcRival(page, check) {
   if (!/\+/.test(seen.text)) throw new Error(`the rival's gap is cut: « ${seen.text} »`);
   await check("rival-pnj");
   await page.unroute("**/api/game");
+}
+
+/**
+ * The Terraferma on a Thursday of 40 merchants, the merchant third by land: the map and the HUD
+ * where they are the most loaded, on the phone and on a PC. The frozen week (its view and its
+ * replay) is served in place of the server's, its times moved once onto the server's clock and its
+ * merchant named after the account.
+ */
+async function midWeek(page, door, check, pseudo) {
+  const serverNow = await page.evaluate(() =>
+    fetch("/api/game")
+      .then((r) => r.json())
+      .then((j) => j.serverTime),
+  );
+  const delta = serverNow - MIDWEEK.now;
+  const moved = (v) => {
+    if (Array.isArray(v)) return v.map(moved);
+    if (v && typeof v === "object")
+      return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, moved(x)]));
+    // Instants only: the week's are between 2001 and 2033.
+    return typeof v === "number" && v > 1e12 && v < 2e12 ? v + delta : v;
+  };
+  const named = (v) => {
+    for (const h of v.holders) if (h.me) h.pseudo = pseudo;
+    return v;
+  };
+  const terra = named(moved(MIDWEEK.terra));
+  const replay = named(moved(MIDWEEK.replay));
+  await page.unroute("**/api/game/terra");
+  await page.route("**/api/game/terra", (route) => route.fulfill({ json: { terra } }));
+  await page.route("**/api/game/terra/replay", (route) => route.fulfill({ json: { replay } }));
+  const open = async () => {
+    await closeAll(page);
+    await door.click();
+    await page.waitForTimeout(500);
+    await door.click();
+    await page.waitForTimeout(1500);
+  };
+  await open();
+  await check("terraferme-jeudi");
+  // The same on a PC, then back to the phone.
+  const phone = page.viewportSize();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.waitForTimeout(1200);
+  await check("terraferme-jeudi-pc");
+  if (phone) await page.setViewportSize(phone);
+  await page.waitForTimeout(800);
+  await page.unroute("**/api/game/terra");
+  await page.unroute("**/api/game/terra/replay");
 }
 
 /** The workshops' window opened: each workshop's button, its recipe raw or transforming. */
