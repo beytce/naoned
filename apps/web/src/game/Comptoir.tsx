@@ -760,8 +760,10 @@ function WorkshopSheet({
                 type="button"
                 aria-pressed={q === o.n}
                 onClick={() => setQty(o.n)}
-                className={`cut border px-2 py-2 text-xs font-semibold ${q === o.n ? "border-info bg-info/15 text-info" : "border-line"}`}
+                // The one chosen reads as chosen: lit, with its tick, never as switched off.
+                className={`cut border px-2 py-2 text-xs font-semibold ${q === o.n ? "border-info bg-night-4 text-cream" : "border-line text-cream-dim"}`}
               >
+                {q === o.n && <span className="text-info">✓ </span>}
                 {o.label}
                 <span className="block font-display text-sm tabular-nums">{o.n}</span>
               </button>
