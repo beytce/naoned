@@ -161,7 +161,7 @@ export function ActionButton({
       >
         {icon}
         {badge !== undefined && badge !== null && badge !== false && (
-          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 font-mono text-xs font-bold text-ink ring-2 ring-night-2">
+          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 font-display text-xs font-bold text-ink ring-2 ring-night-2">
             {badge}
           </span>
         )}

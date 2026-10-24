@@ -55,7 +55,7 @@ function Orb({
       >
         {children}
         {badge !== undefined && badge !== false && badge !== 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-vermilion px-1 font-mono text-xs font-bold text-cream ring-2 ring-night">
+          <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-vermilion px-1 font-display text-xs font-bold text-cream ring-2 ring-night">
             {badge === true ? "" : badge > 9 ? "9+" : badge}
           </span>
         )}
@@ -349,7 +349,7 @@ export function MapHud({
             <HudCounter
               label={fr.game.rations.hud(bread.stock, bread.perDay)}
               side={
-                <span className="font-mono text-xs text-cream-dim">
+                <span className="font-sans text-xs text-cream-dim">
                   {fr.game.rations.perDay(bread.perDay)}
                 </span>
               }

@@ -80,7 +80,7 @@ function Body({
         <label className="block text-sm">
           <span className="flex justify-between">
             <span>{t.bid}</span>
-            <span className="font-mono">{d(BigInt(amount))}</span>
+            <span className="font-sans">{d(BigInt(amount))}</span>
           </span>
           <input
             type="range"

@@ -113,7 +113,7 @@ export function HudTip({
                   {l.label}
                 </dt>
                 <dd
-                  className={`shrink-0 whitespace-nowrap font-mono text-xs tabular-nums ${
+                  className={`shrink-0 whitespace-nowrap font-sans text-xs tabular-nums ${
                     l.tone === "vermilion"
                       ? "text-vermilion"
                       : l.tone === "gold"
@@ -298,7 +298,7 @@ export function FleetDrawer({
                 <span className="block truncate font-display text-sm font-semibold">{l.name}</span>
                 <span className="block truncate text-xs text-cream-dim">{l.status}</span>
               </span>
-              <span className="shrink-0 font-mono text-xs text-cream-dim">
+              <span className="shrink-0 font-sans text-xs text-cream-dim">
                 {t.capacity(l.capacity)}
               </span>
             </button>

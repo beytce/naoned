@@ -233,7 +233,7 @@ export function Tabs<T extends string>(props: {
                 props.onChange(o.value);
               }}
               // The hit area climbs 14 px above the word: 44 px under the thumb.
-              className={`relative flex-1 pb-2.5 pt-1 font-display text-xs font-extrabold uppercase tracking-[0.12em] transition-colors before:absolute before:inset-x-0 before:-top-3.5 before:bottom-0 before:content-[''] ${on ? "text-cream" : "text-muted hover:text-cream-dim"}`}
+              className={`relative flex-1 pb-2.5 pt-1 font-display text-sm font-bold transition-colors before:absolute before:inset-x-0 before:-top-3.5 before:bottom-0 before:content-[''] ${on ? "text-cream" : "text-muted hover:text-cream-dim"}`}
             >
               {o.label}
             </button>
@@ -260,7 +260,7 @@ export function Tabs<T extends string>(props: {
             type="button"
             data-coach={props.coach ? `${props.coach}-${o.value}` : undefined}
             onClick={() => props.onChange(o.value)}
-            className={`slab min-h-11 flex-1 px-3 py-2.5 font-display text-xs font-extrabold uppercase tracking-wide transition ${on ? "bg-cream text-night" : "bg-night-3 text-cream-dim hover:text-cream"}`}
+            className={`slab min-h-11 flex-1 px-3 py-2.5 font-display text-sm font-bold transition ${on ? "bg-cream text-night" : "bg-night-3 text-cream-dim hover:text-cream"}`}
           >
             {o.label}
           </button>
@@ -410,7 +410,7 @@ export function Badge({ children, tone = "ghost" }: { children: ReactNode; tone?
   }[tone];
   return (
     <span
-      className={`slab inline-block shrink-0 whitespace-nowrap px-2.5 py-0.5 font-mono text-xs font-bold uppercase tracking-wider ${look}`}
+      className={`slab inline-block shrink-0 whitespace-nowrap px-2.5 py-0.5 font-display text-xs font-bold ${look}`}
     >
       <span>{children}</span>
     </span>
@@ -431,7 +431,7 @@ export function Ribbon({
         style={{ width: `${v * 100}%` }}
       />
       {label && (
-        <span className="absolute inset-0 flex items-center justify-center font-mono text-xs font-bold tracking-widest text-cream [text-shadow:0_1px_2px_#000]">
+        <span className="absolute inset-0 flex items-center justify-center font-sans text-xs font-bold tracking-widest text-cream [text-shadow:0_1px_2px_#000]">
           {label}
         </span>
       )}
@@ -858,7 +858,7 @@ export function Segmented<T extends string>({
           aria-pressed={value === o.value}
           data-coach={coach ? `${coach}-${o.value}` : undefined}
           onClick={() => onChange(o.value)}
-          className={`slab min-h-11 px-4 py-2.5 font-mono text-xs uppercase tracking-[0.06em] transition-colors ${value === o.value ? "bg-info/20 font-bold text-info" : "bg-night-3 text-cream-dim"}`}
+          className={`slab min-h-11 px-4 py-2.5 font-display text-sm font-semibold transition-colors ${value === o.value ? "bg-info/20 font-bold text-info" : "bg-night-3 text-cream-dim"}`}
         >
           {o.label}
         </button>

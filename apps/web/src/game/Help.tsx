@@ -103,7 +103,7 @@ export function Help(props: GameProps & { onClose: () => void }) {
             {fr.game.replayGuide}
           </Slab>
         </div>
-        <p className="text-center font-mono text-xs text-muted">
+        <p className="text-center font-sans text-xs text-muted">
           {fr.game.version(
             __BUILD__,
             new Date(__BUILT_AT__).toLocaleString("fr-FR", {

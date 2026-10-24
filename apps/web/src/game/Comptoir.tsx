@@ -407,7 +407,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
                 className="hit flex shrink-0 transition active:scale-95"
               >
                 {/* The slab is clipped: drawn inside, the button keeps its 44 px of touch. */}
-                <span className="slab flex items-center gap-1 whitespace-nowrap bg-night-4 px-2.5 py-0.5 font-mono text-xs font-bold text-cream">
+                <span className="slab flex items-center gap-1 whitespace-nowrap bg-night-4 px-2.5 py-0.5 font-sans text-xs font-bold text-cream">
                   {fr.game.level(b.level)} <span aria-hidden="true">↑</span>
                 </span>
               </button>
@@ -420,7 +420,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
             <span className="min-w-0">{status}</span>
           </p>
           {/* What it earns, and whether its next level is the best placement of the ducats. */}
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 font-mono text-xs text-cream-dim">
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 font-sans text-xs text-cream-dim">
             {BigInt(b.economics.queued?.marginPerHour ?? b.economics.marginPerHour) > 0n && (
               <span>
                 {fr.game.economics.perHour(
@@ -433,7 +433,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
             )}
           </p>
           {b.upgradeCost && !b.economics.advisable && b.economics.next && (
-            <p className="mt-1 font-mono text-xs">
+            <p className="mt-1 font-sans text-xs">
               <NotAdvised b={b} props={props} />
             </p>
           )}

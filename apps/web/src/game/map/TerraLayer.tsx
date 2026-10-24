@@ -1000,7 +1000,7 @@ export function terraMarkers(
             type="button"
             data-map-label
             onClick={() => select({ kind: "terra", cell: next?.cell ?? f.aim })}
-            className={`marker-hit relative flex h-6 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full px-2 font-mono text-xs font-bold shadow-md shadow-black/40 ${f.mine ? "bg-gold text-ink" : "bg-vermilion text-cream"}`}
+            className={`marker-hit relative flex h-6 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full px-2 font-display text-xs font-bold shadow-md shadow-black/40 ${f.mine ? "bg-gold text-ink" : "bg-vermilion text-cream"}`}
           >
             ⚔ {f.troops}
             {next && <span className="font-normal opacity-80">· {wait(next.at, props.now)}</span>}
@@ -1749,7 +1749,7 @@ export function TerraPanel({
               className="terra-share w-full accent-gold"
             />
             <p
-              className={`text-center font-mono text-xs ${cells === 0 ? "text-vermilion" : "text-cream"}`}
+              className={`text-center font-sans text-xs ${cells === 0 ? "text-vermilion" : "text-cream"}`}
             >
               {cells === 0
                 ? me.troops >= (cost ?? 0)
@@ -1758,7 +1758,7 @@ export function TerraPanel({
                 : t().target.plan(troops, cells, cells * (cost ?? 0), troops - cells * (cost ?? 0))}
             </p>
             {cells > 0 && (
-              <p className="text-center font-mono text-xs text-cream-dim">
+              <p className="text-center font-sans text-xs text-cream-dim">
                 {t().target.pace(
                   Math.ceil(
                     (cells * (holder < 0 ? v.rules.neutralMinutes : v.rules.cellMinutes)) / 60,
@@ -1769,19 +1769,19 @@ export function TerraPanel({
             )}
             {/* The first attack on a merchant gives up the capital's safety. */}
             {merchant && v.rules.peacefulSafe && !me.aggressor && (
-              <p className="text-center font-mono text-xs text-vermilion">
+              <p className="text-center font-sans text-xs text-vermilion">
                 {t().target.losesSafety}
               </p>
             )}
             {/* Against a merchant only, and when it changes something: what stays home. */}
             {cells > 0 && merchant && density(me.troops - troops) < density(me.troops) && (
-              <p className="text-center font-mono text-xs text-cream-dim">
+              <p className="text-center font-sans text-xs text-cream-dim">
                 {t().target.defense(density(me.troops - troops), density(me.troops))}
               </p>
             )}
           </div>
         ) : merchant && ally ? (
-          <p className="text-center font-mono text-xs text-cream-dim">
+          <p className="text-center font-sans text-xs text-cream-dim">
             {t().holder.sendLine(gift, me.giftsLeft)}
           </p>
         ) : undefined
@@ -1966,7 +1966,7 @@ function PeasantsSlider({
   };
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between font-mono text-xs">
+      <div className="flex items-center justify-between font-sans text-xs">
         <span className="text-vermilion">
           ⚔ {t().peasants.soldiers(100 - Math.round(bps / 100))}
         </span>

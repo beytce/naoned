@@ -33,7 +33,7 @@ function ChangeTag({ value }: { value: number }) {
   // One piece: « ▼ 3,9 % » never breaks over two lines.
   return (
     <span
-      className={`whitespace-nowrap font-mono text-xs font-bold ${up ? "text-lagoon" : "text-vermilion"}`}
+      className={`whitespace-nowrap font-sans text-xs font-bold ${up ? "text-lagoon" : "text-vermilion"}`}
     >
       {`${up ? "▲" : "▼"}\u00a0${percent.format(Math.abs(value))}\u00a0%`}
     </span>
@@ -69,9 +69,7 @@ function Row({
     >
       <ResourceIcon code={line.resource} size={36} />
       <div className="min-w-0 flex-1">
-        <p className="font-display text-sm font-semibold uppercase">
-          {props.names.resource(line.resource)}
-        </p>
+        <p className="font-display text-sm font-semibold">{props.names.resource(line.resource)}</p>
         <p className="meta mt-0.5 flex items-center gap-2">
           <span className="whitespace-nowrap">
             {fr.game.inStock(have(props.view, line.resource))}
@@ -137,7 +135,7 @@ function BookSide({
                     <MerchantName pseudo={props.people[l.by] ?? null} bot={props.bots.has(l.by)} />
                   )}
                 </p>
-                <p className="font-mono tabular-nums text-cream-dim">
+                <p className="font-sans tabular-nums text-cream-dim">
                   {l.quantity} × {d(l.price)}
                 </p>
               </li>
@@ -459,7 +457,7 @@ function MudaPanel({ props }: { props: GameProps }) {
                 className="flex w-full items-center gap-2.5 py-1.5 text-left"
               >
                 <ResourceIcon code={r} size={26} />
-                <span className="min-w-0 flex-1 truncate font-display text-xs font-semibold uppercase">
+                <span className="min-w-0 flex-1 truncate font-display text-xs font-semibold">
                   {props.names.resource(r)}
                 </span>
                 <span className="whitespace-nowrap text-xs text-cream-dim">
@@ -673,7 +671,7 @@ function PriceChart({
         />
         <circle cx={x(raw.at(-1)?.t ?? t1)} cy={y(last)} r="3.5" fill="rgb(var(--gold))" />
       </svg>
-      <figcaption className="flex justify-between font-mono text-xs text-cream-dim">
+      <figcaption className="flex justify-between font-sans text-xs text-cream-dim">
         <span>{c.since(props.priceDays)}</span>
         <span>
           {c.low} {d(BigInt(Math.min(...values)))} · {c.high} {d(BigInt(Math.max(...values)))}

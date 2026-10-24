@@ -40,6 +40,7 @@ Les illustrations (ressources, bâtiments, blasons) et la carte gardent leurs pr
 
 - **Archivo Expanded** (Archivo variable, largeur 125 %) : titres et chiffres.
 - **Space Grotesk** : texte courant et boutons.
+- **Space Mono** n'écrit que les sur-titres, en capitales espacées : jamais une ligne de texte, un chiffre, un badge ni un onglet (`test/mono.test.ts` ; seules exceptions : les chiffres du code de connexion et la console d'admin). Badges, onglets, `Segmented` et les noms des marchandises au Rialto sont en casse de phrase.
 - **Space Mono** : sur-titres de un à trois mots en capitales (`.label`, 12 px).
 - Toute phrase ou temps restant en petit : `.note` (Space Grotesk 13 px, chiffres alignés). Aucun texte sous 12 px.
 

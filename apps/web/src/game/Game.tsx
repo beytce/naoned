@@ -714,7 +714,7 @@ function Loading({
       {failed ? (
         <>
           <p className="max-w-xs text-cream-dim">{fr.errors.network}</p>
-          {detail && <p className="font-mono text-xs text-muted">{detail}</p>}
+          {detail && <p className="font-sans text-xs text-muted">{detail}</p>}
           <Slab onClick={onRetry}>{fr.game.retry}</Slab>
         </>
       ) : (

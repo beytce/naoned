@@ -81,7 +81,7 @@ function Tender({ props, x }: { props: GameProps; x: TenderView }) {
         <span className="text-right text-xs text-cream-dim">
           {t.ceiling}
           <br />
-          <span className="font-mono text-cream">{d(x.ceiling)}</span>
+          <span className="font-sans text-cream">{d(x.ceiling)}</span>
         </span>
       </div>
       {x.won ? (
@@ -109,7 +109,7 @@ function Tender({ props, x }: { props: GameProps; x: TenderView }) {
             <label className="block text-sm">
               <span className="flex justify-between">
                 <span>{t.price}</span>
-                <span className="font-mono">{d(BigInt(price))}</span>
+                <span className="font-sans">{d(BigInt(price))}</span>
               </span>
               <input
                 type="range"

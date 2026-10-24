@@ -1143,7 +1143,7 @@ function CartPanel({
   const title = (
     <>
       {vehicleName(vehicle.type)}{" "}
-      <span className="font-mono text-xs font-normal normal-case tracking-normal text-cream-dim">
+      <span className="font-sans text-xs font-normal normal-case tracking-normal text-cream-dim">
         {units}/{capacity}
       </span>
     </>
@@ -1171,12 +1171,12 @@ function CartPanel({
         title={
           <>
             {vehicleName(vehicle.type)}{" "}
-            <span className="font-mono text-xs font-normal normal-case tracking-normal text-cream-dim">
+            <span className="font-sans text-xs font-normal normal-case tracking-normal text-cream-dim">
               {trip.loaded} {props.names.resource(trip.resource).toLowerCase()}
             </span>
           </>
         }
-        chip={<span className="font-mono text-xs text-gold">{d(trip.paid ?? trip.payment)}</span>}
+        chip={<span className="font-sans text-xs text-gold">{d(trip.paid ?? trip.payment)}</span>}
         status={
           out
             ? m.cart.outbound(city, clock(trip.arriveAt - now))
@@ -1184,7 +1184,7 @@ function CartPanel({
         }
         extra={
           rush ? (
-            <p className="text-center font-mono text-xs text-gold">
+            <p className="text-center font-sans text-xs text-gold">
               {fr.game.house.spend.rushLine(out, rush.cost)}
             </p>
           ) : undefined

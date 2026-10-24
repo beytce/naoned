@@ -170,7 +170,7 @@ function HouseBody(props: GameProps) {
                   {e.patent ? patentName(e.patent) : (t().sources[e.source]?.(e.week) ?? e.source)}
                 </span>
                 <span
-                  className={`font-mono font-bold tabular-nums ${e.amount < 0 ? "text-vermilion" : "text-lagoon"}`}
+                  className={`font-sans font-bold tabular-nums ${e.amount < 0 ? "text-vermilion" : "text-lagoon"}`}
                 >
                   {e.amount > 0 ? `+${e.amount}` : e.amount}
                 </span>
@@ -201,7 +201,7 @@ function Missions(props: GameProps & { onClaimed: () => void }) {
             className="flex items-center gap-3 cut bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70"
           >
             <span
-              className={`flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full px-1.5 font-mono text-xs font-bold ${mission.claimed ? "bg-lagoon text-on-lagoon" : mission.done ? "bg-gold text-ink" : "bg-night-4 text-cream-dim ring-1 ring-inset ring-line"}`}
+              className={`flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full px-1.5 font-display text-xs font-bold ${mission.claimed ? "bg-lagoon text-on-lagoon" : mission.done ? "bg-gold text-ink" : "bg-night-4 text-cream-dim ring-1 ring-inset ring-line"}`}
             >
               {mission.claimed ? "✓" : `${mission.progress}/${mission.count}`}
             </span>

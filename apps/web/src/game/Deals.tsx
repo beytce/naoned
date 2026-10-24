@@ -145,7 +145,7 @@ function Commissions(props: GameProps) {
         <label className="block text-sm">
           <span className="flex justify-between">
             <span>{t.price}</span>
-            <span className="font-mono">
+            <span className="font-sans">
               {d(BigInt(price))} · {pct} %
             </span>
           </span>
@@ -247,7 +247,7 @@ function Colleganze(props: GameProps) {
         <label className="block text-sm">
           <span className="flex justify-between">
             <span>{t.amount}</span>
-            <span className="font-mono">{d(BigInt(amount))}</span>
+            <span className="font-sans">{d(BigInt(amount))}</span>
           </span>
           <input
             type="range"
@@ -266,7 +266,7 @@ function Colleganze(props: GameProps) {
         <label className="block text-sm">
           <span className="flex justify-between">
             <span>{t.share}</span>
-            <span className="font-mono">{share} %</span>
+            <span className="font-sans">{share} %</span>
           </span>
           <input
             type="range"
@@ -334,7 +334,7 @@ function Bank(props: GameProps) {
           <label className="block text-sm">
             <span className="flex justify-between">
               <span>{b.amount}</span>
-              <span className="font-mono">{d(BigInt(Math.min(amount, limit)))}</span>
+              <span className="font-sans">{d(BigInt(Math.min(amount, limit)))}</span>
             </span>
             <input
               type="range"

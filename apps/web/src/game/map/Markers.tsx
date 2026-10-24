@@ -46,7 +46,7 @@ function Pill({ children, tone }: { children: ReactNode; tone: "gold" | "lagoon"
         : "bg-vermilion text-cream";
   return (
     <span
-      className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 font-mono text-xs font-bold leading-none shadow-md shadow-black/40 ${cls}`}
+      className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 font-display text-xs font-bold leading-none shadow-md shadow-black/40 ${cls}`}
     >
       {children}
     </span>

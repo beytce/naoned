@@ -76,7 +76,7 @@ function Figure({ label, value }: { label: string; value: string }) {
   return (
     <div className="cut bg-night-3 px-2 py-2 ring-1 ring-inset ring-line">
       <dt className="label">{label}</dt>
-      <dd className="font-mono text-base tabular-nums text-cream">{value}</dd>
+      <dd className="font-sans text-base tabular-nums text-cream">{value}</dd>
     </div>
   );
 }
