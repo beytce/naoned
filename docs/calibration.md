@@ -1417,7 +1417,14 @@ Un jour manqué par période de 7 jours ne casse plus la série du coffre. C'est
 - Le coffre affiche « Série : 4 jours · grâce disponible ».
 - Un rappel à 19 h (jusqu'à 21 h), une fois par jour, à qui tient une série d'au moins 3 jours et n'a pas ouvert le coffre du jour. Il compte dans le plafond de 3 notifications par jour d'E3-1. Il n'est envoyé que si la grâce est en place.
 
-**La monnaie, estimée et non simulée.** Les marchands de `pnpm sim` ne font pas les tâches du jour : la simulation ne voit pas cette règle.
+**La monnaie.**
 - Le coffre vaut 10 d, plus 3 d par jour de série, jusqu'à 22 d.
-- Un marchand qui manque un jour par semaine touchait, sur 6 jours, 10 + 13 + 16 + 19 + 22 + 22 = 102 d. Avec la grâce, il touche 6 × 22 = 132 d.
-- Cela fait +30 d par semaine, soit environ 4 d par jour, ou +2,4 % de la monnaie payée par actif (182 d). C'est le plafond : un marchand présent tous les jours ne touche rien de plus.
+- Au plus : un marchand qui manque un jour par semaine touchait, sur 6 jours, 10 + 13 + 16 + 19 + 22 + 22 = 102 d. Avec la grâce, il touche 6 × 22 = 132 d. Cela fait +30 d par semaine, soit environ 4 d par jour, ou +2,4 % de la monnaie payée par actif (182 d). Un marchand présent tous les jours ne touche rien de plus.
+- Mesuré : `pnpm sim` sur 5 graines, avec E1-4, les 5 conformes. Les marchands simulés encaissent les tâches faites en chemin, et ouvrent donc le coffre certains jours seulement.
+
+| | Coffres sur la saison (5 graines) | Part de la monnaie créée |
+| --- | --- | --- |
+| Sans la grâce | 2 868 · 3 171 · 3 245 · 3 329 · 3 052 d | 0,82 à 0,95 % |
+| Avec la grâce | 2 991 · 3 575 · 3 539 · 3 460 · 3 121 d | 0,87 à 1,02 % |
+
+La monnaie des coffres monte de 6,5 %, soit environ +0,1 % de la monnaie payée. C'est bien en dessous des +2 % redoutés.
