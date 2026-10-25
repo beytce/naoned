@@ -751,6 +751,8 @@ export interface Ceremony {
   turnover: Money | null;
   tier: string;
   award: string;
+  /** The month's titles of the Terraferma held (a name only, E2-10). */
+  titles: string[];
   /** Title held at the close and the renown it added (included in `renown`). */
   milestone: { name: string; renown: number };
   renown: number;
@@ -781,6 +783,7 @@ export interface Palmares {
     turnover: Money | null;
     tier: string;
     award: string;
+    titles: string[];
     milestone: { name: string; renown: number };
     renown: number;
   }[];

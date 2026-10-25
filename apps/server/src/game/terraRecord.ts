@@ -12,6 +12,7 @@ type Result = {
   of: number;
   glory: number;
   cells: number;
+  signore: boolean;
 };
 
 /**
@@ -59,6 +60,7 @@ export async function recordTerra(
       of: Number(e.data?.of ?? 0),
       glory: Number(e.data?.glory ?? 0),
       cells: Number(e.data?.cells ?? 0),
+      signore: e.data?.signore === true,
     }));
   if (results.length === 0) return;
   const ids = results.map((r) => r.accountId);
@@ -84,6 +86,7 @@ export async function recordTerra(
         of: r.of,
         glory: r.glory,
         cells: r.cells,
+        signore: r.signore,
         rating: next.get(r.accountId) ?? 1000,
         at,
       })),

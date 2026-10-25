@@ -1,0 +1,1 @@
+ALTER TABLE "terra_results" ADD COLUMN "signore" boolean DEFAULT false NOT NULL;

@@ -259,6 +259,8 @@ export const terraResults = pgTable(
     glory: integer("glory").notNull(),
     cells: integer("cells").notNull(),
     rating: integer("rating").notNull(),
+    /** The week's Signore (always a person: the computer's houses are never it). */
+    signore: boolean("signore").notNull().default(false),
     at: timestamp("at", { withTimezone: true }).notNull(),
   },
   (t) => [primaryKey({ columns: [t.worldId, t.week, t.accountId] })],

@@ -1,7 +1,15 @@
 import { seasonTier } from "@comptoirs/engine";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { accounts, players, seasonResults, weeklyResults, worlds } from "../db/schema.js";
+import {
+  accounts,
+  influenceEntries,
+  players,
+  seasonResults,
+  terraResults,
+  weeklyResults,
+  worlds,
+} from "../db/schema.js";
 import { nextSeasonBounds } from "./calendar.js";
 import { TITLES, titleFor } from "./profile.js";
 
@@ -127,6 +135,79 @@ export async function renownOf(db: Db, accountId: string): Promise<number> {
 }
 
 /** Seasons an account took part in, latest first: the palmarès. */
+/**
+ * The month's two titles of the Terraferma (E2-10 of the experts), read from what was recorded,
+ * people only, worth nothing but their name on the palmarès: the Capitano generale, who earned
+ * the most Influence there (the most glory breaks a tie), and the Gonfalone, the Signore of the
+ * last week closed.
+ */
+export async function monthTitles(
+  db: Db,
+  worldId: string,
+): Promise<{ capitano: string | null; gonfalone: string | null }> {
+  const glory = new Map(
+    (
+      await db
+        .select({ id: terraResults.accountId, glory: sql<number>`sum(${terraResults.glory})::int` })
+        .from(terraResults)
+        .where(eq(terraResults.worldId, worldId))
+        .groupBy(terraResults.accountId)
+    ).map((r) => [r.id, Number(r.glory)]),
+  );
+  const earned = await db
+    .select({
+      id: influenceEntries.accountId,
+      amount: sql<number>`sum(${influenceEntries.amount})::int`,
+    })
+    .from(influenceEntries)
+    .innerJoin(accounts, eq(accounts.id, influenceEntries.accountId))
+    .where(
+      and(
+        eq(influenceEntries.worldId, worldId),
+        eq(influenceEntries.source, "terraferma"),
+        eq(accounts.isBot, false),
+      ),
+    )
+    .groupBy(influenceEntries.accountId);
+  const capitano =
+    earned
+      .filter((r) => Number(r.amount) > 0)
+      .sort(
+        (a, b) =>
+          Number(b.amount) - Number(a.amount) ||
+          (glory.get(b.id) ?? 0) - (glory.get(a.id) ?? 0) ||
+          (a.id < b.id ? -1 : 1),
+      )[0]?.id ?? null;
+  const [last] = await db
+    .select({ id: terraResults.accountId })
+    .from(terraResults)
+    .innerJoin(accounts, eq(accounts.id, terraResults.accountId))
+    .where(
+      and(
+        eq(terraResults.worldId, worldId),
+        eq(terraResults.signore, true),
+        eq(accounts.isBot, false),
+      ),
+    )
+    .orderBy(desc(terraResults.week))
+    .limit(1);
+  return { capitano, gonfalone: last?.id ?? null };
+}
+
+/** The titles of the month an account holds in a world, by name. */
+async function titlesOf(db: Db, worldId: string, accountId: string): Promise<string[]> {
+  const t = await monthTitles(db, worldId);
+  return [
+    t.capitano === accountId ? MONTH_TITLES.capitano : null,
+    t.gonfalone === accountId ? MONTH_TITLES.gonfalone : null,
+  ].filter((x): x is string => x !== null);
+}
+
+export const MONTH_TITLES = {
+  capitano: "Capitano generale della Terraferma",
+  gonfalone: "Gonfalone de la Terraferme",
+};
+
 export async function seasonRecord(db: Db, accountId: string) {
   const rows = await db
     .select({
@@ -145,9 +226,15 @@ export async function seasonRecord(db: Db, accountId: string) {
     .innerJoin(worlds, eq(worlds.id, seasonResults.worldId))
     .where(eq(seasonResults.accountId, accountId))
     .orderBy(desc(worlds.endsAt));
+  const titles = new Map(
+    await Promise.all(
+      rows.map(async (r) => [r.worldId, await titlesOf(db, r.worldId, accountId)] as const),
+    ),
+  );
   return rows.map((r) => ({
     season: r.name,
     endsAt: r.endsAt.getTime(),
+    titles: titles.get(r.worldId) ?? [],
     rank: r.rank,
     players: r.players,
     worth: r.worth.toString(),
@@ -201,6 +288,8 @@ export async function pendingCeremony(db: Db, accountId: string) {
     turnover: row.turnover?.toString() ?? null,
     tier: row.tier,
     award: info.name,
+    // The month's titles of the Terraferma: a name only, no renown (E2-10).
+    titles: await titlesOf(db, row.worldId, accountId),
     milestone: {
       name: milestoneInfo(row.milestone).name,
       renown: milestoneInfo(row.milestone).renown,
