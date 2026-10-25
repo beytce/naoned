@@ -80,6 +80,28 @@ describe("the guide's ring", () => {
     expect(isCovered(row, row.getBoundingClientRect(), page(row, [rialto]))).toBe(false);
   });
 
+  it("is never drawn on the map under a place open over it (the counter up close)", () => {
+    const cart = target(400);
+    const orbit = sheet();
+    const p = { ...page(cart), places: () => [orbit] };
+    expect(isCovered(cart, cart.getBoundingClientRect(), p)).toBe(true);
+  });
+
+  it("is drawn on a target in the place, and in a window opened over the place", () => {
+    const orbit = sheet();
+    const harvest = target(700, orbit);
+    expect(
+      isCovered(harvest, harvest.getBoundingClientRect(), {
+        ...page(harvest),
+        places: () => [orbit],
+      }),
+    ).toBe(false);
+    const workshops = sheet();
+    const produce = target(400, workshops);
+    const p = { ...page(produce, [workshops]), places: () => [orbit] };
+    expect(isCovered(produce, produce.getBoundingClientRect(), p)).toBe(false);
+  });
+
   it("is not drawn on a target something else lies over", () => {
     const bell = target(120);
     const card = { contains: () => false, closest: () => null };

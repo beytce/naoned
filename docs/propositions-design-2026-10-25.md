@@ -110,3 +110,22 @@ Les épices préparées (chaîne `spicery`, une seule marchandise) prennent la t
 3. **Jetons gravés** : un disque de nuit cerclé de la couleur de la chaîne, gravé de son pictogramme ; l'étape en crans au-dessus du cercle (un, deux, trois), un double cercle pour l'outre-mer. Le plus explicite pour un débutant, le plus proche des illustrations actuelles ; les crans se perdent sous 20 px.
 
 Ma recommandation : **les astres** pour la carte et les petites tailles, avec le pictogramme de la proposition 3 dès 24 px (Magasin, Rialto, Ateliers). Les trois sont maquettées sur la planche, chacune en légende complète et dans quatre situations de jeu : commandes en orbite, Magasin, chaîne au comptoir, Rialto.
+
+## Décisions du porteur (25 octobre 2026, suite)
+
+- **Astres de chaîne** retenus pour les marchandises, appliqués au jeu (PR #40).
+- **Le comptoir en orbite** de la maquette A2 mis en place tel quel (plein écran au toucher du comptoir).
+- **Toute la suite dans cette direction** : CLAUDE.md et `docs/design.md` (§ Direction Lagune : la règle).
+
+## Lagune : une proposition par page
+
+Sur la planche, page « Lagune · toutes les pages » : le système (couleurs à rôle, marques, l'astre et ses états, boutons, frise, mouvement), la navigation entre les pages (carte → lieu en orbite → feuille du bas ; moments qui s'ouvrent seuls), puis une maquette par page :
+
+| Rangée | Pages |
+| --- | --- |
+| Le comptoir et la route | Atelier (produire, améliorer) · Bâtir · Magasin · Ville · Cargaison et départ |
+| Le marché et les nouvelles | Rialto · Négoce d'une marchandise · Avis · Livre de compte · Bon retour |
+| La saison | Classement · Profil · Ballots de Faraj · Fin de saison · Pass Négociant |
+| Le monde et l'entrée | Terraferme · Compagnie · Connexion · Choix de la région · Aide |
+
+Aucune ne change une règle : chacune redessine une page qui existe, avec ses données actuelles. Les chiffres des maquettes sont des exemples. À valider page par page avant d'être codées.

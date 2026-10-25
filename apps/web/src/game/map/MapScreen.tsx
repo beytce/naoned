@@ -64,6 +64,7 @@ import {
 } from "./HudTips.js";
 import { CartMarker, CityMarker, CityName, HomeMarker } from "./Markers.js";
 import { NoticesSheet } from "./Notices.js";
+import { ComptoirOrbit } from "./Orbit.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
 import { SIDE_W, SideColumn } from "./SideColumn.js";
 import {
@@ -86,7 +87,6 @@ import {
   useWeekReplay,
 } from "./TerraLayer.js";
 import { TimeStrip } from "./TimeStrip.js";
-import { WorkshopRow } from "./WorkshopRow.js";
 import { type MapMarker, type Selection, WorldMap, type WorldMapHandle } from "./WorldMap.js";
 import { ACTION_ICONS as A } from "./actions.js";
 import { Icon } from "./icons.js";
@@ -581,8 +581,9 @@ export function MapScreen(
       />
     );
   const trade = !campaign && !terra;
+  // The counter opens up close, its workshops in orbit around its sun.
   if (trade && sel?.kind === "home")
-    panel = <HomePanel props={props} onClose={() => select(null)} />;
+    panel = <ComptoirOrbit props={props} crest={crest} onClose={() => select(null)} />;
   if (trade && sel?.kind === "city") {
     const i = cities.indexOf(sel.code);
     const step = (k: number) =>
@@ -938,78 +939,6 @@ export function MapScreen(
       <Coach key={props.guideKey} {...props} departing={departure !== null} />
       {props.sheet === null && <ComeBack {...props} />}
     </div>
-  );
-}
-
-/** The merchant's counter: collect, the workshops, the store, building. */
-function HomePanel({ props, onClose }: { props: GameProps; onClose: () => void }) {
-  const { view, now } = props;
-  const m = fr.game.map;
-  const ready = view.buildings.reduce((n, b) => n + readyOf(b, now), 0);
-  const idle = view.buildings.some((b) => !b.job && b.canStart > 0);
-  const next = view.buildings
-    .filter((b) => b.job && readyOf(b, now) < b.job.batches)
-    .map((b) => {
-      const job = b.job as NonNullable<typeof b.job>;
-      const done = readyOf(b, now);
-      const start = job.startedAt + done * job.batchMs;
-      return { b, at: start + job.batchMs, share: (now - start) / job.batchMs };
-    })
-    .sort((x, y) => x.at - y.at)[0];
-  const stock = view.inventory.reduce((n, i) => n + i.available, 0);
-  const room = view.buildings.length < props.catalog.rules.maxBuildings;
-  const hungry = view.rations.perDay > 0 && view.rations.hungryUntil > now;
-  const status =
-    ready > 0
-      ? m.homeStatus.ready(ready)
-      : next
-        ? m.homeStatus.next(props.names.building(next.b.type), clock(next.at - now))
-        : idle
-          ? m.homeStatus.idle
-          : m.homeStatus.rest;
-  return (
-    <ContextPanel
-      title={m.home(props.account.pseudo ?? "")}
-      chip={<span className="meta">{fr.game.inStock(stock)}</span>}
-      status={hungry ? fr.game.domain.hungry : status}
-      tone={hungry ? "vermilion" : ready > 0 ? "gold" : "lagoon"}
-      progress={ready === 0 && next ? next.share : null}
-      onClose={onClose}
-      above={<WorkshopRow props={props} />}
-      actions={
-        <>
-          {ready > 0 || idle ? (
-            <ActionButton
-              icon={ready > 0 ? Icon.harvest() : Icon.restart()}
-              label={ready > 0 ? m.buttons.harvest : m.buttons.restart}
-              tone="gold"
-              badge={ready > 0 ? ready : undefined}
-              coach="panel-harvest"
-              disabled={props.busy}
-              onClick={() => harvestAndRestart(props)}
-            />
-          ) : null}
-          <ActionButton
-            icon={Icon.workshops()}
-            label={m.buttons.workshops}
-            coach="panel-workshops"
-            onClick={() => props.setSheet("workshops")}
-          />
-          <ActionButton
-            icon={A.store.icon()}
-            label={A.store.label}
-            onClick={() => props.setSheet("store")}
-          />
-          {room && (
-            <ActionButton
-              icon={Icon.build()}
-              label={m.buttons.build}
-              onClick={() => props.setSheet("buildHere")}
-            />
-          )}
-        </>
-      }
-    />
   );
 }
 
