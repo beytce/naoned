@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { BuildingArt } from "../art/buildings.js";
+import { GoodsMark } from "../art/goods.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { locale } from "../lang.js";
@@ -50,22 +51,32 @@ function RecipeFlow({
   props,
   runningMs,
 }: { recipe: Recipe; level: number; props: GameProps; runningMs?: number }) {
+  // Each good by its mark, its quantity under it: the chain reads from left to right.
   const side = (m: Record<string, number>, out: boolean) =>
     Object.entries(m).map(([r, q]) => (
-      <span key={r} className="inline-flex items-center gap-1">
-        <span className="font-display text-sm font-semibold tabular-nums">
+      <span key={r} className="inline-flex flex-col items-center gap-0.5">
+        <GoodsMark code={r} size={30} title={props.names.resource(r)} />
+        <span className="font-display text-sm font-bold tabular-nums">
           {out ? outputQty(props, r, q * level, level) : q * level}
         </span>
-        <ResourceIcon code={r} size={22} />
       </span>
     ));
   const inputs = side(recipe.inputs, false);
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl bg-night px-3 py-2.5">
       {inputs.length > 0 && (
         <>
           {inputs}
-          <span className="text-gold">→</span>
+          <svg viewBox="0 0 32 12" className="h-3 w-8 shrink-0" aria-hidden="true">
+            <path
+              d="M1 6h26M22 1.5l5 4.5-5 4.5"
+              fill="none"
+              stroke="rgb(var(--info))"
+              strokeWidth="1.8"
+              strokeDasharray="3 3"
+              strokeLinecap="round"
+            />
+          </svg>
         </>
       )}
       {side(recipe.outputs, true)}
@@ -604,6 +615,57 @@ function limit(b: BuildingView, recipe: Recipe, props: GameProps): string | null
   return t.limitedByQueue(b.canStart, props.catalog.rules.productionQueueMaxHours);
 }
 
+const STAR_R = 44;
+const STAR_C = 2 * Math.PI * STAR_R;
+
+/**
+ * A workshop as a star of the Lagune direction: the mark of what it makes in a round of the night,
+ * the arc of its batch in lapis, full and lagoon when it is ready, a dotted round when it waits
+ * (cream for work, grey for its matter: never an alarm).
+ */
+function WorkshopStar({
+  output,
+  state,
+  progress,
+}: { output?: string; state: string; progress: number }) {
+  const waiting = state !== "ready" && state !== "running";
+  return (
+    <span className="relative flex h-28 w-28 items-center justify-center">
+      {state === "ready" && <span className="marker-halo absolute inset-0 rounded-full" />}
+      <svg viewBox="-50 -50 100 100" className="absolute inset-0 -rotate-90" aria-hidden="true">
+        {waiting ? (
+          <circle
+            r={STAR_R}
+            fill="none"
+            stroke={state === "idle" ? "rgb(var(--cream) / 0.6)" : "rgb(var(--muted))"}
+            strokeWidth="2.5"
+            strokeDasharray="6 6"
+          />
+        ) : (
+          <>
+            <circle r={STAR_R} fill="none" stroke="rgb(var(--info) / 0.2)" strokeWidth="5" />
+            <circle
+              r={STAR_R}
+              fill="none"
+              stroke={state === "ready" ? "rgb(var(--lagoon))" : "rgb(var(--info))"}
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeDasharray={`${(STAR_C * (state === "ready" ? 1 : Math.max(0.03, Math.min(1, progress)))).toFixed(1)} ${STAR_C.toFixed(1)}`}
+            />
+          </>
+        )}
+      </svg>
+      <span className="flex h-[4.75rem] w-[4.75rem] items-center justify-center rounded-full bg-night ring-1 ring-line">
+        {output ? (
+          <GoodsMark code={output} size={44} />
+        ) : (
+          <span className="h-5 w-5 rotate-45 bg-gold-soft" />
+        )}
+      </span>
+    </span>
+  );
+}
+
 /**
  * One sheet per workshop, opened from its plot on the domain or from the list: what it is doing,
  * collecting, producing (with quick choices), what it lacks, and upgrading.
@@ -726,28 +788,28 @@ function WorkshopSheet({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <BuildingArt type={b.type} active={st.state === "running"} className="h-20 w-24" />
-        <div className="min-w-0">
-          <Label>
-            {fr.game.level(b.level)}
-            {b.path && ` · ${fr.game.manufacture.paths[b.path].name}`}
-          </Label>
-          <h3 className="font-display text-lg font-extrabold uppercase">
-            {props.names.building(b.type)}
-          </h3>
-          {status && (
-            <p
-              className={`text-sm ${st.state === "ready" ? "text-gold" : st.state === "blocked" ? "text-cream-dim" : "text-lagoon"}`}
-            >
-              {status}
-            </p>
-          )}
-        </div>
+      {/* The workshop as a star (Lagune): what it makes, the arc of its batch, its name. */}
+      <div className="flex flex-col items-center gap-1 text-center">
+        <WorkshopStar
+          output={Object.keys(recipe?.outputs ?? {})[0]}
+          state={st.state}
+          progress={st.progress ?? 0}
+        />
+        <p className="label text-cream-dim">
+          {fr.game.level(b.level)}
+          {b.path && ` · ${fr.game.manufacture.paths[b.path].name}`}
+        </p>
+        <h3 className="font-place text-xl font-bold uppercase tracking-[0.18em]">
+          {props.names.building(b.type)}
+        </h3>
+        {status && (
+          <p
+            className={`text-sm ${st.state === "ready" ? "text-lagoon" : st.state === "blocked" ? "text-cream-dim" : "text-info"}`}
+          >
+            {status}
+          </p>
+        )}
       </div>
-      {st.state === "running" && b.job && (
-        <Ribbon value={st.progress ?? 0} tone="lagoon" label={clock(st.left ?? 0)} />
-      )}
       {st.ready > 0 && (
         <Slab
           size="lg"
@@ -775,11 +837,13 @@ function WorkshopSheet({
                 aria-pressed={q === o.n}
                 onClick={() => setQty(o.n)}
                 // The one chosen reads as chosen: lit, with its tick, never as switched off.
-                className={`cut border px-2 py-2 text-xs font-semibold ${q === o.n ? "border-info bg-night-4 text-cream" : "border-line text-cream-dim"}`}
+                className={`flex min-h-11 flex-col items-center justify-center rounded-full px-2 py-1 text-xs font-semibold leading-tight transition active:scale-95 ${q === o.n ? "bg-info text-ink" : "text-cream-dim ring-1 ring-inset ring-line"}`}
               >
-                {q === o.n && <span className="text-info">✓ </span>}
-                {o.label}
-                <span className="block font-display text-sm tabular-nums">{o.n}</span>
+                <span>
+                  {q === o.n && "✓ "}
+                  {o.label}
+                </span>
+                <span className="font-display text-sm tabular-nums">{o.n}</span>
               </button>
             ))}
           </div>
