@@ -568,7 +568,8 @@ export const venice1450Settings: WorldSettingsInput = {
     urgentPerDay: 2,
     urgentPremiumBps: 1_500,
     urgentOpenMinutes: 180,
-    urgentHours: { from: 8, to: 21 },
+    // The last urgent order opens before 19 h and closes before 22 h.
+    urgentHours: { from: 8, to: 19 },
     // Vehicles carry several orders at once: city orders at +10 %, +30 % per hour of road.
     cityPriceBps: 11_000,
     distanceBonusBpsPerHour: 3_000,
@@ -626,8 +627,15 @@ export const venice1450Settings: WorldSettingsInput = {
     // Shared demand: the cities' orders form one board for the world, first come first served
     // (four city orders per active merchant: vehicles fill up with several of them).
     sharedOrdersPerActivePlayer: 4,
-    // In waves: new city orders every 4 hours, each open 8 hours, rather than all at midnight.
-    waves: { everyHours: 4, openHours: 8 },
+    // In waves, by day only (the experts' E1-1, 25 October 2026): new city orders at 8, 11, 14,
+    // 17 and 20 h in Paris, each open 8 hours; those of 17 and 20 h last until 10 h the next
+    // morning, and nobody takes an order of the board from 22 to 8 h.
+    waves: {
+      hours: [8, 11, 14, 17, 20],
+      openHours: 8,
+      carryUntilHour: 10,
+      closedHours: { from: 22, to: 8 },
+    },
     // The first delivery is felt: 150 ducats, about a seventh of the starting capital. The
     // Terraferma delivers its first batch of wheat, never the bread its workers eat.
     welcome: {

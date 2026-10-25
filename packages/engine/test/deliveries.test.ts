@@ -10,6 +10,7 @@ import {
   contractsFor,
   deliveryOrdersFor,
   hourIn,
+  nextWaveAt,
   netWorth,
   orderUnitPrice,
   supplierKey,
@@ -622,6 +623,16 @@ describe("a board shared by the world", () => {
       w.at(DAY + 9 * HOUR);
       expect(paris(w.now)).toBe(10);
       expect(error(dispatch(w, evening.id))).toBe("order_expired");
+    });
+
+    it("tells when the next wave comes, by the clock of Paris", () => {
+      const c = ctx({ deliveries: dayWaves } as never);
+      // 10 h in Paris: the next wave at 11 h; at 21 h, the next at 8 h the next morning.
+      expect(paris(nextWaveAt(c, T0 + 9 * HOUR) ?? 0)).toBe(11);
+      const late = nextWaveAt(c, T0 + 20 * HOUR) ?? 0;
+      expect(paris(late)).toBe(8);
+      expect(late).toBeGreaterThan(T0 + 20 * HOUR);
+      expect(nextWaveAt(ctx(), T0)).toBeNull();
     });
 
     it("never opens an order at night over a month, across the change of time", () => {

@@ -2,7 +2,7 @@ import { isDraft, original } from "immer";
 import { marketCityBps } from "./acts.js";
 import { costValue, qualityBps } from "./buildings.js";
 import { familyAccount } from "./campaign.js";
-import { hourIn, hourWithin } from "./clock.js";
+import { dayStartIn, hourIn, hourWithin } from "./clock.js";
 import { contractsDoneToday, contractsFor } from "./contracts.js";
 import {
   dogeFavourBps,
@@ -658,10 +658,7 @@ export function ensureBoard(tx: Tx): void {
     const perDay = Math.max(1, Math.floor(DAY_MS / every));
     const open = waves ? waves.openHours * HOUR_MS : DAY_MS;
     // At the hours of Paris: the clock of the players, whatever the change of time.
-    const opens = (waves?.hours ?? [])
-      .map((h) => nextHour(dayStart, h))
-      .filter((t): t is number => t !== undefined)
-      .sort((a, b) => a - b);
+    const opens = waveOpenings(ctx, day);
     let rank = 0;
     const wave = (): [number, number] => {
       if (opens.length === 0) {
@@ -740,6 +737,30 @@ function nextHour(from: number, hour: number): number | undefined {
     if (hourIn(at) === hour) return at;
   }
   return undefined;
+}
+
+/**
+ * The waves of a day of the board, at the hours of Paris of its calendar day (the day that holds
+ * its middle): a world started in the morning finds the morning's wave open at once.
+ */
+function waveOpenings(ctx: WorldContext, day: number): number[] {
+  const hours = ctx.settings.deliveries.waves?.hours ?? [];
+  const midnight = dayStartIn(ctx.startAt + day * DAY_MS + DAY_MS / 2).start;
+  return hours
+    .map((h) => nextHour(midnight, h))
+    .filter((t): t is number => t !== undefined)
+    .sort((a, b) => a - b);
+}
+
+/** When the next wave of the board opens after `now` (null without waves at hours of Paris). */
+export function nextWaveAt(ctx: WorldContext, now: number): number | null {
+  if (!deliveriesOn(ctx) || !ctx.settings.deliveries.waves?.hours?.length) return null;
+  const today = dayIndex(ctx, now);
+  for (const day of [today, today + 1]) {
+    const next = waveOpenings(ctx, day).find((t) => t > now);
+    if (next !== undefined) return next;
+  }
+  return null;
 }
 
 /** Whether nobody may take an order of the world's board now (the night). */

@@ -1280,3 +1280,33 @@ Ces cinq missions sont remplacées par celles de la Terraferme prévues par docs
 `pnpm sim` ne change pas : les marchands simulés ne réclament pas l'Influence.
 
 `pnpm sim` relancé après tout le lot 0 (Signore, missions, compte par boîte mail, affichage) : 5 graines, **toutes conformes** (PASS). La croissance de la monnaie par joueur actif reste dans le diagnostic déjà connu (1,5 à 4,1 %/jour en moyenne), le Gini à J+15 entre 0,46 et 0,49, et 3 à 4 jours hors plage du ratio créée / détruite sur 23 : les valeurs d'avant, aux variations de graine près. Le lot 0 ne touche pas à l'économie simulée.
+
+## Les villes passent commande de jour (25 octobre 2026, lot 1, E1-1)
+
+Les vagues du tableau commun s'ouvraient toutes les 4 heures depuis le début du jour de jeu, donc à 0 h et à 4 h. Un tiers des commandes se prenait la nuit, alors que le jeu promet de dormir de 22 h à 8 h. Désormais (`deliveries.waves`) :
+
+- **Vagues aux heures de Paris.** Elles s'ouvrent à 8, 11, 14, 17 et 20 h du jour calendaire de Paris (`hours`), quel que soit le changement d'heure. Chaque commande reste ouverte 8 h, et le nombre de commandes du jour ne change pas.
+- **Les vagues du soir durent jusqu'au lendemain 10 h** (`carryUntilHour`). Ce sont celles qui iraient dans la nuit, à 17 h et 20 h. Elles passent sur le tableau du jour suivant sous leur identifiant.
+- **Personne ne prend une commande du tableau entre 22 h et 8 h** (`closedHours`, erreur `board_closed`). Les commandes personnelles (Doge, bienvenue) ne sont pas touchées.
+- **Les urgentes s'ouvrent avant 19 h** (`urgentHours.to: 19`) : elles ferment donc avant 22 h.
+
+Pourquoi le report est obligatoire : le prototype de l'expert a montré que supprimer seulement les vagues de nuit pénalise l'occasionnel. Les PNJ, eux, ne jouent pas la nuit et retrouvaient ces commandes le matin. Le report rend cette réserve du matin, et la fermeture de nuit empêche qu'on la vide.
+
+Mesure : `pnpm sim`, 5 graines, avant et après, avec le nouvel indicateur « prises d'un occasionnel / d'un assidu ». C'est la médiane des commandes du tableau prises dans la saison. Une commande reportée y compte une fois.
+
+| Graine | Monnaie payée (d / actif / jour) avant → après | Prises dans l'heure | Occasionnel / assidu | Assidus devant occasionnels (ventes nettes) |
+| --- | --- | --- | --- | --- |
+| 1 | 213,2 → 220,1 | 27 % → 42 % | 0,42 → 0,38 | 274 % → 154 % |
+| 2 | 214,8 → 219,2 | 28 % → 43 % | 0,44 → 0,44 | 62 % → 311 % |
+| 3 | 215,9 → 221,4 | 28 % → 44 % | 0,46 → — | 156 % → — |
+| 4 | 211,1 → 216,7 | 27 % → 43 % | 0,44 → 0,62 | 93 % → 41 % |
+| 5 | 209,1 → 212,8 | 28 % → 43 % | 0,54 → 0,41 | 145 % → 126 % |
+
+Toutes les graines sont conformes (PASS), avant comme après. Les critères de l'expert sont tenus :
+- **Monnaie payée** : +2,5 % (dans les ±5 % demandés).
+- **Rapport occasionnel / assidu** : au moins 0,38 sur chaque graine (≥ 0,37 demandé) ; médiane 0,43 contre 0,44 avant.
+- **Avance des assidus** : médiane 140 % contre 145 % avant (≤ 145 % demandé).
+
+Sur la graine 3, les deux seuls occasionnels encore actifs en fin de saison sont des retardataires, que le rapport écarte, d'où « — ». Le nombre d'occasionnels actifs au dernier jour reste du même ordre : 20 avant, 17 après, sur les 5 graines.
+
+Les commandes partent plus vite après l'ouverture (42 % dans l'heure contre 27 %), puisque les vagues tombent toutes pendant les heures de jeu.
