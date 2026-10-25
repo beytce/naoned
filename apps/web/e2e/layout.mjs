@@ -37,15 +37,21 @@ const SIZES = (process.env.SIZES ?? "390x844,320x568")
 const CLOCK_START = "2026-03-02T10:00:00+01:00";
 // REPORT=1: every fault listed, the session played to its end all the same.
 const REPORT = process.env.REPORT === "1";
+const TEXT_SIZE = process.env.TEXT_SIZE ?? "";
 const REPEAT = Math.max(1, Number(process.env.REPEAT ?? 1));
 // The merchant's name keeps this many letters on the map, at 320 px too.
-const NAME_LETTERS = 10;
+// The budgets in pixels are set for the text at 100 %; at a larger text (TEXT_SIZE), the name's
+// letters and the band's height follow it: what is checked then is that nothing overlaps, spills
+// or shrinks under 44 px.
+const SCALE = Number(process.env.TEXT_SIZE || 100) / 100;
+const NAME_LETTERS = Math.floor(10 / SCALE ** 2);
 const faults = [];
 
 // Lorenzo's words the script reads (apps/web/src/i18n.ts, fr.game.coach).
 const COVERED = /fermez cette fenêtre/i;
 const LEDGER = /voici votre livre de compte/i;
 const LEDGER_LATER = /votre livre de compte, sous la cloche/i;
+const INVEST_LATER = /il vous faut encore des briques et des planches/i;
 const BRAVO = /bravo, vous connaissez la boucle/i;
 // A Thursday of 40 merchants on the Terraferma (e2e/fixtures/make-terra-midweek.ts).
 const MIDWEEK = JSON.parse(
@@ -196,6 +202,13 @@ async function session(width, height, tag) {
     serviceWorkers: "block",
   });
   try {
+    // TEXT_SIZE=130: the whole session with the text at 130 % (E3-11 of the experts).
+    if (TEXT_SIZE)
+      await context.addInitScript((size) => {
+        try {
+          localStorage.setItem("comptoirs:textSize", size);
+        } catch {}
+      }, TEXT_SIZE);
     const page = await context.newPage();
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
@@ -352,6 +365,7 @@ async function guide(page, check) {
   let last = null;
   let since = Date.now();
   let cashed = false;
+  let invested = true;
   while (Date.now() < deadline) {
     await page.waitForTimeout(700);
     if ((await bubble.count()) === 0) {
@@ -370,10 +384,19 @@ async function guide(page, check) {
       throw new Error(`the guide stays three minutes on « ${text} »`);
     }
     if (BRAVO.test(text)) {
-      if (!/objectif 7\/7/i.test(text)) throw new Error(`the guide ends short: « ${text} »`);
+      // Seven objectives, six when the first upgrade had to wait.
+      const goal = invested ? /objectif 7\/7/i : /objectif [67]\/7/i;
+      if (!goal.test(text)) throw new Error(`the guide ends short: « ${text} »`);
       if (!cashed) throw new Error("the guide ends without the Livre de compte's reward cashed");
       await bubble.getByRole("button", { name: /terminer/i }).click();
       return;
+    }
+    // The first upgrade waits when the Rialto has nothing to sell (a new world, the Dogana's
+    // stock spent): the guide lets it go, as it should for a newcomer. Any other skip is a fault.
+    if (INVEST_LATER.test(text)) {
+      await bubble.getByRole("button", { name: /^passer$/i }).click();
+      invested = false;
+      continue;
     }
     if ((await bubble.getByRole("button", { name: /^passer$/i }).count()) > 0)
       throw new Error(`the guide skips a step: « ${text} »`);
@@ -645,7 +668,7 @@ async function lightHud(page, label) {
   });
   // The purse, the troops and a plaque of two lines: from 235 px before (24 October 2026). On a
   // PC the right column holds three lines of text at most.
-  const most = seen.width >= 1024 ? 200 : 160;
+  const most = Math.round((seen.width >= 1024 ? 200 : 160) * SCALE);
   if (seen.band > most)
     throw new Error(
       `${label}: the HUD's band ends at ${Math.round(seen.band)} px, ${most} at most`,

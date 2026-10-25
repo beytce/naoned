@@ -59,7 +59,7 @@ export function ContextPanel({
           </span>
         </button>
         <div className="flex items-center gap-2 pr-14">
-          <h2 className="min-w-0 truncate font-display text-[15px] font-extrabold uppercase tracking-wide">
+          <h2 className="min-w-0 truncate font-display text-[0.9375rem] font-extrabold uppercase tracking-wide">
             {title}
           </h2>
           {chip && <span className="shrink-0">{chip}</span>}
@@ -79,7 +79,7 @@ export function ContextPanel({
           )}
         </div>
         {status && (
-          <div className={`mt-1 flex min-h-5 items-center gap-2 text-[13px] ${ink}`}>
+          <div className={`mt-1 flex min-h-5 items-center gap-2 text-[0.8125rem] ${ink}`}>
             <span className="min-w-0 truncate">{status}</span>
             {progress !== undefined && progress !== null && (
               <span className="relative h-1.5 min-w-16 flex-1 overflow-hidden rounded-full bg-night ring-1 ring-line">

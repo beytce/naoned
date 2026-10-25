@@ -103,7 +103,7 @@ export function HudTip({
           className={`absolute -right-[7px] top-1/2 h-3.5 w-3.5 -translate-y-1/2 rotate-45 ${ARROW[content.tone]}`}
         />
       </div>
-      <div className="space-y-2.5 bg-night-2 p-3 text-[13px] leading-snug text-cream shadow-[0_10px_30px_rgb(0_0_0/0.5)] ring-1 ring-inset ring-line backdrop-blur">
+      <div className="space-y-2.5 bg-night-2 p-3 text-[0.8125rem] leading-snug text-cream shadow-[0_10px_30px_rgb(0_0_0/0.5)] ring-1 ring-inset ring-line backdrop-blur">
         <p>{content.text}</p>
         {content.lines && content.lines.length > 0 && (
           <dl className="space-y-0.5 border-t border-line pt-2">

@@ -14,8 +14,18 @@ import { hapticsEnabled, setHapticsEnabled } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { LegalLinks } from "../legal/Legal.js";
 import { setSoundEnabled, soundEnabled } from "../sound.js";
-import { PALETTES, type PaletteId, choosePalette, currentPalette, needsPass } from "../theme.js";
-import { Big, Donut, Label, Panel, Ribbon, Sheet, Slab, Switch } from "../ui.js";
+import {
+  PALETTES,
+  type PaletteId,
+  TEXT_SIZES,
+  type TextSize,
+  applyTextSize,
+  choosePalette,
+  currentPalette,
+  currentTextSize,
+  needsPass,
+} from "../theme.js";
+import { Big, Donut, Label, Panel, Ribbon, Segmented, Sheet, Slab, Switch } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { HouseSummary } from "./House.js";
 import { PalmaresView } from "./Palmares.js";
@@ -165,6 +175,26 @@ function HapticsSetting() {
       label={fr.game.haptics}
       hint={fr.game.hapticsHint}
     />
+  );
+}
+
+/** The size of the text, 100 to 130 % (E3-11 of the experts). */
+function TextSizeSetting() {
+  const [size, setSize] = useState<TextSize>(currentTextSize());
+  return (
+    <section className="space-y-3">
+      <Label>{fr.game.textSize}</Label>
+      {window.innerWidth < 360 && <p className="meta">{fr.game.textSizeNarrow}</p>}
+      <Segmented
+        value={String(size)}
+        options={TEXT_SIZES.map((s) => ({ value: String(s), label: `${s} %` }))}
+        onChange={(v) => {
+          const next = Number(v) as TextSize;
+          applyTextSize(next);
+          setSize(next);
+        }}
+      />
+    </section>
   );
 }
 
@@ -449,6 +479,7 @@ function ProfileBody(props: GameProps) {
             offered={props.view.pass.enabled && props.view.pass.perks.cosmetics}
           />
 
+          <TextSizeSetting />
           <SoundSetting />
           <HapticsSetting />
 

@@ -144,7 +144,7 @@ export function LorenzoCard({
             {/* His seal: red wax, an L pressed in. */}
             <span
               aria-hidden="true"
-              className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-vermilion-deep font-display text-[9px] font-extrabold text-cream ring-1 ring-vermilion"
+              className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-vermilion-deep font-display text-[0.5625rem] font-extrabold text-cream ring-1 ring-vermilion"
             >
               L
             </span>

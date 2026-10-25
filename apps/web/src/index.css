@@ -161,7 +161,7 @@
    * hint, what happens next). 13 px, aligned figures, a step brighter than the kickers above it.
    */
   .meta {
-    @apply font-sans text-[13px] leading-snug text-cream-dim tabular-nums;
+    @apply font-sans text-[0.8125rem] leading-snug text-cream-dim tabular-nums;
   }
   /*
    * A control drawn small, touched at 44 × 44 px: its hit area reaches past the drawing, centred
@@ -903,5 +903,16 @@ body[data-coach-top] [data-toast] {
 @media (max-width: 359px) {
   .map-marker:is([data-marker^="city:"], [data-marker="home"]) > button {
     scale: 0.8;
+  }
+}
+
+/*
+ * A larger text (the Profil's size, E3-11) on a short phone: the door's sky and medal give way, so
+ * that the sign-in's field and button stay above the fold.
+ */
+@media (max-height: 700px) {
+  html:not([data-text-size="100"]) .hero-sky,
+  html:not([data-text-size="100"]) .hero-medal {
+    display: none;
   }
 }

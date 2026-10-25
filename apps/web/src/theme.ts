@@ -46,3 +46,25 @@ export function choosePalette(id: PaletteId): void {
   store.set("paletteChosen", "1");
   applyPalette(id);
 }
+
+/**
+ * The size of the text, chosen in the Profil (E3-11 of the experts): 100, 115 or 130 % of the
+ * browser's own, on the page's root, so that every size in rem follows.
+ */
+export const TEXT_SIZES = [100, 115, 130] as const;
+export type TextSize = (typeof TEXT_SIZES)[number];
+
+export function currentTextSize(): TextSize {
+  const saved = Number(store.get("textSize"));
+  return (TEXT_SIZES as readonly number[]).includes(saved) ? (saved as TextSize) : 100;
+}
+
+export function applyTextSize(size: TextSize = currentTextSize()): void {
+  // Under 360 px of width (an iPhone SE), the usual size: larger, Lorenzo's bubble has no room left
+  // beside what it points at. The choice is kept, and holds on a wider screen.
+  const shown = typeof window !== "undefined" && window.innerWidth < 360 ? 100 : size;
+  document.documentElement.style.fontSize = shown === 100 ? "" : `${shown}%`;
+  // For the few places a larger text must make room (index.css, « data-text-size »).
+  document.documentElement.dataset.textSize = String(shown);
+  store.set("textSize", String(size));
+}

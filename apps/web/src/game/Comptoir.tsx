@@ -422,7 +422,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="min-w-0 font-display text-[15px] font-extrabold uppercase leading-tight [font-stretch:100%]">
+            <h3 className="min-w-0 font-display text-[0.9375rem] font-extrabold uppercase leading-tight [font-stretch:100%]">
               {props.names.building(b.type)}
             </h3>
             {b.upgradeCost ? (

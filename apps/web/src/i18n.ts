@@ -1866,6 +1866,8 @@ export const fr = {
       open: "✎ Changer de nom (une fois, gratuit)",
       save: "Garder ce nom",
     },
+    textSize: "Taille du texte",
+    textSizeNarrow: "Sur un écran étroit, le texte garde sa taille habituelle.",
     editCrest: "Modifier",
     crestTitle: "Mon blason",
     shape: "Forme",

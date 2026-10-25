@@ -10,9 +10,10 @@ import "@fontsource/space-mono/700.css";
 import "@fontsource/cinzel/latin-700.css";
 import "./index.css";
 import { keepOrigin } from "./origin.js";
-import { applyPalette } from "./theme.js";
+import { applyPalette, applyTextSize } from "./theme.js";
 
 applyPalette();
+applyTextSize();
 
 // Where the visit comes from (a shared link, a campaign), kept until the sign-in.
 try {
