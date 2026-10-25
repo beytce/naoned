@@ -304,6 +304,8 @@ Ce second tour est enfin un plan, et plus un catalogue. J'ai vérifié les point
 
 ### 14. Les bots prennent entrepôts et prêts : la simulation couvre enfin toute l'économie publiée (`loop-m1` · effort M · impact critique)
 
+**Clos sans objet le 25 octobre 2026** : les prêts et les entrepôts sont coupés (E1-5 de l'équipe d'experts, docs/expertise-2026-10-24.md). Les fondaci (E1-3) remplaceront les entrepôts, simulés dès leur conception.
+
 *Expert boucle de commerce et sensation de progression*
 
 **Problème.** calibration.md (l. 1150 et 1160) note que les PNJ ne prennent « ni entrepôts ni prêts ». bots.ts n'émet jamais bidWarehouse, borrow ni repayLoan. Or ces deux mécaniques créent ou détruisent de la monnaie : les enchères d'entrepôt sont détruites, les intérêts sont de 1 %/jour et la pénalité de retard de +20 %. La masse monétaire, l'écart assidu/occasionnel et la vérification `pnpm sim --pass 0.2` sont donc validés sur une économie qui n'est pas celle qu'on publie.

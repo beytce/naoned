@@ -78,3 +78,18 @@ describe("the Bank's loans", () => {
     );
   });
 });
+
+describe("a world without the Bank nor warehouses", () => {
+  it("refuses a loan and a bid for a warehouse, nothing moving", () => {
+    const w = new World(makeContext());
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    const cash = w.cash("a");
+    expect(error(w.try({ type: "borrow", playerId: "a", amount: 10_000n, days: 3 }))).not.toBe(
+      "ok",
+    );
+    expect(
+      error(w.try({ type: "warehouseBid", playerId: "a", city: "venezia", amount: 10_000n })),
+    ).not.toBe("ok");
+    expect(w.cash("a")).toBe(cash);
+  });
+});

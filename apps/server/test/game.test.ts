@@ -262,18 +262,13 @@ describe("game API", () => {
     expect(BigInt(after.cash)).toBe(BigInt(v.cash) - BigInt(after.tenders[0].mine.caution));
   });
 
-  it("takes a bid for a city's warehouse, its ducats locked until the week's close", async () => {
+  it("has no warehouse in the cities since 25 October 2026: a bid is refused", async () => {
     const cookie = await login("ada@example.org");
     await post(cookie, "/api/game/join", { region: "lagoon" });
     const v = (await get(cookie)).json().view;
-    const venice = v.warehouses.cities.find((c: { city: string }) => c.city === "venezia");
-    const res = await act(cookie, { type: "warehouseBid", city: "venezia", amount: venice.toWin });
-    expect(res.json().error).toBeUndefined();
-    const after = res.json().view;
-    expect(BigInt(after.cash)).toBe(BigInt(v.cash) - BigInt(venice.toWin));
-    expect(after.warehouses.cities.find((c: { city: string }) => c.city === "venezia").mine).toBe(
-      venice.toWin,
-    );
+    expect(v.warehouses).toBeNull();
+    const res = await act(cookie, { type: "warehouseBid", city: "venezia", amount: "10000" });
+    expect(res.json().error).toBeDefined();
   });
 
   it("posts a commission to the other merchants, its ducats held, and a colleganza", async () => {
@@ -297,13 +292,10 @@ describe("game API", () => {
       shareBps: 5_000,
     });
     expect(g.json().view.deals.colleganze[0]).toMatchObject({ role: "investor", merchant: null });
-    // A loan of the Bank, within its limit, owed with its interest.
-    const bank = g.json().view.deals.bank;
+    // No loan of the Bank since 25 October 2026.
+    expect(g.json().view.deals.bank).toBeNull();
     const loan = await act(cookie, { type: "borrow", amount: "1000", days: 2 });
-    expect(loan.json().error).toBeUndefined();
-    expect(loan.json().view.deals.bank.loan.owed).toBe(
-      String(1000 + Math.ceil((1000 * bank.interestBpsPerDay * 2) / 10_000)),
-    );
+    expect(loan.json().error).toBeDefined();
   });
 
   it("buys instantly from the market maker once the tick has quoted", async () => {

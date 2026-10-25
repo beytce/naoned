@@ -934,15 +934,8 @@ export const venice1450Settings: WorldSettingsInput = {
   // most; the colleganza a week at most, the investor taking at most three quarters of the gains
   // (the share of the Venetian stans).
   commissions: { maxDays: 3 },
-  // The Bank's loans (recommendations of 20 October 2026): up to 30 % of the net worth and 500
-  // ducats, a week at most, 1 % a day; 20 % more on what is missing at term.
-  loans: {
-    maxShareBps: 3_000,
-    maxAmount: 50_000,
-    interestBpsPerDay: 100,
-    maxDays: 7,
-    lateBps: 2_000,
-  },
+  // No Bank's loans since 25 October 2026 (the experts' E1-5): not simulated, and borrowing cost
+  // nothing in the rankings of net sales. The rules stay in the engine, off when absent.
   colleganza: { maxDays: 7, maxShareBps: 7_500 },
   // The manufactures (recommendations of 20 October 2026): past level 5, a workshop climbs to 10
   // from Négociant (3 000 ducats of net sales) on a path chosen once: volume (bigger batches) or
@@ -1194,9 +1187,8 @@ export const venice1450Settings: WorldSettingsInput = {
     ceilingBps: 14_000,
     cautionBps: 2_000,
   },
-  // Warehouses in the cities (recommendations of 20 October 2026): two places a city, auctioned
-  // each week from 50 ducats (destroyed), each delivering 40 units a day at once.
-  warehouses: { perCity: 2, minBid: 5_000, unitsPerDay: 40 },
+  // No warehouses in the cities since 25 October 2026 (the experts' E1-5): not simulated; the
+  // fondaci are to take their place. The rules stay in the engine, off when absent.
   // The official supplier (recommendations of 20 October 2026): the week's best deliverer of a
   // good to a city, from 10 units, is paid 10 % more for it there all the next week.
   suppliers: { bonusBps: 1_000, minUnits: 10 },
