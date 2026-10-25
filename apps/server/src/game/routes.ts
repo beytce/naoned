@@ -402,6 +402,17 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   app.get("/api/game", perMerchant(300), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
+    // Opened from a push: which kind brought the merchant back (E3-1 of the experts).
+    const opened = (req.query as { opened?: string } | undefined)?.opened;
+    if (opened && (NOTIFICATION_KINDS as readonly string[]).includes(opened)) {
+      await db.insert(telemetry).values({
+        accountId: account.id,
+        worldId: world.id,
+        type: "push_open",
+        at: new Date(world.now()),
+        props: { kind: opened },
+      });
+    }
     let welcome = null;
     if (world.current.players[account.id]) {
       const [row] = await db

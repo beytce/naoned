@@ -123,6 +123,22 @@ export function pushText(
         title: "Livraison arrivée",
         body: `${data.quantity} ${RESOURCES[String(data.resource)] ?? String(data.resource)} livrés par ${road(data.route, cities)} : ${ducats(String(data.amount ?? "0"))} ducats encaissés.`,
       };
+    case "morning": {
+      // What the night kept in the bell, in one line.
+      const parts = [
+        Number(data.deliveries) > 0
+          ? `${data.deliveries} livraison${Number(data.deliveries) > 1 ? "s" : ""} payée${Number(data.deliveries) > 1 ? "s" : ""} (${ducats(String(data.paid ?? "0"))} ducats)`
+          : "",
+        Number(data.harvests) > 0 ? "des lots prêts à récolter" : "",
+        Number(data.offers) > 0
+          ? `${data.offers} offre${Number(data.offers) > 1 ? "s" : ""} prise${Number(data.offers) > 1 ? "s" : ""} au Rialto`
+          : "",
+      ].filter(Boolean);
+      return {
+        title: "La gazette du matin",
+        body: `Cette nuit : ${parts.length > 0 ? parts.join(", ") : "votre comptoir vous attend"}.`,
+      };
+    }
     case "muda": {
       const goods = Object.entries((data.stock ?? {}) as Record<string, number>)
         .filter(([, q]) => q > 0)

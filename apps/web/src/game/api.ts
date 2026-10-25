@@ -1,4 +1,5 @@
 import { ApiError } from "../api.js";
+import { pushOpened } from "./shortcut.js";
 import type {
   Action,
   Catalog,
@@ -43,9 +44,17 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   return data as T;
 }
 
+/** The push the game was opened from, told once with the first load (for the measures). */
+let opened = typeof window === "undefined" ? null : pushOpened(window.location.search);
+function openedOnce(): string {
+  const kind = opened;
+  opened = null;
+  return kind ? `?opened=${kind}` : "";
+}
+
 export const gameApi = {
   catalog: () => call<Catalog>("GET", "/api/game/catalog"),
-  view: () => call<GameResponse>("GET", "/api/game"),
+  view: () => call<GameResponse>("GET", `/api/game${openedOnce()}`),
   /** Restart from scratch (once per season). */
   reset: () => call<GameResponse>("POST", "/api/game/reset", {}),
   join: (region: string) => call<GameResponse>("POST", "/api/game/join", { region }),

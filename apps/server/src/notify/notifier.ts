@@ -1,5 +1,6 @@
 import {
   activeEvent,
+  dayStartIn,
   hourIn,
   hourWithin,
   seasonActs,
@@ -7,7 +8,19 @@ import {
   weekIndex,
 } from "@comptoirs/engine";
 import type { Effects } from "@comptoirs/engine";
-import { and, desc, eq, gt, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  gt,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  notInArray,
+  sql,
+} from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import {
   accounts,
@@ -36,6 +49,8 @@ export const NOTIFICATION_KINDS = [
   "siege",
   "delivery",
   "muda",
+  // The gazette of 8:05: what the night kept in the bell.
+  "morning",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -55,6 +70,32 @@ const TERRA_NEWS: ReadonlySet<string> = new Set([
 /** Pushed at once, never held back by the hourly limit per kind: the merchant has minutes. */
 const URGENT: ReadonlySet<NotificationKind> = new Set(["siege"]);
 const DAY_MS = 24 * HOUR_MS;
+/**
+ * Pushes a person gets in a day of Paris at most, all kinds together, the urgent ones aside
+ * (E3-1 of the experts, 25 October 2026): every kind to come declares itself here, none keeps a
+ * cap of its own.
+ */
+export const DAILY_PUSH_CAP = 3;
+/** The gazette goes at 8:05 in Paris, and no later than 10 h (a server down at 8:05 catches up). */
+const MORNING = { minutes: 8 * 60 + 5, until: 10 * 60 };
+/** Where a push opens the game: one of the places the client knows (`deepLink`, web). */
+const OPENS: Partial<Record<NotificationKind, string>> = {
+  harvest: "workshops",
+  delivery: "cargo",
+  order: "rialto",
+  muda: "rialto",
+  week: "ranking",
+  season: "ranking",
+  siege: "terra",
+  family: "terra",
+  morning: "notices",
+};
+
+/** The link a push opens: a place of the list, and where it comes from for the measures. */
+export function pushUrl(kind: NotificationKind): string {
+  const open = OPENS[kind];
+  return open ? `/?open=${open}&src=push&kind=${kind}` : `/?src=push&kind=${kind}`;
+}
 
 interface Notice {
   accountId: string;
@@ -295,6 +336,7 @@ export class Notifier {
     }
     await this.send(notices, now);
     await this.weekResults(now);
+    await this.morning(now);
   }
 
   /**
@@ -416,8 +458,14 @@ export class Notifier {
             )
             .limit(1);
       if (recent) continue;
+      if (!URGENT.has(n.kind as NotificationKind) && !(await this.underDailyCap(n.accountId, now)))
+        continue;
       const text = pushText(n.kind, n.data, this.cities, now);
-      const payload = JSON.stringify({ ...text, kind: n.kind, url: "/" });
+      const payload = JSON.stringify({
+        ...text,
+        kind: n.kind,
+        url: pushUrl(n.kind as NotificationKind),
+      });
       let delivered = false;
       for (const s of mine) {
         const res = await this.pusher.send(s, payload);
@@ -430,6 +478,86 @@ export class Notifier {
         await this.db.update(notifications).set({ pushedAt: at }).where(eq(notifications.id, n.id));
       }
     }
+  }
+
+  /** Whether a person may get one more push today (Paris), the urgent ones not counted. */
+  private async underDailyCap(accountId: string, now: number): Promise<boolean> {
+    const since = new Date(dayStartIn(now).start);
+    const [row] = await this.db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.accountId, accountId),
+          isNotNull(notifications.pushedAt),
+          gte(notifications.pushedAt, since),
+          notInArray(notifications.kind, [...URGENT]),
+        ),
+      );
+    return Number(row?.n ?? 0) < DAILY_PUSH_CAP;
+  }
+
+  /**
+   * The gazette of the morning: at 8:05 in Paris, to whoever had news kept in the bell during the
+   * night (batches ready, goods delivered, offers taken), what they come to. Once a day.
+   */
+  private async morning(now: number): Promise<void> {
+    const day = dayStartIn(now).start;
+    const minutes = (now - day) / 60_000;
+    if (minutes < MORNING.minutes || minutes >= MORNING.until) return;
+    const key = new Date(day).toISOString().slice(0, 10);
+    const [done] = await this.db
+      .select({ id: notifications.id })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.worldId, this.world.id),
+          eq(notifications.kind, "morning"),
+          sql`${notifications.data}->>'day' = ${key}`,
+        ),
+      )
+      .limit(1);
+    if (done) return;
+    const night = await this.db
+      .select({
+        accountId: notifications.accountId,
+        kind: notifications.kind,
+        data: notifications.data,
+      })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.worldId, this.world.id),
+          inArray(notifications.kind, ["harvest", "delivery", "order"]),
+          isNull(notifications.pushedAt),
+          gte(notifications.createdAt, new Date(day - 2 * HOUR_MS)),
+          lt(notifications.createdAt, new Date(day + 8 * HOUR_MS)),
+        ),
+      );
+    const people = await this.people();
+    const by = new Map<
+      string,
+      { harvests: number; deliveries: number; offers: number; paid: bigint }
+    >();
+    for (const n of night) {
+      if (!people.has(n.accountId)) continue;
+      const t = by.get(n.accountId) ?? { harvests: 0, deliveries: 0, offers: 0, paid: 0n };
+      if (n.kind === "harvest") t.harvests += 1;
+      if (n.kind === "order") t.offers += 1;
+      if (n.kind === "delivery") {
+        t.deliveries += 1;
+        t.paid += BigInt(String((n.data as { amount?: string }).amount ?? "0"));
+      }
+      by.set(n.accountId, t);
+    }
+    await this.send(
+      [...by].map(([accountId, t]) => ({
+        accountId,
+        kind: "morning" as const,
+        data: { day: key, ...t, paid: t.paid.toString() },
+      })),
+      now,
+    );
   }
 
   /** The bell: latest notices and how many are unread. */

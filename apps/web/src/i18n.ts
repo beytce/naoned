@@ -1658,6 +1658,7 @@ export const fr = {
           siege: "Terre menacée (alerte immédiate)",
           delivery: "Livraison arrivée",
           muda: "Galères de la Muda à quai",
+          morning: "Gazette du matin (8 h 05)",
         } as Record<string, string>,
       },
     },
