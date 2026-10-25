@@ -18,6 +18,7 @@ export function ContextPanel({
   onNext,
   onClose,
   extra,
+  above,
 }: {
   title: ReactNode;
   chip?: ReactNode;
@@ -31,6 +32,8 @@ export function ContextPanel({
   onClose: () => void;
   /** A line under the actions (a hint, a warning). */
   extra?: ReactNode;
+  /** What the place holds, between its state and its actions (the counter's workshops). */
+  above?: ReactNode;
 }) {
   const edge =
     tone === "gold" ? "border-gold" : tone === "vermilion" ? "border-vermilion" : "border-lagoon";
@@ -91,6 +94,7 @@ export function ContextPanel({
             )}
           </div>
         )}
+        {above && <div className="mt-2">{above}</div>}
         {/*
           The whole width for the actions: four of them side by side on a 320 px phone, more
           scrolled sideways, never under the arrows. Its top margin is padding, for the badges.

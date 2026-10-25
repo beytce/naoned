@@ -255,6 +255,20 @@ export const en: Dictionary = {
           .join(", "),
       carts: "Free carts",
       resumeGuide: "Resume the guide",
+      rate: (amount: string) => `≈ +${amount}/h`,
+      workshopRow: {
+        ready: (n: number) => (n > 1 ? `${n} ready` : "Ready"),
+        idle: "To start",
+        starved: "No input",
+      },
+      timeline: {
+        label: "Coming up",
+        now: "now",
+        ready: (workshop: string) => `${workshop} ready`,
+        pays: (city: string) => `${city} pays`,
+        orders: "Orders",
+        back: (vehicle: string) => `${vehicle} back`,
+      },
       tips: {
         cash: {
           title: "Ducats",
@@ -2028,8 +2042,7 @@ export const en: Dictionary = {
         `A raw material is worth little. Transform it: start your ${building.toLowerCase()}.`,
       sellCity: (resource: string) =>
         `Sell your ${resource.toLowerCase()} to the city that pays best.`,
-      goRoutes:
-        "The cities place orders: a city's badge counts those your stock covers. Tap a cart.",
+      goRoutes: "Each mark around a city is an order, full when your stock covers it. Tap a cart.",
       deliver: "Open the cargo: tick an order your stock covers, the city pays on arrival.",
       dispatch: "Tap « Go » (or let the countdown run out).",
       welcomeEnRoute: (left: string) =>
