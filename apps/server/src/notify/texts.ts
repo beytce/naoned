@@ -1,4 +1,9 @@
-/** Push texts, in French (the interface language). The bell renders its own from kind + data. */
+import { pushTextEn } from "./texts.en.js";
+
+/**
+ * Push texts, in the person's language (French, or English in texts.en.ts). The bell renders its
+ * own from kind + data.
+ */
 
 const EVENTS: Record<string, string> = {
   famine_verona: "Disette à Vérone : commandes de pain pour Vérone payées 60 % de plus.",
@@ -116,7 +121,9 @@ export function pushText(
   data: Record<string, unknown>,
   cities: Record<string, string> = {},
   now = 0,
+  lang = "fr",
 ): { title: string; body: string } {
+  if (lang === "en") return pushTextEn(kind, data);
   switch (kind) {
     case "delivery":
       return {

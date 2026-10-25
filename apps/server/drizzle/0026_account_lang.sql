@@ -1,0 +1,1 @@
+ALTER TABLE "accounts" ADD COLUMN "lang" text DEFAULT 'fr' NOT NULL;

@@ -10,28 +10,35 @@ const KEY = "fondaco.lang";
 
 const isLang = (v: unknown): v is Lang => v === "fr" || v === "en";
 
+/** The browser, when there is one (read without the DOM's types: the server compiles this too). */
+const browser = globalThis as {
+  window?: { location: { search: string } };
+  navigator?: { language?: string };
+  localStorage?: { getItem(k: string): string | null; setItem(k: string, v: string): void };
+};
+
 /** The language of this visit: the address's, then the device's choice, then the browser's. */
 export function chosenLang(): Lang {
-  if (typeof window === "undefined") return "fr";
+  if (!browser.window) return "fr";
   try {
-    const asked = new URLSearchParams(window.location.search).get("lang");
+    const asked = new URLSearchParams(browser.window.location.search).get("lang");
     if (isLang(asked)) {
-      localStorage.setItem(KEY, asked);
+      browser.localStorage?.setItem(KEY, asked);
       return asked;
     }
-    const kept = localStorage.getItem(KEY);
+    const kept = browser.localStorage?.getItem(KEY);
     if (isLang(kept)) return kept;
   } catch {
     // No storage: the browser's language decides.
   }
-  const nav = typeof navigator === "undefined" ? "fr" : (navigator.language ?? "fr");
+  const nav = browser.navigator?.language ?? "fr";
   return nav.toLowerCase().startsWith("fr") ? "fr" : "en";
 }
 
 /** Keeps the language for the next start (the caller reloads the page). */
 export function keepLang(lang: Lang): void {
   try {
-    localStorage.setItem(KEY, lang);
+    browser.localStorage?.setItem(KEY, lang);
   } catch {
     // No storage: the browser's language will decide again.
   }

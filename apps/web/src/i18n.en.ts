@@ -1915,6 +1915,8 @@ export const en: Dictionary = {
       open: "✎ Change name (once, free)",
       save: "Keep this name",
     },
+    language: "Language",
+    languageNames: { fr: "Français", en: "English" } as Record<string, string>,
     textSize: "Text size",
     textSizeNarrow: "On a narrow screen, the text keeps its usual size.",
     editCrest: "Edit",

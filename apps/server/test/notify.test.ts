@@ -330,6 +330,30 @@ describe("notifications", () => {
     expect(String(calls[0]?.payload.title)).toContain("Les Amis du Rialto");
   });
 
+  it("pushes in the person's language", async () => {
+    const ada = await player("ada@example.org");
+    await subscribe(ada.cookie);
+    const me = await app.inject({
+      method: "PATCH",
+      url: "/api/me",
+      headers: { cookie: ada.cookie },
+      payload: { lang: "en" },
+    });
+    expect(me.json().account.lang).toBe("en");
+    await app.inject({
+      method: "PATCH",
+      url: "/api/notifications/push",
+      headers: { cookie: ada.cookie },
+      payload: { off: ["skirmish_call"] },
+    });
+    now = Date.parse("2026-10-12T10:14:00Z");
+    await notifier.scan();
+    now = Date.parse("2026-10-12T10:15:00Z");
+    await notifier.scan();
+    const call = pusher.sent.find((p) => p.payload.kind === "skirmish_call");
+    expect(String(call?.payload.title)).toBe("Skirmish at 12:30");
+  });
+
   it("refuses a push endpoint outside the browsers' push services", async () => {
     const ada = await player("ada@example.org");
     const res = await subscribe(ada.cookie, "https://10.0.0.1/internal");

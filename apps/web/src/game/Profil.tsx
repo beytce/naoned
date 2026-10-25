@@ -12,7 +12,7 @@ import { Medal } from "../art/icons.js";
 import { P } from "../art/palette.js";
 import { hapticsEnabled, setHapticsEnabled } from "../haptics.js";
 import { fr } from "../i18n.js";
-import { locale } from "../lang.js";
+import { LANG, LANGS, type Lang, keepLang, locale } from "../lang.js";
 import { LegalLinks } from "../legal/Legal.js";
 import { setSoundEnabled, soundEnabled } from "../sound.js";
 import {
@@ -181,6 +181,26 @@ function HapticsSetting() {
 }
 
 /** The size of the text, 100 to 130 % (E3-11 of the experts). */
+/** French or English (E3-8): kept on this device and for the pushes, the game reloads in it. */
+function LanguageSetting() {
+  return (
+    <section className="space-y-3">
+      <Label>{fr.game.language}</Label>
+      <Segmented
+        value={LANG}
+        options={LANGS.map((l) => ({ value: l, label: fr.game.languageNames[l] ?? l }))}
+        onChange={async (v) => {
+          const next = v as Lang;
+          if (next === LANG) return;
+          keepLang(next);
+          await api.setLang(next).catch(() => undefined);
+          window.location.reload();
+        }}
+      />
+    </section>
+  );
+}
+
 function TextSizeSetting() {
   const [size, setSize] = useState<TextSize>(currentTextSize());
   return (
@@ -483,6 +503,7 @@ function ProfileBody(props: GameProps) {
             offered={props.view.pass.enabled && props.view.pass.perks.cosmetics}
           />
 
+          <LanguageSetting />
           <TextSizeSetting />
           <SoundSetting />
           <HapticsSetting />

@@ -1969,6 +1969,8 @@ const frDict = {
       open: "✎ Changer de nom (une fois, gratuit)",
       save: "Garder ce nom",
     },
+    language: "Langue",
+    languageNames: { fr: "Français", en: "English" } as Record<string, string>,
     textSize: "Taille du texte",
     textSizeNarrow: "Sur un écran étroit, le texte garde sa taille habituelle.",
     editCrest: "Modifier",

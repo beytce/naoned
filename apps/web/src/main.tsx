@@ -9,9 +9,11 @@ import "@fontsource/space-mono/400.css";
 import "@fontsource/space-mono/700.css";
 import "@fontsource/cinzel/latin-700.css";
 import "./index.css";
+import { LANG } from "./lang.js";
 import { keepInvite, keepOrigin } from "./origin.js";
 import { applyPalette, applyTextSize } from "./theme.js";
 
+document.documentElement.lang = LANG;
 applyPalette();
 applyTextSize();
 

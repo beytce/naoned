@@ -505,14 +505,12 @@ export class Notifier {
       .from(pushSubscriptions)
       .where(inArray(pushSubscriptions.accountId, ids));
     if (subs.length === 0) return;
-    const prefs = new Map(
-      (
-        await this.db
-          .select({ id: accounts.id, off: accounts.pushOff })
-          .from(accounts)
-          .where(inArray(accounts.id, ids))
-      ).map((r) => [r.id, new Set(r.off)]),
-    );
+    const rows = await this.db
+      .select({ id: accounts.id, off: accounts.pushOff, lang: accounts.lang })
+      .from(accounts)
+      .where(inArray(accounts.id, ids));
+    const prefs = new Map(rows.map((r) => [r.id, new Set(r.off)]));
+    const langs = new Map(rows.map((r) => [r.id, r.lang]));
     for (const n of saved) {
       const mine = subs.filter((s) => s.accountId === n.accountId);
       // Off when listed; a kind asked for (opt-in) is on only when listed.
@@ -538,7 +536,7 @@ export class Notifier {
       if (recent) continue;
       if (!URGENT.has(n.kind as NotificationKind) && !(await this.underDailyCap(n.accountId, now)))
         continue;
-      const text = pushText(n.kind, n.data, this.cities, now);
+      const text = pushText(n.kind, n.data, this.cities, now, langs.get(n.accountId));
       const payload = JSON.stringify({
         ...text,
         kind: n.kind,

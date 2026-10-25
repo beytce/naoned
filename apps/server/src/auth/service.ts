@@ -34,7 +34,14 @@ export interface PublicAccount {
   /** The name kept as proposed at the door (the profile offers to change it). */
   pseudoDefault: boolean;
   crest: Crest | null;
+  /** The interface's language, for the pushes and the mails. */
+  lang: Lang;
 }
+
+/** The languages of the interface (E3-8). */
+export const LANGS = ["fr", "en"] as const;
+export type Lang = (typeof LANGS)[number];
+export const langSchema = z.enum(LANGS);
 
 /** Choices offered for the coat of arms (cosmetic only). The web app draws them. */
 export const CREST_SHAPES = ["heater", "round", "banner"] as const;
@@ -61,6 +68,7 @@ const publicColumns = {
   pseudo: accounts.pseudo,
   pseudoDefault: accounts.pseudoDefault,
   crest: accounts.crest,
+  lang: accounts.lang,
 };
 
 export class AuthError extends Error {
@@ -109,7 +117,7 @@ export class AuthService {
   }
 
   /** Sends a magic link. The answer never says whether the address has an account. */
-  async requestLink(rawEmail: string): Promise<void> {
+  async requestLink(rawEmail: string, lang: Lang = "fr"): Promise<void> {
     const email = emailSchema.parse(rawEmail);
     if (disposableEmail(email)) throw new AuthError("disposable_email");
     const now = this.now();
@@ -132,7 +140,7 @@ export class AuthService {
       codeHash: hashCode(code, tokenHash),
     });
     const link = `${this.deps.appUrl}/connexion?token=${encodeURIComponent(token)}`;
-    await this.deps.mailer.send(magicLinkMail(email, link, code, LINK_VALID_MINUTES));
+    await this.deps.mailer.send(magicLinkMail(email, link, code, LINK_VALID_MINUTES, lang));
   }
 
   /**
@@ -276,6 +284,18 @@ export class AuthService {
       .returning(publicColumns);
     if (!account) throw new Error("account not found");
     return account;
+  }
+
+  /** The interface's language, for the pushes and the mails (E3-8). */
+  async setLang(accountId: string, raw: unknown): Promise<PublicAccount> {
+    const lang = langSchema.parse(raw);
+    const [account] = await this.deps.db
+      .update(accounts)
+      .set({ lang })
+      .where(eq(accounts.id, accountId))
+      .returning(publicColumns);
+    if (!account) throw new Error("account not found");
+    return account as PublicAccount;
   }
 
   async setPseudo(

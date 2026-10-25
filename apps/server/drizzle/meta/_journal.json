@@ -183,6 +183,13 @@
       "when": 1792949113827,
       "tag": "0025_companies",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792950834011,
+      "tag": "0026_account_lang",
+      "breakpoints": true
     }
   ]
 }

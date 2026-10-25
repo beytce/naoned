@@ -52,6 +52,8 @@ export const accounts = pgTable(
     utmSource: text("utm_source"),
     utmMedium: text("utm_medium"),
     utmCampaign: text("utm_campaign"),
+    /** The interface's language, for the pushes and the mails (E3-8): "fr" or "en". */
+    lang: text("lang").$type<"fr" | "en">().notNull().default("fr"),
     /** When the account last left a company: it may join another only a week later (E2-8). */
     companyLeftAt: timestamp("company_left_at", { withTimezone: true }),
   },
