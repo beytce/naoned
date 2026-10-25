@@ -2,6 +2,7 @@ import { useState } from "react";
 import { BuildingArt } from "../art/buildings.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
+import { locale } from "../lang.js";
 import { Badge, Label, Panel, Qty, Ribbon, Sheet, Slab, clock } from "../ui.js";
 import { AdviceTile } from "./Advice.js";
 import { BaleScreen, BaleTile } from "./Bales.js";
@@ -575,7 +576,7 @@ function WorkshopsSummary(props: GameProps) {
 
 /** « 22:05 », in Paris. */
 function timeOfDay(at: number): string {
-  return new Intl.DateTimeFormat("fr-FR", {
+  return new Intl.DateTimeFormat(locale, {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Europe/Paris",

@@ -5,6 +5,7 @@ import { MAP_TEXT, P } from "../../art/palette.js";
 import { Lorenzo } from "../../art/scenes.js";
 import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
+import { locale } from "../../lang.js";
 import { HudChip, LorenzoCard, Segmented, Sheet, Slab, clock } from "../../ui.js";
 import type { GameProps } from "../Game.js";
 import { MerchantName, merchantLabel } from "../Name.js";
@@ -467,7 +468,7 @@ export function useTerraShapes(v: TerraView | null | undefined): TerraShapes | n
 
 /** "14:20", Paris time: when a front will reach a cell. */
 const hour = (at: number) =>
-  new Date(at).toLocaleTimeString("fr-FR", {
+  new Date(at).toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Europe/Paris",
@@ -487,8 +488,11 @@ function holderName(v: TerraView, i: number): string {
   const h = v.holders[i];
   if (!h) return t().neutral;
   if (h.milan) return t().nations[h.nation ?? "milan"] ?? t().milan;
-  return merchantLabel(h.pseudo, h.bot, t().someone);
+  return friendLabel(merchantLabel(h.pseudo, h.bot, t().someone), h.friend);
 }
+
+/** A fellow of the merchant's company is marked by a sign, not a colour (E2-8, E3-11). */
+const friendLabel = (name: string, friend?: boolean) => (friend ? `${name} ✦` : name);
 
 /** Where a front starts from: its owner's cell nearest its aim. */
 function frontFrom(v: TerraView, map: HexMap, owner: number, aim: number): [number, number] | null {
@@ -901,7 +905,7 @@ export function terraMarkers(
       tier: h.me ? 0 : TIER[focus],
       node: (
         <WarCounter
-          name={merchantLabel(h.pseudo, h.bot, t().someone)}
+          name={friendLabel(merchantLabel(h.pseudo, h.bot, t().someone), h.friend)}
           crest={h.crest ?? defaultCrest(h.id ?? String(i))}
           mine={h.me}
           tone={s.tone[i] ?? P.cream}
@@ -1203,7 +1207,8 @@ export function TerraHud({
   folded?: boolean;
 }) {
   const me = v.me;
-  const regionName = (code: string) => regions.find((r) => r.code === code)?.name ?? code;
+  const regionName = (code: string) =>
+    fr.themeNames.region[code] ?? regions.find((r) => r.code === code)?.name ?? code;
   const [tip, setTip] = useTip();
   const { shown, leaving } = usePresence(tip, 120);
   return (
@@ -1635,7 +1640,15 @@ export function TerraPanel({
   return (
     <ContextPanel
       title={title}
-      chip={ally ? <span className="label text-lagoon">{t().holder.allyChip}</span> : chip}
+      chip={
+        ally ? (
+          <span className="label text-lagoon">{t().holder.allyChip}</span>
+        ) : merchant?.friend ? (
+          <span className="label text-gold">{t().holder.friendChip}</span>
+        ) : (
+          chip
+        )
+      }
       status={
         eta
           ? t().target.eta(hour(eta.at), wait(eta.at, now))
@@ -1870,9 +1883,9 @@ export function TerraSheets({
   const kind = t().decree.targets[code];
   const options =
     kind === "resource"
-      ? props.catalog.resources.map((r) => ({ value: r.code, label: r.name }))
+      ? props.catalog.resources.map((r) => ({ value: r.code, label: props.names.resource(r.code) }))
       : kind === "city"
-        ? props.catalog.cities.map((c) => ({ value: c.code, label: c.name }))
+        ? props.catalog.cities.map((c) => ({ value: c.code, label: props.names.city(c.code) }))
         : [];
   const [target, setTarget] = useState<string>(picked?.target ?? "");
   const aim = options.some((o) => o.value === target) ? target : (options[0]?.value ?? "");
@@ -1965,7 +1978,7 @@ function PeasantsSlider({
     .filter(([, n]) => n > 0)
     .map(
       ([r, n]) =>
-        `${(n / 100).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} ${props.names.resource(r).toLowerCase()}`,
+        `${(n / 100).toLocaleString(locale, { maximumFractionDigits: 1 })} ${props.names.resource(r).toLowerCase()}`,
     )
     .join(", ");
   const send = () => {

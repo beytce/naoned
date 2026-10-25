@@ -1,8 +1,11 @@
 import { ApiError } from "../api.js";
+import { fr } from "../i18n.js";
 import { pushOpened } from "./shortcut.js";
 import type {
   Action,
   Catalog,
+  CompanyInvitation,
+  CompanyView,
   CrestData,
   DashboardView,
   FamilyMessage,
@@ -41,7 +44,36 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   if (!res.ok && !(res.status === 422 && data.view)) {
     throw new ApiError(res.status, data.error ?? "unknown");
   }
-  return data as T;
+  return serverWords(data) as T;
+}
+
+/** Fields written by players, never translated (a name, a message, a company's own name). */
+const PLAYERS_WORDS = new Set([
+  "pseudo",
+  "body",
+  "counterpartyName",
+  "email",
+  "company",
+  "messages",
+]);
+
+/**
+ * The server's own French names (titles, tiers, badges, renown) in the interface's language: an
+ * exact name of the list is replaced wherever it comes; the players' words are left alone.
+ */
+export function serverWords(data: unknown, words = fr.serverNames): unknown {
+  if (Object.keys(words).length === 0) return data;
+  const walk = (v: unknown): unknown => {
+    if (typeof v === "string") return words[v] ?? v;
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === "object") {
+      return Object.fromEntries(
+        Object.entries(v).map(([k, x]) => [k, PLAYERS_WORDS.has(k) ? x : walk(x)]),
+      );
+    }
+    return v;
+  };
+  return walk(data);
 }
 
 /** The push the game was opened from, told once with the first load (for the measures). */
@@ -87,6 +119,19 @@ export const gameApi = {
   ceremonySeen: (worldId: string) =>
     call<{ ok: true }>("POST", "/api/game/ceremony/seen", { worldId }),
   prices: () => call<{ days: number; series: PriceSeries }>("GET", "/api/game/prices"),
+  company: () => call<CompanyView>("GET", "/api/company"),
+  foundCompany: (name: string) => call<CompanyView>("POST", "/api/company", { name }),
+  invitation: (code: string) =>
+    call<CompanyInvitation>("GET", `/api/company/invitation/${encodeURIComponent(code)}`),
+  joinCompany: (code: string) => call<CompanyView>("POST", "/api/company/join", { code }),
+  leaveCompany: () => call<CompanyView>("POST", "/api/company/leave", {}),
+  inviteShared: () => call<{ ok: true }>("POST", "/api/company/invite", {}),
+  callCompany: () => call<CompanyView>("POST", "/api/company/call", {}),
+  companyThread: () => call<{ messages: FamilyMessage[] }>("GET", "/api/company/messages"),
+  sayToCompany: (body: string) =>
+    call<{ messages: FamilyMessage[] }>("POST", "/api/company/messages", { body }),
+  reportCompanyMessage: (id: string) =>
+    call<{ ok: true }>("POST", `/api/company/messages/${id}/report`, {}),
   familyThread: () =>
     call<{ family: string; messages: FamilyMessage[] }>("GET", "/api/game/family/messages"),
   sayToFamily: (body: string) =>

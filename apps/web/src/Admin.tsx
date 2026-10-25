@@ -27,6 +27,11 @@ interface Retention {
   };
   tutorial: { step: string; players: number }[];
   lastSeen: Record<string, number>;
+  companies?: {
+    members: number;
+    invitesPerPlayer: number;
+    day7: Record<"members" | "alone", { eligible: number; returned: number }>;
+  };
   funnel?: {
     steps: string[];
     days: { day: string; steps: Record<string, number> }[];
@@ -360,6 +365,33 @@ export function Admin() {
               ))}
             </tbody>
           </table>
+        </Panel>
+      )}
+      {data.companies && (
+        <Panel>
+          <Label>Compagnies</Label>
+          <p className="mt-1 text-xs text-cream-dim">
+            Marchands en compagnie, invitations partagées par marchand (cible : 0,5), et retour au
+            7e jour des membres comparé à celui des marchands seuls.
+          </p>
+          <ul className="mt-2 space-y-1 text-sm">
+            <li>Membres : {data.companies.members}</li>
+            <li>
+              Invitations par marchand :{" "}
+              {data.companies.invitesPerPlayer.toLocaleString("fr-FR", {
+                maximumFractionDigits: 2,
+              })}
+            </li>
+            {(["members", "alone"] as const).map((k) => {
+              const d = data.companies?.day7[k] ?? { eligible: 0, returned: 0 };
+              return (
+                <li key={k}>
+                  J7 {k === "members" ? "en compagnie" : "seuls"} : {d.returned} / {d.eligible}
+                  {d.eligible > 0 && ` (${Math.round((100 * d.returned) / d.eligible)} %)`}
+                </li>
+              );
+            })}
+          </ul>
         </Panel>
       )}
       <Panel>

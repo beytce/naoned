@@ -1,5 +1,6 @@
 import { NavIcon } from "../art/icons.js";
 import { fr } from "../i18n.js";
+import { locale } from "../lang.js";
 import { CloseButton, Label, Slab, useOverlay } from "../ui.js";
 import { BankSection } from "./Bank.js";
 import type { GameProps } from "./Game.js";
@@ -106,7 +107,7 @@ export function Help(props: GameProps & { onClose: () => void }) {
         <p className="text-center font-sans text-xs text-muted">
           {fr.game.version(
             __BUILD__,
-            new Date(__BUILT_AT__).toLocaleString("fr-FR", {
+            new Date(__BUILT_AT__).toLocaleString(locale, {
               timeZone: "Europe/Paris",
               dateStyle: "short",
               timeStyle: "short",

@@ -4,6 +4,7 @@ import { BaleArt, CardBack, FarajMark, rarityOf } from "../art/bale.js";
 import { ResourceIcon } from "../art/resources.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
+import { locale } from "../lang.js";
 import { CloseButton, Label, Slab, clock, useOverlay } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import type { BaleCard, BalesView } from "./types.js";
@@ -424,7 +425,7 @@ function Summary(props: {
 }
 
 const pct = (bps: number) =>
-  `${(bps / 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} %`;
+  `${(bps / 100).toLocaleString(locale, { maximumFractionDigits: 2 })} %`;
 
 /** The odds, exactly those of the world's settings. */
 function Odds({ bales, props }: { bales: BalesView; props: GameProps }) {

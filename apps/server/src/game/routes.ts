@@ -26,6 +26,20 @@ import {
 import { isPushEndpoint } from "../notify/push.js";
 import { retention, sharedMailboxes, suspiciousPairs } from "./admin.js";
 import { bankReport, ledgerCsv } from "./bank.js";
+import {
+  CompanyError,
+  callCompany,
+  companions,
+  companyThread,
+  companyView,
+  createCompany,
+  invitation,
+  inviteShared,
+  joinCompany,
+  leaveCompany,
+  postCompanyMessage,
+  reportCompanyMessage,
+} from "./company.js";
 import { dashboard } from "./dashboard.js";
 import {
   ChatError,
@@ -800,6 +814,111 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     });
   });
 
+  // ——— Companies (E2-8): a thread, a call together, a shared record; no power over the trade.
+  async function company<T>(reply: FastifyReply, run: () => Promise<T>) {
+    try {
+      return await run();
+    } catch (e) {
+      if (e instanceof CompanyError || e instanceof ChatError) {
+        return reply.code(e.status).send({ error: e.code });
+      }
+      throw e;
+    }
+  }
+  const codeSchema = z.string().regex(/^[\w-]{4,16}$/);
+
+  app.get("/api/company", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return companyView(db, world, account.id);
+  });
+
+  app.post("/api/company", perMerchant(10), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const parsed = z.object({ name: z.string().max(200) }).safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_name" });
+    return company(reply, async () => {
+      await createCompany(db, account.id, parsed.data.name, world.now());
+      return companyView(db, world, account.id);
+    });
+  });
+
+  app.get("/api/company/invitation/:code", async (req, reply) => {
+    const code = codeSchema.safeParse((req.params as { code?: string }).code);
+    if (!code.success) return reply.code(404).send({ error: "unknown_company" });
+    return company(reply, () => invitation(db, world, code.data));
+  });
+
+  app.post("/api/company/join", perMerchant(10), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const parsed = z.object({ code: codeSchema }).safeParse(req.body);
+    if (!parsed.success) return reply.code(404).send({ error: "unknown_company" });
+    return company(reply, async () => {
+      await joinCompany(db, account.id, parsed.data.code, world.now());
+      return companyView(db, world, account.id);
+    });
+  });
+
+  app.post("/api/company/leave", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return company(reply, async () => {
+      await leaveCompany(db, account.id, world.now());
+      return companyView(db, world, account.id);
+    });
+  });
+
+  app.post("/api/company/invite", perMerchant(10), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return company(reply, async () => {
+      await inviteShared(db, account.id, world.now());
+      return { ok: true };
+    });
+  });
+
+  app.post("/api/company/call", perMerchant(10), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return company(reply, async () => {
+      await callCompany(db, world, account.id, world.now());
+      return companyView(db, world, account.id);
+    });
+  });
+
+  app.get("/api/company/messages", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return company(reply, () => companyThread(db, account.id));
+  });
+
+  app.post("/api/company/messages", perMerchant(60), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const parsed = z.object({ body: z.string().max(2_000) }).safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_message" });
+    return company(reply, async () => {
+      await postCompanyMessage(db, account.id, parsed.data.body, world.now());
+      return companyThread(db, account.id);
+    });
+  });
+
+  app.post("/api/company/messages/:id/report", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const id = z
+      .string()
+      .uuid()
+      .safeParse((req.params as { id?: string }).id);
+    if (!id.success) return reply.code(404).send({ error: "unknown_message" });
+    return company(reply, async () => {
+      await reportCompanyMessage(db, account.id, id.data, world.now());
+      return { ok: true };
+    });
+  });
+
   /** Admin: reported messages of the families' threads. */
   app.get("/api/admin/reports", async (req, reply) => {
     const account = await requireAccount(req, reply);
@@ -1118,8 +1237,12 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
             })
             .from(accounts)
             .where(inArray(accounts.id, ids));
+    const friends = new Set(await companions(db, account.id));
     const names = new Map(
-      rows.map((r) => [r.id, { pseudo: r.pseudo, crest: r.crest, bot: r.bot }]),
+      rows.map((r) => [
+        r.id,
+        { pseudo: r.pseudo, crest: r.crest, bot: r.bot, friend: friends.has(r.id) },
+      ]),
     );
     return toJson({
       terra: terraView(world.ctx, world.current, account.id, world.now(), names),

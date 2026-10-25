@@ -155,6 +155,38 @@ describe("the Terraferma on the server", () => {
     );
   });
 
+  it("marks a fellow of the merchant's company on the map, without an alliance", async () => {
+    await open({ terraferma: { live: true } });
+    const ada = await player("ada@example.org");
+    const bob = await player("bob@example.org", "lagoon");
+    const eve = await player("eve@example.org", "dolomites");
+    await world.execute({ type: "tick" });
+    const code = (
+      await app.inject({
+        method: "POST",
+        url: "/api/company",
+        headers: { cookie: ada },
+        payload: { name: "Les Amis du Rialto" },
+      })
+    ).json().company.code;
+    await app.inject({
+      method: "POST",
+      url: "/api/company/join",
+      headers: { cookie: bob },
+      payload: { code },
+    });
+    for (const c of [ada, bob, eve]) await place(c);
+    const holders = (await get(ada, "/api/game/terra")).terra.holders as {
+      pseudo: string | null;
+      friend: boolean;
+      ally: boolean;
+    }[];
+    const of = (p: string) => holders.find((h) => h.pseudo === p);
+    expect(of("bob")).toMatchObject({ friend: true, ally: false });
+    expect(of("eve")?.friend).toBe(false);
+    expect(of("ada")?.friend).toBe(false);
+  });
+
   it("closes the week: the Influence of the ranking goes to the house", async () => {
     await open({ terraferma: { live: true } });
     const ada = await player("ada@example.org");

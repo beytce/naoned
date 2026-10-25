@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Crest } from "../art/crest.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
+import { locale } from "../lang.js";
 import { Badge, Label, Qty, Segmented, Sheet, Slab, Sparkline, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
 import { DecreeBanner } from "./Famille.js";
@@ -22,7 +23,7 @@ function change(points: number[]): number {
   return ((last - first) / first) * 100;
 }
 
-const percent = new Intl.NumberFormat("fr-FR", {
+const percent = new Intl.NumberFormat(locale, {
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,
 });

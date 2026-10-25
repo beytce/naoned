@@ -16,7 +16,7 @@
 // clock started on a Monday morning in Paris (the Terraferma's truce on, daylight), its mules
 // quick enough for a delivery to arrive while the test waits. With BASE_URL
 // (the dev servers), SERVER_LOG must name the server's log, where the magic link is printed.
-// Env: CHROMIUM (a Chromium or headless shell), SHOTS (a folder for a picture of every step,
+// Env: LANG=en (the session in English), CHROMIUM (a Chromium or headless shell), SHOTS (a folder for a picture of every step,
 // e2e-shots by default), SIZES ("390x844,320x568" by default), REPORT=1 (every fault listed
 // without stopping at the first), REPEAT=n (the whole session n times over, the sizes side by
 // side, each run on a server of its own, to measure its stability: every run's verdict
@@ -47,12 +47,68 @@ const SCALE = Number(process.env.TEXT_SIZE || 100) / 100;
 const NAME_LETTERS = Math.floor(10 / SCALE ** 2);
 const faults = [];
 
-// Lorenzo's words the script reads (apps/web/src/i18n.ts, fr.game.coach).
-const COVERED = /fermez cette fenêtre/i;
-const LEDGER = /voici votre livre de compte/i;
-const LEDGER_LATER = /votre livre de compte, sous la cloche/i;
-const INVEST_LATER = /il vous faut encore des briques et des planches/i;
-const BRAVO = /bravo, vous connaissez la boucle/i;
+// LANG=en plays the session in English (E3-8 of the experts): the words the script reads, in
+// each language (apps/web/src/i18n.ts and i18n.en.ts).
+const LANG = process.env.LANG === "en" || process.env.E2E_LANG === "en" ? "en" : "fr";
+const WORDS = {
+  fr: {
+    covered: /fermez cette fenêtre/i,
+    ledger: /voici votre livre de compte/i,
+    ledgerLater: /votre livre de compte, sous la cloche/i,
+    investLater: /il vous faut encore des briques et des planches/i,
+    bravo: /bravo, vous connaissez la boucle/i,
+    goal: (n) => new RegExp(`objectif ${n}\\/7`, "i"),
+    goalPrefix: /^.*?objectif \d+\/\d+ /i,
+    code: /code à 6 chiffres/i,
+    mailCode: /connexion à Fondaco : (\d{3}) (\d{3})/,
+    skip: /passer/i,
+    skipExact: /^passer$/i,
+    settle: /choisir ce métier/i,
+    nextOrGot: /^(suivant|compris)$/i,
+    truce: /trêve/i,
+    notices: /^avis/i,
+    firstSteps: "Premiers pas",
+    finish: /terminer/i,
+    produce: /^produire$/i,
+    quantity: "Quantité",
+    team: /équipe · vénétie/i,
+    onYou: /sur vous/i,
+    battleAt: /bataille à 20 h/i,
+    teamWon: /vénétie l'emporte/i,
+    npc: "PNJ",
+  },
+  en: {
+    covered: /close this window/i,
+    ledger: /here is your account book/i,
+    ledgerLater: /your account book, under the bell/i,
+    investLater: /you still need bricks and planks/i,
+    bravo: /well done, you know the loop/i,
+    goal: (n) => new RegExp(`goal ${n}\\/7`, "i"),
+    goalPrefix: /^.*?goal \d+\/\d+ /i,
+    code: /6-digit code/i,
+    mailCode: /Fondaco sign-in code: (\d{3}) (\d{3})/,
+    skip: /skip/i,
+    skipExact: /^skip$/i,
+    settle: /choose this trade/i,
+    nextOrGot: /^(next|got it)$/i,
+    truce: /truce/i,
+    notices: /^notices/i,
+    firstSteps: "First steps",
+    finish: /finish/i,
+    produce: /^produce$/i,
+    quantity: "Quantity",
+    team: /team · veneto/i,
+    onYou: /on you/i,
+    battleAt: /battle at 20:00/i,
+    teamWon: /veneto wins/i,
+    npc: "NPC",
+  },
+}[LANG === "en" ? "en" : "fr"];
+const COVERED = WORDS.covered;
+const LEDGER = WORDS.ledger;
+const LEDGER_LATER = WORDS.ledgerLater;
+const INVEST_LATER = WORDS.investLater;
+const BRAVO = WORDS.bravo;
 // A Thursday of 40 merchants on the Terraferma (e2e/fixtures/make-terra-midweek.ts).
 const MIDWEEK = JSON.parse(
   readFileSync(
@@ -150,6 +206,8 @@ async function startServer() {
     cwd: serverDir,
     env: {
       ...process.env,
+      // LANG=en names the interface's language here, not a locale: the database would choke on it.
+      LANG: "C.UTF-8",
       NODE_ENV: "test",
       DATABASE_URL: "pglite:memory",
       HOST: "127.0.0.1",
@@ -251,7 +309,7 @@ async function session(width, height, tag) {
     // The sign-in (by the mail's code or its link), the merchant's name, the introduction, the
     // trade.
     const email = `e2e-${width}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.org`;
-    await page.goto(base);
+    await page.goto(LANG === "en" ? `${base}/?lang=en` : base);
     await check("connexion");
     // On the short phone (an iPhone SE), the address field and its button above the fold; a tall
     // one shows Venice's sky first.
@@ -268,7 +326,7 @@ async function session(width, height, tag) {
     // iPhone); the other one with its link.
     if (width < 360) {
       const code = await mailCode(email);
-      const field = page.getByLabel(/code à 6 chiffres/i);
+      const field = page.getByLabel(WORDS.code);
       await field.waitFor();
       await check("code");
       await field.fill(code);
@@ -282,18 +340,12 @@ async function session(width, height, tag) {
     const pseudo = `e2e_${width}_${Math.floor(Math.random() * 1e6)}`;
     await page.fill("input", pseudo);
     await page.keyboard.press("Enter");
-    await page.getByRole("button", { name: /passer/i }).waitFor();
+    await page.getByRole("button", { name: WORDS.skip }).waitFor();
     await check("introduction");
-    await page.getByRole("button", { name: /passer/i }).click();
-    await page
-      .getByRole("button", { name: /choisir ce métier/i })
-      .first()
-      .waitFor();
+    await page.getByRole("button", { name: WORDS.skip }).click();
+    await page.getByRole("button", { name: WORDS.settle }).first().waitFor();
     await check("metier");
-    await page
-      .getByRole("button", { name: /choisir ce métier/i })
-      .first()
-      .click();
+    await page.getByRole("button", { name: WORDS.settle }).first().click();
 
     await guide(page, check);
     await transform(page, check);
@@ -311,7 +363,7 @@ async function session(width, height, tag) {
     await check("terraferme");
     // Lorenzo's three cards on the Terraferma, read to the end.
     for (let i = 0; i < 4; i++) {
-      const next = page.getByRole("button", { name: /^(suivant|compris)$/i });
+      const next = page.getByRole("button", { name: WORDS.nextOrGot });
       if ((await next.count()) === 0) break;
       await next.first().click();
       await page.waitForTimeout(300);
@@ -324,7 +376,7 @@ async function session(width, height, tag) {
       return shown ? (shown.textContent ?? "").replace(/\s+/g, " ") : null;
     });
     if (said === null) throw new Error(`${label}: no note of the week on the HUD`);
-    if (!/trêve/i.test(said))
+    if (!WORDS.truce.test(said))
       throw new Error(`${label}: the Terraferma's note says « ${said} », not its truce`);
     await check("terraferme-treve");
     await teamWeek(page, door, check);
@@ -334,12 +386,12 @@ async function session(width, height, tag) {
 
     // The notices: the day, the gazette, the day's book; the first steps all done (their list
     // gone).
-    await page.getByRole("button", { name: /^avis/i }).first().click();
+    await page.getByRole("button", { name: WORDS.notices }).first().click();
     await page.waitForTimeout(600);
     await check("avis");
     // Scrolled to its foot, the notices keep their title and their cross.
     await assertSheetHead(page);
-    if ((await page.getByText("Premiers pas", { exact: true }).count()) > 0)
+    if ((await page.getByText(WORDS.firstSteps, { exact: true }).count()) > 0)
       throw new Error(`${label}: the notices still list first steps to take`);
     await page.keyboard.press("Escape");
     await check("carte");
@@ -385,20 +437,20 @@ async function guide(page, check) {
     }
     if (BRAVO.test(text)) {
       // Seven objectives, six when the first upgrade had to wait.
-      const goal = invested ? /objectif 7\/7/i : /objectif [67]\/7/i;
+      const goal = invested ? WORDS.goal("7") : WORDS.goal("[67]");
       if (!goal.test(text)) throw new Error(`the guide ends short: « ${text} »`);
       if (!cashed) throw new Error("the guide ends without the Livre de compte's reward cashed");
-      await bubble.getByRole("button", { name: /terminer/i }).click();
+      await bubble.getByRole("button", { name: WORDS.finish }).click();
       return;
     }
     // The first upgrade waits when the Rialto has nothing to sell (a new world, the Dogana's
     // stock spent): the guide lets it go, as it should for a newcomer. Any other skip is a fault.
     if (INVEST_LATER.test(text)) {
-      await bubble.getByRole("button", { name: /^passer$/i }).click();
+      await bubble.getByRole("button", { name: WORDS.skipExact }).click();
       invested = false;
       continue;
     }
-    if ((await bubble.getByRole("button", { name: /^passer$/i }).count()) > 0)
+    if ((await bubble.getByRole("button", { name: WORDS.skipExact }).count()) > 0)
       throw new Error(`the guide skips a step: « ${text} »`);
     // The book's goals not yet met (a delivery still on the road): its reward comes, wait.
     if (LEDGER_LATER.test(text)) continue;
@@ -425,20 +477,20 @@ async function guide(page, check) {
 async function transform(page, check) {
   await closeAll(page);
   const mill = await workshopRows(page);
-  const idle = mill.find((r) => r.recipe === "transform" && /^produire$/i.test(r.text));
+  const idle = mill.find((r) => r.recipe === "transform" && WORDS.produce.test(r.text));
   if (!idle) {
     await closeAll(page);
     await page.locator("[data-coach=hud-rialto]").click();
     await page.locator("[data-coach=row-wheat]").click();
     await page.locator("[data-coach=sheet-buy]").waitFor();
-    await page.fill("input[aria-label=Quantité]", "10");
+    await page.fill(`input[aria-label=${WORDS.quantity}]`, "10");
     await check("rialto-ble");
     await page.locator("[data-coach=sheet-buy]").click();
     await page.waitForTimeout(1200);
   }
   await closeAll(page);
   const rows = await workshopRows(page);
-  const mill2 = rows.find((r) => r.recipe === "transform" && /^produire$/i.test(r.text));
+  const mill2 = rows.find((r) => r.recipe === "transform" && WORDS.produce.test(r.text));
   if (!mill2)
     throw new Error(`no workshop to transform with: ${rows.map((r) => r.text).join(", ")}`);
   await page.locator(`[data-coach='${mill2.coach}']`).first().click();
@@ -448,7 +500,7 @@ async function transform(page, check) {
   await go.click();
   await page.waitForTimeout(1200);
   const after = await workshopRows(page);
-  if (after.some((r) => r.coach === mill2.coach && /^produire$/i.test(r.text)))
+  if (after.some((r) => r.coach === mill2.coach && WORDS.produce.test(r.text)))
     throw new Error("the transformation did not start");
   await check("transformation-lancee");
 }
@@ -507,8 +559,8 @@ async function teamWeek(page, door, check) {
     });
   });
   // Two lines: what presses most (Milan on the merchant), then the team.
-  expect(riding, "the team", /équipe · vénétie/i);
-  expect(riding, "Milan riding against the merchant", /sur vous/i);
+  expect(riding, "the team", WORDS.team);
+  expect(riding, "Milan riding against the merchant", WORDS.onYou);
   await check("terraferme-equipes");
 
   const calm = await show((v) => {
@@ -520,13 +572,13 @@ async function teamWeek(page, door, check) {
     });
     v.fronts = v.fronts.filter((f) => !f.threat);
   });
-  expect(calm, "the battle's hour", /bataille à 20 h/i);
+  expect(calm, "the battle's hour", WORDS.battleAt);
 
   const won = await show((v) => {
     v.rules.team = TEAM;
     v.closed = { signore: -1, conquest: false, teams: [{ team: TEAM, glory: 40, cells: 12 }] };
   });
-  expect(won, "the team that won", /vénétie l'emporte/i);
+  expect(won, "the team that won", WORDS.teamWon);
   await check("terraferme-equipes-close");
   await page.unroute("**/api/game/terra");
 }
@@ -553,9 +605,9 @@ async function npcRival(page, check) {
   await page.reload();
   await page.locator("[data-hud=rival]").waitFor();
   await page.waitForTimeout(800);
-  const seen = await page.evaluate(() => {
+  const seen = await page.evaluate((npc) => {
     const line = document.querySelector("[data-hud=rival]");
-    const seal = [...(line?.querySelectorAll("span") ?? [])].find((s) => s.textContent === "PNJ");
+    const seal = [...(line?.querySelectorAll("span") ?? [])].find((s) => s.textContent === npc);
     if (!line || !seal) return { text: line?.textContent ?? "", seal: false };
     const l = line.getBoundingClientRect();
     const b = seal.getBoundingClientRect();
@@ -564,7 +616,7 @@ async function npcRival(page, check) {
       seal: b.width > 0 && b.left >= l.left - 0.5 && b.right <= l.right + 0.5,
       inside: b.right <= window.innerWidth,
     };
-  });
+  }, WORDS.npc);
   if (!seen.seal || !seen.inside)
     throw new Error(`the rival's « PNJ » seal is cut or missing: « ${seen.text} »`);
   if (!/\+/.test(seen.text)) throw new Error(`the rival's gap is cut: « ${seen.text} »`);
@@ -755,7 +807,7 @@ async function mailCode(email) {
     await new Promise((r) => setTimeout(r, 200));
     const text = readFileSync(log, "utf8");
     const at = text.lastIndexOf(email);
-    const code = at >= 0 ? text.slice(at).match(/connexion à Fondaco : (\d{3}) (\d{3})/) : null;
+    const code = at >= 0 ? text.slice(at).match(WORDS.mailCode) : null;
     if (code) return `${code[1]}${code[2]}`;
   }
   throw new Error("no code in the server's log");
@@ -775,7 +827,7 @@ async function magicLink(email) {
 
 function slug(text) {
   return text
-    .replace(/^.*?objectif \d+\/\d+ /i, "")
+    .replace(WORDS.goalPrefix, "")
     .normalize("NFD")
     .replace(/[^\w ]/g, "")
     .trim()

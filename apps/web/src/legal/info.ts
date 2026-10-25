@@ -15,6 +15,7 @@ export const LEGAL = {
     /** To check on railway.com. */
     address: null as string | null,
     city: "San Francisco (Californie, États-Unis)",
+    cityEn: "San Francisco (California, United States)",
     url: "https://railway.com",
   },
   /** Where the server and the database run (the region chosen in Railway). */
@@ -22,7 +23,9 @@ export const LEGAL = {
   mail: {
     name: "Resend",
     address: "2261 Market Street #5039, San Francisco, CA 94114, États-Unis",
+    addressEn: "2261 Market Street #5039, San Francisco, CA 94114, United States",
     url: "https://resend.com",
   },
-  updated: "16 octobre 2026",
+  updated: "25 octobre 2026",
+  updatedEn: "25 October 2026",
 } as const;

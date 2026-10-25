@@ -4,8 +4,10 @@ import {
   hourIn,
   hourWithin,
   nextSkirmishCall,
+  nextWaveAt,
   seasonActs,
   seasonEnd,
+  waveOrdersCovered,
   weekIndex,
 } from "@comptoirs/engine";
 import type { Effects } from "@comptoirs/engine";
@@ -31,6 +33,7 @@ import {
   seasonResults,
   weeklyResults,
 } from "../db/schema.js";
+import { calledTo } from "../game/company.js";
 import { seasonPlayers } from "../game/season.js";
 import type { GameWorld } from "../game/world.js";
 import type { Pusher } from "./push.js";
@@ -54,6 +57,8 @@ export const NOTIFICATION_KINDS = [
   "morning",
   // A call to skirmish, a quarter of an hour before (E2-2); asked for, off by default.
   "skirmish_call",
+  // A wave of the board opens with orders the stock covers, to whoever is away (E3-1, lot 2).
+  "wave",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -77,6 +82,8 @@ const TERRA_NEWS: ReadonlySet<string> = new Set([
 export const OPT_IN: ReadonlySet<NotificationKind> = new Set(["skirmish_call"]);
 /** A call to skirmish is told this long before its hour. */
 const CALL_NOTICE_MS = 15 * 60_000;
+/** A wave is told only to whoever has been away this long, with at least this many orders covered. */
+const WAVE = { awayMs: 2 * 60 * 60_000, covered: 2 };
 
 /** Pushed at once, never held back by the hourly limit per kind: the merchant has minutes. */
 const URGENT: ReadonlySet<NotificationKind> = new Set(["siege"]);
@@ -101,6 +108,7 @@ const OPENS: Partial<Record<NotificationKind, string>> = {
   family: "terra",
   morning: "notices",
   skirmish_call: "terra",
+  wave: "cargo",
 };
 
 /** The link a push opens: a place of the list, and where it comes from for the measures. */
@@ -350,6 +358,31 @@ export class Notifier {
     await this.weekResults(now);
     await this.morning(now);
     await this.skirmishCall(since, now);
+    await this.wave(since, now);
+  }
+
+  /**
+   * A wave of the board has just opened (its hours read in the settings): told to whoever has
+   * been away for two hours and could fill at least two of its orders from their stock.
+   */
+  private async wave(since: number, now: number): Promise<void> {
+    const at = nextWaveAt(this.world.ctx, since);
+    if (at === null || at > now) return;
+    const people = await this.people();
+    if (people.size === 0) return;
+    const state = this.world.current;
+    const seen = await this.db
+      .select({ id: players.accountId, at: players.lastSeenAt })
+      .from(players)
+      .where(and(eq(players.worldId, this.world.id), inArray(players.accountId, [...people])));
+    const notices: Notice[] = [];
+    for (const p of seen) {
+      if (p.at && now - p.at.getTime() < WAVE.awayMs) continue;
+      const covered = waveOrdersCovered(this.world.ctx, state, p.id, at, now);
+      if (covered < WAVE.covered) continue;
+      notices.push({ accountId: p.id, kind: "wave", data: { at, covered } });
+    }
+    await this.send(notices, now);
   }
 
   /** A quarter of an hour before a call to skirmish, to whoever asked to be told (E2-2). */
@@ -362,8 +395,19 @@ export class Notifier {
       .select({ id: accounts.id })
       .from(accounts)
       .where(and(inArray(accounts.id, [...people]), sql`${accounts.pushOff} ? 'skirmish_call'`));
+    // A company called to this hour by one of its members: all of them told, asked or not.
+    const company = new Map(
+      (await calledTo(this.db, call))
+        .filter((r) => people.has(r.accountId))
+        .map((r) => [r.accountId, r.company]),
+    );
+    const told = new Set([...asked.map((r) => r.id), ...company.keys()]);
     await this.send(
-      asked.map((r) => ({ accountId: r.id, kind: "skirmish_call" as const, data: { at: call } })),
+      [...told].map((accountId) => ({
+        accountId,
+        kind: "skirmish_call" as const,
+        data: company.has(accountId) ? { at: call, company: company.get(accountId) } : { at: call },
+      })),
       now,
     );
   }
@@ -461,20 +505,20 @@ export class Notifier {
       .from(pushSubscriptions)
       .where(inArray(pushSubscriptions.accountId, ids));
     if (subs.length === 0) return;
-    const prefs = new Map(
-      (
-        await this.db
-          .select({ id: accounts.id, off: accounts.pushOff })
-          .from(accounts)
-          .where(inArray(accounts.id, ids))
-      ).map((r) => [r.id, new Set(r.off)]),
-    );
+    const rows = await this.db
+      .select({ id: accounts.id, off: accounts.pushOff, lang: accounts.lang })
+      .from(accounts)
+      .where(inArray(accounts.id, ids));
+    const prefs = new Map(rows.map((r) => [r.id, new Set(r.off)]));
+    const langs = new Map(rows.map((r) => [r.id, r.lang]));
     for (const n of saved) {
       const mine = subs.filter((s) => s.accountId === n.accountId);
       // Off when listed; a kind asked for (opt-in) is on only when listed.
       const listed = prefs.get(n.accountId)?.has(n.kind) ?? false;
-      if (mine.length === 0 || (OPT_IN.has(n.kind as NotificationKind) ? !listed : listed))
-        continue;
+      // A call of the person's company is theirs even unasked for (E2-8), still within the cap.
+      const asked =
+        listed || (n.kind === "skirmish_call" && !!(n.data as { company?: string }).company);
+      if (mine.length === 0 || (OPT_IN.has(n.kind as NotificationKind) ? !asked : listed)) continue;
       const [recent] = URGENT.has(n.kind as NotificationKind)
         ? []
         : await this.db
@@ -492,7 +536,7 @@ export class Notifier {
       if (recent) continue;
       if (!URGENT.has(n.kind as NotificationKind) && !(await this.underDailyCap(n.accountId, now)))
         continue;
-      const text = pushText(n.kind, n.data, this.cities, now);
+      const text = pushText(n.kind, n.data, this.cities, now, langs.get(n.accountId));
       const payload = JSON.stringify({
         ...text,
         kind: n.kind,

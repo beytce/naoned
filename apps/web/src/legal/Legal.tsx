@@ -1,7 +1,9 @@
-import type { ReactNode } from "react";
 import { Emblem } from "../art/logo.js";
 import { fr } from "../i18n.js";
+import { LANG } from "../lang.js";
+import { MentionsEn, PrivacyEn, TITLES_EN, TermsEn } from "./LegalEn.js";
 import { LEGAL } from "./info.js";
+import { Contact, H2, List, Missing, P, value } from "./parts.js";
 
 /** The three legal pages, by their path. */
 export const LEGAL_PAGES = {
@@ -13,43 +15,6 @@ export type LegalPageName = (typeof LEGAL_PAGES)[keyof typeof LEGAL_PAGES];
 
 export function legalPageAt(pathname: string): LegalPageName | null {
   return LEGAL_PAGES[pathname.replace(/\/$/, "") as keyof typeof LEGAL_PAGES] ?? null;
-}
-
-/** A detail still to give (see legal/info.ts): visible, so that it is not forgotten. */
-function Missing({ what }: { what: string }) {
-  return <span className="font-semibold text-vermilion">[à compléter : {what}]</span>;
-}
-
-const value = (v: string | null, what: string) => v ?? <Missing what={what} />;
-
-function Contact() {
-  return LEGAL.email ? (
-    <a className="text-gold underline" href={`mailto:${LEGAL.email}`}>
-      {LEGAL.email}
-    </a>
-  ) : (
-    <Missing what="adresse e-mail de contact" />
-  );
-}
-
-function H2({ children }: { children: ReactNode }) {
-  return <h2 className="mt-8 font-display text-lg font-extrabold uppercase">{children}</h2>;
-}
-
-function P({ children }: { children: ReactNode }) {
-  return <p className="mt-3 leading-relaxed text-cream-dim">{children}</p>;
-}
-
-function List({ items }: { items: ReactNode[] }) {
-  return (
-    <ul className="mt-3 list-disc space-y-1.5 pl-5 leading-relaxed text-cream-dim">
-      {items.map((item, i) => (
-        // Fixed texts: their order never changes.
-        // biome-ignore lint/suspicious/noArrayIndexKey: static content
-        <li key={i}>{item}</li>
-      ))}
-    </ul>
-  );
 }
 
 function Mentions() {
@@ -85,7 +50,7 @@ function Mentions() {
       <H2>Signaler un contenu</H2>
       <P>
         Un message ou un nom de marchand qui vous semble illicite ou blessant peut être signalé
-        depuis le jeu (fil de famille) ou à l'adresse <Contact />.
+        depuis le jeu (fil de compagnie) ou à l'adresse <Contact />.
       </P>
     </>
   );
@@ -106,9 +71,10 @@ function Privacy() {
       <H2>Données traitées</H2>
       <List
         items={[
-          "Votre compte : adresse e-mail, nom de marchand, blason, dates de connexion.",
-          "Votre partie : région, ateliers, stocks, ducats, offres et échanges au Rialto, livraisons, famille, classements et palmarès.",
-          "Vos messages dans le fil de votre famille, et les signalements que vous faites.",
+          "Votre compte : adresse e-mail, nom de marchand, blason, langue de l'interface, dates de connexion.",
+          "Votre partie : région, ateliers, stocks, ducats, offres et échanges au Rialto, livraisons, classements et palmarès.",
+          "Votre compagnie, si vous en rejoignez une : son nom, ses membres, la date de votre arrivée, les invitations que vous partagez.",
+          "Vos messages dans le fil de votre compagnie, et les signalements que vous faites.",
           "Les mesures d'usage du jeu : sessions, étapes du tutoriel, actions de jeu, rattachées à votre compte.",
           "D'où vient votre compte : le lien partagé (le nom du marchand qui l'a partagé) ou la campagne (paramètres utm) par lesquels vous êtes arrivé, enregistrés à la création du compte.",
           "Des compteurs anonymes de l'entrée dans le jeu (accueil vu, lien demandé, compte créé, région choisie, premier lot), par jour et par campagne, qui ne sont rattachés à personne.",
@@ -119,7 +85,7 @@ function Privacy() {
       <List
         items={[
           "Vous connecter (lien envoyé par e-mail) et faire fonctionner votre partie : exécution des conditions d'utilisation que vous acceptez en créant un compte.",
-          "Assurer la sécurité du jeu, lutter contre la triche et modérer le fil des familles : intérêt légitime de l'éditeur.",
+          "Assurer la sécurité du jeu, lutter contre la triche et modérer le fil des compagnies : intérêt légitime de l'éditeur.",
           "Améliorer le jeu à partir des mesures d'usage (rétention, difficulté, équilibre) : intérêt légitime de l'éditeur.",
           "Vous envoyer des notifications sur votre appareil : votre consentement, donné en les activant et retiré en les coupant (profil ou navigateur).",
         ]}
@@ -127,7 +93,7 @@ function Privacy() {
       <H2>Qui y a accès</H2>
       <List
         items={[
-          "Les autres joueurs voient votre nom de marchand, votre blason, votre rang, vos offres au Rialto et, dans votre famille, vos messages. Jamais votre adresse e-mail.",
+          "Les autres joueurs voient votre nom de marchand, votre blason, votre rang, vos offres au Rialto et, dans votre compagnie, vos messages. Jamais votre adresse e-mail.",
           <span key="host">
             {LEGAL.host.name} ({LEGAL.host.city}) héberge le serveur et la base de données. Région
             d'hébergement : {value(LEGAL.hostingRegion, "région choisie dans Railway")}.
@@ -162,7 +128,7 @@ function Privacy() {
         Quand vous supprimez votre compte, votre adresse e-mail, votre nom de marchand, votre
         blason, vos sessions, vos notifications, vos abonnements et vos mesures d'usage sont
         effacés. Votre marchand reste dans la saison en cours sans nom, pour que les échanges des
-        autres joueurs restent justes ; vos messages de famille restent, sans votre nom.
+        autres joueurs restent justes ; vous quittez votre compagnie et vos messages y sont effacés.
       </P>
       <H2>Cookies et stockage</H2>
       <P>
@@ -229,7 +195,7 @@ function Terms() {
       </P>
       <H2>Conduite</H2>
       <P>
-        Respectez les autres joueurs. Dans le fil des familles sont interdits les insultes, le
+        Respectez les autres joueurs. Dans le fil des compagnies sont interdits les insultes, le
         harcèlement, les propos discriminatoires, les contenus illicites et la publicité. Un message
         signalé par trois membres est masqué ; les signalements sont examinés par l'éditeur.
       </P>
@@ -288,16 +254,34 @@ const TITLES: Record<LegalPageName, string> = {
 
 /** A legal page, readable without an account. */
 export function LegalPage({ page }: { page: LegalPageName }) {
+  const en = LANG === "en";
+  const titles = en ? TITLES_EN : TITLES;
   return (
     <main className="mx-auto max-w-2xl px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
       <a href="/" className="label flex items-center gap-2 text-gold">
         <Emblem size={28} /> ← {fr.appName}
       </a>
       <h1 className="mt-6 font-display text-3xl font-extrabold uppercase leading-tight text-cream">
-        {TITLES[page]}
+        {titles[page]}
       </h1>
-      <p className="meta mt-2">Dernière mise à jour : {LEGAL.updated}</p>
-      {page === "mentions" ? <Mentions /> : page === "privacy" ? <Privacy /> : <Terms />}
+      <p className="meta mt-2">
+        {en ? `Last updated: ${LEGAL.updatedEn}` : `Dernière mise à jour : ${LEGAL.updated}`}
+      </p>
+      {en ? (
+        page === "mentions" ? (
+          <MentionsEn />
+        ) : page === "privacy" ? (
+          <PrivacyEn />
+        ) : (
+          <TermsEn />
+        )
+      ) : page === "mentions" ? (
+        <Mentions />
+      ) : page === "privacy" ? (
+        <Privacy />
+      ) : (
+        <Terms />
+      )}
       <LegalLinks className="mt-10 border-t border-line pt-5" />
     </main>
   );
@@ -307,12 +291,12 @@ export function LegalPage({ page }: { page: LegalPageName }) {
 export function LegalLinks({ className = "" }: { className?: string }) {
   return (
     <nav
-      aria-label="Informations légales"
+      aria-label={LANG === "en" ? "Legal information" : "Informations légales"}
       className={`flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted ${className}`}
     >
       {Object.entries(LEGAL_PAGES).map(([path, page]) => (
         <a key={path} href={path} className="underline-offset-2 hover:text-cream hover:underline">
-          {TITLES[page]}
+          {(LANG === "en" ? TITLES_EN : TITLES)[page]}
         </a>
       ))}
     </nav>

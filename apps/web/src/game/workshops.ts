@@ -1,5 +1,6 @@
 /** How a workshop stands: something to collect, working, waiting for work, lacking, at rest. */
 export type PlotState = "ready" | "running" | "idle" | "blocked" | "still";
+import { locale } from "../lang.js";
 import type { GameProps } from "./Game.js";
 import type { BuildingView, PlayerView, Recipe } from "./types.js";
 
@@ -81,7 +82,7 @@ export function workshopState(props: GameProps, b: BuildingView): WorkshopState 
 
 /** Minutes from now to the evening (21 h in Paris), or to the morning (8 h) once evening has come. */
 export function untilRest(now: number): { minutes: number; night: boolean } {
-  const parts = new Intl.DateTimeFormat("fr-FR", {
+  const parts = new Intl.DateTimeFormat(locale, {
     hour: "numeric",
     minute: "numeric",
     hourCycle: "h23",

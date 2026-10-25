@@ -134,7 +134,7 @@ function Commissions(props: GameProps) {
         >
           {goods.map((r) => (
             <option key={r.code} value={r.code}>
-              {r.name}
+              {props.names.resource(r.code)}
             </option>
           ))}
         </select>

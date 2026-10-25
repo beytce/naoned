@@ -60,6 +60,8 @@ Ton : sobre, historique, un peu de panache. On ne promet rien que le jeu ne tien
 
 ### Reddit (EN)
 
+À publier seulement une fois l'interface anglaise et ses mentions légales en ligne (E3-8) : lancement d'abord sur les communautés francophones, les posts anglais ensuite.
+
 > **Fondaco — a multiplayer trading game set in 1450 Venice, one season per month (free, browser, PC & mobile)**
 >
 > Hi! I'm making Fondaco, a browser management game. You run a trading house: your workshops produce clay, bricks, planks and bread, you load your mules to fill city orders, and you trade on the Rialto, a player-driven order book.
@@ -69,7 +71,7 @@ Ton : sobre, historique, un peu de panache. On ne promet rien que le jeu ne tien
 > - **Short sessions** on mobile, deeper optimisation on PC.
 > - Every week, **the Terraferma**: a conquest map between merchants, nations and Milan. The week's first becomes Signore and imposes a decree on the market for the next week.
 >
-> No pay-to-win: you can't buy ducats, goods or speed. The interface is in French for now (English is planned). Feedback very welcome!
+> No pay-to-win: you can't buy ducats, goods or speed. The game is in English and French (Venetian names kept in Italian). Feedback very welcome!
 >
 > [game link]
 

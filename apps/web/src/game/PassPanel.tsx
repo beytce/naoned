@@ -1,13 +1,14 @@
 import { Emblem } from "../art/logo.js";
 import { fr } from "../i18n.js";
+import { locale } from "../lang.js";
 import { Badge, Label, Panel } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import type { GameResponse } from "./types.js";
 
 const date = (t: number) =>
-  new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+  new Date(t).toLocaleDateString(locale, { day: "numeric", month: "long" });
 const euros = (cents: number) =>
-  (cents / 100).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+  (cents / 100).toLocaleString(locale, { style: "currency", currency: "EUR" });
 
 /** Profile: the Pass Négociant, what it gives, how to win it, and its price (payment later). */
 export function PassPanel({

@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Lorenzo } from "../art/scenes.js";
 import { fr } from "../i18n.js";
+import { locale } from "../lang.js";
 import { LorenzoCard, Slab, clock } from "../ui.js";
 import { affordable, have, missingMaterials } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
@@ -114,7 +115,7 @@ function investStep(props: GameProps, isRaw: (type: string) => boolean): CoachSt
     )[0] ?? ["", 1];
     const now = outputQty(props, resource, base, raw.level);
     const next = outputQty(props, resource, base, raw.level + 1);
-    const times = (next / Math.max(1, now)).toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+    const times = (next / Math.max(1, now)).toLocaleString(locale, { maximumFractionDigits: 1 });
     return { text: c.invest(name, raw.level + 1, times), target: "sheet-upgrade" };
   }
   if (props.sheet === "workshops") return { text: c.investTap(name), target: `upgrade-${raw.id}` };

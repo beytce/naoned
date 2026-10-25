@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fr } from "../i18n.js";
+import { locale } from "../lang.js";
 import { Rules, Sheet } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { merchantLabel } from "./Name.js";
@@ -99,7 +100,7 @@ function Curves({ data }: { data: DashboardView }) {
   const long = data.days.length > 7;
   const dayLabel = (day: string) =>
     new Date(`${day}T12:00:00Z`).toLocaleDateString(
-      "fr-FR",
+      locale,
       long ? { day: "numeric", month: "short" } : { weekday: "short" },
     );
   const shown = (i: number) => !long || (data.days.length - 1 - i) % 7 === 0;

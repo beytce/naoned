@@ -9,15 +9,19 @@ import "@fontsource/space-mono/400.css";
 import "@fontsource/space-mono/700.css";
 import "@fontsource/cinzel/latin-700.css";
 import "./index.css";
-import { keepOrigin } from "./origin.js";
+import { LANG } from "./lang.js";
+import { keepInvite, keepOrigin } from "./origin.js";
 import { applyPalette, applyTextSize } from "./theme.js";
 
+document.documentElement.lang = LANG;
 applyPalette();
 applyTextSize();
 
 // Where the visit comes from (a shared link, a campaign), kept until the sign-in.
 try {
   keepOrigin(window.location.search, sessionStorage);
+  // A company's invitation outlives the visit: the sign-in mail may open another tab.
+  keepInvite(window.location.search, localStorage);
 } catch {
   // No storage at all: the origin is lost, nothing else.
 }

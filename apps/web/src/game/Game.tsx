@@ -3,6 +3,7 @@ import { type Account, ApiError } from "../api.js";
 import { Emblem } from "../art/logo.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
+import { pendingInvite } from "../origin.js";
 import { type SoundKind, sound } from "../sound.js";
 import { DEFAULT_PALETTE, applyPalette, currentPalette, needsPass } from "../theme.js";
 import { Slab } from "../ui.js";
@@ -381,6 +382,22 @@ export function Game(props: {
     );
   }, [placed, goTo, setLayer]);
 
+  // A company's invitation waiting (E2-8): the profile opens on it once the guide is over.
+  const inviteShown = useRef(false);
+  useEffect(() => {
+    if (!placed || sheet !== null || inviteShown.current) return;
+    if (store.get("guideDone") !== "1") return;
+    let code: string | null = null;
+    try {
+      code = pendingInvite(localStorage);
+    } catch {
+      code = null;
+    }
+    if (!code) return;
+    inviteShown.current = true;
+    setSheet("profile");
+  }, [placed, sheet]);
+
   // Back button: another layer goes back to the trade's map.
   useEffect(() => {
     if (layer === "trade") return;
@@ -418,11 +435,13 @@ export function Game(props: {
       list: { code?: string; type?: string; name: string }[] | undefined,
       key: string,
     ) => list?.find((x) => x.code === key || x.type === key)?.name ?? key;
+    // The theme's names in the interface's language, over the server's French ones.
+    const own = fr.themeNames;
     return {
-      resource: (c) => pick(catalog?.resources, c),
-      building: (t) => pick(catalog?.buildings, t),
-      city: (c) => pick(catalog?.cities, c),
-      region: (c) => pick(catalog?.regions, c),
+      resource: (c) => own.resource[c] ?? pick(catalog?.resources, c),
+      building: (t) => own.building[t] ?? pick(catalog?.buildings, t),
+      city: (c) => own.city[c] ?? pick(catalog?.cities, c),
+      region: (c) => own.region[c] ?? pick(catalog?.regions, c),
     };
   }, [catalog]);
 

@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BuildingArt } from "../art/buildings.js";
 import { ResourceIcon } from "../art/resources.js";
 import { RegionArt } from "../art/scenes.js";
 import { fr } from "../i18n.js";
+import { pendingInvite } from "../origin.js";
 import { Label, Panel, Slab } from "../ui.js";
 import type { Names } from "./Game.js";
-import type { Catalog } from "./types.js";
+import { gameApi } from "./api.js";
+import type { Catalog, CompanyInvitation } from "./types.js";
 
 const SELLS: Record<string, string> = {
   terraferma: "bread",
@@ -26,6 +28,23 @@ export function Region(props: {
   toast: string | null;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
+  // Who comes by a company's link sees the trade the company lacks (E2-8 of the experts).
+  const [invitation, setInvitation] = useState<CompanyInvitation | null>(null);
+  useEffect(() => {
+    let code: string | null = null;
+    try {
+      code = pendingInvite(localStorage);
+    } catch {
+      code = null;
+    }
+    if (code)
+      gameApi
+        .invitation(code)
+        .then(setInvitation)
+        .catch(() => undefined);
+  }, []);
+  const lacks = invitation && !invitation.full ? invitation.missingRegion : null;
+  const has = invitation?.regions.map((r) => fr.region.jobs[r]?.name ?? r) ?? [];
   const bonus = props.catalog.rules.regionBonusBps / 100;
   return (
     <main className="mx-auto max-w-md space-y-5 px-4 pb-10 pt-[max(1.5rem,env(safe-area-inset-top))]">
@@ -47,11 +66,19 @@ export function Region(props: {
               {fr.region.jobs[r.code]?.name ?? r.name}
             </h2>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              <p className="label text-cream-dim">{r.name}</p>
+              <p className="label text-cream-dim">{props.names.region(r.code)}</p>
               <span className="slab whitespace-nowrap bg-lagoon px-2 py-0.5 font-sans text-xs font-bold text-on-lagoon">
                 {fr.region.bonus(bonus, props.names.resource(r.bonusResource))}
               </span>
-              {props.catalog.recommendedRegion === r.code && (
+              {lacks === r.code && invitation && (
+                <span
+                  title={fr.game.myCompany.regionHelp(invitation.name, has)}
+                  className="slab whitespace-nowrap bg-gold px-2 py-0.5 font-sans text-xs font-bold text-ink"
+                >
+                  ✦ {fr.game.myCompany.regionBadge}
+                </span>
+              )}
+              {props.catalog.recommendedRegion === r.code && lacks !== r.code && (
                 <span
                   title={fr.region.recommendedHelp}
                   className="slab whitespace-nowrap bg-gold px-2 py-0.5 font-sans text-xs font-bold text-ink"
@@ -61,6 +88,11 @@ export function Region(props: {
               )}
             </div>
             <p className="mt-2 text-sm text-cream-dim">{fr.region.jobs[r.code]?.text}</p>
+            {lacks === r.code && invitation && (
+              <p className="mt-1 text-sm text-gold">
+                {fr.game.myCompany.regionHelp(invitation.name, has)}
+              </p>
+            )}
             <div className="mt-4 flex items-end gap-1">
               {r.startingBuildings.map((b) => (
                 <div key={b} className="flex-1 text-center">

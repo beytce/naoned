@@ -4,7 +4,13 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
-import { accounts, notifications, pushSubscriptions, weeklyResults } from "../src/db/schema.js";
+import {
+  accounts,
+  notifications,
+  players,
+  pushSubscriptions,
+  weeklyResults,
+} from "../src/db/schema.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { NOTIFICATION_KINDS, Notifier } from "../src/notify/notifier.js";
@@ -290,6 +296,64 @@ describe("notifications", () => {
     expect(String(calls[0]?.payload.title)).toContain("12:30");
   });
 
+  it("calls a company's members to the hour one of them chose, asked or not", async () => {
+    const ada = await player("ada@example.org");
+    const bob = await player("bob@example.org");
+    const eve = await player("eve@example.org");
+    await subscribe(ada.cookie);
+    await subscribe(bob.cookie, "https://fcm.googleapis.com/fcm/send/2");
+    await subscribe(eve.cookie, "https://fcm.googleapis.com/fcm/send/3");
+    const code = (
+      await app.inject({
+        method: "POST",
+        url: "/api/company",
+        headers: { cookie: ada.cookie },
+        payload: { name: "Les Amis du Rialto" },
+      })
+    ).json().company.code;
+    await app.inject({
+      method: "POST",
+      url: "/api/company/join",
+      headers: { cookie: bob.cookie },
+      payload: { code },
+    });
+    // 10 h in Paris: Ada calls the company to the next call, 12:30.
+    await app.inject({ method: "POST", url: "/api/company/call", headers: { cookie: ada.cookie } });
+    await notifier.scan();
+    now = Date.parse("2026-10-12T10:15:00Z");
+    await notifier.scan();
+    const calls = pusher.sent.filter((p) => p.payload.kind === "skirmish_call");
+    expect(calls.map((c) => c.target.endpoint).sort()).toEqual([
+      "https://fcm.googleapis.com/fcm/send/1",
+      "https://fcm.googleapis.com/fcm/send/2",
+    ]);
+    expect(String(calls[0]?.payload.title)).toContain("Les Amis du Rialto");
+  });
+
+  it("pushes in the person's language", async () => {
+    const ada = await player("ada@example.org");
+    await subscribe(ada.cookie);
+    const me = await app.inject({
+      method: "PATCH",
+      url: "/api/me",
+      headers: { cookie: ada.cookie },
+      payload: { lang: "en" },
+    });
+    expect(me.json().account.lang).toBe("en");
+    await app.inject({
+      method: "PATCH",
+      url: "/api/notifications/push",
+      headers: { cookie: ada.cookie },
+      payload: { off: ["skirmish_call"] },
+    });
+    now = Date.parse("2026-10-12T10:14:00Z");
+    await notifier.scan();
+    now = Date.parse("2026-10-12T10:15:00Z");
+    await notifier.scan();
+    const call = pusher.sent.find((p) => p.payload.kind === "skirmish_call");
+    expect(String(call?.payload.title)).toBe("Skirmish at 12:30");
+  });
+
   it("refuses a push endpoint outside the browsers' push services", async () => {
     const ada = await player("ada@example.org");
     const res = await subscribe(ada.cookie, "https://10.0.0.1/internal");
@@ -372,6 +436,40 @@ describe("notifications", () => {
 });
 
 describe("notifications of the road", () => {
+  it("tells of a wave whose orders the stock covers, only to whoever is away", async () => {
+    smallOrders(world);
+    // A board big enough for every wave to hold a few orders of each merchant's road.
+    world.ctx.settings.deliveries.sharedOrdersPerActivePlayer = 20;
+    const ada = await player("ada@example.org");
+    const bob = await player("bob@example.org");
+    await subscribe(ada.cookie);
+    await subscribe(bob.cookie, "https://fcm.googleapis.com/fcm/send/2");
+    await notifier.scan();
+    // 11 h in Paris: both were here an hour ago, nobody is told.
+    now = Date.parse("2026-10-12T09:00:00Z");
+    await world.execute({ type: "tick" });
+    await notifier.scan();
+    expect(pusher.sent.filter((p) => p.payload.kind === "wave")).toHaveLength(0);
+    // 14 h: Ada away since 10 h, Bob back at 13:30.
+    await database.db
+      .update(players)
+      .set({ lastSeenAt: new Date(Date.parse("2026-10-12T11:30:00Z")) })
+      .where(eq(players.accountId, bob.id));
+    now = Date.parse("2026-10-12T11:59:00Z");
+    await world.execute({ type: "tick" });
+    await notifier.scan();
+    now = Date.parse("2026-10-12T12:00:00Z");
+    await world.execute({ type: "tick" });
+    await notifier.scan();
+    now += MIN;
+    await notifier.scan();
+    const waves = pusher.sent.filter((p) => p.payload.kind === "wave");
+    expect(waves).toHaveLength(1);
+    expect(waves[0]?.target.endpoint).toBe("https://fcm.googleapis.com/fcm/send/1");
+    expect(String(waves[0]?.payload.title)).toContain("14:00");
+    expect(String(waves[0]?.payload.url)).toContain("open=cargo");
+  });
+
   it("tells the merchant that goods arrived", async () => {
     smallOrders(world);
     const ada = await player("ada@example.org");

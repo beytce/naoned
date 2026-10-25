@@ -1,4 +1,6 @@
-const ducatsFormat = new Intl.NumberFormat("fr-FR", {
+import { LANG, locale } from "../lang.js";
+
+const ducatsFormat = new Intl.NumberFormat(locale, {
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,
 });
@@ -66,9 +68,9 @@ export function minutesLabel(minutes: number): string {
   return m === 0 ? `${h} h` : `${h} h ${m.toString().padStart(2, "0")}`;
 }
 
-/** The hour of an instant in Paris, the French way: « 8 h », « 21 h 40 ». */
+/** The hour of an instant in Paris, the French way: « 8 h », « 21 h 40 » (in English « 8:00 »). */
 export function hourOf(at: number): string {
-  const parts = new Intl.DateTimeFormat("fr-FR", {
+  const parts = new Intl.DateTimeFormat(locale, {
     hour: "numeric",
     minute: "numeric",
     hourCycle: "h23",
@@ -76,5 +78,6 @@ export function hourOf(at: number): string {
   }).formatToParts(new Date(at));
   const h = Number(parts.find((p) => p.type === "hour")?.value ?? 0);
   const m = Number(parts.find((p) => p.type === "minute")?.value ?? 0);
+  if (LANG === "en") return `${h}:${String(m).padStart(2, "0")}`;
   return m === 0 ? `${h}${NBSP}h` : `${h}${NBSP}h${NBSP}${String(m).padStart(2, "0")}`;
 }

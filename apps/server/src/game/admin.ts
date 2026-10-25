@@ -128,6 +128,34 @@ export async function retention(db: Db, worldId: string, now: number) {
           as aborted_paid`),
   );
 
+  // Companies (E2-8): invitations shared per person, and day 7 of members against loners.
+  const members = new Set(
+    rowsOf<{ id: string }>(
+      await db.execute(sql`
+        select m.account_id as id from company_members m
+        join players p on p.account_id = m.account_id and p.world_id = ${worldId}`),
+    ).map((r) => r.id),
+  );
+  const [invites] = rowsOf<{ n: number }>(
+    await db.execute(sql`
+      select count(*)::int as n from telemetry t
+      join players p on p.account_id = t.account_id and p.world_id = ${worldId}
+      join accounts a on a.id = t.account_id
+      where t.type = 'company_invite' and a.is_bot = false`),
+  );
+  const day7 = (inCompany: boolean) => {
+    const eligible = players.filter(
+      (p) => members.has(p.id) === inCompany && now - Number(p.joined) >= 7 * DAY,
+    );
+    const back = eligible.filter((p) => [...(days.get(p.id) ?? [])].some((d) => d >= 7));
+    return { eligible: eligible.length, returned: back.length };
+  };
+  const companies = {
+    members: members.size,
+    invitesPerPlayer: players.length > 0 ? Number(invites?.n ?? 0) / players.length : 0,
+    day7: { members: day7(true), alone: day7(false) },
+  };
+
   const lastSeen = { today: 0, days1to3: 0, days3to7: 0, moreThan7: 0, never: 0 };
   for (const p of players) {
     if (!p.last_seen) {
@@ -157,6 +185,7 @@ export async function retention(db: Db, worldId: string, now: number) {
       players: players.filter((p) => (p.steps ?? []).includes(step)).length,
     })),
     lastSeen,
+    companies,
   };
 }
 

@@ -14,7 +14,7 @@ import Fastify, {
 import { ZodError, z } from "zod";
 import { deleteAccount, exportAccount } from "./account.js";
 import { suggestPseudo } from "./auth/names.js";
-import { AuthError, AuthService, SESSION_DAYS, originSchema } from "./auth/service.js";
+import { AuthError, AuthService, SESSION_DAYS, langSchema, originSchema } from "./auth/service.js";
 import type { Db } from "./db/client.js";
 import { countFunnel } from "./funnel.js";
 import { registerGameRoutes } from "./game/routes.js";
@@ -177,10 +177,14 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     "/api/auth/request",
     { config: { rateLimit: { max: 10, timeWindow: "15 minutes" } } },
     async (req, reply) => {
-      const { email, source } = z
-        .object({ email: z.string(), source: z.string().max(64).optional() })
+      const { email, source, lang } = z
+        .object({
+          email: z.string(),
+          source: z.string().max(64).optional(),
+          lang: langSchema.optional(),
+        })
         .parse(req.body);
-      await auth.requestLink(email);
+      await auth.requestLink(email, lang);
       await countFunnel(options.db, "link_requested", source, now());
       return reply.code(202).send({ ok: true });
     },
@@ -244,12 +248,14 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
         pseudo: z.string().optional(),
         proposed: z.boolean().optional(),
         crest: z.unknown().optional(),
+        lang: langSchema.optional(),
       })
       .parse(req.body);
     let updated = account;
     if (body.pseudo !== undefined)
       updated = await auth.setPseudo(account.id, body.pseudo, body.proposed ?? false);
     if (body.crest !== undefined) updated = await auth.setCrest(account.id, body.crest);
+    if (body.lang !== undefined) updated = await auth.setLang(account.id, body.lang);
     return { account: updated };
   });
 

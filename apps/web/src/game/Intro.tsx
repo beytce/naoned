@@ -42,12 +42,16 @@ function Goal() {
 function Loop() {
   const steps = [
     {
-      label: "Produire",
+      label: fr.misc.loop[0] ?? "",
       icon: <BuildingArt type="mill" active className="h-16 w-20" />,
       pos: "left-1/2 top-0 -translate-x-1/2",
     },
-    { label: "Livrer", icon: <ResourceIcon code="bread" size={48} />, pos: "bottom-2 right-0" },
-    { label: "Réinvestir", icon: <Coin size={44} />, pos: "bottom-2 left-0" },
+    {
+      label: fr.misc.loop[1] ?? "",
+      icon: <ResourceIcon code="bread" size={48} />,
+      pos: "bottom-2 right-0",
+    },
+    { label: fr.misc.loop[2] ?? "", icon: <Coin size={44} />, pos: "bottom-2 left-0" },
   ];
   return (
     <div className="relative mx-auto h-64 w-72">

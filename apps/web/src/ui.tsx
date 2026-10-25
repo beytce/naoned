@@ -536,7 +536,7 @@ export function Qty(props: {
         min={1}
         value={props.value}
         onChange={(e) => set(Number(e.target.value) || 1)}
-        aria-label="Quantité"
+        aria-label={fr.misc.quantity}
         className="h-11 w-16 rounded-md bg-night text-center font-display text-base ring-1 ring-line focus:outline-none focus:ring-info"
       />
       <button
@@ -848,7 +848,7 @@ export function clock(ms: number): string {
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
   // Non-breaking spaces: a time left never ends a line on « 21 » with its « h » on the next.
-  if (d > 0) return `${d}\u00a0j\u00a0${h}\u00a0h`;
+  if (d > 0) return `${d}\u00a0${fr.misc.dayUnit}\u00a0${h}\u00a0h`;
   if (h > 0) return `${h}\u00a0h\u00a0${m.toString().padStart(2, "0")}`;
   return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
 }

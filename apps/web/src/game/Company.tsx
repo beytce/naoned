@@ -7,8 +7,7 @@ import type { Project } from "./types.js";
 
 const t = fr.game.company;
 
-const cityName = (props: GameProps, code: string) =>
-  props.catalog.cities.find((c) => c.code === code)?.name ?? code;
+const cityName = (props: GameProps, code: string) => props.names.city(code);
 
 const stockOf = (props: GameProps, resource: string) =>
   props.view.inventory.find((i) => i.resource === resource)?.available ?? 0;
@@ -48,7 +47,7 @@ function Line({ props, p, resource }: { props: GameProps; p: Project; resource: 
   // The workers' bread of the day stays home.
   const keep = resource === props.view.rations.resource ? props.view.rations.perDay : 0;
   const give = Math.max(0, Math.min(have - keep, need - done));
-  const name = props.catalog.resources.find((r) => r.code === resource)?.name ?? resource;
+  const name = props.names.resource(resource);
   return (
     <li className="flex items-center gap-3">
       <ResourceIcon code={resource} size={32} />

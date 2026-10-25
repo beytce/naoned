@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavIcon } from "../art/icons.js";
 import { fr } from "../i18n.js";
+import { locale } from "../lang.js";
 import { familyName, landName } from "./Famille.js";
 import type { GameProps } from "./Game.js";
 import { gameApi } from "./api.js";
@@ -22,6 +23,7 @@ const ICON = {
   muda: NavIcon.marche,
   morning: NavIcon.bell,
   skirmish_call: NavIcon.famille,
+  wave: NavIcon.routes,
 } as const;
 const TONE: Record<string, string> = {
   harvest: "text-lagoon",
@@ -38,6 +40,7 @@ const TONE: Record<string, string> = {
   muda: "text-gold",
   morning: "text-gold",
   skirmish_call: "text-vermilion",
+  wave: "text-lagoon",
 };
 
 function text(n: Notice, props: GameProps): string {
@@ -82,7 +85,7 @@ function text(n: Notice, props: GameProps): string {
         landName(String(n.data.land ?? "")),
         n.data.by === "milan" ? "de Milan" : `des ${familyName(String(n.data.by ?? ""))}`,
         Number(n.data.lances ?? 0),
-        new Date(Number(n.data.arriveAt)).toLocaleTimeString("fr-FR", {
+        new Date(Number(n.data.arriveAt)).toLocaleTimeString(locale, {
           hour: "2-digit",
           minute: "2-digit",
           timeZone: "Europe/Paris",
@@ -134,6 +137,8 @@ function text(n: Notice, props: GameProps): string {
       );
     case "skirmish_call":
       return t.skirmishCall(hourOf(Number(n.data.at ?? 0)));
+    case "wave":
+      return t.wave(hourOf(Number(n.data.at ?? 0)), Number(n.data.covered ?? 0));
     default:
       return "";
   }
@@ -150,7 +155,7 @@ function ago(ms: number): string {
   if (min < 60) return `${min} min`;
   const h = Math.floor(min / 60);
   if (h < 24) return `${h} h`;
-  return `${Math.floor(h / 24)} j`;
+  return `${Math.floor(h / 24)} ${fr.misc.dayUnit}`;
 }
 
 /** The bell in the header: unread count, and the latest notices in a sheet. */

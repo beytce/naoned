@@ -1,3 +1,4 @@
+import { LANG } from "./lang.js";
 import { takeOrigin, visitSource } from "./origin.js";
 export interface Account {
   id: string;
@@ -6,6 +7,8 @@ export interface Account {
   /** The name kept as proposed at the door: the profile offers to change it. */
   pseudoDefault?: boolean;
   crest: { shape: string; color: string; symbol: string } | null;
+  /** The language the pushes and mails are written in. */
+  lang?: "fr" | "en";
 }
 
 export class ApiError extends Error {
@@ -57,7 +60,7 @@ function storedSource() {
 export const api = {
   me: () => call<{ account: Account }>("GET", "/api/me").then((r) => r.account),
   requestLink: (email: string) =>
-    call<void>("POST", "/api/auth/request", { email, source: storedSource() }),
+    call<void>("POST", "/api/auth/request", { email, source: storedSource(), lang: LANG }),
   /** The landing seen (a counter of the way in, without anyone in it). */
   landing: () => call<void>("POST", "/api/funnel/landing", { source: storedSource() }),
   // Where the visit came from goes with the first sign-in (an existing account keeps its own).
@@ -78,6 +81,9 @@ export const api = {
     call<{ pseudo: string }>("GET", "/api/me/pseudo-suggestion").then((r) => r.pseudo),
   setCrest: (crest: { shape: string; color: string; symbol: string }) =>
     call<{ account: Account }>("PATCH", "/api/me", { crest }).then((r) => r.account),
+  /** The pushes and mails follow the interface's language. */
+  setLang: (lang: "fr" | "en") =>
+    call<{ account: Account }>("PATCH", "/api/me", { lang }).then((r) => r.account),
   logout: () => call<void>("POST", "/api/auth/logout"),
   deleteAccount: () => call<void>("DELETE", "/api/me", { confirm: "SUPPRIMER" }),
 };

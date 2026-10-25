@@ -5,6 +5,7 @@ import { Emblem } from "./art/logo.js";
 import { Skyline } from "./art/scenes.js";
 import { Game } from "./game/Game.js";
 import { fr } from "./i18n.js";
+import { LANG } from "./lang.js";
 import { LegalLinks, LegalPage, legalPageAt } from "./legal/Legal.js";
 import { firstLanding } from "./origin.js";
 import { Label, Slab } from "./ui.js";
@@ -48,6 +49,14 @@ export function App() {
       .then((account) => setScreen(screenFor(account)))
       .catch(() => setScreen({ name: "login" }));
   }, []);
+
+  // The pushes and mails follow the interface's language (E3-8): told once it differs.
+  const signedIn = "account" in screen ? screen.account : null;
+  useEffect(() => {
+    if (signedIn && signedIn.lang !== undefined && signedIn.lang !== LANG) {
+      void api.setLang(LANG).catch(() => undefined);
+    }
+  }, [signedIn]);
 
   // The landing seen, once per visit, for the counters of the way in (`/admin`).
   const landing = screen.name === "login" && !screen.sentTo;
