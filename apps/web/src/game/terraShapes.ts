@@ -54,28 +54,55 @@ export function hexCenter(map: HexMap, i: number): [number, number] {
   ];
 }
 
+/** The corners' directions from a cell's centre, clockwise on screen from the upper right. */
+const CORNERS = Array.from({ length: 6 }, (_, k) => {
+  const a = ((60 * k - 30) * Math.PI) / 180;
+  return [Math.cos(a), Math.sin(a)] as const;
+});
+
 /** The corners of a pointed-top cell, clockwise on screen from the upper right. */
 export function hexCorners(map: HexMap, i: number, scale = 1): [number, number][] {
   const [x, y] = hexCenter(map, i);
-  return Array.from({ length: 6 }, (_, k) => {
-    const a = ((60 * k - 30) * Math.PI) / 180;
-    return [x + Math.cos(a) * map.size * scale, y + Math.sin(a) * map.size * scale];
+  const r = map.size * scale;
+  return CORNERS.map(([cx, cy]) => [x + cx * r, y + cy * r]);
+}
+
+/**
+ * Which neighbour lies across each of a cell's six edges (edge k joins corners k and k+1, its
+ * middle at 60 k degrees): east, south-east, south-west, west, north-west, north-east, the odd
+ * rows shifted right.
+ */
+const ACROSS = {
+  even: [
+    [1, 0],
+    [0, 1],
+    [-1, 1],
+    [-1, 0],
+    [-1, -1],
+    [0, -1],
+  ],
+  odd: [
+    [1, 0],
+    [1, 1],
+    [0, 1],
+    [-1, 0],
+    [0, -1],
+    [1, -1],
+  ],
+} as const;
+function across(map: HexMap, i: number): (number | null)[] {
+  const row = Math.floor(i / map.width);
+  const col = i % map.width;
+  return (row & 1 ? ACROSS.odd : ACROSS.even).map(([dc, dr]) => {
+    const c = col + dc;
+    const r = row + dr;
+    return c >= 0 && c < map.width && r >= 0 && r < map.height ? r * map.width + c : null;
   });
 }
 
-/** Which neighbour lies across each of a cell's six edges (edge k joins corners k and k+1). */
-function across(map: HexMap, i: number): (number | null)[] {
-  const [x, y] = hexCenter(map, i);
-  const out: (number | null)[] = [null, null, null, null, null, null];
-  for (const n of hexNeighbors(map, i)) {
-    const [nx, ny] = hexCenter(map, n);
-    const deg = (Math.atan2(ny - y, nx - x) * 180) / Math.PI;
-    out[(Math.round(deg / 60) + 6) % 6] = n;
-  }
-  return out;
-}
-
-const key = ([x, y]: [number, number]) => `${x.toFixed(2)},${y.toFixed(2)}`;
+/** A corner as a number (to the hundredth of a map unit): three cells share each one. */
+const key = ([x, y]: [number, number]) =>
+  (Math.round(x * 100) + 50_000_000) * 100_000_000 + Math.round(y * 100) + 50_000_000;
 
 /**
  * The outline of a set of cells, its corners rounded: one SVG path (every loop of it, islands
@@ -85,7 +112,7 @@ export function outline(map: HexMap, cells: Iterable<number>): string {
   const set = new Set(cells);
   // The border's edges, each from one corner to the next, keyed by where they start. Around a
   // corner three cells meet: at most one border edge leaves it.
-  const next = new Map<string, { from: [number, number]; to: [number, number] }>();
+  const next = new Map<number, { from: [number, number]; to: [number, number] }>();
   for (const i of set) {
     const corners = hexCorners(map, i);
     across(map, i).forEach((n, k) => {

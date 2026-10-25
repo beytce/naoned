@@ -122,6 +122,19 @@ function padded(i: Insets, small = false): Insets {
   return { top: i.top + k, right: i.right + k, bottom: i.bottom + k + 12, left: i.left + k };
 }
 
+/**
+ * A marker's style, written only when it changes: a frame of the map moves hundreds of them, and
+ * a style written the same again still costs the browser a pass over the layer.
+ */
+const written = new WeakMap<HTMLElement, Record<string, string>>();
+function write(el: HTMLElement, prop: "visibility" | "transform", value: string): void {
+  const last = written.get(el) ?? {};
+  if (last[prop] === value) return;
+  last[prop] = value;
+  written.set(el, last);
+  el.style[prop] = value;
+}
+
 export const WorldMap = forwardRef<
   WorldMapHandle,
   {
@@ -165,12 +178,25 @@ export const WorldMap = forwardRef<
   const ground = useRef<HTMLDivElement>(null);
   const lines = useRef<SVGSVGElement>(null);
   const nodes = useRef(new Map<string, HTMLElement>());
+  /** The markers' layer: a pan moves it as one, the markers stay where they were laid out. */
+  const layer = useRef<HTMLDivElement>(null);
+  /** A finger (or its glide) moving the map: the markers follow the layer, laid out at its end. */
+  const gesture = useRef(false);
+  /** The camera and lists the markers were last laid out for. */
+  const laidOut = useRef<{
+    tx: number;
+    ty: number;
+    s: number;
+    markers: unknown;
+    places: unknown;
+  } | null>(null);
   const cam = useRef<Camera>({ s: 0.4, tx: 0, ty: 0 });
   const fitted = useRef<Camera | null>(null);
-  // The labels kept apart: where each goes, measured again when the zoom changes.
+  // The labels kept apart: where each goes, measured again for new markers or another zoom tier.
   const placement = useRef<Placement>(new Map());
   const measured = useRef<{
-    s: number;
+    /** The zoom's tier they were measured at: its labels shown or hidden change their sizes. */
+    tier: string;
     markers: unknown;
     sizes: Map<string, { cx: number; cy: number; w: number; h: number }>;
     hud: { x0: number; x1: number; y0: number; y1: number }[];
@@ -224,13 +250,31 @@ export const WorldMap = forwardRef<
   const places = useRef(activePlaces);
   places.current = activePlaces;
 
-  const viewport = useCallback(
-    () => ({
-      w: root.current?.clientWidth ?? window.innerWidth,
-      h: root.current?.clientHeight ?? window.innerHeight,
-    }),
-    [],
-  );
+  // The map's size, measured when it changes, never in a frame: read after the markers' styles
+  // are written, it would lay the whole page out again at every move of a finger.
+  const size = useRef<{ w: number; h: number } | null>(null);
+  const viewport = useCallback(() => {
+    if (!size.current)
+      size.current = {
+        w: root.current?.clientWidth ?? window.innerWidth,
+        h: root.current?.clientHeight ?? window.innerHeight,
+      };
+    return size.current;
+  }, []);
+  useLayoutEffect(() => {
+    const el = root.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const watch = new ResizeObserver(() => {
+      size.current = null;
+    });
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, []);
+  // The markers by key, built again only when the list changes (a lookup a marker a frame).
+  const byKey = useRef<{ list: unknown; map: Map<string, MapMarker> }>({
+    list: null,
+    map: new Map(),
+  });
 
   /** Where a marker stands now, in world pixels. */
   const where = useCallback(
@@ -240,7 +284,12 @@ export const WorldMap = forwardRef<
         places.current[key] ??
         (key.startsWith("cityname:") ? places.current[`city:${key.slice(9)}`] : undefined);
       if (fixed) return { p: fixed, flip: false };
-      const marker = live.current.markers.find((m) => m.key === key);
+      if (byKey.current.list !== live.current.markers)
+        byKey.current = {
+          list: live.current.markers,
+          map: new Map(live.current.markers.map((m) => [m.key, m])),
+        };
+      const marker = byKey.current.map.get(key);
       if (marker?.at) return { p: toWorld([marker.at.x, marker.at.y]), flip: !!marker.at.flip };
       const trip = marker?.trip;
       if (trip) {
@@ -279,23 +328,50 @@ export const WorldMap = forwardRef<
     const now = Date.now() + live.current.clockOffset;
     const tier = String(zoomTier(fitted.current ? c.s / fitted.current.s : 1));
     if (root.current && root.current.dataset.zoom !== tier) root.current.dataset.zoom = tier;
+    // A pan under the finger: the layer moves, nothing is laid out again (its end lays them out).
+    const was = laidOut.current;
+    if (
+      gesture.current &&
+      was &&
+      was.s === c.s &&
+      was.markers === live.current.markers &&
+      was.places === places.current &&
+      !live.current.markers.some((m) => m.trip)
+    ) {
+      if (layer.current)
+        layer.current.style.transform = `translate3d(${c.tx - was.tx}px, ${c.ty - was.ty}px, 0)`;
+      return;
+    }
+    if (layer.current) layer.current.style.transform = "";
+    laidOut.current = {
+      tx: c.tx,
+      ty: c.ty,
+      s: c.s,
+      markers: live.current.markers,
+      places: places.current,
+    };
     const shown = new Map<string, Point>();
     for (const [key, el] of nodes.current) {
       const at = where(key, now);
       if (!at) {
-        el.style.visibility = "hidden";
+        write(el, "visibility", "hidden");
         continue;
       }
       shown.set(key, project(c, at.p));
-      el.dataset.flip = at.flip ? "1" : "0";
+      const flip = at.flip ? "1" : "0";
+      if (el.dataset.flip !== flip) el.dataset.flip = flip;
     }
     const place = (key: string, el: HTMLElement, q: Point) => {
       const p = placement.current.get(key);
-      el.style.visibility = p === null ? "hidden" : "visible";
-      el.style.transform = `translate3d(${(q.x + (p?.dx ?? 0)).toFixed(1)}px, ${(q.y + (p?.dy ?? 0)).toFixed(1)}px, 0)`;
+      write(el, "visibility", p === null ? "hidden" : "visible");
+      write(
+        el,
+        "transform",
+        `translate3d(${(q.x + (p?.dx ?? 0)).toFixed(1)}px, ${(q.y + (p?.dy ?? 0)).toFixed(1)}px, 0)`,
+      );
     };
     // The labels kept apart. Their sizes (around their anchor) and the HUD's blocks are measured
-    // when the zoom or the labels change; a pan only moves them, laid out again from those.
+    // for new markers or another zoom tier; a pan or a zoom within a tier lays them out from those.
     const markers = live.current.markers;
     const ranked = new Map(
       markers.flatMap((m) => (m.priority === undefined ? [] : [[m.key, m.priority] as const])),
@@ -304,7 +380,8 @@ export const WorldMap = forwardRef<
       placement.current = new Map();
     } else {
       const last = measured.current;
-      if (!last || last.markers !== markers || Math.abs(last.s - c.s) > c.s * 0.002) {
+      // Their sizes stand in screen pixels: measured again only for new markers or another tier.
+      if (!last || last.markers !== markers || last.tier !== tier) {
         // Measured where they stand, none moved aside.
         placement.current = new Map();
         for (const [key, q] of shown) {
@@ -345,7 +422,7 @@ export const WorldMap = forwardRef<
           .map((el) => el.getBoundingClientRect())
           .filter((r) => r.width > 0)
           .map((r) => ({ x0: r.left - ox, x1: r.right - ox, y0: r.top - oy, y1: r.bottom - oy }));
-        measured.current = { s: c.s, markers, sizes, hud };
+        measured.current = { tier, markers, sizes, hud };
       }
       const { sizes, hud } = measured.current as NonNullable<typeof measured.current>;
       const labels: Label[] = [];
@@ -386,8 +463,10 @@ export const WorldMap = forwardRef<
         );
         v.x *= 0.92;
         v.y *= 0.92;
-        if (Math.hypot(v.x, v.y) < 0.02) velocity.current = null;
-        else moving = true;
+        if (Math.hypot(v.x, v.y) < 0.02) {
+          velocity.current = null;
+          gesture.current = false;
+        } else moving = true;
       }
       if (live.current.markers.some((m) => m.trip)) moving = true;
       paint();
@@ -562,6 +641,7 @@ export const WorldMap = forwardRef<
       moved += Math.abs(dx) + Math.abs(dy);
       if (moved <= TAP_SLOP) return;
       el.dataset.dragging = "1";
+      gesture.current = true;
       cam.current = clampCamera(
         { ...cam.current, tx: cam.current.tx + dx, ty: cam.current.ty + dy },
         box,
@@ -585,7 +665,14 @@ export const WorldMap = forwardRef<
       // A glide only after a real flick (the finger still moving when lifted).
       const sinceMove = last ? performance.now() - last.t : 999;
       if (!tapped && velocity.current && sinceMove < 60) loop();
-      else velocity.current = null;
+      else {
+        velocity.current = null;
+        // The pan is over: the markers laid out again where they stand, kept clear of the HUD.
+        if (gesture.current) {
+          gesture.current = false;
+          paint();
+        }
+      }
       setTimeout(() => {
         delete el.dataset.dragging;
       }, 0);
@@ -723,26 +810,29 @@ export const WorldMap = forwardRef<
             ) : null;
           })()}
       </svg>
-      {props.markers.map((m) => (
-        <div
-          key={m.key}
-          ref={register(m.key)}
-          data-marker={m.key}
-          data-selected={props.selectedKey === m.key ? "1" : undefined}
-          data-tier={m.tier}
-          className={`map-marker animate-fade absolute left-0 top-0 ${
-            // A city and its name over the carts on their road: a cart never hides a name.
-            m.key.startsWith("cityname:") || m.priority === 0
-              ? "z-[4]"
-              : m.key.startsWith("cart:")
-                ? "z-[3]"
-                : "z-[2]"
-          }`}
-          style={{ visibility: "hidden" }}
-        >
-          {m.node}
-        </div>
-      ))}
+      {/* No size of its own: a tap between the markers reaches the map underneath. */}
+      <div ref={layer} className="absolute left-0 top-0 z-[2] will-change-transform">
+        {props.markers.map((m) => (
+          <div
+            key={m.key}
+            ref={register(m.key)}
+            data-marker={m.key}
+            data-selected={props.selectedKey === m.key ? "1" : undefined}
+            data-tier={m.tier}
+            className={`map-marker animate-fade absolute left-0 top-0 ${
+              // A city and its name over the carts on their road: a cart never hides a name.
+              m.key.startsWith("cityname:") || m.priority === 0
+                ? "z-[4]"
+                : m.key.startsWith("cart:")
+                  ? "z-[3]"
+                  : "z-[2]"
+            }`}
+            style={{ visibility: "hidden" }}
+          >
+            {m.node}
+          </div>
+        ))}
+      </div>
     </div>
   );
 });
