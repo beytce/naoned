@@ -1,6 +1,14 @@
 import { and, count, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { accounts, familyMessages, messageReports, telemetry } from "../db/schema.js";
+import {
+  ChatError,
+  HIDE_AFTER_REPORTS,
+  MESSAGES_PER_DAY,
+  MESSAGE_GAP_MS,
+  THREAD_LENGTH,
+  checkMessage,
+} from "./chatRules.js";
 import type { GameWorld } from "./world.js";
 
 /**
@@ -9,64 +17,14 @@ import type { GameWorld } from "./world.js";
  * `family` column). Kept small and moderated: members only, a pace, a word
  * filter, no links, and a message three members report is hidden.
  */
-export const MESSAGE_MAX = 280;
-export const MESSAGE_GAP_MS = 10_000;
-export const MESSAGES_PER_DAY = 50;
-export const HIDE_AFTER_REPORTS = 3;
-const THREAD_LENGTH = 50;
-
-/** Words refused in the thread (compared without accents or case, as whole words). */
-const REFUSED = [
-  "connard",
-  "connasse",
-  "salope",
-  "salaud",
-  "pute",
-  "putain",
-  "encule",
-  "enculee",
-  "nique",
-  "niquer",
-  "batard",
-  "negre",
-  "bougnoule",
-  "youpin",
-  "pede",
-  "tapette",
-  "gouine",
-  "bite",
-  "couille",
-  "fdp",
-  "ntm",
-];
-
-export class ChatError extends Error {
-  constructor(
-    public readonly code: string,
-    public readonly status = 400,
-  ) {
-    super(code);
-  }
-}
-
-const plain = (text: string) =>
-  text
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase();
-
-/** The message as it will be kept (trimmed, spaces collapsed), or why it is refused. */
-export function checkMessage(text: string): string {
-  const body = text.replace(/\s+/g, " ").trim();
-  if (body.length === 0) throw new ChatError("message_empty");
-  if (body.length > MESSAGE_MAX) throw new ChatError("message_too_long");
-  const words = plain(body).split(/[^a-z0-9]+/);
-  if (words.some((w) => REFUSED.includes(w))) throw new ChatError("message_refused");
-  if (/https?:|www\.|\.(com|fr|net|org|io|gg)\b/i.test(body)) {
-    throw new ChatError("message_refused");
-  }
-  return body;
-}
+export {
+  ChatError,
+  HIDE_AFTER_REPORTS,
+  MESSAGE_GAP_MS,
+  MESSAGE_MAX,
+  MESSAGES_PER_DAY,
+  checkMessage,
+} from "./chatRules.js";
 
 /** The merchant's family (its code is what the thread's rows keep in their `family` column). */
 function familyOfAccount(world: GameWorld, accountId: string): string {
