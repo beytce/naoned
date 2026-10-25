@@ -4,6 +4,7 @@ import { FAMILY_LOOK, FamilyCrest, MILITIA_HEX, familyHex } from "../art/familyC
 import { P } from "../art/palette.js";
 import { WorkGlyph } from "../art/workIcon.js";
 import { fr } from "../i18n.js";
+import { locale } from "../lang.js";
 import { Badge, Big, Label, Panel, Qty, Slab, Stat, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { gameApi } from "./api.js";
@@ -805,7 +806,7 @@ export function Thread({ source = FAMILY_THREAD }: { source?: ThreadSource }) {
 
 /** "14:05", Paris time like the rest of the game's clock. */
 function clockTime(at: number): string {
-  return new Date(at).toLocaleTimeString("fr-FR", {
+  return new Date(at).toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Europe/Paris",

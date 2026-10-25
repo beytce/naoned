@@ -536,7 +536,7 @@ export function Qty(props: {
         min={1}
         value={props.value}
         onChange={(e) => set(Number(e.target.value) || 1)}
-        aria-label="Quantité"
+        aria-label={fr.misc.quantity}
         className="h-11 w-16 rounded-md bg-night text-center font-display text-base ring-1 ring-line focus:outline-none focus:ring-info"
       />
       <button

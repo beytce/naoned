@@ -89,7 +89,7 @@ function Workshops(props: GameProps) {
             onClick={() => props.setSheet(`build:${b.type}`)}
             art={<BuildingArt type={b.type} className="h-20 w-24" />}
             count={t().built(built)}
-            title={b.name}
+            title={props.names.building(b.type)}
             time={b.recipe ? t().batch(minutesLabel(b.recipe.durationMinutes)) : null}
             body={
               <>

@@ -1,4 +1,10 @@
-/** Interface texts. French only for now; one object per language when i18n comes. */
+import { en } from "./i18n.en.js";
+import { LANG } from "./lang.js";
+
+/**
+ * Interface texts, in French; the English ones in i18n.en.ts, key for key (E3-8 of the experts).
+ * `fr` is the dictionary of the language chosen at start-up (lang.ts), French by default.
+ */
 
 /**
  * A skirmish lost to a restart of the server: the same words on the bar and in the bell (and in
@@ -8,8 +14,42 @@
 const skirmishInterrupted =
   "Escarmouche interrompue par une maintenance : aucune Gloire, rien n'est compté ; elle n'a pas consommé votre partie classée du jour.";
 
-export const fr = {
+const frDict = {
   appName: "Fondaco",
+  /** The theme's names in this language, over the server's (French: the server's own). */
+  themeNames: {
+    resource: {} as Record<string, string>,
+    building: {} as Record<string, string>,
+    city: {} as Record<string, string>,
+    region: {} as Record<string, string>,
+  },
+  /** Words of the drawings and small controls. */
+  misc: {
+    loop: ["Produire", "Livrer", "Réinvestir"],
+    reached: "✓ acquis",
+    upcoming: "à venir",
+    first: "Premier",
+    prev: "Précédent",
+    next: "Suivant",
+    last: "Dernier",
+    quantity: "Quantité",
+    legend: [
+      "Vos terres",
+      "Vos alliés",
+      "En guerre avec vous",
+      "Milan et les seigneurs",
+      "Les autres marchands",
+    ],
+    nations: [
+      ["Milan", "frappe le voisin le plus faible"],
+      ["Mantoue", "rend les coups à qui l'attaque"],
+      ["Ferrare", "tombe sur les faibles"],
+      ["Aquilée", "s'étend lentement"],
+      ["L'Empire", "pille depuis les Alpes"],
+    ] as [string, string][],
+    /** The word to type to delete the account (checked here; the request carries its own). */
+    deleteWord: "SUPPRIMER",
+  },
   /** « Venise 1450 · saison d'octobre »: a season is a calendar month (Paris), its year left out. */
   seasonOf: (at: Date) => {
     const month = at.toLocaleDateString("fr-FR", { month: "long", timeZone: "Europe/Paris" });
@@ -1112,7 +1152,7 @@ export const fr = {
         `Votre domaine : ${n} atelier${n > 1 ? "s" : ""}, ${levels} niveau${levels > 1 ? "x" : ""} en tout`,
     },
     workshopsSheet: {
-      ready: (n: number) => (n > 1 ? "prêts" : "prêt"),
+      ready: (n: number): string => (n > 1 ? "prêts" : "prêt"),
       running: (_n: number) => "en cours",
       idle: (_n: number) => "à l'arrêt",
       collectAll: (n: number) => `Tout récolter et relancer (${n} lot${n > 1 ? "s" : ""})`,
@@ -1996,7 +2036,7 @@ export const fr = {
         `Touchez « Produire » : ce lot de votre ${building.toLowerCase()} sera prêt dans ${time}.`,
       seconds: (n: number) => `${n} secondes`,
       readyIn: (time: string) => `Prêt dans ${time}`,
-      wait: (ms: number) =>
+      wait: (ms: number): string =>
         ms < 60_000
           ? "Vos ouvriers s'activent. Patientez quelques secondes…"
           : "Vos ouvriers s'activent : explorez la carte en attendant, je vous fais signe.",
@@ -2698,3 +2738,9 @@ export const fr = {
     unknown: "Une erreur est survenue.",
   } as Record<string, string>,
 };
+
+export type Dictionary = typeof frDict;
+/** The French words, whatever the language chosen (the key test reads them). */
+export const french: Dictionary = frDict;
+/** The dictionary of the language chosen at start-up. */
+export const fr: Dictionary = LANG === "en" ? en : frDict;

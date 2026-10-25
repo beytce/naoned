@@ -165,27 +165,27 @@ const ring = (c: number, r: number, tone: Tone, centre?: Partial<Cell>): Cell[] 
 /** The map's colours, as the map draws them: one land a line. */
 function Legend() {
   const rows: { label: string; fill: string; opacity: number; stroke: string; dash?: string }[] = [
-    { label: "Vos terres", fill: "var(--gold)", opacity: 0.32, stroke: "var(--gold)" },
+    { label: fr.misc.legend[0] ?? "", fill: "var(--gold)", opacity: 0.32, stroke: "var(--gold)" },
     {
-      label: "Vos alliés",
+      label: fr.misc.legend[1] ?? "",
       fill: "var(--lagoon)",
       opacity: 0.18,
       stroke: "var(--lagoon)",
       dash: "5 3",
     },
     {
-      label: "En guerre avec vous",
+      label: fr.misc.legend[2] ?? "",
       fill: "var(--cream)",
       opacity: 0.08,
       stroke: "var(--vermilion)",
     },
     {
-      label: "Milan et les seigneurs",
+      label: fr.misc.legend[3] ?? "",
       fill: "var(--vermilion-deep)",
       opacity: 0.3,
       stroke: "var(--vermilion-deep)",
     },
-    { label: "Les autres marchands", fill: "var(--cream)", opacity: 0.08, stroke: "var(--line)" },
+    { label: fr.misc.legend[4] ?? "", fill: "var(--cream)", opacity: 0.08, stroke: "var(--line)" },
   ];
   return (
     <Diagram height={rows.length * 22 + 14}>
@@ -442,13 +442,7 @@ function Bombard() {
 }
 
 function Nations() {
-  const rows: [string, string][] = [
-    ["Milan", "frappe le voisin le plus faible"],
-    ["Mantoue", "rend les coups à qui l'attaque"],
-    ["Ferrare", "tombe sur les faibles"],
-    ["Aquilée", "s'étend lentement"],
-    ["L'Empire", "pille depuis les Alpes"],
-  ];
+  const rows: [string, string][] = fr.misc.nations;
   return (
     <Diagram height={110}>
       {rows.map(([n, d], k) => (

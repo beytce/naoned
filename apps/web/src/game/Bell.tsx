@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavIcon } from "../art/icons.js";
 import { fr } from "../i18n.js";
+import { locale } from "../lang.js";
 import { familyName, landName } from "./Famille.js";
 import type { GameProps } from "./Game.js";
 import { gameApi } from "./api.js";
@@ -84,7 +85,7 @@ function text(n: Notice, props: GameProps): string {
         landName(String(n.data.land ?? "")),
         n.data.by === "milan" ? "de Milan" : `des ${familyName(String(n.data.by ?? ""))}`,
         Number(n.data.lances ?? 0),
-        new Date(Number(n.data.arriveAt)).toLocaleTimeString("fr-FR", {
+        new Date(Number(n.data.arriveAt)).toLocaleTimeString(locale, {
           hour: "2-digit",
           minute: "2-digit",
           timeZone: "Europe/Paris",

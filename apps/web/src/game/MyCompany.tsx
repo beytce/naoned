@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ApiError } from "../api.js";
 import { fr } from "../i18n.js";
+import { locale } from "../lang.js";
 import { dropInvite, inviteUrl, pendingInvite } from "../origin.js";
 import { Label, Panel, Slab } from "../ui.js";
 import { Thread, type ThreadSource } from "./Famille.js";
@@ -104,7 +105,7 @@ function NoCompany({ view, busy, run }: { view: CompanyView; busy: boolean; run:
     setAnswered(true);
   };
   if (view.mayJoinAt) {
-    const date = new Date(view.mayJoinAt).toLocaleDateString("fr-FR", {
+    const date = new Date(view.mayJoinAt).toLocaleDateString(locale, {
       day: "numeric",
       month: "long",
       timeZone: "Europe/Paris",

@@ -435,11 +435,13 @@ export function Game(props: {
       list: { code?: string; type?: string; name: string }[] | undefined,
       key: string,
     ) => list?.find((x) => x.code === key || x.type === key)?.name ?? key;
+    // The theme's names in the interface's language, over the server's French ones.
+    const own = fr.themeNames;
     return {
-      resource: (c) => pick(catalog?.resources, c),
-      building: (t) => pick(catalog?.buildings, t),
-      city: (c) => pick(catalog?.cities, c),
-      region: (c) => pick(catalog?.regions, c),
+      resource: (c) => own.resource[c] ?? pick(catalog?.resources, c),
+      building: (t) => own.building[t] ?? pick(catalog?.buildings, t),
+      city: (c) => own.city[c] ?? pick(catalog?.cities, c),
+      region: (c) => own.region[c] ?? pick(catalog?.regions, c),
     };
   }, [catalog]);
 

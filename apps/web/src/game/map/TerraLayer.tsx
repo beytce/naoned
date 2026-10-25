@@ -5,6 +5,7 @@ import { MAP_TEXT, P } from "../../art/palette.js";
 import { Lorenzo } from "../../art/scenes.js";
 import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
+import { locale } from "../../lang.js";
 import { HudChip, LorenzoCard, Segmented, Sheet, Slab, clock } from "../../ui.js";
 import type { GameProps } from "../Game.js";
 import { MerchantName, merchantLabel } from "../Name.js";
@@ -467,7 +468,7 @@ export function useTerraShapes(v: TerraView | null | undefined): TerraShapes | n
 
 /** "14:20", Paris time: when a front will reach a cell. */
 const hour = (at: number) =>
-  new Date(at).toLocaleTimeString("fr-FR", {
+  new Date(at).toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Europe/Paris",
@@ -1881,9 +1882,9 @@ export function TerraSheets({
   const kind = t().decree.targets[code];
   const options =
     kind === "resource"
-      ? props.catalog.resources.map((r) => ({ value: r.code, label: r.name }))
+      ? props.catalog.resources.map((r) => ({ value: r.code, label: props.names.resource(r.code) }))
       : kind === "city"
-        ? props.catalog.cities.map((c) => ({ value: c.code, label: c.name }))
+        ? props.catalog.cities.map((c) => ({ value: c.code, label: props.names.city(c.code) }))
         : [];
   const [target, setTarget] = useState<string>(picked?.target ?? "");
   const aim = options.some((o) => o.value === target) ? target : (options[0]?.value ?? "");
@@ -1976,7 +1977,7 @@ function PeasantsSlider({
     .filter(([, n]) => n > 0)
     .map(
       ([r, n]) =>
-        `${(n / 100).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} ${props.names.resource(r).toLowerCase()}`,
+        `${(n / 100).toLocaleString(locale, { maximumFractionDigits: 1 })} ${props.names.resource(r).toLowerCase()}`,
     )
     .join(", ");
   const send = () => {

@@ -1,5 +1,6 @@
 import { seasonDays } from "@comptoirs/engine/src/clock.js";
 import { fr } from "../i18n.js";
+import { locale } from "../lang.js";
 
 /**
  * The season's day as the notices show it, « Jour 3 sur 42 », and the days left counting today
@@ -17,7 +18,7 @@ export function seasonCount(
 }
 
 const inParis = (at: number, options: Intl.DateTimeFormatOptions) =>
-  new Date(at).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", ...options });
+  new Date(at).toLocaleDateString(locale, { timeZone: "Europe/Paris", ...options });
 
 /**
  * The first slide's text: « un mois » for a season within its calendar month, « jusqu'au 30

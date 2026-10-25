@@ -12,6 +12,7 @@ import { Medal } from "../art/icons.js";
 import { P } from "../art/palette.js";
 import { hapticsEnabled, setHapticsEnabled } from "../haptics.js";
 import { fr } from "../i18n.js";
+import { locale } from "../lang.js";
 import { LegalLinks } from "../legal/Legal.js";
 import { setSoundEnabled, soundEnabled } from "../sound.js";
 import {
@@ -62,12 +63,12 @@ function Titles({ profile }: { profile: Profile }) {
                     {t.name}
                   </span>
                   <span className="mt-1 font-sans text-xs text-muted">
-                    {t.from.toLocaleString("fr-FR")} d
+                    {t.from.toLocaleString(locale)} d
                   </span>
                 </span>
               </div>
               <p className={`label mt-2 ${reached ? "text-lagoon" : ""}`}>
-                {reached ? "✓ acquis" : "à venir"}
+                {reached ? fr.misc.reached : fr.misc.upcoming}
               </p>
             </div>
           );
@@ -76,10 +77,10 @@ function Titles({ profile }: { profile: Profile }) {
       <div className="mt-3 flex justify-between px-2 font-display text-xl text-cream-dim">
         {(
           [
-            ["«", "Premier", 0],
-            ["‹", "Précédent", Math.max(0, at - 1)],
-            ["›", "Suivant", Math.min(profile.titles.length - 1, at + 1)],
-            ["»", "Dernier", profile.titles.length - 1],
+            ["«", fr.misc.first, 0],
+            ["‹", fr.misc.prev, Math.max(0, at - 1)],
+            ["›", fr.misc.next, Math.min(profile.titles.length - 1, at + 1)],
+            ["»", fr.misc.last, profile.titles.length - 1],
           ] as const
         ).map(([glyph, label, to]) => (
           <button
@@ -327,8 +328,8 @@ function ProfileBody(props: GameProps) {
               <Ribbon
                 value={props.level.progress}
                 label={fr.game.merchantLevel.progress(
-                  props.level.xp.toLocaleString("fr-FR"),
-                  props.level.to.toLocaleString("fr-FR"),
+                  props.level.xp.toLocaleString(locale),
+                  props.level.to.toLocaleString(locale),
                 )}
               />
             </div>
@@ -358,7 +359,7 @@ function ProfileBody(props: GameProps) {
                   value={profile.title.progress}
                   label={
                     profile.title.next
-                      ? `${d(profile.turnover).replace(" d", "")} / ${profile.title.next.from.toLocaleString("fr-FR")} d`
+                      ? `${d(profile.turnover).replace(" d", "")} / ${profile.title.next.from.toLocaleString(locale)} d`
                       : fr.game.maxTitle
                   }
                 />
@@ -589,7 +590,7 @@ function ProfileBody(props: GameProps) {
           <Slab
             tone="vermilion"
             className="w-full"
-            disabled={typed.trim().toUpperCase() !== "SUPPRIMER"}
+            disabled={typed.trim().toUpperCase() !== fr.misc.deleteWord}
             onClick={async () => {
               await api.deleteAccount().catch(() => undefined);
               window.location.href = "/";

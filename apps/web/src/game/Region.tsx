@@ -66,7 +66,7 @@ export function Region(props: {
               {fr.region.jobs[r.code]?.name ?? r.name}
             </h2>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              <p className="label text-cream-dim">{r.name}</p>
+              <p className="label text-cream-dim">{props.names.region(r.code)}</p>
               <span className="slab whitespace-nowrap bg-lagoon px-2 py-0.5 font-sans text-xs font-bold text-on-lagoon">
                 {fr.region.bonus(bonus, props.names.resource(r.bonusResource))}
               </span>
