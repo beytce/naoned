@@ -116,6 +116,7 @@ export { MarketView, scale } from "./marketView.js";
 export * from "./muda.js";
 export * from "./fattore.js";
 export * from "./skirmish.js";
+export * from "./condotta.js";
 export * from "./advice.js";
 export * from "./suppliers.js";
 export * from "./tenders.js";

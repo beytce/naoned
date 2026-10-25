@@ -330,6 +330,26 @@ export const venice1450Settings: WorldSettingsInput = {
       calls: [750, 1110, 1275],
       callLobbyMinutes: 10,
     },
+    // The Condotta (E2-5 of the experts): 1 to 4 allied merchants against three nations and Milan,
+    // 8 minutes at 60 times the speed; won holding Padua and 35 % of the land. Twelve levels on the
+    // same field, the nations' troops +15 % a level (calibration.md: alone, the median player
+    // wins level 8 and loses level 10).
+    condotta: {
+      minutes: 8,
+      speed: 60,
+      stepMinutes: 5,
+      maxPlayers: 4,
+      cellsPerPlayer: 30,
+      lobbySeconds: 60,
+      troops: 60,
+      recruit: { base: 60, perCell: 6, perCity: 12 },
+      nations: { min: 3, max: 3 },
+      nationTroops: 60,
+      levels: 12,
+      levelStepBps: 1_500,
+      holdCity: "padova",
+      holdShareBps: 3_500,
+    },
     // The third week of the month in teams, by region.
     teams: { weeks: [2] },
     // Diplomacy: a signal each 5 minutes, up to 50 d a day to one's allies, an embargo from the
