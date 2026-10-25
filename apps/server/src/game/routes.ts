@@ -40,7 +40,7 @@ import {
   postCompanyMessage,
   reportCompanyMessage,
 } from "./company.js";
-import type { CondottaHub } from "./condotta.js";
+import { type CondottaHub, condottaRecord } from "./condotta.js";
 import { dashboard } from "./dashboard.js";
 import {
   ChatError,
@@ -670,6 +670,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       level: (await levelsOf(db, world.current, [account.id])).get(account.id),
       palmares: await palmares(db, account.id),
       terra: await terraRecord(db, account.id),
+      condotta: await condottaRecord(db, account.id),
     });
   });
 

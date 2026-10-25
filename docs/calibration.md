@@ -1348,3 +1348,36 @@ Deux points de la proposition ne sont pas faits :
 - **La trahison de l'« opportuniste »** : aucune maison ne rompt une alliance aujourd'hui, et ce comportement est gardé tel quel.
 
 **La mesure demandée n'est pas faisable dans le simulateur.** Elle comparait les cases médianes des humains alliés à un PNJ et des humains non alliés, avec un écart de +30 % au plus et 2 éliminés par semaine au plus. Mais les marchands simulés de `pnpm sim` ne sont pas marqués PNJ et ne lancent jamais d'appel à l'aide, donc le secours et la riposte ne s'y déclenchent pas, et la règle « un allié PNJ au plus » ne s'y applique pas. `pnpm sim` ne change donc pas. Il faudra suivre en bêta les éliminés par semaine et les cases des marchands alliés à une maison.
+
+## La Condotta (25 octobre 2026, lot 2, E2-5)
+
+Une partie coopérative de 8 minutes, à 60 fois la vitesse. De 1 à 4 marchands alliés se posent au centre. Trois nations (sur les quatre du catalogue) et Milan partent des bords. Pour gagner, il faut tenir Padoue et 35 % des terres à la fin.
+
+**Le terrain.** Les 12 niveaux se jouent sur le même terrain : même carte et mêmes nations. Seules les troupes des nations montent, de 15 % par niveau. Les troupes de Milan et de chaque nation valent `nationTroops` = 60 au niveau 1, soit 60 × (1 + 0,15 × (niveau − 1)).
+
+**Le niveau d'un groupe.** Un groupe joue au niveau le plus haut ouvert à tous ses membres. Une victoire ouvre le niveau suivant.
+
+**Ce qui a été écarté, et pourquoi.**
+- Avec un terrain et des nations tirés à chaque partie, l'écart entre graines (±10 points de terres) dépassait l'effet d'un niveau (environ 4 points). La difficulté ne suivait plus le niveau.
+- Avec les troupes propres des nations (Empire 150, Aquilée 80), le tirage décidait de l'issue.
+
+**Mesure** : `pnpm --filter @comptoirs/simulator condotta`. L'ordinateur joue chaque marchand. Une graine représente un style de joueur : la part de troupes qu'il envoie par front, de 40 % à 60 %. Chaque case du tableau donne le nombre de victoires sur 5, puis la part médiane des terres.
+
+| Marchands | N1 | N4 | N6 | N7 | N8 | N9 | N10 | N12 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 5/5 (79 %) | 5/5 (62 %) | 5/5 (50 %) | 4/5 (45 %) | 4/5 (44 %) | 3/5 (36 %) | 1/5 (32 %) | 1/5 (26 %) |
+| 2 | 5/5 (98 %) | 5/5 (98 %) | 5/5 (98 %) | 5/5 (96 %) | 5/5 (94 %) | 5/5 (95 %) | 5/5 (95 %) | 5/5 (91 %) |
+| 3 | 5/5 (98 %) | 5/5 (93 %) | 5/5 (98 %) | 5/5 (98 %) | 5/5 (95 %) | 5/5 (91 %) | 5/5 (82 %) | 5/5 (93 %) |
+
+**Le critère demandé est tenu en médiane, pas sur chaque graine.** Le critère : un joueur seul gagne au niveau 8 et perd au niveau 10, sur 5 graines.
+- **En médiane :** le joueur seul gagne le niveau 8 (44 % des terres) et perd le niveau 10 (32 %).
+- **Graine par graine :** au niveau 8, 4 styles sur 5 gagnent ; au niveau 10, 1 style sur 5 gagne encore.
+- **La limite :** l'ordinateur ne joue pas comme un humain. Il vise d'abord Padoue, puis la terre la moins chère. Ses choix dispersent les résultats d'un niveau à l'autre plus qu'un joueur régulier ne le ferait.
+
+**Les groupes.** À 2 ou 3, les niveaux 9 à 12 restent largement gagnés (82 à 95 % des terres). L'attrait du groupe est donc là, mais les derniers niveaux sont probablement trop faciles à plusieurs.
+
+**En bêta.** La télémétrie `condotta_played` (niveau, victoire, part des terres, nombre de joueurs) servira à recaler `nationTroops`, et peut-être à durcir les nations par joueur supplémentaire. Cela se fera par une décision du porteur, au changement de mois.
+
+**Le plafond de récompense.** Un test serveur le vérifie : une victoire ne crée aucune écriture au grand livre, ne change ni la caisse ni la Gloire. Elle donne le niveau suivant, un grade cosmétique (de *Condottiere di ventura* à *Capitano generale*) et l'événement `condotta_won`.
+
+**Hors du tableau des missions.** Aucune mission `condotta_won` n'est ajoutée au tableau de Venise : en ajouter une changerait le tirage des missions et l'Influence. La question revient au paquet de règles, validé par `pnpm sim`.

@@ -6,6 +6,7 @@ import type {
   Catalog,
   CompanyInvitation,
   CompanyView,
+  CondottaStatus,
   CrestData,
   DashboardView,
   FamilyMessage,
@@ -98,6 +99,8 @@ export const gameApi = {
       profile: Profile;
       level?: Level;
       palmares: Palmares;
+      /** The Condotta's best level won and its grade (null before a first win). */
+      condotta?: { best: number; level: number; grade: string } | null;
       terra?: {
         rating: number;
         weeks: {
@@ -168,6 +171,12 @@ export const gameApi = {
         steps: [number, number, number][];
       } | null;
     }>("GET", "/api/game/terra/replay"),
+  condotta: () => call<CondottaStatus>("GET", "/api/game/condotta"),
+  condottaOpen: (company: boolean) =>
+    call<{ ok: boolean }>("POST", "/api/game/condotta/open", { company }),
+  condottaJoin: (lobby: string) =>
+    call<{ ok: boolean }>("POST", "/api/game/condotta/join", { lobby }),
+  condottaAct: (a: TerraAction) => call<{ ok: boolean }>("POST", "/api/game/condotta/act", a),
   skirmish: () => call<SkirmishStatus>("GET", "/api/game/skirmish"),
   skirmishJoin: () => call<{ ok: boolean }>("POST", "/api/game/skirmish/join"),
   skirmishAct: (a: TerraAction) => call<{ ok: boolean }>("POST", "/api/game/skirmish/act", a),

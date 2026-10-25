@@ -36,6 +36,16 @@ export function condottaGrade(best: number) {
   return CONDOTTA_GRADES.find((g) => best >= g.from) ?? null;
 }
 
+/** The profile's line: the best level won and its grade (null before a first win). */
+export async function condottaRecord(db: Db, accountId: string) {
+  const [row] = await db
+    .select({ best: accounts.condottaBest, level: accounts.condottaLevel })
+    .from(accounts)
+    .where(eq(accounts.id, accountId));
+  const grade = condottaGrade(row?.best ?? 0);
+  return grade ? { best: row?.best ?? 0, level: row?.level ?? 1, grade: grade.name } : null;
+}
+
 export type CondottaRefusal = "condotta_off" | "already_in" | "no_company" | "lobby_full";
 
 interface Lobby {
@@ -256,7 +266,18 @@ export class CondottaHub {
         holdCell: m.c.holdCell,
         players: m.c.humans.map((id) => names.get(id)?.pseudo ?? null),
         result: m.c.result ?? null,
-        view: view ? realTimes(m.c, view, m.c.endsAt) : null,
+        // One side against the nations: the team of a Condotta is not a region to tell.
+        view: view
+          ? realTimes(
+              m.c,
+              {
+                ...view,
+                rules: { ...view.rules, team: null },
+                closed: view.closed ? { ...view.closed, teams: null } : view.closed,
+              },
+              m.c.endsAt,
+            )
+          : null,
         ...me,
       };
     }
