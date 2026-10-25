@@ -1,6 +1,6 @@
 import { fr } from "../i18n.js";
 import type { GameProps } from "./Game.js";
-import { d } from "./format.js";
+import { whole } from "./format.js";
 
 /** The rival's line, in pieces so that the name truncates and never its seal nor the gap. */
 export interface RivalLine {
@@ -24,7 +24,7 @@ export function rivalLine(r: GameProps["rival"]): RivalLine | null {
   const name = r.character ? `${who} ${t.characters[r.character] ?? ""}`.trim() : who;
   const gap = BigInt(r.gain) - BigInt(r.mine);
   const abs = gap < 0n ? -gap : gap;
-  const shown = abs === 0n ? null : d(abs);
+  const shown = abs === 0n ? null : whole(abs);
   return {
     lead: r.ahead ? t.chase : t.chased,
     name,

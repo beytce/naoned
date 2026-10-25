@@ -4,7 +4,7 @@ import { Rules, Sheet } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { merchantLabel } from "./Name.js";
 import { gameApi } from "./api.js";
-import { d } from "./format.js";
+import { d, whole } from "./format.js";
 import type { DashboardView } from "./types.js";
 
 const t = fr.game.dashboard;
@@ -62,8 +62,8 @@ export function DashboardSheet(props: GameProps) {
       <div className="space-y-4">
         <dl className="grid grid-cols-3 gap-2 text-center">
           <Figure label={t.hour} value={d(perHour(props))} />
-          <Figure label={t.today} value={data ? d(data.today) : "…"} />
-          <Figure label={t.week} value={data ? d(data.week) : "…"} />
+          <Figure label={t.today} value={data ? whole(data.today) : "…"} />
+          <Figure label={t.week} value={data ? whole(data.week) : "…"} />
         </dl>
         {data && <Curves data={data} />}
         <Rules id="dashboard">{t.help(data?.days.length ?? 7)}</Rules>
@@ -160,7 +160,7 @@ function Curves({ data }: { data: DashboardView }) {
             />
             <span className="text-cream-dim">
               {t.who[l.who](merchantLabel(l.pseudo, l.bot, "—"))} ·{" "}
-              {d(BigInt(l.points.at(-1) ?? 0))}
+              {whole(BigInt(l.points.at(-1) ?? 0))}
             </span>
           </span>
         ))}

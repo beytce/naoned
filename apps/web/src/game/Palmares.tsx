@@ -5,7 +5,7 @@ import { fr } from "../i18n.js";
 import { Badge, Label, Panel, Ribbon, Sheet, Stat } from "../ui.js";
 import { MerchantName } from "./Name.js";
 import { gameApi } from "./api.js";
-import { d } from "./format.js";
+import { d, whole } from "./format.js";
 import type { Palmares } from "./types.js";
 
 const place = (rank: number) => `${rank}${rank === 1 ? "er" : "e"}`;
@@ -65,7 +65,7 @@ export function PalmaresView({ data }: { data: Palmares }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{s.season}</p>
                 <p className="text-xs text-cream-dim">
-                  {fr.game.season.rankOf(s.rank, s.players)} · {d(s.turnover ?? s.worth)}
+                  {fr.game.season.rankOf(s.rank, s.players)} · {whole(s.turnover ?? s.worth)}
                   {s.milestone.renown > 0 && ` · ${s.milestone.name}`}
                 </p>
               </div>
@@ -90,7 +90,7 @@ export function PalmaresView({ data }: { data: Palmares }) {
                 <p className="font-display text-lg font-extrabold">{place(w.rank)}</p>
                 <p className={`text-xs ${BigInt(w.gain) >= 0n ? "text-lagoon" : "text-vermilion"}`}>
                   {BigInt(w.gain) > 0n ? "+" : ""}
-                  {d(w.gain)}
+                  {whole(w.gain)}
                 </p>
               </div>
             ))}

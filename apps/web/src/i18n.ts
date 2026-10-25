@@ -1829,7 +1829,7 @@ export const fr = {
         /** The same on a phone's narrow line: the sign of a change and its price. */
         rerollShort: (n: number) => `Changer · ${n} ✦`,
         /** Why the task cannot be changed yet. */
-        rerollNeed: (n: number) => `Il faut ${n} ✦ d'Influence pour la changer.`,
+        rerollCost: (n: number, have: number) => `Changer une tâche : ${n} ✦ (vous : ${have})`,
       },
     },
     profileTitle: "Ma progression",
