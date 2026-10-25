@@ -40,6 +40,7 @@ import {
   postCompanyMessage,
   reportCompanyMessage,
 } from "./company.js";
+import type { CondottaHub } from "./condotta.js";
 import { dashboard } from "./dashboard.js";
 import {
   ChatError,
@@ -264,6 +265,8 @@ export interface GameRouteDeps {
   notifier: Notifier;
   /** The skirmishes, their lost matches already recovered. */
   skirmishes: SkirmishHub;
+  /** The Condotta's matches (E2-5). */
+  condottas: CondottaHub;
   adminEmails: string[];
   /** The players' community (null: none). */
   communityUrl?: string | null;
@@ -733,6 +736,47 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       ])
       .parse(req.body);
     const ok = skirmishes.act(account.id, a, world.now());
+    return ok ? { ok } : reply.code(409).send({ error: "refused" });
+  });
+
+  // The Condotta (E2-5): alone at once, or with the company after a minute; it pays nothing.
+  const { condottas } = deps;
+  const liveAction = z.discriminatedUnion("type", [
+    z.object({
+      type: z.literal("terraFront"),
+      aim: z.number().int().nonnegative(),
+      shareBps: z.number().int().min(0).max(10_000),
+    }),
+    z.object({ type: z.literal("terraRecall"), frontId: z.string().max(32) }),
+  ]);
+
+  app.get("/api/game/condotta", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    await condottas.step(world.now());
+    return toJson(await condottas.status(account.id, world.now()));
+  });
+
+  app.post("/api/game/condotta/open", perMerchant(20), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const { company } = z.object({ company: z.boolean().optional() }).parse(req.body ?? {});
+    const opened = await condottas.open(account.id, company ?? false, world.now());
+    return opened === true ? { ok: true } : reply.code(409).send({ error: opened });
+  });
+
+  app.post("/api/game/condotta/join", perMerchant(20), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const { lobby } = z.object({ lobby: z.string().uuid() }).parse(req.body);
+    const joined = await condottas.join(account.id, lobby, world.now());
+    return joined === true ? { ok: true } : reply.code(409).send({ error: joined });
+  });
+
+  app.post("/api/game/condotta/act", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const ok = condottas.act(account.id, liveAction.parse(req.body), world.now());
     return ok ? { ok } : reply.code(409).send({ error: "refused" });
   });
 

@@ -54,6 +54,9 @@ export const accounts = pgTable(
     utmCampaign: text("utm_campaign"),
     /** The interface's language, for the pushes and the mails (E3-8): "fr" or "en". */
     lang: text("lang").$type<"fr" | "en">().notNull().default("fr"),
+    /** The Condotta (E2-5): the highest level open to the account, and the best level won. */
+    condottaLevel: integer("condotta_level").notNull().default(1),
+    condottaBest: integer("condotta_best").notNull().default(0),
     /** When the account last left a company: it may join another only a week later (E2-8). */
     companyLeftAt: timestamp("company_left_at", { withTimezone: true }),
   },

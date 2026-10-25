@@ -12,7 +12,7 @@ import {
   hexDistance,
 } from "../src/index.js";
 import { testTerraferma } from "./fixture.js";
-import { makeContext } from "./helpers.js";
+import { World, makeContext } from "./helpers.js";
 
 const START = Date.UTC(2026, 9, 20, 9, 0);
 const MIN = 60_000;
@@ -139,5 +139,20 @@ describe("the Condotta", () => {
     expect(
       condottaAct(c, "ada", { type: "terraFront", aim, shareBps: 5_000 }, START + 9 * MIN),
     ).toBe(false);
+  });
+
+  it("is told to the world by an event for the missions, and pays nothing", () => {
+    const w = new World(makeContext({}));
+    w.do({ type: "join", playerId: "ada", region: "terraferma" });
+    const cash = w.state.accounts["cash:ada"];
+    const res = w.do({ type: "condottaWon", playerIds: ["ada", "ghost"], level: 4 });
+    if (!res.ok) throw new Error("refused");
+    const fx = res.effects;
+    expect(fx.events.filter((e) => e.type === "condotta_won")).toEqual([
+      expect.objectContaining({ playerId: "ada", data: { level: 4 } }),
+    ]);
+    expect(w.state.accounts["cash:ada"]).toBe(cash);
+    expect(fx.ledger).toEqual([]);
+    expect(fx.stock).toEqual([]);
   });
 });
