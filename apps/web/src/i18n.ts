@@ -1284,9 +1284,6 @@ export const fr = {
       pitch:
         "De l'information à lire et de quoi se distinguer, rien de plus : ni ducats, ni marchandises, ni production, ni quota, ni offre de plus.",
       perks: {
-        history: "Cours du Rialto sur 30 jours (7 pour tous)",
-        dashboard: "Tableau de bord sur 30 jours (7 pour tous)",
-        book: "Carnet d'ordres à 10 offres (5 pour tous)",
         cosmetics: "Sceau à côté de votre nom, palette « Or de Venise »",
       },
       trust:
@@ -1673,8 +1670,6 @@ export const fr = {
       worth: "Ventes nettes de la saison",
       podium: "Le podium",
       rewards: "Vos récompenses",
-      passSeason: "Pass Négociant pour toute la nouvelle saison",
-      passDays: (n: number) => `${n} jours de Pass Négociant`,
       renown: (n: number) => `+${n} de Renommée`,
       milestone: (name: string, n: number) => `Palier ${name} : +${n} de Renommée`,
       goal: {
@@ -2443,6 +2438,7 @@ export const fr = {
         "Commerce : au-delà du niveau 5, les manufactures montent jusqu'au niveau 10, en volume ou en qualité.",
         "Commerce : affaires entre marchands — commandes sous séquestre et colleganza.",
         "Commerce : plus de prêts de la Banque ni d'entrepôts dans les villes.",
+        "Pour tous : les cours du Rialto et le tableau de bord sur 30 jours, le carnet d'ordres à 10 offres. Le classement donne des titres et des trophées, plus de Pass Négociant.",
         "Le guide de Lorenzo fait agrandir un premier atelier, et la mission « Agrandir un atelier » du Livre de compte s'ouvre dès le premier jour.",
         "Commerce : les villes passent commande de jour, à 8 h, 11 h, 14 h, 17 h et 20 h. Personne ne prend de commande au tableau entre 22 h et 8 h ; celles de 17 h et de 20 h restent jusqu'au lendemain 10 h. Les commandes urgentes s'ouvrent avant 19 h.",
         "Terraferme : le Signore est toujours un marchand ; les maisons de l'ordinateur restent au classement de la semaine mais ne reçoivent ni palier ni Influence. Une maison qui se retire rend ses terres.",

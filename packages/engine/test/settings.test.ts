@@ -132,14 +132,27 @@ describe("the Pass Négociant's settings", () => {
     });
   });
 
-  it("are within the rule in Venice, with information and cosmetics only", () => {
+  it("are within the rule in Venice, things to show only", () => {
     const pass = parseSettings(venice1450Settings).pass;
     expect(pass.perks).toEqual({
-      history30Days: true,
-      dashboardDetail: true,
-      deepBook: true,
       cosmetics: true,
+      seal: false,
+      domainOrnaments: false,
+      goldenName: false,
+      illustratedChronicle: false,
     });
+  });
+
+  it("refuse any perk but things to show, and drop the information once sold", () => {
+    expect(() =>
+      parseSettings({ ...testSettings, pass: { perks: { fasterQueues: true } } as never }),
+    ).toThrow();
+    const old = parseSettings({
+      ...testSettings,
+      pass: { perks: { history30Days: true, deepBook: true, cosmetics: true } } as never,
+    }).pass.perks;
+    expect(old).toMatchObject({ cosmetics: true });
+    expect(Object.keys(old)).not.toContain("deepBook");
   });
 
   it("of a world saved before are brought within the rule, the rest kept", () => {
@@ -166,10 +179,11 @@ describe("the Pass Négociant's settings", () => {
 
   it("give nothing to read or to show unless listed", () => {
     expect(parseSettings({ ...testSettings, pass: { enabled: true } }).pass.perks).toEqual({
-      history30Days: false,
-      dashboardDetail: false,
-      deepBook: false,
       cosmetics: false,
+      seal: false,
+      domainOrnaments: false,
+      goldenName: false,
+      illustratedChronicle: false,
     });
   });
 });

@@ -562,9 +562,6 @@ export interface PassView {
   until: number;
   /** Exactly what the Pass gives, from the settings: information to read and cosmetics. */
   perks: {
-    history30Days: boolean;
-    dashboardDetail: boolean;
-    deepBook: boolean;
     cosmetics: boolean;
   };
   maxOpenOrders: number;
@@ -757,7 +754,6 @@ export interface Ceremony {
   /** Title held at the close and the renown it added (included in `renown`). */
   milestone: { name: string; renown: number };
   renown: number;
-  passDays: number | "season";
   totalRenown: Renown;
   podium: {
     rank: number;

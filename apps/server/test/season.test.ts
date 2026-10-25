@@ -141,10 +141,9 @@ describe("seasons on calendar months", () => {
       headers: { cookie: ada },
       payload: { region: "lagoon" },
     });
-    // The Doge of the last season holds the Pass for the whole new one.
+    // The rankings give titles and trophies, never the Pass (E3-9 of the experts).
     const joined = await get(ada);
-    expect(joined.view.pass.active).toBe(true);
-    expect(joined.view.pass.until).toBe(Date.parse("2026-11-30T23:00:00Z"));
+    expect(joined.view.pass.active).toBe(false);
     const prof = await get(ada, "/api/game/profile");
     expect(prof.palmares.renown.points).toBe(back.ceremony.renown);
     expect(prof.palmares.seasons[0]).toMatchObject({ rank: 1, award: "Doge de la saison" });

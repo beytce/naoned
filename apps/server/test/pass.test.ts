@@ -124,17 +124,13 @@ describe("the Pass Négociant", () => {
       headers: { cookie: boss },
       payload: { email: "ada@example.org", days: 7 },
     });
+    // The information is everyone's: the Pass gives things to show only (E3-9 of the experts).
     expect((await get(ada, "/api/game/prices")).days).toBe(30);
-    expect((await get(bob, "/api/game/prices")).days).toBe(7);
+    expect((await get(bob, "/api/game/prices")).days).toBe(30);
     expect((await get(ada, "/api/game/dashboard")).days).toHaveLength(30);
-    expect((await get(bob, "/api/game/dashboard")).days).toHaveLength(7);
+    expect((await get(bob, "/api/game/dashboard")).days).toHaveLength(30);
     const [paid, free] = [(await get(ada)).view, (await get(bob)).view];
-    expect(paid.pass.perks).toEqual({
-      history30Days: true,
-      dashboardDetail: true,
-      deepBook: true,
-      cosmetics: true,
-    });
+    expect(paid.pass.perks).toMatchObject({ cosmetics: true });
     // Nothing on the market: the same number of open offers as anyone.
     expect(paid.pass.maxOpenOrders).toBe(free.pass.maxOpenOrders);
   });
@@ -172,17 +168,14 @@ describe("the Pass Négociant", () => {
     expect(row?.pass.freshBonusBps).toBe(0);
   });
 
-  it("goes to the weekly top 10 for the next seven days", async () => {
+  it("is never given by the weekly ranking: titles and trophies only (E3-9 of the experts)", async () => {
     const ada = await player("ada@example.org");
     await act(ada, { type: "sellToCity", city: "venezia", resource: "bread", quantity: 5 });
     const [account] = (await get(ada, "/api/game/ranking")).rows;
     now += 7 * DAY + 60_000;
     await world.execute({ type: "tick" });
-    expect(await passUntil(database.db, account.id, now)).toBe(now + 7 * DAY);
-    const back = await get(ada);
-    expect(back.view.pass.active).toBe(true);
-    const rows = (await get(ada, "/api/game/ranking")).rows;
-    expect(rows[0].pass).toBe(true);
+    expect(await passUntil(database.db, account.id, now)).toBeLessThanOrEqual(now);
+    expect((await get(ada)).view.pass.active).toBe(false);
   });
 
   it("is off in Venice until it comes back: nothing granted, nothing shown", async () => {

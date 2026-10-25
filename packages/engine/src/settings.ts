@@ -271,17 +271,32 @@ export const worldSettingsSchema = z.object({
       /** Refused unless zero: once one of the Doge's orders swapped a day. */
       contractRerollsPerDay: qty.prefault(0),
       /**
-       * What the Pass gives, all read-only or for show; the profile lists exactly these. Prices
-       * of the Rialto over 30 days (7 for everyone), the dashboard over 30 days (7 for
-       * everyone), an order book 10 offers deep (5 for everyone), the seal and the palette.
+       * What the Pass (the « Mécène ») gives: things to show, nothing else (E3-9 of the experts,
+       * 25 October 2026). The information it once sold is everyone's; the keys of a world saved
+       * before are dropped, and any other key is refused.
        */
       perks: z
-        .object({
-          history30Days: z.boolean().prefault(false),
-          dashboardDetail: z.boolean().prefault(false),
-          deepBook: z.boolean().prefault(false),
-          cosmetics: z.boolean().prefault(false),
-        })
+        .preprocess(
+          (v) => {
+            if (!v || typeof v !== "object") return v;
+            const {
+              history30Days: _h,
+              dashboardDetail: _d,
+              deepBook: _b,
+              ...rest
+            } = v as Record<string, unknown>;
+            return rest;
+          },
+          z
+            .object({
+              cosmetics: z.boolean().prefault(false),
+              seal: z.boolean().prefault(false),
+              domainOrnaments: z.boolean().prefault(false),
+              goldenName: z.boolean().prefault(false),
+              illustratedChronicle: z.boolean().prefault(false),
+            })
+            .strict(),
+        )
         .prefault({}),
     })
     .refine(

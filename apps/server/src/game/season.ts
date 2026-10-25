@@ -3,7 +3,6 @@ import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { accounts, players, seasonResults, weeklyResults, worlds } from "../db/schema.js";
 import { nextSeasonBounds } from "./calendar.js";
-import { grantPass } from "./pass.js";
 import { TITLES, titleFor } from "./profile.js";
 
 /**
@@ -11,16 +10,16 @@ import { TITLES, titleFor } from "./profile.js";
  * week gets something; each place in the top 10 counts.
  */
 export const SEASON_TIERS = [
-  { tier: "doge", name: "Doge de la saison", renown: 100, passDays: "season" },
-  { tier: "podium", name: "Podium de la saison", renown: 65, passDays: "season" },
-  { tier: "top10", name: "Top 10 de la saison", renown: 40, passDays: "season" },
-  { tier: "elite", name: "Top 10 % de la saison", renown: 25, passDays: 21 },
-  { tier: "notable", name: "Top 25 % de la saison", renown: 15, passDays: 7 },
-  { tier: "participant", name: "Marchand de la saison", renown: 5, passDays: 0 },
-  { tier: "none", name: "", renown: 0, passDays: 0 },
+  { tier: "doge", name: "Doge de la saison", renown: 100 },
+  { tier: "podium", name: "Podium de la saison", renown: 65 },
+  { tier: "top10", name: "Top 10 de la saison", renown: 40 },
+  { tier: "elite", name: "Top 10 % de la saison", renown: 25 },
+  { tier: "notable", name: "Top 25 % de la saison", renown: 15 },
+  { tier: "participant", name: "Marchand de la saison", renown: 5 },
+  { tier: "none", name: "", renown: 0 },
 ] as const;
 
-const NO_REWARD = { tier: "none", name: "", renown: 0, passDays: 0 } as const;
+const NO_REWARD = { tier: "none", name: "", renown: 0 } as const;
 
 export type SeasonTier = (typeof SEASON_TIERS)[number]["tier"];
 
@@ -73,13 +72,7 @@ export function renownTitle(points: number) {
  * Saves the final ranking (engine event `season_closed`), in the transaction of the closing tick.
  * Ranks count people only; bots are left out of the results.
  */
-export async function recordSeason(
-  db: Db,
-  worldId: string,
-  data: Record<string, unknown>,
-  /** End of this season: the Pass won is held during the next one (none won if absent). */
-  endsAt?: number,
-) {
+export async function recordSeason(db: Db, worldId: string, data: Record<string, unknown>) {
   // Ranked by net sales; standings saved before them carry net worth only.
   const standings = (data.standings ?? []) as {
     playerId: string;
@@ -120,14 +113,6 @@ export async function recordSeason(
     };
   });
   await db.insert(seasonResults).values(rows).onConflictDoNothing();
-  if (endsAt !== undefined) {
-    const next = nextSeasonBounds(endsAt);
-    for (const r of rows) {
-      const span = tierInfo(r.tier).passDays;
-      const until = span === "season" ? next.endsAt : endsAt + span * 86_400_000;
-      if (until > endsAt) await grantPass(db, r.accountId, "season", endsAt, until, r.tier);
-    }
-  }
   // Days of play beside each result: the house's Influence of the season asks for a week.
   return rows.map((r) => ({ ...r, days: days.get(r.accountId) ?? 0 }));
 }
@@ -175,12 +160,7 @@ export async function seasonRecord(db: Db, accountId: string) {
 }
 
 /** The closing ceremony not yet watched by this account, if any (latest season only). */
-export async function pendingCeremony(
-  db: Db,
-  accountId: string,
-  /** The Pass is on: the ceremony tells the Pass won. */
-  passOn = true,
-) {
+export async function pendingCeremony(db: Db, accountId: string) {
   const [row] = await db
     .select({
       worldId: seasonResults.worldId,
@@ -226,7 +206,6 @@ export async function pendingCeremony(
       renown: milestoneInfo(row.milestone).renown,
     },
     renown: row.renown,
-    passDays: passOn ? info.passDays : 0,
     totalRenown: renownTitle(await renownOf(db, accountId)),
     podium: podium.map((p) => ({
       ...p,

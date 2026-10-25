@@ -819,7 +819,8 @@ export const venice1450Settings: WorldSettingsInput = {
     extraOpenOrders: 0,
     freshBonusBps: 0,
     contractRerollsPerDay: 0,
-    perks: { history30Days: true, dashboardDetail: true, deepBook: true, cosmetics: true },
+    // Things to show only; the information is everyone's (E3-9 of the experts).
+    perks: { cosmetics: true },
   },
   // Raw materials are local: wheat grows in the Terraferma, clay lies in the Lagoon, wood in the
   // Dolomites. Workshops that transform can be built anywhere.

@@ -35,12 +35,9 @@ export function PassPanel({
   }
   // Only the perks the settings give: information to read and cosmetics.
   const p = pass.perks;
-  const perks = [
-    p.history30Days && t.perks.history,
-    p.dashboardDetail && t.perks.dashboard,
-    p.deepBook && t.perks.book,
-    p.cosmetics && t.perks.cosmetics,
-  ].filter((x): x is string => typeof x === "string");
+  const perks = [p.cosmetics && t.perks.cosmetics].filter(
+    (x): x is string => typeof x === "string",
+  );
   return (
     <Panel glow="gold">
       <div className="flex items-start justify-between gap-3">
