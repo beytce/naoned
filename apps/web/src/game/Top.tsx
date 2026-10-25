@@ -8,7 +8,7 @@ import type { GameProps } from "./Game.js";
 import { MerchantName } from "./Name.js";
 import { PlayerPalmares } from "./Palmares.js";
 import { gameApi } from "./api.js";
-import { d } from "./format.js";
+import { d, whole } from "./format.js";
 import { store } from "./store.js";
 import type { PodiumRow, RankingRow, WeekRanking } from "./types.js";
 
@@ -92,7 +92,7 @@ function Gain({ value }: { value: string }) {
   return (
     <span className={n > 0n ? "text-lagoon" : n < 0n ? "text-vermilion" : "text-cream-dim"}>
       {n > 0n ? "+" : ""}
-      {d(n)}
+      {whole(n)}
     </span>
   );
 }

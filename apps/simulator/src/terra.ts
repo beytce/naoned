@@ -138,6 +138,33 @@ export interface TerraControls {
   draw?: string;
   blind?: boolean;
   sessions?: string;
+  /**
+   * The merchants who are people (drawn by `humansOf`): the others are marked as the computer's
+   * houses, on the board but never in the tiers nor Signore. Absent: no house is marked.
+   */
+  humans?: ReadonlySet<string>;
+}
+
+/** The profiles of the people, in the order they are drawn: two actives, two regulars, a casual. */
+const HUMAN_PROFILES = ["active", "regular", "active", "regular", "casual"];
+
+/**
+ * `n` merchants of the week taken as people, drawn by the seed (more active than the field on
+ * average, which favours the people): the sorted ids.
+ */
+export function humansOf(seed: number, n: number, mix = TERRA_MIX): Set<string> {
+  const ids = Object.entries(mix).flatMap(([profile, k]) =>
+    Array.from({ length: k }, (_, i) => ({ id: `${profile}${i}`, profile })),
+  );
+  const out = new Set<string>();
+  for (let k = 0; k < Math.min(n, ids.length); k++) {
+    const profile = HUMAN_PROFILES[k % HUMAN_PROFILES.length];
+    const pick = ids
+      .filter((b) => !out.has(b.id) && (b.profile === profile || out.size >= 5))
+      .sort((a, b) => hash(`${seed}:human:${a.id}`) - hash(`${seed}:human:${b.id}`))[0];
+    if (pick) out.add(pick.id);
+  }
+  return out;
 }
 
 /** The rank (from 0) of a merchant in one of its skirmishes. */
@@ -233,6 +260,8 @@ export function runTerra(
     const purse = wallet.get(bot.id) as { day: number; left: bigint };
     const before = purse.left;
     play(s, cfg, bot.id, profile, at, seed, purse, fame);
+    const placed = s.players[bot.id];
+    if (controls.humans && placed && !controls.humans.has(bot.id)) placed.npc = true;
     result.spent += before - purse.left;
     // Its skirmishes of the day, at its second session: its rank as `ranks` says; the first of
     // the day ranked, the others friendly.

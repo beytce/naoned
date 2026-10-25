@@ -134,6 +134,13 @@
       "when": 1792775647357,
       "tag": "0018_season_turnover_peak",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792881953785,
+      "tag": "0019_email_canonical",
+      "breakpoints": true
     }
   ]
 }

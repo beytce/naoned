@@ -1,9 +1,10 @@
-import { and, count, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, gt, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "../db/client.js";
 import { accounts, loginTokens, sessions } from "../db/schema.js";
 import type { Mailer } from "../mail/mailer.js";
 import { magicLinkMail } from "../mail/templates.js";
+import { canonicalEmail, disposableEmail } from "./canonical.js";
 import { hashCode, hashToken, newCode, newToken, sameHash } from "./tokens.js";
 
 export const LINK_VALID_MINUTES = 15;
@@ -60,7 +61,12 @@ const publicColumns = {
 
 export class AuthError extends Error {
   constructor(
-    readonly code: "invalid_token" | "invalid_code" | "pseudo_taken" | "too_many_requests",
+    readonly code:
+      | "invalid_token"
+      | "invalid_code"
+      | "pseudo_taken"
+      | "too_many_requests"
+      | "disposable_email",
     message?: string,
   ) {
     super(message ?? code);
@@ -84,6 +90,7 @@ export class AuthService {
   /** Sends a magic link. The answer never says whether the address has an account. */
   async requestLink(rawEmail: string): Promise<void> {
     const email = emailSchema.parse(rawEmail);
+    if (disposableEmail(email)) throw new AuthError("disposable_email");
     const now = this.now();
     const hourAgo = new Date(now.getTime() - 3_600_000);
     const [recent] = await this.deps.db
@@ -181,15 +188,26 @@ export class AuthService {
     email: string,
     now: Date,
   ): Promise<{ sessionToken: string; account: PublicAccount }> {
+    // One account per mailbox: an alias opens the account of its mailbox, never a second one.
+    const mailbox = canonicalEmail(email);
     await this.deps.db
       .insert(accounts)
-      .values({ email, createdAt: now })
-      .onConflictDoNothing({ target: accounts.email });
+      .values({ email, emailCanonical: mailbox, createdAt: now })
+      .onConflictDoNothing();
     const [account] = await this.deps.db
       .update(accounts)
       .set({ lastLoginAt: now })
-      // Bots have no mailbox; their addresses can never open a session.
-      .where(and(eq(accounts.email, email), eq(accounts.isBot, false)))
+      // Bots have no mailbox; their addresses can never open a session. An account of before
+      // that shared its mailbox (no canonical one) still opens with its own address.
+      .where(
+        and(
+          or(
+            eq(accounts.emailCanonical, mailbox),
+            and(eq(accounts.email, email), isNull(accounts.emailCanonical)),
+          ),
+          eq(accounts.isBot, false),
+        ),
+      )
       .returning(publicColumns);
     if (!account) throw new AuthError("invalid_token");
 

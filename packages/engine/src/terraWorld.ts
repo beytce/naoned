@@ -42,6 +42,7 @@ import {
   setPeasants,
   signal,
   skirmishesLeft,
+  withdrawFromTerra,
 } from "./terraferma.js";
 import { type Tx, addStock, balance, emit, fail, transfer } from "./tx.js";
 import { seasonWeeks, weekIndex } from "./weekly.js";
@@ -137,7 +138,9 @@ export function advanceTerraWorld(tx: Tx): TerraState | null {
   if (!cfg) return null;
   const map = terra(tx, cfg);
   const end = campaignWeekEnd(tx.ctx, tx.s.terra?.week ?? 0);
+  const seen = map.history?.cell.length ?? 0;
   advanceTerra(map, cfg, Math.min(tx.now, end));
+  tellCellsTaken(tx, map, seen);
   payHarvests(tx, map);
   warnBattle(tx, cfg, map);
   if (map.closed && !map.closedSeen) {
@@ -146,6 +149,27 @@ export function advanceTerraWorld(tx: Tx): TerraState | null {
     payClose(tx, cfg, tx.s.terra?.week ?? 0, map);
   }
   return map;
+}
+
+/**
+ * The cells the merchants' fronts took since the history's line `from`, one event a merchant
+ * (cells and cities), for the house's missions.
+ */
+function tellCellsTaken(tx: Tx, map: TerraState, from: number): void {
+  const h = map.history;
+  if (!h || h.cell.length <= from) return;
+  const by = new Map<string, { count: number; cities: number }>();
+  for (let k = from; k < h.cell.length; k++) {
+    const id = h.ids[h.holder[k] ?? -1];
+    if (id === undefined || isNation(id) || !tx.s.players[id]) continue;
+    const t = by.get(id) ?? { count: 0, cities: 0 };
+    t.count += 1;
+    if (map.map.city[h.cell[k] ?? -1]) t.cities += 1;
+    by.set(id, t);
+  }
+  for (const [id, t] of [...by].sort(([a], [b]) => (a < b ? -1 : 1))) {
+    emit(tx, "terra_cells_taken", id, t);
+  }
 }
 
 /** The land's whole units go into the merchants' stock, the routes' ducats into their purse. */
@@ -287,7 +311,14 @@ export type TerraCommand =
   | { type: "terraSignal"; playerId: PlayerId; kind: TerraSignalKind; cell?: number }
   | { type: "terraGift"; playerId: PlayerId; to: PlayerId; amount: string }
   | { type: "terraEmbargo"; playerId: PlayerId; target: PlayerId | null }
+  | TerraWithdraw
   | TerraSkirmishPay;
+
+/** From the server: a house of the computer retires, and hands back what it held on the map. */
+export interface TerraWithdraw {
+  type: "terraWithdraw";
+  playerId: PlayerId;
+}
 
 /**
  * A ranked skirmish paid by the server, once its match is over: the glory of each merchant who
@@ -343,7 +374,38 @@ export function paySkirmish(tx: Tx, cmd: TerraSkirmishPay): void {
   emit(tx, "terra_skirmish_paid", undefined, { matchId: cmd.matchId, paid });
 }
 
-export function applyTerra(tx: Tx, cmd: Exclude<TerraCommand, TerraSkirmishPay>): void {
+/** The house is the computer's on the week's map too (where the week closes, even by conquest). */
+function markTerraNpc(map: TerraState, id: PlayerId): void {
+  const p = map.players[id];
+  if (p) p.npc = true;
+}
+
+/** From the server: the house is the computer's, in the world and on the week's map. */
+export function markNpc(tx: Tx, playerId: PlayerId): void {
+  const p = tx.s.players[playerId];
+  if (!p) fail("unknown_player");
+  p.npc = true;
+  if (tx.s.terra) markTerraNpc(tx.s.terra.map as TerraState, playerId);
+}
+
+/**
+ * A retiring house's land goes back to neutral, its fronts and the fronts against it stop, its
+ * alliances end and each ally is told. Nothing to do off the map or once the week is closed.
+ */
+export function withdrawTerra(tx: Tx, playerId: PlayerId): void {
+  if (!tx.s.players[playerId]) fail("unknown_player");
+  if (!terraOn(tx.ctx) || !tx.s.terra) return;
+  const map = advanceTerraWorld(tx) as TerraState;
+  if (map.closed || !map.players[playerId]) return;
+  for (const ally of withdrawFromTerra(map, playerId, tx.now)) {
+    emit(tx, "terra_alliance_broken", ally, { by: playerId, reason: "withdrawn" });
+  }
+}
+
+export function applyTerra(
+  tx: Tx,
+  cmd: Exclude<TerraCommand, TerraSkirmishPay | TerraWithdraw>,
+): void {
   const cfg = terraOn(tx.ctx);
   if (!cfg) fail("terra_off");
   if (!tx.s.players[cmd.playerId]) fail("unknown_player");
@@ -354,6 +416,7 @@ export function applyTerra(tx: Tx, cmd: Exclude<TerraCommand, TerraSkirmishPay>)
   switch (cmd.type) {
     case "terraPlace":
       placeOnTerra(map, cfg, id, cmd.cell, now);
+      if (tx.s.players[id]?.npc) markTerraNpc(map, id);
       joinTeam(map, id, tx.s.players[id]?.region ?? "");
       emit(tx, "terra_placed", id, { cell: cmd.cell });
       break;
@@ -382,6 +445,7 @@ export function applyTerra(tx: Tx, cmd: Exclude<TerraCommand, TerraSkirmishPay>)
     case "terraSend":
       sendTroops(map, cfg, id, cmd.to, cmd.count, now);
       emit(tx, "terra_troops_received", cmd.to, { from: id, count: cmd.count });
+      emit(tx, "terra_troops_sent", id, { to: cmd.to, count: cmd.count });
       break;
     case "terraBuild": {
       const price = cfg.buildings[cmd.kind]?.price;

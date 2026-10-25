@@ -54,6 +54,18 @@ function freeCell(w: World): number {
   return i;
 }
 
+/** A neutral cell next to the merchant's land. */
+function border(w: World, id: string): number {
+  const map = w.state.terra?.map;
+  if (!map) throw new Error("no map");
+  const i = map.owner.findIndex(
+    (o, k) =>
+      o === null && map.map.land[k] && hexNeighbors(map.map, k).some((n) => map.owner[n] === id),
+  );
+  if (i < 0) throw new Error("no border");
+  return i;
+}
+
 function joined(w: World, ...ids: string[]) {
   for (const id of ids) w.do({ type: "join", playerId: id, region: "terraferma" });
   w.do({ type: "tick" });
@@ -96,6 +108,19 @@ describe("the Terraferma in the world", () => {
     expect(poor.state.terra?.map.players.b?.boughtCap).toBeUndefined();
   });
 
+  it("counts the cells each merchant's fronts take, and the cities, once per merchant", () => {
+    const w = live();
+    w.at(10 * HOUR);
+    joined(w, "a");
+    act(w, { type: "terraFront", playerId: "a", aim: border(w, "a"), shareBps: 8_000 });
+    const res = w.advance(3 * HOUR).do({ type: "tick" });
+    const taken = res.effects.events.filter((e) => e.type === "terra_cells_taken");
+    expect(taken).toHaveLength(1);
+    expect(taken[0]?.playerId).toBe("a");
+    expect(Number(taken[0]?.data?.count)).toBeGreaterThan(0);
+    expect(Number(taken[0]?.data?.cities)).toBeGreaterThanOrEqual(0);
+  });
+
   it("closes the week: Influence by tier, and the Signore's decree for the next one", () => {
     const w = live();
     joined(w, "a", "b");
@@ -118,6 +143,69 @@ describe("the Terraferma in the world", () => {
     expect(res.effects.events.some((e) => e.type === "terra_closed")).toBe(true);
     expect(w.state.terra?.week).toBe(1);
     expect(w.state.terraDecree).toEqual({ week: 1, code: "dime", members: ["a"] });
+  });
+});
+
+describe("the computer's houses on the Terraferma", () => {
+  it("are marked at their arrival by the server, never by a command of a merchant", () => {
+    const w = live();
+    w.do({ type: "join", playerId: "bot", region: "terraferma", npc: true } as Command);
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    expect(w.state.players.bot?.npc).toBe(true);
+    expect(w.state.players.a?.npc).toBeUndefined();
+    // Houses of an older version are marked afterwards, once.
+    w.do({ type: "join", playerId: "old", region: "terraferma" });
+    w.do({ type: "markNpc", playerId: "old" } as Command);
+    expect(w.state.players.old?.npc).toBe(true);
+  });
+
+  it("are never Signore: the week's tiers and decree go to the merchants", () => {
+    const w = live();
+    w.do({ type: "join", playerId: "bot", region: "terraferma", npc: true } as Command);
+    joined(w, "a");
+    w.do({ type: "terraPlace", playerId: "bot", cell: freeCell(w) } as Command);
+    expect(w.state.terra?.map.players.bot?.npc).toBe(true);
+    act(w, { type: "terraDecree", playerId: "bot", code: "dime" });
+    act(w, { type: "terraDecree", playerId: "a", code: "embargo", target: "verona" });
+    const terra = w.state.terra;
+    if (!terra) throw new Error("no map");
+    let more = 10;
+    const owner = terra.map.owner.map((o) => (o === null && more-- > 0 ? "bot" : o));
+    w.state = { ...w.state, terra: { ...terra, map: { ...terra.map, owner } } };
+    const res = w.at(WEEK + MIN).do({ type: "tick" });
+    const influence = res.effects.events.filter(
+      (e) => e.type === "influence_earned" && e.data?.source === "terraferma",
+    );
+    expect(influence.map((e) => [e.playerId, e.data?.amount])).toEqual([["a", 20]]);
+    expect(w.state.terraDecree?.code).toBe("embargo");
+  });
+
+  it("hand back their land, fronts and alliances when they retire, the allies told", () => {
+    const w = live();
+    joined(w, "a", "bot");
+    // A house of an older version, already on the map: marked there too.
+    w.do({ type: "markNpc", playerId: "bot" } as Command);
+    expect(w.state.terra?.map.players.bot?.npc).toBe(true);
+    act(w, { type: "terraAlly", playerId: "a", other: "bot" });
+    act(w, { type: "terraAccept", playerId: "bot", from: "a" });
+    expect(cellsOf(w.state.terra?.map as never, "bot").length).toBeGreaterThan(0);
+    const res = w.do({ type: "terraWithdraw", playerId: "bot" } as Command);
+    const map = w.state.terra?.map;
+    if (!map) throw new Error("no map");
+    expect(cellsOf(map, "bot")).toEqual([]);
+    expect(map.fronts.some((f) => f.owner === "bot" || f.against === "bot")).toBe(false);
+    expect((map.alliances ?? []).some((x) => x.a === "bot" || x.b === "bot")).toBe(false);
+    expect(
+      res.effects.events.some(
+        (e) =>
+          e.type === "terra_alliance_broken" &&
+          e.playerId === "a" &&
+          e.data?.reason === "withdrawn",
+      ),
+    ).toBe(true);
+    // Not on the map: nothing to hand back, and no error.
+    w.do({ type: "join", playerId: "away", region: "terraferma" });
+    expect(act(w, { type: "terraWithdraw", playerId: "away" }).ok).toBe(true);
   });
 });
 
@@ -273,6 +361,17 @@ describe("diplomacy on the Terraferma", () => {
     expect(act(w, { type: "terraSignal", playerId: "a", kind: "attack", cell }).ok).toBe(true);
     const signals = w.state.terra?.map.signals ?? [];
     expect(signals.map((s) => s.kind)).toEqual(["help", "attack"]);
+  });
+
+  it("tells the sender of troops, for the house's missions", () => {
+    const w = live();
+    joined(w, "a", "b");
+    act(w, { type: "terraAlly", playerId: "a", other: "b" });
+    act(w, { type: "terraAccept", playerId: "b", from: "a" });
+    const res = w.do({ type: "terraSend", playerId: "a", to: "b", count: 10 } as Command);
+    const sent = res.effects.events.find((e) => e.type === "terra_troops_sent");
+    expect(sent?.playerId).toBe("a");
+    expect(sent?.data).toEqual({ to: "b", count: 10 });
   });
 
   it("lets allies give each other ducats, through the books, within a day's limit", () => {

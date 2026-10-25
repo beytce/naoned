@@ -7,6 +7,14 @@ export function have(view: PlayerView, resource: string) {
   return view.inventory.find((i) => i.resource === resource)?.available ?? 0;
 }
 
+/**
+ * The batches a workshop's sheet proposes: one while the guide lasts (short lots, quick returns),
+ * then all it can start. The guide ends on its last step, the claimed mission.
+ */
+export function defaultBatches(tutorial: readonly string[], canStart: number) {
+  return tutorial.includes("mission") ? Math.max(1, canStart) : 1;
+}
+
 /** Batches of the job done, waiting to be collected. */
 export function readyOf(b: BuildingView, now: number) {
   if (!b.job) return 0;

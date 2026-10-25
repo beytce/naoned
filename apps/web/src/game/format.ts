@@ -27,10 +27,24 @@ export function d(deniers: string | bigint | null | undefined): string {
   return `${grouped(deniers)}${NBSP}d`;
 }
 
-/** The bare number, for the purse next to its coin: "1 000". */
+/** Whole ducats, cut toward zero (never rounded up): 1 128,80 is 1 128, −29,72 is −29. */
+function cut(deniers: string | bigint): bigint {
+  return (BigInt(deniers) / 100n) * 100n;
+}
+
+/**
+ * Whole ducats for the sums of a hundred and more (purse, rival, ranking, returns): « 1 128 d ».
+ * The deniers stay on unit prices and in the trade sheets, which keep `d()` and the exact sum.
+ */
+export function whole(deniers: string | bigint | null | undefined): string {
+  if (deniers === null || deniers === undefined) return "—";
+  return `${grouped(cut(deniers)).replace("-", "−")}${NBSP}d`;
+}
+
+/** The bare number in whole ducats, for the purse next to its coin: "1 000". */
 export function amount(deniers: string | bigint | null | undefined): string {
   if (deniers === null || deniers === undefined) return "—";
-  return grouped(deniers);
+  return grouped(cut(deniers));
 }
 
 export function duration(ms: number): string {

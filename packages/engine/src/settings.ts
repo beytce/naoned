@@ -982,10 +982,16 @@ export const worldSettingsSchema = z.object({
               id: z.string(),
               event: z.string(),
               filter: z.record(z.string(), z.union([z.string(), z.number()])).prefault({}),
+              /** The event's data field to add up (absent: each event counts one). */
+              sum: z.string().optional(),
+              /** A family of missions, capped on a board by `groupMax`. */
+              group: z.string().optional(),
               count: positive,
               influence: positive,
             }),
           ),
+          /** At most this many missions of a group on a board (the optional Terraferma's). */
+          groupMax: z.record(z.string(), qty).prefault({}),
         })
         .optional(),
       /** What Influence buys in the world (absent: nothing but patents). */

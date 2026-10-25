@@ -112,15 +112,26 @@ export function missionBoard(ctx: WorldContext, now: number): number {
   return Math.max(0, Math.floor((now - ctx.startAt) / (every * HOUR_MS)));
 }
 
-/** The missions of a board, drawn from the pool, the same for every merchant. */
+/**
+ * The missions of a board, drawn from the pool, the same for every merchant. A group past its cap
+ * gives way to the next mission drawn.
+ */
 function missionsOf(ctx: WorldContext, board: number) {
   const cfg = ctx.settings.house?.missions;
   if (!cfg) return [];
+  const taken: Record<string, number> = {};
   return cfg.pool
     .map((m) => ({ m, key: draw(ctx, `house-missions:${board}:${m.id}`) }))
     .sort((a, b) => a.key - b.key)
-    .slice(0, cfg.perBoard)
-    .map((x) => x.m);
+    .map((x) => x.m)
+    .filter((m) => {
+      if (m.group === undefined) return true;
+      const max = cfg.groupMax[m.group];
+      if (max !== undefined && (taken[m.group] ?? 0) >= max) return false;
+      taken[m.group] = (taken[m.group] ?? 0) + 1;
+      return true;
+    })
+    .slice(0, cfg.perBoard);
 }
 
 function missionState(tx: Tx, playerId: PlayerId) {
@@ -143,8 +154,10 @@ export function trackHouseMissions(tx: Tx): void {
     for (const m of missions) {
       if (m.event !== e.type) continue;
       if (!Object.entries(m.filter).every(([k, v]) => data[k] === v)) continue;
+      const add = m.sum === undefined ? 1 : Math.max(0, Math.floor(Number(data[m.sum] ?? 0)));
+      if (add === 0) continue;
       const mine = missionState(tx, e.playerId);
-      mine.progress[m.id] = (mine.progress[m.id] ?? 0) + 1;
+      mine.progress[m.id] = (mine.progress[m.id] ?? 0) + add;
     }
   }
 }

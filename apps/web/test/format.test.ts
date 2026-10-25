@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { amount, d, ducats } from "../src/game/format.js";
+import { amount, d, ducats, whole } from "../src/game/format.js";
 
 /** A breaking space would cut « 10 d » into « 10 » and « d » at the end of a line. */
 const BREAKING = /[ \t\n]/;
@@ -18,5 +18,14 @@ describe("amounts", () => {
     expect(d(1_100_000n)).toBe(`11${NBSP}000${NBSP}d`);
     expect(ducats(12_855n)).toBe(`128,55${NBSP}ducats`);
     expect(amount(100_000_000n)).toBe(`1${NBSP}000${NBSP}000`);
+  });
+});
+
+describe("whole ducats", () => {
+  it("cut the deniers, never round up: a purse never shows more than it holds", () => {
+    expect(whole(112_880n)).toBe(`1${NBSP}128${NBSP}d`);
+    expect(whole(-2_972n)).toBe(`−29${NBSP}d`);
+    expect(whole(99n)).toBe(`0${NBSP}d`);
+    expect(amount(112_880n)).toBe(`1${NBSP}128`);
   });
 });

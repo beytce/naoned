@@ -1,5 +1,7 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { canonicalEmail } from "../auth/canonical.js";
 import type { Db } from "../db/client.js";
+import { accounts } from "../db/schema.js";
 import { TUTORIAL_STEPS } from "./tutorial.js";
 
 const DAY = 86_400_000;
@@ -127,6 +129,22 @@ export async function retention(db: Db, worldId: string, now: number) {
     })),
     lastSeen,
   };
+}
+
+/**
+ * Accounts of before that share their mailbox with an older one (left without a canonical address
+ * by the migration of 24 October 2026), each with the address of the account that holds the
+ * mailbox: for the owner to decide, never merged by the code.
+ */
+export async function sharedMailboxes(db: Db) {
+  const rows = await db
+    .select({ email: accounts.email, canonical: accounts.emailCanonical })
+    .from(accounts)
+    .where(eq(accounts.isBot, false));
+  const holder = new Map(rows.filter((r) => r.canonical).map((r) => [r.canonical, r.email]));
+  return rows
+    .filter((r) => !r.canonical)
+    .map((r) => ({ email: r.email, holder: holder.get(canonicalEmail(r.email)) ?? null }));
 }
 
 /**

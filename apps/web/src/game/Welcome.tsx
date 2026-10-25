@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { fr } from "../i18n.js";
 import { Big, Label, Sheet, Slab } from "../ui.js";
 import type { GameProps } from "./Game.js";
-import { d } from "./format.js";
+import { d, whole } from "./format.js";
 import { harvestAndRestart } from "./harvest.js";
 import type { Welcome as WelcomeData } from "./types.js";
 
@@ -53,7 +53,7 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
                 data.week.award ? (fr.game.week.awards[data.week.award] ?? null) : null,
               )}
             </p>
-            <p className="text-sm text-cream-dim">{t.week.gain(d(data.week.gain))}</p>
+            <p className="text-sm text-cream-dim">{t.week.gain(whole(data.week.gain))}</p>
             {data.week.award && <p className="text-sm text-gold">{t.week.award}</p>}
           </section>
         )}
@@ -62,7 +62,7 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
         <section className="space-y-2 cut bg-night-3 p-3 ring-1 ring-inset ring-line">
           <div className="flex items-baseline justify-between">
             <Label>{t.commerce}</Label>
-            <Big className="text-2xl text-lagoon">+{d(total)}</Big>
+            <Big className="text-2xl text-lagoon">+{whole(total)}</Big>
           </div>
           {income.length > 0 ||
           (data.road && data.road.arrived > 0) ||
@@ -70,7 +70,7 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
             <ul className="space-y-1.5">
               {income.map(([reason, v]) => (
                 <Line key={reason} mark="◎" tone="text-cream">
-                  <span className="font-semibold text-gold">+{d(v)}</span>{" "}
+                  <span className="font-semibold text-gold">+{whole(v)}</span>{" "}
                   {t.sources[reason] ?? reason}
                 </Line>
               ))}

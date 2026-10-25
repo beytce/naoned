@@ -122,6 +122,8 @@ export async function deleteAccount(db: Db, accountId: string): Promise<void> {
       .update(accounts)
       .set({
         email: `deleted-${accountId}@deleted.invalid`,
+        // The mailbox is free again: a new sign-up with it makes a new account.
+        emailCanonical: null,
         pseudo: null,
         crest: null,
         lastLoginAt: null,

@@ -1798,11 +1798,11 @@ export const fr = {
           vehicle: () => "Améliorer un véhicule",
           chests: (n: number) => `Ouvrir ${n} coffres du jour`,
           bales: (n: number) => `Ouvrir ${n} ballots de Faraj`,
-          levy: (n: number) => `Lever ${n} fois l'impôt de la famille`,
-          marches: (n: number) => `Envoyer ${n} marches`,
-          assault: () => "Gagner un assaut",
-          defence: () => "Défendre une terre",
-          work: () => "Bâtir un ouvrage",
+          terra_place: () => "Poser son comptoir sur la Terraferme",
+          terra_cells: (n: number) => `Prendre ${n} cases sur la Terraferme`,
+          terra_city: () => "Prendre une ville de la Terraferme",
+          terra_rocca: () => "Bâtir une Rocca",
+          terra_aid: () => "Envoyer des troupes à un allié",
         } as Record<string, (n: number) => string>,
       },
       spend: {
@@ -1829,7 +1829,7 @@ export const fr = {
         /** The same on a phone's narrow line: the sign of a change and its price. */
         rerollShort: (n: number) => `Changer · ${n} ✦`,
         /** Why the task cannot be changed yet. */
-        rerollNeed: (n: number) => `Il faut ${n} ✦ d'Influence pour la changer.`,
+        rerollCost: (n: number, have: number) => `Changer une tâche : ${n} ✦ (vous : ${have})`,
       },
     },
     profileTitle: "Ma progression",
@@ -2573,6 +2573,8 @@ export const fr = {
     invalid_input: "Vérifiez votre saisie.",
     pseudo_taken: "Ce nom est déjà pris.",
     too_many_requests: "Trop de demandes. Réessayez dans quelques minutes.",
+    disposable_email:
+      "Les adresses jetables ne sont pas acceptées : utilisez votre adresse habituelle.",
     network: "Le serveur ne répond pas. Vérifiez votre connexion.",
     mail_unavailable: "L'e-mail n'a pas pu être envoyé. Réessayez dans quelques minutes.",
     unknown: "Une erreur est survenue.",

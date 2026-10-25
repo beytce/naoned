@@ -11,6 +11,7 @@ export function Daily(props: GameProps) {
   if (!daily || daily.tasks.length === 0) return null;
   const spend = props.view.houseSpend;
   const ready = daily.tasks.some((task) => task.done && !task.claimed);
+  const canReroll = !!spend && (props.influence ?? 0) >= spend.dailyReroll;
   return (
     <Panel glow={ready ? "gold" : undefined}>
       {/* On a narrow phone the streak goes under the kicker, whole, rather than both cut in two. */}
@@ -44,14 +45,14 @@ export function Daily(props: GameProps) {
                 )}
               </span>
             </div>
-            {!task.done && !task.claimed && spend && (
+            {!task.done && !task.claimed && spend && canReroll && (
               // A short word, the whole action read aloud: the task's words keep the room.
               <Slab
                 size="sm"
                 tone="ghost"
                 className="shrink-0"
                 label={fr.game.house.spend.reroll(spend.dailyReroll)}
-                disabled={props.busy || (props.influence ?? 0) < spend.dailyReroll}
+                disabled={props.busy}
                 onClick={() => props.spend({ use: "daily", taskId: task.id })}
               >
                 {fr.game.house.spend.rerollShort(spend.dailyReroll)}
@@ -67,15 +68,15 @@ export function Daily(props: GameProps) {
                 {t.claim}
               </Slab>
             )}
-            {/* The change switched off says why, never silent, across the whole line. */}
-            {!task.done && !task.claimed && spend && (props.influence ?? 0) < spend.dailyReroll && (
-              <span className="meta basis-full">
-                {fr.game.house.spend.rerollNeed(spend.dailyReroll)}
-              </span>
-            )}
           </li>
         ))}
       </ul>
+      {/* Without the Influence, no wall of greyed buttons: one line says what a change costs. */}
+      {spend && !canReroll && daily.tasks.some((task) => !task.done && !task.claimed) && (
+        <p className="meta mt-2">
+          {fr.game.house.spend.rerollCost(spend.dailyReroll, props.influence ?? 0)}
+        </p>
+      )}
       <div className="mt-3 flex items-center justify-between gap-3 cut bg-night-2 px-3 py-2.5 ring-1 ring-inset ring-line/70">
         <div className="min-w-0">
           <p className="text-xs text-cream-dim">{t.chest}</p>

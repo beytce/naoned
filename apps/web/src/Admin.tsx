@@ -152,9 +152,14 @@ export function Admin() {
   }, []);
 
   const [pairs, setPairs] = useState<Pair[] | null>(null);
+  const [shared, setShared] = useState<{ email: string; holder: string | null }[]>([]);
   useEffect(() => {
     fetch("/api/admin/suspicious", { credentials: "same-origin" })
-      .then(async (r) => (r.ok ? setPairs((await r.json()).pairs) : setPairs([])))
+      .then(async (r) => {
+        const body = r.ok ? await r.json() : {};
+        setPairs(body.pairs ?? []);
+        setShared(body.sharedMailboxes ?? []);
+      })
       .catch(() => setPairs([]));
   }, []);
 
@@ -334,6 +339,23 @@ export function Admin() {
           </ul>
         )}
       </Panel>
+      {shared.length > 0 && (
+        <Panel>
+          <Label>Adresses en double</Label>
+          <p className="mt-1 text-xs text-cream-dim">
+            Comptes d'avant le 24 octobre 2026 qui partagent la boîte mail d'un compte plus ancien
+            (alias « + », points de Gmail). Ils se connectent encore avec leur propre adresse ; rien
+            n'est fusionné. À trancher à la main.
+          </p>
+          <ul className="mt-3 space-y-1 text-sm">
+            {shared.map((s) => (
+              <li key={s.email} className="break-all">
+                {s.email} → {s.holder ?? "?"}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
       <Reports />
       <SeasonEnd />
     </main>

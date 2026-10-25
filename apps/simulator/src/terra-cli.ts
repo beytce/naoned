@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { parseSettings, venice1450Settings } from "@comptoirs/engine";
-import { TERRA_PROFILES, type TerraResult, runTerra } from "./terra.js";
+import { TERRA_PROFILES, type TerraResult, humansOf, runTerra } from "./terra.js";
 
 /** The placebo controls: other draws of the skirmish ranks, and of the minutes of the sessions. */
 const DRAWS = ["b", "c", "d"];
@@ -29,6 +29,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const { values } = parseArgs({
   options: {
     seeds: { type: "string", default: "1,2,3,4,5" },
+    /** Only the Signore among n people and the computer's houses (the 24 October 2026 fix). */
+    humans: { type: "string" },
     out: { type: "string", default: join(here, "..", "out") },
   },
 });
@@ -114,6 +116,39 @@ function section({ r, first, off, draws, shifted, blind }: Runs): string {
     "",
   ];
   return lines.join("\n");
+}
+
+if (values.humans) {
+  // The week as it is, then the same week with the others marked as the computer's houses: the
+  // marks only change the close, so the week played is the same.
+  const n = Number(values.humans);
+  const rows = seeds.map((seed) => {
+    const humans = humansOf(seed, n);
+    const before = runTerra(cfg, seed);
+    const after = runTerra(cfg, seed, undefined, undefined, "merchants", { humans });
+    const influence = (x: TerraResult) =>
+      x.players.filter((p) => humans.has(p.id)).reduce((t, p) => t + p.influence, 0);
+    const npc = (x: TerraResult) => x.signore.id !== null && !humans.has(x.signore.id);
+    console.log(`seed ${seed}: done`);
+    return { seed, before, after, influence, npc };
+  });
+  const lines = [
+    `# Le Signore parmi ${n} marchands et ${40 - n} maisons du PNJ`,
+    "",
+    "| Graine | Signore avant | PNJ ? | Signore après | PNJ ? | Influence des marchands avant → après |",
+    "| --- | --- | --- | --- | --- | --- |",
+    ...rows.map(
+      (r) =>
+        `| ${r.seed} | ${r.before.signore.id ?? "aucun"} | ${r.npc(r.before) ? "oui" : "non"} | ${r.after.signore.id ?? "aucun"} | ${r.npc(r.after) ? "oui" : "non"} | ${r.influence(r.before)} → ${r.influence(r.after)} |`,
+    ),
+    "",
+    `Semaines avec un Signore PNJ : avant ${rows.filter((r) => r.npc(r.before)).length} / ${rows.length}, après ${rows.filter((r) => r.npc(r.after)).length} / ${rows.length}.`,
+  ].join("\n");
+  const out = values.out ?? join(here, "..", "out");
+  mkdirSync(out, { recursive: true });
+  writeFileSync(join(out, "terraferma-humans.md"), lines);
+  console.log(lines);
+  process.exit(0);
 }
 
 const results = seeds.map((seed): Runs => {

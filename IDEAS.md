@@ -62,7 +62,8 @@ Tout ce qui sort du périmètre du MVP (voir docs/CADRAGE.md) est noté ici, pas
 - **Le burchiello sur la Brenta** (la ligne de saut) : un ouvrage de famille qui raccourcit une route (Venise–Padoue par la Brenta) pour tous ses membres pendant quelques jours, dans la Campagne. Borné : une route, temporaire, la commande garde son prix.
 - **L'Arsenal arme une flotte** (les étoiles bleues) : pendant un acte, une grande commande que tous les marchands remplissent ensemble, récompense partagée au prorata. Le code des grands chantiers existe encore (`projects`, coupé par les réglages depuis que les livraisons sont la demande des villes) ; à rouvrir comme événement d'acte plutôt que chaque semaine. Mesure : la part de joueurs actifs qui livrent ensemble.
 - **Trêve entre deux familles** (la station diplomatique) : une semaine de Campagne sans assaut entre deux familles qui la signent. Risque : à quatre familles, une alliance fige la carte ; à n'ouvrir qu'avec plus de familles.
-- Écartées : étoiles rouges et station de recherche (les ballots de Faraj tiennent ce rôle), étoiles blanches (c'est la Campagne), station d'échange (le second comptoir, retiré), récolteur d'étoiles (du rendement en plus), scanners (rien de caché sur la carte).
+- Les étoiles rouges reviennent comme la Condotta (décision du porteur du 24 octobre 2026, voir docs/expertise-2026-10-24.md, E2-5).
+- Écartées : station de recherche (les ballots de Faraj tiennent ce rôle), étoiles blanches (c'est la Campagne), station d'échange (le second comptoir, retiré), récolteur d'étoiles (du rendement en plus), scanners (rien de caché sur la carte).
 
 ## Retours design du 24 octobre 2026 (plus tard, avec leur mesure)
 Voir `docs/retours-design-2026-10-24.md`, « Idées waouh ». Aucune n'est une mécanique sauf mention.

@@ -24,6 +24,11 @@ export const accounts = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     email: text("email").notNull(),
+    /**
+     * The mailbox (`canonicalEmail`): one account each. Null only for an account of before that
+     * shared its mailbox with an older one, left for the owner to decide.
+     */
+    emailCanonical: text("email_canonical"),
     pseudo: text("pseudo"),
     /** Cosmetic coat of arms chosen by the player: { shape, color, symbol }. */
     crest: jsonb("crest").$type<{ shape: string; color: string; symbol: string }>(),
@@ -38,6 +43,7 @@ export const accounts = pgTable(
   },
   (t) => [
     uniqueIndex("accounts_email_key").on(t.email),
+    uniqueIndex("accounts_email_canonical_key").on(t.emailCanonical),
     uniqueIndex("accounts_pseudo_key").on(sql`lower(${t.pseudo})`),
   ],
 );

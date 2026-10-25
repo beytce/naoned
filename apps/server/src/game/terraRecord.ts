@@ -65,7 +65,8 @@ export async function recordTerra(
   const rows = await tx
     .select({ id: accounts.id, rating: accounts.terraRating })
     .from(accounts)
-    .where(inArray(accounts.id, ids));
+    // The computer's houses keep no rating and move nobody's.
+    .where(and(inArray(accounts.id, ids), eq(accounts.isBot, false)));
   const rating = new Map(rows.map((r) => [r.id, r.rating]));
   const known = results.filter((r) => rating.has(r.accountId));
   const next = newRatings(

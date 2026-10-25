@@ -931,6 +931,56 @@ describe("a week in teams", () => {
   });
 });
 
+describe("the Signore is a merchant, never a house run by the computer", () => {
+  const week = () => {
+    const cfg = config({ start: { ...testTerraferma.start, protectionHours: 0, minDistance: 2 } });
+    const s = newTerra(cfg, "seed", 10, START);
+    for (const id of ["bot1", "bot2", "a", "b"]) placeOnTerra(s, cfg, id, freeCell(s, 2), START);
+    const glory = { bot1: 50, bot2: 40, a: 20, b: 10 };
+    for (const [id, g] of Object.entries(glory)) (s.players[id] as { glory: number }).glory = g;
+    return { cfg, s, npc: (id: string) => id.startsWith("bot") };
+  };
+
+  it("ranks the computer's houses on the board but gives the tiers to the merchants alone", () => {
+    const { cfg, s, npc } = week();
+    const close = closeTerra(s, cfg, START + HOUR, undefined, npc);
+    expect(close.ranking.map((r) => r.id)).toEqual(["bot1", "bot2", "a", "b"]);
+    expect(close.signore).toBe("a");
+    const by = Object.fromEntries(close.ranking.map((r) => [r.id, r]));
+    expect(by.a?.tier).toBe("signore");
+    expect(by.b?.tier).toBe("podium");
+    expect(by.bot1?.tier).toBe("none");
+    expect(by.bot1?.influence).toBe(0);
+    expect(by.a?.influence).toBe(cfg.close.influence.signore);
+  });
+
+  it("is a merchant who holds land: none at all, no Signore and no decree", () => {
+    const { cfg, s, npc } = week();
+    for (const id of ["a", "b"]) (s.players[id] as { glory: number }).glory = 0;
+    const close = closeTerra(s, cfg, START + HOUR, undefined, npc);
+    expect(close.signore).toBeNull();
+    expect(close.decree).toBeNull();
+  });
+
+  it("is the best merchant of the winning team in a week in teams", () => {
+    const { cfg, s, npc } = week();
+    s.teamMode = true;
+    joinTeam(s, "bot1", "lagoon");
+    joinTeam(s, "b", "lagoon");
+    joinTeam(s, "bot2", "dolomites");
+    joinTeam(s, "a", "dolomites");
+    (s.players.bot2 as { glory: number }).glory = 30;
+    const close = closeTerra(s, cfg, START + HOUR, undefined, npc);
+    expect(close.teams?.[0]?.team).toBe("lagoon");
+    expect(close.signore).toBe("b");
+  });
+
+  it("changes nothing when no house is the computer's", () => {
+    const { cfg, s } = week();
+    expect(closeTerra(s, cfg, START + HOUR).signore).toBe("bot1");
+  });
+});
+
 describe("the week's history", () => {
   it("records every cell that changes hands, enough to replay the map from its start", () => {
     const cfg = config({ start: { ...testTerraferma.start, troops: 400 } });
