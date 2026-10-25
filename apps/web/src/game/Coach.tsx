@@ -3,13 +3,23 @@ import { createPortal } from "react-dom";
 import { Lorenzo } from "../art/scenes.js";
 import { fr } from "../i18n.js";
 import { LorenzoCard, Slab, clock } from "../ui.js";
-import { affordable, have } from "./Comptoir.js";
+import { affordable, have, missingMaterials } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
+import { RendezVous } from "./RendezVous.js";
 import { bringOnce, browserPage, isCovered, outOfSheet, unionBox } from "./coachSight.js";
 import { minutesLabel } from "./format.js";
 import { store } from "./store.js";
+import { outputQty } from "./workshops.js";
 
-const STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "mission"] as const;
+const STEPS = [
+  "produce",
+  "harvest",
+  "transform",
+  "sell_city",
+  "market_buy",
+  "invest",
+  "mission",
+] as const;
 const CITY_GOODS = ["bread", "bricks", "planks"];
 /** The construction material each region lacks. */
 const MISSING: Record<string, string> = {
@@ -74,6 +84,36 @@ function produceAt(props: GameProps, id: string, building: string, text?: string
   if (props.sheet === "workshops")
     return { text: text ?? c.produceTap(building), target: `produce-${id}` };
   return atHome(props, { text: text ?? c.openWorkshops(building), target: "panel-workshops" });
+}
+
+/**
+ * The first upgrade of a raw workshop: open it, buy at once what it lacks (no more), upgrade. Its
+ * gain is read from the yield; without the means (cash, goods on sale), the guide moves on.
+ */
+function investStep(props: GameProps, isRaw: (type: string) => boolean): CoachStep | null {
+  const c = fr.game.coach;
+  const { view, names } = props;
+  const raw = view.buildings
+    .filter((b) => b.upgradeCost && isRaw(b.type))
+    .sort((a, b) => a.level - b.level)[0];
+  const cost = raw?.upgradeCost;
+  if (!raw || !cost) return null;
+  const { lines, estimate } = missingMaterials(props, cost);
+  if ((lines.length > 0 && estimate === 0n) || BigInt(view.cash) < BigInt(cost.ducats) + estimate)
+    return { text: c.investLater, skip: "skipInvest" };
+  const name = names.building(raw.type);
+  if (props.sheet === `upgrade:${raw.id}`) {
+    if (lines.length > 0) return { text: c.investBuy, target: "buy-missing" };
+    const [resource, base] = Object.entries(
+      props.catalog.buildings.find((b) => b.type === raw.type)?.recipe?.outputs ?? {},
+    )[0] ?? ["", 1];
+    const now = outputQty(props, resource, base, raw.level);
+    const next = outputQty(props, resource, base, raw.level + 1);
+    const times = (next / Math.max(1, now)).toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+    return { text: c.invest(name, raw.level + 1, times), target: "sheet-upgrade" };
+  }
+  if (props.sheet === "workshops") return { text: c.investTap(name), target: `upgrade-${raw.id}` };
+  return atHome(props, { text: c.investOpen(name), target: "panel-workshops" });
 }
 
 type CoachProps = GameProps & { departing: boolean };
@@ -220,6 +260,12 @@ function nextStep(props: CoachProps): CoachStep {
     if (props.selection?.kind === "city" && props.selection.code === "venezia")
       return { text: fr.game.coach.goRialto, target: "panel-rialto" };
     return { text: fr.game.coach.goRialto, target: "city-venezia" };
+  }
+
+  // The first upgrade: the merchant leaves knowing the house grows (E3-3 of the experts).
+  if (!done.has("invest") && !done.has("mission") && store.get("skipInvest") !== "1") {
+    const step = investStep(props, isRaw);
+    if (step) return step;
   }
 
   if (!done.has("mission")) {
@@ -439,6 +485,8 @@ export function Coach(props: CoachProps) {
           }
         >
           <p className="mt-1 text-sm leading-snug">{text}</p>
+          {/* The last card gives a time to come back, and the means to be told (E3-1). */}
+          {step.final && <RendezVous props={props} />}
           {step.waitUntil && (
             <p className="meta mt-1">
               {fr.game.coach.readyIn(clock(Math.max(0, step.waitUntil - props.now)))}

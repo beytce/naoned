@@ -125,6 +125,8 @@ export interface GameProps {
   influence: number | null;
   /** The rival of the week (null: none). */
   rival: GameResponse["rival"];
+  /** How often the game asked to notify, and the sessions played. */
+  pushAsk: GameResponse["pushAsk"];
   /** The merchant's permanent level (honorary). */
   level: Level | null;
   /**
@@ -188,6 +190,7 @@ export function Game(props: {
   const [familyLatestAt, setFamilyLatestAt] = useState<number | null>(null);
   const [influence, setInfluence] = useState<number | null>(null);
   const [rival, setRival] = useState<GameResponse["rival"]>(null);
+  const [pushAsk, setPushAsk] = useState<GameResponse["pushAsk"]>(null);
   const [level, setLevel] = useState<Level | null>(null);
   const loaded = useRef(false);
   const [welcome, setWelcome] = useState<WelcomeData | null>(null);
@@ -255,6 +258,7 @@ export function Game(props: {
       setFamilyLatestAt(res.familyLatestAt ?? null);
       setInfluence(res.influence ?? null);
       setRival(res.rival ?? null);
+      if (res.pushAsk !== undefined) setPushAsk(res.pushAsk);
       setLevel(res.level ?? null);
       if (res.welcome) setWelcome(res.welcome);
       setCeremony(res.ceremony ?? null);
@@ -610,6 +614,7 @@ export function Game(props: {
     familyLatestAt,
     influence,
     rival,
+    pushAsk,
     level,
     bots,
     tab: layer === "campaign" ? "famille" : selection?.kind === "cart" ? "routes" : "comptoir",

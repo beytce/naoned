@@ -530,6 +530,8 @@ export interface PlayerView {
   road: RoadView | null;
   /** The galleys of the Muda (null when the world has none). */
   muda: MudaView | null;
+  /** The hours of the guide's last card, from the server. */
+  agenda: { queuesEndAt: number | null; nextWaveAt: number | null; nextMudaAt: number | null };
   rations: {
     resource: string;
     perDay: number;
@@ -701,6 +703,8 @@ export interface GameResponse {
   error?: string;
   /** Unread notifications (the bell). */
   unread?: number;
+  /** How often the game asked to notify, and the sessions played (the reminder's rule). */
+  pushAsk?: { count: number; sessions: number } | null;
   /** Newest message of the family's thread (null: no family or no message). */
   familyLatestAt?: number | null;
   /** The house's Influence, kept from season to season (worlds with the house only). */

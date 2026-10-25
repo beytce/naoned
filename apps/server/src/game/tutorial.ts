@@ -7,6 +7,8 @@ export const TUTORIAL_STEPS = [
   "transform",
   "sell_city",
   "market_buy",
+  // The first upgrade of a workshop (E3-3 of the experts): the merchant leaves knowing it grows.
+  "invest",
   "mission",
 ] as const;
 export type TutorialStep = (typeof TUTORIAL_STEPS)[number];
@@ -26,6 +28,7 @@ export function stepsReached(theme: Theme, events: GameEvent[]): Set<TutorialSte
     if (e.type === "order_placed" && data.side === "buy" && Number(data.filled) > 0) {
       reached.add("market_buy");
     }
+    if (e.type === "upgrade") reached.add("invest");
     if (e.type === "mission_claimed") reached.add("mission");
   }
   return reached;

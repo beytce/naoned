@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { amount, d, ducats, whole } from "../src/game/format.js";
+import { amount, d, ducats, hourOf, whole } from "../src/game/format.js";
 
 /** A breaking space would cut « 10 d » into « 10 » and « d » at the end of a line. */
 const BREAKING = /[ \t\n]/;
@@ -27,5 +27,12 @@ describe("whole ducats", () => {
     expect(whole(-2_972n)).toBe(`−29${NBSP}d`);
     expect(whole(99n)).toBe(`0${NBSP}d`);
     expect(amount(112_880n)).toBe(`1${NBSP}128`);
+  });
+});
+
+describe("an hour of Paris", () => {
+  it("reads the French way, whatever the browser's zone", () => {
+    expect(hourOf(Date.UTC(2026, 10, 2, 7, 0))).toBe(`8${NBSP}h`);
+    expect(hourOf(Date.UTC(2026, 6, 2, 19, 40))).toBe(`21${NBSP}h${NBSP}40`);
   });
 });

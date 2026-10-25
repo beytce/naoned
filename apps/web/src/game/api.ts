@@ -100,6 +100,9 @@ export const gameApi = {
   pushSettings: () => call<PushSettings>("GET", "/api/notifications/push"),
   setPushOff: (off: NotificationKind[]) =>
     call<{ off: NotificationKind[] }>("PATCH", "/api/notifications/push", { off }),
+  /** The game asked to notify: the answer, for the measures. */
+  pushAsk: (accepted: boolean, ios: boolean) =>
+    call<void>("POST", "/api/game/push-ask", { accepted, ios }),
   subscribe: (sub: PushSubscriptionJSON) =>
     call<{ ok: true }>("POST", "/api/notifications/push/subscribe", sub),
   unsubscribe: (endpoint: string) =>

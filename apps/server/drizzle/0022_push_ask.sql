@@ -1,0 +1,1 @@
+ALTER TABLE "accounts" ADD COLUMN "push_ask_count" integer DEFAULT 0 NOT NULL;

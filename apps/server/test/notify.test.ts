@@ -233,6 +233,25 @@ describe("notifications", () => {
     expect(String(morning[0]?.payload.body)).toContain("150");
   });
 
+  it("counts the asks to notify and gives the hours of the guide's last card", async () => {
+    const ada = await player("ada@example.org");
+    const game = () =>
+      app.inject({ method: "GET", url: "/api/game", headers: { cookie: ada.cookie } });
+    expect((await game()).json().pushAsk).toMatchObject({ count: 0 });
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/game/push-ask",
+      headers: { cookie: ada.cookie },
+      payload: { accepted: false, ios: true },
+    });
+    expect(res.statusCode).toBe(204);
+    expect((await game()).json().pushAsk).toMatchObject({ count: 1 });
+    await produce(ada.id);
+    const agenda = (await game()).json().view.agenda;
+    expect(agenda.queuesEndAt).toBeGreaterThan(now);
+    expect(agenda.nextWaveAt).toBeGreaterThan(now);
+  });
+
   it("refuses a push endpoint outside the browsers' push services", async () => {
     const ada = await player("ada@example.org");
     const res = await subscribe(ada.cookie, "https://10.0.0.1/internal");

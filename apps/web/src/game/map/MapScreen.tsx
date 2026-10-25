@@ -8,6 +8,7 @@ import { Big, Panel, Qty, Sheet, Slab, clock } from "../../ui.js";
 import { ActCard } from "../Acts.js";
 import { CargoSheet, loadOrders, loadSummary } from "../Cargo.js";
 import { Coach } from "../Coach.js";
+import { ComeBack } from "../ComeBack.js";
 import { CounterSheets, buyRationsSheet, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import type { GameProps } from "../Game.js";
@@ -902,6 +903,7 @@ export function MapScreen(
         {sheetKind === "sell" && sheetId && <CitySellSheet props={props} city={sheetId} />}
       </Sheet>
       <Coach key={props.guideKey} {...props} departing={departure !== null} />
+      {props.sheet === null && <ComeBack {...props} />}
     </div>
   );
 }

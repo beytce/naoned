@@ -520,7 +520,7 @@ export const venice1450Settings: WorldSettingsInput = {
     },
     {
       id: "first_upgrade",
-      day: 3,
+      day: 1,
       event: "upgrade",
       count: 1,
       reward: { goods: { bricks: 10, planks: 10 } },

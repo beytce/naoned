@@ -44,6 +44,8 @@ export const accounts = pgTable(
      * Where the account came from, recorded at its creation: the shared link's `ref` (the pseudo
      * of who shared it) and the campaign's `utm_*`, for the launch's measures.
      */
+    /** How many times the game asked to notify (the guide's card, then one reminder at most). */
+    pushAskCount: integer("push_ask_count").notNull().default(0),
     ref: text("ref"),
     utmSource: text("utm_source"),
     utmMedium: text("utm_medium"),

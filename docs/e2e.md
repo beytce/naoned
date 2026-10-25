@@ -1,7 +1,7 @@
 # Test de mise en page (e2e)
 
 `apps/web/e2e/layout.mjs` joue la première session complète sur deux téléphones (390 × 844 et
-320 × 568) : connexion, nom, guide de Lorenzo jusqu'à « Bravo » (objectif 6/6, récompense du Livre
+320 × 568) : connexion, nom, guide de Lorenzo jusqu'à « Bravo » (objectif 7/7, récompense du Livre
 de compte encaissée), une transformation au moulin, la Terraferme pendant sa trêve (note « Trêve »
 vérifiée), une semaine en équipes avec Milan contre le joueur puis sa clôture (la réponse de
 `GET /api/game/terra` réécrite au passage : « Équipe · Terraferma », « sur vous », « Bataille à

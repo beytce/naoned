@@ -1637,7 +1637,7 @@ export const fr = {
         `Semaine ${week} : vous terminez ${rank}${rank === 1 ? "er" : "e"} (${gain}).${award ? ` Vous êtes ${award} !` : ""}`,
       push: {
         title: "Notifications",
-        help: "Recevez une alerte sur ce téléphone ou cet ordinateur, même jeu fermé. Jamais entre 22 h et 8 h, et au plus une par type et par heure, sauf les terres menacées, envoyées tout de suite.",
+        help: "Recevez une alerte sur ce téléphone ou cet ordinateur, même jeu fermé. Jamais entre 22 h et 8 h (la gazette de 8 h 05 reprend la nuit), au plus une par type et par heure et trois par jour, sauf les terres menacées, envoyées tout de suite.",
         enable: "Activer sur cet appareil",
         disable: "Couper sur cet appareil",
         on: "Activées sur cet appareil",
@@ -1947,16 +1947,48 @@ export const fr = {
       emptyMarket:
         "Personne ne vend rien au Rialto pour l'instant et votre part de la Dogana est épuisée pour aujourd'hui. Passons, vous achèterez plus tard.",
       skip: "Passer",
-      goComptoir: "Retour au comptoir pour investir.",
-      invest: "Améliorez un atelier : il produira davantage à chaque lot.",
+      /** The first upgrade (E3-3): its gain read from the yield, never written here. */
+      investOpen: (building: string) => `Agrandissons votre ${building} : ouvrez vos ateliers.`,
+      investTap: (building: string) => `Touchez le niveau de votre ${building} pour l'agrandir.`,
+      investBuy:
+        "Il manque des matériaux : achetez-les en une fois au Rialto, juste ce qu'il faut.",
+      invest: (building: string, level: number, times: string) =>
+        `Au niveau ${level}, votre ${building} produira ×${times} à chaque lot. Agrandissez-le !`,
       ledger:
         "Voici votre Livre de compte : chaque jour, de nouveaux objectifs et leur récompense. Encaissez la première !",
       ledgerLater:
         "Votre Livre de compte, sous la cloche des Avis, vous donne vos objectifs du jour. Remplissez-les pour gagner des récompenses.",
       investLater:
         "Il vous faut encore des briques et des planches pour améliorer un atelier. Produisez, vendez, achetez : c'est la boucle du marchand !",
-      done: "Bravo, vous connaissez la boucle : produire, vendre, réinvestir. Revenez récolter au moins toutes les 12 heures : lancez la production le soir, elle tourne toute la nuit.",
+      done: "Bravo, vous connaissez la boucle : produire, vendre, réinvestir. Lancez vos ateliers avant de partir : ils tournent sans vous.",
       finish: "Terminer",
+      /** The guide's last card: a time to come back, and the means to be told (E3-1). */
+      rendezvous: {
+        title: "Rendez-vous",
+        launch: "Tout lancer jusqu'à ce soir",
+        launched: "Vos ateliers tournent.",
+        /** The hours, from the server: when the queues end, the board's next wave. */
+        line: (queues: string | null, wave: string | null) =>
+          [
+            queues ? `Vos ateliers auront fini vers ${queues}.` : "",
+            wave ? `Les villes passent leurs prochaines commandes à ${wave}.` : "",
+          ]
+            .filter(Boolean)
+            .join(" ") || "Revenez récolter quand vos lots sont prêts.",
+        notify: "Me prévenir",
+        notifyHelp: "Une alerte quand vos lots sont prêts, trois par jour au plus, jamais la nuit.",
+        notified: "Vous serez prévenu.",
+        denied:
+          "Les alertes sont bloquées par votre navigateur : vous les retrouverez dans le Profil.",
+        reminder:
+          "Vos ateliers travaillent pendant votre absence. Voulez-vous être prévenu quand vos lots sont prêts ?",
+        later: "Plus tard",
+      },
+      install: {
+        text: "Installez Fondaco : une icône sur l'écran d'accueil, le jeu en plein écran.",
+        action: "Installer",
+        later: "Plus tard",
+      },
     },
 
     /** Company orders: a city's order filled by several merchants together. */
@@ -2415,6 +2447,8 @@ export const fr = {
         "Commerce : au-delà du niveau 5, les manufactures montent jusqu'au niveau 10, en volume ou en qualité.",
         "Commerce : affaires entre marchands — commandes sous séquestre et colleganza.",
         "Commerce : plus de prêts de la Banque ni d'entrepôts dans les villes.",
+        "Le guide de Lorenzo fait agrandir un premier atelier, et la mission « Agrandir un atelier » du Livre de compte s'ouvre dès le premier jour.",
+        "Commerce : les villes passent commande de jour, à 8 h, 11 h, 14 h, 17 h et 20 h. Personne ne prend de commande au tableau entre 22 h et 8 h ; celles de 17 h et de 20 h restent jusqu'au lendemain 10 h. Les commandes urgentes s'ouvrent avant 19 h.",
         "Terraferme : le Signore est toujours un marchand ; les maisons de l'ordinateur restent au classement de la semaine mais ne reçoivent ni palier ni Influence. Une maison qui se retire rend ses terres.",
         "Missions de la Maison : celles de l'ancienne campagne sont remplacées par des missions de la Terraferme, deux au plus par tableau.",
         "Pass Négociant : plus aucun avantage de jeu (ni quota à la Dogana, ni offre ouverte, ni produits frais en plus, ni commande du Doge échangée, ni alerte de bonne affaire) ; il ne donne que de l'information à lire et du cosmétique.",
@@ -2541,6 +2575,8 @@ export const fr = {
       invalid_programme: "Programme invalide.",
       order_reserved:
         "Cette commande est réservée un moment à la famille qui a la faveur de la ville.",
+      board_closed:
+        "Les villes ne passent pas commande la nuit : le tableau rouvre à 8 h, les commandes du soir vous attendent jusqu'à 10 h.",
       terra_off: "La Terraferme n'est pas ouverte dans ce monde.",
       terra_closed: "La semaine de la Terraferme est close : une nouvelle carte s'ouvre bientôt.",
       already_placed: "Votre camp de départ est déjà posé.",

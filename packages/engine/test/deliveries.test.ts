@@ -10,8 +10,8 @@ import {
   contractsFor,
   deliveryOrdersFor,
   hourIn,
-  nextWaveAt,
   netWorth,
+  nextWaveAt,
   orderUnitPrice,
   supplierKey,
   supplierOf,
@@ -638,7 +638,10 @@ describe("a board shared by the world", () => {
     it("never opens an order at night over a month, across the change of time", () => {
       // From 5 October 2026, midnight in Paris: the clocks go back on 25 October.
       const start = Date.UTC(2026, 9, 4, 22);
-      const c = { ...ctx({ deliveries: { ...dayWaves, urgentPerDay: 2 } } as never), startAt: start };
+      const c = {
+        ...ctx({ deliveries: { ...dayWaves, urgentPerDay: 2 } } as never),
+        startAt: start,
+      };
       const w = new World(c);
       w.now = start + 10 * HOUR;
       w.do({ type: "join", playerId: "a", region: "terraferma" });

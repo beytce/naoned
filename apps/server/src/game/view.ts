@@ -29,6 +29,8 @@ import {
   mudaView,
   netWorth,
   nextActions,
+  nextMudaAt,
+  nextWaveAt,
   openProjects,
   playerQuota,
   quoteCitySale,
@@ -762,6 +764,21 @@ export function playerView(
     road: roadView(ctx, state, playerId, now),
     /** The galleys of the Muda: what is on the quay, at what price, and the merchant's quota. */
     muda: ctx.settings.muda ? mudaView(ctx, state, playerId, now) : null,
+    /**
+     * The hours the guide's last card gives (E3-1 of the experts): when the merchant's queues all
+     * end, the board's next wave, the next galleys. All from here, none written by the client.
+     */
+    agenda: {
+      queuesEndAt:
+        Math.max(
+          0,
+          ...Object.values(state.buildings)
+            .filter((b) => b.playerId === playerId && b.job)
+            .map((b) => (b.job ? b.job.startedAt + b.job.batches * b.job.batchMs : 0)),
+        ) || null,
+      nextWaveAt: nextWaveAt(ctx, now),
+      nextMudaAt: ctx.settings.muda ? nextMudaAt(ctx, now) : null,
+    },
     rations: {
       resource: ctx.settings.rations.resource,
       perDay: rationsPerDay(ctx, buildings, playerId),
