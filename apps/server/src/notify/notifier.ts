@@ -4,8 +4,10 @@ import {
   hourIn,
   hourWithin,
   nextSkirmishCall,
+  nextWaveAt,
   seasonActs,
   seasonEnd,
+  waveOrdersCovered,
   weekIndex,
 } from "@comptoirs/engine";
 import type { Effects } from "@comptoirs/engine";
@@ -54,6 +56,8 @@ export const NOTIFICATION_KINDS = [
   "morning",
   // A call to skirmish, a quarter of an hour before (E2-2); asked for, off by default.
   "skirmish_call",
+  // A wave of the board opens with orders the stock covers, to whoever is away (E3-1, lot 2).
+  "wave",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -77,6 +81,8 @@ const TERRA_NEWS: ReadonlySet<string> = new Set([
 export const OPT_IN: ReadonlySet<NotificationKind> = new Set(["skirmish_call"]);
 /** A call to skirmish is told this long before its hour. */
 const CALL_NOTICE_MS = 15 * 60_000;
+/** A wave is told only to whoever has been away this long, with at least this many orders covered. */
+const WAVE = { awayMs: 2 * 60 * 60_000, covered: 2 };
 
 /** Pushed at once, never held back by the hourly limit per kind: the merchant has minutes. */
 const URGENT: ReadonlySet<NotificationKind> = new Set(["siege"]);
@@ -101,6 +107,7 @@ const OPENS: Partial<Record<NotificationKind, string>> = {
   family: "terra",
   morning: "notices",
   skirmish_call: "terra",
+  wave: "cargo",
 };
 
 /** The link a push opens: a place of the list, and where it comes from for the measures. */
@@ -350,6 +357,31 @@ export class Notifier {
     await this.weekResults(now);
     await this.morning(now);
     await this.skirmishCall(since, now);
+    await this.wave(since, now);
+  }
+
+  /**
+   * A wave of the board has just opened (its hours read in the settings): told to whoever has
+   * been away for two hours and could fill at least two of its orders from their stock.
+   */
+  private async wave(since: number, now: number): Promise<void> {
+    const at = nextWaveAt(this.world.ctx, since);
+    if (at === null || at > now) return;
+    const people = await this.people();
+    if (people.size === 0) return;
+    const state = this.world.current;
+    const seen = await this.db
+      .select({ id: players.accountId, at: players.lastSeenAt })
+      .from(players)
+      .where(and(eq(players.worldId, this.world.id), inArray(players.accountId, [...people])));
+    const notices: Notice[] = [];
+    for (const p of seen) {
+      if (p.at && now - p.at.getTime() < WAVE.awayMs) continue;
+      const covered = waveOrdersCovered(this.world.ctx, state, p.id, at, now);
+      if (covered < WAVE.covered) continue;
+      notices.push({ accountId: p.id, kind: "wave", data: { at, covered } });
+    }
+    await this.send(notices, now);
   }
 
   /** A quarter of an hour before a call to skirmish, to whoever asked to be told (E2-2). */

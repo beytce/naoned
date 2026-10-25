@@ -37,6 +37,7 @@ import {
 } from "./state.js";
 import { supplyArrived } from "./suppliers.js";
 import { terraEmbargoCutBps } from "./terraWorld.js";
+import { findRecipe } from "./theme.js";
 import { type Tx, emit, fail, nextId, removeStock, transfer } from "./tx.js";
 import { lockedGood, makesGood } from "./unlocks.js";
 import { vwap } from "./valuation.js";
@@ -761,6 +762,43 @@ export function nextWaveAt(ctx: WorldContext, now: number): number | null {
     if (next !== undefined) return next;
   }
   return null;
+}
+
+/**
+ * How many orders of the world's board opening at `opensAt` a merchant could fill from their
+ * stock, batches finished but not collected counted at their base yield, each unit used once
+ * (the wave's push says so only when there are enough of them, E3-1).
+ */
+export function waveOrdersCovered(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  opensAt: number,
+  now: number,
+): number {
+  const stock: Record<string, number> = {};
+  for (const [r, line] of Object.entries(state.inventories[playerId] ?? {})) {
+    stock[r] = line.available;
+  }
+  for (const b of Object.values(state.buildings)) {
+    const job = b.job;
+    if (b.playerId !== playerId || !job) continue;
+    const done = Math.min(job.batches, Math.floor((now - job.startedAt) / job.batchMs));
+    const recipe = done > 0 ? findRecipe(ctx.theme, job.recipe) : undefined;
+    for (const [r, perBatch] of Object.entries(recipe?.outputs ?? {})) {
+      stock[r] = (stock[r] ?? 0) + (perBatch ?? 0) * job.level * done;
+    }
+  }
+  const wave = deliveryOrdersFor(ctx, state, playerId, dayIndex(ctx, opensAt)).filter(
+    (o) => o.shared && o.opensAt === opensAt && !o.takenBy,
+  );
+  let covered = 0;
+  for (const o of wave) {
+    if ((stock[o.resource] ?? 0) < o.quantity) continue;
+    stock[o.resource] = (stock[o.resource] ?? 0) - o.quantity;
+    covered++;
+  }
+  return covered;
 }
 
 /** Whether nobody may take an order of the world's board now (the night). */

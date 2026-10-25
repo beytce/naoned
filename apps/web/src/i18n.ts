@@ -1607,6 +1607,9 @@ export const fr = {
             .filter(Boolean)
             .join(", ") || "votre comptoir vous attend"
         }.`,
+      /** A wave of the board opens with orders the stock covers. */
+      wave: (at: string, covered: number) =>
+        `Nouvelles commandes à ${at} : votre stock en couvre ${covered}.`,
       skirmishCall: (at: string) =>
         `Convocation d'escarmouche à ${at} : les marchands s'y retrouvent pour une partie classée.`,
       harvest: "Récolte prête : vos ateliers ont terminé leur production.",
@@ -1665,6 +1668,7 @@ export const fr = {
           muda: "Galères de la Muda à quai",
           morning: "Gazette du matin (8 h 05)",
           skirmish_call: "Convocations d'escarmouche (un quart d'heure avant)",
+          wave: "Vague de commandes que votre stock couvre (si vous êtes absent)",
         } as Record<string, string>,
       },
     },

@@ -3,6 +3,7 @@ import {
   type Command,
   type DeliveryOrder,
   type WorldSettingsInput,
+  type WorldState,
   boardDemand,
   boardRivals,
   boardTakes,
@@ -18,6 +19,7 @@ import {
   supplierStandings,
   travelMinutes,
   warehouseHolders,
+  waveOrdersCovered,
 } from "../src/index.js";
 import { deliverySettings, testDeliveries, testSettings } from "./fixture.js";
 import { DAY, HOUR, MIN, T0, World, makeContext } from "./helpers.js";
@@ -623,6 +625,45 @@ describe("a board shared by the world", () => {
       w.at(DAY + 9 * HOUR);
       expect(paris(w.now)).toBe(10);
       expect(error(dispatch(w, evening.id))).toBe("order_expired");
+    });
+
+    // The world's state with one merchant's stock replaced (the state itself is frozen).
+    const withStock = (w: World, id: string, stock: (r: string) => number): WorldState => ({
+      ...w.state,
+      inventories: {
+        ...w.state.inventories,
+        [id]: Object.fromEntries(
+          Object.entries(w.state.inventories[id] ?? {}).map(([r, l]) => [
+            r,
+            { ...l, available: stock(r) },
+          ]),
+        ),
+      },
+    });
+
+    it("counts the orders of a wave a merchant's stock covers, those taken aside", () => {
+      const w = shared({ deliveries: dayWaves } as never);
+      const at11 = common(w, "a").filter((o) => paris(o.opensAt) === 11);
+      const first = at11[0];
+      const board = w.state.board;
+      if (!first || !board) throw new Error("no order at 11 h");
+      expect(at11.length).toBeGreaterThan(1);
+      // With plenty of everything, every order of the wave is covered; with nothing, none.
+      expect(waveOrdersCovered(w.ctx, w.state, "a", first.opensAt, w.now)).toBe(at11.length);
+      const empty = withStock(w, "a", () => 0);
+      expect(waveOrdersCovered(w.ctx, empty, "a", first.opensAt, w.now)).toBe(0);
+      // An order already taken is no longer counted.
+      const taken = { ...w.state, board: { ...board, takenBy: { [first.id]: "b" } } };
+      expect(waveOrdersCovered(w.ctx, taken, "a", first.opensAt, w.now)).toBe(at11.length - 1);
+    });
+
+    it("covers each order once from the same stock", () => {
+      const w = shared({ deliveries: dayWaves } as never);
+      const first = common(w, "a").find((o) => paris(o.opensAt) === 11);
+      if (!first) throw new Error("no order at 11 h");
+      // Only enough of the first order's goods for that order alone, nothing else.
+      const s = withStock(w, "a", (r) => (r === first.resource ? first.quantity : 0));
+      expect(waveOrdersCovered(w.ctx, s, "a", first.opensAt, w.now)).toBe(1);
     });
 
     it("tells when the next wave comes, by the clock of Paris", () => {

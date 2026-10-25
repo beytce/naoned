@@ -822,7 +822,8 @@ export type NotificationKind =
   | "delivery"
   | "muda"
   | "morning"
-  | "skirmish_call";
+  | "skirmish_call"
+  | "wave";
 
 export interface Notice {
   id: number;

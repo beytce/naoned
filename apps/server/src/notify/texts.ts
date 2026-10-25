@@ -123,6 +123,11 @@ export function pushText(
         title: "Livraison arrivée",
         body: `${data.quantity} ${RESOURCES[String(data.resource)] ?? String(data.resource)} livrés par ${road(data.route, cities)} : ${ducats(String(data.amount ?? "0"))} ducats encaissés.`,
       };
+    case "wave":
+      return {
+        title: `Nouvelles commandes à ${clock(data.at)}`,
+        body: `Votre stock couvre ${data.covered} commandes de la vague : les premiers à charger les prennent.`,
+      };
     case "skirmish_call":
       return {
         title: `Escarmouche à ${clock(data.at)}`,
