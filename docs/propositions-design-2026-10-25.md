@@ -79,3 +79,34 @@ Ordre conseillé, chaque étape jouable seule : code couleur et formes (S) → f
 2. Code couleur et formes des marchandises : oui ou non (il touche aussi les illustrations des ressources).
 3. Main du jour en cartes à la place de la feuille Cargaisons : oui ou non.
 4. Le carnet (B) pour les moments solennels : oui, non, ou plus tard (IDEAS.md).
+
+## Décisions du porteur (25 octobre 2026)
+
+1. **Direction A retenue** (Lagune : astres, comptoir en orbite, frise du temps, HUD d'une ligne).
+2. Code couleur et formes des marchandises : **plusieurs propositions demandées, à partir de A** (ci-dessous).
+3. **Main du jour en cartes : non.** La feuille Cargaisons reste ; D est écartée.
+
+## Marchandises : couleur et forme, sur la base de A
+
+Le moteur range déjà chaque marchandise par **chaîne** et par **étape** (`packages/engine/src/themes/venice1450.ts`, champs `chain` et `tier`) : vingt marchandises, sept chaînes, quatre étapes (brut, transformé, fini, outre-mer). Un code « une couleur et une forme par marchandise » ne tient pas à vingt ; les trois propositions partagent donc la même règle : **la couleur dit la chaîne**, et l'étape se lit autrement selon la proposition.
+
+### Six teintes, une par chaîne
+
+| Chaîne | Marchandises | Teinte |
+| --- | --- | --- |
+| Vivres | blé, farine, pain | paille `#E6D3A3` |
+| Construction | argile, briques | terre cuite `#C77B4A` |
+| Charpente | bois, planches | mousse `#93B95C` |
+| Verrerie | sable, verre, miroirs | rose de Murano `#F09CC4` |
+| Draperie | laine, drap de laine, vêtements | gris de lin `#A3A8C9` |
+| Outre-mer | épices, soie, sel, vin, fourrures, draps, épices préparées | pourpre `#B48BE6` |
+
+Les épices préparées (chaîne `spicery`, une seule marchandise) prennent la teinte de l'outre-mer. Chaque teinte est à un écart ΔE ≥ 25 (CIE76) de l'or, du vert d'eau, du cinabre, du lapis et de l'eau, et de chacune des autres ; contraste ≥ 4,5:1 sur `night-2`. Le blé n'est pas doré : l'or reste l'argent et l'action.
+
+### Trois façons de dire l'étape
+
+1. **Astres de chaîne** : la forme dit l'étape. Rond brut, carré transformé, hexagone fini, losange d'outre-mer, plein de la couleur de la chaîne, pictogramme gravé en sombre dès 24 px. Le plus lisible en petit : sur la carte, en orbite autour des villes (plein = le stock couvre la commande, creux = il en manque).
+2. **Cristaux** : la taille de la pierre dit l'étape. Pierre brute, taille à degrés, brillant ; marquise gravée de son pictogramme pour l'outre-mer. Un éclat blanc sur les marchandises finies. Le plus proche de Hades Star, et l'on « voit » la valeur ajoutée ; un peu moins net sous 16 px.
+3. **Jetons gravés** : un disque de nuit cerclé de la couleur de la chaîne, gravé de son pictogramme ; l'étape en crans au-dessus du cercle (un, deux, trois), un double cercle pour l'outre-mer. Le plus explicite pour un débutant, le plus proche des illustrations actuelles ; les crans se perdent sous 20 px.
+
+Ma recommandation : **les astres** pour la carte et les petites tailles, avec le pictogramme de la proposition 3 dès 24 px (Magasin, Rialto, Ateliers). Les trois sont maquettées sur la planche, chacune en légende complète et dans quatre situations de jeu : commandes en orbite, Magasin, chaîne au comptoir, Rialto.
