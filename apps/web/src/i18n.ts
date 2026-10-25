@@ -178,6 +178,8 @@ const frDict = {
       /** The counter's workshops in its panel. */
       /** The counter up close, its workshops in orbit around it. */
       orbit: {
+        load: "Charger une mule",
+        missing: (n: number) => `il en manque ${n}`,
         back: "Retour à la carte",
         store: "Magasin",
         storeLine: (n: number) => `Magasin · ${n} en stock`,

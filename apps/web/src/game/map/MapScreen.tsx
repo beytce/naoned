@@ -64,7 +64,7 @@ import {
 } from "./HudTips.js";
 import { CartMarker, CityMarker, CityName, HomeMarker } from "./Markers.js";
 import { NoticesSheet } from "./Notices.js";
-import { ComptoirOrbit } from "./Orbit.js";
+import { CityOrbit, ComptoirOrbit } from "./Orbit.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
 import { SIDE_W, SideColumn } from "./SideColumn.js";
 import {
@@ -588,8 +588,9 @@ export function MapScreen(
     const i = cities.indexOf(sel.code);
     const step = (k: number) =>
       select({ kind: "city", code: cities[(i + k + cities.length) % cities.length] ?? sel.code });
+    // A city opens up close, its orders in orbit around it.
     panel = (
-      <CityPanel
+      <CityOrbit
         props={props}
         code={sel.code}
         onClose={() => select(null)}
@@ -939,146 +940,6 @@ export function MapScreen(
       <Coach key={props.guideKey} {...props} departing={departure !== null} />
       {props.sheet === null && <ComeBack {...props} />}
     </div>
-  );
-}
-
-/** A city: its orders, a Criée, and in Venice the Rialto and the port. */
-function CityPanel({
-  props,
-  code,
-  onClose,
-  onPrev,
-  onNext,
-  onCargo,
-  freeCart,
-  onSheet,
-}: {
-  props: GameProps;
-  code: string;
-  onClose: () => void;
-  onPrev: () => void;
-  onNext: () => void;
-  onCargo: () => void;
-  freeCart: boolean;
-  onSheet: (s: string) => void;
-}) {
-  const { view, now } = props;
-  const m = fr.game.map;
-  const road = view.road;
-  const orders = (road?.orders ?? []).filter((o) => o.city === code && o.status === "open");
-  const covered = orders.filter((o) => have(view, o.resource) >= o.quantity).length;
-  const criee =
-    view.criee && view.criee.city === code && view.criee.endsAt > now ? view.criee : null;
-  const nextDay = props.catalog.world.startsAt + view.day * 86_400_000;
-  const venice = code === "venezia";
-  const status = criee
-    ? m.city.criee(
-        props.names.resource(criee.resource),
-        String(Math.round(criee.premiumBps / 100)),
-        clock(criee.endsAt - now),
-      )
-    : road
-      ? orders.length > 0
-        ? m.city.deliverable(covered)
-        : m.city.none(clock(nextDay - now))
-      : venice
-        ? m.city.venice
-        : "";
-  const sells = !road && view.cityQuotes.some((q) => q.city === code);
-  const held = view.supplies.filter((s) => s.city === code);
-  // Once, after the guide's first delivery: what the number on a city says.
-  const [pipsSeen, setPipsSeen] = useState(() => store.get("pipsSeen") === "1");
-  const pips = !pipsSeen && orders.length > 0 && view.tutorial.includes("sell_city");
-  return (
-    <ContextPanel
-      title={props.names.city(code)}
-      chip={road ? <span className="meta">{m.city.orders(orders.length)}</span> : undefined}
-      status={status}
-      tone={criee ? "vermilion" : covered > 0 ? "gold" : "lagoon"}
-      onClose={onClose}
-      onPrev={onPrev}
-      onNext={onNext}
-      actions={
-        <>
-          {road && (
-            <ActionButton
-              icon={Icon.cargo()}
-              label={m.buttons.cargo}
-              tone={covered > 0 && freeCart ? "gold" : "plain"}
-              badge={orders.length || undefined}
-              coach="panel-cargo"
-              disabled={!freeCart || orders.length === 0}
-              onClick={onCargo}
-            />
-          )}
-          {sells && (
-            <ActionButton
-              icon={A.sell.icon()}
-              label={A.sell.label}
-              tone="gold"
-              onClick={() => onSheet(`sell:${code}`)}
-            />
-          )}
-          {criee && (
-            <ActionButton
-              icon={Icon.criee()}
-              label={m.buttons.criee}
-              tone="vermilion"
-              onClick={() => onSheet("criee")}
-            />
-          )}
-          {road && view.warehouses && (
-            <ActionButton
-              icon={A.warehouse.icon()}
-              label={A.warehouse.label}
-              tone={
-                view.warehouses.cities.some((c) => c.city === code && c.held) ? "gold" : "plain"
-              }
-              onClick={() => onSheet(`warehouse:${code}`)}
-            />
-          )}
-          {road && (
-            <ActionButton
-              icon={A.suppliers.icon()}
-              label={A.suppliers.label}
-              tone={held.length > 0 ? "gold" : "plain"}
-              onClick={() => onSheet(`suppliers:${code}`)}
-            />
-          )}
-          {venice && (
-            <ActionButton
-              icon={Icon.rialto()}
-              label={m.buttons.rialto}
-              coach="panel-rialto"
-              onClick={() => props.goTo("marche")}
-            />
-          )}
-        </>
-      }
-      extra={
-        pips ? (
-          <div className="flex items-center gap-3">
-            <p className="min-w-0 flex-1 text-xs text-cream-dim">{m.city.pips}</p>
-            <Slab
-              size="sm"
-              tone="ghost"
-              onClick={() => {
-                store.set("pipsSeen", "1");
-                setPipsSeen(true);
-              }}
-            >
-              {m.city.pipsOk}
-            </Slab>
-          </div>
-        ) : road && !freeCart && orders.length > 0 ? (
-          <p className="text-center text-xs text-cream-dim">{m.city.noCart}</p>
-        ) : held.length > 0 ? (
-          <p className="text-center text-xs text-gold">
-            {fr.game.suppliers.held(held.map((s) => props.names.resource(s.resource)).join(", "))}
-          </p>
-        ) : undefined
-      }
-    />
   );
 }
 

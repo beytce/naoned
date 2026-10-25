@@ -257,6 +257,8 @@ export const en: Dictionary = {
       resumeGuide: "Resume the guide",
       rate: (amount: string) => `≈ +${amount}/h`,
       orbit: {
+        load: "Load a mule",
+        missing: (n: number) => `${n} short`,
         back: "Back to the map",
         store: "Store",
         storeLine: (n: number) => `Store · ${n} in stock`,
