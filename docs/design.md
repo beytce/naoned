@@ -2,6 +2,18 @@
 
 Le jeu s'appelle **Fondaco**, du nom des entrepôts où les marchands étrangers logeaient et commerçaient à Venise. Ambiance : Venise au Quattrocento, des ducats, la lagune. L'identité suit le guide « Fondaco — identité & palettes ».
 
+## Direction Lagune : la règle (25 octobre 2026)
+
+Décision du porteur : **tout ajout suit cette direction**. Les maquettes de chaque page sont sur la planche de design (lien dans `docs/propositions-design-2026-10-25.md`, page « Lagune · toutes les pages », avec le système et la navigation).
+
+- **Un lieu est un astre.** Le comptoir est un soleil, une ville un astre, un atelier une petite étoile en orbite. On le touche : on s'en approche (zoom `orbit-in`, 0,32 s) ; on revient par le chevron en haut à gauche, Échap ou en glissant vers le bas.
+- **Trois profondeurs, pas plus.** La carte ; le lieu en orbite, plein écran (`ComptoirOrbit`, `data-place`) ; la feuille du bas qui porte une action (`Sheet`). Un moment (bon retour, ballot, fin de saison) s'ouvre de lui-même puis ramène à la carte.
+- **Une seule action en or par écran**, en pilule de 52 à 56 px ; les autres en fantôme (filet `line`), ou en texte lapis.
+- **Le temps se lit en arcs et sur la frise**, pas en phrases : l'arc lapis d'un lot, plein et vert d'eau quand c'est prêt, le pointillé crème de ce qui attend.
+- **Les marchandises par leur marque** (`GoodsMark`) : couleur de chaîne, forme d'étape ; pleine quand le stock couvre, creuse sinon.
+- **L'écriture** : Cinzel en capitales espacées pour les lieux et les titres de lieu, Archivo élargi pour les chiffres, Space Grotesk pour le reste.
+- **Petits écrans** (moins de 640 à 700 px de haut) : ce qui n'est pas l'action cède (frise, puces du magasin), jamais l'action ni le retour.
+
 ## Logo : le lion ailé
 
 Logo officiel (depuis le 18 octobre 2026) : le lion ailé de saint Marc, de face, rugissant, ailes déployées, debout sur les vagues, frappé en relief sur une médaille d'or à frise tressée, sur un fond olive très sombre. Pas de nom dans le logo.
@@ -119,7 +131,7 @@ Un seul écran, la Vénétie en **portulan** à la lueur des lampes (`PortolanTe
 
 | Lieu choisi | État | Actions |
 | --- | --- | --- |
-| **Comptoir** | Lots prêts, prochain lot et sa barre, ouvriers affamés ; puis **ses ateliers en petits astres** (`WorkshopRow`) : la marque de ce qu'il fait, l'arc du lot, vert d'eau quand il est prêt, pointillé quand il attend (crème : du travail ; gris : sa matière, jamais une alerte) ; en toucher un ouvre sa production | Récolter (ou Relancer) · Ateliers · Magasin · Bâtir |
+| **Comptoir** | Le toucher ouvre **le comptoir en orbite**, plein écran (`ComptoirOrbit`, `map/Orbit.tsx`) : le soleil au blason, chaque atelier une étoile en orbite (la marque de ce qu'il fait, l'arc du lot, vert d'eau et « +10 » quand il est prêt, pointillé quand il attend : crème pour du travail, gris pour sa matière, jamais une alerte), la chaîne tracée entre ceux qui se nourrissent (tirets à la couleur de la marchandise, qui coulent), une parcelle libre « Bâtir ». Dessous, le magasin en puces (masqué sous 700 px de haut) ; au pied, l'état (lots prêts, en cours, pain des ouvriers) | Récolter et relancer (or) · Ateliers · Magasin ; toucher un atelier ouvre sa production, la parcelle le catalogue |
 | **Ville** | Commandes couvertes par le stock, Criée en cours, renouvellement | Cargaisons · Criée ; Venise : Rialto (et les galères de la Muda en tête du Rialto) |
 | **Charrette au comptoir** | Au comptoir, chargée pour…, jauge de cale | Cargaisons · Partir |
 | **Charrette en route** | Vers la ville ou retour, temps restant | Suivre |
