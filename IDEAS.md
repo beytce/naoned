@@ -78,6 +78,17 @@ Voir `docs/retours-design-2026-10-24.md`, « Idées waouh ». Aucune n'est une m
 - Historique des « Fronts rentrés » dans la cloche : demande un stockage serveur ; si « Compris » est touché en moins de 2 s plus d'une fois sur deux.
 - Second lot rapide offert dans le tutoriel (une règle) : si plus de 15 % abandonnent à l'étape « transformation » au playtest.
 
+## Équipe d'experts du 24 octobre 2026 (reportées, chacune avec sa mesure de déclenchement)
+
+Détails dans docs/expertise-2026-10-24/ (fichiers `*-final.md`).
+- **Ligues de 10 marchands** (E2-7, avec E1-9) : un classement de la semaine par division plutôt que pour tout le monde. Déclenchement : au moins 60 humains actifs sur une semaine (sinon une ligue de dix est une course contre l'ordinateur).
+- **Théâtres de la Terraferme** (E2-11) : 40 marchands au plus par carte, un Signore et un décret par théâtre. Déclenchement : 30 humains actifs dans la Terraferme sur une semaine, ou une demande du test de charge.
+- **Privilèges d'ouverture** (E1-10) : des privilèges qui changent le départ de la saison, pas la puissance. Déclenchement : Influence médiane non dépensée d'au moins 100 à J+30.
+- **Élection du Doge en fin de mois** (reste d'E2-10) : cinq humains candidats, un vote par compte vérifié, le Doge choisit le mutateur suivant parmi trois. Déclenchement : alias e-mail normalisés (fait) et au moins 50 votants éligibles (7 jours actifs dans la saison).
+- **File d'attente d'escarmouche notifiée** (reste d'E2-2) : à la Hades' Star. Déclenchement : moins de 40 % des parties classées jouées dans les convocations.
+- **Jouer en invité** (E3-2) : décision du porteur sur l'entonnoir mesuré, après au moins 300 `landing_view` ; s'il est décidé, les quatre conditions du chef du 20 octobre (aucun transfert de valeur, aucune fusion, absent des classements, purge) et l'e-mail demandé à la première paie.
+- **Paiement du Mécène** (E3-9) : Stripe et CGV en V1, et trois cosmétiques dessinés avant toute vente.
+
 ## V1 (après la première saison)
 - Escarmouches : reprendre une partie en cours après un redémarrage du serveur (aujourd'hui elle est interrompue, sans Gloire ni quota consommé, terra-m1) ; demande d'enregistrer l'état de la partie à chaque pas.
 - Chaînes textile (laine, tissu, vêtements) et ameublement (meubles).
