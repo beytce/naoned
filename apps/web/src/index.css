@@ -689,6 +689,34 @@
     animation: none;
   }
 }
+/* The counter up close: it opens like a zoom on the sun, the chain's dashes run toward who eats. */
+.orbit-in {
+  animation: orbit-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes orbit-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.orbit-flow {
+  animation: orbit-flow 1.6s linear infinite;
+}
+@keyframes orbit-flow {
+  to {
+    stroke-dashoffset: -5.2;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orbit-in,
+  .orbit-flow {
+    animation: none;
+  }
+}
 .marker-halo {
   background: radial-gradient(circle, rgb(var(--lagoon) / 0.45) 0%, transparent 68%);
   animation: marker-halo 2.2s ease-in-out infinite;

@@ -256,6 +256,22 @@ export const en: Dictionary = {
       carts: "Free carts",
       resumeGuide: "Resume the guide",
       rate: (amount: string) => `≈ +${amount}/h`,
+      orbit: {
+        back: "Back to the map",
+        store: "Store",
+        storeLine: (n: number) => `Store · ${n} in stock`,
+        summary: (ready: number, running: number) =>
+          [
+            ready > 0 ? `${ready} batch${ready > 1 ? "es" : ""} ready` : null,
+            running > 0 ? `${running} running` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || "Workshops at rest",
+        bread: (days: number) => `Workers' bread: ${days} d`,
+        harvest: "Collect and restart",
+        waits: (resource: string) => `needs ${resource.toLowerCase()}`,
+        level: (n: number) => `lv. ${n}`,
+      },
       workshopRow: {
         ready: (n: number) => (n > 1 ? `${n} ready` : "Ready"),
         idle: "To start",

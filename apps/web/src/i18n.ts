@@ -176,6 +176,23 @@ const frDict = {
       rate: (amount: string) => `≈ +${amount}/h`,
       /** The strip of what comes next, above the doors. */
       /** The counter's workshops in its panel. */
+      /** The counter up close, its workshops in orbit around it. */
+      orbit: {
+        back: "Retour à la carte",
+        store: "Magasin",
+        storeLine: (n: number) => `Magasin · ${n} en stock`,
+        summary: (ready: number, running: number) =>
+          [
+            ready > 0 ? `${ready} lot${ready > 1 ? "s" : ""} prêt${ready > 1 ? "s" : ""}` : null,
+            running > 0 ? `${running} en cours` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || "Ateliers au repos",
+        bread: (days: number) => `Pain des ouvriers : ${days} j`,
+        harvest: "Récolter et relancer",
+        waits: (resource: string) => `attend ${resource.toLowerCase()}`,
+        level: (n: number) => `niv. ${n}`,
+      },
       workshopRow: {
         ready: (n: number) => (n > 1 ? `${n} prêts` : "Prêt"),
         idle: "À lancer",
