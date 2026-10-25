@@ -71,6 +71,13 @@ Trois experts en jeux mobile et PC persistants, de la famille de Hades' Star, on
 
 ### Lot 1 : avant le lancement
 
+**Fait le 25 octobre 2026** (branche `claude/lot1`), à une exception près : E1-2 avait été retirée par son auteur. Toutes les vérifications sont passées :
+- 725 tests ;
+- l'e2e aux deux formats, premier lot lancé 10 s après le nom ;
+- `pnpm sim` conforme sur 5 graines, avant et après les vagues de jour (docs/calibration.md).
+
+Il reste à faire en dehors du code : la porte de publication (charge, changement de saison, restauration de sauvegarde), puis un lien collé dans Discord pour vérifier l'aperçu.
+
 1. **E1-1, des vagues de jour seulement.**
    - Vagues à 8, 11, 14, 17 et 20 h, heure de Paris, testées aux deux changements d'heure. Les commandes urgentes ferment à 19 h au plus tard.
    - E1 a mesuré qu'enlever les vagues de nuit pénalise les occasionnels : les PNJ, qui ne dorment pas, retrouvaient ces commandes le matin. Deux règles sont donc obligatoires : les vagues de 17 h et 20 h restent ouvertes jusqu'au lendemain 10 h, et personne ne prend au tableau commun entre 22 h et 8 h.

@@ -1310,3 +1310,24 @@ Toutes les graines sont conformes (PASS), avant comme après. Les critères de l
 Sur la graine 3, les deux seuls occasionnels encore actifs en fin de saison sont des retardataires, que le rapport écarte, d'où « — ». Le nombre d'occasionnels actifs au dernier jour reste du même ordre : 20 avant, 17 après, sur les 5 graines.
 
 Les commandes partent plus vite après l'ouverture (42 % dans l'heure contre 27 %), puisque les vagues tombent toutes pendant les heures de jeu.
+
+## Le lot 1 de l'équipe d'experts, tout ensemble (25 octobre 2026)
+
+Le lot comprend :
+- la coupure des prêts et des entrepôts (E1-5) ;
+- les vagues de jour (E1-1) ;
+- la mission `first_upgrade` ouverte dès le premier jour (E3-3) ;
+- le reste du lot, qui ne touche pas à l'économie simulée : vitrine, entonnoir, notifications, guide, avant-jeu.
+
+`pnpm sim`, 5 graines, **toutes conformes** (PASS) :
+
+| Graine | Monnaie payée (d / actif / jour) | Gini du patrimoine à J+15 | Croissance de la monnaie | Occasionnel / assidu | Influence médiane dans la saison |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 220,1 | 0,47 | 2,8 %/jour | 0,38 | 162 |
+| 2 | 219,2 | 0,52 | 1,9 %/jour | 0,44 | 163 |
+| 3 | 221,4 | 0,50 | 5,1 %/jour | — | 162 |
+| 4 | 216,7 | 0,42 | 4,4 %/jour | 0,62 | 153,5 |
+| 5 | 212,8 | 0,46 | 3,0 %/jour | 0,41 | 149,5 |
+
+- **La croissance de la monnaie** reste l'avertissement déjà connu (diagnostic).
+- **L'Influence** reste celle d'avant (médiane 149 à 163 sur les 5 graines, contre 160 avant le lot) : avancer `first_upgrade` au premier jour ne change rien de mesurable, les marchands simulés améliorant leurs ateliers dès les premiers jours.
