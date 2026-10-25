@@ -17,7 +17,12 @@ import type { AuthService, PublicAccount } from "../auth/service.js";
 import type { Db } from "../db/client.js";
 import { accounts, players, pushSubscriptions, telemetry } from "../db/schema.js";
 import { countFunnel, funnelReport } from "../funnel.js";
-import { NOTIFICATION_KINDS, type NotificationKind, type Notifier } from "../notify/notifier.js";
+import {
+  NOTIFICATION_KINDS,
+  type NotificationKind,
+  type Notifier,
+  OPT_IN,
+} from "../notify/notifier.js";
 import { isPushEndpoint } from "../notify/push.js";
 import { retention, sharedMailboxes, suspiciousPairs } from "./admin.js";
 import { bankReport, ledgerCsv } from "./bank.js";
@@ -486,7 +491,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       await syncPass(db, world, account.id);
     }
     const body = (await view(account)) as Record<string, unknown>;
-    const ceremony = await pendingCeremony(db, account.id, world.ctx.settings.pass.enabled);
+    const ceremony = await pendingCeremony(db, account.id);
     const rival = world.current.players[account.id]
       ? await weeklyRival(db, world.id, world.ctx, world.current, world.now(), account.id)
       : null;
@@ -748,16 +753,9 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   app.get("/api/game/prices", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
-    // Seven days of prices for everyone (recommendations of 20 October 2026: a decision to make
-    // at each session, read on the curve); thirty for a holder of the Pass Négociant when its
-    // settings give them (read-only information).
+    // Thirty days of prices for everyone: information is never sold (E3-9 of the experts).
     const now = world.now();
-    const days =
-      world.current.players[account.id] &&
-      hasPass(world.ctx, world.current, account.id, now) &&
-      world.ctx.settings.pass.perks.history30Days
-        ? 30
-        : 7;
+    const days = 30;
     return { days, series: await priceHistory(db, world.id, now, days * 24) };
   });
 
@@ -1008,6 +1006,8 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       // The Criée and good-deal alerts were the Pass's: no longer sent (live-2), never offered.
       kinds: NOTIFICATION_KINDS.filter((k) => k !== "criee" && k !== "deal"),
       off: row?.off ?? [],
+      // Kinds off unless asked for: listed in `off`, they are on.
+      optIn: [...OPT_IN],
     };
   });
 

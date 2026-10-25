@@ -447,18 +447,10 @@ export class GameWorld {
       }
 
       for (const e of fx.events) {
-        // The Pass is won only while it is on.
-        const passOn = this.ctx.settings.pass.enabled;
-        if (e.type === "week_closed") {
-          await recordWeek(tx, worldId, e.data ?? {}, passOn ? now : undefined);
-        }
+        // The rankings give titles and trophies, never the Pass (E3-9 of the experts).
+        if (e.type === "week_closed") await recordWeek(tx, worldId, e.data ?? {});
         if (e.type === "season_closed") {
-          const ranked = await recordSeason(
-            tx,
-            worldId,
-            e.data ?? {},
-            passOn ? seasonEnd(this.ctx) : undefined,
-          );
+          const ranked = await recordSeason(tx, worldId, e.data ?? {});
           await recordSeasonInfluence(tx, worldId, this.ctx.settings, ranked, at);
         }
       }

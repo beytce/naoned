@@ -126,6 +126,42 @@ const paidLines = (matchId: string) =>
       and(eq(telemetry.type, "terra_skirmish"), sql`${telemetry.props}->>'matchId' = ${matchId}`),
     );
 
+describe("the calls to skirmish", () => {
+  it("open their lobby ten minutes before their hour and start at it, ranked", async () => {
+    await open();
+    const { ada, bob } = await two();
+    // 12:15 in Paris: no lobby yet, the next call told.
+    now = Date.parse("2026-10-05T10:15:00Z");
+    const before = await get(ada, "/api/game/skirmish");
+    expect(before.phase).toBe("none");
+    expect(before.nextCall).toBe(Date.parse("2026-10-05T10:30:00Z"));
+    // 12:20: the call's lobby opens by itself, for 12:30.
+    now = Date.parse("2026-10-05T10:21:00Z");
+    const lobby = await get(ada, "/api/game/skirmish");
+    expect(lobby).toMatchObject({ phase: "lobby", call: "12:30" });
+    expect(lobby.opensAt).toBe(Date.parse("2026-10-05T10:30:00Z"));
+    await join(ada);
+    await join(bob);
+    // Still waiting a minute later: the call starts at its hour.
+    now += 60_000;
+    expect((await get(ada, "/api/game/skirmish")).phase).toBe("lobby");
+    now = Date.parse("2026-10-05T10:30:30Z");
+    const playing = await get(ada, "/api/game/skirmish");
+    expect(playing.phase).toBe("playing");
+    expect(playing.ranked).toBe(true);
+  });
+
+  it("start no match when nobody came", async () => {
+    await open();
+    const { ada } = await two();
+    now = Date.parse("2026-10-05T10:21:00Z");
+    await get(ada, "/api/game/skirmish");
+    now = Date.parse("2026-10-05T10:31:00Z");
+    expect((await get(ada, "/api/game/skirmish")).phase).toBe("none");
+    expect((await rows()).every((r) => r.status !== "playing")).toBe(true);
+  });
+});
+
 describe("a skirmish's row", () => {
   it("follows the match from its lobby to its payment, every merchant paid at once", async () => {
     await open();

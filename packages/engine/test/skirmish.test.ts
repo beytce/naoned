@@ -4,7 +4,9 @@ import {
   advanceSkirmish,
   cellsOf,
   createSkirmish,
+  nextSkirmishCall,
   skirmishAct,
+  skirmishCallAt,
   toReal,
 } from "../src/index.js";
 import { testTerraferma } from "./fixture.js";
@@ -74,5 +76,38 @@ describe("a skirmish", () => {
     // 23 h in Paris.
     expect(createSkirmish(night, "seed", ["ada", "bob"], START + 3 * 3_600_000).ranked).toBe(false);
     expect(createSkirmish(night, "seed", ["ada", "bob"], START).ranked).toBe(true);
+  });
+});
+
+describe("the calls to skirmish", () => {
+  // 12:30, 18:30 and 21:15 in Paris, the lobby open ten minutes before.
+  const called = () => {
+    const cfg = makeContext({
+      terraferma: {
+        ...testTerraferma,
+        skirmish: { ...skirmish, calls: [750, 1110, 1275], callLobbyMinutes: 10 },
+      } as WorldSettingsInput["terraferma"],
+    }).settings.terraferma;
+    if (!cfg) throw new Error("no skirmish");
+    return cfg;
+  };
+  // 20 October 2026 in Paris (summer time: UTC+2).
+  const paris = (h: number, m = 0) => Date.UTC(2026, 9, 20, h - 2, m);
+
+  it("open their lobby ten minutes before, at the hours of Paris", () => {
+    const cfg = called();
+    expect(skirmishCallAt(cfg, paris(12, 19))).toBeNull();
+    expect(skirmishCallAt(cfg, paris(12, 20))).toBe(paris(12, 30));
+    expect(skirmishCallAt(cfg, paris(12, 29))).toBe(paris(12, 30));
+    expect(skirmishCallAt(cfg, paris(12, 30))).toBeNull();
+    expect(skirmishCallAt(cfg, paris(21, 10))).toBe(paris(21, 15));
+  });
+
+  it("tell the next one, the next morning's after the last", () => {
+    const cfg = called();
+    expect(nextSkirmishCall(cfg, paris(9))).toBe(paris(12, 30));
+    expect(nextSkirmishCall(cfg, paris(19))).toBe(paris(21, 15));
+    expect(nextSkirmishCall(cfg, paris(22))).toBe(paris(12, 30) + 24 * 3_600_000);
+    expect(nextSkirmishCall(config(), paris(9))).toBeNull();
   });
 });

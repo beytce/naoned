@@ -271,17 +271,32 @@ export const worldSettingsSchema = z.object({
       /** Refused unless zero: once one of the Doge's orders swapped a day. */
       contractRerollsPerDay: qty.prefault(0),
       /**
-       * What the Pass gives, all read-only or for show; the profile lists exactly these. Prices
-       * of the Rialto over 30 days (7 for everyone), the dashboard over 30 days (7 for
-       * everyone), an order book 10 offers deep (5 for everyone), the seal and the palette.
+       * What the Pass (the « Mécène ») gives: things to show, nothing else (E3-9 of the experts,
+       * 25 October 2026). The information it once sold is everyone's; the keys of a world saved
+       * before are dropped, and any other key is refused.
        */
       perks: z
-        .object({
-          history30Days: z.boolean().prefault(false),
-          dashboardDetail: z.boolean().prefault(false),
-          deepBook: z.boolean().prefault(false),
-          cosmetics: z.boolean().prefault(false),
-        })
+        .preprocess(
+          (v) => {
+            if (!v || typeof v !== "object") return v;
+            const {
+              history30Days: _h,
+              dashboardDetail: _d,
+              deepBook: _b,
+              ...rest
+            } = v as Record<string, unknown>;
+            return rest;
+          },
+          z
+            .object({
+              cosmetics: z.boolean().prefault(false),
+              seal: z.boolean().prefault(false),
+              domainOrnaments: z.boolean().prefault(false),
+              goldenName: z.boolean().prefault(false),
+              illustratedChronicle: z.boolean().prefault(false),
+            })
+            .strict(),
+        )
         .prefault({}),
     })
     .refine(
@@ -464,6 +479,13 @@ export const worldSettingsSchema = z.object({
           glory: z.array(qty),
           rankedPerDay: qty.prefault(1),
           minHumans: positive.prefault(2),
+          /**
+           * The calls of the day (E2-2 of the experts), in minutes after midnight in Paris: a
+           * lobby opens `callLobbyMinutes` before each and starts at its hour, so that merchants
+           * meet. Outside them, the lobby of `lobbySeconds` as before.
+           */
+          calls: z.array(z.number().int().min(0).max(1_439)).prefault([]),
+          callLobbyMinutes: positive.prefault(10),
         })
         .optional(),
       /** Weeks of the season (from 0) played in teams: the merchants of a region together. */

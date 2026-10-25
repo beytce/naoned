@@ -579,8 +579,8 @@ export function playerView(
   const player = state.players[playerId];
   if (!player) return null;
   const pass = hasPass(ctx, state, playerId, now);
-  // Pass Négociant: a deeper order book when its settings give one (read-only information).
-  const depth = pass && ctx.settings.pass.perks.deepBook ? 10 : 5;
+  // An order book ten offers deep for everyone: information is never sold (E3-9 of the experts).
+  const depth = 10;
   const buildings = Object.values(state.buildings)
     .filter((b) => b.playerId === playerId)
     .sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1)));

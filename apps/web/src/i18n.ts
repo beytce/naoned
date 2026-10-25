@@ -1284,9 +1284,6 @@ export const fr = {
       pitch:
         "De l'information à lire et de quoi se distinguer, rien de plus : ni ducats, ni marchandises, ni production, ni quota, ni offre de plus.",
       perks: {
-        history: "Cours du Rialto sur 30 jours (7 pour tous)",
-        dashboard: "Tableau de bord sur 30 jours (7 pour tous)",
-        book: "Carnet d'ordres à 10 offres (5 pour tous)",
         cosmetics: "Sceau à côté de votre nom, palette « Or de Venise »",
       },
       trust:
@@ -1595,6 +1592,23 @@ export const fr = {
         "Rien de neuf pour l'instant. Les récoltes, les livraisons, la gazette et les résultats de la semaine s'afficheront ici.",
       now: "à l'instant",
       settings: "Régler les notifications",
+      /** The gazette of 8:05: what the night kept. */
+      morning: (deliveries: number, paid: string, harvests: boolean, offers: number) =>
+        `La gazette du matin : ${
+          [
+            deliveries > 0
+              ? `${deliveries} livraison${deliveries > 1 ? "s" : ""} payée${deliveries > 1 ? "s" : ""} (${paid})`
+              : "",
+            harvests ? "des lots prêts à récolter" : "",
+            offers > 0
+              ? `${offers} offre${offers > 1 ? "s" : ""} prise${offers > 1 ? "s" : ""} au Rialto`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(", ") || "votre comptoir vous attend"
+        }.`,
+      skirmishCall: (at: string) =>
+        `Convocation d'escarmouche à ${at} : les marchands s'y retrouvent pour une partie classée.`,
       harvest: "Récolte prête : vos ateliers ont terminé leur production.",
       event: "Un événement agite les marchés.",
       seasonEnding: "Dernier sprint : la saison se termine dans 3 jours.",
@@ -1650,6 +1664,7 @@ export const fr = {
           delivery: "Livraison arrivée",
           muda: "Galères de la Muda à quai",
           morning: "Gazette du matin (8 h 05)",
+          skirmish_call: "Convocations d'escarmouche (un quart d'heure avant)",
         } as Record<string, string>,
       },
     },
@@ -1673,8 +1688,6 @@ export const fr = {
       worth: "Ventes nettes de la saison",
       podium: "Le podium",
       rewards: "Vos récompenses",
-      passSeason: "Pass Négociant pour toute la nouvelle saison",
-      passDays: (n: number) => `${n} jours de Pass Négociant`,
       renown: (n: number) => `+${n} de Renommée`,
       milestone: (name: string, n: number) => `Palier ${name} : +${n} de Renommée`,
       goal: {
@@ -1853,6 +1866,8 @@ export const fr = {
       open: "✎ Changer de nom (une fois, gratuit)",
       save: "Garder ce nom",
     },
+    textSize: "Taille du texte",
+    textSizeNarrow: "Sur un écran étroit, le texte garde sa taille habituelle.",
     editCrest: "Modifier",
     crestTitle: "Mon blason",
     shape: "Forme",
@@ -2170,6 +2185,9 @@ export const fr = {
       night: (opensAt: number, closesAt: number) =>
         `☾ Pas d'escarmouche la nuit : elles reprennent à ${opensAt} h. Une partie classée par jour, de ${opensAt} h à ${closesAt} h.`,
       nightShort: (hour: number) => `☾ Escarmouches dès ${hour} h`,
+      /** The calls of the day (E2-2): merchants meet at set hours. */
+      nextCall: (at: string) => `Prochaine convocation à ${at} : les marchands s'y retrouvent.`,
+      call: (at: string) => `Convocation de ${at.replace(":", " h ")} : la partie part à l'heure.`,
       /** A match lost to a restart of the server. */
       interrupted: skirmishInterrupted,
       open: "Lancer une escarmouche",
@@ -2426,6 +2444,7 @@ export const fr = {
         "Le guide de la Terraferme, avec ses schémas, dans l'Aide et sur la carte de la Terraferme (« ? Guide »).",
         "Terraferme : les escarmouches, des parties en direct d'un quart d'heure, de 8 h à 22 h. Une seule par jour est classée : la première avec au moins un autre marchand, si votre camp est posé sur la carte de la semaine et qu'elle finit avant 22 h ; son rang rapporte 45, 30, 20 ou 10 de Gloire à la semaine. Les autres parties sont amicales, sans Gloire. Une partie interrompue par une maintenance ne rapporte rien et ne compte pas : elle ne consomme pas votre partie classée du jour.",
         "Terraferme : une semaine par mois en équipes, les marchands d'une même région ensemble.",
+        "Terraferme : trois convocations d'escarmouche par jour, à 12 h 30, 18 h 30 et 21 h 15 ; la salle s'ouvre dix minutes avant et la partie part à l'heure. Une alerte un quart d'heure avant, si vous la demandez dans le Profil.",
         "Terraferme : signaux sur la carte, cible désignée aux alliés, ducats entre alliés et embargo depuis les villes que vous tenez.",
         "Terraferme : bombardes (un tir par jour rend libres une terre ennemie et ses voisines) et remparts qui en protègent.",
         "Terraferme : Mantoue, Ferrare, le Patriarche d'Aquilée et l'Empire rejoignent Milan, chacun à sa manière.",
@@ -2443,6 +2462,7 @@ export const fr = {
         "Commerce : au-delà du niveau 5, les manufactures montent jusqu'au niveau 10, en volume ou en qualité.",
         "Commerce : affaires entre marchands — commandes sous séquestre et colleganza.",
         "Commerce : plus de prêts de la Banque ni d'entrepôts dans les villes.",
+        "Pour tous : les cours du Rialto et le tableau de bord sur 30 jours, le carnet d'ordres à 10 offres. Le classement donne des titres et des trophées, plus de Pass Négociant.",
         "Le guide de Lorenzo fait agrandir un premier atelier, et la mission « Agrandir un atelier » du Livre de compte s'ouvre dès le premier jour.",
         "Commerce : les villes passent commande de jour, à 8 h, 11 h, 14 h, 17 h et 20 h. Personne ne prend de commande au tableau entre 22 h et 8 h ; celles de 17 h et de 20 h restent jusqu'au lendemain 10 h. Les commandes urgentes s'ouvrent avant 19 h.",
         "Terraferme : le Signore est toujours un marchand ; les maisons de l'ordinateur restent au classement de la semaine mais ne reçoivent ni palier ni Influence. Une maison qui se retire rend ses terres.",

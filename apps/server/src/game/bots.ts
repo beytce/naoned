@@ -6,6 +6,8 @@ import {
   PROFILES,
   type ProfileName,
   Rng,
+  alliesOf,
+  allyHelpAsked,
   botsWanted,
   isActive,
 } from "@comptoirs/engine";
@@ -100,9 +102,14 @@ interface Running {
  * while few people play. Bots act through the engine like players (GameWorld.batch); they are
  * marked as bots in the database and retire as people arrive.
  */
+/** A house answers an ally's call for help this long after it, at most half an hour. */
+const HELP_AFTER_MS = 5 * 60_000;
+
 export class BotRunner {
   private running = new Map<string, Running>();
   private retired = new Set<string>();
+  /** The last call for help each house answered. */
+  private answered = new Map<string, number>();
   private lastRetireAt = 0;
   private timer: NodeJS.Timeout | undefined;
   private readonly rng: Rng;
@@ -255,10 +262,31 @@ export class BotRunner {
 
     for (const r of this.running.values()) {
       if (r.sessions.length === 0) r.sessions = this.plan(r.bot, now);
+      // An ally's call for help brings the house within half an hour (E2-4 of the experts).
+      const help = this.helpAsked(r.bot.id, now);
+      if (
+        help !== null &&
+        help > (this.answered.get(r.bot.id) ?? 0) &&
+        now - help >= HELP_AFTER_MS
+      ) {
+        this.answered.set(r.bot.id, help);
+        await this.play(r.bot);
+        continue;
+      }
       if ((r.sessions[0] ?? Number.POSITIVE_INFINITY) > now) continue;
       while ((r.sessions[0] ?? Number.POSITIVE_INFINITY) <= now) r.sessions.shift();
       await this.play(r.bot);
     }
+  }
+
+  /** The latest call for help of one of the house's allies on the week's map, or null. */
+  private helpAsked(id: string, now: number): number | null {
+    const map = this.world.current.terra?.map;
+    if (!map) return null;
+    const calls = alliesOf(map, id)
+      .map((ally) => allyHelpAsked(map, ally, now))
+      .filter((t): t is number => t !== null);
+    return calls.length > 0 ? Math.max(...calls) : null;
   }
 
   /** Today's remaining sessions, or tomorrow's. */

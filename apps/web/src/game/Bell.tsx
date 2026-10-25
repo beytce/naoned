@@ -4,7 +4,7 @@ import { fr } from "../i18n.js";
 import { familyName, landName } from "./Famille.js";
 import type { GameProps } from "./Game.js";
 import { gameApi } from "./api.js";
-import { d } from "./format.js";
+import { d, hourOf } from "./format.js";
 import type { Notice } from "./types.js";
 
 const ICON = {
@@ -20,6 +20,8 @@ const ICON = {
   siege: NavIcon.famille,
   delivery: NavIcon.routes,
   muda: NavIcon.marche,
+  morning: NavIcon.bell,
+  skirmish_call: NavIcon.famille,
 } as const;
 const TONE: Record<string, string> = {
   harvest: "text-lagoon",
@@ -34,6 +36,8 @@ const TONE: Record<string, string> = {
   siege: "text-vermilion",
   delivery: "text-lagoon",
   muda: "text-gold",
+  morning: "text-gold",
+  skirmish_call: "text-vermilion",
 };
 
 function text(n: Notice, props: GameProps): string {
@@ -121,6 +125,15 @@ function text(n: Notice, props: GameProps): string {
         .map(([r]) => props.names.resource(r).toLowerCase());
       return t.muda(goods.join(", "));
     }
+    case "morning":
+      return t.morning(
+        Number(n.data.deliveries ?? 0),
+        d(String(n.data.paid ?? "0")),
+        Number(n.data.harvests ?? 0) > 0,
+        Number(n.data.offers ?? 0),
+      );
+    case "skirmish_call":
+      return t.skirmishCall(hourOf(Number(n.data.at ?? 0)));
     default:
       return "";
   }

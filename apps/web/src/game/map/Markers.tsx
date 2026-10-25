@@ -287,7 +287,7 @@ export function LandMarker({
         <span className="absolute inset-0.5 rounded-full border-2 border-dashed border-gold/80" />
       )}
       <span
-        className={`marker-orb relative flex items-center justify-center rounded-full font-display text-[13px] font-extrabold text-cream shadow-[0_4px_12px_rgb(0_0_0/0.55),inset_-3px_-4px_8px_rgb(0_0_0/0.3)] [text-shadow:0_1px_2px_rgb(0_0_0/0.8)] ${mine ? "ring-2 ring-gold" : "ring-1 ring-black/50"}`}
+        className={`marker-orb relative flex items-center justify-center rounded-full font-display text-[0.8125rem] font-extrabold text-cream shadow-[0_4px_12px_rgb(0_0_0/0.55),inset_-3px_-4px_8px_rgb(0_0_0/0.3)] [text-shadow:0_1px_2px_rgb(0_0_0/0.8)] ${mine ? "ring-2 ring-gold" : "ring-1 ring-black/50"}`}
         style={{
           width: size,
           height: size,

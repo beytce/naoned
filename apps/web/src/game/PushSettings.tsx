@@ -89,7 +89,11 @@ export function PushSettings() {
           {settings.kinds.map((kind) => (
             <Switch
               key={kind}
-              checked={!settings.off.includes(kind)}
+              checked={
+                settings.optIn?.includes(kind)
+                  ? settings.off.includes(kind)
+                  : !settings.off.includes(kind)
+              }
               onChange={() => toggleKind(kind)}
               label={t.kinds[kind]}
             />

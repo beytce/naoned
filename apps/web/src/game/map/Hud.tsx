@@ -247,7 +247,7 @@ export function MapHud({
             {/* Under 360 px, upright and a size down: ten letters of the name at least. */}
             <span
               data-hud-name
-              className="block truncate font-display text-[17px] font-extrabold leading-tight text-cream [font-stretch:100%] min-[360px]:text-lg min-[360px]:[font-stretch:125%] min-[400px]:text-xl"
+              className="block truncate font-display text-[1.0625rem] font-extrabold leading-tight text-cream [font-stretch:100%] min-[360px]:text-lg min-[360px]:[font-stretch:125%] min-[400px]:text-xl"
             >
               {pseudo}
             </span>
@@ -303,7 +303,7 @@ export function MapHud({
             type="button"
             data-hud="rival"
             onClick={onRanking}
-            className="pointer-events-auto col-span-2 flex min-h-11 min-w-0 max-w-full items-center justify-self-start text-left text-[13px] text-info [text-shadow:0_1px_4px_rgb(0_0_0/0.9)] lg:max-w-xs"
+            className="pointer-events-auto col-span-2 flex min-h-11 min-w-0 max-w-full items-center justify-self-start text-left text-[0.8125rem] text-info [text-shadow:0_1px_4px_rgb(0_0_0/0.9)] lg:max-w-xs"
           >
             <span className="shrink-0 whitespace-pre">{`${rival.lead} `}</span>
             <MerchantName pseudo={rival.name} bot={rival.bot} />

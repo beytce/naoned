@@ -1331,3 +1331,20 @@ Le lot comprend :
 
 - **La croissance de la monnaie** reste l'avertissement déjà connu (diagnostic).
 - **L'Influence** reste celle d'avant (médiane 149 à 163 sur les 5 graines, contre 160 avant le lot) : avancer `first_upgrade` au premier jour ne change rien de mesurable, les marchands simulés améliorant leurs ateliers dès les premiers jours.
+
+## Des maisons du PNJ qui sont de vrais alliés (25 octobre 2026, lot 2, E2-4)
+
+Sur la Terraferme, une maison de l'ordinateur :
+- **propose l'alliance d'abord à un marchand voisin** qui n'a pas encore d'allié PNJ, ensuite seulement à une autre maison ;
+- **refuse la demande d'un marchand qui a déjà un allié PNJ**, si bien qu'un marchand a au plus un allié PNJ ;
+- **secourt un allié qui a appelé à l'aide** (signal de moins de 2 h) et qu'un front vise : elle lui envoie un quart de ses troupes, dans la limite de la part de dons du jour ;
+- **riposte contre l'agresseur quand c'est son voisin**, avec un front à 30 % de ses troupes, et signale la case visée aux alliés ;
+- **ne donne jamais de ducats** : un test vérifie que le jeu des maisons n'utilise pas `terraGift`.
+
+Le pilote du serveur fait jouer la maison 5 minutes après l'appel d'un allié, donc bien avant les 30 minutes demandées.
+
+Deux points de la proposition ne sont pas faits :
+- **Remercier après un don** : l'événement du don n'est pas dans l'état que lit la maison.
+- **La trahison de l'« opportuniste »** : aucune maison ne rompt une alliance aujourd'hui, et ce comportement est gardé tel quel.
+
+**La mesure demandée n'est pas faisable dans le simulateur.** Elle comparait les cases médianes des humains alliés à un PNJ et des humains non alliés, avec un écart de +30 % au plus et 2 éliminés par semaine au plus. Mais les marchands simulés de `pnpm sim` ne sont pas marqués PNJ et ne lancent jamais d'appel à l'aide, donc le secours et la riposte ne s'y déclenchent pas, et la règle « un allié PNJ au plus » ne s'y applique pas. `pnpm sim` ne change donc pas. Il faudra suivre en bêta les éliminés par semaine et les cases des marchands alliés à une maison.

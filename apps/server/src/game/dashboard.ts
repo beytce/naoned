@@ -41,8 +41,8 @@ export async function dashboard(
   const leader = standings[0]?.playerId ?? null;
   const rival = at > 0 ? standings[at - 1]?.playerId : standings[1]?.playerId;
   const ids = [...new Set([playerId, rival, leader].filter((x): x is string => !!x))];
-  const span =
-    hasPass(ctx, state, playerId, now) && ctx.settings.pass.perks.dashboardDetail ? 30 : 7;
+  // Thirty days for everyone: information is never sold (E3-9 of the experts).
+  const span = 30;
   const since = dayStartIn(now - (span - 1) * DAY).start;
   const accountsOf = ids.flatMap((id) => [`cash:${id}`, `escrow:${id}`]);
   const list = sql.join(

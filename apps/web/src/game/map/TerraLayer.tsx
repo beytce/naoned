@@ -9,7 +9,7 @@ import { HudChip, LorenzoCard, Segmented, Sheet, Slab, clock } from "../../ui.js
 import type { GameProps } from "../Game.js";
 import { MerchantName, merchantLabel } from "../Name.js";
 import { gameApi } from "../api.js";
-import { d, duration } from "../format.js";
+import { d, duration, hourOf } from "../format.js";
 import { store } from "../store.js";
 import {
   FOCUS_ORDER,
@@ -193,12 +193,16 @@ export function SkirmishBar({
       ) : status.phase === "none" ? (
         <>
           <p className="meta">{k.pitch(status.minutes)}</p>
+          {status.nextCall && (
+            <p className="meta text-gold">{k.nextCall(hourOf(status.nextCall))}</p>
+          )}
           <Slab size="sm" className="w-full" onClick={onJoin}>
             {k.open}
           </Slab>
         </>
       ) : status.phase === "lobby" ? (
         <>
+          {status.call && <p className="meta text-gold">{k.call(status.call)}</p>}
           <p className="meta">
             {k.lobby(status.humans, status.bots, clock(Math.max(0, status.opensAt - now)))}
           </p>
@@ -966,7 +970,7 @@ export function terraMarkers(
           type="button"
           aria-label={t().buildings[b.kind] ?? b.kind}
           onClick={() => select({ kind: "terra", cell: b.cell })}
-          className="marker-hit -translate-x-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-night/85 text-[11px] leading-none ring-1"
+          className="marker-hit -translate-x-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-night/85 text-[0.6875rem] leading-none ring-1"
           style={{ color: s.tone[b.owner] ?? P.cream, borderColor: s.tone[b.owner] ?? P.cream }}
         >
           {BUILDING_GLYPH[b.kind] ?? "•"}
@@ -1306,11 +1310,11 @@ function NotePlaque({
       // As wide as the column, never widening it: the purse sets it, the name keeps its letters.
       className="flex w-0 min-w-full flex-col items-end rounded-lg bg-night/85 px-2 py-1 text-right leading-snug ring-1 ring-line/70"
     >
-      {head && <span className={`text-[13px] font-semibold ${head.tone}`}>{head.text}</span>}
+      {head && <span className={`text-[0.8125rem] font-semibold ${head.tone}`}>{head.text}</span>}
       {/* One line high: what does not fit wraps out of sight, item by item. */}
       <span
         data-hud-meta
-        className="flex h-[18px] flex-wrap justify-end gap-x-1.5 overflow-hidden text-[13px] leading-[18px] text-cream-dim tabular-nums"
+        className="flex h-[18px] flex-wrap justify-end gap-x-1.5 overflow-hidden text-[0.8125rem] leading-[18px] text-cream-dim tabular-nums"
       >
         {after.map((x, i) => (
           <span key={x} className="whitespace-nowrap">
@@ -1343,7 +1347,8 @@ export function TerraActions({
     // On a phone the round at the left, the chips at the right; on a computer side by side.
     <span className="flex w-full items-center justify-between gap-2 lg:w-auto lg:justify-end">
       <span className="flex">{extra}</span>
-      <span className="flex items-center gap-2">
+      {/* A larger text (the Profil's size) puts the second chip under the first, never off screen. */}
+      <span className="flex min-w-0 flex-wrap items-center justify-end gap-2">
         {onSkirmish && (
           <HudChip
             hud="terra-skirmish"
@@ -1402,7 +1407,7 @@ export function TerraPanel({
     if ((!me && !open) || (me && me.eliminatedAt !== null)) {
       return (
         <div className="pointer-events-none absolute inset-x-0 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 flex flex-col items-center gap-1 px-4 text-center lg:bottom-28">
-          <span className="rounded-full bg-night/90 px-4 py-2 font-display text-[13px] font-extrabold uppercase tracking-wide text-cream ring-1 ring-line shadow-[0_6px_20px_rgb(0_0_0/0.45)]">
+          <span className="rounded-full bg-night/90 px-4 py-2 font-display text-[0.8125rem] font-extrabold uppercase tracking-wide text-cream ring-1 ring-line shadow-[0_6px_20px_rgb(0_0_0/0.45)]">
             {me ? t().out.eliminated : t().out.late}
           </span>
           <span className="font-mono text-xs uppercase tracking-[0.1em] text-cream-dim [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
@@ -1416,7 +1421,7 @@ export function TerraPanel({
     if (v.skirmish) return null;
     return (
       <div className="pointer-events-none absolute inset-x-0 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 flex flex-col items-center gap-1 lg:bottom-28">
-        <span className="slab whitespace-nowrap bg-gold px-4 py-2 font-display text-[13px] font-extrabold uppercase tracking-wide text-ink shadow-[0_6px_20px_rgb(0_0_0/0.45)]">
+        <span className="slab whitespace-nowrap bg-gold px-4 py-2 font-display text-[0.8125rem] font-extrabold uppercase tracking-wide text-ink shadow-[0_6px_20px_rgb(0_0_0/0.45)]">
           {t().place.invite}
         </span>
         <span className="meta [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
@@ -1534,7 +1539,7 @@ export function TerraPanel({
           )
         }
         extra={
-          <div className="space-y-1.5 text-[12px] text-cream-dim">
+          <div className="space-y-1.5 text-[0.75rem] text-cream-dim">
             <p>
               {me.troops >= me.cap
                 ? t().mine.full(v.rules.capRaise)
@@ -1832,7 +1837,7 @@ function Returns({ v }: { v: TerraView }) {
         <div className="min-w-0 flex-1">
           <p className="label text-gold">{t().returns.title}</p>
           {fresh.map((r) => (
-            <p key={r.front} className="text-[13px] leading-snug text-cream">
+            <p key={r.front} className="text-[0.8125rem] leading-snug text-cream">
               {t().returns.line(holderName(v, r.against), r.cells, r.spent, r.back)}
             </p>
           ))}
@@ -1884,14 +1889,14 @@ export function TerraSheets({
                 ? ` · ${props.names.resource(v.decree.target) || props.names.city(v.decree.target)}`
                 : ""}
             </p>
-            {v.decree.mine && <p className="text-[12px] text-gold">{t().decree.yours}</p>}
+            {v.decree.mine && <p className="text-[0.75rem] text-gold">{t().decree.yours}</p>}
           </div>
         )}
         <div>
           <h2 className="font-display text-lg font-extrabold uppercase tracking-wide">
             {t().decree.title}
           </h2>
-          <p className="mt-1 text-[13px] text-cream-dim">{t().decree.hint}</p>
+          <p className="mt-1 text-[0.8125rem] text-cream-dim">{t().decree.hint}</p>
         </div>
         <div className="space-y-2">
           {v.rules.decrees.map((c) => (
@@ -1903,12 +1908,14 @@ export function TerraSheets({
               className={`block w-full cut p-3 text-left ring-1 ring-inset transition ${code === c ? "bg-gold/10 ring-gold/70" : "bg-night-3 ring-line"} ${v.decree?.code === c ? "opacity-50" : ""}`}
             >
               <span className="flex items-center justify-between gap-2">
-                <span className="font-display text-[14px] font-extrabold">
+                <span className="font-display text-[0.875rem] font-extrabold">
                   {t().decree.names[c] ?? c}
                 </span>
                 {picked?.code === c && <span className="label text-gold">{t().decree.chosen}</span>}
               </span>
-              <span className="mt-0.5 block text-[12px] text-cream-dim">{t().decree.texts[c]}</span>
+              <span className="mt-0.5 block text-[0.75rem] text-cream-dim">
+                {t().decree.texts[c]}
+              </span>
             </button>
           ))}
         </div>

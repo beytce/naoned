@@ -3,6 +3,7 @@ import {
   dayStartIn,
   hourIn,
   hourWithin,
+  nextSkirmishCall,
   seasonActs,
   seasonEnd,
   weekIndex,
@@ -51,6 +52,8 @@ export const NOTIFICATION_KINDS = [
   "muda",
   // The gazette of 8:05: what the night kept in the bell.
   "morning",
+  // A call to skirmish, a quarter of an hour before (E2-2); asked for, off by default.
+  "skirmish_call",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -67,6 +70,14 @@ const TERRA_NEWS: ReadonlySet<string> = new Set([
   "terra_bombarded",
   "terra_ducats_received",
 ]);
+/**
+ * Kinds sent only to whoever asked for them (off by default): their name in `push_off` turns
+ * them on.
+ */
+export const OPT_IN: ReadonlySet<NotificationKind> = new Set(["skirmish_call"]);
+/** A call to skirmish is told this long before its hour. */
+const CALL_NOTICE_MS = 15 * 60_000;
+
 /** Pushed at once, never held back by the hourly limit per kind: the merchant has minutes. */
 const URGENT: ReadonlySet<NotificationKind> = new Set(["siege"]);
 const DAY_MS = 24 * HOUR_MS;
@@ -89,6 +100,7 @@ const OPENS: Partial<Record<NotificationKind, string>> = {
   siege: "terra",
   family: "terra",
   morning: "notices",
+  skirmish_call: "terra",
 };
 
 /** The link a push opens: a place of the list, and where it comes from for the measures. */
@@ -337,6 +349,23 @@ export class Notifier {
     await this.send(notices, now);
     await this.weekResults(now);
     await this.morning(now);
+    await this.skirmishCall(since, now);
+  }
+
+  /** A quarter of an hour before a call to skirmish, to whoever asked to be told (E2-2). */
+  private async skirmishCall(since: number, now: number): Promise<void> {
+    const call = nextSkirmishCall(this.world.ctx.settings.terraferma, since);
+    if (call === null || !(call - CALL_NOTICE_MS > since && call - CALL_NOTICE_MS <= now)) return;
+    const people = await this.people();
+    if (people.size === 0) return;
+    const asked = await this.db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(and(inArray(accounts.id, [...people]), sql`${accounts.pushOff} ? 'skirmish_call'`));
+    await this.send(
+      asked.map((r) => ({ accountId: r.id, kind: "skirmish_call" as const, data: { at: call } })),
+      now,
+    );
   }
 
   /**
@@ -442,7 +471,10 @@ export class Notifier {
     );
     for (const n of saved) {
       const mine = subs.filter((s) => s.accountId === n.accountId);
-      if (mine.length === 0 || prefs.get(n.accountId)?.has(n.kind)) continue;
+      // Off when listed; a kind asked for (opt-in) is on only when listed.
+      const listed = prefs.get(n.accountId)?.has(n.kind) ?? false;
+      if (mine.length === 0 || (OPT_IN.has(n.kind as NotificationKind) ? !listed : listed))
+        continue;
       const [recent] = URGENT.has(n.kind as NotificationKind)
         ? []
         : await this.db

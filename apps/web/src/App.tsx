@@ -111,7 +111,7 @@ function Hero({ children }: { children: ReactNode }) {
     // On a short screen (an iPhone SE) the form stays above the fold: a smaller medal and sky.
     <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] [@media(max-height:700px)]:pt-4">
       <header className="flex flex-col items-center text-center">
-        <span className="hidden [@media(max-height:700px)]:block">
+        <span className="hero-medal hidden [@media(max-height:700px)]:block">
           <Emblem size={56} className="drop-shadow-xl" />
         </span>
         <span className="[@media(max-height:700px)]:hidden">
@@ -122,7 +122,7 @@ function Hero({ children }: { children: ReactNode }) {
         </h1>
         <Label className="mt-3">{fr.seasonOf(new Date())}</Label>
       </header>
-      <Skyline className="-mx-5 mt-4 w-[calc(100%+2.5rem)] max-w-none animate-floaty [@media(max-height:700px)]:mt-2 [@media(max-height:700px)]:max-h-[120px]" />
+      <Skyline className="hero-sky -mx-5 mt-4 w-[calc(100%+2.5rem)] max-w-none animate-floaty [@media(max-height:700px)]:mt-2 [@media(max-height:700px)]:max-h-[120px]" />
       <section className="flex flex-1 flex-col justify-start pt-2">{children}</section>
       <LegalLinks className="mt-8" />
     </main>

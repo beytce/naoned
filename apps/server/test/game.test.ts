@@ -230,7 +230,7 @@ describe("game API", () => {
     expect(after.tutorial).toEqual(["produce", "harvest", "transform", "sell_city"]);
     // The dashboard counts the delivery in the day's net sales, as the week's ranking does.
     const board = (await get(cookie, "/api/game/dashboard")).json();
-    expect(board.days).toHaveLength(7);
+    expect(board.days).toHaveLength(30);
     expect(BigInt(board.today)).toBeGreaterThan(0n);
     expect(board.lines[0]).toMatchObject({ who: "me", bot: false });
     expect(board.lines[0].daily.at(-1)).toBe(board.today);

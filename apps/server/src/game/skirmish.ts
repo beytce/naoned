@@ -9,7 +9,9 @@ import {
   dayStartIn,
   hourIn,
   hourWithin,
+  nextSkirmishCall,
   skirmishAct,
+  skirmishCallAt,
   skirmishRanked,
   skirmishRankedLeft,
   toReal,
@@ -48,7 +50,11 @@ export type FriendlyWhy = "off_map" | "quota" | "late" | "few";
  * nothing paid nor spent, and its merchants are told so.
  */
 export class SkirmishHub {
-  private lobby: { id: string; players: string[]; opensAt: number } | null = null;
+  /** The lobby; `call` when it is one of the day's calls (its start, « 12:30 »). */
+  private lobby: { id: string; players: string[]; opensAt: number; call: string | null } | null =
+    null;
+  /** The call of the match under way, for the measures. */
+  private matchCall: string | null = null;
   private match: Skirmish | null = null;
   private matchId = "";
   private paid = false;
@@ -171,8 +177,24 @@ export class SkirmishHub {
   async step(now: number): Promise<void> {
     const cfg = this.cfg;
     if (!cfg) return;
+    // A call's lobby opens by itself ten minutes before its hour, for merchants to find it.
+    const call = skirmishCallAt(cfg, now);
+    if (call !== null && !this.lobby && !(this.match && !this.match.result))
+      this.openLobby(call, now);
+    // Nobody came: no match.
+    if (this.lobby && now >= this.lobby.opensAt && this.lobby.players.length === 0) {
+      const { id } = this.lobby;
+      this.lobby = null;
+      void this.write(() =>
+        this.db
+          .update(skirmishMatches)
+          .set({ status: "done", endedAt: new Date(now) })
+          .where(and(eq(skirmishMatches.id, id), eq(skirmishMatches.status, "open"))),
+      );
+    }
     if (this.lobby && now >= this.lobby.opensAt) {
-      const { id, players: humans } = this.lobby;
+      const { id, players: humans, call: called } = this.lobby;
+      this.matchCall = called;
       const m = createSkirmish(cfg, `${this.world.id}:${++this.seq}:${now}`, humans, now);
       this.match = m;
       this.matchId = id;
@@ -239,7 +261,13 @@ export class SkirmishHub {
           worldId: this.world.id,
           type: "skirmish_played",
           at: new Date(now),
-          props: { ranked: this.credited.has(id), glory: this.credited.get(id) ?? 0 },
+          props: {
+            ranked: this.credited.has(id),
+            glory: this.credited.get(id) ?? 0,
+            call: this.matchCall,
+            match: this.matchId,
+            humans: m.humans.length,
+          },
         })),
       );
     }
@@ -253,24 +281,13 @@ export class SkirmishHub {
     if (this.match && !this.match.result)
       return this.match.humans.includes(accountId) || "skirmish_full";
     if (!this.lobby && !hourWithin(hourIn(now), cfg.openHours)) return "night";
+    // Within a call's ten minutes, the lobby waits for its hour; else it starts in a minute.
     if (!this.lobby) {
-      const lobby = {
-        id: randomUUID(),
-        players: [] as string[],
-        opensAt: now + cfg.skirmish.lobbySeconds * 1_000,
-      };
-      this.lobby = lobby;
-      void this.write(() =>
-        this.db.insert(skirmishMatches).values({
-          id: lobby.id,
-          worldId: this.world.id,
-          players: [],
-          status: "open",
-          openedAt: new Date(now),
-        }),
-      );
+      const call = skirmishCallAt(cfg, now);
+      this.openLobby(call ?? now + cfg.skirmish.lobbySeconds * 1_000, now, call !== null);
     }
     const lobby = this.lobby;
+    if (!lobby) return "skirmish_full";
     if (lobby.players.length >= cfg.skirmish.players) return "skirmish_full";
     if (!lobby.players.includes(accountId)) {
       lobby.players.push(accountId);
@@ -285,6 +302,26 @@ export class SkirmishHub {
       );
     }
     return true;
+  }
+
+  /** A lobby opening at `opensAt`; a call's when `called` (its start written « 12:30 »). */
+  private openLobby(opensAt: number, now: number, called = true): void {
+    const lobby = {
+      id: randomUUID(),
+      players: [] as string[],
+      opensAt,
+      call: called ? callLabel(opensAt) : null,
+    };
+    this.lobby = lobby;
+    void this.write(() =>
+      this.db.insert(skirmishMatches).values({
+        id: lobby.id,
+        worldId: this.world.id,
+        players: [],
+        status: "open",
+        openedAt: new Date(now),
+      }),
+    );
   }
 
   /** Set down on the week's map, and still on it. */
@@ -343,6 +380,8 @@ export class SkirmishHub {
       minHumans: cfg.skirmish.minHumans,
       opensAtHour: cfg.openHours.from,
       closesAtHour: cfg.openHours.to,
+      // The next call of the day, when merchants meet (E2-2), or null.
+      nextCall: nextSkirmishCall(cfg, now),
     };
     if (!m) {
       if (this.lobby) {
@@ -363,6 +402,7 @@ export class SkirmishHub {
         return {
           phase: "lobby" as const,
           opensAt: this.lobby.opensAt,
+          call: this.lobby.call,
           players: joined.length,
           humans: joined.length - houses,
           bots: houses + Math.max(0, cfg.skirmish.players - joined.length),
@@ -485,4 +525,14 @@ function realTimes(
         }
       : null,
   };
+}
+
+/** A call's start as people read it: « 12:30 » in Paris. */
+function callLabel(at: number): string {
+  return new Intl.DateTimeFormat("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: "Europe/Paris",
+  }).format(at);
 }

@@ -1,9 +1,16 @@
 import { seasonTier } from "@comptoirs/engine";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { accounts, players, seasonResults, weeklyResults, worlds } from "../db/schema.js";
+import {
+  accounts,
+  influenceEntries,
+  players,
+  seasonResults,
+  terraResults,
+  weeklyResults,
+  worlds,
+} from "../db/schema.js";
 import { nextSeasonBounds } from "./calendar.js";
-import { grantPass } from "./pass.js";
 import { TITLES, titleFor } from "./profile.js";
 
 /**
@@ -11,16 +18,16 @@ import { TITLES, titleFor } from "./profile.js";
  * week gets something; each place in the top 10 counts.
  */
 export const SEASON_TIERS = [
-  { tier: "doge", name: "Doge de la saison", renown: 100, passDays: "season" },
-  { tier: "podium", name: "Podium de la saison", renown: 65, passDays: "season" },
-  { tier: "top10", name: "Top 10 de la saison", renown: 40, passDays: "season" },
-  { tier: "elite", name: "Top 10 % de la saison", renown: 25, passDays: 21 },
-  { tier: "notable", name: "Top 25 % de la saison", renown: 15, passDays: 7 },
-  { tier: "participant", name: "Marchand de la saison", renown: 5, passDays: 0 },
-  { tier: "none", name: "", renown: 0, passDays: 0 },
+  { tier: "doge", name: "Doge de la saison", renown: 100 },
+  { tier: "podium", name: "Podium de la saison", renown: 65 },
+  { tier: "top10", name: "Top 10 de la saison", renown: 40 },
+  { tier: "elite", name: "Top 10 % de la saison", renown: 25 },
+  { tier: "notable", name: "Top 25 % de la saison", renown: 15 },
+  { tier: "participant", name: "Marchand de la saison", renown: 5 },
+  { tier: "none", name: "", renown: 0 },
 ] as const;
 
-const NO_REWARD = { tier: "none", name: "", renown: 0, passDays: 0 } as const;
+const NO_REWARD = { tier: "none", name: "", renown: 0 } as const;
 
 export type SeasonTier = (typeof SEASON_TIERS)[number]["tier"];
 
@@ -73,13 +80,7 @@ export function renownTitle(points: number) {
  * Saves the final ranking (engine event `season_closed`), in the transaction of the closing tick.
  * Ranks count people only; bots are left out of the results.
  */
-export async function recordSeason(
-  db: Db,
-  worldId: string,
-  data: Record<string, unknown>,
-  /** End of this season: the Pass won is held during the next one (none won if absent). */
-  endsAt?: number,
-) {
+export async function recordSeason(db: Db, worldId: string, data: Record<string, unknown>) {
   // Ranked by net sales; standings saved before them carry net worth only.
   const standings = (data.standings ?? []) as {
     playerId: string;
@@ -120,14 +121,6 @@ export async function recordSeason(
     };
   });
   await db.insert(seasonResults).values(rows).onConflictDoNothing();
-  if (endsAt !== undefined) {
-    const next = nextSeasonBounds(endsAt);
-    for (const r of rows) {
-      const span = tierInfo(r.tier).passDays;
-      const until = span === "season" ? next.endsAt : endsAt + span * 86_400_000;
-      if (until > endsAt) await grantPass(db, r.accountId, "season", endsAt, until, r.tier);
-    }
-  }
   // Days of play beside each result: the house's Influence of the season asks for a week.
   return rows.map((r) => ({ ...r, days: days.get(r.accountId) ?? 0 }));
 }
@@ -142,6 +135,79 @@ export async function renownOf(db: Db, accountId: string): Promise<number> {
 }
 
 /** Seasons an account took part in, latest first: the palmarès. */
+/**
+ * The month's two titles of the Terraferma (E2-10 of the experts), read from what was recorded,
+ * people only, worth nothing but their name on the palmarès: the Capitano generale, who earned
+ * the most Influence there (the most glory breaks a tie), and the Gonfalone, the Signore of the
+ * last week closed.
+ */
+export async function monthTitles(
+  db: Db,
+  worldId: string,
+): Promise<{ capitano: string | null; gonfalone: string | null }> {
+  const glory = new Map(
+    (
+      await db
+        .select({ id: terraResults.accountId, glory: sql<number>`sum(${terraResults.glory})::int` })
+        .from(terraResults)
+        .where(eq(terraResults.worldId, worldId))
+        .groupBy(terraResults.accountId)
+    ).map((r) => [r.id, Number(r.glory)]),
+  );
+  const earned = await db
+    .select({
+      id: influenceEntries.accountId,
+      amount: sql<number>`sum(${influenceEntries.amount})::int`,
+    })
+    .from(influenceEntries)
+    .innerJoin(accounts, eq(accounts.id, influenceEntries.accountId))
+    .where(
+      and(
+        eq(influenceEntries.worldId, worldId),
+        eq(influenceEntries.source, "terraferma"),
+        eq(accounts.isBot, false),
+      ),
+    )
+    .groupBy(influenceEntries.accountId);
+  const capitano =
+    earned
+      .filter((r) => Number(r.amount) > 0)
+      .sort(
+        (a, b) =>
+          Number(b.amount) - Number(a.amount) ||
+          (glory.get(b.id) ?? 0) - (glory.get(a.id) ?? 0) ||
+          (a.id < b.id ? -1 : 1),
+      )[0]?.id ?? null;
+  const [last] = await db
+    .select({ id: terraResults.accountId })
+    .from(terraResults)
+    .innerJoin(accounts, eq(accounts.id, terraResults.accountId))
+    .where(
+      and(
+        eq(terraResults.worldId, worldId),
+        eq(terraResults.signore, true),
+        eq(accounts.isBot, false),
+      ),
+    )
+    .orderBy(desc(terraResults.week))
+    .limit(1);
+  return { capitano, gonfalone: last?.id ?? null };
+}
+
+/** The titles of the month an account holds in a world, by name. */
+async function titlesOf(db: Db, worldId: string, accountId: string): Promise<string[]> {
+  const t = await monthTitles(db, worldId);
+  return [
+    t.capitano === accountId ? MONTH_TITLES.capitano : null,
+    t.gonfalone === accountId ? MONTH_TITLES.gonfalone : null,
+  ].filter((x): x is string => x !== null);
+}
+
+export const MONTH_TITLES = {
+  capitano: "Capitano generale della Terraferma",
+  gonfalone: "Gonfalone de la Terraferme",
+};
+
 export async function seasonRecord(db: Db, accountId: string) {
   const rows = await db
     .select({
@@ -160,9 +226,15 @@ export async function seasonRecord(db: Db, accountId: string) {
     .innerJoin(worlds, eq(worlds.id, seasonResults.worldId))
     .where(eq(seasonResults.accountId, accountId))
     .orderBy(desc(worlds.endsAt));
+  const titles = new Map(
+    await Promise.all(
+      rows.map(async (r) => [r.worldId, await titlesOf(db, r.worldId, accountId)] as const),
+    ),
+  );
   return rows.map((r) => ({
     season: r.name,
     endsAt: r.endsAt.getTime(),
+    titles: titles.get(r.worldId) ?? [],
     rank: r.rank,
     players: r.players,
     worth: r.worth.toString(),
@@ -175,12 +247,7 @@ export async function seasonRecord(db: Db, accountId: string) {
 }
 
 /** The closing ceremony not yet watched by this account, if any (latest season only). */
-export async function pendingCeremony(
-  db: Db,
-  accountId: string,
-  /** The Pass is on: the ceremony tells the Pass won. */
-  passOn = true,
-) {
+export async function pendingCeremony(db: Db, accountId: string) {
   const [row] = await db
     .select({
       worldId: seasonResults.worldId,
@@ -221,12 +288,13 @@ export async function pendingCeremony(
     turnover: row.turnover?.toString() ?? null,
     tier: row.tier,
     award: info.name,
+    // The month's titles of the Terraferma: a name only, no renown (E2-10).
+    titles: await titlesOf(db, row.worldId, accountId),
     milestone: {
       name: milestoneInfo(row.milestone).name,
       renown: milestoneInfo(row.milestone).renown,
     },
     renown: row.renown,
-    passDays: passOn ? info.passDays : 0,
     totalRenown: renownTitle(await renownOf(db, accountId)),
     podium: podium.map((p) => ({
       ...p,

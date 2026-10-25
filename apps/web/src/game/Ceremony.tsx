@@ -27,11 +27,7 @@ export function Ceremony({
   const top = data.tier === "doge" || data.tier === "podium" || data.tier === "top10";
   const rewards = [
     data.award || null,
-    data.passDays === "season"
-      ? t.passSeason
-      : data.passDays > 0
-        ? t.passDays(data.passDays)
-        : null,
+    ...data.titles,
     data.milestone.renown > 0 ? t.milestone(data.milestone.name, data.milestone.renown) : null,
     data.renown > 0 ? t.renown(data.renown) : null,
   ].filter((r): r is string => r !== null);

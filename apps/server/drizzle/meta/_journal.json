@@ -169,6 +169,13 @@
       "when": 1792921726057,
       "tag": "0023_pseudo_default",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792928131214,
+      "tag": "0024_terra_signore",
+      "breakpoints": true
     }
   ]
 }

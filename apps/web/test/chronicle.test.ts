@@ -13,7 +13,7 @@ const ceremony: Ceremony = {
   award: "Sénateur de la saison",
   milestone: { name: "Négociant", renown: 20 },
   renown: 40,
-  passDays: 0,
+  titles: [],
   totalRenown: {
     points: 60,
     current: { from: 50, name: "Maison connue" },

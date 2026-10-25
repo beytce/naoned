@@ -99,7 +99,12 @@ function investStep(props: GameProps, isRaw: (type: string) => boolean): CoachSt
   const cost = raw?.upgradeCost;
   if (!raw || !cost) return null;
   const { lines, estimate } = missingMaterials(props, cost);
-  if ((lines.length > 0 && estimate === 0n) || BigInt(view.cash) < BigInt(cost.ducats) + estimate)
+  // What the Rialto sells at once, within the price's protection, must cover what is lacking.
+  const short = lines.some((l) => (view.book[l.resource]?.instant?.buy?.units ?? 0) < l.quantity);
+  if (
+    (lines.length > 0 && (estimate === 0n || short)) ||
+    BigInt(view.cash) < BigInt(cost.ducats) + estimate
+  )
     return { text: c.investLater, skip: "skipInvest" };
   const name = names.building(raw.type);
   if (props.sheet === `upgrade:${raw.id}`) {
@@ -380,7 +385,12 @@ export function Coach(props: CoachProps) {
   // The bubble goes where it hides neither the target nor the panel or sheet the player works in:
   // at the top while a sheet or a place's panel is up, or for a target in the lower third; at the
   // bottom otherwise, and always at the bottom for a target under where it would sit at the top.
-  const lowTarget = rect !== null && rect.top + rect.height / 2 > window.innerHeight * 0.65;
+  // Low, or where the bubble at the bottom would cover it (its measured height: a larger text
+  // makes it taller).
+  const lowTarget =
+    rect !== null &&
+    (rect.top + rect.height / 2 > window.innerHeight * 0.65 ||
+      rect.top + rect.height / 2 > window.innerHeight - bubbleH - 24);
   // At the top on the map, the bubble sits under the HUD's band: a target within its height there
   // sends it down.
   const hudTop =

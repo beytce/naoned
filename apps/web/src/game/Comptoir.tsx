@@ -220,7 +220,8 @@ const FIRST_STEPS = [
 
 function FirstSteps(props: GameProps & { inSheet?: boolean }) {
   const done = new Set(props.view.tutorial);
-  if (FIRST_STEPS.every((s) => done.has(s))) return null;
+  // Done once the guide's last step is: the first upgrade may have waited for the Rialto.
+  if (done.has("mission") || FIRST_STEPS.every((s) => done.has(s))) return null;
   // While Lorenzo guides, he already says what to do next: the list stands in when he is paused.
   if (!props.inSheet && store.get("guideDone") !== "1" && store.get("guideHidden") !== "1")
     return null;
@@ -422,7 +423,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="min-w-0 font-display text-[15px] font-extrabold uppercase leading-tight [font-stretch:100%]">
+            <h3 className="min-w-0 font-display text-[0.9375rem] font-extrabold uppercase leading-tight [font-stretch:100%]">
               {props.names.building(b.type)}
             </h3>
             {b.upgradeCost ? (

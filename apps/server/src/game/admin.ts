@@ -73,6 +73,34 @@ export async function retention(db: Db, worldId: string, now: number) {
       group by 1 order by 1`),
   );
 
+  // The calls to skirmish (E2-2): per day and call (« hors » outside them), the matches with a
+  // merchant ranked or all friendly, and the merchants per match on average.
+  const skirmishCalls = rowsOf<{
+    day: string;
+    call: string;
+    ranked: number;
+    friendly: number;
+    humans: number;
+  }>(
+    await db.execute(sql`
+      select day, call,
+        count(*) filter (where ranked)::int as ranked,
+        count(*) filter (where not ranked)::int as friendly,
+        round(avg(humans), 1)::float as humans
+      from (
+        select to_char(date_trunc('day', t.at at time zone 'Europe/Paris'), 'YYYY-MM-DD') as day,
+          coalesce(t.props->>'call', 'hors') as call, t.props->>'match' as match,
+          bool_or((t.props->>'ranked')::boolean) as ranked,
+          max((t.props->>'humans')::int) as humans
+        from telemetry t join accounts a on a.id = t.account_id
+        where t.world_id = ${worldId} and a.is_bot = false and t.type = 'skirmish_played'
+          and t.props ? 'match'
+          and t.at > ${new Date(now - 14 * DAY).toISOString()}::timestamptz
+        group by 1, 2, 3
+      ) m
+      group by 1, 2 order by 1, 2`),
+  );
+
   // The skirmishes' matches by week (Paris): paid, friendly or unpaid, lost to a restart; and the
   // checks that must stay at 0: a match's glory paid twice to a merchant, glory paid for a match
   // marked aborted (its quota spent).
@@ -118,6 +146,7 @@ export async function retention(db: Db, worldId: string, now: number) {
     retention: [1, 3, 7, 14, 30].map(retained),
     sessions,
     skirmishes,
+    skirmishCalls,
     skirmishMatches: {
       weeks: skirmishWeeks,
       duplicates: checks?.duplicates ?? 0,
