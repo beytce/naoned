@@ -220,7 +220,8 @@ const FIRST_STEPS = [
 
 function FirstSteps(props: GameProps & { inSheet?: boolean }) {
   const done = new Set(props.view.tutorial);
-  if (FIRST_STEPS.every((s) => done.has(s))) return null;
+  // Done once the guide's last step is: the first upgrade may have waited for the Rialto.
+  if (done.has("mission") || FIRST_STEPS.every((s) => done.has(s))) return null;
   // While Lorenzo guides, he already says what to do next: the list stands in when he is paused.
   if (!props.inSheet && store.get("guideDone") !== "1" && store.get("guideHidden") !== "1")
     return null;

@@ -99,7 +99,12 @@ function investStep(props: GameProps, isRaw: (type: string) => boolean): CoachSt
   const cost = raw?.upgradeCost;
   if (!raw || !cost) return null;
   const { lines, estimate } = missingMaterials(props, cost);
-  if ((lines.length > 0 && estimate === 0n) || BigInt(view.cash) < BigInt(cost.ducats) + estimate)
+  // What the Rialto sells at once, within the price's protection, must cover what is lacking.
+  const short = lines.some((l) => (view.book[l.resource]?.instant?.buy?.units ?? 0) < l.quantity);
+  if (
+    (lines.length > 0 && (estimate === 0n || short)) ||
+    BigInt(view.cash) < BigInt(cost.ducats) + estimate
+  )
     return { text: c.investLater, skip: "skipInvest" };
   const name = names.building(raw.type);
   if (props.sheet === `upgrade:${raw.id}`) {
