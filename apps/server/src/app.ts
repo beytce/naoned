@@ -1,5 +1,5 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import cookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
@@ -13,7 +13,7 @@ import Fastify, {
 } from "fastify";
 import { ZodError, z } from "zod";
 import { deleteAccount, exportAccount } from "./account.js";
-import { AuthError, AuthService, SESSION_DAYS } from "./auth/service.js";
+import { AuthError, AuthService, SESSION_DAYS, originSchema } from "./auth/service.js";
 import type { Db } from "./db/client.js";
 import { registerGameRoutes } from "./game/routes.js";
 import { SkirmishHub } from "./game/skirmish.js";
@@ -184,8 +184,10 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     "/api/auth/verify",
     { config: { rateLimit: { max: 20, timeWindow: "15 minutes" } } },
     async (req, reply) => {
-      const { token } = z.object({ token: z.string().min(1).max(200) }).parse(req.body);
-      const { sessionToken, account } = await auth.verify(token);
+      const { token, origin } = z
+        .object({ token: z.string().min(1).max(200), origin: originSchema })
+        .parse(req.body);
+      const { sessionToken, account } = await auth.verify(token, origin);
       setSession(reply, sessionToken);
       return { account };
     },
@@ -196,10 +198,10 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     "/api/auth/code",
     { config: { rateLimit: { max: 20, timeWindow: "15 minutes" } } },
     async (req, reply) => {
-      const { email, code } = z
-        .object({ email: z.string().max(254), code: z.string().max(20) })
+      const { email, code, origin } = z
+        .object({ email: z.string().max(254), code: z.string().max(20), origin: originSchema })
         .parse(req.body);
-      const { sessionToken, account } = await auth.verifyCode(email, code);
+      const { sessionToken, account } = await auth.verifyCode(email, code, origin);
       setSession(reply, sessionToken);
       return { account };
     },
@@ -276,14 +278,19 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
   const webDist = options.webDist ? resolve(options.webDist) : undefined;
   if (webDist && existsSync(webDist)) {
     // Files are looked up on each request, so a rebuilt app is served without a restart.
-    await app.register(fastifyStatic, { root: webDist });
+    // The page itself is served below: its link previews need the site's absolute address.
+    await app.register(fastifyStatic, { root: webDist, index: false });
+    const site = new URL(options.appUrl).origin;
+    const page = () =>
+      readFileSync(join(webDist, "index.html"), "utf8").replaceAll("%APP_URL%", site);
     // Single-page app: page routes get index.html; a missing file (old cached asset) is a 404,
     // never HTML in place of a script.
+    app.get("/", (_req, reply) => reply.type("text/html").send(page()));
     app.setNotFoundHandler((req, reply) => {
       const path = req.url.split("?")[0] ?? "";
       const isPage =
         req.method === "GET" && !path.startsWith("/api/") && !/\.[a-z0-9]+$/i.test(path);
-      if (isPage) return reply.type("text/html").sendFile("index.html");
+      if (isPage) return reply.type("text/html").send(page());
       return reply.code(404).send({ error: "not_found" });
     });
   }

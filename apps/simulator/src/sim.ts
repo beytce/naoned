@@ -110,6 +110,8 @@ export interface SimulationResult {
     firstHourShare: number;
     /** At each session, orders the stock covered but another merchant had already taken. */
     lostPerSession: number;
+    /** Orders of the board taken over the season, per merchant. */
+    takesBy: Record<string, number>;
   };
   /** The road: deliveries and vehicles (see `roadStats`). */
   road?: RoadStats;
@@ -573,25 +575,31 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     const departed = new Map<string, number>();
     for (const d of roadSeen.deliveries.values())
       departed.set(`${d.playerId}:${d.orderId}`, d.departAt);
-    let orders = 0;
-    let taken = 0;
-    let fast = 0;
-    for (const b of boards.values()) {
-      orders += b.orders.length;
+    // An evening's order carried to the next day's board counts once, with its last taker.
+    const seen = new Map<string, { opensAt: number; taker: string | undefined }>();
+    for (const b of [...boards.values()].sort((x, y) => x.day - y.day)) {
       for (const o of b.orders) {
-        const taker = b.takenBy[o.id];
-        if (!taker) continue;
-        taken++;
-        const at = departed.get(`${taker}:${o.id}`);
-        if (at !== undefined && at - o.opensAt <= 3_600_000) fast++;
+        seen.set(o.id, { opensAt: o.opensAt, taker: b.takenBy[o.id] ?? seen.get(o.id)?.taker });
       }
     }
+    let taken = 0;
+    let fast = 0;
+    const takesBy: Record<string, number> = {};
+    for (const [id, o] of seen) {
+      if (!o.taker) continue;
+      taken++;
+      takesBy[o.taker] = (takesBy[o.taker] ?? 0) + 1;
+      const at = departed.get(`${o.taker}:${id}`);
+      if (at !== undefined && at - o.opensAt <= 3_600_000) fast++;
+    }
+    const orders = seen.size;
     result.board = {
       days: boards.size,
       orders,
       takenShare: orders > 0 ? taken / orders : 0,
       firstHourShare: taken > 0 ? fast / taken : 0,
       lostPerSession: activity.lost / Math.max(1, activity.sessions),
+      takesBy,
     };
   }
   if (ctx.settings.muda) {

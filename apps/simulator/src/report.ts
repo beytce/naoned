@@ -239,6 +239,20 @@ export function evaluate(
       pass: true,
       blocking: false,
     });
+    // The occasional merchant's share of the board against the regular's (E1-1 of the experts,
+    // 25 October 2026: the night's waves gone, the morning must not be all the frequent's).
+    const final = finalWorth(r);
+    const takes = (keep: (profile: string) => boolean) =>
+      median(final.filter((p) => keep(p.profile)).map((p) => b.takesBy[p.playerId] ?? 0));
+    const casual = takes((p) => p === "casual");
+    const frequent = takes((p) => p !== "casual");
+    checks.push({
+      name: "Tableau commun : prises d'un occasionnel / d'un assidu",
+      target: "diagnostic : ≥ 0,37 (référence avant les vagues de jour)",
+      value: `${(frequent > 0 ? casual / frequent : 0).toFixed(2)} (médianes ${casual} et ${frequent} commandes dans la saison)`,
+      pass: true,
+      blocking: false,
+    });
   }
   checks.push(...passChecks(r, twin));
   checks.push(...houseChecks(r, houseTwin));

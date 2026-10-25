@@ -1,3 +1,4 @@
+import { takeOrigin } from "./origin.js";
 export interface Account {
   id: string;
   email: string;
@@ -34,13 +35,29 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   return data as T;
 }
 
+/** The origin kept for the visit (`origin.ts`), if any and if storage is allowed. */
+function visitOrigin() {
+  try {
+    return takeOrigin(sessionStorage) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export const api = {
   me: () => call<{ account: Account }>("GET", "/api/me").then((r) => r.account),
   requestLink: (email: string) => call<void>("POST", "/api/auth/request", { email }),
+  // Where the visit came from goes with the first sign-in (an existing account keeps its own).
   verifyCode: (email: string, code: string) =>
-    call<{ account: Account }>("POST", "/api/auth/code", { email, code }).then((r) => r.account),
+    call<{ account: Account }>("POST", "/api/auth/code", {
+      email,
+      code,
+      origin: visitOrigin(),
+    }).then((r) => r.account),
   verify: (token: string) =>
-    call<{ account: Account }>("POST", "/api/auth/verify", { token }).then((r) => r.account),
+    call<{ account: Account }>("POST", "/api/auth/verify", { token, origin: visitOrigin() }).then(
+      (r) => r.account,
+    ),
   setPseudo: (pseudo: string) =>
     call<{ account: Account }>("PATCH", "/api/me", { pseudo }).then((r) => r.account),
   setCrest: (crest: { shape: string; color: string; symbol: string }) =>

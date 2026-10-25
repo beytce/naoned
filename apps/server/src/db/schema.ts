@@ -40,6 +40,14 @@ export const accounts = pgTable(
     pushOff: jsonb("push_off").$type<string[]>().notNull().default([]),
     /** The Terraferma's rating (Elo, from 1 000), kept from week to week and season to season. */
     terraRating: integer("terra_rating").notNull().default(1000),
+    /**
+     * Where the account came from, recorded at its creation: the shared link's `ref` (the pseudo
+     * of who shared it) and the campaign's `utm_*`, for the launch's measures.
+     */
+    ref: text("ref"),
+    utmSource: text("utm_source"),
+    utmMedium: text("utm_medium"),
+    utmCampaign: text("utm_campaign"),
   },
   (t) => [
     uniqueIndex("accounts_email_key").on(t.email),

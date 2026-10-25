@@ -73,6 +73,23 @@ export class AuthError extends Error {
   }
 }
 
+/** Where a new account comes from (see apps/web/src/origin.ts), each value at most 64 chars. */
+export interface Origin {
+  ref?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+}
+
+export const originSchema = z
+  .object({
+    ref: z.string().max(64).optional(),
+    utmSource: z.string().max(64).optional(),
+    utmMedium: z.string().max(64).optional(),
+    utmCampaign: z.string().max(64).optional(),
+  })
+  .optional();
+
 export interface AuthDeps {
   db: Db;
   mailer: Mailer;
@@ -123,6 +140,7 @@ export class AuthService {
   async verifyCode(
     rawEmail: string,
     rawCode: string,
+    origin?: Origin,
   ): Promise<{ sessionToken: string; account: PublicAccount }> {
     const parsed = emailSchema.safeParse(rawEmail);
     const code = rawCode.replace(/\s+/g, "");
@@ -159,14 +177,17 @@ export class AuthService {
       return false;
     });
     if (!opened) throw new AuthError("invalid_code");
-    return this.openSession(email, now);
+    return this.openSession(email, now, origin);
   }
 
   /**
    * Consumes a magic link token (single use, atomically) and opens a session.
    * Creates the account on first login.
    */
-  async verify(token: string): Promise<{ sessionToken: string; account: PublicAccount }> {
+  async verify(
+    token: string,
+    origin?: Origin,
+  ): Promise<{ sessionToken: string; account: PublicAccount }> {
     const now = this.now();
     const [used] = await this.deps.db
       .update(loginTokens)
@@ -180,19 +201,21 @@ export class AuthService {
       )
       .returning({ email: loginTokens.email });
     if (!used) throw new AuthError("invalid_token");
-    return this.openSession(used.email, now);
+    return this.openSession(used.email, now, origin);
   }
 
   /** The session of a token consumed, by link or code; the account made on first login. */
   private async openSession(
     email: string,
     now: Date,
+    origin: Origin = {},
   ): Promise<{ sessionToken: string; account: PublicAccount }> {
     // One account per mailbox: an alias opens the account of its mailbox, never a second one.
     const mailbox = canonicalEmail(email);
     await this.deps.db
       .insert(accounts)
-      .values({ email, emailCanonical: mailbox, createdAt: now })
+      // Where it came from, on its creation only (an existing account keeps its own).
+      .values({ email, emailCanonical: mailbox, createdAt: now, ...origin })
       .onConflictDoNothing();
     const [account] = await this.deps.db
       .update(accounts)

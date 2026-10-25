@@ -1,4 +1,5 @@
 import { fr } from "../i18n.js";
+import { shareUrl } from "../origin.js";
 import { d } from "./format.js";
 import type { Ceremony } from "./types.js";
 
@@ -74,8 +75,10 @@ export async function shareChronicle(data: Ceremony, pseudo: string): Promise<vo
     type: "image/png",
   });
   const text = chronicleLines(data, pseudo).join(" · ");
+  // The game's address goes with the picture, carrying who shared it.
+  const link = shareUrl(window.location.origin, pseudo);
   if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
-    await navigator.share({ files: [file], text }).catch(() => undefined);
+    await navigator.share({ files: [file], text, url: link }).catch(() => undefined);
     return;
   }
   const url = URL.createObjectURL(blob);
