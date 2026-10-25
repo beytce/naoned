@@ -50,6 +50,8 @@ Trois experts en jeux mobile et PC persistants, de la famille de Hades' Star, on
 
 ### Lot 0 : corrections, en premier
 
+**Fait le 25 octobre 2026** (branche `claude/lot0-corrections`) : les 7 points ci-dessous, chacun dans son commit. Toutes les vérifications sont passées : 699 tests, e2e, `pnpm sim` conforme sur 5 graines, et `pnpm --filter @comptoirs/simulator terra --humans 5` qui passe de 5 semaines sur 5 avec un Signore PNJ à 0 sur 5. Détails dans docs/calibration.md.
+
 | Sujet | Proposition | Ce qu'on fait |
 | --- | --- | --- |
 | Bogue `invest` | Annexe B, E3-3 | La feuille de production propose à nouveau `canStart` une fois le guide fini. Le pas `invest` est enregistré par `tutorial.ts`. La condition inclut aussi `mission`, pour débloquer les comptes qui ont déjà fini le guide. |

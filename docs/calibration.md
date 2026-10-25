@@ -1278,3 +1278,5 @@ Ces cinq missions sont remplacées par celles de la Terraferme prévues par docs
 - **Un test de réglages vérifie que chaque événement du tableau de Venise est bien émis** par le moteur, en dehors de la Campagne.
 
 `pnpm sim` ne change pas : les marchands simulés ne réclament pas l'Influence.
+
+`pnpm sim` relancé après tout le lot 0 (Signore, missions, compte par boîte mail, affichage) : 5 graines, **toutes conformes** (PASS). La croissance de la monnaie par joueur actif reste dans le diagnostic déjà connu (1,5 à 4,1 %/jour en moyenne), le Gini à J+15 entre 0,46 et 0,49, et 3 à 4 jours hors plage du ratio créée / détruite sur 23 : les valeurs d'avant, aux variations de graine près. Le lot 0 ne touche pas à l'économie simulée.
