@@ -155,7 +155,7 @@ function ago(ms: number): string {
   if (min < 60) return `${min} min`;
   const h = Math.floor(min / 60);
   if (h < 24) return `${h} h`;
-  return `${Math.floor(h / 24)} j`;
+  return `${Math.floor(h / 24)} ${fr.misc.dayUnit}`;
 }
 
 /** The bell in the header: unread count, and the latest notices in a sheet. */

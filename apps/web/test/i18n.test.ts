@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { serverWords } from "../src/game/api.js";
 import { en } from "../src/i18n.en.js";
 import { fr, french } from "../src/i18n.js";
 
@@ -10,6 +11,7 @@ const SHAPED_APART = new Set([
   "themeNames.building",
   "themeNames.city",
   "themeNames.region",
+  "serverNames",
 ]);
 
 /** Every difference of shape between the two dictionaries: a key missing, a type, a length. */
@@ -58,7 +60,8 @@ describe("the English interface", () => {
   it("keeps the Venetian names in Italian", () => {
     expect(en.game.terra.nations.mantova).toContain("Mantova");
     expect(en.game.families.lands.padova).toBe("Padova");
-    expect(JSON.stringify(en)).not.toMatch(/Venise|Vérone|Padoue|Mantoue/);
+    // The server's French names are keys of a translation, not English words.
+    expect(JSON.stringify({ ...en, serverNames: {} })).not.toMatch(/Venise|Vérone|Padoue|Mantoue/);
   });
 
   it("writes ordinals the English way", async () => {
@@ -76,5 +79,23 @@ describe("the English interface", () => {
       "101st",
       "111th",
     ]);
+  });
+
+  it("puts the server's French names in English, never a player's words", () => {
+    const got = serverWords(
+      {
+        title: { current: { name: "Colporteur" } },
+        badges: [{ name: "Fidèle au comptoir" }],
+        pseudo: "Colporteur",
+        messages: [{ body: "Marchand" }],
+      },
+      en.serverNames,
+    );
+    expect(got).toEqual({
+      title: { current: { name: "Peddler" } },
+      badges: [{ name: "Faithful to the counter" }],
+      pseudo: "Colporteur",
+      messages: [{ body: "Marchand" }],
+    });
   });
 });

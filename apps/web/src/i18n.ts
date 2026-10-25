@@ -23,6 +23,8 @@ const frDict = {
     city: {} as Record<string, string>,
     region: {} as Record<string, string>,
   },
+  /** The server's French names (titles, tiers, badges), in another language: none in French. */
+  serverNames: {} as Record<string, string>,
   /** Words of the drawings and small controls. */
   misc: {
     loop: ["Produire", "Livrer", "Réinvestir"],
@@ -33,6 +35,8 @@ const frDict = {
     next: "Suivant",
     last: "Dernier",
     quantity: "Quantité",
+    /** The day's unit in a time left: « 6 j 13 h ». */
+    dayUnit: "j",
     legend: [
       "Vos terres",
       "Vos alliés",

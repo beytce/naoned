@@ -17,6 +17,10 @@ son centre, une pièce des effets restée à l'écran (sur la bulle du guide com
 pnpm --filter @comptoirs/web build && pnpm --filter @comptoirs/web e2e
 ```
 
+`LANG=en` joue la même session dans l'interface anglaise (`/?lang=en`), aux deux formats et sous
+les mêmes règles d'`assert.mjs` ; les mots que le script lit sont dans la table `WORDS` de
+`layout.mjs`. Les captures vont alors dans `SHOTS` (par exemple `e2e-shots-en`).
+
 `REPEAT=n` rejoue la session n fois, chaque fois sur un serveur neuf (monde vide, horloge à son
 départ, limites de connexion par adresse et stock du jour de la Dogana intacts), et compte les
 exécutions sans défaut.

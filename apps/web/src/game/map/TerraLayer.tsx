@@ -1207,7 +1207,8 @@ export function TerraHud({
   folded?: boolean;
 }) {
   const me = v.me;
-  const regionName = (code: string) => regions.find((r) => r.code === code)?.name ?? code;
+  const regionName = (code: string) =>
+    fr.themeNames.region[code] ?? regions.find((r) => r.code === code)?.name ?? code;
   const [tip, setTip] = useTip();
   const { shown, leaving } = usePresence(tip, 120);
   return (
