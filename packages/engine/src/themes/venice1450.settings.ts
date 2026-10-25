@@ -820,7 +820,8 @@ export const venice1450Settings: WorldSettingsInput = {
     clay_pit: ["lagoon"],
     lumber_camp: ["dolomites"],
   },
-  // Specialising pays: +25 % yield per level above the first (a level 5 workshop: × 2).
+  // Specialising pays: +25 % yield per level above the first, on top of the level itself (a level
+  // 5 workshop makes 5 × 2 = 10 times a level 1).
   levelYieldBonusBps: 2_500,
   maxBuildings: 12,
   maxBuildingLevel: 5,
