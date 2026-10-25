@@ -2,6 +2,7 @@ import { and, count, desc, eq, gt, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "../db/client.js";
 import { accounts, loginTokens, sessions } from "../db/schema.js";
+import { countFunnel } from "../funnel.js";
 import type { Mailer } from "../mail/mailer.js";
 import { magicLinkMail } from "../mail/templates.js";
 import { canonicalEmail, disposableEmail } from "./canonical.js";
@@ -212,11 +213,13 @@ export class AuthService {
   ): Promise<{ sessionToken: string; account: PublicAccount }> {
     // One account per mailbox: an alias opens the account of its mailbox, never a second one.
     const mailbox = canonicalEmail(email);
-    await this.deps.db
+    const created = await this.deps.db
       .insert(accounts)
       // Where it came from, on its creation only (an existing account keeps its own).
       .values({ email, emailCanonical: mailbox, createdAt: now, ...origin })
-      .onConflictDoNothing();
+      .onConflictDoNothing()
+      .returning({ id: accounts.id });
+    if (created.length > 0) await countFunnel(this.deps.db, "signed_in", origin.utmSource, now);
     const [account] = await this.deps.db
       .update(accounts)
       .set({ lastLoginAt: now })

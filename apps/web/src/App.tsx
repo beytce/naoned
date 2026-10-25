@@ -6,6 +6,7 @@ import { Skyline } from "./art/scenes.js";
 import { Game } from "./game/Game.js";
 import { fr } from "./i18n.js";
 import { LegalLinks, LegalPage, legalPageAt } from "./legal/Legal.js";
+import { firstLanding } from "./origin.js";
 import { Label, Slab } from "./ui.js";
 
 type Screen =
@@ -47,6 +48,19 @@ export function App() {
       .then((account) => setScreen(screenFor(account)))
       .catch(() => setScreen({ name: "login" }));
   }, []);
+
+  // The landing seen, once per visit, for the counters of the way in (`/admin`).
+  const landing = screen.name === "login" && !screen.sentTo;
+  useEffect(() => {
+    if (!landing) return;
+    let first = false;
+    try {
+      first = firstLanding(sessionStorage);
+    } catch {
+      // No storage: not counted.
+    }
+    if (first) void api.landing().catch(() => undefined);
+  }, [landing]);
 
   const logout = async () => {
     await api.logout().catch(() => undefined);

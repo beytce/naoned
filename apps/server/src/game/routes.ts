@@ -16,6 +16,7 @@ import { z } from "zod";
 import type { AuthService, PublicAccount } from "../auth/service.js";
 import type { Db } from "../db/client.js";
 import { accounts, players, pushSubscriptions, telemetry } from "../db/schema.js";
+import { countFunnel, funnelReport } from "../funnel.js";
 import { NOTIFICATION_KINDS, type NotificationKind, type Notifier } from "../notify/notifier.js";
 import { isPushEndpoint } from "../notify/push.js";
 import { retention, sharedMailboxes, suspiciousPairs } from "./admin.js";
@@ -477,6 +478,11 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     });
     if (!res.ok) return reply.code(409).send({ error: res.error });
     await syncPass(db, world, account.id);
+    const [came] = await db
+      .select({ source: accounts.utmSource })
+      .from(accounts)
+      .where(eq(accounts.id, account.id));
+    await countFunnel(db, "region_chosen", came?.source, new Date(world.now()));
     return view(account);
   });
 
@@ -768,7 +774,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     if (!deps.adminEmails.includes(account.email.toLowerCase())) {
       return reply.code(403).send({ error: "forbidden" });
     }
-    return retention(db, world.id, world.now());
+    return {
+      ...(await retention(db, world.id, world.now())),
+      funnel: await funnelReport(db, new Date(world.now())),
+    };
   });
 
   /** Admin: pairs of people trading a lot with each other away from the reference price. */

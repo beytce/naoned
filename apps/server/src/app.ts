@@ -15,6 +15,7 @@ import { ZodError, z } from "zod";
 import { deleteAccount, exportAccount } from "./account.js";
 import { AuthError, AuthService, SESSION_DAYS, originSchema } from "./auth/service.js";
 import type { Db } from "./db/client.js";
+import { countFunnel } from "./funnel.js";
 import { registerGameRoutes } from "./game/routes.js";
 import { SkirmishHub } from "./game/skirmish.js";
 import type { GameWorld } from "./game/world.js";
@@ -101,6 +102,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     trustProxy: options.production ? (_address: string, hop: number) => hop < 1 : false,
   });
   const auth = new AuthService(options);
+  const now = options.now ?? (() => new Date());
   const appOrigin = new URL(options.appUrl).origin;
   const headers = securityHeaders(options.appUrl, options.production);
 
@@ -174,9 +176,23 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     "/api/auth/request",
     { config: { rateLimit: { max: 10, timeWindow: "15 minutes" } } },
     async (req, reply) => {
-      const { email } = z.object({ email: z.string() }).parse(req.body);
+      const { email, source } = z
+        .object({ email: z.string(), source: z.string().max(64).optional() })
+        .parse(req.body);
       await auth.requestLink(email);
+      await countFunnel(options.db, "link_requested", source, now());
       return reply.code(202).send({ ok: true });
+    },
+  );
+
+  // The landing seen, counted without anyone in it (no account, no cookie): once per visit.
+  app.post(
+    "/api/funnel/landing",
+    { config: { rateLimit: { max: 10, timeWindow: "15 minutes" } } },
+    async (req, reply) => {
+      const { source } = z.object({ source: z.string().max(64).optional() }).parse(req.body ?? {});
+      await countFunnel(options.db, "landing_view", source, now());
+      return reply.code(204).send();
     },
   );
 

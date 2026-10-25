@@ -1,4 +1,4 @@
-import { takeOrigin } from "./origin.js";
+import { takeOrigin, visitSource } from "./origin.js";
 export interface Account {
   id: string;
   email: string;
@@ -44,9 +44,20 @@ function visitOrigin() {
   }
 }
 
+function storedSource() {
+  try {
+    return visitSource(sessionStorage);
+  } catch {
+    return undefined;
+  }
+}
+
 export const api = {
   me: () => call<{ account: Account }>("GET", "/api/me").then((r) => r.account),
-  requestLink: (email: string) => call<void>("POST", "/api/auth/request", { email }),
+  requestLink: (email: string) =>
+    call<void>("POST", "/api/auth/request", { email, source: storedSource() }),
+  /** The landing seen (a counter of the way in, without anyone in it). */
+  landing: () => call<void>("POST", "/api/funnel/landing", { source: storedSource() }),
   // Where the visit came from goes with the first sign-in (an existing account keeps its own).
   verifyCode: (email: string, code: string) =>
     call<{ account: Account }>("POST", "/api/auth/code", {

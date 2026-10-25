@@ -456,3 +456,19 @@ export const messageReports = pgTable(
   },
   (t) => [primaryKey({ columns: [t.messageId, t.reporterId] })],
 );
+
+/**
+ * The way in, counted without anyone in it (E3-2 of the experts, 25 October 2026): per day of
+ * Paris, step and campaign source ('' for none), how many went through. No account, no address,
+ * no cookie: counters only.
+ */
+export const funnelCounts = pgTable(
+  "funnel_counts",
+  {
+    day: text("day").notNull(),
+    step: text("step").notNull(),
+    source: text("source").notNull().default(""),
+    count: integer("count").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.step, t.source] })],
+);

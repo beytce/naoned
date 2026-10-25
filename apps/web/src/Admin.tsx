@@ -26,6 +26,63 @@ interface Retention {
   };
   tutorial: { step: string; players: number }[];
   lastSeen: Record<string, number>;
+  funnel?: {
+    steps: string[];
+    days: { day: string; steps: Record<string, number> }[];
+    sources: { source: string; steps: Record<string, number> }[];
+  };
+}
+
+/** The way in, step by step (counters, no one in them). */
+const FUNNEL: Record<string, string> = {
+  landing_view: "Accueil",
+  link_requested: "Lien",
+  signed_in: "Compte",
+  region_chosen: "Région",
+  first_produce: "1er lot",
+};
+
+function Funnel({ funnel }: { funnel: NonNullable<Retention["funnel"]> }) {
+  const head = (
+    <tr className="text-left text-cream-dim">
+      <th className="py-1 pr-2 font-normal" />
+      {funnel.steps.map((s) => (
+        <th key={s} className="py-1 pr-2 text-right font-normal">
+          {FUNNEL[s] ?? s}
+        </th>
+      ))}
+    </tr>
+  );
+  const row = (label: string, steps: Record<string, number>) => (
+    <tr key={label} className="border-t border-line/60">
+      <td className="py-1 pr-2">{label}</td>
+      {funnel.steps.map((s) => (
+        <td key={s} className="py-1 pr-2 text-right tabular-nums">
+          {steps[s] ?? 0}
+        </td>
+      ))}
+    </tr>
+  );
+  return (
+    <Panel>
+      <Label>Entrée dans le jeu (14 jours)</Label>
+      <p className="mt-1 text-xs text-cream-dim">
+        Compteurs anonymes, sans compte ni cookie avant l'inscription : accueil vu, lien demandé,
+        compte créé, région choisie, premier lot lancé. Par jour, puis par source de campagne
+        (utm_source ; « — » sans source).
+      </p>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>{head}</thead>
+          <tbody>{funnel.days.map((d) => row(d.day.slice(5), d.steps))}</tbody>
+        </table>
+        <table className="mt-3 w-full text-xs">
+          <thead>{head}</thead>
+          <tbody>{funnel.sources.map((s) => row(s.source || "—", s.steps))}</tbody>
+        </table>
+      </div>
+    </Panel>
+  );
 }
 
 const LAST_SEEN: Record<string, string> = {
@@ -312,6 +369,7 @@ export function Admin() {
           </table>
         )}
       </Panel>
+      {data.funnel && <Funnel funnel={data.funnel} />}
       <Panel>
         <Label>Échanges suspects</Label>
         <p className="mt-1 text-xs text-cream-dim">

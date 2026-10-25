@@ -24,6 +24,7 @@ import {
 import { and, asc, eq, gt, lte, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import {
+  accounts,
   ledgerEntries,
   players,
   stockMovements,
@@ -33,6 +34,7 @@ import {
   worldStates,
   worlds,
 } from "../db/schema.js";
+import { countFunnel } from "../funnel.js";
 import { nextSeasonBounds, seasonBounds, seasonMonthName } from "./calendar.js";
 import { recordInfluence, recordSeasonInfluence } from "./house.js";
 import { recordSeason } from "./season.js";
@@ -524,6 +526,14 @@ export class GameWorld {
     const done = new Set(row.steps);
     const fresh = TUTORIAL_STEPS.filter((s) => reached.has(s) && !done.has(s));
     if (fresh.length === 0) return;
+    // The way in ends at the first batch launched (counted per campaign source, not per person).
+    if (fresh.includes("produce")) {
+      const [came] = await tx
+        .select({ source: accounts.utmSource })
+        .from(accounts)
+        .where(eq(accounts.id, accountId));
+      await countFunnel(tx, "first_produce", came?.source, at);
+    }
     await tx
       .update(players)
       .set({ tutorialSteps: [...row.steps, ...fresh] })

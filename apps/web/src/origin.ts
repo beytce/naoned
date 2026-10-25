@@ -52,6 +52,30 @@ export function takeOrigin(storage: Pick<Storage, "getItem" | "removeItem">): Or
   }
 }
 
+/** The campaign source of the visit, left in place (for the counters of the way in). */
+export function visitSource(storage: Pick<Storage, "getItem">): string | undefined {
+  try {
+    const raw = storage.getItem(KEY);
+    return raw ? ((JSON.parse(raw) as Origin).utmSource ?? undefined) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The landing seen, counted once per visit and without anyone in it (no account, no cookie):
+ * true the first time only.
+ */
+export function firstLanding(storage: Pick<Storage, "getItem" | "setItem">): boolean {
+  try {
+    if (storage.getItem(`${KEY}.landing`)) return false;
+    storage.setItem(`${KEY}.landing`, "1");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** The game's address to share, carrying who shared it. */
 export function shareUrl(origin: string, pseudo: string | null): string {
   return pseudo ? `${origin}/?ref=${encodeURIComponent(pseudo)}` : `${origin}/`;
