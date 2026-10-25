@@ -17,7 +17,7 @@ const COLOR = {
 } as const;
 
 /** What the workshops earn an hour at reference prices, from the view (no request). */
-function perHour(props: GameProps): bigint {
+export function perHour(props: GameProps): bigint {
   return props.view.buildings.reduce((n, b) => n + BigInt(b.economics.marginPerHour), 0n);
 }
 

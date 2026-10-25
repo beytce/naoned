@@ -1,10 +1,26 @@
+import { TIER_SHAPE, goodsColour, goodsTier } from "./goods.js";
 import { P } from "./palette.js";
 
-/** Icons of the seven resources, 48 × 48. */
+/**
+ * A good's icon, 48 × 48: its illustration set on its mark of the goods' code (`goods.tsx`), the
+ * shape of its tier in its chain's colour, so that the same good reads the same everywhere.
+ */
 export function ResourceIcon({ code, size = 32 }: { code: string; size?: number }) {
+  const colour = goodsColour(code);
   return (
-    <svg viewBox="0 0 48 48" width={size} height={size} aria-hidden="true">
-      {ICONS[code] ?? <circle cx="24" cy="24" r="14" fill={P.line} />}
+    <svg viewBox="0 0 48 48" width={size} height={size} aria-hidden="true" data-goods={code}>
+      <path
+        d={TIER_SHAPE[goodsTier(code)]}
+        transform="translate(24 24) scale(1.6)"
+        fill={colour}
+        fillOpacity="0.24"
+        stroke={colour}
+        strokeWidth="1.4"
+        strokeOpacity="0.9"
+      />
+      <g transform="translate(24 24) scale(0.8) translate(-24 -24)">
+        {ICONS[code] ?? <circle cx="24" cy="24" r="14" fill={P.line} />}
+      </g>
     </svg>
   );
 }

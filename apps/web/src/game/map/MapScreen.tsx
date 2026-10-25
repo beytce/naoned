@@ -1,7 +1,8 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { defaultCrest } from "../../art/crest.js";
+import { goodsColour } from "../../art/goods.js";
 import { ResourceIcon } from "../../art/resources.js";
-import { GOODS_COLOUR, PLACES } from "../../art/veneto.js";
+import { PLACES } from "../../art/veneto.js";
 import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
 import { Big, Panel, Qty, Sheet, Slab, clock } from "../../ui.js";
@@ -11,6 +12,7 @@ import { Coach } from "../Coach.js";
 import { ComeBack } from "../ComeBack.js";
 import { CounterSheets, buyRationsSheet, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
+import { perHour } from "../Dashboard.js";
 import type { GameProps } from "../Game.js";
 import { HouseSheet } from "../House.js";
 import { RialtoSheet } from "../Marche.js";
@@ -32,6 +34,7 @@ import {
   vehicleName,
 } from "../roadKit.js";
 import { store } from "../store.js";
+import { upcoming } from "../timeline.js";
 import type {
   DeliveryOrderView,
   DeliveryView,
@@ -82,6 +85,8 @@ import {
   useTerraShapes,
   useWeekReplay,
 } from "./TerraLayer.js";
+import { TimeStrip } from "./TimeStrip.js";
+import { WorkshopRow } from "./WorkshopRow.js";
 import { type MapMarker, type Selection, WorldMap, type WorldMapHandle } from "./WorldMap.js";
 import { ACTION_ICONS as A } from "./actions.js";
 import { Icon } from "./icons.js";
@@ -417,7 +422,13 @@ export function MapScreen(
           name={m.homeLabel}
           crest={crest}
           ready={ready}
-          progress={running ? running.share : null}
+          rings={view.buildings.map((b) => {
+            const done = readyOf(b, now);
+            if (done > 0) return { share: 1, ready: true };
+            if (!b.job || done >= b.job.batches) return { share: null, ready: false };
+            const start = b.job.startedAt + done * b.job.batchMs;
+            return { share: (now - start) / b.job.batchMs, ready: false };
+          })}
           onTap={() => {
             setDeparture(null);
             haptic("tap");
@@ -438,7 +449,10 @@ export function MapScreen(
             <CityMarker
               code={code}
               name={names.city(code)}
-              orders={orders.length}
+              orders={orders.map((o) => ({
+                resource: o.resource,
+                covered: have(view, o.resource) >= o.quantity,
+              }))}
               deliverable={deliverable}
               criee={criee?.city === code}
               supplier={view.supplies.some((s) => s.city === code) ? crest : null}
@@ -483,7 +497,7 @@ export function MapScreen(
             id={v.id}
             type={v.type}
             label={vehicleName(v.type)}
-            load={loaded && (!dv || now < dv.arriveAt) ? (GOODS_COLOUR[loaded] ?? null) : null}
+            load={loaded && (!dv || now < dv.arriveAt) ? goodsColour(loaded) : null}
             state={dv ? "road" : "parked"}
             onTap={() => {
               haptic("tap");
@@ -541,13 +555,14 @@ export function MapScreen(
         top: 110,
         right: (panelUp ? 460 : 40) + (side ? SIDE_W : 0),
         // The Terraferma's actions above the doors, at the right, stay clear too.
-        bottom: (campaign && !campaign.mine) || (terra && !terra.me) ? 170 : terra ? 180 : 120,
+        bottom: (campaign && !campaign.mine) || (terra && !terra.me) ? 170 : terra ? 180 : 190,
         left: 40,
       }
     : {
         top: Math.max(campaign || terra ? 160 : 150, hudBand),
         right: 12,
-        bottom: panelUp ? 200 : terra ? 156 : 100,
+        // The trade keeps its strip of what comes next clear, above the doors (shown from 640 px high).
+        bottom: panelUp ? 200 : terra ? 156 : campaign || window.innerHeight < 640 ? 100 : 160,
         left: 12,
       };
 
@@ -697,6 +712,7 @@ export function MapScreen(
         rival={rivalLine(props.rival)}
         seasonProgress={seasonProgress}
         cash={view.cash}
+        rate={!campaign && !terra && perHour(props) > 0n ? m.rate(d(perHour(props))) : null}
         // Three counters on the map (recommendations of 20 October 2026): the ducats, the rank
         // and the carts; the Influence lives in the Profil.
         influence={null}
@@ -744,6 +760,23 @@ export function MapScreen(
             <CampaignHud f={campaign} now={now} />
           ) : terra ? (
             <TerraHud v={terra} now={now} regions={props.catalog.regions} folded={skirmishOn} />
+          ) : undefined
+        }
+        timeline={
+          !campaign && !terra ? (
+            <TimeStrip
+              now={now}
+              items={upcoming(
+                {
+                  buildings: view.buildings,
+                  deliveries,
+                  nextWaveAt: view.agenda.nextWaveAt,
+                  building: props.names.building,
+                  city: props.names.city,
+                },
+                now,
+              )}
+            />
           ) : undefined
         }
         actions={
@@ -942,6 +975,7 @@ function HomePanel({ props, onClose }: { props: GameProps; onClose: () => void }
       tone={hungry ? "vermilion" : ready > 0 ? "gold" : "lagoon"}
       progress={ready === 0 && next ? next.share : null}
       onClose={onClose}
+      above={<WorkshopRow props={props} />}
       actions={
         <>
           {ready > 0 || idle ? (

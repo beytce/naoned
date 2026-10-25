@@ -172,6 +172,23 @@ const frDict = {
           .join(", "),
       carts: "Charrettes libres",
       resumeGuide: "Reprendre le guide",
+      /** What the workshops earn an hour, under the purse (theoretical, at reference prices). */
+      rate: (amount: string) => `≈ +${amount}/h`,
+      /** The strip of what comes next, above the doors. */
+      /** The counter's workshops in its panel. */
+      workshopRow: {
+        ready: (n: number) => (n > 1 ? `${n} prêts` : "Prêt"),
+        idle: "À lancer",
+        starved: "Sans matière",
+      },
+      timeline: {
+        label: "À venir",
+        now: "maintenant",
+        ready: (workshop: string) => `${workshop} prêt`,
+        pays: (city: string) => `${city} paie`,
+        orders: "Commandes",
+        back: (vehicle: string) => `${vehicle} rentre`,
+      },
       /** The cards that unfold beside the HUD's counters. */
       tips: {
         cash: {
@@ -2052,7 +2069,7 @@ const frDict = {
       sellCity: (resource: string) =>
         `Vendez vos ${resource.toLowerCase()} à la ville qui paie le mieux.`,
       goRoutes:
-        "Les villes passent commande : la pastille d'une ville compte celles que votre stock couvre. Touchez une charrette.",
+        "Chaque marque autour d'une ville est une commande, pleine si votre stock la couvre. Touchez une charrette.",
       deliver:
         "Ouvrez les cargaisons : cochez une commande que votre stock couvre, la ville paie à l'arrivée.",
       dispatch: "Touchez « Partir » (ou laissez filer le compte à rebours).",
