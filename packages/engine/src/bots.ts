@@ -341,10 +341,13 @@ export class Bot {
       const code = decrees[Math.floor(s.rng.next() * decrees.length)];
       if (code) act({ type: "terraDecree", code });
     }
+    // A real ally (E2-4 of the experts): one house of the computer at most beside a merchant.
+    const npc = (o: string) => s.state().players[o]?.npc === true;
+    const hasNpcAlly = (o: string) => alliesOf(map, o).some(npc);
     for (const r of (map.requests ?? []).filter((x) => x.to === id))
-      act({ type: "terraAccept", from: r.from });
+      if (npc(r.from) || !hasNpcAlly(r.from)) act({ type: "terraAccept", from: r.from });
     const mine = cellsOf(map, id);
-    const allies = alliesOf(map, id);
+    const allies = alliesOf(s.state().terra?.map ?? map, id);
     if (allies.length === 0 && !(map.requests ?? []).some((r) => r.from === id)) {
       const next = new Set<string>();
       for (const c of mine) {
@@ -353,9 +356,12 @@ export class Bot {
           if (o && o !== id && !isNation(o)) next.add(o);
         }
       }
-      const pick = [...next].sort()[0];
+      // A merchant without an ally of the computer first, then a house of the computer.
+      const merchants = [...next].filter((o) => !npc(o) && !hasNpcAlly(o)).sort();
+      const pick = merchants[0] ?? [...next].filter(npc).sort()[0];
       if (pick) act({ type: "terraAlly", other: pick });
     }
+    this.standByAllies(s, cfg, allies, act);
     // Spare ducats only: four times the price in hand.
     const spare = (price: bigint) => this.cash(s) >= price * 4n;
     const border = mine.find((c) =>
@@ -374,6 +380,43 @@ export class Bot {
     // Fronts, one after another while the troops are worth it.
     for (let k = 0; k < cfg.fronts.max; k++) {
       if (!this.launchFront(s, cfg, allies, act)) return;
+    }
+  }
+
+  /**
+   * An ally who called for help (a signal of the last two hours) under attack: a quarter of the
+   * troops sent, within the day's share; its aggressor struck back when it is a neighbour, the
+   * cell told to the allies. Troops only, never ducats (E2-4 of the experts).
+   */
+  private standByAllies(
+    s: Session,
+    cfg: TerraConfig,
+    allies: string[],
+    act: (cmd: Record<string, unknown>) => boolean,
+  ): void {
+    const id = this.id;
+    for (const ally of allies) {
+      const map = s.state().terra?.map;
+      const me = map?.players[id];
+      if (!map || !me || allyHelpAsked(map, ally, s.now) === null) continue;
+      const against = map.fronts.filter((f) => f.against === ally && f.owner !== id);
+      if (against.length === 0) continue;
+      const limit = Math.floor((capOf(map, cfg, id) * cfg.alliances.giftShareBps) / 10_000);
+      const today = Math.floor((s.now - map.startAt) / DAY);
+      const given = me.today?.day === today ? me.today.gifts : 0;
+      const count = Math.min(Math.floor(me.troops / 4), limit - given);
+      if (count > 0) act({ type: "terraSend", to: ally, count });
+      // Struck back: a cell of the aggressor's on the house's border.
+      const mine = new Set(cellsOf(map, id));
+      for (const f of against) {
+        const cell = cellsOf(map, f.owner).find((c) =>
+          hexNeighbors(map.map, c).some((n) => mine.has(n)),
+        );
+        if (cell === undefined) continue;
+        if (act({ type: "terraFront", aim: cell, shareBps: 3_000 }))
+          act({ type: "terraSignal", kind: "attack", cell });
+        break;
+      }
     }
   }
 
@@ -1345,4 +1388,12 @@ export class Bot {
       }
     }
   }
+}
+
+/** When an ally last called for help on the week's map, within two hours, or null. */
+export function allyHelpAsked(map: TerraState, ally: string, now: number): number | null {
+  const asked = (map.signals ?? [])
+    .filter((x) => x.from === ally && x.kind === "help" && now - x.at <= 2 * HOUR)
+    .map((x) => x.at);
+  return asked.length > 0 ? Math.max(...asked) : null;
 }

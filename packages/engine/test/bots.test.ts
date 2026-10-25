@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   Bot,
@@ -263,5 +266,116 @@ describe("bots on the Terraferma", () => {
     const fronts = w.state.terra?.map.fronts.filter((f) => f.owner === bot.id) ?? [];
     expect(fronts.some((f) => f.against === null)).toBe(true);
     expect(fronts.some((f) => f.against === "rival")).toBe(true);
+  });
+});
+
+describe("the computer's houses as allies (E2-4 of the experts)", () => {
+  /** A house of the computer set down, with a merchant and another house on its border. */
+  function neighbours() {
+    const w = new World(
+      makeContext({
+        terraferma: {
+          ...testTerraferma,
+          live: true,
+          start: {
+            ...testTerraferma.start,
+            troops: 90,
+            protectionHours: 0,
+            placementHours: 0,
+            minDistance: 2,
+          },
+          cellsPerActive: 40,
+        },
+      }),
+    );
+    const bot = new Bot("b1", PROFILES.producer, "terraferma", w.now);
+    w.do({ type: "join", playerId: "b1", region: "terraferma", npc: true } as never);
+    w.do({ type: "join", playerId: "b2", region: "terraferma", npc: true } as never);
+    w.do({ type: "join", playerId: "ada", region: "terraferma" });
+    w.do({ type: "join", playerId: "rival", region: "terraferma" });
+    w.do({ type: "tick" });
+    const first = w.state.terra?.map;
+    if (!first) throw new Error("no map");
+    // Each on the first free inner cell the rules accept.
+    for (const id of ["b1", "b2", "ada", "rival"]) {
+      const now = w.state.terra?.map ?? first;
+      const cells = now.owner
+        .map((o, i) => (o === null && hexNeighbors(now.map, i).length === 6 ? i : -1))
+        .filter((i) => i >= 0);
+      if (!cells.some((cell) => w.try({ type: "terraPlace", playerId: id, cell } as never).ok))
+        throw new Error(`nowhere for ${id}`);
+    }
+    const state = structuredClone(w.state);
+    const map = state.terra?.map;
+    if (!map) throw new Error("no map");
+    const home = map.players.b1?.capital ?? 0;
+    // Two cells of the border given to Ada and to the other house; one to the rival.
+    const ring = hexNeighbors(map.map, home).filter((n) => map.map.land[n]);
+    const [toAda, toB2, toRival] = ring;
+    if (toAda === undefined || toB2 === undefined || toRival === undefined) throw new Error("ring");
+    map.owner[toAda] = "ada";
+    map.owner[toB2] = "b2";
+    map.owner[toRival] = "rival";
+    w.state = state;
+    const play = () =>
+      bot.play({
+        ctx: w.ctx,
+        state: () => w.state,
+        now: w.now,
+        market: new MarketView(
+          w.ctx,
+          () => w.state,
+          () => w.now,
+        ),
+        rng: new Rng(1),
+        act: (cmd) => w.try(cmd).ok,
+      });
+    return { w, play, toAda, toRival };
+  }
+
+  it("ask a merchant to ally before a house of the computer", () => {
+    const { w, play } = neighbours();
+    play();
+    const map = w.state.terra?.map;
+    expect(map?.requests?.some((r) => r.from === "b1" && r.to === "ada")).toBe(true);
+  });
+
+  it("refuse a merchant who already has a house of the computer for ally", () => {
+    const { w, play } = neighbours();
+    // Ada allied with the other house, then asking b1 too.
+    w.do({ type: "terraAlly", playerId: "ada", other: "b2" } as never);
+    w.do({ type: "terraAccept", playerId: "b2", from: "ada" } as never);
+    w.do({ type: "terraAlly", playerId: "ada", other: "b1" } as never);
+    play();
+    const allies = (w.state.terra?.map.alliances ?? []).filter(
+      (a) => (a.a === "b1" || a.b === "b1") && (a.a === "ada" || a.b === "ada"),
+    );
+    expect(allies).toHaveLength(0);
+  });
+
+  it("send troops to an ally who calls for help under attack, and strike its aggressor back", () => {
+    const { w, play, toAda } = neighbours();
+    w.do({ type: "terraAlly", playerId: "ada", other: "b1" } as never);
+    play();
+    const state = structuredClone(w.state);
+    const map = state.terra?.map;
+    if (!map) throw new Error("no map");
+    expect(map.alliances?.some((a) => a.a === "ada" || a.b === "ada")).toBe(true);
+    map.signals = [...(map.signals ?? []), { from: "ada", kind: "help", at: w.now }];
+    map.fronts = [
+      ...map.fronts,
+      { id: "f-test", owner: "rival", against: "ada", aim: toAda, troops: 20, launchedAt: w.now },
+    ];
+    w.state = state;
+    const given = w.state.terra?.map.players.b1?.today?.gifts ?? 0;
+    play();
+    const after = w.state.terra?.map;
+    expect(after?.players.b1?.today?.gifts ?? 0).toBeGreaterThan(given);
+    expect(after?.fronts.some((f) => f.owner === "b1" && f.against === "rival")).toBe(true);
+  });
+
+  it("never give ducats: no gift of money in their play", () => {
+    const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "src");
+    expect(readFileSync(join(dir, "bots.ts"), "utf8")).not.toMatch(/terraGift/);
   });
 });
