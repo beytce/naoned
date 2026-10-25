@@ -1,7 +1,8 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { defaultCrest } from "../../art/crest.js";
+import { goodsColour } from "../../art/goods.js";
 import { ResourceIcon } from "../../art/resources.js";
-import { GOODS_COLOUR, PLACES } from "../../art/veneto.js";
+import { PLACES } from "../../art/veneto.js";
 import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
 import { Big, Panel, Qty, Sheet, Slab, clock } from "../../ui.js";
@@ -483,7 +484,7 @@ export function MapScreen(
             id={v.id}
             type={v.type}
             label={vehicleName(v.type)}
-            load={loaded && (!dv || now < dv.arriveAt) ? (GOODS_COLOUR[loaded] ?? null) : null}
+            load={loaded && (!dv || now < dv.arriveAt) ? goodsColour(loaded) : null}
             state={dv ? "road" : "parked"}
             onTap={() => {
               haptic("tap");
