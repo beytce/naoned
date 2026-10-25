@@ -52,6 +52,8 @@ export const fr = {
   choosePseudo: "Votre nom de marchand",
   pseudoHelp: "3 à 20 caractères : lettres, chiffres, _ ou -. Il sera visible des autres joueurs.",
   pseudoLabel: "Nom de marchand",
+  pseudoProposed:
+    "Un nom proposé pour commencer tout de suite : vous pourrez le changer une fois, gratuitement, dans le Profil.",
   pseudoInvalid:
     "De 3 à 20 caractères, avec seulement des lettres, des chiffres, _ ou - (pas d'espace ni de ponctuation).",
   confirm: "Valider",
@@ -61,34 +63,23 @@ export const fr = {
     skip: "Passer",
     next: "Suivant",
     start: "Choisir mon métier",
-    /** The first slide's text when the season runs past its first calendar month. */
+    /** The slide's text when the season runs past its first calendar month. */
     longSeason: (until: string) =>
-      `Cette saison dure jusqu'au ${until} ; les suivantes, un mois chacune, du 1er au dernier jour du mois. À la fin, le classement se fige : le plus gros chiffre de ventes nettes l'emporte (ce que vous avez vendu, moins ce que vous avez acheté ; le stock ne compte pas). Vous partez avec 1 000 ducats et deux ou trois ateliers.`,
+      `Cette saison dure jusqu'au ${until}, les suivantes un mois chacune : le meilleur vendeur devient Doge, puis tout le monde repart à zéro. Lorenzo, votre facteur, vous guide. Rien à acheter qui fasse gagner : ni ducats, ni marchandises, ni vitesse.`,
+    /** One slide only (E3-5 of the experts): the rest is said by Lorenzo, at its step. */
     slides: [
       {
         kicker: "Le but du jeu",
-        title: "Devenez le premier marchand de Venise",
-        text: "Une saison dure un mois : elle s'ouvre le 1er et se termine le dernier jour du mois. À la fin, le classement se fige : le plus gros chiffre de ventes nettes l'emporte (ce que vous avez vendu, moins ce que vous avez acheté ; le stock ne compte pas). Vous partez avec 1 000 ducats et deux ou trois ateliers.",
-      },
-      {
-        kicker: "Comment",
-        title: "Produire, livrer, réinvestir",
-        text: "Vos ateliers fabriquent des marchandises, même quand vous dormez. Les villes vous passent commande : chargez une charrette et livrez-les par la route, ou vendez aux autres marchands au Rialto. Puis réinvestissez pour produire plus.",
-      },
-      {
-        kicker: "Le commerce",
-        title: "Vous ne pouvez pas tout faire seul",
-        text: "Vos ouvriers mangent du pain, vos fours brûlent du bois, et pour grandir il faut des briques ET des planches. Votre métier n'en produit qu'une partie : le reste, vous l'achèterez aux autres marchands.",
-      },
-      {
-        kicker: "Le rythme",
-        title: "Quelques minutes, plusieurs fois par jour",
-        text: "Lancez jusqu'à 12 heures de production (toute une nuit), revenez récolter, vendez, réinvestissez. Lorenzo, votre facteur, vous guide pour vos premiers pas.",
+        title: "Un mois. Le meilleur vendeur devient Doge.",
+        text: "Vos ateliers produisent, les villes commandent, le Rialto échange : Lorenzo, votre facteur, vous guide. Chaque mois, tout le monde repart à zéro. Rien à acheter qui fasse gagner : ni ducats, ni marchandises, ni vitesse.",
       },
     ],
   },
 
   region: {
+    recommended: "Recommandé ce mois-ci",
+    recommendedHelp:
+      "Le métier le moins choisi ce mois-ci : ses marchandises sont les plus demandées par les autres.",
     title: "Choisissez votre métier",
     help: "Chaque région n'extrait que sa propre matière première : le blé en Vénétie, l'argile dans la Lagune, le bois dans les Dolomites. Pour le reste, il faudra commercer.",
     bonus: (pct: number, resource: string) => {
@@ -1857,6 +1848,11 @@ export const fr = {
       days: "Jours joués",
     },
     trophies: "Trophées",
+    /** The name proposed at the door, changed once (E3-5). */
+    rename: {
+      open: "✎ Changer de nom (une fois, gratuit)",
+      save: "Garder ce nom",
+    },
     editCrest: "Modifier",
     crestTitle: "Mon blason",
     shape: "Forme",

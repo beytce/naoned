@@ -31,6 +31,8 @@ export interface PublicAccount {
   id: string;
   email: string;
   pseudo: string | null;
+  /** The name kept as proposed at the door (the profile offers to change it). */
+  pseudoDefault: boolean;
   crest: Crest | null;
 }
 
@@ -57,6 +59,7 @@ const publicColumns = {
   id: accounts.id,
   email: accounts.email,
   pseudo: accounts.pseudo,
+  pseudoDefault: accounts.pseudoDefault,
   crest: accounts.crest,
 };
 
@@ -275,7 +278,12 @@ export class AuthService {
     return account;
   }
 
-  async setPseudo(accountId: string, rawPseudo: string): Promise<PublicAccount> {
+  async setPseudo(
+    accountId: string,
+    rawPseudo: string,
+    /** Kept as the door proposed it. */
+    proposed = false,
+  ): Promise<PublicAccount> {
     const pseudo = pseudoSchema.parse(rawPseudo);
     const [taken] = await this.deps.db
       .select({ id: accounts.id })
@@ -285,7 +293,7 @@ export class AuthService {
     try {
       const [account] = await this.deps.db
         .update(accounts)
-        .set({ pseudo })
+        .set({ pseudo, pseudoDefault: proposed })
         .where(eq(accounts.id, accountId))
         .returning(publicColumns);
       if (!account) throw new Error("account not found");

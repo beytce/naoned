@@ -46,6 +46,7 @@ import { levelsOf } from "./level.js";
 import { LiveHub } from "./live.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
 import { priceHistory, profile } from "./profile.js";
+import { activePeopleByRegion, recommendedRegion } from "./recommend.js";
 import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
 import { toJson } from "./serialize.js";
 import type { SkirmishHub } from "./skirmish.js";
@@ -395,6 +396,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   app.get("/api/game/catalog", async () =>
     toJson({
       ...catalog(world.ctx, world),
+      // The trade to recommend at the door (E3-5), or none.
+      recommendedRegion: recommendedRegion(
+        activePeopleByRegion(world.ctx, world.current, world.now()),
+      ),
       previousDoge: await previousDoge(db, world.id),
       community: deps.communityUrl ?? null,
     }),

@@ -3,6 +3,8 @@ export interface Account {
   id: string;
   email: string;
   pseudo: string | null;
+  /** The name kept as proposed at the door: the profile offers to change it. */
+  pseudoDefault?: boolean;
   crest: { shape: string; color: string; symbol: string } | null;
 }
 
@@ -69,8 +71,11 @@ export const api = {
     call<{ account: Account }>("POST", "/api/auth/verify", { token, origin: visitOrigin() }).then(
       (r) => r.account,
     ),
-  setPseudo: (pseudo: string) =>
-    call<{ account: Account }>("PATCH", "/api/me", { pseudo }).then((r) => r.account),
+  setPseudo: (pseudo: string, proposed = false) =>
+    call<{ account: Account }>("PATCH", "/api/me", { pseudo, proposed }).then((r) => r.account),
+  /** A free name proposed at the door. */
+  pseudoSuggestion: () =>
+    call<{ pseudo: string }>("GET", "/api/me/pseudo-suggestion").then((r) => r.pseudo),
   setCrest: (crest: { shape: string; color: string; symbol: string }) =>
     call<{ account: Account }>("PATCH", "/api/me", { crest }).then((r) => r.account),
   logout: () => call<void>("POST", "/api/auth/logout"),

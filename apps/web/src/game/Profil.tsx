@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api.js";
+import { ApiError, api } from "../api.js";
 import {
   CREST_COLORS,
   CREST_SHAPES,
@@ -279,6 +279,7 @@ function ProfileBody(props: GameProps) {
           <button type="button" className="label mt-2 text-info" onClick={() => setEditing(true)}>
             ✎ {fr.game.editCrest}
           </button>
+          {props.account.pseudoDefault && <RenameOnce props={props} />}
         </div>
       </header>
 
@@ -569,5 +570,51 @@ function ProfileBody(props: GameProps) {
         {editing && <CrestEditor props={props} onClose={() => setEditing(false)} />}
       </Sheet>
     </div>
+  );
+}
+
+/** The name proposed at the door, changed once and for free (E3-5 of the experts). */
+function RenameOnce({ props }: { props: GameProps }) {
+  const t = fr.game.rename;
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(props.account.pseudo ?? "");
+  const [error, setError] = useState<string | null>(null);
+  if (!open)
+    return (
+      <button
+        type="button"
+        className="mt-1 block min-h-11 text-sm text-info"
+        onClick={() => setOpen(true)}
+      >
+        {t.open}
+      </button>
+    );
+  return (
+    <form
+      className="mt-2 space-y-2"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setError(null);
+        if (!/^[\p{L}\p{N}_-]{3,20}$/u.test(name)) return setError(fr.pseudoInvalid);
+        try {
+          props.onAccount(await api.setPseudo(name));
+        } catch (err) {
+          const known = err instanceof ApiError ? fr.errors[err.code] : undefined;
+          setError(known ?? fr.errors.unknown ?? null);
+        }
+      }}
+    >
+      <input
+        aria-label={fr.pseudoLabel}
+        value={name}
+        maxLength={20}
+        onChange={(e) => setName(e.target.value.replace(/\s/g, "_"))}
+        className="w-full rounded-lg bg-night-2 px-3 py-2 text-base ring-1 ring-inset ring-line"
+      />
+      {error && <p className="text-sm text-vermilion">{error}</p>}
+      <Slab size="sm" type="submit" className="w-full">
+        {t.save}
+      </Slab>
+    </form>
   );
 }

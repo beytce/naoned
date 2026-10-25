@@ -30,6 +30,8 @@ export const accounts = pgTable(
      */
     emailCanonical: text("email_canonical"),
     pseudo: text("pseudo"),
+    /** The name kept as proposed at the door: the profile offers to change it, once, for free. */
+    pseudoDefault: boolean("pseudo_default").notNull().default(false),
     /** Cosmetic coat of arms chosen by the player: { shape, color, symbol }. */
     crest: jsonb("crest").$type<{ shape: string; color: string; symbol: string }>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

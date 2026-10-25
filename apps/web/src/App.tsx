@@ -319,6 +319,18 @@ function CodeForm(props: {
 
 function PseudoForm({ onDone }: { onDone: (account: Account) => void }) {
   const [pseudo, setPseudo] = useState("");
+  // A name proposed, so that the game starts at once (E3-5): kept as is, the profile offers to
+  // change it later.
+  const [proposed, setProposed] = useState<string | null>(null);
+  useEffect(() => {
+    api
+      .pseudoSuggestion()
+      .then((name) => {
+        setProposed(name);
+        setPseudo((typed) => typed || name);
+      })
+      .catch(() => undefined);
+  }, []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -332,7 +344,7 @@ function PseudoForm({ onDone }: { onDone: (account: Account) => void }) {
     }
     setBusy(true);
     try {
-      onDone(await api.setPseudo(pseudo));
+      onDone(await api.setPseudo(pseudo, pseudo === proposed));
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -358,7 +370,9 @@ function PseudoForm({ onDone }: { onDone: (account: Account) => void }) {
           className={inputClass}
         />
       </label>
-      <p className="text-xs text-muted">{fr.pseudoHelp}</p>
+      <p className="text-xs text-muted">
+        {pseudo === proposed ? fr.pseudoProposed : fr.pseudoHelp}
+      </p>
       {error && <p className="text-sm text-vermilion">{error}</p>}
       <Slab type="submit" size="lg" className="w-full" disabled={busy}>
         {fr.confirm}

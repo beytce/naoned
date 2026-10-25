@@ -13,6 +13,7 @@ import Fastify, {
 } from "fastify";
 import { ZodError, z } from "zod";
 import { deleteAccount, exportAccount } from "./account.js";
+import { suggestPseudo } from "./auth/names.js";
 import { AuthError, AuthService, SESSION_DAYS, originSchema } from "./auth/service.js";
 import type { Db } from "./db/client.js";
 import { countFunnel } from "./funnel.js";
@@ -239,12 +240,25 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     const account = await auth.accountForSession(req.cookies[SESSION_COOKIE]);
     if (!account) return reply.code(401).send({ error: "unauthenticated" });
     const body = z
-      .object({ pseudo: z.string().optional(), crest: z.unknown().optional() })
+      .object({
+        pseudo: z.string().optional(),
+        proposed: z.boolean().optional(),
+        crest: z.unknown().optional(),
+      })
       .parse(req.body);
     let updated = account;
-    if (body.pseudo !== undefined) updated = await auth.setPseudo(account.id, body.pseudo);
+    if (body.pseudo !== undefined)
+      updated = await auth.setPseudo(account.id, body.pseudo, body.proposed ?? false);
     if (body.crest !== undefined) updated = await auth.setCrest(account.id, body.crest);
     return { account: updated };
+  });
+
+  /** A free name to propose at the door (E3-5 of the experts). */
+  app.get("/api/me/pseudo-suggestion", async (req, reply) => {
+    const account = await auth.accountForSession(req.cookies[SESSION_COOKIE]);
+    if (!account) return reply.code(401).send({ error: "unauthenticated" });
+    const seed = Number.parseInt(account.id.replace(/-/g, "").slice(0, 8), 16);
+    return { pseudo: await suggestPseudo(options.db, seed) };
   });
 
   /** GDPR: everything the game keeps about the player, as a JSON file. */
