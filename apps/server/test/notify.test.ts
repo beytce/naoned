@@ -252,6 +252,44 @@ describe("notifications", () => {
     expect(agenda.nextWaveAt).toBeGreaterThan(now);
   });
 
+  it("tells of a call to skirmish a quarter of an hour before, only whoever asked", async () => {
+    world = await GameWorld.open(database.db, () => now, {
+      settingsOverride: { terraferma: { live: true } },
+    });
+    notifier = new Notifier(database.db, world, pusher);
+    await app.close();
+    app = await buildApp({
+      db: database.db,
+      mailer,
+      appUrl: "https://comptoirs.test",
+      production: false,
+      world,
+      notifier,
+      now: () => new Date(now),
+    });
+    const ada = await player("ada@example.org");
+    const bob = await player("bob@example.org");
+    await subscribe(ada.cookie);
+    await subscribe(bob.cookie, "https://fcm.googleapis.com/fcm/send/2");
+    await app.inject({
+      method: "PATCH",
+      url: "/api/notifications/push",
+      headers: { cookie: ada.cookie },
+      payload: { off: ["skirmish_call"] },
+    });
+    // 12:14 then 12:15 in Paris: the call of 12:30 told once, to Ada who asked.
+    now = Date.parse("2026-10-12T10:14:00Z");
+    await notifier.scan();
+    now = Date.parse("2026-10-12T10:15:00Z");
+    await notifier.scan();
+    now += 60_000;
+    await notifier.scan();
+    const calls = pusher.sent.filter((p) => p.payload.kind === "skirmish_call");
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.target.endpoint).toBe("https://fcm.googleapis.com/fcm/send/1");
+    expect(String(calls[0]?.payload.title)).toContain("12:30");
+  });
+
   it("refuses a push endpoint outside the browsers' push services", async () => {
     const ada = await player("ada@example.org");
     const res = await subscribe(ada.cookie, "https://10.0.0.1/internal");

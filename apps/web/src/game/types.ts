@@ -820,7 +820,9 @@ export type NotificationKind =
   | "family"
   | "siege"
   | "delivery"
-  | "muda";
+  | "muda"
+  | "morning"
+  | "skirmish_call";
 
 export interface Notice {
   id: number;
@@ -834,6 +836,8 @@ export interface PushSettings {
   publicKey: string | null;
   kinds: NotificationKind[];
   off: NotificationKind[];
+  /** Kinds off unless asked for: listed in `off`, they are on. */
+  optIn?: NotificationKind[];
 }
 
 export interface CrestData {
@@ -1235,6 +1239,8 @@ interface SkirmishDay {
   closesAtHour: number;
   /** A match of the merchant's lost to a restart lately: no glory, its quota untouched. */
   interrupted: boolean;
+  /** The next call of the day, when merchants meet (E2-2), or null. */
+  nextCall?: number | null;
 }
 
 /**
@@ -1255,6 +1261,8 @@ export type SkirmishStatus =
   | ({
       phase: "lobby";
       opensAt: number;
+      /** One of the day's calls (« 12:30 »), or null. */
+      call?: string | null;
       players: number;
       /** Who it opens with as things stand: merchants, and the computer's houses filling it. */
       humans: number;

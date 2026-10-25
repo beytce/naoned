@@ -1,4 +1,4 @@
-import { hourIn, hourWithin } from "./clock.js";
+import { dayStartIn, hourIn, hourWithin } from "./clock.js";
 import { MINUTE_MS } from "./state.js";
 import {
   MILAN,
@@ -37,6 +37,30 @@ export interface Skirmish {
   /** Ranked (by day, between merchants): its ranks bring glory; friendly otherwise. */
   ranked: boolean;
   result?: { ranking: { id: string; cells: number; glory: number }[] };
+}
+
+/** The starts of the day's calls of the day `at` falls on (Paris), in order. */
+function callsOfDay(cfg: TerraConfig, at: number): number[] {
+  const midnight = dayStartIn(at).start;
+  return [...(cfg.skirmish?.calls ?? [])]
+    .sort((a, b) => a - b)
+    .map((m) => midnight + m * MINUTE_MS);
+}
+
+/** The call whose lobby is open at `now` (its start), or null. */
+export function skirmishCallAt(cfg: TerraConfig | undefined, now: number): number | null {
+  const sk = cfg?.skirmish;
+  if (!cfg || !sk) return null;
+  const lobby = sk.callLobbyMinutes * MINUTE_MS;
+  return callsOfDay(cfg, now).find((s) => now >= s - lobby && now < s) ?? null;
+}
+
+/** The next call's start after `now` (today's, else tomorrow's first), or null without calls. */
+export function nextSkirmishCall(cfg: TerraConfig | undefined, now: number): number | null {
+  if (!cfg?.skirmish?.calls.length) return null;
+  return (
+    callsOfDay(cfg, now).find((s) => s > now) ?? callsOfDay(cfg, now + 24 * 3_600_000)[0] ?? null
+  );
 }
 
 /**

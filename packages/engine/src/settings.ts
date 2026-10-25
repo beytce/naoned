@@ -479,6 +479,13 @@ export const worldSettingsSchema = z.object({
           glory: z.array(qty),
           rankedPerDay: qty.prefault(1),
           minHumans: positive.prefault(2),
+          /**
+           * The calls of the day (E2-2 of the experts), in minutes after midnight in Paris: a
+           * lobby opens `callLobbyMinutes` before each and starts at its hour, so that merchants
+           * meet. Outside them, the lobby of `lobbySeconds` as before.
+           */
+          calls: z.array(z.number().int().min(0).max(1_439)).prefault([]),
+          callLobbyMinutes: positive.prefault(10),
         })
         .optional(),
       /** Weeks of the season (from 0) played in teams: the merchants of a region together. */

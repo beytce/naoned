@@ -19,6 +19,7 @@ interface Retention {
   retention: { day: number; eligible: number; returned: number }[];
   sessions: { day: string; sessions: number; players: number }[];
   skirmishes: { day: string; ranked: number; friendly: number; night: number }[];
+  skirmishCalls?: { day: string; call: string; ranked: number; friendly: number; humans: number }[];
   skirmishMatches: {
     weeks: { week: string; paid: number; done: number; aborted: number }[];
     duplicates: number;
@@ -329,6 +330,38 @@ export function Admin() {
           </table>
         )}
       </Panel>
+      {data.skirmishCalls && data.skirmishCalls.length > 0 && (
+        <Panel>
+          <Label>Convocations d'escarmouche</Label>
+          <p className="mt-1 text-xs text-cream-dim">
+            Par jour et par convocation (« hors » : en dehors d'elles) : parties avec au moins un
+            marchand classé, parties amicales, marchands par partie en moyenne. Cible : 40 % de
+            parties classées en convocation au moins.
+          </p>
+          <table className="mt-3 w-full text-sm">
+            <thead>
+              <tr className="label text-left">
+                <th>Jour</th>
+                <th>Heure</th>
+                <th className="text-right">Classées</th>
+                <th className="text-right">Amicales</th>
+                <th className="text-right">Marchands</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.skirmishCalls.map((s) => (
+                <tr key={`${s.day}-${s.call}`} className="border-b border-line/70">
+                  <td className="py-1">{s.day.slice(5)}</td>
+                  <td>{s.call}</td>
+                  <td className="text-right">{s.ranked}</td>
+                  <td className="text-right">{s.friendly}</td>
+                  <td className="text-right">{s.humans}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+      )}
       <Panel>
         <Label>Parties d'escarmouche</Label>
         <p className="mt-1 text-xs text-cream-dim">

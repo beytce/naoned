@@ -1592,6 +1592,23 @@ export const fr = {
         "Rien de neuf pour l'instant. Les récoltes, les livraisons, la gazette et les résultats de la semaine s'afficheront ici.",
       now: "à l'instant",
       settings: "Régler les notifications",
+      /** The gazette of 8:05: what the night kept. */
+      morning: (deliveries: number, paid: string, harvests: boolean, offers: number) =>
+        `La gazette du matin : ${
+          [
+            deliveries > 0
+              ? `${deliveries} livraison${deliveries > 1 ? "s" : ""} payée${deliveries > 1 ? "s" : ""} (${paid})`
+              : "",
+            harvests ? "des lots prêts à récolter" : "",
+            offers > 0
+              ? `${offers} offre${offers > 1 ? "s" : ""} prise${offers > 1 ? "s" : ""} au Rialto`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(", ") || "votre comptoir vous attend"
+        }.`,
+      skirmishCall: (at: string) =>
+        `Convocation d'escarmouche à ${at} : les marchands s'y retrouvent pour une partie classée.`,
       harvest: "Récolte prête : vos ateliers ont terminé leur production.",
       event: "Un événement agite les marchés.",
       seasonEnding: "Dernier sprint : la saison se termine dans 3 jours.",
@@ -1647,6 +1664,7 @@ export const fr = {
           delivery: "Livraison arrivée",
           muda: "Galères de la Muda à quai",
           morning: "Gazette du matin (8 h 05)",
+          skirmish_call: "Convocations d'escarmouche (un quart d'heure avant)",
         } as Record<string, string>,
       },
     },
@@ -2165,6 +2183,9 @@ export const fr = {
       night: (opensAt: number, closesAt: number) =>
         `☾ Pas d'escarmouche la nuit : elles reprennent à ${opensAt} h. Une partie classée par jour, de ${opensAt} h à ${closesAt} h.`,
       nightShort: (hour: number) => `☾ Escarmouches dès ${hour} h`,
+      /** The calls of the day (E2-2): merchants meet at set hours. */
+      nextCall: (at: string) => `Prochaine convocation à ${at} : les marchands s'y retrouvent.`,
+      call: (at: string) => `Convocation de ${at.replace(":", " h ")} : la partie part à l'heure.`,
       /** A match lost to a restart of the server. */
       interrupted: skirmishInterrupted,
       open: "Lancer une escarmouche",
@@ -2421,6 +2442,7 @@ export const fr = {
         "Le guide de la Terraferme, avec ses schémas, dans l'Aide et sur la carte de la Terraferme (« ? Guide »).",
         "Terraferme : les escarmouches, des parties en direct d'un quart d'heure, de 8 h à 22 h. Une seule par jour est classée : la première avec au moins un autre marchand, si votre camp est posé sur la carte de la semaine et qu'elle finit avant 22 h ; son rang rapporte 45, 30, 20 ou 10 de Gloire à la semaine. Les autres parties sont amicales, sans Gloire. Une partie interrompue par une maintenance ne rapporte rien et ne compte pas : elle ne consomme pas votre partie classée du jour.",
         "Terraferme : une semaine par mois en équipes, les marchands d'une même région ensemble.",
+        "Terraferme : trois convocations d'escarmouche par jour, à 12 h 30, 18 h 30 et 21 h 15 ; la salle s'ouvre dix minutes avant et la partie part à l'heure. Une alerte un quart d'heure avant, si vous la demandez dans le Profil.",
         "Terraferme : signaux sur la carte, cible désignée aux alliés, ducats entre alliés et embargo depuis les villes que vous tenez.",
         "Terraferme : bombardes (un tir par jour rend libres une terre ennemie et ses voisines) et remparts qui en protègent.",
         "Terraferme : Mantoue, Ferrare, le Patriarche d'Aquilée et l'Empire rejoignent Milan, chacun à sa manière.",

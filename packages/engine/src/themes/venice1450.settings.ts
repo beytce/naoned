@@ -325,6 +325,10 @@ export const venice1450Settings: WorldSettingsInput = {
       glory: [45, 30, 20, 10],
       rankedPerDay: 1,
       minHumans: 2,
+      // Three calls a day (E2-2 of the experts): 12:30, 18:30 and 21:15 in Paris, the lobby
+      // open ten minutes before, so that merchants meet; the last ends at 21:30.
+      calls: [750, 1110, 1275],
+      callLobbyMinutes: 10,
     },
     // The third week of the month in teams, by region.
     teams: { weeks: [2] },

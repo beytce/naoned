@@ -9,7 +9,7 @@ import { HudChip, LorenzoCard, Segmented, Sheet, Slab, clock } from "../../ui.js
 import type { GameProps } from "../Game.js";
 import { MerchantName, merchantLabel } from "../Name.js";
 import { gameApi } from "../api.js";
-import { d, duration } from "../format.js";
+import { d, duration, hourOf } from "../format.js";
 import { store } from "../store.js";
 import {
   FOCUS_ORDER,
@@ -193,12 +193,16 @@ export function SkirmishBar({
       ) : status.phase === "none" ? (
         <>
           <p className="meta">{k.pitch(status.minutes)}</p>
+          {status.nextCall && (
+            <p className="meta text-gold">{k.nextCall(hourOf(status.nextCall))}</p>
+          )}
           <Slab size="sm" className="w-full" onClick={onJoin}>
             {k.open}
           </Slab>
         </>
       ) : status.phase === "lobby" ? (
         <>
+          {status.call && <p className="meta text-gold">{k.call(status.call)}</p>}
           <p className="meta">
             {k.lobby(status.humans, status.bots, clock(Math.max(0, status.opensAt - now)))}
           </p>

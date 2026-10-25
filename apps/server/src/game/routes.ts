@@ -17,7 +17,12 @@ import type { AuthService, PublicAccount } from "../auth/service.js";
 import type { Db } from "../db/client.js";
 import { accounts, players, pushSubscriptions, telemetry } from "../db/schema.js";
 import { countFunnel, funnelReport } from "../funnel.js";
-import { NOTIFICATION_KINDS, type NotificationKind, type Notifier } from "../notify/notifier.js";
+import {
+  NOTIFICATION_KINDS,
+  type NotificationKind,
+  type Notifier,
+  OPT_IN,
+} from "../notify/notifier.js";
 import { isPushEndpoint } from "../notify/push.js";
 import { retention, sharedMailboxes, suspiciousPairs } from "./admin.js";
 import { bankReport, ledgerCsv } from "./bank.js";
@@ -1001,6 +1006,8 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       // The Criée and good-deal alerts were the Pass's: no longer sent (live-2), never offered.
       kinds: NOTIFICATION_KINDS.filter((k) => k !== "criee" && k !== "deal"),
       off: row?.off ?? [],
+      // Kinds off unless asked for: listed in `off`, they are on.
+      optIn: [...OPT_IN],
     };
   });
 
