@@ -688,23 +688,43 @@ export function Choose({ f, props }: { f: FamiliesView; props: GameProps }) {
 
 const THREAD_POLL_MS = 15_000;
 
+/** Where a thread reads, writes and reports: the family's by default, or a company's. */
+export interface ThreadSource {
+  load: () => Promise<{ messages: FamilyMessage[] }>;
+  say: (body: string) => Promise<{ messages: FamilyMessage[] }>;
+  report: (id: string) => Promise<unknown>;
+  /** Overrides of the family's words (title, help, placeholder). */
+  words?: { title: string; help: string; placeholder: string };
+  seenKey?: string;
+}
+
+const FAMILY_THREAD: ThreadSource = {
+  load: () => gameApi.familyThread(),
+  say: (body) => gameApi.sayToFamily(body),
+  report: (id) => gameApi.reportMessage(id),
+};
+
 /** The family's thread: members plan their assaults, report what should not be there. */
-export function Thread() {
+export function Thread({ source = FAMILY_THREAD }: { source?: ThreadSource }) {
+  const words = { ...t().thread, ...source.words };
   const [messages, setMessages] = useState<FamilyMessage[]>([]);
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [reported, setReported] = useState<Set<string>>(new Set());
-  const show = useCallback((list: FamilyMessage[]) => {
-    setMessages(list);
-    const last = list.at(-1);
-    if (last) store.set("familySeen", String(last.at));
-  }, []);
+  const show = useCallback(
+    (list: FamilyMessage[]) => {
+      setMessages(list);
+      const last = list.at(-1);
+      if (last) store.set(source.seenKey ?? "familySeen", String(last.at));
+    },
+    [source.seenKey],
+  );
   useEffect(() => {
     let alive = true;
     const load = () =>
-      gameApi
-        .familyThread()
+      source
+        .load()
         .then((r) => alive && show(r.messages))
         .catch(() => {});
     load();
@@ -713,12 +733,12 @@ export function Thread() {
       alive = false;
       clearInterval(timer);
     };
-  }, [show]);
+  }, [show, source]);
   const send = async () => {
     setSending(true);
     setError(null);
     try {
-      show((await gameApi.sayToFamily(text)).messages);
+      show((await source.say(text)).messages);
       setText("");
     } catch (e) {
       const errors = t().thread.errors;
@@ -729,8 +749,8 @@ export function Thread() {
   };
   return (
     <Panel>
-      <Label className="text-cream-dim">{t().thread.title}</Label>
-      <p className="mt-1 text-xs text-cream-dim">{t().thread.help}</p>
+      <Label className="text-cream-dim">{words.title}</Label>
+      <p className="mt-1 text-xs text-cream-dim">{words.help}</p>
       <ul className="mt-3 max-h-80 space-y-2 overflow-y-auto">
         {messages.length === 0 && <li className="text-sm text-cream-dim">{t().thread.empty}</li>}
         {messages.map((m) => (
@@ -749,7 +769,7 @@ export function Thread() {
                 disabled={reported.has(m.id)}
                 className="label mt-1 text-cream-dim disabled:opacity-50"
                 onClick={async () => {
-                  await gameApi.reportMessage(m.id).catch(() => {});
+                  await source.report(m.id).catch(() => {});
                   setReported(new Set([...reported, m.id]));
                 }}
               >
@@ -770,8 +790,8 @@ export function Thread() {
           value={text}
           maxLength={280}
           onChange={(e) => setText(e.target.value)}
-          placeholder={t().thread.placeholder}
-          aria-label={t().thread.placeholder}
+          placeholder={words.placeholder}
+          aria-label={words.placeholder}
           className="min-w-0 flex-1 cut border border-line bg-night-2 px-3 py-2.5 text-sm"
         />
         <Slab size="sm" disabled={sending || !text.trim()} onClick={() => void send()}>

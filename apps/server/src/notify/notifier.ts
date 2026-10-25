@@ -33,6 +33,7 @@ import {
   seasonResults,
   weeklyResults,
 } from "../db/schema.js";
+import { calledTo } from "../game/company.js";
 import { seasonPlayers } from "../game/season.js";
 import type { GameWorld } from "../game/world.js";
 import type { Pusher } from "./push.js";
@@ -394,8 +395,19 @@ export class Notifier {
       .select({ id: accounts.id })
       .from(accounts)
       .where(and(inArray(accounts.id, [...people]), sql`${accounts.pushOff} ? 'skirmish_call'`));
+    // A company called to this hour by one of its members: all of them told, asked or not.
+    const company = new Map(
+      (await calledTo(this.db, call))
+        .filter((r) => people.has(r.accountId))
+        .map((r) => [r.accountId, r.company]),
+    );
+    const told = new Set([...asked.map((r) => r.id), ...company.keys()]);
     await this.send(
-      asked.map((r) => ({ accountId: r.id, kind: "skirmish_call" as const, data: { at: call } })),
+      [...told].map((accountId) => ({
+        accountId,
+        kind: "skirmish_call" as const,
+        data: company.has(accountId) ? { at: call, company: company.get(accountId) } : { at: call },
+      })),
       now,
     );
   }
@@ -505,8 +517,10 @@ export class Notifier {
       const mine = subs.filter((s) => s.accountId === n.accountId);
       // Off when listed; a kind asked for (opt-in) is on only when listed.
       const listed = prefs.get(n.accountId)?.has(n.kind) ?? false;
-      if (mine.length === 0 || (OPT_IN.has(n.kind as NotificationKind) ? !listed : listed))
-        continue;
+      // A call of the person's company is theirs even unasked for (E2-8), still within the cap.
+      const asked =
+        listed || (n.kind === "skirmish_call" && !!(n.data as { company?: string }).company);
+      if (mine.length === 0 || (OPT_IN.has(n.kind as NotificationKind) ? !asked : listed)) continue;
       const [recent] = URGENT.has(n.kind as NotificationKind)
         ? []
         : await this.db

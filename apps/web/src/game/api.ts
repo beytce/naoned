@@ -3,6 +3,8 @@ import { pushOpened } from "./shortcut.js";
 import type {
   Action,
   Catalog,
+  CompanyInvitation,
+  CompanyView,
   CrestData,
   DashboardView,
   FamilyMessage,
@@ -87,6 +89,19 @@ export const gameApi = {
   ceremonySeen: (worldId: string) =>
     call<{ ok: true }>("POST", "/api/game/ceremony/seen", { worldId }),
   prices: () => call<{ days: number; series: PriceSeries }>("GET", "/api/game/prices"),
+  company: () => call<CompanyView>("GET", "/api/company"),
+  foundCompany: (name: string) => call<CompanyView>("POST", "/api/company", { name }),
+  invitation: (code: string) =>
+    call<CompanyInvitation>("GET", `/api/company/invitation/${encodeURIComponent(code)}`),
+  joinCompany: (code: string) => call<CompanyView>("POST", "/api/company/join", { code }),
+  leaveCompany: () => call<CompanyView>("POST", "/api/company/leave", {}),
+  inviteShared: () => call<{ ok: true }>("POST", "/api/company/invite", {}),
+  callCompany: () => call<CompanyView>("POST", "/api/company/call", {}),
+  companyThread: () => call<{ messages: FamilyMessage[] }>("GET", "/api/company/messages"),
+  sayToCompany: (body: string) =>
+    call<{ messages: FamilyMessage[] }>("POST", "/api/company/messages", { body }),
+  reportCompanyMessage: (id: string) =>
+    call<{ ok: true }>("POST", `/api/company/messages/${id}/report`, {}),
   familyThread: () =>
     call<{ family: string; messages: FamilyMessage[] }>("GET", "/api/game/family/messages"),
   sayToFamily: (body: string) =>

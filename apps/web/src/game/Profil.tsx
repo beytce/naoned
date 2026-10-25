@@ -28,6 +28,7 @@ import {
 import { Big, Donut, Label, Panel, Ribbon, Segmented, Sheet, Slab, Switch } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { HouseSummary } from "./House.js";
+import { CompanyPanel } from "./MyCompany.js";
 import { PalmaresView } from "./Palmares.js";
 import { PassPanel } from "./PassPanel.js";
 import { PushSettings } from "./PushSettings.js";
@@ -370,6 +371,8 @@ function ProfileBody(props: GameProps) {
           </div>
         </details>
       </Panel>
+
+      <CompanyPanel props={props} />
 
       <Panel>
         <Label>{fr.game.netWorth}</Label>

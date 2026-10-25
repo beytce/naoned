@@ -2,6 +2,9 @@ import { and, desc, eq, or, sql } from "drizzle-orm";
 import type { Db } from "./db/client.js";
 import {
   accounts,
+  companies,
+  companyMembers,
+  companyMessages,
   influenceEntries,
   ledgerEntries,
   loginTokens,
@@ -98,6 +101,19 @@ export async function exportAccount(db: Db, accountId: string) {
       .from(trades)
       .where(or(eq(trades.buyerId, accountId), eq(trades.sellerId, accountId)))
       .orderBy(trades.at),
+    company:
+      (
+        await db
+          .select({ name: companies.name, joinedAt: companyMembers.joinedAt })
+          .from(companyMembers)
+          .innerJoin(companies, eq(companies.id, companyMembers.companyId))
+          .where(eq(companyMembers.accountId, accountId))
+      )[0] ?? null,
+    companyMessages: await db
+      .select({ body: companyMessages.body, at: companyMessages.createdAt })
+      .from(companyMessages)
+      .where(eq(companyMessages.accountId, accountId))
+      .orderBy(companyMessages.createdAt),
   };
 }
 
@@ -118,6 +134,21 @@ export async function deleteAccount(db: Db, accountId: string): Promise<void> {
     await tx.delete(pushSubscriptions).where(eq(pushSubscriptions.accountId, accountId));
     await tx.delete(notifications).where(eq(notifications.accountId, accountId));
     await tx.delete(telemetry).where(eq(telemetry.accountId, accountId));
+    // Out of the company and its thread; a company left empty closes.
+    await tx.delete(companyMessages).where(eq(companyMessages.accountId, accountId));
+    const [member] = await tx
+      .delete(companyMembers)
+      .where(eq(companyMembers.accountId, accountId))
+      .returning({ companyId: companyMembers.companyId });
+    if (member) {
+      const [left] = await tx
+        .select({ n: sql<number>`count(*)::int` })
+        .from(companyMembers)
+        .where(eq(companyMembers.companyId, member.companyId));
+      if (Number(left?.n ?? 0) === 0) {
+        await tx.delete(companies).where(eq(companies.id, member.companyId));
+      }
+    }
     await tx
       .update(accounts)
       .set({

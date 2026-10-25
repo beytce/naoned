@@ -296,6 +296,40 @@ describe("notifications", () => {
     expect(String(calls[0]?.payload.title)).toContain("12:30");
   });
 
+  it("calls a company's members to the hour one of them chose, asked or not", async () => {
+    const ada = await player("ada@example.org");
+    const bob = await player("bob@example.org");
+    const eve = await player("eve@example.org");
+    await subscribe(ada.cookie);
+    await subscribe(bob.cookie, "https://fcm.googleapis.com/fcm/send/2");
+    await subscribe(eve.cookie, "https://fcm.googleapis.com/fcm/send/3");
+    const code = (
+      await app.inject({
+        method: "POST",
+        url: "/api/company",
+        headers: { cookie: ada.cookie },
+        payload: { name: "Les Amis du Rialto" },
+      })
+    ).json().company.code;
+    await app.inject({
+      method: "POST",
+      url: "/api/company/join",
+      headers: { cookie: bob.cookie },
+      payload: { code },
+    });
+    // 10 h in Paris: Ada calls the company to the next call, 12:30.
+    await app.inject({ method: "POST", url: "/api/company/call", headers: { cookie: ada.cookie } });
+    await notifier.scan();
+    now = Date.parse("2026-10-12T10:15:00Z");
+    await notifier.scan();
+    const calls = pusher.sent.filter((p) => p.payload.kind === "skirmish_call");
+    expect(calls.map((c) => c.target.endpoint).sort()).toEqual([
+      "https://fcm.googleapis.com/fcm/send/1",
+      "https://fcm.googleapis.com/fcm/send/2",
+    ]);
+    expect(String(calls[0]?.payload.title)).toContain("Les Amis du Rialto");
+  });
+
   it("refuses a push endpoint outside the browsers' push services", async () => {
     const ada = await player("ada@example.org");
     const res = await subscribe(ada.cookie, "https://10.0.0.1/internal");

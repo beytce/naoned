@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { keepOrigin, originOf, shareUrl, takeOrigin } from "../src/origin.js";
+import {
+  dropInvite,
+  inviteUrl,
+  keepInvite,
+  keepOrigin,
+  originOf,
+  pendingInvite,
+  shareUrl,
+  takeOrigin,
+} from "../src/origin.js";
 
 const memory = () => {
   const m = new Map<string, string>();
@@ -48,5 +57,27 @@ describe("where a newcomer comes from", () => {
       "https://fondaco.example/?ref=Ada%20Lovelace",
     );
     expect(shareUrl("https://fondaco.example", null)).toBe("https://fondaco.example/");
+  });
+});
+
+describe("a company's invitation", () => {
+  it("is kept from the link until answered, the latest link winning", () => {
+    const s = memory();
+    keepInvite("?ref=Ada&co=Ab3_x-9", s);
+    expect(pendingInvite(s)).toBe("Ab3_x-9");
+    keepInvite("?co=Zz99zz", s);
+    expect(pendingInvite(s)).toBe("Zz99zz");
+    // Anything not shaped like a code is ignored.
+    keepInvite("?co=<script>", s);
+    expect(pendingInvite(s)).toBe("Zz99zz");
+    dropInvite(s);
+    expect(pendingInvite(s)).toBeNull();
+  });
+
+  it("is shared as a link carrying who invites and the company's code", () => {
+    expect(inviteUrl("https://fondaco.fr", "Ada Lovelace", "Ab3x")).toBe(
+      "https://fondaco.fr/?ref=Ada%20Lovelace&co=Ab3x",
+    );
+    expect(inviteUrl("https://fondaco.fr", null, "Ab3x")).toBe("https://fondaco.fr/?co=Ab3x");
   });
 });

@@ -626,6 +626,7 @@ export const fr = {
         sendLine: (count: number, left: number) =>
           `Envoyer ${count} troupes (encore ${left} aujourd'hui)`,
         allyChip: "Allié",
+        friendChip: "✦ Votre compagnie",
       },
       mine: {
         title: "Vos terres",
@@ -1866,6 +1867,64 @@ export const fr = {
     },
     trophies: "Trophées",
     /** The name proposed at the door, changed once (E3-5). */
+    /** Companies (E2-8): friends kept from month to month, with no power over the trade. */
+    myCompany: {
+      title: "Compagnie",
+      pitch:
+        "De 2 à 6 amis, d'un mois à l'autre : un fil à vous, une convocation commune à l'escarmouche, un palmarès partagé, et vos associés marqués ✦ sur la carte. Ni trésor, ni avantage au commerce.",
+      found: "Fonder une compagnie",
+      namePlaceholder: "Nom de la compagnie",
+      create: "Fonder",
+      waitUntil: (date: string) => `Vous pourrez rejoindre une compagnie le ${date}.`,
+      members: (n: number, max: number) => `${n} / ${max} associés`,
+      me: "vous",
+      seen: (ago: string) => `vu ${ago}`,
+      notHere: "pas encore ce mois-ci",
+      lacks: (has: string, wants: string) =>
+        `Votre compagnie a un ${has.toLowerCase()} : invitez un ${wants.toLowerCase()}.`,
+      lacksAlone: (wants: string) => `Invitez un ${wants.toLowerCase()} pour commencer.`,
+      invite: "Inviter un associé",
+      copied: "Lien copié : envoyez-le à votre associé.",
+      inviteText: (name: string) => `Rejoignez ma compagnie « ${name} » sur Fondaco.`,
+      call: (at: string) => `Convoquer à l'escarmouche de ${at}`,
+      called: (at: string, by: string) => `Convocation à l'escarmouche de ${at}, par ${by}.`,
+      calledHelp: "Chaque associé est prévenu un quart d'heure avant.",
+      record: "Palmarès commun",
+      recordEmpty: "Les saisons jouées à deux ou plus s'inscriront ici.",
+      rank: (n: number) => `${n}ᵉ`,
+      leave: "Quitter la compagnie",
+      leaveConfirm: "Quitter ? Vous attendrez 7 jours avant d'en rejoindre une autre.",
+      leaveYes: "Oui, quitter",
+      cancel: "Annuler",
+      thread: {
+        title: "Fil de la compagnie",
+        help: "Réservé à vos associés. Restez courtois : un message signalé par trois membres disparaît.",
+        placeholder: "Un mot pour vos associés…",
+      },
+      invitation: {
+        title: (name: string) => `Invitation : « ${name} »`,
+        line: (n: number) => `${n} associé${n > 1 ? "s" : ""} déjà.`,
+        full: "Cette compagnie est complète (6 associés).",
+        join: "Rejoindre",
+        decline: "Non merci",
+      },
+      /** The badge on the choice of a trade, for whoever comes by a company's link. */
+      regionBadge: "Manque à votre compagnie",
+      regionHelp: (name: string, jobs: string[]) =>
+        jobs.length > 0
+          ? `« ${name} » a déjà un ${jobs.map((j) => j.toLowerCase()).join(" et un ")} : ce métier lui manque.`
+          : `Le métier que « ${name} » attend.`,
+      errors: {
+        already_member: "Vous êtes déjà dans une compagnie.",
+        left_recently: "Vous avez quitté une compagnie il y a moins de 7 jours.",
+        company_full: "Cette compagnie est complète.",
+        unknown_company: "Cette invitation n'existe plus.",
+        invalid_name: "Un nom de 3 à 24 caractères, sans grossièreté.",
+        name_taken: "Ce nom est déjà pris.",
+        no_call: "Aucune convocation à venir.",
+        other: "Cela n'a pas marché. Réessayez.",
+      } as Record<string, string>,
+    },
     rename: {
       open: "✎ Changer de nom (une fois, gratuit)",
       save: "Garder ce nom",

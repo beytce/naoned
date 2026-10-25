@@ -76,6 +76,8 @@ export interface TerraName {
   crest: unknown;
   /** A house of the computer (a bot account, or a skirmish's condottiere). */
   bot: boolean;
+  /** A fellow member of the merchant's company (E2-8): a mark on the map, never an alliance. */
+  friend?: boolean;
 }
 
 export function terraView(
@@ -153,6 +155,7 @@ export function terraView(
       bot: !isNation(id) && (names.get(id)?.bot ?? false),
       me: id === playerId,
       ally: allies.has(id),
+      friend: !isNation(id) && (names.get(id)?.friend ?? false),
       milan: isNation(id),
       /** The nation it is (milan, mantova…), null for a merchant. */
       nation: isNation(id) ? id.replace("nation:", "") : null,

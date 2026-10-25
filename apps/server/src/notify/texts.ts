@@ -129,10 +129,15 @@ export function pushText(
         body: `Votre stock couvre ${data.covered} commandes de la vague : les premiers à charger les prennent.`,
       };
     case "skirmish_call":
-      return {
-        title: `Escarmouche à ${clock(data.at)}`,
-        body: "Les marchands se retrouvent dans un quart d'heure pour une partie classée : la salle est ouverte.",
-      };
+      return data.company
+        ? {
+            title: `${String(data.company)} : escarmouche à ${clock(data.at)}`,
+            body: "Votre compagnie vous attend dans un quart d'heure pour une partie classée : la salle est ouverte.",
+          }
+        : {
+            title: `Escarmouche à ${clock(data.at)}`,
+            body: "Les marchands se retrouvent dans un quart d'heure pour une partie classée : la salle est ouverte.",
+          };
     case "morning": {
       // What the night kept in the bell, in one line.
       const parts = [

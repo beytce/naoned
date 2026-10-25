@@ -76,6 +76,48 @@ export function firstLanding(storage: Pick<Storage, "getItem" | "setItem">): boo
   }
 }
 
+const INVITE = "fondaco.company";
+const INVITE_CODE = /^[\w-]{4,16}$/;
+
+/**
+ * A company's invitation the address carries (`co`, E2-8 of the experts): kept until answered,
+ * past the sign-in mail. The latest link wins; anything not shaped like a code is ignored.
+ */
+export function keepInvite(search: string, storage: Pick<Storage, "setItem">): void {
+  const code = new URLSearchParams(search).get("co")?.trim();
+  if (!code || !INVITE_CODE.test(code)) return;
+  try {
+    storage.setItem(INVITE, code);
+  } catch {
+    // No storage: the invitation is lost, the link still works when opened again.
+  }
+}
+
+/** The invitation waiting for an answer, or null. */
+export function pendingInvite(storage: Pick<Storage, "getItem">): string | null {
+  try {
+    const code = storage.getItem(INVITE);
+    return code && INVITE_CODE.test(code) ? code : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The invitation answered (joined or declined): forgotten. */
+export function dropInvite(storage: Pick<Storage, "removeItem">): void {
+  try {
+    storage.removeItem(INVITE);
+  } catch {
+    // Nothing kept, nothing to drop.
+  }
+}
+
+/** The link that invites into a company, carrying who shared it. */
+export function inviteUrl(origin: string, pseudo: string | null, code: string): string {
+  const ref = pseudo ? `ref=${encodeURIComponent(pseudo)}&` : "";
+  return `${origin}/?${ref}co=${encodeURIComponent(code)}`;
+}
+
 /** The game's address to share, carrying who shared it. */
 export function shareUrl(origin: string, pseudo: string | null): string {
   return pseudo ? `${origin}/?ref=${encodeURIComponent(pseudo)}` : `${origin}/`;

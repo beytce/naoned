@@ -487,8 +487,11 @@ function holderName(v: TerraView, i: number): string {
   const h = v.holders[i];
   if (!h) return t().neutral;
   if (h.milan) return t().nations[h.nation ?? "milan"] ?? t().milan;
-  return merchantLabel(h.pseudo, h.bot, t().someone);
+  return friendLabel(merchantLabel(h.pseudo, h.bot, t().someone), h.friend);
 }
+
+/** A fellow of the merchant's company is marked by a sign, not a colour (E2-8, E3-11). */
+const friendLabel = (name: string, friend?: boolean) => (friend ? `${name} ✦` : name);
 
 /** Where a front starts from: its owner's cell nearest its aim. */
 function frontFrom(v: TerraView, map: HexMap, owner: number, aim: number): [number, number] | null {
@@ -901,7 +904,7 @@ export function terraMarkers(
       tier: h.me ? 0 : TIER[focus],
       node: (
         <WarCounter
-          name={merchantLabel(h.pseudo, h.bot, t().someone)}
+          name={friendLabel(merchantLabel(h.pseudo, h.bot, t().someone), h.friend)}
           crest={h.crest ?? defaultCrest(h.id ?? String(i))}
           mine={h.me}
           tone={s.tone[i] ?? P.cream}
@@ -1635,7 +1638,15 @@ export function TerraPanel({
   return (
     <ContextPanel
       title={title}
-      chip={ally ? <span className="label text-lagoon">{t().holder.allyChip}</span> : chip}
+      chip={
+        ally ? (
+          <span className="label text-lagoon">{t().holder.allyChip}</span>
+        ) : merchant?.friend ? (
+          <span className="label text-gold">{t().holder.friendChip}</span>
+        ) : (
+          chip
+        )
+      }
       status={
         eta
           ? t().target.eta(hour(eta.at), wait(eta.at, now))

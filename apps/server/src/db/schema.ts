@@ -52,6 +52,8 @@ export const accounts = pgTable(
     utmSource: text("utm_source"),
     utmMedium: text("utm_medium"),
     utmCampaign: text("utm_campaign"),
+    /** When the account last left a company: it may join another only a week later (E2-8). */
+    companyLeftAt: timestamp("company_left_at", { withTimezone: true }),
   },
   (t) => [
     uniqueIndex("accounts_email_key").on(t.email),
@@ -477,4 +479,80 @@ export const funnelCounts = pgTable(
     count: integer("count").notNull().default(0),
   },
   (t) => [primaryKey({ columns: [t.day, t.step, t.source] })],
+);
+
+/**
+ * A company (E2-8 of the experts, 25 October 2026): two to six friends, at the layer of the
+ * accounts (no world_id), so it outlives the months. No treasury, no power over the trade: a
+ * thread, a call to skirmish together, a shared record, a mark on the Terraferma's map.
+ */
+export const companies = pgTable(
+  "companies",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    /** The code of the invitation link (`/?co=<code>`). */
+    code: text("code").notNull(),
+    createdBy: uuid("created_by").references(() => accounts.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    /** The call to skirmish a member chose for the company, and who chose it. */
+    callAt: timestamp("call_at", { withTimezone: true }),
+    callBy: uuid("call_by").references(() => accounts.id, { onDelete: "set null" }),
+  },
+  (t) => [
+    uniqueIndex("companies_code_key").on(t.code),
+    uniqueIndex("companies_name_key").on(sql`lower(${t.name})`),
+  ],
+);
+
+/** A member of a company: one company per account at most. */
+export const companyMembers = pgTable(
+  "company_members",
+  {
+    accountId: uuid("account_id")
+      .primaryKey()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("company_members_company_idx").on(t.companyId)],
+);
+
+/** The company's thread, under the same rules as every thread (`chatRules.ts`). */
+export const companyMessages = pgTable(
+  "company_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    /** Hidden after enough reports, or by an admin. */
+    hidden: boolean("hidden").notNull().default(false),
+  },
+  (t) => [
+    index("company_messages_thread_idx").on(t.companyId, t.createdAt),
+    index("company_messages_author_idx").on(t.accountId, t.createdAt),
+  ],
+);
+
+/** A member's report of a message of the company's thread (once per member). */
+export const companyMessageReports = pgTable(
+  "company_message_reports",
+  {
+    messageId: uuid("message_id")
+      .notNull()
+      .references(() => companyMessages.id, { onDelete: "cascade" }),
+    reporterId: uuid("reporter_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.messageId, t.reporterId] })],
 );

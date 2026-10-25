@@ -1041,6 +1041,8 @@ export interface TerraView {
     bot: boolean;
     me: boolean;
     ally: boolean;
+    /** A fellow member of the merchant's company: marked, never an ally of itself. */
+    friend?: boolean;
     milan: boolean;
     /** The nation it is (milan, mantova…), null for a merchant. */
     nation: string | null;
@@ -1220,6 +1222,41 @@ export type HouseView =
     };
 
 /** A message of the family's thread. */
+/** The merchant's company (E2-8): friends kept from month to month, with no power over trade. */
+export interface CompanyView {
+  company: {
+    name: string;
+    code: string;
+    max: number;
+    members: {
+      pseudo: string | null;
+      me: boolean;
+      region: string | null;
+      lastSeenAt: number | null;
+    }[];
+    missingRegion: string | null;
+    /** The next call to skirmish a member may call the company to. */
+    nextCall: number | null;
+    call: { at: number; by: string | null } | null;
+    record: {
+      season: string;
+      endsAt: number;
+      members: { pseudo: string | null; rank: number; award: string; titles: string[] }[];
+    }[];
+  } | null;
+  /** Who left a company may join another from then on. */
+  mayJoinAt: number | null;
+}
+
+/** An invitation to a company, as shown before joining. */
+export interface CompanyInvitation {
+  name: string;
+  members: number;
+  full: boolean;
+  regions: string[];
+  missingRegion: string | null;
+}
+
 export interface FamilyMessage {
   id: string;
   pseudo: string | null;
