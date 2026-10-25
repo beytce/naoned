@@ -175,7 +175,8 @@ describe("living world", () => {
     const v = (await post(cookie, "/api/game/join", { region: "terraferma" })).json().view;
     expect(v.contracts).toHaveLength(2); // Two orders of the Doge.
     expect(v.gazette).toHaveProperty("next");
-    expect(v.rations.perDay).toBe(6); // farm + mill + bakery
+    // Twelve batches a day by the batch (E1-4): farm 3 loaves, mill 6, bakery 6.
+    expect(v.rations.perDay).toBe(15);
     const home = v.contracts.find((c: { resource: string }) =>
       ["wheat", "flour", "bread", "clay", "wood", "bricks", "planks"].includes(c.resource),
     );
