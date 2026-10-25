@@ -2,10 +2,11 @@
 self.addEventListener("push", (event) => {
   const data = event.data ? event.data.json() : {};
   event.waitUntil(
-    self.registration.showNotification(data.title || "Comptoirs", {
+    self.registration.showNotification(data.title || "Fondaco", {
       body: data.body,
       icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
+      // A white silhouette: Android draws the badge as a mask (the coloured icon came out a square).
+      badge: "/icons/badge-96.png",
       tag: data.kind,
       // An ambush stays on screen until seen: the merchant has minutes to fight back.
       requireInteraction: data.kind === "ambush",
