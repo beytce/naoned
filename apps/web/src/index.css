@@ -187,65 +187,19 @@
   .cartouche-line {
     @apply relative rounded-2xl border border-line bg-night-3;
   }
-  /* Slanted block, as the buttons: badges, chips, small slabs. */
-  .slab {
-    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
-  }
-  /* The buttons' slant: a parallelogram, the text standing straight. */
-  .bevel {
-    clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-  }
-  /* Cards with cut corners (top left, bottom right). */
-  .cut {
-    clip-path: polygon(
-      14px 0,
-      100% 0,
-      100% calc(100% - 14px),
-      calc(100% - 14px) 100%,
-      0 100%,
-      0 14px
-    );
-  }
   /*
-   * A cut card with a border keeps its filet on the cut corners too: clip-path cuts the border
-   * there, so each diagonal is drawn again, in the border's own colour and width (inherited).
+   * The Lagune direction (docs/design.md): no cut corner left. Badges and chips are pills, the
+   * buttons too (ui.tsx, Slab), the cards are rounded. `overflow: clip` keeps what the old
+   * clip-path cut (a badge over the edge) without making a scrolling box.
    */
-  .cut:is(.border, .border-2, [class*="border-["]):not(.absolute):not(.fixed):not(.sticky) {
-    position: relative;
+  .slab,
+  .bevel {
+    border-radius: 9999px;
+    overflow: clip;
   }
-  /* Its border's width: the diagonals start on the border's outer edge, as the corner does. */
-  .cut:is(.border, .border-2, [class*="border-["]) {
-    --cut-bw: 1px;
-  }
-  .cut.border-2 {
-    --cut-bw: 2px;
-  }
-  .cut[class*="border-[3px]"] {
-    --cut-bw: 3px;
-  }
-  .cut:is(.border, .border-2, [class*="border-["])::before,
-  .cut:is(.border, .border-2, [class*="border-["])::after {
-    content: "";
-    position: absolute;
-    width: 19.8px;
-    height: 0;
-    border-top-style: solid;
-    border-top-color: inherit;
-    border-top-width: inherit;
-    transform-origin: 0 0;
-    pointer-events: none;
-  }
-  /* From (0, 14 px) up to (14 px, 0), its width inside the card. */
-  .cut:is(.border, .border-2, [class*="border-["])::before {
-    left: calc(-1 * var(--cut-bw));
-    top: calc(14px - var(--cut-bw));
-    transform: rotate(-45deg);
-  }
-  /* From (100 %, 100 % − 14 px) down to (100 % − 14 px, 100 %), its width inside. */
-  .cut:is(.border, .border-2, [class*="border-["])::after {
-    left: calc(100% + var(--cut-bw));
-    top: calc(100% + var(--cut-bw) - 14px);
-    transform: rotate(135deg);
+  .cut {
+    border-radius: 1.125rem;
+    overflow: clip;
   }
   .stripes {
     background-image: repeating-linear-gradient(
@@ -907,18 +861,14 @@
  * (Coach.tsx marks its target data-coach-lit).
  */
 body[data-coaching] button[data-slab="gold"]:not([data-coach-lit]) .slab-face {
-  background-color: rgb(var(--night-4));
+  background-color: transparent;
   color: rgb(var(--cream));
-}
-body[data-coaching] button[data-slab="gold"]:not([data-coach-lit]) .slab-shadow {
-  background-color: rgb(var(--line));
+  box-shadow: inset 0 0 0 1px rgb(var(--line));
 }
 body[data-coaching] button[data-slab="ghost"][data-coach-lit] .slab-face {
   background-color: rgb(var(--gold));
   color: rgb(var(--ink));
-}
-body[data-coaching] button[data-slab="ghost"][data-coach-lit] .slab-shadow {
-  background-color: rgb(var(--gold-deep));
+  box-shadow: 0 0 0 5px rgb(var(--gold) / 0.15);
 }
 
 /* Lorenzo's bubble at the top of the screen (Coach.tsx): the toasts go to the foot. */
