@@ -7,7 +7,7 @@ import { type Database, openDatabase } from "../src/db/client.js";
 import { accounts, notifications, pushSubscriptions, weeklyResults } from "../src/db/schema.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
-import { Notifier } from "../src/notify/notifier.js";
+import { NOTIFICATION_KINDS, Notifier } from "../src/notify/notifier.js";
 import { MemoryPusher } from "../src/notify/push.js";
 import { testDatabase } from "./db.js";
 import { smallOrders } from "./road.js";
@@ -173,6 +173,83 @@ describe("notifications", () => {
       })
     ).json();
     expect(bell.unread).toBe(4);
+  });
+
+  it("pushes three a day at most, whatever the kinds, an attack always", async () => {
+    const ada = await player("ada@example.org");
+    await subscribe(ada.cookie);
+    await notifier.scan();
+    // Every kind once, an hour apart from the last of its kind: only three go out.
+    for (const kind of NOTIFICATION_KINDS) {
+      await notifier.send([{ accountId: ada.id, kind, data: { at: now, arriveAt: now } }], now);
+      now += MIN;
+    }
+    const pushed = () => pusher.sent.filter((p) => p.payload.kind !== "siege").length;
+    expect(pushed()).toBe(3);
+    // An attack is pushed past the cap: the merchant has minutes.
+    const before = pusher.sent.length;
+    await notifier.send(
+      [{ accountId: ada.id, kind: "siege", data: { at: now, arriveAt: now } }],
+      now,
+    );
+    expect(pusher.sent.length).toBe(before + 1);
+    // The next day (Paris), three again.
+    now = Date.parse("2026-10-13T08:00:00Z");
+    await notifier.send([{ accountId: ada.id, kind: "harvest", data: {} }], now);
+    expect(pushed()).toBe(4);
+  });
+
+  it("opens the right place from a push, by a link of the list", async () => {
+    const ada = await player("ada@example.org");
+    await subscribe(ada.cookie);
+    await notifier.scan();
+    await notifier.send([{ accountId: ada.id, kind: "delivery", data: {} }], now);
+    expect(pusher.sent[0]?.payload.url).toBe("/?open=cargo&src=push&kind=delivery");
+  });
+
+  it("gives at 8:05 the night's news kept in the bell, once a day", async () => {
+    const ada = await player("ada@example.org");
+    await subscribe(ada.cookie);
+    await notifier.scan();
+    // 23:30 in Paris: kept in the bell, not pushed.
+    now = Date.parse("2026-10-12T21:30:00Z");
+    await notifier.send([{ accountId: ada.id, kind: "harvest", data: {} }], now);
+    await notifier.send(
+      [{ accountId: ada.id, kind: "delivery", data: { amount: "15000" } }],
+      now + MIN,
+    );
+    expect(pusher.sent).toHaveLength(0);
+    // 8:04: not yet; 8:05: the gazette, once.
+    now = Date.parse("2026-10-13T06:04:00Z");
+    await notifier.scan();
+    expect(pusher.sent).toHaveLength(0);
+    now = Date.parse("2026-10-13T06:05:00Z");
+    await notifier.scan();
+    now += MIN;
+    await notifier.scan();
+    const morning = pusher.sent.filter((p) => p.payload.kind === "morning");
+    expect(morning).toHaveLength(1);
+    expect(morning[0]?.payload.url).toBe("/?open=notices&src=push&kind=morning");
+    expect(String(morning[0]?.payload.body)).toContain("150");
+  });
+
+  it("counts the asks to notify and gives the hours of the guide's last card", async () => {
+    const ada = await player("ada@example.org");
+    const game = () =>
+      app.inject({ method: "GET", url: "/api/game", headers: { cookie: ada.cookie } });
+    expect((await game()).json().pushAsk).toMatchObject({ count: 0 });
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/game/push-ask",
+      headers: { cookie: ada.cookie },
+      payload: { accepted: false, ios: true },
+    });
+    expect(res.statusCode).toBe(204);
+    expect((await game()).json().pushAsk).toMatchObject({ count: 1 });
+    await produce(ada.id);
+    const agenda = (await game()).json().view.agenda;
+    expect(agenda.queuesEndAt).toBeGreaterThan(now);
+    expect(agenda.nextWaveAt).toBeGreaterThan(now);
   });
 
   it("refuses a push endpoint outside the browsers' push services", async () => {

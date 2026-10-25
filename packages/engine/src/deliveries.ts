@@ -2,7 +2,7 @@ import { isDraft, original } from "immer";
 import { marketCityBps } from "./acts.js";
 import { costValue, qualityBps } from "./buildings.js";
 import { familyAccount } from "./campaign.js";
-import { hourIn, hourWithin } from "./clock.js";
+import { dayStartIn, hourIn, hourWithin } from "./clock.js";
 import { contractsDoneToday, contractsFor } from "./contracts.js";
 import {
   dogeFavourBps,
@@ -490,6 +490,9 @@ export function deliveryOrdersFor(
   return out;
 }
 
+/** Ids of the world's board carry a letter (`3:w12`, `3:e0`, `3:u1`). */
+const BOARD_ID = /^\d+:[ewu]\d+$/;
+
 /**
  * One order of the merchant's board, by id: a shared one is read straight from the world's board
  * (hundreds of orders, not worth pricing them all), a personal one from the merchant's own board.
@@ -502,7 +505,7 @@ function findDeliveryOrder(
   orderId: string,
 ): DeliveryOrder | undefined {
   // Board ids carry a letter (`3:w12`, `3:e0`, `3:u1`); personal ones are plain ranks (`3:4`).
-  if (!/^\d+:[ewu]\d+$/.test(orderId)) {
+  if (!BOARD_ID.test(orderId)) {
     return deliveryOrdersFor(ctx, state, playerId, day, { board: false }).find(
       (o) => o.id === orderId,
     );
@@ -650,13 +653,26 @@ export function ensureBoard(tx: Tx): void {
     };
     const total = Math.floor((cfg.sharedOrdersPerActivePlayer * active * demand.totalBps) / 10_000);
     // City orders by rank: the n-th goes to wave n modulo the waves of the day.
-    const every = (cfg.waves?.everyHours ?? 24) * HOUR_MS;
+    const waves = cfg.waves;
+    const every = (waves?.everyHours ?? 24) * HOUR_MS;
     const perDay = Math.max(1, Math.floor(DAY_MS / every));
+    const open = waves ? waves.openHours * HOUR_MS : DAY_MS;
+    // At the hours of Paris: the clock of the players, whatever the change of time.
+    const opens = waveOpenings(ctx, day);
     let rank = 0;
     const wave = (): [number, number] => {
-      const opensAt = dayStart + (rank++ % perDay) * every;
-      const open = cfg.waves ? cfg.waves.openHours * HOUR_MS : DAY_MS;
-      return [opensAt, Math.min(expiresAt, opensAt + open)];
+      if (opens.length === 0) {
+        const opensAt = dayStart + (rank++ % perDay) * every;
+        return [opensAt, Math.min(expiresAt, opensAt + open)];
+      }
+      const opensAt = opens[rank++ % opens.length] as number;
+      const ends = opensAt + open;
+      // A wave that would run into the night lasts instead until the next morning.
+      const night = waves?.closedHours ? nextHour(opensAt, waves.closedHours.from) : undefined;
+      if (night !== undefined && ends > night && waves?.carryUntilHour !== undefined) {
+        return [opensAt, nextHour(night, waves.carryUntilHour) ?? ends];
+      }
+      return [opensAt, ends];
     };
     // Where the market asks for more: the same share of the board as on a personal board.
     const asked = resources.flatMap((resource) =>
@@ -698,7 +714,59 @@ export function ensureBoard(tx: Tx): void {
       );
     }
   }
-  tx.s.board = { day, active, orders, takenBy: held?.day === day ? held.takenBy : {} };
+  // The evening's orders of the day before still open (until the next morning) stay on the board,
+  // under their ids; those already taken are done with.
+  const carried = (held?.orders ?? []).filter(
+    (o) =>
+      !o.id.startsWith(`${day}:`) &&
+      o.expiresAt > tx.now &&
+      (held?.day === day || !held?.takenBy[o.id]),
+  );
+  tx.s.board = {
+    day,
+    active,
+    orders: [...carried, ...orders],
+    takenBy: held?.day === day ? held.takenBy : {},
+  };
+}
+
+/** The first instant from `from` (on the hour) when the clock of Paris shows `hour`, within a day. */
+function nextHour(from: number, hour: number): number | undefined {
+  for (let k = 0; k < 25; k++) {
+    const at = from + k * HOUR_MS;
+    if (hourIn(at) === hour) return at;
+  }
+  return undefined;
+}
+
+/**
+ * The waves of a day of the board, at the hours of Paris of its calendar day (the day that holds
+ * its middle): a world started in the morning finds the morning's wave open at once.
+ */
+function waveOpenings(ctx: WorldContext, day: number): number[] {
+  const hours = ctx.settings.deliveries.waves?.hours ?? [];
+  const midnight = dayStartIn(ctx.startAt + day * DAY_MS + DAY_MS / 2).start;
+  return hours
+    .map((h) => nextHour(midnight, h))
+    .filter((t): t is number => t !== undefined)
+    .sort((a, b) => a - b);
+}
+
+/** When the next wave of the board opens after `now` (null without waves at hours of Paris). */
+export function nextWaveAt(ctx: WorldContext, now: number): number | null {
+  if (!deliveriesOn(ctx) || !ctx.settings.deliveries.waves?.hours?.length) return null;
+  const today = dayIndex(ctx, now);
+  for (const day of [today, today + 1]) {
+    const next = waveOpenings(ctx, day).find((t) => t > now);
+    if (next !== undefined) return next;
+  }
+  return null;
+}
+
+/** Whether nobody may take an order of the world's board now (the night). */
+export function boardClosed(ctx: WorldContext, now: number): boolean {
+  const closed = ctx.settings.deliveries.waves?.closedHours;
+  return !!closed && hourWithin(hourIn(now), closed);
 }
 
 /** Orders of the board already dispatched today. */
@@ -758,11 +826,17 @@ export function dispatchDelivery(
   const orders: DeliveryOrder[] = [];
   for (const orderId of ids) {
     const [dayText] = orderId.split(":");
-    if (Number(dayText) !== today) fail("order_expired");
+    // An evening's order of the day before may still be on today's board.
+    const carried =
+      BOARD_ID.test(orderId) &&
+      state.board?.day === today &&
+      state.board.orders.some((o) => o.id === orderId);
+    if (Number(dayText) !== today && !carried) fail("order_expired");
     const order = findDeliveryOrder(ctx, state, playerId, today, orderId);
     if (!order) fail("unknown_delivery_order");
     if (done.includes(orderId)) fail("order_done");
     if (order.shared && order.takenBy) fail("order_taken");
+    if (order.shared && boardClosed(ctx, tx.now)) fail("board_closed");
     if (order.kind === "doge" && contractsDoneToday(tx, playerId, today).includes(order.ref ?? ""))
       fail("order_done");
     if (tx.now < order.opensAt) fail("order_not_open");

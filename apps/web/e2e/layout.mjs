@@ -1,5 +1,5 @@
 // The first session in full, on two phones (390 × 844 and 320 × 568): the sign-in, the
-// merchant's name, Lorenzo's guide played to its last card (« Bravo », objective 6/6, the Livre
+// merchant's name, Lorenzo's guide played to its last card (« Bravo », objective 7/7, the Livre
 // de compte's reward cashed: produce, harvest, deliver to a city, buy at the Rialto, the reward),
 // then a transformation in the workshops, the Terraferma during its truce, then a week in teams
 // with Milan riding against the merchant and its close (the week's view rewritten on its way:
@@ -200,8 +200,18 @@ async function session(width, height, tag) {
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     let n = 0;
+    // From the name to the first batch launched: 90 s at most (E3-5 of the experts), pictures and
+    // checks included.
+    let named = 0;
     /** A step done: its picture, then the layout checked. */
     const check = async (name) => {
+      if (name === "nom") named = Date.now();
+      if (named && name.startsWith("guide-vos-ouvriers")) {
+        const seconds = Math.round((Date.now() - named) / 1000);
+        named = 0;
+        console.log(`· ${size} premier lot lancé ${seconds} s après le nom`);
+        if (seconds > 90) throw new Error(`${label}: the first batch ${seconds} s after the name`);
+      }
       await page.waitForTimeout(450);
       const file = join(dir, `${String(++n).padStart(2, "0")}-${name}.png`);
       try {
@@ -332,7 +342,7 @@ async function session(width, height, tag) {
 
 /**
  * Plays Lorenzo's guide to its last card, touching what it rings; a check at each of its steps.
- * Fails unless it ends on « Bravo » at objective 6/6, the Livre de compte's reward cashed on the
+ * Fails unless it ends on « Bravo » at objective 7/7, the Livre de compte's reward cashed on the
  * way: waiting is allowed (a batch, a delivery on the road), stopping short is not.
  */
 async function guide(page, check) {
@@ -360,7 +370,7 @@ async function guide(page, check) {
       throw new Error(`the guide stays three minutes on « ${text} »`);
     }
     if (BRAVO.test(text)) {
-      if (!/objectif 6\/6/i.test(text)) throw new Error(`the guide ends short: « ${text} »`);
+      if (!/objectif 7\/7/i.test(text)) throw new Error(`the guide ends short: « ${text} »`);
       if (!cashed) throw new Error("the guide ends without the Livre de compte's reward cashed");
       await bubble.getByRole("button", { name: /terminer/i }).click();
       return;

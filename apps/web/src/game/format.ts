@@ -65,3 +65,16 @@ export function minutesLabel(minutes: number): string {
   const m = minutes % 60;
   return m === 0 ? `${h} h` : `${h} h ${m.toString().padStart(2, "0")}`;
 }
+
+/** The hour of an instant in Paris, the French way: « 8 h », « 21 h 40 ». */
+export function hourOf(at: number): string {
+  const parts = new Intl.DateTimeFormat("fr-FR", {
+    hour: "numeric",
+    minute: "numeric",
+    hourCycle: "h23",
+    timeZone: "Europe/Paris",
+  }).formatToParts(new Date(at));
+  const h = Number(parts.find((p) => p.type === "hour")?.value ?? 0);
+  const m = Number(parts.find((p) => p.type === "minute")?.value ?? 0);
+  return m === 0 ? `${h}${NBSP}h` : `${h}${NBSP}h${NBSP}${String(m).padStart(2, "0")}`;
+}

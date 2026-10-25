@@ -20,6 +20,7 @@ import { harvestSummary } from "./harvest.js";
 import { connectLive } from "./live.js";
 import { MapScreen } from "./map/MapScreen.js";
 import type { Selection } from "./map/WorldMap.js";
+import { placeFrom, withoutPlace } from "./shortcut.js";
 import { store } from "./store.js";
 
 /** Actions that bring something in: a fuller cue than a plain tap. */
@@ -124,6 +125,8 @@ export interface GameProps {
   influence: number | null;
   /** The rival of the week (null: none). */
   rival: GameResponse["rival"];
+  /** How often the game asked to notify, and the sessions played. */
+  pushAsk: GameResponse["pushAsk"];
   /** The merchant's permanent level (honorary). */
   level: Level | null;
   /**
@@ -187,6 +190,7 @@ export function Game(props: {
   const [familyLatestAt, setFamilyLatestAt] = useState<number | null>(null);
   const [influence, setInfluence] = useState<number | null>(null);
   const [rival, setRival] = useState<GameResponse["rival"]>(null);
+  const [pushAsk, setPushAsk] = useState<GameResponse["pushAsk"]>(null);
   const [level, setLevel] = useState<Level | null>(null);
   const loaded = useRef(false);
   const [welcome, setWelcome] = useState<WelcomeData | null>(null);
@@ -254,6 +258,7 @@ export function Game(props: {
       setFamilyLatestAt(res.familyLatestAt ?? null);
       setInfluence(res.influence ?? null);
       setRival(res.rival ?? null);
+      if (res.pushAsk !== undefined) setPushAsk(res.pushAsk);
       setLevel(res.level ?? null);
       if (res.welcome) setWelcome(res.welcome);
       setCeremony(res.ceremony ?? null);
@@ -359,6 +364,22 @@ export function Game(props: {
     setSheet("rialto");
   }, []);
   const select = useCallback((s: Selection | null) => setSelection(s), []);
+
+  // A shortcut of the installed app (`/?ouvrir=…`) or a push's link (`/?open=…`), once the
+  // merchant's house is loaded; the address is then cleaned, so that a reload does not open it.
+  const placed = !!view;
+  useEffect(() => {
+    if (!placed) return;
+    const place = placeFrom(window.location.search);
+    if (place && "tab" in place) goTo(place.tab);
+    if (place && "sheet" in place) setSheet(place.sheet);
+    if (place && "layer" in place) setLayer(place.layer);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      withoutPlace(new URL(window.location.href)),
+    );
+  }, [placed, goTo, setLayer]);
 
   // Back button: another layer goes back to the trade's map.
   useEffect(() => {
@@ -593,6 +614,7 @@ export function Game(props: {
     familyLatestAt,
     influence,
     rival,
+    pushAsk,
     level,
     bots,
     tab: layer === "campaign" ? "famille" : selection?.kind === "cart" ? "routes" : "comptoir",

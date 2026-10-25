@@ -141,6 +141,34 @@
       "when": 1792881953785,
       "tag": "0019_email_canonical",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792919064052,
+      "tag": "0020_account_origin",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792919185273,
+      "tag": "0021_funnel_counts",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792919867539,
+      "tag": "0022_push_ask",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792921726057,
+      "tag": "0023_pseudo_default",
+      "breakpoints": true
     }
   ]
 }

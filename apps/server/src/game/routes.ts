@@ -10,12 +10,13 @@ import {
   weekReplay,
   workLevel,
 } from "@comptoirs/engine";
-import { and, desc, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { AuthService, PublicAccount } from "../auth/service.js";
 import type { Db } from "../db/client.js";
 import { accounts, players, pushSubscriptions, telemetry } from "../db/schema.js";
+import { countFunnel, funnelReport } from "../funnel.js";
 import { NOTIFICATION_KINDS, type NotificationKind, type Notifier } from "../notify/notifier.js";
 import { isPushEndpoint } from "../notify/push.js";
 import { retention, sharedMailboxes, suspiciousPairs } from "./admin.js";
@@ -45,6 +46,7 @@ import { levelsOf } from "./level.js";
 import { LiveHub } from "./live.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
 import { priceHistory, profile } from "./profile.js";
+import { activePeopleByRegion, recommendedRegion } from "./recommend.js";
 import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
 import { toJson } from "./serialize.js";
 import type { SkirmishHub } from "./skirmish.js";
@@ -349,6 +351,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
         : {}),
       ...(v ? await namesFor(v) : { names: {}, bots: [] }),
       unread: v ? await notifier.unread(account.id) : 0,
+      pushAsk: v ? await pushAsk(account.id) : null,
       level: (await levelsOf(db, world.current, [account.id])).get(account.id),
       familyLatestAt: v ? await latestMessageAt(db, world, account.id) : null,
       // The house's Influence, under the ducats (worlds with the house only).
@@ -393,14 +396,71 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   app.get("/api/game/catalog", async () =>
     toJson({
       ...catalog(world.ctx, world),
+      // The trade to recommend at the door (E3-5), or none.
+      recommendedRegion: recommendedRegion(
+        activePeopleByRegion(world.ctx, world.current, world.now()),
+      ),
       previousDoge: await previousDoge(db, world.id),
       community: deps.communityUrl ?? null,
     }),
   );
 
+  /**
+   * The game asked to notify (the guide's last card, or its one reminder): the answer, counted
+   * for the measures (E3-1 of the experts), and the asks counted for the reminder.
+   */
+  app.post("/api/game/push-ask", perMerchant(30), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const body = z.object({ accepted: z.boolean(), ios: z.boolean() }).parse(req.body);
+    const [row] = await db
+      .update(accounts)
+      .set({ pushAskCount: sql`${accounts.pushAskCount} + 1` })
+      .where(eq(accounts.id, account.id))
+      .returning({ attempt: accounts.pushAskCount });
+    await db.insert(telemetry).values({
+      accountId: account.id,
+      worldId: world.id,
+      type: "push_ask",
+      at: new Date(world.now()),
+      props: { accepted: body.accepted, attempt: row?.attempt ?? 1, ios_standalone: body.ios },
+    });
+    return reply.code(204).send();
+  });
+
+  /** How often the game asked to notify, and the sessions played: the reminder's rule. */
+  async function pushAsk(accountId: string) {
+    const [asked] = await db
+      .select({ count: accounts.pushAskCount })
+      .from(accounts)
+      .where(eq(accounts.id, accountId));
+    const [sessions] = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(telemetry)
+      .where(
+        and(
+          eq(telemetry.accountId, accountId),
+          eq(telemetry.worldId, world.id),
+          eq(telemetry.type, "session_start"),
+        ),
+      );
+    return { count: asked?.count ?? 0, sessions: Number(sessions?.n ?? 0) };
+  }
+
   app.get("/api/game", perMerchant(300), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
+    // Opened from a push: which kind brought the merchant back (E3-1 of the experts).
+    const opened = (req.query as { opened?: string } | undefined)?.opened;
+    if (opened && (NOTIFICATION_KINDS as readonly string[]).includes(opened)) {
+      await db.insert(telemetry).values({
+        accountId: account.id,
+        worldId: world.id,
+        type: "push_open",
+        at: new Date(world.now()),
+        props: { kind: opened },
+      });
+    }
     let welcome = null;
     if (world.current.players[account.id]) {
       const [row] = await db
@@ -477,6 +537,11 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     });
     if (!res.ok) return reply.code(409).send({ error: res.error });
     await syncPass(db, world, account.id);
+    const [came] = await db
+      .select({ source: accounts.utmSource })
+      .from(accounts)
+      .where(eq(accounts.id, account.id));
+    await countFunnel(db, "region_chosen", came?.source, new Date(world.now()));
     return view(account);
   });
 
@@ -768,7 +833,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     if (!deps.adminEmails.includes(account.email.toLowerCase())) {
       return reply.code(403).send({ error: "forbidden" });
     }
-    return retention(db, world.id, world.now());
+    return {
+      ...(await retention(db, world.id, world.now())),
+      funnel: await funnelReport(db, new Date(world.now())),
+    };
   });
 
   /** Admin: pairs of people trading a lot with each other away from the reference price. */

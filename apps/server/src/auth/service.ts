@@ -2,6 +2,7 @@ import { and, count, desc, eq, gt, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "../db/client.js";
 import { accounts, loginTokens, sessions } from "../db/schema.js";
+import { countFunnel } from "../funnel.js";
 import type { Mailer } from "../mail/mailer.js";
 import { magicLinkMail } from "../mail/templates.js";
 import { canonicalEmail, disposableEmail } from "./canonical.js";
@@ -30,6 +31,8 @@ export interface PublicAccount {
   id: string;
   email: string;
   pseudo: string | null;
+  /** The name kept as proposed at the door (the profile offers to change it). */
+  pseudoDefault: boolean;
   crest: Crest | null;
 }
 
@@ -56,6 +59,7 @@ const publicColumns = {
   id: accounts.id,
   email: accounts.email,
   pseudo: accounts.pseudo,
+  pseudoDefault: accounts.pseudoDefault,
   crest: accounts.crest,
 };
 
@@ -72,6 +76,23 @@ export class AuthError extends Error {
     super(message ?? code);
   }
 }
+
+/** Where a new account comes from (see apps/web/src/origin.ts), each value at most 64 chars. */
+export interface Origin {
+  ref?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+}
+
+export const originSchema = z
+  .object({
+    ref: z.string().max(64).optional(),
+    utmSource: z.string().max(64).optional(),
+    utmMedium: z.string().max(64).optional(),
+    utmCampaign: z.string().max(64).optional(),
+  })
+  .optional();
 
 export interface AuthDeps {
   db: Db;
@@ -123,6 +144,7 @@ export class AuthService {
   async verifyCode(
     rawEmail: string,
     rawCode: string,
+    origin?: Origin,
   ): Promise<{ sessionToken: string; account: PublicAccount }> {
     const parsed = emailSchema.safeParse(rawEmail);
     const code = rawCode.replace(/\s+/g, "");
@@ -159,14 +181,17 @@ export class AuthService {
       return false;
     });
     if (!opened) throw new AuthError("invalid_code");
-    return this.openSession(email, now);
+    return this.openSession(email, now, origin);
   }
 
   /**
    * Consumes a magic link token (single use, atomically) and opens a session.
    * Creates the account on first login.
    */
-  async verify(token: string): Promise<{ sessionToken: string; account: PublicAccount }> {
+  async verify(
+    token: string,
+    origin?: Origin,
+  ): Promise<{ sessionToken: string; account: PublicAccount }> {
     const now = this.now();
     const [used] = await this.deps.db
       .update(loginTokens)
@@ -180,20 +205,24 @@ export class AuthService {
       )
       .returning({ email: loginTokens.email });
     if (!used) throw new AuthError("invalid_token");
-    return this.openSession(used.email, now);
+    return this.openSession(used.email, now, origin);
   }
 
   /** The session of a token consumed, by link or code; the account made on first login. */
   private async openSession(
     email: string,
     now: Date,
+    origin: Origin = {},
   ): Promise<{ sessionToken: string; account: PublicAccount }> {
     // One account per mailbox: an alias opens the account of its mailbox, never a second one.
     const mailbox = canonicalEmail(email);
-    await this.deps.db
+    const created = await this.deps.db
       .insert(accounts)
-      .values({ email, emailCanonical: mailbox, createdAt: now })
-      .onConflictDoNothing();
+      // Where it came from, on its creation only (an existing account keeps its own).
+      .values({ email, emailCanonical: mailbox, createdAt: now, ...origin })
+      .onConflictDoNothing()
+      .returning({ id: accounts.id });
+    if (created.length > 0) await countFunnel(this.deps.db, "signed_in", origin.utmSource, now);
     const [account] = await this.deps.db
       .update(accounts)
       .set({ lastLoginAt: now })
@@ -249,7 +278,12 @@ export class AuthService {
     return account;
   }
 
-  async setPseudo(accountId: string, rawPseudo: string): Promise<PublicAccount> {
+  async setPseudo(
+    accountId: string,
+    rawPseudo: string,
+    /** Kept as the door proposed it. */
+    proposed = false,
+  ): Promise<PublicAccount> {
     const pseudo = pseudoSchema.parse(rawPseudo);
     const [taken] = await this.deps.db
       .select({ id: accounts.id })
@@ -259,7 +293,7 @@ export class AuthService {
     try {
       const [account] = await this.deps.db
         .update(accounts)
-        .set({ pseudo })
+        .set({ pseudo, pseudoDefault: proposed })
         .where(eq(accounts.id, accountId))
         .returning(publicColumns);
       if (!account) throw new Error("account not found");

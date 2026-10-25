@@ -29,10 +29,11 @@ describe("the season's day in the notices", () => {
 describe("the introduction's season", () => {
   it("says « un mois » for a season within its calendar month", () => {
     const november = { startsAt: Date.parse("2026-10-31T23:00:00Z"), endsAt: world.endsAt };
-    expect(seasonText(november)).toMatch(/^Une saison dure un mois/);
+    expect(seasonText(november)).toMatch(/^Vos ateliers produisent/);
+    expect(seasonText(november)).toMatch(/Chaque mois, tout le monde repart à zéro/);
   });
 
   it("says until when for a first season running past its month", () => {
-    expect(seasonText(world)).toMatch(/^Cette saison dure jusqu'au 30 novembre ;/);
+    expect(seasonText(world)).toMatch(/^Cette saison dure jusqu.au 30 novembre,/);
   });
 });

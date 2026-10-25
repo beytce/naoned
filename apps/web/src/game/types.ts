@@ -46,6 +46,8 @@ export interface Catalog {
   };
   /** The Doge of the season before, honoured on the Dogana's façade. */
   previousDoge?: { pseudo: string | null; crest: CrestData | null; season: string } | null;
+  /** The trade fewest people chose this month, when the gap is clear (E3-5), or none. */
+  recommendedRegion?: string | null;
   /** The players' community (a Discord invite, a forum), null when none. */
   community?: string | null;
   /** Deliveries by road (null when the world has none). */
@@ -530,6 +532,8 @@ export interface PlayerView {
   road: RoadView | null;
   /** The galleys of the Muda (null when the world has none). */
   muda: MudaView | null;
+  /** The hours of the guide's last card, from the server. */
+  agenda: { queuesEndAt: number | null; nextWaveAt: number | null; nextMudaAt: number | null };
   rations: {
     resource: string;
     perDay: number;
@@ -701,6 +705,8 @@ export interface GameResponse {
   error?: string;
   /** Unread notifications (the bell). */
   unread?: number;
+  /** How often the game asked to notify, and the sessions played (the reminder's rule). */
+  pushAsk?: { count: number; sessions: number } | null;
   /** Newest message of the family's thread (null: no family or no message). */
   familyLatestAt?: number | null;
   /** The house's Influence, kept from season to season (worlds with the house only). */

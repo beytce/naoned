@@ -30,6 +30,8 @@ export const accounts = pgTable(
      */
     emailCanonical: text("email_canonical"),
     pseudo: text("pseudo"),
+    /** The name kept as proposed at the door: the profile offers to change it, once, for free. */
+    pseudoDefault: boolean("pseudo_default").notNull().default(false),
     /** Cosmetic coat of arms chosen by the player: { shape, color, symbol }. */
     crest: jsonb("crest").$type<{ shape: string; color: string; symbol: string }>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -40,6 +42,16 @@ export const accounts = pgTable(
     pushOff: jsonb("push_off").$type<string[]>().notNull().default([]),
     /** The Terraferma's rating (Elo, from 1 000), kept from week to week and season to season. */
     terraRating: integer("terra_rating").notNull().default(1000),
+    /**
+     * Where the account came from, recorded at its creation: the shared link's `ref` (the pseudo
+     * of who shared it) and the campaign's `utm_*`, for the launch's measures.
+     */
+    /** How many times the game asked to notify (the guide's card, then one reminder at most). */
+    pushAskCount: integer("push_ask_count").notNull().default(0),
+    ref: text("ref"),
+    utmSource: text("utm_source"),
+    utmMedium: text("utm_medium"),
+    utmCampaign: text("utm_campaign"),
   },
   (t) => [
     uniqueIndex("accounts_email_key").on(t.email),
@@ -447,4 +459,20 @@ export const messageReports = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   },
   (t) => [primaryKey({ columns: [t.messageId, t.reporterId] })],
+);
+
+/**
+ * The way in, counted without anyone in it (E3-2 of the experts, 25 October 2026): per day of
+ * Paris, step and campaign source ('' for none), how many went through. No account, no address,
+ * no cookie: counters only.
+ */
+export const funnelCounts = pgTable(
+  "funnel_counts",
+  {
+    day: text("day").notNull(),
+    step: text("step").notNull(),
+    source: text("source").notNull().default(""),
+    count: integer("count").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.step, t.source] })],
 );

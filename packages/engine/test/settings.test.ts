@@ -85,6 +85,14 @@ describe("settings", () => {
   });
 });
 
+describe("Venice without loans nor warehouses", () => {
+  it("has neither: the Bank lends nothing and no city auctions a place", () => {
+    const s = parseSettings(venice1450Settings);
+    expect(s.loans).toBeUndefined();
+    expect(s.warehouses).toBeUndefined();
+  });
+});
+
 describe("the house's missions of Venice", () => {
   it("listen only to events the engine still sends with the Terraferma live", () => {
     const pool = parseSettings(venice1450Settings).house?.missions?.pool ?? [];

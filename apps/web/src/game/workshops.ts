@@ -78,3 +78,26 @@ export function workshopState(props: GameProps, b: BuildingView): WorkshopState 
   }
   return { state: "blocked", resource: missingInput(props, recipe, b.level), ready };
 }
+
+/** Minutes from now to the evening (21 h in Paris), or to the morning (8 h) once evening has come. */
+export function untilRest(now: number): { minutes: number; night: boolean } {
+  const parts = new Intl.DateTimeFormat("fr-FR", {
+    hour: "numeric",
+    minute: "numeric",
+    hourCycle: "h23",
+    timeZone: "Europe/Paris",
+  }).formatToParts(new Date(now));
+  const part = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? 0);
+  const at = part("hour") * 60 + part("minute");
+  const night = at >= 20 * 60 || at < 8 * 60;
+  const target = night ? (at < 8 * 60 ? 8 * 60 : 32 * 60) : 21 * 60;
+  return { minutes: target - at, night };
+}
+
+/** The batches that keep a workshop busy until this evening (or the morning), one at least. */
+export function eveningBatches(props: GameProps, b: BuildingView): number {
+  const recipe = recipeOf(props, b.type);
+  if (!recipe) return 1;
+  const rest = untilRest(props.now);
+  return Math.max(1, Math.min(b.canStart, Math.floor(rest.minutes / recipe.durationMinutes)));
+}

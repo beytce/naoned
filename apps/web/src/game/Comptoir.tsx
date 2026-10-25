@@ -20,7 +20,16 @@ import { harvestAll, harvestAndRestart } from "./harvest.js";
 import { store } from "./store.js";
 import type { BuildingView, Cost, PlayerView, Recipe } from "./types.js";
 import { unlocksOf } from "./unlocks.js";
-import { defaultBatches, have, outputQty, readyOf, recipeOf, workshopState } from "./workshops.js";
+import {
+  defaultBatches,
+  eveningBatches,
+  have,
+  outputQty,
+  readyOf,
+  recipeOf,
+  untilRest,
+  workshopState,
+} from "./workshops.js";
 
 export { have };
 
@@ -105,7 +114,8 @@ export function CostList({
   buyable = false,
 }: { cost: Cost; props: GameProps; buyable?: boolean }) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    // Its buttons keep their 44 px clear of the touch area of the button under them.
+    <div className={`flex flex-wrap items-center gap-3 ${buyable ? "pb-4" : ""}`}>
       <span className="font-display text-sm font-semibold">{d(cost.ducats)}</span>
       {Object.entries(cost.materials).map(([r, q]) => {
         const ok = have(props.view, r) >= q;
@@ -121,7 +131,7 @@ export function CostList({
             type="button"
             aria-label={`${fr.game.buy} : ${props.names.resource(r)}`}
             onClick={() => props.setSheet(`trade:${r}`)}
-            className="hit inline-flex items-center gap-1 text-vermilion underline decoration-dotted underline-offset-4"
+            className="inline-flex min-h-11 items-center gap-1 text-vermilion underline decoration-dotted underline-offset-4"
           >
             {inner}
           </button>
@@ -136,7 +146,7 @@ export function CostList({
 }
 
 /** The materials an upgrade lacks, and what buying them right away at the Rialto costs. */
-function missingMaterials(props: GameProps, cost: Cost) {
+export function missingMaterials(props: GameProps, cost: Cost) {
   const lines = Object.entries(cost.materials)
     .map(([r, q]) => ({ resource: r, quantity: q - have(props.view, r) }))
     .filter((l) => l.quantity > 0);
@@ -161,6 +171,7 @@ function BuyMissing({ cost, props }: { cost: Cost; props: GameProps }) {
       size="sm"
       tone="ghost"
       className="w-full"
+      coach="buy-missing"
       disabled={props.busy}
       onClick={async () => {
         const said: string[] = [];
@@ -197,7 +208,15 @@ function BuyMissing({ cost, props }: { cost: Cost; props: GameProps }) {
   );
 }
 
-const FIRST_STEPS = ["produce", "harvest", "transform", "sell_city", "market_buy", "mission"];
+const FIRST_STEPS = [
+  "produce",
+  "harvest",
+  "transform",
+  "sell_city",
+  "market_buy",
+  "invest",
+  "mission",
+];
 
 function FirstSteps(props: GameProps & { inSheet?: boolean }) {
   const done = new Set(props.view.tutorial);
@@ -583,21 +602,6 @@ function limit(b: BuildingView, recipe: Recipe, props: GameProps): string | null
   return t.limitedByQueue(b.canStart, props.catalog.rules.productionQueueMaxHours);
 }
 
-/** Minutes from now to the evening (21 h in Paris), or to the morning (8 h) once evening has come. */
-function untilRest(now: number): { minutes: number; night: boolean } {
-  const parts = new Intl.DateTimeFormat("fr-FR", {
-    hour: "numeric",
-    minute: "numeric",
-    hourCycle: "h23",
-    timeZone: "Europe/Paris",
-  }).formatToParts(new Date(now));
-  const part = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? 0);
-  const at = part("hour") * 60 + part("minute");
-  const night = at >= 20 * 60 || at < 8 * 60;
-  const target = night ? (at < 8 * 60 ? 8 * 60 : 32 * 60) : 21 * 60;
-  return { minutes: target - at, night };
-}
-
 /**
  * One sheet per workshop, opened from its plot on the domain or from the list: what it is doing,
  * collecting, producing (with quick choices), what it lacks, and upgrading.
@@ -615,9 +619,7 @@ function WorkshopSheet({
   const canUpgrade = cost !== null && affordable(props.view, cost);
   const q = Math.min(qty, Math.max(1, b.canStart));
   const rest = untilRest(props.now);
-  const evening = recipe
-    ? Math.max(1, Math.min(b.canStart, Math.floor(rest.minutes / recipe.durationMinutes)))
-    : 1;
+  const evening = eveningBatches(props, b);
   const status =
     st.state === "ready"
       ? t.ready(st.quantity ?? 0, props.names.resource(st.resource ?? ""))

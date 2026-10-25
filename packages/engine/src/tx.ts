@@ -125,6 +125,7 @@ export type EngineErrorCode =
   | "too_many_orders"
   | "unknown_delivery_order"
   | "order_not_open"
+  | "board_closed"
   | "order_expired"
   | "order_done"
   | "no_route"

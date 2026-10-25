@@ -9,9 +9,17 @@ import "@fontsource/space-mono/400.css";
 import "@fontsource/space-mono/700.css";
 import "@fontsource/cinzel/latin-700.css";
 import "./index.css";
+import { keepOrigin } from "./origin.js";
 import { applyPalette } from "./theme.js";
 
 applyPalette();
+
+// Where the visit comes from (a shared link, a campaign), kept until the sign-in.
+try {
+  keepOrigin(window.location.search, sessionStorage);
+} catch {
+  // No storage at all: the origin is lost, nothing else.
+}
 
 // A new version of the game: the new service worker takes over at once (autoUpdate) and the page
 // reloads onto it. An app left open, or kept in the background on a phone, looks for one every

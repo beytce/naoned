@@ -1,4 +1,5 @@
 import { ApiError } from "../api.js";
+import { pushOpened } from "./shortcut.js";
 import type {
   Action,
   Catalog,
@@ -43,9 +44,17 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   return data as T;
 }
 
+/** The push the game was opened from, told once with the first load (for the measures). */
+let opened = typeof window === "undefined" ? null : pushOpened(window.location.search);
+function openedOnce(): string {
+  const kind = opened;
+  opened = null;
+  return kind ? `?opened=${kind}` : "";
+}
+
 export const gameApi = {
   catalog: () => call<Catalog>("GET", "/api/game/catalog"),
-  view: () => call<GameResponse>("GET", "/api/game"),
+  view: () => call<GameResponse>("GET", `/api/game${openedOnce()}`),
   /** Restart from scratch (once per season). */
   reset: () => call<GameResponse>("POST", "/api/game/reset", {}),
   join: (region: string) => call<GameResponse>("POST", "/api/game/join", { region }),
@@ -91,6 +100,9 @@ export const gameApi = {
   pushSettings: () => call<PushSettings>("GET", "/api/notifications/push"),
   setPushOff: (off: NotificationKind[]) =>
     call<{ off: NotificationKind[] }>("PATCH", "/api/notifications/push", { off }),
+  /** The game asked to notify: the answer, for the measures. */
+  pushAsk: (accepted: boolean, ios: boolean) =>
+    call<void>("POST", "/api/game/push-ask", { accepted, ios }),
   subscribe: (sub: PushSubscriptionJSON) =>
     call<{ ok: true }>("POST", "/api/notifications/push/subscribe", sub),
   unsubscribe: (endpoint: string) =>

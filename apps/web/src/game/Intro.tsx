@@ -132,7 +132,7 @@ function Illustration({ index }: { index: number }) {
   );
 }
 
-/** Four illustrated slides: the story and the loop, before the first step. */
+/** One illustrated slide (E3-5 of the experts): the goal, then the game at once. */
 export function Intro({
   onDone,
   world,

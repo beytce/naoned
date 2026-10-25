@@ -138,6 +138,26 @@ describe("magic link", () => {
     expect(rows[0]?.emailCanonical).toBe("ada@gmail.com");
   });
 
+  it("records where a new account came from, never changing an existing one's", async () => {
+    await request("eve@example.org");
+    await app.inject({
+      method: "POST",
+      url: "/api/auth/verify",
+      payload: { token: lastToken(), origin: { ref: "Ada", utmSource: "reddit" } },
+    });
+    await request("eve@example.org");
+    await app.inject({
+      method: "POST",
+      url: "/api/auth/verify",
+      payload: { token: lastToken(), origin: { utmSource: "discord" } },
+    });
+    const [row] = await database.db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.email, "eve@example.org"));
+    expect(row).toMatchObject({ ref: "Ada", utmSource: "reddit", utmMedium: null });
+  });
+
   it("refuses a throwaway mailbox, saying so", async () => {
     const res = await request("x@yopmail.com");
     expect(res.statusCode).toBe(400);

@@ -110,6 +110,8 @@ function Privacy() {
           "Votre partie : région, ateliers, stocks, ducats, offres et échanges au Rialto, livraisons, famille, classements et palmarès.",
           "Vos messages dans le fil de votre famille, et les signalements que vous faites.",
           "Les mesures d'usage du jeu : sessions, étapes du tutoriel, actions de jeu, rattachées à votre compte.",
+          "D'où vient votre compte : le lien partagé (le nom du marchand qui l'a partagé) ou la campagne (paramètres utm) par lesquels vous êtes arrivé, enregistrés à la création du compte.",
+          "Des compteurs anonymes de l'entrée dans le jeu (accueil vu, lien demandé, compte créé, région choisie, premier lot), par jour et par campagne, qui ne sont rattachés à personne.",
           "Des données techniques : le cookie de session, les journaux du serveur (qui contiennent l'adresse IP de chaque requête) et, si vous les activez, l'abonnement aux notifications de votre navigateur.",
         ]}
       />
@@ -166,8 +168,9 @@ function Privacy() {
       <P>
         Fondaco n'utilise qu'un cookie : celui de votre session, indispensable pour rester connecté.
         Le jeu garde aussi sur votre appareil quelques préférences (palette, retours haptiques,
-        écrans déjà vus). Aucun cookie publicitaire ni de mesure d'audience : aucun consentement
-        n'est donc demandé. Les polices sont servies par le serveur du jeu.
+        écrans déjà vus) et, le temps de la visite, la campagne ou le lien partagé par lesquels vous
+        êtes arrivé. Aucun cookie publicitaire ni de mesure d'audience : aucun consentement n'est
+        donc demandé. Les polices sont servies par le serveur du jeu.
       </P>
       <H2>Vos droits</H2>
       <P>

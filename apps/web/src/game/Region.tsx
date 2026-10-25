@@ -51,6 +51,14 @@ export function Region(props: {
               <span className="slab whitespace-nowrap bg-lagoon px-2 py-0.5 font-sans text-xs font-bold text-on-lagoon">
                 {fr.region.bonus(bonus, props.names.resource(r.bonusResource))}
               </span>
+              {props.catalog.recommendedRegion === r.code && (
+                <span
+                  title={fr.region.recommendedHelp}
+                  className="slab whitespace-nowrap bg-gold px-2 py-0.5 font-sans text-xs font-bold text-ink"
+                >
+                  {fr.region.recommended}
+                </span>
+              )}
             </div>
             <p className="mt-2 text-sm text-cream-dim">{fr.region.jobs[r.code]?.text}</p>
             <div className="mt-4 flex items-end gap-1">

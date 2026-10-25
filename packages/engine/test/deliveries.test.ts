@@ -11,6 +11,7 @@ import {
   deliveryOrdersFor,
   hourIn,
   netWorth,
+  nextWaveAt,
   orderUnitPrice,
   supplierKey,
   supplierOf,
@@ -561,6 +562,103 @@ describe("a board shared by the world", () => {
     expect(open.map((o) => (o.opensAt - T0) / HOUR).sort()).toEqual([4, 4, 4, 8, 8, 8]);
     const later = common(w, "a").find((o) => o.kind === "city" && o.opensAt > w.now);
     expect(error(dispatch(w, later?.id ?? ""))).toBe("order_not_open");
+  });
+
+  describe("by day only (24 October 2026: no order of the board taken at night)", () => {
+    const dayWaves = {
+      ...testDeliveries,
+      quantity: { ...testDeliveries.quantity, wheat: [10, 20] },
+      sharedOrdersPerActivePlayer: 6,
+      urgentPerDay: 0,
+      waves: {
+        hours: [8, 11, 14, 17, 20],
+        openHours: 8,
+        carryUntilHour: 10,
+        closedHours: { from: 22, to: 8 },
+      },
+    };
+    const paris = (at: number) => hourIn(at);
+
+    it("opens its waves at 8, 11, 14, 17 and 20 h in Paris, as many orders as before", () => {
+      const w = shared({ deliveries: dayWaves } as never);
+      const city = w.state.board?.orders.filter((o) => o.kind === "city") ?? [];
+      expect(city).toHaveLength(18);
+      expect([...new Set(city.map((o) => paris(o.opensAt)))].sort((a, b) => a - b)).toEqual([
+        8, 11, 14, 17, 20,
+      ]);
+      // The waves of 17 and 20 h last until 10 h the next morning; the others their 8 hours.
+      for (const o of city) {
+        const h = paris(o.opensAt);
+        if (h >= 17) {
+          expect(paris(o.expiresAt)).toBe(10);
+          expect(o.expiresAt - o.opensAt).toBeLessThan(DAY);
+        } else expect(o.expiresAt - o.opensAt).toBe(8 * HOUR);
+      }
+    });
+
+    it("keeps the evening's orders on the next day's board until 10 h, never taken at night", () => {
+      const w = shared({ deliveries: dayWaves } as never);
+      const evening = common(w, "a").find((o) => paris(o.opensAt) === 20);
+      if (!evening) throw new Error("no order at 20 h");
+      // 23 h in Paris: the board is closed.
+      w.at(22 * HOUR);
+      expect(paris(w.now)).toBe(23);
+      expect(error(dispatch(w, evening.id))).toBe("board_closed");
+      // The next day at 7:59, still closed; at 8 h, the order of the evening before is there.
+      w.at(DAY + 6 * HOUR + 59 * MIN);
+      expect(paris(w.now)).toBe(7);
+      w.do({ type: "tick" });
+      expect(w.state.board?.day).toBe(1);
+      expect(w.state.board?.orders.some((o) => o.id === evening.id)).toBe(true);
+      expect(error(dispatch(w, evening.id))).toBe("board_closed");
+      w.at(DAY + 7 * HOUR);
+      expect(error(dispatch(w, evening.id))).toBe("ok");
+      expect(w.state.board?.takenBy[evening.id]).toBe("a");
+    });
+
+    it("lets an evening's order go at 10 h the next morning", () => {
+      const w = shared({ deliveries: dayWaves } as never);
+      const evening = common(w, "a").find((o) => paris(o.opensAt) === 20);
+      if (!evening) throw new Error("no order at 20 h");
+      w.at(DAY + 9 * HOUR);
+      expect(paris(w.now)).toBe(10);
+      expect(error(dispatch(w, evening.id))).toBe("order_expired");
+    });
+
+    it("tells when the next wave comes, by the clock of Paris", () => {
+      const c = ctx({ deliveries: dayWaves } as never);
+      // 10 h in Paris: the next wave at 11 h; at 21 h, the next at 8 h the next morning.
+      expect(paris(nextWaveAt(c, T0 + 9 * HOUR) ?? 0)).toBe(11);
+      const late = nextWaveAt(c, T0 + 20 * HOUR) ?? 0;
+      expect(paris(late)).toBe(8);
+      expect(late).toBeGreaterThan(T0 + 20 * HOUR);
+      expect(nextWaveAt(ctx(), T0)).toBeNull();
+    });
+
+    it("never opens an order at night over a month, across the change of time", () => {
+      // From 5 October 2026, midnight in Paris: the clocks go back on 25 October.
+      const start = Date.UTC(2026, 9, 4, 22);
+      const c = {
+        ...ctx({ deliveries: { ...dayWaves, urgentPerDay: 2 } } as never),
+        startAt: start,
+      };
+      const w = new World(c);
+      w.now = start + 10 * HOUR;
+      w.do({ type: "join", playerId: "a", region: "terraferma" });
+      let counted = 0;
+      for (let day = 0; day < 31; day++) {
+        w.now = start + day * DAY + 12 * HOUR;
+        w.do({ type: "tick" });
+        const today = (w.state.board?.orders ?? []).filter((o) => o.id.startsWith(`${day}:`));
+        counted += today.length;
+        for (const o of today) {
+          const h = paris(o.opensAt);
+          expect(h >= 8 && h < 22, `${o.id} opens at ${h} h`).toBe(true);
+          if (o.kind === "urgent") expect(paris(o.expiresAt - 1)).toBeLessThan(22);
+        }
+      }
+      expect(counted).toBeGreaterThan(31 * 6);
+    });
   });
 
   it("is drawn once a day for the whole world, in proportion to the active merchants", () => {

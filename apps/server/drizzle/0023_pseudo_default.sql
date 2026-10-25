@@ -1,0 +1,1 @@
+ALTER TABLE "accounts" ADD COLUMN "pseudo_default" boolean DEFAULT false NOT NULL;

@@ -806,10 +806,22 @@ export const worldSettingsSchema = z.object({
       sharedOrdersPerActivePlayer: qty.prefault(0),
       /**
        * The cities' orders of the shared board come in waves through the day instead of all at
-       * midnight: a wave every `everyHours`, each order open `openHours` (cut at midnight). The
-       * day's count is unchanged. Absent: one board at midnight, open all day.
+       * midnight: a wave every `everyHours` (cut at midnight), or at the `hours` of Paris, each
+       * order open `openHours`. A wave that would run into `closedHours` lasts instead until
+       * `carryUntilHour` the next morning, on the next day's board; in `closedHours` nobody takes
+       * an order of the board. The day's count is unchanged. Absent: one board at midnight.
        */
-      waves: z.object({ everyHours: positive, openHours: positive }).optional(),
+      waves: z
+        .object({
+          everyHours: positive.optional(),
+          hours: z.array(z.number().int().min(0).max(23)).optional(),
+          openHours: positive,
+          carryUntilHour: z.number().int().min(0).max(23).optional(),
+          closedHours: z
+            .object({ from: z.number().int().min(0).max(23), to: z.number().int().min(0).max(23) })
+            .optional(),
+        })
+        .optional(),
       /**
        * On the day of joining, a first order the starting stock (or the first batch) covers, by
        * region. `reward`: deniers paid for the whole order, so the first delivery is felt.
