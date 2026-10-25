@@ -130,6 +130,11 @@ export function pushText(
         title: "Livraison arrivée",
         body: `${data.quantity} ${RESOURCES[String(data.resource)] ?? String(data.resource)} livrés par ${road(data.route, cities)} : ${ducats(String(data.amount ?? "0"))} ducats encaissés.`,
       };
+    case "streak":
+      return {
+        title: `Série de ${data.streak} jours`,
+        body: "Le coffre du jour est encore fermé : finissez vos tâches avant la fin du jour pour prolonger la série.",
+      };
     case "wave":
       return {
         title: `Nouvelles commandes à ${clock(data.at)}`,

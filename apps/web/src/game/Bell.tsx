@@ -24,6 +24,7 @@ const ICON = {
   morning: NavIcon.bell,
   skirmish_call: NavIcon.famille,
   wave: NavIcon.routes,
+  streak: NavIcon.bell,
 } as const;
 const TONE: Record<string, string> = {
   harvest: "text-lagoon",
@@ -41,6 +42,7 @@ const TONE: Record<string, string> = {
   morning: "text-gold",
   skirmish_call: "text-vermilion",
   wave: "text-lagoon",
+  streak: "text-gold",
 };
 
 function text(n: Notice, props: GameProps): string {
@@ -139,6 +141,8 @@ function text(n: Notice, props: GameProps): string {
       return t.skirmishCall(hourOf(Number(n.data.at ?? 0)));
     case "wave":
       return t.wave(hourOf(Number(n.data.at ?? 0)), Number(n.data.covered ?? 0));
+    case "streak":
+      return t.streak(Number(n.data.streak ?? 0));
     default:
       return "";
   }

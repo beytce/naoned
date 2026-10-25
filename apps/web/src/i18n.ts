@@ -1262,9 +1262,10 @@ const frDict = {
       title: "Tâches du jour",
       streak: (n: number) =>
         n > 0 ? `Série : ${n} jour${n > 1 ? "s" : ""}` : "Pas encore de série",
+      grace: "grâce disponible",
       chest: "Coffre du jour",
       chestHint:
-        "Les trois tâches faites ouvrent le coffre ; chaque jour d'affilée l'agrandit (jusqu'à 5).",
+        "Les trois tâches faites ouvrent le coffre ; chaque jour d'affilée l'agrandit (jusqu'à 5). Un jour manqué par semaine ne casse pas la série.",
       chestOpen: "Coffre ouvert : revenez demain pour prolonger la série.",
       resetsIn: (t: string) => `Nouvelles tâches dans ${t}`,
       claim: "Encaisser",
@@ -1664,6 +1665,9 @@ const frDict = {
       /** A wave of the board opens with orders the stock covers. */
       wave: (at: string, covered: number) =>
         `Nouvelles commandes à ${at} : votre stock en couvre ${covered}.`,
+      /** A streak of chests whose day's chest is still closed, at 19 h. */
+      streak: (n: number) =>
+        `Série de ${n} jours : le coffre du jour est encore fermé, finissez vos tâches avant la fin du jour.`,
       skirmishCall: (at: string) =>
         `Convocation d'escarmouche à ${at} : les marchands s'y retrouvent pour une partie classée.`,
       harvest: "Récolte prête : vos ateliers ont terminé leur production.",
@@ -1723,6 +1727,7 @@ const frDict = {
           morning: "Gazette du matin (8 h 05)",
           skirmish_call: "Convocations d'escarmouche (un quart d'heure avant)",
           wave: "Vague de commandes que votre stock couvre (si vous êtes absent)",
+          streak: "Rappel de série (19 h, coffre du jour fermé)",
         } as Record<string, string>,
       },
     },
@@ -2617,6 +2622,7 @@ const frDict = {
         "Pass Négociant : plus aucun avantage de jeu (ni quota à la Dogana, ni offre ouverte, ni produits frais en plus, ni commande du Doge échangée, ni alerte de bonne affaire) ; il ne donne que de l'information à lire et du cosmétique.",
         "Terraferme : la Condotta, 8 minutes en coopération, seul ou avec sa compagnie, contre trois nations et Milan. Tenez Padoue et 35 % des terres pour ouvrir le niveau suivant (12 niveaux). Ni ducats, ni marchandises, ni Gloire : un grade, de Condottiere di ventura à Capitano generale.",
         "Commerce : les ouvriers mangent au lot, plus à la journée — un demi-pain par lot et par niveau dans un atelier qui transforme, un quart pour une matière première. Sans pain, l'atelier travaille deux fois moins vite, jamais arrêté.",
+        "Tâches du jour : un jour manqué par semaine ne casse plus la série du coffre ; un rappel à 19 h si votre série atteint 3 jours et que le coffre est encore fermé.",
       ],
     },
     howTo: [

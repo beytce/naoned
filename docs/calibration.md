@@ -1408,3 +1408,16 @@ Réglage : `rations.perBatchQuarters` = `{ transform: 2, raw: 1 }` (les coeffici
 - Le pain et les matières ne s'effondrent plus en fin de mois : la consommation suit enfin la production.
 - La graine 5 dépasse le plafond de la Vénétie. C'est la lagune qui y est basse (2 421 d de ventes nettes médianes, contre 3 440 à 4 379 sur les autres graines), pas la Vénétie qui monte : elle y fait 4 456 d, comme sur la graine 2. La médiane des 5 graines est 95 %.
 - La monnaie payée baisse de 15 % : une part du pain livré hier aux villes nourrit maintenant les ateliers. C'est la nouvelle base pour la cible des fondaci (E1-3), qui visait ±10 % de 213 d.
+
+## Une série clémente (25 octobre 2026, lot 2, E3-10)
+
+Un jour manqué par période de 7 jours ne casse plus la série du coffre. C'est automatique : rien à acheter ni à gagner. Les périodes se comptent depuis le début du monde (jours 0 à 6, 7 à 13…). Deux jours manqués de suite, ou deux dans la même période, cassent la série.
+
+- Réglage : `daily.chest.graceDaysPerWeek` = 1 (0 : l'ancienne règle).
+- Le coffre affiche « Série : 4 jours · grâce disponible ».
+- Un rappel à 19 h (jusqu'à 21 h), une fois par jour, à qui tient une série d'au moins 3 jours et n'a pas ouvert le coffre du jour. Il compte dans le plafond de 3 notifications par jour d'E3-1. Il n'est envoyé que si la grâce est en place.
+
+**La monnaie, estimée et non simulée.** Les marchands de `pnpm sim` ne font pas les tâches du jour : la simulation ne voit pas cette règle.
+- Le coffre vaut 10 d, plus 3 d par jour de série, jusqu'à 22 d.
+- Un marchand qui manque un jour par semaine touchait, sur 6 jours, 10 + 13 + 16 + 19 + 22 + 22 = 102 d. Avec la grâce, il touche 6 × 22 = 132 d.
+- Cela fait +30 d par semaine, soit environ 4 d par jour, ou +2,4 % de la monnaie payée par actif (182 d). C'est le plafond : un marchand présent tous les jours ne touche rien de plus.

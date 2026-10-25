@@ -583,6 +583,8 @@ export interface DailyView {
   chestClaimed: boolean;
   chest: Money;
   streak: number;
+  /** Days the streak may still miss this week without breaking. */
+  graceLeft: number;
   best: number;
   resetsAt: number;
 }
@@ -825,7 +827,8 @@ export type NotificationKind =
   | "muda"
   | "morning"
   | "skirmish_call"
-  | "wave";
+  | "wave"
+  | "streak";
 
 export interface Notice {
   id: number;

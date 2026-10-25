@@ -1272,9 +1272,10 @@ export const en: Dictionary = {
     daily: {
       title: "Today's tasks",
       streak: (n: number) => (n > 0 ? `Streak: ${n} day${s(n)}` : "No streak yet"),
+      grace: "grace available",
       chest: "Chest of the day",
       chestHint:
-        "The three tasks done open the chest; each day in a row makes it bigger (up to 5).",
+        "The three tasks done open the chest; each day in a row makes it bigger (up to 5). One missed day a week does not break the streak.",
       chestOpen: "Chest open: come back tomorrow to extend the streak.",
       resetsIn: (t: string) => `New tasks in ${t}`,
       claim: "Collect",
@@ -1651,6 +1652,8 @@ export const en: Dictionary = {
             .join(", ") || "your counter is waiting for you"
         }.`,
       wave: (at: string, covered: number) => `New orders at ${at}: your stock covers ${covered}.`,
+      streak: (n: number) =>
+        `${n}-day streak: today's chest is still closed, finish your tasks before the day ends.`,
       skirmishCall: (at: string) =>
         `Call to skirmish at ${at}: the merchants meet there for a ranked match.`,
       harvest: "Harvest ready: your workshops have finished their production.",
@@ -1709,6 +1712,7 @@ export const en: Dictionary = {
           morning: "Morning gazette (8:05)",
           skirmish_call: "Calls to skirmish (a quarter of an hour before)",
           wave: "A wave of orders your stock covers (if you are away)",
+          streak: "Streak reminder (7 pm, today's chest closed)",
         } as Record<string, string>,
       },
     },
@@ -2543,6 +2547,7 @@ export const en: Dictionary = {
         "Merchant Pass: no game advantage any more (no Dogana quota, no open offer, no extra fresh produce, no Doge's order swapped, no bargain alert); it gives only information to read and cosmetics.",
         "Terraferma: the Condotta, 8 cooperative minutes, alone or with your company, against three nations and Milano. Hold Padova and 35% of the land to open the next level (12 levels). No ducats, no goods, no Glory: a grade, from Condottiere di ventura to Capitano generale.",
         "Trade: workers eat by the batch, no longer by the day — half a loaf per batch and level in a workshop that transforms, a quarter for a raw material. Without bread, the workshop works at half speed, never stopped.",
+        "Daily tasks: one missed day a week no longer breaks the chest streak; a reminder at 7 pm if your streak reaches 3 days and the chest is still closed.",
       ],
     },
     howTo: [

@@ -337,6 +337,8 @@ export interface WorldState {
       best: number;
       /** Tasks of the day swapped for others (bought with Influence). */
       rerolled?: string[];
+      /** Days missed that the weekly grace forgave (E3-10). */
+      graceDays?: number[];
     }
   >;
   /** Faraj's bales, per player (absent: none opened yet, see `bales.ts`). */

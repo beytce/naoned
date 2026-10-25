@@ -221,7 +221,13 @@ export const worldSettingsSchema = z.object({
           }),
         }),
       ),
-      chest: z.object({ ducats: money, perStreakDay: money, maxStreak: positive }),
+      chest: z.object({
+        ducats: money,
+        perStreakDay: money,
+        maxStreak: positive,
+        /** Days a streak may miss in each period of 7 days without breaking (E3-10). */
+        graceDaysPerWeek: qty.prefault(0),
+      }),
     })
     .prefault({ perDay: 0, tasks: [], chest: { ducats: 0, perStreakDay: 0, maxStreak: 1 } }),
   /**

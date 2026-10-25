@@ -794,7 +794,7 @@ export const venice1450Settings: WorldSettingsInput = {
         reward: { goods: {}, ducats: 1_000 },
       },
     ],
-    chest: { ducats: 1_000, perStreakDay: 300, maxStreak: 5 },
+    chest: { ducats: 1_000, perStreakDay: 300, maxStreak: 5, graceDaysPerWeek: 1 },
   },
   // Faraj's bales: one every six hours, two kept at most, three cards of one to five units.
   // Rarity follows value; a bale is worth about 7.5 ducats on average (docs/calibration.md).
