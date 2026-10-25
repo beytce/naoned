@@ -81,3 +81,10 @@ export function hourOf(at: number): string {
   if (LANG === "en") return `${h}:${String(m).padStart(2, "0")}`;
   return m === 0 ? `${h}${NBSP}h` : `${h}${NBSP}h${NBSP}${String(m).padStart(2, "0")}`;
 }
+
+/** A share of a loaf, from quarters: « ¼ », « ½ », « ¾ », « 1 », « 1 ½ »… */
+export function loafShare(quarters: number): string {
+  const whole = Math.floor(quarters / 4);
+  const part = ["", "¼", "½", "¾"][quarters % 4] ?? "";
+  return whole === 0 ? part || "0" : part ? `${whole} ${part}` : String(whole);
+}

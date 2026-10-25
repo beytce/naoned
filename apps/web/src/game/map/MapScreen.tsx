@@ -21,7 +21,7 @@ import { RankingSheet } from "../Top.js";
 import { WarehouseSheet } from "../Warehouse.js";
 import { gameApi } from "../api.js";
 import { onBack } from "../back.js";
-import { d, minutesLabel } from "../format.js";
+import { d, loafShare, minutesLabel } from "../format.js";
 import { harvestAndRestart } from "../harvest.js";
 import { rivalLine } from "../rival.js";
 import {
@@ -143,20 +143,32 @@ function hudTips(props: GameProps): Partial<Record<TipKey, TipContent>> {
     tips.bread = {
       title: t.bread.title,
       tone: "cream",
-      text: t.bread.text(rations.perLevel),
+      text: rations.byBatch
+        ? fr.game.rations.byBatch(
+            loafShare(rations.byBatch.transform),
+            loafShare(rations.byBatch.raw),
+          )
+        : t.bread.text(rations.perLevel),
       lines: [
-        { label: t.bread.eaten, value: rations.perDay },
+        { label: rations.byBatch ? fr.game.rations.about : t.bread.eaten, value: rations.perDay },
         {
           label: t.bread.reserve,
           value: t.bread.reserveValue(stock, Math.floor(stock / rations.perDay)),
           tone: hungry ? "vermilion" : stock < rations.perDay ? "gold" : undefined,
         },
-        { label: t.bread.nextMeal, value: clock(rations.nextMealAt - now) },
+        ...(rations.byBatch
+          ? []
+          : [{ label: t.bread.nextMeal, value: clock(rations.nextMealAt - now) }]),
       ],
       alert: hungry
         ? { text: t.bread.hungry(clock(rations.hungryUntil - now)), tone: "vermilion" }
         : stock < rations.perDay
-          ? { text: t.bread.low(rations.perDay - stock), tone: "gold" }
+          ? {
+              text: rations.byBatch
+                ? fr.game.rations.lowBatch
+                : t.bread.low(rations.perDay - stock),
+              tone: "gold",
+            }
           : undefined,
       action: {
         label: fr.game.rations.buy,

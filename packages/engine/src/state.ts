@@ -73,6 +73,8 @@ export interface Building {
   investedValue: Deniers;
   /** Accelerated batches left for the first minutes of play (starting kit only). */
   fastBatchesLeft: number;
+  /** Quarters of a loaf its batches have eaten and not yet taken (the rounding's rest, E1-4). */
+  rationDebt?: number;
   /** A manufacture's path past the last ordinary level (absent: not chosen). */
   path?: "volume" | "quality";
 }

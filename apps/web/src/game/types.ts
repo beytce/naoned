@@ -541,6 +541,8 @@ export interface PlayerView {
     perLevel: number;
     hungryUntil: number;
     nextMealAt: number;
+    /** Quarters of a loaf a batch and a level (E1-4), null without rations by the batch. */
+    byBatch?: { transform: number; raw: number } | null;
   };
   tutorial: string[];
   missions: MissionView[];

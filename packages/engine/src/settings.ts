@@ -87,6 +87,13 @@ export const worldSettingsSchema = z.object({
       perLevelPerDay: qty,
       slowdownBps: bps,
       graceHours: qty.prefault(0),
+      /**
+       * E1-4 of the experts: the workers eat when they work. Each batch started costs, a level,
+       * so many quarters of a loaf (`transform` in a workshop with inputs, `raw` for a raw
+       * material), the rounding's rest kept by the workshop. Short of bread, a new queue starts
+       * slowed by `slowdownBps`: never blocked.
+       */
+      perBatchQuarters: z.object({ transform: qty, raw: qty }).prefault({ transform: 0, raw: 0 }),
     })
     .prefault({ resource: "bread", perLevelPerDay: 0, slowdownBps: 0, graceHours: 0 }),
   /**

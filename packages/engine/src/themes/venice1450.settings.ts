@@ -128,7 +128,16 @@ export const venice1450Settings: WorldSettingsInput = {
     dolomites: { bread: 20, wood: 30, planks: 15 },
   },
   // A newcomer's workers do not eat on their first day: the tutorial never costs bread.
-  rations: { resource: "bread", perLevelPerDay: 2, slowdownBps: 5_000, graceHours: 24 },
+  // E1-4 of the experts: the workers eat when they work, half a loaf a batch and a level in a
+  // workshop that transforms, a quarter for a raw material; short of bread, a new queue is slowed
+  // by half, never blocked. No daily ration any more.
+  rations: {
+    resource: "bread",
+    perLevelPerDay: 0,
+    slowdownBps: 5_000,
+    graceHours: 24,
+    perBatchQuarters: { transform: 2, raw: 1 },
+  },
   // Computer-run merchants fill the world up to this many active merchants (beta).
   bots: { population: 40 },
   // The galleys of the Muda: every three days at 9 h, a lot of goods from overseas sold by the

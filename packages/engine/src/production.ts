@@ -106,8 +106,28 @@ export function startProduction(
   if (!player) fail("unknown_player");
 
   collect(tx, building);
-  const normalMs = batchDuration(tx.ctx, player, recipe.durationMinutes, tx.now);
+  const tutorial = tx.ctx.settings.tutorial;
+  const fast = batches === 1 && fastBatchNext(tx.ctx, building, player, tx.now);
   const job = building.job;
+  // The workers eat when they work (E1-4): quarters of a loaf a batch and a level.
+  const rations = tx.ctx.settings.rations;
+  const perQuarter =
+    Object.keys(recipe.inputs).length > 0
+      ? rations.perBatchQuarters.transform
+      : rations.perBatchQuarters.raw;
+  const debt = fast
+    ? 0
+    : (building.rationDebt ?? 0) + batches * workLevel(tx.ctx, building) * perQuarter;
+  const loaves = Math.floor(debt / 4);
+  const bread = Math.min(
+    loaves,
+    tx.s.inventories[building.playerId]?.[rations.resource]?.available ?? 0,
+  );
+  let normalMs = batchDuration(tx.ctx, player, recipe.durationMinutes, tx.now);
+  // Short of bread, a new queue starts slowed; one under way goes on at its pace.
+  const slowed = Number(applyBpsFloor(BigInt(normalMs), 10_000 + rations.slowdownBps));
+  if ((bread < loaves && !job) || (job && perQuarter > 0 && job.batchMs === slowed))
+    normalMs = slowed;
   if (
     job &&
     (job.recipe !== recipeCode ||
@@ -117,8 +137,6 @@ export function startProduction(
     fail("building_busy");
   }
 
-  const tutorial = tx.ctx.settings.tutorial;
-  const fast = batches === 1 && fastBatchNext(tx.ctx, building, player, tx.now);
   const batchMs = fast ? tutorial.fastBatchSeconds * 1000 : normalMs;
 
   const queuedEnd = job ? job.startedAt + job.batches * batchMs : tx.now;
@@ -130,6 +148,10 @@ export function startProduction(
     removeStock(tx, building.playerId, resource, qty, "production_input", building.id);
   }
 
+  if (bread > 0)
+    removeStock(tx, building.playerId, rations.resource, bread, "rations", building.id);
+  // The rounding's rest is kept; the loaves missing are not owed.
+  if (perQuarter > 0 && !fast) building.rationDebt = debt % 4;
   if (fast) building.fastBatchesLeft -= 1;
   if (job) job.batches += batches;
   else {

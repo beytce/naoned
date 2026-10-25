@@ -1381,3 +1381,30 @@ Une partie coopérative de 8 minutes, à 60 fois la vitesse. De 1 à 4 marchands
 **Le plafond de récompense.** Un test serveur le vérifie : une victoire ne crée aucune écriture au grand livre, ne change ni la caisse ni la Gloire. Elle donne le niveau suivant, un grade cosmétique (de *Condottiere di ventura* à *Capitano generale*) et l'événement `condotta_won`.
 
 **Hors du tableau des missions.** Aucune mission `condotta_won` n'est ajoutée au tableau de Venise : en ajouter une changerait le tirage des missions et l'Influence. La question revient au paquet de règles, validé par `pnpm sim`.
+
+## Les rations au lot (25 octobre 2026, lot 2, E1-4)
+
+Les ouvriers mangent quand ils travaillent, plus à la journée. Chaque lot lancé coûte, par niveau de l'atelier :
+- **un demi-pain** dans un atelier qui transforme (moulin, four, scierie…) ;
+- **un quart de pain** pour une matière première (ferme, carrière, bûcheron…).
+
+Le pain se prend en entiers, au lancement, par `stock_movements` (raison `rations`). Le reste, en quarts, est gardé sur l'atelier (`rationDebt`) et compté au lancement suivant.
+
+Le jeu ne bloque jamais. Sans pain, une nouvelle file part ralentie de moitié (`slowdownBps` 5 000), et le pain manquant n'est pas dû. Le lot rapide du tutoriel ne coûte rien. La ration à la journée (`perLevelPerDay`) passe à 0.
+
+Réglage : `rations.perBatchQuarters` = `{ transform: 2, raw: 1 }` (les coefficients de la proposition, divisés par deux par le chef).
+
+**Mesure** : `pnpm sim` sur 5 graines, les 5 conformes.
+
+| Indicateur | Cible | Avant | Après |
+| --- | --- | --- | --- |
+| Pain au Rialto en fin de mois (% de la référence) | ≥ 75 % | 52–53 % | 76–83 % |
+| Matières premières en fin de mois (blé, argile, bois) | ≥ 65 % | 50–71 % | 79–128 % |
+| Ventes nettes de la Vénétie / autres régions (médianes) | ≤ 115 % | 74–106 % | 81–114 % sur 4 graines, 138 % sur la graine 5 |
+| Monnaie payée par actif et par jour | diagnostic | 209–216 d | 181–184 d |
+| Masse monétaire par actif, plafond | ≤ 2,5 × le capital | 0,85–0,93 × | 0,83–0,86 × |
+
+**Lecture.**
+- Le pain et les matières ne s'effondrent plus en fin de mois : la consommation suit enfin la production.
+- La graine 5 dépasse le plafond de la Vénétie. C'est la lagune qui y est basse (2 421 d de ventes nettes médianes, contre 3 440 à 4 379 sur les autres graines), pas la Vénétie qui monte : elle y fait 4 456 d, comme sur la graine 2. La médiane des 5 graines est 95 %.
+- La monnaie payée baisse de 15 % : une part du pain livré hier aux villes nourrit maintenant les ateliers. C'est la nouvelle base pour la cible des fondaci (E1-3), qui visait ±10 % de 213 d.

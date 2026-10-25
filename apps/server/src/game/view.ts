@@ -784,6 +784,13 @@ export function playerView(
       perDay: rationsPerDay(ctx, buildings, playerId),
       /** Loaves per workshop level: the need grows with every level built. */
       perLevel: ctx.settings.rations.perLevelPerDay,
+      /** E1-4: quarters of a loaf a batch and a level (null: no rations by the batch). */
+      byBatch:
+        ctx.settings.rations.perBatchQuarters.transform +
+          ctx.settings.rations.perBatchQuarters.raw >
+        0
+          ? ctx.settings.rations.perBatchQuarters
+          : null,
       hungryUntil: player.hungryUntil ?? 0,
       /** Workers eat at each day boundary of the world. */
       nextMealAt: ctx.startAt + (dayIndex(ctx, now) + 1) * 86_400_000,

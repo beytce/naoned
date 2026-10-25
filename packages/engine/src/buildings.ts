@@ -7,6 +7,7 @@ import {
   type WorldState,
   cashAccount,
 } from "./state.js";
+import { recipesFor } from "./theme.js";
 import { turnoverOf } from "./turnover.js";
 import { type Tx, emit, fail, nextId, removeStock, transfer } from "./tx.js";
 import { isUnlocked } from "./unlocks.js";
@@ -59,17 +60,31 @@ export function costPerOutput(ctx: WorldContext, type: string, level: number): D
   return (costValue(ctx, costForLevel(ctx, type, level + 1)) * 10_000n) / added;
 }
 
-/** Bread the player's workers eat a day: so much per level of a workshop (the palazzo eats none). */
+/** Batches a workshop is reckoned to start a day, for the bread kept back (E1-4). */
+const BATCHES_A_DAY = 12;
+
+/**
+ * Bread the player's workers eat a day: so much per level of a workshop (the palazzo eats none),
+ * and with rations by the batch, what twelve batches a day of each workshop would eat.
+ */
 export function rationsPerDay(
   ctx: WorldContext,
   buildings: Building[],
   playerId: PlayerId,
 ): number {
+  const r = ctx.settings.rations;
   let levels = 0;
+  let quarters = 0;
   for (const b of buildings) {
-    if (b.playerId === playerId && b.type !== "palazzo") levels += b.level;
+    if (b.playerId !== playerId || b.type === "palazzo") continue;
+    levels += b.level;
+    const transforms = recipesFor(ctx.theme, b.type).some((x) => Object.keys(x.inputs).length > 0);
+    quarters +=
+      b.level *
+      BATCHES_A_DAY *
+      (transforms ? r.perBatchQuarters.transform : r.perBatchQuarters.raw);
   }
-  return levels * ctx.settings.rations.perLevelPerDay;
+  return levels * r.perLevelPerDay + Math.floor(quarters / 4);
 }
 
 function payCost(tx: Tx, playerId: PlayerId, cost: BuildingCost, ref: string): void {

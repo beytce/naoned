@@ -492,6 +492,15 @@ const frDict = {
     rations: {
       line: (perDay: number, days: number) =>
         `Vos ouvriers mangent ${perDay} pains par jour · réserve : ${days} j`,
+      /** E1-4: the workers eat when they work, a share of a loaf a batch and a level. */
+      byBatch: (transform: string, raw: string) =>
+        `Vos ouvriers mangent quand ils travaillent : ${transform} pain par lot et par niveau dans un atelier qui transforme, ${raw} pour une matière première. Sans pain, une nouvelle file va 50 % moins vite.`,
+      batchNeed: (n: number, have: number) =>
+        n > have
+          ? `Ces lots mangent ${n} pain${n > 1 ? "s" : ""}, vous en avez ${have} : ils iront 50 % moins vite.`
+          : `Ces lots mangent ${n} pain${n > 1 ? "s" : ""}.`,
+      lowBatch: "Moins d'un jour de pain : une nouvelle file ira 50 % moins vite sans lui.",
+      about: "Mangés par jour, environ",
       nextMeal: (inTime: string, need: number, have: number) =>
         `Prochain repas dans ${inTime} : il faut ${need} pains, vous en avez ${have}.`,
       why: (perLevel: number) =>
@@ -2607,6 +2616,7 @@ const frDict = {
         "Missions de la Maison : celles de l'ancienne campagne sont remplacées par des missions de la Terraferme, deux au plus par tableau.",
         "Pass Négociant : plus aucun avantage de jeu (ni quota à la Dogana, ni offre ouverte, ni produits frais en plus, ni commande du Doge échangée, ni alerte de bonne affaire) ; il ne donne que de l'information à lire et du cosmétique.",
         "Terraferme : la Condotta, 8 minutes en coopération, seul ou avec sa compagnie, contre trois nations et Milan. Tenez Padoue et 35 % des terres pour ouvrir le niveau suivant (12 niveaux). Ni ducats, ni marchandises, ni Gloire : un grade, de Condottiere di ventura à Capitano generale.",
+        "Commerce : les ouvriers mangent au lot, plus à la journée — un demi-pain par lot et par niveau dans un atelier qui transforme, un quart pour une matière première. Sans pain, l'atelier travaille deux fois moins vite, jamais arrêté.",
       ],
     },
     howTo: [

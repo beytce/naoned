@@ -565,6 +565,14 @@ export const en: Dictionary = {
     rations: {
       line: (perDay: number, days: number) =>
         `Your workers eat ${perDay} loaves a day · reserve: ${days} d`,
+      byBatch: (transform: string, raw: string) =>
+        `Your workers eat when they work: ${transform} loaf a batch and a level in a workshop that transforms, ${raw} for a raw material. Without bread, a new queue goes 50% slower.`,
+      batchNeed: (n: number, have: number) =>
+        n > have
+          ? `These batches eat ${n} loa${n === 1 ? "f" : "ves"}, you have ${have}: they will go 50% slower.`
+          : `These batches eat ${n} loa${n === 1 ? "f" : "ves"}.`,
+      lowBatch: "Less than a day of bread: a new queue will go 50% slower without it.",
+      about: "Eaten per day, about",
       nextMeal: (inTime: string, need: number, have: number) =>
         `Next meal in ${inTime}: ${need} loaves needed, you have ${have}.`,
       why: (perLevel: number) =>
@@ -2534,6 +2542,7 @@ export const en: Dictionary = {
         "Missions of the House: those of the old campaign are replaced by Terraferma missions, two at most per board.",
         "Merchant Pass: no game advantage any more (no Dogana quota, no open offer, no extra fresh produce, no Doge's order swapped, no bargain alert); it gives only information to read and cosmetics.",
         "Terraferma: the Condotta, 8 cooperative minutes, alone or with your company, against three nations and Milano. Hold Padova and 35% of the land to open the next level (12 levels). No ducats, no goods, no Glory: a grade, from Condottiere di ventura to Capitano generale.",
+        "Trade: workers eat by the batch, no longer by the day — half a loaf per batch and level in a workshop that transforms, a quarter for a raw material. Without bread, the workshop works at half speed, never stopped.",
       ],
     },
     howTo: [

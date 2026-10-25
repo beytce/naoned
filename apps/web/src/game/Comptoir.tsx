@@ -16,7 +16,7 @@ import { Ledger } from "./Ledger.js";
 import { costOf } from "./Marche.js";
 import { MasteryTile } from "./Mastery.js";
 import { TendersSheet, TendersTile } from "./Tenders.js";
-import { d, duration, minutesLabel } from "./format.js";
+import { d, duration, loafShare, minutesLabel } from "./format.js";
 import { harvestAll, harvestAndRestart } from "./harvest.js";
 import { store } from "./store.js";
 import type { BuildingView, Cost, PlayerView, Recipe } from "./types.js";
@@ -291,7 +291,16 @@ export function Rations(props: GameProps) {
       <div className="text-sm">
         <p className={tone}>{fr.game.rations.line(rations.perDay, days)}</p>
         <p className="mt-1 text-cream-dim">
-          {fr.game.rations.nextMeal(clock(rations.nextMealAt - props.now), rations.perDay, stock)}
+          {rations.byBatch
+            ? fr.game.rations.byBatch(
+                loafShare(rations.byBatch.transform),
+                loafShare(rations.byBatch.raw),
+              )
+            : fr.game.rations.nextMeal(
+                clock(rations.nextMealAt - props.now),
+                rations.perDay,
+                stock,
+              )}
         </p>
         {hungry && (
           <p className="mt-1 text-vermilion">
@@ -299,7 +308,11 @@ export function Rations(props: GameProps) {
           </p>
         )}
         {!hungry && days < 1 && (
-          <p className="mt-1 text-gold">{fr.game.rations.low(rations.perDay - stock)}</p>
+          <p className="mt-1 text-gold">
+            {rations.byBatch
+              ? fr.game.rations.lowBatch
+              : fr.game.rations.low(rations.perDay - stock)}
+          </p>
         )}
         {rations.perLevel > 0 && (
           <p className="meta mt-1">{fr.game.rations.why(rations.perLevel)}</p>
@@ -785,6 +798,20 @@ function WorkshopSheet({
           </div>
           <Qty value={q} max={b.canStart} onChange={setQty} maxButton={false} />
           {limit(b, recipe, props) && <p className="meta">{limit(b, recipe, props)}</p>}
+          {(() => {
+            // The bread these batches eat (E1-4), the workshop's rest of a loaf aside.
+            const by = props.view.rations.byBatch;
+            if (!by || (b.fastSeconds !== null && q === 1)) return null;
+            const k = Object.keys(recipe.inputs).length > 0 ? by.transform : by.raw;
+            const loaves = Math.floor((q * b.workLevel * k) / 4);
+            if (loaves === 0) return null;
+            const stock = have(props.view, props.view.rations.resource);
+            return (
+              <p className={`text-sm ${loaves > stock ? "text-gold" : "text-cream-dim"}`}>
+                {fr.game.rations.batchNeed(loaves, stock)}
+              </p>
+            );
+          })()}
           <p className="text-sm text-cream-dim">
             {b.fastSeconds !== null && q === 1
               ? fr.game.fastBatch(b.fastSeconds)
