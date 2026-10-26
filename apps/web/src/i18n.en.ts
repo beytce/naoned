@@ -1396,6 +1396,7 @@ export const en: Dictionary = {
     },
     ledger: {
       title: "Account book",
+      constellation: (done: number, all: number) => `${done} of ${all} missions done`,
       claim: "Collect",
       go: "Go there",
       reward: "Reward",
