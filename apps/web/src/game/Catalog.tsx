@@ -1,6 +1,5 @@
 import { type ReactNode, useState } from "react";
-import { BuildingArt } from "../art/buildings.js";
-import { ResourceIcon } from "../art/resources.js";
+import { GoodsMark } from "../art/goods.js";
 import { VehicleGlyph } from "../art/veneto.js";
 import { fr } from "../i18n.js";
 import { Slab } from "../ui.js";
@@ -27,7 +26,8 @@ export function BuildCatalog(props: GameProps) {
   return (
     <div className="space-y-4">
       {road && (
-        <div className="flex border-b border-line" role="tablist">
+        // Lagune: two pills in a groove, the chosen one lit in lapis.
+        <div className="grid grid-cols-2 gap-1.5 rounded-full bg-night p-1" role="tablist">
           {(["workshops", "vehicles"] as const).map((k) => (
             <button
               key={k}
@@ -35,8 +35,8 @@ export function BuildCatalog(props: GameProps) {
               role="tab"
               aria-selected={tab === k}
               onClick={() => setTab(k)}
-              className={`-mb-px flex-1 border-b-2 py-2 font-display text-sm font-extrabold uppercase tracking-wide transition ${
-                tab === k ? "border-info text-cream" : "border-transparent text-cream-dim"
+              className={`min-h-11 rounded-full font-display text-sm font-bold transition ${
+                tab === k ? "bg-info text-ink" : "text-cream-dim"
               }`}
             >
               {t().tabs[k]}
@@ -87,7 +87,7 @@ function Workshops(props: GameProps) {
             dim={lock !== null}
             disabled={elsewhere}
             onClick={() => props.setSheet(`build:${b.type}`)}
-            art={<BuildingArt type={b.type} className="h-20 w-24" />}
+            art={<PlotStar output={Object.keys(b.recipe?.outputs ?? {})[0]} />}
             count={t().built(built)}
             title={props.names.building(b.type)}
             time={b.recipe ? t().batch(minutesLabel(b.recipe.durationMinutes)) : null}
@@ -172,6 +172,22 @@ function Vehicles(props: GameProps) {
   );
 }
 
+/**
+ * A workshop to build, as a plot of the counter's orbit (Lagune): a dotted round with the mark of
+ * what it will make; the palazzo, which makes nothing, a gold lozenge.
+ */
+function PlotStar({ output }: { output?: string }) {
+  return (
+    <span className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-dashed border-info/45">
+      {output ? (
+        <GoodsMark code={output} size={40} />
+      ) : (
+        <span className="h-6 w-6 rotate-45 bg-gold-soft" />
+      )}
+    </span>
+  );
+}
+
 /** One card of the catalogue: art and count on the left, the rest on the right. */
 function Card(props: {
   art: ReactNode;
@@ -191,12 +207,10 @@ function Card(props: {
     <div className={`flex gap-3 ${props.dim ? "opacity-55" : ""}`}>
       <div className="flex w-24 shrink-0 flex-col items-center gap-2">
         {props.art}
-        <span className="text-center font-mono text-xs uppercase tracking-[0.06em] text-cream-dim">
-          {props.count}
-        </span>
+        <span className="text-center text-xs text-cream-dim">{props.count}</span>
       </div>
       <div className="min-w-0 flex-1 space-y-1.5 text-sm text-cream-dim">
-        <p className="font-display text-base font-extrabold uppercase leading-tight text-cream">
+        <p className="font-place text-base font-bold uppercase leading-tight tracking-[0.12em] text-cream">
           {props.title}
         </p>
         {props.time && <p className="meta text-lagoon">{props.time}</p>}
@@ -206,7 +220,7 @@ function Card(props: {
     </div>
   );
   return (
-    <div className="cut border border-line bg-night-3 p-3">
+    <div className="rounded-2xl bg-night-3 p-3 ring-1 ring-inset ring-line">
       {props.disabled ? (
         inner
       ) : (
@@ -216,7 +230,7 @@ function Card(props: {
       )}
       {(props.lock || props.action) && (
         <div className="mt-2 flex items-center justify-between gap-3 border-t border-line pt-2">
-          <span className="text-xs text-gold">{props.lock ?? ""}</span>
+          <span className="text-xs text-cream-dim">{props.lock ?? ""}</span>
           {props.action}
         </div>
       )}
@@ -228,9 +242,9 @@ function Card(props: {
 function RecipeLine({ recipe }: { recipe: Recipe }) {
   const side = (m: Record<string, number>) =>
     Object.entries(m).map(([r, q]) => (
-      <span key={r} className="inline-flex items-center gap-0.5 text-cream">
+      <span key={r} className="inline-flex items-center gap-1 text-cream">
         <span className="font-display text-sm font-semibold tabular-nums">{q}</span>
-        <ResourceIcon code={r} size={18} />
+        <GoodsMark code={r} size={18} />
       </span>
     ));
   const inputs = side(recipe.inputs);
@@ -239,7 +253,7 @@ function RecipeLine({ recipe }: { recipe: Recipe }) {
       {inputs.length > 0 && (
         <>
           {inputs}
-          <span className="text-gold">→</span>
+          <span className="text-info">→</span>
         </>
       )}
       {side(recipe.outputs)}
@@ -263,7 +277,7 @@ function Price({ cost, props }: { cost: Cost; props: GameProps }) {
           }`}
         >
           {q}
-          <ResourceIcon code={r} size={18} />
+          <GoodsMark code={r} size={18} />
         </span>
       ))}
     </div>
