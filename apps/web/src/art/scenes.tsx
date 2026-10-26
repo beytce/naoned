@@ -214,3 +214,75 @@ export function PortArt({ code, className = "" }: { code: string; className?: st
     </svg>
   );
 }
+
+/**
+ * The night of the lagoon (Lagune): a few stars, the cities as small stars on their road, the
+ * counter a gold one among them, two waves of water under them.
+ */
+export function LagoonNight({ className = "" }: { className?: string }) {
+  const cities: [number, number, number][] = [
+    [40, 92, 7],
+    [110, 56, 7],
+    [250, 46, 7],
+    [320, 80, 8],
+  ];
+  return (
+    <svg viewBox="0 0 360 160" className={className} aria-hidden="true">
+      <g fill="rgb(var(--cream))">
+        {[
+          [24, 14, 1],
+          [300, 10, 1.2],
+          [210, 20, 0.8],
+          [70, 30, 0.8],
+          [346, 40, 1],
+          [160, 8, 0.9],
+        ].map(([x, y, r]) => (
+          <circle key={`${x}`} cx={x} cy={y} r={r} opacity="0.7" />
+        ))}
+      </g>
+      <path
+        d="M40 92 L110 56 L180 86 L250 46 L320 80"
+        fill="none"
+        stroke="rgb(var(--info))"
+        strokeOpacity="0.3"
+        strokeDasharray="3 5"
+        strokeWidth="1.5"
+      />
+      {cities.map(([x, y, r]) => (
+        <circle
+          key={x}
+          cx={x}
+          cy={y}
+          r={r}
+          fill="rgb(var(--night-2))"
+          stroke="#BFE3FF"
+          strokeOpacity="0.55"
+          strokeWidth="1.5"
+        />
+      ))}
+      <circle
+        cx="180"
+        cy="86"
+        r="22"
+        fill="rgb(var(--gold))"
+        fillOpacity="0.15"
+        className="animate-pulse"
+      />
+      <circle cx="180" cy="86" r="12" fill="rgb(var(--gold))" />
+      <path
+        d="M0 132 Q90 116 180 132 T360 132"
+        fill="none"
+        stroke="rgb(var(--info))"
+        strokeOpacity="0.3"
+        strokeWidth="2"
+      />
+      <path
+        d="M0 146 Q90 130 180 146 T360 146"
+        fill="none"
+        stroke="rgb(var(--info))"
+        strokeOpacity="0.15"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}

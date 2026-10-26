@@ -242,6 +242,13 @@ Le mode qui remplace la Campagne depuis le 18 octobre 2026 (`docs/plan-terraferm
 - **Pass Négociant** (`PassPanel`) : son sceau, une étoile d'or dans son anneau pointillé ; ses avantages en lignes arrondies ; « gagnable au classement » dans un cadre doré pointillé ; le prix en pilule fantôme.
 - Le test de mise en page ouvre aussi un ballot en attente (ses probabilités dépliées) et une fin de saison, réécrits (`ballots`, `fin-de-saison`).
 
+## L'entrée et l'Aide (Lagune, 26 octobre 2026)
+
+- **Connexion** (`App.tsx`, `Hero`) : la médaille, « FONDACO » en lettres de lieu dorées, puis la nuit de la lagune (`LagoonNight`) : les villes en petits astres sur leur route, le comptoir astre d'or, deux vagues ; les promesses marquées d'un point lapis ; les champs en pilules cerclées de lapis à la saisie ; « Renvoyer le code » et « Autre adresse » en pilules fantômes. Sur un écran court, la nuit cède comme l'ancien ciel (`hero-sky`).
+- **Choix du métier** (`Region`) : les trois régions en astres, chacun sa matière au cœur (`GoodsMark`), un point d'or sur le recommandé ou celui qui manque à la compagnie ; toucher un astre l'avance (anneau lapis) et ouvre sa fiche dessous : bonus en pilule, texte, ateliers de départ, ce qu'on vend et achète en marques, une seule action en or. Le premier (ou celui de la compagnie) est choisi d'avance.
+- **Aide** (`Help`) : titre centré en lettres de lieu ; la boucle en orbite (le comptoir soleil d'or, Produire · Livrer · Réinvestir en astres) ; chaque rubrique en carte arrondie, son icône dans un rond cerclé de lapis ; **le code des marchandises** (les quatre formes des étapes, les six couleurs des filières) ; les notes de saison cerclées de lapis.
+- Le test de mise en page ouvre aussi l'Aide (`aide`).
+
 ## Charger et partir
 
 - **Charrette choisie** (`CartPanel`) : bord vert d'eau et croix en onglet ; nom, cale « 12/40 » et sa jauge, état (au comptoir, chargée pour…). Les villes qu'elle peut servir s'éclairent et leur route se dore, les autres s'estompent. Toucher une ville éclairée ouvre ses cargaisons ; toucher la ville de la cale prépare le départ.

@@ -2,7 +2,7 @@ import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "rea
 import { Admin } from "./Admin.js";
 import { type Account, ApiError, api, tokenFromLocation } from "./api.js";
 import { Emblem } from "./art/logo.js";
-import { Skyline } from "./art/scenes.js";
+import { LagoonNight } from "./art/scenes.js";
 import { Game } from "./game/Game.js";
 import { fr } from "./i18n.js";
 import { LANG } from "./lang.js";
@@ -126,20 +126,22 @@ function Hero({ children }: { children: ReactNode }) {
         <span className="[@media(max-height:700px)]:hidden">
           <Emblem size={88} className="drop-shadow-xl" />
         </span>
-        <h1 className="mt-3 font-display text-[2.6rem] font-extrabold uppercase leading-none tracking-tight text-cream [@media(max-height:700px)]:mt-2 [@media(max-height:700px)]:text-[2rem]">
+        {/* Lagune: the name in the letters of a place, gold, as the counter's star. */}
+        <h1 className="mt-3 pl-[0.2em] font-place text-[2.2rem] font-bold uppercase leading-none tracking-[0.2em] text-gold [@media(max-height:700px)]:mt-2 [@media(max-height:700px)]:text-[1.8rem]">
           {fr.appName}
         </h1>
-        <Label className="mt-3">{fr.seasonOf(new Date())}</Label>
+        <p className="mt-2 text-sm text-cream-dim">{fr.seasonOf(new Date())}</p>
       </header>
-      <Skyline className="hero-sky -mx-5 mt-4 w-[calc(100%+2.5rem)] max-w-none animate-floaty [@media(max-height:700px)]:mt-2 [@media(max-height:700px)]:max-h-[120px]" />
+      <LagoonNight className="hero-sky -mx-5 mt-2 w-[calc(100%+2.5rem)] max-w-none [@media(max-height:700px)]:mt-1 [@media(max-height:700px)]:max-h-[100px]" />
       <section className="flex flex-1 flex-col justify-start pt-2">{children}</section>
       <LegalLinks className="mt-8" />
     </main>
   );
 }
 
+/** A field as a pill (Lagune), ringed in lapis while it is being typed in. */
 const inputClass =
-  "w-full rounded-md bg-night-3 px-4 py-4 text-base text-cream ring-1 ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gold";
+  "w-full rounded-full bg-night-2 px-5 py-3.5 text-base text-cream ring-1 ring-inset ring-line placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-info";
 
 /** The app installed on the home screen: its link would open in the browser, not here. */
 function standalone(): boolean {
@@ -194,8 +196,11 @@ function Login(props: {
       </p>
       <ul className="space-y-1 text-sm text-cream-dim [@media(max-height:700px)]:order-last">
         {fr.promises.map((p) => (
-          <li key={p} className="flex gap-2">
-            <span className="text-info">✦</span>
+          <li key={p} className="flex items-baseline gap-2.5">
+            <span
+              className="h-2 w-2 shrink-0 translate-y-[-1px] rounded-full bg-info"
+              aria-hidden="true"
+            />
             {p}
           </li>
         ))}
@@ -273,7 +278,9 @@ function CodeForm(props: {
         if (code.length === 6) void send(code);
       }}
     >
-      <h2 className="font-display text-xl font-semibold uppercase">{fr.checkInbox}</h2>
+      <h2 className="text-balance font-place text-lg font-bold uppercase tracking-[0.1em]">
+        {fr.checkInbox}
+      </h2>
       {/* The field first: on a small phone, the keyboard covers what lies below. */}
       <label className="block space-y-2 text-left">
         <Label>{fr.code.label}</Label>
@@ -301,7 +308,7 @@ function CodeForm(props: {
         {busy ? fr.signingIn : fr.code.submit}
       </Slab>
       <p className="text-sm text-cream-dim">{fr.linkSentTo(props.email)}</p>
-      <div className="flex flex-col items-center gap-1">
+      <div className="flex flex-wrap justify-center gap-2">
         <button
           type="button"
           disabled={resent}
@@ -314,11 +321,15 @@ function CodeForm(props: {
               setError(errorText(err));
             }
           }}
-          className="label min-h-11 text-gold disabled:opacity-40"
+          className="inline-flex min-h-11 items-center rounded-full px-4 text-sm text-info ring-1 ring-inset ring-line transition active:scale-95 disabled:opacity-40"
         >
           {fr.code.resend}
         </button>
-        <button type="button" onClick={props.onReset} className="label min-h-11 text-gold">
+        <button
+          type="button"
+          onClick={props.onReset}
+          className="inline-flex min-h-11 items-center rounded-full px-4 text-sm text-info ring-1 ring-inset ring-line transition active:scale-95 disabled:opacity-40"
+        >
           {fr.otherAddress}
         </button>
       </div>
@@ -363,7 +374,7 @@ function PseudoForm({ onDone }: { onDone: (account: Account) => void }) {
 
   return (
     <form onSubmit={submit} className="animate-rise space-y-5">
-      <h2 className="text-center font-display text-xl font-semibold uppercase">
+      <h2 className="text-center font-place text-lg font-bold uppercase tracking-[0.15em]">
         {fr.choosePseudo}
       </h2>
       <label className="block space-y-2">

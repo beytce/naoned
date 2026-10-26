@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { BuildingArt } from "../art/buildings.js";
-import { ResourceIcon } from "../art/resources.js";
-import { RegionArt } from "../art/scenes.js";
+import { GoodsMark, goodsColour } from "../art/goods.js";
 import { fr } from "../i18n.js";
 import { pendingInvite } from "../origin.js";
-import { Label, Panel, Slab } from "../ui.js";
+import { Slab } from "../ui.js";
 import type { Names } from "./Game.js";
 import { gameApi } from "./api.js";
 import type { Catalog, CompanyInvitation } from "./types.js";
@@ -46,103 +45,152 @@ export function Region(props: {
   const lacks = invitation && !invitation.full ? invitation.missingRegion : null;
   const has = invitation?.regions.map((r) => fr.region.jobs[r]?.name ?? r) ?? [];
   const bonus = props.catalog.rules.regionBonusBps / 100;
+  const regions = props.catalog.regions;
+  // The company's missing trade first, else the first: the one to read before choosing.
+  const [chosen, setChosen] = useState<string | null>(null);
+  const r = regions.find((x) => x.code === (chosen ?? lacks)) ?? regions[0];
+  if (!r) return null;
+  const sells = SELLS[r.code] ?? "bread";
+  const needs = NEEDS[r.code] ?? [];
+  const chip =
+    "inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-xs font-semibold";
   return (
-    <main className="mx-auto max-w-md space-y-5 px-4 pb-10 pt-[max(1.5rem,env(safe-area-inset-top))]">
-      <header className="space-y-2">
-        <Label className="text-cream-dim">{props.catalog.world.name}</Label>
-        <h1 className="font-display text-[1.75rem] font-extrabold leading-[1.1] [font-stretch:105%]">
+    <main
+      className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]"
+      style={{
+        backgroundImage:
+          "radial-gradient(ellipse at 50% 22%, rgb(var(--info) / 0.1), transparent 60%)",
+      }}
+    >
+      <header className="space-y-2 text-center">
+        <p className="text-sm text-cream-dim">{props.catalog.world.name}</p>
+        <h1 className="font-place text-xl font-bold uppercase tracking-[0.15em] text-gold">
           {fr.region.title}
         </h1>
-        <p className="text-cream-dim">{fr.region.help}</p>
+        <p className="text-sm text-cream-dim">{fr.region.help}</p>
       </header>
-      {props.catalog.regions.map((r, k) => (
-        <div key={r.code} className="animate-rise" style={{ animationDelay: `${k * 80}ms` }}>
-          <Panel glow={k === 0 ? "gold" : k === 1 ? "lagoon" : undefined}>
-            <RegionArt
-              code={r.code}
-              className="-mx-4 -mt-4 mb-3 h-28 w-[calc(100%+2rem)] max-w-none bg-night-2"
-            />
-            <h2 className="font-display text-2xl font-extrabold uppercase leading-tight">
-              {fr.region.jobs[r.code]?.name ?? r.name}
-            </h2>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              <p className="label text-cream-dim">{props.names.region(r.code)}</p>
-              <span className="slab whitespace-nowrap bg-lagoon px-2 py-0.5 font-sans text-xs font-bold text-on-lagoon">
-                {fr.region.bonus(bonus, props.names.resource(r.bonusResource))}
+      {/* Lagune: the regions as stars, each its raw good at its heart; the chosen one comes forward. */}
+      <div className="mt-5 grid grid-cols-3 items-center gap-2">
+        {regions.map((x, k) => {
+          const on = x.code === r.code;
+          const colour = goodsColour(x.bonusResource);
+          return (
+            <button
+              key={x.code}
+              type="button"
+              aria-pressed={on}
+              onClick={() => setChosen(x.code)}
+              className="flex animate-rise flex-col items-center gap-2 rounded-3xl py-2 transition active:scale-95"
+              style={{ animationDelay: `${k * 80}ms` }}
+            >
+              <span
+                className="relative grid place-items-center rounded-full bg-night-2 transition-all"
+                style={{
+                  width: on ? 84 : 60,
+                  height: on ? 84 : 60,
+                  boxShadow: on
+                    ? `0 0 0 3px rgb(var(--info)), 0 0 30px ${colour}40`
+                    : `0 0 0 2px ${colour}99`,
+                }}
+              >
+                <GoodsMark code={x.bonusResource} size={on ? 42 : 28} />
+                {(lacks === x.code || (props.catalog.recommendedRegion === x.code && !lacks)) && (
+                  <span
+                    className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full bg-gold ring-2 ring-night"
+                    aria-hidden="true"
+                  />
+                )}
               </span>
-              {lacks === r.code && invitation && (
-                <span
-                  title={fr.game.myCompany.regionHelp(invitation.name, has)}
-                  className="slab whitespace-nowrap bg-gold px-2 py-0.5 font-sans text-xs font-bold text-ink"
-                >
-                  ✦ {fr.game.myCompany.regionBadge}
-                </span>
-              )}
-              {props.catalog.recommendedRegion === r.code && lacks !== r.code && (
-                <span
-                  title={fr.region.recommendedHelp}
-                  className="slab whitespace-nowrap bg-gold px-2 py-0.5 font-sans text-xs font-bold text-ink"
-                >
-                  {fr.region.recommended}
-                </span>
-              )}
+              <span
+                className={`max-w-full font-place text-[0.7rem] font-bold uppercase tracking-[0.04em] min-[380px]:text-xs min-[380px]:tracking-[0.12em] ${on ? "text-cream" : "text-cream-dim"}`}
+              >
+                {fr.region.jobs[x.code]?.name ?? x.name}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <section
+        key={r.code}
+        className="mt-5 flex animate-rise flex-col rounded-3xl bg-night-3 p-4 ring-1 ring-inset ring-line"
+      >
+        <h2 className="font-display text-xl font-extrabold leading-tight">
+          {fr.region.jobs[r.code]?.name ?? r.name}
+          <span className="font-sans text-sm font-normal text-cream-dim">
+            {" "}
+            · {props.names.region(r.code)}
+          </span>
+        </h2>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <span className={`${chip} bg-night-2`}>
+            <GoodsMark code={r.bonusResource} size={18} />
+            {fr.region.bonus(bonus, props.names.resource(r.bonusResource))}
+          </span>
+          {lacks === r.code && invitation && (
+            <span
+              title={fr.game.myCompany.regionHelp(invitation.name, has)}
+              className={`${chip} text-gold ring-1 ring-inset ring-gold/60`}
+            >
+              {fr.game.myCompany.regionBadge}
+            </span>
+          )}
+          {props.catalog.recommendedRegion === r.code && lacks !== r.code && (
+            <span
+              title={fr.region.recommendedHelp}
+              className={`${chip} text-gold ring-1 ring-inset ring-gold/60`}
+            >
+              {fr.region.recommended}
+            </span>
+          )}
+        </div>
+        <p className="mt-3 text-sm text-cream-dim">{fr.region.jobs[r.code]?.text}</p>
+        {lacks === r.code && invitation && (
+          <p className="mt-1 text-sm text-gold">
+            {fr.game.myCompany.regionHelp(invitation.name, has)}
+          </p>
+        )}
+        <div className="mt-4 flex items-end gap-1">
+          {r.startingBuildings.map((b) => (
+            <div key={b} className="flex-1 text-center">
+              <BuildingArt type={b} className="mx-auto h-12 w-16" />
+              <p className="text-xs text-cream-dim">{props.names.building(b)}</p>
             </div>
-            <p className="mt-2 text-sm text-cream-dim">{fr.region.jobs[r.code]?.text}</p>
-            {lacks === r.code && invitation && (
-              <p className="mt-1 text-sm text-gold">
-                {fr.game.myCompany.regionHelp(invitation.name, has)}
-              </p>
-            )}
-            <div className="mt-4 flex items-end gap-1">
-              {r.startingBuildings.map((b) => (
-                <div key={b} className="flex-1 text-center">
-                  <BuildingArt type={b} className="mx-auto h-14 w-20" />
-                  <p className="font-mono text-xs uppercase tracking-wider text-muted">
-                    {props.names.building(b)}
-                  </p>
-                </div>
+          ))}
+        </div>
+        <div className="mt-3 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
+          {/* Marks above the words: three goods never squeeze their names. */}
+          <div className="space-y-1 rounded-2xl bg-night-2 p-3">
+            <GoodsMark code={sells} size={26} />
+            <p className="text-xs text-cream-dim">{fr.region.sells}</p>
+            <p className="text-sm font-semibold">{props.names.resource(sells)}</p>
+          </div>
+          <div className="min-w-0 space-y-1 rounded-2xl bg-night-2 p-3">
+            <div className="flex gap-1">
+              {needs.map((n) => (
+                <GoodsMark key={n} code={n} size={26} />
               ))}
             </div>
-            <div className="mt-3 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
-              {/* Icons above the words: three goods never squeeze their names. */}
-              <div className="cut space-y-1 bg-night-2 p-2.5">
-                <ResourceIcon code={SELLS[r.code] ?? "bread"} size={28} />
-                <p className="font-mono text-xs uppercase tracking-wider text-cream-dim">
-                  {fr.region.sells}
-                </p>
-                <p className="text-sm font-semibold">
-                  {props.names.resource(SELLS[r.code] ?? "bread")}
-                </p>
-              </div>
-              <div className="cut min-w-0 space-y-1 bg-night-2 p-2.5">
-                <div className="flex gap-1">
-                  {(NEEDS[r.code] ?? []).map((n) => (
-                    <ResourceIcon key={n} code={n} size={28} />
-                  ))}
-                </div>
-                <p className="font-mono text-xs uppercase tracking-wider text-cream-dim">
-                  {fr.region.needs}
-                </p>
-                <p className="text-sm font-semibold">
-                  {(NEEDS[r.code] ?? []).map((n) => props.names.resource(n)).join(", ")}
-                </p>
-              </div>
-            </div>
-            <Slab
-              className="mt-4 w-full"
-              disabled={busy !== null}
-              onClick={async () => {
-                setBusy(r.code);
-                await props.onJoin(r.code);
-                setBusy(null);
-              }}
-            >
-              {busy === r.code ? "…" : fr.region.settle}
-            </Slab>
-          </Panel>
+            <p className="text-xs text-cream-dim">{fr.region.needs}</p>
+            <p className="text-sm font-semibold">
+              {needs.map((n) => props.names.resource(n)).join(", ")}
+            </p>
+          </div>
         </div>
-      ))}
-      {props.toast && <p className="text-sm text-vermilion">{props.toast}</p>}
+        <Slab
+          size="lg"
+          className="mt-5 w-full"
+          disabled={busy !== null}
+          onClick={async () => {
+            setBusy(r.code);
+            await props.onJoin(r.code);
+            setBusy(null);
+          }}
+        >
+          {busy === r.code ? "…" : fr.region.settle}
+        </Slab>
+      </section>
+      {props.toast && <p className="mt-3 text-sm text-vermilion">{props.toast}</p>}
     </main>
   );
 }

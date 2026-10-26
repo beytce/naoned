@@ -71,6 +71,7 @@ const WORDS = {
     build: /^bâtir$/i,
     ranking: /^classement$/i,
     bale: /ballot/i,
+    help: /^aide$/i,
     odds: /^probabilités$/i,
     firstSteps: "Premiers pas",
     finish: /terminer/i,
@@ -103,6 +104,7 @@ const WORDS = {
     build: /^build$/i,
     ranking: /^ranking$/i,
     bale: /bale/i,
+    help: /^help$/i,
     odds: /^odds$/i,
     firstSteps: "First steps",
     finish: /finish/i,
@@ -439,6 +441,13 @@ async function session(width, height, tag) {
       await check("classement");
       await closeAll(page);
     }
+    // The help, its loop as an orbit and the goods' code.
+    await page.getByRole("button", { name: WORDS.help }).first().click();
+    await page.waitForTimeout(600);
+    await check("aide");
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(400);
+    await closeAll(page);
     await npcRival(page, check);
     await welcomeBack(page, check);
     await baleWaiting(page, check);
