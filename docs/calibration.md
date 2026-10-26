@@ -1428,3 +1428,77 @@ Un jour manqué par période de 7 jours ne casse plus la série du coffre. C'est
 | Avec la grâce | 2 991 · 3 575 · 3 539 · 3 460 · 3 121 d | 0,87 à 1,02 % |
 
 La monnaie des coffres monte de 6,5 %, soit environ +0,1 % de la monnaie payée. C'est bien en dessous des +2 % redoutés.
+
+## Le paquet de règles du lot 2, tout ensemble (26 octobre 2026 : E1-3, E1-6, E1-7, E2-6)
+
+Mesuré par `pnpm sim` sur 5 graines, toutes conformes, avec les rations au lot (E1-4) et la série clémente (E3-10) déjà en place. Le mutateur du mois (E2-9) n'est pas tiré dans la simulation : chaque mutateur a sa propre mesure, plus bas.
+
+### Les fondaci (E1-3)
+
+Les règles sont celles de la proposition :
+- au plus 3 villes, niveaux 1 à 3, 6 niveaux en tout ;
+- une commande personnelle de la ville par jour et par niveau, à 95 % du prix du tableau commun ;
+- coûts des niveaux : 100 d + 10 briques + 10 planches, puis 250 d + 20 + 20, puis 600 d + 40 + 40 ;
+- ducats et matériaux sortent du jeu par le grand livre et le journal des stocks (`fondaco_build`) ;
+- le fondaco compte au patrimoine à son coût.
+
+Les entrepôts restent retirés. Une feuille par ville, ouverte depuis la ville sur la carte du commerce.
+
+**Trois réglages essayés.**
+
+| | A : tableau à 2, bots dès le premier jour | B : tableau à 3, bots dès le premier jour | C, retenu : tableau à 3, bots une fois la maison à 5 niveaux |
+| --- | --- | --- | --- |
+| Niveaux de fondaco par marchand | 3,03–3,14 | 3,05–3,19 | 1,15–2,11 |
+| Monnaie payée par actif et par jour (base 182 d avec E1-4) | 162–168 d | 183–189 d | 171–179 d |
+| Pain en fin de mois (% de la référence) | 54–70 % | 52–87 % | 68–79 % |
+| Matières premières en fin de mois | 60–91 % | 70–120 % | 64–139 % |
+| Maîtrises choisies | presque aucune | presque aucune | de nouveau, comme avant |
+
+**Pourquoi C.** En A et B, les bots mettent leurs briques et leurs planches dans les fondaci dès le premier jour, au lieu d'agrandir leurs ateliers. Leur maison n'atteint plus les 5 niveaux d'une maîtrise (« aucune » : 20 à 39 bots par graine), et le revenu ne croît plus. En C, un bot n'ouvre un fondaco qu'une fois sa maison à 5 niveaux. Le tableau commun passe de 4 à **3** commandes par actif, et non à 2 : à 2, la monnaie payée baisse de 10 %, au lieu de monter comme l'estimait la proposition. Le « réglage de sécurité » (passer à 1 au-delà de 3 niveaux en moyenne) suppose une monnaie qui grimpe ; elle ne l'a pas fait.
+
+**Les cibles, avec C.**
+
+| Cible | Valeur | Tenue |
+| --- | --- | --- |
+| Monnaie payée par actif à ±10 % (de 182 d, la base avec E1-4 ; 213 d avant E1-4) | 171–179 d, soit −2 à −6 % | oui |
+| Masse monétaire ≤ 2,5 × le capital | 0,80–0,87 × | oui |
+| Lombardie / Installation ≥ 1,20 | 0,97 · 1,03 · 1,02 · 1,07 · 1,08 | **non** |
+| Semaine 4 hors Sensa / semaine 3 ≥ 1,10 | non mesuré séparément | — |
+| Cours du Veneto en fin de mois ≥ 65 % | blé 64–72 %, pain 68–79 % | presque (blé à 64 % sur la graine 2) |
+| Niveaux de fondaco par actif, publiés dans le rapport | 1,15–2,11 | oui (ligne « Fondaci » du rapport) |
+| Vénétie ≤ 115 % des autres régions (E1-4) | 97–113 % sur 4 graines, 132 % sur la graine 2 | 4 sur 5 |
+
+**La croissance ne vient pas.** Le revenu de la Lombardie dépasse celui de l'Installation de 0 à 8 %, comme sans les fondaci. Avec 2 niveaux en moyenne, les commandes du fondaco remplacent celles retirées du tableau sans en ajouter. Les gagner demanderait plus de niveaux, donc plus de monnaie : c'est l'arbitrage que la proposition voulait borner. **La décision revient au porteur**, en connaissant ce chiffre : garder ainsi, ouvrir plus de niveaux, ou attendre la bêta pour voir comment les humains investissent.
+
+### Les maîtrises (E1-6)
+
+- **Négociant** : quota de la Dogana × 3 (`marketMakerQuotaBps` 20 000). La Dogana lui rachète au moins 85 % de la référence (`marketMakerFloorBps` 8 500).
+- **Roulier** : il voit une commande urgente 20 minutes avant son ouverture, et la prend à l'heure comme tout le monde (`urgentPreviewMinutes` 20). Le serveur ne montre plus à personne une commande pas encore ouverte, sauf celle-là au Roulier.
+- Les spéculateurs simulés choisissent Négociant : le plancher est donc simulé. Il ne fait pas dépasser la masse monétaire (0,80–0,87 ×).
+- **Écart à profil égal** (cible ≤ 10 %) : 30,8 · 10,9 · 21,4 · 9,0 · 17,9 %, toujours entre Maître d'atelier et Levant, sur des groupes de 2 à 7 bots. La mesure reste trop bruitée pour conclure ; elle se refera chez les humains, dans `/admin`.
+
+### Le Livre de la Maison (E1-7)
+
+- Un tableau de 8 missions par semaine, ouvert le lundi à 0 h (les semaines du classement), dont au plus 2 de la Terraferme.
+- Seuils doublés et Influence multipliée par environ 2,5, selon le tableau de la proposition.
+- Espérance mesurée sur 10 000 tableaux : **64,2 par semaine** (cible 59,5 à 65,7, contre 62,6 avant). La part du commerce seul est de 50,2.
+- Dans la simulation, l'Influence gagnée sur la saison reste entre 128 et 137 par marchand actif (médiane), comme avant.
+- Le Livre s'ouvre sur deux pages : « Aujourd'hui » (les tâches du jour et le coffre) et « Cette semaine ».
+
+### L'Arsenal de la semaine (E2-6)
+
+- Une commande par semaine, du lundi au dimanche, à la place de celle des 2 jours.
+- Le Bronze vaut 3,5 fois l'ancienne commande : 14 pains, 11 briques et 11 planches par actif.
+- L'Argent vaut 1,25 fois le Bronze, l'Or 1,5 fois.
+- Jusqu'au Bronze, l'unité est payée +10 %, et la prime de 10 % est versée au Bronze. Au-delà, l'unité est payée +5 %.
+- L'Argent apporte un quart de plus aux galères de la Muda la semaine suivante.
+- L'Or donne 3 d'Influence à qui en a livré 2 % et au moins une unité après le Bronze.
+- Les bots s'arrêtent au Bronze. Un test moteur le vérifie.
+
+Monnaie de la commande sur la saison (livraisons et primes), 5 graines :
+
+| | Avant (commande de 2 jours) | Arsenal |
+| --- | --- | --- |
+| d | 4 065 · 5 003 · 4 756 · 4 561 · 4 109 | 3 026 · 2 586 · 2 704 · 2 932 · 2 854 |
+
+L'Arsenal crée 0,6 à 0,7 fois la monnaie d'avant, sous le plafond de 1,5 ×. La simulation n'a pas d'humains : l'Argent et l'Or n'y sont jamais atteints, et leur part de monnaie (1,43 × au plus à l'Or, selon la proposition) se mesurera en bêta, dans `/admin`. La galère de l'Arsenal sur la carte et le « Livre d'or » de la gazette ne sont pas faits : c'est du cosmétique, qui peut suivre.
