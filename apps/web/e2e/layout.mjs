@@ -70,6 +70,8 @@ const WORDS = {
     store: /^magasin$/i,
     build: /^bâtir$/i,
     ranking: /^classement$/i,
+    bale: /ballot/i,
+    odds: /^probabilités$/i,
     firstSteps: "Premiers pas",
     finish: /terminer/i,
     produce: /^produire$/i,
@@ -100,6 +102,8 @@ const WORDS = {
     store: /^store$/i,
     build: /^build$/i,
     ranking: /^ranking$/i,
+    bale: /bale/i,
+    odds: /^odds$/i,
     firstSteps: "First steps",
     finish: /finish/i,
     produce: /^produce$/i,
@@ -437,6 +441,8 @@ async function session(width, height, tag) {
     }
     await npcRival(page, check);
     await welcomeBack(page, check);
+    await baleWaiting(page, check);
+    await seasonClosed(page, check);
 
     if (errors.length > 0) throw new Error(`${label}: errors on the page: ${errors.join(" / ")}`);
   } catch (e) {
@@ -807,6 +813,89 @@ async function welcomeBack(page, check) {
   await page.waitForTimeout(1200);
   await check("bon-retour");
   await page.unroute("**/api/game");
+  await closeAll(page);
+}
+
+/** The game's response rewritten on its way to the page, then the page reloaded. */
+async function rewrite(page, patch) {
+  await page.route("**/api/game", async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    if (json.view) patch(json);
+    await route.fulfill({ response, json });
+  });
+  await page.reload();
+  await page.waitForTimeout(1200);
+}
+
+/** A bale of Faraj waiting: its round under the bell opens the quay, its odds unfolded. */
+async function baleWaiting(page, check) {
+  await rewrite(page, (json) => {
+    if (!json.view.tutorial.includes("mission")) json.view.tutorial.push("mission");
+    json.view.bales = {
+      available: 1,
+      max: 3,
+      nextAt: Date.now() + 5 * 3600_000,
+      intervalHours: 8,
+      cardsPerBale: 3,
+      opened: 0,
+      last: null,
+      odds: [
+        {
+          rarity: "common",
+          chanceBps: 7000,
+          goods: [{ resource: "wheat", chanceBps: 10000 }],
+          quantities: [{ quantity: 4, chanceBps: 10000 }],
+        },
+        {
+          rarity: "legendary",
+          chanceBps: 3000,
+          goods: [{ resource: "silk", chanceBps: 10000 }],
+          quantities: [{ quantity: 1, chanceBps: 10000 }],
+        },
+      ],
+    };
+  });
+  await page.getByRole("button", { name: WORDS.bale }).first().click();
+  await page.waitForTimeout(600);
+  await page.getByRole("button", { name: WORDS.odds }).click();
+  await page.waitForTimeout(300);
+  await check("ballots");
+  await page.unroute("**/api/game");
+  await page.reload();
+  await page.waitForTimeout(1200);
+  await closeAll(page);
+}
+
+/** The season closed while away: the ceremony, at its fullest (top ten, podium, rewards). */
+async function seasonClosed(page, check) {
+  await rewrite(page, (json) => {
+    json.ceremony = {
+      worldId: "e2e",
+      season: "Octobre 1450",
+      rank: 4,
+      players: 52,
+      worth: "4812000",
+      turnover: "4812000",
+      tier: "top10",
+      award: "Pass 7 jours",
+      titles: ["Seigneur de Vicence"],
+      milestone: { name: "Marchand", renown: 80 },
+      renown: 120,
+      totalRenown: { points: 120, current: { from: 100, name: "Marchand" }, next: null },
+      podium: [1, 2, 3].map((rank) => ({
+        rank,
+        pseudo: `Casa ${["Foscari", "Grimani", "Contarini"][rank - 1]}`,
+        crest: null,
+        worth: "9000000",
+        turnover: "9000000",
+      })),
+    };
+  });
+  await check("fin-de-saison");
+  await page.unroute("**/api/game");
+  await page.reload();
+  await page.waitForTimeout(1200);
   await closeAll(page);
 }
 
