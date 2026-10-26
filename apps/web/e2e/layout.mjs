@@ -434,6 +434,7 @@ async function session(width, height, tag) {
     await page.waitForTimeout(600);
     await check("profil");
     await closeAll(page);
+    await company(page, check);
     const ranking = page.getByRole("button", { name: WORDS.ranking });
     if ((await ranking.count()) > 0 && (await ranking.first().isEnabled())) {
       await ranking.first().click();
@@ -822,6 +823,66 @@ async function welcomeBack(page, check) {
   await page.waitForTimeout(1200);
   await check("bon-retour");
   await page.unroute("**/api/game");
+  await closeAll(page);
+}
+
+/**
+ * A company of four (one away, two seats free) and its thread, in the profile: its
+ * constellation and its bubbles. No fresh merchant has one: the answers are written here.
+ */
+async function company(page, check) {
+  const now = Date.now();
+  await page.route("**/api/company", (route) =>
+    route.fulfill({
+      json: {
+        company: {
+          name: "Compagnie du Lion",
+          code: "e2e",
+          max: 6,
+          members: [
+            { pseudo: "Vous", me: true, region: "terraferma", lastSeenAt: now },
+            { pseudo: "Ilaria", me: false, region: "dolomites", lastSeenAt: now - 3600_000 },
+            { pseudo: "Marco", me: false, region: "lagoon", lastSeenAt: now - 2 * 3600_000 },
+            { pseudo: "Lucia", me: false, region: null, lastSeenAt: null },
+          ],
+          missingRegion: null,
+          nextCall: now + 3 * 3600_000,
+          call: null,
+          record: [],
+        },
+        mayJoinAt: null,
+      },
+    }),
+  );
+  await page.route("**/api/company/messages", (route) =>
+    route.fulfill({
+      json: {
+        messages: [
+          {
+            id: "1",
+            pseudo: "Ilaria",
+            body: "J'ai 30 planches en trop si quelqu'un livre à Trévise.",
+            at: now - 600_000,
+            mine: false,
+          },
+          {
+            id: "2",
+            pseudo: null,
+            body: "Je prends, je t'envoie une offre au Rialto.",
+            at: now - 300_000,
+            mine: true,
+          },
+        ],
+      },
+    }),
+  );
+  await page.locator('[data-hud="identity"]').click();
+  await page.waitForTimeout(800);
+  await page.getByText("Compagnie du Lion", { exact: true }).scrollIntoViewIfNeeded();
+  await page.waitForTimeout(400);
+  await check("compagnie");
+  await page.unroute("**/api/company");
+  await page.unroute("**/api/company/messages");
   await closeAll(page);
 }
 
