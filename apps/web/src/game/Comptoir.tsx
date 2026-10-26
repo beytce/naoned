@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { BuildingArt } from "../art/buildings.js";
+import { GoodsMark } from "../art/goods.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { locale } from "../lang.js";
@@ -50,22 +51,32 @@ function RecipeFlow({
   props,
   runningMs,
 }: { recipe: Recipe; level: number; props: GameProps; runningMs?: number }) {
+  // Each good by its mark, its quantity under it: the chain reads from left to right.
   const side = (m: Record<string, number>, out: boolean) =>
     Object.entries(m).map(([r, q]) => (
-      <span key={r} className="inline-flex items-center gap-1">
-        <span className="font-display text-sm font-semibold tabular-nums">
+      <span key={r} className="inline-flex flex-col items-center gap-0.5">
+        <GoodsMark code={r} size={30} title={props.names.resource(r)} />
+        <span className="font-display text-sm font-bold tabular-nums">
           {out ? outputQty(props, r, q * level, level) : q * level}
         </span>
-        <ResourceIcon code={r} size={22} />
       </span>
     ));
   const inputs = side(recipe.inputs, false);
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl bg-night px-3 py-2.5">
       {inputs.length > 0 && (
         <>
           {inputs}
-          <span className="text-gold">→</span>
+          <svg viewBox="0 0 32 12" className="h-3 w-8 shrink-0" aria-hidden="true">
+            <path
+              d="M1 6h26M22 1.5l5 4.5-5 4.5"
+              fill="none"
+              stroke="rgb(var(--info))"
+              strokeWidth="1.8"
+              strokeDasharray="3 3"
+              strokeLinecap="round"
+            />
+          </svg>
         </>
       )}
       {side(recipe.outputs, true)}
@@ -342,12 +353,12 @@ export function StockStrip(props: GameProps) {
 }
 
 /**
- * The tone of a workshop's state: gold to collect, lagoon at work, quiet when it waits for goods
- * (a normal state of a chain, not an alarm: a hollow dot, not a red one).
+ * The tone of a workshop's state, as its star's (Lagune): lagoon when it is ready, lapis at work,
+ * quiet when it waits for goods (a normal state of a chain, not an alarm: a hollow dot).
  */
 const STATE_TONE = {
-  ready: { glow: "gold", dot: "bg-gold", text: "text-gold", ring: "ring-gold/60" },
-  running: { glow: "lagoon", dot: "bg-lagoon", text: "text-lagoon", ring: "ring-lagoon/50" },
+  ready: { glow: "lagoon", dot: "bg-lagoon", text: "text-lagoon", ring: "ring-lagoon/60" },
+  running: { glow: undefined, dot: "bg-info", text: "text-info", ring: "ring-info/50" },
   idle: { glow: undefined, dot: "bg-cream-dim", text: "text-cream-dim", ring: "ring-line" },
   blocked: {
     glow: undefined,
@@ -417,14 +428,15 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
   return (
     <Panel glow={tone.glow}>
       <div className="flex items-center gap-3">
-        <div
-          className={`cut flex h-[72px] w-[84px] shrink-0 items-center justify-center bg-night-2 ring-1 ring-inset ${tone.ring}`}
-        >
-          <BuildingArt type={b.type} active={st.state === "running"} className="h-16 w-20" />
-        </div>
+        <WorkshopStar
+          small
+          output={Object.keys(recipe?.outputs ?? {})[0]}
+          state={st.state}
+          progress={st.progress ?? 0}
+        />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="min-w-0 font-display text-[0.9375rem] font-extrabold uppercase leading-tight [font-stretch:100%]">
+            <h3 className="min-w-0 font-place text-[0.9375rem] font-bold uppercase leading-tight tracking-[0.12em]">
               {props.names.building(b.type)}
             </h3>
             {b.upgradeCost ? (
@@ -436,7 +448,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
                 className="hit flex shrink-0 transition active:scale-95"
               >
                 {/* The slab is clipped: drawn inside, the button keeps its 44 px of touch. */}
-                <span className="slab flex items-center gap-1 whitespace-nowrap bg-night-4 px-2.5 py-0.5 font-sans text-xs font-bold text-cream">
+                <span className="slab flex items-center gap-1 whitespace-nowrap px-2.5 py-0.5 font-sans text-xs font-bold text-cream ring-1 ring-inset ring-line">
                   {fr.game.level(b.level)} <span aria-hidden="true">↑</span>
                 </span>
               </button>
@@ -486,15 +498,6 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
           {b.economics.queued && <p className="meta mt-1 text-gold">{t.afterQueue(b.workLevel)}</p>}
         </div>
       )}
-      {st.state === "running" && job && (
-        <div className="mt-3">
-          <Ribbon
-            value={st.progress ?? 0}
-            tone="lagoon"
-            label={`${fr.game.batch(ready + 1, job.batches)} · ${clock(st.left ?? 0)}`}
-          />
-        </div>
-      )}
 
       {st.state === "ready" && (
         <Slab
@@ -538,18 +541,19 @@ function WorkshopsSummary(props: GameProps) {
   const ready = states.reduce((n, x) => n + (x.state === "ready" ? x.ready : 0), 0);
   const t = fr.game.workshopsSheet;
   const chips = [
-    { n: count("ready"), label: t.ready, cls: "bg-gold/15 text-gold" },
-    { n: count("running"), label: t.running, cls: "bg-lagoon/15 text-lagoon" },
-    { n: count("idle") + count("blocked"), label: t.idle, cls: "bg-night-3 text-cream-dim" },
+    { n: count("ready"), label: t.ready, cls: "bg-lagoon/15 text-lagoon" },
+    { n: count("running"), label: t.running, cls: "bg-info/15 text-info" },
+    {
+      n: count("idle") + count("blocked"),
+      label: t.idle,
+      cls: "text-cream-dim ring-1 ring-inset ring-line",
+    },
   ].filter((c) => c.n > 0);
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
         {chips.map((c) => (
-          <span
-            key={c.cls}
-            className={`slab px-3 py-1 font-mono text-xs font-bold uppercase tracking-wide ${c.cls}`}
-          >
+          <span key={c.cls} className={`slab px-3 py-1 font-display text-xs font-bold ${c.cls}`}>
             {c.n} {c.label(c.n)}
           </span>
         ))}
@@ -602,6 +606,62 @@ function limit(b: BuildingView, recipe: Recipe, props: GameProps): string | null
       by.perBatch,
     );
   return t.limitedByQueue(b.canStart, props.catalog.rules.productionQueueMaxHours);
+}
+
+const STAR_R = 44;
+const STAR_C = 2 * Math.PI * STAR_R;
+
+/**
+ * A workshop as a star of the Lagune direction: the mark of what it makes in a round of the night,
+ * the arc of its batch in lapis, full and lagoon when it is ready, a dotted round when it waits
+ * (cream for work, grey for its matter: never an alarm).
+ */
+function WorkshopStar({
+  output,
+  state,
+  progress,
+  small,
+}: { output?: string; state: string; progress: number; small?: boolean }) {
+  const waiting = state !== "ready" && state !== "running";
+  return (
+    <span
+      className={`relative flex shrink-0 items-center justify-center ${small ? "h-[4.5rem] w-[4.5rem]" : "h-28 w-28"}`}
+    >
+      {state === "ready" && <span className="marker-halo absolute inset-0 rounded-full" />}
+      <svg viewBox="-50 -50 100 100" className="absolute inset-0 -rotate-90" aria-hidden="true">
+        {waiting ? (
+          <circle
+            r={STAR_R}
+            fill="none"
+            stroke={state === "idle" ? "rgb(var(--cream) / 0.6)" : "rgb(var(--muted))"}
+            strokeWidth="2.5"
+            strokeDasharray="6 6"
+          />
+        ) : (
+          <>
+            <circle r={STAR_R} fill="none" stroke="rgb(var(--info) / 0.2)" strokeWidth="5" />
+            <circle
+              r={STAR_R}
+              fill="none"
+              stroke={state === "ready" ? "rgb(var(--lagoon))" : "rgb(var(--info))"}
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeDasharray={`${(STAR_C * (state === "ready" ? 1 : Math.max(0.03, Math.min(1, progress)))).toFixed(1)} ${STAR_C.toFixed(1)}`}
+            />
+          </>
+        )}
+      </svg>
+      <span
+        className={`flex items-center justify-center rounded-full bg-night ring-1 ring-line ${small ? "h-12 w-12" : "h-[4.75rem] w-[4.75rem]"}`}
+      >
+        {output ? (
+          <GoodsMark code={output} size={small ? 28 : 44} />
+        ) : (
+          <span className="h-5 w-5 rotate-45 bg-gold-soft" />
+        )}
+      </span>
+    </span>
+  );
 }
 
 /**
@@ -726,28 +786,28 @@ function WorkshopSheet({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <BuildingArt type={b.type} active={st.state === "running"} className="h-20 w-24" />
-        <div className="min-w-0">
-          <Label>
-            {fr.game.level(b.level)}
-            {b.path && ` · ${fr.game.manufacture.paths[b.path].name}`}
-          </Label>
-          <h3 className="font-display text-lg font-extrabold uppercase">
-            {props.names.building(b.type)}
-          </h3>
-          {status && (
-            <p
-              className={`text-sm ${st.state === "ready" ? "text-gold" : st.state === "blocked" ? "text-cream-dim" : "text-lagoon"}`}
-            >
-              {status}
-            </p>
-          )}
-        </div>
+      {/* The workshop as a star (Lagune): what it makes, the arc of its batch, its name. */}
+      <div className="flex flex-col items-center gap-1 text-center">
+        <WorkshopStar
+          output={Object.keys(recipe?.outputs ?? {})[0]}
+          state={st.state}
+          progress={st.progress ?? 0}
+        />
+        <p className="label text-cream-dim">
+          {fr.game.level(b.level)}
+          {b.path && ` · ${fr.game.manufacture.paths[b.path].name}`}
+        </p>
+        <h3 className="font-place text-xl font-bold uppercase tracking-[0.18em]">
+          {props.names.building(b.type)}
+        </h3>
+        {status && (
+          <p
+            className={`text-sm ${st.state === "ready" ? "text-lagoon" : st.state === "blocked" ? "text-cream-dim" : "text-info"}`}
+          >
+            {status}
+          </p>
+        )}
       </div>
-      {st.state === "running" && b.job && (
-        <Ribbon value={st.progress ?? 0} tone="lagoon" label={clock(st.left ?? 0)} />
-      )}
       {st.ready > 0 && (
         <Slab
           size="lg"
@@ -775,11 +835,13 @@ function WorkshopSheet({
                 aria-pressed={q === o.n}
                 onClick={() => setQty(o.n)}
                 // The one chosen reads as chosen: lit, with its tick, never as switched off.
-                className={`cut border px-2 py-2 text-xs font-semibold ${q === o.n ? "border-info bg-night-4 text-cream" : "border-line text-cream-dim"}`}
+                className={`flex min-h-11 flex-col items-center justify-center rounded-full px-2 py-1 text-xs font-semibold leading-tight transition active:scale-95 ${q === o.n ? "bg-info text-ink" : "text-cream-dim ring-1 ring-inset ring-line"}`}
               >
-                {q === o.n && <span className="text-info">✓ </span>}
-                {o.label}
-                <span className="block font-display text-sm tabular-nums">{o.n}</span>
+                <span>
+                  {q === o.n && "✓ "}
+                  {o.label}
+                </span>
+                <span className="font-display text-sm tabular-nums">{o.n}</span>
               </button>
             ))}
           </div>

@@ -45,9 +45,15 @@ export interface Page {
   at(x: number, y: number): Hit | null;
   /** The windows open over the page (`[aria-modal="true"]`). */
   modals(): Modal[];
+  /**
+   * The places open full screen over the map (`[data-place]`: the counter up close). They cover
+   * the map, never the windows opened over them.
+   */
+  places?(): { contains(other: unknown): boolean }[];
 }
 
 export const MODAL = '[aria-modal="true"]';
+export const PLACE = "[data-place]";
 
 /** Where a window's visible part begins: below the screen's top, and below its sticky head. */
 function sheetTop(sheet: Modal): number {
@@ -62,16 +68,21 @@ export function browserPage(): Page {
     height: window.innerHeight,
     at: (x, y) => document.elementFromPoint(x, y),
     modals: () => [...document.querySelectorAll<HTMLElement>(MODAL)],
+    places: () => [...document.querySelectorAll<HTMLElement>(PLACE)],
   };
 }
 
 /**
  * Something lies over the target: a window open over the page that does not hold it (as soon as
- * it opens, while it still slides in), or, under its centre, an element that is neither the
+ * it opens, while it still slides in), a place open over the map that does not hold it, or, under
+ * its centre, an element that is neither the
  * target, inside it, nor the guide's own bubble. Off screen, it is not covered (it scrolls).
  */
 export function isCovered(el: Target, box: Rect, page: Page): boolean {
-  if (page.modals().some((m) => !m.contains(el))) return true;
+  const modals = page.modals();
+  if (modals.some((m) => !m.contains(el))) return true;
+  // A place covers the map; a window over the place (holding the target) is above it.
+  if (modals.length === 0 && (page.places?.() ?? []).some((p) => !p.contains(el))) return true;
   const x = box.left + box.width / 2;
   const y = box.top + box.height / 2;
   if (x < 0 || y < 0 || x > page.width || y > page.height) return false;

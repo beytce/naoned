@@ -450,20 +450,3 @@ export function VehicleGlyph({
     </g>
   );
 }
-
-/** Colour of a load on the map, by resource. */
-export const GOODS_COLOUR: Record<string, string> = {
-  wheat: P.gold,
-  flour: P.goldSoft,
-  bread: P.woodLight,
-  clay: P.clay,
-  bricks: P.vermilion,
-  wood: P.wood,
-  planks: P.woodLight,
-  spices: P.vermilionDeep,
-  silk: P.violet,
-  salt: P.cream,
-  wine: "#7A2E3A",
-  furs: "#8A6A4A",
-  cloth: P.lagoon,
-};

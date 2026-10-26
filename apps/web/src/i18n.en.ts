@@ -235,6 +235,14 @@ export const en: Dictionary = {
 
   game: {
     ui: { howItWorks: "How does it work?" },
+    chains: {
+      food: "Food",
+      construction: "Building",
+      carpentry: "Carpentry",
+      glass: "Glass",
+      drapery: "Cloth",
+      orient: "Overseas",
+    } as Record<string, string>,
     map: {
       home: (pseudo: string) => (pseudo ? `House ${pseudo}` : "Your house"),
       homeLabel: "Counter",
@@ -255,6 +263,38 @@ export const en: Dictionary = {
           .join(", "),
       carts: "Free carts",
       resumeGuide: "Resume the guide",
+      rate: (amount: string) => `≈ +${amount}/h`,
+      orbit: {
+        load: "Load a mule",
+        missing: (n: number) => `${n} short`,
+        back: "Back to the map",
+        store: "Store",
+        storeLine: (n: number) => `Store · ${n} in stock`,
+        summary: (ready: number, running: number) =>
+          [
+            ready > 0 ? `${ready} batch${ready > 1 ? "es" : ""} ready` : null,
+            running > 0 ? `${running} running` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || "Workshops at rest",
+        bread: (days: number) => `Workers' bread: ${days} d`,
+        harvest: "Collect and restart",
+        waits: (resource: string) => `needs ${resource.toLowerCase()}`,
+        level: (n: number) => `lv. ${n}`,
+      },
+      workshopRow: {
+        ready: (n: number) => (n > 1 ? `${n} ready` : "Ready"),
+        idle: "To start",
+        starved: "No input",
+      },
+      timeline: {
+        label: "Coming up",
+        now: "now",
+        ready: (workshop: string) => `${workshop} ready`,
+        pays: (city: string) => `${city} pays`,
+        orders: "Orders",
+        back: (vehicle: string) => `${vehicle} back`,
+      },
       tips: {
         cash: {
           title: "Ducats",
@@ -2028,8 +2068,7 @@ export const en: Dictionary = {
         `A raw material is worth little. Transform it: start your ${building.toLowerCase()}.`,
       sellCity: (resource: string) =>
         `Sell your ${resource.toLowerCase()} to the city that pays best.`,
-      goRoutes:
-        "The cities place orders: a city's badge counts those your stock covers. Tap a cart.",
+      goRoutes: "Each mark around a city is an order, full when your stock covers it. Tap a cart.",
       deliver: "Open the cargo: tick an order your stock covers, the city pays on arrival.",
       dispatch: "Tap « Go » (or let the countdown run out).",
       welcomeEnRoute: (left: string) =>

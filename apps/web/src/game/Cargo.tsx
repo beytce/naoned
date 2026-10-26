@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ResourceIcon } from "../art/resources.js";
+import { GoodsMark, goodsColour } from "../art/goods.js";
+import { VehicleGlyph } from "../art/veneto.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Segmented, Slab, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
@@ -68,6 +69,51 @@ export function HoldGauge({ units, capacity }: { units: number; capacity: number
   );
 }
 
+const HOLD_R = 50;
+const HOLD_C = 2 * Math.PI * HOLD_R;
+
+/**
+ * The hold of a vehicle as its star (Lagune): a ring of the vehicle's capacity, filled by what is
+ * loaded in the colour of each good's chain, the vehicle drawn in the middle.
+ */
+export function HoldRing({
+  type,
+  capacity,
+  loaded,
+}: { type: string; capacity: number; loaded: DeliveryOrderView[] }) {
+  let at = 0;
+  const parts = loaded.map((o) => {
+    const len = capacity > 0 ? (Math.min(o.quantity, capacity) / capacity) * HOLD_C : 0;
+    const part = { id: o.id, colour: goodsColour(o.resource), len, from: at };
+    at += len;
+    return part;
+  });
+  return (
+    <span className="relative flex h-32 w-32 items-center justify-center">
+      <svg viewBox="-60 -60 120 120" className="absolute inset-0 -rotate-90" aria-hidden="true">
+        <circle r={HOLD_R} fill="none" stroke="rgb(var(--night-4))" strokeWidth="9" />
+        {parts.map((p) => (
+          <circle
+            key={p.id}
+            r={HOLD_R}
+            fill="none"
+            stroke={p.colour}
+            strokeWidth="9"
+            strokeDasharray={`${p.len.toFixed(1)} ${HOLD_C.toFixed(1)}`}
+            strokeDashoffset={(-p.from).toFixed(1)}
+            className="transition-all duration-300"
+          />
+        ))}
+      </svg>
+      <span className="flex h-[5.5rem] w-[5.5rem] items-center justify-center rounded-full bg-night ring-1 ring-line">
+        <svg viewBox="-19 -15 38 26" className="h-10 w-14" aria-hidden="true">
+          <VehicleGlyph type={type} load={null} />
+        </svg>
+      </span>
+    </span>
+  );
+}
+
 type Sort = "reward" | "distance" | "city";
 
 /** The cargo list of the depot: tick orders into the vehicle's hold. */
@@ -118,14 +164,9 @@ export function CargoSheet({
           data-coach={inHold ? undefined : `cargo-order-${o.id}`}
           disabled={!inHold && why !== null}
           onClick={() => setLoad(inHold ? load.filter((x) => x !== o.id) : [...load, o.id])}
-          className={`flex w-full items-center gap-3 cut px-3 py-2.5 text-left ring-1 ring-inset transition ${inHold ? "bg-lagoon/15 ring-lagoon/60" : why ? "bg-night-2/60 opacity-50 ring-line/50" : "bg-night-2 ring-line/70 active:scale-[0.99]"}`}
+          className={`flex min-h-[3.5rem] w-full items-center gap-3 rounded-2xl px-3 py-2 text-left ring-inset transition ${inHold ? "bg-night-3 ring-[1.5px] ring-lagoon" : why ? "bg-night/60 opacity-55 ring-1 ring-line/50" : "bg-night-3 ring-1 ring-line/70 active:scale-[0.99]"}`}
         >
-          <span
-            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ring-2 ${inHold ? "bg-lagoon ring-lagoon" : "ring-cream-dim/60"}`}
-          >
-            {inHold && <span className="text-xs font-black text-night">✓</span>}
-          </span>
-          <ResourceIcon code={o.resource} size={26} />
+          <GoodsMark code={o.resource} size={32} />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold">
               {o.quantity} {props.names.resource(o.resource).toLowerCase()}
@@ -150,17 +191,26 @@ export function CargoSheet({
           <span className="shrink-0 font-display text-base font-extrabold tabular-nums text-gold">
             {d(total(o))}
           </span>
+          <span
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${inHold ? "bg-lagoon" : "ring-2 ring-inset ring-line"}`}
+          >
+            {inHold && <span className="text-xs font-black text-night">✓</span>}
+          </span>
         </button>
       </li>
     );
   };
   return (
     <div className="space-y-3">
-      <div className="text-center">
-        <h3 className="font-display text-2xl font-extrabold uppercase">{t().title}</h3>
-        <p className="label mt-1 text-lagoon">
+      {/* The vehicle as a star: its hold is the ring, filled by the colours of its goods. */}
+      <div className="flex flex-col items-center gap-1 text-center">
+        <HoldRing type={vehicle.type} capacity={s.capacity} loaded={loaded} />
+        <h3 className="font-place text-xl font-bold uppercase tracking-[0.18em]">
           {vehicleName(vehicle.type)}
-          {city ? ` · ${props.names.city(city)}` : ""}
+        </h3>
+        <p className="text-sm text-cream-dim">
+          {t().title} · {s.units} / {s.capacity}
+          {s.city || city ? ` · ${props.names.city((s.city ?? city) as string)}` : ""}
         </p>
       </div>
       <Segmented<Sort>
@@ -180,7 +230,7 @@ export function CargoSheet({
         )}
         {rows.map((o) => row(o, false))}
       </ul>
-      <div className="cut bg-night p-3 ring-1 ring-line">
+      <div className="rounded-2xl bg-night p-3 ring-1 ring-line">
         <div className="flex items-center gap-3">
           <Label>{t().hold}</Label>
           <HoldGauge units={s.units} capacity={s.capacity} />
@@ -192,6 +242,7 @@ export function CargoSheet({
         )}
       </div>
       <Slab
+        size="lg"
         className="w-full"
         coach={loaded.length > 0 ? "cargo-ready" : undefined}
         disabled={loaded.length === 0}

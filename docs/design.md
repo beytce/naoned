@@ -2,6 +2,18 @@
 
 Le jeu s'appelle **Fondaco**, du nom des entrepôts où les marchands étrangers logeaient et commerçaient à Venise. Ambiance : Venise au Quattrocento, des ducats, la lagune. L'identité suit le guide « Fondaco — identité & palettes ».
 
+## Direction Lagune : la règle (25 octobre 2026)
+
+Décision du porteur : **tout ajout suit cette direction**. Les maquettes de chaque page sont sur la planche de design (lien dans `docs/propositions-design-2026-10-25.md`, page « Lagune · toutes les pages », avec le système et la navigation).
+
+- **Un lieu est un astre.** Le comptoir est un soleil, une ville un astre, un atelier une petite étoile en orbite. On le touche : on s'en approche (zoom `orbit-in`, 0,32 s) ; on revient par le chevron en haut à gauche, Échap ou en glissant vers le bas.
+- **Trois profondeurs, pas plus.** La carte ; le lieu en orbite, plein écran (`ComptoirOrbit`, `data-place`) ; la feuille du bas qui porte une action (`Sheet`). Un moment (bon retour, ballot, fin de saison) s'ouvre de lui-même puis ramène à la carte.
+- **Une seule action en or par écran**, en pilule de 52 à 56 px ; les autres en fantôme (filet `line`), ou en texte lapis.
+- **Le temps se lit en arcs et sur la frise**, pas en phrases : l'arc lapis d'un lot, plein et vert d'eau quand c'est prêt, le pointillé crème de ce qui attend.
+- **Les marchandises par leur marque** (`GoodsMark`) : couleur de chaîne, forme d'étape ; pleine quand le stock couvre, creuse sinon.
+- **L'écriture** : Cinzel en capitales espacées pour les lieux et les titres de lieu, Archivo élargi pour les chiffres, Space Grotesk pour le reste.
+- **Petits écrans** (moins de 640 à 700 px de haut) : ce qui n'est pas l'action cède (frise, puces du magasin), jamais l'action ni le retour.
+
 ## Logo : le lion ailé
 
 Logo officiel (depuis le 18 octobre 2026) : le lion ailé de saint Marc, de face, rugissant, ailes déployées, debout sur les vagues, frappé en relief sur une médaille d'or à frise tressée, sur un fond olive très sombre. Pas de nom dans le logo.
@@ -38,6 +50,21 @@ Les deux halos du fond suivent la palette (`--glow-a`, `--glow-b`) : cyan et ver
 
 Les illustrations (ressources, bâtiments, blasons) et la carte gardent leurs propres couleurs dans toutes les palettes, réglées sur la palette par défaut (`art/palette.ts`).
 
+### Le code des marchandises (« astres de chaîne », 25 octobre 2026)
+
+Une marchandise se lit pareil partout (carte, Magasin, Rialto, Ateliers) : **la couleur dit sa chaîne, la forme dit son étape** (`art/goods.tsx`, d'après `chain` et `tier` du thème, `venice1450.ts`). Rond : brut ; carré : transformé ; hexagone : fini ; losange : outre-mer. Dès 20 px, son pictogramme est gravé dans la forme (`GoodsMark`) ; une forme creuse est une commande que le stock ne couvre pas encore. `ResourceIcon` pose l'illustration sur la forme de son étape, teintée de sa chaîne.
+
+| Chaîne | Marchandises | Teinte |
+| --- | --- | --- |
+| Vivres | blé, farine, pain | paille `#E6D3A3` |
+| Construction | argile, briques | terre cuite `#C08A5A` |
+| Charpente | bois, planches | mousse `#93B95C` |
+| Verrerie | sable, verre, miroirs | rose de Murano `#F09CC4` |
+| Draperie | laine, drap de laine, vêtements | gris de lin `#A6A3B5` |
+| Outre-mer | épices, soie, sel, vin, fourrures, draps, épices préparées | pourpre `#B48BE6` |
+
+Chaque teinte reste à ΔE ≥ 25 de l'or, du vert d'eau, du cinabre, du lapis et de l'eau des trois palettes, et des autres teintes ; contraste ≥ 3:1 (un graphisme, jamais du texte) sur les nuits sombres (`test/goods.test.ts`). Le blé n'est pas doré : l'or reste l'argent et l'action. La charge d'une charrette prend la teinte de sa chaîne.
+
 ## Typographie (embarquée, sans appel à Google)
 
 - **Archivo Expanded** (Archivo variable, largeur 125 %) : titres et chiffres.
@@ -49,13 +76,13 @@ Les illustrations (ressources, bâtiments, blasons) et la carte gardent leurs pr
 
 ## Composants (`apps/web/src/ui.tsx`)
 
-Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arrondis, partout (`.cut` pour les cartes et les lignes, `.slab` pour les puces et les badges). Le cercle est réservé aux médaillons, avatars, pastilles et jauges ; les feuilles gardent leur poignée arrondie.
-- `Slab` : bouton en parallélogramme (`.bevel`) posé sur une ombre pleine décalée de sa teinte sombre. À l'appui, la face s'enfonce sur son ombre, avec un tick haptique. Or pour l'unique action qui compte à l'écran, fantôme pour les autres ; jamais vert d'eau. Trois niveaux seulement : **or** (l'unique action), **fantôme** (les autres), **texte** (`Slab tone="text"`, en lapis, sans soulignement : « Lire le guide », « Passer »). Le lien souligné n'existe pas dans le jeu. Sous les capitales, l'unité d'un montant reste un petit « d ».
-- Les cartes à coins coupés (`.cut`) qui portent une bordure gardent leur filet sur les diagonales : `index.css` les retrace, de la couleur et de l'épaisseur de la bordure, à un seul endroit pour toutes (`test/frames.test.ts`). Un choix actif (préréglage de quantité) se lit choisi : allumé, avec sa coche, jamais comme éteint.
+Formes de la direction Lagune (depuis le 25 octobre 2026 ; avant, des biseaux) : **aucun coin coupé**. Les cartes et les lignes sont arrondies (`.cut`, 18 px), les puces, badges et boutons sont des pilules (`.slab`, `.bevel`, `Slab`) ; un lieu, un atelier, une ville, une mule sont des ronds (astres). `index.css` le fait en un seul endroit, `test/frames.test.ts` le garde.
+- `Slab` : bouton en pilule, en casse de phrase (Archivo). À l'appui, il s'enfonce un peu, avec un tick haptique. Trois niveaux seulement : **or** (l'unique action qui compte à l'écran, avec son halo), **fantôme** (un filet `line`, les autres), **texte** (`Slab tone="text"`, en lapis, sans soulignement : « Lire le guide », « Passer »). Jamais vert d'eau. Le lien souligné n'existe pas dans le jeu. Pendant le guide, seule la cible reste en or.
+- Un choix actif (préréglage de quantité, `Segmented`) se lit choisi : pilule allumée en lapis, avec sa coche, jamais comme éteint ; les autres en filet.
 - `HudChip` : sur la carte, une action à portée de pouce ou un état à lire d'un coup d'œil, un picto et un mot court (« Escarmouche », « Semaine »), 44 px de haut, lapis par défaut, vermillon quand elle presse.
 - `MiniCrest` (`art/crest.tsx`) : le blason réduit à un disque de son émail et son meuble en silhouette, pour les marques de 14 à 18 px de la Terraferme.
-- `Panel` : carte à coins coupés (`.cut`), haut gauche et bas droit, avec un liseré. Une lueur intérieure s'ajoute quand elle doit attirer l'œil. Les tuiles et cartes de commande suivent la même coupe.
-- `Badge`, puces du stock, pastilles de tri : petits biseaux (`.slab`).
+- `Panel` : carte arrondie (`.cut`), avec un liseré. Une lueur intérieure s'ajoute quand elle doit attirer l'œil. Les tuiles et cartes de commande suivent la même coupe.
+- `Badge`, puces du stock, pastilles de tri : pilules (`.slab`).
 - `Tabs` :
   - `pills` : choix d'une valeur, par exemple le tri ;
   - `underline` : parties d'un écran (Joueurs et Villes). Capitales sur un double trait crème et lapis qui glisse d'un onglet à l'autre.
@@ -66,6 +93,8 @@ Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arron
 - `Ribbon` : barre de progression rayée ; `Big` : grands chiffres.
 
 ### Rialto et Ateliers
+
+Lagune (26 octobre 2026) : au Rialto, chaque marchandise est une ligne arrondie sur la nuit, avec sa marque (`GoodsMark`) ; les lignes sont groupées par chaîne sous une tête à la couleur de la chaîne (Vivres, Construction, Charpente, Verrerie, Draperie, Outre-mer), sauf sous le tri « En hausse » ; les galères de la Muda sont bordées du pourpre de l'outre-mer (l'or reste l'argent) ; la fiche d'une marchandise s'ouvre sur sa marque et son nom en Cinzel. Dans la liste des ateliers, chaque atelier est un petit astre (marque, arc du lot, pointillé s'il attend) ; prêt se dit en vert d'eau, en cours en lapis ; plus de barre rayée : l'arc et le temps de la ligne d'état suffisent.
 
 Au Rialto, deux colonnes « Achat » et « Vente », côte à côte sous leurs têtes ; les marchandises que personne n'a encore échangées viennent après, sous « Pas encore échangées (n) ». Une courbe n'est dessinée qu'à partir de deux prix (sa place reste vide avant). Dans les Ateliers, une seule ligne d'état colorée par carte ; la marge théorique est une puce (« ≈ 20,8 d/h ») ; une amélioration déconseillée le dit en `.meta` (« Amélioration déconseillée : il manque du blé. »), jamais en or. Sur ordinateur, la fenêtre des Ateliers est large (`Sheet size="wide"`), les cartes en deux colonnes. Toute fenêtre qui a encore du contenu sous le pli le montre par un fondu à son pied.
 
@@ -94,8 +123,8 @@ Un seul écran, la Vénétie en **portulan** à la lueur des lampes (`PortolanTe
 | Pièce | Rôle | Composants |
 | --- | --- | --- |
 | **Carte** | Le sol (une couche que le processeur graphique déplace), les routes du comptoir en pointillés, les repères placés à la main à chaque image, sans rendu React. Les images ne tournent que si quelque chose bouge (caméra, élan, charrette en route) | `WorldMap`, `NightTerrain`, `geometry.ts` |
-| **Repères** | Les villes en médaillons à leur teinte (pastille or : commandes couvertes par le stock ; vert d'eau : commandes ; vermillon : Criée), le comptoir doré au blason (anneau du prochain lot, pastille des lots prêts), les véhicules en jetons (vert d'eau en route). Elles se garent dans le secteur libre autour du comptoir, côté terre, et partent du bord du médaillon | `CityMarker`, `HomeMarker`, `CartMarker` |
-| **HUD** | En haut, une grille à deux colonnes réservées (`minmax(0,1fr)` à gauche, au plus 46 % à droite, sa largeur donnée par la bourse et ses ronds, jamais par une phrase) : rien ne s'écrit sur la colonne voisine, à 320 px comme à 390 px, et le nom garde au moins dix lettres à 320 px (sous 360 px, nom et bourse en Archivo droit, d'un cran plus petits). À gauche, un seul bouton vers le Profil : le blason dans l'anneau de la saison, le nom, puis le rang, le niveau et le titre sur une ligne qui cède élément par élément (le titre, puis le niveau, chacun avec son point : jamais « · … » orphelin ; le rang reste). La carte se cadre sous la bande du haut du HUD (son identité, le rival, les ronds de gauche, la colonne de droite, mesurés) : aucun nom ni médaillon de ville sous le HUD à l'ouverture. Le rival de la semaine a sa ligne à lui sous la grille, sur toute la largeur (toucher : le Classement). Dessous, deux ronds de haut au plus : la cloche des Avis et la bulle du Rialto, et à côté Lorenzo quand le guide est en pause et le cercle des ballots (seulement quand un ballot attend). En haut à droite, en colonne, des compteurs : les ducats, l'Influence, la réserve de pain des ouvriers (« −6/j 14 » : la consommation du jour et le stock ; neutre, dorée quand elle ne couvre plus le prochain repas, vermillon quand ils ont faim, l'icône respirant alors un anneau), les véhicules libres et « + » pour en acheter. Toucher un compteur déplie à gauche de son icône une fiche (bandeau de sa couleur, flèche vers l'icône, ce qu'il est, ses chiffres, un bouton : Rialto, livre de la Maison, « Acheter du pain ») : fondu court qui glisse de l'icône, sortie plus brève ; une seule à la fois, la carte touchée la ferme. Les véhicules ouvrent un tiroir glissé du bord droit : chacun, où il est, le toucher le choisit sur la carte. Au pied, sans sélection, quatre portes rondes : Ateliers (sur le calque du commerce), Classement, Famille (Commerce sur le calque de la Campagne ; point vermillon quand la famille appelle), Aide. Tout ce qui se touche dans le HUD fait au moins 44 × 44 px (un petit rond garde son dessin, sa zone de toucher l'entoure) ; chaque bloc porte `data-hud`, que vérifie le test de mise en page (`apps/web/e2e/layout.mjs`) | `MapHud` |
+| **Repères** | Direction « Lagune » (25 octobre 2026, `docs/propositions-design-2026-10-25.md`). **Les villes en astres** : un rond à leur teinte, leur monument au centre, et **leurs commandes en orbite**, chacune la marque de sa marchandise (pleine : le stock la couvre ; creuse : il en manque), six au plus puis « +n » ; pastille vermillon : Criée. **Le comptoir en soleil** : le disque doré au blason, entouré d'**un anneau par atelier** (cinq au plus) : l'arc du lot en cours en lapis, plein et vert d'eau quand il est prêt, une trace pâle quand il ne fait rien ; pastille vert d'eau des lots prêts. Les véhicules en jetons (vert d'eau en route). Ils se garent dans le secteur libre autour du comptoir, côté terre, et partent du bord du médaillon | `CityMarker`, `HomeMarker`, `CartMarker` |
+| **HUD** | En haut, une grille à deux colonnes réservées (`minmax(0,1fr)` à gauche, au plus 46 % à droite, sa largeur donnée par la bourse et ses ronds, jamais par une phrase) : rien ne s'écrit sur la colonne voisine, à 320 px comme à 390 px, et le nom garde au moins dix lettres à 320 px (sous 360 px, nom et bourse en Archivo droit, d'un cran plus petits). À gauche, un seul bouton vers le Profil : le blason dans l'anneau de la saison, le nom, puis le rang, le niveau et le titre sur une ligne qui cède élément par élément (le titre, puis le niveau, chacun avec son point : jamais « · … » orphelin ; le rang reste). La carte se cadre sous la bande du haut du HUD (son identité, le rival, les ronds de gauche, la colonne de droite, mesurés) : aucun nom ni médaillon de ville sous le HUD à l'ouverture. Le rival de la semaine a sa ligne à lui sous la grille, sur toute la largeur (toucher : le Classement). Dessous, **une seule rangée de ronds** (la carte commence juste dessous) : la cloche des Avis, la bulle du Rialto, Lorenzo quand le guide est en pause et le cercle des ballots (seulement quand un ballot attend). En haut à droite, en colonne, des compteurs : les ducats et, dessous en vert d'eau, ce que rapportent les ateliers par heure (« ≈ +61,6 d/h », la marge théorique du tableau de bord, sur le commerce seulement), l'Influence, la réserve de pain des ouvriers (« −6/j 14 » : la consommation du jour et le stock ; neutre, dorée quand elle ne couvre plus le prochain repas, vermillon quand ils ont faim, l'icône respirant alors un anneau), les véhicules libres et « + » pour en acheter. Toucher un compteur déplie à gauche de son icône une fiche (bandeau de sa couleur, flèche vers l'icône, ce qu'il est, ses chiffres, un bouton : Rialto, livre de la Maison, « Acheter du pain ») : fondu court qui glisse de l'icône, sortie plus brève ; une seule à la fois, la carte touchée la ferme. Les véhicules ouvrent un tiroir glissé du bord droit : chacun, où il est, le toucher le choisit sur la carte. Au-dessus des portes, sur le commerce, **la frise du temps** (`TimeStrip`, `game/timeline.ts`) : « maintenant » puis, sur un fil de lumière, les trois prochains moments avec leur temps restant : une livraison qui paie (vert d'eau), le prochain lot d'un atelier (lapis), les nouvelles commandes des villes (creux). Elle dit quand revenir sans rien ouvrir, et la carte se cadre au-dessus d'elle. Au pied, sans sélection, quatre portes rondes : Ateliers (sur le calque du commerce), Classement, Famille (Commerce sur le calque de la Campagne ; point vermillon quand la famille appelle), Aide. Tout ce qui se touche dans le HUD fait au moins 44 × 44 px (un petit rond garde son dessin, sa zone de toucher l'entoure) ; chaque bloc porte `data-hud`, que vérifie le test de mise en page (`apps/web/e2e/layout.mjs`) | `MapHud` |
 | **Panneau** | Ce qui est choisi : titre, une ligne d'état (et sa barre), de grosses actions carrées, flèches vers l'objet suivant du même genre, croix. Sur ordinateur, flottant en bas à droite | `ContextPanel`, `ActionButton` |
 | **Feuilles** | Le détail : ateliers, magasin, bâtir, cargaisons, Criée, Avis | `Sheet` |
 | **Construire** | Le catalogue en cartes, deux onglets (Ateliers, Véhicules) : illustration et nombre déjà bâti à gauche ; nom, durée d'un lot (ou vitesse), recette, rôle dans le commerce, pain des ouvriers et prix à droite (en vermillon ce qui manque). Une carte qu'on ne peut pas prendre est assombrie et dit pourquoi (autre région, parcelles pleines, prix, amélioration d'un autre véhicule) ; celles des autres régions restent visibles, pour montrer qui produit quoi | `BuildCatalog` |
@@ -104,8 +133,8 @@ Un seul écran, la Vénétie en **portulan** à la lueur des lampes (`PortolanTe
 
 | Lieu choisi | État | Actions |
 | --- | --- | --- |
-| **Comptoir** | Lots prêts, prochain lot et sa barre, ouvriers affamés | Récolter (ou Relancer) · Ateliers · Magasin · Bâtir |
-| **Ville** | Commandes couvertes par le stock, Criée en cours, renouvellement | Cargaisons · Criée ; Venise : Rialto (et les galères de la Muda en tête du Rialto) |
+| **Comptoir** | Le toucher ouvre **le comptoir en orbite**, plein écran (`ComptoirOrbit`, `map/Orbit.tsx`) : le soleil au blason, chaque atelier une étoile en orbite (la marque de ce qu'il fait, l'arc du lot, vert d'eau et « +10 » quand il est prêt, pointillé quand il attend : crème pour du travail, gris pour sa matière, jamais une alerte), la chaîne tracée entre ceux qui se nourrissent (tirets à la couleur de la marchandise, qui coulent), une parcelle libre « Bâtir ». Dessous, le magasin en puces (masqué sous 700 px de haut) ; au pied, l'état (lots prêts, en cours, pain des ouvriers) | Récolter et relancer (or) · Ateliers · Magasin ; toucher un atelier ouvre sa production, la parcelle le catalogue |
+| **Ville** | La toucher ouvre **la ville en orbite**, plein écran (`CityOrbit`, `map/Orbit.tsx`) : son monument au centre, ses commandes ouvertes en orbite (huit au plus), chacune la marque de sa marchandise, pleine quand le stock la couvre, sa quantité et ce qu'elle paie (ou « il en manque n » en cinabre), une urgente avec son horloge cinabre ; ‹ › vers la ville suivante ; au pied, l'état (livrables, Criée, renouvellement) | « Charger une mule » (or quand le stock couvre et qu'une mule est libre) ; en fantôme : Criée, Entrepôt, Fournisseurs ; Venise : Rialto |
 | **Charrette au comptoir** | Au comptoir, chargée pour…, jauge de cale | Cargaisons · Partir |
 | **Charrette en route** | Vers la ville ou retour, temps restant | Suivre |
 
@@ -194,7 +223,7 @@ Le mode qui remplace la Campagne depuis le 18 octobre 2026 (`docs/plan-terraferm
 ## Charger et partir
 
 - **Charrette choisie** (`CartPanel`) : bord vert d'eau et croix en onglet ; nom, cale « 12/40 » et sa jauge, état (au comptoir, chargée pour…). Les villes qu'elle peut servir s'éclairent et leur route se dore, les autres s'estompent. Toucher une ville éclairée ouvre ses cargaisons ; toucher la ville de la cale prépare le départ.
-- **Cargaisons** (`CargoSheet`) : feuille avec onglets Récompense, Distance, Ville ; une ligne par commande (pastille à cocher, marchandise, ville et durée, récompense en or), grisée avec sa raison quand elle ne va pas (autre ville, trop lourd, stock) ; la cale en bas avec sa jauge et ses commandes cochées ; « Prêt pour Vicence · 63 d ».
+- **Cargaisons** (`CargoSheet`) : en tête, la mule en astre (`HoldRing`) : sa cale est l'anneau, rempli à la couleur de chaque marchandise chargée ; puis les tris en pilules (Récompense, Distance, Ville) ; une ligne arrondie par commande (marque, quantité, ville et durée, récompense en or, rond à cocher à droite), grisée avec sa raison quand elle ne va pas (autre ville, trop lourd, stock) ; la cale en bas avec sa jauge et ses commandes cochées ; « Prêt pour Vicence · 63 d » en or.
 - **Départ** (`DeparturePanel`) : la route en pointillés vert d'eau jusqu'à la ville, « Départ vers Padoue · 10 s » et sa barre, les escortes en puces avec leur risque (choisir relance le compte), ✓ Partir et ✕ Annuler ; à zéro, la charrette part d'elle-même. Elle reste choisie : on la voit quitter le comptoir.
 
 ## Bon retour : le rapport de chaque visite

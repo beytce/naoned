@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { CityIcon } from "../../art/cities.js";
 import { Crest, type CrestData } from "../../art/crest.js";
+import { GoodsMark } from "../../art/goods.js";
 import { ResourceIcon } from "../../art/resources.js";
 import { VehicleGlyph } from "../../art/veneto.js";
 import { WorkGlyph } from "../../art/workIcon.js";
@@ -31,10 +32,12 @@ export function orbStyle(code: string): { background: string } {
   };
 }
 
-/** A city's plaque on the chart: dark parchment warmed by the city's hue, an ink edge. */
+/** A city's round on the night: deep blue warmed by the city's hue, lit from above left. */
 function plaqueStyle(code: string): { background: string } {
   const [, mid] = HUES[code] ?? DEFAULT_HUE;
-  return { background: `linear-gradient(160deg, ${mid}66 0%, #1D3150 62%, #16263E 100%)` };
+  return {
+    background: `radial-gradient(circle at 34% 28%, ${mid}88 0%, #1D3150 58%, #12203A 100%)`,
+  };
 }
 
 function Pill({ children, tone }: { children: ReactNode; tone: "gold" | "lagoon" | "vermilion" }) {
@@ -53,6 +56,14 @@ function Pill({ children, tone }: { children: ReactNode; tone: "gold" | "lagoon"
   );
 }
 
+/** The most orders drawn in a city's orbit; the others are counted beside it. */
+const ORBIT_MAX = 6;
+
+/**
+ * A city as a star of the night: its monument in a round of its hue, its orders in orbit around
+ * it, each the mark of its good (`GoodsMark`), full when the stock covers it, hollow when it
+ * does not yet. The orbit says what the city wants at a glance, without a figure.
+ */
 export function CityMarker({
   code,
   name,
@@ -66,9 +77,9 @@ export function CityMarker({
 }: {
   code: string;
   name: string;
-  /** Orders of the city open today. */
-  orders: number;
-  /** Among them, those the stock covers now. */
+  /** Orders of the city open today: their good and whether the stock covers them. */
+  orders: { resource: string; covered: boolean }[];
+  /** Among them, those a free vehicle can take now. */
   deliverable: number;
   /** A Criée under way there. */
   criee: boolean;
@@ -78,32 +89,57 @@ export function CityMarker({
   lit: boolean;
   onTap: () => void;
 }) {
+  const big = code === "venezia";
+  const orbit = big ? 36 : 33;
+  const shown = orders.slice(0, ORBIT_MAX);
+  const more = orders.length - shown.length;
+  const covered = orders.filter((o) => o.covered).length;
   return (
     <button
       type="button"
       data-coach={`city-${code}`}
-      aria-label={fr.game.map.cityLabel(name, orders, deliverable, criee)}
+      aria-label={fr.game.map.cityLabel(name, orders.length, covered, criee)}
       onClick={onTap}
       className={`marker-hit group relative -ml-9 -mt-9 flex h-[72px] w-[72px] items-center justify-center transition-opacity duration-300 ${dim ? "opacity-40" : ""}`}
     >
-      <span className="marker-ring absolute inset-1 rounded-xl ring-1 ring-cream/10" />
+      <span
+        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-info/25"
+        style={{ width: orbit * 2, height: orbit * 2 }}
+      />
+      <span className="marker-ring absolute inset-1.5 rounded-full ring-1 ring-cream/10" />
       {(lit || deliverable > 0) && !dim && (
-        <span className="marker-halo absolute inset-1 rounded-full" />
+        <span className="marker-halo absolute -inset-1 rounded-full" />
       )}
       <span
         data-map-label
-        className={`marker-orb relative flex items-center justify-center rounded-lg shadow-[0_6px_16px_rgb(0_0_0/0.5)] ring-1 ring-[#BFE3FF]/55 ${code === "venezia" ? "h-14 w-14" : "h-12 w-12"}`}
+        className={`marker-orb relative flex items-center justify-center rounded-full shadow-[0_6px_16px_rgb(0_0_0/0.5)] ring-[1.5px] ${lit ? "ring-lagoon" : "ring-[#BFE3FF]/45"} ${big ? "h-14 w-14" : "h-12 w-12"}`}
         style={plaqueStyle(code)}
       >
         <CityIcon
           code={code}
-          className={`drop-shadow-[0_1px_1px_rgb(0_0_0/0.5)] ${code === "venezia" ? "h-11 w-11" : "h-9 w-9"}`}
+          className={`drop-shadow-[0_1px_1px_rgb(0_0_0/0.5)] ${big ? "h-10 w-10" : "h-8 w-8"}`}
         />
       </span>
-      {(orders > 0 || criee) && (
-        <span data-map-label className="absolute -right-0.5 top-0.5 flex gap-0.5">
+      {shown.map((o, i) => {
+        // From the top, clockwise, 40° apart: the first orders face the reader.
+        const a = ((-90 + i * 40) * Math.PI) / 180;
+        return (
+          <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: the orbit's places are fixed.
+            key={i}
+            className="pointer-events-none absolute left-1/2 top-1/2 drop-shadow-[0_1px_2px_rgb(0_0_0/0.7)]"
+            style={{
+              transform: `translate(${(orbit * Math.cos(a) - 8).toFixed(1)}px, ${(orbit * Math.sin(a) - 8).toFixed(1)}px)`,
+            }}
+          >
+            <GoodsMark code={o.resource} size={16} covered={o.covered} />
+          </span>
+        );
+      })}
+      {(more > 0 || criee) && (
+        <span data-map-label className="absolute -right-1 top-0.5 flex gap-0.5">
           {criee && <Pill tone="vermilion">!</Pill>}
-          {orders > 0 && <Pill tone={deliverable > 0 ? "gold" : "lagoon"}>{orders}</Pill>}
+          {more > 0 && <Pill tone="lagoon">+{more}</Pill>}
         </span>
       )}
       {supplier && (
@@ -131,23 +167,36 @@ export function CityName({ code, name, dim }: { code: string; name: string; dim:
   );
 }
 
+/** A workshop's ring around the counter: its batch's progress, or ready (full lagoon). */
+export interface WorkshopRing {
+  /** Share of the batch under way, 0 to 1; null when the workshop is idle. */
+  share: number | null;
+  ready: boolean;
+}
+
+/** The most rings drawn around the counter; past them, the outer one stands for the rest. */
+const RINGS_MAX = 5;
+
+/**
+ * The merchant's counter as the sun of their map: a gold disc with their coat of arms, and one
+ * ring per workshop around it, its arc the batch under way, full and lagoon when it is ready, a
+ * faint track when it is idle. What runs is read without opening the workshops.
+ */
 export function HomeMarker({
   name,
   crest,
   ready,
-  progress,
+  rings,
   onTap,
 }: {
   name: string;
   crest: CrestData;
   /** Batches waiting to be collected. */
   ready: number;
-  /** Share of the next batch done, 0 to 1 (null: nothing running). */
-  progress: number | null;
+  rings: WorkshopRing[];
   onTap: () => void;
 }) {
-  const r = 38;
-  const c = 2 * Math.PI * r;
+  const shown = rings.slice(0, RINGS_MAX);
   return (
     <button
       type="button"
@@ -156,24 +205,43 @@ export function HomeMarker({
       onClick={onTap}
       className="marker-hit relative -ml-[46px] -mt-[46px] flex h-[92px] w-[92px] items-center justify-center"
     >
-      <span className="absolute inset-0 rounded-full ring-1 ring-gold/20" />
-      <span className="absolute -inset-5 rounded-full ring-1 ring-gold/[0.08]" />
-      {ready > 0 && <span className="marker-halo marker-halo-gold absolute inset-1 rounded-full" />}
-      {progress !== null && (
-        <svg viewBox="0 0 92 92" className="absolute inset-0 -rotate-90" aria-hidden="true">
-          <circle
-            cx="46"
-            cy="46"
-            r={r}
-            fill="none"
-            stroke="rgb(var(--lagoon))"
-            strokeOpacity="0.85"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray={`${(c * Math.min(1, Math.max(0.02, progress))).toFixed(1)} ${c.toFixed(1)}`}
-          />
-        </svg>
+      {ready > 0 && (
+        <span className="marker-halo marker-halo-gold absolute -inset-2 rounded-full" />
       )}
+      <svg
+        viewBox="-60 -60 120 120"
+        className="pointer-events-none absolute -inset-[14px] h-[120px] w-[120px] -rotate-90 overflow-visible"
+        aria-hidden="true"
+      >
+        {shown.map((w, i) => {
+          const r = 35 + i * 5;
+          const c = 2 * Math.PI * r;
+          const arc = w.ready ? 1 : (w.share ?? 0);
+          return (
+            // biome-ignore lint/suspicious/noArrayIndexKey: a ring's place is its workshop's rank.
+            <g key={i}>
+              <circle
+                r={r}
+                fill="none"
+                stroke="rgb(var(--info))"
+                strokeOpacity="0.28"
+                strokeWidth="3"
+              />
+              {(w.ready || w.share !== null) && (
+                <circle
+                  r={r}
+                  fill="none"
+                  stroke={w.ready ? "rgb(var(--lagoon))" : "rgb(var(--info))"}
+                  strokeOpacity={w.ready ? 0.95 : 0.85}
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray={`${(c * Math.min(1, Math.max(0.02, arc))).toFixed(1)} ${c.toFixed(1)}`}
+                />
+              )}
+            </g>
+          );
+        })}
+      </svg>
       <span
         className="marker-orb relative flex h-[60px] w-[60px] items-center justify-center rounded-full shadow-[0_0_28px_rgb(var(--gold)/0.45),inset_-5px_-7px_12px_rgb(0_0_0/0.35)]"
         style={{
@@ -184,13 +252,13 @@ export function HomeMarker({
         <Crest crest={crest} size={34} />
       </span>
       {ready > 0 && (
-        <span className="absolute right-0 top-1">
-          <Pill tone="gold">{ready}</Pill>
+        <span className="absolute -right-1 -top-1">
+          <Pill tone="lagoon">{ready}</Pill>
         </span>
       )}
       <span
         data-coach-with="home"
-        className="pointer-events-none absolute left-1/2 top-[calc(100%-4px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
+        className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] -translate-x-1/2 whitespace-nowrap font-place text-xs font-bold uppercase tracking-[0.18em] text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
       >
         {name}
       </span>

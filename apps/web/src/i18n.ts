@@ -152,6 +152,15 @@ const frDict = {
 
   game: {
     ui: { howItWorks: "Comment ça marche ?" },
+    /** The goods' chains, as the Rialto groups them (Lagune). */
+    chains: {
+      food: "Vivres",
+      construction: "Construction",
+      carpentry: "Charpente",
+      glass: "Verrerie",
+      drapery: "Draperie",
+      orient: "Outre-mer",
+    } as Record<string, string>,
     map: {
       home: (pseudo: string) => (pseudo ? `Maison ${pseudo}` : "Votre maison"),
       homeLabel: "Comptoir",
@@ -172,6 +181,42 @@ const frDict = {
           .join(", "),
       carts: "Charrettes libres",
       resumeGuide: "Reprendre le guide",
+      /** What the workshops earn an hour, under the purse (theoretical, at reference prices). */
+      rate: (amount: string) => `≈ +${amount}/h`,
+      /** The strip of what comes next, above the doors. */
+      /** The counter's workshops in its panel. */
+      /** The counter up close, its workshops in orbit around it. */
+      orbit: {
+        load: "Charger une mule",
+        missing: (n: number) => `il en manque ${n}`,
+        back: "Retour à la carte",
+        store: "Magasin",
+        storeLine: (n: number) => `Magasin · ${n} en stock`,
+        summary: (ready: number, running: number) =>
+          [
+            ready > 0 ? `${ready} lot${ready > 1 ? "s" : ""} prêt${ready > 1 ? "s" : ""}` : null,
+            running > 0 ? `${running} en cours` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || "Ateliers au repos",
+        bread: (days: number) => `Pain des ouvriers : ${days} j`,
+        harvest: "Récolter et relancer",
+        waits: (resource: string) => `attend ${resource.toLowerCase()}`,
+        level: (n: number) => `niv. ${n}`,
+      },
+      workshopRow: {
+        ready: (n: number) => (n > 1 ? `${n} prêts` : "Prêt"),
+        idle: "À lancer",
+        starved: "Sans matière",
+      },
+      timeline: {
+        label: "À venir",
+        now: "maintenant",
+        ready: (workshop: string) => `${workshop} prêt`,
+        pays: (city: string) => `${city} paie`,
+        orders: "Commandes",
+        back: (vehicle: string) => `${vehicle} rentre`,
+      },
       /** The cards that unfold beside the HUD's counters. */
       tips: {
         cash: {
@@ -2052,7 +2097,7 @@ const frDict = {
       sellCity: (resource: string) =>
         `Vendez vos ${resource.toLowerCase()} à la ville qui paie le mieux.`,
       goRoutes:
-        "Les villes passent commande : la pastille d'une ville compte celles que votre stock couvre. Touchez une charrette.",
+        "Chaque marque autour d'une ville est une commande, pleine si votre stock la couvre. Touchez une charrette.",
       deliver:
         "Ouvrez les cargaisons : cochez une commande que votre stock couvre, la ville paie à l'arrivée.",
       dispatch: "Touchez « Partir » (ou laissez filer le compte à rebours).",
