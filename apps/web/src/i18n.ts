@@ -1408,6 +1408,7 @@ const frDict = {
     },
     ledger: {
       title: "Livre de compte",
+      constellation: (done: number, all: number) => `${done} missions faites sur ${all}`,
       claim: "Encaisser",
       go: "Y aller",
       reward: "Récompense",

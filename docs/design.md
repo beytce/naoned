@@ -234,6 +234,14 @@ Le mode qui remplace la Campagne depuis le 18 octobre 2026 (`docs/plan-terraferm
 - **Bon retour** (`Welcome`) : centré comme un lieu qu'on retrouve, le nom du comptoir puis le gagné en grand chiffre doré ; chaque fait par un point de son rôle (gain vert d'eau, perte vermillon, fait lapis, attente creux) ; la semaine close en carte cerclée d'or ; une seule action en or au pied.
 - Le test de mise en page ouvre aussi le Profil, le Classement et un Bon retour réécrit à son plus plein (`profil`, `classement`, `bon-retour`) ; tout ce qui s'y touche fait 44 px.
 
+## Livre de compte, Ballots, Fin de saison, Pass (Lagune, 26 octobre 2026)
+
+- **Livre de compte** (`Ledger`) : les missions en constellation, tracée à mesure qu'on les remplit (encaissées vert d'eau et reliées d'un trait plein, à encaisser en or avec son halo, ouvertes cerclées de lapis, à venir en creux) ; « 4 / 10 » en grand chiffre ; la récompense en pilules (marque de la marchandise et quantité, ducats en or).
+- **Ballots de Faraj** (`BaleScreen`) : le quai baigné du violet de l'outre-mer (Faraj vient d'Alexandrie), le nom en lettres de lieu ; « Probabilités » et « Qui est Faraj ? » en pilules fantômes ; les cartes sorties montrent la marque de la marchandise, la rareté écrite à sa couleur au-dessus.
+- **Fin de saison** (`Ceremony`) : le rang final se lève comme un astre sur deux vagues (soleil d'or pour le top 10, étoile lapis sinon) ; le podium en trois anneaux or, argent, bronze (le blason, ou l'initiale de la maison) ; les récompenses en lignes arrondies marquées d'une étoile d'or.
+- **Pass Négociant** (`PassPanel`) : son sceau, une étoile d'or dans son anneau pointillé ; ses avantages en lignes arrondies ; « gagnable au classement » dans un cadre doré pointillé ; le prix en pilule fantôme.
+- Le test de mise en page ouvre aussi un ballot en attente (ses probabilités dépliées) et une fin de saison, réécrits (`ballots`, `fin-de-saison`).
+
 ## Charger et partir
 
 - **Charrette choisie** (`CartPanel`) : bord vert d'eau et croix en onglet ; nom, cale « 12/40 » et sa jauge, état (au comptoir, chargée pour…). Les villes qu'elle peut servir s'éclairent et leur route se dore, les autres s'estompent. Toucher une ville éclairée ouvre ses cargaisons ; toucher la ville de la cale prépare le départ.

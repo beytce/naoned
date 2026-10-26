@@ -1,4 +1,4 @@
-import { ResourceIcon } from "../art/resources.js";
+import { GoodsMark } from "../art/goods.js";
 import { fr } from "../i18n.js";
 import { Label, Panel, Ribbon, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
@@ -11,18 +11,89 @@ function Reward({ m }: { m: MissionView }) {
   return (
     <span className="inline-flex flex-wrap items-center gap-2 text-xs">
       {Object.entries(m.reward.goods).map(([r, q]) => (
-        <span key={r} className="inline-flex items-center gap-1">
-          <ResourceIcon code={r} size={18} />
-          {q}
+        <span
+          key={r}
+          className="inline-flex min-h-7 items-center gap-1 rounded-full bg-night-2 py-0.5 pl-1 pr-2.5"
+        >
+          <GoodsMark code={r} size={20} />
+          <b>{q}</b>
         </span>
       ))}
-      {BigInt(m.reward.ducats) > 0n && <span className="text-gold">{d(m.reward.ducats)}</span>}
+      {BigInt(m.reward.ducats) > 0n && (
+        <span className="inline-flex min-h-7 items-center rounded-full bg-night-2 px-2.5 font-semibold text-gold">
+          +{d(m.reward.ducats)}
+        </span>
+      )}
       {m.reward.vehicles.length > 0 && (
         <span className="font-semibold text-lagoon">
           {m.reward.vehicles.map((v) => fr.game.carnet.vehicle(vehicleName(v))).join(" ")}
         </span>
       )}
     </span>
+  );
+}
+
+/**
+ * The ledger's missions as a constellation, drawn as they are met (Lagune): claimed ones lagoon,
+ * one to cash gold and haloed, the open ones ringed in lapis, those to come hollow.
+ */
+function Constellation({ missions }: { missions: MissionView[] }) {
+  const n = missions.length;
+  const step = n > 1 ? 296 / (n - 1) : 0;
+  const at = missions.map((_, i) => ({ x: 12 + i * step, y: i % 2 === 0 ? 40 : 18 }));
+  const lit = (m: MissionView) => m.claimed;
+  return (
+    <svg
+      viewBox="0 0 320 56"
+      className="mt-2 h-14 w-full"
+      role="img"
+      aria-label={fr.game.ledger.constellation(
+        missions.filter((m) => m.claimed).length,
+        missions.length,
+      )}
+    >
+      {at.slice(1).map((p, i) => {
+        const a = missions[i] as MissionView;
+        const b = missions[i + 1] as MissionView;
+        const q = at[i] as { x: number; y: number };
+        const tone = lit(a) && lit(b) ? "rgb(var(--lagoon) / 0.8)" : "rgb(var(--line))";
+        return (
+          <line
+            key={b.id}
+            x1={q.x}
+            y1={q.y}
+            x2={p.x}
+            y2={p.y}
+            stroke={tone}
+            strokeWidth="2"
+            strokeDasharray={lit(a) && lit(b) ? undefined : "2 5"}
+          />
+        );
+      })}
+      {missions.map((m, i) => {
+        const p = at[i] as { x: number; y: number };
+        if (m.claimed)
+          return <circle key={m.id} cx={p.x} cy={p.y} r="6" fill="rgb(var(--lagoon))" />;
+        if (m.done)
+          return (
+            <g key={m.id}>
+              <circle cx={p.x} cy={p.y} r="13" fill="rgb(var(--gold) / 0.18)" />
+              <circle cx={p.x} cy={p.y} r="8" fill="rgb(var(--gold))" />
+            </g>
+          );
+        return (
+          <circle
+            key={m.id}
+            cx={p.x}
+            cy={p.y}
+            r="6"
+            fill="rgb(var(--night-2))"
+            stroke={m.unlocked ? "rgb(var(--info))" : "rgb(var(--line))"}
+            strokeWidth="2"
+          />
+        );
+      })}
+    </svg>
   );
 }
 
@@ -41,10 +112,12 @@ export function Ledger(props: GameProps) {
     <Panel glow={open.some((m) => m.done) ? "gold" : "lagoon"}>
       <div className="flex items-center justify-between">
         <Label className="text-gold">{t.title}</Label>
-        <span className="meta">
-          {claimedCount}/{missions.length}
+        <span className="font-display font-extrabold [font-stretch:125%]">
+          {claimedCount}
+          <span className="text-xs text-cream-dim"> / {missions.length}</span>
         </span>
       </div>
+      <Constellation missions={missions} />
       <ul className="mt-3 space-y-3">
         {open.map((m) => {
           const [title, why] = t.items[m.id] ?? [m.id, ""];

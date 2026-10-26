@@ -1,7 +1,7 @@
 import { type CSSProperties, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { BaleArt, CardBack, FarajMark, rarityOf } from "../art/bale.js";
-import { ResourceIcon } from "../art/resources.js";
+import { GoodsMark } from "../art/goods.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { locale } from "../lang.js";
@@ -38,7 +38,7 @@ export function BaleTile(props: GameProps) {
     <button
       type="button"
       onClick={() => props.setSheet("bales")}
-      className={`flex w-full items-center gap-3 cut border px-3 py-2 text-left text-sm transition active:scale-[0.99] ${ready ? "border-gold/60 bg-gold/10 text-gold" : "border-line bg-night-3 text-cream-dim"}`}
+      className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left text-sm transition active:scale-[0.99] ${ready ? "border-gold/60 bg-gold/10 text-gold" : "border-line bg-night-3 text-cream-dim"}`}
     >
       <BaleArt size={44} className={ready ? "bale-float shrink-0" : "shrink-0 opacity-70"} />
       <span className="min-w-0 flex-1">
@@ -150,13 +150,15 @@ export function BaleScreen(props: GameProps) {
       className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none animate-fade flex-col overflow-y-auto border-0 bg-night p-0 text-cream"
       style={{
         backgroundImage:
-          "radial-gradient(ellipse at 50% 38%, rgb(var(--lagoon) / 0.16), transparent 60%)",
+          "radial-gradient(ellipse at 50% 36%, rgb(180 139 230 / 0.2), transparent 60%)",
       }}
     >
       <header className="flex items-start justify-between gap-3 px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))]">
         <div>
           <Label className="text-cream-dim">{t.kicker}</Label>
-          <h2 className="font-display text-xl font-extrabold uppercase">{t.title}</h2>
+          <h2 className="font-place text-xl font-bold uppercase tracking-[0.15em] text-[#B48BE6]">
+            {t.title}
+          </h2>
         </div>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-night-3 px-3 py-1 font-sans text-xs text-cream-dim ring-1 ring-inset ring-line">
@@ -228,17 +230,17 @@ export function BaleScreen(props: GameProps) {
                 <p className="label">{t.tapToOpen}</p>
               </>
             )}
-            <div className="flex justify-center gap-4 text-xs">
+            <div className="flex flex-wrap justify-center gap-2 text-xs">
               <button
                 type="button"
-                className="text-lagoon underline"
+                className="inline-flex min-h-11 items-center rounded-full px-4 text-info ring-1 ring-inset ring-line transition active:scale-95"
                 onClick={() => setOdds((o) => !o)}
               >
                 {t.odds}
               </button>
               <button
                 type="button"
-                className="text-lagoon underline"
+                className="inline-flex min-h-11 items-center rounded-full px-4 text-info ring-1 ring-inset ring-line transition active:scale-95"
                 onClick={() => setStory((s) => !s)}
               >
                 {t.storyTitle}
@@ -345,14 +347,11 @@ function Card(props: {
             boxShadow: `0 0 18px 2px ${look.glow}`,
           }}
         >
-          <span
-            className="w-full rounded-md py-0.5 font-mono text-xs font-bold uppercase tracking-wider text-night"
-            style={{ background: look.frame }}
-          >
+          <span className="text-xs font-semibold" style={{ color: look.frame }}>
             {label}
           </span>
           <span className="relative">
-            <ResourceIcon code={card.resource} size={52} />
+            <GoodsMark code={card.resource} size={52} />
             {card.rarity === "legendary" && turned && <Sparks />}
           </span>
           <span className="w-full">
@@ -405,7 +404,7 @@ function Summary(props: {
         <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm">
           {[...goods].map(([r, q]) => (
             <li key={r} className="inline-flex items-center gap-1.5">
-              <ResourceIcon code={r} size={20} />
+              <GoodsMark code={r} size={22} />
               <span className="font-semibold tabular-nums text-lagoon">+{q}</span>
               <span className="text-cream-dim">{props.names(r)}</span>
             </li>
@@ -451,7 +450,7 @@ function Odds({ bales, props }: { bales: BalesView; props: GameProps }) {
               <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-cream-dim">
                 {o.goods.map((g) => (
                   <span key={g.resource} className="inline-flex items-center gap-1">
-                    <ResourceIcon code={g.resource} size={16} />
+                    <GoodsMark code={g.resource} size={16} />
                     {props.names.resource(g.resource)} {pct(g.chanceBps)}
                   </span>
                 ))}
