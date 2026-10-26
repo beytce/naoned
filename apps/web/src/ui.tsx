@@ -9,16 +9,16 @@ import { fr } from "./i18n.js";
 type Tone = "gold" | "lagoon" | "vermilion" | "ghost";
 
 /** Face and solid offset shadow of each tone. */
-const TONES: Record<Tone, { face: string; shadow: string }> = {
-  gold: { face: "bg-gold text-ink", shadow: "bg-gold-deep" },
-  lagoon: { face: "bg-lagoon text-on-lagoon", shadow: "bg-lagoon-deep" },
-  vermilion: { face: "bg-vermilion text-cream", shadow: "bg-vermilion-deep" },
-  ghost: { face: "bg-night-4 text-cream", shadow: "bg-line" },
+const TONES: Record<Tone, { face: string }> = {
+  gold: { face: "bg-gold text-ink shadow-[0_0_0_5px_rgb(var(--gold)/0.15)]" },
+  lagoon: { face: "bg-lagoon text-on-lagoon" },
+  vermilion: { face: "bg-vermilion text-cream" },
+  ghost: { face: "bg-transparent text-cream ring-1 ring-inset ring-line" },
 };
 
 /**
- * Button: a slanted slab on a solid offset shadow, gold for the one action that matters on the
- * screen. Pressed, the face sinks onto its shadow.
+ * Button, in the Lagune direction: a pill, gold for the one action that matters on the screen
+ * (with its halo), ghost (a fine line) for the others. Pressed, it sinks a little.
  */
 export function Slab(props: {
   children: ReactNode;
@@ -37,10 +37,10 @@ export function Slab(props: {
   label?: string;
 }) {
   const size = {
-    // Drawn small, touched at 44 px: the hit area reaches 8 px above and below the slab.
-    sm: "px-4 py-2 text-xs",
-    md: "px-6 py-3 text-sm",
-    lg: "px-7 py-4 text-base",
+    // Drawn small, touched at 44 px: the hit area reaches 8 px above and below the pill.
+    sm: "min-h-9 px-4 py-1.5 text-[0.8125rem]",
+    md: "min-h-11 px-6 py-2.5 text-sm",
+    lg: "min-h-[3.25rem] px-7 py-3 text-[0.9375rem]",
   }[props.size ?? "md"];
   if (props.tone === "text")
     return (
@@ -70,14 +70,10 @@ export function Slab(props: {
       data-coach={props.coach}
       data-slab={props.tone ?? "gold"}
       aria-label={props.label}
-      className={`group relative isolate inline-flex pb-1 pr-1 font-display font-extrabold uppercase tracking-wide disabled:pointer-events-none disabled:opacity-35 ${props.size === "sm" ? "before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']" : ""} ${props.className ?? ""}`}
+      className={`group relative isolate inline-flex font-display font-extrabold disabled:pointer-events-none disabled:opacity-35 ${props.size === "sm" ? "before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']" : ""} ${props.className ?? ""}`}
     >
       <span
-        aria-hidden="true"
-        className={`slab-shadow bevel absolute inset-0 left-1 top-1 -z-10 ${tone.shadow}`}
-      />
-      <span
-        className={`slab-face bevel flex w-full items-center justify-center text-center transition-transform duration-100 ease-out group-hover:brightness-105 group-active:translate-x-[3px] group-active:translate-y-[3px] ${size} ${tone.face}`}
+        className={`slab-face flex w-full items-center justify-center rounded-full text-center leading-tight transition-transform duration-100 ease-out group-hover:brightness-105 group-active:scale-[0.97] ${size} ${tone.face}`}
       >
         <span>{unitsKept(props.children)}</span>
       </span>
@@ -874,7 +870,8 @@ export function Segmented<T extends string>({
           aria-pressed={value === o.value}
           data-coach={coach ? `${coach}-${o.value}` : undefined}
           onClick={() => onChange(o.value)}
-          className={`slab min-h-11 px-4 py-2.5 font-display text-sm font-semibold transition-colors ${value === o.value ? "bg-info/20 font-bold text-info" : "bg-night-3 text-cream-dim"}`}
+          // Lagune: a pill, the chosen one lit in lapis.
+          className={`min-h-11 rounded-full px-4 py-2.5 font-display text-sm font-semibold transition-colors ${value === o.value ? "bg-info font-bold text-ink" : "text-cream-dim ring-1 ring-inset ring-line"}`}
         >
           {o.label}
         </button>

@@ -76,13 +76,13 @@ Chaque teinte reste à ΔE ≥ 25 de l'or, du vert d'eau, du cinabre, du lapis e
 
 ## Composants (`apps/web/src/ui.tsx`)
 
-Formes inspirées des jeux de cartes mobiles : des biseaux plutôt que des arrondis, partout (`.cut` pour les cartes et les lignes, `.slab` pour les puces et les badges). Le cercle est réservé aux médaillons, avatars, pastilles et jauges ; les feuilles gardent leur poignée arrondie.
-- `Slab` : bouton en parallélogramme (`.bevel`) posé sur une ombre pleine décalée de sa teinte sombre. À l'appui, la face s'enfonce sur son ombre, avec un tick haptique. Or pour l'unique action qui compte à l'écran, fantôme pour les autres ; jamais vert d'eau. Trois niveaux seulement : **or** (l'unique action), **fantôme** (les autres), **texte** (`Slab tone="text"`, en lapis, sans soulignement : « Lire le guide », « Passer »). Le lien souligné n'existe pas dans le jeu. Sous les capitales, l'unité d'un montant reste un petit « d ».
-- Les cartes à coins coupés (`.cut`) qui portent une bordure gardent leur filet sur les diagonales : `index.css` les retrace, de la couleur et de l'épaisseur de la bordure, à un seul endroit pour toutes (`test/frames.test.ts`). Un choix actif (préréglage de quantité) se lit choisi : allumé, avec sa coche, jamais comme éteint.
+Formes de la direction Lagune (depuis le 25 octobre 2026 ; avant, des biseaux) : **aucun coin coupé**. Les cartes et les lignes sont arrondies (`.cut`, 18 px), les puces, badges et boutons sont des pilules (`.slab`, `.bevel`, `Slab`) ; un lieu, un atelier, une ville, une mule sont des ronds (astres). `index.css` le fait en un seul endroit, `test/frames.test.ts` le garde.
+- `Slab` : bouton en pilule, en casse de phrase (Archivo). À l'appui, il s'enfonce un peu, avec un tick haptique. Trois niveaux seulement : **or** (l'unique action qui compte à l'écran, avec son halo), **fantôme** (un filet `line`, les autres), **texte** (`Slab tone="text"`, en lapis, sans soulignement : « Lire le guide », « Passer »). Jamais vert d'eau. Le lien souligné n'existe pas dans le jeu. Pendant le guide, seule la cible reste en or.
+- Un choix actif (préréglage de quantité, `Segmented`) se lit choisi : pilule allumée en lapis, avec sa coche, jamais comme éteint ; les autres en filet.
 - `HudChip` : sur la carte, une action à portée de pouce ou un état à lire d'un coup d'œil, un picto et un mot court (« Escarmouche », « Semaine »), 44 px de haut, lapis par défaut, vermillon quand elle presse.
 - `MiniCrest` (`art/crest.tsx`) : le blason réduit à un disque de son émail et son meuble en silhouette, pour les marques de 14 à 18 px de la Terraferme.
-- `Panel` : carte à coins coupés (`.cut`), haut gauche et bas droit, avec un liseré. Une lueur intérieure s'ajoute quand elle doit attirer l'œil. Les tuiles et cartes de commande suivent la même coupe.
-- `Badge`, puces du stock, pastilles de tri : petits biseaux (`.slab`).
+- `Panel` : carte arrondie (`.cut`), avec un liseré. Une lueur intérieure s'ajoute quand elle doit attirer l'œil. Les tuiles et cartes de commande suivent la même coupe.
+- `Badge`, puces du stock, pastilles de tri : pilules (`.slab`).
 - `Tabs` :
   - `pills` : choix d'une valeur, par exemple le tri ;
   - `underline` : parties d'un écran (Joueurs et Villes). Capitales sur un double trait crème et lapis qui glisse d'un onglet à l'autre.
@@ -132,7 +132,7 @@ Un seul écran, la Vénétie en **portulan** à la lueur des lampes (`PortolanTe
 | Lieu choisi | État | Actions |
 | --- | --- | --- |
 | **Comptoir** | Le toucher ouvre **le comptoir en orbite**, plein écran (`ComptoirOrbit`, `map/Orbit.tsx`) : le soleil au blason, chaque atelier une étoile en orbite (la marque de ce qu'il fait, l'arc du lot, vert d'eau et « +10 » quand il est prêt, pointillé quand il attend : crème pour du travail, gris pour sa matière, jamais une alerte), la chaîne tracée entre ceux qui se nourrissent (tirets à la couleur de la marchandise, qui coulent), une parcelle libre « Bâtir ». Dessous, le magasin en puces (masqué sous 700 px de haut) ; au pied, l'état (lots prêts, en cours, pain des ouvriers) | Récolter et relancer (or) · Ateliers · Magasin ; toucher un atelier ouvre sa production, la parcelle le catalogue |
-| **Ville** | Commandes couvertes par le stock, Criée en cours, renouvellement | Cargaisons · Criée ; Venise : Rialto (et les galères de la Muda en tête du Rialto) |
+| **Ville** | La toucher ouvre **la ville en orbite**, plein écran (`CityOrbit`, `map/Orbit.tsx`) : son monument au centre, ses commandes ouvertes en orbite (huit au plus), chacune la marque de sa marchandise, pleine quand le stock la couvre, sa quantité et ce qu'elle paie (ou « il en manque n » en cinabre), une urgente avec son horloge cinabre ; ‹ › vers la ville suivante ; au pied, l'état (livrables, Criée, renouvellement) | « Charger une mule » (or quand le stock couvre et qu'une mule est libre) ; en fantôme : Criée, Entrepôt, Fournisseurs ; Venise : Rialto |
 | **Charrette au comptoir** | Au comptoir, chargée pour…, jauge de cale | Cargaisons · Partir |
 | **Charrette en route** | Vers la ville ou retour, temps restant | Suivre |
 
@@ -221,7 +221,7 @@ Le mode qui remplace la Campagne depuis le 18 octobre 2026 (`docs/plan-terraferm
 ## Charger et partir
 
 - **Charrette choisie** (`CartPanel`) : bord vert d'eau et croix en onglet ; nom, cale « 12/40 » et sa jauge, état (au comptoir, chargée pour…). Les villes qu'elle peut servir s'éclairent et leur route se dore, les autres s'estompent. Toucher une ville éclairée ouvre ses cargaisons ; toucher la ville de la cale prépare le départ.
-- **Cargaisons** (`CargoSheet`) : feuille avec onglets Récompense, Distance, Ville ; une ligne par commande (pastille à cocher, marchandise, ville et durée, récompense en or), grisée avec sa raison quand elle ne va pas (autre ville, trop lourd, stock) ; la cale en bas avec sa jauge et ses commandes cochées ; « Prêt pour Vicence · 63 d ».
+- **Cargaisons** (`CargoSheet`) : en tête, la mule en astre (`HoldRing`) : sa cale est l'anneau, rempli à la couleur de chaque marchandise chargée ; puis les tris en pilules (Récompense, Distance, Ville) ; une ligne arrondie par commande (marque, quantité, ville et durée, récompense en or, rond à cocher à droite), grisée avec sa raison quand elle ne va pas (autre ville, trop lourd, stock) ; la cale en bas avec sa jauge et ses commandes cochées ; « Prêt pour Vicence · 63 d » en or.
 - **Départ** (`DeparturePanel`) : la route en pointillés vert d'eau jusqu'à la ville, « Départ vers Padoue · 10 s » et sa barre, les escortes en puces avec leur risque (choisir relance le compte), ✓ Partir et ✕ Annuler ; à zéro, la charrette part d'elle-même. Elle reste choisie : on la voit quitter le comptoir.
 
 ## Bon retour : le rapport de chaque visite

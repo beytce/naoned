@@ -1,14 +1,18 @@
 import type { ReactNode } from "react";
+import { CityIcon } from "../../art/cities.js";
 import { Crest, type CrestData } from "../../art/crest.js";
 import { GoodsMark, goodsColour } from "../../art/goods.js";
 import { Coin } from "../../art/icons.js";
 import { fr } from "../../i18n.js";
 import { clock } from "../../ui.js";
 import type { GameProps } from "../Game.js";
-import { amount } from "../format.js";
+import { amount, d } from "../format.js";
 import { harvestAndRestart } from "../harvest.js";
+import { total } from "../roadKit.js";
 import type { BuildingView } from "../types.js";
-import { readyOf, recipeOf, workshopState } from "../workshops.js";
+import { have, readyOf, recipeOf, workshopState } from "../workshops.js";
+import { orbStyle } from "./Markers.js";
+import { ACTION_ICONS as A } from "./actions.js";
 import { Icon } from "./icons.js";
 
 /** Where the workshops turn: the orbit's radius, in % of the square that holds it. */
@@ -317,5 +321,212 @@ function WorkshopStar({ props, star }: { props: GameProps; star: Star }) {
         </span>
       </button>
     </Place>
+  );
+}
+
+/** The most orders drawn around a city up close; the others wait for the cargo sheet. */
+const CITY_ORDERS = 8;
+
+/**
+ * A city seen up close, once touched on the map: its monument in the middle, its open orders in
+ * orbit around it (the mark of the good, full when the stock covers it, its quantity and what it
+ * pays, a red clock on an urgent one), then at the foot its state and the one gold action, loading
+ * a free mule for it; its other doors (criée, warehouse, suppliers, Rialto) in ghost pills.
+ */
+export function CityOrbit({
+  props,
+  code,
+  freeCart,
+  onClose,
+  onPrev,
+  onNext,
+  onCargo,
+  onSheet,
+}: {
+  props: GameProps;
+  code: string;
+  freeCart: boolean;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  onCargo: () => void;
+  onSheet: (s: string) => void;
+}) {
+  const { view, now } = props;
+  const m = fr.game.map;
+  const t = m.orbit;
+  const road = view.road;
+  const orders = (road?.orders ?? []).filter((o) => o.city === code && o.status === "open");
+  const shown = orders.slice(0, CITY_ORDERS);
+  const covered = orders.filter((o) => have(view, o.resource) >= o.quantity).length;
+  const criee =
+    view.criee && view.criee.city === code && view.criee.endsAt > now ? view.criee : null;
+  const nextDay = props.catalog.world.startsAt + view.day * 86_400_000;
+  const venice = code === "venezia";
+  const status = criee
+    ? m.city.criee(
+        props.names.resource(criee.resource),
+        String(Math.round(criee.premiumBps / 100)),
+        clock(criee.endsAt - now),
+      )
+    : road
+      ? orders.length > 0
+        ? m.city.deliverable(covered)
+        : m.city.none(clock(nextDay - now))
+      : venice
+        ? m.city.venice
+        : "";
+  const sells = !road && view.cityQuotes.some((q) => q.city === code);
+  const held = view.supplies.filter((s) => s.city === code);
+  const doors: { label: string; on: () => void; coach?: string }[] = [];
+  if (sells) doors.push({ label: A.sell.label, on: () => onSheet(`sell:${code}`) });
+  if (criee) doors.push({ label: m.buttons.criee, on: () => onSheet("criee") });
+  if (road && view.warehouses)
+    doors.push({ label: A.warehouse.label, on: () => onSheet(`warehouse:${code}`) });
+  if (road) doors.push({ label: A.suppliers.label, on: () => onSheet(`suppliers:${code}`) });
+  if (venice)
+    doors.push({ label: m.buttons.rialto, on: () => props.goTo("marche"), coach: "panel-rialto" });
+  const at = (i: number) => {
+    const a = ((-90 + (360 / Math.max(1, shown.length)) * i) * Math.PI) / 180;
+    return { x: 50 + ORBIT * Math.cos(a), y: 50 + ORBIT * Math.sin(a) };
+  };
+  const cargo = road && orders.length > 0;
+  return (
+    <section
+      data-orbit
+      // A place over the map (the guide sees the map covered), and a place's panel for the checks.
+      data-place
+      data-panel
+      aria-label={props.names.city(code)}
+      className="orbit-in absolute inset-0 z-[25] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_34%,rgb(var(--night-3))_0%,rgb(var(--night))_62%)] lg:right-[var(--side,0px)]"
+    >
+      <header className="relative z-10 flex items-center gap-1 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <button
+          type="button"
+          aria-label={t.back}
+          onClick={onClose}
+          className="hud-orb flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-cream transition active:scale-90"
+        >
+          {Icon.chevronLeft()}
+        </button>
+        <button
+          type="button"
+          aria-label={m.prev}
+          onClick={onPrev}
+          className="ml-auto flex h-11 w-11 shrink-0 items-center justify-center text-cream-dim"
+        >
+          {Icon.chevronLeft()}
+        </button>
+        <h2 className="min-w-0 truncate text-center font-place text-base font-bold uppercase tracking-[0.25em]">
+          {props.names.city(code)}
+        </h2>
+        <button
+          type="button"
+          aria-label={m.next}
+          onClick={onNext}
+          className="mr-auto flex h-11 w-11 shrink-0 items-center justify-center text-cream-dim"
+        >
+          {Icon.chevronRight()}
+        </button>
+        <span className="w-11 shrink-0" />
+      </header>
+
+      <div className="flex min-h-0 flex-1 items-center justify-center px-2">
+        <div className="relative aspect-square h-full max-h-[26rem] max-w-full">
+          <svg
+            viewBox="0 0 100 100"
+            className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+            aria-hidden="true"
+          >
+            <circle
+              cx="50"
+              cy="50"
+              r={ORBIT}
+              fill="none"
+              stroke="rgb(var(--info) / 0.3)"
+              strokeWidth="0.3"
+              strokeDasharray="0.8 1.6"
+            />
+          </svg>
+          <span
+            className="absolute left-1/2 top-1/2 flex h-[26%] w-[26%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full shadow-[0_8px_28px_rgb(0_0_0/0.5)] ring-2 ring-[#BFE3FF]/45"
+            style={orbStyle(code)}
+          >
+            <CityIcon code={code} className="h-3/5 w-3/5 drop-shadow-[0_1px_2px_rgb(0_0_0/0.6)]" />
+          </span>
+          {shown.map((o, i) => {
+            const p = at(i);
+            const ok = have(view, o.resource) >= o.quantity;
+            const name = props.names.resource(o.resource);
+            return (
+              <Place key={o.id} x={p.x} y={p.y}>
+                <button
+                  type="button"
+                  aria-label={`${o.quantity} ${name} · ${d(total(o))}`}
+                  disabled={!freeCart}
+                  onClick={onCargo}
+                  className={`flex w-24 flex-col items-center gap-0.5 transition active:scale-95 ${ok ? "" : "opacity-80"}`}
+                >
+                  <span className="relative flex h-16 w-16 items-center justify-center">
+                    <GoodsMark code={o.resource} size={44} covered={ok} />
+                    {o.kind === "urgent" && (
+                      <span className="absolute -right-3 -top-1 rounded-full bg-vermilion px-1.5 font-display text-xs font-bold text-ink">
+                        {clock(o.expiresAt - now)}
+                      </span>
+                    )}
+                  </span>
+                  <span className="max-w-full truncate text-[0.8125rem] font-bold text-cream [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
+                    {o.quantity} {name.toLowerCase()}
+                  </span>
+                  {ok ? (
+                    <span className="font-display text-xs font-extrabold text-gold">
+                      {d(total(o))}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-vermilion">
+                      {t.missing(o.quantity - have(view, o.resource))}
+                    </span>
+                  )}
+                </button>
+              </Place>
+            );
+          })}
+        </div>
+      </div>
+
+      <section className="rounded-t-3xl border-t border-line bg-night-2 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+        <p
+          className={`mb-3 text-sm ${criee ? "text-vermilion" : covered > 0 ? "text-lagoon" : "text-cream-dim"}`}
+        >
+          {status}
+        </p>
+        {cargo && (
+          <button
+            type="button"
+            data-coach="panel-cargo"
+            disabled={!freeCart}
+            onClick={onCargo}
+            className={`mb-2 flex h-[52px] w-full items-center justify-center gap-2 rounded-full font-display text-[0.9375rem] font-extrabold transition active:scale-[0.98] disabled:opacity-50 ${covered > 0 && freeCart ? "bg-gold text-ink shadow-[0_0_0_5px_rgb(var(--gold)/0.15)]" : "text-cream ring-1 ring-inset ring-line"}`}
+          >
+            {Icon.cargo()}
+            {freeCart ? t.load : m.city.noCart}
+          </button>
+        )}
+        {doors.length > 0 && (
+          <div className={`grid gap-2 ${doors.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
+            {doors.map((x) => (
+              <Ghost key={x.label} coach={x.coach} onClick={x.on}>
+                {x.label}
+              </Ghost>
+            ))}
+          </div>
+        )}
+        {held.length > 0 && (
+          <p className="mt-2 text-center text-xs text-gold">
+            {fr.game.suppliers.held(held.map((s) => props.names.resource(s.resource)).join(", "))}
+          </p>
+        )}
+      </section>
+    </section>
   );
 }
