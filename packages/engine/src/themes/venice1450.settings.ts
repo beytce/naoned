@@ -933,8 +933,16 @@ export const venice1450Settings: WorldSettingsInput = {
     unlockLevels: 5,
     options: {
       master: { transformYieldBps: 1_500 },
-      carter: { vehicleSpeedBps: 2_500, extraVehicles: 1 },
-      trader: { marketMakerQuotaBps: 2_500, taxDiscountBps: 200, extraOpenOrders: 3 },
+      carter: { vehicleSpeedBps: 2_500, extraVehicles: 1, urgentPreviewMinutes: 20 },
+      // The experts' E1-6 (25 October 2026): the trader three times the Dogana's quota, which
+      // buys from them at no less than 85 % of the reference; the carter sees the urgent orders
+      // 20 minutes before they open (taken at their hour like any).
+      trader: {
+        marketMakerQuotaBps: 20_000,
+        taxDiscountBps: 200,
+        extraOpenOrders: 3,
+        marketMakerFloorBps: 8_500,
+      },
       // Marchand du Levant: half as much again at the galleys of the Muda.
       levant: { mudaQuotaBps: 5_000 },
     },

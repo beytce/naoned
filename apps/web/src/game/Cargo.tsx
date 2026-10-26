@@ -95,6 +95,10 @@ export function CargoSheet({
   const open = road.orders.filter(
     (o) => o.status === "open" && !load.includes(o.id) && (!city || o.city === city),
   );
+  // The carter's mastery: urgent orders seen before they open (E1-6), not yet to be loaded.
+  const soon = road.orders.filter(
+    (o) => o.status === "upcoming" && o.kind === "urgent" && (!city || o.city === city),
+  );
   const minutes = (o: DeliveryOrderView) => o.minutes[vehicle.type] ?? Number.POSITIVE_INFINITY;
   const sorted = [...open].sort((a, b) => {
     if (sort === "distance") return minutes(a) - minutes(b);
@@ -180,6 +184,22 @@ export function CargoSheet({
         )}
         {rows.map((o) => row(o, false))}
       </ul>
+      {soon.length > 0 && (
+        <ul className="space-y-1">
+          {soon.map((o) => (
+            <li key={o.id} className="flex items-center gap-2 text-xs text-cream-dim">
+              <ResourceIcon code={o.resource} size={20} />
+              <span className="min-w-0 flex-1 truncate">
+                {t().soon(
+                  `${o.quantity} ${props.names.resource(o.resource).toLowerCase()}`,
+                  props.names.city(o.city),
+                  clock(o.opensAt - props.now),
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="cut bg-night p-3 ring-1 ring-line">
         <div className="flex items-center gap-3">
           <Label>{t().hold}</Label>

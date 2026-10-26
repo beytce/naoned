@@ -33,6 +33,7 @@ import {
   nextMudaAt,
   nextWaveAt,
   openProjects,
+  orderVisible,
   playerQuota,
   quoteCitySale,
   rationsPerDay,
@@ -274,29 +275,32 @@ function roadView(ctx: WorldContext, state: WorldState, playerId: string, now: n
     contractsDone.ids.includes(ref);
   const types = Object.keys(ctx.settings.deliveries.vehicles);
   const rivalsOf = boardRivals(ctx, state, playerId, now);
-  const orders = deliveryOrdersFor(ctx, state, playerId, today).map((o) => ({
-    ...o,
-    /** Other active merchants who may take this order of the world's board. */
-    rivals: o.shared ? rivalsOf(o) : 0,
-    status:
-      done.has(o.id) || served(o.ref, o.kind)
-        ? ("done" as const)
-        : o.takenBy && o.takenBy !== playerId
-          ? ("taken" as const)
-          : now < o.opensAt
-            ? ("upcoming" as const)
-            : now >= o.expiresAt
-              ? ("expired" as const)
-              : ("open" as const),
-    /** The welcome order's express trip each way, in seconds, while the tutorial lasts. */
-    ...(o.welcome && welcomeTripMs(ctx, player, now) > 0
-      ? { express: welcomeTripMs(ctx, player, now) / 1000 }
-      : {}),
-    /** Minutes one way, per vehicle type. */
-    minutes: Object.fromEntries(
-      types.map((t) => [t, travelMinutesFor(ctx, state, playerId, o.city, t) ?? null]),
-    ),
-  }));
+  // An order not open yet stays out of sight, but the carter's urgent ones (E1-6).
+  const orders = deliveryOrdersFor(ctx, state, playerId, today)
+    .filter((o) => orderVisible(ctx, state, playerId, o, now))
+    .map((o) => ({
+      ...o,
+      /** Other active merchants who may take this order of the world's board. */
+      rivals: o.shared ? rivalsOf(o) : 0,
+      status:
+        done.has(o.id) || served(o.ref, o.kind)
+          ? ("done" as const)
+          : o.takenBy && o.takenBy !== playerId
+            ? ("taken" as const)
+            : now < o.opensAt
+              ? ("upcoming" as const)
+              : now >= o.expiresAt
+                ? ("expired" as const)
+                : ("open" as const),
+      /** The welcome order's express trip each way, in seconds, while the tutorial lasts. */
+      ...(o.welcome && welcomeTripMs(ctx, player, now) > 0
+        ? { express: welcomeTripMs(ctx, player, now) / 1000 }
+        : {}),
+      /** Minutes one way, per vehicle type. */
+      minutes: Object.fromEntries(
+        types.map((t) => [t, travelMinutesFor(ctx, state, playerId, o.city, t) ?? null]),
+      ),
+    }));
   const vehicles = vehiclesOf(state, playerId).map((v) => ({
     ...v,
     status: vehicleFree(v, now) ? ("free" as const) : ("busy" as const),

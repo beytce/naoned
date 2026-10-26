@@ -425,7 +425,13 @@ const frDict = {
     cargo: {
       title: "Cargaisons",
       sort: { reward: "Récompense", distance: "Distance", city: "Ville" },
-      kinds: { doge: "Doge", urgent: "Urgente", family: "Famille" } as Record<string, string>,
+      /** An urgent order the carter sees before it opens. */
+      soon: (goods: string, city: string, inTime: string) =>
+        `Urgente bientôt : ${goods} pour ${city}, dans ${inTime}`,
+      kinds: { doge: "Doge", urgent: "Urgente", family: "Famille", fondaco: "Fondaco" } as Record<
+        string,
+        string
+      >,
       why: {
         noRoad: "pas de route",
         otherCity: (city: string) => `pour ${city} seulement`,

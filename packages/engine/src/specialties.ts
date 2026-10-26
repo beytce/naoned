@@ -12,6 +12,8 @@ const NONE: SpecialtyEffects = {
   marketMakerQuotaBps: 0,
   taxDiscountBps: 0,
   extraOpenOrders: 0,
+  marketMakerFloorBps: 0,
+  urgentPreviewMinutes: 0,
 };
 
 /** What the merchant's mastery changes (nothing before one is chosen). */

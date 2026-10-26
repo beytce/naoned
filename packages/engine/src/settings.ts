@@ -958,6 +958,10 @@ export const worldSettingsSchema = z.object({
           /** Taken off the market tax on the merchant's sales. */
           taxDiscountBps: bps.prefault(0),
           extraOpenOrders: qty.prefault(0),
+          /** The Dogana buys from the merchant at no less than this share of the reference. */
+          marketMakerFloorBps: bps.prefault(0),
+          /** Urgent orders seen this long before they open (information only, E1-6). */
+          urgentPreviewMinutes: qty.prefault(0),
         }),
       ),
     })

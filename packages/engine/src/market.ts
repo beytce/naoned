@@ -201,9 +201,17 @@ function settle(tx: Tx, buy: Order, sell: Order, price: Deniers, qty: number): v
   let tax = 0n;
 
   if (buy.playerId === MARKET_MAKER) {
-    // The market maker buys: money is created, the goods leave the economy.
+    // The market maker buys: money is created, the goods leave the economy. A trader's mastery
+    // sets a floor to its price (E1-6): never under that share of the reference.
+    const floorBps = specialtyEffects(
+      tx.ctx,
+      tx.s as WorldState,
+      sell.playerId,
+    ).marketMakerFloorBps;
+    const floor = applyBpsFloor(tx.ctx.settings.referencePrices[sell.resource] ?? 0n, floorBps);
+    const paid = floor > price ? floor * BigInt(qty) : gross;
     removeEscrowedStock(tx, sell.playerId, sell.resource, qty, "trade_sell", tradeId);
-    transfer(tx, SOURCE_ACCOUNT, cashAccount(sell.playerId), gross, "market_maker_buy", tradeId);
+    transfer(tx, SOURCE_ACCOUNT, cashAccount(sell.playerId), paid, "market_maker_buy", tradeId);
     tx.s.marketMaker.bought[sell.resource] = (tx.s.marketMaker.bought[sell.resource] ?? 0) + qty;
     useQuota(tx, sell.playerId, sell.resource, "sold", qty);
   } else if (sell.playerId === MARKET_MAKER) {

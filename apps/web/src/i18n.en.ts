@@ -500,7 +500,12 @@ export const en: Dictionary = {
     cargo: {
       title: "Cargo",
       sort: { reward: "Reward", distance: "Distance", city: "City" },
-      kinds: { doge: "Doge", urgent: "Urgent", family: "Family" } as Record<string, string>,
+      soon: (goods: string, city: string, inTime: string) =>
+        `Urgent soon: ${goods} for ${city}, in ${inTime}`,
+      kinds: { doge: "Doge", urgent: "Urgent", family: "Family", fondaco: "Fondaco" } as Record<
+        string,
+        string
+      >,
       why: {
         noRoad: "no road",
         otherCity: (city: string) => `for ${city} only`,

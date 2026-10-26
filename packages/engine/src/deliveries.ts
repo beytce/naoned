@@ -522,6 +522,23 @@ export function deliveryOrdersFor(
   return out;
 }
 
+/**
+ * Whether the merchant sees an order yet: once it opens, or an urgent one up to the carter's
+ * `urgentPreviewMinutes` before (E1-6: information only, taken at its hour like any other).
+ */
+export function orderVisible(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: PlayerId,
+  order: Pick<DeliveryOrder, "kind" | "opensAt">,
+  now: number,
+): boolean {
+  if (now >= order.opensAt) return true;
+  if (order.kind !== "urgent") return false;
+  const preview = specialtyEffects(ctx, state, playerId).urgentPreviewMinutes;
+  return order.opensAt - now <= preview * MINUTE_MS;
+}
+
 /** Ids of the world's board carry a letter (`3:w12`, `3:e0`, `3:u1`). */
 const BOARD_ID = /^\d+:[ewu]\d+$/;
 
