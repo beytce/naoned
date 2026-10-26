@@ -152,6 +152,15 @@ const frDict = {
 
   game: {
     ui: { howItWorks: "Comment ça marche ?" },
+    /** The goods' chains, as the Rialto groups them (Lagune). */
+    chains: {
+      food: "Vivres",
+      construction: "Construction",
+      carpentry: "Charpente",
+      glass: "Verrerie",
+      drapery: "Draperie",
+      orient: "Outre-mer",
+    } as Record<string, string>,
     map: {
       home: (pseudo: string) => (pseudo ? `Maison ${pseudo}` : "Votre maison"),
       homeLabel: "Comptoir",

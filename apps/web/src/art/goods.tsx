@@ -61,6 +61,15 @@ export function goodsColour(code: string): string {
   return (def && CHAIN_COLOUR[def.chain]) ?? "#9FB4CF";
 }
 
+/** The chain of a good (`food`, `construction`…); the prepared spices count with the overseas goods. */
+export function goodsChain(code: string): string {
+  const chain = DEFS.get(code)?.chain ?? "other";
+  return chain === "spicery" ? "orient" : chain;
+}
+
+/** The chains in the order the game shows them: the three of the Terraferma, then the luxury. */
+export const CHAIN_ORDER = ["food", "construction", "carpentry", "glass", "drapery", "orient"];
+
 export function goodsTier(code: string): Tier {
   return DEFS.get(code)?.tier ?? "raw";
 }

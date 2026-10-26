@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Crest } from "../art/crest.js";
-import { ResourceIcon } from "../art/resources.js";
+import { CHAIN_COLOUR, CHAIN_ORDER, GoodsMark, goodsChain } from "../art/goods.js";
 import { fr } from "../i18n.js";
 import { locale } from "../lang.js";
 import { Badge, Label, Qty, Segmented, Sheet, Slab, Sparkline, clock } from "../ui.js";
@@ -66,9 +66,10 @@ function Row({
       type="button"
       data-coach={`row-${line.resource}`}
       onClick={() => props.setSheet(`trade:${line.resource}`)}
-      className={`flex w-full items-center gap-3 border-b border-line/70 py-3 text-left transition lg:cut lg:border-transparent lg:px-3 lg:hover:bg-night-3 ${selected ? "lg:bg-night-3 lg:ring-1 lg:ring-info/70" : ""}`}
+      // Lagune: a rounded line on the night, the good by its mark.
+      className={`mb-1.5 flex min-h-[3.5rem] w-full items-center gap-3 rounded-2xl bg-night-3 px-3 py-2 text-left transition active:scale-[0.99] lg:hover:bg-night-4 ${selected ? "ring-1 ring-inset ring-info/70" : ""}`}
     >
-      <ResourceIcon code={line.resource} size={36} />
+      <GoodsMark code={line.resource} size={34} />
       <div className="min-w-0 flex-1">
         <p className="font-display text-sm font-semibold">{props.names.resource(line.resource)}</p>
         <p className="meta mt-0.5 flex items-center gap-2">
@@ -195,11 +196,9 @@ function TradeSheet({
     <div className="space-y-5">
       {/* Room on the right for the window's close button. */}
       <div className={`flex items-center gap-4 ${inline ? "" : "pr-12"}`}>
-        <div className="shrink-0 cut bg-night-3 p-2 ring-1 ring-inset ring-line">
-          <ResourceIcon code={line.resource} size={56} />
-        </div>
+        <GoodsMark code={line.resource} size={56} />
         <div className="min-w-0 flex-1">
-          <h3 className="font-display text-xl font-extrabold uppercase">
+          <h3 className="font-place text-xl font-bold uppercase tracking-[0.14em]">
             {props.names.resource(line.resource)}
           </h3>
           <p className="meta mt-1 whitespace-nowrap">{fr.game.inStock(stock)}</p>
@@ -399,8 +398,8 @@ function MyOffers({ orders, props }: { orders: OrderView[]; props: GameProps }) 
     <section className="space-y-2">
       <Label>{t.myOffers}</Label>
       {orders.map((o) => (
-        <div key={o.id} className="flex items-center gap-3 border-b border-line/70 py-2">
-          <ResourceIcon code={o.resource} size={28} />
+        <div key={o.id} className="flex items-center gap-3 rounded-2xl bg-night-3 px-3 py-2">
+          <GoodsMark code={o.resource} size={28} />
           <div className="min-w-0 flex-1 text-sm">
             <p className={o.side === "sell" ? "text-lagoon" : "text-gold"}>
               {t.offerLine(o.side, o.remaining, props.names.resource(o.resource), d(o.price))}
@@ -439,9 +438,12 @@ function MudaPanel({ props }: { props: GameProps }) {
   const next = muda.nextAt !== null ? clock(muda.nextAt - props.now) : null;
   const goods = muda.goods.filter((r) => (muda.stock[r] ?? 0) > 0);
   return (
-    <section className="cut border border-gold/50 bg-gold/5 p-3">
+    // Lagune: the galleys bring the overseas goods, in their purple; gold stays for money.
+    <section className="rounded-2xl border border-[#B48BE6]/50 bg-[#B48BE6]/10 p-3">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="font-display text-sm font-extrabold uppercase text-gold">{t.title}</p>
+        <p className="font-place text-sm font-bold uppercase tracking-[0.14em] text-cream">
+          {t.title}
+        </p>
         {next && <p className="meta shrink-0">{t.next(next)}</p>}
       </div>
       <p className="mt-1 text-xs text-cream-dim">
@@ -458,7 +460,7 @@ function MudaPanel({ props }: { props: GameProps }) {
                 onClick={() => props.setSheet(`trade:${r}`)}
                 className="flex w-full items-center gap-2.5 py-1.5 text-left"
               >
-                <ResourceIcon code={r} size={26} />
+                <GoodsMark code={r} size={26} />
                 <span className="min-w-0 flex-1 truncate font-display text-xs font-semibold">
                   {props.names.resource(r)}
                 </span>
@@ -492,14 +494,43 @@ function PriceHeads() {
   );
 }
 
-/** The goods with a price first; those nobody has traded yet after, under their own head. */
-function PricedRows({ lines, props }: { lines: MarketLine[]; props: GameProps }) {
+/**
+ * The goods with a price first, grouped by chain under a head in the chain's colour (Lagune);
+ * those nobody has traded yet after, under their own head.
+ */
+function PricedRows({
+  lines,
+  props,
+  grouped = true,
+}: { lines: MarketLine[]; props: GameProps; grouped?: boolean }) {
   const priced = lines.filter((l) => l.bestAsk !== null || l.bestBid !== null);
   const unpriced = lines.filter((l) => l.bestAsk === null && l.bestBid === null);
+  const chains = grouped
+    ? CHAIN_ORDER.map((c) => ({ c, lines: priced.filter((l) => goodsChain(l.resource) === c) }))
+        .concat([
+          {
+            c: "other",
+            lines: priced.filter((l) => !CHAIN_ORDER.includes(goodsChain(l.resource))),
+          },
+        ])
+        .filter((g) => g.lines.length > 0)
+    : [{ c: "", lines: priced }];
   return (
     <>
-      {priced.map((l) => (
-        <Row key={l.resource} line={l} props={props} />
+      {chains.map((g) => (
+        <div key={g.c}>
+          {g.c && fr.game.chains[g.c] && (
+            <p
+              className="pb-1.5 pt-2 font-display text-xs font-bold"
+              style={{ color: CHAIN_COLOUR[g.c] }}
+            >
+              {fr.game.chains[g.c]}
+            </p>
+          )}
+          {g.lines.map((l) => (
+            <Row key={l.resource} line={l} props={props} />
+          ))}
+        </div>
       ))}
       {unpriced.length > 0 && (
         <>
@@ -604,7 +635,7 @@ export function RialtoSheet(props: GameProps) {
             </span>
             <button type="button" onClick={() => props.setSheet("offers")} className="hit">
               <span
-                className={`slab block px-2.5 py-1 font-mono text-xs uppercase tracking-[0.06em] ${offers.length > 0 ? "bg-info/20 text-info" : "bg-night-3 text-cream-dim"}`}
+                className={`slab block px-3 py-1 font-display text-xs font-semibold ${offers.length > 0 ? "bg-info/20 text-info" : "text-cream-dim ring-1 ring-inset ring-line"}`}
               >
                 {r.offers(offers.length)}
               </span>
@@ -614,7 +645,7 @@ export function RialtoSheet(props: GameProps) {
                 type="button"
                 aria-expanded={decreesOpen}
                 onClick={() => setDecreesOpen(!decreesOpen)}
-                className={`hit rounded-full px-2.5 py-1 font-mono text-xs uppercase tracking-[0.08em] ring-1 ring-inset ${ours ? "bg-lagoon/15 text-lagoon ring-lagoon/60" : "bg-vermilion/15 text-vermilion ring-vermilion/60"}`}
+                className={`hit rounded-full px-3 py-1 font-display text-xs font-semibold ring-1 ring-inset ${ours ? "bg-lagoon/15 text-lagoon ring-lagoon/60" : "bg-vermilion/15 text-vermilion ring-vermilion/60"}`}
               >
                 ⚑ {m.decrees(decrees.items.length)}
               </button>
@@ -630,7 +661,7 @@ export function RialtoSheet(props: GameProps) {
             {shown.length === 0 ? (
               <p className="py-6 text-center text-sm text-cream-dim">{r.none}</p>
             ) : (
-              <PricedRows lines={shown} props={props} />
+              <PricedRows lines={shown} props={props} grouped={filter !== "rising"} />
             )}
           </div>
         </div>
