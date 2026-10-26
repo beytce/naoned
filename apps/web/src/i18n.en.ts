@@ -243,6 +243,10 @@ export const en: Dictionary = {
       drapery: "Cloth",
       orient: "Overseas",
     } as Record<string, string>,
+    store: {
+      total: (n: number) => `${n} in stock`,
+      escrow: (n: number) => `+${n} committed`,
+    },
     map: {
       home: (pseudo: string) => (pseudo ? `House ${pseudo}` : "Your house"),
       homeLabel: "Counter",

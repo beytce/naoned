@@ -16,6 +16,7 @@ import type { GameProps } from "./Game.js";
 import { Ledger } from "./Ledger.js";
 import { costOf } from "./Marche.js";
 import { MasteryTile } from "./Mastery.js";
+import { StoreView } from "./Store.js";
 import { TendersSheet, TendersTile } from "./Tenders.js";
 import { d, duration, minutesLabel } from "./format.js";
 import { harvestAll, harvestAndRestart } from "./harvest.js";
@@ -323,30 +324,6 @@ export function Rations(props: GameProps) {
         >
           {fr.game.rations.buy}
         </Slab>
-      </div>
-    </div>
-  );
-}
-
-export function StockStrip(props: GameProps) {
-  return (
-    <div>
-      <Label className="mb-2">{fr.game.stock}</Label>
-      <div
-        data-no-swipe
-        className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0"
-      >
-        {props.view.inventory.map((i) => (
-          <div
-            key={i.resource}
-            className={`slab flex shrink-0 items-center gap-1.5 px-3 py-1.5 ring-1 ring-inset ${i.available > 0 ? "bg-night-3 ring-line" : "bg-night-2 opacity-50 ring-night-3"}`}
-          >
-            <span className="flex items-center gap-1.5">
-              <ResourceIcon code={i.resource} size={24} />
-              <span className="font-display text-sm font-semibold tabular-nums">{i.available}</span>
-            </span>
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -1058,7 +1035,7 @@ export function CounterSheets(props: GameProps) {
       </Sheet>
       <Sheet open={props.sheet === "store"} onClose={close} title={fr.game.domain.store.title}>
         <div className="space-y-4">
-          <StockStrip {...props} />
+          <StoreView {...props} />
           <Rations {...props} />
         </div>
       </Sheet>

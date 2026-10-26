@@ -67,6 +67,8 @@ const WORDS = {
     nextOrGot: /^(suivant|compris)$/i,
     truce: /trêve/i,
     notices: /^avis/i,
+    store: /^magasin$/i,
+    build: /^bâtir$/i,
     firstSteps: "Premiers pas",
     finish: /terminer/i,
     produce: /^produire$/i,
@@ -94,6 +96,8 @@ const WORDS = {
     nextOrGot: /^(next|got it)$/i,
     truce: /truce/i,
     notices: /^notices/i,
+    store: /^store$/i,
+    build: /^build$/i,
     firstSteps: "First steps",
     finish: /finish/i,
     produce: /^produce$/i,
@@ -398,6 +402,24 @@ async function session(width, height, tag) {
       throw new Error(`${label}: the notices still list first steps to take`);
     await page.keyboard.press("Escape");
     await check("carte");
+    // The counter up close (Lagune), its store by chain, then the catalogue of its free plot.
+    await page.locator('[data-coach="home"]').first().click();
+    await page.waitForTimeout(600);
+    await check("comptoir");
+    await page.locator("[data-place]").getByRole("button", { name: WORDS.store }).click();
+    await page.waitForTimeout(600);
+    await check("magasin");
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(400);
+    const plot = page.locator("[data-place]").getByRole("button", { name: WORDS.build });
+    if ((await plot.count()) > 0) {
+      await plot.first().click();
+      await page.waitForTimeout(600);
+      await check("batir");
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(400);
+    }
+    await closeAll(page);
     await npcRival(page, check);
 
     if (errors.length > 0) throw new Error(`${label}: errors on the page: ${errors.join(" / ")}`);

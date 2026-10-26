@@ -181,7 +181,8 @@ export function NoticeList(props: GameProps & { onRead: () => void }) {
       {items.map((n) => (
         <li
           key={n.id}
-          className={`flex gap-3 border-b border-line/70 py-3 ${n.read ? "" : "border-l-4 border-l-gold pl-3"}`}
+          // Lagune: a rounded line; unread, a lapis ring around it.
+          className={`flex gap-3 rounded-2xl bg-night-3 px-3 py-3 ${n.read ? "" : "ring-1 ring-inset ring-info/60"}`}
         >
           <span className={TONE[n.kind] ?? "text-cream-dim"}>{ICON[n.kind]?.()}</span>
           <p className="flex-1 text-sm leading-snug">{text(n, props)}</p>

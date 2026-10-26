@@ -161,6 +161,11 @@ const frDict = {
       drapery: "Draperie",
       orient: "Outre-mer",
     } as Record<string, string>,
+    /** The store's sheet (Lagune). */
+    store: {
+      total: (n: number) => `${n} en stock`,
+      escrow: (n: number) => `+${n} engagés`,
+    },
     map: {
       home: (pseudo: string) => (pseudo ? `Maison ${pseudo}` : "Votre maison"),
       homeLabel: "Comptoir",
