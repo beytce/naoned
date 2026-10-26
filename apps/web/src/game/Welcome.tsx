@@ -12,15 +12,23 @@ function hoursAway(ms: number): string {
   return h >= 48 ? `${Math.round(h / 24)} jours` : `${h} h`;
 }
 
-/** One line of the report: a mark, what happened, in its colour. */
+/** The dot of a line, by its role (Lagune): a gain, a fact, a loss. */
+const DOT = {
+  gain: "bg-lagoon shadow-[0_0_8px_rgb(var(--lagoon))]",
+  fact: "bg-info",
+  loss: "bg-vermilion",
+  quiet: "ring-2 ring-inset ring-info",
+} as const;
+
+/** One line of the report, on the thread of what happened: its dot, then what, in its colour. */
 function Line({
-  mark,
+  dot,
   tone = "text-cream",
   children,
-}: { mark: string; tone?: string; children: ReactNode }) {
+}: { dot: keyof typeof DOT; tone?: string; children: ReactNode }) {
   return (
-    <li className="flex items-center gap-2.5 rounded-lg bg-night-2/70 px-3 py-2 text-sm">
-      <span className="w-5 text-center text-base leading-none">{mark}</span>
+    <li className="flex items-center gap-3 py-1.5 text-sm">
+      <span aria-hidden="true" className={`h-3 w-3 shrink-0 rounded-full ${DOT[dot]}`} />
       <span className={tone}>{children}</span>
     </li>
   );
@@ -36,16 +44,22 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
   return (
     <Sheet open onClose={props.onClose}>
       <div className="space-y-4">
-        <div>
-          <div className="flex flex-wrap items-baseline gap-x-2">
-            <Label className="text-gold">{t.kicker}</Label>
-            <span className="meta">{hoursAway(props.now - data.since)}</span>
-          </div>
-          <h3 className="mt-1 font-display text-2xl font-extrabold uppercase">{t.title}</h3>
+        {/* Lagune: the place's name, the time away, and what came in, rising like the sun. */}
+        <div className="flex flex-col items-center gap-1 text-center">
+          <h3 className="text-balance px-12 font-place text-lg font-bold uppercase tracking-[0.2em] text-cream-dim">
+            {t.title}
+          </h3>
+          <span className="meta">
+            {t.kicker} {hoursAway(props.now - data.since)}
+          </span>
+          <Big className="mt-2 text-5xl text-gold [text-shadow:0_0_30px_rgb(var(--gold)/0.4)]">
+            +{whole(total)}
+          </Big>
+          <Label className="text-cream-dim">{t.commerce}</Label>
         </div>
         {/* The week closed while away: its ceremony comes first. */}
         {data.week && (
-          <section className="space-y-1 cut border border-gold/60 bg-gold/10 p-3">
+          <section className="space-y-1 rounded-2xl bg-night-3 p-3 ring-1 ring-inset ring-gold/50">
             <p className="text-sm font-semibold text-gold">{t.week.title(data.week.week)}</p>
             <p className="font-display text-lg font-extrabold">
               {t.week.rank(
@@ -59,26 +73,22 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
         )}
         {data.slept && <p className="text-sm text-lagoon">{t.slept}</p>}
         {/* The commerce: what the counting house earned, by source. */}
-        <section className="space-y-2 cut bg-night-3 p-3 ring-1 ring-inset ring-line">
-          <div className="flex items-baseline justify-between">
-            <Label>{t.commerce}</Label>
-            <Big className="text-2xl text-lagoon">+{whole(total)}</Big>
-          </div>
+        <section className="space-y-1 rounded-2xl bg-night-3 p-3">
           {income.length > 0 ||
           (data.road && data.road.arrived > 0) ||
           (data.fattore?.length ?? 0) > 0 ? (
             <ul className="space-y-1.5">
               {income.map(([reason, v]) => (
-                <Line key={reason} mark="◎" tone="text-cream">
+                <Line key={reason} dot="gain" tone="text-cream">
                   <span className="font-semibold text-gold">+{whole(v)}</span>{" "}
                   {t.sources[reason] ?? reason}
                 </Line>
               ))}
               {data.road && data.road.arrived > 0 && (
-                <Line mark="➜">{t.road.arrived(data.road.arrived)}</Line>
+                <Line dot="gain">{t.road.arrived(data.road.arrived)}</Line>
               )}
               {data.fattore?.map((f) => (
-                <Line key={f.id} mark="⚑" tone="text-cream-dim">
+                <Line key={f.id} dot="fact" tone="text-cream-dim">
                   {t.fattore(
                     f.quantity,
                     props.names.resource(f.resource),
@@ -95,7 +105,7 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
         </section>
         {/* The Terraferma: the land taken and lost, the fronts come home, where it stands. */}
         {data.terra && (
-          <section className="space-y-2 cut bg-night-3 p-3 ring-1 ring-inset ring-line">
+          <section className="space-y-1 rounded-2xl bg-night-3 p-3">
             <div className="flex items-baseline justify-between">
               <Label>{t.terra.title}</Label>
               <span className="font-display text-sm font-extrabold text-gold">
@@ -104,25 +114,25 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
             </div>
             <ul className="space-y-1.5">
               {data.terra.eliminated && (
-                <Line mark="✕" tone="text-vermilion">
+                <Line dot="loss" tone="text-vermilion">
                   {t.terra.eliminated}
                 </Line>
               )}
               {data.terra.gained > 0 && (
-                <Line mark="▲" tone="text-lagoon">
+                <Line dot="gain" tone="text-lagoon">
                   {t.terra.gained(data.terra.gained)}
                 </Line>
               )}
               {data.terra.lost > 0 && (
-                <Line mark="▼" tone="text-vermilion">
+                <Line dot="loss" tone="text-vermilion">
                   {t.terra.lost(data.terra.lost)}
                 </Line>
               )}
               {data.terra.fronts > 0 && (
-                <Line mark="⚑">{t.terra.fronts(data.terra.fronts, data.terra.spent)}</Line>
+                <Line dot="fact">{t.terra.fronts(data.terra.fronts, data.terra.spent)}</Line>
               )}
               {!data.terra.eliminated && (
-                <Line mark="⚔">
+                <Line dot="quiet">
                   {t.terra.troops(
                     data.terra.troops,
                     data.terra.cap,
