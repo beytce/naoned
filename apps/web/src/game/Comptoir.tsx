@@ -353,12 +353,12 @@ export function StockStrip(props: GameProps) {
 }
 
 /**
- * The tone of a workshop's state: gold to collect, lagoon at work, quiet when it waits for goods
- * (a normal state of a chain, not an alarm: a hollow dot, not a red one).
+ * The tone of a workshop's state, as its star's (Lagune): lagoon when it is ready, lapis at work,
+ * quiet when it waits for goods (a normal state of a chain, not an alarm: a hollow dot).
  */
 const STATE_TONE = {
-  ready: { glow: "gold", dot: "bg-gold", text: "text-gold", ring: "ring-gold/60" },
-  running: { glow: "lagoon", dot: "bg-lagoon", text: "text-lagoon", ring: "ring-lagoon/50" },
+  ready: { glow: "lagoon", dot: "bg-lagoon", text: "text-lagoon", ring: "ring-lagoon/60" },
+  running: { glow: undefined, dot: "bg-info", text: "text-info", ring: "ring-info/50" },
   idle: { glow: undefined, dot: "bg-cream-dim", text: "text-cream-dim", ring: "ring-line" },
   blocked: {
     glow: undefined,
@@ -428,14 +428,15 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
   return (
     <Panel glow={tone.glow}>
       <div className="flex items-center gap-3">
-        <div
-          className={`cut flex h-[72px] w-[84px] shrink-0 items-center justify-center bg-night-2 ring-1 ring-inset ${tone.ring}`}
-        >
-          <BuildingArt type={b.type} active={st.state === "running"} className="h-16 w-20" />
-        </div>
+        <WorkshopStar
+          small
+          output={Object.keys(recipe?.outputs ?? {})[0]}
+          state={st.state}
+          progress={st.progress ?? 0}
+        />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="min-w-0 font-display text-[0.9375rem] font-extrabold uppercase leading-tight [font-stretch:100%]">
+            <h3 className="min-w-0 font-place text-[0.9375rem] font-bold uppercase leading-tight tracking-[0.12em]">
               {props.names.building(b.type)}
             </h3>
             {b.upgradeCost ? (
@@ -447,7 +448,7 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
                 className="hit flex shrink-0 transition active:scale-95"
               >
                 {/* The slab is clipped: drawn inside, the button keeps its 44 px of touch. */}
-                <span className="slab flex items-center gap-1 whitespace-nowrap bg-night-4 px-2.5 py-0.5 font-sans text-xs font-bold text-cream">
+                <span className="slab flex items-center gap-1 whitespace-nowrap px-2.5 py-0.5 font-sans text-xs font-bold text-cream ring-1 ring-inset ring-line">
                   {fr.game.level(b.level)} <span aria-hidden="true">↑</span>
                 </span>
               </button>
@@ -497,15 +498,6 @@ function Workshop({ b, props }: { b: BuildingView; props: GameProps }) {
           {b.economics.queued && <p className="meta mt-1 text-gold">{t.afterQueue(b.workLevel)}</p>}
         </div>
       )}
-      {st.state === "running" && job && (
-        <div className="mt-3">
-          <Ribbon
-            value={st.progress ?? 0}
-            tone="lagoon"
-            label={`${fr.game.batch(ready + 1, job.batches)} · ${clock(st.left ?? 0)}`}
-          />
-        </div>
-      )}
 
       {st.state === "ready" && (
         <Slab
@@ -549,18 +541,19 @@ function WorkshopsSummary(props: GameProps) {
   const ready = states.reduce((n, x) => n + (x.state === "ready" ? x.ready : 0), 0);
   const t = fr.game.workshopsSheet;
   const chips = [
-    { n: count("ready"), label: t.ready, cls: "bg-gold/15 text-gold" },
-    { n: count("running"), label: t.running, cls: "bg-lagoon/15 text-lagoon" },
-    { n: count("idle") + count("blocked"), label: t.idle, cls: "bg-night-3 text-cream-dim" },
+    { n: count("ready"), label: t.ready, cls: "bg-lagoon/15 text-lagoon" },
+    { n: count("running"), label: t.running, cls: "bg-info/15 text-info" },
+    {
+      n: count("idle") + count("blocked"),
+      label: t.idle,
+      cls: "text-cream-dim ring-1 ring-inset ring-line",
+    },
   ].filter((c) => c.n > 0);
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
         {chips.map((c) => (
-          <span
-            key={c.cls}
-            className={`slab px-3 py-1 font-mono text-xs font-bold uppercase tracking-wide ${c.cls}`}
-          >
+          <span key={c.cls} className={`slab px-3 py-1 font-display text-xs font-bold ${c.cls}`}>
             {c.n} {c.label(c.n)}
           </span>
         ))}
@@ -627,10 +620,13 @@ function WorkshopStar({
   output,
   state,
   progress,
-}: { output?: string; state: string; progress: number }) {
+  small,
+}: { output?: string; state: string; progress: number; small?: boolean }) {
   const waiting = state !== "ready" && state !== "running";
   return (
-    <span className="relative flex h-28 w-28 items-center justify-center">
+    <span
+      className={`relative flex shrink-0 items-center justify-center ${small ? "h-[4.5rem] w-[4.5rem]" : "h-28 w-28"}`}
+    >
       {state === "ready" && <span className="marker-halo absolute inset-0 rounded-full" />}
       <svg viewBox="-50 -50 100 100" className="absolute inset-0 -rotate-90" aria-hidden="true">
         {waiting ? (
@@ -655,9 +651,11 @@ function WorkshopStar({
           </>
         )}
       </svg>
-      <span className="flex h-[4.75rem] w-[4.75rem] items-center justify-center rounded-full bg-night ring-1 ring-line">
+      <span
+        className={`flex items-center justify-center rounded-full bg-night ring-1 ring-line ${small ? "h-12 w-12" : "h-[4.75rem] w-[4.75rem]"}`}
+      >
         {output ? (
-          <GoodsMark code={output} size={44} />
+          <GoodsMark code={output} size={small ? 28 : 44} />
         ) : (
           <span className="h-5 w-5 rotate-45 bg-gold-soft" />
         )}
