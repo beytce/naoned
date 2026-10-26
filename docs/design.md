@@ -90,7 +90,7 @@ Formes de la direction Lagune (depuis le 25 octobre 2026 ; avant, des biseaux) :
 - `Stat` : tuile chiffrée (une durée, un gain en lagune, une perte en cinabre).
 - `Switch` : interrupteur (escorte, navires, notifications), à la place des cases à cocher.
 - `Sheet` : feuille du bas sur mobile, fenêtre centrée sur PC, fermeture par ×. Une seule anatomie : un en-tête collant (surtitre, titre, croix, résumé d'une ligne) qui reste en vue au défilement, puis l'état et l'action, puis la règle dans `Rules` (« Comment ça marche ? »), ouverte la première fois, repliée ensuite, le choix du joueur gardé feuille par feuille. Le guide ouvre une règle repliée qui contient sa cible.
-- `Ribbon` : barre de progression rayée ; `Big` : grands chiffres.
+- `Ribbon` : fine barre de progression arrondie (dégradé lapis, son libellé au-dessus) ; `Big` : grands chiffres.
 
 ### Rialto et Ateliers
 
@@ -226,6 +226,13 @@ Le mode qui remplace la Campagne depuis le 18 octobre 2026 (`docs/plan-terraferm
 - **Bâtir** (`BuildCatalog`) : les deux onglets en pilules dans un sillon ; chaque atelier à bâtir est une parcelle de l'orbite (rond pointillé lapis, la marque de ce qu'il fera ; le palais un losange or pâle) ; recette et prix par marques ; la raison d'un verrou en crème atténuée, jamais en or.
 - **Avis** : la saison en anneau doré (la part du mois passée) à côté de « Jour n sur N » ; la gazette en carte à la lueur cinabre ; les tâches du jour en petits anneaux (arc lapis, plein et vert d'eau une fois faites) ; les nouvelles en lignes arrondies, celles non lues cerclées de lapis.
 - Le test de mise en page ouvre aussi le comptoir, son magasin et son catalogue (`comptoir`, `magasin`, `batir`).
+
+## La saison : Classement, Profil, Bon retour (Lagune, 26 octobre 2026)
+
+- **Classement** (`RankingSheet`) : « Semaine passée » et « Règles » en pilules fantômes en tête du corps ; semaine et saison en pilules lapis avec leur clôture ; le podium en trois astres (le blason dans un anneau or, argent, bronze ; le premier plus grand, à la lueur dorée) ; les lignes arrondies, la mienne cerclée de lapis ; ma ligne épinglée au pied cerclée d'or.
+- **Profil** (`ProfileSheet`) : le blason dans l'anneau doré de la progression vers le titre suivant, le titre en pilule dessous ; « Modifier » en pilule fantôme ; les titres de la saison en constellation (atteints pleins, le suivant cerclé, les autres en creux) ; les chiffres en tuiles sans police à chasse fixe.
+- **Bon retour** (`Welcome`) : centré comme un lieu qu'on retrouve, le nom du comptoir puis le gagné en grand chiffre doré ; chaque fait par un point de son rôle (gain vert d'eau, perte vermillon, fait lapis, attente creux) ; la semaine close en carte cerclée d'or ; une seule action en or au pied.
+- Le test de mise en page ouvre aussi le Profil, le Classement et un Bon retour réécrit à son plus plein (`profil`, `classement`, `bon-retour`) ; tout ce qui s'y touche fait 44 px.
 
 ## Charger et partir
 

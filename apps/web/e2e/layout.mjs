@@ -69,6 +69,7 @@ const WORDS = {
     notices: /^avis/i,
     store: /^magasin$/i,
     build: /^bâtir$/i,
+    ranking: /^classement$/i,
     firstSteps: "Premiers pas",
     finish: /terminer/i,
     produce: /^produire$/i,
@@ -98,6 +99,7 @@ const WORDS = {
     notices: /^notices/i,
     store: /^store$/i,
     build: /^build$/i,
+    ranking: /^ranking$/i,
     firstSteps: "First steps",
     finish: /finish/i,
     produce: /^produce$/i,
@@ -420,7 +422,21 @@ async function session(width, height, tag) {
       await page.waitForTimeout(400);
     }
     await closeAll(page);
+    // The merchant's crest opens their profile (Lagune: titles as a constellation), and the
+    // ranking's door its podium once it is open.
+    await page.locator('[data-hud="identity"]').click();
+    await page.waitForTimeout(600);
+    await check("profil");
+    await closeAll(page);
+    const ranking = page.getByRole("button", { name: WORDS.ranking });
+    if ((await ranking.count()) > 0 && (await ranking.first().isEnabled())) {
+      await ranking.first().click();
+      await page.waitForTimeout(600);
+      await check("classement");
+      await closeAll(page);
+    }
     await npcRival(page, check);
+    await welcomeBack(page, check);
 
     if (errors.length > 0) throw new Error(`${label}: errors on the page: ${errors.join(" / ")}`);
   } catch (e) {
@@ -752,6 +768,46 @@ async function condotta(page, check) {
   if (minutes < 0 || minutes > 8) throw new Error(`the Condotta's match lasts ${minutes} minutes`);
   await bar.locator("button").first().click();
   await page.waitForTimeout(800);
+}
+
+/**
+ * The « Bon retour » report of a long absence, at its fullest (sales, the week closed, the
+ * Terraferma won and lost): no fresh world has one, so the game's response is rewritten.
+ */
+async function welcomeBack(page, check) {
+  await page.route("**/api/game", async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    if (json.view)
+      json.welcome = {
+        since: Date.now() - 9 * 3600_000,
+        income: { city_sale: "184000", trade: "52000", contract_reward: "30000" },
+        readyBatches: 3,
+        notices: {},
+        slept: false,
+        road: { arrived: 2 },
+        week: { week: 1, rank: 2, gain: "90000", award: null },
+        terra: {
+          gained: 3,
+          lost: 1,
+          fronts: 2,
+          spent: 18,
+          cells: 7,
+          troops: 40,
+          cap: 60,
+          perHour: 13,
+          glory: 120,
+          rank: 3,
+          eliminated: false,
+        },
+      };
+    await route.fulfill({ response, json });
+  });
+  await page.reload();
+  await page.waitForTimeout(1200);
+  await check("bon-retour");
+  await page.unroute("**/api/game");
+  await closeAll(page);
 }
 
 /**
