@@ -1502,3 +1502,20 @@ Monnaie de la commande sur la saison (livraisons et primes), 5 graines :
 | d | 4 065 · 5 003 · 4 756 · 4 561 · 4 109 | 3 026 · 2 586 · 2 704 · 2 932 · 2 854 |
 
 L'Arsenal crée 0,6 à 0,7 fois la monnaie d'avant, sous le plafond de 1,5 ×. La simulation n'a pas d'humains : l'Argent et l'Or n'y sont jamais atteints, et leur part de monnaie (1,43 × au plus à l'Or, selon la proposition) se mesurera en bêta, dans `/admin`. La galère de l'Arsenal sur la carte et le « Livre d'or » de la gazette ne sont pas faits : c'est du cosmétique, qui peut suivre.
+
+### Le mutateur du mois (E2-9)
+
+Chaque mutateur est joué toute la saison par `pnpm sim --mutator <code>`, sur 5 graines, avec le paquet ci-dessus. Les 15 saisons sont conformes.
+
+| Mutateur | Masse monétaire max | Indice des prix | Monnaie payée par actif et par jour (base 171–179 d) | Galères de la Muda |
+| --- | --- | --- | --- | --- |
+| `embargo_ottomano` | 0,81–0,87 × | 98–102 | 150–156 d | 108 à 141 % des lots vendus (lots deux fois plus petits, le stock du quai part en entier) |
+| `grand_gel` | 0,81–0,86 × | 93–115 | 175–184 d | 90–92 % |
+| `guerra_milano` | 0,81–0,87 × | 94–114 | 175–196 d | 87–92 % |
+
+**Lecture.**
+- L'embargo est le plus dur : la monnaie payée baisse d'environ 13 %, car les commandes d'exotiques manquent de marchandises.
+- Le Grand gel et la Guerre de Milan paient un peu plus les matériaux, à masse monétaire inchangée.
+- La simulation ne joue pas la Terraferme : les troupes de Milan de la Guerre de Milan n'y sont pas mesurées.
+
+Les trois restent au catalogue. Le premier tirage vaut pour décembre 2026.
