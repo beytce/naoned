@@ -1685,6 +1685,12 @@ const frDict = {
     cityPays: "Paie l'unité",
     sellToCity: "Vendre",
     iconsTitle: "Les icônes",
+    /** The goods' code, told in the Aide (Lagune). */
+    goodsCode: {
+      title: "Les marchandises",
+      text: "La couleur dit la filière, la forme dit l'étape. Une marque creuse : ce que votre stock ne couvre pas encore.",
+      tiers: ["Brute", "Transformée", "Finie", "Outre-mer"],
+    },
 
     projectsKicker: "Grand chantier",
     projectTitle: (city: string) => `Chantier de ${city}`,

@@ -1670,6 +1670,12 @@ export const en: Dictionary = {
     cityPays: "Pays per unit",
     sellToCity: "Sell",
     iconsTitle: "The icons",
+    /** The goods' code, told in the Aide (Lagune). */
+    goodsCode: {
+      title: "The goods",
+      text: "The colour tells the chain, the shape tells the stage. A hollow mark: what your stock does not cover yet.",
+      tiers: ["Raw", "Processed", "Finished", "Overseas"],
+    },
 
     projectsKicker: "Great work",
     projectTitle: (city: string) => `Work in ${city}`,
