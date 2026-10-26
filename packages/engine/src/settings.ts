@@ -1053,6 +1053,8 @@ export const worldSettingsSchema = z.object({
       missions: z
         .object({
           everyHours: positive,
+          /** One board a week, from Monday 0 h (the ranking's weeks) instead (E1-7). */
+          weekly: z.boolean().prefault(false),
           perBoard: qty,
           pool: z.array(
             z.object({

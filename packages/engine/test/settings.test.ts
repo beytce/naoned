@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   expectedBaleValue,
+  missionsOfBoard,
   parseSettings,
   upgradeLegacySettings,
   venice1450,
@@ -106,7 +107,7 @@ describe("the house's missions of Venice", () => {
     for (const m of pool) expect(sent, m.id).toContain(m.event);
   });
 
-  it("draw two of the Terraferma's at most, eight of trade at least", () => {
+  it("draw two of the Terraferma's at most, six of trade at least", () => {
     const missions = parseSettings(venice1450Settings).house?.missions;
     expect(missions?.groupMax.terra).toBe(2);
     const trade = (missions?.pool ?? []).filter((m) => m.group === undefined).length;

@@ -8,6 +8,7 @@ import {
   houseSpendFor,
   reserveOf,
   rushCost,
+  weekStart,
 } from "../src/index.js";
 import { campaignSettings, deliverySettings, testCampaign, testHouse } from "./fixture.js";
 import { DAY, HOUR, MIN, World, makeContext } from "./helpers.js";
@@ -69,6 +70,25 @@ describe("the house's missions", () => {
     const next = houseMissionsFor(w.ctx, w.state, "a", w.now);
     expect(next.board).toBe(1);
     expect(next.missions.every((m) => m.progress === 0 && !m.claimed)).toBe(true);
+  });
+
+  it("may change with the week, on Monday at midnight in Paris (E1-7)", () => {
+    const missions = { ...testHouse.missions, weekly: true };
+    const w = new World(makeContext({ weekStart: "monday", house: { ...testHouse, missions } }));
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    sell(w, "a", 2);
+    const first = houseMissionsFor(w.ctx, w.state, "a", w.now);
+    expect(first.board).toBe(0);
+    const monday = weekStart(w.ctx, 1);
+    expect(first.endsAt).toBe(monday);
+    // A minute before Monday: the same board; at midnight, a new one.
+    w.at(monday - MIN - w.ctx.startAt);
+    expect(houseMissionsFor(w.ctx, w.state, "a", w.now).board).toBe(0);
+    w.at(monday - w.ctx.startAt);
+    const next = houseMissionsFor(w.ctx, w.state, "a", w.now);
+    expect(next.board).toBe(1);
+    expect(next.endsAt).toBe(weekStart(w.ctx, 2));
+    expect(next.missions.every((m) => m.progress === 0)).toBe(true);
   });
 
   it("may count a quantity of the event rather than the event itself", () => {

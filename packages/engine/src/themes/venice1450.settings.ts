@@ -1154,41 +1154,45 @@ export const venice1450Settings: WorldSettingsInput = {
     },
   },
   // The house between seasons (docs/plan-progression.md): Influence, the game's premium coin,
-  // kept from season to season. Earned only by the house's missions (ten every three and a half
-  // days, about 3 each), spent on privileges, rushed deliveries, troops and a few comforts.
+  // kept from season to season. Earned only by the house's missions (eight a week, about 8 each),
+  // spent on privileges, rushed deliveries, troops and a few comforts.
   house: {
+    // The Livre de la Maison (the experts' E1-7, 25 October 2026): a board of 8 missions a
+    // week from Monday 0 h, thresholds doubled and Influence about 2.5 times: 64 a week expected
+    // (62.6 for the two boards of 84 hours before).
     missions: {
       everyHours: 84,
-      perBoard: 10,
+      weekly: true,
+      perBoard: 8,
       pool: [
-        { id: "deliveries", event: "delivery_arrived", count: 10, influence: 3 },
-        { id: "many_deliveries", event: "delivery_arrived", count: 25, influence: 5 },
+        { id: "deliveries", event: "delivery_arrived", count: 20, influence: 8 },
+        { id: "many_deliveries", event: "delivery_arrived", count: 50, influence: 12 },
         {
           id: "urgent",
           event: "delivery_arrived",
           filter: { kind: "urgent" },
-          count: 2,
-          influence: 4,
+          count: 4,
+          influence: 10,
         },
-        { id: "doge", event: "contract_fulfilled", count: 3, influence: 4 },
-        { id: "offers", event: "order_placed", filter: { kind: "limit" }, count: 3, influence: 2 },
-        { id: "rialto", event: "order_filled", count: 5, influence: 3 },
-        { id: "harvests", event: "harvest", count: 20, influence: 2 },
-        { id: "upgrade", event: "upgrade", count: 1, influence: 4 },
-        { id: "build", event: "build", count: 1, influence: 3 },
-        { id: "vehicle", event: "vehicle_upgraded", count: 1, influence: 3 },
-        { id: "chests", event: "daily_chest", count: 2, influence: 3 },
-        { id: "bales", event: "bale_opened", count: 4, influence: 2 },
+        { id: "doge", event: "contract_fulfilled", count: 6, influence: 10 },
+        { id: "offers", event: "order_placed", filter: { kind: "limit" }, count: 6, influence: 5 },
+        { id: "rialto", event: "order_filled", count: 10, influence: 8 },
+        { id: "harvests", event: "harvest", count: 40, influence: 5 },
+        { id: "upgrade", event: "upgrade", count: 2, influence: 10 },
+        { id: "build", event: "build", count: 2, influence: 8 },
+        { id: "vehicle", event: "vehicle_upgraded", count: 2, influence: 8 },
+        { id: "chests", event: "daily_chest", count: 4, influence: 8 },
+        { id: "bales", event: "bale_opened", count: 8, influence: 5 },
         // The Terraferma's, optional: two at most on a board, so that a pure merchant always has
-        // eight of trade (24 October 2026: five missions of the old campaign could not be done).
-        { id: "terra_place", event: "terra_placed", group: "terra", count: 1, influence: 2 },
+        // six of trade (24 October 2026: five missions of the old campaign could not be done).
+        { id: "terra_place", event: "terra_placed", group: "terra", count: 1, influence: 5 },
         {
           id: "terra_cells",
           event: "terra_cells_taken",
           sum: "count",
           group: "terra",
-          count: 15,
-          influence: 3,
+          count: 30,
+          influence: 8,
         },
         {
           id: "terra_city",
@@ -1196,7 +1200,7 @@ export const venice1450Settings: WorldSettingsInput = {
           sum: "cities",
           group: "terra",
           count: 1,
-          influence: 4,
+          influence: 10,
         },
         {
           id: "terra_rocca",
@@ -1204,9 +1208,9 @@ export const venice1450Settings: WorldSettingsInput = {
           filter: { kind: "rocca" },
           group: "terra",
           count: 1,
-          influence: 3,
+          influence: 8,
         },
-        { id: "terra_aid", event: "terra_troops_sent", group: "terra", count: 1, influence: 3 },
+        { id: "terra_aid", event: "terra_troops_sent", group: "terra", count: 2, influence: 8 },
       ],
       groupMax: { terra: 2 },
     },

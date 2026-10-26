@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "../api.js";
 import { fr } from "../i18n.js";
-import { Badge, Big, Label, Panel, Sheet, Slab, clock } from "../ui.js";
+import { Badge, Big, Label, Panel, Segmented, Sheet, Slab, clock } from "../ui.js";
+import { Daily } from "./Daily.js";
 import type { GameProps } from "./Game.js";
 import { gameApi } from "./api.js";
 import type { HouseView } from "./types.js";
@@ -65,6 +66,7 @@ function HouseBody(props: GameProps) {
   const [house, reload] = useHouse();
   const [message, setMessage] = useState<string | null>(null);
   const [buying, setBuying] = useState<string | null>(null);
+  const [page, setPage] = useState<"today" | "week">("week");
   if (!house) return null;
   const errors = fr.game.errors as Record<string, string>;
   const buy = async (code: string) => {
@@ -94,7 +96,22 @@ function HouseBody(props: GameProps) {
 
       {message && <p className="text-sm text-lagoon">{message}</p>}
 
-      <Missions {...props} onClaimed={reload} />
+      {/* Two pages (E1-7): the day's tasks and chest, the week's missions. */}
+      {props.view.daily && props.view.daily.tasks.length > 0 && (
+        <Segmented<"today" | "week">
+          value={page}
+          onChange={setPage}
+          options={[
+            { value: "today", label: t().pages.today },
+            { value: "week", label: t().pages.week },
+          ]}
+        />
+      )}
+      {page === "today" && props.view.daily && props.view.daily.tasks.length > 0 ? (
+        <Daily {...props} />
+      ) : (
+        <Missions {...props} onClaimed={reload} />
+      )}
 
       {props.view.mastery.chosen && spend && (
         <Panel>
@@ -183,7 +200,7 @@ function HouseBody(props: GameProps) {
   );
 }
 
-/** The board of the house's missions: ten every three and a half days, paid in Influence. */
+/** The board of the house's missions: eight a week from Monday (E1-7), paid in Influence. */
 function Missions(props: GameProps & { onClaimed: () => void }) {
   const board = props.view.houseMissions;
   if (!board || board.missions.length === 0) return null;

@@ -12,6 +12,7 @@ import {
 } from "./state.js";
 import { findRegion } from "./theme.js";
 import { type Tx, emit, fail } from "./tx.js";
+import { weekIndex, weekStart } from "./weekly.js";
 
 /**
  * The house between seasons (see docs/plan-progression.md): its fortune starts afresh every
@@ -107,6 +108,7 @@ export function seasonInfluence(ctx: WorldContext, tier: string): number {
 
 /** Index of the missions' board at `now` (a new one every `everyHours`). */
 export function missionBoard(ctx: WorldContext, now: number): number {
+  if (ctx.settings.house?.missions?.weekly) return Math.max(0, weekIndex(ctx, now));
   const every = ctx.settings.house?.missions?.everyHours ?? 0;
   if (every === 0) return 0;
   return Math.max(0, Math.floor((now - ctx.startAt) / (every * HOUR_MS)));
@@ -116,7 +118,7 @@ export function missionBoard(ctx: WorldContext, now: number): number {
  * The missions of a board, drawn from the pool, the same for every merchant. A group past its cap
  * gives way to the next mission drawn.
  */
-function missionsOf(ctx: WorldContext, board: number) {
+export function missionsOfBoard(ctx: WorldContext, board: number) {
   const cfg = ctx.settings.house?.missions;
   if (!cfg) return [];
   const taken: Record<string, number> = {};
@@ -146,7 +148,7 @@ function missionState(tx: Tx, playerId: PlayerId) {
 
 /** Counts this command's events towards the merchants' missions of the board. */
 export function trackHouseMissions(tx: Tx): void {
-  const missions = missionsOf(tx.ctx, missionBoard(tx.ctx, tx.now));
+  const missions = missionsOfBoard(tx.ctx, missionBoard(tx.ctx, tx.now));
   if (missions.length === 0) return;
   for (const e of tx.fx.events) {
     if (!e.playerId || !tx.s.players[e.playerId]) continue;
@@ -175,8 +177,10 @@ export function houseMissionsFor(
   const every = (ctx.settings.house?.missions?.everyHours ?? 0) * HOUR_MS;
   return {
     board,
-    endsAt: ctx.startAt + (board + 1) * every,
-    missions: missionsOf(ctx, board).map((m) => {
+    endsAt: ctx.settings.house?.missions?.weekly
+      ? weekStart(ctx, board + 1)
+      : ctx.startAt + (board + 1) * every,
+    missions: missionsOfBoard(ctx, board).map((m) => {
       const progress = Math.min(m.count, mine?.progress[m.id] ?? 0);
       return {
         id: m.id,
@@ -195,7 +199,7 @@ export function houseMissionsFor(
 /** Pays a mission done: its Influence, which the server keeps from season to season. */
 export function claimHouseMission(tx: Tx, playerId: PlayerId, missionId: string): void {
   const board = missionBoard(tx.ctx, tx.now);
-  const mission = missionsOf(tx.ctx, board).find((m) => m.id === missionId);
+  const mission = missionsOfBoard(tx.ctx, board).find((m) => m.id === missionId);
   if (!mission) fail("unknown_mission");
   const mine = missionState(tx, playerId);
   if ((mine.progress[missionId] ?? 0) < mission.count) fail("mission_not_done");

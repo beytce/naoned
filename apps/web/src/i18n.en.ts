@@ -1796,7 +1796,8 @@ export const en: Dictionary = {
       influence: "Influence",
       intro:
         "Your fortune starts again from zero every season, your House does not: Influence is kept from season to season and buys privileges: advantages kept forever, which open new things without ever bringing more.",
-      earn: "It cannot be bought nor earned by selling: only through the House's missions, ten every three and a half days.",
+      earn: "It cannot be bought nor earned by selling: only through the House's missions, eight each week, renewed on Monday.",
+      pages: { today: "Today", week: "This week" },
       open: "Open the book",
       balance: (n: number) => `${n} Influence`,
       catalog: "Privileges",
@@ -1837,7 +1838,7 @@ export const en: Dictionary = {
         glass: { name: "Art of glass", text: "The Murano glass chain." },
       } as Record<string, { name: string; text: string }>,
       missions: {
-        title: "Missions of the House",
+        title: "Missions of the week",
         renews: (t: string) => `New missions in ${t}`,
         claim: (n: number) => `Receive · ${n} ✦`,
         claimed: "Received",

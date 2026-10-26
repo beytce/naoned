@@ -1814,7 +1814,8 @@ const frDict = {
       influence: "Influence",
       intro:
         "Votre fortune repart à zéro chaque saison, votre Maison non : l'Influence se garde de saison en saison et achète des privilèges : des avantages gardés pour toujours, qui ouvrent du neuf sans jamais rapporter plus.",
-      earn: "Elle ne s'achète pas et ne se gagne pas en vendant : seulement par les missions de la Maison, dix tous les trois jours et demi.",
+      earn: "Elle ne s'achète pas et ne se gagne pas en vendant : seulement par les missions de la Maison, huit chaque semaine, renouvelées le lundi.",
+      pages: { today: "Aujourd'hui", week: "Cette semaine" },
       open: "Ouvrir le livre",
       balance: (n: number) => `${n} d'Influence`,
       catalog: "Privilèges",
@@ -1855,7 +1856,7 @@ const frDict = {
         glass: { name: "Art du verre", text: "La chaîne du verre de Murano." },
       } as Record<string, { name: string; text: string }>,
       missions: {
-        title: "Missions de la Maison",
+        title: "Missions de la semaine",
         renews: (t: string) => `Nouvelles missions dans ${t}`,
         claim: (n: number) => `Recevoir · ${n} ✦`,
         claimed: "Reçue",
