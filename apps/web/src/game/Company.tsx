@@ -1,4 +1,4 @@
-import { ResourceIcon } from "../art/resources.js";
+import { GoodsMark } from "../art/goods.js";
 import { fr } from "../i18n.js";
 import { Rules, Sheet, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
@@ -25,7 +25,7 @@ export function CompanyTile(props: GameProps) {
     <button
       type="button"
       onClick={() => props.setSheet("company")}
-      className={`flex w-full items-center gap-3 cut border px-3 py-2 text-left text-sm transition active:scale-[0.99] ${canGive ? "border-info/60 bg-info/10 text-info" : "border-line bg-night-3 text-cream-dim"}`}
+      className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left text-sm transition active:scale-[0.99] ${canGive ? "border-info/60 bg-info/10 text-info" : "border-line bg-night-3 text-cream-dim"}`}
     >
       <span className="min-w-0 flex-1">
         <span className="block font-semibold">{t.of(cityName(props, p.city))}</span>
@@ -56,8 +56,8 @@ function Line({ props, p, resource }: { props: GameProps; p: Project; resource: 
   const give = Math.max(0, Math.min(have - keep, need - done));
   const name = props.names.resource(resource);
   return (
-    <li className="flex items-center gap-3">
-      <ResourceIcon code={resource} size={32} />
+    <li className="flex items-center gap-3 rounded-2xl bg-night-2 p-3">
+      <GoodsMark code={resource} size={32} />
       <span className="min-w-0 flex-1">
         <span className="flex justify-between text-sm">
           <span className="font-semibold">{name}</span>
@@ -118,7 +118,7 @@ export function CompanySheet(props: GameProps) {
               {t.merchants(p.merchants)}
               {BigInt(p.mine) > 0n && <> · {t.mine(d(p.mine))}</>}
             </p>
-            <ul className="space-y-4">
+            <ul className="space-y-2">
               {Object.keys(p.needs).map((r) => (
                 <Line key={r} props={props} p={p} resource={r} />
               ))}
