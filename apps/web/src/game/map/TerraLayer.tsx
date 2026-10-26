@@ -592,25 +592,11 @@ export function useTerraShapes(v: TerraView | null | undefined): TerraShapes | n
     const holders = [...by.entries()].map(([i, cells]) => {
       const h = v.holders[i] ?? { me: false, ally: false, milan: false };
       const focus = focusOf(h, i, cells.length, around, enemies);
-      return { i, d: outline(map, cells), tone: tone[i] ?? P.cream, focus };
+      return { i, d: outlineOf(map, cells), tone: tone[i] ?? P.cream, focus };
     });
     // Milan under everyone, the merchant over all.
     holders.sort((a, b) => FOCUS_ORDER[a.focus] - FOCUS_ORDER[b.focus]);
-    let grid = "";
-    let x0 = Number.POSITIVE_INFINITY;
-    let x1 = Number.NEGATIVE_INFINITY;
-    let y0 = Number.POSITIVE_INFINITY;
-    let y1 = Number.NEGATIVE_INFINITY;
-    land.forEach((l, i) => {
-      if (!l) return;
-      const c = hexCorners(map, i, 0.96);
-      grid += `M${c.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join("L")}Z`;
-      const [x, y] = hexCenter(map, i);
-      x0 = Math.min(x0, x);
-      x1 = Math.max(x1, x);
-      y0 = Math.min(y0, y);
-      y1 = Math.max(y1, y);
-    });
+    const { grid, x0, x1, y0, y1 } = gridOf(map, v.map.terrain, land);
     // Off the war counters and the cities, which carry their own markers.
     const kept = new Set<number>([
       ...v.map.cities.map((c) => c.cell),
@@ -634,6 +620,55 @@ export function useTerraShapes(v: TerraView | null | undefined): TerraShapes | n
     ];
     return { map, land, holders, tone, me, grid, labels, edges };
   }, [owners, ids, foes]);
+}
+
+/**
+ * The grid of the land cells and its corners: the same all week (the map does not change), drawn
+ * once, not at every cell taken.
+ */
+let gridCache: {
+  key: string;
+  grid: string;
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+} | null = null;
+function gridOf(map: HexMap, terrain: string, land: boolean[]) {
+  const key = `${map.width}:${map.height}:${map.size}:${map.origin.join(",")}:${terrain}`;
+  if (gridCache?.key === key) return gridCache;
+  let grid = "";
+  let x0 = Number.POSITIVE_INFINITY;
+  let x1 = Number.NEGATIVE_INFINITY;
+  let y0 = Number.POSITIVE_INFINITY;
+  let y1 = Number.NEGATIVE_INFINITY;
+  land.forEach((l, i) => {
+    if (!l) return;
+    const c = hexCorners(map, i, 0.96);
+    grid += `M${c.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join("L")}Z`;
+    const [x, y] = hexCenter(map, i);
+    x0 = Math.min(x0, x);
+    x1 = Math.max(x1, x);
+    y0 = Math.min(y0, y);
+    y1 = Math.max(y1, y);
+  });
+  gridCache = { key, grid, x0, x1, y0, y1 };
+  return gridCache;
+}
+
+/**
+ * A holder's outline, drawn again only when its cells change: at each refresh most holders keep
+ * theirs (a front takes a few cells).
+ */
+const outlines = new Map<string, string>();
+function outlineOf(map: HexMap, cells: number[]): string {
+  const key = `${map.width}:${map.size}:${cells.join(",")}`;
+  const known = outlines.get(key);
+  if (known !== undefined) return known;
+  const d = outline(map, cells);
+  if (outlines.size > 400) outlines.clear();
+  outlines.set(key, d);
+  return d;
 }
 
 /** "14:20", Paris time: when a front will reach a cell. */

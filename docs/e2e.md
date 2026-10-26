@@ -17,6 +17,19 @@ son centre, une pièce des effets restée à l'écran (sur la bulle du guide com
 pnpm --filter @comptoirs/web build && pnpm --filter @comptoirs/web e2e
 ```
 
+`PERF=1` mesure la Terraferme d'un jeudi à 40 marchands sur un téléphone (processeur ralenti
+×4) : tâches longues et durée des images à l'ouverture, au déplacement, au zoom et pendant un
+rafraîchissement où les troupes changent ; `PERF_PROFILE=1` y ajoute les fonctions les plus
+coûteuses (le mieux sur un build non minifié, `npx vite build --minify false`). Avec
+`SIZES=390x844`, la mesure du 26 octobre 2026 donne :
+
+| Mesure | Avant | Après |
+| --- | --- | --- |
+| Ouverture : tâches longues | 1,2 s | 0,67 s |
+| Trois glissés : tâches longues | 1,2 s | 0,39 s |
+| Trois glissés : travail du navigateur | 2,4 s (script 0,44 s, styles 0,78 s) | 0,6 s (script 0,06 s, styles 0,07 s) |
+| Zoom (10 crans) : tâches longues | 1,2 s | 0,44 s |
+
 `LANG=en` joue la même session dans l'interface anglaise (`/?lang=en`), aux deux formats et sous
 les mêmes règles d'`assert.mjs` ; les mots que le script lit sont dans la table `WORDS` de
 `layout.mjs`. Les captures vont alors dans `SHOTS` (par exemple `e2e-shots-en`).

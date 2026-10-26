@@ -71,6 +71,47 @@ function recruitClock(
 const FORECAST_MS = 24 * 3_600_000;
 const FORECAST_CELLS = 12;
 
+/**
+ * The fronts' forecast, once a state of the map for all of its fronts: simulating the week ahead
+ * is the dearest part of a view, and every merchant asks for one every few seconds. A live match
+ * (a skirmish, the Condotta) changes its map in place: its clock and fronts tell a new one.
+ */
+const forecasts = new WeakMap<
+  TerraState,
+  { key: string; cfg: unknown; horizon: number; all: ReturnType<typeof forecastFronts> }
+>();
+function forecastFor(s: TerraState, cfg: TerraConfig, ids: string[], horizon: number) {
+  const key = `${s.clock}:${s.nextFront}:${s.fronts.map((f) => `${f.id}/${f.troops}`).join(",")}`;
+  let known = forecasts.get(s);
+  if (!known || known.key !== key || known.cfg !== cfg || known.horizon < horizon) {
+    // A step past the asked horizon: the requests of the next minutes find it too.
+    const far = horizon + cfg.stepMinutes * 60_000 * 12;
+    known = {
+      key,
+      cfg,
+      horizon: far,
+      all: forecastFronts(
+        s,
+        cfg,
+        s.fronts.map((f) => f.id),
+        far,
+      ),
+    };
+    forecasts.set(s, known);
+  }
+  // Cut at this request's horizon: what the simulation of that horizon alone would have said.
+  const out: ReturnType<typeof forecastFronts> = {};
+  for (const id of ids) {
+    const f = known.all[id];
+    if (!f) continue;
+    out[id] = {
+      takes: f.takes.filter((x) => x.at <= horizon),
+      endsAt: f.endsAt !== null && f.endsAt <= horizon ? f.endsAt : null,
+    };
+  }
+  return out;
+}
+
 export interface TerraName {
   pseudo: string | null;
   crest: unknown;
@@ -121,7 +162,7 @@ export function terraView(
   const watched = s.fronts
     .filter((f) => f.owner === playerId || f.against === playerId)
     .map((f) => f.id);
-  const forecast = forecastFronts(s, cfg, watched, now + FORECAST_MS);
+  const forecast = forecastFor(s, cfg, watched, now + FORECAST_MS);
   return {
     week: t.week,
     closesAt: campaignWeekEnd(ctx, t.week),

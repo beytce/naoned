@@ -403,8 +403,18 @@ export function Coach(props: CoachProps) {
   const highTarget = rect !== null && rect.top < Math.max(BUBBLE_ROOM, hudTop + 8 + bubbleH);
   const atTop =
     !highTarget && (props.sheet !== null || props.selection !== null || onFollow || lowTarget);
+  // A target in the top of the screen (a round of the HUD) while a place's panel holds the foot:
+  // the bubble just under the target, between the two, covering neither (a longer language
+  // makes it taller).
+  const underTarget =
+    highTarget &&
+    props.sheet === null &&
+    props.selection !== null &&
+    rect !== null &&
+    rect.bottom < window.innerHeight * 0.4 &&
+    rect.bottom + 12 + bubbleH < window.innerHeight;
   // The bubble at the top: the toasts go to the foot (index.css).
-  if (atTop) document.body.dataset.coachTop = "1";
+  if (atTop || underTarget) document.body.dataset.coachTop = "1";
   else delete document.body.dataset.coachTop;
   const pad = 6;
   // Kept inside the screen: the tab bar's end tabs touch its edges.
@@ -440,11 +450,15 @@ export function Coach(props: CoachProps) {
         // window's head when one is open.
         ref={bubble}
         style={
-          atTop && props.sheet === null ? { top: "calc(var(--hud-top, 0.75rem) + 8px)" } : undefined
+          underTarget && rect
+            ? { top: rect.bottom + 12 }
+            : atTop && props.sheet === null
+              ? { top: "calc(var(--hud-top, 0.75rem) + 8px)" }
+              : undefined
         }
         // Over a window, at the top, from 380 px wide, it leaves the window's cross free on the right (round
         // corners since the Lagune direction: no cut corner left room for it).
-        className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-[calc(1rem+env(safe-area-inset-bottom))] lg:bottom-28"} ${atTop && props.sheet !== null ? "min-[380px]:max-lg:right-16" : ""}`}
+        className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop || underTarget ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-[calc(1rem+env(safe-area-inset-bottom))] lg:bottom-28"} ${(atTop || underTarget) && props.sheet !== null ? "min-[380px]:max-lg:right-16" : ""}`}
       >
         <LorenzoCard
           bubble

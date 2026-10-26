@@ -586,6 +586,126 @@ async function teamWeek(page, door, check) {
   await page.unroute("**/api/game/terra");
 }
 
+/** PERF=1: how heavy the Terraferma is on a phone (CPU × 4): long tasks and frames, opened and moved. */
+async function perf(page, open, terra) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+  const watch = () =>
+    page.evaluate(() => {
+      window.__perf = { long: [], frames: [] };
+      new PerformanceObserver((l) => {
+        for (const e of l.getEntries()) window.__perf.long.push(Math.round(e.duration));
+      }).observe({ type: "longtask", buffered: false });
+      let last = performance.now();
+      const tick = (t) => {
+        window.__perf.frames.push(t - last);
+        last = t;
+        if (window.__perf.on !== false) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  const read = (what) =>
+    page.evaluate((what) => {
+      const p = window.__perf;
+      p.on = false;
+      const f = p.frames.slice(1).sort((a, b) => a - b);
+      const q = (x) => Math.round(f[Math.floor((f.length - 1) * x)] ?? 0);
+      return `${what}: long tasks ${p.long.length} (total ${p.long.reduce((a, b) => a + b, 0)} ms, max ${Math.max(0, ...p.long)} ms); frames ${f.length}, median ${q(0.5)} ms, p95 ${q(0.95)} ms, max ${q(1)} ms`;
+    }, what);
+  const profile = async (what, run) => {
+    await cdp.send("Profiler.enable");
+    await cdp.send("Profiler.setSamplingInterval", { interval: 200 });
+    await cdp.send("Profiler.start");
+    await run();
+    const { profile: prof } = await cdp.send("Profiler.stop");
+    const self = new Map();
+    const dt = prof.timeDeltas ?? [];
+    const byId = new Map(prof.nodes.map((n) => [n.id, n]));
+    prof.samples.forEach((id, i) => {
+      const n = byId.get(id);
+      const f = n.callFrame;
+      const key = `${f.functionName || "(anon)"} ${f.url.split("/").pop()}:${f.lineNumber}`;
+      self.set(key, (self.get(key) ?? 0) + (dt[i] ?? 0) / 1000);
+    });
+    const top = [...self.entries()]
+      .filter(([k]) => !k.startsWith("(idle)") && !k.startsWith("(program)"))
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 14)
+      .map(([k, v]) => `    ${Math.round(v)} ms ${k}`);
+    console.log(`PERF profile ${what}:\n${top.join("\n")}`);
+  };
+  if (process.env.PERF_PROFILE === "1") {
+    await profile("open", open);
+    const box0 = page.viewportSize();
+    await profile("pan", async () => {
+      await page.mouse.move(box0.width / 2, box0.height / 2);
+      await page.mouse.down();
+      for (let i = 1; i <= 20; i++)
+        await page.mouse.move(box0.width / 2 - i * 6, box0.height / 2 - i * 4);
+      await page.mouse.up();
+    });
+  }
+  await watch();
+  const t0 = Date.now();
+  await open();
+  console.log(`PERF open (${Date.now() - t0} ms with waits)`, await read("open"));
+  await watch();
+  const box = page.viewportSize();
+  const cx = box.width / 2;
+  const cy = box.height / 2;
+  for (let k = 0; k < 3; k++) {
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    for (let i = 1; i <= 20; i++) await page.mouse.move(cx - i * 6, cy - i * 4);
+    await page.mouse.up();
+  }
+  console.log("PERF", await read("pan"));
+  {
+    await cdp.send("Performance.enable");
+    const m0 = Object.fromEntries(
+      (await cdp.send("Performance.getMetrics")).metrics.map((m) => [m.name, m.value]),
+    );
+    for (let k = 0; k < 3; k++) {
+      await page.mouse.move(cx, cy);
+      await page.mouse.down();
+      for (let i = 1; i <= 20; i++) await page.mouse.move(cx - i * 6, cy - i * 4);
+      await page.mouse.up();
+    }
+    const m1 = Object.fromEntries(
+      (await cdp.send("Performance.getMetrics")).metrics.map((m) => [m.name, m.value]),
+    );
+    const d = (k) => `${k} ${Math.round(((m1[k] ?? 0) - (m0[k] ?? 0)) * 1000)}`;
+    console.log(
+      "PERF pan metrics (ms):",
+      ["TaskDuration", "ScriptDuration", "RecalcStyleDuration", "LayoutDuration"].map(d).join(", "),
+      `layouts ${m1.LayoutCount - m0.LayoutCount}, styles ${m1.RecalcStyleCount - m0.RecalcStyleCount}, nodes ${m1.Nodes}`,
+    );
+  }
+  await watch();
+  for (let i = 0; i < 10; i++) {
+    await page.mouse.wheel(0, i < 5 ? -120 : 120);
+    await page.waitForTimeout(60);
+  }
+  console.log("PERF", await read("zoom"));
+  // A refresh as the week gives it: troops moved, a cell changed hands.
+  let k = 0;
+  await page.unroute("**/api/game/terra");
+  await page.route("**/api/game/terra", (route) => {
+    k++;
+    const v = structuredClone(terra);
+    for (const h of v.holders) h.troops += k;
+    const cell = v.owner.findIndex((o, i) => o >= 0 && v.map.terrain[i] !== "w" && i % 7 === k % 7);
+    if (cell >= 0) v.owner[cell] = (v.owner[cell] + 1) % v.holders.length;
+    return route.fulfill({ json: { terra: v } });
+  });
+  await watch();
+  await page.waitForTimeout(12_000);
+  console.log("PERF", await read("idle 12 s (a refresh, troops and a cell changed)"));
+  await page.unroute("**/api/game/terra");
+  await page.route("**/api/game/terra", (route) => route.fulfill({ json: { terra } }));
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+}
+
 /**
  * The Condotta (E2-5 of the experts): opened from the Terraferma's chip, played alone at once, its
  * match 8 minutes at most, its bar and the match's map laid out like the rest; back to the week.
@@ -689,6 +809,7 @@ async function midWeek(page, door, check, pseudo) {
     await door.click();
     await page.waitForTimeout(1500);
   };
+  if (process.env.PERF === "1") await perf(page, open, terra);
   await open();
   await check("terraferme-jeudi");
   await lightHud(page, "terraferme-jeudi");
