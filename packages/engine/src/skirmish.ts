@@ -75,7 +75,7 @@ export function skirmishRanked(cfg: TerraConfig | undefined, humans: number, now
 }
 
 /** The Terraferma's settings for a skirmish: all hours open, no truce, short steps. */
-function skirmishConfig(cfg: TerraConfig): TerraConfig {
+export function skirmishConfig(cfg: TerraConfig): TerraConfig {
   const sk = cfg.skirmish;
   if (!sk) throw new Error("no skirmish");
   return {
@@ -174,14 +174,17 @@ export function advanceSkirmish(sk: Skirmish, now: number): void {
   while (!sk.state.closed && sk.state.clock + step <= until) {
     advanceTerra(sk.state, sk.cfg, sk.state.clock + step);
     for (const id of Object.keys(sk.state.players).sort())
-      if (id.startsWith("bot:")) botMoves(sk, id);
+      if (id.startsWith("bot:")) aiMoves(sk.state, sk.cfg, id);
   }
   if (now >= sk.endsAt || sk.state.closed) finish(sk);
 }
 
-/** A house of the computer: a front at free land, else at its thinnest neighbour, else Milan. */
-function botMoves(sk: Skirmish, id: string): void {
-  const s = sk.state;
+/**
+ * A house of the computer (or a merchant the simulator plays): a front at free land, else at its
+ * thinnest neighbour, else Milan.
+ */
+export function aiMoves(s: TerraState, cfg: TerraConfig, id: string, shareBps = 5_000): void {
+  const sk = { cfg };
   const me = s.players[id];
   if (!me || me.eliminatedAt !== undefined || me.troops * 10 < capOf(s, sk.cfg, id) * 3) return;
   const mine = s.fronts.filter((f) => f.owner === id);
@@ -206,7 +209,7 @@ function botMoves(sk: Skirmish, id: string): void {
   );
   for (const t of targets) {
     try {
-      launchFront(s, sk.cfg, id, t.cell, 5_000, s.clock);
+      launchFront(s, sk.cfg, id, t.cell, shareBps, s.clock);
       return;
     } catch (e) {
       if (!(e instanceof EngineError)) throw e;

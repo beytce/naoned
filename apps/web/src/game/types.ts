@@ -1321,6 +1321,37 @@ export type SkirmishStatus =
     } & SkirmishStake &
       SkirmishDay);
 
+/** The merchant's Condotta (E2-5): its level and grade, a lobby, or its match. */
+interface CondottaMine {
+  /** The highest level open, the best won, of so many. */
+  level: number;
+  best: number;
+  levels: number;
+  grade: { code: string; name: string } | null;
+  minutes: number;
+  holdShareBps: number;
+  maxPlayers: number;
+}
+export type CondottaStatus =
+  | { phase: "off" }
+  | ({ phase: "none"; company: boolean } & CondottaMine)
+  | ({
+      phase: "lobby";
+      lobby: string;
+      opensAt: number;
+      joined: boolean;
+      players: (string | null)[];
+    } & CondottaMine)
+  | ({
+      phase: "playing" | "done";
+      endsAt: number;
+      playedLevel: number;
+      holdCell: number;
+      players: (string | null)[];
+      result: { won: boolean; shareBps: number; holdsCity: boolean; cells: number } | null;
+      view: TerraView | null;
+    } & CondottaMine);
+
 /** The counter's dashboard (GET /api/game/dashboard). */
 export interface DashboardView {
   perHour: string;

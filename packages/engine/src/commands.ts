@@ -96,6 +96,11 @@ export type Command =
     }
   /** From the server: a house run by the computer that joined before houses were marked. */
   | { type: "markNpc"; playerId: PlayerId }
+  /**
+   * From the server: a Condotta won by these merchants at a level (E2-5). Its event counts towards
+   * the house's missions; nothing else (no ducats, no goods, no Glory).
+   */
+  | { type: "condottaWon"; playerIds: PlayerId[]; level: number }
   /** A patent bought with Influence (server only: it checked and took the price). */
   | { type: "grantPatent"; playerId: PlayerId; patent: string }
   | { type: "claimHouseMission"; playerId: PlayerId; missionId: string }
@@ -288,6 +293,11 @@ function apply(tx: Tx, cmd: Command): void {
     if (!p) fail("unknown_player");
     p.passUntil = Math.max(p.passUntil ?? 0, cmd.until);
     emit(tx, "pass_granted", cmd.playerId, { until: cmd.until });
+    return;
+  }
+  if (cmd.type === "condottaWon") {
+    for (const id of cmd.playerIds)
+      if (tx.s.players[id]) emit(tx, "condotta_won", id, { level: cmd.level });
     return;
   }
   if (cmd.type === "markNpc") {

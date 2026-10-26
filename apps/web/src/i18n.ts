@@ -2321,6 +2321,35 @@ const frDict = {
         },
       ],
     },
+    /** The Condotta (E2-5): together against the nations, for a grade and nothing else. */
+    condotta: {
+      title: "Condotta",
+      leave: "← La semaine",
+      off: "Pas de Condotta dans ce monde.",
+      pitch: (minutes: number, share: number) =>
+        `Une partie de ${minutes} minutes en coopération, seul ou avec votre compagnie, contre trois nations et Milan. Tenez Padoue et ${share} % des terres à la fin.`,
+      noReward: "Ni ducats, ni marchandises, ni Gloire : un grade, et le niveau suivant.",
+      level: (level: number, levels: number) => `Niveau ${level} / ${levels}`,
+      grade: (name: string) => `Grade : ${name}`,
+      alone: "Jouer seul",
+      company: "Avec ma compagnie",
+      lobby: (n: number, time: string) => `${n} associé${n > 1 ? "s" : ""} · départ dans ${time}`,
+      join: "Rejoindre",
+      playing: (level: number, time: string) => `Niveau ${level} · fin dans ${time}`,
+      hold: (share: number, target: number, city: string, holds: boolean) =>
+        `${share}\u00a0% des terres sur ${target}\u00a0%${holds ? ` · ${city} tenue` : ` · ${city} à prendre`}`,
+      won: (level: number) => `Victoire au niveau ${level} : le niveau suivant s'ouvre.`,
+      lost: (level: number) => `Défaite au niveau ${level} : réessayez, ou venez à plusieurs.`,
+      again: "Rejouer",
+      /** The profile's line: the grade, and the best level won. */
+      record: (grade: string, best: number) => `Condotta : ${grade} (niveau ${best} gagné)`,
+      errors: {
+        already_in: "Une Condotta vous attend déjà.",
+        no_company: "Il faut une compagnie (Profil).",
+        lobby_full: "La troupe est au complet.",
+        other: "Cela n'a pas marché. Réessayez.",
+      } as Record<string, string>,
+    },
     /** Skirmishes: live matches on the Terraferma. */
     skirmish: {
       title: "Escarmouche",
@@ -2627,6 +2656,7 @@ const frDict = {
         "Terraferme : le Signore est toujours un marchand ; les maisons de l'ordinateur restent au classement de la semaine mais ne reçoivent ni palier ni Influence. Une maison qui se retire rend ses terres.",
         "Missions de la Maison : celles de l'ancienne campagne sont remplacées par des missions de la Terraferme, deux au plus par tableau.",
         "Pass Négociant : plus aucun avantage de jeu (ni quota à la Dogana, ni offre ouverte, ni produits frais en plus, ni commande du Doge échangée, ni alerte de bonne affaire) ; il ne donne que de l'information à lire et du cosmétique.",
+        "Terraferme : la Condotta, 8 minutes en coopération, seul ou avec sa compagnie, contre trois nations et Milan. Tenez Padoue et 35 % des terres pour ouvrir le niveau suivant (12 niveaux). Ni ducats, ni marchandises, ni Gloire : un grade, de Condottiere di ventura à Capitano generale.",
       ],
     },
     howTo: [

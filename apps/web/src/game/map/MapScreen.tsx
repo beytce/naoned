@@ -1,4 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ApiError } from "../../api.js";
 import { defaultCrest } from "../../art/crest.js";
 import { goodsColour } from "../../art/goods.js";
 import { ResourceIcon } from "../../art/resources.js";
@@ -68,6 +69,7 @@ import { CityOrbit, ComptoirOrbit } from "./Orbit.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
 import { SIDE_W, SideColumn } from "./SideColumn.js";
 import {
+  CondottaBar,
   SkirmishBar,
   TerraActions,
   TerraHud,
@@ -81,6 +83,7 @@ import {
   terraSpots,
   terraTap,
   useAbsence,
+  useCondotta,
   useSkirmish,
   useTerra,
   useTerraShapes,
@@ -236,7 +239,17 @@ export function MapScreen(
   const [skirmishOn, setSkirmishOn] = useState(false);
   const skirmish = useSkirmish(props.layer === "terra" && skirmishOn);
   const skirmishView = skirmish.status && "view" in skirmish.status ? skirmish.status.view : null;
-  const servedView = skirmishOn && skirmishView ? skirmishView : weekView;
+  // The Condotta (E2-5), the same way: its own map in place of the week's.
+  const [condottaOn, setCondottaOn] = useState(false);
+  const [condottaError, setCondottaError] = useState<string | null>(null);
+  const condotta = useCondotta(props.layer === "terra" && condottaOn);
+  const condottaView = condotta.status && "view" in condotta.status ? condotta.status.view : null;
+  const servedView =
+    skirmishOn && skirmishView
+      ? skirmishView
+      : condottaOn && condottaView
+        ? condottaView
+        : weekView;
   // A front just ordered shows at once, before the server answers (dropped at its answer).
   const [pending, setPending] = useState<TerraView["fronts"][number] | null>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: a fresh view replaces the pending front.
@@ -252,11 +265,12 @@ export function MapScreen(
         : servedView,
     [servedView, pending],
   );
-  const absence = useAbsence(terraView, props.layer === "terra" && !skirmishOn, now);
+  const absence = useAbsence(terraView, props.layer === "terra" && !skirmishOn && !condottaOn, now);
   const week = useWeekReplay(absence.view);
   const shapes = useTerraShapes(week.view);
   const act = props.act;
   const refreshSkirmish = skirmish.refresh;
+  const refreshCondotta = condotta.refresh;
   const terraAct = useCallback(
     async (a: TerraAction) => {
       const v = servedView;
@@ -273,6 +287,15 @@ export function MapScreen(
           takes: [],
           endsAt: null,
         });
+      if (condottaOn && condottaView) {
+        const ok = await gameApi
+          .condottaAct(a)
+          .then((r) => r.ok)
+          .catch(() => false);
+        if (!ok) setPending(null);
+        refreshCondotta();
+        return ok;
+      }
       if (skirmishOn && skirmishView) {
         const ok = await gameApi
           .skirmishAct(a)
@@ -287,7 +310,17 @@ export function MapScreen(
       refreshTerra();
       return ok;
     },
-    [act, refreshTerra, refreshSkirmish, skirmishOn, skirmishView, servedView],
+    [
+      act,
+      refreshTerra,
+      refreshSkirmish,
+      refreshCondotta,
+      skirmishOn,
+      skirmishView,
+      condottaOn,
+      condottaView,
+      servedView,
+    ],
   );
 
   const cities = useMemo(
@@ -783,7 +816,7 @@ export function MapScreen(
         }
         actions={
           // Without a camp, the invitation to set one down is the only call at the foot.
-          terra?.me && !skirmishOn ? (
+          terra?.me && !skirmishOn && !condottaOn ? (
             <TerraActions
               v={terra}
               extra={
@@ -804,6 +837,7 @@ export function MapScreen(
                 )
               }
               onSkirmish={() => setSkirmishOn(true)}
+              onCondotta={() => setCondottaOn(true)}
               onReplay={week.playing ? undefined : week.start}
             />
           ) : undefined
@@ -838,7 +872,7 @@ export function MapScreen(
         onHelp={terra ? props.openTerraGuide : props.openHelp}
       />
       {panel}
-      {terra && !skirmishOn && (
+      {terra && !skirmishOn && !condottaOn && (
         <TerraIntro onGuide={props.openTerraGuide} top={Math.max(160, hudBand)} />
       )}
       {terra && skirmishOn && (
@@ -852,6 +886,37 @@ export function MapScreen(
               .finally(refreshSkirmish);
           }}
           onLeave={() => setSkirmishOn(false)}
+        />
+      )}
+      {terra && condottaOn && (
+        <CondottaBar
+          status={condotta.status}
+          now={now}
+          error={condottaError}
+          cityName={(cell) => {
+            const code = condottaView?.map.cities.find((c) => c.cell === cell)?.code;
+            return code ? props.names.city(code) : "—";
+          }}
+          onOpen={(company) => {
+            setCondottaError(null);
+            void gameApi
+              .condottaOpen(company)
+              .catch((e) =>
+                setCondottaError(
+                  fr.game.condotta.errors[e instanceof ApiError ? e.code : ""] ??
+                    fr.game.condotta.errors.other ??
+                    null,
+                ),
+              )
+              .finally(refreshCondotta);
+          }}
+          onJoin={(lobby) => {
+            void gameApi
+              .condottaJoin(lobby)
+              .catch(() => undefined)
+              .finally(refreshCondotta);
+          }}
+          onLeave={() => setCondottaOn(false)}
         />
       )}
       {side && <SideColumn props={props} onCity={goCity} />}

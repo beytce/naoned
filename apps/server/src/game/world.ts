@@ -486,8 +486,8 @@ export class GameWorld {
             lastSeenAt: at,
           });
         }
-      } else if (command.type === "terraSkirmishPay") {
-        // A skirmish paid by the server: no one's step of the tutorial.
+      } else if (command.type === "terraSkirmishPay" || command.type === "condottaWon") {
+        // A skirmish paid or a Condotta won, by the server: no one's step of the tutorial.
       } else if (command.type !== "tick") {
         await this.recordTutorial(tx, command.playerId, fx.events, at);
       } else {

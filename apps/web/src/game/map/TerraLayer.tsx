@@ -31,7 +31,7 @@ import {
   territoryLook,
   tones,
 } from "../terraShapes.js";
-import type { SkirmishStatus, TerraAction, TerraView } from "../types.js";
+import type { CondottaStatus, SkirmishStatus, TerraAction, TerraView } from "../types.js";
 import { HudTip, usePresence, useTip } from "./HudTips.js";
 import { orbStyle } from "./Markers.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
@@ -237,6 +237,176 @@ export function SkirmishBar({
       )}
     </div>
   );
+}
+
+/** The Condotta (E2-5): its state, fetched each second while it is shown. */
+export function useCondotta(shown: boolean): {
+  status: CondottaStatus | null;
+  refresh: () => void;
+} {
+  const [status, setStatus] = useState<CondottaStatus | null>(null);
+  const refresh = useCallback(() => {
+    gameApi
+      .condotta()
+      .then(setStatus)
+      .catch(() => undefined);
+  }, []);
+  useEffect(() => {
+    if (!shown) return;
+    refresh();
+    const id = setInterval(refresh, 1_000);
+    return () => clearInterval(id);
+  }, [shown, refresh]);
+  return { status, refresh };
+}
+
+/**
+ * The Condotta's bar: the level and the grade, alone or with the company, the lobby, the share of
+ * the land against the target and the city at stake, the result; and the way back to the week.
+ */
+export function CondottaBar({
+  status,
+  now,
+  cityName,
+  onOpen,
+  onJoin,
+  onLeave,
+  error,
+}: {
+  status: CondottaStatus | null;
+  now: number;
+  /** The city at stake, by its cell on the match's map. */
+  cityName: (cell: number) => string;
+  onOpen: (company: boolean) => void;
+  onJoin: (lobby: string) => void;
+  onLeave: () => void;
+  error: string | null;
+}) {
+  const k = fr.game.condotta;
+  const pct = (bps: number) => Math.floor(bps / 100);
+  return (
+    <div
+      data-panel="condotta-bar"
+      className={`pointer-events-auto absolute inset-x-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+11rem)] z-20 mx-auto max-w-sm cut border border-gold/60 bg-night text-sm shadow-lg lg:top-24 ${status?.phase === "playing" ? "space-y-0.5 px-3 py-1" : "space-y-2 p-3"}`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="shrink-0 font-display font-extrabold uppercase text-gold">
+          ⚑ {k.title}
+        </span>
+        <button
+          type="button"
+          className="label min-h-11 whitespace-nowrap text-right text-cream-dim"
+          onClick={onLeave}
+        >
+          {k.leave}
+        </button>
+      </div>
+      {!status || status.phase === "off" ? (
+        <p className="meta">{k.off}</p>
+      ) : (
+        <>
+          {status.phase !== "playing" && (
+            <p className="text-xs font-semibold text-cream-dim">
+              {[
+                k.level(status.level, status.levels),
+                status.grade ? k.grade(status.grade.name) : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          )}
+          {status.phase === "none" ? (
+            <>
+              <p className="text-sm text-cream-dim">
+                {k.pitch(status.minutes, pct(status.holdShareBps))}
+              </p>
+              <p className="text-xs text-muted">{k.noReward}</p>
+              <div className="flex gap-2">
+                <Slab className="flex-1" onClick={() => onOpen(false)}>
+                  {k.alone}
+                </Slab>
+                {status.company && (
+                  <Slab tone="ghost" className="flex-1" onClick={() => onOpen(true)}>
+                    {k.company}
+                  </Slab>
+                )}
+              </div>
+            </>
+          ) : status.phase === "lobby" ? (
+            <>
+              <p className="text-sm">
+                {k.lobby(status.players.length, clock(Math.max(0, status.opensAt - now)))}
+              </p>
+              <p className="text-xs text-cream-dim">
+                {status.players.map((p) => merchantLabel(p, false)).join(", ")}
+              </p>
+              {!status.joined && (
+                <Slab className="w-full" onClick={() => onJoin(status.lobby)}>
+                  {k.join}
+                </Slab>
+              )}
+            </>
+          ) : (
+            <>
+              {/* While it plays, one line: the map underneath is the match. */}
+              <p className={status.result ? "text-sm" : "text-xs"}>
+                {status.result
+                  ? status.result.won
+                    ? k.won(status.playedLevel)
+                    : k.lost(status.playedLevel)
+                  : [
+                      k.playing(status.playedLevel, clock(Math.max(0, status.endsAt - now))),
+                      status.view
+                        ? k.hold(
+                            pct(landShare(status.view)),
+                            pct(status.holdShareBps),
+                            cityName(status.holdCell),
+                            holdsAt(status.view, status.holdCell),
+                          )
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+              </p>
+              {status.result && (
+                <p className="text-xs text-cream-dim">
+                  {k.hold(
+                    pct(status.result.shareBps),
+                    pct(status.holdShareBps),
+                    cityName(status.holdCell),
+                    status.result.holdsCity,
+                  )}
+                </p>
+              )}
+              {status.result && (
+                <Slab className="w-full" onClick={() => onOpen(false)}>
+                  {k.again}
+                </Slab>
+              )}
+            </>
+          )}
+        </>
+      )}
+      {error && <p className="text-xs text-vermilion">{error}</p>}
+    </div>
+  );
+}
+
+/** The merchants' share of the land on a match's map (bps). */
+function landShare(v: TerraView): number {
+  const land = [...v.map.terrain].filter((t) => t !== "w").length;
+  const merchants = new Set(
+    v.holders.map((h, i) => (h.milan || h.nation ? -1 : i)).filter((i) => i >= 0),
+  );
+  const held = v.owner.filter((o) => merchants.has(o)).length;
+  return land > 0 ? Math.floor((held * 10_000) / land) : 0;
+}
+
+/** Whether the merchants hold the city at stake. */
+function holdsAt(v: TerraView, cell: number): boolean {
+  const o = v.owner[cell] ?? -1;
+  const h = v.holders[o];
+  return cell < 0 || (!!h && !h.milan && !h.nation);
 }
 
 /** Whether merchants may still set down this week. */
@@ -1339,11 +1509,14 @@ function NotePlaque({
 export function TerraActions({
   v,
   onSkirmish,
+  onCondotta,
   onReplay,
   extra,
 }: {
   v: TerraView;
   onSkirmish?: () => void;
+  /** The Condotta (E2-5), at any hour. */
+  onCondotta?: () => void;
   onReplay?: () => void;
   /** A round of the map's own (« Me centrer »). */
   extra?: ReactNode;
@@ -1363,6 +1536,17 @@ export function TerraActions({
             onClick={onSkirmish}
           >
             {fr.game.skirmish.title}
+          </HudChip>
+        )}
+        {onCondotta && (
+          <HudChip
+            hud="terra-condotta"
+            icon={<Icon.skirmish />}
+            tone="plain"
+            label={fr.game.condotta.title}
+            onClick={onCondotta}
+          >
+            <span className="max-[359px]:sr-only">{fr.game.condotta.title}</span>
           </HudChip>
         )}
         {onReplay && (
