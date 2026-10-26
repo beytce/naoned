@@ -17,6 +17,7 @@ import { suggestPseudo } from "./auth/names.js";
 import { AuthError, AuthService, SESSION_DAYS, langSchema, originSchema } from "./auth/service.js";
 import type { Db } from "./db/client.js";
 import { countFunnel } from "./funnel.js";
+import { CondottaHub } from "./game/condotta.js";
 import { registerGameRoutes } from "./game/routes.js";
 import { SkirmishHub } from "./game/skirmish.js";
 import type { GameWorld } from "./game/world.js";
@@ -295,8 +296,11 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
     const skirmishes = new SkirmishHub(options.db, options.world, notifier);
     await skirmishes.recover(options.world.now());
     skirmishes.start();
+    const condottas = new CondottaHub(options.db, options.world);
+    condottas.start();
     app.addHook("onClose", async () => {
       skirmishes.stop();
+      condottas.stop();
       await skirmishes.flush();
     });
     registerGameRoutes(app, {
@@ -306,6 +310,7 @@ export async function buildApp(options: AppOptions): Promise<FastifyInstance> {
       sessionCookie: SESSION_COOKIE,
       notifier,
       skirmishes,
+      condottas,
       adminEmails: options.adminEmails ?? [],
       communityUrl: options.communityUrl ?? null,
     });

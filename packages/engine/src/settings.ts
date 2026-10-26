@@ -488,6 +488,32 @@ export const worldSettingsSchema = z.object({
           callLobbyMinutes: positive.prefault(10),
         })
         .optional(),
+      /**
+       * The Condotta (E2-5 of the experts, the owner's decision of 24 October 2026): 1 to
+       * `maxPlayers` allied merchants set down in the middle against `nations` of the catalogue
+       * and Milan from the edges, a live match of `minutes` at `speed` on the skirmishes' engine.
+       * Won holding `holdCity` (else the city nearest the middle) and `holdShareBps` of the land
+       * at the end. `levels` levels: each nation (and Milan) has `nationTroops`, raised by
+       * `levelStepBps` a level. It pays nothing: no ducats, no goods, no Muda, no Glory.
+       */
+      condotta: z
+        .object({
+          minutes: positive,
+          speed: positive,
+          stepMinutes: positive,
+          maxPlayers: positive,
+          cellsPerPlayer: positive,
+          lobbySeconds: positive,
+          troops: positive,
+          recruit: z.object({ base: qty, perCell: qty, perCity: qty }),
+          nations: z.object({ min: positive, max: positive }),
+          nationTroops: positive,
+          levels: positive,
+          levelStepBps: bps,
+          holdCity: z.string().optional(),
+          holdShareBps: bps.max(10_000),
+        })
+        .optional(),
       /** Weeks of the season (from 0) played in teams: the merchants of a region together. */
       teams: z.object({ weeks: z.array(qty) }).optional(),
       /**

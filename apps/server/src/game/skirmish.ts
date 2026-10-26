@@ -488,13 +488,13 @@ export class SkirmishHub {
   }
 }
 
-/** The view's times, from the skirmish's own time to real time. */
-function realTimes(
-  m: Skirmish,
+/** The view's times, from a live match's own time to real time (skirmishes, the Condotta). */
+export function realTimes(
+  m: Pick<Skirmish, "startedAt" | "virtualStart" | "speed">,
   v: NonNullable<ReturnType<typeof terraView>>,
   endsAt: number,
 ): NonNullable<ReturnType<typeof terraView>> & { skirmish: true } {
-  const r = (t: number) => toReal(m, t);
+  const r = (t: number) => toReal(m as Skirmish, t);
   const rn = (t: number | null) => (t === null ? null : r(t));
   return {
     ...v,

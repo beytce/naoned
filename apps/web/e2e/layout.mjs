@@ -76,6 +76,7 @@ const WORDS = {
     battleAt: /bataille à 20 h/i,
     teamWon: /vénétie l'emporte/i,
     npc: "PNJ",
+    alone: /^jouer seul$/i,
   },
   en: {
     covered: /close this window/i,
@@ -102,6 +103,7 @@ const WORDS = {
     battleAt: /battle at 20:00/i,
     teamWon: /veneto wins/i,
     npc: "NPC",
+    alone: /^play alone$/i,
   },
 }[LANG === "en" ? "en" : "fr"];
 const COVERED = WORDS.covered;
@@ -381,6 +383,7 @@ async function session(width, height, tag) {
     await check("terraferme-treve");
     await teamWeek(page, door, check);
     await midWeek(page, door, check, pseudo);
+    await condotta(page, check);
     await door.click();
     await page.waitForTimeout(1000);
 
@@ -581,6 +584,32 @@ async function teamWeek(page, door, check) {
   expect(won, "the team that won", WORDS.teamWon);
   await check("terraferme-equipes-close");
   await page.unroute("**/api/game/terra");
+}
+
+/**
+ * The Condotta (E2-5 of the experts): opened from the Terraferma's chip, played alone at once, its
+ * match 8 minutes at most, its bar and the match's map laid out like the rest; back to the week.
+ */
+async function condotta(page, check) {
+  const chip = page.locator("[data-hud=terra-condotta]");
+  if ((await chip.count()) === 0) throw new Error("no Condotta on the Terraferma's actions");
+  await chip.first().click();
+  const bar = page.locator("[data-panel=condotta-bar]");
+  await bar.waitFor();
+  await page.waitForTimeout(800);
+  await check("condotta");
+  await bar.getByRole("button", { name: WORDS.alone }).click();
+  await page.waitForTimeout(2000);
+  await check("condotta-partie");
+  const minutes = await page.evaluate(() =>
+    Promise.all([
+      fetch("/api/game/condotta").then((r) => r.json()),
+      fetch("/api/game").then((r) => r.json()),
+    ]).then(([c, g]) => (c.phase === "playing" ? (c.endsAt - g.serverTime) / 60_000 : -1)),
+  );
+  if (minutes < 0 || minutes > 8) throw new Error(`the Condotta's match lasts ${minutes} minutes`);
+  await bar.locator("button").first().click();
+  await page.waitForTimeout(800);
 }
 
 /**

@@ -2273,6 +2273,33 @@ export const en: Dictionary = {
         },
       ],
     },
+    condotta: {
+      title: "Condotta",
+      leave: "← The week",
+      off: "No Condotta in this world.",
+      pitch: (minutes: number, share: number) =>
+        `A ${minutes}-minute cooperative match, alone or with your company, against three nations and Milano. Hold Padova and ${share}% of the land at the end.`,
+      noReward: "No ducats, no goods, no Glory: a grade, and the next level.",
+      level: (level: number, levels: number) => `Level ${level} / ${levels}`,
+      grade: (name: string) => `Grade: ${name}`,
+      alone: "Play alone",
+      company: "With my company",
+      lobby: (n: number, time: string) => `${n} associate${s(n)} · starts in ${time}`,
+      join: "Join",
+      playing: (level: number, time: string) => `Level ${level} · ends in ${time}`,
+      hold: (share: number, target: number, city: string, holds: boolean) =>
+        `${share}% of the land of ${target}%${holds ? ` · ${city} held` : ` · ${city} to take`}`,
+      won: (level: number) => `Won at level ${level}: the next level opens.`,
+      lost: (level: number) => `Lost at level ${level}: try again, or come with others.`,
+      again: "Play again",
+      record: (grade: string, best: number) => `Condotta: ${grade} (level ${best} won)`,
+      errors: {
+        already_in: "A Condotta is already waiting for you.",
+        no_company: "You need a company (Profile).",
+        lobby_full: "The troop is full.",
+        other: "That did not work. Try again.",
+      } as Record<string, string>,
+    },
     skirmish: {
       title: "Skirmish",
       leave: "← The week",
@@ -2545,6 +2572,7 @@ export const en: Dictionary = {
         "Terraferma: the Signore is always a merchant; the computer's houses stay in the week's ranking but receive no tier or Influence. A house that steps aside gives back its lands.",
         "Missions of the House: those of the old campaign are replaced by Terraferma missions, two at most per board.",
         "Merchant Pass: no game advantage any more (no Dogana quota, no open offer, no extra fresh produce, no Doge's order swapped, no bargain alert); it gives only information to read and cosmetics.",
+        "Terraferma: the Condotta, 8 cooperative minutes, alone or with your company, against three nations and Milano. Hold Padova and 35% of the land to open the next level (12 levels). No ducats, no goods, no Glory: a grade, from Condottiere di ventura to Capitano generale.",
       ],
     },
     howTo: [

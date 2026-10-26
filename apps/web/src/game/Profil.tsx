@@ -285,6 +285,7 @@ function ProfileBody(props: GameProps) {
     rating: number;
     weeks: { week: number; rank: number; of: number; glory: number; rating: number }[];
   } | null>(null);
+  const [condotta, setCondotta] = useState<{ best: number; grade: string } | null>(null);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [typed, setTyped] = useState("");
@@ -297,6 +298,7 @@ function ProfileBody(props: GameProps) {
         setProfile(r.profile);
         setPalmares(r.palmares);
         setTerra(r.terra ?? null);
+        setCondotta(r.condotta ?? null);
       })
       .catch(() => setProfile(null));
   }, []);
@@ -468,6 +470,11 @@ function ProfileBody(props: GameProps) {
         <section className="space-y-2">
           <h2 className="font-display text-2xl font-extrabold">{fr.game.terraRecord.title}</h2>
           <p className="text-sm">{fr.game.terraRecord.rating(terra.rating)}</p>
+          {condotta && (
+            <p className="text-sm text-gold">
+              ⚑ {fr.game.condotta.record(condotta.grade, condotta.best)}
+            </p>
+          )}
           {terra.weeks.length === 0 ? (
             <p className="meta">{fr.game.terraRecord.none}</p>
           ) : (
