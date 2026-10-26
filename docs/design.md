@@ -249,6 +249,14 @@ Le mode qui remplace la Campagne depuis le 18 octobre 2026 (`docs/plan-terraferm
 - **Aide** (`Help`) : titre centré en lettres de lieu ; la boucle en orbite (le comptoir soleil d'or, Produire · Livrer · Réinvestir en astres) ; chaque rubrique en carte arrondie, son icône dans un rond cerclé de lapis ; **le code des marchandises** (les quatre formes des étapes, les six couleurs des filières) ; les notes de saison cerclées de lapis.
 - Le test de mise en page ouvre aussi l'Aide (`aide`).
 
+## Compagnie et Terraferme (Lagune, 26 octobre 2026)
+
+- **Compagnie** (`CompanyPanel`) : le nom en lettres de lieu ; les associés en constellation autour de l'initiale de la compagnie (anneau or) : le marchand en or, un associé vu dans la journée en lapis, un absent en pointillé, les places libres en petits creux ; dessous, une ligne arrondie par associé, le palmarès en cartes arrondies.
+- **Fil** (compagnie et famille, `Thread`) : des bulles, les miennes à droite en vert d'eau, celles des autres à gauche, les noms en lapis ; le champ en pilule et l'envoi en rond lapis à flèche ; « Signaler » touché sur 44 px.
+- **Commande de compagnie** (`CompanySheet`) : chaque marchandise en ligne arrondie avec sa marque.
+- **Terraferme** (pass ciblé) : les troupes en anneau vert d'eau autour de leur signe (la part du plafond), la plaque de la semaine arrondie et cerclée de vermillon quand Milan, une bataille ou l'élimination pressent ; les curseurs (part des troupes d'un front, paysans) en curseurs Lagune (`.lagune-range` : fil rempli de leur ton, pouce crème de 28 px, 44 px de toucher).
+- Le test de mise en page ouvre aussi une compagnie de quatre avec son fil (`compagnie`, réponses réécrites).
+
 ## Charger et partir
 
 - **Charrette choisie** (`CartPanel`) : bord vert d'eau et croix en onglet ; nom, cale « 12/40 » et sa jauge, état (au comptoir, chargée pour…). Les villes qu'elle peut servir s'éclairent et leur route se dore, les autres s'estompent. Toucher une ville éclairée ouvre ses cargaisons ; toucher la ville de la cale prépare le départ.

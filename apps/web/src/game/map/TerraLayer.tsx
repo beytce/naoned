@@ -1,4 +1,13 @@
-import { type ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type ReactNode,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { CityIcon } from "../../art/cities.js";
 import { Crest, MiniCrest, defaultCrest } from "../../art/crest.js";
 import { MAP_TEXT, P } from "../../art/palette.js";
@@ -1429,18 +1438,34 @@ export function TerraHud({
             onClick={() => setTip((k) => (k === "troops" ? null : "troops"))}
             className="pointer-events-auto flex min-h-11 items-center"
           >
-            <span className="hud-orb relative flex h-9 items-center gap-1 overflow-hidden rounded-full pl-2 pr-2.5 text-cream">
-              <span className="flex h-5 w-5 shrink-0 [&>svg]:h-5 [&>svg]:w-5">
-                <Icon.troops />
+            <span className="hud-orb relative flex h-9 items-center gap-1 rounded-full pl-1 pr-2.5 text-cream">
+              {/* How full the troops are: a ring of light around their sign (Lagune). */}
+              <span className="relative grid h-6 w-6 shrink-0 place-items-center [&>span>svg]:h-3.5 [&>span>svg]:w-3.5">
+                <svg
+                  viewBox="-16 -16 32 32"
+                  className="absolute inset-0 h-6 w-6"
+                  aria-hidden="true"
+                >
+                  <circle r="13.5" fill="none" stroke="rgb(var(--line))" strokeWidth="4" />
+                  <circle
+                    r="13.5"
+                    fill="none"
+                    stroke="rgb(var(--lagoon))"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    pathLength={100}
+                    strokeDasharray={`${Math.min(100, (me.troops / Math.max(1, me.cap)) * 100)} 100`}
+                    transform="rotate(-90)"
+                    className="transition-[stroke-dasharray] duration-700"
+                  />
+                </svg>
+                <span className="relative flex">
+                  <Icon.troops />
+                </span>
               </span>
               <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
                 {t().troopsLine(me.troops, me.cap)}
               </span>
-              {/* How full the troops are: a thread of light at the foot of the pill. */}
-              <span
-                className="absolute bottom-0 left-0 h-[3px] bg-lagoon transition-[width] duration-700"
-                style={{ width: `${Math.min(100, (me.troops / Math.max(1, me.cap)) * 100)}%` }}
-              />
             </span>
           </button>
           {shown === "troops" && (
@@ -1518,7 +1543,7 @@ function NotePlaque({
     <span
       data-hud="terra-note"
       // As wide as the column, never widening it: the purse sets it, the name keeps its letters.
-      className="flex w-0 min-w-full flex-col items-end rounded-lg bg-night/85 px-2 py-1 text-right leading-snug ring-1 ring-line/70"
+      className={`flex w-0 min-w-full flex-col items-end rounded-2xl bg-night/85 px-2.5 py-1 text-right leading-snug ring-1 ${head?.tone === "text-vermilion" ? "ring-vermilion/80" : "ring-line/70"}`}
     >
       {head && <span className={`text-[0.8125rem] font-semibold ${head.tone}`}>{head.text}</span>}
       {/* One line high: what does not fit wraps out of sight, item by item. */}
@@ -1983,7 +2008,12 @@ export function TerraPanel({
               value={shareBps}
               onChange={(e) => setShare(Number(e.target.value))}
               aria-label={t().target.attack}
-              className="terra-share w-full accent-gold"
+              className="terra-share lagune-range w-full"
+              style={
+                {
+                  "--fill": `${((shareBps - Math.max(1_000, v.rules.minShareBps)) / Math.max(1, 10_000 - Math.max(1_000, v.rules.minShareBps))) * 100}%`,
+                } as CSSProperties
+              }
             />
             <p
               className={`text-center font-sans text-xs ${cells === 0 ? "text-vermilion" : "text-cream"}`}
@@ -2222,7 +2252,8 @@ function PeasantsSlider({
         onKeyUp={send}
         onBlur={send}
         aria-label={t().peasants.label}
-        className="w-full accent-lagoon"
+        className="lagune-range w-full"
+        style={{ "--fill": `${bps / 100}%`, "--tone": "rgb(var(--lagoon))" } as CSSProperties}
       />
       <p>
         {t().peasants.yield(

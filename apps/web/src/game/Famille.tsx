@@ -757,10 +757,13 @@ export function Thread({ source = FAMILY_THREAD }: { source?: ThreadSource }) {
         {messages.map((m) => (
           <li
             key={m.id}
-            className={`cut px-3 py-2 text-sm ${m.mine ? "ml-6 bg-lagoon/15" : "mr-6 bg-night-3"}`}
+            // Lagune: bubbles, mine on the right in lagoon, the others' on the left, names in lapis.
+            className={`px-3.5 py-2 text-sm ${m.mine ? "ml-8 rounded-2xl rounded-br-md bg-lagoon/15 ring-1 ring-inset ring-lagoon/40" : "mr-8 rounded-2xl rounded-bl-md bg-night-3"}`}
           >
             <div className="flex items-baseline justify-between gap-2">
-              <span className="label text-gold">{m.mine ? t().thread.me : (m.pseudo ?? "—")}</span>
+              <span className="text-xs font-bold text-info">
+                {m.mine ? t().thread.me : (m.pseudo ?? "—")}
+              </span>
               <span className="label">{clockTime(m.at)}</span>
             </div>
             <p className="mt-1 whitespace-pre-wrap break-words">{m.body}</p>
@@ -768,7 +771,7 @@ export function Thread({ source = FAMILY_THREAD }: { source?: ThreadSource }) {
               <button
                 type="button"
                 disabled={reported.has(m.id)}
-                className="label mt-1 text-cream-dim disabled:opacity-50"
+                className="label -mb-2 inline-flex min-h-11 items-center text-cream-dim disabled:opacity-50"
                 onClick={async () => {
                   await source.report(m.id).catch(() => {});
                   setReported(new Set([...reported, m.id]));
@@ -793,11 +796,24 @@ export function Thread({ source = FAMILY_THREAD }: { source?: ThreadSource }) {
           onChange={(e) => setText(e.target.value)}
           placeholder={words.placeholder}
           aria-label={words.placeholder}
-          className="min-w-0 flex-1 cut border border-line bg-night-2 px-3 py-2.5 text-sm"
+          className="min-h-11 min-w-0 flex-1 rounded-full bg-night-2 px-4 text-sm ring-1 ring-inset ring-line focus:outline-none focus:ring-2 focus:ring-info"
         />
-        <Slab size="sm" disabled={sending || !text.trim()} onClick={() => void send()}>
-          {t().thread.send}
-        </Slab>
+        <button
+          type="submit"
+          aria-label={t().thread.send}
+          disabled={sending || !text.trim()}
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-info text-ink transition active:scale-95 disabled:opacity-40"
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+            <path
+              d="M4 12h14M12 5l7 7-7 7"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
       </form>
       {error && <p className="mt-2 text-sm text-vermilion">{error}</p>}
     </Panel>

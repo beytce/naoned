@@ -63,7 +63,9 @@ export function CompanyPanel({ props }: { props: GameProps }) {
   return (
     <Panel>
       <Label>{t().title}</Label>
-      {c && <h2 className="mt-1 font-display text-xl font-extrabold">{c.name}</h2>}
+      {c && (
+        <h2 className="mt-1 font-place text-lg font-bold uppercase tracking-[0.12em]">{c.name}</h2>
+      )}
       {c ? (
         <Members c={c} props={props} busy={busy} run={run} />
       ) : (
@@ -80,6 +82,118 @@ export function CompanyPanel({ props }: { props: GameProps }) {
 }
 
 type Run = (action: () => Promise<CompanyView>) => Promise<void>;
+
+/** Seen within the day: present on the constellation; longer ago, a dashed star. */
+const PRESENT_MS = 24 * 3600_000;
+
+/**
+ * The company as a constellation (Lagune): its initial at the heart in a gold ring, each member a
+ * star on the orbit linked to it (gold for the merchant, lapis when seen within the day, dashed
+ * when away), the empty seats as faint hollow points.
+ */
+function Constellation({
+  c,
+  now,
+}: {
+  c: NonNullable<CompanyView["company"]>;
+  now: number;
+}) {
+  const seats = Math.max(c.max, c.members.length);
+  const at = (i: number) => {
+    const a = -Math.PI / 2 + (i / seats) * Math.PI * 2;
+    return { x: 160 + Math.cos(a) * 92, y: 112 + Math.sin(a) * 78 };
+  };
+  return (
+    <svg
+      viewBox="0 0 320 230"
+      className="mx-auto mt-2 w-full max-w-xs"
+      role="img"
+      aria-label={t().members(c.members.length, c.max)}
+    >
+      <ellipse
+        cx="160"
+        cy="112"
+        rx="92"
+        ry="78"
+        fill="none"
+        stroke="rgb(var(--info))"
+        strokeOpacity="0.25"
+        strokeDasharray="2 5"
+      />
+      {Array.from({ length: seats }, (_, i) => {
+        const p = at(i);
+        const m = c.members[i];
+        if (!m)
+          return (
+            <circle
+              key={`seat-${p.x}-${p.y}`}
+              cx={p.x}
+              cy={p.y}
+              r="6"
+              fill="none"
+              stroke="rgb(var(--line))"
+              strokeWidth="1.5"
+            />
+          );
+        const away = !m.me && (m.lastSeenAt === null || now - m.lastSeenAt > PRESENT_MS);
+        const ring = m.me ? "rgb(var(--gold))" : away ? "rgb(var(--line))" : "rgb(var(--info))";
+        const name = merchantLabel(m.pseudo, false);
+        return (
+          <g key={name}>
+            <line
+              x1="160"
+              y1="112"
+              x2={p.x}
+              y2={p.y}
+              stroke="rgb(var(--line))"
+              strokeOpacity="0.7"
+            />
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={m.me ? 17 : 14}
+              fill="rgb(var(--night-2))"
+              stroke={ring}
+              strokeWidth="2.5"
+              strokeDasharray={away ? "3 3" : undefined}
+            />
+            <text
+              x={p.x}
+              y={p.y < 112 ? p.y - 22 : p.y + 30}
+              textAnchor="middle"
+              fontSize="12"
+              fontWeight="700"
+              fill={
+                m.me ? "rgb(var(--gold))" : away ? "rgb(var(--cream) / 0.6)" : "rgb(var(--cream))"
+              }
+            >
+              {m.me ? t().me : name.length > 12 ? `${name.slice(0, 11)}…` : name}
+            </text>
+          </g>
+        );
+      })}
+      <circle
+        cx="160"
+        cy="112"
+        r="30"
+        fill="rgb(var(--night-2))"
+        stroke="rgb(var(--gold))"
+        strokeWidth="2"
+      />
+      <text
+        x="160"
+        y="122"
+        textAnchor="middle"
+        className="font-place"
+        fontSize="26"
+        fontWeight="700"
+        fill="rgb(var(--gold))"
+      >
+        {c.name.charAt(0).toUpperCase()}
+      </text>
+    </svg>
+  );
+}
 
 function NoCompany({ view, busy, run }: { view: CompanyView; busy: boolean; run: Run }) {
   const code = useMemo(() => {
@@ -158,7 +272,7 @@ function NoCompany({ view, busy, run }: { view: CompanyView; busy: boolean; run:
         onChange={(e) => setName(e.target.value)}
         placeholder={t().namePlaceholder}
         aria-label={t().namePlaceholder}
-        className="w-full cut border border-line bg-night-2 px-3 py-2.5 text-base"
+        className="w-full rounded-full bg-night-2 px-5 py-3 text-base ring-1 ring-inset ring-line focus:outline-none focus:ring-2 focus:ring-info"
       />
       <Slab type="submit" size="sm" className="w-full" disabled={busy || name.trim().length < 3}>
         {t().found}
@@ -193,14 +307,17 @@ function Members({
   };
   return (
     <div className="mt-2 space-y-4">
-      <p className="meta">{t().members(c.members.length, c.max)}</p>
+      <Constellation c={c} now={props.now} />
+      <p className="meta text-center">{t().members(c.members.length, c.max)}</p>
       <ul className="space-y-1.5">
         {c.members.map((m) => (
           <li
             key={merchantLabel(m.pseudo, false)}
-            className="flex flex-wrap items-baseline gap-x-2 text-sm"
+            className="flex flex-wrap items-baseline gap-x-2 rounded-2xl bg-night-2 px-3.5 py-2 text-sm"
           >
-            <span className="font-semibold">✦ {merchantLabel(m.pseudo, false)}</span>
+            <span className={`font-semibold ${m.me ? "text-gold" : ""}`}>
+              {merchantLabel(m.pseudo, false)}
+            </span>
             {m.me && <span className="label text-cream-dim">{t().me}</span>}
             <span className="text-cream-dim">{m.region ? job(m.region) : t().notHere}</span>
             {!m.me && m.lastSeenAt !== null && (
@@ -245,13 +362,15 @@ function Members({
         )
       )}
       <section className="space-y-2">
-        <h3 className="label text-cream-dim">{t().record}</h3>
+        <h3 className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream-dim">
+          {t().record}
+        </h3>
         {c.record.length === 0 ? (
           <p className="text-sm text-cream-dim">{t().recordEmpty}</p>
         ) : (
           <ul className="space-y-2 text-sm">
             {c.record.map((r) => (
-              <li key={`${r.season}-${r.endsAt}`}>
+              <li key={`${r.season}-${r.endsAt}`} className="rounded-2xl bg-night-2 px-3.5 py-2.5">
                 <p className="font-semibold">{r.season}</p>
                 <p className="text-cream-dim">
                   {r.members
