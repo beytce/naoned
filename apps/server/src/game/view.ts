@@ -762,10 +762,21 @@ export function playerView(
     book,
     cityQuotes,
     // Company orders: what this merchant delivered and how many took part, not who.
-    projects: openProjects(state.projects, now).map(({ by, ...p }) => ({
+    projects: openProjects(state.projects, now).map(({ by, units, above, ...p }) => ({
       ...p,
       mine: by?.[playerId] ?? 0n,
-      merchants: Object.keys(by ?? {}).length,
+      merchants: Object.keys(units ?? by ?? {}).length,
+      // The Arsenal's tiers (E2-6): each one's share of the Bronze, and the price past it.
+      tiersBps: ctx.settings.projects.tiersBps,
+      abovePrice: Object.fromEntries(
+        Object.keys(p.needs).map((r) => [
+          r,
+          applyBpsFloor(
+            ctx.settings.referencePrices[r] ?? 0n,
+            10_000 + ctx.settings.projects.premiumAboveBps,
+          ),
+        ]),
+      ),
     })),
     contracts,
     families: familiesView(ctx, state, playerId, now),

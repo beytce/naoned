@@ -90,7 +90,7 @@ export {
   freeBatches,
   yieldBonusBps,
 } from "./production.js";
-export { openProjects } from "./projects.js";
+export { arsenalMudaBps, openProjects } from "./projects.js";
 export * from "./settings.js";
 export { type MissionView, missionsFor } from "./missions.js";
 export * from "./specialties.js";

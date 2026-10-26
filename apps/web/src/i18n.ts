@@ -1832,6 +1832,7 @@ const frDict = {
         patent: () => "Privilège",
         refund: () => "Remboursement",
         mission: () => "Mission de la Maison",
+        arsenal: () => "Or de l'Arsenal",
         spend: () => "Dépense",
       } as Record<string, (week: number | null) => string>,
       patents: {
@@ -2135,10 +2136,16 @@ const frDict = {
 
     /** Company orders: a city's order filled by several merchants together. */
     company: {
-      title: "Commande de compagnie",
-      of: (city: string) => `Commande de compagnie · ${city}`,
-      line: "+10 % par unité · +10 % une fois remplie",
-      help: "Une ville commande du pain, des briques et des planches aux trois régions. Chaque unité livrée est payée 10 % au-dessus de la référence ; quand la commande est remplie, chaque marchand qui a livré touche 10 % de plus.",
+      title: "L'Arsenal de la semaine",
+      of: (city: string) => `Arsenal · ${city}`,
+      line: "Bronze, Argent, Or · du lundi au dimanche",
+      help: "Chaque semaine, une ville commande du pain, des briques et des planches aux trois régions. Jusqu'au Bronze, chaque unité est payée 10 % au-dessus de la référence, et chaque marchand qui a livré touche 10 % de plus quand le Bronze est atteint. Au-delà, l'Argent (une fois et quart le Bronze) et l'Or (une fois et demie) sont payés 5 % au-dessus de la référence. L'Argent apporte un quart de plus aux galères de la Muda la semaine suivante ; l'Or, 3 d'Influence à qui en a livré 2 % et au moins une unité après le Bronze. Les maisons de l'ordinateur s'arrêtent au Bronze.",
+      tiers: [
+        "Visez le Bronze",
+        "Bronze atteint : prime versée. En route pour l'Argent",
+        "Argent atteint : les galères de la semaine prochaine apporteront plus. En route pour l'Or",
+        "Or atteint : 3 d'Influence pour qui a livré après le Bronze",
+      ],
       endsIn: (time: string) => `se termine dans ${time}`,
       filled: "Remplie : la prime est versée",
       merchants: (n: number) =>

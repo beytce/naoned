@@ -143,6 +143,11 @@ export interface Project {
   by?: Record<PlayerId, Deniers>;
   /** When the last unit came in (the bonus paid then). */
   completedAt?: number;
+  /** The Arsenal's tier reached (E2-6): 1 Bronze, 2 Silver, 3 Gold; absent before the Bronze. */
+  tier?: number;
+  /** Units each merchant delivered in all, and past the Bronze. */
+  units?: Record<PlayerId, number>;
+  above?: Record<PlayerId, number>;
 }
 
 /**

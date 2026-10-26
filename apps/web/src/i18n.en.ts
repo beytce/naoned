@@ -1814,6 +1814,7 @@ export const en: Dictionary = {
         patent: () => "Privilege",
         refund: () => "Refund",
         mission: () => "Mission of the House",
+        arsenal: () => "Gold of the Arsenal",
         spend: () => "Spending",
       } as Record<string, (week: number | null) => string>,
       patents: {
@@ -2100,10 +2101,16 @@ export const en: Dictionary = {
     },
 
     company: {
-      title: "Company order",
-      of: (city: string) => `Company order · ${city}`,
-      line: "+10% per unit · +10% once filled",
-      help: "A city orders bread, bricks and planks from the three regions. Each unit delivered is paid 10% above the reference; when the order is filled, each merchant who delivered gets 10% more.",
+      title: "The Arsenal of the week",
+      of: (city: string) => `Arsenal · ${city}`,
+      line: "Bronze, Silver, Gold · Monday to Sunday",
+      help: "Each week, a city orders bread, bricks and planks from the three regions. Up to Bronze, each unit is paid 10% above the reference, and each merchant who delivered gets 10% more once Bronze is reached. Beyond it, Silver (one and a quarter times Bronze) and Gold (one and a half times) are paid 5% above the reference. Silver brings a quarter more to the Muda galleys the next week; Gold, 3 Influence to whoever delivered 2% of it and at least one unit after Bronze. The computer's houses stop at Bronze.",
+      tiers: [
+        "Aim for Bronze",
+        "Bronze reached: bonus paid. On to Silver",
+        "Silver reached: next week's galleys will bring more. On to Gold",
+        "Gold reached: 3 Influence for whoever delivered after Bronze",
+      ],
       endsIn: (time: string) => `ends in ${time}`,
       filled: "Filled: the bonus is paid",
       merchants: (n: number) =>

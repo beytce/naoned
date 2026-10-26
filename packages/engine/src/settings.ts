@@ -1178,6 +1178,19 @@ export const worldSettingsSchema = z.object({
        * of what he was paid on top, from the city.
        */
       bonusBps: bps.prefault(0),
+      /** One order a week, from Monday to Sunday (the ranking's weeks) instead (E2-6). */
+      weekly: z.boolean().prefault(false),
+      /**
+       * The Arsenal's tiers (E2-6): the needs (Bronze) times each of these; the bonus is paid at the
+       * Bronze, the units past it at `premiumAboveBps` over the reference. Silver brings
+       * `silverMudaBps` more to the galleys of the next week, Gold `goldInfluence` to each who
+       * delivered `goldMinShareBps` of its units and one past the Bronze.
+       */
+      tiersBps: z.array(bps).min(1).prefault([10_000]),
+      premiumAboveBps: bps.prefault(0),
+      silverMudaBps: bps.prefault(0),
+      goldInfluence: qty.prefault(0),
+      goldMinShareBps: bps.prefault(0),
     })
     .prefault({ intervalDays: 7, durationDays: 7, needsPerPlayer: {}, premiumBps: 0, bonusBps: 0 }),
   valuation: z.object({

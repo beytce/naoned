@@ -473,6 +473,10 @@ export interface Project {
   merchants: number;
   /** When it was filled (the bonus paid then). */
   completedAt?: number;
+  /** The Arsenal (E2-6): its tiers as shares of the Bronze, the one reached, the price past it. */
+  tiersBps: number[];
+  tier?: number;
+  abovePrice: Record<string, Money>;
 }
 
 export interface PlayerView {
