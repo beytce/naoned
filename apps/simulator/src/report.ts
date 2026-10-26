@@ -219,6 +219,7 @@ export function evaluate(
   checks.push(...terraChecks(r));
   checks.push(...mudaChecks(r));
   checks.push(...masteryChecks(r));
+  checks.push(...fondaciChecks(r));
   checks.push(...actChecks(r));
   const a = r.activity;
   if (a) {
@@ -489,6 +490,34 @@ export function masteryChecks(r: SimulationResult): Check[] {
       target: "≤ 15 % (patrimoine médian)",
       value: `${pct(lead)}${where ? ` (${where})` : ""}${detail.length ? ` — ${detail.join(" ; ")}` : ""}`,
       pass: lead <= 0.15,
+      blocking: false,
+    },
+  ];
+}
+
+/** The fondaci (E1-3): levels per merchant present at the close, all and per play style. */
+export function fondaciChecks(r: SimulationResult): Check[] {
+  const state = r.finalState;
+  if (!state || !r.options.settings.fondaci) return [];
+  const final = finalWorth(r);
+  const levels = (id: string) =>
+    Object.values(state.fondaci?.[id] ?? {}).reduce((n, f) => n + f.level, 0);
+  const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+  const all = final.map((p) => levels(p.playerId));
+  const byProfile = new Map<string, number[]>();
+  for (const p of final)
+    byProfile.set(p.profile, [...(byProfile.get(p.profile) ?? []), levels(p.playerId)]);
+  return [
+    {
+      name: "Fondaci : niveaux par marchand présent en fin de saison",
+      target:
+        "diagnostic : au plus 3 en moyenne, sinon 1 commande du tableau par actif au lieu de 2",
+      value: `${mean(all).toFixed(2)} en moyenne · ${all.filter((n) => n > 0).length} sur ${all.length} en ont un — ${[
+        ...byProfile,
+      ]
+        .map(([profile, xs]) => `${profile} ${mean(xs).toFixed(1)}`)
+        .join(" · ")}`,
+      pass: true,
       blocking: false,
     },
   ];

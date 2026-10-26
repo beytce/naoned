@@ -306,6 +306,7 @@ export const en: Dictionary = {
         criee: "Auction",
         suppliers: "Suppliers",
         warehouse: "Warehouse",
+        fondaco: "Fondaco",
         ranking: "Ranking",
         family: "Family",
         help: "Help",
@@ -2463,6 +2464,23 @@ export const en: Dictionary = {
       bid: "Your bid",
       place: "Bid",
       rebid: "Replace the bid",
+    },
+    fondaco: {
+      title: (city: string) => `Fondaco of ${city}`,
+      line: (level: number, top: number) =>
+        level > 0 ? `Level ${level} of ${top}` : "No fondaco here yet",
+      orders: (n: number) =>
+        n > 0
+          ? `${n} order${s(n)} from the city a day, for you alone.`
+          : "No order from the city for you alone.",
+      next: (level: number) => (level === 1 ? "Open the fondaco" : `Raise to level ${level}`),
+      cost: "Cost",
+      top: "Your fondaco is at its highest level.",
+      full: (levels: number, max: number, cities: number) =>
+        `You have ${levels} level${s(levels)} of ${max}, in ${cities} cit${cities > 1 ? "ies" : "y"} at most.`,
+      build: "Build",
+      help: (cities: number, levels: number, top: number, pct: number) =>
+        `A fondaco in ${cities} cities at most, from level 1 to level ${top}, ${levels} levels in all. Each level gives you an order from the city every day, for you alone, paid ${pct}% of the shared board's price: cheaper than the board, but sure. The ducats leave the game, the bricks and planks too; the fondaco counts in your net worth at its cost.`,
     },
     suppliers: {
       title: (city: string) => `Suppliers of ${city}`,

@@ -1142,6 +1142,20 @@ export const worldSettingsSchema = z.object({
    */
   warehouses: z.object({ perCity: positive, minBid: money, unitsPerDay: positive }).optional(),
   /**
+   * The fondaci (E1-3): a counter in at most `maxCities` cities, `maxLevels` levels in all, each
+   * level (`levels[i]` its cost, ducats destroyed and materials) bringing `ordersPerLevel`
+   * personal orders of the city a day at `priceBps` of the board's price. Off when absent.
+   */
+  fondaci: z
+    .object({
+      maxCities: positive,
+      maxLevels: positive,
+      ordersPerLevel: positive,
+      priceBps: bps,
+      levels: z.array(z.object({ ducats: money, materials: z.record(z.string(), qty) })).min(1),
+    })
+    .optional(),
+  /**
    * The official supplier of a city: the week's best deliverer of a good to a city (at least
    * `minUnits`) is paid `bonusBps` more for it there all the next week. Off when absent.
    */

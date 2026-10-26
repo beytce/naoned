@@ -145,6 +145,8 @@ export interface DeliveryOrderView {
   /** The welcome order: its express trip each way, in seconds, while the tutorial lasts. */
   welcome?: boolean;
   express?: number;
+  /** An order of the merchant's fondaco in the city. */
+  fondaco?: boolean;
 }
 
 export interface VehicleView {
@@ -518,6 +520,8 @@ export interface PlayerView {
   deals: DealsView | null;
   /** The warehouses in the cities (null: none in this world). */
   warehouses: WarehousesView | null;
+  /** The merchant's fondaci, per city on a road (E1-3); null when off. */
+  fondaci: FondaciView | null;
   /** The goods the merchant is the official supplier of this week, by city. */
   supplies: { city: string; resource: string }[];
   market: MarketLine[];
@@ -955,6 +959,7 @@ export type Action =
   | { type: "tenderBid"; tenderId: string; price: string; quantity: number }
   | { type: "tenderDeliver"; tenderId: string }
   | { type: "warehouseBid"; city: string; amount: string }
+  | { type: "buildFondaco"; city: string }
   | { type: "choosePath"; buildingId: string; path: "volume" | "quality" }
   | {
       type: "postCommission";
@@ -1411,6 +1416,21 @@ export interface TenderView {
   bidders: number;
   mine: { price: Money; quantity: number; caution: Money; at: number } | null;
   won: { quantity: number; price: Money; caution: Money; delivered: boolean } | null;
+}
+
+export interface FondaciView {
+  maxCities: number;
+  maxLevels: number;
+  topLevel: number;
+  ordersPerLevel: number;
+  priceBps: number;
+  /** Levels of all the merchant's fondaci. */
+  levels: number;
+  cities: {
+    city: string;
+    level: number;
+    next: { level: number; ducats: Money; materials: Record<string, number> } | null;
+  }[];
 }
 
 export interface WarehousesView {

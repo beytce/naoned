@@ -12,6 +12,7 @@ import { Coach } from "../Coach.js";
 import { ComeBack } from "../ComeBack.js";
 import { CounterSheets, buyRationsSheet, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
+import { FondacoSheet } from "../Fondaco.js";
 import type { GameProps } from "../Game.js";
 import { HouseSheet } from "../House.js";
 import { RialtoSheet } from "../Marche.js";
@@ -922,6 +923,7 @@ export function MapScreen(
       <CounterSheets {...props} />
       <SuppliersSheet {...props} />
       <WarehouseSheet {...props} />
+      <FondacoSheet {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}
       {terraView && <TerraSheets props={props} v={terraView} act={terraAct} />}
       <RialtoSheet {...props} />
@@ -1100,6 +1102,7 @@ function CityPanel({
         : "";
   const sells = !road && view.cityQuotes.some((q) => q.city === code);
   const held = view.supplies.filter((s) => s.city === code);
+  const fondaco = view.fondaci?.cities.find((c) => c.city === code);
   // Once, after the guide's first delivery: what the number on a city says.
   const [pipsSeen, setPipsSeen] = useState(() => store.get("pipsSeen") === "1");
   const pips = !pipsSeen && orders.length > 0 && view.tutorial.includes("sell_city");
@@ -1149,6 +1152,15 @@ function CityPanel({
                 view.warehouses.cities.some((c) => c.city === code && c.held) ? "gold" : "plain"
               }
               onClick={() => onSheet(`warehouse:${code}`)}
+            />
+          )}
+          {road && fondaco && (
+            <ActionButton
+              icon={A.fondaco.icon()}
+              label={A.fondaco.label}
+              tone={fondaco.level > 0 ? "gold" : "plain"}
+              badge={fondaco.level || undefined}
+              onClick={() => onSheet(`fondaco:${code}`)}
             />
           )}
           {road && (

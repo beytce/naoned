@@ -224,6 +224,7 @@ const frDict = {
         criee: "Criée",
         suppliers: "Fournisseurs",
         warehouse: "Entrepôt",
+        fondaco: "Fondaco",
         ranking: "Classement",
         family: "Famille",
         help: "Aide",
@@ -2531,6 +2532,24 @@ const frDict = {
       bid: "Votre offre",
       place: "Enchérir",
       rebid: "Remplacer l'offre",
+    },
+    /** A merchant's fondaco in a city (E1-3). */
+    fondaco: {
+      title: (city: string) => `Fondaco de ${city}`,
+      line: (level: number, top: number) =>
+        level > 0 ? `Niveau ${level} sur ${top}` : "Pas encore de fondaco ici",
+      orders: (n: number) =>
+        n > 0
+          ? `${n} commande${n > 1 ? "s" : ""} de la ville par jour, pour vous seul.`
+          : "Aucune commande de la ville pour vous seul.",
+      next: (level: number) => (level === 1 ? "Ouvrir le fondaco" : `Passer au niveau ${level}`),
+      cost: "Coût",
+      top: "Votre fondaco est au plus haut niveau.",
+      full: (levels: number, max: number, cities: number) =>
+        `Vous avez ${levels} niveau${levels > 1 ? "x" : ""} sur ${max}, dans ${cities} ville${cities > 1 ? "s" : ""} au plus.`,
+      build: "Construire",
+      help: (cities: number, levels: number, top: number, pct: number) =>
+        `Un fondaco dans ${cities} villes au plus, du niveau 1 au niveau ${top}, ${levels} niveaux en tout. Chaque niveau vous donne chaque jour une commande de la ville, à vous seul, payée ${pct} % du prix du tableau commun : moins chère que le tableau, mais sûre. Les ducats sortent du jeu, les briques et les planches aussi ; le fondaco compte dans votre patrimoine à son coût.`,
     },
     /** The official suppliers of a city. */
     suppliers: {

@@ -77,6 +77,7 @@ const DESTROYED = [
   "terraferma",
   "tender_forfeit",
   "warehouse_rent",
+  "fondaco_build",
   "loan_repay",
   "loan_interest",
 ];

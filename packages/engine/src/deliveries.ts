@@ -384,6 +384,37 @@ export function deliveryOrdersFor(
     });
   }
 
+  // The merchant's fondaci: their orders of the day, a goods the city buys, at a share of the
+  // board's price (E1-3). Ids of their own, kept whatever is built later in the day.
+  const fondaci = ctx.settings.fondaci;
+  for (const [city, f] of Object.entries(state.fondaci?.[playerId] ?? {})) {
+    if (!fondaci || routeMinutes(ctx, region, city) === undefined) continue;
+    const goods = Object.keys(cfg.quantity)
+      .filter((r) => ctx.settings.cities[city]?.[r] && tier(r) !== "luxury" && mayOrder(r))
+      .map((code) => ({ code, weight: cfg.weights[code] ?? 1 }));
+    for (let i = 0; i < f.level * fondaci.ordersPerLevel && goods.length > 0; i++) {
+      const resource = pickWeighted(
+        goods,
+        draw(ctx, `fondaco:${playerId}:${day}:${city}:${i}`),
+      )?.code;
+      if (!resource) continue;
+      const [lo, hi] = cfg.quantity[resource] ?? [1, 1];
+      const unit = orderUnitPrice(ctx, region, city, resource, 0, { state, day });
+      out.push({
+        id: `${day}:f${city}${i}`,
+        day,
+        kind: "city",
+        city,
+        resource,
+        quantity: Math.min(capacity, Math.floor((lo + hi) / 2)),
+        unitPrice: priced(applyBpsFloor(unit, fondaci.priceBps), city, resource),
+        opensAt: dayStart,
+        expiresAt,
+        fondaco: true,
+      });
+    }
+  }
+
   // Shared demand: the world's board, priced by the road from this merchant's region.
   if (sharedBoardOn(ctx)) {
     if (options.board === false) return out;

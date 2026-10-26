@@ -146,6 +146,7 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("cancelOrder"), orderId: z.string() }),
   z.object({ type: z.literal("buyVehicle"), vehicleType: z.string() }),
   z.object({ type: z.literal("upgradeVehicle"), vehicleId: z.string() }),
+  z.object({ type: z.literal("buildFondaco"), city: z.string() }),
   z.object({
     type: z.literal("dispatchDelivery"),
     orderId: z.string(),
@@ -1581,6 +1582,8 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "buyVehicle", playerId, vehicleType: a.vehicleType }];
     case "upgradeVehicle":
       return [{ type: "upgradeVehicle", playerId, vehicleId: a.vehicleId }];
+    case "buildFondaco":
+      return [{ type: "buildFondaco", playerId, city: a.city }];
     case "dispatchDelivery":
       return [
         {

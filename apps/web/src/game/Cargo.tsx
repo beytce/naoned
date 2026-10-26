@@ -129,10 +129,10 @@ export function CargoSheet({
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold">
               {o.quantity} {props.names.resource(o.resource).toLowerCase()}
-              {o.kind !== "city" && (
+              {(o.kind !== "city" || o.fondaco) && (
                 <span className="ml-1 align-middle">
                   <Badge tone={o.kind === "urgent" ? "vermilion" : "ghost"}>
-                    {t().kinds[o.kind] ?? o.kind}
+                    {o.fondaco ? t().kinds.fondaco : (t().kinds[o.kind] ?? o.kind)}
                   </Badge>
                 </span>
               )}

@@ -658,8 +658,9 @@ export const venice1450Settings: WorldSettingsInput = {
     // On a market event day, three city orders go where the event asks for more.
     eventOrdersPerDay: 3,
     // Shared demand: the cities' orders form one board for the world, first come first served
-    // (four city orders per active merchant: vehicles fill up with several of them).
-    sharedOrdersPerActivePlayer: 4,
+    // (three city orders per active merchant since the fondaci of 26 October 2026, E1-3: the rest
+    // of the demand comes from the cities where one invests; two cut the money paid by a tenth).
+    sharedOrdersPerActivePlayer: 3,
     // In waves, by day only (the experts' E1-1, 25 October 2026): new city orders at 8, 11, 14,
     // 17 and 20 h in Paris, each open 8 hours; those of 17 and 20 h last until 10 h the next
     // morning, and nobody takes an order of the board from 22 to 8 h.
@@ -1230,7 +1231,21 @@ export const venice1450Settings: WorldSettingsInput = {
     cautionBps: 2_000,
   },
   // No warehouses in the cities since 25 October 2026 (the experts' E1-5): not simulated; the
-  // fondaci are to take their place. The rules stay in the engine, off when absent.
+  // fondaci take their place. The rules stay in the engine, off when absent.
+  // The fondaci (the experts' E1-3, 25 October 2026): a counter in up to 3 cities, levels 1 to 3,
+  // 6 levels in all; each level brings a personal order of the city a day at 95 % of the board's
+  // price (the board stays the best price per unit, the fondaco the surest).
+  fondaci: {
+    maxCities: 3,
+    maxLevels: 6,
+    ordersPerLevel: 1,
+    priceBps: 9_500,
+    levels: [
+      { ducats: 10_000, materials: { bricks: 10, planks: 10 } },
+      { ducats: 25_000, materials: { bricks: 20, planks: 20 } },
+      { ducats: 60_000, materials: { bricks: 40, planks: 40 } },
+    ],
+  },
   // The official supplier (recommendations of 20 October 2026): the week's best deliverer of a
   // good to a city, from 10 units, is paid 10 % more for it there all the next week.
   suppliers: { bonusBps: 1_000, minUnits: 10 },

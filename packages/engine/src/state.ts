@@ -201,6 +201,8 @@ export interface DeliveryOrder {
   takenBy?: PlayerId | null;
   /** The newcomer's welcome order (express during the tutorial). */
   welcome?: boolean;
+  /** An order of the merchant's fondaco in the city (E1-3). */
+  fondaco?: boolean;
 }
 
 /** An order of the world's board, before it is priced for a merchant's region. */
@@ -383,6 +385,8 @@ export interface WorldState {
    * The warehouses in the cities: this week's holders by city, the bids for next week, and the
    * units each merchant delivered from them on its last day.
    */
+  /** The merchants' fondaci, per city (E1-3, see `fondaci.ts`). */
+  fondaci?: Record<PlayerId, Record<string, import("./fondaci.js").Fondaco>>;
   warehouses?: {
     holders: Record<string, PlayerId[]>;
     bids: Record<string, Record<PlayerId, Deniers>>;

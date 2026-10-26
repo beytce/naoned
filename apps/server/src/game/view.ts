@@ -29,6 +29,7 @@ import {
   mudaView,
   netWorth,
   nextActions,
+  nextFondaco,
   nextMudaAt,
   nextWaveAt,
   openProjects,
@@ -64,6 +65,8 @@ import {
   familiesOn,
   familiesOpenAt,
   familyOf,
+  fondaciLevels,
+  fondaciOf,
   garrisonAt,
   hasPass,
   hireCost,
@@ -742,6 +745,8 @@ export function playerView(
     // The warehouses in the cities: those the merchant holds this week, its bids for the next,
     // and for each city the bid that wins a place now (the auction is open).
     warehouses: warehousesView(ctx, state, playerId, now),
+    // The merchant's fondaci, per city on a road, and what the next level costs (E1-3).
+    fondaci: fondaciView(ctx, state, playerId),
     // The goods the merchant is the official supplier of, by city, this week.
     supplies: Object.entries(state.suppliers?.holders ?? {})
       .filter(([, id]) => id === playerId)
@@ -872,6 +877,32 @@ export function ranking(
     netWorth: row.netWorth,
     turnover: row.turnover,
   }));
+}
+
+function fondaciView(ctx: WorldContext, state: WorldState, playerId: string) {
+  const rules = ctx.settings.fondaci;
+  const player = state.players[playerId];
+  if (!rules || !player) return null;
+  const mine = fondaciOf(state, playerId);
+  const routes = ctx.settings.deliveries.routes[player.region] ?? {};
+  return {
+    maxCities: rules.maxCities,
+    maxLevels: rules.maxLevels,
+    topLevel: rules.levels.length,
+    ordersPerLevel: rules.ordersPerLevel,
+    priceBps: rules.priceBps,
+    levels: fondaciLevels(state, playerId),
+    cities: ctx.theme.cities
+      .filter(({ code }) => routes[code] !== undefined)
+      .map(({ code }) => {
+        const next = nextFondaco(ctx, state, playerId, code);
+        return {
+          city: code,
+          level: mine[code]?.level ?? 0,
+          next: next ? { level: next.level, ducats: next.ducats, materials: next.materials } : null,
+        };
+      }),
+  };
 }
 
 function warehousesView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {

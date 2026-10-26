@@ -187,6 +187,18 @@ describe("living world", () => {
   });
 });
 
+describe("the fondaci (E1-3)", () => {
+  it("shows each city on a road with its next level, and builds one through the actions", async () => {
+    const cookie = await login("ada@example.org");
+    const v = (await post(cookie, "/api/game/join", { region: "lagoon" })).json().view;
+    const padova = v.fondaci.cities.find((c: { city: string }) => c.city === "padova");
+    expect(padova).toMatchObject({ level: 0, next: { level: 1 } });
+    // A lagoon house starts with bricks but no planks: refused, nothing taken.
+    const res = await act(cookie, { type: "buildFondaco", city: "padova" });
+    expect(res.json().error).toBe("insufficient_stock");
+  });
+});
+
 describe("game API", () => {
   it("creates the first world and serves its catalog", async () => {
     const res = await app.inject({ method: "GET", url: "/api/game/catalog" });
