@@ -235,6 +235,14 @@ export const en: Dictionary = {
 
   game: {
     ui: { howItWorks: "How does it work?" },
+    chains: {
+      food: "Food",
+      construction: "Building",
+      carpentry: "Carpentry",
+      glass: "Glass",
+      drapery: "Cloth",
+      orient: "Overseas",
+    } as Record<string, string>,
     map: {
       home: (pseudo: string) => (pseudo ? `House ${pseudo}` : "Your house"),
       homeLabel: "Counter",

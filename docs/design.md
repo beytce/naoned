@@ -94,6 +94,8 @@ Formes de la direction Lagune (depuis le 25 octobre 2026 ; avant, des biseaux) :
 
 ### Rialto et Ateliers
 
+Lagune (26 octobre 2026) : au Rialto, chaque marchandise est une ligne arrondie sur la nuit, avec sa marque (`GoodsMark`) ; les lignes sont groupées par chaîne sous une tête à la couleur de la chaîne (Vivres, Construction, Charpente, Verrerie, Draperie, Outre-mer), sauf sous le tri « En hausse » ; les galères de la Muda sont bordées du pourpre de l'outre-mer (l'or reste l'argent) ; la fiche d'une marchandise s'ouvre sur sa marque et son nom en Cinzel. Dans la liste des ateliers, chaque atelier est un petit astre (marque, arc du lot, pointillé s'il attend) ; prêt se dit en vert d'eau, en cours en lapis ; plus de barre rayée : l'arc et le temps de la ligne d'état suffisent.
+
 Au Rialto, deux colonnes « Achat » et « Vente », côte à côte sous leurs têtes ; les marchandises que personne n'a encore échangées viennent après, sous « Pas encore échangées (n) ». Une courbe n'est dessinée qu'à partir de deux prix (sa place reste vide avant). Dans les Ateliers, une seule ligne d'état colorée par carte ; la marge théorique est une puce (« ≈ 20,8 d/h ») ; une amélioration déconseillée le dit en `.meta` (« Amélioration déconseillée : il manque du blé. »), jamais en or. Sur ordinateur, la fenêtre des Ateliers est large (`Sheet size="wide"`), les cartes en deux colonnes. Toute fenêtre qui a encore du contenu sous le pli le montre par un fondu à son pied.
 
 ### Carte du commerce : charrettes et noms
