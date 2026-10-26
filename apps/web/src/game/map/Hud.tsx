@@ -104,6 +104,7 @@ export function MapHud({
   rank,
   seasonProgress,
   cash,
+  rate,
   influence,
   tips,
   bread,
@@ -125,6 +126,7 @@ export function MapHud({
   locks = {},
   right,
   actions,
+  timeline,
   onProfile,
   onNotices,
   onBales,
@@ -148,6 +150,8 @@ export function MapHud({
   rank: number | null;
   seasonProgress: number;
   cash: string;
+  /** What the workshops earn an hour, under the purse (null: nothing runs yet). */
+  rate?: string | null;
   /** The house's Influence, under the ducats (null: no house in this world). */
   influence: number | null;
   /** The cards unfolded by the counters (absent: the counter has none). */
@@ -185,6 +189,8 @@ export function MapHud({
   right?: ReactNode;
   /** A layer's actions at the thumb, at the bottom right above the doors, hidden with them. */
   actions?: ReactNode;
+  /** The strip of what comes next (the trade), above the doors, hidden with them. */
+  timeline?: ReactNode;
   onProfile: () => void;
   onNotices: () => void;
   onBales: () => void;
@@ -280,6 +286,14 @@ export function MapHud({
             tip={shownTip === "cash" ? (tips.cash ?? null) : null}
             leaving={tipLeaving}
           />
+          {rate && (
+            <span
+              data-hud="rate"
+              className="-mt-1 whitespace-nowrap text-xs font-semibold text-lagoon [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
+            >
+              {rate}
+            </span>
+          )}
           {influence !== null && (
             <HudCounter
               label={tipsT.influence.title}
@@ -311,12 +325,11 @@ export function MapHud({
           </button>
         )}
         {/*
-          Two rounds high at most, never further down the map: the bell and the Rialto, then
-          beside them the bales and Lorenzo when the guide is paused.
+          One row of rounds, never further down the map: the bell and the Rialto, then the bales
+          and Lorenzo when the guide is paused. The map starts right under it.
         */}
-        {/* On the Terraferma, one row: the map starts higher. */}
-        <div className={`flex gap-2 ${layer === "terra" ? "items-start" : ""}`}>
-          <span className={`flex items-center gap-1.5 ${layer === "terra" ? "gap-2" : "flex-col"}`}>
+        <div className="flex items-start gap-2">
+          <span className="flex items-center gap-2">
             <Orb label={m.notices} onClick={onNotices} badge={notices} coach="hud-notices">
               {Icon.bell()}
             </Orb>
@@ -327,9 +340,7 @@ export function MapHud({
             )}
           </span>
           {(bales > 0 || guidePaused) && (
-            <span
-              className={`flex items-center gap-1.5 ${layer === "terra" ? "gap-2" : "flex-col"}`}
-            >
+            <span className="flex items-center gap-2">
               {guidePaused && (
                 <Orb label={m.resumeGuide} onClick={onResumeGuide} tone="gold">
                   <Lorenzo size={30} />
@@ -412,6 +423,12 @@ export function MapHud({
           className="pointer-events-none absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+6.25rem)] z-10 flex justify-end lg:left-auto lg:bottom-32 lg:right-[calc(var(--side,0px)+1.25rem)]"
         >
           {actions}
+        </div>
+      )}
+      {bottom && timeline && (
+        // Not on a short screen (a 320 × 568 phone): the map needs that room more.
+        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.5rem)] z-10 flex justify-center px-4 lg:bottom-[7.5rem] lg:right-[var(--side,0px)] [@media(max-height:639px)]:hidden">
+          <div className="w-full max-w-md">{timeline}</div>
         </div>
       )}
       {bottom && (

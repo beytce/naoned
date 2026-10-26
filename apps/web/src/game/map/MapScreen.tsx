@@ -1,8 +1,9 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../../api.js";
 import { defaultCrest } from "../../art/crest.js";
+import { goodsColour } from "../../art/goods.js";
 import { ResourceIcon } from "../../art/resources.js";
-import { GOODS_COLOUR, PLACES } from "../../art/veneto.js";
+import { PLACES } from "../../art/veneto.js";
 import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
 import { Big, Panel, Qty, Sheet, Slab, clock } from "../../ui.js";
@@ -12,6 +13,7 @@ import { Coach } from "../Coach.js";
 import { ComeBack } from "../ComeBack.js";
 import { CounterSheets, buyRationsSheet, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
+import { perHour } from "../Dashboard.js";
 import { FondacoSheet } from "../Fondaco.js";
 import type { GameProps } from "../Game.js";
 import { HouseSheet } from "../House.js";
@@ -34,6 +36,7 @@ import {
   vehicleName,
 } from "../roadKit.js";
 import { store } from "../store.js";
+import { upcoming } from "../timeline.js";
 import type {
   DeliveryOrderView,
   DeliveryView,
@@ -63,6 +66,7 @@ import {
 } from "./HudTips.js";
 import { CartMarker, CityMarker, CityName, HomeMarker } from "./Markers.js";
 import { NoticesSheet } from "./Notices.js";
+import { CityOrbit, ComptoirOrbit } from "./Orbit.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
 import { SIDE_W, SideColumn } from "./SideColumn.js";
 import {
@@ -86,6 +90,7 @@ import {
   useTerraShapes,
   useWeekReplay,
 } from "./TerraLayer.js";
+import { TimeStrip } from "./TimeStrip.js";
 import { type MapMarker, type Selection, WorldMap, type WorldMapHandle } from "./WorldMap.js";
 import { ACTION_ICONS as A } from "./actions.js";
 import { Icon } from "./icons.js";
@@ -463,7 +468,13 @@ export function MapScreen(
           name={m.homeLabel}
           crest={crest}
           ready={ready}
-          progress={running ? running.share : null}
+          rings={view.buildings.map((b) => {
+            const done = readyOf(b, now);
+            if (done > 0) return { share: 1, ready: true };
+            if (!b.job || done >= b.job.batches) return { share: null, ready: false };
+            const start = b.job.startedAt + done * b.job.batchMs;
+            return { share: (now - start) / b.job.batchMs, ready: false };
+          })}
           onTap={() => {
             setDeparture(null);
             haptic("tap");
@@ -484,7 +495,10 @@ export function MapScreen(
             <CityMarker
               code={code}
               name={names.city(code)}
-              orders={orders.length}
+              orders={orders.map((o) => ({
+                resource: o.resource,
+                covered: have(view, o.resource) >= o.quantity,
+              }))}
               deliverable={deliverable}
               criee={criee?.city === code}
               supplier={view.supplies.some((s) => s.city === code) ? crest : null}
@@ -529,7 +543,7 @@ export function MapScreen(
             id={v.id}
             type={v.type}
             label={vehicleName(v.type)}
-            load={loaded && (!dv || now < dv.arriveAt) ? (GOODS_COLOUR[loaded] ?? null) : null}
+            load={loaded && (!dv || now < dv.arriveAt) ? goodsColour(loaded) : null}
             state={dv ? "road" : "parked"}
             onTap={() => {
               haptic("tap");
@@ -587,13 +601,14 @@ export function MapScreen(
         top: 110,
         right: (panelUp ? 460 : 40) + (side ? SIDE_W : 0),
         // The Terraferma's actions above the doors, at the right, stay clear too.
-        bottom: (campaign && !campaign.mine) || (terra && !terra.me) ? 170 : terra ? 180 : 120,
+        bottom: (campaign && !campaign.mine) || (terra && !terra.me) ? 170 : terra ? 180 : 190,
         left: 40,
       }
     : {
         top: Math.max(campaign || terra ? 160 : 150, hudBand),
         right: 12,
-        bottom: panelUp ? 200 : terra ? 156 : 100,
+        // The trade keeps its strip of what comes next clear, above the doors (shown from 640 px high).
+        bottom: panelUp ? 200 : terra ? 156 : campaign || window.innerHeight < 640 ? 100 : 160,
         left: 12,
       };
 
@@ -612,14 +627,16 @@ export function MapScreen(
       />
     );
   const trade = !campaign && !terra;
+  // The counter opens up close, its workshops in orbit around its sun.
   if (trade && sel?.kind === "home")
-    panel = <HomePanel props={props} onClose={() => select(null)} />;
+    panel = <ComptoirOrbit props={props} crest={crest} onClose={() => select(null)} />;
   if (trade && sel?.kind === "city") {
     const i = cities.indexOf(sel.code);
     const step = (k: number) =>
       select({ kind: "city", code: cities[(i + k + cities.length) % cities.length] ?? sel.code });
+    // A city opens up close, its orders in orbit around it.
     panel = (
-      <CityPanel
+      <CityOrbit
         props={props}
         code={sel.code}
         onClose={() => select(null)}
@@ -743,6 +760,7 @@ export function MapScreen(
         rival={rivalLine(props.rival)}
         seasonProgress={seasonProgress}
         cash={view.cash}
+        rate={!campaign && !terra && perHour(props) > 0n ? m.rate(d(perHour(props))) : null}
         // Three counters on the map (recommendations of 20 October 2026): the ducats, the rank
         // and the carts; the Influence lives in the Profil.
         influence={null}
@@ -790,6 +808,23 @@ export function MapScreen(
             <CampaignHud f={campaign} now={now} />
           ) : terra ? (
             <TerraHud v={terra} now={now} regions={props.catalog.regions} folded={skirmishOn} />
+          ) : undefined
+        }
+        timeline={
+          !campaign && !terra ? (
+            <TimeStrip
+              now={now}
+              items={upcoming(
+                {
+                  buildings: view.buildings,
+                  deliveries,
+                  nextWaveAt: view.agenda.nextWaveAt,
+                  building: props.names.building,
+                  city: props.names.city,
+                },
+                now,
+              )}
+            />
           ) : undefined
         }
         actions={
@@ -984,227 +1019,6 @@ export function MapScreen(
       <Coach key={props.guideKey} {...props} departing={departure !== null} />
       {props.sheet === null && <ComeBack {...props} />}
     </div>
-  );
-}
-
-/** The merchant's counter: collect, the workshops, the store, building. */
-function HomePanel({ props, onClose }: { props: GameProps; onClose: () => void }) {
-  const { view, now } = props;
-  const m = fr.game.map;
-  const ready = view.buildings.reduce((n, b) => n + readyOf(b, now), 0);
-  const idle = view.buildings.some((b) => !b.job && b.canStart > 0);
-  const next = view.buildings
-    .filter((b) => b.job && readyOf(b, now) < b.job.batches)
-    .map((b) => {
-      const job = b.job as NonNullable<typeof b.job>;
-      const done = readyOf(b, now);
-      const start = job.startedAt + done * job.batchMs;
-      return { b, at: start + job.batchMs, share: (now - start) / job.batchMs };
-    })
-    .sort((x, y) => x.at - y.at)[0];
-  const stock = view.inventory.reduce((n, i) => n + i.available, 0);
-  const room = view.buildings.length < props.catalog.rules.maxBuildings;
-  const hungry = view.rations.perDay > 0 && view.rations.hungryUntil > now;
-  const status =
-    ready > 0
-      ? m.homeStatus.ready(ready)
-      : next
-        ? m.homeStatus.next(props.names.building(next.b.type), clock(next.at - now))
-        : idle
-          ? m.homeStatus.idle
-          : m.homeStatus.rest;
-  return (
-    <ContextPanel
-      title={m.home(props.account.pseudo ?? "")}
-      chip={<span className="meta">{fr.game.inStock(stock)}</span>}
-      status={hungry ? fr.game.domain.hungry : status}
-      tone={hungry ? "vermilion" : ready > 0 ? "gold" : "lagoon"}
-      progress={ready === 0 && next ? next.share : null}
-      onClose={onClose}
-      actions={
-        <>
-          {ready > 0 || idle ? (
-            <ActionButton
-              icon={ready > 0 ? Icon.harvest() : Icon.restart()}
-              label={ready > 0 ? m.buttons.harvest : m.buttons.restart}
-              tone="gold"
-              badge={ready > 0 ? ready : undefined}
-              coach="panel-harvest"
-              disabled={props.busy}
-              onClick={() => harvestAndRestart(props)}
-            />
-          ) : null}
-          <ActionButton
-            icon={Icon.workshops()}
-            label={m.buttons.workshops}
-            coach="panel-workshops"
-            onClick={() => props.setSheet("workshops")}
-          />
-          <ActionButton
-            icon={A.store.icon()}
-            label={A.store.label}
-            onClick={() => props.setSheet("store")}
-          />
-          {room && (
-            <ActionButton
-              icon={Icon.build()}
-              label={m.buttons.build}
-              onClick={() => props.setSheet("buildHere")}
-            />
-          )}
-        </>
-      }
-    />
-  );
-}
-
-/** A city: its orders, a Criée, and in Venice the Rialto and the port. */
-function CityPanel({
-  props,
-  code,
-  onClose,
-  onPrev,
-  onNext,
-  onCargo,
-  freeCart,
-  onSheet,
-}: {
-  props: GameProps;
-  code: string;
-  onClose: () => void;
-  onPrev: () => void;
-  onNext: () => void;
-  onCargo: () => void;
-  freeCart: boolean;
-  onSheet: (s: string) => void;
-}) {
-  const { view, now } = props;
-  const m = fr.game.map;
-  const road = view.road;
-  const orders = (road?.orders ?? []).filter((o) => o.city === code && o.status === "open");
-  const covered = orders.filter((o) => have(view, o.resource) >= o.quantity).length;
-  const criee =
-    view.criee && view.criee.city === code && view.criee.endsAt > now ? view.criee : null;
-  const nextDay = props.catalog.world.startsAt + view.day * 86_400_000;
-  const venice = code === "venezia";
-  const status = criee
-    ? m.city.criee(
-        props.names.resource(criee.resource),
-        String(Math.round(criee.premiumBps / 100)),
-        clock(criee.endsAt - now),
-      )
-    : road
-      ? orders.length > 0
-        ? m.city.deliverable(covered)
-        : m.city.none(clock(nextDay - now))
-      : venice
-        ? m.city.venice
-        : "";
-  const sells = !road && view.cityQuotes.some((q) => q.city === code);
-  const held = view.supplies.filter((s) => s.city === code);
-  const fondaco = view.fondaci?.cities.find((c) => c.city === code);
-  // Once, after the guide's first delivery: what the number on a city says.
-  const [pipsSeen, setPipsSeen] = useState(() => store.get("pipsSeen") === "1");
-  const pips = !pipsSeen && orders.length > 0 && view.tutorial.includes("sell_city");
-  return (
-    <ContextPanel
-      title={props.names.city(code)}
-      chip={road ? <span className="meta">{m.city.orders(orders.length)}</span> : undefined}
-      status={status}
-      tone={criee ? "vermilion" : covered > 0 ? "gold" : "lagoon"}
-      onClose={onClose}
-      onPrev={onPrev}
-      onNext={onNext}
-      actions={
-        <>
-          {road && (
-            <ActionButton
-              icon={Icon.cargo()}
-              label={m.buttons.cargo}
-              tone={covered > 0 && freeCart ? "gold" : "plain"}
-              badge={orders.length || undefined}
-              coach="panel-cargo"
-              disabled={!freeCart || orders.length === 0}
-              onClick={onCargo}
-            />
-          )}
-          {sells && (
-            <ActionButton
-              icon={A.sell.icon()}
-              label={A.sell.label}
-              tone="gold"
-              onClick={() => onSheet(`sell:${code}`)}
-            />
-          )}
-          {criee && (
-            <ActionButton
-              icon={Icon.criee()}
-              label={m.buttons.criee}
-              tone="vermilion"
-              onClick={() => onSheet("criee")}
-            />
-          )}
-          {road && view.warehouses && (
-            <ActionButton
-              icon={A.warehouse.icon()}
-              label={A.warehouse.label}
-              tone={
-                view.warehouses.cities.some((c) => c.city === code && c.held) ? "gold" : "plain"
-              }
-              onClick={() => onSheet(`warehouse:${code}`)}
-            />
-          )}
-          {road && fondaco && (
-            <ActionButton
-              icon={A.fondaco.icon()}
-              label={A.fondaco.label}
-              tone={fondaco.level > 0 ? "gold" : "plain"}
-              badge={fondaco.level || undefined}
-              onClick={() => onSheet(`fondaco:${code}`)}
-            />
-          )}
-          {road && (
-            <ActionButton
-              icon={A.suppliers.icon()}
-              label={A.suppliers.label}
-              tone={held.length > 0 ? "gold" : "plain"}
-              onClick={() => onSheet(`suppliers:${code}`)}
-            />
-          )}
-          {venice && (
-            <ActionButton
-              icon={Icon.rialto()}
-              label={m.buttons.rialto}
-              coach="panel-rialto"
-              onClick={() => props.goTo("marche")}
-            />
-          )}
-        </>
-      }
-      extra={
-        pips ? (
-          <div className="flex items-center gap-3">
-            <p className="min-w-0 flex-1 text-xs text-cream-dim">{m.city.pips}</p>
-            <Slab
-              size="sm"
-              tone="ghost"
-              onClick={() => {
-                store.set("pipsSeen", "1");
-                setPipsSeen(true);
-              }}
-            >
-              {m.city.pipsOk}
-            </Slab>
-          </div>
-        ) : road && !freeCart && orders.length > 0 ? (
-          <p className="text-center text-xs text-cream-dim">{m.city.noCart}</p>
-        ) : held.length > 0 ? (
-          <p className="text-center text-xs text-gold">
-            {fr.game.suppliers.held(held.map((s) => props.names.resource(s.resource)).join(", "))}
-          </p>
-        ) : undefined
-      }
-    />
   );
 }
 

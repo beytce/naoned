@@ -1,4 +1,4 @@
-import { ResourceIcon } from "../art/resources.js";
+import { GoodsMark } from "../art/goods.js";
 import { fr } from "../i18n.js";
 import { Rules, Sheet, Slab } from "../ui.js";
 import type { GameProps } from "./Game.js";
@@ -60,7 +60,7 @@ function Body({
                 key={r}
                 className={`inline-flex items-center gap-1 ${have(props.view, r) >= q ? "" : "text-vermilion"}`}
               >
-                <ResourceIcon code={r} size={20} />
+                <GoodsMark code={r} size={20} />
                 {q}
               </span>
             ))}
