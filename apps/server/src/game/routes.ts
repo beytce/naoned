@@ -72,7 +72,7 @@ import { toJson } from "./serialize.js";
 import type { SkirmishHub } from "./skirmish.js";
 import { terraView } from "./terra.js";
 import { terraRecord } from "./terraRecord.js";
-import { catalog, instantDepth, playerView, ranking } from "./view.js";
+import { catalog, instantDepth, mutatorNotice, playerView, ranking } from "./view.js";
 import { weeklyRival, weeklyTable } from "./weekly.js";
 import { WELCOME_AFTER_MS, welcomeBack } from "./welcome.js";
 import type { GameWorld } from "./world.js";
@@ -419,6 +419,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   app.get("/api/game/catalog", async () =>
     toJson({
       ...catalog(world.ctx, world),
+      mutator: mutatorNotice(world.ctx, world.now()),
       // The trade to recommend at the door (E3-5), or none.
       recommendedRegion: recommendedRegion(
         activePeopleByRegion(world.ctx, world.current, world.now()),

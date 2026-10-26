@@ -9,6 +9,7 @@ export * from "./acts.js";
 export * from "./effects.js";
 export * from "./deliveries.js";
 export * from "./fondaci.js";
+export * from "./mutators.js";
 export * from "./clock.js";
 export {
   activeMembers,

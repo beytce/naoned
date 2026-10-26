@@ -40,6 +40,7 @@ import {
   recipesFor,
   seasonActs,
   seasonEnd,
+  seasonMutator,
   specialtyUnlocked,
   stockUnitValue,
   topLevel,
@@ -103,6 +104,7 @@ import {
   vehiclesOf,
   welcomeTripMs,
 } from "@comptoirs/engine";
+import { dayOfMonthIn, seasonMonthKey } from "./calendar.js";
 import { titleFor } from "./profile.js";
 
 /** The Criée under way (players only learn of one once it has started). */
@@ -319,6 +321,20 @@ function roadView(ctx: WorldContext, state: WorldState, playerId: string, now: n
 }
 
 /** Static data of a world, for the client: names, recipes, costs. */
+/**
+ * The month's mutator (E2-9), and from the 24th the next month's, announced at the head of the
+ * season's notes: codes of the catalog, null when none.
+ */
+export function mutatorNotice(ctx: WorldContext, now: number) {
+  const end = seasonEnd(ctx);
+  const next = seasonMonthKey(end + 15 * 86_400_000);
+  const announced = dayOfMonthIn(now) >= 24 || now >= end;
+  return {
+    current: seasonMutator(ctx.settings, seasonMonthKey(end))?.code ?? null,
+    next: announced ? (seasonMutator(ctx.settings, next)?.code ?? null) : null,
+  };
+}
+
 export function catalog(ctx: WorldContext, world: { name: string }) {
   const { theme, settings } = ctx;
   return {

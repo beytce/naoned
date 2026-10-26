@@ -2537,6 +2537,17 @@ export const en: Dictionary = {
         casual: "the stroller",
       } as Record<string, string>,
     },
+    mutators: {
+      now: (text: string) => `This month: ${text}`,
+      next: (text: string) => `Next month: ${text}`,
+      codes: {
+        embargo_ottomano:
+          "Ottoman embargo — the Muda galleys bring half as much, and their price rises twice as fast.",
+        grand_gel: "Great frost — cities pay 20% more for planks and ask for more wood.",
+        guerra_milano:
+          "War of Milan — Milano is half as strong again on the Terraferma; bricks and planks are paid 25% more.",
+      } as Record<string, string>,
+    },
     seasonNotes: {
       title: "New this season",
       items: [
@@ -2579,6 +2590,11 @@ export const en: Dictionary = {
         "Terraferma: the Condotta, 8 cooperative minutes, alone or with your company, against three nations and Milano. Hold Padova and 35% of the land to open the next level (12 levels). No ducats, no goods, no Glory: a grade, from Condottiere di ventura to Capitano generale.",
         "Trade: workers eat by the batch, no longer by the day — half a loaf per batch and level in a workshop that transforms, a quarter for a raw material. Without bread, the workshop works at half speed, never stopped.",
         "Daily tasks: one missed day a week no longer breaks the chest streak; a reminder at 7 pm if your streak reaches 3 days and the chest is still closed.",
+        "Trade: fondaci replace warehouses. A fondaco in 3 cities at most, levels 1 to 3, 6 levels in all: each level gives you an order from the city every day, for you alone, at 95% of the shared board's price. The shared board drops to 3 orders per active merchant.",
+        "Masteries: the Trader gets three times the Dogana's quota, and the Dogana buys from them at no less than 85% of the reference; the Carter sees urgent orders 20 minutes before they open.",
+        'Book of the House: 8 missions a week, renewed on Monday, with doubled thresholds and better pay; the Book opens on "Today" and "This week".',
+        "The Arsenal of the week replaces the two-day company order: Bronze, Silver and Gold, Monday to Sunday. Silver brings more goods to next week's galleys, Gold Influence to whoever delivered after Bronze.",
+        "Each month, from December, a mutator changes a few prices or strengths for the month; it is announced here on the 24th of the month before.",
       ],
     },
     howTo: [

@@ -1261,15 +1261,53 @@ export const venice1450Settings: WorldSettingsInput = {
   // The official supplier (recommendations of 20 October 2026): the week's best deliverer of a
   // good to a city, from 10 units, is paid 10 % more for it there all the next week.
   suppliers: { bonusBps: 1_000, minUnits: 10 },
-  // Company orders (recommendations of 20 October 2026): every two days a city orders bread,
-  // bricks and planks from the three regions together, paid 10 % above the reference on
-  // delivery, and 10 % more to everyone who delivered once the order is full.
+  // Company orders (recommendations of 20 October 2026): a city orders bread, bricks and planks
+  // from the three regions together, paid 10 % above the reference on delivery, and 10 % more to
+  // everyone who delivered once the order is full.
+  //
+  // The mutator of the month (the experts' E2-9, 25 October 2026): none in November, the
+  // reference season; from December, one of three drawn for the month, announced on the 24th.
+  mutators: {
+    from: "2026-12",
+    catalog: [
+      // Embargo ottomano: half the galleys' lots, the price rising twice as fast as they go.
+      {
+        code: "embargo_ottomano",
+        weight: 1,
+        override: { mudaLotBps: 5_000, mudaPriceRiseBps: 20_000 },
+      },
+      // Grand gel: planks paid a fifth more by the cities, wood asked for more.
+      {
+        code: "grand_gel",
+        weight: 1,
+        override: { cityPriceBps: { planks: 12_000 }, cityCapacityBps: { wood: 13_000 } },
+      },
+      // Guerra di Milano: Milan half as strong again, bricks and planks a quarter dearer.
+      {
+        code: "guerra_milano",
+        weight: 1,
+        override: { milanTroopsBps: 15_000, cityPriceBps: { bricks: 12_500, planks: 12_500 } },
+      },
+    ],
+  },
+  //
+  // The Arsenal of the week (the experts' E2-6, 25 October 2026) in place of the order of two
+  // days: the same volume a week at the Bronze (3.5 orders of 4, 3 and 3), Silver at 1.25 times,
+  // Gold at 1.5 times, the units past the Bronze at +5 % only. Silver brings a quarter more to the
+  // galleys of the next week, Gold 3 Influence to whoever delivered 2 % of it and a unit past the
+  // Bronze. The bots stop at the Bronze.
   projects: {
-    intervalDays: 2,
-    durationDays: 2,
-    needsPerPlayer: { bread: 4, bricks: 3, planks: 3 },
+    intervalDays: 7,
+    durationDays: 7,
+    weekly: true,
+    needsPerPlayer: { bread: 14, bricks: 11, planks: 11 },
     premiumBps: 1_000,
     bonusBps: 1_000,
+    tiersBps: [10_000, 12_500, 15_000],
+    premiumAboveBps: 500,
+    silverMudaBps: 2_500,
+    goldInfluence: 3,
+    goldMinShareBps: 200,
   },
   valuation: {
     vwapDays: 7,

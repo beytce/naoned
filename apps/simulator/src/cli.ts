@@ -18,6 +18,8 @@ const { values } = parseArgs({
     players: { type: "string" },
     /** Share of bots holding the Pass Négociant (0 to 1). */
     pass: { type: "string", default: "0" },
+    /** A mutator of the month played all season (E2-9), by its code. */
+    mutator: { type: "string" },
     /**
      * Share of bots whose house holds patents (0 to 1), compared with the same season without
      * them (the house's settings of Venice).
@@ -113,6 +115,7 @@ for (const seed of seeds) {
     lateJoiners: players ? 0 : 10,
     live: values.live,
     passShare: Number(values.pass),
+    mutator: values.mutator,
     patentShare: Number(values.patents),
   };
   const result: SimulationResult = runSimulation(options);

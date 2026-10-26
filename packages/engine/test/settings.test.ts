@@ -113,6 +113,34 @@ describe("the house's missions of Venice", () => {
     const trade = (missions?.pool ?? []).filter((m) => m.group === undefined).length;
     expect(trade).toBeGreaterThanOrEqual((missions?.perBoard ?? 0) - 2);
   });
+
+  it("give a week's Influence within 5 % of the two boards of 84 hours before (E1-7)", () => {
+    const ctx = { theme: venice1450, settings: parseSettings(venice1450Settings), startAt: 0 };
+    let sum = 0;
+    for (let board = 0; board < 1_000; board++) {
+      const drawn = missionsOfBoard(ctx, board);
+      expect(drawn).toHaveLength(8);
+      expect(drawn.filter((m) => m.group === "terra").length).toBeLessThanOrEqual(2);
+      sum += drawn.reduce((n, m) => n + m.influence, 0);
+    }
+    // 62.6 a week before: 31.3 expected on each board of ten, two boards a week.
+    expect(sum / 1_000).toBeGreaterThanOrEqual(59.5);
+    expect(sum / 1_000).toBeLessThanOrEqual(65.7);
+  });
+});
+
+describe("the mutators of Venice (E2-9)", () => {
+  it("are three, one of pure trade at least, none of the Terraferma alone, from December", () => {
+    const m = parseSettings(venice1450Settings).mutators;
+    expect(m?.from).toBe("2026-12");
+    expect(m?.catalog).toHaveLength(3);
+    const touchesTrade = (o: NonNullable<typeof m>["catalog"][number]["override"]) =>
+      !!o.cityPriceBps || !!o.cityCapacityBps || o.mudaLotBps !== undefined;
+    expect(
+      m?.catalog.some((c) => touchesTrade(c.override) && c.override.milanTroopsBps === undefined),
+    ).toBe(true);
+    expect(m?.catalog.every((c) => touchesTrade(c.override))).toBe(true);
+  });
 });
 
 describe("the Pass Négociant's settings", () => {

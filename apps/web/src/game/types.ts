@@ -46,6 +46,8 @@ export interface Catalog {
   };
   /** The Doge of the season before, honoured on the Dogana's façade. */
   previousDoge?: { pseudo: string | null; crest: CrestData | null; season: string } | null;
+  /** The month's mutator, and the next month's from the 24th (E2-9): codes, null when none. */
+  mutator?: { current: string | null; next: string | null };
   /** The trade fewest people chose this month, when the gap is clear (E3-5), or none. */
   recommendedRegion?: string | null;
   /** The players' community (a Discord invite, a forum), null when none. */

@@ -2614,6 +2614,19 @@ const frDict = {
      * What changed for this season, shown at the foot of the help: the rules change only from one
      * month to the next, and say so here (owner's decision of 20 October 2026).
      */
+    /** The mutator of the month (E2-9), at the head of the season's notes. */
+    mutators: {
+      now: (text: string) => `Ce mois-ci : ${text}`,
+      next: (text: string) => `Le mois prochain : ${text}`,
+      codes: {
+        embargo_ottomano:
+          "Embargo ottoman — les galères de la Muda apportent deux fois moins, et leur prix monte deux fois plus vite.",
+        grand_gel:
+          "Grand gel — les villes paient les planches 20 % plus cher et demandent davantage de bois.",
+        guerra_milano:
+          "Guerre de Milan — Milan est une fois et demie plus fort sur la Terraferme ; briques et planches sont payées 25 % plus cher.",
+      } as Record<string, string>,
+    },
     seasonNotes: {
       title: "Nouveautés de la saison",
       items: [
@@ -2656,6 +2669,11 @@ const frDict = {
         "Terraferme : la Condotta, 8 minutes en coopération, seul ou avec sa compagnie, contre trois nations et Milan. Tenez Padoue et 35 % des terres pour ouvrir le niveau suivant (12 niveaux). Ni ducats, ni marchandises, ni Gloire : un grade, de Condottiere di ventura à Capitano generale.",
         "Commerce : les ouvriers mangent au lot, plus à la journée — un demi-pain par lot et par niveau dans un atelier qui transforme, un quart pour une matière première. Sans pain, l'atelier travaille deux fois moins vite, jamais arrêté.",
         "Tâches du jour : un jour manqué par semaine ne casse plus la série du coffre ; un rappel à 19 h si votre série atteint 3 jours et que le coffre est encore fermé.",
+        "Commerce : les fondaci remplacent les entrepôts. Un fondaco dans 3 villes au plus, niveaux 1 à 3, 6 niveaux en tout : chaque niveau vous donne chaque jour une commande de la ville, à vous seul, à 95 % du prix du tableau commun. Le tableau commun passe à 3 commandes par marchand actif.",
+        "Maîtrises : le Négociant a trois fois le quota de la Dogana, qui lui rachète au moins 85 % de la référence ; le Roulier voit les commandes urgentes 20 minutes avant leur ouverture.",
+        "Livre de la Maison : 8 missions par semaine, renouvelées le lundi, aux seuils doublés et mieux payées ; le Livre s'ouvre sur « Aujourd'hui » et « Cette semaine ».",
+        "L'Arsenal de la semaine remplace la commande de compagnie de deux jours : Bronze, Argent et Or, du lundi au dimanche. L'Argent apporte plus de marchandises aux galères de la semaine suivante, l'Or de l'Influence à qui a livré après le Bronze.",
+        "Chaque mois, à partir de décembre, un mutateur change quelques prix ou forces pour le mois ; il est annoncé ici le 24 du mois précédent.",
       ],
     },
     howTo: [

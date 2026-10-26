@@ -101,6 +101,38 @@ export const worldSettingsSchema = z.object({
    * `hour`: the Dogana sells a lot in proportion to active merchants, dearer as it runs out
    * (up to `priceRiseBps` more when all is gone), a few units per merchant and per arrival.
    */
+  /**
+   * The mutator of the month (E2-9): from the month `from` (YYYY-MM, Paris), one of the catalog
+   * drawn the same for everyone (`seasonMutator`), its `override` limited by the schema to a
+   * white list of keys, as factors in bps.
+   */
+  mutators: z
+    .object({
+      from: z.string().regex(/^\d{4}-\d{2}$/),
+      catalog: z.array(
+        z.object({
+          code: z.string(),
+          weight: positive,
+          override: z.strictObject({
+            /** Every city's base price of these goods. */
+            cityPriceBps: z.record(z.string(), bps).optional(),
+            /** Every city's daily capacity for these goods. */
+            cityCapacityBps: z.record(z.string(), bps).optional(),
+            mudaLotBps: bps.optional(),
+            mudaPriceRiseBps: bps.optional(),
+            milanTroopsBps: bps.optional(),
+          }),
+        }),
+      ),
+    })
+    .optional(),
+  /** The month's factors on the cities' prices and capacities, set by its mutator (E2-9). */
+  monthBps: z
+    .object({
+      price: z.record(z.string(), bps).prefault({}),
+      capacity: z.record(z.string(), bps).prefault({}),
+    })
+    .prefault({}),
   muda: z
     .object({
       everyDays: positive,
