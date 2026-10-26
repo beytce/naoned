@@ -58,6 +58,13 @@ export const Icon = {
       <path d="M12 14.5 V18.5 M12 17 H13.8" />
     </I>
   ),
+  /** A fondaco: the merchant's arcaded house in a city. */
+  fondaco: () => (
+    <I>
+      <path d="M3 20 H21 M4 20 V9 H20 V20 M3 9 L12 4 L21 9" />
+      <path d="M7 20 V15 A2 2 0 0 1 11 15 V20 M13 20 V15 A2 2 0 0 1 17 15 V20" />
+    </I>
+  ),
   /** The official suppliers: the banner their crest flies on. */
   banner: () => (
     <I>

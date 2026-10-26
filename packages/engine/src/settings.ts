@@ -87,6 +87,13 @@ export const worldSettingsSchema = z.object({
       perLevelPerDay: qty,
       slowdownBps: bps,
       graceHours: qty.prefault(0),
+      /**
+       * E1-4 of the experts: the workers eat when they work. Each batch started costs, a level,
+       * so many quarters of a loaf (`transform` in a workshop with inputs, `raw` for a raw
+       * material), the rounding's rest kept by the workshop. Short of bread, a new queue starts
+       * slowed by `slowdownBps`: never blocked.
+       */
+      perBatchQuarters: z.object({ transform: qty, raw: qty }).prefault({ transform: 0, raw: 0 }),
     })
     .prefault({ resource: "bread", perLevelPerDay: 0, slowdownBps: 0, graceHours: 0 }),
   /**
@@ -94,6 +101,38 @@ export const worldSettingsSchema = z.object({
    * `hour`: the Dogana sells a lot in proportion to active merchants, dearer as it runs out
    * (up to `priceRiseBps` more when all is gone), a few units per merchant and per arrival.
    */
+  /**
+   * The mutator of the month (E2-9): from the month `from` (YYYY-MM, Paris), one of the catalog
+   * drawn the same for everyone (`seasonMutator`), its `override` limited by the schema to a
+   * white list of keys, as factors in bps.
+   */
+  mutators: z
+    .object({
+      from: z.string().regex(/^\d{4}-\d{2}$/),
+      catalog: z.array(
+        z.object({
+          code: z.string(),
+          weight: positive,
+          override: z.strictObject({
+            /** Every city's base price of these goods. */
+            cityPriceBps: z.record(z.string(), bps).optional(),
+            /** Every city's daily capacity for these goods. */
+            cityCapacityBps: z.record(z.string(), bps).optional(),
+            mudaLotBps: bps.optional(),
+            mudaPriceRiseBps: bps.optional(),
+            milanTroopsBps: bps.optional(),
+          }),
+        }),
+      ),
+    })
+    .optional(),
+  /** The month's factors on the cities' prices and capacities, set by its mutator (E2-9). */
+  monthBps: z
+    .object({
+      price: z.record(z.string(), bps).prefault({}),
+      capacity: z.record(z.string(), bps).prefault({}),
+    })
+    .prefault({}),
   muda: z
     .object({
       everyDays: positive,
@@ -214,7 +253,13 @@ export const worldSettingsSchema = z.object({
           }),
         }),
       ),
-      chest: z.object({ ducats: money, perStreakDay: money, maxStreak: positive }),
+      chest: z.object({
+        ducats: money,
+        perStreakDay: money,
+        maxStreak: positive,
+        /** Days a streak may miss in each period of 7 days without breaking (E3-10). */
+        graceDaysPerWeek: qty.prefault(0),
+      }),
     })
     .prefault({ perDay: 0, tasks: [], chest: { ducats: 0, perStreakDay: 0, maxStreak: 1 } }),
   /**
@@ -945,6 +990,10 @@ export const worldSettingsSchema = z.object({
           /** Taken off the market tax on the merchant's sales. */
           taxDiscountBps: bps.prefault(0),
           extraOpenOrders: qty.prefault(0),
+          /** The Dogana buys from the merchant at no less than this share of the reference. */
+          marketMakerFloorBps: bps.prefault(0),
+          /** Urgent orders seen this long before they open (information only, E1-6). */
+          urgentPreviewMinutes: qty.prefault(0),
         }),
       ),
     })
@@ -1036,6 +1085,8 @@ export const worldSettingsSchema = z.object({
       missions: z
         .object({
           everyHours: positive,
+          /** One board a week, from Monday 0 h (the ranking's weeks) instead (E1-7). */
+          weekly: z.boolean().prefault(false),
           perBoard: qty,
           pool: z.array(
             z.object({
@@ -1129,6 +1180,20 @@ export const worldSettingsSchema = z.object({
    */
   warehouses: z.object({ perCity: positive, minBid: money, unitsPerDay: positive }).optional(),
   /**
+   * The fondaci (E1-3): a counter in at most `maxCities` cities, `maxLevels` levels in all, each
+   * level (`levels[i]` its cost, ducats destroyed and materials) bringing `ordersPerLevel`
+   * personal orders of the city a day at `priceBps` of the board's price. Off when absent.
+   */
+  fondaci: z
+    .object({
+      maxCities: positive,
+      maxLevels: positive,
+      ordersPerLevel: positive,
+      priceBps: bps,
+      levels: z.array(z.object({ ducats: money, materials: z.record(z.string(), qty) })).min(1),
+    })
+    .optional(),
+  /**
    * The official supplier of a city: the week's best deliverer of a good to a city (at least
    * `minUnits`) is paid `bonusBps` more for it there all the next week. Off when absent.
    */
@@ -1145,6 +1210,19 @@ export const worldSettingsSchema = z.object({
        * of what he was paid on top, from the city.
        */
       bonusBps: bps.prefault(0),
+      /** One order a week, from Monday to Sunday (the ranking's weeks) instead (E2-6). */
+      weekly: z.boolean().prefault(false),
+      /**
+       * The Arsenal's tiers (E2-6): the needs (Bronze) times each of these; the bonus is paid at the
+       * Bronze, the units past it at `premiumAboveBps` over the reference. Silver brings
+       * `silverMudaBps` more to the galleys of the next week, Gold `goldInfluence` to each who
+       * delivered `goldMinShareBps` of its units and one past the Bronze.
+       */
+      tiersBps: z.array(bps).min(1).prefault([10_000]),
+      premiumAboveBps: bps.prefault(0),
+      silverMudaBps: bps.prefault(0),
+      goldInfluence: qty.prefault(0),
+      goldMinShareBps: bps.prefault(0),
     })
     .prefault({ intervalDays: 7, durationDays: 7, needsPerPlayer: {}, premiumBps: 0, bonusBps: 0 }),
   valuation: z.object({

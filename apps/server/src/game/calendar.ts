@@ -54,6 +54,17 @@ const MONTHS = [
 ];
 
 /** "novembre 2026": the month a season is named after (the month it mostly covers). */
+/** The day of the month at `at` (1 to 31), in the season's time zone. */
+export function dayOfMonthIn(at: number, timeZone = SEASON_TIME_ZONE): number {
+  return new Date(at + offsetAt(at, timeZone)).getUTCDate();
+}
+
+/** The season's month as YYYY-MM (the key of its mutator, E2-9). */
+export function seasonMonthKey(endsAt: number, timeZone = SEASON_TIME_ZONE): string {
+  const { year, month } = monthOf(endsAt - DAY_MS, timeZone);
+  return `${year}-${String(month + 1).padStart(2, "0")}`;
+}
+
 export function seasonMonthName(endsAt: number, timeZone = SEASON_TIME_ZONE): string {
   const { year, month } = monthOf(endsAt - DAY_MS, timeZone);
   return `${MONTHS[month]} ${year}`;

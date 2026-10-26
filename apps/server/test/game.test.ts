@@ -175,7 +175,8 @@ describe("living world", () => {
     const v = (await post(cookie, "/api/game/join", { region: "terraferma" })).json().view;
     expect(v.contracts).toHaveLength(2); // Two orders of the Doge.
     expect(v.gazette).toHaveProperty("next");
-    expect(v.rations.perDay).toBe(6); // farm + mill + bakery
+    // Twelve batches a day by the batch (E1-4): farm 3 loaves, mill 6, bakery 6.
+    expect(v.rations.perDay).toBe(15);
     const home = v.contracts.find((c: { resource: string }) =>
       ["wheat", "flour", "bread", "clay", "wood", "bricks", "planks"].includes(c.resource),
     );
@@ -183,6 +184,18 @@ describe("living world", () => {
       const res = await act(cookie, { type: "fulfillContract", contractId: home.id });
       expect(res.json().error).toBe("city_sales_closed");
     }
+  });
+});
+
+describe("the fondaci (E1-3)", () => {
+  it("shows each city on a road with its next level, and builds one through the actions", async () => {
+    const cookie = await login("ada@example.org");
+    const v = (await post(cookie, "/api/game/join", { region: "lagoon" })).json().view;
+    const padova = v.fondaci.cities.find((c: { city: string }) => c.city === "padova");
+    expect(padova).toMatchObject({ level: 0, next: { level: 1 } });
+    // A lagoon house starts with bricks but no planks: refused, nothing taken.
+    const res = await act(cookie, { type: "buildFondaco", city: "padova" });
+    expect(res.json().error).toBe("insufficient_stock");
   });
 });
 

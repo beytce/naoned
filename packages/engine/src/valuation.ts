@@ -84,6 +84,9 @@ export function netWorth(
       buildings += applyBpsFloor(v.investedValue, ctx.settings.valuation.buildingValueBps);
     }
   }
+  for (const f of Object.values(state.fondaci?.[playerId] ?? {})) {
+    buildings += applyBpsFloor(f.investedValue, ctx.settings.valuation.buildingValueBps);
+  }
   // What it owes the Bank.
   const debt = state.loans?.[playerId]?.owed ?? 0n;
   return { cash, stock, buildings, total: cash + stock + buildings - debt };

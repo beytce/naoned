@@ -116,6 +116,60 @@ describe("bots in a live world", () => {
   });
 });
 
+describe("bots at the Arsenal (E2-6)", () => {
+  it("deliver their share up to the Bronze, never past it: Silver and Gold are for people", () => {
+    const projects = {
+      intervalDays: 7,
+      durationDays: 7,
+      needsPerPlayer: { bricks: 5, planks: 5 },
+      premiumBps: 1_000,
+      tiersBps: [10_000, 12_500, 15_000],
+      premiumAboveBps: 500,
+    };
+    const w = new World(makeContext({ projects }));
+    const rng = new Rng(5);
+    const bots = [
+      new Bot("b1", PROFILES.builder, "lagoon", w.now),
+      new Bot("b2", PROFILES.builder, "dolomites", w.now),
+    ];
+    for (const b of bots) w.do({ type: "join", playerId: b.id, region: b.region });
+    w.do({ type: "join", playerId: "h", region: "terraferma" });
+    w.do({ type: "tick" });
+    const project = Object.values(w.state.projects)[0];
+    if (!project) throw new Error("no project");
+    // A person fills the Bronze alone.
+    w.give("h", "bricks", 15).give("h", "planks", 15);
+    for (const resource of ["bricks", "planks"])
+      w.do({
+        type: "deliverToProject",
+        playerId: "h",
+        projectId: project.id,
+        resource,
+        quantity: 15,
+      });
+    for (const b of bots) w.give(b.id, "bricks", 50).give(b.id, "planks", 50);
+    const session = {
+      ctx: w.ctx,
+      state: () => w.state,
+      get now() {
+        return w.now;
+      },
+      market: new MarketView(
+        w.ctx,
+        () => w.state,
+        () => w.now,
+      ),
+      rng,
+      act: (cmd: Parameters<World["try"]>[0]) => w.try(cmd).ok,
+    };
+    for (let i = 0; i < 4; i++) {
+      for (const b of bots) b.play(session);
+      w.advance(3 * HOUR);
+    }
+    expect(w.state.projects[project.id]?.units).toEqual({ h: 30 });
+  });
+});
+
 describe("bots on the road", () => {
   it("deliver their board and buy vehicles", () => {
     const w = new World(makeContext({ ...deliverySettings }));

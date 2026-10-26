@@ -331,7 +331,7 @@ const CITY_ORDERS = 8;
  * A city seen up close, once touched on the map: its monument in the middle, its open orders in
  * orbit around it (the mark of the good, full when the stock covers it, its quantity and what it
  * pays, a red clock on an urgent one), then at the foot its state and the one gold action, loading
- * a free mule for it; its other doors (criée, warehouse, suppliers, Rialto) in ghost pills.
+ * a free mule for it; its other doors (criée, warehouse, fondaco, suppliers, Rialto) in ghost pills.
  */
 export function CityOrbit({
   props,
@@ -383,6 +383,13 @@ export function CityOrbit({
   if (criee) doors.push({ label: m.buttons.criee, on: () => onSheet("criee") });
   if (road && view.warehouses)
     doors.push({ label: A.warehouse.label, on: () => onSheet(`warehouse:${code}`) });
+  // The merchant's fondaco in the city, its level when open (E1-3).
+  const fondaco = view.fondaci?.cities.find((c) => c.city === code);
+  if (road && fondaco)
+    doors.push({
+      label: fondaco.level > 0 ? `${A.fondaco.label} · ${fondaco.level}` : A.fondaco.label,
+      on: () => onSheet(`fondaco:${code}`),
+    });
   if (road) doors.push({ label: A.suppliers.label, on: () => onSheet(`suppliers:${code}`) });
   if (venice)
     doors.push({ label: m.buttons.rialto, on: () => props.goTo("marche"), coach: "panel-rialto" });

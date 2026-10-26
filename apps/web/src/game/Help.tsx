@@ -75,6 +75,17 @@ export function Help(props: GameProps & { onClose: () => void }) {
           <h2 className="font-display text-base font-extrabold uppercase text-info">
             {fr.game.seasonNotes.title}
           </h2>
+          {/* The month's mutator first, and from the 24th the next one's (E2-9). */}
+          {props.catalog.mutator?.current && (
+            <p className="text-sm text-gold">
+              {fr.game.mutators.now(fr.game.mutators.codes[props.catalog.mutator.current] ?? "")}
+            </p>
+          )}
+          {props.catalog.mutator?.next && (
+            <p className="text-sm text-info">
+              {fr.game.mutators.next(fr.game.mutators.codes[props.catalog.mutator.next] ?? "")}
+            </p>
+          )}
           <ul className="list-disc space-y-1 pl-5 text-cream-dim">
             {fr.game.seasonNotes.items.map((n) => (
               <li key={n}>{n}</li>

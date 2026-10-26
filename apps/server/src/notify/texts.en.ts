@@ -131,6 +131,11 @@ export function pushTextEn(
         title: "Delivery arrived",
         body: `${data.quantity} ${resource(data.resource)} delivered by ${road(data.route)}: ${ducats(String(data.amount ?? "0"))} ducats collected.`,
       };
+    case "streak":
+      return {
+        title: `${data.streak}-day streak`,
+        body: "Today's chest is still closed: finish your tasks before the day ends to keep the streak.",
+      };
     case "wave":
       return {
         title: `New orders at ${clock(data.at)}`,

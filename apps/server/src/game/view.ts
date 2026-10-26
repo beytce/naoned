@@ -29,15 +29,18 @@ import {
   mudaView,
   netWorth,
   nextActions,
+  nextFondaco,
   nextMudaAt,
   nextWaveAt,
   openProjects,
+  orderVisible,
   playerQuota,
   quoteCitySale,
   rationsPerDay,
   recipesFor,
   seasonActs,
   seasonEnd,
+  seasonMutator,
   specialtyUnlocked,
   stockUnitValue,
   topLevel,
@@ -64,6 +67,8 @@ import {
   familiesOn,
   familiesOpenAt,
   familyOf,
+  fondaciLevels,
+  fondaciOf,
   garrisonAt,
   hasPass,
   hireCost,
@@ -99,6 +104,7 @@ import {
   vehiclesOf,
   welcomeTripMs,
 } from "@comptoirs/engine";
+import { dayOfMonthIn, seasonMonthKey } from "./calendar.js";
 import { titleFor } from "./profile.js";
 
 /** The Criée under way (players only learn of one once it has started). */
@@ -271,29 +277,32 @@ function roadView(ctx: WorldContext, state: WorldState, playerId: string, now: n
     contractsDone.ids.includes(ref);
   const types = Object.keys(ctx.settings.deliveries.vehicles);
   const rivalsOf = boardRivals(ctx, state, playerId, now);
-  const orders = deliveryOrdersFor(ctx, state, playerId, today).map((o) => ({
-    ...o,
-    /** Other active merchants who may take this order of the world's board. */
-    rivals: o.shared ? rivalsOf(o) : 0,
-    status:
-      done.has(o.id) || served(o.ref, o.kind)
-        ? ("done" as const)
-        : o.takenBy && o.takenBy !== playerId
-          ? ("taken" as const)
-          : now < o.opensAt
-            ? ("upcoming" as const)
-            : now >= o.expiresAt
-              ? ("expired" as const)
-              : ("open" as const),
-    /** The welcome order's express trip each way, in seconds, while the tutorial lasts. */
-    ...(o.welcome && welcomeTripMs(ctx, player, now) > 0
-      ? { express: welcomeTripMs(ctx, player, now) / 1000 }
-      : {}),
-    /** Minutes one way, per vehicle type. */
-    minutes: Object.fromEntries(
-      types.map((t) => [t, travelMinutesFor(ctx, state, playerId, o.city, t) ?? null]),
-    ),
-  }));
+  // An order not open yet stays out of sight, but the carter's urgent ones (E1-6).
+  const orders = deliveryOrdersFor(ctx, state, playerId, today)
+    .filter((o) => orderVisible(ctx, state, playerId, o, now))
+    .map((o) => ({
+      ...o,
+      /** Other active merchants who may take this order of the world's board. */
+      rivals: o.shared ? rivalsOf(o) : 0,
+      status:
+        done.has(o.id) || served(o.ref, o.kind)
+          ? ("done" as const)
+          : o.takenBy && o.takenBy !== playerId
+            ? ("taken" as const)
+            : now < o.opensAt
+              ? ("upcoming" as const)
+              : now >= o.expiresAt
+                ? ("expired" as const)
+                : ("open" as const),
+      /** The welcome order's express trip each way, in seconds, while the tutorial lasts. */
+      ...(o.welcome && welcomeTripMs(ctx, player, now) > 0
+        ? { express: welcomeTripMs(ctx, player, now) / 1000 }
+        : {}),
+      /** Minutes one way, per vehicle type. */
+      minutes: Object.fromEntries(
+        types.map((t) => [t, travelMinutesFor(ctx, state, playerId, o.city, t) ?? null]),
+      ),
+    }));
   const vehicles = vehiclesOf(state, playerId).map((v) => ({
     ...v,
     status: vehicleFree(v, now) ? ("free" as const) : ("busy" as const),
@@ -312,6 +321,20 @@ function roadView(ctx: WorldContext, state: WorldState, playerId: string, now: n
 }
 
 /** Static data of a world, for the client: names, recipes, costs. */
+/**
+ * The month's mutator (E2-9), and from the 24th the next month's, announced at the head of the
+ * season's notes: codes of the catalog, null when none.
+ */
+export function mutatorNotice(ctx: WorldContext, now: number) {
+  const end = seasonEnd(ctx);
+  const next = seasonMonthKey(end + 15 * 86_400_000);
+  const announced = dayOfMonthIn(now) >= 24 || now >= end;
+  return {
+    current: seasonMutator(ctx.settings, seasonMonthKey(end))?.code ?? null,
+    next: announced ? (seasonMutator(ctx.settings, next)?.code ?? null) : null,
+  };
+}
+
 export function catalog(ctx: WorldContext, world: { name: string }) {
   const { theme, settings } = ctx;
   return {
@@ -742,6 +765,8 @@ export function playerView(
     // The warehouses in the cities: those the merchant holds this week, its bids for the next,
     // and for each city the bid that wins a place now (the auction is open).
     warehouses: warehousesView(ctx, state, playerId, now),
+    // The merchant's fondaci, per city on a road, and what the next level costs (E1-3).
+    fondaci: fondaciView(ctx, state, playerId),
     // The goods the merchant is the official supplier of, by city, this week.
     supplies: Object.entries(state.suppliers?.holders ?? {})
       .filter(([, id]) => id === playerId)
@@ -753,10 +778,21 @@ export function playerView(
     book,
     cityQuotes,
     // Company orders: what this merchant delivered and how many took part, not who.
-    projects: openProjects(state.projects, now).map(({ by, ...p }) => ({
+    projects: openProjects(state.projects, now).map(({ by, units, above, ...p }) => ({
       ...p,
       mine: by?.[playerId] ?? 0n,
-      merchants: Object.keys(by ?? {}).length,
+      merchants: Object.keys(units ?? by ?? {}).length,
+      // The Arsenal's tiers (E2-6): each one's share of the Bronze, and the price past it.
+      tiersBps: ctx.settings.projects.tiersBps,
+      abovePrice: Object.fromEntries(
+        Object.keys(p.needs).map((r) => [
+          r,
+          applyBpsFloor(
+            ctx.settings.referencePrices[r] ?? 0n,
+            10_000 + ctx.settings.projects.premiumAboveBps,
+          ),
+        ]),
+      ),
     })),
     contracts,
     families: familiesView(ctx, state, playerId, now),
@@ -784,6 +820,13 @@ export function playerView(
       perDay: rationsPerDay(ctx, buildings, playerId),
       /** Loaves per workshop level: the need grows with every level built. */
       perLevel: ctx.settings.rations.perLevelPerDay,
+      /** E1-4: quarters of a loaf a batch and a level (null: no rations by the batch). */
+      byBatch:
+        ctx.settings.rations.perBatchQuarters.transform +
+          ctx.settings.rations.perBatchQuarters.raw >
+        0
+          ? ctx.settings.rations.perBatchQuarters
+          : null,
       hungryUntil: player.hungryUntil ?? 0,
       /** Workers eat at each day boundary of the world. */
       nextMealAt: ctx.startAt + (dayIndex(ctx, now) + 1) * 86_400_000,
@@ -865,6 +908,32 @@ export function ranking(
     netWorth: row.netWorth,
     turnover: row.turnover,
   }));
+}
+
+function fondaciView(ctx: WorldContext, state: WorldState, playerId: string) {
+  const rules = ctx.settings.fondaci;
+  const player = state.players[playerId];
+  if (!rules || !player) return null;
+  const mine = fondaciOf(state, playerId);
+  const routes = ctx.settings.deliveries.routes[player.region] ?? {};
+  return {
+    maxCities: rules.maxCities,
+    maxLevels: rules.maxLevels,
+    topLevel: rules.levels.length,
+    ordersPerLevel: rules.ordersPerLevel,
+    priceBps: rules.priceBps,
+    levels: fondaciLevels(state, playerId),
+    cities: ctx.theme.cities
+      .filter(({ code }) => routes[code] !== undefined)
+      .map(({ code }) => {
+        const next = nextFondaco(ctx, state, playerId, code);
+        return {
+          city: code,
+          level: mine[code]?.level ?? 0,
+          next: next ? { level: next.level, ducats: next.ducats, materials: next.materials } : null,
+        };
+      }),
+  };
 }
 
 function warehousesView(ctx: WorldContext, state: WorldState, playerId: string, now: number) {

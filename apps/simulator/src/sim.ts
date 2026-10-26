@@ -12,9 +12,11 @@ import {
   type ProfileName,
   Rng,
   type WorldContext,
+  type WorldSettings,
   type WorldSettingsInput,
   type WorldState,
   accumulate,
+  applyMutator,
   checkInvariants,
   createWorldState,
   decide,
@@ -42,6 +44,8 @@ import { type RoadStats, roadStats } from "./road.js";
 
 export interface SimulationOptions {
   settings: WorldSettingsInput;
+  /** A mutator of the catalog played all season (E2-9), by its code. */
+  mutator?: string;
   seed: number;
   days: number;
   stepMinutes: number;
@@ -222,11 +226,19 @@ export function createBots(options: SimulationOptions, rng: Rng): Bot[] {
   return bots;
 }
 
+/** The settings under a mutator of their catalog (an unknown code is an error). */
+function withMutator(settings: WorldSettings, code?: string): WorldSettings {
+  if (!code) return settings;
+  const mutator = settings.mutators?.catalog.find((m) => m.code === code);
+  if (!mutator) throw new Error(`unknown mutator ${code}`);
+  return applyMutator(settings, mutator.override);
+}
+
 export function runSimulation(options: SimulationOptions): SimulationResult {
   const started = performance.now();
   const ctx: WorldContext = {
     theme: venice1450,
-    settings: parseSettings(options.settings),
+    settings: withMutator(parseSettings(options.settings), options.mutator),
     startAt: START,
     endAt: START + options.days * DAY_MS,
   };

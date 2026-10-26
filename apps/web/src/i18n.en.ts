@@ -350,6 +350,7 @@ export const en: Dictionary = {
         criee: "Auction",
         suppliers: "Suppliers",
         warehouse: "Warehouse",
+        fondaco: "Fondaco",
         ranking: "Ranking",
         family: "Family",
         help: "Help",
@@ -543,7 +544,12 @@ export const en: Dictionary = {
     cargo: {
       title: "Cargo",
       sort: { reward: "Reward", distance: "Distance", city: "City" },
-      kinds: { doge: "Doge", urgent: "Urgent", family: "Family" } as Record<string, string>,
+      soon: (goods: string, city: string, inTime: string) =>
+        `Urgent soon: ${goods} for ${city}, in ${inTime}`,
+      kinds: { doge: "Doge", urgent: "Urgent", family: "Family", fondaco: "Fondaco" } as Record<
+        string,
+        string
+      >,
       why: {
         noRoad: "no road",
         otherCity: (city: string) => `for ${city} only`,
@@ -609,6 +615,14 @@ export const en: Dictionary = {
     rations: {
       line: (perDay: number, days: number) =>
         `Your workers eat ${perDay} loaves a day · reserve: ${days} d`,
+      byBatch: (transform: string, raw: string) =>
+        `Your workers eat when they work: ${transform} loaf a batch and a level in a workshop that transforms, ${raw} for a raw material. Without bread, a new queue goes 50% slower.`,
+      batchNeed: (n: number, have: number) =>
+        n > have
+          ? `These batches eat ${n} loa${n === 1 ? "f" : "ves"}, you have ${have}: they will go 50% slower.`
+          : `These batches eat ${n} loa${n === 1 ? "f" : "ves"}.`,
+      lowBatch: "Less than a day of bread: a new queue will go 50% slower without it.",
+      about: "Eaten per day, about",
       nextMeal: (inTime: string, need: number, have: number) =>
         `Next meal in ${inTime}: ${need} loaves needed, you have ${have}.`,
       why: (perLevel: number) =>
@@ -1308,9 +1322,10 @@ export const en: Dictionary = {
     daily: {
       title: "Today's tasks",
       streak: (n: number) => (n > 0 ? `Streak: ${n} day${s(n)}` : "No streak yet"),
+      grace: "grace available",
       chest: "Chest of the day",
       chestHint:
-        "The three tasks done open the chest; each day in a row makes it bigger (up to 5).",
+        "The three tasks done open the chest; each day in a row makes it bigger (up to 5). One missed day a week does not break the streak.",
       chestOpen: "Chest open: come back tomorrow to extend the streak.",
       resetsIn: (t: string) => `New tasks in ${t}`,
       claim: "Collect",
@@ -1687,6 +1702,8 @@ export const en: Dictionary = {
             .join(", ") || "your counter is waiting for you"
         }.`,
       wave: (at: string, covered: number) => `New orders at ${at}: your stock covers ${covered}.`,
+      streak: (n: number) =>
+        `${n}-day streak: today's chest is still closed, finish your tasks before the day ends.`,
       skirmishCall: (at: string) =>
         `Call to skirmish at ${at}: the merchants meet there for a ranked match.`,
       harvest: "Harvest ready: your workshops have finished their production.",
@@ -1745,6 +1762,7 @@ export const en: Dictionary = {
           morning: "Morning gazette (8:05)",
           skirmish_call: "Calls to skirmish (a quarter of an hour before)",
           wave: "A wave of orders your stock covers (if you are away)",
+          streak: "Streak reminder (7 pm, today's chest closed)",
         } as Record<string, string>,
       },
     },
@@ -1822,7 +1840,8 @@ export const en: Dictionary = {
       influence: "Influence",
       intro:
         "Your fortune starts again from zero every season, your House does not: Influence is kept from season to season and buys privileges: advantages kept forever, which open new things without ever bringing more.",
-      earn: "It cannot be bought nor earned by selling: only through the House's missions, ten every three and a half days.",
+      earn: "It cannot be bought nor earned by selling: only through the House's missions, eight each week, renewed on Monday.",
+      pages: { today: "Today", week: "This week" },
       open: "Open the book",
       balance: (n: number) => `${n} Influence`,
       catalog: "Privileges",
@@ -1839,6 +1858,7 @@ export const en: Dictionary = {
         patent: () => "Privilege",
         refund: () => "Refund",
         mission: () => "Mission of the House",
+        arsenal: () => "Gold of the Arsenal",
         spend: () => "Spending",
       } as Record<string, (week: number | null) => string>,
       patents: {
@@ -1863,7 +1883,7 @@ export const en: Dictionary = {
         glass: { name: "Art of glass", text: "The Murano glass chain." },
       } as Record<string, { name: string; text: string }>,
       missions: {
-        title: "Missions of the House",
+        title: "Missions of the week",
         renews: (t: string) => `New missions in ${t}`,
         claim: (n: number) => `Receive · ${n} ✦`,
         claimed: "Received",
@@ -2124,10 +2144,16 @@ export const en: Dictionary = {
     },
 
     company: {
-      title: "Company order",
-      of: (city: string) => `Company order · ${city}`,
-      line: "+10% per unit · +10% once filled",
-      help: "A city orders bread, bricks and planks from the three regions. Each unit delivered is paid 10% above the reference; when the order is filled, each merchant who delivered gets 10% more.",
+      title: "The Arsenal of the week",
+      of: (city: string) => `Arsenal · ${city}`,
+      line: "Bronze, Silver, Gold · Monday to Sunday",
+      help: "Each week, a city orders bread, bricks and planks from the three regions. Up to Bronze, each unit is paid 10% above the reference, and each merchant who delivered gets 10% more once Bronze is reached. Beyond it, Silver (one and a quarter times Bronze) and Gold (one and a half times) are paid 5% above the reference. Silver brings a quarter more to the Muda galleys the next week; Gold, 3 Influence to whoever delivered 2% of it and at least one unit after Bronze. The computer's houses stop at Bronze.",
+      tiers: [
+        "Aim for Bronze",
+        "Bronze reached: bonus paid. On to Silver",
+        "Silver reached: next week's galleys will bring more. On to Gold",
+        "Gold reached: 3 Influence for whoever delivered after Bronze",
+      ],
       endsIn: (time: string) => `ends in ${time}`,
       filled: "Filled: the bonus is paid",
       merchants: (n: number) =>
@@ -2495,6 +2521,23 @@ export const en: Dictionary = {
       place: "Bid",
       rebid: "Replace the bid",
     },
+    fondaco: {
+      title: (city: string) => `Fondaco of ${city}`,
+      line: (level: number, top: number) =>
+        level > 0 ? `Level ${level} of ${top}` : "No fondaco here yet",
+      orders: (n: number) =>
+        n > 0
+          ? `${n} order${s(n)} from the city a day, for you alone.`
+          : "No order from the city for you alone.",
+      next: (level: number) => (level === 1 ? "Open the fondaco" : `Raise to level ${level}`),
+      cost: "Cost",
+      top: "Your fondaco is at its highest level.",
+      full: (levels: number, max: number, cities: number) =>
+        `You have ${levels} level${s(levels)} of ${max}, in ${cities} cit${cities > 1 ? "ies" : "y"} at most.`,
+      build: "Build",
+      help: (cities: number, levels: number, top: number, pct: number) =>
+        `A fondaco in ${cities} cities at most, from level 1 to level ${top}, ${levels} levels in all. Each level gives you an order from the city every day, for you alone, paid ${pct}% of the shared board's price: cheaper than the board, but sure. The ducats leave the game, the bricks and planks too; the fondaco counts in your net worth at its cost.`,
+    },
     suppliers: {
       title: (city: string) => `Suppliers of ${city}`,
       line: (pct: number, min: number) => `+${pct}% to the top deliverer · ${min} at least`,
@@ -2537,6 +2580,17 @@ export const en: Dictionary = {
         casual: "the stroller",
       } as Record<string, string>,
     },
+    mutators: {
+      now: (text: string) => `This month: ${text}`,
+      next: (text: string) => `Next month: ${text}`,
+      codes: {
+        embargo_ottomano:
+          "Ottoman embargo — the Muda galleys bring half as much, and their price rises twice as fast.",
+        grand_gel: "Great frost — cities pay 20% more for planks and ask for more wood.",
+        guerra_milano:
+          "War of Milan — Milano is half as strong again on the Terraferma; bricks and planks are paid 25% more.",
+      } as Record<string, string>,
+    },
     seasonNotes: {
       title: "New this season",
       items: [
@@ -2577,6 +2631,13 @@ export const en: Dictionary = {
         "Missions of the House: those of the old campaign are replaced by Terraferma missions, two at most per board.",
         "Merchant Pass: no game advantage any more (no Dogana quota, no open offer, no extra fresh produce, no Doge's order swapped, no bargain alert); it gives only information to read and cosmetics.",
         "Terraferma: the Condotta, 8 cooperative minutes, alone or with your company, against three nations and Milano. Hold Padova and 35% of the land to open the next level (12 levels). No ducats, no goods, no Glory: a grade, from Condottiere di ventura to Capitano generale.",
+        "Trade: workers eat by the batch, no longer by the day — half a loaf per batch and level in a workshop that transforms, a quarter for a raw material. Without bread, the workshop works at half speed, never stopped.",
+        "Daily tasks: one missed day a week no longer breaks the chest streak; a reminder at 7 pm if your streak reaches 3 days and the chest is still closed.",
+        "Trade: fondaci replace warehouses. A fondaco in 3 cities at most, levels 1 to 3, 6 levels in all: each level gives you an order from the city every day, for you alone, at 95% of the shared board's price. The shared board drops to 3 orders per active merchant.",
+        "Masteries: the Trader gets three times the Dogana's quota, and the Dogana buys from them at no less than 85% of the reference; the Carter sees urgent orders 20 minutes before they open.",
+        'Book of the House: 8 missions a week, renewed on Monday, with doubled thresholds and better pay; the Book opens on "Today" and "This week".',
+        "The Arsenal of the week replaces the two-day company order: Bronze, Silver and Gold, Monday to Sunday. Silver brings more goods to next week's galleys, Gold Influence to whoever delivered after Bronze.",
+        "Each month, from December, a mutator changes a few prices or strengths for the month; it is announced here on the 24th of the month before.",
       ],
     },
     howTo: [

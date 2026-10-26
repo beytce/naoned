@@ -1,5 +1,6 @@
 import {
   activeEvent,
+  dailyFor,
   dayStartIn,
   hourIn,
   hourWithin,
@@ -59,6 +60,8 @@ export const NOTIFICATION_KINDS = [
   "skirmish_call",
   // A wave of the board opens with orders the stock covers, to whoever is away (E3-1, lot 2).
   "wave",
+  // A streak of chests of 3 days or more, today's still closed, at 19 h (E3-10).
+  "streak",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -96,6 +99,8 @@ const DAY_MS = 24 * HOUR_MS;
 export const DAILY_PUSH_CAP = 3;
 /** The gazette goes at 8:05 in Paris, and no later than 10 h (a server down at 8:05 catches up). */
 const MORNING = { minutes: 8 * 60 + 5, until: 10 * 60 };
+/** The streak's reminder goes at 19 h in Paris, and no later than 21 h, for a streak this long. */
+const STREAK = { minutes: 19 * 60, until: 21 * 60, from: 3 };
 /** Where a push opens the game: one of the places the client knows (`deepLink`, web). */
 const OPENS: Partial<Record<NotificationKind, string>> = {
   harvest: "workshops",
@@ -109,6 +114,7 @@ const OPENS: Partial<Record<NotificationKind, string>> = {
   morning: "notices",
   skirmish_call: "terra",
   wave: "cargo",
+  streak: "notices",
 };
 
 /** The link a push opens: a place of the list, and where it comes from for the measures. */
@@ -359,6 +365,40 @@ export class Notifier {
     await this.morning(now);
     await this.skirmishCall(since, now);
     await this.wave(since, now);
+    await this.streak(now);
+  }
+
+  /**
+   * One reminder at 19 h in Paris to whoever holds a streak of 3 days or more and has not opened
+   * today's chest (E3-10 of the experts): it comes with the weekly grace, and counts in the cap.
+   */
+  private async streak(now: number): Promise<void> {
+    const ctx = this.world.ctx;
+    if (ctx.settings.daily.perDay === 0 || ctx.settings.daily.chest.graceDaysPerWeek === 0) return;
+    const day = dayStartIn(now).start;
+    const minutes = (now - day) / 60_000;
+    if (minutes < STREAK.minutes || minutes >= STREAK.until) return;
+    const key = new Date(day).toISOString().slice(0, 10);
+    const [done] = await this.db
+      .select({ id: notifications.id })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.worldId, this.world.id),
+          eq(notifications.kind, "streak"),
+          sql`${notifications.data}->>'day' = ${key}`,
+        ),
+      )
+      .limit(1);
+    if (done) return;
+    const state = this.world.current;
+    const notices: Notice[] = [];
+    for (const accountId of await this.people()) {
+      const daily = dailyFor(ctx, state, accountId, now);
+      if (daily.chestClaimed || daily.streak < STREAK.from) continue;
+      notices.push({ accountId, kind: "streak", data: { day: key, streak: daily.streak } });
+    }
+    await this.send(notices, now);
   }
 
   /**

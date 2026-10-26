@@ -23,6 +23,7 @@ import {
 } from "./deliveries.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { joinFamily, leaveFamily } from "./families.js";
+import { buildFondaco } from "./fondaci.js";
 import {
   claimHouseMission,
   grantPatent,
@@ -121,6 +122,7 @@ export type Command =
   | { type: "tenderBid"; playerId: PlayerId; tenderId: string; price: Deniers; quantity: number }
   | { type: "tenderDeliver"; playerId: PlayerId; tenderId: string }
   | { type: "warehouseBid"; playerId: PlayerId; city: string; amount: Deniers }
+  | { type: "buildFondaco"; playerId: PlayerId; city: string }
   | { type: "choosePath"; playerId: PlayerId; buildingId: string; path: "volume" | "quality" }
   | {
       type: "postCommission";
@@ -459,6 +461,9 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "warehouseBid":
       bidWarehouse(tx, cmd.playerId, cmd.city, cmd.amount);
+      break;
+    case "buildFondaco":
+      buildFondaco(tx, cmd.playerId, cmd.city);
       break;
     case "postCommission":
       postCommission(tx, cmd.playerId, cmd.resource, cmd.quantity, cmd.unitPrice, cmd.days, cmd.to);

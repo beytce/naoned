@@ -7,8 +7,10 @@ import {
   type LedgerEntry,
   type LedgerReason,
   type WorldContext,
+  type WorldSettings,
   type WorldState,
   adoptTurnover,
+  applyMutator,
   checkInvariants,
   createWorldState,
   decide,
@@ -16,6 +18,7 @@ import {
   emptyTotals,
   parseSettings,
   seasonEnd,
+  seasonMutator,
   upgradeLegacySettings,
   upgradeLegacyState,
   venice1450,
@@ -35,7 +38,7 @@ import {
   worlds,
 } from "../db/schema.js";
 import { countFunnel } from "../funnel.js";
-import { nextSeasonBounds, seasonBounds, seasonMonthName } from "./calendar.js";
+import { nextSeasonBounds, seasonBounds, seasonMonthKey, seasonMonthName } from "./calendar.js";
 import { recordInfluence, recordSeasonInfluence } from "./house.js";
 import { recordSeason } from "./season.js";
 import { decode, encode } from "./serialize.js";
@@ -653,6 +656,12 @@ async function replayJournal(
   return { state, version, replayed: version - snapshotVersion };
 }
 
+/** The settings of a season's month: its mutator applied, if one is drawn for it. */
+export function monthSettings(settings: WorldSettings, endsAt: number): WorldSettings {
+  const mutator = seasonMutator(settings, seasonMonthKey(endsAt));
+  return mutator ? applyMutator(settings, mutator.override) : settings;
+}
+
 async function createWorld(db: Db, bounds: { startsAt: number; endsAt: number }) {
   const [world] = await db
     .insert(worlds)
@@ -690,7 +699,8 @@ async function loadWorld(db: Db, world: WorldRow, options: WorldOptions, owner: 
     theme,
     // The world id is never sent to players: it seeds draws (events, contracts, pirates).
     seed: world.id,
-    settings: parseSettings(stored),
+    // The month's mutator over the stored settings, never saved into them (E2-9).
+    settings: monthSettings(parseSettings(stored), world.endsAt.getTime()),
     startAt: world.startsAt.getTime(),
     endAt: world.endsAt.getTime(),
   };

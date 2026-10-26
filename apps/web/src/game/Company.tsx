@@ -40,9 +40,16 @@ export function CompanyTile(props: GameProps) {
   );
 }
 
+/** A tier's need of a good, from the Bronze's (as the engine rounds it). */
+const tierNeed = (need: number, bps: number) => Math.ceil((need * bps) / 10_000);
+
 function Line({ props, p, resource }: { props: GameProps; p: Project; resource: string }) {
-  const need = p.needs[resource] ?? 0;
+  const bronze = p.needs[resource] ?? 0;
   const done = p.delivered[resource] ?? 0;
+  // Past the Bronze, the Arsenal's next tier (E2-6).
+  const need =
+    p.tiersBps.map((bps) => tierNeed(bronze, bps)).find((n) => n > done) ??
+    tierNeed(bronze, p.tiersBps.at(-1) ?? 10_000);
   const have = stockOf(props, resource);
   // The workers' bread of the day stays home.
   const keep = resource === props.view.rations.resource ? props.view.rations.perDay : 0;
@@ -65,7 +72,12 @@ function Line({ props, p, resource }: { props: GameProps; p: Project; resource: 
           />
         </span>
         <span className="meta mt-1 block">
-          {d(p.unitPrice[resource])} · {fr.game.inStock(have)}
+          {d(
+            done >= bronze
+              ? (p.abovePrice[resource] ?? p.unitPrice[resource])
+              : p.unitPrice[resource],
+          )}{" "}
+          · {fr.game.inStock(have)}
         </span>
       </span>
       <Slab
@@ -98,6 +110,9 @@ export function CompanySheet(props: GameProps) {
           <p className="meta">{t.none}</p>
         ) : (
           <>
+            {p.tiersBps.length > 1 && (
+              <p className="text-sm text-gold">{t.tiers[p.tier ?? 0] ?? ""}</p>
+            )}
             <p className="meta">
               {p.completedAt ? t.filled : t.endsIn(clock(p.deadline - props.now))} ·{" "}
               {t.merchants(p.merchants)}

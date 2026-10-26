@@ -52,6 +52,7 @@ export type LedgerReason =
   | "warehouse_bid"
   | "warehouse_refund"
   | "warehouse_rent"
+  | "fondaco_build"
   | "decree_share"
   | "terraferma"
   // Kept for the entries of the time of the upkeep (October 2026).
@@ -91,6 +92,7 @@ export interface LedgerEntry {
 
 export type StockReason =
   | "starting_kit"
+  | "fondaco_build"
   | "production_input"
   | "production_output"
   | "construction"

@@ -19,6 +19,7 @@ export const ACTION_ICONS = {
   sell: { icon: Icon.sell, label: fr.game.sellToCity },
   criee: { icon: Icon.criee, label: m.criee },
   warehouse: { icon: Icon.vault, label: m.warehouse },
+  fondaco: { icon: Icon.fondaco, label: m.fondaco },
   suppliers: { icon: Icon.banner, label: m.suppliers },
   rialto: { icon: Icon.rialto, label: m.rialto },
   ranking: { icon: Icon.trophy, label: m.ranking },

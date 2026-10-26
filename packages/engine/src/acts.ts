@@ -88,7 +88,9 @@ export function marketCityBps(
 ): number {
   const event = eventCityBps(ctx, at, city, resource, what);
   const act = actCityBps(ctx, at, city, resource, what);
-  return Math.floor((event * act) / 10_000);
+  // The month's mutator, all month long (E2-9).
+  const month = ctx.settings.monthBps[what][resource] ?? 10_000;
+  return Math.floor((Math.floor((event * act) / 10_000) * month) / 10_000);
 }
 
 /** Added to a resource's yield by the act under way (and by the day's event). */

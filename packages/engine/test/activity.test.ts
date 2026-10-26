@@ -163,6 +163,59 @@ describe("tasks of the day and the streak", () => {
     expect(dailyFor(w.ctx, w.state, "a", w.now).best).toBe(2);
   });
 
+  it("forgives one day missed in each period of 7 days (E3-10), not two", () => {
+    const w = new World(
+      makeContext({
+        daily: { ...daily.daily, chest: { ...daily.daily?.chest, graceDaysPerWeek: 1 } },
+      } as Partial<WorldSettingsInput>),
+    );
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    const play = () => {
+      w.give("a", "bread", 1);
+      w.do({ type: "sellToCity", playerId: "a", city: "venezia", resource: "bread", quantity: 1 });
+      w.give("a", "wheat", 1);
+      w.do({
+        type: "placeOrder",
+        playerId: "a",
+        resource: "wheat",
+        side: "sell",
+        kind: "limit",
+        price: 500n,
+        quantity: 1,
+      });
+      for (const t of dailyFor(w.ctx, w.state, "a", w.now).tasks) {
+        w.do({ type: "claimDaily", playerId: "a", taskId: t.id });
+      }
+    };
+    const view = () => dailyFor(w.ctx, w.state, "a", w.now);
+    play(); // day 0
+    w.advance(DAY);
+    play(); // day 1
+    expect(view().graceLeft).toBe(1);
+    // Day 2 missed: on day 3 the streak still stands, the grace of the week spent.
+    w.advance(2 * DAY);
+    expect(view().streak).toBe(2);
+    expect(view().graceLeft).toBe(0);
+    play();
+    expect(view().streak).toBe(3);
+    expect(view().graceLeft).toBe(0);
+    // Day 4 missed too, in the same week: the streak starts again.
+    w.advance(2 * DAY);
+    expect(view().streak).toBe(0);
+    play(); // day 5
+    expect(view().streak).toBe(1);
+    w.advance(DAY);
+    play(); // day 6
+    // A new week (days 7 to 13), a new grace: day 7 missed, day 8 goes on.
+    w.advance(2 * DAY);
+    expect(view().graceLeft).toBe(0);
+    play();
+    expect(view().streak).toBe(3);
+    // Two days missed in a row are never forgiven by one grace.
+    w.advance(3 * DAY);
+    expect(view().streak).toBe(0);
+  });
+
   it("refuses a task not done or already claimed", () => {
     const w = new World(makeContext(daily));
     w.do({ type: "join", playerId: "a", region: "terraferma" });

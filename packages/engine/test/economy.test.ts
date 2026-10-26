@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { netWorth, quoteCitySale, stockUnitValue } from "../src/index.js";
+import {
+  arsenalMudaBps,
+  netWorth,
+  quoteCitySale,
+  stockUnitValue,
+  weekStart,
+} from "../src/index.js";
 import { DAY, HOUR, World, makeContext } from "./helpers.js";
 
 describe("cities", () => {
@@ -96,6 +102,87 @@ describe("company orders", () => {
     expect(w.cash("a") - a).toBe(value("bricks", bricks) / 10n);
     expect(w.cash("b") - b).toBe(value("planks", planks) + value("planks", planks) / 10n);
     expect(done?.completedAt).toBe(w.now);
+  });
+});
+
+describe("the Arsenal of the week (E2-6)", () => {
+  const arsenal = {
+    intervalDays: 7,
+    durationDays: 7,
+    weekly: true,
+    needsPerPlayer: { bricks: 10, planks: 10 },
+    premiumBps: 1_000,
+    bonusBps: 1_000,
+    tiersBps: [10_000, 12_500, 15_000],
+    premiumAboveBps: 500,
+    silverMudaBps: 2_500,
+    goldInfluence: 3,
+    goldMinShareBps: 200,
+  };
+  const world = () => {
+    const w = new World(makeContext({ weekStart: "monday", projects: arsenal }));
+    w.do({ type: "join", playerId: "a", region: "terraferma" });
+    w.do({ type: "join", playerId: "b", region: "lagoon" });
+    w.do({ type: "tick" });
+    w.give("a", "bricks", 100).give("a", "planks", 100);
+    w.give("b", "bricks", 100).give("b", "planks", 100);
+    const project = Object.values(w.state.projects)[0];
+    if (!project) throw new Error("no project");
+    const deliver = (playerId: string, resource: string, quantity: number) =>
+      w.try({ type: "deliverToProject", playerId, projectId: project.id, resource, quantity });
+    return { w, project, deliver };
+  };
+
+  it("runs from Monday to Sunday night, the ranking's week", () => {
+    const { w, project } = world();
+    expect(project.deadline).toBe(weekStart(w.ctx, 1));
+    w.at(weekStart(w.ctx, 1) - w.ctx.startAt).do({ type: "tick" });
+    const next = Object.values(w.state.projects).find((p) => p.id !== project.id);
+    expect(next?.openedAt).toBe(weekStart(w.ctx, 1));
+    expect(next?.deadline).toBe(weekStart(w.ctx, 2));
+  });
+
+  it("goes past the Bronze to Silver and Gold, at +5 % instead of +10 % beyond it", () => {
+    const { w, project, deliver } = world();
+    // Bronze: 10 a merchant, 20 of each; Silver 25, Gold 30.
+    expect(project.needs).toEqual({ bricks: 20, planks: 20 });
+    const cash = w.cash("a");
+    deliver("a", "bricks", 22);
+    // 20 at 242 (reference 220 + 10 %), 2 at 231 (+5 %).
+    expect(w.cash("a") - cash).toBe(20n * 242n + 2n * 231n);
+    deliver("a", "planks", 20);
+    // The Bronze reached: the bonus of 10 % on what was paid, as before.
+    expect(w.state.projects[project.id]?.tier).toBe(1);
+    deliver("b", "bricks", 3);
+    deliver("b", "planks", 5);
+    expect(w.state.projects[project.id]?.tier).toBe(2);
+    deliver("b", "bricks", 5);
+    deliver("b", "planks", 5);
+    expect(w.state.projects[project.id]?.tier).toBe(3);
+    const full = deliver("b", "bricks", 1);
+    expect(full.ok ? "" : full.error).toBe("project_full");
+  });
+
+  it("gives Gold's Influence to whoever delivered 2 % of it and a unit past the Bronze", () => {
+    const { w, project, deliver } = world();
+    deliver("a", "bricks", 20);
+    deliver("a", "planks", 20);
+    deliver("b", "bricks", 10);
+    const last = deliver("b", "planks", 10);
+    if (!last.ok) throw new Error(last.error);
+    expect(w.state.projects[project.id]?.tier).toBe(3);
+    const earned = last.effects.events.filter((e) => e.type === "influence_earned");
+    // Ada filled the Bronze alone: nothing past it, no Influence.
+    expect(earned.map((e) => [e.playerId, e.data?.amount])).toEqual([["b", 3]]);
+  });
+
+  it("brings a quarter more to the galleys of the next week once the Silver is reached", () => {
+    const { w, project, deliver } = world();
+    deliver("a", "bricks", 25);
+    deliver("a", "planks", 25);
+    expect(arsenalMudaBps(w.ctx, w.state, w.now)).toBe(0);
+    expect(arsenalMudaBps(w.ctx, w.state, project.deadline)).toBe(2_500);
+    expect(arsenalMudaBps(w.ctx, w.state, project.deadline + 7 * DAY)).toBe(0);
   });
 });
 

@@ -210,12 +210,43 @@ export function chestValue(ctx: WorldContext, streak: number): Deniers {
   return chest.ducats + chest.perStreakDay * BigInt(days - 1);
 }
 
+/**
+ * The days missed since the last chest, forgiven by the grace of their week (E3-10 of the
+ * experts: `graceDaysPerWeek` a period of 7 days, nothing to buy): the days forgiven so far with
+ * them, or null when one of them finds its week's grace spent.
+ */
+function forgive(
+  ctx: WorldContext,
+  saved: { streak: number; lastChestDay: number; graceDays?: number[] },
+  day: number,
+): number[] | null {
+  const kept = saved.graceDays ?? [];
+  if (saved.lastChestDay >= day - 1) return kept;
+  const perWeek = ctx.settings.daily.chest.graceDaysPerWeek;
+  if (saved.streak === 0 || saved.lastChestDay < 0 || perWeek === 0) return null;
+  const out = [...kept];
+  for (let d = saved.lastChestDay + 1; d < day; d++) {
+    const week = Math.floor(d / 7);
+    if (out.filter((g) => Math.floor(g / 7) === week).length >= perWeek) return null;
+    out.push(d);
+  }
+  return out;
+}
+
 export function dailyFor(ctx: WorldContext, state: WorldState, playerId: PlayerId, now: number) {
   const day = dayIndex(ctx, now);
   const saved = state.daily?.[playerId];
   const mine = saved && saved.day === day ? saved : undefined;
-  // The streak still counts if yesterday's chest was opened (or today's already is).
-  const streak = saved && saved.lastChestDay >= day - 1 ? saved.streak : 0;
+  // The streak still counts if yesterday's chest was opened (or today's already is), or the days
+  // missed since are forgiven.
+  const forgiven = saved ? forgive(ctx, saved, day) : null;
+  const streak = saved && forgiven ? saved.streak : 0;
+  const week = Math.floor(day / 7);
+  const graceLeft = Math.max(
+    0,
+    ctx.settings.daily.chest.graceDaysPerWeek -
+      (forgiven ?? saved?.graceDays ?? []).filter((g) => Math.floor(g / 7) === week).length,
+  );
   return {
     day,
     tasks: tasksOfDay(ctx, day, mine?.rerolled).map((t) => {
@@ -234,6 +265,8 @@ export function dailyFor(ctx: WorldContext, state: WorldState, playerId: PlayerI
     /** What today's chest holds if opened (the streak goes on). */
     chest: chestValue(ctx, mine?.chest ? streak : streak + 1),
     streak,
+    /** Days the streak may still miss this week without breaking. */
+    graceLeft,
     best: saved?.best ?? 0,
     /** Next reset of the tasks. */
     resetsAt: ctx.startAt + (day + 1) * DAY_MS,
@@ -259,7 +292,11 @@ export function claimDaily(tx: Tx, playerId: PlayerId, taskId: string): void {
   emit(tx, "daily_claimed", playerId, { task: taskId });
 
   if (!mine.chest && today.every((t) => mine.claimed.includes(t.id))) {
-    mine.streak = mine.lastChestDay === mine.day - 1 ? mine.streak + 1 : 1;
+    const forgiven = forgive(tx.ctx, mine, mine.day);
+    mine.streak = forgiven ? mine.streak + 1 : 1;
+    // Only this week's and last week's graces still matter.
+    const kept = (forgiven ?? []).filter((d) => d >= mine.day - 14);
+    if (kept.length > 0 || mine.graceDays) mine.graceDays = kept;
     mine.lastChestDay = mine.day;
     mine.best = Math.max(mine.best, mine.streak);
     mine.chest = true;

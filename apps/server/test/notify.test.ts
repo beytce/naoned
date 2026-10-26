@@ -1,4 +1,4 @@
-import { seasonActs } from "@comptoirs/engine";
+import { dayIndex, seasonActs } from "@comptoirs/engine";
 import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -211,6 +211,38 @@ describe("notifications", () => {
     await notifier.scan();
     await notifier.send([{ accountId: ada.id, kind: "delivery", data: {} }], now);
     expect(pusher.sent[0]?.payload.url).toBe("/?open=cargo&src=push&kind=delivery");
+  });
+
+  it("reminds at 19 h a streak of 3 days whose chest is closed, once a day", async () => {
+    const ada = await player("ada@example.org");
+    const bob = await player("bob@example.org");
+    await subscribe(ada.cookie);
+    await subscribe(bob.cookie, "https://fcm.googleapis.com/fcm/send/2");
+    await notifier.scan();
+    // 19:00 in Paris: Ada holds a streak of 3, Bob of 2.
+    now = Date.parse("2026-10-12T17:00:00Z");
+    const day = dayIndex(world.ctx, now);
+    const streak = (n: number) => ({
+      day,
+      progress: {},
+      claimed: [],
+      chest: false,
+      streak: n,
+      lastChestDay: day - 1,
+      best: n,
+    });
+    // The state is frozen: the test swaps in a copy carrying the two streaks.
+    (world as unknown as { state: object }).state = {
+      ...world.current,
+      daily: { [ada.id]: streak(3), [bob.id]: streak(2) },
+    };
+    await notifier.scan();
+    now += MIN;
+    await notifier.scan();
+    const told = pusher.sent.filter((p) => p.payload.kind === "streak");
+    expect(told).toHaveLength(1);
+    expect(String(told[0]?.payload.title)).toContain("3");
+    expect(told[0]?.payload.url).toBe("/?open=notices&src=push&kind=streak");
   });
 
   it("gives at 8:05 the night's news kept in the bell, once a day", async () => {

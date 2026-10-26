@@ -274,6 +274,7 @@ const frDict = {
         criee: "Criée",
         suppliers: "Fournisseurs",
         warehouse: "Entrepôt",
+        fondaco: "Fondaco",
         ranking: "Classement",
         family: "Famille",
         help: "Aide",
@@ -474,7 +475,13 @@ const frDict = {
     cargo: {
       title: "Cargaisons",
       sort: { reward: "Récompense", distance: "Distance", city: "Ville" },
-      kinds: { doge: "Doge", urgent: "Urgente", family: "Famille" } as Record<string, string>,
+      /** An urgent order the carter sees before it opens. */
+      soon: (goods: string, city: string, inTime: string) =>
+        `Urgente bientôt : ${goods} pour ${city}, dans ${inTime}`,
+      kinds: { doge: "Doge", urgent: "Urgente", family: "Famille", fondaco: "Fondaco" } as Record<
+        string,
+        string
+      >,
       why: {
         noRoad: "pas de route",
         otherCity: (city: string) => `pour ${city} seulement`,
@@ -542,6 +549,15 @@ const frDict = {
     rations: {
       line: (perDay: number, days: number) =>
         `Vos ouvriers mangent ${perDay} pains par jour · réserve : ${days} j`,
+      /** E1-4: the workers eat when they work, a share of a loaf a batch and a level. */
+      byBatch: (transform: string, raw: string) =>
+        `Vos ouvriers mangent quand ils travaillent : ${transform} pain par lot et par niveau dans un atelier qui transforme, ${raw} pour une matière première. Sans pain, une nouvelle file va 50 % moins vite.`,
+      batchNeed: (n: number, have: number) =>
+        n > have
+          ? `Ces lots mangent ${n} pain${n > 1 ? "s" : ""}, vous en avez ${have} : ils iront 50 % moins vite.`
+          : `Ces lots mangent ${n} pain${n > 1 ? "s" : ""}.`,
+      lowBatch: "Moins d'un jour de pain : une nouvelle file ira 50 % moins vite sans lui.",
+      about: "Mangés par jour, environ",
       nextMeal: (inTime: string, need: number, have: number) =>
         `Prochain repas dans ${inTime} : il faut ${need} pains, vous en avez ${have}.`,
       why: (perLevel: number) =>
@@ -1303,9 +1319,10 @@ const frDict = {
       title: "Tâches du jour",
       streak: (n: number) =>
         n > 0 ? `Série : ${n} jour${n > 1 ? "s" : ""}` : "Pas encore de série",
+      grace: "grâce disponible",
       chest: "Coffre du jour",
       chestHint:
-        "Les trois tâches faites ouvrent le coffre ; chaque jour d'affilée l'agrandit (jusqu'à 5).",
+        "Les trois tâches faites ouvrent le coffre ; chaque jour d'affilée l'agrandit (jusqu'à 5). Un jour manqué par semaine ne casse pas la série.",
       chestOpen: "Coffre ouvert : revenez demain pour prolonger la série.",
       resetsIn: (t: string) => `Nouvelles tâches dans ${t}`,
       claim: "Encaisser",
@@ -1705,6 +1722,9 @@ const frDict = {
       /** A wave of the board opens with orders the stock covers. */
       wave: (at: string, covered: number) =>
         `Nouvelles commandes à ${at} : votre stock en couvre ${covered}.`,
+      /** A streak of chests whose day's chest is still closed, at 19 h. */
+      streak: (n: number) =>
+        `Série de ${n} jours : le coffre du jour est encore fermé, finissez vos tâches avant la fin du jour.`,
       skirmishCall: (at: string) =>
         `Convocation d'escarmouche à ${at} : les marchands s'y retrouvent pour une partie classée.`,
       harvest: "Récolte prête : vos ateliers ont terminé leur production.",
@@ -1764,6 +1784,7 @@ const frDict = {
           morning: "Gazette du matin (8 h 05)",
           skirmish_call: "Convocations d'escarmouche (un quart d'heure avant)",
           wave: "Vague de commandes que votre stock couvre (si vous êtes absent)",
+          streak: "Rappel de série (19 h, coffre du jour fermé)",
         } as Record<string, string>,
       },
     },
@@ -1843,7 +1864,8 @@ const frDict = {
       influence: "Influence",
       intro:
         "Votre fortune repart à zéro chaque saison, votre Maison non : l'Influence se garde de saison en saison et achète des privilèges : des avantages gardés pour toujours, qui ouvrent du neuf sans jamais rapporter plus.",
-      earn: "Elle ne s'achète pas et ne se gagne pas en vendant : seulement par les missions de la Maison, dix tous les trois jours et demi.",
+      earn: "Elle ne s'achète pas et ne se gagne pas en vendant : seulement par les missions de la Maison, huit chaque semaine, renouvelées le lundi.",
+      pages: { today: "Aujourd'hui", week: "Cette semaine" },
       open: "Ouvrir le livre",
       balance: (n: number) => `${n} d'Influence`,
       catalog: "Privilèges",
@@ -1860,6 +1882,7 @@ const frDict = {
         patent: () => "Privilège",
         refund: () => "Remboursement",
         mission: () => "Mission de la Maison",
+        arsenal: () => "Or de l'Arsenal",
         spend: () => "Dépense",
       } as Record<string, (week: number | null) => string>,
       patents: {
@@ -1884,7 +1907,7 @@ const frDict = {
         glass: { name: "Art du verre", text: "La chaîne du verre de Murano." },
       } as Record<string, { name: string; text: string }>,
       missions: {
-        title: "Missions de la Maison",
+        title: "Missions de la semaine",
         renews: (t: string) => `Nouvelles missions dans ${t}`,
         claim: (n: number) => `Recevoir · ${n} ✦`,
         claimed: "Reçue",
@@ -2163,10 +2186,16 @@ const frDict = {
 
     /** Company orders: a city's order filled by several merchants together. */
     company: {
-      title: "Commande de compagnie",
-      of: (city: string) => `Commande de compagnie · ${city}`,
-      line: "+10 % par unité · +10 % une fois remplie",
-      help: "Une ville commande du pain, des briques et des planches aux trois régions. Chaque unité livrée est payée 10 % au-dessus de la référence ; quand la commande est remplie, chaque marchand qui a livré touche 10 % de plus.",
+      title: "L'Arsenal de la semaine",
+      of: (city: string) => `Arsenal · ${city}`,
+      line: "Bronze, Argent, Or · du lundi au dimanche",
+      help: "Chaque semaine, une ville commande du pain, des briques et des planches aux trois régions. Jusqu'au Bronze, chaque unité est payée 10 % au-dessus de la référence, et chaque marchand qui a livré touche 10 % de plus quand le Bronze est atteint. Au-delà, l'Argent (une fois et quart le Bronze) et l'Or (une fois et demie) sont payés 5 % au-dessus de la référence. L'Argent apporte un quart de plus aux galères de la Muda la semaine suivante ; l'Or, 3 d'Influence à qui en a livré 2 % et au moins une unité après le Bronze. Les maisons de l'ordinateur s'arrêtent au Bronze.",
+      tiers: [
+        "Visez le Bronze",
+        "Bronze atteint : prime versée. En route pour l'Argent",
+        "Argent atteint : les galères de la semaine prochaine apporteront plus. En route pour l'Or",
+        "Or atteint : 3 d'Influence pour qui a livré après le Bronze",
+      ],
       endsIn: (time: string) => `se termine dans ${time}`,
       filled: "Remplie : la prime est versée",
       merchants: (n: number) =>
@@ -2568,6 +2597,24 @@ const frDict = {
       place: "Enchérir",
       rebid: "Remplacer l'offre",
     },
+    /** A merchant's fondaco in a city (E1-3). */
+    fondaco: {
+      title: (city: string) => `Fondaco de ${city}`,
+      line: (level: number, top: number) =>
+        level > 0 ? `Niveau ${level} sur ${top}` : "Pas encore de fondaco ici",
+      orders: (n: number) =>
+        n > 0
+          ? `${n} commande${n > 1 ? "s" : ""} de la ville par jour, pour vous seul.`
+          : "Aucune commande de la ville pour vous seul.",
+      next: (level: number) => (level === 1 ? "Ouvrir le fondaco" : `Passer au niveau ${level}`),
+      cost: "Coût",
+      top: "Votre fondaco est au plus haut niveau.",
+      full: (levels: number, max: number, cities: number) =>
+        `Vous avez ${levels} niveau${levels > 1 ? "x" : ""} sur ${max}, dans ${cities} ville${cities > 1 ? "s" : ""} au plus.`,
+      build: "Construire",
+      help: (cities: number, levels: number, top: number, pct: number) =>
+        `Un fondaco dans ${cities} villes au plus, du niveau 1 au niveau ${top}, ${levels} niveaux en tout. Chaque niveau vous donne chaque jour une commande de la ville, à vous seul, payée ${pct} % du prix du tableau commun : moins chère que le tableau, mais sûre. Les ducats sortent du jeu, les briques et les planches aussi ; le fondaco compte dans votre patrimoine à son coût.`,
+    },
     /** The official suppliers of a city. */
     suppliers: {
       title: (city: string) => `Fournisseurs de ${city}`,
@@ -2617,6 +2664,19 @@ const frDict = {
      * What changed for this season, shown at the foot of the help: the rules change only from one
      * month to the next, and say so here (owner's decision of 20 October 2026).
      */
+    /** The mutator of the month (E2-9), at the head of the season's notes. */
+    mutators: {
+      now: (text: string) => `Ce mois-ci : ${text}`,
+      next: (text: string) => `Le mois prochain : ${text}`,
+      codes: {
+        embargo_ottomano:
+          "Embargo ottoman — les galères de la Muda apportent deux fois moins, et leur prix monte deux fois plus vite.",
+        grand_gel:
+          "Grand gel — les villes paient les planches 20 % plus cher et demandent davantage de bois.",
+        guerra_milano:
+          "Guerre de Milan — Milan est une fois et demie plus fort sur la Terraferme ; briques et planches sont payées 25 % plus cher.",
+      } as Record<string, string>,
+    },
     seasonNotes: {
       title: "Nouveautés de la saison",
       items: [
@@ -2657,6 +2717,13 @@ const frDict = {
         "Missions de la Maison : celles de l'ancienne campagne sont remplacées par des missions de la Terraferme, deux au plus par tableau.",
         "Pass Négociant : plus aucun avantage de jeu (ni quota à la Dogana, ni offre ouverte, ni produits frais en plus, ni commande du Doge échangée, ni alerte de bonne affaire) ; il ne donne que de l'information à lire et du cosmétique.",
         "Terraferme : la Condotta, 8 minutes en coopération, seul ou avec sa compagnie, contre trois nations et Milan. Tenez Padoue et 35 % des terres pour ouvrir le niveau suivant (12 niveaux). Ni ducats, ni marchandises, ni Gloire : un grade, de Condottiere di ventura à Capitano generale.",
+        "Commerce : les ouvriers mangent au lot, plus à la journée — un demi-pain par lot et par niveau dans un atelier qui transforme, un quart pour une matière première. Sans pain, l'atelier travaille deux fois moins vite, jamais arrêté.",
+        "Tâches du jour : un jour manqué par semaine ne casse plus la série du coffre ; un rappel à 19 h si votre série atteint 3 jours et que le coffre est encore fermé.",
+        "Commerce : les fondaci remplacent les entrepôts. Un fondaco dans 3 villes au plus, niveaux 1 à 3, 6 niveaux en tout : chaque niveau vous donne chaque jour une commande de la ville, à vous seul, à 95 % du prix du tableau commun. Le tableau commun passe à 3 commandes par marchand actif.",
+        "Maîtrises : le Négociant a trois fois le quota de la Dogana, qui lui rachète au moins 85 % de la référence ; le Roulier voit les commandes urgentes 20 minutes avant leur ouverture.",
+        "Livre de la Maison : 8 missions par semaine, renouvelées le lundi, aux seuils doublés et mieux payées ; le Livre s'ouvre sur « Aujourd'hui » et « Cette semaine ».",
+        "L'Arsenal de la semaine remplace la commande de compagnie de deux jours : Bronze, Argent et Or, du lundi au dimanche. L'Argent apporte plus de marchandises aux galères de la semaine suivante, l'Or de l'Influence à qui a livré après le Bronze.",
+        "Chaque mois, à partir de décembre, un mutateur change quelques prix ou forces pour le mois ; il est annoncé ici le 24 du mois précédent.",
       ],
     },
     howTo: [

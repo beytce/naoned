@@ -73,6 +73,8 @@ export interface Building {
   investedValue: Deniers;
   /** Accelerated batches left for the first minutes of play (starting kit only). */
   fastBatchesLeft: number;
+  /** Quarters of a loaf its batches have eaten and not yet taken (the rounding's rest, E1-4). */
+  rationDebt?: number;
   /** A manufacture's path past the last ordinary level (absent: not chosen). */
   path?: "volume" | "quality";
 }
@@ -141,6 +143,11 @@ export interface Project {
   by?: Record<PlayerId, Deniers>;
   /** When the last unit came in (the bonus paid then). */
   completedAt?: number;
+  /** The Arsenal's tier reached (E2-6): 1 Bronze, 2 Silver, 3 Gold; absent before the Bronze. */
+  tier?: number;
+  /** Units each merchant delivered in all, and past the Bronze. */
+  units?: Record<PlayerId, number>;
+  above?: Record<PlayerId, number>;
 }
 
 /**
@@ -199,6 +206,8 @@ export interface DeliveryOrder {
   takenBy?: PlayerId | null;
   /** The newcomer's welcome order (express during the tutorial). */
   welcome?: boolean;
+  /** An order of the merchant's fondaco in the city (E1-3). */
+  fondaco?: boolean;
 }
 
 /** An order of the world's board, before it is priced for a merchant's region. */
@@ -335,6 +344,8 @@ export interface WorldState {
       best: number;
       /** Tasks of the day swapped for others (bought with Influence). */
       rerolled?: string[];
+      /** Days missed that the weekly grace forgave (E3-10). */
+      graceDays?: number[];
     }
   >;
   /** Faraj's bales, per player (absent: none opened yet, see `bales.ts`). */
@@ -379,6 +390,8 @@ export interface WorldState {
    * The warehouses in the cities: this week's holders by city, the bids for next week, and the
    * units each merchant delivered from them on its last day.
    */
+  /** The merchants' fondaci, per city (E1-3, see `fondaci.ts`). */
+  fondaci?: Record<PlayerId, Record<string, import("./fondaci.js").Fondaco>>;
   warehouses?: {
     holders: Record<string, PlayerId[]>;
     bids: Record<string, Record<PlayerId, Deniers>>;

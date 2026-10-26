@@ -72,7 +72,7 @@ import { toJson } from "./serialize.js";
 import type { SkirmishHub } from "./skirmish.js";
 import { terraView } from "./terra.js";
 import { terraRecord } from "./terraRecord.js";
-import { catalog, instantDepth, playerView, ranking } from "./view.js";
+import { catalog, instantDepth, mutatorNotice, playerView, ranking } from "./view.js";
 import { weeklyRival, weeklyTable } from "./weekly.js";
 import { WELCOME_AFTER_MS, welcomeBack } from "./welcome.js";
 import type { GameWorld } from "./world.js";
@@ -146,6 +146,7 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("cancelOrder"), orderId: z.string() }),
   z.object({ type: z.literal("buyVehicle"), vehicleType: z.string() }),
   z.object({ type: z.literal("upgradeVehicle"), vehicleId: z.string() }),
+  z.object({ type: z.literal("buildFondaco"), city: z.string() }),
   z.object({
     type: z.literal("dispatchDelivery"),
     orderId: z.string(),
@@ -418,6 +419,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   app.get("/api/game/catalog", async () =>
     toJson({
       ...catalog(world.ctx, world),
+      mutator: mutatorNotice(world.ctx, world.now()),
       // The trade to recommend at the door (E3-5), or none.
       recommendedRegion: recommendedRegion(
         activePeopleByRegion(world.ctx, world.current, world.now()),
@@ -1581,6 +1583,8 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "buyVehicle", playerId, vehicleType: a.vehicleType }];
     case "upgradeVehicle":
       return [{ type: "upgradeVehicle", playerId, vehicleId: a.vehicleId }];
+    case "buildFondaco":
+      return [{ type: "buildFondaco", playerId, city: a.city }];
     case "dispatchDelivery":
       return [
         {

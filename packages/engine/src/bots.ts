@@ -1,6 +1,6 @@
 import { crieeRoom, currentCriee, dailyFor } from "./activity.js";
 import { balesFor } from "./bales.js";
-import { costForLevel, costPerOutput } from "./buildings.js";
+import { costForLevel, costPerOutput, costValue } from "./buildings.js";
 import {
   MILAN,
   defenseBpsOf,
@@ -25,12 +25,14 @@ import {
   deliveriesDoneToday,
   deliveriesOn,
   deliveryOrdersFor,
+  orderUnitPrice,
   travelMinutes,
   vehicleFree,
   vehiclesOf,
 } from "./deliveries.js";
 import { draw } from "./draw.js";
 import { familiesOn, familiesOpenAt, familyCodes, membersOf, seatOf } from "./families.js";
+import { nextFondaco } from "./fondaci.js";
 import { houseMissionsFor } from "./house.js";
 import { bestPrice, marketMakerQuotaLeft, maxOpenOrdersFor, openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
@@ -40,7 +42,7 @@ import { freeBatches } from "./production.js";
 import { openProjects } from "./projects.js";
 import type { Rng } from "./rng.js";
 import type { WorldSettings } from "./settings.js";
-import { specialtyUnlocked } from "./specialties.js";
+import { houseLevels, specialtyUnlocked } from "./specialties.js";
 import {
   type Building,
   type DecreePick,
@@ -272,6 +274,7 @@ export class Bot {
       this.sellToCities(s);
     }
     this.invest(s);
+    this.fondaco(s);
     this.chooseMastery(s);
     this.runProduction(s);
     if (this.profile.speculates) this.speculate(s);
@@ -1148,6 +1151,52 @@ export class Bot {
         (a.kind === b.kind ? 0 : a.kind === "upgrade" ? -1 : 1),
     );
     return options[0];
+  }
+
+  /**
+   * A fondaco opened or raised a level (E1-3), once the house has the levels of its mastery:
+   * where a level pays itself back soonest (its cost over the day's orders it brings, as
+   * `costPerOutput` ranks the workshops), within the season, when the purse holds three times
+   * its ducats.
+   */
+  private fondaco(s: Session): void {
+    const rules = s.ctx.settings.fondaci;
+    const player = s.state().players[this.id];
+    if (!rules || !player) return;
+    // The workshops first: a counter in a city once the house has grown to its mastery.
+    if (houseLevels(s.state(), this.id) < s.ctx.settings.specialties.unlockLevels) return;
+    const state = s.state();
+    const day = dayIndex(s.ctx, s.now);
+    const daysLeft = (seasonEnd(s.ctx) - s.now) / DAY;
+    const { quantity, weights, routes } = s.ctx.settings.deliveries;
+    const best = Object.keys(routes[player.region] ?? {})
+      .map((city) => {
+        const next = nextFondaco(s.ctx, state, this.id, city);
+        const goods = Object.keys(quantity).filter((r) => s.ctx.settings.cities[city]?.[r]);
+        if (!next || goods.length === 0) return undefined;
+        let value = 0;
+        let weight = 0;
+        for (const r of goods) {
+          const [lo, hi] = quantity[r] ?? [1, 1];
+          const unit = orderUnitPrice(s.ctx, player.region, city, r, 0, { state, day });
+          const w = weights[r] ?? 1;
+          value += w * Number(unit) * Math.floor((lo + hi) / 2);
+          weight += w;
+        }
+        const perDay = ((value / weight) * rules.priceBps * rules.ordersPerLevel) / 10_000;
+        return { city, next, payback: Number(costValue(s.ctx, next)) / Math.max(1, perDay) };
+      })
+      .filter((x) => x !== undefined && x.payback < daysLeft)
+      .sort((a, b) => (a?.payback ?? 0) - (b?.payback ?? 0));
+    for (const option of best) {
+      if (!option) continue;
+      if (this.cash(s) < option.next.ducats * 3n) return;
+      for (const [res, qty] of Object.entries(option.next.materials)) {
+        const missing = qty - this.available(s, res);
+        if (missing > 0) this.buy(s, res, missing, 1.15);
+      }
+      if (s.act({ type: "buildFondaco", playerId: this.id, city: option.city })) return;
+    }
   }
 
   /** With nothing productive left to fund, idle cash goes into the palazzo (counts at cost). */

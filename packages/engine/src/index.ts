@@ -8,6 +8,8 @@ export * from "./events.js";
 export * from "./acts.js";
 export * from "./effects.js";
 export * from "./deliveries.js";
+export * from "./fondaci.js";
+export * from "./mutators.js";
 export * from "./clock.js";
 export {
   activeMembers,
@@ -89,7 +91,7 @@ export {
   freeBatches,
   yieldBonusBps,
 } from "./production.js";
-export { openProjects } from "./projects.js";
+export { arsenalMudaBps, openProjects } from "./projects.js";
 export * from "./settings.js";
 export { type MissionView, missionsFor } from "./missions.js";
 export * from "./specialties.js";

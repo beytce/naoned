@@ -1,5 +1,6 @@
 import { levantQuotaBps } from "./decrees.js";
 import type { Deniers } from "./money.js";
+import { arsenalMudaBps } from "./projects.js";
 import { specialtyEffects } from "./specialties.js";
 import {
   DAY_MS,
@@ -56,8 +57,10 @@ export function arriveMuda(tx: Tx): void {
   const players = Math.max(1, activePlayerCount(ctx, tx.s as WorldState, tx.now));
   // Galleys missed between two ticks still came, but the quay holds only a few lots.
   const arrivals = Math.min(index - muda.arrival, m.maxStockLots);
+  // The week after an Arsenal at the Silver, the galleys bring more (E2-6).
+  const boost = arsenalMudaBps(ctx, tx.s as WorldState, tx.now);
   for (const [resource, perPlayer] of Object.entries(m.lotPerActivePlayer)) {
-    const lot = perPlayer * players;
+    const lot = Math.floor((perPlayer * players * (10_000 + boost)) / 10_000);
     const left = muda.stock[resource] ?? 0;
     muda.lot[resource] = lot;
     muda.stock[resource] = Math.min(left + arrivals * lot, m.maxStockLots * lot);
