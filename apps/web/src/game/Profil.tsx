@@ -40,36 +40,33 @@ import type { Palmares, Profile } from "./types.js";
 function Titles({ profile }: { profile: Profile }) {
   const [at, setAt] = useState(profile.title.index);
   const show = [at - 1, at, at + 1];
+  // Lagune: the titles as a constellation, the path lit in gold up to the one held.
   return (
     <div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="relative grid grid-cols-3 gap-2">
+        <span
+          aria-hidden="true"
+          className="absolute left-[16%] right-[16%] top-5 h-0.5 bg-[linear-gradient(90deg,rgb(var(--gold-soft))_0_50%,rgb(var(--line))_50%_100%)]"
+        />
         {show.map((i) => {
           const t = profile.titles[i];
           if (!t) return <div key={i} />;
           const reached = i <= profile.title.index;
           const current = i === profile.title.index;
           return (
-            <div key={t.code} className="text-center">
+            <div key={t.code} className="relative flex flex-col items-center text-center">
               <span
-                className={`slab inline-block px-2 py-0.5 font-display text-sm font-extrabold ${current ? "bg-gold text-ink" : "bg-night-4 text-cream-dim"}`}
+                className={`flex h-10 w-10 items-center justify-center rounded-full font-display text-sm font-extrabold ${current ? "bg-gold text-ink shadow-[0_0_18px_rgb(var(--gold)/0.45)]" : reached ? "bg-gold-soft text-ink" : "bg-night-3 text-cream-dim ring-2 ring-inset ring-line"}`}
               >
-                <span>{i + 1}</span>
+                {i + 1}
               </span>
-              <div
-                className={`slab mt-2 flex h-24 flex-col items-center justify-center px-1.5 text-center ring-1 ${current ? "bg-night-3 ring-2 ring-info" : "bg-night-2 ring-line"}`}
-              >
-                <span className="flex flex-col items-center">
-                  <span className="font-display text-xs font-extrabold uppercase leading-tight [font-stretch:100%] [overflow-wrap:anywhere]">
-                    {t.name}
-                  </span>
-                  <span className="mt-1 font-sans text-xs text-muted">
-                    {t.from.toLocaleString(locale)} d
-                  </span>
-                </span>
-              </div>
-              <p className={`label mt-2 ${reached ? "text-lagoon" : ""}`}>
+              <span className="mt-2 font-display text-xs font-extrabold leading-tight [overflow-wrap:anywhere]">
+                {t.name}
+              </span>
+              <span className="mt-0.5 text-xs text-muted">{t.from.toLocaleString(locale)} d</span>
+              <span className={`mt-1 text-xs ${reached ? "text-lagoon" : "text-cream-dim"}`}>
                 {reached ? fr.misc.reached : fr.misc.upcoming}
-              </p>
+              </span>
             </div>
           );
         })}
@@ -314,12 +311,30 @@ function ProfileBody(props: GameProps) {
     <div className="space-y-8 pt-2">
       <header className="flex items-center gap-5 pr-12">
         <div className="relative">
-          <div className="rounded-full bg-night-3 p-3 ring-4 ring-gold/70">
-            <Crest crest={crest} size={96} />
-          </div>
+          {/* Lagune: the crest in the ring of the title's progress. */}
+          <span className="relative flex h-[8.5rem] w-[8.5rem] items-center justify-center">
+            <svg
+              viewBox="-70 -70 140 140"
+              className="absolute inset-0 -rotate-90"
+              aria-hidden="true"
+            >
+              <circle r="62" fill="none" stroke="rgb(var(--night-4))" strokeWidth="6" />
+              <circle
+                r="62"
+                fill="none"
+                stroke="rgb(var(--gold))"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeDasharray={`${(389.6 * Math.max(0.02, profile?.title.progress ?? 0)).toFixed(1)} 389.6`}
+              />
+            </svg>
+            <span className="rounded-full bg-night-3 p-2.5">
+              <Crest crest={crest} size={84} />
+            </span>
+          </span>
           {profile && (
-            <span className="slab absolute -bottom-3 left-1 bg-gold px-3 py-1 font-display text-xs font-extrabold uppercase text-ink">
-              <span>{profile.title.current.name}</span>
+            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-night-4 px-3 py-1 font-display text-xs font-extrabold text-gold-soft ring-1 ring-inset ring-gold/50">
+              {profile.title.current.name}
             </span>
           )}
         </div>
@@ -330,7 +345,11 @@ function ProfileBody(props: GameProps) {
           <p className="label mt-2 text-cream-dim">
             {props.names.region(props.view.player.region)}
           </p>
-          <button type="button" className="label mt-2 text-info" onClick={() => setEditing(true)}>
+          <button
+            type="button"
+            className="label inline-flex min-h-11 items-center rounded-full px-3.5 text-info ring-1 ring-inset ring-line transition active:scale-95 mt-2"
+            onClick={() => setEditing(true)}
+          >
             ✎ {fr.game.editCrest}
           </button>
           {props.account.pseudoDefault && <RenameOnce props={props} />}
@@ -430,11 +449,9 @@ function ProfileBody(props: GameProps) {
               [fr.game.stats.delivered, profile.stats.delivered],
               [fr.game.stats.days, profile.stats.days],
             ].map(([label, value]) => (
-              <div key={String(label)} className="cut bg-night-3 p-3 ring-1 ring-line">
-                <Big className="text-2xl text-gold">{value}</Big>
-                <p className="mt-2 font-mono text-xs uppercase leading-tight tracking-wider text-muted">
-                  {label}
-                </p>
+              <div key={String(label)} className="rounded-2xl bg-night-3 p-3">
+                <Big className="text-2xl text-cream">{value}</Big>
+                <p className="mt-1 text-xs leading-tight text-cream-dim">{label}</p>
               </div>
             ))}
           </div>

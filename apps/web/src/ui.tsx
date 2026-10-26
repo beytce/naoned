@@ -420,17 +420,21 @@ export function Ribbon({
   tone = "gold",
 }: { value: number; label?: string; tone?: "gold" | "lagoon" }) {
   const v = Math.max(0, Math.min(1, value));
+  // Lagune: a thread of light, its figures above it; progress in lapis (gold stays for money),
+  // lagoon for what is ready or gained.
   return (
-    <div className="relative h-6 overflow-hidden rounded-full bg-night ring-1 ring-line">
-      <div
-        className={`stripes h-full rounded-full ${tone === "gold" ? "bg-gold" : "bg-lagoon"} transition-all duration-500`}
-        style={{ width: `${v * 100}%` }}
-      />
+    <div className="space-y-1">
       {label && (
-        <span className="absolute inset-0 flex items-center justify-center font-sans text-xs font-bold tracking-widest text-cream [text-shadow:0_1px_2px_#000]">
+        <span className="block text-right font-display text-xs font-semibold tabular-nums text-cream-dim">
           {label}
         </span>
       )}
+      <div className="relative h-2 overflow-hidden rounded-full bg-night-4">
+        <div
+          className={`h-full rounded-full ${tone === "gold" ? "bg-gradient-to-r from-info/70 to-info" : "bg-lagoon"} shadow-[0_0_10px_rgb(var(--info)/0.5)] transition-all duration-500`}
+          style={{ width: `${v * 100}%` }}
+        />
+      </div>
     </div>
   );
 }
