@@ -70,6 +70,11 @@ export function goodsChain(code: string): string {
 /** The chains in the order the game shows them: the three of the Terraferma, then the luxury. */
 export const CHAIN_ORDER = ["food", "construction", "carpentry", "glass", "drapery", "orient"];
 
+/** The goods of a chain, in the theme's order (raw first, then what is made of it). */
+export function chainGoods(chain: string): string[] {
+  return venice1450.resources.filter((r) => goodsChain(r.code) === chain).map((r) => r.code);
+}
+
 export function goodsTier(code: string): Tier {
   return DEFS.get(code)?.tier ?? "raw";
 }
