@@ -1,4 +1,4 @@
-import { ResourceIcon } from "../art/resources.js";
+import { GoodsMark } from "../art/goods.js";
 import { fr } from "../i18n.js";
 import { Label, Panel, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
@@ -13,7 +13,7 @@ export function Daily(props: GameProps) {
   const ready = daily.tasks.some((task) => task.done && !task.claimed);
   const canReroll = !!spend && (props.influence ?? 0) >= spend.dailyReroll;
   return (
-    <Panel glow={ready ? "gold" : undefined}>
+    <Panel glow={ready ? "lagoon" : undefined}>
       {/* On a narrow phone the streak goes under the kicker, whole, rather than both cut in two. */}
       <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
         <Label className="whitespace-nowrap text-gold">{t.title}</Label>
@@ -22,10 +22,28 @@ export function Daily(props: GameProps) {
       <ul className="mt-3 space-y-2">
         {daily.tasks.map((task) => (
           <li key={task.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span
-              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${task.claimed ? "bg-lagoon text-on-lagoon" : task.done ? "bg-gold text-ink" : "bg-night-4 text-cream-dim ring-1 ring-inset ring-line"}`}
-            >
-              {task.claimed ? "✓" : `${task.progress}/${task.count}`.replace(/^(\d)\/1$/, "$1")}
+            {/* Lagune: the task as a small ring, its arc the progress, full and lagoon once done. */}
+            <span className="relative flex h-11 w-11 shrink-0 items-center justify-center">
+              <svg
+                viewBox="-24 -24 48 48"
+                className="absolute inset-0 -rotate-90"
+                aria-hidden="true"
+              >
+                <circle r="19" fill="none" stroke="rgb(var(--night-4))" strokeWidth="3.5" />
+                <circle
+                  r="19"
+                  fill="none"
+                  stroke={task.done || task.claimed ? "rgb(var(--lagoon))" : "rgb(var(--info))"}
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  strokeDasharray={`${(119.4 * Math.max(0.02, task.claimed || task.done ? 1 : task.progress / Math.max(1, task.count))).toFixed(1)} 119.4`}
+                />
+              </svg>
+              <span
+                className={`relative font-display text-xs font-bold tabular-nums ${task.done || task.claimed ? "text-lagoon" : "text-cream"}`}
+              >
+                {task.claimed ? "✓" : `${task.progress}/${task.count}`.replace(/^(\d)\/1$/, "$1")}
+              </span>
             </span>
             <div className="min-w-[9rem] flex-1">
               <p
@@ -36,7 +54,7 @@ export function Daily(props: GameProps) {
               <span className="inline-flex flex-wrap items-center gap-2 text-xs text-cream-dim">
                 {Object.entries(task.reward.goods).map(([r, q]) => (
                   <span key={r} className="inline-flex items-center gap-1">
-                    <ResourceIcon code={r} size={16} />
+                    <GoodsMark code={r} size={16} />
                     {q}
                   </span>
                 ))}
