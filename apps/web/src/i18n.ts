@@ -2764,6 +2764,8 @@ const frDict = {
         "Livre de la Maison : 8 missions par semaine, renouvelées le lundi, aux seuils doublés et mieux payées ; le Livre s'ouvre sur « Aujourd'hui » et « Cette semaine ».",
         "L'Arsenal de la semaine remplace la commande de compagnie de deux jours : Bronze, Argent et Or, du lundi au dimanche. L'Argent apporte plus de marchandises aux galères de la semaine suivante, l'Or de l'Influence à qui a livré après le Bronze.",
         "Chaque mois, à partir de décembre, un mutateur change quelques prix ou forces pour le mois ; il est annoncé ici le 24 du mois précédent.",
+        "La guerre mange les marchandises : sur la Terraferme, vos troupes mangent du pain chaque jour ; sans pain, vous ne recrutez plus. « Max » demande aussi du pain, le fort des briques, les remparts des briques et des planches, le port des planches, la bombarde du bois et des planches.",
+        "La Signoria des villes remplace les fournisseurs officiels et l'embargo : chaque ducat livré dans une ville, et chaque heure où vous la tenez sur la Terraferme, compte sur sa jauge. Chaque nuit à minuit, le premier devient Podestà (3 villes au plus) : il prend 3 % des livraisons des autres vers sa ville et prend ses commandes une demi-heure avant tout le monde.",
       ],
     },
     howTo: [

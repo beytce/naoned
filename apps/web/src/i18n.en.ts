@@ -2678,6 +2678,8 @@ export const en: Dictionary = {
         'Book of the House: 8 missions a week, renewed on Monday, with doubled thresholds and better pay; the Book opens on "Today" and "This week".',
         "The Arsenal of the week replaces the two-day company order: Bronze, Silver and Gold, Monday to Sunday. Silver brings more goods to next week's galleys, Gold Influence to whoever delivered after Bronze.",
         "Each month, from December, a mutator changes a few prices or strengths for the month; it is announced here on the 24th of the month before.",
+        "War eats goods: on the Terraferma your troops eat bread every day; without bread you recruit no more. « Max » also asks for bread, the fort for bricks, walls for bricks and planks, the port for planks, the bombard for wood and planks.",
+        "The Signoria of the cities replaces the official suppliers and the embargo: every ducat delivered to a city, and every hour you hold it on the Terraferma, counts on its gauge. Every night at midnight the leader becomes Podestà (3 cities at most): it takes 3% of the others' deliveries to its city and takes its orders half an hour before everyone.",
       ],
     },
     howTo: [

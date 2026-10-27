@@ -25,9 +25,9 @@
 
 | # | Proposition | Vague | État | Commit |
 | --- | --- | --- | --- | --- |
-| R1 | La guerre mange les marchandises | 1 | en cours (moteur fait) | voir journal |
-| R2 | La Signoria des villes | 1 | à faire | — |
-| R12 | Le grand ménage (part de la vague 1 : fournisseurs officiels, embargo) | 1 | à faire | — |
+| R1 | La guerre mange les marchandises | 1 | fait, calibration en cours | `98c70c7`…`5fbc6b6` |
+| R2 | La Signoria des villes | 1 | fait, calibration en cours | `9d46868`…`d03784d` |
+| R12 | Le grand ménage (part de la vague 1 : fournisseurs officiels, embargo) | 1 | fait | `acfc181` |
 | R6 | Le Lustre (échelle de rang, fantômes) | 2 | à faire | — |
 | R11 | La Sera (20 h, incanto des galères) | 2 | à faire | — |
 | R3 | Les Atouts | 3 | à faire | — |
@@ -40,9 +40,13 @@
 
 ## Où j'en suis
 
-- **Dernier commit :** R1 dans le moteur (`terraferma.supply`, `breadOwed`/`unfed`, `eatStep`, `serveTerraRations`, `takeGoods`, événement `terra_hungry`, motifs de stock `terraferma_rations` et `terraferma`), tests `terraferma-supply.test.ts`.
-- **Étape suivante exacte :** R1 chez les PNJ (`packages/engine/src/bots.ts`) : une maison qui joue la Terraferme achète le pain qui lui manque ; puis le rapport du simulateur (pain mangé par la Terraferme).
-- **À moitié fait :** rien.
+- **Fait (vague 1)** : R1 et R2 dans le moteur, chez les PNJ, au simulateur, sur le serveur (vue, route `GET /api/game/signoria`, notifications nommées) et à l'écran (jauge autour de la ville, feuille « Signoria », blason du Podestà sur la carte, pain des troupes au HUD, coûts de la guerre dans « Vos terres ») ; ménage (fournisseurs et embargo retirés à Venise) ; notes de saison ; CADRAGE et plan-terraferme à jour.
+- **En cours** : la calibration de la vague 1, `pnpm sim` sur 5 graines avec R1 et R2 ensemble (environ 10 min par graine). Résultat à reporter dans `docs/calibration.md`, section « Vague 1 ».
+- **Étape suivante exacte** : lire le rapport ; si la semaine III ne fait pas 1,20 × la semaine I, ou si le pain finit sous 65 % de la référence, régler `terraferma.supply.breadPerTroopDay` (et noter chaque essai) ; puis passer la vague 2 en mode plan (R6 le Lustre, R11 la Sera).
+- **À savoir** :
+  - La Signoria compte les livraisons parties entre 8 h et 22 h (Paris) ; le Podestà est nommé par `closeSignoriaDays` dans le tick, au changement de jour (minuit).
+  - L'e2e de mise en page passe sur chaque format lancé seul (`SIZES=390x844`, `SIZES=320x568`) ; lancé sur les deux formats d'affilée, le second a échoué deux fois dans le guide, à une étape différente chaque fois (une charrette sur Venise, l'achat de briques), puis la machine a été redémarrée : à surveiller. Chromium : `CHROMIUM=/opt/pw-browsers/chromium`.
+  - Mesures partielles de R1 seul (3 graines, avant la Signoria) : semaine III / semaine I = 1,14 à 1,17 (contre 0,97 à 1,08 avant) ; pain en fin de mois 56 à 60 % de la référence (cible ≥ 65 %, avertissement) ; la Terraferme mange 5,3 à 5,6 pains par actif et par jour, plus 2,7 à 3,3 pains et 2,5 à 2,7 briques pour « Max » et les forts.
 - **Base :** 819 tests verts au départ (27 octobre 2026).
 
 ## Vague 1 : un seul jeu (R1, R2, et le ménage associé)
@@ -104,3 +108,4 @@ But : une ville se prend en y livrant ou en la tenant sur la Terraferme, sur la 
 
 - 27 octobre 2026 : audit validé, plan approuvé, document de reprise créé.
 - 27 octobre 2026 : R1 moteur. Valeurs de départ à Venise : 0,1 pain par troupe et par jour ouvert, 10 pains par « + Troupes », rocca 10 briques, porto 10 planches, bombarda 10 bois + 10 planches, mura 5 briques + 15 planches. Le pain manquant est pardonné, mais le marchand ne recrute plus jusqu'à ce que du pain revienne dans son stock.
+- 27 octobre 2026 : R1 chez les PNJ (le pain des troupes compte dans leurs rations, ils achètent les matériaux avant de bâtir) ; R2 dans le moteur (`signoria.ts`), le ménage, le serveur, les écrans, les notes de saison.

@@ -232,3 +232,8 @@ Après l'analyse des écarts avec OpenFront, le porteur demande tout le lot :
 | Rien après la partie | **Rejeu** de la semaine en dix secondes, **historique** des semaines (`terra_results`) et **cote** Elo au profil | — |
 
 Pas fait : d'autres cartes que la Vénétie (il faudrait leurs dessins), une carte plus fine (essayée, elle élimine davantage d'occasionnels), les ordinateurs ne jouent ni les ports, ni les bombardes, ni le curseur.
+
+## La guerre mange les marchandises (27 octobre 2026, vague 1 du plan de rupture)
+
+Décision du porteur (`docs/audit-retention-2026-10-27.md`, R1 et R2 ; suivi dans `docs/plan-rupture.md`) : la Terraferme devient le grand puits de marchandises du commerce. Les troupes mangent du pain chaque jour ouvert, « Max » demande du pain, les bâtiments des matériaux (`terraferma.supply`) ; sans pain, plus de recrues. La règle « le maximum de troupes ne monte qu'avec les ducats » (18 octobre) est levée. Tenir une ville de la carte compte sur la jauge de la Signoria de cette ville, comme y livrer (`signoria`). L'embargo de la diplomatie est retiré : le droit de porte du Podestà le remplace.
+
