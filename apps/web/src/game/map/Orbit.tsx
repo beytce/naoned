@@ -4,7 +4,7 @@ import { Crest, type CrestData } from "../../art/crest.js";
 import { GoodsMark, goodsColour } from "../../art/goods.js";
 import { Coin } from "../../art/icons.js";
 import { fr } from "../../i18n.js";
-import { clock } from "../../ui.js";
+import { Slab, clock } from "../../ui.js";
 import type { GameProps } from "../Game.js";
 import { amount, d } from "../format.js";
 import { harvestAndRestart } from "../harvest.js";
@@ -197,16 +197,17 @@ export function ComptoirOrbit({
           )}
         </div>
         {(ready > 0 || idle) && (
-          <button
-            type="button"
-            data-coach="panel-harvest"
-            disabled={props.busy}
+          <Slab
+            size="lg"
+            coach="panel-harvest"
+            busy={props.busy}
+            shine={ready > 0}
             onClick={() => harvestAndRestart(props)}
-            className="mb-2 flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-gold font-display text-[0.9375rem] font-extrabold text-ink shadow-[0_0_0_5px_rgb(var(--gold)/0.15)] transition active:scale-[0.98] disabled:opacity-60"
+            className="mb-2 w-full"
           >
             {ready > 0 ? Icon.harvest() : Icon.restart()}
             {ready > 0 ? t.harvest : m.buttons.restart}
-          </button>
+          </Slab>
         )}
         <div className="grid grid-cols-2 gap-2">
           <Ghost coach="panel-workshops" onClick={() => props.setSheet("workshops")}>
@@ -229,7 +230,7 @@ function Ghost({
       type="button"
       data-coach={coach}
       onClick={onClick}
-      className="h-11 rounded-full border border-line text-sm font-semibold text-cream transition active:scale-[0.98]"
+      className="h-11 rounded-full border border-line text-sm font-semibold text-cream transition hover:border-cream/40 active:scale-[0.97] active:bg-night-3"
     >
       {children}
     </button>
@@ -508,16 +509,17 @@ export function CityOrbit({
           {status}
         </p>
         {cargo && (
-          <button
-            type="button"
-            data-coach="panel-cargo"
+          <Slab
+            size="lg"
+            tone={covered > 0 && freeCart ? "gold" : "ghost"}
+            coach="panel-cargo"
             disabled={!freeCart}
             onClick={onCargo}
-            className={`mb-2 flex h-[52px] w-full items-center justify-center gap-2 rounded-full font-display text-[0.9375rem] font-extrabold transition active:scale-[0.98] disabled:opacity-50 ${covered > 0 && freeCart ? "bg-gold text-ink shadow-[0_0_0_5px_rgb(var(--gold)/0.15)]" : "text-cream ring-1 ring-inset ring-line"}`}
+            className="mb-2 w-full"
           >
             {Icon.cargo()}
             {freeCart ? t.load : m.city.noCart}
-          </button>
+          </Slab>
         )}
         {doors.length > 0 && (
           <div className={`grid gap-2 ${doors.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
