@@ -769,17 +769,34 @@ export const WorldMap = forwardRef<
           const curve = roadCurve(route(c));
           if (!curve) return null;
           const lit = props.litRoads.includes(c);
+          const d = curvePath(curve);
           return (
-            <path
-              key={c}
-              d={curvePath(curve)}
-              fill="none"
-              stroke={lit ? "rgb(var(--gold))" : "rgb(var(--cream))"}
-              strokeOpacity={lit ? 0.45 : 0.1}
-              strokeWidth={lit ? 1.6 : 1.1}
-              strokeDasharray="1.5 4"
-              strokeLinecap="round"
-            />
+            <g key={c}>
+              <path
+                d={d}
+                fill="none"
+                stroke={lit ? "rgb(var(--gold))" : "rgb(var(--cream))"}
+                strokeOpacity={lit ? 0.45 : 0.1}
+                strokeWidth={lit ? 1.6 : 1.1}
+                strokeDasharray="1.5 4"
+                strokeLinecap="round"
+              />
+              {lit && (
+                // A lit road draws itself from the counter to the city, then settles as a trace
+                // (index.css, .route-draw); drawn again when the cart chosen changes.
+                <path
+                  key={props.litRoads.join(",")}
+                  d={d}
+                  fill="none"
+                  stroke="rgb(var(--gold))"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  pathLength={1}
+                  strokeDasharray="1 1"
+                  className="route-draw"
+                />
+              )}
+            </g>
           );
         })}
         {trips.map((trip) => {

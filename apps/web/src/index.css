@@ -679,6 +679,26 @@
 .terra-march {
   stroke-dashoffset: var(--march, 0);
 }
+/* A road lit for the cart chosen draws itself to its city, then stays as a faint trace. */
+.route-draw {
+  animation: route-draw 0.6s var(--ease-out) both, route-settle 0.5s ease-out 0.6s both;
+}
+@keyframes route-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes route-settle {
+  from {
+    stroke-opacity: 0.9;
+  }
+  to {
+    stroke-opacity: 0.25;
+  }
+}
 .route-march {
   animation: route-march 0.9s linear infinite;
 }
