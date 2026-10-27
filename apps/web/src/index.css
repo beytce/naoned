@@ -601,6 +601,44 @@
   align-items: center;
   transition: transform 0.7s var(--ease-out);
 }
+/*
+ * The welcome back (Welcome.tsx): its lines enter one after the other, under the gain running
+ * up; each dot lights up in its colour.
+ */
+.rise-line {
+  animation: rise-line 0.42s var(--ease-out) both;
+  animation-delay: calc(350ms + var(--i, 0) * 60ms);
+}
+.rise-line:nth-child(2) {
+  --i: 1;
+}
+.rise-line:nth-child(3) {
+  --i: 2;
+}
+.rise-line:nth-child(4) {
+  --i: 3;
+}
+.rise-line:nth-child(n + 5) {
+  --i: 4;
+}
+@keyframes rise-line {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.dot-light {
+  animation: dot-light 0.6s var(--spring) both;
+  animation-delay: calc(470ms + var(--i, 0) * 60ms);
+}
+@keyframes dot-light {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.6);
+  }
+}
 /* The purse when the coins land in it. */
 .purse-bump {
   animation: purse-bump 0.38s var(--spring);

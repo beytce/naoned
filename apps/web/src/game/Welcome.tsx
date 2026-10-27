@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { fr } from "../i18n.js";
-import { Big, Label, Sheet, Slab } from "../ui.js";
+import { Big, CountUp, Label, Sheet, Slab } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { d, whole } from "./format.js";
 import { harvestAndRestart } from "./harvest.js";
@@ -27,8 +27,9 @@ function Line({
   children,
 }: { dot: keyof typeof DOT; tone?: string; children: ReactNode }) {
   return (
-    <li className="flex items-center gap-3 py-1.5 text-sm">
-      <span aria-hidden="true" className={`h-3 w-3 shrink-0 rounded-full ${DOT[dot]}`} />
+    // Each line enters after the one before, its dot lighting up in its colour (index.css).
+    <li className="rise-line flex items-center gap-3 py-1.5 text-sm">
+      <span aria-hidden="true" className={`dot-light h-3 w-3 shrink-0 rounded-full ${DOT[dot]}`} />
       <span className={tone}>{children}</span>
     </li>
   );
@@ -53,7 +54,14 @@ export function Welcome(props: GameProps & { data: WelcomeData; onClose: () => v
             {t.kicker} {hoursAway(props.now - data.since)}
           </span>
           <Big className="mt-2 text-5xl text-gold [text-shadow:0_0_30px_rgb(var(--gold)/0.4)]">
-            +{whole(total)}
+            {/* The gain runs up from nothing once the sheet has risen. */}+
+            <CountUp
+              value={Number(total)}
+              from={0}
+              delay={250}
+              duration={1_100}
+              format={(v) => whole(BigInt(Math.round(v)))}
+            />
           </Big>
           <Label className="text-cream-dim">{t.commerce}</Label>
         </div>

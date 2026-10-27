@@ -312,25 +312,45 @@ export function Panel({
   );
 }
 
+/** Whether the player asks for less motion, read when it is needed. */
+function reducedNow(): boolean {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+}
+
 /**
  * A number that runs to its new value (money, counts): 400 ms, decelerating. `format` writes it.
+ * `from` makes it run once from there when it first shows (the welcome back's gain), after
+ * `delay` ms, over `duration` ms.
  */
-export function CountUp({ value, format }: { value: number; format: (v: number) => string }) {
-  const [shown, setShown] = useState(value);
-  const from = useRef(value);
+export function CountUp({
+  value,
+  format,
+  from: start0,
+  duration = 400,
+  delay = 0,
+}: {
+  value: number;
+  format: (v: number) => string;
+  from?: number;
+  duration?: number;
+  delay?: number;
+}) {
+  const [shown, setShown] = useState(() =>
+    start0 !== undefined && typeof window !== "undefined" && !reducedNow() ? start0 : value,
+  );
+  const from = useRef(shown);
   useEffect(() => {
     const start = from.current;
     if (start === value) return;
-    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
+    if (reducedNow()) {
       from.current = value;
       setShown(value);
       return;
     }
-    const t0 = performance.now();
+    const t0 = performance.now() + delay;
     let raf = 0;
     const step = (t: number) => {
-      const k = Math.min(1, (t - t0) / 400);
+      const k = Math.max(0, Math.min(1, (t - t0) / duration));
       const v = start + (value - start) * (1 - (1 - k) ** 3);
       from.current = v;
       setShown(v);
@@ -338,7 +358,7 @@ export function CountUp({ value, format }: { value: number; format: (v: number) 
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [value]);
+  }, [value, duration, delay]);
   return <>{format(shown)}</>;
 }
 
