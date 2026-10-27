@@ -587,6 +587,20 @@
     box-shadow: 0 0 0 0 rgb(var(--gold-soft) / 0);
   }
 }
+/* The purse's wheels (ui.tsx, Odometer): a digit's column rolls to its figure. */
+.odo-digit {
+  position: relative;
+  display: inline-block;
+  clip-path: inset(0);
+}
+.odo-wheel {
+  position: absolute;
+  inset: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.7s var(--ease-out);
+}
 /* The purse when the coins land in it. */
 .purse-bump {
   animation: purse-bump 0.38s var(--spring);

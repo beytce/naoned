@@ -342,6 +342,45 @@ export function CountUp({ value, format }: { value: number; format: (v: number) 
   return <>{format(shown)}</>;
 }
 
+/**
+ * A number on mechanical wheels (the purse): each digit a column of 0 to 9 that rolls to its new
+ * figure, the rightmost first; separators stay still. A hidden digit in the flow keeps the width
+ * and the baseline, the wheel is clipped to it: the line around it never moves. Read whole by
+ * screen readers.
+ */
+export function Odometer({ text }: { text: string }) {
+  const chars = [...text];
+  return (
+    <span className="whitespace-nowrap">
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true">
+        {chars.map((ch, i) => {
+          // Keyed from the right: a new leading digit leaves the others' wheels in place.
+          const key = chars.length - i;
+          if (!/\d/.test(ch)) return <span key={key}>{ch}</span>;
+          return (
+            <span key={key} className="odo-digit">
+              <span className="invisible">{ch}</span>
+              <span
+                className="odo-wheel"
+                style={{
+                  transform: `translateY(-${Number(ch) * 10}%)`,
+                  transitionDelay: `${(key - 1) * 50}ms`,
+                }}
+              >
+                {DIGITS.map((d) => (
+                  <span key={d}>{d}</span>
+                ))}
+              </span>
+            </span>
+          );
+        })}
+      </span>
+    </span>
+  );
+}
+const DIGITS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+
 /** On/off switch (vellum knob), instead of a bare checkbox. */
 export function Switch(props: {
   checked: boolean;

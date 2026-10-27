@@ -5,7 +5,7 @@ import { Coin } from "../../art/icons.js";
 import { ResourceIcon } from "../../art/resources.js";
 import { Lorenzo } from "../../art/scenes.js";
 import { fr } from "../../i18n.js";
-import { CountUp } from "../../ui.js";
+import { Odometer } from "../../ui.js";
 import { MerchantName } from "../Name.js";
 import { amount } from "../format.js";
 import type { RivalLine } from "../rival.js";
@@ -278,7 +278,7 @@ export function MapHud({
           <HudCounter
             label={tipsT.cash.title}
             fx="purse"
-            value={<CountUp value={Number(cash)} format={(v) => amount(BigInt(Math.round(v)))} />}
+            value={<Odometer text={amount(BigInt(cash))} />}
             valueClass="text-lg text-gold [font-stretch:100%] min-[360px]:[font-stretch:125%] min-[400px]:text-xl"
             icon={<Coin size={24} />}
             open={tip === "cash"}
