@@ -349,6 +349,7 @@ export const en: Dictionary = {
         rialto: "Rialto",
         criee: "Auction",
         suppliers: "Suppliers",
+        signoria: "Signoria",
         warehouse: "Warehouse",
         fondaco: "Fondaco",
         ranking: "Ranking",
@@ -660,13 +661,16 @@ export const en: Dictionary = {
       troops: "Troops",
       troopsTip: {
         title: "Your troops",
-        text: "Your lands recruit every daytime hour, up to the maximum. Each cell taken brings Glory.",
+        text: "Your lands recruit every daytime hour, up to the maximum, as long as your troops have bread. Each cell taken brings Glory.",
         troops: "Troops",
         recruit: "Recruits",
         glory: "Glory",
         rank: "Rank",
         rankOf: (rank: number, of: number) => `${ordinal(rank)} of ${of}`,
+        bread: "Troops' bread",
+        breadLine: (stock: number, perDay: string) => `${stock} · −${perDay}/day`,
       },
+      hungryShort: "Your troops are hungry: no bread, no recruits",
       troopsLine: (troops: number, cap: number) => `${troops}/${cap}`,
       perHour: (n: number) => `+${n}/h`,
       perHourAt: (n: number, from: number) => `☾ +${n}/h at ${from}:00`,
@@ -808,6 +812,7 @@ export const en: Dictionary = {
         full: (amount: number) =>
           `Troops at the maximum. « Max +${amount} » raises that maximum for ducats (it gives no troops).`,
         decree: "Decree",
+        costs: "The war eats goods too:",
         fronts: "Fronts",
         recall: "Recall",
         frontLine: (troops: number, against: string) => `⚔ ${troops} → ${against}`,
@@ -2554,6 +2559,24 @@ export const en: Dictionary = {
       build: "Build",
       help: (cities: number, levels: number, top: number, pct: number) =>
         `A fondaco in ${cities} cities at most, from level 1 to level ${top}, ${levels} levels in all. Each level gives you an order from the city every day, for you alone, paid ${pct}% of the shared board's price: cheaper than the board, but sure. The ducats leave the game, the bricks and planks too; the fondaco counts in your net worth at its cost.`,
+    },
+    /** The Signoria of the cities (R2): the gauge of a city and its Podestà. */
+    signoria: {
+      title: (city: string) => `Signoria of ${city}`,
+      kicker: "Who holds the city",
+      podesta: "Podestà",
+      vacant: "No Podestà yet",
+      you: "You",
+      points: (n: number) => `${n.toLocaleString("en-GB")} pts`,
+      share: (pct: number) => `${pct}%`,
+      mine: (pct: number) => `Your share: ${pct}%`,
+      held: "You are the city's Podestà",
+      line: (toll: number, minutes: number) =>
+        `The Podestà takes ${toll}% of the others' deliveries and sees the orders ${minutes} min before them.`,
+      decided: "The Podestà is decided every night at midnight.",
+      help: (pointsPerHour: number, keptPct: number, max: number, toll: number, minutes: number) =>
+        `Each ducat paid for a delivery sent between 8 am and 10 pm counts a point on the city's gauge; holding the city on the Terraferma counts ${pointsPerHour} an open hour. Every night at midnight the leader becomes Podestà and the points keep only ${keptPct}%. A house holds ${max} cities at most; the computer's houses never do. The Podestà takes ${toll}% of the others' deliveries to the city (not the newcomers') and takes its orders ${minutes} minutes before everyone.`,
+      none: "Nobody has counted here yet.",
     },
     suppliers: {
       title: (city: string) => `Suppliers of ${city}`,

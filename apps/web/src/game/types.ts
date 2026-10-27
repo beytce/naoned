@@ -530,6 +530,17 @@ export interface PlayerView {
   fondaci: FondaciView | null;
   /** The goods the merchant is the official supplier of this week, by city. */
   supplies: { city: string; resource: string }[];
+  /**
+   * The Signoria of the cities (R2): the cities the merchant is Podestà of, each city's Podestà
+   * (names and gauges from GET /api/game/signoria), its rules; null when off.
+   */
+  signoria: {
+    held: string[];
+    podesta: Record<string, string>;
+    tollBps: number;
+    previewMinutes: number;
+    maxCities: number;
+  } | null;
   market: MarketLine[];
   cityQuotes: { city: string; resource: string; unitPrice: Money }[];
   projects: Project[];
@@ -1139,6 +1150,11 @@ export interface TerraView {
     raisesLeft: number;
     giftsLeft: number;
     programme: { code: string; target?: string } | null;
+    /**
+     * The troops' bread (R1): eaten in a day of open hours (in 1/10 000 of a loaf), in stock, and
+     * whether it was missing at the last meal (no recruits until fed).
+     */
+    bread?: { perDay: number; stock: number; unfed: boolean };
   } | null;
   ranking: { holder: number; glory: number; cells: number }[];
   players: number;
@@ -1179,6 +1195,8 @@ export interface TerraView {
     diplomacy: { ducatGiftPerDay: Money; embargoBps: number } | null;
     /** Hours a merchant who sets down is safe from the others (0: none). */
     protectionHours: number;
+    /** The war's goods (R1): bread for the cap, materials by building (null: ducats only). */
+    supply?: { raiseBread: number; materials: Record<string, Record<string, number>> } | null;
     /** Minutes a front takes for a cell of free land, and of a rival's. */
     neutralMinutes: number;
     cellMinutes: number;
@@ -1400,6 +1418,26 @@ export interface SuppliersView {
     holder: SupplierPerson | null;
     top: (SupplierPerson & { units: number })[];
     mine: number;
+  }[];
+}
+
+/** The Signoria of the cities (GET /api/game/signoria, R2). */
+export interface SignoriaView {
+  rules: {
+    tollBps: number;
+    previewMinutes: number;
+    maxCities: number;
+    cityPointsPerHour: number;
+    decayBps: number;
+    minPoints: number;
+  } | null;
+  cities: {
+    city: string;
+    podesta: SupplierPerson | null;
+    since: number | null;
+    top: (SupplierPerson & { points: number })[];
+    mine: number;
+    total: number;
   }[];
 }
 

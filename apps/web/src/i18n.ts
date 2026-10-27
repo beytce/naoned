@@ -273,6 +273,7 @@ const frDict = {
         rialto: "Rialto",
         criee: "Criée",
         suppliers: "Fournisseurs",
+        signoria: "Signoria",
         warehouse: "Entrepôt",
         fondaco: "Fondaco",
         ranking: "Classement",
@@ -597,13 +598,16 @@ const frDict = {
       /** The troops' card on the HUD: the glory and the rank live there. */
       troopsTip: {
         title: "Vos troupes",
-        text: "Vos terres recrutent chaque heure de jour, jusqu'au maximum. Chaque case prise rapporte de la Gloire.",
+        text: "Vos terres recrutent chaque heure de jour, jusqu'au maximum, tant que vos troupes ont du pain. Chaque case prise rapporte de la Gloire.",
         troops: "Troupes",
         recruit: "Recrues",
         glory: "Gloire",
         rank: "Rang",
         rankOf: (rank: number, of: number) => `${rank}${rank === 1 ? "er" : "e"} sur ${of}`,
+        bread: "Pain des troupes",
+        breadLine: (stock: number, perDay: string) => `${stock} · −${perDay}/j`,
       },
+      hungryShort: "Vos troupes ont faim : sans pain, plus de recrues",
       troopsLine: (troops: number, cap: number) => `${troops}/${cap}`,
       perHour: (n: number) => `+${n}/h`,
       perHourAt: (n: number, from: number) => `☾ +${n}/h à ${from} h`,
@@ -750,6 +754,7 @@ const frDict = {
         full: (amount: number) =>
           `Troupes au maximum. « Max +${amount} » relève ce maximum pour des ducats (il ne donne pas de troupes).`,
         decree: "Décret",
+        costs: "La guerre mange aussi des marchandises :",
         fronts: "Fronts",
         recall: "Rappeler",
         frontLine: (troops: number, against: string) => `⚔ ${troops} → ${against}`,
@@ -2631,6 +2636,24 @@ const frDict = {
       build: "Construire",
       help: (cities: number, levels: number, top: number, pct: number) =>
         `Un fondaco dans ${cities} villes au plus, du niveau 1 au niveau ${top}, ${levels} niveaux en tout. Chaque niveau vous donne chaque jour une commande de la ville, à vous seul, payée ${pct} % du prix du tableau commun : moins chère que le tableau, mais sûre. Les ducats sortent du jeu, les briques et les planches aussi ; le fondaco compte dans votre patrimoine à son coût.`,
+    },
+    /** The Signoria of the cities (R2): the gauge of a city and its Podestà. */
+    signoria: {
+      title: (city: string) => `Signoria de ${city}`,
+      kicker: "Qui tient la ville",
+      podesta: "Podestà",
+      vacant: "Pas encore de Podestà",
+      you: "Vous",
+      points: (n: number) => `${n.toLocaleString("fr-FR")} pts`,
+      share: (pct: number) => `${pct} %`,
+      mine: (pct: number) => `Votre part : ${pct} %`,
+      held: "Vous êtes Podestà de la ville",
+      line: (toll: number, minutes: number) =>
+        `Le Podestà prend ${toll} % des livraisons des autres et voit les commandes ${minutes} min avant eux.`,
+      decided: "Le Podestà se décide chaque nuit à minuit.",
+      help: (pointsPerHour: number, keptPct: number, max: number, toll: number, minutes: number) =>
+        `Chaque ducat payé par une livraison partie entre 8 h et 22 h compte un point sur la jauge de la ville ; tenir la ville sur la Terraferme en compte ${pointsPerHour} par heure ouverte. Chaque nuit à minuit, le premier devient Podestà et les points ne gardent que ${keptPct} %. Une maison tient ${max} villes au plus ; les maisons de l'ordinateur ne le deviennent jamais. Le Podestà prend ${toll} % des livraisons des autres vers sa ville (pas des nouveaux venus) et prend ses commandes ${minutes} minutes avant tout le monde.`,
+      none: "Personne n'a encore compté ici.",
     },
     /** The official suppliers of a city. */
     suppliers: {

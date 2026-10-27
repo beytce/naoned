@@ -29,6 +29,7 @@ import type { GameProps } from "../Game.js";
 import { HouseSheet } from "../House.js";
 import { RialtoSheet } from "../Marche.js";
 import { ProfileSheet } from "../Profil.js";
+import { SignoriaSheet } from "../Signoria.js";
 import { SuppliersSheet } from "../Suppliers.js";
 import { RankingSheet } from "../Top.js";
 import { WarehouseSheet } from "../Warehouse.js";
@@ -45,6 +46,7 @@ import {
   total,
   vehicleName,
 } from "../roadKit.js";
+import { signoriaOf, useSignoria } from "../signoria.js";
 import { store } from "../store.js";
 import { upcoming } from "../timeline.js";
 import type {
@@ -458,6 +460,13 @@ export function MapScreen(
 
   // What stands on the map.
   const crest = props.account.crest ?? defaultCrest(props.account.id);
+  // Each city's Podestà (R2): its crest on the city, the merchant's own when it is.
+  const signoria = useSignoria(view);
+  const podestaCrest = (code: string) => {
+    const p = signoriaOf(signoria, code)?.podesta;
+    if (!p) return null;
+    return { crest: p.me ? crest : (p.crest ?? defaultCrest(p.id)), mine: p.me };
+  };
   const pseudo = props.account.pseudo ?? "";
   const ready = view.buildings.reduce((n, b) => n + readyOf(b, now), 0);
   const running = view.buildings
@@ -513,6 +522,7 @@ export function MapScreen(
               deliverable={deliverable}
               criee={criee?.city === code}
               supplier={view.supplies.some((s) => s.city === code) ? crest : null}
+              podesta={podestaCrest(code)}
               lit={litCities.includes(code)}
               dim={cartFree && !litCities.includes(code)}
               onTap={() => goCity(code)}
@@ -986,6 +996,7 @@ export function MapScreen(
 
       <CounterSheets {...props} />
       <SuppliersSheet {...props} />
+      <SignoriaSheet {...props} />
       <WarehouseSheet {...props} />
       <FondacoSheet {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}

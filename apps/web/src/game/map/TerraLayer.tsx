@@ -10,6 +10,7 @@ import {
 } from "react";
 import { CityIcon } from "../../art/cities.js";
 import { Crest, MiniCrest, defaultCrest } from "../../art/crest.js";
+import { GoodsMark } from "../../art/goods.js";
 import { MAP_TEXT, P } from "../../art/palette.js";
 import { Lorenzo } from "../../art/scenes.js";
 import { haptic } from "../../haptics.js";
@@ -41,6 +42,7 @@ import {
   tones,
 } from "../terraShapes.js";
 import type { CondottaStatus, SkirmishStatus, TerraAction, TerraView } from "../types.js";
+import { have } from "../workshops.js";
 import { HudTip, usePresence, useTip } from "./HudTips.js";
 import { orbStyle } from "./Markers.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
@@ -1520,7 +1522,11 @@ export function TerraHud({
             onClick={() => setTip((k) => (k === "troops" ? null : "troops"))}
             className="pointer-events-auto flex min-h-11 items-center"
           >
-            <span className="hud-orb relative flex h-9 items-center gap-1 rounded-full pl-1 pr-2.5 text-cream">
+            <span
+              // Hungry troops recruit no more: the orb breathes in vermilion (R1).
+              className={`hud-orb relative flex h-9 items-center gap-1 rounded-full pl-1 pr-2.5 text-cream ${me.bread?.unfed ? "hud-alert" : ""}`}
+              data-tone={me.bread?.unfed ? "vermilion" : undefined}
+            >
               {/* How full the troops are: a ring of light around their sign (Lagune). */}
               <span className="relative grid h-6 w-6 shrink-0 place-items-center [&>span>svg]:h-3.5 [&>span>svg]:w-3.5">
                 <svg
@@ -1566,6 +1572,18 @@ export function TerraHud({
                       ? t().perHour(me.recruit.perHour)
                       : t().perHourAt(me.recruit.perHour, v.openHours.from),
                   },
+                  ...(me.bread && me.bread.perDay > 0
+                    ? [
+                        {
+                          label: t().troopsTip.bread,
+                          value: t().troopsTip.breadLine(
+                            me.bread.stock,
+                            (me.bread.perDay / 10_000).toFixed(1),
+                          ),
+                          ...(me.bread.unfed ? { tone: "vermilion" as const } : {}),
+                        },
+                      ]
+                    : []),
                   { label: t().troopsTip.glory, value: me.glory, tone: "gold" },
                   { label: t().troopsTip.rank, value: t().troopsTip.rankOf(me.rank, v.players) },
                 ],
@@ -1588,6 +1606,7 @@ function pressing(v: TerraView, now: number): { text: string; tone: string } | n
   const me = v.me;
   if (v.closed) return null;
   if (me?.eliminatedAt != null) return { text: t().eliminated, tone: "text-vermilion" };
+  if (me?.bread?.unfed) return { text: t().hungryShort, tone: "text-vermilion" };
   const ride = v.fronts.find((f) => f.threat && v.holders[f.owner]?.milan);
   if (ride) return { text: t().milanOnMeShort(holderName(v, ride.owner)), tone: "text-vermilion" };
   if (v.battle?.on) return { text: t().battle.onShort(v.battle.to), tone: "text-vermilion" };
@@ -1881,6 +1900,7 @@ export function TerraPanel({
                     v.openHours.to,
                   )}
             </p>
+            {v.rules.supply && <WarCosts v={v} props={props} />}
             {v.rules.peasants && <PeasantsSlider v={v} props={props} act={act} />}
             {v.rules.diplomacy && (
               <p className="flex flex-wrap gap-1.5">
@@ -2025,7 +2045,7 @@ export function TerraPanel({
             />
           )}
           {allyButton}
-          {merchant && !ally && v.rules.diplomacy && me.holdsCity && (
+          {merchant && !ally && !!v.rules.diplomacy?.embargoBps && me.holdsCity && (
             <ActionButton
               icon={Icon.cross()}
               label={me.embargo === holder ? t().diplomacy.lift : t().diplomacy.embargo}
@@ -2398,6 +2418,47 @@ export function TerraIntro({ onGuide, top }: { onGuide: () => void; top: number 
       >
         <p className="mt-1 text-sm leading-snug">{k.steps[step]}</p>
       </LorenzoCard>
+    </div>
+  );
+}
+
+/**
+ * What the war asks of the stock (R1): bread for the cap, materials for each building, each good
+ * by its mark, hollow when the stock does not cover it.
+ */
+function WarCosts({ v, props }: { v: TerraView; props: GameProps }) {
+  const supply = v.rules.supply;
+  if (!supply) return null;
+  const rows: { label: string; goods: Record<string, number> }[] = [];
+  if (supply.raiseBread > 0)
+    rows.push({ label: t().mine.raise(v.rules.capRaise), goods: { bread: supply.raiseBread } });
+  for (const [kind, goods] of Object.entries(supply.materials)) {
+    if (v.rules.prices[kind as keyof typeof v.rules.prices] === null) continue;
+    const label = kind === "rocca" ? t().mine.rocca : kind === "porto" ? t().mine.porto : null;
+    rows.push({ label: label ?? t().buildings[kind] ?? kind, goods });
+  }
+  if (rows.length === 0) return null;
+  return (
+    <div>
+      <p>{t().mine.costs}</p>
+      <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+        {rows.map((r) => (
+          <li key={r.label} className="flex items-center gap-1">
+            <span className="text-cream">{r.label}</span>
+            {Object.entries(r.goods).map(([code, n]) => (
+              <span key={code} className="flex items-center gap-0.5 font-display tabular-nums">
+                <GoodsMark
+                  code={code}
+                  size={14}
+                  covered={have(props.view, code) >= n}
+                  title={props.names.resource(code)}
+                />
+                {n}
+              </span>
+            ))}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
