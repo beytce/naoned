@@ -182,11 +182,13 @@ La règle « la carte ne bouge que sous le doigt » vaut pour la caméra ; le d�
 
 | Lot | Contenu | Effort | Effet |
 |---|---|---|---|
-| **1. Le toucher** | A1 halo en ombre portée ; A2 pression, relâché, en cours, succès, échec ; A3 un seul `Slab` ; A4 panneau de la charrette en Lagune ; A5 focus lapis arrondi ; B2 sorties des feuilles et de l'orbite ; B3 retour optimiste ; B1 ménage des classes mortes (en recyclant `domain-bump`, `stock-beat`, `stagger`) | 2 à 3 jours | Immédiat, sur chaque toucher |
+| **1. Le toucher** (fait le 27 octobre 2026) | A1 halo en ombre portée ; A2 pression, relâché, en cours, succès, échec ; A3 un seul `Slab` ; A4 panneau de la charrette en Lagune ; A5 focus lapis arrondi ; B2 sorties des feuilles et de l'orbite ; B3 retour optimiste ; B1 ménage des classes mortes (en recyclant `domain-bump`, `stock-beat`, `stagger`) | 2 à 3 jours | Immédiat, sur chaque toucher |
 | **2. La boucle** | La moisson (marchandises qui volent, rebonds, arpège) ; la bourse en compteur mécanique ; la livraison ; la route qui se dessine ; le bon retour qui court | 3 à 4 jours | Le plaisir de la boucle principale |
 | **3. Les lieux** | Orbite qui part de l'astre ; étoiles qui entrent en orbite ; soleil à couronne et rayons de production | 2 jours | « Un lieu est un astre » devient vrai |
 | **4. Les sommets** | Fin de saison en séquence ; sceau maintenu et hit-stop des ballots ; forge du niveau | 3 jours | Les moments dont on parle |
 | **5. Le monde** | Heure de Paris sur la carte ; eau ; respiration des astres ; parallaxe ; vie rare ; ambiance sonore ; réglage des effets | 4 à 5 jours | L'attachement au lieu |
+
+Lot 1 livré : jetons de mouvement et ménage (et `test/motion.test.ts`), bouton or en pièce frappée (relief, lumière portée, ressort, attente, frappe et refus, reflet), boutons or du comptoir et de la ville en `Slab`, panneau de sélection en ronds, focus lapis, sorties des feuilles et de l'orbite (`useLeaving`), son au toucher. Limite : une feuille que son parent démonte au lieu de la fermer (`open={false}`) sort encore d'un coup.
 
 ## 5. Ce que ces propositions bousculent
 
