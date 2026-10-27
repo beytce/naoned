@@ -5,6 +5,7 @@ import { GoodsMark, goodsColour } from "../../art/goods.js";
 import { Coin } from "../../art/icons.js";
 import { fr } from "../../i18n.js";
 import { Slab, clock } from "../../ui.js";
+import { perHour } from "../Dashboard.js";
 import type { GameProps } from "../Game.js";
 import { amount, d } from "../format.js";
 import { harvestAndRestart } from "../harvest.js";
@@ -146,6 +147,7 @@ export function ComptoirOrbit({
               strokeWidth="0.3"
               strokeDasharray="0.8 1.6"
             />
+            <SunCorona perHour={perHour(props)} />
             {/* The threads to the sun and the chain appear once the stars are in place. */}
             <g className="orbit-links">
               {stars.map((s) => (
@@ -174,7 +176,7 @@ export function ComptoirOrbit({
               ))}
             </g>
           </svg>
-          <span className="absolute left-1/2 top-1/2 flex h-[21%] w-[21%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full shadow-[0_0_48px_rgb(var(--gold)/0.45),inset_-6px_-8px_14px_rgb(0_0_0/0.35)] [background:radial-gradient(circle_at_34%_30%,rgb(var(--gold-soft))_0%,rgb(var(--gold))_45%,rgb(var(--gold-deep))_80%,#5A3D12_100%)]">
+          <span className="sun-breathe absolute left-1/2 top-1/2 flex h-[21%] w-[21%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full shadow-[0_0_48px_rgb(var(--gold)/0.45),inset_-6px_-8px_14px_rgb(0_0_0/0.35)] [background:radial-gradient(circle_at_34%_30%,rgb(var(--gold-soft))_0%,rgb(var(--gold))_45%,rgb(var(--gold-deep))_80%,#5A3D12_100%)]">
             <Crest crest={crest} size={40} />
           </span>
           {stars.map((s, i) => (
@@ -275,6 +277,67 @@ function Ghost({
     >
       {children}
     </button>
+  );
+}
+
+/** The sun's radius in the orbit's square (21 % of it), and the longest a ray reaches past it. */
+const SUN_R = 10.5;
+const RAY_MAX = 14;
+const RAYS = Array.from({ length: 24 }, (_, i) => ({
+  angle: (i * 360) / 24,
+  long: i % 2 === 0,
+}));
+
+/**
+ * The counter's corona: rays that turn slowly around the sun, as long as the counter earns (its
+ * workshops' margin an hour, on a log scale: a first workshop shows a little light, a busy
+ * counter a crown), with a dotted ring turning the other way. Drawn from the middle, under the
+ * sun's disc: its length is a scale of the whole, which glides when it changes.
+ */
+function SunCorona({ perHour }: { perHour: bigint }) {
+  const ducats = Math.max(0, Number(perHour) / 100);
+  // A scale of display, not of the game: 400 d/h and more is the full crown.
+  const share = Math.min(1, Math.max(0.08, Math.log10(1 + ducats) / Math.log10(401)));
+  const reach = SUN_R + RAY_MAX;
+  const scale = (SUN_R + 0.5 + share * RAY_MAX) / reach;
+  return (
+    <>
+      <defs>
+        <radialGradient id="sun-ray" gradientUnits="userSpaceOnUse" cx="50" cy="50" r={reach}>
+          <stop offset="0.4" stopColor="rgb(var(--gold-soft))" stopOpacity="0.85" />
+          <stop offset="1" stopColor="rgb(var(--gold))" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <g className="sun-corona">
+        <g className="sun-reach" style={{ transform: `scale(${scale.toFixed(3)})` }}>
+          {RAYS.map((r) => {
+            const tip = r.long ? reach : SUN_R + (reach - SUN_R) * 0.55;
+            const a = (r.angle * Math.PI) / 180;
+            const w = (3.2 * Math.PI) / 180;
+            const base = SUN_R * 0.6;
+            const pt = (rad: number, ang: number) =>
+              `${(50 + rad * Math.cos(ang)).toFixed(2)},${(50 + rad * Math.sin(ang)).toFixed(2)}`;
+            return (
+              <polygon
+                key={r.angle}
+                points={`${pt(base, a - w)} ${pt(tip, a)} ${pt(base, a + w)}`}
+                fill="url(#sun-ray)"
+              />
+            );
+          })}
+        </g>
+      </g>
+      <circle
+        cx="50"
+        cy="50"
+        r={SUN_R + 3}
+        fill="none"
+        stroke="rgb(var(--gold-soft) / 0.35)"
+        strokeWidth="0.4"
+        strokeDasharray="0.4 2.2"
+        className="sun-ring"
+      />
+    </>
   );
 }
 

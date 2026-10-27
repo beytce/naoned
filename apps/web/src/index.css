@@ -566,6 +566,38 @@
   }
 }
 /*
+ * The counter's sun up close (Orbit.tsx, SunCorona): its corona turns slowly, its dotted ring
+ * the other way; its rays' reach glides when what it earns changes; its disc breathes.
+ */
+.sun-corona,
+.sun-reach,
+.sun-ring {
+  transform-box: view-box;
+  transform-origin: 50px 50px;
+}
+.sun-corona {
+  animation: sun-turn 90s linear infinite;
+}
+.sun-ring {
+  animation: sun-turn 140s linear infinite reverse;
+}
+@keyframes sun-turn {
+  to {
+    rotate: 360deg;
+  }
+}
+.sun-reach {
+  transition: transform 1.2s var(--ease-out);
+}
+.sun-breathe {
+  animation: sun-breathe 6s ease-in-out infinite;
+}
+@keyframes sun-breathe {
+  50% {
+    scale: 1.025;
+  }
+}
+/*
  * A place opening: what turns around it leaves the sun and springs to its place, one after the
  * other (Orbit.tsx, Place: --dx, --dy the way back to the middle); the threads come after.
  */
