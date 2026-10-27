@@ -1,6 +1,7 @@
 import { campaignWeekEnd, campaignWeekStart, familyAccount } from "./campaign.js";
 import { dayStartIn, hourIn, hourWithin } from "./clock.js";
 import { TERRA_FAMILY } from "./decrees.js";
+import { signoriaHeld } from "./signoria.js";
 import {
   HOUR_MS,
   MINUTE_MS,
@@ -143,6 +144,7 @@ export function advanceTerraWorld(tx: Tx): TerraState | null {
   tellCellsTaken(tx, map, seen);
   payHarvests(tx, map);
   serveTerraRations(tx, map);
+  countHeldCities(tx, map);
   warnBattle(tx, cfg, map);
   if (map.closed && !map.closedSeen) {
     // Won by conquest before the week's end: the close is paid at once.
@@ -222,6 +224,17 @@ function serveTerraRations(tx: Tx, map: TerraState): void {
     } else if (p.unfed) {
       p.unfed = undefined;
     }
+  }
+}
+
+/** The cities held on the map count on their gauges (the Signoria, R2). */
+function countHeldCities(tx: Tx, map: TerraState): void {
+  for (const [id, p] of Object.entries(map.players).sort(([a], [b]) => (a < b ? -1 : 1))) {
+    if (!p.cityMinutes) continue;
+    if (!isNation(id) && tx.s.players[id])
+      for (const [city, minutes] of Object.entries(p.cityMinutes).sort())
+        signoriaHeld(tx, id, city, minutes);
+    p.cityMinutes = undefined;
   }
 }
 

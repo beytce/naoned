@@ -10,6 +10,7 @@ import { arriveMuda } from "./muda.js";
 import { settlePartners } from "./partners.js";
 import { openDueProjects } from "./projects.js";
 import { retireSeaAndBandits } from "./retired.js";
+import { closeSignoriaDays } from "./signoria.js";
 import { DAY_MS, HOUR_MS, dayIndex } from "./state.js";
 import { runTenders } from "./tenders.js";
 import { advanceTerraWorld } from "./terraWorld.js";
@@ -59,6 +60,8 @@ export function tick(tx: Tx): void {
   // The Terraferma: its fronts up to now, and its week closed when it turns (before the weekly
   // ranking, which is its glory).
   advanceTerraWorld(tx);
+  // The Signoria of the cities: each day's Podestà, once the day's deliveries and land are in.
+  closeSignoriaDays(tx);
   closeWeek(tx);
   // States of the time of the guilds: their treasuries go back to their members.
   dissolveLegacyGuilds(tx);

@@ -15,6 +15,7 @@ import {
 import { draw, pickWeighted } from "./draw.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
 import { isMudaGood } from "./muda.js";
+import { podestaAdvanceMs, signoriaArrived, signoriaToll } from "./signoria.js";
 import { maxVehiclesFor, specialtyEffects } from "./specialties.js";
 import {
   type BoardOrder,
@@ -524,16 +525,17 @@ export function deliveryOrdersFor(
 
 /**
  * Whether the merchant sees an order yet: once it opens, or an urgent one up to the carter's
- * `urgentPreviewMinutes` before (E1-6: information only, taken at its hour like any other).
+ * `urgentPreviewMinutes` before (E1-6: information only, taken at its hour like any other); the
+ * city's Podestà sees and takes its orders `signoria.previewMinutes` before they open (R2).
  */
 export function orderVisible(
   ctx: WorldContext,
   state: WorldState,
   playerId: PlayerId,
-  order: Pick<DeliveryOrder, "kind" | "opensAt">,
+  order: Pick<DeliveryOrder, "kind" | "opensAt" | "city">,
   now: number,
 ): boolean {
-  if (now >= order.opensAt) return true;
+  if (now >= order.opensAt - podestaAdvanceMs(ctx, state, playerId, order.city)) return true;
   if (order.kind !== "urgent") return false;
   const preview = specialtyEffects(ctx, state, playerId).urgentPreviewMinutes;
   return order.opensAt - now <= preview * MINUTE_MS;
@@ -925,7 +927,9 @@ export function dispatchDelivery(
     if (order.shared && boardClosed(ctx, tx.now)) fail("board_closed");
     if (order.kind === "doge" && contractsDoneToday(tx, playerId, today).includes(order.ref ?? ""))
       fail("order_done");
-    if (tx.now < order.opensAt) fail("order_not_open");
+    // The city's Podestà may take its orders a while before they open.
+    if (tx.now < order.opensAt - podestaAdvanceMs(ctx, state, playerId, order.city))
+      fail("order_not_open");
     if (tx.now >= order.expiresAt) fail("order_expired");
     // The favour of a city: its urgent orders are the members' for a while.
     if (order.kind === "urgent") {
@@ -1078,6 +1082,9 @@ function arrive(tx: Tx, d: Delivery): void {
   d.outcome = "delivered";
   // The official supplier of the good in this city is paid more.
   d.paid += supplyArrived(tx, d.playerId, city, d.cargo, paidFor, d.id);
+  // The Signoria of the city: the delivery counts on its gauge, its Podestà takes its toll.
+  signoriaArrived(tx, d.playerId, city, amount, d.departAt);
+  d.paid -= signoriaToll(tx, d.playerId, city, amount);
   // So are the goods of a manufacture on the quality path.
   let quality = 0n;
   for (const [res, paid] of Object.entries(paidFor).sort(([a], [b]) => a.localeCompare(b))) {

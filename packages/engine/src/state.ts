@@ -387,6 +387,15 @@ export interface WorldState {
     holders: Record<string, PlayerId>;
   };
   /**
+   * The Signoria of the cities (R2, `signoria.ts`): the points on each city's gauge by merchant,
+   * each city's Podestà, and the day last closed.
+   */
+  signoria?: {
+    day: number;
+    points: Record<string, Record<PlayerId, number>>;
+    podesta: Record<string, { playerId: PlayerId; since: number }>;
+  };
+  /**
    * The warehouses in the cities: this week's holders by city, the bids for next week, and the
    * units each merchant delivered from them on its last day.
    */

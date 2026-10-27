@@ -31,6 +31,7 @@ export type LedgerReason =
   | "campaign_work"
   | "decree_gabelle"
   | "decree_toll"
+  | "signoria_toll"
   | "decree_favour"
   | "supplier_bonus"
   | "tender_caution"

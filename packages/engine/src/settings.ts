@@ -1211,6 +1211,30 @@ export const worldSettingsSchema = z.object({
    * `minUnits`) is paid `bonusBps` more for it there all the next week. Off when absent.
    */
   suppliers: z.object({ bonusBps: bps, minUnits: positive }).optional(),
+  /**
+   * The Signoria of the cities (R2, docs/plan-rupture.md): a delivery's ducats, and each open hour
+   * a city is held on the Terraferma (`cityPointsPerHour`), count on the city's gauge; nothing for
+   * a delivery sent outside `openHours`. At each day's close the points keep `decayBps`, and the
+   * leader above `minPoints` is the city's Podestà (never a house of the computer, `maxCities` at
+   * most): it takes `tollBps` of the others' deliveries there (not of a merchant arrived within
+   * `newcomerDays`) and sees and takes the city's orders `previewMinutes` before they open. Off
+   * when absent.
+   */
+  signoria: z
+    .object({
+      cityPointsPerHour: qty,
+      decayBps: bps.max(10_000),
+      minPoints: qty,
+      maxCities: positive,
+      tollBps: bps.max(10_000),
+      previewMinutes: qty,
+      newcomerDays: qty,
+      openHours: z.object({
+        from: z.number().int().min(0).max(23),
+        to: z.number().int().min(0).max(24),
+      }),
+    })
+    .optional(),
   /** Weekly city projects; no needs turns them off. */
   projects: z
     .object({

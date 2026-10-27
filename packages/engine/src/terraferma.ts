@@ -86,6 +86,8 @@ export interface TerraPlayer {
   breadOwed?: number;
   /** Its bread was missing at the last meal: it recruits no more until fed. */
   unfed?: true;
+  /** Open minutes it has held each city, not yet counted on the cities' gauges (R2). */
+  cityMinutes?: Record<string, number>;
   /** When it lost its last cell: out of the week. */
   eliminatedAt?: number;
 }
@@ -611,6 +613,17 @@ function harvestStep(s: TerraState, cfg: TerraConfig, minutes: number): void {
         p.routeOwed = (p.routeOwed ?? 0n) + (pc.routeDucats * BigInt(joined * minutes)) / 60n;
     }
   }
+}
+
+/** The cities each merchant holds, for an economic step of `minutes` (the Signoria, R2). */
+function holdStep(s: TerraState, minutes: number): void {
+  s.owner.forEach((id, i) => {
+    const city = s.map.cityCode?.[i];
+    if (!id || !city || isNation(id)) return;
+    const p = s.players[id];
+    if (!p || p.eliminatedAt !== undefined) return;
+    p.cityMinutes = { ...p.cityMinutes, [city]: (p.cityMinutes?.[city] ?? 0) + minutes };
+  });
 }
 
 /** Minutes the map is open in a day (the troops' day, for their bread). */
@@ -1464,6 +1477,7 @@ function step(s: TerraState, cfg: TerraConfig, at: number, fronts = true): void 
   // The land's yield and the city routes; the troops' bread.
   harvestStep(s, cfg, cfg.stepMinutes);
   eatStep(s, cfg, cfg.stepMinutes);
+  holdStep(s, cfg.stepMinutes);
   // Glory for the land held.
   for (const [id, p] of Object.entries(s.players)) {
     if (isNation(id)) continue;
