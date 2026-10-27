@@ -688,6 +688,77 @@ async function perf(page, open, terra) {
       .map(([k, v]) => `    ${Math.round(v)} ms ${k}`);
     console.log(`PERF profile ${what}:\n${top.join("\n")}`);
   };
+  // PERF_TRACE=1: the browser's own work, from a trace (the main thread's and the rasterizers'),
+  // and what made it draw again (the invalidations), for each phase.
+  const trace = async (what, run) => {
+    const browser = page.context().browser();
+    await browser.startTracing(page, {
+      categories: [
+        "devtools.timeline",
+        "disabled-by-default-devtools.timeline",
+        "disabled-by-default-devtools.timeline.invalidationTracking",
+      ],
+    });
+    await run();
+    const events = JSON.parse((await browser.stopTracing()).toString()).traceEvents ?? [];
+    const main = events.find((e) => e.name === "thread_name" && e.args?.name === "CrRendererMain");
+    const rasters = new Set(
+      events
+        .filter((e) => e.name === "thread_name" && /Compositor|Raster/.test(e.args?.name ?? ""))
+        .map((e) => e.tid),
+    );
+    let mainMs = 0;
+    let rasterMs = 0;
+    const steps = new Map();
+    const redrawn = new Map();
+    for (const e of events) {
+      if (/InvalidationTracking/.test(e.name)) {
+        const k = `${e.args?.data?.nodeName ?? ""} (${e.args?.data?.reason ?? e.name})`.slice(
+          0,
+          100,
+        );
+        redrawn.set(k, (redrawn.get(k) ?? 0) + 1);
+      }
+      if (e.ph !== "X" || !e.dur) continue;
+      if (e.tid === main?.tid && e.name === "RunTask") mainMs += e.dur / 1000;
+      if (rasters.has(e.tid) && e.name === "RasterTask") rasterMs += e.dur / 1000;
+      if (e.tid === main?.tid) steps.set(e.name, (steps.get(e.name) ?? 0) + e.dur / 1000);
+    }
+    const top = (m, n, f) =>
+      [...m.entries()]
+        .sort((x, y) => y[1] - x[1])
+        .slice(0, n)
+        .map(([k, v]) => `    ${f(v)} ${k}`)
+        .join("\n");
+    console.log(
+      `PERF trace ${what}: main thread ${Math.round(mainMs)} ms, raster ${Math.round(rasterMs)} ms\n${top(
+        steps,
+        8,
+        (v) => `${Math.round(v)} ms`,
+      )}\n  drawn again:\n${top(redrawn, 6, (v) => `${v}×`)}`,
+    );
+  };
+  if (process.env.PERF_TRACE === "1") {
+    const b = page.viewportSize();
+    await trace("open", open);
+    await page.waitForTimeout(2000);
+    await trace("pan", async () => {
+      for (let k = 0; k < 3; k++) {
+        await page.mouse.move(b.width / 2, b.height / 2);
+        await page.mouse.down();
+        for (let i = 1; i <= 20; i++)
+          await page.mouse.move(b.width / 2 - i * 6, b.height / 2 - i * 4);
+        await page.mouse.up();
+      }
+    });
+    await trace("zoom", async () => {
+      for (let i = 0; i < 10; i++) {
+        await page.mouse.wheel(0, i < 5 ? -120 : 120);
+        await page.waitForTimeout(60);
+      }
+    });
+    await trace("idle 5 s", () => page.waitForTimeout(5000));
+  }
   if (process.env.PERF_PROFILE === "1") {
     await profile("open", open);
     const box0 = page.viewportSize();
@@ -758,6 +829,8 @@ async function perf(page, open, terra) {
   await page.unroute("**/api/game/terra");
   await page.route("**/api/game/terra", (route) => route.fulfill({ json: { terra } }));
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+  // PERF_ONLY=1: the session stops once the Terraferma is measured (about three minutes).
+  if (process.env.PERF_ONLY === "1") throw new Error("PERF_ONLY: stopped after the measures");
 }
 
 /**
