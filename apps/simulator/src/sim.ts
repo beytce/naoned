@@ -141,6 +141,8 @@ export interface SimulationResult {
   bales?: { opened: number; cards: Record<string, number>; valueBy: Record<string, number> };
   /** The war's goods (R1): taken from the merchants' stock by the Terraferma, by resource. */
   war?: { eaten: Record<string, number>; built: Record<string, number> };
+  /** The Signoria (R2): Podestà named, by city, and the merchants who held a city a day. */
+  signoria?: { named: Record<string, number>; holders: string[]; days: number };
   /** The families and the week's campaign: members, lances, battles, weeks won, decrees. */
   families?: {
     /** Members of each family at the end of the season. */
@@ -280,6 +282,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
   } as NonNullable<SimulationResult["families"]>;
   const bales = { opened: 0, cards: {}, valueBy: {} } as NonNullable<SimulationResult["bales"]>;
   const war: NonNullable<SimulationResult["war"]> = { eaten: {}, built: {} };
+  const signoria = { named: {} as Record<string, number>, holders: new Set<string>() };
   let now = START;
   const muda = { arrivals: 0, brought: 0, sold: 0, takings: 0n, buyers: new Set<string>() };
   const run = (cmd: Command): boolean => {
@@ -337,6 +340,11 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     }
     for (const e of res.effects.events) {
       if (e.type === "harvest") activity.harvests++;
+      if (e.type === "podesta_named" && e.playerId) {
+        const city = String(e.data?.city ?? "");
+        signoria.named[city] = (signoria.named[city] ?? 0) + 1;
+        signoria.holders.add(e.playerId);
+      }
       if (e.type === "muda_arrived") muda.arrivals++;
       if (e.type === "delivery_dispatched" && e.playerId) {
         activity.deliveries++;
@@ -586,6 +594,11 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
   if (familiesOn(ctx)) result.families = families;
   result.bales = bales;
   result.war = war;
+  result.signoria = {
+    named: signoria.named,
+    holders: [...signoria.holders],
+    days: options.days,
+  };
   const playerDays = result.daily.reduce((a, d) => a + d.active, 0);
   const sortedFirst = [...activity.firstDelivery].sort((a, b) => a - b);
   result.activity = {

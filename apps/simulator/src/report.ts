@@ -369,6 +369,33 @@ export function mudaChecks(r: SimulationResult): Check[] {
 }
 
 /** The road (deliveries and vehicles), with the targets of docs/plan-livraisons.md § 7. */
+/** The Signoria of the cities (R2): how often each city changes Podestà, and who held one. */
+function signoriaChecks(r: SimulationResult): Check[] {
+  const sg = r.signoria;
+  if (!sg || Object.keys(sg.named).length === 0) return [];
+  const weeks = Math.max(1, sg.days / 7);
+  const perWeek = Object.entries(sg.named)
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([city, n]) => `${city} ${(n / weeks).toFixed(1)}`);
+  const least = Math.min(...Object.values(sg.named)) / weeks;
+  return [
+    {
+      name: "Signoria : Podestà nommés par ville et par semaine",
+      target: "≥ 1 par ville et par semaine",
+      value: perWeek.join(" · "),
+      pass: least >= 1,
+      blocking: false,
+    },
+    {
+      name: "Signoria : marchands qui ont tenu une ville",
+      target: "diagnostic",
+      value: String(sg.holders.length),
+      pass: true,
+      blocking: false,
+    },
+  ];
+}
+
 /** The Terraferma played in the world: the ducats its buildings and cap destroy. */
 export function terraChecks(r: SimulationResult): Check[] {
   const days = r.daily.filter((d) => d.active > 0);
@@ -400,6 +427,7 @@ export function terraChecks(r: SimulationResult): Check[] {
       pass: true,
       blocking: false,
     },
+    ...signoriaChecks(r),
     {
       name: "Monnaie détruite par la Terraferme",
       target: "diagnostic : le puits qui remplace l'entretien",
