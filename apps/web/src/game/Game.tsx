@@ -459,6 +459,9 @@ export function Game(props: {
       if (acting.current) return null;
       acting.current = true;
       setBusy(true);
+      // A sure action is heard at the touch, not after the server (the coin waits for the money).
+      const early = soundOf(type);
+      if (early && early !== "coin") sound(early);
       try {
         const res = await request();
         versionRef.current = Math.max(versionRef.current, res.version ?? 0);
@@ -476,7 +479,7 @@ export function Game(props: {
         haptic(nothing ? "warn" : REWARDING.has(type) ? "success" : "tap");
         pressResult(!nothing);
         const cue = nothing ? null : soundOf(type);
-        if (cue) sound(cue);
+        if (cue === "coin") sound(cue);
         if (!options.quiet) {
           const told = tellRef.current(res, options.action);
           if (told) setToast(told.text, told.tone);
