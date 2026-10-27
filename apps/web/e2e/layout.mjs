@@ -688,7 +688,7 @@ async function perf(page, open, terra) {
       .map(([k, v]) => `    ${Math.round(v)} ms ${k}`);
     console.log(`PERF profile ${what}:\n${top.join("\n")}`);
   };
-  // PERF_TRACE=1: the browser's own work, from a trace (the main thread's and the rasterizers'),
+  // PERF_TRACE=1: the browser's own work, from a trace (the main thread's, and the tiles rasterized off it),
   // and what made it draw again (the invalidations), for each phase.
   const trace = async (what, run) => {
     const browser = page.context().browser();
@@ -702,11 +702,6 @@ async function perf(page, open, terra) {
     await run();
     const events = JSON.parse((await browser.stopTracing()).toString()).traceEvents ?? [];
     const main = events.find((e) => e.name === "thread_name" && e.args?.name === "CrRendererMain");
-    const rasters = new Set(
-      events
-        .filter((e) => e.name === "thread_name" && /Compositor|Raster/.test(e.args?.name ?? ""))
-        .map((e) => e.tid),
-    );
     let mainMs = 0;
     let rasterMs = 0;
     const steps = new Map();
@@ -721,7 +716,7 @@ async function perf(page, open, terra) {
       }
       if (e.ph !== "X" || !e.dur) continue;
       if (e.tid === main?.tid && e.name === "RunTask") mainMs += e.dur / 1000;
-      if (rasters.has(e.tid) && e.name === "RasterTask") rasterMs += e.dur / 1000;
+      if (e.tid !== main?.tid && e.name === "RasterTask") rasterMs += e.dur / 1000;
       if (e.tid === main?.tid) steps.set(e.name, (steps.get(e.name) ?? 0) + e.dur / 1000);
     }
     const top = (m, n, f) =>
