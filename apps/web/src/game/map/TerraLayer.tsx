@@ -615,7 +615,7 @@ export function useTerraShapes(v: TerraView | null | undefined): TerraShapes | n
       const cells = by.get(h.i) ?? [];
       // A small land is covered by its war counter, which then carries the troops itself.
       if (h.focus === "faint" || (h.focus !== "milan" && cells.length < LABEL_MIN_CELLS)) return [];
-      const cell = labelCell(map, cells, kept);
+      const cell = labelOf(map, cells, kept);
       if (cell === null) return [];
       const [x, y] = hexCenter(map, cell);
       const size = Math.min(2.4, Math.max(0.8, 0.42 * Math.sqrt(cells.length))) * map.size;
@@ -678,6 +678,18 @@ function outlineOf(map: HexMap, cells: number[]): string {
   if (outlines.size > 400) outlines.clear();
   outlines.set(key, d);
   return d;
+}
+
+/** Where a holder's name is written, sought again only when its cells change (as its outline). */
+const labelCells = new Map<string, number | null>();
+function labelOf(map: HexMap, cells: number[], kept: Set<number>): number | null {
+  const key = `${map.width}:${cells.join(",")}|${[...kept].join(",")}`;
+  const known = labelCells.get(key);
+  if (known !== undefined) return known;
+  const cell = labelCell(map, cells, kept);
+  if (labelCells.size > 400) labelCells.clear();
+  labelCells.set(key, cell);
+  return cell;
 }
 
 /** "14:20", Paris time: when a front will reach a cell. */
@@ -775,7 +787,53 @@ export const TerraOverlay = memo(function TerraOverlay({
   /** The cell selected (a front aimed there shows the grid). */
   cell: number | null;
 }) {
-  const fresh = useFresh(v);
+  // The land's edges fade into the night (6 % of its width): no frame left on a wide screen. Two
+  // gradients, across and down, rather than a blurred frame: a filter would be drawn again with
+  // the whole land at every repaint.
+  const xs = s.edges.map((e) => e.x);
+  const ys = s.edges.map((e) => e.y);
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const feather = (x1 - x0) * 0.06;
+  const box = {
+    x: x0 - s.map.size,
+    y: y0 - s.map.size,
+    width: x1 - x0 + 2 * s.map.size,
+    height: y1 - y0 + 2 * s.map.size,
+  };
+  const fade = (length: number) => {
+    const k = Math.min(0.5, (2 * feather) / Math.max(1, length));
+    return [0, k, 1 - k, 1].map((offset, j) => (
+      // biome-ignore lint/suspicious/noArrayIndexKey: a gradient's four fixed stops
+      <stop key={j} offset={offset} stopColor="white" stopOpacity={j === 0 || j === 3 ? 0 : 1} />
+    ));
+  };
+  return (
+    <>
+      <g mask="url(#terra-fade-x)">
+        <g mask="url(#terra-fade-y)">
+          <TerraGround v={v} s={s} cell={cell} />
+        </g>
+      </g>
+      <defs>
+        <linearGradient id="terra-fade-gx" x1="0" x2="1" y1="0" y2="0">
+          {fade(box.width)}
+        </linearGradient>
+        <linearGradient id="terra-fade-gy" x1="0" x2="0" y1="0" y2="1">
+          {fade(box.height)}
+        </linearGradient>
+        <mask id="terra-fade-x" maskUnits="userSpaceOnUse" {...box}>
+          <rect {...box} fill="url(#terra-fade-gx)" />
+        </mask>
+        <mask id="terra-fade-y" maskUnits="userSpaceOnUse" {...box}>
+          <rect {...box} fill="url(#terra-fade-gy)" />
+        </mask>
+      </defs>
+    </>
+  );
+});
+
+/** The land under the fronts: the territories, the grid, the reach, the selection, the night. */
+function TerraGround({ v, s, cell }: { v: TerraView; s: TerraShapes; cell: number | null }) {
   const aiming = cell !== null && cell in v.costs;
   const costKeys = Object.keys(v.costs).join(",");
   const playing = !!v.me && !v.closed;
@@ -784,27 +842,9 @@ export const TerraOverlay = memo(function TerraOverlay({
     () => (playing ? hexPath(s.map, Object.keys(v.costs).map(Number), 0.78) : ""),
     [costKeys, s.map, playing],
   );
-  // The land's edges fade into the night (6 % of its width): no frame left on a wide screen.
-  const xs = s.edges.map((e) => e.x);
-  const ys = s.edges.map((e) => e.y);
-  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-  const feather = (x1 - x0) * 0.06;
   return (
-    <g mask="url(#terra-fade)">
+    <>
       <defs>
-        <filter id="terra-feather" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation={feather / 2} />
-        </filter>
-        <mask id="terra-fade" maskUnits="userSpaceOnUse">
-          <rect
-            x={x0 - s.map.size + feather}
-            y={y0 - s.map.size + feather}
-            width={x1 - x0 + 2 * s.map.size - 2 * feather}
-            height={y1 - y0 + 2 * s.map.size - 2 * feather}
-            fill="white"
-            filter="url(#terra-feather)"
-          />
-        </mask>
         <pattern
           id="terra-hatch"
           width="4"
@@ -846,17 +886,6 @@ export const TerraOverlay = memo(function TerraOverlay({
           />
         </g>
       ))}
-      {/* Cells just taken flash and tint in, over a second. */}
-      {fresh.map((f) => (
-        <path
-          key={`fresh-${f.cell}-${f.at}`}
-          d={`M${hexCorners(s.map, f.cell, 1.02)
-            .map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`)
-            .join("L")}Z`}
-          fill={s.tone[f.holder] ?? P.cream}
-          className="terra-take"
-        />
-      ))}
       {/* The grid, as on OpenFront: every cell's edge, brighter while aiming. */}
       <path
         d={s.grid}
@@ -876,6 +905,55 @@ export const TerraOverlay = memo(function TerraOverlay({
           strokeDasharray="1 1"
         />
       )}
+      {cell !== null && (
+        <path
+          d={`M${hexCorners(s.map, cell)
+            .map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`)
+            .join("L")}Z`}
+          fill={P.info}
+          fillOpacity="0.2"
+          stroke={P.info}
+          strokeWidth="2"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )}
+      {!v.open && (
+        <rect
+          x={Math.min(...s.edges.map((e) => e.x)) - 40}
+          y={Math.min(...s.edges.map((e) => e.y)) - 40}
+          width={Math.max(...s.edges.map((e) => e.x)) - Math.min(...s.edges.map((e) => e.x)) + 80}
+          height={Math.max(...s.edges.map((e) => e.y)) - Math.min(...s.edges.map((e) => e.y)) + 80}
+          fill="#14243A"
+          fillOpacity="0.28"
+        />
+      )}
+    </>
+  );
+}
+
+/**
+ * The cells just taken flashing, where the fronts go next, the next cell breathing, and their lines
+ * marching to their aim; dimmed
+ * as the night's veil dims the land when the war sleeps. Over the overlay, in an SVG of its own
+ * (WorldMap's `moving`): they move at every frame, the land under them is not laid out again.
+ */
+export const TerraFronts = memo(function TerraFronts({ v, s }: { v: TerraView; s: TerraShapes }) {
+  const march = useMarch(v.open);
+  const fresh = useFresh(v);
+  return (
+    <g ref={march} opacity={v.open ? undefined : 0.72}>
+      {/* Cells just taken flash and tint in, over a second. */}
+      {fresh.map((f) => (
+        <path
+          key={`fresh-${f.cell}-${f.at}`}
+          d={`M${hexCorners(s.map, f.cell, 1.02)
+            .map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`)
+            .join("L")}Z`}
+          fill={s.tone[f.holder] ?? P.cream}
+          className="terra-take"
+        />
+      ))}
       {/* Where the fronts go next, and in what order: the next cell breathes. */}
       {followed(v).map((f) => {
         const color = f.mine ? P.gold : P.vermilion;
@@ -909,19 +987,6 @@ export const TerraOverlay = memo(function TerraOverlay({
           </g>
         );
       })}
-      {cell !== null && (
-        <path
-          d={`M${hexCorners(s.map, cell)
-            .map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`)
-            .join("L")}Z`}
-          fill={P.info}
-          fillOpacity="0.2"
-          stroke={P.info}
-          strokeWidth="2"
-          strokeLinejoin="round"
-          vectorEffect="non-scaling-stroke"
-        />
-      )}
       {v.fronts.map((f) => {
         const from = frontFrom(v, s.map, f.owner, f.aim);
         if (!from) return null;
@@ -941,26 +1006,43 @@ export const TerraOverlay = memo(function TerraOverlay({
             strokeWidth={strong ? 1.6 : 1.2}
             strokeDasharray="1.5 3.5"
             strokeLinecap="round"
-            className={v.open ? "route-march" : undefined}
+            // Only the fronts that concern the merchant march: each marching line is drawn again at
+            // every frame.
+            className={v.open && strong ? "terra-march" : undefined}
           />
         );
       })}
-      {!v.open && (
-        <rect
-          x={Math.min(...s.edges.map((e) => e.x)) - 40}
-          y={Math.min(...s.edges.map((e) => e.y)) - 40}
-          width={Math.max(...s.edges.map((e) => e.x)) - Math.min(...s.edges.map((e) => e.x)) + 80}
-          height={Math.max(...s.edges.map((e) => e.y)) - Math.min(...s.edges.map((e) => e.y)) + 80}
-          fill="#14243A"
-          fillOpacity="0.28"
-        />
-      )}
     </g>
   );
 });
 
 function selectedHolder(v: TerraView, cell: number | null): number {
   return cell === null ? -2 : holderAt(v, cell);
+}
+
+/**
+ * The fronts' march and their next cells' breath, ten steps a second: a CSS animation of a dash or
+ * a fill is drawn again at every frame of the screen, sixty a second, and keeps a phone busy while
+ * nothing else moves. Written as two properties of their group (`--march`, `--breath`, index.css).
+ */
+function useMarch(on: boolean) {
+  const group = useRef<SVGGElement>(null);
+  useEffect(() => {
+    if (!on || reducedMotion()) return;
+    const start = performance.now();
+    const id = setInterval(() => {
+      const el = group.current;
+      if (!el || document.hidden) return;
+      const t = performance.now() - start;
+      el.style.setProperty("--march", ((-10 * (t % 900)) / 900).toFixed(2));
+      el.style.setProperty(
+        "--breath",
+        (0.25 - 0.13 * Math.cos((2 * Math.PI * t) / 1600)).toFixed(3),
+      );
+    }, 100);
+    return () => clearInterval(id);
+  }, [on]);
+  return group;
 }
 
 /** The cells that changed hands since the last fetch, for 450 ms. */
