@@ -199,7 +199,7 @@ export function BaleScreen(props: GameProps) {
               onClick={open}
               disabled={b.available <= 0 || phase !== "idle"}
               aria-label={t.open}
-              className="relative rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold disabled:cursor-default"
+              className="relative rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-info disabled:cursor-default"
             >
               <BaleArt
                 size={210}

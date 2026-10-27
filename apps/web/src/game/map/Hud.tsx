@@ -47,7 +47,7 @@ function Orb({
       data-hud="orb"
       onClick={onClick}
       style={{ width: hit, height: hit }}
-      className={`pointer-events-auto relative flex shrink-0 items-center justify-center transition active:scale-90 ${ink}`}
+      className={`pointer-events-auto relative flex shrink-0 items-center justify-center rounded-full transition active:scale-90 ${ink}`}
     >
       <span
         style={{ width: size, height: size }}
@@ -244,7 +244,7 @@ export function MapHud({
           data-hud="identity"
           aria-label={`${fr.game.tabs.profil} · ${pseudo}`}
           onClick={onProfile}
-          className="pointer-events-auto flex min-w-0 max-w-full items-center gap-2 justify-self-start text-left transition active:scale-95 min-[360px]:gap-2.5 lg:max-w-xs"
+          className="pointer-events-auto flex min-w-0 max-w-full items-center gap-2 justify-self-start rounded-2xl text-left transition active:scale-95 min-[360px]:gap-2.5 lg:max-w-xs"
         >
           <SeasonRing progress={seasonProgress}>
             <Crest crest={crest} size={32} />
@@ -393,7 +393,7 @@ export function MapHud({
                 aria-label={fr.game.map.fleet.open}
                 aria-expanded={fleetOpen}
                 data-hud="carts"
-                className="pointer-events-auto flex min-h-11 items-center gap-2 transition active:scale-95"
+                className="pointer-events-auto flex min-h-11 items-center gap-2 rounded-full transition active:scale-95"
               >
                 <span className="font-display text-lg font-extrabold tabular-nums text-lagoon [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]">
                   {freeCarts} / {carts}
@@ -542,7 +542,7 @@ function Door({
       aria-label={locked ? `${label} : ${locked}` : label}
       aria-disabled={locked ? true : undefined}
       // The way back is written in cream, never gold: it reads as a door, not as the tab shown.
-      className={`pointer-events-auto relative flex w-16 flex-col items-center gap-1 transition active:scale-90 ${active ? "text-cream" : locked ? "text-muted" : "text-cream-dim"}`}
+      className={`pointer-events-auto relative flex w-16 flex-col items-center gap-1 rounded-2xl transition active:scale-90 ${active ? "text-cream" : locked ? "text-muted" : "text-cream-dim"}`}
     >
       {why && locked && (
         <span className="absolute bottom-full mb-2 w-44 animate-fade bg-night-4 px-3 py-2 text-center text-xs leading-snug text-cream shadow-lg shadow-black/40 slab">

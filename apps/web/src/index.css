@@ -130,9 +130,12 @@
   .font-display {
     font-stretch: 125%;
   }
-  /* Keyboard focus: a gold ring, never on a tap. */
+  /*
+   * Keyboard focus: a lapis ring (the selection's colour; gold is the action's), never on a tap.
+   * A round control carries its own rounding, so that the ring follows it.
+   */
   :focus-visible {
-    outline: 2px solid rgb(var(--gold));
+    outline: 2px solid rgb(var(--info));
     outline-offset: 2px;
   }
   button {
