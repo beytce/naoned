@@ -6,6 +6,7 @@ import {
   type WorldState,
   alliesOf,
   bombardTargets,
+  breadPerDay,
   campaignWeekEnd,
   capOf,
   cellCost,
@@ -288,6 +289,15 @@ export function terraView(
               today.gifts,
           ),
           programme: s.programme?.[playerId] ?? null,
+          /**
+           * The troops' bread (R1): what they eat in a day of open hours (in 1/10 000 of a loaf),
+           * the bread in stock, and whether it was missing at the last meal (no recruits).
+           */
+          bread: {
+            perDay: breadPerDay(s, cfg, playerId),
+            stock: state.inventories?.[playerId]?.bread?.available ?? 0,
+            unfed: !!me.unfed,
+          },
         }
       : null,
     ranking: ranking
@@ -335,6 +345,10 @@ export function terraView(
       /** Diplomacy: signals, ducats to allies, embargo (null: off). */
       diplomacy: cfg.diplomacy
         ? { ducatGiftPerDay: cfg.diplomacy.ducatGiftPerDay, embargoBps: cfg.diplomacy.embargoBps }
+        : null,
+      /** The war's goods (R1): bread for the cap, materials by building (null: ducats only). */
+      supply: cfg.supply
+        ? { raiseBread: cfg.supply.raiseBread, materials: cfg.supply.buildingMaterials }
         : null,
       /** Minutes a front takes for a cell of free land, and of a rival's. */
       neutralMinutes: cfg.stepMinutes * cfg.fronts.neutralEverySteps,

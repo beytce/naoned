@@ -206,6 +206,26 @@ export function pushTextEn(
         body: `You finish ${ordinal(Number(data.rank))} (${data.glory ? `${gain} Glory` : `${sign}${ducats(gain)} ducats`}).${award}`,
       };
     }
+    case "signoria": {
+      // Italian names stay Italian: the city's code, capitalised.
+      const code = String(data.city ?? "");
+      const city = code.charAt(0).toUpperCase() + code.slice(1);
+      const by = data.byName ? String(data.byName) : "A rival";
+      if (data.event === "podesta_named")
+        return {
+          title: `You are Podesta of ${city}`,
+          body: "The city is yours: a toll on the others' deliveries, and its orders before them.",
+        };
+      if (data.event === "podesta_lost")
+        return {
+          title: `${city} slips away`,
+          body: `${by} took ${city} from you. Deliver there, or hold it on the Terraferma, to win it back.`,
+        };
+      return {
+        title: `${by} passes you in ${city}`,
+        body: `${by} leads ${city}'s gauge. The Podesta is decided at midnight.`,
+      };
+    }
     case "siege":
       if (data.event === "terra_bombarded")
         return {
@@ -291,6 +311,11 @@ export function pushTextEn(
 
 function terraText(data: Record<string, unknown>): { title: string; body: string } | null {
   switch (data.event) {
+    case "terra_hungry":
+      return {
+        title: "Your troops are hungry",
+        body: "The bread has run out: you recruit no more. Buy bread at the Rialto or bake some.",
+      };
     case "terra_ducats_received":
       return {
         title: "An ally sends you ducats",

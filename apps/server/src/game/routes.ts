@@ -4,7 +4,9 @@ import {
   freeBatches,
   hasPass,
   isNation,
+  podestaOf,
   rushCost,
+  signoriaStandings,
   supplierOf,
   supplierStandings,
   weekReplay,
@@ -1352,6 +1354,70 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
         holder: l.holder ? person(l.holder) : null,
         top: l.top.map((x) => ({ ...person(x.playerId), units: x.units })),
         mine: l.mine,
+      })),
+    });
+  });
+
+  /**
+   * The Signoria of the cities (R2): each city's Podestà, the three first on its gauge and the
+   * merchant's own points, with names and crests.
+   */
+  app.get("/api/game/signoria", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const state = world.current;
+    const rules = world.ctx.settings.signoria;
+    if (!rules) return toJson({ rules: null, cities: [] });
+    const lines = world.ctx.theme.cities.map((c) => {
+      const standings = signoriaStandings(state, c.code);
+      return {
+        city: c.code,
+        podesta: podestaOf(state, c.code) ?? null,
+        since: state.signoria?.podesta[c.code]?.since ?? null,
+        top: standings.slice(0, 3),
+        mine: standings.find((x) => x.playerId === account.id)?.points ?? 0,
+        total: standings.reduce((n, x) => n + x.points, 0),
+      };
+    });
+    const ids = [
+      ...new Set(lines.flatMap((l) => [l.podesta, ...l.top.map((x) => x.playerId)])),
+    ].filter((x): x is string => !!x);
+    const rows =
+      ids.length === 0
+        ? []
+        : await db
+            .select({
+              id: accounts.id,
+              pseudo: accounts.pseudo,
+              crest: accounts.crest,
+              bot: accounts.isBot,
+            })
+            .from(accounts)
+            .where(inArray(accounts.id, ids));
+    const who = new Map(rows.map((r) => [r.id, r]));
+    const person = (id: string) => ({
+      id,
+      me: id === account.id,
+      pseudo: who.get(id)?.pseudo ?? null,
+      crest: who.get(id)?.crest ?? null,
+      bot: who.get(id)?.bot ?? false,
+    });
+    return toJson({
+      rules: {
+        tollBps: rules.tollBps,
+        previewMinutes: rules.previewMinutes,
+        maxCities: rules.maxCities,
+        cityPointsPerHour: rules.cityPointsPerHour,
+        decayBps: rules.decayBps,
+        minPoints: rules.minPoints,
+      },
+      cities: lines.map((l) => ({
+        city: l.city,
+        podesta: l.podesta ? person(l.podesta) : null,
+        since: l.since,
+        top: l.top.map((x) => ({ ...person(x.playerId), points: x.points })),
+        mine: l.mine,
+        total: l.total,
       })),
     });
   });

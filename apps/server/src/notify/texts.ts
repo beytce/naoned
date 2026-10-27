@@ -207,6 +207,24 @@ export function pushText(
         body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${data.glory ? `${gain} de Gloire` : `${sign}${ducats(gain)} ducats`}).${award}`,
       };
     }
+    case "signoria": {
+      const city = cities[String(data.city)] ?? String(data.city ?? "");
+      const by = data.byName ? String(data.byName) : "Un rival";
+      if (data.event === "podesta_named")
+        return {
+          title: `Vous êtes Podestà de ${city}`,
+          body: "La ville est à vous : un droit sur les livraisons des autres, et ses commandes avant eux.",
+        };
+      if (data.event === "podesta_lost")
+        return {
+          title: `${city} vous échappe`,
+          body: `${by} vous a repris ${city}. Livrez-y, ou tenez-la sur la Terraferme, pour la reprendre.`,
+        };
+      return {
+        title: `${by} vous dépasse à ${city}`,
+        body: `${by} mène la jauge de ${city}. Le Podestà se décide à minuit.`,
+      };
+    }
     case "siege":
       if (data.event === "terra_bombarded")
         return {
@@ -302,6 +320,11 @@ const TERRA_DECREES: Record<string, string> = {
 /** The Terraferma's news (docs/plan-terraferme.md), or null for another event. */
 function terraText(data: Record<string, unknown>): { title: string; body: string } | null {
   switch (data.event) {
+    case "terra_hungry":
+      return {
+        title: "Vos troupes ont faim",
+        body: "Le pain manque : vous ne recrutez plus. Achetez du pain au Rialto ou cuisez-en.",
+      };
     case "terra_ducats_received":
       return {
         title: "Un allié vous envoie des ducats",

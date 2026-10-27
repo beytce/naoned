@@ -62,6 +62,8 @@ export const NOTIFICATION_KINDS = [
   "wave",
   // A streak of chests of 3 days or more, today's still closed, at 19 h (E3-10).
   "streak",
+  // The Signoria of the cities (R2): named Podestà, a city lost, the lead taken by a rival.
+  "signoria",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -77,6 +79,8 @@ const TERRA_NEWS: ReadonlySet<string> = new Set([
   "terra_battle_soon",
   "terra_bombarded",
   "terra_ducats_received",
+  // The war eats the goods (R1): the troops' bread ran out.
+  "terra_hungry",
 ]);
 /**
  * Kinds sent only to whoever asked for them (off by default): their name in `push_off` turns
@@ -115,6 +119,7 @@ const OPENS: Partial<Record<NotificationKind, string>> = {
   skirmish_call: "terra",
   wave: "cargo",
   streak: "notices",
+  signoria: "notices",
 };
 
 /** The link a push opens: a place of the list, and where it comes from for the measures. */
@@ -156,6 +161,7 @@ export class Notifier {
   async fromEffects(fx: Effects, now: number): Promise<void> {
     await this.familyNews(fx, now);
     await this.mudaNews(fx, now);
+    await this.signoriaNews(fx, now);
     const fills = fx.events.filter((e) => e.type === "order_filled" && e.playerId);
     if (fills.length === 0) return;
     const people = await this.people();
@@ -196,6 +202,47 @@ export class Notifier {
       n.data.counterpartyName = who === "market_maker" ? null : (name.get(who) ?? null);
     }
     await this.send([...grouped.values()], now);
+  }
+
+  /**
+   * The Signoria of the cities (R2), to people only, with the rival named: a city held, a city
+   * lost, the lead of a city's gauge taken by another.
+   */
+  private async signoriaNews(fx: Effects, now: number): Promise<void> {
+    const news = fx.events.filter(
+      (e) =>
+        e.playerId &&
+        (e.type === "podesta_named" ||
+          e.type === "podesta_lost" ||
+          e.type === "signoria_overtaken"),
+    );
+    if (news.length === 0) return;
+    const people = await this.people();
+    const mine = news.filter((e) => people.has(e.playerId ?? ""));
+    if (mine.length === 0) return;
+    const ids = [...new Set(mine.map((e) => String(e.data?.by ?? "")))].filter((id) =>
+      /^[0-9a-f-]{36}$/.test(id),
+    );
+    const rows =
+      ids.length === 0
+        ? []
+        : await this.db
+            .select({ id: accounts.id, pseudo: accounts.pseudo })
+            .from(accounts)
+            .where(inArray(accounts.id, ids));
+    const name = new Map(rows.map((r) => [r.id, r.pseudo]));
+    await this.send(
+      mine.map((e) => ({
+        accountId: e.playerId ?? "",
+        kind: "signoria" as const,
+        data: {
+          event: e.type,
+          city: e.data?.city ?? null,
+          byName: e.data?.by ? (name.get(String(e.data.by)) ?? null) : null,
+        },
+      })),
+      now,
+    );
   }
 
   /** The galleys of the Muda are in: everyone hears it, with what they brought. */

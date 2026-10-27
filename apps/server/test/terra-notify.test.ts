@@ -31,3 +31,23 @@ describe("the Terraferma's notices", () => {
     );
   });
 });
+
+describe("the war's and the Signoria's notices (R1, R2)", () => {
+  it("tell hungry troops, and name the rival who took a city", () => {
+    expect(pushText("family", { event: "terra_hungry" }).title).toBe("Vos troupes ont faim");
+    const cities = { padova: "Padoue" };
+    const lost = pushText(
+      "signoria",
+      { event: "podesta_lost", city: "padova", byName: "Morosini" },
+      cities,
+    );
+    expect(lost.title).toBe("Padoue vous échappe");
+    expect(lost.body).toContain("Morosini vous a repris Padoue");
+    expect(pushText("signoria", { event: "podesta_named", city: "padova" }, cities).title).toBe(
+      "Vous êtes Podestà de Padoue",
+    );
+    expect(
+      pushText("signoria", { event: "signoria_overtaken", city: "padova" }, cities).title,
+    ).toBe("Un rival vous dépasse à Padoue");
+  });
+});

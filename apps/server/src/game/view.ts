@@ -12,6 +12,7 @@ import {
   boardTakes,
   bookSide,
   cashAccount,
+  citiesHeldBy,
   costForLevel,
   dayIndex,
   escrowAccount,
@@ -767,6 +768,19 @@ export function playerView(
     warehouses: warehousesView(ctx, state, playerId, now),
     // The merchant's fondaci, per city on a road, and what the next level costs (E1-3).
     fondaci: fondaciView(ctx, state, playerId),
+    // The Signoria of the cities (R2): the cities the merchant is Podestà of, each city's
+    // Podestà (names and gauges come from GET /api/game/signoria), and its rules.
+    signoria: ctx.settings.signoria
+      ? {
+          held: citiesHeldBy(state, playerId),
+          podesta: Object.fromEntries(
+            Object.entries(state.signoria?.podesta ?? {}).map(([city, p]) => [city, p.playerId]),
+          ),
+          tollBps: ctx.settings.signoria.tollBps,
+          previewMinutes: ctx.settings.signoria.previewMinutes,
+          maxCities: ctx.settings.signoria.maxCities,
+        }
+      : null,
     // The goods the merchant is the official supplier of, by city, this week.
     supplies: Object.entries(state.suppliers?.holders ?? {})
       .filter(([, id]) => id === playerId)

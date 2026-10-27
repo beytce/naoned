@@ -838,7 +838,8 @@ export type NotificationKind =
   | "morning"
   | "skirmish_call"
   | "wave"
-  | "streak";
+  | "streak"
+  | "signoria";
 
 export interface Notice {
   id: number;

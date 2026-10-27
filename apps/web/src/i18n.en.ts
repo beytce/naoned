@@ -1508,6 +1508,7 @@ export const en: Dictionary = {
         colleganza_share: "Colleganza shares",
         loan: "Bank loans",
         decree_share: "Share of the decrees",
+        signoria_toll: "The Podestà's toll",
         delivery: "Deliveries",
       } as Record<string, string>,
       road: {
@@ -1730,18 +1731,26 @@ export const en: Dictionary = {
         `The galleys of the Muda are at the quay: the Dogana sells ${goods || "the goods from overseas"} at the Rialto.`,
       siege: (land: string, by: string, lances: number, time: string) =>
         `${land} threatened: ${lances} troops ${by} arrive at ${time}. Reinforce the garrison!`,
+      signoria: (event: string, city: string, by: string | null) =>
+        event === "podesta_named"
+          ? `You are Podestà of ${city}: a toll on the others' deliveries, and its orders before them.`
+          : event === "podesta_lost"
+            ? `${by ?? "A rival"} took ${city} from you.`
+            : `${by ?? "A rival"} passes you on the gauge of ${city}.`,
       family: (event: string, data: Record<string, string>) =>
-        event === "skirmish_aborted"
-          ? skirmishInterrupted
-          : event === "land_lost"
-            ? `${data.land} is lost, taken by ${data.by}.`
-            : event === "decree_share"
-              ? `Your share of the decrees: ${data.amount}.`
-              : data.won === "1"
-                ? `Your family wins the week${data.decrees ? ` and imposes ${data.decrees}` : ""}!`
-                : data.winner
-                  ? `The ${data.winner} win the week${data.decrees ? ` and impose ${data.decrees}` : ""}.`
-                  : "The week ends without a winner.",
+        event === "terra_hungry"
+          ? "Your troops are hungry: without bread, you recruit no more."
+          : event === "skirmish_aborted"
+            ? skirmishInterrupted
+            : event === "land_lost"
+              ? `${data.land} is lost, taken by ${data.by}.`
+              : event === "decree_share"
+                ? `Your share of the decrees: ${data.amount}.`
+                : data.won === "1"
+                  ? `Your family wins the week${data.decrees ? ` and imposes ${data.decrees}` : ""}!`
+                  : data.winner
+                    ? `The ${data.winner} win the week${data.decrees ? ` and impose ${data.decrees}` : ""}.`
+                    : "The week ends without a winner.",
       week: (week: number, rank: number, gain: string, award: string | null) =>
         `Week ${week}: you finish ${ordinal(rank)} (${gain}).${award ? ` You are ${award}!` : ""}`,
       push: {
@@ -1770,6 +1779,7 @@ export const en: Dictionary = {
           skirmish_call: "Calls to skirmish (a quarter of an hour before)",
           wave: "A wave of orders your stock covers (if you are away)",
           streak: "Streak reminder (7 pm, today's chest closed)",
+          signoria: "Signoria of the cities (Podestà named, a city lost, a rival ahead)",
         } as Record<string, string>,
       },
     },

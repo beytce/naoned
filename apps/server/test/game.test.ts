@@ -247,12 +247,9 @@ describe("game API", () => {
     expect(BigInt(board.today)).toBeGreaterThan(0n);
     expect(board.lines[0]).toMatchObject({ who: "me", bot: false });
     expect(board.lines[0].daily.at(-1)).toBe(board.today);
-    // The week's ranking of the city's suppliers counts the loaves.
-    const suppliers = (await get(cookie, "/api/game/suppliers")).json();
-    const line = suppliers.lines.find(
-      (l: { city: string; resource: string }) => l.city === d.route.split(":")[1],
-    );
-    expect(line.resource).toBe("bread");
+    // The city's gauge of the Signoria (R2) counts the delivery's ducats.
+    const signoria = (await get(cookie, "/api/game/signoria")).json();
+    const line = signoria.cities.find((l: { city: string }) => l.city === d.route.split(":")[1]);
     expect(line.top[0]).toMatchObject({ me: true, pseudo: null, bot: false });
     expect(line.mine).toBeGreaterThan(0);
 

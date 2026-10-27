@@ -1511,6 +1511,7 @@ const frDict = {
         colleganza_share: "Parts de colleganza",
         loan: "Prêts de la Banque",
         decree_share: "Part des décrets",
+        signoria_toll: "Droit de porte du Podestà",
         delivery: "Livraisons",
       } as Record<string, string>,
       road: {
@@ -1751,18 +1752,26 @@ const frDict = {
         `Les galères de la Muda sont à quai : la Dogana vend ${goods || "les marchandises d'outre-mer"} au Rialto.`,
       siege: (land: string, by: string, lances: number, time: string) =>
         `${land} menacée : ${lances} troupes ${by} arrivent à ${time}. Renforcez la garnison !`,
+      signoria: (event: string, city: string, by: string | null) =>
+        event === "podesta_named"
+          ? `Vous êtes Podestà de ${city} : un droit sur les livraisons des autres, et ses commandes avant eux.`
+          : event === "podesta_lost"
+            ? `${by ?? "Un rival"} vous a repris ${city}.`
+            : `${by ?? "Un rival"} vous dépasse sur la jauge de ${city}.`,
       family: (event: string, data: Record<string, string>) =>
-        event === "skirmish_aborted"
-          ? skirmishInterrupted
-          : event === "land_lost"
-            ? `${data.land} est perdue, prise par ${data.by}.`
-            : event === "decree_share"
-              ? `Votre part des décrets : ${data.amount}.`
-              : data.won === "1"
-                ? `Votre famille gagne la semaine${data.decrees ? ` et impose ${data.decrees}` : ""} !`
-                : data.winner
-                  ? `Les ${data.winner} gagnent la semaine${data.decrees ? ` et imposent ${data.decrees}` : ""}.`
-                  : "La semaine se termine sans vainqueur.",
+        event === "terra_hungry"
+          ? "Vos troupes ont faim : sans pain, vous ne recrutez plus."
+          : event === "skirmish_aborted"
+            ? skirmishInterrupted
+            : event === "land_lost"
+              ? `${data.land} est perdue, prise par ${data.by}.`
+              : event === "decree_share"
+                ? `Votre part des décrets : ${data.amount}.`
+                : data.won === "1"
+                  ? `Votre famille gagne la semaine${data.decrees ? ` et impose ${data.decrees}` : ""} !`
+                  : data.winner
+                    ? `Les ${data.winner} gagnent la semaine${data.decrees ? ` et imposent ${data.decrees}` : ""}.`
+                    : "La semaine se termine sans vainqueur.",
       week: (week: number, rank: number, gain: string, award: string | null) =>
         `Semaine ${week} : vous terminez ${rank}${rank === 1 ? "er" : "e"} (${gain}).${award ? ` Vous êtes ${award} !` : ""}`,
       push: {
@@ -1792,6 +1801,7 @@ const frDict = {
           skirmish_call: "Convocations d'escarmouche (un quart d'heure avant)",
           wave: "Vague de commandes que votre stock couvre (si vous êtes absent)",
           streak: "Rappel de série (19 h, coffre du jour fermé)",
+          signoria: "Signoria des villes (Podestà nommé, ville perdue, rival en tête)",
         } as Record<string, string>,
       },
     },
