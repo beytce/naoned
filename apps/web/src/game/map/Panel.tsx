@@ -50,7 +50,7 @@ export function ContextPanel({
           type="button"
           aria-label={fr.game.map.close}
           onClick={onClose}
-          className="absolute right-1.5 top-1.5 flex h-11 w-11 items-center justify-center rounded-full lg:right-3 lg:top-3"
+          className="absolute right-1.5 top-1.5 z-10 flex h-11 w-11 items-center justify-center rounded-full lg:right-3 lg:top-3"
         >
           <span className="hud-orb press flex h-9 w-9 items-center justify-center rounded-full text-cream">
             <span className="scale-90">{Icon.cross()}</span>
