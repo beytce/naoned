@@ -16,7 +16,7 @@ import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
 import { onBack } from "./back.js";
 import { d } from "./format.js";
-import { FxLayer, flyCoins } from "./fx.js";
+import { FxLayer, flyCoins, pressResult } from "./fx.js";
 import { harvestSummary } from "./harvest.js";
 import { connectLive } from "./live.js";
 import { MapScreen } from "./map/MapScreen.js";
@@ -468,11 +468,13 @@ export function Game(props: {
         if (res.influence !== undefined) setInfluence(res.influence);
         if (res.error) {
           haptic("warn");
+          pressResult(false);
           setToast(fr.game.errors[res.error] ?? fr.errors.unknown ?? null);
           return null;
         }
         const nothing = res.outcome?.kind === "instant" && res.outcome.filled === 0;
         haptic(nothing ? "warn" : REWARDING.has(type) ? "success" : "tap");
+        pressResult(!nothing);
         const cue = nothing ? null : soundOf(type);
         if (cue) sound(cue);
         if (!options.quiet) {
@@ -490,6 +492,7 @@ export function Game(props: {
       } catch (err) {
         const code = err instanceof ApiError ? err.code : "unknown";
         haptic("warn");
+        pressResult(false);
         setToast(fr.game.errors[code] ?? fr.errors[code] ?? fr.errors.unknown ?? null);
         return null;
       } finally {

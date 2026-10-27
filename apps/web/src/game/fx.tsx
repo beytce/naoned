@@ -36,6 +36,33 @@ export function flyCoins(gain: bigint, options: FlyOptions = {}): void {
   window.dispatchEvent(new CustomEvent(EVENT, { detail: { gain, ...options } }));
 }
 
+/** The last button pressed, for a moment: the server's answer shows on it. */
+let lastPress: { button: HTMLElement; at: number } | null = null;
+
+/** A Slab was pressed (ui.tsx): remember it until the answer comes. */
+export function pressed(button: HTMLElement): void {
+  lastPress = { button, at: Date.now() };
+}
+
+/**
+ * The server answered the action of the button just pressed: it is struck (a flash of light) or
+ * refused (it shakes, edged in cinnabar). Only a gold button pressed less than three seconds ago
+ * and still on screen; nothing for those who ask for less motion.
+ */
+export function pressResult(ok: boolean): void {
+  const press = lastPress;
+  lastPress = null;
+  if (!press || Date.now() - press.at > 3_000 || !press.button.isConnected) return;
+  if (press.button.dataset.slab !== "gold" || typeof window === "undefined" || reduced()) return;
+  const face = press.button.querySelector<HTMLElement>(".slab-face");
+  if (!face) return;
+  const cls = ok ? "slab-stamp" : "slab-nope";
+  face.classList.remove("slab-stamp", "slab-nope");
+  void face.offsetWidth;
+  face.classList.add(cls);
+  face.addEventListener("animationend", () => face.classList.remove(cls), { once: true });
+}
+
 function reduced(): boolean {
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 }

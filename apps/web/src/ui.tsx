@@ -2,23 +2,27 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { P } from "./art/palette.js";
 import { onBack } from "./game/back.js";
+import { pressed } from "./game/fx.js";
 import { store } from "./game/store.js";
 import { haptic } from "./haptics.js";
 import { fr } from "./i18n.js";
 
 type Tone = "gold" | "lagoon" | "vermilion" | "ghost";
 
-/** Face and solid offset shadow of each tone. */
+/** Face of each tone; gold is a struck coin (index.css, .gold-face). */
 const TONES: Record<Tone, { face: string }> = {
-  gold: { face: "bg-gold text-ink shadow-[0_0_0_5px_rgb(var(--gold)/0.15)]" },
+  gold: { face: "gold-face" },
   lagoon: { face: "bg-lagoon text-on-lagoon" },
   vermilion: { face: "bg-vermilion text-cream" },
-  ghost: { face: "bg-transparent text-cream ring-1 ring-inset ring-line" },
+  ghost: {
+    face: "bg-transparent text-cream ring-1 ring-inset ring-line group-hover:ring-cream/40 group-active:bg-night-3",
+  },
 };
 
 /**
  * Button, in the Lagune direction: a pill, gold for the one action that matters on the screen
- * (with its halo), ghost (a fine line) for the others. Pressed, it sinks a little.
+ * (a struck coin, its light cast under it), ghost (a fine line) for the others. Pressed, it sinks
+ * at once; let go, it springs back; the server's answer strikes it or shakes it (fx.tsx).
  */
 export function Slab(props: {
   children: ReactNode;
@@ -35,6 +39,10 @@ export function Slab(props: {
   coach?: string;
   /** The whole action, when the slab only shows a sign of it. */
   label?: string;
+  /** Waiting for the server: a light turns around the pill, which stays bright but untouchable. */
+  busy?: boolean;
+  /** Something to take (lots ready): a light runs across the gold now and then. */
+  shine?: boolean;
 }) {
   const size = {
     // Drawn small, touched at 44 px: the hit area reaches 8 px above and below the pill.
@@ -59,23 +67,29 @@ export function Slab(props: {
       </button>
     );
   const tone = TONES[props.tone ?? "gold"];
+  const gold = (props.tone ?? "gold") === "gold";
   return (
     <button
       type={props.type ?? "button"}
-      onClick={() => {
+      onClick={(e) => {
+        if (props.busy) return;
         haptic("tap");
+        pressed(e.currentTarget);
         props.onClick?.();
       }}
       disabled={props.disabled}
+      aria-busy={props.busy || undefined}
       data-coach={props.coach}
       data-slab={props.tone ?? "gold"}
       aria-label={props.label}
       className={`group relative isolate inline-flex font-display font-extrabold disabled:pointer-events-none disabled:opacity-35 ${props.size === "sm" ? "before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']" : ""} ${props.className ?? ""}`}
     >
       <span
-        className={`slab-face flex w-full items-center justify-center rounded-full text-center leading-tight transition-transform duration-100 ease-out group-hover:brightness-105 group-active:scale-[0.97] ${size} ${tone.face}`}
+        className={`slab-face press relative flex w-full items-center justify-center overflow-hidden rounded-full text-center leading-tight group-hover:brightness-105 ${props.busy ? "slab-busy" : gold && props.shine ? "slab-shine" : ""} ${size} ${tone.face}`}
       >
-        <span>{unitsKept(props.children)}</span>
+        <span className="relative inline-flex items-center justify-center gap-2">
+          {unitsKept(props.children)}
+        </span>
       </span>
     </button>
   );

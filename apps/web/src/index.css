@@ -721,14 +721,128 @@
  * (Coach.tsx marks its target data-coach-lit).
  */
 body[data-coaching] button[data-slab="gold"]:not([data-coach-lit]) .slab-face {
-  background-color: transparent;
+  background: transparent;
   color: rgb(var(--cream));
   box-shadow: inset 0 0 0 1px rgb(var(--line));
 }
+
+/*
+ * The gold button, a struck coin (audit of 27 October 2026): a ducat's relief (pale gold at the
+ * top, deep gold at the foot, a thin light on its upper edge) and a gold light cast under it,
+ * instead of a flat ring that read grey on the night. The one source of a button's gold: Slab,
+ * the panel's actions, and the guide's target.
+ */
+.gold-face,
 body[data-coaching] button[data-slab="ghost"][data-coach-lit] .slab-face {
-  background-color: rgb(var(--gold));
+  background: linear-gradient(
+    180deg,
+    rgb(var(--gold-soft)) 0%,
+    rgb(var(--gold)) 42%,
+    rgb(var(--gold-deep)) 100%
+  );
   color: rgb(var(--ink));
-  box-shadow: 0 0 0 5px rgb(var(--gold) / 0.15);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), inset 0 -2px 0 rgb(0 0 0 / 0.14), 0 10px 24px
+    -8px rgb(var(--gold) / 0.6);
+}
+/*
+ * Pressed, a slab sinks at once; let go, it springs back. The face of a Slab, and the round of a
+ * panel's action.
+ */
+.press {
+  transition: transform var(--t-base) var(--spring), box-shadow var(--t-base) var(--ease-out),
+    background-color var(--t-quick) var(--ease-out);
+}
+button:active > .press {
+  transform: translateY(1px) scale(0.96);
+  transition-duration: var(--t-tap);
+  transition-timing-function: var(--ease-out);
+}
+button:active > .press.gold-face {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), inset 0 -1px 0 rgb(0 0 0 / 0.14), 0 4px 10px
+    -6px rgb(var(--gold) / 0.6);
+}
+/* Something to take (lots ready, a bale): a light runs across the gold, every five seconds. */
+.slab-shine::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgb(255 250 230 / 0.65) 50%, transparent 65%);
+  background-size: 260% 100%;
+  background-position: 140% 0;
+  animation: slab-shine 5s var(--ease-out) 1.2s infinite;
+}
+@keyframes slab-shine {
+  0% {
+    background-position: 140% 0;
+  }
+  22%,
+  100% {
+    background-position: -140% 0;
+  }
+}
+/* Waiting for the server: a light turns around the pill, its words stay readable. */
+@property --slab-turn {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.slab-busy::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--slab-turn),
+    transparent 0 68%,
+    rgb(255 255 255 / 0.9) 84%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: slab-busy 0.9s linear infinite;
+}
+@keyframes slab-busy {
+  to {
+    --slab-turn: 360deg;
+  }
+}
+/* The server's answer, on the button touched (fx.tsx, pressResult): struck, or refused. */
+.slab-stamp {
+  animation: slab-stamp 0.32s var(--ease-out);
+}
+@keyframes slab-stamp {
+  0% {
+    filter: brightness(1.7);
+    transform: scale(1.03);
+  }
+  100% {
+    filter: none;
+    transform: none;
+  }
+}
+.slab-nope {
+  animation: slab-nope 0.26s ease-in-out;
+}
+@keyframes slab-nope {
+  0%,
+  100% {
+    transform: none;
+    box-shadow: inset 0 0 0 2px rgb(var(--vermilion));
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  45% {
+    transform: translateX(5px);
+  }
+  70% {
+    transform: translateX(-3px);
+  }
 }
 
 /* Lorenzo's bubble at the top of the screen (Coach.tsx): the toasts go to the foot. */
