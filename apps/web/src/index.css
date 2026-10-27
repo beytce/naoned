@@ -214,137 +214,17 @@
   }
 }
 
-/* The road map: urgent cities pulse. */
-.map-pulse {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: map-pulse 1.6s ease-out infinite;
-}
-@keyframes map-pulse {
-  0% {
-    transform: scale(0.8);
-    opacity: 0.9;
-  }
-  100% {
-    transform: scale(1.6);
-    opacity: 0;
-  }
-}
-.map-march {
-  animation: map-march 1.2s linear infinite;
-}
-@keyframes map-march {
-  to {
-    stroke-dashoffset: -16;
-  }
-}
-
-/* A section's blocks rise one after the other (the screen's root, then its direct children). */
-.stagger > * > * {
-  animation: stagger-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.stagger > * > *:nth-child(2) {
-  animation-delay: 45ms;
-}
-.stagger > * > *:nth-child(3) {
-  animation-delay: 90ms;
-}
-.stagger > * > *:nth-child(4) {
-  animation-delay: 135ms;
-}
-.stagger > * > *:nth-child(5) {
-  animation-delay: 180ms;
-}
-.stagger > * > *:nth-child(n + 6) {
-  animation-delay: 220ms;
-}
-@keyframes stagger-rise {
-  0% {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  100% {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* The page's ambient light, its colour following the section; shapes drifting in the haze. */
-.ambient {
-  transition: opacity 0.6s ease;
-}
-.drift {
-  animation: drift 26s ease-in-out infinite alternate;
-}
-@keyframes drift {
-  0% {
-    transform: translate(0, 0) rotate(-8deg);
-  }
-  100% {
-    transform: translate(28px, -36px) rotate(6deg);
-  }
-}
-
-/* The domain's people and carts: a worker's step, a cart's jolt on the road. */
-.worker-step {
-  animation: worker-step 0.5s ease-in-out infinite alternate;
-}
-@keyframes worker-step {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-1.5px);
-  }
-}
-.cart-roll {
-  animation: cart-roll 0.7s ease-in-out infinite alternate;
-}
-@keyframes cart-roll {
-  0% {
-    transform: translateY(0) rotate(-1deg);
-  }
-  100% {
-    transform: translateY(-1px) rotate(1deg);
-  }
-}
-
-/* The domain: a workshop harvested jumps; what it gave rises from its plot and fades. */
-.domain-bump {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation: domain-bump 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-@keyframes domain-bump {
-  0% {
-    transform: scale(1, 1);
-  }
-  35% {
-    transform: scale(1.08, 0.9);
-  }
-  70% {
-    transform: scale(0.96, 1.08);
-  }
-  100% {
-    transform: scale(1, 1);
-  }
-}
-.domain-gain {
-  transform-box: fill-box;
-  animation: domain-gain 1.6s ease-out both;
-}
-@keyframes domain-gain {
-  0% {
-    transform: translateY(6px);
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-28px);
-    opacity: 0;
-  }
+/*
+ * The motion's tokens (docs/design.md, Mouvement): every new rule takes its durations and curves
+ * from here. What arrives decelerates, what leaves accelerates and is shorter, what lands springs.
+ */
+:root {
+  --t-tap: 90ms;
+  --t-quick: 160ms;
+  --t-base: 260ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 0.75, 0.4);
+  --spring: cubic-bezier(0.34, 1.45, 0.64, 1);
 }
 
 /* Players who ask for less motion: no floating, pulsing or sliding, only instant changes. */
@@ -538,26 +418,6 @@
   }
   100% {
     opacity: 0;
-  }
-}
-
-/* A quantity of the stock band that just changed: a gold beat. */
-.stock-beat {
-  animation: stock-beat 1.2s ease-out both;
-}
-@keyframes stock-beat {
-  0% {
-    transform: scale(1.18);
-    box-shadow: 0 0 0 2px rgb(var(--gold-soft));
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgb(var(--gold-soft) / 0);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .stock-beat {
-    animation: none;
   }
 }
 
