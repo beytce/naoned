@@ -117,6 +117,8 @@ export type StockReason =
   | "booty"
   | "bale_gift"
   | "terraferma_harvest"
+  | "terraferma_rations"
+  | "terraferma"
   | "tender_delivery"
   | "commission";
 

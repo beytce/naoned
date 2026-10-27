@@ -299,6 +299,18 @@ export const venice1450Settings: WorldSettingsInput = {
       mura: { price: 5_000, perCells: 10, radius: 1 },
     },
     capRaise: { amount: 20, price: 10_000, perDay: 3 },
+    // The war eats the goods (R1, docs/plan-rupture.md): a tenth of a loaf a troop and a day,
+    // bread for the cap, materials for the buildings. Calibrated in docs/calibration.md.
+    supply: {
+      breadPerTroopDay: 1_000,
+      raiseBread: 10,
+      buildingMaterials: {
+        rocca: { bricks: 10 },
+        porto: { planks: 10 },
+        bombarda: { wood: 10, planks: 10 },
+        mura: { bricks: 5, planks: 15 },
+      },
+    },
     // No limit set by the game: fronts march until their troops run out, capitals fall, Milan
     // preys on the weak rather than braking the leader.
     fronts: {

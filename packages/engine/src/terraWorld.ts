@@ -44,7 +44,7 @@ import {
   skirmishesLeft,
   withdrawFromTerra,
 } from "./terraferma.js";
-import { type Tx, addStock, balance, emit, fail, transfer } from "./tx.js";
+import { type Tx, addStock, balance, emit, fail, removeStock, transfer } from "./tx.js";
 import { seasonWeeks, weekIndex } from "./weekly.js";
 
 /**
@@ -142,6 +142,7 @@ export function advanceTerraWorld(tx: Tx): TerraState | null {
   advanceTerra(map, cfg, Math.min(tx.now, end));
   tellCellsTaken(tx, map, seen);
   payHarvests(tx, map);
+  serveTerraRations(tx, map);
   warnBattle(tx, cfg, map);
   if (map.closed && !map.closedSeen) {
     // Won by conquest before the week's end: the close is paid at once.
@@ -195,6 +196,41 @@ function payHarvests(tx: Tx, map: TerraState): void {
       p.routeOwed = 0n;
     }
   }
+}
+
+/**
+ * The troops' bread (R1): each merchant's whole loaves owed are taken from its stock. What the
+ * stock cannot give is forgiven, and the merchant is unfed (it recruits no more) until a meal
+ * finds its bread again.
+ */
+function serveTerraRations(tx: Tx, map: TerraState): void {
+  for (const [id, p] of Object.entries(map.players).sort(([a], [b]) => (a < b ? -1 : 1))) {
+    if (isNation(id) || !tx.s.players[id]) continue;
+    const whole = Math.floor((p.breadOwed ?? 0) / 10_000);
+    const have = tx.s.inventories[id]?.bread?.available ?? 0;
+    if (whole <= 0) {
+      // Bread back in the stock: the troops will eat at their next meal.
+      if (p.unfed && have > 0) delete p.unfed;
+      continue;
+    }
+    const served = Math.min(have, whole);
+    removeStock(tx, id, "bread", served, "terraferma_rations", `terra:${map.startAt}`);
+    p.breadOwed = (p.breadOwed ?? 0) - whole * 10_000;
+    if (served < whole) {
+      if (!p.unfed) emit(tx, "terra_hungry", id, { missing: whole - served });
+      p.unfed = true;
+    } else if (p.unfed) {
+      delete p.unfed;
+    }
+  }
+}
+
+/** Goods the war asks of a merchant's stock (R1), checked all first, then taken. */
+function takeGoods(tx: Tx, id: PlayerId, goods: Record<string, number>, ref: string): void {
+  for (const [resource, qty] of Object.entries(goods))
+    if ((tx.s.inventories[id]?.[resource]?.available ?? 0) < qty) fail("insufficient_stock");
+  for (const [resource, qty] of Object.entries(goods))
+    removeStock(tx, id, resource, qty, "terraferma", ref);
 }
 
 /** A quarter of an hour before the battle hour, the merchants on the map are told, once. */
@@ -451,15 +487,22 @@ export function applyTerra(
       const price = cfg.buildings[cmd.kind]?.price;
       if (price === undefined) fail("unknown_building_type");
       if (balance(tx, cashAccount(id)) < price) fail("insufficient_funds");
+      const goods = cfg.supply?.buildingMaterials[cmd.kind] ?? {};
+      for (const [resource, qty] of Object.entries(goods))
+        if ((tx.s.inventories[id]?.[resource]?.available ?? 0) < qty) fail("insufficient_stock");
       buildOnTerra(map, cfg, id, cmd.cell, cmd.kind);
       pay(tx, id, price, `terra:${cmd.kind}:${cmd.cell}`);
+      takeGoods(tx, id, goods, `terra:${cmd.kind}:${cmd.cell}`);
       emit(tx, "terra_built", id, { kind: cmd.kind, cell: cmd.cell });
       break;
     }
     case "terraRaise": {
       if (balance(tx, cashAccount(id)) < cfg.capRaise.price) fail("insufficient_funds");
+      const bread = cfg.supply?.raiseBread ?? 0;
+      if ((tx.s.inventories[id]?.bread?.available ?? 0) < bread) fail("insufficient_stock");
       const price = raiseCap(map, cfg, id, now);
       pay(tx, id, price, "terra:cap");
+      takeGoods(tx, id, bread > 0 ? { bread } : {}, "terra:cap");
       break;
     }
     case "terraSail": {

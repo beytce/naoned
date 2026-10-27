@@ -25,7 +25,7 @@
 
 | # | Proposition | Vague | État | Commit |
 | --- | --- | --- | --- | --- |
-| R1 | La guerre mange les marchandises | 1 | à faire | — |
+| R1 | La guerre mange les marchandises | 1 | en cours (moteur fait) | voir journal |
 | R2 | La Signoria des villes | 1 | à faire | — |
 | R12 | Le grand ménage (part de la vague 1 : fournisseurs officiels, embargo) | 1 | à faire | — |
 | R6 | Le Lustre (échelle de rang, fantômes) | 2 | à faire | — |
@@ -40,8 +40,8 @@
 
 ## Où j'en suis
 
-- **Dernier commit :** le présent document (étape 0).
-- **Étape suivante exacte :** vague 1, R1 dans le moteur : écrire `packages/engine/test/terraferma-supply.test.ts`, puis `terraferma.supply` dans `settings.ts` et le reste (voir « Vague 1 »).
+- **Dernier commit :** R1 dans le moteur (`terraferma.supply`, `breadOwed`/`unfed`, `eatStep`, `serveTerraRations`, `takeGoods`, événement `terra_hungry`, motifs de stock `terraferma_rations` et `terraferma`), tests `terraferma-supply.test.ts`.
+- **Étape suivante exacte :** R1 chez les PNJ (`packages/engine/src/bots.ts`) : une maison qui joue la Terraferme achète le pain qui lui manque ; puis le rapport du simulateur (pain mangé par la Terraferme).
 - **À moitié fait :** rien.
 - **Base :** 819 tests verts au départ (27 octobre 2026).
 
@@ -103,3 +103,4 @@ But : une ville se prend en y livrant ou en la tenant sur la Terraferme, sur la 
 ## Journal
 
 - 27 octobre 2026 : audit validé, plan approuvé, document de reprise créé.
+- 27 octobre 2026 : R1 moteur. Valeurs de départ à Venise : 0,1 pain par troupe et par jour ouvert, 10 pains par « + Troupes », rocca 10 briques, porto 10 planches, bombarda 10 bois + 10 planches, mura 5 briques + 15 planches. Le pain manquant est pardonné, mais le marchand ne recrute plus jusqu'à ce que du pain revienne dans son stock.

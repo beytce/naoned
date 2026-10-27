@@ -661,6 +661,19 @@ export const worldSettingsSchema = z.object({
       capRaise: z
         .object({ amount: qty, price: money, perDay: qty })
         .prefault({ amount: 10, price: 10_000, perDay: 2 }),
+      /**
+       * The war eats the goods (R1, docs/plan-rupture.md): the troops eat bread each open hour
+       * (in 1/10 000 of a loaf a troop and a day of open hours), a merchant whose bread is missing
+       * recruits no more; the cap asks for bread, the buildings for materials, from the stock.
+       * Absent: the war asks for ducats only.
+       */
+      supply: z
+        .object({
+          breadPerTroopDay: qty,
+          raiseBread: qty,
+          buildingMaterials: z.record(z.string(), z.record(z.string(), qty)),
+        })
+        .optional(),
       /** The week's close: the land that wins at once, Influence by tier, the decrees. */
       close: z
         .object({
