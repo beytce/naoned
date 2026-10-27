@@ -643,6 +643,30 @@ export function CloseButton({
 }
 
 /**
+ * A window closed stays a moment on screen to leave (its exit, shorter than its entrance): true
+ * from the render that closes it, for `ms`. Set during the render, so that no frame shows it gone
+ * then back. Never for those who ask for less motion.
+ */
+export function useLeaving(open: boolean, ms: number): boolean {
+  const [was, setWas] = useState(open);
+  const [leaving, setLeaving] = useState(false);
+  if (was !== open) {
+    setWas(open);
+    setLeaving(
+      !open &&
+        typeof window !== "undefined" &&
+        !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+    );
+  }
+  useEffect(() => {
+    if (!leaving) return;
+    const t = setTimeout(() => setLeaving(false), ms);
+    return () => clearTimeout(t);
+  }, [leaving, ms]);
+  return leaving && !open;
+}
+
+/**
  * A sheet pulled down by the finger: it follows (resisting a little), then closes past a third of
  * its height or on a quick flick, or springs back. Only from the top of its scroll, on a phone.
  */
@@ -695,6 +719,8 @@ function useDragToClose(
       if (dy > el.offsetHeight * 0.3 || (speed > 0.6 && dy > 40)) {
         el.style.transition = "transform 0.2s ease-in";
         el.style.transform = "translateY(100%)";
+        // Gone down already: its exit starts from there, not from the top again.
+        el.dataset.dragged = "1";
         setTimeout(() => close.current(), 180);
       } else {
         set(0, true);
@@ -709,6 +735,7 @@ function useDragToClose(
       el.removeEventListener("touchmove", move);
       el.removeEventListener("touchend", end);
       el.removeEventListener("touchcancel", end);
+      if (el.dataset.dragged) return;
       el.style.transform = "";
       el.style.transition = "";
     };
@@ -757,18 +784,36 @@ export function Sheet({
   }, [open]);
   useOverlay(open, onClose);
   useEffect(() => {
-    if (open) panel.current?.focus({ preventScroll: true });
+    const el = panel.current;
+    if (!open || !el) return;
+    // Opened again while it was leaving after a pull down: it comes back up.
+    if (el.dataset.dragged) {
+      delete el.dataset.dragged;
+      el.style.animation = "";
+      el.style.transform = "";
+      el.style.transition = "";
+    }
+    el.focus({ preventScroll: true });
   }, [open]);
   useDragToClose(panel, open, onClose);
-  if (!open) return null;
+  // Closed, it leaves (index.css, .sheet-out) with what it showed last: its caller may already
+  // have dropped the content.
+  const leaving = useLeaving(open, 170);
+  const shown = useRef({ title, summary, children });
+  if (open) shown.current = { title, summary, children };
+  if (!open && !leaving) return null;
+  const head = shown.current;
   // On the body: a parent with a backdrop blur would otherwise trap the fixed window inside it.
   return createPortal(
-    <div className="fixed inset-0 z-40 flex items-end justify-center lg:items-center">
+    <div
+      className={`fixed inset-0 z-40 flex items-end justify-center lg:items-center ${leaving ? "pointer-events-none" : ""}`}
+      aria-hidden={leaving || undefined}
+    >
       <button
         type="button"
         aria-label="Fermer"
         tabIndex={-1}
-        className="absolute inset-0 animate-fade bg-black/60"
+        className={`absolute inset-0 bg-black/60 ${leaving ? "veil-out" : "animate-fade"}`}
         onClick={onClose}
       />
       {/* Opened in place (not showModal): it stays under the guide's bubble. */}
@@ -777,32 +822,32 @@ export function Sheet({
         ref={panel}
         aria-modal="true"
         tabIndex={-1}
-        className={`relative m-0 max-h-[92dvh] w-full max-w-md animate-sheet overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line bg-night-2 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 text-cream shadow-2xl shadow-black/50 focus:outline-none lg:animate-pop lg:rounded-3xl lg:border lg:p-7 ${size === "wide" ? "lg:max-w-3xl" : "lg:max-w-lg"}`}
+        className={`relative m-0 max-h-[92dvh] w-full max-w-md ${leaving ? "sheet-out" : "animate-sheet lg:animate-pop"} overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line bg-night-2 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 text-cream shadow-2xl shadow-black/50 focus:outline-none lg:rounded-3xl lg:border lg:p-7 ${size === "wide" ? "lg:max-w-3xl" : "lg:max-w-lg"}`}
       >
         {/* Sticky from the dialog's own edge, over its padding (a sticky box stops under it). */}
         <div
           data-sheet-head
-          className={`sticky -top-3 z-10 -mx-5 -mt-3 bg-night-2/90 px-5 pt-3 backdrop-blur lg:-top-7 lg:-mx-7 lg:-mt-7 lg:px-7 lg:pt-7 ${title ? "mb-4 border-b border-line/60 pb-3" : "mb-4 lg:mb-0"}`}
+          className={`sticky -top-3 z-10 -mx-5 -mt-3 bg-night-2/90 px-5 pt-3 backdrop-blur lg:-top-7 lg:-mx-7 lg:-mt-7 lg:px-7 lg:pt-7 ${head.title ? "mb-4 border-b border-line/60 pb-3" : "mb-4 lg:mb-0"}`}
         >
           <div
-            className={`mx-auto h-1.5 w-12 rounded-full bg-line lg:hidden ${title ? "mb-3" : ""}`}
+            className={`mx-auto h-1.5 w-12 rounded-full bg-line lg:hidden ${head.title ? "mb-3" : ""}`}
           />
-          {title ? (
+          {head.title ? (
             <>
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1 pt-1">
                   {kicker && <p className="label text-cream-dim">{kicker}</p>}
-                  <h3 className="font-place text-xl font-bold uppercase">{title}</h3>
+                  <h3 className="font-place text-xl font-bold uppercase">{head.title}</h3>
                 </div>
                 <CloseButton onClick={onClose} className="-mr-2 shrink-0" />
               </div>
-              {summary && <p className="meta mt-1">{summary}</p>}
+              {head.summary && <p className="meta mt-1">{head.summary}</p>}
             </>
           ) : (
             <CloseButton onClick={onClose} className="absolute right-3 top-3 lg:right-4 lg:top-4" />
           )}
         </div>
-        {children}
+        {head.children}
         {more && (
           <div
             aria-hidden="true"

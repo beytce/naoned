@@ -520,6 +520,47 @@
     transform: none;
   }
 }
+/* Closed, the place shrinks back into the map, faster than it came (MapScreen, useLeaving). */
+.orbit-out {
+  animation: orbit-out var(--t-quick) var(--ease-in) both;
+}
+@keyframes orbit-out {
+  to {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+/*
+ * A sheet closed goes down (a window on a computer shrinks and fades), its veil fades: shorter
+ * than its entrance (ui.tsx, Sheet).
+ */
+.sheet-out {
+  animation: sheet-out 170ms var(--ease-in) both;
+}
+@keyframes sheet-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+@media (min-width: 1024px) {
+  .sheet-out {
+    animation-name: sheet-out-wide;
+  }
+}
+@keyframes sheet-out-wide {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+.veil-out {
+  animation: veil-out 170ms var(--ease-in) both;
+}
+@keyframes veil-out {
+  to {
+    opacity: 0;
+  }
+}
 .orbit-flow {
   animation: orbit-flow 1.6s linear infinite;
 }

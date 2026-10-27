@@ -1,4 +1,14 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactElement,
+  type ReactNode,
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ApiError } from "../../api.js";
 import { defaultCrest } from "../../art/crest.js";
 import { goodsColour } from "../../art/goods.js";
@@ -6,7 +16,7 @@ import { ResourceIcon } from "../../art/resources.js";
 import { PLACES } from "../../art/veneto.js";
 import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
-import { Big, Panel, Qty, Sheet, Slab, clock } from "../../ui.js";
+import { Big, Panel, Qty, Sheet, Slab, clock, useLeaving } from "../../ui.js";
 import { ActCard } from "../Acts.js";
 import { CargoSheet, loadOrders, loadSummary } from "../Cargo.js";
 import { Coach } from "../Coach.js";
@@ -651,6 +661,12 @@ export function MapScreen(
       />
     );
   }
+  // A place closed shrinks back into the map (its exit), whichever way it was closed (its chevron,
+  // Escape, the phone's back, the map touched); not when another selection takes its room.
+  const orbitOpen = trade && (sel?.kind === "home" || sel?.kind === "city");
+  const lastOrbit = useRef<ReactNode>(null);
+  if (orbitOpen) lastOrbit.current = panel;
+  const orbitLeaving = useLeaving(orbitOpen, 160);
   if (trade && selectedCart) {
     const i = vehicles.findIndex((v) => v.id === selectedCart.id);
     const step = (k: number) => {
@@ -698,6 +714,11 @@ export function MapScreen(
         />
       );
   }
+
+  if (!orbitOpen && orbitLeaving && !panel && isValidElement(lastOrbit.current))
+    panel = cloneElement(lastOrbit.current as ReactElement<{ leaving?: boolean }>, {
+      leaving: true,
+    });
 
   const [sheetKind, sheetId] = (props.sheet ?? "").split(":");
   const cargoVehicle = sheetKind === "cargo" ? vehicles.find((v) => v.id === sheetId) : undefined;

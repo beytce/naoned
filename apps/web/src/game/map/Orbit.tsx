@@ -37,10 +37,13 @@ export function ComptoirOrbit({
   props,
   crest,
   onClose,
+  leaving,
 }: {
   props: GameProps;
   crest: CrestData;
   onClose: () => void;
+  /** Closed: it shrinks back into the map for a moment, untouchable (MapScreen). */
+  leaving?: boolean;
 }) {
   const { view, now } = props;
   const m = fr.game.map;
@@ -75,13 +78,14 @@ export function ComptoirOrbit({
   const total = stock.reduce((n, i) => n + i.available, 0);
   return (
     <section
-      data-orbit
       // A place over the map (the guide sees the map covered, never the windows over it), and a
-      // place's panel for the layout's checks.
-      data-place
-      data-panel
+      // place's panel for the layout's checks; no longer once it leaves.
+      data-orbit={leaving ? undefined : true}
+      data-place={leaving ? undefined : true}
+      data-panel={leaving ? undefined : true}
+      aria-hidden={leaving || undefined}
       aria-label={m.homeLabel}
-      className="orbit-in absolute inset-0 z-[25] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_32%,rgb(var(--night-3))_0%,rgb(var(--night))_62%)] lg:right-[var(--side,0px)]"
+      className={`${leaving ? "orbit-out pointer-events-none" : "orbit-in"} absolute inset-0 z-[25] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_32%,rgb(var(--night-3))_0%,rgb(var(--night))_62%)] lg:right-[var(--side,0px)]`}
     >
       <header className="relative z-10 flex items-center justify-between gap-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <button
@@ -343,9 +347,12 @@ export function CityOrbit({
   onNext,
   onCargo,
   onSheet,
+  leaving,
 }: {
   props: GameProps;
   code: string;
+  /** Closed: it shrinks back into the map for a moment, untouchable (MapScreen). */
+  leaving?: boolean;
   freeCart: boolean;
   onClose: () => void;
   onPrev: () => void;
@@ -401,12 +408,14 @@ export function CityOrbit({
   const cargo = road && orders.length > 0;
   return (
     <section
-      data-orbit
-      // A place over the map (the guide sees the map covered), and a place's panel for the checks.
-      data-place
-      data-panel
+      // A place over the map (the guide sees the map covered), and a place's panel for the checks;
+      // no longer once it leaves.
+      data-orbit={leaving ? undefined : true}
+      data-place={leaving ? undefined : true}
+      data-panel={leaving ? undefined : true}
+      aria-hidden={leaving || undefined}
       aria-label={props.names.city(code)}
-      className="orbit-in absolute inset-0 z-[25] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_34%,rgb(var(--night-3))_0%,rgb(var(--night))_62%)] lg:right-[var(--side,0px)]"
+      className={`${leaving ? "orbit-out pointer-events-none" : "orbit-in"} absolute inset-0 z-[25] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_34%,rgb(var(--night-3))_0%,rgb(var(--night))_62%)] lg:right-[var(--side,0px)]`}
     >
       <header className="relative z-10 flex items-center gap-1 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <button
