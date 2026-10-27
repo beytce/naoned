@@ -28,6 +28,7 @@ Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage complet 
 - Petits commits, un par fonctionnalité.
 - Hors périmètre MVP : noter dans IDEAS.md, ne pas coder.
 - Gel des mécaniques levé le 20 octobre 2026 par le porteur (conception pure, pas encore de joueurs) pour le lot de recommandations de docs/recommandations-2026-10-20.md et la Terraferme proche d'OpenFront (docs/plan-terraferme.md) ; hors de ce lot, une nouvelle mécanique va toujours dans IDEAS.md.
+- Gel levé aussi le 27 octobre 2026 pour les douze propositions de docs/audit-retention-2026-10-27.md (plafonds d'écart en cours de saison levés, l'égalité se garde au départ du mois). Pour reprendre ce chantier, lire d'abord docs/plan-rupture.md (état, étape suivante) et le tenir à jour à chaque commit.
 - Règles stables pendant une saison (dès qu'il y a des joueurs) : un changement de règle prend effet au changement de mois et s'écrit dans les notes de saison (`fr.game.seasonNotes`, au pied de l'Aide).
 - Langue du code : anglais. Langue de l'interface : français (i18n prévu).
 - Direction artistique « Lagune » (décision du porteur, 25 octobre 2026) : tout nouvel écran ou élément la suit (docs/design.md, § Direction Lagune ; maquettes de chaque page : docs/propositions-design-2026-10-25.md). Un lieu est un astre qu'on approche ; trois profondeurs (carte, lieu en orbite, feuille du bas) ; une seule action en or ; les marchandises par leur marque (`GoodsMark`).
