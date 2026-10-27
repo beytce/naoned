@@ -68,6 +68,7 @@ const WORDS = {
     truce: /trêve/i,
     notices: /^avis/i,
     store: /^magasin$/i,
+    signoria: /^signoria$/i,
     build: /^bâtir$/i,
     ranking: /^classement$/i,
     bale: /ballot/i,
@@ -101,6 +102,7 @@ const WORDS = {
     truce: /truce/i,
     notices: /^notices/i,
     store: /^store$/i,
+    signoria: /^signoria$/i,
     build: /^build$/i,
     ranking: /^ranking$/i,
     bale: /bale/i,
@@ -410,6 +412,20 @@ async function session(width, height, tag) {
       throw new Error(`${label}: the notices still list first steps to take`);
     await page.keyboard.press("Escape");
     await check("carte");
+    // A city up close, its gauge of the Signoria around its monument (R2), then its sheet.
+    // A cart back on its road may lie over the city on a small screen: the tap goes to the city.
+    await page.locator('[data-coach="city-vicenza"]').first().dispatchEvent("click");
+    await page.waitForTimeout(700);
+    await check("ville");
+    const signoria = page.locator("[data-place]").getByRole("button", { name: WORDS.signoria });
+    if ((await signoria.count()) > 0) {
+      await signoria.first().click();
+      await page.waitForTimeout(600);
+      await check("signoria");
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(400);
+    }
+    await closeAll(page);
     // The counter up close (Lagune), its store by chain, then the catalogue of its free plot.
     await page.locator('[data-coach="home"]').first().click();
     await page.waitForTimeout(600);

@@ -1,3 +1,4 @@
+import { CityIcon } from "../art/cities.js";
 import { Crest, defaultCrest } from "../art/crest.js";
 import { fr } from "../i18n.js";
 import { Rules, Sheet } from "../ui.js";
@@ -137,13 +138,15 @@ export function SignoriaSheet(props: GameProps) {
         <div className="flex items-center gap-4">
           <svg viewBox="0 0 100 100" className="h-24 w-24 shrink-0" aria-hidden="true">
             <SignoriaRing line={line} r={40} />
-            {line?.podesta && (
-              <foreignObject x="26" y="26" width="48" height="48">
-                <div className="flex h-full w-full items-center justify-center">
+            <foreignObject x="26" y="26" width="48" height="48">
+              <div className="flex h-full w-full items-center justify-center">
+                {line?.podesta ? (
                   <Crest crest={crestOf(line.podesta)} size={40} />
-                </div>
-              </foreignObject>
-            )}
+                ) : (
+                  <CityIcon code={city ?? ""} className="h-9 w-9 opacity-70" />
+                )}
+              </div>
+            </foreignObject>
           </svg>
           <div className="min-w-0 flex-1">
             <p className="label">{t().podesta}</p>
@@ -155,7 +158,9 @@ export function SignoriaSheet(props: GameProps) {
                   <MerchantName pseudo={line.podesta.pseudo} bot={line.podesta.bot} fallback="—" />
                 )
               ) : (
-                <span className="text-cream-dim">{t().vacant}</span>
+                <span className="font-sans text-sm normal-case tracking-normal text-cream-dim">
+                  {t().vacant}
+                </span>
               )}
             </p>
             <p className="meta mt-1">{t().decided}</p>
