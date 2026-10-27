@@ -1,4 +1,4 @@
-import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { CityIcon } from "../../art/cities.js";
 import { Crest, type CrestData } from "../../art/crest.js";
 import { GoodsMark, goodsColour } from "../../art/goods.js";
@@ -131,7 +131,7 @@ export function ComptoirOrbit({
 
       {/* The orbit: a square as large as the room allows, the sun in its middle. */}
       <div className="flex min-h-0 flex-1 items-center justify-center px-2">
-        <div className="relative aspect-square h-full max-h-[26rem] max-w-full">
+        <div className="relative aspect-square h-full max-h-[26rem] max-w-full [container-type:inline-size]">
           <svg
             viewBox="0 0 100 100"
             className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
@@ -146,30 +146,33 @@ export function ComptoirOrbit({
               strokeWidth="0.3"
               strokeDasharray="0.8 1.6"
             />
-            {stars.map((s) => (
-              <line
-                key={s.b.id}
-                x1="50"
-                y1="50"
-                x2={s.x}
-                y2={s.y}
-                stroke="rgb(var(--line))"
-                strokeOpacity="0.6"
-                strokeWidth="0.3"
-              />
-            ))}
-            {links.map((l) => (
-              <path
-                key={`${l.from.b.id}>${l.to.b.id}`}
-                d={`M${l.from.x} ${l.from.y} Q ${50 + (l.from.x + l.to.x - 100) * 0.75} ${50 + (l.from.y + l.to.y - 100) * 0.75} ${l.to.x} ${l.to.y}`}
-                fill="none"
-                stroke={l.colour}
-                strokeOpacity="0.7"
-                strokeWidth="0.6"
-                strokeDasharray="1.2 1.4"
-                className="orbit-flow"
-              />
-            ))}
+            {/* The threads to the sun and the chain appear once the stars are in place. */}
+            <g className="orbit-links">
+              {stars.map((s) => (
+                <line
+                  key={s.b.id}
+                  x1="50"
+                  y1="50"
+                  x2={s.x}
+                  y2={s.y}
+                  stroke="rgb(var(--line))"
+                  strokeOpacity="0.6"
+                  strokeWidth="0.3"
+                />
+              ))}
+              {links.map((l) => (
+                <path
+                  key={`${l.from.b.id}>${l.to.b.id}`}
+                  d={`M${l.from.x} ${l.from.y} Q ${50 + (l.from.x + l.to.x - 100) * 0.75} ${50 + (l.from.y + l.to.y - 100) * 0.75} ${l.to.x} ${l.to.y}`}
+                  fill="none"
+                  stroke={l.colour}
+                  strokeOpacity="0.7"
+                  strokeWidth="0.6"
+                  strokeDasharray="1.2 1.4"
+                  className="orbit-flow"
+                />
+              ))}
+            </g>
           </svg>
           <span className="absolute left-1/2 top-1/2 flex h-[21%] w-[21%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full shadow-[0_0_48px_rgb(var(--gold)/0.45),inset_-6px_-8px_14px_rgb(0_0_0/0.35)] [background:radial-gradient(circle_at_34%_30%,rgb(var(--gold-soft))_0%,rgb(var(--gold))_45%,rgb(var(--gold-deep))_80%,#5A3D12_100%)]">
             <Crest crest={crest} size={40} />
@@ -178,7 +181,7 @@ export function ComptoirOrbit({
             <WorkshopStar key={s.b.id} props={props} star={s} hop={hop} rank={i} />
           ))}
           {plot && (
-            <Place x={plot.x} y={plot.y}>
+            <Place x={plot.x} y={plot.y} rank={stars.length}>
               <button
                 type="button"
                 onClick={() => props.setSheet("buildHere")}
@@ -275,13 +278,34 @@ function Ghost({
   );
 }
 
-function Place({ x, y, children }: { x: number; y: number; children: ReactNode }) {
+/**
+ * Something in orbit at (x, y), in % of the square. As the place opens, it leaves the middle (the
+ * sun) and springs to its place, after those before it (`rank`); the square is a container, its
+ * width the unit of the way back to the middle (index.css, .star-enter).
+ */
+function Place({
+  x,
+  y,
+  rank,
+  children,
+}: { x: number; y: number; rank: number; children: ReactNode }) {
   return (
     <div
       className="absolute flex -translate-x-1/2 -translate-y-8 justify-center"
       style={{ left: `${x}%`, top: `${y}%` }}
     >
-      {children}
+      <div
+        className="star-enter flex justify-center"
+        style={
+          {
+            "--dx": `${(50 - x).toFixed(2)}cqw`,
+            "--dy": `${(50 - y).toFixed(2)}cqw`,
+            animationDelay: `${120 + rank * 45}ms`,
+          } as CSSProperties
+        }
+      >
+        {children}
+      </div>
     </div>
   );
 }
@@ -315,7 +339,7 @@ function WorkshopStar({
             : fr.game.map.workshopRow.starved;
   const waiting = w.state === "idle" || w.state === "blocked" || w.state === "still";
   return (
-    <Place x={star.x} y={star.y}>
+    <Place x={star.x} y={star.y} rank={rank}>
       <button
         type="button"
         aria-label={`${name} · ${line}`}
@@ -508,7 +532,7 @@ export function CityOrbit({
       </header>
 
       <div className="flex min-h-0 flex-1 items-center justify-center px-2">
-        <div className="relative aspect-square h-full max-h-[26rem] max-w-full">
+        <div className="relative aspect-square h-full max-h-[26rem] max-w-full [container-type:inline-size]">
           <svg
             viewBox="0 0 100 100"
             className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
@@ -535,7 +559,7 @@ export function CityOrbit({
             const ok = have(view, o.resource) >= o.quantity;
             const name = props.names.resource(o.resource);
             return (
-              <Place key={o.id} x={p.x} y={p.y}>
+              <Place key={o.id} x={p.x} y={p.y} rank={i}>
                 <button
                   type="button"
                   aria-label={`${o.quantity} ${name} · ${d(total(o))}`}
