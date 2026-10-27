@@ -543,6 +543,8 @@ export function applyTerra(
       break;
     }
     case "terraEmbargo":
+      // Off once the Signoria's toll took its place (R2): no embargo without its cut.
+      if (!cfg.diplomacy?.embargoBps) fail("terra_off");
       setEmbargo(map, id, cmd.target);
       break;
     case "terraFire": {

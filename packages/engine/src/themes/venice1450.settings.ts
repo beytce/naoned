@@ -373,9 +373,9 @@ export const venice1450Settings: WorldSettingsInput = {
     },
     // The third week of the month in teams, by region.
     teams: { weeks: [2] },
-    // Diplomacy: a signal each 5 minutes, up to 50 d a day to one's allies, an embargo from the
-    // cities one holds that cuts 20 % of what they pay the rival.
-    diplomacy: { ducatGiftPerDay: 5_000, embargoBps: 2_000, signalMinutes: 5 },
+    // Diplomacy: a signal each 5 minutes, up to 50 d a day to one's allies. The embargo from the
+    // cities one holds is off since the Signoria's toll (R2, 27 October 2026).
+    diplomacy: { ducatGiftPerDay: 5_000, embargoBps: 0, signalMinutes: 5 },
     // The other powers of 1450 (recommendations of 20 October 2026): the Gonzaga hold Mantua and
     // strike back at whoever attacks them, the Este of Ferrara fall on the weak, the Patriarch of
     // Aquileia spreads slowly in the north-east, the Empire raids from the Alps.
@@ -1270,9 +1270,20 @@ export const venice1450Settings: WorldSettingsInput = {
       { ducats: 60_000, materials: { bricks: 40, planks: 40 } },
     ],
   },
-  // The official supplier (recommendations of 20 October 2026): the week's best deliverer of a
-  // good to a city, from 10 units, is paid 10 % more for it there all the next week.
-  suppliers: { bonusBps: 1_000, minUnits: 10 },
+  // The official supplier (recommendations of 20 October 2026) is replaced by the Signoria of the
+  // cities (R2, docs/plan-rupture.md, 27 October 2026): a delivery's ducats and the open hours a
+  // city is held on the Terraferma count on its gauge; each day's leader is its Podestà, who
+  // takes 3 % of the others' deliveries there and takes its orders half an hour before them.
+  signoria: {
+    cityPointsPerHour: 20,
+    decayBps: 5_000,
+    minPoints: 50,
+    maxCities: 3,
+    tollBps: 300,
+    previewMinutes: 30,
+    newcomerDays: 3,
+    openHours: { from: 8, to: 22 },
+  },
   // Company orders (recommendations of 20 October 2026): a city orders bread, bricks and planks
   // from the three regions together, paid 10 % above the reference on delivery, and 10 % more to
   // everyone who delivered once the order is full.
