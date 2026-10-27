@@ -426,6 +426,10 @@ export function Coach(props: CoachProps) {
         height: Math.min(window.innerHeight - 2, rect.bottom + pad) - Math.max(2, rect.top - pad),
       }
     : undefined;
+  // Rounded like what it rings (Lagune: pills and rounds, no square corner): a pill's ends.
+  const round = box
+    ? { ...box, borderRadius: Math.min(32, box.width / 2, box.height / 2) }
+    : undefined;
   // On the body: the map is its own layer, the sheets open over it; the guide stays on top.
   return createPortal(
     <>
@@ -433,15 +437,15 @@ export function Coach(props: CoachProps) {
         <>
           {/* The room around the target dimmed: a cut-out whose shadow covers the screen. */}
           <div
-            className="pointer-events-none fixed z-[45] rounded-md transition-all duration-200"
+            className="pointer-events-none fixed z-[45] transition-all duration-200"
             // Light: the sheet it points into is dimmed already, its words must stay legible.
-            style={{ ...box, boxShadow: "0 0 0 9999px rgba(10, 8, 14, 0.35)" }}
+            style={{ ...round, boxShadow: "0 0 0 9999px rgba(10, 8, 14, 0.35)" }}
           />
           {/* The ring on its own element: its pulse must not wipe the dimming's shadow. */}
           <div
-            className="coach-ring pointer-events-none fixed z-[45] rounded-md border-[3px] border-info"
+            className="coach-ring pointer-events-none fixed z-[45] border-[3px] border-info"
             data-coach-target={onFollow ? step.follow : step.target}
-            style={box}
+            style={round}
           />
         </>
       )}

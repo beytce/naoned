@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
 import { Icon } from "./icons.js";
 
@@ -35,8 +36,6 @@ export function ContextPanel({
   /** What the place holds, between its state and its actions (the counter's workshops). */
   above?: ReactNode;
 }) {
-  const edge =
-    tone === "gold" ? "border-gold" : tone === "vermilion" ? "border-vermilion" : "border-lagoon";
   const ink =
     tone === "gold" ? "text-gold" : tone === "vermilion" ? "text-vermilion" : "text-lagoon";
   const bar = tone === "gold" ? "bg-gold" : tone === "vermilion" ? "bg-vermilion" : "bg-lagoon";
@@ -45,19 +44,15 @@ export function ContextPanel({
       data-panel
       className="pointer-events-none absolute inset-x-0 bottom-0 z-20 lg:inset-x-auto lg:bottom-5 lg:right-[calc(var(--side,0px)+1.25rem)] lg:w-[420px]"
     >
-      <div
-        className={`panel-rise pointer-events-auto relative border-t-2 ${edge} bg-night-2/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgb(0_0_0/0.45)] backdrop-blur-md lg:rounded-md lg:border-2 lg:pb-3`}
-      >
+      <div className="panel-rise pointer-events-auto relative rounded-t-3xl border-t border-line bg-night-2/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgb(0_0_0/0.45)] backdrop-blur-md lg:rounded-3xl lg:border lg:pb-3">
+        {/* A ghost round, like the places' way back: never a coloured tab. */}
         <button
           type="button"
           aria-label={fr.game.map.close}
           onClick={onClose}
-          className="absolute -top-[2px] right-0 h-11 w-12 lg:right-3"
+          className="absolute right-1.5 top-1.5 flex h-11 w-11 items-center justify-center rounded-full lg:right-3 lg:top-3"
         >
-          {/* The tab is clipped and 36 px high: drawn inside, the button is touched at 44 px. */}
-          <span
-            className={`flex h-9 w-12 items-center justify-center ${bar} text-night [clip-path:polygon(28%_0,100%_0,100%_100%,0_100%)] lg:rounded-b-lg`}
-          >
+          <span className="hud-orb press flex h-9 w-9 items-center justify-center rounded-full text-cream">
             <span className="scale-90">{Icon.cross()}</span>
           </span>
         </button>
@@ -146,22 +141,26 @@ export function ActionButton({
   badge?: ReactNode;
   coach?: string;
 }) {
+  // Rounds, like every place of the Lagune; gold is a struck coin (index.css, .gold-face).
   const face =
     tone === "gold"
-      ? "bg-gold text-ink ring-gold"
+      ? "gold-face"
       : tone === "vermilion"
-        ? "bg-vermilion text-cream ring-vermilion"
-        : "bg-night text-cream ring-cream/30";
+        ? "bg-vermilion text-cream ring-[1.5px] ring-vermilion"
+        : "bg-night text-cream ring-[1.5px] ring-cream/30 group-hover:ring-cream/50 group-active:bg-night-3";
   return (
     <button
       type="button"
       data-coach={coach}
       disabled={disabled}
-      onClick={onClick}
+      onClick={() => {
+        haptic("tap");
+        onClick();
+      }}
       className="group flex w-[72px] shrink-0 flex-col items-center gap-1 disabled:opacity-35"
     >
       <span
-        className={`relative flex h-14 w-14 items-center justify-center rounded-md ring-[1.5px] transition group-active:scale-90 ${face}`}
+        className={`press relative flex h-14 w-14 items-center justify-center rounded-full ${face}`}
       >
         {icon}
         {badge !== undefined && badge !== null && badge !== false && (
