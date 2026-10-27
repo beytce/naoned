@@ -561,6 +561,41 @@
     opacity: 0;
   }
 }
+/* The harvest touched: a ready star squashes and springs (Orbit.tsx, one after the other). */
+.star-hop {
+  animation: star-hop 0.42s var(--spring) both;
+}
+@keyframes star-hop {
+  35% {
+    transform: scale(1.14, 0.86);
+  }
+  70% {
+    transform: scale(0.94, 1.08);
+  }
+}
+/* Where the harvest's goods land (fx.tsx, flyGoods): a gold beat. */
+.goods-beat {
+  animation: goods-beat 0.9s var(--ease-out);
+}
+@keyframes goods-beat {
+  0% {
+    transform: scale(1.14);
+    box-shadow: 0 0 0 2px rgb(var(--gold-soft));
+  }
+  100% {
+    transform: none;
+    box-shadow: 0 0 0 0 rgb(var(--gold-soft) / 0);
+  }
+}
+/* The purse when the coins land in it. */
+.purse-bump {
+  animation: purse-bump 0.38s var(--spring);
+}
+@keyframes purse-bump {
+  40% {
+    transform: scale(1.28);
+  }
+}
 .orbit-flow {
   animation: orbit-flow 1.6s linear infinite;
 }

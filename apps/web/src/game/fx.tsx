@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Coin } from "../art/icons.js";
+import { chime } from "../sound.js";
 import { amount } from "./format.js";
 
 /**
@@ -63,6 +64,85 @@ export function pressResult(ok: boolean): void {
   face.addEventListener("animationend", () => face.classList.remove(cls), { once: true });
 }
 
+/** Where an element stands on screen: its middle. */
+function middle(el: Element): { x: number; y: number } {
+  const r = el.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+
+/** An element the effects can see: on the page and drawn (not under display: none). */
+function shown(selector: string): HTMLElement | null {
+  const el = document.querySelector<HTMLElement>(selector);
+  return el && el.getClientRects().length > 0 ? el : null;
+}
+
+/** A beat on what was reached (the store's chip, the purse): its class played once more. */
+function beat(el: HTMLElement, cls: string): void {
+  el.classList.remove(cls);
+  void el.offsetWidth;
+  el.classList.add(cls);
+  el.addEventListener("animationend", () => el.classList.remove(cls), { once: true });
+}
+
+/**
+ * The harvest seen coming in: each good's mark leaves the star of the counter that made it and
+ * flies in an arc to its chip of the store (or the store's door when the chips are hidden), which
+ * beats as it lands, a note higher at each good. Nothing where there is no star to leave from
+ * (the R key, the welcome back), nor for those who ask for less motion.
+ */
+export function flyGoods(harvested: Record<string, number>): void {
+  if (typeof window === "undefined" || reduced()) return;
+  const layer = document.querySelector<HTMLElement>("[data-fx-layer]");
+  if (!layer) return;
+  let step = 0;
+  for (const [resource, quantity] of Object.entries(harvested)) {
+    if (quantity <= 0) continue;
+    const source = shown(`[data-goods-from="${resource}"]`);
+    const target = shown(`[data-goods-to="${resource}"]`) ?? shown('[data-goods-to="store"]');
+    if (!source || !target) continue;
+    const from = middle(source);
+    const to = middle(target);
+    const lift = Math.min(from.y, to.y) - 60;
+    const delay = step * 90;
+    const note = step;
+    step++;
+    for (let copy = 0; copy < 2; copy++) {
+      const mark = source.cloneNode(true) as HTMLElement;
+      mark.removeAttribute("data-goods-from");
+      mark.style.cssText = "position:absolute;left:0;top:0;";
+      layer.appendChild(mark);
+      const r = source.getBoundingClientRect();
+      const half = { x: r.width / 2, y: r.height / 2 };
+      const at = (x: number, y: number, scale: number) =>
+        `translate(${x - half.x}px, ${y - half.y}px) scale(${scale})`;
+      const flight = mark.animate(
+        [
+          { transform: at(from.x, from.y, 1), opacity: 0.9 },
+          {
+            transform: at((from.x + to.x) / 2 + (copy ? 18 : -18), lift, 1.2),
+            opacity: 1,
+            offset: 0.45,
+          },
+          { transform: at(to.x, to.y, 0.7), opacity: 0.85 },
+        ],
+        {
+          duration: 760,
+          delay: delay + copy * 60,
+          easing: "cubic-bezier(0.5, 0, 0.2, 1)",
+          fill: "both",
+        },
+      );
+      flight.onfinish = () => {
+        mark.remove();
+        if (copy === 1) return;
+        beat(target, "goods-beat");
+        chime(note);
+      };
+      flight.oncancel = () => mark.remove();
+    }
+  }
+}
+
 function reduced(): boolean {
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 }
@@ -106,6 +186,8 @@ export function FxLayer() {
           },
         );
       }
+      // The purse beats as the first coins land in it.
+      window.setTimeout(() => beat(purse, "purse-bump"), 720);
       const label = root.querySelector<HTMLElement>("[data-gain]");
       const amountEl = root.querySelector<HTMLElement>("[data-gain-amount]");
       const noteEl = root.querySelector<HTMLElement>("[data-gain-note]");

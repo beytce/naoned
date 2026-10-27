@@ -16,7 +16,7 @@ import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
 import { onBack } from "./back.js";
 import { d } from "./format.js";
-import { FxLayer, flyCoins, pressResult } from "./fx.js";
+import { FxLayer, flyCoins, flyGoods, pressResult } from "./fx.js";
 import { harvestSummary } from "./harvest.js";
 import { connectLive } from "./live.js";
 import { MapScreen } from "./map/MapScreen.js";
@@ -478,6 +478,7 @@ export function Game(props: {
         const nothing = res.outcome?.kind === "instant" && res.outcome.filled === 0;
         haptic(nothing ? "warn" : REWARDING.has(type) ? "success" : "tap");
         pressResult(!nothing);
+        if (res.outcome?.kind === "harvest") flyGoods(res.outcome.harvested);
         const cue = nothing ? null : soundOf(type);
         if (cue === "coin") sound(cue);
         if (!options.quiet) {

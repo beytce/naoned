@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { CityIcon } from "../../art/cities.js";
 import { Crest, type CrestData } from "../../art/crest.js";
 import { GoodsMark, goodsColour } from "../../art/goods.js";
@@ -48,6 +48,7 @@ export function ComptoirOrbit({
   const { view, now } = props;
   const m = fr.game.map;
   const t = m.orbit;
+  const [hop, setHop] = useState(0);
   const room = view.buildings.length < props.catalog.rules.maxBuildings;
   const places = view.buildings.length + (room ? 1 : 0);
   const at = (i: number) => {
@@ -150,8 +151,8 @@ export function ComptoirOrbit({
           <span className="absolute left-1/2 top-1/2 flex h-[21%] w-[21%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full shadow-[0_0_48px_rgb(var(--gold)/0.45),inset_-6px_-8px_14px_rgb(0_0_0/0.35)] [background:radial-gradient(circle_at_34%_30%,rgb(var(--gold-soft))_0%,rgb(var(--gold))_45%,rgb(var(--gold-deep))_80%,#5A3D12_100%)]">
             <Crest crest={crest} size={40} />
           </span>
-          {stars.map((s) => (
-            <WorkshopStar key={s.b.id} props={props} star={s} />
+          {stars.map((s, i) => (
+            <WorkshopStar key={s.b.id} props={props} star={s} hop={hop} rank={i} />
           ))}
           {plot && (
             <Place x={plot.x} y={plot.y}>
@@ -178,6 +179,7 @@ export function ComptoirOrbit({
             {stock.map((i) => (
               <li
                 key={i.resource}
+                data-goods-to={i.resource}
                 className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-night-2 pl-1.5 pr-3"
               >
                 <GoodsMark code={i.resource} size={24} />
@@ -206,7 +208,11 @@ export function ComptoirOrbit({
             coach="panel-harvest"
             busy={props.busy}
             shine={ready > 0}
-            onClick={() => harvestAndRestart(props)}
+            onClick={() => {
+              // The ready stars jump at the touch, before the server answers.
+              setHop((n) => n + 1);
+              harvestAndRestart(props);
+            }}
             className="mb-2 w-full"
           >
             {ready > 0 ? Icon.harvest() : Icon.restart()}
@@ -217,7 +223,9 @@ export function ComptoirOrbit({
           <Ghost coach="panel-workshops" onClick={() => props.setSheet("workshops")}>
             {m.buttons.workshops}
           </Ghost>
-          <Ghost onClick={() => props.setSheet("store")}>{t.store}</Ghost>
+          <Ghost fx="store" onClick={() => props.setSheet("store")}>
+            {t.store}
+          </Ghost>
         </div>
       </section>
     </section>
@@ -228,11 +236,14 @@ function Ghost({
   children,
   onClick,
   coach,
-}: { children: ReactNode; onClick: () => void; coach?: string }) {
+  fx,
+}: { children: ReactNode; onClick: () => void; coach?: string; fx?: string }) {
   return (
     <button
       type="button"
       data-coach={coach}
+      // Where the harvest's goods land when the store's chips are not shown (fx.tsx, flyGoods).
+      data-goods-to={fx}
       onClick={onClick}
       className="h-11 rounded-full border border-line text-sm font-semibold text-cream transition hover:border-cream/40 active:scale-[0.97] active:bg-night-3"
     >
@@ -252,7 +263,18 @@ function Place({ x, y, children }: { x: number; y: number; children: ReactNode }
   );
 }
 
-function WorkshopStar({ props, star }: { props: GameProps; star: Star }) {
+function WorkshopStar({
+  props,
+  star,
+  hop,
+  rank,
+}: {
+  props: GameProps;
+  star: Star;
+  /** Harvests touched so far: a ready star jumps at each, after the ones before it. */
+  hop: number;
+  rank: number;
+}) {
   const { b } = star;
   const w = workshopState(props, b);
   const t = fr.game.map.orbit;
@@ -297,14 +319,23 @@ function WorkshopStar({ props, star }: { props: GameProps; star: Star }) {
                   stroke={w.state === "ready" ? "rgb(var(--lagoon))" : "rgb(var(--info))"}
                   strokeWidth="4"
                   strokeLinecap="round"
+                  className="transition-[stroke-dasharray] duration-700 ease-out"
                   strokeDasharray={`${(RING_C * (w.state === "ready" ? 1 : Math.max(0.03, Math.min(1, w.progress ?? 0)))).toFixed(1)} ${RING_C.toFixed(1)}`}
                 />
               </>
             )}
           </svg>
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-night-2 ring-1 ring-line">
+          <span
+            // Remounted at each harvest touched: the ready ones jump again.
+            key={hop}
+            className={`flex h-12 w-12 items-center justify-center rounded-full bg-night-2 ring-1 ring-line ${hop > 0 && w.state === "ready" ? "star-hop" : ""}`}
+            style={{ animationDelay: `${rank * 70}ms` }}
+          >
             {output ? (
-              <GoodsMark code={output} size={30} />
+              // The harvest's goods fly from here to the store (fx.tsx, flyGoods).
+              <span data-goods-from={output} className="flex">
+                <GoodsMark code={output} size={30} />
+              </span>
             ) : (
               <span className="h-4 w-4 rotate-45 bg-gold-soft" />
             )}
