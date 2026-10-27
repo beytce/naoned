@@ -646,7 +646,14 @@ export function MapScreen(
   const trade = !campaign && !terra;
   // The counter opens up close, its workshops in orbit around its sun.
   if (trade && sel?.kind === "home")
-    panel = <ComptoirOrbit props={props} crest={crest} onClose={() => select(null)} />;
+    panel = (
+      <ComptoirOrbit
+        props={props}
+        crest={crest}
+        from='[data-coach="home"]'
+        onClose={() => select(null)}
+      />
+    );
   if (trade && sel?.kind === "city") {
     const i = cities.indexOf(sel.code);
     const step = (k: number) =>
@@ -656,6 +663,7 @@ export function MapScreen(
       <CityOrbit
         props={props}
         code={sel.code}
+        from={`[data-coach="city-${sel.code}"]`}
         onClose={() => select(null)}
         onPrev={() => step(-1)}
         onNext={() => step(1)}

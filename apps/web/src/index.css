@@ -507,27 +507,31 @@
   }
 }
 /* The counter up close: it opens like a zoom on the sun, the chain's dashes run toward who eats. */
+/*
+ * The place opens from its mark on the map (Orbit.tsx sets the transform-origin there): a zoom
+ * from a fifth of its size, the approach of a star.
+ */
 .orbit-in {
-  animation: orbit-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: orbit-in 0.42s var(--ease-out) both;
 }
 @keyframes orbit-in {
   0% {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.2);
   }
   100% {
     opacity: 1;
     transform: none;
   }
 }
-/* Closed, the place shrinks back into the map, faster than it came (MapScreen, useLeaving). */
+/* Closed, the place folds back into its mark, faster than it came (MapScreen, useLeaving). */
 .orbit-out {
   animation: orbit-out var(--t-quick) var(--ease-in) both;
 }
 @keyframes orbit-out {
   to {
     opacity: 0;
-    transform: scale(0.94);
+    transform: scale(0.3);
   }
 }
 /*

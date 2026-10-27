@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { CityIcon } from "../../art/cities.js";
 import { Crest, type CrestData } from "../../art/crest.js";
 import { GoodsMark, goodsColour } from "../../art/goods.js";
@@ -20,6 +20,24 @@ const ORBIT = 36;
 const RING = 30;
 const RING_C = 2 * Math.PI * RING;
 
+/**
+ * A place opens from its mark on the map and folds back into it: the mark's middle, measured as the
+ * place mounts, is the origin of its zoom (index.css, .orbit-in and .orbit-out). Without a mark in
+ * sight, the middle of the screen.
+ */
+function useOriginAt(from: string | undefined) {
+  const section = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const el = section.current;
+    const mark = from ? document.querySelector(from) : null;
+    if (!el || !mark || mark.getClientRects().length === 0) return;
+    const box = el.getBoundingClientRect();
+    const at = mark.getBoundingClientRect();
+    el.style.transformOrigin = `${at.left + at.width / 2 - box.left}px ${at.top + at.height / 2 - box.top}px`;
+  }, [from]);
+  return section;
+}
+
 interface Star {
   b: BuildingView;
   x: number;
@@ -38,13 +56,17 @@ export function ComptoirOrbit({
   crest,
   onClose,
   leaving,
+  from,
 }: {
   props: GameProps;
   crest: CrestData;
   onClose: () => void;
   /** Closed: it shrinks back into the map for a moment, untouchable (MapScreen). */
   leaving?: boolean;
+  /** Its mark on the map, where it opens from and folds back into. */
+  from?: string;
 }) {
+  const section = useOriginAt(from);
   const { view, now } = props;
   const m = fr.game.map;
   const t = m.orbit;
@@ -79,6 +101,7 @@ export function ComptoirOrbit({
   const total = stock.reduce((n, i) => n + i.available, 0);
   return (
     <section
+      ref={section}
       // A place over the map (the guide sees the map covered, never the windows over it), and a
       // place's panel for the layout's checks; no longer once it leaves.
       data-orbit={leaving ? undefined : true}
@@ -379,6 +402,7 @@ export function CityOrbit({
   onCargo,
   onSheet,
   leaving,
+  from,
 }: {
   props: GameProps;
   code: string;
@@ -390,7 +414,10 @@ export function CityOrbit({
   onNext: () => void;
   onCargo: () => void;
   onSheet: (s: string) => void;
+  /** Its mark on the map, where it opens from and folds back into. */
+  from?: string;
 }) {
+  const section = useOriginAt(from);
   const { view, now } = props;
   const m = fr.game.map;
   const t = m.orbit;
@@ -439,6 +466,7 @@ export function CityOrbit({
   const cargo = road && orders.length > 0;
   return (
     <section
+      ref={section}
       // A place over the map (the guide sees the map covered), and a place's panel for the checks;
       // no longer once it leaves.
       data-orbit={leaving ? undefined : true}
