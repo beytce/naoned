@@ -73,6 +73,7 @@ import {
   CondottaBar,
   SkirmishBar,
   TerraActions,
+  TerraFronts,
   TerraHud,
   TerraIntro,
   TerraOverlay,
@@ -560,13 +561,19 @@ export function MapScreen(
   const families = view.families;
   const campaign = props.layer === "campaign" && families ? families : null;
   const terra = props.layer === "terra" && week.view && shapes ? week.view : null;
+  // While the merchant's absence replays (two seconds), the markers are those of the map as it
+  // stands: made again at each of its frames, they would all be measured again ten times a second.
+  const liveShapes = useTerraShapes(absence.replaying ? terraView : null);
+  const markerView = terra && absence.replaying && terraView && liveShapes ? terraView : terra;
+  const markerShapes = markerView === terra ? shapes : liveShapes;
   // The Terraferma's markers and spots, made again when the map changes or every ten seconds
   // (their countdowns), never at each second's clock: the map stays smooth.
   const tenSeconds = Math.floor(now / 10_000);
   // biome-ignore lint/correctness/useExhaustiveDependencies: `tenSeconds` paces the countdowns.
   const terraMarkerList = useMemo(
-    () => (terra && shapes ? terraMarkers(props, terra, shapes, select) : null),
-    [terra, shapes, select, tenSeconds],
+    () =>
+      markerView && markerShapes ? terraMarkers(props, markerView, markerShapes, select) : null,
+    [markerView, markerShapes, select, tenSeconds],
   );
   const terraSpotList = useMemo(
     () => (terra && shapes ? terraSpots(terra, shapes) : null),
@@ -730,6 +737,7 @@ export function MapScreen(
             <TerraOverlay v={terra} s={shapes} cell={terraCell} />
           ) : undefined
         }
+        moving={terra && shapes ? <TerraFronts v={terra} s={shapes} /> : undefined}
         markers={campaign ? campaignMarkers(props, campaign, select) : (terraMarkerList ?? markers)}
         parked={trade ? parked : []}
         roads={trade ? roads : []}

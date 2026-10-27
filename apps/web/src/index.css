@@ -716,23 +716,15 @@
 .terra-progress {
   transition: width 10s linear;
 }
-/* The next cell a front will take breathes, slowly, until it falls. */
+/*
+ * The next cell a front will take breathes, slowly, until it falls; the merchant's fronts march to
+ * their aim. Both stepped from script, ten times a second (TerraLayer.tsx, useMarch).
+ */
 .terra-next {
-  animation: terra-next 1.6s ease-in-out infinite;
+  fill-opacity: var(--breath, 0.25);
 }
-@keyframes terra-next {
-  0%,
-  100% {
-    fill-opacity: 0.12;
-  }
-  50% {
-    fill-opacity: 0.38;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .terra-next {
-    animation: none;
-  }
+.terra-march {
+  stroke-dashoffset: var(--march, 0);
 }
 .route-march {
   animation: route-march 0.9s linear infinite;

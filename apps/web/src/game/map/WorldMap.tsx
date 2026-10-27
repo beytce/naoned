@@ -157,6 +157,11 @@ export const WorldMap = forwardRef<
     focus?: { x: number; y: number }[];
     /** Drawn under the markers, in map units (the campaign's territories and marches). */
     overlay?: ReactNode;
+    /**
+     * Drawn over the overlay in an SVG of its own, in map units: what moves without end (the
+     * Terraferma's fronts marching), so that the overlay is not laid out again at every frame.
+     */
+    moving?: ReactNode;
     markers: MapMarker[];
     /** Parked carts, in their order beside the counter. */
     parked: string[];
@@ -177,6 +182,7 @@ export const WorldMap = forwardRef<
   const root = useRef<HTMLDivElement>(null);
   const ground = useRef<HTMLDivElement>(null);
   const lines = useRef<SVGSVGElement>(null);
+  const motion = useRef<SVGSVGElement>(null);
   const nodes = useRef(new Map<string, HTMLElement>());
   /** The markers' layer: a pan moves it as one, the markers stay where they were laid out. */
   const layer = useRef<HTMLDivElement>(null);
@@ -325,6 +331,7 @@ export const WorldMap = forwardRef<
     const t = `translate3d(${c.tx}px, ${c.ty}px, 0) scale(${c.s})`;
     if (ground.current) ground.current.style.transform = t;
     if (lines.current) lines.current.style.transform = t;
+    if (motion.current) motion.current.style.transform = t;
     const now = Date.now() + live.current.clockOffset;
     const tier = String(zoomTier(fitted.current ? c.s / fitted.current.s : 1));
     if (root.current && root.current.dataset.zoom !== tier) root.current.dataset.zoom = tier;
@@ -810,6 +817,21 @@ export const WorldMap = forwardRef<
             ) : null;
           })()}
       </svg>
+      {props.moving && (
+        <svg
+          ref={motion}
+          viewBox={`0 0 ${MAP_W} ${MAP_H}`}
+          width={WORLD_W}
+          height={WORLD_H}
+          className="pointer-events-none absolute left-0 top-0 origin-top-left overflow-visible will-change-transform"
+          style={{ transform: lines.current?.style.transform }}
+          aria-hidden="true"
+        >
+          <g key={props.layer} className="animate-fade">
+            {props.moving}
+          </g>
+        </svg>
+      )}
       {/* No size of its own: a tap between the markers reaches the map underneath. */}
       <div ref={layer} className="absolute left-0 top-0 z-[2] will-change-transform">
         {props.markers.map((m) => (
