@@ -139,6 +139,8 @@ export interface SimulationResult {
   };
   /** Faraj's bales: opened, cards by rarity, value at reference prices by player (deniers). */
   bales?: { opened: number; cards: Record<string, number>; valueBy: Record<string, number> };
+  /** The war's goods (R1): taken from the merchants' stock by the Terraferma, by resource. */
+  war?: { eaten: Record<string, number>; built: Record<string, number> };
   /** The families and the week's campaign: members, lances, battles, weeks won, decrees. */
   families?: {
     /** Members of each family at the end of the season. */
@@ -277,6 +279,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     decreeMoney: {},
   } as NonNullable<SimulationResult["families"]>;
   const bales = { opened: 0, cards: {}, valueBy: {} } as NonNullable<SimulationResult["bales"]>;
+  const war: NonNullable<SimulationResult["war"]> = { eaten: {}, built: {} };
   let now = START;
   const muda = { arrivals: 0, brought: 0, sold: 0, takings: 0n, buyers: new Set<string>() };
   const run = (cmd: Command): boolean => {
@@ -323,6 +326,15 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
       }
     }
     recordFlows(flows, res.effects);
+    for (const m of res.effects.stock) {
+      const into =
+        m.reason === "terraferma_rations"
+          ? war.eaten
+          : m.reason === "terraferma"
+            ? war.built
+            : undefined;
+      if (into) into[m.resource] = (into[m.resource] ?? 0) - m.quantity;
+    }
     for (const e of res.effects.events) {
       if (e.type === "harvest") activity.harvests++;
       if (e.type === "muda_arrived") muda.arrivals++;
@@ -573,6 +585,7 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
   // The families' figures only while they play (the Terraferma replaces them).
   if (familiesOn(ctx)) result.families = families;
   result.bales = bales;
+  result.war = war;
   const playerDays = result.daily.reduce((a, d) => a + d.active, 0);
   const sortedFirst = [...activity.firstDelivery].sort((a, b) => a - b);
   result.activity = {

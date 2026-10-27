@@ -379,7 +379,27 @@ export function terraChecks(r: SimulationResult): Check[] {
     0,
   );
   const allDestroyed = r.daily.reduce((a, d) => a + Number(d.destroyed), 0);
+  const actives = days.reduce((a, d) => a + d.active, 0);
+  const goods = (by: Record<string, number> = {}) =>
+    Object.entries(by)
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([k, v]) => `${k} ${v} (${(v / Math.max(1, actives)).toFixed(1)}/actif/j)`)
+      .join(", ") || "rien";
   return [
+    {
+      name: "La guerre mange : pain des troupes",
+      target: "diagnostic : la Terraferme, puits de marchandises (R1)",
+      value: goods(r.war?.eaten),
+      pass: true,
+      blocking: false,
+    },
+    {
+      name: "La guerre mange : matériaux des bâtiments et pain du plafond",
+      target: "diagnostic (R1)",
+      value: goods(r.war?.built),
+      pass: true,
+      blocking: false,
+    },
     {
       name: "Monnaie détruite par la Terraferme",
       target: "diagnostic : le puits qui remplace l'entretien",
