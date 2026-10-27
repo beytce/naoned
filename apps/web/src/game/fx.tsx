@@ -85,6 +85,35 @@ function beat(el: HTMLElement, cls: string): void {
 }
 
 /**
+ * A city paid by a delivery: a ring of its light grows from it and fades. Nothing if the city is
+ * not on screen (a place open over the map, another layer), nor for those who ask for less motion.
+ */
+export function ringAt(selector: string): void {
+  if (typeof window === "undefined" || reduced()) return;
+  const layer = document.querySelector<HTMLElement>("[data-fx-layer]");
+  const el = shown(selector);
+  if (!layer || !el) return;
+  const r = el.getBoundingClientRect();
+  if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth)
+    return;
+  const c = middle(el);
+  const size = Math.max(r.width, r.height);
+  const ring = document.createElement("span");
+  ring.className = "absolute rounded-full border-2 border-lagoon";
+  ring.style.cssText = `left:${c.x - size / 2}px;top:${c.y - size / 2}px;width:${size}px;height:${size}px;box-shadow:0 0 18px rgb(var(--lagoon) / 0.6)`;
+  layer.appendChild(ring);
+  const wave = ring.animate(
+    [
+      { transform: "scale(0.7)", opacity: 0.95 },
+      { transform: "scale(2.2)", opacity: 0 },
+    ],
+    { duration: 900, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+  );
+  wave.onfinish = () => ring.remove();
+  wave.oncancel = () => ring.remove();
+}
+
+/**
  * The harvest seen coming in: each good's mark leaves the star of the counter that made it and
  * flies in an arc to its chip of the store (or the store's door when the chips are hidden), which
  * beats as it lands, a note higher at each good. Nothing where there is no star to leave from
@@ -158,7 +187,8 @@ export function FxLayer() {
       const { gain, note, from: origin } = (e as CustomEvent<FlyOptions & { gain: bigint }>).detail;
       const to = purse.getBoundingClientRect();
       const end = { x: to.left + to.width / 2, y: to.top + to.height / 2 };
-      const start = origin ? document.querySelector(origin)?.getBoundingClientRect() : undefined;
+      // From the place that paid when it is drawn (a city hidden by another layer has no box).
+      const start = origin ? shown(origin)?.getBoundingClientRect() : undefined;
       const from = start
         ? { x: start.left + start.width / 2, y: start.top + start.height / 2 }
         : (lastTouch ?? { x: window.innerWidth / 2, y: window.innerHeight / 2 });
