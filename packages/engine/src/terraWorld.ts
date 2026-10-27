@@ -210,7 +210,7 @@ function serveTerraRations(tx: Tx, map: TerraState): void {
     const have = tx.s.inventories[id]?.bread?.available ?? 0;
     if (whole <= 0) {
       // Bread back in the stock: the troops will eat at their next meal.
-      if (p.unfed && have > 0) delete p.unfed;
+      if (p.unfed && have > 0) p.unfed = undefined;
       continue;
     }
     const served = Math.min(have, whole);
@@ -220,7 +220,7 @@ function serveTerraRations(tx: Tx, map: TerraState): void {
       if (!p.unfed) emit(tx, "terra_hungry", id, { missing: whole - served });
       p.unfed = true;
     } else if (p.unfed) {
-      delete p.unfed;
+      p.unfed = undefined;
     }
   }
 }
