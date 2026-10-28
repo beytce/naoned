@@ -1247,11 +1247,11 @@ export const venice1450Settings: WorldSettingsInput = {
   },
   // The Doge's tenders (recommendations of 20 October 2026) are off since the incanto of the
   // Sera (R11, 28 October 2026): the rules stay in the engine, off when absent.
-  // The incanto of the galleys (R11, docs/plan-rupture.md): half of each arrival of the Muda in
-  // three lots, closing at 20 h 10, 20 h 20 and 20 h 30 (two minutes more for a late bid); bids
+  // The incanto of the galleys (R11, docs/plan-rupture.md): 30 % of each arrival of the Muda in
+  // three lots (half sold too little: a lot weighed more than a day's income), closing at 20 h 10, 20 h 20 and 20 h 30 (two minutes more for a late bid); bids
   // are maxima, from 60 % of the goods' reference, a step of 5 %; one lot a Sera per merchant.
   incanto: {
-    shareBps: 5_000,
+    shareBps: 3_000,
     lots: 3,
     hour: 20,
     firstMinute: 10,

@@ -787,8 +787,8 @@ export class Bot {
    */
   /**
    * The incanto of the Sera (R11): a maximum on the cheapest open lot, at what the house thinks
-   * the goods are worth (the speculator dearer, the casual merchant cheaper), with spare ducats
-   * only, one lot a Sera.
+   * the goods are worth (the speculator dearer, the casual merchant cheaper), with half as much
+   * again in hand, one lot a Sera.
    */
   private incanto(s: Session): void {
     if (!s.ctx.settings.incanto) return;
@@ -808,7 +808,7 @@ export class Bot {
     const bps = (worth[this.profile.name] ?? 9_000) + (h % 1_001) - 500;
     const best = open
       .map((l) => ({ l, max: (l.value * BigInt(bps)) / 10_000n, min: incantoMinimum(s.ctx, l) }))
-      .filter((x) => x.max >= x.min && this.cash(s) >= x.max * 3n)
+      .filter((x) => x.max >= x.min && this.cash(s) * 2n >= x.max * 3n)
       .sort((a, b) =>
         (a.min * 10_000n) / (a.l.value || 1n) > (b.min * 10_000n) / (b.l.value || 1n) ? 1 : -1,
       )[0];

@@ -2723,7 +2723,7 @@ const frDict = {
       results: "Résultats du jour",
       podesta: (city: string) => `Vous êtes Podestà de ${city}`,
       noResults: "Vous ne tenez aucune ville ce soir.",
-      help: "Chaque arrivée des galères de la Muda met la moitié de son chargement aux enchères, en trois lots qui ferment à 20 h 10, 20 h 20 et 20 h 30. Laissez votre maximum quand vous voulez, dès l'arrivée : vous payez seulement le deuxième maximum plus 5 %, et vos ducats sont rendus si l'on vous dépasse. Une enchère dans les deux dernières minutes prolonge le lot de deux minutes. Un lot par marchand et par Sera. Le prix payé sort du jeu.",
+      help: "Chaque arrivée des galères de la Muda met 30 % de son chargement aux enchères, en trois lots qui ferment à 20 h 10, 20 h 20 et 20 h 30. Laissez votre maximum quand vous voulez, dès l'arrivée : vous payez seulement le deuxième maximum plus 5 %, et vos ducats sont rendus si l'on vous dépasse. Une enchère dans les deux dernières minutes prolonge le lot de deux minutes. Un lot par marchand et par Sera. Le prix payé sort du jeu.",
       errors: {
         bid_too_low: "Votre maximum doit atteindre le minimum du lot.",
         lot_closed: "Ce lot est clos.",
@@ -2860,7 +2860,7 @@ const frDict = {
         "La guerre mange les marchandises : sur la Terraferme, vos troupes mangent du pain chaque jour ; sans pain, vous ne recrutez plus. « Max » demande aussi du pain, le fort des briques, les remparts des briques et des planches, le port des planches, la bombarde du bois et des planches.",
         "La Signoria des villes remplace les fournisseurs officiels et l'embargo : chaque ducat livré dans une ville, et chaque heure où vous la tenez sur la Terraferme, compte sur sa jauge. Chaque nuit à minuit, le premier devient Podestà (3 villes au plus) : il prend 3 % des livraisons des autres vers sa ville et prend ses commandes une demi-heure avant tout le monde.",
         "Le Lustre : chaque semaine, une Sfida contre un marchand de votre rang (ou le fantôme d'une de ses semaines) ; qui vend le plus gagne du Lustre. Six rangs, de Popolano à Procuratore, gardés d'une saison à l'autre (deux de moins au changement de mois). On peut défier un marchand depuis son palmarès.",
-        "La Sera, chaque soir de 20 h à 20 h 30 : la moitié de chaque arrivée des galères aux enchères en trois lots (votre maximum laissé quand vous voulez, vous payez le deuxième maximum plus 5 %), et la bataille de la Terraferme. Au quai, les galères ne renchérissent plus ; les appels d'offres du Doge sont retirés.",
+        "La Sera, chaque soir de 20 h à 20 h 30 : 30 % de chaque arrivée des galères aux enchères en trois lots (votre maximum laissé quand vous voulez, vous payez le deuxième maximum plus 5 %), et la bataille de la Terraferme. Au quai, les galères ne renchérissent plus ; les appels d'offres du Doge sont retirés.",
       ],
     },
     howTo: [

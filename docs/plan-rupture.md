@@ -28,8 +28,8 @@
 | R1 | La guerre mange les marchandises | 1 | fait | `98c70c7`…`5fbc6b6` |
 | R2 | La Signoria des villes | 1 | fait | `9d46868`…`d03784d` |
 | R12 | Le grand ménage (part de la vague 1 : fournisseurs officiels, embargo) | 1 | fait | `acfc181` |
-| R6 | Le Lustre (échelle de rang, fantômes) | 2 | fait (calibration de la vague à faire) | `ef52658`… |
-| R11 | La Sera (20 h, incanto des galères) | 2 | fait (calibration de la vague en cours) | `572ffc3`… |
+| R6 | Le Lustre (échelle de rang, fantômes) | 2 | fait | `ef52658`… |
+| R11 | La Sera (20 h, incanto des galères) | 2 | fait | `572ffc3`… |
 | R3 | Les Atouts | 3 | à faire | — |
 | R10 | La Lettre du jour | 3 | à faire | — |
 | R4 | La Dynastie | 4 | à faire | — |
@@ -44,8 +44,8 @@
 - **Vague 1 terminée** (28 octobre 2026). Le porteur a choisi de passer à la vague 2 plutôt que de forcer le pain et la croissance (« fais l'option qui te semble la mieux »).
 - **Vague 2 en cours** (plan validé le 28 octobre, détail plus bas, « Vague 2 : le plan validé »). Ordre : Lustre moteur → Lustre serveur → Lustre écrans → incanto moteur (+ bataille à la minute) → incanto PNJ, simulateur, ménage → Sera serveur et écrans → calibration et docs.
 - **Calibration faite** : deux essais (0,1 et 0,2 pain par troupe), 5 graines conformes chacun ; 0,1 retenu (`docs/calibration.md`, « Vague 1 »). Restent sous leur cible : la croissance du mois (1,12 à 1,18 pour 1,20) et le pain en fin de mois (56 à 60 % pour 65 %).
-- **Essai en cours** : `pnpm sim` (5 graines) avec `incanto.shareBps` 3 000 et des PNJ qui enchérissent dès qu'ils ont 1,5 fois leur maximum en caisse (`bots.ts`, au lieu de 3 fois) ; le dépôt garde 5 000 et 3 fois tant que l'essai n'est pas validé. Premier essai consigné dans `docs/calibration.md`, « Vague 2 ».
-- **Étape suivante exacte** : lire l'essai, retenir le meilleur réglage de l'incanto, le consigner ; puis passer la vague 3 (R3 les Atouts, R10 la Lettre) en mode plan.
+- **Vague 2 terminée** (28 octobre 2026) : calibration faite, incanto à 30 % de chaque arrivée, PNJ qui enchérissent avec 1,5 fois leur maximum en caisse (`docs/calibration.md`, « Vague 2 »). Restent sous leur cible, comme après la vague 1 : la croissance du mois (1,16 à 1,20 pour 1,20) et le pain (55 à 59 % pour 65 %), à mesurer avec de vrais joueurs.
+- **Étape suivante exacte** : passer la vague 3 (R3 les Atouts, R10 la Lettre du jour, écrite par Claude) en mode plan, sur le cadre de la vague 3 plus bas.
 - **À savoir** :
   - La Signoria compte les livraisons parties entre 8 h et 22 h (Paris) ; le Podestà est nommé par `closeSignoriaDays` dans le tick, au changement de jour (minuit).
   - L'e2e de mise en page passe sur chaque format lancé seul (`SIZES=390x844`, `SIZES=320x568`) ; lancé sur les deux formats d'affilée, le second a échoué deux fois dans le guide, à une étape différente chaque fois (une charrette sur Venise, l'achat de briques), puis la machine a été redémarrée : à surveiller. Chromium : `CHROMIUM=/opt/pw-browsers/chromium`.
@@ -130,3 +130,4 @@ But : une ville se prend en y livrant ou en la tenant sur la Terraferme, sur la 
 - 28 octobre 2026 : moteur de l'incanto (`incanto.ts` : `openIncanto` appelé par `arriveMuda`, commande `incantoBid`, `closeIncantoLots` dans le tick, comptes `hold:`, motifs `incanto_lock`, `incanto_refund`, `incanto`), tests `test/incanto.test.ts` ; bataille à la minute (`terraferma.battle.toMinute`, `inBattle`), vue serveur et texte web.
 - 28 octobre 2026 : incanto chez les PNJ (un maximum à 80–110 % de la référence selon le profil, sur le lot le moins cher, avec des ducats en réserve), au rapport du simulateur (« Incanto : lots vendus… », `incanto` parmi les puits) ; ménage à Venise : `incanto` allumé, appels d'offres retirés (test serveur remplacé), `muda.priceRiseBps` à 0, bataille de 20 h à 20 h 30.
 - 28 octobre 2026 : la Sera sur le serveur et à l'écran — `view.sera` (lots, prix, minimum, maximum du marchand, tête), action `incantoBid` acceptée par `routes.ts`, avis `sera` (19 h 55, enchère dépassée) et cloche, rond « La Sera » dans le HUD tant que des lots sont ouverts, feuille `Sera.tsx` (lots par leurs marques, prix, statut, quatre maximums, un seul bouton or « Enchérir », vos villes de Podestà) ; étape e2e « sera » sur une réponse réécrite (aucun lot à l'ouverture d'un monde) ; test serveur « takes a maximum at the incanto ».
+- 28 octobre 2026 : calibration de la vague 2 (incanto à 50 % : 3 à 5 lots vendus sur 30 ; à 30 % avec des PNJ moins frileux : 30 sur 30, retenu) ; vague 2 terminée.

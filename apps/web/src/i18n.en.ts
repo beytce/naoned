@@ -2643,7 +2643,7 @@ export const en: Dictionary = {
       results: "Today's results",
       podesta: (city: string) => `You are Podestà of ${city}`,
       noResults: "You hold no city tonight.",
-      help: "Each arrival of the Muda's galleys puts half of its load up for auction, in three lots closing at 8:10, 8:20 and 8:30 pm. Leave your maximum whenever you like, from the arrival on: you only pay the second maximum plus 5%, and your ducats come back if you are passed. A bid in the last two minutes extends the lot by two minutes. One lot per merchant and per Sera. The price paid leaves the game.",
+      help: "Each arrival of the Muda's galleys puts 30% of its load up for auction, in three lots closing at 8:10, 8:20 and 8:30 pm. Leave your maximum whenever you like, from the arrival on: you only pay the second maximum plus 5%, and your ducats come back if you are passed. A bid in the last two minutes extends the lot by two minutes. One lot per merchant and per Sera. The price paid leaves the game.",
       errors: {
         bid_too_low: "Your maximum must reach the lot's minimum.",
         lot_closed: "This lot is closed.",
@@ -2773,7 +2773,7 @@ export const en: Dictionary = {
         "War eats goods: on the Terraferma your troops eat bread every day; without bread you recruit no more. « Max » also asks for bread, the fort for bricks, walls for bricks and planks, the port for planks, the bombard for wood and planks.",
         "The Signoria of the cities replaces the official suppliers and the embargo: every ducat delivered to a city, and every hour you hold it on the Terraferma, counts on its gauge. Every night at midnight the leader becomes Podestà (3 cities at most): it takes 3% of the others' deliveries to its city and takes its orders half an hour before everyone.",
         "The Lustre: every week, a Sfida against a merchant of your rank (or the ghost of one of their weeks); whoever sells the most wins Lustre. Six ranks, from Popolano to Procuratore, kept from season to season (two fewer at the month's change). Challenge a merchant from their record.",
-        "The Sera, every evening from 8 to 8:30 pm: half of each arrival of the galleys up for auction in three lots (leave your maximum whenever you like, you pay the second maximum plus 5%), and the battle of the Terraferma. On the quay the galleys no longer get dearer; the Doge's tenders are gone.",
+        "The Sera, every evening from 8 to 8:30 pm: 30% of each arrival of the galleys up for auction in three lots (leave your maximum whenever you like, you pay the second maximum plus 5%), and the battle of the Terraferma. On the quay the galleys no longer get dearer; the Doge's tenders are gone.",
       ],
     },
     howTo: [

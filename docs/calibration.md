@@ -1580,3 +1580,24 @@ Les 5 graines sont conformes.
 **Lecture.**
 - L'incanto vend peu : un lot vaut environ 300 ducats (la moitié d'une arrivée pour 40 marchands, en trois lots), plus d'une journée de revenu, et les PNJ n'enchérissent qu'avec trois fois leur maximum en caisse. Les lots invendus retournent au quai : les marchandises entrent quand même dans l'économie.
 - La croissance du mois et le pain ne bougent pas par rapport à la vague 1 : la Sera concentre la demande des humains, que la simulation ne joue pas.
+
+### Second essai, retenu : 30 % de chaque arrivée, des PNJ qui enchérissent avec 1,5 fois leur maximum en caisse
+
+Les 5 graines sont conformes.
+
+| Mesure | Graines 1 à 5 |
+| --- | --- |
+| Incanto : lots vendus sur 30 | 30 partout |
+| Incanto : prix payé / référence | 97 · 97 · 96 · 92 · 96 % |
+| Incanto : gagnants distincts | 18 · 15 · 19 · 17 · 15 |
+| Incanto : ducats détruits sur la saison | 13 177 à 14 367 |
+| Monnaie payée, Lombardie / Installation | 1,17 · 1,17 · 1,16 · 1,18 · 1,20 |
+| Pain en fin de mois | 55 · 56 · 58 · 58 · 59 % |
+| Masse monétaire par actif, plafond | 0,90 à 0,95 × |
+| Assidus devant occasionnels (ventes nettes médianes) | 101 à 365 % |
+
+**Lecture.**
+- Chaque lot trouve preneur, près de sa référence, et les lots se répartissent entre 15 à 19 marchands : l'enchère vit sans qu'un seul la rafle.
+- L'incanto devient un puits de monnaie notable (environ 13 500 ducats par saison), sans que la masse monétaire sorte de sa cible.
+- La croissance du mois (1,16 à 1,20) et le pain (55 à 59 %) restent proches de la vague 1 : ces deux cibles attendent la mesure de vrais joueurs, à la Sera.
+- L'avance des assidus varie beaucoup d'une graine à l'autre (101 à 365 %) : diagnostic à suivre dans `/admin`.
