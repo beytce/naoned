@@ -585,6 +585,7 @@ export function Game(props: {
         data={ceremony}
         nextSeason={catalog.world.name}
         pseudo={props.account.pseudo ?? ""}
+        accountId={props.account.id}
         onDone={() => {
           haptic("success");
           setCeremony(null);

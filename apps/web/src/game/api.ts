@@ -3,6 +3,7 @@ import { fr } from "../i18n.js";
 import { pushOpened } from "./shortcut.js";
 import type {
   Action,
+  CanalView,
   Catalog,
   CompanyInvitation,
   CompanyView,
@@ -96,6 +97,8 @@ export const gameApi = {
   reset: () => call<GameResponse>("POST", "/api/game/reset", {}),
   join: (region: string, given?: string) =>
     call<GameResponse>("POST", "/api/game/join", { region, ...(given ? { given } : {}) }),
+  /** The Grand Canal (R5): public, signed in or not. */
+  canal: () => call<CanalView>("GET", "/api/canal"),
   /** The Doge's election (R7): candidates, programmes, voices. */
   election: () => call<ElectionView | null>("GET", "/api/game/election"),
   vote: (candidate: string, boost: number) =>

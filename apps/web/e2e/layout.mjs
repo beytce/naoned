@@ -50,6 +50,31 @@ const faults = [];
 // LANG=en plays the session in English (E3-8 of the experts): the words the script reads, in
 // each language (apps/web/src/i18n.ts and i18n.en.ts).
 const LANG = process.env.LANG === "en" || process.env.E2E_LANG === "en" ? "en" : "fr";
+/** Twelve palaces held on the Grand Canal, and a Doge (R5, R7). */
+const CANAL = {
+  plots: Array.from({ length: 12 }, (_, i) => ({
+    plot: i + 1,
+    pseudo:
+      ["Casa Foscari", "Casa Grimani", "Casa Contarini", "Casa Dandolo"][i % 4] +
+      (i > 3 ? ` ${i}` : ""),
+    crest: {
+      shape: "heater",
+      color: ["vermilion", "lagoon", "gold", "violet", "emerald"][i % 5],
+      symbol: "lion",
+    },
+    generations: (i % 4) + 1,
+    atouts: i % 6,
+    cities: i % 3,
+    doge: i === 0,
+  })),
+  doge: {
+    pseudo: "Casa Foscari",
+    crest: { shape: "heater", color: "vermilion", symbol: "lion" },
+    decree: { code: "faveur", target: "venezia" },
+    mutator: "grand_gel",
+  },
+};
+
 const WORDS = {
   fr: {
     covered: /fermez cette fenêtre/i,
@@ -73,6 +98,7 @@ const WORDS = {
     atouts: /atout de la semaine/i,
     letter: /lettre du jour/i,
     senate: /le sénat/i,
+    canal: /^grand canal$/i,
     build: /^bâtir$/i,
     ranking: /^classement$/i,
     bale: /ballot/i,
@@ -110,6 +136,7 @@ const WORDS = {
     atouts: /atout of the week/i,
     letter: /letter of the day/i,
     senate: /the senate/i,
+    canal: /^grand canal$/i,
     signoria: /^signoria$/i,
     build: /^build$/i,
     ranking: /^ranking$/i,
@@ -292,6 +319,9 @@ async function session(width, height, tag) {
         } catch {}
       }, TEXT_SIZE);
     const page = await context.newPage();
+    // The Grand Canal (R5) and the Doge of the month (R7): a new world has neither, the
+    // public answer is filled for the whole run (sign-in screen, ranking).
+    await page.route("**/api/canal", (route) => route.fulfill({ json: CANAL }));
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     let n = 0;
@@ -484,6 +514,12 @@ async function session(width, height, tag) {
       await ranking.first().click();
       await page.waitForTimeout(600);
       await check("classement");
+      const canal = page.getByRole("button", { name: WORDS.canal });
+      if ((await canal.count()) > 0) {
+        await canal.first().click();
+        await page.waitForTimeout(600);
+        await check("canal");
+      }
       await closeAll(page);
     }
     // The help, its loop as an orbit and the goods' code.

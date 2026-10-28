@@ -861,6 +861,8 @@ export interface Ceremony {
     worth: Money;
     turnover: Money | null;
   }[];
+  /** The palace the month's ranking gave on the Grand Canal (R5; null: none). */
+  palace?: number | null;
 }
 
 export interface Renown {
@@ -1690,4 +1692,23 @@ export interface ElectionView {
     calmiere: { capBps: number };
   };
   ruling: { decree: DogeDecree; mutator: string | null } | null;
+}
+
+/** The Grand Canal (R5): the forty palaces and the Doge of the month, public. */
+export interface CanalView {
+  plots: {
+    plot: number;
+    pseudo: string | null;
+    crest: CrestData | null;
+    generations: number;
+    atouts: number;
+    cities: number;
+    doge: boolean;
+  }[];
+  doge: {
+    pseudo: string | null;
+    crest: CrestData | null;
+    decree: DogeDecree;
+    mutator: string | null;
+  } | null;
 }

@@ -3,6 +3,7 @@ import { Admin } from "./Admin.js";
 import { type Account, ApiError, api, tokenFromLocation } from "./api.js";
 import { Emblem } from "./art/logo.js";
 import { LagoonNight } from "./art/scenes.js";
+import { CanalHero } from "./game/Canal.js";
 import { Game } from "./game/Game.js";
 import { fr } from "./i18n.js";
 import { LANG } from "./lang.js";
@@ -132,7 +133,13 @@ function Hero({ children }: { children: ReactNode }) {
         </h1>
         <p className="mt-2 text-sm text-cream-dim">{fr.seasonOf(new Date())}</p>
       </header>
-      <LagoonNight className="hero-sky -mx-5 mt-2 w-[calc(100%+2.5rem)] max-w-none [@media(max-height:700px)]:mt-1 [@media(max-height:700px)]:max-h-[100px]" />
+      {/* The Grand Canal and the Doge of the month (R5, R7); the night over the lagoon meanwhile. */}
+      <CanalHero
+        className="hero-sky mt-3 [@media(max-height:700px)]:mt-1 [@media(max-height:700px)]:max-h-[110px]"
+        fallback={
+          <LagoonNight className="hero-sky -mx-5 mt-2 w-[calc(100%+2.5rem)] max-w-none [@media(max-height:700px)]:mt-1 [@media(max-height:700px)]:max-h-[100px]" />
+        }
+      />
       <section className="flex flex-1 flex-col justify-start pt-2">{children}</section>
       <LegalLinks className="mt-8" />
     </main>

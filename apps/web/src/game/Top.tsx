@@ -4,6 +4,7 @@ import { Emblem } from "../art/logo.js";
 import { MasteryEmblem } from "../art/mastery.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Panel, Sheet, clock } from "../ui.js";
+import { CanalBoard } from "./Canal.js";
 import type { GameProps } from "./Game.js";
 import { MerchantName } from "./Name.js";
 import { PlayerPalmares } from "./Palmares.js";
@@ -173,7 +174,7 @@ function rowsOf(
     : (season?.map((r) => ({ ...r, value: <Gain value={r.turnover} /> })) ?? null);
 }
 
-type View = "board" | "last" | "rules";
+type View = "board" | "last" | "rules" | "canal";
 
 /**
  * The ranking, a sheet over the map (from the trophy at its foot, or the merchant's rank in the
@@ -259,6 +260,11 @@ export function RankingSheet(props: GameProps) {
               <p className="text-sm text-cream-dim">{tp.noLastWeek}</p>
             )}
           </div>
+        ) : view === "canal" ? (
+          <div>
+            {back}
+            <CanalBoard me={{ id: props.account.id, pseudo: props.account.pseudo }} />
+          </div>
         ) : view === "rules" ? (
           <div className="space-y-3">
             {back}
@@ -283,6 +289,14 @@ export function RankingSheet(props: GameProps) {
                 onClick={() => setView("rules")}
               >
                 {tp.tabs.regles}
+              </button>
+              {/* The Grand Canal (R5): the forty palaces the month's ranking gives. */}
+              <button
+                type="button"
+                className="label inline-flex min-h-11 items-center rounded-full px-3.5 text-gold ring-1 ring-inset ring-gold/60 transition active:scale-95"
+                onClick={() => setView("canal")}
+              >
+                {fr.game.canal.tab}
               </button>
             </span>
             <div className="flex gap-2">

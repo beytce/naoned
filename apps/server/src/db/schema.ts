@@ -366,6 +366,22 @@ export const doges = pgTable("doges", {
   at: timestamp("at", { withTimezone: true }).notNull(),
 });
 
+/**
+ * The Grand Canal (R5, docs/plan-rupture.md): forty palaces from the Rialto to San Marco, given
+ * by each month's final ranking. A palace is kept while its house stays in the forty, and lost
+ * when it leaves them. Plot 1 is the finest, by the Doges' palace.
+ */
+export const canalPlots = pgTable("canal_plots", {
+  plot: integer("plot").primaryKey(),
+  accountId: uuid("account_id")
+    .notNull()
+    .unique()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  /** The month it was won in. */
+  sinceWorldId: uuid("since_world_id").references(() => worlds.id, { onDelete: "set null" }),
+  at: timestamp("at", { withTimezone: true }).notNull(),
+});
+
 export const accountAtouts = pgTable(
   "account_atouts",
   {

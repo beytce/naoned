@@ -2709,6 +2709,27 @@ const frDict = {
       },
     },
     /** The rival of the week, under the rank on the map. */
+    /** The Grand Canal (R5): forty palaces, given by each month's ranking. */
+    canal: {
+      tab: "Grand Canal",
+      title: "Le Grand Canal",
+      label: "Les palais du Grand Canal, du palais des Doges au Rialto",
+      help: "Quarante palais, du palais des Doges au Rialto. Le classement de chaque mois les redonne : une Maison qui reste dans les quarante garde son palais, celle qui en sort le perd, les nouvelles prennent les plus beaux palais libres. Il faut avoir joué une semaine du mois. La façade dit la Maison : un étage par génération, une étoile par Atout débloqué, un écu par ville tenue, la corne du Doge.",
+      empty: "Les palais attendent leurs Maisons : les quarante premiers du mois s'y installeront.",
+      plot: (n: number) => `Palais ${n}`,
+      yours: (n: number) => `Votre palais : le ${n}${n === 1 ? "er" : "e"} du Grand Canal.`,
+      none: (sestiere: string) => `Hors du Grand Canal : votre Maison est à ${sestiere}.`,
+      facade: (g: number, a: number, c: number) =>
+        [
+          g > 0 ? `${g} génération${g > 1 ? "s" : ""}` : "",
+          a > 0 ? `${a} Atout${a > 1 ? "s" : ""}` : "",
+          c > 0 ? `${c} ville${c > 1 ? "s" : ""}` : "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      doge: (name: string) => `Doge du mois : ${name}`,
+      sestieri: ["Cannaregio", "Castello", "Dorsoduro", "San Polo", "Santa Croce", "San Marco"],
+    },
     /** The Doge (R7): the Senate, its candidates, programmes and voices. */
     doge: {
       kicker: "Le Sénat",

@@ -2,6 +2,7 @@ import { and, desc, eq, or, sql } from "drizzle-orm";
 import type { Db } from "./db/client.js";
 import {
   accounts,
+  canalPlots,
   companies,
   companyMembers,
   companyMessages,
@@ -74,6 +75,8 @@ export async function exportAccount(db: Db, accountId: string) {
       })
       .from(sfide)
       .where(or(eq(sfide.a, accountId), eq(sfide.b, accountId))),
+    // The Grand Canal (R5): the palace held, if any.
+    palace: await db.select().from(canalPlots).where(eq(canalPlots.accountId, accountId)),
     // The Dynastie (R4): the line, one generation a month.
     generations: await db.select().from(generations).where(eq(generations.accountId, accountId)),
     influence: await db

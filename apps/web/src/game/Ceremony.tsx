@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Crest } from "../art/crest.js";
 import { fr } from "../i18n.js";
 import { Label, Slab } from "../ui.js";
+import { sestiereOf } from "./Canal.js";
 import { HeirChoice, traitName, useDynasty } from "./Dynasty.js";
 import { gameApi } from "./api.js";
 import { shareChronicle } from "./chronicle.js";
@@ -80,12 +81,15 @@ export function Ceremony({
   data,
   nextSeason,
   pseudo,
+  accountId,
   onDone,
 }: {
   data: CeremonyData;
   nextSeason: string;
   /** The merchant's name, written on the chronicle. */
   pseudo: string;
+  /** The account, for its sestiere off the Canal. */
+  accountId: string;
   onDone: () => void;
 }) {
   const t = fr.game.season;
@@ -197,6 +201,15 @@ export function Ceremony({
       >
         {fr.game.chronicle.share}
       </Slab>
+
+      {/* The palace the month gave on the Grand Canal, or the sestiere (R5). */}
+      {data.palace !== undefined && (
+        <p className="mt-6 text-sm text-gold">
+          {data.palace
+            ? fr.game.canal.yours(data.palace)
+            : fr.game.canal.none(sestiereOf(accountId))}
+        </p>
+      )}
 
       {heir && (
         <div className="mt-8 w-full">

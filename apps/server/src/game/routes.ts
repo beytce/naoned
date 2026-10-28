@@ -33,6 +33,7 @@ import { retention, sharedMailboxes, suspiciousPairs } from "./admin.js";
 import { atoutPoolFor } from "./atouts.js";
 import { bankReport, ledgerCsv } from "./bank.js";
 import { seasonMonthKey } from "./calendar.js";
+import { canalView, palaceOf } from "./canal.js";
 import {
   CompanyError,
   callCompany,
@@ -564,7 +565,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
           ? { value: lustreRow.lustre, tier: tierOf(lustreRules, lustreRow.lustre).code }
           : null,
       ...(welcome ? { welcome: toJson(welcome) } : {}),
-      ...(ceremony ? { ceremony: toJson(ceremony) } : {}),
+      // The palace the month's ranking gave, or none (R5).
+      ...(ceremony
+        ? { ceremony: toJson({ ...ceremony, palace: await palaceOf(db, account.id) }) }
+        : {}),
     };
   });
 
@@ -1459,6 +1463,25 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
    * The Signoria of the cities (R2): each city's Podestà, the three first on its gauge and the
    * merchant's own points, with names and crests.
    */
+  /**
+   * The Grand Canal (R5), for everyone signed in or not: the forty palaces and their façades,
+   * and the Doge of the month with its programme.
+   */
+  app.get("/api/canal", async () => {
+    const doge = await dogeOf(db, seasonMonthKey(world.ctx.endAt ?? world.now()));
+    return toJson({
+      plots: await canalView(db, world.current, doge?.accountId ?? null),
+      doge: doge
+        ? {
+            pseudo: doge.pseudo,
+            crest: doge.crest,
+            decree: doge.decree,
+            mutator: doge.mutator,
+          }
+        : null,
+    });
+  });
+
   /** The Doge ruling this month (R7) as the Dogana's façade shows it, else last month's first. */
   const rulingDoge = async () => {
     const doge = await dogeOf(db, seasonMonthKey(world.ctx.endAt ?? world.now()));

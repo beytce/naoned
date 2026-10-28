@@ -2629,6 +2629,26 @@ export const en: Dictionary = {
         leader: (name: string) => `Leader: ${name}`,
       },
     },
+    canal: {
+      tab: "Grand Canal",
+      title: "The Grand Canal",
+      label: "The palaces of the Grand Canal, from the Doges' palace to the Rialto",
+      help: "Forty palaces, from the Doges' palace to the Rialto. Each month's ranking gives them again: a House that stays in the forty keeps its palace, one that leaves them loses it, newcomers take the finest free palaces. A week of play in the month is needed. The façade tells the House: a floor per generation, a star per Atout unlocked, a shield per city held, the Doge's horn.",
+      empty: "The palaces await their Houses: the month's first forty will settle there.",
+      plot: (n: number) => `Palace ${n}`,
+      yours: (n: number) => `Your palace: number ${n} on the Grand Canal.`,
+      none: (sestiere: string) => `Off the Grand Canal: your House is in ${sestiere}.`,
+      facade: (g: number, a: number, c: number) =>
+        [
+          g > 0 ? `${g} generation${g > 1 ? "s" : ""}` : "",
+          a > 0 ? `${a} Atout${a > 1 ? "s" : ""}` : "",
+          c > 0 ? `${c} cit${c > 1 ? "ies" : "y"}` : "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      doge: (name: string) => `Doge of the month: ${name}`,
+      sestieri: ["Cannaregio", "Castello", "Dorsoduro", "San Polo", "Santa Croce", "San Marco"],
+    },
     doge: {
       kicker: "The Senate",
       title: "The election of the Doge",
