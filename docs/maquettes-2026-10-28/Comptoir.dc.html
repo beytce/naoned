@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mes ateliers</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.nb{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800}
+.gold{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:999px;background:linear-gradient(180deg,#fbe0a0,#f4c554 45%,#c89632);color:#241703;font:700 17px 'Space Grotesk',sans-serif;box-shadow:0 8px 20px rgba(244,197,84,.28);border:0;cursor:pointer;width:100%;transition:transform .1s}
+.gold:active{transform:scale(.96)}
+.done{display:flex;align-items:center;justify-content:center;min-height:54px;border-radius:999px;border:1px solid #6ee0b8;color:#6ee0b8;font-weight:700;font-size:16px}
+.star{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;width:110px;margin-left:-55px;color:#ecf5ff;text-align:center}
+.star:hover{color:#ecf5ff}
+.chip{display:flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:999px;background:#243a5c;color:#ecf5ff;font-size:14px;box-sizing:border-box}
+.chip:hover{color:#ecf5ff}
+.pop{animation:pop .45s cubic-bezier(.2,.8,.2,1.6) both}
+@keyframes pop{from{transform:scale(.4);opacity:0}}
+.fly{position:absolute;width:12px;height:12px;border-radius:3px;pointer-events:none;animation:fly .55s cubic-bezier(.5,0,.8,.4) both}
+@keyframes fly{from{transform:translate(0,0);opacity:1}to{transform:translate(var(--dx),var(--dy)) scale(.6);opacity:.2}}
+.up{position:absolute;transform:translate(-50%,0);font:800 16px 'Archivo',sans-serif;font-stretch:125%;pointer-events:none;animation:up .9s ease-out both;white-space:nowrap}
+@keyframes up{from{opacity:0}20%{opacity:1}to{transform:translate(-50%,-30px);opacity:0}}
+.breathe{animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.04)}}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;color:#c2d4ea;font-size:11px;font-weight:600}
+.tab:hover{color:#ecf5ff}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}.breathe{animation:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #16263e; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+  <header style="position: absolute; left: 16px; right: 16px; top: 10px; height: 44px; display: flex; align-items: center; justify-content: space-between">
+    <h1 class="cz" style="margin: 0; font-size: 18px; color: #ecf5ff">Mes ateliers</h1>
+    <span style="display: flex; align-items: center; gap: 8px"><span class="nb" style="font-size: 18px; color: #f4c554">1 284</span><span style="width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fbe7b0, #f4c554 60%, #c89632); box-shadow: inset 0 0 0 2px #c89632"></span></span>
+  </header>
+
+  <!-- Vos Atouts, rangés en haut à gauche -->
+  <div style="position: absolute; left: 16px; top: 64px; display: flex; align-items: center; gap: 8px" aria-label="Vos Atouts">
+    <span title="Le Fermier : +10 % de matières brutes, −5 % payé par les villes" style="width: 34px; height: 46px; border-radius: 6px; background: #243a5c; border: 1px solid #7db596; transform: rotate(-4deg); display: flex; align-items: center; justify-content: center; color: #7db596; font: 700 13px Cinzel">F</span>
+    <span title="Le Banquier : taxe du Marché 3 % → 1 %" style="width: 34px; height: 46px; border-radius: 6px; background: #243a5c; border: 1px solid #6ec8f5; transform: rotate(2deg); display: flex; align-items: center; justify-content: center; color: #6ec8f5; font: 700 13px Cinzel">B</span>
+    <a href="Atout.dc.html" aria-label="L’Atout de la semaine attend : le choisir" style="width: 44px; height: 56px; border-radius: 6px; background: repeating-linear-gradient(45deg, #2e486e 0 5px, #3b5a85 5px 10px); border: 1.5px solid #6ec8f5; box-shadow: 0 0 14px rgba(110, 200, 245, .5); display: flex; align-items: center; justify-content: center; color: #ecf5ff; font-weight: 800">?</a>
+    <span style="font-size: 12px; color: #c2d4ea">Atout de lundi</span>
+  </div>
+
+  <svg width="390" height="300" viewBox="0 0 390 300" aria-hidden="true" style="position: absolute; left: 0; top: 170px">
+    <circle cx="195" cy="150" r="130" fill="none" stroke="#42628c" stroke-dasharray="3 6"/>
+    <path d="M195 20 A130 130 0 0 1 325 150" fill="none" stroke="#e8d6a8" stroke-width="2" stroke-dasharray="6 6" opacity=".6"/>
+    <path d="M325 150 A130 130 0 0 1 195 280" fill="none" stroke="#e8d6a8" stroke-width="2" stroke-dasharray="6 6" opacity=".6"/>
+  </svg>
+
+  <div class="breathe" style="position: absolute; left: 140px; top: 265px; width: 110px; height: 110px; border-radius: 50%; background: radial-gradient(circle at 38% 32%, #fbe7b0, #f4c554 55%, #c89632); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 50px rgba(244, 197, 84, .3)">
+    <svg width="40" height="46" viewBox="0 0 26 30" aria-hidden="true"><path d="M2 2 H24 V27 L13 21 L2 27 Z" fill="#6ec8f5" stroke="#3c8cc8" stroke-width="1.5"/><circle cx="13" cy="12" r="5" fill="#f6e8cc"/></svg>
+  </div>
+
+  <a href="Production.dc.html" class="star" style="left: 195px; top: 156px">
+    <span style="position: relative; width: 60px; height: 60px; border-radius: 50%; border: 3px solid {{fermeRing}}; display: flex; align-items: center; justify-content: center; background: #1d304d"><span style="width: 22px; height: 22px; border-radius: 50%; background: #e8d6a8"></span></span>
+    <span style="font-size: 14px; font-weight: 700">Ferme · niv. 2</span>
+    <span style="font-size: 12px; color: {{fermeColor}}">{{fermeState}}</span>
+  </a>
+  <a href="Production.dc.html" class="star" style="left: 300px; top: 290px">
+    <span style="position: relative; width: 60px; height: 60px; border-radius: 50%; border: 3px solid {{moulinRing}}; display: flex; align-items: center; justify-content: center; background: #1d304d"><span style="width: 22px; height: 22px; background: #d9c48c; border-radius: 3px"></span></span>
+    <span style="font-size: 14px; font-weight: 700">Moulin</span>
+    <span style="font-size: 12px; color: {{moulinColor}}">{{moulinState}}</span>
+  </a>
+  <a href="Production.dc.html" class="star" style="left: 195px; top: 420px">
+    <span style="width: 56px; height: 56px; border-radius: 50%; border: 3px solid #2e486e; border-top-color: #6ec8f5; border-right-color: #6ec8f5; display: flex; align-items: center; justify-content: center; background: #1d304d"><span style="width: 22px; height: 22px; background: #e8d6a8; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%)"></span></span>
+    <span style="font-size: 14px; font-weight: 700">Boulangerie</span>
+    <span style="font-size: 12px; color: #6ec8f5">prête dans 14 min</span>
+  </a>
+  <a href="Batir.dc.html" class="star" style="left: 70px; top: 290px">
+    <span style="width: 56px; height: 56px; border-radius: 50%; border: 2px dashed #6ec8f5; display: flex; align-items: center; justify-content: center; color: #6ec8f5; font-size: 28px">+</span>
+    <span style="font-size: 13px; font-weight: 600; color: #6ec8f5">Bâtir</span>
+  </a>
+
+  <a href="Lettre.dc.html" aria-label="Lorenzo apporte la Lettre du jour" style="position: absolute; left: 286px; top: 166px; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #ecf5ff; font-size: 12px">
+    <span style="position: relative; width: 44px; height: 44px; border-radius: 50%; background: #f6e8cc; border: 2px solid #e36a4a; display: flex; align-items: center; justify-content: center">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="11" r="6" fill="#e8b48a"/><path d="M6 8 C 8 2, 20 2, 22 8 Z" fill="#c8693f"/><path d="M5 27 C 6 19, 22 19, 23 27 Z" fill="#e36a4a"/></svg>
+    </span>Lettre du jour</a>
+
+  <sc-if value="{{harvesting}}" hint-placeholder-val="{{false}}">
+    <span class="fly" style="left: 195px; top: 186px; background: #e8d6a8; border-radius: 50%; --dx: 10px; --dy: 400px"></span>
+    <span class="fly" style="left: 200px; top: 190px; background: #e8d6a8; border-radius: 50%; --dx: 6px; --dy: 396px; animation-delay: 60ms"></span>
+    <span class="fly" style="left: 300px; top: 320px; background: #d9c48c; --dx: -40px; --dy: 266px; animation-delay: 120ms"></span>
+    <span class="fly" style="left: 296px; top: 324px; background: #d9c48c; --dx: -36px; --dy: 262px; animation-delay: 180ms"></span>
+    <span class="up" style="left: 195px; top: 130px; color: #6ee0b8">+8 blé</span>
+    <span class="up" style="left: 300px; top: 262px; color: #6ee0b8; animation-delay: 120ms">+8 farine</span>
+  </sc-if>
+
+  <!-- Le magasin : une puce par marchandise -->
+  <div style="position: absolute; left: 16px; right: 16px; top: 528px; display: flex; flex-wrap: wrap; gap: 8px" aria-label="Le magasin">
+    <span class="chip"><span style="width: 14px; height: 14px; background: #e8d6a8; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%)"></span><b class="nb" style="font-size: 14px">50</b> pains</span>
+    <span class="chip"><span style="width: 14px; height: 14px; border-radius: 50%; background: #7db596"></span><b class="nb" style="font-size: 14px">25</b> bois</span>
+    <a href="Negoce.dc.html" class="chip" style="color: #ff8070"><span style="width: 14px; height: 14px; border-radius: 3px; border: 2px dashed #c8693f; box-sizing: border-box"></span><b class="nb" style="font-size: 14px">0</b> brique</a>
+    <sc-if value="{{harvested}}" hint-placeholder-val="{{false}}">
+      <span class="chip pop" style="animation-delay: .55s"><span style="width: 14px; height: 14px; border-radius: 3px; background: #d9c48c"></span><b class="nb" style="font-size: 14px">8</b> farine</span>
+      <span class="chip pop" style="animation-delay: .65s"><span style="width: 14px; height: 14px; border-radius: 50%; background: #e8d6a8"></span><b class="nb" style="font-size: 14px">8</b> blé</span>
+    </sc-if>
+  </div>
+
+  <section style="position: absolute; left: 0; right: 0; bottom: 68px; padding: 14px 16px 16px; background: #1d304d; border-radius: 28px 28px 0 0; border-top: 1px solid #42628c; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; justify-content: space-between; align-items: baseline">
+      <span style="font-size: 19px; font-weight: 700" aria-live="polite">{{title}}</span>
+      <span style="font-size: 13px; color: #c2d4ea">Ouvriers nourris 2 jours</span>
+    </div>
+    <sc-if value="{{notHarvested}}" hint-placeholder-val="{{true}}"><button type="button" class="gold" onClick="{{harvest}}">Récolter et relancer</button></sc-if>
+    <sc-if value="{{harvested}}" hint-placeholder-val="{{false}}"><span class="done">Tout tourne · prochain lot à 14 h 30</span></sc-if>
+  </section>
+
+  <nav aria-label="Les lieux" style="position: absolute; left: 0; right: 0; bottom: 0; height: 68px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: #0f1c33; border-top: 1px solid #22375a; padding-bottom: 6px">
+    <a href="Main.dc.html" class="tab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z M9 4v14 M15 6v14"/></svg>Carte</a>
+    <a href="Comptoir.dc.html" class="tab" aria-current="page" style="color: #f4c554"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>Ateliers</a>
+    <a href="Venise.dc.html" class="tab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 18 C 7 13, 17 13, 21 18 M12 4 V15 M8 15 V9 H16 V15"/></svg>Venise</a>
+    <a href="Classement.dc.html" class="tab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 14v4M8 21h8"/></svg>Classement</a>
+    <a href="Terraferme.dc.html" class="tab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/></svg>Conquête</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { harvested: false }; }
+  renderVals() {
+    const h = this.state.harvested;
+    return {
+      harvested: h, notHarvested: !h, harvesting: h,
+      title: h ? '2 lots relancés' : '2 lots prêts',
+      fermeRing: h ? '#6ec8f5' : '#6ee0b8', fermeColor: h ? '#6ec8f5' : '#6ee0b8', fermeState: h ? 'en cours · 30 min' : 'Prête : +8 blé',
+      moulinRing: h ? '#6ec8f5' : '#6ee0b8', moulinColor: h ? '#6ec8f5' : '#6ee0b8', moulinState: h ? 'en cours · 30 min' : 'Prêt : +8 farine',
+      harvest: () => this.setState({ harvested: true }),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Bon retour</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.nb{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800}
+.gold{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:999px;background:linear-gradient(180deg,#fbe0a0,#f4c554 45%,#c89632);color:#241703;font:700 16px 'Space Grotesk',sans-serif;box-shadow:0 8px 20px rgba(244,197,84,.28);border:0;cursor:pointer;width:100%;transition:transform .1s}
+.gold:hover{color:#241703}
+.gold:active{transform:scale(.96)}
+.fig{display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:16px;background:#243a5c;color:#ecf5ff;animation:up .25s ease-out both}
+.fig:hover{color:#ecf5ff;background:#2a4268}
+@keyframes up{from{opacity:0;transform:translateY(12px)}}
+.row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:16px;background:#243a5c;color:#ecf5ff;font-size:14px;min-height:52px;box-sizing:border-box;animation:up .25s ease-out both}
+.row:hover{color:#ecf5ff}
+.count::after{content:"+2 660 d";animation:count .9s ease-out both}
+@keyframes count{0%{content:"+0 d"}12%{content:"+640 d"}25%{content:"+1 180 d"}37%{content:"+1 610 d"}50%{content:"+1 960 d"}62%{content:"+2 230 d"}75%{content:"+2 440 d"}87%{content:"+2 580 d"}100%{content:"+2 660 d"}}
+.mark{position:absolute;width:12px;height:12px;left:189px;bottom:90px;animation:fly .55s cubic-bezier(.5,0,.8,.4) both}
+@keyframes fly{to{transform:translate(var(--tx),var(--ty)) scale(.6);opacity:0}}
+.ok{animation:ok .45s cubic-bezier(.2,.8,.2,1.4) both}
+@keyframes ok{from{transform:scale(.8);opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #1d304d; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif; padding: 26px 16px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+  <div style="text-align: center">
+    <h1 class="cz" style="margin: 0; font-size: 18px; color: #c2d4ea">Bon retour</h1>
+    <p style="margin: 4px 0 0; font-size: 13px; color: #c2d4ea">Vous étiez absent 8 h 40</p>
+    <p class="nb count" role="text" aria-label="+2 660 ducats" style="margin: 8px 0 0; font-size: 52px; color: #f4c554; text-shadow: 0 0 30px rgba(244, 197, 84, .35)"></p>
+    <p style="margin: 0; font-size: 12px; letter-spacing: .14em; color: #c2d4ea">DE BÉNÉFICE</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+    <a href="Classement.dc.html" class="fig" style="animation-delay: 900ms"><span style="font-size: 12px; color: #c2d4ea">Classement de la semaine</span><span class="nb" style="font-size: 18px">4ᵉ <span style="color: #6ee0b8; font-size: 13px">▲ 3</span></span></a>
+    <a href="Classement.dc.html" class="fig" style="animation-delay: 960ms"><span style="font-size: 12px; color: #c2d4ea">Duel contre Grimani</span><span class="nb" style="font-size: 18px; color: #6ee0b8">+109 d</span></a>
+    <a href="Ville.dc.html" class="fig" style="animation-delay: 1020ms"><span style="font-size: 12px; color: #c2d4ea">Contrôle des villes</span><span style="font-size: 15px; font-weight: 700; color: #f4c554">Maître de Vicence ›</span></a>
+    <a href="Terraferme.dc.html" class="fig" style="animation-delay: 1080ms"><span style="font-size: 12px; color: #c2d4ea">Conquête</span><span class="nb" style="font-size: 18px">+3 cases</span></a>
+  </div>
+
+  <h2 style="margin: 4px 0 0; font-size: 14px; font-weight: 600; color: #c2d4ea">Cette nuit</h2>
+  <a href="Profil.dc.html" class="row" style="animation-delay: 1150ms"><span style="width: 32px; height: 36px; background: #3fa36b; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%); flex: none"></span><span style="flex: 1">Casa Venier a acheté 10 actions de votre Maison</span><span style="color: #6ec8f5">›</span></a>
+  <a href="Lettre.dc.html" class="row" style="animation-delay: 1210ms"><span style="width: 32px; height: 32px; border-radius: 50%; background: #e36a4a; flex: none"></span><span style="flex: 1">Faraj a tenu parole : +40 d</span><span style="color: #6ec8f5">›</span></a>
+  <a href="Cloche.dc.html" class="row" style="animation-delay: 1270ms"><span style="width: 32px; height: 32px; border-radius: 50%; background: #ff8070; flex: none"></span><span style="flex: 1">Un espion rôde autour de vos ateliers</span><span style="color: #6ec8f5">›</span></a>
+
+  <details style="font-size: 14px; color: #c2d4ea; border-radius: 14px; background: #16263e; padding: 0 12px">
+    <summary style="cursor: pointer; min-height: 44px; display: flex; align-items: center; color: #ecf5ff; font-weight: 600">D'où vient ce bénéfice ›</summary>
+    <p style="margin: 0 0 12px">Villes 1 840 d · Marché 520 d · commandes du Doge 300 d. 2 fronts rentrés · 121 troupes.</p>
+  </details>
+
+  <span style="flex: 1"></span>
+  <sc-if value="{{flying}}" hint-placeholder-val="{{false}}">
+    <sc-for list="{{marks}}" as="m" hint-placeholder-count="7">
+      <span class="mark" aria-hidden="true" style="--tx: {{m.tx}}px; --ty: {{m.ty}}px; animation-delay: {{m.d}}ms; background: {{m.c}}; border-radius: {{m.r}}"></span>
+    </sc-for>
+  </sc-if>
+  <sc-if value="{{notDone}}" hint-placeholder-val="{{true}}"><button type="button" class="gold" onClick="{{harvest}}">Tout récolter et relancer · 2 lots</button></sc-if>
+  <sc-if value="{{done}}" hint-placeholder-val="{{false}}"><a href="Main.dc.html" class="gold ok">+8 farine · +8 blé · voir la carte</a></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { flying: false, done: false }; }
+  componentWillUnmount() { clearTimeout(this.t); }
+  renderVals() {
+    const s = this.state;
+    const cols = ['#d9c48c', '#e8d6a8'];
+    const marks = [0, 1, 2, 3, 4, 5, 6].map((i) => ({ d: i * 50, c: cols[i % 2], r: i % 2 ? '50%' : '3px', tx: -120 + i * 40, ty: -380 - (i % 3) * 30 }));
+    return {
+      marks, flying: s.flying, done: s.done, notDone: !s.done,
+      harvest: () => { this.setState({ flying: true }); clearTimeout(this.t); this.t = setTimeout(() => this.setState({ done: true }), 650); },
+    };
+  }
+}
+</script>
+</body>
+</html>

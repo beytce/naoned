@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>L'Atout de la semaine</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.gold{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:999px;background:linear-gradient(180deg,#fbe0a0,#f4c554 45%,#c89632);color:#241703;font:700 17px 'Space Grotesk',sans-serif;box-shadow:0 8px 20px rgba(244,197,84,.28);border:0;cursor:pointer;width:100%;transition:transform .1s}
+.gold:active{transform:scale(.96)}
+.fig{display:flex;align-items:center;gap:12px;min-height:100px;padding:10px 14px 10px 10px;border-radius:20px;border:1px solid #6d8db8;background:#243a5c;color:#ecf5ff;text-align:left;font-family:'Space Grotesk',sans-serif;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.figon{border-color:#6ec8f5;box-shadow:inset 0 0 0 2px #6ec8f5;transform:translateX(4px)}
+.flyaway{animation:flyaway .55s cubic-bezier(.5,0,.75,0) both}
+@keyframes flyaway{to{transform:translate(-120px,-520px) scale(.3) rotate(-12deg);opacity:0}}
+.appear{animation:appear .35s ease-out .5s both}
+@keyframes appear{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #16263e; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+  <a href="Comptoir.dc.html" aria-label="Plus tard" style="position: absolute; inset: 0; background: rgba(6, 12, 24, .55)"></a>
+  <section style="position: absolute; left: 0; right: 0; bottom: 0; height: 600px; background: #1d304d; border-radius: 28px 28px 0 0; border-top: 1px solid #6d8db8; padding: 0 16px 18px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+    <div style="width: 44px; height: 5px; border-radius: 3px; background: #6d8db8; margin: 10px auto 0"></div>
+    <div>
+      <p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .14em; color: #c2d4ea">LUNDI · UN BONUS, UN MALUS</p>
+      <h1 class="cz" style="margin: 4px 0 0; font-size: 20px">Votre Atout de la semaine</h1>
+    </div>
+
+    <sc-if value="{{choosing}}" hint-placeholder-val="{{true}}">
+      <sc-for list="{{figs}}" as="f" hint-placeholder-count="3">
+        <button type="button" class="fig {{f.cls}} {{f.fly}}" aria-pressed="{{f.on}}" onClick="{{f.pick}}">
+          <span style="width: 72px; height: 80px; flex: none; border-radius: 14px; background: {{f.bg}}; display: flex; align-items: flex-end; justify-content: center; overflow: hidden">
+            <svg width="64" height="70" viewBox="0 0 96 104" aria-hidden="true"><circle cx="48" cy="40" r="20" fill="#e8b48a"/><path d="M26 32 C 30 12, 66 12, 70 32 Z" fill="{{f.hat}}"/><path d="M14 104 C 16 72, 80 72, 82 104 Z" fill="{{f.robe}}"/></svg>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 4px">
+            <span class="cz" style="font-size: 14px">{{f.name}}</span>
+            <span style="font-size: 14px; color: #6ee0b8">▲ {{f.up}}</span>
+            <span style="font-size: 14px; color: #ff8070">▼ {{f.down}}</span>
+          </span>
+        </button>
+      </sc-for>
+      <span style="flex: 1"></span>
+      <button type="button" class="gold" onClick="{{take}}">Prendre {{short}}</button>
+    </sc-if>
+
+    <sc-if value="{{taken}}" hint-placeholder-val="{{false}}">
+      <div class="appear" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center">
+        <p style="margin: 0; font-size: 18px; font-weight: 700">{{shortCap}} rejoint vos ateliers.</p>
+        <a href="Comptoir.dc.html" style="min-height: 44px; display: flex; align-items: center; font-weight: 600">Voir mes ateliers</a>
+      </div>
+    </sc-if>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { pick: 'banquier', flying: false, taken: false }; }
+  componentWillUnmount() { clearTimeout(this.t); }
+  renderVals() {
+    const all = [
+      { id: 'banquier', name: 'Le Banquier', up: 'taxe du Marché 3 % → 1 %', down: '2 fois moins d’achats à la Douane', bg: '#2b4a74', hat: '#1d304d', robe: '#6ec8f5' },
+      { id: 'gondolier', name: 'Le Gondolier', up: 'véhicules 25 % plus rapides', down: 'un véhicule de moins', bg: '#2f5a4a', hat: '#f6e8cc', robe: '#7db596' },
+      { id: 'verrier', name: 'Le Maître verrier', up: '+10 % de produits transformés', down: '−10 % de matières brutes', bg: '#4a3a6a', hat: '#8e6bd8', robe: '#b9a0f0' },
+    ];
+    const s = this.state;
+    const figs = all.map((f) => ({ ...f, on: s.pick === f.id, cls: s.pick === f.id ? 'figon' : '', fly: s.flying && s.pick === f.id ? 'flyaway' : '', pick: () => this.setState({ pick: f.id }) }));
+    const c = all.find((f) => f.id === s.pick);
+    return {
+      figs, short: c.name.replace(/^Le /, 'le '), shortCap: c.name,
+      choosing: !s.taken, taken: s.taken,
+      take: () => { this.setState({ flying: true }); clearTimeout(this.t); this.t = setTimeout(() => this.setState({ taken: true }), 560); },
+    };
+  }
+}
+</script>
+</body>
+</html>

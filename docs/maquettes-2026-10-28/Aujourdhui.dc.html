@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Tâches du jour</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.nb{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800}
+.task{display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:18px;background:#243a5c;color:#ecf5ff;min-height:64px;box-sizing:border-box}
+.task:hover{color:#ecf5ff;background:#2a4268}
+.gold{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:999px;background:linear-gradient(180deg,#fbe0a0,#f4c554 45%,#c89632);color:#241703;font:700 17px 'Space Grotesk',sans-serif;box-shadow:0 8px 20px rgba(244,197,84,.28);border:0;cursor:pointer;width:100%;animation:slide .35s cubic-bezier(.2,.8,.2,1) .45s both;transition:transform .1s}
+.gold:active{transform:scale(.96)}
+@keyframes slide{from{transform:translateY(16px);opacity:0}}
+.ghost{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid #6d8db8;background:transparent;color:#ecf5ff;font:600 14px 'Space Grotesk',sans-serif;cursor:pointer}
+.lid{transform-origin:50% 100%;transition:transform .4s cubic-bezier(.2,.8,.2,1.4)}
+.coin{position:absolute;left:30px;top:20px;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fbe7b0,#f4c554 60%,#c89632);animation:coin .7s cubic-bezier(.2,.8,.4,1) both}
+@keyframes coin{from{transform:translate(0,0);opacity:1}to{transform:translate(var(--dx),-70px);opacity:0}}
+.fill{animation:fill .3s ease-out both}
+@keyframes fill{from{transform:scale(.3);opacity:.3}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #16263e; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+  <a href="Main.dc.html" aria-label="Revenir à la carte" style="position: absolute; inset: 0; background: rgba(6, 12, 24, .55)"></a>
+  <section style="position: absolute; left: 0; right: 0; bottom: 0; height: 580px; background: #1d304d; border-radius: 28px 28px 0 0; border-top: 1px solid #6d8db8; padding: 0 20px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px">
+    <div style="width: 44px; height: 5px; border-radius: 3px; background: #6d8db8; margin: 10px auto 0"></div>
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <h1 class="cz" style="margin: 0; font-size: 20px">Tâches du jour</h1>
+      <span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #f4c554; font-weight: 600">
+        <sc-for list="{{streak}}" as="d" hint-placeholder-count="3"><span class="{{d.cls}}" style="width: 10px; height: 10px; border-radius: 50%; background: {{d.c}}; animation-delay: {{d.delay}}ms"></span></sc-for>
+        {{streakText}}</span>
+    </div>
+
+    <sc-for list="{{tasks}}" as="t" hint-placeholder-count="3">
+      <a href="{{t.href}}" class="task">
+        <span style="position: relative; width: 46px; height: 46px; flex: none">
+          <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">
+            <circle cx="23" cy="23" r="19" fill="none" stroke="#2e486e" stroke-width="4"/>
+            <circle cx="23" cy="23" r="19" fill="none" stroke="{{t.color}}" stroke-width="4" stroke-linecap="round" stroke-dasharray="{{t.dash}}" transform="rotate(-90 23 23)"/>
+          </svg>
+          <span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">{{t.count}}</span>
+        </span>
+        <span style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 15px; font-weight: 600">{{t.label}}</span>
+          <span style="font-size: 12px; color: #c2d4ea">{{t.where}}</span>
+        </span>
+        <span style="color: #6ec8f5; font-size: 18px" aria-hidden="true">›</span>
+      </a>
+    </sc-for>
+    <div style="display: flex; align-items: center; gap: 10px">
+      <button type="button" class="ghost">Changer une tâche · 3 <svg width="14" height="14" viewBox="0 0 14 14" aria-label="Influence"><path d="M7 1 L9 5 L13 5.5 L10 8.5 L11 13 L7 10.8 L3 13 L4 8.5 L1 5.5 L5 5 Z" fill="#b9a0f0"/></svg></button>
+      <span style="font-size: 12px; color: #c2d4ea">vous en avez 12</span>
+    </div>
+
+    <span style="flex: 1"></span>
+    <div style="display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 18px; border: 1px solid #c8963266; background: #243a5c">
+      <span style="position: relative; width: 60px; height: 52px; flex: none">
+        <svg width="60" height="52" viewBox="0 0 60 52" aria-hidden="true" style="position: absolute; inset: 0">
+          <rect x="6" y="24" width="48" height="26" rx="4" fill="#9a6234" stroke="#f4c554" stroke-width="2"/>
+          <rect x="26" y="28" width="8" height="8" rx="2" fill="#f4c554"/>
+          <g class="lid" style="transform: {{lid}}"><path d="M6 24 C 6 8, 54 8, 54 24 Z" fill="#b87a44" stroke="#f4c554" stroke-width="2"/></g>
+        </svg>
+        <sc-if value="{{opened}}" hint-placeholder-val="{{false}}">
+          <span class="coin" style="--dx: -24px"></span><span class="coin" style="--dx: -8px; animation-delay: 60ms"></span><span class="coin" style="--dx: 8px; animation-delay: 120ms"></span><span class="coin" style="--dx: 24px; animation-delay: 180ms"></span><span class="coin" style="--dx: 0px; animation-delay: 240ms"></span>
+        </sc-if>
+      </span>
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+        <span style="font-weight: 700">{{chestTitle}}</span>
+        <span style="display: flex; gap: 4px" aria-label="{{doneCount}} tâches faites sur 3">
+          <span style="flex: 1; height: 6px; border-radius: 3px; background: #6ec8f5"></span>
+          <span style="flex: 1; height: 6px; border-radius: 3px; background: {{bar2}}"></span>
+          <span style="flex: 1; height: 6px; border-radius: 3px; background: {{bar3}}"></span>
+        </span>
+        <span style="font-size: 12px; color: #c2d4ea">13 d · demain 16 d si la série tient</span>
+      </span>
+    </div>
+    <sc-if value="{{canOpen}}" hint-placeholder-val="{{false}}">
+      <button type="button" class="gold" onClick="{{open}}">Ouvrir le coffre · 13 d</button>
+    </sc-if>
+    <a href="Cadran.dc.html" style="display: flex; align-items: center; justify-content: center; min-height: 44px; font-weight: 600; font-size: 14px">Le calendrier du mois ›</a>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"done":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { opened: false }; }
+  renderVals() {
+    const done = this.props.done ?? false;
+    const c = 2 * Math.PI * 19;
+    const mk = (label, where, href, n, of) => {
+      const k = done ? of : n;
+      return { label, where, href, count: k + '/' + of, color: k >= of ? '#6ee0b8' : '#6ec8f5', dash: (c * k / of).toFixed(1) + ' ' + c.toFixed(1) };
+    };
+    const tasks = [
+      mk('Laisser une offre au Marché', 'Venise · Marché', 'Rialto.dc.html', 1, 1),
+      mk('Récolter 4 fois', 'Mes ateliers', 'Comptoir.dc.html', 1, 4),
+      mk('Livrer 5 commandes', 'Les villes, sur la carte', 'Main.dc.html', 2, 5),
+    ];
+    const opened = this.state.opened;
+    const streak = [0, 1, 2].map((i) => ({ c: i < 2 || opened ? '#f4c554' : '#2e486e', cls: opened && i === 2 ? 'fill' : '', delay: i * 150 }));
+    return {
+      tasks, opened, canOpen: done && !opened,
+      lid: opened ? 'rotate(-28deg) translateY(-6px)' : 'none',
+      chestTitle: opened ? '+13 d dans votre bourse' : done ? 'Le coffre est prêt' : 'Le coffre du jour',
+      doneCount: done ? 3 : 1, bar2: done ? '#6ec8f5' : '#2e486e', bar3: done ? '#6ec8f5' : '#2e486e',
+      streak, streakText: opened ? 'série de 3 jours' : 'série de 2 jours',
+      open: () => this.setState({ opened: true }),
+    };
+  }
+}
+</script>
+</body>
+</html>

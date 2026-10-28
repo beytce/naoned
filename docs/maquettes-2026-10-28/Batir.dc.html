@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Bâtir</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.nb{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800}
+.gold{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:999px;background:linear-gradient(180deg,#fbe0a0,#f4c554 45%,#c89632);color:#241703;font:700 16px 'Space Grotesk',sans-serif;box-shadow:0 8px 20px rgba(244,197,84,.28);border:0;cursor:pointer;width:100%;transition:transform .1s}
+.gold:hover{color:#241703}
+.gold:active{transform:scale(.96)}
+.tab{flex:1;min-height:44px;border-radius:999px;border:0;background:transparent;color:#c2d4ea;font:600 14px 'Space Grotesk',sans-serif;cursor:pointer}
+.tabon{background:#2e486e;color:#ecf5ff;box-shadow:inset 0 0 0 1.5px #6ec8f5}
+.card{display:flex;gap:14px;width:100%;text-align:left;padding:14px;border-radius:20px;border:1px solid #6d8db8;background:#243a5c;color:#ecf5ff;font-family:'Space Grotesk',sans-serif;cursor:pointer;transition:box-shadow .2s}
+.cardon{border-color:#6ec8f5;box-shadow:inset 0 0 0 1.5px #6ec8f5}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #1d304d; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+  <header style="height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid #2e486e">
+    <a href="Comptoir.dc.html" style="display: flex; align-items: center; gap: 4px; min-height: 44px; min-width: 90px; color: #ecf5ff; font-weight: 600; font-size: 14px">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4 L6 10 L12 16"/></svg>Ateliers</a>
+    <h1 class="cz" style="margin: 0; font-size: 17px">Bâtir</h1>
+    <span style="min-width: 90px; text-align: right; font-size: 13px; color: #c2d4ea">3 sur 12 places</span>
+  </header>
+
+  <div style="padding: 14px 16px 0; display: flex; flex-direction: column; gap: 12px">
+    <div role="tablist" style="display: flex; padding: 4px; border-radius: 999px; background: #122036; gap: 4px">
+      <button type="button" role="tab" aria-selected="true" class="tab tabon">Ateliers</button>
+      <button type="button" role="tab" aria-selected="false" class="tab">Véhicules</button>
+    </div>
+
+    <sc-for list="{{cards}}" as="c" hint-placeholder-count="3">
+      <button type="button" class="card {{c.cls}}" aria-pressed="{{c.on}}" onClick="{{c.pick}}">
+        <span style="width: 58px; height: 58px; flex: none; border-radius: 50%; border: 2px dashed #6d8db8; display: flex; align-items: center; justify-content: center"><span style="width: 24px; height: 24px; border-radius: 6px; background: {{c.mark}}"></span></span>
+        <span style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+          <span class="cz" style="font-size: 15px">{{c.name}}</span>
+          <span style="font-size: 13px; color: #c2d4ea">{{c.recipe}}</span>
+          <span style="font-size: 14px"><span class="nb" style="color: #f4c554">{{c.price}}</span> · <span style="color: {{c.matColor}}">{{c.mats}}</span></span>
+        </span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 20px 20px; background: #1d304d; border-top: 1px solid #2e486e">
+    <sc-if value="{{canBuild}}" hint-placeholder-val="{{true}}"><button type="button" class="gold">{{cta}}</button></sc-if>
+    <sc-if value="{{missing}}" hint-placeholder-val="{{false}}"><a href="Negoce.dc.html" class="gold">{{cta}}</a></sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { pick: 'scierie' }; }
+  renderVals() {
+    const all = [
+      { id: 'scierie', name: 'Scierie', art: 'la', recipe: '10 bois → 8 planches · 30 min', price: '320 d', mats: '20 planches : vous les avez', matColor: '#6ee0b8', mark: '#7db596' },
+      { id: 'four', name: 'Four à briques', art: 'le', recipe: '10 argile → 8 briques · 30 min', price: '280 d', mats: 'il manque 15 briques', matColor: '#ff8070', mark: '#c8693f', buy: 'Acheter 15 briques · 24 d' },
+      { id: 'ferme', name: 'Deuxième ferme', art: 'la', recipe: '8 blé toutes les 30 min', price: '210 d', mats: 'il manque 15 briques', matColor: '#ff8070', mark: '#e8d6a8', buy: 'Acheter 15 briques · 24 d' },
+    ];
+    const cards = all.map((c) => ({ ...c, on: this.state.pick === c.id, cls: this.state.pick === c.id ? 'cardon' : '', pick: () => this.setState({ pick: c.id }) }));
+    const c = all.find((x) => x.id === this.state.pick);
+    return { cards, missing: !!c.buy, canBuild: !c.buy, cta: c.buy || ('Bâtir ' + c.art + ' ' + c.name.toLowerCase() + ' · ' + c.price) };
+  }
+}
+</script>
+</body>
+</html>

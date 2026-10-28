@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Les 40 palais</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.nb{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800}
+.pal{flex:none;width:72px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;border:0;background:transparent;cursor:pointer;padding:0;font-family:'Space Grotesk',sans-serif;color:#c2d4ea}
+.rise{transform-origin:bottom;animation:rise .45s cubic-bezier(.2,.8,.2,1.2) both}
+@keyframes rise{from{transform:scaleY(.2);opacity:0}}
+.ghost{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:999px;border:1px solid #6d8db8;color:#ecf5ff;font-weight:600;font-size:15px;background:transparent;font-family:inherit;cursor:pointer}
+.ghost:hover{color:#ecf5ff;border-color:#a8c0de}
+.card{animation:in .3s ease-out both}
+@keyframes in{from{opacity:0;transform:translateY(8px)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #16263e; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+  <header style="position: absolute; left: 12px; right: 12px; top: 10px; display: flex; align-items: center; justify-content: space-between; z-index: 2">
+    <a href="Venise.dc.html" style="display: flex; align-items: center; gap: 4px; min-height: 44px; min-width: 80px; color: #ecf5ff; font-weight: 600; font-size: 14px">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4 L6 10 L12 16"/></svg>Venise</a>
+    <h1 class="cz" style="margin: 0; font-size: 18px">Les 40 palais</h1>
+    <span style="min-width: 80px"></span>
+  </header>
+
+  <p style="position: absolute; left: 16px; right: 16px; top: 62px; margin: 0; font-size: 14px; color: #c2d4ea">Les 40 premières Maisons du mois. Glissez, touchez un palais.</p>
+
+  <div style="position: absolute; left: 0; right: 0; top: 92px; height: 280px">
+    <div style="position: absolute; inset: 0; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth">
+      <div style="position: relative; display: flex; align-items: flex-end; gap: 8px; height: 262px; padding: 0 16px; width: max-content">
+        <sc-for list="{{palaces}}" as="p" hint-placeholder-count="12">
+          <button type="button" class="pal" onClick="{{p.pick}}" aria-pressed="{{p.on}}" aria-label="{{p.aria}}">
+            <span class="rise" style="position: relative; width: 66px; height: {{p.h}}px; border-radius: 4px 4px 0 0; background: #243a5c; border: 2px solid {{p.border}}; box-sizing: border-box; display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; gap: 10px 14px; padding: 16px 8px 0; animation-delay: {{p.delay}}ms">
+              <span style="width: 7px; height: 12px; border-radius: 3px; background: #e8b24c"></span><span style="width: 7px; height: 12px; border-radius: 3px; background: #e8b24c"></span><span style="width: 7px; height: 12px; border-radius: 3px; background: #e8b24c"></span>
+              <span style="width: 7px; height: 12px; border-radius: 3px; background: #e8b24c"></span><span style="width: 7px; height: 12px; border-radius: 3px; background: #e8b24c"></span><span style="width: 7px; height: 12px; border-radius: 3px; background: #e8b24c"></span>
+              <span style="position: absolute; top: -20px; right: 4px; width: 16px; height: 12px; background: {{p.flag}}"></span>
+            </span>
+            <span class="nb" style="font-size: 14px; color: {{p.numColor}}">{{p.rank}}ᵉ</span>
+            <span style="font-size: 11px; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{p.short}}</span>
+          </button>
+        </sc-for>
+        <span style="flex: none; width: 60px; align-self: center; text-align: center; font-size: 13px; color: #c2d4ea">… 28 palais</span>
+        <span id="quai" style="flex: none; width: 92px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; color: #6ec8f5; text-align: center">
+          <span style="width: 72px; height: 44px; border: 2px dashed #6ec8f5; border-radius: 4px"></span>Votre quai<br><b class="nb" style="font-size: 14px">41ᵉ</b></span>
+      </div>
+      <div style="position: absolute; left: 0; width: 1400px; bottom: 0; height: 26px; background: #2b5c86; opacity: .5"></div>
+    </div>
+    <span aria-hidden="true" style="position: absolute; right: 0; top: 0; bottom: 0; width: 32px; background: linear-gradient(90deg, transparent, #16263e); pointer-events: none"></span>
+  </div>
+
+  <section style="position: absolute; left: 16px; right: 16px; top: 388px; display: flex; flex-direction: column; gap: 12px">
+    <div class="card" style="padding: 16px; border-radius: 20px; background: #243a5c; border: 1px solid #6d8db8; display: flex; flex-direction: column; gap: 10px">
+      <span style="display: flex; align-items: center; gap: 10px">
+        <span style="width: 34px; height: 40px; flex: none; background: {{sel.flag}}; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%)"></span>
+        <span style="display: flex; flex-direction: column"><span style="font-size: 18px; font-weight: 700">{{sel.name}}</span><span style="font-size: 13px; color: #c2d4ea">{{sel.rank}}ᵉ palais · {{sel.detail}}</span></span>
+      </span>
+      <a href="Fiche.dc.html" class="ghost">Voir {{sel.name}}</a>
+    </div>
+    <div style="padding: 14px; border-radius: 18px; border: 1px dashed #6ec8f5; display: flex; flex-direction: column; gap: 8px">
+      <span style="font-size: 15px">Vous êtes <b>41ᵉ</b> : <b style="color: #f4c554">1 240 d</b> de bénéfice vous séparent du 40ᵉ palais.</span>
+      <a href="#quai" class="ghost">Aller à mon quai ›</a>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { pick: 1 }; }
+  renderVals() {
+    const names = ['Casa Foscari', 'Casa Grimani', 'Casa Contarini', 'Casa Dandolo', 'Ca’ Zane', 'Casa Venier', 'Casa Loredan', 'Casa Badoer', 'Casa Gritti', 'Casa Morosini', 'Casa Querini', 'Casa Tron'];
+    const flags = ['#e36a4a', '#7db596', '#f4c554', '#8e6bd8', '#c89632', '#3fa36b', '#c8693f'];
+    const heights = [180, 156, 168, 144, 132, 144, 120, 132, 115, 120, 108, 115];
+    const details = ['Doge · 3 générations · 4 Atouts', '2 générations · 1 ville', '3 générations · 2 villes', '4 générations · 3 Atouts'];
+    const palaces = names.map((name, i) => ({
+      rank: i + 1, h: heights[i], flag: flags[i % 7], delay: i * 40, on: this.state.pick === i + 1,
+      short: name.replace(/^Casa /, '').replace(/^Ca’ /, ''),
+      border: this.state.pick === i + 1 ? '#ecf5ff' : '#6d8db8',
+      numColor: this.state.pick === i + 1 ? '#ecf5ff' : '#c2d4ea',
+      aria: (i + 1) + 'ᵉ palais : ' + name,
+      pick: () => this.setState({ pick: i + 1 }),
+    }));
+    const k = this.state.pick - 1;
+    return { palaces, sel: { name: names[k], rank: k + 1, flag: flags[k % 7], detail: details[k % 4] } };
+  }
+}
+</script>
+</body>
+</html>
