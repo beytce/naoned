@@ -59,6 +59,8 @@ export const accounts = pgTable(
     condottaBest: integer("condotta_best").notNull().default(0),
     /** When the account last left a company: it may join another only a week later (E2-8). */
     companyLeftAt: timestamp("company_left_at", { withTimezone: true }),
+    /** The Lustre (R6, docs/plan-rupture.md): the rank won in the weekly Sfide, from 0. */
+    lustre: integer("lustre").notNull().default(0),
   },
   (t) => [
     uniqueIndex("accounts_email_key").on(t.email),
@@ -269,6 +271,67 @@ export const terraResults = pgTable(
     /** The week's Signore (always a person: the computer's houses are never it). */
     signore: boolean("signore").notNull().default(false),
     at: timestamp("at", { withTimezone: true }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.week, t.accountId] })],
+);
+
+/**
+ * The Sfide of the Lustre (R6): a week's duel between two merchants (`b`), or against the ghost of
+ * a merchant's past week (`ghostAccount`, `ghostWorld`, `ghostWeek`), or against a house of the
+ * computer in the world (`b`, a bot: only `a` moves). A challenge (`kind` "challenge") is asked
+ * for the next week and plays once accepted. Settled at the week's close: both gains and what the
+ * Lustre moved.
+ */
+export const sfide = pgTable(
+  "sfide",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    week: integer("week").notNull(),
+    kind: text("kind").$type<"ladder" | "challenge">().notNull().default("ladder"),
+    a: uuid("a")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    b: uuid("b").references(() => accounts.id, { onDelete: "cascade" }),
+    ghostAccount: uuid("ghost_account").references(() => accounts.id, { onDelete: "set null" }),
+    ghostWorld: uuid("ghost_world"),
+    ghostWeek: integer("ghost_week"),
+    stake: integer("stake").notNull().default(0),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    aGain: bigint("a_gain", { mode: "bigint" }),
+    bGain: bigint("b_gain", { mode: "bigint" }),
+    deltaA: integer("delta_a"),
+    deltaB: integer("delta_b"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    settledAt: timestamp("settled_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("sfide_world_week_idx").on(t.worldId, t.week),
+    index("sfide_a_idx").on(t.a),
+    index("sfide_b_idx").on(t.b),
+  ],
+);
+
+/**
+ * A merchant's week, hour by hour: its net sales gained since the week began (deniers, as strings),
+ * and its Lustre then. The ghosts of the Sfide are these curves played again.
+ */
+export const weekCurves = pgTable(
+  "week_curves",
+  {
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    week: integer("week").notNull(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    lustre: integer("lustre").notNull(),
+    gains: jsonb("gains").$type<string[]>().notNull(),
+    /** The week is over: the curve may be a ghost. */
+    closed: boolean("closed").notNull().default(false),
   },
   (t) => [primaryKey({ columns: [t.worldId, t.week, t.accountId] })],
 );

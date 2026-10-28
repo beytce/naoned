@@ -201,9 +201,31 @@ export function pushTextEn(
       const gain = String(data.gain ?? "0");
       const sign = BigInt(gain) > 0n ? "+" : "";
       const award = data.award ? ` You are ${AWARDS[String(data.award)]}!` : "";
+      const lustre =
+        data.lustre === undefined
+          ? ""
+          : Number(data.lustre) > 0
+            ? ` Sfida won: +${Number(data.lustre)} Lustre.`
+            : Number(data.lustre) < 0
+              ? ` Sfida lost: ${Number(data.lustre)} Lustre.`
+              : " Sfida drawn.";
       return {
         title: "Results of the week",
-        body: `You finish ${ordinal(Number(data.rank))} (${data.glory ? `${gain} Glory` : `${sign}${ducats(gain)} ducats`}).${award}`,
+        body: `You finish ${ordinal(Number(data.rank))} (${data.glory ? `${gain} Glory` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
+      };
+    }
+    case "sfida": {
+      const by = data.byName ? String(data.byName) : "a merchant";
+      if (data.event === "challenged")
+        return {
+          title: `${by} challenges you`,
+          body: `A Sfida next week${Number(data.stake) > 0 ? `, ${Number(data.stake)} Lustre at stake` : ""}. Accept it in the Sfida.`,
+        };
+      return {
+        title: "Your Sfida of the week",
+        body: data.ghost
+          ? `You face the ghost of ${by}: their best week, hour by hour.`
+          : `You face ${by}: who will sell the most this week?`,
       };
     }
     case "signoria": {

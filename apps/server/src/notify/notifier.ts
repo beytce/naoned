@@ -22,6 +22,7 @@ import {
   isNotNull,
   isNull,
   lt,
+  lte,
   notInArray,
   sql,
 } from "drizzle-orm";
@@ -32,6 +33,7 @@ import {
   players,
   pushSubscriptions,
   seasonResults,
+  sfide,
   weeklyResults,
 } from "../db/schema.js";
 import { calledTo } from "../game/company.js";
@@ -62,6 +64,8 @@ export const NOTIFICATION_KINDS = [
   "wave",
   // A streak of chests of 3 days or more, today's still closed, at 19 h (E3-10).
   "streak",
+  // The Lustre (R6): the week's Sfida paired, a challenge received.
+  "sfida",
   // The Signoria of the cities (R2): named Podestà, a city lost, the lead taken by a rival.
   "signoria",
 ] as const;
@@ -120,6 +124,7 @@ const OPENS: Partial<Record<NotificationKind, string>> = {
   wave: "cargo",
   streak: "notices",
   signoria: "notices",
+  sfida: "sfida",
 };
 
 /** The link a push opens: a place of the list, and where it comes from for the measures. */
@@ -413,6 +418,65 @@ export class Notifier {
     await this.skirmishCall(since, now);
     await this.wave(since, now);
     await this.streak(now);
+    await this.sfidaNews(since, now);
+  }
+
+  /**
+   * The Lustre (R6): the week's Sfida paired (to each person, the opponent named, or a ghost), a
+   * challenge received.
+   */
+  private async sfidaNews(since: number, now: number): Promise<void> {
+    if (!this.world.ctx.settings.lustre) return;
+    const rows = await this.db
+      .select()
+      .from(sfide)
+      .where(
+        and(
+          eq(sfide.worldId, this.world.id),
+          gt(sfide.createdAt, new Date(since)),
+          lte(sfide.createdAt, new Date(now)),
+        ),
+      );
+    if (rows.length === 0) return;
+    const people = await this.people();
+    const ids = [
+      ...new Set(rows.flatMap((r) => [r.a, r.b, r.ghostAccount]).filter((x): x is string => !!x)),
+    ];
+    const names = new Map(
+      (
+        await this.db
+          .select({ id: accounts.id, pseudo: accounts.pseudo })
+          .from(accounts)
+          .where(inArray(accounts.id, ids))
+      ).map((r) => [r.id, r.pseudo]),
+    );
+    const notices: Notice[] = [];
+    for (const r of rows) {
+      if (r.kind === "challenge") {
+        if (r.b && people.has(r.b) && !r.acceptedAt)
+          notices.push({
+            accountId: r.b,
+            kind: "sfida",
+            data: { event: "challenged", byName: names.get(r.a) ?? null, stake: r.stake },
+          });
+        continue;
+      }
+      const sides: [string, string | null][] = [[r.a, r.b ?? r.ghostAccount]];
+      if (r.b) sides.push([r.b, r.a]);
+      for (const [me, other] of sides) {
+        if (!people.has(me)) continue;
+        notices.push({
+          accountId: me,
+          kind: "sfida",
+          data: {
+            event: "paired",
+            ghost: !r.b,
+            byName: other ? (names.get(other) ?? null) : null,
+          },
+        });
+      }
+    }
+    await this.send(notices, now);
   }
 
   /**
@@ -555,6 +619,18 @@ export class Notifier {
           eq(accounts.isBot, false),
         ),
       );
+    // The week's Sfida (R6), told in the same notice: what the Lustre moved, won or lost.
+    const duels = await this.db
+      .select()
+      .from(sfide)
+      .where(
+        and(eq(sfide.worldId, this.world.id), eq(sfide.week, week), isNotNull(sfide.settledAt)),
+      );
+    const lustre = new Map<string, number>();
+    for (const d of duels) {
+      lustre.set(d.a, d.deltaA ?? 0);
+      if (d.b) lustre.set(d.b, d.deltaB ?? 0);
+    }
     await this.send(
       rows.map((r) => ({
         accountId: r.accountId,
@@ -564,6 +640,7 @@ export class Notifier {
           rank: r.rank,
           gain: r.gain.toString(),
           award: r.award,
+          ...(lustre.has(r.accountId) ? { lustre: lustre.get(r.accountId) } : {}),
         },
       })),
       now,

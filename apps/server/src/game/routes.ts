@@ -66,6 +66,7 @@ import {
 import { journal } from "./journal.js";
 import { levelsOf } from "./level.js";
 import { LiveHub } from "./live.js";
+import { acceptChallenge, challenge, sfidaRival, sfidaView } from "./lustre.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
 import { priceHistory, profile } from "./profile.js";
 import { activePeopleByRegion, recommendedRegion } from "./recommend.js";
@@ -513,8 +514,11 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     }
     const body = (await view(account)) as Record<string, unknown>;
     const ceremony = await pendingCeremony(db, account.id);
+    // The rival of the week is the Sfida's opponent once the Lustre is on (R6), else the one
+    // just ahead in the weekly ranking.
     const rival = world.current.players[account.id]
-      ? await weeklyRival(db, world.id, world.ctx, world.current, world.now(), account.id)
+      ? ((await sfidaRival(db, world.id, world.ctx, world.current, world.now(), account.id)) ??
+        (await weeklyRival(db, world.id, world.ctx, world.current, world.now(), account.id)))
       : null;
     return {
       ...body,
@@ -875,6 +879,45 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     }
   }
   const codeSchema = z.string().regex(/^[\w-]{4,16}$/);
+
+  /** The Lustre (R6): the merchant's Sfida of the week, its tier and its challenges. */
+  app.get("/api/game/sfida", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return toJson(await sfidaView(db, world.id, world.ctx, world.current, world.now(), account.id));
+  });
+
+  /** Challenges a person of the world for next week, with a stake of Lustre. */
+  app.post("/api/game/sfida/challenge", perMerchant(10), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const parsed = z
+      .object({ to: z.string().uuid(), stake: z.number().int().min(0) })
+      .safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_stake" });
+    const res = await challenge(
+      db,
+      world.id,
+      world.ctx,
+      world.now(),
+      account.id,
+      parsed.data.to,
+      parsed.data.stake,
+    );
+    if (res !== "ok") return reply.code(400).send({ error: res });
+    return toJson(await sfidaView(db, world.id, world.ctx, world.current, world.now(), account.id));
+  });
+
+  /** Accepts a challenge received: the two meet next week. */
+  app.post("/api/game/sfida/accept", perMerchant(10), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const parsed = z.object({ id: z.string().uuid() }).safeParse(req.body);
+    if (!parsed.success) return reply.code(404).send({ error: "unknown_challenge" });
+    const res = await acceptChallenge(db, world.id, account.id, parsed.data.id, world.now());
+    if (res !== "ok") return reply.code(404).send({ error: res });
+    return toJson(await sfidaView(db, world.id, world.ctx, world.current, world.now(), account.id));
+  });
 
   app.get("/api/company", async (req, reply) => {
     const account = await requireAccount(req, reply);

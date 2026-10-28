@@ -202,9 +202,31 @@ export function pushText(
       const sign = BigInt(gain) > 0n ? "+" : "";
       // `glory`: the weeks ranked on the Terraferma's glory (18 and 19 October 2026).
       const award = data.award ? ` Vous êtes ${AWARDS[String(data.award)]} !` : "";
+      const lustre =
+        data.lustre === undefined
+          ? ""
+          : Number(data.lustre) > 0
+            ? ` Sfida gagnée : +${Number(data.lustre)} de Lustre.`
+            : Number(data.lustre) < 0
+              ? ` Sfida perdue : ${Number(data.lustre)} de Lustre.`
+              : " Sfida nulle.";
       return {
         title: "Résultats de la semaine",
-        body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${data.glory ? `${gain} de Gloire` : `${sign}${ducats(gain)} ducats`}).${award}`,
+        body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${data.glory ? `${gain} de Gloire` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
+      };
+    }
+    case "sfida": {
+      const by = data.byName ? String(data.byName) : "un marchand";
+      if (data.event === "challenged")
+        return {
+          title: `${by} vous défie`,
+          body: `Une Sfida la semaine prochaine${Number(data.stake) > 0 ? `, ${Number(data.stake)} de Lustre en jeu` : ""}. Acceptez-la dans la Sfida.`,
+        };
+      return {
+        title: "Votre Sfida de la semaine",
+        body: data.ghost
+          ? `Vous affrontez le fantôme de ${by} : sa meilleure semaine, heure par heure.`
+          : `Vous affrontez ${by} : qui vendra le plus cette semaine ?`,
       };
     }
     case "signoria": {
