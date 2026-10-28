@@ -114,6 +114,12 @@ export function programmeOf(ctx: WorldContext, state: WorldState, family: string
 
 // ——— In force ———
 
+/** The Doge's decree of the month (R7): written by the server, it holds for everyone. */
+function dogeDecree(ctx: WorldContext, code: string): { target?: string } | null {
+  const d = ctx.settings.doge?.decree;
+  return d && d.code === code ? d : null;
+}
+
 /** A decree in force at `at`: the family that imposed it and its target. */
 export function decreeInForce(
   ctx: WorldContext,
@@ -170,7 +176,12 @@ export function decreeTaxBps(
     d?.family === TERRA_FAMILY
       ? (terraEffects(ctx)?.franchise_rialto.taxBps ?? base)
       : ctx.settings.decrees.fondaco.taxBps;
-  return d && memberOf(state, seller, d.family) ? Math.min(base, rate) : base;
+  const own = d && memberOf(state, seller, d.family) ? Math.min(base, rate) : base;
+  // The Doge's franchigia: the tax lighter for everyone.
+  const cut = dogeDecree(ctx, "franchigia")
+    ? (ctx.settings.doge?.effects.franchigia.taxCutBps ?? 0)
+    : 0;
+  return Math.max(0, own - cut);
 }
 
 /** Added share of the Dogana's quota (Fondaco's privilege). */
@@ -215,9 +226,13 @@ export function favourBps(
   at: number,
 ): number {
   const d = decreeInForce(ctx, state, "faveur", at);
-  return d && d.target === city && memberOf(state, playerId, d.family)
-    ? ctx.settings.decrees.faveur.premiumBps
-    : 0;
+  const own =
+    d && d.target === city && memberOf(state, playerId, d.family)
+      ? ctx.settings.decrees.faveur.premiumBps
+      : 0;
+  // The Doge's faveur: the city's deliveries paid more for everyone.
+  const doge = dogeDecree(ctx, "faveur");
+  return own + (doge?.target === city ? (ctx.settings.doge?.effects.faveur.premiumBps ?? 0) : 0);
 }
 
 /** Until when the favoured city's urgent orders are kept for the members (null: open to all). */
@@ -270,10 +285,12 @@ export function levantQuotaBps(
   playerId: PlayerId,
   at: number,
 ): number {
+  // The Doge's levante: a larger share of the Dogana's quota for everyone.
+  const doge = dogeDecree(ctx, "levante") ? (ctx.settings.doge?.effects.levante.quotaBps ?? 0) : 0;
   const d = decreeInForce(ctx, state, "levant", at);
-  if (!d) return 0;
+  if (!d) return doge;
   const r = ctx.settings.decrees.levant;
-  return memberOf(state, playerId, d.family) ? r.memberQuotaBps : -r.othersCutBps;
+  return doge + (memberOf(state, playerId, d.family) ? r.memberQuotaBps : -r.othersCutBps);
 }
 
 /** Highest price of an offer of a good under the calmiere, if any. */
@@ -285,6 +302,10 @@ export function calmiereCap(
 ): bigint | null {
   const d = decreeInForce(ctx, state, "calmiere", at);
   const ref = ctx.settings.referencePrices[resource];
+  // The Doge's calmiere: no offer of the good above its cap, all month.
+  const doge = dogeDecree(ctx, "calmiere");
+  if (doge?.target === resource && ref !== undefined && !(d && d.target === resource))
+    return (ref * BigInt(ctx.settings.doge?.effects.calmiere.capBps ?? 10_000)) / 10_000n;
   if (!d || d.target !== resource || ref === undefined) return null;
   const cap =
     d.family === TERRA_FAMILY

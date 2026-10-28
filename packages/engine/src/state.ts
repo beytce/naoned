@@ -509,6 +509,18 @@ export interface WorldState {
   wars?: unknown;
   /** Set once the final ranking has been published (event `season_closed`). */
   seasonClosed?: boolean;
+  /**
+   * The election of the Doge (R7, `doge.ts`): the candidates frozen at its opening, their
+   * programmes and each merchant's voice.
+   */
+  election?: {
+    candidates: PlayerId[];
+    programmes: Record<
+      PlayerId,
+      { mutator: string | null; decree: { code: string; target?: string } }
+    >;
+    votes: Record<PlayerId, { candidate: PlayerId; weight: number; boost: number }>;
+  };
 }
 
 /** One card of a bale: a few units of a good, of a given rarity. */

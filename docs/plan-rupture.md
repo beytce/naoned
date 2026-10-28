@@ -34,7 +34,7 @@
 | R10 | La Lettre du jour | 3 | fait | `7b3c7d5`… (branche `claude/rupture-v3`) |
 | R4 | La Dynastie | 4 | fait (calibration en fin de vague) | branche `claude/rupture-v4` |
 | R5 | Le Grand Canal | 4 | à faire | branche `claude/rupture-v4` |
-| R7 | Le Doge | 4 | à faire | branche `claude/rupture-v4` |
+| R7 | Le Doge | 4 | en cours (moteur fait) | branche `claude/rupture-v4` |
 | R8 | Le Broglio | 5 | à faire | — |
 | R9 | Les parts de Maison | 5 | à faire | — |
 
@@ -48,7 +48,7 @@
 - **Vagues 1 et 2 fusionnées** dans la branche par défaut (PR #51, 28 octobre 2026).
 - **Vague 3 terminée** (28 octobre 2026) sur `claude/rupture-v3` : Atouts et Lettre du jour faits, calibrés (`docs/calibration.md`, « Vague 3 »), notes de saison et CADRAGE à jour. Les deux « moments » (l'Atout du lundi, la Lettre du matin) s'ouvrent d'eux-mêmes une fois, puis vivent sous la cloche (une ligne chacun, comptés dans le badge) : un rond de plus dans le HUD débordait à 320 px. À fusionner par une PR vers la branche par défaut quand la CI passe.
 - **Vague 4 en cours** (plan validé le 28 octobre, détail plus bas, « Vague 4 : le plan validé » ; branche `claude/rupture-v4`, partie de `claude/rupture-v3` ; la vague 3 est fusionnée dans la branche par défaut, PR #52).
-- **Étape suivante exacte** : le moteur du Doge (R7), tests d'abord dans `packages/engine/test/doge.test.ts` — `doge.ts` : `electionOpen` (dernière semaine, `seasonEnd − 7 j`), candidats figés à l'ouverture (10 premiers humains de `seasonStandings`, sans le Doge sortant passé par les réglages `doge.previous`), commandes `standForDoge {mutator, decree}` et `voteDoge {candidate, influenceBoost?}` (poids 1 + villes de Podestà + boost ≤ 3, voix modifiable, 3 jours joués), `dogeTally`, `closeSeason` émet `doge_elected` ; `settings.doge { decrees, decree?, mutator?, previous? }` ; `decreeInForce` lit `settings.doge.decree` avant les familles. Voir « Vague 4 : le plan validé ».
+- **Étape suivante exacte** : le serveur du Doge — migration `doges` (mois `YYYY-MM`, compte, monde d'élection, mutateur, décret, voix) écrite à l'événement `doge_elected` (`world.ts`) ; `createWorld`/`loadWorld`/`monthSettings` : écrire dans `settings.doge` du nouveau monde `decree`, `mutator` et `previous` (le Doge sortant), et prendre son mutateur au lieu du tirage `seasonMutator` ; routes `GET /api/game/election` (candidats, programmes, voix par `dogeTally`, la vôtre) et actions `standForDoge`, `voteDoge` (le serveur prend l'Influence du boost par `spendInfluence`, 10 par voix, seulement la part nouvelle) ; `previousDoge` lit `doges` ; avis `doge` (ouverture, élu) ; gazette ; ménage : retirer le décret du Signore (`terraDecree`) et la renommée en chiffre du palmarès.
 - **À savoir** :
   - La Signoria compte les livraisons parties entre 8 h et 22 h (Paris) ; le Podestà est nommé par `closeSignoriaDays` dans le tick, au changement de jour (minuit).
   - L'e2e de mise en page passe sur chaque format lancé seul (`SIZES=390x844`, `SIZES=320x568`) ; lancé sur les deux formats d'affilée, le second a échoué deux fois dans le guide, à une étape différente chaque fois (une charrette sur Venise, l'achat de briques), puis la machine a été redémarrée : à surveiller. Chromium : `CHROMIUM=/opt/pw-browsers/chromium`.
@@ -137,7 +137,11 @@ Plan complet : la Dynastie (R4), le Grand Canal (R5), le Doge (R7). Décisions p
 - Fait aussi : serveur — table `generations` (migration `0030_dynasty`), `apps/server/src/game/dynasty.ts` (`nextGeneration`/`startGeneration` au `join`, `recordGenerations` à la clôture : traits mérités lus dans `telemetry` — `incanto_won`, `podesta_named`, `terra_result` Signore, `letter_answered` ≥ 20, `daily_chest` série ≥ 7 — et le top 10 ; surnom ; `chooseHeir`, `dynastyView`), routes `GET /api/game/dynasty` et `POST /api/game/heir`, `/api/house/spend` gratuit quand le trait le donne, Signoria : 10 rivaux au lieu de 3 pour `signoriaRivals`, `view.dynasty`, export RGPD ; test `apps/server/test/dynasty.test.ts`.
 - Fait aussi : écrans — `apps/web/src/game/Dynasty.tsx` (`HeirChoice` dans la cérémonie, où l'unique bouton or devient « Léguer … et commencer » ; `NamePicker` dans `Region.tsx` ; `Gallery` au profil), portrait SVG `art/portrait.tsx` (médaillon aux couleurs du blason, coiffe tirée du prénom, voile pour un prénom féminin, corno pour un Doge), gratuités dites dans `Daily.tsx` et `House.tsx`, « Demain, une lettre de … » dans `Letter.tsx` ; textes `game.dynasty` FR/EN ; étape e2e « heritier ».
 
-**Le Doge (R7)** et **le Grand Canal (R5)** : à faire, selon le plan (`doge.ts`, `doges`, `canal_plots`, `GET /api/canal`, feuille du Sénat, Canal à la connexion).
+**Le Doge (R7).** Moteur `doge.ts` : `electionOpen` (les `electionDays` derniers jours), `openElection` au tick (candidats figés : les `candidates` premiers de `seasonStandings`, sans PNJ ni `doge.previous`), `standForDoge {mutator, decree}` (mutateur du catalogue des mutateurs, décret de `doge.decrees` avec sa cible : ville pour `faveur`, marchandise pour `calmiere`), `voteDoge {candidate, influenceBoost}` (poids 1 + villes de Podestà + boost plafonné à `maxBoost`, boost gardé quand on change d'avis, `minDays` depuis l'arrivée), `dogeTally`, `electDoge` au tick avant `closeSeason` (`doge_elected` avec le programme). Le décret du Doge (`settings.doge.decree`, écrit par le serveur) vaut pour tous : `franchigia` (taxe − `taxCutBps`), `faveur` (+ `premiumBps` à la ville), `levante` (+ `quotaBps` à la Dogana), `calmiere` (plafond `capBps`), branchés dans `decreeTaxBps`, `favourBps`, `levantQuotaBps`, `calmiereCap`. Venise : 10 candidats, 7 jours, 3 jours joués, boost 3, +10 % / −1 pt / +25 % / 110 %.
+- Fait : moteur, tests `test/doge.test.ts` (7).
+- À faire : serveur (`doges`, réglages du mois, routes, avis, `previousDoge`, ménage du Signore), écrans (feuille du Sénat, Doge à la connexion), mesure de chaque décret au simulateur (`--decree`).
+
+**Le Grand Canal (R5)** : à faire, selon le plan (`canal_plots`, `GET /api/canal`, palais SVG, Canal à la connexion, onglet du classement).
 
 ## Les vagues suivantes (cadre fixé, à détailler en mode plan au moment venu)
 
@@ -167,3 +171,4 @@ Plan complet : la Dynastie (R4), le Grand Canal (R5), le Doge (R7). Décisions p
 - 28 octobre 2026 : vague 4 planifiée et validée ; moteur de la Dynastie (`dynasty.ts`, traits en liste blanche, `join.trait`, gratuités du trait, branchements), catalogue de Venise, tests.
 - 28 octobre 2026 : vague 3 fusionnée (PR #52) ; serveur de la Dynastie (`generations`, mérites, surnom, héritier, prénoms, gratuités, rivaux de la Signoria).
 - 28 octobre 2026 : écrans de la Dynastie (héritier à la cérémonie, prénom à la région, galerie et portraits, gratuités) ; la Dynastie est faite.
+- 28 octobre 2026 : moteur du Doge (`doge.ts` : élection de la dernière semaine, programme, voix pondérées, élu à la clôture ; décret du mois pour tous dans `decrees.ts`), réglages de Venise, tests.

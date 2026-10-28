@@ -779,6 +779,24 @@ export const venice1450Settings: WorldSettingsInput = {
   // Tasks of the day: three drawn from this pool, the same for everyone; doing all three opens a
   // chest of 10 ducats, 3 more for each day in a row, up to 22 (five days running).
   /**
+   * The Doge (R7): the month's last week, the Senate elects the next month's Doge among the first
+   * ten houses of the people; its decree of the Republic holds all month, for everyone (each
+   * measured with `pnpm sim --decree`, docs/calibration.md).
+   */
+  doge: {
+    candidates: 10,
+    electionDays: 7,
+    minDays: 3,
+    maxBoost: 3,
+    decrees: ["faveur", "franchigia", "levante", "calmiere"],
+    effects: {
+      faveur: { premiumBps: 1_000 },
+      franchigia: { taxCutBps: 100 },
+      levante: { quotaBps: 2_500 },
+      calmiere: { capBps: 11_000 },
+    },
+  },
+  /**
    * The Dynastie (R4): the month's member of the house is named from three of these; the heir
    * takes one trait earned in the month (the feats are the server's, `dynasty.ts` there).
    */

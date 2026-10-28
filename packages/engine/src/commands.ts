@@ -22,6 +22,7 @@ import {
   grantStartingVehicles,
   upgradeVehicle,
 } from "./deliveries.js";
+import { standForDoge, voteDoge } from "./doge.js";
 import { knownTrait } from "./dynasty.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { joinFamily, leaveFamily } from "./families.js";
@@ -109,6 +110,15 @@ export type Command =
   | { type: "chooseAtout"; playerId: PlayerId; code: string }
   /** From the server: an Atout the account unlocked joins the merchant's pool. */
   | { type: "unlockAtout"; playerId: PlayerId; code: string }
+  /** The Doge's election (R7): a candidate's programme, a merchant's voice. */
+  | {
+      type: "standForDoge";
+      playerId: PlayerId;
+      mutator: string | null;
+      decree: { code: string; target?: string };
+    }
+  /** `influenceBoost`: the voices of Influence the server took (capped by the engine). */
+  | { type: "voteDoge"; playerId: PlayerId; candidate: PlayerId; influenceBoost?: number }
   /** The answer to the Letter of the day (R10). */
   | { type: "answerLetter"; playerId: PlayerId; choice: string }
   /**
@@ -493,6 +503,12 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "unlockAtout":
       unlockAtout(tx, cmd.playerId, cmd.code);
+      break;
+    case "standForDoge":
+      standForDoge(tx, cmd.playerId, cmd.mutator, cmd.decree);
+      break;
+    case "voteDoge":
+      voteDoge(tx, cmd.playerId, cmd.candidate, cmd.influenceBoost);
       break;
     case "answerLetter":
       answerLetter(tx, cmd.playerId, cmd.choice);

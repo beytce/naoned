@@ -1278,6 +1278,37 @@ export const worldSettingsSchema = z.object({
     })
     .optional(),
   /**
+   * The Doge (R7, docs/plan-rupture.md): the month's last `electionDays`, the Senate elects the
+   * Doge of the next month among the first `candidates` houses of the people (never the outgoing
+   * one, `previous`). Each candidate stands with a public programme: a mutator of the catalog and
+   * a decree of the Republic among `decrees`; a merchant of `minDays` votes, one voice, one more a
+   * city it holds as Podestà, up to `maxBoost` more of Influence. The month the Doge rules, the
+   * server writes its `mutator` and `decree` here: the decree holds for everyone, all month.
+   * Off when absent.
+   */
+  doge: z
+    .object({
+      candidates: positive,
+      electionDays: positive,
+      minDays: qty,
+      maxBoost: qty,
+      decrees: z.array(z.enum(["faveur", "franchigia", "levante", "calmiere"])),
+      effects: z.object({
+        /** Deliveries to the city paid more. */
+        faveur: z.object({ premiumBps: bps }),
+        /** The market's tax lighter. */
+        franchigia: z.object({ taxCutBps: bps }),
+        /** A larger share of the Dogana's quota. */
+        levante: z.object({ quotaBps: bps }),
+        /** No offer of the good above this share of its reference. */
+        calmiere: z.object({ capBps: bps }),
+      }),
+      decree: z.object({ code: z.string(), target: z.string().optional() }).optional(),
+      mutator: z.string().optional(),
+      previous: z.string().optional(),
+    })
+    .optional(),
+  /**
    * The Dynastie (R4, docs/plan-rupture.md): each month a member of the house, named from three
    * of `names`, and an heir who takes one trait earned in the month. A trait is an option or a
    * piece of information, never yield: its effects are this short list, nothing else parses —
