@@ -1542,3 +1542,20 @@ Les 5 graines sont conformes.
 - La croissance du mois revient : la semaine III rapporte 12 à 18 % de plus que la semaine I, contre 0 à 8 % avec les seuls fondaci. La cible de 1,20 n'est pas tout à fait atteinte.
 - Le pain reste sous 65 % en fin de mois : la Terraferme n'en mange pas encore assez pour absorber ce que les boulangers produisent.
 - La Signoria tourne vite : une ville change de Podestà de 2 à 6 fois par semaine chez les PNJ, qui livrent partout sans viser une ville. À revoir avec des humains (`/admin`) : si le titre change chaque jour, garder plus de points d'un jour à l'autre (`decayBps`).
+
+### Second essai : 0,2 pain par troupe et par jour ouvert (écarté)
+
+Les 5 graines sont conformes, mais l'essai n'est pas retenu.
+
+| Mesure | 0,1 pain (retenu) | 0,2 pain |
+| --- | --- | --- |
+| Monnaie payée, Lombardie / Installation | 1,12 à 1,18 | 1,14 à 1,21 |
+| Pain en fin de mois | 56 à 60 % | 54 à 58 % |
+| Briques et planches en fin de mois | 65 à 95 % | 56 à 64 % |
+| Masse monétaire par actif, plafond | 0,91 à 0,95 × | 0,92 à 1,01 × |
+| Assidus devant occasionnels (ventes nettes médianes) | 112 à 322 % | 314 à 585 % |
+
+**Lecture.**
+- Doubler le pain des troupes ne relève pas le pain : les maisons qui font la guerre dépensent leurs ducats en pain au lieu d'acheter des matériaux, et briques et planches s'effondrent.
+- L'écart entre assidus et occasionnels explose : l'occasionnel, qui ne vient pas nourrir ses troupes, cesse de recruter et décroche.
+- **Décision : 0,1 pain par troupe et par jour.** Le pain sous 65 % en fin de mois vient d'une surproduction des boulangers, pas d'un manque de guerre ; la croissance du mois (cible 1,20) est à reprendre avec la vague 2 (la Sera, qui concentre la demande), ou par un réglage des villes, sur décision du porteur.
