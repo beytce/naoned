@@ -269,6 +269,14 @@ Décision du porteur : les douze propositions de `docs/audit-retention-2026-10-2
 | **Ménage (R12)** | Les fournisseurs officiels et l'embargo diplomatique de la Terraferme sont retirés à Venise : la Signoria les remplace |
 | **Écrans** | La jauge en anneau autour du monument de la ville en orbite, la porte « Signoria » et sa feuille ; le blason du Podestà sur la ville de la carte ; le pain des troupes dans le HUD de la Terraferme (qui respire en cinabre quand il manque) ; le coût en marchandises de la guerre dans « Vos terres ». Notifications : « Vous êtes Podestà de… », « … vous a repris … » (le rival nommé), « … vous dépasse à … », « Vos troupes ont faim » |
 
+### Être le meilleur, revenir chaque soir : le Lustre et la Sera (vague 2 du plan de rupture, 28 octobre 2026)
+
+| Mécanique | Règle |
+| --- | --- |
+| **Le Lustre (R6)** | Un rang du compte, gardé de saison en saison : Popolano 0, Cittadino 100, Mercante 250, Patrizio 450, Senatore 700, Procuratore 1 000 (`lustre`). Chaque semaine, une **Sfida** contre un humain de Lustre voisin, sur les ventes nettes de la semaine : +30 au gagnant, −20 au perdant (jamais sous 0). Sans adversaire libre, le **fantôme** d'un humain (sa courbe horaire d'une semaine passée, Lustre le plus proche) ; au lancement, sans courbe humaine, une maison de l'ordinateur, marquée « PNJ ». Défi direct depuis le palmarès d'un marchand, pour la semaine suivante, mise de 0 à 50 si l'autre accepte. Changement de mois : deux rangs plus bas. Aucun effet économique. Le rang remplace le niveau dans le HUD, l'adversaire de la Sfida remplace le rival de la semaine. Tables `sfide` et `week_curves` |
+| **La Sera (R11)** | Chaque soir de 20 h à 20 h 30. **L'incanto** : chaque arrivée de la Muda met la moitié de son lot aux enchères en trois lots, fermant à 20 h 10, 20 h 20 et 20 h 30 (deux minutes de plus pour une enchère tardive) ; enchères à maximum laissé d'avance (prix = deuxième maximum + 5 %, départ à 60 % de la référence), ducats du meneur bloqués, rendus s'il est dépassé ; le prix sort du jeu ; un lot par marchand et par Sera (`incanto`). Le reste au quai, sans hausse de prix. L'heure de bataille de la Terraferme passe à 20 h – 20 h 30. Avis à 19 h 55 et « enchère dépassée » |
+| **Ménage (R12)** | Appels d'offres du Doge retirés à Venise ; le niveau honorifique quitte le HUD ; le rival de la semaine devient l'adversaire de la Sfida |
+
 ## Vision et positionnement
 
 Fondaco est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.

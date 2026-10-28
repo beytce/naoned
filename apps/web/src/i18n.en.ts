@@ -2772,6 +2772,8 @@ export const en: Dictionary = {
         "Each month, from December, a mutator changes a few prices or strengths for the month; it is announced here on the 24th of the month before.",
         "War eats goods: on the Terraferma your troops eat bread every day; without bread you recruit no more. « Max » also asks for bread, the fort for bricks, walls for bricks and planks, the port for planks, the bombard for wood and planks.",
         "The Signoria of the cities replaces the official suppliers and the embargo: every ducat delivered to a city, and every hour you hold it on the Terraferma, counts on its gauge. Every night at midnight the leader becomes Podestà (3 cities at most): it takes 3% of the others' deliveries to its city and takes its orders half an hour before everyone.",
+        "The Lustre: every week, a Sfida against a merchant of your rank (or the ghost of one of their weeks); whoever sells the most wins Lustre. Six ranks, from Popolano to Procuratore, kept from season to season (two fewer at the month's change). Challenge a merchant from their record.",
+        "The Sera, every evening from 8 to 8:30 pm: half of each arrival of the galleys up for auction in three lots (leave your maximum whenever you like, you pay the second maximum plus 5%), and the battle of the Terraferma. On the quay the galleys no longer get dearer; the Doge's tenders are gone.",
       ],
     },
     howTo: [
