@@ -77,6 +77,10 @@ export const NOTIFICATION_KINDS = [
   "letter",
   // The Doge (R7): the election opened (candidates told so), the Doge elected.
   "doge",
+  // The Broglio (R8): a rumour sold, a spy posted or chased, a lie unmasked.
+  "broglio",
+  // The parts of a house (R9): parts bought, a seat on the council, a dividend, the buyback.
+  "shares",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -139,6 +143,8 @@ const OPENS: Partial<Record<NotificationKind, string>> = {
   sera: "sera",
   letter: "letter",
   doge: "senate",
+  broglio: "broglio",
+  shares: "shares",
 };
 
 /** Who wrote the letter a consequence answers (`followup` id of the month's script). */
@@ -192,6 +198,8 @@ export class Notifier {
     await this.outbid(fx, now);
     await this.letterNews(fx, now);
     await this.dogeNews(fx, now);
+    await this.broglioNews(fx, now);
+    await this.sharesNews(fx, now);
     const fills = fx.events.filter((e) => e.type === "order_filled" && e.playerId);
     if (fills.length === 0) return;
     const people = await this.people();
@@ -288,6 +296,67 @@ export class Notifier {
           kind: "sera" as const,
           data: { event: "outbid", lot: e.data?.lot ?? null },
         })),
+      now,
+    );
+  }
+
+  /** The Broglio (R8): to whom it concerns, never a name (who spies, who lied, who bought). */
+  private async broglioNews(fx: Effects, now: number): Promise<void> {
+    const kinds: Record<string, string> = {
+      rumour_sold: "sold",
+      spy_posted: "spied",
+      spy_chased: "chased",
+      rumour_unmasked: "unmasked",
+      liar_unmasked: "caught",
+    };
+    const news = fx.events.filter((e) => e.playerId && kinds[e.type]);
+    if (news.length === 0) return;
+    const people = await this.people();
+    await this.send(
+      news
+        .filter((e) => people.has(e.playerId ?? ""))
+        .map((e) => ({
+          accountId: e.playerId ?? "",
+          kind: "broglio" as const,
+          data: {
+            event: kinds[e.type] ?? "",
+            ...(e.type === "rumour_sold" ? { price: e.data?.price ?? null } : {}),
+          },
+        })),
+      now,
+    );
+  }
+
+  /**
+   * The parts of a house (R9): its founder told of parts bought from it and of a holder seated on
+   * its council (never named here), each holder of its dividend and of the month's buyback.
+   */
+  private async sharesNews(fx: Effects, now: number): Promise<void> {
+    const out: Notice[] = [];
+    for (const e of fx.events) {
+      const d = e.data ?? {};
+      if (e.type === "shares_traded" && e.playerId && d.buyer !== e.playerId)
+        out.push({
+          accountId: e.playerId,
+          kind: "shares",
+          data: { event: "bought", quantity: d.quantity ?? 0, price: d.price ?? "0" },
+        });
+      if (e.type === "council_seat" && e.playerId)
+        out.push({ accountId: e.playerId, kind: "shares", data: { event: "council" } });
+      if (e.type === "share_dividend" || e.type === "shares_settled")
+        for (const [accountId, amount] of Object.entries(
+          (d.holders ?? {}) as Record<string, string>,
+        ))
+          out.push({
+            accountId,
+            kind: "shares",
+            data: { event: e.type === "share_dividend" ? "dividend" : "settled", amount },
+          });
+    }
+    if (out.length === 0) return;
+    const people = await this.people();
+    await this.send(
+      out.filter((x) => people.has(x.accountId)),
       now,
     );
   }
@@ -958,6 +1027,8 @@ export class Notifier {
           paid: t.paid.toString(),
           ...(atouts.has(accountId) ? { atouts: true } : {}),
           ...(letters.has(accountId) ? { letter: letters.get(accountId) } : {}),
+          // The Broglio (R8): the morning's rumours wait for everyone.
+          ...(this.world.ctx.settings.broglio ? { rumours: true } : {}),
         },
       })),
       now,

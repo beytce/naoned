@@ -19,6 +19,7 @@ import { fr } from "../../i18n.js";
 import { Big, Panel, Qty, Sheet, Slab, clock, useLeaving } from "../../ui.js";
 import { ActCard } from "../Acts.js";
 import { AtoutsSheet, atoutWaiting, useAtoutMoment } from "../Atouts.js";
+import { BroglioSheet } from "../Broglio.js";
 import { CargoSheet, loadOrders, loadSummary } from "../Cargo.js";
 import { Coach } from "../Coach.js";
 import { ComeBack } from "../ComeBack.js";
@@ -762,7 +763,9 @@ export function MapScreen(
     carnetRewards(props) +
     (letterWaiting(view) ? 1 : 0) +
     (atoutWaiting(view) ? 1 : 0) +
-    (senateWaiting(props) ? 1 : 0);
+    (senateWaiting(props) ? 1 : 0) +
+    // A spy at the door (R8).
+    (view.broglio?.spied ? 1 : 0);
   const days = Math.max(1, (catalog.world.endsAt - catalog.world.startsAt) / 86_400_000);
   const open = unlocksOf(view.tutorial, now - view.player.joinedAt);
   const seasonProgress = Math.min(1, (now - catalog.world.startsAt) / (days * 86_400_000));
@@ -1030,6 +1033,7 @@ export function MapScreen(
       <AtoutsSheet {...props} />
       <LetterSheet {...props} />
       <SenateSheet {...props} />
+      <BroglioSheet {...props} />
       <WarehouseSheet {...props} />
       <FondacoSheet {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}

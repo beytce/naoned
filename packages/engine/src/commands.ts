@@ -2,6 +2,15 @@ import { type Draft, enableMapSet, produce } from "immer";
 import { claimDaily, rerollDaily, sellToCriee, trackDaily } from "./activity.js";
 import { chooseAtout, unlockAtout } from "./atouts.js";
 import { grantStartingBales, openBale } from "./bales.js";
+import {
+  type RumourSubject,
+  buyRumour,
+  cancelRumourOffer,
+  chaseSpy,
+  forgeRumour,
+  hireSpy,
+  offerRumour,
+} from "./broglio.js";
 import { build, choosePath, grantBuilding, upgrade } from "./buildings.js";
 import {
   buildWork,
@@ -50,6 +59,7 @@ import {
 } from "./partners.js";
 import { collect, startProduction } from "./production.js";
 import { deliverToProject } from "./projects.js";
+import { cancelShareOrder, listHouse, placeShareOrder } from "./shares.js";
 import { chooseSpecialty } from "./specialties.js";
 import {
   type Building,
@@ -110,6 +120,24 @@ export type Command =
   | { type: "chooseAtout"; playerId: PlayerId; code: string }
   /** From the server: an Atout the account unlocked joins the merchant's pool. */
   | { type: "unlockAtout"; playerId: PlayerId; code: string }
+  /** The Broglio (R8): rumours sold and bought, a false one forged, a spy posted or chased. */
+  | { type: "offerRumour"; playerId: PlayerId; rumourId: string; price: Deniers; to?: PlayerId }
+  | { type: "buyRumour"; playerId: PlayerId; offerId: string }
+  | { type: "cancelRumourOffer"; playerId: PlayerId; offerId: string }
+  | { type: "forgeRumour"; playerId: PlayerId; subject: RumourSubject }
+  | { type: "hireSpy"; playerId: PlayerId; target: PlayerId }
+  | { type: "chaseSpy"; playerId: PlayerId }
+  /** The parts of a house (R9): listed, ordered, an order cancelled. */
+  | { type: "listHouse"; playerId: PlayerId }
+  | {
+      type: "placeShareOrder";
+      playerId: PlayerId;
+      house: PlayerId;
+      side: "buy" | "sell";
+      price: Deniers;
+      quantity: number;
+    }
+  | { type: "cancelShareOrder"; playerId: PlayerId; orderId: string }
   /** The Doge's election (R7): a candidate's programme, a merchant's voice. */
   | {
       type: "standForDoge";
@@ -503,6 +531,33 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "unlockAtout":
       unlockAtout(tx, cmd.playerId, cmd.code);
+      break;
+    case "offerRumour":
+      offerRumour(tx, cmd.playerId, cmd.rumourId, cmd.price, cmd.to);
+      break;
+    case "buyRumour":
+      buyRumour(tx, cmd.playerId, cmd.offerId);
+      break;
+    case "cancelRumourOffer":
+      cancelRumourOffer(tx, cmd.playerId, cmd.offerId);
+      break;
+    case "forgeRumour":
+      forgeRumour(tx, cmd.playerId, cmd.subject);
+      break;
+    case "hireSpy":
+      hireSpy(tx, cmd.playerId, cmd.target);
+      break;
+    case "chaseSpy":
+      chaseSpy(tx, cmd.playerId);
+      break;
+    case "listHouse":
+      listHouse(tx, cmd.playerId);
+      break;
+    case "placeShareOrder":
+      placeShareOrder(tx, cmd.playerId, cmd.house, cmd.side, cmd.price, cmd.quantity);
+      break;
+    case "cancelShareOrder":
+      cancelShareOrder(tx, cmd.playerId, cmd.orderId);
       break;
     case "standForDoge":
       standForDoge(tx, cmd.playerId, cmd.mutator, cmd.decree);

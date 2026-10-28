@@ -41,6 +41,7 @@ import {
 } from "../db/schema.js";
 import { countFunnel } from "../funnel.js";
 import { recordAtoutUnlocks, unlockByLustre } from "./atouts.js";
+import { liarPenalty } from "./broglio.js";
 import { nextSeasonBounds, seasonBounds, seasonMonthKey, seasonMonthName } from "./calendar.js";
 import { redistributeCanal } from "./canal.js";
 import { dogeSettingsFor, recordDoge } from "./doge.js";
@@ -477,6 +478,8 @@ export class GameWorld {
         }
         // The Doge of the next month (R7), kept with its programme before the world turns.
         if (e.type === "doge_elected") await recordDoge(tx, worldId, this.ctx, e, at);
+        // The Broglio (R8): a liar unmasked loses Lustre.
+        if (e.type === "liar_unmasked") await liarPenalty(tx, this.ctx, e.playerId);
         if (e.type === "season_closed") {
           const ranked = await recordSeason(tx, worldId, e.data ?? {});
           await recordSeasonInfluence(tx, worldId, this.ctx.settings, ranked, at);

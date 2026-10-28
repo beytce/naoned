@@ -3,6 +3,7 @@ import { Label, Sheet, clock } from "../../ui.js";
 import { actText, currentAct } from "../Acts.js";
 import { AtoutsLine } from "../Atouts.js";
 import { NoticeList } from "../Bell.js";
+import { BroglioLine } from "../Broglio.js";
 import { Carnet, SeasonTiles, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import { SenateLine } from "../Doge.js";
@@ -73,6 +74,7 @@ export function NoticesSheet(
         </section>
 
         <SenateLine {...props} />
+        <BroglioLine {...props} />
         <LetterLine {...props} />
         <AtoutsLine {...props} />
 

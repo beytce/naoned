@@ -1516,6 +1516,7 @@ const frDict = {
         quality_premium: "Qualité des manufactures",
         commission: "Commandes entre marchands",
         colleganza_share: "Parts de colleganza",
+        share_dividend: "Dividendes de parts",
         loan: "Prêts de la Banque",
         decree_share: "Part des décrets",
         signoria_toll: "Droit de porte du Podestà",
@@ -1765,6 +1766,21 @@ const frDict = {
           : ghost
             ? `Votre Sfida de la semaine : le fantôme de ${by ?? "un marchand"}.`
             : `Votre Sfida de la semaine : ${by ?? "un marchand"}.`,
+      broglio: (event: string, price: string) =>
+        ({
+          sold: `Un marchand vous a acheté une rumeur (${price}).`,
+          spied: "Un espion rôde autour de votre comptoir : chassez-le au Broglio.",
+          chased: "Votre espion a été chassé.",
+          unmasked: "Une rumeur reçue au Rialto venait d'un menteur, démasqué.",
+          caught: "Votre fausse rumeur est démasquée : vous perdez du Lustre.",
+        })[event] ?? "Du nouveau au Broglio.",
+      shares: (event: string, quantity: number, amount: string): string =>
+        ({
+          bought: `${quantity} parts de votre Maison ont trouvé preneur (${amount} pièce).`,
+          council: "Un porteur siège désormais à votre conseil : il voit vos comptes.",
+          dividend: `Vos parts vous rapportent ${amount} cette semaine.`,
+          settled: `Fin du mois : vos parts vous sont rachetées ${amount}.`,
+        })[event] ?? "Du nouveau sur vos parts.",
       doge: (event: string, by: string | null, candidate: boolean) =>
         event === "opened"
           ? candidate
@@ -1832,6 +1848,8 @@ const frDict = {
           sera: "La Sera (19 h 55) et enchères dépassées",
           letter: "Suites de la lettre du jour",
           doge: "Élection du Doge (ouverture, élu)",
+          broglio: "Le Broglio (rumeur vendue, espion, menteur démasqué)",
+          shares: "Les parts de Maison (parts vendues, conseil, dividende, rachat)",
         } as Record<string, string>,
       },
     },
@@ -2523,7 +2541,7 @@ const frDict = {
       title: "Affaires entre marchands",
       tile: (n: number) =>
         n > 0 ? `${n} affaire${n > 1 ? "s" : ""} à saisir` : "Commandes et colleganze",
-      tabs: { commissions: "Commandes", colleganze: "Colleganza", bank: "Banque" },
+      tabs: { commissions: "Commandes", colleganze: "Colleganza", bank: "Banque", parts: "Parts" },
       bank: {
         help: (share: number, pct: number, days: number, late: number) =>
           `La Banque prête jusqu'à ${share} % de votre patrimoine, ${days} jours au plus, à ${pct} % par jour. À l'échéance, elle se paie sur votre caisse ; ce qui manque est majoré de ${late} % et prélevé sur vos rentrées. Remboursé plus tôt, vous ne payez que les jours entamés.`,
@@ -2709,6 +2727,109 @@ const frDict = {
       },
     },
     /** The rival of the week, under the rank on the map. */
+    /** The Broglio (R8): rumours, their sources, their sale, false ones, the spy. */
+    shares: {
+      title: "Votre Maison au Rialto",
+      notListed:
+        "Cotez votre Maison : 100 parts, dont 49 au plus en d'autres mains. Vous en gardez toujours 51.",
+      refusal: (code: string, day: number, days: number): string =>
+        ({
+          too_early: `La cotation ouvre le jour ${day + 1} du mois.`,
+          too_new: `Il faut ${days} jours de présence pour coter sa Maison.`,
+          season_over: "Le dernier jour du mois, le carnet est fermé.",
+          already_listed: "Votre Maison est déjà cotée.",
+        })[code] ?? "La cotation n'est pas ouverte.",
+      list: "Coter ma Maison",
+      lastPrice: (price: string | null): string =>
+        price ? `Dernier cours : ${price} la part` : "Aucune part échangée encore",
+      float: (n: number, max: number) => `${n} parts en d'autres mains sur ${max} possibles`,
+      register: "Le registre",
+      shares: (n: number) => `${n} part${n > 1 ? "s" : ""}`,
+      you: "vous",
+      issue: "Émettre",
+      buyBack: "Racheter",
+      quantity: "Parts",
+      price: "Prix de la part",
+      issueGo: (n: number, price: string) => `Mettre ${n} parts en vente à ${price}`,
+      buyBackGo: (n: number, price: string) => `Racheter ${n} parts à ${price}`,
+      orders: "Vos ordres ouverts",
+      order: (side: "buy" | "sell", n: number, price: string): string =>
+        `${side === "buy" ? "Achat" : "Vente"} de ${n} parts à ${price}`,
+      cancel: "Retirer",
+      book: "Le carnet",
+      ask: (n: number, price: string) => `${n} parts à ${price}`,
+      bid: (n: number, price: string) => `On demande ${n} parts à ${price}`,
+      noAsk: "Aucune part en vente.",
+      buy: (n: number, price: string) => `Acheter ${n} parts à ${price}`,
+      sell: (n: number, price: string) => `Vendre ${n} parts à ${price}`,
+      paid: (amount: string) => `Dividendes versés ce mois : ${amount}`,
+      held: "Vos parts ailleurs",
+      heldLine: (n: number, amount: string) => `${n} parts · ${amount} de dividendes`,
+      noneHeld: "Aucune part d'une autre Maison. Ouvrez la fiche d'un marchand pour en acheter.",
+      theirs: "Ses parts",
+      notTheirs: "Cette Maison n'est pas cotée.",
+      mine: (n: number, amount: string) => `Vous en avez ${n} · ${amount} de dividendes reçus`,
+      council: "Vous siégez à son conseil",
+      accounts: (cash: string, week: string) =>
+        `Caisse ${cash} · ventes nettes de la semaine ${week}`,
+      help: (dividend: number, council: number) =>
+        `Chaque semaine, les porteurs se partagent ${dividend} % des ventes nettes gagnées par la Maison, au prorata, dans la limite de sa caisse. Qui détient ${council} parts siège au conseil et voit ses comptes. Le dernier jour du mois, la Maison rachète toutes les parts au dernier cours, dans la limite de sa caisse. Une part échangée paie la taxe du marché.`,
+    },
+    broglio: {
+      kicker: "Le Broglio",
+      title: "Les rumeurs du Rialto",
+      summary: "Ce qu'on dit ce matin. À vous de juger vos sources.",
+      line: (n: number) => `${n} rumeur${n > 1 ? "s" : ""} ce matin au Broglio`,
+      spiedLine: "On vous espionne : chassez l'espion au Broglio.",
+      sources: {
+        gondoliere: "un gondolier",
+        postino: "un facteur",
+        dogana: "un commis de la Dogana",
+        senato: "un secrétaire du Sénat",
+        rialto: "un marchand du Rialto",
+      } as Record<string, string>,
+      said: (source: string, pct: number) => `D'après ${source} · sûr à ${pct} %`,
+      event: (title: string, city: string | null, when: string) =>
+        city ? `${title} (à ${city}), ${when}.` : `${title}, ${when}.`,
+      muda: (big: boolean): string =>
+        big
+          ? "Les galères de la Muda apporteront beaucoup à la prochaine arrivée."
+          : "Les galères de la Muda apporteront peu à la prochaine arrivée.",
+      when: (days: number) =>
+        days <= 0 ? "aujourd'hui" : days === 1 ? "demain" : `dans ${days} jours`,
+      sell: (price: string) => `Vendre au Rialto · ${price}`,
+      offered: (n: number) => `En vente · ${n} acheteur${n > 1 ? "s" : ""}`,
+      cancel: "Retirer",
+      market: "Au Rialto",
+      marketEmpty: "Aucune rumeur à vendre pour l'instant.",
+      kindEvent: "un événement à venir",
+      kindMuda: "la prochaine Muda",
+      buy: (price: string) => `Acheter · ${price}`,
+      bought: "Achetée",
+      forYou: "pour vous",
+      past: "Les rumeurs des jours passés",
+      truth: (t: boolean | null): string =>
+        t === null ? "on ne sait pas encore" : t ? "vraie" : "fausse",
+      unmasked: "venait d'un menteur",
+      spy: "L'espion",
+      spyNone: "Postez un espion chez un rival : il vous montre chaque jour une de ses offres.",
+      spyAt: (name: string) => `Votre espion chez ${name}`,
+      spyOffer: (side: string, q: number, good: string, price: string) =>
+        `Il ${side === "sell" ? "vend" : "achète"} ${q} ${good} à ${price}.`,
+      spyEmpty: "Aucune offre ouverte aujourd'hui.",
+      spyHire: (cost: string) => `Poster un espion · ${cost}`,
+      spyPick: "Chez qui ?",
+      spied: "Un espion rôde autour de votre comptoir.",
+      chase: (cost: string) => `Chasser l'espion · ${cost}`,
+      forge: "Inventer une rumeur",
+      forgeHelp: (n: number) =>
+        `Une fausse rumeur, remise demain à trois marchands. Elle coûte ${n} ✦ ; démasquée, elle vous coûte du Lustre.`,
+      forgeDone: "Rumeur inventée : elle courra demain.",
+      forgeButton: (n: number) => `L'inventer · ${n} ✦`,
+      mudaBig: "Beaucoup",
+      mudaSmall: "Peu",
+      help: "Chaque matin, deux rumeurs de ce qui vient : un événement de la gazette, le lot de la prochaine Muda. Chaque source dit vrai aussi souvent que sa fiabilité ; le nouveau venu n'entend que des sources sûres pendant trois jours. Les rumeurs se vendent au Rialto (le vendeur n'est jamais nommé). On peut en inventer une fausse contre de l'Influence : elle court chez trois marchands, et si elle est démasquée, son auteur perd du Lustre. Un espion chez un rival montre une de ses offres chaque jour ; l'espionné le sait, sans savoir qui, et peut le chasser. Aucune rumeur ne nomme un marchand.",
+    },
     /** The Grand Canal (R5): forty palaces, given by each month's ranking. */
     canal: {
       tab: "Grand Canal",
@@ -3028,6 +3149,8 @@ const frDict = {
     seasonNotes: {
       title: "Nouveautés de la saison",
       items: [
+        "Le Broglio : chaque matin, deux rumeurs de ce qui vient (un événement, le lot des galères), d'une source plus ou moins sûre. On les vend, on en invente de fausses contre de l'Influence (gare au Lustre si l'on est démasqué), on poste un espion chez un rival. La gazette ne dit plus le lendemain ; les galères apportent un lot qui varie.",
+        "Les parts de Maison : dès le jour 8, votre Maison peut se coter au Rialto (100 parts, vous en gardez toujours 51). Les porteurs touchent chaque semaine une part de vos ventes nettes ; 30 parts siègent à votre conseil ; tout est racheté le dernier jour du mois.",
         "La Dynastie : chaque mois, un membre de votre Maison tient le comptoir (prénom au choix) ; à la fin du mois, il lègue à son héritier un trait mérité dans le mois (une option ou une information, jamais du rendement), et son portrait entre dans la galerie du profil.",
         "Le Doge : la dernière semaine du mois, le Sénat élit le Doge du mois suivant parmi les dix premières Maisons ; chacune annonce un programme (une saison et un décret de la République), chacun vote, la voix d'un Podestà pèse plus. Le décret du Doge vaut pour tous, tout le mois ; celui du Signore de la Terraferme disparaît (le Signore garde son titre et sa Gloire).",
         "Le Grand Canal : quarante palais redonnés chaque mois par le classement ; on garde le sien en restant dans les quarante. Le Canal et le Doge du mois accueillent chacun à la connexion.",
@@ -3164,6 +3287,13 @@ const frDict = {
       no_bale: "Aucun ballot au quai pour l'instant : le prochain est en route.",
       bales_off: "Pas de ballot de Faraj dans ce monde.",
       insufficient_funds: "Pas assez de ducats.",
+      shares_off: "Pas de parts de Maison dans ce monde.",
+      too_early: "La cotation n'est pas encore ouverte.",
+      not_for_npc: "Une Maison de l'ordinateur ne se cote pas.",
+      already_listed: "Votre Maison est déjà cotée.",
+      not_listed: "Cette Maison n'est pas cotée.",
+      over_float: "Vous gardez toujours 51 parts de votre Maison.",
+      insufficient_shares: "Vous n'avez pas autant de parts libres.",
       vehicle_not_for_sale: "Seules les mules s'achètent : améliorez-les ensuite.",
       vehicle_max_level: "Ce véhicule est déjà au plus haut niveau.",
       insufficient_stock: "Pas assez de stock.",

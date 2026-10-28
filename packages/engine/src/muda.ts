@@ -1,4 +1,5 @@
 import { levantQuotaBps } from "./decrees.js";
+import { draw } from "./draw.js";
 import { openIncanto } from "./incanto.js";
 import type { Deniers } from "./money.js";
 import { arsenalMudaBps } from "./projects.js";
@@ -40,6 +41,23 @@ function arrivalAt(ctx: WorldContext, index: number): number {
   return ctx.startAt + (m ? index * m.everyDays * DAY_MS + m.hour * HOUR_MS : 0);
 }
 
+/** When the `index`-th galleys arrive. */
+export function mudaArrivalAt(ctx: WorldContext, index: number): number {
+  return arrivalAt(ctx, index);
+}
+
+/** The index of the next galleys to arrive after `now` (-1 without the Muda). */
+export function nextMudaIndex(ctx: WorldContext, now: number): number {
+  return ctx.settings.muda ? arrivalIndex(ctx, now) + 1 : -1;
+}
+
+/** The `index`-th arrival's lot, in bps of the usual one: 100 % ± the spread, drawn (R8). */
+export function mudaLotBps(ctx: WorldContext, index: number): number {
+  const spread = ctx.settings.muda?.lotSpreadBps ?? 0;
+  if (spread === 0) return 10_000;
+  return 10_000 - spread + (draw(ctx, `muda-lot:${index}`) % (2 * spread + 1));
+}
+
 /** When the next galleys arrive (after `now`); null without the Muda. */
 export function nextMudaAt(ctx: WorldContext, now: number): number | null {
   if (!ctx.settings.muda) return null;
@@ -61,7 +79,10 @@ export function arriveMuda(tx: Tx): void {
   // The week after an Arsenal at the Silver, the galleys bring more (E2-6).
   const boost = arsenalMudaBps(ctx, tx.s as WorldState, tx.now);
   for (const [resource, perPlayer] of Object.entries(m.lotPerActivePlayer)) {
-    const lot = Math.floor((perPlayer * players * (10_000 + boost)) / 10_000);
+    // Each arrival brings more or less than the usual lot (R8: what the rumours speak of), never
+    // nothing where the usual lot is a unit or more.
+    const usual = Math.floor((perPlayer * players * (10_000 + boost)) / 10_000);
+    const lot = usual > 0 ? Math.max(1, Math.round((usual * mudaLotBps(ctx, index)) / 10_000)) : 0;
     const left = muda.stock[resource] ?? 0;
     muda.lot[resource] = lot;
     muda.stock[resource] = Math.min(left + arrivals * lot, m.maxStockLots * lot);

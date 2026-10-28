@@ -1,3 +1,4 @@
+import { settleBroglio } from "./broglio.js";
 import { rationsPerDay } from "./buildings.js";
 import { advanceCampaign } from "./campaign.js";
 import { ensureBoard, pruneRoad, resolveDeliveries } from "./deliveries.js";
@@ -13,6 +14,7 @@ import { arriveMuda } from "./muda.js";
 import { settlePartners } from "./partners.js";
 import { openDueProjects } from "./projects.js";
 import { retireSeaAndBandits } from "./retired.js";
+import { settleShares } from "./shares.js";
 import { closeSignoriaDays } from "./signoria.js";
 import { DAY_MS, HOUR_MS, dayIndex } from "./state.js";
 import { runTenders } from "./tenders.js";
@@ -65,6 +67,11 @@ export function tick(tx: Tx): void {
   advanceTerraWorld(tx);
   // The Signoria of the cities: each day's Podestà, once the day's deliveries and land are in.
   closeSignoriaDays(tx);
+  // Colleganze and commissions at term, before the week's and the season's rankings are frozen:
+  // a share paid at the season's end counts in it.
+  settlePartners(tx);
+  // The houses' parts bought back the month's last day (R9), before the ranking closes too.
+  settleShares(tx);
   closeWeek(tx);
   // States of the time of the guilds: their treasuries go back to their members.
   dissolveLegacyGuilds(tx);
@@ -76,7 +83,6 @@ export function tick(tx: Tx): void {
   closeSeason(tx);
   openDueProjects(tx);
   runTenders(tx);
-  settlePartners(tx);
   collectLoans(tx);
   // Shared demand: the world's board of the day, drawn once the day's active merchants are known.
   ensureBoard(tx);
@@ -87,5 +93,7 @@ export function tick(tx: Tx): void {
   closeIncantoLots(tx);
   // The Letter's consequences come days after the answer.
   settleLetters(tx);
+  // The Broglio's forged rumours delivered and unmasked, its spies gone (R8).
+  settleBroglio(tx);
   requoteMarketMaker(tx);
 }

@@ -4,6 +4,7 @@ import { Medal } from "../art/icons.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Panel, Ribbon, Sheet, Slab, Stat } from "../ui.js";
 import { MerchantName, merchantLabel } from "./Name.js";
+import { TheirShares } from "./Shares.js";
 import { gameApi } from "./api.js";
 import { d, whole } from "./format.js";
 import type { Palmares } from "./types.js";
@@ -129,6 +130,7 @@ export function PlayerPalmares({
             </div>
           </div>
           <PalmaresView data={data.palmares} />
+          {accountId && !data.bot && <TheirShares accountId={accountId} />}
           {onChallenge && accountId && !data.bot && (
             <Slab
               size="lg"

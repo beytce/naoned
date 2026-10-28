@@ -91,10 +91,18 @@ Détails dans docs/expertise-2026-10-24/ (fichiers `*-final.md`).
 
 ## Plan de rupture, vague 4 (28 octobre 2026 : ce qui n'est pas entré dans la vague)
 - **Destitution du Doge** à mi-mois par le Conseil des Dix (les dix premiers du Lustre) : écartée pour l'instant, le Doge ne gouverne que par ce qu'il fixe avant le 1er (règles stables pendant le mois).
-- **Voix vendues** contre une part d'un droit de porte ou un partage de gains : avec les parts de Maison (vague 5, R9) ; pour l'instant, seul le programme public tient lieu de promesse.
+- **Voix vendues** contre une part d'un droit de porte ou un partage de gains : les parts de Maison (vague 5) n'y suffisent pas (rien ne lie un vote à une part) ; pour l'instant, seul le programme public tient lieu de promesse.
 - **Choix du palais** sur le Grand Canal, dans l'ordre du classement (le premier choisit, puis le deuxième…) : les palais sont attribués d'office, faute de tour de choix jouable en asynchrone.
 - **Fiche d'un palais** : toucher un palais du Canal ouvre le palmarès de sa Maison (la route publique ne donne pas d'identifiant ; une route connectée le ferait).
 - **Ménage différé de R12** : fondre les maîtrises dans les Atouts, le coffre et les tâches dans la Lettre, les missions de la Maison et les privilèges dans la Dynastie et le Canal, les actes dans le Doge ; à décider avec la mesure de vrais joueurs.
+
+## Plan de rupture, vague 5 (28 octobre 2026 : ce qui n'est pas entré dans la vague)
+- **Rumeurs sur les marchands** (« Untel va vider son stock de briques ») : écartées, une rumeur ne nomme jamais un marchand (toxicité, § 9 de l'audit).
+- **Prix libre d'une rumeur** à la vente : 5 ducats fixes à l'écran pour l'instant (le moteur accepte un prix) ; à ouvrir si les ventes prennent.
+- **Rachat hostile et OPA** : impossibles par construction (51 parts au fondateur) ; à ne pas ouvrir.
+- **Parts gardées d'un mois à l'autre** : tout est racheté le dernier jour, comme une saison qui se ferme ; un portefeuille qui dure demanderait de valoriser une Maison au changement de mois.
+- **Voix du conseil** : le conseil voit les comptes mais ne décide rien ; un vote du conseil (rachat, dividende plus fort) serait une mécanique de plus.
+- **« Acheter » en or dans la fiche d'un marchand** : le défi de la Sfida y garde l'or, l'achat de parts est en fantôme ; à revoir si les parts prennent plus de place que les Sfide.
 
 ## V1 (après la première saison)
 - Escarmouches : reprendre une partie en cours après un redémarrage du serveur (aujourd'hui elle est interrompue, sans Gloire ni quota consommé, terra-m1) ; demande d'enregistrer l'état de la partie à chaque pas.
