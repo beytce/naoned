@@ -7,6 +7,8 @@ import {
   allowedHere,
   applyBpsCeil,
   applyBpsFloor,
+  atoutOffer,
+  atoutOpen,
   bestUpgrade,
   boardRivals,
   boardTakes,
@@ -817,6 +819,27 @@ export function playerView(
     road: roadView(ctx, state, playerId, now),
     /** The galleys of the Muda: what is on the quay, at what price, and the merchant's quota. */
     muda: ctx.settings.muda ? mudaView(ctx, state, playerId, now) : null,
+    // The Atouts (R3): those held, the week's offer while one may be taken, the pool, and those
+    // still locked with the feat that unlocks them.
+    atouts: ctx.settings.atouts
+      ? {
+          held: state.players[playerId]?.atouts ?? [],
+          open: atoutOpen(ctx, state, playerId, now),
+          offer: atoutOpen(ctx, state, playerId, now) ? atoutOffer(ctx, state, playerId, now) : [],
+          effects: Object.fromEntries(
+            Object.entries(ctx.settings.atouts.catalog).map(([code, a]) => [
+              code,
+              Object.fromEntries(Object.entries(a.effects).filter(([, v]) => v !== 0)),
+            ]),
+          ),
+          locked: Object.entries(ctx.settings.atouts.catalog)
+            .filter(
+              ([code, a]) =>
+                !a.starter && !(state.players[playerId]?.atoutPool ?? []).includes(code),
+            )
+            .map(([code, a]) => ({ code, unlock: a.unlock ?? null })),
+        }
+      : null,
     // The Sera (R11): its hours, and the incanto's lots not yet settled or settled today, with
     // the price now, the least a new maximum must reach and the merchant's own maximum.
     sera: ctx.settings.incanto

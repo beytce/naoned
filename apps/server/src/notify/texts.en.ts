@@ -163,7 +163,7 @@ export function pushTextEn(
       ].filter(Boolean);
       return {
         title: "The morning gazette",
-        body: `Last night: ${parts.length > 0 ? parts.join(", ") : "your counter is waiting for you"}.`,
+        body: `Last night: ${parts.length > 0 ? parts.join(", ") : "your counter is waiting for you"}.${data.atouts ? " Three Atouts await you: choose this week's." : ""}`,
       };
     }
     case "muda": {

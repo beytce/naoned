@@ -39,6 +39,7 @@ import {
   worlds,
 } from "../db/schema.js";
 import { countFunnel } from "../funnel.js";
+import { recordAtoutUnlocks, unlockByLustre } from "./atouts.js";
 import { nextSeasonBounds, seasonBounds, seasonMonthKey, seasonMonthName } from "./calendar.js";
 import { recordInfluence, recordSeasonInfluence } from "./house.js";
 import { ensureSfide, recordCurves, settleSfide, softResetLustre } from "./lustre.js";
@@ -97,6 +98,8 @@ export class GameWorld {
     }
   }
   private timer: NodeJS.Timeout | undefined;
+  /** Atouts unlocked by the command being saved, given to the world once it is (R3). */
+  private unlocks: { accountId: string; code: string }[] = [];
   /** The Lustre's last hour of curves and last field of Sfide paired (week and merchants). */
   private lustreHour = -1;
   private lustreField = "";
@@ -310,6 +313,10 @@ export class GameWorld {
       this.state = res.state;
       this.version += 1;
       this.notify(res.effects, now, command.type === "tick");
+      // Atouts unlocked by this command's feats join the merchants' pools (after it, in turn).
+      for (const u of this.unlocks.splice(0))
+        if (u.accountId in this.state.players)
+          void this.execute({ type: "unlockAtout", playerId: u.accountId, code: u.code });
       if (command.type === "tick" && this.state.seasonClosed) await this.rollover(now);
       return { ok: true, effects: res.effects };
     });
@@ -383,6 +390,7 @@ export class GameWorld {
     const at = new Date(now);
     const worldId = this.id;
     const version = this.version + 1;
+    this.unlocks = [];
     const snapshot =
       now - this.snapshotAt >= (this.options.snapshotEveryMs ?? 60_000) ||
       version - this.snapshotVersion >= (this.options.snapshotEveryVersions ?? 200);
@@ -460,6 +468,8 @@ export class GameWorld {
           await recordWeek(tx, worldId, e.data ?? {});
           // The Lustre's Sfide of the week (R6): settled, the curves closed for the ghosts.
           await settleSfide(tx, worldId, this.ctx, e.data ?? {}, at);
+          // The Mercante's rank unlocks an Atout (R3).
+          this.unlocks.push(...(await unlockByLustre(tx, worldId, this.ctx, at)));
         }
         if (e.type === "season_closed") {
           const ranked = await recordSeason(tx, worldId, e.data ?? {});
@@ -474,6 +484,10 @@ export class GameWorld {
       await recordTerra(tx, worldId, fx.events, new Date(now));
       // The skirmishes paid: their rows settled with the glory.
       await recordSkirmishesPaid(tx, worldId, fx.events, at);
+      // The feats that unlock an Atout, kept by the account (R3).
+      this.unlocks.push(
+        ...(await recordAtoutUnlocks(tx, worldId, this.ctx.settings, fx.events, at)),
+      );
       // The Lustre (R6): each hour, the curves of the week; the week's Sfide paired once its
       // people are known (and again for whoever arrives).
       if (command?.type === "tick" && this.ctx.settings.lustre) {

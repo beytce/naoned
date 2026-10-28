@@ -161,9 +161,12 @@ export function pushText(
           ? `${data.offers} offre${Number(data.offers) > 1 ? "s" : ""} prise${Number(data.offers) > 1 ? "s" : ""} au Rialto`
           : "",
       ].filter(Boolean);
+      const atouts = data.atouts
+        ? " Trois Atouts vous attendent : choisissez celui de la semaine."
+        : "";
       return {
         title: "La gazette du matin",
-        body: `Cette nuit : ${parts.length > 0 ? parts.join(", ") : "votre comptoir vous attend"}.`,
+        body: `Cette nuit : ${parts.length > 0 ? parts.join(", ") : "votre comptoir vous attend"}.${atouts}`,
       };
     }
     case "muda": {

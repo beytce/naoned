@@ -1,5 +1,6 @@
 import {
   activeEvent,
+  atoutOpen,
   dailyFor,
   dayStartIn,
   hourIn,
@@ -852,11 +853,24 @@ export class Notifier {
       }
       by.set(n.accountId, t);
     }
+    // The Atouts (R3): whoever may take this week's says so in the gazette, night news or not.
+    const atouts = new Set<string>();
+    if (this.world.ctx.settings.atouts)
+      for (const id of people)
+        if (atoutOpen(this.world.ctx, this.world.current, id, now)) {
+          atouts.add(id);
+          if (!by.has(id)) by.set(id, { harvests: 0, deliveries: 0, offers: 0, paid: 0n });
+        }
     await this.send(
       [...by].map(([accountId, t]) => ({
         accountId,
         kind: "morning" as const,
-        data: { day: key, ...t, paid: t.paid.toString() },
+        data: {
+          day: key,
+          ...t,
+          paid: t.paid.toString(),
+          ...(atouts.has(accountId) ? { atouts: true } : {}),
+        },
       })),
       now,
     );

@@ -315,6 +315,25 @@ export const sfide = pgTable(
 );
 
 /**
+ * The Atouts an account unlocked by a feat (R3, docs/plan-rupture.md), kept from season to
+ * season: a Podestà, a lot won at the incanto, a Signore, the Mercante's rank at the Lustre.
+ */
+export const accountAtouts = pgTable(
+  "account_atouts",
+  {
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    code: text("code").notNull(),
+    /** The feat that unlocked it (the catalog's `unlock`). */
+    reason: text("reason").notNull(),
+    worldId: uuid("world_id"),
+    at: timestamp("at", { withTimezone: true }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.accountId, t.code] })],
+);
+
+/**
  * A merchant's week, hour by hour: its net sales gained since the week began (deniers, as strings),
  * and its Lustre then. The ghosts of the Sfide are these curves played again.
  */
