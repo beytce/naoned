@@ -70,7 +70,8 @@ const WORDS = {
     store: /^magasin$/i,
     signoria: /^signoria$/i,
     sera: /^la sera$/i,
-    atouts: /^atouts$/i,
+    atouts: /atout de la semaine/i,
+    letter: /lettre du jour/i,
     build: /^bâtir$/i,
     ranking: /^classement$/i,
     bale: /ballot/i,
@@ -105,7 +106,8 @@ const WORDS = {
     notices: /^notices/i,
     store: /^store$/i,
     sera: /^the sera$/i,
-    atouts: /^atouts$/i,
+    atouts: /atout of the week/i,
+    letter: /letter of the day/i,
     signoria: /^signoria$/i,
     build: /^build$/i,
     ranking: /^ranking$/i,
@@ -492,6 +494,7 @@ async function session(width, height, tag) {
     await npcRival(page, check);
     await seraEvening(page, check);
     await atoutsWeek(page, check);
+    await letterOfTheDay(page, check);
     await welcomeBack(page, check);
     await baleWaiting(page, check);
     await seasonClosed(page, check);
@@ -1173,12 +1176,40 @@ async function atoutsWeek(page, check) {
   await page.reload();
   await page.waitForTimeout(1000);
   await closeAll(page);
+  await page.getByRole("button", { name: WORDS.notices }).first().click();
+  await page.waitForTimeout(600);
   await page.getByRole("button", { name: WORDS.atouts }).first().click();
   await page.waitForTimeout(700);
   await check("atouts");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
   await page.unroute("**/api/game");
+}
+
+/**
+ * The letter of the day (R10): under the bell, Lorenzo's line opens the letter on its paper, two
+ * answers below; the first one that can be paid is taken, and what came of it shows.
+ */
+async function letterOfTheDay(page, check) {
+  await closeAll(page);
+  await page.getByRole("button", { name: WORDS.notices }).first().click();
+  await page.waitForTimeout(600);
+  const line = page.getByRole("button", { name: WORDS.letter });
+  if ((await line.count()) === 0) {
+    await closeAll(page);
+    return;
+  }
+  await line.first().click();
+  await page.waitForTimeout(700);
+  await check("lettre");
+  const buttons = page.locator("dialog[open] section button:not([disabled])");
+  if ((await buttons.count()) > 0) {
+    await buttons.first().click();
+    await page.waitForTimeout(900);
+    await check("lettre-reponse");
+  }
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(400);
 }
 
 /**

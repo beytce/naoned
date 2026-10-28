@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fr } from "../i18n.js";
 import { Rules, Sheet, Slab } from "../ui.js";
 import type { GameProps } from "./Game.js";
+import { Icon } from "./map/icons.js";
 import { store } from "./store.js";
 import type { PlayerView } from "./types.js";
 
@@ -139,13 +140,55 @@ export function AtoutsSheet(props: GameProps) {
 }
 
 /**
+ * The Atouts under the bell: this week's still to take (ringed in gold), or those held; a tap
+ * opens them.
+ */
+export function AtoutsLine(props: GameProps) {
+  const a = atoutsOf(props.view);
+  if (!a || (!a.open && a.held.length === 0)) return null;
+  const waiting = a.open && a.offer.length > 0;
+  return (
+    <button
+      type="button"
+      onClick={() => props.setSheet("atouts")}
+      className={`flex w-full items-center gap-3 rounded-2xl bg-night-3 px-3 py-2.5 text-left ${waiting ? "ring-1 ring-inset ring-gold/60" : ""}`}
+    >
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-night-4 text-gold">
+        {Icon.decree()}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="label block text-gold">{t().kicker}</span>
+        <span className="block text-sm">{waiting ? t().waiting : t().held}</span>
+      </span>
+    </button>
+  );
+}
+
+/** The week's offer still to take (the bell counts it). */
+export function atoutWaiting(view: PlayerView): boolean {
+  const a = atoutsOf(view);
+  return !!a?.open && a.offer.length > 0;
+}
+
+/** The key of this week's offer on the device (null: nothing to offer). */
+function atoutMomentKey(view: PlayerView): string | null {
+  const a = atoutsOf(view);
+  return a?.open && a.offer.length > 0 ? `atouts:${a.offer.join(",")}` : null;
+}
+
+/** Whether the week's offer has still to open by itself (the other moments wait for it). */
+export function atoutMomentDue(view: PlayerView): boolean {
+  const key = atoutMomentKey(view);
+  return !!key && store.get(key) !== "seen";
+}
+
+/**
  * The week's offer opens by itself once a week, the guide done and no other sheet up (a moment,
  * like the welcome back): remembered on the device by the offer's cards.
  */
 export function useAtoutMoment(props: GameProps): void {
-  const a = atoutsOf(props.view);
   const ready = props.view.tutorial.includes("mission");
-  const key = a?.open && a.offer.length > 0 ? `atouts:${a.offer.join(",")}` : null;
+  const key = atoutMomentKey(props.view);
   const { sheet, setSheet } = props;
   useEffect(() => {
     if (!key || !ready || sheet) return;

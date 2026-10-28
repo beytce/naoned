@@ -1,4 +1,5 @@
 import type { Dictionary } from "./i18n.js";
+import { lettersEn } from "./i18n.letters.en.js";
 
 /**
  * Interface texts in English (E3-8 of the experts, 25 October 2026). The same shape as the French
@@ -1742,6 +1743,7 @@ export const en: Dictionary = {
           : ghost
             ? `Your Sfida of the week: the ghost of ${by ?? "a merchant"}.`
             : `Your Sfida of the week: ${by ?? "a merchant"}.`,
+      letter: (name: string, text: string) => text || `News from ${name}.`,
       sera: (event: string, lots: number) =>
         event === "outbid"
           ? "Your bid is passed at the incanto of the galleys."
@@ -1797,6 +1799,7 @@ export const en: Dictionary = {
           signoria: "Signoria of the cities (Podestà named, a city lost, a rival ahead)",
           sfida: "Sfida of the week and challenges received",
           sera: "The Sera (7:55 pm) and passed bids",
+          letter: "What follows the letter of the day",
         } as Record<string, string>,
       },
     },
@@ -2618,13 +2621,28 @@ export const en: Dictionary = {
         leader: (name: string) => `Leader: ${name}`,
       },
     },
+    letters: {
+      ...lettersEn,
+      kicker: "The letter of the day",
+      waiting: (name: string) => `A letter from ${name} awaits you`,
+      read: (name: string) => `Read the letter from ${name} again`,
+      pays: (what: string) => `Costs ${what}`,
+      gives: (what: string) => `Gives ${what}`,
+      later: "Something may come of it",
+      answered: "Your answer",
+      tomorrow: "The next letter arrives tomorrow morning.",
+      none: "No letter today: Lorenzo comes by tomorrow.",
+      cannot: "You lack the means",
+      followup: (name: string) => `News from ${name}`,
+      help: "Each day of the season, a letter from a figure of Venice: Lorenzo the postman, Faraj of Alexandria, the widow Contarini, Ser Marin of the Senate, and now and then a Milanese without a name. Two possible answers; your choices decide the next letters, and some consequences come days later. The gains are small and capped for the season. The last letter of the month tells what your House has become.",
+    },
     /** The Atouts (R3): figures of Venice who bend a rule, one taken a week. */
     atouts: {
-      orb: "Atouts",
       kicker: "The Atout of the week",
+      waiting: "Three Atouts await you: take this week's.",
       title: "Three figures of Venice",
       summary: "Take one for the whole season: each gives, and each takes.",
-      take: (name: string) => `Take ${name}`,
+      take: (name: string) => `Take ${name.charAt(0).toLowerCase()}${name.slice(1)}`,
       held: "Your Atouts this season",
       none: "No Atout yet: the next is chosen on Monday.",
       taken: "This week's Atout is chosen: the next on Monday.",
@@ -2931,6 +2949,13 @@ export const en: Dictionary = {
       bid_too_low: "Your maximum must reach the minimum.",
       unknown_lot: "This lot does not exist.",
       lot_closed: "This lot is closed.",
+      letters_off: "No letter of the day in this world.",
+      no_letter: "No letter today.",
+      letter_answered: "You already answered today's letter.",
+      unknown_choice: "This answer does not exist.",
+      atouts_off: "No Atouts in this world.",
+      atout_taken: "This week's Atout is already chosen.",
+      atout_not_offered: "This Atout is not offered this week.",
       one_lot: "You already lead a lot of this Sera.",
       building_busy: "This workshop is already producing: wait for the queue to end.",
       queue_full: "The production queue is full (12 h at most).",

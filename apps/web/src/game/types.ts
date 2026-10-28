@@ -542,6 +542,24 @@ export interface PlayerView {
     locked: { code: string; unlock: string | null }[];
   } | null;
   /**
+   * The Letter of the day (R10): today's letter, each answer with what it pays and gives (ducats
+   * under the season's cap), whether a consequence may follow and whether it can be paid (null:
+   * none today, or off).
+   */
+  letter?: {
+    id: string;
+    sender: string;
+    day: number;
+    answered: string | null;
+    choices: {
+      id: string;
+      pay: { ducats: string; goods: Record<string, number> };
+      gain: { ducats: string; goods: Record<string, number> };
+      later: boolean;
+      can: boolean;
+    }[];
+  } | null;
+  /**
    * The Sera (R11): its hour, and the incanto's lots open or settled today: the price now, the
    * least a new maximum must reach, the merchant's own maximum and whether it leads (null: off).
    */
@@ -890,7 +908,8 @@ export type NotificationKind =
   | "streak"
   | "signoria"
   | "sfida"
-  | "sera";
+  | "sera"
+  | "letter";
 
 export interface Notice {
   id: number;
@@ -1019,6 +1038,7 @@ export type Action =
   | { type: "warehouseBid"; city: string; amount: string }
   | { type: "incantoBid"; lotId: string; max: string }
   | { type: "chooseAtout"; code: string }
+  | { type: "answerLetter"; choice: string }
   | { type: "buildFondaco"; city: string }
   | { type: "choosePath"; buildingId: string; path: "volume" | "quality" }
   | {

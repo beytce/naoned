@@ -28,6 +28,7 @@ const ICON = {
   signoria: NavIcon.routes,
   sfida: NavIcon.top,
   sera: NavIcon.marche,
+  letter: NavIcon.bell,
 } as const;
 const TONE: Record<string, string> = {
   harvest: "text-lagoon",
@@ -49,6 +50,7 @@ const TONE: Record<string, string> = {
   signoria: "text-gold",
   sfida: "text-info",
   sera: "text-gold",
+  letter: "text-gold",
 };
 
 function text(n: Notice, props: GameProps): string {
@@ -155,6 +157,12 @@ function text(n: Notice, props: GameProps): string {
         n.data.byName ? String(n.data.byName) : null,
         n.data.ghost === true,
       );
+    case "letter": {
+      const words = fr.game.letters;
+      const [name] = words.senders[String(n.data.sender ?? "")] ?? [""];
+      const [came, missed] = words.followups[String(n.data.id ?? "")] ?? ["", ""];
+      return t.letter(name, n.data.came ? came : missed);
+    }
     case "sera":
       return t.sera(String(n.data.event ?? ""), Number(n.data.lots ?? 0));
     case "signoria":

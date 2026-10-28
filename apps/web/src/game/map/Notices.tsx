@@ -1,11 +1,13 @@
 import { fr } from "../../i18n.js";
 import { Label, Sheet, clock } from "../../ui.js";
 import { actText, currentAct } from "../Acts.js";
+import { AtoutsLine } from "../Atouts.js";
 import { NoticeList } from "../Bell.js";
 import { Carnet, SeasonTiles, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import type { GameProps } from "../Game.js";
 import { JournalSection } from "../Journal.js";
+import { LetterLine } from "../Letter.js";
 import { seasonCount } from "../seasonCount.js";
 
 /**
@@ -68,6 +70,9 @@ export function NoticesSheet(
             </p>
           )}
         </section>
+
+        <LetterLine {...props} />
+        <AtoutsLine {...props} />
 
         <Criee {...props} />
 

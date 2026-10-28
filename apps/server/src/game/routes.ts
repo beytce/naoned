@@ -262,6 +262,7 @@ const action = z.discriminatedUnion("type", [
   }),
   // The Atout of the week (R3).
   z.object({ type: z.literal("chooseAtout"), code: z.string().max(40) }),
+  z.object({ type: z.literal("answerLetter"), choice: z.string().max(40) }),
   // The incanto of the Sera (R11): a maximum on a lot, in deniers.
   z.object({
     type: z.literal("incantoBid"),
@@ -1792,5 +1793,7 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "incantoBid", playerId, lotId: a.lotId, max: BigInt(a.max) }];
     case "chooseAtout":
       return [{ type: "chooseAtout", playerId, code: a.code }];
+    case "answerLetter":
+      return [{ type: "answerLetter", playerId, choice: a.choice }];
   }
 }

@@ -6,6 +6,7 @@ import {
   hourIn,
   hourWithin,
   incantoLots,
+  letterOf,
   nextSkirmishCall,
   nextWaveAt,
   seasonActs,
@@ -13,7 +14,7 @@ import {
   waveOrdersCovered,
   weekIndex,
 } from "@comptoirs/engine";
-import type { Effects } from "@comptoirs/engine";
+import type { Effects, WorldContext } from "@comptoirs/engine";
 import {
   and,
   desc,
@@ -72,6 +73,8 @@ export const NOTIFICATION_KINDS = [
   "sera",
   // The Signoria of the cities (R2): named Podestà, a city lost, the lead taken by a rival.
   "signoria",
+  // The Letter of the day (R10): a consequence of an answer, come or not.
+  "letter",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -132,7 +135,16 @@ const OPENS: Partial<Record<NotificationKind, string>> = {
   signoria: "notices",
   sfida: "sfida",
   sera: "sera",
+  letter: "letter",
 };
+
+/** Who wrote the letter a consequence answers (`followup` id of the month's script). */
+function letterSender(ctx: WorldContext, followup: string): string | null {
+  const episode = ctx.settings.letters?.episodes.find((e) =>
+    e.choices.some((c) => c.later?.id === followup),
+  );
+  return episode?.sender ?? null;
+}
 
 /** The link a push opens: a place of the list, and where it comes from for the measures. */
 export function pushUrl(kind: NotificationKind): string {
@@ -175,6 +187,7 @@ export class Notifier {
     await this.mudaNews(fx, now);
     await this.signoriaNews(fx, now);
     await this.outbid(fx, now);
+    await this.letterNews(fx, now);
     const fills = fx.events.filter((e) => e.type === "order_filled" && e.playerId);
     if (fills.length === 0) return;
     const people = await this.people();
@@ -270,6 +283,27 @@ export class Notifier {
           accountId: e.playerId ?? "",
           kind: "sera" as const,
           data: { event: "outbid", lot: e.data?.lot ?? null },
+        })),
+      now,
+    );
+  }
+
+  /** A consequence of the Letter (R10) came, or did not: told with its sender and its id. */
+  private async letterNews(fx: Effects, now: number): Promise<void> {
+    const news = fx.events.filter((e) => e.type === "letter_followup" && e.playerId);
+    if (news.length === 0) return;
+    const people = await this.people();
+    await this.send(
+      news
+        .filter((e) => people.has(e.playerId ?? ""))
+        .map((e) => ({
+          accountId: e.playerId ?? "",
+          kind: "letter" as const,
+          data: {
+            id: e.data?.id ?? null,
+            came: e.data?.came === true,
+            sender: letterSender(this.world.ctx, String(e.data?.id ?? "")),
+          },
         })),
       now,
     );
@@ -853,6 +887,15 @@ export class Notifier {
       }
       by.set(n.accountId, t);
     }
+    // The Letter (R10): whoever has one waiting hears from whom, night news or not.
+    const letters = new Map<string, string>();
+    if (this.world.ctx.settings.letters)
+      for (const id of people) {
+        const letter = letterOf(this.world.ctx, this.world.current, id, now);
+        if (!letter || letter.answered) continue;
+        letters.set(id, letter.sender);
+        if (!by.has(id)) by.set(id, { harvests: 0, deliveries: 0, offers: 0, paid: 0n });
+      }
     // The Atouts (R3): whoever may take this week's says so in the gazette, night news or not.
     const atouts = new Set<string>();
     if (this.world.ctx.settings.atouts)
@@ -870,6 +913,7 @@ export class Notifier {
           ...t,
           paid: t.paid.toString(),
           ...(atouts.has(accountId) ? { atouts: true } : {}),
+          ...(letters.has(accountId) ? { letter: letters.get(accountId) } : {}),
         },
       })),
       now,

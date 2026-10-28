@@ -159,3 +159,34 @@ export function settleLetters(tx: Tx): void {
     }
   }
 }
+
+/**
+ * Today's letter for the screen: each answer with what it pays, what it gives (the ducats as far
+ * as the season's cap still allows), whether a consequence may follow, and whether the merchant
+ * can pay it.
+ */
+export function letterView(ctx: WorldContext, state: WorldState, playerId: PlayerId, now: number) {
+  const rules = ctx.settings.letters;
+  const letter = letterOf(ctx, state, playerId, now);
+  if (!rules || !letter) return null;
+  const episode = rules.episodes.find((e) => e.id === letter.id);
+  const minted = state.letters?.[playerId]?.minted ?? 0n;
+  const left = rules.maxDucatsPerSeason > minted ? rules.maxDucatsPerSeason - minted : 0n;
+  const cash = state.accounts[cashAccount(playerId)] ?? 0n;
+  const stock = state.inventories[playerId] ?? {};
+  return {
+    ...letter,
+    choices: (episode?.choices ?? []).map((c) => ({
+      id: c.id,
+      pay: { ducats: c.pay.ducats.toString(), goods: c.pay.goods },
+      gain: {
+        ducats: (c.gain.ducats < left ? c.gain.ducats : left).toString(),
+        goods: c.gain.goods,
+      },
+      later: !!c.later,
+      can:
+        cash >= c.pay.ducats &&
+        Object.entries(c.pay.goods).every(([g, n]) => (stock[g]?.available ?? 0) >= n),
+    })),
+  };
+}

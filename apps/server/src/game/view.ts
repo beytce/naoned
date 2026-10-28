@@ -27,6 +27,7 @@ import {
   incantoMinimum,
   incantoPrice,
   isMudaGood,
+  letterView,
   marketMakerQuotaLeft,
   marketMakerQuotes,
   marketMakerReference,
@@ -840,6 +841,9 @@ export function playerView(
             .map(([code, a]) => ({ code, unlock: a.unlock ?? null })),
         }
       : null,
+    // The Letter of the day (R10): today's letter, what each answer pays and gives, and whether
+    // the merchant can pay it.
+    letter: ctx.settings.letters ? letterView(ctx, state, playerId, now) : null,
     // The Sera (R11): its hours, and the incanto's lots not yet settled or settled today, with
     // the price now, the least a new maximum must reach and the merchant's own maximum.
     sera: ctx.settings.incanto

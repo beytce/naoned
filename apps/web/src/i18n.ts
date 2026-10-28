@@ -1,4 +1,5 @@
 import { en } from "./i18n.en.js";
+import { lettersFr } from "./i18n.letters.js";
 import { LANG } from "./lang.js";
 
 /**
@@ -1764,6 +1765,7 @@ const frDict = {
           : ghost
             ? `Votre Sfida de la semaine : le fantôme de ${by ?? "un marchand"}.`
             : `Votre Sfida de la semaine : ${by ?? "un marchand"}.`,
+      letter: (name: string, text: string) => text || `Des nouvelles de ${name}.`,
       sera: (event: string, lots: number) =>
         event === "outbid"
           ? "Votre enchère est dépassée à l'incanto des galères."
@@ -1820,6 +1822,7 @@ const frDict = {
           signoria: "Signoria des villes (Podestà nommé, ville perdue, rival en tête)",
           sfida: "Sfida de la semaine et défis reçus",
           sera: "La Sera (19 h 55) et enchères dépassées",
+          letter: "Suites de la lettre du jour",
         } as Record<string, string>,
       },
     },
@@ -2698,13 +2701,29 @@ const frDict = {
       },
     },
     /** The rival of the week, under the rank on the map. */
+    /** The Letter of the day (R10): the month's letters (`i18n.letters.ts`) and the sheet's words. */
+    letters: {
+      ...lettersFr,
+      kicker: "La lettre du jour",
+      waiting: (name: string) => `Une lettre de ${name} vous attend`,
+      read: (name: string) => `Relire la lettre de ${name}`,
+      pays: (what: string) => `Coûte ${what}`,
+      gives: (what: string) => `Donne ${what}`,
+      later: "Une suite viendra, peut-être",
+      answered: "Votre réponse",
+      tomorrow: "La prochaine lettre arrive demain matin.",
+      none: "Pas de lettre aujourd'hui : Lorenzo repasse demain.",
+      cannot: "Vous n'avez pas de quoi",
+      followup: (name: string) => `Des nouvelles de ${name}`,
+      help: "Chaque jour de la saison, une lettre d'un personnage de Venise : Lorenzo le facteur, Faraj d'Alexandrie, la veuve Contarini, Ser Marin du Sénat, et parfois un Milanais sans nom. Deux réponses possibles ; vos choix décident des lettres suivantes, et certaines suites arrivent des jours plus tard. Les gains sont petits et plafonnés pour la saison. La dernière lettre du mois raconte ce que votre Maison est devenue.",
+    },
     /** The Atouts (R3): figures of Venice who bend a rule, one taken a week. */
     atouts: {
-      orb: "Atouts",
       kicker: "L'Atout de la semaine",
+      waiting: "Trois Atouts vous attendent : prenez celui de la semaine.",
       title: "Trois figures de Venise",
       summary: "Prenez-en une pour toute la saison : chacune donne, et chacune retire.",
-      take: (name: string) => `Prendre ${name}`,
+      take: (name: string) => `Prendre ${name.charAt(0).toLowerCase()}${name.slice(1)}`,
       held: "Vos Atouts de la saison",
       none: "Aucun Atout encore : le prochain se choisit lundi.",
       taken: "Atout de la semaine choisi : le prochain lundi.",
@@ -3031,6 +3050,13 @@ const frDict = {
       bid_too_low: "Votre maximum doit atteindre le minimum.",
       unknown_lot: "Ce lot n'existe pas.",
       lot_closed: "Ce lot est clos.",
+      letters_off: "Pas de lettre du jour dans ce monde.",
+      no_letter: "Pas de lettre aujourd'hui.",
+      letter_answered: "Vous avez déjà répondu à la lettre du jour.",
+      unknown_choice: "Cette réponse n'existe pas.",
+      atouts_off: "Pas d'Atouts dans ce monde.",
+      atout_taken: "Atout de la semaine déjà choisi.",
+      atout_not_offered: "Cet Atout n'est pas proposé cette semaine.",
       one_lot: "Vous menez déjà un lot de cette Sera.",
       building_busy: "Cet atelier produit déjà : attendez la fin de la file.",
       queue_full: "La file de production est pleine (12 h maximum).",
