@@ -813,6 +813,7 @@ export function Sheet({
   title,
   summary,
   size,
+  docked,
   children,
 }: {
   open: boolean;
@@ -822,6 +823,11 @@ export function Sheet({
   summary?: ReactNode;
   /** « wide »: twice the room on a computer (the workshops in two columns). */
   size?: "wide";
+  /**
+   * A tab's own sheet (the workshops, the ranking): it stops above the tabs at the foot of the
+   * screen, which stay in sight and lead on to the other tabs.
+   */
+  docked?: boolean;
   children: ReactNode;
 }) {
   const panel = useRef<HTMLDialogElement>(null);
@@ -865,7 +871,7 @@ export function Sheet({
   // On the body: a parent with a backdrop blur would otherwise trap the fixed window inside it.
   return createPortal(
     <div
-      className={`fixed inset-0 z-40 flex items-end justify-center lg:items-center ${leaving ? "pointer-events-none" : ""}`}
+      className={`fixed inset-x-0 top-0 z-40 flex items-end justify-center lg:items-center ${docked ? "bottom-[var(--tabbar)]" : "bottom-0"} ${leaving ? "pointer-events-none" : ""}`}
       aria-hidden={leaving || undefined}
     >
       <button
@@ -881,7 +887,7 @@ export function Sheet({
         ref={panel}
         aria-modal="true"
         tabIndex={-1}
-        className={`relative m-0 max-h-[92dvh] w-full max-w-md ${leaving ? "sheet-out" : "animate-sheet lg:animate-pop"} overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line bg-night-2 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 text-cream shadow-2xl shadow-black/50 focus:outline-none lg:rounded-3xl lg:border lg:p-7 ${size === "wide" ? "lg:max-w-3xl" : "lg:max-w-lg"}`}
+        className={`relative m-0 w-full max-w-md ${docked ? "max-h-[calc(92dvh-var(--tabbar))] pb-6" : "max-h-[92dvh] pb-[max(1.5rem,env(safe-area-inset-bottom))]"} ${leaving ? "sheet-out" : "animate-sheet lg:animate-pop"} overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line bg-night-2 px-5 pt-3 text-cream shadow-2xl shadow-black/50 focus:outline-none lg:rounded-3xl lg:border lg:p-7 ${size === "wide" ? "lg:max-w-3xl" : "lg:max-w-lg"}`}
       >
         {/* Sticky from the dialog's own edge, over its padding (a sticky box stops under it). */}
         <div

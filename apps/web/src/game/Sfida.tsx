@@ -133,6 +133,7 @@ export function SfidaSheet(props: GameProps) {
       kicker={t().kicker}
       title={t().title}
       summary={data ? `${t().tiers[data.tier.code] ?? ""} · ${t().lustre(data.lustre)}` : null}
+      docked
     >
       <div className="space-y-4">
         {data && !s && <p className="meta">{t().none}</p>}

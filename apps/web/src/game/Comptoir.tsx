@@ -1038,6 +1038,7 @@ export function CounterSheets(props: GameProps) {
         onClose={close}
         title={fr.game.map.buttons.workshops}
         size="wide"
+        docked
       >
         <WorkshopsList {...props} wide />
       </Sheet>
