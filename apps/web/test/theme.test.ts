@@ -51,6 +51,19 @@ describe("the palettes", () => {
       }
       expect(low).toEqual([]);
     });
+
+    // WCAG 1.4.11 (3:1): the outline of a button, a field or a card that can be touched.
+    it(`${name}: what can be touched is outlined at 3:1 on every surface`, () => {
+      const low: string[] = [];
+      for (const surface of ["night", "night-2", "night-3"]) {
+        const e = vars.edge;
+        const s = vars[surface];
+        if (!e || !s) throw new Error(`${name}: --edge or --${surface} missing`);
+        const ratio = contrast(e, s);
+        if (ratio < 3) low.push(`edge on ${surface}: ${ratio.toFixed(2)}`);
+      }
+      expect(low).toEqual([]);
+    });
   }
 });
 

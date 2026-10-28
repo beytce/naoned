@@ -6,7 +6,8 @@
  * Fondaco palettes (identity guide): same roles, same places, so the player can switch between
  * them without any screen changing. Gold is for money and the one main action of a screen; lagoon
  * for gains and production; cinnabar for losses and urgency; info (lapis) for the selection, the
- * guide and the active tab. --glow-a/--glow-b tint the page's two halos.
+ * guide and the active tab. --line draws rules and dividers; --edge outlines what can be touched
+ * (3:1 on every surface, WCAG 1.4.11). --glow-a/--glow-b tint the page's two halos.
  */
 @layer base {
   /*
@@ -21,6 +22,7 @@
     --night-3: 36 58 92;
     --night-4: 46 72 110;
     --line: 66 98 140;
+    --edge: 109 141 184;
     --cream: 236 245 255;
     --cream-dim: 194 212 234;
     --muted: 156 180 210;
@@ -47,6 +49,7 @@
     --night-3: 54 41 31;
     --night-4: 68 51 39;
     --line: 96 74 55;
+    --edge: 137 115 91;
     --cream: 246 232 204;
     --cream-dim: 207 188 156;
     --muted: 168 146 118;
@@ -73,6 +76,7 @@
     --night-3: 40 35 25;
     --night-4: 52 46 32;
     --line: 84 72 48;
+    --edge: 123 110 83;
     --cream: 247 236 210;
     --cream-dim: 207 192 160;
     --muted: 160 146 116;
@@ -98,6 +102,7 @@
     --night-3: 251 245 232;
     --night-4: 239 228 207;
     --line: 220 205 174;
+    --edge: 140 124 102;
     --cream: 43 32 22;
     --cream-dim: 92 75 59;
     --muted: 105 89 71;
