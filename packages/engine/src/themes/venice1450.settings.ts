@@ -147,7 +147,8 @@ export const venice1450Settings: WorldSettingsInput = {
     hour: 9,
     lotPerActivePlayer: { spices: 1, silk: 1, furs: 1, cloth: 1, salt: 4, wine: 2 },
     quotaPerPlayer: { spices: 3, silk: 3, furs: 2, cloth: 2, salt: 10, wine: 6 },
-    priceRiseBps: 6_000,
+    // No rise on the quay since the incanto (R11): the scarcity is bid for at the Sera.
+    priceRiseBps: 0,
     maxStockLots: 2,
   },
   // Two orders of the Doge a day.
@@ -246,7 +247,8 @@ export const venice1450Settings: WorldSettingsInput = {
     stepMinutes: 30,
     // The battle hour (recommendations of 20 October 2026): from 20 h to 21 h the fronts march a
     // step every 3 minutes, ten times as fast, for those who come to lead them.
-    battle: { from: 20, to: 21, stepMinutes: 3, warnMinutes: 15 },
+    // The Sera (R11, 28 October 2026): from 20 h to 20 h 30, with the incanto.
+    battle: { from: 20, to: 20, toMinute: 30, stepMinutes: 3, warnMinutes: 15 },
     // Soldiers and peasants: the plains grow wheat, the hills clay, the mountains wood, for the
     // counter; two cities or more joined to the capital earn 3 d each an open hour.
     peasants: {
@@ -1243,16 +1245,21 @@ export const venice1450Settings: WorldSettingsInput = {
       gilded_name: { cost: 40, requires: [] },
     },
   },
-  // The Doge's tenders (recommendations of 20 October 2026): every two days, a quantity of a
-  // building good at most 140 % of its reference; sealed bids for a day with a caution of 20 %,
-  // two days to deliver. The cheapest win; a winner who does not deliver loses the caution.
-  tenders: {
-    everyDays: 2,
-    bidHours: 24,
-    deliverHours: 48,
-    quantity: { bread: [40, 80], bricks: [20, 40], planks: [20, 40] },
-    ceilingBps: 14_000,
-    cautionBps: 2_000,
+  // The Doge's tenders (recommendations of 20 October 2026) are off since the incanto of the
+  // Sera (R11, 28 October 2026): the rules stay in the engine, off when absent.
+  // The incanto of the galleys (R11, docs/plan-rupture.md): half of each arrival of the Muda in
+  // three lots, closing at 20 h 10, 20 h 20 and 20 h 30 (two minutes more for a late bid); bids
+  // are maxima, from 60 % of the goods' reference, a step of 5 %; one lot a Sera per merchant.
+  incanto: {
+    shareBps: 5_000,
+    lots: 3,
+    hour: 20,
+    firstMinute: 10,
+    everyMinutes: 10,
+    extendMinutes: 2,
+    startBps: 6_000,
+    stepBps: 500,
+    perPlayer: 1,
   },
   // No warehouses in the cities since 25 October 2026 (the experts' E1-5): not simulated; the
   // fondaci take their place. The rules stay in the engine, off when absent.

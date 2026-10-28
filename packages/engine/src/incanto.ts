@@ -196,8 +196,16 @@ export function closeIncantoLots(tx: Tx): void {
         );
       for (const [r, n] of Object.entries(live.goods))
         addStock(tx, winner, r, n, "incanto", lot.id);
-      emit(tx, "incanto_won", winner, { lot: lot.id, price: price.toString(), goods: live.goods });
-    } else if (tx.s.muda) {
+      emit(tx, "incanto_won", winner, {
+        lot: lot.id,
+        price: price.toString(),
+        value: live.value.toString(),
+        goods: live.goods,
+      });
+    } else {
+      emit(tx, "incanto_unsold", undefined, { lot: lot.id });
+    }
+    if (!winner && tx.s.muda) {
       for (const [r, n] of Object.entries(live.goods))
         tx.s.muda.stock[r] = (tx.s.muda.stock[r] ?? 0) + n;
     }

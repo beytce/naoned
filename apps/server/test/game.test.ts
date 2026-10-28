@@ -257,19 +257,14 @@ describe("game API", () => {
     expect(steps).toHaveLength(4);
   });
 
-  it("takes a sealed bid on the Doge's tender, its caution locked", async () => {
+  it("has no tender of the Doge since the incanto of the Sera (R11): a bid is refused", async () => {
     const cookie = await login("ada@example.org");
     await post(cookie, "/api/game/join", { region: "lagoon" });
     await world.execute({ type: "tick" });
     const v = (await get(cookie)).json().view;
-    const tender = v.tenders[0];
-    expect(tender.open).toBe(true);
-    const price = String(BigInt(tender.ceiling) - 10n);
-    const res = await act(cookie, { type: "tenderBid", tenderId: tender.id, price, quantity: 5 });
-    expect(res.json().error).toBeUndefined();
-    const after = res.json().view;
-    expect(after.tenders[0].mine).toMatchObject({ price, quantity: 5 });
-    expect(BigInt(after.cash)).toBe(BigInt(v.cash) - BigInt(after.tenders[0].mine.caution));
+    expect(v.tenders).toEqual([]);
+    const res = await act(cookie, { type: "tenderBid", tenderId: "0", price: "100", quantity: 5 });
+    expect(res.json().error).toBeDefined();
   });
 
   it("has no warehouse in the cities since 25 October 2026: a bid is refused", async () => {

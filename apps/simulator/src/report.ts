@@ -369,6 +369,21 @@ export function mudaChecks(r: SimulationResult): Check[] {
 }
 
 /** The road (deliveries and vehicles), with the targets of docs/plan-livraisons.md § 7. */
+/** The incanto of the Sera (R11): lots sold, at what share of their reference, to how many. */
+function incantoChecks(r: SimulationResult): Check[] {
+  const ic = r.incanto;
+  if (!ic || ic.sold + ic.unsold === 0) return [];
+  return [
+    {
+      name: "Incanto : lots vendus, prix payé / référence, gagnants distincts",
+      target: "diagnostic (R11)",
+      value: `${ic.sold} vendus, ${ic.unsold} invendus · ${pct(ic.paid / Math.max(1, ic.value))} de la référence · ${ic.winners.length} gagnants · ${(ic.paid / 100).toFixed(0)} ducats détruits`,
+      pass: true,
+      blocking: false,
+    },
+  ];
+}
+
 /** The Signoria of the cities (R2): how often each city changes Podestà, and who held one. */
 function signoriaChecks(r: SimulationResult): Check[] {
   const sg = r.signoria;
@@ -428,6 +443,7 @@ export function terraChecks(r: SimulationResult): Check[] {
       blocking: false,
     },
     ...signoriaChecks(r),
+    ...incantoChecks(r),
     {
       name: "Monnaie détruite par la Terraferme",
       target: "diagnostic : le puits qui remplace l'entretien",
