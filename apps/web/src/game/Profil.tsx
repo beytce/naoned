@@ -524,6 +524,11 @@ function ProfileBody(props: GameProps) {
 
       <PassPanel props={props} extra={props.passInfo} />
 
+      {/* The help, in sight: the map has no door for it since the five tabs. */}
+      <Slab tone="ghost" className="w-full" onClick={props.openHelp}>
+        {fr.game.help}
+      </Slab>
+
       {/* The settings, folded: the profile reads first. */}
       <details className="group space-y-6 border-t border-line pt-5">
         <summary className="flex cursor-pointer list-none items-center justify-between font-display text-lg font-extrabold uppercase">
@@ -544,9 +549,6 @@ function ProfileBody(props: GameProps) {
           <PushSettings />
 
           <section className="space-y-3">
-            <Slab tone="ghost" className="w-full" onClick={props.openHelp}>
-              {fr.game.help}
-            </Slab>
             <div className="grid grid-cols-2 gap-3">
               <Slab tone="ghost" size="sm" onClick={props.replayIntro}>
                 {fr.game.replayIntro}
