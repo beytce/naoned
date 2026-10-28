@@ -438,7 +438,8 @@ async function session(width, height, tag) {
     await teamWeek(page, door, check);
     await midWeek(page, door, check, pseudo);
     await condotta(page, check);
-    await door.click();
+    // Back to the trade: the map's tab.
+    await page.locator("[data-coach=tab-map]").click();
     await page.waitForTimeout(1000);
 
     // The notices: the day, the gazette, the day's book; the first steps all done (their list
@@ -658,7 +659,8 @@ async function transform(page, check) {
 async function teamWeek(page, door, check) {
   const TEAM = "terraferma";
   const show = async (edit) => {
-    await door.click();
+    // Out to the trade by the map's tab, then in again by the conquest's.
+    await page.locator("[data-coach=tab-map]").click();
     await page.waitForTimeout(500);
     await page.unroute("**/api/game/terra");
     await page.route("**/api/game/terra", async (route) => {
@@ -1551,7 +1553,7 @@ async function midWeek(page, door, check, pseudo) {
   await page.route("**/api/game/terra/replay", (route) => route.fulfill({ json: { replay } }));
   const open = async () => {
     await closeAll(page);
-    await door.click();
+    await page.locator("[data-coach=tab-map]").click();
     await page.waitForTimeout(500);
     await door.click();
     await page.waitForTimeout(1500);
