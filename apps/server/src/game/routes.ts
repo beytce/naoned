@@ -9,6 +9,7 @@ import {
   signoriaStandings,
   supplierOf,
   supplierStandings,
+  tierOf,
   weekReplay,
   workLevel,
 } from "@comptoirs/engine";
@@ -520,9 +521,21 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       ? ((await sfidaRival(db, world.id, world.ctx, world.current, world.now(), account.id)) ??
         (await weeklyRival(db, world.id, world.ctx, world.current, world.now(), account.id)))
       : null;
+    // The Lustre (R6): the merchant's rank and tier, shown in the HUD's identity.
+    const lustreRules = world.ctx.settings.lustre;
+    const [lustreRow] = lustreRules
+      ? await db
+          .select({ lustre: accounts.lustre })
+          .from(accounts)
+          .where(eq(accounts.id, account.id))
+      : [];
     return {
       ...body,
       rival: rival ? toJson(rival) : null,
+      lustre:
+        lustreRules && lustreRow
+          ? { value: lustreRow.lustre, tier: tierOf(lustreRules, lustreRow.lustre).code }
+          : null,
       ...(welcome ? { welcome: toJson(welcome) } : {}),
       ...(ceremony ? { ceremony: toJson(ceremony) } : {}),
     };

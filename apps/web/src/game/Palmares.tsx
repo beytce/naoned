@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Crest, type CrestData } from "../art/crest.js";
 import { Medal } from "../art/icons.js";
 import { fr } from "../i18n.js";
-import { Badge, Label, Panel, Ribbon, Sheet, Stat } from "../ui.js";
-import { MerchantName } from "./Name.js";
+import { Badge, Label, Panel, Ribbon, Sheet, Slab, Stat } from "../ui.js";
+import { MerchantName, merchantLabel } from "./Name.js";
 import { gameApi } from "./api.js";
 import { d, whole } from "./format.js";
 import type { Palmares } from "./types.js";
@@ -106,9 +106,12 @@ export function PalmaresView({ data }: { data: Palmares }) {
 export function PlayerPalmares({
   accountId,
   onClose,
+  onChallenge,
 }: {
   accountId: string | null;
   onClose: () => void;
+  /** A Sfida asked of this merchant for next week (R6): absent, no button. */
+  onChallenge?: (accountId: string, pseudo: string) => void;
 }) {
   const [data, setData] = useState<{
     pseudo: string | null;
@@ -138,6 +141,16 @@ export function PlayerPalmares({
             </div>
           </div>
           <PalmaresView data={data.palmares} />
+          {onChallenge && accountId && !data.bot && (
+            <Slab
+              size="lg"
+              tone="gold"
+              className="w-full"
+              onClick={() => onChallenge(accountId, merchantLabel(data.pseudo, data.bot, ""))}
+            >
+              {fr.game.lustre.challenge}
+            </Slab>
+          )}
         </div>
       ) : (
         <p className="py-10 text-center text-muted">…</p>

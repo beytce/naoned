@@ -21,6 +21,7 @@ import type {
   Profile,
   PushSettings,
   RankingRow,
+  SfidaView,
   SignoriaView,
   SkirmishStatus,
   Spend,
@@ -183,6 +184,10 @@ export const gameApi = {
   skirmishAct: (a: TerraAction) => call<{ ok: boolean }>("POST", "/api/game/skirmish/act", a),
   suppliers: () => call<SuppliersView>("GET", "/api/game/suppliers"),
   signoria: () => call<SignoriaView>("GET", "/api/game/signoria"),
+  sfida: () => call<SfidaView>("GET", "/api/game/sfida"),
+  challenge: (to: string, stake: number) =>
+    call<SfidaView>("POST", "/api/game/sfida/challenge", { to, stake }),
+  acceptChallenge: (id: string) => call<SfidaView>("POST", "/api/game/sfida/accept", { id }),
   dashboard: () => call<DashboardView>("GET", "/api/game/dashboard"),
   journal: () => call<{ entries: JournalEntry[] }>("GET", "/api/game/journal"),
   ranking: () =>

@@ -742,7 +742,14 @@ export interface GameResponse {
     gain: string;
     mine: string;
     ahead: boolean;
+    /** The Sfida's opponent (R6) rather than the weekly ranking's neighbour. */
+    sfida?: boolean;
+    /** The opponent is the ghost of a merchant's past week. */
+    ghost?: boolean;
+    tier?: string;
   } | null;
+  /** The Lustre (R6): the merchant's rank and tier (null: off). */
+  lustre?: { value: number; tier: string } | null;
   /** Pseudos of merchants met in the family or the order book. */
   names?: Record<string, string | null>;
   /** Which of them are computer-run houses. */
@@ -1407,6 +1414,30 @@ export type NextAction =
   | { kind: "produce"; buildingId: string }
   | { kind: "company"; projectId: string; resource: string; quantity: number }
   | { kind: "upgrade"; buildingId: string; paybackMinutes: number; addedPerHour: Money };
+
+/** The Lustre and the Sfida of the week (GET /api/game/sfida, R6). */
+export interface SfidaView {
+  lustre: number;
+  tier: { code: string; index: number; from: number; next: number | null };
+  tiers: { code: string; from: number }[];
+  win: number;
+  loss: number;
+  maxStake: number;
+  sfida: {
+    kind: "ladder" | "challenge";
+    stake: number;
+    opponent: SupplierPerson | null;
+    ghost: (SupplierPerson & { week: number }) | null;
+    mine: Money;
+    theirs: Money;
+    curves: { mine: string[]; theirs: string[] };
+    hour: number;
+  } | null;
+  challenges: {
+    out: { id: string; to: SupplierPerson; stake: number; accepted: boolean }[];
+    in: { id: string; from: SupplierPerson; stake: number; accepted: boolean }[];
+  };
+}
 
 /** The official suppliers of the cities (GET /api/game/suppliers). */
 export interface SuppliersView {

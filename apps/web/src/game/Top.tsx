@@ -337,7 +337,19 @@ export function RankingSheet(props: GameProps) {
           </div>
         )}
       </Sheet>
-      <PlayerPalmares accountId={opened} onClose={() => setOpened(null)} />
+      <PlayerPalmares
+        accountId={opened}
+        onClose={() => setOpened(null)}
+        // The Lustre (R6): another person may be challenged for next week.
+        onChallenge={
+          props.lustre && opened !== props.account.id
+            ? (id, pseudo) => {
+                setOpened(null);
+                props.setSheet(`challenge:${id}:${pseudo}`);
+              }
+            : undefined
+        }
+      />
     </>
   );
 }

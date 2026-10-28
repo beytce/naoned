@@ -426,6 +426,16 @@ async function session(width, height, tag) {
       await page.waitForTimeout(400);
     }
     await closeAll(page);
+    // The Sfida of the week (R6): the rival's line opens it once the Lustre is on.
+    const duel = page.locator('[data-hud="rival"]');
+    if ((await duel.count()) > 0) {
+      await duel.first().click();
+      await page.waitForTimeout(700);
+      await check("sfida");
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(400);
+      await closeAll(page);
+    }
     // The counter up close (Lagune), its store by chain, then the catalogue of its free plot.
     await page.locator('[data-coach="home"]').first().click();
     await page.waitForTimeout(600);

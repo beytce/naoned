@@ -485,6 +485,8 @@ export class GameWorld {
         const field = `${weekIndex(this.ctx, now)}:${Object.keys(next.players).length}`;
         if (field !== this.lustreField) {
           await ensureSfide(tx, worldId, this.ctx, now);
+          // A merchant arrived: its curve starts now, not at the next hour.
+          if (hour === this.lustreHour) await recordCurves(tx, worldId, this.ctx, next, now);
           this.lustreField = field;
         }
       }

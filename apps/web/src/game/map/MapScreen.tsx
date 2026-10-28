@@ -29,6 +29,7 @@ import type { GameProps } from "../Game.js";
 import { HouseSheet } from "../House.js";
 import { RialtoSheet } from "../Marche.js";
 import { ProfileSheet } from "../Profil.js";
+import { ChallengeSheet, SfidaSheet } from "../Sfida.js";
 import { SignoriaSheet } from "../Signoria.js";
 import { SuppliersSheet } from "../Suppliers.js";
 import { RankingSheet } from "../Top.js";
@@ -795,6 +796,7 @@ export function MapScreen(
         crest={crest}
         title={view.standing.title.current.name}
         level={props.level?.level ?? null}
+        tier={props.lustre?.tier ?? null}
         rank={view.standing.rank}
         rival={rivalLine(props.rival)}
         seasonProgress={seasonProgress}
@@ -901,6 +903,7 @@ export function MapScreen(
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
         onRanking={() => props.setSheet("ranking")}
+        onRival={props.rival?.sfida ? () => props.setSheet("sfida") : undefined}
         onOpenLayer={
           terraView
             ? () => {
@@ -997,6 +1000,8 @@ export function MapScreen(
       <CounterSheets {...props} />
       <SuppliersSheet {...props} />
       <SignoriaSheet {...props} />
+      <SfidaSheet {...props} />
+      <ChallengeSheet {...props} />
       <WarehouseSheet {...props} />
       <FondacoSheet {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}

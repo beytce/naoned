@@ -2685,6 +2685,53 @@ const frDict = {
       },
     },
     /** The rival of the week, under the rank on the map. */
+    /** The Lustre (R6): the social ranks of Venice and the weekly Sfida. */
+    lustre: {
+      tiers: {
+        popolano: "Popolano",
+        cittadino: "Cittadino",
+        mercante: "Mercante",
+        patrizio: "Patrizio",
+        senatore: "Senatore",
+        procuratore: "Procuratore",
+      } as Record<string, string>,
+      kicker: "La Sfida de la semaine",
+      title: "Sfida",
+      lead: "Sfida :",
+      ghostOf: (name: string) => `fantôme de ${name}`,
+      ghostLine: (name: string, week: number) =>
+        `Le fantôme de ${name} : sa semaine ${week}, rejouée heure par heure.`,
+      you: "Vous",
+      versus: "contre",
+      ahead: (gap: string) => `Vous menez de ${gap}`,
+      behind: (gap: string) => `Il vous manque ${gap}`,
+      even: "À égalité",
+      stake: (n: number) => `Défi : ${n} de Lustre en jeu`,
+      stakes: (win: number, loss: number) =>
+        `Gagner rapporte +${win} de Lustre, perdre en coûte ${loss}. Décidé à la fin de la semaine, sur vos ventes nettes.`,
+      none: "Votre Sfida commence au prochain passage du tick : revenez dans un instant.",
+      lustre: (n: number) => `${n} de Lustre`,
+      next: (n: number, tier: string) => `${tier} à ${n}`,
+      ladder: "L'échelle",
+      challengesIn: "Défis reçus",
+      challengesOut: "Défi lancé",
+      accept: "Accepter",
+      accepted: "Accepté",
+      waiting: "En attente",
+      challenge: "Défier",
+      challengeTitle: (name: string) => `Défier ${name}`,
+      challengeLine: "Une Sfida la semaine prochaine, s'il accepte.",
+      stakeLabel: "Mise",
+      send: "Lancer le défi",
+      sent: "Défi lancé : il a jusqu'à lundi pour accepter.",
+      help: "Chaque semaine, vous affrontez un marchand de votre Lustre : celui qui vend le plus (ventes nettes de la semaine) gagne. Sans adversaire libre, vous affrontez le fantôme d'un marchand : une de ses semaines passées, heure par heure. Le Lustre reste d'une saison à l'autre ; au changement de mois, on redescend de deux rangs. Il ne donne aucun avantage en jeu.",
+      errors: {
+        already_asked: "Un défi est déjà lancé pour la semaine prochaine.",
+        invalid_stake: "Mise impossible.",
+        unknown_player: "Ce marchand n'est pas dans ce monde.",
+        self: "Vous ne pouvez pas vous défier vous-même.",
+      } as Record<string, string>,
+    },
     rival: {
       someone: "Un marchand",
       /** Before the name, then after it: « Rival : Comm884 · PNJ, +120 D ». */

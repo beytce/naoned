@@ -18,15 +18,21 @@ export interface RivalLine {
  * nothing this week: a gap to a stranger means nothing before the first sale.
  */
 export function rivalLine(r: GameProps["rival"]): RivalLine | null {
-  if (!r || BigInt(r.mine) === 0n) return null;
+  // A Sfida shows from its first hour; a ranking's neighbour only after a first sale.
+  if (!r || (!r.sfida && BigInt(r.mine) === 0n)) return null;
   const t = fr.game.rival;
   const who = r.pseudo ?? t.someone;
-  const name = r.character ? `${who} ${t.characters[r.character] ?? ""}`.trim() : who;
+  // The Sfida's opponent (R6): its ghost said as such.
+  const name = r.ghost
+    ? fr.game.lustre.ghostOf(who)
+    : r.character
+      ? `${who} ${t.characters[r.character] ?? ""}`.trim()
+      : who;
   const gap = BigInt(r.gain) - BigInt(r.mine);
   const abs = gap < 0n ? -gap : gap;
   const shown = abs === 0n ? null : whole(abs);
   return {
-    lead: r.ahead ? t.chase : t.chased,
+    lead: r.sfida ? fr.game.lustre.lead : r.ahead ? t.chase : t.chased,
     name,
     bot: r.bot,
     gap: t.gap(r.ahead, shown),
