@@ -176,9 +176,10 @@ export function pushText(
       const letter = data.letter
         ? ` Une lettre de ${SENDERS[String(data.letter)] ?? "Venise"} vous attend.`
         : "";
+      const rumours = data.rumours ? " Deux rumeurs courent au Broglio." : "";
       return {
         title: "La gazette du matin",
-        body: `Cette nuit : ${parts.length > 0 ? parts.join(", ") : "votre comptoir vous attend"}.${atouts}${letter}`,
+        body: `Cette nuit : ${parts.length > 0 ? parts.join(", ") : "votre comptoir vous attend"}.${atouts}${letter}${rumours}`,
       };
     }
     case "muda": {
@@ -229,6 +230,31 @@ export function pushText(
         title: "Résultats de la semaine",
         body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${data.glory ? `${gain} de Gloire` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
       };
+    }
+    case "broglio": {
+      const t: Record<string, { title: string; body: string }> = {
+        sold: {
+          title: "Rumeur vendue",
+          body: `Un marchand vous a acheté une rumeur pour ${ducats(String(data.price ?? "0"))} ducats.`,
+        },
+        spied: {
+          title: "On vous espionne",
+          body: "Un espion rôde autour de votre comptoir. Chassez-le au Broglio.",
+        },
+        chased: {
+          title: "Votre espion est chassé",
+          body: "Le marchand que vous surveilliez l'a renvoyé.",
+        },
+        unmasked: {
+          title: "Une rumeur était fausse",
+          body: "Une rumeur reçue au Rialto venait d'un menteur : il est démasqué.",
+        },
+        caught: {
+          title: "Votre mensonge est démasqué",
+          body: "Votre fausse rumeur a été percée à jour : vous perdez du Lustre.",
+        },
+      };
+      return t[String(data.event)] ?? { title: "Le Broglio", body: "Du nouveau au Broglio." };
     }
     case "doge": {
       if (data.event === "opened")

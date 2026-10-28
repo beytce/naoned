@@ -548,6 +548,8 @@ export interface PlayerView {
     effects: Record<string, Record<string, number>>;
     locked: { code: string; unlock: string | null }[];
   } | null;
+  /** The Broglio (R8): the morning's rumours, and whether a spy watches the merchant. */
+  broglio?: { today: number; spied: boolean } | null;
   /** The Doge's election (R7): running, the merchant a candidate, its programme, its voice. */
   election?: { open: boolean; candidate: boolean; stood: boolean; voted: boolean } | null;
   /** The Dynastie (R4): the heir's trait, and what it still gives for free (null: off). */
@@ -928,7 +930,8 @@ export type NotificationKind =
   | "sfida"
   | "sera"
   | "letter"
-  | "doge";
+  | "doge"
+  | "broglio";
 
 export interface Notice {
   id: number;
@@ -1058,6 +1061,11 @@ export type Action =
   | { type: "incantoBid"; lotId: string; max: string }
   | { type: "chooseAtout"; code: string }
   | { type: "answerLetter"; choice: string }
+  | { type: "offerRumour"; rumourId: string; price: string; to?: string }
+  | { type: "buyRumour"; offerId: string }
+  | { type: "cancelRumourOffer"; offerId: string }
+  | { type: "hireSpy"; target: string }
+  | { type: "chaseSpy" }
   | { type: "standForDoge"; mutator: string | null; decree: { code: string; target?: string } }
   | { type: "buildFondaco"; city: string }
   | { type: "choosePath"; buildingId: string; path: "volume" | "quality" }
@@ -1711,4 +1719,57 @@ export interface CanalView {
     decree: DogeDecree;
     mutator: string | null;
   } | null;
+}
+
+/** What a rumour says (R8): an event on a day (in a city), or the size of the next galleys' lot. */
+export type RumourSubject =
+  | { kind: "event"; code: string; city: string | null; day: number }
+  | { kind: "muda"; arrival: number; big: boolean };
+
+export interface RumourView {
+  id: string;
+  subject: RumourSubject;
+  source: string;
+  reliabilityBps: number;
+  day: number;
+  forged: boolean;
+}
+
+/** The Broglio (R8), for its sheet. */
+export interface BroglioView {
+  today: RumourView[];
+  past: (RumourView & { truth: boolean | null; unmasked: boolean })[];
+  offers: {
+    id: string;
+    price: string;
+    source: string;
+    reliabilityBps: number;
+    kind: "event" | "muda";
+    subject: RumourSubject | null;
+    mine: boolean;
+    bought: boolean;
+    forMe: boolean;
+    buyers: number | null;
+  }[];
+  spy: {
+    target: string;
+    pseudo: string | null;
+    until: number;
+    offer: { resource: string; side: "buy" | "sell"; price: string; quantity: number } | null;
+  } | null;
+  spied: boolean;
+  forgedToday: number;
+  rules: {
+    sources: { code: string; reliabilityBps: number }[];
+    maxOffers: number;
+    forgePerDay: number;
+    forgeInfluence: number;
+    spyCost: string;
+    spyDays: number;
+  };
+  subjects: {
+    events: { code: string; city: string | null }[];
+    days: number[];
+    mudaArrival: number | null;
+  };
 }

@@ -172,7 +172,7 @@ export function pushTextEn(
       ].filter(Boolean);
       return {
         title: "The morning gazette",
-        body: `Last night: ${parts.length > 0 ? parts.join(", ") : "your counter is waiting for you"}.${data.atouts ? " Three Atouts await you: choose this week's." : ""}${data.letter ? ` A letter from ${SENDERS[String(data.letter)] ?? "Venice"} awaits you.` : ""}`,
+        body: `Last night: ${parts.length > 0 ? parts.join(", ") : "your counter is waiting for you"}.${data.atouts ? " Three Atouts await you: choose this week's." : ""}${data.letter ? ` A letter from ${SENDERS[String(data.letter)] ?? "Venice"} awaits you.` : ""}${data.rumours ? " Two rumours are going round the Broglio." : ""}`,
       };
     }
     case "muda": {
@@ -222,6 +222,31 @@ export function pushTextEn(
         title: "Results of the week",
         body: `You finish ${ordinal(Number(data.rank))} (${data.glory ? `${gain} Glory` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
       };
+    }
+    case "broglio": {
+      const t: Record<string, { title: string; body: string }> = {
+        sold: {
+          title: "Rumour sold",
+          body: `A merchant bought one of your rumours for ${ducats(String(data.price ?? "0"))} ducats.`,
+        },
+        spied: {
+          title: "You are being watched",
+          body: "A spy prowls around your counter. Chase it at the Broglio.",
+        },
+        chased: {
+          title: "Your spy was chased",
+          body: "The merchant you were watching sent it away.",
+        },
+        unmasked: {
+          title: "A rumour was false",
+          body: "A rumour heard at the Rialto came from a liar: they are unmasked.",
+        },
+        caught: {
+          title: "Your lie is unmasked",
+          body: "Your false rumour was seen through: you lose Lustre.",
+        },
+      };
+      return t[String(data.event)] ?? { title: "The Broglio", body: "News at the Broglio." };
     }
     case "doge": {
       if (data.event === "opened")

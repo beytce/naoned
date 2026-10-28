@@ -3,6 +3,7 @@ import { fr } from "../i18n.js";
 import { pushOpened } from "./shortcut.js";
 import type {
   Action,
+  BroglioView,
   CanalView,
   Catalog,
   CompanyInvitation,
@@ -24,6 +25,7 @@ import type {
   Profile,
   PushSettings,
   RankingRow,
+  RumourSubject,
   SfidaView,
   SignoriaView,
   SkirmishStatus,
@@ -97,6 +99,10 @@ export const gameApi = {
   reset: () => call<GameResponse>("POST", "/api/game/reset", {}),
   join: (region: string, given?: string) =>
     call<GameResponse>("POST", "/api/game/join", { region, ...(given ? { given } : {}) }),
+  /** The Broglio (R8): rumours, offers, the spy; a false rumour forged against Influence. */
+  broglio: () => call<BroglioView | null>("GET", "/api/game/broglio"),
+  forge: (subject: RumourSubject) =>
+    call<BroglioView>("POST", "/api/game/broglio/forge", { subject }),
   /** The Grand Canal (R5): public, signed in or not. */
   canal: () => call<CanalView>("GET", "/api/canal"),
   /** The Doge's election (R7): candidates, programmes, voices. */

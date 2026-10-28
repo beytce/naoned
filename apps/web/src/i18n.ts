@@ -1765,6 +1765,14 @@ const frDict = {
           : ghost
             ? `Votre Sfida de la semaine : le fantôme de ${by ?? "un marchand"}.`
             : `Votre Sfida de la semaine : ${by ?? "un marchand"}.`,
+      broglio: (event: string, price: string) =>
+        ({
+          sold: `Un marchand vous a acheté une rumeur (${price}).`,
+          spied: "Un espion rôde autour de votre comptoir : chassez-le au Broglio.",
+          chased: "Votre espion a été chassé.",
+          unmasked: "Une rumeur reçue au Rialto venait d'un menteur, démasqué.",
+          caught: "Votre fausse rumeur est démasquée : vous perdez du Lustre.",
+        })[event] ?? "Du nouveau au Broglio.",
       doge: (event: string, by: string | null, candidate: boolean) =>
         event === "opened"
           ? candidate
@@ -1832,6 +1840,7 @@ const frDict = {
           sera: "La Sera (19 h 55) et enchères dépassées",
           letter: "Suites de la lettre du jour",
           doge: "Élection du Doge (ouverture, élu)",
+          broglio: "Le Broglio (rumeur vendue, espion, menteur démasqué)",
         } as Record<string, string>,
       },
     },
@@ -2709,6 +2718,62 @@ const frDict = {
       },
     },
     /** The rival of the week, under the rank on the map. */
+    /** The Broglio (R8): rumours, their sources, their sale, false ones, the spy. */
+    broglio: {
+      kicker: "Le Broglio",
+      title: "Les rumeurs du Rialto",
+      summary: "Ce qu'on dit ce matin. À vous de juger vos sources.",
+      line: (n: number) => `${n} rumeur${n > 1 ? "s" : ""} ce matin au Broglio`,
+      spiedLine: "On vous espionne : chassez l'espion au Broglio.",
+      sources: {
+        gondoliere: "un gondolier",
+        postino: "un facteur",
+        dogana: "un commis de la Dogana",
+        senato: "un secrétaire du Sénat",
+        rialto: "un marchand du Rialto",
+      } as Record<string, string>,
+      said: (source: string, pct: number) => `D'après ${source} · sûr à ${pct} %`,
+      event: (title: string, city: string | null, when: string) =>
+        city ? `${title} (à ${city}), ${when}.` : `${title}, ${when}.`,
+      muda: (big: boolean): string =>
+        big
+          ? "Les galères de la Muda apporteront beaucoup à la prochaine arrivée."
+          : "Les galères de la Muda apporteront peu à la prochaine arrivée.",
+      when: (days: number) =>
+        days <= 0 ? "aujourd'hui" : days === 1 ? "demain" : `dans ${days} jours`,
+      sell: (price: string) => `Vendre au Rialto · ${price}`,
+      offered: (n: number) => `En vente · ${n} acheteur${n > 1 ? "s" : ""}`,
+      cancel: "Retirer",
+      market: "Au Rialto",
+      marketEmpty: "Aucune rumeur à vendre pour l'instant.",
+      kindEvent: "un événement à venir",
+      kindMuda: "la prochaine Muda",
+      buy: (price: string) => `Acheter · ${price}`,
+      bought: "Achetée",
+      forYou: "pour vous",
+      past: "Les rumeurs des jours passés",
+      truth: (t: boolean | null): string =>
+        t === null ? "on ne sait pas encore" : t ? "vraie" : "fausse",
+      unmasked: "venait d'un menteur",
+      spy: "L'espion",
+      spyNone: "Postez un espion chez un rival : il vous montre chaque jour une de ses offres.",
+      spyAt: (name: string) => `Votre espion chez ${name}`,
+      spyOffer: (side: string, q: number, good: string, price: string) =>
+        `Il ${side === "sell" ? "vend" : "achète"} ${q} ${good} à ${price}.`,
+      spyEmpty: "Aucune offre ouverte aujourd'hui.",
+      spyHire: (cost: string) => `Poster un espion · ${cost}`,
+      spyPick: "Chez qui ?",
+      spied: "Un espion rôde autour de votre comptoir.",
+      chase: (cost: string) => `Chasser l'espion · ${cost}`,
+      forge: "Inventer une rumeur",
+      forgeHelp: (n: number) =>
+        `Une fausse rumeur, remise demain à trois marchands. Elle coûte ${n} ✦ ; démasquée, elle vous coûte du Lustre.`,
+      forgeDone: "Rumeur inventée : elle courra demain.",
+      forgeButton: (n: number) => `L'inventer · ${n} ✦`,
+      mudaBig: "Beaucoup",
+      mudaSmall: "Peu",
+      help: "Chaque matin, deux rumeurs de ce qui vient : un événement de la gazette, le lot de la prochaine Muda. Chaque source dit vrai aussi souvent que sa fiabilité ; le nouveau venu n'entend que des sources sûres pendant trois jours. Les rumeurs se vendent au Rialto (le vendeur n'est jamais nommé). On peut en inventer une fausse contre de l'Influence : elle court chez trois marchands, et si elle est démasquée, son auteur perd du Lustre. Un espion chez un rival montre une de ses offres chaque jour ; l'espionné le sait, sans savoir qui, et peut le chasser. Aucune rumeur ne nomme un marchand.",
+    },
     /** The Grand Canal (R5): forty palaces, given by each month's ranking. */
     canal: {
       tab: "Grand Canal",

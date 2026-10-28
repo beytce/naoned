@@ -99,6 +99,7 @@ const WORDS = {
     letter: /lettre du jour/i,
     senate: /le sénat/i,
     canal: /^grand canal$/i,
+    broglio: /le broglio/i,
     build: /^bâtir$/i,
     ranking: /^classement$/i,
     bale: /ballot/i,
@@ -137,6 +138,7 @@ const WORDS = {
     letter: /letter of the day/i,
     senate: /the senate/i,
     canal: /^grand canal$/i,
+    broglio: /the broglio/i,
     signoria: /^signoria$/i,
     build: /^build$/i,
     ranking: /^ranking$/i,
@@ -534,6 +536,7 @@ async function session(width, height, tag) {
     await atoutsWeek(page, check);
     await letterOfTheDay(page, check);
     await senate(page, check);
+    await broglio(page, check);
     await welcomeBack(page, check);
     await baleWaiting(page, check);
     await seasonClosed(page, check);
@@ -1335,6 +1338,91 @@ async function senate(page, check) {
   await page.waitForTimeout(400);
   await page.unroute("**/api/game");
   await page.unroute("**/api/game/election");
+}
+
+/**
+ * The Broglio (R8): the morning's rumours as they are, with what a new world has not yet — two
+ * offers at the Rialto, a spy's report, the past days' rumours, a spy at the door.
+ */
+async function broglio(page, check) {
+  await page.route("**/api/game/broglio", async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    if (json) {
+      const day = json.today[0]?.day ?? 1;
+      json.offers = [
+        {
+          id: "b1",
+          price: "500",
+          source: "senato",
+          reliabilityBps: 8500,
+          kind: "event",
+          subject: null,
+          mine: false,
+          bought: false,
+          forMe: false,
+          buyers: null,
+        },
+        {
+          id: "b2",
+          price: "800",
+          source: "gondoliere",
+          reliabilityBps: 4000,
+          kind: "muda",
+          subject: null,
+          mine: false,
+          bought: false,
+          forMe: true,
+          buyers: null,
+        },
+      ];
+      json.spy = {
+        target: "x",
+        pseudo: "Casa Grimani",
+        until: Date.now() + 3 * 86_400_000,
+        offer: { resource: "bricks", side: "sell", price: "320", quantity: 14 },
+      };
+      json.spied = true;
+      json.past = [
+        {
+          id: "p1",
+          subject: { kind: "event", code: "famine_verona", city: "verona", day: day - 1 },
+          source: "dogana",
+          reliabilityBps: 7500,
+          day: day - 1,
+          forged: false,
+          truth: true,
+          unmasked: false,
+        },
+        {
+          id: "p2",
+          subject: { kind: "muda", arrival: 1, big: true },
+          source: "rialto",
+          reliabilityBps: 5000,
+          day: day - 2,
+          forged: true,
+          truth: false,
+          unmasked: true,
+        },
+      ];
+    }
+    await route.fulfill({ response, json });
+  });
+  await closeAll(page);
+  await page.getByRole("button", { name: WORDS.notices }).first().click();
+  await page.waitForTimeout(600);
+  const line = page.getByRole("button", { name: WORDS.broglio });
+  if ((await line.count()) === 0) {
+    await closeAll(page);
+    await page.unroute("**/api/game/broglio");
+    return;
+  }
+  await line.first().click();
+  await page.waitForTimeout(900);
+  await check("broglio");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(400);
+  await page.unroute("**/api/game/broglio");
 }
 
 /**

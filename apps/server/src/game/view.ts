@@ -47,10 +47,12 @@ import {
   quoteCitySale,
   rationsPerDay,
   recipesFor,
+  rumourBook,
   seasonActs,
   seasonEnd,
   seasonMutator,
   specialtyUnlocked,
+  spiedOn,
   stockUnitValue,
   topLevel,
   turnoverOf,
@@ -821,7 +823,18 @@ export function playerView(
     })),
     contracts,
     families: familiesView(ctx, state, playerId, now),
-    gazette: { current: describe(activeEvent(ctx, now)), next: describe(nextEvent(ctx, now)) },
+    // The gazette tells the event under way; the next one is the Broglio's rumours now (R8).
+    gazette: {
+      current: describe(activeEvent(ctx, now)),
+      next: ctx.settings.broglio ? null : describe(nextEvent(ctx, now)),
+    },
+    // The Broglio (R8): the morning's rumours, and whether a spy watches the merchant.
+    broglio: ctx.settings.broglio
+      ? {
+          today: rumourBook(ctx, state, playerId, now).today.length,
+          spied: spiedOn(state, playerId, now),
+        }
+      : null,
     road: roadView(ctx, state, playerId, now),
     /** The galleys of the Muda: what is on the quay, at what price, and the merchant's quota. */
     muda: ctx.settings.muda ? mudaView(ctx, state, playerId, now) : null,

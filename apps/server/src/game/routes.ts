@@ -32,6 +32,7 @@ import { isPushEndpoint } from "../notify/push.js";
 import { retention, sharedMailboxes, suspiciousPairs } from "./admin.js";
 import { atoutPoolFor } from "./atouts.js";
 import { bankReport, ledgerCsv } from "./bank.js";
+import { broglioView } from "./broglio.js";
 import { seasonMonthKey } from "./calendar.js";
 import { canalView, palaceOf } from "./canal.js";
 import {
@@ -286,6 +287,17 @@ const action = z.discriminatedUnion("type", [
     lotId: z.string().max(32),
     max: z.string().regex(/^\d{1,12}$/),
   }),
+  // The Broglio (R8): ids and amounts only, never a free text.
+  z.object({
+    type: z.literal("offerRumour"),
+    rumourId: z.string().max(80),
+    price: z.string().regex(/^\d{1,9}$/),
+    to: z.string().uuid().optional(),
+  }),
+  z.object({ type: z.literal("buyRumour"), offerId: z.string().max(32) }),
+  z.object({ type: z.literal("cancelRumourOffer"), offerId: z.string().max(32) }),
+  z.object({ type: z.literal("hireSpy"), target: z.string().uuid() }),
+  z.object({ type: z.literal("chaseSpy") }),
 ]);
 type Action = z.infer<typeof action>;
 
@@ -1495,6 +1507,62 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     };
   };
 
+  /** The Broglio (R8): the merchant's rumours, the Rialto's offers (sellers never named), the spy. */
+  app.get("/api/game/broglio", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return toJson(await broglioView(db, world.ctx, world.current, account.id, world.now()));
+  });
+
+  /**
+   * A false rumour forged: its subject chosen from the catalogs (never a text, never a merchant),
+   * its Influence taken first and given back if the world refuses it (a true subject).
+   */
+  const forgeBody = z.object({
+    subject: z.discriminatedUnion("kind", [
+      z.object({
+        kind: z.literal("event"),
+        code: z.string().max(40),
+        city: z.string().max(40).nullable(),
+        day: z.number().int().min(0).max(400),
+      }),
+      z.object({
+        kind: z.literal("muda"),
+        arrival: z.number().int().min(0).max(400),
+        big: z.boolean(),
+      }),
+    ]),
+  });
+  app.post("/api/game/broglio/forge", perMerchant(20), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const { subject } = forgeBody.parse(req.body);
+    const rules = world.ctx.settings.broglio;
+    if (!rules) return reply.code(409).send({ error: "broglio_off" });
+    let key: string | null = null;
+    if (rules.forge.influence > 0) {
+      try {
+        key = await spendInfluence(
+          db,
+          account.id,
+          "forge",
+          rules.forge.influence,
+          world.id,
+          new Date(world.now()),
+        );
+      } catch (e) {
+        if (e instanceof HouseRefused) return reply.code(409).send({ error: e.code });
+        throw e;
+      }
+    }
+    const res = await world.execute({ type: "forgeRumour", playerId: account.id, subject });
+    if (!res.ok) {
+      if (key) await refundInfluence(db, account.id, key);
+      return reply.code(409).send({ error: res.error });
+    }
+    return toJson(await broglioView(db, world.ctx, world.current, account.id, world.now()));
+  });
+
   /** The Doge's election (R7): candidates, programmes, voices, the merchant's own. */
   app.get("/api/game/election", async (req, reply) => {
     const account = await requireAccount(req, reply);
@@ -1929,5 +1997,23 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "answerLetter", playerId, choice: a.choice }];
     case "standForDoge":
       return [{ type: "standForDoge", playerId, mutator: a.mutator, decree: a.decree }];
+    case "offerRumour":
+      return [
+        {
+          type: "offerRumour",
+          playerId,
+          rumourId: a.rumourId,
+          price: BigInt(a.price),
+          ...(a.to ? { to: a.to } : {}),
+        },
+      ];
+    case "buyRumour":
+      return [{ type: "buyRumour", playerId, offerId: a.offerId }];
+    case "cancelRumourOffer":
+      return [{ type: "cancelRumourOffer", playerId, offerId: a.offerId }];
+    case "hireSpy":
+      return [{ type: "hireSpy", playerId, target: a.target }];
+    case "chaseSpy":
+      return [{ type: "chaseSpy", playerId }];
   }
 }

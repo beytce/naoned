@@ -1743,6 +1743,14 @@ export const en: Dictionary = {
           : ghost
             ? `Your Sfida of the week: the ghost of ${by ?? "a merchant"}.`
             : `Your Sfida of the week: ${by ?? "a merchant"}.`,
+      broglio: (event: string, price: string) =>
+        ({
+          sold: `A merchant bought one of your rumours (${price}).`,
+          spied: "A spy prowls around your counter: chase it at the Broglio.",
+          chased: "Your spy was chased away.",
+          unmasked: "A rumour heard at the Rialto came from a liar, now unmasked.",
+          caught: "Your false rumour is unmasked: you lose Lustre.",
+        })[event] ?? "News at the Broglio.",
       doge: (event: string, by: string | null, candidate: boolean) =>
         event === "opened"
           ? candidate
@@ -1809,6 +1817,7 @@ export const en: Dictionary = {
           sera: "The Sera (7:55 pm) and passed bids",
           letter: "What follows the letter of the day",
           doge: "Election of the Doge (opening, elected)",
+          broglio: "The Broglio (rumour sold, spy, liar unmasked)",
         } as Record<string, string>,
       },
     },
@@ -2628,6 +2637,59 @@ export const en: Dictionary = {
         rival: (name: string) => `Rival: ${name}`,
         leader: (name: string) => `Leader: ${name}`,
       },
+    },
+    broglio: {
+      kicker: "The Broglio",
+      title: "The rumours of the Rialto",
+      summary: "What they say this morning. Judge your sources.",
+      line: (n: number) => `${n} rumour${n > 1 ? "s" : ""} this morning at the Broglio`,
+      spiedLine: "You are being watched: chase the spy at the Broglio.",
+      sources: {
+        gondoliere: "a gondolier",
+        postino: "a postman",
+        dogana: "a clerk of the Dogana",
+        senato: "a secretary of the Senate",
+        rialto: "a merchant of the Rialto",
+      } as Record<string, string>,
+      said: (source: string, pct: number) => `According to ${source} · ${pct} % reliable`,
+      event: (title: string, city: string | null, when: string) =>
+        city ? `${title} (in ${city}), ${when}.` : `${title}, ${when}.`,
+      muda: (big: boolean) =>
+        big
+          ? "The galleys of the Muda will bring a lot at the next arrival."
+          : "The galleys of the Muda will bring little at the next arrival.",
+      when: (days: number) => (days <= 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`),
+      sell: (price: string) => `Sell at the Rialto · ${price}`,
+      offered: (n: number) => `For sale · ${n} buyer${n === 1 ? "" : "s"}`,
+      cancel: "Withdraw",
+      market: "At the Rialto",
+      marketEmpty: "No rumour for sale yet.",
+      kindEvent: "an event to come",
+      kindMuda: "the next Muda",
+      buy: (price: string) => `Buy · ${price}`,
+      bought: "Bought",
+      forYou: "for you",
+      past: "Rumours of the past days",
+      truth: (t: boolean | null) => (t === null ? "not known yet" : t ? "true" : "false"),
+      unmasked: "came from a liar",
+      spy: "The spy",
+      spyNone: "Post a spy at a rival's: each day it shows you one of their offers.",
+      spyAt: (name: string) => `Your spy at ${name}'s`,
+      spyOffer: (side: string, q: number, good: string, price: string) =>
+        `They ${side === "sell" ? "sell" : "buy"} ${q} ${good} at ${price}.`,
+      spyEmpty: "No open offer today.",
+      spyHire: (cost: string) => `Post a spy · ${cost}`,
+      spyPick: "At whose house?",
+      spied: "A spy prowls around your counter.",
+      chase: (cost: string) => `Chase the spy · ${cost}`,
+      forge: "Forge a rumour",
+      forgeHelp: (n: number) =>
+        `A false rumour, delivered tomorrow to three merchants. It costs ${n} ✦; unmasked, it costs you Lustre.`,
+      forgeDone: "Rumour forged: it will go round tomorrow.",
+      forgeButton: (n: number) => `Forge it · ${n} ✦`,
+      mudaBig: "A lot",
+      mudaSmall: "Little",
+      help: "Each morning, two rumours of what is coming: an event of the gazette, the lot of the next Muda. Each source tells the truth as often as it is reliable; a newcomer hears only reliable sources for three days. Rumours are sold at the Rialto (the seller is never named). A false one can be forged against Influence: it reaches three merchants, and if it is unmasked its author loses Lustre. A spy at a rival's shows one of their offers each day; the one watched knows it, never by whom, and can chase it. No rumour ever names a merchant.",
     },
     canal: {
       tab: "Grand Canal",
