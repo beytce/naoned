@@ -30,7 +30,7 @@
 | R12 | Le grand ménage (part de la vague 1 : fournisseurs officiels, embargo) | 1 | fait | `acfc181` |
 | R6 | Le Lustre (échelle de rang, fantômes) | 2 | fait | `ef52658`… |
 | R11 | La Sera (20 h, incanto des galères) | 2 | fait | `572ffc3`… |
-| R3 | Les Atouts | 3 | en cours (moteur, PNJ, simulateur, serveur faits) | branche `claude/rupture-v3` |
+| R3 | Les Atouts | 3 | fait (moteur, PNJ, simulateur, serveur, écrans) ; calibration en fin de vague | branche `claude/rupture-v3` |
 | R10 | La Lettre du jour | 3 | à faire | branche `claude/rupture-v3` |
 | R4 | La Dynastie | 4 | à faire | — |
 | R5 | Le Grand Canal | 4 | à faire | — |
@@ -46,7 +46,7 @@
 - **Calibration faite** : deux essais (0,1 et 0,2 pain par troupe), 5 graines conformes chacun ; 0,1 retenu (`docs/calibration.md`, « Vague 1 »). Restent sous leur cible : la croissance du mois (1,12 à 1,18 pour 1,20) et le pain en fin de mois (56 à 60 % pour 65 %).
 - **Vague 2 terminée** (28 octobre 2026) : calibration faite, incanto à 30 % de chaque arrivée, PNJ qui enchérissent avec 1,5 fois leur maximum en caisse (`docs/calibration.md`, « Vague 2 »). Restent sous leur cible, comme après la vague 1 : la croissance du mois (1,16 à 1,20 pour 1,20) et le pain (55 à 59 % pour 65 %), à mesurer avec de vrais joueurs.
 - **Vague 3 en cours** (plan validé le 28 octobre ; branche `claude/rupture-v3`, partie de `claude/rupture` ; PR #51 des vagues 1 et 2 ouverte vers la branche par défaut, à fusionner quand la CI passe).
-- **Étape suivante exacte** : les écrans des Atouts (moment du lundi : 3 cartes de personnages, ce qu'ils donnent en lagon et retirent en cinabre, « Prendre » en or ; Atouts tenus et verrouillés au profil ; textes FR/EN des 16 personnages).
+- **Étape suivante exacte** : le moteur de la Lettre (R10), tests d'abord dans `packages/engine/test/letters.test.ts` sur un petit script de fixture : `letterOf`, `answerLetter` (gains au grand livre `letter_reward` et au journal `letter_gift`, drapeaux, suites), `settleLetters` au tick, plafond `letters.maxDucatsPerSeason`. Voir « Vague 3 : le plan validé ».
 - **À savoir** :
   - La Signoria compte les livraisons parties entre 8 h et 22 h (Paris) ; le Podestà est nommé par `closeSignoriaDays` dans le tick, au changement de jour (minuit).
   - L'e2e de mise en page passe sur chaque format lancé seul (`SIZES=390x844`, `SIZES=320x568`) ; lancé sur les deux formats d'affilée, le second a échoué deux fois dans le guide, à une étape différente chaque fois (une charrette sur Venise, l'achat de briques), puis la machine a été redémarrée : à surveiller. Chromium : `CHROMIUM=/opt/pw-browsers/chromium`.
@@ -142,3 +142,4 @@ But : une ville se prend en y livrant ou en la tenant sur la Terraferme, sur la 
 - 28 octobre 2026 : calibration de la vague 2 (incanto à 50 % : 3 à 5 lots vendus sur 30 ; à 30 % avec des PNJ moins frileux : 30 sur 30, retenu) ; vague 2 terminée.
 - 28 octobre 2026 : vague 3 planifiée ; moteur des Atouts (`atouts.ts`, effets additionnés dans `specialtyEffects`, `rawYieldBps`, `cityPayBps`, `signoriaBps`), catalogue de Venise (16 Atouts), PNJ et rapport du simulateur.
 - 28 octobre 2026 : serveur des Atouts — migration `0029_atouts` (`account_atouts`), `apps/server/src/game/atouts.ts` (`atoutPoolFor` au `join`, `recordAtoutUnlocks` sur `podesta_named`, `incanto_won`, `terra_result` Signore, `unlockByLustre` à la clôture de semaine ; les déblocages sont donnés au monde après la commande par `unlockAtout`), action `chooseAtout`, `view.atouts` (tenus, ouvert, offre, effets, verrouillés), gazette du lundi ; test `apps/server/test/atouts.test.ts`.
+- 28 octobre 2026 : écrans des Atouts — `apps/web/src/game/Atouts.tsx` (feuille : trois cartes, gain en lagon ▲, perte en cinabre ▼, celle choisie cerclée de lapis, un seul bouton or « Prendre … » ; Atouts de la saison ; à débloquer et comment), moment qui s'ouvre de lui-même une fois par offre (guide fini, aucune feuille ouverte ; mémorisé `atouts:<offre>`), rond or « Atouts » dans le HUD tant que l'offre est ouverte, textes FR/EN des 16 personnages ; étape e2e « atouts » sur une réponse réécrite.

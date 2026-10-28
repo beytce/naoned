@@ -138,6 +138,7 @@ export function MapHud({
   onRival,
   onSera,
   sera = 0,
+  onAtouts,
   onFamily,
   onOpenLayer,
   onWorkshops,
@@ -204,6 +205,8 @@ export function MapHud({
   onRialto?: () => void;
   onBuyCart: () => void;
   onResumeGuide: () => void;
+  /** The Atouts' sheet (R3), while this week's is still to take. */
+  onAtouts?: () => void;
   /** The Sera's sheet (R11), and its lots still open. */
   onSera?: () => void;
   sera?: number;
@@ -353,6 +356,12 @@ export function MapHud({
             {onRialto && (
               <Orb label={m.buttons.rialto} onClick={onRialto} coach="hud-rialto">
                 {Icon.rialto()}
+              </Orb>
+            )}
+            {/* The Atouts (R3): a round while this week's is still to take. */}
+            {onAtouts && (
+              <Orb label={fr.game.atouts.orb} onClick={onAtouts} badge tone="gold">
+                {Icon.decree()}
               </Orb>
             )}
             {/* The Sera (R11): its round while lots of the galleys wait for bids. */}

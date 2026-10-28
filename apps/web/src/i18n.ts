@@ -2698,6 +2698,87 @@ const frDict = {
       },
     },
     /** The rival of the week, under the rank on the map. */
+    /** The Atouts (R3): figures of Venice who bend a rule, one taken a week. */
+    atouts: {
+      orb: "Atouts",
+      kicker: "L'Atout de la semaine",
+      title: "Trois figures de Venise",
+      summary: "Prenez-en une pour toute la saison : chacune donne, et chacune retire.",
+      take: (name: string) => `Prendre ${name}`,
+      held: "Vos Atouts de la saison",
+      none: "Aucun Atout encore : le prochain se choisit lundi.",
+      taken: "Atout de la semaine choisi : le prochain lundi.",
+      locked: "À débloquer",
+      unlocks: {
+        podesta: "Devenez Podestà d'une ville",
+        incanto: "Gagnez un lot à l'incanto",
+        signore: "Soyez Signore d'une semaine",
+        mercante: "Atteignez le rang de Mercante au Lustre",
+      } as Record<string, string>,
+      help: "Chaque lundi, trois Atouts sont tirés de votre réserve ; vous en prenez un, pour toute la saison. Chacun donne et retire. La réserve compte douze figures au départ ; quatre de plus se débloquent par un exploit, et restent à votre Maison d'une saison à l'autre.",
+      names: {
+        banchiere: [
+          "Le Banquier du Rialto",
+          "Ses écritures allègent vos taxes ; la Dogana se méfie.",
+        ],
+        gondoliere: ["Le Gondolier", "Il connaît les raccourcis ; une mule reste à l'écurie."],
+        vetraio: [
+          "Le Maître verrier",
+          "Ses fours transforment mieux ; vos champs s'en ressentent.",
+        ],
+        contadino: [
+          "Le Fermier de Terraferma",
+          "Ses terres donnent plus ; les villes paient un peu moins.",
+        ],
+        sensale: ["Le Courtier", "Plus d'offres ouvertes ; il prend sa part sur vos ventes."],
+        capitano: [
+          "Le Capitaine de galère",
+          "Plus de place aux galères ; vos livraisons perdent un peu.",
+        ],
+        notaio: ["Le Notaire", "Vos livraisons pèsent plus à la Signoria ; ses actes coûtent."],
+        carrettiere: ["Le Charretier", "Une charrette de plus ; elles vont moins vite."],
+        doganiere: ["Le Douanier", "La Dogana vous rachète haut ; moins d'offres ouvertes."],
+        messaggero: ["Le Messager", "Il annonce les urgences ; ses courses vous coûtent du blé."],
+        levantino: [
+          "Le Marchand du Levant",
+          "Les villes vous paient mieux ; les galères vous boudent.",
+        ],
+        fornaio: ["Le Boulanger du Doge", "Ses fournées rendent plus ; ses livraisons traînent."],
+        amico_podesta: ["L'Ami du Podestà", "Vos livraisons pèsent bien plus à la Signoria."],
+        armatore: [
+          "L'Armateur",
+          "Deux fois plus de place aux galères ; vos ateliers ralentissent.",
+        ],
+        condottiere: [
+          "Le Condottiere",
+          "Ses terres et ses villes rapportent ; moins d'offres ouvertes.",
+        ],
+        procuratore: ["Le Procurateur", "Les villes vous paient bien mieux ; la taxe s'alourdit."],
+      } as Record<string, [string, string]>,
+      effects: {
+        transformYieldBps: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % sur ce qui se transforme`,
+        rawYieldBps: (v: number) => `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de matières brutes`,
+        cityPayBps: (v: number) => `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % payé par les villes`,
+        vehicleSpeedBps: (v: number) =>
+          `véhicules ${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de vitesse`,
+        extraVehicles: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v)} véhicule${Math.abs(v) > 1 ? "s" : ""}`,
+        mudaQuotaBps: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de quota aux galères`,
+        marketMakerQuotaBps: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de quota à la Dogana`,
+        taxDiscountBps: (v: number) =>
+          `taxe ${v > 0 ? "−" : "+"}${Math.abs(v) / 100} point${Math.abs(v) > 100 ? "s" : ""}`,
+        extraOpenOrders: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v)} offre${Math.abs(v) > 1 ? "s" : ""} ouverte${Math.abs(v) > 1 ? "s" : ""}`,
+        marketMakerFloorBps: (v: number) =>
+          `la Dogana rachète au moins ${v / 100} % de la référence`,
+        urgentPreviewMinutes: (v: number) => `urgences vues ${v} min avant`,
+        signoriaBps: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de points à la Signoria`,
+      } as Record<string, (v: number) => string>,
+    },
     /** The Sera (R11): the incanto of the galleys and the battle, at 20 h. */
     sera: {
       orb: "La Sera",

@@ -18,6 +18,7 @@ import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
 import { Big, Panel, Qty, Sheet, Slab, clock, useLeaving } from "../../ui.js";
 import { ActCard } from "../Acts.js";
+import { AtoutsSheet, useAtoutMoment } from "../Atouts.js";
 import { CargoSheet, loadOrders, loadSummary } from "../Cargo.js";
 import { Coach } from "../Coach.js";
 import { ComeBack } from "../ComeBack.js";
@@ -464,6 +465,8 @@ export function MapScreen(
   const crest = props.account.crest ?? defaultCrest(props.account.id);
   // Each city's Podestà (R2): its crest on the city, the merchant's own when it is.
   const signoria = useSignoria(view);
+  // The week's Atouts open by themselves once (R3).
+  useAtoutMoment(props);
   const podestaCrest = (code: string) => {
     const p = signoriaOf(signoria, code)?.podesta;
     if (!p) return null;
@@ -914,6 +917,7 @@ export function MapScreen(
         onRanking={() => props.setSheet("ranking")}
         onRival={props.rival?.sfida ? () => props.setSheet("sfida") : undefined}
         onSera={view.sera ? () => props.setSheet("sera") : undefined}
+        onAtouts={view.atouts?.open ? () => props.setSheet("atouts") : undefined}
         sera={openSeraLots(view)}
         onOpenLayer={
           terraView
@@ -1014,6 +1018,7 @@ export function MapScreen(
       <SfidaSheet {...props} />
       <ChallengeSheet {...props} />
       <SeraSheet {...props} />
+      <AtoutsSheet {...props} />
       <WarehouseSheet {...props} />
       <FondacoSheet {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}
