@@ -17,9 +17,11 @@ import {
   citiesHeldBy,
   costForLevel,
   dayIndex,
+  electionOpen,
   escrowAccount,
   fastBatchNext,
   freeBatches,
+  freeLeft,
   houseLevels,
   houseMissionsFor,
   houseSpendFor,
@@ -336,9 +338,12 @@ export function mutatorNotice(ctx: WorldContext, now: number) {
   const end = seasonEnd(ctx);
   const next = seasonMonthKey(end + 15 * 86_400_000);
   const announced = dayOfMonthIn(now) >= 24 || now >= end;
+  // The Doge chose this month's (R7); the next month's is its successor's, known at the close.
+  const chosen = ctx.settings.doge?.mutator;
   return {
-    current: seasonMutator(ctx.settings, seasonMonthKey(end))?.code ?? null,
-    next: announced ? (seasonMutator(ctx.settings, next)?.code ?? null) : null,
+    current: chosen ?? seasonMutator(ctx.settings, seasonMonthKey(end))?.code ?? null,
+    next:
+      announced && !ctx.settings.doge ? (seasonMutator(ctx.settings, next)?.code ?? null) : null,
   };
 }
 
@@ -839,6 +844,22 @@ export function playerView(
                 !a.starter && !(state.players[playerId]?.atoutPool ?? []).includes(code),
             )
             .map(([code, a]) => ({ code, unlock: a.unlock ?? null })),
+        }
+      : null,
+    // The Doge's election (R7): whether it runs, the merchant a candidate, its voice given.
+    election: ctx.settings.doge
+      ? {
+          open: electionOpen(ctx, now),
+          candidate: state.election?.candidates.includes(playerId) ?? false,
+          stood: !!state.election?.programmes[playerId],
+          voted: !!state.election?.votes[playerId],
+        }
+      : null,
+    // The Dynastie (R4): the heir's trait, and what it still gives for free.
+    dynasty: ctx.settings.dynasty
+      ? {
+          trait: state.players[playerId]?.trait ?? null,
+          free: freeLeft(ctx, state, playerId, now),
         }
       : null,
     // The Letter of the day (R10): today's letter, what each answer pays and gives, and whether

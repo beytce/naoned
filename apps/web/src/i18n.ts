@@ -1765,6 +1765,14 @@ const frDict = {
           : ghost
             ? `Votre Sfida de la semaine : le fantôme de ${by ?? "un marchand"}.`
             : `Votre Sfida de la semaine : ${by ?? "un marchand"}.`,
+      doge: (event: string, by: string | null, candidate: boolean) =>
+        event === "opened"
+          ? candidate
+            ? "Vous êtes candidat au Doge : annoncez votre programme au Sénat."
+            : "L'élection du Doge est ouverte : lisez les programmes et votez au Sénat."
+          : event === "won"
+            ? "Vous êtes élu Doge : votre programme gouvernera le mois prochain."
+            : `${by ?? "Un marchand"} est élu Doge : son programme gouvernera le mois prochain.`,
       letter: (name: string, text: string) => text || `Des nouvelles de ${name}.`,
       sera: (event: string, lots: number) =>
         event === "outbid"
@@ -1823,6 +1831,7 @@ const frDict = {
           sfida: "Sfida de la semaine et défis reçus",
           sera: "La Sera (19 h 55) et enchères dépassées",
           letter: "Suites de la lettre du jour",
+          doge: "Élection du Doge (ouverture, élu)",
         } as Record<string, string>,
       },
     },
@@ -1846,8 +1855,7 @@ const frDict = {
       worth: "Ventes nettes de la saison",
       podium: "Le podium",
       rewards: "Vos récompenses",
-      renown: (n: number) => `+${n} de Renommée`,
-      milestone: (name: string, n: number) => `Palier ${name} : +${n} de Renommée`,
+      milestone: (name: string) => `Palier ${name}`,
       goal: {
         title: "Objectif de saison",
         now: (name: string, n: number) =>
@@ -1858,7 +1866,7 @@ const frDict = {
           `Prochain palier : ${name}, à ${worth} de ventes nettes (+${n} de Renommée), quel que soit votre rang.`,
         top: "Plus haut palier atteint : tenez-le jusqu'à la fin du mois.",
       },
-      renownTotal: (name: string, points: number) => `${name} · ${points} points de Renommée`,
+      renownTotal: (name: string) => `Renommée de la Maison : ${name}`,
       nothing: "Jouez au moins 7 jours dans une saison pour recevoir l'écusson de participant.",
       start: "Ouvrir mon nouveau comptoir",
       newSeason: (name: string) =>
@@ -2701,6 +2709,113 @@ const frDict = {
       },
     },
     /** The rival of the week, under the rank on the map. */
+    /** The Grand Canal (R5): forty palaces, given by each month's ranking. */
+    canal: {
+      tab: "Grand Canal",
+      title: "Le Grand Canal",
+      label: "Les palais du Grand Canal, du palais des Doges au Rialto",
+      help: "Quarante palais, du palais des Doges au Rialto. Le classement de chaque mois les redonne : une Maison qui reste dans les quarante garde son palais, celle qui en sort le perd, les nouvelles prennent les plus beaux palais libres. Il faut avoir joué une semaine du mois. La façade dit la Maison : un étage par génération, une étoile par Atout débloqué, un écu par ville tenue, la corne du Doge.",
+      empty: "Les palais attendent leurs Maisons : les quarante premiers du mois s'y installeront.",
+      plot: (n: number) => `Palais ${n}`,
+      yours: (n: number) => `Votre palais : le ${n}${n === 1 ? "er" : "e"} du Grand Canal.`,
+      none: (sestiere: string) => `Hors du Grand Canal : votre Maison est à ${sestiere}.`,
+      facade: (g: number, a: number, c: number) =>
+        [
+          g > 0 ? `${g} génération${g > 1 ? "s" : ""}` : "",
+          a > 0 ? `${a} Atout${a > 1 ? "s" : ""}` : "",
+          c > 0 ? `${c} ville${c > 1 ? "s" : ""}` : "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      doge: (name: string) => `Doge du mois : ${name}`,
+      sestieri: ["Cannaregio", "Castello", "Dorsoduro", "San Polo", "Santa Croce", "San Marco"],
+    },
+    /** The Doge (R7): the Senate, its candidates, programmes and voices. */
+    doge: {
+      kicker: "Le Sénat",
+      title: "L'élection du Doge",
+      summary:
+        "Les dix premières Maisons briguent la couronne du mois prochain. Chacune annonce son programme : la saison qu'elle choisit et un décret de la République.",
+      closesIn: (time: string) => `Clôture dans ${time}`,
+      line: "L'élection du Doge est ouverte : lisez les programmes et votez.",
+      lineVoted: "Votre voix est donnée ; vous pouvez changer d'avis jusqu'à la clôture.",
+      noProgramme: "Pas encore de programme",
+      votes: (n: number) => `${n} voix`,
+      vote: (name: string) => `Voter pour ${name}`,
+      voted: (name: string) => `Votre voix va à ${name}`,
+      weight: (n: number) =>
+        `Votre voix pèse ${n} : une, et une de plus par ville dont vous êtes Podestà.`,
+      boost: "De l'Influence pour plus de poids",
+      boostLabel: (n: number, cost: number) => (n === 0 ? "Aucune" : `+${n} · ${cost} ✦`),
+      stand: "Votre programme",
+      standHelp: "Choisissez la saison et le décret que vous imposerez si le Sénat vous élit.",
+      season: "La saison",
+      decree: "Le décret de la République",
+      target: "Pour",
+      announce: "Annoncer mon programme",
+      announced: "Programme annoncé : vous pouvez le changer jusqu'à la clôture.",
+      ruling: (name: string) => `Doge du mois : ${name}`,
+      decreeNames: {
+        faveur: "Faveur d'une ville",
+        franchigia: "Franchise du Rialto",
+        levante: "Charte du Levant",
+        calmiere: "Calmiere",
+      } as Record<string, string>,
+      decrees: {
+        faveur: (target: string, pct: number) =>
+          `Faveur de ${target} : les livraisons à ${target} payées ${pct} % de plus, pour tous.`,
+        franchigia: (_t: string, pts: number) =>
+          `Franchise du Rialto : la taxe du marché allégée de ${pts} point${pts > 1 ? "s" : ""}, pour tous.`,
+        levante: (_t: string, pct: number) =>
+          `Charte du Levant : ${pct} % de plus au quota de la Dogana, pour tous.`,
+        calmiere: (target: string, pct: number) =>
+          `Calmiere : aucune offre de ${target} au-delà de ${pct} % de sa référence.`,
+      } as Record<string, (target: string, n: number) => string>,
+      help: "La dernière semaine du mois, le Sénat élit le Doge du mois suivant parmi les dix premières Maisons (le Doge sortant ne peut pas se représenter). Chaque marchand arrivé depuis trois jours vote ; sa voix pèse une, plus une par ville dont il est Podestà, plus jusqu'à trois achetées en Influence. Le Doge élu choisit la saison du mois suivant et un décret de la République qui vaut pour tous, tout le mois ; son portrait accueille chacun à la connexion.",
+    },
+    /** The Dynastie (R4): the house's line, a member a month, an heir and its trait. */
+    dynasty: {
+      member: (given: string, house: string, year: number) => `${given} ${house}, ${year}`,
+      nameKicker: "Votre Maison ce mois-ci",
+      nameHelp: "Chaque mois, un membre de votre Maison tient le comptoir. Choisissez son prénom.",
+      heirKicker: "Votre héritier",
+      heirHelp:
+        "Le mois s'achève : nommez l'héritier qui tiendra le comptoir le mois prochain, et le trait qu'il reçoit de vous. Un trait est une option ou une information, jamais du rendement.",
+      heirNone: "Aucun trait mérité ce mois-ci : votre héritier part sans héritage, comme vous.",
+      bequeath: (trait: string) => `Léguer « ${trait} » et commencer`,
+      bequeathed: (trait: string) => `Votre héritier reçoit « ${trait} ».`,
+      trait: "Trait de la Maison",
+      freeReroll: "Changer de tâche · gratuit, par votre trait",
+      freeShort: "Changer · gratuit",
+      freeRespec: "Changer de maîtrise · gratuit",
+      tomorrow: (name: string) => `Demain, une lettre de ${name}.`,
+      gallery: "Galerie de la Maison",
+      galleryHelp: "Chaque mois, un portrait de plus. La fortune repart ; la lignée reste.",
+      rank: (n: number) => `${n}${n === 1 ? "er" : "e"} du mois`,
+      traits: {
+        nato_quai: ["Né sur les quais", "Voit les commandes urgentes 15 min plus tôt."],
+        rialto: ["Élevé au Rialto", "Une quatrième carte dans l'offre des Atouts."],
+        condottiere: ["Fils de condottiere", "Change sa maîtrise une fois sans Influence."],
+        amico_citta: ["Ami des villes", "Voit les dix premiers de la Signoria de chaque ville."],
+        notaio: ["Fils de notaire", "Change une tâche du jour sans Influence, chaque jour."],
+        letterato: ["Le Lettré", "Sait qui lui écrira demain."],
+      } as Record<string, [name: string, line: string]>,
+      earnedBy: {
+        nato_quai: "un lot gagné à l'incanto",
+        rialto: "le top 10 du mois",
+        condottiere: "Signore d'une semaine",
+        amico_citta: "Podestà d'une ville",
+        notaio: "sept coffres du jour d'affilée",
+        letterato: "vingt lettres répondues",
+      } as Record<string, string>,
+      epithets: {
+        magnifico: "le Magnifique",
+        rovinato: "le Ruiné",
+        podesta: "le Podestà",
+        condottiere: "le Condottiere",
+        costante: "le Constant",
+      } as Record<string, string>,
+    },
     /** The Letter of the day (R10): the month's letters (`i18n.letters.ts`) and the sheet's words. */
     letters: {
       ...lettersFr,
@@ -2913,6 +3028,10 @@ const frDict = {
     seasonNotes: {
       title: "Nouveautés de la saison",
       items: [
+        "La Dynastie : chaque mois, un membre de votre Maison tient le comptoir (prénom au choix) ; à la fin du mois, il lègue à son héritier un trait mérité dans le mois (une option ou une information, jamais du rendement), et son portrait entre dans la galerie du profil.",
+        "Le Doge : la dernière semaine du mois, le Sénat élit le Doge du mois suivant parmi les dix premières Maisons ; chacune annonce un programme (une saison et un décret de la République), chacun vote, la voix d'un Podestà pèse plus. Le décret du Doge vaut pour tous, tout le mois ; celui du Signore de la Terraferme disparaît (le Signore garde son titre et sa Gloire).",
+        "Le Grand Canal : quarante palais redonnés chaque mois par le classement ; on garde le sien en restant dans les quarante. Le Canal et le Doge du mois accueillent chacun à la connexion.",
+        "La Renommée se dit par ses titres, plus en chiffres.",
         "Les Atouts : chaque lundi, trois figures de Venise vous sont proposées ; vous en prenez une pour la saison. Chacune donne et retire. Quatre de plus se débloquent par un exploit (Podestà, lot gagné à l'incanto, Signore d'une semaine, rang Mercante), gardés de saison en saison.",
         "La Lettre du jour : chaque matin, une lettre de Lorenzo, Faraj, la veuve Contarini, Ser Marin du Sénat ou d'un Milanais sans nom, deux réponses, des suites qui arrivent des jours plus tard, et une fin du mois selon vos choix. Gains petits, plafonnés à 100 ducats par saison.",
         "Nouvelle palette bleue « Lagune », et la carte en bleu (l'ancienne reste dans le Profil).",

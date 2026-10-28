@@ -25,6 +25,7 @@ import { ComeBack } from "../ComeBack.js";
 import { CounterSheets, buyRationsSheet, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import { perHour } from "../Dashboard.js";
+import { SenateSheet, senateWaiting } from "../Doge.js";
 import { FondacoSheet } from "../Fondaco.js";
 import type { GameProps } from "../Game.js";
 import { HouseSheet } from "../House.js";
@@ -755,12 +756,13 @@ export function MapScreen(
 
   const [sheetKind, sheetId] = (props.sheet ?? "").split(":");
   const cargoVehicle = sheetKind === "cargo" ? vehicles.find((v) => v.id === sheetId) : undefined;
-  // The letter of the day (R10) and the week's Atouts (R3) wait under the bell.
+  // The letter of the day (R10), the week's Atouts (R3) and the Senate (R7) wait under the bell.
   const notice =
     props.unread +
     carnetRewards(props) +
     (letterWaiting(view) ? 1 : 0) +
-    (atoutWaiting(view) ? 1 : 0);
+    (atoutWaiting(view) ? 1 : 0) +
+    (senateWaiting(props) ? 1 : 0);
   const days = Math.max(1, (catalog.world.endsAt - catalog.world.startsAt) / 86_400_000);
   const open = unlocksOf(view.tutorial, now - view.player.joinedAt);
   const seasonProgress = Math.min(1, (now - catalog.world.startsAt) / (days * 86_400_000));
@@ -1027,6 +1029,7 @@ export function MapScreen(
       <SeraSheet {...props} />
       <AtoutsSheet {...props} />
       <LetterSheet {...props} />
+      <SenateSheet {...props} />
       <WarehouseSheet {...props} />
       <FondacoSheet {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}

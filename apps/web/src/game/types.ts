@@ -45,7 +45,14 @@ export interface Catalog {
     registrationClosesDay: number;
   };
   /** The Doge of the season before, honoured on the Dogana's façade. */
-  previousDoge?: { pseudo: string | null; crest: CrestData | null; season: string } | null;
+  /** The Doge of the month (R7: elected, with its programme), else last month's first. */
+  previousDoge?: {
+    pseudo: string | null;
+    crest: CrestData | null;
+    season: string;
+    decree?: { code: string; target?: string };
+    mutator?: string | null;
+  } | null;
   /** The month's mutator, and the next month's from the 24th (E2-9): codes, null when none. */
   mutator?: { current: string | null; next: string | null };
   /** The trade fewest people chose this month, when the gap is clear (E3-5), or none. */
@@ -541,6 +548,13 @@ export interface PlayerView {
     effects: Record<string, Record<string, number>>;
     locked: { code: string; unlock: string | null }[];
   } | null;
+  /** The Doge's election (R7): running, the merchant a candidate, its programme, its voice. */
+  election?: { open: boolean; candidate: boolean; stood: boolean; voted: boolean } | null;
+  /** The Dynastie (R4): the heir's trait, and what it still gives for free (null: off). */
+  dynasty?: {
+    trait: string | null;
+    free: { dailyRerolls: number; respecs: number };
+  } | null;
   /**
    * The Letter of the day (R10): today's letter, each answer with what it pays and gives (ducats
    * under the season's cap), whether a consequence may follow and whether it can be paid (null:
@@ -551,6 +565,8 @@ export interface PlayerView {
     sender: string;
     day: number;
     answered: string | null;
+    /** Who writes tomorrow, for the man of letters (R4; null otherwise). */
+    tomorrow?: string | null;
     choices: {
       id: string;
       pay: { ducats: string; goods: Record<string, number> };
@@ -845,6 +861,8 @@ export interface Ceremony {
     worth: Money;
     turnover: Money | null;
   }[];
+  /** The palace the month's ranking gave on the Grand Canal (R5; null: none). */
+  palace?: number | null;
 }
 
 export interface Renown {
@@ -909,7 +927,8 @@ export type NotificationKind =
   | "signoria"
   | "sfida"
   | "sera"
-  | "letter";
+  | "letter"
+  | "doge";
 
 export interface Notice {
   id: number;
@@ -1039,6 +1058,7 @@ export type Action =
   | { type: "incantoBid"; lotId: string; max: string }
   | { type: "chooseAtout"; code: string }
   | { type: "answerLetter"; choice: string }
+  | { type: "standForDoge"; mutator: string | null; decree: { code: string; target?: string } }
   | { type: "buildFondaco"; city: string }
   | { type: "choosePath"; buildingId: string; path: "volume" | "quality" }
   | {
@@ -1616,4 +1636,79 @@ export interface DealsView {
     settled: boolean;
     paid: Money | null;
   }[];
+}
+
+/** One generation of the house's line (R4). */
+export interface Generation {
+  worldId: string;
+  season: string;
+  given: string;
+  year: number;
+  traitIn: string | null;
+  earned: string[] | null;
+  heir: string | null;
+  epithet: string | null;
+  rank: number | null;
+}
+
+/** The Dynastie (R4): the line, the heir to name after a month's close, the names offered. */
+export interface DynastyView {
+  generations: Generation[];
+  current: Generation | null;
+  heir: { earned: string[]; chosen: string | null } | null;
+  names: string[];
+}
+
+/** A decree of the Republic in a Doge's programme (R7). */
+export interface DogeDecree {
+  code: string;
+  target?: string;
+}
+
+/** The Doge's election (R7), for the Senate's sheet. */
+export interface ElectionView {
+  open: boolean;
+  opensAt: number;
+  closesAt: number;
+  candidates: {
+    id: string;
+    rank: number;
+    pseudo: string | null;
+    crest: CrestData | null;
+    programme: { mutator: string | null; decree: DogeDecree } | null;
+    votes: number;
+  }[];
+  candidate: boolean;
+  mine: { candidate: string; weight: number; boost: number } | null;
+  weight: number;
+  maxBoost: number;
+  influencePerVoice: number;
+  mutators: string[];
+  decrees: string[];
+  effects: {
+    faveur: { premiumBps: number };
+    franchigia: { taxCutBps: number };
+    levante: { quotaBps: number };
+    calmiere: { capBps: number };
+  };
+  ruling: { decree: DogeDecree; mutator: string | null } | null;
+}
+
+/** The Grand Canal (R5): the forty palaces and the Doge of the month, public. */
+export interface CanalView {
+  plots: {
+    plot: number;
+    pseudo: string | null;
+    crest: CrestData | null;
+    generations: number;
+    atouts: number;
+    cities: number;
+    doge: boolean;
+  }[];
+  doge: {
+    pseudo: string | null;
+    crest: CrestData | null;
+    decree: DogeDecree;
+    mutator: string | null;
+  } | null;
 }

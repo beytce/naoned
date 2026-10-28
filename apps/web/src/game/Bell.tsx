@@ -29,6 +29,7 @@ const ICON = {
   sfida: NavIcon.top,
   sera: NavIcon.marche,
   letter: NavIcon.bell,
+  doge: NavIcon.top,
 } as const;
 const TONE: Record<string, string> = {
   harvest: "text-lagoon",
@@ -51,6 +52,7 @@ const TONE: Record<string, string> = {
   sfida: "text-info",
   sera: "text-gold",
   letter: "text-gold",
+  doge: "text-gold",
 };
 
 function text(n: Notice, props: GameProps): string {
@@ -156,6 +158,12 @@ function text(n: Notice, props: GameProps): string {
         String(n.data.event ?? ""),
         n.data.byName ? String(n.data.byName) : null,
         n.data.ghost === true,
+      );
+    case "doge":
+      return t.doge(
+        String(n.data.event ?? ""),
+        n.data.byName ? String(n.data.byName) : null,
+        n.data.candidate === true,
       );
     case "letter": {
       const words = fr.game.letters;

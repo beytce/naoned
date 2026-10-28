@@ -1,6 +1,10 @@
+import { useState } from "react";
 import { Crest } from "../art/crest.js";
 import { fr } from "../i18n.js";
 import { Label, Slab } from "../ui.js";
+import { sestiereOf } from "./Canal.js";
+import { HeirChoice, traitName, useDynasty } from "./Dynasty.js";
+import { gameApi } from "./api.js";
 import { shareChronicle } from "./chronicle.js";
 import { d } from "./format.js";
 import type { Ceremony as CeremonyData } from "./types.js";
@@ -77,21 +81,30 @@ export function Ceremony({
   data,
   nextSeason,
   pseudo,
+  accountId,
   onDone,
 }: {
   data: CeremonyData;
   nextSeason: string;
   /** The merchant's name, written on the chronicle. */
   pseudo: string;
+  /** The account, for its sestiere off the Canal. */
+  accountId: string;
   onDone: () => void;
 }) {
   const t = fr.game.season;
+  // The heir to name (R4): the traits the month earned, the first picked until another is.
+  const [dynasty] = useDynasty();
+  const heir = dynasty?.heir ?? null;
+  const [picked, setPicked] = useState<string | null>(null);
+  const trait = picked ?? heir?.chosen ?? heir?.earned[0] ?? null;
+  const [leaving, setLeaving] = useState(false);
   const top = data.tier === "doge" || data.tier === "podium" || data.tier === "top10";
   const rewards = [
     data.award || null,
     ...data.titles,
-    data.milestone.renown > 0 ? t.milestone(data.milestone.name, data.milestone.renown) : null,
-    data.renown > 0 ? t.renown(data.renown) : null,
+    // The tier's name, never its figure (R12): the Renown speaks by its titles.
+    data.milestone.renown > 0 ? t.milestone(data.milestone.name) : null,
   ].filter((r): r is string => r !== null);
   // Podium order: second, first, third.
   const podium = [2, 1, 3]
@@ -177,9 +190,7 @@ export function Ceremony({
         ) : (
           <p className="mt-2 text-sm text-cream-dim">{t.nothing}</p>
         )}
-        <p className="meta mt-3">
-          {t.renownTotal(data.totalRenown.current.name, data.totalRenown.points)}
-        </p>
+        <p className="meta mt-3">{t.renownTotal(data.totalRenown.current.name)}</p>
       </section>
 
       <Slab
@@ -191,9 +202,36 @@ export function Ceremony({
         {fr.game.chronicle.share}
       </Slab>
 
+      {/* The palace the month gave on the Grand Canal, or the sestiere (R5). */}
+      {data.palace !== undefined && (
+        <p className="mt-6 text-sm text-gold">
+          {data.palace
+            ? fr.game.canal.yours(data.palace)
+            : fr.game.canal.none(sestiereOf(accountId))}
+        </p>
+      )}
+
+      {heir && (
+        <div className="mt-8 w-full">
+          <HeirChoice earned={heir.earned} picked={trait} onPick={setPicked} />
+        </div>
+      )}
+
       <p className="mt-6 text-sm text-cream-dim">{t.newSeason(nextSeason)}</p>
-      <Slab size="lg" className="mt-4 w-full" onClick={onDone}>
-        {t.start}
+      {/* One gold action: leave the trait to the heir and begin, or only begin. */}
+      <Slab
+        size="lg"
+        className="mt-4 w-full"
+        disabled={leaving}
+        onClick={async () => {
+          if (heir && trait) {
+            setLeaving(true);
+            await gameApi.heir(trait).catch(() => undefined);
+          }
+          onDone();
+        }}
+      >
+        {heir && trait ? fr.game.dynasty.bequeath(traitName(trait)[0]) : t.start}
       </Slab>
     </main>
   );

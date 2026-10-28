@@ -50,6 +50,31 @@ const faults = [];
 // LANG=en plays the session in English (E3-8 of the experts): the words the script reads, in
 // each language (apps/web/src/i18n.ts and i18n.en.ts).
 const LANG = process.env.LANG === "en" || process.env.E2E_LANG === "en" ? "en" : "fr";
+/** Twelve palaces held on the Grand Canal, and a Doge (R5, R7). */
+const CANAL = {
+  plots: Array.from({ length: 12 }, (_, i) => ({
+    plot: i + 1,
+    pseudo:
+      ["Casa Foscari", "Casa Grimani", "Casa Contarini", "Casa Dandolo"][i % 4] +
+      (i > 3 ? ` ${i}` : ""),
+    crest: {
+      shape: "heater",
+      color: ["vermilion", "lagoon", "gold", "violet", "emerald"][i % 5],
+      symbol: "lion",
+    },
+    generations: (i % 4) + 1,
+    atouts: i % 6,
+    cities: i % 3,
+    doge: i === 0,
+  })),
+  doge: {
+    pseudo: "Casa Foscari",
+    crest: { shape: "heater", color: "vermilion", symbol: "lion" },
+    decree: { code: "faveur", target: "venezia" },
+    mutator: "grand_gel",
+  },
+};
+
 const WORDS = {
   fr: {
     covered: /fermez cette fenêtre/i,
@@ -72,6 +97,8 @@ const WORDS = {
     sera: /^la sera$/i,
     atouts: /atout de la semaine/i,
     letter: /lettre du jour/i,
+    senate: /le sénat/i,
+    canal: /^grand canal$/i,
     build: /^bâtir$/i,
     ranking: /^classement$/i,
     bale: /ballot/i,
@@ -108,6 +135,8 @@ const WORDS = {
     sera: /^the sera$/i,
     atouts: /atout of the week/i,
     letter: /letter of the day/i,
+    senate: /the senate/i,
+    canal: /^grand canal$/i,
     signoria: /^signoria$/i,
     build: /^build$/i,
     ranking: /^ranking$/i,
@@ -290,6 +319,9 @@ async function session(width, height, tag) {
         } catch {}
       }, TEXT_SIZE);
     const page = await context.newPage();
+    // The Grand Canal (R5) and the Doge of the month (R7): a new world has neither, the
+    // public answer is filled for the whole run (sign-in screen, ranking).
+    await page.route("**/api/canal", (route) => route.fulfill({ json: CANAL }));
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     let n = 0;
@@ -482,6 +514,12 @@ async function session(width, height, tag) {
       await ranking.first().click();
       await page.waitForTimeout(600);
       await check("classement");
+      const canal = page.getByRole("button", { name: WORDS.canal });
+      if ((await canal.count()) > 0) {
+        await canal.first().click();
+        await page.waitForTimeout(600);
+        await check("canal");
+      }
       await closeAll(page);
     }
     // The help, its loop as an orbit and the goods' code.
@@ -495,6 +533,7 @@ async function session(width, height, tag) {
     await seraEvening(page, check);
     await atoutsWeek(page, check);
     await letterOfTheDay(page, check);
+    await senate(page, check);
     await welcomeBack(page, check);
     await baleWaiting(page, check);
     await seasonClosed(page, check);
@@ -1052,6 +1091,17 @@ async function baleWaiting(page, check) {
 
 /** The season closed while away: the ceremony, at its fullest (top ten, podium, rewards). */
 async function seasonClosed(page, check) {
+  // The heir to name (R4): two traits earned in the month.
+  await page.route("**/api/game/dynasty", (route) =>
+    route.fulfill({
+      json: {
+        generations: [],
+        current: null,
+        heir: { earned: ["rialto", "nato_quai"], chosen: null },
+        names: ["Marco", "Isabetta", "Zuane"],
+      },
+    }),
+  );
   await rewrite(page, (json) => {
     json.ceremony = {
       worldId: "e2e",
@@ -1076,6 +1126,11 @@ async function seasonClosed(page, check) {
     };
   });
   await check("fin-de-saison");
+  // Down to the heir and the one gold button.
+  await page.mouse.wheel(0, 2000);
+  await page.waitForTimeout(500);
+  await check("heritier");
+  await page.unroute("**/api/game/dynasty");
   await page.unroute("**/api/game");
   await page.reload();
   await page.waitForTimeout(1200);
@@ -1210,6 +1265,76 @@ async function letterOfTheDay(page, check) {
   }
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
+}
+
+/**
+ * The Senate (R7): the month's last week, three candidates, two with a programme; the merchant
+ * a candidate without one yet. No world has an election at its start: the answers are rewritten.
+ */
+async function senate(page, check) {
+  // The world's own clock: the election closes with its month.
+  const catalog = await page.evaluate(() => fetch("/api/game/catalog").then((r) => r.json()));
+  const closesAt = Number(catalog.world.endsAt);
+  await page.route("**/api/game/election", (route) =>
+    route.fulfill({
+      json: {
+        open: true,
+        opensAt: closesAt - 7 * 86_400_000,
+        closesAt,
+        candidates: [
+          {
+            id: "c1",
+            rank: 1,
+            pseudo: "Casa Foscari",
+            crest: { shape: "heater", color: "vermilion", symbol: "lion" },
+            programme: { mutator: "grand_gel", decree: { code: "faveur", target: "venezia" } },
+            votes: 7,
+          },
+          {
+            id: "c2",
+            rank: 2,
+            pseudo: "Casa Grimani dalle Due Torri",
+            crest: { shape: "round", color: "lagoon", symbol: "ship" },
+            programme: { mutator: "guerra_milano", decree: { code: "franchigia" } },
+            votes: 4,
+          },
+          { id: "c3", rank: 3, pseudo: "Casa Contarini", crest: null, programme: null, votes: 0 },
+        ],
+        candidate: true,
+        mine: null,
+        weight: 2,
+        maxBoost: 3,
+        influencePerVoice: 10,
+        mutators: ["embargo_ottomano", "grand_gel", "guerra_milano"],
+        decrees: ["faveur", "franchigia", "levante", "calmiere"],
+        effects: {
+          faveur: { premiumBps: 1000 },
+          franchigia: { taxCutBps: 100 },
+          levante: { quotaBps: 2500 },
+          calmiere: { capBps: 11000 },
+        },
+        ruling: null,
+      },
+    }),
+  );
+  await page.route("**/api/game", async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    if (json.view) json.view.election = { open: true, candidate: true, stood: false, voted: false };
+    await route.fulfill({ response, json });
+  });
+  await page.reload();
+  await page.waitForTimeout(1000);
+  await closeAll(page);
+  await page.getByRole("button", { name: WORDS.notices }).first().click();
+  await page.waitForTimeout(600);
+  await page.getByRole("button", { name: WORDS.senate }).first().click();
+  await page.waitForTimeout(800);
+  await check("senat");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(400);
+  await page.unroute("**/api/game");
+  await page.unroute("**/api/game/election");
 }
 
 /**

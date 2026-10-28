@@ -84,6 +84,8 @@ function HouseBody(props: GameProps) {
     }
   };
   const balance = props.influence ?? house.influence;
+  // The condottiere's son changes it once for free (R4).
+  const freeRespec = (props.view.dynasty?.free.respecs ?? 0) > 0;
   const spend = props.view.houseSpend;
   return (
     <div className="space-y-6 pt-2">
@@ -124,7 +126,7 @@ function HouseBody(props: GameProps) {
           <Slab
             size="sm"
             className="mt-3"
-            disabled={props.busy || balance < spend.respec}
+            disabled={props.busy || (!freeRespec && balance < spend.respec)}
             onClick={async () => {
               if (await props.spend({ use: "respec" })) {
                 reload();
@@ -132,7 +134,7 @@ function HouseBody(props: GameProps) {
               }
             }}
           >
-            {t().spend.respec(spend.respec)}
+            {freeRespec ? fr.game.dynasty.freeRespec : t().spend.respec(spend.respec)}
           </Slab>
         </Panel>
       )}

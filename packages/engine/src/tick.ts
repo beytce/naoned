@@ -1,6 +1,7 @@
 import { rationsPerDay } from "./buildings.js";
 import { advanceCampaign } from "./campaign.js";
 import { ensureBoard, pruneRoad, resolveDeliveries } from "./deliveries.js";
+import { electDoge, openElection } from "./doge.js";
 import { dissolveLegacyGuilds } from "./families.js";
 import { runFattore } from "./fattore.js";
 import { closeIncantoLots } from "./incanto.js";
@@ -69,6 +70,9 @@ export function tick(tx: Tx): void {
   dissolveLegacyGuilds(tx);
   // The week's campaign: marches arrive, Milan rides, glory is counted, the week closes.
   advanceCampaign(tx);
+  // The Doge's election (R7): its candidates frozen at the opening, its winner at the close.
+  openElection(tx);
+  electDoge(tx);
   closeSeason(tx);
   openDueProjects(tx);
   runTenders(tx);

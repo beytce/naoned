@@ -1,4 +1,5 @@
 import { draw } from "./draw.js";
+import { traitEffects } from "./dynasty.js";
 import type { PlayerId, WorldContext, WorldState } from "./state.js";
 import { type Tx, emit, fail } from "./tx.js";
 import { weekIndex } from "./weekly.js";
@@ -36,11 +37,14 @@ export function atoutOffer(
   const week = weekIndex(ctx, now);
   const left = atoutPool(ctx, state, playerId).filter((c) => !held.has(c));
   // A shuffle by the world's secret: each card weighed by a draw of its own.
-  return left
-    .map((code) => ({ code, w: draw(ctx, `atout:${playerId}:${week}:${code}`) }))
-    .sort((a, b) => a.w - b.w || a.code.localeCompare(b.code))
-    .slice(0, rules.choices)
-    .map((x) => x.code);
+  return (
+    left
+      .map((code) => ({ code, w: draw(ctx, `atout:${playerId}:${week}:${code}`) }))
+      .sort((a, b) => a.w - b.w || a.code.localeCompare(b.code))
+      // The one raised at the Rialto sees one more card (R4).
+      .slice(0, rules.choices + traitEffects(ctx, state, playerId).atoutChoices)
+      .map((x) => x.code)
+  );
 }
 
 /** Whether the merchant may still take an Atout this week. */

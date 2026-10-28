@@ -2,6 +2,7 @@ import {
   type Command,
   type Trade,
   freeBatches,
+  freeLeft,
   hasPass,
   isNation,
   podestaOf,
@@ -10,6 +11,7 @@ import {
   supplierOf,
   supplierStandings,
   tierOf,
+  traitEffects,
   weekReplay,
   workLevel,
 } from "@comptoirs/engine";
@@ -30,6 +32,8 @@ import { isPushEndpoint } from "../notify/push.js";
 import { retention, sharedMailboxes, suspiciousPairs } from "./admin.js";
 import { atoutPoolFor } from "./atouts.js";
 import { bankReport, ledgerCsv } from "./bank.js";
+import { seasonMonthKey } from "./calendar.js";
+import { canalView, palaceOf } from "./canal.js";
 import {
   CompanyError,
   callCompany,
@@ -46,6 +50,14 @@ import {
 } from "./company.js";
 import { type CondottaHub, condottaRecord } from "./condotta.js";
 import { dashboard } from "./dashboard.js";
+import { dogeOf, electionView } from "./doge.js";
+import {
+  HeirRefused,
+  chooseHeir,
+  dynastyView,
+  nextGeneration,
+  startGeneration,
+} from "./dynasty.js";
 import {
   ChatError,
   familyThread,
@@ -263,6 +275,11 @@ const action = z.discriminatedUnion("type", [
   // The Atout of the week (R3).
   z.object({ type: z.literal("chooseAtout"), code: z.string().max(40) }),
   z.object({ type: z.literal("answerLetter"), choice: z.string().max(40) }),
+  z.object({
+    type: z.literal("standForDoge"),
+    mutator: z.string().max(40).nullable(),
+    decree: z.object({ code: z.string().max(20), target: z.string().max(40).optional() }),
+  }),
   // The incanto of the Sera (R11): a maximum on a lot, in deniers.
   z.object({
     type: z.literal("incantoBid"),
@@ -438,7 +455,8 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       recommendedRegion: recommendedRegion(
         activePeopleByRegion(world.ctx, world.current, world.now()),
       ),
-      previousDoge: await previousDoge(db, world.id),
+      // The Doge ruling the month (R7), else the first of the month before.
+      previousDoge: await rulingDoge(),
       community: deps.communityUrl ?? null,
     }),
   );
@@ -547,7 +565,10 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
           ? { value: lustreRow.lustre, tier: tierOf(lustreRules, lustreRow.lustre).code }
           : null,
       ...(welcome ? { welcome: toJson(welcome) } : {}),
-      ...(ceremony ? { ceremony: toJson(ceremony) } : {}),
+      // The palace the month's ranking gave, or none (R5).
+      ...(ceremony
+        ? { ceremony: toJson({ ...ceremony, palace: await palaceOf(db, account.id) }) }
+        : {}),
     };
   });
 
@@ -580,18 +601,24 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   app.post("/api/game/join", perMerchant(30), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
-    const { region } = z.object({ region: z.string() }).parse(req.body);
+    const { region, given } = z
+      .object({ region: z.string(), given: z.string().max(40).optional() })
+      .parse(req.body);
     const patents = await patentsFor(db, world.ctx.settings, account.id);
     // The Atouts the account unlocked in earlier seasons (R3).
     const atoutPool = await atoutPoolFor(db, world.ctx.settings, account.id);
+    // The month's member of the house and the heir's trait (R4).
+    const generation = await nextGeneration(db, world.ctx, world.id, account.id, given);
     const res = await world.execute({
       type: "join",
       playerId: account.id,
       region,
       ...(patents.length > 0 ? { patents } : {}),
       ...(atoutPool.length > 0 ? { atoutPool } : {}),
+      ...(generation?.trait ? { trait: generation.trait } : {}),
     });
     if (!res.ok) return reply.code(409).send({ error: res.error });
+    if (generation) await startGeneration(db, world.id, account.id, generation);
     await syncPass(db, world, account.id);
     const [came] = await db
       .select({ source: accounts.utmSource })
@@ -1192,14 +1219,19 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
         cost = spend.rushWork;
         cmd = { type: "rushWork", playerId, land: body.land };
         break;
-      case "respec":
-        cost = spend.respec;
-        cmd = { type: "resetSpecialty", playerId };
+      case "respec": {
+        // The heir's trait may give it for free (R4): no Influence taken.
+        const free = freeLeft(world.ctx, world.current, playerId, world.now()).respecs > 0;
+        cost = free ? 0 : spend.respec;
+        cmd = { type: "resetSpecialty", playerId, ...(free ? { free } : {}) };
         break;
-      case "daily":
-        cost = spend.dailyReroll;
-        cmd = { type: "rerollDaily", playerId, taskId: body.taskId };
+      }
+      case "daily": {
+        const free = freeLeft(world.ctx, world.current, playerId, world.now()).dailyRerolls > 0;
+        cost = free ? 0 : spend.dailyReroll;
+        cmd = { type: "rerollDaily", playerId, taskId: body.taskId, ...(free ? { free } : {}) };
         break;
+      }
     }
     const at = new Date(world.now());
     let key: string;
@@ -1431,19 +1463,119 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
    * The Signoria of the cities (R2): each city's Podestà, the three first on its gauge and the
    * merchant's own points, with names and crests.
    */
+  /**
+   * The Grand Canal (R5), for everyone signed in or not: the forty palaces and their façades,
+   * and the Doge of the month with its programme.
+   */
+  app.get("/api/canal", async () => {
+    const doge = await dogeOf(db, seasonMonthKey(world.ctx.endAt ?? world.now()));
+    return toJson({
+      plots: await canalView(db, world.current, doge?.accountId ?? null),
+      doge: doge
+        ? {
+            pseudo: doge.pseudo,
+            crest: doge.crest,
+            decree: doge.decree,
+            mutator: doge.mutator,
+          }
+        : null,
+    });
+  });
+
+  /** The Doge ruling this month (R7) as the Dogana's façade shows it, else last month's first. */
+  const rulingDoge = async () => {
+    const doge = await dogeOf(db, seasonMonthKey(world.ctx.endAt ?? world.now()));
+    if (!doge) return previousDoge(db, world.id);
+    return {
+      pseudo: doge.pseudo,
+      crest: doge.crest,
+      season: world.name,
+      decree: doge.decree,
+      mutator: doge.mutator,
+    };
+  };
+
+  /** The Doge's election (R7): candidates, programmes, voices, the merchant's own. */
+  app.get("/api/game/election", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return toJson(await electionView(db, world.ctx, world.current, account.id, world.now()));
+  });
+
+  /**
+   * A voice for a candidate, with Influence for more weight: the server takes only the voices of
+   * boost not already given (the engine keeps them when the merchant changes its mind).
+   */
+  app.post("/api/game/election/vote", perMerchant(30), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const body = z
+      .object({ candidate: z.string().max(64), boost: z.number().int().min(0).max(10) })
+      .parse(req.body);
+    const rules = world.ctx.settings.doge;
+    if (!rules) return reply.code(409).send({ error: "doge_off" });
+    const before = world.current.election?.votes[account.id]?.boost ?? 0;
+    const boost = Math.min(rules.maxBoost, Math.max(before, body.boost));
+    const cost = (boost - before) * rules.influencePerVoice;
+    const at = new Date(world.now());
+    let key: string | null = null;
+    if (cost > 0) {
+      try {
+        key = await spendInfluence(db, account.id, "vote", cost, world.id, at);
+      } catch (e) {
+        if (e instanceof HouseRefused) return reply.code(409).send({ error: e.code });
+        throw e;
+      }
+    }
+    const res = await world.execute({
+      type: "voteDoge",
+      playerId: account.id,
+      candidate: body.candidate,
+      influenceBoost: boost,
+    });
+    if (!res.ok) {
+      if (key) await refundInfluence(db, account.id, key);
+      return reply.code(409).send({ error: res.error });
+    }
+    return toJson(await electionView(db, world.ctx, world.current, account.id, world.now()));
+  });
+
+  /** The Dynastie (R4): the account's line, the heir to name and the names offered. */
+  app.get("/api/game/dynasty", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return toJson(await dynastyView(db, world.ctx, world.id, account.id));
+  });
+
+  /** The trait the latest generation leaves to its heir: one it earned. */
+  app.post("/api/game/heir", perMerchant(20), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const { trait } = z.object({ trait: z.string().max(40) }).parse(req.body);
+    try {
+      await chooseHeir(db, account.id, trait);
+    } catch (e) {
+      if (e instanceof HeirRefused) return reply.code(409).send({ error: e.message });
+      throw e;
+    }
+    return toJson(await dynastyView(db, world.ctx, world.id, account.id));
+  });
+
   app.get("/api/game/signoria", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     const state = world.current;
     const rules = world.ctx.settings.signoria;
     if (!rules) return toJson({ rules: null, cities: [] });
+    const rivals = traitEffects(world.ctx, state, account.id).signoriaRivals > 0;
     const lines = world.ctx.theme.cities.map((c) => {
       const standings = signoriaStandings(state, c.code);
       return {
         city: c.code,
         podesta: podestaOf(state, c.code) ?? null,
         since: state.signoria?.podesta[c.code]?.since ?? null,
-        top: standings.slice(0, 3),
+        // The friend of the cities sees the rivals beyond the podium (R4).
+        top: standings.slice(0, rivals ? 10 : 3),
         mine: standings.find((x) => x.playerId === account.id)?.points ?? 0,
         total: standings.reduce((n, x) => n + x.points, 0),
       };
@@ -1795,5 +1927,7 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "chooseAtout", playerId, code: a.code }];
     case "answerLetter":
       return [{ type: "answerLetter", playerId, choice: a.choice }];
+    case "standForDoge":
+      return [{ type: "standForDoge", playerId, mutator: a.mutator, decree: a.decree }];
   }
 }

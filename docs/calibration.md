@@ -1623,3 +1623,22 @@ Mesuré par `pnpm sim` sur 5 graines, avec les vagues 1 et 2, les Atouts (`atout
 - Les Atouts ne déplacent ni la croissance du mois ni le pain. Leur diversité sort de la cible chez les PNJ : le Levantin (`levantino`) plaît à trois profils sur cinq. C'est un biais des goûts des PNJ (`bots.ts`, `chooseAtout`), pas une mesure des joueurs : à suivre dans `/admin` avec de vrais choix, avant de toucher au catalogue.
 - La croissance du mois (1,14 à 1,19) et le pain (55 à 58 %) restent sous leur cible, comme après les vagues 1 et 2.
 
+
+## Vague 4 du plan de rupture : la Dynastie, le Doge, le Grand Canal (28 octobre 2026, R4, R5, R7)
+
+Mesuré par `pnpm sim` sur 5 graines, avec les vagues 1 à 3, le décret du Signore retiré à Venise (`terraferma.close.decrees` vide), puis avec chacun des quatre décrets du Doge tenu tout le mois (`pnpm sim --decree <code>[:cible]`). La Dynastie et le Grand Canal ne touchent pas à l'économie (un trait n'est qu'une option ou une information, les PNJ n'en reçoivent pas ; le Canal est une vitrine) ; l'élection non plus (les PNJ ne votent ni ne se présentent). Les 25 saisons sont conformes.
+
+| Mesure | Sans décret | `faveur:venezia` (+10 %) | `franchigia` (−1 pt) | `levante` (+25 %) | `calmiere:bread` (110 %) |
+| --- | --- | --- | --- | --- | --- |
+| Monnaie payée par actif et par jour, graines 1 à 5 | 205,1 · 207,5 · 207,7 · 207,5 · 202,5 | 206,2 · 207,2 · 206,6 · 206,0 · 201,8 | 206,5 · 208,8 · 206,6 · 207,2 · 205,6 | 205,6 · 211,0 · 206,1 · 203,6 · 201,4 | 205,2 · 210,1 · 206,4 · 207,1 · 198,1 |
+| Moyenne, écart à « sans décret » | 206,1 | 205,6 (−0,2 %) | 206,9 (+0,4 %) | 205,5 (−0,3 %) | 205,4 (−0,3 %) |
+| Masse monétaire par actif, plafond | 0,93 à 0,96 × | 0,92 à 1,45 × | 0,91 à 0,96 × | 0,91 à 0,95 × | 0,91 à 0,96 × |
+| Pain en fin de mois | 54 · 57 · 57 · 54 · 58 % | 56 · 54 · 57 · 56 · 58 % | 56 · 56 · 54 · 54 · 58 % | 54 · 56 · 58 · 54 · 54 % | 56 · 57 · 58 · 55 · 76 % |
+
+Sans décret, Lombardie / Installation : 1,14 · 1,18 · 1,18 · 1,15 · 1,11.
+
+**Lecture.**
+- Chaque décret du Doge reste sous la cible de la vague (écart des ventes payées ≤ 10 %) : moins d'un demi-point en moyenne. Un décret change *où* l'on gagne (une ville, la Dogana, le prix d'une marchandise), presque pas *combien* : c'est ce que le programme d'un candidat doit faire, un choix de saison sans renverser l'équité du mois.
+- La faveur d'une ville fait monter la masse monétaire d'une graine (1,45 ×, graine 5), toujours loin du plafond de 2,5 × : à suivre si un Doge la choisit souvent.
+- Le calmiere du pain relève le pain en fin de mois sur une graine (76 %) : en plafonnant les offres, il empêche les ventes bradées de fin de mois. Effet voulu, mesuré.
+- Retirer le décret du Signore ne déplace ni la croissance du mois (1,11 à 1,18) ni le pain (54 à 58 %), toujours sous leur cible comme après les vagues 1 à 3.

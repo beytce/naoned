@@ -5,6 +5,7 @@ import { AtoutsLine } from "../Atouts.js";
 import { NoticeList } from "../Bell.js";
 import { Carnet, SeasonTiles, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
+import { SenateLine } from "../Doge.js";
 import type { GameProps } from "../Game.js";
 import { JournalSection } from "../Journal.js";
 import { LetterLine } from "../Letter.js";
@@ -71,6 +72,7 @@ export function NoticesSheet(
           )}
         </section>
 
+        <SenateLine {...props} />
         <LetterLine {...props} />
         <AtoutsLine {...props} />
 

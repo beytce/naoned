@@ -21,7 +21,6 @@ function tierTone(tier: string): "gold" | "lagoon" | "ghost" {
 export function PalmaresView({ data }: { data: Palmares }) {
   const t = fr.game.palmares;
   const { renown, seasons, weekly } = data;
-  const span = renown.next ? renown.next.from - renown.current.from : 1;
   return (
     <div className="space-y-4">
       <Panel glow="gold">
@@ -30,18 +29,7 @@ export function PalmaresView({ data }: { data: Palmares }) {
             <Label className="text-gold">{t.renown}</Label>
             <p className="mt-1 font-display text-xl font-extrabold">{renown.current.name}</p>
           </div>
-          <span className="font-display text-2xl font-extrabold tabular-nums text-gold">
-            {renown.points}
-          </span>
         </div>
-        {renown.next && (
-          <div className="mt-3 space-y-1">
-            <Ribbon value={(renown.points - renown.current.from) / span} />
-            <p className="meta">
-              {t.nextRenown(renown.next.name, renown.next.from - renown.points)}
-            </p>
-          </div>
-        )}
         <p className="mt-3 text-xs text-cream-dim">{t.renownHelp}</p>
       </Panel>
 

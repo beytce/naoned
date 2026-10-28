@@ -1,3 +1,4 @@
+import { traitEffects } from "./dynasty.js";
 import type { WorldSettings } from "./settings.js";
 import type { PlayerId, WorldContext, WorldState } from "./state.js";
 import { type Tx, emit, fail } from "./tx.js";
@@ -33,10 +34,13 @@ export function specialtyEffects(
   const mastery = (code && ctx.settings.specialties.options[code]) || NONE;
   const held = player?.atouts ?? [];
   const catalog = ctx.settings.atouts?.catalog;
-  if (held.length === 0 || !catalog) return mastery;
+  // The heir's trait (R4): only the orders seen earlier touch this bag.
+  const preview = traitEffects(ctx, state, playerId).urgentPreviewMinutes;
+  if ((held.length === 0 || !catalog) && preview === 0) return mastery;
   const sum = { ...NONE, ...mastery };
+  sum.urgentPreviewMinutes = (sum.urgentPreviewMinutes ?? 0) + preview;
   for (const a of held) {
-    const fx = catalog[a]?.effects;
+    const fx = catalog?.[a]?.effects;
     if (!fx) continue;
     for (const key of Object.keys(sum) as (keyof SpecialtyEffects)[])
       sum[key] = (sum[key] ?? 0) + (fx[key] ?? 0);

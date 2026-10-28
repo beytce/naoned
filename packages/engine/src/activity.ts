@@ -1,4 +1,5 @@
 import { draw } from "./draw.js";
+import { freeLeft } from "./dynasty.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
 import {
   DAY_MS,
@@ -155,10 +156,14 @@ function tasksOf(tx: Tx, playerId: PlayerId) {
 }
 
 /** A task of the day swapped for the next of the draw (the server took its Influence). */
-export function rerollDaily(tx: Tx, playerId: PlayerId, taskId: string): void {
+export function rerollDaily(tx: Tx, playerId: PlayerId, taskId: string, free?: boolean): void {
+  // The notary's son swaps one a day without Influence (R4).
+  if (free && freeLeft(tx.ctx, tx.s as WorldState, playerId, tx.now).dailyRerolls <= 0)
+    fail("no_free_left");
   if (!tasksOf(tx, playerId).some((t) => t.id === taskId)) fail("unknown_daily");
   const mine = dailyState(tx, playerId);
   if (mine.claimed.includes(taskId)) fail("daily_claimed");
+  if (free) mine.freeRerolls = (mine.freeRerolls ?? 0) + 1;
   mine.rerolled = [...(mine.rerolled ?? []), taskId];
   delete mine.progress[taskId];
   emit(tx, "daily_rerolled", playerId, { task: taskId });
@@ -184,6 +189,7 @@ function dailyState(tx: Tx, playerId: PlayerId) {
     mine.claimed = [];
     mine.chest = false;
     mine.rerolled = [];
+    mine.freeRerolls = 0;
   }
   return mine;
 }

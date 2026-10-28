@@ -62,6 +62,8 @@ export {
   decreeQuotaBps,
   decreeTargetKind,
   decreeTaxBps,
+  favourBps,
+  levantQuotaBps,
   dogeFavourBps,
   dogeFavourOrders,
   embargoCutBps,
@@ -98,6 +100,8 @@ export * from "./specialties.js";
 export * from "./house.js";
 export * from "./atouts.js";
 export * from "./letters.js";
+export * from "./dynasty.js";
+export * from "./doge.js";
 export * from "./incanto.js";
 export * from "./lustre.js";
 export * from "./signoria.js";

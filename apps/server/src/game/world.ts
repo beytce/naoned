@@ -8,6 +8,7 @@ import {
   type LedgerReason,
   type WorldContext,
   type WorldSettings,
+  type WorldSettingsInput,
   type WorldState,
   adoptTurnover,
   applyMutator,
@@ -41,6 +42,9 @@ import {
 import { countFunnel } from "../funnel.js";
 import { recordAtoutUnlocks, unlockByLustre } from "./atouts.js";
 import { nextSeasonBounds, seasonBounds, seasonMonthKey, seasonMonthName } from "./calendar.js";
+import { redistributeCanal } from "./canal.js";
+import { dogeSettingsFor, recordDoge } from "./doge.js";
+import { recordGenerations } from "./dynasty.js";
 import { recordInfluence, recordSeasonInfluence } from "./house.js";
 import { ensureSfide, recordCurves, settleSfide, softResetLustre } from "./lustre.js";
 import { recordSeason } from "./season.js";
@@ -471,9 +475,15 @@ export class GameWorld {
           // The Mercante's rank unlocks an Atout (R3).
           this.unlocks.push(...(await unlockByLustre(tx, worldId, this.ctx, at)));
         }
+        // The Doge of the next month (R7), kept with its programme before the world turns.
+        if (e.type === "doge_elected") await recordDoge(tx, worldId, this.ctx, e, at);
         if (e.type === "season_closed") {
           const ranked = await recordSeason(tx, worldId, e.data ?? {});
           await recordSeasonInfluence(tx, worldId, this.ctx.settings, ranked, at);
+          // The Dynastie (R4): each generation's rank, traits earned and epithet.
+          await recordGenerations(tx, worldId, this.ctx, ranked);
+          // The Grand Canal (R5): the forty palaces given again by the month's ranking.
+          await redistributeCanal(tx, worldId, ranked, at);
           // The month's change: the Lustre two tiers down.
           await softResetLustre(tx, worldId, this.ctx);
         }
@@ -699,11 +709,26 @@ async function replayJournal(
 
 /** The settings of a season's month: its mutator applied, if one is drawn for it. */
 export function monthSettings(settings: WorldSettings, endsAt: number): WorldSettings {
-  const mutator = seasonMutator(settings, seasonMonthKey(endsAt));
+  const mutator = monthMutator(settings, endsAt);
   return mutator ? applyMutator(settings, mutator.override) : settings;
 }
 
+/** The month's mutator: the one its Doge chose (R7), else the one drawn for it. */
+export function monthMutator(settings: WorldSettings, endsAt: number) {
+  const chosen = settings.doge?.mutator;
+  const ruled = chosen ? settings.mutators?.catalog.find((m) => m.code === chosen) : undefined;
+  return ruled ?? seasonMutator(settings, seasonMonthKey(endsAt));
+}
+
+/** The theme's settings with the month's Doge written in (as they are without one). */
+function withDoge(settings: WorldSettingsInput, doge: Record<string, unknown> | null) {
+  if (!doge || Object.keys(doge).length === 0 || !settings.doge) return settings;
+  return { ...settings, doge: { ...settings.doge, ...doge } } as WorldSettingsInput;
+}
+
 async function createWorld(db: Db, bounds: { startsAt: number; endsAt: number }) {
+  // The month's Doge (R7): its decree and mutator written before the 1st, for the whole month.
+  const doge = await dogeSettingsFor(db, bounds.endsAt);
   const [world] = await db
     .insert(worlds)
     .values({
@@ -711,7 +736,7 @@ async function createWorld(db: Db, bounds: { startsAt: number; endsAt: number })
       theme: "venice1450",
       startsAt: new Date(bounds.startsAt),
       endsAt: new Date(bounds.endsAt),
-      settings: venice1450Settings,
+      settings: withDoge(venice1450Settings, doge),
     })
     .returning();
   if (!world) throw new Error("could not create a world");
@@ -724,8 +749,14 @@ async function loadWorld(db: Db, world: WorldRow, options: WorldOptions, owner: 
   if (!theme) throw new Error(`unknown theme ${world.theme}`);
   let stored: unknown = world.settings;
   if (options.settingsFromTheme) {
-    // Beta: the world follows the theme's current balancing, new mechanics included.
-    stored = venice1450Settings;
+    // Beta: the world follows the theme's current balancing, new mechanics included; the
+    // month's Doge stays its own (R7).
+    const saved = (world.settings as { doge?: Record<string, unknown> } | null)?.doge;
+    stored = withDoge(venice1450Settings, {
+      ...(saved?.decree ? { decree: saved.decree } : {}),
+      ...(saved?.mutator ? { mutator: saved.mutator } : {}),
+      ...(saved?.previous ? { previous: saved.previous } : {}),
+    });
   } else {
     // New mechanics get their defaults; values already set in the world are kept.
     stored = mergeDefaults(venice1450Settings, world.settings);

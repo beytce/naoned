@@ -1743,6 +1743,14 @@ export const en: Dictionary = {
           : ghost
             ? `Your Sfida of the week: the ghost of ${by ?? "a merchant"}.`
             : `Your Sfida of the week: ${by ?? "a merchant"}.`,
+      doge: (event: string, by: string | null, candidate: boolean) =>
+        event === "opened"
+          ? candidate
+            ? "You stand for Doge: announce your programme at the Senate."
+            : "The election of the Doge is open: read the programmes and vote at the Senate."
+          : event === "won"
+            ? "You are elected Doge: your programme will rule next month."
+            : `${by ?? "A merchant"} is elected Doge: their programme will rule next month.`,
       letter: (name: string, text: string) => text || `News from ${name}.`,
       sera: (event: string, lots: number) =>
         event === "outbid"
@@ -1800,6 +1808,7 @@ export const en: Dictionary = {
           sfida: "Sfida of the week and challenges received",
           sera: "The Sera (7:55 pm) and passed bids",
           letter: "What follows the letter of the day",
+          doge: "Election of the Doge (opening, elected)",
         } as Record<string, string>,
       },
     },
@@ -1823,8 +1832,7 @@ export const en: Dictionary = {
       worth: "Net sales of the season",
       podium: "The podium",
       rewards: "Your rewards",
-      renown: (n: number) => `+${n} Renown`,
-      milestone: (name: string, n: number) => `${name} milestone: +${n} Renown`,
+      milestone: (name: string) => `${name} milestone`,
       goal: {
         title: "Goal of the season",
         now: (name: string, n: number) =>
@@ -1835,7 +1843,7 @@ export const en: Dictionary = {
           `Next milestone: ${name}, at ${worth} of net sales (+${n} Renown), whatever your rank.`,
         top: "Highest milestone reached: hold it until the end of the month.",
       },
-      renownTotal: (name: string, points: number) => `${name} · ${points} Renown points`,
+      renownTotal: (name: string) => `Renown of the House: ${name}`,
       nothing: "Play at least 7 days in a season to receive the participant's badge.",
       start: "Open my new counter",
       newSeason: (name: string) =>
@@ -2621,6 +2629,111 @@ export const en: Dictionary = {
         leader: (name: string) => `Leader: ${name}`,
       },
     },
+    canal: {
+      tab: "Grand Canal",
+      title: "The Grand Canal",
+      label: "The palaces of the Grand Canal, from the Doges' palace to the Rialto",
+      help: "Forty palaces, from the Doges' palace to the Rialto. Each month's ranking gives them again: a House that stays in the forty keeps its palace, one that leaves them loses it, newcomers take the finest free palaces. A week of play in the month is needed. The façade tells the House: a floor per generation, a star per Atout unlocked, a shield per city held, the Doge's horn.",
+      empty: "The palaces await their Houses: the month's first forty will settle there.",
+      plot: (n: number) => `Palace ${n}`,
+      yours: (n: number) => `Your palace: number ${n} on the Grand Canal.`,
+      none: (sestiere: string) => `Off the Grand Canal: your House is in ${sestiere}.`,
+      facade: (g: number, a: number, c: number) =>
+        [
+          g > 0 ? `${g} generation${g > 1 ? "s" : ""}` : "",
+          a > 0 ? `${a} Atout${a > 1 ? "s" : ""}` : "",
+          c > 0 ? `${c} cit${c > 1 ? "ies" : "y"}` : "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      doge: (name: string) => `Doge of the month: ${name}`,
+      sestieri: ["Cannaregio", "Castello", "Dorsoduro", "San Polo", "Santa Croce", "San Marco"],
+    },
+    doge: {
+      kicker: "The Senate",
+      title: "The election of the Doge",
+      summary:
+        "The first ten Houses seek next month's crown. Each announces its programme: the season it chooses and a decree of the Republic.",
+      closesIn: (time: string) => `Closes in ${time}`,
+      line: "The election of the Doge is open: read the programmes and vote.",
+      lineVoted: "Your voice is given; you may change your mind until the close.",
+      noProgramme: "No programme yet",
+      votes: (n: number) => `${n} voice${n === 1 ? "" : "s"}`,
+      vote: (name: string) => `Vote for ${name}`,
+      voted: (name: string) => `Your voice goes to ${name}`,
+      weight: (n: number) =>
+        `Your voice weighs ${n}: one, and one more for each city where you are Podestà.`,
+      boost: "Influence for more weight",
+      boostLabel: (n: number, cost: number) => (n === 0 ? "None" : `+${n} · ${cost} ✦`),
+      stand: "Your programme",
+      standHelp: "Choose the season and the decree you will impose if the Senate elects you.",
+      season: "The season",
+      decree: "The decree of the Republic",
+      target: "For",
+      announce: "Announce my programme",
+      announced: "Programme announced: you may change it until the close.",
+      ruling: (name: string) => `Doge of the month: ${name}`,
+      decreeNames: {
+        faveur: "Favour of a city",
+        franchigia: "Franchise of the Rialto",
+        levante: "Charter of the Levant",
+        calmiere: "Calmiere",
+      } as Record<string, string>,
+      decrees: {
+        faveur: (target: string, pct: number) =>
+          `Favour of ${target}: deliveries to ${target} paid ${pct} % more, for everyone.`,
+        franchigia: (_t: string, pts: number) =>
+          `Franchise of the Rialto: the market tax lighter by ${pts} point${pts > 1 ? "s" : ""}, for everyone.`,
+        levante: (_t: string, pct: number) =>
+          `Charter of the Levant: ${pct} % more on the Dogana's quota, for everyone.`,
+        calmiere: (target: string, pct: number) =>
+          `Calmiere: no offer of ${target} above ${pct} % of its reference.`,
+      } as Record<string, (target: string, n: number) => string>,
+      help: "In the month's last week, the Senate elects next month's Doge among the first ten Houses (the outgoing Doge may not stand again). Every merchant here for three days votes; a voice weighs one, plus one for each city where they are Podestà, plus up to three bought with Influence. The Doge elected chooses next month's season and a decree of the Republic that holds for everyone, all month; their portrait greets everyone at sign-in.",
+    },
+    dynasty: {
+      member: (given: string, house: string, year: number) => `${given} ${house}, ${year}`,
+      nameKicker: "Your House this month",
+      nameHelp: "Each month a member of your House keeps the counter. Choose their name.",
+      heirKicker: "Your heir",
+      heirHelp:
+        "The month ends: name the heir who keeps the counter next month, and the trait they receive from you. A trait is an option or a piece of information, never yield.",
+      heirNone: "No trait earned this month: your heir sets out with no inheritance, as you did.",
+      bequeath: (trait: string) => `Leave « ${trait} » and begin`,
+      bequeathed: (trait: string) => `Your heir receives « ${trait} ».`,
+      trait: "Trait of the House",
+      freeReroll: "Change the task · free, by your trait",
+      freeShort: "Change · free",
+      freeRespec: "Change mastery · free",
+      tomorrow: (name: string) => `Tomorrow, a letter from ${name}.`,
+      gallery: "Gallery of the House",
+      galleryHelp: "Each month, one more portrait. Fortune starts over; the line remains.",
+      rank: (n: number) =>
+        `${n}${n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"} of the month`,
+      traits: {
+        nato_quai: ["Born on the quays", "Sees urgent orders 15 min earlier."],
+        rialto: ["Raised at the Rialto", "A fourth card in the Atouts' offer."],
+        condottiere: ["Condottiere's son", "Changes mastery once without Influence."],
+        amico_citta: ["Friend of the cities", "Sees the first ten of each city's Signoria."],
+        notaio: ["Notary's son", "Swaps a task of the day without Influence, every day."],
+        letterato: ["Man of letters", "Knows who will write tomorrow."],
+      } as Record<string, [name: string, line: string]>,
+      earnedBy: {
+        nato_quai: "a lot won at the incanto",
+        rialto: "the month's top 10",
+        condottiere: "Signore of a week",
+        amico_citta: "Podestà of a city",
+        notaio: "seven chests of the day in a row",
+        letterato: "twenty letters answered",
+      } as Record<string, string>,
+      epithets: {
+        magnifico: "the Magnificent",
+        rovinato: "the Ruined",
+        podesta: "the Podestà",
+        condottiere: "the Condottiere",
+        costante: "the Steadfast",
+      } as Record<string, string>,
+    },
     letters: {
       ...lettersEn,
       kicker: "The letter of the day",
@@ -2812,6 +2925,10 @@ export const en: Dictionary = {
     seasonNotes: {
       title: "New this season",
       items: [
+        "The Dynasty: each month a member of your House keeps the counter (name of your choice); at the month's end, they leave their heir a trait earned in the month (an option or a piece of information, never yield), and their portrait joins the gallery in the profile.",
+        "The Doge: in the month's last week, the Senate elects next month's Doge among the first ten Houses; each announces a programme (a season and a decree of the Republic), everyone votes, a Podestà's voice weighs more. The Doge's decree holds for everyone, all month; the Terraferma Signore's decree is gone (the Signore keeps the title and the Glory).",
+        "The Grand Canal: forty palaces given again each month by the ranking; a House keeps its own by staying in the forty. The Canal and the Doge of the month greet everyone at sign-in.",
+        "Renown speaks by its titles, no longer in figures.",
         "The Atouts: each Monday, three figures of Venice are offered to you; you take one for the season. Each gives and each takes. Four more are unlocked by a feat (Podestà, a lot won at the incanto, Signore of a week, the rank of Mercante), kept from season to season.",
         "The Letter of the day: each morning, a letter from Lorenzo, Faraj, the widow Contarini, Ser Marin of the Senate or a Milanese without a name, two answers, consequences that come days later, and an end of the month that follows your choices. Small gains, capped at 100 ducats a season.",
         "New blue « Laguna » palette, and the map in blue (the old one stays in the Profile).",

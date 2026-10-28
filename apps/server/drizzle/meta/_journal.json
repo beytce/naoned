@@ -211,6 +211,27 @@
       "when": 1793172961979,
       "tag": "0029_atouts",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793178219363,
+      "tag": "0030_dynasty",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793186229668,
+      "tag": "0031_doge",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793188574235,
+      "tag": "0032_canal",
+      "breakpoints": true
     }
   ]
 }

@@ -3,12 +3,15 @@ import { fr } from "../i18n.js";
 import { pushOpened } from "./shortcut.js";
 import type {
   Action,
+  CanalView,
   Catalog,
   CompanyInvitation,
   CompanyView,
   CondottaStatus,
   CrestData,
   DashboardView,
+  DynastyView,
+  ElectionView,
   FamilyMessage,
   GameResponse,
   HouseView,
@@ -92,7 +95,17 @@ export const gameApi = {
   view: () => call<GameResponse>("GET", `/api/game${openedOnce()}`),
   /** Restart from scratch (once per season). */
   reset: () => call<GameResponse>("POST", "/api/game/reset", {}),
-  join: (region: string) => call<GameResponse>("POST", "/api/game/join", { region }),
+  join: (region: string, given?: string) =>
+    call<GameResponse>("POST", "/api/game/join", { region, ...(given ? { given } : {}) }),
+  /** The Grand Canal (R5): public, signed in or not. */
+  canal: () => call<CanalView>("GET", "/api/canal"),
+  /** The Doge's election (R7): candidates, programmes, voices. */
+  election: () => call<ElectionView | null>("GET", "/api/game/election"),
+  vote: (candidate: string, boost: number) =>
+    call<ElectionView>("POST", "/api/game/election/vote", { candidate, boost }),
+  /** The Dynastie (R4): the house's line, the heir to name, the names offered. */
+  dynasty: () => call<DynastyView | null>("GET", "/api/game/dynasty"),
+  heir: (trait: string) => call<DynastyView | null>("POST", "/api/game/heir", { trait }),
   /** A refused action still returns the fresh view, with `error` set. */
   act: (action: Action) => call<GameResponse>("POST", "/api/game/actions", action),
   profile: () =>

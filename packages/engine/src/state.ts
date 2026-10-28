@@ -53,6 +53,10 @@ export interface Player {
   atoutWeek?: number;
   /** The Atouts the account unlocked, kept from season to season by the server. */
   atoutPool?: string[];
+  /** The trait the heir took from the generation before (R4, `dynasty.ts`). */
+  trait?: string;
+  /** Free changes of mastery the trait gave, used this season. */
+  freeRespecs?: number;
   /** A house run by the computer, marked by the server: it never takes the Terraferma's tiers. */
   npc?: true;
 }
@@ -354,6 +358,8 @@ export interface WorldState {
       rerolled?: string[];
       /** Days missed that the weekly grace forgave (E3-10). */
       graceDays?: number[];
+      /** Swaps of the day the trait gave for free, used today (R4). */
+      freeRerolls?: number;
     }
   >;
   /**
@@ -503,6 +509,18 @@ export interface WorldState {
   wars?: unknown;
   /** Set once the final ranking has been published (event `season_closed`). */
   seasonClosed?: boolean;
+  /**
+   * The election of the Doge (R7, `doge.ts`): the candidates frozen at its opening, their
+   * programmes and each merchant's voice.
+   */
+  election?: {
+    candidates: PlayerId[];
+    programmes: Record<
+      PlayerId,
+      { mutator: string | null; decree: { code: string; target?: string } }
+    >;
+    votes: Record<PlayerId, { candidate: PlayerId; weight: number; boost: number }>;
+  };
 }
 
 /** One card of a bale: a few units of a good, of a given rarity. */

@@ -230,6 +230,27 @@ export function pushText(
         body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${data.glory ? `${gain} de Gloire` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
       };
     }
+    case "doge": {
+      if (data.event === "opened")
+        return data.candidate
+          ? {
+              title: "Vous êtes candidat au Doge",
+              body: "Le Sénat élit le Doge du mois prochain : annoncez votre programme et rassemblez les voix.",
+            }
+          : {
+              title: "L'élection du Doge est ouverte",
+              body: "Les dix premières Maisons briguent la couronne : lisez leurs programmes et votez.",
+            };
+      if (data.event === "won")
+        return {
+          title: "Vous êtes élu Doge",
+          body: "Votre programme gouvernera le mois prochain : votre décret et votre saison.",
+        };
+      return {
+        title: `${data.byName ? String(data.byName) : "Un marchand"} est élu Doge`,
+        body: "Son décret et sa saison gouvernent le mois prochain.",
+      };
+    }
     case "letter": {
       const by = SENDERS[String(data.sender ?? "")] ?? "Venise";
       return {

@@ -185,6 +185,21 @@ export const venice1450Settings: WorldSettingsInput = {
   // day's end and a latecomer for 12 h; Milan rides every 2 open hours (docs/calibration.md).
   terraferma: {
     live: true,
+    // The week's close (the theme's defaults), without the Signore's decree: the Doge's decree
+    // of the Republic replaces it (R7, R12); the Signore keeps his title and his Glory.
+    close: {
+      winBps: 8_000,
+      influence: { signore: 20, podium: 12, top10: 8, quarter: 5, participant: 2 },
+      decrees: [],
+      effects: {
+        franchise_rialto: { taxBps: 0, quotaBps: 10_000 },
+        monopole: { extraTaxBps: 1_500 },
+        embargo: { cutBps: 2_500, reservedMinutes: 60 },
+        dime: { tollBps: 300 },
+        faveur_doge: { premiumBps: 4_000, extraOrders: 1 },
+        calmiere: { capBps: 10_500 },
+      },
+    },
     cellsPerActive: 25,
     minActive: 20,
     aspectBps: 16_000,
@@ -778,6 +793,64 @@ export const venice1450Settings: WorldSettingsInput = {
   },
   // Tasks of the day: three drawn from this pool, the same for everyone; doing all three opens a
   // chest of 10 ducats, 3 more for each day in a row, up to 22 (five days running).
+  /**
+   * The Doge (R7): the month's last week, the Senate elects the next month's Doge among the first
+   * ten houses of the people; its decree of the Republic holds all month, for everyone (each
+   * measured with `pnpm sim --decree`, docs/calibration.md).
+   */
+  doge: {
+    candidates: 10,
+    electionDays: 7,
+    minDays: 3,
+    maxBoost: 3,
+    decrees: ["faveur", "franchigia", "levante", "calmiere"],
+    effects: {
+      faveur: { premiumBps: 1_000 },
+      franchigia: { taxCutBps: 100 },
+      levante: { quotaBps: 2_500 },
+      calmiere: { capBps: 11_000 },
+    },
+  },
+  /**
+   * The Dynastie (R4): the month's member of the house is named from three of these; the heir
+   * takes one trait earned in the month (the feats are the server's, `dynasty.ts` there).
+   */
+  dynasty: {
+    names: [
+      "Marco",
+      "Pietro",
+      "Zuane",
+      "Alvise",
+      "Nicolò",
+      "Andrea",
+      "Francesco",
+      "Lorenzo",
+      "Domenico",
+      "Bernardo",
+      "Giacomo",
+      "Tommaso",
+      "Isabetta",
+      "Caterina",
+      "Lucia",
+      "Elena",
+      "Marina",
+      "Chiara",
+    ],
+    traits: {
+      // A lot won at the incanto: born on the quays, the urgent orders seen earlier.
+      nato_quai: { effects: { urgentPreviewMinutes: 15 } },
+      // The month's top 10: raised at the Rialto, one more Atout card each week.
+      rialto: { effects: { atoutChoices: 1 } },
+      // Signore of a week: the condottiere's son changes his mastery once without Influence.
+      condottiere: { effects: { freeRespecs: 1 } },
+      // Podestà of a city: the friend of the cities sees the rivals' points at the Signoria.
+      amico_citta: { effects: { signoriaRivals: 1 } },
+      // Seven chests in a row: the notary's son swaps a task of the day for free each day.
+      notaio: { effects: { freeDailyRerolls: 1 } },
+      // Twenty letters answered: the man of letters knows who writes tomorrow.
+      letterato: { effects: { letterPreview: 1 } },
+    },
+  },
   /** The Letter of the day (R10): its month written apart, `venice1450.letters.ts`. */
   letters: venice1450Letters,
   daily: {

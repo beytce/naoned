@@ -1278,6 +1278,64 @@ export const worldSettingsSchema = z.object({
     })
     .optional(),
   /**
+   * The Doge (R7, docs/plan-rupture.md): the month's last `electionDays`, the Senate elects the
+   * Doge of the next month among the first `candidates` houses of the people (never the outgoing
+   * one, `previous`). Each candidate stands with a public programme: a mutator of the catalog and
+   * a decree of the Republic among `decrees`; a merchant of `minDays` votes, one voice, one more a
+   * city it holds as Podestà, up to `maxBoost` more of Influence. The month the Doge rules, the
+   * server writes its `mutator` and `decree` here: the decree holds for everyone, all month.
+   * Off when absent.
+   */
+  doge: z
+    .object({
+      candidates: positive,
+      electionDays: positive,
+      minDays: qty,
+      maxBoost: qty,
+      /** Influence a voice of boost costs (taken by the server). */
+      influencePerVoice: qty.prefault(10),
+      decrees: z.array(z.enum(["faveur", "franchigia", "levante", "calmiere"])),
+      effects: z.object({
+        /** Deliveries to the city paid more. */
+        faveur: z.object({ premiumBps: bps }),
+        /** The market's tax lighter. */
+        franchigia: z.object({ taxCutBps: bps }),
+        /** A larger share of the Dogana's quota. */
+        levante: z.object({ quotaBps: bps }),
+        /** No offer of the good above this share of its reference. */
+        calmiere: z.object({ capBps: bps }),
+      }),
+      decree: z.object({ code: z.string(), target: z.string().optional() }).optional(),
+      mutator: z.string().optional(),
+      previous: z.string().optional(),
+    })
+    .optional(),
+  /**
+   * The Dynastie (R4, docs/plan-rupture.md): each month a member of the house, named from three
+   * of `names`, and an heir who takes one trait earned in the month. A trait is an option or a
+   * piece of information, never yield: its effects are this short list, nothing else parses —
+   * orders seen earlier, one more Atout card, a free swap of a task a day, a free change of
+   * mastery a season, tomorrow's letter told, the rivals' points at the Signoria. Off when absent.
+   */
+  dynasty: z
+    .object({
+      names: z.array(z.string()).prefault([]),
+      traits: z.record(
+        z.string(),
+        z.object({
+          effects: z.strictObject({
+            urgentPreviewMinutes: qty.max(60).prefault(0),
+            atoutChoices: qty.max(1).prefault(0),
+            freeDailyRerolls: qty.max(1).prefault(0),
+            freeRespecs: qty.max(1).prefault(0),
+            letterPreview: qty.max(1).prefault(0),
+            signoriaRivals: qty.max(1).prefault(0),
+          }),
+        }),
+      ),
+    })
+    .optional(),
+  /**
    * The Letter of the day (R10, docs/plan-rupture.md): each day of the season (`day`, 0 the
    * first; `last` for the season's last day) the first episode whose flags are met (`needs` all
    * set, `without` none) is the merchant's letter, with two choices. A choice pays (`pay`, to the

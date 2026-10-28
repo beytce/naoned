@@ -93,7 +93,11 @@ export function LetterSheet(props: GameProps) {
               <p className="label">{t().answered}</p>
               <p className="text-sm text-cream">{answered[0]}</p>
               <p className="text-sm italic text-cream-dim">{answered[1]}</p>
-              <p className="meta pt-2">{t().tomorrow}</p>
+              <p className="meta pt-2">
+                {letter.tomorrow
+                  ? fr.game.dynasty.tomorrow(t().senders[letter.tomorrow]?.[0] ?? letter.tomorrow)
+                  : t().tomorrow}
+              </p>
             </section>
           ) : (
             <section className="space-y-3">
