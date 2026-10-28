@@ -177,3 +177,4 @@ Plan complet : la Dynastie (R4), le Grand Canal (R5), le Doge (R7). Décisions p
 - 28 octobre 2026 : serveur du Doge (`doges`, réglages du mois écrits à la création du monde, routes de l'élection, avis) ; ménage : décret du Signore retiré à Venise, Renommée sans chiffres.
 - 28 octobre 2026 : écrans du Doge (feuille du Sénat, ligne sous la cloche, Doge du mois dans l'Aide).
 - 28 octobre 2026 : le Grand Canal (plots, redistribution, route publique, palais SVG, Canal et Doge à la connexion, onglet du classement, palais à la cérémonie).
+- 28 octobre 2026 : option `--decree` du simulateur ; notes de saison, CADRAGE et IDEAS.md de la vague 4 ; simulations de calibration lancées (sans décret et avec chacun des quatre, 5 graines) — résultats à écrire dans `docs/calibration.md`, « Vague 4 ».

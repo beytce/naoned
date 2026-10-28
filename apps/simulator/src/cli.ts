@@ -20,6 +20,8 @@ const { values } = parseArgs({
     pass: { type: "string", default: "0" },
     /** A mutator of the month played all season (E2-9), by its code. */
     mutator: { type: "string" },
+    /** A decree of the Doge held all season (R7): `code` or `code:target`, e.g. faveur:venezia. */
+    decree: { type: "string" },
     /**
      * Share of bots whose house holds patents (0 to 1), compared with the same season without
      * them (the house's settings of Venice).
@@ -39,10 +41,22 @@ const base = values.scenario
 // The Pass is off in Venice until it comes back; --pass measures it as it would be, switched on.
 const withPass =
   Number(values.pass) > 0 ? { ...base, pass: { ...base.pass, enabled: true } } : base;
-const settings =
+const withTerra =
   values.terra && withPass.terraferma
     ? { ...withPass, terraferma: { ...withPass.terraferma, live: true } }
     : withPass;
+// The Doge's decree of the month (R7), as the server writes it into a month's settings.
+const [decreeCode, decreeTarget] = (values.decree ?? "").split(":");
+const settings =
+  decreeCode && withTerra.doge
+    ? {
+        ...withTerra,
+        doge: {
+          ...withTerra.doge,
+          decree: decreeTarget ? { code: decreeCode, target: decreeTarget } : { code: decreeCode },
+        },
+      }
+    : withTerra;
 const players = values.players ? Number(values.players) : undefined;
 const mix = players ? scaleMix(DEFAULT_MIX, players) : DEFAULT_MIX;
 const seeds = (values.seeds ?? "1").split(",").map(Number);

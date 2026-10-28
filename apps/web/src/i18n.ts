@@ -3028,6 +3028,10 @@ const frDict = {
     seasonNotes: {
       title: "Nouveautés de la saison",
       items: [
+        "La Dynastie : chaque mois, un membre de votre Maison tient le comptoir (prénom au choix) ; à la fin du mois, il lègue à son héritier un trait mérité dans le mois (une option ou une information, jamais du rendement), et son portrait entre dans la galerie du profil.",
+        "Le Doge : la dernière semaine du mois, le Sénat élit le Doge du mois suivant parmi les dix premières Maisons ; chacune annonce un programme (une saison et un décret de la République), chacun vote, la voix d'un Podestà pèse plus. Le décret du Doge vaut pour tous, tout le mois ; celui du Signore de la Terraferme disparaît (le Signore garde son titre et sa Gloire).",
+        "Le Grand Canal : quarante palais redonnés chaque mois par le classement ; on garde le sien en restant dans les quarante. Le Canal et le Doge du mois accueillent chacun à la connexion.",
+        "La Renommée se dit par ses titres, plus en chiffres.",
         "Les Atouts : chaque lundi, trois figures de Venise vous sont proposées ; vous en prenez une pour la saison. Chacune donne et retire. Quatre de plus se débloquent par un exploit (Podestà, lot gagné à l'incanto, Signore d'une semaine, rang Mercante), gardés de saison en saison.",
         "La Lettre du jour : chaque matin, une lettre de Lorenzo, Faraj, la veuve Contarini, Ser Marin du Sénat ou d'un Milanais sans nom, deux réponses, des suites qui arrivent des jours plus tard, et une fin du mois selon vos choix. Gains petits, plafonnés à 100 ducats par saison.",
         "Nouvelle palette bleue « Lagune », et la carte en bleu (l'ancienne reste dans le Profil).",

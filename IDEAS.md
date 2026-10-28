@@ -89,6 +89,13 @@ Détails dans docs/expertise-2026-10-24/ (fichiers `*-final.md`).
 - **Jouer en invité** (E3-2) : décision du porteur sur l'entonnoir mesuré, après au moins 300 `landing_view` ; s'il est décidé, les quatre conditions du chef du 20 octobre (aucun transfert de valeur, aucune fusion, absent des classements, purge) et l'e-mail demandé à la première paie.
 - **Paiement du Mécène** (E3-9) : Stripe et CGV en V1, et trois cosmétiques dessinés avant toute vente.
 
+## Plan de rupture, vague 4 (28 octobre 2026 : ce qui n'est pas entré dans la vague)
+- **Destitution du Doge** à mi-mois par le Conseil des Dix (les dix premiers du Lustre) : écartée pour l'instant, le Doge ne gouverne que par ce qu'il fixe avant le 1er (règles stables pendant le mois).
+- **Voix vendues** contre une part d'un droit de porte ou un partage de gains : avec les parts de Maison (vague 5, R9) ; pour l'instant, seul le programme public tient lieu de promesse.
+- **Choix du palais** sur le Grand Canal, dans l'ordre du classement (le premier choisit, puis le deuxième…) : les palais sont attribués d'office, faute de tour de choix jouable en asynchrone.
+- **Fiche d'un palais** : toucher un palais du Canal ouvre le palmarès de sa Maison (la route publique ne donne pas d'identifiant ; une route connectée le ferait).
+- **Ménage différé de R12** : fondre les maîtrises dans les Atouts, le coffre et les tâches dans la Lettre, les missions de la Maison et les privilèges dans la Dynastie et le Canal, les actes dans le Doge ; à décider avec la mesure de vrais joueurs.
+
 ## V1 (après la première saison)
 - Escarmouches : reprendre une partie en cours après un redémarrage du serveur (aujourd'hui elle est interrompue, sans Gloire ni quota consommé, terra-m1) ; demande d'enregistrer l'état de la partie à chaque pas.
 - Chaînes textile (laine, tissu, vêtements) et ameublement (meubles).

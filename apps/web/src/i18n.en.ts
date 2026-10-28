@@ -2925,6 +2925,10 @@ export const en: Dictionary = {
     seasonNotes: {
       title: "New this season",
       items: [
+        "The Dynasty: each month a member of your House keeps the counter (name of your choice); at the month's end, they leave their heir a trait earned in the month (an option or a piece of information, never yield), and their portrait joins the gallery in the profile.",
+        "The Doge: in the month's last week, the Senate elects next month's Doge among the first ten Houses; each announces a programme (a season and a decree of the Republic), everyone votes, a Podestà's voice weighs more. The Doge's decree holds for everyone, all month; the Terraferma Signore's decree is gone (the Signore keeps the title and the Glory).",
+        "The Grand Canal: forty palaces given again each month by the ranking; a House keeps its own by staying in the forty. The Canal and the Doge of the month greet everyone at sign-in.",
+        "Renown speaks by its titles, no longer in figures.",
         "The Atouts: each Monday, three figures of Venice are offered to you; you take one for the season. Each gives and each takes. Four more are unlocked by a feat (Podestà, a lot won at the incanto, Signore of a week, the rank of Mercante), kept from season to season.",
         "The Letter of the day: each morning, a letter from Lorenzo, Faraj, the widow Contarini, Ser Marin of the Senate or a Milanese without a name, two answers, consequences that come days later, and an end of the month that follows your choices. Small gains, capped at 100 ducats a season.",
         "New blue « Laguna » palette, and the map in blue (the old one stays in the Profile).",
