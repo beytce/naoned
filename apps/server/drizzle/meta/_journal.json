@@ -211,6 +211,13 @@
       "when": 1793172961979,
       "tag": "0029_atouts",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793178219363,
+      "tag": "0030_dynasty",
+      "breakpoints": true
     }
   ]
 }

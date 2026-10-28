@@ -5,6 +5,7 @@ import {
   companies,
   companyMembers,
   companyMessages,
+  generations,
   influenceEntries,
   ledgerEntries,
   loginTokens,
@@ -73,6 +74,8 @@ export async function exportAccount(db: Db, accountId: string) {
       })
       .from(sfide)
       .where(or(eq(sfide.a, accountId), eq(sfide.b, accountId))),
+    // The Dynastie (R4): the line, one generation a month.
+    generations: await db.select().from(generations).where(eq(generations.accountId, accountId)),
     influence: await db
       .select()
       .from(influenceEntries)

@@ -318,6 +318,36 @@ export const sfide = pgTable(
  * The Atouts an account unlocked by a feat (R3, docs/plan-rupture.md), kept from season to
  * season: a Podestà, a lot won at the incanto, a Signore, the Mercante's rank at the Lustre.
  */
+/**
+ * The Dynastie (R4, docs/plan-rupture.md): each month a member of the house, a generation of the
+ * account's line — its name, its year, the trait it received, those it earned in the month, the
+ * heir's trait it left and its epithet. Kept from season to season.
+ */
+export const generations = pgTable(
+  "generations",
+  {
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    given: text("given").notNull(),
+    /** 1450 for the first generation, a year more for each. */
+    year: integer("year").notNull(),
+    /** The trait received from the generation before. */
+    traitIn: text("trait_in"),
+    /** The traits earned in the month (set at its close). */
+    earned: jsonb("earned").$type<string[]>(),
+    /** The trait left to the heir (chosen after the close; the first earned by default). */
+    heir: text("heir"),
+    epithet: text("epithet"),
+    rank: integer("rank"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.accountId, t.worldId] })],
+);
+
 export const accountAtouts = pgTable(
   "account_atouts",
   {

@@ -2,6 +2,7 @@ import {
   type Command,
   type Trade,
   freeBatches,
+  freeLeft,
   hasPass,
   isNation,
   podestaOf,
@@ -10,6 +11,7 @@ import {
   supplierOf,
   supplierStandings,
   tierOf,
+  traitEffects,
   weekReplay,
   workLevel,
 } from "@comptoirs/engine";
@@ -46,6 +48,13 @@ import {
 } from "./company.js";
 import { type CondottaHub, condottaRecord } from "./condotta.js";
 import { dashboard } from "./dashboard.js";
+import {
+  HeirRefused,
+  chooseHeir,
+  dynastyView,
+  nextGeneration,
+  startGeneration,
+} from "./dynasty.js";
 import {
   ChatError,
   familyThread,
@@ -580,18 +589,24 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   app.post("/api/game/join", perMerchant(30), async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
-    const { region } = z.object({ region: z.string() }).parse(req.body);
+    const { region, given } = z
+      .object({ region: z.string(), given: z.string().max(40).optional() })
+      .parse(req.body);
     const patents = await patentsFor(db, world.ctx.settings, account.id);
     // The Atouts the account unlocked in earlier seasons (R3).
     const atoutPool = await atoutPoolFor(db, world.ctx.settings, account.id);
+    // The month's member of the house and the heir's trait (R4).
+    const generation = await nextGeneration(db, world.ctx, world.id, account.id, given);
     const res = await world.execute({
       type: "join",
       playerId: account.id,
       region,
       ...(patents.length > 0 ? { patents } : {}),
       ...(atoutPool.length > 0 ? { atoutPool } : {}),
+      ...(generation?.trait ? { trait: generation.trait } : {}),
     });
     if (!res.ok) return reply.code(409).send({ error: res.error });
+    if (generation) await startGeneration(db, world.id, account.id, generation);
     await syncPass(db, world, account.id);
     const [came] = await db
       .select({ source: accounts.utmSource })
@@ -1192,14 +1207,19 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
         cost = spend.rushWork;
         cmd = { type: "rushWork", playerId, land: body.land };
         break;
-      case "respec":
-        cost = spend.respec;
-        cmd = { type: "resetSpecialty", playerId };
+      case "respec": {
+        // The heir's trait may give it for free (R4): no Influence taken.
+        const free = freeLeft(world.ctx, world.current, playerId, world.now()).respecs > 0;
+        cost = free ? 0 : spend.respec;
+        cmd = { type: "resetSpecialty", playerId, ...(free ? { free } : {}) };
         break;
-      case "daily":
-        cost = spend.dailyReroll;
-        cmd = { type: "rerollDaily", playerId, taskId: body.taskId };
+      }
+      case "daily": {
+        const free = freeLeft(world.ctx, world.current, playerId, world.now()).dailyRerolls > 0;
+        cost = free ? 0 : spend.dailyReroll;
+        cmd = { type: "rerollDaily", playerId, taskId: body.taskId, ...(free ? { free } : {}) };
         break;
+      }
     }
     const at = new Date(world.now());
     let key: string;
@@ -1431,19 +1451,42 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
    * The Signoria of the cities (R2): each city's Podestà, the three first on its gauge and the
    * merchant's own points, with names and crests.
    */
+  /** The Dynastie (R4): the account's line, the heir to name and the names offered. */
+  app.get("/api/game/dynasty", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return toJson(await dynastyView(db, world.ctx, world.id, account.id));
+  });
+
+  /** The trait the latest generation leaves to its heir: one it earned. */
+  app.post("/api/game/heir", perMerchant(20), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const { trait } = z.object({ trait: z.string().max(40) }).parse(req.body);
+    try {
+      await chooseHeir(db, account.id, trait);
+    } catch (e) {
+      if (e instanceof HeirRefused) return reply.code(409).send({ error: e.message });
+      throw e;
+    }
+    return toJson(await dynastyView(db, world.ctx, world.id, account.id));
+  });
+
   app.get("/api/game/signoria", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
     const state = world.current;
     const rules = world.ctx.settings.signoria;
     if (!rules) return toJson({ rules: null, cities: [] });
+    const rivals = traitEffects(world.ctx, state, account.id).signoriaRivals > 0;
     const lines = world.ctx.theme.cities.map((c) => {
       const standings = signoriaStandings(state, c.code);
       return {
         city: c.code,
         podesta: podestaOf(state, c.code) ?? null,
         since: state.signoria?.podesta[c.code]?.since ?? null,
-        top: standings.slice(0, 3),
+        // The friend of the cities sees the rivals beyond the podium (R4).
+        top: standings.slice(0, rivals ? 10 : 3),
         mine: standings.find((x) => x.playerId === account.id)?.points ?? 0,
         total: standings.reduce((n, x) => n + x.points, 0),
       };

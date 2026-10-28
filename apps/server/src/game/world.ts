@@ -41,6 +41,7 @@ import {
 import { countFunnel } from "../funnel.js";
 import { recordAtoutUnlocks, unlockByLustre } from "./atouts.js";
 import { nextSeasonBounds, seasonBounds, seasonMonthKey, seasonMonthName } from "./calendar.js";
+import { recordGenerations } from "./dynasty.js";
 import { recordInfluence, recordSeasonInfluence } from "./house.js";
 import { ensureSfide, recordCurves, settleSfide, softResetLustre } from "./lustre.js";
 import { recordSeason } from "./season.js";
@@ -474,6 +475,8 @@ export class GameWorld {
         if (e.type === "season_closed") {
           const ranked = await recordSeason(tx, worldId, e.data ?? {});
           await recordSeasonInfluence(tx, worldId, this.ctx.settings, ranked, at);
+          // The Dynastie (R4): each generation's rank, traits earned and epithet.
+          await recordGenerations(tx, worldId, this.ctx, ranked);
           // The month's change: the Lustre two tiers down.
           await softResetLustre(tx, worldId, this.ctx);
         }

@@ -20,6 +20,7 @@ import {
   escrowAccount,
   fastBatchNext,
   freeBatches,
+  freeLeft,
   houseLevels,
   houseMissionsFor,
   houseSpendFor,
@@ -839,6 +840,13 @@ export function playerView(
                 !a.starter && !(state.players[playerId]?.atoutPool ?? []).includes(code),
             )
             .map(([code, a]) => ({ code, unlock: a.unlock ?? null })),
+        }
+      : null,
+    // The Dynastie (R4): the heir's trait, and what it still gives for free.
+    dynasty: ctx.settings.dynasty
+      ? {
+          trait: state.players[playerId]?.trait ?? null,
+          free: freeLeft(ctx, state, playerId, now),
         }
       : null,
     // The Letter of the day (R10): today's letter, what each answer pays and gives, and whether
