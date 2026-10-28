@@ -36,6 +36,7 @@ import { familiesOn, familiesOpenAt, familyCodes, membersOf, seatOf } from "./fa
 import { nextFondaco } from "./fondaci.js";
 import { houseMissionsFor } from "./house.js";
 import { incantoLots, incantoMinimum } from "./incanto.js";
+import { letterOf } from "./letters.js";
 import { bestPrice, marketMakerQuotaLeft, maxOpenOrdersFor, openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
 import type { Deniers } from "./money.js";
@@ -281,6 +282,7 @@ export class Bot {
     this.fondaco(s);
     this.chooseMastery(s);
     this.chooseAtout(s);
+    this.answerLetter(s);
     this.runProduction(s);
     if (this.profile.speculates) this.speculate(s);
     this.sellSurplus(s);
@@ -815,6 +817,20 @@ export class Bot {
     };
     const best = [...offer].sort((a, b) => score(b) - score(a))[0];
     if (best) s.act({ type: "chooseAtout", playerId: this.id, code: best });
+  }
+
+  /**
+   * The Letter of the day (R10): one of its two answers, drawn by the world's secret; the other
+   * if the house cannot pay for it.
+   */
+  private answerLetter(s: Session): void {
+    const letter = letterOf(s.ctx, s.state(), this.id, s.now);
+    if (!letter || letter.answered) return;
+    const first = draw(s.ctx, `letter-bot:${this.id}:${letter.day}`) % letter.choices.length;
+    const order = [...letter.choices.slice(first), ...letter.choices.slice(0, first)];
+    for (const choice of order) {
+      if (s.act({ type: "answerLetter", playerId: this.id, choice })) return;
+    }
   }
 
   private incanto(s: Session): void {

@@ -1,4 +1,5 @@
 import type { WorldSettingsInput } from "../settings.js";
+import { venice1450Letters } from "./venice1450.letters.js";
 
 /** Default balancing for a Venice 1450 world. Amounts in deniers, rates in bps. */
 /**
@@ -777,6 +778,8 @@ export const venice1450Settings: WorldSettingsInput = {
   },
   // Tasks of the day: three drawn from this pool, the same for everyone; doing all three opens a
   // chest of 10 ducats, 3 more for each day in a row, up to 22 (five days running).
+  /** The Letter of the day (R10): its month written apart, `venice1450.letters.ts`. */
+  letters: venice1450Letters,
   daily: {
     perDay: 3,
     tasks: [
