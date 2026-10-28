@@ -53,6 +53,7 @@
 - **Vague 5 en cours** (plan validé le 28 octobre, détail plus bas, « Vague 5 : le plan validé » ; branche `claude/rupture-v5`, partie de la branche par défaut).
 - Fait : le lot variable de la Muda ne tombe plus à zéro dans un petit monde (une épice par actif, un seul actif, tirée sous 100 % : rien n'arrivait ; vu par la CI de la PR #54) ; test « the galleys' lot for a single merchant » dans `test/broglio.test.ts`.
 - **Vague 5 terminée** (28 octobre 2026) : 5 graines conformes, Broglio et parts sans effet mesurable sur la monnaie payée ni la masse monétaire, toutes les parts rachetées le dernier jour, aucune caisse négative (`docs/calibration.md`, « Vague 5 ») ; notes de saison FR et EN, CADRAGE (« Les marchands entre eux »), IDEAS.md (« Plan de rupture, vague 5 »). À fusionner par une PR vers la branche par défaut quand la CI passe.
+- **Vague 5 fusionnée** dans la branche par défaut (PR #54, 28 octobre 2026).
 - **Étape suivante exacte** : après la fusion de la vague 5, le plan de rupture est fait (R1 à R11 ; R12, le ménage, en partie : le reste est dans IDEAS.md, « Ménage différé de R12 »). La suite se décide avec la mesure de vrais joueurs : les cibles encore manquées (croissance du mois, pain en fin de mois, diversité des Atouts) et les diagnostics du Broglio et des parts.
 - **À savoir** :
   - La Signoria compte les livraisons parties entre 8 h et 22 h (Paris) ; le Podestà est nommé par `closeSignoriaDays` dans le tick, au changement de jour (minuit).
