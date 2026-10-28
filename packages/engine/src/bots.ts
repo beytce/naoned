@@ -1,4 +1,5 @@
 import { crieeRoom, currentCriee, dailyFor } from "./activity.js";
+import { atoutOffer, atoutOpen } from "./atouts.js";
 import { balesFor } from "./bales.js";
 import { costForLevel, costPerOutput, costValue } from "./buildings.js";
 import {
@@ -279,6 +280,7 @@ export class Bot {
     this.invest(s);
     this.fondaco(s);
     this.chooseMastery(s);
+    this.chooseAtout(s);
     this.runProduction(s);
     if (this.profile.speculates) this.speculate(s);
     this.sellSurplus(s);
@@ -790,6 +792,31 @@ export class Bot {
    * the goods are worth (the speculator dearer, the casual merchant cheaper), with half as much
    * again in hand, one lot a Sera.
    */
+  /**
+   * The Atout of the week (R3): of the three offered, the one whose gains suit the house's way of
+   * playing best (ties: the first offered).
+   */
+  private chooseAtout(s: Session): void {
+    const rules = s.ctx.settings.atouts;
+    if (!rules || !atoutOpen(s.ctx, s.state(), this.id, s.now)) return;
+    const offer = atoutOffer(s.ctx, s.state(), this.id, s.now);
+    if (offer.length === 0) return;
+    const likes: Record<string, string[]> = {
+      producer: ["rawYieldBps", "cityPayBps", "vehicleSpeedBps"],
+      artisan: ["transformYieldBps", "cityPayBps", "extraVehicles"],
+      builder: ["transformYieldBps", "rawYieldBps", "signoriaBps"],
+      speculator: ["taxDiscountBps", "extraOpenOrders", "marketMakerFloorBps", "mudaQuotaBps"],
+      casual: ["cityPayBps", "urgentPreviewMinutes", "vehicleSpeedBps"],
+    };
+    const wanted = likes[this.profile.name] ?? [];
+    const score = (code: string) => {
+      const fx = rules.catalog[code]?.effects as Record<string, number> | undefined;
+      return wanted.reduce((n, k, i) => n + ((fx?.[k] ?? 0) > 0 ? wanted.length - i : 0), 0);
+    };
+    const best = [...offer].sort((a, b) => score(b) - score(a))[0];
+    if (best) s.act({ type: "chooseAtout", playerId: this.id, code: best });
+  }
+
   private incanto(s: Session): void {
     if (!s.ctx.settings.incanto) return;
     const state = s.state();

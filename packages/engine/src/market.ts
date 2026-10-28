@@ -93,7 +93,10 @@ export function maxOpenOrdersFor(
   playerId: PlayerId,
   _now: number,
 ): number {
-  return ctx.settings.maxOpenOrders + specialtyEffects(ctx, state, playerId).extraOpenOrders;
+  return Math.max(
+    1,
+    ctx.settings.maxOpenOrders + specialtyEffects(ctx, state, playerId).extraOpenOrders,
+  );
 }
 
 export function openOrderCount(state: WorldState, playerId: PlayerId): number {
@@ -146,7 +149,8 @@ export function playerQuota(
   const mastery = specialtyEffects(ctx, state, playerId).marketMakerQuotaBps;
   // The Fondaco's privilege: a larger share for the members of the family that imposed it.
   const bonus = mastery + decreeQuotaBps(ctx, state, playerId, now);
-  return bonus > 0 ? share + Math.floor((share * bonus) / 10_000) : share;
+  // An Atout may cut it too (R3): never below nothing.
+  return bonus !== 0 ? Math.max(0, share + Math.floor((share * bonus) / 10_000)) : share;
 }
 
 function quotaRoom(tx: Tx, playerId: PlayerId, resource: string, dir: "bought" | "sold"): number {

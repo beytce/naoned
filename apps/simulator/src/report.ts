@@ -369,6 +369,29 @@ export function mudaChecks(r: SimulationResult): Check[] {
 }
 
 /** The road (deliveries and vehicles), with the targets of docs/plan-livraisons.md § 7. */
+/** The Atouts (R3): how the merchants present at the end spread over them (diversity). */
+function atoutChecks(r: SimulationResult): Check[] {
+  const players = Object.values(r.finalState?.players ?? {});
+  const held = players.flatMap((p) => p.atouts ?? []);
+  if (held.length === 0) return [];
+  const by: Record<string, number> = {};
+  for (const a of held) by[a] = (by[a] ?? 0) + 1;
+  const most = Math.max(...Object.values(by));
+  const share = most / Math.max(1, players.length);
+  return [
+    {
+      name: "Atouts : le plus pris, part des marchands",
+      target: "≤ 25 % (diversité, R3)",
+      value: `${pct(share)} · ${Object.entries(by)
+        .sort(([, a], [, b]) => b - a)
+        .map(([k, n]) => `${k} ${n}`)
+        .join(" · ")}`,
+      pass: share <= 0.25,
+      blocking: false,
+    },
+  ];
+}
+
 /** The incanto of the Sera (R11): lots sold, at what share of their reference, to how many. */
 function incantoChecks(r: SimulationResult): Check[] {
   const ic = r.incanto;
@@ -444,6 +467,7 @@ export function terraChecks(r: SimulationResult): Check[] {
     },
     ...signoriaChecks(r),
     ...incantoChecks(r),
+    ...atoutChecks(r),
     {
       name: "Monnaie détruite par la Terraferme",
       target: "diagnostic : le puits qui remplace l'entretien",

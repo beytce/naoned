@@ -27,6 +27,7 @@ const cityDemand = z.object({
 });
 
 const signedBps = z.number().int().min(-10_000);
+const signedInt = z.number().int();
 
 /** A market event: for a while, cities pay more (or buy more) and some yields change. */
 const eventDef = z.object({
@@ -1008,10 +1009,49 @@ export const worldSettingsSchema = z.object({
           marketMakerFloorBps: bps.prefault(0),
           /** Urgent orders seen this long before they open (information only, E1-6). */
           urgentPreviewMinutes: qty.prefault(0),
+          /** Added to the yield of recipes without inputs (raw goods, R3). */
+          rawYieldBps: bps.prefault(0),
+          /** Added to what the cities pay on a delivery's arrival (R3). */
+          cityPayBps: bps.prefault(0),
+          /** Added to the points a delivery or a held city counts on the Signoria (R3). */
+          signoriaBps: bps.prefault(0),
         }),
       ),
     })
     .prefault({ unlockLevels: 5, options: {} }),
+  /**
+   * The Atouts (R3, docs/plan-rupture.md): each week a merchant is offered `choices` Atouts of
+   * its pool (the `starter` ones, and those its account unlocked, `unlock` naming the feat) and
+   * takes `perWeek`, for the season. Each gives and takes: signed effects, added to the
+   * mastery's. Off when absent.
+   */
+  atouts: z
+    .object({
+      perWeek: positive,
+      choices: positive,
+      catalog: z.record(
+        z.string(),
+        z.object({
+          starter: z.boolean().optional(),
+          unlock: z.string().optional(),
+          effects: z.object({
+            transformYieldBps: signedInt.prefault(0),
+            vehicleSpeedBps: signedInt.prefault(0),
+            extraVehicles: signedInt.prefault(0),
+            mudaQuotaBps: signedInt.prefault(0),
+            marketMakerQuotaBps: signedInt.prefault(0),
+            taxDiscountBps: signedInt.prefault(0),
+            extraOpenOrders: signedInt.prefault(0),
+            marketMakerFloorBps: signedInt.prefault(0),
+            urgentPreviewMinutes: signedInt.prefault(0),
+            rawYieldBps: signedInt.prefault(0),
+            cityPayBps: signedInt.prefault(0),
+            signoriaBps: signedInt.prefault(0),
+          }),
+        }),
+      ),
+    })
+    .optional(),
   /**
    * The season in acts: from its week (0 = the first), each act may draw a market modifier among
    * its variants (like an event, for the whole act) and make Milan stronger in the campaign.

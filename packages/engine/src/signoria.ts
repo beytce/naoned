@@ -1,5 +1,6 @@
 import { hourIn, hourWithin } from "./clock.js";
 import { type Deniers, applyBpsFloor } from "./money.js";
+import { specialtyEffects } from "./specialties.js";
 import {
   DAY_MS,
   MINUTE_MS,
@@ -56,7 +57,10 @@ function signoriaOf(tx: Tx): NonNullable<WorldState["signoria"]> {
 }
 
 /** Points added to a merchant on a city's gauge; the leader passed is told. */
-function addPoints(tx: Tx, playerId: PlayerId, city: string, points: number): void {
+function addPoints(tx: Tx, playerId: PlayerId, city: string, raw: number): void {
+  // An Atout may weigh a merchant's points more, or less (R3).
+  const bps = specialtyEffects(tx.ctx, tx.s as WorldState, playerId).signoriaBps;
+  const points = Math.floor((raw * Math.max(0, 10_000 + bps)) / 10_000);
   if (points <= 0) return;
   const signoria = signoriaOf(tx);
   const before = signoriaStandings(tx.s as WorldState, city)[0];

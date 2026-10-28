@@ -48,11 +48,11 @@ export function collect(tx: Tx, building: Building): void {
   const done = Math.min(job.batches, Math.floor((tx.now - job.startedAt) / batchMs));
   if (done <= 0) return;
 
-  // Mastery: a master of the workshop makes more of what they transform.
+  // Mastery: a master of the workshop makes more of what they transform; an Atout may add to
+  // (or take from) the raw goods (R3).
+  const effects = specialtyEffects(tx.ctx, tx.s as WorldState, building.playerId);
   const transform =
-    Object.keys(recipe.inputs).length > 0
-      ? specialtyEffects(tx.ctx, tx.s as WorldState, building.playerId).transformYieldBps
-      : 0;
+    Object.keys(recipe.inputs).length > 0 ? effects.transformYieldBps : effects.rawYieldBps;
   for (const [resource, perBatch] of Object.entries(recipe.outputs)) {
     let total = 0;
     for (let k = 0; k < done; k++) {

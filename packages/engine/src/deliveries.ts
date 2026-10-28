@@ -1070,6 +1070,9 @@ function arrive(tx: Tx, d: Delivery): void {
     terraEmbargoCutBps(tx.ctx, state, d.playerId, city),
   );
   if (cut > 0) amount -= applyBpsFloor(amount, cut);
+  // An Atout may make the cities pay more, or less (R3).
+  const pay = specialtyEffects(tx.ctx, state, d.playerId).cityPayBps;
+  if (pay !== 0) amount = amount + (amount * BigInt(Math.max(-10_000, pay))) / 10_000n;
   transfer(tx, SOURCE_ACCOUNT, cashAccount(d.playerId), amount, "delivery", d.id);
   d.paid = amount;
   // The fattore's commission, destroyed.

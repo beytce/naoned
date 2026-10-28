@@ -30,8 +30,8 @@
 | R12 | Le grand ménage (part de la vague 1 : fournisseurs officiels, embargo) | 1 | fait | `acfc181` |
 | R6 | Le Lustre (échelle de rang, fantômes) | 2 | fait | `ef52658`… |
 | R11 | La Sera (20 h, incanto des galères) | 2 | fait | `572ffc3`… |
-| R3 | Les Atouts | 3 | à faire | — |
-| R10 | La Lettre du jour | 3 | à faire | — |
+| R3 | Les Atouts | 3 | en cours (moteur, PNJ, simulateur faits) | branche `claude/rupture-v3` |
+| R10 | La Lettre du jour | 3 | à faire | branche `claude/rupture-v3` |
 | R4 | La Dynastie | 4 | à faire | — |
 | R5 | Le Grand Canal | 4 | à faire | — |
 | R7 | Le Doge | 4 | à faire | — |
@@ -45,7 +45,8 @@
 - **Vague 2 en cours** (plan validé le 28 octobre, détail plus bas, « Vague 2 : le plan validé »). Ordre : Lustre moteur → Lustre serveur → Lustre écrans → incanto moteur (+ bataille à la minute) → incanto PNJ, simulateur, ménage → Sera serveur et écrans → calibration et docs.
 - **Calibration faite** : deux essais (0,1 et 0,2 pain par troupe), 5 graines conformes chacun ; 0,1 retenu (`docs/calibration.md`, « Vague 1 »). Restent sous leur cible : la croissance du mois (1,12 à 1,18 pour 1,20) et le pain en fin de mois (56 à 60 % pour 65 %).
 - **Vague 2 terminée** (28 octobre 2026) : calibration faite, incanto à 30 % de chaque arrivée, PNJ qui enchérissent avec 1,5 fois leur maximum en caisse (`docs/calibration.md`, « Vague 2 »). Restent sous leur cible, comme après la vague 1 : la croissance du mois (1,16 à 1,20 pour 1,20) et le pain (55 à 59 % pour 65 %), à mesurer avec de vrais joueurs.
-- **Étape suivante exacte** : passer la vague 3 (R3 les Atouts, R10 la Lettre du jour, écrite par Claude) en mode plan, sur le cadre de la vague 3 plus bas.
+- **Vague 3 en cours** (plan validé le 28 octobre ; branche `claude/rupture-v3`, partie de `claude/rupture` ; PR #51 des vagues 1 et 2 ouverte vers la branche par défaut, à fusionner quand la CI passe).
+- **Étape suivante exacte** : le serveur des Atouts (table `account_atouts`, `recordAtoutUnlocks` sur `podesta_named`, `incanto_won`, `terra_result` Signore et le rang Mercante du Lustre, `atoutPool` au `join` comme `patentsFor`, vue de l'offre et des Atouts tenus).
 - **À savoir** :
   - La Signoria compte les livraisons parties entre 8 h et 22 h (Paris) ; le Podestà est nommé par `closeSignoriaDays` dans le tick, au changement de jour (minuit).
   - L'e2e de mise en page passe sur chaque format lancé seul (`SIZES=390x844`, `SIZES=320x568`) ; lancé sur les deux formats d'affilée, le second a échoué deux fois dans le guide, à une étape différente chaque fois (une charrette sur Venise, l'achat de briques), puis la machine a été redémarrée : à surveiller. Chromium : `CHROMIUM=/opt/pw-browsers/chromium`.
@@ -111,6 +112,14 @@ But : une ville se prend en y livrant ou en la tenant sur la Terraferme, sur la 
 - Moteur : `packages/engine/src/incanto.ts` (état `state.incanto`, commande `incantoBid`, ouverture et clôture par le tick), tests `test/incanto.test.ts` ; PNJ qui enchérissent ; rapport du simulateur.
 - Serveur et écrans : l'incanto dans la vue ; avis `sera` à 19 h 55 et « enchère dépassée » ; bandeau « La Sera · 20 h » de 19 h 30 à 20 h 30, feuille « La Sera » (3 lots, prix, décompte, maximum, « Enchérir » en or, résultats du jour : Podestà changés, écart de la Sfida).
 
+## Vague 3 : le plan validé (28 octobre 2026)
+
+**Les Atouts (R3).** Chaque lundi, 3 Atouts tirés de la réserve du joueur (`atoutOffer`, secret du monde, mêmes toute la semaine, sans ceux déjà pris) ; il en prend 1 pour la saison (`chooseAtout`). Chacun donne et retire (effets signés, `settings.atouts.catalog`), additionnés à la maîtrise dans `specialtyEffects` (bornés à l'usage : au moins 1 véhicule, 1 offre, quota jamais négatif). Effets nouveaux : `rawYieldBps` (production brute), `cityPayBps` (paiement à l'arrivée), `signoriaBps` (points de Signoria). Réserve : 12 de départ, 4 débloqués au compte par un exploit (Podestà → `amico_podesta`, lot gagné à l'incanto → `armatore`, Signore → `condottiere`, rang Mercante → `procuratore`), passés au monde par `join.atoutPool` et `unlockAtout`. Les maîtrises restent pour cette vague (les fondre : plus tard).
+- Fait : moteur (`atouts.ts`), tests `test/atouts.test.ts`, catalogue de Venise, PNJ (l'Atout de l'offre qui va à leur profil), rapport du simulateur (« Atouts : le plus pris »).
+- À faire : serveur (table `account_atouts`, déblocages, vue), écran (moment du lundi : 3 cartes, « Prendre » en or ; Atouts au profil), avis à la gazette du lundi.
+
+**La Lettre du jour (R10).** Une lettre par jour de la saison, d'un personnage récurrent, deux choix, des drapeaux et des suites différées ; 31 lettres, écrites par Claude (FR et EN) ; gains petits et plafonnés (`letters.maxDucatsPerSeason`). Script mécanique dans `themes/venice1450.letters.ts` (inclus dans `settings.letters`), textes dans `i18n.ts` / `i18n.en.ts` sous `game.letters`. Moteur `letters.ts` (`letterOf`, `answerLetter`, `settleLetters` dans le tick), état `state.letters[player]`. Le coffre, les tâches et les ballots restent.
+
 ## Les vagues suivantes (cadre fixé, à détailler en mode plan au moment venu)
 
 - **Vague 2 : R6 le Lustre, R11 la Sera.** Comptes : `accounts.lustre` ; tables `sfide` (semaine, monde, a, b ou fantôme, mesure, résultat) et `week_curves` (courbe horaire des ventes nettes, pour rejouer les fantômes). La Sera, de 20 h à 20 h 30 : l'incanto des galères de la Muda (enchères de 3 minutes à prolongation) remplace le prix croissant de `muda.ts` et les appels d'offres (`tenders.ts`, retirés) ; l'heure de bataille passe à 30 minutes.
@@ -131,3 +140,4 @@ But : une ville se prend en y livrant ou en la tenant sur la Terraferme, sur la 
 - 28 octobre 2026 : incanto chez les PNJ (un maximum à 80–110 % de la référence selon le profil, sur le lot le moins cher, avec des ducats en réserve), au rapport du simulateur (« Incanto : lots vendus… », `incanto` parmi les puits) ; ménage à Venise : `incanto` allumé, appels d'offres retirés (test serveur remplacé), `muda.priceRiseBps` à 0, bataille de 20 h à 20 h 30.
 - 28 octobre 2026 : la Sera sur le serveur et à l'écran — `view.sera` (lots, prix, minimum, maximum du marchand, tête), action `incantoBid` acceptée par `routes.ts`, avis `sera` (19 h 55, enchère dépassée) et cloche, rond « La Sera » dans le HUD tant que des lots sont ouverts, feuille `Sera.tsx` (lots par leurs marques, prix, statut, quatre maximums, un seul bouton or « Enchérir », vos villes de Podestà) ; étape e2e « sera » sur une réponse réécrite (aucun lot à l'ouverture d'un monde) ; test serveur « takes a maximum at the incanto ».
 - 28 octobre 2026 : calibration de la vague 2 (incanto à 50 % : 3 à 5 lots vendus sur 30 ; à 30 % avec des PNJ moins frileux : 30 sur 30, retenu) ; vague 2 terminée.
+- 28 octobre 2026 : vague 3 planifiée ; moteur des Atouts (`atouts.ts`, effets additionnés dans `specialtyEffects`, `rawYieldBps`, `cityPayBps`, `signoriaBps`), catalogue de Venise (16 Atouts), PNJ et rapport du simulateur.

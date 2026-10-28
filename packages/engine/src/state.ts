@@ -47,6 +47,12 @@ export interface Player {
   specialty?: string;
   /** Privileges the house holds, kept from season to season by the server (see `house.ts`). */
   patents?: string[];
+  /** The Atouts taken this season, in order (R3, `atouts.ts`). */
+  atouts?: string[];
+  /** The last week an Atout was taken. */
+  atoutWeek?: number;
+  /** The Atouts the account unlocked, kept from season to season by the server. */
+  atoutPool?: string[];
   /** A house run by the computer, marked by the server: it never takes the Terraferma's tiers. */
   npc?: true;
 }

@@ -1,5 +1,6 @@
 import { type Draft, enableMapSet, produce } from "immer";
 import { claimDaily, rerollDaily, sellToCriee, trackDaily } from "./activity.js";
+import { chooseAtout, unlockAtout } from "./atouts.js";
 import { grantStartingBales, openBale } from "./bales.js";
 import { build, choosePath, grantBuilding, upgrade } from "./buildings.js";
 import {
@@ -93,11 +94,17 @@ export type Command =
       region: string;
       /** Privileges the house holds (kept by the server from season to season). */
       patents?: string[];
+      /** The Atouts the account unlocked (kept by the server, R3). */
+      atoutPool?: string[];
       /** A house run by the computer (server only: never read from a merchant's request). */
       npc?: boolean;
     }
   /** From the server: a house run by the computer that joined before houses were marked. */
   | { type: "markNpc"; playerId: PlayerId }
+  /** The Atout of the week (R3). */
+  | { type: "chooseAtout"; playerId: PlayerId; code: string }
+  /** From the server: an Atout the account unlocked joins the merchant's pool. */
+  | { type: "unlockAtout"; playerId: PlayerId; code: string }
   /**
    * From the server: a Condotta won by these merchants at a level (E2-5). Its event counts towards
    * the house's missions; nothing else (no ducats, no goods, no Glory).
@@ -202,7 +209,14 @@ function ownBuilding(tx: Tx, playerId: PlayerId, buildingId: string): Draft<Buil
   return building;
 }
 
-function join(tx: Tx, playerId: PlayerId, region: string, patents?: string[], npc?: boolean): void {
+function join(
+  tx: Tx,
+  playerId: PlayerId,
+  region: string,
+  patents?: string[],
+  npc?: boolean,
+  atoutPool?: string[],
+): void {
   const { ctx } = tx;
   if (tx.s.players[playerId]) fail("player_exists");
   if (!findRegion(ctx.theme, region)) fail("unknown_region");
@@ -214,6 +228,7 @@ function join(tx: Tx, playerId: PlayerId, region: string, patents?: string[], np
     joinedAt: tx.now,
     lastActionAt: tx.now,
     ...(patents && patents.length > 0 ? { patents: [...patents] } : {}),
+    ...(atoutPool && atoutPool.length > 0 ? { atoutPool: [...atoutPool] } : {}),
     ...(npc ? { npc: true as const } : {}),
   };
   tx.s.accounts[cashAccount(playerId)] = 0n;
@@ -313,7 +328,7 @@ function apply(tx: Tx, cmd: Command): void {
     return;
   }
   if (cmd.type === "join") {
-    join(tx, cmd.playerId, cmd.region, cmd.patents, cmd.npc);
+    join(tx, cmd.playerId, cmd.region, cmd.patents, cmd.npc, cmd.atoutPool);
     // A newcomer finds the day's board of the world at once.
     ensureBoard(tx);
     return;
@@ -463,6 +478,12 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "warehouseBid":
       bidWarehouse(tx, cmd.playerId, cmd.city, cmd.amount);
+      break;
+    case "chooseAtout":
+      chooseAtout(tx, cmd.playerId, cmd.code);
+      break;
+    case "unlockAtout":
+      unlockAtout(tx, cmd.playerId, cmd.code);
       break;
     case "incantoBid":
       bidIncanto(tx, cmd.playerId, cmd.lotId, cmd.max);
