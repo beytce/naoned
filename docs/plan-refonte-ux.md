@@ -17,8 +17,8 @@
 
 | Lot | Contenu | État | Commit |
 | --- | --- | --- | --- |
-| 0 | Audit, audit de l'expert, maquettes, ce plan | fait | `83af1e2`…(ce commit) |
-| 1 | Socle : barre à 5 onglets, jetons, `prefers-reduced-motion`, 44 px | à faire | |
+| 0 | Audit, audit de l'expert, maquettes, ce plan | fait (PR #55) | `83af1e2`…`d48bbce` |
+| 1 | Socle : barre à 5 onglets, jetons, `prefers-reduced-motion`, 44 px | fait | `2c1c506`, `64b3918`, `aebfd83` |
 | 2 | Lexique (i18n `fr` puis `en`) | à faire | |
 | 3 | La carte et la fiche d'un lieu | à faire | |
 | 4 | Ateliers, production, bâtir, magasin | à faire | |
@@ -28,7 +28,17 @@
 | 8 | Ville, Conquête | à faire | |
 | 9 | Moments : messages, tâches du jour, calendrier, lettre, Atout, bon retour, fin du mois, entrée | à faire | |
 
-**Étape suivante :** le lot 1. Il commence, comme les autres, par un passage en mode plan (CLAUDE.md), appuyé sur la section du lot ci-dessous et sur les maquettes qu'elle cite.
+**Étape suivante :** le lot 2 (lexique). Il commence, comme les autres, par un passage en mode plan (CLAUDE.md), appuyé sur la section du lot ci-dessous et sur les maquettes qu'elle cite.
+
+**Ce que le lot 1 a posé (à réutiliser) :**
+- **`--edge`** (`index.css`, `tailwind` : `edge`) : le contour de ce qui se touche, à 3:1 dans les quatre palettes (test dans `test/theme.test.ts`). `line` reste pour les filets. Les composants communs de `ui.tsx` l'ont déjà ; chaque lot passe ses écrans à `ring-edge` / `border-edge`.
+- **La barre** : `game/map/TabBar.tsx` (`TabBar`, `activeTab`) et `TABS` / `tabLabel` dans `game/map/actions.ts`. Les textes sont dans `fr.game.map.nav`.
+  - La hauteur de la barre est `--tabbar` (`index.css`) : tout ce qui se pose au pied de la carte se cale sur `calc(var(--tabbar) + …)`.
+  - L'Aide est un rond « ? » près de la cloche.
+  - Les cibles du guide sont `tab-map`, `tab-workshops` et `tab-layer`.
+- **`Sheet docked`** (`ui.tsx`) : la feuille d'un onglet s'arrête au-dessus de la barre. Elle sert aux ateliers, au classement et au duel ; la future Venise (lot 5) la prendra aussi.
+- **Provisoire** : l'onglet Venise mène à la ville `venezia` sur la carte, jusqu'à son écran au lot 5 ; il ne s'allume en or qu'à ce moment-là (`activeTab`).
+- **La couleur « vous »** (`info`) habille les lignes, les courbes et les territoires du joueur, **pas son blason** : les blasons restent ceux que les joueurs ont choisis.
 
 ## Façon de travailler
 
