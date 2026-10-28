@@ -4,7 +4,9 @@ import { fr } from "../i18n.js";
 import { locale } from "../lang.js";
 import { CloseButton, Slab, useOverlay } from "../ui.js";
 import { BankSection } from "./Bank.js";
+import { decreeText } from "./Doge.js";
 import type { GameProps } from "./Game.js";
+import { merchantLabel } from "./Name.js";
 import { ACTION_ICONS } from "./map/actions.js";
 import { useWide } from "./useWide.js";
 
@@ -178,6 +180,13 @@ export function Help(props: GameProps & { onClose: () => void }) {
           <h2 className="font-place text-sm font-bold uppercase tracking-[0.15em] text-info">
             {fr.game.seasonNotes.title}
           </h2>
+          {/* The Doge of the month and the decree of the Republic it rules with (R7). */}
+          {props.catalog.previousDoge?.decree && (
+            <p className="text-sm text-gold">
+              {fr.game.doge.ruling(merchantLabel(props.catalog.previousDoge.pseudo, false))} ·{" "}
+              {decreeText(props.catalog.previousDoge.decree, null, props.names)}
+            </p>
+          )}
           {/* The month's mutator first, and from the 24th the next one's (E2-9). */}
           {props.catalog.mutator?.current && (
             <p className="text-sm text-gold">

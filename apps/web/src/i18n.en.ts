@@ -2629,6 +2629,48 @@ export const en: Dictionary = {
         leader: (name: string) => `Leader: ${name}`,
       },
     },
+    doge: {
+      kicker: "The Senate",
+      title: "The election of the Doge",
+      summary:
+        "The first ten Houses seek next month's crown. Each announces its programme: the season it chooses and a decree of the Republic.",
+      closesIn: (time: string) => `Closes in ${time}`,
+      line: "The election of the Doge is open: read the programmes and vote.",
+      lineVoted: "Your voice is given; you may change your mind until the close.",
+      noProgramme: "No programme yet",
+      votes: (n: number) => `${n} voice${n === 1 ? "" : "s"}`,
+      vote: (name: string) => `Vote for ${name}`,
+      voted: (name: string) => `Your voice goes to ${name}`,
+      weight: (n: number) =>
+        `Your voice weighs ${n}: one, and one more for each city where you are Podestà.`,
+      boost: "Influence for more weight",
+      boostLabel: (n: number, cost: number) => (n === 0 ? "None" : `+${n} · ${cost} ✦`),
+      stand: "Your programme",
+      standHelp: "Choose the season and the decree you will impose if the Senate elects you.",
+      season: "The season",
+      decree: "The decree of the Republic",
+      target: "For",
+      announce: "Announce my programme",
+      announced: "Programme announced: you may change it until the close.",
+      ruling: (name: string) => `Doge of the month: ${name}`,
+      decreeNames: {
+        faveur: "Favour of a city",
+        franchigia: "Franchise of the Rialto",
+        levante: "Charter of the Levant",
+        calmiere: "Calmiere",
+      } as Record<string, string>,
+      decrees: {
+        faveur: (target: string, pct: number) =>
+          `Favour of ${target}: deliveries to ${target} paid ${pct} % more, for everyone.`,
+        franchigia: (_t: string, pts: number) =>
+          `Franchise of the Rialto: the market tax lighter by ${pts} point${pts > 1 ? "s" : ""}, for everyone.`,
+        levante: (_t: string, pct: number) =>
+          `Charter of the Levant: ${pct} % more on the Dogana's quota, for everyone.`,
+        calmiere: (target: string, pct: number) =>
+          `Calmiere: no offer of ${target} above ${pct} % of its reference.`,
+      } as Record<string, (target: string, n: number) => string>,
+      help: "In the month's last week, the Senate elects next month's Doge among the first ten Houses (the outgoing Doge may not stand again). Every merchant here for three days votes; a voice weighs one, plus one for each city where they are Podestà, plus up to three bought with Influence. The Doge elected chooses next month's season and a decree of the Republic that holds for everyone, all month; their portrait greets everyone at sign-in.",
+    },
     dynasty: {
       member: (given: string, house: string, year: number) => `${given} ${house}, ${year}`,
       nameKicker: "Your House this month",

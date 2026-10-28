@@ -17,6 +17,7 @@ import {
   citiesHeldBy,
   costForLevel,
   dayIndex,
+  electionOpen,
   escrowAccount,
   fastBatchNext,
   freeBatches,
@@ -843,6 +844,15 @@ export function playerView(
                 !a.starter && !(state.players[playerId]?.atoutPool ?? []).includes(code),
             )
             .map(([code, a]) => ({ code, unlock: a.unlock ?? null })),
+        }
+      : null,
+    // The Doge's election (R7): whether it runs, the merchant a candidate, its voice given.
+    election: ctx.settings.doge
+      ? {
+          open: electionOpen(ctx, now),
+          candidate: state.election?.candidates.includes(playerId) ?? false,
+          stood: !!state.election?.programmes[playerId],
+          voted: !!state.election?.votes[playerId],
         }
       : null,
     // The Dynastie (R4): the heir's trait, and what it still gives for free.

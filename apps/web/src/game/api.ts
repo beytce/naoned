@@ -10,6 +10,7 @@ import type {
   CrestData,
   DashboardView,
   DynastyView,
+  ElectionView,
   FamilyMessage,
   GameResponse,
   HouseView,
@@ -95,6 +96,10 @@ export const gameApi = {
   reset: () => call<GameResponse>("POST", "/api/game/reset", {}),
   join: (region: string, given?: string) =>
     call<GameResponse>("POST", "/api/game/join", { region, ...(given ? { given } : {}) }),
+  /** The Doge's election (R7): candidates, programmes, voices. */
+  election: () => call<ElectionView | null>("GET", "/api/game/election"),
+  vote: (candidate: string, boost: number) =>
+    call<ElectionView>("POST", "/api/game/election/vote", { candidate, boost }),
   /** The Dynastie (R4): the house's line, the heir to name, the names offered. */
   dynasty: () => call<DynastyView | null>("GET", "/api/game/dynasty"),
   heir: (trait: string) => call<DynastyView | null>("POST", "/api/game/heir", { trait }),

@@ -45,7 +45,14 @@ export interface Catalog {
     registrationClosesDay: number;
   };
   /** The Doge of the season before, honoured on the Dogana's façade. */
-  previousDoge?: { pseudo: string | null; crest: CrestData | null; season: string } | null;
+  /** The Doge of the month (R7: elected, with its programme), else last month's first. */
+  previousDoge?: {
+    pseudo: string | null;
+    crest: CrestData | null;
+    season: string;
+    decree?: { code: string; target?: string };
+    mutator?: string | null;
+  } | null;
   /** The month's mutator, and the next month's from the 24th (E2-9): codes, null when none. */
   mutator?: { current: string | null; next: string | null };
   /** The trade fewest people chose this month, when the gap is clear (E3-5), or none. */
@@ -541,6 +548,8 @@ export interface PlayerView {
     effects: Record<string, Record<string, number>>;
     locked: { code: string; unlock: string | null }[];
   } | null;
+  /** The Doge's election (R7): running, the merchant a candidate, its programme, its voice. */
+  election?: { open: boolean; candidate: boolean; stood: boolean; voted: boolean } | null;
   /** The Dynastie (R4): the heir's trait, and what it still gives for free (null: off). */
   dynasty?: {
     trait: string | null;
@@ -1047,6 +1056,7 @@ export type Action =
   | { type: "incantoBid"; lotId: string; max: string }
   | { type: "chooseAtout"; code: string }
   | { type: "answerLetter"; choice: string }
+  | { type: "standForDoge"; mutator: string | null; decree: { code: string; target?: string } }
   | { type: "buildFondaco"; city: string }
   | { type: "choosePath"; buildingId: string; path: "volume" | "quality" }
   | {
@@ -1645,4 +1655,39 @@ export interface DynastyView {
   current: Generation | null;
   heir: { earned: string[]; chosen: string | null } | null;
   names: string[];
+}
+
+/** A decree of the Republic in a Doge's programme (R7). */
+export interface DogeDecree {
+  code: string;
+  target?: string;
+}
+
+/** The Doge's election (R7), for the Senate's sheet. */
+export interface ElectionView {
+  open: boolean;
+  opensAt: number;
+  closesAt: number;
+  candidates: {
+    id: string;
+    rank: number;
+    pseudo: string | null;
+    crest: CrestData | null;
+    programme: { mutator: string | null; decree: DogeDecree } | null;
+    votes: number;
+  }[];
+  candidate: boolean;
+  mine: { candidate: string; weight: number; boost: number } | null;
+  weight: number;
+  maxBoost: number;
+  influencePerVoice: number;
+  mutators: string[];
+  decrees: string[];
+  effects: {
+    faveur: { premiumBps: number };
+    franchigia: { taxCutBps: number };
+    levante: { quotaBps: number };
+    calmiere: { capBps: number };
+  };
+  ruling: { decree: DogeDecree; mutator: string | null } | null;
 }

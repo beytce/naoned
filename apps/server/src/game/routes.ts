@@ -1463,7 +1463,13 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
   const rulingDoge = async () => {
     const doge = await dogeOf(db, seasonMonthKey(world.ctx.endAt ?? world.now()));
     if (!doge) return previousDoge(db, world.id);
-    return { pseudo: doge.pseudo, crest: doge.crest, season: world.name };
+    return {
+      pseudo: doge.pseudo,
+      crest: doge.crest,
+      season: world.name,
+      decree: doge.decree,
+      mutator: doge.mutator,
+    };
   };
 
   /** The Doge's election (R7): candidates, programmes, voices, the merchant's own. */

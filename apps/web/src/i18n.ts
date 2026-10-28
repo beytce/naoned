@@ -2709,6 +2709,49 @@ const frDict = {
       },
     },
     /** The rival of the week, under the rank on the map. */
+    /** The Doge (R7): the Senate, its candidates, programmes and voices. */
+    doge: {
+      kicker: "Le Sénat",
+      title: "L'élection du Doge",
+      summary:
+        "Les dix premières Maisons briguent la couronne du mois prochain. Chacune annonce son programme : la saison qu'elle choisit et un décret de la République.",
+      closesIn: (time: string) => `Clôture dans ${time}`,
+      line: "L'élection du Doge est ouverte : lisez les programmes et votez.",
+      lineVoted: "Votre voix est donnée ; vous pouvez changer d'avis jusqu'à la clôture.",
+      noProgramme: "Pas encore de programme",
+      votes: (n: number) => `${n} voix`,
+      vote: (name: string) => `Voter pour ${name}`,
+      voted: (name: string) => `Votre voix va à ${name}`,
+      weight: (n: number) =>
+        `Votre voix pèse ${n} : une, et une de plus par ville dont vous êtes Podestà.`,
+      boost: "De l'Influence pour plus de poids",
+      boostLabel: (n: number, cost: number) => (n === 0 ? "Aucune" : `+${n} · ${cost} ✦`),
+      stand: "Votre programme",
+      standHelp: "Choisissez la saison et le décret que vous imposerez si le Sénat vous élit.",
+      season: "La saison",
+      decree: "Le décret de la République",
+      target: "Pour",
+      announce: "Annoncer mon programme",
+      announced: "Programme annoncé : vous pouvez le changer jusqu'à la clôture.",
+      ruling: (name: string) => `Doge du mois : ${name}`,
+      decreeNames: {
+        faveur: "Faveur d'une ville",
+        franchigia: "Franchise du Rialto",
+        levante: "Charte du Levant",
+        calmiere: "Calmiere",
+      } as Record<string, string>,
+      decrees: {
+        faveur: (target: string, pct: number) =>
+          `Faveur de ${target} : les livraisons à ${target} payées ${pct} % de plus, pour tous.`,
+        franchigia: (_t: string, pts: number) =>
+          `Franchise du Rialto : la taxe du marché allégée de ${pts} point${pts > 1 ? "s" : ""}, pour tous.`,
+        levante: (_t: string, pct: number) =>
+          `Charte du Levant : ${pct} % de plus au quota de la Dogana, pour tous.`,
+        calmiere: (target: string, pct: number) =>
+          `Calmiere : aucune offre de ${target} au-delà de ${pct} % de sa référence.`,
+      } as Record<string, (target: string, n: number) => string>,
+      help: "La dernière semaine du mois, le Sénat élit le Doge du mois suivant parmi les dix premières Maisons (le Doge sortant ne peut pas se représenter). Chaque marchand arrivé depuis trois jours vote ; sa voix pèse une, plus une par ville dont il est Podestà, plus jusqu'à trois achetées en Influence. Le Doge élu choisit la saison du mois suivant et un décret de la République qui vaut pour tous, tout le mois ; son portrait accueille chacun à la connexion.",
+    },
     /** The Dynastie (R4): the house's line, a member a month, an heir and its trait. */
     dynasty: {
       member: (given: string, house: string, year: number) => `${given} ${house}, ${year}`,
