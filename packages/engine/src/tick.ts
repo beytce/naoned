@@ -4,6 +4,7 @@ import { ensureBoard, pruneRoad, resolveDeliveries } from "./deliveries.js";
 import { dissolveLegacyGuilds } from "./families.js";
 import { runFattore } from "./fattore.js";
 import { closeIncantoLots } from "./incanto.js";
+import { settleLetters } from "./letters.js";
 import { collectLoans } from "./loans.js";
 import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
@@ -80,5 +81,7 @@ export function tick(tx: Tx): void {
   // The galleys of the Muda, before the Dogana quotes their lot; the incanto's lots of the Sera.
   arriveMuda(tx);
   closeIncantoLots(tx);
+  // The Letter's consequences come days after the answer.
+  settleLetters(tx);
   requoteMarketMaker(tx);
 }

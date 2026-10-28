@@ -356,6 +356,19 @@ export interface WorldState {
       graceDays?: number[];
     }
   >;
+  /**
+   * The Letter of the day (R10, `letters.ts`), per merchant: its flags, the choice of each day
+   * answered, the consequences still to come and the ducats given this season.
+   */
+  letters?: Record<
+    PlayerId,
+    {
+      flags: string[];
+      answered: Record<number, string>;
+      pending: { episode: string; choice: string; at: number }[];
+      minted: Deniers;
+    }
+  >;
   /** Faraj's bales, per player (absent: none opened yet, see `bales.ts`). */
   bales?: Record<PlayerId, BaleState>;
   /** Net sales of the season, per merchant: the ranking (see `turnover.ts`). */

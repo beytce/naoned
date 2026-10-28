@@ -33,6 +33,7 @@ import {
   trackHouseMissions,
 } from "./house.js";
 import { bidIncanto } from "./incanto.js";
+import { answerLetter } from "./letters.js";
 import { borrow, repayLoan } from "./loans.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { claimMission, trackMissions } from "./missions.js";
@@ -105,6 +106,8 @@ export type Command =
   | { type: "chooseAtout"; playerId: PlayerId; code: string }
   /** From the server: an Atout the account unlocked joins the merchant's pool. */
   | { type: "unlockAtout"; playerId: PlayerId; code: string }
+  /** The answer to the Letter of the day (R10). */
+  | { type: "answerLetter"; playerId: PlayerId; choice: string }
   /**
    * From the server: a Condotta won by these merchants at a level (E2-5). Its event counts towards
    * the house's missions; nothing else (no ducats, no goods, no Glory).
@@ -484,6 +487,9 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "unlockAtout":
       unlockAtout(tx, cmd.playerId, cmd.code);
+      break;
+    case "answerLetter":
+      answerLetter(tx, cmd.playerId, cmd.choice);
       break;
     case "incantoBid":
       bidIncanto(tx, cmd.playerId, cmd.lotId, cmd.max);
