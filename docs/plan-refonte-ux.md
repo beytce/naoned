@@ -18,7 +18,7 @@
 | Lot | Contenu | État | Commit |
 | --- | --- | --- | --- |
 | 0 | Audit, audit de l'expert, maquettes, ce plan | fait (PR #55) | `83af1e2`…`d48bbce` |
-| 1 | Socle : barre à 5 onglets, jetons, `prefers-reduced-motion`, 44 px | fait | `2c1c506`, `64b3918`, `aebfd83` |
+| 1 | Socle : barre à 5 onglets, jetons, `prefers-reduced-motion`, 44 px | fait (PR lot 1) | `2c1c506`…(fin de branche `claude/refonte-ux-lot1`) |
 | 2 | Lexique (i18n `fr` puis `en`) | à faire | |
 | 3 | La carte et la fiche d'un lieu | à faire | |
 | 4 | Ateliers, production, bâtir, magasin | à faire | |
@@ -34,7 +34,8 @@
 - **`--edge`** (`index.css`, `tailwind` : `edge`) : le contour de ce qui se touche, à 3:1 dans les quatre palettes (test dans `test/theme.test.ts`). `line` reste pour les filets. Les composants communs de `ui.tsx` l'ont déjà ; chaque lot passe ses écrans à `ring-edge` / `border-edge`.
 - **La barre** : `game/map/TabBar.tsx` (`TabBar`, `activeTab`) et `TABS` / `tabLabel` dans `game/map/actions.ts`. Les textes sont dans `fr.game.map.nav`.
   - La hauteur de la barre est `--tabbar` (`index.css`) : tout ce qui se pose au pied de la carte se cale sur `calc(var(--tabbar) + …)`.
-  - L'Aide est un rond « ? » près de la cloche.
+  - L'Aide s'ouvre du profil (« Comment jouer », hors des réglages pliés) ; sur la Terraferme, un rond « ? » près de la cloche ouvre son guide. Les ronds du commerce (ballots, Rialto, Sera) ne s'affichent que sur la carte du commerce.
+  - Les vues en orbite (comptoir, ville) et le panneau d'un lieu s'arrêtent au-dessus de la barre ; la bulle de Lorenzo reste au pied de l'écran, sur la barre, le temps d'une étape.
   - Les cibles du guide sont `tab-map`, `tab-workshops` et `tab-layer`.
 - **`Sheet docked`** (`ui.tsx`) : la feuille d'un onglet s'arrête au-dessus de la barre. Elle sert aux ateliers, au classement et au duel ; la future Venise (lot 5) la prendra aussi.
 - **Provisoire** : l'onglet Venise mène à la ville `venezia` sur la carte, jusqu'à son écran au lot 5 ; il ne s'allume en or qu'à ce moment-là (`activeTab`).
