@@ -1519,3 +1519,26 @@ Chaque mutateur est joué toute la saison par `pnpm sim --mutator <code>`, sur 5
 - La simulation ne joue pas la Terraferme : les troupes de Milan de la Guerre de Milan n'y sont pas mesurées.
 
 Les trois restent au catalogue. Le premier tirage vaut pour décembre 2026.
+
+## Vague 1 du plan de rupture : la guerre mange, la Signoria des villes (27-28 octobre 2026, R1 et R2)
+
+Mesuré par `pnpm sim` sur 5 graines, avec R1 (`terraferma.supply`) et R2 (`signoria`) ensemble, les fournisseurs officiels et l'embargo retirés (`docs/plan-rupture.md`).
+
+### Premier essai : 0,1 pain par troupe et par jour ouvert
+
+Les 5 graines sont conformes.
+
+| Mesure | Cible | Graines 1 à 5 |
+| --- | --- | --- |
+| Monnaie payée, Lombardie / Installation | ≥ 1,20 (0,97 à 1,08 avant) | 1,17 · 1,18 · 1,12 · 1,17 · 1,16 |
+| Pain en fin de mois (% de la référence) | ≥ 65 % | 56 · 60 · 57 · 58 · 58 |
+| Masse monétaire par actif, plafond | ≤ 2,5 × | 0,91 à 0,95 × |
+| Pain mangé par les troupes, par actif et par jour | diagnostic | 5,4 à 5,8 |
+| Pain de « Max » et matériaux des bâtiments, par actif et par jour | diagnostic | pain 2,8 à 3,3 ; briques 2,4 à 2,7 |
+| Podestà nommés par ville et par semaine | ≥ 1 | 1,9 à 6,3 |
+| Marchands qui ont tenu une ville dans la saison | diagnostic | 40 à 47 |
+
+**Lecture.**
+- La croissance du mois revient : la semaine III rapporte 12 à 18 % de plus que la semaine I, contre 0 à 8 % avec les seuls fondaci. La cible de 1,20 n'est pas tout à fait atteinte.
+- Le pain reste sous 65 % en fin de mois : la Terraferme n'en mange pas encore assez pour absorber ce que les boulangers produisent.
+- La Signoria tourne vite : une ville change de Podestà de 2 à 6 fois par semaine chez les PNJ, qui livrent partout sans viser une ville. À revoir avec des humains (`/admin`) : si le titre change chaque jour, garder plus de points d'un jour à l'autre (`decayBps`).
