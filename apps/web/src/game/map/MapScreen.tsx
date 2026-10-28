@@ -87,6 +87,7 @@ import { NoticesSheet } from "./Notices.js";
 import { CityOrbit, ComptoirOrbit } from "./Orbit.js";
 import { ActionButton, ContextPanel } from "./Panel.js";
 import { SIDE_W, SideColumn } from "./SideColumn.js";
+import { TabBar, activeTab } from "./TabBar.js";
 import {
   CondottaBar,
   SkirmishBar,
@@ -633,18 +634,18 @@ export function MapScreen(
     if (hudBand > 0) document.documentElement.style.setProperty("--hud-top", `${hudBand}px`);
   }, [hudBand]);
   const insets = wide
-    ? // The doors at the foot of the screen (and the campaign's pledge above them) stay clear.
+    ? // The tabs at the foot of the screen (and the campaign's pledge above them) stay clear.
       {
         top: 110,
         right: (panelUp ? 460 : 40) + (side ? SIDE_W : 0),
-        // The Terraferma's actions above the doors, at the right, stay clear too.
+        // The Terraferma's actions above the tabs, at the right, stay clear too.
         bottom: (campaign && !campaign.mine) || (terra && !terra.me) ? 170 : terra ? 180 : 190,
         left: 40,
       }
     : {
         top: Math.max(campaign || terra ? 160 : 150, hudBand),
         right: 12,
-        // The trade keeps its strip of what comes next clear, above the doors (shown from 640 px high).
+        // The trade keeps its strip of what comes next clear, above the tabs (shown from 640 px high).
         bottom: panelUp ? 200 : terra ? 156 : campaign || window.innerHeight < 640 ? 100 : 160,
         left: 12,
       };
@@ -664,6 +665,8 @@ export function MapScreen(
       />
     );
   const trade = !campaign && !terra;
+  // The layer shown, for the HUD and the tabs.
+  const layer = campaign ? "campaign" : terra ? "terra" : "trade";
   // The counter opens up close, its workshops in orbit around its sun.
   if (trade && sel?.kind === "home")
     panel = (
@@ -860,15 +863,7 @@ export function MapScreen(
         bales={view.tutorial.includes("mission") ? (view.bales?.available ?? 0) : 0}
         guidePaused={props.guidePaused}
         bottom={!panelUp}
-        hasFamily={!!view.families || !!terraView}
-        layer={campaign ? "campaign" : terra ? "terra" : "trade"}
-        doorLabel={terraView ? fr.game.terra.door : undefined}
-        familyCalls={terraView ? terraCalls(terraView, now) : familyCalls(props)}
-        workshopsReady={ready > 0}
-        locks={{
-          ranking: open.ranking ? undefined : fr.game.unlocks.afterDelivery,
-          layer: open.terraferma ? undefined : fr.game.unlocks.afterFirstDay,
-        }}
+        layer={layer}
         right={
           campaign ? (
             <CampaignHud f={campaign} now={now} />
@@ -931,27 +926,72 @@ export function MapScreen(
         onRival={props.rival?.sfida ? () => props.setSheet("sfida") : undefined}
         onSera={view.sera ? () => props.setSheet("sera") : undefined}
         sera={openSeraLots(view)}
-        onOpenLayer={
-          terraView
-            ? () => {
-                openTerraEarly();
-                props.setLayer("terra");
-              }
-            : undefined
-        }
-        onFamily={() =>
-          campaign || terra
-            ? props.setLayer("trade")
-            : terraView
-              ? props.setLayer("terra")
-              : props.goTo("famille")
-        }
-        onWorkshops={() => {
-          if (campaign || terra) props.setLayer("trade");
-          props.setSheet("workshops");
-        }}
         // On the Terraferma, the help is its guide with its diagrams.
         onHelp={terra ? props.openTerraGuide : props.openHelp}
+      />
+      <TabBar
+        active={activeTab({ sheet: props.sheet, layer })}
+        items={[
+          {
+            id: "map",
+            coach: "tab-map",
+            onClick: () => {
+              if (layer !== "trade") props.setLayer("trade");
+              props.setSheet(null);
+              select(null);
+            },
+          },
+          {
+            id: "workshops",
+            dot: ready > 0,
+            coach: "tab-workshops",
+            onClick: () => {
+              if (layer !== "trade") props.setLayer("trade");
+              props.setSheet("workshops");
+            },
+          },
+          {
+            // Until Venice has its own screen (lot 5 of the refonte): the city on the map.
+            id: "venice",
+            dot: openSeraLots(view) > 0,
+            onClick: () => {
+              if (layer !== "trade") props.setLayer("trade");
+              props.setSheet(null);
+              goCity("venezia");
+            },
+          },
+          {
+            id: "ranking",
+            locked: open.ranking ? undefined : fr.game.unlocks.afterDelivery,
+            onClick: () => props.setSheet("ranking"),
+          },
+          ...(view.families || terraView
+            ? [
+                {
+                  id: "conquest" as const,
+                  coach: "tab-layer",
+                  dot:
+                    layer === "trade" &&
+                    (terraView ? terraCalls(terraView, now) : familyCalls(props)),
+                  locked:
+                    layer === "trade" && !open.terraferma
+                      ? fr.game.unlocks.afterFirstDay
+                      : undefined,
+                  onForce: terraView
+                    ? () => {
+                        openTerraEarly();
+                        props.setLayer("terra");
+                      }
+                    : undefined,
+                  onClick: () => {
+                    props.setSheet(null);
+                    if (terraView) props.setLayer("terra");
+                    else props.goTo("famille");
+                  },
+                },
+              ]
+            : []),
+        ]}
       />
       {panel}
       {terra && !skirmishOn && !condottaOn && (

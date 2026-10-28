@@ -408,7 +408,7 @@ async function session(width, height, tag) {
 
     // The Terraferma during its truce: the HUD's two columns and the week's note.
     await closeAll(page);
-    const door = page.locator("[data-coach=door-layer]");
+    const door = page.locator("[data-coach=tab-layer]");
     // Closed until the first day of trade: touched once, it says why; touched again, it opens.
     await door.click({ force: true });
     if ((await door.getAttribute("aria-disabled")) === "true") {
@@ -1664,7 +1664,7 @@ async function uncluttered(page, label, most) {
 async function workshopRows(page) {
   if ((await page.locator("[data-coach^='produce-'], [data-coach^='harvest-']").count()) === 0) {
     await closeAll(page);
-    await page.locator("[data-coach=door-workshops]").click();
+    await page.locator("[data-coach=tab-workshops]").click();
     await page.locator("[data-recipe]").first().waitFor();
     await page.waitForTimeout(500);
   }
@@ -1684,13 +1684,12 @@ async function workshopRows(page) {
   );
 }
 
-/** Every window closed and the place's panel too: back on the map, its doors at the foot. */
+/** Every window closed and the place's panel too: back on the map, its tabs at the foot. */
 async function closeAll(page) {
   for (let i = 0; i < 4; i++) {
     const open = await page.evaluate(
       () =>
-        !!document.querySelector('[aria-modal="true"]') ||
-        !document.querySelector("[data-coach=door-workshops]"),
+        !!document.querySelector('[aria-modal="true"]') || !!document.querySelector("[data-panel]"),
     );
     if (!open) return;
     await page.keyboard.press("Escape");

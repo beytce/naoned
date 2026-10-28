@@ -233,6 +233,8 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in: cubic-bezier(0.55, 0, 0.75, 0.4);
   --spring: cubic-bezier(0.34, 1.45, 0.64, 1);
+  /* The five tabs at the foot of the screen: what sits at the foot of the map stops above them. */
+  --tabbar: calc(3.5rem + max(0.25rem, env(safe-area-inset-bottom)));
 }
 
 /* Players who ask for less motion: no floating, pulsing or sliding, only instant changes. */

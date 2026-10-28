@@ -225,9 +225,9 @@ export function CampaignPanel({
   const now = props.now;
 
   if (!f.mine && !land) {
-    // No family yet: an invitation floating over the doors (they stay, to go back to the trade).
+    // No family yet: an invitation floating over the tabs (they stay, to go back to the trade).
     return (
-      <div className="pointer-events-none absolute inset-x-0 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 flex flex-col items-center gap-1 lg:bottom-28">
+      <div className="pointer-events-none absolute inset-x-0 bottom-[calc(var(--tabbar)+1rem)] z-10 flex flex-col items-center gap-1">
         <button
           type="button"
           data-coach="panel-pledge"

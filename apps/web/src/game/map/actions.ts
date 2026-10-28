@@ -26,18 +26,23 @@ export const ACTION_ICONS = {
   decree: { icon: Icon.decree, label: fr.game.terra.mine.decree },
 } as const;
 
-/** The four doors at the foot of the map, at the same places on every layer. */
-export const HUD_DOORS = [
-  { id: "workshops", label: m.workshops },
-  { id: "ranking", label: m.ranking },
-  // The Terraferma's door on the trade's map (« Commerce » back from it).
-  { id: "layer", label: fr.game.terra.door },
-  { id: "help", label: m.help },
+const n = fr.game.map.nav;
+
+/**
+ * The five tabs at the foot of the screen, the same on each of their destinations (refonte UX,
+ * 28 October 2026): the map, the workshops, Venice, the ranking and the conquest.
+ */
+export const TABS = [
+  { id: "map", label: n.map, icon: Icon.map },
+  { id: "workshops", label: n.workshops, icon: Icon.workshops },
+  { id: "venice", label: n.venice, icon: Icon.venice },
+  { id: "ranking", label: n.ranking, icon: Icon.trophy },
+  { id: "conquest", label: n.conquest, icon: Icon.family },
 ] as const;
 
-export type HudDoor = (typeof HUD_DOORS)[number]["id"];
+export type TabId = (typeof TABS)[number]["id"];
 
-/** A door's word, from the one list. */
-export function doorLabel(id: HudDoor): string {
-  return HUD_DOORS.find((d) => d.id === id)?.label ?? id;
+/** A tab's word, from the one list. */
+export function tabLabel(id: TabId): string {
+  return TABS.find((t) => t.id === id)?.label ?? id;
 }

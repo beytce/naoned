@@ -259,6 +259,15 @@ const frDict = {
         back: (time: string) => `Retour · ${time}`,
         capacity: (units: number) => `${units} u.`,
       },
+      /** The five tabs at the foot of the screen (refonte UX, 28 October 2026). */
+      nav: {
+        label: "Les lieux",
+        map: "Carte",
+        workshops: "Ateliers",
+        venice: "Venise",
+        ranking: "Classement",
+        conquest: "Conquête",
+      },
       buttons: {
         harvest: "Récolter",
         restart: "Relancer",
@@ -345,7 +354,7 @@ const frDict = {
           `${holder} · garnison ${garrison} · défense ${defense}`,
         threat: (time: string) => `Marche ennemie, arrivée dans ${time}`,
         ours: (time: string) => `Votre famille y marche · ${time}`,
-        backToTrade: "Revenez au commerce : touchez « Commerce » au pied de la carte.",
+        backToTrade: "Revenez au commerce : touchez « Carte » au pied de l'écran.",
         chooseLine: "Choisissez votre famille pour la saison",
       },
       rialto: {
