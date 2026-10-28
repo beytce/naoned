@@ -1642,3 +1642,27 @@ Sans décret, Lombardie / Installation : 1,14 · 1,18 · 1,18 · 1,15 · 1,11.
 - La faveur d'une ville fait monter la masse monétaire d'une graine (1,45 ×, graine 5), toujours loin du plafond de 2,5 × : à suivre si un Doge la choisit souvent.
 - Le calmiere du pain relève le pain en fin de mois sur une graine (76 %) : en plafonnant les offres, il empêche les ventes bradées de fin de mois. Effet voulu, mesuré.
 - Retirer le décret du Signore ne déplace ni la croissance du mois (1,11 à 1,18) ni le pain (54 à 58 %), toujours sous leur cible comme après les vagues 1 à 3.
+
+## Vague 5 du plan de rupture : le Broglio et les parts de Maison (28 octobre 2026, R8 et R9)
+
+Mesuré par `pnpm sim` sur 5 graines, avec les vagues 1 à 4. Nouveau dans l'économie : le lot de la Muda varie de 80 à 120 % (`muda.lotSpreadBps: 2000`, tiré du secret du monde), les rumeurs vendues (`rumour_sale`, d'un marchand à l'autre, hors ventes nettes), l'espion (`spy_hire`, `spy_chase` : détruits), les parts de Maison (`share_trade` d'un marchand à l'autre, `share_tax` détruite, `share_dividend` à somme nulle au classement, `share_settle` le dernier jour). Au simulateur, les PNJ spéculateurs offrent leur rumeur la plus sûre (5 ducats) et cotent leur Maison (10 à 30 parts au prix de leurs ventes nettes / 200) ; les autres achètent une rumeur sûre un jour sur quatre et 5 parts d'une Maison rentable. En monde vivant, les Maisons de l'ordinateur ne cotent ni n'achètent de parts. Les 5 graines sont conformes.
+
+| Mesure | Graines 1 à 5 |
+| --- | --- |
+| Monnaie payée par actif et par jour | 203,9 · 208,3 · 203,5 · 207,2 · 200,9 (moyenne 204,8 ; 206,1 à la vague 4) |
+| Masse monétaire par actif, plafond | 0,93 à 0,95 × |
+| Lombardie / Installation | 1,12 · 1,19 · 1,19 · 1,16 · 1,12 |
+| Pain en fin de mois | 56 · 56 · 57 · 54 · 58 % |
+| Muda : part du lot vendue | 89,4 · 92,0 · 92,5 · 82,6 · 82,9 % (cible 50 à 100 %) |
+| Broglio : rumeurs achetées par marchand et par jour | 0,44 · 0,50 · 0,43 · 0,48 · 0,42 |
+| Parts : Maisons cotées · dividendes versés | 5 · 343 d ; 5 · 395 d ; 5 · 310 d ; 5 · 250 d ; 3 · 9 d |
+| Parts dehors à la clôture · caisses négatives | 0 · 0 sur chaque graine |
+| Assidus / occasionnels, patrimoine médian | 129,6 · 114,8 · 120,6 · 131,4 · 96,7 % |
+| Assidus / occasionnels, ventes nettes médianes | 169,2 · 225,9 · 156,6 · 117,0 · 142,6 % |
+
+**Lecture.**
+- Le Broglio ne crée pas de monnaie : une rumeur passe d'une caisse à l'autre, l'espion détruit. Le flux reste faible chez les PNJ (moins d'une rumeur achetée tous les deux jours par marchand) ; c'est un jeu entre humains, à mesurer avec eux.
+- Le lot variable de la Muda ne change pas sa vente (83 à 93 %, dans la cible).
+- Les parts de Maison ne déplacent ni la monnaie payée (−0,6 % en moyenne, dans le bruit des graines) ni la masse monétaire. Les dividendes restent petits (jusqu'à 400 ducats pour toute une saison) : 30 % d'un gain de semaine, au prorata de parts surtout gardées par le fondateur. Le rachat du dernier jour est toujours payé en entier (aucune Maison à court), et le test du moteur montre qu'il ne dépasse jamais la caisse.
+- Sur la graine 5, les assidus finissent derrière les occasionnels en patrimoine médian (96,7 %) mais devant en ventes nettes (142,6 %), qui font le classement : diagnostic à suivre (l'avance des assidus varie beaucoup d'une graine à l'autre depuis la vague 1).
+- Restent sous leur cible, comme après les vagues 1 à 4 : la croissance du mois (1,12 à 1,19 pour 1,20) et le pain (54 à 58 % pour 65 %).

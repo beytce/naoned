@@ -35,8 +35,8 @@
 | R4 | La Dynastie | 4 | fait | branche `claude/rupture-v4` |
 | R5 | Le Grand Canal | 4 | fait | branche `claude/rupture-v4` |
 | R7 | Le Doge | 4 | fait | branche `claude/rupture-v4` |
-| R8 | Le Broglio | 5 | fait (calibration en fin de vague) | branche `claude/rupture-v5` |
-| R9 | Les parts de Maison | 5 | fait (calibration en fin de vague) | branche `claude/rupture-v5` |
+| R8 | Le Broglio | 5 | fait | branche `claude/rupture-v5` |
+| R9 | Les parts de Maison | 5 | fait | branche `claude/rupture-v5` |
 
 ## Où j'en suis
 
@@ -51,7 +51,8 @@
 - **Vague 4 terminée** (28 octobre 2026) : 25 saisons conformes (sans décret et avec chacun des quatre décrets du Doge), écart des ventes payées ≤ 0,4 % (`docs/calibration.md`, « Vague 4 »).
 - **Vague 4 fusionnée** dans la branche par défaut (PR #53, 28 octobre 2026).
 - **Vague 5 en cours** (plan validé le 28 octobre, détail plus bas, « Vague 5 : le plan validé » ; branche `claude/rupture-v5`, partie de la branche par défaut).
-- **Étape suivante exacte** : fin de vague 5 — `pnpm sim` sur 5 graines (déjà conformes après le moteur des parts), section « Vague 5 » de `docs/calibration.md` (rumeurs achetées, Maisons cotées, dividendes, rachat), notes de saison FR et EN (`fr.game.seasonNotes`), CADRAGE, IDEAS.md ; puis la PR vers la branche par défaut, fusionnée quand la CI est verte.
+- **Vague 5 terminée** (28 octobre 2026) : 5 graines conformes, Broglio et parts sans effet mesurable sur la monnaie payée ni la masse monétaire, toutes les parts rachetées le dernier jour, aucune caisse négative (`docs/calibration.md`, « Vague 5 ») ; notes de saison FR et EN, CADRAGE (« Les marchands entre eux »), IDEAS.md (« Plan de rupture, vague 5 »). À fusionner par une PR vers la branche par défaut quand la CI passe.
+- **Étape suivante exacte** : après la fusion de la vague 5, le plan de rupture est fait (R1 à R11 ; R12, le ménage, en partie : le reste est dans IDEAS.md, « Ménage différé de R12 »). La suite se décide avec la mesure de vrais joueurs : les cibles encore manquées (croissance du mois, pain en fin de mois, diversité des Atouts) et les diagnostics du Broglio et des parts.
 - **À savoir** :
   - La Signoria compte les livraisons parties entre 8 h et 22 h (Paris) ; le Podestà est nommé par `closeSignoriaDays` dans le tick, au changement de jour (minuit).
   - L'e2e de mise en page passe sur chaque format lancé seul (`SIZES=390x844`, `SIZES=320x568`) ; lancé sur les deux formats d'affilée, le second a échoué deux fois dans le guide, à une étape différente chaque fois (une charrette sur Venise, l'achat de briques), puis la machine a été redémarrée : à surveiller. Chromium : `CHROMIUM=/opt/pw-browsers/chromium`.

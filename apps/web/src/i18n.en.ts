@@ -3041,6 +3041,8 @@ export const en: Dictionary = {
     seasonNotes: {
       title: "New this season",
       items: [
+        "The Broglio: each morning, two rumours of what is coming (an event, the galleys' lot), from a source more or less reliable. Sell them, forge false ones for Influence (mind your Lustre if unmasked), post a spy at a rival's. The gazette no longer tells tomorrow; the galleys bring a lot that varies.",
+        "House parts: from day 8, your House may list itself at the Rialto (100 parts, you always keep 51). Holders get a share of your net sales each week; 30 parts sit on your council; everything is bought back on the month's last day.",
         "The Dynasty: each month a member of your House keeps the counter (name of your choice); at the month's end, they leave their heir a trait earned in the month (an option or a piece of information, never yield), and their portrait joins the gallery in the profile.",
         "The Doge: in the month's last week, the Senate elects next month's Doge among the first ten Houses; each announces a programme (a season and a decree of the Republic), everyone votes, a Podestà's voice weighs more. The Doge's decree holds for everyone, all month; the Terraferma Signore's decree is gone (the Signore keeps the title and the Glory).",
         "The Grand Canal: forty palaces given again each month by the ranking; a House keeps its own by staying in the forty. The Canal and the Doge of the month greet everyone at sign-in.",

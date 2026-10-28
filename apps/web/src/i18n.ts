@@ -3149,6 +3149,8 @@ const frDict = {
     seasonNotes: {
       title: "Nouveautés de la saison",
       items: [
+        "Le Broglio : chaque matin, deux rumeurs de ce qui vient (un événement, le lot des galères), d'une source plus ou moins sûre. On les vend, on en invente de fausses contre de l'Influence (gare au Lustre si l'on est démasqué), on poste un espion chez un rival. La gazette ne dit plus le lendemain ; les galères apportent un lot qui varie.",
+        "Les parts de Maison : dès le jour 8, votre Maison peut se coter au Rialto (100 parts, vous en gardez toujours 51). Les porteurs touchent chaque semaine une part de vos ventes nettes ; 30 parts siègent à votre conseil ; tout est racheté le dernier jour du mois.",
         "La Dynastie : chaque mois, un membre de votre Maison tient le comptoir (prénom au choix) ; à la fin du mois, il lègue à son héritier un trait mérité dans le mois (une option ou une information, jamais du rendement), et son portrait entre dans la galerie du profil.",
         "Le Doge : la dernière semaine du mois, le Sénat élit le Doge du mois suivant parmi les dix premières Maisons ; chacune annonce un programme (une saison et un décret de la République), chacun vote, la voix d'un Podestà pèse plus. Le décret du Doge vaut pour tous, tout le mois ; celui du Signore de la Terraferme disparaît (le Signore garde son titre et sa Gloire).",
         "Le Grand Canal : quarante palais redonnés chaque mois par le classement ; on garde le sien en restant dans les quarante. Le Canal et le Doge du mois accueillent chacun à la connexion.",
