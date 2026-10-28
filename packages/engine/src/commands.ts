@@ -11,7 +11,6 @@ import {
   hireSpy,
   offerRumour,
 } from "./broglio.js";
-import { cancelShareOrder, listHouse, placeShareOrder } from "./shares.js";
 import { build, choosePath, grantBuilding, upgrade } from "./buildings.js";
 import {
   buildWork,
@@ -60,6 +59,7 @@ import {
 } from "./partners.js";
 import { collect, startProduction } from "./production.js";
 import { deliverToProject } from "./projects.js";
+import { cancelShareOrder, listHouse, placeShareOrder } from "./shares.js";
 import { chooseSpecialty } from "./specialties.js";
 import {
   type Building,

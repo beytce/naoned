@@ -87,6 +87,7 @@ import { priceHistory, profile } from "./profile.js";
 import { activePeopleByRegion, recommendedRegion } from "./recommend.js";
 import { markCeremonySeen, palmares, pendingCeremony, previousDoge } from "./season.js";
 import { toJson } from "./serialize.js";
+import { houseSharesView, sharesView } from "./shares.js";
 import type { SkirmishHub } from "./skirmish.js";
 import { terraView } from "./terra.js";
 import { terraRecord } from "./terraRecord.js";
@@ -298,6 +299,16 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("cancelRumourOffer"), offerId: z.string().max(32) }),
   z.object({ type: z.literal("hireSpy"), target: z.string().uuid() }),
   z.object({ type: z.literal("chaseSpy") }),
+  // The parts of a house (R9).
+  z.object({ type: z.literal("listHouse") }),
+  z.object({
+    type: z.literal("placeShareOrder"),
+    house: z.string().uuid(),
+    side: z.enum(["buy", "sell"]),
+    price: z.string().regex(/^\d{1,9}$/),
+    quantity: z.number().int().min(1).max(100),
+  }),
+  z.object({ type: z.literal("cancelShareOrder"), orderId: z.string().max(32) }),
 ]);
 type Action = z.infer<typeof action>;
 
@@ -1514,6 +1525,23 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return toJson(await broglioView(db, world.ctx, world.current, account.id, world.now()));
   });
 
+  /** The parts of a house (R9): the merchant's own house, and its parts in the others'. */
+  app.get("/api/game/shares", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return toJson(await sharesView(db, world.ctx, world.current, account.id, world.now()));
+  });
+
+  /** A house's register and book (its accounts to its council only). */
+  app.get("/api/game/house/:id/shares", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+    const view = await houseSharesView(db, world.ctx, world.current, id, account.id, world.now());
+    if (!view) return reply.code(404).send({ error: "not_listed" });
+    return toJson(view);
+  });
+
   /**
    * A false rumour forged: its subject chosen from the catalogs (never a text, never a merchant),
    * its Influence taken first and given back if the world refuses it (a true subject).
@@ -2015,5 +2043,20 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "hireSpy", playerId, target: a.target }];
     case "chaseSpy":
       return [{ type: "chaseSpy", playerId }];
+    case "listHouse":
+      return [{ type: "listHouse", playerId }];
+    case "placeShareOrder":
+      return [
+        {
+          type: "placeShareOrder",
+          playerId,
+          house: a.house,
+          side: a.side,
+          price: BigInt(a.price),
+          quantity: a.quantity,
+        },
+      ];
+    case "cancelShareOrder":
+      return [{ type: "cancelShareOrder", playerId, orderId: a.orderId }];
   }
 }

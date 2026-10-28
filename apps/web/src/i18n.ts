@@ -1516,6 +1516,7 @@ const frDict = {
         quality_premium: "Qualité des manufactures",
         commission: "Commandes entre marchands",
         colleganza_share: "Parts de colleganza",
+        share_dividend: "Dividendes de parts",
         loan: "Prêts de la Banque",
         decree_share: "Part des décrets",
         signoria_toll: "Droit de porte du Podestà",
@@ -1773,6 +1774,13 @@ const frDict = {
           unmasked: "Une rumeur reçue au Rialto venait d'un menteur, démasqué.",
           caught: "Votre fausse rumeur est démasquée : vous perdez du Lustre.",
         })[event] ?? "Du nouveau au Broglio.",
+      shares: (event: string, quantity: number, amount: string): string =>
+        ({
+          bought: `${quantity} parts de votre Maison ont trouvé preneur (${amount} pièce).`,
+          council: "Un porteur siège désormais à votre conseil : il voit vos comptes.",
+          dividend: `Vos parts vous rapportent ${amount} cette semaine.`,
+          settled: `Fin du mois : vos parts vous sont rachetées ${amount}.`,
+        })[event] ?? "Du nouveau sur vos parts.",
       doge: (event: string, by: string | null, candidate: boolean) =>
         event === "opened"
           ? candidate
@@ -1841,6 +1849,7 @@ const frDict = {
           letter: "Suites de la lettre du jour",
           doge: "Élection du Doge (ouverture, élu)",
           broglio: "Le Broglio (rumeur vendue, espion, menteur démasqué)",
+          shares: "Les parts de Maison (parts vendues, conseil, dividende, rachat)",
         } as Record<string, string>,
       },
     },
@@ -2532,7 +2541,7 @@ const frDict = {
       title: "Affaires entre marchands",
       tile: (n: number) =>
         n > 0 ? `${n} affaire${n > 1 ? "s" : ""} à saisir` : "Commandes et colleganze",
-      tabs: { commissions: "Commandes", colleganze: "Colleganza", bank: "Banque" },
+      tabs: { commissions: "Commandes", colleganze: "Colleganza", bank: "Banque", parts: "Parts" },
       bank: {
         help: (share: number, pct: number, days: number, late: number) =>
           `La Banque prête jusqu'à ${share} % de votre patrimoine, ${days} jours au plus, à ${pct} % par jour. À l'échéance, elle se paie sur votre caisse ; ce qui manque est majoré de ${late} % et prélevé sur vos rentrées. Remboursé plus tôt, vous ne payez que les jours entamés.`,
@@ -2719,6 +2728,53 @@ const frDict = {
     },
     /** The rival of the week, under the rank on the map. */
     /** The Broglio (R8): rumours, their sources, their sale, false ones, the spy. */
+    shares: {
+      title: "Votre Maison au Rialto",
+      notListed:
+        "Cotez votre Maison : 100 parts, dont 49 au plus en d'autres mains. Vous en gardez toujours 51.",
+      refusal: (code: string, day: number, days: number): string =>
+        ({
+          too_early: `La cotation ouvre le jour ${day + 1} du mois.`,
+          too_new: `Il faut ${days} jours de présence pour coter sa Maison.`,
+          season_over: "Le dernier jour du mois, le carnet est fermé.",
+          already_listed: "Votre Maison est déjà cotée.",
+        })[code] ?? "La cotation n'est pas ouverte.",
+      list: "Coter ma Maison",
+      lastPrice: (price: string | null): string =>
+        price ? `Dernier cours : ${price} la part` : "Aucune part échangée encore",
+      float: (n: number, max: number) => `${n} parts en d'autres mains sur ${max} possibles`,
+      register: "Le registre",
+      shares: (n: number) => `${n} part${n > 1 ? "s" : ""}`,
+      you: "vous",
+      issue: "Émettre",
+      buyBack: "Racheter",
+      quantity: "Parts",
+      price: "Prix de la part",
+      issueGo: (n: number, price: string) => `Mettre ${n} parts en vente à ${price}`,
+      buyBackGo: (n: number, price: string) => `Racheter ${n} parts à ${price}`,
+      orders: "Vos ordres ouverts",
+      order: (side: "buy" | "sell", n: number, price: string): string =>
+        `${side === "buy" ? "Achat" : "Vente"} de ${n} parts à ${price}`,
+      cancel: "Retirer",
+      book: "Le carnet",
+      ask: (n: number, price: string) => `${n} parts à ${price}`,
+      bid: (n: number, price: string) => `On demande ${n} parts à ${price}`,
+      noAsk: "Aucune part en vente.",
+      buy: (n: number, price: string) => `Acheter ${n} parts à ${price}`,
+      sell: (n: number, price: string) => `Vendre ${n} parts à ${price}`,
+      paid: (amount: string) => `Dividendes versés ce mois : ${amount}`,
+      held: "Vos parts ailleurs",
+      heldLine: (n: number, amount: string) => `${n} parts · ${amount} de dividendes`,
+      noneHeld: "Aucune part d'une autre Maison. Ouvrez la fiche d'un marchand pour en acheter.",
+      theirs: "Ses parts",
+      notTheirs: "Cette Maison n'est pas cotée.",
+      mine: (n: number, amount: string) => `Vous en avez ${n} · ${amount} de dividendes reçus`,
+      council: "Vous siégez à son conseil",
+      accounts: (cash: string, week: string) =>
+        `Caisse ${cash} · ventes nettes de la semaine ${week}`,
+      help: (dividend: number, council: number) =>
+        `Chaque semaine, les porteurs se partagent ${dividend} % des ventes nettes gagnées par la Maison, au prorata, dans la limite de sa caisse. Qui détient ${council} parts siège au conseil et voit ses comptes. Le dernier jour du mois, la Maison rachète toutes les parts au dernier cours, dans la limite de sa caisse. Une part échangée paie la taxe du marché.`,
+    },
     broglio: {
       kicker: "Le Broglio",
       title: "Les rumeurs du Rialto",
@@ -3229,6 +3285,13 @@ const frDict = {
       no_bale: "Aucun ballot au quai pour l'instant : le prochain est en route.",
       bales_off: "Pas de ballot de Faraj dans ce monde.",
       insufficient_funds: "Pas assez de ducats.",
+      shares_off: "Pas de parts de Maison dans ce monde.",
+      too_early: "La cotation n'est pas encore ouverte.",
+      not_for_npc: "Une Maison de l'ordinateur ne se cote pas.",
+      already_listed: "Votre Maison est déjà cotée.",
+      not_listed: "Cette Maison n'est pas cotée.",
+      over_float: "Vous gardez toujours 51 parts de votre Maison.",
+      insufficient_shares: "Vous n'avez pas autant de parts libres.",
       vehicle_not_for_sale: "Seules les mules s'achètent : améliorez-les ensuite.",
       vehicle_max_level: "Ce véhicule est déjà au plus haut niveau.",
       insufficient_stock: "Pas assez de stock.",

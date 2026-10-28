@@ -25,6 +25,7 @@ const OPENS: Record<string, Place> = {
   letter: { sheet: "letter" },
   senate: { sheet: "senate" },
   broglio: { sheet: "broglio" },
+  shares: { sheet: "deals" },
 };
 
 export function placeFrom(search: string): Place | null {

@@ -223,6 +223,27 @@ export function pushTextEn(
         body: `You finish ${ordinal(Number(data.rank))} (${data.glory ? `${gain} Glory` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
       };
     }
+    case "shares": {
+      const t: Record<string, { title: string; body: string }> = {
+        bought: {
+          title: "Parts bought",
+          body: `${Number(data.quantity ?? 0)} parts of your house found a buyer at ${ducats(String(data.price ?? "0"))} ducats.`,
+        },
+        council: {
+          title: "A holder on the council",
+          body: "A holder now owns enough parts to see your accounts.",
+        },
+        dividend: {
+          title: "Dividend received",
+          body: `Your parts bring you ${ducats(String(data.amount ?? "0"))} ducats this week.`,
+        },
+        settled: {
+          title: "Parts bought back",
+          body: `End of the month: your parts are bought back for ${ducats(String(data.amount ?? "0"))} ducats.`,
+        },
+      };
+      return t[String(data.event)] ?? { title: "Your parts", body: "News about your parts." };
+    }
     case "broglio": {
       const t: Record<string, { title: string; body: string }> = {
         sold: {

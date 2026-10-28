@@ -1512,6 +1512,7 @@ export const en: Dictionary = {
         quality_premium: "Quality of the manufactures",
         commission: "Orders between merchants",
         colleganza_share: "Colleganza shares",
+        share_dividend: "Part dividends",
         loan: "Bank loans",
         decree_share: "Share of the decrees",
         signoria_toll: "The Podestà's toll",
@@ -1751,6 +1752,13 @@ export const en: Dictionary = {
           unmasked: "A rumour heard at the Rialto came from a liar, now unmasked.",
           caught: "Your false rumour is unmasked: you lose Lustre.",
         })[event] ?? "News at the Broglio.",
+      shares: (event: string, quantity: number, amount: string) =>
+        ({
+          bought: `${quantity} parts of your house found a buyer (${amount} each).`,
+          council: "A holder now sits on your council: they see your accounts.",
+          dividend: `Your parts bring you ${amount} this week.`,
+          settled: `End of the month: your parts are bought back for ${amount}.`,
+        })[event] ?? "News about your parts.",
       doge: (event: string, by: string | null, candidate: boolean) =>
         event === "opened"
           ? candidate
@@ -1818,6 +1826,7 @@ export const en: Dictionary = {
           letter: "What follows the letter of the day",
           doge: "Election of the Doge (opening, elected)",
           broglio: "The Broglio (rumour sold, spy, liar unmasked)",
+          shares: "House parts (parts sold, council, dividend, buyback)",
         } as Record<string, string>,
       },
     },
@@ -2462,7 +2471,7 @@ export const en: Dictionary = {
     deals: {
       title: "Deals between merchants",
       tile: (n: number) => (n > 0 ? `${n} deal${s(n)} to seize` : "Orders and colleganze"),
-      tabs: { commissions: "Orders", colleganze: "Colleganza", bank: "Bank" },
+      tabs: { commissions: "Orders", colleganze: "Colleganza", bank: "Bank", parts: "Parts" },
       bank: {
         help: (share: number, pct: number, days: number, late: number) =>
           `The Bank lends up to ${share}% of your net worth, ${days} days at most, at ${pct}% a day. When due, it pays itself from your till; what is missing is raised by ${late}% and taken from your income. Repaid early, you pay only the days begun.`,
@@ -2637,6 +2646,51 @@ export const en: Dictionary = {
         rival: (name: string) => `Rival: ${name}`,
         leader: (name: string) => `Leader: ${name}`,
       },
+    },
+    shares: {
+      title: "Your house at the Rialto",
+      notListed: "List your house: 100 parts, at most 49 in other hands. You always keep 51.",
+      refusal: (code: string, day: number, days: number) =>
+        ({
+          too_early: `Listing opens on day ${day + 1} of the month.`,
+          too_new: `A house lists after ${days} days in the world.`,
+          season_over: "On the month's last day, the book is shut.",
+          already_listed: "Your house is already listed.",
+        })[code] ?? "Listing is not open.",
+      list: "List my house",
+      lastPrice: (price: string | null) =>
+        price ? `Last price: ${price} a part` : "No part traded yet",
+      float: (n: number, max: number) => `${n} parts in other hands out of ${max}`,
+      register: "The register",
+      shares: (n: number) => `${n} part${n > 1 ? "s" : ""}`,
+      you: "you",
+      issue: "Issue",
+      buyBack: "Buy back",
+      quantity: "Parts",
+      price: "Price of a part",
+      issueGo: (n: number, price: string) => `Offer ${n} parts at ${price}`,
+      buyBackGo: (n: number, price: string) => `Buy back ${n} parts at ${price}`,
+      orders: "Your open orders",
+      order: (side: "buy" | "sell", n: number, price: string) =>
+        `${side === "buy" ? "Buying" : "Selling"} ${n} parts at ${price}`,
+      cancel: "Withdraw",
+      book: "The book",
+      ask: (n: number, price: string) => `${n} parts at ${price}`,
+      bid: (n: number, price: string) => `${n} parts wanted at ${price}`,
+      noAsk: "No part for sale.",
+      buy: (n: number, price: string) => `Buy ${n} parts at ${price}`,
+      sell: (n: number, price: string) => `Sell ${n} parts at ${price}`,
+      paid: (amount: string) => `Dividends paid this month: ${amount}`,
+      held: "Your parts elsewhere",
+      heldLine: (n: number, amount: string) => `${n} parts · ${amount} of dividends`,
+      noneHeld: "No part of another house. Open a merchant's card to buy some.",
+      theirs: "Their parts",
+      notTheirs: "This house is not listed.",
+      mine: (n: number, amount: string) => `You hold ${n} · ${amount} of dividends received`,
+      council: "You sit on its council",
+      accounts: (cash: string, week: string) => `Cash ${cash} · net sales this week ${week}`,
+      help: (dividend: number, council: number) =>
+        `Each week, the holders share ${dividend}% of the net sales the house gained, pro rata, as far as its cash goes. Whoever holds ${council} parts sits on the council and sees its accounts. On the month's last day, the house buys every part back at the last price, as far as its cash goes. A part traded pays the market's tax.`,
     },
     broglio: {
       kicker: "The Broglio",
@@ -3123,6 +3177,13 @@ export const en: Dictionary = {
       no_bale: "No bale at the quay for now: the next one is on its way.",
       bales_off: "No Faraj's bales in this world.",
       insufficient_funds: "Not enough ducats.",
+      shares_off: "No house parts in this world.",
+      too_early: "Listing is not open yet.",
+      not_for_npc: "A house of the computer is not listed.",
+      already_listed: "Your house is already listed.",
+      not_listed: "This house is not listed.",
+      over_float: "You always keep 51 parts of your house.",
+      insufficient_shares: "You do not have that many free parts.",
       vehicle_not_for_sale: "Only mules can be bought: upgrade them afterwards.",
       vehicle_max_level: "This vehicle is already at the highest level.",
       insufficient_stock: "Not enough stock.",

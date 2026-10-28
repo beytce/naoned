@@ -4,12 +4,13 @@ import { fr } from "../i18n.js";
 import { Qty, Rules, Segmented, Sheet, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { merchantLabel } from "./Name.js";
+import { SharesTab } from "./Shares.js";
 import { d } from "./format.js";
 import { have } from "./workshops.js";
 
 const t = fr.game.deals;
 
-type Tab = "commissions" | "colleganze" | "bank";
+type Tab = "commissions" | "colleganze" | "bank" | "parts";
 
 const who = (props: GameProps, id: string) =>
   merchantLabel(props.people[id] ?? null, props.bots.has(id), t.someone);
@@ -54,12 +55,15 @@ export function DealsSheet(props: GameProps) {
               { value: "commissions", label: t.tabs.commissions },
               { value: "colleganze", label: t.tabs.colleganze },
               ...(deals.bank ? [{ value: "bank" as const, label: t.tabs.bank }] : []),
+              ...(props.view.shares ? [{ value: "parts" as const, label: t.tabs.parts }] : []),
             ]}
           />
           {tab === "commissions" ? (
             <Commissions {...props} />
           ) : tab === "colleganze" ? (
             <Colleganze {...props} />
+          ) : tab === "parts" ? (
+            <SharesTab {...props} />
           ) : (
             <Bank {...props} />
           )}

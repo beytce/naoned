@@ -31,6 +31,7 @@ const ICON = {
   letter: NavIcon.bell,
   doge: NavIcon.top,
   broglio: NavIcon.bell,
+  shares: NavIcon.bell,
 } as const;
 const TONE: Record<string, string> = {
   harvest: "text-lagoon",
@@ -55,6 +56,7 @@ const TONE: Record<string, string> = {
   letter: "text-gold",
   doge: "text-gold",
   broglio: "text-info",
+  shares: "text-gold",
 };
 
 function text(n: Notice, props: GameProps): string {
@@ -163,6 +165,12 @@ function text(n: Notice, props: GameProps): string {
       );
     case "broglio":
       return t.broglio(String(n.data.event ?? ""), d(String(n.data.price ?? "0")));
+    case "shares":
+      return t.shares(
+        String(n.data.event ?? ""),
+        Number(n.data.quantity ?? 0),
+        d(String(n.data.amount ?? n.data.price ?? "0")),
+      );
     case "doge":
       return t.doge(
         String(n.data.event ?? ""),

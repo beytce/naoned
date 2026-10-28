@@ -550,6 +550,8 @@ export interface PlayerView {
   } | null;
   /** The Broglio (R8): the morning's rumours, and whether a spy watches the merchant. */
   broglio?: { today: number; spied: boolean } | null;
+  /** The parts of a house (R9): listed, may be, in how many others the merchant holds. */
+  shares?: { listed: boolean; canList: boolean; held: number } | null;
   /** The Doge's election (R7): running, the merchant a candidate, its programme, its voice. */
   election?: { open: boolean; candidate: boolean; stood: boolean; voted: boolean } | null;
   /** The Dynastie (R4): the heir's trait, and what it still gives for free (null: off). */
@@ -931,7 +933,8 @@ export type NotificationKind =
   | "sera"
   | "letter"
   | "doge"
-  | "broglio";
+  | "broglio"
+  | "shares";
 
 export interface Notice {
   id: number;
@@ -1066,6 +1069,15 @@ export type Action =
   | { type: "cancelRumourOffer"; offerId: string }
   | { type: "hireSpy"; target: string }
   | { type: "chaseSpy" }
+  | { type: "listHouse" }
+  | {
+      type: "placeShareOrder";
+      house: string;
+      side: "buy" | "sell";
+      price: string;
+      quantity: number;
+    }
+  | { type: "cancelShareOrder"; orderId: string }
   | { type: "standForDoge"; mutator: string | null; decree: { code: string; target?: string } }
   | { type: "buildFondaco"; city: string }
   | { type: "choosePath"; buildingId: string; path: "volume" | "quality" }
@@ -1733,6 +1745,57 @@ export interface RumourView {
   reliabilityBps: number;
   day: number;
   forged: boolean;
+}
+
+/** A house's parts (R9), as the merchant sees them. */
+export interface HouseSharesView {
+  house: string;
+  listed: boolean;
+  refusal: string | null;
+  lastPrice: string | null;
+  float: number;
+  holders: { id: string; pseudo: string; crest: CrestData | null; bot: boolean; shares: number }[];
+  bids: ShareOrderView[];
+  asks: ShareOrderView[];
+  mine: { shares: number; free: number; dividends: string };
+  paid: string;
+  council: boolean;
+  accounts: {
+    cash: string;
+    turnover: string;
+    week: string;
+    stock: { resource: string; quantity: number }[];
+  } | null;
+  rules: {
+    fromDay: number;
+    minDays: number;
+    float: number;
+    dividendBps: number;
+    councilShares: number;
+    maxOpenOrders: number;
+  };
+}
+
+export interface ShareOrderView {
+  id: string;
+  price: string;
+  quantity: number;
+  mine: boolean;
+}
+
+/** The merchant's own house and its parts in the others' (R9). */
+export interface SharesView {
+  mine: HouseSharesView;
+  held: {
+    house: string;
+    pseudo: string;
+    crest: CrestData | null;
+    bot: boolean;
+    shares: number;
+    lastPrice: string | null;
+    dividends: string;
+    council: boolean;
+  }[];
 }
 
 /** The Broglio (R8), for its sheet. */

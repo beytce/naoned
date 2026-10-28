@@ -30,6 +30,7 @@ import {
   incantoPrice,
   isMudaGood,
   letterView,
+  listingRefusal,
   marketMakerQuotaLeft,
   marketMakerQuotes,
   marketMakerReference,
@@ -51,6 +52,7 @@ import {
   seasonActs,
   seasonEnd,
   seasonMutator,
+  sharesHeld,
   specialtyUnlocked,
   spiedOn,
   stockUnitValue,
@@ -833,6 +835,14 @@ export function playerView(
       ? {
           today: rumourBook(ctx, state, playerId, now).today.length,
           spied: spiedOn(state, playerId, now),
+        }
+      : null,
+    // The parts of a house (R9): whether it is listed, may be, and in how many others it holds.
+    shares: ctx.settings.shares
+      ? {
+          listed: !!state.shares?.[playerId],
+          canList: listingRefusal(ctx, state, playerId, now) === null,
+          held: sharesHeld(state, playerId).length,
         }
       : null,
     road: roadView(ctx, state, playerId, now),

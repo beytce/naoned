@@ -1,8 +1,8 @@
 import { dayStartIn } from "./clock.js";
 import { commerceInfluence } from "./house.js";
 import type { Deniers } from "./money.js";
-import { DAY_MS, type PlayerId, type WorldContext, type WorldState, seasonEnd } from "./state.js";
 import { payDividends } from "./shares.js";
+import { DAY_MS, type PlayerId, type WorldContext, type WorldState, seasonEnd } from "./state.js";
 import { nameSuppliers } from "./suppliers.js";
 import { turnoverOf, turnoverPeakOf } from "./turnover.js";
 import { type Tx, emit } from "./tx.js";

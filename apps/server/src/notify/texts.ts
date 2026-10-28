@@ -231,6 +231,27 @@ export function pushText(
         body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${data.glory ? `${gain} de Gloire` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
       };
     }
+    case "shares": {
+      const t: Record<string, { title: string; body: string }> = {
+        bought: {
+          title: "Parts achetées",
+          body: `${Number(data.quantity ?? 0)} parts de votre Maison ont trouvé preneur à ${ducats(String(data.price ?? "0"))} ducats.`,
+        },
+        council: {
+          title: "Un porteur au conseil",
+          body: "Un porteur détient assez de parts pour voir vos comptes.",
+        },
+        dividend: {
+          title: "Dividende reçu",
+          body: `Vos parts vous rapportent ${ducats(String(data.amount ?? "0"))} ducats cette semaine.`,
+        },
+        settled: {
+          title: "Parts rachetées",
+          body: `Fin du mois : vos parts vous sont rachetées ${ducats(String(data.amount ?? "0"))} ducats.`,
+        },
+      };
+      return t[String(data.event)] ?? { title: "Vos parts", body: "Du nouveau sur vos parts." };
+    }
     case "broglio": {
       const t: Record<string, { title: string; body: string }> = {
         sold: {
