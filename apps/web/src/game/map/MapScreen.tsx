@@ -646,7 +646,16 @@ export function MapScreen(
         top: Math.max(campaign || terra ? 160 : 150, hudBand),
         right: 12,
         // The trade keeps its strip of what comes next clear, above the tabs (shown from 640 px high).
-        bottom: panelUp ? 260 : terra ? 156 : campaign || window.innerHeight < 640 ? 100 : 160,
+        // A place's panel sits above the tabs; on a short phone the map keeps its room all the same.
+        bottom: panelUp
+          ? window.innerHeight < 640
+            ? 200
+            : 260
+          : terra
+            ? 156
+            : campaign || window.innerHeight < 640
+              ? 100
+              : 160,
         left: 12,
       };
 
