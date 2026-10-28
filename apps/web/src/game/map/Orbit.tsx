@@ -112,7 +112,7 @@ export function ComptoirOrbit({
       data-panel={leaving ? undefined : true}
       aria-hidden={leaving || undefined}
       aria-label={m.homeLabel}
-      className={`${leaving ? "orbit-out pointer-events-none" : "orbit-in"} absolute inset-0 z-[25] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_32%,rgb(var(--night-3))_0%,rgb(var(--night))_62%)] lg:right-[var(--side,0px)]`}
+      className={`${leaving ? "orbit-out pointer-events-none" : "orbit-in"} absolute inset-x-0 top-0 bottom-[var(--tabbar)] z-[25] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_32%,rgb(var(--night-3))_0%,rgb(var(--night))_62%)] lg:right-[var(--side,0px)]`}
     >
       <header className="relative z-10 flex items-center justify-between gap-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <button
@@ -221,7 +221,7 @@ export function ComptoirOrbit({
         </section>
       )}
 
-      <section className="rounded-t-3xl border-t border-line bg-night-2 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+      <section className="rounded-t-3xl border-t border-line bg-night-2 px-4 pb-4 pt-3">
         <div className="mb-3 flex items-baseline justify-between gap-2">
           <span className="min-w-0 truncate font-display text-base font-extrabold">
             {t.summary(ready, running)}
@@ -568,7 +568,7 @@ export function CityOrbit({
       data-panel={leaving ? undefined : true}
       aria-hidden={leaving || undefined}
       aria-label={props.names.city(code)}
-      className={`${leaving ? "orbit-out pointer-events-none" : "orbit-in"} absolute inset-0 z-[25] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_34%,rgb(var(--night-3))_0%,rgb(var(--night))_62%)] lg:right-[var(--side,0px)]`}
+      className={`${leaving ? "orbit-out pointer-events-none" : "orbit-in"} absolute inset-x-0 top-0 bottom-[var(--tabbar)] z-[25] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_34%,rgb(var(--night-3))_0%,rgb(var(--night))_62%)] lg:right-[var(--side,0px)]`}
     >
       <header className="relative z-10 flex items-center gap-1 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <button
@@ -665,7 +665,7 @@ export function CityOrbit({
         </div>
       </div>
 
-      <section className="rounded-t-3xl border-t border-line bg-night-2 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+      <section className="rounded-t-3xl border-t border-line bg-night-2 px-4 pb-4 pt-3">
         <p
           className={`mb-3 text-sm ${criee ? "text-vermilion" : covered > 0 ? "text-lagoon" : "text-cream-dim"}`}
         >
