@@ -102,6 +102,7 @@ export * from "./atouts.js";
 export * from "./letters.js";
 export * from "./dynasty.js";
 export * from "./doge.js";
+export * from "./broglio.js";
 export * from "./incanto.js";
 export * from "./lustre.js";
 export * from "./signoria.js";

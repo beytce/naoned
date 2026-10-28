@@ -1,6 +1,7 @@
 import { crieeRoom, currentCriee, dailyFor } from "./activity.js";
 import { atoutOffer, atoutOpen } from "./atouts.js";
 import { balesFor } from "./bales.js";
+import { rumourBook } from "./broglio.js";
 import { costForLevel, costPerOutput, costValue } from "./buildings.js";
 import {
   MILAN,
@@ -283,6 +284,7 @@ export class Bot {
     this.chooseMastery(s);
     this.chooseAtout(s);
     this.answerLetter(s);
+    this.broglio(s);
     this.runProduction(s);
     if (this.profile.speculates) this.speculate(s);
     this.sellSurplus(s);
@@ -831,6 +833,36 @@ export class Bot {
     for (const choice of order) {
       if (s.act({ type: "answerLetter", playerId: this.id, choice })) return;
     }
+  }
+
+  /**
+   * The Broglio (R8): a speculator offers its most reliable rumour of the day to the Rialto; any
+   * house buys, now and then, a reliable one at a fair price. A house of the computer never forges
+   * nor spies.
+   */
+  private broglio(s: Session): void {
+    const state = s.state();
+    if (!s.ctx.settings.broglio) return;
+    const book = rumourBook(s.ctx, state, this.id, s.now);
+    const offers = Object.values(state.broglio?.offers ?? {});
+    if (this.profile.speculates) {
+      const best = [...book.today].sort((a, b) => b.reliabilityBps - a.reliabilityBps)[0];
+      const offered = offers.some((o) => o.seller === this.id && o.rumour.day === best?.day);
+      if (best && best.reliabilityBps >= 7_500 && !offered)
+        s.act({ type: "offerRumour", playerId: this.id, rumourId: best.id, price: 500n });
+      return;
+    }
+    const day = Math.floor((s.now - s.ctx.startAt) / 86_400_000);
+    if (draw(s.ctx, `broglio-bot:${this.id}:${day}`) % 4 !== 0) return;
+    const deal = offers.find(
+      (o) =>
+        o.seller !== this.id &&
+        !o.to &&
+        !o.buyers.includes(this.id) &&
+        o.rumour.reliabilityBps >= 7_500 &&
+        o.price <= 800n,
+    );
+    if (deal) s.act({ type: "buyRumour", playerId: this.id, offerId: deal.id });
   }
 
   private incanto(s: Session): void {

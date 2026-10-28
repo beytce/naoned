@@ -426,6 +426,27 @@ function letterChecks(r: SimulationResult): Check[] {
   ];
 }
 
+/** The Broglio (R8): rumours bought between merchants over the season. */
+function broglioChecks(r: SimulationResult): Check[] {
+  const held = r.finalState?.broglio?.held;
+  if (!held) return [];
+  const players = Math.max(1, Object.keys(r.finalState?.players ?? {}).length);
+  const days = Math.max(1, Number(r.options.days ?? r.options.settings.seasonDays));
+  const bought = Object.values(held).reduce(
+    (n, list) => n + list.filter((x) => !x.forged).length,
+    0,
+  );
+  return [
+    {
+      name: "Broglio : rumeurs achetées par marchand et par jour",
+      target: "diagnostic (R8)",
+      value: `${(bought / players / days).toFixed(2)} · ${bought} sur la saison`,
+      pass: true,
+      blocking: false,
+    },
+  ];
+}
+
 /** The incanto of the Sera (R11): lots sold, at what share of their reference, to how many. */
 function incantoChecks(r: SimulationResult): Check[] {
   const ic = r.incanto;
@@ -503,6 +524,7 @@ export function terraChecks(r: SimulationResult): Check[] {
     ...incantoChecks(r),
     ...atoutChecks(r),
     ...letterChecks(r),
+    ...broglioChecks(r),
     {
       name: "Monnaie détruite par la Terraferme",
       target: "diagnostic : le puits qui remplace l'entretien",

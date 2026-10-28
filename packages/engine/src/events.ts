@@ -58,6 +58,13 @@ export function nextEvent(ctx: WorldContext, at: number): MarketEvent | null {
   return null;
 }
 
+/** The event that starts on day `day` of the world (null: none that day). */
+export function eventStartingOn(ctx: WorldContext, day: number): MarketEvent | null {
+  const every = ctx.settings.events.everyDays;
+  if (day < 1 || (day - 1) % every !== 0) return null;
+  return eventAtIndex(ctx, (day - 1) / every);
+}
+
 /** Multiplier in bps applied by the active event to a city's price or capacity for a resource. */
 export function eventCityBps(
   ctx: WorldContext,

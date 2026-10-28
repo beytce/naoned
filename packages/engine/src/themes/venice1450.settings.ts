@@ -151,6 +151,8 @@ export const venice1450Settings: WorldSettingsInput = {
     // No rise on the quay since the incanto (R11): the scarcity is bid for at the Sera.
     priceRiseBps: 0,
     maxStockLots: 2,
+    // Each arrival brings 80 to 120 % of the usual lot (R8: what the rumours speak of).
+    lotSpreadBps: 2_000,
   },
   // Two orders of the Doge a day.
   contracts: {
@@ -793,6 +795,31 @@ export const venice1450Settings: WorldSettingsInput = {
   },
   // Tasks of the day: three drawn from this pool, the same for everyone; doing all three opens a
   // chest of 10 ducats, 3 more for each day in a row, up to 22 (five days running).
+  /**
+   * The Broglio (R8): two rumours each morning from four sources, a false one forged for 20 of
+   * Influence and unmasked a third of the time (−15 of Lustre), a spy for 20 ducats a week.
+   */
+  broglio: {
+    perDay: 2,
+    sources: [
+      { code: "gondoliere", reliabilityBps: 4_000, weight: 3 },
+      { code: "postino", reliabilityBps: 6_000, weight: 3 },
+      { code: "dogana", reliabilityBps: 7_500, weight: 2 },
+      { code: "senato", reliabilityBps: 8_500, weight: 1 },
+    ],
+    newcomerDays: 3,
+    newcomerMinBps: 8_500,
+    maxOffers: 3,
+    forge: {
+      perDay: 1,
+      recipients: 3,
+      reliabilityBps: 5_000,
+      unmaskBps: 3_000,
+      influence: 20,
+      lustreLoss: 15,
+    },
+    spy: { cost: 2_000, days: 7 },
+  },
   /**
    * The Doge (R7): the month's last week, the Senate elects the next month's Doge among the first
    * ten houses of the people; its decree of the Republic holds all month, for everyone (each

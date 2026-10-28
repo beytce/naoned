@@ -1,3 +1,4 @@
+import { settleBroglio } from "./broglio.js";
 import { rationsPerDay } from "./buildings.js";
 import { advanceCampaign } from "./campaign.js";
 import { ensureBoard, pruneRoad, resolveDeliveries } from "./deliveries.js";
@@ -89,5 +90,7 @@ export function tick(tx: Tx): void {
   closeIncantoLots(tx);
   // The Letter's consequences come days after the answer.
   settleLetters(tx);
+  // The Broglio's forged rumours delivered and unmasked, its spies gone (R8).
+  settleBroglio(tx);
   requoteMarketMaker(tx);
 }

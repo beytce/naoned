@@ -97,6 +97,8 @@ const DESTROYED = [
   "fondaco_build",
   "incanto",
   "letter_cost",
+  "spy_hire",
+  "spy_chase",
   "loan_repay",
   "loan_interest",
 ];

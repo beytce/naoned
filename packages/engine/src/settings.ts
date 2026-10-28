@@ -146,6 +146,8 @@ export const worldSettingsSchema = z.object({
       quotaPerPlayer: z.record(z.string(), qty),
       priceRiseBps: bps,
       maxStockLots: positive,
+      /** Each arrival's lot varies by up to this much either way, drawn (R8: a rumour's subject). */
+      lotSpreadBps: bps.max(5_000).prefault(0),
     })
     .optional(),
   /** Daily orders from the Doge, per player: deliver goods to a city at a premium. */
@@ -1275,6 +1277,36 @@ export const worldSettingsSchema = z.object({
       startBps: bps,
       stepBps: bps,
       perPlayer: positive,
+    })
+    .optional(),
+  /**
+   * The Broglio (R8, docs/plan-rupture.md): each morning `perDay` private rumours of what is
+   * coming (an event, the Muda's lot), each from a source of the catalog that tells the truth
+   * `reliabilityBps` of the time (a newcomer of `newcomerDays` hears only sources of
+   * `newcomerMinBps` and more); rumours sold between merchants (`maxOffers` open each); a false one
+   * forged against Influence (the server's `influence`), delivered to `recipients` merchants the
+   * next morning and unmasked `unmaskBps` of the time once its day has passed (the author loses
+   * `lustreLoss` of Lustre); a spy at a rival's for `days`, for `cost` destroyed. Never a merchant
+   * named, never a free text. Off when absent.
+   */
+  broglio: z
+    .object({
+      perDay: positive,
+      sources: z
+        .array(z.object({ code: z.string(), reliabilityBps: bps.max(10_000), weight: positive }))
+        .min(1),
+      newcomerDays: qty,
+      newcomerMinBps: bps.max(10_000),
+      maxOffers: positive,
+      forge: z.object({
+        perDay: positive,
+        recipients: positive,
+        reliabilityBps: bps.max(10_000),
+        unmaskBps: bps.max(10_000),
+        influence: qty.prefault(20),
+        lustreLoss: qty.prefault(15),
+      }),
+      spy: z.object({ cost: money, days: positive }),
     })
     .optional(),
   /**
