@@ -28,8 +28,8 @@
 | R1 | La guerre mange les marchandises | 1 | fait | `98c70c7`…`5fbc6b6` |
 | R2 | La Signoria des villes | 1 | fait | `9d46868`…`d03784d` |
 | R12 | Le grand ménage (part de la vague 1 : fournisseurs officiels, embargo) | 1 | fait | `acfc181` |
-| R6 | Le Lustre (échelle de rang, fantômes) | 2 | à faire | — |
-| R11 | La Sera (20 h, incanto des galères) | 2 | à faire | — |
+| R6 | Le Lustre (échelle de rang, fantômes) | 2 | en cours (moteur fait) | voir journal |
+| R11 | La Sera (20 h, incanto des galères) | 2 | en cours | — |
 | R3 | Les Atouts | 3 | à faire | — |
 | R10 | La Lettre du jour | 3 | à faire | — |
 | R4 | La Dynastie | 4 | à faire | — |
@@ -41,9 +41,10 @@
 ## Où j'en suis
 
 - **Fait (vague 1)** : R1 et R2 dans le moteur, chez les PNJ, au simulateur, sur le serveur (vue, route `GET /api/game/signoria`, notifications nommées) et à l'écran (jauge autour de la ville, feuille « Signoria », blason du Podestà sur la carte, pain des troupes au HUD, coûts de la guerre dans « Vos terres ») ; ménage (fournisseurs et embargo retirés à Venise) ; notes de saison ; CADRAGE et plan-terraferme à jour.
-- **Vague 1 terminée** (28 octobre 2026), en attente du retour du porteur sur les deux cibles manquées.
+- **Vague 1 terminée** (28 octobre 2026). Le porteur a choisi de passer à la vague 2 plutôt que de forcer le pain et la croissance (« fais l'option qui te semble la mieux »).
+- **Vague 2 en cours** (plan validé le 28 octobre, détail plus bas, « Vague 2 : le plan validé »). Ordre : Lustre moteur → Lustre serveur → Lustre écrans → incanto moteur (+ bataille à la minute) → incanto PNJ, simulateur, ménage → Sera serveur et écrans → calibration et docs.
 - **Calibration faite** : deux essais (0,1 et 0,2 pain par troupe), 5 graines conformes chacun ; 0,1 retenu (`docs/calibration.md`, « Vague 1 »). Restent sous leur cible : la croissance du mois (1,12 à 1,18 pour 1,20) et le pain en fin de mois (56 à 60 % pour 65 %).
-- **Étape suivante exacte** : passer la vague 2 en mode plan (R6 le Lustre, R11 la Sera), en relisant le cadre de la vague 2 plus bas.
+- **Étape suivante exacte** : le serveur du Lustre (migration `accounts.lustre`, tables `sfide` et `week_curves`, `apps/server/src/game/lustre.ts`, la Sfida à la place du rival `weeklyRival`).
 - **À savoir** :
   - La Signoria compte les livraisons parties entre 8 h et 22 h (Paris) ; le Podestà est nommé par `closeSignoriaDays` dans le tick, au changement de jour (minuit).
   - L'e2e de mise en page passe sur chaque format lancé seul (`SIZES=390x844`, `SIZES=320x568`) ; lancé sur les deux formats d'affilée, le second a échoué deux fois dans le guide, à une étape différente chaque fois (une charrette sur Venise, l'achat de briques), puis la machine a été redémarrée : à surveiller. Chromium : `CHROMIUM=/opt/pw-browsers/chromium`.
@@ -98,6 +99,17 @@ But : une ville se prend en y livrant ou en la tenant sur la Terraferme, sur la 
 - Au simulateur, chaque ville change de Podestà au moins une fois par semaine.
 - Masse monétaire ≤ 2,5 fois le capital ; cours du pain en fin de mois ≥ 65 % de la référence.
 
+## Vague 2 : le plan validé (28 octobre 2026)
+
+**Le Lustre (R6).** `accounts.lustre` (0 au départ) ; paliers Popolano 0, Cittadino 100, Mercante 250, Patrizio 450, Senatore 700, Procuratore 1 000 (`settings.lustre`). Chaque semaine (bornes du classement), une Sfida contre un humain de Lustre voisin, sur le gain de ventes nettes de la semaine : +30 au gagnant, −20 au perdant, plancher 0, égalité 0. Sans adversaire : le fantôme d'un humain (sa courbe horaire d'une semaine passée, Lustre le plus proche, seul le joueur bouge) ; sans courbe humaine (lancement), une maison PNJ du monde en direct, marquée « PNJ ». Défi direct pour la semaine suivante, mise 10 à 50, accepté par l'autre. Changement de mois : deux paliers plus bas. Aucun effet économique.
+- Moteur pur : `packages/engine/src/lustre.ts` (`tierOf`, `pairByLustre`, `sfidaDelta`, `applyLustre`, `softReset`, `ghostAt`), tests `test/lustre.test.ts`. Fait.
+- Serveur : migration (`accounts.lustre`, tables `sfide` et `week_curves`), `apps/server/src/game/lustre.ts` (`recordCurves` chaque heure depuis le tick, `ensureSfide` à chaque tick, `settleSfide` sur `week_closed` comme `recordWeek`, `softResetLustre` à la clôture de saison) ; la Sfida remplace le rival de la semaine (`weeklyRival`, même forme pour le HUD) ; routes `GET /api/game/sfida`, `POST /api/game/sfida/challenge`, `POST /api/game/sfida/accept` ; avis `sfida`.
+- Écrans : le palier à la place de « NIV. n » dans l'identité du HUD ; la ligne du rival ouvre la feuille « Sfida » (blasons ou fantôme, deux courbes, écart, échelle) ; « Défier » au classement.
+
+**La Sera (R11).** Chaque jour de 20 h à 20 h 30 (`settings.sera`). L'incanto : chaque arrivée de la Muda met aux enchères 50 % de son lot en 3 lots, à la Sera du jour d'arrivée, fermant à 20 h 10, 20 h 20, 20 h 30 (prolongés de 2 min par une enchère des 2 dernières minutes) ; enchères à maximum (prix = deuxième maximum + 5 %, départ 60 % de la référence), ducats bloqués sur `hold:`, rendus quand on est dépassé ; le gagnant reçoit les marchandises (`addStock`, motif `incanto`), le prix est détruit ; un lot par marchand et par Sera. Le reste du lot au quai, sans hausse de prix (`muda.priceRiseBps` 0). L'heure de bataille à 20 h – 20 h 30 (minute ajoutée à `terraferma.battle`). Appels d'offres retirés à Venise.
+- Moteur : `packages/engine/src/incanto.ts` (état `state.incanto`, commande `incantoBid`, ouverture et clôture par le tick), tests `test/incanto.test.ts` ; PNJ qui enchérissent ; rapport du simulateur.
+- Serveur et écrans : l'incanto dans la vue ; avis `sera` à 19 h 55 et « enchère dépassée » ; bandeau « La Sera · 20 h » de 19 h 30 à 20 h 30, feuille « La Sera » (3 lots, prix, décompte, maximum, « Enchérir » en or, résultats du jour : Podestà changés, écart de la Sfida).
+
 ## Les vagues suivantes (cadre fixé, à détailler en mode plan au moment venu)
 
 - **Vague 2 : R6 le Lustre, R11 la Sera.** Comptes : `accounts.lustre` ; tables `sfide` (semaine, monde, a, b ou fantôme, mesure, résultat) et `week_curves` (courbe horaire des ventes nettes, pour rejouer les fantômes). La Sera, de 20 h à 20 h 30 : l'incanto des galères de la Muda (enchères de 3 minutes à prolongation) remplace le prix croissant de `muda.ts` et les appels d'offres (`tenders.ts`, retirés) ; l'heure de bataille passe à 30 minutes.
@@ -111,3 +123,4 @@ But : une ville se prend en y livrant ou en la tenant sur la Terraferme, sur la 
 - 27 octobre 2026 : R1 moteur. Valeurs de départ à Venise : 0,1 pain par troupe et par jour ouvert, 10 pains par « + Troupes », rocca 10 briques, porto 10 planches, bombarda 10 bois + 10 planches, mura 5 briques + 15 planches. Le pain manquant est pardonné, mais le marchand ne recrute plus jusqu'à ce que du pain revienne dans son stock.
 - 27 octobre 2026 : R1 chez les PNJ (le pain des troupes compte dans leurs rations, ils achètent les matériaux avant de bâtir) ; R2 dans le moteur (`signoria.ts`), le ménage, le serveur, les écrans, les notes de saison.
 - 28 octobre 2026 : calibration de la vague 1 (0,1 pain retenu, 0,2 écarté) ; vague 1 terminée.
+- 28 octobre 2026 : vague 2 planifiée et validée ; moteur du Lustre (`lustre.ts`, `settings.lustre`).

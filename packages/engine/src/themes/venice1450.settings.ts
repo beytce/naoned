@@ -1274,6 +1274,22 @@ export const venice1450Settings: WorldSettingsInput = {
   // cities (R2, docs/plan-rupture.md, 27 October 2026): a delivery's ducats and the open hours a
   // city is held on the Terraferma count on its gauge; each day's leader is its Podestà, who
   // takes 3 % of the others' deliveries there and takes its orders half an hour before them.
+  // The Lustre (R6, docs/plan-rupture.md, 28 October 2026): the social ranks of Venice, won in
+  // the weekly Sfide; two tiers down at the month's change.
+  lustre: {
+    tiers: [
+      { code: "popolano", from: 0 },
+      { code: "cittadino", from: 100 },
+      { code: "mercante", from: 250 },
+      { code: "patrizio", from: 450 },
+      { code: "senatore", from: 700 },
+      { code: "procuratore", from: 1_000 },
+    ],
+    win: 30,
+    loss: 20,
+    maxStake: 50,
+    resetTiers: 2,
+  },
   signoria: {
     cityPointsPerHour: 20,
     decayBps: 5_000,

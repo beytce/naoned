@@ -1212,6 +1212,21 @@ export const worldSettingsSchema = z.object({
    */
   suppliers: z.object({ bonusBps: bps, minUnits: positive }).optional(),
   /**
+   * The Lustre (R6, docs/plan-rupture.md): a rank of the accounts in the social ranks of Venice
+   * (`tiers`, from their threshold), won and lost in weekly Sfide: `win` to the winner, `loss` off
+   * the loser, a challenge's stake (up to `maxStake`) on top; `resetTiers` tiers down at the
+   * month's change. Off when absent.
+   */
+  lustre: z
+    .object({
+      tiers: z.array(z.object({ code: z.string(), from: qty })).min(1),
+      win: qty,
+      loss: qty,
+      maxStake: qty,
+      resetTiers: qty,
+    })
+    .optional(),
+  /**
    * The Signoria of the cities (R2, docs/plan-rupture.md): a delivery's ducats, and each open hour
    * a city is held on the Terraferma (`cityPointsPerHour`), count on the city's gauge; nothing for
    * a delivery sent outside `openHours`. At each day's close the points keep `decayBps`, and the
