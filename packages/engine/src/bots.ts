@@ -46,6 +46,7 @@ import { freeBatches } from "./production.js";
 import { openProjects } from "./projects.js";
 import type { Rng } from "./rng.js";
 import type { WorldSettings } from "./settings.js";
+import { houseBoard } from "./shares.js";
 import { houseLevels, specialtyUnlocked } from "./specialties.js";
 import {
   type Building,
@@ -285,6 +286,7 @@ export class Bot {
     this.chooseAtout(s);
     this.answerLetter(s);
     this.broglio(s);
+    this.shares(s);
     this.runProduction(s);
     if (this.profile.speculates) this.speculate(s);
     this.sellSurplus(s);
@@ -863,6 +865,65 @@ export class Bot {
         o.price <= 800n,
     );
     if (deal) s.act({ type: "buyRumour", playerId: this.id, offerId: deal.id });
+  }
+
+  /**
+   * The parts of a house (R9), in the simulator only (a house of the computer in a live world
+   * neither lists nor buys): a speculator lists its house and offers 10 to 30 parts at a price of
+   * its net sales; another house, now and then, buys 5 parts of a house whose dividends would pay
+   * back a tenth of the price by the month's end.
+   */
+  private shares(s: Session): void {
+    const rules = s.ctx.settings.shares;
+    const state = s.state();
+    if (!rules || state.players[this.id]?.npc) return;
+    const day = Math.floor((s.now - s.ctx.startAt) / 86_400_000);
+    const sales = turnoverOf(state, this.id);
+    if (this.profile.speculates) {
+      if (!state.shares?.[this.id]) {
+        s.act({ type: "listHouse", playerId: this.id });
+        return;
+      }
+      const board = houseBoard(state, this.id);
+      const want = 10 + (draw(s.ctx, `shares-bot:${this.id}`) % 21);
+      const offered = board?.asks.reduce((n, o) => n + o.quantity, 0) ?? 0;
+      const more = want - (board?.float ?? 0) - offered;
+      const price = sales / 200n > 1_000n ? sales / 200n : 1_000n;
+      if (more > 0)
+        s.act({
+          type: "placeShareOrder",
+          playerId: this.id,
+          house: this.id,
+          side: "sell",
+          price,
+          quantity: more,
+        });
+      return;
+    }
+    if (draw(s.ctx, `shares-buy:${this.id}:${day}`) % 4 !== 0) return;
+    const weeksLeft = BigInt(Math.max(0, Math.ceil((seasonEnd(s.ctx) - s.now) / (7 * 86_400_000))));
+    for (const house of Object.keys(state.shares ?? {}).sort()) {
+      if (house === this.id) continue;
+      const ask = houseBoard(state, house)?.asks.find((o) => o.player !== this.id);
+      if (!ask) continue;
+      // A part's dividend a week, from the house's net sales so far.
+      const weeks = BigInt(Math.max(1, Math.ceil(day / 7)));
+      const perWeek =
+        (turnoverOf(state, house) * BigInt(rules.dividendBps)) / 10_000n / 100n / weeks;
+      if (perWeek * weeksLeft * 10n < ask.price) continue;
+      const quantity = Math.min(5, ask.quantity);
+      if (
+        s.act({
+          type: "placeShareOrder",
+          playerId: this.id,
+          house,
+          side: "buy",
+          price: ask.price,
+          quantity,
+        })
+      )
+        return;
+    }
   }
 
   private incanto(s: Session): void {

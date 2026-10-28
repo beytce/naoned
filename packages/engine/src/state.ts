@@ -511,6 +511,9 @@ export interface WorldState {
   seasonClosed?: boolean;
   /** The Broglio (R8, `broglio.ts`): rumours held, offered, forged, and the spies posted. */
   broglio?: import("./broglio.js").BroglioState;
+  /** The parts of the houses listed (R9, `shares.ts`), and whether the month's settlement ran. */
+  shares?: Record<PlayerId, import("./shares.js").HouseShares>;
+  sharesSettled?: boolean;
   /**
    * The election of the Doge (R7, `doge.ts`): the candidates frozen at its opening, their
    * programmes and each merchant's voice.

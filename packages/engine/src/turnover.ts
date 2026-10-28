@@ -25,6 +25,7 @@ export const SALES = new Set<LedgerReason>([
   "quality_premium",
   "commission",
   "colleganza_share",
+  "share_dividend",
   "signoria_toll",
 ]);
 
@@ -39,6 +40,7 @@ export const COSTS = new Set<LedgerReason>([
   "fattore",
   "commission",
   "colleganza_share",
+  "share_dividend",
 ]);
 
 /** The merchant behind a cash, escrow or hold account. */

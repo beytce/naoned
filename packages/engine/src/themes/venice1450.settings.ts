@@ -821,6 +821,18 @@ export const venice1450Settings: WorldSettingsInput = {
     spy: { cost: 2_000, days: 7 },
   },
   /**
+   * The parts of a house (R9): listed from day 8 after a week in the world, 49 parts at most in
+   * other hands, 30 % of the week's gain shared, 30 parts on the council; bought back the last day.
+   */
+  shares: {
+    fromDay: 8,
+    minDays: 7,
+    float: 49,
+    dividendBps: 3_000,
+    councilShares: 30,
+    maxOpenOrders: 4,
+  },
+  /**
    * The Doge (R7): the month's last week, the Senate elects the next month's Doge among the first
    * ten houses of the people; its decree of the Republic holds all month, for everyone (each
    * measured with `pnpm sim --decree`, docs/calibration.md).

@@ -447,6 +447,43 @@ function broglioChecks(r: SimulationResult): Check[] {
   ];
 }
 
+/**
+ * The parts of a house (R9): houses listed, parts in other hands, dividends paid, and whether any
+ * settlement fell short of its due (the house's cash caps it).
+ */
+function sharesChecks(r: SimulationResult): Check[] {
+  const books = r.finalState?.shares;
+  if (!books) return [];
+  const listed = Object.keys(books).length;
+  let dividends = 0n;
+  for (const b of Object.values(books))
+    for (const d of Object.values(b.dividends ?? {})) dividends += d;
+  const held = Object.entries(books).reduce(
+    (n, [house, b]) =>
+      n + Object.entries(b.holders).reduce((m, [id, k]) => (id === house ? m : m + k), 0),
+    0,
+  );
+  const negative = Object.keys(books).filter(
+    (house) => (r.finalState?.accounts[`cash:${house}`] ?? 0n) < 0n,
+  );
+  return [
+    {
+      name: "Parts de Maison : Maisons cotées, dividendes versés",
+      target: "diagnostic (R9)",
+      value: `${listed} cotées · ${(Number(dividends) / 100).toFixed(0)} ducats de dividendes`,
+      pass: true,
+      blocking: false,
+    },
+    {
+      name: "Parts de Maison : toutes rachetées à la fin du mois, aucune caisse négative",
+      target: "0 part dehors, 0 caisse < 0",
+      value: `${held} parts dehors, ${negative.length} caisses négatives`,
+      pass: held === 0 && negative.length === 0,
+      blocking: true,
+    },
+  ];
+}
+
 /** The incanto of the Sera (R11): lots sold, at what share of their reference, to how many. */
 function incantoChecks(r: SimulationResult): Check[] {
   const ic = r.incanto;
@@ -525,6 +562,7 @@ export function terraChecks(r: SimulationResult): Check[] {
     ...atoutChecks(r),
     ...letterChecks(r),
     ...broglioChecks(r),
+    ...sharesChecks(r),
     {
       name: "Monnaie détruite par la Terraferme",
       target: "diagnostic : le puits qui remplace l'entretien",

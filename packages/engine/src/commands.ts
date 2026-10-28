@@ -11,6 +11,7 @@ import {
   hireSpy,
   offerRumour,
 } from "./broglio.js";
+import { cancelShareOrder, listHouse, placeShareOrder } from "./shares.js";
 import { build, choosePath, grantBuilding, upgrade } from "./buildings.js";
 import {
   buildWork,
@@ -126,6 +127,17 @@ export type Command =
   | { type: "forgeRumour"; playerId: PlayerId; subject: RumourSubject }
   | { type: "hireSpy"; playerId: PlayerId; target: PlayerId }
   | { type: "chaseSpy"; playerId: PlayerId }
+  /** The parts of a house (R9): listed, ordered, an order cancelled. */
+  | { type: "listHouse"; playerId: PlayerId }
+  | {
+      type: "placeShareOrder";
+      playerId: PlayerId;
+      house: PlayerId;
+      side: "buy" | "sell";
+      price: Deniers;
+      quantity: number;
+    }
+  | { type: "cancelShareOrder"; playerId: PlayerId; orderId: string }
   /** The Doge's election (R7): a candidate's programme, a merchant's voice. */
   | {
       type: "standForDoge";
@@ -537,6 +549,15 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "chaseSpy":
       chaseSpy(tx, cmd.playerId);
+      break;
+    case "listHouse":
+      listHouse(tx, cmd.playerId);
+      break;
+    case "placeShareOrder":
+      placeShareOrder(tx, cmd.playerId, cmd.house, cmd.side, cmd.price, cmd.quantity);
+      break;
+    case "cancelShareOrder":
+      cancelShareOrder(tx, cmd.playerId, cmd.orderId);
       break;
     case "standForDoge":
       standForDoge(tx, cmd.playerId, cmd.mutator, cmd.decree);

@@ -99,6 +99,7 @@ const DESTROYED = [
   "letter_cost",
   "spy_hire",
   "spy_chase",
+  "share_tax",
   "loan_repay",
   "loan_interest",
 ];

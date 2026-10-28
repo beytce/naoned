@@ -2,6 +2,7 @@ import { dayStartIn } from "./clock.js";
 import { commerceInfluence } from "./house.js";
 import type { Deniers } from "./money.js";
 import { DAY_MS, type PlayerId, type WorldContext, type WorldState, seasonEnd } from "./state.js";
+import { payDividends } from "./shares.js";
 import { nameSuppliers } from "./suppliers.js";
 import { turnoverOf, turnoverPeakOf } from "./turnover.js";
 import { type Tx, emit } from "./tx.js";
@@ -169,5 +170,7 @@ export function closeWeek(tx: Tx): void {
   commerceInfluence(tx, weekly.week, standings);
   nameSuppliers(tx);
   closeWarehouseAuctions(tx);
+  // The houses' holders share the week's gain (R9); out of the week's ranking, in the month's.
+  payDividends(tx, standings);
   tx.s.weekly = { week, start: snapshot(tx) };
 }

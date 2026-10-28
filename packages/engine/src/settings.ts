@@ -1310,6 +1310,23 @@ export const worldSettingsSchema = z.object({
     })
     .optional(),
   /**
+   * The parts of a house (R9, docs/plan-rupture.md): from day `fromDay`, a house of the people
+   * `minDays` in the world lists itself, 100 parts of which `float` at most leave the founder;
+   * `maxOpenOrders` open orders each on the houses' books; each week the holders share
+   * `dividendBps` of the house's gain in net sales; `councilShares` parts see its accounts. The
+   * month's last day the house buys them back. Off when absent.
+   */
+  shares: z
+    .object({
+      fromDay: qty,
+      minDays: qty,
+      float: z.number().int().min(0).max(49),
+      dividendBps: bps.max(10_000),
+      councilShares: z.number().int().min(1).max(49),
+      maxOpenOrders: positive,
+    })
+    .optional(),
+  /**
    * The Doge (R7, docs/plan-rupture.md): the month's last `electionDays`, the Senate elects the
    * Doge of the next month among the first `candidates` houses of the people (never the outgoing
    * one, `previous`). Each candidate stands with a public programme: a mutator of the catalog and

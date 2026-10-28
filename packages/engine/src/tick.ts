@@ -12,6 +12,7 @@ import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
 import { arriveMuda } from "./muda.js";
 import { settlePartners } from "./partners.js";
+import { settleShares } from "./shares.js";
 import { openDueProjects } from "./projects.js";
 import { retireSeaAndBandits } from "./retired.js";
 import { closeSignoriaDays } from "./signoria.js";
@@ -69,6 +70,8 @@ export function tick(tx: Tx): void {
   // Colleganze and commissions at term, before the week's and the season's rankings are frozen:
   // a share paid at the season's end counts in it.
   settlePartners(tx);
+  // The houses' parts bought back the month's last day (R9), before the ranking closes too.
+  settleShares(tx);
   closeWeek(tx);
   // States of the time of the guilds: their treasuries go back to their members.
   dissolveLegacyGuilds(tx);
