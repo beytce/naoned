@@ -1743,6 +1743,14 @@ export const en: Dictionary = {
           : ghost
             ? `Your Sfida of the week: the ghost of ${by ?? "a merchant"}.`
             : `Your Sfida of the week: ${by ?? "a merchant"}.`,
+      doge: (event: string, by: string | null, candidate: boolean) =>
+        event === "opened"
+          ? candidate
+            ? "You stand for Doge: announce your programme at the Senate."
+            : "The election of the Doge is open: read the programmes and vote at the Senate."
+          : event === "won"
+            ? "You are elected Doge: your programme will rule next month."
+            : `${by ?? "A merchant"} is elected Doge: their programme will rule next month.`,
       letter: (name: string, text: string) => text || `News from ${name}.`,
       sera: (event: string, lots: number) =>
         event === "outbid"
@@ -1800,6 +1808,7 @@ export const en: Dictionary = {
           sfida: "Sfida of the week and challenges received",
           sera: "The Sera (7:55 pm) and passed bids",
           letter: "What follows the letter of the day",
+          doge: "Election of the Doge (opening, elected)",
         } as Record<string, string>,
       },
     },
@@ -1823,8 +1832,7 @@ export const en: Dictionary = {
       worth: "Net sales of the season",
       podium: "The podium",
       rewards: "Your rewards",
-      renown: (n: number) => `+${n} Renown`,
-      milestone: (name: string, n: number) => `${name} milestone: +${n} Renown`,
+      milestone: (name: string) => `${name} milestone`,
       goal: {
         title: "Goal of the season",
         now: (name: string, n: number) =>
@@ -1835,7 +1843,7 @@ export const en: Dictionary = {
           `Next milestone: ${name}, at ${worth} of net sales (+${n} Renown), whatever your rank.`,
         top: "Highest milestone reached: hold it until the end of the month.",
       },
-      renownTotal: (name: string, points: number) => `${name} · ${points} Renown points`,
+      renownTotal: (name: string) => `Renown of the House: ${name}`,
       nothing: "Play at least 7 days in a season to receive the participant's badge.",
       start: "Open my new counter",
       newSeason: (name: string) =>

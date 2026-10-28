@@ -1883,12 +1883,15 @@ export function TerraPanel({
                 disabled={!!built || !!v.closed}
                 onClick={() => act({ type: "terraBuild", cell, kind: "rocca" })}
               />
-              <ActionButton
-                icon={Icon.decree()}
-                label={t().mine.decree}
-                tone={me.programme ? "plain" : "gold"}
-                onClick={() => props.setSheet("terra:decree")}
-              />
+              {/* No decree to choose once the Doge's replaces the Signore's (R7). */}
+              {v.rules.decrees.length > 0 && (
+                <ActionButton
+                  icon={Icon.decree()}
+                  label={t().mine.decree}
+                  tone={me.programme ? "plain" : "gold"}
+                  onClick={() => props.setSheet("terra:decree")}
+                />
+              )}
             </>
           )
         }

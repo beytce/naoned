@@ -23,6 +23,7 @@ const OPENS: Record<string, Place> = {
   sfida: { sheet: "sfida" },
   sera: { sheet: "sera" },
   letter: { sheet: "letter" },
+  senate: { sheet: "senate" },
 };
 
 export function placeFrom(search: string): Place | null {

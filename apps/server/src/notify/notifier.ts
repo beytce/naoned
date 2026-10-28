@@ -75,6 +75,8 @@ export const NOTIFICATION_KINDS = [
   "signoria",
   // The Letter of the day (R10): a consequence of an answer, come or not.
   "letter",
+  // The Doge (R7): the election opened (candidates told so), the Doge elected.
+  "doge",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -136,6 +138,7 @@ const OPENS: Partial<Record<NotificationKind, string>> = {
   sfida: "sfida",
   sera: "sera",
   letter: "letter",
+  doge: "senate",
 };
 
 /** Who wrote the letter a consequence answers (`followup` id of the month's script). */
@@ -188,6 +191,7 @@ export class Notifier {
     await this.signoriaNews(fx, now);
     await this.outbid(fx, now);
     await this.letterNews(fx, now);
+    await this.dogeNews(fx, now);
     const fills = fx.events.filter((e) => e.type === "order_filled" && e.playerId);
     if (fills.length === 0) return;
     const people = await this.people();
@@ -286,6 +290,46 @@ export class Notifier {
         })),
       now,
     );
+  }
+
+  /** The Doge's election (R7): its opening to everyone (the candidates told so), its winner. */
+  private async dogeNews(fx: Effects, now: number): Promise<void> {
+    const opened = fx.events.find((e) => e.type === "election_opened");
+    const elected = fx.events.find((e) => e.type === "doge_elected");
+    if (!opened && !elected) return;
+    const people = await this.people();
+    if (opened) {
+      const candidates = new Set((opened.data?.candidates ?? []) as string[]);
+      await this.send(
+        [...people].map((accountId) => ({
+          accountId,
+          kind: "doge" as const,
+          data: { event: "opened", candidate: candidates.has(accountId) },
+        })),
+        now,
+      );
+    }
+    if (elected?.playerId) {
+      const [row] = await this.db
+        .select({ pseudo: accounts.pseudo })
+        .from(accounts)
+        .where(eq(accounts.id, elected.playerId));
+      const decree = (elected.data?.decree ?? {}) as { code?: string; target?: string };
+      await this.send(
+        [...people].map((accountId) => ({
+          accountId,
+          kind: "doge" as const,
+          data: {
+            event: accountId === elected.playerId ? "won" : "elected",
+            byName: row?.pseudo ?? null,
+            decree: decree.code ?? null,
+            target: decree.target ?? null,
+            mutator: elected.data?.mutator ?? null,
+          },
+        })),
+        now,
+      );
+    }
   }
 
   /** A consequence of the Letter (R10) came, or did not: told with its sender and its id. */

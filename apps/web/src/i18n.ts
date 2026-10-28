@@ -1765,6 +1765,14 @@ const frDict = {
           : ghost
             ? `Votre Sfida de la semaine : le fantôme de ${by ?? "un marchand"}.`
             : `Votre Sfida de la semaine : ${by ?? "un marchand"}.`,
+      doge: (event: string, by: string | null, candidate: boolean) =>
+        event === "opened"
+          ? candidate
+            ? "Vous êtes candidat au Doge : annoncez votre programme au Sénat."
+            : "L'élection du Doge est ouverte : lisez les programmes et votez au Sénat."
+          : event === "won"
+            ? "Vous êtes élu Doge : votre programme gouvernera le mois prochain."
+            : `${by ?? "Un marchand"} est élu Doge : son programme gouvernera le mois prochain.`,
       letter: (name: string, text: string) => text || `Des nouvelles de ${name}.`,
       sera: (event: string, lots: number) =>
         event === "outbid"
@@ -1823,6 +1831,7 @@ const frDict = {
           sfida: "Sfida de la semaine et défis reçus",
           sera: "La Sera (19 h 55) et enchères dépassées",
           letter: "Suites de la lettre du jour",
+          doge: "Élection du Doge (ouverture, élu)",
         } as Record<string, string>,
       },
     },
@@ -1846,8 +1855,7 @@ const frDict = {
       worth: "Ventes nettes de la saison",
       podium: "Le podium",
       rewards: "Vos récompenses",
-      renown: (n: number) => `+${n} de Renommée`,
-      milestone: (name: string, n: number) => `Palier ${name} : +${n} de Renommée`,
+      milestone: (name: string) => `Palier ${name}`,
       goal: {
         title: "Objectif de saison",
         now: (name: string, n: number) =>
@@ -1858,7 +1866,7 @@ const frDict = {
           `Prochain palier : ${name}, à ${worth} de ventes nettes (+${n} de Renommée), quel que soit votre rang.`,
         top: "Plus haut palier atteint : tenez-le jusqu'à la fin du mois.",
       },
-      renownTotal: (name: string, points: number) => `${name} · ${points} points de Renommée`,
+      renownTotal: (name: string) => `Renommée de la Maison : ${name}`,
       nothing: "Jouez au moins 7 jours dans une saison pour recevoir l'écusson de participant.",
       start: "Ouvrir mon nouveau comptoir",
       newSeason: (name: string) =>

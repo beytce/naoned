@@ -223,6 +223,27 @@ export function pushTextEn(
         body: `You finish ${ordinal(Number(data.rank))} (${data.glory ? `${gain} Glory` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
       };
     }
+    case "doge": {
+      if (data.event === "opened")
+        return data.candidate
+          ? {
+              title: "You stand for Doge",
+              body: "The Senate elects next month's Doge: announce your programme and gather the voices.",
+            }
+          : {
+              title: "The election of the Doge is open",
+              body: "The first ten Houses seek the crown: read their programmes and vote.",
+            };
+      if (data.event === "won")
+        return {
+          title: "You are elected Doge",
+          body: "Your programme will rule next month: your decree and your season.",
+        };
+      return {
+        title: `${data.byName ? String(data.byName) : "A merchant"} is elected Doge`,
+        body: "Their decree and season rule next month.",
+      };
+    }
     case "letter": {
       const by = SENDERS[String(data.sender ?? "")] ?? "Venice";
       return {

@@ -99,8 +99,8 @@ export function Ceremony({
   const rewards = [
     data.award || null,
     ...data.titles,
-    data.milestone.renown > 0 ? t.milestone(data.milestone.name, data.milestone.renown) : null,
-    data.renown > 0 ? t.renown(data.renown) : null,
+    // The tier's name, never its figure (R12): the Renown speaks by its titles.
+    data.milestone.renown > 0 ? t.milestone(data.milestone.name) : null,
   ].filter((r): r is string => r !== null);
   // Podium order: second, first, third.
   const podium = [2, 1, 3]
@@ -186,9 +186,7 @@ export function Ceremony({
         ) : (
           <p className="mt-2 text-sm text-cream-dim">{t.nothing}</p>
         )}
-        <p className="meta mt-3">
-          {t.renownTotal(data.totalRenown.current.name, data.totalRenown.points)}
-        </p>
+        <p className="meta mt-3">{t.renownTotal(data.totalRenown.current.name)}</p>
       </section>
 
       <Slab

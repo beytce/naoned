@@ -916,7 +916,8 @@ export type NotificationKind =
   | "signoria"
   | "sfida"
   | "sera"
-  | "letter";
+  | "letter"
+  | "doge";
 
 export interface Notice {
   id: number;

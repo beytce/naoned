@@ -218,6 +218,13 @@
       "when": 1793178219363,
       "tag": "0030_dynasty",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793186229668,
+      "tag": "0031_doge",
+      "breakpoints": true
     }
   ]
 }

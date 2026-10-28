@@ -185,6 +185,21 @@ export const venice1450Settings: WorldSettingsInput = {
   // day's end and a latecomer for 12 h; Milan rides every 2 open hours (docs/calibration.md).
   terraferma: {
     live: true,
+    // The week's close (the theme's defaults), without the Signore's decree: the Doge's decree
+    // of the Republic replaces it (R7, R12); the Signore keeps his title and his Glory.
+    close: {
+      winBps: 8_000,
+      influence: { signore: 20, podium: 12, top10: 8, quarter: 5, participant: 2 },
+      decrees: [],
+      effects: {
+        franchise_rialto: { taxBps: 0, quotaBps: 10_000 },
+        monopole: { extraTaxBps: 1_500 },
+        embargo: { cutBps: 2_500, reservedMinutes: 60 },
+        dime: { tollBps: 300 },
+        faveur_doge: { premiumBps: 4_000, extraOrders: 1 },
+        calmiere: { capBps: 10_500 },
+      },
+    },
     cellsPerActive: 25,
     minActive: 20,
     aspectBps: 16_000,

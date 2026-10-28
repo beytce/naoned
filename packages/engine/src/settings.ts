@@ -1292,6 +1292,8 @@ export const worldSettingsSchema = z.object({
       electionDays: positive,
       minDays: qty,
       maxBoost: qty,
+      /** Influence a voice of boost costs (taken by the server). */
+      influencePerVoice: qty.prefault(10),
       decrees: z.array(z.enum(["faveur", "franchigia", "levante", "calmiere"])),
       effects: z.object({
         /** Deliveries to the city paid more. */

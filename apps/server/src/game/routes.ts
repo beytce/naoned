@@ -32,6 +32,7 @@ import { isPushEndpoint } from "../notify/push.js";
 import { retention, sharedMailboxes, suspiciousPairs } from "./admin.js";
 import { atoutPoolFor } from "./atouts.js";
 import { bankReport, ledgerCsv } from "./bank.js";
+import { seasonMonthKey } from "./calendar.js";
 import {
   CompanyError,
   callCompany,
@@ -48,6 +49,7 @@ import {
 } from "./company.js";
 import { type CondottaHub, condottaRecord } from "./condotta.js";
 import { dashboard } from "./dashboard.js";
+import { dogeOf, electionView } from "./doge.js";
 import {
   HeirRefused,
   chooseHeir,
@@ -272,6 +274,11 @@ const action = z.discriminatedUnion("type", [
   // The Atout of the week (R3).
   z.object({ type: z.literal("chooseAtout"), code: z.string().max(40) }),
   z.object({ type: z.literal("answerLetter"), choice: z.string().max(40) }),
+  z.object({
+    type: z.literal("standForDoge"),
+    mutator: z.string().max(40).nullable(),
+    decree: z.object({ code: z.string().max(20), target: z.string().max(40).optional() }),
+  }),
   // The incanto of the Sera (R11): a maximum on a lot, in deniers.
   z.object({
     type: z.literal("incantoBid"),
@@ -447,7 +454,8 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       recommendedRegion: recommendedRegion(
         activePeopleByRegion(world.ctx, world.current, world.now()),
       ),
-      previousDoge: await previousDoge(db, world.id),
+      // The Doge ruling the month (R7), else the first of the month before.
+      previousDoge: await rulingDoge(),
       community: deps.communityUrl ?? null,
     }),
   );
@@ -1451,6 +1459,58 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
    * The Signoria of the cities (R2): each city's Podestà, the three first on its gauge and the
    * merchant's own points, with names and crests.
    */
+  /** The Doge ruling this month (R7) as the Dogana's façade shows it, else last month's first. */
+  const rulingDoge = async () => {
+    const doge = await dogeOf(db, seasonMonthKey(world.ctx.endAt ?? world.now()));
+    if (!doge) return previousDoge(db, world.id);
+    return { pseudo: doge.pseudo, crest: doge.crest, season: world.name };
+  };
+
+  /** The Doge's election (R7): candidates, programmes, voices, the merchant's own. */
+  app.get("/api/game/election", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return toJson(await electionView(db, world.ctx, world.current, account.id, world.now()));
+  });
+
+  /**
+   * A voice for a candidate, with Influence for more weight: the server takes only the voices of
+   * boost not already given (the engine keeps them when the merchant changes its mind).
+   */
+  app.post("/api/game/election/vote", perMerchant(30), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const body = z
+      .object({ candidate: z.string().max(64), boost: z.number().int().min(0).max(10) })
+      .parse(req.body);
+    const rules = world.ctx.settings.doge;
+    if (!rules) return reply.code(409).send({ error: "doge_off" });
+    const before = world.current.election?.votes[account.id]?.boost ?? 0;
+    const boost = Math.min(rules.maxBoost, Math.max(before, body.boost));
+    const cost = (boost - before) * rules.influencePerVoice;
+    const at = new Date(world.now());
+    let key: string | null = null;
+    if (cost > 0) {
+      try {
+        key = await spendInfluence(db, account.id, "vote", cost, world.id, at);
+      } catch (e) {
+        if (e instanceof HouseRefused) return reply.code(409).send({ error: e.code });
+        throw e;
+      }
+    }
+    const res = await world.execute({
+      type: "voteDoge",
+      playerId: account.id,
+      candidate: body.candidate,
+      influenceBoost: boost,
+    });
+    if (!res.ok) {
+      if (key) await refundInfluence(db, account.id, key);
+      return reply.code(409).send({ error: res.error });
+    }
+    return toJson(await electionView(db, world.ctx, world.current, account.id, world.now()));
+  });
+
   /** The Dynastie (R4): the account's line, the heir to name and the names offered. */
   app.get("/api/game/dynasty", async (req, reply) => {
     const account = await requireAccount(req, reply);
@@ -1838,5 +1898,7 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "chooseAtout", playerId, code: a.code }];
     case "answerLetter":
       return [{ type: "answerLetter", playerId, choice: a.choice }];
+    case "standForDoge":
+      return [{ type: "standForDoge", playerId, mutator: a.mutator, decree: a.decree }];
   }
 }

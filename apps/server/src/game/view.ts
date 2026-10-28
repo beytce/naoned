@@ -337,9 +337,12 @@ export function mutatorNotice(ctx: WorldContext, now: number) {
   const end = seasonEnd(ctx);
   const next = seasonMonthKey(end + 15 * 86_400_000);
   const announced = dayOfMonthIn(now) >= 24 || now >= end;
+  // The Doge chose this month's (R7); the next month's is its successor's, known at the close.
+  const chosen = ctx.settings.doge?.mutator;
   return {
-    current: seasonMutator(ctx.settings, seasonMonthKey(end))?.code ?? null,
-    next: announced ? (seasonMutator(ctx.settings, next)?.code ?? null) : null,
+    current: chosen ?? seasonMutator(ctx.settings, seasonMonthKey(end))?.code ?? null,
+    next:
+      announced && !ctx.settings.doge ? (seasonMutator(ctx.settings, next)?.code ?? null) : null,
   };
 }
 

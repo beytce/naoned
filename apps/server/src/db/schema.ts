@@ -348,6 +348,24 @@ export const generations = pgTable(
   (t) => [primaryKey({ columns: [t.accountId, t.worldId] })],
 );
 
+/**
+ * The Doges (R7, docs/plan-rupture.md): the account elected in a month's last week, for the month
+ * it rules (`YYYY-MM`), with its programme — the mutator and the decree of the Republic that hold
+ * all that month.
+ */
+export const doges = pgTable("doges", {
+  month: text("month").primaryKey(),
+  accountId: uuid("account_id")
+    .notNull()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  /** The world where it was elected. */
+  worldId: uuid("world_id").references(() => worlds.id, { onDelete: "set null" }),
+  mutator: text("mutator"),
+  decree: jsonb("decree").$type<{ code: string; target?: string }>().notNull(),
+  votes: integer("votes").notNull(),
+  at: timestamp("at", { withTimezone: true }).notNull(),
+});
+
 export const accountAtouts = pgTable(
   "account_atouts",
   {
