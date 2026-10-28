@@ -2812,6 +2812,8 @@ export const en: Dictionary = {
     seasonNotes: {
       title: "New this season",
       items: [
+        "The Atouts: each Monday, three figures of Venice are offered to you; you take one for the season. Each gives and each takes. Four more are unlocked by a feat (Podestà, a lot won at the incanto, Signore of a week, the rank of Mercante), kept from season to season.",
+        "The Letter of the day: each morning, a letter from Lorenzo, Faraj, the widow Contarini, Ser Marin of the Senate or a Milanese without a name, two answers, consequences that come days later, and an end of the month that follows your choices. Small gains, capped at 100 ducats a season.",
         "New blue « Laguna » palette, and the map in blue (the old one stays in the Profile).",
         "The Terraferma opens after your first day of trade; you can set down there any day, everyone safe until the end of the first day.",
         "Whoever attacks no merchant of the week always keeps their capital.",

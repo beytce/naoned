@@ -2913,6 +2913,8 @@ const frDict = {
     seasonNotes: {
       title: "Nouveautés de la saison",
       items: [
+        "Les Atouts : chaque lundi, trois figures de Venise vous sont proposées ; vous en prenez une pour la saison. Chacune donne et retire. Quatre de plus se débloquent par un exploit (Podestà, lot gagné à l'incanto, Signore d'une semaine, rang Mercante), gardés de saison en saison.",
+        "La Lettre du jour : chaque matin, une lettre de Lorenzo, Faraj, la veuve Contarini, Ser Marin du Sénat ou d'un Milanais sans nom, deux réponses, des suites qui arrivent des jours plus tard, et une fin du mois selon vos choix. Gains petits, plafonnés à 100 ducats par saison.",
         "Nouvelle palette bleue « Lagune », et la carte en bleu (l'ancienne reste dans le Profil).",
         "La Terraferme s'ouvre après votre première journée de commerce ; on s'y pose n'importe quel jour, tous à l'abri jusqu'à la fin du premier jour.",
         "Qui n'attaque aucun marchand de la semaine garde toujours sa capitale.",
