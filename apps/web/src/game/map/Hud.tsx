@@ -136,6 +136,8 @@ export function MapHud({
   onResumeGuide,
   onRanking,
   onRival,
+  onSera,
+  sera = 0,
   onFamily,
   onOpenLayer,
   onWorkshops,
@@ -202,6 +204,9 @@ export function MapHud({
   onRialto?: () => void;
   onBuyCart: () => void;
   onResumeGuide: () => void;
+  /** The Sera's sheet (R11), and its lots still open. */
+  onSera?: () => void;
+  sera?: number;
   /** The rival's line: the Sfida's sheet once the Lustre is on, else the ranking. */
   onRival?: () => void;
   onRanking: () => void;
@@ -348,6 +353,12 @@ export function MapHud({
             {onRialto && (
               <Orb label={m.buttons.rialto} onClick={onRialto} coach="hud-rialto">
                 {Icon.rialto()}
+              </Orb>
+            )}
+            {/* The Sera (R11): its round while lots of the galleys wait for bids. */}
+            {onSera && sera > 0 && (
+              <Orb label={fr.game.sera.orb} onClick={onSera} badge={sera}>
+                {Icon.anchor()}
               </Orb>
             )}
           </span>

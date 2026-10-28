@@ -214,6 +214,16 @@ export function pushTextEn(
         body: `You finish ${ordinal(Number(data.rank))} (${data.glory ? `${gain} Glory` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
       };
     }
+    case "sera":
+      if (data.event === "outbid")
+        return {
+          title: "Your bid is passed",
+          body: "A merchant passed you at the incanto of the galleys. Raise your maximum before the close.",
+        };
+      return {
+        title: "The Sera begins at 8 pm",
+        body: `${Number(data.lots)} lots of the galleys up for auction, and the battle of the Terraferma.`,
+      };
     case "sfida": {
       const by = data.byName ? String(data.byName) : "a merchant";
       if (data.event === "challenged")

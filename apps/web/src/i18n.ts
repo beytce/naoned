@@ -1758,6 +1758,16 @@ const frDict = {
         `Les galères de la Muda sont à quai : la Dogana vend ${goods || "les marchandises d'outre-mer"} au Rialto.`,
       siege: (land: string, by: string, lances: number, time: string) =>
         `${land} menacée : ${lances} troupes ${by} arrivent à ${time}. Renforcez la garnison !`,
+      sfida: (event: string, by: string | null, ghost: boolean) =>
+        event === "challenged"
+          ? `${by ?? "Un marchand"} vous défie pour la semaine prochaine.`
+          : ghost
+            ? `Votre Sfida de la semaine : le fantôme de ${by ?? "un marchand"}.`
+            : `Votre Sfida de la semaine : ${by ?? "un marchand"}.`,
+      sera: (event: string, lots: number) =>
+        event === "outbid"
+          ? "Votre enchère est dépassée à l'incanto des galères."
+          : `La Sera commence à 20 h : ${lots} lot${lots > 1 ? "s" : ""} aux enchères, et la bataille.`,
       signoria: (event: string, city: string, by: string | null) =>
         event === "podesta_named"
           ? `Vous êtes Podestà de ${city} : un droit sur les livraisons des autres, et ses commandes avant eux.`
@@ -1808,6 +1818,8 @@ const frDict = {
           wave: "Vague de commandes que votre stock couvre (si vous êtes absent)",
           streak: "Rappel de série (19 h, coffre du jour fermé)",
           signoria: "Signoria des villes (Podestà nommé, ville perdue, rival en tête)",
+          sfida: "Sfida de la semaine et défis reçus",
+          sera: "La Sera (19 h 55) et enchères dépassées",
         } as Record<string, string>,
       },
     },
@@ -2686,6 +2698,39 @@ const frDict = {
       },
     },
     /** The rival of the week, under the rank on the map. */
+    /** The Sera (R11): the incanto of the galleys and the battle, at 20 h. */
+    sera: {
+      orb: "La Sera",
+      kicker: "Ce soir à 20 h",
+      title: "La Sera",
+      line: (n: number) =>
+        `${n} lot${n > 1 ? "s" : ""} des galères aux enchères, et la bataille de la Terraferme.`,
+      lot: (i: number) => `Lot ${i}`,
+      closes: (time: string) => `ferme à ${time}`,
+      closesIn: (left: string) => `ferme dans ${left}`,
+      closed: "Clos",
+      price: "Prix",
+      bidders: (n: number) => `${n} enchérisseur${n > 1 ? "s" : ""}`,
+      leading: "Vous menez",
+      passed: "Dépassé",
+      won: "Gagné",
+      sold: "Vendu",
+      unsold: "Invendu : retourné au quai",
+      max: "Votre maximum",
+      bid: "Enchérir",
+      raise: "Relever",
+      oneLot: "Un lot par marchand et par Sera.",
+      results: "Résultats du jour",
+      podesta: (city: string) => `Vous êtes Podestà de ${city}`,
+      noResults: "Vous ne tenez aucune ville ce soir.",
+      help: "Chaque arrivée des galères de la Muda met la moitié de son chargement aux enchères, en trois lots qui ferment à 20 h 10, 20 h 20 et 20 h 30. Laissez votre maximum quand vous voulez, dès l'arrivée : vous payez seulement le deuxième maximum plus 5 %, et vos ducats sont rendus si l'on vous dépasse. Une enchère dans les deux dernières minutes prolonge le lot de deux minutes. Un lot par marchand et par Sera. Le prix payé sort du jeu.",
+      errors: {
+        bid_too_low: "Votre maximum doit atteindre le minimum du lot.",
+        lot_closed: "Ce lot est clos.",
+        one_lot: "Vous menez déjà un lot de cette Sera.",
+        insufficient_funds: "Pas assez de ducats.",
+      } as Record<string, string>,
+    },
     /** The Lustre (R6): the social ranks of Venice and the weekly Sfida. */
     lustre: {
       tiers: {
@@ -2899,6 +2944,11 @@ const frDict = {
       vehicle_not_for_sale: "Seules les mules s'achètent : améliorez-les ensuite.",
       vehicle_max_level: "Ce véhicule est déjà au plus haut niveau.",
       insufficient_stock: "Pas assez de stock.",
+      incanto_off: "Pas d'incanto dans ce monde.",
+      bid_too_low: "Votre maximum doit atteindre le minimum.",
+      unknown_lot: "Ce lot n'existe pas.",
+      lot_closed: "Ce lot est clos.",
+      one_lot: "Vous menez déjà un lot de cette Sera.",
       building_busy: "Cet atelier produit déjà : attendez la fin de la file.",
       queue_full: "La file de production est pleine (12 h maximum).",
       max_buildings: "Nombre maximal de bâtiments atteint.",

@@ -531,6 +531,26 @@ export interface PlayerView {
   /** The goods the merchant is the official supplier of this week, by city. */
   supplies: { city: string; resource: string }[];
   /**
+   * The Sera (R11): its hour, and the incanto's lots open or settled today: the price now, the
+   * least a new maximum must reach, the merchant's own maximum and whether it leads (null: off).
+   */
+  sera?: {
+    hour: number;
+    minutes: number;
+    lots: {
+      id: string;
+      goods: Record<string, number>;
+      value: Money;
+      closesAt: number;
+      price: Money;
+      minimum: Money;
+      bidders: number;
+      mine: Money | null;
+      leading: boolean;
+      done: { won: boolean; sold: boolean } | null;
+    }[];
+  } | null;
+  /**
    * The Signoria of the cities (R2): the cities the merchant is Podestà of, each city's Podestà
    * (names and gauges from GET /api/game/signoria), its rules; null when off.
    */
@@ -857,7 +877,9 @@ export type NotificationKind =
   | "skirmish_call"
   | "wave"
   | "streak"
-  | "signoria";
+  | "signoria"
+  | "sfida"
+  | "sera";
 
 export interface Notice {
   id: number;
@@ -984,6 +1006,7 @@ export type Action =
   | { type: "tenderBid"; tenderId: string; price: string; quantity: number }
   | { type: "tenderDeliver"; tenderId: string }
   | { type: "warehouseBid"; city: string; amount: string }
+  | { type: "incantoBid"; lotId: string; max: string }
   | { type: "buildFondaco"; city: string }
   | { type: "choosePath"; buildingId: string; path: "volume" | "quality" }
   | {

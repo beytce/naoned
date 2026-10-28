@@ -1736,6 +1736,16 @@ export const en: Dictionary = {
         `The galleys of the Muda are at the quay: the Dogana sells ${goods || "the goods from overseas"} at the Rialto.`,
       siege: (land: string, by: string, lances: number, time: string) =>
         `${land} threatened: ${lances} troops ${by} arrive at ${time}. Reinforce the garrison!`,
+      sfida: (event: string, by: string | null, ghost: boolean) =>
+        event === "challenged"
+          ? `${by ?? "A merchant"} challenges you for next week.`
+          : ghost
+            ? `Your Sfida of the week: the ghost of ${by ?? "a merchant"}.`
+            : `Your Sfida of the week: ${by ?? "a merchant"}.`,
+      sera: (event: string, lots: number) =>
+        event === "outbid"
+          ? "Your bid is passed at the incanto of the galleys."
+          : `The Sera begins at 8 pm: ${lots} lot${lots > 1 ? "s" : ""} up for auction, and the battle.`,
       signoria: (event: string, city: string, by: string | null) =>
         event === "podesta_named"
           ? `You are Podestà of ${city}: a toll on the others' deliveries, and its orders before them.`
@@ -1785,6 +1795,8 @@ export const en: Dictionary = {
           wave: "A wave of orders your stock covers (if you are away)",
           streak: "Streak reminder (7 pm, today's chest closed)",
           signoria: "Signoria of the cities (Podestà named, a city lost, a rival ahead)",
+          sfida: "Sfida of the week and challenges received",
+          sera: "The Sera (7:55 pm) and passed bids",
         } as Record<string, string>,
       },
     },
@@ -2606,6 +2618,39 @@ export const en: Dictionary = {
         leader: (name: string) => `Leader: ${name}`,
       },
     },
+    /** The Sera (R11): the incanto of the galleys and the battle, at 20 h. */
+    sera: {
+      orb: "The Sera",
+      kicker: "Tonight at 8 pm",
+      title: "The Sera",
+      line: (n: number) =>
+        `${n} lot${n > 1 ? "s" : ""} of the galleys up for auction, and the battle of the Terraferma.`,
+      lot: (i: number) => `Lot ${i}`,
+      closes: (time: string) => `closes at ${time}`,
+      closesIn: (left: string) => `closes in ${left}`,
+      closed: "Closed",
+      price: "Price",
+      bidders: (n: number) => `${n} bidder${n > 1 ? "s" : ""}`,
+      leading: "You lead",
+      passed: "Passed",
+      won: "Won",
+      sold: "Sold",
+      unsold: "Unsold: back on the quay",
+      max: "Your maximum",
+      bid: "Bid",
+      raise: "Raise",
+      oneLot: "One lot per merchant and per Sera.",
+      results: "Today's results",
+      podesta: (city: string) => `You are Podestà of ${city}`,
+      noResults: "You hold no city tonight.",
+      help: "Each arrival of the Muda's galleys puts half of its load up for auction, in three lots closing at 8:10, 8:20 and 8:30 pm. Leave your maximum whenever you like, from the arrival on: you only pay the second maximum plus 5%, and your ducats come back if you are passed. A bid in the last two minutes extends the lot by two minutes. One lot per merchant and per Sera. The price paid leaves the game.",
+      errors: {
+        bid_too_low: "Your maximum must reach the lot's minimum.",
+        lot_closed: "This lot is closed.",
+        one_lot: "You already lead a lot of this Sera.",
+        insufficient_funds: "Not enough ducats.",
+      } as Record<string, string>,
+    },
     /** The Lustre (R6): the social ranks of Venice and the weekly Sfida. */
     lustre: {
       tiers: {
@@ -2812,6 +2857,11 @@ export const en: Dictionary = {
       vehicle_not_for_sale: "Only mules can be bought: upgrade them afterwards.",
       vehicle_max_level: "This vehicle is already at the highest level.",
       insufficient_stock: "Not enough stock.",
+      incanto_off: "No incanto in this world.",
+      bid_too_low: "Your maximum must reach the minimum.",
+      unknown_lot: "This lot does not exist.",
+      lot_closed: "This lot is closed.",
+      one_lot: "You already lead a lot of this Sera.",
       building_busy: "This workshop is already producing: wait for the queue to end.",
       queue_full: "The production queue is full (12 h at most).",
       max_buildings: "Maximum number of buildings reached.",

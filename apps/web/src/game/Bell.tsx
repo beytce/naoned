@@ -26,6 +26,8 @@ const ICON = {
   wave: NavIcon.routes,
   streak: NavIcon.bell,
   signoria: NavIcon.routes,
+  sfida: NavIcon.top,
+  sera: NavIcon.marche,
 } as const;
 const TONE: Record<string, string> = {
   harvest: "text-lagoon",
@@ -45,6 +47,8 @@ const TONE: Record<string, string> = {
   wave: "text-lagoon",
   streak: "text-gold",
   signoria: "text-gold",
+  sfida: "text-info",
+  sera: "text-gold",
 };
 
 function text(n: Notice, props: GameProps): string {
@@ -145,6 +149,14 @@ function text(n: Notice, props: GameProps): string {
       return t.wave(hourOf(Number(n.data.at ?? 0)), Number(n.data.covered ?? 0));
     case "streak":
       return t.streak(Number(n.data.streak ?? 0));
+    case "sfida":
+      return t.sfida(
+        String(n.data.event ?? ""),
+        n.data.byName ? String(n.data.byName) : null,
+        n.data.ghost === true,
+      );
+    case "sera":
+      return t.sera(String(n.data.event ?? ""), Number(n.data.lots ?? 0));
     case "signoria":
       return t.signoria(
         String(n.data.event ?? ""),

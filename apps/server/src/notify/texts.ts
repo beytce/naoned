@@ -215,6 +215,16 @@ export function pushText(
         body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${data.glory ? `${gain} de Gloire` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
       };
     }
+    case "sera":
+      if (data.event === "outbid")
+        return {
+          title: "Votre enchère est dépassée",
+          body: "Un marchand vous a passé à l'incanto des galères. Relevez votre maximum avant la clôture.",
+        };
+      return {
+        title: "La Sera commence à 20 h",
+        body: `${Number(data.lots)} lots des galères aux enchères, et la bataille de la Terraferme.`,
+      };
     case "sfida": {
       const by = data.byName ? String(data.byName) : "un marchand";
       if (data.event === "challenged")

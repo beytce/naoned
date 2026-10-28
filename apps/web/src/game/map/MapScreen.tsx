@@ -29,6 +29,7 @@ import type { GameProps } from "../Game.js";
 import { HouseSheet } from "../House.js";
 import { RialtoSheet } from "../Marche.js";
 import { ProfileSheet } from "../Profil.js";
+import { SeraSheet, openSeraLots } from "../Sera.js";
 import { ChallengeSheet, SfidaSheet } from "../Sfida.js";
 import { SignoriaSheet } from "../Signoria.js";
 import { SuppliersSheet } from "../Suppliers.js";
@@ -904,6 +905,8 @@ export function MapScreen(
         onResumeGuide={props.onResumeGuide}
         onRanking={() => props.setSheet("ranking")}
         onRival={props.rival?.sfida ? () => props.setSheet("sfida") : undefined}
+        onSera={view.sera ? () => props.setSheet("sera") : undefined}
+        sera={openSeraLots(view)}
         onOpenLayer={
           terraView
             ? () => {
@@ -1002,6 +1005,7 @@ export function MapScreen(
       <SignoriaSheet {...props} />
       <SfidaSheet {...props} />
       <ChallengeSheet {...props} />
+      <SeraSheet {...props} />
       <WarehouseSheet {...props} />
       <FondacoSheet {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}

@@ -267,6 +267,27 @@ describe("game API", () => {
     expect(res.json().error).toBeDefined();
   });
 
+  it("takes a maximum at the incanto of the Sera, the merchant leading its lot (R11)", async () => {
+    const cookie = await login("ada@example.org");
+    await post(cookie, "/api/game/join", { region: "lagoon" });
+    // Up to the galleys' next arrival: their lots open for the Sera.
+    const open = async () =>
+      ((await get(cookie)).json().view.sera?.lots ?? []).some((l: { done: unknown }) => !l.done);
+    for (let i = 0; i < 100 && !(await open()); i++) {
+      now += 3_600_000;
+      await world.execute({ type: "tick" });
+    }
+    const v = (await get(cookie)).json().view;
+    const lot = v.sera.lots.find((l: { done: unknown }) => !l.done);
+    expect(lot).toBeDefined();
+    const res = await act(cookie, { type: "incantoBid", lotId: lot.id, max: lot.minimum });
+    expect(res.json().error).toBeUndefined();
+    const after = res.json().view.sera.lots.find((l: { id: string }) => l.id === lot.id);
+    expect(after.leading).toBe(true);
+    expect(after.mine).toBe(lot.minimum);
+    expect(BigInt(res.json().view.cash)).toBe(BigInt(v.cash) - BigInt(lot.minimum));
+  });
+
   it("has no warehouse in the cities since 25 October 2026: a bid is refused", async () => {
     const cookie = await login("ada@example.org");
     await post(cookie, "/api/game/join", { region: "lagoon" });

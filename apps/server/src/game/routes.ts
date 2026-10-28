@@ -259,6 +259,12 @@ const action = z.discriminatedUnion("type", [
     city: z.string().max(32),
     amount: z.string().regex(/^\d{1,12}$/),
   }),
+  // The incanto of the Sera (R11): a maximum on a lot, in deniers.
+  z.object({
+    type: z.literal("incantoBid"),
+    lotId: z.string().max(32),
+    max: z.string().regex(/^\d{1,12}$/),
+  }),
 ]);
 type Action = z.infer<typeof action>;
 
@@ -1776,5 +1782,7 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "choosePath", playerId, buildingId: a.buildingId, path: a.path }];
     case "warehouseBid":
       return [{ type: "warehouseBid", playerId, city: a.city, amount: BigInt(a.amount) }];
+    case "incantoBid":
+      return [{ type: "incantoBid", playerId, lotId: a.lotId, max: BigInt(a.max) }];
   }
 }
