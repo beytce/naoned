@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Le classement</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.nb{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800}
+.tab{flex:1;min-height:44px;border-radius:999px;border:0;background:transparent;color:#c2d4ea;font:600 14px 'Space Grotesk',sans-serif;cursor:pointer}
+.tabon{background:#2e486e;color:#ecf5ff;box-shadow:inset 0 0 0 1.5px #6ec8f5}
+.row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:#243a5c;color:#ecf5ff;min-height:52px;box-sizing:border-box;transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.row:hover{color:#ecf5ff;background:#2a4268}
+.in{animation:in .3s ease-out both}
+@keyframes in{from{opacity:0;transform:translateY(8px)}}
+.step{animation:step .35s cubic-bezier(.2,.8,.2,1.3) both}
+@keyframes step{from{opacity:0;transform:translateY(20px)}}
+.ghost{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:999px;border:1px solid #6d8db8;background:transparent;color:#ecf5ff;font:600 14px 'Space Grotesk',sans-serif;padding:0 14px;cursor:pointer}
+.ghost:hover{color:#ecf5ff}
+.gold{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:999px;background:linear-gradient(180deg,#fbe0a0,#f4c554 45%,#c89632);color:#241703;font:700 16px 'Space Grotesk',sans-serif;box-shadow:0 8px 20px rgba(244,197,84,.28);border:0;cursor:pointer;width:100%}
+.gold:active{transform:scale(.96)}
+.nt{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;color:#c2d4ea;font-size:11px;font-weight:600}
+.nt:hover{color:#ecf5ff}
+.sheet{animation:sheetin .35s cubic-bezier(.2,.8,.2,1) both}
+@keyframes sheetin{from{transform:translateY(100%)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #1d304d; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+  <header style="height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid #2e486e">
+    <span style="width: 44px"></span>
+    <h1 class="cz" style="margin: 0; font-size: 17px">Classement</h1>
+    <a href="#aide" aria-label="Les règles" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #6d8db8; display: flex; align-items: center; justify-content: center; color: #ecf5ff; font-weight: 700">?</a>
+  </header>
+
+  <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+    <div role="tablist" style="display: flex; padding: 4px; border-radius: 999px; background: #122036; gap: 4px">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+        <button type="button" role="tab" aria-selected="{{t.on}}" class="tab {{t.cls}}" onClick="{{t.pick}}">{{t.label}}</button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{isList}}" hint-placeholder-val="{{true}}">
+      <p style="margin: 0; font-size: 13px; color: #c2d4ea; text-align: center">{{period}}</p>
+      <div style="display: flex; align-items: flex-end; justify-content: center; gap: 16px; padding: 2px 0">
+        <a href="Fiche.dc.html" class="step" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #ecf5ff; font-size: 12px; width: 96px; text-align: center; animation-delay: 150ms"><span style="width: 52px; height: 60px; background: {{p2.flag}}; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%)"></span>{{p2.name}}<span class="nb" style="font-size: 20px; color: #c2d4ea">2</span></a>
+        <a href="Fiche.dc.html" class="step" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #ecf5ff; font-size: 12px; width: 96px; text-align: center; animation-delay: 300ms"><span style="width: 66px; height: 76px; background: #e36a4a; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%); filter: drop-shadow(0 0 12px rgba(244, 197, 84, .6))"></span>Casa Foscari<span class="nb" style="font-size: 24px; color: #f4c554">1</span></a>
+        <a href="Fiche.dc.html" class="step" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #ecf5ff; font-size: 12px; width: 96px; text-align: center"><span style="width: 48px; height: 56px; background: {{p3.flag}}; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%)"></span>{{p3.name}}<span class="nb" style="font-size: 18px; color: #c8693f">3</span></a>
+      </div>
+      <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+        <div class="in" style="position: relative; border-radius: 16px; overflow: hidden; background: {{r.under}}; animation-delay: {{r.delay}}ms">
+          <sc-if value="{{r.swiped}}" hint-placeholder-val="{{false}}">
+            <div style="position: absolute; right: 0; top: 0; bottom: 0; display: flex">
+              <a href="Fiche.dc.html" style="width: 84px; display: flex; align-items: center; justify-content: center; background: #2e486e; color: #ecf5ff; font-weight: 700; font-size: 13px">Défier</a>
+              <button type="button" onClick="{{openSpy}}" style="width: 84px; border: 0; display: flex; align-items: center; justify-content: center; background: #ff8070; color: #1a0a07; font: 700 13px 'Space Grotesk', sans-serif; cursor: pointer">Espionner</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{r.gap}}" hint-placeholder-val="{{false}}"><p style="margin: 0 0 6px; text-align: center; color: #c2d4ea; font-size: 13px">· · ·</p></sc-if>
+          <a href="Fiche.dc.html" class="row" style="position: relative; transform: translateX({{r.shift}}px); border: {{r.border}}">
+            <span class="nb" style="width: 28px; font-size: 15px; color: {{r.rankColor}}">{{r.rank}}</span>
+            <span style="width: 26px; height: 30px; flex: none; background: {{r.flag}}; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%)"></span>
+            <span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.name}} <span style="font-size: 12px; font-weight: 400; color: #c2d4ea">{{r.npc}}</span></span><span style="font-size: 12px; color: {{r.moveColor}}">{{r.move}}</span></span>
+            <span class="nb" style="font-size: 15px; color: #6ee0b8">{{r.gain}}</span>
+          </a>
+        </div>
+      </sc-for>
+    </sc-if>
+
+    <sc-if value="{{isSfida}}" hint-placeholder-val="{{false}}">
+      <div class="in" style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 18px; background: #243a5c">
+        <span style="display: flex; align-items: center; gap: 8px"><span style="width: 28px; height: 32px; background: #6ec8f5; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%)"></span><b>Vous</b></span>
+        <span style="display: flex; flex-direction: column; align-items: center"><span class="nb" style="font-size: 18px; color: #6ee0b8">+109 d</span><span style="font-size: 12px; color: #c2d4ea">d'avance</span></span>
+        <a href="Fiche.dc.html" style="display: flex; align-items: center; gap: 8px; color: #ecf5ff; min-height: 44px"><b>Casa Grimani</b><span style="width: 28px; height: 32px; background: #7db596; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%)"></span></a>
+      </div>
+      <div style="display: flex; gap: 12px">
+        <svg width="270" height="190" viewBox="0 0 270 190" role="img" aria-label="Vous : 1 290 d de bénéfice depuis lundi ; Casa Grimani : 1 181 d">
+          <path d="M0 180 H270" stroke="#42628c"/>
+          <path d="M0 180 L40 160 L80 150 L120 120 L160 100 L200 70" fill="none" stroke="#6ec8f5" stroke-width="3"/>
+          <path d="M0 180 L40 150 L80 140 L120 130 L160 110 L200 86" fill="none" stroke="#7db596" stroke-width="3" stroke-dasharray="6 4"/>
+          <path d="M200 70 L270 40" fill="none" stroke="#6ec8f5" stroke-width="2" stroke-dasharray="2 5" opacity=".6"/>
+          <text x="0" y="12" fill="#c2d4ea" font-size="12">lun.</text><text x="188" y="12" fill="#c2d4ea" font-size="12">auj.</text><text x="238" y="12" fill="#c2d4ea" font-size="12">dim.</text>
+        </svg>
+        <ol style="flex: 1; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 12px">
+          <li style="padding: 4px 6px; color: #c2d4ea">Ligue 1</li><li style="padding: 4px 6px; color: #c2d4ea">Ligue 2</li><li style="padding: 4px 6px; color: #c2d4ea">Ligue 3</li>
+          <li style="padding: 4px 6px; color: #c2d4ea">Ligue 4</li><li style="padding: 4px 6px; color: #c2d4ea">Ligue 5</li>
+          <li aria-current="true" style="padding: 4px 6px; border-radius: 6px; background: #2e486e; color: #ecf5ff; box-shadow: inset 0 0 0 1.5px #6ec8f5">Ligue 6 · vous</li>
+        </ol>
+      </div>
+      <p style="margin: 0; font-size: 14px; color: #c2d4ea">Gagner dimanche : <b style="color: #6ee0b8">+30</b> vers la ligue 5. Perdre : <b style="color: #ff8070">−20</b>.</p>
+      <a href="Fiche.dc.html" class="ghost">Voir Casa Grimani</a>
+    </sc-if>
+  </div>
+
+  <!-- Confirmation d'espionnage -->
+  <sc-if value="{{spy}}" hint-placeholder-val="{{false}}">
+    <button type="button" aria-label="Fermer" onClick="{{closeSpy}}" style="position: absolute; inset: 0; border: 0; background: rgba(6, 12, 24, .55); cursor: pointer; z-index: 5"></button>
+    <section class="sheet" aria-label="Espionner" style="z-index: 6; position: absolute; left: 0; right: 0; bottom: 0; background: #1d304d; border-radius: 28px 28px 0 0; border-top: 1px solid #6d8db8; padding: 0 16px 20px; display: flex; flex-direction: column; gap: 12px">
+      <div style="width: 44px; height: 5px; border-radius: 3px; background: #6d8db8; margin: 10px auto 0"></div>
+      <h2 class="cz" style="margin: 0; font-size: 16px">Espionner Casa Grimani</h2>
+      <p style="margin: 0; font-size: 14px; color: #c2d4ea">Pendant 7 jours, vous voyez chaque matin une de ses offres au Marché ou un de ses fronts. Il saura qu'on l'espionne, pas par qui.</p>
+      <button type="button" class="gold" onClick="{{hire}}">{{spyText}}</button>
+    </section>
+  </sc-if>
+
+  <nav aria-label="Les lieux" style="position: absolute; left: 0; right: 0; bottom: 0; height: 68px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: #0f1c33; border-top: 1px solid #22375a; padding-bottom: 6px">
+    <a href="Main.dc.html" class="nt"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z M9 4v14 M15 6v14"/></svg>Carte</a>
+    <a href="Comptoir.dc.html" class="nt"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>Ateliers</a>
+    <a href="Venise.dc.html" class="nt"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 18 C 7 13, 17 13, 21 18 M12 4 V15 M8 15 V9 H16 V15"/></svg>Venise</a>
+    <a href="Classement.dc.html" class="nt" aria-current="page" style="color: #f4c554"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 14v4M8 21h8"/></svg>Classement</a>
+    <a href="Terraferme.dc.html" class="nt"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/></svg>Conquête</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { tab: 'semaine', spy: false, hired: false }; }
+  renderVals() {
+    const t = this.state.tab;
+    const tabs = [['semaine', 'Semaine'], ['mois', 'Mois'], ['sfida', 'Duel']].map(([id, label]) => ({ label, on: t === id, cls: t === id ? 'tabon' : '', pick: () => this.setState({ tab: id }) }));
+    const YOU = 'Ca’ Morosini (vous)';
+    const week = [
+      [4, YOU, '#6ec8f5', '', '▲ 3 depuis hier', '+1 290 d'],
+      [5, 'Casa Grimani', '#7db596', '', '▼ 1 depuis hier', '+1 181 d'],
+      [6, 'Casa Loredan', '#8e6bd8', '(ordinateur)', '▼ 2', '+980 d'],
+      [7, 'Ca’ Zane', '#c89632', '', '= hier', '+940 d'],
+    ];
+    const month = [
+      [39, 'Casa Querini', '#c8693f', '', '= hier', '+9 820 d'],
+      [40, 'Casa Tron', '#3fa36b', '(ordinateur)', '▼ 1', '+9 610 d'],
+      [41, YOU, '#6ec8f5', '', '▲ 6 depuis hier · à 1 240 d du 40ᵉ', '+8 370 d'],
+      [42, 'Casa Badoer', '#8e6bd8', '', '▼ 2', '+8 010 d'],
+    ];
+    const raw = t === 'mois' ? month : week;
+    const rows = raw.map(([rank, name, flag, npc, move, gain], i) => ({
+      rank, name, flag, npc, move, gain, delay: i * 50, gap: i === 0,
+      swiped: t === 'semaine' && rank === 5, shift: t === 'semaine' && rank === 5 ? -168 : 0, under: t === 'semaine' && rank === 5 ? '#ff8070' : 'transparent',
+      border: name === YOU ? '1.5px solid #f4c554' : '1px solid transparent',
+      rankColor: name === YOU ? '#f4c554' : '#ecf5ff',
+      moveColor: move.startsWith('▲') ? '#6ee0b8' : move.startsWith('▼') ? '#ff8070' : '#c2d4ea',
+    }));
+    const p2 = t === 'mois' ? { name: 'Casa Grimani', flag: '#7db596' } : { name: 'Casa Contarini', flag: '#f4c554' };
+    const p3 = t === 'mois' ? { name: 'Casa Contarini', flag: '#f4c554' } : { name: 'Casa Dandolo', flag: '#e8d6a8' };
+    return {
+      tabs, rows, p2, p3, isList: t !== 'sfida', isSfida: t === 'sfida',
+      period: t === 'mois' ? 'Octobre · bénéfice du mois · les 40 premiers ont un palais' : 'Bénéfice de la semaine · fin dimanche 14, dans 2 j 6 h',
+      spy: this.state.spy, openSpy: () => this.setState({ spy: true }), closeSpy: () => this.setState({ spy: false, hired: false }),
+      spyText: this.state.hired ? 'Espion posté chez Casa Grimani ✓' : 'Espionner · 20 d', hire: () => this.setState({ hired: true }),
+    };
+  }
+}
+</script>
+</body>
+</html>

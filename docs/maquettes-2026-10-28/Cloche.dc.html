@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Messages</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.row{display:flex;align-items:center;gap:12px;padding:12px;border-radius:18px;background:#243a5c;color:#ecf5ff;min-height:52px;box-sizing:border-box}
+.row:hover{color:#ecf5ff;background:#2a4268}
+.ghost{display:flex;align-items:center;justify-content:center;min-height:44px;padding:0 14px;border-radius:999px;border:1px solid #6d8db8;background:transparent;color:#ecf5ff;font:600 14px 'Space Grotesk',sans-serif;cursor:pointer;flex:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.in{animation:in .4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes in{from{transform:translateY(10px);opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #16263e; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+  <a href="Main.dc.html" aria-label="Revenir à la carte" style="position: absolute; inset: 0; background: rgba(6, 12, 24, .6)"></a>
+  <section style="position: absolute; left: 0; right: 0; bottom: 0; height: 740px; background: #1d304d; border-radius: 28px 28px 0 0; border-top: 1px solid #6d8db8; padding: 0 16px; box-sizing: border-box">
+    <div style="width: 44px; height: 5px; border-radius: 3px; background: #6d8db8; margin: 10px auto 10px"></div>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px">
+      <h1 class="cz" style="margin: 0; font-size: 20px">Messages</h1>
+      <button type="button" onClick="{{readAll}}" style="min-height: 44px; border: 0; background: transparent; color: #6ec8f5; font: 600 14px 'Space Grotesk', sans-serif; cursor: pointer">Tout marquer lu</button>
+    </div>
+
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="2">
+      <h2 style="margin: 14px 0 8px; font-size: 13px; font-weight: 600; color: #c2d4ea">{{g.day}}</h2>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <sc-for list="{{g.items}}" as="i" hint-placeholder-count="3">
+          <div class="in" style="display: flex; flex-direction: column; gap: 8px; animation-delay: {{i.delay}}ms">
+            <a href="{{i.href}}" class="row">
+              <span style="width: 40px; height: 40px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: {{i.bg}}">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#12203a" stroke-width="2" aria-hidden="true"><path d="{{i.icon}}"/></svg>
+              </span>
+              <span style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+                <span style="font-size: 14px; font-weight: {{i.weight}}; line-height: 1.3"><sc-if value="{{i.unread}}" hint-placeholder-val="{{false}}"><span class="sr">non lu, </span></sc-if>{{i.text}}</span>
+                <span style="font-size: 12px; color: #c2d4ea">{{i.where}} · {{i.at}}</span>
+              </span>
+              <sc-if value="{{i.unread}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #6ec8f5; flex: none"></span></sc-if>
+            </a>
+            <sc-if value="{{i.spy}}" hint-placeholder-val="{{false}}"><button type="button" class="ghost" style="align-self: flex-end">Le chasser · 20 d</button></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-for>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { read: false }; }
+  renderVals() {
+    const CITY = 'M4 20V9l8-5 8 5v11M9 20v-6h6v6', MARKET = 'M3 20 C 7 9, 17 9, 21 20 M7 20v-5 M17 20v-5', SUN = 'M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8M12 2v3M12 19v3M2 12h3M19 12h3', CUP = 'M7 4h10v5a5 5 0 0 1-10 0zM12 14v4M8 21h8', EYE = 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6', BOAT = 'M3 16h18l-3 4H6zM12 16V4l7 9h-7';
+    const all = [
+      { day: 'Aujourd’hui', icon: CITY, bg: '#f4c554', text: 'Vous êtes maître de Vicence jusqu’à minuit.', where: 'Vicence', at: '0 h 02', href: 'Ville.dc.html', unread: true },
+      { day: 'Aujourd’hui', icon: MARKET, bg: '#6ec8f5', text: 'Casa Venier a acheté 10 actions de votre Maison à 14 d.', where: 'Marché', at: '7 h 41', href: 'Rialto.dc.html', unread: true },
+      { day: 'Aujourd’hui', icon: EYE, bg: '#ff8070', text: 'Un rival vous espionne : il voit une de vos offres par jour.', where: 'Politique', at: '6 h 10', href: 'Palais.dc.html', unread: false, spy: true },
+      { day: 'Hier', icon: SUN, bg: '#6ee0b8', text: 'Faraj a tenu parole : la suite de sa lettre rapporte 40 d.', where: 'Mes ateliers', at: '18 h 20', href: 'Comptoir.dc.html', unread: false },
+      { day: 'Hier', icon: BOAT, bg: '#b9a0f0', text: 'Lot 2 adjugé : 2 fourrures, 2 vins, 4 draps.', where: 'Enchères', at: '20 h 20', href: 'Mole.dc.html', unread: false },
+      { day: 'Hier', icon: CUP, bg: '#c2d4ea', text: 'Duel : vous menez Casa Grimani de 109 d.', where: 'Classement', at: '19 h 00', href: 'Classement.dc.html', unread: false },
+    ];
+    let k = 0;
+    const groups = ['Aujourd’hui', 'Hier'].map((day) => ({
+      day,
+      items: all.filter((x) => x.day === day).map((x) => ({ ...x, spy: !!x.spy, delay: (k++) * 50, unread: x.unread && !this.state.read, weight: x.unread && !this.state.read ? 700 : 500 })),
+    }));
+    return { groups, readAll: () => this.setState({ read: true }) };
+  }
+}
+</script>
+</body>
+</html>

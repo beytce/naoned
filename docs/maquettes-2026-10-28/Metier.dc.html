@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Nom et métier</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.gold{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:999px;background:linear-gradient(180deg,#fbe0a0,#f4c554 45%,#c89632);color:#241703;font-weight:700;font-size:17px;box-shadow:0 8px 20px rgba(244,197,84,.28)}
+.gold:hover{color:#241703}
+.gold:active{transform:scale(.96)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+.pill{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid #6d8db8;background:transparent;color:#ecf5ff;font:600 15px 'Space Grotesk',sans-serif;cursor:pointer}
+.pillon{border-color:#6ec8f5;box-shadow:inset 0 0 0 1px #6ec8f5;background:#2e486e}
+.job{display:flex;gap:14px;align-items:center;width:100%;text-align:left;padding:14px;border-radius:20px;border:1px solid #6d8db8;background:#243a5c;color:#ecf5ff;font-family:'Space Grotesk',sans-serif;cursor:pointer}
+.jobon{border-color:#6ec8f5;box-shadow:inset 0 0 0 1.5px #6ec8f5}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #16263e; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif; padding: 28px 20px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+  <p style="margin: 0; font-size: 11px; font-weight: 600; letter-spacing: .16em; color: #c2d4ea">VOTRE MAISON</p>
+  <h1 class="cz" style="margin: 0; font-size: 24px">Le nom de votre Maison</h1>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px">
+    <sc-for list="{{names}}" as="n" hint-placeholder-count="3">
+      <button type="button" class="pill {{n.cls}}" aria-pressed="{{n.on}}" onClick="{{n.pick}}">{{n.label}}</button>
+    </sc-for>
+  </div>
+  <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #c2d4ea">ou le vôtre
+    <input type="text" value="{{name}}" onInput="{{typed}}" style="min-height: 48px; border-radius: 999px; border: 1px solid #6d8db8; background: #1d304d; color: #ecf5ff; padding: 0 18px; font-size: 16px; font-family: inherit">
+  </label>
+
+  <h2 class="cz" style="margin: 10px 0 0; font-size: 20px">Votre métier</h2>
+  <p style="margin: -6px 0 0; font-size: 14px; color: #c2d4ea">Vous commencez avec ces deux ateliers.</p>
+  <div style="display: flex; flex-direction: column; gap: 10px">
+    <sc-for list="{{jobs}}" as="j" hint-placeholder-count="3">
+      <button type="button" class="job {{j.cls}}" aria-pressed="{{j.on}}" onClick="{{j.pick}}">
+        <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true" style="flex: none">
+          <circle cx="32" cy="32" r="26" fill="none" stroke="#42628c" stroke-dasharray="3 4"/>
+          <circle cx="32" cy="32" r="12" fill="#f4c554"/>
+          <circle cx="32" cy="6" r="7" fill="{{j.c1}}" stroke="#16263e" stroke-width="2"/>
+          <circle cx="56" cy="40" r="7" fill="{{j.c2}}" stroke="#16263e" stroke-width="2"/>
+        </svg>
+        <span style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 17px; font-weight: 700">{{j.label}}</span>
+          <span style="font-size: 13px; color: #c2d4ea">{{j.text}}</span>
+        </span>
+      </button>
+    </sc-for>
+  </div>
+  <span style="flex: 1"></span>
+  <a href="Main.dc.html" class="gold">Commencer</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { name: "Ca' Morosini", job: 'pain' }; }
+  renderVals() {
+    const names = ["Ca' Morosini", 'Casa Venier', 'Ca’ Zane'].map((label) => ({
+      label, on: this.state.name === label, cls: this.state.name === label ? 'pillon' : '', pick: () => this.setState({ name: label }),
+    }));
+    const jobs = [
+      { id: 'pain', label: 'Meunier', text: 'Ferme et moulin : le blé, la farine, le pain des villes.', c1: '#e8d6a8', c2: '#d9c48c' },
+      { id: 'brique', label: 'Briquetier', text: 'Argile et four : les briques de tous les chantiers.', c1: '#c8693f', c2: '#a8553a' },
+      { id: 'bois', label: 'Charpentier', text: 'Bois et scierie : planches et galères.', c1: '#7db596', c2: '#5f9a78' },
+    ].map((j) => ({ ...j, on: this.state.job === j.id, cls: this.state.job === j.id ? 'jobon' : '', pick: () => this.setState({ job: j.id }) }));
+    return { names, jobs, name: this.state.name, typed: (e) => this.setState({ name: e.target.value }) };
+  }
+}
+</script>
+</body>
+</html>

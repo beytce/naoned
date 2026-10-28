@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fin du mois</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.nb{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800}
+.gold{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:999px;background:linear-gradient(180deg,#fbe0a0,#f4c554 45%,#c89632);color:#241703;font:700 16px 'Space Grotesk',sans-serif;box-shadow:0 8px 20px rgba(244,197,84,.28);text-align:center;padding:0 16px}
+.gold:hover{color:#241703}
+.next{display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:999px;border:1px solid #6d8db8;background:transparent;color:#ecf5ff;font:600 16px 'Space Grotesk',sans-serif;cursor:pointer;width:100%}
+.trait{display:flex;gap:12px;align-items:center;padding:12px;border-radius:18px;border:1px solid #6d8db8;background:#243a5c;color:#ecf5ff;text-align:left;font-family:'Space Grotesk',sans-serif;cursor:pointer;width:100%}
+.traiton{border-color:#6ec8f5;box-shadow:inset 0 0 0 1.5px #6ec8f5}
+.disc{animation:disc .45s cubic-bezier(.2,.8,.2,1.5) both}
+@keyframes disc{from{transform:scale(.6);opacity:0}}
+.rays{animation:rays 1.6s cubic-bezier(.2,.8,.2,1) .1s both}
+@keyframes rays{from{transform:rotate(-120deg);opacity:0}to{transform:rotate(0);opacity:.55}}
+.stepup{transform-origin:bottom;animation:stepup .35s cubic-bezier(.2,.8,.2,1.3) both}
+@keyframes stepup{from{transform:scaleY(0)}}
+.flag{animation:fade .3s ease-out both}
+@keyframes fade{from{opacity:0;transform:translateY(-10px)}}
+.slide{animation:slide .35s cubic-bezier(.2,.8,.2,1) both}
+@keyframes slide{from{opacity:0;transform:translateX(60px)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #16263e; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif; padding: 26px 20px 22px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+  <div style="display: flex; justify-content: space-between; align-items: center">
+    <span class="cz" style="font-size: 13px; color: #f4c554">Octobre 1450 est close</span>
+    <span style="display: flex; gap: 6px" role="img" aria-label="Étape {{step}} sur 4">
+      <sc-for list="{{dots}}" as="d" hint-placeholder-count="4"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{d.c}}"></span></sc-for>
+    </span>
+  </div>
+
+  <sc-if value="{{s1}}" hint-placeholder-val="{{true}}">
+    <div onClick="{{next}}" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; cursor: pointer">
+      <span style="position: relative; width: 200px; height: 200px">
+        <svg class="rays" width="300" height="300" viewBox="0 0 300 300" aria-hidden="true" style="position: absolute; left: -50px; top: -50px"><g stroke="#f4c554" stroke-width="3" stroke-linecap="round"><path d="M150 4 V30 M150 270 V296 M4 150 H30 M270 150 H296 M47 47 L66 66 M234 234 L253 253 M47 253 L66 234 M234 66 L253 47"/></g></svg>
+        <span class="disc" style="position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 38% 32%, #fbe7b0, #f4c554 55%, #c89632); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 80px rgba(244, 197, 84, .4)"><span class="nb" style="font-size: 60px; color: #3a2606">38ᵉ</span></span>
+      </span>
+      <span style="font-size: 18px">sur 52 marchands</span>
+      <span style="font-size: 15px; color: #ecf5ff">Votre premier palais : <b style="color: #f4c554">38ᵉ des 40</b></span>
+      <span style="font-size: 14px; color: #c2d4ea">10 940 d de bénéfice ce mois-ci</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{s2}}" hint-placeholder-val="{{false}}">
+    <div onClick="{{next}}" style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 20px; cursor: pointer">
+      <h2 class="cz" style="margin: 0; text-align: center; font-size: 18px">Le podium</h2>
+      <div style="display: flex; align-items: flex-end; justify-content: center; gap: 12px">
+        <span style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100px; font-size: 13px; text-align: center"><span class="flag" style="width: 56px; height: 64px; background: #7db596; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%); animation-delay: 450ms"></span>Casa Grimani<span class="nb stepup" style="width: 90px; height: 70px; background: #243a5c; border-radius: 6px 6px 0 0; display: flex; align-items: center; justify-content: center; animation-delay: 150ms">2</span></span>
+        <span style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100px; font-size: 13px; text-align: center"><span class="flag" style="width: 66px; height: 76px; background: #e36a4a; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%); animation-delay: 600ms"></span>Casa Foscari<span class="nb stepup" style="width: 90px; height: 100px; background: #2e486e; border-radius: 6px 6px 0 0; display: flex; align-items: center; justify-content: center; color: #f4c554; font-size: 22px; animation-delay: 300ms">1</span></span>
+        <span style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100px; font-size: 13px; text-align: center"><span class="flag" style="width: 50px; height: 58px; background: #f4c554; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%); animation-delay: 300ms"></span>Casa Contarini<span class="nb stepup" style="width: 90px; height: 50px; background: #243a5c; border-radius: 6px 6px 0 0; display: flex; align-items: center; justify-content: center; color: #c8693f">3</span></span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{s3}}" hint-placeholder-val="{{false}}">
+    <div onClick="{{next}}" style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; cursor: pointer">
+      <h2 class="cz" style="margin: 0 0 6px; text-align: center; font-size: 18px">Vos récompenses</h2>
+      <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px">
+        <li class="slide" style="padding: 14px; border-radius: 16px; background: #243a5c; font-size: 16px">Un palais sur le Grand Canal, pour novembre</li>
+        <li class="slide" style="padding: 14px; border-radius: 16px; background: #243a5c; font-size: 16px; animation-delay: 120ms">Maître de Vicence</li>
+        <li class="slide" style="padding: 14px; border-radius: 16px; background: #243a5c; font-size: 16px; animation-delay: 240ms">Prestige : Marchand <span style="font-size: 13px; color: #c2d4ea">(2ᵉ rang sur 5)</span></li>
+        <li class="slide" style="padding: 14px; border-radius: 16px; border: 1px solid #c89632; color: #f4c554; font-size: 16px; animation-delay: 360ms">Un trait mérité : « Élevé au Rialto »</li>
+      </ul>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{s4}}" hint-placeholder-val="{{false}}">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 12px">
+      <h2 class="cz" style="margin: 0; font-size: 18px">Votre héritier</h2>
+      <p style="margin: 0; font-size: 14px; color: #c2d4ea">Marco cède les ateliers. Choisissez ce qu'il transmet à Piero.</p>
+      <sc-for list="{{traits}}" as="t" hint-placeholder-count="2">
+        <button type="button" class="trait {{t.cls}}" aria-pressed="{{t.on}}" onClick="{{t.pick}}">
+          <span style="width: 64px; height: 64px; border-radius: 50%; background: #2e486e; flex: none; display: flex; align-items: flex-end; justify-content: center; overflow: hidden"><svg width="56" height="60" viewBox="0 0 96 104" aria-hidden="true"><circle cx="48" cy="40" r="20" fill="#e8b48a"/><path d="M26 32 C 30 12, 66 12, 70 32 Z" fill="{{t.hat}}"/><path d="M14 104 C 16 72, 80 72, 82 104 Z" fill="{{t.robe}}"/></svg></span>
+          <span style="display: flex; flex-direction: column; gap: 4px"><span class="cz" style="font-size: 14px">{{t.name}}</span><span style="font-size: 13px; color: #6ee0b8">{{t.effect}}</span></span>
+        </button>
+      </sc-for>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #c2d4ea">Le prénom de l'héritier<input type="text" value="Piero" style="min-height: 48px; border-radius: 999px; border: 1px solid #6d8db8; background: #1d304d; color: #ecf5ff; padding: 0 18px; font-size: 16px; font-family: inherit"></label>
+      <span style="flex: 1"></span>
+      <span style="text-align: center; font-size: 13px; color: #c2d4ea">Piero reçoit « {{chosen}} »</span>
+      <a href="Main.dc.html" class="gold">Léguer et commencer novembre</a>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{notLast}}" hint-placeholder-val="{{true}}">
+    <button type="button" class="next" onClick="{{next}}">Continuer</button>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { step: 1, trait: 'rialto' }; }
+  renderVals() {
+    const s = this.state.step;
+    const all = [
+      { id: 'rialto', name: 'Élevé au Rialto', effect: 'Une quatrième carte dans l’offre des Atouts', hat: '#1d304d', robe: '#6ec8f5' },
+      { id: 'quais', name: 'Né sur les quais', effect: 'Voit les commandes urgentes 15 min plus tôt', hat: '#c8693f', robe: '#7db596' },
+    ];
+    const traits = all.map((t) => ({ ...t, on: this.state.trait === t.id, cls: this.state.trait === t.id ? 'traiton' : '', pick: () => this.setState({ trait: t.id }) }));
+    return {
+      step: s, s1: s === 1, s2: s === 2, s3: s === 3, s4: s === 4, notLast: s < 4,
+      dots: [1, 2, 3, 4].map((k) => ({ c: k <= s ? '#f4c554' : '#2e486e' })),
+      traits, chosen: all.find((t) => t.id === this.state.trait).name,
+      next: () => this.setState({ step: Math.min(4, s + 1) }),
+    };
+  }
+}
+</script>
+</body>
+</html>

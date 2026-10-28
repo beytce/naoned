@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Le moulin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.nb{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800}
+.gold{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:999px;background:linear-gradient(180deg,#fbe0a0,#f4c554 45%,#c89632);color:#241703;font:700 16px 'Space Grotesk',sans-serif;box-shadow:0 8px 20px rgba(244,197,84,.28);border:0;cursor:pointer;width:100%;padding:0 14px;transition:transform .1s}
+.gold:active{transform:scale(.96)}
+.ghost{display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:999px;border:1px solid #6d8db8;background:transparent;color:#ecf5ff;font:600 15px 'Space Grotesk',sans-serif;cursor:pointer;padding:0 16px}
+.pre{flex:1;min-height:68px;border-radius:18px;border:1px solid #6d8db8;background:transparent;color:#c2d4ea;font:600 13px 'Space Grotesk',sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.preon{border-color:#6ec8f5;background:#2e486e;color:#ecf5ff;box-shadow:inset 0 0 0 1.5px #6ec8f5}
+.sheetin{animation:sheetin .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes sheetin{from{transform:translateY(40px);opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #1d304d; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+  <header style="height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid #2e486e">
+    <a href="Comptoir.dc.html" style="display: flex; align-items: center; gap: 4px; min-height: 44px; min-width: 88px; color: #ecf5ff; font-weight: 600; font-size: 14px">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4 L6 10 L12 16"/></svg>Ateliers</a>
+    <h1 class="cz" style="margin: 0; font-size: 17px">Moulin · niv. 1</h1>
+    <span style="min-width: 88px"></span>
+  </header>
+
+  <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; align-items: center; gap: 16px; padding: 14px; border-radius: 20px; background: #16263e">
+      <span style="display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="width: 30px; height: 30px; border-radius: 50%; background: #e8d6a8"></span><span class="nb" style="font-size: 15px">10 blé</span></span>
+      <svg width="40" height="12" viewBox="0 0 40 12" aria-hidden="true"><path d="M0 6 H34 M28 1 L35 6 L28 11" fill="none" stroke="#6ec8f5" stroke-width="2" stroke-dasharray="4 3"/></svg>
+      <span style="display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="width: 28px; height: 28px; background: #d9c48c; border-radius: 4px"></span><span class="nb" style="font-size: 15px">8 farine</span></span>
+      <span style="flex: 1; text-align: right; font-size: 15px; color: #c2d4ea">30 min le lot</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 16px; border: 1px solid #6ee0b8; background: rgba(110, 224, 184, .1)">
+      <span style="width: 12px; height: 12px; border-radius: 50%; background: #6ee0b8"></span>
+      <span style="font-size: 15px">1 lot prêt : <b>8 farine</b> à récolter</span>
+    </div>
+
+    <h2 style="margin: 4px 0 0; font-size: 14px; font-weight: 600; color: #c2d4ea">Combien en relancer ?</h2>
+    <div style="display: flex; gap: 8px">
+      <sc-for list="{{presets}}" as="p" hint-placeholder-count="3">
+        <button type="button" class="pre {{p.cls}}" aria-pressed="{{p.on}}" onClick="{{p.pick}}"><span>{{p.label}}</span><span class="nb" style="font-size: 18px">{{p.n}} lot{{p.s}}</span></button>
+      </sc-for>
+    </div>
+    <p style="margin: 0; font-size: 15px">→ <b>{{flour}} farine</b> <span style="color: #c2d4ea">· prête à {{ready}}</span></p>
+    <p style="margin: 0; font-size: 13px; color: #c2d4ea">Limité par le blé : 70 en stock, 10 par lot. <a href="Rialto.dc.html" style="display: inline-flex; min-height: 44px; align-items: center">Acheter du blé</a></p>
+
+    <button type="button" onClick="{{openUp}}" style="display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 20px; border: 1px solid #6d8db8; background: transparent; color: #ecf5ff; text-align: left; font-family: inherit; cursor: pointer">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15" fill="none" stroke="#6ec8f5" stroke-width="2"/><path d="M17 24 V10 M11 16 L17 10 L23 16" fill="none" stroke="#6ec8f5" stroke-width="2.2"/></svg>
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+        <span style="font-weight: 700; font-size: 15px">Améliorer au niveau 2</span>
+        <span style="font-size: 13px; color: #c2d4ea">25 % plus rapide · 180 d, 10 briques</span>
+      </span>
+      <span style="color: #6ec8f5">›</span>
+    </button>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 20px 20px; background: #1d304d; border-top: 1px solid #2e486e">
+    <button type="button" class="gold">Récolter 8 farine et relancer {{n}} lot{{s}}</button>
+  </div>
+
+  <sc-if value="{{up}}" hint-placeholder-val="{{false}}">
+    <button type="button" aria-label="Fermer" onClick="{{closeUp}}" style="position: absolute; inset: 0; border: 0; background: rgba(6, 12, 24, .55); cursor: pointer"></button>
+    <section class="sheetin" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 0 20px 20px; background: #243a5c; border-radius: 28px 28px 0 0; border-top: 1px solid #6d8db8; display: flex; flex-direction: column; gap: 12px">
+      <div style="width: 44px; height: 5px; border-radius: 3px; background: #6d8db8; margin: 10px auto 4px"></div>
+      <h2 class="cz" style="margin: 0; font-size: 17px">Améliorer le moulin</h2>
+      <p style="margin: 0; font-size: 15px">Niveau 2 : un lot en <b>22 min</b> au lieu de 30.</p>
+      <p style="margin: 0; font-size: 14px; color: #c2d4ea">Coût : 180 d et 10 briques. <span style="color: #ff8070">Il vous manque 10 briques.</span></p>
+      <a href="Negoce.dc.html" class="gold">Acheter 10 briques · 16 d</a>
+      <button type="button" class="ghost" onClick="{{closeUp}}">Plus tard</button>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { n: 5, up: false }; }
+  renderVals() {
+    const presets = [{ label: '1 lot', n: 1 }, { label: 'Jusqu’à ce soir', n: 5 }, { label: 'Le plus possible', n: 7 }]
+      .map((p) => ({ ...p, s: p.n > 1 ? 's' : '', on: this.state.n === p.n, cls: this.state.n === p.n ? 'preon' : '', pick: () => this.setState({ n: p.n }) }));
+    const n = this.state.n;
+    const h = 14 + Math.floor((30 + n * 30) / 60), m = (20 + n * 30) % 60;
+    return {
+      presets, n, s: n > 1 ? 's' : '', flour: n * 8, ready: h + ' h ' + String(m).padStart(2, '0'),
+      up: this.state.up, openUp: () => this.setState({ up: true }), closeUp: () => this.setState({ up: false }),
+    };
+  }
+}
+</script>
+</body>
+</html>

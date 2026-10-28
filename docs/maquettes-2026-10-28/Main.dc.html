@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>La carte</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.nb{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800}
+.map{position:absolute;left:0;top:0;width:390px;height:712px;transform-origin:0 0;transition:transform .9s cubic-bezier(.2,.8,.2,1)}
+.place{position:absolute;display:flex;flex-direction:column;align-items:center;gap:5px;transform:translate(-50%,-50%);border:0;background:transparent;padding:0;cursor:pointer;color:#ecf5ff;font-family:'Space Grotesk',sans-serif;transition:opacity .5s;min-width:44px;min-height:44px}
+.disc{position:relative;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid #6d8db8;box-shadow:0 0 0 5px rgba(18,32,58,.6);transition:transform .4s cubic-bezier(.2,.8,.2,1.4)}
+.place:hover .disc{transform:scale(1.08)}
+.pname{font:600 12px 'Space Grotesk',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#ecf5ff;text-shadow:0 1px 3px #0b1626}
+.glow{position:absolute;left:50%;top:50%;width:88px;height:88px;margin:-44px 0 0 -44px;border-radius:50%;animation:glow 2.6s ease-in-out infinite;pointer-events:none}
+@keyframes glow{0%,100%{transform:scale(.8);opacity:.55}50%{transform:scale(1.12);opacity:1}}
+.mark{position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 2px #12203a}
+.ring{position:absolute;left:50%;top:50%;width:70px;height:70px;margin:-35px 0 0 -35px;border-radius:50%;border:2px solid #ecf5ff;animation:ring 1.6s ease-out 2;pointer-events:none;opacity:0}
+@keyframes ring{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.6);opacity:0}}
+.spin{animation:spin 40s linear infinite;transform-origin:50% 50%}
+@keyframes spin{to{transform:rotate(360deg)}}
+.cloud{position:absolute;border-radius:50%;background:radial-gradient(closest-side,rgba(194,212,234,.08),rgba(194,212,234,0));animation:drift 60s linear infinite;pointer-events:none}
+@keyframes drift{from{transform:translateX(-180px)}to{transform:translateX(580px)}}
+.caravan{position:absolute;left:0;top:0;width:22px;height:22px;margin:-11px 0 0 -11px;offset-path:path('M130 392 Q 180 344 230 382');offset-rotate:0deg;offset-distance:0%;pointer-events:none}
+.go{animation:go 1.2s cubic-bezier(.45,0,.3,1) forwards}
+@keyframes go{to{offset-distance:100%}}
+.boat{position:absolute;left:0;top:0;width:26px;height:20px;margin:-10px 0 0 -13px;offset-path:path('M420 700 Q 372 580 322 478');offset-rotate:0deg;animation:travel 18s linear infinite;pointer-events:none}
+@keyframes travel{from{offset-distance:0%}to{offset-distance:100%}}
+.wave{animation:wave 7s ease-in-out infinite}
+@keyframes wave{50%{transform:translateX(-14px)}}
+.fly{position:absolute;width:12px;height:12px;border-radius:3px;pointer-events:none;animation:fly .55s cubic-bezier(.5,0,.8,.4) both}
+@keyframes fly{from{transform:translate(0,0) scale(1);opacity:1}to{transform:translate(var(--dx),var(--dy)) scale(.6);opacity:.2}}
+.up{position:absolute;transform:translate(-50%,0);font:800 16px 'Archivo',sans-serif;font-stretch:125%;pointer-events:none;animation:up .9s ease-out both;white-space:nowrap}
+@keyframes up{from{transform:translate(-50%,0);opacity:0}20%{opacity:1}to{transform:translate(-50%,-30px);opacity:0}}
+.bounce{animation:bounce .45s cubic-bezier(.2,.8,.2,1.6)}
+@keyframes bounce{40%{transform:scale(1.18)}}
+.flip{animation:flip .5s ease-in-out}
+@keyframes flip{to{transform:rotateY(360deg)}}
+.peek{position:absolute;left:12px;right:12px;bottom:80px;padding:16px;border-radius:24px;background:#1d304d;border:1px solid #6d8db8;box-shadow:0 18px 40px rgba(0,0,0,.45);animation:peekIn .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes peekIn{from{transform:translateY(24px);opacity:0}}
+.gold{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border-radius:999px;border:0;background:linear-gradient(110deg,#c89632 0%,#f4c554 30%,#fbe7b0 45%,#f4c554 60%,#c89632 100%);background-size:220% 100%;animation:shine 1.2s ease-out .25s 1 both;color:#241703;font:700 16px 'Space Grotesk',sans-serif;box-shadow:0 8px 20px rgba(244,197,84,.3);cursor:pointer;transition:transform .1s}
+.gold:hover{color:#241703}
+.gold:active{transform:scale(.96)}
+@keyframes shine{from{background-position:100% 0}to{background-position:0 0}}
+.ghost{flex:1;display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 18px;border-radius:999px;border:1px solid #6d8db8;color:#ecf5ff;font-weight:600;font-size:15px}
+.ghost:hover{color:#ecf5ff;border-color:#9fb8d8}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;color:#c2d4ea;font-size:11px;font-weight:600;position:relative}
+.tab:hover{color:#ecf5ff}
+.tdot{position:absolute;top:8px;left:calc(50% + 8px);width:8px;height:8px;border-radius:50%}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}.cloud,.boat,.spin,.wave,.glow{animation:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #12203a; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+
+  <!-- La carte, plein écran -->
+  <div style="position: absolute; left: 0; right: 0; top: 0; bottom: 68px; overflow: hidden; background: radial-gradient(130% 90% at 35% 50%, #233b60 0%, #182b49 55%, #12203a 100%)">
+    <div class="map" style="top: 64px; transform: {{cam}}">
+      <svg width="390" height="712" viewBox="0 0 390 712" aria-hidden="true" style="position: absolute; inset: 0">
+        <path d="M0 90 l26 -40 l22 30 l26 -44 l30 50 l22 -30 l26 36 l26 -42 l30 48 l22 -28 l28 38 l24 -34 l30 44 l22 -24 l26 34 l30 -20 V0 H0 Z" fill="#1b3050" stroke="#42628c" opacity=".9"/>
+        <path d="M60 120 C 90 240, 40 360, 120 480 S 170 620, 250 712" fill="none" stroke="#3b6fa0" stroke-width="3" opacity=".4"/>
+        <path d="M240 110 C 270 230, 220 320, 280 400 S 320 470, 360 520" fill="none" stroke="#3b6fa0" stroke-width="3" opacity=".4"/>
+        <path d="M300 400 C 360 420, 410 500, 410 712 L 260 712 C 300 640, 280 500, 300 400 Z" fill="#2b5c86" opacity=".55"/>
+        <g class="wave" opacity=".45"><path d="M300 600 q8 -4 16 0 t16 0 t16 0 t16 0 t16 0 M290 640 q8 -4 16 0 t16 0 t16 0 t16 0 t16 0 M310 680 q8 -4 16 0 t16 0 t16 0 t16 0" fill="none" stroke="#6ec8f5" stroke-width="1.2"/></g>
+        <path d="M130 392 Q 180 344 230 382" fill="none" stroke="#6ee0b8" stroke-width="1.5" stroke-dasharray="2 6" opacity=".55"/>
+      </svg>
+      <span class="cloud" style="left: 0; top: 140px; width: 200px; height: 70px"></span>
+      <span class="cloud" style="left: 0; top: 520px; width: 160px; height: 56px; animation-duration: 80s; animation-delay: -35s"></span>
+
+      <sc-for list="{{places}}" as="p" hint-placeholder-count="8">
+        <button type="button" class="place" onClick="{{p.pick}}" aria-label="{{p.aria}}" aria-pressed="{{p.chosen}}" style="left: {{p.x}}px; top: {{p.y}}px; opacity: {{p.opacity}}">
+          <sc-if value="{{p.halo}}" hint-placeholder-val="{{false}}"><span class="glow" style="background: radial-gradient(circle, {{p.haloColor}} 0%, rgba(0,0,0,0) 65%); animation-delay: {{p.haloDelay}}"></span></sc-if>
+          <sc-if value="{{p.chosen}}" hint-placeholder-val="{{false}}"><span class="ring"></span></sc-if>
+          <span class="disc" style="background: {{p.bg}}; width: {{p.size}}px; height: {{p.size}}px">
+            <span style="width: 16px; height: 16px; border-radius: 3px; background: {{p.markColor}}; opacity: .9; clip-path: {{p.shape}}"></span>
+            <sc-if value="{{p.dot}}" hint-placeholder-val="{{false}}"><span class="mark" style="background: {{p.haloSolid}}"></span></sc-if>
+          </span>
+          <span class="pname">{{p.name}}</span>
+        </button>
+      </sc-for>
+
+      <!-- Venise : ses quatre lieux tournent lentement autour -->
+      <span class="spin" aria-hidden="true" style="position: absolute; left: 292px; top: 446px; width: 60px; height: 60px; pointer-events: none">
+        <span style="position: absolute; left: 26px; top: -4px; width: 9px; height: 9px; border-radius: 50%; background: #6ec8f5"></span>
+        <span style="position: absolute; right: -4px; top: 26px; width: 9px; height: 9px; border-radius: 50%; background: #8e6bd8"></span>
+        <span style="position: absolute; left: 26px; bottom: -4px; width: 9px; height: 9px; border-radius: 50%; background: #e8b24c"></span>
+        <span style="position: absolute; left: -4px; top: 26px; width: 9px; height: 9px; border-radius: 50%; background: #7db596"></span>
+      </span>
+      <svg class="spin" width="84" height="84" viewBox="0 0 84 84" aria-hidden="true" style="position: absolute; left: 88px; top: 350px; pointer-events: none"><g stroke="#f4c554" stroke-width="2" opacity=".45"><path d="M42 2 V14 M42 70 V82 M2 42 H14 M70 42 H82 M13 13 L21 21 M63 63 L71 71 M13 71 L21 63 M63 21 L71 13"/></g></svg>
+
+      <span class="caravan {{goCls}}" aria-hidden="true"><span style="display: flex; width: 22px; height: 22px; border-radius: 50%; background: #1d304d; border: 1.5px solid #6ee0b8; align-items: center; justify-content: center"><svg width="14" height="12" viewBox="0 0 24 18" fill="none" stroke="#6ee0b8" stroke-width="2.2"><path d="M2 4h14v8H2zM16 7h4l2 3v2h-6"/></svg></span></span>
+      <span class="boat" aria-hidden="true"><svg width="26" height="20" viewBox="0 0 26 20"><path d="M2 13 H24 L20 19 H6 Z" fill="#9a6234"/><path d="M13 13 V1 L22 10 H13" fill="#f6e8cc"/></svg></span>
+    </div>
+  </div>
+
+  <!-- Récolte : les marchandises s'envolent vers l'onglet Ateliers (le lieu choisi est toujours centré en 195, 314) -->
+  <sc-if value="{{harvesting}}" hint-placeholder-val="{{false}}">
+    <span class="fly" style="left: 189px; top: 308px; background: #d9c48c; --dx: -72px; --dy: 492px; animation-delay: 0ms"></span>
+    <span class="fly" style="left: 195px; top: 304px; background: #e8d6a8; border-radius: 50%; --dx: -78px; --dy: 496px; animation-delay: 50ms"></span>
+    <span class="fly" style="left: 201px; top: 310px; background: #d9c48c; --dx: -84px; --dy: 490px; animation-delay: 100ms"></span>
+    <span class="fly" style="left: 193px; top: 316px; background: #e8d6a8; border-radius: 50%; --dx: -76px; --dy: 486px; animation-delay: 150ms"></span>
+    <span class="fly" style="left: 197px; top: 306px; background: #d9c48c; --dx: -80px; --dy: 494px; animation-delay: 200ms"></span>
+    <span class="up" style="left: 195px; top: 250px; color: #6ee0b8">+8 farine · +8 blé</span>
+  </sc-if>
+  <sc-if value="{{delivered}}" hint-placeholder-val="{{false}}">
+    <span class="up" style="left: 195px; top: 250px; color: #f4c554; animation-delay: 1.15s">+48 d</span>
+  </sc-if>
+
+  <!-- Le haut : la bourse, les tâches du jour, les messages -->
+  <header style="position: absolute; left: 14px; right: 14px; top: 12px; display: flex; align-items: center; gap: 8px">
+    <a href="Profil.dc.html" aria-label="Votre profil, {{purse}} ducats" style="display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px; background: rgba(18, 32, 58, .8); border: 1px solid #2e486e; color: #ecf5ff; min-height: 44px; box-sizing: border-box">
+      <span class="{{coinCls}}" style="display: inline-block; width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fbe7b0, #f4c554 60%, #c89632); box-shadow: inset 0 0 0 2px #c89632"></span>
+      <span class="nb" style="font-size: 20px; color: #f4c554">{{purse}}</span>
+    </a>
+    <span style="flex: 1"></span>
+    <a href="Aujourdhui.dc.html" aria-label="Tâches du jour : 1 sur 3" style="position: relative; width: 44px; height: 44px; border-radius: 50%; background: rgba(18, 32, 58, .8); display: flex; align-items: center; justify-content: center">
+      <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true" style="position: absolute; inset: 0"><circle cx="22" cy="22" r="20" fill="none" stroke="#2e486e" stroke-width="3"/><circle cx="22" cy="22" r="20" fill="none" stroke="#6ec8f5" stroke-width="3" stroke-linecap="round" stroke-dasharray="41.9 125.7" transform="rotate(-90 22 22)"/></svg>
+      <svg width="20" height="18" viewBox="0 0 20 18" aria-hidden="true"><rect x="1" y="6" width="18" height="11" rx="2" fill="none" stroke="#ecf5ff" stroke-width="1.8"/><path d="M1 9 H19 M3 6 C 3 1, 17 1, 17 6" fill="none" stroke="#ecf5ff" stroke-width="1.8"/></svg>
+    </a>
+    <a href="Cloche.dc.html" aria-label="Messages : 1 non lu" style="position: relative; width: 44px; height: 44px; border-radius: 50%; background: rgba(18, 32, 58, .8); border: 1px solid #2e486e; display: flex; align-items: center; justify-content: center; color: #ecf5ff; box-sizing: border-box">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+      <span style="position: absolute; top: 0; right: 0; width: 10px; height: 10px; border-radius: 50%; background: #ff8070"></span>
+    </a>
+  </header>
+
+  <sc-if value="{{idle}}" hint-placeholder-val="{{true}}">
+    <p style="position: absolute; left: 0; right: 0; bottom: 88px; margin: 0; text-align: center; font-size: 13px; color: #c2d4ea"><span style="padding: 8px 14px; border-radius: 999px; background: rgba(18, 32, 58, .8)">Touchez un lieu qui brille</span></p>
+  </sc-if>
+
+  <!-- Un lieu choisi : une phrase, une action -->
+  <sc-if value="{{hasSel}}" hint-placeholder-val="{{false}}">
+    <section class="peek" aria-label="{{sel.name}}">
+      <div style="display: flex; align-items: flex-start; gap: 12px">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+          <h1 class="cz" style="margin: 0; font-size: 17px">{{sel.name}}</h1>
+          <p style="margin: 0; font-size: 15px; line-height: 1.4" aria-live="polite">{{line}}</p>
+        </div>
+        <button type="button" onClick="{{close}}" aria-label="Fermer" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #6d8db8; background: transparent; color: #ecf5ff; font-size: 18px; cursor: pointer; flex: none">×</button>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 14px">
+        <sc-if value="{{showAct}}" hint-placeholder-val="{{true}}"><button type="button" class="gold" onClick="{{act}}">{{sel.cta}}</button></sc-if>
+        <sc-if value="{{showGoldLink}}" hint-placeholder-val="{{false}}"><a href="{{sel.href}}" class="gold">{{sel.cta}}</a></sc-if>
+        <a href="{{sel.open}}" class="ghost">{{sel.openLabel}}</a>
+      </div>
+    </section>
+  </sc-if>
+
+  <nav aria-label="Les lieux" style="position: absolute; left: 0; right: 0; bottom: 0; height: 68px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: #0f1c33; border-top: 1px solid #22375a; padding-bottom: 6px">
+    <a href="Main.dc.html" class="tab" aria-current="page" style="color: #f4c554">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z M9 4v14 M15 6v14"/></svg>Carte</a>
+    <a href="Comptoir.dc.html" class="tab">
+      <svg class="{{tabBounce}}" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>Ateliers<span class="tdot" style="background: #6ee0b8"></span></a>
+    <a href="Venise.dc.html" class="tab">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 18 C 7 13, 17 13, 21 18 M12 4 V15 M8 15 V9 H16 V15"/></svg>Venise</a>
+    <a href="Classement.dc.html" class="tab">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 14v4M8 21h8"/></svg>Classement</a>
+    <a href="Terraferme.dc.html" class="tab">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/></svg>Conquête</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { pick: null, harvested: false, delivered: false, purse: 1284, anim: null }; }
+  count(from, to) {
+    const steps = 12; let k = 0;
+    const t = setInterval(() => { k++; this.setState({ purse: Math.round(from + (to - from) * k / steps) }); if (k >= steps) clearInterval(t); }, 50);
+  }
+  componentWillUnmount() { clearTimeout(this.t1); }
+  renderVals() {
+    const st = this.state;
+    const sq = 'inset(0 round 3px)', circle = 'circle(50%)', tri = 'polygon(50% 0, 100% 100%, 0 100%)';
+    const hex = 'polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%)';
+    const READY = 'rgba(110,224,184,.5)', CITY = 'rgba(110,200,245,.45)', RUMOR = 'rgba(142,107,216,.5)';
+    const all = [
+      { id: 'sun', name: 'Mes ateliers', x: 130, y: 392, bg: 'radial-gradient(circle at 38% 32%, #fbe7b0, #f4c554 55%, #c89632)', markColor: '#4c8366', size: 58, shape: sq, waits: !st.harvested, rank: 1, haloColor: READY, haloSolid: '#6ee0b8',
+        line: '2 lots prêts : le moulin et la ferme.', done: 'Récolté et relancé · prochain lot à 14 h 30.', cta: 'Récolter 2 lots', act: 'harvest', open: 'Comptoir.dc.html', openLabel: 'Ouvrir' },
+      { id: 'padova', name: 'Padoue', x: 230, y: 382, bg: '#2f6b74', markColor: '#f6e8cc', size: 46, shape: hex, waits: !st.delivered, rank: 2, haloColor: CITY, haloSolid: '#6ec8f5',
+        line: 'Veut 30 pains, paie 48 d. Vous les avez.', done: 'La mule est partie · +48 d à l’arrivée.', cta: 'Livrer 30 pains · +48 d', act: 'deliver', open: 'Ville.dc.html', openLabel: 'Voir Padoue' },
+      { id: 'verona', name: 'Vérone', x: 62, y: 292, bg: '#8a3a35', markColor: '#f6e8cc', size: 46, shape: tri, waits: true, rank: 3, haloColor: RUMOR, haloSolid: '#8e6bd8',
+        line: 'On dit que le pain y vaudra 60 % de plus demain.', cta: 'Préparer 30 pains', href: 'Ville.dc.html', open: 'Palais.dc.html', openLabel: 'La rumeur' },
+      { id: 'venice', name: 'Venise', x: 322, y: 476, bg: '#1f4f7a', markColor: '#f6e8cc', size: 50, shape: circle, waits: true, rank: 4, haloColor: RUMOR, haloSolid: '#8e6bd8',
+        line: 'Enchères ce soir à 20 h : 3 lots des bateaux.', cta: 'Voir les enchères', href: 'Mole.dc.html', open: 'Venise.dc.html', openLabel: 'Entrer à Venise' },
+      { id: 'vicence', name: 'Vicence', x: 160, y: 200, bg: '#9a7a2f', markColor: '#f6e8cc', size: 44, shape: sq, waits: false, line: 'Vous en êtes le maître jusqu’à minuit.', open: 'Ville.dc.html', openLabel: 'Voir Vicence' },
+      { id: 'treviso', name: 'Trévise', x: 288, y: 168, bg: '#3f7a55', markColor: '#f6e8cc', size: 44, shape: circle, waits: false, line: 'Rien à livrer pour l’instant.', open: 'Ville.dc.html', openLabel: 'Voir Trévise' },
+      { id: 'mantova', name: 'Mantoue', x: 70, y: 520, bg: '#3b4f86', markColor: '#f6e8cc', size: 44, shape: sq, waits: false, line: 'Rien à livrer pour l’instant.', open: 'Ville.dc.html', openLabel: 'Voir Mantoue' },
+      { id: 'ferrara', name: 'Ferrare', x: 200, y: 560, bg: '#8a4a3a', markColor: '#f6e8cc', size: 44, shape: hex, waits: false, line: 'Rien à livrer pour l’instant.', open: 'Ville.dc.html', openLabel: 'Voir Ferrare' },
+    ];
+    const waiting = all.filter((p) => p.waits).sort((a, b) => a.rank - b.rank);
+    const haloIds = waiting.slice(0, 2).map((p) => p.id);
+    const sel = all.find((p) => p.id === st.pick) || null;
+    const s = 1.7;
+    const cam = sel ? `translate(${(195 - sel.x * s).toFixed(0)}px, ${(250 - sel.y * s).toFixed(0)}px) scale(${s})` : 'translate(0px, 0px) scale(1)';
+    const places = all.map((p) => ({
+      ...p,
+      aria: p.name + (p.waits ? ' : quelque chose vous attend' : ''),
+      halo: !sel && haloIds.includes(p.id),
+      haloDelay: haloIds.indexOf(p.id) === 1 ? '-1.3s' : '0s',
+      dot: !sel && p.waits && !haloIds.includes(p.id),
+      chosen: !!sel && sel.id === p.id,
+      opacity: !sel || sel.id === p.id ? 1 : 0.35,
+      pick: () => this.setState({ pick: st.pick === p.id ? null : p.id }),
+    }));
+    const doneHere = sel && ((sel.act === 'harvest' && st.harvested) || (sel.act === 'deliver' && st.delivered));
+    const act = () => {
+      if (!sel) return;
+      if (sel.act === 'harvest') { this.setState({ harvested: true, anim: 'harvest' }); }
+      if (sel.act === 'deliver') { this.setState({ delivered: true, anim: 'deliver' }); this.t1 = setTimeout(() => { this.setState({ anim: 'coin' }); this.count(1284, 1332); }, 1200); }
+    };
+    return {
+      places, cam, sel: sel || {}, hasSel: !!sel, idle: !sel,
+      line: sel ? (doneHere ? sel.done : sel.line) : '',
+      showAct: !!sel && !!sel.act && !doneHere,
+      showGoldLink: !!sel && !sel.act && sel.waits,
+      act, harvesting: st.anim === 'harvest', delivered: st.delivered,
+      goCls: st.delivered ? 'go' : '',
+      coinCls: st.anim === 'coin' ? 'flip' : '',
+      tabBounce: st.anim === 'harvest' ? 'bounce' : '',
+      purse: st.purse.toLocaleString('fr-FR'),
+      close: () => this.setState({ pick: null }),
+    };
+  }
+}
+</script>
+</body>
+</html>

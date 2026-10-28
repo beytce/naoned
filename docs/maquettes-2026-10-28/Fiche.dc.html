@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>La fiche d'un marchand</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.nb{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800}
+.gold{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:999px;background:linear-gradient(180deg,#fbe0a0,#f4c554 45%,#c89632);color:#241703;font:700 16px 'Space Grotesk',sans-serif;box-shadow:0 8px 20px rgba(244,197,84,.28);border:0;cursor:pointer;width:100%;transition:transform .1s}
+.gold:active{transform:scale(.96)}
+.line{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:52px;border-bottom:1px solid #2e486e;font-size:14px;color:#ecf5ff}
+.line:hover{color:#ecf5ff}
+.sheet{animation:sheetin .4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes sheetin{from{transform:translateY(100%)}}
+.ok{animation:ok .45s cubic-bezier(.2,.8,.2,1.4) both}
+@keyframes ok{from{transform:scale(.8);opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #1d304d; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+  <!-- Ce qu'on voit derrière : l'écran d'où l'on vient, assombri -->
+  <a href="Classement.dc.html" aria-label="Retour" style="position: absolute; inset: 0; background: rgba(6, 12, 24, .6)"></a>
+
+  <section class="sheet" aria-label="Casa Foscari" style="position: absolute; left: 0; right: 0; bottom: 0; top: 70px; background: #1d304d; border-radius: 28px 28px 0 0; border-top: 1px solid #6d8db8; overflow: hidden">
+    <!-- La vitrine : le palais sur l'eau -->
+    <div style="position: relative; height: 190px; background: #16263e; overflow: hidden">
+      <svg width="390" height="190" viewBox="0 0 390 190" aria-hidden="true" style="position: absolute; inset: 0">
+        <rect x="140" y="30" width="110" height="130" rx="4" fill="#243a5c" stroke="#6d8db8" stroke-width="2"/>
+        <g fill="#e8b24c" opacity=".8"><rect x="156" y="48" width="10" height="16" rx="5"/><rect x="190" y="48" width="10" height="16" rx="5"/><rect x="224" y="48" width="10" height="16" rx="5"/><rect x="156" y="84" width="10" height="16" rx="5"/><rect x="190" y="84" width="10" height="16" rx="5"/><rect x="224" y="84" width="10" height="16" rx="5"/><rect x="156" y="118" width="10" height="16" rx="5"/><rect x="224" y="118" width="10" height="16" rx="5"/></g>
+        <path d="M182 160 V136 C 182 124, 208 124, 208 136 V160 Z" fill="#16263e"/>
+        <path d="M150 30 C 152 12, 178 8, 186 30 Z" fill="#f4c554"/>
+        <path d="M236 30 V2 h20 l-6 6 6 6 h-20" fill="#e36a4a"/>
+        <rect x="0" y="160" width="390" height="30" fill="#2b5c86" opacity=".5"/>
+      </svg>
+      <div style="width: 44px; height: 5px; border-radius: 3px; background: #6d8db8; position: absolute; left: 173px; top: 10px"></div>
+      <a href="Classement.dc.html" style="position: absolute; left: 12px; top: 8px; display: flex; align-items: center; gap: 4px; min-height: 44px; color: #ecf5ff; font-weight: 600; font-size: 14px">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4 L6 10 L12 16"/></svg>Retour</a>
+    </div>
+
+    <div style="padding: 0 16px; margin-top: -26px; position: relative; display: flex; flex-direction: column; gap: 4px">
+      <div style="display: flex; align-items: flex-end; gap: 12px; margin-bottom: 6px">
+        <span style="width: 60px; height: 70px; background: #e36a4a; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%); flex: none"></span>
+        <span style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 22px; font-weight: 700">Casa Foscari</span>
+          <span style="font-size: 13px; color: #c2d4ea">Doge, l'élu du mois · 1ᵉʳ cette semaine · Ligue 4 de duel</span>
+        </span>
+      </div>
+
+      <div class="line">
+        <span style="display: flex; align-items: center; gap: 10px">
+          <span style="display: flex">
+            <sc-for list="{{gens}}" as="g" hint-placeholder-count="3">
+              <span style="width: 36px; height: 36px; margin-right: -8px; border-radius: 50%; background: #2e486e; border: 2px solid {{g.ring}}; overflow: hidden; display: flex; align-items: flex-end; justify-content: center"><svg width="30" height="32" viewBox="0 0 96 104" aria-hidden="true"><circle cx="48" cy="40" r="20" fill="#e8b48a"/><path d="M26 32 C 30 12, 66 12, 70 32 Z" fill="{{g.hat}}"/><path d="M14 104 C 16 72, 80 72, 82 104 Z" fill="#e36a4a"/></svg></span>
+            </sc-for>
+          </span>
+          <span style="margin-left: 8px">Palmarès</span>
+        </span>
+        <span style="color: #c2d4ea">2ᵉ, 5ᵉ, 1ᵉʳ · 3 générations</span>
+      </div>
+      <a href="Rialto.dc.html" class="line"><span>Actions</span><span style="color: #c2d4ea">22 d · vous en avez 12 ›</span></a>
+      <div class="line"><span>Contre vous</span><span><b style="color: #6ee0b8">2</b> <span style="color: #c2d4ea">duels gagnés,</span> <b style="color: #ff8070">1</b> <span style="color: #c2d4ea">perdu</span></span></div>
+    </div>
+
+    <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px 20px; border-top: 1px solid #2e486e; background: #1d304d">
+      <sc-if value="{{notDone}}" hint-placeholder-val="{{true}}"><button type="button" class="gold" onClick="{{act}}">{{cta}}</button></sc-if>
+      <sc-if value="{{done}}" hint-placeholder-val="{{false}}"><span class="gold ok" role="status">{{doneText}}</span></sc-if>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  // ctx : l'écran d'où l'on vient décide du bouton en or (classement → Défier ; Marché → Acheter des actions ; élection → Voter).
+  constructor(p) { super(p); this.state = { ctx: 'classement', done: false }; }
+  renderVals() {
+    const s = this.state;
+    const gens = [{ ring: '#6d8db8', hat: '#4c2f1a' }, { ring: '#6d8db8', hat: '#8e6bd8' }, { ring: '#f4c554', hat: '#f4c554' }];
+    const cta = s.ctx === 'marche' ? 'Acheter 6 actions · 138 d' : s.ctx === 'election' ? 'Voter pour Casa Foscari' : 'Défier en duel la semaine prochaine';
+    const doneText = s.ctx === 'marche' ? '6 actions achetées ✓' : s.ctx === 'election' ? 'Voix donnée ✓' : 'Défi envoyé : duel lundi ✓';
+    return { gens, cta, doneText, done: s.done, notDone: !s.done, act: () => this.setState({ done: true }) };
+  }
+}
+</script>
+</body>
+</html>

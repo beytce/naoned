@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>La Lettre du jour</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;family=IM+Fell+English:ital@0;1&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.answer{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:72px;padding:10px 8px;border-radius:20px;border:1px solid #6d8db8;background:transparent;color:#ecf5ff;font:600 15px 'Space Grotesk',sans-serif;cursor:pointer;transition:transform .1s}
+.answer:active{transform:scale(.97)}
+.answeron{background:linear-gradient(180deg,#fbe0a0,#f4c554 45%,#c89632);color:#241703;border-color:transparent}
+.crack{animation:crack .3s ease-in both}
+@keyframes crack{50%{transform:rotate(-12deg) scale(1.1)}to{transform:rotate(18deg) scale(.4);opacity:0}}
+.fold{animation:fold .5s cubic-bezier(.4,0,.2,1) both}
+@keyframes fold{from{transform:scaleY(.2) translateY(-40px);opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #16263e; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+  <a href="Comptoir.dc.html" aria-label="Fermer la lettre" style="position: absolute; inset: 0; background: rgba(6, 12, 24, .55)"></a>
+
+  <section style="position: absolute; left: 0; right: 0; bottom: 0; height: 580px; background: #1d304d; border-radius: 28px 28px 0 0; border-top: 1px solid #6d8db8; padding: 0 18px 18px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+    <div style="width: 44px; height: 5px; border-radius: 3px; background: #6d8db8; margin: 10px auto 0"></div>
+    <div style="display: flex; align-items: center; gap: 12px">
+      <span style="width: 48px; height: 48px; border-radius: 50%; background: #f6e8cc; border: 2px solid #8f2f24; display: flex; align-items: center; justify-content: center">
+        <svg width="32" height="32" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="11" r="6" fill="#b07a52"/><path d="M5 9 C 6 3, 22 3, 23 9 L 23 11 L 5 11 Z" fill="#f6e8cc" stroke="#8f2f24"/><path d="M5 27 C 6 19, 22 19, 23 27 Z" fill="#2f6b74"/></svg>
+      </span>
+      <span style="display: flex; flex-direction: column">
+        <span class="cz" style="font-size: 16px">Faraj d'Alexandrie</span>
+        <span style="font-size: 13px; color: #c2d4ea">Lettre du jour, apportée par Lorenzo</span>
+      </span>
+    </div>
+
+    <sc-if value="{{open}}" hint-placeholder-val="{{true}}">
+      <article style="position: relative; padding: 20px 20px 24px; border-radius: 6px; background: #f3e6c9; color: #4a3218; font-family: 'IM Fell English', Georgia, serif; font-size: 18px; line-height: 1.45; box-shadow: 0 10px 30px rgba(0, 0, 0, .35)">
+        <p style="margin: 0; font-style: italic">Messer, mes bateaux arrivent à Venise dans deux jours. J'ai trop de poivre et pas assez de bras. Prenez-en vingt balles à mon prix, et je me souviendrai de vous quand les autres paieront le double.</p>
+        <p style="margin: 10px 0 0; text-align: right">— Faraj</p>
+        <span class="{{sealCls}}" style="position: absolute; right: 8px; top: -14px; width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #d65a48, #8f2f24); display: flex; align-items: center; justify-content: center; color: #f6d8c8; font: 700 16px Cinzel; box-shadow: 0 2px 6px rgba(0, 0, 0, .4)">F</span>
+      </article>
+      <div style="display: flex; gap: 10px">
+        <sc-for list="{{answers}}" as="a" hint-placeholder-count="2">
+          <button type="button" class="answer {{a.cls}}" aria-pressed="{{a.on}}" onClick="{{a.pick}}">{{a.label}}<span style="font: 500 12px 'Space Grotesk'; opacity: .85">{{a.effect}}</span></button>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{answered}}" hint-placeholder-val="{{false}}">
+      <div class="fold" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center">
+        <svg width="120" height="80" viewBox="0 0 120 80" aria-hidden="true"><path d="M10 20 H110 V70 H10 Z" fill="#f3e6c9"/><path d="M10 20 L60 50 L110 20" fill="none" stroke="#a88a5c" stroke-width="2"/></svg>
+        <p style="margin: 0; font-size: 17px; font-weight: 600">{{reply}}</p>
+        <p style="margin: 0; font-size: 14px; color: #c2d4ea">La suite arrive le jour 14. Vous la verrez dans le calendrier.</p>
+        <a href="Comptoir.dc.html" style="min-height: 44px; display: flex; align-items: center; font-weight: 600">Revenir à mes ateliers</a>
+      </div>
+    </sc-if>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { pick: null, done: false }; }
+  componentWillUnmount() { clearTimeout(this.t); }
+  renderVals() {
+    const choose = (id) => () => { this.setState({ pick: id }); clearTimeout(this.t); this.t = setTimeout(() => this.setState({ done: true }), 650); };
+    const answers = [
+      { id: 'a', label: 'Prendre le poivre', effect: '−60 d · une suite viendra' },
+      { id: 'b', label: 'Décliner poliment', effect: 'rien · il s’en souviendra' },
+    ].map((a) => ({ ...a, on: this.state.pick === a.id, cls: this.state.pick === a.id ? 'answeron' : '', pick: choose(a.id) }));
+    return {
+      answers, open: !this.state.done, answered: this.state.done, sealCls: this.state.pick ? 'crack' : '',
+      reply: this.state.pick === 'a' ? 'Vingt balles de poivre réservées chez Faraj.' : 'Vous avez décliné. Faraj prend note.',
+    };
+  }
+}
+</script>
+</body>
+</html>

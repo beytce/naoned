@@ -1,0 +1,334 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-28T19:30:00Z"
+  },
+  "title": "Fondaco · Lagune, toutes les pages",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Connexion.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Entrée · connexion",
+      "is_interactive": true
+    },
+    "Metier.dc.html": {
+      "x": 470,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Entrée · nom et métier",
+      "is_interactive": true
+    },
+    "Main.dc.html": {
+      "x": 940,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "La carte · refonte simple (les lieux qui brillent)",
+      "is_interactive": true
+    },
+    "Cadran.dc.html": {
+      "x": 1410,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Le calendrier du mois",
+      "is_interactive": true
+    },
+    "Cloche.dc.html": {
+      "x": 1880,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Messages",
+      "is_interactive": true
+    },
+    "Aujourdhui.dc.html": {
+      "x": 2350,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Tâches du jour (réglage : tâches faites → coffre)",
+      "is_interactive": true
+    },
+    "Comptoir.dc.html": {
+      "x": 0,
+      "y": 1250,
+      "w": 390,
+      "h": 844,
+      "title": "Mes ateliers",
+      "is_interactive": true
+    },
+    "Production.dc.html": {
+      "x": 470,
+      "y": 1250,
+      "w": 390,
+      "h": 844,
+      "title": "Production d'un atelier",
+      "is_interactive": true
+    },
+    "Batir.dc.html": {
+      "x": 940,
+      "y": 1250,
+      "w": 390,
+      "h": 844,
+      "title": "Bâtir",
+      "is_interactive": true
+    },
+    "Lettre.dc.html": {
+      "x": 1410,
+      "y": 1250,
+      "w": 390,
+      "h": 844,
+      "title": "Moment · la Lettre du jour",
+      "is_interactive": true
+    },
+    "Atout.dc.html": {
+      "x": 1880,
+      "y": 1250,
+      "w": 390,
+      "h": 844,
+      "title": "Moment · l'Atout du lundi (bonus + malus)",
+      "is_interactive": true
+    },
+    "Venise.dc.html": {
+      "x": 0,
+      "y": 2500,
+      "w": 390,
+      "h": 844,
+      "title": "Venise : Marché, Politique, Enchères, 40 palais",
+      "is_interactive": true
+    },
+    "Rialto.dc.html": {
+      "x": 470,
+      "y": 2500,
+      "w": 390,
+      "h": 844,
+      "title": "Marché (marchandises, entre joueurs, actions)",
+      "is_interactive": true
+    },
+    "Negoce.dc.html": {
+      "x": 940,
+      "y": 2500,
+      "w": 390,
+      "h": 844,
+      "title": "Acheter / vendre · briques (rempli depuis Bâtir)",
+      "is_interactive": true
+    },
+    "Palais.dc.html": {
+      "x": 1410,
+      "y": 2500,
+      "w": 390,
+      "h": 844,
+      "title": "Politique (rumeurs, élection, villes)",
+      "is_interactive": true
+    },
+    "Mole.dc.html": {
+      "x": 1880,
+      "y": 2500,
+      "w": 390,
+      "h": 844,
+      "title": "Enchères (réglages : soir / jour, lot adjugé)",
+      "is_interactive": true
+    },
+    "Canal.dc.html": {
+      "x": 2350,
+      "y": 2500,
+      "w": 390,
+      "h": 844,
+      "title": "Les 40 palais",
+      "is_interactive": true
+    },
+    "Classement.dc.html": {
+      "x": 0,
+      "y": 3750,
+      "w": 390,
+      "h": 844,
+      "title": "Classement et duel",
+      "is_interactive": true
+    },
+    "Fiche.dc.html": {
+      "x": 470,
+      "y": 3750,
+      "w": 390,
+      "h": 844,
+      "title": "La fiche d'un joueur (feuille par-dessus)",
+      "is_interactive": true
+    },
+    "Profil.dc.html": {
+      "x": 940,
+      "y": 3750,
+      "w": 390,
+      "h": 844,
+      "title": "Profil : votre Maison",
+      "is_interactive": true
+    },
+    "Ville.dc.html": {
+      "x": 0,
+      "y": 5000,
+      "w": 390,
+      "h": 844,
+      "title": "Une ville (Vérone) et qui la tient",
+      "is_interactive": true
+    },
+    "Terraferme.dc.html": {
+      "x": 470,
+      "y": 5000,
+      "w": 390,
+      "h": 844,
+      "title": "Conquête",
+      "is_interactive": true
+    },
+    "BonRetour.dc.html": {
+      "x": 0,
+      "y": 6250,
+      "w": 390,
+      "h": 844,
+      "title": "Moment · Bon retour",
+      "is_interactive": true
+    },
+    "Saison.dc.html": {
+      "x": 470,
+      "y": 6250,
+      "w": 390,
+      "h": 844,
+      "title": "Moment · fin du mois en 4 temps",
+      "is_interactive": true
+    },
+    "CarteAvant.dc.html": {
+      "x": 3340,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "La carte · avant la refonte (pour comparer)",
+      "is_interactive": true
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Connexion.dc.html",
+    "Metier.dc.html",
+    "Cadran.dc.html",
+    "Cloche.dc.html",
+    "Aujourdhui.dc.html",
+    "Comptoir.dc.html",
+    "Production.dc.html",
+    "Batir.dc.html",
+    "Lettre.dc.html",
+    "Atout.dc.html",
+    "Venise.dc.html",
+    "Rialto.dc.html",
+    "Negoce.dc.html",
+    "Palais.dc.html",
+    "Mole.dc.html",
+    "Canal.dc.html",
+    "Classement.dc.html",
+    "Fiche.dc.html",
+    "Profil.dc.html",
+    "Ville.dc.html",
+    "Terraferme.dc.html",
+    "BonRetour.dc.html",
+    "Saison.dc.html",
+    "CarteAvant.dc.html"
+  ],
+  "notes": {
+    "t1": {
+      "x": 0,
+      "y": -300,
+      "text": "1 · Entrer, la carte et le temps",
+      "kind": "title1",
+      "maxW": 2740
+    },
+    "n1": {
+      "x": 2820,
+      "y": 0,
+      "w": 440,
+      "size": "s",
+      "fill": "blue",
+      "text": "Interactions\n\n• La carte : plein écran, peu de mouvement (le décor bouge lentement, c'est le gain qui explose). En haut : bourse, Tâches du jour (anneau), messages. En bas : 5 onglets, les mêmes sur Carte, Ateliers, Venise, Classement et Conquête.\n• Deux halos au plus, colorés par sens : vert d'eau = prêt à récolter, bleu = une ville achète, violet = rumeur ou enchères. Les autres lieux en attente portent un petit point.\n• Toucher un lieu : zoom, puis une fiche avec une phrase et une action. L'or agit sur place (« Récolter 2 lots » : les marchandises volent vers l'onglet Ateliers ; « Livrer 30 pains » : la caravane part, +48 d, la bourse compte). Le bouton fantôme emmène ailleurs (Ouvrir, Voir Padoue, La rumeur). Une ville calme n'a pas d'or.\n• Tâches du jour → Le calendrier du mois. Messages : espion, enchère gagnée, lettres.\n• Moins de mouvement demandé : les trajets deviennent un fondu du chiffre, rien ne se perd."
+    },
+    "t2": {
+      "x": 0,
+      "y": 950,
+      "text": "2 · Le comptoir et ses moments",
+      "kind": "title1",
+      "maxW": 2270
+    },
+    "n2": {
+      "x": 2350,
+      "y": 1250,
+      "w": 440,
+      "size": "s",
+      "fill": "blue",
+      "text": "Interactions\n\n• Mes ateliers : récolte animée sur place ; Atouts en haut à gauche (l'Atout en attente est un bouton) ; le magasin en puces par marchandise.\n• Atelier → Production (préréglages, « Récolter et relancer »). Parcelle libre → Bâtir.\n• Bâtir : il manque des briques → « Acheter 15 briques · 24 d » ouvre la page des briques, quantité remplie, puis ramène à Bâtir.\n• Lettre : deux réponses de même poids, le cachet se brise, la lettre se plie. Atout : trois cartes en liste, la choisie s'envole vers vos ateliers."
+    },
+    "t3": {
+      "x": 0,
+      "y": 2200,
+      "text": "3 · Venise : Marché, Politique, Enchères, les 40 palais",
+      "kind": "title1",
+      "maxW": 2740
+    },
+    "n3": {
+      "x": 2820,
+      "y": 2500,
+      "w": 440,
+      "size": "s",
+      "fill": "blue",
+      "text": "Interactions\n\n• Venise : quatre lieux autour du lion, chacun avec son état (2 rumeurs, 1 offre, ce soir 20 h, vous : 41ᵉ) ; le Doge en une carte.\n• Marché : Marchandises (marques : rond = brut, carré = transformé, hexagone = fini ; pointillé = pas en stock) · Entre joueurs (« Livrer · +56 d » sur la ligne) · Actions (« Gérer mes actions » → Profil).\n• Politique : Rumeurs · Élection · Villes. Chaque rumeur dit sa source et combien de fois elle a eu raison. Acheter, vendre, tromper, espionner : dans la feuille « Manœuvres ».\n• Enchères : de jour, l'arrivage et « Me prévenir à 20 h » ; le soir, « Jusqu'où montez-vous ? » en crans de ducats ; un lot gagné reçoit le cachet « Adjugé ».\n• Les 40 palais = le top 40 du classement du mois. Vous êtes 41ᵉ, à 1 240 d : « Aller à mon quai »."
+    },
+    "t4": {
+      "x": 0,
+      "y": 3450,
+      "text": "4 · Les marchands",
+      "kind": "title1",
+      "maxW": 1330
+    },
+    "n4": {
+      "x": 1410,
+      "y": 3750,
+      "w": 440,
+      "size": "s",
+      "fill": "blue",
+      "text": "Interactions\n\n• Tout nom de joueur ouvre la fiche, en feuille par-dessus l'écran (« ‹ Retour » ou toucher dehors).\n• Fiche : trois lignes (palmarès, actions, contre vous) ; un seul or selon d'où l'on vient (Défier en duel, Voter, Acheter des actions).\n• Classement : Semaine · Mois · Duel. Glisser une ligne = raccourci (Défier, Espionner → confirmation à 20 d) ; l'action principale reste dans la fiche. Ligue 1 = l'élite ; on débute en Ligue 6.\n• Votre couleur est le bleu clair, partout. Profil : un seul écran, puis Mes actions, Héritage, Guilde, Réglages en lignes."
+    },
+    "t5": {
+      "x": 0,
+      "y": 4700,
+      "text": "5 · Les villes et la guerre",
+      "kind": "title1",
+      "maxW": 860
+    },
+    "n5": {
+      "x": 940,
+      "y": 5000,
+      "w": 440,
+      "size": "s",
+      "fill": "blue",
+      "text": "Interactions\n\n• Ville : touchez les commandes à mettre dans la mule (case vert d'eau) ; « Livrer 2 commandes · +64 d » les envoie au centre, +64 d monte. ‹ › ou glisser : la ville voisine (points sous le nom).\n• La pilule « vous 22 % · maître : Casa Foscari » mène à Politique › Villes ; la puce violette, à la rumeur.\n• Conquête : la même barre d'onglets ; « Lancer un front » en or ; votre camp ouvre sa feuille (Mercenaires, La semaine, Partie rapide).\n• À signaler au porteur : enchères et bataille tombent toutes deux à 20 h (la frise dit « 20 h : enchères puis bataille »)."
+    },
+    "t6": {
+      "x": 0,
+      "y": 5950,
+      "text": "6 · Les moments",
+      "kind": "title1",
+      "maxW": 860
+    },
+    "n6": {
+      "x": 940,
+      "y": 6250,
+      "w": 440,
+      "size": "s",
+      "fill": "blue",
+      "text": "Interactions\n\n• Bon retour : le chiffre compte jusqu'à +2 660 d, les tuiles entrent l'une après l'autre ; « Tout récolter et relancer » récolte sur place, puis mène à la carte.\n• Fin du mois : quatre temps, toucher pour avancer. Le rang éclot avec ses rayons, le podium monte 3 → 2 → 1, les récompenses glissent, puis l'héritier."
+    }
+  },
+  "designSystems": []
+}

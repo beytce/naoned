@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Vérone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.nb{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800}
+.gold{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:999px;background:linear-gradient(180deg,#fbe0a0,#f4c554 45%,#c89632);color:#241703;font:700 16px 'Space Grotesk',sans-serif;box-shadow:0 8px 20px rgba(244,197,84,.28);border:0;cursor:pointer;width:100%;transition:transform .1s}
+.gold:active{transform:scale(.96)}
+.ghost{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;border-radius:999px;border:1px solid #6d8db8;color:#ecf5ff;font-weight:600;font-size:14px}
+.ghost:hover{color:#ecf5ff}
+.arrow{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#c2d4ea;font-size:24px}
+.order{position:absolute;width:96px;min-height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;font:12px 'Space Grotesk',sans-serif;color:#ecf5ff;border-radius:20px;border:1.5px solid transparent;background:transparent;cursor:pointer;padding:6px 2px;transition:transform .2s,opacity .3s}
+.orderon{border-color:#6ee0b8;background:rgba(110,224,184,.1)}
+.check{position:absolute;top:4px;right:6px;width:20px;height:20px;border-radius:50%;background:#6ee0b8;color:#08261c;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.togo{transform:translate(var(--tx),var(--ty)) scale(.3);opacity:0;transition:transform .7s cubic-bezier(.5,0,.75,0),opacity .7s}
+.gain{position:absolute;left:0;right:0;top:250px;text-align:center;font:800 28px 'Archivo',sans-serif;font-stretch:125%;color:#f4c554;animation:gain 1.2s ease-out .7s both;pointer-events:none}
+@keyframes gain{0%{opacity:0;transform:translateY(10px)}30%{opacity:1}100%{opacity:0;transform:translateY(-30px)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #16263e; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+  <header style="position: absolute; left: 12px; right: 12px; top: 8px; display: flex; align-items: center; justify-content: space-between">
+    <a href="Main.dc.html" style="display: flex; align-items: center; gap: 4px; min-height: 44px; min-width: 70px; color: #ecf5ff; font-weight: 600; font-size: 14px">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4 L6 10 L12 16"/></svg>Carte</a>
+    <span style="display: flex; flex-direction: column; align-items: center">
+      <span style="display: flex; align-items: center; gap: 4px">
+        <a href="Ville.dc.html" class="arrow" aria-label="Ville précédente : Mantoue">‹</a>
+        <h1 class="cz" style="margin: 0; font-size: 20px">Vérone</h1>
+        <a href="Ville.dc.html" class="arrow" aria-label="Ville suivante : Vicence">›</a>
+      </span>
+      <span aria-hidden="true" style="display: flex; gap: 6px; margin-top: -4px"><sc-for list="{{dots}}" as="d" hint-placeholder-count="7"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{d.c}}"></span></sc-for></span>
+    </span>
+    <span style="min-width: 70px"></span>
+  </header>
+
+  <a href="Palais.dc.html" style="position: absolute; left: 50%; transform: translateX(-50%); top: 72px; display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; border-radius: 999px; background: rgba(142, 107, 216, .16); border: 1px solid #8e6bd8; color: #d8ccf7; font-size: 13px; white-space: nowrap">
+    <span style="width: 18px; height: 18px; border-radius: 50%; background: #8e6bd8; color: #f3eeff; font-weight: 800; font-size: 11px; display: flex; align-items: center; justify-content: center">?</span>Rumeur : pénurie de pain demain · 7 fois sur 8</a>
+
+  <!-- L'anneau du contrôle de la ville (décor) -->
+  <svg width="320" height="320" viewBox="0 0 320 320" aria-hidden="true" style="position: absolute; left: 35px; top: 140px">
+    <circle cx="160" cy="160" r="150" fill="none" stroke="#2e486e" stroke-width="8"/>
+    <circle cx="160" cy="160" r="150" fill="none" stroke="#f4c554" stroke-width="8" stroke-linecap="round" stroke-dasharray="207 1000" transform="rotate(-90 160 160)"/>
+    <circle cx="160" cy="160" r="150" fill="none" stroke="#e36a4a" stroke-width="8" stroke-dasharray="330 1000" stroke-dashoffset="-215" transform="rotate(-90 160 160)" opacity=".7"/>
+    <circle cx="160" cy="160" r="100" fill="none" stroke="#42628c" stroke-dasharray="3 6"/>
+  </svg>
+
+  <div style="position: absolute; left: 150px; top: 255px; width: 90px; height: 90px; border-radius: 50%; background: #8a3a35; border: 3px solid #6d8db8; display: flex; align-items: center; justify-content: center">
+    <svg width="46" height="34" viewBox="0 0 30 22" aria-hidden="true"><path d="M2 20 V9 H28 V20 M2 9 L15 2 L28 9 M8 20 V13 M15 20 V13 M22 20 V13" fill="none" stroke="#f6e8cc" stroke-width="2"/></svg>
+  </div>
+
+  <sc-for list="{{orders}}" as="o" hint-placeholder-count="3">
+    <button type="button" class="order {{o.cls}} {{o.go}}" aria-pressed="{{o.on}}" onClick="{{o.pick}}" style="left: {{o.x}}px; top: {{o.y}}px; --tx: {{o.tx}}px; --ty: {{o.ty}}px">
+      <sc-if value="{{o.on}}" hint-placeholder-val="{{false}}"><span class="check" aria-hidden="true">✓</span></sc-if>
+      <span style="position: relative; width: 34px; height: 34px; box-sizing: border-box; border-radius: {{o.radius}}; background: {{o.fill}}; border: {{o.line}}; clip-path: {{o.clip}}"></span>
+      <b>{{o.label}}</b><span style="color: {{o.stateColor}}">{{o.state}}</span>
+    </button>
+  </sc-for>
+
+  <sc-if value="{{delivered}}" hint-placeholder-val="{{false}}"><span class="gain" role="status">+64 d</span></sc-if>
+
+  <a href="Palais.dc.html" style="position: absolute; left: 50%; transform: translateX(-50%); top: 470px; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px; background: #1d304d; border: 1px solid #6d8db8; color: #ecf5ff; font-size: 13px; white-space: nowrap">
+    <span style="color: #f4c554; font-weight: 700">vous 22 %</span> · maître : Casa Foscari<span style="width: 14px; height: 16px; background: #e36a4a; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%)"></span>›</a>
+
+  <section style="position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 16px 20px; background: #1d304d; border-radius: 28px 28px 0 0; border-top: 1px solid #6d8db8; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 17px; font-weight: 700">{{summary}}</span><span style="font-size: 13px; color: #c2d4ea">1 mule libre</span></div>
+    <button type="button" class="gold" onClick="{{deliver}}">{{cta}}</button>
+    <a href="Negoce.dc.html" class="ghost">Acheter 12 briques · 19 d</a>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { pain: true, bois: true, delivered: false }; }
+  componentWillUnmount() { clearTimeout(this.t); }
+  renderVals() {
+    const s = this.state;
+    const END = 'polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%)';
+    const raw = [
+      { id: 'pain', label: '30 pains', d: 48, state: '48 d · couvert', stateColor: '#6ee0b8', x: 147, y: 140, fill: '#e8d6a8', radius: '0', clip: END, line: '0', ok: true },
+      { id: 'briques', label: '20 briques', d: 0, state: 'il en manque 12', stateColor: '#ff8070', x: 252, y: 300, fill: 'transparent', radius: '4px', clip: 'none', line: '3px dashed #c8693f', ok: false },
+      { id: 'bois', label: '12 bois', d: 16, state: '16 d · urgente · 42 min', stateColor: '#ff8070', x: 42, y: 300, fill: '#7db596', radius: '50%', clip: 'none', line: '0', ok: true },
+    ];
+    const orders = raw.map((o) => {
+      const on = o.ok && !!s[o.id];
+      return {
+        ...o, on, cls: on ? 'orderon' : '', go: s.delivered && on ? 'togo' : '',
+        tx: 195 - (o.x + 48), ty: 300 - (o.y + 48),
+        pick: () => { if (o.ok && !s.delivered) this.setState({ [o.id]: !s[o.id] }); },
+      };
+    });
+    const chosen = orders.filter((o) => o.on);
+    const total = chosen.reduce((a, o) => a + o.d, 0);
+    const n = chosen.length;
+    const dots = [0, 1, 2, 3, 4, 5, 6].map((i) => ({ c: i === 1 ? '#ecf5ff' : '#42628c' }));
+    return {
+      orders, dots, delivered: s.delivered,
+      summary: s.delivered ? 'Livré · la mule rentre ce soir' : n ? n + ' commande' + (n > 1 ? 's' : '') + ' dans la mule' : 'Touchez une commande',
+      cta: s.delivered ? '+' + total + ' d encaissés ✓' : n ? 'Livrer ' + n + ' commande' + (n > 1 ? 's' : '') + ' · +' + total + ' d' : 'Choisissez une commande',
+      deliver: () => { if (n && !s.delivered) this.setState({ delivered: true }); },
+    };
+  }
+}
+</script>
+</body>
+</html>

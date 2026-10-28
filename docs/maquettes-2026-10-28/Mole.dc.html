@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Enchères</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.nb{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800}
+.gold{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:999px;background:linear-gradient(180deg,#fbe0a0,#f4c554 45%,#c89632);color:#241703;font:700 16px 'Space Grotesk',sans-serif;box-shadow:0 8px 20px rgba(244,197,84,.28);border:0;cursor:pointer;width:100%;transition:transform .1s}
+.gold:active{transform:scale(.96)}
+.lot{position:relative;display:flex;align-items:center;gap:12px;padding:12px;border-radius:18px;border:1.5px solid transparent;color:#ecf5ff;text-align:left;font-family:'Space Grotesk',sans-serif;width:100%;cursor:pointer;animation:in .3s ease-out both;overflow:hidden}
+.lotsel{border-color:#ecf5ff}
+@keyframes in{from{opacity:0;transform:translateY(8px)}}
+.notch{flex:1;min-height:56px;border-radius:14px;border:1px solid #6d8db8;background:transparent;color:#ecf5ff;font-family:'Space Grotesk',sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.notchon{background:#2e486e;border-color:#6ec8f5;box-shadow:inset 0 0 0 1.5px #6ec8f5}
+.urgent{animation:pulse .6s ease-out 1}
+@keyframes pulse{50%{transform:scale(1.12)}}
+.stamp{position:absolute;right:14px;top:50%;margin-top:-20px;padding:6px 12px;border:3px solid #f4c554;border-radius:10px;color:#f4c554;font:700 16px 'Cinzel',serif;letter-spacing:.12em;transform:rotate(-8deg);animation:stamp .25s cubic-bezier(.2,.8,.2,1.6) .2s both;background:rgba(26,31,61,.85)}
+@keyframes stamp{from{transform:rotate(-8deg) scale(1.4);opacity:0}}
+.unfold{animation:unfold .35s ease-out .5s both;overflow:hidden}
+@keyframes unfold{from{max-height:0;opacity:0}to{max-height:80px}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #1a1f3d; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+  <header style="height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid #2e3a6a">
+    <a href="Venise.dc.html" style="display: flex; align-items: center; gap: 4px; min-height: 44px; min-width: 88px; color: #ecf5ff; font-weight: 600; font-size: 14px">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4 L6 10 L12 16"/></svg>Venise</a>
+    <h1 class="cz" style="margin: 0; font-size: 17px">Enchères</h1>
+    <span style="min-width: 88px; text-align: right; font-size: 13px; color: #b9a0f0; font-weight: 600">{{clock}}</span>
+  </header>
+
+  <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+    <svg width="358" height="70" viewBox="0 0 358 70" aria-hidden="true">
+      <path d="M0 58 q15 -6 30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0" fill="none" stroke="#6ec8f5" stroke-opacity=".4"/>
+      <path d="M120 50 H230 L218 62 H132 Z" fill="#9a6234"/><path d="M175 50 V8 L210 40 H175 M175 14 L146 40 H175" fill="#f6e8cc" opacity=".85"/>
+      <circle cx="320" cy="18" r="10" fill="{{sky}}" opacity=".7"/>
+    </svg>
+
+    <!-- De jour : l'arrivage est annoncé, les enchères ouvrent le soir -->
+    <sc-if value="{{isDay}}" hint-placeholder-val="{{false}}">
+      <p style="margin: 0; font-size: 15px">Trois lots arrivent par bateau. Les enchères ouvrent <b>à 20 h</b>.</p>
+      <sc-for list="{{dayLots}}" as="l" hint-placeholder-count="3">
+        <div class="lot" style="background: #243a5c; cursor: default; animation-delay: {{l.delay}}ms">
+          <span class="nb" style="width: 48px; text-align: center; font-size: 15px; color: #b9a0f0">{{l.n}}</span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 700">{{l.goods}}</span><span style="font-size: 13px; color: #c2d4ea">prix conseillé {{l.ref}} d</span></span>
+        </div>
+      </sc-for>
+    </sc-if>
+
+    <!-- Le soir : les enchères -->
+    <sc-if value="{{isEvening}}" hint-placeholder-val="{{true}}">
+      <sc-for list="{{lots}}" as="l" hint-placeholder-count="3">
+        <button type="button" class="lot {{l.sel}}" aria-pressed="{{l.on}}" style="background: {{l.bg}}; animation-delay: {{l.delay}}ms" onClick="{{l.pick}}">
+          <span class="{{l.pulse}}" style="position: relative; width: 48px; height: 48px; flex: none">
+            <svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="none" stroke="#2e3a6a" stroke-width="4"/><circle cx="24" cy="24" r="20" fill="none" stroke="{{l.ring}}" stroke-width="4" stroke-linecap="round" stroke-dasharray="{{l.dash}}" transform="rotate(-90 24 24)"/></svg>
+            <span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700">{{l.closes}}</span>
+          </span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+            <span style="font-weight: 700">Lot {{l.n}} · {{l.goods}}</span>
+            <span style="font-size: 13px; color: {{l.stateColor}}">{{l.state}}</span>
+            <sc-if value="{{l.won}}" hint-placeholder-val="{{false}}"><span class="unfold" style="font-size: 13px; color: #6ee0b8">+2 soies, +2 sels, +7 épices dans vos ateliers</span></sc-if>
+          </span>
+          <span class="nb" style="font-size: 18px; color: #f4c554">{{l.price}}</span>
+          <sc-if value="{{l.won}}" hint-placeholder-val="{{false}}"><span class="stamp">Adjugé</span></sc-if>
+        </button>
+      </sc-for>
+
+      <h2 style="margin: 8px 0 0; font-size: 16px; font-weight: 700">Jusqu'où montez-vous ?</h2>
+      <span style="font-size: 13px; color: #c2d4ea; margin-top: -6px">Lot {{selN}} · prix conseillé {{ref}} d</span>
+      <div style="display: flex; gap: 8px">
+        <sc-for list="{{notches}}" as="n" hint-placeholder-count="4">
+          <button type="button" class="notch {{n.cls}}" aria-pressed="{{n.on}}" onClick="{{n.pick}}"><span class="nb" style="font-size: 17px">{{n.d}} d</span><span style="font-size: 12px; color: #c2d4ea">{{n.label}}</span></button>
+        </sc-for>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: #c2d4ea">Gagnant : vous payez juste au-dessus du 2ᵉ. Perdant : rien n'est payé.</p>
+    </sc-if>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px 20px; border-top: 1px solid #2e3a6a; background: #1a1f3d">
+    <button type="button" class="gold" onClick="{{act}}">{{cta}}</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"evening":{"editor":"boolean","default":true},"closed":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { lot: 2, pct: 110, bid: false, remind: false }; }
+  renderVals() {
+    const evening = this.props.evening ?? true;
+    const closed = this.props.closed ?? false;
+    const s = this.state;
+    const C = 2 * Math.PI * 20;
+    const raw = [
+      { n: 1, goods: '2 soies, 2 sels, 7 épices', price: '63 d', state: 'Vous menez', stateColor: '#6ee0b8', bg: 'rgba(110, 224, 184, .12)', closes: '3 min', left: .1, ref: 60 },
+      { n: 2, goods: '2 fourrures, 2 vins, 4 draps', price: '59 d', state: 'Dépassé : enchérissez avant 20 h 20', stateColor: '#ff8070', bg: 'rgba(255, 128, 112, .12)', closes: '13 min', left: .45, ref: 56 },
+      { n: 3, goods: '1 soie, 6 épices', price: '24 d', state: 'Ouvert jusqu’à 20 h 30', stateColor: '#c2d4ea', bg: '#243a5c', closes: '23 min', left: .8, ref: 30 },
+    ];
+    if (closed) Object.assign(raw[0], { state: 'Gagné pour 63 d', closes: '✓', left: 0 });
+    if (s.bid) Object.assign(raw[1], { state: 'Vous menez · jusqu’à ' + Math.round(56 * s.pct / 100) + ' d', stateColor: '#6ee0b8', bg: 'rgba(110, 224, 184, .12)' });
+    const lots = raw.map((l, i) => {
+      const urgent = !(closed && l.n === 1) && parseInt(l.closes, 10) < 5;
+      return {
+        ...l, delay: i * 60, won: closed && l.n === 1, ring: urgent ? '#ff8070' : '#b9a0f0', pulse: urgent ? 'urgent' : '',
+        dash: (C * l.left).toFixed(1) + ' ' + C.toFixed(1), on: s.lot === l.n, sel: s.lot === l.n ? 'lotsel' : '', pick: () => this.setState({ lot: l.n, bid: false }),
+      };
+    });
+    const sel = raw.find((l) => l.n === s.lot);
+    const notches = [[100, 'conseillé'], [110, '+10 %'], [125, '+25 %'], [150, '+50 %']].map(([pct, label]) => ({ label, d: Math.round(sel.ref * pct / 100), on: s.pct === pct, cls: s.pct === pct ? 'notchon' : '', pick: () => this.setState({ pct, bid: false }) }));
+    const dayLots = raw.map((l, i) => ({ n: l.n, goods: l.goods, ref: l.ref, delay: i * 60 }));
+    const bid = Math.round(sel.ref * s.pct / 100);
+    return {
+      lots, notches, dayLots, selN: sel.n, ref: sel.ref,
+      isDay: !evening, isEvening: evening, clock: evening ? 'ce soir · 20 h 07' : 'ouvre à 20 h', sky: evening ? '#f6e8cc' : '#f4c554',
+      cta: !evening ? (s.remind ? 'Prévenu à 20 h ✓' : 'Me prévenir à 20 h') : s.bid ? 'Enchère posée · ' + bid + ' d au plus ✓' : 'Enchérir · ' + bid + ' d sur le lot ' + sel.n,
+      act: () => this.setState(evening ? { bid: true } : { remind: true }),
+    };
+  }
+}
+</script>
+</body>
+</html>

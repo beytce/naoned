@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Le calendrier du mois</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.day{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border:0;padding:0;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dot{display:flex;align-items:center;justify-content:center;border-radius:50%;font:700 11px 'Space Grotesk',sans-serif;transition:transform .2s}
+.day:hover .dot{transform:scale(1.12)}
+.ghost{display:flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid #6d8db8;color:#ecf5ff;font-weight:600;font-size:14px}
+.ghost:hover{color:#ecf5ff}
+.center{animation:center .3s ease-out both}
+@keyframes center{from{opacity:0;transform:translateY(6px)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #16263e; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+  <a href="Aujourdhui.dc.html" aria-label="Revenir aux tâches du jour" style="position: absolute; inset: 0; background: rgba(6, 12, 24, .6)"></a>
+  <section style="position: absolute; left: 0; right: 0; bottom: 0; height: 600px; background: #1d304d; border-radius: 28px 28px 0 0; border-top: 1px solid #6d8db8; padding: 0 20px">
+    <div style="width: 44px; height: 5px; border-radius: 3px; background: #6d8db8; margin: 10px auto 12px"></div>
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <h1 class="cz" style="margin: 0; font-size: 20px">Octobre</h1>
+      <span style="font-size: 13px; color: #c2d4ea">vendredi 12 · encore 19 jours</span>
+    </div>
+
+    <div style="position: relative; width: 350px; height: 310px; margin-top: 10px">
+      <svg width="350" height="310" viewBox="0 0 350 310" aria-hidden="true" style="position: absolute; inset: 0">
+        <circle cx="175" cy="155" r="122" fill="none" stroke="#2e486e" stroke-width="6"/>
+        <path d="{{pastArc}}" fill="none" stroke="#6d8db8" stroke-width="6" stroke-linecap="round"/>
+        <path d="{{voteArc}}" fill="none" stroke="#8e6bd8" stroke-width="10" stroke-linecap="round"/>
+      </svg>
+      <sc-for list="{{dots}}" as="d" hint-placeholder-count="20">
+        <span aria-hidden="true" style="position: absolute; left: {{d.x}}px; top: {{d.y}}px; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: {{d.c}}"></span>
+      </sc-for>
+      <sc-for list="{{events}}" as="e" hint-placeholder-count="10">
+        <button type="button" class="day" aria-label="{{e.aria}}" aria-pressed="{{e.on}}" onClick="{{e.pick}}" style="left: {{e.x}}px; top: {{e.y}}px">
+          <span class="dot" style="width: {{e.size}}px; height: {{e.size}}px; background: {{e.bg}}; color: {{e.fg}}; box-shadow: {{e.shadow}}">{{e.n}}</span>
+        </button>
+      </sc-for>
+      <div class="center" style="position: absolute; left: 85px; top: 85px; width: 180px; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px">
+        <span style="font-size: 12px; color: #c2d4ea">{{sel.when}}</span>
+        <span class="cz" style="font-size: 15px; color: {{sel.color}}">{{sel.title}}</span>
+        <span style="font-size: 13px; color: #ecf5ff; line-height: 1.35">{{sel.text}}</span>
+      </div>
+    </div>
+    <sc-if value="{{sel.past}}" hint-placeholder-val="{{false}}">
+      <a href="BonRetour.dc.html" class="ghost" style="margin: 4px auto 0; width: fit-content">Revoir ce jour</a>
+    </sc-if>
+    <sc-if value="{{sel.go}}" hint-placeholder-val="{{false}}">
+      <a href="{{sel.href}}" class="ghost" style="margin: 4px auto 0; width: fit-content">{{sel.goLabel}}</a>
+    </sc-if>
+    <p style="margin: 14px 0 0; font-size: 13px; color: #c2d4ea; text-align: center">Touchez un jour marqué.</p>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { day: 12 }; }
+  kind(n) {
+    if (n === 31) return { title: 'Fin du mois', text: 'Les actions rachetées, l’héritier nommé.', color: '#f4c554', bg: '#f4c554', fg: '#241703', href: 'Saison.dc.html', goLabel: 'Voir la fin du mois' };
+    if (n >= 25) return { title: 'Élection', text: 'Votez pour le Doge, l’élu du mois prochain.', color: '#b9a0f0', bg: '#8e6bd8', fg: '#ffffff', href: 'Palais.dc.html', goLabel: 'Aller voter' };
+    if (n === 10 || n === 17 || n === 24) return { title: 'Coup dur', text: n === 17 ? 'Le grand gel : le bois plus cher.' : 'Une crise : certains prix montent.', color: '#ff8070', bg: '#ff8070', fg: '#1a0a07' };
+    if ((n - 1) % 7 === 0 && n > 1) return { title: 'Atout de lundi', text: 'Un bonus et un malus pour la saison : choisissez.', color: '#6ec8f5', bg: '#6ec8f5', fg: '#07263a', href: 'Atout.dc.html', goLabel: 'Voir les Atouts' };
+    if (n % 7 === 0) return { title: 'Fin de semaine', text: 'Classement de la semaine et duel.', color: '#f4c554', bg: '#c89632', fg: '#241703', href: 'Classement.dc.html', goLabel: 'Voir le classement' };
+    return null;
+  }
+  renderVals() {
+    const ang = (n) => (-90 + (n - 1) * (360 / 31)) * Math.PI / 180;
+    const pt = (n, r = 122) => ({ x: 175 + r * Math.cos(ang(n)), y: 155 + r * Math.sin(ang(n)) });
+    const arc = (a, b) => { const p = pt(a), q = pt(b); const large = (b - a) * 360 / 31 > 180 ? 1 : 0; return `M${p.x.toFixed(1)} ${p.y.toFixed(1)} A122 122 0 ${large} 1 ${q.x.toFixed(1)} ${q.y.toFixed(1)}`; };
+    const dots = [], events = [];
+    for (let n = 1; n <= 31; n++) {
+      const k = this.kind(n); const p = pt(n);
+      if (n === 12 || (k && (n < 25 || n === 25 || n === 31))) {
+        const today = n === 12, sel = n === this.state.day;
+        const kk = n === 25 ? this.kind(26) : k;
+        events.push({
+          n: today ? n : (n === 25 ? '25–30' : n), x: p.x.toFixed(1), y: p.y.toFixed(1),
+          size: today ? 32 : n === 25 ? 30 : 26,
+          bg: today ? '#ecf5ff' : kk.bg, fg: today ? '#16263e' : kk.fg,
+          shadow: sel ? '0 0 0 3px #1d304d, 0 0 0 5px #ecf5ff' : today ? '0 0 14px rgba(236,245,255,.6)' : 'none',
+          on: sel, aria: today ? 'Aujourd’hui, le 12' : (n === 25 ? 'Du 25 au 30 : élection' : 'Le ' + n + ' : ' + kk.title),
+          pick: () => this.setState({ day: n }),
+        });
+      } else if (!(n > 25 && n < 31)) {
+        dots.push({ x: p.x.toFixed(1), y: p.y.toFixed(1), c: n < 12 ? '#6d8db8' : '#3b5a85' });
+      }
+    }
+    const d = this.state.day; const k = this.kind(d);
+    const sel = d === 12 ? { when: 'Aujourd’hui, vendredi 12', title: 'Jour de commerce', text: 'Lettre à lire, enchères à 20 h.', color: '#ecf5ff', past: false, go: false }
+      : d < 12 ? { when: 'Le ' + d, title: 'Jour passé', text: 'Ce que vous avez gagné ce jour-là.', color: '#c2d4ea', past: true, go: false }
+      : { when: d === 25 ? 'Du 25 au 30' : 'Le ' + d, ...k, past: false, go: !!k.href };
+    return { dots, events, sel, pastArc: arc(1, 12), voteArc: arc(25, 30) };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Venise</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,800&amp;family=Cinzel:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b1626}
+a{color:#6ec8f5;text-decoration:none}a:hover{color:#a8defa}
+.cz{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.nb{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800}
+.moon{position:absolute;width:130px;margin-left:-65px;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;color:#ecf5ff;animation:moonin .5s cubic-bezier(.2,.8,.2,1.3) both}
+.moon:hover{color:#ecf5ff}
+.moon:hover .orb{transform:scale(1.07)}
+.orb{position:relative;width:74px;height:74px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .3s cubic-bezier(.2,.8,.2,1.4)}
+@keyframes moonin{from{opacity:0;transform:translate(var(--fx),var(--fy)) scale(.4)}}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;color:#c2d4ea;font-size:11px;font-weight:600}
+.tab:hover{color:#ecf5ff}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #16263e; color: #ecf5ff; font-family: 'Space Grotesk', system-ui, sans-serif">
+  <header style="position: absolute; left: 16px; right: 16px; top: 10px; height: 44px; display: flex; align-items: center; justify-content: space-between">
+    <h1 class="cz" style="margin: 0; font-size: 20px; color: #ecf5ff">Venise</h1>
+    <span style="display: flex; align-items: center; gap: 8px"><span class="nb" style="font-size: 18px; color: #f4c554">1 284</span><span style="width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fbe7b0, #f4c554 60%, #c89632); box-shadow: inset 0 0 0 2px #c89632"></span></span>
+  </header>
+
+  <svg width="390" height="440" viewBox="0 0 390 440" aria-hidden="true" style="position: absolute; left: 0; top: 120px">
+    <circle cx="195" cy="220" r="140" fill="none" stroke="#42628c" stroke-dasharray="3 6"/>
+    <path d="M60 340 C 120 310, 270 370, 330 330" fill="none" stroke="#2b5c86" stroke-width="18" stroke-linecap="round" opacity=".35"/>
+  </svg>
+
+  <div style="position: absolute; left: 140px; top: 285px; width: 110px; height: 110px; border-radius: 50%; background: radial-gradient(circle at 38% 32%, #fbe7b0, #f4c554 55%, #c89632); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 40px rgba(244, 197, 84, .25)">
+    <svg width="60" height="54" viewBox="0 0 60 54" aria-hidden="true"><path d="M8 44 C 10 26, 22 14, 30 14 C 38 14, 50 26, 52 44 M14 26 L2 12 M46 26 L58 12 M20 46 H40" fill="none" stroke="#6b4a10" stroke-width="3.5" stroke-linecap="round"/><circle cx="30" cy="24" r="7" fill="#6b4a10"/></svg>
+  </div>
+
+  <a href="Palais.dc.html" class="moon" style="left: 195px; top: 163px; --fx: 0px; --fy: 140px">
+    <span class="orb" style="background: #2b2f5a; border: 3px solid #8e6bd8">
+      <svg width="36" height="30" viewBox="0 0 36 30" aria-hidden="true"><path d="M3 28 H33 M5 28 V12 H31 V28 M5 12 L18 4 L31 12 M10 28 V18 M18 28 V18 M26 28 V18" fill="none" stroke="#f6e8cc" stroke-width="2"/></svg>
+      <span style="position: absolute; top: 2px; right: 2px; width: 12px; height: 12px; border-radius: 50%; background: #8e6bd8; box-shadow: 0 0 0 2px #16263e"></span>
+    </span>
+    <span class="cz" style="font-size: 13px">Politique</span>
+    <span style="font-size: 13px; color: #c2d4ea">2 rumeurs ce matin</span>
+  </a>
+
+  <a href="Rialto.dc.html" class="moon" style="left: 320px; top: 303px; --fx: -140px; --fy: 0px; animation-delay: 60ms">
+    <span class="orb" style="background: #2b3f5a; border: 3px solid #6ec8f5">
+      <svg width="40" height="24" viewBox="0 0 40 24" aria-hidden="true"><path d="M2 22 C 10 4, 30 4, 38 22 M8 22 V14 M32 22 V14 M14 10 V22 M26 10 V22" fill="none" stroke="#f6e8cc" stroke-width="2"/></svg>
+      <span style="position: absolute; top: -2px; right: -2px; min-width: 22px; height: 22px; border-radius: 11px; background: #6ec8f5; color: #07263a; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center">1</span>
+    </span>
+    <span class="cz" style="font-size: 13px">Marché</span>
+    <span style="font-size: 13px; color: #6ee0b8">blé ▲ 4 %</span>
+  </a>
+
+  <a href="Mole.dc.html" class="moon" style="left: 195px; top: 443px; --fx: 0px; --fy: -140px; animation-delay: 120ms">
+    <span class="orb" style="background: #3a2f5a">
+      <svg width="80" height="80" viewBox="0 0 80 80" aria-hidden="true" style="position: absolute; left: -3px; top: -3px"><circle cx="40" cy="40" r="37" fill="none" stroke="#2e3a6a" stroke-width="3"/><path d="M40 3 A37 37 0 1 1 6.3 24.6" fill="none" stroke="#8e6bd8" stroke-width="3" stroke-linecap="round"/></svg>
+      <svg width="38" height="30" viewBox="0 0 38 30" aria-hidden="true"><path d="M3 20 H35 L30 27 H8 Z M19 20 V3 L30 14 H19" fill="none" stroke="#f6e8cc" stroke-width="2"/></svg>
+    </span>
+    <span class="cz" style="font-size: 13px">Enchères</span>
+    <span style="font-size: 13px; color: #b9a0f0">ce soir 20 h</span>
+  </a>
+
+  <a href="Canal.dc.html" class="moon" style="left: 70px; top: 303px; --fx: 140px; --fy: 0px; animation-delay: 180ms">
+    <span class="orb" style="background: #243a5c; border: 2px solid #7db596">
+      <svg width="40" height="36" viewBox="0 0 40 36" aria-hidden="true"><rect x="8" y="6" width="24" height="24" rx="2" fill="#2e486e" stroke="#6d8db8"/><rect x="12" y="11" width="4" height="6" rx="2" fill="#e8b24c"/><rect x="24" y="11" width="4" height="6" rx="2" fill="#e8b24c"/><path d="M0 32 q5 -3 10 0 t10 0 t10 0 t10 0" fill="none" stroke="#6ec8f5"/></svg>
+    </span>
+    <span class="cz" style="font-size: 13px">Les 40 palais</span>
+    <span style="font-size: 13px; color: #c2d4ea">vous : 41ᵉ</span>
+  </a>
+
+  <a href="Fiche.dc.html" style="position: absolute; left: 16px; right: 16px; bottom: 84px; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 20px; background: #1d304d; border: 1px solid #6d8db8; color: #ecf5ff; min-height: 56px; box-sizing: border-box">
+    <span style="width: 36px; height: 40px; flex: none; background: #e36a4a; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%)"></span>
+    <span style="flex: 1; display: flex; flex-direction: column">
+      <b style="font-size: 15px">Doge, l'élu du mois : Casa Foscari</b>
+      <span style="font-size: 13px; color: #c2d4ea">Son décret : livraisons à Venise +10 %</span>
+    </span>
+    <span style="color: #6ec8f5" aria-hidden="true">›</span>
+  </a>
+
+  <nav aria-label="Les lieux" style="position: absolute; left: 0; right: 0; bottom: 0; height: 68px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: #0f1c33; border-top: 1px solid #22375a; padding-bottom: 6px">
+    <a href="Main.dc.html" class="tab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z M9 4v14 M15 6v14"/></svg>Carte</a>
+    <a href="Comptoir.dc.html" class="tab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>Ateliers</a>
+    <a href="Venise.dc.html" class="tab" aria-current="page" style="color: #f4c554"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 18 C 7 13, 17 13, 21 18 M12 4 V15 M8 15 V9 H16 V15"/></svg>Venise</a>
+    <a href="Classement.dc.html" class="tab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 14v4M8 21h8"/></svg>Classement</a>
+    <a href="Terraferme.dc.html" class="tab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/></svg>Conquête</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
