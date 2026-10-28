@@ -31,6 +31,10 @@ export type LedgerReason =
   | "campaign_work"
   | "decree_gabelle"
   | "decree_toll"
+  | "signoria_toll"
+  | "incanto_lock"
+  | "incanto_refund"
+  | "incanto"
   | "decree_favour"
   | "supplier_bonus"
   | "tender_caution"
@@ -117,6 +121,9 @@ export type StockReason =
   | "booty"
   | "bale_gift"
   | "terraferma_harvest"
+  | "terraferma_rations"
+  | "incanto"
+  | "terraferma"
   | "tender_delivery"
   | "commission";
 

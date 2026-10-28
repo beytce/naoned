@@ -7,9 +7,11 @@ import { fr } from "../../i18n.js";
 import { Slab, clock } from "../../ui.js";
 import { perHour } from "../Dashboard.js";
 import type { GameProps } from "../Game.js";
+import { SignoriaLine, SignoriaRing } from "../Signoria.js";
 import { amount, d } from "../format.js";
 import { harvestAndRestart } from "../harvest.js";
 import { total } from "../roadKit.js";
+import { signoriaOf, useSignoria } from "../signoria.js";
 import type { BuildingView } from "../types.js";
 import { have, readyOf, recipeOf, workshopState } from "../workshops.js";
 import { orbStyle } from "./Markers.js";
@@ -509,6 +511,8 @@ export function CityOrbit({
   const m = fr.game.map;
   const t = m.orbit;
   const road = view.road;
+  // The city's gauge, fresh each time the city is opened.
+  const signoria = useSignoria(view, true);
   const orders = (road?.orders ?? []).filter((o) => o.city === code && o.status === "open");
   const shown = orders.slice(0, CITY_ORDERS);
   const covered = orders.filter((o) => have(view, o.resource) >= o.quantity).length;
@@ -543,7 +547,10 @@ export function CityOrbit({
       label: fondaco.level > 0 ? `${A.fondaco.label} · ${fondaco.level}` : A.fondaco.label,
       on: () => onSheet(`fondaco:${code}`),
     });
-  if (road) doors.push({ label: A.suppliers.label, on: () => onSheet(`suppliers:${code}`) });
+  // The Signoria of the city (R2) in place of the official suppliers, once it is on.
+  if (view.signoria)
+    doors.push({ label: m.buttons.signoria, on: () => onSheet(`signoria:${code}`) });
+  else if (road) doors.push({ label: A.suppliers.label, on: () => onSheet(`suppliers:${code}`) });
   if (venice)
     doors.push({ label: m.buttons.rialto, on: () => props.goTo("marche"), coach: "panel-rialto" });
   const at = (i: number) => {
@@ -610,6 +617,7 @@ export function CityOrbit({
               strokeWidth="0.3"
               strokeDasharray="0.8 1.6"
             />
+            {view.signoria && <SignoriaRing line={signoriaOf(signoria, code)} r={16.5} />}
           </svg>
           <span
             className="absolute left-1/2 top-1/2 flex h-[26%] w-[26%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full shadow-[0_8px_28px_rgb(0_0_0/0.5)] ring-2 ring-[#BFE3FF]/45"
@@ -685,6 +693,7 @@ export function CityOrbit({
             ))}
           </div>
         )}
+        <SignoriaLine props={props} code={code} />
         {held.length > 0 && (
           <p className="mt-2 text-center text-xs text-gold">
             {fr.game.suppliers.held(held.map((s) => props.names.resource(s.resource)).join(", "))}

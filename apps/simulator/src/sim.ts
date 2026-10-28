@@ -139,6 +139,12 @@ export interface SimulationResult {
   };
   /** Faraj's bales: opened, cards by rarity, value at reference prices by player (deniers). */
   bales?: { opened: number; cards: Record<string, number>; valueBy: Record<string, number> };
+  /** The war's goods (R1): taken from the merchants' stock by the Terraferma, by resource. */
+  war?: { eaten: Record<string, number>; built: Record<string, number> };
+  /** The incanto (R11): lots sold and unsold, price paid against the goods' reference, winners. */
+  incanto?: { sold: number; unsold: number; paid: number; value: number; winners: string[] };
+  /** The Signoria (R2): Podestà named, by city, and the merchants who held a city a day. */
+  signoria?: { named: Record<string, number>; holders: string[]; days: number };
   /** The families and the week's campaign: members, lances, battles, weeks won, decrees. */
   families?: {
     /** Members of each family at the end of the season. */
@@ -277,6 +283,9 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
     decreeMoney: {},
   } as NonNullable<SimulationResult["families"]>;
   const bales = { opened: 0, cards: {}, valueBy: {} } as NonNullable<SimulationResult["bales"]>;
+  const war: NonNullable<SimulationResult["war"]> = { eaten: {}, built: {} };
+  const signoria = { named: {} as Record<string, number>, holders: new Set<string>() };
+  const incanto = { sold: 0, unsold: 0, paid: 0, value: 0, winners: new Set<string>() };
   let now = START;
   const muda = { arrivals: 0, brought: 0, sold: 0, takings: 0n, buyers: new Set<string>() };
   const run = (cmd: Command): boolean => {
@@ -323,8 +332,29 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
       }
     }
     recordFlows(flows, res.effects);
+    for (const m of res.effects.stock) {
+      const into =
+        m.reason === "terraferma_rations"
+          ? war.eaten
+          : m.reason === "terraferma"
+            ? war.built
+            : undefined;
+      if (into) into[m.resource] = (into[m.resource] ?? 0) - m.quantity;
+    }
     for (const e of res.effects.events) {
       if (e.type === "harvest") activity.harvests++;
+      if (e.type === "incanto_won" && e.playerId) {
+        incanto.sold++;
+        incanto.paid += Number(e.data?.price ?? 0);
+        incanto.value += Number(e.data?.value ?? 0);
+        incanto.winners.add(e.playerId);
+      }
+      if (e.type === "incanto_unsold") incanto.unsold++;
+      if (e.type === "podesta_named" && e.playerId) {
+        const city = String(e.data?.city ?? "");
+        signoria.named[city] = (signoria.named[city] ?? 0) + 1;
+        signoria.holders.add(e.playerId);
+      }
       if (e.type === "muda_arrived") muda.arrivals++;
       if (e.type === "delivery_dispatched" && e.playerId) {
         activity.deliveries++;
@@ -573,6 +603,13 @@ export function runSimulation(options: SimulationOptions): SimulationResult {
   // The families' figures only while they play (the Terraferma replaces them).
   if (familiesOn(ctx)) result.families = families;
   result.bales = bales;
+  result.war = war;
+  result.incanto = { ...incanto, winners: [...incanto.winners] };
+  result.signoria = {
+    named: signoria.named,
+    holders: [...signoria.holders],
+    days: options.days,
+  };
   const playerDays = result.daily.reduce((a, d) => a + d.active, 0);
   const sortedFirst = [...activity.firstDelivery].sort((a, b) => a - b);
   result.activity = {

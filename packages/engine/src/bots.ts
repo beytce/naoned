@@ -34,6 +34,7 @@ import { draw } from "./draw.js";
 import { familiesOn, familiesOpenAt, familyCodes, membersOf, seatOf } from "./families.js";
 import { nextFondaco } from "./fondaci.js";
 import { houseMissionsFor } from "./house.js";
+import { incantoLots, incantoMinimum } from "./incanto.js";
 import { bestPrice, marketMakerQuotaLeft, maxOpenOrdersFor, openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
 import type { Deniers } from "./money.js";
@@ -60,6 +61,7 @@ import {
   type TerraConfig,
   type TerraState,
   alliesOf,
+  breadPerDay,
   capOf,
   cellCost,
   cellsOf,
@@ -267,6 +269,7 @@ export class Bot {
     this.serveFamily(s);
     this.deliverProjects(s);
     this.tenders(s);
+    this.incanto(s);
     this.partners(s);
     if (deliveriesOn(s.ctx)) this.garage(s, this.deliver(s));
     else {
@@ -373,13 +376,23 @@ export class Bot {
         return !!o && o !== id && !isNation(o) && !allies.includes(o);
       }),
     );
-    if (border !== undefined && spare(cfg.buildings.rocca.price))
+    const materials = (kind: string) => cfg.supply?.buildingMaterials[kind] ?? {};
+    if (
+      border !== undefined &&
+      spare(cfg.buildings.rocca.price) &&
+      this.warGoods(s, materials("rocca"))
+    )
       act({ type: "terraBuild", cell: border, kind: "rocca" });
     const inner = mine.find((c) => !map.buildings?.[c]);
     const borgo = cfg.buildings.borgo;
     if (inner !== undefined && borgo && spare(borgo.price))
       act({ type: "terraBuild", cell: inner, kind: "borgo" });
-    if (spare(cfg.capRaise.price)) act({ type: "terraRaise" });
+    const raiseBread = cfg.supply?.raiseBread ?? 0;
+    if (
+      spare(cfg.capRaise.price) &&
+      this.warGoods(s, raiseBread > 0 ? { bread: raiseBread + this.rationsPerDay(s) * 3 } : {})
+    )
+      act({ type: "terraRaise" });
     // Fronts, one after another while the troops are worth it.
     for (let k = 0; k < cfg.fronts.max; k++) {
       if (!this.launchFront(s, cfg, allies, act)) return;
@@ -772,6 +785,36 @@ export class Bot {
    * The Doge's tenders: a bid on a good it has spare, at 95 to 125 % of the reference (drawn per
    * merchant and tender), for half its spare stock at most; then delivers what it won.
    */
+  /**
+   * The incanto of the Sera (R11): a maximum on the cheapest open lot, at what the house thinks
+   * the goods are worth (the speculator dearer, the casual merchant cheaper), with half as much
+   * again in hand, one lot a Sera.
+   */
+  private incanto(s: Session): void {
+    if (!s.ctx.settings.incanto) return;
+    const state = s.state();
+    const open = incantoLots(state).filter((l) => !l.done && s.now < l.closesAt);
+    if (open.length === 0) return;
+    if (open.some((l) => l.leader === this.id)) return;
+    const worth: Record<string, number> = {
+      speculator: 11_000,
+      builder: 10_000,
+      producer: 9_500,
+      artisan: 9_000,
+      casual: 8_000,
+    };
+    let h = 0;
+    for (const c of this.id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    const bps = (worth[this.profile.name] ?? 9_000) + (h % 1_001) - 500;
+    const best = open
+      .map((l) => ({ l, max: (l.value * BigInt(bps)) / 10_000n, min: incantoMinimum(s.ctx, l) }))
+      .filter((x) => x.max >= x.min && this.cash(s) * 2n >= x.max * 3n)
+      .sort((a, b) =>
+        (a.min * 10_000n) / (a.l.value || 1n) > (b.min * 10_000n) / (b.l.value || 1n) ? 1 : -1,
+      )[0];
+    if (best) s.act({ type: "incantoBid", playerId: this.id, lotId: best.l.id, max: best.max });
+  }
+
   private tenders(s: Session): void {
     const state = s.state();
     for (const t of Object.values(state.tenders ?? {})) {
@@ -829,7 +872,27 @@ export class Bot {
     const levels = this.buildings(s)
       .filter((b) => b.type !== "palazzo")
       .reduce((n, b) => n + b.level, 0);
-    return levels * s.ctx.settings.rations.perLevelPerDay;
+    return levels * s.ctx.settings.rations.perLevelPerDay + this.troopsBreadPerDay(s);
+  }
+
+  /** Bread eaten per day by this bot's troops on the Terraferma (R1), in whole loaves. */
+  private troopsBreadPerDay(s: Session): number {
+    const cfg = terraOn(s.ctx);
+    const map = s.state().terra?.map;
+    if (!cfg?.supply || !map || map.closed || !map.players[this.id]) return 0;
+    return Math.ceil(breadPerDay(map, cfg, this.id) / 10_000);
+  }
+
+  /** Goods the war asks for (R1): bought when missing, and whether they are all in stock. */
+  private warGoods(s: Session, goods: Record<string, number>): boolean {
+    let ready = true;
+    for (const [resource, qty] of Object.entries(goods)) {
+      const missing = qty - this.available(s, resource);
+      if (missing <= 0) continue;
+      ready = false;
+      this.buy(s, resource, missing, 1.3);
+    }
+    return ready;
   }
 
   /** Stock kept back: next construction, three days of rations. */

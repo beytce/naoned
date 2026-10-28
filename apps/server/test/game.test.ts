@@ -247,12 +247,9 @@ describe("game API", () => {
     expect(BigInt(board.today)).toBeGreaterThan(0n);
     expect(board.lines[0]).toMatchObject({ who: "me", bot: false });
     expect(board.lines[0].daily.at(-1)).toBe(board.today);
-    // The week's ranking of the city's suppliers counts the loaves.
-    const suppliers = (await get(cookie, "/api/game/suppliers")).json();
-    const line = suppliers.lines.find(
-      (l: { city: string; resource: string }) => l.city === d.route.split(":")[1],
-    );
-    expect(line.resource).toBe("bread");
+    // The city's gauge of the Signoria (R2) counts the delivery's ducats.
+    const signoria = (await get(cookie, "/api/game/signoria")).json();
+    const line = signoria.cities.find((l: { city: string }) => l.city === d.route.split(":")[1]);
     expect(line.top[0]).toMatchObject({ me: true, pseudo: null, bot: false });
     expect(line.mine).toBeGreaterThan(0);
 
@@ -260,19 +257,35 @@ describe("game API", () => {
     expect(steps).toHaveLength(4);
   });
 
-  it("takes a sealed bid on the Doge's tender, its caution locked", async () => {
+  it("has no tender of the Doge since the incanto of the Sera (R11): a bid is refused", async () => {
     const cookie = await login("ada@example.org");
     await post(cookie, "/api/game/join", { region: "lagoon" });
     await world.execute({ type: "tick" });
     const v = (await get(cookie)).json().view;
-    const tender = v.tenders[0];
-    expect(tender.open).toBe(true);
-    const price = String(BigInt(tender.ceiling) - 10n);
-    const res = await act(cookie, { type: "tenderBid", tenderId: tender.id, price, quantity: 5 });
+    expect(v.tenders).toEqual([]);
+    const res = await act(cookie, { type: "tenderBid", tenderId: "0", price: "100", quantity: 5 });
+    expect(res.json().error).toBeDefined();
+  });
+
+  it("takes a maximum at the incanto of the Sera, the merchant leading its lot (R11)", async () => {
+    const cookie = await login("ada@example.org");
+    await post(cookie, "/api/game/join", { region: "lagoon" });
+    // Up to the galleys' next arrival: their lots open for the Sera.
+    const open = async () =>
+      ((await get(cookie)).json().view.sera?.lots ?? []).some((l: { done: unknown }) => !l.done);
+    for (let i = 0; i < 100 && !(await open()); i++) {
+      now += 3_600_000;
+      await world.execute({ type: "tick" });
+    }
+    const v = (await get(cookie)).json().view;
+    const lot = v.sera.lots.find((l: { done: unknown }) => !l.done);
+    expect(lot).toBeDefined();
+    const res = await act(cookie, { type: "incantoBid", lotId: lot.id, max: lot.minimum });
     expect(res.json().error).toBeUndefined();
-    const after = res.json().view;
-    expect(after.tenders[0].mine).toMatchObject({ price, quantity: 5 });
-    expect(BigInt(after.cash)).toBe(BigInt(v.cash) - BigInt(after.tenders[0].mine.caution));
+    const after = res.json().view.sera.lots.find((l: { id: string }) => l.id === lot.id);
+    expect(after.leading).toBe(true);
+    expect(after.mine).toBe(lot.minimum);
+    expect(BigInt(res.json().view.cash)).toBe(BigInt(v.cash) - BigInt(lot.minimum));
   });
 
   it("has no warehouse in the cities since 25 October 2026: a bid is refused", async () => {

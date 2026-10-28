@@ -68,6 +68,8 @@ const WORDS = {
     truce: /trêve/i,
     notices: /^avis/i,
     store: /^magasin$/i,
+    signoria: /^signoria$/i,
+    sera: /^la sera$/i,
     build: /^bâtir$/i,
     ranking: /^classement$/i,
     bale: /ballot/i,
@@ -101,6 +103,8 @@ const WORDS = {
     truce: /truce/i,
     notices: /^notices/i,
     store: /^store$/i,
+    sera: /^the sera$/i,
+    signoria: /^signoria$/i,
     build: /^build$/i,
     ranking: /^ranking$/i,
     bale: /bale/i,
@@ -410,6 +414,40 @@ async function session(width, height, tag) {
       throw new Error(`${label}: the notices still list first steps to take`);
     await page.keyboard.press("Escape");
     await check("carte");
+    // A city up close, its gauge of the Signoria around its monument (R2), then its sheet.
+    // A cart back on its road may lie over the city on a small screen: the tap goes to the city.
+    await page.locator('[data-coach="city-vicenza"]').first().dispatchEvent("click");
+    await page.waitForTimeout(700);
+    await check("ville");
+    const signoria = page.locator("[data-place]").getByRole("button", { name: WORDS.signoria });
+    if ((await signoria.count()) > 0) {
+      await signoria.first().click();
+      await page.waitForTimeout(600);
+      await check("signoria");
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(400);
+    }
+    await closeAll(page);
+    // The Sfida of the week (R6): the rival's line opens it once the Lustre is on.
+    const duel = page.locator('[data-hud="rival"]');
+    if ((await duel.count()) > 0) {
+      await duel.first().click();
+      await page.waitForTimeout(700);
+      await check("sfida");
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(400);
+      await closeAll(page);
+    }
+    // The Sera (R11): its round while lots of the galleys wait for bids, then its sheet.
+    const sera = page.getByRole("button", { name: WORDS.sera });
+    if ((await sera.count()) > 0) {
+      await sera.first().click();
+      await page.waitForTimeout(700);
+      await check("sera");
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(400);
+      await closeAll(page);
+    }
     // The counter up close (Lagune), its store by chain, then the catalogue of its free plot.
     await page.locator('[data-coach="home"]').first().click();
     await page.waitForTimeout(600);
@@ -450,6 +488,7 @@ async function session(width, height, tag) {
     await page.waitForTimeout(400);
     await closeAll(page);
     await npcRival(page, check);
+    await seraEvening(page, check);
     await welcomeBack(page, check);
     await baleWaiting(page, check);
     await seasonClosed(page, check);
@@ -1035,6 +1074,71 @@ async function seasonClosed(page, check) {
   await page.reload();
   await page.waitForTimeout(1200);
   await closeAll(page);
+}
+
+/**
+ * The Sera (R11): three lots of the galleys at the incanto, one led by the merchant, one passed,
+ * one closed and won. No world has lots at its start: the game's response is rewritten.
+ */
+async function seraEvening(page, check) {
+  await page.route("**/api/game", async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    const at = Date.now();
+    if (json.view)
+      json.view.sera = {
+        hour: 20,
+        minutes: 30,
+        lots: [
+          {
+            id: "9:0",
+            goods: { spices: 2, silk: 2, salt: 7 },
+            value: "9100",
+            closesAt: at + 25 * 60_000,
+            price: "6300",
+            minimum: "6615",
+            bidders: 3,
+            mine: "7000",
+            leading: true,
+            done: null,
+          },
+          {
+            id: "9:1",
+            goods: { furs: 2, cloth: 2, wine: 4 },
+            value: "8400",
+            closesAt: at + 35 * 60_000,
+            price: "5900",
+            minimum: "6195",
+            bidders: 2,
+            mine: "5600",
+            leading: false,
+            done: null,
+          },
+          {
+            id: "9:2",
+            goods: { spices: 1, salt: 6 },
+            value: "3300",
+            closesAt: at - 5 * 60_000,
+            price: "2400",
+            minimum: "2400",
+            bidders: 1,
+            mine: "2600",
+            leading: false,
+            done: { won: true, sold: true },
+          },
+        ],
+      };
+    await route.fulfill({ response, json });
+  });
+  await page.reload();
+  await page.waitForTimeout(1000);
+  await closeAll(page);
+  await page.getByRole("button", { name: WORDS.sera }).first().click();
+  await page.waitForTimeout(700);
+  await check("sera");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(400);
+  await page.unroute("**/api/game");
 }
 
 /**

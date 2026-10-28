@@ -25,6 +25,7 @@ export const SALES = new Set<LedgerReason>([
   "quality_premium",
   "commission",
   "colleganza_share",
+  "signoria_toll",
 ]);
 
 /** Paid by the merchant for goods, or to sell them. */
@@ -34,6 +35,7 @@ export const COSTS = new Set<LedgerReason>([
   "market_tax",
   "decree_gabelle",
   "decree_toll",
+  "signoria_toll",
   "fattore",
   "commission",
   "colleganza_share",

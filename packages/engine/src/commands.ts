@@ -31,6 +31,7 @@ import {
   rushDelivery,
   trackHouseMissions,
 } from "./house.js";
+import { bidIncanto } from "./incanto.js";
 import { borrow, repayLoan } from "./loans.js";
 import { type PlaceOrderInput, cancelAllOrders, cancelOrder, placeOrder } from "./market.js";
 import { claimMission, trackMissions } from "./missions.js";
@@ -122,6 +123,7 @@ export type Command =
   | { type: "tenderBid"; playerId: PlayerId; tenderId: string; price: Deniers; quantity: number }
   | { type: "tenderDeliver"; playerId: PlayerId; tenderId: string }
   | { type: "warehouseBid"; playerId: PlayerId; city: string; amount: Deniers }
+  | { type: "incantoBid"; playerId: PlayerId; lotId: string; max: Deniers }
   | { type: "buildFondaco"; playerId: PlayerId; city: string }
   | { type: "choosePath"; playerId: PlayerId; buildingId: string; path: "volume" | "quality" }
   | {
@@ -461,6 +463,9 @@ function apply(tx: Tx, cmd: Command): void {
       break;
     case "warehouseBid":
       bidWarehouse(tx, cmd.playerId, cmd.city, cmd.amount);
+      break;
+    case "incantoBid":
+      bidIncanto(tx, cmd.playerId, cmd.lotId, cmd.max);
       break;
     case "buildFondaco":
       buildFondaco(tx, cmd.playerId, cmd.city);

@@ -82,6 +82,12 @@ export interface TerraPlayer {
   harvest?: Record<string, number>;
   /** Ducats its city routes have earned, not yet paid (deniers). */
   routeOwed?: bigint;
+  /** Bread its troops have eaten, not yet taken from its stock, in 1/10 000 of a loaf. */
+  breadOwed?: number;
+  /** Its bread was missing at the last meal: it recruits no more until fed. */
+  unfed?: true;
+  /** Open minutes it has held each city, not yet counted on the cities' gauges (R2). */
+  cityMinutes?: Record<string, number>;
   /** When it lost its last cell: out of the week. */
   eliminatedAt?: number;
 }
@@ -532,7 +538,7 @@ export function capOf(s: TerraState, cfg: TerraConfig, id: string): number {
 /** Troops a merchant recruits each open hour (with `troops.recruit`): more with more land. */
 export function recruitPerHour(s: TerraState, cfg: TerraConfig, id: string): number {
   const r = cfg.troops.recruit;
-  if (!r) return 0;
+  if (!r || s.players[id]?.unfed) return 0;
   const cells = cellsOf(s, id);
   const base =
     r.base + r.perCell * cells.length + r.perCity * cells.filter((i) => s.map.city[i]).length;
@@ -606,6 +612,45 @@ function harvestStep(s: TerraState, cfg: TerraConfig, minutes: number): void {
       if (joined >= 2)
         p.routeOwed = (p.routeOwed ?? 0n) + (pc.routeDucats * BigInt(joined * minutes)) / 60n;
     }
+  }
+}
+
+/** The cities each merchant holds, for an economic step of `minutes` (the Signoria, R2). */
+function holdStep(s: TerraState, minutes: number): void {
+  s.owner.forEach((id, i) => {
+    const city = s.map.cityCode?.[i];
+    if (!id || !city || isNation(id)) return;
+    const p = s.players[id];
+    if (!p || p.eliminatedAt !== undefined) return;
+    p.cityMinutes = { ...p.cityMinutes, [city]: (p.cityMinutes?.[city] ?? 0) + minutes };
+  });
+}
+
+/** Minutes the map is open in a day (the troops' day, for their bread). */
+function openMinutesPerDay(cfg: TerraConfig): number {
+  const { from, to } = cfg.openHours;
+  return ((to - from + 24) % 24 || 24) * 60;
+}
+
+/** Troops a merchant feeds: its reserve and its fronts. */
+export function troopsFed(s: TerraState, id: string): number {
+  const away = s.fronts.filter((f) => f.owner === id).reduce((n, f) => n + f.troops, 0);
+  return (s.players[id]?.troops ?? 0) + away;
+}
+
+/** Bread a merchant's troops eat in a day of open hours, in 1/10 000 of a loaf. */
+export function breadPerDay(s: TerraState, cfg: TerraConfig, id: string): number {
+  return troopsFed(s, id) * (cfg.supply?.breadPerTroopDay ?? 0);
+}
+
+/** The troops' bread for an economic step of `minutes`, owed until the world serves it. */
+function eatStep(s: TerraState, cfg: TerraConfig, minutes: number): void {
+  if (!cfg.supply || cfg.supply.breadPerTroopDay <= 0) return;
+  const day = openMinutesPerDay(cfg);
+  for (const [id, p] of Object.entries(s.players)) {
+    if (isNation(id) || p.eliminatedAt !== undefined) continue;
+    const eaten = Math.floor((breadPerDay(s, cfg, id) * minutes) / day);
+    if (eaten > 0) p.breadOwed = (p.breadOwed ?? 0) + eaten;
   }
 }
 
@@ -1383,7 +1428,11 @@ export function advanceTerra(s: TerraState, cfg: TerraConfig, until: number): vo
 /** Whether the battle hour is on at `at`. */
 export function inBattle(cfg: TerraConfig, at: number): boolean {
   const b = cfg.battle;
-  return !!b && b.stepMinutes < cfg.stepMinutes && hourWithin(hourIn(at), b);
+  if (!b || b.stepMinutes >= cfg.stepMinutes) return false;
+  if (b.toMinute === undefined) return hourWithin(hourIn(at), b);
+  // To the minute (the Sera, R11): Paris is a whole number of hours from UTC.
+  const minute = hourIn(at) * 60 + (Math.floor(at / MINUTE_MS) % 60);
+  return minute >= b.from * 60 && minute < b.to * 60 + b.toMinute;
 }
 
 /** Minutes of the step starting at `at`: short in the battle hour. */
@@ -1429,8 +1478,10 @@ function step(s: TerraState, cfg: TerraConfig, at: number, fronts = true): void 
     s.hourSteps = 0;
     fallPockets(s, cfg, at);
   }
-  // The land's yield and the city routes.
+  // The land's yield and the city routes; the troops' bread.
   harvestStep(s, cfg, cfg.stepMinutes);
+  eatStep(s, cfg, cfg.stepMinutes);
+  holdStep(s, cfg.stepMinutes);
   // Glory for the land held.
   for (const [id, p] of Object.entries(s.players)) {
     if (isNation(id)) continue;

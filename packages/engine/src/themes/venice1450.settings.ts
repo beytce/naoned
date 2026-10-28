@@ -147,7 +147,8 @@ export const venice1450Settings: WorldSettingsInput = {
     hour: 9,
     lotPerActivePlayer: { spices: 1, silk: 1, furs: 1, cloth: 1, salt: 4, wine: 2 },
     quotaPerPlayer: { spices: 3, silk: 3, furs: 2, cloth: 2, salt: 10, wine: 6 },
-    priceRiseBps: 6_000,
+    // No rise on the quay since the incanto (R11): the scarcity is bid for at the Sera.
+    priceRiseBps: 0,
     maxStockLots: 2,
   },
   // Two orders of the Doge a day.
@@ -246,7 +247,8 @@ export const venice1450Settings: WorldSettingsInput = {
     stepMinutes: 30,
     // The battle hour (recommendations of 20 October 2026): from 20 h to 21 h the fronts march a
     // step every 3 minutes, ten times as fast, for those who come to lead them.
-    battle: { from: 20, to: 21, stepMinutes: 3, warnMinutes: 15 },
+    // The Sera (R11, 28 October 2026): from 20 h to 20 h 30, with the incanto.
+    battle: { from: 20, to: 20, toMinute: 30, stepMinutes: 3, warnMinutes: 15 },
     // Soldiers and peasants: the plains grow wheat, the hills clay, the mountains wood, for the
     // counter; two cities or more joined to the capital earn 3 d each an open hour.
     peasants: {
@@ -299,6 +301,18 @@ export const venice1450Settings: WorldSettingsInput = {
       mura: { price: 5_000, perCells: 10, radius: 1 },
     },
     capRaise: { amount: 20, price: 10_000, perDay: 3 },
+    // The war eats the goods (R1, docs/plan-rupture.md): a tenth of a loaf a troop and a day,
+    // bread for the cap, materials for the buildings. Calibrated in docs/calibration.md.
+    supply: {
+      breadPerTroopDay: 1_000,
+      raiseBread: 10,
+      buildingMaterials: {
+        rocca: { bricks: 10 },
+        porto: { planks: 10 },
+        bombarda: { wood: 10, planks: 10 },
+        mura: { bricks: 5, planks: 15 },
+      },
+    },
     // No limit set by the game: fronts march until their troops run out, capitals fall, Milan
     // preys on the weak rather than braking the leader.
     fronts: {
@@ -361,9 +375,9 @@ export const venice1450Settings: WorldSettingsInput = {
     },
     // The third week of the month in teams, by region.
     teams: { weeks: [2] },
-    // Diplomacy: a signal each 5 minutes, up to 50 d a day to one's allies, an embargo from the
-    // cities one holds that cuts 20 % of what they pay the rival.
-    diplomacy: { ducatGiftPerDay: 5_000, embargoBps: 2_000, signalMinutes: 5 },
+    // Diplomacy: a signal each 5 minutes, up to 50 d a day to one's allies. The embargo from the
+    // cities one holds is off since the Signoria's toll (R2, 27 October 2026).
+    diplomacy: { ducatGiftPerDay: 5_000, embargoBps: 0, signalMinutes: 5 },
     // The other powers of 1450 (recommendations of 20 October 2026): the Gonzaga hold Mantua and
     // strike back at whoever attacks them, the Este of Ferrara fall on the weak, the Patriarch of
     // Aquileia spreads slowly in the north-east, the Empire raids from the Alps.
@@ -1231,16 +1245,21 @@ export const venice1450Settings: WorldSettingsInput = {
       gilded_name: { cost: 40, requires: [] },
     },
   },
-  // The Doge's tenders (recommendations of 20 October 2026): every two days, a quantity of a
-  // building good at most 140 % of its reference; sealed bids for a day with a caution of 20 %,
-  // two days to deliver. The cheapest win; a winner who does not deliver loses the caution.
-  tenders: {
-    everyDays: 2,
-    bidHours: 24,
-    deliverHours: 48,
-    quantity: { bread: [40, 80], bricks: [20, 40], planks: [20, 40] },
-    ceilingBps: 14_000,
-    cautionBps: 2_000,
+  // The Doge's tenders (recommendations of 20 October 2026) are off since the incanto of the
+  // Sera (R11, 28 October 2026): the rules stay in the engine, off when absent.
+  // The incanto of the galleys (R11, docs/plan-rupture.md): 30 % of each arrival of the Muda in
+  // three lots (half sold too little: a lot weighed more than a day's income), closing at 20 h 10, 20 h 20 and 20 h 30 (two minutes more for a late bid); bids
+  // are maxima, from 60 % of the goods' reference, a step of 5 %; one lot a Sera per merchant.
+  incanto: {
+    shareBps: 3_000,
+    lots: 3,
+    hour: 20,
+    firstMinute: 10,
+    everyMinutes: 10,
+    extendMinutes: 2,
+    startBps: 6_000,
+    stepBps: 500,
+    perPlayer: 1,
   },
   // No warehouses in the cities since 25 October 2026 (the experts' E1-5): not simulated; the
   // fondaci take their place. The rules stay in the engine, off when absent.
@@ -1258,9 +1277,36 @@ export const venice1450Settings: WorldSettingsInput = {
       { ducats: 60_000, materials: { bricks: 40, planks: 40 } },
     ],
   },
-  // The official supplier (recommendations of 20 October 2026): the week's best deliverer of a
-  // good to a city, from 10 units, is paid 10 % more for it there all the next week.
-  suppliers: { bonusBps: 1_000, minUnits: 10 },
+  // The official supplier (recommendations of 20 October 2026) is replaced by the Signoria of the
+  // cities (R2, docs/plan-rupture.md, 27 October 2026): a delivery's ducats and the open hours a
+  // city is held on the Terraferma count on its gauge; each day's leader is its Podestà, who
+  // takes 3 % of the others' deliveries there and takes its orders half an hour before them.
+  // The Lustre (R6, docs/plan-rupture.md, 28 October 2026): the social ranks of Venice, won in
+  // the weekly Sfide; two tiers down at the month's change.
+  lustre: {
+    tiers: [
+      { code: "popolano", from: 0 },
+      { code: "cittadino", from: 100 },
+      { code: "mercante", from: 250 },
+      { code: "patrizio", from: 450 },
+      { code: "senatore", from: 700 },
+      { code: "procuratore", from: 1_000 },
+    ],
+    win: 30,
+    loss: 20,
+    maxStake: 50,
+    resetTiers: 2,
+  },
+  signoria: {
+    cityPointsPerHour: 20,
+    decayBps: 5_000,
+    minPoints: 50,
+    maxCities: 3,
+    tollBps: 300,
+    previewMinutes: 30,
+    newcomerDays: 3,
+    openHours: { from: 8, to: 22 },
+  },
   // Company orders (recommendations of 20 October 2026): a city orders bread, bricks and planks
   // from the three regions together, paid 10 % above the reference on delivery, and 10 % more to
   // everyone who delivered once the order is full.

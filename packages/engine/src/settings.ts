@@ -429,14 +429,15 @@ export const worldSettingsSchema = z.object({
         })
         .optional(),
       /**
-       * The battle hour: from `from` to `to` (Paris), the fronts march a step every
-       * `stepMinutes` (troops, glory and Milan keep their pace); merchants on the map are warned
-       * `warnMinutes` before.
+       * The battle hour: from `from` to `to` (Paris; `toMinute` past `to`, for the Sera's half
+       * hour), the fronts march a step every `stepMinutes` (troops, glory and Milan keep their
+       * pace); merchants on the map are warned `warnMinutes` before.
        */
       battle: z
         .object({
           from: qty.max(24),
           to: qty.max(24),
+          toMinute: qty.max(59).optional(),
           stepMinutes: positive,
           warnMinutes: qty.prefault(15),
         })
@@ -661,6 +662,19 @@ export const worldSettingsSchema = z.object({
       capRaise: z
         .object({ amount: qty, price: money, perDay: qty })
         .prefault({ amount: 10, price: 10_000, perDay: 2 }),
+      /**
+       * The war eats the goods (R1, docs/plan-rupture.md): the troops eat bread each open hour
+       * (in 1/10 000 of a loaf a troop and a day of open hours), a merchant whose bread is missing
+       * recruits no more; the cap asks for bread, the buildings for materials, from the stock.
+       * Absent: the war asks for ducats only.
+       */
+      supply: z
+        .object({
+          breadPerTroopDay: qty,
+          raiseBread: qty,
+          buildingMaterials: z.record(z.string(), z.record(z.string(), qty)),
+        })
+        .optional(),
       /** The week's close: the land that wins at once, Influence by tier, the decrees. */
       close: z
         .object({
@@ -1198,6 +1212,66 @@ export const worldSettingsSchema = z.object({
    * `minUnits`) is paid `bonusBps` more for it there all the next week. Off when absent.
    */
   suppliers: z.object({ bonusBps: bps, minUnits: positive }).optional(),
+  /**
+   * The incanto of the galleys (R11, docs/plan-rupture.md): at each arrival of the Muda,
+   * `shareBps` of the lot is auctioned in `lots` lots closing at the Sera of that day (`hour`,
+   * the first at `firstMinute`, then every `everyMinutes`), extended by `extendMinutes` for a bid
+   * in their last minutes. Bids are maxima: the price opens at `startBps` of the goods' reference
+   * and is the second maximum plus `stepBps`. A merchant leads `perPlayer` lots of a Sera at most.
+   * Off when absent.
+   */
+  incanto: z
+    .object({
+      shareBps: bps.max(10_000),
+      lots: positive,
+      hour: z.number().int().min(0).max(23),
+      firstMinute: z.number().int().min(0).max(59),
+      everyMinutes: qty,
+      extendMinutes: qty,
+      startBps: bps,
+      stepBps: bps,
+      perPlayer: positive,
+    })
+    .optional(),
+  /**
+   * The Lustre (R6, docs/plan-rupture.md): a rank of the accounts in the social ranks of Venice
+   * (`tiers`, from their threshold), won and lost in weekly Sfide: `win` to the winner, `loss` off
+   * the loser, a challenge's stake (up to `maxStake`) on top; `resetTiers` tiers down at the
+   * month's change. Off when absent.
+   */
+  lustre: z
+    .object({
+      tiers: z.array(z.object({ code: z.string(), from: qty })).min(1),
+      win: qty,
+      loss: qty,
+      maxStake: qty,
+      resetTiers: qty,
+    })
+    .optional(),
+  /**
+   * The Signoria of the cities (R2, docs/plan-rupture.md): a delivery's ducats, and each open hour
+   * a city is held on the Terraferma (`cityPointsPerHour`), count on the city's gauge; nothing for
+   * a delivery sent outside `openHours`. At each day's close the points keep `decayBps`, and the
+   * leader above `minPoints` is the city's Podestà (never a house of the computer, `maxCities` at
+   * most): it takes `tollBps` of the others' deliveries there (not of a merchant arrived within
+   * `newcomerDays`) and sees and takes the city's orders `previewMinutes` before they open. Off
+   * when absent.
+   */
+  signoria: z
+    .object({
+      cityPointsPerHour: qty,
+      decayBps: bps.max(10_000),
+      minPoints: qty,
+      maxCities: positive,
+      tollBps: bps.max(10_000),
+      previewMinutes: qty,
+      newcomerDays: qty,
+      openHours: z.object({
+        from: z.number().int().min(0).max(23),
+        to: z.number().int().min(0).max(24),
+      }),
+    })
+    .optional(),
   /** Weekly city projects; no needs turns them off. */
   projects: z
     .object({

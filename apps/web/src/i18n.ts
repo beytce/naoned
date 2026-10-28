@@ -273,6 +273,7 @@ const frDict = {
         rialto: "Rialto",
         criee: "Criée",
         suppliers: "Fournisseurs",
+        signoria: "Signoria",
         warehouse: "Entrepôt",
         fondaco: "Fondaco",
         ranking: "Classement",
@@ -597,13 +598,16 @@ const frDict = {
       /** The troops' card on the HUD: the glory and the rank live there. */
       troopsTip: {
         title: "Vos troupes",
-        text: "Vos terres recrutent chaque heure de jour, jusqu'au maximum. Chaque case prise rapporte de la Gloire.",
+        text: "Vos terres recrutent chaque heure de jour, jusqu'au maximum, tant que vos troupes ont du pain. Chaque case prise rapporte de la Gloire.",
         troops: "Troupes",
         recruit: "Recrues",
         glory: "Gloire",
         rank: "Rang",
         rankOf: (rank: number, of: number) => `${rank}${rank === 1 ? "er" : "e"} sur ${of}`,
+        bread: "Pain des troupes",
+        breadLine: (stock: number, perDay: string) => `${stock} · −${perDay}/j`,
       },
+      hungryShort: "Vos troupes ont faim : sans pain, plus de recrues",
       troopsLine: (troops: number, cap: number) => `${troops}/${cap}`,
       perHour: (n: number) => `+${n}/h`,
       perHourAt: (n: number, from: number) => `☾ +${n}/h à ${from} h`,
@@ -683,7 +687,8 @@ const frDict = {
       battle: {
         on: (to: number) => `⚔ Bataille : fronts ×10 jusqu'à ${to} h`,
         at: (from: number) => `Bataille chaque soir à ${from} h`,
-        onShort: (to: number) => `⚔ Bataille → ${to} h`,
+        onShort: (to: number, minute = 0) =>
+          `⚔ Bataille → ${to} h${minute > 0 ? ` ${String(minute).padStart(2, "0")}` : ""}`,
         atShort: (from: number) => `Bataille à ${from} h`,
       },
       marching: (n: number) => `${n} front${n > 1 ? "s" : ""} en marche`,
@@ -750,6 +755,7 @@ const frDict = {
         full: (amount: number) =>
           `Troupes au maximum. « Max +${amount} » relève ce maximum pour des ducats (il ne donne pas de troupes).`,
         decree: "Décret",
+        costs: "La guerre mange aussi des marchandises :",
         fronts: "Fronts",
         recall: "Rappeler",
         frontLine: (troops: number, against: string) => `⚔ ${troops} → ${against}`,
@@ -1511,6 +1517,7 @@ const frDict = {
         colleganza_share: "Parts de colleganza",
         loan: "Prêts de la Banque",
         decree_share: "Part des décrets",
+        signoria_toll: "Droit de porte du Podestà",
         delivery: "Livraisons",
       } as Record<string, string>,
       road: {
@@ -1751,18 +1758,36 @@ const frDict = {
         `Les galères de la Muda sont à quai : la Dogana vend ${goods || "les marchandises d'outre-mer"} au Rialto.`,
       siege: (land: string, by: string, lances: number, time: string) =>
         `${land} menacée : ${lances} troupes ${by} arrivent à ${time}. Renforcez la garnison !`,
+      sfida: (event: string, by: string | null, ghost: boolean) =>
+        event === "challenged"
+          ? `${by ?? "Un marchand"} vous défie pour la semaine prochaine.`
+          : ghost
+            ? `Votre Sfida de la semaine : le fantôme de ${by ?? "un marchand"}.`
+            : `Votre Sfida de la semaine : ${by ?? "un marchand"}.`,
+      sera: (event: string, lots: number) =>
+        event === "outbid"
+          ? "Votre enchère est dépassée à l'incanto des galères."
+          : `La Sera commence à 20 h : ${lots} lot${lots > 1 ? "s" : ""} aux enchères, et la bataille.`,
+      signoria: (event: string, city: string, by: string | null) =>
+        event === "podesta_named"
+          ? `Vous êtes Podestà de ${city} : un droit sur les livraisons des autres, et ses commandes avant eux.`
+          : event === "podesta_lost"
+            ? `${by ?? "Un rival"} vous a repris ${city}.`
+            : `${by ?? "Un rival"} vous dépasse sur la jauge de ${city}.`,
       family: (event: string, data: Record<string, string>) =>
-        event === "skirmish_aborted"
-          ? skirmishInterrupted
-          : event === "land_lost"
-            ? `${data.land} est perdue, prise par ${data.by}.`
-            : event === "decree_share"
-              ? `Votre part des décrets : ${data.amount}.`
-              : data.won === "1"
-                ? `Votre famille gagne la semaine${data.decrees ? ` et impose ${data.decrees}` : ""} !`
-                : data.winner
-                  ? `Les ${data.winner} gagnent la semaine${data.decrees ? ` et imposent ${data.decrees}` : ""}.`
-                  : "La semaine se termine sans vainqueur.",
+        event === "terra_hungry"
+          ? "Vos troupes ont faim : sans pain, vous ne recrutez plus."
+          : event === "skirmish_aborted"
+            ? skirmishInterrupted
+            : event === "land_lost"
+              ? `${data.land} est perdue, prise par ${data.by}.`
+              : event === "decree_share"
+                ? `Votre part des décrets : ${data.amount}.`
+                : data.won === "1"
+                  ? `Votre famille gagne la semaine${data.decrees ? ` et impose ${data.decrees}` : ""} !`
+                  : data.winner
+                    ? `Les ${data.winner} gagnent la semaine${data.decrees ? ` et imposent ${data.decrees}` : ""}.`
+                    : "La semaine se termine sans vainqueur.",
       week: (week: number, rank: number, gain: string, award: string | null) =>
         `Semaine ${week} : vous terminez ${rank}${rank === 1 ? "er" : "e"} (${gain}).${award ? ` Vous êtes ${award} !` : ""}`,
       push: {
@@ -1792,6 +1817,9 @@ const frDict = {
           skirmish_call: "Convocations d'escarmouche (un quart d'heure avant)",
           wave: "Vague de commandes que votre stock couvre (si vous êtes absent)",
           streak: "Rappel de série (19 h, coffre du jour fermé)",
+          signoria: "Signoria des villes (Podestà nommé, ville perdue, rival en tête)",
+          sfida: "Sfida de la semaine et défis reçus",
+          sera: "La Sera (19 h 55) et enchères dépassées",
         } as Record<string, string>,
       },
     },
@@ -2622,6 +2650,24 @@ const frDict = {
       help: (cities: number, levels: number, top: number, pct: number) =>
         `Un fondaco dans ${cities} villes au plus, du niveau 1 au niveau ${top}, ${levels} niveaux en tout. Chaque niveau vous donne chaque jour une commande de la ville, à vous seul, payée ${pct} % du prix du tableau commun : moins chère que le tableau, mais sûre. Les ducats sortent du jeu, les briques et les planches aussi ; le fondaco compte dans votre patrimoine à son coût.`,
     },
+    /** The Signoria of the cities (R2): the gauge of a city and its Podestà. */
+    signoria: {
+      title: (city: string) => `Signoria de ${city}`,
+      kicker: "Qui tient la ville",
+      podesta: "Podestà",
+      vacant: "Pas encore de Podestà",
+      you: "Vous",
+      points: (n: number) => `${n.toLocaleString("fr-FR")} pts`,
+      share: (pct: number) => `${pct} %`,
+      mine: (pct: number) => `Votre part : ${pct} %`,
+      held: "Vous êtes Podestà de la ville",
+      line: (toll: number, minutes: number) =>
+        `Le Podestà prend ${toll} % des livraisons des autres et voit les commandes ${minutes} min avant eux.`,
+      decided: "Le Podestà se décide chaque nuit à minuit.",
+      help: (pointsPerHour: number, keptPct: number, max: number, toll: number, minutes: number) =>
+        `Chaque ducat payé par une livraison partie entre 8 h et 22 h compte un point sur la jauge de la ville ; tenir la ville sur la Terraferme en compte ${pointsPerHour} par heure ouverte. Chaque nuit à minuit, le premier devient Podestà et les points ne gardent que ${keptPct} %. Une maison tient ${max} villes au plus ; les maisons de l'ordinateur ne le deviennent jamais. Le Podestà prend ${toll} % des livraisons des autres vers sa ville (pas des nouveaux venus) et prend ses commandes ${minutes} minutes avant tout le monde.`,
+      none: "Personne n'a encore compté ici.",
+    },
     /** The official suppliers of a city. */
     suppliers: {
       title: (city: string) => `Fournisseurs de ${city}`,
@@ -2652,6 +2698,86 @@ const frDict = {
       },
     },
     /** The rival of the week, under the rank on the map. */
+    /** The Sera (R11): the incanto of the galleys and the battle, at 20 h. */
+    sera: {
+      orb: "La Sera",
+      kicker: "Ce soir à 20 h",
+      title: "La Sera",
+      line: (n: number) =>
+        `${n} lot${n > 1 ? "s" : ""} des galères aux enchères, et la bataille de la Terraferme.`,
+      lot: (i: number) => `Lot ${i}`,
+      closes: (time: string) => `ferme à ${time}`,
+      closesIn: (left: string) => `ferme dans ${left}`,
+      closed: "Clos",
+      price: "Prix",
+      bidders: (n: number) => `${n} enchérisseur${n > 1 ? "s" : ""}`,
+      leading: "Vous menez",
+      passed: "Dépassé",
+      won: "Gagné",
+      sold: "Vendu",
+      unsold: "Invendu : retourné au quai",
+      max: "Votre maximum",
+      bid: "Enchérir",
+      raise: "Relever",
+      oneLot: "Un lot par marchand et par Sera.",
+      results: "Résultats du jour",
+      podesta: (city: string) => `Vous êtes Podestà de ${city}`,
+      noResults: "Vous ne tenez aucune ville ce soir.",
+      help: "Chaque arrivée des galères de la Muda met 30 % de son chargement aux enchères, en trois lots qui ferment à 20 h 10, 20 h 20 et 20 h 30. Laissez votre maximum quand vous voulez, dès l'arrivée : vous payez seulement le deuxième maximum plus 5 %, et vos ducats sont rendus si l'on vous dépasse. Une enchère dans les deux dernières minutes prolonge le lot de deux minutes. Un lot par marchand et par Sera. Le prix payé sort du jeu.",
+      errors: {
+        bid_too_low: "Votre maximum doit atteindre le minimum du lot.",
+        lot_closed: "Ce lot est clos.",
+        one_lot: "Vous menez déjà un lot de cette Sera.",
+        insufficient_funds: "Pas assez de ducats.",
+      } as Record<string, string>,
+    },
+    /** The Lustre (R6): the social ranks of Venice and the weekly Sfida. */
+    lustre: {
+      tiers: {
+        popolano: "Popolano",
+        cittadino: "Cittadino",
+        mercante: "Mercante",
+        patrizio: "Patrizio",
+        senatore: "Senatore",
+        procuratore: "Procuratore",
+      } as Record<string, string>,
+      kicker: "La Sfida de la semaine",
+      title: "Sfida",
+      lead: "Sfida :",
+      ghostOf: (name: string) => `fantôme de ${name}`,
+      ghostLine: (name: string, week: number) =>
+        `Le fantôme de ${name} : sa semaine ${week}, rejouée heure par heure.`,
+      you: "Vous",
+      versus: "contre",
+      ahead: (gap: string) => `Vous menez de ${gap}`,
+      behind: (gap: string) => `Il vous manque ${gap}`,
+      even: "À égalité",
+      stake: (n: number) => `Défi : ${n} de Lustre en jeu`,
+      stakes: (win: number, loss: number) =>
+        `Gagner rapporte +${win} de Lustre, perdre en coûte ${loss}. Décidé à la fin de la semaine, sur vos ventes nettes.`,
+      none: "Votre Sfida commence au prochain passage du tick : revenez dans un instant.",
+      lustre: (n: number) => `${n} de Lustre`,
+      next: (n: number, tier: string) => `${tier} à ${n}`,
+      ladder: "L'échelle",
+      challengesIn: "Défis reçus",
+      challengesOut: "Défi lancé",
+      accept: "Accepter",
+      accepted: "Accepté",
+      waiting: "En attente",
+      challenge: "Défier",
+      challengeTitle: (name: string) => `Défier ${name}`,
+      challengeLine: "Une Sfida la semaine prochaine, s'il accepte.",
+      stakeLabel: "Mise",
+      send: "Lancer le défi",
+      sent: "Défi lancé : il a jusqu'à lundi pour accepter.",
+      help: "Chaque semaine, vous affrontez un marchand de votre Lustre : celui qui vend le plus (ventes nettes de la semaine) gagne. Sans adversaire libre, vous affrontez le fantôme d'un marchand : une de ses semaines passées, heure par heure. Le Lustre reste d'une saison à l'autre ; au changement de mois, on redescend de deux rangs. Il ne donne aucun avantage en jeu.",
+      errors: {
+        already_asked: "Un défi est déjà lancé pour la semaine prochaine.",
+        invalid_stake: "Mise impossible.",
+        unknown_player: "Ce marchand n'est pas dans ce monde.",
+        self: "Vous ne pouvez pas vous défier vous-même.",
+      } as Record<string, string>,
+    },
     rival: {
       someone: "Un marchand",
       /** Before the name, then after it: « Rival : Comm884 · PNJ, +120 D ». */
@@ -2731,6 +2857,10 @@ const frDict = {
         "Livre de la Maison : 8 missions par semaine, renouvelées le lundi, aux seuils doublés et mieux payées ; le Livre s'ouvre sur « Aujourd'hui » et « Cette semaine ».",
         "L'Arsenal de la semaine remplace la commande de compagnie de deux jours : Bronze, Argent et Or, du lundi au dimanche. L'Argent apporte plus de marchandises aux galères de la semaine suivante, l'Or de l'Influence à qui a livré après le Bronze.",
         "Chaque mois, à partir de décembre, un mutateur change quelques prix ou forces pour le mois ; il est annoncé ici le 24 du mois précédent.",
+        "La guerre mange les marchandises : sur la Terraferme, vos troupes mangent du pain chaque jour ; sans pain, vous ne recrutez plus. « Max » demande aussi du pain, le fort des briques, les remparts des briques et des planches, le port des planches, la bombarde du bois et des planches.",
+        "La Signoria des villes remplace les fournisseurs officiels et l'embargo : chaque ducat livré dans une ville, et chaque heure où vous la tenez sur la Terraferme, compte sur sa jauge. Chaque nuit à minuit, le premier devient Podestà (3 villes au plus) : il prend 3 % des livraisons des autres vers sa ville et prend ses commandes une demi-heure avant tout le monde.",
+        "Le Lustre : chaque semaine, une Sfida contre un marchand de votre rang (ou le fantôme d'une de ses semaines) ; qui vend le plus gagne du Lustre. Six rangs, de Popolano à Procuratore, gardés d'une saison à l'autre (deux de moins au changement de mois). On peut défier un marchand depuis son palmarès.",
+        "La Sera, chaque soir de 20 h à 20 h 30 : 30 % de chaque arrivée des galères aux enchères en trois lots (votre maximum laissé quand vous voulez, vous payez le deuxième maximum plus 5 %), et la bataille de la Terraferme. Au quai, les galères ne renchérissent plus ; les appels d'offres du Doge sont retirés.",
       ],
     },
     howTo: [
@@ -2816,6 +2946,11 @@ const frDict = {
       vehicle_not_for_sale: "Seules les mules s'achètent : améliorez-les ensuite.",
       vehicle_max_level: "Ce véhicule est déjà au plus haut niveau.",
       insufficient_stock: "Pas assez de stock.",
+      incanto_off: "Pas d'incanto dans ce monde.",
+      bid_too_low: "Votre maximum doit atteindre le minimum.",
+      unknown_lot: "Ce lot n'existe pas.",
+      lot_closed: "Ce lot est clos.",
+      one_lot: "Vous menez déjà un lot de cette Sera.",
       building_busy: "Cet atelier produit déjà : attendez la fin de la file.",
       queue_full: "La file de production est pleine (12 h maximum).",
       max_buildings: "Nombre maximal de bâtiments atteint.",

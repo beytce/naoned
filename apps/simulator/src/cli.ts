@@ -80,6 +80,7 @@ const DESTROYED = [
   "tender_forfeit",
   "warehouse_rent",
   "fondaco_build",
+  "incanto",
   "loan_repay",
   "loan_interest",
 ];

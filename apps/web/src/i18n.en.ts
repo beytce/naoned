@@ -349,6 +349,7 @@ export const en: Dictionary = {
         rialto: "Rialto",
         criee: "Auction",
         suppliers: "Suppliers",
+        signoria: "Signoria",
         warehouse: "Warehouse",
         fondaco: "Fondaco",
         ranking: "Ranking",
@@ -660,13 +661,16 @@ export const en: Dictionary = {
       troops: "Troops",
       troopsTip: {
         title: "Your troops",
-        text: "Your lands recruit every daytime hour, up to the maximum. Each cell taken brings Glory.",
+        text: "Your lands recruit every daytime hour, up to the maximum, as long as your troops have bread. Each cell taken brings Glory.",
         troops: "Troops",
         recruit: "Recruits",
         glory: "Glory",
         rank: "Rank",
         rankOf: (rank: number, of: number) => `${ordinal(rank)} of ${of}`,
+        bread: "Troops' bread",
+        breadLine: (stock: number, perDay: string) => `${stock} · −${perDay}/day`,
       },
+      hungryShort: "Your troops are hungry: no bread, no recruits",
       troopsLine: (troops: number, cap: number) => `${troops}/${cap}`,
       perHour: (n: number) => `+${n}/h`,
       perHourAt: (n: number, from: number) => `☾ +${n}/h at ${from}:00`,
@@ -742,7 +746,7 @@ export const en: Dictionary = {
       battle: {
         on: (to: number) => `⚔ Battle: fronts ×10 until ${to}:00`,
         at: (from: number) => `Battle every evening at ${from}:00`,
-        onShort: (to: number) => `⚔ Battle → ${to}:00`,
+        onShort: (to: number, minute = 0) => `⚔ Battle → ${to}:${String(minute).padStart(2, "0")}`,
         atShort: (from: number) => `Battle at ${from}:00`,
       },
       marching: (n: number) => `${n} front${s(n)} marching`,
@@ -808,6 +812,7 @@ export const en: Dictionary = {
         full: (amount: number) =>
           `Troops at the maximum. « Max +${amount} » raises that maximum for ducats (it gives no troops).`,
         decree: "Decree",
+        costs: "The war eats goods too:",
         fronts: "Fronts",
         recall: "Recall",
         frontLine: (troops: number, against: string) => `⚔ ${troops} → ${against}`,
@@ -1508,6 +1513,7 @@ export const en: Dictionary = {
         colleganza_share: "Colleganza shares",
         loan: "Bank loans",
         decree_share: "Share of the decrees",
+        signoria_toll: "The Podestà's toll",
         delivery: "Deliveries",
       } as Record<string, string>,
       road: {
@@ -1730,18 +1736,36 @@ export const en: Dictionary = {
         `The galleys of the Muda are at the quay: the Dogana sells ${goods || "the goods from overseas"} at the Rialto.`,
       siege: (land: string, by: string, lances: number, time: string) =>
         `${land} threatened: ${lances} troops ${by} arrive at ${time}. Reinforce the garrison!`,
+      sfida: (event: string, by: string | null, ghost: boolean) =>
+        event === "challenged"
+          ? `${by ?? "A merchant"} challenges you for next week.`
+          : ghost
+            ? `Your Sfida of the week: the ghost of ${by ?? "a merchant"}.`
+            : `Your Sfida of the week: ${by ?? "a merchant"}.`,
+      sera: (event: string, lots: number) =>
+        event === "outbid"
+          ? "Your bid is passed at the incanto of the galleys."
+          : `The Sera begins at 8 pm: ${lots} lot${lots > 1 ? "s" : ""} up for auction, and the battle.`,
+      signoria: (event: string, city: string, by: string | null) =>
+        event === "podesta_named"
+          ? `You are Podestà of ${city}: a toll on the others' deliveries, and its orders before them.`
+          : event === "podesta_lost"
+            ? `${by ?? "A rival"} took ${city} from you.`
+            : `${by ?? "A rival"} passes you on the gauge of ${city}.`,
       family: (event: string, data: Record<string, string>) =>
-        event === "skirmish_aborted"
-          ? skirmishInterrupted
-          : event === "land_lost"
-            ? `${data.land} is lost, taken by ${data.by}.`
-            : event === "decree_share"
-              ? `Your share of the decrees: ${data.amount}.`
-              : data.won === "1"
-                ? `Your family wins the week${data.decrees ? ` and imposes ${data.decrees}` : ""}!`
-                : data.winner
-                  ? `The ${data.winner} win the week${data.decrees ? ` and impose ${data.decrees}` : ""}.`
-                  : "The week ends without a winner.",
+        event === "terra_hungry"
+          ? "Your troops are hungry: without bread, you recruit no more."
+          : event === "skirmish_aborted"
+            ? skirmishInterrupted
+            : event === "land_lost"
+              ? `${data.land} is lost, taken by ${data.by}.`
+              : event === "decree_share"
+                ? `Your share of the decrees: ${data.amount}.`
+                : data.won === "1"
+                  ? `Your family wins the week${data.decrees ? ` and imposes ${data.decrees}` : ""}!`
+                  : data.winner
+                    ? `The ${data.winner} win the week${data.decrees ? ` and impose ${data.decrees}` : ""}.`
+                    : "The week ends without a winner.",
       week: (week: number, rank: number, gain: string, award: string | null) =>
         `Week ${week}: you finish ${ordinal(rank)} (${gain}).${award ? ` You are ${award}!` : ""}`,
       push: {
@@ -1770,6 +1794,9 @@ export const en: Dictionary = {
           skirmish_call: "Calls to skirmish (a quarter of an hour before)",
           wave: "A wave of orders your stock covers (if you are away)",
           streak: "Streak reminder (7 pm, today's chest closed)",
+          signoria: "Signoria of the cities (Podestà named, a city lost, a rival ahead)",
+          sfida: "Sfida of the week and challenges received",
+          sera: "The Sera (7:55 pm) and passed bids",
         } as Record<string, string>,
       },
     },
@@ -2545,6 +2572,24 @@ export const en: Dictionary = {
       help: (cities: number, levels: number, top: number, pct: number) =>
         `A fondaco in ${cities} cities at most, from level 1 to level ${top}, ${levels} levels in all. Each level gives you an order from the city every day, for you alone, paid ${pct}% of the shared board's price: cheaper than the board, but sure. The ducats leave the game, the bricks and planks too; the fondaco counts in your net worth at its cost.`,
     },
+    /** The Signoria of the cities (R2): the gauge of a city and its Podestà. */
+    signoria: {
+      title: (city: string) => `Signoria of ${city}`,
+      kicker: "Who holds the city",
+      podesta: "Podestà",
+      vacant: "No Podestà yet",
+      you: "You",
+      points: (n: number) => `${n.toLocaleString("en-GB")} pts`,
+      share: (pct: number) => `${pct}%`,
+      mine: (pct: number) => `Your share: ${pct}%`,
+      held: "You are the city's Podestà",
+      line: (toll: number, minutes: number) =>
+        `The Podestà takes ${toll}% of the others' deliveries and sees the orders ${minutes} min before them.`,
+      decided: "The Podestà is decided every night at midnight.",
+      help: (pointsPerHour: number, keptPct: number, max: number, toll: number, minutes: number) =>
+        `Each ducat paid for a delivery sent between 8 am and 10 pm counts a point on the city's gauge; holding the city on the Terraferma counts ${pointsPerHour} an open hour. Every night at midnight the leader becomes Podestà and the points keep only ${keptPct}%. A house holds ${max} cities at most; the computer's houses never do. The Podestà takes ${toll}% of the others' deliveries to the city (not the newcomers') and takes its orders ${minutes} minutes before everyone.`,
+      none: "Nobody has counted here yet.",
+    },
     suppliers: {
       title: (city: string) => `Suppliers of ${city}`,
       line: (pct: number, min: number) => `+${pct}% to the top deliverer · ${min} at least`,
@@ -2572,6 +2617,86 @@ export const en: Dictionary = {
         rival: (name: string) => `Rival: ${name}`,
         leader: (name: string) => `Leader: ${name}`,
       },
+    },
+    /** The Sera (R11): the incanto of the galleys and the battle, at 20 h. */
+    sera: {
+      orb: "The Sera",
+      kicker: "Tonight at 8 pm",
+      title: "The Sera",
+      line: (n: number) =>
+        `${n} lot${n > 1 ? "s" : ""} of the galleys up for auction, and the battle of the Terraferma.`,
+      lot: (i: number) => `Lot ${i}`,
+      closes: (time: string) => `closes at ${time}`,
+      closesIn: (left: string) => `closes in ${left}`,
+      closed: "Closed",
+      price: "Price",
+      bidders: (n: number) => `${n} bidder${n > 1 ? "s" : ""}`,
+      leading: "You lead",
+      passed: "Passed",
+      won: "Won",
+      sold: "Sold",
+      unsold: "Unsold: back on the quay",
+      max: "Your maximum",
+      bid: "Bid",
+      raise: "Raise",
+      oneLot: "One lot per merchant and per Sera.",
+      results: "Today's results",
+      podesta: (city: string) => `You are Podestà of ${city}`,
+      noResults: "You hold no city tonight.",
+      help: "Each arrival of the Muda's galleys puts 30% of its load up for auction, in three lots closing at 8:10, 8:20 and 8:30 pm. Leave your maximum whenever you like, from the arrival on: you only pay the second maximum plus 5%, and your ducats come back if you are passed. A bid in the last two minutes extends the lot by two minutes. One lot per merchant and per Sera. The price paid leaves the game.",
+      errors: {
+        bid_too_low: "Your maximum must reach the lot's minimum.",
+        lot_closed: "This lot is closed.",
+        one_lot: "You already lead a lot of this Sera.",
+        insufficient_funds: "Not enough ducats.",
+      } as Record<string, string>,
+    },
+    /** The Lustre (R6): the social ranks of Venice and the weekly Sfida. */
+    lustre: {
+      tiers: {
+        popolano: "Popolano",
+        cittadino: "Cittadino",
+        mercante: "Mercante",
+        patrizio: "Patrizio",
+        senatore: "Senatore",
+        procuratore: "Procuratore",
+      } as Record<string, string>,
+      kicker: "The Sfida of the week",
+      title: "Sfida",
+      lead: "Sfida:",
+      ghostOf: (name: string) => `ghost of ${name}`,
+      ghostLine: (name: string, week: number) =>
+        `The ghost of ${name}: their week ${week}, played again hour by hour.`,
+      you: "You",
+      versus: "against",
+      ahead: (gap: string) => `You lead by ${gap}`,
+      behind: (gap: string) => `You are ${gap} behind`,
+      even: "Level",
+      stake: (n: number) => `Challenge: ${n} Lustre at stake`,
+      stakes: (win: number, loss: number) =>
+        `Winning brings +${win} Lustre, losing costs ${loss}. Decided at the week's end, on your net sales.`,
+      none: "Your Sfida starts at the next tick: come back in a moment.",
+      lustre: (n: number) => `${n} Lustre`,
+      next: (n: number, tier: string) => `${tier} at ${n}`,
+      ladder: "The ladder",
+      challengesIn: "Challenges received",
+      challengesOut: "Challenge sent",
+      accept: "Accept",
+      accepted: "Accepted",
+      waiting: "Waiting",
+      challenge: "Challenge",
+      challengeTitle: (name: string) => `Challenge ${name}`,
+      challengeLine: "A Sfida next week, if they accept.",
+      stakeLabel: "Stake",
+      send: "Send the challenge",
+      sent: "Challenge sent: they have until Monday to accept.",
+      help: "Every week you face a merchant of your Lustre: whoever sells the most (net sales of the week) wins. With nobody free, you face the ghost of a merchant: one of their past weeks, hour by hour. The Lustre stays from season to season; at the month's change you go down two ranks. It gives no advantage in the game.",
+      errors: {
+        already_asked: "A challenge is already sent for next week.",
+        invalid_stake: "Impossible stake.",
+        unknown_player: "This merchant is not in this world.",
+        self: "You cannot challenge yourself.",
+      } as Record<string, string>,
     },
     rival: {
       someone: "A merchant",
@@ -2645,6 +2770,10 @@ export const en: Dictionary = {
         'Book of the House: 8 missions a week, renewed on Monday, with doubled thresholds and better pay; the Book opens on "Today" and "This week".',
         "The Arsenal of the week replaces the two-day company order: Bronze, Silver and Gold, Monday to Sunday. Silver brings more goods to next week's galleys, Gold Influence to whoever delivered after Bronze.",
         "Each month, from December, a mutator changes a few prices or strengths for the month; it is announced here on the 24th of the month before.",
+        "War eats goods: on the Terraferma your troops eat bread every day; without bread you recruit no more. « Max » also asks for bread, the fort for bricks, walls for bricks and planks, the port for planks, the bombard for wood and planks.",
+        "The Signoria of the cities replaces the official suppliers and the embargo: every ducat delivered to a city, and every hour you hold it on the Terraferma, counts on its gauge. Every night at midnight the leader becomes Podestà (3 cities at most): it takes 3% of the others' deliveries to its city and takes its orders half an hour before everyone.",
+        "The Lustre: every week, a Sfida against a merchant of your rank (or the ghost of one of their weeks); whoever sells the most wins Lustre. Six ranks, from Popolano to Procuratore, kept from season to season (two fewer at the month's change). Challenge a merchant from their record.",
+        "The Sera, every evening from 8 to 8:30 pm: 30% of each arrival of the galleys up for auction in three lots (leave your maximum whenever you like, you pay the second maximum plus 5%), and the battle of the Terraferma. On the quay the galleys no longer get dearer; the Doge's tenders are gone.",
       ],
     },
     howTo: [
@@ -2730,6 +2859,11 @@ export const en: Dictionary = {
       vehicle_not_for_sale: "Only mules can be bought: upgrade them afterwards.",
       vehicle_max_level: "This vehicle is already at the highest level.",
       insufficient_stock: "Not enough stock.",
+      incanto_off: "No incanto in this world.",
+      bid_too_low: "Your maximum must reach the minimum.",
+      unknown_lot: "This lot does not exist.",
+      lot_closed: "This lot is closed.",
+      one_lot: "You already lead a lot of this Sera.",
       building_busy: "This workshop is already producing: wait for the queue to end.",
       queue_full: "The production queue is full (12 h at most).",
       max_buildings: "Maximum number of buildings reached.",

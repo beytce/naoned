@@ -71,6 +71,7 @@ export function CityMarker({
   deliverable,
   criee,
   supplier,
+  podesta,
   dim,
   lit,
   onTap,
@@ -85,6 +86,8 @@ export function CityMarker({
   criee: boolean;
   /** The merchant's crest, where it is an official supplier this week. */
   supplier?: CrestData | null;
+  /** The city's Podestà (R2): its crest, ringed in lapis when it is the merchant. */
+  podesta?: { crest: CrestData; mine: boolean } | null;
   dim: boolean;
   lit: boolean;
   onTap: () => void;
@@ -140,6 +143,13 @@ export function CityMarker({
         <span data-map-label className="absolute -right-1 top-0.5 flex gap-0.5">
           {criee && <Pill tone="vermilion">!</Pill>}
           {more > 0 && <Pill tone="lagoon">+{more}</Pill>}
+        </span>
+      )}
+      {podesta && (
+        <span
+          className={`pointer-events-none absolute -right-0.5 bottom-0.5 rounded-full drop-shadow-[0_1px_2px_rgb(0_0_0/0.8)] ${podesta.mine ? "ring-2 ring-info" : "ring-1 ring-cream/40"}`}
+        >
+          <Crest crest={podesta.crest} size={20} />
         </span>
       )}
       {supplier && (

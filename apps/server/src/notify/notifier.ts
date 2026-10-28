@@ -4,6 +4,7 @@ import {
   dayStartIn,
   hourIn,
   hourWithin,
+  incantoLots,
   nextSkirmishCall,
   nextWaveAt,
   seasonActs,
@@ -22,6 +23,7 @@ import {
   isNotNull,
   isNull,
   lt,
+  lte,
   notInArray,
   sql,
 } from "drizzle-orm";
@@ -32,6 +34,7 @@ import {
   players,
   pushSubscriptions,
   seasonResults,
+  sfide,
   weeklyResults,
 } from "../db/schema.js";
 import { calledTo } from "../game/company.js";
@@ -62,6 +65,12 @@ export const NOTIFICATION_KINDS = [
   "wave",
   // A streak of chests of 3 days or more, today's still closed, at 19 h (E3-10).
   "streak",
+  // The Lustre (R6): the week's Sfida paired, a challenge received.
+  "sfida",
+  // The Sera (R11): it begins, a bid at the incanto passed.
+  "sera",
+  // The Signoria of the cities (R2): named Podestà, a city lost, the lead taken by a rival.
+  "signoria",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -77,6 +86,8 @@ const TERRA_NEWS: ReadonlySet<string> = new Set([
   "terra_battle_soon",
   "terra_bombarded",
   "terra_ducats_received",
+  // The war eats the goods (R1): the troops' bread ran out.
+  "terra_hungry",
 ]);
 /**
  * Kinds sent only to whoever asked for them (off by default): their name in `push_off` turns
@@ -99,6 +110,8 @@ const DAY_MS = 24 * HOUR_MS;
 export const DAILY_PUSH_CAP = 3;
 /** The gazette goes at 8:05 in Paris, and no later than 10 h (a server down at 8:05 catches up). */
 const MORNING = { minutes: 8 * 60 + 5, until: 10 * 60 };
+/** The Sera is told this many minutes before its hour. */
+const SERA_NOTICE_MINUTES = 5;
 /** The streak's reminder goes at 19 h in Paris, and no later than 21 h, for a streak this long. */
 const STREAK = { minutes: 19 * 60, until: 21 * 60, from: 3 };
 /** Where a push opens the game: one of the places the client knows (`deepLink`, web). */
@@ -115,6 +128,9 @@ const OPENS: Partial<Record<NotificationKind, string>> = {
   skirmish_call: "terra",
   wave: "cargo",
   streak: "notices",
+  signoria: "notices",
+  sfida: "sfida",
+  sera: "sera",
 };
 
 /** The link a push opens: a place of the list, and where it comes from for the measures. */
@@ -156,6 +172,8 @@ export class Notifier {
   async fromEffects(fx: Effects, now: number): Promise<void> {
     await this.familyNews(fx, now);
     await this.mudaNews(fx, now);
+    await this.signoriaNews(fx, now);
+    await this.outbid(fx, now);
     const fills = fx.events.filter((e) => e.type === "order_filled" && e.playerId);
     if (fills.length === 0) return;
     const people = await this.people();
@@ -196,6 +214,64 @@ export class Notifier {
       n.data.counterpartyName = who === "market_maker" ? null : (name.get(who) ?? null);
     }
     await this.send([...grouped.values()], now);
+  }
+
+  /**
+   * The Signoria of the cities (R2), to people only, with the rival named: a city held, a city
+   * lost, the lead of a city's gauge taken by another.
+   */
+  private async signoriaNews(fx: Effects, now: number): Promise<void> {
+    const news = fx.events.filter(
+      (e) =>
+        e.playerId &&
+        (e.type === "podesta_named" ||
+          e.type === "podesta_lost" ||
+          e.type === "signoria_overtaken"),
+    );
+    if (news.length === 0) return;
+    const people = await this.people();
+    const mine = news.filter((e) => people.has(e.playerId ?? ""));
+    if (mine.length === 0) return;
+    const ids = [...new Set(mine.map((e) => String(e.data?.by ?? "")))].filter((id) =>
+      /^[0-9a-f-]{36}$/.test(id),
+    );
+    const rows =
+      ids.length === 0
+        ? []
+        : await this.db
+            .select({ id: accounts.id, pseudo: accounts.pseudo })
+            .from(accounts)
+            .where(inArray(accounts.id, ids));
+    const name = new Map(rows.map((r) => [r.id, r.pseudo]));
+    await this.send(
+      mine.map((e) => ({
+        accountId: e.playerId ?? "",
+        kind: "signoria" as const,
+        data: {
+          event: e.type,
+          city: e.data?.city ?? null,
+          byName: e.data?.by ? (name.get(String(e.data.by)) ?? null) : null,
+        },
+      })),
+      now,
+    );
+  }
+
+  /** A maximum passed at the incanto (R11): its merchant may bid again before the close. */
+  private async outbid(fx: Effects, now: number): Promise<void> {
+    const news = fx.events.filter((e) => e.type === "incanto_outbid" && e.playerId);
+    if (news.length === 0) return;
+    const people = await this.people();
+    await this.send(
+      news
+        .filter((e) => people.has(e.playerId ?? ""))
+        .map((e) => ({
+          accountId: e.playerId ?? "",
+          kind: "sera" as const,
+          data: { event: "outbid", lot: e.data?.lot ?? null },
+        })),
+      now,
+    );
   }
 
   /** The galleys of the Muda are in: everyone hears it, with what they brought. */
@@ -366,6 +442,103 @@ export class Notifier {
     await this.skirmishCall(since, now);
     await this.wave(since, now);
     await this.streak(now);
+    await this.sfidaNews(since, now);
+    await this.sera(now);
+  }
+
+  /**
+   * The Sera (R11), five minutes before 20 h on a day with lots at the incanto: to everyone in
+   * the world, once a day (its lots and the battle).
+   */
+  private async sera(now: number): Promise<void> {
+    const ctx = this.world.ctx;
+    const rules = ctx.settings.incanto;
+    if (!rules) return;
+    const day = dayStartIn(now).start;
+    const minutes = (now - day) / 60_000;
+    const at = rules.hour * 60 - SERA_NOTICE_MINUTES;
+    if (minutes < at || minutes >= rules.hour * 60 + rules.firstMinute) return;
+    const lots = incantoLots(this.world.current).filter((l) => !l.done && l.sera === day);
+    if (lots.length === 0) return;
+    const key = new Date(day).toISOString().slice(0, 10);
+    const [done] = await this.db
+      .select({ id: notifications.id })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.worldId, this.world.id),
+          eq(notifications.kind, "sera"),
+          sql`${notifications.data}->>'day' = ${key}`,
+        ),
+      )
+      .limit(1);
+    if (done) return;
+    await this.send(
+      [...(await this.people())].map((accountId) => ({
+        accountId,
+        kind: "sera" as const,
+        data: { event: "soon", day: key, lots: lots.length },
+      })),
+      now,
+    );
+  }
+
+  /**
+   * The Lustre (R6): the week's Sfida paired (to each person, the opponent named, or a ghost), a
+   * challenge received.
+   */
+  private async sfidaNews(since: number, now: number): Promise<void> {
+    if (!this.world.ctx.settings.lustre) return;
+    const rows = await this.db
+      .select()
+      .from(sfide)
+      .where(
+        and(
+          eq(sfide.worldId, this.world.id),
+          gt(sfide.createdAt, new Date(since)),
+          lte(sfide.createdAt, new Date(now)),
+        ),
+      );
+    if (rows.length === 0) return;
+    const people = await this.people();
+    const ids = [
+      ...new Set(rows.flatMap((r) => [r.a, r.b, r.ghostAccount]).filter((x): x is string => !!x)),
+    ];
+    const names = new Map(
+      (
+        await this.db
+          .select({ id: accounts.id, pseudo: accounts.pseudo })
+          .from(accounts)
+          .where(inArray(accounts.id, ids))
+      ).map((r) => [r.id, r.pseudo]),
+    );
+    const notices: Notice[] = [];
+    for (const r of rows) {
+      if (r.kind === "challenge") {
+        if (r.b && people.has(r.b) && !r.acceptedAt)
+          notices.push({
+            accountId: r.b,
+            kind: "sfida",
+            data: { event: "challenged", byName: names.get(r.a) ?? null, stake: r.stake },
+          });
+        continue;
+      }
+      const sides: [string, string | null][] = [[r.a, r.b ?? r.ghostAccount]];
+      if (r.b) sides.push([r.b, r.a]);
+      for (const [me, other] of sides) {
+        if (!people.has(me)) continue;
+        notices.push({
+          accountId: me,
+          kind: "sfida",
+          data: {
+            event: "paired",
+            ghost: !r.b,
+            byName: other ? (names.get(other) ?? null) : null,
+          },
+        });
+      }
+    }
+    await this.send(notices, now);
   }
 
   /**
@@ -508,6 +681,18 @@ export class Notifier {
           eq(accounts.isBot, false),
         ),
       );
+    // The week's Sfida (R6), told in the same notice: what the Lustre moved, won or lost.
+    const duels = await this.db
+      .select()
+      .from(sfide)
+      .where(
+        and(eq(sfide.worldId, this.world.id), eq(sfide.week, week), isNotNull(sfide.settledAt)),
+      );
+    const lustre = new Map<string, number>();
+    for (const d of duels) {
+      lustre.set(d.a, d.deltaA ?? 0);
+      if (d.b) lustre.set(d.b, d.deltaB ?? 0);
+    }
     await this.send(
       rows.map((r) => ({
         accountId: r.accountId,
@@ -517,6 +702,7 @@ export class Notifier {
           rank: r.rank,
           gain: r.gain.toString(),
           award: r.award,
+          ...(lustre.has(r.accountId) ? { lustre: lustre.get(r.accountId) } : {}),
         },
       })),
       now,

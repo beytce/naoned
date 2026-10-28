@@ -23,6 +23,7 @@ import {
   upgradeLegacyState,
   venice1450,
   venice1450Settings,
+  weekIndex,
 } from "@comptoirs/engine";
 import { and, asc, eq, gt, lte, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
@@ -40,6 +41,7 @@ import {
 import { countFunnel } from "../funnel.js";
 import { nextSeasonBounds, seasonBounds, seasonMonthKey, seasonMonthName } from "./calendar.js";
 import { recordInfluence, recordSeasonInfluence } from "./house.js";
+import { ensureSfide, recordCurves, settleSfide, softResetLustre } from "./lustre.js";
 import { recordSeason } from "./season.js";
 import { decode, encode } from "./serialize.js";
 import { recordSkirmishesPaid, recordTerra } from "./terraRecord.js";
@@ -95,6 +97,9 @@ export class GameWorld {
     }
   }
   private timer: NodeJS.Timeout | undefined;
+  /** The Lustre's last hour of curves and last field of Sfide paired (week and merchants). */
+  private lustreHour = -1;
+  private lustreField = "";
 
   private constructor(
     /** This server instance, owner of the world while it runs. */
@@ -451,10 +456,16 @@ export class GameWorld {
 
       for (const e of fx.events) {
         // The rankings give titles and trophies, never the Pass (E3-9 of the experts).
-        if (e.type === "week_closed") await recordWeek(tx, worldId, e.data ?? {});
+        if (e.type === "week_closed") {
+          await recordWeek(tx, worldId, e.data ?? {});
+          // The Lustre's Sfide of the week (R6): settled, the curves closed for the ghosts.
+          await settleSfide(tx, worldId, this.ctx, e.data ?? {}, at);
+        }
         if (e.type === "season_closed") {
           const ranked = await recordSeason(tx, worldId, e.data ?? {});
           await recordSeasonInfluence(tx, worldId, this.ctx.settings, ranked, at);
+          // The month's change: the Lustre two tiers down.
+          await softResetLustre(tx, worldId, this.ctx);
         }
       }
       // The house's Influence, kept from season to season.
@@ -463,6 +474,22 @@ export class GameWorld {
       await recordTerra(tx, worldId, fx.events, new Date(now));
       // The skirmishes paid: their rows settled with the glory.
       await recordSkirmishesPaid(tx, worldId, fx.events, at);
+      // The Lustre (R6): each hour, the curves of the week; the week's Sfide paired once its
+      // people are known (and again for whoever arrives).
+      if (command?.type === "tick" && this.ctx.settings.lustre) {
+        const hour = Math.floor(now / 3_600_000);
+        if (hour !== this.lustreHour) {
+          await recordCurves(tx, worldId, this.ctx, next, now);
+          this.lustreHour = hour;
+        }
+        const field = `${weekIndex(this.ctx, now)}:${Object.keys(next.players).length}`;
+        if (field !== this.lustreField) {
+          await ensureSfide(tx, worldId, this.ctx, now);
+          // A merchant arrived: its curve starts now, not at the next hour.
+          if (hour === this.lustreHour) await recordCurves(tx, worldId, this.ctx, next, now);
+          this.lustreField = field;
+        }
+      }
 
       if (!command) {
         // A batch (bot session): journals only.

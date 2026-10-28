@@ -4,9 +4,12 @@ import {
   freeBatches,
   hasPass,
   isNation,
+  podestaOf,
   rushCost,
+  signoriaStandings,
   supplierOf,
   supplierStandings,
+  tierOf,
   weekReplay,
   workLevel,
 } from "@comptoirs/engine";
@@ -64,6 +67,7 @@ import {
 import { journal } from "./journal.js";
 import { levelsOf } from "./level.js";
 import { LiveHub } from "./live.js";
+import { acceptChallenge, challenge, sfidaRival, sfidaView } from "./lustre.js";
 import { PASS_PRICES, grantPass, passUntil, syncPass, upcomingPass } from "./pass.js";
 import { priceHistory, profile } from "./profile.js";
 import { activePeopleByRegion, recommendedRegion } from "./recommend.js";
@@ -254,6 +258,12 @@ const action = z.discriminatedUnion("type", [
     type: z.literal("warehouseBid"),
     city: z.string().max(32),
     amount: z.string().regex(/^\d{1,12}$/),
+  }),
+  // The incanto of the Sera (R11): a maximum on a lot, in deniers.
+  z.object({
+    type: z.literal("incantoBid"),
+    lotId: z.string().max(32),
+    max: z.string().regex(/^\d{1,12}$/),
   }),
 ]);
 type Action = z.infer<typeof action>;
@@ -511,12 +521,27 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     }
     const body = (await view(account)) as Record<string, unknown>;
     const ceremony = await pendingCeremony(db, account.id);
+    // The rival of the week is the Sfida's opponent once the Lustre is on (R6), else the one
+    // just ahead in the weekly ranking.
     const rival = world.current.players[account.id]
-      ? await weeklyRival(db, world.id, world.ctx, world.current, world.now(), account.id)
+      ? ((await sfidaRival(db, world.id, world.ctx, world.current, world.now(), account.id)) ??
+        (await weeklyRival(db, world.id, world.ctx, world.current, world.now(), account.id)))
       : null;
+    // The Lustre (R6): the merchant's rank and tier, shown in the HUD's identity.
+    const lustreRules = world.ctx.settings.lustre;
+    const [lustreRow] = lustreRules
+      ? await db
+          .select({ lustre: accounts.lustre })
+          .from(accounts)
+          .where(eq(accounts.id, account.id))
+      : [];
     return {
       ...body,
       rival: rival ? toJson(rival) : null,
+      lustre:
+        lustreRules && lustreRow
+          ? { value: lustreRow.lustre, tier: tierOf(lustreRules, lustreRow.lustre).code }
+          : null,
       ...(welcome ? { welcome: toJson(welcome) } : {}),
       ...(ceremony ? { ceremony: toJson(ceremony) } : {}),
     };
@@ -873,6 +898,45 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     }
   }
   const codeSchema = z.string().regex(/^[\w-]{4,16}$/);
+
+  /** The Lustre (R6): the merchant's Sfida of the week, its tier and its challenges. */
+  app.get("/api/game/sfida", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    return toJson(await sfidaView(db, world.id, world.ctx, world.current, world.now(), account.id));
+  });
+
+  /** Challenges a person of the world for next week, with a stake of Lustre. */
+  app.post("/api/game/sfida/challenge", perMerchant(10), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const parsed = z
+      .object({ to: z.string().uuid(), stake: z.number().int().min(0) })
+      .safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_stake" });
+    const res = await challenge(
+      db,
+      world.id,
+      world.ctx,
+      world.now(),
+      account.id,
+      parsed.data.to,
+      parsed.data.stake,
+    );
+    if (res !== "ok") return reply.code(400).send({ error: res });
+    return toJson(await sfidaView(db, world.id, world.ctx, world.current, world.now(), account.id));
+  });
+
+  /** Accepts a challenge received: the two meet next week. */
+  app.post("/api/game/sfida/accept", perMerchant(10), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const parsed = z.object({ id: z.string().uuid() }).safeParse(req.body);
+    if (!parsed.success) return reply.code(404).send({ error: "unknown_challenge" });
+    const res = await acceptChallenge(db, world.id, account.id, parsed.data.id, world.now());
+    if (res !== "ok") return reply.code(404).send({ error: res });
+    return toJson(await sfidaView(db, world.id, world.ctx, world.current, world.now(), account.id));
+  });
 
   app.get("/api/company", async (req, reply) => {
     const account = await requireAccount(req, reply);
@@ -1356,6 +1420,70 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     });
   });
 
+  /**
+   * The Signoria of the cities (R2): each city's Podestà, the three first on its gauge and the
+   * merchant's own points, with names and crests.
+   */
+  app.get("/api/game/signoria", async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const state = world.current;
+    const rules = world.ctx.settings.signoria;
+    if (!rules) return toJson({ rules: null, cities: [] });
+    const lines = world.ctx.theme.cities.map((c) => {
+      const standings = signoriaStandings(state, c.code);
+      return {
+        city: c.code,
+        podesta: podestaOf(state, c.code) ?? null,
+        since: state.signoria?.podesta[c.code]?.since ?? null,
+        top: standings.slice(0, 3),
+        mine: standings.find((x) => x.playerId === account.id)?.points ?? 0,
+        total: standings.reduce((n, x) => n + x.points, 0),
+      };
+    });
+    const ids = [
+      ...new Set(lines.flatMap((l) => [l.podesta, ...l.top.map((x) => x.playerId)])),
+    ].filter((x): x is string => !!x);
+    const rows =
+      ids.length === 0
+        ? []
+        : await db
+            .select({
+              id: accounts.id,
+              pseudo: accounts.pseudo,
+              crest: accounts.crest,
+              bot: accounts.isBot,
+            })
+            .from(accounts)
+            .where(inArray(accounts.id, ids));
+    const who = new Map(rows.map((r) => [r.id, r]));
+    const person = (id: string) => ({
+      id,
+      me: id === account.id,
+      pseudo: who.get(id)?.pseudo ?? null,
+      crest: who.get(id)?.crest ?? null,
+      bot: who.get(id)?.bot ?? false,
+    });
+    return toJson({
+      rules: {
+        tollBps: rules.tollBps,
+        previewMinutes: rules.previewMinutes,
+        maxCities: rules.maxCities,
+        cityPointsPerHour: rules.cityPointsPerHour,
+        decayBps: rules.decayBps,
+        minPoints: rules.minPoints,
+      },
+      cities: lines.map((l) => ({
+        city: l.city,
+        podesta: l.podesta ? person(l.podesta) : null,
+        since: l.since,
+        top: l.top.map((x) => ({ ...person(x.playerId), points: x.points })),
+        mine: l.mine,
+        total: l.total,
+      })),
+    });
+  });
+
   app.get("/api/game/ranking", async (req, reply) => {
     const account = await requireAccount(req, reply);
     if (!account) return;
@@ -1654,5 +1782,7 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "choosePath", playerId, buildingId: a.buildingId, path: a.path }];
     case "warehouseBid":
       return [{ type: "warehouseBid", playerId, city: a.city, amount: BigInt(a.amount) }];
+    case "incantoBid":
+      return [{ type: "incantoBid", playerId, lotId: a.lotId, max: BigInt(a.max) }];
   }
 }

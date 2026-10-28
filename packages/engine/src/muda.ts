@@ -1,4 +1,5 @@
 import { levantQuotaBps } from "./decrees.js";
+import { openIncanto } from "./incanto.js";
 import type { Deniers } from "./money.js";
 import { arsenalMudaBps } from "./projects.js";
 import { specialtyEffects } from "./specialties.js";
@@ -67,6 +68,8 @@ export function arriveMuda(tx: Tx): void {
   }
   muda.arrival = index;
   muda.bought = {};
+  // The incanto of the Sera takes its share of the lot (R11).
+  openIncanto(tx, index, arrivalAt(ctx, index));
   emit(tx, "muda_arrived", undefined, { arrival: index, stock: { ...muda.stock } });
 }
 

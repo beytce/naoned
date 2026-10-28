@@ -101,6 +101,7 @@ export function MapHud({
   title,
   rival,
   level,
+  tier,
   rank,
   seasonProgress,
   cash,
@@ -134,6 +135,9 @@ export function MapHud({
   onBuyCart,
   onResumeGuide,
   onRanking,
+  onRival,
+  onSera,
+  sera = 0,
   onFamily,
   onOpenLayer,
   onWorkshops,
@@ -147,6 +151,8 @@ export function MapHud({
   rival?: RivalLine | null;
   /** Permanent level (honorary), once known. */
   level: number | null;
+  /** The Lustre's tier (R6), shown in the level's place once it is on. */
+  tier?: string | null;
   rank: number | null;
   seasonProgress: number;
   cash: string;
@@ -198,6 +204,11 @@ export function MapHud({
   onRialto?: () => void;
   onBuyCart: () => void;
   onResumeGuide: () => void;
+  /** The Sera's sheet (R11), and its lots still open. */
+  onSera?: () => void;
+  sera?: number;
+  /** The rival's line: the Sfida's sheet once the Lustre is on, else the ranking. */
+  onRival?: () => void;
   onRanking: () => void;
   onFamily: () => void;
   /** Opens the other layer's closed door early (the Terraferma before its first day). */
@@ -267,8 +278,14 @@ export function MapHud({
               className="flex h-4 flex-wrap gap-x-[0.6em] overflow-hidden font-mono text-xs uppercase leading-4 tracking-[0.1em] text-cream-dim"
             >
               <span className="whitespace-nowrap text-gold">#{rank ?? "—"}</span>
-              {level !== null && (
-                <span className="whitespace-nowrap">· {fr.game.merchantLevel.short(level)}</span>
+              {tier ? (
+                <span className="whitespace-nowrap text-info">
+                  · {fr.game.lustre.tiers[tier] ?? tier}
+                </span>
+              ) : (
+                level !== null && (
+                  <span className="whitespace-nowrap">· {fr.game.merchantLevel.short(level)}</span>
+                )
               )}
               <span className="whitespace-nowrap">· {title}</span>
             </span>
@@ -316,7 +333,7 @@ export function MapHud({
           <button
             type="button"
             data-hud="rival"
-            onClick={onRanking}
+            onClick={onRival ?? onRanking}
             className="pointer-events-auto col-span-2 flex min-h-11 min-w-0 max-w-full items-center justify-self-start text-left text-[0.8125rem] text-info [text-shadow:0_1px_4px_rgb(0_0_0/0.9)] lg:max-w-xs"
           >
             <span className="shrink-0 whitespace-pre">{`${rival.lead} `}</span>
@@ -336,6 +353,12 @@ export function MapHud({
             {onRialto && (
               <Orb label={m.buttons.rialto} onClick={onRialto} coach="hud-rialto">
                 {Icon.rialto()}
+              </Orb>
+            )}
+            {/* The Sera (R11): its round while lots of the galleys wait for bids. */}
+            {onSera && sera > 0 && (
+              <Orb label={fr.game.sera.orb} onClick={onSera} badge={sera}>
+                {Icon.anchor()}
               </Orb>
             )}
           </span>

@@ -530,6 +530,37 @@ export interface PlayerView {
   fondaci: FondaciView | null;
   /** The goods the merchant is the official supplier of this week, by city. */
   supplies: { city: string; resource: string }[];
+  /**
+   * The Sera (R11): its hour, and the incanto's lots open or settled today: the price now, the
+   * least a new maximum must reach, the merchant's own maximum and whether it leads (null: off).
+   */
+  sera?: {
+    hour: number;
+    minutes: number;
+    lots: {
+      id: string;
+      goods: Record<string, number>;
+      value: Money;
+      closesAt: number;
+      price: Money;
+      minimum: Money;
+      bidders: number;
+      mine: Money | null;
+      leading: boolean;
+      done: { won: boolean; sold: boolean } | null;
+    }[];
+  } | null;
+  /**
+   * The Signoria of the cities (R2): the cities the merchant is Podestà of, each city's Podestà
+   * (names and gauges from GET /api/game/signoria), its rules; null when off.
+   */
+  signoria: {
+    held: string[];
+    podesta: Record<string, string>;
+    tollBps: number;
+    previewMinutes: number;
+    maxCities: number;
+  } | null;
   market: MarketLine[];
   cityQuotes: { city: string; resource: string; unitPrice: Money }[];
   projects: Project[];
@@ -731,7 +762,14 @@ export interface GameResponse {
     gain: string;
     mine: string;
     ahead: boolean;
+    /** The Sfida's opponent (R6) rather than the weekly ranking's neighbour. */
+    sfida?: boolean;
+    /** The opponent is the ghost of a merchant's past week. */
+    ghost?: boolean;
+    tier?: string;
   } | null;
+  /** The Lustre (R6): the merchant's rank and tier (null: off). */
+  lustre?: { value: number; tier: string } | null;
   /** Pseudos of merchants met in the family or the order book. */
   names?: Record<string, string | null>;
   /** Which of them are computer-run houses. */
@@ -838,7 +876,10 @@ export type NotificationKind =
   | "morning"
   | "skirmish_call"
   | "wave"
-  | "streak";
+  | "streak"
+  | "signoria"
+  | "sfida"
+  | "sera";
 
 export interface Notice {
   id: number;
@@ -965,6 +1006,7 @@ export type Action =
   | { type: "tenderBid"; tenderId: string; price: string; quantity: number }
   | { type: "tenderDeliver"; tenderId: string }
   | { type: "warehouseBid"; city: string; amount: string }
+  | { type: "incantoBid"; lotId: string; max: string }
   | { type: "buildFondaco"; city: string }
   | { type: "choosePath"; buildingId: string; path: "volume" | "quality" }
   | {
@@ -1037,7 +1079,7 @@ export interface TerraView {
   truceEndsAt: number | null;
   openHours: { from: number; to: number };
   /** The battle hour (null: none): the fronts march ten times as fast. */
-  battle: { from: number; to: number; on: boolean } | null;
+  battle: { from: number; to: number; toMinute?: number; on: boolean } | null;
   /** Whether the fronts march now (they rest at night). */
   open: boolean;
   map: {
@@ -1138,6 +1180,11 @@ export interface TerraView {
     raisesLeft: number;
     giftsLeft: number;
     programme: { code: string; target?: string } | null;
+    /**
+     * The troops' bread (R1): eaten in a day of open hours (in 1/10 000 of a loaf), in stock, and
+     * whether it was missing at the last meal (no recruits until fed).
+     */
+    bread?: { perDay: number; stock: number; unfed: boolean };
   } | null;
   ranking: { holder: number; glory: number; cells: number }[];
   players: number;
@@ -1178,6 +1225,8 @@ export interface TerraView {
     diplomacy: { ducatGiftPerDay: Money; embargoBps: number } | null;
     /** Hours a merchant who sets down is safe from the others (0: none). */
     protectionHours: number;
+    /** The war's goods (R1): bread for the cap, materials by building (null: ducats only). */
+    supply?: { raiseBread: number; materials: Record<string, Record<string, number>> } | null;
     /** Minutes a front takes for a cell of free land, and of a rival's. */
     neutralMinutes: number;
     cellMinutes: number;
@@ -1389,6 +1438,30 @@ export type NextAction =
   | { kind: "company"; projectId: string; resource: string; quantity: number }
   | { kind: "upgrade"; buildingId: string; paybackMinutes: number; addedPerHour: Money };
 
+/** The Lustre and the Sfida of the week (GET /api/game/sfida, R6). */
+export interface SfidaView {
+  lustre: number;
+  tier: { code: string; index: number; from: number; next: number | null };
+  tiers: { code: string; from: number }[];
+  win: number;
+  loss: number;
+  maxStake: number;
+  sfida: {
+    kind: "ladder" | "challenge";
+    stake: number;
+    opponent: SupplierPerson | null;
+    ghost: (SupplierPerson & { week: number }) | null;
+    mine: Money;
+    theirs: Money;
+    curves: { mine: string[]; theirs: string[] };
+    hour: number;
+  } | null;
+  challenges: {
+    out: { id: string; to: SupplierPerson; stake: number; accepted: boolean }[];
+    in: { id: string; from: SupplierPerson; stake: number; accepted: boolean }[];
+  };
+}
+
 /** The official suppliers of the cities (GET /api/game/suppliers). */
 export interface SuppliersView {
   bonusBps: number;
@@ -1399,6 +1472,26 @@ export interface SuppliersView {
     holder: SupplierPerson | null;
     top: (SupplierPerson & { units: number })[];
     mine: number;
+  }[];
+}
+
+/** The Signoria of the cities (GET /api/game/signoria, R2). */
+export interface SignoriaView {
+  rules: {
+    tollBps: number;
+    previewMinutes: number;
+    maxCities: number;
+    cityPointsPerHour: number;
+    decayBps: number;
+    minPoints: number;
+  } | null;
+  cities: {
+    city: string;
+    podesta: SupplierPerson | null;
+    since: number | null;
+    top: (SupplierPerson & { points: number })[];
+    mine: number;
+    total: number;
   }[];
 }
 

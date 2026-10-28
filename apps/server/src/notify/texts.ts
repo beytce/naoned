@@ -202,9 +202,59 @@ export function pushText(
       const sign = BigInt(gain) > 0n ? "+" : "";
       // `glory`: the weeks ranked on the Terraferma's glory (18 and 19 October 2026).
       const award = data.award ? ` Vous êtes ${AWARDS[String(data.award)]} !` : "";
+      const lustre =
+        data.lustre === undefined
+          ? ""
+          : Number(data.lustre) > 0
+            ? ` Sfida gagnée : +${Number(data.lustre)} de Lustre.`
+            : Number(data.lustre) < 0
+              ? ` Sfida perdue : ${Number(data.lustre)} de Lustre.`
+              : " Sfida nulle.";
       return {
         title: "Résultats de la semaine",
-        body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${data.glory ? `${gain} de Gloire` : `${sign}${ducats(gain)} ducats`}).${award}`,
+        body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${data.glory ? `${gain} de Gloire` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
+      };
+    }
+    case "sera":
+      if (data.event === "outbid")
+        return {
+          title: "Votre enchère est dépassée",
+          body: "Un marchand vous a passé à l'incanto des galères. Relevez votre maximum avant la clôture.",
+        };
+      return {
+        title: "La Sera commence à 20 h",
+        body: `${Number(data.lots)} lots des galères aux enchères, et la bataille de la Terraferme.`,
+      };
+    case "sfida": {
+      const by = data.byName ? String(data.byName) : "un marchand";
+      if (data.event === "challenged")
+        return {
+          title: `${by} vous défie`,
+          body: `Une Sfida la semaine prochaine${Number(data.stake) > 0 ? `, ${Number(data.stake)} de Lustre en jeu` : ""}. Acceptez-la dans la Sfida.`,
+        };
+      return {
+        title: "Votre Sfida de la semaine",
+        body: data.ghost
+          ? `Vous affrontez le fantôme de ${by} : sa meilleure semaine, heure par heure.`
+          : `Vous affrontez ${by} : qui vendra le plus cette semaine ?`,
+      };
+    }
+    case "signoria": {
+      const city = cities[String(data.city)] ?? String(data.city ?? "");
+      const by = data.byName ? String(data.byName) : "Un rival";
+      if (data.event === "podesta_named")
+        return {
+          title: `Vous êtes Podestà de ${city}`,
+          body: "La ville est à vous : un droit sur les livraisons des autres, et ses commandes avant eux.",
+        };
+      if (data.event === "podesta_lost")
+        return {
+          title: `${city} vous échappe`,
+          body: `${by} vous a repris ${city}. Livrez-y, ou tenez-la sur la Terraferme, pour la reprendre.`,
+        };
+      return {
+        title: `${by} vous dépasse à ${city}`,
+        body: `${by} mène la jauge de ${city}. Le Podestà se décide à minuit.`,
       };
     }
     case "siege":
@@ -302,6 +352,11 @@ const TERRA_DECREES: Record<string, string> = {
 /** The Terraferma's news (docs/plan-terraferme.md), or null for another event. */
 function terraText(data: Record<string, unknown>): { title: string; body: string } | null {
   switch (data.event) {
+    case "terra_hungry":
+      return {
+        title: "Vos troupes ont faim",
+        body: "Le pain manque : vous ne recrutez plus. Achetez du pain au Rialto ou cuisez-en.",
+      };
     case "terra_ducats_received":
       return {
         title: "Un allié vous envoie des ducats",

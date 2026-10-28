@@ -12,6 +12,7 @@ import {
   boardTakes,
   bookSide,
   cashAccount,
+  citiesHeldBy,
   costForLevel,
   dayIndex,
   escrowAccount,
@@ -20,6 +21,9 @@ import {
   houseLevels,
   houseMissionsFor,
   houseSpendFor,
+  incantoLots,
+  incantoMinimum,
+  incantoPrice,
   isMudaGood,
   marketMakerQuotaLeft,
   marketMakerQuotes,
@@ -767,6 +771,19 @@ export function playerView(
     warehouses: warehousesView(ctx, state, playerId, now),
     // The merchant's fondaci, per city on a road, and what the next level costs (E1-3).
     fondaci: fondaciView(ctx, state, playerId),
+    // The Signoria of the cities (R2): the cities the merchant is Podestà of, each city's
+    // Podestà (names and gauges come from GET /api/game/signoria), and its rules.
+    signoria: ctx.settings.signoria
+      ? {
+          held: citiesHeldBy(state, playerId),
+          podesta: Object.fromEntries(
+            Object.entries(state.signoria?.podesta ?? {}).map(([city, p]) => [city, p.playerId]),
+          ),
+          tollBps: ctx.settings.signoria.tollBps,
+          previewMinutes: ctx.settings.signoria.previewMinutes,
+          maxCities: ctx.settings.signoria.maxCities,
+        }
+      : null,
     // The goods the merchant is the official supplier of, by city, this week.
     supplies: Object.entries(state.suppliers?.holders ?? {})
       .filter(([, id]) => id === playerId)
@@ -800,6 +817,32 @@ export function playerView(
     road: roadView(ctx, state, playerId, now),
     /** The galleys of the Muda: what is on the quay, at what price, and the merchant's quota. */
     muda: ctx.settings.muda ? mudaView(ctx, state, playerId, now) : null,
+    // The Sera (R11): its hours, and the incanto's lots not yet settled or settled today, with
+    // the price now, the least a new maximum must reach and the merchant's own maximum.
+    sera: ctx.settings.incanto
+      ? {
+          hour: ctx.settings.incanto.hour,
+          minutes:
+            ctx.settings.incanto.firstMinute +
+            (ctx.settings.incanto.lots - 1) * ctx.settings.incanto.everyMinutes,
+          lots: incantoLots(state)
+            .filter((l) => !l.done || now - l.closesAt < 12 * 3_600_000)
+            .map((l) => ({
+              id: l.id,
+              goods: l.goods,
+              value: l.value,
+              closesAt: l.closesAt,
+              price: incantoPrice(ctx, l),
+              minimum: incantoMinimum(ctx, l),
+              bidders: Object.keys(l.bids).length,
+              mine: l.bids[playerId] ?? null,
+              leading: l.leader === playerId,
+              done: l.done
+                ? { won: l.done.winner === playerId, sold: l.done.winner !== null }
+                : null,
+            })),
+        }
+      : null,
     /**
      * The hours the guide's last card gives (E3-1 of the experts): when the merchant's queues all
      * end, the board's next wave, the next galleys. All from here, none written by the client.

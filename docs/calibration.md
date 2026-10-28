@@ -1519,3 +1519,85 @@ Chaque mutateur est joué toute la saison par `pnpm sim --mutator <code>`, sur 5
 - La simulation ne joue pas la Terraferme : les troupes de Milan de la Guerre de Milan n'y sont pas mesurées.
 
 Les trois restent au catalogue. Le premier tirage vaut pour décembre 2026.
+
+## Vague 1 du plan de rupture : la guerre mange, la Signoria des villes (27-28 octobre 2026, R1 et R2)
+
+Mesuré par `pnpm sim` sur 5 graines, avec R1 (`terraferma.supply`) et R2 (`signoria`) ensemble, les fournisseurs officiels et l'embargo retirés (`docs/plan-rupture.md`).
+
+### Premier essai : 0,1 pain par troupe et par jour ouvert
+
+Les 5 graines sont conformes.
+
+| Mesure | Cible | Graines 1 à 5 |
+| --- | --- | --- |
+| Monnaie payée, Lombardie / Installation | ≥ 1,20 (0,97 à 1,08 avant) | 1,17 · 1,18 · 1,12 · 1,17 · 1,16 |
+| Pain en fin de mois (% de la référence) | ≥ 65 % | 56 · 60 · 57 · 58 · 58 |
+| Masse monétaire par actif, plafond | ≤ 2,5 × | 0,91 à 0,95 × |
+| Pain mangé par les troupes, par actif et par jour | diagnostic | 5,4 à 5,8 |
+| Pain de « Max » et matériaux des bâtiments, par actif et par jour | diagnostic | pain 2,8 à 3,3 ; briques 2,4 à 2,7 |
+| Podestà nommés par ville et par semaine | ≥ 1 | 1,9 à 6,3 |
+| Marchands qui ont tenu une ville dans la saison | diagnostic | 40 à 47 |
+
+**Lecture.**
+- La croissance du mois revient : la semaine III rapporte 12 à 18 % de plus que la semaine I, contre 0 à 8 % avec les seuls fondaci. La cible de 1,20 n'est pas tout à fait atteinte.
+- Le pain reste sous 65 % en fin de mois : la Terraferme n'en mange pas encore assez pour absorber ce que les boulangers produisent.
+- La Signoria tourne vite : une ville change de Podestà de 2 à 6 fois par semaine chez les PNJ, qui livrent partout sans viser une ville. À revoir avec des humains (`/admin`) : si le titre change chaque jour, garder plus de points d'un jour à l'autre (`decayBps`).
+
+### Second essai : 0,2 pain par troupe et par jour ouvert (écarté)
+
+Les 5 graines sont conformes, mais l'essai n'est pas retenu.
+
+| Mesure | 0,1 pain (retenu) | 0,2 pain |
+| --- | --- | --- |
+| Monnaie payée, Lombardie / Installation | 1,12 à 1,18 | 1,14 à 1,21 |
+| Pain en fin de mois | 56 à 60 % | 54 à 58 % |
+| Briques et planches en fin de mois | 65 à 95 % | 56 à 64 % |
+| Masse monétaire par actif, plafond | 0,91 à 0,95 × | 0,92 à 1,01 × |
+| Assidus devant occasionnels (ventes nettes médianes) | 112 à 322 % | 314 à 585 % |
+
+**Lecture.**
+- Doubler le pain des troupes ne relève pas le pain : les maisons qui font la guerre dépensent leurs ducats en pain au lieu d'acheter des matériaux, et briques et planches s'effondrent.
+- L'écart entre assidus et occasionnels explose : l'occasionnel, qui ne vient pas nourrir ses troupes, cesse de recruter et décroche.
+- **Décision : 0,1 pain par troupe et par jour.** Le pain sous 65 % en fin de mois vient d'une surproduction des boulangers, pas d'un manque de guerre ; la croissance du mois (cible 1,20) est à reprendre avec la vague 2 (la Sera, qui concentre la demande), ou par un réglage des villes, sur décision du porteur.
+
+## Vague 2 du plan de rupture : le Lustre et la Sera (28 octobre 2026, R6 et R11)
+
+Mesuré par `pnpm sim` sur 5 graines, avec la vague 1, l'incanto (`incanto`), les PNJ qui enchérissent, la bataille de 20 h à 20 h 30, les appels d'offres retirés et le quai sans hausse. Le Lustre ne touche pas à l'économie : rien à calibrer au simulateur (il vit sur le serveur).
+
+### Premier essai : la moitié de chaque arrivée aux enchères
+
+Les 5 graines sont conformes.
+
+| Mesure | Cible | Graines 1 à 5 |
+| --- | --- | --- |
+| Monnaie payée, Lombardie / Installation | ≥ 1,20 | 1,18 · 1,17 · 1,15 · 1,18 · 1,11 |
+| Pain en fin de mois | ≥ 65 % | 54 · 60 · 57 · 56 · 58 |
+| Masse monétaire par actif, plafond | ≤ 2,5 × | 0,91 à 0,96 × |
+| Assidus devant occasionnels (ventes nettes médianes) | diagnostic | 138 à 254 % |
+| Incanto : lots vendus sur 30 | diagnostic | 3 · 3 · 5 · 5 · 4 |
+| Incanto : prix payé / référence | diagnostic | 69 à 100 % |
+
+**Lecture.**
+- L'incanto vend peu : un lot vaut environ 300 ducats (la moitié d'une arrivée pour 40 marchands, en trois lots), plus d'une journée de revenu, et les PNJ n'enchérissent qu'avec trois fois leur maximum en caisse. Les lots invendus retournent au quai : les marchandises entrent quand même dans l'économie.
+- La croissance du mois et le pain ne bougent pas par rapport à la vague 1 : la Sera concentre la demande des humains, que la simulation ne joue pas.
+
+### Second essai, retenu : 30 % de chaque arrivée, des PNJ qui enchérissent avec 1,5 fois leur maximum en caisse
+
+Les 5 graines sont conformes.
+
+| Mesure | Graines 1 à 5 |
+| --- | --- |
+| Incanto : lots vendus sur 30 | 30 partout |
+| Incanto : prix payé / référence | 97 · 97 · 96 · 92 · 96 % |
+| Incanto : gagnants distincts | 18 · 15 · 19 · 17 · 15 |
+| Incanto : ducats détruits sur la saison | 13 177 à 14 367 |
+| Monnaie payée, Lombardie / Installation | 1,17 · 1,17 · 1,16 · 1,18 · 1,20 |
+| Pain en fin de mois | 55 · 56 · 58 · 58 · 59 % |
+| Masse monétaire par actif, plafond | 0,90 à 0,95 × |
+| Assidus devant occasionnels (ventes nettes médianes) | 101 à 365 % |
+
+**Lecture.**
+- Chaque lot trouve preneur, près de sa référence, et les lots se répartissent entre 15 à 19 marchands : l'enchère vit sans qu'un seul la rafle.
+- L'incanto devient un puits de monnaie notable (environ 13 500 ducats par saison), sans que la masse monétaire sorte de sa cible.
+- La croissance du mois (1,16 à 1,20) et le pain (55 à 59 %) restent proches de la vague 1 : ces deux cibles attendent la mesure de vrais joueurs, à la Sera.
+- L'avance des assidus varie beaucoup d'une graine à l'autre (101 à 365 %) : diagnostic à suivre dans `/admin`.

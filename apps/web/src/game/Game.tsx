@@ -130,6 +130,8 @@ export interface GameProps {
   pushAsk: GameResponse["pushAsk"];
   /** The merchant's permanent level (honorary). */
   level: Level | null;
+  /** The Lustre (R6): rank and tier (null: off). */
+  lustre: GameResponse["lustre"];
   /**
    * Sends an action without telling its outcome (the caller sums several up), and returns the
    * answer (null when refused: the error is said).
@@ -193,6 +195,7 @@ export function Game(props: {
   const [rival, setRival] = useState<GameResponse["rival"]>(null);
   const [pushAsk, setPushAsk] = useState<GameResponse["pushAsk"]>(null);
   const [level, setLevel] = useState<Level | null>(null);
+  const [lustre, setLustre] = useState<GameResponse["lustre"]>(null);
   const loaded = useRef(false);
   const [welcome, setWelcome] = useState<WelcomeData | null>(null);
   const [ceremony, setCeremony] = useState<CeremonyData | null>(null);
@@ -268,6 +271,7 @@ export function Game(props: {
       setRival(res.rival ?? null);
       if (res.pushAsk !== undefined) setPushAsk(res.pushAsk);
       setLevel(res.level ?? null);
+      if (res.lustre !== undefined) setLustre(res.lustre);
       if (res.welcome) setWelcome(res.welcome);
       setCeremony(res.ceremony ?? null);
       setPassInfo({ upcomingPass: res.upcomingPass, passPrices: res.passPrices });
@@ -649,6 +653,7 @@ export function Game(props: {
     rival,
     pushAsk,
     level,
+    lustre,
     bots,
     tab: layer === "campaign" ? "famille" : selection?.kind === "cart" ? "routes" : "comptoir",
     passInfo,

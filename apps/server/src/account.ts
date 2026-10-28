@@ -14,6 +14,7 @@ import {
   pushSubscriptions,
   seasonResults,
   sessions,
+  sfide,
   telemetry,
   trades,
   weeklyResults,
@@ -33,6 +34,7 @@ export async function exportAccount(db: Db, accountId: string) {
       createdAt: accounts.createdAt,
       lastLoginAt: accounts.lastLoginAt,
       pushOff: accounts.pushOff,
+      lustre: accounts.lustre,
     })
     .from(accounts)
     .where(eq(accounts.id, accountId));
@@ -59,6 +61,18 @@ export async function exportAccount(db: Db, accountId: string) {
       .from(weeklyResults)
       .where(eq(weeklyResults.accountId, accountId)),
     pass: await db.select().from(passGrants).where(eq(passGrants.accountId, accountId)),
+    // The Lustre's Sfide (R6), as either side.
+    sfide: await db
+      .select({
+        week: sfide.week,
+        kind: sfide.kind,
+        stake: sfide.stake,
+        aGain: sfide.aGain,
+        bGain: sfide.bGain,
+        delta: sql<number>`case when ${sfide.a} = ${accountId} then ${sfide.deltaA} else ${sfide.deltaB} end`,
+      })
+      .from(sfide)
+      .where(or(eq(sfide.a, accountId), eq(sfide.b, accountId))),
     influence: await db
       .select()
       .from(influenceEntries)
