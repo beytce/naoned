@@ -4,6 +4,7 @@ import { GoodsMark, goodsColour } from "../art/goods.js";
 import { fr } from "../i18n.js";
 import { pendingInvite } from "../origin.js";
 import { Slab } from "../ui.js";
+import { NamePicker, useDynasty } from "./Dynasty.js";
 import type { Names } from "./Game.js";
 import { gameApi } from "./api.js";
 import type { Catalog, CompanyInvitation } from "./types.js";
@@ -23,10 +24,15 @@ const NEEDS: Record<string, string[]> = {
 export function Region(props: {
   catalog: Catalog;
   names: Names;
-  onJoin: (region: string) => Promise<void>;
+  onJoin: (region: string, given?: string) => Promise<void>;
   toast: string | null;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
+  // The month's member of the house (R4): three names offered, the first until another is picked.
+  const [dynasty] = useDynasty();
+  const [given, setGiven] = useState<string | null>(null);
+  const names = dynasty?.names ?? [];
+  const name = given ?? names[0] ?? null;
   // Who comes by a company's link sees the trade the company lacks (E2-8 of the experts).
   const [invitation, setInvitation] = useState<CompanyInvitation | null>(null);
   useEffect(() => {
@@ -69,6 +75,7 @@ export function Region(props: {
         </h1>
         <p className="text-sm text-cream-dim">{fr.region.help}</p>
       </header>
+      <NamePicker names={names} picked={name} onPick={setGiven} />
       {/* Lagune: the regions as stars, each its raw good at its heart; the chosen one comes forward. */}
       <div className="mt-5 grid grid-cols-3 items-center gap-2">
         {regions.map((x, k) => {
@@ -183,7 +190,7 @@ export function Region(props: {
           disabled={busy !== null}
           onClick={async () => {
             setBusy(r.code);
-            await props.onJoin(r.code);
+            await props.onJoin(r.code, name ?? undefined);
             setBusy(null);
           }}
         >

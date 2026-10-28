@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { Crest } from "../art/crest.js";
 import { fr } from "../i18n.js";
 import { Label, Slab } from "../ui.js";
+import { HeirChoice, traitName, useDynasty } from "./Dynasty.js";
+import { gameApi } from "./api.js";
 import { shareChronicle } from "./chronicle.js";
 import { d } from "./format.js";
 import type { Ceremony as CeremonyData } from "./types.js";
@@ -86,6 +89,12 @@ export function Ceremony({
   onDone: () => void;
 }) {
   const t = fr.game.season;
+  // The heir to name (R4): the traits the month earned, the first picked until another is.
+  const [dynasty] = useDynasty();
+  const heir = dynasty?.heir ?? null;
+  const [picked, setPicked] = useState<string | null>(null);
+  const trait = picked ?? heir?.chosen ?? heir?.earned[0] ?? null;
+  const [leaving, setLeaving] = useState(false);
   const top = data.tier === "doge" || data.tier === "podium" || data.tier === "top10";
   const rewards = [
     data.award || null,
@@ -191,9 +200,27 @@ export function Ceremony({
         {fr.game.chronicle.share}
       </Slab>
 
+      {heir && (
+        <div className="mt-8 w-full">
+          <HeirChoice earned={heir.earned} picked={trait} onPick={setPicked} />
+        </div>
+      )}
+
       <p className="mt-6 text-sm text-cream-dim">{t.newSeason(nextSeason)}</p>
-      <Slab size="lg" className="mt-4 w-full" onClick={onDone}>
-        {t.start}
+      {/* One gold action: leave the trait to the heir and begin, or only begin. */}
+      <Slab
+        size="lg"
+        className="mt-4 w-full"
+        disabled={leaving}
+        onClick={async () => {
+          if (heir && trait) {
+            setLeaving(true);
+            await gameApi.heir(trait).catch(() => undefined);
+          }
+          onDone();
+        }}
+      >
+        {heir && trait ? fr.game.dynasty.bequeath(traitName(trait)[0]) : t.start}
       </Slab>
     </main>
   );

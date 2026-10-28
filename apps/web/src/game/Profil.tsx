@@ -27,6 +27,7 @@ import {
   needsPass,
 } from "../theme.js";
 import { Big, Donut, Label, Panel, Ribbon, Segmented, Sheet, Slab, Switch } from "../ui.js";
+import { Gallery, useDynasty } from "./Dynasty.js";
 import type { GameProps } from "./Game.js";
 import { HouseSummary } from "./House.js";
 import { CompanyPanel } from "./MyCompany.js";
@@ -277,6 +278,8 @@ export function ProfileSheet(props: GameProps) {
 
 function ProfileBody(props: GameProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
+  // The house's line (R4), its portraits in the gallery.
+  const [dynasty] = useDynasty();
   const [palmares, setPalmares] = useState<Palmares | null>(null);
   const [terra, setTerra] = useState<{
     rating: number;
@@ -512,6 +515,12 @@ function ProfileBody(props: GameProps) {
           <PalmaresView data={palmares} />
         </section>
       )}
+
+      <Gallery
+        view={dynasty}
+        house={props.account.pseudo ?? ""}
+        crest={props.account.crest ?? defaultCrest(props.account.id)}
+      />
 
       <PassPanel props={props} extra={props.passInfo} />
 

@@ -1052,6 +1052,17 @@ async function baleWaiting(page, check) {
 
 /** The season closed while away: the ceremony, at its fullest (top ten, podium, rewards). */
 async function seasonClosed(page, check) {
+  // The heir to name (R4): two traits earned in the month.
+  await page.route("**/api/game/dynasty", (route) =>
+    route.fulfill({
+      json: {
+        generations: [],
+        current: null,
+        heir: { earned: ["rialto", "nato_quai"], chosen: null },
+        names: ["Marco", "Isabetta", "Zuane"],
+      },
+    }),
+  );
   await rewrite(page, (json) => {
     json.ceremony = {
       worldId: "e2e",
@@ -1076,6 +1087,11 @@ async function seasonClosed(page, check) {
     };
   });
   await check("fin-de-saison");
+  // Down to the heir and the one gold button.
+  await page.mouse.wheel(0, 2000);
+  await page.waitForTimeout(500);
+  await check("heritier");
+  await page.unroute("**/api/game/dynasty");
   await page.unroute("**/api/game");
   await page.reload();
   await page.waitForTimeout(1200);

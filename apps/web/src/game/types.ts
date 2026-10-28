@@ -541,6 +541,11 @@ export interface PlayerView {
     effects: Record<string, Record<string, number>>;
     locked: { code: string; unlock: string | null }[];
   } | null;
+  /** The Dynastie (R4): the heir's trait, and what it still gives for free (null: off). */
+  dynasty?: {
+    trait: string | null;
+    free: { dailyRerolls: number; respecs: number };
+  } | null;
   /**
    * The Letter of the day (R10): today's letter, each answer with what it pays and gives (ducats
    * under the season's cap), whether a consequence may follow and whether it can be paid (null:
@@ -551,6 +556,8 @@ export interface PlayerView {
     sender: string;
     day: number;
     answered: string | null;
+    /** Who writes tomorrow, for the man of letters (R4; null otherwise). */
+    tomorrow?: string | null;
     choices: {
       id: string;
       pay: { ducats: string; goods: Record<string, number> };
@@ -1616,4 +1623,25 @@ export interface DealsView {
     settled: boolean;
     paid: Money | null;
   }[];
+}
+
+/** One generation of the house's line (R4). */
+export interface Generation {
+  worldId: string;
+  season: string;
+  given: string;
+  year: number;
+  traitIn: string | null;
+  earned: string[] | null;
+  heir: string | null;
+  epithet: string | null;
+  rank: number | null;
+}
+
+/** The Dynastie (R4): the line, the heir to name after a month's close, the names offered. */
+export interface DynastyView {
+  generations: Generation[];
+  current: Generation | null;
+  heir: { earned: string[]; chosen: string | null } | null;
+  names: string[];
 }

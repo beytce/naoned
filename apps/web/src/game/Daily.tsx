@@ -11,7 +11,9 @@ export function Daily(props: GameProps) {
   if (!daily || daily.tasks.length === 0) return null;
   const spend = props.view.houseSpend;
   const ready = daily.tasks.some((task) => task.done && !task.claimed);
-  const canReroll = !!spend && (props.influence ?? 0) >= spend.dailyReroll;
+  // The notary's son swaps one a day for free (R4).
+  const free = (props.view.dynasty?.free.dailyRerolls ?? 0) > 0;
+  const canReroll = !!spend && (free || (props.influence ?? 0) >= spend.dailyReroll);
   return (
     <Panel glow={ready ? "lagoon" : undefined}>
       {/* On a narrow phone the streak goes under the kicker, whole, rather than both cut in two. */}
@@ -72,11 +74,15 @@ export function Daily(props: GameProps) {
                 size="sm"
                 tone="ghost"
                 className="shrink-0"
-                label={fr.game.house.spend.reroll(spend.dailyReroll)}
+                label={
+                  free ? fr.game.dynasty.freeReroll : fr.game.house.spend.reroll(spend.dailyReroll)
+                }
                 disabled={props.busy}
                 onClick={() => props.spend({ use: "daily", taskId: task.id })}
               >
-                {fr.game.house.spend.rerollShort(spend.dailyReroll)}
+                {free
+                  ? fr.game.dynasty.freeShort
+                  : fr.game.house.spend.rerollShort(spend.dailyReroll)}
               </Slab>
             )}
             {task.done && !task.claimed && (

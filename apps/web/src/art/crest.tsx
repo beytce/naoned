@@ -28,6 +28,11 @@ const FIELD: Record<string, [string, string]> = {
   violet: [P.violet, "#5E44A0"],
 };
 
+/** A crest colour's field and edge (the portraits wear them, R4). */
+export function crestColours(color: string): [string, string] {
+  return FIELD[color] ?? FIELD.gold ?? [P.gold, P.goldDeep];
+}
+
 /** A stable default crest from any id, so every player has one. */
 export function defaultCrest(id: string): CrestData {
   let h = 0;

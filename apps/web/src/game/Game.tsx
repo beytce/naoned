@@ -611,9 +611,9 @@ export function Game(props: {
         catalog={catalog}
         names={names}
         toast={toast?.text ?? null}
-        onJoin={async (region) => {
+        onJoin={async (region, given) => {
           try {
-            const res = await gameApi.join(region);
+            const res = await gameApi.join(region, given);
             apply(res.serverTime, res.view);
           } catch (err) {
             const code = err instanceof ApiError ? err.code : "unknown";

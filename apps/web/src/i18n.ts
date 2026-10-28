@@ -2701,6 +2701,49 @@ const frDict = {
       },
     },
     /** The rival of the week, under the rank on the map. */
+    /** The Dynastie (R4): the house's line, a member a month, an heir and its trait. */
+    dynasty: {
+      member: (given: string, house: string, year: number) => `${given} ${house}, ${year}`,
+      nameKicker: "Votre Maison ce mois-ci",
+      nameHelp: "Chaque mois, un membre de votre Maison tient le comptoir. Choisissez son prénom.",
+      heirKicker: "Votre héritier",
+      heirHelp:
+        "Le mois s'achève : nommez l'héritier qui tiendra le comptoir le mois prochain, et le trait qu'il reçoit de vous. Un trait est une option ou une information, jamais du rendement.",
+      heirNone: "Aucun trait mérité ce mois-ci : votre héritier part sans héritage, comme vous.",
+      bequeath: (trait: string) => `Léguer « ${trait} » et commencer`,
+      bequeathed: (trait: string) => `Votre héritier reçoit « ${trait} ».`,
+      trait: "Trait de la Maison",
+      freeReroll: "Changer de tâche · gratuit, par votre trait",
+      freeShort: "Changer · gratuit",
+      freeRespec: "Changer de maîtrise · gratuit",
+      tomorrow: (name: string) => `Demain, une lettre de ${name}.`,
+      gallery: "Galerie de la Maison",
+      galleryHelp: "Chaque mois, un portrait de plus. La fortune repart ; la lignée reste.",
+      rank: (n: number) => `${n}${n === 1 ? "er" : "e"} du mois`,
+      traits: {
+        nato_quai: ["Né sur les quais", "Voit les commandes urgentes 15 min plus tôt."],
+        rialto: ["Élevé au Rialto", "Une quatrième carte dans l'offre des Atouts."],
+        condottiere: ["Fils de condottiere", "Change sa maîtrise une fois sans Influence."],
+        amico_citta: ["Ami des villes", "Voit les dix premiers de la Signoria de chaque ville."],
+        notaio: ["Fils de notaire", "Change une tâche du jour sans Influence, chaque jour."],
+        letterato: ["Le Lettré", "Sait qui lui écrira demain."],
+      } as Record<string, [name: string, line: string]>,
+      earnedBy: {
+        nato_quai: "un lot gagné à l'incanto",
+        rialto: "le top 10 du mois",
+        condottiere: "Signore d'une semaine",
+        amico_citta: "Podestà d'une ville",
+        notaio: "sept coffres du jour d'affilée",
+        letterato: "vingt lettres répondues",
+      } as Record<string, string>,
+      epithets: {
+        magnifico: "le Magnifique",
+        rovinato: "le Ruiné",
+        podesta: "le Podestà",
+        condottiere: "le Condottiere",
+        costante: "le Constant",
+      } as Record<string, string>,
+    },
     /** The Letter of the day (R10): the month's letters (`i18n.letters.ts`) and the sheet's words. */
     letters: {
       ...lettersFr,
