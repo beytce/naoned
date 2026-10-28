@@ -15,7 +15,7 @@ import { Icon } from "./icons.js";
 /**
  * The map's heads-up display, floating on the night without any bar: who the merchant is (the
  * season's progress as a ring around their arms), their purse, the workers' bread and their
- * carts, the notices and the help. The tabs at the foot are the TabBar's.
+ * carts and the notices. The tabs at the foot are the TabBar's.
  */
 
 function Orb({
@@ -192,8 +192,8 @@ export function MapHud({
   /** The rival's line: the Sfida's sheet once the Lustre is on, else the ranking. */
   onRival?: () => void;
   onRanking: () => void;
-  /** The help: a round beside the bell. */
-  onHelp: () => void;
+  /** The Terraferma's guide: a round beside the bell there (on the trade, the help is in the profile). */
+  onHelp?: () => void;
   /**
    * Where the HUD's band across the top ends (its identity, the rival's line, the rounds on the
    * left and the right column), in px from the top of the screen: the map frames itself under it.
@@ -340,9 +340,11 @@ export function MapHud({
                 {Icon.anchor()}
               </Orb>
             )}
-            <Orb label={m.buttons.help} onClick={onHelp} coach="hud-help">
-              {Icon.help()}
-            </Orb>
+            {onHelp && (
+              <Orb label={m.buttons.help} onClick={onHelp} coach="hud-help">
+                {Icon.help()}
+              </Orb>
+            )}
           </span>
           {(bales > 0 || guidePaused) && (
             <span className="flex items-center gap-2">

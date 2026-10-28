@@ -104,6 +104,7 @@ const WORDS = {
     ranking: /^classement$/i,
     bale: /ballot/i,
     help: /^aide$/i,
+    howToPlay: /^comment jouer$/i,
     odds: /^probabilités$/i,
     firstSteps: "Premiers pas",
     finish: /terminer/i,
@@ -144,6 +145,7 @@ const WORDS = {
     ranking: /^ranking$/i,
     bale: /bale/i,
     help: /^help$/i,
+    howToPlay: /^how to play$/i,
     odds: /^odds$/i,
     firstSteps: "First steps",
     finish: /finish/i,
@@ -525,8 +527,11 @@ async function session(width, height, tag) {
       }
       await closeAll(page);
     }
-    // The help, its loop as an orbit and the goods' code.
-    await page.getByRole("button", { name: WORDS.help }).first().click();
+    // The help, its loop as an orbit and the goods' code: from the profile (the map has no door
+    // for it since the five tabs).
+    await page.locator('[data-hud="identity"]').click();
+    await page.waitForTimeout(600);
+    await page.getByRole("button", { name: WORDS.howToPlay }).first().click();
     await page.waitForTimeout(600);
     await check("aide");
     await page.keyboard.press("Escape");

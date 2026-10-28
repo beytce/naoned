@@ -926,8 +926,8 @@ export function MapScreen(
         onRival={props.rival?.sfida ? () => props.setSheet("sfida") : undefined}
         onSera={view.sera ? () => props.setSheet("sera") : undefined}
         sera={openSeraLots(view)}
-        // On the Terraferma, the help is its guide with its diagrams.
-        onHelp={terra ? props.openTerraGuide : props.openHelp}
+        // On the Terraferma, its guide with its diagrams; on the trade, the help is in the profile.
+        onHelp={terra ? props.openTerraGuide : undefined}
       />
       <TabBar
         active={activeTab({ sheet: props.sheet, layer })}
