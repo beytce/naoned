@@ -3,6 +3,15 @@
  * names stay Italian.
  */
 
+/** Who writes the Letter of the day (R10), by the script's sender codes. */
+const SENDERS: Record<string, string> = {
+  lorenzo: "Lorenzo",
+  faraj: "Faraj",
+  contarini: "the widow Contarini",
+  senate: "Ser Marin Zane",
+  spy: "a Milanese",
+};
+
 const EVENTS: Record<string, string> = {
   famine_verona: "Shortage in Verona: bread orders for Verona paid 60% more.",
   fire_venezia: "Fire in Venezia: brick and plank orders for Venezia paid 50% more.",
@@ -163,7 +172,7 @@ export function pushTextEn(
       ].filter(Boolean);
       return {
         title: "The morning gazette",
-        body: `Last night: ${parts.length > 0 ? parts.join(", ") : "your counter is waiting for you"}.`,
+        body: `Last night: ${parts.length > 0 ? parts.join(", ") : "your counter is waiting for you"}.${data.atouts ? " Three Atouts await you: choose this week's." : ""}${data.letter ? ` A letter from ${SENDERS[String(data.letter)] ?? "Venice"} awaits you.` : ""}`,
       };
     }
     case "muda": {
@@ -212,6 +221,15 @@ export function pushTextEn(
       return {
         title: "Results of the week",
         body: `You finish ${ordinal(Number(data.rank))} (${data.glory ? `${gain} Glory` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
+      };
+    }
+    case "letter": {
+      const by = SENDERS[String(data.sender ?? "")] ?? "Venice";
+      return {
+        title: `News from ${by}`,
+        body: data.came
+          ? "What followed one of your letters has come."
+          : "What should have followed one of your letters did not come.",
       };
     }
     case "sera":

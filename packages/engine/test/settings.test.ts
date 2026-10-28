@@ -216,3 +216,37 @@ describe("the Pass Négociant's settings", () => {
     });
   });
 });
+
+describe("the month of letters of Venice (R10)", () => {
+  const { letters, referencePrices } = parseSettings(venice1450Settings);
+  const episodes = letters?.episodes ?? [];
+  const plain = (e?: (typeof episodes)[number]) =>
+    !!e && e.needs.length === 0 && e.without.length === 0;
+
+  it("writes a letter without conditions every day of a month, and a last one", () => {
+    for (let day = 0; day < 30; day++) {
+      const ofDay = episodes.filter((e) => e.day === day && !e.last);
+      expect(ofDay.length, `day ${day}`).toBeGreaterThan(0);
+      // Those with conditions come first: the plain one closes the day.
+      expect(plain(ofDay[ofDay.length - 1]), `day ${day}`).toBe(true);
+    }
+    const last = episodes.filter((e) => e.last);
+    expect(plain(last[last.length - 1])).toBe(true);
+    expect(new Set(episodes.map((e) => e.id)).size).toBe(episodes.length);
+  });
+
+  it("gives and asks only goods of the theme, a little at a time", () => {
+    for (const e of episodes) {
+      for (const c of e.choices) {
+        for (const gift of [c.pay, c.gain, c.later?.gain]) {
+          for (const [g, n] of Object.entries(gift?.goods ?? {})) {
+            expect(referencePrices[g], `${e.id}: ${g}`).toBeDefined();
+            expect(n).toBeLessThanOrEqual(10);
+          }
+          expect(gift?.ducats ?? 0n).toBeLessThanOrEqual(3_500n);
+        }
+      }
+    }
+    expect(letters?.maxDucatsPerSeason).toBe(10_000n);
+  });
+});

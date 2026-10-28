@@ -12,6 +12,10 @@ describe("the places an address opens", () => {
     expect(placeFrom("?open=workshops&src=push&kind=harvest")).toEqual({ sheet: "workshops" });
     expect(placeFrom("?open=notices")).toEqual({ sheet: "notices" });
     expect(placeFrom("?open=terra")).toEqual({ layer: "terra" });
+    // The Sfida, the Sera and the letter of the day (R6, R11, R10).
+    expect(placeFrom("?open=sfida&src=push&kind=sfida")).toEqual({ sheet: "sfida" });
+    expect(placeFrom("?open=sera")).toEqual({ sheet: "sera" });
+    expect(placeFrom("?open=letter")).toEqual({ sheet: "letter" });
     expect(placeFrom("?open=admin")).toBeNull();
     expect(placeFrom("?ouvrir=admin")).toBeNull();
     expect(placeFrom("")).toBeNull();

@@ -18,6 +18,7 @@ import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
 import { Big, Panel, Qty, Sheet, Slab, clock, useLeaving } from "../../ui.js";
 import { ActCard } from "../Acts.js";
+import { AtoutsSheet, atoutWaiting, useAtoutMoment } from "../Atouts.js";
 import { CargoSheet, loadOrders, loadSummary } from "../Cargo.js";
 import { Coach } from "../Coach.js";
 import { ComeBack } from "../ComeBack.js";
@@ -27,6 +28,7 @@ import { perHour } from "../Dashboard.js";
 import { FondacoSheet } from "../Fondaco.js";
 import type { GameProps } from "../Game.js";
 import { HouseSheet } from "../House.js";
+import { LetterSheet, letterWaiting, useLetterMoment } from "../Letter.js";
 import { RialtoSheet } from "../Marche.js";
 import { ProfileSheet } from "../Profil.js";
 import { SeraSheet, openSeraLots } from "../Sera.js";
@@ -464,6 +466,10 @@ export function MapScreen(
   const crest = props.account.crest ?? defaultCrest(props.account.id);
   // Each city's Podestà (R2): its crest on the city, the merchant's own when it is.
   const signoria = useSignoria(view);
+  // The week's Atouts open by themselves once (R3).
+  useAtoutMoment(props);
+  // The letter of the day opens by itself at the first visit of the day (R10).
+  useLetterMoment(props);
   const podestaCrest = (code: string) => {
     const p = signoriaOf(signoria, code)?.podesta;
     if (!p) return null;
@@ -749,7 +755,12 @@ export function MapScreen(
 
   const [sheetKind, sheetId] = (props.sheet ?? "").split(":");
   const cargoVehicle = sheetKind === "cargo" ? vehicles.find((v) => v.id === sheetId) : undefined;
-  const notice = props.unread + carnetRewards(props);
+  // The letter of the day (R10) and the week's Atouts (R3) wait under the bell.
+  const notice =
+    props.unread +
+    carnetRewards(props) +
+    (letterWaiting(view) ? 1 : 0) +
+    (atoutWaiting(view) ? 1 : 0);
   const days = Math.max(1, (catalog.world.endsAt - catalog.world.startsAt) / 86_400_000);
   const open = unlocksOf(view.tutorial, now - view.player.joinedAt);
   const seasonProgress = Math.min(1, (now - catalog.world.startsAt) / (days * 86_400_000));
@@ -1014,6 +1025,8 @@ export function MapScreen(
       <SfidaSheet {...props} />
       <ChallengeSheet {...props} />
       <SeraSheet {...props} />
+      <AtoutsSheet {...props} />
+      <LetterSheet {...props} />
       <WarehouseSheet {...props} />
       <FondacoSheet {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}

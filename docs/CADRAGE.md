@@ -277,6 +277,14 @@ Décision du porteur : les douze propositions de `docs/audit-retention-2026-10-2
 | **La Sera (R11)** | Chaque soir de 20 h à 20 h 30. **L'incanto** : chaque arrivée de la Muda met 30 % de son lot aux enchères en trois lots, fermant à 20 h 10, 20 h 20 et 20 h 30 (deux minutes de plus pour une enchère tardive) ; enchères à maximum laissé d'avance (prix = deuxième maximum + 5 %, départ à 60 % de la référence), ducats du meneur bloqués, rendus s'il est dépassé ; le prix sort du jeu ; un lot par marchand et par Sera (`incanto`). Le reste au quai, sans hausse de prix. L'heure de bataille de la Terraferme passe à 20 h – 20 h 30. Avis à 19 h 55 et « enchère dépassée » |
 | **Ménage (R12)** | Appels d'offres du Doge retirés à Venise ; le niveau honorifique quitte le HUD ; le rival de la semaine devient l'adversaire de la Sfida |
 
+### Chaque mois autrement, chaque matin une raison : les Atouts et la Lettre du jour (vague 3 du plan de rupture, 28 octobre 2026)
+
+| Mécanique | Règle |
+| --- | --- |
+| **Les Atouts (R3)** | Chaque semaine du classement, trois Atouts tirés de la réserve du marchand (secret du monde, les mêmes toute la semaine, sans ceux déjà pris) ; il en prend un pour la saison, quatre ou cinq en fin de mois. Chacun donne et retire (effets signés, additionnés à la maîtrise : taxe, quotas, véhicules, vitesse, rendements brut et transformé, paiement des villes, points de Signoria) ; jamais moins d'un véhicule ni d'une offre. Réserve : douze de départ, quatre débloqués au compte par un exploit (Podestà, lot gagné à l'incanto, Signore d'une semaine, rang Mercante au Lustre), gardés de saison en saison (`atouts`, table `account_atouts`). Les maîtrises restent |
+| **La Lettre du jour (R10)** | Chaque jour de la saison, une lettre d'un des cinq personnages (Lorenzo le facteur, Faraj d'Alexandrie, la veuve Contarini, Ser Marin Zane du Sénat, un Milanais sans nom), deux réponses. Une réponse peut coûter quelques ducats ou marchandises, donner un peu, poser des drapeaux qui choisissent les lettres suivantes, et programmer une suite des jours plus tard (parfois tirée au sort). Le dernier jour du mois, une des sept fins selon les choix. Ducats donnés plafonnés à 100 par marchand et par saison (`letters`, script `themes/venice1450.letters.ts`, textes `i18n.letters.ts`). Elle s'ouvre d'elle-même à la première visite du jour, se relit sous la cloche ; la gazette de 8 h 05 l'annonce, les suites arrivent dans la cloche |
+| **Sous la cloche** | La Lettre et l'Atout de la semaine vivent sous la cloche (une ligne chacun, comptés dans son badge) plutôt qu'en ronds du HUD, trop serrés à 320 px |
+
 ## Vision et positionnement
 
 Fondaco est un jeu de commerce multijoueur en 2D, jouable sur navigateur PC et mobile. Chaque joueur développe un comptoir marchand dans un monde partagé dont les prix sont fixés par les joueurs.

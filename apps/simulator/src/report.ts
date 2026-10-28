@@ -369,6 +369,63 @@ export function mudaChecks(r: SimulationResult): Check[] {
 }
 
 /** The road (deliveries and vehicles), with the targets of docs/plan-livraisons.md § 7. */
+/** The Atouts (R3): how the merchants present at the end spread over them (diversity). */
+function atoutChecks(r: SimulationResult): Check[] {
+  const players = Object.values(r.finalState?.players ?? {});
+  const held = players.flatMap((p) => p.atouts ?? []);
+  if (held.length === 0) return [];
+  const by: Record<string, number> = {};
+  for (const a of held) by[a] = (by[a] ?? 0) + 1;
+  const most = Math.max(...Object.values(by));
+  const share = most / Math.max(1, players.length);
+  return [
+    {
+      name: "Atouts : le plus pris, part des marchands",
+      target: "≤ 25 % (diversité, R3)",
+      value: `${pct(share)} · ${Object.entries(by)
+        .sort(([, a], [, b]) => b - a)
+        .map(([k, n]) => `${k} ${n}`)
+        .join(" · ")}`,
+      pass: share <= 0.25,
+      blocking: false,
+    },
+  ];
+}
+
+/**
+ * The Letter of the day (R10): what it gave a merchant at most (under the season's cap), the
+ * letters answered, and how the month ended for the houses.
+ */
+function letterChecks(r: SimulationResult): Check[] {
+  const letters = Object.values(r.finalState?.letters ?? {});
+  if (letters.length === 0) return [];
+  const max = BigInt(r.options.settings.letters?.maxDucatsPerSeason ?? 0);
+  const most = letters.reduce((m, l) => (l.minted > m ? l.minted : m), 0n);
+  const mean = letters.reduce((n, l) => n + Number(l.minted), 0) / letters.length;
+  const answered = letters.reduce((n, l) => n + Object.keys(l.answered).length, 0) / letters.length;
+  const endings: Record<string, number> = {};
+  for (const l of letters) {
+    for (const a of Object.values(l.answered)) {
+      const id = a.split(":")[0] ?? "";
+      if (id.startsWith("end_")) endings[id] = (endings[id] ?? 0) + 1;
+    }
+  }
+  return [
+    {
+      name: "Lettre : ducats donnés au plus / en moyenne, lettres répondues, fins du mois",
+      target: `≤ ${(Number(max) / 100).toFixed(0)} ducats par marchand (R10)`,
+      value: `${(Number(most) / 100).toFixed(0)} / ${(mean / 100).toFixed(0)} ducats · ${answered.toFixed(1)} lettres · ${
+        Object.entries(endings)
+          .sort(([, a], [, b]) => b - a)
+          .map(([k, n]) => `${k} ${n}`)
+          .join(" · ") || "aucune fin"
+      }`,
+      pass: max === 0n || most <= max,
+      blocking: true,
+    },
+  ];
+}
+
 /** The incanto of the Sera (R11): lots sold, at what share of their reference, to how many. */
 function incantoChecks(r: SimulationResult): Check[] {
   const ic = r.incanto;
@@ -444,6 +501,8 @@ export function terraChecks(r: SimulationResult): Check[] {
     },
     ...signoriaChecks(r),
     ...incantoChecks(r),
+    ...atoutChecks(r),
+    ...letterChecks(r),
     {
       name: "Monnaie détruite par la Terraferme",
       target: "diagnostic : le puits qui remplace l'entretien",

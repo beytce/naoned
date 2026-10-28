@@ -27,6 +27,11 @@ const cityDemand = z.object({
 });
 
 const signedBps = z.number().int().min(-10_000);
+const signedInt = z.number().int();
+/** What a letter's choice pays or gives: a few ducats, a few goods. */
+const letterGift = z
+  .object({ ducats: money.prefault(0), goods: z.record(z.string(), qty).prefault({}) })
+  .prefault({});
 
 /** A market event: for a while, cities pay more (or buy more) and some yields change. */
 const eventDef = z.object({
@@ -1008,10 +1013,49 @@ export const worldSettingsSchema = z.object({
           marketMakerFloorBps: bps.prefault(0),
           /** Urgent orders seen this long before they open (information only, E1-6). */
           urgentPreviewMinutes: qty.prefault(0),
+          /** Added to the yield of recipes without inputs (raw goods, R3). */
+          rawYieldBps: bps.prefault(0),
+          /** Added to what the cities pay on a delivery's arrival (R3). */
+          cityPayBps: bps.prefault(0),
+          /** Added to the points a delivery or a held city counts on the Signoria (R3). */
+          signoriaBps: bps.prefault(0),
         }),
       ),
     })
     .prefault({ unlockLevels: 5, options: {} }),
+  /**
+   * The Atouts (R3, docs/plan-rupture.md): each week a merchant is offered `choices` Atouts of
+   * its pool (the `starter` ones, and those its account unlocked, `unlock` naming the feat) and
+   * takes `perWeek`, for the season. Each gives and takes: signed effects, added to the
+   * mastery's. Off when absent.
+   */
+  atouts: z
+    .object({
+      perWeek: positive,
+      choices: positive,
+      catalog: z.record(
+        z.string(),
+        z.object({
+          starter: z.boolean().optional(),
+          unlock: z.string().optional(),
+          effects: z.object({
+            transformYieldBps: signedInt.prefault(0),
+            vehicleSpeedBps: signedInt.prefault(0),
+            extraVehicles: signedInt.prefault(0),
+            mudaQuotaBps: signedInt.prefault(0),
+            marketMakerQuotaBps: signedInt.prefault(0),
+            taxDiscountBps: signedInt.prefault(0),
+            extraOpenOrders: signedInt.prefault(0),
+            marketMakerFloorBps: signedInt.prefault(0),
+            urgentPreviewMinutes: signedInt.prefault(0),
+            rawYieldBps: signedInt.prefault(0),
+            cityPayBps: signedInt.prefault(0),
+            signoriaBps: signedInt.prefault(0),
+          }),
+        }),
+      ),
+    })
+    .optional(),
   /**
    * The season in acts: from its week (0 = the first), each act may draw a market modifier among
    * its variants (like an event, for the whole act) and make Milan stronger in the campaign.
@@ -1231,6 +1275,48 @@ export const worldSettingsSchema = z.object({
       startBps: bps,
       stepBps: bps,
       perPlayer: positive,
+    })
+    .optional(),
+  /**
+   * The Letter of the day (R10, docs/plan-rupture.md): each day of the season (`day`, 0 the
+   * first; `last` for the season's last day) the first episode whose flags are met (`needs` all
+   * set, `without` none) is the merchant's letter, with two choices. A choice pays (`pay`, to the
+   * sink), gives (`gain`), sets flags, and may bring a consequence `days` later, at the tick, that
+   * comes with `chanceBps`. The ducats given stay under `maxDucatsPerSeason` a merchant. The words
+   * are the interface's (`game.letters`). Off when absent.
+   */
+  letters: z
+    .object({
+      maxDucatsPerSeason: money,
+      episodes: z.array(
+        z.object({
+          id: z.string(),
+          sender: z.string(),
+          day: qty.optional(),
+          last: z.boolean().optional(),
+          needs: z.array(z.string()).prefault([]),
+          without: z.array(z.string()).prefault([]),
+          choices: z
+            .array(
+              z.object({
+                id: z.string(),
+                pay: letterGift,
+                gain: letterGift,
+                set: z.array(z.string()).prefault([]),
+                later: z
+                  .object({
+                    id: z.string(),
+                    days: positive,
+                    chanceBps: bps.max(10_000).prefault(10_000),
+                    gain: letterGift,
+                    set: z.array(z.string()).prefault([]),
+                  })
+                  .optional(),
+              }),
+            )
+            .length(2),
+        }),
+      ),
     })
     .optional(),
   /**

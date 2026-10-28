@@ -15,6 +15,15 @@ const EVENTS: Record<string, string> = {
   sensa_fair: "Foire de la Sensa : commandes plus nombreuses et mieux payées.",
 };
 
+/** Who writes the Letter of the day (R10), by the script's sender codes. */
+const SENDERS: Record<string, string> = {
+  lorenzo: "Lorenzo",
+  faraj: "Faraj",
+  contarini: "la veuve Contarini",
+  senate: "Ser Marin Zane",
+  spy: "un Milanais",
+};
+
 /** Each act of the season, and the variant drawn for its crisis. */
 const ACTS: Record<string, [string, string]> = {
   installation: ["L'installation", "Les marchands s'installent en Vénétie."],
@@ -161,9 +170,15 @@ export function pushText(
           ? `${data.offers} offre${Number(data.offers) > 1 ? "s" : ""} prise${Number(data.offers) > 1 ? "s" : ""} au Rialto`
           : "",
       ].filter(Boolean);
+      const atouts = data.atouts
+        ? " Trois Atouts vous attendent : choisissez celui de la semaine."
+        : "";
+      const letter = data.letter
+        ? ` Une lettre de ${SENDERS[String(data.letter)] ?? "Venise"} vous attend.`
+        : "";
       return {
         title: "La gazette du matin",
-        body: `Cette nuit : ${parts.length > 0 ? parts.join(", ") : "votre comptoir vous attend"}.`,
+        body: `Cette nuit : ${parts.length > 0 ? parts.join(", ") : "votre comptoir vous attend"}.${atouts}${letter}`,
       };
     }
     case "muda": {
@@ -213,6 +228,15 @@ export function pushText(
       return {
         title: "Résultats de la semaine",
         body: `Vous terminez ${data.rank}${data.rank === 1 ? "er" : "e"} (${data.glory ? `${gain} de Gloire` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
+      };
+    }
+    case "letter": {
+      const by = SENDERS[String(data.sender ?? "")] ?? "Venise";
+      return {
+        title: `Des nouvelles de ${by}`,
+        body: data.came
+          ? "La suite d'une de vos lettres est arrivée."
+          : "La suite d'une de vos lettres n'est pas venue.",
       };
     }
     case "sera":

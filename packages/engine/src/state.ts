@@ -47,6 +47,12 @@ export interface Player {
   specialty?: string;
   /** Privileges the house holds, kept from season to season by the server (see `house.ts`). */
   patents?: string[];
+  /** The Atouts taken this season, in order (R3, `atouts.ts`). */
+  atouts?: string[];
+  /** The last week an Atout was taken. */
+  atoutWeek?: number;
+  /** The Atouts the account unlocked, kept from season to season by the server. */
+  atoutPool?: string[];
   /** A house run by the computer, marked by the server: it never takes the Terraferma's tiers. */
   npc?: true;
 }
@@ -348,6 +354,19 @@ export interface WorldState {
       rerolled?: string[];
       /** Days missed that the weekly grace forgave (E3-10). */
       graceDays?: number[];
+    }
+  >;
+  /**
+   * The Letter of the day (R10, `letters.ts`), per merchant: its flags, the choice of each day
+   * answered, the consequences still to come and the ducats given this season.
+   */
+  letters?: Record<
+    PlayerId,
+    {
+      flags: string[];
+      answered: Record<number, string>;
+      pending: { episode: string; choice: string; at: number }[];
+      minted: Deniers;
     }
   >;
   /** Faraj's bales, per player (absent: none opened yet, see `bales.ts`). */

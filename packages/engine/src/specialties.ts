@@ -14,16 +14,34 @@ const NONE: SpecialtyEffects = {
   extraOpenOrders: 0,
   marketMakerFloorBps: 0,
   urgentPreviewMinutes: 0,
+  rawYieldBps: 0,
+  cityPayBps: 0,
+  signoriaBps: 0,
 };
 
-/** What the merchant's mastery changes (nothing before one is chosen). */
+/**
+ * What the merchant's mastery and its Atouts change (R3), added up: an Atout's effects are signed
+ * (it gives and takes), so a sum may be negative; each use bounds it.
+ */
 export function specialtyEffects(
   ctx: WorldContext,
   state: WorldState,
   playerId: PlayerId | null | undefined,
 ): SpecialtyEffects {
-  const code = playerId ? state.players[playerId]?.specialty : undefined;
-  return (code && ctx.settings.specialties.options[code]) || NONE;
+  const player = playerId ? state.players[playerId] : undefined;
+  const code = player?.specialty;
+  const mastery = (code && ctx.settings.specialties.options[code]) || NONE;
+  const held = player?.atouts ?? [];
+  const catalog = ctx.settings.atouts?.catalog;
+  if (held.length === 0 || !catalog) return mastery;
+  const sum = { ...NONE, ...mastery };
+  for (const a of held) {
+    const fx = catalog[a]?.effects;
+    if (!fx) continue;
+    for (const key of Object.keys(sum) as (keyof SpecialtyEffects)[])
+      sum[key] = (sum[key] ?? 0) + (fx[key] ?? 0);
+  }
+  return sum;
 }
 
 /** Levels of all the merchant's workshops: the house's growth. */
@@ -57,5 +75,9 @@ export function chooseSpecialty(tx: Tx, playerId: PlayerId, specialty: string): 
 
 /** Vehicles the merchant may own. */
 export function maxVehiclesFor(ctx: WorldContext, state: WorldState, playerId: PlayerId): number {
-  return ctx.settings.deliveries.maxVehicles + specialtyEffects(ctx, state, playerId).extraVehicles;
+  // An Atout may take a vehicle: never the last.
+  return Math.max(
+    1,
+    ctx.settings.deliveries.maxVehicles + specialtyEffects(ctx, state, playerId).extraVehicles,
+  );
 }

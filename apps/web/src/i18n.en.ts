@@ -1,4 +1,5 @@
 import type { Dictionary } from "./i18n.js";
+import { lettersEn } from "./i18n.letters.en.js";
 
 /**
  * Interface texts in English (E3-8 of the experts, 25 October 2026). The same shape as the French
@@ -1742,6 +1743,7 @@ export const en: Dictionary = {
           : ghost
             ? `Your Sfida of the week: the ghost of ${by ?? "a merchant"}.`
             : `Your Sfida of the week: ${by ?? "a merchant"}.`,
+      letter: (name: string, text: string) => text || `News from ${name}.`,
       sera: (event: string, lots: number) =>
         event === "outbid"
           ? "Your bid is passed at the incanto of the galleys."
@@ -1797,6 +1799,7 @@ export const en: Dictionary = {
           signoria: "Signoria of the cities (Podestà named, a city lost, a rival ahead)",
           sfida: "Sfida of the week and challenges received",
           sera: "The Sera (7:55 pm) and passed bids",
+          letter: "What follows the letter of the day",
         } as Record<string, string>,
       },
     },
@@ -2618,6 +2621,89 @@ export const en: Dictionary = {
         leader: (name: string) => `Leader: ${name}`,
       },
     },
+    letters: {
+      ...lettersEn,
+      kicker: "The letter of the day",
+      waiting: (name: string) => `A letter from ${name} awaits you`,
+      read: (name: string) => `Read the letter from ${name} again`,
+      pays: (what: string) => `Costs ${what}`,
+      gives: (what: string) => `Gives ${what}`,
+      later: "Something may come of it",
+      answered: "Your answer",
+      tomorrow: "The next letter arrives tomorrow morning.",
+      none: "No letter today: Lorenzo comes by tomorrow.",
+      cannot: "You lack the means",
+      followup: (name: string) => `News from ${name}`,
+      help: "Each day of the season, a letter from a figure of Venice: Lorenzo the postman, Faraj of Alexandria, the widow Contarini, Ser Marin of the Senate, and now and then a Milanese without a name. Two possible answers; your choices decide the next letters, and some consequences come days later. The gains are small and capped for the season. The last letter of the month tells what your House has become.",
+    },
+    /** The Atouts (R3): figures of Venice who bend a rule, one taken a week. */
+    atouts: {
+      kicker: "The Atout of the week",
+      waiting: "Three Atouts await you: take this week's.",
+      title: "Three figures of Venice",
+      summary: "Take one for the whole season: each gives, and each takes.",
+      take: (name: string) => `Take ${name.charAt(0).toLowerCase()}${name.slice(1)}`,
+      held: "Your Atouts this season",
+      none: "No Atout yet: the next is chosen on Monday.",
+      taken: "This week's Atout is chosen: the next on Monday.",
+      locked: "To unlock",
+      unlocks: {
+        podesta: "Become Podestà of a city",
+        incanto: "Win a lot at the incanto",
+        signore: "Be Signore of a week",
+        mercante: "Reach the Mercante's rank at the Lustre",
+      } as Record<string, string>,
+      help: "Every Monday, three Atouts are drawn from your pool; you take one, for the whole season. Each gives and takes. The pool holds twelve figures at the start; four more unlock with a feat, and stay with your House from season to season.",
+      names: {
+        banchiere: [
+          "The Banker of the Rialto",
+          "His books lighten your taxes; the Dogana grows wary.",
+        ],
+        gondoliere: ["The Gondolier", "He knows the short cuts; a mule stays in the stable."],
+        vetraio: ["The Master Glassmaker", "His furnaces transform better; your fields feel it."],
+        contadino: [
+          "The Farmer of Terraferma",
+          "His lands yield more; the cities pay a little less.",
+        ],
+        sensale: ["The Broker", "More open offers; he takes his share of your sales."],
+        capitano: [
+          "The Galley Captain",
+          "More room at the galleys; your deliveries lose a little.",
+        ],
+        notaio: ["The Notary", "Your deliveries weigh more at the Signoria; his deeds cost."],
+        carrettiere: ["The Carter", "One more cart; they go slower."],
+        doganiere: ["The Customs Officer", "The Dogana buys from you high; fewer open offers."],
+        messaggero: ["The Messenger", "He tells of urgent orders; his errands cost you wheat."],
+        levantino: ["The Levant Merchant", "The cities pay you better; the galleys sulk."],
+        fornaio: ["The Doge's Baker", "His batches yield more; his deliveries dawdle."],
+        amico_podesta: ["The Podestà's Friend", "Your deliveries weigh far more at the Signoria."],
+        armatore: ["The Shipowner", "Twice the room at the galleys; your workshops slow down."],
+        condottiere: ["The Condottiere", "His lands and cities pay; fewer open offers."],
+        procuratore: ["The Procurator", "The cities pay you much better; the tax grows heavier."],
+      } as Record<string, [string, string]>,
+      effects: {
+        transformYieldBps: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100}% on what is transformed`,
+        rawYieldBps: (v: number) => `${v > 0 ? "+" : "−"}${Math.abs(v) / 100}% raw goods`,
+        cityPayBps: (v: number) => `${v > 0 ? "+" : "−"}${Math.abs(v) / 100}% paid by the cities`,
+        vehicleSpeedBps: (v: number) => `vehicles ${v > 0 ? "+" : "−"}${Math.abs(v) / 100}% speed`,
+        extraVehicles: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v)} vehicle${Math.abs(v) > 1 ? "s" : ""}`,
+        mudaQuotaBps: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100}% quota at the galleys`,
+        marketMakerQuotaBps: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100}% quota at the Dogana`,
+        taxDiscountBps: (v: number) =>
+          `tax ${v > 0 ? "−" : "+"}${Math.abs(v) / 100} point${Math.abs(v) > 100 ? "s" : ""}`,
+        extraOpenOrders: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v)} open offer${Math.abs(v) > 1 ? "s" : ""}`,
+        marketMakerFloorBps: (v: number) =>
+          `the Dogana buys at no less than ${v / 100}% of the reference`,
+        urgentPreviewMinutes: (v: number) => `urgent orders seen ${v} min before`,
+        signoriaBps: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100}% points at the Signoria`,
+      } as Record<string, (v: number) => string>,
+    },
     /** The Sera (R11): the incanto of the galleys and the battle, at 20 h. */
     sera: {
       orb: "The Sera",
@@ -2726,6 +2812,8 @@ export const en: Dictionary = {
     seasonNotes: {
       title: "New this season",
       items: [
+        "The Atouts: each Monday, three figures of Venice are offered to you; you take one for the season. Each gives and each takes. Four more are unlocked by a feat (Podestà, a lot won at the incanto, Signore of a week, the rank of Mercante), kept from season to season.",
+        "The Letter of the day: each morning, a letter from Lorenzo, Faraj, the widow Contarini, Ser Marin of the Senate or a Milanese without a name, two answers, consequences that come days later, and an end of the month that follows your choices. Small gains, capped at 100 ducats a season.",
         "New blue « Laguna » palette, and the map in blue (the old one stays in the Profile).",
         "The Terraferma opens after your first day of trade; you can set down there any day, everyone safe until the end of the first day.",
         "Whoever attacks no merchant of the week always keeps their capital.",
@@ -2863,6 +2951,13 @@ export const en: Dictionary = {
       bid_too_low: "Your maximum must reach the minimum.",
       unknown_lot: "This lot does not exist.",
       lot_closed: "This lot is closed.",
+      letters_off: "No letter of the day in this world.",
+      no_letter: "No letter today.",
+      letter_answered: "You already answered today's letter.",
+      unknown_choice: "This answer does not exist.",
+      atouts_off: "No Atouts in this world.",
+      atout_taken: "This week's Atout is already chosen.",
+      atout_not_offered: "This Atout is not offered this week.",
       one_lot: "You already lead a lot of this Sera.",
       building_busy: "This workshop is already producing: wait for the queue to end.",
       queue_full: "The production queue is full (12 h at most).",

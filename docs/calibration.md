@@ -1601,3 +1601,25 @@ Les 5 graines sont conformes.
 - L'incanto devient un puits de monnaie notable (environ 13 500 ducats par saison), sans que la masse monétaire sorte de sa cible.
 - La croissance du mois (1,16 à 1,20) et le pain (55 à 59 %) restent proches de la vague 1 : ces deux cibles attendent la mesure de vrais joueurs, à la Sera.
 - L'avance des assidus varie beaucoup d'une graine à l'autre (101 à 365 %) : diagnostic à suivre dans `/admin`.
+
+## Vague 3 du plan de rupture : les Atouts et la Lettre du jour (28 octobre 2026, R3 et R10)
+
+Mesuré par `pnpm sim` sur 5 graines, avec les vagues 1 et 2, les Atouts (`atouts`, 16 au catalogue de Venise, choisis par les PNJ selon leur profil) et la Lettre (`letters`, plafond 10 000 deniers par marchand et par saison, réponses des PNJ tirées par `draw`). Les 5 graines sont conformes.
+
+| Mesure | Cible | Graines 1 à 5 |
+| --- | --- | --- |
+| Monnaie payée, Lombardie / Installation | ≥ 1,20 | 1,16 · 1,14 · 1,16 · 1,18 · 1,19 |
+| Pain en fin de mois | ≥ 65 % | 55 · 57 · 57 · 58 · 56 |
+| Masse monétaire par actif, plafond | ≤ 2,5 × | 0,90 à 1,10 × |
+| Assidus devant occasionnels (ventes nettes médianes) | diagnostic | 189 à 584 % |
+| Incanto : lots vendus sur 30, gagnants distincts | diagnostic | 30 partout · 20, 17, 18, 16, 18 |
+| Lettre : ducats donnés au plus / en moyenne | ≤ 100 | 100 / 43 · 100 / 48 · 100 / 47 · 100 / 50 · 100 / 44 |
+| Lettre : lettres répondues par marchand (moyenne) | diagnostic | 21,6 · 23,0 · 22,7 · 24,6 · 22,4 |
+| Lettre : fins du mois | toutes atteintes | les deux rives, le Sénat, le palais, le peuple, Faraj, les Dix, la plus simple : chacune au moins une fois sur les 5 graines |
+| Atouts : le plus pris, part des marchands | ≤ 25 % (diversité) | 45 · 53 · 53 · 55 · 50 % (`levantino`) |
+
+**Lecture.**
+- La Lettre reste un petit à-côté : 43 à 50 ducats en moyenne sur le mois (la moitié du plafond), moins d'une demi-journée de revenu ; les plus chanceux touchent le plafond. La masse monétaire reste dans sa cible.
+- Les Atouts ne déplacent ni la croissance du mois ni le pain. Leur diversité sort de la cible chez les PNJ : le Levantin (`levantino`) plaît à trois profils sur cinq. C'est un biais des goûts des PNJ (`bots.ts`, `chooseAtout`), pas une mesure des joueurs : à suivre dans `/admin` avec de vrais choix, avant de toucher au catalogue.
+- La croissance du mois (1,14 à 1,19) et le pain (55 à 58 %) restent sous leur cible, comme après les vagues 1 et 2.
+

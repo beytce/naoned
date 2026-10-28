@@ -1,4 +1,5 @@
 import type { WorldSettingsInput } from "../settings.js";
+import { venice1450Letters } from "./venice1450.letters.js";
 
 /** Default balancing for a Venice 1450 world. Amounts in deniers, rates in bps. */
 /**
@@ -777,6 +778,8 @@ export const venice1450Settings: WorldSettingsInput = {
   },
   // Tasks of the day: three drawn from this pool, the same for everyone; doing all three opens a
   // chest of 10 ducats, 3 more for each day in a row, up to 22 (five days running).
+  /** The Letter of the day (R10): its month written apart, `venice1450.letters.ts`. */
+  letters: venice1450Letters,
   daily: {
     perDay: 3,
     tasks: [
@@ -1281,6 +1284,34 @@ export const venice1450Settings: WorldSettingsInput = {
   // cities (R2, docs/plan-rupture.md, 27 October 2026): a delivery's ducats and the open hours a
   // city is held on the Terraferma count on its gauge; each day's leader is its Podestà, who
   // takes 3 % of the others' deliveries there and takes its orders half an hour before them.
+  // The Atouts (R3, docs/plan-rupture.md, 28 October 2026): figures of Venice, each giving and
+  // taking. Twelve to start with; four unlocked by a feat (Podestà, a lot won at the incanto,
+  // Signore of a week, the Mercante's rank at the Lustre). One a week, offered three at a time.
+  atouts: {
+    perWeek: 1,
+    choices: 3,
+    catalog: {
+      banchiere: { starter: true, effects: { taxDiscountBps: 200, marketMakerQuotaBps: -5_000 } },
+      gondoliere: { starter: true, effects: { vehicleSpeedBps: 2_500, extraVehicles: -1 } },
+      vetraio: { starter: true, effects: { transformYieldBps: 1_000, rawYieldBps: -1_000 } },
+      contadino: { starter: true, effects: { rawYieldBps: 1_500, cityPayBps: -500 } },
+      sensale: { starter: true, effects: { extraOpenOrders: 4, taxDiscountBps: -100 } },
+      capitano: { starter: true, effects: { mudaQuotaBps: 5_000, cityPayBps: -300 } },
+      notaio: { starter: true, effects: { signoriaBps: 3_000, cityPayBps: -300 } },
+      carrettiere: { starter: true, effects: { extraVehicles: 1, vehicleSpeedBps: -1_500 } },
+      doganiere: { starter: true, effects: { marketMakerFloorBps: 8_000, extraOpenOrders: -2 } },
+      messaggero: { starter: true, effects: { urgentPreviewMinutes: 30, rawYieldBps: -500 } },
+      levantino: { starter: true, effects: { cityPayBps: 600, mudaQuotaBps: -5_000 } },
+      fornaio: { starter: true, effects: { transformYieldBps: 600, vehicleSpeedBps: -1_000 } },
+      amico_podesta: { unlock: "podesta", effects: { signoriaBps: 5_000, taxDiscountBps: -100 } },
+      armatore: { unlock: "incanto", effects: { mudaQuotaBps: 10_000, transformYieldBps: -500 } },
+      condottiere: {
+        unlock: "signore",
+        effects: { rawYieldBps: 1_000, cityPayBps: 300, extraOpenOrders: -3 },
+      },
+      procuratore: { unlock: "mercante", effects: { cityPayBps: 800, taxDiscountBps: -200 } },
+    },
+  },
   // The Lustre (R6, docs/plan-rupture.md, 28 October 2026): the social ranks of Venice, won in
   // the weekly Sfide; two tiers down at the month's change.
   lustre: {

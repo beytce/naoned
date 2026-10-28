@@ -1,4 +1,5 @@
 import { crieeRoom, currentCriee, dailyFor } from "./activity.js";
+import { atoutOffer, atoutOpen } from "./atouts.js";
 import { balesFor } from "./bales.js";
 import { costForLevel, costPerOutput, costValue } from "./buildings.js";
 import {
@@ -35,6 +36,7 @@ import { familiesOn, familiesOpenAt, familyCodes, membersOf, seatOf } from "./fa
 import { nextFondaco } from "./fondaci.js";
 import { houseMissionsFor } from "./house.js";
 import { incantoLots, incantoMinimum } from "./incanto.js";
+import { letterOf } from "./letters.js";
 import { bestPrice, marketMakerQuotaLeft, maxOpenOrdersFor, openOrderCount } from "./market.js";
 import { type MarketView, scale } from "./marketView.js";
 import type { Deniers } from "./money.js";
@@ -279,6 +281,8 @@ export class Bot {
     this.invest(s);
     this.fondaco(s);
     this.chooseMastery(s);
+    this.chooseAtout(s);
+    this.answerLetter(s);
     this.runProduction(s);
     if (this.profile.speculates) this.speculate(s);
     this.sellSurplus(s);
@@ -790,6 +794,45 @@ export class Bot {
    * the goods are worth (the speculator dearer, the casual merchant cheaper), with half as much
    * again in hand, one lot a Sera.
    */
+  /**
+   * The Atout of the week (R3): of the three offered, the one whose gains suit the house's way of
+   * playing best (ties: the first offered).
+   */
+  private chooseAtout(s: Session): void {
+    const rules = s.ctx.settings.atouts;
+    if (!rules || !atoutOpen(s.ctx, s.state(), this.id, s.now)) return;
+    const offer = atoutOffer(s.ctx, s.state(), this.id, s.now);
+    if (offer.length === 0) return;
+    const likes: Record<string, string[]> = {
+      producer: ["rawYieldBps", "cityPayBps", "vehicleSpeedBps"],
+      artisan: ["transformYieldBps", "cityPayBps", "extraVehicles"],
+      builder: ["transformYieldBps", "rawYieldBps", "signoriaBps"],
+      speculator: ["taxDiscountBps", "extraOpenOrders", "marketMakerFloorBps", "mudaQuotaBps"],
+      casual: ["cityPayBps", "urgentPreviewMinutes", "vehicleSpeedBps"],
+    };
+    const wanted = likes[this.profile.name] ?? [];
+    const score = (code: string) => {
+      const fx = rules.catalog[code]?.effects as Record<string, number> | undefined;
+      return wanted.reduce((n, k, i) => n + ((fx?.[k] ?? 0) > 0 ? wanted.length - i : 0), 0);
+    };
+    const best = [...offer].sort((a, b) => score(b) - score(a))[0];
+    if (best) s.act({ type: "chooseAtout", playerId: this.id, code: best });
+  }
+
+  /**
+   * The Letter of the day (R10): one of its two answers, drawn by the world's secret; the other
+   * if the house cannot pay for it.
+   */
+  private answerLetter(s: Session): void {
+    const letter = letterOf(s.ctx, s.state(), this.id, s.now);
+    if (!letter || letter.answered) return;
+    const first = draw(s.ctx, `letter-bot:${this.id}:${letter.day}`) % letter.choices.length;
+    const order = [...letter.choices.slice(first), ...letter.choices.slice(0, first)];
+    for (const choice of order) {
+      if (s.act({ type: "answerLetter", playerId: this.id, choice })) return;
+    }
+  }
+
   private incanto(s: Session): void {
     if (!s.ctx.settings.incanto) return;
     const state = s.state();

@@ -28,6 +28,7 @@ import {
 } from "../notify/notifier.js";
 import { isPushEndpoint } from "../notify/push.js";
 import { retention, sharedMailboxes, suspiciousPairs } from "./admin.js";
+import { atoutPoolFor } from "./atouts.js";
 import { bankReport, ledgerCsv } from "./bank.js";
 import {
   CompanyError,
@@ -259,6 +260,9 @@ const action = z.discriminatedUnion("type", [
     city: z.string().max(32),
     amount: z.string().regex(/^\d{1,12}$/),
   }),
+  // The Atout of the week (R3).
+  z.object({ type: z.literal("chooseAtout"), code: z.string().max(40) }),
+  z.object({ type: z.literal("answerLetter"), choice: z.string().max(40) }),
   // The incanto of the Sera (R11): a maximum on a lot, in deniers.
   z.object({
     type: z.literal("incantoBid"),
@@ -578,11 +582,14 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     if (!account) return;
     const { region } = z.object({ region: z.string() }).parse(req.body);
     const patents = await patentsFor(db, world.ctx.settings, account.id);
+    // The Atouts the account unlocked in earlier seasons (R3).
+    const atoutPool = await atoutPoolFor(db, world.ctx.settings, account.id);
     const res = await world.execute({
       type: "join",
       playerId: account.id,
       region,
       ...(patents.length > 0 ? { patents } : {}),
+      ...(atoutPool.length > 0 ? { atoutPool } : {}),
     });
     if (!res.ok) return reply.code(409).send({ error: res.error });
     await syncPass(db, world, account.id);
@@ -1784,5 +1791,9 @@ function toCommands(a: Action, playerId: string, world: GameWorld): Command[] {
       return [{ type: "warehouseBid", playerId, city: a.city, amount: BigInt(a.amount) }];
     case "incantoBid":
       return [{ type: "incantoBid", playerId, lotId: a.lotId, max: BigInt(a.max) }];
+    case "chooseAtout":
+      return [{ type: "chooseAtout", playerId, code: a.code }];
+    case "answerLetter":
+      return [{ type: "answerLetter", playerId, choice: a.choice }];
   }
 }

@@ -1,4 +1,5 @@
 import { en } from "./i18n.en.js";
+import { lettersFr } from "./i18n.letters.js";
 import { LANG } from "./lang.js";
 
 /**
@@ -1764,6 +1765,7 @@ const frDict = {
           : ghost
             ? `Votre Sfida de la semaine : le fantôme de ${by ?? "un marchand"}.`
             : `Votre Sfida de la semaine : ${by ?? "un marchand"}.`,
+      letter: (name: string, text: string) => text || `Des nouvelles de ${name}.`,
       sera: (event: string, lots: number) =>
         event === "outbid"
           ? "Votre enchère est dépassée à l'incanto des galères."
@@ -1820,6 +1822,7 @@ const frDict = {
           signoria: "Signoria des villes (Podestà nommé, ville perdue, rival en tête)",
           sfida: "Sfida de la semaine et défis reçus",
           sera: "La Sera (19 h 55) et enchères dépassées",
+          letter: "Suites de la lettre du jour",
         } as Record<string, string>,
       },
     },
@@ -2698,6 +2701,103 @@ const frDict = {
       },
     },
     /** The rival of the week, under the rank on the map. */
+    /** The Letter of the day (R10): the month's letters (`i18n.letters.ts`) and the sheet's words. */
+    letters: {
+      ...lettersFr,
+      kicker: "La lettre du jour",
+      waiting: (name: string) => `Une lettre de ${name} vous attend`,
+      read: (name: string) => `Relire la lettre de ${name}`,
+      pays: (what: string) => `Coûte ${what}`,
+      gives: (what: string) => `Donne ${what}`,
+      later: "Une suite viendra, peut-être",
+      answered: "Votre réponse",
+      tomorrow: "La prochaine lettre arrive demain matin.",
+      none: "Pas de lettre aujourd'hui : Lorenzo repasse demain.",
+      cannot: "Vous n'avez pas de quoi",
+      followup: (name: string) => `Des nouvelles de ${name}`,
+      help: "Chaque jour de la saison, une lettre d'un personnage de Venise : Lorenzo le facteur, Faraj d'Alexandrie, la veuve Contarini, Ser Marin du Sénat, et parfois un Milanais sans nom. Deux réponses possibles ; vos choix décident des lettres suivantes, et certaines suites arrivent des jours plus tard. Les gains sont petits et plafonnés pour la saison. La dernière lettre du mois raconte ce que votre Maison est devenue.",
+    },
+    /** The Atouts (R3): figures of Venice who bend a rule, one taken a week. */
+    atouts: {
+      kicker: "L'Atout de la semaine",
+      waiting: "Trois Atouts vous attendent : prenez celui de la semaine.",
+      title: "Trois figures de Venise",
+      summary: "Prenez-en une pour toute la saison : chacune donne, et chacune retire.",
+      take: (name: string) => `Prendre ${name.charAt(0).toLowerCase()}${name.slice(1)}`,
+      held: "Vos Atouts de la saison",
+      none: "Aucun Atout encore : le prochain se choisit lundi.",
+      taken: "Atout de la semaine choisi : le prochain lundi.",
+      locked: "À débloquer",
+      unlocks: {
+        podesta: "Devenez Podestà d'une ville",
+        incanto: "Gagnez un lot à l'incanto",
+        signore: "Soyez Signore d'une semaine",
+        mercante: "Atteignez le rang de Mercante au Lustre",
+      } as Record<string, string>,
+      help: "Chaque lundi, trois Atouts sont tirés de votre réserve ; vous en prenez un, pour toute la saison. Chacun donne et retire. La réserve compte douze figures au départ ; quatre de plus se débloquent par un exploit, et restent à votre Maison d'une saison à l'autre.",
+      names: {
+        banchiere: [
+          "Le Banquier du Rialto",
+          "Ses écritures allègent vos taxes ; la Dogana se méfie.",
+        ],
+        gondoliere: ["Le Gondolier", "Il connaît les raccourcis ; une mule reste à l'écurie."],
+        vetraio: [
+          "Le Maître verrier",
+          "Ses fours transforment mieux ; vos champs s'en ressentent.",
+        ],
+        contadino: [
+          "Le Fermier de Terraferma",
+          "Ses terres donnent plus ; les villes paient un peu moins.",
+        ],
+        sensale: ["Le Courtier", "Plus d'offres ouvertes ; il prend sa part sur vos ventes."],
+        capitano: [
+          "Le Capitaine de galère",
+          "Plus de place aux galères ; vos livraisons perdent un peu.",
+        ],
+        notaio: ["Le Notaire", "Vos livraisons pèsent plus à la Signoria ; ses actes coûtent."],
+        carrettiere: ["Le Charretier", "Une charrette de plus ; elles vont moins vite."],
+        doganiere: ["Le Douanier", "La Dogana vous rachète haut ; moins d'offres ouvertes."],
+        messaggero: ["Le Messager", "Il annonce les urgences ; ses courses vous coûtent du blé."],
+        levantino: [
+          "Le Marchand du Levant",
+          "Les villes vous paient mieux ; les galères vous boudent.",
+        ],
+        fornaio: ["Le Boulanger du Doge", "Ses fournées rendent plus ; ses livraisons traînent."],
+        amico_podesta: ["L'Ami du Podestà", "Vos livraisons pèsent bien plus à la Signoria."],
+        armatore: [
+          "L'Armateur",
+          "Deux fois plus de place aux galères ; vos ateliers ralentissent.",
+        ],
+        condottiere: [
+          "Le Condottiere",
+          "Ses terres et ses villes rapportent ; moins d'offres ouvertes.",
+        ],
+        procuratore: ["Le Procurateur", "Les villes vous paient bien mieux ; la taxe s'alourdit."],
+      } as Record<string, [string, string]>,
+      effects: {
+        transformYieldBps: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % sur ce qui se transforme`,
+        rawYieldBps: (v: number) => `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de matières brutes`,
+        cityPayBps: (v: number) => `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % payé par les villes`,
+        vehicleSpeedBps: (v: number) =>
+          `véhicules ${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de vitesse`,
+        extraVehicles: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v)} véhicule${Math.abs(v) > 1 ? "s" : ""}`,
+        mudaQuotaBps: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de quota aux galères`,
+        marketMakerQuotaBps: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de quota à la Dogana`,
+        taxDiscountBps: (v: number) =>
+          `taxe ${v > 0 ? "−" : "+"}${Math.abs(v) / 100} point${Math.abs(v) > 100 ? "s" : ""}`,
+        extraOpenOrders: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v)} offre${Math.abs(v) > 1 ? "s" : ""} ouverte${Math.abs(v) > 1 ? "s" : ""}`,
+        marketMakerFloorBps: (v: number) =>
+          `la Dogana rachète au moins ${v / 100} % de la référence`,
+        urgentPreviewMinutes: (v: number) => `urgences vues ${v} min avant`,
+        signoriaBps: (v: number) =>
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de points à la Signoria`,
+      } as Record<string, (v: number) => string>,
+    },
     /** The Sera (R11): the incanto of the galleys and the battle, at 20 h. */
     sera: {
       orb: "La Sera",
@@ -2813,6 +2913,8 @@ const frDict = {
     seasonNotes: {
       title: "Nouveautés de la saison",
       items: [
+        "Les Atouts : chaque lundi, trois figures de Venise vous sont proposées ; vous en prenez une pour la saison. Chacune donne et retire. Quatre de plus se débloquent par un exploit (Podestà, lot gagné à l'incanto, Signore d'une semaine, rang Mercante), gardés de saison en saison.",
+        "La Lettre du jour : chaque matin, une lettre de Lorenzo, Faraj, la veuve Contarini, Ser Marin du Sénat ou d'un Milanais sans nom, deux réponses, des suites qui arrivent des jours plus tard, et une fin du mois selon vos choix. Gains petits, plafonnés à 100 ducats par saison.",
         "Nouvelle palette bleue « Lagune », et la carte en bleu (l'ancienne reste dans le Profil).",
         "La Terraferme s'ouvre après votre première journée de commerce ; on s'y pose n'importe quel jour, tous à l'abri jusqu'à la fin du premier jour.",
         "Qui n'attaque aucun marchand de la semaine garde toujours sa capitale.",
@@ -2950,6 +3052,13 @@ const frDict = {
       bid_too_low: "Votre maximum doit atteindre le minimum.",
       unknown_lot: "Ce lot n'existe pas.",
       lot_closed: "Ce lot est clos.",
+      letters_off: "Pas de lettre du jour dans ce monde.",
+      no_letter: "Pas de lettre aujourd'hui.",
+      letter_answered: "Vous avez déjà répondu à la lettre du jour.",
+      unknown_choice: "Cette réponse n'existe pas.",
+      atouts_off: "Pas d'Atouts dans ce monde.",
+      atout_taken: "Atout de la semaine déjà choisi.",
+      atout_not_offered: "Cet Atout n'est pas proposé cette semaine.",
       one_lot: "Vous menez déjà un lot de cette Sera.",
       building_busy: "Cet atelier produit déjà : attendez la fin de la file.",
       queue_full: "La file de production est pleine (12 h maximum).",

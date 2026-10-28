@@ -55,6 +55,7 @@ const CREATED = [
   "criee_sale",
   "daily_reward",
   "daily_chest",
+  "letter_reward",
   "project_delivery",
   "project_bonus",
   "market_maker_buy",
@@ -81,6 +82,7 @@ const DESTROYED = [
   "warehouse_rent",
   "fondaco_build",
   "incanto",
+  "letter_cost",
   "loan_repay",
   "loan_interest",
 ];
