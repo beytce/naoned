@@ -1609,7 +1609,11 @@ function pressing(v: TerraView, now: number): { text: string; tone: string } | n
   if (me?.bread?.unfed) return { text: t().hungryShort, tone: "text-vermilion" };
   const ride = v.fronts.find((f) => f.threat && v.holders[f.owner]?.milan);
   if (ride) return { text: t().milanOnMeShort(holderName(v, ride.owner)), tone: "text-vermilion" };
-  if (v.battle?.on) return { text: t().battle.onShort(v.battle.to), tone: "text-vermilion" };
+  if (v.battle?.on)
+    return {
+      text: t().battle.onShort(v.battle.to, v.battle.toMinute ?? 0),
+      tone: "text-vermilion",
+    };
   if (v.placementEndsAt !== null && now < v.placementEndsAt)
     return { text: t().placingShort(unbroken(clock(v.placementEndsAt - now))), tone: "text-gold" };
   if (v.truceEndsAt !== null && now < v.truceEndsAt)

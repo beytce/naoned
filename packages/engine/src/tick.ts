@@ -3,6 +3,7 @@ import { advanceCampaign } from "./campaign.js";
 import { ensureBoard, pruneRoad, resolveDeliveries } from "./deliveries.js";
 import { dissolveLegacyGuilds } from "./families.js";
 import { runFattore } from "./fattore.js";
+import { closeIncantoLots } from "./incanto.js";
 import { collectLoans } from "./loans.js";
 import { expireOrders } from "./market.js";
 import { requoteMarketMaker } from "./marketMaker.js";
@@ -76,7 +77,8 @@ export function tick(tx: Tx): void {
   ensureBoard(tx);
   // The fattore sends the vehicles left at the counter.
   runFattore(tx);
-  // The galleys of the Muda, before the Dogana quotes their lot.
+  // The galleys of the Muda, before the Dogana quotes their lot; the incanto's lots of the Sera.
   arriveMuda(tx);
+  closeIncantoLots(tx);
   requoteMarketMaker(tx);
 }

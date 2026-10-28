@@ -175,7 +175,12 @@ export function terraView(
     openHours: cfg.openHours,
     /** The battle hour: when it is, whether it is on now. */
     battle: cfg.battle
-      ? { from: cfg.battle.from, to: cfg.battle.to, on: inBattle(cfg, now) }
+      ? {
+          from: cfg.battle.from,
+          to: cfg.battle.to,
+          toMinute: cfg.battle.toMinute ?? 0,
+          on: inBattle(cfg, now),
+        }
       : null,
     /** Whether the fronts march now (they rest at night). */
     open: hourWithin(hourIn(now), cfg.openHours),

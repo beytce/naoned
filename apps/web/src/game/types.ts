@@ -1056,7 +1056,7 @@ export interface TerraView {
   truceEndsAt: number | null;
   openHours: { from: number; to: number };
   /** The battle hour (null: none): the fronts march ten times as fast. */
-  battle: { from: number; to: number; on: boolean } | null;
+  battle: { from: number; to: number; toMinute?: number; on: boolean } | null;
   /** Whether the fronts march now (they rest at night). */
   open: boolean;
   map: {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { type Command, hexDistance, hexNeighbors, recruitPerHour } from "../src/index.js";
+import { type Command, hexDistance, hexNeighbors, inBattle, recruitPerHour } from "../src/index.js";
 import { testTerraferma } from "./fixture.js";
-import { HOUR, World, makeContext } from "./helpers.js";
+import { HOUR, MIN, T0, World, makeContext } from "./helpers.js";
 
 /**
  * The war eats the goods (R1 of the audit of 27 October 2026, docs/plan-rupture.md): troops eat
@@ -107,5 +107,23 @@ describe("the war eats the goods", () => {
     w.advance(24 * HOUR).do({ type: "tick" });
     expect(w.state.terra?.map.players.a?.unfed).toBeUndefined();
     expect(error(act(w, { type: "terraRaise", playerId: "a" }))).toBe("ok");
+  });
+});
+
+describe("the battle of the Sera", () => {
+  it("may end at a minute: 20 h to 20 h 30 (R11)", () => {
+    const cfg = makeContext({
+      terraferma: {
+        ...testTerraferma,
+        battle: { from: 20, to: 20, toMinute: 30, stepMinutes: 3, warnMinutes: 15 },
+      },
+    }).settings.terraferma;
+    if (!cfg) throw new Error("no terraferma");
+    // T0 is midnight UTC in January: 20 h in Paris is 19 h UTC.
+    const at = (h: number, m: number) => T0 + h * HOUR + m * MIN;
+    expect(inBattle(cfg, at(18, 59))).toBe(false);
+    expect(inBattle(cfg, at(19, 0))).toBe(true);
+    expect(inBattle(cfg, at(19, 29))).toBe(true);
+    expect(inBattle(cfg, at(19, 30))).toBe(false);
   });
 });

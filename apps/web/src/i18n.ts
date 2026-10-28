@@ -687,7 +687,8 @@ const frDict = {
       battle: {
         on: (to: number) => `⚔ Bataille : fronts ×10 jusqu'à ${to} h`,
         at: (from: number) => `Bataille chaque soir à ${from} h`,
-        onShort: (to: number) => `⚔ Bataille → ${to} h`,
+        onShort: (to: number, minute = 0) =>
+          `⚔ Bataille → ${to} h${minute > 0 ? ` ${String(minute).padStart(2, "0")}` : ""}`,
         atShort: (from: number) => `Bataille à ${from} h`,
       },
       marching: (n: number) => `${n} front${n > 1 ? "s" : ""} en marche`,

@@ -746,7 +746,7 @@ export const en: Dictionary = {
       battle: {
         on: (to: number) => `⚔ Battle: fronts ×10 until ${to}:00`,
         at: (from: number) => `Battle every evening at ${from}:00`,
-        onShort: (to: number) => `⚔ Battle → ${to}:00`,
+        onShort: (to: number, minute = 0) => `⚔ Battle → ${to}:${String(minute).padStart(2, "0")}`,
         atShort: (from: number) => `Battle at ${from}:00`,
       },
       marching: (n: number) => `${n} front${s(n)} marching`,

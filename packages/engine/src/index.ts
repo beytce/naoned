@@ -96,6 +96,7 @@ export * from "./settings.js";
 export { type MissionView, missionsFor } from "./missions.js";
 export * from "./specialties.js";
 export * from "./house.js";
+export * from "./incanto.js";
 export * from "./lustre.js";
 export * from "./signoria.js";
 export * from "./terraferma.js";

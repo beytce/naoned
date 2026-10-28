@@ -303,6 +303,8 @@ export interface WorldState {
   marketMaker: MarketMakerUsage;
   /** The Muda's lot on the quay, from the first galleys on. */
   muda?: MudaState;
+  /** The incanto of the galleys (R11, `incanto.ts`): its lots, open and lately settled. */
+  incanto?: { lots: Record<string, import("./incanto.js").IncantoLot> };
   cities: Record<string, Record<ResourceCode, CityDemandState>>;
   projects: Record<ProjectId, Project>;
   nextProjectAt: number;

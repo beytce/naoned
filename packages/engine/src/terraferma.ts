@@ -1428,7 +1428,11 @@ export function advanceTerra(s: TerraState, cfg: TerraConfig, until: number): vo
 /** Whether the battle hour is on at `at`. */
 export function inBattle(cfg: TerraConfig, at: number): boolean {
   const b = cfg.battle;
-  return !!b && b.stepMinutes < cfg.stepMinutes && hourWithin(hourIn(at), b);
+  if (!b || b.stepMinutes >= cfg.stepMinutes) return false;
+  if (b.toMinute === undefined) return hourWithin(hourIn(at), b);
+  // To the minute (the Sera, R11): Paris is a whole number of hours from UTC.
+  const minute = hourIn(at) * 60 + (Math.floor(at / MINUTE_MS) % 60);
+  return minute >= b.from * 60 && minute < b.to * 60 + b.toMinute;
 }
 
 /** Minutes of the step starting at `at`: short in the battle hour. */
