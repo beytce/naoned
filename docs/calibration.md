@@ -1559,3 +1559,24 @@ Les 5 graines sont conformes, mais l'essai n'est pas retenu.
 - Doubler le pain des troupes ne relève pas le pain : les maisons qui font la guerre dépensent leurs ducats en pain au lieu d'acheter des matériaux, et briques et planches s'effondrent.
 - L'écart entre assidus et occasionnels explose : l'occasionnel, qui ne vient pas nourrir ses troupes, cesse de recruter et décroche.
 - **Décision : 0,1 pain par troupe et par jour.** Le pain sous 65 % en fin de mois vient d'une surproduction des boulangers, pas d'un manque de guerre ; la croissance du mois (cible 1,20) est à reprendre avec la vague 2 (la Sera, qui concentre la demande), ou par un réglage des villes, sur décision du porteur.
+
+## Vague 2 du plan de rupture : le Lustre et la Sera (28 octobre 2026, R6 et R11)
+
+Mesuré par `pnpm sim` sur 5 graines, avec la vague 1, l'incanto (`incanto`), les PNJ qui enchérissent, la bataille de 20 h à 20 h 30, les appels d'offres retirés et le quai sans hausse. Le Lustre ne touche pas à l'économie : rien à calibrer au simulateur (il vit sur le serveur).
+
+### Premier essai : la moitié de chaque arrivée aux enchères
+
+Les 5 graines sont conformes.
+
+| Mesure | Cible | Graines 1 à 5 |
+| --- | --- | --- |
+| Monnaie payée, Lombardie / Installation | ≥ 1,20 | 1,18 · 1,17 · 1,15 · 1,18 · 1,11 |
+| Pain en fin de mois | ≥ 65 % | 54 · 60 · 57 · 56 · 58 |
+| Masse monétaire par actif, plafond | ≤ 2,5 × | 0,91 à 0,96 × |
+| Assidus devant occasionnels (ventes nettes médianes) | diagnostic | 138 à 254 % |
+| Incanto : lots vendus sur 30 | diagnostic | 3 · 3 · 5 · 5 · 4 |
+| Incanto : prix payé / référence | diagnostic | 69 à 100 % |
+
+**Lecture.**
+- L'incanto vend peu : un lot vaut environ 300 ducats (la moitié d'une arrivée pour 40 marchands, en trois lots), plus d'une journée de revenu, et les PNJ n'enchérissent qu'avec trois fois leur maximum en caisse. Les lots invendus retournent au quai : les marchandises entrent quand même dans l'économie.
+- La croissance du mois et le pain ne bougent pas par rapport à la vague 1 : la Sera concentre la demande des humains, que la simulation ne joue pas.
