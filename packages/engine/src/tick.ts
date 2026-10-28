@@ -65,6 +65,9 @@ export function tick(tx: Tx): void {
   advanceTerraWorld(tx);
   // The Signoria of the cities: each day's Podestà, once the day's deliveries and land are in.
   closeSignoriaDays(tx);
+  // Colleganze and commissions at term, before the week's and the season's rankings are frozen:
+  // a share paid at the season's end counts in it.
+  settlePartners(tx);
   closeWeek(tx);
   // States of the time of the guilds: their treasuries go back to their members.
   dissolveLegacyGuilds(tx);
@@ -76,7 +79,6 @@ export function tick(tx: Tx): void {
   closeSeason(tx);
   openDueProjects(tx);
   runTenders(tx);
-  settlePartners(tx);
   collectLoans(tx);
   // Shared demand: the world's board of the day, drawn once the day's active merchants are known.
   ensureBoard(tx);

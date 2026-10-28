@@ -156,6 +156,29 @@ describe("a colleganza taken late in the season", () => {
     expect(w.state.colleganze?.[id]?.settled).toBe(true);
   });
 
+  it("pays its share before the final ranking is frozen", () => {
+    const w = world();
+    const end = seasonEnd(w.ctx);
+    w.at(end - DAY - w.ctx.startAt);
+    w.do({ type: "offerColleganza", playerId: "a", amount: 10_000n, days: 3, shareBps: 5_000 });
+    const id = lastId(w, "colleganze");
+    w.do({ type: "acceptColleganza", playerId: "b", colleganzaId: id });
+    w.do({
+      type: "postCommission",
+      playerId: "c",
+      resource: "bread",
+      quantity: 20,
+      unitPrice: 206n,
+      days: 1,
+    });
+    w.do({ type: "fillCommission", playerId: "b", commissionId: lastId(w, "commissions") });
+    const res = w.at(end - w.ctx.startAt).do({ type: "tick" });
+    const closed = res.effects.events.find((e) => e.type === "season_closed");
+    const standings = (closed?.data?.standings ?? []) as { playerId: string; turnover: string }[];
+    // The investor's share is in the ranking, taken from the merchant's.
+    expect(BigInt(standings.find((s) => s.playerId === "a")?.turnover ?? "0")).toBeGreaterThan(0n);
+  });
+
   it("keeps its full term when the season lasts longer", () => {
     const w = world();
     w.do({ type: "offerColleganza", playerId: "a", amount: 10_000n, days: 3, shareBps: 5_000 });

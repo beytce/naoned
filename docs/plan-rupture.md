@@ -32,11 +32,11 @@
 | R11 | La Sera (20 h, incanto des galères) | 2 | fait | `572ffc3`… |
 | R3 | Les Atouts | 3 | fait | `b7597e4`… (branche `claude/rupture-v3`) |
 | R10 | La Lettre du jour | 3 | fait | `7b3c7d5`… (branche `claude/rupture-v3`) |
-| R4 | La Dynastie | 4 | fait (calibration en fin de vague) | branche `claude/rupture-v4` |
+| R4 | La Dynastie | 4 | fait | branche `claude/rupture-v4` |
 | R5 | Le Grand Canal | 4 | fait | branche `claude/rupture-v4` |
-| R7 | Le Doge | 4 | fait (mesure des décrets en fin de vague) | branche `claude/rupture-v4` |
-| R8 | Le Broglio | 5 | à faire | — |
-| R9 | Les parts de Maison | 5 | à faire | — |
+| R7 | Le Doge | 4 | fait | branche `claude/rupture-v4` |
+| R8 | Le Broglio | 5 | en cours | branche `claude/rupture-v5` |
+| R9 | Les parts de Maison | 5 | à faire | branche `claude/rupture-v5` |
 
 ## Où j'en suis
 
@@ -49,7 +49,9 @@
 - **Vague 3 terminée** (28 octobre 2026) sur `claude/rupture-v3` : Atouts et Lettre du jour faits, calibrés (`docs/calibration.md`, « Vague 3 »), notes de saison et CADRAGE à jour. Les deux « moments » (l'Atout du lundi, la Lettre du matin) s'ouvrent d'eux-mêmes une fois, puis vivent sous la cloche (une ligne chacun, comptés dans le badge) : un rond de plus dans le HUD débordait à 320 px. À fusionner par une PR vers la branche par défaut quand la CI passe.
 - **Vague 4 en cours** (plan validé le 28 octobre, détail plus bas, « Vague 4 : le plan validé » ; branche `claude/rupture-v4`, partie de `claude/rupture-v3` ; la vague 3 est fusionnée dans la branche par défaut, PR #52).
 - **Vague 4 terminée** (28 octobre 2026) : 25 saisons conformes (sans décret et avec chacun des quatre décrets du Doge), écart des ventes payées ≤ 0,4 % (`docs/calibration.md`, « Vague 4 »).
-- **Étape suivante exacte** : fusionner `claude/rupture-v4` (PR vers la branche par défaut), puis la vague 5 (R8 le Broglio, puis R9 les parts de Maison) : **commencer en mode plan** et attendre la validation du porteur ; les relire d'abord dans l'audit (§ R8, R9, risques de toxicité) et dans IDEAS.md (voix vendues, ménage différé de R12).
+- **Vague 4 fusionnée** dans la branche par défaut (PR #53, 28 octobre 2026).
+- **Vague 5 en cours** (plan validé le 28 octobre, détail plus bas, « Vague 5 : le plan validé » ; branche `claude/rupture-v5`, partie de la branche par défaut).
+- **Étape suivante exacte** : le moteur du Broglio — tests d'abord dans `packages/engine/test/broglio.test.ts` (fixture) : `rumoursOf` (deux rumeurs par jour tirées par `draw(ctx, rumour:${joueur}:${jour}:${i})`, sujets : événement d'un jour à venir, lot de la prochaine Muda ; source et fiabilité ; nouveau venu : seulement 85 %), `rumourTruth`, lot variable de la Muda (`mudaLotBps`, 80 à 120 %), commandes `offerRumour`/`buyRumour`/`cancelRumourOffer` (`rumour_sale` hors ventes nettes), `forgeRumour` (sujet faux seulement ; remise à 3 marchands le lendemain, source « un marchand du Rialto » 50 %), `settleBroglio` (démasqué à 30 % une fois le jour passé : `liar_unmasked`), `hireSpy`/`chaseSpy` (`spy_hire`/`spy_chase` au puits), `spyReport` ; réglages `settings.broglio`.
 - **À savoir** :
   - La Signoria compte les livraisons parties entre 8 h et 22 h (Paris) ; le Podestà est nommé par `closeSignoriaDays` dans le tick, au changement de jour (minuit).
   - L'e2e de mise en page passe sur chaque format lancé seul (`SIZES=390x844`, `SIZES=320x568`) ; lancé sur les deux formats d'affilée, le second a échoué deux fois dans le guide, à une étape différente chaque fois (une charrette sur Venise, l'achat de briques), puis la machine a été redémarrée : à surveiller. Chromium : `CHROMIUM=/opt/pw-browsers/chromium`.
@@ -146,6 +148,16 @@ Plan complet : la Dynastie (R4), le Grand Canal (R5), le Doge (R7). Décisions p
 
 **Le Grand Canal (R5).** Fait : table `canal_plots` (migration `0032_canal` ; un plot par compte), `apps/server/src/game/canal.ts` (`redistributeCanal` à la clôture après `recordGenerations` : qui reste dans les 40 garde son plot, les nouveaux prennent les plus petits numéros libres dans l'ordre du classement, 7 jours joués, jamais de PNJ ; `palaceOf` ; `canalView` : façade = générations, Atouts débloqués, villes tenues maintenant, Doge), route publique `GET /api/canal` (sans e-mail ni identifiant ; le Doge du mois et son programme), `ceremony.palace`, export RGPD ; dessins `art/canal.tsx` (palais SVG : un étage par génération jusqu'à 4, fenêtres gothiques, bannière du blason, étoiles d'Atouts, écus de villes, corno du Doge ; plots vides en pointillés) ; `game/Canal.tsx` : `CanalHero` (le `Hero` de connexion montre les 6 premiers palais et le Doge du mois en médaillon, la nuit de la lagune en attendant), `CanalBoard` (pastille « Grand Canal » du classement : la bande des 40 à faire défiler, « Votre palais : le n », sinon le sestiere, la liste des palais), ligne du palais à la cérémonie, `sestiereOf` ; tests `apps/server/test/canal.test.ts` ; e2e « canal » (et « connexion » montre le Canal, réponse `/api/canal` remplie pour tout le parcours). Non fait, noté : toucher un palais n'ouvre pas encore la fiche du marchand (la route publique ne donne pas d'identifiant).
 
+## Vague 5 : le plan validé (28 octobre 2026)
+
+Décisions prises avec le plan : **aucun texte libre** (rumeurs, fausses rumeurs, ventes, espions : formulaires à choix, rien à modérer) ; **une rumeur ne nomme jamais un marchand** (sujets : faits du monde) ; **la gazette ne dit plus le lendemain** (`view.gazette.next` retiré) ; **les parts de Maison sont un jeu entre joueurs** (aucun PNJ en monde vivant ; au simulateur, un comportement simple) ; rien n'est payable en argent réel.
+
+**Le Broglio (R8).** Deux rumeurs privées chaque matin (événement à venir, lot de la Muda), source et fiabilité affichées (gondolier 40 %, facteur 60 %, commis de la Dogana 75 %, secrétaire du Sénat 85 %), le nouveau venu n'a que des sources sûres 3 jours ; vente d'une rumeur à un marchand ou au Rialto ; fausse rumeur inventée contre de l'Influence (sujet faux seulement), remise à 3 marchands, démasquée à 30 % (−15 de Lustre, les dupes l'apprennent sans le nom) ; espion d'une semaine chez un rival (une offre ou un front par jour ; l'espionné le sait, sans savoir qui, et peut le chasser) ; rumeurs passées marquées vraies ou fausses. Moteur `broglio.ts`, lot variable de la Muda, serveur, feuille « Le Broglio » sous la cloche.
+
+**Les parts de Maison (R9).** Cotation dès le jour 8 pour une Maison humaine de 7 jours ; 100 parts, 49 au plus en circulation (51 au fondateur, toujours) ; un petit carnet par Maison (fonds dans `hold:`, hors de `escrow:` et de l'invariant 6) ; dividende hebdomadaire de 30 % des ventes nettes de la semaine au prorata (`share_dividend`, à somme nulle au classement comme `colleganza_share`) ; conseil à 30 parts (voit les comptes) ; solde au dernier cours le dernier jour, avant la clôture, plafonnée par la caisse. Moteur `shares.ts`, serveur, onglet « Parts » du Comptoir et fiche d'un marchand.
+
+- Fait : le bug de `settlePartners` (une colleganza finie au dernier jour versait sa part après le classement figé) : `settlePartners` passe avant `closeWeek`/`closeSeason` dans le tick ; test dans `test/partners.test.ts`.
+
 ## Les vagues suivantes (cadre fixé, à détailler en mode plan au moment venu)
 
 - **Vague 2 : R6 le Lustre, R11 la Sera.** Comptes : `accounts.lustre` ; tables `sfide` (semaine, monde, a, b ou fantôme, mesure, résultat) et `week_curves` (courbe horaire des ventes nettes, pour rejouer les fantômes). La Sera, de 20 h à 20 h 30 : l'incanto des galères de la Muda (enchères de 3 minutes à prolongation) remplace le prix croissant de `muda.ts` et les appels d'offres (`tenders.ts`, retirés) ; l'heure de bataille passe à 30 minutes.
@@ -180,3 +192,4 @@ Plan complet : la Dynastie (R4), le Grand Canal (R5), le Doge (R7). Décisions p
 - 28 octobre 2026 : le Grand Canal (plots, redistribution, route publique, palais SVG, Canal et Doge à la connexion, onglet du classement, palais à la cérémonie).
 - 28 octobre 2026 : option `--decree` du simulateur ; notes de saison, CADRAGE et IDEAS.md de la vague 4 ; simulations de calibration lancées (sans décret et avec chacun des quatre, 5 graines) — résultats à écrire dans `docs/calibration.md`, « Vague 4 ».
 - 28 octobre 2026 : calibration de la vague 4 (5 graines, sans décret et avec chacun des quatre) ; vague 4 terminée.
+- 28 octobre 2026 : vague 4 fusionnée (PR #53) ; vague 5 planifiée et validée ; `settlePartners` avant les clôtures de semaine et de saison (la part d'une colleganza finie au dernier jour compte au classement).
