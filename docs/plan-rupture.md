@@ -42,6 +42,7 @@
 
 - **Fait (vague 1)** : R1 et R2 dans le moteur, chez les PNJ, au simulateur, sur le serveur (vue, route `GET /api/game/signoria`, notifications nommées) et à l'écran (jauge autour de la ville, feuille « Signoria », blason du Podestà sur la carte, pain des troupes au HUD, coûts de la guerre dans « Vos terres ») ; ménage (fournisseurs et embargo retirés à Venise) ; notes de saison ; CADRAGE et plan-terraferme à jour.
 - **En cours** : la calibration de la vague 1, `pnpm sim` sur 5 graines avec R1 et R2 ensemble (environ 10 min par graine). Résultat à reporter dans `docs/calibration.md`, section « Vague 1 ».
+- **Essai en cours** : `pnpm sim` (5 graines) avec `terraferma.supply.breadPerTroopDay` à 2 000 (0,2 pain par troupe et par jour), le dépôt restant à 1 000 tant que l'essai n'est pas validé. Premier essai à 1 000 consigné dans `docs/calibration.md`, « Vague 1 ».
 - **Étape suivante exacte** : lire le rapport ; si la semaine III ne fait pas 1,20 × la semaine I, ou si le pain finit sous 65 % de la référence, régler `terraferma.supply.breadPerTroopDay` (et noter chaque essai) ; puis passer la vague 2 en mode plan (R6 le Lustre, R11 la Sera).
 - **À savoir** :
   - La Signoria compte les livraisons parties entre 8 h et 22 h (Paris) ; le Podestà est nommé par `closeSignoriaDays` dans le tick, au changement de jour (minuit).
