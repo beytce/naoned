@@ -53,6 +53,10 @@ export interface Player {
   atoutWeek?: number;
   /** The Atouts the account unlocked, kept from season to season by the server. */
   atoutPool?: string[];
+  /** The trait the heir took from the generation before (R4, `dynasty.ts`). */
+  trait?: string;
+  /** Free changes of mastery the trait gave, used this season. */
+  freeRespecs?: number;
   /** A house run by the computer, marked by the server: it never takes the Terraferma's tiers. */
   npc?: true;
 }
@@ -354,6 +358,8 @@ export interface WorldState {
       rerolled?: string[];
       /** Days missed that the weekly grace forgave (E3-10). */
       graceDays?: number[];
+      /** Swaps of the day the trait gave for free, used today (R4). */
+      freeRerolls?: number;
     }
   >;
   /**

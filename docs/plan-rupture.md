@@ -32,9 +32,9 @@
 | R11 | La Sera (20 h, incanto des galères) | 2 | fait | `572ffc3`… |
 | R3 | Les Atouts | 3 | fait | `b7597e4`… (branche `claude/rupture-v3`) |
 | R10 | La Lettre du jour | 3 | fait | `7b3c7d5`… (branche `claude/rupture-v3`) |
-| R4 | La Dynastie | 4 | à faire | — |
-| R5 | Le Grand Canal | 4 | à faire | — |
-| R7 | Le Doge | 4 | à faire | — |
+| R4 | La Dynastie | 4 | en cours (moteur fait) | branche `claude/rupture-v4` |
+| R5 | Le Grand Canal | 4 | à faire | branche `claude/rupture-v4` |
+| R7 | Le Doge | 4 | à faire | branche `claude/rupture-v4` |
 | R8 | Le Broglio | 5 | à faire | — |
 | R9 | Les parts de Maison | 5 | à faire | — |
 
@@ -47,7 +47,8 @@
 - **Vague 2 terminée** (28 octobre 2026) : calibration faite, incanto à 30 % de chaque arrivée, PNJ qui enchérissent avec 1,5 fois leur maximum en caisse (`docs/calibration.md`, « Vague 2 »). Restent sous leur cible, comme après la vague 1 : la croissance du mois (1,16 à 1,20 pour 1,20) et le pain (55 à 59 % pour 65 %), à mesurer avec de vrais joueurs.
 - **Vagues 1 et 2 fusionnées** dans la branche par défaut (PR #51, 28 octobre 2026).
 - **Vague 3 terminée** (28 octobre 2026) sur `claude/rupture-v3` : Atouts et Lettre du jour faits, calibrés (`docs/calibration.md`, « Vague 3 »), notes de saison et CADRAGE à jour. Les deux « moments » (l'Atout du lundi, la Lettre du matin) s'ouvrent d'eux-mêmes une fois, puis vivent sous la cloche (une ligne chacun, comptés dans le badge) : un rond de plus dans le HUD débordait à 320 px. À fusionner par une PR vers la branche par défaut quand la CI passe.
-- **Étape suivante exacte** : fusionner `claude/rupture-v3`, puis la vague 4 (R4 la Dynastie, R5 le Grand Canal, R7 le Doge) : **commencer en mode plan** et attendre la validation du porteur (CLAUDE.md), sur le cadre de « Les vagues suivantes » ci-dessous. Ménage possible à proposer dans ce plan : fondre les maîtrises dans les Atouts, et le coffre dans la Lettre, si la mesure de vrais joueurs le justifie.
+- **Vague 4 en cours** (plan validé le 28 octobre, détail plus bas, « Vague 4 : le plan validé » ; branche `claude/rupture-v4`, partie de `claude/rupture-v3` ; PR #52 de la vague 3 à fusionner quand sa CI passe, puis fusionner la branche par défaut dans `claude/rupture-v4`).
+- **Étape suivante exacte** : le serveur de la Dynastie — migration `generations` (compte, monde, prénom, surnom, trait reçu, trait légué, rang, année) ; `recordGenerations` à la clôture (`world.ts`, `season_closed`, sur le modèle de `recordAtoutUnlocks`) : traits mérités (incanto gagné → `nato_quai`, top 10 → `rialto`, Signore → `condottiere`, Podestà → `amico_citta`, 7 coffres d'affilée → `notaio`, 20 lettres → `letterato`) et surnom ; `POST /api/game/heir`, `GET /api/game/names` (`heirNames`), le `join` passe `trait` et le prénom ; `/api/house/spend` : coût 0 et `free: true` quand `freeLeft` le permet ; vue : prénom, trait, `freeLeft`, et les points des rivaux à la Signoria pour `signoriaRivals`.
 - **À savoir** :
   - La Signoria compte les livraisons parties entre 8 h et 22 h (Paris) ; le Podestà est nommé par `closeSignoriaDays` dans le tick, au changement de jour (minuit).
   - L'e2e de mise en page passe sur chaque format lancé seul (`SIZES=390x844`, `SIZES=320x568`) ; lancé sur les deux formats d'affilée, le second a échoué deux fois dans le guide, à une étape différente chaque fois (une charrette sur Venise, l'achat de briques), puis la machine a été redémarrée : à surveiller. Chromium : `CHROMIUM=/opt/pw-browsers/chromium`.
@@ -123,6 +124,20 @@ But : une ville se prend en y livrant ou en la tenant sur la Terraferme, sur la 
 - Fait : moteur et tests (`test/letters.test.ts`) ; le mois écrit (`venice1450.letters.ts` : 30 jours, une lettre sans condition chaque jour après celles à drapeaux, 7 fins le dernier jour ; textes dans `apps/web/src/i18n.letters.ts` et `i18n.letters.en.ts`, contrôlés par `apps/web/test/letters.test.ts`) ; PNJ ; simulateur (« Lettre : ducats donnés… ») ; serveur (`view.letter` par `letterView`, action `answerLetter`, avis `letter` pour les suites, gazette « Une lettre de … vous attend ») ; écran `Letter.tsx` (la lettre sur son papier, son sceau, deux réponses or et fantôme avec ce qu'elles coûtent et donnent ; moment du matin ; ligne sous la cloche) ; liens des pushes `sfida`, `sera`, `letter` (`shortcut.ts`).
 - Écrire une autre saison : un autre fichier de script et ses textes, mêmes ids ; le test du web dit ce qui manque.
 
+## Vague 4 : le plan validé (28 octobre 2026)
+
+Plan complet : la Dynastie (R4), le Grand Canal (R5), le Doge (R7). Décisions prises avec le plan :
+- les plots du Grand Canal sont attribués d'office (on garde le sien en restant dans les 40 ; les nouveaux prennent les plus beaux plots libres dans l'ordre du classement ; 7 jours joués ; jamais de PNJ) ;
+- le broglio se fait par programme public (mutateur et décret annoncés par chaque candidat), sans voix vendues contre des ducats ou des parts (vague 5) ;
+- pas de destitution du Doge en cours de mois (règles stables ; dans IDEAS.md) ;
+- le ménage se limite au décret du Signore (retiré, le Signore garde son titre et sa Gloire) et à la renommée en chiffre (retirée du palmarès). Les actes, les missions de la Maison et les privilèges restent.
+
+**La Dynastie (R4).** Chaque mois, un membre de la Maison (prénom choisi parmi trois, `heirNames`) ; à la clôture, un héritier et un trait mérité dans le mois, un seul actif. Les traits ne sont que des options ou des informations : `settings.dynasty.traits[code].effects` est un `strictObject` de six clés (`urgentPreviewMinutes` ≤ 60, `atoutChoices`, `freeDailyRerolls`, `freeRespecs`, `letterPreview`, `signoriaRivals` ≤ 1), rien d'autre ne se lit. Moteur `dynasty.ts` (`traitEffects`, `knownTrait`, `heirNames`, `freeLeft`, `takeFreeRespec`), `join.trait`, `rerollDaily`/`resetSpecialty` avec `free`, branchements dans `specialtyEffects`, `atoutOffer` et `letterView` (`tomorrow`). Le « Fils de condottiere » du plan change sa maîtrise sans Influence une fois par saison : l'ouverture de la Terraferme n'est qu'un affichage du client, sans levier.
+- Fait : moteur, tests `test/dynasty.test.ts` (8), catalogue de Venise (18 prénoms, 6 traits).
+- À faire : serveur, écrans (héritier à la cérémonie, prénom à la région, galerie au profil, portraits SVG).
+
+**Le Doge (R7)** et **le Grand Canal (R5)** : à faire, selon le plan (`doge.ts`, `doges`, `canal_plots`, `GET /api/canal`, feuille du Sénat, Canal à la connexion).
+
 ## Les vagues suivantes (cadre fixé, à détailler en mode plan au moment venu)
 
 - **Vague 2 : R6 le Lustre, R11 la Sera.** Comptes : `accounts.lustre` ; tables `sfide` (semaine, monde, a, b ou fantôme, mesure, résultat) et `week_curves` (courbe horaire des ventes nettes, pour rejouer les fantômes). La Sera, de 20 h à 20 h 30 : l'incanto des galères de la Muda (enchères de 3 minutes à prolongation) remplace le prix croissant de `muda.ts` et les appels d'offres (`tenders.ts`, retirés) ; l'heure de bataille passe à 30 minutes.
@@ -148,3 +163,4 @@ But : une ville se prend en y livrant ou en la tenant sur la Terraferme, sur la 
 - 28 octobre 2026 : écrans des Atouts — `apps/web/src/game/Atouts.tsx` (feuille : trois cartes, gain en lagon ▲, perte en cinabre ▼, celle choisie cerclée de lapis, un seul bouton or « Prendre … » ; Atouts de la saison ; à débloquer et comment), moment qui s'ouvre de lui-même une fois par offre (guide fini, aucune feuille ouverte ; mémorisé `atouts:<offre>`), rond or « Atouts » dans le HUD tant que l'offre est ouverte, textes FR/EN des 16 personnages ; étape e2e « atouts » sur une réponse réécrite.
 - 28 octobre 2026 : PR #51 (vagues 1 et 2) fusionnée dans la branche par défaut, reprise dans `claude/rupture-v3`. Moteur de la Lettre — `packages/engine/src/letters.ts` : `letterOf` (premier épisode du jour dont les drapeaux `needs`/`without` sont remplis ; `last` pour le dernier jour de la saison ; une lettre répondue reste la même), commande `answerLetter { choice }` (coût au puits `letter_cost`, gains `letter_reward` / `letter_gift` sous `maxDucatsPerSeason`, drapeaux, suite programmée), `settleLetters` au tick (suite tirée par `chanceBps`, événement `letter_followup`) ; `state.letters[joueur] = { flags, answered, pending, minted }` ; réglages `settings.letters` ; tests `packages/engine/test/letters.test.ts` (7).
 - 28 octobre 2026 : la Lettre du jour écrite et branchée — un mois de lettres (30 jours, 7 fins), textes FR/EN, PNJ, simulateur, serveur (vue, réponse, avis `letter`, gazette), écran `Letter.tsx` ; les Atouts et la Lettre passent sous la cloche (un rond de plus débordait à 320 px) ; calibration de la vague 3 sur 5 graines, conformes (Lettre : 100 ducats au plus, 43 à 50 en moyenne ; Atouts : diversité hors cible chez les PNJ) ; vague 3 terminée.
+- 28 octobre 2026 : vague 4 planifiée et validée ; moteur de la Dynastie (`dynasty.ts`, traits en liste blanche, `join.trait`, gratuités du trait, branchements), catalogue de Venise, tests.

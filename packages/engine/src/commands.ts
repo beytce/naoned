@@ -22,6 +22,7 @@ import {
   grantStartingVehicles,
   upgradeVehicle,
 } from "./deliveries.js";
+import { knownTrait } from "./dynasty.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { joinFamily, leaveFamily } from "./families.js";
 import { buildFondaco } from "./fondaci.js";
@@ -97,6 +98,8 @@ export type Command =
       patents?: string[];
       /** The Atouts the account unlocked (kept by the server, R3). */
       atoutPool?: string[];
+      /** The trait the heir took from the generation before (kept by the server, R4). */
+      trait?: string;
       /** A house run by the computer (server only: never read from a merchant's request). */
       npc?: boolean;
     }
@@ -120,8 +123,9 @@ export type Command =
   | { type: "rushDelivery"; playerId: PlayerId; deliveryId: string }
   | { type: "buyTroops"; playerId: PlayerId; count: number }
   | { type: "rushWork"; playerId: PlayerId; land: string }
-  | { type: "resetSpecialty"; playerId: PlayerId }
-  | { type: "rerollDaily"; playerId: PlayerId; taskId: string }
+  /** `free`: the trait's free change (R4), no Influence taken by the server. */
+  | { type: "resetSpecialty"; playerId: PlayerId; free?: boolean }
+  | { type: "rerollDaily"; playerId: PlayerId; taskId: string; free?: boolean }
   | {
       type: "startProduction";
       playerId: PlayerId;
@@ -219,6 +223,7 @@ function join(
   patents?: string[],
   npc?: boolean,
   atoutPool?: string[],
+  trait?: string,
 ): void {
   const { ctx } = tx;
   if (tx.s.players[playerId]) fail("player_exists");
@@ -232,6 +237,7 @@ function join(
     lastActionAt: tx.now,
     ...(patents && patents.length > 0 ? { patents: [...patents] } : {}),
     ...(atoutPool && atoutPool.length > 0 ? { atoutPool: [...atoutPool] } : {}),
+    ...(knownTrait(ctx, trait) ? { trait } : {}),
     ...(npc ? { npc: true as const } : {}),
   };
   tx.s.accounts[cashAccount(playerId)] = 0n;
@@ -331,7 +337,7 @@ function apply(tx: Tx, cmd: Command): void {
     return;
   }
   if (cmd.type === "join") {
-    join(tx, cmd.playerId, cmd.region, cmd.patents, cmd.npc, cmd.atoutPool);
+    join(tx, cmd.playerId, cmd.region, cmd.patents, cmd.npc, cmd.atoutPool, cmd.trait);
     // A newcomer finds the day's board of the world at once.
     ensureBoard(tx);
     return;
@@ -420,10 +426,10 @@ function apply(tx: Tx, cmd: Command): void {
       finishWork(tx, cmd.playerId, cmd.land);
       break;
     case "resetSpecialty":
-      resetSpecialty(tx, cmd.playerId);
+      resetSpecialty(tx, cmd.playerId, cmd.free);
       break;
     case "rerollDaily":
-      rerollDaily(tx, cmd.playerId, cmd.taskId);
+      rerollDaily(tx, cmd.playerId, cmd.taskId, cmd.free);
       break;
     case "claimMission":
       claimMission(tx, cmd.playerId, cmd.missionId);

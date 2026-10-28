@@ -1278,6 +1278,31 @@ export const worldSettingsSchema = z.object({
     })
     .optional(),
   /**
+   * The Dynastie (R4, docs/plan-rupture.md): each month a member of the house, named from three
+   * of `names`, and an heir who takes one trait earned in the month. A trait is an option or a
+   * piece of information, never yield: its effects are this short list, nothing else parses —
+   * orders seen earlier, one more Atout card, a free swap of a task a day, a free change of
+   * mastery a season, tomorrow's letter told, the rivals' points at the Signoria. Off when absent.
+   */
+  dynasty: z
+    .object({
+      names: z.array(z.string()).prefault([]),
+      traits: z.record(
+        z.string(),
+        z.object({
+          effects: z.strictObject({
+            urgentPreviewMinutes: qty.max(60).prefault(0),
+            atoutChoices: qty.max(1).prefault(0),
+            freeDailyRerolls: qty.max(1).prefault(0),
+            freeRespecs: qty.max(1).prefault(0),
+            letterPreview: qty.max(1).prefault(0),
+            signoriaRivals: qty.max(1).prefault(0),
+          }),
+        }),
+      ),
+    })
+    .optional(),
+  /**
    * The Letter of the day (R10, docs/plan-rupture.md): each day of the season (`day`, 0 the
    * first; `last` for the season's last day) the first episode whose flags are met (`needs` all
    * set, `without` none) is the merchant's letter, with two choices. A choice pays (`pay`, to the

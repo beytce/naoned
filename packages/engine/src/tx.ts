@@ -36,6 +36,7 @@ export type EngineErrorCode =
   | "atout_not_offered"
   | "unknown_atout"
   | "letters_off"
+  | "no_free_left"
   | "no_letter"
   | "letter_answered"
   | "unknown_choice"

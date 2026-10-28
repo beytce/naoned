@@ -1,4 +1,5 @@
 import { draw } from "./draw.js";
+import { traitEffects } from "./dynasty.js";
 import type { Deniers } from "./money.js";
 import type { WorldSettings } from "./settings.js";
 import {
@@ -174,8 +175,14 @@ export function letterView(ctx: WorldContext, state: WorldState, playerId: Playe
   const left = rules.maxDucatsPerSeason > minted ? rules.maxDucatsPerSeason - minted : 0n;
   const cash = state.accounts[cashAccount(playerId)] ?? 0n;
   const stock = state.inventories[playerId] ?? {};
+  // The man of letters knows who writes tomorrow (R4).
+  const tomorrow =
+    traitEffects(ctx, state, playerId).letterPreview > 0
+      ? (letterOf(ctx, state, playerId, now + DAY_MS)?.sender ?? null)
+      : null;
   return {
     ...letter,
+    tomorrow,
     choices: (episode?.choices ?? []).map((c) => ({
       id: c.id,
       pay: { ducats: c.pay.ducats.toString(), goods: c.pay.goods },

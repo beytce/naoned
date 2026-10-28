@@ -778,6 +778,46 @@ export const venice1450Settings: WorldSettingsInput = {
   },
   // Tasks of the day: three drawn from this pool, the same for everyone; doing all three opens a
   // chest of 10 ducats, 3 more for each day in a row, up to 22 (five days running).
+  /**
+   * The Dynastie (R4): the month's member of the house is named from three of these; the heir
+   * takes one trait earned in the month (the feats are the server's, `dynasty.ts` there).
+   */
+  dynasty: {
+    names: [
+      "Marco",
+      "Pietro",
+      "Zuane",
+      "Alvise",
+      "Nicolò",
+      "Andrea",
+      "Francesco",
+      "Lorenzo",
+      "Domenico",
+      "Bernardo",
+      "Giacomo",
+      "Tommaso",
+      "Isabetta",
+      "Caterina",
+      "Lucia",
+      "Elena",
+      "Marina",
+      "Chiara",
+    ],
+    traits: {
+      // A lot won at the incanto: born on the quays, the urgent orders seen earlier.
+      nato_quai: { effects: { urgentPreviewMinutes: 15 } },
+      // The month's top 10: raised at the Rialto, one more Atout card each week.
+      rialto: { effects: { atoutChoices: 1 } },
+      // Signore of a week: the condottiere's son changes his mastery once without Influence.
+      condottiere: { effects: { freeRespecs: 1 } },
+      // Podestà of a city: the friend of the cities sees the rivals' points at the Signoria.
+      amico_citta: { effects: { signoriaRivals: 1 } },
+      // Seven chests in a row: the notary's son swaps a task of the day for free each day.
+      notaio: { effects: { freeDailyRerolls: 1 } },
+      // Twenty letters answered: the man of letters knows who writes tomorrow.
+      letterato: { effects: { letterPreview: 1 } },
+    },
+  },
   /** The Letter of the day (R10): its month written apart, `venice1450.letters.ts`. */
   letters: venice1450Letters,
   daily: {

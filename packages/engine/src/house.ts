@@ -1,5 +1,6 @@
 import { arriveNow, resolveDeliveries } from "./deliveries.js";
 import { draw } from "./draw.js";
+import { takeFreeRespec } from "./dynasty.js";
 import type { Deniers } from "./money.js";
 import {
   type Delivery,
@@ -263,10 +264,12 @@ export function rushDelivery(tx: Tx, playerId: PlayerId, deliveryId: string): vo
 }
 
 /** The mastery forgotten: the merchant chooses one again. */
-export function resetSpecialty(tx: Tx, playerId: PlayerId): void {
+export function resetSpecialty(tx: Tx, playerId: PlayerId, free?: boolean): void {
   const player = tx.s.players[playerId];
   if (!player) fail("unknown_player");
   if (!player.specialty) fail("no_specialty");
+  // The condottiere's son changes it once a season without Influence (R4).
+  if (free) takeFreeRespec(tx, playerId);
   player.specialty = undefined;
   emit(tx, "specialty_reset", playerId);
 }
