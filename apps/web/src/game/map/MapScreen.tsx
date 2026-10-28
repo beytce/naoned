@@ -869,7 +869,9 @@ export function MapScreen(
         carts={vehicles.length}
         canBuyCart={!!road && vehicles.length < maxCarts}
         notices={notice > 0 ? notice : !!criee}
-        bales={view.tutorial.includes("mission") ? (view.bales?.available ?? 0) : 0}
+        // The trade's rounds (the bales, the Rialto, the Sera) on the trade alone: the conquest keeps
+        // its row short, under its own counters on the right.
+        bales={trade && view.tutorial.includes("mission") ? (view.bales?.available ?? 0) : 0}
         guidePaused={props.guidePaused}
         bottom={!panelUp}
         layer={layer}
@@ -928,12 +930,12 @@ export function MapScreen(
         onProfile={() => props.setSheet("profile")}
         onNotices={() => props.setSheet("notices")}
         onBales={() => props.setSheet("bales")}
-        onRialto={open.rialto ? () => props.goTo("marche") : undefined}
+        onRialto={trade && open.rialto ? () => props.goTo("marche") : undefined}
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
         onRanking={() => props.setSheet("ranking")}
         onRival={props.rival?.sfida ? () => props.setSheet("sfida") : undefined}
-        onSera={view.sera ? () => props.setSheet("sera") : undefined}
+        onSera={trade && view.sera ? () => props.setSheet("sera") : undefined}
         sera={openSeraLots(view)}
         // On the Terraferma, its guide with its diagrams; on the trade, the help is in the profile.
         onHelp={terra ? props.openTerraGuide : undefined}
