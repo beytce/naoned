@@ -462,7 +462,7 @@ export function Coach(props: CoachProps) {
         }
         // Over a window, at the top, from 380 px wide, it leaves the window's cross free on the right (round
         // corners since the Lagune direction: no cut corner left room for it).
-        className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop || underTarget ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-[calc(var(--tabbar)+0.75rem)]"} ${(atTop || underTarget) && props.sheet !== null ? "min-[380px]:max-lg:right-16" : ""}`}
+        className={`fixed inset-x-3 z-[46] mx-auto max-w-md animate-rise ${atTop || underTarget ? "top-[max(0.75rem,env(safe-area-inset-top))]" : "bottom-[calc(1rem+env(safe-area-inset-bottom))] lg:bottom-28"} ${(atTop || underTarget) && props.sheet !== null ? "min-[380px]:max-lg:right-16" : ""}`}
       >
         <LorenzoCard
           bubble
