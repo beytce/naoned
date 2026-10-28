@@ -65,6 +65,25 @@ function thud(ctx: AudioContext, at: number, ms: number, freq: number, gain: num
   src.start(at);
 }
 
+/** A pentatonic scale (C, D, E, G, A, then the octave): any run of steps sounds well. */
+const PENTATONIC = [523.25, 587.33, 659.25, 783.99, 880, 1_046.5, 1_174.66, 1_318.51];
+
+/**
+ * One short note of the scale, quieter than the other sounds: a good landing in the store. Steps
+ * rising one after the other make an arpeggio; a big harvest sounds bigger.
+ */
+export function chime(step: number): void {
+  if (!soundEnabled()) return;
+  try {
+    const ctx = context();
+    if (!ctx) return;
+    const f = PENTATONIC[Math.min(step, PENTATONIC.length - 1)] ?? 523.25;
+    voice(ctx, ctx.currentTime + 0.01, "sine", f, f * 1.005, 260, 0.05);
+  } catch {
+    // Never let a sound break the game.
+  }
+}
+
 /**
  * The game's sounds, all made here (no file to load): a ducat's ring, a harvest's tick, a cart's
  * wheels, a stamp, the notices' bell. Short and quiet; never let one break the game.

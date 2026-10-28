@@ -1,10 +1,11 @@
-import type { ReactNode } from "react";
+import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { CityIcon } from "../../art/cities.js";
 import { Crest, type CrestData } from "../../art/crest.js";
 import { GoodsMark, goodsColour } from "../../art/goods.js";
 import { Coin } from "../../art/icons.js";
 import { fr } from "../../i18n.js";
 import { Slab, clock } from "../../ui.js";
+import { perHour } from "../Dashboard.js";
 import type { GameProps } from "../Game.js";
 import { SignoriaLine, SignoriaRing } from "../Signoria.js";
 import { amount, d } from "../format.js";
@@ -21,6 +22,24 @@ import { Icon } from "./icons.js";
 const ORBIT = 36;
 const RING = 30;
 const RING_C = 2 * Math.PI * RING;
+
+/**
+ * A place opens from its mark on the map and folds back into it: the mark's middle, measured as the
+ * place mounts, is the origin of its zoom (index.css, .orbit-in and .orbit-out). Without a mark in
+ * sight, the middle of the screen.
+ */
+function useOriginAt(from: string | undefined) {
+  const section = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const el = section.current;
+    const mark = from ? document.querySelector(from) : null;
+    if (!el || !mark || mark.getClientRects().length === 0) return;
+    const box = el.getBoundingClientRect();
+    const at = mark.getBoundingClientRect();
+    el.style.transformOrigin = `${at.left + at.width / 2 - box.left}px ${at.top + at.height / 2 - box.top}px`;
+  }, [from]);
+  return section;
+}
 
 interface Star {
   b: BuildingView;
@@ -40,16 +59,21 @@ export function ComptoirOrbit({
   crest,
   onClose,
   leaving,
+  from,
 }: {
   props: GameProps;
   crest: CrestData;
   onClose: () => void;
   /** Closed: it shrinks back into the map for a moment, untouchable (MapScreen). */
   leaving?: boolean;
+  /** Its mark on the map, where it opens from and folds back into. */
+  from?: string;
 }) {
+  const section = useOriginAt(from);
   const { view, now } = props;
   const m = fr.game.map;
   const t = m.orbit;
+  const [hop, setHop] = useState(0);
   const room = view.buildings.length < props.catalog.rules.maxBuildings;
   const places = view.buildings.length + (room ? 1 : 0);
   const at = (i: number) => {
@@ -80,6 +104,7 @@ export function ComptoirOrbit({
   const total = stock.reduce((n, i) => n + i.available, 0);
   return (
     <section
+      ref={section}
       // A place over the map (the guide sees the map covered, never the windows over it), and a
       // place's panel for the layout's checks; no longer once it leaves.
       data-orbit={leaving ? undefined : true}
@@ -109,7 +134,7 @@ export function ComptoirOrbit({
 
       {/* The orbit: a square as large as the room allows, the sun in its middle. */}
       <div className="flex min-h-0 flex-1 items-center justify-center px-2">
-        <div className="relative aspect-square h-full max-h-[26rem] max-w-full">
+        <div className="relative aspect-square h-full max-h-[26rem] max-w-full [container-type:inline-size]">
           <svg
             viewBox="0 0 100 100"
             className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
@@ -124,39 +149,43 @@ export function ComptoirOrbit({
               strokeWidth="0.3"
               strokeDasharray="0.8 1.6"
             />
-            {stars.map((s) => (
-              <line
-                key={s.b.id}
-                x1="50"
-                y1="50"
-                x2={s.x}
-                y2={s.y}
-                stroke="rgb(var(--line))"
-                strokeOpacity="0.6"
-                strokeWidth="0.3"
-              />
-            ))}
-            {links.map((l) => (
-              <path
-                key={`${l.from.b.id}>${l.to.b.id}`}
-                d={`M${l.from.x} ${l.from.y} Q ${50 + (l.from.x + l.to.x - 100) * 0.75} ${50 + (l.from.y + l.to.y - 100) * 0.75} ${l.to.x} ${l.to.y}`}
-                fill="none"
-                stroke={l.colour}
-                strokeOpacity="0.7"
-                strokeWidth="0.6"
-                strokeDasharray="1.2 1.4"
-                className="orbit-flow"
-              />
-            ))}
+            <SunCorona perHour={perHour(props)} />
+            {/* The threads to the sun and the chain appear once the stars are in place. */}
+            <g className="orbit-links">
+              {stars.map((s) => (
+                <line
+                  key={s.b.id}
+                  x1="50"
+                  y1="50"
+                  x2={s.x}
+                  y2={s.y}
+                  stroke="rgb(var(--line))"
+                  strokeOpacity="0.6"
+                  strokeWidth="0.3"
+                />
+              ))}
+              {links.map((l) => (
+                <path
+                  key={`${l.from.b.id}>${l.to.b.id}`}
+                  d={`M${l.from.x} ${l.from.y} Q ${50 + (l.from.x + l.to.x - 100) * 0.75} ${50 + (l.from.y + l.to.y - 100) * 0.75} ${l.to.x} ${l.to.y}`}
+                  fill="none"
+                  stroke={l.colour}
+                  strokeOpacity="0.7"
+                  strokeWidth="0.6"
+                  strokeDasharray="1.2 1.4"
+                  className="orbit-flow"
+                />
+              ))}
+            </g>
           </svg>
-          <span className="absolute left-1/2 top-1/2 flex h-[21%] w-[21%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full shadow-[0_0_48px_rgb(var(--gold)/0.45),inset_-6px_-8px_14px_rgb(0_0_0/0.35)] [background:radial-gradient(circle_at_34%_30%,rgb(var(--gold-soft))_0%,rgb(var(--gold))_45%,rgb(var(--gold-deep))_80%,#5A3D12_100%)]">
+          <span className="sun-breathe absolute left-1/2 top-1/2 flex h-[21%] w-[21%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full shadow-[0_0_48px_rgb(var(--gold)/0.45),inset_-6px_-8px_14px_rgb(0_0_0/0.35)] [background:radial-gradient(circle_at_34%_30%,rgb(var(--gold-soft))_0%,rgb(var(--gold))_45%,rgb(var(--gold-deep))_80%,#5A3D12_100%)]">
             <Crest crest={crest} size={40} />
           </span>
-          {stars.map((s) => (
-            <WorkshopStar key={s.b.id} props={props} star={s} />
+          {stars.map((s, i) => (
+            <WorkshopStar key={s.b.id} props={props} star={s} hop={hop} rank={i} />
           ))}
           {plot && (
-            <Place x={plot.x} y={plot.y}>
+            <Place x={plot.x} y={plot.y} rank={stars.length}>
               <button
                 type="button"
                 onClick={() => props.setSheet("buildHere")}
@@ -180,6 +209,7 @@ export function ComptoirOrbit({
             {stock.map((i) => (
               <li
                 key={i.resource}
+                data-goods-to={i.resource}
                 className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-night-2 pl-1.5 pr-3"
               >
                 <GoodsMark code={i.resource} size={24} />
@@ -208,7 +238,11 @@ export function ComptoirOrbit({
             coach="panel-harvest"
             busy={props.busy}
             shine={ready > 0}
-            onClick={() => harvestAndRestart(props)}
+            onClick={() => {
+              // The ready stars jump at the touch, before the server answers.
+              setHop((n) => n + 1);
+              harvestAndRestart(props);
+            }}
             className="mb-2 w-full"
           >
             {ready > 0 ? Icon.harvest() : Icon.restart()}
@@ -219,7 +253,9 @@ export function ComptoirOrbit({
           <Ghost coach="panel-workshops" onClick={() => props.setSheet("workshops")}>
             {m.buttons.workshops}
           </Ghost>
-          <Ghost onClick={() => props.setSheet("store")}>{t.store}</Ghost>
+          <Ghost fx="store" onClick={() => props.setSheet("store")}>
+            {t.store}
+          </Ghost>
         </div>
       </section>
     </section>
@@ -230,11 +266,14 @@ function Ghost({
   children,
   onClick,
   coach,
-}: { children: ReactNode; onClick: () => void; coach?: string }) {
+  fx,
+}: { children: ReactNode; onClick: () => void; coach?: string; fx?: string }) {
   return (
     <button
       type="button"
       data-coach={coach}
+      // Where the harvest's goods land when the store's chips are not shown (fx.tsx, flyGoods).
+      data-goods-to={fx}
       onClick={onClick}
       className="h-11 rounded-full border border-line text-sm font-semibold text-cream transition hover:border-cream/40 active:scale-[0.97] active:bg-night-3"
     >
@@ -243,18 +282,111 @@ function Ghost({
   );
 }
 
-function Place({ x, y, children }: { x: number; y: number; children: ReactNode }) {
+/** The sun's radius in the orbit's square (21 % of it), and the longest a ray reaches past it. */
+const SUN_R = 10.5;
+const RAY_MAX = 14;
+const RAYS = Array.from({ length: 24 }, (_, i) => ({
+  angle: (i * 360) / 24,
+  long: i % 2 === 0,
+}));
+
+/**
+ * The counter's corona: rays that turn slowly around the sun, as long as the counter earns (its
+ * workshops' margin an hour, on a log scale: a first workshop shows a little light, a busy
+ * counter a crown), with a dotted ring turning the other way. Drawn from the middle, under the
+ * sun's disc: its length is a scale of the whole, which glides when it changes.
+ */
+function SunCorona({ perHour }: { perHour: bigint }) {
+  const ducats = Math.max(0, Number(perHour) / 100);
+  // A scale of display, not of the game: 400 d/h and more is the full crown.
+  const share = Math.min(1, Math.max(0.08, Math.log10(1 + ducats) / Math.log10(401)));
+  const reach = SUN_R + RAY_MAX;
+  const scale = (SUN_R + 0.5 + share * RAY_MAX) / reach;
+  return (
+    <>
+      <defs>
+        <radialGradient id="sun-ray" gradientUnits="userSpaceOnUse" cx="50" cy="50" r={reach}>
+          <stop offset="0.4" stopColor="rgb(var(--gold-soft))" stopOpacity="0.85" />
+          <stop offset="1" stopColor="rgb(var(--gold))" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <g className="sun-corona">
+        <g className="sun-reach" style={{ transform: `scale(${scale.toFixed(3)})` }}>
+          {RAYS.map((r) => {
+            const tip = r.long ? reach : SUN_R + (reach - SUN_R) * 0.55;
+            const a = (r.angle * Math.PI) / 180;
+            const w = (3.2 * Math.PI) / 180;
+            const base = SUN_R * 0.6;
+            const pt = (rad: number, ang: number) =>
+              `${(50 + rad * Math.cos(ang)).toFixed(2)},${(50 + rad * Math.sin(ang)).toFixed(2)}`;
+            return (
+              <polygon
+                key={r.angle}
+                points={`${pt(base, a - w)} ${pt(tip, a)} ${pt(base, a + w)}`}
+                fill="url(#sun-ray)"
+              />
+            );
+          })}
+        </g>
+      </g>
+      <circle
+        cx="50"
+        cy="50"
+        r={SUN_R + 3}
+        fill="none"
+        stroke="rgb(var(--gold-soft) / 0.35)"
+        strokeWidth="0.4"
+        strokeDasharray="0.4 2.2"
+        className="sun-ring"
+      />
+    </>
+  );
+}
+
+/**
+ * Something in orbit at (x, y), in % of the square. As the place opens, it leaves the middle (the
+ * sun) and springs to its place, after those before it (`rank`); the square is a container, its
+ * width the unit of the way back to the middle (index.css, .star-enter).
+ */
+function Place({
+  x,
+  y,
+  rank,
+  children,
+}: { x: number; y: number; rank: number; children: ReactNode }) {
   return (
     <div
       className="absolute flex -translate-x-1/2 -translate-y-8 justify-center"
       style={{ left: `${x}%`, top: `${y}%` }}
     >
-      {children}
+      <div
+        className="star-enter flex justify-center"
+        style={
+          {
+            "--dx": `${(50 - x).toFixed(2)}cqw`,
+            "--dy": `${(50 - y).toFixed(2)}cqw`,
+            animationDelay: `${120 + rank * 45}ms`,
+          } as CSSProperties
+        }
+      >
+        {children}
+      </div>
     </div>
   );
 }
 
-function WorkshopStar({ props, star }: { props: GameProps; star: Star }) {
+function WorkshopStar({
+  props,
+  star,
+  hop,
+  rank,
+}: {
+  props: GameProps;
+  star: Star;
+  /** Harvests touched so far: a ready star jumps at each, after the ones before it. */
+  hop: number;
+  rank: number;
+}) {
   const { b } = star;
   const w = workshopState(props, b);
   const t = fr.game.map.orbit;
@@ -272,7 +404,7 @@ function WorkshopStar({ props, star }: { props: GameProps; star: Star }) {
             : fr.game.map.workshopRow.starved;
   const waiting = w.state === "idle" || w.state === "blocked" || w.state === "still";
   return (
-    <Place x={star.x} y={star.y}>
+    <Place x={star.x} y={star.y} rank={rank}>
       <button
         type="button"
         aria-label={`${name} · ${line}`}
@@ -299,14 +431,23 @@ function WorkshopStar({ props, star }: { props: GameProps; star: Star }) {
                   stroke={w.state === "ready" ? "rgb(var(--lagoon))" : "rgb(var(--info))"}
                   strokeWidth="4"
                   strokeLinecap="round"
+                  className="transition-[stroke-dasharray] duration-700 ease-out"
                   strokeDasharray={`${(RING_C * (w.state === "ready" ? 1 : Math.max(0.03, Math.min(1, w.progress ?? 0)))).toFixed(1)} ${RING_C.toFixed(1)}`}
                 />
               </>
             )}
           </svg>
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-night-2 ring-1 ring-line">
+          <span
+            // Remounted at each harvest touched: the ready ones jump again.
+            key={hop}
+            className={`flex h-12 w-12 items-center justify-center rounded-full bg-night-2 ring-1 ring-line ${hop > 0 && w.state === "ready" ? "star-hop" : ""}`}
+            style={{ animationDelay: `${rank * 70}ms` }}
+          >
             {output ? (
-              <GoodsMark code={output} size={30} />
+              // The harvest's goods fly from here to the store (fx.tsx, flyGoods).
+              <span data-goods-from={output} className="flex">
+                <GoodsMark code={output} size={30} />
+              </span>
             ) : (
               <span className="h-4 w-4 rotate-45 bg-gold-soft" />
             )}
@@ -350,6 +491,7 @@ export function CityOrbit({
   onCargo,
   onSheet,
   leaving,
+  from,
 }: {
   props: GameProps;
   code: string;
@@ -361,7 +503,10 @@ export function CityOrbit({
   onNext: () => void;
   onCargo: () => void;
   onSheet: (s: string) => void;
+  /** Its mark on the map, where it opens from and folds back into. */
+  from?: string;
 }) {
+  const section = useOriginAt(from);
   const { view, now } = props;
   const m = fr.game.map;
   const t = m.orbit;
@@ -415,6 +560,7 @@ export function CityOrbit({
   const cargo = road && orders.length > 0;
   return (
     <section
+      ref={section}
       // A place over the map (the guide sees the map covered), and a place's panel for the checks;
       // no longer once it leaves.
       data-orbit={leaving ? undefined : true}
@@ -456,7 +602,7 @@ export function CityOrbit({
       </header>
 
       <div className="flex min-h-0 flex-1 items-center justify-center px-2">
-        <div className="relative aspect-square h-full max-h-[26rem] max-w-full">
+        <div className="relative aspect-square h-full max-h-[26rem] max-w-full [container-type:inline-size]">
           <svg
             viewBox="0 0 100 100"
             className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
@@ -484,7 +630,7 @@ export function CityOrbit({
             const ok = have(view, o.resource) >= o.quantity;
             const name = props.names.resource(o.resource);
             return (
-              <Place key={o.id} x={p.x} y={p.y}>
+              <Place key={o.id} x={p.x} y={p.y} rank={i}>
                 <button
                   type="button"
                   aria-label={`${o.quantity} ${name} · ${d(total(o))}`}

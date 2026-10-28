@@ -507,27 +507,31 @@
   }
 }
 /* The counter up close: it opens like a zoom on the sun, the chain's dashes run toward who eats. */
+/*
+ * The place opens from its mark on the map (Orbit.tsx sets the transform-origin there): a zoom
+ * from a fifth of its size, the approach of a star.
+ */
 .orbit-in {
-  animation: orbit-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: orbit-in 0.42s var(--ease-out) both;
 }
 @keyframes orbit-in {
   0% {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.2);
   }
   100% {
     opacity: 1;
     transform: none;
   }
 }
-/* Closed, the place shrinks back into the map, faster than it came (MapScreen, useLeaving). */
+/* Closed, the place folds back into its mark, faster than it came (MapScreen, useLeaving). */
 .orbit-out {
   animation: orbit-out var(--t-quick) var(--ease-in) both;
 }
 @keyframes orbit-out {
   to {
     opacity: 0;
-    transform: scale(0.94);
+    transform: scale(0.3);
   }
 }
 /*
@@ -559,6 +563,146 @@
 @keyframes veil-out {
   to {
     opacity: 0;
+  }
+}
+/*
+ * The counter's sun up close (Orbit.tsx, SunCorona): its corona turns slowly, its dotted ring
+ * the other way; its rays' reach glides when what it earns changes; its disc breathes.
+ */
+.sun-corona,
+.sun-reach,
+.sun-ring {
+  transform-box: view-box;
+  transform-origin: 50px 50px;
+}
+.sun-corona {
+  animation: sun-turn 90s linear infinite;
+}
+.sun-ring {
+  animation: sun-turn 140s linear infinite reverse;
+}
+@keyframes sun-turn {
+  to {
+    rotate: 360deg;
+  }
+}
+.sun-reach {
+  transition: transform 1.2s var(--ease-out);
+}
+.sun-breathe {
+  animation: sun-breathe 6s ease-in-out infinite;
+}
+@keyframes sun-breathe {
+  50% {
+    scale: 1.025;
+  }
+}
+/*
+ * A place opening: what turns around it leaves the sun and springs to its place, one after the
+ * other (Orbit.tsx, Place: --dx, --dy the way back to the middle); the threads come after.
+ */
+.star-enter {
+  animation: star-enter 0.5s var(--spring) backwards;
+}
+@keyframes star-enter {
+  from {
+    opacity: 0;
+    transform: translate(var(--dx, 0), var(--dy, 0)) scale(0.3);
+  }
+}
+.orbit-links {
+  animation: orbit-links 0.4s ease-out 0.45s backwards;
+}
+@keyframes orbit-links {
+  from {
+    opacity: 0;
+  }
+}
+/* The harvest touched: a ready star squashes and springs (Orbit.tsx, one after the other). */
+.star-hop {
+  animation: star-hop 0.42s var(--spring) both;
+}
+@keyframes star-hop {
+  35% {
+    transform: scale(1.14, 0.86);
+  }
+  70% {
+    transform: scale(0.94, 1.08);
+  }
+}
+/* Where the harvest's goods land (fx.tsx, flyGoods): a gold beat. */
+.goods-beat {
+  animation: goods-beat 0.9s var(--ease-out);
+}
+@keyframes goods-beat {
+  0% {
+    transform: scale(1.14);
+    box-shadow: 0 0 0 2px rgb(var(--gold-soft));
+  }
+  100% {
+    transform: none;
+    box-shadow: 0 0 0 0 rgb(var(--gold-soft) / 0);
+  }
+}
+/* The purse's wheels (ui.tsx, Odometer): a digit's column rolls to its figure. */
+.odo-digit {
+  position: relative;
+  display: inline-block;
+  clip-path: inset(0);
+}
+.odo-wheel {
+  position: absolute;
+  inset: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.7s var(--ease-out);
+}
+/*
+ * The welcome back (Welcome.tsx): its lines enter one after the other, under the gain running
+ * up; each dot lights up in its colour.
+ */
+.rise-line {
+  animation: rise-line 0.42s var(--ease-out) both;
+  animation-delay: calc(350ms + var(--i, 0) * 60ms);
+}
+.rise-line:nth-child(2) {
+  --i: 1;
+}
+.rise-line:nth-child(3) {
+  --i: 2;
+}
+.rise-line:nth-child(4) {
+  --i: 3;
+}
+.rise-line:nth-child(n + 5) {
+  --i: 4;
+}
+@keyframes rise-line {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.dot-light {
+  animation: dot-light 0.6s var(--spring) both;
+  animation-delay: calc(470ms + var(--i, 0) * 60ms);
+}
+@keyframes dot-light {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.6);
+  }
+}
+/* The purse when the coins land in it. */
+.purse-bump {
+  animation: purse-bump 0.38s var(--spring);
+}
+@keyframes purse-bump {
+  40% {
+    transform: scale(1.28);
   }
 }
 .orbit-flow {
@@ -629,6 +773,26 @@
 }
 .terra-march {
   stroke-dashoffset: var(--march, 0);
+}
+/* A road lit for the cart chosen draws itself to its city, then stays as a faint trace. */
+.route-draw {
+  animation: route-draw 0.6s var(--ease-out) both, route-settle 0.5s ease-out 0.6s both;
+}
+@keyframes route-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes route-settle {
+  from {
+    stroke-opacity: 0.9;
+  }
+  to {
+    stroke-opacity: 0.25;
+  }
 }
 .route-march {
   animation: route-march 0.9s linear infinite;

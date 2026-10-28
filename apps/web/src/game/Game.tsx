@@ -16,7 +16,7 @@ import { Welcome } from "./Welcome.js";
 import { gameApi } from "./api.js";
 import { onBack } from "./back.js";
 import { d } from "./format.js";
-import { FxLayer, flyCoins, pressResult } from "./fx.js";
+import { FxLayer, flyCoins, flyGoods, pressResult, ringAt } from "./fx.js";
 import { harvestSummary } from "./harvest.js";
 import { connectLive } from "./live.js";
 import { MapScreen } from "./map/MapScreen.js";
@@ -225,15 +225,22 @@ export function Game(props: {
     const welcome = v?.road?.deliveries.find((dv) => dv.welcome && dv.outcome === "delivered");
     const first = !!welcome && store.get("firstPaySeen") !== "1";
     if (first) store.set("firstPaySeen", "1");
+    // A delivery paid since the last view: its city lights up and the coins leave from it.
+    const paidBefore = new Set(
+      viewRef.current?.road?.deliveries
+        .filter((dv) => dv.outcome === "delivered")
+        .map((dv) => dv.id),
+    );
+    const arrived = viewRef.current
+      ? v?.road?.deliveries.find((dv) => dv.outcome === "delivered" && !paidBefore.has(dv.id))
+      : undefined;
+    const paidCity = (first && welcome) || arrived;
+    const from = paidCity ? `[data-coach="city-${paidCity.route.split(":")[1]}"]` : undefined;
+    if (arrived && from) ringAt(from);
     if (before && v)
       flyCoins(
         BigInt(v.cash) - BigInt(before),
-        first && welcome
-          ? {
-              note: fr.game.coach.firstPay,
-              from: `[data-coach="city-${welcome.route.split(":")[1]}"]`,
-            }
-          : {},
+        first && welcome ? { note: fr.game.coach.firstPay, from } : { from },
       );
     viewRef.current = v;
     setView(v);
@@ -482,6 +489,7 @@ export function Game(props: {
         const nothing = res.outcome?.kind === "instant" && res.outcome.filled === 0;
         haptic(nothing ? "warn" : REWARDING.has(type) ? "success" : "tap");
         pressResult(!nothing);
+        if (res.outcome?.kind === "harvest") flyGoods(res.outcome.harvested);
         const cue = nothing ? null : soundOf(type);
         if (cue === "coin") sound(cue);
         if (!options.quiet) {
