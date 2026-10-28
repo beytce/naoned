@@ -107,6 +107,24 @@ describe("the rumours of the morning", () => {
   });
 });
 
+describe("the galleys' lot for a single merchant", () => {
+  it("never brings nothing where the usual lot is a unit", () => {
+    for (const seed of ["a", "b", "c", "d", "e", "f", "g", "h"]) {
+      const single = { ...muda, lotPerActivePlayer: { spices: 1 } };
+      const ctx = {
+        ...makeContext({ muda: single } as unknown as Partial<WorldSettingsInput>),
+        seed,
+      };
+      const w = new World(ctx);
+      w.at(HOUR).do({ type: "join", playerId: "a", region: "terraferma" });
+      for (let k = 0; k < 4; k++) {
+        w.at(9 * HOUR + 3 * k * DAY + HOUR).do({ type: "tick" });
+        expect(w.state.muda?.lot.spices ?? 0).toBeGreaterThan(0);
+      }
+    }
+  });
+});
+
 describe("rumours sold between merchants", () => {
   it("sells a copy, paid through the ledger, out of the net sales", () => {
     const w = world();

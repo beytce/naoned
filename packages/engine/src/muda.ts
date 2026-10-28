@@ -79,10 +79,10 @@ export function arriveMuda(tx: Tx): void {
   // The week after an Arsenal at the Silver, the galleys bring more (E2-6).
   const boost = arsenalMudaBps(ctx, tx.s as WorldState, tx.now);
   for (const [resource, perPlayer] of Object.entries(m.lotPerActivePlayer)) {
-    // Each arrival brings more or less than the usual lot (R8: what the rumours speak of).
-    const lot = Math.floor(
-      (((perPlayer * players * (10_000 + boost)) / 10_000) * mudaLotBps(ctx, index)) / 10_000,
-    );
+    // Each arrival brings more or less than the usual lot (R8: what the rumours speak of), never
+    // nothing where the usual lot is a unit or more.
+    const usual = Math.floor((perPlayer * players * (10_000 + boost)) / 10_000);
+    const lot = usual > 0 ? Math.max(1, Math.round((usual * mudaLotBps(ctx, index)) / 10_000)) : 0;
     const left = muda.stock[resource] ?? 0;
     muda.lot[resource] = lot;
     muda.stock[resource] = Math.min(left + arrivals * lot, m.maxStockLots * lot);

@@ -51,6 +51,7 @@
 - **Vague 4 terminée** (28 octobre 2026) : 25 saisons conformes (sans décret et avec chacun des quatre décrets du Doge), écart des ventes payées ≤ 0,4 % (`docs/calibration.md`, « Vague 4 »).
 - **Vague 4 fusionnée** dans la branche par défaut (PR #53, 28 octobre 2026).
 - **Vague 5 en cours** (plan validé le 28 octobre, détail plus bas, « Vague 5 : le plan validé » ; branche `claude/rupture-v5`, partie de la branche par défaut).
+- Fait : le lot variable de la Muda ne tombe plus à zéro dans un petit monde (une épice par actif, un seul actif, tirée sous 100 % : rien n'arrivait ; vu par la CI de la PR #54) ; test « the galleys' lot for a single merchant » dans `test/broglio.test.ts`.
 - **Vague 5 terminée** (28 octobre 2026) : 5 graines conformes, Broglio et parts sans effet mesurable sur la monnaie payée ni la masse monétaire, toutes les parts rachetées le dernier jour, aucune caisse négative (`docs/calibration.md`, « Vague 5 ») ; notes de saison FR et EN, CADRAGE (« Les marchands entre eux »), IDEAS.md (« Plan de rupture, vague 5 »). À fusionner par une PR vers la branche par défaut quand la CI passe.
 - **Étape suivante exacte** : après la fusion de la vague 5, le plan de rupture est fait (R1 à R11 ; R12, le ménage, en partie : le reste est dans IDEAS.md, « Ménage différé de R12 »). La suite se décide avec la mesure de vrais joueurs : les cibles encore manquées (croissance du mois, pain en fin de mois, diversité des Atouts) et les diagnostics du Broglio et des parts.
 - **À savoir** :

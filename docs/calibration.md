@@ -1662,7 +1662,7 @@ Mesuré par `pnpm sim` sur 5 graines, avec les vagues 1 à 4. Nouveau dans l'éc
 
 **Lecture.**
 - Le Broglio ne crée pas de monnaie : une rumeur passe d'une caisse à l'autre, l'espion détruit. Le flux reste faible chez les PNJ (moins d'une rumeur achetée tous les deux jours par marchand) ; c'est un jeu entre humains, à mesurer avec eux.
-- Le lot variable de la Muda ne change pas sa vente (83 à 93 %, dans la cible).
+- Le lot variable de la Muda ne change pas sa vente (83 à 93 %, dans la cible). Corrigé après la mesure : la variation s'applique au lot habituel arrondi, et jamais un lot d'au moins une unité ne tombe à zéro (une épice pour un seul actif, tirée à 80 %, n'apportait rien) ; à 40 actifs ou plus, la différence est d'une unité au plus.
 - Les parts de Maison ne déplacent ni la monnaie payée (−0,6 % en moyenne, dans le bruit des graines) ni la masse monétaire. Les dividendes restent petits (jusqu'à 400 ducats pour toute une saison) : 30 % d'un gain de semaine, au prorata de parts surtout gardées par le fondateur. Le rachat du dernier jour est toujours payé en entier (aucune Maison à court), et le test du moteur montre qu'il ne dépasse jamais la caisse.
 - Sur la graine 5, les assidus finissent derrière les occasionnels en patrimoine médian (96,7 %) mais devant en ventes nettes (142,6 %), qui font le classement : diagnostic à suivre (l'avance des assidus varie beaucoup d'une graine à l'autre depuis la vague 1).
 - Restent sous leur cible, comme après les vagues 1 à 4 : la croissance du mois (1,12 à 1,19 pour 1,20) et le pain (54 à 58 % pour 65 %).
