@@ -150,6 +150,8 @@ describe("the Lustre", () => {
     await world.execute({ type: "tick" });
     const week = weekIndex(world.ctx, now);
     await settleSfide(database.db, world.id, world.ctx, { week, standings: [] }, new Date(now));
+    // Ada ranks first: she is paired, the one left over meets her ghost (never his own).
+    await database.db.update(accounts).set({ lustre: 100 }).where(eq(accounts.id, ada.id));
     now += 7 * DAY;
     const bea = await player("bea@example.org");
     const cid = await player("cid@example.org");
