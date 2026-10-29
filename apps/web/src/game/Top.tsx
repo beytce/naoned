@@ -182,7 +182,9 @@ type View = "board" | "last" | "rules" | "canal";
  * week's podium and the rules one touch away in the same sheet.
  */
 export function RankingSheet(props: GameProps) {
-  const open = props.sheet === "ranking";
+  // « canal »: the forty palaces at once, Venice's moon (refonte UX, lot 5).
+  const open = props.sheet === "ranking" || props.sheet === "canal";
+  const canal = props.sheet === "canal";
   const [view, setView] = useState<View>("board");
   const [opened, setOpened] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>(() =>
@@ -192,7 +194,7 @@ export function RankingSheet(props: GameProps) {
   const [season, setSeason] = useState<RankingRow[] | null>(null);
   useEffect(() => {
     if (!open) return;
-    setView("board");
+    setView(canal ? "canal" : "board");
     gameApi
       .weekRanking()
       .then(setWeek)
@@ -201,7 +203,7 @@ export function RankingSheet(props: GameProps) {
       .ranking()
       .then((r) => setSeason(r.rows))
       .catch(() => setSeason([]));
-  }, [open]);
+  }, [open, canal]);
   const choose = (p: Period) => {
     store.set("topPeriod", p);
     setPeriod(p);

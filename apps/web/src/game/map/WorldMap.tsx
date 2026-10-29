@@ -54,6 +54,8 @@ export type Selection =
   // `peek`: touched on the map, the place's card (refonte UX); without it, the place up close.
   | { kind: "home"; peek?: boolean }
   | { kind: "city"; code: string; peek?: boolean }
+  // Venice up close, the Venise tab's screen (refonte UX, lot 5).
+  | { kind: "venice" }
   | { kind: "cart"; id: string }
   | { kind: "land"; code: string }
   | { kind: "terra"; cell: number };

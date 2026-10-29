@@ -170,6 +170,25 @@ const frDict = {
     map: {
       home: (pseudo: string) => (pseudo ? `Maison ${pseudo}` : "Votre maison"),
       homeLabel: "Mes ateliers",
+      /** Venice, the Venise tab's screen (refonte UX, lot 5): four moons and the Doge. */
+      venice: {
+        title: "Venise",
+        politics: "Politique",
+        rumours: (n: number) => `${n} rumeur${n > 1 ? "s" : ""} ce matin`,
+        politicsCalm: "Rumeurs, élection, villes",
+        market: "Marché",
+        move: (good: string, up: boolean, pct: number) => `${good} ${up ? "▲" : "▼"} ${pct} %`,
+        marketCalm: "Les prix du jour",
+        auctions: "Enchères",
+        lots: (n: number) => `${n} lot${n > 1 ? "s" : ""} ouvert${n > 1 ? "s" : ""}`,
+        tonight: (hour: string) => `ce soir ${hour}`,
+        palaces: "Les 40 palais",
+        rank: (n: number) => `vous : ${n}${n === 1 ? "ᵉʳ" : "ᵉ"}`,
+        palacesCalm: "Le top 40 du mois",
+        doge: (name: string) => `Doge, l'élu du mois : ${name}`,
+        decree: (text: string) => `Son décret : ${text}`,
+        port: (n: number) => `Le port : ${n} commande${n > 1 ? "s" : ""}`,
+      },
       /** The trade's header (refonte UX): the purse leads to the profile. */
       purse: (amount: string) => `Votre profil, ${amount} ducats`,
       dailyRing: (done: number, total: number) => `Tâches du jour : ${done} sur ${total}`,
@@ -396,7 +415,9 @@ const frDict = {
       },
       rialto: {
         kicker: "Le marché des joueurs, à Venise",
-        filters: { all: "Tout", stock: "En stock", rising: "En hausse" },
+        tabs: { goods: "Marchandises", players: "Entre joueurs", shares: "Actions" },
+        priceHead: "Prix à l'unité · votre stock sous le nom",
+        manageShares: "Gérer mes actions",
         offers: (n: number) => (n > 0 ? `Mes offres · ${n}` : "Mes offres"),
         none: "Rien ici pour l'instant.",
       },
@@ -1693,6 +1714,18 @@ const frDict = {
     book: {
       sellers: "Ils vendent",
       buyers: "Ils achètent",
+      /** The page of a good (refonte UX, lot 5, maquette `Negoce`). */
+      sideBuy: "Acheter",
+      sideSell: "Vendre",
+      nothingToSell: (good: string) =>
+        `Vous n'avez pas ${/^[aeiouyéèêàâîôûh]/i.test(good) ? "d'" : "de "}${good.toLowerCase()} à vendre.`,
+      prefilled: (n: number) => `Quantité remplie : les ${n} qui vous manquent.`,
+      summary: (q: number, good: string, total: string) => `${q} ${good.toLowerCase()} → ${total}`,
+      summaryNote: "· taxe comprise · détail ›",
+      buyGold: (q: number, good: string, total: string) =>
+        `Acheter ${q} ${good.toLowerCase()} · ${total}`,
+      sellGold: (q: number, good: string, total: string) =>
+        `Vendre ${q} ${good.toLowerCase()} · +${total}`,
       empty: "Personne",
       fondaco: "Douane",
       you: "Vous",

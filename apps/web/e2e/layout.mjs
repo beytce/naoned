@@ -114,6 +114,8 @@ const WORDS = {
     battleAt: /bataille à 20 h/i,
     teamWon: /vénétie l'emporte/i,
     npc: "PNJ",
+    sharesTab: /^actions$/i,
+    playersTab: /^entre joueurs$/i,
     alone: /^jouer seul$/i,
   },
   en: {
@@ -154,6 +156,8 @@ const WORDS = {
     battleAt: /battle 20:00/i,
     teamWon: /veneto wins/i,
     npc: "NPC",
+    sharesTab: /^shares$/i,
+    playersTab: /^between players$/i,
     alone: /^play alone$/i,
   },
 }[LANG === "en" ? "en" : "fr"];
@@ -505,6 +509,21 @@ async function session(width, height, tag) {
       await page.waitForTimeout(400);
     }
     await closeAll(page);
+    // Venice up close (refonte UX, lot 5): its four moons and the Doge, from its tab.
+    await page.locator('[data-tab="venice"]').click();
+    await page.waitForTimeout(700);
+    await check("venise");
+    // Its Market in three tabs: the goods, then the deals between players.
+    await page.locator("[data-coach=venice-market]").click();
+    await page.waitForTimeout(700);
+    await check("marche");
+    const players = page.getByRole("tab", { name: WORDS.playersTab });
+    if ((await players.count()) > 0) {
+      await players.first().click();
+      await page.waitForTimeout(500);
+      await check("marche-joueurs");
+    }
+    await closeAll(page);
     // The merchant's crest opens their profile (Lagune: titles as a constellation), and the
     // ranking's door its podium once it is open.
     await page.locator('[data-hud="identity"], [data-hud="purse"]').first().click();
@@ -631,7 +650,7 @@ async function transform(page, check) {
     await closeAll(page);
     // The Market, from Venice (its tab, then the Rialto of the place up close).
     await page.locator('[data-tab="venice"]').click();
-    await page.locator("[data-coach=panel-rialto]").click();
+    await page.locator("[data-coach=venice-market]").click();
     await page.locator("[data-coach=row-wheat]").click();
     await page.locator("[data-coach=sheet-buy]").waitFor();
     await page.fill(`input[aria-label=${WORDS.quantity}]`, "10");
@@ -1475,13 +1494,13 @@ async function parts(page, check) {
   await closeAll(page);
   await page.goto(new URL("/?open=shares", page.url()).toString());
   await page.waitForTimeout(1200);
-  const tab = page.getByRole("button", { name: /^parts$/i });
+  // The Market at its « Actions » tab (refonte UX, lot 5).
+  const tab = page.getByRole("tab", { name: WORDS.sharesTab });
   if ((await tab.count()) === 0) {
     await closeAll(page);
     await page.unroute("**/api/game/shares");
     return;
   }
-  await tab.first().click();
   await page.waitForTimeout(900);
   await check("parts");
   await page.keyboard.press("Escape");

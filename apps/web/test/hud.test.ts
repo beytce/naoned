@@ -45,6 +45,12 @@ describe("the tabs at the foot of the screen", () => {
     expect(activeTab({ sheet: "produce:b1", layer: "trade", home: true })).toBe("workshops");
     expect(activeTab({ sheet: "buildHere", layer: "trade" })).toBe("workshops");
     expect(activeTab({ sheet: "upgrade:b1", layer: "trade" })).toBe("workshops");
+    // Venice up close is the Venise tab (refonte UX, lot 5), and the sheets of its four moons.
+    expect(activeTab({ sheet: null, layer: "trade", venice: true })).toBe("venice");
+    expect(activeTab({ sheet: "rialto", layer: "trade" })).toBe("venice");
+    expect(activeTab({ sheet: "trade:wheat", layer: "trade" })).toBe("venice");
+    expect(activeTab({ sheet: "canal", layer: "trade" })).toBe("venice");
+    expect(activeTab({ sheet: "broglio", layer: "trade" })).toBe("venice");
     expect(activeTab({ sheet: "ranking", layer: "trade" })).toBe("ranking");
     expect(activeTab({ sheet: "sfida", layer: "terra" })).toBe("ranking");
     expect(activeTab({ sheet: null, layer: "terra" })).toBe("conquest");

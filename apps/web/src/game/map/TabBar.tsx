@@ -13,21 +13,40 @@ import { Icon } from "./icons.js";
 /** The workshops' own sheets: the list, a workshop, its upgrade, building, the store. */
 const WORKSHOP_SHEETS = new Set(["workshops", "produce", "upgrade", "buildHere", "build", "store"]);
 
-/** The tab a screen belongs to: its sheet first, then « Mes ateliers » up close, then the layer. */
+/** Venice's own sheets: its four moons and what they open (refonte UX, lot 5). */
+const VENICE_SHEETS = new Set([
+  "rialto",
+  "trade",
+  "offers",
+  "deals",
+  "shares",
+  "sera",
+  "broglio",
+  "senate",
+  "canal",
+]);
+
+/** The tab a screen belongs to: its sheet first, then a place up close, then the layer. */
 export function activeTab({
   sheet,
   layer,
   home = false,
+  venice = false,
 }: {
   sheet: string | null;
   layer: "trade" | "campaign" | "terra";
   /** « Mes ateliers » open up close (the Ateliers tab's screen, refonte UX). */
   home?: boolean;
+  /** Venice open up close (the Venise tab's screen). */
+  venice?: boolean;
 }): TabId {
-  if (WORKSHOP_SHEETS.has((sheet ?? "").split(":")[0] ?? "")) return "workshops";
+  const kind = (sheet ?? "").split(":")[0] ?? "";
+  if (WORKSHOP_SHEETS.has(kind)) return "workshops";
+  if (VENICE_SHEETS.has(kind)) return "venice";
   if (sheet === "ranking" || sheet === "sfida") return "ranking";
   if (layer !== "trade") return "conquest";
   if (home) return "workshops";
+  if (venice) return "venice";
   return "map";
 }
 

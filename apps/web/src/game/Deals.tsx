@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
-import { Qty, Rules, Segmented, Sheet, Slab, clock } from "../ui.js";
+import { Qty, Rules, Segmented, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { merchantLabel } from "./Name.js";
-import { SharesTab } from "./Shares.js";
 import { d } from "./format.js";
 import { have } from "./workshops.js";
 
@@ -37,39 +36,33 @@ export function DealsTile(props: GameProps) {
   );
 }
 
-export function DealsSheet(props: GameProps) {
-  const [tab, setTab] = useState<Tab>("commissions");
+/**
+ * The deals between players (orders, colleganze, the bank): the Market's « Entre joueurs » tab
+ * (refonte UX, lot 5); the houses' shares have their own tab there.
+ */
+export function DealsBody(props: GameProps) {
+  const [tab, setTab] = useState<Exclude<Tab, "parts">>("commissions");
   const deals = props.view.deals;
+  if (!deals) return null;
   return (
-    <Sheet
-      open={props.sheet === "deals" && !!deals}
-      onClose={() => props.setSheet(null)}
-      title={t.title}
-    >
-      {deals && (
-        <div className="space-y-4">
-          <Segmented
-            value={tab}
-            onChange={setTab}
-            options={[
-              { value: "commissions", label: t.tabs.commissions },
-              { value: "colleganze", label: t.tabs.colleganze },
-              ...(deals.bank ? [{ value: "bank" as const, label: t.tabs.bank }] : []),
-              ...(props.view.shares ? [{ value: "parts" as const, label: t.tabs.parts }] : []),
-            ]}
-          />
-          {tab === "commissions" ? (
-            <Commissions {...props} />
-          ) : tab === "colleganze" ? (
-            <Colleganze {...props} />
-          ) : tab === "parts" ? (
-            <SharesTab {...props} />
-          ) : (
-            <Bank {...props} />
-          )}
-        </div>
+    <div className="space-y-4">
+      <Segmented
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: "commissions", label: t.tabs.commissions },
+          { value: "colleganze", label: t.tabs.colleganze },
+          ...(deals.bank ? [{ value: "bank" as const, label: t.tabs.bank }] : []),
+        ]}
+      />
+      {tab === "commissions" ? (
+        <Commissions {...props} />
+      ) : tab === "colleganze" ? (
+        <Colleganze {...props} />
+      ) : (
+        <Bank {...props} />
       )}
-    </Sheet>
+    </div>
   );
 }
 
