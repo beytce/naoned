@@ -716,7 +716,7 @@ const frDict = {
       },
       attackPill: (n: number) => `attaque · ${n}`,
       hudRank: (rank: number, glory: number) =>
-        `${rank}${rank === 1 ? "er" : "e"} de la conquête · ${glory} points`,
+        `${rank}${rank === 1 ? "er" : "e"} · ${glory} points`,
       perHour: (n: number) => `+${n}/h`,
       perHourAt: (n: number, from: number) => `☾ +${n}/h à ${from} h`,
       returns: {

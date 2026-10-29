@@ -485,7 +485,8 @@ export function MapHud({
       {bottom && actions && (
         <div
           data-hud="actions"
-          className="pointer-events-none absolute inset-x-3 bottom-[calc(var(--tabbar)+2rem)] z-10 flex justify-end lg:left-auto lg:right-[calc(var(--side,0px)+1.25rem)]"
+          // Over the strip when there is one (the Conquest's, lot 8), where a short screen hides it.
+          className={`pointer-events-none absolute inset-x-3 z-10 flex justify-end lg:left-auto lg:right-[calc(var(--side,0px)+1.25rem)] ${timeline ? "bottom-[calc(var(--tabbar)+5.5rem)] [@media(max-height:639px)]:bottom-[calc(var(--tabbar)+2rem)]" : "bottom-[calc(var(--tabbar)+2rem)]"}`}
         >
           {actions}
         </div>

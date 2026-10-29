@@ -1624,7 +1624,8 @@ function pressing(v: TerraView, now: number): { text: string; tone: string } | n
   if (v.truceEndsAt !== null && now < v.truceEndsAt)
     return { text: t().truceShort(unbroken(clock(v.truceEndsAt - now))), tone: "text-gold" };
   if (!v.open) return { text: `☾ ${t().nightShort}`, tone: "text-lagoon" };
-  if (v.battle) return { text: t().battle.atShort(v.battle.from), tone: "text-cream" };
+  // The battle to come is the strip's once a camp is down (lot 8).
+  if (v.battle && !me) return { text: t().battle.atShort(v.battle.from), tone: "text-cream" };
   return null;
 }
 
@@ -1659,17 +1660,19 @@ function NotePlaque({
     >
       {head && <span className={`text-[0.8125rem] font-semibold ${head.tone}`}>{head.text}</span>}
       {/* One line high: what does not fit wraps out of sight, item by item. */}
-      <span
-        data-hud-meta
-        className="flex h-[18px] flex-wrap justify-end gap-x-1.5 overflow-hidden text-[0.8125rem] leading-[18px] text-cream-dim tabular-nums"
-      >
-        {after.map((x, i) => (
-          <span key={x} className="whitespace-nowrap">
-            {i > 0 ? "· " : ""}
-            {x}
-          </span>
-        ))}
-      </span>
+      {after.length > 0 && (
+        <span
+          data-hud-meta
+          className="flex h-[18px] flex-wrap justify-end gap-x-1.5 overflow-hidden text-[0.8125rem] leading-[18px] text-cream-dim tabular-nums"
+        >
+          {after.map((x, i) => (
+            <span key={x} className="whitespace-nowrap">
+              {i > 0 ? "· " : ""}
+              {x}
+            </span>
+          ))}
+        </span>
+      )}
     </span>
   );
 }
@@ -2157,7 +2160,7 @@ function Returns({ v }: { v: TerraView }) {
   }, [last, folded]);
   if (fresh.length === 0) return null;
   // Above the tabs and the actions at the thumb.
-  const place = "absolute bottom-[calc(var(--tabbar)+5.25rem)] z-10";
+  const place = "absolute bottom-[calc(var(--tabbar)+9.5rem)] z-10";
   if (folded)
     return (
       <button

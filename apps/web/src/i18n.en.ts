@@ -777,8 +777,7 @@ export const en: Dictionary = {
         quick: "Quick game",
       },
       attackPill: (n: number) => `attack · ${n}`,
-      hudRank: (rank: number, glory: number) =>
-        `${ordinal(rank)} in the conquest · ${glory} points`,
+      hudRank: (rank: number, glory: number) => `${ordinal(rank)} · ${glory} points`,
       perHour: (n: number) => `+${n}/h`,
       perHourAt: (n: number, from: number) => `☾ +${n}/h at ${from}:00`,
       returns: {
