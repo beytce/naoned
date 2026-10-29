@@ -39,6 +39,8 @@
   - la Criée devient « Vente rapide ».
 - **Les ligues** : `leagueOf(code)` (`game/Sfida.tsx`) affiche « Ligue 6 » pour Popolano et « Ligue 1 » pour Procuratore ; un test vérifie que l'ordre du dictionnaire suit celui du moteur. Le Lustre devient des « points de ligue ».
 - Les mots de l'e2e (`WORDS` de `layout.mjs`) et les tests serveur qui figent les textes ont suivi.
+- **`.hit` vaut 48 px** (et non 44) : un doigt à 22 px du centre ne tombe plus sur le bord. La zone déborde de 14 px autour d'une puce de 20 px : deux rangées de puces `.hit` gardent 16 px entre elles (Marché : filtres et « Mes offres »).
+- L'e2e passe en `fr` et en `en` aux deux formats (fin du lot). En anglais, la plaque de la Conquête dit « Battle 20:00 » pour tenir sur une ligne.
 
 **Ce que le lot 1 a posé (à réutiliser) :**
 - **`--edge`** (`index.css`, `tailwind` : `edge`) : le contour de ce qui se touche, à 3:1 dans les quatre palettes (test dans `test/theme.test.ts`). `line` reste pour les filets. Les composants communs de `ui.tsx` l'ont déjà ; chaque lot passe ses écrans à `ring-edge` / `border-edge`.
