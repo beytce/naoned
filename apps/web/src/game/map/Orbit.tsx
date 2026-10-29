@@ -696,7 +696,7 @@ export function CityOrbit({
           {t.toMap}
         </button>
         <div className="flex min-w-0 flex-col items-center">
-          <div className="flex min-w-0 items-center">
+          <div className="flex min-w-0 items-center gap-1">
             <button
               type="button"
               aria-label={m.prev}
