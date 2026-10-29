@@ -718,7 +718,7 @@ export function CityOrbit({
             </button>
           </div>
           {count > 1 && (
-            <span aria-hidden="true" className="-mt-1.5 flex gap-1.5">
+            <span aria-hidden="true" className="pointer-events-none -mt-1.5 flex gap-1.5">
               {Array.from({ length: count }, (_, i) => (
                 <span
                   // biome-ignore lint/suspicious/noArrayIndexKey: one dot per city, in order
