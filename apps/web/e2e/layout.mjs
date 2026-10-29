@@ -966,12 +966,17 @@ async function perf(page, open, terra) {
 }
 
 /**
- * The Condotta (E2-5 of the experts): opened from the Terraferma's chip, played alone at once, its
- * match 8 minutes at most, its bar and the match's map laid out like the rest; back to the week.
+ * The Condotta (E2-5 of the experts): opened from the camp's sheet (« Lancer un front », lot 8),
+ * played alone at once, its match 8 minutes at most, its bar and the match's map laid out like
+ * the rest; back to the week.
  */
 async function condotta(page, check) {
-  const chip = page.locator("[data-hud=terra-condotta]");
-  if ((await chip.count()) === 0) throw new Error("no Condotta on the Terraferma's actions");
+  const launch = page.locator('[data-coach="terra-launch"]');
+  if ((await launch.count()) === 0) throw new Error("no « Lancer un front » on the Terraferma");
+  await launch.first().click();
+  await page.waitForTimeout(600);
+  const chip = page.locator("[data-hud=camp-condotta]");
+  if ((await chip.count()) === 0) throw new Error("no Condotta in the camp's sheet");
   await chip.first().click();
   const bar = page.locator("[data-panel=condotta-bar]");
   await bar.waitFor();
@@ -1617,6 +1622,12 @@ async function midWeek(page, door, check, pseudo) {
   await check("terraferme-jeudi");
   await lightHud(page, "terraferme-jeudi");
   await uncluttered(page, "terraferme-jeudi", 30);
+  // The camp's sheet: its advice and the one gold that launches a front (lot 8).
+  await page.locator('[data-coach="terra-launch"]').first().click();
+  await page.waitForTimeout(700);
+  await check("terraferme-camp");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(500);
   // The same on a PC, then back to the phone.
   const phone = page.viewportSize();
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -1681,7 +1692,7 @@ async function lightHud(page, label) {
   if (seen.underlined > 0) throw new Error(`${label}: ${seen.underlined} link(s) underlined`);
   if (seen.cut > 0) throw new Error(`${label}: ${seen.cut} action(s) past the screen's edge`);
   if (seen.actions === null || seen.actions < 0.5)
-    throw new Error(`${label}: the skirmishes and the week not at the thumb`);
+    throw new Error(`${label}: « Lancer un front » not at the thumb`);
 }
 
 /**

@@ -116,6 +116,7 @@ export function MapHud({
   guidePaused,
   bottom,
   layer,
+  meta,
   right,
   actions,
   timeline,
@@ -163,6 +164,8 @@ export function MapHud({
   bottom: boolean;
   /** The map shown. */
   layer: "trade" | "campaign" | "terra";
+  /** Under the name in place of the trade's rank and league (the Conquest's rank and points). */
+  meta?: ReactNode;
   /** Under the purse on the right, in place of the bread and the carts (the families' glory on the campaign). */
   right?: ReactNode;
   /** A layer's actions at the thumb, at the bottom right above the tabs. */
@@ -330,17 +333,21 @@ export function MapHud({
                   data-hud-meta
                   className="flex h-4 flex-wrap gap-x-[0.6em] overflow-hidden font-mono text-xs uppercase leading-4 tracking-[0.1em] text-cream-dim"
                 >
-                  <span className="whitespace-nowrap text-gold">#{rank ?? "—"}</span>
-                  {tier ? (
-                    <span className="whitespace-nowrap text-info">· {leagueOf(tier)}</span>
-                  ) : (
-                    level !== null && (
-                      <span className="whitespace-nowrap">
-                        · {fr.game.merchantLevel.short(level)}
-                      </span>
-                    )
+                  {meta ?? (
+                    <>
+                      <span className="whitespace-nowrap text-gold">#{rank ?? "—"}</span>
+                      {tier ? (
+                        <span className="whitespace-nowrap text-info">· {leagueOf(tier)}</span>
+                      ) : (
+                        level !== null && (
+                          <span className="whitespace-nowrap">
+                            · {fr.game.merchantLevel.short(level)}
+                          </span>
+                        )
+                      )}
+                      <span className="whitespace-nowrap">· {title}</span>
+                    </>
                   )}
-                  <span className="whitespace-nowrap">· {title}</span>
                 </span>
               </span>
             </button>

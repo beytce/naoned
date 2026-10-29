@@ -31,9 +31,9 @@
 **Étape suivante :** le lot 8, plan validé le 29 octobre. Ordre des commits :
 - [x] 1. la ville : les commandes se touchent pour charger la mule libre (règles de `refusal`, charge partagée avec la feuille des cargaisons), l'or « Livrer 2 commandes · +64 d » lance le départ, « Acheter 12 briques » en fantôme, « ‹ Carte », points de pagination et balayage, pilule « vous 22 % · maître : … » (`SignoriaPill`) à la place de `SignoriaLine` ;
 - [x] 2. le guide : « Touchez la ville », « Ouvrir », la commande en orbite, puis « Livrer » ; `tutorial.mjs` passe ;
-- [ ] 3. la Conquête : en-tête (« 4ᵉ de la conquête · 120 points », troupes sur deux lignes), libellés en pilules, grille plus visible ;
-- [ ] 4. « Lancer un front » en or et la feuille du camp (case visée, fonction pure testée) ; Mercenaires, La semaine, Partie rapide en fantômes ;
-- [ ] 5. la frise : 13 px, et celle de la Conquête (front, 20 h, fin de semaine ; fonction pure testée) ;
+- [x] 3. la Conquête : en-tête (« 4ᵉ de la conquête · 120 points » sous le nom, `meta` de `MapHud` ; troupes sur deux lignes), libellés en pilules (« Gritti · 91 », « vous · 121 troupes », « attaque · 25 »), grille plus visible ;
+- [x] 4. « Lancer un front » en or au pouce (`TerraActions`), la feuille du camp (`map/Camp.tsx`, case visée par `bestAim` dans `terraAim.ts`, testée) ; Mercenaires, La semaine, Partie rapide en fantômes ; le panneau de son camp sans or ;
+- [x] 5. la frise : 13 px, et celle de la Conquête (`terraUpcoming` : front, 20 h, fin de semaine ; testée) ; la plaque ne redit plus la fin de semaine une fois le camp posé ;
 - [ ] 6. textes `en`, e2e (`ville-mule`, `terraferme-camp`) et plan.
 
 **Ce que le lot 7 a fait (plan validé le 29 octobre) :**

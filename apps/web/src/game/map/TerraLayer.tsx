@@ -16,7 +16,7 @@ import { Lorenzo } from "../../art/scenes.js";
 import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
 import { locale } from "../../lang.js";
-import { HudChip, LorenzoCard, Segmented, Sheet, Slab, clock } from "../../ui.js";
+import { LorenzoCard, Segmented, Sheet, Slab, clock } from "../../ui.js";
 import type { GameProps } from "../Game.js";
 import { MerchantName, merchantLabel } from "../Name.js";
 import { gameApi } from "../api.js";
@@ -711,7 +711,7 @@ const LABEL_MIN_CELLS = 12;
 /** The holder of a cell (-1: neutral land). */
 const holderAt = (v: TerraView, cell: number) => v.owner[cell] ?? -1;
 
-function holderName(v: TerraView, i: number): string {
+export function holderName(v: TerraView, i: number): string {
   if (i < 0) return t().neutral;
   const h = v.holders[i];
   if (!h) return t().neutral;
@@ -893,8 +893,8 @@ function TerraGround({ v, s, cell }: { v: TerraView; s: TerraShapes; cell: numbe
         d={s.grid}
         fill="none"
         stroke={P.cream}
-        strokeOpacity={aiming ? 0.2 : 0.08}
-        strokeWidth="0.3"
+        strokeOpacity={aiming ? 0.24 : 0.14}
+        strokeWidth="0.35"
       />
       {/* The cells a front can take, along the merchant's border. */}
       {reach && (
@@ -1128,30 +1128,30 @@ function cellsOf(v: TerraView, i: number): number {
   return n;
 }
 
-/** A land's name and troops on the map, at a fixed size (MAP_TEXT), on the map's ink. */
+/**
+ * A land's name and troops on the map (refonte UX lot 8): one pill « Gritti · 91 », edged in its
+ * holder's tone, at a fixed size (MAP_TEXT).
+ */
 function TerraLabel({
   name,
   troops,
+  tone,
   strong,
   big,
-}: { name: string; troops: number; strong: boolean; big: boolean }) {
+}: { name: string; troops: number; tone: string; strong: boolean; big: boolean }) {
   return (
     <span
       data-map-label
-      className={`pointer-events-none flex -translate-x-1/2 -translate-y-1/2 flex-col items-center leading-tight [text-shadow:0_1px_3px_rgb(0_0_0/0.95)] ${strong ? "" : "opacity-70"}`}
+      className={`pointer-events-none flex -translate-x-1/2 -translate-y-1/2 items-center whitespace-nowrap rounded-full px-2 py-0.5 font-display font-bold leading-tight ${strong ? "" : "opacity-70"}`}
+      style={{
+        fontSize: big ? MAP_TEXT.mine : MAP_TEXT.merchant,
+        background: `${MAP_TEXT.halo}E6`,
+        boxShadow: `inset 0 0 0 1px ${tone}`,
+        color: tone,
+      }}
     >
-      <span
-        className="whitespace-nowrap font-display font-bold text-cream"
-        style={{ fontSize: big ? MAP_TEXT.mine : MAP_TEXT.merchant }}
-      >
-        {name}
-      </span>
-      <span
-        className="mt-0.5 rounded-full px-1.5 font-display font-extrabold tabular-nums text-cream"
-        style={{ fontSize: MAP_TEXT.troops, background: `${MAP_TEXT.halo}CC` }}
-      >
-        {troops}
-      </span>
+      {name}
+      <span className="tabular-nums text-cream">&nbsp;· {troops}</span>
     </span>
   );
 }
@@ -1237,6 +1237,7 @@ export function terraMarkers(
         <TerraLabel
           name={holderName(v, l.i)}
           troops={h.troops}
+          tone={s.tone[l.i] ?? P.cream}
           strong={focus !== "other" && focus !== "faint"}
           big={big}
         />
@@ -1306,9 +1307,9 @@ export function terraMarkers(
             type="button"
             data-map-label
             onClick={() => select({ kind: "terra", cell: next?.cell ?? f.aim })}
-            className={`marker-hit relative flex h-6 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full px-2 font-display text-xs font-bold shadow-md shadow-black/40 ${f.mine ? "bg-gold text-ink" : "bg-vermilion text-cream"}`}
+            className={`marker-hit relative flex h-6 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full px-2 font-display text-xs font-bold shadow-md shadow-black/40 ${f.mine ? "bg-vermilion text-ink" : "bg-night text-vermilion ring-1 ring-inset ring-vermilion"}`}
           >
-            ⚔ {f.troops}
+            {f.mine ? t().attackPill(f.troops) : `⚔ ${f.troops}`}
             {next && <span className="font-normal opacity-80">· {wait(next.at, props.now)}</span>}
             {next && (
               // How far toward its next cell, aimed ten seconds ahead and slid there.
@@ -1462,10 +1463,9 @@ function WarCounter({
       {mine ? (
         <span
           data-map-label
-          className="pointer-events-none absolute left-1/2 top-[calc(100%-2px)] -translate-x-1/2 whitespace-nowrap font-display text-xs font-extrabold uppercase tracking-wider text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
+          className="pointer-events-none absolute left-1/2 top-[calc(100%+2px)] -translate-x-1/2 whitespace-nowrap rounded-full bg-night/90 px-2 py-0.5 font-display text-xs font-bold tabular-nums text-info ring-1 ring-inset ring-info"
         >
-          {name}
-          {troops !== null && <span className="tabular-nums text-cream"> · {troops}</span>}
+          {t().youTroops(troops ?? 0)}
         </span>
       ) : (
         troops !== null && (
@@ -1551,8 +1551,13 @@ export function TerraHud({
                   <Icon.troops />
                 </span>
               </span>
-              <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
-                {t().troopsLine(me.troops, me.cap)}
+              <span className="flex flex-col items-start leading-tight">
+                <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
+                  {t().troopsCard.troops(me.troops)}
+                </span>
+                <span className="whitespace-nowrap text-xs tabular-nums text-cream-dim">
+                  {t().troopsCard.of(me.cap)}
+                </span>
               </span>
             </span>
           </button>
@@ -1640,10 +1645,12 @@ function NotePlaque({
   const head = won
     ? { text: t().teamWonShort(regionName(won.team)), tone: "text-gold" }
     : pressing(v, now);
+  // The week's end is the strip's (lot 8), once a camp is down; before, the plaque says it.
   const after = [
     v.rules.team ? t().teamShort(regionName(v.rules.team)) : null,
-    v.closed ? t().closed : t().closesIn(unbroken(clock(v.closesAt - now))),
+    v.closed ? t().closed : v.me ? null : t().closesIn(unbroken(clock(v.closesAt - now))),
   ].filter((x): x is string => x !== null);
+  if (!head && after.length === 0) return null;
   return (
     <span
       data-hud="terra-note"
@@ -1668,64 +1675,31 @@ function NotePlaque({
 }
 
 /**
- * The Terraferma's actions at the thumb, at the bottom right above the tabs: the skirmishes and
- * the week's replay, each a sign and a word, hidden while a panel is up.
+ * The Terraferma's actions at the thumb, above the tabs (refonte UX lot 8): the map's own round
+ * (« Me centrer ») at the left, the one gold action « Lancer un front » at the right, which opens
+ * the camp's sheet; hidden while a panel is up.
  */
 export function TerraActions({
-  v,
-  onSkirmish,
-  onCondotta,
-  onReplay,
+  onLaunch,
   extra,
 }: {
-  v: TerraView;
-  onSkirmish?: () => void;
-  /** The Condotta (E2-5), at any hour. */
-  onCondotta?: () => void;
-  onReplay?: () => void;
+  onLaunch?: () => void;
   /** A round of the map's own (« Me centrer »). */
   extra?: ReactNode;
 }) {
   return (
-    // On a phone the round at the left, the chips at the right; on a computer side by side.
-    <span className="flex w-full items-center justify-between gap-2 lg:w-auto lg:justify-end">
-      <span className="flex">{extra}</span>
-      {/* A larger text (the Profil's size) puts the second chip under the first, never off screen. */}
-      <span className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-        {onSkirmish && (
-          <HudChip
-            hud="terra-skirmish"
-            icon={<Icon.skirmish />}
-            tone={v.open ? "vermilion" : "plain"}
-            label={v.open ? fr.game.skirmish.title : fr.game.skirmish.nightShort(v.openHours.from)}
-            onClick={onSkirmish}
-          >
-            {fr.game.skirmish.title}
-          </HudChip>
-        )}
-        {onCondotta && (
-          <HudChip
-            hud="terra-condotta"
-            icon={<Icon.skirmish />}
-            tone="plain"
-            label={fr.game.condotta.title}
-            onClick={onCondotta}
-          >
-            <span className="max-[359px]:sr-only">{fr.game.condotta.title}</span>
-          </HudChip>
-        )}
-        {onReplay && (
-          <HudChip
-            hud="terra-replay"
-            icon={<Icon.week />}
-            label={fr.game.terraRecord.replay}
-            onClick={onReplay}
-          >
-            {/* Under 360 px its sign alone: the three hold on the narrowest phone. */}
-            <span className="max-[359px]:sr-only">{fr.game.terraRecord.weekShort}</span>
-          </HudChip>
-        )}
-      </span>
+    <span className="flex w-full items-center gap-3 lg:w-auto lg:justify-end">
+      <span className="flex shrink-0">{extra}</span>
+      {onLaunch && (
+        <Slab
+          size="lg"
+          coach="terra-launch"
+          className="pointer-events-auto min-w-0 flex-1 lg:w-72 lg:flex-none"
+          onClick={onLaunch}
+        >
+          {t().camp.open}
+        </Slab>
+      )}
     </span>
   );
 }
@@ -1836,6 +1810,7 @@ export function TerraPanel({
       .filter((f) => f.threat)
       .flatMap((f) => f.takes.filter((x) => x.cell === cell))
       .sort((a, b) => a.at - b.at)[0];
+    // The camp without gold (refonte UX lot 8): the one gold of the Terraferma is « Lancer un front ».
     return (
       <ContextPanel
         title={t().mine.title}
@@ -1850,7 +1825,6 @@ export function TerraPanel({
               <ActionButton
                 icon={Icon.upgrade()}
                 label={t().mine.raise(v.rules.capRaise)}
-                tone="gold"
                 badge={me.raisesLeft > 0 ? d(v.rules.prices.cap) : undefined}
                 disabled={me.raisesLeft === 0 || !!v.closed}
                 onClick={() => act({ type: "terraRaise" })}
@@ -1888,7 +1862,6 @@ export function TerraPanel({
                 <ActionButton
                   icon={Icon.decree()}
                   label={t().mine.decree}
-                  tone={me.programme ? "plain" : "gold"}
                   onClick={() => props.setSheet("terra:decree")}
                 />
               )}

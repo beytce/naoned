@@ -44,7 +44,7 @@ import { RankingSheet } from "../Top.js";
 import { WarehouseSheet } from "../Warehouse.js";
 import { gameApi } from "../api.js";
 import { onBack } from "../back.js";
-import { clockHour, d, loafShare, minutesLabel } from "../format.js";
+import { clockHour, d, hourOf, loafShare, minutesLabel, weekDay } from "../format.js";
 import { harvestAndRestart } from "../harvest.js";
 import {
   BuyVehicleSheet,
@@ -56,7 +56,7 @@ import {
 } from "../roadKit.js";
 import { signoriaOf, useSignoria } from "../signoria.js";
 import { store } from "../store.js";
-import { upcoming } from "../timeline.js";
+import { terraUpcoming, upcoming } from "../timeline.js";
 import type {
   DeliveryOrderView,
   DeliveryView,
@@ -68,6 +68,7 @@ import type {
 import { openTerraEarly, unlocksOf } from "../unlocks.js";
 import { useWide } from "../useWide.js";
 import { have, readyOf } from "../workshops.js";
+import { CampSheet } from "./Camp.js";
 import {
   CampaignHud,
   CampaignOverlay,
@@ -263,6 +264,8 @@ export function MapScreen(
 
   // The dock: what each cart has been loaded with, the departure being confirmed.
   const [loads, setLoads] = useState<Record<string, string[]>>({});
+  // The camp's sheet on the Terraferma, opened by « Lancer un front » (refonte UX lot 8).
+  const [campOpen, setCampOpen] = useState(false);
   const [departure, setDeparture] = useState<{ vehicleId: string; city: string } | null>(null);
   const [cargoCity, setCargoCity] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
@@ -1017,6 +1020,13 @@ export function MapScreen(
         guidePaused={props.guidePaused}
         bottom={!panelUp}
         layer={layer}
+        meta={
+          terra?.me ? (
+            <span className="min-w-0 truncate text-gold">
+              {fr.game.terra.hudRank(terra.me.rank, terra.me.glory)}
+            </span>
+          ) : undefined
+        }
         right={
           campaign ? (
             <CampaignHud f={campaign} now={now} />
@@ -1025,7 +1035,22 @@ export function MapScreen(
           ) : undefined
         }
         timeline={
-          !campaign && !terra ? (
+          // The Conquest's strip of the day (lot 8): its next front, the battle, the week's end.
+          terra?.me && !skirmishOn && !condottaOn ? (
+            <TimeStrip
+              now={now}
+              items={terraUpcoming(
+                {
+                  fronts: terra.fronts,
+                  battle: terra.battle,
+                  closesAt: terra.closesAt,
+                  closed: !!terra.closed,
+                },
+                now,
+                { hour: hourOf, day: weekDay },
+              )}
+            />
+          ) : !campaign && !terra ? (
             <TimeStrip
               now={now}
               items={upcoming(
@@ -1045,7 +1070,6 @@ export function MapScreen(
           // Without a camp, the invitation to set one down is the only call at the foot.
           terra?.me && !skirmishOn && !condottaOn ? (
             <TerraActions
-              v={terra}
               extra={
                 terraFocusList && (
                   <button
@@ -1063,9 +1087,9 @@ export function MapScreen(
                   </button>
                 )
               }
-              onSkirmish={() => setSkirmishOn(true)}
-              onCondotta={() => setCondottaOn(true)}
-              onReplay={week.playing ? undefined : week.start}
+              onLaunch={
+                terra.closed || terra.me.eliminatedAt !== null ? undefined : () => setCampOpen(true)
+              }
             />
           ) : undefined
         }
@@ -1246,6 +1270,17 @@ export function MapScreen(
       <FondacoSheet {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}
       {terraView && <TerraSheets props={props} v={terraView} act={terraAct} />}
+      {terraView && (
+        <CampSheet
+          v={terraView}
+          open={campOpen}
+          onClose={() => setCampOpen(false)}
+          act={terraAct}
+          onCondotta={() => setCondottaOn(true)}
+          onReplay={week.playing ? undefined : week.start}
+          onSkirmish={() => setSkirmishOn(true)}
+        />
+      )}
       <RialtoSheet {...props} />
       <RankingSheet {...props} />
       <PlayerSheet {...props} />

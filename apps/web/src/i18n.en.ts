@@ -364,6 +364,10 @@ export const en: Dictionary = {
         pays: (city: string) => `${city} pays`,
         orders: "Orders",
         back: (vehicle: string) => `${vehicle} back`,
+        front: (hour: string) => `front ${hour}`,
+        battle: (from: number) => `${from}:00: auctions then battle`,
+        battleOn: "battle under way",
+        end: (day: string) => `ends ${day}`,
       },
       tips: {
         cash: {
@@ -751,6 +755,30 @@ export const en: Dictionary = {
       },
       hungryShort: "Your troops are hungry: no bread, no recruits",
       troopsLine: (troops: number, cap: number) => `${troops}/${cap}`,
+      troopsCard: {
+        troops: (n: number) => `${n} troop${n > 1 ? "s" : ""}`,
+        of: (cap: number) => `of ${cap}`,
+      },
+      youTroops: (n: number) => `you · ${n} troop${n > 1 ? "s" : ""}`,
+      camp: {
+        title: (cells: number) => `Your camp · ${cells} cell${cells > 1 ? "s" : ""}`,
+        line: (troops: number, perHour: number) =>
+          `${troops} troop${troops > 1 ? "s" : ""} · +${perHour} troop${perHour > 1 ? "s" : ""} an hour`,
+        bread: (days: number) =>
+          days > 0 ? `food for ${days} day${days > 1 ? "s" : ""}` : "out of food",
+        aim: (name: string, n: number) => `Aim at ${name}'s cell: ${n} troops will do.`,
+        aimFree: (n: number) => `Aim at the free land on your border: ${n} troops will do.`,
+        none: "No cell in your reach yet: wait for recruits.",
+        open: "Launch a front",
+        launch: (n: number) => `Launch a front · ${n} troops`,
+        launched: (n: number) => `Front launched · ${n} troops marching ✓`,
+        mercenaries: "Mercenaries",
+        week: "The week",
+        quick: "Quick game",
+      },
+      attackPill: (n: number) => `attack · ${n}`,
+      hudRank: (rank: number, glory: number) =>
+        `${ordinal(rank)} in the conquest · ${glory} points`,
       perHour: (n: number) => `+${n}/h`,
       perHourAt: (n: number, from: number) => `☾ +${n}/h at ${from}:00`,
       returns: {
