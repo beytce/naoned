@@ -558,10 +558,12 @@ export const en: Dictionary = {
       sort: { reward: "Reward", distance: "Distance", city: "City" },
       soon: (goods: string, city: string, inTime: string) =>
         `Urgent soon: ${goods} for ${city}, in ${inTime}`,
-      kinds: { doge: "Doge", urgent: "Urgent", family: "Family", fondaco: "City warehouse" } as Record<
-        string,
-        string
-      >,
+      kinds: {
+        doge: "Doge",
+        urgent: "Urgent",
+        family: "Family",
+        fondaco: "City warehouse",
+      } as Record<string, string>,
       why: {
         noRoad: "no road",
         otherCity: (city: string) => `for ${city} only`,
@@ -1462,7 +1464,10 @@ export const en: Dictionary = {
           "Fulfil five contracts",
           "The Doge places new orders every day, in « Loading ».",
         ],
-        new_workshop: ["Build a new workshop", "« Build », in your workshops: enlarge your estate."],
+        new_workshop: [
+          "Build a new workshop",
+          "« Build », in your workshops: enlarge your estate.",
+        ],
         three_deliveries: [
           "Deliver three orders",
           "A second cart is waiting for you: two orders at once.",
@@ -2182,8 +2187,7 @@ export const en: Dictionary = {
       investBuy: "Materials are missing: buy them in one go at the Market, just what is needed.",
       invest: (building: string, level: number, times: string) =>
         `At level ${level}, your ${building} will produce ×${times} each batch. Enlarge it!`,
-      ledger:
-        "Here are your goals: every day, new goals and their reward. Collect the first one!",
+      ledger: "Here are your goals: every day, new goals and their reward. Collect the first one!",
       ledgerLater:
         "Under the bell of the Messages, your goals of the day: meet them to earn rewards.",
       investLater:
@@ -2659,7 +2663,8 @@ export const en: Dictionary = {
     },
     shares: {
       title: "Your house on the stock market",
-      notListed: "Put your house on the stock market: 100 shares, at most 49 in other hands. You always keep 51.",
+      notListed:
+        "Put your house on the stock market: 100 shares, at most 49 in other hands. You always keep 51.",
       refusal: (code: string, day: number, days: number) =>
         ({
           too_early: `Listing opens on day ${day + 1} of the month.`,
@@ -2905,10 +2910,7 @@ export const en: Dictionary = {
           "His lands yield more; the cities pay a little less.",
         ],
         sensale: ["The Broker", "More open offers; he takes his share of your sales."],
-        capitano: [
-          "The Galley Captain",
-          "More room at the ships; your deliveries lose a little.",
-        ],
+        capitano: ["The Galley Captain", "More room at the ships; your deliveries lose a little."],
         notaio: ["The Notary", "Your deliveries weigh more for city control; his deeds cost."],
         carrettiere: ["The Carter", "One more cart; they go slower."],
         doganiere: ["The Customs Officer", "Customs buys from you high; fewer open offers."],
@@ -2928,8 +2930,7 @@ export const en: Dictionary = {
         vehicleSpeedBps: (v: number) => `vehicles ${v > 0 ? "+" : "−"}${Math.abs(v) / 100}% speed`,
         extraVehicles: (v: number) =>
           `${v > 0 ? "+" : "−"}${Math.abs(v)} vehicle${Math.abs(v) > 1 ? "s" : ""}`,
-        mudaQuotaBps: (v: number) =>
-          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100}% quota at the ships`,
+        mudaQuotaBps: (v: number) => `${v > 0 ? "+" : "−"}${Math.abs(v) / 100}% quota at the ships`,
         marketMakerQuotaBps: (v: number) =>
           `${v > 0 ? "+" : "−"}${Math.abs(v) / 100}% quota at Customs`,
         taxDiscountBps: (v: number) =>

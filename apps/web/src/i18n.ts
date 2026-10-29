@@ -489,10 +489,12 @@ const frDict = {
       /** An urgent order the carter sees before it opens. */
       soon: (goods: string, city: string, inTime: string) =>
         `Urgente bientôt : ${goods} pour ${city}, dans ${inTime}`,
-      kinds: { doge: "Doge", urgent: "Urgente", family: "Famille", fondaco: "Entrepôt de ville" } as Record<
-        string,
-        string
-      >,
+      kinds: {
+        doge: "Doge",
+        urgent: "Urgente",
+        family: "Famille",
+        fondaco: "Entrepôt de ville",
+      } as Record<string, string>,
       why: {
         noRoad: "pas de route",
         otherCity: (city: string) => `pour ${city} seulement`,
@@ -881,7 +883,8 @@ const frDict = {
       weekEnds: (time: string) => `Fin de la semaine dans ${time}`,
       lastWeek: "Dernière semaine : la famille gagnante remporte la saison.",
       landsHeld: (n: number) => `${n} terre${n > 1 ? "s" : ""}`,
-      night: (time: string) => `Trêve de nuit : marches et points de conquête reprennent dans ${time}.`,
+      night: (time: string) =>
+        `Trêve de nuit : marches et points de conquête reprennent dans ${time}.`,
       milanNext: (time: string) =>
         `Prochaine chevauchée de Milan dans ${time}, contre la famille en tête.`,
       closed: "La Campagne de la saison est terminée.",
@@ -1062,10 +1065,7 @@ const frDict = {
           "C'est ainsi que les ducats entrent dans votre caisse : la ville paie à l'arrivée.",
         ],
         market_buy: ["Acheter au marché", "Le matériau d'un autre métier, pour grandir."],
-        mission: [
-          "Ouvrir mes objectifs",
-          "Chaque jour, de nouveaux objectifs et leur récompense.",
-        ],
+        mission: ["Ouvrir mes objectifs", "Chaque jour, de nouveaux objectifs et leur récompense."],
       } as Record<string, [string, string]>,
       guide: "Me guider",
     },
@@ -2333,7 +2333,8 @@ const frDict = {
         `La commande de guilde de ${city} est remplie par ${n} marchand${n > 1 ? "s" : ""}`,
       conquest: (who: string, cells: number) =>
         `${who} prend ${cells} terre${cells > 1 ? "s" : ""} sur la carte de la Conquête`,
-      milan: (cells: number) => `Milan prend ${cells} terre${cells > 1 ? "s" : ""} sur la carte de la Conquête`,
+      milan: (cells: number) =>
+        `Milan prend ${cells} terre${cells > 1 ? "s" : ""} sur la carte de la Conquête`,
       signore: (who: string, conquest: boolean) =>
         `${who} devient Signore de la Conquête${conquest ? ", par conquête" : ""}`,
       noSignore: "La semaine de la Conquête se clôt sans Signore",
@@ -2430,7 +2431,8 @@ const frDict = {
       off: "Pas de mercenaires dans ce monde.",
       pitch: (minutes: number, share: number) =>
         `Une partie de ${minutes} minutes en coopération, seul ou avec votre guilde, contre trois nations et Milan. Tenez Padoue et ${share} % des terres à la fin.`,
-      noReward: "Ni ducats, ni marchandises, ni points de conquête : un grade, et le niveau suivant.",
+      noReward:
+        "Ni ducats, ni marchandises, ni points de conquête : un grade, et le niveau suivant.",
       level: (level: number, levels: number) => `Niveau ${level} / ${levels}`,
       grade: (name: string) => `Grade : ${name}`,
       alone: "Jouer seul",
@@ -2469,7 +2471,8 @@ const frDict = {
         `Partie amicale : il fallait ${humans} marchands, sans points de conquête. ${later ? "Votre partie classée du jour reste à jouer." : "Votre partie classée, demain."}`,
       friendlyFew: (humans: number) =>
         `Partie amicale tant qu'il n'y a pas ${humans} marchands : sans points de conquête.`,
-      friendlyDone: "Partie amicale : sans points de conquête. Votre prochaine partie classée, demain.",
+      friendlyDone:
+        "Partie amicale : sans points de conquête. Votre prochaine partie classée, demain.",
       friendlyOffMap:
         "Partie amicale : posez votre camp sur la carte de la Conquête de la semaine pour que votre partie du jour soit classée.",
       night: (opensAt: number, closesAt: number) =>
@@ -2550,13 +2553,17 @@ const frDict = {
       title: "Entre joueurs",
       tile: (n: number) =>
         n > 0 ? `${n} affaire${n > 1 ? "s" : ""} à saisir` : "Commandes et colleganze",
-      tabs: { commissions: "Commandes", colleganze: "Investir", bank: "Emprunter", parts: "Actions" },
+      tabs: {
+        commissions: "Commandes",
+        colleganze: "Investir",
+        bank: "Emprunter",
+        parts: "Actions",
+      },
       bank: {
         help: (share: number, pct: number, days: number, late: number) =>
           `Vous pouvez emprunter jusqu'à ${share} % de votre patrimoine, ${days} jours au plus, à ${pct} % par jour. À l'échéance, l'emprunt se rembourse sur votre caisse ; ce qui manque est majoré de ${late} % et prélevé sur vos rentrées. Remboursé plus tôt, vous ne payez que les jours entamés.`,
         none: "Votre patrimoine ne permet pas encore d'emprunter.",
-        current: (owed: string, left: string) =>
-          `Vous devez ${owed} · échéance dans ${left}.`,
+        current: (owed: string, left: string) => `Vous devez ${owed} · échéance dans ${left}.`,
         late: (owed: string) => `En retard : ${owed} restent dus, prélevés sur vos rentrées.`,
         repay: "Rembourser maintenant",
         amount: "Montant emprunté",
@@ -2779,8 +2786,7 @@ const frDict = {
       notTheirs: "Cette Maison n'est pas en bourse.",
       mine: (n: number, amount: string) => `Vous en avez ${n} · ${amount} de dividendes reçus`,
       council: "Vous avez accès à ses comptes",
-      accounts: (cash: string, week: string) =>
-        `Caisse ${cash} · bénéfice de la semaine ${week}`,
+      accounts: (cash: string, week: string) => `Caisse ${cash} · bénéfice de la semaine ${week}`,
       help: (dividend: number, council: number) =>
         `Chaque semaine, les porteurs se partagent ${dividend} % du bénéfice gagné par la Maison, au prorata, dans la limite de sa caisse. Qui détient ${council} actions a accès à ses comptes. Le dernier jour du mois, la Maison rachète toutes les actions au dernier cours, dans la limite de sa caisse. Une action échangée paie la taxe du marché.`,
     },
@@ -2999,7 +3005,10 @@ const frDict = {
           "Le Capitaine de galère",
           "Plus de place aux bateaux ; vos livraisons perdent un peu.",
         ],
-        notaio: ["Le Notaire", "Vos livraisons pèsent plus pour le contrôle des villes ; ses actes coûtent."],
+        notaio: [
+          "Le Notaire",
+          "Vos livraisons pèsent plus pour le contrôle des villes ; ses actes coûtent.",
+        ],
         carrettiere: ["Le Charretier", "Une charrette de plus ; elles vont moins vite."],
         doganiere: ["Le Douanier", "La Douane vous rachète haut ; moins d'offres ouvertes."],
         messaggero: ["Le Messager", "Il annonce les urgences ; ses courses vous coûtent du blé."],
@@ -3008,7 +3017,10 @@ const frDict = {
           "Les villes vous paient mieux ; les bateaux vous boudent.",
         ],
         fornaio: ["Le Boulanger du Doge", "Ses fournées rendent plus ; ses livraisons traînent."],
-        amico_podesta: ["L'Ami du Podestà", "Vos livraisons pèsent bien plus pour le contrôle des villes."],
+        amico_podesta: [
+          "L'Ami du Podestà",
+          "Vos livraisons pèsent bien plus pour le contrôle des villes.",
+        ],
         armatore: [
           "L'Armateur",
           "Deux fois plus de place aux bateaux ; vos ateliers ralentissent.",
