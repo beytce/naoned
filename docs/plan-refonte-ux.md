@@ -20,7 +20,7 @@
 | 0 | Audit, audit de l'expert, maquettes, ce plan | fait (PR #55) | `83af1e2`…`d48bbce` |
 | 1 | Socle : barre à 5 onglets, jetons, `prefers-reduced-motion`, 44 px | fait (PR lot 1) | `2c1c506`…(fin de branche `claude/refonte-ux-lot1`) |
 | 2 | Lexique (i18n `fr` puis `en`, notifications push) | fait (PR lot 2) | `6e69c57`…(fin de branche `claude/refonte-ux-lot2`) |
-| 3 | La carte et la fiche d'un lieu | à faire | |
+| 3 | La carte et la fiche d'un lieu | en cours (branche `claude/refonte-ux-lot3`) | |
 | 4 | Ateliers, production, bâtir, magasin | à faire | |
 | 5 | Venise, Marché, page d'une marchandise | à faire | |
 | 6 | Politique (rumeurs, élection, villes), enchères, 40 palais | à faire | |
@@ -28,7 +28,14 @@
 | 8 | Ville, Conquête | à faire | |
 | 9 | Moments : messages, tâches du jour, calendrier, lettre, Atout, bon retour, fin du mois, entrée | à faire | |
 
-**Étape suivante :** le lot 3 (la carte et la fiche d'un lieu). Il commence, comme les autres, par un passage en mode plan (CLAUDE.md), appuyé sur la section du lot ci-dessous et sur les maquettes qu'elle cite.
+**Étape suivante :** le lot 3, plan validé le 29 octobre. Ordre des commits, cochés au fil de l'eau :
+- [x] 1. `game/map/places.ts` (testé : `test/places.test.ts`) : la phrase, l'or et le fantôme de chaque lieu, deux halos au plus ;
+- [ ] 2. la fiche d'un lieu (`PlaceCard`, `Panel.tsx`) : `Selection` `home`/`city` avec `open` (faux : la fiche ; vrai : l'orbite) ;
+- [ ] 3. « Récolter » et « Livrer » sur place, animés (`flyGoods` vers l'onglet Ateliers) ;
+- [ ] 4. halos par sens (vert d'eau, bleu, violet `--rumour`), noms des lieux en crème ;
+- [ ] 5. en-tête du commerce : bourse, anneau des Tâches du jour, cloche ; véhicules en rond sous la cloche (décision du porteur) ; duel, Marché, identité et d/h quittent l'en-tête ;
+- [ ] 6. guide (`Coach.tsx`) et e2e.
+- Hors lot : le « ? » de rumeur sur une ville (la vue joueur ne porte pas les rumeurs par ville), lot 6.
 
 **Ce que le lot 2 a fixé (lexique) :**
 - Les noms affichés suivent l'audit § 0 dans `i18n.ts`, `i18n.en.ts` et les notifications push (`apps/server/src/notify/texts*.ts`). Les **clés** i18n, le code, la base et les réglages gardent leurs noms historiques (`broglio`, `signoria`, `sera`…).

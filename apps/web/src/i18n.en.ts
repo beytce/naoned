@@ -252,6 +252,33 @@ export const en: Dictionary = {
     map: {
       home: (pseudo: string) => (pseudo ? `House ${pseudo}` : "Your house"),
       homeLabel: "My workshops",
+      /** A place touched on the map: a sentence, one gold action in place, a way in (refonte UX). */
+      place: {
+        ready: (n: number, list: string) => `${n} batch${n > 1 ? "es" : ""} ready: ${list}.`,
+        harvest: (n: number) => `Harvest ${n} batch${n > 1 ? "es" : ""}`,
+        nextAt: (hour: string) => `Next batch at ${hour}.`,
+        idle: "Your workshops wait for work.",
+        restarted: "Restarted",
+        open: "Open",
+        wants: (quantity: number, good: string, pay: string) =>
+          `Wants ${quantity} ${good}, pays ${pay}.`,
+        youHave: "You have them.",
+        missing: (n: number) => `You lack ${n}.`,
+        cartBack: (time: string) => `A vehicle is free in ${time}.`,
+        noCart: "You need a vehicle.",
+        tooHeavy: "Too heavy for your vehicles.",
+        deliver: (quantity: number, good: string, pay: string) =>
+          `Deliver ${quantity} ${good} · +${pay}`,
+        sent: (pay: string) => `On its way · +${pay} on arrival.`,
+        calm: "Nothing to deliver for now.",
+        master: "You are its master.",
+        see: (city: string) => `See ${city}`,
+        venice: "Enter Venice",
+        auction: (n: number, hour: string) =>
+          `Auctions tonight at ${hour}: ${n} lot${n > 1 ? "s" : ""}.`,
+        rumours: (n: number) => `${n} rumour${n > 1 ? "s" : ""} this morning at the Palace.`,
+        and: "and",
+      },
       close: "Close",
       prev: "Previous",
       next: "Next",
