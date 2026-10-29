@@ -1998,6 +1998,24 @@ const frDict = {
         `Dernier sprint : la saison se termine dans ${days} jour${days > 1 ? "s" : ""}.`,
       honoured: (pseudo: string, season: string) => `${pseudo}, Doge de ${season}`,
     },
+    /** The profile (refonte UX, lot 7, maquette `Profil`): one content, then a line a part. */
+    profile: {
+      generation: (given: string, n: number) => `${given}, ${n}${n === 1 ? "ʳᵉ" : "ᵉ"} génération`,
+      league: (league: string) => `${league} de duel`,
+      palace: (rank: number) => `Votre palais : le ${rank}${rank === 1 ? "ᵉʳ" : "ᵉ"} des 40`,
+      toPalaces: (rank: number, gap: string) => `${rank}ᵉ · à ${gap} du 40ᵉ palais`,
+      influence: "Influence",
+      prestige: "Prestige",
+      duel: "Ligue de duel",
+      back: "Profil",
+      lines: {
+        shares: "Mes actions",
+        heritage: "Héritage",
+        guild: "Guilde",
+        record: "Palmarès et chiffres",
+        settings: "Réglages",
+      },
+    },
     palmares: {
       title: "Palmarès",
       renown: "Prestige",

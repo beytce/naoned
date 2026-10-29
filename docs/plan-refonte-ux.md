@@ -32,7 +32,7 @@
 - [x] 1. « (ordinateur) » en texte après le nom (`MerchantName`, `merchantLabel`, `fr.game.npc`), plus de sceau « PNJ » ;
 - [x] 2. le classement en trois onglets (Semaine, Mois, Duel ; `SfidaBody`), « ? » pour les règles ;
 - [x] 3. la fiche d’un joueur en feuille par-dessus (clé `player:<id>:<origine>`), trois lignes, l'or selon l'origine ;
-- [ ] 4. le profil : un contenu, puis Mes actions, Héritage, Guilde, Palmarès, Réglages ;
+- [x] 4. le profil : un contenu, puis Mes actions, Héritage, Guilde, Palmarès, Réglages ;
 - [ ] 5. textes `en`, e2e et guide.
 
 **Ce que le lot 6 a fait (plan validé le 29 octobre) :**

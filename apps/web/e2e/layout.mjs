@@ -533,6 +533,10 @@ async function session(width, height, tag) {
     await page.locator('[data-hud="identity"], [data-hud="purse"]').first().click();
     await page.waitForTimeout(600);
     await check("profil");
+    // Its settings, a line of their own (refonte UX, lot 7).
+    await page.locator('[data-profile="settings"]').click();
+    await page.waitForTimeout(500);
+    await check("profil-reglages");
     await closeAll(page);
     await company(page, check);
     const ranking = page.getByRole("button", { name: WORDS.ranking });
@@ -1073,6 +1077,9 @@ async function company(page, check) {
   );
   await page.locator('[data-hud="identity"], [data-hud="purse"]').first().click();
   await page.waitForTimeout(800);
+  // The guild, a line of the profile (refonte UX, lot 7).
+  await page.locator('[data-profile="guild"]').click();
+  await page.waitForTimeout(600);
   await page.getByText("Compagnie du Lion", { exact: true }).scrollIntoViewIfNeeded();
   await page.waitForTimeout(400);
   await check("compagnie");
