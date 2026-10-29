@@ -76,6 +76,16 @@ function Curves({ mine, theirs, hour }: { mine: string[]; theirs: string[]; hour
 }
 
 /** The six ranks of Venice, the merchant's lit, how far the next. */
+/**
+ * A tier as its league (refonte UX, 28 October 2026): the tiers run from the newcomers' up, so the
+ * highest is League 1 and the first one League 6. `count` is the world's number of tiers, the
+ * dictionary's when unknown (its keys are in the engine's order).
+ */
+export function leagueOf(code: string, count = Object.keys(fr.game.lustre.tiers).length): string {
+  const index = Object.keys(fr.game.lustre.tiers).indexOf(code);
+  return index < 0 ? (fr.game.lustre.tiers[code] ?? code) : fr.game.lustre.league(count - index);
+}
+
 function Ladder({ data }: { data: SfidaView }) {
   return (
     <ol className="flex flex-wrap gap-1.5">
@@ -86,7 +96,8 @@ function Ladder({ data }: { data: SfidaView }) {
             key={tier.code}
             className={`rounded-full px-3 py-1 text-xs ${here ? "bg-info/20 text-info ring-1 ring-inset ring-info" : i < data.tier.index ? "text-cream-dim" : "text-muted ring-1 ring-inset ring-line"}`}
           >
-            {t().tiers[tier.code] ?? tier.code}
+            {t().league(data.tiers.length - i)}
+            <span className="ml-1 text-muted">{t().tiers[tier.code] ?? ""}</span>
             {here && <span className="ml-1 font-display tabular-nums">{data.lustre}</span>}
           </li>
         );
@@ -132,7 +143,11 @@ export function SfidaSheet(props: GameProps) {
       onClose={() => props.setSheet(null)}
       kicker={t().kicker}
       title={t().title}
-      summary={data ? `${t().tiers[data.tier.code] ?? ""} · ${t().lustre(data.lustre)}` : null}
+      summary={
+        data
+          ? `${t().league(data.tiers.length - data.tier.index)} (${t().tiers[data.tier.code] ?? ""}) · ${t().lustre(data.lustre)}`
+          : null
+      }
       docked
     >
       <div className="space-y-4">

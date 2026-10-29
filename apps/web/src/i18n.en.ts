@@ -3001,6 +3001,8 @@ export const en: Dictionary = {
         `Winning brings +${win} Lustre, losing costs ${loss}. Decided at the week's end, on your net sales.`,
       none: "Your Sfida starts at the next tick: come back in a moment.",
       lustre: (n: number) => `${n} Lustre`,
+      /** The league of a tier (refonte UX): the highest is League 1, newcomers start in the last. */
+      league: (n: number) => `League ${n}`,
       next: (n: number, tier: string) => `${tier} at ${n}`,
       ladder: "The ladder",
       challengesIn: "Challenges received",

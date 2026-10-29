@@ -13,7 +13,7 @@ import { LANG } from "./lang.js";
  * after the merchant has played again, so it promises nothing.
  */
 const skirmishInterrupted =
-  "Partie rapide interrompue par une maintenance : aucune Gloire, rien n'est compté ; elle n'a pas consommé votre partie classée du jour.";
+  "Partie rapide interrompue par une maintenance : aucun point de conquête, rien n'est compté ; elle n'a pas consommé votre partie classée du jour.";
 
 const frDict = {
   appName: "Fondaco",
@@ -227,10 +227,10 @@ const frDict = {
       tips: {
         cash: {
           title: "Ducats",
-          text: "La monnaie de la République : elle paie les marchandises, les ateliers, les véhicules et le Palais. Le classement compte vos ventes nettes.",
+          text: "La monnaie de la République : elle paie les marchandises, les ateliers, les véhicules et le Palais. Le classement compte votre bénéfice.",
           purse: "En caisse",
           escrow: "Engagés dans vos offres",
-          turnover: "Ventes nettes de la saison",
+          turnover: "Bénéfice de la saison",
           action: "Aller au Marché",
         },
         influence: {
@@ -347,7 +347,7 @@ const frDict = {
         howTo: "Règles",
         families: "Les quatre familles",
         rankGlory: (rank: number, glory: number) =>
-          `${rank}${rank === 1 ? "re" : "e"} · ${glory} Gloire`,
+          `${rank}${rank === 1 ? "re" : "e"} · ${glory} points`,
         reserveLine: (reserve: number, levy: number, max: number) =>
           `Réserve ⚔ ${reserve} · levée ${levy}/${max}`,
         landLine: (holder: string, garrison: number, defense: number) =>
@@ -608,10 +608,10 @@ const frDict = {
       /** The troops' card on the HUD: the glory and the rank live there. */
       troopsTip: {
         title: "Vos troupes",
-        text: "Vos terres recrutent chaque heure de jour, jusqu'au maximum, tant que vos troupes ont du pain. Chaque case prise rapporte de la Gloire.",
+        text: "Vos terres recrutent chaque heure de jour, jusqu'au maximum, tant que vos troupes ont du pain. Chaque case prise rapporte des points de conquête.",
         troops: "Troupes",
         recruit: "Recrues",
-        glory: "Gloire",
+        glory: "Points de conquête",
         rank: "Rang",
         rankOf: (rank: number, of: number) => `${rank}${rank === 1 ? "er" : "e"} sur ${of}`,
         bread: "Pain des troupes",
@@ -627,7 +627,7 @@ const frDict = {
           `${against} : +${cells} case${cells > 1 ? "s" : ""}, −${spent} troupes, ${back} rentrée${back > 1 ? "s" : ""}`,
         ok: "Compris",
       },
-      glory: (glory: number, rank: number) => `${glory} Gloire · ${rank}${rank === 1 ? "er" : "e"}`,
+      glory: (glory: number, rank: number) => `${glory} points · ${rank}${rank === 1 ? "er" : "e"}`,
       milan: "Milan",
       /** The powers of 1450 held by the computer. */
       nations: {
@@ -819,7 +819,7 @@ const frDict = {
     families: {
       kicker: "Les quatre familles",
       title: "La Campagne de Terraferme",
-      help: "Chaque semaine, les quatre grandes familles se disputent la Terraferme. Levez des troupes, engagez-en contre des ducats, prenez des terres aux milices, à Milan et aux autres familles. De 8 h à 22 h, chaque terre rapporte sa Gloire à qui la tient, heure après heure. La famille la plus glorieuse à la fin de la semaine impose ses décrets la semaine suivante.",
+      help: "Chaque semaine, les quatre grandes familles se disputent la Terraferme. Levez des troupes, engagez-en contre des ducats, prenez des terres aux milices, à Milan et aux autres familles. De 8 h à 22 h, chaque terre rapporte ses points de conquête à qui la tient, heure après heure. La famille qui a le plus de points à la fin de la semaine impose ses décrets la semaine suivante.",
       names: {
         contarini: "Contarini",
         morosini: "Morosini",
@@ -875,13 +875,13 @@ const frDict = {
       confirm: (family: string) => `Rejoindre les ${family} pour la saison`,
       cancel: "Annuler",
       yours: "Votre famille",
-      glory: "Gloire",
+      glory: "Points de conquête",
       gloryHelp:
-        "Gloire de la semaine : la valeur des terres tenues, à chaque heure entre 8 h et 22 h.",
+        "Points de conquête de la semaine : la valeur des terres tenues, à chaque heure entre 8 h et 22 h.",
       weekEnds: (time: string) => `Fin de la semaine dans ${time}`,
       lastWeek: "Dernière semaine : la famille gagnante remporte la saison.",
       landsHeld: (n: number) => `${n} terre${n > 1 ? "s" : ""}`,
-      night: (time: string) => `Trêve de nuit : marches et Gloire reprennent dans ${time}.`,
+      night: (time: string) => `Trêve de nuit : marches et points de conquête reprennent dans ${time}.`,
       milanNext: (time: string) =>
         `Prochaine chevauchée de Milan dans ${time}, contre la famille en tête.`,
       closed: "La Campagne de la saison est terminée.",
@@ -937,7 +937,7 @@ const frDict = {
           dogana: "Péage fortifié",
         } as Record<string, string>,
         defense: (pct: string) => `Garnison comptée +${pct} en défense.`,
-        glory: (pct: string) => `Gloire de la terre +${pct}.`,
+        glory: (pct: string) => `Points de conquête de la terre +${pct}.`,
         staging: "Vos marches partent d'ici plutôt que du fief : elles arrivent plus vite.",
         build: (price: string) => `Bâtir · ${price}`,
         building: (time: string) => `En chantier : prête dans ${time}`,
@@ -1047,7 +1047,7 @@ const frDict = {
       kicker: "Objectif de la saison",
       title: "Les plus grosses ventes de Venise",
       rank: (rank: number, total: number) => `Rang ${rank} / ${total}`,
-      worth: "Vos ventes nettes",
+      worth: "Votre bénéfice",
       nextTitle: (name: string, amount: string) => `${name} à ${amount}`,
       left: "Fin de saison dans",
     },
@@ -1089,7 +1089,7 @@ const frDict = {
         crisis: ["La crise", "Une crise s'annonce pour la République…"],
         lombardy: [
           "La guerre de Lombardie",
-          "Milan lève ses troupes : cette semaine, ses garnisons et ses chevauchées sont moitié plus fortes. Ses forteresses rapportent toujours le plus de Gloire.",
+          "Milan lève ses troupes : cette semaine, ses garnisons et ses chevauchées sont moitié plus fortes. Ses forteresses rapportent toujours le plus de points de conquête.",
         ],
         sensa: [
           "La Sensa",
@@ -1486,7 +1486,7 @@ const frDict = {
         title: (n: number) => `Semaine ${n + 1}`,
         rank: (rank: number, award: string | null) =>
           `Vous terminez ${rank}${rank === 1 ? "er" : "e"}${award ? ` — ${award}` : ""}`,
-        gain: (amount: string) => `${amount} de ventes nettes dans la semaine`,
+        gain: (amount: string) => `${amount} de bénéfice dans la semaine`,
         award: "Le titre entre à votre palmarès, visible de tous les marchands.",
       },
       /** What the fattore sent while away. */
@@ -1498,7 +1498,7 @@ const frDict = {
       terra: {
         title: "Conquête",
         glory: (glory: number, rank: number) =>
-          `${glory} Gloire · ${rank}${rank === 1 ? "er" : "e"}`,
+          `${glory} points · ${rank}${rank === 1 ? "er" : "e"}`,
         gained: (n: number) => `${n} case${n > 1 ? "s" : ""} prise${n > 1 ? "s" : ""}`,
         lost: (n: number) => `${n} case${n > 1 ? "s" : ""} perdue${n > 1 ? "s" : ""}`,
         fronts: (n: number, spent: number) =>
@@ -1593,7 +1593,7 @@ const frDict = {
         brickworks: "Cuit l'argile en briques, qui servent à bâtir et agrandir tous les ateliers.",
         sawmill: "Scie le bois en planches, qui servent à bâtir et agrandir tous les ateliers.",
         palazzo:
-          "Prestige : ne produit rien. Compte à son coût dans le patrimoine, pas dans le classement (ventes nettes).",
+          "Prestige : ne produit rien. Compte à son coût dans le patrimoine, pas dans le classement (bénéfice).",
         sand_pit: "Tire le sable de la lagune, que la verrerie fond en verre.",
         glassworks: "Le verre de Murano : sable et bois fondus, pour la miroiterie.",
         mirrorworks: "Argente le verre en miroirs, que les palais des villes paient cher.",
@@ -1611,7 +1611,7 @@ const frDict = {
     },
     maxBuildings: (n: number) => `Maximum de ${n} bâtiments atteint.`,
     palazzoHelp:
-      "Prestige : ne produit rien. Compte à son coût dans le patrimoine, pas dans le classement (ventes nettes).",
+      "Prestige : ne produit rien. Compte à son coût dans le patrimoine, pas dans le classement (bénéfice).",
     rationsOfLevel: (loaves: number) => `Ouvriers : +${loaves} pains/jour`,
     cost: "Coût",
     missing: "manque",
@@ -1652,7 +1652,7 @@ const frDict = {
           .filter(Boolean)
           .join(" · "),
       /** A purchase lowers the net sales, the ranking. */
-      rankCost: (amount: string) => `Acheter : −${amount} sur vos ventes nettes (classement).`,
+      rankCost: (amount: string) => `Acheter : −${amount} sur votre bénéfice (classement).`,
       rules:
         "Tout de suite : au meilleur prix du carnet. À mon prix : votre offre attend un preneur.",
       more: "En savoir plus",
@@ -1773,15 +1773,15 @@ const frDict = {
         event === "challenged"
           ? `${by ?? "Un marchand"} vous défie pour la semaine prochaine.`
           : ghost
-            ? `Votre Sfida de la semaine : le fantôme de ${by ?? "un marchand"}.`
-            : `Votre Sfida de la semaine : ${by ?? "un marchand"}.`,
+            ? `Votre duel de la semaine : le fantôme de ${by ?? "un marchand"}.`
+            : `Votre duel de la semaine : ${by ?? "un marchand"}.`,
       broglio: (event: string, price: string) =>
         ({
           sold: `Un marchand vous a acheté une rumeur (${price}).`,
           spied: "Un espion rôde autour de vos ateliers : chassez-le aux Rumeurs.",
           chased: "Votre espion a été chassé.",
           unmasked: "Une rumeur reçue au Marché venait d'un menteur, démasqué.",
-          caught: "Votre fausse rumeur est démasquée : vous perdez du Lustre.",
+          caught: "Votre fausse rumeur est démasquée : vous reculez dans votre ligue.",
         })[event] ?? "Du nouveau aux Rumeurs.",
       shares: (event: string, quantity: number, amount: string): string =>
         ({
@@ -1853,7 +1853,7 @@ const frDict = {
           wave: "Vague de commandes que votre stock couvre (si vous êtes absent)",
           streak: "Rappel de série (19 h, coffre du jour fermé)",
           signoria: "Contrôle des villes (maître nommé, ville perdue, rival en tête)",
-          sfida: "Sfida de la semaine et défis reçus",
+          sfida: "Duel de la semaine et défis reçus",
           sera: "Les enchères du soir (19 h 55) et enchères dépassées",
           letter: "Suites de la lettre du jour",
           doge: "Élection du Doge (ouverture, élu)",
@@ -1873,13 +1873,13 @@ const frDict = {
         procurator: "Procurateur",
         senator: "Sénateur",
       } as Record<string, string>,
-      help: "Ventes nettes depuis le début de la semaine (ou depuis votre arrivée), en ducats : ce que vous avez vendu, moins ce que vous avez acheté. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
+      help: "Bénéfice depuis le début de la semaine (ou depuis votre arrivée), en ducats : ce que vous avez vendu, moins ce que vous avez acheté. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
     },
     season: {
       closed: (name: string) => `La saison ${name} est close`,
       rankOf: (rank: number, players: number) =>
         `${rank}${rank === 1 ? "er" : "e"} sur ${players} marchand${players > 1 ? "s" : ""}`,
-      worth: "Ventes nettes de la saison",
+      worth: "Bénéfice de la saison",
       podium: "Le podium",
       rewards: "Vos récompenses",
       milestone: (name: string) => `Palier ${name}`,
@@ -1887,26 +1887,26 @@ const frDict = {
         title: "Objectif de saison",
         now: (name: string, n: number) =>
           n > 0
-            ? `${name} : +${n} de Renommée assurés à la fin du mois.`
-            : `${name} : pas encore de Renommée de palier.`,
+            ? `${name} : +${n} de prestige assurés à la fin du mois.`
+            : `${name} : pas encore de prestige de palier.`,
         next: (name: string, worth: string, n: number) =>
-          `Prochain palier : ${name}, à ${worth} de ventes nettes (+${n} de Renommée), quel que soit votre rang.`,
+          `Prochain palier : ${name}, à ${worth} de bénéfice (+${n} de prestige), quel que soit votre rang.`,
         top: "Plus haut palier atteint : tenez-le jusqu'à la fin du mois.",
       },
-      renownTotal: (name: string) => `Renommée de la Maison : ${name}`,
+      renownTotal: (name: string) => `Prestige de la Maison : ${name}`,
       nothing: "Jouez au moins 7 jours dans une saison pour recevoir l'écusson de participant.",
       start: "Ouvrir mon nouveau comptoir",
       newSeason: (name: string) =>
-        `${name} commence : tout le monde repart de zéro. Votre palmarès et votre Renommée vous suivent.`,
+        `${name} commence : tout le monde repart de zéro. Votre palmarès et votre prestige vous suivent.`,
       lastSprint: (days: number) =>
         `Dernier sprint : la saison se termine dans ${days} jour${days > 1 ? "s" : ""}.`,
       honoured: (pseudo: string, season: string) => `${pseudo}, Doge de ${season}`,
     },
     palmares: {
       title: "Palmarès",
-      renown: "Renommée",
+      renown: "Prestige",
       renownHelp:
-        "La Renommée s'accumule de saison en saison selon votre rang final. Elle donne des titres, jamais d'avance économique : chaque saison, tout le monde repart à égalité.",
+        "Le prestige s'accumule de saison en saison selon votre rang final. Il donne des titres, jamais d'avance économique : chaque saison, tout le monde repart à égalité.",
       nextRenown: (name: string, missing: number) => `${missing} points avant « ${name} »`,
       seasons: "Saisons",
       weeks: "Semaines classées",
@@ -1924,12 +1924,12 @@ const frDict = {
       "PNJ : maisons marchandes tenues par l'ordinateur, avec les mêmes règles que vous. Elles animent le monde tant qu'il compte peu de joueurs et se retirent à mesure que de vrais marchands arrivent.",
     anonymous: "Marchand anonyme",
     rankingHelp:
-      "Ventes nettes = tout ce que vous avez vendu (Marché, Douane, livraisons, commandes du Doge), taxes et péages déduits, moins tout ce que vous avez acheté. Le stock et les bâtiments ne comptent pas.",
+      "Bénéfice = tout ce que vous avez vendu (Marché, Douane, livraisons, commandes du Doge), taxes et péages déduits, moins tout ce que vous avez acheté. Le stock et les bâtiments ne comptent pas.",
 
     house: {
       card: "Votre Maison",
       titleOf: (name: string) => `Titre de la saison : ${name}`,
-      renownOf: (n: number) => `Renommée ${n.toLocaleString("fr-FR")}`,
+      renownOf: (n: number) => `Prestige ${n.toLocaleString("fr-FR")}`,
       influenceOf: (n: number) => `${n.toLocaleString("fr-FR")} d'Influence`,
       more: "Voir le détail",
       less: "Replier",
@@ -1949,7 +1949,7 @@ const frDict = {
       history: "Derniers mouvements",
       none: "Rien encore : accomplissez une mission de la Maison.",
       sources: {
-        commerce: (week: number | null) => `Ventes nettes · semaine ${(week ?? 0) + 1}`,
+        commerce: (week: number | null) => `Bénéfice · semaine ${(week ?? 0) + 1}`,
         campaign: (week: number | null) => `Campagne · semaine ${(week ?? 0) + 1}`,
         season: () => "Fin de saison",
         patent: () => "Privilège",
@@ -2036,12 +2036,12 @@ const frDict = {
     nextTitle: (name: string) => `Prochain titre : ${name}`,
     maxTitle: "Titre suprême atteint",
     netWorth: "Patrimoine",
-    turnover: "Ventes nettes",
+    turnover: "Bénéfice",
     merchantLevel: {
       short: (n: number) => `Niv. ${n}`,
       title: (n: number) => `Niveau ${n}`,
       progress: (xp: string, to: string) => `${xp} / ${to} points`,
-      help: "Votre niveau ne redescend jamais : chaque ducat de ventes nettes vous rapporte un point, saison après saison. Il est honorifique : aucun avantage en jeu, chaque saison tout le monde repart à égalité.",
+      help: "Votre niveau ne redescend jamais : chaque ducat de bénéfice vous rapporte un point, saison après saison. Il est honorifique : aucun avantage en jeu, chaque saison tout le monde repart à égalité.",
     },
     cash: "Caisse",
     stockValue: "Stocks",
@@ -2314,10 +2314,10 @@ const frDict = {
       share: "Partager ma chronique",
       who: (pseudo: string, rank: number, of: number) =>
         `${pseudo}, ${rank}${rank === 1 ? "er" : "e"} marchand sur ${of}`,
-      sales: (amount: string) => `${amount} de ventes nettes`,
+      sales: (amount: string) => `${amount} de bénéfice`,
       title: (name: string) => `Titre : ${name}`,
       award: (name: string) => `Distinction : ${name}`,
-      renown: (name: string) => `Renommée de la Maison : ${name}`,
+      renown: (name: string) => `Prestige de la Maison : ${name}`,
       footer: "Un jeu de commerce honnête · une saison par mois",
     },
     /** The Journal du Rialto, in the notices. */
@@ -2414,12 +2414,12 @@ const frDict = {
         {
           diagram: "win",
           title: "Gagner la semaine",
-          text: "Chaque heure ouverte, chaque terre vous rapporte 1 de Gloire, chaque ville 3. À la fin de la semaine, le premier en Gloire est le Signore : le décret qu'il a choisi s'applique la semaine suivante, pour lui et ses alliés. Tout le classement gagne de l'Influence pour sa Maison.",
+          text: "Chaque heure ouverte, chaque terre vous rapporte 1 point de conquête, chaque ville 3. À la fin de la semaine, le premier en points de conquête est le Signore : le décret qu'il a choisi s'applique la semaine suivante, pour lui et ses alliés. Tout le classement gagne de l'Influence pour sa Maison.",
         },
         {
           diagram: "battle",
           title: "Bataille et parties rapides",
-          text: "Chaque soir de 20 h à 21 h, l'heure de bataille : les fronts avancent dix fois plus vite, venez les mener. De 8 h à 22 h, « Partie rapide » lance une partie en direct d'un quart d'heure contre d'autres marchands et des condottieri. Une seule par jour est classée : la première avec au moins un autre marchand, si votre camp est posé sur la carte de la semaine et qu'elle finit avant 22 h. Votre rang y rapporte de la Gloire à votre semaine ; les autres parties sont amicales, sans Gloire.",
+          text: "Chaque soir de 20 h à 21 h, l'heure de bataille : les fronts avancent dix fois plus vite, venez les mener. De 8 h à 22 h, « Partie rapide » lance une partie en direct d'un quart d'heure contre d'autres marchands et des condottieri. Une seule par jour est classée : la première avec au moins un autre marchand, si votre camp est posé sur la carte de la semaine et qu'elle finit avant 22 h. Votre rang y rapporte des points de conquête à votre semaine ; les autres parties sont amicales, sans points de conquête.",
         },
       ],
     },
@@ -2430,7 +2430,7 @@ const frDict = {
       off: "Pas de mercenaires dans ce monde.",
       pitch: (minutes: number, share: number) =>
         `Une partie de ${minutes} minutes en coopération, seul ou avec votre guilde, contre trois nations et Milan. Tenez Padoue et ${share} % des terres à la fin.`,
-      noReward: "Ni ducats, ni marchandises, ni Gloire : un grade, et le niveau suivant.",
+      noReward: "Ni ducats, ni marchandises, ni points de conquête : un grade, et le niveau suivant.",
       level: (level: number, levels: number) => `Niveau ${level} / ${levels}`,
       grade: (name: string) => `Grade : ${name}`,
       alone: "Jouer seul",
@@ -2461,15 +2461,15 @@ const frDict = {
         `Une partie en direct de ${minutes} minutes, le temps soixante fois plus vite, contre d'autres marchands et des condottieri.`,
       /** The day's ranked match, before it is played. */
       rankedToday: (left: number, humans: number) =>
-        `Partie classée · ${left} aujourd'hui, dès ${humans} marchands : votre rang rapporte de la Gloire à votre semaine.`,
-      ranked: "Partie classée : votre rang rapporte de la Gloire à votre semaine.",
+        `Partie classée · ${left} aujourd'hui, dès ${humans} marchands : votre rang rapporte des points de conquête à votre semaine.`,
+      ranked: "Partie classée : votre rang rapporte des points de conquête à votre semaine.",
       friendlyLate: (hour: number) =>
-        `Partie amicale : elle finirait après ${hour} h, sans Gloire. Votre partie classée, demain.`,
+        `Partie amicale : elle finirait après ${hour} h, sans points de conquête. Votre partie classée, demain.`,
       friendlyAlone: (humans: number, later: boolean) =>
-        `Partie amicale : il fallait ${humans} marchands, sans Gloire. ${later ? "Votre partie classée du jour reste à jouer." : "Votre partie classée, demain."}`,
+        `Partie amicale : il fallait ${humans} marchands, sans points de conquête. ${later ? "Votre partie classée du jour reste à jouer." : "Votre partie classée, demain."}`,
       friendlyFew: (humans: number) =>
-        `Partie amicale tant qu'il n'y a pas ${humans} marchands : sans Gloire.`,
-      friendlyDone: "Partie amicale : sans Gloire. Votre prochaine partie classée, demain.",
+        `Partie amicale tant qu'il n'y a pas ${humans} marchands : sans points de conquête.`,
+      friendlyDone: "Partie amicale : sans points de conquête. Votre prochaine partie classée, demain.",
       friendlyOffMap:
         "Partie amicale : posez votre camp sur la carte de la Conquête de la semaine pour que votre partie du jour soit classée.",
       night: (opensAt: number, closesAt: number) =>
@@ -2490,7 +2490,7 @@ const frDict = {
       watching: "Une partie rapide est en cours : regardez-la, la prochaine s'ouvre ensuite.",
       someone: "Un marchand",
       cells: (n: number) => `${n} terre${n > 1 ? "s" : ""}`,
-      glory: "Gloire",
+      glory: "Points de conquête",
     },
     /** The Terraferma's rating and last weeks, in the profile. */
     terraRecord: {
@@ -2498,7 +2498,7 @@ const frDict = {
       rating: (r: number) => `Cote : ${r}`,
       none: "Aucune semaine jouée pour l'instant.",
       week: (week: number, rank: number, of: number, glory: number, rating: number) =>
-        `Semaine ${week} : ${rank}${rank === 1 ? "er" : "e"} sur ${of} · ${glory} Gloire · cote ${rating}`,
+        `Semaine ${week} : ${rank}${rank === 1 ? "er" : "e"} sur ${of} · ${glory} points · cote ${rating}`,
       replay: "Revoir la semaine",
       weekShort: "Semaine",
       replaying: "Semaine rejouée",
@@ -2582,7 +2582,7 @@ const frDict = {
       locks: (total: string) => `${total} bloqués jusqu'à la livraison.`,
       post: "Passer la commande",
       colleganzaHelp: (max: number) =>
-        `Investir dans un joueur, comme la colleganza vénitienne : avancez des ducats à un autre marchand pour quelques jours. À l'échéance, il vous rend le capital et une part (jusqu'à ${max} %) des ventes nettes qu'il a faites entre-temps — autant que sa caisse le permet. Cette part passe de son classement au vôtre.`,
+        `Investir dans un joueur, comme la colleganza vénitienne : avancez des ducats à un autre marchand pour quelques jours. À l'échéance, il vous rend le capital et une part (jusqu'à ${max} %) du bénéfice qu'il a fait entre-temps — autant que sa caisse le permet. Cette part passe de son classement au vôtre.`,
       noColleganza: "Aucun investissement en cours.",
       offer: (who: string, amount: string, days: number, pct: number) =>
         `${who} avance ${amount} pour ${days} j, contre ${pct} % des gains`,
@@ -2720,15 +2720,15 @@ const frDict = {
     },
     dashboard: {
       title: "Tableau de bord",
-      line: (days: number) => `Ventes nettes · ${days} jours`,
+      line: (days: number) => `Bénéfice · ${days} jours`,
       help: (days: number) =>
-        `Vos ventes nettes comptées comme au classement : ce qui entre pour vos marchandises, moins ce qu'elles vous coûtent. La courbe additionne les ${days} derniers jours.`,
+        `Votre bénéfice compté comme au classement : ce qui entre pour vos marchandises, moins ce qu'elles vous coûtent. La courbe additionne les ${days} derniers jours.`,
       perHour: (amount: string) => `≈ ${amount} de marge par heure`,
       hour: "Par heure",
       today: "Aujourd'hui",
       week: "Cette semaine",
       chart: (days: number) =>
-        `Ventes nettes des ${days} derniers jours : vous, votre rival et le premier de la semaine`,
+        `Bénéfice des ${days} derniers jours : vous, votre rival et le premier de la semaine`,
       who: {
         me: (_: string) => "Vous",
         rival: (name: string) => `Rival : ${name}`,
@@ -2832,12 +2832,12 @@ const frDict = {
       chase: (cost: string) => `Chasser l'espion · ${cost}`,
       forge: "Inventer une rumeur",
       forgeHelp: (n: number) =>
-        `Une fausse rumeur, remise demain à trois marchands. Elle coûte ${n} ✦ ; démasquée, elle vous coûte du Lustre.`,
+        `Une fausse rumeur, remise demain à trois marchands. Elle coûte ${n} ✦ ; démasquée, elle vous fait reculer dans votre ligue.`,
       forgeDone: "Rumeur inventée : elle courra demain.",
       forgeButton: (n: number) => `L'inventer · ${n} ✦`,
       mudaBig: "Beaucoup",
       mudaSmall: "Peu",
-      help: "Chaque matin, deux rumeurs de ce qui vient : un événement de la gazette, le lot du prochain arrivage. Chaque source dit vrai aussi souvent que sa fiabilité ; le nouveau venu n'entend que des sources sûres pendant trois jours. Les rumeurs se vendent au Marché (le vendeur n'est jamais nommé). On peut en inventer une fausse contre de l'Influence : elle court chez trois marchands, et si elle est démasquée, son auteur perd du Lustre. Un espion chez un rival montre une de ses offres chaque jour ; l'espionné le sait, sans savoir qui, et peut le chasser. Aucune rumeur ne nomme un marchand.",
+      help: "Chaque matin, deux rumeurs de ce qui vient : un événement de la gazette, le lot du prochain arrivage. Chaque source dit vrai aussi souvent que sa fiabilité ; le nouveau venu n'entend que des sources sûres pendant trois jours. Les rumeurs se vendent au Marché (le vendeur n'est jamais nommé). On peut en inventer une fausse contre de l'Influence : elle court chez trois marchands, et si elle est démasquée, son auteur recule dans sa ligue. Un espion chez un rival montre une de ses offres chaque jour ; l'espionné le sait, sans savoir qui, et peut le chasser. Aucune rumeur ne nomme un marchand.",
     },
     /** The Grand Canal (R5): forty palaces, given by each month's ranking. */
     canal: {
@@ -2977,7 +2977,7 @@ const frDict = {
         podesta: "Devenez maître d'une ville",
         incanto: "Gagnez un lot aux enchères",
         signore: "Soyez Signore d'une semaine",
-        mercante: "Atteignez le rang de Mercante au Lustre",
+        mercante: "Atteignez la ligue 4 (Mercante)",
       } as Record<string, string>,
       help: "Chaque lundi, trois Atouts sont tirés de votre réserve ; vous en prenez un, pour toute la saison. Chacun donne et retire. La réserve compte douze figures au départ ; quatre de plus se débloquent par un exploit, et restent à votre Maison d'une saison à l'autre.",
       names: {
@@ -3086,9 +3086,9 @@ const frDict = {
         senatore: "Senatore",
         procuratore: "Procuratore",
       } as Record<string, string>,
-      kicker: "La Sfida de la semaine",
-      title: "Sfida",
-      lead: "Sfida :",
+      kicker: "Le duel de la semaine",
+      title: "Duel",
+      lead: "Duel :",
       ghostOf: (name: string) => `fantôme de ${name}`,
       ghostLine: (name: string, week: number) =>
         `Le fantôme de ${name} : sa semaine ${week}, rejouée heure par heure.`,
@@ -3097,11 +3097,13 @@ const frDict = {
       ahead: (gap: string) => `Vous menez de ${gap}`,
       behind: (gap: string) => `Il vous manque ${gap}`,
       even: "À égalité",
-      stake: (n: number) => `Défi : ${n} de Lustre en jeu`,
+      stake: (n: number) => `Défi : ${n} points de ligue en jeu`,
       stakes: (win: number, loss: number) =>
-        `Gagner rapporte +${win} de Lustre, perdre en coûte ${loss}. Décidé à la fin de la semaine, sur vos ventes nettes.`,
-      none: "Votre Sfida commence au prochain passage du tick : revenez dans un instant.",
-      lustre: (n: number) => `${n} de Lustre`,
+        `Gagner rapporte +${win} points de ligue, perdre en coûte ${loss}. Décidé à la fin de la semaine, sur votre bénéfice.`,
+      none: "Votre duel commence au prochain passage du tick : revenez dans un instant.",
+      lustre: (n: number) => `${n} points de ligue`,
+      /** The league of a tier (refonte UX): the highest is League 1, newcomers start in the last. */
+      league: (n: number) => `Ligue ${n}`,
       next: (n: number, tier: string) => `${tier} à ${n}`,
       ladder: "L'échelle",
       challengesIn: "Défis reçus",
@@ -3111,11 +3113,11 @@ const frDict = {
       waiting: "En attente",
       challenge: "Défier",
       challengeTitle: (name: string) => `Défier ${name}`,
-      challengeLine: "Une Sfida la semaine prochaine, s'il accepte.",
+      challengeLine: "Un duel la semaine prochaine, s'il accepte.",
       stakeLabel: "Mise",
       send: "Lancer le défi",
       sent: "Défi lancé : il a jusqu'à lundi pour accepter.",
-      help: "Chaque semaine, vous affrontez un marchand de votre Lustre : celui qui vend le plus (ventes nettes de la semaine) gagne. Sans adversaire libre, vous affrontez le fantôme d'un marchand : une de ses semaines passées, heure par heure. Le Lustre reste d'une saison à l'autre ; au changement de mois, on redescend de deux rangs. Il ne donne aucun avantage en jeu.",
+      help: "Chaque semaine, vous affrontez un marchand de votre ligue : le plus gros bénéfice de la semaine gagne. Sans adversaire libre, vous affrontez le fantôme d'un marchand : une de ses semaines passées, heure par heure. La ligue reste d'une saison à l'autre ; au changement de mois, on redescend de deux ligues. Elle ne donne aucun avantage en jeu.",
       errors: {
         already_asked: "Un défi est déjà lancé pour la semaine prochaine.",
         invalid_stake: "Mise impossible.",
@@ -3158,12 +3160,12 @@ const frDict = {
     seasonNotes: {
       title: "Nouveautés de la saison",
       items: [
-        "Les Rumeurs : chaque matin, deux rumeurs de ce qui vient (un événement, le lot des bateaux), d'une source plus ou moins sûre. On les vend, on en invente de fausses contre de l'Influence (gare au Lustre si l'on est démasqué), on poste un espion chez un rival. La gazette ne dit plus le lendemain ; les bateaux apportent un lot qui varie.",
-        "Les actions : dès le jour 8, votre Maison peut entrer en bourse (100 actions, vous en gardez toujours 51). Les porteurs touchent chaque semaine une part de vos ventes nettes ; 30 actions donnent accès à vos comptes ; tout est racheté le dernier jour du mois.",
+        "Les Rumeurs : chaque matin, deux rumeurs de ce qui vient (un événement, le lot des bateaux), d'une source plus ou moins sûre. On les vend, on en invente de fausses contre de l'Influence (gare à sa ligue si l'on est démasqué), on poste un espion chez un rival. La gazette ne dit plus le lendemain ; les bateaux apportent un lot qui varie.",
+        "Les actions : dès le jour 8, votre Maison peut entrer en bourse (100 actions, vous en gardez toujours 51). Les porteurs touchent chaque semaine une part de votre bénéfice ; 30 actions donnent accès à vos comptes ; tout est racheté le dernier jour du mois.",
         "L'Héritage : chaque mois, un membre de votre Maison tient le comptoir (prénom au choix) ; à la fin du mois, il lègue à son héritier un trait mérité dans le mois (une option ou une information, jamais du rendement), et son portrait entre dans la galerie du profil.",
-        "Le Doge : la dernière semaine du mois, le Sénat élit le Doge du mois suivant parmi les dix premières Maisons ; chacune annonce un programme (une saison et un décret de la République), chacun vote, la voix d'un maître pèse plus. Le décret du Doge vaut pour tous, tout le mois ; celui du Signore de la Conquête disparaît (le Signore garde son titre et sa Gloire).",
+        "Le Doge : la dernière semaine du mois, le Sénat élit le Doge du mois suivant parmi les dix premières Maisons ; chacune annonce un programme (une saison et un décret de la République), chacun vote, la voix d'un maître pèse plus. Le décret du Doge vaut pour tous, tout le mois ; celui du Signore de la Conquête disparaît (le Signore garde son titre et ses points de conquête).",
         "Les 40 palais : quarante palais redonnés chaque mois par le classement ; on garde le sien en restant dans les quarante. Les 40 palais et le Doge du mois accueillent chacun à la connexion.",
-        "La Renommée se dit par ses titres, plus en chiffres.",
+        "Le prestige se dit par ses titres, plus en chiffres.",
         "Les Atouts : chaque lundi, trois figures de Venise vous sont proposées ; vous en prenez une pour la saison. Chacune donne et retire. Quatre de plus se débloquent par un exploit (maître, lot gagné aux enchères, Signore d'une semaine, rang Mercante), gardés de saison en saison.",
         "La Lettre du jour : chaque matin, une lettre de Lorenzo, Faraj, la veuve Contarini, Ser Marin du Sénat ou d'un Milanais sans nom, deux réponses, des suites qui arrivent des jours plus tard, et une fin du mois selon vos choix. Gains petits, plafonnés à 100 ducats par saison.",
         "Nouvelle palette bleue « Lagune », et la carte en bleu (l'ancienne reste dans le Profil).",
@@ -3176,7 +3178,7 @@ const frDict = {
         "Conquête : l'heure de bataille, chaque soir de 20 h à 21 h, les fronts avancent dix fois plus vite.",
         "Conquête : les ports, sur les rives de la lagune, du lac de Garde et de l'Adriatique ; les barques débarquent sur une autre rive, les galères gardent la vôtre.",
         "Le guide de la Conquête, avec ses schémas, dans l'Aide et sur la carte de la Conquête (« ? Guide »).",
-        "Conquête : les parties rapides, des parties en direct d'un quart d'heure, de 8 h à 22 h. Une seule par jour est classée : la première avec au moins un autre marchand, si votre camp est posé sur la carte de la semaine et qu'elle finit avant 22 h ; son rang rapporte 45, 30, 20 ou 10 de Gloire à la semaine. Les autres parties sont amicales, sans Gloire. Une partie interrompue par une maintenance ne rapporte rien et ne compte pas : elle ne consomme pas votre partie classée du jour.",
+        "Conquête : les parties rapides, des parties en direct d'un quart d'heure, de 8 h à 22 h. Une seule par jour est classée : la première avec au moins un autre marchand, si votre camp est posé sur la carte de la semaine et qu'elle finit avant 22 h ; son rang rapporte 45, 30, 20 ou 10 points de conquête à la semaine. Les autres parties sont amicales, sans points de conquête. Une partie interrompue par une maintenance ne rapporte rien et ne compte pas : elle ne consomme pas votre partie classée du jour.",
         "Conquête : une semaine par mois en équipes, les marchands d'une même région ensemble.",
         "Conquête : trois convocations à la partie rapide par jour, à 12 h 30, 18 h 30 et 21 h 15 ; la salle s'ouvre dix minutes avant et la partie part à l'heure. Une alerte un quart d'heure avant, si vous la demandez dans le Profil.",
         "Conquête : signaux sur la carte, cible désignée aux alliés, ducats entre alliés et embargo depuis les villes que vous tenez.",
@@ -3202,7 +3204,7 @@ const frDict = {
         "Conquête : le Signore est toujours un marchand ; les maisons de l'ordinateur restent au classement de la semaine mais ne reçoivent ni palier ni Influence. Une maison qui se retire rend ses terres.",
         "Missions de la Maison : celles de l'ancienne campagne sont remplacées par des missions de la Conquête, deux au plus par tableau.",
         "Pass Négociant : plus aucun avantage de jeu (ni quota à la Douane, ni offre ouverte, ni produits frais en plus, ni commande du Doge échangée, ni alerte de bonne affaire) ; il ne donne que de l'information à lire et du cosmétique.",
-        "Conquête : les Mercenaires, 8 minutes en coopération, seul ou avec sa guilde, contre trois nations et Milan. Tenez Padoue et 35 % des terres pour ouvrir le niveau suivant (12 niveaux). Ni ducats, ni marchandises, ni Gloire : un grade, de Condottiere di ventura à Capitano generale.",
+        "Conquête : les Mercenaires, 8 minutes en coopération, seul ou avec sa guilde, contre trois nations et Milan. Tenez Padoue et 35 % des terres pour ouvrir le niveau suivant (12 niveaux). Ni ducats, ni marchandises, ni points de conquête : un grade, de Condottiere di ventura à Capitano generale.",
         "Commerce : les ouvriers mangent au lot, plus à la journée — un demi-pain par lot et par niveau dans un atelier qui transforme, un quart pour une matière première. Sans pain, l'atelier travaille deux fois moins vite, jamais arrêté.",
         "Tâches du jour : un jour manqué par semaine ne casse plus la série du coffre ; un rappel à 19 h si votre série atteint 3 jours et que le coffre est encore fermé.",
         "Commerce : les entrepôts de ville remplacent les anciens entrepôts. Un entrepôt dans 3 villes au plus, niveaux 1 à 3, 6 niveaux en tout : chaque niveau vous donne chaque jour une commande de la ville, à vous seul, à 95 % du prix du tableau commun. Le tableau commun passe à 3 commandes par marchand actif.",
@@ -3212,7 +3214,7 @@ const frDict = {
         "Chaque mois, à partir de décembre, un mutateur change quelques prix ou forces pour le mois ; il est annoncé ici le 24 du mois précédent.",
         "La guerre mange les marchandises : sur la carte de la Conquête, vos troupes mangent du pain chaque jour ; sans pain, vous ne recrutez plus. « Max » demande aussi du pain, le fort des briques, les remparts des briques et des planches, le port des planches, la bombarde du bois et des planches.",
         "Le contrôle des villes remplace les fournisseurs officiels et l'embargo : chaque ducat livré dans une ville, et chaque heure où vous la tenez sur la carte de la Conquête, compte sur sa jauge. Chaque nuit à minuit, le premier devient maître (3 villes au plus) : il prend 3 % des livraisons des autres vers sa ville et prend ses commandes une demi-heure avant tout le monde.",
-        "Le Lustre : chaque semaine, une Sfida contre un marchand de votre rang (ou le fantôme d'une de ses semaines) ; qui vend le plus gagne du Lustre. Six rangs, de Popolano à Procuratore, gardés d'une saison à l'autre (deux de moins au changement de mois). On peut défier un marchand depuis son palmarès.",
+        "Les ligues : chaque semaine, un duel contre un marchand de votre ligue (ou le fantôme d'une de ses semaines) ; le plus gros bénéfice gagne des points de ligue. Six ligues, de la 6 (Popolano) à la 1 (Procuratore), gardées d'une saison à l'autre (deux de moins au changement de mois). On peut défier un marchand depuis son palmarès.",
         "Les enchères du soir, chaque soir de 20 h à 20 h 30 : 30 % de chaque arrivée des bateaux aux enchères en trois lots (votre maximum laissé quand vous voulez, vous payez le deuxième maximum plus 5 %), et la bataille de la Conquête. Au quai, les bateaux ne renchérissent plus ; les appels d'offres du Doge sont retirés.",
       ],
     },
@@ -3255,12 +3257,12 @@ const frDict = {
       {
         icon: "top",
         title: "Classement",
-        text: "Chaque semaine et sur la saison, on compte vos ventes nettes : ce que vous vendez, moins ce que vous achetez. Un stock qui dort ne compte pas. Les trois premiers de la semaine reçoivent un titre.",
+        text: "Chaque semaine et sur la saison, on compte votre bénéfice : ce que vous vendez, moins ce que vous achetez. Un stock qui dort ne compte pas. Les trois premiers de la semaine reçoivent un titre.",
       },
       {
         icon: "famille",
         title: "La Conquête",
-        text: "Une conquête d'une semaine, à côté du commerce. Posez votre camp sur une terre libre, n'importe quel jour ; puis lancez des fronts vers les terres voisines avec une part de vos troupes. Ils avancent seuls de 8 h à 22 h. Le premier en Gloire impose un décret la semaine suivante.",
+        text: "Une conquête d'une semaine, à côté du commerce. Posez votre camp sur une terre libre, n'importe quel jour ; puis lancez des fronts vers les terres voisines avec une part de vos troupes. Ils avancent seuls de 8 h à 22 h. Le premier en points de conquête impose un décret la semaine suivante.",
       },
       {
         icon: "bale",

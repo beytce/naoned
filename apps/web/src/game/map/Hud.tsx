@@ -7,6 +7,7 @@ import { Lorenzo } from "../../art/scenes.js";
 import { fr } from "../../i18n.js";
 import { Odometer } from "../../ui.js";
 import { MerchantName } from "../Name.js";
+import { leagueOf } from "../Sfida.js";
 import { amount } from "../format.js";
 import type { RivalLine } from "../rival.js";
 import { HudCounter, type TipContent, type TipKey, usePresence, useTip } from "./HudTips.js";
@@ -258,9 +259,7 @@ export function MapHud({
             >
               <span className="whitespace-nowrap text-gold">#{rank ?? "—"}</span>
               {tier ? (
-                <span className="whitespace-nowrap text-info">
-                  · {fr.game.lustre.tiers[tier] ?? tier}
-                </span>
+                <span className="whitespace-nowrap text-info">· {leagueOf(tier)}</span>
               ) : (
                 level !== null && (
                   <span className="whitespace-nowrap">· {fr.game.merchantLevel.short(level)}</span>
