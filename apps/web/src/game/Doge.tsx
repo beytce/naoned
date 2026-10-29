@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ApiError } from "../api.js";
 import { Portrait } from "../art/portrait.js";
 import { fr } from "../i18n.js";
-import { Label, Rules, Sheet, Slab, clock } from "../ui.js";
+import { Label, Rules, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { MerchantName, merchantLabel } from "./Name.js";
 import { gameApi } from "./api.js";
@@ -64,23 +64,22 @@ export function senateWaiting(props: GameProps): boolean {
 }
 
 /**
- * The Senate (R7): the candidates as medallions with their programme and voices, one picked in
- * lapis; the one gold action is the voice (or, for a candidate without one, its programme).
+ * The election, Politics' second tab (R7, refonte UX lot 6): the candidates as medallions with
+ * their programme and voices, one picked in lapis; the one gold action is the voice (or, for a
+ * candidate without one, its programme).
  */
-export function SenateSheet(props: GameProps) {
-  const open = props.sheet === "senate";
+export function SenateBody(props: GameProps) {
   const [e, setE] = useState<ElectionView | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
   const [boost, setBoost] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    if (!open) return;
     gameApi
       .election()
       .then(setE)
       .catch(() => setE(null));
-  }, [open]);
+  }, []);
   const standing = e?.open && e.candidate;
   const mine = e?.candidates.find((c) => c.id === props.account.id);
   const choice = picked ?? e?.mine?.candidate ?? e?.candidates.find((c) => c.programme)?.id ?? null;
@@ -99,117 +98,109 @@ export function SenateSheet(props: GameProps) {
     }
     setBusy(false);
   };
+  if (!e) return null;
   return (
-    <Sheet
-      open={open && !!e}
-      onClose={() => props.setSheet(null)}
-      kicker={t().kicker}
-      title={t().title}
-      summary={e?.open ? t().closesIn(clock(e.closesAt - props.now)) : null}
-    >
-      {e && (
-        <div className="space-y-4">
-          <p className="text-sm text-cream-dim">{t().summary}</p>
-          <ul className="space-y-2">
-            {e.candidates.map((c) => {
-              const on = c.id === choice;
-              return (
-                <li key={c.id}>
-                  <button
-                    type="button"
-                    disabled={!c.programme}
-                    aria-pressed={on}
-                    onClick={() => setPicked(c.id)}
-                    className={`flex w-full items-start gap-3 rounded-2xl bg-night-3 px-3 py-2.5 text-left ${on ? "ring-[1.5px] ring-inset ring-info" : "ring-1 ring-inset ring-line"} ${c.programme ? "" : "opacity-60"}`}
-                  >
-                    <Portrait given={merchantLabel(c.pseudo, false)} crest={c.crest} size={44} />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-baseline justify-between gap-2">
-                        <MerchantName pseudo={c.pseudo} bot={false} className="font-semibold" />
-                        <span className="meta shrink-0 text-gold">{t().votes(c.votes)}</span>
-                      </span>
-                      {c.programme ? (
-                        <>
-                          <span className="block text-sm text-info">
-                            {mutatorName(c.programme.mutator)}
-                          </span>
-                          <span className="block text-sm text-cream-dim">
-                            {decreeText(c.programme.decree, e.effects, props.names)}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="meta block">{t().noProgramme}</span>
-                      )}
-                      <span className="mt-1.5 block h-1 overflow-hidden rounded-full bg-night-4">
-                        <span
-                          className="block h-full rounded-full bg-gold"
-                          style={{ width: `${(c.votes / most) * 100}%` }}
-                        />
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-
-          {standing && (
-            <Programme
-              props={props}
-              e={e}
-              gold={!mine?.programme}
-              onDone={async () => setE(await gameApi.election())}
-            />
-          )}
-
-          {e.open && chosen && (
-            <section className="space-y-2">
-              <p className="text-sm text-cream-dim">{t().weight(e.weight)}</p>
-              {e.maxBoost > 0 && (
-                <>
-                  <Label>{t().boost}</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {Array.from({ length: e.maxBoost + 1 }, (_, n) => n).map((n) => (
-                      <button
-                        key={n}
-                        type="button"
-                        disabled={n < kept}
-                        aria-pressed={Math.max(boost, kept) === n}
-                        onClick={() => setBoost(n)}
-                        className={`min-h-12 rounded-full px-4 text-sm ${Math.max(boost, kept) === n ? "bg-info/15 ring-[1.5px] ring-inset ring-info" : "text-cream-dim ring-1 ring-inset ring-line"} ${n < kept ? "opacity-40" : ""}`}
-                      >
-                        {t().boostLabel(n, Math.max(0, n - kept) * e.influencePerVoice)}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-              {e.mine && (
-                <p className="meta">
-                  {t().voted(
-                    merchantLabel(
-                      e.candidates.find((c) => c.id === e.mine?.candidate)?.pseudo ?? null,
-                      false,
-                    ),
-                  )}
-                </p>
-              )}
-              <Slab
-                size="lg"
-                tone={standing && !mine?.programme ? "ghost" : "gold"}
-                className="w-full"
-                disabled={busy || props.busy}
-                onClick={() => void vote()}
+    <div className="space-y-4">
+      {e.open && <p className="text-sm">{t().closesIn(clock(e.closesAt - props.now))}</p>}
+      <p className="text-sm text-cream-dim">{t().summary}</p>
+      <ul className="space-y-2">
+        {e.candidates.map((c) => {
+          const on = c.id === choice;
+          return (
+            <li key={c.id}>
+              <button
+                type="button"
+                disabled={!c.programme}
+                aria-pressed={on}
+                onClick={() => setPicked(c.id)}
+                className={`flex w-full items-start gap-3 rounded-2xl bg-night-3 px-3 py-2.5 text-left ${on ? "ring-[1.5px] ring-inset ring-info" : "ring-1 ring-inset ring-line"} ${c.programme ? "" : "opacity-60"}`}
               >
-                {t().vote(merchantLabel(chosen.pseudo, false))}
-              </Slab>
-              {error && <p className="text-sm text-vermilion">{error}</p>}
-            </section>
-          )}
-          <Rules id="doge">{t().help}</Rules>
-        </div>
+                <Portrait given={merchantLabel(c.pseudo, false)} crest={c.crest} size={44} />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline justify-between gap-2">
+                    <MerchantName pseudo={c.pseudo} bot={false} className="font-semibold" />
+                    <span className="meta shrink-0 text-gold">{t().votes(c.votes)}</span>
+                  </span>
+                  {c.programme ? (
+                    <>
+                      <span className="block text-sm text-info">
+                        {mutatorName(c.programme.mutator)}
+                      </span>
+                      <span className="block text-sm text-cream-dim">
+                        {decreeText(c.programme.decree, e.effects, props.names)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="meta block">{t().noProgramme}</span>
+                  )}
+                  <span className="mt-1.5 block h-1 overflow-hidden rounded-full bg-night-4">
+                    <span
+                      className="block h-full rounded-full bg-gold"
+                      style={{ width: `${(c.votes / most) * 100}%` }}
+                    />
+                  </span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      {standing && (
+        <Programme
+          props={props}
+          e={e}
+          gold={!mine?.programme}
+          onDone={async () => setE(await gameApi.election())}
+        />
       )}
-    </Sheet>
+
+      {e.open && chosen && (
+        <section className="space-y-2">
+          <p className="text-sm text-cream-dim">{t().weight(e.weight)}</p>
+          {e.maxBoost > 0 && (
+            <>
+              <Label>{t().boost}</Label>
+              <div className="flex flex-wrap gap-2">
+                {Array.from({ length: e.maxBoost + 1 }, (_, n) => n).map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    disabled={n < kept}
+                    aria-pressed={Math.max(boost, kept) === n}
+                    onClick={() => setBoost(n)}
+                    className={`min-h-12 rounded-full px-4 text-sm ${Math.max(boost, kept) === n ? "bg-info/15 ring-[1.5px] ring-inset ring-info" : "text-cream-dim ring-1 ring-inset ring-line"} ${n < kept ? "opacity-40" : ""}`}
+                  >
+                    {t().boostLabel(n, Math.max(0, n - kept) * e.influencePerVoice)}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          {e.mine && (
+            <p className="meta">
+              {t().voted(
+                merchantLabel(
+                  e.candidates.find((c) => c.id === e.mine?.candidate)?.pseudo ?? null,
+                  false,
+                ),
+              )}
+            </p>
+          )}
+          <Slab
+            size="lg"
+            tone={standing && !mine?.programme ? "ghost" : "gold"}
+            className="w-full"
+            disabled={busy || props.busy}
+            onClick={() => void vote()}
+          >
+            {t().vote(merchantLabel(chosen.pseudo, false))}
+          </Slab>
+          {error && <p className="text-sm text-vermilion">{error}</p>}
+        </section>
+      )}
+      <Rules id="doge">{t().help}</Rules>
+    </div>
   );
 }
 

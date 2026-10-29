@@ -3,7 +3,8 @@ import { GoodsMark } from "../art/goods.js";
 import { fr } from "../i18n.js";
 import { Rules, Sheet, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
-import { d, hourOf } from "./format.js";
+import { MudaPanel } from "./Marche.js";
+import { d, hourOf, whole } from "./format.js";
 import type { PlayerView } from "./types.js";
 
 const t = () => fr.game.sera;
@@ -40,6 +41,10 @@ export function SeraSheet(props: GameProps) {
   const offers = lot ? steps(BigInt(lot.minimum)) : [];
   const max = offers[Math.min(step, offers.length - 1)] ?? 0n;
   const now = props.now;
+  const soonest = live.reduce<number | null>(
+    (at, l) => (at === null || l.closesAt < at ? l.closesAt : at),
+    null,
+  );
   const day = new Date(now).toDateString();
   const podesta = props.view.signoria
     ? Object.keys(props.view.signoria.podesta).filter(
@@ -50,11 +55,24 @@ export function SeraSheet(props: GameProps) {
     <Sheet
       open={open}
       onClose={() => props.setSheet(null)}
-      kicker={t().kicker}
-      title={t().title}
-      summary={t().line(live.length)}
+      title={t().sheetTitle}
+      summary={
+        // The clock of the next lot that closes, in vermilion under five minutes (maquette `Mole`).
+        soonest !== null ? (
+          <span className={soonest - now < 5 * 60_000 ? "text-vermilion" : ""}>
+            {soonest - now > 3_600_000
+              ? t().closes(hourOf(soonest))
+              : t().closesIn(clock(Math.max(0, soonest - now)))}
+          </span>
+        ) : (
+          t().kicker
+        )
+      }
     >
       <div className="space-y-4">
+        {/* By day, before the lots: what the ships bring (the arrival moved from the Market). */}
+        {lots.length === 0 && <p className="text-sm text-cream-dim">{t().none}</p>}
+        {live.length === 0 && <MudaPanel props={props} />}
         <ul className="space-y-2">
           {lots.map((l, i) => {
             const picked = lot?.id === l.id;
@@ -64,13 +82,43 @@ export function SeraSheet(props: GameProps) {
                 <button
                   type="button"
                   disabled={!!l.done}
+                  aria-pressed={!l.done ? picked : undefined}
                   onClick={() => {
                     setChosen(l.id);
                     setStep(0);
                   }}
-                  className={`flex w-full items-center gap-3 rounded-2xl bg-night-3 px-3 py-2.5 text-left ${picked && !l.done ? "ring-[1.5px] ring-inset ring-info" : ""} ${l.done ? "opacity-70" : ""}`}
+                  className={`relative flex w-full items-center gap-3 overflow-hidden rounded-2xl bg-night-3 px-3 py-2.5 text-left ${picked && !l.done ? "ring-[1.5px] ring-inset ring-info" : ""} ${l.done && !l.done.won ? "opacity-70" : ""}`}
                 >
-                  <span className="w-12 shrink-0 text-xs text-cream-dim">{t().lot(i + 1)}</span>
+                  {/* Its clock as a ring: the hour left, vermilion under five minutes. */}
+                  <span className="relative flex h-11 w-11 shrink-0 items-center justify-center">
+                    {!l.done && (
+                      <svg
+                        viewBox="0 0 44 44"
+                        className="absolute inset-0 -rotate-90"
+                        aria-hidden="true"
+                      >
+                        <circle
+                          cx="22"
+                          cy="22"
+                          r="19"
+                          fill="none"
+                          stroke="rgb(var(--night-4))"
+                          strokeWidth="3"
+                        />
+                        <circle
+                          cx="22"
+                          cy="22"
+                          r="19"
+                          fill="none"
+                          stroke={left < 5 * 60_000 ? "rgb(var(--vermilion))" : "rgb(var(--info))"}
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeDasharray={`${(119.4 * Math.max(0.02, Math.min(1, left / 3_600_000))).toFixed(1)} 119.4`}
+                        />
+                      </svg>
+                    )}
+                    <span className="relative text-xs text-cream-dim">{i + 1}</span>
+                  </span>
                   <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
                     {Object.entries(l.goods).map(([code, n]) => (
                       <span
@@ -82,6 +130,12 @@ export function SeraSheet(props: GameProps) {
                       </span>
                     ))}
                   </span>
+                  {l.done?.won && (
+                    // « Adjugé »: the stamp falls on the lot won (index.css, .sera-stamp).
+                    <span className="sera-stamp pointer-events-none absolute right-24 top-1/2 -translate-y-1/2 -rotate-12 rounded-md px-2 py-0.5 font-place text-sm font-bold uppercase tracking-[0.12em] text-gold ring-2 ring-gold">
+                      {t().stamp}
+                    </span>
+                  )}
                   <span className="flex max-w-[40%] shrink-0 flex-col items-end text-right">
                     <span className="font-display text-sm font-extrabold text-gold">
                       {d(l.price)}
@@ -109,18 +163,33 @@ export function SeraSheet(props: GameProps) {
             );
           })}
         </ul>
+        {lots
+          .filter((l) => l.done?.won)
+          .map((l) => (
+            <p key={l.id} className="text-sm text-lagoon">
+              {t().wonGoods(
+                Object.entries(l.goods)
+                  .map(([code, n]) => `+${n} ${props.names.resource(code).toLowerCase()}`)
+                  .join(", "),
+              )}
+            </p>
+          ))}
         {lot && (
           <section className="space-y-3">
-            <p className="label">{t().max}</p>
+            <h3 className="font-display text-base font-extrabold">{t().max}</h3>
+            <p className="meta">
+              {t().lotRef(lots.findIndex((l) => l.id === lot.id) + 1, whole(lot.value))}
+            </p>
             <div className="grid grid-cols-4 gap-1.5 pb-1">
               {offers.map((o, i) => (
                 <button
                   key={o.toString()}
                   type="button"
+                  aria-pressed={step === i}
                   onClick={() => setStep(i)}
                   className={`min-h-11 rounded-full font-display text-sm tabular-nums ${step === i ? "bg-info/20 text-info ring-1 ring-inset ring-info" : "text-cream ring-1 ring-inset ring-line"}`}
                 >
-                  {d(o)}
+                  {whole(o)}
                 </button>
               ))}
             </div>
@@ -133,8 +202,9 @@ export function SeraSheet(props: GameProps) {
                 void props.act({ type: "incantoBid", lotId: lot.id, max: max.toString() })
               }
             >
-              {lot.leading ? t().raise : t().bid} · {d(max)}
+              {lot.leading ? t().raise : t().bid} · {whole(max)}
             </Slab>
+            <p className="meta">{t().rule}</p>
             <p className="meta">{t().oneLot}</p>
           </section>
         )}

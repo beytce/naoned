@@ -2706,6 +2706,18 @@ export const en: Dictionary = {
         `A warehouse in ${cities} cities at most, from level 1 to level ${top}, ${levels} levels in all. Each level gives you an order from the city every day, for you alone, paid ${pct}% of the shared board's price: cheaper than the board, but sure. The ducats leave the game, the bricks and planks too; the fondaco counts in your net worth at its cost.`,
     },
     /** The Signoria of the cities (R2): the gauge of a city and its Podestà. */
+    /** Politics, Venice's moon (refonte UX, lot 6): rumours, election, cities in one sheet. */
+    politics: {
+      title: "Politics",
+      tabs: { rumours: "Rumours", election: "Election", cities: "Cities" },
+      citiesHelp: "Whoever delivers the most to a city holds it tomorrow.",
+      standing: (mine: number, rank: number | null, lead: number) =>
+        lead === 0
+          ? "nobody delivers there yet"
+          : rank === 1
+            ? `you: ${mine} % · leading`
+            : `you: ${mine} % · the first is at ${lead} %`,
+    },
     signoria: {
       title: (city: string) => `Control of ${city}`,
       kicker: "Who holds the city",
@@ -2810,7 +2822,12 @@ export const en: Dictionary = {
         senato: "a secretary of the Senate",
         rialto: "a merchant of the Market",
       } as Record<string, string>,
-      said: (source: string, pct: number) => `According to ${source} · ${pct} % reliable`,
+      said: (source: string, n: number) => `Source: ${source}, right ${n} times out of 8`,
+      /** What the rumour would bring (refonte UX, lot 6). */
+      ifTrue: "If it is true:",
+      toAuctions: "See the auctions",
+      maneuvers: "Maneuvers",
+      maneuversHint: "buy, sell, deceive, spy",
       event: (title: string, city: string | null, when: string) =>
         city ? `${title} (in ${city}), ${when}.` : `${title}, ${when}.`,
       muda: (big: boolean) =>
@@ -2868,6 +2885,16 @@ export const en: Dictionary = {
           .filter(Boolean)
           .join(" · "),
       doge: (name: string) => `Doge of the month: ${name}`,
+      /** The forty palaces' sheet (refonte UX, lot 6, maquette `Canal`). */
+      summary: "The month's 40 first houses. Swipe, touch a palace.",
+      rank: (n: number) => `${n}${n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"}`,
+      quay: "Your quay",
+      palace: (n: number, facade: string) => [`Palace ${n}`, facade].filter(Boolean).join(" · "),
+      outside: (rank: number, gap: string) =>
+        `You are ${rank}th: ${gap} of profit part you from the 40th palace.`,
+      inside: (rank: number) => `Your palace: number ${rank} on the quay.`,
+      toQuay: "Go to my quay",
+      seeRanking: "See the ranking",
       sestieri: ["Cannaregio", "Castello", "Dorsoduro", "San Polo", "Santa Croce", "San Marco"],
     },
     doge: {
@@ -3052,7 +3079,14 @@ export const en: Dictionary = {
       won: "Won",
       sold: "Sold",
       unsold: "Unsold: back on the quay",
-      max: "Your maximum",
+      max: "How high will you go?",
+      /** The auctions (refonte UX, lot 6, maquette `Mole`). */
+      sheetTitle: "Auctions",
+      none: "No lot for now: each arrival of the ships puts three up for auction, closing at 20:00.",
+      lotRef: (i: number, value: string) => `Lot ${i} · advised price ${value}`,
+      rule: "Winner: you pay just above the 2nd. Loser: nothing is paid.",
+      stamp: "Sold",
+      wonGoods: (list: string) => `${list} in your store`,
       bid: "Bid",
       raise: "Raise",
       oneLot: "One lot per merchant and per auction evening.",

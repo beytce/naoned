@@ -429,7 +429,7 @@ function MyOffers({ orders, props }: { orders: OrderView[]; props: GameProps }) 
  * The galleys of the Muda, on top of the Rialto: what they brought is on the quay, sold by the
  * Dogana dearer as it runs out, a few units per merchant until the next galleys.
  */
-function MudaPanel({ props }: { props: GameProps }) {
+export function MudaPanel({ props }: { props: GameProps }) {
   const muda = props.view.muda;
   if (!muda) return null;
   const t = fr.game.market.muda;
@@ -672,7 +672,6 @@ export function RialtoSheet(props: GameProps) {
                 )}
               </div>
               {decreesOpen && <DecreeBanner props={props} />}
-              <MudaPanel props={props} />
               <p className="meta border-b border-line/70 pb-2">{r.priceHead}</p>
               <div>
                 {lines.length === 0 ? (

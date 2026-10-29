@@ -3,7 +3,7 @@ import { Label, Sheet, clock } from "../../ui.js";
 import { actText, currentAct } from "../Acts.js";
 import { AtoutsLine } from "../Atouts.js";
 import { NoticeList } from "../Bell.js";
-import { BroglioLine } from "../Broglio.js";
+import { BroglioLine, SpyAlert } from "../Broglio.js";
 import { Carnet, SeasonTiles, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import { SenateLine } from "../Doge.js";
@@ -33,6 +33,8 @@ export function NoticesSheet(
   return (
     <Sheet open={props.open} onClose={props.onClose} title={t.title}>
       <div className="space-y-5">
+        {/* A spy at the door first: it costs while it stays (refonte UX, lot 6). */}
+        <SpyAlert {...props} />
         <section className="space-y-2">
           <div className="flex items-center gap-3">
             <svg

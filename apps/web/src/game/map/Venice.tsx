@@ -66,7 +66,7 @@ export function VeniceOrbit({
       icon: Icon.decree(),
       tone: "text-rumour ring-rumour/70",
       call: rumours > 0,
-      open: () => props.setSheet("broglio"),
+      open: () => props.setSheet("politics"),
     },
     {
       key: "market",
@@ -212,7 +212,7 @@ export function VeniceOrbit({
   );
 }
 
-function DogeCard({
+export function DogeCard({
   name,
   crest,
   decree,

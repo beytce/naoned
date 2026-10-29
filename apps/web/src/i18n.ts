@@ -2788,6 +2788,18 @@ const frDict = {
         `Un entrepôt dans ${cities} villes au plus, du niveau 1 au niveau ${top}, ${levels} niveaux en tout. Chaque niveau vous donne chaque jour une commande de la ville, à vous seul, payée ${pct} % du prix du tableau commun : moins chère que le tableau, mais sûre. Les ducats sortent du jeu, les briques et les planches aussi ; le fondaco compte dans votre patrimoine à son coût.`,
     },
     /** The Signoria of the cities (R2): the gauge of a city and its Podestà. */
+    /** Politics, Venice's moon (refonte UX, lot 6): rumours, election, cities in one sheet. */
+    politics: {
+      title: "Politique",
+      tabs: { rumours: "Rumeurs", election: "Élection", cities: "Villes" },
+      citiesHelp: "Celui qui livre le plus dans une ville la tient demain.",
+      standing: (mine: number, rank: number | null, lead: number) =>
+        lead === 0
+          ? "personne n'y livre encore"
+          : rank === 1
+            ? `vous : ${mine} % · en tête`
+            : `vous : ${mine} % · le 1ᵉʳ est à ${lead} %`,
+    },
     signoria: {
       title: (city: string) => `Contrôle de ${city}`,
       kicker: "Qui tient la ville",
@@ -2895,7 +2907,12 @@ const frDict = {
         senato: "un secrétaire du Sénat",
         rialto: "un marchand du Marché",
       } as Record<string, string>,
-      said: (source: string, pct: number) => `D'après ${source} · sûr à ${pct} %`,
+      said: (source: string, n: number) => `Source : ${source}, juste ${n} fois sur 8`,
+      /** What the rumour would bring (refonte UX, lot 6). */
+      ifTrue: "Si c'est vrai :",
+      toAuctions: "Voir les enchères",
+      maneuvers: "Manœuvres",
+      maneuversHint: "acheter, vendre, tromper, espionner",
       event: (title: string, city: string | null, when: string) =>
         city ? `${title} (à ${city}), ${when}.` : `${title}, ${when}.`,
       muda: (big: boolean): string =>
@@ -2956,6 +2973,17 @@ const frDict = {
           .filter(Boolean)
           .join(" · "),
       doge: (name: string) => `Doge du mois : ${name}`,
+      /** The forty palaces' sheet (refonte UX, lot 6, maquette `Canal`). */
+      summary: "Les 40 premières Maisons du mois. Glissez, touchez un palais.",
+      rank: (n: number) => `${n}${n === 1 ? "ᵉʳ" : "ᵉ"}`,
+      quay: "Votre quai",
+      palace: (n: number, facade: string) =>
+        [`${n}${n === 1 ? "ᵉʳ" : "ᵉ"} palais`, facade].filter(Boolean).join(" · "),
+      outside: (rank: number, gap: string) =>
+        `Vous êtes ${rank}ᵉ : ${gap} de bénéfice vous séparent du 40ᵉ palais.`,
+      inside: (rank: number) => `Votre palais : le ${rank}${rank === 1 ? "ᵉʳ" : "ᵉ"} du quai.`,
+      toQuay: "Aller à mon quai",
+      seeRanking: "Voir le classement",
       sestieri: ["Cannaregio", "Castello", "Dorsoduro", "San Polo", "Santa Croce", "San Marco"],
     },
     /** The Doge (R7): the Senate, its candidates, programmes and voices. */
@@ -3165,7 +3193,14 @@ const frDict = {
       won: "Gagné",
       sold: "Vendu",
       unsold: "Invendu : retourné au quai",
-      max: "Votre maximum",
+      max: "Jusqu'où montez-vous ?",
+      /** The auctions (refonte UX, lot 6, maquette `Mole`). */
+      sheetTitle: "Enchères",
+      none: "Pas de lot pour l'instant : chaque arrivée des bateaux en met trois aux enchères, fermées à 20 h.",
+      lotRef: (i: number, value: string) => `Lot ${i} · prix conseillé ${value}`,
+      rule: "Gagnant : vous payez juste au-dessus du 2ᵉ. Perdant : rien n'est payé.",
+      stamp: "Adjugé",
+      wonGoods: (list: string) => `${list} dans votre magasin`,
       bid: "Enchérir",
       raise: "Relever",
       oneLot: "Un lot par marchand et par soirée d'enchères.",
