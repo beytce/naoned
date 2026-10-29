@@ -1,6 +1,8 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { venice1450Settings } from "@comptoirs/engine/src/themes/venice1450.settings.js";
 import { describe, expect, it } from "vitest";
+import { leagueOf } from "../src/game/Sfida.js";
 import { activeTab } from "../src/game/map/TabBar.js";
 import { TABS } from "../src/game/map/actions.js";
 import { fr } from "../src/i18n.js";
@@ -42,5 +44,16 @@ describe("the tabs at the foot of the screen", () => {
     expect(activeTab({ sheet: "sfida", layer: "terra" })).toBe("ranking");
     expect(activeTab({ sheet: null, layer: "terra" })).toBe("conquest");
     expect(activeTab({ sheet: null, layer: "campaign" })).toBe("conquest");
+  });
+});
+
+describe("the duel's leagues", () => {
+  it("number the tiers from the top: Procuratore is League 1, the newcomers' Popolano League 6", () => {
+    // The dictionary's tiers in the engine's order: the league is counted from it.
+    const engine = (venice1450Settings.lustre?.tiers ?? []).map((t) => t.code);
+    expect(Object.keys(fr.game.lustre.tiers)).toEqual(engine);
+    expect(leagueOf("popolano")).toBe("Ligue 6");
+    expect(leagueOf("mercante")).toBe("Ligue 4");
+    expect(leagueOf("procuratore")).toBe("Ligue 1");
   });
 });

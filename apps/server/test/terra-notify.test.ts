@@ -25,9 +25,9 @@ describe("the Terraferma's notices", () => {
     // The same words as the skirmish's bar and the bell (apps/web/src/i18n.ts), in the past: the
     // notice stays true once the ranked match of the day is played.
     const kept = pushText("family", { event: "skirmish_aborted", ranked: true });
-    expect(kept.title).toBe("Escarmouche interrompue");
+    expect(kept.title).toBe("Partie rapide interrompue");
     expect(kept.body).toBe(
-      "Escarmouche interrompue par une maintenance : aucune Gloire, rien n'est compté ; elle n'a pas consommé votre partie classée du jour.",
+      "Partie rapide interrompue par une maintenance : aucun point de conquête, rien n'est compté ; elle n'a pas consommé votre partie classée du jour.",
     );
   });
 });
@@ -44,7 +44,7 @@ describe("the war's and the Signoria's notices (R1, R2)", () => {
     expect(lost.title).toBe("Padoue vous échappe");
     expect(lost.body).toContain("Morosini vous a repris Padoue");
     expect(pushText("signoria", { event: "podesta_named", city: "padova" }, cities).title).toBe(
-      "Vous êtes Podestà de Padoue",
+      "Vous êtes maître de Padoue",
     );
     expect(
       pushText("signoria", { event: "signoria_overtaken", city: "padova" }, cities).title,

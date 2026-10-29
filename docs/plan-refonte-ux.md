@@ -19,7 +19,7 @@
 | --- | --- | --- | --- |
 | 0 | Audit, audit de l'expert, maquettes, ce plan | fait (PR #55) | `83af1e2`…`d48bbce` |
 | 1 | Socle : barre à 5 onglets, jetons, `prefers-reduced-motion`, 44 px | fait (PR lot 1) | `2c1c506`…(fin de branche `claude/refonte-ux-lot1`) |
-| 2 | Lexique (i18n `fr` puis `en`) | à faire | |
+| 2 | Lexique (i18n `fr` puis `en`, notifications push) | fait (PR lot 2) | `6e69c57`…(fin de branche `claude/refonte-ux-lot2`) |
 | 3 | La carte et la fiche d'un lieu | à faire | |
 | 4 | Ateliers, production, bâtir, magasin | à faire | |
 | 5 | Venise, Marché, page d'une marchandise | à faire | |
@@ -28,7 +28,19 @@
 | 8 | Ville, Conquête | à faire | |
 | 9 | Moments : messages, tâches du jour, calendrier, lettre, Atout, bon retour, fin du mois, entrée | à faire | |
 
-**Étape suivante :** le lot 2 (lexique). Il commence, comme les autres, par un passage en mode plan (CLAUDE.md), appuyé sur la section du lot ci-dessous et sur les maquettes qu'elle cite.
+**Étape suivante :** le lot 3 (la carte et la fiche d'un lieu). Il commence, comme les autres, par un passage en mode plan (CLAUDE.md), appuyé sur la section du lot ci-dessous et sur les maquettes qu'elle cite.
+
+**Ce que le lot 2 a fixé (lexique) :**
+- Les noms affichés suivent l'audit § 0 dans `i18n.ts`, `i18n.en.ts` et les notifications push (`apps/server/src/notify/texts*.ts`). Les **clés** i18n, le code, la base et les réglages gardent leurs noms historiques (`broglio`, `signoria`, `sera`…).
+- **Restent vénitiens, exprès** : les titres et badges décernés par le serveur, les noms des Atouts et des décrets (Dîme de la Terraferme, Franchise du Rialto, Péage…), « Signore della Terraferma », le récit des lettres (`i18n.letters*.ts`, où le Rialto est un lieu de Venise), « comptoir » au sens de la Maison (« Ouverture du comptoir… »).
+- **Écarts au lexique** :
+  - le « Livre de compte » du jeu, ce sont les missions : il devient « Objectifs » (en : Goals) ; « Mes comptes » désigne le relevé CSV ;
+  - le Fondaco (bâtiment) devient « Entrepôt de ville », pour ne pas le confondre avec l'entrepôt ;
+  - la Criée devient « Vente rapide ».
+- **Les ligues** : `leagueOf(code)` (`game/Sfida.tsx`) affiche « Ligue 6 » pour Popolano et « Ligue 1 » pour Procuratore ; un test vérifie que l'ordre du dictionnaire suit celui du moteur. Le Lustre devient des « points de ligue ».
+- Les mots de l'e2e (`WORDS` de `layout.mjs`) et les tests serveur qui figent les textes ont suivi.
+- **`.hit` vaut 48 px** (et non 44) : un doigt à 22 px du centre ne tombe plus sur le bord. La zone déborde de 14 px autour d'une puce de 20 px : deux rangées de puces `.hit` gardent 16 px entre elles (Marché : filtres et « Mes offres »).
+- L'e2e passe en `fr` et en `en` aux deux formats (fin du lot). En anglais, la plaque de la Conquête dit « Battle 20:00 » pour tenir sur une ligne.
 
 **Ce que le lot 1 a posé (à réutiliser) :**
 - **`--edge`** (`index.css`, `tailwind` : `edge`) : le contour de ce qui se touche, à 3:1 dans les quatre palettes (test dans `test/theme.test.ts`). `line` reste pour les filets. Les composants communs de `ui.tsx` l'ont déjà ; chaque lot passe ses écrans à `ring-edge` / `border-edge`.

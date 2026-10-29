@@ -153,11 +153,11 @@ export function pushTextEn(
     case "skirmish_call":
       return data.company
         ? {
-            title: `${String(data.company)}: skirmish at ${clock(data.at)}`,
-            body: "Your company is waiting for you in a quarter of an hour for a ranked match: the room is open.",
+            title: `${String(data.company)}: quick match at ${clock(data.at)}`,
+            body: "Your guild is waiting for you in a quarter of an hour for a ranked match: the room is open.",
           }
         : {
-            title: `Skirmish at ${clock(data.at)}`,
+            title: `Quick match at ${clock(data.at)}`,
             body: "The merchants meet in a quarter of an hour for a ranked match: the room is open.",
           };
     case "morning": {
@@ -168,7 +168,7 @@ export function pushTextEn(
           ? `${deliveries} deliver${deliveries === 1 ? "y" : "ies"} paid (${ducats(String(data.paid ?? "0"))} ducats)`
           : "",
         Number(data.harvests) > 0 ? "batches ready to harvest" : "",
-        offers > 0 ? `${offers} offer${s(offers)} taken at the Rialto` : "",
+        offers > 0 ? `${offers} offer${s(offers)} taken at the Market` : "",
       ].filter(Boolean);
       return {
         title: "The morning gazette",
@@ -180,8 +180,8 @@ export function pushTextEn(
         .filter(([, q]) => q > 0)
         .map(([r]) => resource(r));
       return {
-        title: "The galleys of the Muda are at the quay",
-        body: `The Dogana sells ${goods.length > 0 ? goods.join(", ") : "the goods from overseas"} at the Rialto: first come, best prices.`,
+        title: "The ships of the arrival are at the quay",
+        body: `Customs sells ${goods.length > 0 ? goods.join(", ") : "the goods from overseas"} at the Market: first come, best prices.`,
       };
     }
     case "harvest":
@@ -190,7 +190,7 @@ export function pushTextEn(
         body: "Your workshops have finished their production. Come and harvest and restart!",
       };
     case "order": {
-      const who = data.counterpartyName ? String(data.counterpartyName) : "the Dogana";
+      const who = data.counterpartyName ? String(data.counterpartyName) : "Customs";
       const what = `${data.quantity} ${resource(data.resource)}`;
       return data.side === "sell"
         ? { title: "Offer closed", body: `${who} bought ${what} from your offer.` }
@@ -214,35 +214,35 @@ export function pushTextEn(
         data.lustre === undefined
           ? ""
           : Number(data.lustre) > 0
-            ? ` Sfida won: +${Number(data.lustre)} Lustre.`
+            ? ` Duel won: +${Number(data.lustre)} league points.`
             : Number(data.lustre) < 0
-              ? ` Sfida lost: ${Number(data.lustre)} Lustre.`
-              : " Sfida drawn.";
+              ? ` Duel lost: ${Number(data.lustre)} league points.`
+              : " Duel drawn.";
       return {
         title: "Results of the week",
-        body: `You finish ${ordinal(Number(data.rank))} (${data.glory ? `${gain} Glory` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
+        body: `You finish ${ordinal(Number(data.rank))} (${data.glory ? `${gain} conquest points` : `${sign}${ducats(gain)} ducats`}).${award}${lustre}`,
       };
     }
     case "shares": {
       const t: Record<string, { title: string; body: string }> = {
         bought: {
           title: "Parts bought",
-          body: `${Number(data.quantity ?? 0)} parts of your house found a buyer at ${ducats(String(data.price ?? "0"))} ducats.`,
+          body: `${Number(data.quantity ?? 0)} shares of your house found a buyer at ${ducats(String(data.price ?? "0"))} ducats.`,
         },
         council: {
           title: "A holder on the council",
-          body: "A holder now owns enough parts to see your accounts.",
+          body: "A shareholder now owns enough shares to see your accounts.",
         },
         dividend: {
           title: "Dividend received",
-          body: `Your parts bring you ${ducats(String(data.amount ?? "0"))} ducats this week.`,
+          body: `Your shares bring you ${ducats(String(data.amount ?? "0"))} ducats this week.`,
         },
         settled: {
           title: "Parts bought back",
-          body: `End of the month: your parts are bought back for ${ducats(String(data.amount ?? "0"))} ducats.`,
+          body: `End of the month: your shares are bought back for ${ducats(String(data.amount ?? "0"))} ducats.`,
         },
       };
-      return t[String(data.event)] ?? { title: "Your parts", body: "News about your parts." };
+      return t[String(data.event)] ?? { title: "Your shares", body: "News about your shares." };
     }
     case "broglio": {
       const t: Record<string, { title: string; body: string }> = {
@@ -252,7 +252,7 @@ export function pushTextEn(
         },
         spied: {
           title: "You are being watched",
-          body: "A spy prowls around your counter. Chase it at the Broglio.",
+          body: "A spy prowls around your workshops. Chase it in the Rumours.",
         },
         chased: {
           title: "Your spy was chased",
@@ -260,14 +260,14 @@ export function pushTextEn(
         },
         unmasked: {
           title: "A rumour was false",
-          body: "A rumour heard at the Rialto came from a liar: they are unmasked.",
+          body: "A rumour heard at the Market came from a liar: they are unmasked.",
         },
         caught: {
           title: "Your lie is unmasked",
-          body: "Your false rumour was seen through: you lose Lustre.",
+          body: "Your false rumour was seen through: you drop in your league.",
         },
       };
-      return t[String(data.event)] ?? { title: "The Broglio", body: "News at the Broglio." };
+      return t[String(data.event)] ?? { title: "The Rumours", body: "News in the Rumours." };
     }
     case "doge": {
       if (data.event === "opened")
@@ -303,21 +303,21 @@ export function pushTextEn(
       if (data.event === "outbid")
         return {
           title: "Your bid is passed",
-          body: "A merchant passed you at the incanto of the galleys. Raise your maximum before the close.",
+          body: "A merchant passed you at the evening auctions. Raise your maximum before the close.",
         };
       return {
-        title: "The Sera begins at 8 pm",
-        body: `${Number(data.lots)} lots of the galleys up for auction, and the battle of the Terraferma.`,
+        title: "The evening auctions begin at 8 pm",
+        body: `${Number(data.lots)} lots of the ships up for auction, and the battle of the Conquest.`,
       };
     case "sfida": {
       const by = data.byName ? String(data.byName) : "a merchant";
       if (data.event === "challenged")
         return {
           title: `${by} challenges you`,
-          body: `A Sfida next week${Number(data.stake) > 0 ? `, ${Number(data.stake)} Lustre at stake` : ""}. Accept it in the Sfida.`,
+          body: `A duel next week${Number(data.stake) > 0 ? `, ${Number(data.stake)} league points at stake` : ""}. Accept it in the Duel.`,
         };
       return {
-        title: "Your Sfida of the week",
+        title: "Your duel of the week",
         body: data.ghost
           ? `You face the ghost of ${by}: their best week, hour by hour.`
           : `You face ${by}: who will sell the most this week?`,
@@ -330,17 +330,17 @@ export function pushTextEn(
       const by = data.byName ? String(data.byName) : "A rival";
       if (data.event === "podesta_named")
         return {
-          title: `You are Podesta of ${city}`,
+          title: `You are master of ${city}`,
           body: "The city is yours: a toll on the others' deliveries, and its orders before them.",
         };
       if (data.event === "podesta_lost")
         return {
           title: `${city} slips away`,
-          body: `${by} took ${city} from you. Deliver there, or hold it on the Terraferma, to win it back.`,
+          body: `${by} took ${city} from you. Deliver there, or hold it on the Conquest map, to win it back.`,
         };
       return {
         title: `${by} passes you in ${city}`,
-        body: `${by} leads ${city}'s gauge. The Podesta is decided at midnight.`,
+        body: `${by} leads ${city}'s gauge. The city master is decided at midnight.`,
       };
     }
     case "siege":
@@ -400,7 +400,7 @@ export function pushTextEn(
     }
     case "criee":
       return {
-        title: "Auction at the Rialto!",
+        title: "Quick sale in town!",
         body: `A city buys ${resource(data.resource)} at +${Math.round(Number(data.premiumBps) / 100)}% for 20 minutes.`,
       };
     case "deal":
@@ -422,7 +422,7 @@ export function pushTextEn(
           : `${String(data.name)} begins: a new counter is waiting for you.`,
       };
     default:
-      return { title: "Fondaco", body: "Something new at your counter." };
+      return { title: "Fondaco", body: "Something new in your workshops." };
   }
 }
 
@@ -431,22 +431,22 @@ function terraText(data: Record<string, unknown>): { title: string; body: string
     case "terra_hungry":
       return {
         title: "Your troops are hungry",
-        body: "The bread has run out: you recruit no more. Buy bread at the Rialto or bake some.",
+        body: "The bread has run out: you recruit no more. Buy bread at the Market or bake some.",
       };
     case "terra_ducats_received":
       return {
         title: "An ally sends you ducats",
-        body: `${ducats(String(data.amount ?? "0"))} ducats from an ally on the Terraferma.`,
+        body: `${ducats(String(data.amount ?? "0"))} ducats from an ally on the Conquest map.`,
       };
     case "terra_battle_soon":
       return {
         title: "The battle starts in 15 minutes",
-        body: "For an hour, the Terraferma's fronts advance ten times faster: come and lead them.",
+        body: "For an hour, the Conquest's fronts advance ten times faster: come and lead them.",
       };
     case "terra_alliance_asked":
       return {
         title: "An alliance is proposed to you",
-        body: "A neighbour on the Terraferma asks for your alliance.",
+        body: "A neighbour on the Conquest map asks for your alliance.",
       };
     case "terra_alliance_made":
       return {
@@ -456,7 +456,7 @@ function terraText(data: Record<string, unknown>): { title: string; body: string
     case "terra_alliance_broken":
       if (data.reason === "withdrawn")
         return {
-          title: "Your ally leaves the Terraferma",
+          title: "Your ally leaves the Conquest",
           body: "Their house steps aside: their lands become free again and your alliance ends.",
         };
       return {
@@ -465,8 +465,8 @@ function terraText(data: Record<string, unknown>): { title: string; body: string
       };
     case "skirmish_aborted":
       return {
-        title: "Skirmish interrupted",
-        body: "Skirmish interrupted by maintenance: no Glory, nothing counted; it did not use up your ranked match of the day.",
+        title: "Quick match interrupted",
+        body: "Quick match interrupted by maintenance: no conquest points, nothing counted; it did not use up your ranked match of the day.",
       };
     case "terra_troops_received":
       return { title: "Reinforcements", body: `An ally sends you ${Number(data.count)} troops.` };
@@ -476,10 +476,10 @@ function terraText(data: Record<string, unknown>): { title: string; body: string
       if (data.signore)
         return {
           title: "You are Signore della Terraferma!",
-          body: `${data.conquest ? "The Terraferma is yours. " : ""}You impose ${decree} for the coming week (+${influence} Influence).`,
+          body: `${data.conquest ? "The Conquest is yours. " : ""}You impose ${decree} for the coming week (+${influence} Influence).`,
         };
       return {
-        title: "The Terraferma closes",
+        title: "The Conquest closes",
         body: `You finish ${ordinal(Number(data.rank))}${influence > 0 ? ` (+${influence} Influence)` : ""}. A new map opens.`,
       };
     }

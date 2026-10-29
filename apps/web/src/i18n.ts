@@ -13,7 +13,7 @@ import { LANG } from "./lang.js";
  * after the merchant has played again, so it promises nothing.
  */
 const skirmishInterrupted =
-  "Escarmouche interrompue par une maintenance : aucune Gloire, rien n'est compté ; elle n'a pas consommé votre partie classée du jour.";
+  "Partie rapide interrompue par une maintenance : aucun point de conquête, rien n'est compté ; elle n'a pas consommé votre partie classée du jour.";
 
 const frDict = {
   appName: "Fondaco",
@@ -116,7 +116,7 @@ const frDict = {
       {
         kicker: "Le but du jeu",
         title: "Un mois. Le meilleur vendeur devient Doge.",
-        text: "Vos ateliers produisent, les villes commandent, le Rialto échange : Lorenzo, votre facteur, vous guide. Chaque mois, tout le monde repart à zéro. Rien à acheter qui fasse gagner : ni ducats, ni marchandises, ni vitesse.",
+        text: "Vos ateliers produisent, les villes commandent, le Marché échange : Lorenzo, votre facteur, vous guide. Chaque mois, tout le monde repart à zéro. Rien à acheter qui fasse gagner : ni ducats, ni marchandises, ni vitesse.",
       },
     ],
   },
@@ -169,19 +169,19 @@ const frDict = {
     },
     map: {
       home: (pseudo: string) => (pseudo ? `Maison ${pseudo}` : "Votre maison"),
-      homeLabel: "Comptoir",
+      homeLabel: "Mes ateliers",
       close: "Fermer",
       prev: "Précédent",
       next: "Suivant",
-      notices: "Avis",
-      bales: (n: number) => (n > 1 ? `${n} ballots à ouvrir` : "Un ballot à ouvrir"),
+      notices: "Messages",
+      bales: (n: number) => (n > 1 ? `${n} colis à ouvrir` : "Un colis à ouvrir"),
       buyCart: "Acheter une mule",
       cityLabel: (name: string, orders: number, covered: number, criee: boolean) =>
         [
           name,
           orders > 0 ? `${orders} commande${orders > 1 ? "s" : ""}` : "aucune commande",
           covered > 0 ? `${covered} couverte${covered > 1 ? "s" : ""} par votre stock` : null,
-          criee ? "criée en cours" : null,
+          criee ? "vente rapide en cours" : null,
         ]
           .filter(Boolean)
           .join(", "),
@@ -227,11 +227,11 @@ const frDict = {
       tips: {
         cash: {
           title: "Ducats",
-          text: "La monnaie de la République : elle paie les marchandises, les ateliers, les véhicules et le Palais. Le classement compte vos ventes nettes.",
+          text: "La monnaie de la République : elle paie les marchandises, les ateliers, les véhicules et le Palais. Le classement compte votre bénéfice.",
           purse: "En caisse",
           escrow: "Engagés dans vos offres",
-          turnover: "Ventes nettes de la saison",
-          action: "Aller au Rialto",
+          turnover: "Bénéfice de la saison",
+          action: "Aller au Marché",
         },
         influence: {
           title: "Influence",
@@ -253,7 +253,7 @@ const frDict = {
       fleet: {
         title: "Tous les véhicules",
         open: "Voir les véhicules",
-        home: "Au comptoir",
+        home: "Aux ateliers",
         out: (city: string, time: string) => `Vers ${city} · ${time}`,
         byFattore: "envoyé par le fattore",
         back: (time: string) => `Retour · ${time}`,
@@ -274,18 +274,18 @@ const frDict = {
         workshops: "Ateliers",
         store: "Magasin",
         build: "Bâtir",
-        cargo: "Cargaisons",
+        cargo: "Chargement",
         send: "Partir",
         go: "Partir",
         cancel: "Annuler",
         follow: "Suivre",
         upgrade: "Améliorer",
-        rialto: "Rialto",
-        criee: "Criée",
+        rialto: "Marché",
+        criee: "Vente rapide",
         suppliers: "Fournisseurs",
-        signoria: "Signoria",
+        signoria: "Contrôle",
         warehouse: "Entrepôt",
-        fondaco: "Fondaco",
+        fondaco: "Entrepôt de ville",
         ranking: "Classement",
         family: "Famille",
         help: "Aide",
@@ -304,17 +304,17 @@ const frDict = {
             : "Votre stock ne couvre aucune commande",
         none: (time: string) => `Nouvelles commandes dans ${time}`,
         criee: (resource: string, pct: string, left: string) =>
-          `Criée : ${resource.toLowerCase()} payé +${pct} · ${left}`,
+          `Vente rapide : ${resource.toLowerCase()} payé +${pct} · ${left}`,
         noCart: "Aucune charrette libre",
         pips: "Le chiffre sur une ville : ses commandes ouvertes. En or, votre stock en couvre ; en vert, pas encore.",
         pipsOk: "Compris",
-        venice: "Le Rialto et la Muda",
+        venice: "Le Marché et l'arrivage",
       },
       cart: {
-        atHome: "Au comptoir",
+        atHome: "Aux ateliers",
         loaded: (city: string) => `Chargée pour ${city}`,
         outbound: (city: string, left: string) => `Vers ${city} · ${left}`,
-        inbound: (left: string) => `Retour au comptoir · ${left}`,
+        inbound: (left: string) => `Retour aux ateliers · ${left}`,
         leaving: (city: string) => `Départ vers ${city}`,
         express: (left: string) => `routes dégagées · ${left}`,
         normalTrip: (minutes: string) => `trajet normal · ${minutes}`,
@@ -322,11 +322,11 @@ const frDict = {
         nothing: "Rien à livrer avec votre stock pour l'instant",
       },
       notice: {
-        title: "Avis",
+        title: "Messages",
         season: (day: number, of: number) => `Jour ${day} sur ${of}`,
         daysLeft: (n: number) => `fin dans ${n} j`,
         event: "La gazette",
-        carnet: "Carnet du jour",
+        carnet: "Tâches du jour",
         yourSeason: "Votre saison",
         news: "Nouvelles",
       },
@@ -347,7 +347,7 @@ const frDict = {
         howTo: "Règles",
         families: "Les quatre familles",
         rankGlory: (rank: number, glory: number) =>
-          `${rank}${rank === 1 ? "re" : "e"} · ${glory} Gloire`,
+          `${rank}${rank === 1 ? "re" : "e"} · ${glory} points`,
         reserveLine: (reserve: number, levy: number, max: number) =>
           `Réserve ⚔ ${reserve} · levée ${levy}/${max}`,
         landLine: (holder: string, garrison: number, defense: number) =>
@@ -365,7 +365,7 @@ const frDict = {
       },
     },
     tabs: {
-      comptoir: "Comptoir",
+      comptoir: "Mes ateliers",
       marche: "Marché",
       famille: "Famille",
       routes: "Routes",
@@ -421,7 +421,7 @@ const frDict = {
         deliverable: "Livrable",
         contested: (n: number) => `Disputée · ${n}`,
         unit: (price: string) => `${price} l'unité`,
-        rialto: (gap: string) => `${gap} / Rialto`,
+        rialto: (gap: string) => `${gap} / Marché`,
         perHour: (amount: string) => `${amount}/h`,
       },
       sharedHelp:
@@ -452,15 +452,15 @@ const frDict = {
       capacity: (n: number) => `${n} unités`,
       buy: "Acheter",
       buyTitle: "Acheter un véhicule",
-      buyHint: "Tout véhicule s'achète mule ; améliorez-le ensuite au comptoir.",
+      buyHint: "Tout véhicule s'achète mule ; améliorez-le ensuite aux ateliers.",
       upgradeTitle: (name: string) => `Améliorer : ${name}`,
       upgradeHint:
-        "Mule, charrette, chariot, grand chariot : chaque amélioration porte plus et va plus vite. Le véhicule doit être au comptoir.",
+        "Mule, charrette, chariot, grand chariot : chaque amélioration porte plus et va plus vite. Le véhicule doit être aux ateliers.",
       upgradeTo: (name: string) => `Devient : ${name}`,
       speed: (pct: number) => `Vitesse ${pct} %`,
       upgrade: (cost: string) => `Améliorer · ${cost}`,
       maxLevel: "Plus haut niveau atteint.",
-      away: "De retour au comptoir, il pourra être amélioré.",
+      away: "De retour aux ateliers, il pourra être amélioré.",
       maxVehicles: (n: number) => `${n} véhicules au plus.`,
       sheet: {
         payment: "Paiement à l'arrivée",
@@ -479,20 +479,22 @@ const frDict = {
       take: (who: string, q: number, res: string, city: string, amount: string) =>
         `${who} a raflé ${q} ${res} pour ${city} (${amount}).`,
       cityClosed:
-        "Les villes ne rachètent plus au comptoir : elles passent commande. Livrez-les depuis l'onglet Routes.",
+        "Les villes ne rachètent plus aux ateliers : elles passent commande. Livrez-les depuis l'onglet Routes.",
       byRoad: "À livrer par la route",
       seeRoutes: "Voir les routes",
     },
     cargo: {
-      title: "Cargaisons",
+      title: "Chargement",
       sort: { reward: "Récompense", distance: "Distance", city: "Ville" },
       /** An urgent order the carter sees before it opens. */
       soon: (goods: string, city: string, inTime: string) =>
         `Urgente bientôt : ${goods} pour ${city}, dans ${inTime}`,
-      kinds: { doge: "Doge", urgent: "Urgente", family: "Famille", fondaco: "Fondaco" } as Record<
-        string,
-        string
-      >,
+      kinds: {
+        doge: "Doge",
+        urgent: "Urgente",
+        family: "Famille",
+        fondaco: "Entrepôt de ville",
+      } as Record<string, string>,
       why: {
         noRoad: "pas de route",
         otherCity: (city: string) => `pour ${city} seulement`,
@@ -574,7 +576,7 @@ const frDict = {
       why: (perLevel: number) =>
         `${perLevel} pains par niveau d'atelier : chaque niveau construit en ajoute.`,
       hungry: (left: string) =>
-        `Ouvriers affamés encore ${left} : les lots lancés maintenant durent 50 % de plus. Achetez du pain au Rialto.`,
+        `Ouvriers affamés encore ${left} : les lots lancés maintenant durent 50 % de plus. Achetez du pain au Marché.`,
       low: (missing: number) =>
         `Il manque ${missing} pains pour le prochain repas : sans eux, vos lots dureront 50 % de plus pendant 24 h.`,
       slower: "+50 % (faim)",
@@ -598,9 +600,9 @@ const frDict = {
       tabs: { doge: "Le Doge" },
     },
     terra: {
-      door: "Terraferme",
+      door: "Conquête",
       away: "Pendant votre absence",
-      title: "La Terraferme",
+      title: "La Conquête",
       closesIn: (time: string) => `fin dans ${time}`,
       closed: "Semaine close",
       night: "Nuit : les fronts reposent",
@@ -608,10 +610,10 @@ const frDict = {
       /** The troops' card on the HUD: the glory and the rank live there. */
       troopsTip: {
         title: "Vos troupes",
-        text: "Vos terres recrutent chaque heure de jour, jusqu'au maximum, tant que vos troupes ont du pain. Chaque case prise rapporte de la Gloire.",
+        text: "Vos terres recrutent chaque heure de jour, jusqu'au maximum, tant que vos troupes ont du pain. Chaque case prise rapporte des points de conquête.",
         troops: "Troupes",
         recruit: "Recrues",
-        glory: "Gloire",
+        glory: "Points de conquête",
         rank: "Rang",
         rankOf: (rank: number, of: number) => `${rank}${rank === 1 ? "er" : "e"} sur ${of}`,
         bread: "Pain des troupes",
@@ -627,7 +629,7 @@ const frDict = {
           `${against} : +${cells} case${cells > 1 ? "s" : ""}, −${spent} troupes, ${back} rentrée${back > 1 ? "s" : ""}`,
         ok: "Compris",
       },
-      glory: (glory: number, rank: number) => `${glory} Gloire · ${rank}${rank === 1 ? "er" : "e"}`,
+      glory: (glory: number, rank: number) => `${glory} points · ${rank}${rank === 1 ? "er" : "e"}`,
       milan: "Milan",
       /** The powers of 1450 held by the computer. */
       nations: {
@@ -751,7 +753,7 @@ const frDict = {
         sendLine: (count: number, left: number) =>
           `Envoyer ${count} troupes (encore ${left} aujourd'hui)`,
         allyChip: "Allié",
-        friendChip: "✦ Votre compagnie",
+        friendChip: "✦ Votre guilde",
       },
       mine: {
         title: "Vos terres",
@@ -806,8 +808,8 @@ const frDict = {
           faveur_doge:
             "Un contrat du Doge de plus chaque jour, et tous mieux payés, pour le Signore et ses alliés.",
           franchise_rialto:
-            "Ni taxe du marché, et des quotas de la Dogana doublés, pour le Signore et ses alliés.",
-          calmiere: "Le prix d'une marchandise est plafonné au Rialto, pour tous.",
+            "Ni taxe du marché, et des quotas de la Douane doublés, pour le Signore et ses alliés.",
+          calmiere: "Le prix d'une marchandise est plafonné au Marché, pour tous.",
         } as Record<string, string>,
         targets: { monopole: "resource", calmiere: "resource", embargo: "city" } as Record<
           string,
@@ -819,7 +821,7 @@ const frDict = {
     families: {
       kicker: "Les quatre familles",
       title: "La Campagne de Terraferme",
-      help: "Chaque semaine, les quatre grandes familles se disputent la Terraferme. Levez des troupes, engagez-en contre des ducats, prenez des terres aux milices, à Milan et aux autres familles. De 8 h à 22 h, chaque terre rapporte sa Gloire à qui la tient, heure après heure. La famille la plus glorieuse à la fin de la semaine impose ses décrets la semaine suivante.",
+      help: "Chaque semaine, les quatre grandes familles se disputent la Terraferme. Levez des troupes, engagez-en contre des ducats, prenez des terres aux milices, à Milan et aux autres familles. De 8 h à 22 h, chaque terre rapporte ses points de conquête à qui la tient, heure après heure. La famille qui a le plus de points à la fin de la semaine impose ses décrets la semaine suivante.",
       names: {
         contarini: "Contarini",
         morosini: "Morosini",
@@ -875,13 +877,14 @@ const frDict = {
       confirm: (family: string) => `Rejoindre les ${family} pour la saison`,
       cancel: "Annuler",
       yours: "Votre famille",
-      glory: "Gloire",
+      glory: "Points de conquête",
       gloryHelp:
-        "Gloire de la semaine : la valeur des terres tenues, à chaque heure entre 8 h et 22 h.",
+        "Points de conquête de la semaine : la valeur des terres tenues, à chaque heure entre 8 h et 22 h.",
       weekEnds: (time: string) => `Fin de la semaine dans ${time}`,
       lastWeek: "Dernière semaine : la famille gagnante remporte la saison.",
       landsHeld: (n: number) => `${n} terre${n > 1 ? "s" : ""}`,
-      night: (time: string) => `Trêve de nuit : marches et Gloire reprennent dans ${time}.`,
+      night: (time: string) =>
+        `Trêve de nuit : marches et points de conquête reprennent dans ${time}.`,
       milanNext: (time: string) =>
         `Prochaine chevauchée de Milan dans ${time}, contre la famille en tête.`,
       closed: "La Campagne de la saison est terminée.",
@@ -898,7 +901,7 @@ const frDict = {
       hireDone: "Plafond du jour atteint : revenez demain.",
       hiredToday: (n: number, max: number) => `${n} / ${max} engagées aujourd'hui`,
       leaving: (n: number, time: string) => `${n} partent dans ${time}`,
-      map: "La Terraferme",
+      map: "La Conquête",
       inReach: "À portée de vos troupes",
       drag: {
         hint: "Glissez vos troupes depuis votre fief vers une terre",
@@ -930,14 +933,14 @@ const frDict = {
       works: {
         title: "Les ouvrages",
         help: "Bâtis sur une terre que votre famille tient, payés en ducats qui quittent le jeu. Une terre prise rase son ouvrage ; la carte qui rouvre chaque semaine les efface tous.",
-        names: { rocca: "Rocca", campo: "Campo", dogana: "Dogana" } as Record<string, string>,
+        names: { rocca: "Rocca", campo: "Campo", dogana: "Douane" } as Record<string, string>,
         kinds: {
           rocca: "Forteresse",
           campo: "Camp avancé",
           dogana: "Péage fortifié",
         } as Record<string, string>,
         defense: (pct: string) => `Garnison comptée +${pct} en défense.`,
-        glory: (pct: string) => `Gloire de la terre +${pct}.`,
+        glory: (pct: string) => `Points de conquête de la terre +${pct}.`,
         staging: "Vos marches partent d'ici plutôt que du fief : elles arrivent plus vite.",
         build: (price: string) => `Bâtir · ${price}`,
         building: (time: string) => `En chantier : prête dans ${time}`,
@@ -997,15 +1000,15 @@ const frDict = {
         } as Record<string, string>,
         effects: {
           fondaco: (tax: string, quota: string) =>
-            `Membres : taxe du Rialto à ${tax}, quotas de la Dogana +${quota}.`,
+            `Membres : taxe du Marché à ${tax}, quotas de la Douane +${quota}.`,
           gabelle: (good: string, pct: string) =>
-            `Les autres paient ${pct} de plus sur leurs ventes de ${good} au Rialto, au profit des membres.`,
+            `Les autres paient ${pct} de plus sur leurs ventes de ${good} au Marché, au profit des membres.`,
           faveur: (city: string, pct: string, minutes: number) =>
             `Membres : livraisons à ${city} payées +${pct}, ses commandes urgentes à eux les ${minutes} premières minutes.`,
           peage: (pct: string, cities: string) =>
             `Les autres paient ${pct} de leurs livraisons à ${cities || "leurs villes"} aux membres.`,
           levant: (more: string, less: string) =>
-            `Galères de la Muda : quota +${more} pour les membres, −${less} pour les autres.`,
+            `Arrivage des bateaux : quota +${more} pour les membres, −${less} pour les autres.`,
           calmiere: (good: string, pct: string) =>
             `Aucune offre de ${good} au-dessus de ${pct} du prix de référence.`,
         },
@@ -1047,7 +1050,7 @@ const frDict = {
       kicker: "Objectif de la saison",
       title: "Les plus grosses ventes de Venise",
       rank: (rank: number, total: number) => `Rang ${rank} / ${total}`,
-      worth: "Vos ventes nettes",
+      worth: "Votre bénéfice",
       nextTitle: (name: string, amount: string) => `${name} à ${amount}`,
       left: "Fin de saison dans",
     },
@@ -1062,10 +1065,7 @@ const frDict = {
           "C'est ainsi que les ducats entrent dans votre caisse : la ville paie à l'arrivée.",
         ],
         market_buy: ["Acheter au marché", "Le matériau d'un autre métier, pour grandir."],
-        mission: [
-          "Ouvrir le Livre de compte",
-          "Chaque jour, de nouveaux objectifs et leur récompense.",
-        ],
+        mission: ["Ouvrir mes objectifs", "Chaque jour, de nouveaux objectifs et leur récompense."],
       } as Record<string, [string, string]>,
       guide: "Me guider",
     },
@@ -1089,7 +1089,7 @@ const frDict = {
         crisis: ["La crise", "Une crise s'annonce pour la République…"],
         lombardy: [
           "La guerre de Lombardie",
-          "Milan lève ses troupes : cette semaine, ses garnisons et ses chevauchées sont moitié plus fortes. Ses forteresses rapportent toujours le plus de Gloire.",
+          "Milan lève ses troupes : cette semaine, ses garnisons et ses chevauchées sont moitié plus fortes. Ses forteresses rapportent toujours le plus de points de conquête.",
         ],
         sensa: [
           "La Sensa",
@@ -1107,7 +1107,7 @@ const frDict = {
         ],
         embargo: [
           "L'embargo du Levant",
-          "Les galères ne passent plus : sel et vin se paient 50 % de plus, épices, soie, fourrures et draps 60 %.",
+          "Les bateaux ne passent plus : sel et vin se paient 50 % de plus, épices, soie, fourrures et draps 60 %.",
         ],
         sensa: [
           "La Sensa",
@@ -1116,7 +1116,7 @@ const frDict = {
       } as Record<string, [string, string]>,
     },
     mastery: {
-      kicker: "Maîtrise de la saison",
+      kicker: "Spécialisation de la saison",
       title: "Choisissez votre voie",
       help: "Votre Maison a grandi : elle peut se spécialiser. La maîtrise vaut pour toute la saison ; seule l'Influence permet d'en changer.",
       pick: "Choisissez une maîtrise",
@@ -1125,7 +1125,7 @@ const frDict = {
       ready: "Votre Maison peut choisir sa maîtrise",
       readyHelp: "Maître d'atelier, roulier, négociant ou marchand du Levant",
       locked: (levels: number, need: number) =>
-        `Maîtrise à ${need} niveaux d'ateliers (vous en avez ${levels}) : améliorez ou bâtissez.`,
+        `Spécialisation à ${need} niveaux d'ateliers (vous en avez ${levels}) : améliorez ou bâtissez.`,
       names: {
         master: "Maître d'atelier",
         carter: "Roulier",
@@ -1135,17 +1135,17 @@ const frDict = {
       mottos: {
         master: "Qui transforme bien vend mieux.",
         carter: "Les routes sont à qui va vite.",
-        trader: "Le Rialto est mon atelier.",
-        levant: "Les galères de la Muda ne viennent pas pour rien.",
+        trader: "Le Marché est mon atelier.",
+        levant: "Les bateaux de l'arrivage ne viennent pas pour rien.",
       } as Record<string, string>,
       effects: {
         transform: (n: number) => `+${n} % de rendement sur ce qui se transforme`,
         speed: (n: number) => `véhicules ${n} % plus rapides`,
         vehicles: (n: number) => `${n} véhicule${n > 1 ? "s" : ""} de plus permis`,
-        quota: (n: number) => `quotas de la Dogana +${n} %`,
+        quota: (n: number) => `quotas de la Douane +${n} %`,
         tax: (n: number) => `taxe de marché −${n} point${n > 1 ? "s" : ""} sur vos ventes`,
-        offers: (n: number) => `${n} offres de plus au Rialto`,
-        muda: (n: number) => `quota aux galères de la Muda +${n} %`,
+        offers: (n: number) => `${n} offres de plus au Marché`,
+        muda: (n: number) => `quota aux bateaux de l'arrivage +${n} %`,
       },
     },
     /** Words shared by every section's frame (the scene, its bars, its drawer). */
@@ -1174,15 +1174,15 @@ const frDict = {
       noOffers: "Aucune offre posée. Touchez une marchandise et choisissez « À mon prix ».",
       tabs: { negoce: "Négoce", offres: "Offres", decrets: "Décrets" },
       muda: {
-        title: "Galères de la Muda",
+        title: "Arrivage des bateaux",
         next: (time: string) => `Prochaines dans ${time}`,
-        first: "Les premières galères d'État arrivent bientôt d'Alexandrie et de Beyrouth.",
-        help: "Leurs marchandises d'outre-mer sont vendues par la Dogana, plus cher à mesure que le lot s'épuise : premiers arrivés, meilleurs prix.",
-        empty: "Le quai est vide : tout est parti. Attendez les prochaines galères.",
+        first: "Les premiers bateaux d'État arrivent bientôt d'Alexandrie et de Beyrouth.",
+        help: "Leurs marchandises d'outre-mer sont vendues par la Douane, plus cher à mesure que le lot s'épuise : premiers arrivés, meilleurs prix.",
+        empty: "Le quai est vide : tout est parti. Attendez les prochains bateaux.",
         stock: (n: number) => `${n} à quai`,
         left: (n: number) => (n > 0 ? `vous ${n}` : "pris"),
         quota: (left: number, stock: number, next: string) =>
-          `Galères de la Muda : encore ${left} à acheter pour vous, ${stock} à quai. Nouveau lot dans ${next}.`,
+          `Arrivage des bateaux : encore ${left} à acheter pour vous, ${stock} à quai. Nouveau lot dans ${next}.`,
       },
     },
     top: {
@@ -1319,11 +1319,11 @@ const frDict = {
         `${n} lot${n > 1 ? "s" : ""} : limité par la file (${hours} h)`,
       /** The materials an upgrade lacks: bought right away at the Rialto. */
       buyMissing: (cost: string) => `Acheter ce qui manque (≈ ${cost})`,
-      buyMissingNone: "Personne ne vend ce qui manque au Rialto pour l'instant.",
+      buyMissingNone: "Personne ne vend ce qui manque au Marché pour l'instant.",
       buildHere: "Bâtir ici",
     },
     carnet: {
-      title: "Carnet du jour",
+      title: "Tâches du jour",
       short: "Carnet",
       rewards: (n: number) => `${n} récompense${n > 1 ? "s" : ""} à réclamer`,
       left: (n: number) =>
@@ -1348,38 +1348,38 @@ const frDict = {
         urgent: "Livrer une commande urgente",
         many_deliveries: "Livrer 5 commandes",
         doge_order: "Honorer un contrat du Doge",
-        place_offer: "Laisser une offre au Rialto",
+        place_offer: "Laisser une offre au Marché",
         harvests: "Récolter 4 fois",
         build_site: "Livrer un grand chantier",
-        criee: "Vendre à une Criée",
+        criee: "Vente rapide à une ville",
       } as Record<string, string>,
     },
     bales: {
-      title: "Ballots de Faraj",
+      title: "Colis surprise de Faraj",
       kicker: "Présent d'Alexandrie",
       waiting: (n: number) =>
-        n > 1 ? `${n} ballots vous attendent au quai` : "Un ballot vous attend au quai",
-      next: (t: string) => `Prochain ballot dans ${t}`,
+        n > 1 ? `${n} colis vous attendent au quai` : "Un colis vous attend au quai",
+      next: (t: string) => `Prochain colis dans ${t}`,
       full: "Le quai est plein : ouvrez-en un pour que le suivant parte d'Alexandrie",
-      none: "Plus de ballot avant la fin du mois",
-      arriving: "Un ballot arrive au quai…",
+      none: "Plus de colis avant la fin du mois",
+      arriving: "Un colis arrive au quai…",
       count: (n: number, max: number) => `${n}/${max}`,
       lorenzo:
-        "Lorenzo remonte du quai : « Un ballot pour vous, Messer, scellé de la marque de Faraj d'Alexandrie. »",
+        "Lorenzo remonte du quai : « Un colis pour vous, Messer, scellé de la marque de Faraj d'Alexandrie. »",
       story:
         "Votre grand-père a sauvé du naufrage, au large de Candie, la cargaison d'un jeune marchand d'Alexandrie. Faraj al-Iskandarani est devenu l'un des plus riches négociants du Levant, et il n'a pas oublié sa dette : toutes les six heures, une balle de toile cordée part pour votre comptoir. On ne sait jamais ce qu'elle contient : trois sacs de blé, ou un coupon de soie de Damas.",
       storyTitle: "Qui est Faraj ?",
       tapToOpen: "Touchez le sceau pour ouvrir",
-      open: "Ouvrir le ballot",
+      open: "Ouvrir le colis",
       revealAll: "Tout révéler",
       tapCard: "Touchez une carte pour la retourner",
       stored: "Rangé au magasin",
-      nextBale: (left: number) => `Ballot suivant (${left} restant${left > 1 ? "s" : ""})`,
-      back: "Retour au comptoir",
+      nextBale: (left: number) => `Colis suivant (${left} restant${left > 1 ? "s" : ""})`,
+      back: "Retour aux ateliers",
       odds: "Probabilités",
-      oddsTitle: "Ce que contient un ballot",
+      oddsTitle: "Ce que contient un colis",
       oddsIntro: (cards: number, hours: number, max: number) =>
-        `${cards} cartes par ballot, de 1 à 5 unités chacune. Un ballot toutes les ${hours} heures, ${max} au plus en attente au quai. Les ballots ne s'achètent pas.`,
+        `${cards} cartes par colis, de 1 à 5 unités chacune. Un colis toutes les ${hours} heures, ${max} au plus en attente au quai. Les colis ne s'achètent pas.`,
       oddsOwn: "Votre propre matière première vient deux fois moins souvent.",
       perCard: "par carte",
       units: (q: number) => `×${q}`,
@@ -1392,7 +1392,7 @@ const frDict = {
       } as Record<string, string>,
     },
     criee: {
-      kicker: "Criée du Rialto",
+      kicker: "Vente rapide",
       title: (city: string, resource: string, pct: string) =>
         `${city} achète ${resource} à +${pct}`,
       endsIn: (t: string) => `Fin dans ${t}`,
@@ -1400,7 +1400,7 @@ const frDict = {
         `Vous pouvez vendre ${mine} · il en reste ${total} pour tous`,
       sell: (q: number) => `Vendre ${q}`,
       none: "Rien à vendre en stock",
-      soldOut: "Criée épuisée",
+      soldOut: "Vente rapide épuisée",
       help: "Trois fois par jour, à une heure imprévisible, une ville rachète une marchandise au-dessus du prix de référence pendant 20 minutes. Seuls ceux qui sont là en profitent.",
     },
     pass: {
@@ -1423,7 +1423,7 @@ const frDict = {
       paletteLocked: "Réservée au Pass Négociant",
     },
     ledger: {
-      title: "Livre de compte",
+      title: "Objectifs",
       constellation: (done: number, all: number) => `${done} missions faites sur ${all}`,
       claim: "Encaisser",
       go: "Y aller",
@@ -1433,7 +1433,7 @@ const frDict = {
       items: {
         first_delivery: [
           "Première livraison",
-          "Touchez une charrette sur la carte, puis « Cargaisons » : cochez une commande et « Partir ». La ville paie à l'arrivée.",
+          "Touchez une charrette sur la carte, puis « Chargement » : cochez une commande et « Partir ». La ville paie à l'arrivée.",
         ],
         first_vehicle: [
           "Premier véhicule",
@@ -1441,15 +1441,15 @@ const frDict = {
         ],
         first_contract: [
           "Honorer un contrat du Doge",
-          "Dans « Cargaisons », les commandes marquées « Doge » paient 20 % de plus : livrez-en une.",
+          "Dans « Chargement », les commandes marquées « Doge » paient 20 % de plus : livrez-en une.",
         ],
         first_offer: [
-          "Laisser une offre au Rialto",
-          "Au « Rialto », touchez une marchandise, puis « À mon prix ».",
+          "Laisser une offre au Marché",
+          "Au « Marché », touchez une marchandise, puis « À mon prix ».",
         ],
         offer_taken: [
           "Conclure une offre",
-          "Un marchand achète ou vend sur votre offre : suivez-la dans « Mes offres », au « Rialto ».",
+          "Un marchand achète ou vend sur votre offre : suivez-la dans « Mes offres », au « Marché ».",
         ],
         first_upgrade: [
           "Améliorer un atelier",
@@ -1457,11 +1457,11 @@ const frDict = {
         ],
         five_contracts: [
           "Honorer cinq contrats",
-          "Le Doge passe de nouvelles commandes chaque jour, dans « Cargaisons ».",
+          "Le Doge passe de nouvelles commandes chaque jour, dans « Chargement ».",
         ],
         new_workshop: [
           "Construire un nouvel atelier",
-          "« Bâtir », au comptoir : agrandissez votre domaine.",
+          "« Bâtir », dans vos ateliers : agrandissez votre domaine.",
         ],
         three_deliveries: [
           "Livrer trois commandes",
@@ -1479,14 +1479,14 @@ const frDict = {
     },
     welcome: {
       kicker: "Absent",
-      title: "Bon retour au comptoir",
+      title: "Bon retour",
       slept: "Votre comptoir s'est mis en sommeil : vos ouvriers n'ont ni mangé ni connu la faim.",
       /** The week closed while away: where the merchant finished, and its title. */
       week: {
         title: (n: number) => `Semaine ${n + 1}`,
         rank: (rank: number, award: string | null) =>
           `Vous terminez ${rank}${rank === 1 ? "er" : "e"}${award ? ` — ${award}` : ""}`,
-        gain: (amount: string) => `${amount} de ventes nettes dans la semaine`,
+        gain: (amount: string) => `${amount} de bénéfice dans la semaine`,
         award: "Le titre entre à votre palmarès, visible de tous les marchands.",
       },
       /** What the fattore sent while away. */
@@ -1496,9 +1496,9 @@ const frDict = {
       commerce: "Commerce",
       nothing: "Rien de vendu depuis votre dernière visite.",
       terra: {
-        title: "Terraferme",
+        title: "Conquête",
         glory: (glory: number, rank: number) =>
-          `${glory} Gloire · ${rank}${rank === 1 ? "er" : "e"}`,
+          `${glory} points · ${rank}${rank === 1 ? "er" : "e"}`,
         gained: (n: number) => `${n} case${n > 1 ? "s" : ""} prise${n > 1 ? "s" : ""}`,
         lost: (n: number) => `${n} case${n > 1 ? "s" : ""} perdue${n > 1 ? "s" : ""}`,
         fronts: (n: number, spent: number) =>
@@ -1509,13 +1509,13 @@ const frDict = {
       },
       sources: {
         city_sale: "Ventes aux villes",
-        criee_sale: "Ventes à la criée",
-        trade: "Ventes au Rialto",
-        market_maker_buy: "Ventes à la Dogana",
+        criee_sale: "Ventes rapides",
+        trade: "Ventes au Marché",
+        market_maker_buy: "Ventes à la Douane",
         contract_reward: "Contrats du Doge",
-        project_delivery: "Commandes de compagnie",
-        project_bonus: "Primes de compagnie",
-        mission_reward: "Livre de compte",
+        project_delivery: "Commandes de guilde",
+        project_bonus: "Primes de guilde",
+        mission_reward: "Objectifs",
         family_order_reward: "Commandes de famille",
         guild_dividend: "Dividendes de guilde",
         guild_payout: "Trésor de guilde partagé",
@@ -1524,11 +1524,11 @@ const frDict = {
         tender_delivery: "Appels d'offres du Doge",
         quality_premium: "Qualité des manufactures",
         commission: "Commandes entre marchands",
-        colleganza_share: "Parts de colleganza",
-        share_dividend: "Dividendes de parts",
-        loan: "Prêts de la Banque",
+        colleganza_share: "Parts d'investissement",
+        share_dividend: "Dividendes d'actions",
+        loan: "Emprunts",
         decree_share: "Part des décrets",
-        signoria_toll: "Droit de porte du Podestà",
+        signoria_toll: "Droit de porte du maître de la ville",
         delivery: "Livraisons",
       } as Record<string, string>,
       road: {
@@ -1564,7 +1564,7 @@ const frDict = {
     upgradeEffect: (bonus: number) =>
       `Chaque lot produit davantage, avec une prime de rendement de +${bonus} % : à matières égales, un grand atelier rapporte plus que plusieurs petits. Vos ouvriers mangent aussi davantage de pain.`,
     localRaw: (raw: string) =>
-      `Matière première de votre région : ${raw}. Les autres ne s'extraient pas ici : achetez-les au Rialto.`,
+      `Matière première de votre région : ${raw}. Les autres ne s'extraient pas ici : achetez-les au Marché.`,
     outOfRegion: "Hors de sa région : il produit encore, mais ne peut plus être amélioré.",
     build: "Construire",
     buildTitle: "Nouvel atelier",
@@ -1593,14 +1593,14 @@ const frDict = {
         brickworks: "Cuit l'argile en briques, qui servent à bâtir et agrandir tous les ateliers.",
         sawmill: "Scie le bois en planches, qui servent à bâtir et agrandir tous les ateliers.",
         palazzo:
-          "Prestige : ne produit rien. Compte à son coût dans le patrimoine, pas dans le classement (ventes nettes).",
+          "Prestige : ne produit rien. Compte à son coût dans le patrimoine, pas dans le classement (bénéfice).",
         sand_pit: "Tire le sable de la lagune, que la verrerie fond en verre.",
         glassworks: "Le verre de Murano : sable et bois fondus, pour la miroiterie.",
         mirrorworks: "Argente le verre en miroirs, que les palais des villes paient cher.",
         sheepfold: "Tond la laine des troupeaux, pour le métier à tisser.",
         loom: "Tisse la laine en drap, que le tailleur coupe.",
         tailor: "Coupe le drap en vêtements, le luxe des villes de la Terraferme.",
-        spicery: "Prépare les épices de la Muda : les villes les paient presque le double.",
+        spicery: "Prépare les épices de l'arrivage : les villes les paient presque le double.",
       } as Record<string, string>,
       vehicleRoles: {
         mule: "Lente mais bon marché : tout véhicule commence mule.",
@@ -1611,7 +1611,7 @@ const frDict = {
     },
     maxBuildings: (n: number) => `Maximum de ${n} bâtiments atteint.`,
     palazzoHelp:
-      "Prestige : ne produit rien. Compte à son coût dans le patrimoine, pas dans le classement (ventes nettes).",
+      "Prestige : ne produit rien. Compte à son coût dans le patrimoine, pas dans le classement (bénéfice).",
     rationsOfLevel: (loaves: number) => `Ouvriers : +${loaves} pains/jour`,
     cost: "Coût",
     missing: "manque",
@@ -1619,7 +1619,7 @@ const frDict = {
     loading: "Ouverture du comptoir…",
     retry: "Réessayer",
 
-    marketTabs: { joueurs: "Rialto", villes: "Villes" },
+    marketTabs: { joueurs: "Marché", villes: "Villes" },
     featured: "Plus forte hausse",
     buyAt: "Achat",
     sellAt: "Vente",
@@ -1631,18 +1631,18 @@ const frDict = {
     noOffer: "Aucune offre",
     maxCost: (amount: string) => `Coût maximal : ${amount}`,
     marketHelp: (slippage: number, tax: number) =>
-      `« Tout de suite » : au meilleur prix du carnet (écart maximal ${slippage} %). « À mon prix » : votre offre attend un preneur jusqu'à 72 h. Taxe de ${tax} % payée par le vendeur entre joueurs ; aucune avec la Dogana.`,
+      `« Tout de suite » : au meilleur prix du carnet (écart maximal ${slippage} %). « À mon prix » : votre offre attend un preneur jusqu'à 72 h. Taxe de ${tax} % payée par le vendeur entre joueurs ; aucune avec la Douane.`,
     book: {
       sellers: "Ils vendent",
       buyers: "Ils achètent",
       empty: "Personne",
-      fondaco: "Dogana",
+      fondaco: "Douane",
       you: "Vous",
       quota: (buy: string, sell: string) =>
-        `Dogana aujourd'hui, pour cette marchandise : encore ${buy} à acheter, ${sell} à lui vendre.`,
+        `Douane aujourd'hui, pour cette marchandise : encore ${buy} à acheter, ${sell} à lui vendre.`,
       /** What an order right away can take now, from the book and the Dogana's quota. */
       nowMax: (buy: number, sell: number) =>
-        `Tout de suite : jusqu'à ${buy} à l'achat, ${sell} à la vente (offres du carnet dans l'écart et quota de la Dogana).`,
+        `Tout de suite : jusqu'à ${buy} à l'achat, ${sell} à la vente (offres du carnet dans l'écart et quota de la Douane).`,
       /** The bounds of an order right away, on each side. */
       bounds: (cost: string | null, proceeds: string | null, tax: number) =>
         [
@@ -1652,13 +1652,13 @@ const frDict = {
           .filter(Boolean)
           .join(" · "),
       /** A purchase lowers the net sales, the ranking. */
-      rankCost: (amount: string) => `Acheter : −${amount} sur vos ventes nettes (classement).`,
+      rankCost: (amount: string) => `Acheter : −${amount} sur votre bénéfice (classement).`,
       rules:
         "Tout de suite : au meilleur prix du carnet. À mon prix : votre offre attend un preneur.",
       more: "En savoir plus",
-      dogana: (pct: number) => `Cours de la Dogana : ${pct} % du prix de référence`,
+      dogana: (pct: number) => `Cours de la Douane : ${pct} % du prix de référence`,
       fondacoHelp:
-        "La Dogana, la douane de la République, achète et vend chaque ressource de base en quantité limitée par marchand et par jour. Son cours suit l'offre et la demande : il monte quand les marchands lui achètent plus qu'ils ne lui vendent, baisse dans le cas contraire, et revient peu à peu au prix de référence.",
+        "La Douane de la République achète et vend chaque ressource de base en quantité limitée par marchand et par jour. Son cours suit l'offre et la demande : il monte quand les marchands lui achètent plus qu'ils ne lui vendent, baisse dans le cas contraire, et revient peu à peu au prix de référence.",
       now: "Tout de suite",
       myPrice: "À mon prix",
       price: "Prix unitaire (ducats)",
@@ -1686,7 +1686,7 @@ const frDict = {
           return `${side === "sell" ? "Vente" : "Achat"} : ${filled} unité${filled > 1 ? "s" : ""} ${/^[aeiouyéèêh]/i.test(what) ? "d'" : "de "}${what.toLowerCase()} pour ${amount}.`;
         const why =
           reason === "quota"
-            ? "quota de la Dogana atteint pour aujourd'hui"
+            ? "quota de la Douane atteint pour aujourd'hui"
             : side === "sell"
               ? `aucun autre acheteur dans l'écart de ${slippage} %`
               : `aucun autre vendeur dans l'écart de ${slippage} %`;
@@ -1738,7 +1738,7 @@ const frDict = {
               : "",
             harvests ? "des lots prêts à récolter" : "",
             offers > 0
-              ? `${offers} offre${offers > 1 ? "s" : ""} prise${offers > 1 ? "s" : ""} au Rialto`
+              ? `${offers} offre${offers > 1 ? "s" : ""} prise${offers > 1 ? "s" : ""} au Marché`
               : "",
           ]
             .filter(Boolean)
@@ -1751,14 +1751,14 @@ const frDict = {
       streak: (n: number) =>
         `Série de ${n} jours : le coffre du jour est encore fermé, finissez vos tâches avant la fin du jour.`,
       skirmishCall: (at: string) =>
-        `Convocation d'escarmouche à ${at} : les marchands s'y retrouvent pour une partie classée.`,
+        `Convocation à la partie rapide à ${at} : les marchands s'y retrouvent pour une partie classée.`,
       harvest: "Récolte prête : vos ateliers ont terminé leur production.",
       event: "Un événement agite les marchés.",
       seasonEnding: "Dernier sprint : la saison se termine dans 3 jours.",
       seasonOpened: (name: string) => `${name} commence : venez voir vos récompenses.`,
       criee: (city: string, what: string, pct: number) =>
-        `Criée : ${city} achète ${what} à +${pct} % pendant 20 minutes.`,
-      deal: (what: string, price: string) => `Bonne affaire : ${what} à ${price} au Rialto.`,
+        `Vente rapide : ${city} achète ${what} à +${pct} % pendant 20 minutes.`,
+      deal: (what: string, price: string) => `Bonne affaire : ${what} à ${price} au Marché.`,
       order: (who: string, sold: boolean, qty: number, what: string) =>
         sold
           ? `Offre conclue : ${who} a acheté ${qty} ${what.toLowerCase()}.`
@@ -1766,46 +1766,46 @@ const frDict = {
       delivery: (qty: number, what: string, city: string, amount: string) =>
         `${qty} ${what} livrés à ${city} : ${amount} encaissés.`,
       muda: (goods: string) =>
-        `Les galères de la Muda sont à quai : la Dogana vend ${goods || "les marchandises d'outre-mer"} au Rialto.`,
+        `Les bateaux de l'arrivage sont à quai : la Douane vend ${goods || "les marchandises d'outre-mer"} au Marché.`,
       siege: (land: string, by: string, lances: number, time: string) =>
         `${land} menacée : ${lances} troupes ${by} arrivent à ${time}. Renforcez la garnison !`,
       sfida: (event: string, by: string | null, ghost: boolean) =>
         event === "challenged"
           ? `${by ?? "Un marchand"} vous défie pour la semaine prochaine.`
           : ghost
-            ? `Votre Sfida de la semaine : le fantôme de ${by ?? "un marchand"}.`
-            : `Votre Sfida de la semaine : ${by ?? "un marchand"}.`,
+            ? `Votre duel de la semaine : le fantôme de ${by ?? "un marchand"}.`
+            : `Votre duel de la semaine : ${by ?? "un marchand"}.`,
       broglio: (event: string, price: string) =>
         ({
           sold: `Un marchand vous a acheté une rumeur (${price}).`,
-          spied: "Un espion rôde autour de votre comptoir : chassez-le au Broglio.",
+          spied: "Un espion rôde autour de vos ateliers : chassez-le aux Rumeurs.",
           chased: "Votre espion a été chassé.",
-          unmasked: "Une rumeur reçue au Rialto venait d'un menteur, démasqué.",
-          caught: "Votre fausse rumeur est démasquée : vous perdez du Lustre.",
-        })[event] ?? "Du nouveau au Broglio.",
+          unmasked: "Une rumeur reçue au Marché venait d'un menteur, démasqué.",
+          caught: "Votre fausse rumeur est démasquée : vous reculez dans votre ligue.",
+        })[event] ?? "Du nouveau aux Rumeurs.",
       shares: (event: string, quantity: number, amount: string): string =>
         ({
-          bought: `${quantity} parts de votre Maison ont trouvé preneur (${amount} pièce).`,
-          council: "Un porteur siège désormais à votre conseil : il voit vos comptes.",
-          dividend: `Vos parts vous rapportent ${amount} cette semaine.`,
-          settled: `Fin du mois : vos parts vous sont rachetées ${amount}.`,
-        })[event] ?? "Du nouveau sur vos parts.",
+          bought: `${quantity} actions de votre Maison ont trouvé preneur (${amount} pièce).`,
+          council: "Un actionnaire a désormais accès à vos comptes.",
+          dividend: `Vos actions vous rapportent ${amount} cette semaine.`,
+          settled: `Fin du mois : vos actions vous sont rachetées ${amount}.`,
+        })[event] ?? "Du nouveau sur vos actions.",
       doge: (event: string, by: string | null, candidate: boolean) =>
         event === "opened"
           ? candidate
-            ? "Vous êtes candidat au Doge : annoncez votre programme au Sénat."
-            : "L'élection du Doge est ouverte : lisez les programmes et votez au Sénat."
+            ? "Vous êtes candidat au Doge : annoncez votre programme à l'élection."
+            : "L'élection du Doge est ouverte : lisez les programmes et votez à l'élection."
           : event === "won"
             ? "Vous êtes élu Doge : votre programme gouvernera le mois prochain."
             : `${by ?? "Un marchand"} est élu Doge : son programme gouvernera le mois prochain.`,
       letter: (name: string, text: string) => text || `Des nouvelles de ${name}.`,
       sera: (event: string, lots: number) =>
         event === "outbid"
-          ? "Votre enchère est dépassée à l'incanto des galères."
-          : `La Sera commence à 20 h : ${lots} lot${lots > 1 ? "s" : ""} aux enchères, et la bataille.`,
+          ? "Votre enchère est dépassée aux enchères du soir."
+          : `Les enchères du soir commencent à 20 h : ${lots} lot${lots > 1 ? "s" : ""} aux enchères, et la bataille.`,
       signoria: (event: string, city: string, by: string | null) =>
         event === "podesta_named"
-          ? `Vous êtes Podestà de ${city} : un droit sur les livraisons des autres, et ses commandes avant eux.`
+          ? `Vous êtes maître de ${city} : un droit sur les livraisons des autres, et ses commandes avant eux.`
           : event === "podesta_lost"
             ? `${by ?? "Un rival"} vous a repris ${city}.`
             : `${by ?? "Un rival"} vous dépasse sur la jauge de ${city}.`,
@@ -1847,18 +1847,18 @@ const frDict = {
           family: "Résultats de la Campagne et terres perdues",
           siege: "Terre menacée (alerte immédiate)",
           delivery: "Livraison arrivée",
-          muda: "Galères de la Muda à quai",
+          muda: "Les bateaux de l'arrivage sont à quai",
           morning: "Gazette du matin (8 h 05)",
-          skirmish_call: "Convocations d'escarmouche (un quart d'heure avant)",
+          skirmish_call: "Convocations à la partie rapide (un quart d'heure avant)",
           wave: "Vague de commandes que votre stock couvre (si vous êtes absent)",
           streak: "Rappel de série (19 h, coffre du jour fermé)",
-          signoria: "Signoria des villes (Podestà nommé, ville perdue, rival en tête)",
-          sfida: "Sfida de la semaine et défis reçus",
-          sera: "La Sera (19 h 55) et enchères dépassées",
+          signoria: "Contrôle des villes (maître nommé, ville perdue, rival en tête)",
+          sfida: "Duel de la semaine et défis reçus",
+          sera: "Les enchères du soir (19 h 55) et enchères dépassées",
           letter: "Suites de la lettre du jour",
           doge: "Élection du Doge (ouverture, élu)",
-          broglio: "Le Broglio (rumeur vendue, espion, menteur démasqué)",
-          shares: "Les parts de Maison (parts vendues, conseil, dividende, rachat)",
+          broglio: "Les Rumeurs (rumeur vendue, espion, menteur démasqué)",
+          shares: "Les actions (vendues, accès aux comptes, dividende, rachat)",
         } as Record<string, string>,
       },
     },
@@ -1873,13 +1873,13 @@ const frDict = {
         procurator: "Procurateur",
         senator: "Sénateur",
       } as Record<string, string>,
-      help: "Ventes nettes depuis le début de la semaine (ou depuis votre arrivée), en ducats : ce que vous avez vendu, moins ce que vous avez acheté. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
+      help: "Bénéfice depuis le début de la semaine (ou depuis votre arrivée), en ducats : ce que vous avez vendu, moins ce que vous avez acheté. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
     },
     season: {
       closed: (name: string) => `La saison ${name} est close`,
       rankOf: (rank: number, players: number) =>
         `${rank}${rank === 1 ? "er" : "e"} sur ${players} marchand${players > 1 ? "s" : ""}`,
-      worth: "Ventes nettes de la saison",
+      worth: "Bénéfice de la saison",
       podium: "Le podium",
       rewards: "Vos récompenses",
       milestone: (name: string) => `Palier ${name}`,
@@ -1887,26 +1887,26 @@ const frDict = {
         title: "Objectif de saison",
         now: (name: string, n: number) =>
           n > 0
-            ? `${name} : +${n} de Renommée assurés à la fin du mois.`
-            : `${name} : pas encore de Renommée de palier.`,
+            ? `${name} : +${n} de prestige assurés à la fin du mois.`
+            : `${name} : pas encore de prestige de palier.`,
         next: (name: string, worth: string, n: number) =>
-          `Prochain palier : ${name}, à ${worth} de ventes nettes (+${n} de Renommée), quel que soit votre rang.`,
+          `Prochain palier : ${name}, à ${worth} de bénéfice (+${n} de prestige), quel que soit votre rang.`,
         top: "Plus haut palier atteint : tenez-le jusqu'à la fin du mois.",
       },
-      renownTotal: (name: string) => `Renommée de la Maison : ${name}`,
+      renownTotal: (name: string) => `Prestige de la Maison : ${name}`,
       nothing: "Jouez au moins 7 jours dans une saison pour recevoir l'écusson de participant.",
       start: "Ouvrir mon nouveau comptoir",
       newSeason: (name: string) =>
-        `${name} commence : tout le monde repart de zéro. Votre palmarès et votre Renommée vous suivent.`,
+        `${name} commence : tout le monde repart de zéro. Votre palmarès et votre prestige vous suivent.`,
       lastSprint: (days: number) =>
         `Dernier sprint : la saison se termine dans ${days} jour${days > 1 ? "s" : ""}.`,
       honoured: (pseudo: string, season: string) => `${pseudo}, Doge de ${season}`,
     },
     palmares: {
       title: "Palmarès",
-      renown: "Renommée",
+      renown: "Prestige",
       renownHelp:
-        "La Renommée s'accumule de saison en saison selon votre rang final. Elle donne des titres, jamais d'avance économique : chaque saison, tout le monde repart à égalité.",
+        "Le prestige s'accumule de saison en saison selon votre rang final. Il donne des titres, jamais d'avance économique : chaque saison, tout le monde repart à égalité.",
       nextRenown: (name: string, missing: number) => `${missing} points avant « ${name} »`,
       seasons: "Saisons",
       weeks: "Semaines classées",
@@ -1924,12 +1924,12 @@ const frDict = {
       "PNJ : maisons marchandes tenues par l'ordinateur, avec les mêmes règles que vous. Elles animent le monde tant qu'il compte peu de joueurs et se retirent à mesure que de vrais marchands arrivent.",
     anonymous: "Marchand anonyme",
     rankingHelp:
-      "Ventes nettes = tout ce que vous avez vendu (Rialto, Dogana, livraisons, commandes du Doge), taxes et péages déduits, moins tout ce que vous avez acheté. Le stock et les bâtiments ne comptent pas.",
+      "Bénéfice = tout ce que vous avez vendu (Marché, Douane, livraisons, commandes du Doge), taxes et péages déduits, moins tout ce que vous avez acheté. Le stock et les bâtiments ne comptent pas.",
 
     house: {
       card: "Votre Maison",
       titleOf: (name: string) => `Titre de la saison : ${name}`,
-      renownOf: (n: number) => `Renommée ${n.toLocaleString("fr-FR")}`,
+      renownOf: (n: number) => `Prestige ${n.toLocaleString("fr-FR")}`,
       influenceOf: (n: number) => `${n.toLocaleString("fr-FR")} d'Influence`,
       more: "Voir le détail",
       less: "Replier",
@@ -1949,7 +1949,7 @@ const frDict = {
       history: "Derniers mouvements",
       none: "Rien encore : accomplissez une mission de la Maison.",
       sources: {
-        commerce: (week: number | null) => `Ventes nettes · semaine ${(week ?? 0) + 1}`,
+        commerce: (week: number | null) => `Bénéfice · semaine ${(week ?? 0) + 1}`,
         campaign: (week: number | null) => `Campagne · semaine ${(week ?? 0) + 1}`,
         season: () => "Fin de saison",
         patent: () => "Privilège",
@@ -1990,17 +1990,17 @@ const frDict = {
           many_deliveries: (n: number) => `Livrer ${n} commandes`,
           urgent: (n: number) => `Livrer ${n} commandes urgentes`,
           doge: (n: number) => `Honorer ${n} contrats du Doge`,
-          offers: (n: number) => `Laisser ${n} offres au Rialto`,
-          rialto: (n: number) => `Voir ${n} de vos offres prises au Rialto`,
+          offers: (n: number) => `Laisser ${n} offres au Marché`,
+          rialto: (n: number) => `Voir ${n} de vos offres prises au Marché`,
           harvests: (n: number) => `Récolter ${n} fois`,
           upgrade: () => "Agrandir un atelier",
           build: () => "Bâtir un atelier",
           vehicle: () => "Améliorer un véhicule",
           chests: (n: number) => `Ouvrir ${n} coffres du jour`,
-          bales: (n: number) => `Ouvrir ${n} ballots de Faraj`,
-          terra_place: () => "Poser son comptoir sur la Terraferme",
-          terra_cells: (n: number) => `Prendre ${n} cases sur la Terraferme`,
-          terra_city: () => "Prendre une ville de la Terraferme",
+          bales: (n: number) => `Ouvrir ${n} colis de Faraj`,
+          terra_place: () => "Poser son camp sur la carte de la Conquête",
+          terra_cells: (n: number) => `Prendre ${n} cases sur la carte de la Conquête`,
+          terra_city: () => "Prendre une ville de la Conquête",
           terra_rocca: () => "Bâtir une Rocca",
           terra_aid: () => "Envoyer des troupes à un allié",
         } as Record<string, (n: number) => string>,
@@ -2023,7 +2023,7 @@ const frDict = {
             : "Plus de troupes aujourd'hui.",
         work: (n: number) => `Achever · ${n} ✦`,
         respec: (n: number) => `Changer de maîtrise · ${n} ✦`,
-        respecTitle: (name: string) => `Maîtrise : ${name}`,
+        respecTitle: (name: string) => `Spécialisation : ${name}`,
         respecHelp: "Vous la choisissez de nouveau aussitôt, parmi toutes.",
         reroll: (n: number) => `Changer de tâche · ${n} ✦`,
         /** The same on a phone's narrow line: the sign of a change and its price. */
@@ -2036,12 +2036,12 @@ const frDict = {
     nextTitle: (name: string) => `Prochain titre : ${name}`,
     maxTitle: "Titre suprême atteint",
     netWorth: "Patrimoine",
-    turnover: "Ventes nettes",
+    turnover: "Bénéfice",
     merchantLevel: {
       short: (n: number) => `Niv. ${n}`,
       title: (n: number) => `Niveau ${n}`,
       progress: (xp: string, to: string) => `${xp} / ${to} points`,
-      help: "Votre niveau ne redescend jamais : chaque ducat de ventes nettes vous rapporte un point, saison après saison. Il est honorifique : aucun avantage en jeu, chaque saison tout le monde repart à égalité.",
+      help: "Votre niveau ne redescend jamais : chaque ducat de bénéfice vous rapporte un point, saison après saison. Il est honorifique : aucun avantage en jeu, chaque saison tout le monde repart à égalité.",
     },
     cash: "Caisse",
     stockValue: "Stocks",
@@ -2059,55 +2059,55 @@ const frDict = {
     /** The name proposed at the door, changed once (E3-5). */
     /** Companies (E2-8): friends kept from month to month, with no power over the trade. */
     myCompany: {
-      title: "Compagnie",
+      title: "Guilde",
       pitch:
-        "De 2 à 6 amis, d'un mois à l'autre : un fil à vous, une convocation commune à l'escarmouche, un palmarès partagé, et vos associés marqués ✦ sur la carte. Ni trésor, ni avantage au commerce.",
-      found: "Fonder une compagnie",
-      namePlaceholder: "Nom de la compagnie",
+        "De 2 à 6 amis, d'un mois à l'autre : un fil à vous, une convocation commune à la partie rapide, un palmarès partagé, et vos associés marqués ✦ sur la carte. Ni trésor, ni avantage au commerce.",
+      found: "Fonder une guilde",
+      namePlaceholder: "Nom de la guilde",
       create: "Fonder",
-      waitUntil: (date: string) => `Vous pourrez rejoindre une compagnie le ${date}.`,
+      waitUntil: (date: string) => `Vous pourrez rejoindre une guilde le ${date}.`,
       members: (n: number, max: number) => `${n} / ${max} associés`,
       me: "vous",
       seen: (ago: string) => `vu ${ago}`,
       notHere: "pas encore ce mois-ci",
       lacks: (has: string, wants: string) =>
-        `Votre compagnie a un ${has.toLowerCase()} : invitez un ${wants.toLowerCase()}.`,
+        `Votre guilde a un ${has.toLowerCase()} : invitez un ${wants.toLowerCase()}.`,
       lacksAlone: (wants: string) => `Invitez un ${wants.toLowerCase()} pour commencer.`,
       invite: "Inviter un associé",
       copied: "Lien copié : envoyez-le à votre associé.",
-      inviteText: (name: string) => `Rejoignez ma compagnie « ${name} » sur Fondaco.`,
-      call: (at: string) => `Convoquer à l'escarmouche de ${at}`,
-      called: (at: string, by: string) => `Convocation à l'escarmouche de ${at}, par ${by}.`,
+      inviteText: (name: string) => `Rejoignez ma guilde « ${name} » sur Fondaco.`,
+      call: (at: string) => `Convoquer à la partie rapide de ${at}`,
+      called: (at: string, by: string) => `Convocation à la partie rapide de ${at}, par ${by}.`,
       calledHelp: "Chaque associé est prévenu un quart d'heure avant.",
       record: "Palmarès commun",
       recordEmpty: "Les saisons jouées à deux ou plus s'inscriront ici.",
       rank: (n: number) => `${n}ᵉ`,
-      leave: "Quitter la compagnie",
+      leave: "Quitter la guilde",
       leaveConfirm: "Quitter ? Vous attendrez 7 jours avant d'en rejoindre une autre.",
       leaveYes: "Oui, quitter",
       cancel: "Annuler",
       thread: {
-        title: "Fil de la compagnie",
+        title: "Fil de la guilde",
         help: "Réservé à vos associés. Restez courtois : un message signalé par trois membres disparaît.",
         placeholder: "Un mot pour vos associés…",
       },
       invitation: {
         title: (name: string) => `Invitation : « ${name} »`,
         line: (n: number) => `${n} associé${n > 1 ? "s" : ""} déjà.`,
-        full: "Cette compagnie est complète (6 associés).",
+        full: "Cette guilde est complète (6 associés).",
         join: "Rejoindre",
         decline: "Non merci",
       },
       /** The badge on the choice of a trade, for whoever comes by a company's link. */
-      regionBadge: "Manque à votre compagnie",
+      regionBadge: "Manque à votre guilde",
       regionHelp: (name: string, jobs: string[]) =>
         jobs.length > 0
           ? `« ${name} » a déjà un ${jobs.map((j) => j.toLowerCase()).join(" et un ")} : ce métier lui manque.`
           : `Le métier que « ${name} » attend.`,
       errors: {
-        already_member: "Vous êtes déjà dans une compagnie.",
-        left_recently: "Vous avez quitté une compagnie il y a moins de 7 jours.",
-        company_full: "Cette compagnie est complète.",
+        already_member: "Vous êtes déjà dans une guilde.",
+        left_recently: "Vous avez quitté une guilde il y a moins de 7 jours.",
+        company_full: "Cette guilde est complète.",
         unknown_company: "Cette invitation n'existe plus.",
         invalid_name: "Un nom de 3 à 24 caractères, sans grossièreté.",
         name_taken: "Ce nom est déjà pris.",
@@ -2135,7 +2135,7 @@ const frDict = {
       title: "Mes données",
       help: "Téléchargez tout ce que le jeu conserve sur vous, ou supprimez votre compte.",
       export: "Télécharger mes données",
-      ledgerCsv: "Livre de compte (CSV, pour un tableur)",
+      ledgerCsv: "Mes comptes (CSV, pour un tableur)",
       delete: "Supprimer mon compte",
       deleteText:
         "Votre adresse, votre nom, votre blason, vos notifications et votre historique d'activité seront effacés, et vous serez déconnecté. Votre comptoir reste dans la saison en cours sous le nom « Marchand anonyme », pour que les échanges des autres joueurs restent justes. C'est définitif.",
@@ -2152,7 +2152,7 @@ const frDict = {
     replayGuide: "Relancer le guide",
     haptics: "Vibrations",
     sound: "Sons",
-    soundHint: "Une pièce qui sonne, une récolte, une charrette qui part, la cloche des avis.",
+    soundHint: "Une pièce qui sonne, une récolte, une charrette qui part, la cloche des messages.",
     hapticsHint:
       "Un léger retour quand une action réussit, une alerte en cas d'abordage. Sur iPhone, seulement un petit clic.",
     palette: "Palette",
@@ -2171,7 +2171,7 @@ const frDict = {
       afterDelivery: "S'ouvre après votre première livraison.",
       force: "Touchez encore pour l'ouvrir maintenant.",
       afterFirstDay:
-        "La Terraferme, conquête de la semaine, s'ouvre après votre première journée de commerce. Facultative : on n'y perd jamais rien.",
+        "La Conquête, la guerre de la semaine, s'ouvre après votre première journée de commerce. Facultative : on n'y perd jamais rien.",
     },
     coach: {
       name: "Lorenzo, votre facteur",
@@ -2180,7 +2180,7 @@ const frDict = {
       covered: "Fermez cette fenêtre pour continuer : ce que je vous montre est dessous.",
       produceTap: (building: string) =>
         `Lançons votre ${building.toLowerCase()} ! Touchez « Produire » : il attend du travail.`,
-      tapHome: "Touchez votre comptoir, au centre de la carte : vos ateliers s'y trouvent.",
+      tapHome: "Touchez « Mes ateliers », au centre de la carte.",
       openWorkshops: (building: string) =>
         `Lançons votre ${building.toLowerCase()} ! Ouvrez vos ateliers.`,
       /** The batch's own time: 30 seconds in the guide's first ones, 30 minutes after. */
@@ -2207,23 +2207,23 @@ const frDict = {
       enRoute: (left: string) => `Votre charrette est en route : arrivée dans ${left}.`,
       firstPay: "Première paie",
       goRialto:
-        "Pour grandir, il faut les matériaux d'une autre région. Touchez Venise, puis le Rialto.",
+        "Pour grandir, il faut les matériaux d'une autre région. Touchez Venise, puis le Marché.",
       /** « de l'argile », « des briques »: the good with its article. */
       buy: (some: string) => `Achetez ${some} : cela sert à améliorer vos ateliers.`,
       emptyMarket:
-        "Personne ne vend rien au Rialto pour l'instant et votre part de la Dogana est épuisée pour aujourd'hui. Passons, vous achèterez plus tard.",
+        "Personne ne vend rien au Marché pour l'instant et votre part de la Douane est épuisée pour aujourd'hui. Passons, vous achèterez plus tard.",
       skip: "Passer",
       /** The first upgrade (E3-3): its gain read from the yield, never written here. */
       investOpen: (building: string) => `Agrandissons votre ${building} : ouvrez vos ateliers.`,
       investTap: (building: string) => `Touchez le niveau de votre ${building} pour l'agrandir.`,
       investBuy:
-        "Il manque des matériaux : achetez-les en une fois au Rialto, juste ce qu'il faut.",
+        "Il manque des matériaux : achetez-les en une fois au Marché, juste ce qu'il faut.",
       invest: (building: string, level: number, times: string) =>
         `Au niveau ${level}, votre ${building} produira ×${times} à chaque lot. Agrandissez-le !`,
       ledger:
-        "Voici votre Livre de compte : chaque jour, de nouveaux objectifs et leur récompense. Encaissez la première !",
+        "Voici vos objectifs : chaque jour, de nouveaux objectifs et leur récompense. Encaissez la première !",
       ledgerLater:
-        "Votre Livre de compte, sous la cloche des Avis, vous donne vos objectifs du jour. Remplissez-les pour gagner des récompenses.",
+        "Sous la cloche des Messages, vos objectifs du jour : remplissez-les pour gagner des récompenses.",
       investLater:
         "Il vous faut encore des briques et des planches pour améliorer un atelier. Produisez, vendez, achetez : c'est la boucle du marchand !",
       done: "Bravo, vous connaissez la boucle : produire, vendre, réinvestir. Lancez vos ateliers avant de partir : ils tournent sans vous.",
@@ -2262,11 +2262,11 @@ const frDict = {
       title: "L'Arsenal de la semaine",
       of: (city: string) => `Arsenal · ${city}`,
       line: "Bronze, Argent, Or · du lundi au dimanche",
-      help: "Chaque semaine, une ville commande du pain, des briques et des planches aux trois régions. Jusqu'au Bronze, chaque unité est payée 10 % au-dessus de la référence, et chaque marchand qui a livré touche 10 % de plus quand le Bronze est atteint. Au-delà, l'Argent (une fois et quart le Bronze) et l'Or (une fois et demie) sont payés 5 % au-dessus de la référence. L'Argent apporte un quart de plus aux galères de la Muda la semaine suivante ; l'Or, 3 d'Influence à qui en a livré 2 % et au moins une unité après le Bronze. Les maisons de l'ordinateur s'arrêtent au Bronze.",
+      help: "Chaque semaine, une ville commande du pain, des briques et des planches aux trois régions. Jusqu'au Bronze, chaque unité est payée 10 % au-dessus de la référence, et chaque marchand qui a livré touche 10 % de plus quand le Bronze est atteint. Au-delà, l'Argent (une fois et quart le Bronze) et l'Or (une fois et demie) sont payés 5 % au-dessus de la référence. L'Argent apporte un quart de plus aux bateaux de l'arrivage la semaine suivante ; l'Or, 3 d'Influence à qui en a livré 2 % et au moins une unité après le Bronze. Les maisons de l'ordinateur s'arrêtent au Bronze.",
       tiers: [
         "Visez le Bronze",
         "Bronze atteint : prime versée. En route pour l'Argent",
-        "Argent atteint : les galères de la semaine prochaine apporteront plus. En route pour l'Or",
+        "Argent atteint : les bateaux de la semaine prochaine apporteront plus. En route pour l'Or",
         "Or atteint : 3 d'Influence pour qui a livré après le Bronze",
       ],
       endsIn: (time: string) => `se termine dans ${time}`,
@@ -2279,7 +2279,7 @@ const frDict = {
             : `${n} marchands y ont livré`,
       mine: (amount: string) => `Vous : ${amount}`,
       deliver: (n: number) => `Livrer ${n}`,
-      none: "Aucune commande de compagnie en cours.",
+      none: "Aucune commande de guilde en cours.",
     },
     /** The Rapport de la Banque de Venise, in the help. */
     bank: {
@@ -2294,17 +2294,17 @@ const frDict = {
         delivery: "livraisons",
         city_sale: "villes",
         contract_reward: "contrats",
-        project_delivery: "compagnie",
+        project_delivery: "guilde",
         project_bonus: "primes",
         mission_reward: "missions",
         daily_reward: "tâches",
         starting_capital: "capitaux",
-        market_maker_buy: "Dogana",
-        market_maker_sell: "Dogana",
+        market_maker_buy: "Douane",
+        market_maker_sell: "Douane",
         market_tax: "taxe",
         construction: "chantiers",
         vehicle: "véhicules",
-        terraferma: "Terraferme",
+        terraferma: "Conquête",
         fattore: "fattore",
         decree_favour: "faveurs",
       } as Record<string, string>,
@@ -2314,15 +2314,15 @@ const frDict = {
       share: "Partager ma chronique",
       who: (pseudo: string, rank: number, of: number) =>
         `${pseudo}, ${rank}${rank === 1 ? "er" : "e"} marchand sur ${of}`,
-      sales: (amount: string) => `${amount} de ventes nettes`,
+      sales: (amount: string) => `${amount} de bénéfice`,
       title: (name: string) => `Titre : ${name}`,
       award: (name: string) => `Distinction : ${name}`,
-      renown: (name: string) => `Renommée de la Maison : ${name}`,
+      renown: (name: string) => `Prestige de la Maison : ${name}`,
       footer: "Un jeu de commerce honnête · une saison par mois",
     },
     /** The Journal du Rialto, in the notices. */
     journal: {
-      title: "Journal du Rialto",
+      title: "Journal du Marché",
       empty: "Rien de marquant depuis hier.",
       minutes: (n: number) => `${n} min`,
       hours: (n: number) => `${n} h`,
@@ -2330,13 +2330,14 @@ const frDict = {
       trade: (buyer: string, seller: string, qty: number, good: string, value: string) =>
         `${buyer} achète ${qty} ${good.toLowerCase()} à ${seller} pour ${value}`,
       company: (city: string, n: number) =>
-        `La commande de compagnie de ${city} est remplie par ${n} marchand${n > 1 ? "s" : ""}`,
+        `La commande de guilde de ${city} est remplie par ${n} marchand${n > 1 ? "s" : ""}`,
       conquest: (who: string, cells: number) =>
-        `${who} prend ${cells} terre${cells > 1 ? "s" : ""} en Terraferme`,
-      milan: (cells: number) => `Milan prend ${cells} terre${cells > 1 ? "s" : ""} en Terraferme`,
+        `${who} prend ${cells} terre${cells > 1 ? "s" : ""} sur la carte de la Conquête`,
+      milan: (cells: number) =>
+        `Milan prend ${cells} terre${cells > 1 ? "s" : ""} sur la carte de la Conquête`,
       signore: (who: string, conquest: boolean) =>
-        `${who} devient Signore de la Terraferme${conquest ? ", par conquête" : ""}`,
-      noSignore: "La semaine de la Terraferme se clôt sans Signore",
+        `${who} devient Signore de la Conquête${conquest ? ", par conquête" : ""}`,
+      noSignore: "La semaine de la Conquête se clôt sans Signore",
       community: "Rejoindre la communauté des marchands →",
     },
     /** Lorenzo's three bubbles at the first visit to the Terraferma. */
@@ -2354,8 +2355,8 @@ const frDict = {
     /** The Terraferma's guide, with its diagrams. */
     terraGuide: {
       kicker: "Guide",
-      title: "La Terraferme",
-      open: "Guide de la Terraferme",
+      title: "La Conquête",
+      open: "Guide de la Conquête",
       openShort: "? Guide",
       cardText: "Le mode conquête expliqué pas à pas, avec des schémas.",
       intro:
@@ -2389,12 +2390,12 @@ const frDict = {
         {
           diagram: "peasants",
           title: "Soldats ou paysans",
-          text: "Sur vos terres, un curseur partage vos gens : les soldats recrutent (jusqu'à deux fois plus), les paysans récoltent pour votre comptoir du blé dans les plaines, de l'argile dans les collines, du bois dans les montagnes. Deux villes ou plus reliées à votre capitale par vos terres rapportent des ducats chaque heure.",
+          text: "Sur vos terres, un curseur partage vos gens : les soldats recrutent (jusqu'à deux fois plus), les paysans récoltent pour vos ateliers du blé dans les plaines, de l'argile dans les collines, du bois dans les montagnes. Deux villes ou plus reliées à votre capitale par vos terres rapportent des ducats chaque heure.",
         },
         {
           diagram: "water",
           title: "L'eau : ports et barques",
-          text: "Bâtissez un port sur une terre au bord de la lagune, du lac de Garde ou de l'Adriatique. Touchez ensuite une rive des mêmes eaux : « Débarquer » y envoie une barque, dix minutes par case d'eau, qui prend la rive puis avance comme un front. Les galères d'un port ennemi sur ces eaux coulent 30 % du débarquement.",
+          text: "Bâtissez un port sur une terre au bord de la lagune, du lac de Garde ou de l'Adriatique. Touchez ensuite une rive des mêmes eaux : « Débarquer » y envoie une barque, dix minutes par case d'eau, qui prend la rive puis avance comme un front. Les bateaux d'un port ennemi sur ces eaux coulent 30 % du débarquement.",
         },
         {
           diagram: "bombard",
@@ -2414,27 +2415,28 @@ const frDict = {
         {
           diagram: "win",
           title: "Gagner la semaine",
-          text: "Chaque heure ouverte, chaque terre vous rapporte 1 de Gloire, chaque ville 3. À la fin de la semaine, le premier en Gloire est le Signore : le décret qu'il a choisi s'applique la semaine suivante, pour lui et ses alliés. Tout le classement gagne de l'Influence pour sa Maison.",
+          text: "Chaque heure ouverte, chaque terre vous rapporte 1 point de conquête, chaque ville 3. À la fin de la semaine, le premier en points de conquête est le Signore : le décret qu'il a choisi s'applique la semaine suivante, pour lui et ses alliés. Tout le classement gagne de l'Influence pour sa Maison.",
         },
         {
           diagram: "battle",
-          title: "Bataille et escarmouches",
-          text: "Chaque soir de 20 h à 21 h, l'heure de bataille : les fronts avancent dix fois plus vite, venez les mener. De 8 h à 22 h, « Escarmouche » lance une partie en direct d'un quart d'heure contre d'autres marchands et des condottieri. Une seule par jour est classée : la première avec au moins un autre marchand, si votre camp est posé sur la carte de la semaine et qu'elle finit avant 22 h. Votre rang y rapporte de la Gloire à votre semaine ; les autres parties sont amicales, sans Gloire.",
+          title: "Bataille et parties rapides",
+          text: "Chaque soir de 20 h à 21 h, l'heure de bataille : les fronts avancent dix fois plus vite, venez les mener. De 8 h à 22 h, « Partie rapide » lance une partie en direct d'un quart d'heure contre d'autres marchands et des condottieri. Une seule par jour est classée : la première avec au moins un autre marchand, si votre camp est posé sur la carte de la semaine et qu'elle finit avant 22 h. Votre rang y rapporte des points de conquête à votre semaine ; les autres parties sont amicales, sans points de conquête.",
         },
       ],
     },
     /** The Condotta (E2-5): together against the nations, for a grade and nothing else. */
     condotta: {
-      title: "Condotta",
+      title: "Mercenaires",
       leave: "← La semaine",
-      off: "Pas de Condotta dans ce monde.",
+      off: "Pas de mercenaires dans ce monde.",
       pitch: (minutes: number, share: number) =>
-        `Une partie de ${minutes} minutes en coopération, seul ou avec votre compagnie, contre trois nations et Milan. Tenez Padoue et ${share} % des terres à la fin.`,
-      noReward: "Ni ducats, ni marchandises, ni Gloire : un grade, et le niveau suivant.",
+        `Une partie de ${minutes} minutes en coopération, seul ou avec votre guilde, contre trois nations et Milan. Tenez Padoue et ${share} % des terres à la fin.`,
+      noReward:
+        "Ni ducats, ni marchandises, ni points de conquête : un grade, et le niveau suivant.",
       level: (level: number, levels: number) => `Niveau ${level} / ${levels}`,
       grade: (name: string) => `Grade : ${name}`,
       alone: "Jouer seul",
-      company: "Avec ma compagnie",
+      company: "Avec ma guilde",
       lobby: (n: number, time: string) => `${n} associé${n > 1 ? "s" : ""} · départ dans ${time}`,
       join: "Rejoindre",
       playing: (level: number, time: string) => `Niveau ${level} · fin dans ${time}`,
@@ -2444,61 +2446,62 @@ const frDict = {
       lost: (level: number) => `Défaite au niveau ${level} : réessayez, ou venez à plusieurs.`,
       again: "Rejouer",
       /** The profile's line: the grade, and the best level won. */
-      record: (grade: string, best: number) => `Condotta : ${grade} (niveau ${best} gagné)`,
+      record: (grade: string, best: number) => `Mercenaires : ${grade} (niveau ${best} gagné)`,
       errors: {
-        already_in: "Une Condotta vous attend déjà.",
-        no_company: "Il faut une compagnie (Profil).",
+        already_in: "Une partie de mercenaires vous attend déjà.",
+        no_company: "Il faut une guilde (Profil).",
         lobby_full: "La troupe est au complet.",
         other: "Cela n'a pas marché. Réessayez.",
       } as Record<string, string>,
     },
     /** Skirmishes: live matches on the Terraferma. */
     skirmish: {
-      title: "Escarmouche",
+      title: "Partie rapide",
       leave: "← La semaine",
-      off: "Pas d'escarmouche dans ce monde.",
+      off: "Pas de partie rapide dans ce monde.",
       pitch: (minutes: number) =>
         `Une partie en direct de ${minutes} minutes, le temps soixante fois plus vite, contre d'autres marchands et des condottieri.`,
       /** The day's ranked match, before it is played. */
       rankedToday: (left: number, humans: number) =>
-        `Partie classée · ${left} aujourd'hui, dès ${humans} marchands : votre rang rapporte de la Gloire à votre semaine.`,
-      ranked: "Partie classée : votre rang rapporte de la Gloire à votre semaine.",
+        `Partie classée · ${left} aujourd'hui, dès ${humans} marchands : votre rang rapporte des points de conquête à votre semaine.`,
+      ranked: "Partie classée : votre rang rapporte des points de conquête à votre semaine.",
       friendlyLate: (hour: number) =>
-        `Partie amicale : elle finirait après ${hour} h, sans Gloire. Votre partie classée, demain.`,
+        `Partie amicale : elle finirait après ${hour} h, sans points de conquête. Votre partie classée, demain.`,
       friendlyAlone: (humans: number, later: boolean) =>
-        `Partie amicale : il fallait ${humans} marchands, sans Gloire. ${later ? "Votre partie classée du jour reste à jouer." : "Votre partie classée, demain."}`,
+        `Partie amicale : il fallait ${humans} marchands, sans points de conquête. ${later ? "Votre partie classée du jour reste à jouer." : "Votre partie classée, demain."}`,
       friendlyFew: (humans: number) =>
-        `Partie amicale tant qu'il n'y a pas ${humans} marchands : sans Gloire.`,
-      friendlyDone: "Partie amicale : sans Gloire. Votre prochaine partie classée, demain.",
+        `Partie amicale tant qu'il n'y a pas ${humans} marchands : sans points de conquête.`,
+      friendlyDone:
+        "Partie amicale : sans points de conquête. Votre prochaine partie classée, demain.",
       friendlyOffMap:
-        "Partie amicale : posez votre camp sur la Terraferme de la semaine pour que votre partie du jour soit classée.",
+        "Partie amicale : posez votre camp sur la carte de la Conquête de la semaine pour que votre partie du jour soit classée.",
       night: (opensAt: number, closesAt: number) =>
-        `☾ Pas d'escarmouche la nuit : elles reprennent à ${opensAt} h. Une partie classée par jour, de ${opensAt} h à ${closesAt} h.`,
-      nightShort: (hour: number) => `☾ Escarmouches dès ${hour} h`,
+        `☾ Pas de partie rapide la nuit : elles reprennent à ${opensAt} h. Une partie classée par jour, de ${opensAt} h à ${closesAt} h.`,
+      nightShort: (hour: number) => `☾ Parties rapides dès ${hour} h`,
       /** The calls of the day (E2-2): merchants meet at set hours. */
       nextCall: (at: string) => `Prochaine convocation à ${at} : les marchands s'y retrouvent.`,
       call: (at: string) => `Convocation de ${at.replace(":", " h ")} : la partie part à l'heure.`,
       /** A match lost to a restart of the server. */
       interrupted: skirmishInterrupted,
-      open: "Lancer une escarmouche",
+      open: "Lancer une partie rapide",
       join: "Rejoindre",
       /** Who it opens with, told before entering: « 2 marchands · 6 PNJ · départ dans 0:45 ». */
       lobby: (humans: number, bots: number, time: string) =>
         `${humans} marchand${humans > 1 ? "s" : ""} · ${bots} PNJ · départ dans ${time}${bots > 0 ? " ; un marchand qui arrive prend la place d'un condottiere." : "."}`,
       playing: (time: string) =>
         `En cours · fin dans ${time}. Touchez une terre au bord des vôtres pour attaquer.`,
-      watching: "Une escarmouche est en cours : regardez-la, la prochaine s'ouvre ensuite.",
+      watching: "Une partie rapide est en cours : regardez-la, la prochaine s'ouvre ensuite.",
       someone: "Un marchand",
       cells: (n: number) => `${n} terre${n > 1 ? "s" : ""}`,
-      glory: "Gloire",
+      glory: "Points de conquête",
     },
     /** The Terraferma's rating and last weeks, in the profile. */
     terraRecord: {
-      title: "Terraferme",
+      title: "Conquête",
       rating: (r: number) => `Cote : ${r}`,
       none: "Aucune semaine jouée pour l'instant.",
       week: (week: number, rank: number, of: number, glory: number, rating: number) =>
-        `Semaine ${week} : ${rank}${rank === 1 ? "er" : "e"} sur ${of} · ${glory} Gloire · cote ${rating}`,
+        `Semaine ${week} : ${rank}${rank === 1 ? "er" : "e"} sur ${of} · ${glory} points · cote ${rating}`,
       replay: "Revoir la semaine",
       weekShort: "Semaine",
       replaying: "Semaine rejouée",
@@ -2514,7 +2517,7 @@ const frDict = {
        * an input.
        */
       unsold: (qty: number, res: string, hours: number, dogana: number | null) =>
-        `Amélioration déconseillée : ${qty} ${res.toLowerCase()} invendus, ~${hours >= 48 ? `${Math.round(hours / 24)} j` : `${hours} h`} de production${dogana !== null ? ` ; la Dogana en prend ${dogana} par jour` : ""}.`,
+        `Amélioration déconseillée : ${qty} ${res.toLowerCase()} invendus, ~${hours >= 48 ? `${Math.round(hours / 24)} j` : `${hours} h`} de production${dogana !== null ? ` ; la Douane en prend ${dogana} par jour` : ""}.`,
       missing: (list: string) => `Amélioration déconseillée : il manque ${list}.`,
       best: "meilleur placement",
       bestLong:
@@ -2537,8 +2540,8 @@ const frDict = {
         // « du pain », « de la farine », « de l'argile », « des briques » (see workshop.genders).
         const some = fr.game.workshop.some(code, resource);
         return some
-          ? `La commande de compagnie attend ${some} : vous en avez ${n} à livrer.`
-          : `La commande de compagnie attend : ${resource.toLowerCase()}. Vous en avez ${n} à livrer.`;
+          ? `La commande de guilde attend ${some} : vous en avez ${n} à livrer.`
+          : `La commande de guilde attend : ${resource.toLowerCase()}. Vous en avez ${n} à livrer.`;
       },
       companyGo: "Livrer",
       upgrade: (building: string, adds: string, payback: string) =>
@@ -2547,16 +2550,20 @@ const frDict = {
     },
     /** Deals between merchants: commissions and colleganze. */
     deals: {
-      title: "Affaires entre marchands",
+      title: "Entre joueurs",
       tile: (n: number) =>
         n > 0 ? `${n} affaire${n > 1 ? "s" : ""} à saisir` : "Commandes et colleganze",
-      tabs: { commissions: "Commandes", colleganze: "Colleganza", bank: "Banque", parts: "Parts" },
+      tabs: {
+        commissions: "Commandes",
+        colleganze: "Investir",
+        bank: "Emprunter",
+        parts: "Actions",
+      },
       bank: {
         help: (share: number, pct: number, days: number, late: number) =>
-          `La Banque prête jusqu'à ${share} % de votre patrimoine, ${days} jours au plus, à ${pct} % par jour. À l'échéance, elle se paie sur votre caisse ; ce qui manque est majoré de ${late} % et prélevé sur vos rentrées. Remboursé plus tôt, vous ne payez que les jours entamés.`,
+          `Vous pouvez emprunter jusqu'à ${share} % de votre patrimoine, ${days} jours au plus, à ${pct} % par jour. À l'échéance, l'emprunt se rembourse sur votre caisse ; ce qui manque est majoré de ${late} % et prélevé sur vos rentrées. Remboursé plus tôt, vous ne payez que les jours entamés.`,
         none: "Votre patrimoine ne permet pas encore d'emprunter.",
-        current: (owed: string, left: string) =>
-          `Vous devez ${owed} à la Banque · échéance dans ${left}.`,
+        current: (owed: string, left: string) => `Vous devez ${owed} · échéance dans ${left}.`,
         late: (owed: string) => `En retard : ${owed} restent dus, prélevés sur vos rentrées.`,
         repay: "Rembourser maintenant",
         amount: "Montant emprunté",
@@ -2566,7 +2573,7 @@ const frDict = {
       someone: "un marchand",
       you: "Vous",
       commissionHelp:
-        "Commandez une marchandise aux autres marchands à votre prix : vos ducats sont bloqués jusqu'à la livraison, rendus si personne ne livre à temps. Le vendeur paie la taxe du marché, comme au Rialto.",
+        "Commandez une marchandise aux autres marchands à votre prix : vos ducats sont bloqués jusqu'à la livraison, rendus si personne ne livre à temps. Le vendeur paie la taxe du marché, comme au Marché.",
       noCommission: "Aucune commande ouverte.",
       asks: (who: string, n: number, resource: string, price: string) =>
         `${who} : ${n} ${resource} à ${price}`,
@@ -2582,8 +2589,8 @@ const frDict = {
       locks: (total: string) => `${total} bloqués jusqu'à la livraison.`,
       post: "Passer la commande",
       colleganzaHelp: (max: number) =>
-        `La colleganza vénitienne : avancez des ducats à un autre marchand pour quelques jours. À l'échéance, il vous rend le capital et une part (jusqu'à ${max} %) des ventes nettes qu'il a faites entre-temps — autant que sa caisse le permet. Cette part passe de son classement au vôtre.`,
-      noColleganza: "Aucune colleganza en cours.",
+        `Investir dans un joueur, comme la colleganza vénitienne : avancez des ducats à un autre marchand pour quelques jours. À l'échéance, il vous rend le capital et une part (jusqu'à ${max} %) du bénéfice qu'il a fait entre-temps — autant que sa caisse le permet. Cette part passe de son classement au vôtre.`,
+      noColleganza: "Aucun investissement en cours.",
       offer: (who: string, amount: string, days: number, pct: number) =>
         `${who} avance ${amount} pour ${days} j, contre ${pct} % des gains`,
       invested: (amount: string, merchant: string | null, pct: number) =>
@@ -2596,7 +2603,7 @@ const frDict = {
       term: (time: string) => `Échéance dans ${time}`,
       waiting: "En attente d'un marchand",
       accept: "Accepter",
-      newColleganza: "Proposer une colleganza",
+      newColleganza: "Proposer un investissement",
       amount: "Capital avancé",
       share: "Votre part des gains",
       offerGo: "Proposer",
@@ -2672,38 +2679,38 @@ const frDict = {
     },
     /** A merchant's fondaco in a city (E1-3). */
     fondaco: {
-      title: (city: string) => `Fondaco de ${city}`,
+      title: (city: string) => `Entrepôt de ${city}`,
       line: (level: number, top: number) =>
-        level > 0 ? `Niveau ${level} sur ${top}` : "Pas encore de fondaco ici",
+        level > 0 ? `Niveau ${level} sur ${top}` : "Pas encore d'entrepôt ici",
       orders: (n: number) =>
         n > 0
           ? `${n} commande${n > 1 ? "s" : ""} de la ville par jour, pour vous seul.`
           : "Aucune commande de la ville pour vous seul.",
-      next: (level: number) => (level === 1 ? "Ouvrir le fondaco" : `Passer au niveau ${level}`),
+      next: (level: number) => (level === 1 ? "Ouvrir l'entrepôt" : `Passer au niveau ${level}`),
       cost: "Coût",
-      top: "Votre fondaco est au plus haut niveau.",
+      top: "Votre entrepôt est au plus haut niveau.",
       full: (levels: number, max: number, cities: number) =>
         `Vous avez ${levels} niveau${levels > 1 ? "x" : ""} sur ${max}, dans ${cities} ville${cities > 1 ? "s" : ""} au plus.`,
       build: "Construire",
       help: (cities: number, levels: number, top: number, pct: number) =>
-        `Un fondaco dans ${cities} villes au plus, du niveau 1 au niveau ${top}, ${levels} niveaux en tout. Chaque niveau vous donne chaque jour une commande de la ville, à vous seul, payée ${pct} % du prix du tableau commun : moins chère que le tableau, mais sûre. Les ducats sortent du jeu, les briques et les planches aussi ; le fondaco compte dans votre patrimoine à son coût.`,
+        `Un entrepôt dans ${cities} villes au plus, du niveau 1 au niveau ${top}, ${levels} niveaux en tout. Chaque niveau vous donne chaque jour une commande de la ville, à vous seul, payée ${pct} % du prix du tableau commun : moins chère que le tableau, mais sûre. Les ducats sortent du jeu, les briques et les planches aussi ; le fondaco compte dans votre patrimoine à son coût.`,
     },
     /** The Signoria of the cities (R2): the gauge of a city and its Podestà. */
     signoria: {
-      title: (city: string) => `Signoria de ${city}`,
+      title: (city: string) => `Contrôle de ${city}`,
       kicker: "Qui tient la ville",
-      podesta: "Podestà",
-      vacant: "Pas encore de Podestà",
+      podesta: "Maître",
+      vacant: "Pas encore de maître",
       you: "Vous",
       points: (n: number) => `${n.toLocaleString("fr-FR")} pts`,
       share: (pct: number) => `${pct} %`,
       mine: (pct: number) => `Votre part : ${pct} %`,
-      held: "Vous êtes Podestà de la ville",
+      held: "Vous êtes maître de la ville",
       line: (toll: number, minutes: number) =>
-        `Le Podestà prend ${toll} % des livraisons des autres et voit les commandes ${minutes} min avant eux.`,
-      decided: "Le Podestà se décide chaque nuit à minuit.",
+        `Le maître de la ville prend ${toll} % des livraisons des autres et voit les commandes ${minutes} min avant eux.`,
+      decided: "Le maître de la ville se décide chaque nuit à minuit.",
       help: (pointsPerHour: number, keptPct: number, max: number, toll: number, minutes: number) =>
-        `Chaque ducat payé par une livraison partie entre 8 h et 22 h compte un point sur la jauge de la ville ; tenir la ville sur la Terraferme en compte ${pointsPerHour} par heure ouverte. Chaque nuit à minuit, le premier devient Podestà et les points ne gardent que ${keptPct} %. Une maison tient ${max} villes au plus ; les maisons de l'ordinateur ne le deviennent jamais. Le Podestà prend ${toll} % des livraisons des autres vers sa ville (pas des nouveaux venus) et prend ses commandes ${minutes} minutes avant tout le monde.`,
+        `Chaque ducat payé par une livraison partie entre 8 h et 22 h compte un point sur la jauge de la ville ; tenir la ville sur la carte de la Conquête en compte ${pointsPerHour} par heure ouverte. Chaque nuit à minuit, le premier devient maître et les points ne gardent que ${keptPct} %. Une maison tient ${max} villes au plus ; les maisons de l'ordinateur ne le deviennent jamais. Le maître de la ville prend ${toll} % des livraisons des autres vers sa ville (pas des nouveaux venus) et prend ses commandes ${minutes} minutes avant tout le monde.`,
       none: "Personne n'a encore compté ici.",
     },
     /** The official suppliers of a city. */
@@ -2720,15 +2727,15 @@ const frDict = {
     },
     dashboard: {
       title: "Tableau de bord",
-      line: (days: number) => `Ventes nettes · ${days} jours`,
+      line: (days: number) => `Bénéfice · ${days} jours`,
       help: (days: number) =>
-        `Vos ventes nettes comptées comme au classement : ce qui entre pour vos marchandises, moins ce qu'elles vous coûtent. La courbe additionne les ${days} derniers jours.`,
+        `Votre bénéfice compté comme au classement : ce qui entre pour vos marchandises, moins ce qu'elles vous coûtent. La courbe additionne les ${days} derniers jours.`,
       perHour: (amount: string) => `≈ ${amount} de marge par heure`,
       hour: "Par heure",
       today: "Aujourd'hui",
       week: "Cette semaine",
       chart: (days: number) =>
-        `Ventes nettes des ${days} derniers jours : vous, votre rival et le premier de la semaine`,
+        `Bénéfice des ${days} derniers jours : vous, votre rival et le premier de la semaine`,
       who: {
         me: (_: string) => "Vous",
         rival: (name: string) => `Rival : ${name}`,
@@ -2738,81 +2745,80 @@ const frDict = {
     /** The rival of the week, under the rank on the map. */
     /** The Broglio (R8): rumours, their sources, their sale, false ones, the spy. */
     shares: {
-      title: "Votre Maison au Rialto",
+      title: "Votre Maison en bourse",
       notListed:
-        "Cotez votre Maison : 100 parts, dont 49 au plus en d'autres mains. Vous en gardez toujours 51.",
+        "Mettez votre Maison en bourse : 100 actions, dont 49 au plus en d'autres mains. Vous en gardez toujours 51.",
       refusal: (code: string, day: number, days: number): string =>
         ({
-          too_early: `La cotation ouvre le jour ${day + 1} du mois.`,
-          too_new: `Il faut ${days} jours de présence pour coter sa Maison.`,
+          too_early: `La mise en bourse ouvre le jour ${day + 1} du mois.`,
+          too_new: `Il faut ${days} jours de présence pour mettre sa Maison en bourse.`,
           season_over: "Le dernier jour du mois, le carnet est fermé.",
-          already_listed: "Votre Maison est déjà cotée.",
-        })[code] ?? "La cotation n'est pas ouverte.",
-      list: "Coter ma Maison",
+          already_listed: "Votre Maison est déjà en bourse.",
+        })[code] ?? "La mise en bourse n'est pas ouverte.",
+      list: "Mettre ma Maison en bourse",
       lastPrice: (price: string | null): string =>
-        price ? `Dernier cours : ${price} la part` : "Aucune part échangée encore",
-      float: (n: number, max: number) => `${n} parts en d'autres mains sur ${max} possibles`,
+        price ? `Dernier cours : ${price} l'action` : "Aucune action échangée encore",
+      float: (n: number, max: number) => `${n} actions en d'autres mains sur ${max} possibles`,
       register: "Le registre",
-      shares: (n: number) => `${n} part${n > 1 ? "s" : ""}`,
+      shares: (n: number) => `${n} action${n > 1 ? "s" : ""}`,
       you: "vous",
       issue: "Émettre",
       buyBack: "Racheter",
-      quantity: "Parts",
-      price: "Prix de la part",
-      issueGo: (n: number, price: string) => `Mettre ${n} parts en vente à ${price}`,
-      buyBackGo: (n: number, price: string) => `Racheter ${n} parts à ${price}`,
+      quantity: "Actions",
+      price: "Prix de l'action",
+      issueGo: (n: number, price: string) => `Mettre ${n} actions en vente à ${price}`,
+      buyBackGo: (n: number, price: string) => `Racheter ${n} actions à ${price}`,
       orders: "Vos ordres ouverts",
       order: (side: "buy" | "sell", n: number, price: string): string =>
-        `${side === "buy" ? "Achat" : "Vente"} de ${n} parts à ${price}`,
+        `${side === "buy" ? "Achat" : "Vente"} de ${n} actions à ${price}`,
       cancel: "Retirer",
       book: "Le carnet",
-      ask: (n: number, price: string) => `${n} parts à ${price}`,
-      bid: (n: number, price: string) => `On demande ${n} parts à ${price}`,
-      noAsk: "Aucune part en vente.",
-      buy: (n: number, price: string) => `Acheter ${n} parts à ${price}`,
-      sell: (n: number, price: string) => `Vendre ${n} parts à ${price}`,
+      ask: (n: number, price: string) => `${n} actions à ${price}`,
+      bid: (n: number, price: string) => `On demande ${n} actions à ${price}`,
+      noAsk: "Aucune action en vente.",
+      buy: (n: number, price: string) => `Acheter ${n} actions à ${price}`,
+      sell: (n: number, price: string) => `Vendre ${n} actions à ${price}`,
       paid: (amount: string) => `Dividendes versés ce mois : ${amount}`,
-      held: "Vos parts ailleurs",
-      heldLine: (n: number, amount: string) => `${n} parts · ${amount} de dividendes`,
-      noneHeld: "Aucune part d'une autre Maison. Ouvrez la fiche d'un marchand pour en acheter.",
-      theirs: "Ses parts",
-      notTheirs: "Cette Maison n'est pas cotée.",
+      held: "Vos actions ailleurs",
+      heldLine: (n: number, amount: string) => `${n} actions · ${amount} de dividendes`,
+      noneHeld: "Aucune action d'une autre Maison. Ouvrez la fiche d'un marchand pour en acheter.",
+      theirs: "Ses actions",
+      notTheirs: "Cette Maison n'est pas en bourse.",
       mine: (n: number, amount: string) => `Vous en avez ${n} · ${amount} de dividendes reçus`,
-      council: "Vous siégez à son conseil",
-      accounts: (cash: string, week: string) =>
-        `Caisse ${cash} · ventes nettes de la semaine ${week}`,
+      council: "Vous avez accès à ses comptes",
+      accounts: (cash: string, week: string) => `Caisse ${cash} · bénéfice de la semaine ${week}`,
       help: (dividend: number, council: number) =>
-        `Chaque semaine, les porteurs se partagent ${dividend} % des ventes nettes gagnées par la Maison, au prorata, dans la limite de sa caisse. Qui détient ${council} parts siège au conseil et voit ses comptes. Le dernier jour du mois, la Maison rachète toutes les parts au dernier cours, dans la limite de sa caisse. Une part échangée paie la taxe du marché.`,
+        `Chaque semaine, les porteurs se partagent ${dividend} % du bénéfice gagné par la Maison, au prorata, dans la limite de sa caisse. Qui détient ${council} actions a accès à ses comptes. Le dernier jour du mois, la Maison rachète toutes les actions au dernier cours, dans la limite de sa caisse. Une action échangée paie la taxe du marché.`,
     },
     broglio: {
-      kicker: "Le Broglio",
-      title: "Les rumeurs du Rialto",
+      kicker: "Les Rumeurs",
+      title: "Les rumeurs du Marché",
       summary: "Ce qu'on dit ce matin. À vous de juger vos sources.",
-      line: (n: number) => `${n} rumeur${n > 1 ? "s" : ""} ce matin au Broglio`,
-      spiedLine: "On vous espionne : chassez l'espion au Broglio.",
+      line: (n: number) => `${n} rumeur${n > 1 ? "s" : ""} ce matin`,
+      spiedLine: "On vous espionne : chassez l'espion aux Rumeurs.",
       sources: {
         gondoliere: "un gondolier",
         postino: "un facteur",
-        dogana: "un commis de la Dogana",
+        dogana: "un commis de la Douane",
         senato: "un secrétaire du Sénat",
-        rialto: "un marchand du Rialto",
+        rialto: "un marchand du Marché",
       } as Record<string, string>,
       said: (source: string, pct: number) => `D'après ${source} · sûr à ${pct} %`,
       event: (title: string, city: string | null, when: string) =>
         city ? `${title} (à ${city}), ${when}.` : `${title}, ${when}.`,
       muda: (big: boolean): string =>
         big
-          ? "Les galères de la Muda apporteront beaucoup à la prochaine arrivée."
-          : "Les galères de la Muda apporteront peu à la prochaine arrivée.",
+          ? "Les bateaux de l'arrivage apporteront beaucoup à la prochaine arrivée."
+          : "Les bateaux de l'arrivage apporteront peu à la prochaine arrivée.",
       when: (days: number) =>
         days <= 0 ? "aujourd'hui" : days === 1 ? "demain" : `dans ${days} jours`,
-      sell: (price: string) => `Vendre au Rialto · ${price}`,
+      sell: (price: string) => `Vendre au Marché · ${price}`,
       offered: (n: number) => `En vente · ${n} acheteur${n > 1 ? "s" : ""}`,
       cancel: "Retirer",
-      market: "Au Rialto",
+      market: "Au Marché",
       marketEmpty: "Aucune rumeur à vendre pour l'instant.",
       kindEvent: "un événement à venir",
-      kindMuda: "la prochaine Muda",
+      kindMuda: "le prochain arrivage",
       buy: (price: string) => `Acheter · ${price}`,
       bought: "Achetée",
       forYou: "pour vous",
@@ -2828,27 +2834,27 @@ const frDict = {
       spyEmpty: "Aucune offre ouverte aujourd'hui.",
       spyHire: (cost: string) => `Poster un espion · ${cost}`,
       spyPick: "Chez qui ?",
-      spied: "Un espion rôde autour de votre comptoir.",
+      spied: "Un espion rôde autour de vos ateliers.",
       chase: (cost: string) => `Chasser l'espion · ${cost}`,
       forge: "Inventer une rumeur",
       forgeHelp: (n: number) =>
-        `Une fausse rumeur, remise demain à trois marchands. Elle coûte ${n} ✦ ; démasquée, elle vous coûte du Lustre.`,
+        `Une fausse rumeur, remise demain à trois marchands. Elle coûte ${n} ✦ ; démasquée, elle vous fait reculer dans votre ligue.`,
       forgeDone: "Rumeur inventée : elle courra demain.",
       forgeButton: (n: number) => `L'inventer · ${n} ✦`,
       mudaBig: "Beaucoup",
       mudaSmall: "Peu",
-      help: "Chaque matin, deux rumeurs de ce qui vient : un événement de la gazette, le lot de la prochaine Muda. Chaque source dit vrai aussi souvent que sa fiabilité ; le nouveau venu n'entend que des sources sûres pendant trois jours. Les rumeurs se vendent au Rialto (le vendeur n'est jamais nommé). On peut en inventer une fausse contre de l'Influence : elle court chez trois marchands, et si elle est démasquée, son auteur perd du Lustre. Un espion chez un rival montre une de ses offres chaque jour ; l'espionné le sait, sans savoir qui, et peut le chasser. Aucune rumeur ne nomme un marchand.",
+      help: "Chaque matin, deux rumeurs de ce qui vient : un événement de la gazette, le lot du prochain arrivage. Chaque source dit vrai aussi souvent que sa fiabilité ; le nouveau venu n'entend que des sources sûres pendant trois jours. Les rumeurs se vendent au Marché (le vendeur n'est jamais nommé). On peut en inventer une fausse contre de l'Influence : elle court chez trois marchands, et si elle est démasquée, son auteur recule dans sa ligue. Un espion chez un rival montre une de ses offres chaque jour ; l'espionné le sait, sans savoir qui, et peut le chasser. Aucune rumeur ne nomme un marchand.",
     },
     /** The Grand Canal (R5): forty palaces, given by each month's ranking. */
     canal: {
-      tab: "Grand Canal",
-      title: "Le Grand Canal",
+      tab: "Les 40 palais",
+      title: "Les 40 palais",
       label: "Les palais du Grand Canal, du palais des Doges au Rialto",
       help: "Quarante palais, du palais des Doges au Rialto. Le classement de chaque mois les redonne : une Maison qui reste dans les quarante garde son palais, celle qui en sort le perd, les nouvelles prennent les plus beaux palais libres. Il faut avoir joué une semaine du mois. La façade dit la Maison : un étage par génération, une étoile par Atout débloqué, un écu par ville tenue, la corne du Doge.",
       empty: "Les palais attendent leurs Maisons : les quarante premiers du mois s'y installeront.",
       plot: (n: number) => `Palais ${n}`,
-      yours: (n: number) => `Votre palais : le ${n}${n === 1 ? "er" : "e"} du Grand Canal.`,
-      none: (sestiere: string) => `Hors du Grand Canal : votre Maison est à ${sestiere}.`,
+      yours: (n: number) => `Votre palais : le ${n}${n === 1 ? "er" : "e"} des 40 palais.`,
+      none: (sestiere: string) => `Hors des 40 palais : votre Maison est à ${sestiere}.`,
       facade: (g: number, a: number, c: number) =>
         [
           g > 0 ? `${g} génération${g > 1 ? "s" : ""}` : "",
@@ -2862,7 +2868,7 @@ const frDict = {
     },
     /** The Doge (R7): the Senate, its candidates, programmes and voices. */
     doge: {
-      kicker: "Le Sénat",
+      kicker: "L'élection",
       title: "L'élection du Doge",
       summary:
         "Les dix premières Maisons briguent la couronne du mois prochain. Chacune annonce son programme : la saison qu'elle choisit et un décret de la République.",
@@ -2874,11 +2880,11 @@ const frDict = {
       vote: (name: string) => `Voter pour ${name}`,
       voted: (name: string) => `Votre voix va à ${name}`,
       weight: (n: number) =>
-        `Votre voix pèse ${n} : une, et une de plus par ville dont vous êtes Podestà.`,
+        `Votre voix pèse ${n} : une, et une de plus par ville dont vous êtes maître.`,
       boost: "De l'Influence pour plus de poids",
       boostLabel: (n: number, cost: number) => (n === 0 ? "Aucune" : `+${n} · ${cost} ✦`),
       stand: "Votre programme",
-      standHelp: "Choisissez la saison et le décret que vous imposerez si le Sénat vous élit.",
+      standHelp: "Choisissez la saison et le décret que vous imposerez si vous êtes élu.",
       season: "La saison",
       decree: "Le décret de la République",
       target: "Pour",
@@ -2897,11 +2903,11 @@ const frDict = {
         franchigia: (_t: string, pts: number) =>
           `Franchise du Rialto : la taxe du marché allégée de ${pts} point${pts > 1 ? "s" : ""}, pour tous.`,
         levante: (_t: string, pct: number) =>
-          `Charte du Levant : ${pct} % de plus au quota de la Dogana, pour tous.`,
+          `Charte du Levant : ${pct} % de plus au quota de la Douane, pour tous.`,
         calmiere: (target: string, pct: number) =>
           `Calmiere : aucune offre de ${target} au-delà de ${pct} % de sa référence.`,
       } as Record<string, (target: string, n: number) => string>,
-      help: "La dernière semaine du mois, le Sénat élit le Doge du mois suivant parmi les dix premières Maisons (le Doge sortant ne peut pas se représenter). Chaque marchand arrivé depuis trois jours vote ; sa voix pèse une, plus une par ville dont il est Podestà, plus jusqu'à trois achetées en Influence. Le Doge élu choisit la saison du mois suivant et un décret de la République qui vaut pour tous, tout le mois ; son portrait accueille chacun à la connexion.",
+      help: "La dernière semaine du mois, le Sénat élit le Doge du mois suivant parmi les dix premières Maisons (le Doge sortant ne peut pas se représenter). Chaque marchand arrivé depuis trois jours vote ; sa voix pèse une, plus une par ville dont il est maître, plus jusqu'à trois achetées en Influence. Le Doge élu choisit la saison du mois suivant et un décret de la République qui vaut pour tous, tout le mois ; son portrait accueille chacun à la connexion.",
     },
     /** The Dynastie (R4): the house's line, a member a month, an heir and its trait. */
     dynasty: {
@@ -2926,22 +2932,22 @@ const frDict = {
         nato_quai: ["Né sur les quais", "Voit les commandes urgentes 15 min plus tôt."],
         rialto: ["Élevé au Rialto", "Une quatrième carte dans l'offre des Atouts."],
         condottiere: ["Fils de condottiere", "Change sa maîtrise une fois sans Influence."],
-        amico_citta: ["Ami des villes", "Voit les dix premiers de la Signoria de chaque ville."],
+        amico_citta: ["Ami des villes", "Voit les dix premiers du contrôle de chaque ville."],
         notaio: ["Fils de notaire", "Change une tâche du jour sans Influence, chaque jour."],
         letterato: ["Le Lettré", "Sait qui lui écrira demain."],
       } as Record<string, [name: string, line: string]>,
       earnedBy: {
-        nato_quai: "un lot gagné à l'incanto",
+        nato_quai: "un lot gagné aux enchères",
         rialto: "le top 10 du mois",
         condottiere: "Signore d'une semaine",
-        amico_citta: "Podestà d'une ville",
+        amico_citta: "maître d'une ville",
         notaio: "sept coffres du jour d'affilée",
         letterato: "vingt lettres répondues",
       } as Record<string, string>,
       epithets: {
         magnifico: "le Magnifique",
         rovinato: "le Ruiné",
-        podesta: "le Podestà",
+        podesta: "le maître de la ville",
         condottiere: "le Condottiere",
         costante: "le Constant",
       } as Record<string, string>,
@@ -2974,16 +2980,16 @@ const frDict = {
       taken: "Atout de la semaine choisi : le prochain lundi.",
       locked: "À débloquer",
       unlocks: {
-        podesta: "Devenez Podestà d'une ville",
-        incanto: "Gagnez un lot à l'incanto",
+        podesta: "Devenez maître d'une ville",
+        incanto: "Gagnez un lot aux enchères",
         signore: "Soyez Signore d'une semaine",
-        mercante: "Atteignez le rang de Mercante au Lustre",
+        mercante: "Atteignez la ligue 4 (Mercante)",
       } as Record<string, string>,
       help: "Chaque lundi, trois Atouts sont tirés de votre réserve ; vous en prenez un, pour toute la saison. Chacun donne et retire. La réserve compte douze figures au départ ; quatre de plus se débloquent par un exploit, et restent à votre Maison d'une saison à l'autre.",
       names: {
         banchiere: [
           "Le Banquier du Rialto",
-          "Ses écritures allègent vos taxes ; la Dogana se méfie.",
+          "Ses écritures allègent vos taxes ; la Douane se méfie.",
         ],
         gondoliere: ["Le Gondolier", "Il connaît les raccourcis ; une mule reste à l'écurie."],
         vetraio: [
@@ -2997,21 +3003,27 @@ const frDict = {
         sensale: ["Le Courtier", "Plus d'offres ouvertes ; il prend sa part sur vos ventes."],
         capitano: [
           "Le Capitaine de galère",
-          "Plus de place aux galères ; vos livraisons perdent un peu.",
+          "Plus de place aux bateaux ; vos livraisons perdent un peu.",
         ],
-        notaio: ["Le Notaire", "Vos livraisons pèsent plus à la Signoria ; ses actes coûtent."],
+        notaio: [
+          "Le Notaire",
+          "Vos livraisons pèsent plus pour le contrôle des villes ; ses actes coûtent.",
+        ],
         carrettiere: ["Le Charretier", "Une charrette de plus ; elles vont moins vite."],
-        doganiere: ["Le Douanier", "La Dogana vous rachète haut ; moins d'offres ouvertes."],
+        doganiere: ["Le Douanier", "La Douane vous rachète haut ; moins d'offres ouvertes."],
         messaggero: ["Le Messager", "Il annonce les urgences ; ses courses vous coûtent du blé."],
         levantino: [
           "Le Marchand du Levant",
-          "Les villes vous paient mieux ; les galères vous boudent.",
+          "Les villes vous paient mieux ; les bateaux vous boudent.",
         ],
         fornaio: ["Le Boulanger du Doge", "Ses fournées rendent plus ; ses livraisons traînent."],
-        amico_podesta: ["L'Ami du Podestà", "Vos livraisons pèsent bien plus à la Signoria."],
+        amico_podesta: [
+          "L'Ami du Podestà",
+          "Vos livraisons pèsent bien plus pour le contrôle des villes.",
+        ],
         armatore: [
           "L'Armateur",
-          "Deux fois plus de place aux galères ; vos ateliers ralentissent.",
+          "Deux fois plus de place aux bateaux ; vos ateliers ralentissent.",
         ],
         condottiere: [
           "Le Condottiere",
@@ -3029,27 +3041,27 @@ const frDict = {
         extraVehicles: (v: number) =>
           `${v > 0 ? "+" : "−"}${Math.abs(v)} véhicule${Math.abs(v) > 1 ? "s" : ""}`,
         mudaQuotaBps: (v: number) =>
-          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de quota aux galères`,
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de quota aux bateaux`,
         marketMakerQuotaBps: (v: number) =>
-          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de quota à la Dogana`,
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de quota à la Douane`,
         taxDiscountBps: (v: number) =>
           `taxe ${v > 0 ? "−" : "+"}${Math.abs(v) / 100} point${Math.abs(v) > 100 ? "s" : ""}`,
         extraOpenOrders: (v: number) =>
           `${v > 0 ? "+" : "−"}${Math.abs(v)} offre${Math.abs(v) > 1 ? "s" : ""} ouverte${Math.abs(v) > 1 ? "s" : ""}`,
         marketMakerFloorBps: (v: number) =>
-          `la Dogana rachète au moins ${v / 100} % de la référence`,
+          `la Douane rachète au moins ${v / 100} % de la référence`,
         urgentPreviewMinutes: (v: number) => `urgences vues ${v} min avant`,
         signoriaBps: (v: number) =>
-          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de points à la Signoria`,
+          `${v > 0 ? "+" : "−"}${Math.abs(v) / 100} % de points pour le contrôle des villes`,
       } as Record<string, (v: number) => string>,
     },
     /** The Sera (R11): the incanto of the galleys and the battle, at 20 h. */
     sera: {
-      orb: "La Sera",
+      orb: "Enchères du soir",
       kicker: "Ce soir à 20 h",
-      title: "La Sera",
+      title: "Les enchères du soir",
       line: (n: number) =>
-        `${n} lot${n > 1 ? "s" : ""} des galères aux enchères, et la bataille de la Terraferme.`,
+        `${n} lot${n > 1 ? "s" : ""} des bateaux aux enchères, et la bataille de la Conquête.`,
       lot: (i: number) => `Lot ${i}`,
       closes: (time: string) => `ferme à ${time}`,
       closesIn: (left: string) => `ferme dans ${left}`,
@@ -3064,15 +3076,15 @@ const frDict = {
       max: "Votre maximum",
       bid: "Enchérir",
       raise: "Relever",
-      oneLot: "Un lot par marchand et par Sera.",
+      oneLot: "Un lot par marchand et par soirée d'enchères.",
       results: "Résultats du jour",
-      podesta: (city: string) => `Vous êtes Podestà de ${city}`,
+      podesta: (city: string) => `Vous êtes maître de ${city}`,
       noResults: "Vous ne tenez aucune ville ce soir.",
-      help: "Chaque arrivée des galères de la Muda met 30 % de son chargement aux enchères, en trois lots qui ferment à 20 h 10, 20 h 20 et 20 h 30. Laissez votre maximum quand vous voulez, dès l'arrivée : vous payez seulement le deuxième maximum plus 5 %, et vos ducats sont rendus si l'on vous dépasse. Une enchère dans les deux dernières minutes prolonge le lot de deux minutes. Un lot par marchand et par Sera. Le prix payé sort du jeu.",
+      help: "Chaque arrivée des bateaux de l'arrivage met 30 % de son chargement aux enchères, en trois lots qui ferment à 20 h 10, 20 h 20 et 20 h 30. Laissez votre maximum quand vous voulez, dès l'arrivée : vous payez seulement le deuxième maximum plus 5 %, et vos ducats sont rendus si l'on vous dépasse. Une enchère dans les deux dernières minutes prolonge le lot de deux minutes. Un lot par marchand et par soirée d'enchères. Le prix payé sort du jeu.",
       errors: {
         bid_too_low: "Votre maximum doit atteindre le minimum du lot.",
         lot_closed: "Ce lot est clos.",
-        one_lot: "Vous menez déjà un lot de cette Sera.",
+        one_lot: "Vous menez déjà un lot de ces enchères.",
         insufficient_funds: "Pas assez de ducats.",
       } as Record<string, string>,
     },
@@ -3086,9 +3098,9 @@ const frDict = {
         senatore: "Senatore",
         procuratore: "Procuratore",
       } as Record<string, string>,
-      kicker: "La Sfida de la semaine",
-      title: "Sfida",
-      lead: "Sfida :",
+      kicker: "Le duel de la semaine",
+      title: "Duel",
+      lead: "Duel :",
       ghostOf: (name: string) => `fantôme de ${name}`,
       ghostLine: (name: string, week: number) =>
         `Le fantôme de ${name} : sa semaine ${week}, rejouée heure par heure.`,
@@ -3097,11 +3109,13 @@ const frDict = {
       ahead: (gap: string) => `Vous menez de ${gap}`,
       behind: (gap: string) => `Il vous manque ${gap}`,
       even: "À égalité",
-      stake: (n: number) => `Défi : ${n} de Lustre en jeu`,
+      stake: (n: number) => `Défi : ${n} points de ligue en jeu`,
       stakes: (win: number, loss: number) =>
-        `Gagner rapporte +${win} de Lustre, perdre en coûte ${loss}. Décidé à la fin de la semaine, sur vos ventes nettes.`,
-      none: "Votre Sfida commence au prochain passage du tick : revenez dans un instant.",
-      lustre: (n: number) => `${n} de Lustre`,
+        `Gagner rapporte +${win} points de ligue, perdre en coûte ${loss}. Décidé à la fin de la semaine, sur votre bénéfice.`,
+      none: "Votre duel commence au prochain passage du tick : revenez dans un instant.",
+      lustre: (n: number) => `${n} points de ligue`,
+      /** The league of a tier (refonte UX): the highest is League 1, newcomers start in the last. */
+      league: (n: number) => `Ligue ${n}`,
       next: (n: number, tier: string) => `${tier} à ${n}`,
       ladder: "L'échelle",
       challengesIn: "Défis reçus",
@@ -3111,11 +3125,11 @@ const frDict = {
       waiting: "En attente",
       challenge: "Défier",
       challengeTitle: (name: string) => `Défier ${name}`,
-      challengeLine: "Une Sfida la semaine prochaine, s'il accepte.",
+      challengeLine: "Un duel la semaine prochaine, s'il accepte.",
       stakeLabel: "Mise",
       send: "Lancer le défi",
       sent: "Défi lancé : il a jusqu'à lundi pour accepter.",
-      help: "Chaque semaine, vous affrontez un marchand de votre Lustre : celui qui vend le plus (ventes nettes de la semaine) gagne. Sans adversaire libre, vous affrontez le fantôme d'un marchand : une de ses semaines passées, heure par heure. Le Lustre reste d'une saison à l'autre ; au changement de mois, on redescend de deux rangs. Il ne donne aucun avantage en jeu.",
+      help: "Chaque semaine, vous affrontez un marchand de votre ligue : le plus gros bénéfice de la semaine gagne. Sans adversaire libre, vous affrontez le fantôme d'un marchand : une de ses semaines passées, heure par heure. La ligue reste d'une saison à l'autre ; au changement de mois, on redescend de deux ligues. Elle ne donne aucun avantage en jeu.",
       errors: {
         already_asked: "Un défi est déjà lancé pour la semaine prochaine.",
         invalid_stake: "Mise impossible.",
@@ -3148,79 +3162,79 @@ const frDict = {
       next: (text: string) => `Le mois prochain : ${text}`,
       codes: {
         embargo_ottomano:
-          "Embargo ottoman — les galères de la Muda apportent deux fois moins, et leur prix monte deux fois plus vite.",
+          "Embargo ottoman — les bateaux de l'arrivage apportent deux fois moins, et leur prix monte deux fois plus vite.",
         grand_gel:
           "Grand gel — les villes paient les planches 20 % plus cher et demandent davantage de bois.",
         guerra_milano:
-          "Guerre de Milan — Milan est une fois et demie plus fort sur la Terraferme ; briques et planches sont payées 25 % plus cher.",
+          "Guerre de Milan — Milan est une fois et demie plus fort sur la carte de la Conquête ; briques et planches sont payées 25 % plus cher.",
       } as Record<string, string>,
     },
     seasonNotes: {
       title: "Nouveautés de la saison",
       items: [
-        "Le Broglio : chaque matin, deux rumeurs de ce qui vient (un événement, le lot des galères), d'une source plus ou moins sûre. On les vend, on en invente de fausses contre de l'Influence (gare au Lustre si l'on est démasqué), on poste un espion chez un rival. La gazette ne dit plus le lendemain ; les galères apportent un lot qui varie.",
-        "Les parts de Maison : dès le jour 8, votre Maison peut se coter au Rialto (100 parts, vous en gardez toujours 51). Les porteurs touchent chaque semaine une part de vos ventes nettes ; 30 parts siègent à votre conseil ; tout est racheté le dernier jour du mois.",
-        "La Dynastie : chaque mois, un membre de votre Maison tient le comptoir (prénom au choix) ; à la fin du mois, il lègue à son héritier un trait mérité dans le mois (une option ou une information, jamais du rendement), et son portrait entre dans la galerie du profil.",
-        "Le Doge : la dernière semaine du mois, le Sénat élit le Doge du mois suivant parmi les dix premières Maisons ; chacune annonce un programme (une saison et un décret de la République), chacun vote, la voix d'un Podestà pèse plus. Le décret du Doge vaut pour tous, tout le mois ; celui du Signore de la Terraferme disparaît (le Signore garde son titre et sa Gloire).",
-        "Le Grand Canal : quarante palais redonnés chaque mois par le classement ; on garde le sien en restant dans les quarante. Le Canal et le Doge du mois accueillent chacun à la connexion.",
-        "La Renommée se dit par ses titres, plus en chiffres.",
-        "Les Atouts : chaque lundi, trois figures de Venise vous sont proposées ; vous en prenez une pour la saison. Chacune donne et retire. Quatre de plus se débloquent par un exploit (Podestà, lot gagné à l'incanto, Signore d'une semaine, rang Mercante), gardés de saison en saison.",
+        "Les Rumeurs : chaque matin, deux rumeurs de ce qui vient (un événement, le lot des bateaux), d'une source plus ou moins sûre. On les vend, on en invente de fausses contre de l'Influence (gare à sa ligue si l'on est démasqué), on poste un espion chez un rival. La gazette ne dit plus le lendemain ; les bateaux apportent un lot qui varie.",
+        "Les actions : dès le jour 8, votre Maison peut entrer en bourse (100 actions, vous en gardez toujours 51). Les porteurs touchent chaque semaine une part de votre bénéfice ; 30 actions donnent accès à vos comptes ; tout est racheté le dernier jour du mois.",
+        "L'Héritage : chaque mois, un membre de votre Maison tient le comptoir (prénom au choix) ; à la fin du mois, il lègue à son héritier un trait mérité dans le mois (une option ou une information, jamais du rendement), et son portrait entre dans la galerie du profil.",
+        "Le Doge : la dernière semaine du mois, le Sénat élit le Doge du mois suivant parmi les dix premières Maisons ; chacune annonce un programme (une saison et un décret de la République), chacun vote, la voix d'un maître pèse plus. Le décret du Doge vaut pour tous, tout le mois ; celui du Signore de la Conquête disparaît (le Signore garde son titre et ses points de conquête).",
+        "Les 40 palais : quarante palais redonnés chaque mois par le classement ; on garde le sien en restant dans les quarante. Les 40 palais et le Doge du mois accueillent chacun à la connexion.",
+        "Le prestige se dit par ses titres, plus en chiffres.",
+        "Les Atouts : chaque lundi, trois figures de Venise vous sont proposées ; vous en prenez une pour la saison. Chacune donne et retire. Quatre de plus se débloquent par un exploit (maître, lot gagné aux enchères, Signore d'une semaine, rang Mercante), gardés de saison en saison.",
         "La Lettre du jour : chaque matin, une lettre de Lorenzo, Faraj, la veuve Contarini, Ser Marin du Sénat ou d'un Milanais sans nom, deux réponses, des suites qui arrivent des jours plus tard, et une fin du mois selon vos choix. Gains petits, plafonnés à 100 ducats par saison.",
         "Nouvelle palette bleue « Lagune », et la carte en bleu (l'ancienne reste dans le Profil).",
-        "La Terraferme s'ouvre après votre première journée de commerce ; on s'y pose n'importe quel jour, tous à l'abri jusqu'à la fin du premier jour.",
+        "La Conquête s'ouvre après votre première journée de commerce ; on s'y pose n'importe quel jour, tous à l'abri jusqu'à la fin du premier jour.",
         "Qui n'attaque aucun marchand de la semaine garde toujours sa capitale.",
         "Milan chevauche plus souvent et plus fort ; les maisons de l'ordinateur attaquent leurs voisins plus tôt.",
         "Le rival de la semaine, sous votre rang.",
-        "Commandes de compagnie : une commande d'une ville remplie à plusieurs, avec une prime pour tous.",
-        "Le fattore fait partir vos charrettes oubliées au comptoir, deux fois par jour.",
-        "Terraferme : l'heure de bataille, chaque soir de 20 h à 21 h, les fronts avancent dix fois plus vite.",
-        "Terraferme : les ports, sur les rives de la lagune, du lac de Garde et de l'Adriatique ; les barques débarquent sur une autre rive, les galères gardent la vôtre.",
-        "Le guide de la Terraferme, avec ses schémas, dans l'Aide et sur la carte de la Terraferme (« ? Guide »).",
-        "Terraferme : les escarmouches, des parties en direct d'un quart d'heure, de 8 h à 22 h. Une seule par jour est classée : la première avec au moins un autre marchand, si votre camp est posé sur la carte de la semaine et qu'elle finit avant 22 h ; son rang rapporte 45, 30, 20 ou 10 de Gloire à la semaine. Les autres parties sont amicales, sans Gloire. Une partie interrompue par une maintenance ne rapporte rien et ne compte pas : elle ne consomme pas votre partie classée du jour.",
-        "Terraferme : une semaine par mois en équipes, les marchands d'une même région ensemble.",
-        "Terraferme : trois convocations d'escarmouche par jour, à 12 h 30, 18 h 30 et 21 h 15 ; la salle s'ouvre dix minutes avant et la partie part à l'heure. Une alerte un quart d'heure avant, si vous la demandez dans le Profil.",
-        "Terraferme : signaux sur la carte, cible désignée aux alliés, ducats entre alliés et embargo depuis les villes que vous tenez.",
-        "Terraferme : bombardes (un tir par jour rend libres une terre ennemie et ses voisines) et remparts qui en protègent.",
-        "Terraferme : Mantoue, Ferrare, le Patriarche d'Aquilée et l'Empire rejoignent Milan, chacun à sa manière.",
-        "Terraferme : soldats ou paysans. Vos terres donnent du blé, de l'argile et du bois à votre comptoir, et les routes entre vos villes des ducats.",
+        "Commandes de guilde : une commande d'une ville remplie à plusieurs, avec une prime pour tous.",
+        "Le fattore fait partir vos charrettes oubliées aux ateliers, deux fois par jour.",
+        "Conquête : l'heure de bataille, chaque soir de 20 h à 21 h, les fronts avancent dix fois plus vite.",
+        "Conquête : les ports, sur les rives de la lagune, du lac de Garde et de l'Adriatique ; les barques débarquent sur une autre rive, les galères gardent la vôtre.",
+        "Le guide de la Conquête, avec ses schémas, dans l'Aide et sur la carte de la Conquête (« ? Guide »).",
+        "Conquête : les parties rapides, des parties en direct d'un quart d'heure, de 8 h à 22 h. Une seule par jour est classée : la première avec au moins un autre marchand, si votre camp est posé sur la carte de la semaine et qu'elle finit avant 22 h ; son rang rapporte 45, 30, 20 ou 10 points de conquête à la semaine. Les autres parties sont amicales, sans points de conquête. Une partie interrompue par une maintenance ne rapporte rien et ne compte pas : elle ne consomme pas votre partie classée du jour.",
+        "Conquête : une semaine par mois en équipes, les marchands d'une même région ensemble.",
+        "Conquête : trois convocations à la partie rapide par jour, à 12 h 30, 18 h 30 et 21 h 15 ; la salle s'ouvre dix minutes avant et la partie part à l'heure. Une alerte un quart d'heure avant, si vous la demandez dans le Profil.",
+        "Conquête : signaux sur la carte, cible désignée aux alliés, ducats entre alliés et embargo depuis les villes que vous tenez.",
+        "Conquête : bombardes (un tir par jour rend libres une terre ennemie et ses voisines) et remparts qui en protègent.",
+        "Conquête : Mantoue, Ferrare, le Patriarche d'Aquilée et l'Empire rejoignent Milan, chacun à sa manière.",
+        "Conquête : soldats ou paysans. Vos terres donnent du blé, de l'argile et du bois à vos ateliers, et les routes entre vos villes des ducats.",
         "La carte n'affiche plus que les ducats, le rang et les charrettes ; le pain quand il manque.",
-        "Sept jours de cours pour chaque marchandise du Rialto, face à sa référence.",
-        "Le Journal du Rialto, dans les avis : les gros échanges et les conquêtes du jour.",
-        "Le Rapport de la Banque de Venise, au pied de l'Aide ; votre livre de compte en CSV dans le Profil.",
+        "Sept jours de cours pour chaque marchandise du Marché, face à sa référence.",
+        "Le Journal du Marché, dans les messages : les gros échanges et les conquêtes du jour.",
+        "Le Rapport de la Banque de Venise, au pied de l'Aide ; vos comptes en CSV dans le Profil.",
         "En fin de saison, une chronique à partager.",
         "Commerce : chaque atelier dit sa marge par heure et ce que rapporterait son amélioration ; un tableau de bord compare vos sept derniers jours à votre rival et au premier.",
-        "Commerce : Lorenzo conseille la prochaine meilleure action, au comptoir.",
+        "Commerce : Lorenzo conseille la prochaine meilleure action, dans vos ateliers.",
         "Commerce : le fournisseur officiel — qui livre le plus d'une marchandise dans une ville en une semaine y est payé 10 % de plus la semaine suivante, blason sur la carte.",
         "Commerce : les appels d'offres du Doge, sous pli scellé avec caution ; le moins cher l'emporte.",
         "Commerce : les chaînes de luxe s'ouvrent avec les titres — verre de Murano au Marchand, draperie au Négociant, épices préparées à l'Armateur.",
         "Commerce : au-delà du niveau 5, les manufactures montent jusqu'au niveau 10, en volume ou en qualité.",
-        "Commerce : affaires entre marchands — commandes sous séquestre et colleganza.",
-        "Commerce : plus de prêts de la Banque ni d'entrepôts dans les villes.",
-        "Pour tous : les cours du Rialto et le tableau de bord sur 30 jours, le carnet d'ordres à 10 offres. Le classement donne des titres et des trophées, plus de Pass Négociant.",
-        "Le guide de Lorenzo fait agrandir un premier atelier, et la mission « Agrandir un atelier » du Livre de compte s'ouvre dès le premier jour.",
+        "Commerce : affaires entre marchands — commandes sous séquestre et investissements.",
+        "Commerce : plus d'emprunts ni d'entrepôts dans les villes.",
+        "Pour tous : les cours du Marché et le tableau de bord sur 30 jours, le carnet d'ordres à 10 offres. Le classement donne des titres et des trophées, plus de Pass Négociant.",
+        "Le guide de Lorenzo fait agrandir un premier atelier, et la mission « Agrandir un atelier » des objectifs s'ouvre dès le premier jour.",
         "Commerce : les villes passent commande de jour, à 8 h, 11 h, 14 h, 17 h et 20 h. Personne ne prend de commande au tableau entre 22 h et 8 h ; celles de 17 h et de 20 h restent jusqu'au lendemain 10 h. Les commandes urgentes s'ouvrent avant 19 h.",
-        "Terraferme : le Signore est toujours un marchand ; les maisons de l'ordinateur restent au classement de la semaine mais ne reçoivent ni palier ni Influence. Une maison qui se retire rend ses terres.",
-        "Missions de la Maison : celles de l'ancienne campagne sont remplacées par des missions de la Terraferme, deux au plus par tableau.",
-        "Pass Négociant : plus aucun avantage de jeu (ni quota à la Dogana, ni offre ouverte, ni produits frais en plus, ni commande du Doge échangée, ni alerte de bonne affaire) ; il ne donne que de l'information à lire et du cosmétique.",
-        "Terraferme : la Condotta, 8 minutes en coopération, seul ou avec sa compagnie, contre trois nations et Milan. Tenez Padoue et 35 % des terres pour ouvrir le niveau suivant (12 niveaux). Ni ducats, ni marchandises, ni Gloire : un grade, de Condottiere di ventura à Capitano generale.",
+        "Conquête : le Signore est toujours un marchand ; les maisons de l'ordinateur restent au classement de la semaine mais ne reçoivent ni palier ni Influence. Une maison qui se retire rend ses terres.",
+        "Missions de la Maison : celles de l'ancienne campagne sont remplacées par des missions de la Conquête, deux au plus par tableau.",
+        "Pass Négociant : plus aucun avantage de jeu (ni quota à la Douane, ni offre ouverte, ni produits frais en plus, ni commande du Doge échangée, ni alerte de bonne affaire) ; il ne donne que de l'information à lire et du cosmétique.",
+        "Conquête : les Mercenaires, 8 minutes en coopération, seul ou avec sa guilde, contre trois nations et Milan. Tenez Padoue et 35 % des terres pour ouvrir le niveau suivant (12 niveaux). Ni ducats, ni marchandises, ni points de conquête : un grade, de Condottiere di ventura à Capitano generale.",
         "Commerce : les ouvriers mangent au lot, plus à la journée — un demi-pain par lot et par niveau dans un atelier qui transforme, un quart pour une matière première. Sans pain, l'atelier travaille deux fois moins vite, jamais arrêté.",
         "Tâches du jour : un jour manqué par semaine ne casse plus la série du coffre ; un rappel à 19 h si votre série atteint 3 jours et que le coffre est encore fermé.",
-        "Commerce : les fondaci remplacent les entrepôts. Un fondaco dans 3 villes au plus, niveaux 1 à 3, 6 niveaux en tout : chaque niveau vous donne chaque jour une commande de la ville, à vous seul, à 95 % du prix du tableau commun. Le tableau commun passe à 3 commandes par marchand actif.",
-        "Maîtrises : le Négociant a trois fois le quota de la Dogana, qui lui rachète au moins 85 % de la référence ; le Roulier voit les commandes urgentes 20 minutes avant leur ouverture.",
+        "Commerce : les entrepôts de ville remplacent les anciens entrepôts. Un entrepôt dans 3 villes au plus, niveaux 1 à 3, 6 niveaux en tout : chaque niveau vous donne chaque jour une commande de la ville, à vous seul, à 95 % du prix du tableau commun. Le tableau commun passe à 3 commandes par marchand actif.",
+        "Spécialisations : le Négociant a trois fois le quota de la Douane, qui lui rachète au moins 85 % de la référence ; le Roulier voit les commandes urgentes 20 minutes avant leur ouverture.",
         "Livre de la Maison : 8 missions par semaine, renouvelées le lundi, aux seuils doublés et mieux payées ; le Livre s'ouvre sur « Aujourd'hui » et « Cette semaine ».",
-        "L'Arsenal de la semaine remplace la commande de compagnie de deux jours : Bronze, Argent et Or, du lundi au dimanche. L'Argent apporte plus de marchandises aux galères de la semaine suivante, l'Or de l'Influence à qui a livré après le Bronze.",
+        "L'Arsenal de la semaine remplace la commande de guilde de deux jours : Bronze, Argent et Or, du lundi au dimanche. L'Argent apporte plus de marchandises aux bateaux de la semaine suivante, l'Or de l'Influence à qui a livré après le Bronze.",
         "Chaque mois, à partir de décembre, un mutateur change quelques prix ou forces pour le mois ; il est annoncé ici le 24 du mois précédent.",
-        "La guerre mange les marchandises : sur la Terraferme, vos troupes mangent du pain chaque jour ; sans pain, vous ne recrutez plus. « Max » demande aussi du pain, le fort des briques, les remparts des briques et des planches, le port des planches, la bombarde du bois et des planches.",
-        "La Signoria des villes remplace les fournisseurs officiels et l'embargo : chaque ducat livré dans une ville, et chaque heure où vous la tenez sur la Terraferme, compte sur sa jauge. Chaque nuit à minuit, le premier devient Podestà (3 villes au plus) : il prend 3 % des livraisons des autres vers sa ville et prend ses commandes une demi-heure avant tout le monde.",
-        "Le Lustre : chaque semaine, une Sfida contre un marchand de votre rang (ou le fantôme d'une de ses semaines) ; qui vend le plus gagne du Lustre. Six rangs, de Popolano à Procuratore, gardés d'une saison à l'autre (deux de moins au changement de mois). On peut défier un marchand depuis son palmarès.",
-        "La Sera, chaque soir de 20 h à 20 h 30 : 30 % de chaque arrivée des galères aux enchères en trois lots (votre maximum laissé quand vous voulez, vous payez le deuxième maximum plus 5 %), et la bataille de la Terraferme. Au quai, les galères ne renchérissent plus ; les appels d'offres du Doge sont retirés.",
+        "La guerre mange les marchandises : sur la carte de la Conquête, vos troupes mangent du pain chaque jour ; sans pain, vous ne recrutez plus. « Max » demande aussi du pain, le fort des briques, les remparts des briques et des planches, le port des planches, la bombarde du bois et des planches.",
+        "Le contrôle des villes remplace les fournisseurs officiels et l'embargo : chaque ducat livré dans une ville, et chaque heure où vous la tenez sur la carte de la Conquête, compte sur sa jauge. Chaque nuit à minuit, le premier devient maître (3 villes au plus) : il prend 3 % des livraisons des autres vers sa ville et prend ses commandes une demi-heure avant tout le monde.",
+        "Les ligues : chaque semaine, un duel contre un marchand de votre ligue (ou le fantôme d'une de ses semaines) ; le plus gros bénéfice gagne des points de ligue. Six ligues, de la 6 (Popolano) à la 1 (Procuratore), gardées d'une saison à l'autre (deux de moins au changement de mois). On peut défier un marchand depuis son palmarès.",
+        "Les enchères du soir, chaque soir de 20 h à 20 h 30 : 30 % de chaque arrivée des bateaux aux enchères en trois lots (votre maximum laissé quand vous voulez, vous payez le deuxième maximum plus 5 %), et la bataille de la Conquête. Au quai, les bateaux ne renchérissent plus ; les appels d'offres du Doge sont retirés.",
       ],
     },
     howTo: [
       {
         icon: "comptoir",
         title: "Produire",
-        text: "Touchez votre comptoir, puis un atelier : il transforme des matières en produits, par lots d'une demi-heure. Lancez jusqu'à 12 heures de travail et revenez récolter ; rien ne se perd pendant votre absence.",
+        text: "Touchez « Mes ateliers », puis un atelier : il transforme des matières en produits, par lots d'une demi-heure. Lancez jusqu'à 12 heures de travail et revenez récolter ; rien ne se perd pendant votre absence.",
       },
       {
         icon: "routes",
@@ -3230,11 +3244,11 @@ const frDict = {
       {
         icon: "steward",
         title: "Le fattore",
-        text: "Votre commis : quand une charrette reste deux heures au comptoir, il la fait partir avec la meilleure commande que votre stock couvre, deux fois par jour, de 8 h à 22 h, en gardant le pain des ouvriers. Il prend 15 % du paiement. Il ne travaille que si vous êtes passé dans les dernières 24 heures.",
+        text: "Votre commis : quand une charrette reste deux heures aux ateliers, il la fait partir avec la meilleure commande que votre stock couvre, deux fois par jour, de 8 h à 22 h, en gardant le pain des ouvriers. Il prend 15 % du paiement. Il ne travaille que si vous êtes passé dans les dernières 24 heures.",
       },
       {
         icon: "contrats",
-        title: "Commandes de compagnie",
+        title: "Commandes de guilde",
         text: "Tous les deux jours, une ville commande du pain, des briques et des planches aux trois régions. Livrez depuis votre stock : 10 % au-dessus de la référence, et 10 % de plus pour chacun quand la commande est remplie.",
       },
       {
@@ -3244,28 +3258,28 @@ const frDict = {
       },
       {
         icon: "marche",
-        title: "Le Rialto",
-        text: "À Venise, achetez et vendez aux autres marchands et à la Dogana : tout de suite au meilleur prix, ou à votre prix en laissant une offre. C'est là que vous trouvez ce que votre région ne produit pas.",
+        title: "Le Marché",
+        text: "À Venise, achetez et vendez aux autres marchands et à la Douane : tout de suite au meilleur prix, ou à votre prix en laissant une offre. C'est là que vous trouvez ce que votre région ne produit pas.",
       },
       {
         icon: "port",
-        title: "Les galères de la Muda",
-        text: "Tous les trois jours à 9 h, les galères d'État apportent épices, soie, sel, vin, fourrures et draps, vendus au Rialto en petites quantités, de plus en plus cher à mesure que le lot part. Quelques villes en commandent : achetez tôt.",
+        title: "Les bateaux de l'arrivage",
+        text: "Tous les trois jours à 9 h, les bateaux d'État apportent épices, soie, sel, vin, fourrures et draps, vendus au Marché en petites quantités, de plus en plus cher à mesure que le lot part. Quelques villes en commandent : achetez tôt.",
       },
       {
         icon: "top",
         title: "Classement",
-        text: "Chaque semaine et sur la saison, on compte vos ventes nettes : ce que vous vendez, moins ce que vous achetez. Un stock qui dort ne compte pas. Les trois premiers de la semaine reçoivent un titre.",
+        text: "Chaque semaine et sur la saison, on compte votre bénéfice : ce que vous vendez, moins ce que vous achetez. Un stock qui dort ne compte pas. Les trois premiers de la semaine reçoivent un titre.",
       },
       {
         icon: "famille",
-        title: "La Terraferme",
-        text: "Une conquête d'une semaine, à côté du commerce. Posez votre camp sur une terre libre, n'importe quel jour ; puis lancez des fronts vers les terres voisines avec une part de vos troupes. Ils avancent seuls de 8 h à 22 h. Le premier en Gloire impose un décret la semaine suivante.",
+        title: "La Conquête",
+        text: "Une conquête d'une semaine, à côté du commerce. Posez votre camp sur une terre libre, n'importe quel jour ; puis lancez des fronts vers les terres voisines avec une part de vos troupes. Ils avancent seuls de 8 h à 22 h. Le premier en points de conquête impose un décret la semaine suivante.",
       },
       {
         icon: "bale",
-        title: "Ballots de Faraj",
-        text: "Toutes les six heures, Faraj d'Alexandrie vous envoie un ballot : trois cartes de 1 à 5 marchandises. Les probabilités sont affichées ; les ballots ne s'achètent pas.",
+        title: "Colis surprise de Faraj",
+        text: "Toutes les six heures, Faraj d'Alexandrie vous envoie un colis : trois cartes de 1 à 5 marchandises. Les probabilités sont affichées ; les colis ne s'achètent pas.",
       },
       {
         icon: "help",
@@ -3293,16 +3307,16 @@ const frDict = {
       work_ready: "Cet ouvrage est déjà achevé.",
       unknown_use: "Usage inconnu.",
       unknown_daily: "Cette tâche n'est plus au programme du jour.",
-      no_bale: "Aucun ballot au quai pour l'instant : le prochain est en route.",
-      bales_off: "Pas de ballot de Faraj dans ce monde.",
+      no_bale: "Aucun colis au quai pour l'instant : le prochain est en route.",
+      bales_off: "Pas de colis de Faraj dans ce monde.",
       insufficient_funds: "Pas assez de ducats.",
-      shares_off: "Pas de parts de Maison dans ce monde.",
+      shares_off: "Pas d'actions dans ce monde.",
       too_early: "La cotation n'est pas encore ouverte.",
       not_for_npc: "Une Maison de l'ordinateur ne se cote pas.",
       already_listed: "Votre Maison est déjà cotée.",
       not_listed: "Cette Maison n'est pas cotée.",
-      over_float: "Vous gardez toujours 51 parts de votre Maison.",
-      insufficient_shares: "Vous n'avez pas autant de parts libres.",
+      over_float: "Vous gardez toujours 51 actions de votre Maison.",
+      insufficient_shares: "Vous n'avez pas autant d'actions libres.",
       vehicle_not_for_sale: "Seules les mules s'achètent : améliorez-les ensuite.",
       vehicle_max_level: "Ce véhicule est déjà au plus haut niveau.",
       insufficient_stock: "Pas assez de stock.",
@@ -3317,7 +3331,7 @@ const frDict = {
       atouts_off: "Pas d'Atouts dans ce monde.",
       atout_taken: "Atout de la semaine déjà choisi.",
       atout_not_offered: "Cet Atout n'est pas proposé cette semaine.",
-      one_lot: "Vous menez déjà un lot de cette Sera.",
+      one_lot: "Vous menez déjà un lot de ces enchères.",
       building_busy: "Cet atelier produit déjà : attendez la fin de la file.",
       queue_full: "La file de production est pleine (12 h maximum).",
       max_buildings: "Nombre maximal de bâtiments atteint.",
@@ -3358,8 +3372,8 @@ const frDict = {
         "Cette commande est réservée un moment à la famille qui a la faveur de la ville.",
       board_closed:
         "Les villes ne passent pas commande la nuit : le tableau rouvre à 8 h, les commandes du soir vous attendent jusqu'à 10 h.",
-      terra_off: "La Terraferme n'est pas ouverte dans ce monde.",
-      terra_closed: "La semaine de la Terraferme est close : une nouvelle carte s'ouvre bientôt.",
+      terra_off: "La Conquête n'est pas ouverte dans ce monde.",
+      terra_closed: "La semaine de la Conquête est close : une nouvelle carte s'ouvre bientôt.",
       already_placed: "Votre camp de départ est déjà posé.",
       not_placed: "Posez d'abord votre camp de départ.",
       not_neutral: "Il faut une terre libre.",

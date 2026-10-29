@@ -616,7 +616,8 @@ export function RialtoSheet(props: GameProps) {
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-1.5">
+          {/* 16 px to the next row: « Mes offres » reaches 14 px above its chip (.hit). */}
+          <div className="flex flex-wrap items-center gap-1.5 pb-1">
             <Segmented<Filter>
               value={filter}
               onChange={setFilter}

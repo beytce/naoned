@@ -6,7 +6,7 @@ describe("a skirmish cut short by a restart", () => {
     expect(fr.game.notices.family("skirmish_aborted", {})).toBe(fr.game.skirmish.interrupted);
     // True for good: the bell keeps it after the ranked match of the day is played.
     expect(fr.game.skirmish.interrupted).toBe(
-      "Escarmouche interrompue par une maintenance : aucune Gloire, rien n'est compté ; elle n'a pas consommé votre partie classée du jour.",
+      "Partie rapide interrompue par une maintenance : aucun point de conquête, rien n'est compté ; elle n'a pas consommé votre partie classée du jour.",
     );
     expect(fr.game.skirmish.interrupted).not.toContain("reste à jouer");
   });

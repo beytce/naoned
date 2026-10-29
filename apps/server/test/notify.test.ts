@@ -383,7 +383,7 @@ describe("notifications", () => {
     now = Date.parse("2026-10-12T10:15:00Z");
     await notifier.scan();
     const call = pusher.sent.find((p) => p.payload.kind === "skirmish_call");
-    expect(String(call?.payload.title)).toBe("Skirmish at 12:30");
+    expect(String(call?.payload.title)).toBe("Quick match at 12:30");
   });
 
   it("refuses a push endpoint outside the browsers' push services", async () => {
