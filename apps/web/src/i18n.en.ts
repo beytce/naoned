@@ -488,7 +488,9 @@ export const en: Dictionary = {
       },
       rialto: {
         kicker: "The players' market, in Venezia",
-        filters: { all: "All", stock: "In stock", rising: "Rising" },
+        tabs: { goods: "Goods", players: "Between players", shares: "Shares" },
+        priceHead: "Price per unit · your stock under the name",
+        manageShares: "Manage my shares",
         offers: (n: number) => (n > 0 ? `My offers · ${n}` : "My offers"),
         none: "Nothing here for now.",
       },

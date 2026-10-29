@@ -10,7 +10,7 @@ import { BuildCatalog } from "./Catalog.js";
 import { CompanySheet, CompanyTile } from "./Company.js";
 import { Daily } from "./Daily.js";
 import { DashboardSheet, DashboardTile } from "./Dashboard.js";
-import { DealsSheet, DealsTile } from "./Deals.js";
+import { DealsTile } from "./Deals.js";
 import type { GameProps } from "./Game.js";
 import { Ledger } from "./Ledger.js";
 import { costOf } from "./Marche.js";
@@ -1117,7 +1117,6 @@ export function CounterSheets(props: GameProps) {
       <CompanySheet {...props} />
       <DashboardSheet {...props} />
       <TendersSheet {...props} />
-      <DealsSheet {...props} />
     </>
   );
 }

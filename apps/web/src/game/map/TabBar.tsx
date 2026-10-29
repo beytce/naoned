@@ -19,6 +19,7 @@ const VENICE_SHEETS = new Set([
   "trade",
   "offers",
   "deals",
+  "shares",
   "sera",
   "broglio",
   "senate",

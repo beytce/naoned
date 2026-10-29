@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Crest } from "../art/crest.js";
 import { CHAIN_COLOUR, CHAIN_ORDER, GoodsMark, goodsChain } from "../art/goods.js";
 import { fr } from "../i18n.js";
 import { locale } from "../lang.js";
 import { Badge, Label, Qty, Segmented, Sheet, Slab, Sparkline, clock } from "../ui.js";
 import { have } from "./Comptoir.js";
+import { DealsBody } from "./Deals.js";
 import { DecreeBanner } from "./Famille.js";
 import type { GameProps } from "./Game.js";
 import { MerchantName } from "./Name.js";
+import { SharesTab } from "./Shares.js";
 import { d } from "./format.js";
 import { change } from "./market.js";
 import type { BookLine, MarketLine, OrderView } from "./types.js";
@@ -65,31 +67,16 @@ function Row({
       <GoodsMark code={line.resource} size={34} />
       <div className="min-w-0 flex-1">
         <p className="font-display text-sm font-semibold">{props.names.resource(line.resource)}</p>
-        <p className="meta mt-0.5 flex items-center gap-2">
-          <span className="whitespace-nowrap">
-            {fr.game.inStock(have(props.view, line.resource))}
-          </span>
-          <ChangeTag value={change(points)} />
+        <p className="meta mt-0.5 whitespace-nowrap">
+          {fr.game.inStock(have(props.view, line.resource))}
         </p>
       </div>
-      {/* Under 360 px the curve gives way to the stock: the trade sheet draws it bigger. */}
-      <span className="hidden shrink-0 min-[360px]:block">
-        <Sparkline points={points} width={64} height={26} />
-      </span>
-      {/* Two columns, as their heads: buying, selling. */}
-      <div className="flex shrink-0 gap-2 text-right">
-        <p
-          className="w-14 font-display text-sm font-semibold tabular-nums"
-          aria-label={`${fr.game.buyAt} ${d(line.bestAsk)}`}
-        >
-          {d(line.bestAsk)}
+      {/* One price a unit (to buy, else to sell), its change over the days under it (maquette `Rialto`). */}
+      <div className="flex shrink-0 flex-col items-end text-right">
+        <p className="font-display text-sm font-semibold tabular-nums">
+          {d(line.bestAsk ?? line.bestBid)}
         </p>
-        <p
-          className="w-14 font-display text-sm tabular-nums text-lagoon"
-          aria-label={`${fr.game.sellAt} ${d(line.bestBid)}`}
-        >
-          {d(line.bestBid)}
-        </p>
+        <ChangeTag value={change(points)} />
       </div>
     </button>
   );
@@ -413,8 +400,6 @@ function MyOffers({ orders, props }: { orders: OrderView[]; props: GameProps }) 
   );
 }
 
-type Filter = "all" | "stock" | "rising";
-
 /**
  * The Rialto, opened from Venice on the map: one sheet. The board first (sorts, the tax, the
  * decrees, the merchant's offers), then a touched good's trade in the same sheet, a back arrow to
@@ -477,16 +462,6 @@ function MudaPanel({ props }: { props: GameProps }) {
   );
 }
 
-/** The heads of the price columns, side by side over their figures. */
-function PriceHeads() {
-  return (
-    <div className="flex shrink-0 gap-2 text-right">
-      <p className="label w-14">{fr.game.buyAt}</p>
-      <p className="label w-14 text-lagoon">{fr.game.sellAt}</p>
-    </div>
-  );
-}
-
 /**
  * The goods with a price first, grouped by chain under a head in the chain's colour (Lagune);
  * those nobody has traded yet after, under their own head.
@@ -543,19 +518,28 @@ function PricedRows({
 export function MarketBoard(props: GameProps) {
   return (
     <div>
-      <div className="flex items-end justify-between gap-3 border-b border-line/70 pb-2">
-        <p className="label">{fr.game.market.goods}</p>
-        <PriceHeads />
-      </div>
+      <p className="meta border-b border-line/70 pb-2">{fr.game.map.rialto.priceHead}</p>
       <PricedRows lines={props.view.market} props={props} />
     </div>
   );
 }
 
+type MarketTab = "goods" | "players" | "shares";
+
 export function RialtoSheet(props: GameProps) {
   const [kind, id] = (props.sheet ?? "").split(":");
-  const open = kind === "rialto" || kind === "offers" || (kind === "trade" && !!id);
-  const [filter, setFilter] = useState<Filter>("all");
+  // « deals »: the Market at its tab between players (refonte UX, lot 5).
+  const open =
+    kind === "rialto" ||
+    kind === "offers" ||
+    kind === "deals" ||
+    kind === "shares" ||
+    (kind === "trade" && !!id);
+  const [tab, setTab] = useState<MarketTab>("goods");
+  useEffect(() => {
+    if (kind === "deals") setTab("players");
+    if (kind === "shares") setTab("shares");
+  }, [kind]);
   const [decreesOpen, setDecreesOpen] = useState(false);
   const lines = props.view.market;
   const line = kind === "trade" ? lines.find((l) => l.resource === id) : undefined;
@@ -573,25 +557,18 @@ export function RialtoSheet(props: GameProps) {
       ← {fr.game.map.buttons.rialto}
     </button>
   );
-  const shown = lines
-    .filter((l) =>
-      filter === "stock"
-        ? have(props.view, l.resource) > 0
-        : filter === "rising"
-          ? change(series(props, l.resource)) > 0
-          : true,
-    )
-    .sort((a, b) =>
-      filter === "rising"
-        ? change(series(props, b.resource)) - change(series(props, a.resource))
-        : 0,
-    );
+  const tabs: { value: MarketTab; label: string }[] = [
+    { value: "goods", label: r.tabs.goods },
+    ...(props.view.deals ? [{ value: "players" as const, label: r.tabs.players }] : []),
+    ...(props.view.shares ? [{ value: "shares" as const, label: r.tabs.shares }] : []),
+  ];
+  const board = !line && kind !== "offers";
   return (
     <Sheet
       open={open}
       onClose={() => props.setSheet(null)}
-      title={!line && kind !== "offers" ? fr.game.map.buttons.rialto : undefined}
-      summary={!line && kind !== "offers" ? r.kicker : undefined}
+      title={board ? fr.game.map.buttons.rialto : undefined}
+      summary={board ? m.tax(props.catalog.rules.marketTaxBps / 100) : undefined}
     >
       {line ? (
         <div>
@@ -609,55 +586,74 @@ export function RialtoSheet(props: GameProps) {
         </div>
       ) : (
         <div className="space-y-3">
-          {/* 16 px to the next row: « Mes offres » reaches 14 px above its chip (.hit). */}
-          <div className="flex flex-wrap items-center gap-1.5 pb-1">
-            <Segmented<Filter>
-              value={filter}
-              onChange={setFilter}
-              options={[
-                { value: "all", label: r.filters.all },
-                { value: "stock", label: r.filters.stock },
-                { value: "rising", label: r.filters.rising },
-              ]}
-            />
-          </div>
-          {/* Rows 20 px apart when they wrap: the chips' 44 px of touch do not meet. */}
-          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-5">
-            {/* A fact, not a filter: plain text. */}
-            <span className="mr-1 text-xs text-cream-dim">
-              {m.tax(props.catalog.rules.marketTaxBps / 100)}
-            </span>
-            <button type="button" onClick={() => props.setSheet("offers")} className="hit">
-              <span
-                className={`slab block px-3 py-1 font-display text-xs font-semibold ${offers.length > 0 ? "bg-info/20 text-info" : "text-cream-dim ring-1 ring-inset ring-line"}`}
-              >
-                {r.offers(offers.length)}
-              </span>
-            </button>
-            {decrees && decrees.items.length > 0 && (
+          {tabs.length > 1 && (
+            // Three tabs (maquette `Rialto`): the goods, the deals between players, the shares.
+            <div
+              className="grid gap-1.5 rounded-full bg-night p-1"
+              role="tablist"
+              style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
+            >
+              {tabs.map((x) => (
+                <button
+                  key={x.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === x.value}
+                  onClick={() => setTab(x.value)}
+                  className={`min-h-11 whitespace-nowrap rounded-full px-1 text-[0.8125rem] font-semibold transition ${tab === x.value ? "bg-info text-ink" : "text-cream-dim"}`}
+                >
+                  {x.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {tab === "players" ? (
+            <DealsBody {...props} />
+          ) : tab === "shares" ? (
+            <div className="space-y-3">
+              <SharesTab {...props} />
               <button
                 type="button"
-                aria-expanded={decreesOpen}
-                onClick={() => setDecreesOpen(!decreesOpen)}
-                className={`hit rounded-full px-3 py-1 font-display text-xs font-semibold ring-1 ring-inset ${ours ? "bg-lagoon/15 text-lagoon ring-lagoon/60" : "bg-vermilion/15 text-vermilion ring-vermilion/60"}`}
+                onClick={() => props.setSheet("profile")}
+                className="flex min-h-12 items-center text-sm font-semibold text-info"
               >
-                ⚑ {m.decrees(decrees.items.length)}
+                {r.manageShares} ›
               </button>
-            )}
-          </div>
-          {decreesOpen && <DecreeBanner props={props} />}
-          <MudaPanel props={props} />
-          <div className="flex items-end justify-between gap-3 border-b border-line/70 pb-2">
-            <p className="label">{m.goods}</p>
-            <PriceHeads />
-          </div>
-          <div>
-            {shown.length === 0 ? (
-              <p className="py-6 text-center text-sm text-cream-dim">{r.none}</p>
-            ) : (
-              <PricedRows lines={shown} props={props} grouped={filter !== "rising"} />
-            )}
-          </div>
+            </div>
+          ) : (
+            <>
+              {/* 16 px to the next row: « Mes offres » reaches 14 px above its chip (.hit). */}
+              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-5 pt-1">
+                <button type="button" onClick={() => props.setSheet("offers")} className="hit">
+                  <span
+                    className={`slab block px-3 py-1 font-display text-xs font-semibold ${offers.length > 0 ? "bg-info/20 text-info" : "text-cream-dim ring-1 ring-inset ring-line"}`}
+                  >
+                    {r.offers(offers.length)}
+                  </span>
+                </button>
+                {decrees && decrees.items.length > 0 && (
+                  <button
+                    type="button"
+                    aria-expanded={decreesOpen}
+                    onClick={() => setDecreesOpen(!decreesOpen)}
+                    className={`hit rounded-full px-3 py-1 font-display text-xs font-semibold ring-1 ring-inset ${ours ? "bg-lagoon/15 text-lagoon ring-lagoon/60" : "bg-vermilion/15 text-vermilion ring-vermilion/60"}`}
+                  >
+                    ⚑ {m.decrees(decrees.items.length)}
+                  </button>
+                )}
+              </div>
+              {decreesOpen && <DecreeBanner props={props} />}
+              <MudaPanel props={props} />
+              <p className="meta border-b border-line/70 pb-2">{r.priceHead}</p>
+              <div>
+                {lines.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-cream-dim">{r.none}</p>
+                ) : (
+                  <PricedRows lines={lines} props={props} />
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
     </Sheet>

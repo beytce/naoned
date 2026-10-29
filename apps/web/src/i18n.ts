@@ -415,7 +415,9 @@ const frDict = {
       },
       rialto: {
         kicker: "Le marché des joueurs, à Venise",
-        filters: { all: "Tout", stock: "En stock", rising: "En hausse" },
+        tabs: { goods: "Marchandises", players: "Entre joueurs", shares: "Actions" },
+        priceHead: "Prix à l'unité · votre stock sous le nom",
+        manageShares: "Gérer mes actions",
         offers: (n: number) => (n > 0 ? `Mes offres · ${n}` : "Mes offres"),
         none: "Rien ici pour l'instant.",
       },
