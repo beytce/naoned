@@ -6,7 +6,7 @@ import { fr } from "../i18n.js";
 import { Badge, Label, Panel, Sheet, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { MerchantName } from "./Name.js";
-import { PlayerPalmares } from "./Palmares.js";
+import { SfidaBody } from "./Sfida.js";
 import { gameApi } from "./api.js";
 import { d, whole } from "./format.js";
 import { store } from "./store.js";
@@ -181,9 +181,12 @@ type View = "board" | "last" | "rules";
  * week's podium and the rules one touch away in the same sheet.
  */
 export function RankingSheet(props: GameProps) {
-  const open = props.sheet === "ranking";
+  // « sfida »: the ranking at its Duel tab (refonte UX, lot 7).
+  const open = props.sheet === "ranking" || props.sheet === "sfida";
   const [view, setView] = useState<View>("board");
-  const [opened, setOpened] = useState<string | null>(null);
+  const [duel, setDuel] = useState(false);
+  // A line opens the player's sheet over the ranking (refonte UX, lot 7).
+  const setOpened = (id: string) => props.setSheet(`player:${id}:ranking`);
   const [period, setPeriod] = useState<Period>(() =>
     store.get("topPeriod") === "season" ? "season" : "week",
   );
@@ -192,6 +195,7 @@ export function RankingSheet(props: GameProps) {
   useEffect(() => {
     if (!open) return;
     setView("board");
+    setDuel(props.sheet === "sfida");
     gameApi
       .weekRanking()
       .then(setWeek)
@@ -200,7 +204,7 @@ export function RankingSheet(props: GameProps) {
       .ranking()
       .then((r) => setSeason(r.rows))
       .catch(() => setSeason([]));
-  }, [open]);
+  }, [open, props.sheet]);
   const choose = (p: Period) => {
     store.set("topPeriod", p);
     setPeriod(p);
@@ -225,24 +229,13 @@ export function RankingSheet(props: GameProps) {
       ← {fr.game.tabs.top}
     </button>
   );
-  const tab = (p: Period, label: string, ends: number) => (
-    <button
-      type="button"
-      aria-pressed={period === p}
-      onClick={() => choose(p)}
-      // Lagune: a rounded choice, lit in lapis when chosen.
-      className={`flex-1 rounded-2xl px-3 py-2 text-left ring-inset transition ${period === p ? "bg-info/15 ring-[1.5px] ring-info" : "bg-night-3 ring-1 ring-line/70"}`}
-    >
-      <span
-        className={`block text-xs font-semibold ${period === p ? "text-info" : "text-cream-dim"}`}
-      >
-        {label}
-      </span>
-      <span className="block font-display text-sm font-extrabold tabular-nums">
-        {fr.game.closesIn} {clock(ends - props.now)}
-      </span>
-    </button>
-  );
+  const tabs: { value: Period | "duel"; label: string }[] = [
+    { value: "week", label: tp.periods.week },
+    { value: "season", label: tp.periods.season },
+    ...(props.lustre ? [{ value: "duel" as const, label: tp.periods.duel }] : []),
+  ];
+  const current = duel ? "duel" : period;
+  const ends = period === "week" ? (week?.endsAt ?? props.now) : props.catalog.world.endsAt;
   return (
     <>
       <Sheet
@@ -269,67 +262,89 @@ export function RankingSheet(props: GameProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* The week before and the rules first, as ghost pills: never under the own line. */}
-            <span className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="label inline-flex min-h-11 items-center rounded-full px-3.5 text-info ring-1 ring-inset ring-line transition active:scale-95"
-                onClick={() => setView("last")}
+            {/* Three tabs (maquette `Classement`): the week, the month, the duel; « ? » the rules. */}
+            <div className="flex items-center gap-2">
+              <div
+                className="grid flex-1 gap-1.5 rounded-full bg-night p-1"
+                role="tablist"
+                style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
               >
-                {tp.tabs.passee}
-              </button>
+                {tabs.map((x) => (
+                  <button
+                    key={x.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={current === x.value}
+                    onClick={() => {
+                      if (x.value === "duel") setDuel(true);
+                      else {
+                        setDuel(false);
+                        choose(x.value);
+                      }
+                    }}
+                    className={`min-h-11 rounded-full px-1 text-[0.8125rem] font-semibold transition ${current === x.value ? "bg-info text-ink" : "text-cream-dim"}`}
+                  >
+                    {x.label}
+                  </button>
+                ))}
+              </div>
               <button
                 type="button"
-                className="label inline-flex min-h-11 items-center rounded-full px-3.5 text-info ring-1 ring-inset ring-line transition active:scale-95"
+                aria-label={tp.rules}
                 onClick={() => setView("rules")}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-cream ring-1 ring-inset ring-edge"
               >
-                {tp.tabs.regles}
+                ?
               </button>
-              {/* The week's duel (R6): its line left the map's header (refonte UX). */}
-              {props.rival?.sfida && (
-                <button
-                  type="button"
-                  data-coach="ranking-duel"
-                  className="label inline-flex min-h-11 items-center rounded-full px-3.5 text-info ring-1 ring-inset ring-line transition active:scale-95"
-                  onClick={() => props.setSheet("sfida")}
-                >
-                  {fr.game.lustre.title}
-                </button>
-              )}
-              {/* The Grand Canal (R5): the forty palaces the month's ranking gives. */}
-              <button
-                type="button"
-                className="label inline-flex min-h-11 items-center rounded-full px-3.5 text-gold ring-1 ring-inset ring-gold/60 transition active:scale-95"
-                // The forty palaces, a sheet of their own (refonte UX, lot 6).
-                onClick={() => props.setSheet("canal")}
-              >
-                {fr.game.canal.tab}
-              </button>
-            </span>
-            <div className="flex gap-2">
-              {tab(
-                "week",
-                week ? fr.game.week.kicker(week.week) : fr.game.week.tab,
-                week?.endsAt ?? props.now,
-              )}
-              {tab("season", fr.game.week.seasonTab, props.catalog.world.endsAt)}
             </div>
-            {rows === null ? (
-              <p className="text-muted">…</p>
+            {duel ? (
+              <SfidaBody {...props} />
             ) : (
               <>
-                <Podium
-                  rows={rows.slice(0, 3).map((r) => ({ ...r, award: null }))}
-                  title={period === "week" ? fr.game.week.title : fr.game.topTitle}
-                />
-                <div>
-                  {rows.map((r) => (
-                    <Line key={r.rank} r={r} game={props} value={r.value} onOpen={setOpened} />
-                  ))}
+                <p className="meta">
+                  {tp.line(
+                    period === "week"
+                      ? week
+                        ? fr.game.week.kicker(week.week)
+                        : fr.game.week.tab
+                      : fr.game.week.seasonTab,
+                    clock(ends - props.now),
+                  )}
+                </p>
+                {rows === null ? (
+                  <p className="text-muted">…</p>
+                ) : (
+                  <>
+                    <Podium
+                      rows={rows.slice(0, 3).map((r) => ({ ...r, award: null }))}
+                      title={period === "week" ? fr.game.week.title : fr.game.topTitle}
+                    />
+                    <div>
+                      {rows.map((r) => (
+                        <Line key={r.rank} r={r} game={props} value={r.value} onOpen={setOpened} />
+                      ))}
+                    </div>
+                  </>
+                )}
+                <div className="flex flex-wrap gap-x-5">
+                  <button
+                    type="button"
+                    onClick={() => setView("last")}
+                    className="flex min-h-12 items-center text-sm font-semibold text-info"
+                  >
+                    {tp.lastWeek} ›
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => props.setSheet("canal")}
+                    className="flex min-h-12 items-center text-sm font-semibold text-info"
+                  >
+                    {fr.game.canal.tab} ›
+                  </button>
                 </div>
               </>
             )}
-            {me && (
+            {!duel && me && (
               // The merchant's own line stays in sight at the foot of the sheet.
               <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-night-2 via-night-2/95 to-night-2/0 px-5 pb-1 pt-4 lg:-mx-7 lg:px-7">
                 <button
@@ -358,19 +373,6 @@ export function RankingSheet(props: GameProps) {
           </div>
         )}
       </Sheet>
-      <PlayerPalmares
-        accountId={opened}
-        onClose={() => setOpened(null)}
-        // The Lustre (R6): another person may be challenged for next week.
-        onChallenge={
-          props.lustre && opened !== props.account.id
-            ? (id, pseudo) => {
-                setOpened(null);
-                props.setSheet(`challenge:${id}:${pseudo}`);
-              }
-            : undefined
-        }
-      />
     </>
   );
 }

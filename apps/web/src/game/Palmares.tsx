@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
+import { CanalStrip } from "../art/canal.js";
 import { Crest, type CrestData } from "../art/crest.js";
 import { Medal } from "../art/icons.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Panel, Ribbon, Sheet, Slab, Stat } from "../ui.js";
+import { useCanal } from "./Canal.js";
+import type { GameProps } from "./Game.js";
 import { MerchantName, merchantLabel } from "./Name.js";
 import { TheirShares } from "./Shares.js";
 import { gameApi } from "./api.js";
 import { d, whole } from "./format.js";
+import { playerKey } from "./politics.js";
 import type { Palmares } from "./types.js";
 
 const place = (rank: number) => `${rank}${rank === 1 ? "er" : "e"}`;
@@ -91,17 +95,18 @@ export function PalmaresView({ data }: { data: Palmares }) {
   );
 }
 
-/** Another merchant's palmarès, opened from the rankings. */
-export function PlayerPalmares({
-  accountId,
-  onClose,
-  onChallenge,
-}: {
-  accountId: string | null;
-  onClose: () => void;
-  /** A Sfida asked of this merchant for next week (R6): absent, no button. */
-  onChallenge?: (accountId: string, pseudo: string) => void;
-}) {
+/**
+ * A player's sheet over the screen it was opened from (refonte UX lot 7, maquette `Fiche`): their
+ * palace on the water, their name and title, three lines (the record, the shares, against you
+ * when known), and the one gold the origin gives: challenge from the ranking, shares from the
+ * Market, none from the palaces. « Retour » goes back to that screen.
+ */
+export function PlayerSheet(props: GameProps) {
+  const key = playerKey(props.sheet);
+  const id = key?.id ?? null;
+  const t = fr.game.palmares;
+  const canal = useCanal();
+  const [shares, setShares] = useState(false);
   const [data, setData] = useState<{
     pseudo: string | null;
     crest: CrestData | null;
@@ -110,35 +115,118 @@ export function PlayerPalmares({
   } | null>(null);
   useEffect(() => {
     setData(null);
-    if (!accountId) return;
+    setShares(false);
+    if (!id) return;
     gameApi
-      .palmares(accountId)
+      .palmares(id)
       .then(setData)
       .catch(() => setData(null));
-  }, [accountId]);
+  }, [id]);
+  const back = () =>
+    props.setSheet(
+      key?.origin === "market" ? "shares" : key?.origin === "canal" ? "canal" : "ranking",
+    );
+  const name = data ? merchantLabel(data.pseudo, false) : "";
+  const plot = data ? canal?.plots.find((p) => merchantLabel(p.pseudo, false) === name) : undefined;
+  const places = data?.palmares.seasons.slice(0, 3).map((s) => place(s.rank)) ?? [];
+  const self = id === props.account.id;
   return (
-    <Sheet open={accountId !== null} onClose={onClose}>
-      {data ? (
+    <Sheet open={!!key} onClose={back}>
+      {data && id ? (
         <div className="space-y-4">
-          <div className="flex items-center gap-3 pr-10">
-            {data.crest && <Crest crest={data.crest} size={52} />}
+          <button
+            type="button"
+            onClick={back}
+            className="label -ml-1 flex h-11 items-center gap-1 text-gold"
+          >
+            ‹ {t.back}
+          </button>
+          {/* Their palace on the water, when they hold one of the forty. */}
+          {plot && (
+            <div className="flex justify-center">
+              <CanalStrip
+                facades={[
+                  {
+                    plot: 1,
+                    color: plot.crest?.color ?? null,
+                    generations: plot.generations,
+                    atouts: plot.atouts,
+                    cities: plot.cities,
+                    doge: plot.doge,
+                  },
+                ]}
+                count={1}
+                label=""
+                height={120}
+              />
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            {data.crest && <Crest crest={data.crest} size={48} />}
             <div className="min-w-0">
-              <Label>{fr.game.palmares.title}</Label>
               <h3 className="flex font-display text-xl font-extrabold">
                 <MerchantName pseudo={data.pseudo} bot={data.bot} />
               </h3>
+              <p className="meta">
+                {data.palmares.renown.current.name}
+                {plot ? ` · ${fr.game.canal.palace(plot.plot, "")}` : ""}
+              </p>
             </div>
           </div>
-          <PalmaresView data={data.palmares} />
-          {accountId && !data.bot && <TheirShares accountId={accountId} />}
-          {onChallenge && accountId && !data.bot && (
+          <div className="divide-y divide-line/60 rounded-2xl bg-night-3 px-3">
+            <div className="flex min-h-12 items-center justify-between gap-3 py-2">
+              <span className="flex items-center gap-2 text-sm font-semibold">
+                {plot && (
+                  <span className="flex gap-0.5" aria-hidden="true">
+                    {Array.from({ length: Math.min(6, plot.generations) }, (_, i) => (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: a dot a generation.
+                      <span key={i} className="h-2 w-2 rounded-full bg-gold" />
+                    ))}
+                  </span>
+                )}
+                {t.title}
+              </span>
+              <span className="text-right text-sm text-cream-dim">
+                {places.length > 0 ? places.join(", ") : t.noPlace}
+                {plot ? ` · ${t.generations(plot.generations)}` : ""}
+              </span>
+            </div>
+            {!data.bot && (
+              <button
+                type="button"
+                aria-expanded={shares}
+                onClick={() => setShares((o) => !o)}
+                className="flex min-h-12 w-full items-center justify-between gap-3 py-2 text-left"
+              >
+                <span className="text-sm font-semibold">{t.shares}</span>
+                <span className="text-sm text-cream-dim">{t.sharesOpen} ›</span>
+              </button>
+            )}
+          </div>
+          {shares && !data.bot && <TheirShares accountId={id} />}
+          <details>
+            <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold text-info">
+              {t.all}
+            </summary>
+            <div className="mt-2">
+              <PalmaresView data={data.palmares} />
+            </div>
+          </details>
+          {/* The one gold, by the screen it was opened from (plan, open point 3). */}
+          {!self && !data.bot && key?.origin === "ranking" && props.lustre && (
             <Slab
               size="lg"
-              tone="gold"
               className="w-full"
-              onClick={() => onChallenge(accountId, merchantLabel(data.pseudo, data.bot, ""))}
+              onClick={() =>
+                props.setSheet(`challenge:${id}:${merchantLabel(data.pseudo, false, "")}`)
+              }
             >
               {fr.game.lustre.challenge}
+            </Slab>
+          )}
+          {!self && !data.bot && key?.origin === "market" && !shares && (
+            <Slab size="lg" className="w-full" onClick={() => setShares(true)}>
+              {t.buyShares}
             </Slab>
           )}
         </div>

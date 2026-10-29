@@ -1245,6 +1245,11 @@ const frDict = {
     },
     top: {
       tabs: { passee: "Semaine passée", regles: "Règles" },
+      /** The ranking in three tabs (refonte UX, lot 7, maquette `Classement`). */
+      periods: { week: "Semaine", season: "Mois", duel: "Duel" },
+      line: (label: string, left: string) => `${label} · clôture dans ${left}`,
+      lastWeek: "La semaine passée",
+      rules: "Les règles du classement",
       noLastWeek: "Pas encore de semaine terminée : le premier podium se joue maintenant.",
     },
     counter: {
@@ -1964,7 +1969,7 @@ const frDict = {
         procurator: "Procurateur",
         senator: "Sénateur",
       } as Record<string, string>,
-      help: "Bénéfice depuis le début de la semaine (ou depuis votre arrivée), en ducats : ce que vous avez vendu, moins ce que vous avez acheté. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
+      help: "Bénéfice depuis le début de la semaine (ou depuis votre arrivée), en ducats : ce que vous avez vendu, moins ce que vous avez acheté. Chaque semaine, les trois meilleurs marchands (hors Maisons de l'ordinateur) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
     },
     season: {
       closed: (name: string) => `La saison ${name} est close`,
@@ -1993,6 +1998,24 @@ const frDict = {
         `Dernier sprint : la saison se termine dans ${days} jour${days > 1 ? "s" : ""}.`,
       honoured: (pseudo: string, season: string) => `${pseudo}, Doge de ${season}`,
     },
+    /** The profile (refonte UX, lot 7, maquette `Profil`): one content, then a line a part. */
+    profile: {
+      generation: (given: string, n: number) => `${given}, ${n}${n === 1 ? "ʳᵉ" : "ᵉ"} génération`,
+      league: (league: string) => `${league} de duel`,
+      palace: (rank: number) => `Votre palais : le ${rank}${rank === 1 ? "ᵉʳ" : "ᵉ"} des 40`,
+      toPalaces: (rank: number, gap: string) => `${rank}ᵉ · à ${gap} du 40ᵉ palais`,
+      influence: "Influence",
+      prestige: "Prestige",
+      duel: "Ligue de duel",
+      back: "Profil",
+      lines: {
+        shares: "Mes actions",
+        heritage: "Héritage",
+        guild: "Guilde",
+        record: "Palmarès et chiffres",
+        settings: "Réglages",
+      },
+    },
     palmares: {
       title: "Palmarès",
       renown: "Prestige",
@@ -2009,10 +2032,19 @@ const frDict = {
       latestWeeks: "Dernières semaines",
       weekOf: (week: number, season: string) => `Semaine ${week} · ${season}`,
       open: "Voir le palmarès",
+      /** A player's sheet (refonte UX, lot 7, maquette `Fiche`). */
+      back: "Retour",
+      generations: (n: number) => `${n} génération${n > 1 ? "s" : ""}`,
+      places: (list: string) => list,
+      noPlace: "pas encore de mois fini",
+      shares: "Actions",
+      sharesOpen: "le cours, et en acheter",
+      all: "Tout le palmarès",
+      buyShares: "Acheter des actions",
     },
-    npc: "PNJ",
+    npc: "(ordinateur)",
     npcHelp:
-      "PNJ : maisons marchandes tenues par l'ordinateur, avec les mêmes règles que vous. Elles animent le monde tant qu'il compte peu de joueurs et se retirent à mesure que de vrais marchands arrivent.",
+      "(ordinateur) : maisons marchandes tenues par l'ordinateur, avec les mêmes règles que vous. Elles animent le monde tant qu'il compte peu de joueurs et se retirent à mesure que de vrais marchands arrivent.",
     anonymous: "Marchand anonyme",
     rankingHelp:
       "Bénéfice = tout ce que vous avez vendu (Marché, Douane, livraisons, commandes du Doge), taxes et péages déduits, moins tout ce que vous avez acheté. Le stock et les bâtiments ne comptent pas.",
@@ -2579,7 +2611,7 @@ const frDict = {
       join: "Rejoindre",
       /** Who it opens with, told before entering: « 2 marchands · 6 PNJ · départ dans 0:45 ». */
       lobby: (humans: number, bots: number, time: string) =>
-        `${humans} marchand${humans > 1 ? "s" : ""} · ${bots} PNJ · départ dans ${time}${bots > 0 ? " ; un marchand qui arrive prend la place d'un condottiere." : "."}`,
+        `${humans} marchand${humans > 1 ? "s" : ""} · ${bots} de l'ordinateur · départ dans ${time}${bots > 0 ? " ; un marchand qui arrive prend la place d'un condottiere." : "."}`,
       playing: (time: string) =>
         `En cours · fin dans ${time}. Touchez une terre au bord des vôtres pour attaquer.`,
       watching: "Une partie rapide est en cours : regardez-la, la prochaine s'ouvre ensuite.",
@@ -2983,7 +3015,7 @@ const frDict = {
         `Vous êtes ${rank}ᵉ : ${gap} de bénéfice vous séparent du 40ᵉ palais.`,
       inside: (rank: number) => `Votre palais : le ${rank}${rank === 1 ? "ᵉʳ" : "ᵉ"} du quai.`,
       toQuay: "Aller à mon quai",
-      seeRanking: "Voir le classement",
+      see: (name: string) => `Voir ${name}`,
       sestieri: ["Cannaregio", "Castello", "Dorsoduro", "San Polo", "Santa Croce", "San Marco"],
     },
     /** The Doge (R7): the Senate, its candidates, programmes and voices. */
@@ -3217,6 +3249,7 @@ const frDict = {
     },
     /** The Lustre (R6): the social ranks of Venice and the weekly Sfida. */
     lustre: {
+      see: (name: string) => `Voir ${name}`,
       tiers: {
         popolano: "Popolano",
         cittadino: "Cittadino",

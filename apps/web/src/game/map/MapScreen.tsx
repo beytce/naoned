@@ -33,10 +33,11 @@ import type { GameProps } from "../Game.js";
 import { HouseSheet } from "../House.js";
 import { LetterSheet, letterWaiting, useLetterMoment } from "../Letter.js";
 import { RialtoSheet } from "../Marche.js";
+import { PlayerSheet } from "../Palmares.js";
 import { PoliticsSheet } from "../Politics.js";
 import { ProfileSheet } from "../Profil.js";
 import { SeraSheet, openSeraLots } from "../Sera.js";
-import { ChallengeSheet, SfidaSheet } from "../Sfida.js";
+import { ChallengeSheet } from "../Sfida.js";
 import { SignoriaSheet } from "../Signoria.js";
 import { SuppliersSheet } from "../Suppliers.js";
 import { RankingSheet } from "../Top.js";
@@ -1221,7 +1222,6 @@ export function MapScreen(
       <CounterSheets {...props} />
       <SuppliersSheet {...props} />
       <SignoriaSheet {...props} />
-      <SfidaSheet {...props} />
       <ChallengeSheet {...props} />
       <SeraSheet {...props} />
       <DailySheet {...props} />
@@ -1235,6 +1235,7 @@ export function MapScreen(
       {terraView && <TerraSheets props={props} v={terraView} act={terraAct} />}
       <RialtoSheet {...props} />
       <RankingSheet {...props} />
+      <PlayerSheet {...props} />
       <CanalSheet {...props} />
       <ProfileSheet {...props} />
       <HouseSheet {...props} />

@@ -292,10 +292,15 @@ export function LegalLinks({ className = "" }: { className?: string }) {
   return (
     <nav
       aria-label={LANG === "en" ? "Legal information" : "Informations légales"}
-      className={`flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted ${className}`}
+      className={`flex flex-wrap justify-center gap-x-4 text-xs text-muted ${className}`}
     >
       {Object.entries(LEGAL_PAGES).map(([path, page]) => (
-        <a key={path} href={path} className="underline-offset-2 hover:text-cream hover:underline">
+        // 48 px of touch each, their lines stacked (refonte UX, 44 px at least).
+        <a
+          key={path}
+          href={path}
+          className="inline-flex min-h-12 items-center underline-offset-2 hover:text-cream hover:underline"
+        >
           {(LANG === "en" ? TITLES_EN : TITLES)[page]}
         </a>
       ))}

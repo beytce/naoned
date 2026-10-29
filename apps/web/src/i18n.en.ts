@@ -1293,6 +1293,11 @@ export const en: Dictionary = {
     },
     top: {
       tabs: { passee: "Last week", regles: "Rules" },
+      /** The ranking in three tabs (refonte UX, lot 7, maquette `Classement`). */
+      periods: { week: "Week", season: "Month", duel: "Duel" },
+      line: (label: string, left: string) => `${label} · closes in ${left}`,
+      lastWeek: "Last week",
+      rules: "The ranking's rules",
       noLastWeek: "No week finished yet: the first podium is being played now.",
     },
     counter: {
@@ -1973,6 +1978,25 @@ export const en: Dictionary = {
       lastSprint: (days: number) => `Final sprint: the season ends in ${days} day${s(days)}.`,
       honoured: (pseudo: string, season: string) => `${pseudo}, Doge of ${season}`,
     },
+    /** The profile (refonte UX, lot 7, maquette `Profil`): one content, then a line a part. */
+    profile: {
+      generation: (given: string, n: number) =>
+        `${given}, ${n}${n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"} generation`,
+      league: (league: string) => `duel ${league}`,
+      palace: (rank: number) => `Your palace: number ${rank} of the 40`,
+      toPalaces: (rank: number, gap: string) => `${rank}th · ${gap} from the 40th palace`,
+      influence: "Influence",
+      prestige: "Prestige",
+      duel: "Duel league",
+      back: "Profile",
+      lines: {
+        shares: "My shares",
+        heritage: "Heritage",
+        guild: "Guild",
+        record: "Record and figures",
+        settings: "Settings",
+      },
+    },
     palmares: {
       title: "Record",
       renown: "Prestige",
@@ -1988,8 +2012,17 @@ export const en: Dictionary = {
       latestWeeks: "Latest weeks",
       weekOf: (week: number, season: string) => `Week ${week} · ${season}`,
       open: "See the record",
+      /** A player's sheet (refonte UX, lot 7, maquette `Fiche`). */
+      back: "Back",
+      generations: (n: number) => `${n} generation${n > 1 ? "s" : ""}`,
+      places: (list: string) => list,
+      noPlace: "no month finished yet",
+      shares: "Shares",
+      sharesOpen: "the price, and buying some",
+      all: "The whole record",
+      buyShares: "Buy shares",
     },
-    npc: "NPC",
+    npc: "(computer)",
     npcHelp:
       "NPC: merchant houses run by the computer, under the same rules as you. They liven up the world while it has few players and step aside as real merchants arrive.",
     anonymous: "Anonymous merchant",
@@ -2894,7 +2927,7 @@ export const en: Dictionary = {
         `You are ${rank}th: ${gap} of profit part you from the 40th palace.`,
       inside: (rank: number) => `Your palace: number ${rank} on the quay.`,
       toQuay: "Go to my quay",
-      seeRanking: "See the ranking",
+      see: (name: string) => `See ${name}`,
       sestieri: ["Cannaregio", "Castello", "Dorsoduro", "San Polo", "Santa Croce", "San Marco"],
     },
     doge: {
@@ -3103,6 +3136,7 @@ export const en: Dictionary = {
     },
     /** The Lustre (R6): the social ranks of Venice and the weekly Sfida. */
     lustre: {
+      see: (name: string) => `See ${name}`,
       tiers: {
         popolano: "Popolano",
         cittadino: "Cittadino",

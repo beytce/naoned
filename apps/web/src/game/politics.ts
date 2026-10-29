@@ -38,3 +38,16 @@ export function palaceGap(
   const gap = last ? BigInt(last.turnover) - BigInt(mine.turnover) : 0n;
   return { inside: false, rank: mine.rank, gap: gap > 0n ? gap : 0n };
 }
+
+/** Where a player's sheet was opened from (refonte UX, lot 7): its gold and its way back. */
+export type PlayerOrigin = "ranking" | "market" | "canal";
+
+/** The key `player:<id>:<origin>` read (null: not a player's sheet). */
+export function playerKey(sheet: string | null): { id: string; origin: PlayerOrigin } | null {
+  const [kind, id, origin] = (sheet ?? "").split(":");
+  if (kind !== "player" || !id) return null;
+  return {
+    id,
+    origin: origin === "market" || origin === "canal" ? origin : "ranking",
+  };
+}

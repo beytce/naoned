@@ -8,7 +8,7 @@ import { fr } from "../src/i18n.js";
 /**
  * One sign for the computer's houses, wherever a merchant's name shows: a name in src/game goes
  * through <MerchantName pseudo bot /> (or merchantLabel() where only text fits, on the map's
- * SVG), which adds the « PNJ » seal to a house. A merchant who believes he beats people and learns
+ * SVG), which adds « (ordinateur) » to a house. A merchant who believes he beats people and learns
  * they were machines feels deceived.
  */
 
@@ -79,8 +79,10 @@ describe("the computer's houses", () => {
   });
 
   it("carry the seal in text, a person's name left as it is", () => {
-    expect(merchantLabel("Comm884", true)).toBe(`Comm884 · ${fr.game.npc}`);
+    // « (ordinateur) » in text after the name (refonte UX, lot 7), no longer a « PNJ » seal.
+    expect(merchantLabel("Comm884", true)).toBe(`Comm884 ${fr.game.npc}`);
+    expect(fr.game.npc).toBe("(ordinateur)");
     expect(merchantLabel("ada", false)).toBe("ada");
-    expect(merchantLabel(null, true, "—")).toBe(`— · ${fr.game.npc}`);
+    expect(merchantLabel(null, true, "—")).toBe(`— ${fr.game.npc}`);
   });
 });

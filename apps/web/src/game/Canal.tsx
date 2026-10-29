@@ -176,10 +176,16 @@ export function CanalSheet(props: GameProps) {
               </span>
               <button
                 type="button"
-                onClick={() => props.setSheet("ranking")}
+                // Their sheet over the palaces, matched by name in the month's ranking (lot 7).
+                onClick={() => {
+                  const row = rows.find(
+                    (r) => merchantLabel(r.pseudo, false) === merchantLabel(chosen.pseudo, false),
+                  );
+                  props.setSheet(row ? `player:${row.id}:canal` : "ranking");
+                }}
                 className="min-h-11 shrink-0 rounded-full px-3 text-xs font-semibold text-cream ring-1 ring-inset ring-edge"
               >
-                {t().seeRanking}
+                {t().see(merchantLabel(chosen.pseudo, false).replace(/^Casa\s+/, ""))}
               </button>
             </div>
           )}

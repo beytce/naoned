@@ -451,7 +451,18 @@ function bubbleRoom(page) {
 }
 
 /** Lorenzo's ring on what is touched under it; nothing left over his bubble. */
-function guide(page) {
+async function guide(page) {
+  // An effect still in flight is not stuck: give it time to land, a stuck one still fails.
+  await page
+    .waitForFunction(
+      () =>
+        ![...document.querySelectorAll("[data-fx-layer] > *")].some(
+          (el) => Number(getComputedStyle(el).opacity) > 0.05,
+        ),
+      null,
+      { timeout: 2500 },
+    )
+    .catch(() => {});
   return page.evaluate(() => {
     const wrong = [];
     const ring = document.querySelector(".coach-ring");

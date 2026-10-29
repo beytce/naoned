@@ -34,9 +34,11 @@ import { CompanyPanel } from "./MyCompany.js";
 import { PalmaresView } from "./Palmares.js";
 import { PassPanel } from "./PassPanel.js";
 import { PushSettings } from "./PushSettings.js";
+import { leagueOf } from "./Sfida.js";
 import { gameApi } from "./api.js";
-import { d } from "./format.js";
-import type { Palmares, Profile } from "./types.js";
+import { d, whole } from "./format.js";
+import { palaceGap } from "./politics.js";
+import type { Palmares, Profile, RankingRow } from "./types.js";
 
 function Titles({ profile }: { profile: Profile }) {
   const [at, setAt] = useState(profile.title.index);
@@ -291,6 +293,18 @@ function ProfileBody(props: GameProps) {
   const [typed, setTyped] = useState("");
   const [resetting, setResetting] = useState(false);
   const [busyReset, setBusyReset] = useState(false);
+  // The profile reads first; each line opens its view (refonte UX, lot 7).
+  const [section, setSection] = useState<"home" | "heritage" | "guild" | "record" | "settings">(
+    "home",
+  );
+  const [rows, setRows] = useState<RankingRow[]>([]);
+  useEffect(() => {
+    gameApi
+      .ranking()
+      .then((r) => setRows(r.rows))
+      .catch(() => setRows([]));
+  }, []);
+  const where = palaceGap(rows);
   useEffect(() => {
     gameApi
       .profile()
@@ -312,294 +326,369 @@ function ProfileBody(props: GameProps) {
 
   return (
     <div className="space-y-8 pt-2">
-      <header className="flex items-center gap-5 pr-12">
-        <div className="relative">
-          {/* Lagune: the crest in the ring of the title's progress. */}
-          <span className="relative flex h-[8.5rem] w-[8.5rem] items-center justify-center">
-            <svg
-              viewBox="-70 -70 140 140"
-              className="absolute inset-0 -rotate-90"
-              aria-hidden="true"
-            >
-              <circle r="62" fill="none" stroke="rgb(var(--night-4))" strokeWidth="6" />
-              <circle
-                r="62"
-                fill="none"
-                stroke="rgb(var(--gold))"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={`${(389.6 * Math.max(0.02, profile?.title.progress ?? 0)).toFixed(1)} 389.6`}
-              />
-            </svg>
-            <span className="rounded-full bg-night-3 p-2.5">
-              <Crest crest={crest} size={84} />
-            </span>
-          </span>
-          {profile && (
-            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-night-4 px-3 py-1 font-display text-xs font-extrabold text-gold-soft ring-1 ring-inset ring-gold/50">
-              {profile.title.current.name}
-            </span>
-          )}
-        </div>
-        <div className="min-w-0">
-          <h1 className="break-words font-display text-2xl font-extrabold leading-tight [font-stretch:105%]">
-            {props.account.pseudo}
-          </h1>
-          <p className="label mt-2 text-cream-dim">
-            {props.names.region(props.view.player.region)}
-          </p>
-          <button
-            type="button"
-            className="label inline-flex min-h-11 items-center rounded-full px-3.5 text-info ring-1 ring-inset ring-line transition active:scale-95 mt-2"
-            onClick={() => setEditing(true)}
-          >
-            ✎ {fr.game.editCrest}
-          </button>
-          {props.account.pseudoDefault && <RenameOnce props={props} />}
-        </div>
-      </header>
-
-      {/* One house, one progression: the level that lasts, then the season's title, the renown
-          and the Influence on one line; their detail folded underneath. */}
-      <Panel glow="gold">
-        <Label>{fr.game.house.card}</Label>
-        {props.level && (
-          <>
-            <h2 className="mt-1 font-display text-2xl font-extrabold">
-              {fr.game.merchantLevel.title(props.level.level)}
-            </h2>
-            <div className="mt-2">
-              <Ribbon
-                value={props.level.progress}
-                label={fr.game.merchantLevel.progress(
-                  props.level.xp.toLocaleString(locale),
-                  props.level.to.toLocaleString(locale),
-                )}
-              />
-            </div>
-          </>
-        )}
-        <p className="meta mt-3">
-          {[
-            profile ? fr.game.house.titleOf(profile.title.current.name) : null,
-            palmares ? fr.game.house.renownOf(palmares.renown.points) : null,
-            props.influence !== null ? fr.game.house.influenceOf(props.influence) : null,
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
-        <details className="group mt-3">
-          <summary className="label cursor-pointer list-none text-info">
-            <span className="group-open:hidden">▸ {fr.game.house.more}</span>
-            <span className="hidden group-open:inline">▾ {fr.game.house.less}</span>
-          </summary>
-          <div className="mt-4 space-y-6">
-            {props.level && <p className="text-sm text-cream-dim">{fr.game.merchantLevel.help}</p>}
-            <HouseSummary {...props} />
-            {profile && (
-              <section className="space-y-4">
-                <h3 className="font-display text-lg font-extrabold">{fr.game.profileTitle}</h3>
-                <Ribbon
-                  value={profile.title.progress}
-                  label={
-                    profile.title.next
-                      ? `${d(profile.turnover).replace(" d", "")} / ${profile.title.next.from.toLocaleString(locale)} d`
-                      : fr.game.maxTitle
-                  }
-                />
-                {profile.title.next && (
-                  <p className="meta">{fr.game.nextTitle(profile.title.next.name)}</p>
-                )}
-                <Titles profile={profile} />
-              </section>
-            )}
-          </div>
-        </details>
-      </Panel>
-
-      <CompanyPanel props={props} />
-
-      <Panel>
-        <Label>{fr.game.netWorth}</Label>
-        <div className="mt-3 flex items-center gap-5">
-          <div className="relative">
-            <Donut parts={parts} size={120} />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Big className="text-sm">{d(worth.total)}</Big>
-            </div>
-          </div>
-          <ul className="space-y-2 text-sm">
-            {parts.map((p) => (
-              <li key={p.label} className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded-sm" style={{ background: p.color }} />
-                <span className="text-cream-dim">{p.label}</span>
-                <span className="font-display font-semibold">{d(String(p.value))}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </Panel>
-
-      {profile && (
-        <section className="space-y-3">
-          <Label>{fr.game.statsTitle}</Label>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              [fr.game.stats.rank, profile.rank ? `#${profile.rank}` : "—"],
-              [fr.game.stats.buildings, profile.buildings],
-              [fr.game.stats.trades, profile.stats.trades],
-              [fr.game.stats.citySold, profile.stats.citySold],
-              [fr.game.stats.delivered, profile.stats.delivered],
-              [fr.game.stats.days, profile.stats.days],
-            ].map(([label, value]) => (
-              <div key={String(label)} className="rounded-2xl bg-night-3 p-3">
-                <Big className="text-2xl text-cream">{value}</Big>
-                <p className="mt-1 text-xs leading-tight text-cream-dim">{label}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {profile && (
-        <section className="space-y-3">
-          <Label>{fr.game.trophies}</Label>
-          <div className="grid grid-cols-4 gap-3">
-            {profile.badges.map((b) => (
-              <div key={b.code} className="text-center">
-                <div className="flex justify-center">
-                  <Medal earned={b.earned} size={40} />
-                </div>
-                <p
-                  className={`mt-1 text-xs leading-tight ${b.earned ? "text-cream" : "text-muted"}`}
+      {section === "home" ? (
+        <>
+          <header className="flex items-center gap-5 pr-12">
+            <div className="relative">
+              {/* Lagune: the crest in the ring of the title's progress. */}
+              <span className="relative flex h-[8.5rem] w-[8.5rem] items-center justify-center">
+                <svg
+                  viewBox="-70 -70 140 140"
+                  className="absolute inset-0 -rotate-90"
+                  aria-hidden="true"
                 >
-                  {b.name}
-                </p>
-                {!b.earned && (
-                  <p className="font-sans text-xs text-muted">
-                    {b.value}/{b.goal}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {terra && (
-        <section className="space-y-2">
-          <h2 className="font-display text-2xl font-extrabold">{fr.game.terraRecord.title}</h2>
-          <p className="text-sm">{fr.game.terraRecord.rating(terra.rating)}</p>
-          {condotta && (
-            <p className="text-sm text-gold">
-              ⚑ {fr.game.condotta.record(condotta.grade, condotta.best)}
-            </p>
-          )}
-          {terra.weeks.length === 0 ? (
-            <p className="meta">{fr.game.terraRecord.none}</p>
-          ) : (
-            <ul className="space-y-1 text-sm text-cream-dim">
-              {terra.weeks.map((w) => (
-                <li key={w.week}>
-                  {fr.game.terraRecord.week(w.week + 1, w.rank, w.of, w.glory, w.rating)}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-
-      {palmares && (
-        <section className="space-y-3">
-          <h2 className="font-display text-2xl font-extrabold">{fr.game.palmares.title}</h2>
-          <PalmaresView data={palmares} />
-        </section>
-      )}
-
-      <Gallery
-        view={dynasty}
-        house={props.account.pseudo ?? ""}
-        crest={props.account.crest ?? defaultCrest(props.account.id)}
-      />
-
-      <PassPanel props={props} extra={props.passInfo} />
-
-      {/* The help, in sight: the map has no door for it since the five tabs. */}
-      <Slab tone="ghost" className="w-full" onClick={props.openHelp}>
-        {fr.game.help}
-      </Slab>
-
-      {/* The settings, folded: the profile reads first. */}
-      <details className="group space-y-6 border-t border-line pt-5">
-        <summary className="flex cursor-pointer list-none items-center justify-between font-display text-lg font-extrabold uppercase">
-          {fr.game.map.settings}
-          <span className="text-gold transition group-open:rotate-90">›</span>
-        </summary>
-        <div className="mt-6 space-y-8">
-          <PalettePicker
-            pass={props.view.pass.active && props.view.pass.perks.cosmetics}
-            offered={props.view.pass.enabled && props.view.pass.perks.cosmetics}
-          />
-
-          <LanguageSetting />
-          <TextSizeSetting />
-          <SoundSetting />
-          <HapticsSetting />
-
-          <PushSettings />
-
-          <section className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <Slab tone="ghost" size="sm" onClick={props.replayIntro}>
-                {fr.game.replayIntro}
-              </Slab>
-              <Slab tone="ghost" size="sm" onClick={props.replayGuide}>
-                {fr.game.replayGuide}
-              </Slab>
+                  <circle r="62" fill="none" stroke="rgb(var(--night-4))" strokeWidth="6" />
+                  <circle
+                    r="62"
+                    fill="none"
+                    stroke="rgb(var(--gold))"
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(389.6 * Math.max(0.02, profile?.title.progress ?? 0)).toFixed(1)} 389.6`}
+                  />
+                </svg>
+                <span className="rounded-full bg-night-3 p-2.5">
+                  <Crest crest={crest} size={84} />
+                </span>
+              </span>
+              {profile && (
+                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-night-4 px-3 py-1 font-display text-xs font-extrabold text-gold-soft ring-1 ring-inset ring-gold/50">
+                  {profile.title.current.name}
+                </span>
+              )}
             </div>
+            <div className="min-w-0">
+              <h1 className="break-words font-display text-2xl font-extrabold leading-tight [font-stretch:105%]">
+                {props.account.pseudo}
+              </h1>
+              <p className="mt-1 text-sm text-cream-dim">
+                {[
+                  dynasty?.current
+                    ? fr.game.profile.generation(
+                        dynasty.current.given,
+                        Math.max(1, dynasty.generations.length),
+                      )
+                    : props.names.region(props.view.player.region),
+                  props.lustre ? fr.game.profile.league(leagueOf(props.lustre.tier)) : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+              <button
+                type="button"
+                className="label inline-flex min-h-11 items-center rounded-full px-3.5 text-info ring-1 ring-inset ring-line transition active:scale-95 mt-2"
+                onClick={() => setEditing(true)}
+              >
+                ✎ {fr.game.editCrest}
+              </button>
+              {props.account.pseudoDefault && <RenameOnce props={props} />}
+            </div>
+          </header>
+
+          {/* Where the house stands against the forty palaces (refonte UX, lot 7). */}
+          {where && (
             <button
               type="button"
-              onClick={props.onLogout}
-              className="label w-full pt-2 text-center text-cream-dim"
+              onClick={() => props.setSheet("canal")}
+              className="flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl bg-night-3 px-4 text-left text-sm ring-1 ring-inset ring-edge"
             >
-              {fr.logout}
+              <span>
+                {where.inside
+                  ? fr.game.profile.palace(where.rank)
+                  : fr.game.profile.toPalaces(where.rank, whole(where.gap))}
+              </span>
+              <span aria-hidden="true">›</span>
             </button>
-          </section>
+          )}
+          {/* One house, one progression: the level that lasts, then the season's title, the renown
+          and the Influence on one line; their detail folded underneath. */}
+          <Panel glow="gold">
+            <Label>{fr.game.house.card}</Label>
+            {props.level && (
+              <>
+                <h2 className="mt-1 font-display text-2xl font-extrabold">
+                  {fr.game.merchantLevel.title(props.level.level)}
+                </h2>
+                <div className="mt-2">
+                  <Ribbon
+                    value={props.level.progress}
+                    label={fr.game.merchantLevel.progress(
+                      props.level.xp.toLocaleString(locale),
+                      props.level.to.toLocaleString(locale),
+                    )}
+                  />
+                </div>
+              </>
+            )}
+          </Panel>
 
-          <section className="space-y-3">
-            <div>
-              <Label>{fr.game.data.title}</Label>
-              <p className="mt-1 text-xs text-cream-dim">{fr.game.data.help}</p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <a
-                href="/api/me/export"
-                download
-                className="cut bg-night-4 px-3 py-2 text-center font-display text-xs font-extrabold uppercase tracking-wide text-cream ring-1 ring-inset ring-line hover:ring-cream-dim/40"
+          {/* Four figures (maquette `Profil`): worth, Influence, prestige, the duel's league. */}
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              [fr.game.netWorth, d(worth.total)],
+              [fr.game.profile.influence, props.influence ?? "—"],
+              [fr.game.profile.prestige, palmares?.renown.current.name ?? "—"],
+              [
+                fr.game.profile.duel,
+                props.lustre ? `${leagueOf(props.lustre.tier)} · ${props.lustre.value}` : "—",
+              ],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="rounded-2xl bg-night-3 px-3 py-2.5">
+                <p className="text-xs text-cream-dim">{label}</p>
+                <p className="font-display text-base font-extrabold">{value}</p>
+              </div>
+            ))}
+          </div>
+          {/* Then a line a part of the house, each opening its view (maquette `Profil`). */}
+          <nav className="divide-y divide-line/60 rounded-2xl bg-night-3 px-4">
+            {(
+              [
+                ["shares", fr.game.profile.lines.shares],
+                ["heritage", fr.game.profile.lines.heritage],
+                ["guild", fr.game.profile.lines.guild],
+                ["record", fr.game.profile.lines.record],
+                ["help", fr.game.help],
+                ["settings", fr.game.profile.lines.settings],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                data-profile={key}
+                onClick={() => {
+                  if (key === "shares") props.setSheet("shares");
+                  else if (key === "help") props.openHelp();
+                  else setSection(key);
+                }}
+                className="flex min-h-12 w-full items-center justify-between gap-3 text-left text-sm font-semibold"
               >
-                {fr.game.data.export}
-              </a>
-              <a
-                href="/api/game/ledger.csv"
-                download
-                className="cut bg-night-4 px-3 py-2 text-center font-display text-xs font-extrabold uppercase tracking-wide text-cream ring-1 ring-inset ring-line hover:ring-cream-dim/40"
-              >
-                {fr.game.data.ledgerCsv}
-              </a>
-              <Slab tone="ghost" size="sm" onClick={() => setDeleting(true)}>
-                {fr.game.data.delete}
-              </Slab>
-            </div>
-            <LegalLinks className="pt-2" />
-          </section>
+                {label}
+                <span className="text-cream-dim" aria-hidden="true">
+                  ›
+                </span>
+              </button>
+            ))}
+          </nav>
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={() => setSection("home")}
+            className="label -ml-1 flex h-11 items-center gap-1 text-gold"
+          >
+            ‹ {fr.game.profile.back}
+          </button>
+          {section === "heritage" && (
+            <Gallery
+              view={dynasty}
+              house={props.account.pseudo ?? ""}
+              crest={props.account.crest ?? defaultCrest(props.account.id)}
+            />
+          )}
+          {section === "guild" && <CompanyPanel props={props} />}
+          {section === "record" && (
+            <>
+              <Panel>
+                <Label>{fr.game.netWorth}</Label>
+                <div className="mt-3 flex items-center gap-5">
+                  <div className="relative">
+                    <Donut parts={parts} size={120} />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Big className="text-sm">{d(worth.total)}</Big>
+                    </div>
+                  </div>
+                  <ul className="space-y-2 text-sm">
+                    {parts.map((p) => (
+                      <li key={p.label} className="flex items-center gap-2">
+                        <span className="h-3 w-3 rounded-sm" style={{ background: p.color }} />
+                        <span className="text-cream-dim">{p.label}</span>
+                        <span className="font-display font-semibold">{d(String(p.value))}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Panel>
 
-          <section className="border-t border-vermilion/40 pt-6">
-            <Slab tone="vermilion" size="sm" className="w-full" onClick={() => setResetting(true)}>
-              {fr.game.reset.title}
-            </Slab>
-          </section>
-        </div>
-      </details>
+              {profile && (
+                <section className="space-y-3">
+                  <Label>{fr.game.statsTitle}</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      [fr.game.stats.rank, profile.rank ? `#${profile.rank}` : "—"],
+                      [fr.game.stats.buildings, profile.buildings],
+                      [fr.game.stats.trades, profile.stats.trades],
+                      [fr.game.stats.citySold, profile.stats.citySold],
+                      [fr.game.stats.delivered, profile.stats.delivered],
+                      [fr.game.stats.days, profile.stats.days],
+                    ].map(([label, value]) => (
+                      <div key={String(label)} className="rounded-2xl bg-night-3 p-3">
+                        <Big className="text-2xl text-cream">{value}</Big>
+                        <p className="mt-1 text-xs leading-tight text-cream-dim">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {profile && (
+                <section className="space-y-3">
+                  <Label>{fr.game.trophies}</Label>
+                  <div className="grid grid-cols-4 gap-3">
+                    {profile.badges.map((b) => (
+                      <div key={b.code} className="text-center">
+                        <div className="flex justify-center">
+                          <Medal earned={b.earned} size={40} />
+                        </div>
+                        <p
+                          className={`mt-1 text-xs leading-tight ${b.earned ? "text-cream" : "text-muted"}`}
+                        >
+                          {b.name}
+                        </p>
+                        {!b.earned && (
+                          <p className="font-sans text-xs text-muted">
+                            {b.value}/{b.goal}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {terra && (
+                <section className="space-y-2">
+                  <h2 className="font-display text-2xl font-extrabold">
+                    {fr.game.terraRecord.title}
+                  </h2>
+                  <p className="text-sm">{fr.game.terraRecord.rating(terra.rating)}</p>
+                  {condotta && (
+                    <p className="text-sm text-gold">
+                      ⚑ {fr.game.condotta.record(condotta.grade, condotta.best)}
+                    </p>
+                  )}
+                  {terra.weeks.length === 0 ? (
+                    <p className="meta">{fr.game.terraRecord.none}</p>
+                  ) : (
+                    <ul className="space-y-1 text-sm text-cream-dim">
+                      {terra.weeks.map((w) => (
+                        <li key={w.week}>
+                          {fr.game.terraRecord.week(w.week + 1, w.rank, w.of, w.glory, w.rating)}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              )}
+
+              {palmares && (
+                <section className="space-y-3">
+                  <h2 className="font-display text-2xl font-extrabold">{fr.game.palmares.title}</h2>
+                  <PalmaresView data={palmares} />
+                </section>
+              )}
+
+              <div className="mt-4 space-y-6">
+                {props.level && (
+                  <p className="text-sm text-cream-dim">{fr.game.merchantLevel.help}</p>
+                )}
+                <HouseSummary {...props} />
+                {profile && (
+                  <section className="space-y-4">
+                    <h3 className="font-display text-lg font-extrabold">{fr.game.profileTitle}</h3>
+                    <Ribbon
+                      value={profile.title.progress}
+                      label={
+                        profile.title.next
+                          ? `${d(profile.turnover).replace(" d", "")} / ${profile.title.next.from.toLocaleString(locale)} d`
+                          : fr.game.maxTitle
+                      }
+                    />
+                    {profile.title.next && (
+                      <p className="meta">{fr.game.nextTitle(profile.title.next.name)}</p>
+                    )}
+                    <Titles profile={profile} />
+                  </section>
+                )}
+              </div>
+            </>
+          )}
+          {section === "settings" && (
+            <>
+              <div className="mt-6 space-y-8">
+                <PalettePicker
+                  pass={props.view.pass.active && props.view.pass.perks.cosmetics}
+                  offered={props.view.pass.enabled && props.view.pass.perks.cosmetics}
+                />
+
+                <LanguageSetting />
+                <TextSizeSetting />
+                <SoundSetting />
+                <HapticsSetting />
+
+                <PushSettings />
+
+                <section className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Slab tone="ghost" size="sm" onClick={props.replayIntro}>
+                      {fr.game.replayIntro}
+                    </Slab>
+                    <Slab tone="ghost" size="sm" onClick={props.replayGuide}>
+                      {fr.game.replayGuide}
+                    </Slab>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={props.onLogout}
+                    className="label flex min-h-12 w-full items-center justify-center text-cream-dim"
+                  >
+                    {fr.logout}
+                  </button>
+                </section>
+
+                <section className="space-y-3">
+                  <div>
+                    <Label>{fr.game.data.title}</Label>
+                    <p className="mt-1 text-xs text-cream-dim">{fr.game.data.help}</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <a
+                      href="/api/me/export"
+                      download
+                      className="flex min-h-12 items-center justify-center cut bg-night-4 px-3 py-2 text-center font-display text-xs font-extrabold uppercase tracking-wide text-cream ring-1 ring-inset ring-line hover:ring-cream-dim/40"
+                    >
+                      {fr.game.data.export}
+                    </a>
+                    <a
+                      href="/api/game/ledger.csv"
+                      download
+                      className="flex min-h-12 items-center justify-center cut bg-night-4 px-3 py-2 text-center font-display text-xs font-extrabold uppercase tracking-wide text-cream ring-1 ring-inset ring-line hover:ring-cream-dim/40"
+                    >
+                      {fr.game.data.ledgerCsv}
+                    </a>
+                    <Slab tone="ghost" size="sm" onClick={() => setDeleting(true)}>
+                      {fr.game.data.delete}
+                    </Slab>
+                  </div>
+                  <LegalLinks className="pt-2" />
+                </section>
+
+                <section className="border-t border-vermilion/40 pt-6">
+                  <Slab
+                    tone="vermilion"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setResetting(true)}
+                  >
+                    {fr.game.reset.title}
+                  </Slab>
+                </section>
+              </div>
+              <PassPanel props={props} extra={props.passInfo} />
+            </>
+          )}
+        </>
+      )}
 
       <Sheet open={resetting} onClose={() => setResetting(false)}>
         <div className="space-y-5">

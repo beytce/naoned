@@ -97,7 +97,7 @@ const WORDS = {
     atouts: /atout de la semaine/i,
     letter: /lettre du jour/i,
     senate: /l'élection/i,
-    canal: /^les 40 palais$/i,
+    canal: /^les 40 palais( ›)?$/i,
     broglio: /les rumeurs/i,
     build: /^bâtir$/i,
     ranking: /^classement$/i,
@@ -113,10 +113,11 @@ const WORDS = {
     onYou: /sur vous/i,
     battleAt: /bataille à 20 h/i,
     teamWon: /vénétie l'emporte/i,
-    npc: "PNJ",
+    npc: "(ordinateur)",
     sharesTab: /^actions$/i,
     playersTab: /^entre joueurs$/i,
     citiesTab: /^villes$/i,
+    duelTab: /^duel$/i,
     alone: /^jouer seul$/i,
   },
   en: {
@@ -139,7 +140,7 @@ const WORDS = {
     atouts: /atout of the week/i,
     letter: /letter of the day/i,
     senate: /the election/i,
-    canal: /^the 40 palaces$/i,
+    canal: /^the 40 palaces( ›)?$/i,
     broglio: /the rumours/i,
     signoria: /^control$/i,
     build: /^build$/i,
@@ -156,10 +157,11 @@ const WORDS = {
     onYou: /on you/i,
     battleAt: /battle 20:00/i,
     teamWon: /veneto wins/i,
-    npc: "NPC",
+    npc: "(computer)",
     sharesTab: /^shares$/i,
     playersTab: /^between players$/i,
     citiesTab: /^cities$/i,
+    duelTab: /^duel$/i,
     alone: /^play alone$/i,
   },
 }[LANG === "en" ? "en" : "fr"];
@@ -477,10 +479,10 @@ async function session(width, height, tag) {
       await page.waitForTimeout(400);
     }
     await closeAll(page);
-    // The Sfida of the week (R6): from the ranking's « Duel » once the Lustre is on.
+    // The Sfida of the week (R6): the ranking's « Duel » tab once the Lustre is on (lot 7).
     await page.locator('[data-tab="ranking"]').click();
     await page.waitForTimeout(600);
-    const duel = page.locator('[data-coach="ranking-duel"]');
+    const duel = page.getByRole("tab", { name: WORDS.duelTab });
     if ((await duel.count()) === 0) await closeAll(page);
     else {
       await duel.first().click();
@@ -531,6 +533,10 @@ async function session(width, height, tag) {
     await page.locator('[data-hud="identity"], [data-hud="purse"]').first().click();
     await page.waitForTimeout(600);
     await check("profil");
+    // Its settings, a line of their own (refonte UX, lot 7).
+    await page.locator('[data-profile="settings"]').click();
+    await page.waitForTimeout(500);
+    await check("profil-reglages");
     await closeAll(page);
     await company(page, check);
     const ranking = page.getByRole("button", { name: WORDS.ranking });
@@ -538,6 +544,15 @@ async function session(width, height, tag) {
       await ranking.first().click();
       await page.waitForTimeout(600);
       await check("classement");
+      // A player's sheet over the ranking (refonte UX, lot 7): a house of the computer's line.
+      const other = page.locator("[aria-modal=true] button", { hasText: WORDS.npc });
+      if ((await other.count()) > 1) {
+        await other.nth(1).click();
+        await page.waitForTimeout(900);
+        await check("fiche");
+        await page.keyboard.press("Escape");
+        await page.waitForTimeout(500);
+      }
       const canal = page.getByRole("button", { name: WORDS.canal });
       if ((await canal.count()) > 0) {
         await canal.first().click();
@@ -1062,6 +1077,9 @@ async function company(page, check) {
   );
   await page.locator('[data-hud="identity"], [data-hud="purse"]').first().click();
   await page.waitForTimeout(800);
+  // The guild, a line of the profile (refonte UX, lot 7).
+  await page.locator('[data-profile="guild"]').click();
+  await page.waitForTimeout(600);
   await page.getByText("Compagnie du Lion", { exact: true }).scrollIntoViewIfNeeded();
   await page.waitForTimeout(400);
   await check("compagnie");
