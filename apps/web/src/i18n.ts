@@ -2794,7 +2794,11 @@ const frDict = {
       tabs: { rumours: "Rumeurs", election: "Élection", cities: "Villes" },
       citiesHelp: "Celui qui livre le plus dans une ville la tient demain.",
       standing: (mine: number, rank: number | null, lead: number) =>
-        rank === 1 ? `vous : ${mine} % · en tête` : `vous : ${mine} % · le 1ᵉʳ est à ${lead} %`,
+        lead === 0
+          ? "personne n'y livre encore"
+          : rank === 1
+            ? `vous : ${mine} % · en tête`
+            : `vous : ${mine} % · le 1ᵉʳ est à ${lead} %`,
     },
     signoria: {
       title: (city: string) => `Contrôle de ${city}`,

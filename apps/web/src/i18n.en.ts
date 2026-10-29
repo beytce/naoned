@@ -2712,7 +2712,11 @@ export const en: Dictionary = {
       tabs: { rumours: "Rumours", election: "Election", cities: "Cities" },
       citiesHelp: "Whoever delivers the most to a city holds it tomorrow.",
       standing: (mine: number, rank: number | null, lead: number) =>
-        rank === 1 ? `you: ${mine} % · leading` : `you: ${mine} % · the first is at ${lead} %`,
+        lead === 0
+          ? "nobody delivers there yet"
+          : rank === 1
+            ? `you: ${mine} % · leading`
+            : `you: ${mine} % · the first is at ${lead} %`,
     },
     signoria: {
       title: (city: string) => `Control of ${city}`,
