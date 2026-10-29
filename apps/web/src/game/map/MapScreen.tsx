@@ -1018,7 +1018,8 @@ export function MapScreen(
         // its row short, under its own counters on the right.
         bales={trade && view.tutorial.includes("mission") ? (view.bales?.available ?? 0) : 0}
         guidePaused={props.guidePaused}
-        bottom={!panelUp}
+        // The camp's sheet, docked above the tabs, covers the foot too (lot 8).
+        bottom={!panelUp && !campOpen}
         layer={layer}
         meta={
           terra?.me ? (
