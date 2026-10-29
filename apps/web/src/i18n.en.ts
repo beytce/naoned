@@ -314,8 +314,13 @@ export const en: Dictionary = {
           ]
             .filter(Boolean)
             .join(" · ") || "Workshops at rest",
-        bread: (days: number) => `Workers' bread: ${days} d`,
+        bread: (days: number) => `Workers fed ${days} day${days > 1 ? "s" : ""}`,
         harvest: "Collect and restart",
+        allRunning: (hour: string) => `All running · next batch at ${hour}`,
+        atouts: "Your Atouts",
+        atoutWaiting: "The Atout of the week waits: choose it",
+        atoutLabel: "Atout to choose",
+        letter: "Letter of the day",
         waits: (resource: string) => `needs ${resource.toLowerCase()}`,
         level: (n: number) => `lv. ${n}`,
       },

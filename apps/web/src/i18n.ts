@@ -237,8 +237,13 @@ const frDict = {
           ]
             .filter(Boolean)
             .join(" · ") || "Ateliers au repos",
-        bread: (days: number) => `Pain des ouvriers : ${days} j`,
+        bread: (days: number) => `Ouvriers nourris ${days} jour${days > 1 ? "s" : ""}`,
         harvest: "Récolter et relancer",
+        allRunning: (hour: string) => `Tout tourne · prochain lot à ${hour}`,
+        atouts: "Vos Atouts",
+        atoutWaiting: "L’Atout de la semaine attend : le choisir",
+        atoutLabel: "Atout à choisir",
+        letter: "Lettre du jour",
         waits: (resource: string) => `attend ${resource.toLowerCase()}`,
         level: (n: number) => `niv. ${n}`,
       },
