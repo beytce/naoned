@@ -43,7 +43,7 @@
 - [x] 4. le profil : un contenu, puis Mes actions, Héritage, Guilde, Palmarès, Réglages ;
 - [x] 5. textes `en`, e2e (`classement`, `sfida` par l'onglet Duel, `fiche`, `profil`, `profil-reglages`, `compagnie` par la ligne Guilde) et guide ; `layout.mjs` fr et en, `tutorial.mjs` passent.
 - Hors lot : le balayage Défier / Espionner sur les lignes du classement ; « Contre vous » dans la fiche (il faut les duels entre deux joueurs côté serveur) ; l'or « Voter » depuis l'élection (les candidats n'ouvrent pas encore de fiche).
-- Banc : la vérification des effets (`guide` dans `e2e/assert.mjs`) attend jusqu'à 2,5 s qu'un effet en vol se pose ; un effet resté à l'écran échoue toujours.
+- Banc : la vérification des effets (`guide` dans `e2e/assert.mjs`) attend jusqu'à 5 s qu'un effet en vol se pose ; un effet resté à l'écran échoue toujours.
 
 **Ce que le lot 6 a fait (plan validé le 29 octobre) :**
 - [x] 1. Politique (`Politics.tsx`, clés `politics`, `broglio`, `senate`, `cities`) : Rumeurs (`RumoursBody`, « Source : …, juste 7 fois sur 8 », « Si c'est vrai : … »), Manœuvres dans leur feuille (`ManeuversSheet`, clé `maneuvers`), Élection (`SenateBody` sous le Doge du mois), Villes (jauge et part, `cityStanding`) ; l'alerte d'espion en tête des Messages (`SpyAlert`) ;

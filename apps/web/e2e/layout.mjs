@@ -971,10 +971,16 @@ async function perf(page, open, terra) {
  * the rest; back to the week.
  */
 async function condotta(page, check) {
+  // The week's view served again by the server (the frozen Thursday is gone): let it settle.
   const launch = page.locator('[data-coach="terra-launch"]');
+  await launch
+    .first()
+    .waitFor({ timeout: 10_000 })
+    .catch(() => {});
+  await page.waitForTimeout(1500);
   if ((await launch.count()) === 0) throw new Error("no « Lancer un front » on the Terraferma");
   await launch.first().click();
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(800);
   const chip = page.locator("[data-hud=camp-condotta]");
   if ((await chip.count()) === 0) throw new Error("no Condotta in the camp's sheet");
   await chip.first().click();

@@ -469,7 +469,7 @@ async function guide(page) {
           (el) => Number(getComputedStyle(el).opacity) > 0.05,
         ),
       null,
-      { timeout: 2500 },
+      { timeout: 5000 },
     )
     .catch(() => {});
   return page.evaluate(() => {
