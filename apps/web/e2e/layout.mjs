@@ -974,7 +974,7 @@ async function condotta(page, check) {
   if ((await launch.count()) === 0) throw new Error("no « Lancer un front » on the Terraferma");
   await launch.first().click();
   await page.waitForTimeout(800);
-  const chip = page.locator("[data-hud=camp-condotta]");
+  const chip = page.locator("[data-camp=condotta]");
   if ((await chip.count()) === 0) throw new Error("no Condotta in the camp's sheet");
   await chip.first().click();
   const bar = page.locator("[data-panel=condotta-bar]");
@@ -1623,7 +1623,9 @@ async function midWeek(page, door, check, pseudo) {
   await uncluttered(page, "terraferme-jeudi", 30);
   // The camp's sheet: its advice and the one gold that launches a front (lot 8).
   await page.locator('[data-coach="terra-launch"]').first().click();
-  await page.waitForTimeout(700);
+  // Settled once its gold stands still (a slow machine still slides it in at 700 ms).
+  await page.locator('[data-coach="camp-launch"]').waitFor();
+  await page.waitForTimeout(1200);
   await check("terraferme-camp");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(500);

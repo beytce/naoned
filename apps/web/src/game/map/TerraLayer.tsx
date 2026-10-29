@@ -1530,7 +1530,9 @@ export function TerraHud({
               {/* Two lines, as the maquette: « 121 troupes », « sur 140 » (lot 8). */}
               <span className="flex flex-col items-end leading-tight">
                 <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
-                  {t().troopsCard.troops(me.troops)}
+                  {/* Under 360 px the number alone: the name keeps its ten letters. */}
+                  <span className="max-[359px]:hidden">{t().troopsCard.troops(me.troops)}</span>
+                  <span className="min-[360px]:hidden">{me.troops}</span>
                 </span>
                 <span className="whitespace-nowrap text-xs tabular-nums text-cream-dim">
                   {t().troopsCard.of(me.cap)}

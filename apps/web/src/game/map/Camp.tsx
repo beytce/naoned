@@ -44,10 +44,10 @@ export function CampSheet({
       ? Math.floor((me.bread.stock * 10_000) / me.bread.perDay)
       : null;
   const ghosts = [
-    onCondotta && { label: t().mercenaries, on: onCondotta, hud: "camp-condotta" },
-    onReplay && { label: t().week, on: onReplay, hud: "camp-replay" },
-    onSkirmish && { label: t().quick, on: onSkirmish, hud: "camp-skirmish" },
-  ].filter((x): x is { label: string; on: () => void; hud: string } => !!x);
+    onCondotta && { label: t().mercenaries, on: onCondotta, camp: "condotta" },
+    onReplay && { label: t().week, on: onReplay, camp: "replay" },
+    onSkirmish && { label: t().quick, on: onSkirmish, camp: "skirmish" },
+  ].filter((x): x is { label: string; on: () => void; camp: string } => !!x);
   return (
     <Sheet
       open={open && !!me}
@@ -89,9 +89,10 @@ export function CampSheet({
             >
               {ghosts.map((g) => (
                 <button
-                  key={g.hud}
+                  key={g.camp}
                   type="button"
-                  data-hud={g.hud}
+                  // A sheet's buttons, not the HUD's.
+                  data-camp={g.camp}
                   onClick={() => {
                     onClose();
                     g.on();
