@@ -810,6 +810,13 @@ export function MapScreen(
     const i = cities.indexOf(sel.code);
     const step = (k: number) =>
       select({ kind: "city", code: cities[(i + k + cities.length) % cities.length] ?? sel.code });
+    // The mule its orders go into: a free one already loaded for it, else the first free one.
+    const cityVehicle =
+      freeVehicles.find(
+        (v) => !!road && loadOrders(road, loads[v.id] ?? []).some((o) => o.city === sel.code),
+      ) ??
+      freeVehicles[0] ??
+      null;
     // A city opens up close, its orders in orbit around it.
     panel = (
       <CityOrbit
@@ -819,11 +826,17 @@ export function MapScreen(
         onClose={() => select(null)}
         onPrev={() => step(-1)}
         onNext={() => step(1)}
-        onCargo={() => {
-          const v = freeVehicles[0];
-          if (v) openCargo(v.id, sel.code);
+        index={i}
+        count={cities.length}
+        vehicle={cityVehicle}
+        freeCarts={freeVehicles.length}
+        load={cityVehicle ? (loads[cityVehicle.id] ?? []) : []}
+        setLoad={(ids) => {
+          if (cityVehicle) setLoads((all) => ({ ...all, [cityVehicle.id]: ids }));
         }}
-        freeCart={freeVehicles.length > 0}
+        onDeliver={() => {
+          if (cityVehicle) startDeparture(cityVehicle.id, sel.code);
+        }}
         onSheet={(s) => props.setSheet(s)}
       />
     );

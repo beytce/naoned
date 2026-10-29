@@ -93,7 +93,6 @@ const WORDS = {
     truce: /trêve/i,
     notices: /^messages/i,
     store: /^magasin$/i,
-    signoria: /^contrôle$/i,
     atouts: /atout de la semaine/i,
     letter: /lettre du jour/i,
     senate: /l'élection/i,
@@ -142,7 +141,6 @@ const WORDS = {
     senate: /the election/i,
     canal: /^the 40 palaces( ›)?$/i,
     broglio: /the rumours/i,
-    signoria: /^control$/i,
     build: /^build$/i,
     ranking: /^ranking$/i,
     bale: /parcel/i,
@@ -470,7 +468,15 @@ async function session(width, height, tag) {
     await page.locator('[data-coach="place-open"]').click();
     await page.waitForTimeout(700);
     await check("ville");
-    const signoria = page.locator("[data-place]").getByRole("button", { name: WORDS.signoria });
+    // An order touched into the mule, the gold « Livrer » then lit (lot 8).
+    const order = page.locator('[data-coach^="city-order-"]:not([disabled])');
+    if ((await order.count()) > 0) {
+      await order.first().click();
+      await page.waitForTimeout(400);
+      await check("ville-mule");
+    }
+    // Who holds the city, its pill under the orbit, opens its Signoria.
+    const signoria = page.locator('[data-place] [data-coach="city-control"]');
     if ((await signoria.count()) > 0) {
       await signoria.first().click();
       await page.waitForTimeout(600);

@@ -25,10 +25,16 @@
 | 5 | Venise, Marché, page d'une marchandise | fait (PR lot 5) | `12d584a`…(fin de branche `claude/refonte-ux-lot5`) |
 | 6 | Politique (rumeurs, élection, villes), enchères, 40 palais | fait (PR lot 6) | `cc1d56a`…(fin de branche `claude/refonte-ux-lot6`) |
 | 7 | Classement, fiche d'un joueur, profil | fait (PR lot 7) | `17e891a`…(fin de branche `claude/refonte-ux-lot7`) |
-| 8 | Ville, Conquête | à faire | |
+| 8 | Ville, Conquête | en cours (branche `claude/refonte-ux-lot8`) | |
 | 9 | Moments : messages, tâches du jour, calendrier, lettre, Atout, bon retour, fin du mois, entrée | à faire | |
 
-**Étape suivante :** le lot 8 (Ville et Conquête, maquettes `Ville`, `Terraferme`) : faire son plan, le faire valider, puis coder.
+**Étape suivante :** le lot 8, plan validé le 29 octobre. Ordre des commits :
+- [x] 1. la ville : les commandes se touchent pour charger la mule libre (règles de `refusal`, charge partagée avec la feuille des cargaisons), l'or « Livrer 2 commandes · +64 d » lance le départ, « Acheter 12 briques » en fantôme, « ‹ Carte », points de pagination et balayage, pilule « vous 22 % · maître : … » (`SignoriaPill`) à la place de `SignoriaLine` ;
+- [x] 2. le guide : « Touchez la ville », « Ouvrir », la commande en orbite, puis « Livrer » ; `tutorial.mjs` passe ;
+- [ ] 3. la Conquête : en-tête (« 4ᵉ de la conquête · 120 points », troupes sur deux lignes), libellés en pilules, grille plus visible ;
+- [ ] 4. « Lancer un front » en or et la feuille du camp (case visée, fonction pure testée) ; Mercenaires, La semaine, Partie rapide en fantômes ;
+- [ ] 5. la frise : 13 px, et celle de la Conquête (front, 20 h, fin de semaine ; fonction pure testée) ;
+- [ ] 6. textes `en`, e2e (`ville-mule`, `terraferme-camp`) et plan.
 
 **Ce que le lot 7 a fait (plan validé le 29 octobre) :**
 - [x] 1. « (ordinateur) » en texte après le nom (`MerchantName`, `merchantLabel`, `fr.game.npc`), plus de sceau « PNJ » ;

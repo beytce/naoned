@@ -247,6 +247,16 @@ const frDict = {
         load: "Charger une mule",
         missing: (n: number) => `il en manque ${n}`,
         back: "Retour à la carte",
+        toMap: "Carte",
+        covered: (pay: string) => `${pay} · couvert`,
+        urgent: (pay: string, left: string) => `${pay} · urgente · ${left}`,
+        pick: "Touchez une commande",
+        inMule: (n: number) => `${n} commande${n > 1 ? "s" : ""} dans la mule`,
+        freeMules: (n: number) =>
+          n > 0 ? `${n} mule${n > 1 ? "s" : ""} libre${n > 1 ? "s" : ""}` : "Aucune mule libre",
+        deliver: (n: number, pay: string) => `Livrer ${n} commande${n > 1 ? "s" : ""} · +${pay}`,
+        choose: "Choisissez une commande",
+        buy: (n: number, good: string) => `Acheter ${n} ${good.toLowerCase()}`,
         store: "Magasin",
         storeLine: (n: number) => `Magasin · ${n} en stock`,
         summary: (ready: number, running: number) =>
@@ -2305,6 +2315,7 @@ const frDict = {
         `Lançons votre ${building.toLowerCase()} ! Touchez « Produire » : il attend du travail.`,
       tapHome: "Touchez « Mes ateliers », au centre de la carte.",
       openPlace: "Touchez « Ouvrir » pour entrer dans vos ateliers.",
+      openCity: "Touchez « Ouvrir » : ses commandes tournent autour d'elle.",
       openWorkshops: (building: string) =>
         `Lançons votre ${building.toLowerCase()} ! Ouvrez vos ateliers.`,
       /** The batch's own time: 30 seconds in the guide's first ones, 30 minutes after. */
@@ -2322,7 +2333,9 @@ const frDict = {
       sellCity: (resource: string) =>
         `Vendez vos ${resource.toLowerCase()} à la ville qui paie le mieux.`,
       goRoutes:
-        "Chaque marque autour d'une ville est une commande, pleine si votre stock la couvre. Touchez une charrette.",
+        "Chaque marque autour d'une ville est une commande, pleine si votre stock la couvre. Touchez la ville.",
+      pickOrder: "Touchez une commande que votre stock couvre : elle entre dans la mule.",
+      sendMule: "Touchez « Livrer » : la mule part, la ville paie à l'arrivée.",
       deliver:
         "Ouvrez les cargaisons : cochez une commande que votre stock couvre, la ville paie à l'arrivée.",
       dispatch: "Touchez « Partir » (ou laissez filer le compte à rebours).",
@@ -2841,6 +2854,11 @@ const frDict = {
       points: (n: number) => `${n.toLocaleString("fr-FR")} pts`,
       share: (pct: number) => `${pct} %`,
       mine: (pct: number) => `Votre part : ${pct} %`,
+      pill: {
+        you: (pct: number) => `vous ${pct} %`,
+        master: "maître :",
+        none: "pas encore de maître",
+      },
       held: "Vous êtes maître de la ville",
       line: (toll: number, minutes: number) =>
         `Le maître de la ville prend ${toll} % des livraisons des autres et voit les commandes ${minutes} min avant eux.`,
