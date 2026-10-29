@@ -2014,6 +2014,15 @@ const frDict = {
       latestWeeks: "Dernières semaines",
       weekOf: (week: number, season: string) => `Semaine ${week} · ${season}`,
       open: "Voir le palmarès",
+      /** A player's sheet (refonte UX, lot 7, maquette `Fiche`). */
+      back: "Retour",
+      generations: (n: number) => `${n} génération${n > 1 ? "s" : ""}`,
+      places: (list: string) => list,
+      noPlace: "pas encore de mois fini",
+      shares: "Actions",
+      sharesOpen: "le cours, et en acheter",
+      all: "Tout le palmarès",
+      buyShares: "Acheter des actions",
     },
     npc: "(ordinateur)",
     npcHelp:
@@ -2988,7 +2997,7 @@ const frDict = {
         `Vous êtes ${rank}ᵉ : ${gap} de bénéfice vous séparent du 40ᵉ palais.`,
       inside: (rank: number) => `Votre palais : le ${rank}${rank === 1 ? "ᵉʳ" : "ᵉ"} du quai.`,
       toQuay: "Aller à mon quai",
-      seeRanking: "Voir le classement",
+      see: (name: string) => `Voir ${name}`,
       sestieri: ["Cannaregio", "Castello", "Dorsoduro", "San Polo", "Santa Croce", "San Marco"],
     },
     /** The Doge (R7): the Senate, its candidates, programmes and voices. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cityStanding, outOfEight, palaceGap } from "../src/game/politics.js";
+import { cityStanding, outOfEight, palaceGap, playerKey } from "../src/game/politics.js";
 
 describe("politics in figures", () => {
   it("says a source's reliability out of eight", () => {
@@ -30,5 +30,13 @@ describe("politics in figures", () => {
     expect(palaceGap(rows)).toEqual({ inside: false, rank: 41, gap: 124_000n });
     expect(palaceGap([{ rank: 12, me: true, turnover: "9" }])).toEqual({ inside: true, rank: 12 });
     expect(palaceGap([{ rank: 1, turnover: "9" }])).toBeNull();
+  });
+
+  it("reads a player's sheet key, its origin the ranking unless said", () => {
+    expect(playerKey("player:a1:market")).toEqual({ id: "a1", origin: "market" });
+    expect(playerKey("player:a1")).toEqual({ id: "a1", origin: "ranking" });
+    expect(playerKey("player:a1:elsewhere")).toEqual({ id: "a1", origin: "ranking" });
+    expect(playerKey("ranking")).toBeNull();
+    expect(playerKey(null)).toBeNull();
   });
 });

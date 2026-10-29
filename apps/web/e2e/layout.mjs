@@ -97,7 +97,7 @@ const WORDS = {
     atouts: /atout de la semaine/i,
     letter: /lettre du jour/i,
     senate: /l'élection/i,
-    canal: /^les 40 palais$/i,
+    canal: /^les 40 palais( ›)?$/i,
     broglio: /les rumeurs/i,
     build: /^bâtir$/i,
     ranking: /^classement$/i,
@@ -140,7 +140,7 @@ const WORDS = {
     atouts: /atout of the week/i,
     letter: /letter of the day/i,
     senate: /the election/i,
-    canal: /^the 40 palaces$/i,
+    canal: /^the 40 palaces( ›)?$/i,
     broglio: /the rumours/i,
     signoria: /^control$/i,
     build: /^build$/i,
@@ -540,6 +540,15 @@ async function session(width, height, tag) {
       await ranking.first().click();
       await page.waitForTimeout(600);
       await check("classement");
+      // A player's sheet over the ranking (refonte UX, lot 7): a house of the computer's line.
+      const other = page.locator("[aria-modal=true] button", { hasText: WORDS.npc });
+      if ((await other.count()) > 1) {
+        await other.nth(1).click();
+        await page.waitForTimeout(900);
+        await check("fiche");
+        await page.keyboard.press("Escape");
+        await page.waitForTimeout(500);
+      }
       const canal = page.getByRole("button", { name: WORDS.canal });
       if ((await canal.count()) > 0) {
         await canal.first().click();

@@ -1993,6 +1993,15 @@ export const en: Dictionary = {
       latestWeeks: "Latest weeks",
       weekOf: (week: number, season: string) => `Week ${week} · ${season}`,
       open: "See the record",
+      /** A player's sheet (refonte UX, lot 7, maquette `Fiche`). */
+      back: "Back",
+      generations: (n: number) => `${n} generation${n > 1 ? "s" : ""}`,
+      places: (list: string) => list,
+      noPlace: "no month finished yet",
+      shares: "Shares",
+      sharesOpen: "the price, and buying some",
+      all: "The whole record",
+      buyShares: "Buy shares",
     },
     npc: "(computer)",
     npcHelp:
@@ -2899,7 +2908,7 @@ export const en: Dictionary = {
         `You are ${rank}th: ${gap} of profit part you from the 40th palace.`,
       inside: (rank: number) => `Your palace: number ${rank} on the quay.`,
       toQuay: "Go to my quay",
-      seeRanking: "See the ranking",
+      see: (name: string) => `See ${name}`,
       sestieri: ["Cannaregio", "Castello", "Dorsoduro", "San Polo", "Santa Croce", "San Marco"],
     },
     doge: {

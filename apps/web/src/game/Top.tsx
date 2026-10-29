@@ -6,7 +6,6 @@ import { fr } from "../i18n.js";
 import { Badge, Label, Panel, Sheet, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { MerchantName } from "./Name.js";
-import { PlayerPalmares } from "./Palmares.js";
 import { SfidaBody } from "./Sfida.js";
 import { gameApi } from "./api.js";
 import { d, whole } from "./format.js";
@@ -186,7 +185,8 @@ export function RankingSheet(props: GameProps) {
   const open = props.sheet === "ranking" || props.sheet === "sfida";
   const [view, setView] = useState<View>("board");
   const [duel, setDuel] = useState(false);
-  const [opened, setOpened] = useState<string | null>(null);
+  // A line opens the player's sheet over the ranking (refonte UX, lot 7).
+  const setOpened = (id: string) => props.setSheet(`player:${id}:ranking`);
   const [period, setPeriod] = useState<Period>(() =>
     store.get("topPeriod") === "season" ? "season" : "week",
   );
@@ -373,19 +373,6 @@ export function RankingSheet(props: GameProps) {
           </div>
         )}
       </Sheet>
-      <PlayerPalmares
-        accountId={opened}
-        onClose={() => setOpened(null)}
-        // The Lustre (R6): another person may be challenged for next week.
-        onChallenge={
-          props.lustre && opened !== props.account.id
-            ? (id, pseudo) => {
-                setOpened(null);
-                props.setSheet(`challenge:${id}:${pseudo}`);
-              }
-            : undefined
-        }
-      />
     </>
   );
 }

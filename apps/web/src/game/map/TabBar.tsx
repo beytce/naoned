@@ -46,7 +46,7 @@ export function activeTab({
   const kind = (sheet ?? "").split(":")[0] ?? "";
   if (WORKSHOP_SHEETS.has(kind)) return "workshops";
   if (VENICE_SHEETS.has(kind)) return "venice";
-  if (sheet === "ranking" || sheet === "sfida") return "ranking";
+  if (["ranking", "sfida", "player", "challenge"].includes(kind)) return "ranking";
   if (layer !== "trade") return "conquest";
   if (home) return "workshops";
   if (venice) return "venice";
