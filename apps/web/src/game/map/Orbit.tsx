@@ -139,7 +139,8 @@ export function ComptoirOrbit({
       {atouts && (atouts.held.length > 0 || atoutWaiting(view)) && (
         <div
           aria-label={t.atouts}
-          className="absolute left-4 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.25rem)] z-10 flex items-center gap-1.5"
+          // On a short phone the orbit needs the room: the bell keeps the Atouts and the letter.
+          className="absolute left-4 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.25rem)] z-10 flex items-center gap-1.5 [@media(max-height:699px)]:hidden"
         >
           {atouts.held.map((code) => (
             <span
@@ -228,7 +229,7 @@ export function ComptoirOrbit({
             <button
               type="button"
               onClick={() => props.setSheet("letter")}
-              className="absolute bottom-0 left-0 z-10 flex min-h-11 items-center gap-2 rounded-full bg-night-2/90 py-1 pl-1 pr-3 text-xs font-semibold text-cream ring-1 ring-edge transition active:scale-95"
+              className="absolute bottom-0 left-0 z-10 flex min-h-11 [@media(max-height:699px)]:hidden items-center gap-2 rounded-full bg-night-2/90 py-1 pl-1 pr-3 text-xs font-semibold text-cream ring-1 ring-edge transition active:scale-95"
             >
               <Lorenzo size={32} />
               {t.letter}

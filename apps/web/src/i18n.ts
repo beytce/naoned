@@ -1626,7 +1626,9 @@ const frDict = {
     buildTitle: "Nouvel atelier",
     /** The catalogue of what can be built, in cards (workshops, vehicles). */
     catalog: {
-      title: "Construire",
+      title: "Bâtir",
+      places: (used: number, max: number) => `${used} sur ${max} places`,
+      build: (name: string, cost: string) => `Bâtir : ${name.toLowerCase()} · ${cost}`,
       tabs: { workshops: "Ateliers", vehicles: "Véhicules" },
       plots: (used: number, max: number) => `Parcelles occupées : ${used}/${max}`,
       fleet: (owned: number, max: number) => `Véhicules : ${owned}/${max}`,

@@ -32,7 +32,7 @@
 - [x] 1. l'onglet Ateliers ouvre « Mes ateliers » (`ComptoirOrbit`), allumé en or avec ses feuilles (`activeTab`, `home`) ; plus de chevron « ‹ » dans l'orbite ;
 - [x] 2. « Mes ateliers » : Atouts en haut à gauche, Lettre du jour, puces du magasin en boutons (`trade:<res>`), « Ouvriers nourris 2 jours », « Tout tourne · prochain lot à … » ;
 - [x] 3. un atelier : bandeau « 1 lot prêt », préréglages seuls, « → 80 farine · prête à … », un seul or (« Récolter … et relancer N lots »), l'amélioration dans sa feuille ;
-- [ ] 4. Bâtir : cartes choisies sur place, un seul or au pied (« Bâtir un moulin · 280 d » ou `BuyMissing`) ;
+- [x] 4. Bâtir : cartes choisies sur place, un seul or au pied (« Bâtir un moulin · 280 d » ou `BuyMissing`) ;
 - [ ] 5. textes `en`, e2e et guide.
 - Hors lot : la puce « 0 brique » du magasin.
 

@@ -3,7 +3,7 @@ import { GoodsMark } from "../art/goods.js";
 import { VehicleGlyph } from "../art/veneto.js";
 import { fr } from "../i18n.js";
 import { Slab } from "../ui.js";
-import { affordable, have } from "./Comptoir.js";
+import { BuyMissing, affordable, have, missingMaterials } from "./Comptoir.js";
 import type { GameProps } from "./Game.js";
 import { d, minutesLabel } from "./format.js";
 import { vehicleName } from "./roadKit.js";
@@ -75,9 +75,11 @@ function Workshops(props: GameProps) {
   const cards = catalog.buildings
     .map((b) => ({ b, lock: lockOf(props, b.regions, b.cost, b.unlock) }))
     .sort((x, y) => rank(x.lock, x.b.regions) - rank(y.lock, y.b.regions));
+  // A card is chosen in place (maquette `Batir`); the one gold at the foot acts on it.
+  const [chosen, setChosen] = useState<string | null>(cards[0]?.b.type ?? null);
+  const pick = cards.find((c) => c.b.type === chosen) ?? cards[0];
   return (
     <div className="space-y-3">
-      <p className="meta">{t().plots(view.buildings.length, catalog.rules.maxBuildings)}</p>
       {cards.map(({ b, lock }) => {
         const elsewhere = !!b.regions && !b.regions.includes(view.player.region);
         const built = view.buildings.filter((x) => x.type === b.type).length;
@@ -86,25 +88,56 @@ function Workshops(props: GameProps) {
             key={b.type}
             dim={lock !== null}
             disabled={elsewhere}
-            onClick={() => props.setSheet(`build:${b.type}`)}
+            pressed={pick?.b.type === b.type}
+            onClick={() => setChosen(b.type)}
             art={<PlotStar output={Object.keys(b.recipe?.outputs ?? {})[0]} />}
             count={t().built(built)}
             title={props.names.building(b.type)}
             time={b.recipe ? t().batch(minutesLabel(b.recipe.durationMinutes)) : null}
-            body={
-              <>
-                {b.recipe && <RecipeLine recipe={b.recipe} />}
-                <p>{t().roles[b.type] ?? ""}</p>
-                {b.recipe && catalog.rations.perLevelPerDay > 0 && (
-                  <p className="meta">{fr.game.rationsOfLevel(catalog.rations.perLevelPerDay)}</p>
-                )}
-              </>
-            }
+            body={b.recipe ? <RecipeLine recipe={b.recipe} /> : <p>{t().roles[b.type] ?? ""}</p>}
             price={<Price cost={b.cost} props={props} />}
-            lock={lock}
+            lock={elsewhere ? lock : null}
           />
         );
       })}
+      {pick && <BuildFoot props={props} type={pick.b.type} cost={pick.b.cost} lock={pick.lock} />}
+    </div>
+  );
+}
+
+/**
+ * The one gold of « Bâtir », held at the sheet's foot: build the chosen workshop, or first buy
+ * what it lacks right here (the owner's word, 29 October 2026); a lock says why in words.
+ */
+function BuildFoot({
+  props,
+  type,
+  cost,
+  lock,
+}: { props: GameProps; type: string; cost: Cost; lock: string | null }) {
+  const lacking = missingMaterials(props, cost).lines.length > 0;
+  const shortOf = BigInt(cost.ducats) - BigInt(props.view.cash);
+  return (
+    <div className="sticky bottom-0 -mx-5 space-y-2 bg-night-2 px-5 pb-1 pt-3">
+      {lock === null ? (
+        <Slab
+          size="lg"
+          className="w-full"
+          coach="catalog-build"
+          disabled={props.busy}
+          onClick={async () => {
+            if (await props.act({ type: "build", buildingType: type })) props.setSheet(null);
+          }}
+        >
+          {t().build(props.names.building(type), d(cost.ducats))}
+        </Slab>
+      ) : lock === t().missing && lacking && shortOf <= 0n ? (
+        <BuyMissing cost={cost} props={props} gold />
+      ) : (
+        <p className="meta text-center">
+          {lock === t().missing && shortOf > 0n ? fr.game.workshop.shortOf(d(shortOf)) : lock}
+        </p>
+      )}
     </div>
   );
 }
@@ -200,6 +233,8 @@ function Card(props: {
   dim: boolean;
   /** Not a way into a detail sheet (another region's trade, a vehicle). */
   disabled?: boolean;
+  /** The card chosen (« Bâtir »): lit, `aria-pressed`. */
+  pressed?: boolean;
   onClick?: () => void;
   action?: ReactNode;
 }) {
@@ -220,11 +255,18 @@ function Card(props: {
     </div>
   );
   return (
-    <div className="rounded-2xl bg-night-3 p-3 ring-1 ring-inset ring-line">
+    <div
+      className={`rounded-2xl bg-night-3 p-3 ring-inset ${props.pressed ? "ring-2 ring-info" : "ring-1 ring-edge"}`}
+    >
       {props.disabled ? (
         inner
       ) : (
-        <button type="button" onClick={props.onClick} className="block w-full text-left">
+        <button
+          type="button"
+          aria-pressed={props.pressed}
+          onClick={props.onClick}
+          className="block w-full text-left"
+        >
           {inner}
         </button>
       )}

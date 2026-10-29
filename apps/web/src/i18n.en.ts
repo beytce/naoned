@@ -1627,6 +1627,8 @@ export const en: Dictionary = {
     buildTitle: "New workshop",
     catalog: {
       title: "Build",
+      places: (used: number, max: number) => `${used} of ${max} places`,
+      build: (name: string, cost: string) => `Build: ${name.toLowerCase()} · ${cost}`,
       tabs: { workshops: "Workshops", vehicles: "Vehicles" },
       plots: (used: number, max: number) => `Plots in use: ${used}/${max}`,
       fleet: (owned: number, max: number) => `Vehicles: ${owned}/${max}`,

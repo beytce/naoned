@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { BuildingArt } from "../art/buildings.js";
 import { GoodsMark } from "../art/goods.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
@@ -1011,50 +1010,6 @@ function WorkshopSheet({
   );
 }
 
-function BuildSheet({ type, props }: { type: string; props: GameProps }) {
-  const def = props.catalog.buildings.find((b) => b.type === type);
-  if (!def) return null;
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <BuildingArt type={type} className="h-24 w-32" />
-        <div>
-          <Label>{fr.game.buildTitle}</Label>
-          <h3 className="font-display text-lg font-extrabold uppercase">{def.name}</h3>
-          {def.recipe && props.catalog.rations.perLevelPerDay > 0 && (
-            <p className="meta mt-1">
-              {fr.game.rationsOfLevel(props.catalog.rations.perLevelPerDay)}
-            </p>
-          )}
-        </div>
-      </div>
-      {def.recipe ? (
-        <RecipeFlow recipe={def.recipe} level={1} props={props} />
-      ) : (
-        <p className="text-sm text-cream-dim">{fr.game.palazzoHelp}</p>
-      )}
-      <div className="space-y-2">
-        <Label>{fr.game.cost}</Label>
-        <CostList cost={def.cost} props={props} />
-      </div>
-      <Slab
-        size="lg"
-        className="w-full"
-        disabled={
-          props.busy ||
-          !affordable(props.view, def.cost) ||
-          (!!def.unlock && BigInt(props.view.standing.turnover) < BigInt(def.unlock.turnover))
-        }
-        onClick={async () => {
-          if (await props.act({ type: "build", buildingType: type })) props.setSheet("workshops");
-        }}
-      >
-        {fr.game.build}
-      </Slab>
-    </div>
-  );
-}
-
 /** What waits to be claimed in the day's notebook: tasks done, missions done, the chest. */
 export function carnetRewards(props: GameProps): number {
   const daily = props.view.daily?.tasks.filter((t) => t.done && !t.claimed).length ?? 0;
@@ -1144,11 +1099,13 @@ export function CounterSheets(props: GameProps) {
           />
         )}
       </Sheet>
-      <Sheet open={props.sheet === "buildHere"} onClose={close} title={fr.game.catalog.title}>
+      <Sheet
+        open={props.sheet === "buildHere"}
+        onClose={close}
+        title={fr.game.catalog.title}
+        summary={fr.game.catalog.places(view.buildings.length, props.catalog.rules.maxBuildings)}
+      >
         <BuildCatalog {...props} />
-      </Sheet>
-      <Sheet open={kind === "build"} onClose={() => props.setSheet("buildHere")}>
-        {kind === "build" && id && <BuildSheet type={id} props={props} />}
       </Sheet>
       <Sheet open={props.sheet === "store"} onClose={close} title={fr.game.domain.store.title}>
         <div className="space-y-4">

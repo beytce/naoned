@@ -103,15 +103,20 @@ export function unitsKept(children: ReactNode): ReactNode {
   const keep = (text: string, key: number | string) => {
     const parts = text.split(/(\u00a0(?:d|ducats)\b)/);
     if (parts.length === 1) return text;
-    return parts.map((part, i) =>
-      i % 2 === 1 ? (
-        // biome-ignore lint/suspicious/noArrayIndexKey: the pieces of one fixed text
-        <span key={`${key}:${i}`} className="normal-case">
-          {part}
-        </span>
-      ) : (
-        part
-      ),
+    // One span for the whole text: in the slab's flex row, its pieces never part with a gap.
+    return (
+      <span key={key}>
+        {parts.map((part, i) =>
+          i % 2 === 1 ? (
+            // biome-ignore lint/suspicious/noArrayIndexKey: the pieces of one fixed text
+            <span key={`${key}:${i}`} className="normal-case">
+              {part}
+            </span>
+          ) : (
+            part
+          ),
+        )}
+      </span>
     );
   };
   if (typeof children === "string") return keep(children, 0);
