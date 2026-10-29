@@ -936,6 +936,9 @@
 .hud-alert[data-tone="gold"] {
   --hud-alert: var(--gold);
 }
+.hud-alert[data-tone="lagoon"] {
+  --hud-alert: var(--lagoon);
+}
 .hud-alert[data-tone="vermilion"] {
   --hud-alert: var(--vermilion);
 }

@@ -170,6 +170,9 @@ const frDict = {
     map: {
       home: (pseudo: string) => (pseudo ? `Maison ${pseudo}` : "Votre maison"),
       homeLabel: "Mes ateliers",
+      /** The trade's header (refonte UX): the purse leads to the profile. */
+      purse: (amount: string) => `Votre profil, ${amount} ducats`,
+      dailyRing: (done: number, total: number) => `Tâches du jour : ${done} sur ${total}`,
       /** A place touched on the map: a sentence, one gold action in place, a way in (refonte UX). */
       place: {
         ready: (n: number, list: string) =>
@@ -193,6 +196,7 @@ const frDict = {
         master: "Vous en êtes le maître.",
         see: (city: string) => `Voir ${city}`,
         venice: "Entrer à Venise",
+        auctions: "Voir les enchères",
         auction: (n: number, hour: string) =>
           `Enchères ce soir à ${hour} : ${n} lot${n > 1 ? "s" : ""}.`,
         rumours: (n: number) => `${n} rumeur${n > 1 ? "s" : ""} ce matin au Palais.`,

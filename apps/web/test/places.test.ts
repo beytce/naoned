@@ -108,7 +108,9 @@ describe("a city's place on the map", () => {
       venice: { lots: 3, hour: "20 h", rumours: 2 },
     });
     expect(auction.line).toBe("Enchères ce soir à 20 h : 3 lots.");
-    expect(auction.ghost).toBe("Entrer à Venise");
+    // The ghost leads to the auctions while lots are open, else inside Venice.
+    expect(auction.ghost).toBe("Voir les enchères");
+    expect(auction.to).toBe("sera");
     expect(auction.gold).toBeNull();
     expect(auction.waits).toBe("rumour");
     const rumours = city({
@@ -117,6 +119,7 @@ describe("a city's place on the map", () => {
       venice: { lots: 0, hour: "20 h", rumours: 2 },
     });
     expect(rumours.line).toBe("2 rumeurs ce matin au Palais.");
+    expect(rumours.ghost).toBe("Entrer à Venise");
     // An order to deliver comes first, even in Venice.
     const both = city({
       code: "venezia",

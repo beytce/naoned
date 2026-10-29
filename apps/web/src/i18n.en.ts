@@ -252,6 +252,9 @@ export const en: Dictionary = {
     map: {
       home: (pseudo: string) => (pseudo ? `House ${pseudo}` : "Your house"),
       homeLabel: "My workshops",
+      /** The trade's header (refonte UX): the purse leads to the profile. */
+      purse: (amount: string) => `Your profile, ${amount} ducats`,
+      dailyRing: (done: number, total: number) => `Tasks of the day: ${done} of ${total}`,
       /** A place touched on the map: a sentence, one gold action in place, a way in (refonte UX). */
       place: {
         ready: (n: number, list: string) => `${n} batch${n > 1 ? "es" : ""} ready: ${list}.`,
@@ -274,6 +277,7 @@ export const en: Dictionary = {
         master: "You are its master.",
         see: (city: string) => `See ${city}`,
         venice: "Enter Venice",
+        auctions: "See the auctions",
         auction: (n: number, hour: string) =>
           `Auctions tonight at ${hour}: ${n} lot${n > 1 ? "s" : ""}.`,
         rumours: (n: number) => `${n} rumour${n > 1 ? "s" : ""} this morning at the Palace.`,

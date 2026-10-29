@@ -25,7 +25,7 @@ import { Coach } from "../Coach.js";
 import { ComeBack } from "../ComeBack.js";
 import { CounterSheets, buyRationsSheet, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
-import { perHour } from "../Dashboard.js";
+import { DailySheet } from "../Daily.js";
 import { SenateSheet, senateWaiting } from "../Doge.js";
 import { FondacoSheet } from "../Fondaco.js";
 import type { GameProps } from "../Game.js";
@@ -43,7 +43,6 @@ import { gameApi } from "../api.js";
 import { onBack } from "../back.js";
 import { clockHour, d, loafShare, minutesLabel } from "../format.js";
 import { harvestAndRestart } from "../harvest.js";
-import { rivalLine } from "../rival.js";
 import {
   BuyVehicleSheet,
   UpgradeVehicleSheet,
@@ -789,7 +788,10 @@ export function MapScreen(
         onGold={() => {
           if (place.gold) void placeAct(place.gold);
         }}
-        onGhost={() => select({ ...sel, peek: false })}
+        onGhost={() => {
+          if (place.to === "sera") props.setSheet("sera");
+          else select({ ...sel, peek: false });
+        }}
         onClose={() => select(null)}
       />
     );
@@ -955,10 +957,8 @@ export function MapScreen(
         level={props.level?.level ?? null}
         tier={props.lustre?.tier ?? null}
         rank={view.standing.rank}
-        rival={rivalLine(props.rival)}
         seasonProgress={seasonProgress}
         cash={view.cash}
-        rate={!campaign && !terra && perHour(props) > 0n ? m.rate(d(perHour(props))) : null}
         // Three counters on the map (recommendations of 20 October 2026): the ducats, the rank
         // and the carts; the Influence lives in the Profil.
         influence={null}
@@ -1050,15 +1050,20 @@ export function MapScreen(
         onProfile={() => props.setSheet("profile")}
         onNotices={() => props.setSheet("notices")}
         onBales={() => props.setSheet("bales")}
-        onRialto={trade && open.rialto ? () => props.goTo("marche") : undefined}
         onBuyCart={() => setBuying(true)}
         onResumeGuide={props.onResumeGuide}
-        onRanking={() => props.setSheet("ranking")}
-        onRival={props.rival?.sfida ? () => props.setSheet("sfida") : undefined}
-        onSera={trade && view.sera ? () => props.setSheet("sera") : undefined}
-        sera={openSeraLots(view)}
         // On the Terraferma, its guide with its diagrams; on the trade, the help is in the profile.
         onHelp={terra ? props.openTerraGuide : undefined}
+        daily={
+          view.daily && view.daily.tasks.length > 0
+            ? {
+                done: view.daily.tasks.filter((x) => x.done || x.claimed).length,
+                total: view.daily.tasks.length,
+                ready: view.daily.tasks.some((x) => x.done && !x.claimed),
+              }
+            : null
+        }
+        onDaily={() => props.setSheet("daily")}
       />
       <TabBar
         active={activeTab({ sheet: props.sheet, layer })}
@@ -1093,6 +1098,8 @@ export function MapScreen(
           },
           {
             id: "ranking",
+            // The duel's line left the header (refonte UX): a dot while the rival is ahead.
+            dot: !!props.rival && BigInt(props.rival.gain) > BigInt(props.rival.mine),
             locked: open.ranking ? undefined : fr.game.unlocks.afterDelivery,
             onClick: () => props.setSheet("ranking"),
           },
@@ -1201,6 +1208,7 @@ export function MapScreen(
       <SfidaSheet {...props} />
       <ChallengeSheet {...props} />
       <SeraSheet {...props} />
+      <DailySheet {...props} />
       <AtoutsSheet {...props} />
       <LetterSheet {...props} />
       <SenateSheet {...props} />

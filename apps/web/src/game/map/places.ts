@@ -18,6 +18,8 @@ export interface Place {
   line: string;
   gold: PlaceGold | null;
   ghost: string;
+  /** Where the ghost leads: the place up close, or Venice's auctions while lots are open. */
+  to?: "sera";
   waits: Waits | null;
 }
 
@@ -104,7 +106,10 @@ export function cityPlace(input: {
         ? t().rumours(input.venice.rumours)
         : null
     : null;
-  if (news) return { line: news, gold: null, ghost, waits: "rumour" };
+  if (news)
+    return input.venice && input.venice.lots > 0
+      ? { line: news, gold: null, ghost: t().auctions, to: "sera", waits: "rumour" }
+      : { line: news, gold: null, ghost, waits: "rumour" };
   if (best) {
     const why =
       best.have < best.quantity
