@@ -306,7 +306,7 @@ describe("a skirmish's row", () => {
     for (const n of told) {
       const push = pushText(n.kind, n.data);
       expect(push.body).toBe(
-        "Escarmouche interrompue par une maintenance : aucune Gloire, rien n'est compté ; elle n'a pas consommé votre partie classée du jour.",
+        "Partie rapide interrompue par une maintenance : aucun point de conquête, rien n'est compté ; elle n'a pas consommé votre partie classée du jour.",
       );
       expect(push.body).not.toContain("reste à jouer");
     }
