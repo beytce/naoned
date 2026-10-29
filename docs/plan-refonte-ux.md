@@ -24,16 +24,20 @@
 | 4 | Ateliers, production, bâtir, magasin | fait (PR lot 4) | `568f5e1`…(fin de branche `claude/refonte-ux-lot4`) |
 | 5 | Venise, Marché, page d'une marchandise | fait (PR lot 5) | `12d584a`…(fin de branche `claude/refonte-ux-lot5`) |
 | 6 | Politique (rumeurs, élection, villes), enchères, 40 palais | fait (PR lot 6) | `cc1d56a`…(fin de branche `claude/refonte-ux-lot6`) |
-| 7 | Classement, fiche d'un joueur, profil | en cours (branche `claude/refonte-ux-lot7`) | |
+| 7 | Classement, fiche d'un joueur, profil | fait (PR lot 7) | `17e891a`…(fin de branche `claude/refonte-ux-lot7`) |
 | 8 | Ville, Conquête | à faire | |
 | 9 | Moments : messages, tâches du jour, calendrier, lettre, Atout, bon retour, fin du mois, entrée | à faire | |
 
-**Étape suivante :** le lot 7, plan validé le 29 octobre. Ordre des commits :
+**Étape suivante :** le lot 8 (Ville et Conquête, maquettes `Ville`, `Terraferme`) : faire son plan, le faire valider, puis coder.
+
+**Ce que le lot 7 a fait (plan validé le 29 octobre) :**
 - [x] 1. « (ordinateur) » en texte après le nom (`MerchantName`, `merchantLabel`, `fr.game.npc`), plus de sceau « PNJ » ;
 - [x] 2. le classement en trois onglets (Semaine, Mois, Duel ; `SfidaBody`), « ? » pour les règles ;
 - [x] 3. la fiche d’un joueur en feuille par-dessus (clé `player:<id>:<origine>`), trois lignes, l'or selon l'origine ;
 - [x] 4. le profil : un contenu, puis Mes actions, Héritage, Guilde, Palmarès, Réglages ;
-- [ ] 5. textes `en`, e2e et guide.
+- [x] 5. textes `en`, e2e (`classement`, `sfida` par l'onglet Duel, `fiche`, `profil`, `profil-reglages`, `compagnie` par la ligne Guilde) et guide ; `layout.mjs` fr et en, `tutorial.mjs` passent.
+- Hors lot : le balayage Défier / Espionner sur les lignes du classement ; « Contre vous » dans la fiche (il faut les duels entre deux joueurs côté serveur) ; l'or « Voter » depuis l'élection (les candidats n'ouvrent pas encore de fiche).
+- Banc : la vérification des effets (`guide` dans `e2e/assert.mjs`) attend jusqu'à 2,5 s qu'un effet en vol se pose ; un effet resté à l'écran échoue toujours.
 
 **Ce que le lot 6 a fait (plan validé le 29 octobre) :**
 - [x] 1. Politique (`Politics.tsx`, clés `politics`, `broglio`, `senate`, `cities`) : Rumeurs (`RumoursBody`, « Source : …, juste 7 fois sur 8 », « Si c'est vrai : … »), Manœuvres dans leur feuille (`ManeuversSheet`, clé `maneuvers`), Élection (`SenateBody` sous le Doge du mois), Villes (jauge et part, `cityStanding`) ; l'alerte d'espion en tête des Messages (`SpyAlert`) ;
