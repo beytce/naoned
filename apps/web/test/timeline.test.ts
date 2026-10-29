@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { upcoming } from "../src/game/timeline.js";
+import { terraUpcoming, upcoming } from "../src/game/timeline.js";
 import type { BuildingView, DeliveryView } from "../src/game/types.js";
 
 const MIN = 60_000;
@@ -70,5 +70,47 @@ describe("the strip of what comes next", () => {
       NOW,
     );
     expect(u?.at).toBe(NOW + 15 * MIN);
+  });
+});
+
+describe("the Conquest's strip of the day", () => {
+  const fmt = { hour: (at: number) => `${at / MIN}m`, day: (at: number) => `d${at / MIN}` };
+  const front = (mine: boolean, ...takes: number[]) => ({
+    mine,
+    takes: takes.map((at) => ({ at })),
+  });
+
+  it("reads the merchant's next front, the battle of the evening and the week's end, in order", () => {
+    const list = terraUpcoming(
+      {
+        fronts: [
+          front(false, NOW + 5 * MIN),
+          front(true, NOW + 90 * MIN),
+          front(true, NOW + 30 * MIN),
+        ],
+        battle: { from: 20, on: false },
+        closesAt: NOW + 3_000 * MIN,
+        closed: false,
+      },
+      NOW,
+      fmt,
+    );
+    expect(list.map((u) => u.key)).toEqual(["front", "battle", "end"]);
+    expect(list[0]?.label).toContain(`${(NOW + 30 * MIN) / MIN}m`);
+    expect(list[1]?.label).toContain("20");
+    expect(list[2]?.label).toContain(`d${(NOW + 3_000 * MIN) / MIN}`);
+    expect(list.every((u) => u.plain)).toBe(true);
+  });
+
+  it("says the battle under way, and nothing once the week is closed", () => {
+    const input = {
+      fronts: [],
+      battle: { from: 20, on: true },
+      closesAt: NOW + MIN,
+      closed: false,
+    };
+    expect(terraUpcoming(input, NOW, fmt).map((u) => u.key)).toEqual(["battle", "end"]);
+    expect(terraUpcoming({ ...input, closed: true }, NOW, fmt)).toEqual([]);
+    expect(terraUpcoming({ ...input, battle: null }, NOW, fmt).map((u) => u.key)).toEqual(["end"]);
   });
 });

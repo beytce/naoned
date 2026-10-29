@@ -209,8 +209,19 @@ function nextStep(props: CoachProps): CoachStep {
         const chosen = props.selection?.kind === "cart" ? props.selection.id : null;
         if (road.vehicles.some((v) => v.status === "free" && v.id === chosen))
           return { text: fr.game.coach.deliver, target: "panel-cargo" };
+        // The city up close (refonte UX lot 8): an order touched into the mule, then « Livrer ».
+        const sel = props.selection;
         const free = road.vehicles.find((v) => v.status === "free");
-        if (free) return { text: fr.game.coach.goRoutes, target: `cart-${free.id}` };
+        if (sel?.kind === "city" && sel.code === deliverable.city && free)
+          return sel.peek
+            ? { text: fr.game.coach.openCity, target: "place-open" }
+            : {
+                text: fr.game.coach.pickOrder,
+                target: `city-order-${deliverable.id}`,
+                follow: "city-deliver",
+                followText: fr.game.coach.sendMule,
+              };
+        if (free) return { text: fr.game.coach.goRoutes, target: `city-${deliverable.city}` };
       }
     }
     const good = road ? undefined : CITY_GOODS.find((r) => have(view, r) > 0);

@@ -247,6 +247,16 @@ const frDict = {
         load: "Charger une mule",
         missing: (n: number) => `il en manque ${n}`,
         back: "Retour à la carte",
+        toMap: "Carte",
+        covered: (pay: string) => `${pay} · couvert`,
+        urgent: (pay: string, left: string) => `${pay} · urgente · ${left}`,
+        pick: "Touchez une commande",
+        inMule: (n: number) => `${n} commande${n > 1 ? "s" : ""} dans la mule`,
+        freeMules: (n: number) =>
+          n > 0 ? `${n} mule${n > 1 ? "s" : ""} libre${n > 1 ? "s" : ""}` : "Aucune mule libre",
+        deliver: (n: number, pay: string) => `Livrer ${n} commande${n > 1 ? "s" : ""} · +${pay}`,
+        choose: "Choisissez une commande",
+        buy: (n: number, good: string) => `Acheter ${n} ${good.toLowerCase()}`,
         store: "Magasin",
         storeLine: (n: number) => `Magasin · ${n} en stock`,
         summary: (ready: number, running: number) =>
@@ -278,6 +288,10 @@ const frDict = {
         pays: (city: string) => `${city} paie`,
         orders: "Commandes",
         back: (vehicle: string) => `${vehicle} rentre`,
+        front: (hour: string) => `front ${hour}`,
+        battle: (from: number) => `${from} h : enchères puis bataille`,
+        battleOn: "bataille en cours",
+        end: (day: string) => `fin ${day}`,
       },
       /** The cards that unfold beside the HUD's counters. */
       tips: {
@@ -679,6 +693,30 @@ const frDict = {
       },
       hungryShort: "Vos troupes ont faim : sans pain, plus de recrues",
       troopsLine: (troops: number, cap: number) => `${troops}/${cap}`,
+      troopsCard: {
+        troops: (n: number) => `${n} troupe${n > 1 ? "s" : ""}`,
+        of: (cap: number) => `sur ${cap}`,
+      },
+      youTroops: (n: number) => `vous · ${n} troupe${n > 1 ? "s" : ""}`,
+      camp: {
+        title: (cells: number) => `Votre camp · ${cells} case${cells > 1 ? "s" : ""}`,
+        line: (troops: number, perHour: number) =>
+          `${troops} troupe${troops > 1 ? "s" : ""} · +${perHour} troupe${perHour > 1 ? "s" : ""} par heure`,
+        bread: (days: number) =>
+          days > 0 ? `vivres pour ${days} jour${days > 1 ? "s" : ""}` : "plus de vivres",
+        aim: (name: string, n: number) => `Visez la case de ${name} : ${n} troupes suffisent.`,
+        aimFree: (n: number) => `Visez la terre libre à votre frontière : ${n} troupes suffisent.`,
+        none: "Aucune case à votre portée pour l'instant : attendez des recrues.",
+        open: "Lancer un front",
+        launch: (n: number) => `Lancer un front · ${n} troupes`,
+        launched: (n: number) => `Front lancé · ${n} troupes en marche ✓`,
+        mercenaries: "Mercenaires",
+        week: "La semaine",
+        quick: "Partie rapide",
+      },
+      attackPill: (n: number) => `attaque · ${n}`,
+      hudRank: (rank: number, glory: number) =>
+        `${rank}${rank === 1 ? "er" : "e"} · ${glory} points`,
       perHour: (n: number) => `+${n}/h`,
       perHourAt: (n: number, from: number) => `☾ +${n}/h à ${from} h`,
       returns: {
@@ -2305,6 +2343,7 @@ const frDict = {
         `Lançons votre ${building.toLowerCase()} ! Touchez « Produire » : il attend du travail.`,
       tapHome: "Touchez « Mes ateliers », au centre de la carte.",
       openPlace: "Touchez « Ouvrir » pour entrer dans vos ateliers.",
+      openCity: "Touchez « Ouvrir » : ses commandes tournent autour d'elle.",
       openWorkshops: (building: string) =>
         `Lançons votre ${building.toLowerCase()} ! Ouvrez vos ateliers.`,
       /** The batch's own time: 30 seconds in the guide's first ones, 30 minutes after. */
@@ -2322,7 +2361,9 @@ const frDict = {
       sellCity: (resource: string) =>
         `Vendez vos ${resource.toLowerCase()} à la ville qui paie le mieux.`,
       goRoutes:
-        "Chaque marque autour d'une ville est une commande, pleine si votre stock la couvre. Touchez une charrette.",
+        "Chaque marque autour d'une ville est une commande, pleine si votre stock la couvre. Touchez la ville.",
+      pickOrder: "Touchez une commande que votre stock couvre : elle entre dans la mule.",
+      sendMule: "Touchez « Livrer » : la mule part, la ville paie à l'arrivée.",
       deliver:
         "Ouvrez les cargaisons : cochez une commande que votre stock couvre, la ville paie à l'arrivée.",
       dispatch: "Touchez « Partir » (ou laissez filer le compte à rebours).",
@@ -2841,6 +2882,11 @@ const frDict = {
       points: (n: number) => `${n.toLocaleString("fr-FR")} pts`,
       share: (pct: number) => `${pct} %`,
       mine: (pct: number) => `Votre part : ${pct} %`,
+      pill: {
+        you: (pct: number) => `vous ${pct} %`,
+        master: "maître :",
+        none: "pas encore de maître",
+      },
       held: "Vous êtes maître de la ville",
       line: (toll: number, minutes: number) =>
         `Le maître de la ville prend ${toll} % des livraisons des autres et voit les commandes ${minutes} min avant eux.`,

@@ -324,6 +324,15 @@ export const en: Dictionary = {
         load: "Load a mule",
         missing: (n: number) => `${n} short`,
         back: "Back to the map",
+        toMap: "Map",
+        covered: (pay: string) => `${pay} · covered`,
+        urgent: (pay: string, left: string) => `${pay} · urgent · ${left}`,
+        pick: "Tap an order",
+        inMule: (n: number) => `${n} order${n > 1 ? "s" : ""} in the mule`,
+        freeMules: (n: number) => (n > 0 ? `${n} free mule${n > 1 ? "s" : ""}` : "No free mule"),
+        deliver: (n: number, pay: string) => `Deliver ${n} order${n > 1 ? "s" : ""} · +${pay}`,
+        choose: "Choose an order",
+        buy: (n: number, good: string) => `Buy ${n} ${good.toLowerCase()}`,
         store: "Store",
         storeLine: (n: number) => `Store · ${n} in stock`,
         summary: (ready: number, running: number) =>
@@ -355,6 +364,10 @@ export const en: Dictionary = {
         pays: (city: string) => `${city} pays`,
         orders: "Orders",
         back: (vehicle: string) => `${vehicle} back`,
+        front: (hour: string) => `front ${hour}`,
+        battle: (from: number) => `${from}:00: auctions then battle`,
+        battleOn: "battle under way",
+        end: (day: string) => `ends ${day}`,
       },
       tips: {
         cash: {
@@ -742,6 +755,29 @@ export const en: Dictionary = {
       },
       hungryShort: "Your troops are hungry: no bread, no recruits",
       troopsLine: (troops: number, cap: number) => `${troops}/${cap}`,
+      troopsCard: {
+        troops: (n: number) => `${n} troop${n > 1 ? "s" : ""}`,
+        of: (cap: number) => `of ${cap}`,
+      },
+      youTroops: (n: number) => `you · ${n} troop${n > 1 ? "s" : ""}`,
+      camp: {
+        title: (cells: number) => `Your camp · ${cells} cell${cells > 1 ? "s" : ""}`,
+        line: (troops: number, perHour: number) =>
+          `${troops} troop${troops > 1 ? "s" : ""} · +${perHour} troop${perHour > 1 ? "s" : ""} an hour`,
+        bread: (days: number) =>
+          days > 0 ? `food for ${days} day${days > 1 ? "s" : ""}` : "out of food",
+        aim: (name: string, n: number) => `Aim at ${name}'s cell: ${n} troops will do.`,
+        aimFree: (n: number) => `Aim at the free land on your border: ${n} troops will do.`,
+        none: "No cell in your reach yet: wait for recruits.",
+        open: "Launch a front",
+        launch: (n: number) => `Launch a front · ${n} troops`,
+        launched: (n: number) => `Front launched · ${n} troops marching ✓`,
+        mercenaries: "Mercenaries",
+        week: "The week",
+        quick: "Quick game",
+      },
+      attackPill: (n: number) => `attack · ${n}`,
+      hudRank: (rank: number, glory: number) => `${ordinal(rank)} · ${glory} points`,
       perHour: (n: number) => `+${n}/h`,
       perHourAt: (n: number, from: number) => `☾ +${n}/h at ${from}:00`,
       returns: {
@@ -2278,6 +2314,7 @@ export const en: Dictionary = {
         `Let's start your ${building.toLowerCase()}! Tap « Produce »: it is waiting for work.`,
       tapHome: "Tap « My workshops », in the middle of the map.",
       openPlace: "Tap « Open » to step into your workshops.",
+      openCity: "Tap « Open »: its orders turn around it.",
       openWorkshops: (building: string) =>
         `Let's start your ${building.toLowerCase()}! Open your workshops.`,
       produce: (building: string, time: string) =>
@@ -2293,7 +2330,10 @@ export const en: Dictionary = {
         `A raw material is worth little. Transform it: start your ${building.toLowerCase()}.`,
       sellCity: (resource: string) =>
         `Sell your ${resource.toLowerCase()} to the city that pays best.`,
-      goRoutes: "Each mark around a city is an order, full when your stock covers it. Tap a cart.",
+      goRoutes:
+        "Each mark around a city is an order, full when your stock covers it. Tap the city.",
+      pickOrder: "Tap an order your stock covers: it goes into the mule.",
+      sendMule: "Tap « Deliver »: the mule leaves, the city pays on arrival.",
       deliver: "Open the cargo: tick an order your stock covers, the city pays on arrival.",
       dispatch: "Tap « Go » (or let the countdown run out).",
       welcomeEnRoute: (left: string) =>
@@ -2760,6 +2800,11 @@ export const en: Dictionary = {
       points: (n: number) => `${n.toLocaleString("en-GB")} pts`,
       share: (pct: number) => `${pct}%`,
       mine: (pct: number) => `Your share: ${pct}%`,
+      pill: {
+        you: (pct: number) => `you ${pct}%`,
+        master: "master:",
+        none: "no master yet",
+      },
       held: "You are the city's master",
       line: (toll: number, minutes: number) =>
         `The city master takes ${toll}% of the others' deliveries and sees the orders ${minutes} min before them.`,

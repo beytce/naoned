@@ -116,6 +116,7 @@ export function MapHud({
   guidePaused,
   bottom,
   layer,
+  meta,
   right,
   actions,
   timeline,
@@ -163,6 +164,8 @@ export function MapHud({
   bottom: boolean;
   /** The map shown. */
   layer: "trade" | "campaign" | "terra";
+  /** Under the name in place of the trade's rank and league (the Conquest's rank and points). */
+  meta?: ReactNode;
   /** Under the purse on the right, in place of the bread and the carts (the families' glory on the campaign). */
   right?: ReactNode;
   /** A layer's actions at the thumb, at the bottom right above the tabs. */
@@ -330,17 +333,21 @@ export function MapHud({
                   data-hud-meta
                   className="flex h-4 flex-wrap gap-x-[0.6em] overflow-hidden font-mono text-xs uppercase leading-4 tracking-[0.1em] text-cream-dim"
                 >
-                  <span className="whitespace-nowrap text-gold">#{rank ?? "—"}</span>
-                  {tier ? (
-                    <span className="whitespace-nowrap text-info">· {leagueOf(tier)}</span>
-                  ) : (
-                    level !== null && (
-                      <span className="whitespace-nowrap">
-                        · {fr.game.merchantLevel.short(level)}
-                      </span>
-                    )
+                  {meta ?? (
+                    <>
+                      <span className="whitespace-nowrap text-gold">#{rank ?? "—"}</span>
+                      {tier ? (
+                        <span className="whitespace-nowrap text-info">· {leagueOf(tier)}</span>
+                      ) : (
+                        level !== null && (
+                          <span className="whitespace-nowrap">
+                            · {fr.game.merchantLevel.short(level)}
+                          </span>
+                        )
+                      )}
+                      <span className="whitespace-nowrap">· {title}</span>
+                    </>
                   )}
-                  <span className="whitespace-nowrap">· {title}</span>
                 </span>
               </span>
             </button>
@@ -478,7 +485,8 @@ export function MapHud({
       {bottom && actions && (
         <div
           data-hud="actions"
-          className="pointer-events-none absolute inset-x-3 bottom-[calc(var(--tabbar)+2rem)] z-10 flex justify-end lg:left-auto lg:right-[calc(var(--side,0px)+1.25rem)]"
+          // Over the strip when there is one (the Conquest's, lot 8), where a short screen hides it.
+          className={`pointer-events-none absolute inset-x-3 z-10 flex justify-end lg:left-auto lg:right-[calc(var(--side,0px)+1.25rem)] ${timeline ? "bottom-[calc(var(--tabbar)+5.5rem)] [@media(max-height:639px)]:bottom-[calc(var(--tabbar)+2rem)]" : "bottom-[calc(var(--tabbar)+2rem)]"}`}
         >
           {actions}
         </div>

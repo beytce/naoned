@@ -93,7 +93,6 @@ const WORDS = {
     truce: /trêve/i,
     notices: /^messages/i,
     store: /^magasin$/i,
-    signoria: /^contrôle$/i,
     atouts: /atout de la semaine/i,
     letter: /lettre du jour/i,
     senate: /l'élection/i,
@@ -142,7 +141,6 @@ const WORDS = {
     senate: /the election/i,
     canal: /^the 40 palaces( ›)?$/i,
     broglio: /the rumours/i,
-    signoria: /^control$/i,
     build: /^build$/i,
     ranking: /^ranking$/i,
     bale: /parcel/i,
@@ -445,7 +443,6 @@ async function session(width, height, tag) {
     await check("terraferme-treve");
     await teamWeek(page, door, check);
     await midWeek(page, door, check, pseudo);
-    await condotta(page, check);
     // Back to the trade: the map's tab.
     await page.locator("[data-coach=tab-map]").click();
     await page.waitForTimeout(1000);
@@ -470,7 +467,15 @@ async function session(width, height, tag) {
     await page.locator('[data-coach="place-open"]').click();
     await page.waitForTimeout(700);
     await check("ville");
-    const signoria = page.locator("[data-place]").getByRole("button", { name: WORDS.signoria });
+    // An order touched into the mule, the gold « Livrer » then lit (lot 8).
+    const order = page.locator('[data-coach^="city-order-"]:not([disabled])');
+    if ((await order.count()) > 0) {
+      await order.first().click();
+      await page.waitForTimeout(400);
+      await check("ville-mule");
+    }
+    // Who holds the city, its pill under the orbit, opens its Signoria.
+    const signoria = page.locator('[data-place] [data-coach="city-control"]');
     if ((await signoria.count()) > 0) {
       await signoria.first().click();
       await page.waitForTimeout(600);
@@ -960,12 +965,17 @@ async function perf(page, open, terra) {
 }
 
 /**
- * The Condotta (E2-5 of the experts): opened from the Terraferma's chip, played alone at once, its
- * match 8 minutes at most, its bar and the match's map laid out like the rest; back to the week.
+ * The Condotta (E2-5 of the experts): opened from the camp's sheet (« Lancer un front », lot 8),
+ * played alone at once, its match 8 minutes at most, its bar and the match's map laid out like
+ * the rest; back to the week.
  */
 async function condotta(page, check) {
-  const chip = page.locator("[data-hud=terra-condotta]");
-  if ((await chip.count()) === 0) throw new Error("no Condotta on the Terraferma's actions");
+  const launch = page.locator('[data-coach="terra-launch"]');
+  if ((await launch.count()) === 0) throw new Error("no « Lancer un front » on the Terraferma");
+  await launch.first().click();
+  await page.waitForTimeout(800);
+  const chip = page.locator("[data-camp=condotta]");
+  if ((await chip.count()) === 0) throw new Error("no Condotta in the camp's sheet");
   await chip.first().click();
   const bar = page.locator("[data-panel=condotta-bar]");
   await bar.waitFor();
@@ -1611,6 +1621,14 @@ async function midWeek(page, door, check, pseudo) {
   await check("terraferme-jeudi");
   await lightHud(page, "terraferme-jeudi");
   await uncluttered(page, "terraferme-jeudi", 30);
+  // The camp's sheet: its advice and the one gold that launches a front (lot 8).
+  await page.locator('[data-coach="terra-launch"]').first().click();
+  // Settled once its gold stands still (a slow machine still slides it in at 700 ms).
+  await page.locator('[data-coach="camp-launch"]').waitFor();
+  await page.waitForTimeout(1200);
+  await check("terraferme-camp");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(500);
   // The same on a PC, then back to the phone.
   const phone = page.viewportSize();
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -1632,6 +1650,8 @@ async function midWeek(page, door, check, pseudo) {
   }
   if (phone) await page.setViewportSize(phone);
   await page.waitForTimeout(800);
+  // The Condotta from the camp's sheet, while the week has the merchant's camp (lot 8).
+  await condotta(page, check);
   await page.unroute("**/api/game/terra");
   await page.unroute("**/api/game/terra/replay");
 }
@@ -1675,7 +1695,7 @@ async function lightHud(page, label) {
   if (seen.underlined > 0) throw new Error(`${label}: ${seen.underlined} link(s) underlined`);
   if (seen.cut > 0) throw new Error(`${label}: ${seen.cut} action(s) past the screen's edge`);
   if (seen.actions === null || seen.actions < 0.5)
-    throw new Error(`${label}: the skirmishes and the week not at the thumb`);
+    throw new Error(`${label}: « Lancer un front » not at the thumb`);
 }
 
 /**

@@ -82,6 +82,15 @@ export function hourOf(at: number): string {
   return m === 0 ? `${h}${NBSP}h` : `${h}${NBSP}h${NBSP}${String(m).padStart(2, "0")}`;
 }
 
+/** A day of the week and its date, in Paris: « dim. 14 », « Sun 14 ». */
+export function weekDay(at: number): string {
+  return new Date(at).toLocaleDateString(locale, {
+    weekday: "short",
+    day: "numeric",
+    timeZone: "Europe/Paris",
+  });
+}
+
 /** An hour of the day given by its numbers, as `hourOf` writes it: « 20 h », « 20 h 30 », « 20:30 ». */
 export function clockHour(h: number, m = 0): string {
   if (LANG === "en") return `${h}:${String(m).padStart(2, "0")}`;

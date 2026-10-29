@@ -33,7 +33,7 @@ export function loadSummary(props: GameProps, v: VehicleView, orders: DeliveryOr
 }
 
 /** Why an order cannot join this load (null: it can). */
-function refusal(
+export function refusal(
   props: GameProps,
   v: VehicleView,
   load: DeliveryOrderView[],

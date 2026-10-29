@@ -25,10 +25,21 @@
 | 5 | Venise, Marché, page d'une marchandise | fait (PR lot 5) | `12d584a`…(fin de branche `claude/refonte-ux-lot5`) |
 | 6 | Politique (rumeurs, élection, villes), enchères, 40 palais | fait (PR lot 6) | `cc1d56a`…(fin de branche `claude/refonte-ux-lot6`) |
 | 7 | Classement, fiche d'un joueur, profil | fait (PR lot 7) | `17e891a`…(fin de branche `claude/refonte-ux-lot7`) |
-| 8 | Ville, Conquête | à faire | |
+| 8 | Ville, Conquête | fait (PR lot 8) | `3ec7456`…(fin de branche `claude/refonte-ux-lot8`) |
 | 9 | Moments : messages, tâches du jour, calendrier, lettre, Atout, bon retour, fin du mois, entrée | à faire | |
 
-**Étape suivante :** le lot 8 (Ville et Conquête, maquettes `Ville`, `Terraferme`) : faire son plan, le faire valider, puis coder.
+**Étape suivante :** le lot 9 (Moments et entrée : messages, tâches du jour, calendrier, lettre, Atout, bon retour, fin du mois, connexion) : faire son plan, le faire valider, puis coder.
+
+**Ce que le lot 8 a fait (plan validé le 29 octobre) :**
+- [x] 1. la ville : les commandes se touchent pour charger la mule libre (règles de `refusal`, charge partagée avec la feuille des cargaisons), l'or « Livrer 2 commandes · +64 d » lance le départ, « Acheter 12 briques » en fantôme, « ‹ Carte », points de pagination et balayage, pilule « vous 22 % · maître : … » (`SignoriaPill`) à la place de `SignoriaLine` ;
+- [x] 2. le guide : « Touchez la ville », « Ouvrir », la commande en orbite, puis « Livrer » ; `tutorial.mjs` passe ;
+- [x] 3. la Conquête : en-tête (« 4ᵉ de la conquête · 120 points » sous le nom, `meta` de `MapHud` ; troupes sur deux lignes), libellés en pilules (« Gritti · 91 », « vous · 121 troupes », « attaque · 25 »), grille plus visible ;
+- [x] 4. « Lancer un front » en or au pouce (`TerraActions`), la feuille du camp (`map/Camp.tsx`, case visée par `bestAim` dans `terraAim.ts`, testée) ; Mercenaires, La semaine, Partie rapide en fantômes ; le panneau de son camp sans or ;
+- [x] 5. la frise : 13 px, et celle de la Conquête (`terraUpcoming` : front, 20 h, fin de semaine ; testée) ; la plaque ne redit plus la fin de semaine une fois le camp posé ;
+- [x] 6. textes `en`, e2e (`ville-mule` quand une commande est couverte, `terraferme-camp`, la Condotta par la feuille du camp pendant le jeudi figé) ; `layout.mjs` fr et en, `tutorial.mjs` et la CI passent.
+- Hors lot : la rumeur sur la ville (la vue ne porte pas les rumeurs par ville) ; le « +64 d » qui s'envole à la livraison (la ville paie à l'arrivée) ; « elle tombe à 20 h » dans le conseil du camp (l'heure n'est connue qu'une fois le front lancé).
+- Écarts : sous 360 px, la carte des troupes dit le nombre seul (le nom garde ses dix lettres) ; les troupes perdent leur anneau (« sur 140 » le dit) ; la plaque ne garde que ce qui presse, la frise dit la bataille et la fin de semaine.
+- Banc : un effet resté à l'écran dit maintenant son genre et l'état de son vol (`guide` dans `e2e/assert.mjs`) ; une fois sur quatre exécutions, un effet sans texte a été vu après le délai de 5 s, sans encore savoir lequel.
 
 **Ce que le lot 7 a fait (plan validé le 29 octobre) :**
 - [x] 1. « (ordinateur) » en texte après le nom (`MerchantName`, `merchantLabel`, `fr.game.npc`), plus de sceau « PNJ » ;
@@ -37,7 +48,7 @@
 - [x] 4. le profil : un contenu, puis Mes actions, Héritage, Guilde, Palmarès, Réglages ;
 - [x] 5. textes `en`, e2e (`classement`, `sfida` par l'onglet Duel, `fiche`, `profil`, `profil-reglages`, `compagnie` par la ligne Guilde) et guide ; `layout.mjs` fr et en, `tutorial.mjs` passent.
 - Hors lot : le balayage Défier / Espionner sur les lignes du classement ; « Contre vous » dans la fiche (il faut les duels entre deux joueurs côté serveur) ; l'or « Voter » depuis l'élection (les candidats n'ouvrent pas encore de fiche).
-- Banc : la vérification des effets (`guide` dans `e2e/assert.mjs`) attend jusqu'à 2,5 s qu'un effet en vol se pose ; un effet resté à l'écran échoue toujours.
+- Banc : la vérification des effets (`guide` dans `e2e/assert.mjs`) attend jusqu'à 5 s qu'un effet en vol se pose ; un effet resté à l'écran échoue toujours.
 
 **Ce que le lot 6 a fait (plan validé le 29 octobre) :**
 - [x] 1. Politique (`Politics.tsx`, clés `politics`, `broglio`, `senate`, `cities`) : Rumeurs (`RumoursBody`, « Source : …, juste 7 fois sur 8 », « Si c'est vrai : … »), Manœuvres dans leur feuille (`ManeuversSheet`, clé `maneuvers`), Élection (`SenateBody` sous le Doge du mois), Villes (jauge et part, `cityStanding`) ; l'alerte d'espion en tête des Messages (`SpyAlert`) ;

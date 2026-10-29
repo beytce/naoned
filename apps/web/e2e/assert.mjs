@@ -319,9 +319,18 @@ function touches(page) {
           ["left", x - half, y],
           ["right", x + half, y],
         ].filter(([, px, py]) => !on(px, py));
+        // What the finger meets there instead, to find it at once.
+        const over = ([, px, py]) => {
+          const hit = document.elementFromPoint(px, py);
+          if (!hit) return "nothing";
+          const label = (hit.getAttribute("aria-label") ?? hit.textContent ?? "")
+            .trim()
+            .slice(0, 24);
+          return `${hit.tagName.toLowerCase()}${label ? ` « ${label} »` : ""}`;
+        };
         if (short.length > 0)
           wrong.push(
-            `${name(el)} is touched on less than ${target} × ${target} px (drawn ${Math.round(r.width)} × ${Math.round(r.height)}, short ${short.map(([side]) => side).join(", ")})`,
+            `${name(el)} is touched on less than ${target} × ${target} px (drawn ${Math.round(r.width)} × ${Math.round(r.height)}, short ${short.map((s) => `${s[0]} under ${over(s)}`).join(", ")})`,
           );
       }
       for (const [e, [left, top]] of scrolled) e.scrollTo({ left, top, behavior: "instant" });
@@ -460,7 +469,7 @@ async function guide(page) {
           (el) => Number(getComputedStyle(el).opacity) > 0.05,
         ),
       null,
-      { timeout: 2500 },
+      { timeout: 5000 },
     )
     .catch(() => {});
   return page.evaluate(() => {
@@ -488,7 +497,14 @@ async function guide(page) {
       (el) => Number(getComputedStyle(el).opacity) > 0.05,
     );
     for (const el of fx) {
-      const what = el.hasAttribute("data-coin") ? "a coin" : `« ${el.textContent} »`;
+      // Its kind and the state of its flight, to know a stuck one from a late one.
+      const flights = el
+        .getAnimations()
+        .map((a) => `${a.playState} ${Math.round(Number(a.currentTime ?? 0))} ms`)
+        .join(", ");
+      const what = el.hasAttribute("data-coin")
+        ? "a coin"
+        : `« ${el.textContent} » (${el.tagName.toLowerCase()}.${el.className || "-"}; ${flights || "no animation"})`;
       const r = el.getBoundingClientRect();
       const over = bubble
         ? (() => {

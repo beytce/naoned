@@ -90,31 +90,42 @@ export function SignoriaRing({
   );
 }
 
-/** The Podestà's crest and the merchant's share, under the city up close. */
-export function SignoriaLine({ props, code }: { props: GameProps; code: string }) {
+/**
+ * Who holds the city, under it up close (refonte UX lot 8, maquette `Ville`): « vous 22 % ·
+ * maître : Casa Foscari › », a pill that opens the city's Signoria.
+ */
+export function SignoriaPill({ props, code }: { props: GameProps; code: string }) {
   const data = useSignoria(props.view);
   const line = signoriaOf(data, code);
   if (!props.view.signoria || !line) return null;
   const mine = pctOf(line.mine, line.total);
+  const p = line.podesta;
   return (
-    <p className="mt-2 flex items-center justify-center gap-2 text-xs text-cream-dim">
-      {line.podesta ? (
-        <>
-          <Crest crest={crestOf(line.podesta)} size={18} />
-          <span className={line.podesta.me ? "text-info" : "text-cream"}>
-            {t().podesta} ·{" "}
-            {line.podesta.me ? (
-              t().you
-            ) : (
-              <MerchantName pseudo={line.podesta.pseudo} bot={line.podesta.bot} fallback="—" />
-            )}
-          </span>
-        </>
+    <button
+      type="button"
+      data-coach="city-control"
+      onClick={() => props.setSheet(`signoria:${code}`)}
+      className="mx-auto flex min-h-11 max-w-full items-center gap-1.5 rounded-full bg-night-2 px-3.5 text-[0.8125rem] text-cream ring-1 ring-inset ring-edge transition active:scale-[0.97]"
+    >
+      <span className="shrink-0 font-bold text-gold">{t().pill.you(mine)}</span>
+      <span className="shrink-0 text-cream-dim">·</span>
+      {p ? (
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span className="shrink-0">{t().pill.master}</span>
+          {p.me ? (
+            <span className="text-info">{t().you}</span>
+          ) : (
+            <MerchantName pseudo={p.pseudo} bot={p.bot} fallback="—" />
+          )}
+          <Crest crest={crestOf(p)} size={16} />
+        </span>
       ) : (
-        <span>{t().vacant}</span>
+        <span className="truncate">{t().pill.none}</span>
       )}
-      {mine > 0 && <span className="text-info">· {t().mine(mine)}</span>}
-    </p>
+      <span aria-hidden="true" className="shrink-0 text-cream-dim">
+        ›
+      </span>
+    </button>
   );
 }
 

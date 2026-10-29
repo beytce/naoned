@@ -4,18 +4,20 @@ import { Crest, type CrestData } from "../../art/crest.js";
 import { GoodsMark, goodsColour } from "../../art/goods.js";
 import { Coin } from "../../art/icons.js";
 import { Lorenzo } from "../../art/scenes.js";
+import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
 import { Slab, clock } from "../../ui.js";
 import { nameOf as atoutName, atoutWaiting, atoutsOf } from "../Atouts.js";
+import { loadOrders, refusal } from "../Cargo.js";
 import { perHour } from "../Dashboard.js";
 import type { GameProps } from "../Game.js";
 import { letterWaiting } from "../Letter.js";
-import { SignoriaLine, SignoriaRing } from "../Signoria.js";
+import { SignoriaPill, SignoriaRing } from "../Signoria.js";
 import { amount, d, hourOf } from "../format.js";
 import { harvestAndRestart } from "../harvest.js";
 import { total } from "../roadKit.js";
 import { signoriaOf, useSignoria } from "../signoria.js";
-import type { BuildingView } from "../types.js";
+import type { BuildingView, VehicleView } from "../types.js";
 import { have, readyOf, recipeOf, workshopState } from "../workshops.js";
 import { orbStyle } from "./Markers.js";
 import { ACTION_ICONS as A } from "./actions.js";
@@ -546,32 +548,48 @@ function WorkshopStar({
 const CITY_ORDERS = 8;
 
 /**
- * A city seen up close, once touched on the map: its monument in the middle, its open orders in
- * orbit around it (the mark of the good, full when the stock covers it, its quantity and what it
- * pays, a red clock on an urgent one), then at the foot its state and the one gold action, loading
- * a free mule for it; its other doors (criée, warehouse, fondaco, suppliers, Rialto) in ghost pills.
+ * A city seen up close, once touched on the map (refonte UX lot 8, maquette `Ville`): its monument
+ * in the middle, its open orders in orbit around it (the mark of the good, full when the stock
+ * covers it, its quantity and its state). An order is touched to put it in the free mule, or to
+ * take it out, by the cargo sheet's rules; at the foot, the mule's state and the one gold action,
+ * « Livrer 2 commandes · +64 d », which starts the departure. Who holds the city in a pill under
+ * the orbit; its other doors in ghost pills. ‹ › and a swipe go to the next city.
  */
 export function CityOrbit({
   props,
   code,
-  freeCart,
+  index,
+  count,
+  vehicle,
+  freeCarts,
+  load,
+  setLoad,
+  onDeliver,
   onClose,
   onPrev,
   onNext,
-  onCargo,
   onSheet,
   leaving,
   from,
 }: {
   props: GameProps;
   code: string;
+  /** Its place among the cities, for the pagination's dots. */
+  index: number;
+  count: number;
+  /** The free mule the orders go into, if any. */
+  vehicle: VehicleView | null;
+  freeCarts: number;
+  /** The mule's load (order ids), shared with the cargo sheet. */
+  load: string[];
+  setLoad: (ids: string[]) => void;
+  /** Sends the mule with its load. */
+  onDeliver: () => void;
   /** Closed: it shrinks back into the map for a moment, untouchable (MapScreen). */
   leaving?: boolean;
-  freeCart: boolean;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
-  onCargo: () => void;
   onSheet: (s: string) => void;
   /** Its mark on the map, where it opens from and folds back into. */
   from?: string;
@@ -583,9 +601,14 @@ export function CityOrbit({
   const road = view.road;
   // The city's gauge, fresh each time the city is opened.
   const signoria = useSignoria(view, true);
+  const [why, setWhy] = useState<string | null>(null);
+  const swipe = useRef<{ x: number; y: number } | null>(null);
   const orders = (road?.orders ?? []).filter((o) => o.city === code && o.status === "open");
   const shown = orders.slice(0, CITY_ORDERS);
-  const covered = orders.filter((o) => have(view, o.resource) >= o.quantity).length;
+  // The load as this city sees it: another city's orders do not count here.
+  const loaded = road ? loadOrders(road, load) : [];
+  const chosen = loaded.every((o) => o.city === code) ? loaded : [];
+  const pay = chosen.reduce((a, o) => a + total(o), 0n);
   const criee =
     view.criee && view.criee.city === code && view.criee.endsAt > now ? view.criee : null;
   const nextDay = props.catalog.world.startsAt + view.day * 86_400_000;
@@ -598,7 +621,7 @@ export function CityOrbit({
       )
     : road
       ? orders.length > 0
-        ? m.city.deliverable(covered)
+        ? null
         : m.city.none(clock(nextDay - now))
       : venice
         ? m.city.venice
@@ -617,10 +640,9 @@ export function CityOrbit({
       label: fondaco.level > 0 ? `${A.fondaco.label} · ${fondaco.level}` : A.fondaco.label,
       on: () => onSheet(`fondaco:${code}`),
     });
-  // The Signoria of the city (R2) in place of the official suppliers, once it is on.
-  if (view.signoria)
-    doors.push({ label: m.buttons.signoria, on: () => onSheet(`signoria:${code}`) });
-  else if (road) doors.push({ label: A.suppliers.label, on: () => onSheet(`suppliers:${code}`) });
+  // The official suppliers, until the Signoria (R2) takes their place in the pill.
+  if (!view.signoria && road)
+    doors.push({ label: A.suppliers.label, on: () => onSheet(`suppliers:${code}`) });
   if (venice)
     doors.push({ label: m.buttons.rialto, on: () => props.goTo("marche"), coach: "panel-rialto" });
   const at = (i: number) => {
@@ -628,6 +650,29 @@ export function CityOrbit({
     return { x: 50 + ORBIT * Math.cos(a), y: 50 + ORBIT * Math.sin(a) };
   };
   const cargo = road && orders.length > 0;
+  // The first order the stock does not cover: what to buy for it.
+  const short = shown.find((o) => have(view, o.resource) < o.quantity);
+  // What to buy for it opens the good with the quantity, first among the ghosts.
+  if (short) {
+    const n = short.quantity - have(view, short.resource);
+    doors.unshift({
+      label: t.buy(n, props.names.resource(short.resource)),
+      on: () => onSheet(`trade:${short.resource}:${n}`),
+    });
+  }
+  const pick = (o: (typeof orders)[number]) => {
+    if (!vehicle) return;
+    haptic("tap");
+    const ids = chosen.map((x) => x.id);
+    if (ids.includes(o.id)) {
+      setWhy(null);
+      setLoad(ids.filter((id) => id !== o.id));
+      return;
+    }
+    const no = refusal(props, vehicle, chosen, o);
+    setWhy(no);
+    if (!no) setLoad([...ids, o.id]);
+  };
   return (
     <section
       ref={section}
@@ -640,38 +685,69 @@ export function CityOrbit({
       aria-label={props.names.city(code)}
       className={`${leaving ? "orbit-out pointer-events-none" : "orbit-in"} absolute inset-x-0 top-0 bottom-[var(--tabbar)] z-[25] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_34%,rgb(var(--night-3))_0%,rgb(var(--night))_62%)] lg:right-[var(--side,0px)]`}
     >
-      <header className="relative z-10 flex items-center gap-1 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <header className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center px-3 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <button
           type="button"
           aria-label={t.back}
           onClick={onClose}
-          className="hud-orb flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-cream transition active:scale-90"
+          className="flex min-h-11 items-center gap-1 justify-self-start pr-2 text-sm font-semibold text-cream transition active:scale-95"
         >
           {Icon.chevronLeft()}
+          {t.toMap}
         </button>
-        <button
-          type="button"
-          aria-label={m.prev}
-          onClick={onPrev}
-          className="ml-auto flex h-11 w-11 shrink-0 items-center justify-center text-cream-dim"
-        >
-          {Icon.chevronLeft()}
-        </button>
-        <h2 className="min-w-0 truncate text-center font-place text-base font-bold uppercase tracking-[0.25em]">
-          {props.names.city(code)}
-        </h2>
-        <button
-          type="button"
-          aria-label={m.next}
-          onClick={onNext}
-          className="mr-auto flex h-11 w-11 shrink-0 items-center justify-center text-cream-dim"
-        >
-          {Icon.chevronRight()}
-        </button>
-        <span className="w-11 shrink-0" />
+        <div className="flex min-w-0 flex-col items-center">
+          <div className="flex min-w-0 items-center gap-1">
+            <button
+              type="button"
+              aria-label={m.prev}
+              onClick={onPrev}
+              className="flex h-11 w-11 shrink-0 items-center justify-center text-cream-dim"
+            >
+              {Icon.chevronLeft()}
+            </button>
+            <h2 className="min-w-0 truncate text-center font-place text-base font-bold uppercase tracking-[0.2em]">
+              {props.names.city(code)}
+            </h2>
+            <button
+              type="button"
+              aria-label={m.next}
+              onClick={onNext}
+              className="flex h-11 w-11 shrink-0 items-center justify-center text-cream-dim"
+            >
+              {Icon.chevronRight()}
+            </button>
+          </div>
+          {count > 1 && (
+            <span aria-hidden="true" className="pointer-events-none -mt-1.5 flex gap-1.5">
+              {Array.from({ length: count }, (_, i) => (
+                <span
+                  // biome-ignore lint/suspicious/noArrayIndexKey: one dot per city, in order
+                  key={i}
+                  className={`h-1.5 w-1.5 rounded-full ${i === index ? "bg-cream" : "bg-line"}`}
+                />
+              ))}
+            </span>
+          )}
+        </div>
+        <span />
       </header>
 
-      <div className="flex min-h-0 flex-1 items-center justify-center px-2">
+      <div
+        className="flex min-h-0 flex-1 touch-pan-y items-center justify-center px-2"
+        onPointerDown={(e) => {
+          swipe.current = { x: e.clientX, y: e.clientY };
+        }}
+        onPointerUp={(e) => {
+          const s = swipe.current;
+          swipe.current = null;
+          if (!s) return;
+          const dx = e.clientX - s.x;
+          if (Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(e.clientY - s.y)) {
+            if (dx < 0) onNext();
+            else onPrev();
+          }
+        }}
+      >
         <div className="relative aspect-square h-full max-h-[26rem] max-w-full [container-type:inline-size]">
           <svg
             viewBox="0 0 100 100"
@@ -698,36 +774,43 @@ export function CityOrbit({
           {shown.map((o, i) => {
             const p = at(i);
             const ok = have(view, o.resource) >= o.quantity;
+            const on = chosen.some((x) => x.id === o.id);
             const name = props.names.resource(o.resource);
+            const state = ok
+              ? o.kind === "urgent"
+                ? t.urgent(d(total(o)), clock(o.expiresAt - now))
+                : t.covered(d(total(o)))
+              : t.missing(o.quantity - have(view, o.resource));
             return (
               <Place key={o.id} x={p.x} y={p.y} rank={i}>
                 <button
                   type="button"
-                  aria-label={`${o.quantity} ${name} · ${d(total(o))}`}
-                  disabled={!freeCart}
-                  onClick={onCargo}
-                  className={`flex w-24 flex-col items-center gap-0.5 transition active:scale-95 ${ok ? "" : "opacity-80"}`}
+                  data-coach={`city-order-${o.id}`}
+                  aria-pressed={ok ? on : undefined}
+                  aria-label={`${o.quantity} ${name} · ${state}`}
+                  disabled={!ok || !vehicle}
+                  onClick={() => pick(o)}
+                  className={`relative flex min-h-24 w-24 flex-col items-center justify-center gap-0.5 rounded-[1.25rem] px-0.5 py-1.5 ring-inset transition active:scale-95 ${on ? "bg-lagoon/10 ring-[1.5px] ring-lagoon" : ""}`}
                 >
-                  <span className="relative flex h-16 w-16 items-center justify-center">
-                    <GoodsMark code={o.resource} size={44} covered={ok} />
-                    {o.kind === "urgent" && (
-                      <span className="absolute -right-3 -top-1 rounded-full bg-vermilion px-1.5 font-display text-xs font-bold text-ink">
-                        {clock(o.expiresAt - now)}
-                      </span>
-                    )}
+                  {on && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute right-1.5 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-lagoon text-xs font-extrabold text-ink"
+                    >
+                      ✓
+                    </span>
+                  )}
+                  <span className="flex h-10 w-10 items-center justify-center">
+                    <GoodsMark code={o.resource} size={34} covered={ok} />
                   </span>
                   <span className="max-w-full truncate text-[0.8125rem] font-bold text-cream [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
                     {o.quantity} {name.toLowerCase()}
                   </span>
-                  {ok ? (
-                    <span className="font-display text-xs font-extrabold text-gold">
-                      {d(total(o))}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-vermilion">
-                      {t.missing(o.quantity - have(view, o.resource))}
-                    </span>
-                  )}
+                  <span
+                    className={`max-w-full text-center text-xs leading-tight ${!ok || o.kind === "urgent" ? "text-vermilion" : "text-lagoon"}`}
+                  >
+                    {state}
+                  </span>
                 </button>
               </Place>
             );
@@ -735,24 +818,39 @@ export function CityOrbit({
         </div>
       </div>
 
+      <div className="relative z-10 mb-2 flex justify-center px-4">
+        <SignoriaPill props={props} code={code} />
+      </div>
+
       <section className="rounded-t-3xl border-t border-line bg-night-2 px-4 pb-4 pt-3">
-        <p
-          className={`mb-3 text-sm ${criee ? "text-vermilion" : covered > 0 ? "text-lagoon" : "text-cream-dim"}`}
-        >
-          {status}
-        </p>
+        {status && (
+          <p className={`mb-3 text-sm ${criee ? "text-vermilion" : "text-cream-dim"}`}>{status}</p>
+        )}
         {cargo && (
-          <Slab
-            size="lg"
-            tone={covered > 0 && freeCart ? "gold" : "ghost"}
-            coach="panel-cargo"
-            disabled={!freeCart}
-            onClick={onCargo}
-            className="mb-2 w-full"
-          >
-            {Icon.cargo()}
-            {freeCart ? t.load : m.city.noCart}
-          </Slab>
+          <>
+            <div className="mb-2 flex items-baseline justify-between gap-3">
+              <output className="min-w-0 font-semibold text-cream">
+                {why ?? (chosen.length > 0 ? t.inMule(chosen.length) : t.pick)}
+              </output>
+              <span className="shrink-0 text-xs text-cream-dim">{t.freeMules(freeCarts)}</span>
+            </div>
+            <Slab
+              size="lg"
+              tone={chosen.length > 0 && vehicle ? "gold" : "ghost"}
+              // The guide's next ring, once an order is in the mule.
+              coach={chosen.length > 0 ? "city-deliver" : undefined}
+              disabled={chosen.length === 0 || !vehicle}
+              onClick={onDeliver}
+              className="mb-2 w-full"
+            >
+              {Icon.cargo()}
+              {!vehicle
+                ? m.city.noCart
+                : chosen.length > 0
+                  ? t.deliver(chosen.length, d(pay))
+                  : t.choose}
+            </Slab>
+          </>
         )}
         {doors.length > 0 && (
           <div className={`grid gap-2 ${doors.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
@@ -763,7 +861,6 @@ export function CityOrbit({
             ))}
           </div>
         )}
-        <SignoriaLine props={props} code={code} />
         {held.length > 0 && (
           <p className="mt-2 text-center text-xs text-gold">
             {fr.game.suppliers.held(held.map((s) => props.names.resource(s.resource)).join(", "))}
