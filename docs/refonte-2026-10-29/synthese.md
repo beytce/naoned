@@ -4,7 +4,7 @@
 - *`expert-progression.md`, sur la progression persistante et l'économie ;*
 - *`expert-meta.md`, sur le méta-jeu, le social et la rétention.*
 
-*Rien n'est codé. Ce document attend les arbitrages du porteur (§ 4) avant tout plan de mise en œuvre.*
+*Rien n'est codé. Les arbitrages du porteur sont faits (§ 4) ; la suite commence par le nouveau cadrage (§ 5).*
 
 ## 0. La demande du porteur
 
@@ -150,12 +150,14 @@ Les experts divergent sur six points. Pour chacun, voici ma recommandation, à a
 
 ## 4. Les arbitrages demandés au porteur
 
-| # | Question | Recommandation |
-| --- | --- | --- |
-| A | Frein des gros : salaires sur les recettes, entretien sur la caisse, ou rien | Salaires sur les recettes, jamais pendant l'absence |
-| B | Guilde : pilier obligatoire ou amplificateur | Amplificateur fort, empire jouable seul |
-| C | Guerre de compagnies : Contesa une semaine sur deux, chaque semaine, ou pas | Une semaine sur deux |
-| D | Univers : de la Vénétie à la Flandre (dix régions), ou rester dans la Vénétie et l'Adriatique | Dix régions, ouvertes par ère, quatre au lancement |
+*Arbitrés le 29 octobre 2026 : le porteur a retenu les quatre recommandations.*
+
+| # | Question | Recommandation | Décision |
+| --- | --- | --- | --- |
+| A | Frein des gros : salaires sur les recettes, entretien sur la caisse, ou rien | Salaires sur les recettes, jamais pendant l'absence | Retenue |
+| B | Guilde : pilier obligatoire ou amplificateur | Amplificateur fort, empire jouable seul | Retenue |
+| C | Guerre de compagnies : Contesa une semaine sur deux, chaque semaine, ou pas | Une semaine sur deux | Retenue |
+| D | Univers : de la Vénétie à la Flandre (dix régions), ou rester dans la Vénétie et l'Adriatique | Dix régions, ouvertes par ère, quatre au lancement | Retenue |
 
 Points qui ne demandent pas d'arbitrage, puisque le porteur lève les règles :
 - **la bascule** se fait par un dernier reset, avec la Casa 1 pour tous (il n'y a pas encore de joueurs) ;
