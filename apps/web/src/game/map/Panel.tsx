@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { haptic } from "../../haptics.js";
 import { fr } from "../../i18n.js";
+import { Slab } from "../../ui.js";
 import { Icon } from "./icons.js";
 
 /**
@@ -99,6 +100,81 @@ export function ContextPanel({
         </div>
         {extra && <div className="mt-2">{extra}</div>}
       </div>
+    </div>
+  );
+}
+
+/**
+ * A place touched on the map (refonte UX, maquette `Main`): its name, one sentence, the gold
+ * action that acts in place when there is one, and the ghost that leads inside. A calm place has
+ * no gold: its ghost takes the whole width. It floats above the tabs, the map zoomed behind it.
+ */
+export function PlaceCard({
+  name,
+  line,
+  gold,
+  ghost,
+  busy,
+  onGold,
+  onGhost,
+  onClose,
+}: {
+  name: string;
+  line: string;
+  /** The action in place (null: nothing to do here, or nothing that can be done). */
+  gold: string | null;
+  ghost: string;
+  /** The gold action waits for the server. */
+  busy?: boolean;
+  onGold: () => void;
+  onGhost: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      data-panel
+      className="pointer-events-none absolute inset-x-3 bottom-[calc(var(--tabbar)+0.75rem)] z-20 lg:inset-x-auto lg:bottom-[calc(var(--tabbar)+1rem)] lg:right-[calc(var(--side,0px)+1.25rem)] lg:w-[420px]"
+    >
+      <section
+        aria-label={name}
+        className="place-peek pointer-events-auto rounded-3xl bg-night-2 p-4 shadow-[0_18px_40px_rgb(0_0_0/0.45)] ring-1 ring-edge"
+      >
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1 space-y-1">
+            <h2 className="font-place text-[1.0625rem] font-bold uppercase tracking-[0.14em]">
+              {name}
+            </h2>
+            <p className="text-[0.9375rem] leading-snug" aria-live="polite">
+              {line}
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label={fr.game.map.close}
+            onClick={onClose}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-cream ring-1 ring-inset ring-edge transition active:scale-90"
+          >
+            <span className="scale-90">{Icon.cross()}</span>
+          </button>
+        </div>
+        {/* The gold on one line; a long one sends the ghost under it, never cut. */}
+        <div className="mt-3.5 flex flex-wrap gap-2.5">
+          {gold && (
+            <Slab
+              size="lg"
+              className="grow whitespace-nowrap"
+              coach="place-gold"
+              busy={busy}
+              onClick={onGold}
+            >
+              {gold}
+            </Slab>
+          )}
+          <Slab size="lg" tone="ghost" className="grow" coach="place-open" onClick={onGhost}>
+            {ghost}
+          </Slab>
+        </div>
+      </section>
     </div>
   );
 }

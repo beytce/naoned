@@ -457,7 +457,11 @@ async function session(width, height, tag) {
     await check("carte");
     // A city up close, its gauge of the Signoria around its monument (R2), then its sheet.
     // A cart back on its road may lie over the city on a small screen: the tap goes to the city.
+    // First its card (refonte UX): one sentence, then the ghost that leads inside.
     await page.locator('[data-coach="city-vicenza"]').first().dispatchEvent("click");
+    await page.waitForTimeout(700);
+    await check("fiche-ville");
+    await page.locator('[data-coach="place-open"]').click();
     await page.waitForTimeout(700);
     await check("ville");
     const signoria = page.locator("[data-place]").getByRole("button", { name: WORDS.signoria });
@@ -491,6 +495,9 @@ async function session(width, height, tag) {
     }
     // The counter up close (Lagune), its store by chain, then the catalogue of its free plot.
     await page.locator('[data-coach="home"]').first().click();
+    await page.waitForTimeout(600);
+    await check("fiche-ateliers");
+    await page.locator('[data-coach="place-open"]').click();
     await page.waitForTimeout(600);
     await check("comptoir");
     await page.locator("[data-place]").getByRole("button", { name: WORDS.store }).click();

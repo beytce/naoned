@@ -41,7 +41,7 @@ import { RankingSheet } from "../Top.js";
 import { WarehouseSheet } from "../Warehouse.js";
 import { gameApi } from "../api.js";
 import { onBack } from "../back.js";
-import { d, loafShare, minutesLabel } from "../format.js";
+import { clockHour, d, loafShare, minutesLabel } from "../format.js";
 import { harvestAndRestart } from "../harvest.js";
 import { rivalLine } from "../rival.js";
 import {
@@ -85,7 +85,7 @@ import {
 import { CartMarker, CityMarker, CityName, HomeMarker } from "./Markers.js";
 import { NoticesSheet } from "./Notices.js";
 import { CityOrbit, ComptoirOrbit } from "./Orbit.js";
-import { ActionButton, ContextPanel } from "./Panel.js";
+import { ActionButton, ContextPanel, PlaceCard } from "./Panel.js";
 import { SIDE_W, SideColumn } from "./SideColumn.js";
 import { TabBar, activeTab } from "./TabBar.js";
 import {
@@ -114,6 +114,7 @@ import { TimeStrip } from "./TimeStrip.js";
 import { type MapMarker, type Selection, WorldMap, type WorldMapHandle } from "./WorldMap.js";
 import { ACTION_ICONS as A } from "./actions.js";
 import { Icon } from "./icons.js";
+import { type CityOrder, type Place, cityPlace, homePlace } from "./places.js";
 
 /** Seconds to change one's mind once a cart is sent, as at a space dock. */
 const DEPART_SECONDS = 10;
@@ -263,6 +264,9 @@ export function MapScreen(
   const [buying, setBuying] = useState(false);
   const [upgrading, setUpgrading] = useState<string | null>(null);
   const [fleetOpen, setFleetOpen] = useState(false);
+  // A place's gold action done in place: its sentence then says so (refonte UX).
+  const [placeDone, setPlaceDone] = useState<{ key: string; sent: string | null } | null>(null);
+  const [placeBusy, setPlaceBusy] = useState(false);
   const { shown: fleetShown, leaving: fleetLeaving } = usePresence(fleetOpen || null, 160);
   const closeFleet = useCallback(() => setFleetOpen(false), []);
 
@@ -439,7 +443,7 @@ export function MapScreen(
     return () => window.removeEventListener("keydown", keys);
   }, [props, freeVehicles, view.buildings]);
 
-  const goCity = (code: string) => {
+  const goCity = (code: string, peek = true) => {
     if (cartFree && selectedCart) {
       if (cartHold?.city === code && cartLoad.length > 0) {
         startDeparture(selectedCart.id, code);
@@ -453,7 +457,7 @@ export function MapScreen(
     }
     setDeparture(null);
     haptic("tap");
-    select({ kind: "city", code });
+    select({ kind: "city", code, peek });
   };
   const startDeparture = (vehicleId: string, city: string) => {
     haptic("tap");
@@ -491,6 +495,78 @@ export function MapScreen(
     .sort((x, y) => x.at - y.at)[0];
   const criee = view.criee && view.criee.endsAt > now ? view.criee : null;
 
+  // Each place's sentence, gold and ghost (places.ts).
+  const homePlaceOf = () =>
+    homePlace({
+      name: m.homeLabel,
+      ready: view.buildings
+        .map((b) => ({ name: names.building(b.type).toLowerCase(), batches: readyOf(b, now) }))
+        .filter((r) => r.batches > 0),
+      nextAt: running?.at ?? null,
+    });
+  const cityOrdersOf = (code: string): (CityOrder & { order: DeliveryOrderView })[] => {
+    // Which vehicles could carry it: the free ones while there are, else any.
+    const fleet = freeVehicles.length > 0 ? freeVehicles : vehicles;
+    return openOrders
+      .filter((o) => o.city === code)
+      .map((o) => ({
+        id: o.id,
+        good: names.resource(o.resource).toLowerCase(),
+        quantity: o.quantity,
+        pay: total(o),
+        payLabel: d(total(o)),
+        have: have(view, o.resource),
+        fits: fleet.some((v) => o.quantity <= capacityOf(props, v)),
+        order: o,
+      }));
+  };
+  const cityPlaceOf = (code: string) => {
+    const back = deliveries
+      .filter((dv) => dv.backAt > now)
+      .reduce<number | null>((at, dv) => (at === null || dv.backAt < at ? dv.backAt : at), null);
+    return cityPlace({
+      code,
+      name: names.city(code),
+      orders: cityOrdersOf(code),
+      freeCart: freeVehicles.length > 0,
+      cartBackAt: back,
+      master: !!signoriaOf(signoria, code)?.podesta?.me,
+      venice:
+        code === "venezia"
+          ? {
+              lots: openSeraLots(view),
+              hour: clockHour(view.sera?.hour ?? 20, view.sera?.minutes ?? 0),
+              rumours: view.broglio?.today ?? 0,
+            }
+          : null,
+      now,
+    });
+  };
+  // The gold action of a place, done in place: harvest and restart, or a delivery.
+  const placeAct = async (gold: NonNullable<Place["gold"]>) => {
+    const at = selectionKey(sel);
+    if (!at || placeBusy) return;
+    setPlaceBusy(true);
+    try {
+      if (gold.kind === "harvest") {
+        if (await harvestAndRestart(props)) setPlaceDone({ key: at, sent: null });
+        return;
+      }
+      const o = openOrders.find((x) => x.id === gold.order);
+      // The smallest free vehicle that carries it.
+      const v = o
+        ? freeVehicles
+            .filter((x) => o.quantity <= capacityOf(props, x))
+            .sort((a, b) => capacityOf(props, a) - capacityOf(props, b))[0]
+        : undefined;
+      if (!o || !v) return;
+      const ok = await props.act({ type: "dispatchDelivery", orderId: o.id, vehicleId: v.id });
+      if (ok) setPlaceDone({ key: at, sent: m.place.sent(d(total(o))) });
+    } finally {
+      setPlaceBusy(false);
+    }
+  };
+
   const markers: MapMarker[] = [
     {
       key: "home",
@@ -509,7 +585,7 @@ export function MapScreen(
           onTap={() => {
             setDeparture(null);
             haptic("tap");
-            select({ kind: "home" });
+            select({ kind: "home", peek: true });
           }}
         />
       ),
@@ -676,8 +752,40 @@ export function MapScreen(
   const trade = !campaign && !terra;
   // The layer shown, for the HUD and the tabs.
   const layer = campaign ? "campaign" : terra ? "terra" : "trade";
+  // A place touched on the map: its card, one sentence and one action (refonte UX).
+  const peek = trade && (sel?.kind === "home" || sel?.kind === "city") && !!sel.peek;
+  const placeKey = peek && sel ? selectionKey(sel) : null;
+  const place: (Place & { name: string }) | null =
+    peek && sel?.kind === "home"
+      ? { name: m.homeLabel, ...homePlaceOf() }
+      : peek && sel?.kind === "city"
+        ? { name: names.city(sel.code), ...cityPlaceOf(sel.code) }
+        : null;
+  if (place && sel && (sel.kind === "home" || sel.kind === "city")) {
+    const done = placeDone?.key === placeKey ? placeDone : null;
+    const line = done
+      ? done.sent
+        ? done.sent
+        : `${m.place.restarted} · ${place.line.charAt(0).toLowerCase()}${place.line.slice(1)}`
+      : place.line;
+    panel = (
+      <PlaceCard
+        key={placeKey ?? ""}
+        name={place.name}
+        line={line}
+        gold={done ? null : (place.gold?.label ?? null)}
+        ghost={place.ghost}
+        busy={placeBusy}
+        onGold={() => {
+          if (place.gold) void placeAct(place.gold);
+        }}
+        onGhost={() => select({ ...sel, peek: false })}
+        onClose={() => select(null)}
+      />
+    );
+  }
   // The counter opens up close, its workshops in orbit around its sun.
-  if (trade && sel?.kind === "home")
+  if (trade && sel?.kind === "home" && !peek)
     panel = (
       <ComptoirOrbit
         props={props}
@@ -686,7 +794,7 @@ export function MapScreen(
         onClose={() => select(null)}
       />
     );
-  if (trade && sel?.kind === "city") {
+  if (trade && sel?.kind === "city" && !peek) {
     const i = cities.indexOf(sel.code);
     const step = (k: number) =>
       select({ kind: "city", code: cities[(i + k + cities.length) % cities.length] ?? sel.code });
@@ -710,7 +818,7 @@ export function MapScreen(
   }
   // A place closed shrinks back into the map (its exit), whichever way it was closed (its chevron,
   // Escape, the phone's back, the map touched); not when another selection takes its room.
-  const orbitOpen = trade && (sel?.kind === "home" || sel?.kind === "city");
+  const orbitOpen = trade && (sel?.kind === "home" || sel?.kind === "city") && !peek;
   const lastOrbit = useRef<ReactNode>(null);
   if (orbitOpen) lastOrbit.current = panel;
   const orbitLeaving = useLeaving(orbitOpen, 160);
@@ -786,6 +894,8 @@ export function MapScreen(
   return (
     <div
       className="fixed inset-0 overflow-hidden bg-night"
+      // A place's card up: the other places step back (refonte UX).
+      data-peek={peek ? "1" : undefined}
       style={{ overflow: "clip", ["--side" as string]: side ? `${SIDE_W}px` : "0px" }}
     >
       <WorldMap
@@ -968,7 +1078,7 @@ export function MapScreen(
             onClick: () => {
               if (layer !== "trade") props.setLayer("trade");
               props.setSheet(null);
-              goCity("venezia");
+              goCity("venezia", false);
             },
           },
           {

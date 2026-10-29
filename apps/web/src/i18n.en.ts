@@ -2182,6 +2182,7 @@ export const en: Dictionary = {
       produceTap: (building: string) =>
         `Let's start your ${building.toLowerCase()}! Tap « Produce »: it is waiting for work.`,
       tapHome: "Tap « My workshops », in the middle of the map.",
+      openPlace: "Tap « Open » to step into your workshops.",
       openWorkshops: (building: string) =>
         `Let's start your ${building.toLowerCase()}! Open your workshops.`,
       produce: (building: string, time: string) =>

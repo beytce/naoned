@@ -51,8 +51,9 @@ import {
  */
 
 export type Selection =
-  | { kind: "home" }
-  | { kind: "city"; code: string }
+  // `peek`: touched on the map, the place's card (refonte UX); without it, the place up close.
+  | { kind: "home"; peek?: boolean }
+  | { kind: "city"; code: string; peek?: boolean }
   | { kind: "cart"; id: string }
   | { kind: "land"; code: string }
   | { kind: "terra"; cell: number };
@@ -856,7 +857,13 @@ export const WorldMap = forwardRef<
             key={m.key}
             ref={register(m.key)}
             data-marker={m.key}
-            data-selected={props.selectedKey === m.key ? "1" : undefined}
+            data-selected={
+              // A city's name goes with its city.
+              props.selectedKey === m.key ||
+              (!!props.selectedKey && m.key === props.selectedKey.replace(/^city:/, "cityname:"))
+                ? "1"
+                : undefined
+            }
             data-tier={m.tier}
             className={`map-marker animate-fade absolute left-0 top-0 ${
               // A city and its name over the carts on their road: a cart never hides a name.

@@ -457,6 +457,9 @@
 .map-marker {
   will-change: transform;
 }
+.map-marker > * {
+  transition: opacity 0.5s;
+}
 .map-marker .marker-hit {
   transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -814,6 +817,15 @@
 /* The selection's panel at the foot of the map, and the HUD's round buttons. */
 .panel-rise {
   animation: panel-rise 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+/* While a place's card is up, the other places step back to 35 %. */
+/* On the marker's content: the marker's own fade-in holds its opacity. */
+[data-peek] .map-marker:not([data-selected]) > * {
+  opacity: 0.35;
+}
+/* A place's card (maquette `Main`): it rises 24 px into place, in 320 ms. */
+.place-peek {
+  animation: panel-rise 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 @keyframes panel-rise {
   0% {

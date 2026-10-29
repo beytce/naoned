@@ -67,6 +67,11 @@ function toBuy(props: GameProps): string | null {
 function atHome(props: GameProps, step: CoachStep): CoachStep {
   if (props.tab !== "comptoir" || props.selection?.kind !== "home")
     return { text: fr.game.coach.tapHome, target: "home" };
+  // The counter's card (refonte UX): its gold harvests in place, its ghost opens the workshops.
+  if (props.selection.peek)
+    return step.target === "panel-harvest"
+      ? { ...step, target: "place-gold" }
+      : { text: fr.game.coach.openPlace, target: "place-open" };
   return step;
 }
 
@@ -264,7 +269,10 @@ function nextStep(props: CoachProps): CoachStep {
         target: `row-${material}`,
       };
     if (props.selection?.kind === "city" && props.selection.code === "venezia")
-      return { text: fr.game.coach.goRialto, target: "panel-rialto" };
+      return {
+        text: fr.game.coach.goRialto,
+        target: props.selection.peek ? "place-open" : "panel-rialto",
+      };
     return { text: fr.game.coach.goRialto, target: "city-venezia" };
   }
 

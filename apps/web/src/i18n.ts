@@ -2209,6 +2209,7 @@ const frDict = {
       produceTap: (building: string) =>
         `Lançons votre ${building.toLowerCase()} ! Touchez « Produire » : il attend du travail.`,
       tapHome: "Touchez « Mes ateliers », au centre de la carte.",
+      openPlace: "Touchez « Ouvrir » pour entrer dans vos ateliers.",
       openWorkshops: (building: string) =>
         `Lançons votre ${building.toLowerCase()} ! Ouvrez vos ateliers.`,
       /** The batch's own time: 30 seconds in the guide's first ones, 30 minutes after. */

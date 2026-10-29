@@ -82,6 +82,12 @@ export function hourOf(at: number): string {
   return m === 0 ? `${h}${NBSP}h` : `${h}${NBSP}h${NBSP}${String(m).padStart(2, "0")}`;
 }
 
+/** An hour of the day given by its numbers, as `hourOf` writes it: « 20 h », « 20 h 30 », « 20:30 ». */
+export function clockHour(h: number, m = 0): string {
+  if (LANG === "en") return `${h}:${String(m).padStart(2, "0")}`;
+  return m === 0 ? `${h}${NBSP}h` : `${h}${NBSP}h${NBSP}${String(m).padStart(2, "0")}`;
+}
+
 /** A share of a loaf, from quarters: « ¼ », « ½ », « ¾ », « 1 », « 1 ½ »… */
 export function loafShare(quarters: number): string {
   const whole = Math.floor(quarters / 4);
