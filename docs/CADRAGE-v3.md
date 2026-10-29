@@ -357,6 +357,11 @@ Le point où un jeu persistant se gagne ou se perd. Les parades se cumulent :
   - Chaque compagnie inscrit un roster de 5, 10 ou 15 associés, apparié par la somme de leurs Puissances, à la White Star.
   - La guerre mange les marchandises des associés ; les non-inscrits ravitaillent par l'entraide.
   - Elle rapporte des Sceaux, une pièce du fondaco, le Lustre de compagnie et le blason sur les villes tenues.
+- **Ce que la profondeur lui ajoute** (`profondeur.md`, § I) :
+  - le **Courrier de compagnie**, qui partage les prix de tous les comptoirs des associés ;
+  - un **comptoir de compagnie** dans un port franc lointain ;
+  - les **expéditions de compagnie**, aux paliers 7 à 12 ;
+  - une **colleganza de compagnie**, un fonds commun qui finance les voyages des associés.
 - **La réputation** : des contrats de fourniture de longue durée et une réputation publique de marchand (les contrats honorés). Le roulage, c'est-à-dire confier une cargaison à la mule d'un autre.
 
 ## 8. La Terraferme, seule en saisons courtes
