@@ -305,7 +305,10 @@ function touches(page) {
           // Another layer laid over it for a while (Lorenzo's bubble over a panel): not this
           // control's own size, the guide's check looks at what it covers.
           // A toast is such a layer too: it says what was done, then goes.
-          const layer = hit.closest(`${scope}, [data-hud], [data-hud-overlay], [data-toast]`);
+          // A sheet's veil, over a place under it (an orbit), is such a layer too.
+          const layer = hit.closest(
+            `${scope}, [data-hud], [data-hud-overlay], [data-toast], [data-sheet-veil]`,
+          );
           return !!layer && layer !== root && !layer.contains(root) && !root.contains(layer);
         };
         // Under something else at its very centre (a bubble, a sticky foot): not this check's.

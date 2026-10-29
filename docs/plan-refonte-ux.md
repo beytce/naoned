@@ -31,7 +31,7 @@
 **Étape suivante :** le lot 4, plan validé le 29 octobre. Décision du porteur : quand il manque des matériaux, l'or achète sur place (`BuyMissing`, « Acheter 15 briques · 24 d »), sans passer par la page de la marchandise. Ordre des commits :
 - [x] 1. l'onglet Ateliers ouvre « Mes ateliers » (`ComptoirOrbit`), allumé en or avec ses feuilles (`activeTab`, `home`) ; plus de chevron « ‹ » dans l'orbite ;
 - [x] 2. « Mes ateliers » : Atouts en haut à gauche, Lettre du jour, puces du magasin en boutons (`trade:<res>`), « Ouvriers nourris 2 jours », « Tout tourne · prochain lot à … » ;
-- [ ] 3. un atelier : bandeau « 1 lot prêt », préréglages seuls, « → 80 farine · prête à … », un seul or (« Récolter … et relancer N lots »), l'amélioration dans sa feuille ;
+- [x] 3. un atelier : bandeau « 1 lot prêt », préréglages seuls, « → 80 farine · prête à … », un seul or (« Récolter … et relancer N lots »), l'amélioration dans sa feuille ;
 - [ ] 4. Bâtir : cartes choisies sur place, un seul or au pied (« Bâtir un moulin · 280 d » ou `BuyMissing`) ;
 - [ ] 5. textes `en`, e2e et guide.
 - Hors lot : la puce « 0 brique » du magasin.

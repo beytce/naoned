@@ -878,6 +878,7 @@ export function Sheet({
         type="button"
         aria-label="Fermer"
         tabIndex={-1}
+        data-sheet-veil
         className={`absolute inset-0 bg-black/60 ${leaving ? "veil-out" : "animate-fade"}`}
         onClick={onClose}
       />

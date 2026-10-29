@@ -1355,7 +1355,26 @@ const frDict = {
       limitedByQueue: (n: number, hours: number) =>
         `${n} lot${n > 1 ? "s" : ""} : limité par la file (${hours} h)`,
       /** The materials an upgrade lacks: bought right away at the Rialto. */
-      buyMissing: (cost: string) => `Acheter ce qui manque (≈ ${cost})`,
+      buyMissing: (cost: string) => `Acheter ce qui manque · ${cost}`,
+      /** One material lacking: the gold says which and how many (refonte UX, lot 4). */
+      buyMissingOne: (quantity: number, res: string, cost: string) =>
+        `Acheter ${quantity} ${res.toLowerCase()} · ${cost}`,
+      /** A workshop's sheet (maquette `Production`). */
+      readyBanner: (n: number, q: number, res: string) =>
+        `${n} lot${n > 1 ? "s" : ""} prêt${n > 1 ? "s" : ""} : ${q} ${res.toLowerCase()} à récolter`,
+      relaunch: "Combien en relancer ?",
+      result: (q: number, res: string, hour: string) =>
+        `→ ${q} ${res.toLowerCase()} · fin à ${hour}`,
+      buySome: (some: string) => `Acheter ${some}`,
+      harvestRelaunch: (q: number, res: string, n: number) =>
+        `Récolter ${q} ${res.toLowerCase()} et relancer ${n} lot${n > 1 ? "s" : ""}`,
+      harvestOnly: (q: number, res: string) => `Récolter ${q} ${res.toLowerCase()}`,
+      produceN: (n: number) => `Produire ${n} lot${n > 1 ? "s" : ""}`,
+      lots: (n: number) => `${n} lot${n > 1 ? "s" : ""}`,
+      upgradeYield: (pct: number) => `+${pct} % par lot`,
+      upgradeTitle: (name: string, level: number) => `${name} · niveau ${level}`,
+      later: "Plus tard",
+      shortOf: (cost: string) => `Il vous manque ${cost}.`,
       buyMissingNone: "Personne ne vend ce qui manque au Marché pour l'instant.",
       buildHere: "Bâtir ici",
     },

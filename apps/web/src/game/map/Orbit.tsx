@@ -259,7 +259,7 @@ export function ComptoirOrbit({
             type="button"
             aria-label={t.store}
             onClick={() => props.setSheet("store")}
-            className="-my-2 flex min-h-11 items-center text-xs text-cream-dim"
+            className="-mt-2 flex min-h-12 items-center text-xs text-cream-dim"
           >
             {t.storeLine(total)} ›
           </button>

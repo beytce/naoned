@@ -1361,7 +1361,26 @@ export const en: Dictionary = {
         `${n} batch${n === 1 ? "" : "es"}: limited by the ${res.toLowerCase()} (${have} in stock, ${perBatch} per batch)`,
       limitedByQueue: (n: number, hours: number) =>
         `${n} batch${n === 1 ? "" : "es"}: limited by the queue (${hours} h)`,
-      buyMissing: (cost: string) => `Buy what is missing (≈ ${cost})`,
+      buyMissing: (cost: string) => `Buy what is missing · ${cost}`,
+      /** One material lacking: the gold says which and how many (refonte UX, lot 4). */
+      buyMissingOne: (quantity: number, res: string, cost: string) =>
+        `Buy ${quantity} ${res.toLowerCase()} · ${cost}`,
+      /** A workshop's sheet (maquette `Production`). */
+      readyBanner: (n: number, q: number, res: string) =>
+        `${n} batch${n > 1 ? "es" : ""} ready: ${q} ${res.toLowerCase()} to harvest`,
+      relaunch: "How many to restart?",
+      result: (q: number, res: string, hour: string) =>
+        `→ ${q} ${res.toLowerCase()} · done at ${hour}`,
+      buySome: (some: string) => `Buy ${some}`,
+      harvestRelaunch: (q: number, res: string, n: number) =>
+        `Harvest ${q} ${res.toLowerCase()} and restart ${n} batch${n > 1 ? "es" : ""}`,
+      harvestOnly: (q: number, res: string) => `Harvest ${q} ${res.toLowerCase()}`,
+      produceN: (n: number) => `Produce ${n} batch${n > 1 ? "es" : ""}`,
+      lots: (n: number) => `${n} batch${n > 1 ? "es" : ""}`,
+      upgradeYield: (pct: number) => `+${pct} % per batch`,
+      upgradeTitle: (name: string, level: number) => `${name} · level ${level}`,
+      later: "Later",
+      shortOf: (cost: string) => `You lack ${cost}.`,
       buyMissingNone: "Nobody sells what is missing at the Market for now.",
       buildHere: "Build here",
     },
