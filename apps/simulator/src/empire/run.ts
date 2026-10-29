@@ -6,7 +6,7 @@ import {
 } from "@comptoirs/engine";
 import { arrive, finishBuild, newHouse, playsNow, session } from "./bots.js";
 import { DEFAULT_MODEL } from "./defaults.js";
-import { type DailyRow, snapshot } from "./metrics.js";
+import { type DailyRow, type MonthRow, monthSample, snapshot } from "./metrics.js";
 import { type Activity, type Bent, DAY, MONTH, type SimModel, type World } from "./model.js";
 import { terraWeek } from "./terra.js";
 import { createWorld, newDay, newRng, relaxMarkets } from "./world.js";
@@ -27,6 +27,7 @@ export interface EmpireResult {
   options: EmpireOptions;
   world: World;
   daily: DailyRow[];
+  monthly: MonthRow[];
   violations: string[];
   durationMs: number;
 }
@@ -55,6 +56,7 @@ export function runEmpire(options: EmpireOptions): EmpireResult {
   const w = createWorld(s, { ...DEFAULT_MODEL, ...options.model });
   const rng = newRng(options.seed, 1);
   const daily: DailyRow[] = [];
+  const monthly: MonthRow[] = [];
   const violations: string[] = [];
   const end = options.months * MONTH;
   for (w.now = 0; w.now < end; w.now++) {
@@ -76,6 +78,7 @@ export function runEmpire(options: EmpireOptions): EmpireResult {
           `day ${w.now / DAY}: cash ${cash} ≠ created − destroyed ${w.created - w.destroyed}`,
         );
       daily.push(snapshot(w));
+      if (w.now > 0 && w.now % MONTH === 0) monthly.push(monthSample(w));
     }
     relaxMarkets(w);
     for (const h of w.houses) {
@@ -103,7 +106,7 @@ export function runEmpire(options: EmpireOptions): EmpireResult {
     }
     for (const h of w.houses) if (playsNow(w, h, rng)) session(w, h, rng);
   }
-  return { options, world: w, daily, violations, durationMs: Date.now() - started };
+  return { options, world: w, daily, monthly, violations, durationMs: Date.now() - started };
 }
 
 /** « Le savoir circule »: the share of the active houses at each Casa level or above. */

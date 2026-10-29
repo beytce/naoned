@@ -77,6 +77,8 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
     bookLeft: new Map(),
     income: { orders: 0n, market: 0n, voyages: 0n, extraction: 0n, expeditions: 0n, terra: 0n },
     spent: 0n,
+    earned: 0n,
+    sampled: { earned: 0n, spent: 0n },
     recent: [0n],
     sessions: 0,
     sessionsInSight: 0,

@@ -1,5 +1,6 @@
 import type { Deniers } from "@comptoirs/engine";
-import { DAY, type House, type Trade, type World } from "./model.js";
+import { nextCasaCost } from "./bots.js";
+import { DAY, type House, MONTH, type Trade, type World } from "./model.js";
 import { power, priceOf } from "./world.js";
 
 export interface CohortRow {
@@ -81,3 +82,42 @@ export const TRADES: Trade[] = [
   "expeditions",
   "terra",
 ];
+
+export interface MonthRow {
+  month: number;
+  /** Median of the next Casa's cost in days of the house's income (target 2 to 7). */
+  nextCasaDays: number;
+  /** Sinks ÷ sources over the month, in bps, by age: under 3 months, then older. */
+  ratioYoung: number;
+  ratioOld: number;
+}
+
+/** Each month: the next step in days of income, and what was destroyed against what was made. */
+export function monthSample(w: World): MonthRow {
+  const steps: number[] = [];
+  let youngIn = 0n;
+  let youngOut = 0n;
+  let oldIn = 0n;
+  let oldOut = 0n;
+  for (const h of w.houses) {
+    const income = dailyIncome(h);
+    if (h.casa < w.s.casa.length && income > 0) steps.push(ducatsOf(nextCasaCost(w, h)) / income);
+    const made = h.earned - h.sampled.earned;
+    const spent = h.spent - h.sampled.spent;
+    if (w.now - h.joinedAt <= 3 * MONTH) {
+      youngIn += made;
+      youngOut += spent;
+    } else {
+      oldIn += made;
+      oldOut += spent;
+    }
+    h.sampled = { earned: h.earned, spent: h.spent };
+  }
+  const ratio = (out: bigint, made: bigint) => (made > 0n ? Number((out * 10_000n) / made) : 0);
+  return {
+    month: w.now / MONTH,
+    nextCasaDays: median(steps),
+    ratioYoung: ratio(youngOut, youngIn),
+    ratioOld: ratio(oldOut, oldIn),
+  };
+}

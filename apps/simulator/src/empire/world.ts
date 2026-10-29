@@ -85,6 +85,7 @@ export const priceOf = (w: World, mk: Market) => priceAt(mk.ref, mk.pressure, w.
 export function create(w: World, h: House, amount: Deniers, why: string, trade?: Trade) {
   if (amount <= 0n) return;
   h.cash += amount;
+  h.earned += amount;
   w.created += amount;
   w.createdBy[why] = (w.createdBy[why] ?? 0n) + amount;
   if (trade) h.income[trade] += amount;

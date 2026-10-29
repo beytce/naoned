@@ -89,6 +89,10 @@ export interface House {
   income: Record<Trade, Deniers>;
   /** Paid out (constructions, research, wages, taxes, rations…), to read its net. */
   spent: Deniers;
+  /** All the money made for it (sales, booty, its start), to read sinks against sources. */
+  earned: Deniers;
+  /** Its earned and spent at the last monthly sample. */
+  sampled: { earned: Deniers; spent: Deniers };
   /** Net receipts per day of the last week, for the « days of income » of a step. */
   recent: Deniers[];
   /** Sessions where something finishes within 24 h (an objective in sight). */
