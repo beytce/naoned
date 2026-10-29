@@ -78,7 +78,7 @@ const TITLES = new Set([
   // Props forwarded into a label: their callers are checked instead (FORWARDED).
   "Label.children",
   "Figure.label",
-  "BookSide.title",
+  "BookRows.title",
   "Podium.title",
   "row.label",
   "Sheet.kicker",
@@ -91,7 +91,7 @@ const TITLES = new Set([
  */
 const FORWARDED: Record<string, string> = {
   Figure: "label",
-  BookSide: "title",
+  BookRows: "title",
   Podium: "title",
   Sheet: "kicker",
   LorenzoCard: "name",

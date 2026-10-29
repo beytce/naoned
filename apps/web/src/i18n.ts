@@ -1714,6 +1714,18 @@ const frDict = {
     book: {
       sellers: "Ils vendent",
       buyers: "Ils achètent",
+      /** The page of a good (refonte UX, lot 5, maquette `Negoce`). */
+      sideBuy: "Acheter",
+      sideSell: "Vendre",
+      nothingToSell: (good: string) =>
+        `Vous n'avez pas ${/^[aeiouyéèêàâîôûh]/i.test(good) ? "d'" : "de "}${good.toLowerCase()} à vendre.`,
+      prefilled: (n: number) => `Quantité remplie : les ${n} qui vous manquent.`,
+      summary: (q: number, good: string, total: string) => `${q} ${good.toLowerCase()} → ${total}`,
+      summaryNote: "· taxe comprise · détail ›",
+      buyGold: (q: number, good: string, total: string) =>
+        `Acheter ${q} ${good.toLowerCase()} · ${total}`,
+      sellGold: (q: number, good: string, total: string) =>
+        `Vendre ${q} ${good.toLowerCase()} · +${total}`,
       empty: "Personne",
       fondaco: "Douane",
       you: "Vous",

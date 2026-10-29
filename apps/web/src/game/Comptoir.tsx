@@ -901,7 +901,12 @@ function WorkshopSheet({
             // The input that limits, bought at the Market from here: a line of its own.
             <button
               type="button"
-              onClick={() => props.setSheet(`trade:${short.res}`)}
+              onClick={() => {
+                // What one more batch lacks, filled in; back to this workshop once bought.
+                const per = (recipe.inputs[short.res] ?? 0) * b.workLevel;
+                const need = per > 0 ? per - (have(props.view, short.res) % per) : 0;
+                props.setSheet(`trade:${short.res}:${need}:produce:${b.id}`);
+              }}
               className="-my-2 flex min-h-12 items-center text-sm font-semibold text-info"
             >
               {t.buySome(

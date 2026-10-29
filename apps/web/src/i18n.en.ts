@@ -1710,6 +1710,17 @@ export const en: Dictionary = {
     book: {
       sellers: "They sell",
       buyers: "They buy",
+      /** The page of a good (refonte UX, lot 5, maquette `Negoce`). */
+      sideBuy: "Buy",
+      sideSell: "Sell",
+      nothingToSell: (good: string) => `You have no ${good.toLowerCase()} to sell.`,
+      prefilled: (n: number) => `Quantity filled in: the ${n} you lack.`,
+      summary: (q: number, good: string, total: string) => `${q} ${good.toLowerCase()} → ${total}`,
+      summaryNote: "· tax included · details ›",
+      buyGold: (q: number, good: string, total: string) =>
+        `Buy ${q} ${good.toLowerCase()} · ${total}`,
+      sellGold: (q: number, good: string, total: string) =>
+        `Sell ${q} ${good.toLowerCase()} · +${total}`,
       empty: "Nobody",
       fondaco: "Customs",
       you: "You",

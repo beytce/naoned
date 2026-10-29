@@ -31,7 +31,7 @@
 **Étape suivante :** le lot 5, plan validé le 29 octobre. Ordre des commits :
 - [x] 1. Venise, l'écran de l'onglet (`map/Venice.tsx`, sélection `{ kind: "venice" }`) : quatre lunes (Politique → `broglio`, Marché → `rialto`, Enchères → `sera`, Les 40 palais → `canal`, vue canal du classement), la carte du Doge (`useCanal`, `decreeText`), « Le port : N commandes » vers l'orbite de la ville ; `activeTab` allume Venise sur ses feuilles ; le guide passe par `tab-venice` puis `venice-market` ; la plus forte variation dans `game/market.ts` (testée) ;
 - [x] 2. le Marché : trois onglets (Marchandises, Entre joueurs, Actions), plus de filtres, un prix et sa variation par ligne ;
-- [ ] 3. la page d'une marchandise : carnet en lignes, Acheter/Vendre, Tout de suite / À mon prix, détail replié, un seul or, quantité préremplie (`trade:<res>:<qté>`) ;
+- [x] 3. la page d’une marchandise : carnet en lignes, Acheter/Vendre, Tout de suite / À mon prix, détail replié, un seul or, quantité préremplie (`trade:<res>:<qté>`) ;
 - [ ] 4. textes `en`, e2e et guide.
 
 **Ce que le lot 4 a fait (plan validé le 29 octobre).** Décision du porteur : quand il manque des matériaux, l'or achète sur place (`BuyMissing`, « Acheter 15 briques · 24 d »), sans passer par la page de la marchandise. Ordre des commits :
