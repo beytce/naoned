@@ -1,12 +1,12 @@
 # Fondaco (ex-Comptoirs)
 
-Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage complet : docs/CADRAGE.md. Nom de code du dépôt : naoned.
+Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage qui fait foi : docs/CADRAGE-v3.md (un empire marchand persistant, sans remise à zéro) ; docs/CADRAGE.md (v2) ne vaut plus que pour ses parties techniques. Nom de code du dépôt : naoned.
 
 ## Stack
 - Monorepo pnpm : apps/web (React + Vite + Tailwind, PWA), apps/server (Node + Fastify), apps/simulator (bots en mémoire, sortie CSV), packages/engine (logique pure en TypeScript).
 - PostgreSQL via Drizzle ORM, migrations versionnées.
 - Tests : Vitest. Temps réel : WebSocket.
-- Commandes : `pnpm dev`, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm sim` (simulation de saison, rapport dans apps/simulator/out/report.md).
+- Commandes : `pnpm dev`, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm sim` (simulation, rapport dans apps/simulator/out/report.md ; le simulateur de 24 mois par cohortes est à construire, CADRAGE-v3 § 13).
 - Base locale : PGlite (`DATABASE_URL=pglite:…`) en dev et en test ; PostgreSQL en production. Nouvelle table → modifier apps/server/src/db/schema.ts puis `pnpm --filter @comptoirs/server db:generate --name <nom>`.
 - Déploiement : un seul service Railway (Dockerfile), voir docs/deploiement.md.
 
@@ -18,18 +18,18 @@ Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage complet 
 - Production calculée paresseusement à la lecture, pas par le tick.
 - Toute opération de marché = une transaction SQL unique, sérialisée par un verrou transactionnel par (world_id, resource).
 - Paramètres d'équilibrage dans worlds.settings (JSON), jamais en dur.
-- Avantages payants (Pass Négociant) légers, plafonnés et mesurés : jamais de ducats, de ressources, de vitesse de production ni de file plus longue ; utiles seulement à un joueur actif ; tous gagnables au classement ; à activité égale, écart de patrimoine ≤ 5 % vérifié par `pnpm sim --pass 0.2`, et un gratuit assidu devant un abonné occasionnel.
-- Saisons = mois civils (heure de Paris) : `worlds.ends_at` fait foi, `settings.seasonDays` n'est que le mois nominal du simulateur.
+- On ne vend jamais de temps ni de puissance : ni ducats, ni ressources, ni Sceaux, ni accélération, ni chantier ou file en plus, ni avantage dans les bandes, à la Terraferme ou à la Contesa. L'abonnement ne donne que de l'information, du confort et du cosmétique (CADRAGE-v3 § 10).
+- Le commerce est persistant, sans remise à zéro : rien de bâti ne se perd, on ne punit jamais l'absence (aucun coût qui court pendant l'absence). Seule la Terraferme a des saisons courtes, d'une semaine ; `worlds.ends_at` ne borne plus le commerce.
+- Toute compétition se joue par bande de Puissance (calculée sur ce qui est bâti, jamais sur la caisse).
 
 ## Façon de travailler
 - Commencer chaque tâche en mode plan, attendre validation avant de coder.
 - Écrire les tests avant le code pour packages/engine. Les tests du moteur utilisent la fixture figée test/fixture.ts, jamais les paramètres de Venise.
-- Tout changement d'équilibrage se valide avec `pnpm sim` (toutes les graines conformes) et se documente dans docs/calibration.md.
+- Tout changement d'équilibrage se valide au simulateur (`pnpm sim`, puis le simulateur de 24 mois dès qu'il existe : toutes les graines conformes) et se documente dans docs/calibration.md.
 - Petits commits, un par fonctionnalité.
 - Hors périmètre MVP : noter dans IDEAS.md, ne pas coder.
-- Gel des mécaniques levé le 20 octobre 2026 par le porteur (conception pure, pas encore de joueurs) pour le lot de recommandations de docs/recommandations-2026-10-20.md et la Terraferme proche d'OpenFront (docs/plan-terraferme.md) ; hors de ce lot, une nouvelle mécanique va toujours dans IDEAS.md.
-- Gel levé aussi le 27 octobre 2026 pour les douze propositions de docs/audit-retention-2026-10-27.md (plafonds d'écart en cours de saison levés, l'égalité se garde au départ du mois). Pour reprendre ce chantier, lire d'abord docs/plan-rupture.md (état, étape suivante) et le tenir à jour à chaque commit.
-- Règles stables pendant une saison (dès qu'il y a des joueurs) : un changement de règle prend effet au changement de mois et s'écrit dans les notes de saison (`fr.game.seasonNotes`, au pied de l'Aide).
+- Refonte totale du 29 octobre 2026 (docs/refonte-2026-10-29/ : synthèse, arbitrages du porteur, notes d'expert) : toute mécanique suit CADRAGE-v3 et son chemin (§ 13), une étape à la fois, chacune avec son plan validé. Les gels et chantiers antérieurs (recommandations du 20 octobre, plan de rupture du 27 octobre) sont clos ; une idée hors du chemin va dans IDEAS.md.
+- Règles stables dès qu'il y a des joueurs : à la Terraferme, un changement prend effet le lundi suivant ; au commerce, il s'annonce dans les notes du chapitre (le mois) avant de s'appliquer.
 - Langue du code : anglais. Langue de l'interface : français (i18n prévu).
-- Refonte UX du 28 octobre 2026 (maquettes `docs/maquettes-2026-10-28/`) : pour la mettre dans `apps/web`, lire d'abord docs/plan-refonte-ux.md (décisions finales, lots, étape suivante) et le tenir à jour à chaque commit. C'est de l'interface : aucune règle ne change.
+- Refonte UX du 28 octobre 2026 : lots 1 à 8 faits (docs/plan-refonte-ux.md), leurs acquis restent (barre à 5 onglets, feuilles, un seul or) ; le lot 9 est suspendu, ses écrans seront repensés pour CADRAGE-v3.
 - Direction artistique « Lagune » (décision du porteur, 25 octobre 2026) : tout nouvel écran ou élément la suit (docs/design.md, § Direction Lagune ; maquettes de chaque page : docs/propositions-design-2026-10-25.md). Un lieu est un astre qu'on approche ; trois profondeurs (carte, lieu en orbite, feuille du bas) ; une seule action en or ; les marchandises par leur marque (`GoodsMark`).
