@@ -23,12 +23,16 @@
 | 3 | La carte et la fiche d'un lieu | fait (PR lot 3) | `e193d83`…(fin de branche `claude/refonte-ux-lot3`) |
 | 4 | Ateliers, production, bâtir, magasin | fait (PR lot 4) | `568f5e1`…(fin de branche `claude/refonte-ux-lot4`) |
 | 5 | Venise, Marché, page d'une marchandise | fait (PR lot 5) | `12d584a`…(fin de branche `claude/refonte-ux-lot5`) |
-| 6 | Politique (rumeurs, élection, villes), enchères, 40 palais | à faire | |
+| 6 | Politique (rumeurs, élection, villes), enchères, 40 palais | en cours (branche `claude/refonte-ux-lot6`) | |
 | 7 | Classement, fiche d'un joueur, profil | à faire | |
 | 8 | Ville, Conquête | à faire | |
 | 9 | Moments : messages, tâches du jour, calendrier, lettre, Atout, bon retour, fin du mois, entrée | à faire | |
 
-**Étape suivante :** le lot 6 (Politique, enchères, 40 palais). Il commence par un passage en mode plan (CLAUDE.md), appuyé sur la section du lot ci-dessous et sur les maquettes qu'elle cite.
+**Étape suivante :** le lot 6, plan validé le 29 octobre. Ordre des commits :
+- [x] 1. Politique (`Politics.tsx`, clés `politics`, `broglio`, `senate`, `cities`) : Rumeurs (`RumoursBody`, « Source : …, juste 7 fois sur 8 », « Si c'est vrai : … »), Manœuvres dans leur feuille (`ManeuversSheet`, clé `maneuvers`), Élection (`SenateBody` sous le Doge du mois), Villes (jauge et part, `cityStanding`) ; l'alerte d'espion en tête des Messages (`SpyAlert`) ;
+- [ ] 2. Enchères : de jour l'arrivage (`MudaPanel` quitte le Marché), le soir les lots, le cachet « Adjugé », des crans en ducats ronds, un seul or ;
+- [ ] 3. Les 40 palais (`CanalSheet`, clé `canal`) : le quai qui défile, le palais choisi, l'écart au 40ᵉ, « Aller à mon quai » ;
+- [ ] 4. textes `en`, e2e et guide.
 
 **Ce que le lot 5 a fait (plan validé le 29 octobre) :**
 - [x] 1. Venise, l'écran de l'onglet (`map/Venice.tsx`, sélection `{ kind: "venice" }`) : quatre lunes (Politique → `broglio`, Marché → `rialto`, Enchères → `sera`, Les 40 palais → `canal`, vue canal du classement), la carte du Doge (`useCanal`, `decreeText`), « Le port : N commandes » vers l'orbite de la ville ; `activeTab` allume Venise sur ses feuilles ; le guide passe par `tab-venice` puis `venice-market` ; la plus forte variation dans `game/market.ts` (testée) ;

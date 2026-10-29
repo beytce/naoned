@@ -2788,6 +2788,14 @@ const frDict = {
         `Un entrepôt dans ${cities} villes au plus, du niveau 1 au niveau ${top}, ${levels} niveaux en tout. Chaque niveau vous donne chaque jour une commande de la ville, à vous seul, payée ${pct} % du prix du tableau commun : moins chère que le tableau, mais sûre. Les ducats sortent du jeu, les briques et les planches aussi ; le fondaco compte dans votre patrimoine à son coût.`,
     },
     /** The Signoria of the cities (R2): the gauge of a city and its Podestà. */
+    /** Politics, Venice's moon (refonte UX, lot 6): rumours, election, cities in one sheet. */
+    politics: {
+      title: "Politique",
+      tabs: { rumours: "Rumeurs", election: "Élection", cities: "Villes" },
+      citiesHelp: "Celui qui livre le plus dans une ville la tient demain.",
+      standing: (mine: number, rank: number | null, lead: number) =>
+        rank === 1 ? `vous : ${mine} % · en tête` : `vous : ${mine} % · le 1ᵉʳ est à ${lead} %`,
+    },
     signoria: {
       title: (city: string) => `Contrôle de ${city}`,
       kicker: "Qui tient la ville",
@@ -2895,7 +2903,12 @@ const frDict = {
         senato: "un secrétaire du Sénat",
         rialto: "un marchand du Marché",
       } as Record<string, string>,
-      said: (source: string, pct: number) => `D'après ${source} · sûr à ${pct} %`,
+      said: (source: string, n: number) => `Source : ${source}, juste ${n} fois sur 8`,
+      /** What the rumour would bring (refonte UX, lot 6). */
+      ifTrue: "Si c'est vrai :",
+      toAuctions: "Voir les enchères",
+      maneuvers: "Manœuvres",
+      maneuversHint: "acheter, vendre, tromper, espionner",
       event: (title: string, city: string | null, when: string) =>
         city ? `${title} (à ${city}), ${when}.` : `${title}, ${when}.`,
       muda: (big: boolean): string =>

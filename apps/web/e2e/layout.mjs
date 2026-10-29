@@ -116,6 +116,7 @@ const WORDS = {
     npc: "PNJ",
     sharesTab: /^actions$/i,
     playersTab: /^entre joueurs$/i,
+    citiesTab: /^villes$/i,
     alone: /^jouer seul$/i,
   },
   en: {
@@ -158,6 +159,7 @@ const WORDS = {
     npc: "NPC",
     sharesTab: /^shares$/i,
     playersTab: /^between players$/i,
+    citiesTab: /^cities$/i,
     alone: /^play alone$/i,
   },
 }[LANG === "en" ? "en" : "fr"];
@@ -1450,6 +1452,18 @@ async function broglio(page, check) {
   await line.first().click();
   await page.waitForTimeout(900);
   await check("broglio");
+  // The maneuvers in their own sheet, then the cities' tab of Politics (refonte UX, lot 6).
+  await page.locator('[data-coach="politics-maneuvers"]').click();
+  await page.waitForTimeout(700);
+  await check("manoeuvres");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(500);
+  const cities = page.getByRole("tab", { name: WORDS.citiesTab });
+  if ((await cities.count()) > 0) {
+    await cities.first().click();
+    await page.waitForTimeout(700);
+    await check("politique-villes");
+  }
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
   await page.unroute("**/api/game/broglio");

@@ -19,19 +19,20 @@ import { fr } from "../../i18n.js";
 import { Big, Panel, Qty, Sheet, Slab, clock, useLeaving } from "../../ui.js";
 import { ActCard } from "../Acts.js";
 import { AtoutsSheet, atoutWaiting, useAtoutMoment } from "../Atouts.js";
-import { BroglioSheet } from "../Broglio.js";
+import { ManeuversSheet } from "../Broglio.js";
 import { CargoSheet, loadOrders, loadSummary } from "../Cargo.js";
 import { Coach } from "../Coach.js";
 import { ComeBack } from "../ComeBack.js";
 import { CounterSheets, buyRationsSheet, carnetRewards } from "../Comptoir.js";
 import { Criee } from "../Criee.js";
 import { DailySheet } from "../Daily.js";
-import { SenateSheet, senateWaiting } from "../Doge.js";
+import { senateWaiting } from "../Doge.js";
 import { FondacoSheet } from "../Fondaco.js";
 import type { GameProps } from "../Game.js";
 import { HouseSheet } from "../House.js";
 import { LetterSheet, letterWaiting, useLetterMoment } from "../Letter.js";
 import { RialtoSheet } from "../Marche.js";
+import { PoliticsSheet } from "../Politics.js";
 import { ProfileSheet } from "../Profil.js";
 import { SeraSheet, openSeraLots } from "../Sera.js";
 import { ChallengeSheet, SfidaSheet } from "../Sfida.js";
@@ -1225,8 +1226,8 @@ export function MapScreen(
       <DailySheet {...props} />
       <AtoutsSheet {...props} />
       <LetterSheet {...props} />
-      <SenateSheet {...props} />
-      <BroglioSheet {...props} />
+      <PoliticsSheet {...props} />
+      <ManeuversSheet {...props} />
       <WarehouseSheet {...props} />
       <FondacoSheet {...props} />
       {families && <CampaignSheets props={props} f={families} select={select} />}

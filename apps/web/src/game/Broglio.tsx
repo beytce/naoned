@@ -7,6 +7,7 @@ import type { GameProps } from "./Game.js";
 import { merchantLabel } from "./Name.js";
 import { gameApi } from "./api.js";
 import { d } from "./format.js";
+import { outOfEight } from "./politics.js";
 import type { BroglioView, RankingRow, RumourSubject, RumourView } from "./types.js";
 
 const t = () => fr.game.broglio;
@@ -43,7 +44,7 @@ function Source({ source, reliabilityBps }: { source: string; reliabilityBps: nu
   return (
     <span className="mt-1 block">
       <span className="block text-xs text-cream-dim">
-        {t().said(t().sources[source] ?? source, pct)}
+        {t().said(t().sources[source] ?? source, outOfEight(reliabilityBps))}
       </span>
       <span className="mt-1 block h-1 overflow-hidden rounded-full bg-night-4">
         <span
@@ -79,15 +80,122 @@ export function BroglioLine(props: GameProps) {
   );
 }
 
-/**
- * The Broglio (R8): the morning's rumours as cards, each with its source's gauge and a ghost
- * « Sell »; the Rialto's offers (a seller never named, a rumour's words hidden until bought) with
- * the one gold « Buy » on the offer chosen; the spy; the forge; the past days' rumours, true or
- * false once known.
- */
-export function BroglioSheet(props: GameProps) {
-  const open = props.sheet === "broglio";
+/** The Broglio fetched while a sheet that shows it is open; again after each action. */
+function useBroglio(active: boolean, props: GameProps) {
   const [b, setB] = useState<BroglioView | null>(null);
+  useEffect(() => {
+    if (active) load(setB);
+  }, [active]);
+  const act = async (a: Parameters<GameProps["act"]>[0]) => {
+    if (await props.act(a)) await load(setB);
+  };
+  return { b, setB, act };
+}
+
+/**
+ * The rumours, Politics' first tab (R8, refonte UX lot 6): the morning's rumours as cards, each
+ * with its source out of eight, what it would bring if true and a ghost « Sell »; the merchant's
+ * own on sale; the way to the maneuvers; the past days' rumours, true or false once known.
+ */
+export function RumoursBody(props: GameProps) {
+  const { b, act } = useBroglio(true, props);
+  if (!b) return null;
+  const mine = b.offers.filter((o) => o.mine);
+  return (
+    <div className="space-y-5">
+      <ul className="space-y-2">
+        {b.today.map((r) => (
+          <RumourCard key={r.id} r={r} props={props} events={b.subjects.events}>
+            {r.subject.kind === "muda" && (
+              <button
+                type="button"
+                onClick={() => props.setSheet("sera")}
+                className="flex min-h-12 items-center text-sm font-semibold text-info"
+              >
+                {t().toAuctions} ›
+              </button>
+            )}
+            {!b.offers.some((o) => o.mine && o.subject && same(o.subject, r.subject)) &&
+              mine.length < b.rules.maxOffers && (
+                <Slab
+                  size="sm"
+                  tone="ghost"
+                  className="mt-2"
+                  disabled={props.busy}
+                  onClick={() =>
+                    void act({ type: "offerRumour", rumourId: r.id, price: SALE_PRICE })
+                  }
+                >
+                  {t().sell(d(SALE_PRICE))}
+                </Slab>
+              )}
+          </RumourCard>
+        ))}
+      </ul>
+
+      {mine.length > 0 && (
+        <ul className="space-y-1">
+          {mine.map((o) => (
+            <li key={o.id} className="flex items-center justify-between gap-2 text-sm">
+              <span className="min-w-0 truncate text-cream-dim">
+                {o.subject ? rumourText(o.subject, props, b.subjects.events) : ""} ·{" "}
+                {t().offered(o.buyers ?? 0)}
+              </span>
+              <Slab
+                size="sm"
+                tone="ghost"
+                disabled={props.busy}
+                onClick={() => void act({ type: "cancelRumourOffer", offerId: o.id })}
+              >
+                {t().cancel}
+              </Slab>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Buying, selling, deceiving, spying: in a sheet of their own (maquette `Palais`). */}
+      <button
+        type="button"
+        data-coach="politics-maneuvers"
+        onClick={() => props.setSheet("maneuvers")}
+        className="flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl px-4 text-left ring-1 ring-inset ring-edge transition active:scale-[0.98]"
+      >
+        <span className="text-sm">
+          <b>{t().maneuvers}</b> <span className="text-cream-dim">· {t().maneuversHint}</span>
+        </span>
+        <span className="text-xl text-cream-dim" aria-hidden="true">
+          ›
+        </span>
+      </button>
+
+      {b.past.length > 0 && (
+        <section className="space-y-1">
+          <Label>{t().past}</Label>
+          {b.past.map((r) => (
+            <p key={r.id} className="text-sm text-cream-dim">
+              <span className={r.truth === null ? "" : r.truth ? "text-lagoon" : "text-vermilion"}>
+                {r.truth === null ? "·" : r.truth ? "✓" : "✗"}
+              </span>{" "}
+              {rumourText(r.subject, props, b.subjects.events)} — {t().truth(r.truth)}
+              {r.unmasked ? ` · ${t().unmasked}` : ""}
+            </p>
+          ))}
+        </section>
+      )}
+      <Rules id="broglio">{t().help}</Rules>
+    </div>
+  );
+}
+
+/**
+ * The maneuvers (R8, maquette `Palais`): the rumours others sell (a seller never named, a
+ * rumour's words hidden until bought) with the one gold « Buy » on the offer chosen; the spy; the
+ * forge. Back to the rumours when closed.
+ */
+export function ManeuversSheet(props: GameProps) {
+  const open = props.sheet === "maneuvers";
+  const { b, setB, act } = useBroglio(open, props);
   const [picked, setPicked] = useState<string | null>(null);
   const [rivals, setRivals] = useState<RankingRow[]>([]);
   const [target, setTarget] = useState<string | null>(null);
@@ -95,90 +203,21 @@ export function BroglioSheet(props: GameProps) {
     null,
   );
   const [note, setNote] = useState<string | null>(null);
-  const reload = () => load(setB);
   useEffect(() => {
     if (!open) return;
     setNote(null);
-    load(setB);
     gameApi
       .ranking()
       .then((r) => setRivals(r.rows.filter((x) => !x.me).slice(0, 8)))
       .catch(() => setRivals([]));
   }, [open]);
-  const act = async (a: Parameters<GameProps["act"]>[0]) => {
-    if (await props.act(a)) await reload();
-  };
   const market = b?.offers.filter((o) => !o.mine) ?? [];
-  const mine = b?.offers.filter((o) => o.mine) ?? [];
   const chosen = market.find((o) => o.id === picked && !o.bought) ?? null;
   const subject = forge ?? (b ? firstSubject(b) : null);
   return (
-    <Sheet
-      open={open && !!b}
-      onClose={() => props.setSheet(null)}
-      kicker={t().kicker}
-      title={t().title}
-      summary={t().summary}
-    >
+    <Sheet open={open && !!b} onClose={() => props.setSheet("broglio")} title={t().maneuvers}>
       {b && (
         <div className="space-y-5">
-          {b.spied && (
-            <section className="space-y-2 rounded-2xl p-3 ring-1 ring-inset ring-vermilion/60">
-              <p className="text-sm text-vermilion">{t().spied}</p>
-              <Slab
-                size="md"
-                tone="ghost"
-                className="w-full"
-                disabled={props.busy}
-                onClick={() => void act({ type: "chaseSpy" })}
-              >
-                {t().chase(d(b.rules.spyCost))}
-              </Slab>
-            </section>
-          )}
-
-          <ul className="space-y-2">
-            {b.today.map((r) => (
-              <RumourCard key={r.id} r={r} props={props} events={b.subjects.events}>
-                {!b.offers.some((o) => o.mine && o.subject && same(o.subject, r.subject)) &&
-                  mine.length < b.rules.maxOffers && (
-                    <Slab
-                      size="sm"
-                      tone="ghost"
-                      className="mt-2"
-                      disabled={props.busy}
-                      onClick={() =>
-                        void act({ type: "offerRumour", rumourId: r.id, price: SALE_PRICE })
-                      }
-                    >
-                      {t().sell(d(SALE_PRICE))}
-                    </Slab>
-                  )}
-              </RumourCard>
-            ))}
-          </ul>
-
-          {mine.length > 0 && (
-            <ul className="space-y-1">
-              {mine.map((o) => (
-                <li key={o.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="min-w-0 truncate text-cream-dim">
-                    {o.subject ? rumourText(o.subject, props, b.subjects.events) : ""} ·{" "}
-                    {t().offered(o.buyers ?? 0)}
-                  </span>
-                  <Slab
-                    size="sm"
-                    tone="ghost"
-                    disabled={props.busy}
-                    onClick={() => void act({ type: "cancelRumourOffer", offerId: o.id })}
-                  >
-                    {t().cancel}
-                  </Slab>
-                </li>
-              ))}
-            </ul>
-          )}
-
           <section className="space-y-2">
             <Label>{t().market}</Label>
             {market.length === 0 ? (
@@ -252,7 +291,7 @@ export function BroglioSheet(props: GameProps) {
                         type="button"
                         aria-pressed={target === r.id}
                         onClick={() => setTarget(r.id)}
-                        className={`min-h-12 rounded-full px-4 text-sm ${target === r.id ? "bg-info/15 ring-[1.5px] ring-inset ring-info" : "text-cream-dim ring-1 ring-inset ring-line"}`}
+                        className={pill(target === r.id)}
                       >
                         {merchantLabel(r.pseudo, r.bot)}
                       </button>
@@ -329,27 +368,30 @@ export function BroglioSheet(props: GameProps) {
               {note && <p className="mt-2 text-sm text-gold">{note}</p>}
             </details>
           )}
-
-          {b.past.length > 0 && (
-            <section className="space-y-1">
-              <Label>{t().past}</Label>
-              {b.past.map((r) => (
-                <p key={r.id} className="text-sm text-cream-dim">
-                  <span
-                    className={r.truth === null ? "" : r.truth ? "text-lagoon" : "text-vermilion"}
-                  >
-                    {r.truth === null ? "·" : r.truth ? "✓" : "✗"}
-                  </span>{" "}
-                  {rumourText(r.subject, props, b.subjects.events)} — {t().truth(r.truth)}
-                  {r.unmasked ? ` · ${t().unmasked}` : ""}
-                </p>
-              ))}
-            </section>
-          )}
-          <Rules id="broglio">{t().help}</Rules>
         </div>
       )}
     </Sheet>
+  );
+}
+
+/** A spy at the door (R8): at the top of the Messages, with the way to chase it (refonte UX). */
+export function SpyAlert(props: GameProps) {
+  const spied = !!props.view.broglio?.spied;
+  const { b, act } = useBroglio(spied, props);
+  if (!spied || !b) return null;
+  return (
+    <section className="space-y-2 rounded-2xl p-3 ring-1 ring-inset ring-vermilion/60">
+      <p className="text-sm text-vermilion">{t().spied}</p>
+      <Slab
+        size="md"
+        tone="ghost"
+        className="w-full"
+        disabled={props.busy}
+        onClick={() => void act({ type: "chaseSpy" })}
+      >
+        {t().chase(d(b.rules.spyCost))}
+      </Slab>
+    </section>
   );
 }
 
@@ -368,6 +410,11 @@ function RumourCard({
     <li className="rounded-2xl bg-night-3 px-3 py-2.5">
       <p className="text-base italic leading-snug">« {rumourText(r.subject, props, events)} »</p>
       <Source source={r.source} reliabilityBps={r.reliabilityBps} />
+      {r.subject.kind === "event" && fr.game.gazette.events[r.subject.code]?.[1] && (
+        <p className="mt-1.5 text-sm">
+          <b>{t().ifTrue}</b> {fr.game.gazette.events[r.subject.code]?.[1]}
+        </p>
+      )}
       {children}
     </li>
   );
