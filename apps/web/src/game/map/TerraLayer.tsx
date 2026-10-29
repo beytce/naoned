@@ -1524,34 +1524,11 @@ export function TerraHud({
           >
             <span
               // Hungry troops recruit no more: the orb breathes in vermilion (R1).
-              className={`hud-orb relative flex h-9 items-center gap-1 rounded-full pl-1 pr-2.5 text-cream ${me.bread?.unfed ? "hud-alert" : ""}`}
+              className={`hud-orb relative flex items-center rounded-2xl px-3 py-1 text-cream ${me.bread?.unfed ? "hud-alert" : ""}`}
               data-tone={me.bread?.unfed ? "vermilion" : undefined}
             >
-              {/* How full the troops are: a ring of light around their sign (Lagune). */}
-              <span className="relative grid h-6 w-6 shrink-0 place-items-center [&>span>svg]:h-3.5 [&>span>svg]:w-3.5">
-                <svg
-                  viewBox="-16 -16 32 32"
-                  className="absolute inset-0 h-6 w-6"
-                  aria-hidden="true"
-                >
-                  <circle r="13.5" fill="none" stroke="rgb(var(--line))" strokeWidth="4" />
-                  <circle
-                    r="13.5"
-                    fill="none"
-                    stroke="rgb(var(--lagoon))"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    pathLength={100}
-                    strokeDasharray={`${Math.min(100, (me.troops / Math.max(1, me.cap)) * 100)} 100`}
-                    transform="rotate(-90)"
-                    className="transition-[stroke-dasharray] duration-700"
-                  />
-                </svg>
-                <span className="relative flex">
-                  <Icon.troops />
-                </span>
-              </span>
-              <span className="flex flex-col items-start leading-tight">
+              {/* Two lines, as the maquette: « 121 troupes », « sur 140 » (lot 8). */}
+              <span className="flex flex-col items-end leading-tight">
                 <span className="whitespace-nowrap font-display text-sm font-extrabold tabular-nums">
                   {t().troopsCard.troops(me.troops)}
                 </span>
