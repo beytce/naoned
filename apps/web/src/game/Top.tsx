@@ -4,7 +4,6 @@ import { Emblem } from "../art/logo.js";
 import { MasteryEmblem } from "../art/mastery.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Panel, Sheet, clock } from "../ui.js";
-import { CanalBoard } from "./Canal.js";
 import type { GameProps } from "./Game.js";
 import { MerchantName } from "./Name.js";
 import { PlayerPalmares } from "./Palmares.js";
@@ -174,7 +173,7 @@ function rowsOf(
     : (season?.map((r) => ({ ...r, value: <Gain value={r.turnover} /> })) ?? null);
 }
 
-type View = "board" | "last" | "rules" | "canal";
+type View = "board" | "last" | "rules";
 
 /**
  * The ranking, a sheet over the map (from the trophy at its foot, or the merchant's rank in the
@@ -182,9 +181,7 @@ type View = "board" | "last" | "rules" | "canal";
  * week's podium and the rules one touch away in the same sheet.
  */
 export function RankingSheet(props: GameProps) {
-  // « canal »: the forty palaces at once, Venice's moon (refonte UX, lot 5).
-  const open = props.sheet === "ranking" || props.sheet === "canal";
-  const canal = props.sheet === "canal";
+  const open = props.sheet === "ranking";
   const [view, setView] = useState<View>("board");
   const [opened, setOpened] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>(() =>
@@ -194,7 +191,7 @@ export function RankingSheet(props: GameProps) {
   const [season, setSeason] = useState<RankingRow[] | null>(null);
   useEffect(() => {
     if (!open) return;
-    setView(canal ? "canal" : "board");
+    setView("board");
     gameApi
       .weekRanking()
       .then(setWeek)
@@ -203,7 +200,7 @@ export function RankingSheet(props: GameProps) {
       .ranking()
       .then((r) => setSeason(r.rows))
       .catch(() => setSeason([]));
-  }, [open, canal]);
+  }, [open]);
   const choose = (p: Period) => {
     store.set("topPeriod", p);
     setPeriod(p);
@@ -263,11 +260,6 @@ export function RankingSheet(props: GameProps) {
               <p className="text-sm text-cream-dim">{tp.noLastWeek}</p>
             )}
           </div>
-        ) : view === "canal" ? (
-          <div>
-            {back}
-            <CanalBoard me={{ id: props.account.id, pseudo: props.account.pseudo }} />
-          </div>
         ) : view === "rules" ? (
           <div className="space-y-3">
             {back}
@@ -308,7 +300,8 @@ export function RankingSheet(props: GameProps) {
               <button
                 type="button"
                 className="label inline-flex min-h-11 items-center rounded-full px-3.5 text-gold ring-1 ring-inset ring-gold/60 transition active:scale-95"
-                onClick={() => setView("canal")}
+                // The forty palaces, a sheet of their own (refonte UX, lot 6).
+                onClick={() => props.setSheet("canal")}
               >
                 {fr.game.canal.tab}
               </button>

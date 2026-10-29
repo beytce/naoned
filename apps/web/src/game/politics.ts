@@ -22,3 +22,19 @@ export function cityStanding(line: {
     rank: at >= 0 ? at + 1 : null,
   };
 }
+
+/**
+ * The merchant against the forty palaces (the month's top 40): their palace when inside, else
+ * their rank and the profit that parts them from the 40th, in deniers (null: not ranked yet).
+ */
+export function palaceGap(
+  rows: { rank: number; me?: boolean; turnover: string }[],
+  palaces = 40,
+): { inside: true; rank: number } | { inside: false; rank: number; gap: bigint } | null {
+  const mine = rows.find((r) => r.me);
+  if (!mine) return null;
+  if (mine.rank <= palaces) return { inside: true, rank: mine.rank };
+  const last = rows.find((r) => r.rank === palaces);
+  const gap = last ? BigInt(last.turnover) - BigInt(mine.turnover) : 0n;
+  return { inside: false, rank: mine.rank, gap: gap > 0n ? gap : 0n };
+}

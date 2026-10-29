@@ -2885,6 +2885,16 @@ export const en: Dictionary = {
           .filter(Boolean)
           .join(" · "),
       doge: (name: string) => `Doge of the month: ${name}`,
+      /** The forty palaces' sheet (refonte UX, lot 6, maquette `Canal`). */
+      summary: "The month's 40 first houses. Swipe, touch a palace.",
+      rank: (n: number) => `${n}${n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"}`,
+      quay: "Your quay",
+      palace: (n: number, facade: string) => [`Palace ${n}`, facade].filter(Boolean).join(" · "),
+      outside: (rank: number, gap: string) =>
+        `You are ${rank}th: ${gap} of profit part you from the 40th palace.`,
+      inside: (rank: number) => `Your palace: number ${rank} on the quay.`,
+      toQuay: "Go to my quay",
+      seeRanking: "See the ranking",
       sestieri: ["Cannaregio", "Castello", "Dorsoduro", "San Polo", "Santa Croce", "San Marco"],
     },
     doge: {

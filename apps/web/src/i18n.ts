@@ -2973,6 +2973,17 @@ const frDict = {
           .filter(Boolean)
           .join(" · "),
       doge: (name: string) => `Doge du mois : ${name}`,
+      /** The forty palaces' sheet (refonte UX, lot 6, maquette `Canal`). */
+      summary: "Les 40 premières Maisons du mois. Glissez, touchez un palais.",
+      rank: (n: number) => `${n}${n === 1 ? "ᵉʳ" : "ᵉ"}`,
+      quay: "Votre quai",
+      palace: (n: number, facade: string) =>
+        [`${n}${n === 1 ? "ᵉʳ" : "ᵉ"} palais`, facade].filter(Boolean).join(" · "),
+      outside: (rank: number, gap: string) =>
+        `Vous êtes ${rank}ᵉ : ${gap} de bénéfice vous séparent du 40ᵉ palais.`,
+      inside: (rank: number) => `Votre palais : le ${rank}${rank === 1 ? "ᵉʳ" : "ᵉ"} du quai.`,
+      toQuay: "Aller à mon quai",
+      seeRanking: "Voir le classement",
       sestieri: ["Cannaregio", "Castello", "Dorsoduro", "San Polo", "Santa Croce", "San Marco"],
     },
     /** The Doge (R7): the Senate, its candidates, programmes and voices. */

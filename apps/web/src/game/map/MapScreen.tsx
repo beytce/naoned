@@ -20,6 +20,7 @@ import { Big, Panel, Qty, Sheet, Slab, clock, useLeaving } from "../../ui.js";
 import { ActCard } from "../Acts.js";
 import { AtoutsSheet, atoutWaiting, useAtoutMoment } from "../Atouts.js";
 import { ManeuversSheet } from "../Broglio.js";
+import { CanalSheet } from "../Canal.js";
 import { CargoSheet, loadOrders, loadSummary } from "../Cargo.js";
 import { Coach } from "../Coach.js";
 import { ComeBack } from "../ComeBack.js";
@@ -1234,6 +1235,7 @@ export function MapScreen(
       {terraView && <TerraSheets props={props} v={terraView} act={terraAct} />}
       <RialtoSheet {...props} />
       <RankingSheet {...props} />
+      <CanalSheet {...props} />
       <ProfileSheet {...props} />
       <HouseSheet {...props} />
       <ActCard {...props} />

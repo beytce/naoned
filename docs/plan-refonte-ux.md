@@ -31,7 +31,7 @@
 **Étape suivante :** le lot 6, plan validé le 29 octobre. Ordre des commits :
 - [x] 1. Politique (`Politics.tsx`, clés `politics`, `broglio`, `senate`, `cities`) : Rumeurs (`RumoursBody`, « Source : …, juste 7 fois sur 8 », « Si c'est vrai : … »), Manœuvres dans leur feuille (`ManeuversSheet`, clé `maneuvers`), Élection (`SenateBody` sous le Doge du mois), Villes (jauge et part, `cityStanding`) ; l'alerte d'espion en tête des Messages (`SpyAlert`) ;
 - [x] 2. Enchères : de jour l'arrivage (`MudaPanel` quitte le Marché), le soir les lots, le cachet « Adjugé », des crans en ducats ronds, un seul or ;
-- [ ] 3. Les 40 palais (`CanalSheet`, clé `canal`) : le quai qui défile, le palais choisi, l'écart au 40ᵉ, « Aller à mon quai » ;
+- [x] 3. Les 40 palais (`CanalSheet`, clé `canal`) : le quai qui défile, le palais choisi, l'écart au 40ᵉ, « Aller à mon quai » ;
 - [ ] 4. textes `en`, e2e et guide.
 
 **Ce que le lot 5 a fait (plan validé le 29 octobre) :**

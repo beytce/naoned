@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cityStanding, outOfEight } from "../src/game/politics.js";
+import { cityStanding, outOfEight, palaceGap } from "../src/game/politics.js";
 
 describe("politics in figures", () => {
   it("says a source's reliability out of eight", () => {
@@ -20,5 +20,15 @@ describe("politics in figures", () => {
     };
     expect(cityStanding(line)).toEqual({ mine: 22, lead: 40, rank: 2 });
     expect(cityStanding({ mine: 0, total: 0, top: [] })).toEqual({ mine: 0, lead: 0, rank: null });
+  });
+
+  it("says the merchant's palace, or the profit that parts them from the 40th", () => {
+    const rows = [
+      { rank: 40, turnover: "500000" },
+      { rank: 41, me: true, turnover: "376000" },
+    ];
+    expect(palaceGap(rows)).toEqual({ inside: false, rank: 41, gap: 124_000n });
+    expect(palaceGap([{ rank: 12, me: true, turnover: "9" }])).toEqual({ inside: true, rank: 12 });
+    expect(palaceGap([{ rank: 1, turnover: "9" }])).toBeNull();
   });
 });
