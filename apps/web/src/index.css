@@ -32,6 +32,7 @@
     --gold-deep: 200 150 50;
     --gold-soft: 250 222 150;
     --lagoon: 110 224 184;
+    --rumour: 142 107 216;
     --lagoon-deep: 60 160 130;
     --lagoon-soft: 170 236 212;
     --vermilion: 255 128 112;
@@ -59,6 +60,7 @@
     --gold-deep: 186 136 48;
     --gold-soft: 243 212 146;
     --lagoon: 125 181 150;
+    --rumour: 160 128 200;
     --lagoon-deep: 76 131 102;
     --lagoon-soft: 180 216 192;
     --vermilion: 234 118 88;
@@ -86,6 +88,7 @@
     --gold-deep: 190 146 50;
     --gold-soft: 245 216 150;
     --lagoon: 128 182 150;
+    --rumour: 160 128 200;
     --lagoon-deep: 80 136 104;
     --lagoon-soft: 180 216 194;
     --vermilion: 222 104 76;
@@ -112,6 +115,7 @@
     --gold-deep: 96 64 8;
     --gold-soft: 160 118 44;
     --lagoon: 40 110 78;
+    --rumour: 104 64 168;
     --lagoon-deep: 28 82 57;
     --lagoon-soft: 130 180 154;
     --vermilion: 170 52 34;
@@ -743,8 +747,12 @@
   background: radial-gradient(circle, rgb(var(--lagoon) / 0.45) 0%, transparent 68%);
   animation: marker-halo 2.2s ease-in-out infinite;
 }
-.marker-halo-gold {
-  background: radial-gradient(circle, rgb(var(--gold) / 0.55) 0%, transparent 68%);
+/* The map's halos by meaning (refonte UX): ready (lagoon), a city that buys, a rumour or auctions. */
+.marker-halo-city {
+  background: radial-gradient(circle, rgb(var(--info) / 0.45) 0%, transparent 68%);
+}
+.marker-halo-rumour {
+  background: radial-gradient(circle, rgb(var(--rumour) / 0.5) 0%, transparent 68%);
 }
 @keyframes marker-halo {
   0%,

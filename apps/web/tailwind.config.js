@@ -22,6 +22,8 @@ export default {
         vermilion: { DEFAULT: v("vermilion"), deep: v("vermilion-deep") },
         /** Selection, the guide, the active tab: never money nor a gain. */
         info: { DEFAULT: v("info"), deep: v("info-deep") },
+        /** A rumour or the auctions on the map: their halo and dot (refonte UX). */
+        rumour: v("rumour"),
       },
       fontFamily: {
         display: ["Archivo Variable", "Archivo", "system-ui", "sans-serif"],

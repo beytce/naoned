@@ -64,6 +64,19 @@ describe("the palettes", () => {
       }
       expect(low).toEqual([]);
     });
+
+    // The map's dots (refonte UX): a place that waits reads at 3:1 on the map's night.
+    it(`${name}: the dots of the map's calls read on the night`, () => {
+      const low: string[] = [];
+      for (const call of ["lagoon", "info", "rumour"]) {
+        const c = vars[call];
+        const s = vars.night;
+        if (!c || !s) throw new Error(`${name}: --${call} or --night missing`);
+        const ratio = contrast(c, s);
+        if (ratio < 3) low.push(`${call} on night: ${ratio.toFixed(2)}`);
+      }
+      expect(low).toEqual([]);
+    });
   }
 });
 

@@ -82,7 +82,7 @@ import {
   type TipKey,
   usePresence,
 } from "./HudTips.js";
-import { CartMarker, CityMarker, CityName, HomeMarker } from "./Markers.js";
+import { CartMarker, CityMarker, CityName, HomeMarker, type PlaceCall } from "./Markers.js";
 import { NoticesSheet } from "./Notices.js";
 import { CityOrbit, ComptoirOrbit } from "./Orbit.js";
 import { ActionButton, ContextPanel, PlaceCard } from "./Panel.js";
@@ -114,7 +114,7 @@ import { TimeStrip } from "./TimeStrip.js";
 import { type MapMarker, type Selection, WorldMap, type WorldMapHandle } from "./WorldMap.js";
 import { ACTION_ICONS as A } from "./actions.js";
 import { Icon } from "./icons.js";
-import { type CityOrder, type Place, cityPlace, homePlace } from "./places.js";
+import { type CityOrder, type Place, cityPlace, halos, homePlace } from "./places.js";
 
 /** Seconds to change one's mind once a cart is sent, as at a space dock. */
 const DEPART_SECONDS = 10;
@@ -567,6 +567,18 @@ export function MapScreen(
     }
   };
 
+  // Two halos at most on the map, by meaning; the other places that wait carry a dot.
+  const placeWaits = [
+    { key: "home", waits: homePlaceOf().waits },
+    ...cities.map((code) => ({ key: `city:${code}`, waits: cityPlaceOf(code).waits })),
+  ];
+  const lit = halos(placeWaits);
+  const callOf = (key: string): PlaceCall | null => {
+    const mode = lit.get(key);
+    const tone = placeWaits.find((p) => p.key === key)?.waits;
+    return mode && tone ? { mode, tone } : null;
+  };
+
   const markers: MapMarker[] = [
     {
       key: "home",
@@ -575,6 +587,7 @@ export function MapScreen(
           name={m.homeLabel}
           crest={crest}
           ready={ready}
+          call={callOf("home")}
           rings={view.buildings.map((b) => {
             const done = readyOf(b, now);
             if (done > 0) return { share: 1, ready: true };
@@ -592,9 +605,6 @@ export function MapScreen(
     },
     ...cities.flatMap((code) => {
       const orders = openOrders.filter((o) => o.city === code);
-      const deliverable = orders.filter((o) =>
-        freeVehicles.some((v) => canServe(props, o, capacityOf(props, v))),
-      ).length;
       return [
         {
           key: `city:${code}`,
@@ -606,11 +616,11 @@ export function MapScreen(
                 resource: o.resource,
                 covered: have(view, o.resource) >= o.quantity,
               }))}
-              deliverable={deliverable}
               criee={criee?.city === code}
               supplier={view.supplies.some((s) => s.city === code) ? crest : null}
               podesta={podestaCrest(code)}
               lit={litCities.includes(code)}
+              call={callOf(`city:${code}`)}
               dim={cartFree && !litCities.includes(code)}
               onTap={() => goCity(code)}
             />
