@@ -117,6 +117,7 @@ const WORDS = {
     sharesTab: /^actions$/i,
     playersTab: /^entre joueurs$/i,
     citiesTab: /^villes$/i,
+    duelTab: /^duel$/i,
     alone: /^jouer seul$/i,
   },
   en: {
@@ -160,6 +161,7 @@ const WORDS = {
     sharesTab: /^shares$/i,
     playersTab: /^between players$/i,
     citiesTab: /^cities$/i,
+    duelTab: /^duel$/i,
     alone: /^play alone$/i,
   },
 }[LANG === "en" ? "en" : "fr"];
@@ -477,10 +479,10 @@ async function session(width, height, tag) {
       await page.waitForTimeout(400);
     }
     await closeAll(page);
-    // The Sfida of the week (R6): from the ranking's « Duel » once the Lustre is on.
+    // The Sfida of the week (R6): the ranking's « Duel » tab once the Lustre is on (lot 7).
     await page.locator('[data-tab="ranking"]').click();
     await page.waitForTimeout(600);
-    const duel = page.locator('[data-coach="ranking-duel"]');
+    const duel = page.getByRole("tab", { name: WORDS.duelTab });
     if ((await duel.count()) === 0) await closeAll(page);
     else {
       await duel.first().click();

@@ -1245,6 +1245,11 @@ const frDict = {
     },
     top: {
       tabs: { passee: "Semaine passée", regles: "Règles" },
+      /** The ranking in three tabs (refonte UX, lot 7, maquette `Classement`). */
+      periods: { week: "Semaine", season: "Mois", duel: "Duel" },
+      line: (label: string, left: string) => `${label} · clôture dans ${left}`,
+      lastWeek: "La semaine passée",
+      rules: "Les règles du classement",
       noLastWeek: "Pas encore de semaine terminée : le premier podium se joue maintenant.",
     },
     counter: {
@@ -3217,6 +3222,7 @@ const frDict = {
     },
     /** The Lustre (R6): the social ranks of Venice and the weekly Sfida. */
     lustre: {
+      see: (name: string) => `Voir ${name}`,
       tiers: {
         popolano: "Popolano",
         cittadino: "Cittadino",

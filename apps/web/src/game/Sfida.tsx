@@ -75,7 +75,6 @@ function Curves({ mine, theirs, hour }: { mine: string[]; theirs: string[]; hour
   );
 }
 
-/** The six ranks of Venice, the merchant's lit, how far the next. */
 /**
  * A tier as its league (refonte UX, 28 October 2026): the tiers run from the newcomers' up, so the
  * highest is League 1 and the first one League 6. `count` is the world's number of tiers, the
@@ -88,13 +87,15 @@ export function leagueOf(code: string, count = Object.keys(fr.game.lustre.tiers)
 
 function Ladder({ data }: { data: SfidaView }) {
   return (
-    <ol className="flex flex-wrap gap-1.5">
+    // A column, League 1 at the top, the merchant's own marked (maquette `Classement`).
+    <ol className="flex flex-col-reverse gap-1">
       {data.tiers.map((tier, i) => {
         const here = i === data.tier.index;
         return (
           <li
             key={tier.code}
-            className={`rounded-full px-3 py-1 text-xs ${here ? "bg-info/20 text-info ring-1 ring-inset ring-info" : i < data.tier.index ? "text-cream-dim" : "text-muted ring-1 ring-inset ring-line"}`}
+            aria-current={here ? "true" : undefined}
+            className={`rounded-xl px-3 py-1.5 text-sm ${here ? "bg-info/20 text-info ring-1 ring-inset ring-info" : i < data.tier.index ? "text-cream-dim" : "text-muted"}`}
           >
             {t().league(data.tiers.length - i)}
             <span className="ml-1 text-muted">{t().tiers[tier.code] ?? ""}</span>
@@ -106,16 +107,16 @@ function Ladder({ data }: { data: SfidaView }) {
   );
 }
 
+/** The six leagues of Venice, the merchant's lit, how far the next. */
 /**
- * The Sfida of the week: the merchant and its opponent face to face (or its ghost), both net sales
- * of the week and their curves, what winning brings; the ladder; the challenges received and sent.
+ * The duel of the week, the ranking's third tab (R6, refonte UX lot 7): the merchant and its
+ * opponent face to face (or its ghost), both net sales of the week and their curves, what winning
+ * brings; the way to the opponent's sheet; the leagues; the challenges received and sent.
  */
-export function SfidaSheet(props: GameProps) {
-  const open = props.sheet === "sfida";
+export function SfidaBody(props: GameProps) {
   const [data, setData] = useState<SfidaView | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    if (!open) return;
     let live = true;
     gameApi
       .sfida()
@@ -124,7 +125,7 @@ export function SfidaSheet(props: GameProps) {
     return () => {
       live = false;
     };
-  }, [open]);
+  }, []);
   const s = data?.sfida ?? null;
   const other = s?.opponent ?? s?.ghost ?? null;
   const gap = s ? BigInt(s.mine) - BigInt(s.theirs) : 0n;
@@ -138,110 +139,113 @@ export function SfidaSheet(props: GameProps) {
     }
   };
   return (
-    <Sheet
-      open={open}
-      onClose={() => props.setSheet(null)}
-      kicker={t().kicker}
-      title={t().title}
-      summary={
-        data
-          ? `${t().league(data.tiers.length - data.tier.index)} (${t().tiers[data.tier.code] ?? ""}) · ${t().lustre(data.lustre)}`
-          : null
-      }
-      docked
-    >
-      <div className="space-y-4">
-        {data && !s && <p className="meta">{t().none}</p>}
-        {s && other && (
-          <section className="space-y-3">
-            {/* One line a side: the merchant, then its opponent, each with its week so far. */}
-            <div className="flex items-center gap-3 rounded-2xl bg-night-3 px-3 py-2 ring-1 ring-inset ring-info/60">
-              <Crest crest={me} size={32} />
-              <span className="min-w-0 flex-1 font-semibold text-info">{t().you}</span>
-              <span className="font-display text-lg font-extrabold tabular-nums text-info">
-                {whole(BigInt(s.mine))}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 rounded-2xl bg-night-3 px-3 py-2">
-              <span className={s.ghost ? "opacity-50" : ""}>
-                <Crest crest={crestOf(other)} size={32} />
-              </span>
-              <span className="flex min-w-0 flex-1 font-semibold">
-                {s.ghost ? (
-                  <span className="truncate">
-                    {t().ghostOf(merchantLabel(other.pseudo, other.bot, "—"))}
-                  </span>
-                ) : (
-                  <MerchantName pseudo={other.pseudo} bot={other.bot} fallback="—" />
-                )}
-              </span>
-              <span className="font-display text-lg font-extrabold tabular-nums text-cream">
-                {whole(BigInt(s.theirs))}
-              </span>
-            </div>
-            <p
-              className={`text-center text-sm ${gap > 0n ? "text-lagoon" : gap < 0n ? "text-vermilion" : "text-cream-dim"}`}
-            >
-              {gap > 0n ? t().ahead(whole(gap)) : gap < 0n ? t().behind(whole(-gap)) : t().even}
+    <div className="space-y-4">
+      {data && (
+        <p className="meta">
+          {t().league(data.tiers.length - data.tier.index)} ({t().tiers[data.tier.code] ?? ""}) ·{" "}
+          {t().lustre(data.lustre)}
+        </p>
+      )}
+      {data && !s && <p className="meta">{t().none}</p>}
+      {s && other && (
+        <section className="space-y-3">
+          {/* One line a side: the merchant, then its opponent, each with its week so far. */}
+          <div className="flex items-center gap-3 rounded-2xl bg-night-3 px-3 py-2 ring-1 ring-inset ring-info/60">
+            <Crest crest={me} size={32} />
+            <span className="min-w-0 flex-1 font-semibold text-info">{t().you}</span>
+            <span className="font-display text-lg font-extrabold tabular-nums text-info">
+              {whole(BigInt(s.mine))}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 rounded-2xl bg-night-3 px-3 py-2">
+            <span className={s.ghost ? "opacity-50" : ""}>
+              <Crest crest={crestOf(other)} size={32} />
+            </span>
+            <span className="flex min-w-0 flex-1 font-semibold">
+              {s.ghost ? (
+                <span className="truncate">
+                  {t().ghostOf(merchantLabel(other.pseudo, other.bot, "—"))}
+                </span>
+              ) : (
+                <MerchantName pseudo={other.pseudo} bot={other.bot} fallback="—" />
+              )}
+            </span>
+            <span className="font-display text-lg font-extrabold tabular-nums text-cream">
+              {whole(BigInt(s.theirs))}
+            </span>
+          </div>
+          <p
+            className={`text-center text-sm ${gap > 0n ? "text-lagoon" : gap < 0n ? "text-vermilion" : "text-cream-dim"}`}
+          >
+            {gap > 0n ? t().ahead(whole(gap)) : gap < 0n ? t().behind(whole(-gap)) : t().even}
+          </p>
+          <Curves
+            mine={withNow(s.curves.mine, s.hour, s.mine)}
+            theirs={s.ghost ? s.curves.theirs : withNow(s.curves.theirs, s.hour, s.theirs)}
+            hour={s.hour}
+          />
+          {s.ghost && (
+            <p className="meta">
+              {t().ghostLine(merchantLabel(s.ghost.pseudo, s.ghost.bot, "—"), s.ghost.week)}
             </p>
-            <Curves
-              mine={withNow(s.curves.mine, s.hour, s.mine)}
-              theirs={s.ghost ? s.curves.theirs : withNow(s.curves.theirs, s.hour, s.theirs)}
-              hour={s.hour}
-            />
-            {s.ghost && (
-              <p className="meta">
-                {t().ghostLine(merchantLabel(s.ghost.pseudo, s.ghost.bot, "—"), s.ghost.week)}
-              </p>
-            )}
-            {s.stake > 0 && <p className="text-sm text-gold">{t().stake(s.stake)}</p>}
-            <p className="text-xs text-cream-dim">{t().stakes(data?.win ?? 0, data?.loss ?? 0)}</p>
-          </section>
-        )}
-        {data && (
-          <section className="space-y-2">
-            <p className="label">{t().ladder}</p>
-            <Ladder data={data} />
-          </section>
-        )}
-        {data && data.challenges.in.length > 0 && (
-          <section className="space-y-2">
-            <p className="label">{t().challengesIn}</p>
-            {data.challenges.in.map((c) => (
-              <div key={c.id} className="flex items-center gap-2 rounded-2xl bg-night-3 px-3 py-2">
-                <Crest crest={crestOf(c.from)} size={22} />
-                <span className="min-w-0 flex-1 truncate text-sm">
-                  <MerchantName pseudo={c.from.pseudo} bot={c.from.bot} fallback="—" />
-                  {c.stake > 0 && <span className="text-gold"> · {t().lustre(c.stake)}</span>}
-                </span>
-                {c.accepted ? (
-                  <span className="label">{t().accepted}</span>
-                ) : (
-                  <Slab size="sm" tone="gold" disabled={busy} onClick={() => accept(c.id)}>
-                    {t().accept}
-                  </Slab>
-                )}
-              </div>
-            ))}
-          </section>
-        )}
-        {data && data.challenges.out.length > 0 && (
-          <section className="space-y-2">
-            <p className="label">{t().challengesOut}</p>
-            {data.challenges.out.map((c) => (
-              <div key={c.id} className="flex items-center gap-2 rounded-2xl bg-night-3 px-3 py-2">
-                <Crest crest={crestOf(c.to)} size={22} />
-                <span className="min-w-0 flex-1 truncate text-sm">
-                  <MerchantName pseudo={c.to.pseudo} bot={c.to.bot} fallback="—" />
-                </span>
-                <span className="label">{c.accepted ? t().accepted : t().waiting}</span>
-              </div>
-            ))}
-          </section>
-        )}
-        <Rules id="lustre">{t().help}</Rules>
-      </div>
-    </Sheet>
+          )}
+          {s.stake > 0 && <p className="text-sm text-gold">{t().stake(s.stake)}</p>}
+          <p className="text-xs text-cream-dim">{t().stakes(data?.win ?? 0, data?.loss ?? 0)}</p>
+          {s.opponent && (
+            // The opponent's sheet over the ranking (refonte UX, lot 7).
+            <Slab
+              tone="ghost"
+              className="w-full"
+              onClick={() => props.setSheet(`player:${s.opponent?.id ?? ""}:ranking`)}
+            >
+              {t().see(merchantLabel(s.opponent.pseudo, s.opponent.bot, "—"))}
+            </Slab>
+          )}
+        </section>
+      )}
+      {data && (
+        <section className="space-y-2">
+          <p className="label">{t().ladder}</p>
+          <Ladder data={data} />
+        </section>
+      )}
+      {data && data.challenges.in.length > 0 && (
+        <section className="space-y-2">
+          <p className="label">{t().challengesIn}</p>
+          {data.challenges.in.map((c) => (
+            <div key={c.id} className="flex items-center gap-2 rounded-2xl bg-night-3 px-3 py-2">
+              <Crest crest={crestOf(c.from)} size={22} />
+              <span className="min-w-0 flex-1 truncate text-sm">
+                <MerchantName pseudo={c.from.pseudo} bot={c.from.bot} fallback="—" />
+                {c.stake > 0 && <span className="text-gold"> · {t().lustre(c.stake)}</span>}
+              </span>
+              {c.accepted ? (
+                <span className="label">{t().accepted}</span>
+              ) : (
+                <Slab size="sm" tone="gold" disabled={busy} onClick={() => accept(c.id)}>
+                  {t().accept}
+                </Slab>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+      {data && data.challenges.out.length > 0 && (
+        <section className="space-y-2">
+          <p className="label">{t().challengesOut}</p>
+          {data.challenges.out.map((c) => (
+            <div key={c.id} className="flex items-center gap-2 rounded-2xl bg-night-3 px-3 py-2">
+              <Crest crest={crestOf(c.to)} size={22} />
+              <span className="min-w-0 flex-1 truncate text-sm">
+                <MerchantName pseudo={c.to.pseudo} bot={c.to.bot} fallback="—" />
+              </span>
+              <span className="label">{c.accepted ? t().accepted : t().waiting}</span>
+            </div>
+          ))}
+        </section>
+      )}
+      <Rules id="lustre">{t().help}</Rules>
+    </div>
   );
 }
 

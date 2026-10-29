@@ -18,8 +18,11 @@ export function MerchantName({
   className?: string;
 }) {
   return (
-    <span className={`inline-flex min-w-0 max-w-full items-center gap-1.5 ${className}`}>
-      <span className="truncate">{pseudo ?? fallback}</span>
+    // Short of room, the word goes under the name rather than cutting it.
+    <span
+      className={`inline-flex min-w-0 max-w-full flex-wrap items-baseline gap-x-1.5 ${className}`}
+    >
+      <span className="min-w-0 max-w-full truncate">{pseudo ?? fallback}</span>
       {bot && <NpcSeal />}
     </span>
   );

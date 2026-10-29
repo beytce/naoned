@@ -36,7 +36,7 @@ import { RialtoSheet } from "../Marche.js";
 import { PoliticsSheet } from "../Politics.js";
 import { ProfileSheet } from "../Profil.js";
 import { SeraSheet, openSeraLots } from "../Sera.js";
-import { ChallengeSheet, SfidaSheet } from "../Sfida.js";
+import { ChallengeSheet } from "../Sfida.js";
 import { SignoriaSheet } from "../Signoria.js";
 import { SuppliersSheet } from "../Suppliers.js";
 import { RankingSheet } from "../Top.js";
@@ -1221,7 +1221,6 @@ export function MapScreen(
       <CounterSheets {...props} />
       <SuppliersSheet {...props} />
       <SignoriaSheet {...props} />
-      <SfidaSheet {...props} />
       <ChallengeSheet {...props} />
       <SeraSheet {...props} />
       <DailySheet {...props} />

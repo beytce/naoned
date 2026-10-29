@@ -1293,6 +1293,11 @@ export const en: Dictionary = {
     },
     top: {
       tabs: { passee: "Last week", regles: "Rules" },
+      /** The ranking in three tabs (refonte UX, lot 7, maquette `Classement`). */
+      periods: { week: "Week", season: "Month", duel: "Duel" },
+      line: (label: string, left: string) => `${label} · closes in ${left}`,
+      lastWeek: "Last week",
+      rules: "The ranking's rules",
       noLastWeek: "No week finished yet: the first podium is being played now.",
     },
     counter: {
@@ -3103,6 +3108,7 @@ export const en: Dictionary = {
     },
     /** The Lustre (R6): the social ranks of Venice and the weekly Sfida. */
     lustre: {
+      see: (name: string) => `See ${name}`,
       tiers: {
         popolano: "Popolano",
         cittadino: "Cittadino",
