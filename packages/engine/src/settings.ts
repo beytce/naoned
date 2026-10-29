@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { empireSettingsSchema } from "./empire/settings.js";
 
 /**
  * Balancing parameters of a world, stored in `worlds.settings` (JSON).
@@ -1497,6 +1498,8 @@ export const worldSettingsSchema = z.object({
     minVolume: qty,
     buildingValueBps: bps,
   }),
+  /** The persistent empire (CADRAGE-v3): absent from the worlds of the monthly seasons. */
+  empire: empireSettingsSchema.optional(),
 });
 
 export type WorldSettingsInput = z.input<typeof worldSettingsSchema>;

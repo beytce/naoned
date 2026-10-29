@@ -114,6 +114,7 @@ export * from "./state.js";
 export * from "./theme.js";
 export { venice1450 } from "./themes/venice1450.js";
 export { venice1450Settings } from "./themes/venice1450.settings.js";
+export { venice1450Empire } from "./themes/venice1450.empire.js";
 export { EngineError, type EngineErrorCode } from "./tx.js";
 export {
   adoptTurnover,
@@ -137,3 +138,4 @@ export * from "./warehouses.js";
 export * from "./unlocks.js";
 export * from "./partners.js";
 export * from "./loans.js";
+export * from "./empire/index.js";
