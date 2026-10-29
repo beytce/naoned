@@ -9,18 +9,11 @@ import { DecreeBanner } from "./Famille.js";
 import type { GameProps } from "./Game.js";
 import { MerchantName } from "./Name.js";
 import { d } from "./format.js";
+import { change } from "./market.js";
 import type { BookLine, MarketLine, OrderView } from "./types.js";
 
-function series(props: GameProps, resource: string): number[] {
+export function series(props: GameProps, resource: string): number[] {
   return (props.prices[resource] ?? []).map((p) => Number(p.price));
-}
-
-/** Change over the visible history, in percent. */
-function change(points: number[]): number {
-  const first = points[0];
-  const last = points.at(-1);
-  if (!first || !last || points.length < 2) return 0;
-  return ((last - first) / first) * 100;
 }
 
 const percent = new Intl.NumberFormat(locale, {

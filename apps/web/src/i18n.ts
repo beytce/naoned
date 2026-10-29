@@ -170,6 +170,25 @@ const frDict = {
     map: {
       home: (pseudo: string) => (pseudo ? `Maison ${pseudo}` : "Votre maison"),
       homeLabel: "Mes ateliers",
+      /** Venice, the Venise tab's screen (refonte UX, lot 5): four moons and the Doge. */
+      venice: {
+        title: "Venise",
+        politics: "Politique",
+        rumours: (n: number) => `${n} rumeur${n > 1 ? "s" : ""} ce matin`,
+        politicsCalm: "Rumeurs, élection, villes",
+        market: "Marché",
+        move: (good: string, up: boolean, pct: number) => `${good} ${up ? "▲" : "▼"} ${pct} %`,
+        marketCalm: "Les prix du jour",
+        auctions: "Enchères",
+        lots: (n: number) => `${n} lot${n > 1 ? "s" : ""} ouvert${n > 1 ? "s" : ""}`,
+        tonight: (hour: string) => `ce soir ${hour}`,
+        palaces: "Les 40 palais",
+        rank: (n: number) => `vous : ${n}${n === 1 ? "ᵉʳ" : "ᵉ"}`,
+        palacesCalm: "Le top 40 du mois",
+        doge: (name: string) => `Doge, l'élu du mois : ${name}`,
+        decree: (text: string) => `Son décret : ${text}`,
+        port: (n: number) => `Le port : ${n} commande${n > 1 ? "s" : ""}`,
+      },
       /** The trade's header (refonte UX): the purse leads to the profile. */
       purse: (amount: string) => `Votre profil, ${amount} ducats`,
       dailyRing: (done: number, total: number) => `Tâches du jour : ${done} sur ${total}`,

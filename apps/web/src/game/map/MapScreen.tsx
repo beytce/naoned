@@ -110,6 +110,7 @@ import {
   useWeekReplay,
 } from "./TerraLayer.js";
 import { TimeStrip } from "./TimeStrip.js";
+import { VeniceOrbit } from "./Venice.js";
 import { type MapMarker, type Selection, WorldMap, type WorldMapHandle } from "./WorldMap.js";
 import { ACTION_ICONS as A } from "./actions.js";
 import { Icon } from "./icons.js";
@@ -122,6 +123,7 @@ const DEPART_SECONDS = 10;
 export function selectionKey(s: Selection | null): string | null {
   if (!s) return null;
   if (s.kind === "home") return "home";
+  if (s.kind === "venice") return "city:venezia";
   if (s.kind === "cart") return `${s.kind}:${s.id}`;
   if (s.kind === "terra") return `terra:${s.cell}`;
   return `${s.kind}:${s.code}`;
@@ -790,6 +792,8 @@ export function MapScreen(
         }}
         onGhost={() => {
           if (place.to === "sera") props.setSheet("sera");
+          // Venice's card leads into Venice, its moons (refonte UX, lot 5).
+          else if (sel.kind === "city" && sel.code === "venezia") select({ kind: "venice" });
           else select({ ...sel, peek: false });
         }}
         onClose={() => select(null)}
@@ -821,6 +825,15 @@ export function MapScreen(
       />
     );
   }
+  // Venice up close: its four moons and the Doge (refonte UX, lot 5).
+  if (trade && sel?.kind === "venice")
+    panel = (
+      <VeniceOrbit
+        props={props}
+        ports={openOrders.filter((o) => o.city === "venezia").length}
+        onPort={() => select({ kind: "city", code: "venezia" })}
+      />
+    );
   // A place closed shrinks back into the map (its exit), whichever way it was closed (its chevron,
   // Escape, the phone's back, the map touched); not when another selection takes its room.
   const orbitOpen = trade && (sel?.kind === "home" || sel?.kind === "city") && !peek;
@@ -1063,6 +1076,7 @@ export function MapScreen(
           sheet: props.sheet,
           layer,
           home: trade && sel?.kind === "home" && !peek,
+          venice: trade && sel?.kind === "venice",
         })}
         items={[
           {
@@ -1086,13 +1100,14 @@ export function MapScreen(
             },
           },
           {
-            // Until Venice has its own screen (lot 5 of the refonte): the city on the map.
+            // Venice up close, its four moons (refonte UX, lot 5).
             id: "venice",
+            coach: "tab-venice",
             dot: openSeraLots(view) > 0,
             onClick: () => {
               if (layer !== "trade") props.setLayer("trade");
               props.setSheet(null);
-              goCity("venezia", false);
+              select({ kind: "venice" });
             },
           },
           {

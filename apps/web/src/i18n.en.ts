@@ -252,6 +252,25 @@ export const en: Dictionary = {
     map: {
       home: (pseudo: string) => (pseudo ? `House ${pseudo}` : "Your house"),
       homeLabel: "My workshops",
+      /** Venice, the Venise tab's screen (refonte UX, lot 5): four moons and the Doge. */
+      venice: {
+        title: "Venice",
+        politics: "Politics",
+        rumours: (n: number) => `${n} rumour${n > 1 ? "s" : ""} this morning`,
+        politicsCalm: "Rumours, election, cities",
+        market: "Market",
+        move: (good: string, up: boolean, pct: number) => `${good} ${up ? "▲" : "▼"} ${pct} %`,
+        marketCalm: "Today's prices",
+        auctions: "Auctions",
+        lots: (n: number) => `${n} lot${n > 1 ? "s" : ""} open`,
+        tonight: (hour: string) => `tonight ${hour}`,
+        palaces: "The 40 palaces",
+        rank: (n: number) => `you: ${n}${n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"}`,
+        palacesCalm: "The month's top 40",
+        doge: (name: string) => `Doge, elected for the month: ${name}`,
+        decree: (text: string) => `Decree: ${text}`,
+        port: (n: number) => `The port: ${n} order${n > 1 ? "s" : ""}`,
+      },
       /** The trade's header (refonte UX): the purse leads to the profile. */
       purse: (amount: string) => `Your profile, ${amount} ducats`,
       dailyRing: (done: number, total: number) => `Tasks of the day: ${done} of ${total}`,

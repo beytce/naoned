@@ -22,13 +22,17 @@
 | 2 | Lexique (i18n `fr` puis `en`, notifications push) | fait (PR lot 2) | `6e69c57`…(fin de branche `claude/refonte-ux-lot2`) |
 | 3 | La carte et la fiche d'un lieu | fait (PR lot 3) | `e193d83`…(fin de branche `claude/refonte-ux-lot3`) |
 | 4 | Ateliers, production, bâtir, magasin | fait (PR lot 4) | `568f5e1`…(fin de branche `claude/refonte-ux-lot4`) |
-| 5 | Venise, Marché, page d'une marchandise | à faire | |
+| 5 | Venise, Marché, page d'une marchandise | en cours (branche `claude/refonte-ux-lot5`) | |
 | 6 | Politique (rumeurs, élection, villes), enchères, 40 palais | à faire | |
 | 7 | Classement, fiche d'un joueur, profil | à faire | |
 | 8 | Ville, Conquête | à faire | |
 | 9 | Moments : messages, tâches du jour, calendrier, lettre, Atout, bon retour, fin du mois, entrée | à faire | |
 
-**Étape suivante :** le lot 5 (Venise, Marché, page d'une marchandise). Il commence par un passage en mode plan (CLAUDE.md), appuyé sur la section du lot ci-dessous et sur les maquettes qu'elle cite.
+**Étape suivante :** le lot 5, plan validé le 29 octobre. Ordre des commits :
+- [x] 1. Venise, l'écran de l'onglet (`map/Venice.tsx`, sélection `{ kind: "venice" }`) : quatre lunes (Politique → `broglio`, Marché → `rialto`, Enchères → `sera`, Les 40 palais → `canal`, vue canal du classement), la carte du Doge (`useCanal`, `decreeText`), « Le port : N commandes » vers l'orbite de la ville ; `activeTab` allume Venise sur ses feuilles ; le guide passe par `tab-venice` puis `venice-market` ; la plus forte variation dans `game/market.ts` (testée) ;
+- [ ] 2. le Marché : trois onglets (Marchandises, Entre joueurs, Actions), plus de filtres, un prix et sa variation par ligne ;
+- [ ] 3. la page d'une marchandise : carnet en lignes, Acheter/Vendre, Tout de suite / À mon prix, détail replié, un seul or, quantité préremplie (`trade:<res>:<qté>`) ;
+- [ ] 4. textes `en`, e2e et guide.
 
 **Ce que le lot 4 a fait (plan validé le 29 octobre).** Décision du porteur : quand il manque des matériaux, l'or achète sur place (`BuyMissing`, « Acheter 15 briques · 24 d »), sans passer par la page de la marchandise. Ordre des commits :
 - [x] 1. l'onglet Ateliers ouvre « Mes ateliers » (`ComptoirOrbit`), allumé en or avec ses feuilles (`activeTab`, `home`) ; plus de chevron « ‹ » dans l'orbite ;

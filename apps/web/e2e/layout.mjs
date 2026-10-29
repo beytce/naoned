@@ -505,6 +505,11 @@ async function session(width, height, tag) {
       await page.waitForTimeout(400);
     }
     await closeAll(page);
+    // Venice up close (refonte UX, lot 5): its four moons and the Doge, from its tab.
+    await page.locator('[data-tab="venice"]').click();
+    await page.waitForTimeout(700);
+    await check("venise");
+    await closeAll(page);
     // The merchant's crest opens their profile (Lagune: titles as a constellation), and the
     // ranking's door its podium once it is open.
     await page.locator('[data-hud="identity"], [data-hud="purse"]').first().click();
@@ -631,7 +636,7 @@ async function transform(page, check) {
     await closeAll(page);
     // The Market, from Venice (its tab, then the Rialto of the place up close).
     await page.locator('[data-tab="venice"]').click();
-    await page.locator("[data-coach=panel-rialto]").click();
+    await page.locator("[data-coach=venice-market]").click();
     await page.locator("[data-coach=row-wheat]").click();
     await page.locator("[data-coach=sheet-buy]").waitFor();
     await page.fill(`input[aria-label=${WORDS.quantity}]`, "10");

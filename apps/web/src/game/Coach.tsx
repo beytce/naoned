@@ -273,7 +273,10 @@ function nextStep(props: CoachProps): CoachStep {
         text: fr.game.coach.goRialto,
         target: props.selection.peek ? "place-open" : "panel-rialto",
       };
-    return { text: fr.game.coach.goRialto, target: "city-venezia" };
+    // Venice up close, then its Market moon (refonte UX, lot 5).
+    if (props.selection?.kind === "venice")
+      return { text: fr.game.coach.goRialto, target: "venice-market" };
+    return { text: fr.game.coach.goRialto, target: "tab-venice" };
   }
 
   // The first upgrade: the merchant leaves knowing the house grows (E3-3 of the experts).
