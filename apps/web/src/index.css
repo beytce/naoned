@@ -179,13 +179,14 @@
   .hit {
     position: relative;
   }
+  /* 48 px, not 44: a finger 22 px from the centre never lands on the edge's half pixel. */
   .hit::before {
     content: "";
     position: absolute;
     left: 50%;
     top: 50%;
-    width: max(100%, 44px);
-    height: max(100%, 44px);
+    width: max(100%, 48px);
+    height: max(100%, 48px);
     transform: translate(-50%, -50%);
   }
   /* Card: deep water, a thin foam line, rounded corners. */
