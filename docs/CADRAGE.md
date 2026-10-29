@@ -1,5 +1,7 @@
 # Fondaco (ex-Comptoirs) — Document de cadrage (v2)
 
+> **Remplacé par [`CADRAGE-v3.md`](CADRAGE-v3.md) pour la conception, le 29 octobre 2026** : le commerce devient persistant, sans remise à zéro, et seule la Terraferme garde des saisons courtes. Les parties techniques de ce document (comptabilité et invariants, architecture, modèle de données, données personnelles) restent valables, sauf ce que le § 12 du v3 change.
+
 10 octobre 2026 · nom de code du dépôt : `naoned`
 
 ## Décisions de la v2

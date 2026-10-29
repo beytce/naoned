@@ -1,0 +1,387 @@
+# Fondaco — Document de cadrage (v3) : un empire marchand sans remise à zéro
+
+*Rédigé le 29 octobre 2026, à la décision du porteur. Ce cadrage fait foi pour toute la conception à partir de cette date. Il remplace la partie conception de `docs/CADRAGE.md` (v2) ; les parties techniques de la v2 restent valables, sauf mention contraire au § 12.*
+
+*Origine : `docs/refonte-2026-10-29/`. On y trouve la synthèse et ses quatre arbitrages, ainsi que les deux notes d'expert : `expert-progression.md` et `expert-meta.md`.*
+
+*Tous les chiffres de ce document sont des **ordres de grandeur, à calibrer au simulateur de 24 mois** (§ 13). Aucun n'est encore simulé.*
+
+## 1. Vision et promesse
+
+Fondaco est un jeu de commerce multijoueur en 2D, sur navigateur PC et mobile (PWA), dans la Venise de 1450.
+
+**Pitch** : un empire marchand qui grandit pendant des années, de la lagune à Bruges ; et, à côté, la Terraferme, une guerre d'une semaine à armes égales.
+
+**Promesse joueur** : « J'ai commencé avec une mule à Mestre. Un an plus tard, j'ai un palais sur le Grand Canal, des comptoirs jusqu'à Alexandrie, une flotte dans la Muda et un siège au Sénat. »
+
+**Ce qui ne change pas** :
+- le positionnement : un jeu de niche, assumé, dont la profondeur est lisible ;
+- la cible : des adultes de 25 à 55 ans, en sessions courtes sur mobile et longues sur PC ;
+- les canaux d'acquisition : les communautés de jeux de gestion et de jeux par navigateur.
+
+**Ce qui change** : le commerce ne repart plus de zéro chaque mois. Le monde est **persistant**. Seule la Terraferme garde des saisons courtes, d'une semaine.
+
+## 2. Les règles d'or
+
+Elles remplacent les règles de conception de la v2.
+
+1. **Rien de ce que le joueur a bâti ne se perd.** Ni par le temps, ni par l'absence, ni par un autre joueur (hors de la Terraferme, qui repart chaque semaine).
+2. **On ne punit jamais l'absence.** Il n'y a ni série à casser, ni coût qui court pendant qu'on est parti, ni marchandise qui pourrit en entrepôt pendant une absence.
+3. **Seules les positions disputées se perdent**, parce que d'autres les prennent : Podestà, charges, Doge, emplacement du Grand Canal, classement de la Terraferme.
+4. **Toute compétition se joue par bande de puissance.** Le vétéran est une légende qu'on voit, jamais un prédateur qu'on croise.
+5. **On ne vend jamais de temps ni de puissance** : ni ducats, ni ressources, ni accélération, ni chantier, ni file en plus.
+6. **Chaque système absorbe les anciens au lieu de s'y ajouter.** La cible est une douzaine de systèmes visibles, pas trente.
+
+## 3. Ce qui grandit : cinq axes
+
+| Axe | Contenu | Ce qu'on voit grandir |
+| --- | --- | --- |
+| **La Casa** | Le palais-comptoir de la Maison, niveaux 1 à 20, puis la Maestria sans fin. Jauge maîtresse : elle plafonne les autres axes et ouvre les paliers | La façade sur le Grand Canal, qui prend des étages |
+| **Les ateliers** (botteghe) | Niveaux 1 à 20 (25 pour son Arte), dans chaque région où la Maison a un comptoir. Quatre étages de chaîne : brut, travaillé, fini, grand ouvrage | L'atelier qui change de forme tous les cinq niveaux |
+| **La flotte** | Huit véhicules, de la mule à la galère de Flandre, avec des modules (cale, vitesse, escorte, comptable, pavillon, assurance) | Les convois sur ses routes |
+| **Les comptoirs et la carte** | Dix régions, de la Vénétie à la Flandre. Chacune s'ouvre par une charte, un voyage d'ouverture, puis un comptoir à bâtir (niveaux 1 à 10) | Le brouillard qui se lève, la carte qui se dézoome |
+| **La famille et le savoir** | Les membres de la famille comme agents, l'arbre des savoirs (Scuola d'Abaco), l'Arte | La galerie des portraits, l'arbre qui se remplit |
+
+### 3.1 La Casa, jauge maîtresse
+
+Le prochain palier coûte **2 à 7 jours de revenu courant**, jamais plus de 10. Au début, c'est l'argent qui freine ; au sommet, c'est le temps.
+
+| Niveau | Chantier | Ce qu'il ouvre | Atteint vers (joueur médian) |
+| --- | --- | --- | --- |
+| 1 | — | 4 places d'atelier en Vénétie, 2 mules | Jour 0 |
+| 2–3 | 2 à 10 min | Ateliers niveau 2 et 3, charrette, ordres à cours limité au Rialto | Jour 1 |
+| 4 | 30 min | La Scuola d'Abaco (savoirs) | Jour 3 |
+| 5 | 1 h | **2e chantier en parallèle** ; burchio (bateau de la Brenta et du Pô) | Semaine 1 |
+| 6 | 2 h | Charte de Lombardie | Semaine 2 |
+| 7 | 4 h | **Choix de l'Arte** | Semaine 3 |
+| 8 | 8 h | **Stato da Mar ou Stato da Terra** ; Frioul et Istrie | Mois 1 |
+| 9–10 | 12 à 18 h | Marciliana, Romagne et Marches ; l'Arsenal privé et la Dalmatie | Mois 1,5 à 2,5 |
+| 11–13 | 1 à 2 j | Cocca ; Allemagne ou Grèce selon le Stato ; Arte mineure | Mois 3 à 5 |
+| 14–16 | 2,5 à 3,5 j | Galea grossa, le Levant ; **3e chantier** ; Constantinople et la mer Noire | Mois 7 à 12 |
+| 17–19 | 4 à 6 j | Charges de Procuratie ; galère de Flandre, Bruges et Londres ; **4e chantier** | An 1,3 à 2 |
+| 20 | 7 j | Couronne de la façade ; Maestria (niveaux infinis) | An 2,5 |
+
+À partir du niveau 8, chaque palier demande un matériau d'une autre région : chêne de Dalmatie, fer, marbre d'Istrie, soie, alun. **La Casa oblige à commercer avec les joueurs des autres routes.**
+
+Le tableau détaillé, avec les coûts, est dans `expert-progression.md`, § 4.2.
+
+### 3.2 Les ateliers
+
+- **Places** : 4 en Vénétie au départ, +1 aux niveaux 2, 5, 8 et 12 de la Casa. Chaque comptoir de région en ajoute 2 à 4, avec le bonus des matières locales.
+- **Niveau maximum** : le niveau de la Casa.
+- **Production d'un lot** : Y(n) = n × (1 + 0,15 × (n − 1)) fois la base. Un niveau 20 produit environ 77 fois la base : **des chiffres qui se sentent**.
+- **Coût d'un niveau** : base × 1,3^(n − 1). Le coût croît plus vite que la production : le temps de remboursement passe de moins d'un jour (niveaux 1 à 5) à 3 à 5 semaines (niveaux 16 à 20).
+
+### 3.3 Le charroi et la flotte
+
+| Véhicule | Ouvert à (Casa) | Capacité | Trajets | Modules | Fabriqué par |
+| --- | --- | --- | --- | --- | --- |
+| Mule | 1 | 25 | Vénétie, 1 à 3 h | 0 | On l'achète |
+| Charrette | 3 | 40 | Vénétie | 1 | On l'achète |
+| Burchio | 5 | 90 | Brenta et Pô, 2 à 5 h | 2 | Un atelier |
+| Chariot bâché | 6 | 70 | Lombardie, 4 à 6 h | 1 | Un atelier |
+| Marciliana | 9 | 150 | Adriatique, 8 à 16 h | 2 | L'Arsenal privé |
+| Cocca | 11 | 300 | Dalmatie, Grèce, 1 à 2 j | 3 | L'Arsenal privé |
+| Galea grossa | 14 | 500 | Levant, 3 à 5 j | 4 | L'Arsenal privé |
+| Galère de Flandre | 18 | 800 | Bruges, 10 à 14 j | 4 | L'Arsenal privé |
+
+**Les galères partent avec la Muda d'État**, à date fixe. Le risque d'un voyage (tempête, corsaires) reste faible et affiché. Il porte sur 3 à 8 % de la cargaison, jamais sur le navire, et il est assurable.
+
+### 3.4 Les comptoirs et les dix régions
+
+Les dix régions, dans l'ordre d'ouverture :
+1. Vénétie ;
+2. Lombardie ;
+3. Frioul et Istrie ;
+4. Romagne et Marches ;
+5. Dalmatie ;
+6. Allemagne (Stato da Terra d'abord) ;
+7. Grèce (Stato da Mar d'abord) ;
+8. Levant ;
+9. Constantinople et la mer Noire ;
+10. Flandre et Angleterre.
+
+**Quatre sont ouvertes au lancement** : la Vénétie, la Lombardie, le Frioul et Istrie, la Romagne et les Marches. Les autres s'ouvrent au fil des ères (§ 4.3).
+
+**Ouvrir une région** se fait en trois moments :
+1. on achète la charte, en Faveur ;
+2. on fait le voyage d'ouverture, qu'on regarde avancer sur la carte ;
+3. on bâtit le comptoir.
+
+**Le comptoir** donne des places d'atelier, un **carnet de commandes local**, et un poste pour un membre de la famille.
+
+**Stato da Mar ou Stato da Terra** (Casa 8) est le premier grand choix exclusif. L'autre branche s'ouvre à la Casa 15, avec des chartes deux fois plus chères.
+
+### 3.5 Ce qui rend deux Maisons différentes
+
+- **L'Arte** (Casa 7), une seule, parmi les Lanaioli, les Vetrai, les Speziali, les Arsenalotti et les Banchieri.
+  - Elle porte les ateliers de sa chaîne jusqu'au niveau 25 et donne un atelier unique au sommet.
+  - On peut en changer, au prix d'un renoncement : ses ateliers retombent au niveau 15.
+  - Une Arte mineure s'ajoute à la Casa 13.
+- **Les savoirs** : quatre branches (Abaco, Navigation, Arti, Diplomazia), un savoir à la fois (deux à partir de la Casa 12), de 30 minutes à 10 jours. Chaque branche se termine par un **choix exclusif** entre deux capstones. L'arbre entier demanderait plus de trois ans : on choisit.
+- **La famille** :
+  - Chaque membre a un trait qui donne et qui retire ; le catalogue des Atouts actuel s'y prête.
+  - On place un membre par comptoir. Le fattore est le premier agent, et s'améliore.
+  - **Une génération par trimestre**, alignée sur l'ère. L'héritier hérite de tout, et la Maison gagne un point d'**Héritage** qui ouvre un trait de lignée permanent. C'est un « prestige » qui ajoute sans rien retirer.
+
+### 3.6 Un seul chiffre : la Puissance
+
+La Puissance est la somme pondérée des niveaux bâtis : Casa, ateliers, comptoirs, flotte, savoirs. **Jamais la caisse.**
+
+Elle sert à **apparier** et à **découper les bandes**. Les noms des bandes sont à figer :
+- *Bottega*, *Casa*, *Ca'*, *Palazzo*, *Procuratia* chez l'expert de la progression ;
+- *Bottega*, *Casa*, *Ca'*, *Palazzo*, *Fondaco* chez l'expert du méta-jeu.
+
+On l'affiche avec sa courbe depuis le premier jour, par exemple : « Votre Maison a doublé en six semaines ».
+
+## 4. Le rythme
+
+### 4.1 Trois horloges, une tournée
+
+- **Trois horloges** :
+  - la récolte, en heures ;
+  - le chantier, de quelques minutes à 7 jours, 2 à 4 en parallèle ;
+  - l'ambition, en semaines : une région, une galère, une charge.
+
+  En ouvrant le jeu, on trouve toujours une horloge arrivée à terme. **À tout moment, trois objectifs visibles à moins d'une semaine, sur trois axes** (écran « Prochains paliers »).
+- **Les chantiers avancent la nuit.** La **file de production couvre 12 h**, pour tous, et ne se vend jamais.
+- **La tournée de 5 minutes** :
+  1. tout ramasser ;
+  2. relancer ;
+  3. un geste pour un associé ;
+  4. un choix qui compte ;
+  5. une question ouverte pour revenir.
+
+  On joue bien avec deux tournées par jour ; l'assidu gagne des **occasions**, pas un multiplicateur.
+
+### 4.2 Sans culpabiliser
+
+- **Supprimés** : le coffre quotidien et sa série, les tâches du jour, les produits frais, le bonus de retardataire.
+- **Le Carnet de la semaine** les remplace : 10 à 12 objectifs à remplir n'importe quand du lundi au dimanche, et deux à rattraper de la semaine précédente.
+- **Le retour du marchand** : après une absence, un résumé (Annales, compagnie, prix) et un vent en poupe (les objectifs du Carnet comptent double pendant 3 jours après 7 jours d'absence).
+
+### 4.3 Le calendrier
+
+| Échelle | Ce qui s'y passe |
+| --- | --- |
+| **Jour** | 8 h le Broglio et la Lettre ; les vagues de commandes ; la Condotta de compagnie à midi (fenêtre, pas obligation) ; **20 h la Sera** (incanto, bataille de la Terraferme) ; minuit, la Signoria |
+| **Semaine** | Lundi : nouvelle Terraferme, nouveau Carnet, nouvelles Sfide. Jeudi : inscription des rosters de Contesa. Dimanche : clôture et le Gazzettino (palmarès, promotions de bande) |
+| **Mois** | Un **chapitre** : l'élection du Doge (son décret vaut le mois suivant) et une **foire** (la Sensa, le Carnaval…) avec un objectif commun à paliers |
+| **Trimestre** | Une **ère historique** : 1450 les comptoirs, 1451 la guerre de Lombardie, 1452 l'ouverture du Levant, 1453 la chute de Constantinople, puis la paix de Lodi… Chaque ère ouvre du contenu pour tous (une région, une chaîne, une route) et rebat les prix par un événement, sans rien effacer. Annoncée trois mois à l'avance |
+
+## 5. L'économie sans reset
+
+### 5.1 Sources et puits
+
+| Sources de ducats | Part visée | Puits | Part visée |
+| --- | --- | --- | --- |
+| Commandes des villes (carnets locaux et tableau commun) | ≈ 70 % | Constructions (Casa, ateliers, comptoirs, navires) | ≈ 55 % |
+| Ventes à la Dogana | ≈ 10 % | **Salaires sur les recettes** | ≈ 15 % |
+| Contrats de l'État (Doge, Muda, Grandes Œuvres) | ≈ 15 % | Taxes : Rialto 3 %, gabelles lointaines 5 à 10 %, péages | ≈ 12 % |
+| Terraferme, Lettres | ≤ 5 % | Savoirs | ≈ 8 % |
+| | | Assurances, Grandes Œuvres, palais, Maestria, cosmétiques en ducats | le reste |
+
+### 5.2 Les salaires (arbitrage A)
+
+C'est le frein des grosses Maisons. **Une part de chaque recette part en salaires du comptoir** : environ 3 % pour une petite Maison, 20 à 25 % pour un empire de Casa 18.
+
+Le prélèvement est :
+- **pris sur les recettes, jamais sur la caisse** ;
+- **jamais pendant l'absence** : qui ne vend pas ne paie rien ;
+- jamais sous zéro, et il ne détruit rien ;
+- lisible : « Salaires : −1 240 d sur 6 200 d de ventes ».
+
+**La décime** reste en réserve : un impôt vénitien sur la trésorerie qui dort au-delà d'un seuil élevé. On ne l'active que si la masse monétaire s'emballe au simulateur.
+
+### 5.3 Les prix et l'inflation
+
+- Les prix des villes restent **ancrés à la référence**, entre 60 et 150 %.
+- **La Dogana** vend au plafond et achète au plancher : elle régule.
+- L'indicateur principal est un **indice des prix**, cible 80 à 130 sur 24 mois.
+- Le ratio entre puits et sources est suivi **par cohorte** : 0,6 à 0,8 avant 3 mois, 0,9 à 1,0 au-delà.
+- Les entrepôts ont une capacité. Le pain stocké se gâte (−2 % par jour après 3 jours) : c'est un plafond de stockage, pas un coût d'absence, car rien ne pourrit dans une file ni dans un atelier.
+
+### 5.4 Trois monnaies, pas plus
+
+| Monnaie | Se gagne | S'achète | Sert à |
+| --- | --- | --- | --- |
+| **Ducats** | Le commerce | Jamais contre de l'argent réel | Tout ce qui est économique |
+| **Faveur** (l'Influence refondue) | En servant l'État : commandes du Doge et de la Signoria, Grandes Œuvres, Terraferme | Jamais | Chartes de région, voix, candidatures, accélération plafonnée d'un chantier (3 par jour, coût croissant) |
+| **Sceaux** (rares) | La coopération (Condotta, Expédition, Contesa) et la Terraferme. Ils absorbent les trophées | Jamais | Agents, plans de manufacture, sidegrades de guerre, cosmétiques. **Jamais du rendement brut** |
+
+## 6. Nouveaux et anciens
+
+Le point où un jeu persistant se gagne ou se perd. Les parades se cumulent :
+
+1. **Les bandes** de Puissance pour toute compétition : Sfida, classements, Sera (un lot par bande), Terraferme par théâtres, Condotta, Expédition, Contesa.
+2. **Une demande privée par comptoir** : un carnet local que personne d'autre ne prend.
+3. **Des commandes réservées** : les petites commandes de Vénétie (moins de 30 unités) sont réservées aux Maisons de Casa 10 ou moins.
+4. **Le nouveau est utile au vétéran**, qui achète ses matières brutes. Jusqu'à la Casa 8, les bruts rapportent +20 %.
+5. **Le savoir circule** : ce que plus de la moitié des Maisons actives possèdent coûte jusqu'à 50 % moins cher et se bâtit jusqu'à 60 % plus vite. Le sommet n'est jamais rabaissé.
+6. **La protection** : 30 jours, tant qu'on reste dans la première bande. Le nouveau ne peut être visé ni par un espion, ni par une rumeur, ni par un front d'une bande supérieure. Il ne paie pas de droit de porte.
+7. **L'apprentissage** (*garzone*) : un nouveau se place chez une Maison qui accueille. Le maître gagne des Sceaux à chaque jalon de l'apprenti ; l'apprenti voit sa production achetée au prix de référence pendant 14 jours.
+8. **Aucun pillage** de ce qui est bâti, hors de la Terraferme.
+
+**Cible** : un nouveau dans un monde d'un an atteint la Puissance médiane en **4 à 6 mois**, sans jamais rattraper les dix premiers par le seul rattrapage.
+
+**Les inactifs** :
+- à 7 jours, ils quittent les rôles de compagnie ;
+- à 14 jours, la Maison **s'endort** : elle sort des cartes et des appariements, et ne produit plus au-delà d'une file pleine ;
+- à 30 jours, son emplacement du Grand Canal est **mis en location** (le bien reste à elle) ;
+- au retour, tout se réveille.
+
+**Les mondes** : un seul monde par langue tant que possible, car la liquidité du Rialto prime. On n'ouvre un monde jeune que sur un signal mesuré.
+
+## 7. Le social : la Compagnia en amplificateur (arbitrage B)
+
+**L'empire se joue entièrement seul**, et l'interdépendance passe par le marché. La compagnie **démultiplie** : elle porte le meilleur contenu sans être obligatoire.
+
+- **Forme** : 5 à 25 associés (30 avec le fondaco de compagnie au maximum).
+  - Rôles : *Capo*, deux à quatre *Consiglieri*, *Cassiere*. Des vocations affichées, sans bonus.
+  - **Succession automatique** : un Capo absent 7 jours cède sa place.
+  - Une compagnie à la fois, 3 jours d'attente pour en changer.
+- **L'entraide** : toutes les 8 h, chaque associé peut demander un lot d'un bien ; un autre le fournit en un geste.
+  - C'est une **vente au prix de référence**, inscrite au grand livre et au journal des stocks, sans taxe du Rialto. Le fournisseur gagne en plus du Mérite.
+  - Plafonds contre les doubles comptes : rien avant 3 jours d'ancienneté, un volume par jour et par compte.
+- **Le contenu coopératif** :
+  - **la Condotta**, à la Red Star : une partie en direct de 10 minutes, 1 à 4 associés, paliers 1 à 12 ;
+  - **l'Expédition** : une galère de compagnie vers Bruges, Alexandrie ou Constantinople, chargée à plusieurs, trois jours de voyage avec une décision par jour, difficulté par palier ;
+  - **le fondaco de compagnie** : un grand puits de matériaux qui ouvre des options communes plafonnées, **jamais de rendement de production**.
+- **La Contesa** (arbitrage C) : la guerre de compagnies sur le moteur de la Terraferme, **une semaine sur deux**.
+  - Chaque compagnie inscrit un roster de 5, 10 ou 15 associés, apparié par la somme de leurs Puissances, à la White Star.
+  - La guerre mange les marchandises des associés ; les non-inscrits ravitaillent par l'entraide.
+  - Elle rapporte des Sceaux, une pièce du fondaco, le Lustre de compagnie et le blason sur les villes tenues.
+- **La réputation** : des contrats de fourniture de longue durée et une réputation publique de marchand (les contrats honorés). Le roulage, c'est-à-dire confier une cargaison à la mule d'un autre.
+
+## 8. La Terraferme, seule en saisons courtes
+
+- **Une partie d'une semaine**, du lundi au dimanche, qui repart de zéro. Les semaines alternent :
+  - les semaines impaires, chacun pour soi avec des alliances ;
+  - les semaines paires, la Contesa.
+- **À armes égales**, quel que soit le niveau de la Casa. L'appariement se fait par la cote de la Terraferme (Elo), en **théâtres** de 20 à 40 marchands par bande.
+- **L'empire paie l'entrée en marchandises** : pain, briques, planches. Une **ration journalière égale pour tous** plafonne l'avantage des riches, et les petites Maisons reçoivent une ration de la République.
+- **Ce qu'elle rapporte au permanent** est plafonné à 10 à 15 % de la progression hebdomadaire d'un joueur médian :
+  - de la Faveur ;
+  - des Sceaux (2 trophées par semaine au plus) ;
+  - des sidegrades de guerre, jamais plus forts ;
+  - les bannières sur la façade ;
+  - le décret du Signore de la semaine ;
+  - le grade honorifique.
+
+  **Jamais de rendement de production.**
+- Les règles d'une semaine restent stables pendant la semaine : un changement prend effet le lundi suivant.
+
+## 9. La politique et le haut niveau
+
+| Institution | Accès | Pouvoir |
+| --- | --- | --- |
+| **Charges de région** : Podestà (Vénétie), Console d'Alexandrie, Bailo de Constantinople, Capitano de la Muda | La Signoria de sa région, donc entre joueurs du palier qui y commercent ; 3 villes au plus, villes de départ disputables par les débutants | Droit de porte, avance sur les commandes |
+| **Grand Conseil** | Patrizio et au-dessus (le *cursus honorum*) | Vote l'œuvre publique de la foire |
+| **Sénat** | Les 30 premiers du *cursus*, plus un siège par compagnie de premier rang | Présente les candidats au Doge |
+| **Doge** | Élu chaque mois, sans réélection consécutive (3 mois d'attente) | Le décret du mois suivant, son portrait, sa ligne aux Annales |
+| **Conseil des Dix** | Tiré au sort chaque mois parmi les Senatori actifs | Annuler le décret suivant, démasquer un espion |
+| **Procurateur** | Casa 17, élu par trimestre | Une charge de prestige et une voix |
+
+**Le sommet reste ouvert** :
+- **les Grandes Œuvres** (la Basilique, l'Arsenal, le pont du Rialto) : des chantiers communs à niveaux infinis, qui changent le monde pour tous, avec la plaque des donateurs ;
+- **la Maestria** : des niveaux d'atelier infinis, à +1 % chacun ;
+- **le palais** : des étages de pure vanité ;
+- **le Grand Canal** : 40 emplacements devenus de l'**immobilier persistant**, acquis aux enchères de fin d'ère et perdus seulement par la vente ou une longue inactivité ;
+- **les parts de Maison** : sans rachat forcé, une vraie bourse ;
+- **les Annales de Venise** : une page publique écrite par le serveur à partir des événements, sans texte libre. C'est l'outil d'acquisition d'un monde ancien.
+
+## 10. La monétisation
+
+**On ne vend jamais** :
+- de ducats, de ressources ou de Sceaux ;
+- de temps (accélération) ;
+- de chantier en plus ni de file plus longue ;
+- de troupes ;
+- aucun avantage dans les bandes, à la Terraferme ou à la Contesa.
+
+Les cosmétiques de rang (corno du Doge, façade de Procurateur) se méritent, ils ne s'achètent pas.
+
+| Offre | Contenu |
+| --- | --- |
+| **Abonnement** (le Pass Négociant, refondu) | De l'information et du confort : historique des prix, alertes, tableau de bord étendu, préréglages de file (le même geste, plus confortable, jamais plus long). Une façade ou une bannière par mois, à garder |
+| **Mécénat de compagnie** | Un associé offre l'abonnement à 5 ou 10 associés pour un mois. L'acte se voit aux Annales de la compagnie |
+| **Cosmétiques** | Façades et étages décoratifs, gondoles, bannières de compagnie, portraits, sceaux de lettre |
+
+Un rapport public dit ce qui a été vendu.
+
+## 11. Ce qui change dans l'existant
+
+| Système actuel | Décision |
+| --- | --- |
+| Saisons d'un mois civil, reset le 1er | **Supprimées** pour le commerce. Le mois est un chapitre, le trimestre une ère |
+| Ateliers 1–5, manufactures 6–10, palazzo, chaînes de luxe | Fondus dans la Casa 1–20 et les ateliers 1–20 |
+| Maîtrises (4) | Deviennent les Arti (5, exclusives, persistantes) |
+| Fondaci, privilèges d'Influence | Deviennent les comptoirs de région et leurs chartes |
+| Atouts hebdomadaires | Deviennent les traits des membres de la famille |
+| Dynastie et héritier | Gardée : une génération par trimestre, l'Héritage, la famille comme agents |
+| Influence, missions de la Maison | Deviennent la Faveur et les commandes de la Signoria (dans le Carnet) |
+| Classement mensuel des ventes nettes | Supprimé en absolu, remplacé par des classements **par bande** (croissance, livraisons) et la Puissance |
+| Lustre et Sfida | Gardés, par bande ; le Lustre décroît doucement à chaque ère |
+| Grand Canal (40 palais) | Devient de l'immobilier persistant |
+| Doge, Signoria, Broglio, Sera, Muda, parts de Maison | Gardés et prolongés. La Sera vend aussi des places dans la Muda |
+| Lettre du jour | Devient un feuilleton sans fin, en arcs, avec mémoire |
+| Coffre, série, tâches du jour, produits frais, ballots, bonus de retardataire | Supprimés, au profit du Carnet de la semaine et du « savoir circule » |
+| Guildes (2 à 6 amis) | Deviennent la Compagnia (§ 7) |
+| Condotta | Gardée : paliers 1 à 12, récompensée en Sceaux |
+| Pass Négociant | Refondu en abonnement d'information et de confort (§ 10). La règle « écart ≤ 5 % au simulateur » disparaît avec les saisons |
+| Refonte UX (lots 1 à 8 faits) | Les acquis restent : barre à 5 onglets, Lagune, feuilles, un seul or. **Le lot 9 est suspendu**, car ses écrans seront repensés pour ce modèle |
+
+## 12. Technique : ce qui reste, ce qui bouge
+
+**Reste**, sans changement :
+- les montants en entiers (deniers) et les taux en points de base ;
+- le grand livre en partie double et le journal des stocks, avec leurs six invariants ;
+- `world_id` sur la couche monde et `theme_id` sur le référentiel ;
+- le moteur pur dans `packages/engine`, utilisé à l'identique par le serveur et le simulateur ;
+- la production calculée à la lecture ;
+- une transaction par opération de marché, avec un verrou par (monde, ressource) ;
+- les paramètres dans `worlds.settings` ;
+- la stack, PGlite en développement et Railway en production.
+
+**Bouge** :
+- `worlds.ends_at` ne borne plus le commerce. **Seule la Terraferme a des semaines** (son propre calendrier).
+- **Les chantiers** se calculent à la lecture, comme la production : fin = début + durée, avec une file de chantiers par Maison.
+- **Les salaires** s'écrivent au grand livre à chaque vente, sur un compte système de destruction.
+- **Les régions, les chartes, les ères et leur calendrier** vivent dans `worlds.settings`.
+- **La bascule** se fait par un dernier reset (la Casa 1 pour tous), puisqu'il n'y a pas encore de joueurs. Ce qu'on reprend :
+  - l'Influence, convertie en Faveur un pour un ;
+  - le Lustre ;
+  - les portraits de la Dynastie, qui deviennent des ancêtres.
+
+## 13. Le chemin
+
+Chaque étape fait l'objet d'un plan, validé avant le code.
+
+1. **Ce cadrage**, puis `CLAUDE.md` mis à jour.
+2. **Le simulateur de 24 mois**, avant toute calibration : des cohortes arrivent aux mois 0, 3, 6 et 12.
+
+   | Mesure | Cible |
+   | --- | --- |
+   | Temps jusqu'à chaque palier de Casa | Proche du § 3.1 ; les cohortes tardives 20 à 40 % plus vite |
+   | Objectif à moins de 24 h pour un joueur médian | Toujours |
+   | Prochain palier de Casa, en jours de revenu | 2 à 7 |
+   | Nouveau à la Puissance médiane | 4 à 6 mois |
+   | Indice des prix | 80 à 130 sur 24 mois |
+   | Ratio entre puits et sources | 0,6–0,8 avant 3 mois, 0,9–1,0 au-delà |
+   | Part de la Terraferme dans la progression | ≤ 15 % |
+   | Part des achats de bruts des vétérans faits aux jeunes Maisons | ≥ 30 % |
+
+3. **Le socle**, jouable seul en Vénétie :
+   - la fin du reset ;
+   - la Casa 1–20, les ateliers 1–20, les chantiers en parallèle ;
+   - les salaires ;
+   - la Puissance et ses bandes ;
+   - le Carnet de la semaine ;
+   - la file de nuit de 12 h ;
+   - les Maisons endormies.
+4. **L'étendue** : les comptoirs, la Lombardie et le Frioul, le chariot et le burchio.
+5. **L'identité** : l'Arte, les savoirs, la famille comme agents.
+6. **La compagnie** : rôles, succession, entraide, Condotta à paliers, puis la Contesa et les théâtres de la Terraferme.
+7. **La mer** : la Dalmatie, l'Arsenal, les navires à modules, la Muda des joueurs.
+8. **Les ères et les Annales**, la politique étendue, le Grand Canal en immobilier, le Levant.
+9. **La refonte visuelle et des interactions**, qui suit chaque étape : la carte qui s'étend, la façade qui monte, les convois.
