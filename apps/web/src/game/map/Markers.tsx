@@ -253,6 +253,7 @@ export function HomeMarker({
         })}
       </svg>
       <span
+        data-goods-from="place"
         className="marker-orb relative flex h-[60px] w-[60px] items-center justify-center rounded-full shadow-[0_0_28px_rgb(var(--gold)/0.45),inset_-5px_-7px_12px_rgb(0_0_0/0.35)]"
         style={{
           background:

@@ -642,6 +642,15 @@
   }
 }
 /* Where the harvest's goods land (fx.tsx, flyGoods): a gold beat. */
+/* The Ateliers tab's icon as a harvested good lands in it (fx.tsx, flyFromPlace). */
+.tab-bounce {
+  animation: tab-bounce 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.6);
+}
+@keyframes tab-bounce {
+  40% {
+    transform: scale(1.18);
+  }
+}
 .goods-beat {
   animation: goods-beat 0.9s var(--ease-out);
 }

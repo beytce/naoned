@@ -30,8 +30,8 @@
 
 **Étape suivante :** le lot 3, plan validé le 29 octobre. Ordre des commits, cochés au fil de l'eau :
 - [x] 1. `game/map/places.ts` (testé : `test/places.test.ts`) : la phrase, l'or et le fantôme de chaque lieu, deux halos au plus ;
-- [x] 2. la fiche d’un lieu (`PlaceCard`, `Panel.tsx`) : `Selection` `home`/`city` avec `open` (faux : la fiche ; vrai : l'orbite) ;
-- [ ] 3. « Récolter » et « Livrer » sur place, animés (`flyGoods` vers l'onglet Ateliers) ;
+- [x] 2. la fiche d’un lieu (`PlaceCard`, `Panel.tsx`) : `Selection` `home`/`city` avec `peek` (vrai : la fiche ; absent : l'orbite, comme pour les onglets et raccourcis) ;
+- [x] 3. « Récolter » et « Livrer » sur place, animés : `flyGoods` sans étoile de départ fait voler les marques du soleil (`data-goods-from="place"`) vers l'onglet Ateliers (`data-goods-to="workshops"`, `.tab-bounce`) et monter « +8 farine » ; la livraison part sur la route (trajet déjà animé), les pièces à l'arrivée ;
 - [ ] 4. halos par sens (vert d'eau, bleu, violet `--rumour`), noms des lieux en crème ;
 - [ ] 5. en-tête du commerce : bourse, anneau des Tâches du jour, cloche ; véhicules en rond sous la cloche (décision du porteur) ; duel, Marché, identité et d/h quittent l'en-tête ;
 - [ ] 6. guide (`Coach.tsx`) et e2e.

@@ -86,7 +86,11 @@ function Tab({ item, on }: { item: TabItem; on: boolean }) {
           {onForce && <span className="mt-1 block text-gold">{fr.game.unlocks.force}</span>}
         </span>
       )}
-      <span className={`relative ${locked ? "opacity-60" : ""}`}>
+      <span
+        // The harvest made on the map flies here (fx.tsx, flyGoods).
+        data-goods-to={item.id === "workshops" ? "workshops" : undefined}
+        className={`relative ${locked ? "opacity-60" : ""}`}
+      >
         {tab.icon()}
         {item.dot && !locked && (
           <span className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full bg-vermilion ring-2 ring-night" />
