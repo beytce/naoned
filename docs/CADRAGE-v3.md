@@ -134,6 +134,106 @@ Elle sert à **apparier** et à **découper les bandes**. Les noms des bandes so
 
 On l'affiche avec sa courbe depuis le premier jour, par exemple : « Votre Maison a doublé en six semaines ».
 
+## 3 bis. La profondeur : trois métiers et des modules
+
+*Le détail est dans `docs/refonte-2026-10-29/profondeur.md`, qui fait foi pour ces systèmes. Ce qui suit en est le résumé.*
+
+**Trois métiers, trois flottes**, sur le modèle d'Hades' Star (transport, extraction, combat). Chacun a sa boucle et son jeu actif, et un marchand peut se spécialiser :
+
+| Métier | Boucle |
+| --- | --- |
+| **Le négoce** | Acheter là où c'est bon marché, vendre là où c'est cher, entre des marchés régionaux qui ont chacun leurs prix. Honorer les commandes et les contrats à terme. La valeur d'une cargaison croît avec la distance |
+| **L'exploitation** | Des gisements apparaissent sur la carte et s'épuisent (salines, forêts, carrières, mines, pêcheries, alun). On y envoie des équipes ; le premier arrivé et le mieux équipé en tire le plus |
+| **Les armes** | Des galères armées et des compagnies de condottieri pour escorter, chasser les corsaires et partir en expédition |
+
+**Les modules.** Chaque navire, équipe ou compagnie a des emplacements par type, ouverts par son niveau :
+- les modules de **négoce** : cale, voilure, débarquement prompt, courrier, comptoir flottant, prime de convoi, pavillon neutre, portulan, lettre de change, rappel ;
+- les modules d'**exploitation** : rendement, grande campagne, concession lointaine, prospection, gestion durable, charrois ;
+- les modules d'**armes** : armes, défense, soutien.
+
+Chaque module va du niveau 1 au niveau 10. On le **recherche** une fois, à la Scuola ou à l'Arsenal privé :
+- une place de recherche, deux à la Casa 12, trois à la Casa 18 ;
+- de 30 minutes à 10 jours ;
+- des ducats, puis des **plans** à partir du niveau 4.
+
+Plus de quarante modules sur dix niveaux : on ne maximise jamais tout. **Le choix des modules fait l'identité de la Maison.**
+
+## 3 ter. Les expéditions à paliers et les reliques
+
+- **L'expédition** (l'équivalent des Red Stars) :
+  - une partie coopérative de 1 à 5 Maisons, en direct (10 à 15 minutes) ou en différé sur 24 h ;
+  - **paliers 1 à 12**, ouverts par le palier précédent et le niveau de sa galère armée ;
+  - les lieux : la côte barbaresque, les épaves ioniennes, la route de Tana, les ruines de Byzance, les caravanes du Sinaï.
+- **Les reliques** (portulans, codex, objets d'art, pièces d'armes) :
+  - elles se **déchiffrent** à la Scuola, de 1 h à 2 jours, en plans de modules, en plans de savoirs, en ornements du palais ;
+  - elles se **vendent au Rialto** : un marché des reliques ;
+  - le palier fixe leur qualité.
+- **La partie rapide** (l'ancienne Condotta, l'équivalent des Blue Stars) : de 4 à 5 joueurs en direct, à armes égales. Elle rend quelques Sceaux.
+
+## 3 quater. Des marchés vivants et la colleganza
+
+- **Un marché par région**, avec sa propre offre et sa propre demande. L'arbitrage entre régions est le métier du négociant.
+- **Les nouvelles voyagent à la vitesse des navires.**
+  - On connaît en direct les prix des régions où l'on a un comptoir.
+  - Ailleurs, on ne connaît que le dernier prix rapporté, **daté** : par ses convois, une rumeur ou un associé.
+  - Le portulan, le Courrier de compagnie et les comptoirs réduisent ce retard. **L'information est une ressource.**
+- **Les crises** (tempête, peste, guerre, récolte) déplacent les prix, annoncées par des rumeurs plus ou moins fiables.
+- **Les contrats à terme** : livrer telle quantité à tel port dans N jours, à prix fixé, adossés au séquestre.
+- **La colleganza** : un investisseur finance la cargaison d'un voyageur. Au retour, le bénéfice se partage, par exemple trois quarts pour l'investisseur et un quart pour le voyageur.
+  - Le partage est automatique, au grand livre, et une perte se partage aussi.
+  - La réputation du voyageur est publique.
+  - **Le vétéran investit dans les voyages des nouveaux**, et les deux y gagnent.
+
+## 3 quinquies. Le personnel
+
+Ce sont les « héros » du jeu, à collectionner et à faire grandir, du niveau 1 au niveau 30, avec un choix de compétence à chaque palier :
+
+| Rôle | Où | Effet |
+| --- | --- | --- |
+| **Capitaine** | Un navire | S'ajoute aux modules : vitesse, prix d'escale ou risque |
+| **Maître artisan** | Un atelier | La qualité des produits et le rendement |
+| **Facteur** | Un comptoir | Automatise le routinier, rapporte les prix |
+| **Condottiere** | Une compagnie armée | Tactique en escorte et en expédition |
+| **Ambassadeur** | Une cour étrangère | Chartes moins chères, avance sur les nouvelles |
+
+- On les recrute par la famille (§ 3.5), par l'embauche ou par une relique rare (un personnage historique).
+- Ils ont une rareté (commun, rare, illustre), et **aucun ne se vend**.
+- Les places sont limitées par la Casa : **on compose**.
+
+**La production gagne aussi en profondeur** :
+- trois qualités (ordinaire, fine, exquise), la cour payant l'exquise trois fois plus ;
+- des modules d'atelier ;
+- des **voisinages** : deux ateliers qui se suivent dans une chaîne, placés côte à côte, se donnent un bonus. La disposition du comptoir devient un petit puzzle ;
+- des recettes alternatives selon les intrants de la région.
+
+## 3 sexies. Un monde qui se découvre et qui menace
+
+- **Le brouillard** : chaque région est faite de zones à explorer. On y découvre des gisements, des ports francs, des épaves, et des marchés cachés qui ne vendent qu'aux découvreurs pendant une semaine.
+- **Les menaces non joueurs**, l'équivalent de Cerberus : corsaires barbaresques, Uscoques, pirates catalans, puis les flottes ottomanes.
+  - Elles patrouillent **les routes lointaines seulement**, plus fortes à mesure qu'on s'éloigne.
+  - Un convoi mal escorté perd **une part de sa cargaison, jamais le navire**.
+  - Les vaincre rapporte des reliques et du butin.
+- **Les ports francs** : des relais neutres où une compagnie bâtit un comptoir partagé.
+
+## 3 septies. Ce qui s'ouvre, palier par palier
+
+La profondeur s'ouvre progressivement, chaque fois avec un objectif du guide :
+
+| Casa | Ce qui s'ouvre |
+| --- | --- |
+| 1–3 | Le négoce simple en Vénétie, le Rialto |
+| 4 | La Scuola, les modules de négoce 1 à 3, le premier capitaine |
+| 5 | Le 2e chantier, le burchio, **l'exploitation** |
+| 6 | La Lombardie : un second marché, les nouvelles datées |
+| 7 | L'Arte, les modules d'atelier, les qualités, les maîtres |
+| 8 | Le Stato, les contrats à terme |
+| 9 | **Les armes**, l'Arsenal privé, les corsaires de l'Adriatique |
+| 10 | **Les expéditions**, paliers 1 à 3, les reliques |
+| 11 | **La colleganza**, les ambassadeurs |
+| 12 | La 2e place de recherche, Allemagne ou Grèce, le brouillard des zones |
+| 14+ | Le Levant, les paliers 4 à 9, les ports francs |
+| 18+ | La Flandre, les paliers 10 à 12, la 3e place de recherche |
+
 ## 4. Le rythme
 
 ### 4.1 Trois horloges, une tournée
@@ -145,12 +245,16 @@ On l'affiche avec sa courbe depuis le premier jour, par exemple : « Votre Maiso
 
   En ouvrant le jeu, on trouve toujours une horloge arrivée à terme. **À tout moment, trois objectifs visibles à moins d'une semaine, sur trois axes** (écran « Prochains paliers »).
 - **Les chantiers avancent la nuit.** La **file de production couvre 12 h**, pour tous, et ne se vend jamais.
-- **La tournée de 5 minutes** :
-  1. tout ramasser ;
-  2. relancer ;
-  3. un geste pour un associé ;
-  4. un choix qui compte ;
-  5. une question ouverte pour revenir.
+- **La tournée de 5 minutes**, où chaque session contient une vraie décision :
+  1. tout ramasser et relancer ;
+  2. lire les nouvelles du jour : les prix datés des autres régions, les crises annoncées ;
+  3. décider d'une route : sa cargaison, ses modules, son escorte ;
+  4. envoyer une équipe sur un gisement frais ;
+  5. financer une colleganza, lancer une recherche, déchiffrer une relique ;
+  6. un geste pour un associé ;
+  7. le soir, une expédition.
+
+  Un exemple complet est au § L de `profondeur.md`.
 
   On joue bien avec deux tournées par jour ; l'assidu gagne des **occasions**, pas un multiplicateur.
 
@@ -175,11 +279,13 @@ On l'affiche avec sa courbe depuis le premier jour, par exemple : « Votre Maiso
 
 | Sources de ducats | Part visée | Puits | Part visée |
 | --- | --- | --- | --- |
-| Commandes des villes (carnets locaux et tableau commun) | ≈ 70 % | Constructions (Casa, ateliers, comptoirs, navires) | ≈ 55 % |
+| Commandes des villes (carnets locaux et tableau commun) et **arbitrage entre marchés régionaux** | ≈ 70 % | Constructions (Casa, ateliers, comptoirs, navires) | ≈ 55 % |
 | Ventes à la Dogana | ≈ 10 % | **Salaires sur les recettes** | ≈ 15 % |
 | Contrats de l'État (Doge, Muda, Grandes Œuvres) | ≈ 15 % | Taxes : Rialto 3 %, gabelles lointaines 5 à 10 %, péages | ≈ 12 % |
-| Terraferme, Lettres | ≤ 5 % | Savoirs | ≈ 8 % |
+| Terraferme, Lettres, butin des corsaires | ≤ 5 % | Recherche des modules et savoirs | ≈ 8 % |
 | | | Assurances, Grandes Œuvres, palais, Maestria, cosmétiques en ducats | le reste |
+
+Ces ducats passent seulement d'un joueur à l'autre, ils ne créent ni ne détruisent de monnaie : la **colleganza** (partage du bénéfice), les **contrats à terme** et le **marché des reliques**. Ils passent par le séquestre et le grand livre, comme le Rialto.
 
 ### 5.2 Les salaires (arbitrage A)
 
@@ -317,7 +423,7 @@ Un rapport public dit ce qui a été vendu.
 | Ateliers 1–5, manufactures 6–10, palazzo, chaînes de luxe | Fondus dans la Casa 1–20 et les ateliers 1–20 |
 | Maîtrises (4) | Deviennent les Arti (5, exclusives, persistantes) |
 | Fondaci, privilèges d'Influence | Deviennent les comptoirs de région et leurs chartes |
-| Atouts hebdomadaires | Deviennent les traits des membres de la famille |
+| Atouts hebdomadaires | Deviennent les traits du personnel (§ 3 quinquies) et de la famille |
 | Dynastie et héritier | Gardée : une génération par trimestre, l'Héritage, la famille comme agents |
 | Influence, missions de la Maison | Deviennent la Faveur et les commandes de la Signoria (dans le Carnet) |
 | Classement mensuel des ventes nettes | Supprimé en absolu, remplacé par des classements **par bande** (croissance, livraisons) et la Puissance |
@@ -327,7 +433,8 @@ Un rapport public dit ce qui a été vendu.
 | Lettre du jour | Devient un feuilleton sans fin, en arcs, avec mémoire |
 | Coffre, série, tâches du jour, produits frais, ballots, bonus de retardataire | Supprimés, au profit du Carnet de la semaine et du « savoir circule » |
 | Guildes (2 à 6 amis) | Deviennent la Compagnia (§ 7) |
-| Condotta | Gardée : paliers 1 à 12, récompensée en Sceaux |
+| Condotta | Devient la **partie rapide** (§ 3 ter). Les paliers 1 à 12 passent aux **expéditions** |
+| Fattore | Devient le **facteur**, le premier personnel, qui automatise le routinier |
 | Pass Négociant | Refondu en abonnement d'information et de confort (§ 10). La règle « écart ≤ 5 % au simulateur » disparaît avec les saisons |
 | Refonte UX (lots 1 à 8 faits) | Les acquis restent : barre à 5 onglets, Lagune, feuilles, un seul or. **Le lot 9 est suspendu**, car ses écrans seront repensés pour ce modèle |
 
@@ -370,6 +477,10 @@ Chaque étape fait l'objet d'un plan, validé avant le code.
    | Ratio entre puits et sources | 0,6–0,8 avant 3 mois, 0,9–1,0 au-delà |
    | Part de la Terraferme dans la progression | ≤ 15 % |
    | Part des achats de bruts des vétérans faits aux jeunes Maisons | ≥ 30 % |
+   | Écart de prix entre régions (arbitrage) | Assez pour payer le voyage, jamais assez pour rendre les commandes inutiles |
+   | Part des Maisons qui vivent surtout d'un seul métier | ≥ 30 % (la spécialisation est viable) |
+
+   Le simulateur modélise aussi les marchés régionaux et le retard des nouvelles, les modules (en multiplicateurs), l'exploitation des gisements, les expéditions (en boîte noire de reliques) et la colleganza.
 
 3. **Le socle**, jouable seul en Vénétie :
    - la fin du reset ;
@@ -379,9 +490,9 @@ Chaque étape fait l'objet d'un plan, validé avant le code.
    - le Carnet de la semaine ;
    - la file de nuit de 12 h ;
    - les Maisons endormies.
-4. **L'étendue** : les comptoirs, la Lombardie et le Frioul, le chariot et le burchio.
-5. **L'identité** : l'Arte, les savoirs, la famille comme agents.
+4. **L'étendue et le négoce** : les comptoirs, la Lombardie et le Frioul, les marchés régionaux et les nouvelles datées, le chariot et le burchio, les modules de négoce et la recherche ; l'exploitation des gisements.
+5. **L'identité** : l'Arte, les savoirs, le personnel et la famille, les qualités et les voisinages d'ateliers.
 6. **La compagnie** : rôles, succession, entraide, Condotta à paliers, puis la Contesa et les théâtres de la Terraferme.
-7. **La mer** : la Dalmatie, l'Arsenal, les navires à modules, la Muda des joueurs.
+7. **La mer et les armes** : la Dalmatie, l'Arsenal, les navires à modules, la Muda des joueurs, les corsaires ; puis les expéditions et les reliques, et la colleganza.
 8. **Les ères et les Annales**, la politique étendue, le Grand Canal en immobilier, le Levant.
-9. **La refonte visuelle et des interactions**, qui suit chaque étape : la carte qui s'étend, la façade qui monte, les convois.
+9. **La refonte visuelle et des interactions**, qui suit chaque étape : la carte qui s'étend, la façade qui monte, les trois flottes et leurs emplacements de modules, les convois, la carte d'expédition.
