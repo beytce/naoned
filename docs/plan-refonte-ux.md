@@ -21,14 +21,20 @@
 | 1 | Socle : barre à 5 onglets, jetons, `prefers-reduced-motion`, 44 px | fait (PR lot 1) | `2c1c506`…(fin de branche `claude/refonte-ux-lot1`) |
 | 2 | Lexique (i18n `fr` puis `en`, notifications push) | fait (PR lot 2) | `6e69c57`…(fin de branche `claude/refonte-ux-lot2`) |
 | 3 | La carte et la fiche d'un lieu | fait (PR lot 3) | `e193d83`…(fin de branche `claude/refonte-ux-lot3`) |
-| 4 | Ateliers, production, bâtir, magasin | à faire | |
+| 4 | Ateliers, production, bâtir, magasin | en cours (branche `claude/refonte-ux-lot4`) | |
 | 5 | Venise, Marché, page d'une marchandise | à faire | |
 | 6 | Politique (rumeurs, élection, villes), enchères, 40 palais | à faire | |
 | 7 | Classement, fiche d'un joueur, profil | à faire | |
 | 8 | Ville, Conquête | à faire | |
 | 9 | Moments : messages, tâches du jour, calendrier, lettre, Atout, bon retour, fin du mois, entrée | à faire | |
 
-**Étape suivante :** le lot 4 (ateliers, production, bâtir, magasin). Il commence par un passage en mode plan (CLAUDE.md), appuyé sur la section du lot ci-dessous et sur les maquettes qu'elle cite.
+**Étape suivante :** le lot 4, plan validé le 29 octobre. Décision du porteur : quand il manque des matériaux, l'or achète sur place (`BuyMissing`, « Acheter 15 briques · 24 d »), sans passer par la page de la marchandise. Ordre des commits :
+- [x] 1. l'onglet Ateliers ouvre « Mes ateliers » (`ComptoirOrbit`), allumé en or avec ses feuilles (`activeTab`, `home`) ; plus de chevron « ‹ » dans l'orbite ;
+- [ ] 2. « Mes ateliers » : Atouts en haut à gauche, Lettre du jour, puces du magasin en boutons (`trade:<res>`), « Ouvriers nourris 2 jours », « Tout tourne · prochain lot à … » ;
+- [ ] 3. un atelier : bandeau « 1 lot prêt », préréglages seuls, « → 80 farine · prête à … », un seul or (« Récolter … et relancer N lots »), l'amélioration dans sa feuille ;
+- [ ] 4. Bâtir : cartes choisies sur place, un seul or au pied (« Bâtir un moulin · 280 d » ou `BuyMissing`) ;
+- [ ] 5. textes `en`, e2e et guide.
+- Hors lot : la puce « 0 brique » du magasin.
 
 **Ce que le lot 3 a fait (plan validé le 29 octobre) :**
 - [x] 1. `game/map/places.ts` (testé : `test/places.test.ts`) : la phrase, l'or et le fantôme de chaque lieu, deux halos au plus ;

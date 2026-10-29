@@ -10,17 +10,24 @@ import { Icon } from "./icons.js";
  * what sits at the foot of the map, and the tabs' own sheets, stop above it.
  */
 
-/** The tab a screen belongs to: its sheet first, then the map's layer. */
+/** The workshops' own sheets: the list, a workshop, its upgrade, building, the store. */
+const WORKSHOP_SHEETS = new Set(["workshops", "produce", "upgrade", "buildHere", "build", "store"]);
+
+/** The tab a screen belongs to: its sheet first, then « Mes ateliers » up close, then the layer. */
 export function activeTab({
   sheet,
   layer,
+  home = false,
 }: {
   sheet: string | null;
   layer: "trade" | "campaign" | "terra";
+  /** « Mes ateliers » open up close (the Ateliers tab's screen, refonte UX). */
+  home?: boolean;
 }): TabId {
-  if (sheet === "workshops") return "workshops";
+  if (WORKSHOP_SHEETS.has((sheet ?? "").split(":")[0] ?? "")) return "workshops";
   if (sheet === "ranking" || sheet === "sfida") return "ranking";
   if (layer !== "trade") return "conquest";
+  if (home) return "workshops";
   return "map";
 }
 

@@ -798,14 +798,7 @@ export function MapScreen(
   }
   // The counter opens up close, its workshops in orbit around its sun.
   if (trade && sel?.kind === "home" && !peek)
-    panel = (
-      <ComptoirOrbit
-        props={props}
-        crest={crest}
-        from='[data-coach="home"]'
-        onClose={() => select(null)}
-      />
-    );
+    panel = <ComptoirOrbit props={props} crest={crest} from='[data-coach="home"]' />;
   if (trade && sel?.kind === "city" && !peek) {
     const i = cities.indexOf(sel.code);
     const step = (k: number) =>
@@ -1066,7 +1059,11 @@ export function MapScreen(
         onDaily={() => props.setSheet("daily")}
       />
       <TabBar
-        active={activeTab({ sheet: props.sheet, layer })}
+        active={activeTab({
+          sheet: props.sheet,
+          layer,
+          home: trade && sel?.kind === "home" && !peek,
+        })}
         items={[
           {
             id: "map",
@@ -1081,9 +1078,11 @@ export function MapScreen(
             id: "workshops",
             dot: ready > 0,
             coach: "tab-workshops",
+            // « Mes ateliers » up close (refonte UX, lot 4).
             onClick: () => {
               if (layer !== "trade") props.setLayer("trade");
-              props.setSheet("workshops");
+              props.setSheet(null);
+              select({ kind: "home" });
             },
           },
           {

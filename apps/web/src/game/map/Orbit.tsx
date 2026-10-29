@@ -48,7 +48,7 @@ interface Star {
 }
 
 /**
- * The counter seen up close, once touched on the map: its gold sun in the middle, each workshop a
+ * The counter seen up close, the Ateliers tab's screen (or « Ouvrir » on the map's card): its gold sun in the middle, each workshop a
  * star in orbit around it (the mark of what it makes, the arc of its batch, lagoon and « +10 »
  * when it is ready, a dotted round when it waits), the chain drawn between those that feed each
  * other, a free plot to build on. Under it, the store in chips; at the foot, the one gold action
@@ -57,13 +57,11 @@ interface Star {
 export function ComptoirOrbit({
   props,
   crest,
-  onClose,
   leaving,
   from,
 }: {
   props: GameProps;
   crest: CrestData;
-  onClose: () => void;
   /** Closed: it shrinks back into the map for a moment, untouchable (MapScreen). */
   leaving?: boolean;
   /** Its mark on the map, where it opens from and folds back into. */
@@ -114,16 +112,9 @@ export function ComptoirOrbit({
       aria-label={m.homeLabel}
       className={`${leaving ? "orbit-out pointer-events-none" : "orbit-in"} absolute inset-x-0 top-0 bottom-[var(--tabbar)] z-[25] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_32%,rgb(var(--night-3))_0%,rgb(var(--night))_62%)] lg:right-[var(--side,0px)]`}
     >
-      <header className="relative z-10 flex items-center justify-between gap-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <button
-          type="button"
-          aria-label={t.back}
-          onClick={onClose}
-          className="hud-orb flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-cream transition active:scale-90"
-        >
-          {Icon.chevronLeft()}
-        </button>
-        <h2 className="font-place text-base font-bold uppercase tracking-[0.25em] text-gold">
+      {/* The Ateliers tab's screen (refonte UX): no way back, the tabs lead on. */}
+      <header className="relative z-10 flex min-h-11 items-center justify-between gap-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <h2 className="font-place text-base font-bold uppercase tracking-[0.2em] text-cream">
           {m.homeLabel}
         </h2>
         <span className="flex shrink-0 items-center gap-1.5 font-display text-lg font-extrabold text-gold">

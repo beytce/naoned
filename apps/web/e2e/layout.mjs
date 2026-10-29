@@ -1663,7 +1663,9 @@ async function uncluttered(page, label, most) {
 async function workshopRows(page) {
   if ((await page.locator("[data-coach^='produce-'], [data-coach^='harvest-']").count()) === 0) {
     await closeAll(page);
+    // The Ateliers tab opens « Mes ateliers » (refonte UX, lot 4); its list, from there.
     await page.locator("[data-coach=tab-workshops]").click();
+    await page.locator("[data-coach=panel-workshops]").click();
     await page.locator("[data-recipe]").first().waitFor();
     await page.waitForTimeout(500);
   }
