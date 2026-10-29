@@ -182,6 +182,20 @@ export const Icon = {
       <path d="M12 2.5 V5.5 M12 18.5 V21.5 M2.5 12 H5.5 M18.5 12 H21.5" />
     </I>
   ),
+  /** The map tab: a folded map. */
+  map: () => (
+    <I>
+      <path d="M3 6 L9 4 L15 6 L21 4 V18 L15 20 L9 18 L3 20 Z" />
+      <path d="M9 4 V18 M15 6 V20" />
+    </I>
+  ),
+  /** Venice's tab: the campanile over the water. */
+  venice: () => (
+    <I>
+      <path d="M3 19 Q7.5 14.5 12 19 Q16.5 14.5 21 19" />
+      <path d="M12 3 V5 M9.5 15 V7 L12 5 L14.5 7 V15" />
+    </I>
+  ),
   trophy: () => (
     <I>
       <path d="M7 4 H17 V9 A5 5 0 0 1 7 9 Z" />

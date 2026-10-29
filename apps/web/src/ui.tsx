@@ -15,7 +15,7 @@ const TONES: Record<Tone, { face: string }> = {
   lagoon: { face: "bg-lagoon text-on-lagoon" },
   vermilion: { face: "bg-vermilion text-cream" },
   ghost: {
-    face: "bg-transparent text-cream ring-1 ring-inset ring-line group-hover:ring-cream/40 group-active:bg-night-3",
+    face: "bg-transparent text-cream ring-1 ring-inset ring-edge group-hover:ring-cream/40 group-active:bg-night-3",
   },
 };
 
@@ -190,7 +190,7 @@ export function HudChip(props: {
   const tone = {
     info: "text-info ring-info/45",
     vermilion: "text-vermilion ring-vermilion/60",
-    plain: "text-cream ring-line",
+    plain: "text-cream ring-edge",
   }[props.tone ?? "info"];
   return (
     <button
@@ -421,7 +421,7 @@ export function Switch(props: {
         {props.hint && <span className="block text-xs text-cream-dim">{props.hint}</span>}
       </span>
       <span
-        className={`relative h-7 w-12 shrink-0 rounded-full transition ${props.checked ? "bg-lagoon" : "bg-night-4 ring-1 ring-inset ring-line"}`}
+        className={`relative h-7 w-12 shrink-0 rounded-full transition ${props.checked ? "bg-lagoon" : "bg-night-4 ring-1 ring-inset ring-edge"}`}
       >
         <span
           className={`absolute top-1 h-5 w-5 rounded-full bg-cream transition-all ${props.checked ? "left-6" : "left-1"}`}
@@ -590,7 +590,7 @@ export function Qty(props: {
   const btn =
     "group grid h-11 w-11 place-items-center font-display text-lg transition active:scale-95 disabled:opacity-35";
   const face =
-    "slab col-start-1 row-start-1 h-full w-full bg-night-4 ring-1 ring-inset ring-line group-hover:ring-cream-dim/40";
+    "slab col-start-1 row-start-1 h-full w-full bg-night-4 ring-1 ring-inset ring-edge group-hover:ring-cream-dim/40";
   return (
     <div className="flex items-center gap-2">
       <button
@@ -610,7 +610,7 @@ export function Qty(props: {
         value={props.value}
         onChange={(e) => set(Number(e.target.value) || 1)}
         aria-label={fr.misc.quantity}
-        className="h-11 w-16 rounded-md bg-night text-center font-display text-base ring-1 ring-line focus:outline-none focus:ring-info"
+        className="h-11 w-16 rounded-md bg-night text-center font-display text-base ring-1 ring-edge focus:outline-none focus:ring-info"
       />
       <button
         type="button"
@@ -687,7 +687,7 @@ export function CloseButton({
       type="button"
       aria-label="Fermer"
       onClick={onClick}
-      className={`flex h-11 w-11 items-center justify-center rounded-full text-cream-dim ring-1 ring-inset ring-line transition hover:text-cream active:scale-95 ${className}`}
+      className={`flex h-11 w-11 items-center justify-center rounded-full text-cream-dim ring-1 ring-inset ring-edge transition hover:text-cream active:scale-95 ${className}`}
     >
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
         <path
@@ -813,6 +813,7 @@ export function Sheet({
   title,
   summary,
   size,
+  docked,
   children,
 }: {
   open: boolean;
@@ -822,6 +823,11 @@ export function Sheet({
   summary?: ReactNode;
   /** « wide »: twice the room on a computer (the workshops in two columns). */
   size?: "wide";
+  /**
+   * A tab's own sheet (the workshops, the ranking): it stops above the tabs at the foot of the
+   * screen, which stay in sight and lead on to the other tabs.
+   */
+  docked?: boolean;
   children: ReactNode;
 }) {
   const panel = useRef<HTMLDialogElement>(null);
@@ -865,7 +871,7 @@ export function Sheet({
   // On the body: a parent with a backdrop blur would otherwise trap the fixed window inside it.
   return createPortal(
     <div
-      className={`fixed inset-0 z-40 flex items-end justify-center lg:items-center ${leaving ? "pointer-events-none" : ""}`}
+      className={`fixed inset-x-0 top-0 z-40 flex items-end justify-center lg:items-center ${docked ? "bottom-[var(--tabbar)]" : "bottom-0"} ${leaving ? "pointer-events-none" : ""}`}
       aria-hidden={leaving || undefined}
     >
       <button
@@ -881,7 +887,7 @@ export function Sheet({
         ref={panel}
         aria-modal="true"
         tabIndex={-1}
-        className={`relative m-0 max-h-[92dvh] w-full max-w-md ${leaving ? "sheet-out" : "animate-sheet lg:animate-pop"} overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line bg-night-2 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 text-cream shadow-2xl shadow-black/50 focus:outline-none lg:rounded-3xl lg:border lg:p-7 ${size === "wide" ? "lg:max-w-3xl" : "lg:max-w-lg"}`}
+        className={`relative m-0 w-full max-w-md ${docked ? "max-h-[calc(92dvh-var(--tabbar))] pb-6" : "max-h-[92dvh] pb-[max(1.5rem,env(safe-area-inset-bottom))]"} ${leaving ? "sheet-out" : "animate-sheet lg:animate-pop"} overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line bg-night-2 px-5 pt-3 text-cream shadow-2xl shadow-black/50 focus:outline-none lg:rounded-3xl lg:border lg:p-7 ${size === "wide" ? "lg:max-w-3xl" : "lg:max-w-lg"}`}
       >
         {/* Sticky from the dialog's own edge, over its padding (a sticky box stops under it). */}
         <div
@@ -939,7 +945,7 @@ export function Rules({ id, children }: { id: string; children: ReactNode }) {
         kept.current = e.currentTarget.open;
         store.set(key, kept.current ? "open" : "closed");
       }}
-      className="group cut bg-night-3/60 ring-1 ring-inset ring-line"
+      className="group cut bg-night-3/60 ring-1 ring-inset ring-edge"
     >
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm text-cream-dim [&::-webkit-details-marker]:hidden">
         {fr.game.ui.howItWorks}
@@ -993,7 +999,7 @@ export function Segmented<T extends string>({
           data-coach={coach ? `${coach}-${o.value}` : undefined}
           onClick={() => onChange(o.value)}
           // Lagune: a pill, the chosen one lit in lapis.
-          className={`min-h-11 rounded-full px-4 py-2.5 font-display text-sm font-semibold transition-colors ${value === o.value ? "bg-info font-bold text-ink" : "text-cream-dim ring-1 ring-inset ring-line"}`}
+          className={`min-h-11 rounded-full px-4 py-2.5 font-display text-sm font-semibold transition-colors ${value === o.value ? "bg-info font-bold text-ink" : "text-cream-dim ring-1 ring-inset ring-edge"}`}
         >
           {o.label}
         </button>

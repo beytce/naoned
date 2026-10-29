@@ -10,6 +10,8 @@ export default {
       colors: {
         night: { DEFAULT: v("night"), 2: v("night-2"), 3: v("night-3"), 4: v("night-4") },
         line: v("line"),
+        /** The outline of what can be touched (3:1); line stays for rules and dividers. */
+        edge: v("edge"),
         cream: { DEFAULT: v("cream"), dim: v("cream-dim") },
         muted: v("muted"),
         /** Text on gold or lagoon fills. */

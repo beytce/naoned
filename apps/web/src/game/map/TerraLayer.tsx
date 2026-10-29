@@ -1668,8 +1668,8 @@ function NotePlaque({
 }
 
 /**
- * The Terraferma's actions at the thumb, at the bottom right above the doors: the skirmishes and
- * the week's replay, each a sign and a word, hidden as the doors are while a panel is up.
+ * The Terraferma's actions at the thumb, at the bottom right above the tabs: the skirmishes and
+ * the week's replay, each a sign and a word, hidden while a panel is up.
  */
 export function TerraActions({
   v,
@@ -1760,7 +1760,7 @@ export function TerraPanel({
     // Out of the week: too late to set down, or wiped off the map.
     if ((!me && !open) || (me && me.eliminatedAt !== null)) {
       return (
-        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 flex flex-col items-center gap-1 px-4 text-center lg:bottom-28">
+        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(var(--tabbar)+1rem)] z-10 flex flex-col items-center gap-1 px-4 text-center">
           <span className="rounded-full bg-night/90 px-4 py-2 font-display text-[0.8125rem] font-extrabold uppercase tracking-wide text-cream ring-1 ring-line shadow-[0_6px_20px_rgb(0_0_0/0.45)]">
             {me ? t().out.eliminated : t().out.late}
           </span>
@@ -1774,7 +1774,7 @@ export function TerraPanel({
     // A skirmish sets everyone down itself: a spectator only watches.
     if (v.skirmish) return null;
     return (
-      <div className="pointer-events-none absolute inset-x-0 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.25rem)] z-10 flex flex-col items-center gap-1 lg:bottom-28">
+      <div className="pointer-events-none absolute inset-x-0 bottom-[calc(var(--tabbar)+1rem)] z-10 flex flex-col items-center gap-1">
         <span className="slab whitespace-nowrap bg-gold px-4 py-2 font-display text-[0.8125rem] font-extrabold uppercase tracking-wide text-ink shadow-[0_6px_20px_rgb(0_0_0/0.45)]">
           {t().place.invite}
         </span>
@@ -2168,7 +2168,7 @@ export function TerraPanel({
 
 /**
  * The merchant's fronts come home since the last look: what each took, spent and brought back,
- * one line each, in a short card above the doors. Left unread, it folds after a few seconds into
+ * one line each, in a short card above the tabs. Left unread, it folds after a few seconds into
  * a pill (« ↩ 2 ») that opens it again; « Compris » puts it away.
  */
 function Returns({ v }: { v: TerraView }) {
@@ -2183,9 +2183,8 @@ function Returns({ v }: { v: TerraView }) {
     return () => clearTimeout(id);
   }, [last, folded]);
   if (fresh.length === 0) return null;
-  // Above the doors and the actions at the thumb.
-  const place =
-    "absolute bottom-[calc(max(1rem,env(safe-area-inset-bottom))+9.5rem)] z-10 lg:bottom-28";
+  // Above the tabs and the actions at the thumb.
+  const place = "absolute bottom-[calc(var(--tabbar)+5.25rem)] z-10";
   if (folded)
     return (
       <button

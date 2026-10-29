@@ -104,6 +104,7 @@ const WORDS = {
     ranking: /^classement$/i,
     bale: /ballot/i,
     help: /^aide$/i,
+    howToPlay: /^comment jouer$/i,
     odds: /^probabilités$/i,
     firstSteps: "Premiers pas",
     finish: /terminer/i,
@@ -144,6 +145,7 @@ const WORDS = {
     ranking: /^ranking$/i,
     bale: /bale/i,
     help: /^help$/i,
+    howToPlay: /^how to play$/i,
     odds: /^odds$/i,
     firstSteps: "First steps",
     finish: /finish/i,
@@ -408,7 +410,7 @@ async function session(width, height, tag) {
 
     // The Terraferma during its truce: the HUD's two columns and the week's note.
     await closeAll(page);
-    const door = page.locator("[data-coach=door-layer]");
+    const door = page.locator("[data-coach=tab-layer]");
     // Closed until the first day of trade: touched once, it says why; touched again, it opens.
     await door.click({ force: true });
     if ((await door.getAttribute("aria-disabled")) === "true") {
@@ -438,7 +440,8 @@ async function session(width, height, tag) {
     await teamWeek(page, door, check);
     await midWeek(page, door, check, pseudo);
     await condotta(page, check);
-    await door.click();
+    // Back to the trade: the map's tab.
+    await page.locator("[data-coach=tab-map]").click();
     await page.waitForTimeout(1000);
 
     // The notices: the day, the gazette, the day's book; the first steps all done (their list
@@ -524,8 +527,11 @@ async function session(width, height, tag) {
       }
       await closeAll(page);
     }
-    // The help, its loop as an orbit and the goods' code.
-    await page.getByRole("button", { name: WORDS.help }).first().click();
+    // The help, its loop as an orbit and the goods' code: from the profile (the map has no door
+    // for it since the five tabs).
+    await page.locator('[data-hud="identity"]').click();
+    await page.waitForTimeout(600);
+    await page.getByRole("button", { name: WORDS.howToPlay }).first().click();
     await page.waitForTimeout(600);
     await check("aide");
     await page.keyboard.press("Escape");
@@ -658,7 +664,8 @@ async function transform(page, check) {
 async function teamWeek(page, door, check) {
   const TEAM = "terraferma";
   const show = async (edit) => {
-    await door.click();
+    // Out to the trade by the map's tab, then in again by the conquest's.
+    await page.locator("[data-coach=tab-map]").click();
     await page.waitForTimeout(500);
     await page.unroute("**/api/game/terra");
     await page.route("**/api/game/terra", async (route) => {
@@ -1551,7 +1558,7 @@ async function midWeek(page, door, check, pseudo) {
   await page.route("**/api/game/terra/replay", (route) => route.fulfill({ json: { replay } }));
   const open = async () => {
     await closeAll(page);
-    await door.click();
+    await page.locator("[data-coach=tab-map]").click();
     await page.waitForTimeout(500);
     await door.click();
     await page.waitForTimeout(1500);
@@ -1664,7 +1671,7 @@ async function uncluttered(page, label, most) {
 async function workshopRows(page) {
   if ((await page.locator("[data-coach^='produce-'], [data-coach^='harvest-']").count()) === 0) {
     await closeAll(page);
-    await page.locator("[data-coach=door-workshops]").click();
+    await page.locator("[data-coach=tab-workshops]").click();
     await page.locator("[data-recipe]").first().waitFor();
     await page.waitForTimeout(500);
   }
@@ -1684,13 +1691,12 @@ async function workshopRows(page) {
   );
 }
 
-/** Every window closed and the place's panel too: back on the map, its doors at the foot. */
+/** Every window closed and the place's panel too: back on the map, its tabs at the foot. */
 async function closeAll(page) {
   for (let i = 0; i < 4; i++) {
     const open = await page.evaluate(
       () =>
-        !!document.querySelector('[aria-modal="true"]') ||
-        !document.querySelector("[data-coach=door-workshops]"),
+        !!document.querySelector('[aria-modal="true"]') || !!document.querySelector("[data-panel]"),
     );
     if (!open) return;
     await page.keyboard.press("Escape");

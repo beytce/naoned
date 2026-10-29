@@ -250,6 +250,7 @@ export function RankingSheet(props: GameProps) {
         open={open}
         onClose={() => props.setSheet(null)}
         title={view === "board" ? fr.game.tabs.top : undefined}
+        docked
       >
         {view === "last" ? (
           <div>

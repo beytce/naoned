@@ -42,9 +42,9 @@ export function ContextPanel({
   return (
     <div
       data-panel
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-20 lg:inset-x-auto lg:bottom-5 lg:right-[calc(var(--side,0px)+1.25rem)] lg:w-[420px]"
+      className="pointer-events-none absolute inset-x-0 bottom-[var(--tabbar)] z-20 lg:inset-x-auto lg:bottom-[calc(var(--tabbar)+1rem)] lg:right-[calc(var(--side,0px)+1.25rem)] lg:w-[420px]"
     >
-      <div className="panel-rise pointer-events-auto relative rounded-t-3xl border-t border-line bg-night-2/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgb(0_0_0/0.45)] backdrop-blur-md lg:rounded-3xl lg:border lg:pb-3">
+      <div className="panel-rise pointer-events-auto relative rounded-t-3xl border-t border-line bg-night-2/95 px-3 pb-3 pt-3 shadow-[0_-10px_30px_rgb(0_0_0/0.45)] backdrop-blur-md lg:rounded-3xl lg:border lg:pb-3">
         {/* A ghost round, like the places' way back: never a coloured tab. */}
         <button
           type="button"

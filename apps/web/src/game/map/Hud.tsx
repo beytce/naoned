@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { BaleArt } from "../../art/bale.js";
 import { Crest, type CrestData } from "../../art/crest.js";
 import { Coin } from "../../art/icons.js";
@@ -10,13 +10,12 @@ import { MerchantName } from "../Name.js";
 import { amount } from "../format.js";
 import type { RivalLine } from "../rival.js";
 import { HudCounter, type TipContent, type TipKey, usePresence, useTip } from "./HudTips.js";
-import { doorLabel } from "./actions.js";
 import { Icon } from "./icons.js";
 
 /**
  * The map's heads-up display, floating on the night without any bar: who the merchant is (the
  * season's progress as a ring around their arms), their purse, the workers' bread and their
- * carts, the notices, and three round doors at the foot while nothing is selected.
+ * carts and the notices. The tabs at the foot are the TabBar's.
  */
 
 function Orb({
@@ -119,12 +118,7 @@ export function MapHud({
   bales,
   guidePaused,
   bottom,
-  hasFamily,
   layer,
-  doorLabel: layerLabel,
-  familyCalls,
-  workshopsReady,
-  locks = {},
   right,
   actions,
   timeline,
@@ -138,9 +132,6 @@ export function MapHud({
   onRival,
   onSera,
   sera = 0,
-  onFamily,
-  onOpenLayer,
-  onWorkshops,
   onHelp,
   onBand,
 }: {
@@ -178,24 +169,15 @@ export function MapHud({
   /** Bales of Faraj waiting to be opened: a small round under the bell while there are any. */
   bales: number;
   guidePaused: boolean;
-  /** The round doors at the foot (hidden while a panel is up). */
+  /** The actions and the strip at the foot, above the tabs (hidden while a panel is up). */
   bottom: boolean;
-  hasFamily: boolean;
-  /** The map shown: the family door switches between the two. */
+  /** The map shown. */
   layer: "trade" | "campaign" | "terra";
-  /** The other layer's door, when it is not the families' (the Terraferma). */
-  doorLabel?: string;
-  /** Something waits at the family (a levy, a threat, a message, an invitation). */
-  familyCalls: boolean;
-  /** Batches waiting at the workshops (a dot on their door). */
-  workshopsReady: boolean;
-  /** Doors still closed in the first session, with what opens them. */
-  locks?: { ranking?: string; layer?: string };
   /** Under the purse on the right, in place of the bread and the carts (the families' glory on the campaign). */
   right?: ReactNode;
-  /** A layer's actions at the thumb, at the bottom right above the doors, hidden with them. */
+  /** A layer's actions at the thumb, at the bottom right above the tabs. */
   actions?: ReactNode;
-  /** The strip of what comes next (the trade), above the doors, hidden with them. */
+  /** The strip of what comes next (the trade), above the tabs. */
   timeline?: ReactNode;
   onProfile: () => void;
   onNotices: () => void;
@@ -210,11 +192,8 @@ export function MapHud({
   /** The rival's line: the Sfida's sheet once the Lustre is on, else the ranking. */
   onRival?: () => void;
   onRanking: () => void;
-  onFamily: () => void;
-  /** Opens the other layer's closed door early (the Terraferma before its first day). */
-  onOpenLayer?: () => void;
-  onWorkshops: () => void;
-  onHelp: () => void;
+  /** The Terraferma's guide: a round beside the bell there (on the trade, the help is in the profile). */
+  onHelp?: () => void;
   /**
    * Where the HUD's band across the top ends (its identity, the rival's line, the rounds on the
    * left and the right column), in px from the top of the screen: the map frames itself under it.
@@ -361,6 +340,11 @@ export function MapHud({
                 {Icon.anchor()}
               </Orb>
             )}
+            {onHelp && (
+              <Orb label={m.buttons.help} onClick={onHelp} coach="hud-help">
+                {Icon.help()}
+              </Orb>
+            )}
           </span>
           {(bales > 0 || guidePaused) && (
             <span className="flex items-center gap-2">
@@ -443,48 +427,16 @@ export function MapHud({
       {bottom && actions && (
         <div
           data-hud="actions"
-          className="pointer-events-none absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+6.25rem)] z-10 flex justify-end lg:left-auto lg:bottom-32 lg:right-[calc(var(--side,0px)+1.25rem)]"
+          className="pointer-events-none absolute inset-x-3 bottom-[calc(var(--tabbar)+2rem)] z-10 flex justify-end lg:left-auto lg:right-[calc(var(--side,0px)+1.25rem)]"
         >
           {actions}
         </div>
       )}
       {bottom && timeline && (
         // Not on a short screen (a 320 × 568 phone): the map needs that room more.
-        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+5.5rem)] z-10 flex justify-center px-4 lg:bottom-[7.5rem] lg:right-[var(--side,0px)] [@media(max-height:639px)]:hidden">
+        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(var(--tabbar)+1.25rem)] z-10 flex justify-center px-4 lg:right-[var(--side,0px)] [@media(max-height:639px)]:hidden">
           <div className="w-full max-w-md">{timeline}</div>
         </div>
-      )}
-      {bottom && (
-        <nav className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-10 flex justify-center gap-4 lg:bottom-6 lg:right-[var(--side,0px)]">
-          {/* The same four doors at the same places on every layer. */}
-          <Door
-            label={doorLabel("workshops")}
-            onClick={onWorkshops}
-            dot={workshopsReady}
-            coach="door-workshops"
-          >
-            {Icon.workshops()}
-          </Door>
-          <Door label={doorLabel("ranking")} onClick={onRanking} locked={locks.ranking}>
-            {Icon.trophy()}
-          </Door>
-          {(hasFamily || layer !== "trade") && (
-            <Door
-              label={layer !== "trade" ? m.campaign.toTrade : (layerLabel ?? m.campaign.toCampaign)}
-              onClick={onFamily}
-              dot={layer === "trade" && familyCalls && !locks.layer}
-              active={layer !== "trade"}
-              locked={layer === "trade" ? locks.layer : undefined}
-              onForce={onOpenLayer}
-              coach="door-layer"
-            >
-              {layer !== "trade" ? Icon.home() : Icon.family()}
-            </Door>
-          )}
-          <Door label={doorLabel("help")} onClick={onHelp}>
-            {Icon.help()}
-          </Door>
-        </nav>
       )}
     </>
   );
@@ -521,74 +473,4 @@ function useBand(
       blocks.disconnect();
     };
   }, [grid, onBand]);
-}
-
-function Door({
-  children,
-  label,
-  onClick,
-  dot,
-  active,
-  locked,
-  onForce,
-  coach,
-}: {
-  children: ReactNode;
-  label: string;
-  onClick: () => void;
-  /** A closed door that may be opened early: touched again while it says why. */
-  onForce?: () => void;
-  /** Something waits behind it. */
-  dot?: boolean;
-  /** The door leads back (its layer is the one shown). */
-  active?: boolean;
-  /** Still closed: what opens it, said for a moment when it is touched. */
-  locked?: string;
-  coach?: string;
-}) {
-  const [why, setWhy] = useState(false);
-  useEffect(() => {
-    if (!why) return;
-    const t = setTimeout(() => setWhy(false), 2600);
-    return () => clearTimeout(t);
-  }, [why]);
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        if (!locked) onClick();
-        else if (why && onForce) onForce();
-        else setWhy(true);
-      }}
-      data-coach={coach}
-      data-hud="door"
-      aria-label={locked ? `${label} : ${locked}` : label}
-      aria-disabled={locked ? true : undefined}
-      // The way back is written in cream, never gold: it reads as a door, not as the tab shown.
-      className={`pointer-events-auto relative flex w-16 flex-col items-center gap-1 rounded-2xl transition active:scale-90 ${active ? "text-cream" : locked ? "text-muted" : "text-cream-dim"}`}
-    >
-      {why && locked && (
-        <span className="absolute bottom-full mb-2 w-44 animate-fade bg-night-4 px-3 py-2 text-center text-xs leading-snug text-cream shadow-lg shadow-black/40 slab">
-          {locked}
-          {onForce && <span className="mt-1 block text-gold">{fr.game.unlocks.force}</span>}
-        </span>
-      )}
-      <span
-        className={`hud-orb relative flex h-12 w-12 items-center justify-center rounded-full ${active ? "ring-1 ring-cream/50" : ""} ${locked ? "opacity-60" : ""}`}
-      >
-        {children}
-        {dot && (
-          <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full bg-vermilion ring-2 ring-night" />
-        )}
-        {locked && (
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-night-4 text-cream-dim ring-2 ring-night">
-            {Icon.lock()}
-          </span>
-        )}
-      </span>
-      <span className="whitespace-nowrap text-xs font-semibold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]">
-        {label}
-      </span>
-    </button>
-  );
 }

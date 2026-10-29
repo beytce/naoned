@@ -1,6 +1,6 @@
 import { fr } from "../i18n.js";
 import type { GameProps, Tab } from "./Game.js";
-import { ACTION_ICONS, HUD_DOORS } from "./map/actions.js";
+import { ACTION_ICONS, TABS } from "./map/actions.js";
 
 /** Where a mission is done: a sheet opened over the map, or a place of the trade (a free cart). */
 type Go = { sheet: string } | { tab: Extract<Tab, "routes" | "marche"> };
@@ -29,7 +29,7 @@ export function missionGo(props: GameProps, id: string): (() => void) | null {
 
 /**
  * The words of the screen each mission's text cites between « », as written there: a test holds
- * them to the text and to the game's own words (its doors, its panels' actions, the screens').
+ * them to the text and to the game's own words (its tabs, its panels' actions, the screens').
  */
 export const MISSION_REFS: Record<string, string[]> = {
   first_delivery: [fr.game.map.buttons.cargo, fr.game.map.buttons.go],
@@ -44,9 +44,10 @@ export const MISSION_REFS: Record<string, string[]> = {
   first_palace: [fr.game.map.buttons.build],
 };
 
-/** The game's own words a mission may cite: its doors, its panels' actions, its screens'. */
+/** The game's own words a mission may cite: its tabs, its panels' actions, its screens'. */
 export const SCREEN_WORDS = new Set<string>([
-  ...HUD_DOORS.map((d) => d.label),
+  ...TABS.map((t) => t.label),
+  fr.game.map.buttons.help,
   ...Object.values(ACTION_ICONS).map((a) => a.label),
   fr.game.map.buttons.go,
   fr.game.map.buttons.upgrade,

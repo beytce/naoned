@@ -307,7 +307,7 @@ export function Coach(props: CoachProps) {
   // On the campaign's layer the guide's places are not on the map: back to the trade first.
   const step: CoachStep =
     props.layer !== "trade"
-      ? { text: fr.game.map.campaign.backToTrade, target: "door-layer" }
+      ? { text: fr.game.map.campaign.backToTrade, target: "tab-map" }
       : nextStep(props);
   const index = Math.min(STEPS.length, props.view.tutorial.length + 1);
   // A target out of sight in its sheet is brought into view once a step, never fought for.

@@ -335,6 +335,15 @@ export const en: Dictionary = {
         back: (time: string) => `Back · ${time}`,
         capacity: (units: number) => `${units} u.`,
       },
+      /** The five tabs at the foot of the screen (refonte UX, 28 October 2026). */
+      nav: {
+        label: "Places",
+        map: "Map",
+        workshops: "Workshops",
+        venice: "Venice",
+        ranking: "Ranking",
+        conquest: "Conquest",
+      },
       buttons: {
         harvest: "Harvest",
         restart: "Restart",
@@ -418,7 +427,7 @@ export const en: Dictionary = {
           `${holder} · garrison ${garrison} · defence ${defense}`,
         threat: (time: string) => `Enemy march, arriving in ${time}`,
         ours: (time: string) => `Your family is marching there · ${time}`,
-        backToTrade: "Back to trade: tap « Trade » at the foot of the map.",
+        backToTrade: "Back to trade: tap « Map » at the foot of the screen.",
         chooseLine: "Choose your family for the season",
       },
       rialto: {
