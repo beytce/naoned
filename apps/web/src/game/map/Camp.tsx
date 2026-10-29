@@ -49,7 +49,12 @@ export function CampSheet({
     onSkirmish && { label: t().quick, on: onSkirmish, hud: "camp-skirmish" },
   ].filter((x): x is { label: string; on: () => void; hud: string } => !!x);
   return (
-    <Sheet open={open && !!me} onClose={onClose} title={me ? t().title(me.cells) : undefined}>
+    <Sheet
+      open={open && !!me}
+      onClose={onClose}
+      title={me ? t().title(me.cells) : undefined}
+      docked
+    >
       {me && (
         <div className="space-y-3">
           <p className="text-sm text-cream-dim">
