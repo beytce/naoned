@@ -4,3 +4,8 @@ export * from "./salaries.js";
 export * from "./power.js";
 export * from "./catchup.js";
 export * from "./prices.js";
+export * from "./modules.js";
+export * from "./deposits.js";
+export * from "./colleganza.js";
+export * from "./expedition.js";
+export * from "./corsairs.js";
