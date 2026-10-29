@@ -22,17 +22,20 @@
 | 2 | Lexique (i18n `fr` puis `en`, notifications push) | fait (PR lot 2) | `6e69c57`…(fin de branche `claude/refonte-ux-lot2`) |
 | 3 | La carte et la fiche d'un lieu | fait (PR lot 3) | `e193d83`…(fin de branche `claude/refonte-ux-lot3`) |
 | 4 | Ateliers, production, bâtir, magasin | fait (PR lot 4) | `568f5e1`…(fin de branche `claude/refonte-ux-lot4`) |
-| 5 | Venise, Marché, page d'une marchandise | en cours (branche `claude/refonte-ux-lot5`) | |
+| 5 | Venise, Marché, page d'une marchandise | fait (PR lot 5) | `12d584a`…(fin de branche `claude/refonte-ux-lot5`) |
 | 6 | Politique (rumeurs, élection, villes), enchères, 40 palais | à faire | |
 | 7 | Classement, fiche d'un joueur, profil | à faire | |
 | 8 | Ville, Conquête | à faire | |
 | 9 | Moments : messages, tâches du jour, calendrier, lettre, Atout, bon retour, fin du mois, entrée | à faire | |
 
-**Étape suivante :** le lot 5, plan validé le 29 octobre. Ordre des commits :
+**Étape suivante :** le lot 6 (Politique, enchères, 40 palais). Il commence par un passage en mode plan (CLAUDE.md), appuyé sur la section du lot ci-dessous et sur les maquettes qu'elle cite.
+
+**Ce que le lot 5 a fait (plan validé le 29 octobre) :**
 - [x] 1. Venise, l'écran de l'onglet (`map/Venice.tsx`, sélection `{ kind: "venice" }`) : quatre lunes (Politique → `broglio`, Marché → `rialto`, Enchères → `sera`, Les 40 palais → `canal`, vue canal du classement), la carte du Doge (`useCanal`, `decreeText`), « Le port : N commandes » vers l'orbite de la ville ; `activeTab` allume Venise sur ses feuilles ; le guide passe par `tab-venice` puis `venice-market` ; la plus forte variation dans `game/market.ts` (testée) ;
 - [x] 2. le Marché : trois onglets (Marchandises, Entre joueurs, Actions), plus de filtres, un prix et sa variation par ligne ;
 - [x] 3. la page d’une marchandise : carnet en lignes, Acheter/Vendre, Tout de suite / À mon prix, détail replié, un seul or, quantité préremplie (`trade:<res>:<qté>`) ;
-- [ ] 4. textes `en`, e2e et guide.
+- [x] 4. textes `en`, e2e (`venise`, `marche`, `marche-joueurs`, `parts` sur l'onglet Actions) et guide ; `layout.mjs` fr et en, `tutorial.mjs` passent.
+- Restent au lot 6 : l'arrivage des bateaux (`MudaPanel`) encore au Marché, la Politique réunie (la lune ouvre `broglio`). Au lot 7 : « (ordinateur) » à la place du sceau PNJ dans le carnet.
 
 **Ce que le lot 4 a fait (plan validé le 29 octobre).** Décision du porteur : quand il manque des matériaux, l'or achète sur place (`BuyMissing`, « Acheter 15 briques · 24 d »), sans passer par la page de la marchandise. Ordre des commits :
 - [x] 1. l'onglet Ateliers ouvre « Mes ateliers » (`ComptoirOrbit`), allumé en or avec ses feuilles (`activeTab`, `home`) ; plus de chevron « ‹ » dans l'orbite ;
@@ -72,7 +75,7 @@
   - Les vues en orbite (comptoir, ville) et le panneau d'un lieu s'arrêtent au-dessus de la barre ; la bulle de Lorenzo reste au pied de l'écran, sur la barre, le temps d'une étape.
   - Les cibles du guide sont `tab-map`, `tab-workshops` et `tab-layer`.
 - **`Sheet docked`** (`ui.tsx`) : la feuille d'un onglet s'arrête au-dessus de la barre. Elle sert aux ateliers, au classement et au duel ; la future Venise (lot 5) la prendra aussi.
-- **Provisoire** : l'onglet Venise mène à la ville `venezia` sur la carte, jusqu'à son écran au lot 5 ; il ne s'allume en or qu'à ce moment-là (`activeTab`).
+- L'onglet Venise mène à Venise (`map/Venice.tsx`, lot 5) et s'allume en or sur ses feuilles (`activeTab`).
 - **La couleur « vous »** (`info`) habille les lignes, les courbes et les territoires du joueur, **pas son blason** : les blasons restent ceux que les joueurs ont choisis.
 
 ## Façon de travailler
