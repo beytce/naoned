@@ -443,7 +443,6 @@ async function session(width, height, tag) {
     await check("terraferme-treve");
     await teamWeek(page, door, check);
     await midWeek(page, door, check, pseudo);
-    await condotta(page, check);
     // Back to the trade: the map's tab.
     await page.locator("[data-coach=tab-map]").click();
     await page.waitForTimeout(1000);
@@ -1655,6 +1654,8 @@ async function midWeek(page, door, check, pseudo) {
   }
   if (phone) await page.setViewportSize(phone);
   await page.waitForTimeout(800);
+  // The Condotta from the camp's sheet, while the week has the merchant's camp (lot 8).
+  await condotta(page, check);
   await page.unroute("**/api/game/terra");
   await page.unroute("**/api/game/terra/replay");
 }
