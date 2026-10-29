@@ -291,6 +291,17 @@ export function RankingSheet(props: GameProps) {
               >
                 {tp.tabs.regles}
               </button>
+              {/* The week's duel (R6): its line left the map's header (refonte UX). */}
+              {props.rival?.sfida && (
+                <button
+                  type="button"
+                  data-coach="ranking-duel"
+                  className="label inline-flex min-h-11 items-center rounded-full px-3.5 text-info ring-1 ring-inset ring-line transition active:scale-95"
+                  onClick={() => props.setSheet("sfida")}
+                >
+                  {fr.game.lustre.title}
+                </button>
+              )}
               {/* The Grand Canal (R5): the forty palaces the month's ranking gives. */}
               <button
                 type="button"

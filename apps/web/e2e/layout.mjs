@@ -94,7 +94,6 @@ const WORDS = {
     notices: /^messages/i,
     store: /^magasin$/i,
     signoria: /^contrôle$/i,
-    sera: /^enchères du soir$/i,
     atouts: /atout de la semaine/i,
     letter: /lettre du jour/i,
     senate: /l'élection/i,
@@ -134,7 +133,6 @@ const WORDS = {
     truce: /truce/i,
     notices: /^messages/i,
     store: /^store$/i,
-    sera: /^evening auctions$/i,
     atouts: /atout of the week/i,
     letter: /letter of the day/i,
     senate: /the election/i,
@@ -457,7 +455,11 @@ async function session(width, height, tag) {
     await check("carte");
     // A city up close, its gauge of the Signoria around its monument (R2), then its sheet.
     // A cart back on its road may lie over the city on a small screen: the tap goes to the city.
+    // First its card (refonte UX): one sentence, then the ghost that leads inside.
     await page.locator('[data-coach="city-vicenza"]').first().dispatchEvent("click");
+    await page.waitForTimeout(700);
+    await check("fiche-ville");
+    await page.locator('[data-coach="place-open"]').click();
     await page.waitForTimeout(700);
     await check("ville");
     const signoria = page.locator("[data-place]").getByRole("button", { name: WORDS.signoria });
@@ -469,9 +471,12 @@ async function session(width, height, tag) {
       await page.waitForTimeout(400);
     }
     await closeAll(page);
-    // The Sfida of the week (R6): the rival's line opens it once the Lustre is on.
-    const duel = page.locator('[data-hud="rival"]');
-    if ((await duel.count()) > 0) {
+    // The Sfida of the week (R6): from the ranking's « Duel » once the Lustre is on.
+    await page.locator('[data-tab="ranking"]').click();
+    await page.waitForTimeout(600);
+    const duel = page.locator('[data-coach="ranking-duel"]');
+    if ((await duel.count()) === 0) await closeAll(page);
+    else {
       await duel.first().click();
       await page.waitForTimeout(700);
       await check("sfida");
@@ -479,18 +484,11 @@ async function session(width, height, tag) {
       await page.waitForTimeout(400);
       await closeAll(page);
     }
-    // The Sera (R11): its round while lots of the galleys wait for bids, then its sheet.
-    const sera = page.getByRole("button", { name: WORDS.sera });
-    if ((await sera.count()) > 0) {
-      await sera.first().click();
-      await page.waitForTimeout(700);
-      await check("sera");
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(400);
-      await closeAll(page);
-    }
     // The counter up close (Lagune), its store by chain, then the catalogue of its free plot.
     await page.locator('[data-coach="home"]').first().click();
+    await page.waitForTimeout(600);
+    await check("fiche-ateliers");
+    await page.locator('[data-coach="place-open"]').click();
     await page.waitForTimeout(600);
     await check("comptoir");
     await page.locator("[data-place]").getByRole("button", { name: WORDS.store }).click();
@@ -509,7 +507,7 @@ async function session(width, height, tag) {
     await closeAll(page);
     // The merchant's crest opens their profile (Lagune: titles as a constellation), and the
     // ranking's door its podium once it is open.
-    await page.locator('[data-hud="identity"]').click();
+    await page.locator('[data-hud="identity"], [data-hud="purse"]').first().click();
     await page.waitForTimeout(600);
     await check("profil");
     await closeAll(page);
@@ -529,7 +527,7 @@ async function session(width, height, tag) {
     }
     // The help, its loop as an orbit and the goods' code: from the profile (the map has no door
     // for it since the five tabs).
-    await page.locator('[data-hud="identity"]').click();
+    await page.locator('[data-hud="identity"], [data-hud="purse"]').first().click();
     await page.waitForTimeout(600);
     await page.getByRole("button", { name: WORDS.howToPlay }).first().click();
     await page.waitForTimeout(600);
@@ -631,7 +629,9 @@ async function transform(page, check) {
   const idle = mill.find((r) => r.recipe === "transform" && WORDS.produce.test(r.text));
   if (!idle) {
     await closeAll(page);
-    await page.locator("[data-coach=hud-rialto]").click();
+    // The Market, from Venice (its tab, then the Rialto of the place up close).
+    await page.locator('[data-tab="venice"]').click();
+    await page.locator("[data-coach=panel-rialto]").click();
     await page.locator("[data-coach=row-wheat]").click();
     await page.locator("[data-coach=sheet-buy]").waitFor();
     await page.fill(`input[aria-label=${WORDS.quantity}]`, "10");
@@ -1039,7 +1039,7 @@ async function company(page, check) {
       },
     }),
   );
-  await page.locator('[data-hud="identity"]').click();
+  await page.locator('[data-hud="identity"], [data-hud="purse"]').first().click();
   await page.waitForTimeout(800);
   await page.getByText("Compagnie du Lion", { exact: true }).scrollIntoViewIfNeeded();
   await page.waitForTimeout(400);
@@ -1205,7 +1205,10 @@ async function seraEvening(page, check) {
   await page.reload();
   await page.waitForTimeout(1000);
   await closeAll(page);
-  await page.getByRole("button", { name: WORDS.sera }).first().click();
+  // Venice's card on the map leads to its auctions while lots are open (refonte UX).
+  await page.locator('[data-coach="city-venezia"]').first().dispatchEvent("click");
+  await page.waitForTimeout(700);
+  await page.locator('[data-coach="place-open"]').click();
   await page.waitForTimeout(700);
   await check("sera");
   await page.keyboard.press("Escape");
@@ -1487,8 +1490,8 @@ async function parts(page, check) {
 }
 
 /**
- * The rival of the week, a house of the computer with a long name: the HUD's line truncates the
- * name, never the « PNJ » seal nor the gap. No world has such a rival at its start: the game's
+ * The rival of the week ahead, a house of the computer: its line left the map's header (refonte
+ * UX), a dot on the Classement tab says it. No world has such a rival at its start: the game's
  * response is rewritten on its way to the page.
  */
 async function npcRival(page, check) {
@@ -1506,23 +1509,12 @@ async function npcRival(page, check) {
     await route.fulfill({ response, json });
   });
   await page.reload();
-  await page.locator("[data-hud=rival]").waitFor();
+  await page.locator('[data-tab="ranking"]').waitFor();
   await page.waitForTimeout(800);
-  const seen = await page.evaluate((npc) => {
-    const line = document.querySelector("[data-hud=rival]");
-    const seal = [...(line?.querySelectorAll("span") ?? [])].find((s) => s.textContent === npc);
-    if (!line || !seal) return { text: line?.textContent ?? "", seal: false };
-    const l = line.getBoundingClientRect();
-    const b = seal.getBoundingClientRect();
-    return {
-      text: line.textContent ?? "",
-      seal: b.width > 0 && b.left >= l.left - 0.5 && b.right <= l.right + 0.5,
-      inside: b.right <= window.innerWidth,
-    };
-  }, WORDS.npc);
-  if (!seen.seal || !seen.inside)
-    throw new Error(`the rival's « PNJ » seal is cut or missing: « ${seen.text} »`);
-  if (!/\+/.test(seen.text)) throw new Error(`the rival's gap is cut: « ${seen.text} »`);
+  const dot = await page.evaluate(
+    () => !!document.querySelector('[data-tab="ranking"] .bg-vermilion'),
+  );
+  if (!dot) throw new Error("the rival ahead puts no dot on the Classement tab");
   await check("rival-pnj");
   await page.unroute("**/api/game");
 }

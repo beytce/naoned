@@ -170,6 +170,38 @@ const frDict = {
     map: {
       home: (pseudo: string) => (pseudo ? `Maison ${pseudo}` : "Votre maison"),
       homeLabel: "Mes ateliers",
+      /** The trade's header (refonte UX): the purse leads to the profile. */
+      purse: (amount: string) => `Votre profil, ${amount} ducats`,
+      dailyRing: (done: number, total: number) => `Tâches du jour : ${done} sur ${total}`,
+      /** A place touched on the map: a sentence, one gold action in place, a way in (refonte UX). */
+      place: {
+        ready: (n: number, list: string) =>
+          `${n} lot${n > 1 ? "s" : ""} prêt${n > 1 ? "s" : ""} : ${list}.`,
+        harvest: (n: number) => `Récolter ${n} lot${n > 1 ? "s" : ""}`,
+        nextAt: (hour: string) => `Prochain lot à ${hour}.`,
+        idle: "Vos ateliers attendent du travail.",
+        restarted: "Relancé",
+        open: "Ouvrir",
+        wants: (quantity: number, good: string, pay: string) =>
+          `Veut ${quantity} ${good}, paie ${pay}.`,
+        youHave: "Vous les avez.",
+        missing: (n: number) => `Il vous en manque ${n}.`,
+        cartBack: (time: string) => `Un véhicule se libère dans ${time}.`,
+        noCart: "Il vous faut un véhicule.",
+        tooHeavy: "Trop lourd pour vos véhicules.",
+        deliver: (quantity: number, good: string, pay: string) =>
+          `Livrer ${quantity} ${good} · +${pay}`,
+        sent: (pay: string) => `C’est parti · +${pay} à l’arrivée.`,
+        calm: "Rien à livrer pour l’instant.",
+        master: "Vous en êtes le maître.",
+        see: (city: string) => `Voir ${city}`,
+        venice: "Entrer à Venise",
+        auctions: "Voir les enchères",
+        auction: (n: number, hour: string) =>
+          `Enchères ce soir à ${hour} : ${n} lot${n > 1 ? "s" : ""}.`,
+        rumours: (n: number) => `${n} rumeur${n > 1 ? "s" : ""} ce matin au Palais.`,
+        and: "et",
+      },
       close: "Fermer",
       prev: "Précédent",
       next: "Suivant",
@@ -2181,6 +2213,7 @@ const frDict = {
       produceTap: (building: string) =>
         `Lançons votre ${building.toLowerCase()} ! Touchez « Produire » : il attend du travail.`,
       tapHome: "Touchez « Mes ateliers », au centre de la carte.",
+      openPlace: "Touchez « Ouvrir » pour entrer dans vos ateliers.",
       openWorkshops: (building: string) =>
         `Lançons votre ${building.toLowerCase()} ! Ouvrez vos ateliers.`,
       /** The batch's own time: 30 seconds in the guide's first ones, 30 minutes after. */

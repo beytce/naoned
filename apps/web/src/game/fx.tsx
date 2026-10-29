@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { goodsColour } from "../art/goods.js";
 import { Coin } from "../art/icons.js";
 import { chime } from "../sound.js";
 import { amount } from "./format.js";
@@ -119,10 +120,15 @@ export function ringAt(selector: string): void {
  * beats as it lands, a note higher at each good. Nothing where there is no star to leave from
  * (the R key, the welcome back), nor for those who ask for less motion.
  */
-export function flyGoods(harvested: Record<string, number>): void {
+export function flyGoods(harvested: Record<string, number>, label?: string): void {
   if (typeof window === "undefined" || reduced()) return;
   const layer = document.querySelector<HTMLElement>("[data-fx-layer]");
   if (!layer) return;
+  // No star to leave from: harvested from the map's card, the goods fly to the Ateliers tab.
+  if (!Object.keys(harvested).some((r) => shown(`[data-goods-from="${r}"]`))) {
+    flyFromPlace(layer, harvested, label);
+    return;
+  }
   let step = 0;
   for (const [resource, quantity] of Object.entries(harvested)) {
     if (quantity <= 0) continue;
@@ -170,6 +176,61 @@ export function flyGoods(harvested: Record<string, number>): void {
       flight.oncancel = () => mark.remove();
     }
   }
+}
+
+/**
+ * The harvest of the map's card (refonte UX, maquette `Main`): small marks of the goods leave the
+ * counter in a curve for the Ateliers tab, whose icon bounces as each lands, and « +8 farine »
+ * rises over the counter.
+ */
+function flyFromPlace(layer: HTMLElement, harvested: Record<string, number>, label?: string) {
+  const source = shown('[data-goods-from="place"]');
+  const target = shown('[data-goods-to="workshops"]');
+  if (!source || !target) return;
+  const from = middle(source);
+  const to = middle(target);
+  const goods = Object.entries(harvested).filter(([, q]) => q > 0);
+  if (goods.length === 0) return;
+  const MARKS = 7;
+  for (let i = 0; i < MARKS; i++) {
+    const [resource] = goods[i % goods.length] ?? ["", 0];
+    const mark = document.createElement("span");
+    mark.style.cssText = `position:absolute;left:0;top:0;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:${i % 2 ? "50%" : "3px"};background:${goodsColour(resource)}`;
+    layer.appendChild(mark);
+    const jitter = { x: (Math.random() - 0.5) * 14, y: (Math.random() - 0.5) * 14 };
+    const flight = mark.animate(
+      [
+        {
+          transform: `translate(${from.x + jitter.x}px, ${from.y + jitter.y}px) scale(1)`,
+          opacity: 1,
+        },
+        { transform: `translate(${to.x}px, ${to.y}px) scale(0.6)`, opacity: 0.2 },
+      ],
+      { duration: 550, delay: 80 + i * 50, easing: "cubic-bezier(0.5, 0, 0.8, 0.4)", fill: "both" },
+    );
+    flight.onfinish = () => {
+      mark.remove();
+      beat(target, "tab-bounce");
+    };
+    flight.oncancel = () => mark.remove();
+  }
+  if (!label) return;
+  const rise = document.createElement("span");
+  rise.textContent = label;
+  rise.className =
+    "absolute left-0 top-0 whitespace-nowrap font-display text-base font-extrabold text-lagoon [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]";
+  layer.appendChild(rise);
+  const at = (y: number) => `translate(${from.x}px, ${y}px) translate(-50%, 0)`;
+  const up = rise.animate(
+    [
+      { transform: at(from.y - 64), opacity: 0 },
+      { transform: at(from.y - 70), opacity: 1, offset: 0.2 },
+      { transform: at(from.y - 94), opacity: 0 },
+    ],
+    { duration: 900, easing: "ease-out", fill: "both" },
+  );
+  up.onfinish = () => rise.remove();
+  up.oncancel = () => rise.remove();
 }
 
 function reduced(): boolean {

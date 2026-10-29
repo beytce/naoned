@@ -57,6 +57,26 @@ function Pill({ children, tone }: { children: ReactNode; tone: "gold" | "lagoon"
 }
 
 /** The most orders drawn in a city's orbit; the others are counted beside it. */
+/** What waits at a place, as the map shows it (places.ts): a halo by meaning, or a small dot. */
+export interface PlaceCall {
+  mode: "halo" | "dot";
+  tone: "ready" | "city" | "rumour";
+}
+
+const CALL_HALO = { ready: "", city: "marker-halo-city", rumour: "marker-halo-rumour" } as const;
+const CALL_DOT = { ready: "bg-lagoon", city: "bg-info", rumour: "bg-rumour" } as const;
+
+/** The halo of a place that calls (two on the map at most), or its dot. */
+function Call({ call, inset }: { call: PlaceCall; inset: string }) {
+  if (call.mode === "dot")
+    return (
+      <span
+        className={`pointer-events-none absolute right-1 top-1 h-2 w-2 rounded-full ring-2 ring-night ${CALL_DOT[call.tone]}`}
+      />
+    );
+  return <span className={`marker-halo ${CALL_HALO[call.tone]} absolute ${inset} rounded-full`} />;
+}
+
 const ORBIT_MAX = 6;
 
 /**
@@ -68,20 +88,18 @@ export function CityMarker({
   code,
   name,
   orders,
-  deliverable,
   criee,
   supplier,
   podesta,
   dim,
   lit,
+  call,
   onTap,
 }: {
   code: string;
   name: string;
   /** Orders of the city open today: their good and whether the stock covers them. */
   orders: { resource: string; covered: boolean }[];
-  /** Among them, those a free vehicle can take now. */
-  deliverable: number;
   /** A Criée under way there. */
   criee: boolean;
   /** The merchant's crest, where it is an official supplier this week. */
@@ -90,6 +108,8 @@ export function CityMarker({
   podesta?: { crest: CrestData; mine: boolean } | null;
   dim: boolean;
   lit: boolean;
+  /** What waits there (null: nothing). */
+  call?: PlaceCall | null;
   onTap: () => void;
 }) {
   const big = code === "venezia";
@@ -110,8 +130,11 @@ export function CityMarker({
         style={{ width: orbit * 2, height: orbit * 2 }}
       />
       <span className="marker-ring absolute inset-1.5 rounded-full ring-1 ring-cream/10" />
-      {(lit || deliverable > 0) && !dim && (
+      {/* A cart chosen lights the cities it can serve; otherwise the place's call. */}
+      {lit && !dim ? (
         <span className="marker-halo absolute -inset-1 rounded-full" />
+      ) : (
+        call && !dim && <Call call={call} inset="-inset-1" />
       )}
       <span
         data-map-label
@@ -197,6 +220,7 @@ export function HomeMarker({
   crest,
   ready,
   rings,
+  call,
   onTap,
 }: {
   name: string;
@@ -204,6 +228,8 @@ export function HomeMarker({
   /** Batches waiting to be collected. */
   ready: number;
   rings: WorkshopRing[];
+  /** Its halo while batches wait (null: nothing). */
+  call?: PlaceCall | null;
   onTap: () => void;
 }) {
   const shown = rings.slice(0, RINGS_MAX);
@@ -215,9 +241,7 @@ export function HomeMarker({
       onClick={onTap}
       className="marker-hit relative -ml-[46px] -mt-[46px] flex h-[92px] w-[92px] items-center justify-center"
     >
-      {ready > 0 && (
-        <span className="marker-halo marker-halo-gold absolute -inset-2 rounded-full" />
-      )}
+      {call && <Call call={call} inset="-inset-2" />}
       <svg
         viewBox="-60 -60 120 120"
         className="pointer-events-none absolute -inset-[14px] h-[120px] w-[120px] -rotate-90 overflow-visible"
@@ -253,6 +277,7 @@ export function HomeMarker({
         })}
       </svg>
       <span
+        data-goods-from="place"
         className="marker-orb relative flex h-[60px] w-[60px] items-center justify-center rounded-full shadow-[0_0_28px_rgb(var(--gold)/0.45),inset_-5px_-7px_12px_rgb(0_0_0/0.35)]"
         style={{
           background:
@@ -268,7 +293,8 @@ export function HomeMarker({
       )}
       <span
         data-coach-with="home"
-        className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] -translate-x-1/2 whitespace-nowrap font-place text-xs font-bold uppercase tracking-[0.18em] text-gold [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
+        // Cream like every place's name: the sun is gold by its fill, not its writing.
+        className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] -translate-x-1/2 whitespace-nowrap bg-[#16263E]/80 px-1.5 font-place text-xs font-bold uppercase tracking-wide text-cream/95 [text-shadow:0_1px_3px_rgb(0_0_0/0.9)]"
       >
         {name}
       </span>

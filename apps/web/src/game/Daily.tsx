@@ -1,8 +1,18 @@
 import { GoodsMark } from "../art/goods.js";
 import { fr } from "../i18n.js";
-import { Label, Panel, Slab, clock } from "../ui.js";
+import { Label, Panel, Sheet, Slab, clock } from "../ui.js";
 import type { GameProps } from "./Game.js";
 import { d } from "./format.js";
+
+/** The tasks of the day in a sheet of their own: the ring of the map's header opens it. */
+export function DailySheet(props: GameProps) {
+  const open = props.sheet === "daily";
+  return (
+    <Sheet open={open} onClose={() => props.setSheet(null)}>
+      {open && <Daily {...props} />}
+    </Sheet>
+  );
+}
 
 /** Tasks of the day, the streak and the day's chest: a reason to come back every day. */
 export function Daily(props: GameProps) {

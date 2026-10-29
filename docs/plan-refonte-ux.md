@@ -20,7 +20,7 @@
 | 0 | Audit, audit de l'expert, maquettes, ce plan | fait (PR #55) | `83af1e2`…`d48bbce` |
 | 1 | Socle : barre à 5 onglets, jetons, `prefers-reduced-motion`, 44 px | fait (PR lot 1) | `2c1c506`…(fin de branche `claude/refonte-ux-lot1`) |
 | 2 | Lexique (i18n `fr` puis `en`, notifications push) | fait (PR lot 2) | `6e69c57`…(fin de branche `claude/refonte-ux-lot2`) |
-| 3 | La carte et la fiche d'un lieu | à faire | |
+| 3 | La carte et la fiche d'un lieu | fait (PR lot 3) | `e193d83`…(fin de branche `claude/refonte-ux-lot3`) |
 | 4 | Ateliers, production, bâtir, magasin | à faire | |
 | 5 | Venise, Marché, page d'une marchandise | à faire | |
 | 6 | Politique (rumeurs, élection, villes), enchères, 40 palais | à faire | |
@@ -28,7 +28,16 @@
 | 8 | Ville, Conquête | à faire | |
 | 9 | Moments : messages, tâches du jour, calendrier, lettre, Atout, bon retour, fin du mois, entrée | à faire | |
 
-**Étape suivante :** le lot 3 (la carte et la fiche d'un lieu). Il commence, comme les autres, par un passage en mode plan (CLAUDE.md), appuyé sur la section du lot ci-dessous et sur les maquettes qu'elle cite.
+**Étape suivante :** le lot 4 (ateliers, production, bâtir, magasin). Il commence par un passage en mode plan (CLAUDE.md), appuyé sur la section du lot ci-dessous et sur les maquettes qu'elle cite.
+
+**Ce que le lot 3 a fait (plan validé le 29 octobre) :**
+- [x] 1. `game/map/places.ts` (testé : `test/places.test.ts`) : la phrase, l'or et le fantôme de chaque lieu, deux halos au plus ;
+- [x] 2. la fiche d’un lieu (`PlaceCard`, `Panel.tsx`) : `Selection` `home`/`city` avec `peek` (vrai : la fiche ; absent : l'orbite, comme pour les onglets et raccourcis) ;
+- [x] 3. « Récolter » et « Livrer » sur place, animés : `flyGoods` sans étoile de départ fait voler les marques du soleil (`data-goods-from="place"`) vers l'onglet Ateliers (`data-goods-to="workshops"`, `.tab-bounce`) et monter « +8 farine » ; la livraison part sur la route (trajet déjà animé), les pièces à l'arrivée ;
+- [x] 4. halos par sens (vert d'eau, bleu `info`, violet `--rumour` dans les quatre palettes, Tailwind `rumour`), deux au plus (`halos`), un point de 8 px pour les autres (`Call` dans `Markers.tsx`) ; le halo doré du soleil et son nom en or partent ; une charrette choisie allume toujours ses villes ;
+- [x] 5. en-tête du commerce : bourse (→ profil, `data-hud="purse"`), anneau des Tâches du jour (`DailyRing` → feuille `daily`, `DailySheet`), cloche ; véhicules en rond « 2/2 » sous la cloche (décision du porteur) ; duel (→ point de l'onglet Classement et pilule « Duel » du classement), Marché ⚖ (→ onglet Venise), Enchères (→ fiche de Venise), identité et d/h quittent l'en-tête du commerce ;
+- [x] 6. guide (`Coach.tsx` : « Ouvrir » ou l'or de la fiche) et e2e (`fiche-ville`, `fiche-ateliers`, profil par la bourse, Marché par l'onglet Venise, enchères par la fiche de Venise, rival en point d'onglet) ; `layout.mjs` fr et en, `tutorial.mjs` passent.
+- Hors lot : le « ? » de rumeur sur une ville (la vue joueur ne porte pas les rumeurs par ville), lot 6.
 
 **Ce que le lot 2 a fixé (lexique) :**
 - Les noms affichés suivent l'audit § 0 dans `i18n.ts`, `i18n.en.ts` et les notifications push (`apps/server/src/notify/texts*.ts`). Les **clés** i18n, le code, la base et les réglages gardent leurs noms historiques (`broglio`, `signoria`, `sera`…).

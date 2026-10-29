@@ -489,7 +489,14 @@ export function Game(props: {
         const nothing = res.outcome?.kind === "instant" && res.outcome.filled === 0;
         haptic(nothing ? "warn" : REWARDING.has(type) ? "success" : "tap");
         pressResult(!nothing);
-        if (res.outcome?.kind === "harvest") flyGoods(res.outcome.harvested);
+        if (res.outcome?.kind === "harvest")
+          flyGoods(
+            res.outcome.harvested,
+            Object.entries(res.outcome.harvested)
+              .filter(([, q]) => q > 0)
+              .map(([r, q]) => `+${q} ${names.resource(r).toLowerCase()}`)
+              .join(" · "),
+          );
         const cue = nothing ? null : soundOf(type);
         if (cue === "coin") sound(cue);
         if (!options.quiet) {
@@ -515,7 +522,7 @@ export function Game(props: {
         setBusy(false);
       }
     },
-    [apply, setToast],
+    [apply, setToast, names.resource],
   );
 
   /** What to say of an action that went through (null: the screen says it). */
