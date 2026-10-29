@@ -1989,7 +1989,7 @@ export const en: Dictionary = {
       weekOf: (week: number, season: string) => `Week ${week} · ${season}`,
       open: "See the record",
     },
-    npc: "NPC",
+    npc: "(computer)",
     npcHelp:
       "NPC: merchant houses run by the computer, under the same rules as you. They liven up the world while it has few players and step aside as real merchants arrive.",
     anonymous: "Anonymous merchant",

@@ -1964,7 +1964,7 @@ const frDict = {
         procurator: "Procurateur",
         senator: "Sénateur",
       } as Record<string, string>,
-      help: "Bénéfice depuis le début de la semaine (ou depuis votre arrivée), en ducats : ce que vous avez vendu, moins ce que vous avez acheté. Chaque semaine, les trois meilleurs marchands (hors PNJ) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
+      help: "Bénéfice depuis le début de la semaine (ou depuis votre arrivée), en ducats : ce que vous avez vendu, moins ce que vous avez acheté. Chaque semaine, les trois meilleurs marchands (hors Maisons de l'ordinateur) reçoivent un titre : Doge, Procurateur et Sénateur de la semaine.",
     },
     season: {
       closed: (name: string) => `La saison ${name} est close`,
@@ -2010,9 +2010,9 @@ const frDict = {
       weekOf: (week: number, season: string) => `Semaine ${week} · ${season}`,
       open: "Voir le palmarès",
     },
-    npc: "PNJ",
+    npc: "(ordinateur)",
     npcHelp:
-      "PNJ : maisons marchandes tenues par l'ordinateur, avec les mêmes règles que vous. Elles animent le monde tant qu'il compte peu de joueurs et se retirent à mesure que de vrais marchands arrivent.",
+      "(ordinateur) : maisons marchandes tenues par l'ordinateur, avec les mêmes règles que vous. Elles animent le monde tant qu'il compte peu de joueurs et se retirent à mesure que de vrais marchands arrivent.",
     anonymous: "Marchand anonyme",
     rankingHelp:
       "Bénéfice = tout ce que vous avez vendu (Marché, Douane, livraisons, commandes du Doge), taxes et péages déduits, moins tout ce que vous avez acheté. Le stock et les bâtiments ne comptent pas.",
@@ -2579,7 +2579,7 @@ const frDict = {
       join: "Rejoindre",
       /** Who it opens with, told before entering: « 2 marchands · 6 PNJ · départ dans 0:45 ». */
       lobby: (humans: number, bots: number, time: string) =>
-        `${humans} marchand${humans > 1 ? "s" : ""} · ${bots} PNJ · départ dans ${time}${bots > 0 ? " ; un marchand qui arrive prend la place d'un condottiere." : "."}`,
+        `${humans} marchand${humans > 1 ? "s" : ""} · ${bots} de l'ordinateur · départ dans ${time}${bots > 0 ? " ; un marchand qui arrive prend la place d'un condottiere." : "."}`,
       playing: (time: string) =>
         `En cours · fin dans ${time}. Touchez une terre au bord des vôtres pour attaquer.`,
       watching: "Une partie rapide est en cours : regardez-la, la prochaine s'ouvre ensuite.",
