@@ -40,6 +40,11 @@ describe("the tabs at the foot of the screen", () => {
     expect(activeTab({ sheet: null, layer: "trade" })).toBe("map");
     expect(activeTab({ sheet: "letter", layer: "trade" })).toBe("map");
     expect(activeTab({ sheet: "workshops", layer: "trade" })).toBe("workshops");
+    // « Mes ateliers » up close is the Ateliers tab (refonte UX, lot 4), and its sheets too.
+    expect(activeTab({ sheet: null, layer: "trade", home: true })).toBe("workshops");
+    expect(activeTab({ sheet: "produce:b1", layer: "trade", home: true })).toBe("workshops");
+    expect(activeTab({ sheet: "buildHere", layer: "trade" })).toBe("workshops");
+    expect(activeTab({ sheet: "upgrade:b1", layer: "trade" })).toBe("workshops");
     expect(activeTab({ sheet: "ranking", layer: "trade" })).toBe("ranking");
     expect(activeTab({ sheet: "sfida", layer: "terra" })).toBe("ranking");
     expect(activeTab({ sheet: null, layer: "terra" })).toBe("conquest");

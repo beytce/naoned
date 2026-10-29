@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { BuildingArt } from "../art/buildings.js";
 import { GoodsMark } from "../art/goods.js";
 import { ResourceIcon } from "../art/resources.js";
 import { fr } from "../i18n.js";
 import { locale } from "../lang.js";
-import { Badge, Label, Panel, Qty, Ribbon, Sheet, Slab, clock } from "../ui.js";
+import { Badge, Label, Panel, Ribbon, Sheet, Slab, clock } from "../ui.js";
 import { AdviceTile } from "./Advice.js";
 import { BaleScreen, BaleTile } from "./Bales.js";
 import { BuildCatalog } from "./Catalog.js";
@@ -18,7 +17,7 @@ import { costOf } from "./Marche.js";
 import { MasteryTile } from "./Mastery.js";
 import { StoreView } from "./Store.js";
 import { TendersSheet, TendersTile } from "./Tenders.js";
-import { d, duration, loafShare, minutesLabel } from "./format.js";
+import { d, duration, hourOf, loafShare, minutesLabel, whole } from "./format.js";
 import { harvestAll, harvestAndRestart } from "./harvest.js";
 import { store } from "./store.js";
 import type { BuildingView, Cost, PlayerView, Recipe } from "./types.js";
@@ -174,15 +173,25 @@ export function missingMaterials(props: GameProps, cost: Cost) {
  * Buys what an upgrade lacks, one order right away per material, and says in one toast what was
  * bought (or why less).
  */
-function BuyMissing({ cost, props }: { cost: Cost; props: GameProps }) {
+export function BuyMissing({
+  cost,
+  props,
+  gold = false,
+}: {
+  cost: Cost;
+  props: GameProps;
+  /** The screen's one action (refonte UX, lot 4): in gold, its size, what it buys said. */
+  gold?: boolean;
+}) {
   const { lines, estimate } = missingMaterials(props, cost);
   if (lines.length === 0) return null;
   const t = fr.game.workshop;
   if (estimate === 0n) return <p className="meta">{t.buyMissingNone}</p>;
+  const one = lines.length === 1 ? lines[0] : undefined;
   return (
     <Slab
-      size="sm"
-      tone="ghost"
+      size={gold ? "lg" : "sm"}
+      tone={gold ? "gold" : "ghost"}
       className="w-full"
       coach="buy-missing"
       disabled={props.busy}
@@ -216,7 +225,9 @@ function BuyMissing({ cost, props }: { cost: Cost; props: GameProps }) {
         if (said.length > 0) props.say(said.join(" "), short ? "warn" : "info");
       }}
     >
-      {t.buyMissing(d(estimate))}
+      {one
+        ? t.buyMissingOne(one.quantity, props.names.resource(one.resource), whole(estimate))
+        : t.buyMissing(whole(estimate))}
     </Slab>
   );
 }
@@ -663,15 +674,21 @@ function WorkshopSheet({
   props,
   focus,
 }: { b: BuildingView; props: GameProps; focus: "produce" | "upgrade" }) {
-  const [qty, setQty] = useState(defaultBatches(props.view.tutorial, b.canStart));
+  // The preset chosen (maquette `Production`: presets only): one, tonight, the most.
+  const [pick, setPick] = useState(defaultBatches(props.view.tutorial, b.canStart) > 1 ? 2 : 0);
   const recipe = recipeOf(props, b.type);
   const st = workshopState(props, b);
   const t = fr.game.workshop;
   const cost = b.upgradeCost;
   const canUpgrade = cost !== null && affordable(props.view, cost);
-  const q = Math.min(qty, Math.max(1, b.canStart));
   const rest = untilRest(props.now);
   const evening = eveningBatches(props, b);
+  const presets = [
+    { label: t.one, n: 1 },
+    { label: rest.night ? t.night : t.evening, n: evening },
+    { label: t.max, n: b.canStart },
+  ];
+  const q = Math.min(presets[pick]?.n ?? 1, Math.max(1, b.canStart));
   const status =
     st.state === "ready"
       ? t.ready(st.quantity ?? 0, props.names.resource(st.resource ?? ""))
@@ -715,6 +732,7 @@ function WorkshopSheet({
     </div>
   );
   const nextWork = b.path === "quality" ? b.workLevel : b.workLevel + 1;
+  const lacking = !!cost && missingMaterials(props, cost).lines.length > 0;
   const upgrade = cost && (
     <div className="space-y-3">
       {recipe && (
@@ -757,32 +775,78 @@ function WorkshopSheet({
         </p>
       )}
       <CostList cost={cost} props={props} buyable />
-      <BuyMissing cost={cost} props={props} />
       {b.job && b.job.endsAt > props.now && !b.path && (
         <p className="text-sm text-gold">{t.queueKeeps(b.level + 1, timeOfDay(b.job.endsAt))}</p>
       )}
+      {/* One gold: what is lacking bought here first, then the upgrade (refonte UX, lot 4). */}
+      {lacking ? (
+        <BuyMissing cost={cost} props={props} gold />
+      ) : canUpgrade ? (
+        <Slab
+          size="lg"
+          className="w-full"
+          coach="sheet-upgrade"
+          disabled={props.busy}
+          onClick={async () => {
+            if (await props.act({ type: "upgrade", buildingId: b.id }))
+              props.setSheet(`produce:${b.id}`);
+          }}
+        >
+          {fr.game.upgradeTo(b.level + 1)}
+        </Slab>
+      ) : (
+        <p className="meta">{t.shortOf(d(BigInt(cost.ducats) - BigInt(props.view.cash)))}</p>
+      )}
       <Slab
+        tone="ghost"
         className="w-full"
-        coach="sheet-upgrade"
-        disabled={props.busy || !canUpgrade}
-        onClick={async () => {
-          if (await props.act({ type: "upgrade", buildingId: b.id })) props.setSheet("workshops");
-        }}
+        onClick={() => props.setSheet(recipe ? `produce:${b.id}` : null)}
       >
-        {fr.game.upgradeTo(b.level + 1)}
+        {t.later}
       </Slab>
     </div>
   );
 
+  // The upgrade in a sheet of its own (maquette `Production`): its title, then all of it.
+  if (focus === "upgrade" && upgrade)
+    return (
+      <div className="space-y-4">
+        <h3 className="font-place text-xl font-bold uppercase tracking-[0.14em]">
+          {t.upgradeTitle(props.names.building(b.type), b.level + 1)}
+        </h3>
+        {choice}
+        {upgrade}
+      </div>
+    );
+
+  const output = Object.keys(recipe?.outputs ?? {})[0] ?? "";
+  const perBatch = recipe ? outputQty(props, output, recipe.outputs[output] ?? 0, b.workLevel) : 0;
+  const relaunch = !!recipe && b.canStart > 0 && !(b.job && st.ready < b.job.batches);
+  const harvestQty = st.quantity ?? 0;
+  const harvestRes = props.names.resource(st.resource ?? output);
+  const fast = b.fastSeconds !== null && q === 1;
+  const endsAt =
+    props.now + (fast ? (b.fastSeconds ?? 0) * 1000 : q * (recipe?.durationMinutes ?? 0) * 60_000);
+  // What keeps the batches down: an input short, to buy at the Market from here.
+  const short = recipe
+    ? Object.entries(recipe.inputs)
+        .map(([res, per]) => ({
+          res,
+          n: Math.floor(have(props.view, res) / Math.max(1, per * b.workLevel)),
+        }))
+        .sort((x, y) => x.n - y.n)[0]
+    : undefined;
+  const limited = recipe && relaunch ? limit(b, recipe, props) : null;
+  const produce = async () => {
+    if (st.ready > 0 && !(await props.act({ type: "collect", buildingId: b.id }))) return;
+    if (relaunch && (await props.act({ type: "startProduction", buildingId: b.id, batches: q })))
+      props.setSheet("workshops");
+  };
   return (
     <div className="space-y-5">
       {/* The workshop as a star (Lagune): what it makes, the arc of its batch, its name. */}
       <div className="flex flex-col items-center gap-1 text-center">
-        <WorkshopStar
-          output={Object.keys(recipe?.outputs ?? {})[0]}
-          state={st.state}
-          progress={st.progress ?? 0}
-        />
+        <WorkshopStar output={output || undefined} state={st.state} progress={st.progress ?? 0} />
         <p className="label text-cream-dim">
           {fr.game.level(b.level)}
           {b.path && ` · ${fr.game.manufacture.paths[b.path].name}`}
@@ -790,57 +854,67 @@ function WorkshopSheet({
         <h3 className="font-place text-xl font-bold uppercase tracking-[0.18em]">
           {props.names.building(b.type)}
         </h3>
-        {status && (
-          <p
-            className={`text-sm ${st.state === "ready" ? "text-lagoon" : st.state === "blocked" ? "text-cream-dim" : "text-info"}`}
-          >
+        {status && st.state !== "ready" && (
+          <p className={`text-sm ${st.state === "blocked" ? "text-cream-dim" : "text-info"}`}>
             {status}
           </p>
         )}
       </div>
       {st.ready > 0 && (
-        <Slab
-          size="lg"
-          className="w-full"
-          disabled={props.busy}
-          onClick={() => props.act({ type: "collect", buildingId: b.id })}
+        // What waits, in a lagoon band: the harvest itself is the gold at the foot.
+        <p
+          aria-live="polite"
+          className="flex items-center gap-2 rounded-2xl bg-lagoon/15 px-3 py-2.5 text-sm font-semibold text-lagoon ring-1 ring-inset ring-lagoon/40"
         >
-          {fr.game.harvest(st.ready)}
-        </Slab>
+          <span className="h-2 w-2 shrink-0 rounded-full bg-lagoon" aria-hidden="true" />
+          {t.readyBanner(st.ready, harvestQty, harvestRes)}
+        </p>
       )}
       {!recipe && <p className="text-sm text-cream-dim">{fr.game.palazzoHelp}</p>}
       {recipe && <RecipeFlow recipe={recipe} level={b.workLevel} props={props} />}
-      {recipe && b.canStart > 0 && !(b.job && st.ready < b.job.batches) && (
+      {relaunch && recipe && (
         <div className="space-y-3">
-          <Label>{fr.game.batchesLabel}</Label>
+          <Label>{st.ready > 0 ? t.relaunch : fr.game.batchesLabel}</Label>
           <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: t.one, n: 1 },
-              { label: rest.night ? t.night : t.evening, n: evening },
-              { label: t.max, n: b.canStart },
-            ].map((o) => (
+            {presets.map((o, i) => (
               <button
                 key={o.label}
                 type="button"
-                aria-pressed={q === o.n}
-                onClick={() => setQty(o.n)}
+                aria-pressed={pick === i}
+                onClick={() => setPick(i)}
                 // The one chosen reads as chosen: lit, with its tick, never as switched off.
-                className={`flex min-h-11 flex-col items-center justify-center rounded-full px-2 py-1 text-xs font-semibold leading-tight transition active:scale-95 ${q === o.n ? "bg-info text-ink" : "text-cream-dim ring-1 ring-inset ring-line"}`}
+                className={`flex min-h-11 flex-col items-center justify-center rounded-full px-2 py-1 text-xs font-semibold leading-tight transition active:scale-95 ${pick === i ? "bg-info text-ink" : "text-cream-dim ring-1 ring-inset ring-edge"}`}
               >
                 <span>
-                  {q === o.n && "✓ "}
+                  {pick === i && "✓ "}
                   {o.label}
                 </span>
-                <span className="font-display text-sm tabular-nums">{o.n}</span>
+                <span className="font-display text-sm tabular-nums">{t.lots(o.n)}</span>
               </button>
             ))}
           </div>
-          <Qty value={q} max={b.canStart} onChange={setQty} maxButton={false} />
-          {limit(b, recipe, props) && <p className="meta">{limit(b, recipe, props)}</p>}
+          <p className="font-display text-base font-extrabold">
+            {t.result(q * perBatch, props.names.resource(output), hourOf(endsAt))}
+          </p>
+          {limited && <p className="meta">{limited}</p>}
+          {limited && short && short.n <= b.canStart && (
+            // The input that limits, bought at the Market from here: a line of its own.
+            <button
+              type="button"
+              onClick={() => props.setSheet(`trade:${short.res}`)}
+              className="-my-2 flex min-h-12 items-center text-sm font-semibold text-info"
+            >
+              {t.buySome(
+                t.some(short.res, props.names.resource(short.res)) ??
+                  props.names.resource(short.res),
+              )}{" "}
+              ›
+            </button>
+          )}
           {(() => {
             // The bread these batches eat (E1-4), the workshop's rest of a loaf aside.
             const by = props.view.rations.byBatch;
-            if (!by || (b.fastSeconds !== null && q === 1)) return null;
+            if (!by || fast) return null;
             const k = Object.keys(recipe.inputs).length > 0 ? by.transform : by.raw;
             const loaves = Math.floor((q * b.workLevel * k) / 4);
             if (loaves === 0) return null;
@@ -851,23 +925,9 @@ function WorkshopSheet({
               </p>
             );
           })()}
-          <p className="text-sm text-cream-dim">
-            {b.fastSeconds !== null && q === 1
-              ? fr.game.fastBatch(b.fastSeconds)
-              : `${q} × ${minutesLabel(recipe.durationMinutes)} = ${duration(q * recipe.durationMinutes * 60_000)}`}
-          </p>
-          <Slab
-            size="lg"
-            className="w-full"
-            coach="sheet-produce"
-            disabled={props.busy}
-            onClick={async () => {
-              if (await props.act({ type: "startProduction", buildingId: b.id, batches: q }))
-                props.setSheet("workshops");
-            }}
-          >
-            {fr.game.produce}
-          </Slab>
+          {fast && (
+            <p className="text-sm text-cream-dim">{fr.game.fastBatch(b.fastSeconds ?? 0)}</p>
+          )}
         </div>
       )}
       {missing && recipe && (
@@ -885,10 +945,7 @@ function WorkshopSheet({
               size="sm"
               tone="ghost"
               className="flex-1"
-              onClick={() => {
-                props.setSheet(null);
-                props.goTo("marche");
-              }}
+              onClick={() => props.setSheet(`trade:${missing}`)}
             >
               {t.toMarket}
             </Slab>
@@ -907,62 +964,48 @@ function WorkshopSheet({
       )}
       {b.outOfRegion && <p className="text-xs text-muted">{fr.game.outOfRegion}</p>}
       {choice}
-      {upgrade &&
-        (focus === "upgrade" || canUpgrade || !recipe ? (
-          <div className="space-y-2 border-t border-line pt-4">
-            <Label>{fr.game.upgradeTo(b.level + 1)}</Label>
-            {upgrade}
-          </div>
-        ) : (
-          <details className="border-t border-line pt-4">
-            <summary className="label cursor-pointer">{t.upgradeLater(b.level + 1)}</summary>
-            <div className="mt-3">{upgrade}</div>
-          </details>
-        ))}
-    </div>
-  );
-}
-
-function BuildSheet({ type, props }: { type: string; props: GameProps }) {
-  const def = props.catalog.buildings.find((b) => b.type === type);
-  if (!def) return null;
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <BuildingArt type={type} className="h-24 w-32" />
-        <div>
-          <Label>{fr.game.buildTitle}</Label>
-          <h3 className="font-display text-lg font-extrabold uppercase">{def.name}</h3>
-          {def.recipe && props.catalog.rations.perLevelPerDay > 0 && (
-            <p className="meta mt-1">
-              {fr.game.rationsOfLevel(props.catalog.rations.perLevelPerDay)}
-            </p>
-          )}
-        </div>
-      </div>
-      {def.recipe ? (
-        <RecipeFlow recipe={def.recipe} level={1} props={props} />
-      ) : (
-        <p className="text-sm text-cream-dim">{fr.game.palazzoHelp}</p>
+      {cost && (
+        // The upgrade, a row that opens its own sheet (maquette `Production`).
+        <button
+          type="button"
+          data-coach={`upgrade-row-${b.id}`}
+          onClick={() => props.setSheet(`upgrade:${b.id}`)}
+          className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left ring-1 ring-inset ring-edge transition active:scale-[0.98]"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-info ring-2 ring-info">
+            ↑
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">{t.upgradeLater(b.level + 1)}</span>
+            <span className="block text-xs text-cream-dim">
+              {t.upgradeYield(Math.round(props.catalog.rules.levelYieldBonusBps / 100))} ·{" "}
+              {d(cost.ducats)}
+              {Object.entries(cost.materials).map(
+                ([r, n]) => `, ${n} ${props.names.resource(r).toLowerCase()}`,
+              )}
+            </span>
+          </span>
+          <span className="text-xl text-cream-dim" aria-hidden="true">
+            ›
+          </span>
+        </button>
       )}
-      <div className="space-y-2">
-        <Label>{fr.game.cost}</Label>
-        <CostList cost={def.cost} props={props} />
-      </div>
-      <Slab
-        size="lg"
-        className="w-full"
-        disabled={
-          props.busy ||
-          !affordable(props.view, def.cost) ||
-          (!!def.unlock && BigInt(props.view.standing.turnover) < BigInt(def.unlock.turnover))
-        }
-        onClick={async () => {
-          if (await props.act({ type: "build", buildingType: type })) props.setSheet("workshops");
-        }}
-      >
-        {fr.game.build}
-      </Slab>
+      {(st.ready > 0 || relaunch) && (
+        // The one gold, at the foot: harvest and restart, harvest, or produce.
+        <Slab
+          size="lg"
+          className="w-full"
+          coach={relaunch ? "sheet-produce" : undefined}
+          disabled={props.busy}
+          onClick={() => void produce()}
+        >
+          {st.ready > 0
+            ? relaunch
+              ? t.harvestRelaunch(harvestQty, harvestRes, q)
+              : t.harvestOnly(harvestQty, harvestRes)
+            : t.produceN(q)}
+        </Slab>
+      )}
     </div>
   );
 }
@@ -1044,7 +1087,8 @@ export function CounterSheets(props: GameProps) {
       </Sheet>
       <Sheet
         open={(kind === "produce" || kind === "upgrade") && !!sheetBuilding}
-        onClose={() => props.setSheet("workshops")}
+        // The upgrade's sheet goes back to its workshop; the workshop's, to the list.
+        onClose={() => props.setSheet(kind === "upgrade" && id ? `produce:${id}` : "workshops")}
       >
         {sheetBuilding && (
           <WorkshopSheet
@@ -1055,11 +1099,13 @@ export function CounterSheets(props: GameProps) {
           />
         )}
       </Sheet>
-      <Sheet open={props.sheet === "buildHere"} onClose={close} title={fr.game.catalog.title}>
+      <Sheet
+        open={props.sheet === "buildHere"}
+        onClose={close}
+        title={fr.game.catalog.title}
+        summary={fr.game.catalog.places(view.buildings.length, props.catalog.rules.maxBuildings)}
+      >
         <BuildCatalog {...props} />
-      </Sheet>
-      <Sheet open={kind === "build"} onClose={() => props.setSheet("buildHere")}>
-        {kind === "build" && id && <BuildSheet type={id} props={props} />}
       </Sheet>
       <Sheet open={props.sheet === "store"} onClose={close} title={fr.game.domain.store.title}>
         <div className="space-y-4">

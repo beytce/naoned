@@ -14,7 +14,7 @@ export function atoutsOf(view: PlayerView) {
 }
 
 /** An Atout's name and its line. */
-function nameOf(code: string): [string, string] {
+export function nameOf(code: string): [string, string] {
   return t().names[code] ?? [code, ""];
 }
 

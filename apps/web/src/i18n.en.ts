@@ -314,8 +314,13 @@ export const en: Dictionary = {
           ]
             .filter(Boolean)
             .join(" · ") || "Workshops at rest",
-        bread: (days: number) => `Workers' bread: ${days} d`,
+        bread: (days: number) => `Workers fed ${days} day${days > 1 ? "s" : ""}`,
         harvest: "Collect and restart",
+        allRunning: (hour: string) => `All running · next batch at ${hour}`,
+        atouts: "Your Atouts",
+        atoutWaiting: "The Atout of the week waits: choose it",
+        atoutLabel: "Atout to choose",
+        letter: "Letter of the day",
         waits: (resource: string) => `needs ${resource.toLowerCase()}`,
         level: (n: number) => `lv. ${n}`,
       },
@@ -1356,7 +1361,26 @@ export const en: Dictionary = {
         `${n} batch${n === 1 ? "" : "es"}: limited by the ${res.toLowerCase()} (${have} in stock, ${perBatch} per batch)`,
       limitedByQueue: (n: number, hours: number) =>
         `${n} batch${n === 1 ? "" : "es"}: limited by the queue (${hours} h)`,
-      buyMissing: (cost: string) => `Buy what is missing (≈ ${cost})`,
+      buyMissing: (cost: string) => `Buy what is missing · ${cost}`,
+      /** One material lacking: the gold says which and how many (refonte UX, lot 4). */
+      buyMissingOne: (quantity: number, res: string, cost: string) =>
+        `Buy ${quantity} ${res.toLowerCase()} · ${cost}`,
+      /** A workshop's sheet (maquette `Production`). */
+      readyBanner: (n: number, q: number, res: string) =>
+        `${n} batch${n > 1 ? "es" : ""} ready: ${q} ${res.toLowerCase()} to harvest`,
+      relaunch: "How many to restart?",
+      result: (q: number, res: string, hour: string) =>
+        `→ ${q} ${res.toLowerCase()} · done at ${hour}`,
+      buySome: (some: string) => `Buy ${some}`,
+      harvestRelaunch: (q: number, res: string, n: number) =>
+        `Harvest ${q} ${res.toLowerCase()} and restart ${n} batch${n > 1 ? "es" : ""}`,
+      harvestOnly: (q: number, res: string) => `Harvest ${q} ${res.toLowerCase()}`,
+      produceN: (n: number) => `Produce ${n} batch${n > 1 ? "es" : ""}`,
+      lots: (n: number) => `${n} batch${n > 1 ? "es" : ""}`,
+      upgradeYield: (pct: number) => `+${pct} % per batch`,
+      upgradeTitle: (name: string, level: number) => `${name} · level ${level}`,
+      later: "Later",
+      shortOf: (cost: string) => `You lack ${cost}.`,
       buyMissingNone: "Nobody sells what is missing at the Market for now.",
       buildHere: "Build here",
     },
@@ -1603,6 +1627,8 @@ export const en: Dictionary = {
     buildTitle: "New workshop",
     catalog: {
       title: "Build",
+      places: (used: number, max: number) => `${used} of ${max} places`,
+      build: (name: string, cost: string) => `Build: ${name.toLowerCase()} · ${cost}`,
       tabs: { workshops: "Workshops", vehicles: "Vehicles" },
       plots: (used: number, max: number) => `Plots in use: ${used}/${max}`,
       fleet: (owned: number, max: number) => `Vehicles: ${owned}/${max}`,

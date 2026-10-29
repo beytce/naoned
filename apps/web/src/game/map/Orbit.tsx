@@ -3,12 +3,15 @@ import { CityIcon } from "../../art/cities.js";
 import { Crest, type CrestData } from "../../art/crest.js";
 import { GoodsMark, goodsColour } from "../../art/goods.js";
 import { Coin } from "../../art/icons.js";
+import { Lorenzo } from "../../art/scenes.js";
 import { fr } from "../../i18n.js";
 import { Slab, clock } from "../../ui.js";
+import { nameOf as atoutName, atoutWaiting, atoutsOf } from "../Atouts.js";
 import { perHour } from "../Dashboard.js";
 import type { GameProps } from "../Game.js";
+import { letterWaiting } from "../Letter.js";
 import { SignoriaLine, SignoriaRing } from "../Signoria.js";
-import { amount, d } from "../format.js";
+import { amount, d, hourOf } from "../format.js";
 import { harvestAndRestart } from "../harvest.js";
 import { total } from "../roadKit.js";
 import { signoriaOf, useSignoria } from "../signoria.js";
@@ -48,7 +51,7 @@ interface Star {
 }
 
 /**
- * The counter seen up close, once touched on the map: its gold sun in the middle, each workshop a
+ * The counter seen up close, the Ateliers tab's screen (or « Ouvrir » on the map's card): its gold sun in the middle, each workshop a
  * star in orbit around it (the mark of what it makes, the arc of its batch, lagoon and « +10 »
  * when it is ready, a dotted round when it waits), the chain drawn between those that feed each
  * other, a free plot to build on. Under it, the store in chips; at the foot, the one gold action
@@ -57,13 +60,11 @@ interface Star {
 export function ComptoirOrbit({
   props,
   crest,
-  onClose,
   leaving,
   from,
 }: {
   props: GameProps;
   crest: CrestData;
-  onClose: () => void;
   /** Closed: it shrinks back into the map for a moment, untouchable (MapScreen). */
   leaving?: boolean;
   /** Its mark on the map, where it opens from and folds back into. */
@@ -102,6 +103,15 @@ export function ComptoirOrbit({
   const breadDays = view.rations.perDay > 0 ? Math.floor(bread / view.rations.perDay) : null;
   const stock = view.inventory.filter((i) => i.available > 0);
   const total = stock.reduce((n, i) => n + i.available, 0);
+  // When the next batch under way is done: « Tout tourne · prochain lot à 14 h 30 ».
+  const nextAt = view.buildings.reduce<number | null>((at, b) => {
+    if (!b.job) return at;
+    const done = readyOf(b, now);
+    if (done >= b.job.batches) return at;
+    const end = b.job.startedAt + (done + 1) * b.job.batchMs;
+    return at === null || end < at ? end : at;
+  }, null);
+  const atouts = atoutsOf(view);
   return (
     <section
       ref={section}
@@ -114,16 +124,9 @@ export function ComptoirOrbit({
       aria-label={m.homeLabel}
       className={`${leaving ? "orbit-out pointer-events-none" : "orbit-in"} absolute inset-x-0 top-0 bottom-[var(--tabbar)] z-[25] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_32%,rgb(var(--night-3))_0%,rgb(var(--night))_62%)] lg:right-[var(--side,0px)]`}
     >
-      <header className="relative z-10 flex items-center justify-between gap-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <button
-          type="button"
-          aria-label={t.back}
-          onClick={onClose}
-          className="hud-orb flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-cream transition active:scale-90"
-        >
-          {Icon.chevronLeft()}
-        </button>
-        <h2 className="font-place text-base font-bold uppercase tracking-[0.25em] text-gold">
+      {/* The Ateliers tab's screen (refonte UX): no way back, the tabs lead on. */}
+      <header className="relative z-10 flex min-h-11 items-center justify-between gap-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <h2 className="font-place text-base font-bold uppercase tracking-[0.2em] text-cream">
           {m.homeLabel}
         </h2>
         <span className="flex shrink-0 items-center gap-1.5 font-display text-lg font-extrabold text-gold">
@@ -132,6 +135,43 @@ export function ComptoirOrbit({
         </span>
       </header>
 
+      {/* The Atouts held, at the top left (maquette `Comptoir`); the one waiting is a button. */}
+      {atouts && (atouts.held.length > 0 || atoutWaiting(view)) && (
+        <div
+          aria-label={t.atouts}
+          // On a short phone the orbit needs the room: the bell keeps the Atouts and the letter.
+          className="absolute left-4 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.25rem)] z-10 flex items-center gap-1.5 [@media(max-height:699px)]:hidden"
+        >
+          {atouts.held.map((code) => (
+            <span
+              key={code}
+              role="img"
+              aria-label={atoutName(code)[0]}
+              className="flex h-[38px] w-[28px] items-center justify-center rounded-md bg-night-3 font-place text-sm font-bold text-gold ring-1 ring-edge"
+            >
+              {atoutName(code)[0]
+                .replace(/^(Le|La|L’|L'|The )\s*/, "")
+                .charAt(0)}
+            </span>
+          ))}
+          {atoutWaiting(view) && (
+            <button
+              type="button"
+              aria-label={t.atoutWaiting}
+              onClick={() => props.setSheet("atouts")}
+              className="flex min-h-11 items-center gap-1.5 rounded-full pr-2 transition active:scale-95"
+            >
+              <span
+                className="hud-alert flex h-[38px] w-[28px] items-center justify-center rounded-md border-2 border-dashed border-gold font-place text-sm font-bold text-gold"
+                data-tone="gold"
+              >
+                ?
+              </span>
+              <span className="text-xs font-semibold text-gold">{t.atoutLabel}</span>
+            </button>
+          )}
+        </div>
+      )}
       {/* The orbit: a square as large as the room allows, the sun in its middle. */}
       <div className="flex min-h-0 flex-1 items-center justify-center px-2">
         <div className="relative aspect-square h-full max-h-[26rem] max-w-full [container-type:inline-size]">
@@ -184,6 +224,17 @@ export function ComptoirOrbit({
           {stars.map((s, i) => (
             <WorkshopStar key={s.b.id} props={props} star={s} hop={hop} rank={i} />
           ))}
+          {/* The letter of the day, brought by Lorenzo while it waits (R10). */}
+          {letterWaiting(view) && (
+            <button
+              type="button"
+              onClick={() => props.setSheet("letter")}
+              className="absolute bottom-0 left-0 z-10 flex min-h-11 [@media(max-height:699px)]:hidden items-center gap-2 rounded-full bg-night-2/90 py-1 pl-1 pr-3 text-xs font-semibold text-cream ring-1 ring-edge transition active:scale-95"
+            >
+              <Lorenzo size={32} />
+              {t.letter}
+            </button>
+          )}
           {plot && (
             <Place x={plot.x} y={plot.y} rank={stars.length}>
               <button
@@ -204,17 +255,28 @@ export function ComptoirOrbit({
       {stock.length > 0 && (
         // On a short screen (320 × 568), the orbit needs the room: the store is a door below.
         <section aria-label={t.store} className="px-4 pb-2 [@media(max-height:699px)]:hidden">
-          <p className="mb-1.5 text-xs text-cream-dim">{t.storeLine(total)}</p>
+          {/* The store's line opens it; each chip, its good at the Market (maquette `Comptoir`). */}
+          <button
+            type="button"
+            aria-label={t.store}
+            onClick={() => props.setSheet("store")}
+            className="-mt-2 flex min-h-12 items-center text-xs text-cream-dim"
+          >
+            {t.storeLine(total)} ›
+          </button>
           <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
             {stock.map((i) => (
-              <li
-                key={i.resource}
-                data-goods-to={i.resource}
-                className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-night-2 pl-1.5 pr-3"
-              >
-                <GoodsMark code={i.resource} size={24} />
-                <b className="font-display text-sm tabular-nums">{i.available}</b>
-                <span className="text-xs text-cream-dim">{props.names.resource(i.resource)}</span>
+              <li key={i.resource} className="shrink-0">
+                <button
+                  type="button"
+                  data-goods-to={i.resource}
+                  onClick={() => props.setSheet(`trade:${i.resource}`)}
+                  className="flex h-11 items-center gap-1.5 rounded-full bg-night-2 pl-1.5 pr-3 transition active:scale-95"
+                >
+                  <GoodsMark code={i.resource} size={24} />
+                  <b className="font-display text-sm tabular-nums">{i.available}</b>
+                  <span className="text-xs text-cream-dim">{props.names.resource(i.resource)}</span>
+                </button>
               </li>
             ))}
           </ul>
@@ -223,8 +285,13 @@ export function ComptoirOrbit({
 
       <section className="rounded-t-3xl border-t border-line bg-night-2 px-4 pb-4 pt-3">
         <div className="mb-3 flex items-baseline justify-between gap-2">
-          <span className="min-w-0 truncate font-display text-base font-extrabold">
-            {t.summary(ready, running)}
+          <span
+            aria-live="polite"
+            className="min-w-0 truncate font-display text-base font-extrabold"
+          >
+            {ready === 0 && !idle && nextAt !== null
+              ? t.allRunning(hourOf(nextAt))
+              : t.summary(ready, running)}
           </span>
           {breadDays !== null && (
             <span className={`shrink-0 text-xs ${hungry ? "text-vermilion" : "text-cream-dim"}`}>
@@ -249,13 +316,16 @@ export function ComptoirOrbit({
             {ready > 0 ? t.harvest : m.buttons.restart}
           </Slab>
         )}
-        <div className="grid grid-cols-2 gap-2">
+        {/* The store's door here only where its chips are hidden (a short phone). */}
+        <div className="grid grid-cols-2 gap-2 [@media(min-height:700px)]:grid-cols-1">
           <Ghost coach="panel-workshops" onClick={() => props.setSheet("workshops")}>
             {m.buttons.workshops}
           </Ghost>
-          <Ghost fx="store" onClick={() => props.setSheet("store")}>
-            {t.store}
-          </Ghost>
+          <span className="contents [@media(min-height:700px)]:hidden">
+            <Ghost fx="store" onClick={() => props.setSheet("store")}>
+              {t.store}
+            </Ghost>
+          </span>
         </div>
       </section>
     </section>

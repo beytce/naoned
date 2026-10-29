@@ -237,8 +237,13 @@ const frDict = {
           ]
             .filter(Boolean)
             .join(" · ") || "Ateliers au repos",
-        bread: (days: number) => `Pain des ouvriers : ${days} j`,
+        bread: (days: number) => `Ouvriers nourris ${days} jour${days > 1 ? "s" : ""}`,
         harvest: "Récolter et relancer",
+        allRunning: (hour: string) => `Tout tourne · prochain lot à ${hour}`,
+        atouts: "Vos Atouts",
+        atoutWaiting: "L’Atout de la semaine attend : le choisir",
+        atoutLabel: "Atout à choisir",
+        letter: "Lettre du jour",
         waits: (resource: string) => `attend ${resource.toLowerCase()}`,
         level: (n: number) => `niv. ${n}`,
       },
@@ -1350,7 +1355,26 @@ const frDict = {
       limitedByQueue: (n: number, hours: number) =>
         `${n} lot${n > 1 ? "s" : ""} : limité par la file (${hours} h)`,
       /** The materials an upgrade lacks: bought right away at the Rialto. */
-      buyMissing: (cost: string) => `Acheter ce qui manque (≈ ${cost})`,
+      buyMissing: (cost: string) => `Acheter ce qui manque · ${cost}`,
+      /** One material lacking: the gold says which and how many (refonte UX, lot 4). */
+      buyMissingOne: (quantity: number, res: string, cost: string) =>
+        `Acheter ${quantity} ${res.toLowerCase()} · ${cost}`,
+      /** A workshop's sheet (maquette `Production`). */
+      readyBanner: (n: number, q: number, res: string) =>
+        `${n} lot${n > 1 ? "s" : ""} prêt${n > 1 ? "s" : ""} : ${q} ${res.toLowerCase()} à récolter`,
+      relaunch: "Combien en relancer ?",
+      result: (q: number, res: string, hour: string) =>
+        `→ ${q} ${res.toLowerCase()} · fin à ${hour}`,
+      buySome: (some: string) => `Acheter ${some}`,
+      harvestRelaunch: (q: number, res: string, n: number) =>
+        `Récolter ${q} ${res.toLowerCase()} et relancer ${n} lot${n > 1 ? "s" : ""}`,
+      harvestOnly: (q: number, res: string) => `Récolter ${q} ${res.toLowerCase()}`,
+      produceN: (n: number) => `Produire ${n} lot${n > 1 ? "s" : ""}`,
+      lots: (n: number) => `${n} lot${n > 1 ? "s" : ""}`,
+      upgradeYield: (pct: number) => `+${pct} % par lot`,
+      upgradeTitle: (name: string, level: number) => `${name} · niveau ${level}`,
+      later: "Plus tard",
+      shortOf: (cost: string) => `Il vous manque ${cost}.`,
       buyMissingNone: "Personne ne vend ce qui manque au Marché pour l'instant.",
       buildHere: "Bâtir ici",
     },
@@ -1602,7 +1626,9 @@ const frDict = {
     buildTitle: "Nouvel atelier",
     /** The catalogue of what can be built, in cards (workshops, vehicles). */
     catalog: {
-      title: "Construire",
+      title: "Bâtir",
+      places: (used: number, max: number) => `${used} sur ${max} places`,
+      build: (name: string, cost: string) => `Bâtir : ${name.toLowerCase()} · ${cost}`,
       tabs: { workshops: "Ateliers", vehicles: "Véhicules" },
       plots: (used: number, max: number) => `Parcelles occupées : ${used}/${max}`,
       fleet: (owned: number, max: number) => `Véhicules : ${owned}/${max}`,
