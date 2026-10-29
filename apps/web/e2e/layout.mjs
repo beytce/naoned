@@ -153,7 +153,7 @@ const WORDS = {
     quantity: "Quantity",
     team: /team · veneto/i,
     onYou: /on you/i,
-    battleAt: /battle at 20:00/i,
+    battleAt: /battle 20:00/i,
     teamWon: /veneto wins/i,
     npc: "NPC",
     alone: /^play alone$/i,
