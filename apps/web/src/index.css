@@ -840,6 +840,20 @@
 [data-peek] .map-marker:not([data-selected]) > * {
   opacity: 0.35;
 }
+/* The auctions' stamp (maquette `Mole`): « Adjugé » falls on the lot won, 250 ms, with a bounce. */
+.sera-stamp {
+  animation: sera-stamp 0.25s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+}
+@keyframes sera-stamp {
+  0% {
+    transform: translateY(-50%) rotate(-12deg) scale(1.4);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(-50%) rotate(-12deg) scale(1);
+    opacity: 1;
+  }
+}
 /* A place's card (maquette `Main`): it rises 24 px into place, in 320 ms. */
 .place-peek {
   animation: panel-rise 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
