@@ -216,8 +216,6 @@ export interface SimModel {
   foreignDepthPerActive: number;
   /** Booty of a won expedition: this many ducats × its tier². */
   bootyPerTierDucats: number;
-  /** The deposits' rate is per this many houses present in the region. */
-  housesPerDeposit: number;
   /** A miner's teams, against another house's. */
   minerTeams: number;
   /** Rialto's tax on market sales and purchases. */
@@ -226,10 +224,6 @@ export interface SimModel {
     string,
     { casa: number; capacity: number; costDucats: number; regions: string[]; speedBps: number }
   >;
-  /** Trips a day a land vehicle makes for the local books. */
-  localTripsPerDay: number;
-  /** A counter (new, or a level more) costs this many times a workshop's level. */
-  counterCostTimes: number;
   galleyCostDucats: number;
   galleyStrength: number;
   /** A house's raw goods count as young while its Casa is at most this. */

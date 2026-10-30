@@ -34,9 +34,6 @@ function venetiaChains(): {
 
 const VENETIA = venetiaChains();
 
-const VENETO = ["veneto"];
-const RIVERS = ["veneto", "lombardia", "romagna"];
-const ROADS = ["veneto", "lombardia", "friuli", "germania"];
 const ADRIATIC = ["veneto", "romagna", "friuli", "dalmazia"];
 const SEA = [...ADRIATIC, "grecia"];
 const GALLEY = [...SEA, "levante", "costantinopoli"];
@@ -72,13 +69,9 @@ export const DEFAULT_MODEL: SimModel = {
   foreignDepthPerActive: 1.5,
   bootyPerTierDucats: 250,
   minerTeams: 3,
-  housesPerDeposit: 10,
   marketTaxBps: 300,
+  // The ships, until their step: the land and river vehicles are the game's (empire.vehicles).
   vehicles: {
-    mule: { casa: 1, capacity: 25, costDucats: 60, regions: VENETO, speedBps: 0 },
-    cart: { casa: 3, capacity: 40, costDucats: 120, regions: VENETO, speedBps: 0 },
-    burchio: { casa: 5, capacity: 90, costDucats: 400, regions: RIVERS, speedBps: 0 },
-    chariot: { casa: 6, capacity: 70, costDucats: 500, regions: ROADS, speedBps: 0 },
     marciliana: { casa: 9, capacity: 150, costDucats: 1_500, regions: ADRIATIC, speedBps: 2_000 },
     cocca: { casa: 11, capacity: 300, costDucats: 3_500, regions: SEA, speedBps: 2_000 },
     galea: { casa: 14, capacity: 500, costDucats: 9_000, regions: GALLEY, speedBps: 3_000 },
@@ -90,8 +83,6 @@ export const DEFAULT_MODEL: SimModel = {
       speedBps: 3_000,
     },
   },
-  localTripsPerDay: 4,
-  counterCostTimes: 4,
   galleyCostDucats: 1_200,
   galleyStrength: 10,
   youngCasa: 8,
