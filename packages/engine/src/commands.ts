@@ -36,8 +36,10 @@ import { knownTrait } from "./dynasty.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { advanceCarnet, claimObjective, ensureCarnet, windOnReturn } from "./empire/carnet.js";
 import { sendTeam, settleDeposits } from "./empire/extraction.js";
+import { chooseLineage, passGenerations } from "./empire/family.js";
 import {
   charterRegion,
+  chooseArte,
   empireJoin,
   ownHouse,
   settleBuilds,
@@ -47,9 +49,11 @@ import {
   startWorkshop,
   upgradeCounter,
 } from "./empire/house.js";
-import { deliverOrders, sellToDogana } from "./empire/trade.js";
+import { startLearning } from "./empire/knowledge.js";
+import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
+import { deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
 import { buyEmpireVehicle, settleVoyages, startVoyage } from "./empire/voyages.js";
-import { relaunchAll, relaunchWorkshop } from "./empire/workshops.js";
+import { fitModule, relaunchAll, relaunchWorkshop, swapWorkshops } from "./empire/workshops.js";
 import { joinFamily, leaveFamily } from "./families.js";
 import { buildFondaco } from "./fondaci.js";
 import {
@@ -288,6 +292,15 @@ export type EmpireCommand =
   | { type: "empireBuyVehicle"; playerId: PlayerId; vehicleType: string }
   | { type: "empireResearch"; playerId: PlayerId; module: string }
   | { type: "empireTeam"; playerId: PlayerId; depositId: string }
+  | { type: "empireFit"; playerId: PlayerId; workshopId: string; slot: number; module: string }
+  | { type: "empireCourt"; playerId: PlayerId; good: string; qty: number }
+  | { type: "empireSwap"; playerId: PlayerId; a: string; b: string }
+  | { type: "empireChooseArte"; playerId: PlayerId; arte: string; minor?: boolean }
+  | { type: "empireLearn"; playerId: PlayerId; code: string }
+  | { type: "empireHire"; playerId: PlayerId; role: string }
+  | { type: "empirePlace"; playerId: PlayerId; staffId: string; at: string }
+  | { type: "empireSkill"; playerId: PlayerId; staffId: string; path: number }
+  | { type: "empireLineage"; playerId: PlayerId; trait: string }
   | {
       type: "empireVoyage";
       playerId: PlayerId;
@@ -410,11 +423,15 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     const h = ownHouse(tx, cmd.playerId);
     h.favour += Math.max(0, Math.floor(cmd.favour ?? 0));
     ensureCarnet(tx, cmd.playerId, h);
+    passGenerations(tx, cmd.playerId);
     return;
   }
   const h = ownHouse(tx, cmd.playerId);
   settleBuilds(h, tx.now);
   ensureCarnet(tx, cmd.playerId, h);
+  // The generations passed, then the factors' work while the house was away, before its own.
+  passGenerations(tx, cmd.playerId);
+  runFactors(tx, cmd.playerId);
   windOnReturn(tx, h);
   h.lastActionAt = tx.now;
   const player = tx.s.players[cmd.playerId];
@@ -454,6 +471,33 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireTeam":
       sendTeam(tx, cmd.playerId, cmd.depositId);
+      break;
+    case "empireFit":
+      fitModule(tx, cmd.playerId, cmd.workshopId, cmd.slot, cmd.module);
+      break;
+    case "empireCourt":
+      sellToCourt(tx, cmd.playerId, cmd.good, cmd.qty);
+      break;
+    case "empireSwap":
+      swapWorkshops(tx, cmd.playerId, cmd.a, cmd.b);
+      break;
+    case "empireChooseArte":
+      chooseArte(tx, cmd.playerId, cmd.arte, cmd.minor);
+      break;
+    case "empireLearn":
+      startLearning(tx, cmd.playerId, cmd.code);
+      break;
+    case "empireHire":
+      hireStaff(tx, cmd.playerId, cmd.role);
+      break;
+    case "empirePlace":
+      placeStaff(tx, cmd.playerId, cmd.staffId, cmd.at);
+      break;
+    case "empireSkill":
+      chooseSkill(tx, cmd.playerId, cmd.staffId, cmd.path);
+      break;
+    case "empireLineage":
+      chooseLineage(tx, cmd.playerId, cmd.trait);
       break;
     case "empireVoyage":
       startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);

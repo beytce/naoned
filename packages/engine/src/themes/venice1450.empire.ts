@@ -185,8 +185,8 @@ const MODULES = [
   module("victualler", "arms", "support", 1_000, 600),
   module("engineer", "arms", "support", 1_500, 800),
   module("trumpet", "arms", "support", 1_000, 600),
-  module("tools", "workshop", "yield", 1_000, 500),
-  module("apprentices", "workshop", "speed", 1_000, 500),
+  module("tools", "workshop", "workshopYield", 1_000, 500),
+  module("apprentices", "workshop", "workshopSpeed", 1_000, 500),
   module("master", "workshop", "quality", 1_000, 500),
   module("furnace", "workshop", "inputs", 500, 300),
 ];
@@ -218,6 +218,7 @@ export const venice1450Empire: EmpireSettingsInput = {
       10_800, 12_600, 14_400, 18_000, 18_000, 20_160, 20_160, 20_160,
     ],
     maxLevel: 25,
+    neighbourBps: 1_000,
   },
   counters: { maxLevel: 10, bookStepBps: 4_000 },
   // The socle in Venetia: the clay, the wood and the planks of the Casa 2; its bricks ask the
@@ -253,6 +254,126 @@ export const venice1450Empire: EmpireSettingsInput = {
   },
   localTripsPerDay: 4,
   newcomers: { rawBonusBps: 2_000, untilCasa: 8 },
+  // The knowledge (CADRAGE-v3 § 3.5): four branches, four knowledges and two capstones each,
+  // from 30 minutes to 10 days; one place from the Casa 4, two from the 12.
+  knowledge: {
+    baseCostDucats: 300,
+    costGrowthBps: 25_000,
+    minutes: [30, 240, 1_440, 4_320, 14_400],
+    slotsAt: [4, 12],
+    branches: [
+      {
+        code: "abaco",
+        nodes: [
+          { code: "tariffa", effects: { taxCut: 50 } },
+          { code: "scritta", effects: { orderBonus: 500 } },
+          { code: "libro", effects: { book: 1_000 } },
+          { code: "cambio", effects: { taxCut: 50 } },
+        ],
+        capstones: [
+          { code: "partita", effects: { wagesCut: 1_500 } },
+          { code: "banco", effects: { orderBonus: 1_500 } },
+        ],
+      },
+      {
+        code: "navigazione",
+        nodes: [
+          { code: "bussola", effects: { speed: 1_000 } },
+          { code: "stiva", effects: { capacity: 1_000 } },
+          { code: "corriere", effects: { intel: 3_333 } },
+          { code: "carri", effects: { haul: 1_000 } },
+        ],
+        capstones: [
+          { code: "portolano", effects: { newsLive: 1 } },
+          { code: "convoglio", effects: { tripsExtra: 1 } },
+        ],
+      },
+      {
+        code: "arti",
+        nodes: [
+          { code: "mestiere", effects: { workshopYield: 500 } },
+          { code: "cantiere", effects: { buildTime: 1_000 } },
+          { code: "risparmio", effects: { inputs: 500 } },
+          { code: "finezza", effects: { quality: 500 } },
+        ],
+        capstones: [
+          { code: "bottega", effects: { moduleSlotsExtra: 1 } },
+          { code: "catena", effects: { neighbour: 10_000 } },
+        ],
+      },
+      {
+        code: "diplomazia",
+        nodes: [
+          { code: "lettere", effects: { charterCut: 2_000 } },
+          { code: "patti", effects: { counterCut: 1_000 } },
+          { code: "favori", effects: { carnetFavour: 2_000 } },
+          { code: "squadre", effects: { teamsExtra: 1 } },
+        ],
+        capstones: [
+          { code: "ambasciata", effects: { charterCut: 5_000 } },
+          { code: "signoria", effects: { carnetExtra: 1 } },
+        ],
+      },
+    ],
+  },
+  // The staff (CADRAGE-v3 § 3 quinquies): the master of a workshop, the factor of a region, the
+  // captain of a vehicle; a path every five levels, a place more every four levels of the Casa.
+  staff: {
+    hireCostDucats: 200,
+    hireGrowthBps: 15_000,
+    slotsBase: 1,
+    casaPerSlot: 4,
+    xpPerLevel: 50,
+    maxLevel: 30,
+    tierEvery: 5,
+    rarityBps: { common: 10_000, rare: 15_000, illustrious: 20_000 },
+    roles: {
+      master: {
+        place: "workshop",
+        perLevel: { workshopYield: 30, quality: 20 },
+        paths: [{ quality: 300 }, { workshopYield: 300 }],
+      },
+      factor: {
+        place: "region",
+        perLevel: { book: 50 },
+        paths: [{ book: 500 }, { orderBonus: 200 }],
+      },
+      captain: {
+        place: "vehicle",
+        perLevel: { speed: 50, capacity: 50 },
+        paths: [{ speed: 500 }, { capacity: 500 }],
+      },
+    },
+  },
+  // The family (CADRAGE-v3 § 3.5): a generation a quarter, a rare member of the family each, and
+  // the lineage's traits, small and for good.
+  family: {
+    roles: ["master", "factor", "captain"],
+    rarity: "rare",
+    traits: [
+      { code: "mercanti", effects: { orderBonus: 300 } },
+      { code: "artigiani", effects: { workshopYield: 200 } },
+      { code: "navigatori", effects: { speed: 500 } },
+      { code: "diplomatici", effects: { charterCut: 1_000 } },
+      { code: "prudenti", effects: { wagesCut: 500 } },
+    ],
+  },
+  // The Arti (CADRAGE-v3 § 3.5, the owner's choice of 30 October 2026): the chains of the theme.
+  arte: {
+    fromCasa: 7,
+    minorFromCasa: 13,
+    chainYieldBps: 1_000,
+    minorYieldBps: 500,
+    topLevel: 25,
+    renounceLevel: 15,
+    artes: [
+      { code: "lanaioli", buildings: ["sheepfold", "loom", "tailor"] },
+      { code: "vetrai", buildings: ["sand_pit", "glassworks", "mirrorworks"] },
+      { code: "speziali", buildings: ["spicery"] },
+      { code: "arsenalotti", buildings: ["lumber_camp", "sawmill", "brickworks"] },
+      { code: "banchieri", buildings: [], effects: { taxCut: 100, orderBonus: 500 } },
+    ],
+  },
   highRecipes: { fromLevel: 12, rawPerLevelBps: 500, goods: ["wheat", "clay", "wood", "salt"] },
   salaries: { minBps: 300, maxBps: 2_500, halfPower: 4_000 },
   power: {
@@ -275,7 +396,18 @@ export const venice1450Empire: EmpireSettingsInput = {
     plansFromLevel: 4,
     plansPerLevel: 2,
     // Step 4: the trade modules whose systems exist, and the deposits'; the others wait for theirs.
-    available: ["hold", "sails", "portolan", "convoy", "yield", "remote"],
+    available: [
+      "hold",
+      "sails",
+      "portolan",
+      "convoy",
+      "yield",
+      "remote",
+      "tools",
+      "apprentices",
+      "master",
+      "furnace",
+    ],
   },
   deposits: { spawnBpsPerRegionDay: 15_000, minStock: 1_000, maxStock: 5_000, teamPerHour: 30 },
   expeditions: {

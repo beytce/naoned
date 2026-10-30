@@ -413,7 +413,7 @@ export function VoyageSheet({
   );
 }
 
-function Choice({
+export function Choice({
   label,
   value,
   onChange,

@@ -118,6 +118,11 @@ Détails dans docs/expertise-2026-10-24/ (fichiers `*-final.md`).
 - Le Gazzettino du dimanche (palmarès par bande, promotions).
 - Le coût des derniers paliers de la Casa, au-delà de 7 jours de revenu : avec le contenu de fin de partie.
 - La cible « nouveau à la médiane de sa bande » : triviale au simulateur, à redéfinir (par exemple « quitter la première bande en 4 à 6 mois »).
+- L'atelier unique au sommet de chaque Arte : il demande un dessin et un effet propre.
+- Les recettes alternatives d'un bâtiment : le thème n'en a qu'une par bâtiment, il faut d'abord du contenu.
+- L'ambassadeur (avec les cours étrangères) et le condottiere (avec les armes), les deux rôles du personnel qui manquent.
+- Le trait de chaque membre de la famille, qui donne et qui retire (catalogue des Atouts), et les portraits de la Dynastie.
+- Désaffecter un membre du personnel, le renvoyer.
 
 ## V2
 - Plusieurs mondes en parallèle ; ouverture d'un nouveau monde quand le précédent dépasse J+14 (seulement si la population le permet sans vider les carnets).

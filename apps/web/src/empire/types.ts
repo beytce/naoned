@@ -15,6 +15,7 @@ export interface EmpireWorkshop {
   recipe: string;
   level: number;
   job: EmpireJob | null;
+  fitted?: string[];
 }
 
 export interface EmpireBuild {
@@ -113,6 +114,57 @@ export interface EmpireView {
     mine: boolean;
   }[];
   teams: { max: number; used: number };
+  workshopPlaces: Record<string, { slots: number; neighbourBps: number }>;
+  courtLeft: number;
+  identity: EmpireIdentity;
+}
+
+export interface KnowledgeNode {
+  code: string;
+  depth: number;
+  effects: Record<string, number>;
+  state: "learnt" | "learning" | "open" | "locked";
+  cost: string;
+  minutes: number;
+}
+
+export interface EmpireStaffMember {
+  id: string;
+  role: string;
+  rarity: string;
+  level: number;
+  xp: number;
+  skills: number[];
+  placedAt?: string;
+  family?: string;
+  tiersOpen: number;
+}
+
+export interface EmpireIdentity {
+  arte: {
+    current: string | null;
+    minor: string | null;
+    options: { code: string; buildings: string[]; effects: Record<string, number> }[];
+    fromCasa: number;
+    minorFromCasa: number;
+  };
+  knowledge: {
+    slots: number;
+    learning: { code: string; startedAt: number; endsAt: number }[];
+    branches: { code: string; nodes: KnowledgeNode[]; capstones: KnowledgeNode[] }[];
+  };
+  staff: {
+    slots: number;
+    hireCost: string;
+    members: EmpireStaffMember[];
+    roles: { role: string; place: string; paths: Record<string, number>[] }[];
+  };
+  family: {
+    generation: number;
+    heritage: number;
+    lineage: string[];
+    traits: { code: string; effects: Record<string, number> }[];
+  };
 }
 
 export interface EmpireRegion {
@@ -186,4 +238,13 @@ export type EmpireAction =
   | { type: "empireBuyVehicle"; vehicleType: string }
   | { type: "empireVoyage"; vehicleId: string; from: string; to: string; good: string; qty: number }
   | { type: "empireResearch"; module: string }
-  | { type: "empireTeam"; depositId: string };
+  | { type: "empireTeam"; depositId: string }
+  | { type: "empireFit"; workshopId: string; slot: number; module: string }
+  | { type: "empireCourt"; good: string; qty: number }
+  | { type: "empireSwap"; a: string; b: string }
+  | { type: "empireChooseArte"; arte: string; minor?: boolean }
+  | { type: "empireLearn"; code: string }
+  | { type: "empireHire"; role: string }
+  | { type: "empirePlace"; staffId: string; at: string }
+  | { type: "empireSkill"; staffId: string; path: number }
+  | { type: "empireLineage"; trait: string };

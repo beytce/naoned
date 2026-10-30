@@ -13,8 +13,8 @@ import {
 } from "../state.js";
 import { type Tx, addStock, fail, inventoryLine, removeStock, transfer } from "../tx.js";
 import { advanceCarnet } from "./carnet.js";
+import { houseEffect } from "./effects.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
-import { effectOf } from "./modules.js";
 import { powerOf } from "./power.js";
 import {
   localBookOf,
@@ -38,8 +38,9 @@ export function powerOfHouse(h: EmpireHouse, s: EmpireSettings): number {
       casa: h.casa,
       workshopLevels: h.workshops.map((w) => w.level),
       counterLevels: Object.values(h.counters ?? {}),
-      moduleLevels: Object.values(h.modules ?? {}),
-      staffLevels: [],
+      // The modules' levels, and each knowledge learnt as one level.
+      moduleLevels: [...Object.values(h.modules ?? {}), ...(h.knowledge ?? []).map(() => 1)],
+      staffLevels: (h.staff ?? []).map((m) => m.level),
       vehicles: (h.vehicles ?? []).length,
     },
     s,
@@ -58,7 +59,11 @@ export function receive(tx: Tx, playerId: PlayerId, gross: Deniers, ref?: string
   transfer(tx, SOURCE_ACCOUNT, cashAccount(playerId), gross, "empire_sale", ref);
   recordIncome(h, tx.now, gross);
   advanceCarnet(h, "earn", Number(gross / DENIERS_PER_DUCAT));
-  const wages = wagesOn(gross, powerOfHouse(h, s), s);
+  // The double entry (partita doppia) saves a share of the wages.
+  const wages = applyBpsFloor(
+    wagesOn(gross, powerOfHouse(h, s), s),
+    10_000 - Math.min(10_000, houseEffect(h, "wagesCut", s)),
+  );
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, wages, "empire_wages", ref);
 }
 
@@ -235,7 +240,7 @@ export function sellAt(
     tx,
     cashAccount(playerId),
     SINK_ACCOUNT,
-    applyBpsFloor(gross, s.markets.taxBps),
+    applyBpsFloor(gross, Math.max(0, s.markets.taxBps - houseEffect(h, "taxCut", s))),
     "market_tax",
   );
   mk.soldToday += n;
@@ -289,11 +294,12 @@ function haulLeft(tx: Tx, h: EmpireHouse): number {
     .filter((v) => v?.regions.length === 1)
     .reduce((n, v) => n + (v?.capacity ?? 0), 0);
   const capacity = Number(
-    applyBpsFloor(BigInt(base), 10_000 + effectOf(h.modules ?? {}, "capacity", s)),
+    applyBpsFloor(BigInt(base), 10_000 + houseEffect(h, "capacity", s) + houseEffect(h, "haul", s)),
   );
+  const trips = s.localTripsPerDay + houseEffect(h, "tripsExtra", s);
   const day = dayOf(tx.now);
   const used = h.hauled?.day === day ? h.hauled.units : 0;
-  return Math.max(0, capacity * s.localTripsPerDay - used);
+  return Math.max(0, capacity * trips - used);
 }
 
 /**
@@ -342,7 +348,15 @@ export function fillOrders(
   const mine =
     books[region]?.day === day
       ? (books[region] as { day: number; left: number })
-      : { day, left: localBookOf(region, counterLevel(h, region), s) };
+      : {
+          day,
+          left: Number(
+            applyBpsFloor(
+              BigInt(localBookOf(region, counterLevel(h, region), s)),
+              10_000 + houseEffect(h, "book", s, { region }),
+            ),
+          ),
+        };
   books[region] = mine;
   const book = Math.min(mine.left, left);
   mine.left -= book;
@@ -366,7 +380,7 @@ export function fillOrders(
   if (delivered <= 0) return 0;
   removeStock(tx, playerId, good, delivered, "empire_sale");
   // The convoy's premium on the orders, with the market's.
-  const convoy = effectOf(h.modules ?? {}, "orderBonus", s);
+  const convoy = houseEffect(h, "orderBonus", s, { region });
   receive(
     tx,
     playerId,
@@ -415,8 +429,13 @@ export function empireQuotes(
   );
   return regions.flatMap((r) => {
     const size = marketSize(houses, r.code, now, s);
-    const live = r.code === HOME || (h?.counters?.[r.code] ?? 0) > 0;
-    const intel = effectOf(h?.modules ?? {}, "intel", s);
+    const live =
+      r.code === HOME ||
+      (h?.counters?.[r.code] ?? 0) > 0 ||
+      houseEffect(h, "newsLive", s) > 0 ||
+      // A factor there reports its prices as they are.
+      (h?.staff ?? []).some((m) => m.placedAt === r.code);
+    const intel = houseEffect(h, "intel", s);
     const asOf = now - newsDelayMs(r.code, live, intel, s);
     const goods = [...new Set([...Object.keys(r.produces), ...Object.keys(r.demands)])];
     return goods.map((good) => {
@@ -436,4 +455,35 @@ export function empireQuotes(
       };
     });
   });
+}
+
+/**
+ * Sells fine or exquisite goods to the court of Venice (profondeur.md § G): at the reference, the
+ * fine half again, the exquisite three times, within the court's book of the day for the house (so
+ * many units a level of its Casa). Returns what it took.
+ */
+export function sellToCourt(tx: Tx, playerId: PlayerId, code: string, qty: number): number {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  if (!Number.isInteger(qty) || qty <= 0) fail("invalid_quantity");
+  const [good = "", quality] = code.split(":");
+  const mult =
+    quality === "fine"
+      ? s.qualities.fineBps
+      : quality === "exquisite"
+        ? s.qualities.exquisiteBps
+        : 0;
+  const r = regionOf(HOME, s);
+  const ref = r.demands[good] ?? r.produces[good];
+  if (mult === 0 || ref === undefined) fail("unknown_resource");
+  const day = dayOf(tx.now);
+  const book = h.court?.day === day ? h.court : { day, left: s.qualities.courtPerCasa * h.casa };
+  const n = Math.min(qty, book.left, inventoryLine(tx, playerId, code).available);
+  if (inventoryLine(tx, playerId, code).available <= 0) fail("insufficient_stock");
+  if (n <= 0) fail("no_liquidity");
+  removeStock(tx, playerId, code, n, "empire_sale");
+  receive(tx, playerId, applyBpsFloor(ref * BigInt(n), mult), `court:${code}`);
+  h.court = { day, left: book.left - n };
+  advanceCarnet(h, "sell", n);
+  return n;
 }

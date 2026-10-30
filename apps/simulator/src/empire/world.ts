@@ -13,6 +13,7 @@ import {
   refPriceOf,
   wagesOn,
 } from "@comptoirs/engine";
+import { identityEffect } from "./identity.js";
 import { DAY, type House, type Market, type SimModel, type Trade, type World } from "./model.js";
 
 export const d = (ducats: number): Deniers => BigInt(Math.round(ducats)) * DENIERS_PER_DUCAT;
@@ -129,7 +130,8 @@ export function power(w: World, h: House): number {
 /** A receipt from a sale: made by the buyer (a city, the Dogana), less the wages (arbitrage A). */
 export function receive(w: World, h: House, gross: Deniers, why: string, trade: Trade) {
   create(w, h, gross, why, trade);
-  destroy(w, h, wagesOn(gross, power(w, h), w.s), "wages");
+  const wagesCut = Math.min(10_000, identityEffect(w, h, "wagesCut"));
+  destroy(w, h, applyBpsFloor(wagesOn(gross, power(w, h), w.s), 10_000 - wagesCut), "wages");
   h.recent[h.recent.length - 1] = (h.recent.at(-1) ?? 0n) + gross;
   if (h.casa <= w.m.youngCasa) h.youngEarned += gross;
 }
@@ -163,7 +165,8 @@ export function sellToMarket(
   receive(w, h, gross, "market", trade);
   if (h.casa <= w.m.youngCasa && region === "veneto" && w.s.highRecipes.goods.includes(good))
     h.youngRawSold += gross;
-  destroy(w, h, applyBpsFloor(gross, w.m.marketTaxBps), "tax");
+  const tax = Math.max(0, w.m.marketTaxBps - identityEffect(w, h, "taxCut"));
+  destroy(w, h, applyBpsFloor(gross, tax), "tax");
   mk.lots.push({ qty: n, young: h.casa <= w.m.youngCasa });
   mk.pressure = pressureAfterTrade(mk.pressure, n, depth, "sell", w.s);
   return n;

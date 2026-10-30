@@ -1,7 +1,9 @@
 import { DENIERS_PER_DUCAT, type Deniers, applyBpsFloor } from "../money.js";
 import {
   type CarnetObjective,
+  DAY_MS,
   type EmpireHouse,
+  type EmpireStaff,
   type EmpireVoyage,
   HOUR_MS,
   type PlayerId,
@@ -17,12 +19,24 @@ import {
   levelCost,
   lotYieldBps,
 } from "./curves.js";
+import { houseEffect } from "./effects.js";
 import { extractionTeams as teamsOf } from "./extraction.js";
-import { empireHouseAt, isAsleep, regionOfWorkshop, workshopPlaces } from "./house.js";
-import { effectOf, plansFor, researchCost, researchMinutesOf } from "./modules.js";
+import {
+  charterFavourOf,
+  counterCostOf,
+  empireHouseAt,
+  isAsleep,
+  regionOfWorkshop,
+  workshopPlaces,
+  workshopTop,
+} from "./house.js";
+import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
+import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import { bandOf } from "./power.js";
 import type { EmpireSettings } from "./settings.js";
+import { staffHireCost, staffSlots } from "./staff.js";
 import { counterLevel, incomePerDay, powerOfHouse } from "./trade.js";
+import { moduleSlotsOf, neighbourBonus } from "./workshops.js";
 
 export interface EmpireSite {
   level: number;
@@ -105,6 +119,47 @@ export interface EmpireView {
     mine: boolean;
   }[];
   teams: { max: number; used: number };
+  /** The workshops' places for modules, and their neighbourhood's bonus (bps). */
+  workshopPlaces: Record<string, { slots: number; neighbourBps: number }>;
+  /** What the court of Venice still takes today. */
+  courtLeft: number;
+  identity: EmpireIdentity;
+}
+
+export interface EmpireIdentity {
+  arte: {
+    current: string | null;
+    minor: string | null;
+    options: { code: string; buildings: string[]; effects: Record<string, number> }[];
+    fromCasa: number;
+    minorFromCasa: number;
+  };
+  knowledge: {
+    slots: number;
+    learning: { code: string; startedAt: number; endsAt: number }[];
+    branches: { code: string; nodes: KnowledgeNodeView[]; capstones: KnowledgeNodeView[] }[];
+  };
+  staff: {
+    slots: number;
+    hireCost: Deniers;
+    members: (EmpireStaff & { tiersOpen: number })[];
+    roles: { role: string; place: string; paths: Record<string, number>[] }[];
+  };
+  family: {
+    generation: number;
+    heritage: number;
+    lineage: string[];
+    traits: { code: string; effects: Record<string, number> }[];
+  };
+}
+
+export interface KnowledgeNodeView {
+  code: string;
+  depth: number;
+  effects: Record<string, number>;
+  state: "learnt" | "learning" | "open" | "locked";
+  cost: Deniers;
+  minutes: number;
 }
 
 export interface EmpireRegionView {
@@ -194,7 +249,7 @@ export function empireView(
   for (const ws of house.workshops) {
     const l = ws.level + 1;
     upgrades[ws.id] =
-      l > house.casa || l > s.workshops.maxLevel
+      l > workshopTop(house, ws.type, s)
         ? null
         : site(
             levelCost(l, s),
@@ -250,9 +305,7 @@ export function empireView(
     vehicles: vehiclesOf(state, playerId, house, s),
     research: researchOf(house, s),
     deposits: (state.empire?.deposits ?? [])
-      .filter(
-        (d) => counterLevel(house, d.region) > 0 || effectOf(house.modules ?? {}, "range", s) > 0,
-      )
+      .filter((d) => counterLevel(house, d.region) > 0 || houseEffect(house, "range", s) > 0)
       .map((d) => ({
         id: d.id,
         region: d.region,
@@ -262,6 +315,97 @@ export function empireView(
         mine: d.teams.includes(playerId),
       })),
     teams: { max: teamsOf(house, s), used: (house.teams ?? []).length },
+    workshopPlaces: Object.fromEntries(
+      house.workshops.map((w) => [
+        w.id,
+        { slots: moduleSlotsOf(w.level, s, house), neighbourBps: neighbourBonus(ctx, house, w, s) },
+      ]),
+    ),
+    courtLeft:
+      house.court?.day === Math.floor(now / DAY_MS)
+        ? house.court.left
+        : s.qualities.courtPerCasa * house.casa,
+    identity: identityOf(house, s),
+  };
+}
+
+function identityOf(house: EmpireHouse, s: EmpireSettings): EmpireIdentity {
+  const learnt = house.knowledge ?? [];
+  const learning = house.learning ?? [];
+  const nodeView = (
+    code: string,
+    effects: Record<string, number>,
+    depth: number,
+    open: boolean,
+  ): KnowledgeNodeView => ({
+    code,
+    depth,
+    effects,
+    state: learnt.includes(code)
+      ? "learnt"
+      : learning.some((l) => l.code === code)
+        ? "learning"
+        : open
+          ? "open"
+          : "locked",
+    cost: knowledgeCost(depth, s),
+    minutes: knowledgeMinutes(depth, s),
+  });
+  return {
+    arte: {
+      current: house.arte ?? null,
+      minor: house.minorArte ?? null,
+      options: s.arte.artes.map((a) => ({
+        code: a.code,
+        buildings: a.buildings,
+        effects: a.effects,
+      })),
+      fromCasa: s.arte.fromCasa,
+      minorFromCasa: s.arte.minorFromCasa,
+    },
+    knowledge: {
+      slots: learningSlots(house, s),
+      learning,
+      branches: s.knowledge.branches.map((b) => {
+        const all = b.nodes.every((n) => learnt.includes(n.code));
+        const chosen = b.capstones.some(
+          (c) => learnt.includes(c.code) || learning.some((l) => l.code === c.code),
+        );
+        return {
+          code: b.code,
+          nodes: b.nodes.map((n, i) =>
+            nodeView(
+              n.code,
+              n.effects,
+              i + 1,
+              b.nodes.slice(0, i).every((x) => learnt.includes(x.code)),
+            ),
+          ),
+          capstones: b.capstones.map((c) =>
+            nodeView(c.code, c.effects, b.nodes.length + 1, all && !chosen),
+          ),
+        };
+      }),
+    },
+    staff: {
+      slots: staffSlots(house, s),
+      hireCost: staffHireCost(house, s),
+      members: (house.staff ?? []).map((m) => ({
+        ...m,
+        tiersOpen: Math.max(0, Math.floor(m.level / s.staff.tierEvery) - m.skills.length),
+      })),
+      roles: Object.entries(s.staff.roles).map(([role, r]) => ({
+        role,
+        place: r.place,
+        paths: r.paths,
+      })),
+    },
+    family: {
+      generation: house.generation?.number ?? 1,
+      heritage: house.heritage ?? 0,
+      lineage: house.lineage ?? [],
+      traits: s.family.traits,
+    },
   };
 }
 
@@ -274,7 +418,7 @@ function regionsOf(house: EmpireHouse, s: EmpireSettings): EmpireRegionView[] {
     if (far && !site && counter === 0 && house.casa >= r.casa)
       next = {
         ...plainSite(
-          levelCost(r.casa, s) * BigInt(s.counters.costTimes),
+          counterCostOf(house, levelCost(r.casa, s) * BigInt(s.counters.costTimes), s),
           r.hoursFromVenice * 60 + 60,
           1,
         ),
@@ -283,7 +427,7 @@ function regionsOf(house: EmpireHouse, s: EmpireSettings): EmpireRegionView[] {
     else if (far && !site && counter > 0 && counter < s.counters.maxLevel)
       next = {
         ...plainSite(
-          levelCost(counter + 1, s) * BigInt(s.counters.costTimes),
+          counterCostOf(house, levelCost(counter + 1, s) * BigInt(s.counters.costTimes), s),
           buildMinutesOf(counter + 2, s),
           counter + 1,
         ),
@@ -292,7 +436,7 @@ function regionsOf(house: EmpireHouse, s: EmpireSettings): EmpireRegionView[] {
     return {
       code: r.code,
       casa: r.casa,
-      charterFavour: r.charterFavour,
+      charterFavour: charterFavourOf(house, r.charterFavour, s),
       hoursFromVenice: r.hoursFromVenice,
       workshopSlots: workshopPlaces(house, r.code, s) || r.workshopSlots,
       produces: Object.keys(r.produces),
@@ -312,7 +456,7 @@ const plainSite = (cost: Deniers, minutes: number, level: number): EmpireSite =>
 });
 
 function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s: EmpireSettings) {
-  const hold = effectOf(house.modules ?? {}, "capacity", s);
+  const hold = houseEffect(house, "capacity", s);
   const capacity = (c: number) => Number(applyBpsFloor(BigInt(c), 10_000 + hold));
   const mine = (house.vehicles ?? []).map((v) => ({
     ...v,

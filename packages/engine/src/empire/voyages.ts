@@ -1,9 +1,10 @@
 import { applyBpsFloor } from "../money.js";
 import { type EmpireVoyage, HOUR_MS, type PlayerId, SINK_ACCOUNT, cashAccount } from "../state.js";
 import { type Tx, addStock, fail, inventoryLine, nextId, removeStock, transfer } from "../tx.js";
+import { houseEffect } from "./effects.js";
 import { empireSettings, ownHouse } from "./house.js";
-import { effectOf } from "./modules.js";
 import { priceAt, routeHours } from "./prices.js";
+import { gainXp } from "./staff.js";
 import { buyAt, counterLevel, fillOrders, homesOf, sellAt } from "./trade.js";
 
 /** Buys a vehicle at its Casa (CADRAGE-v3 § 3.3): its price is destroyed. */
@@ -50,7 +51,7 @@ export function startVoyage(
   if (v.busyUntil > tx.now) fail("building_busy");
   const hold = applyBpsFloor(
     BigInt(spec.capacity),
-    10_000 + effectOf(h.modules ?? {}, "capacity", s),
+    10_000 + houseEffect(h, "capacity", s, { vehicleId }),
   );
   if (!Number.isInteger(qty) || qty <= 0 || qty > Number(hold)) fail("invalid_quantity");
   // The port of arrival must trade the good: its cities ask it, or its Dogana takes it.
@@ -67,7 +68,7 @@ export function startVoyage(
   removeStock(tx, playerId, good, carried, "empire_voyage");
   const paid = before - (tx.s.accounts[cashAccount(playerId)] ?? 0n);
   const ownValue = ref !== undefined ? priceAt(ref, 10_000, s) * BigInt(own) : 0n;
-  const hours = routeHours(from, to, spec.speedBps + effectOf(h.modules ?? {}, "speed", s), s);
+  const hours = routeHours(from, to, spec.speedBps + houseEffect(h, "speed", s, { vehicleId }), s);
   v.busyUntil = tx.now + 2 * hours * HOUR_MS;
   const voyage: EmpireVoyage = {
     id: nextId(tx, "y"),
@@ -96,6 +97,10 @@ export function settleVoyages(tx: Tx): void {
   for (const v of due) {
     if (!tx.s.empire.houses[v.house]) continue;
     addStock(tx, v.house, v.good, v.qty, "empire_voyage", v.id);
+    // Its captain grows with each voyage.
+    const s = empireSettings(tx.ctx);
+    for (const m of tx.s.empire.houses[v.house]?.staff ?? [])
+      if (m.placedAt === v.vehicleId) gainXp(m, s.staff.xpPerLevel, s);
     const delivered = fillOrders(tx, v.house, v.good, v.qty, v.to);
     sellAt(tx, v.house, v.good, v.qty - delivered, v.to);
   }

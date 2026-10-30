@@ -16,6 +16,8 @@ import { type Tx, fail, nextId, removeStock, transfer } from "../tx.js";
 import { advanceCarnet } from "./carnet.js";
 import { catchupCut } from "./catchup.js";
 import { buildMinutesOf, casaLevelOf, casaRequirementMet, levelCost } from "./curves.js";
+import { houseEffect } from "./effects.js";
+import { settleLearning } from "./knowledge.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import type { EmpireSettings } from "./settings.js";
 
@@ -56,6 +58,7 @@ function settleResearch(h: EmpireHouse, now: number): void {
 /** Applies the building sites (and the researches) that ended by `now`, in the order they end. */
 export function settleBuilds(h: EmpireHouse, now: number): void {
   settleResearch(h, now);
+  settleLearning(h, now);
   const done = h.builds.filter((b) => b.endsAt <= now).sort((a, b) => a.endsAt - b.endsAt);
   if (done.length === 0) return;
   h.builds = h.builds.filter((b) => b.endsAt > now);
@@ -174,7 +177,8 @@ function openSite(
   for (const [good, qty] of Object.entries(materials))
     removeStock(tx, playerId, good, qty, "empire_build");
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, price, "empire_build");
-  const ms = Math.round((minutes * MINUTE_MS * (10_000 - cut.timeCutBps)) / 10_000);
+  const quicker = Math.min(9_000, cut.timeCutBps + houseEffect(h, "buildTime", s));
+  const ms = Math.round((minutes * MINUTE_MS * (10_000 - quicker)) / 10_000);
   advanceCarnet(h, "sites", 1);
   return { startedAt: tx.now, endsAt: tx.now + ms };
 }
@@ -256,7 +260,7 @@ export function startUpgrade(tx: Tx, playerId: PlayerId, workshopId: string): vo
   if (!ws) fail("unknown_building");
   if (h.builds.some((b) => b.workshopId === workshopId)) fail("building_busy");
   const level = ws.level + 1;
-  if (level > h.casa || level > s.workshops.maxLevel) fail("max_level");
+  if (level > workshopTop(h, ws.type, s)) fail("max_level");
   const share = shareOwningBps(tx, (x) => x.workshops.some((w) => w.level >= level));
   const site = openSite(tx, playerId, h, levelCost(level, s), {}, buildMinutesOf(level, s), share);
   h.builds.push({ kind: "upgrade", level, workshopId, ...site });
@@ -281,10 +285,11 @@ export function charterRegion(tx: Tx, playerId: PlayerId, code: string): void {
   if (h.counters?.[code] || h.builds.some((b) => b.kind === "counter" && b.region === code))
     fail("built");
   if (h.casa < r.casa) fail("requirement_unmet");
-  if (h.favour < r.charterFavour) fail("insufficient_favour");
-  const cost = levelCost(r.casa, s) * BigInt(s.counters.costTimes);
+  const favour = charterFavourOf(h, r.charterFavour, s);
+  if (h.favour < favour) fail("insufficient_favour");
+  const cost = counterCostOf(h, levelCost(r.casa, s) * BigInt(s.counters.costTimes), s);
   const site = openSite(tx, playerId, h, cost, {}, r.hoursFromVenice * 60 + 60, 0);
-  h.favour -= r.charterFavour;
+  h.favour -= favour;
   h.builds.push({ kind: "counter", level: 1, region: code, ...site });
 }
 
@@ -297,7 +302,7 @@ export function upgradeCounter(tx: Tx, playerId: PlayerId, code: string): void {
   if (!level) fail("unknown_region");
   if (h.builds.some((b) => b.kind === "counter" && b.region === code)) fail("building_busy");
   if (level >= s.counters.maxLevel) fail("max_level");
-  const cost = levelCost(level + 1, s) * BigInt(s.counters.costTimes);
+  const cost = counterCostOf(h, levelCost(level + 1, s) * BigInt(s.counters.costTimes), s);
   const site = openSite(tx, playerId, h, cost, {}, buildMinutesOf(level + 2, s), 0);
   h.builds.push({ kind: "counter", level: level + 1, region: code, ...site });
 }
@@ -312,6 +317,7 @@ export function startResearch(tx: Tx, playerId: PlayerId, code: string): void {
   const m = s.modules.find((x) => x.code === code);
   if (!m || (s.research.available.length > 0 && !s.research.available.includes(code)))
     fail("unknown_building_type");
+  if (!openedFor(h, m.kind, s)) fail("requirement_unmet");
   if ((h.research ?? []).some((r) => r.code === code)) fail("building_busy");
   if ((h.research ?? []).length >= casaLevelOf(h.casa, s).researchSlots) fail("no_build_slot");
   const level = (h.modules?.[code] ?? 0) + 1;
@@ -327,4 +333,59 @@ export function startResearch(tx: Tx, playerId: PlayerId, code: string): void {
   );
   const ms = researchMinutesOf(level, s) * MINUTE_MS;
   h.research = [...(h.research ?? []), { code, level, startedAt: tx.now, endsAt: tx.now + ms }];
+}
+
+/** What a kind of module waits for: the workshops' open with the Casa that opens them. */
+const OPENS_KIND: Record<string, string> = { workshop: "workshopModules" };
+
+/** Has the house reached the Casa that opens this kind of module (none named: open)? */
+function openedFor(h: EmpireHouse, kind: string, s: EmpireSettings): boolean {
+  const code = OPENS_KIND[kind];
+  const at = code ? s.casa.findIndex((c) => c.opens.includes(code)) : -1;
+  return at < 0 || h.casa >= at + 1;
+}
+
+/**
+ * The level a workshop may reach: the Casa's, and, for its Arte's chain once the Casa is at its
+ * top, the Arte's own top; never the settings' bound.
+ */
+export function workshopTop(h: EmpireHouse, type: string, s: EmpireSettings): number {
+  const arte = s.arte.artes.find((a) => a.code === h.arte);
+  const top = arte?.buildings.includes(type) && h.casa >= s.casa.length ? s.arte.topLevel : h.casa;
+  return Math.min(top, s.workshops.maxLevel);
+}
+
+/**
+ * Chooses the house's Arte (or its minor Arte), from their Casa. Changing the Arte costs a
+ * renunciation: the old chain's workshops above a level fall back to it.
+ */
+export function chooseArte(tx: Tx, playerId: PlayerId, code: string, minor = false): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const arte = s.arte.artes.find((a) => a.code === code);
+  if (!arte) fail("unknown_choice");
+  if (h.casa < (minor ? s.arte.minorFromCasa : s.arte.fromCasa)) fail("requirement_unmet");
+  if (minor) {
+    if (code === h.arte || code === h.minorArte) fail("built");
+    h.minorArte = code;
+    return;
+  }
+  if (code === h.arte) fail("built");
+  const old = s.arte.artes.find((a) => a.code === h.arte);
+  if (old)
+    for (const ws of h.workshops)
+      if (old.buildings.includes(ws.type)) ws.level = Math.min(ws.level, s.arte.renounceLevel);
+  h.arte = code;
+  if (h.minorArte === code) h.minorArte = undefined;
+}
+
+/** A charter's Favour, less the house's diplomacy (letters, embassy). */
+export function charterFavourOf(h: EmpireHouse, favour: number, s: EmpireSettings): number {
+  const cut = Math.min(10_000, houseEffect(h, "charterCut", s));
+  return Math.ceil((favour * (10_000 - cut)) / 10_000);
+}
+
+/** A counter's ducats, less the house's pacts. */
+export function counterCostOf(h: EmpireHouse, cost: Deniers, s: EmpireSettings): Deniers {
+  return applyBpsFloor(cost, 10_000 - Math.min(10_000, houseEffect(h, "counterCut", s)));
 }

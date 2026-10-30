@@ -7,6 +7,7 @@ import { TabBar } from "../game/map/TabBar.js";
 import type { TabId } from "../game/map/actions.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
+import { ArteSection, Court, FamilySheet, Knowledge, WorkshopIdentity } from "./Identity.js";
 import { EmpireOrbit } from "./Orbit.js";
 import { Charroi, Constellation, RegionPlace, Scuola, VoyageSheet, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
@@ -28,6 +29,7 @@ type SheetId =
   | "carnet"
   | "new"
   | "away"
+  | "family"
   | `workshop:${string}`
   | `new:${string}`
   | `voyage:${string}`;
@@ -112,9 +114,11 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       ? "venice"
       : sheet === "carnet"
         ? "ranking"
-        : sheet === "workshops" || sheet?.startsWith("new") || sheet?.startsWith("workshop:")
-          ? "workshops"
-          : "map";
+        : sheet === "family"
+          ? "conquest"
+          : sheet === "workshops" || sheet?.startsWith("new") || sheet?.startsWith("workshop:")
+            ? "workshops"
+            : "map";
   const close = () => setSheet(null);
 
   // The one gold action: what the house needs most now.
@@ -279,6 +283,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         onClose={close}
         act={act}
       />
+      <FamilySheet p={p} open={sheet === "family"} busy={busy} onClose={close} act={act} />
       <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
 
       <TabBar
@@ -288,7 +293,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           workshops: t.tabs.workshops,
           venice: t.tabs.casa,
           ranking: t.tabs.carnet,
-          conquest: t.tabs.terra,
+          conquest: t.identity.tab,
         }}
         items={[
           {
@@ -299,12 +304,21 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           { id: "workshops", onClick: () => setSheet("workshops"), dot: relaunch },
           { id: "venice", onClick: () => setSheet("casa"), dot: canCasa },
           { id: "ranking", onClick: () => setSheet("carnet"), dot: claimable(p) },
-          { id: "conquest", onClick: () => undefined, locked: t.terraLocked },
+          { id: "conquest", onClick: () => setSheet("family"), dot: familyCalls(p) },
         ]}
       />
     </div>
   );
 }
+
+/** A trait to take or a path to choose waits in the family. */
+const familyCalls = (p: EmpirePayload) => {
+  const id = p.view?.identity;
+  return (
+    !!id &&
+    (id.family.heritage > id.family.lineage.length || id.staff.members.some((m) => m.tiersOpen > 0))
+  );
+};
 
 const claimable = (p: EmpirePayload) =>
   [...(p.view?.carnet.objectives ?? []), ...(p.view?.carnet.carried ?? [])].some(
@@ -472,11 +486,13 @@ function WorkshopsSheet({
                   <span className="self-center text-xs text-cream-dim">{t.workshop.atCasa}</span>
                 )}
               </div>
+              {focus && <WorkshopIdentity p={p} ws={ws} busy={busy} act={act} />}
             </li>
           );
         })}
       </ul>
       {!focus && <Store p={p} busy={busy} act={act} />}
+      {!focus && <Court p={p} busy={busy} act={act} />}
       {!focus && <Charroi p={p} now={now} busy={busy} act={act} />}
     </Sheet>
   );
@@ -484,7 +500,8 @@ function WorkshopsSheet({
 
 /** What is in store, each good with its two outlets: the cities' orders and the Dogana. */
 function Store({ p, busy, act }: Omit<SheetProps, "onClose">) {
-  const goods = Object.entries(p.stock).filter(([, n]) => n > 0);
+  // The fine and exquisite goods go to the court alone.
+  const goods = Object.entries(p.stock).filter(([g, n]) => n > 0 && !g.includes(":"));
   return (
     <section className="mt-5">
       <Label>{t.stock.title}</Label>
@@ -693,7 +710,9 @@ function CasaSheet({
           )}
         </div>
       )}
+      <ArteSection p={p} busy={busy} act={act} />
       <Scuola p={p} busy={busy} act={act} />
+      <Knowledge p={p} busy={busy} act={act} />
     </Sheet>
   );
 }

@@ -1,8 +1,21 @@
-import { type EmpireWorkshop, HOUR_MS, MINUTE_MS, type PlayerId } from "../state.js";
+import {
+  type EmpireHouse,
+  type EmpireWorkshop,
+  HOUR_MS,
+  MINUTE_MS,
+  type PlayerId,
+  type WorldContext,
+} from "../state.js";
 import { type Tx, addStock, fail, inventoryLine, removeStock } from "../tx.js";
+
+/** A rate raised by an effect in bps. */
+const applyBps = (base: number, bps: number) => Math.floor((base * (10_000 + bps)) / 10_000);
 import { lotYieldBps } from "./curves.js";
+import { houseEffect } from "./effects.js";
 import { empireSettings, ownHouse } from "./house.js";
 import { highRecipeRaw } from "./recipes.js";
+import type { EmpireSettings } from "./settings.js";
+import { gainXp } from "./staff.js";
 
 function recipeOf(tx: Tx, ws: EmpireWorkshop) {
   const r = tx.ctx.theme.recipes.find((x) => x.code === ws.recipe && x.building === ws.type);
@@ -21,16 +34,23 @@ export function collectWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop):
   if (done <= 0) return;
   const s = empireSettings(tx.ctx);
   const recipe = recipeOf(tx, ws);
-  const yieldBps = lotYieldBps(ws.level, s);
-  for (const [good, qty = 0] of Object.entries(recipe.outputs))
-    addStock(
-      tx,
-      playerId,
-      good,
-      Math.floor((qty * done * yieldBps) / 10_000),
-      "production_output",
-      ws.id,
-    );
+  const h = ownHouse(tx, playerId);
+  const yieldBps = applyBps(
+    lotYieldBps(ws.level, s),
+    houseEffect(h, "workshopYield", s, { workshopId: ws.id }) + neighbourBonus(tx.ctx, h, ws, s),
+  );
+  // A share of the lots comes out better (the master), a share of those exquisite.
+  const quality = Math.min(10_000, houseEffect(h, "quality", s, { workshopId: ws.id }));
+  for (const [good, qty = 0] of Object.entries(recipe.outputs)) {
+    const made = Math.floor((qty * done * yieldBps) / 10_000);
+    const better = Math.floor((made * quality) / 10_000);
+    const exquisite = Math.floor((better * s.qualities.exquisiteShareBps) / 10_000);
+    addStock(tx, playerId, good, made - better, "production_output", ws.id);
+    addStock(tx, playerId, `${good}:fine`, better - exquisite, "production_output", ws.id);
+    addStock(tx, playerId, `${good}:exquisite`, exquisite, "production_output", ws.id);
+  }
+  // Its master grows with the lots of its workshop.
+  for (const m of h.staff ?? []) if (m.placedAt === ws.id) gainXp(m, done, s);
   job.batches -= done;
   job.startedAt += done * job.batchMs;
   if (job.batches === 0) ws.job = null;
@@ -58,18 +78,28 @@ export function relaunchWorkshop(
     ws.recipe = recipe;
   }
   const r = recipeOf(tx, ws);
-  const batchMs = Math.max(1, r.durationMinutes) * MINUTE_MS;
+  const place = { workshopId: ws.id };
+  // The apprentices make a lot quicker; a queue under way keeps its pace.
+  const speed = houseEffect(h, "workshopSpeed", s, place);
+  const fresh = Math.round(
+    (Math.max(1, r.durationMinutes) * MINUTE_MS * 10_000) / (10_000 + speed),
+  );
+  const batchMs = ws.job?.batchMs ?? fresh;
   const queueEnd = ws.job ? ws.job.startedAt + ws.job.batches * batchMs : tx.now;
   let add = Math.floor((tx.now + s.queueHours * HOUR_MS - queueEnd) / batchMs);
+  // The furnace saves inputs: a share of a lot's, in whole units over the queue.
+  const saved = Math.min(9_000, houseEffect(h, "inputs", s, place));
+  const need = (per: number, lots: number) => Math.ceil((per * lots * (10_000 - saved)) / 10_000);
   for (const [good, per = 0] of Object.entries(r.inputs))
-    if (per > 0) add = Math.min(add, Math.floor(inventoryLine(tx, playerId, good).available / per));
+    if (per > 0)
+      while (add > 0 && need(per, add) > inventoryLine(tx, playerId, good).available) add--;
   // A high recipe also eats Venetia's raw goods, the ones it does not make (CADRAGE-v3 § 12 bis).
   const raws = s.highRecipes.goods.filter((g) => !(g in r.outputs));
   const rawHeld = raws.reduce((n, g) => n + inventoryLine(tx, playerId, g).available, 0);
   while (add > 0 && highRecipeRaw(ws.level, add, s) > rawHeld) add--;
   if (add <= 0) return;
   for (const [good, per = 0] of Object.entries(r.inputs))
-    removeStock(tx, playerId, good, per * add, "production_input", ws.id);
+    removeStock(tx, playerId, good, need(per, add), "production_input", ws.id);
   let raw = highRecipeRaw(ws.level, add, s);
   for (const g of [...raws].sort(
     (a, b) => inventoryLine(tx, playerId, b).available - inventoryLine(tx, playerId, a).available,
@@ -90,4 +120,78 @@ export function relaunchAll(tx: Tx, playerId: PlayerId): void {
       Object.keys(recipeOf(tx, a).inputs).length - Object.keys(recipeOf(tx, b).inputs).length,
   );
   for (const ws of order) relaunchWorkshop(tx, playerId, ws.id);
+}
+
+/** The places a workshop has for modules, by its level. */
+export function moduleSlotsOf(level: number, s: EmpireSettings, h?: EmpireHouse): number {
+  // The master's workshop (bottega maestra) gives a place more.
+  return (
+    s.workshops.moduleSlotsAt.filter((at) => level >= at).length +
+    houseEffect(h, "moduleSlotsExtra", s)
+  );
+}
+
+/** Fits a researched workshop module in one of a workshop's places: free, at once, once each. */
+export function fitModule(
+  tx: Tx,
+  playerId: PlayerId,
+  workshopId: string,
+  slot: number,
+  code: string,
+): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const ws = h.workshops.find((w) => w.id === workshopId);
+  if (!ws) fail("unknown_building");
+  const m = s.modules.find((x) => x.code === code);
+  if (!m || m.kind !== "workshop" || !(h.modules?.[code] ?? 0)) fail("unknown_building_type");
+  if (!Number.isInteger(slot) || slot < 0 || slot >= moduleSlotsOf(ws.level, s, h)) fail("no_room");
+  const fitted = [...(ws.fitted ?? [])];
+  if (fitted.some((x, i) => x === code && i !== slot)) fail("built");
+  fitted[slot] = code;
+  ws.fitted = fitted;
+}
+
+/** Does one workshop make what the other takes in? */
+function feeds(ctx: WorldContext, a: EmpireWorkshop, b: EmpireWorkshop): boolean {
+  const of = (w: EmpireWorkshop) =>
+    ctx.theme.recipes.find((x) => x.code === w.recipe && x.building === w.type);
+  const out = Object.keys(of(a)?.outputs ?? {});
+  return Object.keys(of(b)?.inputs ?? {}).some((g) => out.includes(g));
+}
+
+/**
+ * The neighbourhood's bonus (profondeur.md § G): the workshops of a region sit in a ring on its
+ * orbit, in their order; each neighbour whose chain follows this one's (it feeds it, or is fed by
+ * it) adds its share. The order is a little puzzle.
+ */
+export function neighbourBonus(
+  ctx: WorldContext,
+  h: EmpireHouse,
+  ws: EmpireWorkshop,
+  s: EmpireSettings,
+): number {
+  const ring = h.workshops.filter((w) => (w.region ?? "veneto") === (ws.region ?? "veneto"));
+  const i = ring.findIndex((w) => w.id === ws.id);
+  if (i < 0 || ring.length < 2) return 0;
+  const sides = new Set([ring[(i + 1) % ring.length], ring[(i - 1 + ring.length) % ring.length]]);
+  sides.delete(ws);
+  let links = 0;
+  for (const n of sides) if (n && (feeds(ctx, n, ws) || feeds(ctx, ws, n))) links++;
+  return (
+    links * s.workshops.neighbourBps * (1 + Math.floor(houseEffect(h, "neighbour", s) / 10_000))
+  );
+}
+
+/** Swaps the places of two workshops of a region on its orbit: free, at once. */
+export function swapWorkshops(tx: Tx, playerId: PlayerId, a: string, b: string): void {
+  const h = ownHouse(tx, playerId);
+  const i = h.workshops.findIndex((w) => w.id === a);
+  const j = h.workshops.findIndex((w) => w.id === b);
+  const wa = h.workshops[i];
+  const wb = h.workshops[j];
+  if (!wa || !wb || i === j) fail("unknown_building");
+  if ((wa.region ?? "veneto") !== (wb.region ?? "veneto")) fail("unknown_region");
+  h.workshops[i] = wb;
+  h.workshops[j] = wa;
 }

@@ -310,6 +310,8 @@ export interface EmpireWorkshop {
   type: BuildingType;
   recipe: string;
   level: number;
+  /** The workshop modules fitted in its places, by place. */
+  fitted?: string[];
   /** The night queue: lots queued from `startedAt`, their inputs already taken. */
   job: ProductionJob | null;
 }
@@ -346,10 +348,27 @@ export interface EmpireHouse {
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */
   found?: Record<string, string[]>;
+  /** Its generation, by the calendar quarter it began in, and the Heritage it earned. */
+  generation?: { quarter: number; number: number };
+  heritage?: number;
+  /** The lineage's traits, one opened by each point of Heritage. */
+  lineage?: string[];
+  /** Its staff (CADRAGE-v3 § 3 quinquies). */
+  staff?: EmpireStaff[];
+  /** How many it hired: the next one costs more. */
+  hired?: number;
+  /** Its knowledges learnt, and those being learnt (settled at the next read). */
+  knowledge?: string[];
+  learning?: { code: string; startedAt: number; endsAt: number }[];
+  /** Its Arte, and its minor Arte (CADRAGE-v3 § 3.5). */
+  arte?: string;
+  minorArte?: string;
   /** Its modules researched, by code: their level (profondeur.md § B). */
   modules?: Record<string, number>;
   /** Its researches under way at the Scuola: settled at the next read, as the sites. */
   research?: { code: string; level: number; startedAt: number; endsAt: number }[];
+  /** What is left today of the court's book for its fine and exquisite goods. */
+  court?: { day: number; left: number };
   /** What its land vehicles carried to the cities today. */
   hauled?: { day: number; units: number };
   /** What is left today of its private book of orders, by region. */
@@ -359,6 +378,23 @@ export interface EmpireHouse {
   income?: { day: number; days: Deniers[] };
   /** A following wind after a long absence: the Carnet's Favour doubled until then. */
   windUntil?: number;
+}
+
+/** A member of the staff: a master, a factor, a captain… */
+export interface EmpireStaff {
+  id: string;
+  role: string;
+  rarity: string;
+  level: number;
+  xp: number;
+  /** The path chosen at each tier, by tier. */
+  skills: number[];
+  /** Where it works: a workshop's id, a region's code, a vehicle's id. */
+  placedAt?: string;
+  /** Since when it is placed (a factor's days). */
+  placedSince?: number;
+  /** A member of the family, with its name. */
+  family?: string;
 }
 
 export type CarnetKind = "relaunch" | "deliver" | "sell" | "sites" | "levels" | "casa" | "earn";

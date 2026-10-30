@@ -142,6 +142,132 @@ export const empireSettingsSchema = z.object({
       windAfterDays: 7,
       windDays: 3,
     }),
+  /**
+   * The qualities (profondeur.md § G): the share of a workshop's lots made better is its quality
+   * effect, a share of those exquisite; only the court of Venice buys them, dearer, within its book
+   * of the day (so many units a level of the Casa).
+   */
+  qualities: z
+    .object({
+      fineBps: bps,
+      exquisiteBps: bps,
+      exquisiteShareBps: bps.max(10_000),
+      courtPerCasa: qty,
+    })
+    .prefault({ fineBps: 15_000, exquisiteBps: 30_000, exquisiteShareBps: 2_500, courtPerCasa: 5 }),
+  /**
+   * The Arti (CADRAGE-v3 § 3.5): one chosen from a Casa, its chain's workshops (by building)
+   * yielding more and passing the Casa's level at its top, up to its own; another, minor, later,
+   * yielding less. Changing costs a renunciation: the old chain falls back to a level. An Arte may
+   * also carry effects of its own (the Banchieri, no chain).
+   */
+  arte: z
+    .object({
+      fromCasa: positive,
+      minorFromCasa: positive,
+      chainYieldBps: bps,
+      minorYieldBps: bps,
+      topLevel: positive,
+      renounceLevel: positive,
+      artes: z.array(
+        z.object({
+          code: z.string(),
+          buildings: z.array(z.string()),
+          effects: z.record(z.string(), z.number().int()).prefault({}),
+        }),
+      ),
+    })
+    .prefault({
+      fromCasa: 7,
+      minorFromCasa: 13,
+      chainYieldBps: 1_000,
+      minorYieldBps: 500,
+      topLevel: 25,
+      renounceLevel: 15,
+      artes: [],
+    }),
+  /**
+   * The knowledge (CADRAGE-v3 § 3.5): branches of knowledges learnt in order, each ending in a
+   * choice between two capstones, for good; learnt at the Scuola, its own places (by Casa), its cost
+   * and time growing with the depth in the branch. The whole tree takes years: one chooses.
+   */
+  knowledge: z
+    .object({
+      baseCostDucats: qty,
+      costGrowthBps: positive,
+      /** Minutes of a knowledge by its depth in the branch (index depth − 1). */
+      minutes: z.array(qty).min(1),
+      /** The Casa levels that open a place of learning each. */
+      slotsAt: z.array(positive),
+      branches: z.array(
+        z.object({
+          code: z.string(),
+          nodes: z.array(
+            z.object({ code: z.string(), effects: z.record(z.string(), z.number().int()) }),
+          ),
+          capstones: z.array(
+            z.object({ code: z.string(), effects: z.record(z.string(), z.number().int()) }),
+          ),
+        }),
+      ),
+    })
+    .prefault({
+      baseCostDucats: 0,
+      costGrowthBps: 10_000,
+      minutes: [0],
+      slotsAt: [],
+      branches: [],
+    }),
+  /**
+   * The staff (CADRAGE-v3 § 3 quinquies): hired for ducats, dearer each time, within the Casa's
+   * places; placed where it works (a workshop, a region, a vehicle); growing with its work, a level
+   * by so much experience; at each tier a path chosen for good. Its rarity multiplies all it gives.
+   * Never sold.
+   */
+  staff: z
+    .object({
+      hireCostDucats: qty,
+      hireGrowthBps: positive,
+      slotsBase: qty,
+      casaPerSlot: positive,
+      xpPerLevel: positive,
+      maxLevel: positive,
+      tierEvery: positive,
+      rarityBps: z.record(z.string(), positive),
+      roles: z.record(
+        z.string(),
+        z.object({
+          place: z.enum(["workshop", "region", "vehicle"]),
+          perLevel: z.record(z.string(), z.number().int()),
+          paths: z.array(z.record(z.string(), z.number().int())),
+        }),
+      ),
+    })
+    .prefault({
+      hireCostDucats: 200,
+      hireGrowthBps: 15_000,
+      slotsBase: 1,
+      casaPerSlot: 4,
+      xpPerLevel: 50,
+      maxLevel: 30,
+      tierEvery: 5,
+      rarityBps: { common: 10_000, rare: 15_000, illustrious: 20_000 },
+      roles: {},
+    }),
+  /**
+   * The family (CADRAGE-v3 § 3.5): a generation each calendar quarter, in Venice's time; each brings
+   * a member of the family to the staff (the roles in turn, of a rarity) and a point of Heritage,
+   * which opens a lineage trait for good: it adds, never takes away.
+   */
+  family: z
+    .object({
+      roles: z.array(z.string()),
+      rarity: z.string(),
+      traits: z.array(
+        z.object({ code: z.string(), effects: z.record(z.string(), z.number().int()) }),
+      ),
+    })
+    .prefault({ roles: [], rarity: "rare", traits: [] }),
   /** Days without an action after which a house falls asleep (CADRAGE-v3 § 6). */
   sleepAfterDays: positive.prefault(14),
   workshops: z.object({
@@ -154,6 +280,10 @@ export const empireSettingsSchema = z.object({
     buildMinutes: z.array(qty).min(1),
     /** A workshop's level never passes the Casa's, nor this. */
     maxLevel: positive,
+    /** Two workshops side by side whose chain follows: each makes this share more (§ G). */
+    neighbourBps: bps.prefault(0),
+    /** The levels that open a workshop's places for modules (profondeur.md § G): 1, 8, 15. */
+    moduleSlotsAt: z.array(positive).prefault([1, 8, 15]),
   }),
   counters: z
     .object({

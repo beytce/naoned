@@ -112,6 +112,7 @@ try {
       ["workshops", "4-ateliers"],
       ["venice", "5-casa"],
       ["ranking", "6-carnet"],
+      ["conquest", "6b-famille"],
     ]) {
       await page.locator(`[data-tab=${tab}]`).click();
       await page.waitForSelector('[aria-modal="true"]');
@@ -120,6 +121,26 @@ try {
       await page.locator("[data-tab=map]").click();
       await page.waitForTimeout(400);
     }
+
+    // A workshop up close: its place on the ring, to move it (CADRAGE-v3 § 13, step 5).
+    await page.locator("[data-workshop]").first().click();
+    await page.waitForSelector('[aria-modal="true"]');
+    if ((await page.getByRole("button", { name: /déplacer/i }).count()) === 0)
+      faults.push(`${label}: no move on the workshop`);
+    await shot("6c-atelier");
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(400);
+    // The Casa's sheet holds the knowledge's tree, closed until the Casa 4.
+    await page.locator("[data-tab=venice]").click();
+    if (
+      !(await page
+        .getByText(/savoirs s'ouvrent/i)
+        .first()
+        .isVisible())
+    )
+      faults.push(`${label}: no knowledge in the Casa`);
+    await page.locator("[data-tab=map]").click();
+    await page.waitForTimeout(400);
 
     // The map zoomed out: Venice and the regions, Lombardy fogged until the Casa 6.
     await page.locator("[data-tab=map]").click();
