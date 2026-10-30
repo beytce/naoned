@@ -303,6 +303,13 @@ export const empireSettingsSchema = z.object({
       expireHours: 24,
       meritPer100Ducats: 10,
     }),
+  /**
+   * The Condotta of the empire (CADRAGE-v3 § 7): its tier n opens from the Casa n + `casaOffset`
+   * (and by the win of the tier before); a won match a day pays `sealsByTier[n − 1]` Seals.
+   */
+  condotta: z
+    .object({ casaOffset: qty, sealsByTier: z.array(qty).min(1) })
+    .prefault({ casaOffset: 2, sealsByTier: [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3] }),
   /** Days without an action after which a house falls asleep (CADRAGE-v3 § 6). */
   sleepAfterDays: positive.prefault(14),
   workshops: z.object({

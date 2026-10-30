@@ -36,6 +36,7 @@ import { knownTrait } from "./dynasty.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { type EmpireCompanyTag, askAid, settleAid, supplyAid, syncCompany } from "./empire/aid.js";
 import { advanceCarnet, claimObjective, ensureCarnet, windOnReturn } from "./empire/carnet.js";
+import { rewardCondotta } from "./empire/condotta.js";
 import { sendTeam, settleDeposits } from "./empire/extraction.js";
 import { chooseLineage, passGenerations } from "./empire/family.js";
 import {
@@ -308,6 +309,8 @@ type EmpireCommandOf =
   | { type: "empireSkill"; playerId: PlayerId; staffId: string; path: number }
   | { type: "empireLineage"; playerId: PlayerId; trait: string }
   | { type: "empireAsk"; playerId: PlayerId; good: string; qty: number }
+  /** A won match of the Condotta, told by the server: never a client's action. */
+  | { type: "empireCondotta"; playerId: PlayerId; tier: number }
   | { type: "empireSupply"; playerId: PlayerId; requestId: string }
   | {
       type: "empireVoyage";
@@ -515,6 +518,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireSupply":
       supplyAid(tx, cmd.playerId, cmd.requestId);
+      break;
+    case "empireCondotta":
+      rewardCondotta(tx, cmd.playerId, cmd.tier);
       break;
     case "empireVoyage":
       startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);

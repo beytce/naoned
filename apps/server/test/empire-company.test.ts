@@ -1,9 +1,10 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
-import { companyMembers, ledgerEntries } from "../src/db/schema.js";
+import { accounts, companyMembers, ledgerEntries } from "../src/db/schema.js";
+import { CondottaHub } from "../src/game/condotta.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
@@ -24,7 +25,10 @@ afterAll(async () => {
 });
 
 async function start() {
-  world = await GameWorld.open(database.db, () => now, { empire: true });
+  world = await GameWorld.open(database.db, () => now, {
+    empire: true,
+    settingsOverride: { terraferma: { live: true } },
+  });
   app = await buildApp({
     db: database.db,
     mailer,
@@ -175,5 +179,47 @@ describe("the empire's company (CADRAGE-v3 § 7)", () => {
     expect(done.view.aid.merit).toBeGreaterThanOrEqual(0);
     const rows = await database.db.select().from(ledgerEntries).where(sql`reason = 'empire_aid'`);
     expect(rows).toHaveLength(1);
+  });
+
+  it("plays the Condotta at the tier its Casa opens, and pays a win a day in Seals", async () => {
+    const a = await merchant("ada@example.org");
+    const [row] = await database.db.select().from(accounts).where(eq(accounts.pseudo, "ada"));
+    const id = row?.id ?? "";
+    await database.db.update(accounts).set({ condottaLevel: 5 }).where(eq(accounts.id, id));
+    const hub = new CondottaHub(database.db, world);
+    const ledger = (await database.db.select().from(ledgerEntries)).length;
+    const win = async () => {
+      expect(await hub.open(id, false, now)).toBe(true);
+      type Inside = {
+        matches: Map<
+          string,
+          {
+            c: {
+              humans: string[];
+              level: number;
+              state: { owner: (string | null)[]; map: { land: boolean[] } };
+            };
+          }
+        >;
+      };
+      const m = [...(hub as unknown as Inside).matches.values()].find((x) =>
+        x.c.humans.includes(id),
+      );
+      if (!m) throw new Error("no match");
+      // The Casa 1 opens the first tier only, whatever the level won before.
+      expect(m.c.level).toBe(1);
+      m.c.state.owner = m.c.state.owner.map((o, i) => (m.c.state.map.land[i] ? id : o));
+      now += 9 * 60_000;
+      await hub.step(now);
+    };
+    await win();
+    const seals = () => world.current.empire?.houses[id]?.seals ?? 0;
+    expect(seals()).toBe(1);
+    now += 5 * 60_000;
+    await win();
+    expect(seals()).toBe(1);
+    // Seals, never ducats.
+    expect((await database.db.select().from(ledgerEntries)).length).toBe(ledger);
+    void a;
   });
 });

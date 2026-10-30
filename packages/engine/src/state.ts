@@ -363,6 +363,8 @@ export interface EmpireHouse {
   /** Its company, as the server knows it, and since when it is in it (CADRAGE-v3 § 7). */
   company?: string;
   companySince?: number;
+  /** The day of its last won Condotta paid in Seals. */
+  condottaDay?: number;
   /** The Merit its entraide earned, the last lot it asked, what it supplied today (deniers). */
   merit?: number;
   askedAt?: number;
