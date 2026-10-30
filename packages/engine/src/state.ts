@@ -371,6 +371,8 @@ export interface EmpireHouse {
   terraBest?: string;
   /** Places won at the Muda: its galley may leave until `until`, sailing at the departure's hour. */
   mudaPasses?: { vehicleId: string; departure: number; until: number }[];
+  /** Its record as a traveller of colleganze: voyages returned, their summed return (bps). */
+  colleganzaRecord?: { voyages: number; returnBps: number };
   /** The day of its last won Condotta paid in Seals. */
   condottaDay?: number;
   /** The Merit its entraide earned, the last lot it asked, what it supplied today (deniers). */
@@ -471,6 +473,29 @@ export interface EmpireVoyage {
   cost: Deniers;
   /** Insured at its departure: the units the corsairs take are paid back at the reference. */
   insured?: boolean;
+  /** The colleganza that financed it: its return is shared at the arrival. */
+  colleganza?: string;
+}
+
+/**
+ * A colleganza (CADRAGE-v3 § 3 quater): a traveller's voyage, its investors' stakes in escrow; at
+ * the departure, the capital the cargo used; at the return, the share.
+ */
+export interface EmpireColleganza {
+  id: string;
+  traveller: PlayerId;
+  vehicleId: string;
+  from: string;
+  to: string;
+  good: string;
+  qty: number;
+  /** The capital sought, and what each investor put in (what the cargo used, once sailed). */
+  target: Deniers;
+  stakes: { house: PlayerId; amount: Deniers }[];
+  status: "open" | "sailing";
+  /** Once sailed: the capital used, and what the whole cargo cost. */
+  capital?: Deniers;
+  cargoCost?: Deniers;
 }
 
 /** A theatre of the empire's Terraferma (CADRAGE-v3 § 8): one map, its merchants, its rules. */
@@ -525,6 +550,7 @@ export interface EmpireState {
   aid?: EmpireAidRequest[];
   terra?: EmpireTerra;
   muda?: EmpireMuda;
+  colleganze?: EmpireColleganza[];
   voyages?: EmpireVoyage[];
   deposits?: EmpireDeposit[];
   /** The last day the deposits were drawn for. */

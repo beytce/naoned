@@ -26,3 +26,4 @@ export * from "./aid.js";
 export * from "./condotta.js";
 export * from "./terra.js";
 export * from "./mudaSail.js";
+export * from "./colleganzaSail.js";

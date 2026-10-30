@@ -18,6 +18,7 @@ import {
   removeStock,
   transfer,
 } from "../tx.js";
+import { returnSeaColleganza } from "./colleganzaSail.js";
 import { corsairRiskBps } from "./corsairs.js";
 import { houseEffect } from "./effects.js";
 import { empireSettings, openSite, ownHouse } from "./house.js";
@@ -171,6 +172,8 @@ export function settleVoyages(tx: Tx): void {
   for (const v of due) {
     if (!tx.s.empire.houses[v.house]) continue;
     addStock(tx, v.house, v.good, v.qty, "empire_voyage", v.id);
+    // A colleganza's return: what the traveller's purse gains at the arrival.
+    const purse = tx.s.accounts[cashAccount(v.house)] ?? 0n;
     const lost = corsairsTake(tx, v);
     // Its captain grows with each voyage.
     const s = empireSettings(tx.ctx);
@@ -179,6 +182,8 @@ export function settleVoyages(tx: Tx): void {
     const left = v.qty - lost;
     const delivered = fillOrders(tx, v.house, v.good, left, v.to);
     sellAt(tx, v.house, v.good, left - delivered, v.to);
+    if (v.colleganza)
+      returnSeaColleganza(tx, v, (tx.s.accounts[cashAccount(v.house)] ?? 0n) - purse);
   }
 }
 

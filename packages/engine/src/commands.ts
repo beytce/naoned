@@ -36,6 +36,13 @@ import { knownTrait } from "./dynasty.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { type EmpireCompanyTag, askAid, settleAid, supplyAid, syncCompany } from "./empire/aid.js";
 import { advanceCarnet, claimObjective, ensureCarnet, windOnReturn } from "./empire/carnet.js";
+import {
+  cancelSeaColleganza,
+  openSeaColleganza,
+  sailSeaColleganza,
+  stakeSeaColleganza,
+  withdrawSeaColleganza,
+} from "./empire/colleganzaSail.js";
 import { rewardCondotta } from "./empire/condotta.js";
 import { sendTeam, settleDeposits } from "./empire/extraction.js";
 import { chooseLineage, passGenerations } from "./empire/family.js";
@@ -319,6 +326,20 @@ type EmpireCommandOf =
   | { type: "empireLineage"; playerId: PlayerId; trait: string }
   | { type: "empireAsk"; playerId: PlayerId; good: string; qty: number }
   | { type: "empireBuildShip"; playerId: PlayerId; vehicleType: string }
+  | {
+      type: "empireColleganzaOpen";
+      playerId: PlayerId;
+      vehicleId: string;
+      from: string;
+      to: string;
+      good: string;
+      qty: number;
+      target: string;
+    }
+  | { type: "empireColleganzaStake"; playerId: PlayerId; id: string; amount: string }
+  | { type: "empireColleganzaWithdraw"; playerId: PlayerId; id: string }
+  | { type: "empireColleganzaCancel"; playerId: PlayerId; id: string }
+  | { type: "empireColleganzaSail"; playerId: PlayerId; id: string; insured?: boolean }
   /** A bid for a place at the Muda's next departure, in deniers (0: taken back). */
   | { type: "empireMudaBid"; playerId: PlayerId; vehicleId: string; amount: string }
   | { type: "empireFitShip"; playerId: PlayerId; vehicleId: string; slot: number; module: string }
@@ -550,6 +571,28 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireMudaBid":
       bidMuda(tx, cmd.playerId, cmd.vehicleId, toDeniers(cmd.amount));
+      break;
+    case "empireColleganzaOpen":
+      openSeaColleganza(tx, cmd.playerId, {
+        vehicleId: cmd.vehicleId,
+        from: cmd.from,
+        to: cmd.to,
+        good: cmd.good,
+        qty: cmd.qty,
+        target: toDeniers(cmd.target),
+      });
+      break;
+    case "empireColleganzaStake":
+      stakeSeaColleganza(tx, cmd.playerId, cmd.id, toDeniers(cmd.amount));
+      break;
+    case "empireColleganzaWithdraw":
+      withdrawSeaColleganza(tx, cmd.playerId, cmd.id);
+      break;
+    case "empireColleganzaCancel":
+      cancelSeaColleganza(tx, cmd.playerId, cmd.id);
+      break;
+    case "empireColleganzaSail":
+      sailSeaColleganza(tx, cmd.playerId, cmd.id, cmd.insured === true);
       break;
     case "empireBuildShip":
       buildShip(tx, cmd.playerId, cmd.vehicleType);
@@ -845,7 +888,7 @@ function apply(tx: Tx, cmd: Command): void {
       acceptColleganza(tx, cmd.playerId, cmd.colleganzaId);
       break;
     case "cancelColleganza":
-      cancelColleganza(tx, cmd.playerId, cmd.colleganzaId);
+      cancelSeaColleganza(tx, cmd.playerId, cmd.colleganzaId);
       break;
     case "borrow":
       borrow(tx, cmd.playerId, cmd.amount, cmd.days);
