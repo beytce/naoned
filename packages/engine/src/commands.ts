@@ -888,7 +888,7 @@ function apply(tx: Tx, cmd: Command): void {
       acceptColleganza(tx, cmd.playerId, cmd.colleganzaId);
       break;
     case "cancelColleganza":
-      cancelSeaColleganza(tx, cmd.playerId, cmd.colleganzaId);
+      cancelColleganza(tx, cmd.playerId, cmd.colleganzaId);
       break;
     case "borrow":
       borrow(tx, cmd.playerId, cmd.amount, cmd.days);
