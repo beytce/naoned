@@ -31,5 +31,13 @@ export function houseEffect(
   // The workshop's own modules, at their researched level.
   const ws = place?.workshopId ? h.workshops.find((w) => w.id === place.workshopId) : undefined;
   for (const code of ws?.fitted ?? []) of(code, h.modules?.[code] ?? 0, true);
+  // The Arte: its own effects, and its chain's yield where the workshop is of it.
+  const arte = s.arte.artes.find((a) => a.code === h.arte);
+  total += arte?.effects[effect] ?? 0;
+  if (effect === "workshopYield" && ws) {
+    if (arte?.buildings.includes(ws.type)) total += s.arte.chainYieldBps;
+    const minor = s.arte.artes.find((a) => a.code === h.minorArte);
+    if (minor?.buildings.includes(ws.type)) total += s.arte.minorYieldBps;
+  }
   return total;
 }

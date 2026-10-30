@@ -235,7 +235,7 @@ export function sellAt(
     tx,
     cashAccount(playerId),
     SINK_ACCOUNT,
-    applyBpsFloor(gross, s.markets.taxBps),
+    applyBpsFloor(gross, Math.max(0, s.markets.taxBps - houseEffect(h, "taxCut", s))),
     "market_tax",
   );
   mk.soldToday += n;

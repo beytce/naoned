@@ -38,6 +38,7 @@ import { advanceCarnet, claimObjective, ensureCarnet, windOnReturn } from "./emp
 import { sendTeam, settleDeposits } from "./empire/extraction.js";
 import {
   charterRegion,
+  chooseArte,
   empireJoin,
   ownHouse,
   settleBuilds,
@@ -291,6 +292,7 @@ export type EmpireCommand =
   | { type: "empireFit"; playerId: PlayerId; workshopId: string; slot: number; module: string }
   | { type: "empireCourt"; playerId: PlayerId; good: string; qty: number }
   | { type: "empireSwap"; playerId: PlayerId; a: string; b: string }
+  | { type: "empireChooseArte"; playerId: PlayerId; arte: string; minor?: boolean }
   | {
       type: "empireVoyage";
       playerId: PlayerId;
@@ -466,6 +468,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireSwap":
       swapWorkshops(tx, cmd.playerId, cmd.a, cmd.b);
+      break;
+    case "empireChooseArte":
+      chooseArte(tx, cmd.playerId, cmd.arte, cmd.minor);
       break;
     case "empireVoyage":
       startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);

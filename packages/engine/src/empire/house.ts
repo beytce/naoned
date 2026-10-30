@@ -256,7 +256,7 @@ export function startUpgrade(tx: Tx, playerId: PlayerId, workshopId: string): vo
   if (!ws) fail("unknown_building");
   if (h.builds.some((b) => b.workshopId === workshopId)) fail("building_busy");
   const level = ws.level + 1;
-  if (level > h.casa || level > s.workshops.maxLevel) fail("max_level");
+  if (level > workshopTop(h, ws.type, s)) fail("max_level");
   const share = shareOwningBps(tx, (x) => x.workshops.some((w) => w.level >= level));
   const site = openSite(tx, playerId, h, levelCost(level, s), {}, buildMinutesOf(level, s), share);
   h.builds.push({ kind: "upgrade", level, workshopId, ...site });
@@ -338,4 +338,38 @@ function openedFor(h: EmpireHouse, kind: string, s: EmpireSettings): boolean {
   const code = OPENS_KIND[kind];
   const at = code ? s.casa.findIndex((c) => c.opens.includes(code)) : -1;
   return at < 0 || h.casa >= at + 1;
+}
+
+/**
+ * The level a workshop may reach: the Casa's, and, for its Arte's chain once the Casa is at its
+ * top, the Arte's own top; never the settings' bound.
+ */
+export function workshopTop(h: EmpireHouse, type: string, s: EmpireSettings): number {
+  const arte = s.arte.artes.find((a) => a.code === h.arte);
+  const top = arte?.buildings.includes(type) && h.casa >= s.casa.length ? s.arte.topLevel : h.casa;
+  return Math.min(top, s.workshops.maxLevel);
+}
+
+/**
+ * Chooses the house's Arte (or its minor Arte), from their Casa. Changing the Arte costs a
+ * renunciation: the old chain's workshops above a level fall back to it.
+ */
+export function chooseArte(tx: Tx, playerId: PlayerId, code: string, minor = false): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const arte = s.arte.artes.find((a) => a.code === code);
+  if (!arte) fail("unknown_choice");
+  if (h.casa < (minor ? s.arte.minorFromCasa : s.arte.fromCasa)) fail("requirement_unmet");
+  if (minor) {
+    if (code === h.arte || code === h.minorArte) fail("built");
+    h.minorArte = code;
+    return;
+  }
+  if (code === h.arte) fail("built");
+  const old = s.arte.artes.find((a) => a.code === h.arte);
+  if (old)
+    for (const ws of h.workshops)
+      if (old.buildings.includes(ws.type)) ws.level = Math.min(ws.level, s.arte.renounceLevel);
+  h.arte = code;
+  if (h.minorArte === code) h.minorArte = undefined;
 }

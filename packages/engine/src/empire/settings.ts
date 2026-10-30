@@ -155,6 +155,37 @@ export const empireSettingsSchema = z.object({
       courtPerCasa: qty,
     })
     .prefault({ fineBps: 15_000, exquisiteBps: 30_000, exquisiteShareBps: 2_500, courtPerCasa: 5 }),
+  /**
+   * The Arti (CADRAGE-v3 § 3.5): one chosen from a Casa, its chain's workshops (by building)
+   * yielding more and passing the Casa's level at its top, up to its own; another, minor, later,
+   * yielding less. Changing costs a renunciation: the old chain falls back to a level. An Arte may
+   * also carry effects of its own (the Banchieri, no chain).
+   */
+  arte: z
+    .object({
+      fromCasa: positive,
+      minorFromCasa: positive,
+      chainYieldBps: bps,
+      minorYieldBps: bps,
+      topLevel: positive,
+      renounceLevel: positive,
+      artes: z.array(
+        z.object({
+          code: z.string(),
+          buildings: z.array(z.string()),
+          effects: z.record(z.string(), z.number().int()).prefault({}),
+        }),
+      ),
+    })
+    .prefault({
+      fromCasa: 7,
+      minorFromCasa: 13,
+      chainYieldBps: 1_000,
+      minorYieldBps: 500,
+      topLevel: 25,
+      renounceLevel: 15,
+      artes: [],
+    }),
   /** Days without an action after which a house falls asleep (CADRAGE-v3 § 6). */
   sleepAfterDays: positive.prefault(14),
   workshops: z.object({

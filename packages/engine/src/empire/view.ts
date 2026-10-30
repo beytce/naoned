@@ -19,7 +19,7 @@ import {
 } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { extractionTeams as teamsOf } from "./extraction.js";
-import { empireHouseAt, isAsleep, regionOfWorkshop, workshopPlaces } from "./house.js";
+import { empireHouseAt, isAsleep, regionOfWorkshop, workshopPlaces, workshopTop } from "./house.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import { bandOf } from "./power.js";
 import type { EmpireSettings } from "./settings.js";
@@ -195,7 +195,7 @@ export function empireView(
   for (const ws of house.workshops) {
     const l = ws.level + 1;
     upgrades[ws.id] =
-      l > house.casa || l > s.workshops.maxLevel
+      l > workshopTop(house, ws.type, s)
         ? null
         : site(
             levelCost(l, s),

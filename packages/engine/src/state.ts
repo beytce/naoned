@@ -348,6 +348,9 @@ export interface EmpireHouse {
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */
   found?: Record<string, string[]>;
+  /** Its Arte, and its minor Arte (CADRAGE-v3 § 3.5). */
+  arte?: string;
+  minorArte?: string;
   /** Its modules researched, by code: their level (profondeur.md § B). */
   modules?: Record<string, number>;
   /** Its researches under way at the Scuola: settled at the next read, as the sites. */

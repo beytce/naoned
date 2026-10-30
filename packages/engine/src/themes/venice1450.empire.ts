@@ -254,6 +254,22 @@ export const venice1450Empire: EmpireSettingsInput = {
   },
   localTripsPerDay: 4,
   newcomers: { rawBonusBps: 2_000, untilCasa: 8 },
+  // The Arti (CADRAGE-v3 § 3.5, the owner's choice of 30 October 2026): the chains of the theme.
+  arte: {
+    fromCasa: 7,
+    minorFromCasa: 13,
+    chainYieldBps: 1_000,
+    minorYieldBps: 500,
+    topLevel: 25,
+    renounceLevel: 15,
+    artes: [
+      { code: "lanaioli", buildings: ["sheepfold", "loom", "tailor"] },
+      { code: "vetrai", buildings: ["sand_pit", "glassworks", "mirrorworks"] },
+      { code: "speziali", buildings: ["spicery"] },
+      { code: "arsenalotti", buildings: ["lumber_camp", "sawmill", "brickworks"] },
+      { code: "banchieri", buildings: [], effects: { taxCut: 100, orderBonus: 500 } },
+    ],
+  },
   highRecipes: { fromLevel: 12, rawPerLevelBps: 500, goods: ["wheat", "clay", "wood", "salt"] },
   salaries: { minBps: 300, maxBps: 2_500, halfPower: 4_000 },
   power: {
