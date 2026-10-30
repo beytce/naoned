@@ -329,6 +329,8 @@ export function reportMarkdown(results: EmpireResult[]): string {
     "",
     `Muda : ${w.muda.places} places vendues pour ${Number(w.muda.paid / 100n).toLocaleString("fr-FR")} d ; ${w.muda.voyages} convois, dont ${w.muda.withColleganza} en colleganza (${Number(w.muda.stakes / 100n).toLocaleString("fr-FR")} d de mises).`,
     "",
+    `Entraide : ${w.aid.asked} lots demandés, ${w.aid.supplied} fournis pour ${Number(w.aid.value / 100n).toLocaleString("fr-FR")} d, dont ${Number(w.aid.toYoung / 100n).toLocaleString("fr-FR")} d aux jeunes Maisons ; ${w.companies.length} compagnies.`,
+    "",
     `Violations de la comptabilité : ${results.reduce((n, x) => n + x.violations.length, 0)}. Durée : ${results.map((x) => `${(x.durationMs / 1000).toFixed(0)} s`).join(", ")}.`,
   );
   return lines.join("\n");

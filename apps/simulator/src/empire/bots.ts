@@ -27,6 +27,7 @@ import {
   settleColleganza,
   teamRate,
 } from "@comptoirs/engine";
+import { askAid, joinCompany, supplyAid } from "./company.js";
 import {
   growIdentity,
   identityEffect,
@@ -117,7 +118,10 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
     fine: new Map(),
     courtDay: -1,
     courtLeft: 0,
+    companySince: w.now,
+    supplied: { day: -1, value: 0n },
   };
+  joinCompany(w, h);
   w.houses.push(h);
   create(w, h, d(w.m.startCapitalDucats), "start");
   h.bookLeft.set("veneto", w.s.regions[0]?.localOrdersPerCounter ?? 0);
@@ -211,7 +215,9 @@ function collect(w: World, h: House) {
     if (!recipe || !wanted.has(ws.good) || pilesUp(w, h, ws.good)) continue;
     for (const [g, per] of Object.entries(recipe)) {
       const missing = Math.ceil(need * per - (h.stock.get(g) ?? 0));
-      if (missing > 0) buyFromMarket(w, h, ws.region, g, missing);
+      // A young house asks its company first; it buys what the request does not cover.
+      const asked = missing > 0 && h.casa <= w.m.youngCasa ? askAid(w, h, g, missing) : 0;
+      if (missing - asked > 0) buyFromMarket(w, h, ws.region, g, missing - asked);
     }
   }
 }
@@ -1027,6 +1033,10 @@ export function session(w: World, h: House, rng: Rng) {
   collect(w, h);
   extractNow(w, h, worked);
   deliver(w, h, since);
+  // Its partners' requests first, from what it holds beyond its inputs and its next Casa.
+  const keep = nextCasaMaterials(w, h);
+  const inputs = new Set(h.workshops.flatMap((x) => Object.keys(w.m.recipes[x.good] ?? {})));
+  supplyAid(w, h, (g) => (inputs.has(g) ? Number.POSITIVE_INFINITY : (keep[g] ?? 0)));
   sellSurplus(w, h);
   sellToCourt(w, h);
   if (h.bent !== "miner" || h.casa >= 8) planVoyages(w, h, rng);

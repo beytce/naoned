@@ -123,6 +123,8 @@ Détails dans docs/expertise-2026-10-24/ (fichiers `*-final.md`).
 - L'ambassadeur (avec les cours étrangères) et le condottiere (avec les armes), les deux rôles du personnel qui manquent.
 - Le trait de chaque membre de la famille, qui donne et qui retire (catalogue des Atouts), et les portraits de la Dynastie.
 - Désaffecter un membre du personnel, le renvoyer.
+- La compagnie (après l'étape 6a) : l'Expédition de compagnie, le fondaco de compagnie, le Courrier de compagnie, la colleganza de compagnie, les contrats de fourniture et la réputation, le roulage, le *garzone* (l'apprenti d'une compagnie qui accueille les nouveaux) ; l'usage du Mérite ; l'annonce de la succession dans le fil.
+- La Condotta jouée depuis l'écran de l'empire : avec la carte de la Terraferme (plan 6b).
 
 ## V2
 - Plusieurs mondes en parallèle ; ouverture d'un nouveau monde quand le précédent dépasse J+14 (seulement si la population le permet sans vider les carnets).

@@ -128,6 +128,11 @@ export interface House {
   fine: Map<string, number>;
   courtDay: number;
   courtLeft: number;
+  /** Its company (step 6): which, since when; its last request; what it supplied today. */
+  company?: number;
+  companySince: number;
+  askedAt?: number;
+  supplied: { day: number; value: Deniers };
 }
 
 export interface Deposit {
@@ -187,6 +192,15 @@ export interface World {
     withColleganza: number;
     stakes: Deniers;
     fromLarger: Deniers;
+  };
+  /** The companies (step 6) and the entraide's requests open, asked, supplied, their value. */
+  companies: { id: number; members: number[] }[];
+  aid: {
+    requests: { house: number; company: number; good: string; qty: number; at: number }[];
+    asked: number;
+    supplied: number;
+    value: Deniers;
+    toYoung: Deniers;
   };
 }
 
