@@ -83,6 +83,8 @@ export interface EmpireQuote {
   asked: boolean;
   depthLeft: number;
   boardLeft: number;
+  /** When the price was so: now with a counter there, earlier elsewhere. */
+  asOf: number;
 }
 
 export interface EmpireRecipe {

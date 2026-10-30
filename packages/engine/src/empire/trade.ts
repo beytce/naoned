@@ -17,6 +17,7 @@ import { empireSettings, isAsleep, ownHouse } from "./house.js";
 import { powerOf } from "./power.js";
 import {
   localBookOf,
+  newsDelayMs,
   pressureAfterHours,
   pressureAfterTrade,
   priceAt,
@@ -163,6 +164,25 @@ function marketNow(tx: Tx, region: string, good: string): EmpireMarket {
   return mk;
 }
 
+/** The fortnight of news a market keeps. */
+const NEWS_MS = 14 * DAY_MS;
+
+function remember(mk: EmpireMarket, now: number): void {
+  const kept = (mk.history ?? []).filter((x) => x.at > now - NEWS_MS && x.at < now);
+  mk.history = [...kept, { at: now, pressureBps: mk.pressureBps }];
+}
+
+/** A market's pressure as it stood at an instant: its last trade before, come back since. */
+function pressureAt(mk: EmpireMarket | undefined, at: number, s: EmpireSettings): number {
+  if (!mk) return 10_000;
+  const before = [...(mk.history ?? [])].reverse().find((x) => x.at <= at);
+  if (!before)
+    return mk.history?.length
+      ? 10_000
+      : pressureAfterHours(mk.pressureBps, (at - mk.at) / HOUR_MS, s);
+  return pressureAfterHours(before.pressureBps, (at - before.at) / HOUR_MS, s);
+}
+
 function isRaw(tx: Tx, good: string): boolean {
   return tx.ctx.theme.resources.find((r) => r.code === good)?.tier === "raw";
 }
@@ -203,6 +223,7 @@ export function sellToDogana(
   mk.soldToday += n;
   advanceCarnet(h, "sell", n);
   mk.pressureBps = pressureAfterTrade(mk.pressureBps, n, Math.max(1, depth), "sell", s);
+  remember(mk, tx.now);
   return n;
 }
 
@@ -276,11 +297,14 @@ export interface EmpireQuote {
   depthLeft: number;
   /** What is left today of the cities' common board. */
   boardLeft: number;
+  /** When the price was so: now where the house has a counter, earlier elsewhere (the news). */
+  asOf: number;
 }
 
 /**
- * The markets as a house sees them now, for the view (pure, the state untouched): Venetia's and
- * those of its counters' regions; without a house, Venetia's.
+ * The markets as a house sees them now, for the view (pure, the state untouched): live in Venetia
+ * and where it has a counter; in the other regions it may charter, as the news brought them, as
+ * late as a ship from there (profondeur.md § D). Without a house, Venetia's.
  */
 export function empireQuotes(
   ctx: WorldContext,
@@ -293,24 +317,29 @@ export function empireQuotes(
   const houses = state.empire?.houses ?? {};
   const h = playerId ? houses[playerId] : undefined;
   const day = dayOf(now);
-  const regions = s.regions.filter((r) => r.code === HOME || (h?.counters?.[r.code] ?? 0) > 0);
+  const regions = s.regions.filter(
+    (r) =>
+      r.code === HOME || (h !== undefined && ((h.counters?.[r.code] ?? 0) > 0 || r.casa <= h.casa)),
+  );
   return regions.flatMap((r) => {
     const size = marketSize(houses, r.code, now, s);
+    const live = r.code === HOME || (h?.counters?.[r.code] ?? 0) > 0;
+    const asOf = now - newsDelayMs(r.code, live, 0, s);
     const goods = [...new Set([...Object.keys(r.produces), ...Object.keys(r.demands)])];
     return goods.map((good) => {
       const ref = (r.demands[good] ?? r.produces[good]) as Deniers;
       const mk = state.empire?.markets?.[`${r.code}:${good}`];
-      const pressure = mk ? pressureAfterHours(mk.pressureBps, (now - mk.at) / HOUR_MS, s) : 10_000;
       const sold = mk && mk.day === day ? mk.soldToday : 0;
       const board = state.empire?.boards?.[`${r.code}:${good}`];
       return {
         region: r.code,
         good,
         ref,
-        price: priceAt(ref, pressure, s),
+        price: priceAt(ref, pressureAt(mk, asOf, s), s),
         asked: good in r.demands,
         depthLeft: Math.max(0, size.depth - sold),
         boardLeft: board?.day === day ? board.left : size.board,
+        asOf,
       };
     });
   });

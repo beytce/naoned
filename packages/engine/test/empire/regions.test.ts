@@ -104,3 +104,26 @@ describe("a market for each region", () => {
     w.advance(DAY);
   });
 });
+
+describe("the news travels at the speed of ships", () => {
+  const quote = (w: World, id: string) =>
+    empireQuotes(w.ctx, w.state, w.now, id).find(
+      (q) => q.region === "lombardia" && q.good === "flour",
+    );
+
+  it("shows a region's price live where the house has a counter, dated elsewhere", () => {
+    const w = world();
+    const before = quote(w, "a")?.price ?? 0n;
+    w.give("a", "flour", 15);
+    w.do({ type: "empireSell", playerId: "a", good: "flour", qty: 15, region: "lombardia" });
+    // a sees the price it made fall, at once.
+    expect((quote(w, "a")?.price ?? 0n) < before).toBe(true);
+    expect(quote(w, "a")?.asOf).toBe(w.now);
+    // b, without a counter there, learns it six hours later (Lombardy's distance from Venice).
+    w.advance(HOUR);
+    expect(quote(w, "b")?.price).toBe(before);
+    expect(quote(w, "b")?.asOf).toBe(w.now - 6 * HOUR);
+    w.advance(6 * HOUR);
+    expect((quote(w, "b")?.price ?? 0n) < before).toBe(true);
+  });
+});

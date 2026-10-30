@@ -375,6 +375,8 @@ export interface EmpireMarket {
   at: number;
   day: number;
   soldToday: number;
+  /** Its pressure after each trade of the last fortnight: the news a house learns late. */
+  history?: { at: number; pressureBps: number }[];
 }
 
 /** The persistent empire's part of a world (absent from the worlds of the monthly seasons). */
