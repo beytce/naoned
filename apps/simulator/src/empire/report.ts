@@ -120,15 +120,18 @@ export function evaluate(r: EmpireResult): Check[] {
     pass: steps.length > 0 && stepsOut.length === 0,
   });
 
-  // 4. A newcomer at the median Power.
+  // 4. A newcomer at the median Power of its band, among the houses that came before it.
   const last = Math.max(...r.options.cohortMonths.filter((m) => m <= r.options.months - 1));
-  const caught = r.daily.find(
-    (row) => row.day >= last * 30 && (row.cohorts[last]?.power ?? 0) >= row.worldPower,
+  const newcomers = hs.filter((h) => h.cohort === last);
+  const caughtIn = newcomers.map((h) =>
+    h.bandCaughtAt === undefined ? Number.POSITIVE_INFINITY : (h.bandCaughtAt - h.joinedAt) / MONTH,
   );
-  const months = caught ? (caught.day - last * 30) / 30 : null;
+  const reachedBand = caughtIn.filter(Number.isFinite).length;
+  const months =
+    newcomers.length > 0 && reachedBand >= newcomers.length / 2 ? median(caughtIn) : null;
   checks.push({
     code: "newcomer",
-    label: `Cohorte du mois ${last} à la Puissance médiane du monde`,
+    label: `Cohorte du mois ${last} à la Puissance médiane de sa bande (Maisons plus anciennes)`,
     target: "en 4 à 6 mois",
     value: months === null ? "jamais dans la simulation" : `${months.toFixed(1)} mois`,
     pass: months !== null && months >= 4 && months <= 6,

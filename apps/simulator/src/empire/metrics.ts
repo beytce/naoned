@@ -1,4 +1,4 @@
-import type { Deniers } from "@comptoirs/engine";
+import { type Deniers, bandOf } from "@comptoirs/engine";
 import { nextCasaCost } from "./bots.js";
 import { DAY, type House, MONTH, type Trade, type World } from "./model.js";
 import { power, priceOf } from "./world.js";
@@ -36,7 +36,31 @@ export function dailyIncome(h: House): number {
   return ducatsOf(sum) / days;
 }
 
+/**
+ * Marks the houses that reach the median Power of their band, measured among the houses that
+ * arrived before them (CADRAGE-v3 § 12 bis: a newcomer is measured within its band).
+ */
+function markBandCatch(w: World, powers: Map<House, number>) {
+  const bands = new Map(w.houses.map((h) => [h, bandOf(powers.get(h) ?? 0, w.s)]));
+  const medians = new Map<string, number | null>();
+  const medianBefore = (joinedAt: number, band: number) => {
+    const key = `${joinedAt}:${band}`;
+    if (!medians.has(key)) {
+      const older = w.houses.filter((o) => o.joinedAt < joinedAt && bands.get(o) === band);
+      medians.set(key, older.length > 0 ? median(older.map((o) => powers.get(o) ?? 0)) : null);
+    }
+    return medians.get(key) ?? null;
+  };
+  for (const h of w.houses) {
+    if (h.bandCaughtAt !== undefined || h.joinedAt === 0) continue;
+    const m = medianBefore(h.joinedAt, bands.get(h) ?? 0);
+    if (m !== null && (powers.get(h) ?? 0) >= m) h.bandCaughtAt = w.now;
+  }
+}
+
 export function snapshot(w: World): DailyRow {
+  const powers = new Map(w.houses.map((h) => [h, power(w, h)]));
+  markBandCatch(w, powers);
   let index = 0;
   let n = 0;
   const byGood = new Map<string, number[]>();
@@ -60,7 +84,7 @@ export function snapshot(w: World): DailyRow {
     cohorts[c] = {
       houses: hs.length,
       casa: median(hs.map((h) => h.casa)),
-      power: median(hs.map((h) => power(w, h))),
+      power: median(hs.map((h) => powers.get(h) ?? 0)),
       income: median(hs.map(dailyIncome)),
     };
   }
@@ -70,7 +94,7 @@ export function snapshot(w: World): DailyRow {
     spread,
     money: w.created - w.destroyed,
     cohorts,
-    worldPower: median(w.houses.map((h) => power(w, h))),
+    worldPower: median([...powers.values()]),
   };
 }
 
