@@ -119,8 +119,12 @@ export function relaunchAll(tx: Tx, playerId: PlayerId): void {
 }
 
 /** The places a workshop has for modules, by its level. */
-export function moduleSlotsOf(level: number, s: EmpireSettings): number {
-  return s.workshops.moduleSlotsAt.filter((at) => level >= at).length;
+export function moduleSlotsOf(level: number, s: EmpireSettings, h?: EmpireHouse): number {
+  // The master's workshop (bottega maestra) gives a place more.
+  return (
+    s.workshops.moduleSlotsAt.filter((at) => level >= at).length +
+    houseEffect(h, "moduleSlotsExtra", s)
+  );
 }
 
 /** Fits a researched workshop module in one of a workshop's places: free, at once, once each. */
@@ -137,7 +141,7 @@ export function fitModule(
   if (!ws) fail("unknown_building");
   const m = s.modules.find((x) => x.code === code);
   if (!m || m.kind !== "workshop" || !(h.modules?.[code] ?? 0)) fail("unknown_building_type");
-  if (!Number.isInteger(slot) || slot < 0 || slot >= moduleSlotsOf(ws.level, s)) fail("no_room");
+  if (!Number.isInteger(slot) || slot < 0 || slot >= moduleSlotsOf(ws.level, s, h)) fail("no_room");
   const fitted = [...(ws.fitted ?? [])];
   if (fitted.some((x, i) => x === code && i !== slot)) fail("built");
   fitted[slot] = code;

@@ -10,6 +10,7 @@ import {
   type WorldContext,
 } from "../state.js";
 import { type Tx, fail } from "../tx.js";
+import { houseEffect } from "./effects.js";
 import { empireSettings, ownHouse } from "./house.js";
 import type { EmpireSettings } from "./settings.js";
 
@@ -63,7 +64,8 @@ function drawCarnet(
   ];
   const keyed = pool.map((o, i) => ({ o, k: draw(ctx, `carnet:${week}:${playerId}:${i}`) }));
   keyed.sort((a, b) => a.k - b.k);
-  return [...always, ...keyed.map((x) => x.o)].slice(0, s.carnet.objectives);
+  const extra = houseEffect(h, "carnetExtra", s);
+  return [...always, ...keyed.map((x) => x.o)].slice(0, s.carnet.objectives + extra);
 }
 
 /** The carnet a house would find now: this week's, or the next one drawn as it will be. */
@@ -130,7 +132,8 @@ export function claimObjective(tx: Tx, playerId: PlayerId, index: number): void 
   if (o.progress < o.target) fail("too_early");
   o.claimed = true;
   const wind = (h.windUntil ?? 0) > tx.now ? 2 : 1;
-  h.favour += s.carnet.favourPerObjective * wind;
+  const more = houseEffect(h, "carnetFavour", s);
+  h.favour += Math.floor((s.carnet.favourPerObjective * wind * (10_000 + more)) / 10_000);
   if (!c.full && c.objectives.every((x) => x.claimed)) {
     c.full = true;
     h.seals += s.carnet.sealForFull;

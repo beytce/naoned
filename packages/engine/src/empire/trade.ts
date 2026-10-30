@@ -59,7 +59,11 @@ export function receive(tx: Tx, playerId: PlayerId, gross: Deniers, ref?: string
   transfer(tx, SOURCE_ACCOUNT, cashAccount(playerId), gross, "empire_sale", ref);
   recordIncome(h, tx.now, gross);
   advanceCarnet(h, "earn", Number(gross / DENIERS_PER_DUCAT));
-  const wages = wagesOn(gross, powerOfHouse(h, s), s);
+  // The double entry (partita doppia) saves a share of the wages.
+  const wages = applyBpsFloor(
+    wagesOn(gross, powerOfHouse(h, s), s),
+    10_000 - Math.min(10_000, houseEffect(h, "wagesCut", s)),
+  );
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, wages, "empire_wages", ref);
 }
 
@@ -289,10 +293,13 @@ function haulLeft(tx: Tx, h: EmpireHouse): number {
     .map((v) => s.vehicles[v.type])
     .filter((v) => v?.regions.length === 1)
     .reduce((n, v) => n + (v?.capacity ?? 0), 0);
-  const capacity = Number(applyBpsFloor(BigInt(base), 10_000 + houseEffect(h, "capacity", s)));
+  const capacity = Number(
+    applyBpsFloor(BigInt(base), 10_000 + houseEffect(h, "capacity", s) + houseEffect(h, "haul", s)),
+  );
+  const trips = s.localTripsPerDay + houseEffect(h, "tripsExtra", s);
   const day = dayOf(tx.now);
   const used = h.hauled?.day === day ? h.hauled.units : 0;
-  return Math.max(0, capacity * s.localTripsPerDay - used);
+  return Math.max(0, capacity * trips - used);
 }
 
 /**
@@ -341,7 +348,15 @@ export function fillOrders(
   const mine =
     books[region]?.day === day
       ? (books[region] as { day: number; left: number })
-      : { day, left: localBookOf(region, counterLevel(h, region), s) };
+      : {
+          day,
+          left: Number(
+            applyBpsFloor(
+              BigInt(localBookOf(region, counterLevel(h, region), s)),
+              10_000 + houseEffect(h, "book", s),
+            ),
+          ),
+        };
   books[region] = mine;
   const book = Math.min(mine.left, left);
   mine.left -= book;
@@ -414,7 +429,8 @@ export function empireQuotes(
   );
   return regions.flatMap((r) => {
     const size = marketSize(houses, r.code, now, s);
-    const live = r.code === HOME || (h?.counters?.[r.code] ?? 0) > 0;
+    const live =
+      r.code === HOME || (h?.counters?.[r.code] ?? 0) > 0 || houseEffect(h, "newsLive", s) > 0;
     const intel = houseEffect(h, "intel", s);
     const asOf = now - newsDelayMs(r.code, live, intel, s);
     const goods = [...new Set([...Object.keys(r.produces), ...Object.keys(r.demands)])];

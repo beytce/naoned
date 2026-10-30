@@ -16,6 +16,7 @@ import { type Tx, fail, nextId, removeStock, transfer } from "../tx.js";
 import { advanceCarnet } from "./carnet.js";
 import { catchupCut } from "./catchup.js";
 import { buildMinutesOf, casaLevelOf, casaRequirementMet, levelCost } from "./curves.js";
+import { houseEffect } from "./effects.js";
 import { settleLearning } from "./knowledge.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import type { EmpireSettings } from "./settings.js";
@@ -176,7 +177,8 @@ function openSite(
   for (const [good, qty] of Object.entries(materials))
     removeStock(tx, playerId, good, qty, "empire_build");
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, price, "empire_build");
-  const ms = Math.round((minutes * MINUTE_MS * (10_000 - cut.timeCutBps)) / 10_000);
+  const quicker = Math.min(9_000, cut.timeCutBps + houseEffect(h, "buildTime", s));
+  const ms = Math.round((minutes * MINUTE_MS * (10_000 - quicker)) / 10_000);
   advanceCarnet(h, "sites", 1);
   return { startedAt: tx.now, endsAt: tx.now + ms };
 }
@@ -283,10 +285,11 @@ export function charterRegion(tx: Tx, playerId: PlayerId, code: string): void {
   if (h.counters?.[code] || h.builds.some((b) => b.kind === "counter" && b.region === code))
     fail("built");
   if (h.casa < r.casa) fail("requirement_unmet");
-  if (h.favour < r.charterFavour) fail("insufficient_favour");
-  const cost = levelCost(r.casa, s) * BigInt(s.counters.costTimes);
+  const favour = charterFavourOf(h, r.charterFavour, s);
+  if (h.favour < favour) fail("insufficient_favour");
+  const cost = counterCostOf(h, levelCost(r.casa, s) * BigInt(s.counters.costTimes), s);
   const site = openSite(tx, playerId, h, cost, {}, r.hoursFromVenice * 60 + 60, 0);
-  h.favour -= r.charterFavour;
+  h.favour -= favour;
   h.builds.push({ kind: "counter", level: 1, region: code, ...site });
 }
 
@@ -299,7 +302,7 @@ export function upgradeCounter(tx: Tx, playerId: PlayerId, code: string): void {
   if (!level) fail("unknown_region");
   if (h.builds.some((b) => b.kind === "counter" && b.region === code)) fail("building_busy");
   if (level >= s.counters.maxLevel) fail("max_level");
-  const cost = levelCost(level + 1, s) * BigInt(s.counters.costTimes);
+  const cost = counterCostOf(h, levelCost(level + 1, s) * BigInt(s.counters.costTimes), s);
   const site = openSite(tx, playerId, h, cost, {}, buildMinutesOf(level + 2, s), 0);
   h.builds.push({ kind: "counter", level: level + 1, region: code, ...site });
 }
@@ -374,4 +377,15 @@ export function chooseArte(tx: Tx, playerId: PlayerId, code: string, minor = fal
       if (old.buildings.includes(ws.type)) ws.level = Math.min(ws.level, s.arte.renounceLevel);
   h.arte = code;
   if (h.minorArte === code) h.minorArte = undefined;
+}
+
+/** A charter's Favour, less the house's diplomacy (letters, embassy). */
+export function charterFavourOf(h: EmpireHouse, favour: number, s: EmpireSettings): number {
+  const cut = Math.min(10_000, houseEffect(h, "charterCut", s));
+  return Math.ceil((favour * (10_000 - cut)) / 10_000);
+}
+
+/** A counter's ducats, less the house's pacts. */
+export function counterCostOf(h: EmpireHouse, cost: Deniers, s: EmpireSettings): Deniers {
+  return applyBpsFloor(cost, 10_000 - Math.min(10_000, houseEffect(h, "counterCut", s)));
 }

@@ -19,7 +19,15 @@ import {
 } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { extractionTeams as teamsOf } from "./extraction.js";
-import { empireHouseAt, isAsleep, regionOfWorkshop, workshopPlaces, workshopTop } from "./house.js";
+import {
+  charterFavourOf,
+  counterCostOf,
+  empireHouseAt,
+  isAsleep,
+  regionOfWorkshop,
+  workshopPlaces,
+  workshopTop,
+} from "./house.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import { bandOf } from "./power.js";
 import type { EmpireSettings } from "./settings.js";
@@ -273,7 +281,7 @@ function regionsOf(house: EmpireHouse, s: EmpireSettings): EmpireRegionView[] {
     if (far && !site && counter === 0 && house.casa >= r.casa)
       next = {
         ...plainSite(
-          levelCost(r.casa, s) * BigInt(s.counters.costTimes),
+          counterCostOf(house, levelCost(r.casa, s) * BigInt(s.counters.costTimes), s),
           r.hoursFromVenice * 60 + 60,
           1,
         ),
@@ -282,7 +290,7 @@ function regionsOf(house: EmpireHouse, s: EmpireSettings): EmpireRegionView[] {
     else if (far && !site && counter > 0 && counter < s.counters.maxLevel)
       next = {
         ...plainSite(
-          levelCost(counter + 1, s) * BigInt(s.counters.costTimes),
+          counterCostOf(house, levelCost(counter + 1, s) * BigInt(s.counters.costTimes), s),
           buildMinutesOf(counter + 2, s),
           counter + 1,
         ),
@@ -291,7 +299,7 @@ function regionsOf(house: EmpireHouse, s: EmpireSettings): EmpireRegionView[] {
     return {
       code: r.code,
       casa: r.casa,
-      charterFavour: r.charterFavour,
+      charterFavour: charterFavourOf(house, r.charterFavour, s),
       hoursFromVenice: r.hoursFromVenice,
       workshopSlots: workshopPlaces(house, r.code, s) || r.workshopSlots,
       produces: Object.keys(r.produces),

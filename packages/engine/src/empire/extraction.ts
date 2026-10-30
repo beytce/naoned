@@ -15,7 +15,8 @@ const CATCH_UP_DAYS = 14;
 /** The teams a house sends out (CADRAGE-v3 § 3 bis): none before the Casa that opens them. */
 export function extractionTeams(h: EmpireHouse, s: EmpireSettings): number {
   const { teamsFromCasa, casaPerTeam } = s.deposits;
-  return h.casa < teamsFromCasa ? 0 : 1 + Math.floor((h.casa - teamsFromCasa) / casaPerTeam);
+  if (h.casa < teamsFromCasa) return 0;
+  return 1 + Math.floor((h.casa - teamsFromCasa) / casaPerTeam) + houseEffect(h, "teamsExtra", s);
 }
 
 /** One of a region's goods, the dearer the likelier (a deposit of alum before one of salt). */
