@@ -140,6 +140,14 @@ try {
     await shot("6c-atelier");
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
+    // The sea, in the workshops' sheet: the private Arsenal and the colleganze (step 7a).
+    await page.locator("[data-tab=workshops]").click();
+    await page.waitForSelector("[data-arsenal]");
+    await page.waitForSelector("[data-colleganze]");
+    await page.locator("[data-arsenal]").scrollIntoViewIfNeeded();
+    await shot("6f-arsenal");
+    await page.locator("[data-tab=map]").click();
+    await page.waitForTimeout(400);
     // The Terraferma's tab: the week's theatre, its entry or the Contesa (CADRAGE-v3 § 8).
     await page.locator("[data-tab=conquest]").click();
     await page.waitForSelector("[data-terra]");

@@ -10,6 +10,7 @@ import { Badge, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { CompanySection, suppliable } from "./Company.js";
 import { ArteSection, Court, FamilySheet, Knowledge, WorkshopIdentity } from "./Identity.js";
 import { EmpireOrbit } from "./Orbit.js";
+import { Arsenal, Colleganze } from "./Sea.js";
 import { TerraSheet } from "./Terra.js";
 import { Charroi, Constellation, RegionPlace, Scuola, VoyageSheet, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
@@ -361,6 +362,8 @@ function Founding({ busy, onJoin, name }: { busy: boolean; onJoin: () => void; n
 function siteLabel(p: EmpirePayload, b: EmpireBuild): string {
   if (b.kind === "casa") return t.sites.casa(b.level);
   if (b.kind === "newWorkshop") return t.sites.newWorkshop(buildingName(p, b.workshopType ?? ""));
+  if (b.kind === "ship")
+    return t.sites.ship(t.vehicleNames[b.vehicleType ?? ""] ?? b.vehicleType ?? "");
   const ws = p.view?.house.workshops.find((w) => w.id === b.workshopId);
   return t.sites.upgrade(buildingName(p, ws?.type ?? ""), b.level);
 }
@@ -513,6 +516,8 @@ function WorkshopsSheet({
       {!focus && <Store p={p} busy={busy} act={act} />}
       {!focus && <Court p={p} busy={busy} act={act} />}
       {!focus && <Charroi p={p} now={now} busy={busy} act={act} />}
+      {!focus && <Arsenal p={p} now={now} busy={busy} act={act} />}
+      {!focus && <Colleganze p={p} busy={busy} act={act} />}
     </Sheet>
   );
 }
