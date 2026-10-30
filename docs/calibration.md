@@ -1870,6 +1870,39 @@ Sur la graine 3, 48 compagnies ; 7 195 lots demandés, 333 fournis pour 295 000 
 
 Décision du porteur : le nouveau doit **quitter la première bande de Puissance en 4 à 6 mois**. Le simulateur mesure désormais le jour où la Puissance d'une Maison de la cohorte du mois 12 dépasse le seuil de la deuxième bande (600). Essai rapide (graine 1, cohortes de 30) : **0,2 mois**. La première bande, de 0 à 600, se quitte en une semaine : la Casa 2 et quelques niveaux d'ateliers y suffisent. Atteindre la cible demande d'élargir les bandes (`power.bands`), ce qui change aussi qui affronte qui ; ce sera calibré avec l'appariement de la Contesa (plan 6b).
 
+### L'étape 6b au simulateur : la Terraferme de l'empire et les bandes (30 octobre 2026)
+
+La semaine de la Terraferme suit désormais les réglages du jeu (`empire.terra`) :
+- **semaine ouverte** : qui joue paie l'entrée (20 planches) et reçoit Faveur et Sceaux selon un rang tiré dans un théâtre de 40 ;
+- **Contesa** (semaines paires) : chaque compagnie ayant au moins 5 joueurs ce jour-là fait jouer un roster de 5, 10 ou 15 associés ; une compagnie sur deux gagne ;
+- **la ration** de la République ne coûte rien.
+
+Les **bandes de Puissance** de Venise passent de `[0, 600, 1 500, 3 500, 7 000, 14 000]` à `[0, 4 500, 7 000, 9 500, 12 000]`. Le seuil de la deuxième bande suit la Puissance d'une Maison du mois 12 après 4 à 5 mois (3 200 au 3e mois, 4 700 au 5e, sur l'essai rapide).
+
+**Résultat** (graines 1, 2 et 3, quatre cohortes de 200) : **9 cibles sur 12 sur chaque graine**, contre 8.
+
+| Mesure | Étape 6a | Étape 6b |
+| --- | --- | --- |
+| Nouveau hors de la première bande | 0,2 mois (essai rapide) | 5,5, 5,8 et 4,9 mois ✓ |
+| Prochain palier de Casa, en jours de revenu | 4,2 à 8,9 | 3,9 à 8,9 |
+| Puits ÷ sources, jeunes puis anciennes | 0,84–0,87 puis 0,99–1,03 | 0,83–0,86 puis 0,94–1,01 |
+| Bruts des jeunes vendus à Venise | 6,2 à 6,6 % | 6,2 à 7,0 % |
+| Part de la Terraferme dans la progression | 0,1 % | moins de 0,1 % |
+
+Au mois 24 (graine 3), les 800 Maisons se répartissent ainsi dans les bandes :
+
+| Bande | Maisons |
+| --- | --- |
+| 0 | 205 |
+| 1 | 75 |
+| 2 | 99 |
+| 3 | 318 |
+| 4 | 103 |
+
+Chaque bande peut donc remplir au moins un théâtre de 20 à 40 marchands, même si la moitié seulement joue.
+
+La part de la Terraferme reste très loin du plafond de 15 % : la Faveur et les Sceaux y sont valorisés à 10 et 40 ducats (hypothèse du modèle), contre des recettes de commerce de plusieurs milliers de ducats par jour. Les gains pourront monter sans menacer le plafond, si l'on veut que la guerre compte davantage.
+
 ### Refaire le calibrage
 
 ```
