@@ -35,6 +35,7 @@ const clockShift = config.CLOCK_START !== undefined ? config.CLOCK_START - Date.
 const clock = clockShift === 0 ? Date.now : () => Date.now() + clockShift;
 const world = await GameWorld.open(database.db, clock, {
   settingsFromTheme: config.WORLD_SETTINGS_FROM_THEME,
+  empire: config.WORLD_KIND === "empire",
   ...(config.WORLD_SETTINGS_OVERRIDE ? { settingsOverride: config.WORLD_SETTINGS_OVERRIDE } : {}),
 });
 world.startTicking();

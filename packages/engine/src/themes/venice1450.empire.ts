@@ -220,6 +220,16 @@ export const venice1450Empire: EmpireSettingsInput = {
     maxLevel: 25,
   },
   counters: { maxLevel: 10, bookStepBps: 4_000 },
+  // The socle in Venetia: the clay, the wood and the planks of the Casa 2; its bricks ask the
+  // fourth place, a brickworks, the first choice (a farm instead would leave the Casa waiting).
+  start: {
+    capitalDucats: 500,
+    workshops: [
+      { type: "clay_pit", recipe: "dig_clay" },
+      { type: "lumber_camp", recipe: "cut_wood" },
+      { type: "sawmill", recipe: "saw_planks" },
+    ],
+  },
   newcomers: { rawBonusBps: 2_000, untilCasa: 8 },
   highRecipes: { fromLevel: 12, rawPerLevelBps: 500, goods: ["wheat", "clay", "wood", "salt"] },
   salaries: { minBps: 300, maxBps: 2_500, halfPower: 4_000 },

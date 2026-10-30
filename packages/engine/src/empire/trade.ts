@@ -7,6 +7,8 @@ import {
   type PlayerId,
   SINK_ACCOUNT,
   SOURCE_ACCOUNT,
+  type WorldContext,
+  type WorldState,
   cashAccount,
 } from "../state.js";
 import { type Tx, fail, inventoryLine, removeStock, transfer } from "../tx.js";
@@ -156,4 +158,45 @@ export function deliverOrders(tx: Tx, playerId: PlayerId, good: string, qty: num
   receive(tx, playerId, applyBpsFloor(value, 10_000 + s.markets.orderPremiumBps), `orders:${good}`);
   advanceCarnet(h, "deliver", delivered);
   return delivered;
+}
+
+export interface EmpireQuote {
+  good: string;
+  ref: Deniers;
+  /** What the Dogana pays now, before the young houses' bonus. */
+  price: Deniers;
+  /** Asked by the cities (orders), or only made there (the Dogana). */
+  asked: boolean;
+  /** What the Dogana still takes today. */
+  depthLeft: number;
+  /** What is left today of the cities' common board. */
+  boardLeft: number;
+}
+
+/** Venetia's market as it stands now, for the view: pure, the state untouched. */
+export function empireQuotes(ctx: WorldContext, state: WorldState, now: number): EmpireQuote[] {
+  const s = ctx.settings.empire;
+  if (!s) return [];
+  const r = regionOf(HOME, s);
+  const day = dayOf(now);
+  const awake = Object.values(state.empire?.houses ?? {}).filter(
+    (h) => !isAsleep(h, now, s),
+  ).length;
+  const depth = s.markets.depthBase + s.markets.depthPerHouse * awake;
+  const goods = [...new Set([...Object.keys(r.produces), ...Object.keys(r.demands)])];
+  return goods.map((good) => {
+    const ref = (r.demands[good] ?? r.produces[good]) as Deniers;
+    const mk = state.empire?.markets?.[`${HOME}:${good}`];
+    const pressure = mk ? pressureAfterHours(mk.pressureBps, (now - mk.at) / HOUR_MS, s) : 10_000;
+    const sold = mk && mk.day === day ? mk.soldToday : 0;
+    const board = state.empire?.boards?.[`${HOME}:${good}`];
+    return {
+      good,
+      ref,
+      price: priceAt(ref, pressure, s),
+      asked: good in r.demands,
+      depthLeft: Math.max(0, depth - sold),
+      boardLeft: board?.day === day ? board.left : s.markets.boardPerHouse * awake,
+    };
+  });
 }

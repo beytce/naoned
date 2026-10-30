@@ -689,9 +689,12 @@ export function decide(
     const next = produce(state, (draft) => {
       const tx = { ctx, s: draft, now, fx };
       apply(tx, cmd);
-      trackMissions(tx);
-      trackDaily(tx);
-      trackHouseMissions(tx);
+      // The monthly season's trackers: the empire has its Carnet instead.
+      if (!isEmpire(cmd)) {
+        trackMissions(tx);
+        trackDaily(tx);
+        trackHouseMissions(tx);
+      }
       if (fx.ledger.length > 0) markTurnoverPeaks(draft);
     });
     return { ok: true, state: next, effects: fx };

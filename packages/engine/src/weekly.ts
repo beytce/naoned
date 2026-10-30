@@ -121,6 +121,8 @@ export function seasonStandings(
  * `season_closed`). The caller hands out the rewards and opens the next season.
  */
 export function closeSeason(tx: Tx): void {
+  // The persistent empire never closes (CADRAGE-v3): only the Terraferma keeps its weeks.
+  if (tx.ctx.settings.empire) return;
   if (tx.s.seasonClosed || tx.now < seasonEnd(tx.ctx)) return;
   // Valued at the last moment of the season: nothing moves after it.
   const at = seasonEnd(tx.ctx) - 1;
