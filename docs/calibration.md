@@ -1724,6 +1724,13 @@ Revenu médian de la première cohorte (ducats par jour, sur 30 jours glissants)
 
 ### Les points ouverts, au porteur
 
+*Arbitrés le 30 octobre 2026 :*
+- *le nouveau se mesure contre la médiane de **sa bande** ;*
+- *les **recettes de haut niveau** demandent des bruts de Vénétie en quantité ;*
+- *les **places de la Muda** se gagnent cher à l'incanto, et les cargaisons de luxe valent des semaines de revenu.*
+
+*Le détail suit, tel qu'il a été posé.*
+
 - **Le nouveau à la Puissance médiane en 4 à 6 mois** n'est pas atteignable avec ce calendrier. À 18 mois, la plupart des Maisons anciennes sont à la Casa 20 : la médiane du monde est le sommet. Deux voies :
   - mesurer le nouveau contre la médiane de sa bande ;
   - prolonger le sommet (Maestria, Grandes Œuvres) pour que la Puissance des anciens ne plafonne pas.

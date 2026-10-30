@@ -472,6 +472,12 @@ Un rapport public dit ce qui a été vendu.
   - le Lustre ;
   - les portraits de la Dynastie, qui deviennent des ancêtres.
 
+## 12 bis. Arbitrages du 30 octobre 2026 (après le premier calibrage)
+
+1. **Le nouveau se mesure dans sa bande.** La cible « un nouveau dans un monde d'un an atteint la Puissance médiane en 4 à 6 mois » devient : « il atteint la Puissance médiane de sa bande en 4 à 6 mois ». C'est cohérent avec la règle d'or 4 : toute compétition se joue par bande.
+2. **Les recettes de haut niveau demandent des bruts de Vénétie en quantité.** Au-delà du niveau 12, un atelier et les grands ouvrages consomment plus de bruts (blé, argile, bois, sel) qu'un vétéran ne peut en produire. Il les achète donc au Rialto, où vendent les jeunes Maisons, et le jeune devient utile au vétéran.
+3. **Les places de la Muda se gagnent cher.** Les grandes galères (galea grossa, galère de Flandre) ne partent qu'avec la Muda d'État. Leurs places s'achètent à l'incanto du soir, et les cargaisons de luxe (épices, soie) valent des semaines de revenu. On s'associe pour remplir une place : la colleganza vit de là.
+
 ## 13. Le chemin
 
 Chaque étape fait l'objet d'un plan, validé avant le code.
