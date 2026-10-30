@@ -55,7 +55,13 @@ import { startLearning } from "./empire/knowledge.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
 import { deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
-import { buyEmpireVehicle, settleVoyages, startVoyage } from "./empire/voyages.js";
+import {
+  buildShip,
+  buyEmpireVehicle,
+  fitShip,
+  settleVoyages,
+  startVoyage,
+} from "./empire/voyages.js";
 import { fitModule, relaunchAll, relaunchWorkshop, swapWorkshops } from "./empire/workshops.js";
 import { joinFamily, leaveFamily } from "./families.js";
 import { buildFondaco } from "./fondaci.js";
@@ -311,6 +317,8 @@ type EmpireCommandOf =
   | { type: "empireSkill"; playerId: PlayerId; staffId: string; path: number }
   | { type: "empireLineage"; playerId: PlayerId; trait: string }
   | { type: "empireAsk"; playerId: PlayerId; good: string; qty: number }
+  | { type: "empireBuildShip"; playerId: PlayerId; vehicleType: string }
+  | { type: "empireFitShip"; playerId: PlayerId; vehicleId: string; slot: number; module: string }
   /** The Terraferma (CADRAGE-v3 § 8): enter the week's theatre (the cote from the server). */
   | { type: "empireTerraJoin"; playerId: PlayerId; rating?: number }
   | { type: "empireTerra"; playerId: PlayerId; action: TerraPlayerCommand }
@@ -526,6 +534,12 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireSupply":
       supplyAid(tx, cmd.playerId, cmd.requestId);
+      break;
+    case "empireBuildShip":
+      buildShip(tx, cmd.playerId, cmd.vehicleType);
+      break;
+    case "empireFitShip":
+      fitShip(tx, cmd.playerId, cmd.vehicleId, cmd.slot, cmd.module);
       break;
     case "empireCondotta":
       rewardCondotta(tx, cmd.playerId, cmd.tier);

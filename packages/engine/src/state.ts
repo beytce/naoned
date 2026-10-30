@@ -318,7 +318,10 @@ export interface EmpireWorkshop {
 
 /** A building site: it ends at `endsAt`, settled at the next read. */
 export interface EmpireBuild {
-  kind: "casa" | "newWorkshop" | "upgrade" | "counter";
+  kind: "casa" | "newWorkshop" | "upgrade" | "counter" | "ship";
+  /** A ship of the Arsenal: its type and the id it will bear. */
+  vehicleType?: string;
+  vehicleId?: string;
   /** A counter's region (its first level: the charter's opening voyage and its building). */
   region?: string;
   /** The level it builds. */
@@ -343,7 +346,7 @@ export interface EmpireHouse {
   favour: number;
   seals: number;
   /** Its vehicles: free again at `busyUntil` (a voyage's way there and back). */
-  vehicles?: { id: string; type: string; busyUntil: number }[];
+  vehicles?: { id: string; type: string; busyUntil: number; fitted?: string[] }[];
   /** The deposits its teams work, by id. */
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */

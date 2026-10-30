@@ -30,7 +30,13 @@ export function houseEffect(
     if (m && (m.kind === "workshop") === fitted && m.effect === effect)
       total += moduleEffectBps(code, level, s);
   };
-  for (const [code, level] of Object.entries(h.modules ?? {})) of(code, level, false);
+  // A ship with places: its trade modules count only where they are fitted on it.
+  const ship = place?.vehicleId ? h.vehicles?.find((v) => v.id === place.vehicleId) : undefined;
+  const onShip = ship && (s.vehicles[ship.type]?.slots ?? 0) > 0;
+  const trade = (code: string) => s.modules.find((x) => x.code === code)?.kind === "trade";
+  for (const [code, level] of Object.entries(h.modules ?? {}))
+    if (!(onShip && trade(code))) of(code, level, false);
+  if (onShip) for (const code of ship.fitted ?? []) of(code, h.modules?.[code] ?? 0, false);
   // The workshop's own modules, at their researched level.
   const ws = place?.workshopId ? h.workshops.find((w) => w.id === place.workshopId) : undefined;
   for (const code of ws?.fitted ?? []) of(code, h.modules?.[code] ?? 0, true);

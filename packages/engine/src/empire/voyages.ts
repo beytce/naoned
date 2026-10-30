@@ -2,7 +2,7 @@ import { applyBpsFloor } from "../money.js";
 import { type EmpireVoyage, HOUR_MS, type PlayerId, SINK_ACCOUNT, cashAccount } from "../state.js";
 import { type Tx, addStock, fail, inventoryLine, nextId, removeStock, transfer } from "../tx.js";
 import { houseEffect } from "./effects.js";
-import { empireSettings, ownHouse } from "./house.js";
+import { empireSettings, openSite, ownHouse } from "./house.js";
 import { priceAt, routeHours } from "./prices.js";
 import { gainXp } from "./staff.js";
 import { buyAt, counterLevel, fillOrders, homesOf, sellAt } from "./trade.js";
@@ -12,10 +12,55 @@ export function buyEmpireVehicle(tx: Tx, playerId: PlayerId, type: string): void
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   const spec = s.vehicles[type];
-  if (!spec) fail("unknown_building_type");
+  // A ship is built at the Arsenal, never bought.
+  if (!spec || spec.build) fail("unknown_building_type");
   if (h.casa < spec.casa) fail("requirement_unmet");
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, BigInt(spec.costDucats) * 100n, "empire_build");
   h.vehicles = [...(h.vehicles ?? []), { id: nextId(tx, "v"), type, busyUntil: 0 }];
+}
+
+/**
+ * Lays a ship down at the private Arsenal (CADRAGE-v3 § 3.3): a site of the Casa's, its price and
+ * its materials destroyed; the ship joins the house's vehicles when the site ends.
+ */
+export function buildShip(tx: Tx, playerId: PlayerId, type: string): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const spec = s.vehicles[type];
+  if (!spec?.build) fail("unknown_building_type");
+  if (h.casa < spec.casa) fail("requirement_unmet");
+  const site = openSite(
+    tx,
+    playerId,
+    h,
+    BigInt(spec.costDucats) * 100n,
+    spec.build.materials,
+    spec.build.minutes,
+    0,
+  );
+  h.builds.push({ kind: "ship", level: 1, vehicleType: type, vehicleId: nextId(tx, "v"), ...site });
+}
+
+/** Fits a researched trade module on one of a ship's places: free, at once, once each. */
+export function fitShip(
+  tx: Tx,
+  playerId: PlayerId,
+  vehicleId: string,
+  slot: number,
+  code: string,
+): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const v = h.vehicles?.find((x) => x.id === vehicleId);
+  if (!v) fail("unknown_building");
+  const m = s.modules.find((x) => x.code === code);
+  if (!m || m.kind !== "trade" || !(h.modules?.[code] ?? 0)) fail("unknown_building_type");
+  const slots = s.vehicles[v.type]?.slots ?? 0;
+  if (!Number.isInteger(slot) || slot < 0 || slot >= slots) fail("no_room");
+  const fitted = [...(v.fitted ?? [])];
+  if (fitted.some((x, i) => x === code && i !== slot)) fail("built");
+  fitted[slot] = code;
+  v.fitted = fitted;
 }
 
 /**

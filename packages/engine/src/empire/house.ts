@@ -77,6 +77,9 @@ export function settleBuilds(h: EmpireHouse, now: number): void {
         job: null,
       });
       advanceCarnet(h, "levels", 1);
+    } else if (b.kind === "ship" && b.vehicleType && b.vehicleId) {
+      // A ship of the Arsenal, launched.
+      h.vehicles = [...(h.vehicles ?? []), { id: b.vehicleId, type: b.vehicleType, busyUntil: 0 }];
     } else if (b.kind === "counter" && b.region) {
       h.counters = {
         ...(h.counters ?? {}),
@@ -161,7 +164,7 @@ export function empireJoin(tx: Tx, playerId: PlayerId): void {
 }
 
 /** Opens a site: checks its slot, pays its cost and its materials, cut by the catch-up. */
-function openSite(
+export function openSite(
   tx: Tx,
   playerId: PlayerId,
   h: EmpireHouse,

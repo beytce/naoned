@@ -89,6 +89,12 @@ export const empireSettingsSchema = z.object({
         costDucats: qty,
         regions: z.array(z.string()).min(1),
         speedBps: bps,
+        /** A ship: built at the private Arsenal (its site's minutes and materials), not bought. */
+        build: z
+          .object({ minutes: positive, materials: z.record(z.string(), qty).prefault({}) })
+          .optional(),
+        /** Its places for trade modules: on a ship, they count only where they are fitted. */
+        slots: qty.prefault(0),
       }),
     )
     .prefault({}),

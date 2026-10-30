@@ -147,6 +147,10 @@ const REGIONS: EmpireSettingsInput["regions"] = [
   },
 ];
 
+const ADRIATIC = ["veneto", "romagna", "friuli", "dalmazia"];
+const SEA = [...ADRIATIC, "grecia"];
+const GALLEY = [...SEA, "levante", "costantinopoli"];
+
 const module = (
   code: string,
   kind: "trade" | "extract" | "arms" | "workshop",
@@ -250,6 +254,44 @@ export const venice1450Empire: EmpireSettingsInput = {
       costDucats: 500,
       regions: ["veneto", "lombardia", "friuli", "germania"],
       speedBps: 0,
+    },
+    // The ships of the private Arsenal (step 7a), as the 24-month simulator has them: built on a
+    // site, with places for trade modules; the galea and the Flanders galley sail with the Muda.
+    marciliana: {
+      casa: 9,
+      capacity: 150,
+      costDucats: 1_500,
+      regions: ADRIATIC,
+      speedBps: 2_000,
+      build: { minutes: 480, materials: { planks: 80, oak: 20 } },
+      slots: 2,
+    },
+    cocca: {
+      casa: 11,
+      capacity: 300,
+      costDucats: 3_500,
+      regions: SEA,
+      speedBps: 2_000,
+      build: { minutes: 1_440, materials: { planks: 150, oak: 60 } },
+      slots: 3,
+    },
+    galea: {
+      casa: 14,
+      capacity: 500,
+      costDucats: 9_000,
+      regions: GALLEY,
+      speedBps: 3_000,
+      build: { minutes: 2_880, materials: { planks: 250, oak: 120, iron: 40 } },
+      slots: 4,
+    },
+    fiandra: {
+      casa: 18,
+      capacity: 800,
+      costDucats: 25_000,
+      regions: [...GALLEY, "fiandra"],
+      speedBps: 3_000,
+      build: { minutes: 5_760, materials: { planks: 400, oak: 200, iron: 80 } },
+      slots: 4,
     },
   },
   localTripsPerDay: 4,
