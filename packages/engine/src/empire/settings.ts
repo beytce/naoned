@@ -473,6 +473,8 @@ export const empireSettingsSchema = z.object({
     lossShareBps: bps.max(10_000),
     /** An escort of this strength halves the risk; each as much again halves it again. */
     escortHalving: positive,
+    /** The insurance's premium: the risk times the cargo's value times this (12 000: × 1,2). */
+    premiumBps: bps.prefault(12_000),
   }),
   /**
    * The Muda's galleys sail in convoy, twice a week; their places are auctioned (the incanto,

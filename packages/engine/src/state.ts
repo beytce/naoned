@@ -469,6 +469,8 @@ export interface EmpireVoyage {
   arrivesAt: number;
   /** What the cargo cost, bought or own at its port's price: to read the voyage's margin. */
   cost: Deniers;
+  /** Insured at its departure: the units the corsairs take are paid back at the reference. */
+  insured?: boolean;
 }
 
 /** A theatre of the empire's Terraferma (CADRAGE-v3 § 8): one map, its merchants, its rules. */

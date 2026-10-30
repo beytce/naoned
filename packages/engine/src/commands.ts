@@ -337,6 +337,8 @@ type EmpireCommandOf =
       to: string;
       good: string;
       qty: number;
+      /** Insured against the corsairs: its premium paid at the departure. */
+      insured?: boolean;
     };
 
 export type DecideResult =
@@ -568,7 +570,16 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       setRoster(tx, cmd.playerId, cmd.members);
       break;
     case "empireVoyage":
-      startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);
+      startVoyage(
+        tx,
+        cmd.playerId,
+        cmd.vehicleId,
+        cmd.from,
+        cmd.to,
+        cmd.good,
+        cmd.qty,
+        cmd.insured === true,
+      );
       break;
     case "empireSell":
       sellToDogana(tx, cmd.playerId, cmd.good, cmd.qty, cmd.region);

@@ -1,10 +1,29 @@
-import { applyBpsFloor } from "../money.js";
-import { type EmpireVoyage, HOUR_MS, type PlayerId, SINK_ACCOUNT, cashAccount } from "../state.js";
-import { type Tx, addStock, fail, inventoryLine, nextId, removeStock, transfer } from "../tx.js";
+import { draw } from "../draw.js";
+import { type Deniers, applyBpsFloor } from "../money.js";
+import {
+  type EmpireVoyage,
+  HOUR_MS,
+  type PlayerId,
+  SINK_ACCOUNT,
+  SOURCE_ACCOUNT,
+  cashAccount,
+} from "../state.js";
+import {
+  type Tx,
+  addStock,
+  emit,
+  fail,
+  inventoryLine,
+  nextId,
+  removeStock,
+  transfer,
+} from "../tx.js";
+import { corsairRiskBps } from "./corsairs.js";
 import { houseEffect } from "./effects.js";
 import { empireSettings, openSite, ownHouse } from "./house.js";
 import { mudaDeparture } from "./mudaSail.js";
 import { priceAt, routeHours } from "./prices.js";
+import type { EmpireSettings } from "./settings.js";
 import { gainXp } from "./staff.js";
 import { buyAt, counterLevel, fillOrders, homesOf, sellAt } from "./trade.js";
 
@@ -77,6 +96,7 @@ export function startVoyage(
   to: string,
   good: string,
   qty: number,
+  insured = false,
 ): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
@@ -129,6 +149,12 @@ export function startVoyage(
     arrivesAt: start + hours * HOUR_MS,
     cost: paid + ownValue,
   };
+  // The insurance: its premium destroyed now, against the risk of the way there.
+  const premium = insurancePremium(voyage.cost, to, s);
+  if (insured && premium > 0n) {
+    transfer(tx, cashAccount(playerId), SINK_ACCOUNT, premium, "empire_insurance", voyage.id);
+    voyage.insured = true;
+  }
   if (tx.s.empire) tx.s.empire.voyages = [...(tx.s.empire.voyages ?? []), voyage];
 }
 
@@ -145,13 +171,51 @@ export function settleVoyages(tx: Tx): void {
   for (const v of due) {
     if (!tx.s.empire.houses[v.house]) continue;
     addStock(tx, v.house, v.good, v.qty, "empire_voyage", v.id);
+    const lost = corsairsTake(tx, v);
     // Its captain grows with each voyage.
     const s = empireSettings(tx.ctx);
     for (const m of tx.s.empire.houses[v.house]?.staff ?? [])
       if (m.placedAt === v.vehicleId) gainXp(m, s.staff.xpPerLevel, s);
-    const delivered = fillOrders(tx, v.house, v.good, v.qty, v.to);
-    sellAt(tx, v.house, v.good, v.qty - delivered, v.to);
+    const left = v.qty - lost;
+    const delivered = fillOrders(tx, v.house, v.good, left, v.to);
+    sellAt(tx, v.house, v.good, left - delivered, v.to);
   }
+}
+
+/** The insurance's premium of a cargo of this value to a region: risk × value × the premium's rate. */
+export function insurancePremium(value: Deniers, to: string, s: EmpireSettings): Deniers {
+  const risk = corsairRiskBps(to, 0, s);
+  return (value * BigInt(risk) * BigInt(s.corsairs.premiumBps)) / 100_000_000n;
+}
+
+/**
+ * The corsairs (CADRAGE-v3 § 3 sexies), at the arrival: a draw on the world's seed and the voyage
+ * against its region's risk (none in Venetia, more far away); an attack takes a share of the
+ * cargo, never the ship, and an insured voyage has the units back at the reference. The escort
+ * comes with the armed galleys.
+ */
+function corsairsTake(tx: Tx, v: EmpireVoyage): number {
+  const s = empireSettings(tx.ctx);
+  const risk = corsairRiskBps(v.to, 0, s);
+  if (risk <= 0 || draw(tx.ctx, `corsairs:${v.id}`) % 10_000 >= risk) return 0;
+  const lost = Math.floor((v.qty * s.corsairs.lossShareBps) / 10_000);
+  if (lost <= 0) return 0;
+  removeStock(tx, v.house, v.good, lost, "empire_corsairs", v.id);
+  if (v.insured) {
+    const r = s.regions.find((x) => x.code === v.to);
+    const ref = r?.demands[v.good] ?? r?.produces[v.good] ?? 0n;
+    if (ref > 0n)
+      transfer(
+        tx,
+        SOURCE_ACCOUNT,
+        cashAccount(v.house),
+        ref * BigInt(lost),
+        "empire_insurance",
+        v.id,
+      );
+  }
+  emit(tx, "empire_corsairs", v.house, { voyage: v.id, lost, insured: v.insured === true });
+  return lost;
 }
 
 /** A voyage's expected margin a unit, for the view: the port's price less the cost, after tax. */
