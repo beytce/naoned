@@ -42,6 +42,8 @@ export interface Voyage {
   /** The colleganza's investors: house index and stake (escrowed until the return). */
   stakes: { house: number; amount: Deniers }[];
   escort: number;
+  /** A Muda convoy: it sells at the port's fair, whatever the market's depth. */
+  muda?: boolean;
 }
 
 export interface Build {
@@ -103,6 +105,11 @@ export interface House {
   /** Raw goods bought on the market, and how many of them a young house had made. */
   rawBought: number;
   rawBoughtFromYoung: number;
+  /** Places won at the last incanto of the Muda, for its next departure. */
+  mudaPasses: number;
+  /** What the place cost, and the stakes that paid for it, carried into the convoy. */
+  mudaPrice: Deniers;
+  mudaStakes: { house: number; amount: Deniers }[];
   /** While young (Casa ≤ youngCasa): its receipts, and those of its raw goods sold in Venice. */
   youngEarned: Deniers;
   youngRawSold: Deniers;
@@ -163,6 +170,18 @@ export interface World {
   workshopShare: number[];
   /** Colleganza stakes: all of them, and those of a large house in a young one's voyage. */
   colleganza: { total: Deniers; toYoung: Deniers };
+  /**
+   * The Muda: places sold and their price, convoys sailed, those with a colleganza, and the
+   * stakes put in them (all, and those of a larger house than the traveller).
+   */
+  muda: {
+    places: number;
+    paid: Deniers;
+    voyages: number;
+    withColleganza: number;
+    stakes: Deniers;
+    fromLarger: Deniers;
+  };
 }
 
 /** The model's own parameters (not the game's): goods' rates, bots' habits, the vehicles. */
@@ -244,4 +263,6 @@ export interface SimModel {
   paybackDays: number;
   /** A voyage carries at most this share of the port's depth a day. */
   voyageDepthShare: number;
+  /** The share of a convoy's expected margin a house bids for a Muda place. */
+  mudaBidBps: number;
 }

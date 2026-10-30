@@ -158,6 +158,19 @@ export const empireSettingsSchema = z.object({
     /** An escort of this strength halves the risk; each as much again halves it again. */
     escortHalving: positive,
   }),
+  /**
+   * The Muda's galleys sail in convoy, twice a week; their places are auctioned (the incanto,
+   * CADRAGE-v3 § 12 bis): places in proportion to the houses owning such a galley, a reserve in
+   * days of the bidders' median income, and the price paid destroyed.
+   */
+  muda: z
+    .object({
+      vehicles: z.array(z.string()),
+      departuresPerWeek: positive,
+      placesShareBps: bps,
+      reserveDaysBps: bps,
+    })
+    .prefault({ vehicles: [], departuresPerWeek: 2, placesShareBps: 10_000, reserveDaysBps: 0 }),
   colleganza: z.object({
     /** The traveller's share of the profit (the custom: a quarter). */
     travellerShareBps: bps.max(10_000),

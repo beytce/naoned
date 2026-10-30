@@ -72,6 +72,7 @@ export function createWorld(s: EmpireSettings, m: SimModel): World {
     casaShare: [],
     workshopShare: [],
     colleganza: { total: 0n, toYoung: 0n },
+    muda: { places: 0, paid: 0n, voyages: 0, withColleganza: 0, stakes: 0n, fromLarger: 0n },
   };
 }
 
@@ -147,9 +148,12 @@ export function sellToMarket(
   good: string,
   qty: number,
   trade: Trade,
+  fair = 0,
 ): number {
   const mk = market(w, region, good);
-  const n = Math.min(qty, depthOf(w, region) - mk.soldToday);
+  // A fair (the Muda's convoy at the port) adds its own buyers to the day's depth.
+  const depth = depthOf(w, region) + fair;
+  const n = Math.min(qty, depth - mk.soldToday);
   if (n <= 0) return 0;
   mk.soldToday += n;
   // The young houses' raw goods sell dearer (CADRAGE-v3 § 6).
@@ -160,7 +164,7 @@ export function sellToMarket(
     h.youngRawSold += gross;
   destroy(w, h, applyBpsFloor(gross, w.m.marketTaxBps), "tax");
   mk.lots.push({ qty: n, young: h.casa <= w.m.youngCasa });
-  mk.pressure = pressureAfterTrade(mk.pressure, n, depthOf(w, region), "sell", w.s);
+  mk.pressure = pressureAfterTrade(mk.pressure, n, depth, "sell", w.s);
   return n;
 }
 

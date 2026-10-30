@@ -252,5 +252,11 @@ export const venice1450Empire: EmpireSettingsInput = {
     baseSuccessBps: 6_500,
   },
   corsairs: { lossShareBps: 2_500, escortHalving: 30 },
+  muda: {
+    vehicles: ["galea", "fiandra"],
+    departuresPerWeek: 2,
+    placesShareBps: 5_000,
+    reserveDaysBps: 10_000,
+  },
   colleganza: { travellerShareBps: 2_500 },
 };

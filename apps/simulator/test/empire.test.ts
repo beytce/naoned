@@ -33,7 +33,7 @@ describe("the 24-month model simulator (CADRAGE-v3 § 13)", () => {
 
   it("judges the ten targets", () => {
     const checks = evaluate(small(1));
-    expect(checks).toHaveLength(11);
+    expect(checks).toHaveLength(12);
     for (const c of checks) expect(c.value).not.toBe("");
   });
 });

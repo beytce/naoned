@@ -15,6 +15,9 @@ import {
   levelCost,
   localBookOf,
   lotYieldBps,
+  mudaAuction,
+  mudaPlaces,
+  mudaReserve,
   newsDelayMs,
   plansFor,
   relicsOf,
@@ -88,6 +91,9 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
     sessionsInSight: 0,
     rawBought: 0,
     rawBoughtFromYoung: 0,
+    mudaPasses: 0,
+    mudaPrice: 0n,
+    mudaStakes: [],
     youngEarned: 0n,
     youngRawSold: 0n,
     voyagesDone: 0,
@@ -343,43 +349,61 @@ function strengthOf(w: World, h: House): number {
   return Math.floor((h.galleys * w.m.galleyStrength * (10_000 + bonus)) / 10_000);
 }
 
-function planVoyages(w: World, h: House, rng: Rng) {
+interface Route {
+  from: string;
+  to: string;
+  good: string;
+  hours: number;
+  unit: Deniers;
+  gain: number;
+  qty: number;
+  /** What the cargo should fetch over its cost, in deniers. */
+  margin: number;
+}
+
+/**
+ * A vehicle's best route by gain an hour. A port takes a share of its day's depth, selling more
+ * would only sink its price; a Muda convoy sells at the port's fair, a full hold.
+ */
+function bestRoute(w: World, h: House, type: string): Route | null {
+  const spec = vehicleSpec(w, type);
   const intel = effectOf(h.modules, "intel", w.s);
   const hold = effectOf(h.modules, "capacity", w.s);
   const speed = effectOf(h.modules, "speed", w.s);
+  const cap = Math.floor((spec.capacity * (10_000 + hold)) / 10_000);
+  const fair = w.s.muda.vehicles.includes(type);
+  let best: Route | null = null;
+  for (const from of spec.regions) {
+    if (!h.counters.has(from)) continue;
+    for (const to of spec.regions) {
+      if (to === from) continue;
+      const hours = routeHours(from, to, spec.speedBps + speed, w.s);
+      const delay = Math.round(newsDelayMs(to, h.counters.has(to), intel, w.s) / DAY_MS);
+      const risk = corsairRiskBps(to, strengthOf(w, h), w.s) * w.s.corsairs.lossShareBps;
+      const depth = depthOf(w, to) + (fair ? cap : 0);
+      const qtyMax = fair ? cap : Math.min(cap, Math.floor(depth * w.m.voyageDepthShare));
+      const impact = (w.s.prices.impactBps * qtyMax) / (2 * depth) / 10_000;
+      for (const good of Object.keys(w.s.regions.find((r) => r.code === to)?.demands ?? {})) {
+        const buy = priceOf(w, market(w, from, good));
+        const sell = Number(knownPrice(w, h, to, good, delay)) * (1 - impact);
+        const expected = sell * (1 - risk / 1e8) - Number(buy) * 1.03;
+        const gain = (expected * qtyMax) / (2 * hours);
+        if (expected > Number(buy) * 0.1 && (!best || gain > best.gain))
+          best = { from, to, good, hours, unit: buy, gain, qty: qtyMax, margin: expected * qtyMax };
+      }
+    }
+  }
+  return best;
+}
+
+function planVoyages(w: World, h: House, rng: Rng) {
   h.vehicles.forEach((v, index) => {
     const spec = vehicleSpec(w, v.type);
     if (spec.regions.length < 2 || v.busyUntil > w.now) return;
-    const cap = Math.floor((spec.capacity * (10_000 + hold)) / 10_000);
-    let best: {
-      from: string;
-      to: string;
-      good: string;
-      hours: number;
-      unit: Deniers;
-      gain: number;
-      qty: number;
-    } | null = null;
-    for (const from of spec.regions) {
-      if (!h.counters.has(from)) continue;
-      for (const to of spec.regions) {
-        if (to === from) continue;
-        const hours = routeHours(from, to, spec.speedBps + speed, w.s);
-        const delay = Math.round(newsDelayMs(to, h.counters.has(to), intel, w.s) / DAY_MS);
-        const risk = corsairRiskBps(to, strengthOf(w, h), w.s) * w.s.corsairs.lossShareBps;
-        // The port takes a share of its day's depth; selling more would only sink its price.
-        const qtyMax = Math.min(cap, Math.floor(depthOf(w, to) * w.m.voyageDepthShare));
-        const impact = (w.s.prices.impactBps * qtyMax) / (2 * depthOf(w, to)) / 10_000;
-        for (const good of Object.keys(w.s.regions.find((r) => r.code === to)?.demands ?? {})) {
-          const buy = priceOf(w, market(w, from, good));
-          const sell = Number(knownPrice(w, h, to, good, delay)) * (1 - impact);
-          const expected = sell * (1 - risk / 1e8) - Number(buy) * 1.03;
-          const gain = (expected * qtyMax) / (2 * hours);
-          if (expected > Number(buy) * 0.1 && (!best || gain > best.gain))
-            best = { from, to, good, hours, unit: buy, gain, qty: qtyMax };
-        }
-      }
-    }
+    // A Muda galley sails only with a place won at the incanto.
+    const muda = w.s.muda.vehicles.includes(v.type);
+    if (muda && h.mudaPasses <= 0) return;
+    const best = bestRoute(w, h, v.type);
     if (!best) return;
     const unit = (best.unit * 103n) / 100n;
     // Its own goods first: the négociant sells its surplus where it fetches most.
@@ -388,36 +412,39 @@ function planVoyages(w: World, h: House, rng: Rng) {
     // It pays from what it may spend: its reserve for the Casa stays, the colleganza fills in.
     const free = minBig(h.cash, maxBig(0n, spendable(w, h)));
     let qty = Math.min(wanted, unit > 0n ? Number(free / unit) : 0);
-    const stakes: Voyage["stakes"] = [];
-    // A long voyage short of capital opens a colleganza (Casa 11).
-    if (best.hours >= 48 && h.casa >= 11 && qty < wanted) {
-      const missing = unit * BigInt(wanted - qty);
-      let raised = 0n;
-      const investors = w.houses
-        .filter((x) => x !== h && x.awayUntil <= w.now && investable(w, x) > 0n)
-        .sort(() => rng.next() - 0.5)
-        .slice(0, 3);
-      for (const inv of investors) {
-        if (raised >= missing) break;
-        const stake = minBig(missing - raised, investable(w, inv));
-        if (stake <= 0n) continue;
-        transfer(inv, h, stake);
-        stakes.push({ house: w.houses.indexOf(inv), amount: stake });
-        raised += stake;
-      }
+    // A convoy carries the stakes that paid its place.
+    const stakes: Voyage["stakes"] = muda ? h.mudaStakes : [];
+    const place = muda ? h.mudaPrice : 0n;
+    if (muda) {
+      h.mudaStakes = [];
+      h.mudaPrice = 0n;
+    }
+    // A long voyage or a convoy short of capital opens a colleganza (Casa 11).
+    if ((muda || best.hours >= 48) && h.casa >= 11 && qty < wanted) {
+      const raised = raise(w, h, unit * BigInt(wanted - qty), stakes, rng);
       qty = Math.min(wanted, Number((free + raised) / unit));
     }
     const bought = qty > 0 ? buyFromMarket(w, h, best.from, best.good, qty) : 0;
     if (bought + own <= 0) {
-      // Nothing to carry: the investors have their stakes back.
+      // Nothing to carry: the investors have their stakes back, as far as the house can.
+      if (muda) h.mudaPasses--;
       for (const st of stakes) {
         const inv = w.houses[st.house];
-        if (inv) transfer(h, inv, st.amount);
+        if (inv) transfer(h, inv, minBig(st.amount, h.cash));
       }
       return;
     }
     takeStock(h, best.good, bought + own);
     v.busyUntil = w.now + 2 * best.hours;
+    if (muda) {
+      h.mudaPasses--;
+      w.muda.voyages++;
+      if (stakes.length > 0) w.muda.withColleganza++;
+      for (const st of stakes) {
+        w.muda.stakes += st.amount;
+        if ((w.houses[st.house]?.casa ?? 0) > h.casa) w.muda.fromLarger += st.amount;
+      }
+    }
     w.voyages.push({
       house: w.houses.indexOf(h),
       vehicle: index,
@@ -426,10 +453,89 @@ function planVoyages(w: World, h: House, rng: Rng) {
       to: best.to,
       arrivesAt: w.now + best.hours,
       // Its own goods count at what they would have fetched at home.
-      cost: unit * BigInt(bought) + best.unit * BigInt(own),
+      // A convoy's place is part of its cost.
+      cost: unit * BigInt(bought) + best.unit * BigInt(own) + place,
       stakes,
       escort: strengthOf(w, h),
+      muda,
     });
+  });
+}
+
+/**
+ * Raises up to `missing` from up to three houses with money to spare, as stakes in a colleganza.
+ * Returns what was raised.
+ */
+function raise(w: World, h: House, missing: Deniers, stakes: Voyage["stakes"], rng: Rng): Deniers {
+  let raised = 0n;
+  const investors = w.houses
+    .filter((x) => x !== h && x.awayUntil <= w.now && investable(w, x) > 0n)
+    .sort(() => rng.next() - 0.5)
+    .slice(0, 3);
+  for (const inv of investors) {
+    if (raised >= missing) break;
+    const stake = minBig(missing - raised, investable(w, inv));
+    if (stake <= 0n) continue;
+    transfer(inv, h, stake);
+    stakes.push({ house: w.houses.indexOf(inv), amount: stake });
+    raised += stake;
+  }
+  return raised;
+}
+
+/**
+ * The incanto (CADRAGE-v3 § 12 bis), before each Muda departure. A place not sailed is lost, and
+ * its investors have back what the house can give. Each owner of an idle Muda galley bids a share
+ * of what its best convoy should make; a winner short of free cash raises the rest in colleganza
+ * on that convoy, or gives the place up. The price is destroyed.
+ */
+export function mudaIncanto(w: World, rng: Rng) {
+  for (const h of w.houses) {
+    for (const st of h.mudaStakes) {
+      const inv = w.houses[st.house];
+      if (inv) transfer(h, inv, minBig(st.amount, h.cash));
+    }
+    h.mudaPasses = 0;
+    h.mudaPrice = 0n;
+    h.mudaStakes = [];
+  }
+  const types = w.s.muda.vehicles;
+  const owners = w.houses.filter((h) => h.vehicles.some((v) => types.includes(v.type)));
+  const places = mudaPlaces(owners.length, w.s);
+  if (places === 0) return;
+  const incomes = owners.map(incomePerDay).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const reserve = mudaReserve(incomes[Math.floor(incomes.length / 2)] ?? 0n, w.s);
+  const bidders: House[] = [];
+  const bids: Deniers[] = [];
+  for (const h of owners) {
+    if (h.awayUntil > w.now) continue;
+    const idle = h.vehicles.find((v) => types.includes(v.type) && v.busyUntil <= w.now);
+    const route = idle ? bestRoute(w, h, idle.type) : null;
+    if (!route) continue;
+    const bid = BigInt(Math.floor((route.margin * w.m.mudaBidBps) / 10_000));
+    if (bid <= 0n) continue;
+    bidders.push(h);
+    bids.push(bid);
+  }
+  mudaAuction(bids, places, reserve).forEach((price, i) => {
+    const h = bidders[i];
+    if (!h || price === null) return;
+    const free = minBig(h.cash, maxBig(0n, spendable(w, h)));
+    const stakes: Voyage["stakes"] = [];
+    if (free < price) raise(w, h, price - free, stakes, rng);
+    if (h.cash < price) {
+      for (const st of stakes) {
+        const inv = w.houses[st.house];
+        if (inv) transfer(h, inv, st.amount);
+      }
+      return;
+    }
+    destroy(w, h, price, "muda");
+    h.mudaPasses = 1;
+    h.mudaPrice = price;
+    h.mudaStakes = stakes;
+    w.muda.places++;
+    w.muda.paid += price;
   });
 }
 
@@ -453,7 +559,8 @@ export function arrive(w: World, v: Voyage, rng: Rng) {
   // The port's orders first, then its market; what it cannot take comes home in stock.
   addStock(h, v.good, qty);
   const delivered = fillOrders(w, h, v.to, v.good, qty, "voyages");
-  const sold = sellToMarket(w, h, v.to, v.good, qty - delivered, "voyages") + delivered;
+  const fair = v.muda ? qty : 0;
+  const sold = sellToMarket(w, h, v.to, v.good, qty - delivered, "voyages", fair) + delivered;
   takeStock(h, v.good, sold - delivered);
   const net = h.cash - before;
   const kept = priceOf(w, market(w, v.to, v.good)) * BigInt(qty - sold);

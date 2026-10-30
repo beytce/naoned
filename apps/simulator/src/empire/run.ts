@@ -4,7 +4,7 @@ import {
   parseEmpireSettings,
   venice1450Empire,
 } from "@comptoirs/engine";
-import { arrive, finishBuild, newHouse, playsNow, session } from "./bots.js";
+import { arrive, finishBuild, mudaIncanto, newHouse, playsNow, session } from "./bots.js";
 import { DEFAULT_MODEL } from "./defaults.js";
 import { type DailyRow, type MonthRow, monthSample, snapshot } from "./metrics.js";
 import { type Activity, type Bent, DAY, MONTH, type SimModel, type World } from "./model.js";
@@ -80,6 +80,11 @@ export function runEmpire(options: EmpireOptions): EmpireResult {
       daily.push(snapshot(w));
       if (w.now > 0 && w.now % MONTH === 0) monthly.push(monthSample(w));
     }
+    if (
+      s.muda.vehicles.length > 0 &&
+      w.now % Math.round((7 * DAY) / s.muda.departuresPerWeek) === 0
+    )
+      mudaIncanto(w, rng);
     relaxMarkets(w);
     for (const h of w.houses) {
       if (h.builds.length > 0) {

@@ -54,7 +54,7 @@ export function daysToCasa(r: EmpireResult, cohort: number, level: number): numb
 const pct = (bps: number) => `${(bps / 100).toFixed(1)} %`;
 const fmt = (x: number | null) => (x === null ? "—" : x.toFixed(1));
 
-/** The ten targets of CADRAGE-v3 § 13, each with its value and verdict. */
+/** The targets of CADRAGE-v3 § 13 and § 12 bis, each with its value and verdict. */
 export function evaluate(r: EmpireResult): Check[] {
   const w = r.world;
   const hs = w.houses;
@@ -233,6 +233,20 @@ export function evaluate(r: EmpireResult): Check[] {
     value: shares.map((x) => `${x.bent} ${pct(x.bps)}`).join(", "),
     pass: shares.every((x) => x.bps >= 2_500),
   });
+
+  // 11. The Muda's places are dear, and the colleganza lives from them (§ 12 bis).
+  const muda = w.muda;
+  const withBps = muda.voyages > 0 ? Math.round((muda.withColleganza * 10_000) / muda.voyages) : 0;
+  const placePrice = muda.places > 0 ? Number(muda.paid / BigInt(muda.places) / 100n) : 0;
+  const largerBps = muda.stakes > 0n ? Number((muda.fromLarger * 10_000n) / muda.stakes) : 0;
+  checks.push({
+    code: "colleganza",
+    label:
+      "Convois de la Muda financés en colleganza ; prix moyen d'une place, part des mises venue de plus grandes Maisons",
+    target: "≥ 20 % des convois",
+    value: `${pct(withBps)} de ${muda.voyages} ; place ${placePrice} d, plus grandes ${pct(largerBps)}`,
+    pass: withBps >= 2_000,
+  });
   return checks;
 }
 
@@ -309,6 +323,8 @@ export function reportMarkdown(results: EmpireResult[]): string {
   lines.push(
     "",
     `Colleganza : ${Number(w.colleganza.total / 100n).toLocaleString("fr-FR")} d engagés, dont ${Number(w.colleganza.toYoung / 100n).toLocaleString("fr-FR")} d d'une grande Maison dans le voyage d'une plus jeune.`,
+    "",
+    `Muda : ${w.muda.places} places vendues pour ${Number(w.muda.paid / 100n).toLocaleString("fr-FR")} d ; ${w.muda.voyages} convois, dont ${w.muda.withColleganza} en colleganza (${Number(w.muda.stakes / 100n).toLocaleString("fr-FR")} d de mises).`,
     "",
     `Violations de la comptabilité : ${results.reduce((n, x) => n + x.violations.length, 0)}. Durée : ${results.map((x) => `${(x.durationMs / 1000).toFixed(0)} s`).join(", ")}.`,
   );

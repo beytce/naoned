@@ -10,3 +10,4 @@ export * from "./colleganza.js";
 export * from "./expedition.js";
 export * from "./corsairs.js";
 export * from "./recipes.js";
+export * from "./muda.js";
