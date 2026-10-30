@@ -42,6 +42,7 @@ import {
   startUpgrade,
   startWorkshop,
 } from "./empire/house.js";
+import { relaunchAll, relaunchWorkshop } from "./empire/workshops.js";
 import { joinFamily, leaveFamily } from "./families.js";
 import { buildFondaco } from "./fondaci.js";
 import {
@@ -257,7 +258,9 @@ export type EmpireCommand =
   | { type: "empireJoin"; playerId: PlayerId }
   | { type: "empireBuildCasa"; playerId: PlayerId }
   | { type: "empireBuildWorkshop"; playerId: PlayerId; workshopType: string; recipe: string }
-  | { type: "empireUpgrade"; playerId: PlayerId; workshopId: string };
+  | { type: "empireUpgrade"; playerId: PlayerId; workshopId: string }
+  | { type: "empireRelaunch"; playerId: PlayerId; workshopId: string; recipe?: string }
+  | { type: "empireRelaunchAll"; playerId: PlayerId };
 
 export type DecideResult =
   | { ok: true; state: WorldState; effects: Effects }
@@ -378,6 +381,12 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireUpgrade":
       startUpgrade(tx, cmd.playerId, cmd.workshopId);
+      break;
+    case "empireRelaunch":
+      relaunchWorkshop(tx, cmd.playerId, cmd.workshopId, cmd.recipe);
+      break;
+    case "empireRelaunchAll":
+      relaunchAll(tx, cmd.playerId);
       break;
   }
 }

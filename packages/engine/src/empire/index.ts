@@ -12,3 +12,4 @@ export * from "./corsairs.js";
 export * from "./recipes.js";
 export * from "./muda.js";
 export * from "./house.js";
+export * from "./workshops.js";
