@@ -4,10 +4,12 @@ import {
   type EmpireSettings,
   Rng,
   applyBpsFloor,
+  localBookOf,
   powerOf,
   pressureAfterHours,
   pressureAfterTrade,
   priceAt,
+  rawBonusBps,
   refPriceOf,
   wagesOn,
 } from "@comptoirs/engine";
@@ -68,6 +70,7 @@ export function createWorld(s: EmpireSettings, m: SimModel): World {
     nextId: 1,
     depth: new Map(),
     casaShare: [],
+    workshopShare: [],
     colleganza: { total: 0n, toYoung: 0n },
   };
 }
@@ -148,7 +151,9 @@ export function sellToMarket(
   const n = Math.min(qty, depthOf(w, region) - mk.soldToday);
   if (n <= 0) return 0;
   mk.soldToday += n;
-  const gross = priceOf(w, mk) * BigInt(n);
+  // The young houses' raw goods sell dearer (CADRAGE-v3 § 6).
+  const bonus = w.m.recipes[good] ? 0 : rawBonusBps(h.casa, w.s);
+  const gross = applyBpsFloor(priceOf(w, mk) * BigInt(n), 10_000 + bonus);
   receive(w, h, gross, "market", trade);
   destroy(w, h, applyBpsFloor(gross, w.m.marketTaxBps), "tax");
   mk.lots.push({ qty: n, young: h.casa <= w.m.youngCasa });
@@ -222,7 +227,10 @@ export function newDay(w: World) {
   for (const r of w.s.regions)
     w.depth.set(
       r.code,
-      w.m.depthBase + w.m.depthPerActive * actives.filter((h) => h.counters.has(r.code)).length,
+      w.m.depthBase +
+        w.m.depthPerActive * actives.filter((h) => h.counters.has(r.code)).length +
+        // The great foreign markets (Bruges, Alexandria…) take goods whoever comes.
+        (r.hoursFromVenice > 0 ? w.m.foreignDepth : 0),
     );
   for (const [key, mk] of w.markets) {
     mk.soldToday = 0;
@@ -232,11 +240,9 @@ export function newDay(w: World) {
   }
   for (const h of w.houses) {
     h.recent.push(0n);
-    if (h.recent.length > 7) h.recent.shift();
-    for (const [region, level] of h.counters) {
-      const r = w.s.regions.find((x) => x.code === region);
-      h.bookLeft.set(region, (r?.localOrdersPerCounter ?? 0) * level);
-    }
+    if (h.recent.length > w.m.incomeDays + 1) h.recent.shift();
+    for (const [region, level] of h.counters)
+      h.bookLeft.set(region, localBookOf(region, level, w.s));
   }
 }
 

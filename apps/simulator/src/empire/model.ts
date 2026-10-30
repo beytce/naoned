@@ -93,7 +93,7 @@ export interface House {
   earned: Deniers;
   /** Its earned and spent at the last monthly sample. */
   sampled: { earned: Deniers; spent: Deniers };
-  /** Net receipts per day of the last week, for the « days of income » of a step. */
+  /** Receipts per day over the last `incomeDays`, for the « days of income » of a step. */
   recent: Deniers[];
   /** Sessions where something finishes within 24 h (an objective in sight). */
   sessions: number;
@@ -102,6 +102,8 @@ export interface House {
   rawBought: number;
   rawBoughtFromYoung: number;
   voyagesDone: number;
+  /** What the cities paid it for orders, by mules or by voyages. */
+  ordersValue: Deniers;
   voyageMargin: Deniers;
   expeditionsWon: number;
   expeditionsTried: number;
@@ -152,6 +154,8 @@ export interface World {
   depth: Map<string, number>;
   /** For each Casa level, the share of active houses that reached it (bps): « le savoir circule ». */
   casaShare: number[];
+  /** For each workshop level, the share of active houses with a workshop at it or above (bps). */
+  workshopShare: number[];
   /** Colleganza stakes: all of them, and those of a large house in a young one's voyage. */
   colleganza: { total: Deniers; toYoung: Deniers };
 }
@@ -180,6 +184,12 @@ export interface SimModel {
   /** A market's depth a day: base, plus per active house with a counter in its region. */
   depthBase: number;
   depthPerActive: number;
+  /** Units a day a foreign region's market takes of each good, whoever comes. */
+  foreignDepth: number;
+  /** Booty of a won expedition: this many ducats × its tier². */
+  bootyPerTierDucats: number;
+  /** A miner's teams, against another house's. */
+  minerTeams: number;
   /** Rialto's tax on market sales and purchases. */
   marketTaxBps: number;
   vehicles: Record<
@@ -188,7 +198,8 @@ export interface SimModel {
   >;
   /** Trips a day a land vehicle makes for the local books. */
   localTripsPerDay: number;
-  counterCostDucats: number;
+  /** A counter (new, or a level more) costs this many times a workshop's level. */
+  counterCostTimes: number;
   galleyCostDucats: number;
   galleyStrength: number;
   /** A house's raw goods count as young while its Casa is at most this. */
@@ -212,6 +223,16 @@ export interface SimModel {
   leaveBpsPerWeek: number;
   /** Research order by bent. */
   researchOrder: Record<Bent, string[]>;
-  /** Keep this many days of the next Casa's cost before spending elsewhere. */
+  /** Save for the next Casa first. */
   casaFirst: boolean;
+  /** It saves the whole next Casa once it costs no more than this many days of income. */
+  saveDays: number;
+  /** Past this many days of income in its treasury, it gives to the Grandes Œuvres. */
+  worksDays: number;
+  /** Days over which a house reads its income (voyages pay in lumps: a month smooths them). */
+  incomeDays: number;
+  /** An investment that pays back within this many days comes before saving for the Casa. */
+  paybackDays: number;
+  /** A voyage carries at most this share of the port's depth a day. */
+  voyageDepthShare: number;
 }

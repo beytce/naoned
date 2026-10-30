@@ -70,3 +70,15 @@ export function newsDelayMs(
   if (hours === 0) return 0;
   return Math.round((hours * HOUR_MS * 10_000) / (10_000 + Math.max(0, intelBps)));
 }
+
+/** The units a day a counter's private book asks in its region, growing with its level. */
+export function localBookOf(region: string, level: number, s: EmpireSettings): number {
+  if (level <= 0) return 0;
+  const base = regionOf(region, s).localOrdersPerCounter;
+  return Math.floor((base * (10_000 + s.counters.bookStepBps * (level - 1))) / 10_000);
+}
+
+/** The young houses' bonus on their raw goods (bps), none past the Casa it stops at. */
+export function rawBonusBps(casa: number, s: EmpireSettings): number {
+  return casa <= s.newcomers.untilCasa ? s.newcomers.rawBonusBps : 0;
+}

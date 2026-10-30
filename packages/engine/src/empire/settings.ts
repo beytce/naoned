@@ -28,6 +28,11 @@ const casaLevel = z.object({
   researchSlots: qty,
   /** What the level opens, by code (regions, systems, vehicles). */
   opens: z.array(z.string()).prefault([]),
+  /**
+   * What the empire must have built to start this level: so many workshops at a level (the master
+   * level asks the rest to follow, as Hades' Star's). None by default.
+   */
+  requires: z.object({ workshops: qty, level: qty }).prefault({ workshops: 0, level: 0 }),
 });
 
 const region = z.object({
@@ -73,6 +78,17 @@ export const empireSettingsSchema = z.object({
     /** A workshop's level never passes the Casa's, nor this. */
     maxLevel: positive,
   }),
+  counters: z
+    .object({
+      maxLevel: positive,
+      /** Each level past the first adds this share of the region's private book. */
+      bookStepBps: bps,
+    })
+    .prefault({ maxLevel: 10, bookStepBps: 10_000 }),
+  /** The young houses' raw goods sell this much dearer, up to a Casa (CADRAGE-v3 § 6). */
+  newcomers: z
+    .object({ rawBonusBps: bps, untilCasa: qty })
+    .prefault({ rawBonusBps: 0, untilCasa: 0 }),
   salaries: z.object({
     /** The share of receipts paid in wages by the smallest house, then the largest. */
     minBps: bps.max(10_000),

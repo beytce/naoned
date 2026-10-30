@@ -10,25 +10,25 @@ const D = 100; // deniers a ducat
 /** The Casa 1 to 20 (CADRAGE-v3 § 3.1 and § 3 septies). */
 const CASA: [number, Record<string, number>, number, string[]][] = [
   [0, {}, 0, []],
-  [100, { bricks: 10, planks: 10 }, 2, []],
-  [200, { bricks: 20, planks: 20 }, 10, ["cart", "limitOrders"]],
-  [350, { bricks: 30, planks: 30 }, 30, ["scuola", "tradeModules"]],
-  [600, { bricks: 40, planks: 40 }, 60, ["burchio", "extraction"]],
+  [50, { bricks: 5, planks: 5 }, 2, []],
+  [100, { bricks: 10, planks: 10 }, 10, ["cart", "limitOrders"]],
+  [150, { bricks: 15, planks: 15 }, 30, ["scuola", "tradeModules"]],
+  [400, { bricks: 30, planks: 30 }, 60, ["burchio", "extraction"]],
   [1_000, { bricks: 60, planks: 60 }, 120, ["lombardia", "datedNews"]],
   [1_600, { bricks: 80, planks: 80 }, 240, ["arte", "workshopModules", "qualities"]],
   [2_500, { bricks: 100, planks: 100, glass: 20 }, 480, ["stato", "friuli", "forwards"]],
   [3_800, { bricks: 120, planks: 120, iron: 30 }, 720, ["arms", "marciliana", "romagna"]],
   [5_500, { planks: 150, oak: 40 }, 1_080, ["expeditions", "dalmazia"]],
-  [7_500, { planks: 180, oak: 60 }, 1_440, ["colleganza", "cocca", "ambassadors"]],
-  [10_000, { bricks: 200, marble: 40 }, 2_160, ["germania", "grecia", "fog"]],
-  [14_000, { marble: 60, glass: 60 }, 2_880, ["minorArte"]],
-  [20_000, { marble: 80, silk: 30 }, 3_600, ["levante", "galeaGrossa", "freePorts"]],
-  [27_000, { oak: 150, silk: 40 }, 4_320, []],
-  [36_000, { marble: 120, alum: 40 }, 5_040, ["costantinopoli"]],
-  [50_000, { marble: 150, alum: 60 }, 5_760, ["procuratia"]],
-  [70_000, { marble: 180, cloth: 80 }, 7_200, ["fiandra", "flandersGalley"]],
-  [95_000, { marble: 220, cloth: 100 }, 8_640, []],
-  [130_000, { marble: 300, silk: 100, alum: 100, cloth: 100 }, 10_080, ["maestria"]],
+  [9_000, { planks: 180, oak: 60 }, 2_160, ["colleganza", "cocca", "ambassadors"]],
+  [12_000, { bricks: 200, marble: 40 }, 3_240, ["germania", "grecia", "fog"]],
+  [16_000, { marble: 60, glass: 60 }, 4_320, ["minorArte"]],
+  [20_000, { marble: 80, silk: 30 }, 5_400, ["levante", "galeaGrossa", "freePorts"]],
+  [26_000, { oak: 150, silk: 40 }, 6_480, []],
+  [32_000, { marble: 120, alum: 40 }, 7_560, ["costantinopoli"]],
+  [40_000, { marble: 150, alum: 60 }, 8_640, ["procuratia"]],
+  [48_000, { marble: 180, cloth: 80 }, 10_800, ["fiandra", "flandersGalley"]],
+  [58_000, { marble: 220, cloth: 100 }, 12_960, []],
+  [75_000, { marble: 300, silk: 100, alum: 100, cloth: 100 }, 15_120, ["maestria"]],
 ];
 
 const slots = (level: number, at: number[]) => at.filter((l) => level >= l).length;
@@ -43,7 +43,7 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     workshopSlots: 0,
     produces: { wheat: 4 * D, clay: 3 * D, wood: 3 * D, salt: 5 * D },
     demands: { bread: 12 * D, bricks: 10 * D, planks: 10 * D, spices: 70 * D, cloth: 45 * D },
-    localOrdersPerCounter: 60,
+    localOrdersPerCounter: 20,
     corsairRiskBps: 0,
   },
   {
@@ -54,7 +54,7 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     workshopSlots: 3,
     produces: { iron: 9 * D, wool: 8 * D, wheat: 4 * D },
     demands: { salt: 9 * D, glass: 30 * D, cloth: 40 * D },
-    localOrdersPerCounter: 50,
+    localOrdersPerCounter: 20,
     corsairRiskBps: 0,
   },
   {
@@ -65,7 +65,7 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     workshopSlots: 3,
     produces: { wood: 2 * D, marble: 15 * D, wine: 6 * D },
     demands: { bread: 13 * D, iron: 14 * D, cloth: 42 * D },
-    localOrdersPerCounter: 40,
+    localOrdersPerCounter: 16,
     corsairRiskBps: 0,
   },
   {
@@ -76,7 +76,7 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     workshopSlots: 3,
     produces: { salt: 3 * D, wheat: 3 * D },
     demands: { planks: 13 * D, glass: 32 * D },
-    localOrdersPerCounter: 40,
+    localOrdersPerCounter: 16,
     corsairRiskBps: 100,
   },
   {
@@ -87,7 +87,7 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     workshopSlots: 4,
     produces: { oak: 12 * D, salt: 3 * D, wine: 5 * D },
     demands: { bread: 14 * D, cloth: 46 * D, iron: 15 * D },
-    localOrdersPerCounter: 40,
+    localOrdersPerCounter: 16,
     corsairRiskBps: 400,
   },
   {
@@ -98,7 +98,7 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     workshopSlots: 4,
     produces: { silver: 60 * D, copper: 20 * D, iron: 7 * D },
     demands: { spices: 110 * D, glass: 45 * D, silk: 160 * D },
-    localOrdersPerCounter: 30,
+    localOrdersPerCounter: 6,
     corsairRiskBps: 200,
   },
   {
@@ -109,7 +109,7 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     workshopSlots: 4,
     produces: { sugar: 25 * D, wine: 4 * D, cotton: 18 * D },
     demands: { cloth: 50 * D, glass: 40 * D, iron: 16 * D },
-    localOrdersPerCounter: 30,
+    localOrdersPerCounter: 6,
     corsairRiskBps: 800,
   },
   {
@@ -120,7 +120,7 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     workshopSlots: 4,
     produces: { spices: 35 * D, silk: 80 * D, cotton: 12 * D },
     demands: { cloth: 60 * D, silver: 85 * D, copper: 32 * D, glass: 50 * D },
-    localOrdersPerCounter: 25,
+    localOrdersPerCounter: 5,
     corsairRiskBps: 1_200,
   },
   {
@@ -131,7 +131,7 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     workshopSlots: 4,
     produces: { alum: 20 * D, furs: 40 * D, wheat: 3 * D },
     demands: { cloth: 58 * D, glass: 48 * D, spices: 90 * D },
-    localOrdersPerCounter: 25,
+    localOrdersPerCounter: 5,
     corsairRiskBps: 1_500,
   },
   {
@@ -142,7 +142,7 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     workshopSlots: 4,
     produces: { cloth: 30 * D, wool: 6 * D },
     demands: { spices: 140 * D, silk: 200 * D, alum: 45 * D, sugar: 55 * D, wine: 14 * D },
-    localOrdersPerCounter: 25,
+    localOrdersPerCounter: 5,
     corsairRiskBps: 1_000,
   },
 ];
@@ -202,18 +202,25 @@ export const venice1450Empire: EmpireSettingsInput = {
       buildSlots: 1 + slots(level, [5, 15, 19]),
       researchSlots: slots(level, [4, 12, 18]),
       opens,
+      // From the Casa 9: so many workshops at the level just below (the empire follows).
+      requires:
+        level >= 9
+          ? { workshops: Math.min(level - 3, 12), level: level - 1 }
+          : { workshops: 0, level: 0 },
     };
   }),
   workshops: {
     yieldStepBps: 1_500,
     costGrowthBps: 13_000,
-    baseCostDucats: 60,
+    baseCostDucats: 120,
     buildMinutes: [
-      1, 5, 15, 30, 60, 120, 240, 480, 720, 720, 1_080, 1_440, 1_440, 2_160, 2_880, 3_600, 4_320,
-      5_040, 5_760, 7_200, 8_640, 8_640, 10_080, 10_080, 10_080,
+      1, 5, 15, 30, 60, 120, 240, 480, 720, 720, 1_080, 1_440, 1_440, 2_160, 4_320, 7_200, 9_000,
+      10_800, 12_600, 14_400, 18_000, 18_000, 20_160, 20_160, 20_160,
     ],
     maxLevel: 25,
   },
+  counters: { maxLevel: 10, bookStepBps: 4_000 },
+  newcomers: { rawBonusBps: 2_000, untilCasa: 8 },
   salaries: { minBps: 300, maxBps: 2_500, halfPower: 4_000 },
   power: {
     casa: 100,
@@ -224,7 +231,7 @@ export const venice1450Empire: EmpireSettingsInput = {
     vehicle: 20,
     bands: [0, 600, 1_500, 3_500, 7_000, 14_000],
   },
-  catchup: { fromShareBps: 5_000, maxCostCutBps: 5_000, maxTimeCutBps: 6_000 },
+  catchup: { fromShareBps: 4_000, maxCostCutBps: 6_000, maxTimeCutBps: 7_000 },
   prices: { floorBps: 6_000, ceilBps: 15_000, impactBps: 1_500, halfLifeHours: 36 },
   regions: REGIONS,
   modules: MODULES,
@@ -235,7 +242,7 @@ export const venice1450Empire: EmpireSettingsInput = {
     plansFromLevel: 4,
     plansPerLevel: 2,
   },
-  deposits: { spawnBpsPerRegionDay: 4_000, minStock: 300, maxStock: 2_000, teamPerHour: 12 },
+  deposits: { spawnBpsPerRegionDay: 15_000, minStock: 1_000, maxStock: 5_000, teamPerHour: 30 },
   expeditions: {
     tiers: Array.from({ length: 12 }, (_, i) => ({
       strength: Math.round(10 * 1.6 ** i),

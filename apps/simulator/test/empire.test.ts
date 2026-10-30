@@ -23,11 +23,12 @@ describe("the 24-month model simulator (CADRAGE-v3 § 13)", () => {
     expect(small(2).violations).toEqual([]);
   });
 
-  it("lets the houses grow and sail", () => {
+  it("lets the houses grow, sail and win expeditions", () => {
     const r = small(3);
     const hs = r.world.houses;
-    expect(Math.max(...hs.map((h) => h.casa))).toBeGreaterThan(5);
+    expect(Math.max(...hs.map((h) => h.casa))).toBeGreaterThan(9);
     expect(hs.reduce((n, h) => n + h.voyagesDone, 0)).toBeGreaterThan(0);
+    expect(hs.reduce((n, h) => n + h.expeditionsWon, 0)).toBeGreaterThan(0);
   });
 
   it("judges the ten targets", () => {

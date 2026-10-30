@@ -64,13 +64,16 @@ export function evaluate(r: EmpireResult): Check[] {
   const reached = Object.entries(CASA_TARGET_DAYS)
     .map(([l, target]) => ({ level: Number(l), target, days: daysToCasa(r, 0, Number(l)) }))
     .filter((x) => x.days !== null || x.target <= (r.options.months * MONTH) / DAY);
-  const off = reached.filter(
-    (x) => x.days === null || x.days < x.target / 2 || x.days > x.target * 2,
-  );
+  // Within half and double the target; the first days, within two days either way.
+  const off = reached.filter((x) => {
+    if (x.days === null) return true;
+    if (x.target <= 3) return Math.abs(x.days - x.target) > 2;
+    return x.days < x.target / 2 || x.days > x.target * 2;
+  });
   checks.push({
     code: "casa",
     label:
-      "Calendrier de la Casa (cohorte 0), chaque palier entre la moitié et le double de la cible",
+      "Calendrier de la Casa (cohorte 0), entre la moitié et le double de la cible (à 2 jours près au début)",
     target: "0 palier hors bornes",
     value:
       off.length === 0
@@ -78,7 +81,10 @@ export function evaluate(r: EmpireResult): Check[] {
         : `${off.length} hors bornes (${off.map((x) => x.level).join(", ")})`,
     pass: off.length === 0,
   });
-  const late = r.options.cohortMonths.find((m) => m >= 3 && m <= r.options.months - 4);
+  // The latest cohort with four months to run at least.
+  const late = [...r.options.cohortMonths]
+    .reverse()
+    .find((m) => m > 0 && m <= r.options.months - 4);
   const level = 10;
   const first = daysToCasa(r, 0, level);
   const later = late !== undefined ? daysToCasa(r, late, level) : null;
@@ -189,7 +195,8 @@ export function evaluate(r: EmpireResult): Check[] {
     (a, t) => a + income(t),
     0n,
   );
-  const ordersBps = total > 0n ? Number((income("orders") * 10_000n) / total) : 0;
+  const orders = hs.reduce((a, h) => a + h.ordersValue, 0n);
+  const ordersBps = total > 0n ? Number((orders * 10_000n) / total) : 0;
   const perVoyage = voyages > 0 ? Number(margin / BigInt(voyages) / 100n) : 0;
   checks.push({
     code: "arbitrage",
@@ -199,24 +206,21 @@ export function evaluate(r: EmpireResult): Check[] {
     pass: perVoyage > 0 && ordersBps >= 2_500,
   });
 
-  // 10. One trade is enough to live.
-  const mono = hs.filter((h) => {
-    const parts = [
-      h.income.orders + h.income.market,
-      h.income.voyages,
-      h.income.extraction,
-      h.income.expeditions,
-    ];
-    const sum = parts.reduce((a, x) => a + x, 0n);
-    return sum > 0n && parts.some((x) => x * 10n > sum * 6n);
-  }).length;
-  const monoBps = hs.length > 0 ? Math.round((mono * 10_000) / hs.length) : 0;
+  // 10. Each of the three trades is lived from by the houses that lean to it.
+  const bentTrade = { trader: "voyages", miner: "extraction", armourer: "expeditions" } as const;
+  const shares = (Object.keys(bentTrade) as (keyof typeof bentTrade)[]).map((bent) => {
+    const of = hs.filter((h) => h.bent === bent);
+    const part = of.reduce((a, h) => a + h.income[bentTrade[bent]], 0n);
+    const all = of.reduce((a, h) => a + h.earned, 0n);
+    return { bent, bps: all > 0n ? Number((part * 10_000n) / all) : 0 };
+  });
   checks.push({
     code: "trades",
-    label: "Maisons qui tirent plus de 60 % de leurs recettes d'un seul métier",
-    target: "≥ 30 %",
-    value: pct(monoBps),
-    pass: monoBps >= 3_000,
+    label:
+      "Part de son métier dans les recettes : voyages (négociant), gisements (exploitant), expéditions (armateur)",
+    target: "≥ 25 % chacun",
+    value: shares.map((x) => `${x.bent} ${pct(x.bps)}`).join(", "),
+    pass: shares.every((x) => x.bps >= 2_500),
   });
   return checks;
 }

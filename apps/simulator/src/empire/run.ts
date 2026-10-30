@@ -104,7 +104,10 @@ export function runEmpire(options: EmpireOptions): EmpireResult {
         for (const v of arrived) arrive(w, v, rng);
       }
     }
-    for (const h of w.houses) if (playsNow(w, h, rng)) session(w, h, rng);
+    // In a new order each hour: no house is always first at the cities' board.
+    const order = w.houses.map((h, i) => ({ h, k: rng.next() + i * 0 }));
+    order.sort((a, b) => a.k - b.k);
+    for (const { h } of order) if (playsNow(w, h, rng)) session(w, h, rng);
   }
   return { options, world: w, daily, monthly, violations, durationMs: Date.now() - started };
 }
@@ -116,6 +119,22 @@ function shareOfCasa(w: World) {
   w.casaShare = w.s.casa.map((_, i) =>
     Math.floor((active.filter((h) => h.casa >= i + 1).length * 10_000) / n),
   );
+  const best = active.map((h) => Math.max(0, ...h.workshops.map((x) => x.level)));
+  w.workshopShare = Array.from({ length: w.s.workshops.maxLevel }, (_, i) =>
+    Math.floor((best.filter((l) => l >= i + 1).length * 10_000) / n),
+  );
+}
+
+/** A deposit's good, the dearer ones more often (a silver vein before a field of clay). */
+function valuable(rng: ReturnType<typeof newRng>, produces: Record<string, bigint>): string {
+  const goods = Object.entries(produces);
+  const total = goods.reduce((a, [, p]) => a + Number(p), 0);
+  let pick = rng.next() * total;
+  for (const [good, p] of goods) {
+    pick -= Number(p);
+    if (pick < 0) return good;
+  }
+  return goods[0]?.[0] ?? "salt";
 }
 
 /** New deposits, in the regions some house has a counter in (profondeur.md § A). */
@@ -126,12 +145,15 @@ function spawnDeposits(w: World, rng: ReturnType<typeof newRng>) {
     if (!open.has(r.code)) continue;
     const raws = Object.keys(r.produces);
     if (raws.length === 0) continue;
-    if (rng.next() * 10_000 >= w.s.deposits.spawnBpsPerRegionDay) continue;
-    w.deposits.push({
-      id: w.nextId++,
-      region: r.code,
-      good: rng.pick(raws),
-      stock: depositStock(rng, w.s),
-    });
+    // As many deposits a day as the rate says (1,5: one, and a second one day in two).
+    const rate = w.s.deposits.spawnBpsPerRegionDay;
+    const count = Math.floor(rate / 10_000) + (rng.next() * 10_000 < rate % 10_000 ? 1 : 0);
+    for (let i = 0; i < count; i++)
+      w.deposits.push({
+        id: w.nextId++,
+        region: r.code,
+        good: valuable(rng, r.produces),
+        stock: depositStock(rng, w.s),
+      });
   }
 }

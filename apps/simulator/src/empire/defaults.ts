@@ -9,7 +9,7 @@ const GALLEY = [...SEA, "levante", "costantinopoli"];
 
 /** The model's first guesses (CADRAGE-v3 § 3.3 for the vehicles), to calibrate. */
 export const DEFAULT_MODEL: SimModel = {
-  startCapitalDucats: 300,
+  startCapitalDucats: 500,
   startWorkshops: [
     { region: "veneto", good: "wheat" },
     { region: "veneto", good: "bread" },
@@ -25,13 +25,16 @@ export const DEFAULT_MODEL: SimModel = {
     cloth: { wool: 2 },
   },
   queueHours: 12,
-  boardPerActive: 30,
+  boardPerActive: 5,
   smallShareBps: 3_000,
   smallCasa: 10,
   orderPremiumBps: 1_000,
   favourPer100Ducats: 1,
-  depthBase: 400,
-  depthPerActive: 20,
+  depthBase: 20,
+  depthPerActive: 3,
+  foreignDepth: 400,
+  bootyPerTierDucats: 250,
+  minerTeams: 3,
   marketTaxBps: 300,
   vehicles: {
     mule: { casa: 1, capacity: 25, costDucats: 60, regions: VENETO, speedBps: 0 },
@@ -50,7 +53,7 @@ export const DEFAULT_MODEL: SimModel = {
     },
   },
   localTripsPerDay: 4,
-  counterCostDucats: 400,
+  counterCostTimes: 4,
   galleyCostDucats: 1_200,
   galleyStrength: 10,
   youngCasa: 8,
@@ -79,4 +82,9 @@ export const DEFAULT_MODEL: SimModel = {
     mixed: ["hold", "tools", "yield", "crossbow", "sails", "pavise"],
   },
   casaFirst: true,
+  saveDays: 10,
+  worksDays: 30,
+  voyageDepthShare: 0.5,
+  paybackDays: 5,
+  incomeDays: 30,
 };

@@ -39,3 +39,13 @@ export function casaLevelOf(level: number, s: EmpireSettings): EmpireSettings["c
     throw new RangeError(`no Casa level ${level}`);
   return line;
 }
+
+/** Whether the workshops (their levels) meet what the Casa's level asks before it is built. */
+export function casaRequirementMet(
+  level: number,
+  workshopLevels: readonly number[],
+  s: EmpireSettings,
+): boolean {
+  const { workshops, level: at } = casaLevelOf(level, s).requires;
+  return workshopLevels.filter((l) => l >= at).length >= workshops;
+}
