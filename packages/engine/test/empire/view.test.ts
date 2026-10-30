@@ -92,3 +92,18 @@ describe("a sleeping house", () => {
     expect(w.state.inventories.a?.bread?.available).toBe(50);
   });
 });
+
+describe("the merchant's return", () => {
+  it("tells what the queues made and the sites that ended while away", () => {
+    const w = world();
+    w.do({ type: "empireRelaunchAll", playerId: "a" });
+    w.do({ type: "empireBuildCasa", playerId: "a" });
+    expect(view(w).away).toBeNull();
+    w.advance(2 * DAY);
+    const away = view(w).away;
+    // A full queue of twelve lots of 20 wheat, and the Casa 2.
+    expect(away?.ready).toEqual({ wheat: 240 });
+    expect(away?.sitesDone).toBe(1);
+    expect(away?.since).toBe(w.now - 2 * DAY);
+  });
+});

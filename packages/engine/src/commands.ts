@@ -34,6 +34,7 @@ import {
 import { standForDoge, voteDoge } from "./doge.js";
 import { knownTrait } from "./dynasty.js";
 import { type Effects, emptyEffects } from "./effects.js";
+import { advanceCarnet, claimObjective, ensureCarnet, windOnReturn } from "./empire/carnet.js";
 import {
   empireJoin,
   ownHouse,
@@ -263,7 +264,8 @@ export type EmpireCommand =
   | { type: "empireRelaunch"; playerId: PlayerId; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll"; playerId: PlayerId }
   | { type: "empireSell"; playerId: PlayerId; good: string; qty: number }
-  | { type: "empireDeliver"; playerId: PlayerId; good: string; qty: number };
+  | { type: "empireDeliver"; playerId: PlayerId; good: string; qty: number }
+  | { type: "empireClaim"; playerId: PlayerId; index: number };
 
 export type DecideResult =
   | { ok: true; state: WorldState; effects: Effects }
@@ -368,10 +370,13 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
 function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   if (cmd.type === "empireJoin") {
     empireJoin(tx, cmd.playerId);
+    ensureCarnet(tx, cmd.playerId, ownHouse(tx, cmd.playerId));
     return;
   }
   const h = ownHouse(tx, cmd.playerId);
   settleBuilds(h, tx.now);
+  ensureCarnet(tx, cmd.playerId, h);
+  windOnReturn(tx, h);
   h.lastActionAt = tx.now;
   const player = tx.s.players[cmd.playerId];
   if (player) player.lastActionAt = tx.now;
@@ -387,9 +392,14 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireRelaunch":
       relaunchWorkshop(tx, cmd.playerId, cmd.workshopId, cmd.recipe);
+      advanceCarnet(h, "relaunch", 1);
       break;
     case "empireRelaunchAll":
       relaunchAll(tx, cmd.playerId);
+      advanceCarnet(h, "relaunch", 1);
+      break;
+    case "empireClaim":
+      claimObjective(tx, cmd.playerId, cmd.index);
       break;
     case "empireSell":
       sellToDogana(tx, cmd.playerId, cmd.good, cmd.qty);

@@ -336,6 +336,29 @@ export interface EmpireHouse {
   seals: number;
   /** What is left today of its private book of orders in Venetia. */
   book?: { day: number; left: number };
+  carnet?: EmpireCarnet;
+  /** A following wind after a long absence: the Carnet's Favour doubled until then. */
+  windUntil?: number;
+}
+
+export type CarnetKind = "relaunch" | "deliver" | "sell" | "sites" | "levels" | "casa" | "earn";
+
+export interface CarnetObjective {
+  kind: CarnetKind;
+  target: number;
+  progress: number;
+  claimed: boolean;
+}
+
+/** The Carnet of the week (CADRAGE-v3 § 4.2). */
+export interface EmpireCarnet {
+  /** Weeks since Monday 5 January 1970, UTC. */
+  week: number;
+  objectives: CarnetObjective[];
+  /** Last week's objectives still to catch up. */
+  carried: CarnetObjective[];
+  /** The Seal of the full carnet, given. */
+  full: boolean;
 }
 
 /** A market of the empire: its pressure (bps of the reference) and what the Dogana took today. */

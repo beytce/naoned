@@ -100,6 +100,28 @@ export const empireSettingsSchema = z.object({
       orderPremiumBps: 1_000,
       taxBps: 300,
     }),
+  /**
+   * The Carnet of the week (CADRAGE-v3 § 4.2): objectives drawn each Monday, filled any day of the
+   * week; some of last week's to catch up; Favour for each, a Seal for a full carnet, never
+   * ducats nor yield. After a long absence, a following wind doubles the Favour for a few days.
+   */
+  carnet: z
+    .object({
+      objectives: positive,
+      carryOver: qty,
+      favourPerObjective: qty,
+      sealForFull: qty,
+      windAfterDays: positive,
+      windDays: qty,
+    })
+    .prefault({
+      objectives: 11,
+      carryOver: 2,
+      favourPerObjective: 10,
+      sealForFull: 1,
+      windAfterDays: 7,
+      windDays: 3,
+    }),
   /** Days without an action after which a house falls asleep (CADRAGE-v3 § 6). */
   sleepAfterDays: positive.prefault(14),
   workshops: z.object({

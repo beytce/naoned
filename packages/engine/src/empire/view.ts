@@ -1,7 +1,21 @@
 import { type Deniers, applyBpsFloor } from "../money.js";
-import type { EmpireHouse, PlayerId, WorldContext, WorldState } from "../state.js";
+import {
+  type CarnetObjective,
+  type EmpireHouse,
+  HOUR_MS,
+  type PlayerId,
+  type WorldContext,
+  type WorldState,
+} from "../state.js";
+import { carnetPreview } from "./carnet.js";
 import { catchupCut } from "./catchup.js";
-import { buildMinutesOf, casaLevelOf, casaRequirementMet, levelCost } from "./curves.js";
+import {
+  buildMinutesOf,
+  casaLevelOf,
+  casaRequirementMet,
+  levelCost,
+  lotYieldBps,
+} from "./curves.js";
 import { empireHouseAt, isAsleep } from "./house.js";
 import { bandOf } from "./power.js";
 import type { EmpireSettings } from "./settings.js";
@@ -36,6 +50,41 @@ export interface EmpireView {
   newWorkshop: EmpireSite | null;
   buildSlots: number;
   workshopSlots: number;
+  /** Back after half a day or more: what the queues made and the sites that ended meanwhile. */
+  away: { since: number; ready: Record<string, number>; sitesDone: number } | null;
+  /** The Carnet of the week, as the house would find it now (a new week drawn already). */
+  carnet: {
+    week: number;
+    objectives: CarnetObjective[];
+    carried: CarnetObjective[];
+    windUntil: number | null;
+  };
+}
+
+/** What a house finds after an absence of half a day or more. */
+function awayOf(
+  ctx: WorldContext,
+  before: EmpireHouse | undefined,
+  house: EmpireHouse,
+  now: number,
+  s: EmpireSettings,
+): EmpireView["away"] {
+  if (!before || now - before.lastActionAt < 12 * HOUR_MS) return null;
+  const ready: Record<string, number> = {};
+  for (const ws of house.workshops) {
+    const job = ws.job;
+    const recipe = ctx.theme.recipes.find((r) => r.code === ws.recipe && r.building === ws.type);
+    if (!job || !recipe) continue;
+    const done = Math.min(job.batches, Math.floor((now - job.startedAt) / job.batchMs));
+    for (const [good, qty = 0] of Object.entries(recipe.outputs))
+      ready[good] =
+        (ready[good] ?? 0) + Math.floor((qty * done * lotYieldBps(ws.level, s)) / 10_000);
+  }
+  return {
+    since: before.lastActionAt,
+    ready,
+    sitesDone: before.builds.filter((b) => b.endsAt <= now).length,
+  };
 }
 
 function sharesOf(ctx: WorldContext, state: WorldState, now: number, s: EmpireSettings) {
@@ -130,5 +179,7 @@ export function empireView(
         : null,
     buildSlots: line.buildSlots,
     workshopSlots: line.workshopSlots,
+    carnet: carnetPreview(ctx, playerId, house, now, s),
+    away: awayOf(ctx, state.empire?.houses[playerId], house, now, s),
   };
 }

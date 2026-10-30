@@ -15,3 +15,4 @@ export * from "./house.js";
 export * from "./workshops.js";
 export * from "./trade.js";
 export * from "./view.js";
+export * from "./carnet.js";

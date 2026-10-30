@@ -1,4 +1,4 @@
-import { type Deniers, applyBpsFloor } from "../money.js";
+import { DENIERS_PER_DUCAT, type Deniers, applyBpsFloor } from "../money.js";
 import {
   DAY_MS,
   type EmpireHouse,
@@ -10,6 +10,7 @@ import {
   cashAccount,
 } from "../state.js";
 import { type Tx, fail, inventoryLine, removeStock, transfer } from "../tx.js";
+import { advanceCarnet } from "./carnet.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
 import { powerOf } from "./power.js";
 import {
@@ -51,6 +52,7 @@ export function receive(tx: Tx, playerId: PlayerId, gross: Deniers, ref?: string
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   transfer(tx, SOURCE_ACCOUNT, cashAccount(playerId), gross, "empire_sale", ref);
+  advanceCarnet(h, "earn", Number(gross / DENIERS_PER_DUCAT));
   const wages = wagesOn(gross, powerOfHouse(h, s), s);
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, wages, "empire_wages", ref);
 }
@@ -112,6 +114,7 @@ export function sellToDogana(tx: Tx, playerId: PlayerId, good: string, qty: numb
     "market_tax",
   );
   mk.soldToday += n;
+  advanceCarnet(h, "sell", n);
   mk.pressureBps = pressureAfterTrade(mk.pressureBps, n, Math.max(1, depth), "sell", s);
   return n;
 }
@@ -151,5 +154,6 @@ export function deliverOrders(tx: Tx, playerId: PlayerId, good: string, qty: num
   if (delivered <= 0) fail("no_liquidity");
   removeStock(tx, playerId, good, delivered, "empire_sale");
   receive(tx, playerId, applyBpsFloor(value, 10_000 + s.markets.orderPremiumBps), `orders:${good}`);
+  advanceCarnet(h, "deliver", delivered);
   return delivered;
 }

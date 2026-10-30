@@ -13,6 +13,7 @@ import {
   escrowAccount,
 } from "../state.js";
 import { type Tx, fail, nextId, removeStock, transfer } from "../tx.js";
+import { advanceCarnet } from "./carnet.js";
 import { catchupCut } from "./catchup.js";
 import { buildMinutesOf, casaLevelOf, casaRequirementMet, levelCost } from "./curves.js";
 import type { EmpireSettings } from "./settings.js";
@@ -47,8 +48,10 @@ export function settleBuilds(h: EmpireHouse, now: number): void {
   if (done.length === 0) return;
   h.builds = h.builds.filter((b) => b.endsAt > now);
   for (const b of done) {
-    if (b.kind === "casa") h.casa = Math.max(h.casa, b.level);
-    else if (b.kind === "newWorkshop" && b.workshopId && b.workshopType && b.recipe)
+    if (b.kind === "casa") {
+      if (b.level > h.casa) advanceCarnet(h, "casa", 1);
+      h.casa = Math.max(h.casa, b.level);
+    } else if (b.kind === "newWorkshop" && b.workshopId && b.workshopType && b.recipe) {
       h.workshops.push({
         id: b.workshopId,
         type: b.workshopType,
@@ -56,9 +59,13 @@ export function settleBuilds(h: EmpireHouse, now: number): void {
         level: 1,
         job: null,
       });
-    else if (b.kind === "upgrade") {
+      advanceCarnet(h, "levels", 1);
+    } else if (b.kind === "upgrade") {
       const ws = h.workshops.find((x) => x.id === b.workshopId);
-      if (ws) ws.level = Math.max(ws.level, b.level);
+      if (ws && b.level > ws.level) {
+        ws.level = b.level;
+        advanceCarnet(h, "levels", 1);
+      }
     }
   }
 }
@@ -146,6 +153,7 @@ function openSite(
     removeStock(tx, playerId, good, qty, "empire_build");
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, price, "empire_build");
   const ms = Math.round((minutes * MINUTE_MS * (10_000 - cut.timeCutBps)) / 10_000);
+  advanceCarnet(h, "sites", 1);
   return { startedAt: tx.now, endsAt: tx.now + ms };
 }
 
