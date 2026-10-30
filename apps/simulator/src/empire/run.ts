@@ -74,7 +74,7 @@ export function runEmpire(options: EmpireOptions): EmpireResult {
       newDay(w);
       shareOfCasa(w);
       spawnDeposits(w, rng);
-      if ((w.now / DAY) % 7 === 0 && w.now > 0) terraWeek(w, rng);
+      if ((w.now / DAY) % 7 === 0 && w.now > 0) terraWeek(w, rng, w.now / DAY / 7);
       const cash = w.houses.reduce((a, h) => a + h.cash, 0n);
       if (cash !== w.created - w.destroyed)
         violations.push(

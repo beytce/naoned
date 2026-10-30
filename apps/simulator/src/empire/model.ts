@@ -256,9 +256,6 @@ export interface SimModel {
   /** The Terraferma (CADRAGE-v3 § 8): who plays a week, its ration and its rewards. */
   terra: {
     playBps: Record<Activity, number>;
-    rationDucats: number;
-    favour: [number, number];
-    seals: [number, number];
     favourValueDucats: number;
     sealValueDucats: number;
   };
