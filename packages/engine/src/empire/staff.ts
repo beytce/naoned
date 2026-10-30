@@ -1,5 +1,6 @@
 import { DENIERS_PER_DUCAT, type Deniers, applyBpsCeil } from "../money.js";
 import {
+  DAY_MS,
   type EmpireHouse,
   type EmpireStaff,
   type PlayerId,
@@ -10,6 +11,7 @@ import { type Tx, fail, nextId, transfer } from "../tx.js";
 import type { EffectPlace } from "./effects.js";
 import { empireSettings, ownHouse } from "./house.js";
 import type { EmpireSettings } from "./settings.js";
+import { relaunchWorkshop } from "./workshops.js";
 
 /** The places for staff: so many, one more every so many levels of the Casa. */
 export function staffSlots(h: EmpireHouse, s: EmpireSettings): number {
@@ -124,4 +126,36 @@ export function staffEffect(
     total += Math.floor((own * (s.staff.rarityBps[m.rarity] ?? 10_000)) / 10_000);
   }
   return total;
+}
+
+/** Experience a factor earns a day at work. */
+const FACTOR_XP_A_DAY = 10;
+
+/**
+ * The factors at work since the last read (profondeur.md § F): each relaunches the queues of its
+ * region as they ran dry, at the instant they did, with what the store held; and grows a day at a
+ * time. Lazy, as the production: settled at the house's next command.
+ */
+export function runFactors(tx: Tx, playerId: PlayerId): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  for (const m of h.staff ?? []) {
+    if (s.staff.roles[m.role]?.place !== "region" || !m.placedAt || m.placedSince === undefined)
+      continue;
+    const region = m.placedAt;
+    for (const ws of h.workshops) {
+      if ((ws.region ?? "veneto") !== region) continue;
+      // At most a fortnight of queues: no house sleeps longer without a word.
+      for (let k = 0; k < 28 && ws.job; k++) {
+        const end = ws.job.startedAt + ws.job.batches * ws.job.batchMs;
+        if (end > tx.now || end < m.placedSince) break;
+        relaunchWorkshop({ ...tx, now: end }, playerId, ws.id);
+      }
+    }
+    const days = Math.floor((tx.now - m.placedSince) / DAY_MS);
+    if (days > 0) {
+      gainXp(m, days * FACTOR_XP_A_DAY, s);
+      m.placedSince += days * DAY_MS;
+    }
+  }
 }

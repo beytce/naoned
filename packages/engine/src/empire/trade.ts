@@ -353,7 +353,7 @@ export function fillOrders(
           left: Number(
             applyBpsFloor(
               BigInt(localBookOf(region, counterLevel(h, region), s)),
-              10_000 + houseEffect(h, "book", s),
+              10_000 + houseEffect(h, "book", s, { region }),
             ),
           ),
         };
@@ -380,7 +380,7 @@ export function fillOrders(
   if (delivered <= 0) return 0;
   removeStock(tx, playerId, good, delivered, "empire_sale");
   // The convoy's premium on the orders, with the market's.
-  const convoy = houseEffect(h, "orderBonus", s);
+  const convoy = houseEffect(h, "orderBonus", s, { region });
   receive(
     tx,
     playerId,
@@ -430,7 +430,11 @@ export function empireQuotes(
   return regions.flatMap((r) => {
     const size = marketSize(houses, r.code, now, s);
     const live =
-      r.code === HOME || (h?.counters?.[r.code] ?? 0) > 0 || houseEffect(h, "newsLive", s) > 0;
+      r.code === HOME ||
+      (h?.counters?.[r.code] ?? 0) > 0 ||
+      houseEffect(h, "newsLive", s) > 0 ||
+      // A factor there reports its prices as they are.
+      (h?.staff ?? []).some((m) => m.placedAt === r.code);
     const intel = houseEffect(h, "intel", s);
     const asOf = now - newsDelayMs(r.code, live, intel, s);
     const goods = [...new Set([...Object.keys(r.produces), ...Object.keys(r.demands)])];

@@ -49,7 +49,7 @@ import {
   upgradeCounter,
 } from "./empire/house.js";
 import { startLearning } from "./empire/knowledge.js";
-import { chooseSkill, hireStaff, placeStaff } from "./empire/staff.js";
+import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
 import { buyEmpireVehicle, settleVoyages, startVoyage } from "./empire/voyages.js";
 import { fitModule, relaunchAll, relaunchWorkshop, swapWorkshops } from "./empire/workshops.js";
@@ -426,6 +426,8 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   const h = ownHouse(tx, cmd.playerId);
   settleBuilds(h, tx.now);
   ensureCarnet(tx, cmd.playerId, h);
+  // The factors' work while the house was away, before its own.
+  runFactors(tx, cmd.playerId);
   windOnReturn(tx, h);
   h.lastActionAt = tx.now;
   const player = tx.s.players[cmd.playerId];
