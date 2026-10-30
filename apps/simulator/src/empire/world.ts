@@ -34,7 +34,8 @@ export function globalRef(good: string, s: EmpireSettings, m: SimModel): Deniers
   const recipe = m.recipes[good];
   if (!recipe) return d(1);
   let cost = 0n;
-  for (const [g, q] of Object.entries(recipe)) cost += globalRef(g, s, m) * BigInt(q);
+  for (const [g, q] of Object.entries(recipe))
+    cost += (globalRef(g, s, m) * BigInt(Math.round(q * 1_000))) / 1_000n;
   return (cost * 16n) / 10n;
 }
 

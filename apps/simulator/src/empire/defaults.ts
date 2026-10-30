@@ -1,4 +1,38 @@
+import { venice1450, venice1450Empire } from "@comptoirs/engine";
 import type { SimModel } from "./model.js";
+
+/**
+ * Venetia's chains as the socle plays them (the theme's recipes, CADRAGE-v3 § 13 step 3): each
+ * good of Venetia made by a recipe gets its rate an hour at level 1 and its inputs a unit.
+ */
+function venetiaChains(): {
+  rates: Record<string, number>;
+  recipes: Record<string, Record<string, number>>;
+} {
+  const veneto = venice1450Empire.regions?.find((r) => r.code === "veneto");
+  const goods = new Set([
+    ...Object.keys(veneto?.produces ?? {}),
+    ...Object.keys(veneto?.demands ?? {}),
+  ]);
+  // One step up the chains: the flour of the bread.
+  for (const r of venice1450.recipes)
+    if (Object.keys(r.outputs).some((g) => goods.has(g)))
+      for (const g of Object.keys(r.inputs)) goods.add(g);
+  const rates: Record<string, number> = {};
+  const recipes: Record<string, Record<string, number>> = {};
+  for (const r of venice1450.recipes) {
+    const [good, out] = Object.entries(r.outputs)[0] ?? [];
+    if (!good || !out || !goods.has(good)) continue;
+    rates[good] = (out * 60) / r.durationMinutes;
+    if (Object.keys(r.inputs).length > 0)
+      recipes[good] = Object.fromEntries(
+        Object.entries(r.inputs).map(([g, n = 0]) => [g, n / out]),
+      );
+  }
+  return { rates, recipes };
+}
+
+const VENETIA = venetiaChains();
 
 const VENETO = ["veneto"];
 const RIVERS = ["veneto", "lombardia", "romagna"];
@@ -10,19 +44,21 @@ const GALLEY = [...SEA, "levante", "costantinopoli"];
 /** The model's first guesses (CADRAGE-v3 § 3.3 for the vehicles), to calibrate. */
 export const DEFAULT_MODEL: SimModel = {
   startCapitalDucats: 500,
+  // The socle's start (venice1450.empire.ts): the clay, the wood and the planks of the Casa 2.
   startWorkshops: [
-    { region: "veneto", good: "wheat" },
-    { region: "veneto", good: "bread" },
+    { region: "veneto", good: "clay" },
+    { region: "veneto", good: "wood" },
+    { region: "veneto", good: "planks" },
   ],
   startVehicles: ["mule", "mule"],
   rawPerHour: 10,
   craftedPerHour: 5,
+  rates: VENETIA.rates,
+  // Venetia's chains from the theme; the others, the model's guesses until their step.
   recipes: {
-    bread: { wheat: 2 },
-    bricks: { clay: 2 },
-    planks: { wood: 2 },
     glass: { salt: 1, wood: 1 },
     cloth: { wool: 2 },
+    ...VENETIA.recipes,
   },
   queueHours: 12,
   boardPerActive: 5,

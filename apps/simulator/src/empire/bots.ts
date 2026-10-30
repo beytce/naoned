@@ -129,7 +129,7 @@ export function playsNow(w: World, h: House, rng: Rng): boolean {
 // ——— Production ———
 
 function rateOf(w: World, h: House, ws: { good: string; level: number }): number {
-  const base = w.m.recipes[ws.good] ? w.m.craftedPerHour : w.m.rawPerHour;
+  const base = w.m.rates[ws.good] ?? (w.m.recipes[ws.good] ? w.m.craftedPerHour : w.m.rawPerHour);
   const tools = h.modules.tools ? effectOf({ tools: h.modules.tools }, "yield", w.s) : 0;
   return (base * lotYieldBps(ws.level, w.s) * (10_000 + tools)) / 1e8;
 }
@@ -167,7 +167,8 @@ function collect(w: World, h: House) {
       while (qty > 0 && highRecipeRaw(ws.level, qty, w.s) > have)
         qty = Math.floor((qty * have) / highRecipeRaw(ws.level, qty, w.s));
       if (qty <= 0) continue;
-      if (recipe) for (const [g, per] of Object.entries(recipe)) takeStock(h, g, qty * per);
+      if (recipe)
+        for (const [g, per] of Object.entries(recipe)) takeStock(h, g, Math.ceil(qty * per));
       takeRaw(h, raws, highRecipeRaw(ws.level, qty, w.s));
       addStock(h, ws.good, qty);
     }
@@ -189,7 +190,7 @@ function collect(w: World, h: House) {
     // No inputs for a good no city of its regions asks, nor for one that piles up.
     if (!recipe || !wanted.has(ws.good) || pilesUp(w, h, ws.good)) continue;
     for (const [g, per] of Object.entries(recipe)) {
-      const missing = need * per - (h.stock.get(g) ?? 0);
+      const missing = Math.ceil(need * per - (h.stock.get(g) ?? 0));
       if (missing > 0) buyFromMarket(w, h, ws.region, g, missing);
     }
   }
@@ -776,7 +777,7 @@ function bestNewWorkshop(w: World, h: House, anyway = false) {
     );
     for (const good of goods) {
       const recipe = w.m.recipes[good];
-      const rate = recipe ? w.m.craftedPerHour : w.m.rawPerHour;
+      const rate = w.m.rates[good] ?? (recipe ? w.m.craftedPerHour : w.m.rawPerHour);
       let value = Number(priceOf(w, market(w, region, good))) * rate;
       if (recipe)
         for (const [g, per] of Object.entries(recipe))

@@ -194,7 +194,9 @@ export interface SimModel {
   /** Units an hour a level-1 workshop makes, raw then crafted. */
   rawPerHour: number;
   craftedPerHour: number;
-  /** Crafted goods and their inputs, a unit each. */
+  /** A good's own rate, units an hour at level 1 (the theme's recipes), over the two above. */
+  rates: Record<string, number>;
+  /** Crafted goods and their inputs, a unit each (a share of a unit when the theme says so). */
   recipes: Record<string, Record<string, number>>;
   /** The workshops' queue (CADRAGE-v3 § 4.1): they work this long past a relaunch. */
   queueHours: number;
