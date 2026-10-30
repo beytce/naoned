@@ -254,6 +254,20 @@ export const empireSettingsSchema = z.object({
       rarityBps: { common: 10_000, rare: 15_000, illustrious: 20_000 },
       roles: {},
     }),
+  /**
+   * The family (CADRAGE-v3 § 3.5): a generation each calendar quarter, in Venice's time; each brings
+   * a member of the family to the staff (the roles in turn, of a rarity) and a point of Heritage,
+   * which opens a lineage trait for good: it adds, never takes away.
+   */
+  family: z
+    .object({
+      roles: z.array(z.string()),
+      rarity: z.string(),
+      traits: z.array(
+        z.object({ code: z.string(), effects: z.record(z.string(), z.number().int()) }),
+      ),
+    })
+    .prefault({ roles: [], rarity: "rare", traits: [] }),
   /** Days without an action after which a house falls asleep (CADRAGE-v3 § 6). */
   sleepAfterDays: positive.prefault(14),
   workshops: z.object({

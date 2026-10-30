@@ -348,6 +348,11 @@ export interface EmpireHouse {
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */
   found?: Record<string, string[]>;
+  /** Its generation, by the calendar quarter it began in, and the Heritage it earned. */
+  generation?: { quarter: number; number: number };
+  heritage?: number;
+  /** The lineage's traits, one opened by each point of Heritage. */
+  lineage?: string[];
   /** Its staff (CADRAGE-v3 § 3 quinquies). */
   staff?: EmpireStaff[];
   /** How many it hired: the next one costs more. */

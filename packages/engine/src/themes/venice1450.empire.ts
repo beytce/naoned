@@ -345,6 +345,19 @@ export const venice1450Empire: EmpireSettingsInput = {
       },
     },
   },
+  // The family (CADRAGE-v3 § 3.5): a generation a quarter, a rare member of the family each, and
+  // the lineage's traits, small and for good.
+  family: {
+    roles: ["master", "factor", "captain"],
+    rarity: "rare",
+    traits: [
+      { code: "mercanti", effects: { orderBonus: 300 } },
+      { code: "artigiani", effects: { workshopYield: 200 } },
+      { code: "navigatori", effects: { speed: 500 } },
+      { code: "diplomatici", effects: { charterCut: 1_000 } },
+      { code: "prudenti", effects: { wagesCut: 500 } },
+    ],
+  },
   // The Arti (CADRAGE-v3 § 3.5, the owner's choice of 30 October 2026): the chains of the theme.
   arte: {
     fromCasa: 7,

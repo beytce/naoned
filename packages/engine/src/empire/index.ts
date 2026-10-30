@@ -21,3 +21,4 @@ export * from "./extraction.js";
 export * from "./effects.js";
 export * from "./knowledge.js";
 export * from "./staff.js";
+export * from "./family.js";

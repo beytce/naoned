@@ -36,6 +36,7 @@ import { knownTrait } from "./dynasty.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { advanceCarnet, claimObjective, ensureCarnet, windOnReturn } from "./empire/carnet.js";
 import { sendTeam, settleDeposits } from "./empire/extraction.js";
+import { chooseLineage, passGenerations } from "./empire/family.js";
 import {
   charterRegion,
   chooseArte,
@@ -299,6 +300,7 @@ export type EmpireCommand =
   | { type: "empireHire"; playerId: PlayerId; role: string }
   | { type: "empirePlace"; playerId: PlayerId; staffId: string; at: string }
   | { type: "empireSkill"; playerId: PlayerId; staffId: string; path: number }
+  | { type: "empireLineage"; playerId: PlayerId; trait: string }
   | {
       type: "empireVoyage";
       playerId: PlayerId;
@@ -421,12 +423,14 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     const h = ownHouse(tx, cmd.playerId);
     h.favour += Math.max(0, Math.floor(cmd.favour ?? 0));
     ensureCarnet(tx, cmd.playerId, h);
+    passGenerations(tx, cmd.playerId);
     return;
   }
   const h = ownHouse(tx, cmd.playerId);
   settleBuilds(h, tx.now);
   ensureCarnet(tx, cmd.playerId, h);
-  // The factors' work while the house was away, before its own.
+  // The generations passed, then the factors' work while the house was away, before its own.
+  passGenerations(tx, cmd.playerId);
   runFactors(tx, cmd.playerId);
   windOnReturn(tx, h);
   h.lastActionAt = tx.now;
@@ -491,6 +495,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireSkill":
       chooseSkill(tx, cmd.playerId, cmd.staffId, cmd.path);
+      break;
+    case "empireLineage":
+      chooseLineage(tx, cmd.playerId, cmd.trait);
       break;
     case "empireVoyage":
       startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);

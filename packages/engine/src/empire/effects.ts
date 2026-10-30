@@ -1,4 +1,5 @@
 import type { EmpireHouse } from "../state.js";
+import { lineageEffect } from "./family.js";
 import { knowledgeEffect } from "./knowledge.js";
 import { moduleEffectBps } from "./modules.js";
 import type { EmpireSettings } from "./settings.js";
@@ -35,6 +36,7 @@ export function houseEffect(
   for (const code of ws?.fitted ?? []) of(code, h.modules?.[code] ?? 0, true);
   total += knowledgeEffect(h, effect, s);
   total += staffEffect(h, effect, s, place);
+  total += lineageEffect(h, effect, s);
   // The Arte: its own effects, and its chain's yield where the workshop is of it.
   const arte = s.arte.artes.find((a) => a.code === h.arte);
   total += arte?.effects[effect] ?? 0;
