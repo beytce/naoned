@@ -44,6 +44,8 @@ export interface Voyage {
   escort: number;
   /** A Muda convoy: it sells at the port's fair, whatever the market's depth. */
   muda?: boolean;
+  /** Insured at its departure (step 7a): the units the corsairs take paid back at the reference. */
+  insured?: boolean;
 }
 
 export interface Build {
@@ -276,6 +278,8 @@ export interface SimModel {
   paybackDays: number;
   /** A voyage carries at most this share of the port's depth a day. */
   voyageDepthShare: number;
+  /** A house insures a voyage whose corsairs' risk reaches this (bps). */
+  insureFromBps: number;
   /** The share of a convoy's expected margin a house bids for a Muda place. */
   mudaBidBps: number;
 }

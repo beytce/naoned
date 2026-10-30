@@ -55,6 +55,7 @@ import {
   d,
   depthOf,
   destroy,
+  globalRef,
   knownPrice,
   market,
   priceOf,
@@ -463,6 +464,12 @@ function planVoyages(w: World, h: House, rng: Rng) {
     }
     takeStock(h, best.good, bought + own);
     v.busyUntil = w.now + 2 * best.hours;
+    // A prudent house insures a risky road (step 7a): the premium destroyed now.
+    const risk = corsairRiskBps(best.to, strengthOf(w, h), w.s);
+    const value = unit * BigInt(bought) + best.unit * BigInt(own);
+    const premium = (value * BigInt(risk) * BigInt(w.s.corsairs.premiumBps)) / 100_000_000n;
+    const insured = risk >= w.m.insureFromBps && premium > 0n && h.cash >= premium;
+    if (insured) destroy(w, h, premium, "insurance");
     if (muda) {
       h.mudaPasses--;
       w.muda.voyages++;
@@ -485,6 +492,7 @@ function planVoyages(w: World, h: House, rng: Rng) {
       stakes,
       escort: strengthOf(w, h),
       muda,
+      ...(insured ? { insured: true } : {}),
     });
   });
 }
@@ -580,8 +588,11 @@ export function arrive(w: World, v: Voyage, rng: Rng) {
   if (!h) return;
   let qty = v.qty;
   const risk = corsairRiskBps(v.to, v.escort, w.s);
-  if (risk > 0 && rng.next() * 10_000 < risk)
-    qty -= Math.floor((qty * w.s.corsairs.lossShareBps) / 10_000);
+  if (risk > 0 && rng.next() * 10_000 < risk) {
+    const lost = Math.floor((qty * w.s.corsairs.lossShareBps) / 10_000);
+    qty -= lost;
+    if (v.insured) create(w, h, market(w, v.to, v.good).ref * BigInt(lost), "insurance", "voyages");
+  }
   const before = h.cash;
   // The port's orders first, then its market; what it cannot take comes home in stock.
   addStock(h, v.good, qty);
@@ -888,10 +899,27 @@ function tryVehicle(w: World, h: House): boolean {
   const wantLand = landCapacity(w, h) * w.s.localTripsPerDay < book;
   const pick = wantLand ? types.find(([, v]) => v.regions.length === 1) : types[0];
   if (!pick || (!wantLand && pick[1].regions.length === 1)) return false;
-  const cost = d(pick[1].costDucats);
+  // A ship is built at the Arsenal (step 7a): its site's hours, its materials from the stock, or
+  // their worth at the reference when the house lacks them (the model buys them for it).
+  const build = w.s.vehicles[pick[0]]?.build;
+  let cost = d(pick[1].costDucats);
+  const lacking: [string, number][] = [];
+  for (const [g, n] of Object.entries(build?.materials ?? {})) {
+    const short = n - Math.min(n, h.stock.get(g) ?? 0);
+    if (short > 0) {
+      cost += globalRef(g, w.s, w.m) * BigInt(short);
+      lacking.push([g, n - short]);
+    } else lacking.push([g, n]);
+  }
   if (spendable(w, h) < cost) return false;
+  for (const [g, n] of lacking) takeStock(h, g, n);
   destroy(w, h, cost, "vehicles");
-  startBuild(w, h, { kind: "vehicle", target: pick[0] }, 120);
+  startBuild(
+    w,
+    h,
+    { kind: "vehicle", target: pick[0] },
+    build ? Math.ceil(build.minutes / 60) : 120,
+  );
   return true;
 }
 

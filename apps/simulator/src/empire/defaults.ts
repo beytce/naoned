@@ -111,6 +111,7 @@ export const DEFAULT_MODEL: SimModel = {
   saveDays: 10,
   worksDays: 30,
   voyageDepthShare: 0.5,
+  insureFromBps: 500,
   mudaBidBps: 7_000,
   paybackDays: 5,
   incomeDays: 30,
