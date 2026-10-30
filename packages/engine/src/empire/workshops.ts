@@ -31,15 +31,16 @@ export function collectWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop):
     lotYieldBps(ws.level, s),
     houseEffect(h, "workshopYield", s, { workshopId: ws.id }),
   );
-  for (const [good, qty = 0] of Object.entries(recipe.outputs))
-    addStock(
-      tx,
-      playerId,
-      good,
-      Math.floor((qty * done * yieldBps) / 10_000),
-      "production_output",
-      ws.id,
-    );
+  // A share of the lots comes out better (the master), a share of those exquisite.
+  const quality = Math.min(10_000, houseEffect(h, "quality", s, { workshopId: ws.id }));
+  for (const [good, qty = 0] of Object.entries(recipe.outputs)) {
+    const made = Math.floor((qty * done * yieldBps) / 10_000);
+    const better = Math.floor((made * quality) / 10_000);
+    const exquisite = Math.floor((better * s.qualities.exquisiteShareBps) / 10_000);
+    addStock(tx, playerId, good, made - better, "production_output", ws.id);
+    addStock(tx, playerId, `${good}:fine`, better - exquisite, "production_output", ws.id);
+    addStock(tx, playerId, `${good}:exquisite`, exquisite, "production_output", ws.id);
+  }
   job.batches -= done;
   job.startedAt += done * job.batchMs;
   if (job.batches === 0) ws.job = null;

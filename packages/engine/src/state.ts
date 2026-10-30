@@ -352,6 +352,8 @@ export interface EmpireHouse {
   modules?: Record<string, number>;
   /** Its researches under way at the Scuola: settled at the next read, as the sites. */
   research?: { code: string; level: number; startedAt: number; endsAt: number }[];
+  /** What is left today of the court's book for its fine and exquisite goods. */
+  court?: { day: number; left: number };
   /** What its land vehicles carried to the cities today. */
   hauled?: { day: number; units: number };
   /** What is left today of its private book of orders, by region. */

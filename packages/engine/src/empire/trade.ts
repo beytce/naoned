@@ -435,3 +435,34 @@ export function empireQuotes(
     });
   });
 }
+
+/**
+ * Sells fine or exquisite goods to the court of Venice (profondeur.md § G): at the reference, the
+ * fine half again, the exquisite three times, within the court's book of the day for the house (so
+ * many units a level of its Casa). Returns what it took.
+ */
+export function sellToCourt(tx: Tx, playerId: PlayerId, code: string, qty: number): number {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  if (!Number.isInteger(qty) || qty <= 0) fail("invalid_quantity");
+  const [good = "", quality] = code.split(":");
+  const mult =
+    quality === "fine"
+      ? s.qualities.fineBps
+      : quality === "exquisite"
+        ? s.qualities.exquisiteBps
+        : 0;
+  const r = regionOf(HOME, s);
+  const ref = r.demands[good] ?? r.produces[good];
+  if (mult === 0 || ref === undefined) fail("unknown_resource");
+  const day = dayOf(tx.now);
+  const book = h.court?.day === day ? h.court : { day, left: s.qualities.courtPerCasa * h.casa };
+  const n = Math.min(qty, book.left, inventoryLine(tx, playerId, code).available);
+  if (inventoryLine(tx, playerId, code).available <= 0) fail("insufficient_stock");
+  if (n <= 0) fail("no_liquidity");
+  removeStock(tx, playerId, code, n, "empire_sale");
+  receive(tx, playerId, applyBpsFloor(ref * BigInt(n), mult), `court:${code}`);
+  h.court = { day, left: book.left - n };
+  advanceCarnet(h, "sell", n);
+  return n;
+}

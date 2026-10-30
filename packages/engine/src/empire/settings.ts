@@ -142,6 +142,19 @@ export const empireSettingsSchema = z.object({
       windAfterDays: 7,
       windDays: 3,
     }),
+  /**
+   * The qualities (profondeur.md § G): the share of a workshop's lots made better is its quality
+   * effect, a share of those exquisite; only the court of Venice buys them, dearer, within its book
+   * of the day (so many units a level of the Casa).
+   */
+  qualities: z
+    .object({
+      fineBps: bps,
+      exquisiteBps: bps,
+      exquisiteShareBps: bps.max(10_000),
+      courtPerCasa: qty,
+    })
+    .prefault({ fineBps: 15_000, exquisiteBps: 30_000, exquisiteShareBps: 2_500, courtPerCasa: 5 }),
   /** Days without an action after which a house falls asleep (CADRAGE-v3 § 6). */
   sleepAfterDays: positive.prefault(14),
   workshops: z.object({
