@@ -120,7 +120,7 @@ export function evaluate(r: EmpireResult): Check[] {
     pass: steps.length > 0 && stepsOut.length === 0,
   });
 
-  // 4. A newcomer at the median Power of its band, among the houses that came before it.
+  // 4. A newcomer at the median Power of its band, all its houses counted whatever their age.
   const last = Math.max(...r.options.cohortMonths.filter((m) => m <= r.options.months - 1));
   const newcomers = hs.filter((h) => h.cohort === last);
   const monthsTo = (at: (h: (typeof hs)[number]) => number | undefined) => {
@@ -132,13 +132,11 @@ export function evaluate(r: EmpireResult): Check[] {
     return newcomers.length > 0 && reached >= newcomers.length / 2 ? median(caughtIn) : null;
   };
   const months = monthsTo((h) => h.bandCaughtAt);
-  // For information: the same, the absent houses left out of the band's median.
-  const active = monthsTo((h) => h.bandCaughtActiveAt);
   checks.push({
     code: "newcomer",
-    label: `Cohorte du mois ${last} à la Puissance médiane de sa bande (Maisons plus anciennes)`,
+    label: `Cohorte du mois ${last} à la Puissance médiane de sa bande (toutes ses Maisons)`,
     target: "en 4 à 6 mois",
-    value: `${months === null ? "jamais" : `${months.toFixed(1)} mois`} (hors absents : ${active === null ? "jamais" : `${active.toFixed(1)} mois`})`,
+    value: months === null ? "jamais dans la simulation" : `${months.toFixed(1)} mois`,
     pass: months !== null && months >= 4 && months <= 6,
   });
 
@@ -198,7 +196,7 @@ export function evaluate(r: EmpireResult): Check[] {
     code: "raw",
     label:
       "Bruts des jeunes Maisons (Casa ≤ 8) vendus à Venise, part de leurs recettes ; part des bruts des vétérans venue d'elles",
-    target: "≥ 10 % des recettes des jeunes",
+    target: "≥ 10 % des recettes des jeunes (cible du porteur)",
     value: `${pct(youngRawBps)} ; vétérans ${pct(youngBps)}`,
     pass: youngRawBps >= 1_000,
   });
