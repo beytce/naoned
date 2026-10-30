@@ -117,6 +117,7 @@ Détails dans docs/expertise-2026-10-24/ (fichiers `*-final.md`).
 - Modules d'exploitation à venir : grande campagne, prospection, gestion durable, charrois.
 - Le Gazzettino du dimanche (palmarès par bande, promotions).
 - Le coût des derniers paliers de la Casa, au-delà de 7 jours de revenu : avec le contenu de fin de partie.
+- La mer (après 7a) : l'enchère de la Muda liée à la colleganza du voyageur ; le brouillard des zones et les ports francs ; les crises qui déplacent les prix ; les contrats à terme ; les tempêtes.
 - La Terraferme de l'empire (après 6b) : le décret du Signore propre à l'empire, les bannières sur la façade, les sidegrades de guerre, le trophée de la Contesa en pièce du fondaco de compagnie ; les panneaux complets de la carte mensuelle (bâtiments, alliances, signaux, mer) sur l'écran de l'empire ; des bots marchands si les théâtres manquent de monde.
 - L'atelier unique au sommet de chaque Arte : il demande un dessin et un effet propre.
 - Les recettes alternatives d'un bâtiment : le thème n'en a qu'une par bâtiment, il faut d'abord du contenu.
