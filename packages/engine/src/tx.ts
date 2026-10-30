@@ -219,7 +219,10 @@ export type EngineErrorCode =
   | "no_build_slot"
   | "requirement_unmet"
   | "insufficient_favour"
-  | "not_here";
+  | "not_here"
+  | "no_company"
+  | "not_same_company"
+  | "own_order";
 
 export class EngineError extends Error {
   constructor(

@@ -156,6 +156,8 @@ export const gameApi = {
   leaveCompany: () => call<CompanyView>("POST", "/api/company/leave", {}),
   inviteShared: () => call<{ ok: true }>("POST", "/api/company/invite", {}),
   callCompany: () => call<CompanyView>("POST", "/api/company/call", {}),
+  setCompanyRole: (member: string, role: string | null) =>
+    call<CompanyView>("POST", "/api/company/role", { member, role }),
   companyThread: () => call<{ messages: FamilyMessage[] }>("GET", "/api/company/messages"),
   sayToCompany: (body: string) =>
     call<{ messages: FamilyMessage[] }>("POST", "/api/company/messages", { body }),

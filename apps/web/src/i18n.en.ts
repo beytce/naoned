@@ -348,6 +348,38 @@ export const en: Dictionary = {
       sites: (n: number) => (n === 1 ? "1 site finished" : `${n} sites finished`),
       action: "Collect everything",
     },
+    company: {
+      title: "The company",
+      members: (n: number, max: number) => `${n} of ${max} partners`,
+      me: "you",
+      vocation: "Vocation",
+      noRole: "Partner",
+      roles: { capo: "Capo", consigliere: "Consigliere", cassiere: "Cassiere" } as Record<
+        string,
+        string
+      >,
+      invite: "Copy the invitation link",
+      leave: "Leave the company",
+      aid: {
+        rule: "A lot asked every 8 h, supplied at the reference price, no tax",
+        merit: (n: number) => `Merit ${n}`,
+        supplyLeft: (v: string) => `${v} more to supply today`,
+        tooNew: (at: string) => `The entraide opens to you at ${at} (3 days in the company).`,
+        none: "No open request.",
+        by: (name: string) => `asked by ${name}`,
+        supply: "Supply",
+        good: "Good to ask for",
+        qty: (max: number) => `Quantity (${max} at most)`,
+        ask: "Ask the company",
+        nextAsk: (at: string) => `Next request at ${at}`,
+      },
+      condotta: {
+        title: "The Condotta",
+        tier: (level: number, cap: number) => `Tier ${level}, open up to ${cap} by the Casa`,
+        seals: "one win a day pays Seals",
+        where: "It is played on the Terraferma's map, which opens later in the empire.",
+      },
+    },
     identity: {
       tab: "Family",
       effects: {
@@ -575,6 +607,13 @@ export const en: Dictionary = {
       unknown_target: "No such place.",
       unknown_building: "Not found.",
       unknown_building_type: "This module is not researched yet.",
+      no_company: "You need a company.",
+      not_same_company: "This request is another company's.",
+      own_order: "This is your own request.",
+      too_new: "Too soon: 3 days in the company first.",
+      too_soon: "One request every 8 hours.",
+      over_limit: "Today's cap is reached.",
+      unknown_order: "This request is gone.",
     } as Record<string, string>,
   },
 

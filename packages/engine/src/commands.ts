@@ -34,7 +34,9 @@ import {
 import { standForDoge, voteDoge } from "./doge.js";
 import { knownTrait } from "./dynasty.js";
 import { type Effects, emptyEffects } from "./effects.js";
+import { type EmpireCompanyTag, askAid, settleAid, supplyAid, syncCompany } from "./empire/aid.js";
 import { advanceCarnet, claimObjective, ensureCarnet, windOnReturn } from "./empire/carnet.js";
+import { rewardCondotta } from "./empire/condotta.js";
 import { sendTeam, settleDeposits } from "./empire/extraction.js";
 import { chooseLineage, passGenerations } from "./empire/family.js";
 import {
@@ -264,8 +266,13 @@ export type Command =
   | { type: "tick" }
   | EmpireCommand;
 
-/** The persistent empire's commands (CADRAGE-v3 § 13, the socle); refused without `empire`. */
-export type EmpireCommand =
+/**
+ * The persistent empire's commands (CADRAGE-v3 § 13, the socle); refused without `empire`. Each may
+ * carry the house's company as the server knows it (`null`: in none; absent: unchanged).
+ */
+export type EmpireCommand = EmpireCommandOf & { company?: EmpireCompanyTag | null };
+
+type EmpireCommandOf =
   | {
       type: "empireJoin";
       playerId: PlayerId;
@@ -301,6 +308,10 @@ export type EmpireCommand =
   | { type: "empirePlace"; playerId: PlayerId; staffId: string; at: string }
   | { type: "empireSkill"; playerId: PlayerId; staffId: string; path: number }
   | { type: "empireLineage"; playerId: PlayerId; trait: string }
+  | { type: "empireAsk"; playerId: PlayerId; good: string; qty: number }
+  /** A won match of the Condotta, told by the server: never a client's action. */
+  | { type: "empireCondotta"; playerId: PlayerId; tier: number }
+  | { type: "empireSupply"; playerId: PlayerId; requestId: string }
   | {
       type: "empireVoyage";
       playerId: PlayerId;
@@ -417,9 +428,11 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     settleVoyages(tx);
     // The deposits' extraction up to now, then the days' new ones.
     settleDeposits(tx);
+    settleAid(tx);
   }
   if (cmd.type === "empireJoin") {
     empireJoin(tx, cmd.playerId);
+    if (cmd.company !== undefined) syncCompany(tx, cmd.playerId, cmd.company);
     const h = ownHouse(tx, cmd.playerId);
     h.favour += Math.max(0, Math.floor(cmd.favour ?? 0));
     ensureCarnet(tx, cmd.playerId, h);
@@ -427,6 +440,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     return;
   }
   const h = ownHouse(tx, cmd.playerId);
+  if (cmd.company !== undefined) syncCompany(tx, cmd.playerId, cmd.company);
   settleBuilds(h, tx.now);
   ensureCarnet(tx, cmd.playerId, h);
   // The generations passed, then the factors' work while the house was away, before its own.
@@ -498,6 +512,15 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireLineage":
       chooseLineage(tx, cmd.playerId, cmd.trait);
+      break;
+    case "empireAsk":
+      askAid(tx, cmd.playerId, cmd.good, cmd.qty);
+      break;
+    case "empireSupply":
+      supplyAid(tx, cmd.playerId, cmd.requestId);
+      break;
+    case "empireCondotta":
+      rewardCondotta(tx, cmd.playerId, cmd.tier);
       break;
     case "empireVoyage":
       startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);

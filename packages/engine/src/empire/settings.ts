@@ -268,6 +268,48 @@ export const empireSettingsSchema = z.object({
       ),
     })
     .prefault({ roles: [], rarity: "rare", traits: [] }),
+  /**
+   * The company (CADRAGE-v3 § 7): up to `max` partners, `rejoinDays` before changing, a Capo
+   * absent `capoAbsentDays` gives way, two to four Consiglieri. Vocations, never a bonus.
+   */
+  company: z
+    .object({
+      max: positive,
+      rejoinDays: positive,
+      capoAbsentDays: positive,
+      consiglieriMax: positive,
+    })
+    .prefault({ max: 25, rejoinDays: 3, capoAbsentDays: 7, consiglieriMax: 4 }),
+  /**
+   * The entraide (CADRAGE-v3 § 7): a partner asks a lot every `everyHours`, up to `lotPerCasa`
+   * units a Casa; another supplies it at Venice's reference price, no tax, after `minDays` in the
+   * company, up to `dailyDucatsPerCasa` a day; Merit for the supplier. A request lapses after
+   * `expireHours`.
+   */
+  aid: z
+    .object({
+      everyHours: positive,
+      lotPerCasa: positive,
+      minDays: qty,
+      dailyDucatsPerCasa: positive,
+      expireHours: positive,
+      meritPer100Ducats: qty,
+    })
+    .prefault({
+      everyHours: 8,
+      lotPerCasa: 20,
+      minDays: 3,
+      dailyDucatsPerCasa: 300,
+      expireHours: 24,
+      meritPer100Ducats: 10,
+    }),
+  /**
+   * The Condotta of the empire (CADRAGE-v3 § 7): its tier n opens from the Casa n + `casaOffset`
+   * (and by the win of the tier before); a won match a day pays `sealsByTier[n − 1]` Seals.
+   */
+  condotta: z
+    .object({ casaOffset: qty, sealsByTier: z.array(qty).min(1) })
+    .prefault({ casaOffset: 2, sealsByTier: [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3] }),
   /** Days without an action after which a house falls asleep (CADRAGE-v3 § 6). */
   sleepAfterDays: positive.prefault(14),
   workshops: z.object({

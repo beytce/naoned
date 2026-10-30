@@ -560,6 +560,14 @@ Chaque étape fait l'objet d'un plan, validé avant le code.
 
    Restent hors de l'étape : l'ambassadeur et le condottiere (avec les cours étrangères et les armes), les recettes alternatives, l'atelier unique de l'Arte, les reliques et les plans (étape 7).
 6. **La compagnie** : rôles, succession, entraide, Condotta à paliers, puis la Contesa et les théâtres de la Terraferme.
+
+   L'étape se fait en deux plans : 6a, la compagnie dans l'empire ; 6b, la Contesa et les théâtres.
+
+   *6a fait le 30 octobre 2026*, dans le monde de l'empire :
+   - **la compagnie** garde la table et le lien d'invitation des compagnies existantes, à la taille de l'empire (`empire.company`) : 25 associés, 3 jours avant d'en changer ; le fondateur est Capo, il nomme deux à quatre Consiglieri et un Cassiere (vocations sans bonus) ; un Capo absent 7 jours cède sa place, à la lecture, au Consigliere actif le plus ancien ;
+   - **l'entraide** (`empire.aid`) : un lot demandé toutes les 8 h (20 unités par niveau de Casa), fourni en un geste au prix de référence de Venise, sans taxe ni salaires, au grand livre et au journal des stocks ; 3 jours d'ancienneté, un plafond du jour par fournisseur, du Mérite ; la compagnie vient du serveur sur chaque commande, jamais du client ;
+   - **la Condotta à paliers** (`empire.condotta`) : le palier n s'ouvre par la victoire du précédent et par la Casa n + 2 ; une victoire par jour rapporte des Sceaux selon le palier (1, puis 2 dès le 5, 3 dès le 9). Elle se joue sur la carte de la Terraferme, que l'écran de l'empire n'a pas encore : elle viendra avec 6b ;
+   - **l'écran** : la compagnie dans la feuille du Carnet (associés, vocations, demandes, palier de Condotta, fil).
 7. **La mer et les armes** : la Dalmatie, l'Arsenal, les navires à modules, la Muda des joueurs, les corsaires ; puis les expéditions et les reliques, et la colleganza.
 8. **Les ères et les Annales**, la politique étendue, le Grand Canal en immobilier, le Levant.
 9. **La refonte visuelle et des interactions**, qui suit chaque étape : la carte qui s'étend, la façade qui monte, les trois flottes et leurs emplacements de modules, les convois, la carte d'expédition.

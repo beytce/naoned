@@ -24,7 +24,7 @@ const localStore = (): Storage | null => {
   }
 };
 
-const COMPANY_THREAD: ThreadSource = {
+export const COMPANY_THREAD: ThreadSource = {
   load: () => gameApi.companyThread(),
   say: (body) => gameApi.sayToCompany(body),
   report: (id) => gameApi.reportCompanyMessage(id),
@@ -81,7 +81,7 @@ export function CompanyPanel({ props }: { props: GameProps }) {
   );
 }
 
-type Run = (action: () => Promise<CompanyView>) => Promise<void>;
+export type Run = (action: () => Promise<CompanyView>) => Promise<void>;
 
 /** Seen within the day: present on the constellation; longer ago, a dashed star. */
 const PRESENT_MS = 24 * 3600_000;
@@ -195,7 +195,7 @@ function Constellation({
   );
 }
 
-function NoCompany({ view, busy, run }: { view: CompanyView; busy: boolean; run: Run }) {
+export function NoCompany({ view, busy, run }: { view: CompanyView; busy: boolean; run: Run }) {
   const code = useMemo(() => {
     const s = localStore();
     return s ? pendingInvite(s) : null;

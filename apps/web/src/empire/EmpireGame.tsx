@@ -7,6 +7,7 @@ import { TabBar } from "../game/map/TabBar.js";
 import type { TabId } from "../game/map/actions.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
+import { CompanySection, suppliable } from "./Company.js";
 import { ArteSection, Court, FamilySheet, Knowledge, WorkshopIdentity } from "./Identity.js";
 import { EmpireOrbit } from "./Orbit.js";
 import { Charroi, Constellation, RegionPlace, Scuola, VoyageSheet, regionName } from "./World.js";
@@ -303,7 +304,11 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           },
           { id: "workshops", onClick: () => setSheet("workshops"), dot: relaunch },
           { id: "venice", onClick: () => setSheet("casa"), dot: canCasa },
-          { id: "ranking", onClick: () => setSheet("carnet"), dot: claimable(p) },
+          {
+            id: "ranking",
+            onClick: () => setSheet("carnet"),
+            dot: claimable(p) || suppliable(p, account.id) > 0,
+          },
           { id: "conquest", onClick: () => setSheet("family"), dot: familyCalls(p) },
         ]}
       />
@@ -785,6 +790,7 @@ function CarnetSheet({
         </div>
         <p className="mt-2 text-xs text-cream-dim">{t.carnet.powerText}</p>
       </section>
+      {open && <CompanySection p={p} now={now} busy={busy} act={act} />}
     </Sheet>
   );
 }

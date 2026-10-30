@@ -22,3 +22,5 @@ export * from "./effects.js";
 export * from "./knowledge.js";
 export * from "./staff.js";
 export * from "./family.js";
+export * from "./aid.js";
+export * from "./condotta.js";

@@ -33,6 +33,7 @@ import {
 import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import { bandOf } from "./power.js";
+import { regionOf } from "./prices.js";
 import type { EmpireSettings } from "./settings.js";
 import { staffHireCost, staffSlots } from "./staff.js";
 import { counterLevel, incomePerDay, powerOfHouse } from "./trade.js";
@@ -124,6 +125,23 @@ export interface EmpireView {
   /** What the court of Venice still takes today. */
   courtLeft: number;
   identity: EmpireIdentity;
+  /** The entraide (CADRAGE-v3 § 7): its company's open requests, its Merit, its rhythm. */
+  aid: {
+    requests: {
+      id: string;
+      house: string;
+      good: string;
+      qty: number;
+      at: number;
+      value: Deniers;
+    }[];
+    merit: number;
+    nextAskAt: number | null;
+    lotMax: number;
+    /** What it may still supply today, in deniers, and from when it may ask and supply. */
+    supplyLeft: Deniers;
+    seniorFrom: number | null;
+  };
 }
 
 export interface EmpireIdentity {
@@ -326,6 +344,31 @@ export function empireView(
         ? house.court.left
         : s.qualities.courtPerCasa * house.casa,
     identity: identityOf(house, s),
+    aid: aidOf(state, house, now, s),
+  };
+}
+
+function aidOf(state: WorldState, house: EmpireHouse, now: number, s: EmpireSettings) {
+  const r = regionOf("veneto", s);
+  const day = Math.floor(now / DAY_MS);
+  const cap = BigInt(s.aid.dailyDucatsPerCasa * house.casa) * DENIERS_PER_DUCAT;
+  return {
+    requests: (state.empire?.aid ?? [])
+      .filter((x) => house.company && x.company === house.company)
+      .filter((x) => now - x.at < s.aid.expireHours * HOUR_MS)
+      .map((x) => ({
+        ...x,
+        value: (r.demands[x.good] ?? r.produces[x.good] ?? 0n) * BigInt(x.qty),
+      })),
+    merit: house.merit ?? 0,
+    nextAskAt:
+      house.askedAt !== undefined && now - house.askedAt < s.aid.everyHours * HOUR_MS
+        ? house.askedAt + s.aid.everyHours * HOUR_MS
+        : null,
+    lotMax: s.aid.lotPerCasa * house.casa,
+    supplyLeft: cap - (house.supplied?.day === day ? house.supplied.value : 0n),
+    seniorFrom:
+      house.companySince === undefined ? null : house.companySince + s.aid.minDays * DAY_MS,
   };
 }
 

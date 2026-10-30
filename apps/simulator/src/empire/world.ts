@@ -75,6 +75,8 @@ export function createWorld(s: EmpireSettings, m: SimModel): World {
     workshopShare: [],
     colleganza: { total: 0n, toYoung: 0n },
     muda: { places: 0, paid: 0n, voyages: 0, withColleganza: 0, stakes: 0n, fromLarger: 0n },
+    companies: [],
+    aid: { requests: [], asked: 0, supplied: 0, value: 0n, toYoung: 0n },
   };
 }
 

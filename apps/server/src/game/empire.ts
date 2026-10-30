@@ -6,9 +6,11 @@ import {
   empireQuotes,
   empireView,
 } from "@comptoirs/engine";
+import { eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { Db } from "../db/client.js";
+import { companyMembers } from "../db/schema.js";
 import { balanceOf } from "./house.js";
 import { toJson } from "./serialize.js";
 import type { GameWorld } from "./world.js";
@@ -122,6 +124,12 @@ const action = z.discriminatedUnion("type", [
     path: z.number().int().min(0).max(8),
   }),
   z.object({ type: z.literal("empireLineage"), trait: z.string().max(40) }),
+  z.object({
+    type: z.literal("empireAsk"),
+    good: z.string().max(60),
+    qty: z.number().int().min(1).max(100_000),
+  }),
+  z.object({ type: z.literal("empireSupply"), requestId: z.string().max(80) }),
 ]);
 
 export interface EmpireRouteDeps {
@@ -132,6 +140,18 @@ export interface EmpireRouteDeps {
 }
 
 /** The persistent empire's routes (CADRAGE-v3, the socle); a monthly world answers its kind only. */
+/**
+ * The account's company as the engine keeps it (CADRAGE-v3 § 7): written by the server on each
+ * action, never by the client (the schema drops any `company` it sends).
+ */
+async function companyTag(db: Db, accountId: string) {
+  const [row] = await db
+    .select({ id: companyMembers.companyId, since: companyMembers.joinedAt })
+    .from(companyMembers)
+    .where(eq(companyMembers.accountId, accountId));
+  return row ? { id: row.id, since: row.since.getTime() } : null;
+}
+
 export function registerEmpireRoutes(app: FastifyInstance, deps: EmpireRouteDeps): void {
   const { world } = deps;
   const isEmpire = () => world.ctx.settings.empire !== undefined;
@@ -154,6 +174,7 @@ export function registerEmpireRoutes(app: FastifyInstance, deps: EmpireRouteDeps
       type: "empireJoin",
       playerId: account.id,
       ...(influence > 0 ? { favour: influence } : {}),
+      company: await companyTag(deps.db, account.id),
     });
     if (!res.ok) return reply.code(409).send({ error: res.error });
     return payload(account.id);
@@ -164,7 +185,8 @@ export function registerEmpireRoutes(app: FastifyInstance, deps: EmpireRouteDeps
     if (!account) return;
     if (!isEmpire()) return reply.code(409).send({ error: "not_empire_world" });
     const a = action.parse(req.body);
-    const res = await world.execute({ ...a, playerId: account.id } as EmpireCommand);
+    const company = await companyTag(deps.db, account.id);
+    const res = await world.execute({ ...a, playerId: account.id, company } as EmpireCommand);
     if (!res.ok)
       return reply.code(422).send({ error: res.error, ...(payload(account.id) as object) });
     return payload(account.id);

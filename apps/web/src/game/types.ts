@@ -1365,7 +1365,12 @@ export interface CompanyView {
     name: string;
     code: string;
     max: number;
+    /** The empire's vocations (CADRAGE-v3 § 7): the merchant's own, and the Consiglieri's cap. */
+    myRole?: string | null;
+    consiglieriMax?: number;
     members: {
+      id?: string;
+      role?: string | null;
       pseudo: string | null;
       me: boolean;
       region: string | null;
@@ -1468,6 +1473,8 @@ interface CondottaMine {
   minutes: number;
   holdShareBps: number;
   maxPlayers: number;
+  /** In the empire: the highest tier the Casa opens. */
+  tierCap?: number;
 }
 export type CondottaStatus =
   | { phase: "off" }

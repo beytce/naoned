@@ -7,6 +7,7 @@ import {
   advanceCondotta,
   condottaAct,
   condottaLevelAfter,
+  condottaTierCap,
   createCondotta,
   groupCondottaLevel,
 } from "@comptoirs/engine";
@@ -158,7 +159,11 @@ export class CondottaHub {
       if (old) this.matches.delete(old.id);
     }
     const levels = await this.levels(lobby.members);
-    const level = groupCondottaLevel(lobby.members.map((id) => levels.get(id)?.level ?? 1));
+    // In the empire, no tier past what each member's Casa opens (CADRAGE-v3 § 7).
+    const level = Math.min(
+      groupCondottaLevel(lobby.members.map((id) => levels.get(id)?.level ?? 1)),
+      ...lobby.members.map((id) => this.tierCap(id)),
+    );
     const c = createCondotta(
       cfg,
       `${this.world.id}:condotta:${++this.seq}:${now}`,
@@ -167,6 +172,14 @@ export class CondottaHub {
       now,
     );
     this.matches.set(lobby.id, { id: lobby.id, c, company: lobby.company, paid: false });
+  }
+
+  /** The highest tier a merchant's Casa opens in the empire; the last level elsewhere. */
+  private tierCap(accountId: string): number {
+    const levels = this.cfg?.condotta?.levels ?? 12;
+    const s = this.world.ctx.settings.empire;
+    const house = this.world.current.empire?.houses[accountId];
+    return s && house ? condottaTierCap(house.casa, s, levels) : levels;
   }
 
   private async levels(ids: string[]) {
@@ -207,10 +220,18 @@ export class CondottaHub {
           .set({ condottaLevel: level, condottaBest: best })
           .where(eq(accounts.id, id));
     }
-    // The missions hear of it; nothing else (no ducats, no goods, no Glory).
-    const merchants = m.c.humans.filter((id) => id in this.world.current.players);
-    if (result.won && merchants.length > 0)
-      await this.world.execute({ type: "condottaWon", playerIds: merchants, level: m.c.level });
+    if (this.world.ctx.settings.empire) {
+      // The empire pays a won match in Seals, one a day (CADRAGE-v3 § 7); never ducats nor goods.
+      if (result.won)
+        for (const id of m.c.humans)
+          if (this.world.current.empire?.houses[id])
+            await this.world.execute({ type: "empireCondotta", playerId: id, tier: m.c.level });
+    } else {
+      // The missions hear of it; nothing else (no ducats, no goods, no Glory).
+      const merchants = m.c.humans.filter((id) => id in this.world.current.players);
+      if (result.won && merchants.length > 0)
+        await this.world.execute({ type: "condottaWon", playerIds: merchants, level: m.c.level });
+    }
     await this.db.insert(telemetry).values(
       m.c.humans.map((accountId) => ({
         accountId,
@@ -241,7 +262,8 @@ export class CondottaHub {
     const mine = (await this.levels([accountId])).get(accountId) ?? { level: 1, best: 0 };
     const grade = condottaGrade(mine.best);
     const me = {
-      level: mine.level,
+      level: Math.min(mine.level, this.tierCap(accountId)),
+      tierCap: this.tierCap(accountId),
       best: mine.best,
       levels: cfg.condotta.levels,
       grade: grade ? { code: grade.code, name: grade.name } : null,

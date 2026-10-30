@@ -1844,6 +1844,28 @@ Les réglages de Venise sont ceux de l'étape, sans retouche. **Résultat** (gra
 
 Sur la graine 3, la cour a payé 235 millions de ducats sur 24 mois (contre 2 milliards au marché et 1,65 aux commandes), les savoirs en ont détruit 38 millions et l'embauche 1,8 million. L'étape ne déséquilibre pas les cibles : les rendements de l'identité raccourcissent un peu les derniers paliers de la Casa, et les anciennes Maisons restent à l'équilibre des puits. Les jeunes s'en écartent un peu plus (0,87 à 0,89, pour 0,6 à 0,8 visés) : les savoirs et l'embauche de leurs premiers mois sont des puits ; c'est le point à surveiller avec l'étape suivante. Le simulateur prend environ 11 minutes par graine, contre 6.
 
+### L'étape 6a au simulateur : la compagnie et l'entraide (30 octobre 2026)
+
+Le simulateur joue la compagnie (`apps/simulator/src/empire/company.ts`) :
+- chaque Maison rejoint à son arrivée la plus petite compagnie, une pour 17 Maisons environ, 25 au plus, pour mêler les âges ;
+- une jeune Maison (Casa ≤ 8) demande à sa compagnie l'intrant qui lui manque, au plus une fois toutes les 8 h, et n'achète au marché que le reste ;
+- un associé fournit, avant de vendre son surplus, ce qu'il tient au-delà de ses propres intrants et de sa prochaine Casa, dans le plafond du jour (`aid.dailyDucatsPerCasa`, 300 ducats par niveau de Casa) ;
+- l'argent passe du demandeur au fournisseur au prix de référence : il n'est ni créé ni détruit.
+
+La Condotta ne change rien au simulateur : ses Sceaux ne nourrissent pas l'économie.
+
+**Résultat** (graines 1, 2 et 3, quatre cohortes de 200) : **8 cibles sur 12 sur chaque graine**, comme avant.
+
+| Mesure | Étape 5 | Étape 6a |
+| --- | --- | --- |
+| Prochain palier de Casa, en jours de revenu | 4,0 à 9,1 | 4,2 à 8,9 |
+| Puits ÷ sources, jeunes puis anciennes | 0,87–0,89 puis 0,98–1,01 | 0,84–0,87 puis 0,99–1,03 |
+| Bruts des jeunes vendus à Venise | 6,2 à 7,3 % | 6,2 à 6,6 % |
+| Rattrapage des cohortes tardives | 24 à 32 % | 29 à 34 % |
+| Indice des prix | 86 à 101 | 86 à 101 |
+
+Sur la graine 3, 48 compagnies ; 7 195 lots demandés, 333 fournis pour 295 000 ducats, dont 261 000 aux jeunes Maisons. L'entraide reste petite au regard du marché (2 milliards) : les intrants que demandent les jeunes (farine, bois, argile) sont aussi ceux des anciennes, qui n'en ont guère en trop. Elle rapproche un peu les jeunes Maisons de leur cible des puits (0,84 à 0,87 pour 0,6 à 0,8) sans toucher aux prix. Le modèle est prudent : de vrais associés se fourniraient sans doute plus qu'un bot qui garde tous ses intrants.
+
 ### Refaire le calibrage
 
 ```

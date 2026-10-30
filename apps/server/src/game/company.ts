@@ -35,6 +35,34 @@ export const COMPANY_MAX = 6;
 /** Who leaves a company waits this long before joining another (or founding one). */
 export const COMPANY_REJOIN_MS = 7 * 86_400_000;
 const NAME = { min: 3, max: 24 };
+const DAY_MS = 86_400_000;
+
+/** The empire's vocations (CADRAGE-v3 § 7): displayed, never a bonus. */
+export const COMPANY_ROLES = ["capo", "consigliere", "cassiere"] as const;
+export type CompanyRole = (typeof COMPANY_ROLES)[number];
+
+/**
+ * The rules of the world's companies: the empire's settings (up to 25 partners, 3 days before
+ * changing, the Capo's succession), else the monthly world's small companies.
+ */
+function rulesOf(world: GameWorld) {
+  const c = world.ctx.settings.empire?.company;
+  if (!world.ctx.settings.empire)
+    return {
+      empire: false,
+      max: COMPANY_MAX,
+      rejoinMs: COMPANY_REJOIN_MS,
+      capoAbsentMs: 0,
+      consiglieri: 0,
+    };
+  return {
+    empire: true,
+    max: c?.max ?? 25,
+    rejoinMs: (c?.rejoinDays ?? 3) * DAY_MS,
+    capoAbsentMs: (c?.capoAbsentDays ?? 7) * DAY_MS,
+    consiglieri: c?.consiglieriMax ?? 4,
+  };
+}
 
 export class CompanyError extends Error {
   constructor(
@@ -57,7 +85,12 @@ export async function companyIdOf(db: Db, accountId: string): Promise<string | n
 /** The members of a company, oldest first. */
 async function membersOf(db: Db, companyId: string) {
   return db
-    .select({ id: accounts.id, pseudo: accounts.pseudo, joinedAt: companyMembers.joinedAt })
+    .select({
+      id: accounts.id,
+      pseudo: accounts.pseudo,
+      joinedAt: companyMembers.joinedAt,
+      role: companyMembers.role,
+    })
     .from(companyMembers)
     .innerJoin(accounts, eq(accounts.id, companyMembers.accountId))
     .where(eq(companyMembers.companyId, companyId))
@@ -71,14 +104,14 @@ export async function companions(db: Db, accountId: string): Promise<string[]> {
   return (await membersOf(db, id)).map((m) => m.id).filter((m) => m !== accountId);
 }
 
-/** An account may join or found a company: in none, and not one left less than a week ago. */
-async function mayJoin(db: Db, accountId: string, now: number): Promise<void> {
+/** An account may join or found a company: in none, and not one left too recently. */
+async function mayJoin(db: Db, accountId: string, now: number, rejoinMs: number): Promise<void> {
   if (await companyIdOf(db, accountId)) throw new CompanyError("already_member", 409);
   const [row] = await db
     .select({ left: accounts.companyLeftAt })
     .from(accounts)
     .where(eq(accounts.id, accountId));
-  if (row?.left && now - row.left.getTime() < COMPANY_REJOIN_MS) {
+  if (row?.left && now - row.left.getTime() < rejoinMs) {
     throw new CompanyError("left_recently", 409);
   }
 }
@@ -97,9 +130,16 @@ export function checkCompanyName(text: string): string {
 
 const newCode = () => randomBytes(6).toString("base64url");
 
-export async function createCompany(db: Db, accountId: string, text: string, now: number) {
+export async function createCompany(
+  db: Db,
+  world: GameWorld,
+  accountId: string,
+  text: string,
+  now: number,
+) {
   const name = checkCompanyName(text);
-  await mayJoin(db, accountId, now);
+  const rules = rulesOf(world);
+  await mayJoin(db, accountId, now, rules.rejoinMs);
   const at = new Date(now);
   const [taken] = await db
     .select({ id: companies.id })
@@ -111,21 +151,34 @@ export async function createCompany(db: Db, accountId: string, text: string, now
     .values({ name, code: newCode(), createdBy: accountId, createdAt: at })
     .returning({ id: companies.id });
   if (!company) throw new CompanyError("name_taken", 409);
-  await db.insert(companyMembers).values({ accountId, companyId: company.id, joinedAt: at });
+  // In the empire, the founder is its Capo.
+  await db.insert(companyMembers).values({
+    accountId,
+    companyId: company.id,
+    joinedAt: at,
+    role: rules.empire ? "capo" : null,
+  });
   await db
     .insert(telemetry)
     .values({ accountId, type: "company_created", at, props: { company: company.id } });
   return company.id;
 }
 
-export async function joinCompany(db: Db, accountId: string, code: string, now: number) {
+export async function joinCompany(
+  db: Db,
+  world: GameWorld,
+  accountId: string,
+  code: string,
+  now: number,
+) {
   const [company] = await db
     .select({ id: companies.id })
     .from(companies)
     .where(eq(companies.code, code));
   if (!company) throw new CompanyError("unknown_company", 404);
-  await mayJoin(db, accountId, now);
-  if ((await membersOf(db, company.id)).length >= COMPANY_MAX) {
+  const rules = rulesOf(world);
+  await mayJoin(db, accountId, now, rules.rejoinMs);
+  if ((await membersOf(db, company.id)).length >= rules.max) {
     throw new CompanyError("company_full", 409);
   }
   const at = new Date(now);
@@ -135,8 +188,8 @@ export async function joinCompany(db: Db, accountId: string, code: string, now: 
     .values({ accountId, type: "company_joined", at, props: { company: company.id } });
 }
 
-/** Leaves the company (the last one out closes it): a week before joining another. */
-export async function leaveCompany(db: Db, accountId: string, now: number) {
+/** Leaves the company (the last one out closes it; a Capo leaving has a successor at once). */
+export async function leaveCompany(db: Db, world: GameWorld, accountId: string, now: number) {
   const id = await companyIdOf(db, accountId);
   if (!id) throw new CompanyError("not_member", 403);
   await db.delete(companyMembers).where(eq(companyMembers.accountId, accountId));
@@ -146,7 +199,88 @@ export async function leaveCompany(db: Db, accountId: string, now: number) {
     .where(eq(accounts.id, accountId));
   if ((await membersOf(db, id)).length === 0) {
     await db.delete(companies).where(eq(companies.id, id));
-  }
+  } else await settleSuccession(db, world, id, now);
+}
+
+/** When a partner last acted: in the empire, its house's last action; else its arrival. */
+function lastActive(world: GameWorld, m: { id: string; joinedAt: Date }): number {
+  return world.current.empire?.houses[m.id]?.lastActionAt ?? m.joinedAt.getTime();
+}
+
+/**
+ * The automatic succession (CADRAGE-v3 § 7), settled at the reading: a Capo absent
+ * `capoAbsentDays` (or none) gives way to the oldest active Consigliere, else to the oldest active
+ * partner. In the empire only.
+ */
+export async function settleSuccession(
+  db: Db,
+  world: GameWorld,
+  companyId: string,
+  now: number,
+): Promise<boolean> {
+  const rules = rulesOf(world);
+  if (!rules.empire) return false;
+  const members = await membersOf(db, companyId);
+  const active = (m: (typeof members)[number]) => now - lastActive(world, m) < rules.capoAbsentMs;
+  const capo = members.find((m) => m.role === "capo");
+  if (capo && active(capo)) return false;
+  const heir =
+    members.find((m) => m.role === "consigliere" && active(m)) ??
+    members.find((m) => m !== capo && active(m));
+  if (!heir) return false;
+  if (capo)
+    await db
+      .update(companyMembers)
+      .set({ role: null })
+      .where(eq(companyMembers.accountId, capo.id));
+  await db
+    .update(companyMembers)
+    .set({ role: "capo" })
+    .where(eq(companyMembers.accountId, heir.id));
+  await db.insert(telemetry).values({
+    accountId: heir.id,
+    worldId: world.id,
+    type: "company_succession",
+    at: new Date(now),
+    props: { company: companyId, from: capo?.id ?? null },
+  });
+  return true;
+}
+
+/**
+ * The Capo names a partner to a vocation, or takes it away (`null`). Naming another Capo hands
+ * over the place; one Cassiere, two to four Consiglieri. In the empire only.
+ */
+export async function setCompanyRole(
+  db: Db,
+  world: GameWorld,
+  accountId: string,
+  memberId: string,
+  role: CompanyRole | null,
+  now: number,
+) {
+  const rules = rulesOf(world);
+  if (!rules.empire) throw new CompanyError("no_roles");
+  const id = await companyIdOf(db, accountId);
+  if (!id) throw new CompanyError("not_member", 403);
+  await settleSuccession(db, world, id, now);
+  const members = await membersOf(db, id);
+  if (members.find((m) => m.id === accountId)?.role !== "capo")
+    throw new CompanyError("not_capo", 403);
+  const target = members.find((m) => m.id === memberId);
+  if (!target || target.id === accountId) throw new CompanyError("unknown_member", 404);
+  if (
+    role === "consigliere" &&
+    target.role !== "consigliere" &&
+    members.filter((m) => m.role === "consigliere").length >= rules.consiglieri
+  )
+    throw new CompanyError("roles_full", 409);
+  const set = (who: string, r: CompanyRole | null) =>
+    db.update(companyMembers).set({ role: r }).where(eq(companyMembers.accountId, who));
+  if (role === "capo") await set(accountId, null);
+  if (role === "cassiere")
+    for (const m of members) if (m.role === "cassiere") await set(m.id, null);
+  await set(target.id, role);
 }
 
 /** The region the company lacks in this world (the first of the theme's), or null. */
@@ -169,7 +303,7 @@ export async function invitation(db: Db, world: GameWorld, code: string) {
   return {
     name: company.name,
     members: members.length,
-    full: members.length >= COMPANY_MAX,
+    full: members.length >= rulesOf(world).max,
     regions: [...new Set(regions)],
     missingRegion: missingRegion(
       world,
@@ -223,16 +357,18 @@ async function sharedRecord(db: Db, memberIds: string[], pseudo: Map<string, str
 /** The company as a member sees it, or null outside any. */
 export async function companyView(db: Db, world: GameWorld, accountId: string) {
   const id = await companyIdOf(db, accountId);
+  const rules = rulesOf(world);
   if (!id) {
     const [row] = await db
       .select({ left: accounts.companyLeftAt })
       .from(accounts)
       .where(eq(accounts.id, accountId));
-    const until = row?.left ? row.left.getTime() + COMPANY_REJOIN_MS : null;
+    const until = row?.left ? row.left.getTime() + rules.rejoinMs : null;
     return { company: null, mayJoinAt: until && until > world.now() ? until : null };
   }
   const [company] = await db.select().from(companies).where(eq(companies.id, id));
   if (!company) return { company: null, mayJoinAt: null };
+  await settleSuccession(db, world, id, world.now());
   const members = await membersOf(db, id);
   const ids = members.map((m) => m.id);
   const seen = new Map(
@@ -249,9 +385,13 @@ export async function companyView(db: Db, world: GameWorld, accountId: string) {
     company: {
       name: company.name,
       code: company.code,
-      max: COMPANY_MAX,
+      max: rules.max,
+      consiglieriMax: rules.consiglieri,
+      myRole: members.find((m) => m.id === accountId)?.role ?? null,
       members: members.map((m) => ({
+        id: m.id,
         pseudo: m.pseudo,
+        role: m.role,
         me: m.id === accountId,
         region: world.current.players[m.id]?.region ?? null,
         lastSeenAt: seen.get(m.id) ?? null,
@@ -274,6 +414,12 @@ export async function companyView(db: Db, world: GameWorld, accountId: string) {
 export async function callCompany(db: Db, world: GameWorld, accountId: string, now: number) {
   const id = await companyIdOf(db, accountId);
   if (!id) throw new CompanyError("not_member", 403);
+  // In the empire, the Capo and the Consiglieri call the company.
+  if (rulesOf(world).empire) {
+    await settleSuccession(db, world, id, now);
+    const role = (await membersOf(db, id)).find((m) => m.id === accountId)?.role;
+    if (role !== "capo" && role !== "consigliere") throw new CompanyError("not_capo", 403);
+  }
   const at = nextSkirmishCall(world.ctx.settings.terraferma, now);
   if (at === null) throw new CompanyError("no_call");
   await db

@@ -36,6 +36,7 @@ import { broglioView } from "./broglio.js";
 import { seasonMonthKey } from "./calendar.js";
 import { canalView, palaceOf } from "./canal.js";
 import {
+  COMPANY_ROLES,
   CompanyError,
   callCompany,
   companions,
@@ -48,6 +49,7 @@ import {
   leaveCompany,
   postCompanyMessage,
   reportCompanyMessage,
+  setCompanyRole,
 } from "./company.js";
 import { type CondottaHub, condottaRecord } from "./condotta.js";
 import { dashboard } from "./dashboard.js";
@@ -1010,7 +1012,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const parsed = z.object({ name: z.string().max(200) }).safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "invalid_name" });
     return company(reply, async () => {
-      await createCompany(db, account.id, parsed.data.name, world.now());
+      await createCompany(db, world, account.id, parsed.data.name, world.now());
       return companyView(db, world, account.id);
     });
   });
@@ -1027,7 +1029,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const parsed = z.object({ code: codeSchema }).safeParse(req.body);
     if (!parsed.success) return reply.code(404).send({ error: "unknown_company" });
     return company(reply, async () => {
-      await joinCompany(db, account.id, parsed.data.code, world.now());
+      await joinCompany(db, world, account.id, parsed.data.code, world.now());
       return companyView(db, world, account.id);
     });
   });
@@ -1036,7 +1038,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     const account = await requireAccount(req, reply);
     if (!account) return;
     return company(reply, async () => {
-      await leaveCompany(db, account.id, world.now());
+      await leaveCompany(db, world, account.id, world.now());
       return companyView(db, world, account.id);
     });
   });
@@ -1055,6 +1057,27 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     if (!account) return;
     return company(reply, async () => {
       await callCompany(db, world, account.id, world.now());
+      return companyView(db, world, account.id);
+    });
+  });
+
+  // The empire's vocations (CADRAGE-v3 § 7): the Capo names them.
+  app.post("/api/company/role", perMerchant(20), async (req, reply) => {
+    const account = await requireAccount(req, reply);
+    if (!account) return;
+    const parsed = z
+      .object({ member: z.string().uuid(), role: z.enum(COMPANY_ROLES).nullable() })
+      .safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_role" });
+    return company(reply, async () => {
+      await setCompanyRole(
+        db,
+        world,
+        account.id,
+        parsed.data.member,
+        parsed.data.role,
+        world.now(),
+      );
       return companyView(db, world, account.id);
     });
   });

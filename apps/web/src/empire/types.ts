@@ -117,6 +117,14 @@ export interface EmpireView {
   workshopPlaces: Record<string, { slots: number; neighbourBps: number }>;
   courtLeft: number;
   identity: EmpireIdentity;
+  aid: {
+    requests: { id: string; house: string; good: string; qty: number; at: number; value: string }[];
+    merit: number;
+    nextAskAt: number | null;
+    lotMax: number;
+    supplyLeft: string;
+    seniorFrom: number | null;
+  };
 }
 
 export interface KnowledgeNode {
@@ -247,4 +255,6 @@ export type EmpireAction =
   | { type: "empireHire"; role: string }
   | { type: "empirePlace"; staffId: string; at: string }
   | { type: "empireSkill"; staffId: string; path: number }
-  | { type: "empireLineage"; trait: string };
+  | { type: "empireLineage"; trait: string }
+  | { type: "empireAsk"; good: string; qty: number }
+  | { type: "empireSupply"; requestId: string };
