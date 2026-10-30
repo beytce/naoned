@@ -1822,6 +1822,28 @@ Le simulateur lit désormais dans les réglages du jeu ce que l'étape 4 y a mis
 
 Les valeurs étaient celles du modèle : **8 cibles sur 12 sur chaque graine**, les mêmes résultats qu'avant l'étape. Seule la mesure du nouveau change de nature (0 mois, voir plus haut).
 
+### L'étape 5 au simulateur : l'identité (30 octobre 2026)
+
+Le simulateur lit l'identité des Maisons avec le `houseEffect` du moteur, sur une ombre de chaque Maison (`apps/simulator/src/empire/identity.ts`) :
+- **l'Arte**, à la Casa 7 : celle de la chaîne qui compte le plus d'ateliers de la Maison, ou les Banchieri sans chaîne ;
+- **les savoirs**, dans l'ordre de son penchant (le négociant commence par l'Abaco, l'exploitant par les Arti), le premier capstone au bout de chaque branche, dès que la caisse le permet après la réserve ;
+- **le personnel** : un maître par place, sur ses ateliers dans l'ordre, qui gagne son expérience avec les heures de son atelier (un lot par demi-heure, hypothèse du modèle) ;
+- **la famille** : une génération tous les 91 jours depuis l'arrivée, un membre rare et un trait de lignée ;
+- **les voisinages**, en joueur qui ordonne bien son anneau : un lien pour chaque atelier dont une voisine de sa région fait l'intrant ;
+- **la cour**, qui achète chaque jour les biens fins et exquis, dans son carnet.
+
+Les réglages de Venise sont ceux de l'étape, sans retouche. **Résultat** (graines 1, 2 et 3, quatre cohortes de 200) : **8 cibles sur 12 sur chaque graine**, comme avant l'étape.
+
+| Mesure | Avant l'étape | Après |
+| --- | --- | --- |
+| Prochain palier de Casa, en jours de revenu | 4,2 à 10,8 | 4,0 à 9,1 |
+| Puits ÷ sources, jeunes puis anciennes | 0,81–0,83 puis 0,98–1,01 | 0,87–0,89 puis 0,98–1,01 |
+| Bruts des jeunes vendus à Venise | 5,9 à 6,3 % | 6,2 à 7,3 % |
+| Rattrapage des cohortes tardives | 21 à 30 % | 24 à 32 % |
+| Indice des prix | 86 à 101 | 86 à 101 |
+
+Sur la graine 3, la cour a payé 235 millions de ducats sur 24 mois (contre 2 milliards au marché et 1,65 aux commandes), les savoirs en ont détruit 38 millions et l'embauche 1,8 million. L'étape ne déséquilibre pas les cibles : les rendements de l'identité raccourcissent un peu les derniers paliers de la Casa, et les anciennes Maisons restent à l'équilibre des puits. Les jeunes s'en écartent un peu plus (0,87 à 0,89, pour 0,6 à 0,8 visés) : les savoirs et l'embauche de leurs premiers mois sont des puits ; c'est le point à surveiller avec l'étape suivante. Le simulateur prend environ 11 minutes par graine, contre 6.
+
 ### Refaire le calibrage
 
 ```
