@@ -1,3 +1,4 @@
+import { GAME_TIME_ZONE, offsetAt } from "../clock.js";
 import { draw } from "../draw.js";
 import { DENIERS_PER_DUCAT } from "../money.js";
 import {
@@ -13,10 +14,11 @@ import { empireSettings, ownHouse } from "./house.js";
 import type { EmpireSettings } from "./settings.js";
 
 const WEEK_MS = 7 * DAY_MS;
-/** Monday 5 January 1970, 00:00 UTC: the weeks of the Carnet start on Mondays. */
+/** Monday 5 January 1970, 00:00: the weeks of the Carnet start on Mondays, at midnight in Venice. */
 const MONDAY = 4 * DAY_MS;
 
-export const carnetWeek = (now: number) => Math.floor((now - MONDAY) / WEEK_MS);
+export const carnetWeek = (now: number) =>
+  Math.floor((now + offsetAt(now, GAME_TIME_ZONE) - MONDAY) / WEEK_MS);
 
 /** Adds to the objectives of a kind, this week's and those carried from the last. */
 export function advanceCarnet(h: EmpireHouse, kind: CarnetKind, amount: number): void {

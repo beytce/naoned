@@ -4,6 +4,8 @@ import type { ResourceCode } from "./theme.js";
 
 export type LedgerReason =
   | "empire_build"
+  | "empire_purchase"
+  | "empire_research"
   | "empire_sale"
   | "empire_wages"
   | "starting_capital"
@@ -110,7 +112,10 @@ export interface LedgerEntry {
 
 export type StockReason =
   | "empire_build"
+  | "empire_purchase"
   | "empire_sale"
+  | "empire_voyage"
+  | "empire_extract"
   | "starting_kit"
   | "fondaco_build"
   | "production_input"

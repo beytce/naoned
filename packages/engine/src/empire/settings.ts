@@ -72,8 +72,28 @@ export const empireSettingsSchema = z.object({
     .object({
       capitalDucats: qty,
       workshops: z.array(z.object({ type: z.string(), recipe: z.string() })),
+      /** Its first vehicles, by type. */
+      vehicles: z.array(z.string()).prefault([]),
     })
-    .prefault({ capitalDucats: 0, workshops: [] }),
+    .prefault({ capitalDucats: 0, workshops: [], vehicles: [] }),
+  /**
+   * The vehicles (CADRAGE-v3 § 3.3): the Casa that opens each, its hold, its price in ducats, the
+   * regions it goes between (one only: a land vehicle of the deliveries), its speed in bps.
+   */
+  vehicles: z
+    .record(
+      z.string(),
+      z.object({
+        casa: positive,
+        capacity: positive,
+        costDucats: qty,
+        regions: z.array(z.string()).min(1),
+        speedBps: bps,
+      }),
+    )
+    .prefault({}),
+  /** A land vehicle's round trips a day for the cities' orders. */
+  localTripsPerDay: positive.prefault(4),
   /** The night queue: a workshop is relaunched for this many hours at most, for everyone. */
   queueHours: positive.prefault(12),
   /**
@@ -140,8 +160,13 @@ export const empireSettingsSchema = z.object({
       maxLevel: positive,
       /** Each level past the first adds this share of the region's private book. */
       bookStepBps: bps,
+      /**
+       * A counter costs so many times a workshop of the level it stands for: its region's Casa
+       * for the first, the next level for the others (calibrated at the 24-month simulator).
+       */
+      costTimes: positive.prefault(4),
     })
-    .prefault({ maxLevel: 10, bookStepBps: 10_000 }),
+    .prefault({ maxLevel: 10, bookStepBps: 10_000, costTimes: 4 }),
   /** The young houses' raw goods sell this much dearer, up to a Casa (CADRAGE-v3 § 6). */
   newcomers: z
     .object({ rawBonusBps: bps, untilCasa: qty })
@@ -194,6 +219,8 @@ export const empireSettingsSchema = z.object({
     /** From this level on, a level also asks plans (from relics). */
     plansFromLevel: positive,
     plansPerLevel: qty,
+    /** The modules a house may research in this world (their systems exist); none listed: all. */
+    available: z.array(z.string()).prefault([]),
   }),
   deposits: z.object({
     /** Chance a day that a deposit appears in a region open to some house, in bps. */
@@ -202,6 +229,11 @@ export const empireSettingsSchema = z.object({
     maxStock: positive,
     /** Units an hour a team of base level takes. */
     teamPerHour: positive,
+    /** A region gets its daily chance once per so many houses present there (one at least). */
+    housesPerDeposit: positive.prefault(10),
+    /** The Casa of the first team, and a team more every so many levels. */
+    teamsFromCasa: positive.prefault(5),
+    casaPerTeam: positive.prefault(4),
   }),
   expeditions: z.object({
     /** Per tier (index tier − 1): the fleet strength it asks, and the relics it gives on success. */

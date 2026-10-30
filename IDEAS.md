@@ -112,6 +112,13 @@ Détails dans docs/expertise-2026-10-24/ (fichiers `*-final.md`).
 - Emballage Capacitor pour les magasins d'applications ; notifications push.
 - Connexion Google / Apple.
 
+## L'empire : ce qui attend son système (CADRAGE-v3)
+- Modules de négoce sans effet encore, donc fermés à la recherche : débarquement prompt, courrier, comptoir flottant, pavillon neutre, lettre de change, rappel. Ils s'ouvriront avec les escales, la guerre et la Muda des joueurs.
+- Modules d'exploitation à venir : grande campagne, prospection, gestion durable, charrois.
+- Le Gazzettino du dimanche (palmarès par bande, promotions).
+- Le coût des derniers paliers de la Casa, au-delà de 7 jours de revenu : avec le contenu de fin de partie.
+- La cible « nouveau à la médiane de sa bande » : triviale au simulateur, à redéfinir (par exemple « quitter la première bande en 4 à 6 mois »).
+
 ## V2
 - Plusieurs mondes en parallèle ; ouverture d'un nouveau monde quand le précédent dépasse J+14 (seulement si la population le permet sans vider les carnets).
 - Mondes privés pour une communauté, une école ou une entreprise, facturés par saison.

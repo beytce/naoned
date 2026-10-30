@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type EmpireSettingsInput, cashAccount, empireView } from "../../src/index.js";
+import { type EmpireSettingsInput, carnetWeek, cashAccount, empireView } from "../../src/index.js";
 import { testEmpire } from "../fixture.js";
 import { DAY, HOUR, T0, World, makeContext } from "../helpers.js";
 
@@ -115,5 +115,18 @@ describe("the Carnet of the week", () => {
     for (let i = 0; i < 11; i++) w.do({ type: "empireClaim", playerId: "a", index: i });
     expect(empireView(w.ctx, w.state, "a", w.now)?.house.seals).toBe(1);
     expect(T0).toBeGreaterThan(0);
+  });
+});
+
+describe("the Carnet's week, in Venice's time", () => {
+  it("turns on Monday at midnight in Paris, summer and winter alike", () => {
+    // Winter (UTC+1): Monday 2 March 2026, 00:00 in Paris is Sunday 23:00 UTC.
+    const sundayNight = Date.UTC(2026, 2, 1, 22, 30);
+    const mondayMorning = Date.UTC(2026, 2, 1, 23, 30);
+    expect(carnetWeek(mondayMorning)).toBe(carnetWeek(sundayNight) + 1);
+    // Summer (UTC+2): Monday 6 July 2026, 00:00 in Paris is Sunday 22:00 UTC.
+    expect(carnetWeek(Date.UTC(2026, 6, 5, 22, 30))).toBe(
+      carnetWeek(Date.UTC(2026, 6, 5, 21, 30)) + 1,
+    );
   });
 });

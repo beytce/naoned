@@ -53,7 +53,10 @@ function spread<K extends string>(mix: Record<K, number>, n: number): K[] {
 export function runEmpire(options: EmpireOptions): EmpireResult {
   const started = Date.now();
   const s = parseEmpireSettings(options.settings ?? venice1450Empire);
-  const w = createWorld(s, { ...DEFAULT_MODEL, ...options.model });
+  const model = { ...DEFAULT_MODEL, ...options.model };
+  // The vehicles the game sets (step 4: the mule to the wagon) are the engine's; the ships, the
+  // model's until their step.
+  const w = createWorld(s, { ...model, vehicles: { ...model.vehicles, ...s.vehicles } });
   const rng = newRng(options.seed, 1);
   const daily: DailyRow[] = [];
   const monthly: MonthRow[] = [];
@@ -154,7 +157,7 @@ function spawnDeposits(w: World, rng: ReturnType<typeof newRng>) {
     // In proportion to the houses there: a crowded region is prospected more.
     const there = w.houses.filter((h) => h.counters.has(r.code) && h.awayUntil <= w.now).length;
     const rate = Math.round(
-      (w.s.deposits.spawnBpsPerRegionDay * Math.max(1, there)) / w.m.housesPerDeposit,
+      (w.s.deposits.spawnBpsPerRegionDay * Math.max(1, there)) / w.s.deposits.housesPerDeposit,
     );
     const count = Math.floor(rate / 10_000) + (rng.next() * 10_000 < rate % 10_000 ? 1 : 0);
     for (let i = 0; i < count; i++)

@@ -11,12 +11,14 @@ import {
   type WorldState,
   cashAccount,
 } from "../state.js";
-import { type Tx, fail, inventoryLine, removeStock, transfer } from "../tx.js";
+import { type Tx, addStock, fail, inventoryLine, removeStock, transfer } from "../tx.js";
 import { advanceCarnet } from "./carnet.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
+import { effectOf } from "./modules.js";
 import { powerOf } from "./power.js";
 import {
   localBookOf,
+  newsDelayMs,
   pressureAfterHours,
   pressureAfterTrade,
   priceAt,
@@ -29,16 +31,16 @@ import type { EmpireSettings } from "./settings.js";
 /** The socle plays in Venetia only (CADRAGE-v3 § 13, step 3): the counters come at step 4. */
 const HOME = "veneto";
 
-/** The Power of a house of the socle: its Casa and its workshops (CADRAGE-v3 § 3.6). */
+/** The Power of a house: what it built, Casa, workshops, counters, modules, vehicles (§ 3.6). */
 export function powerOfHouse(h: EmpireHouse, s: EmpireSettings): number {
   return powerOf(
     {
       casa: h.casa,
       workshopLevels: h.workshops.map((w) => w.level),
-      counterLevels: [],
-      moduleLevels: [],
+      counterLevels: Object.values(h.counters ?? {}),
+      moduleLevels: Object.values(h.modules ?? {}),
       staffLevels: [],
-      vehicles: 0,
+      vehicles: (h.vehicles ?? []).length,
     },
     s,
   );
@@ -92,9 +94,59 @@ export function incomePerDay(h: EmpireHouse, now: number): Deniers {
   return full.reduce((a, x) => a + x, 0n) / BigInt(full.length);
 }
 
-function awakeHouses(tx: Tx): number {
+/** Houses awake present in a region: all of them in Venetia, those with a counter elsewhere. */
+function presentIn(
+  houses: Record<string, EmpireHouse>,
+  region: string,
+  now: number,
+  s: EmpireSettings,
+): number {
+  return Object.values(houses).filter(
+    (h) => !isAsleep(h, now, s) && (region === HOME || (h.counters?.[region] ?? 0) > 0),
+  ).length;
+}
+
+/** What a region's Dogana takes a day, and its cities' common board: sized on the houses there. */
+function marketSize(
+  houses: Record<string, EmpireHouse>,
+  region: string,
+  now: number,
+  s: EmpireSettings,
+) {
+  const present = presentIn(houses, region, now, s);
+  return {
+    depth: s.markets.depthBase + s.markets.depthPerHouse * present,
+    board: s.markets.boardPerHouse * present,
+  };
+}
+
+/** The house's counter level in a region: its Casa stands for one in Venetia. */
+export function counterLevel(h: EmpireHouse, region: string): number {
+  return region === HOME ? 1 : (h.counters?.[region] ?? 0);
+}
+
+/**
+ * Where a house holds a good (calibrated at the 24-month simulator): in Venice, and in the regions
+ * of the workshops that make it. Elsewhere, a voyage carries it.
+ */
+export function homesOf(tx: Tx, h: EmpireHouse, good: string): Set<string> {
+  const homes = new Set([HOME]);
+  for (const w of h.workshops) {
+    const r = tx.ctx.theme.recipes.find((x) => x.code === w.recipe && x.building === w.type);
+    if (r && good in r.outputs) homes.add(w.region ?? HOME);
+  }
+  // And where its teams found it.
+  for (const region of h.found?.[good] ?? []) homes.add(region);
+  return homes;
+}
+
+/** The region of a sale: one the house is present in, where it holds the good. */
+function checkPlace(tx: Tx, h: EmpireHouse, region: string, good: string) {
   const s = empireSettings(tx.ctx);
-  return Object.values(tx.s.empire?.houses ?? {}).filter((h) => !isAsleep(h, tx.now, s)).length;
+  const r = s.regions.find((x) => x.code === region);
+  if (!r || counterLevel(h, region) <= 0) fail("unknown_region");
+  if (!homesOf(tx, h, good).has(region)) fail("not_here");
+  return r;
 }
 
 /** A market as it stands now: its pressure come back toward the reference, its day's sales. */
@@ -115,30 +167,70 @@ function marketNow(tx: Tx, region: string, good: string): EmpireMarket {
   return mk;
 }
 
+/** The fortnight of news a market keeps. */
+const NEWS_MS = 14 * DAY_MS;
+
+function remember(mk: EmpireMarket, now: number): void {
+  const kept = (mk.history ?? []).filter((x) => x.at > now - NEWS_MS && x.at < now);
+  mk.history = [...kept, { at: now, pressureBps: mk.pressureBps }];
+}
+
+/** A market's pressure as it stood at an instant: its last trade before, come back since. */
+function pressureAt(mk: EmpireMarket | undefined, at: number, s: EmpireSettings): number {
+  if (!mk) return 10_000;
+  const before = [...(mk.history ?? [])].reverse().find((x) => x.at <= at);
+  if (!before)
+    return mk.history?.length
+      ? 10_000
+      : pressureAfterHours(mk.pressureBps, (at - mk.at) / HOUR_MS, s);
+  return pressureAfterHours(before.pressureBps, (at - before.at) / HOUR_MS, s);
+}
+
 function isRaw(tx: Tx, good: string): boolean {
   return tx.ctx.theme.resources.find((r) => r.code === good)?.tier === "raw";
 }
 
 /**
- * Sells to the Dogana of Venetia at the market's price, no more than its depth today: the young
- * houses' raw goods sell dearer; the Rialto's tax is taken. Returns what was sold.
+ * Sells to a region's Dogana at its market's price, no more than its depth today, where the house
+ * holds the good: the young houses' raw goods sell dearer; the tax is taken. Returns what was sold.
  */
-export function sellToDogana(tx: Tx, playerId: PlayerId, good: string, qty: number): number {
-  const s = empireSettings(tx.ctx);
+export function sellToDogana(
+  tx: Tx,
+  playerId: PlayerId,
+  good: string,
+  qty: number,
+  region = HOME,
+): number {
   const h = ownHouse(tx, playerId);
   if (!Number.isInteger(qty) || qty <= 0) fail("invalid_quantity");
-  const r = regionOf(HOME, s);
+  checkPlace(tx, h, region, good);
+  if (inventoryLine(tx, playerId, good).available <= 0) fail("insufficient_stock");
+  const n = sellAt(tx, playerId, good, qty, region);
+  if (n <= 0) fail("no_liquidity");
+  return n;
+}
+
+/** The Dogana's purchase itself (a sale, or a voyage's arrival): what it took, maybe nothing. */
+export function sellAt(
+  tx: Tx,
+  playerId: PlayerId,
+  good: string,
+  qty: number,
+  region: string,
+): number {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const r = regionOf(region, s);
   const ref = r.produces[good] ?? r.demands[good];
   if (ref === undefined) fail("unknown_resource");
-  const mk = marketNow(tx, HOME, good);
-  const depth = s.markets.depthBase + s.markets.depthPerHouse * awakeHouses(tx);
+  const mk = marketNow(tx, region, good);
+  const { depth } = marketSize(tx.s.empire?.houses ?? {}, region, tx.now, s);
   const n = Math.min(qty, depth - mk.soldToday, inventoryLine(tx, playerId, good).available);
-  if (n <= 0)
-    fail(inventoryLine(tx, playerId, good).available <= 0 ? "insufficient_stock" : "no_liquidity");
+  if (n <= 0) return 0;
   removeStock(tx, playerId, good, n, "empire_sale");
   const bonus = isRaw(tx, good) ? rawBonusBps(h.casa, s) : 0;
   const gross = applyBpsFloor(priceAt(ref, mk.pressureBps, s) * BigInt(n), 10_000 + bonus);
-  receive(tx, playerId, gross, `dogana:${good}`);
+  receive(tx, playerId, gross, `dogana:${region}:${good}`);
   transfer(
     tx,
     cashAccount(playerId),
@@ -149,49 +241,144 @@ export function sellToDogana(tx: Tx, playerId: PlayerId, good: string, qty: numb
   mk.soldToday += n;
   advanceCarnet(h, "sell", n);
   mk.pressureBps = pressureAfterTrade(mk.pressureBps, n, Math.max(1, depth), "sell", s);
+  remember(mk, tx.now);
   return n;
 }
 
 /**
- * Delivers to the cities of Venetia: its private book first, at the reference (the anchor), then
- * the common board at the market's price, of which a large house reaches only a share; the orders
- * pay a premium. Returns what was delivered.
+ * Buys from a region's Dogana at its market's price and the tax (a voyage's cargo), as much as the
+ * house can pay: the price rises as it buys. Returns what was bought.
  */
-export function deliverOrders(tx: Tx, playerId: PlayerId, good: string, qty: number): number {
+export function buyAt(
+  tx: Tx,
+  playerId: PlayerId,
+  good: string,
+  qty: number,
+  region: string,
+): number {
   const s = empireSettings(tx.ctx);
+  const r = regionOf(region, s);
+  const ref = r.produces[good] ?? r.demands[good];
+  if (ref === undefined) fail("unknown_resource");
+  const mk = marketNow(tx, region, good);
+  const unit = applyBpsFloor(priceAt(ref, mk.pressureBps, s), 10_000 + s.markets.taxBps);
+  const cash = tx.s.accounts[cashAccount(playerId)] ?? 0n;
+  const n = Math.min(qty, unit > 0n ? Number(cash / unit) : qty);
+  if (n <= 0) return 0;
+  transfer(
+    tx,
+    cashAccount(playerId),
+    SINK_ACCOUNT,
+    unit * BigInt(n),
+    "empire_purchase",
+    `${region}:${good}`,
+  );
+  addStock(tx, playerId, good, n, "empire_purchase");
+  const { depth } = marketSize(tx.s.empire?.houses ?? {}, region, tx.now, s);
+  mk.pressureBps = pressureAfterTrade(mk.pressureBps, n, Math.max(1, depth), "buy", s);
+  remember(mk, tx.now);
+  return n;
+}
+
+/** What the house's land vehicles still carry today to the cities (no vehicles set: no bound). */
+function haulLeft(tx: Tx, h: EmpireHouse): number {
+  const s = empireSettings(tx.ctx);
+  if (Object.keys(s.vehicles).length === 0) return Number.POSITIVE_INFINITY;
+  const base = (h.vehicles ?? [])
+    .map((v) => s.vehicles[v.type])
+    .filter((v) => v?.regions.length === 1)
+    .reduce((n, v) => n + (v?.capacity ?? 0), 0);
+  const capacity = Number(
+    applyBpsFloor(BigInt(base), 10_000 + effectOf(h.modules ?? {}, "capacity", s)),
+  );
+  const day = dayOf(tx.now);
+  const used = h.hauled?.day === day ? h.hauled.units : 0;
+  return Math.max(0, capacity * s.localTripsPerDay - used);
+}
+
+/**
+ * Delivers to a region's cities, where the house holds the good and as much as its land vehicles
+ * carry today. Returns what was delivered.
+ */
+export function deliverOrders(
+  tx: Tx,
+  playerId: PlayerId,
+  good: string,
+  qty: number,
+  region = HOME,
+): number {
   const h = ownHouse(tx, playerId);
   if (!Number.isInteger(qty) || qty <= 0) fail("invalid_quantity");
-  const ref = regionOf(HOME, s).demands[good];
-  if (ref === undefined) fail("unknown_resource");
+  checkPlace(tx, h, region, good);
+  if (inventoryLine(tx, playerId, good).available <= 0) fail("insufficient_stock");
+  const n = fillOrders(tx, playerId, good, Math.min(qty, haulLeft(tx, h)), region);
+  if (n <= 0) fail("no_liquidity");
+  const day = dayOf(tx.now);
+  h.hauled = { day, units: (h.hauled?.day === day ? h.hauled.units : 0) + n };
+  return n;
+}
+
+/**
+ * The cities' orders themselves (a delivery, or a voyage's arrival): the counter's private book
+ * first, at the reference (the anchor), then the common board at the market's price, of which a
+ * large house reaches only a share; the orders pay a premium. Returns what went, maybe nothing.
+ */
+export function fillOrders(
+  tx: Tx,
+  playerId: PlayerId,
+  good: string,
+  qty: number,
+  region: string,
+): number {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const ref = regionOf(region, s).demands[good];
+  if (ref === undefined) return 0;
   const day = dayOf(tx.now);
   let left = Math.min(qty, inventoryLine(tx, playerId, good).available);
-  if (left <= 0) fail("insufficient_stock");
-  if (!h.book || h.book.day !== day) h.book = { day, left: localBookOf(HOME, 1, s) };
-  const book = Math.min(h.book.left, left);
-  h.book.left -= book;
+  if (left <= 0) return 0;
+  const books = h.books ?? {};
+  h.books = books;
+  const mine =
+    books[region]?.day === day
+      ? (books[region] as { day: number; left: number })
+      : { day, left: localBookOf(region, counterLevel(h, region), s) };
+  books[region] = mine;
+  const book = Math.min(mine.left, left);
+  mine.left -= book;
   left -= book;
   let value = ref * BigInt(book);
   const boards = tx.s.empire?.boards ?? {};
   if (tx.s.empire) tx.s.empire.boards = boards;
-  const key = `${HOME}:${good}`;
+  const key = `${region}:${good}`;
   const open =
-    boards[key]?.day === day ? (boards[key]?.left ?? 0) : s.markets.boardPerHouse * awakeHouses(tx);
+    boards[key]?.day === day
+      ? (boards[key]?.left ?? 0)
+      : marketSize(tx.s.empire?.houses ?? {}, region, tx.now, s).board;
   const reach =
     h.casa <= s.markets.smallCasa
       ? open
       : applyBpsFloor(BigInt(open), 10_000 - s.markets.smallShareBps);
   const board = Math.min(Number(reach), left);
   boards[key] = { day, left: open - board };
-  if (board > 0) value += priceAt(ref, marketNow(tx, HOME, good).pressureBps, s) * BigInt(board);
+  if (board > 0) value += priceAt(ref, marketNow(tx, region, good).pressureBps, s) * BigInt(board);
   const delivered = book + board;
-  if (delivered <= 0) fail("no_liquidity");
+  if (delivered <= 0) return 0;
   removeStock(tx, playerId, good, delivered, "empire_sale");
-  receive(tx, playerId, applyBpsFloor(value, 10_000 + s.markets.orderPremiumBps), `orders:${good}`);
+  // The convoy's premium on the orders, with the market's.
+  const convoy = effectOf(h.modules ?? {}, "orderBonus", s);
+  receive(
+    tx,
+    playerId,
+    applyBpsFloor(value, 10_000 + s.markets.orderPremiumBps + convoy),
+    `orders:${region}:${good}`,
+  );
   advanceCarnet(h, "deliver", delivered);
   return delivered;
 }
 
 export interface EmpireQuote {
+  region: string;
   good: string;
   ref: Deniers;
   /** What the Dogana pays now, before the young houses' bonus. */
@@ -202,32 +389,51 @@ export interface EmpireQuote {
   depthLeft: number;
   /** What is left today of the cities' common board. */
   boardLeft: number;
+  /** When the price was so: now where the house has a counter, earlier elsewhere (the news). */
+  asOf: number;
 }
 
-/** Venetia's market as it stands now, for the view: pure, the state untouched. */
-export function empireQuotes(ctx: WorldContext, state: WorldState, now: number): EmpireQuote[] {
+/**
+ * The markets as a house sees them now, for the view (pure, the state untouched): live in Venetia
+ * and where it has a counter; in the other regions it may charter, as the news brought them, as
+ * late as a ship from there (profondeur.md § D). Without a house, Venetia's.
+ */
+export function empireQuotes(
+  ctx: WorldContext,
+  state: WorldState,
+  now: number,
+  playerId?: string,
+): EmpireQuote[] {
   const s = ctx.settings.empire;
   if (!s) return [];
-  const r = regionOf(HOME, s);
+  const houses = state.empire?.houses ?? {};
+  const h = playerId ? houses[playerId] : undefined;
   const day = dayOf(now);
-  const awake = Object.values(state.empire?.houses ?? {}).filter(
-    (h) => !isAsleep(h, now, s),
-  ).length;
-  const depth = s.markets.depthBase + s.markets.depthPerHouse * awake;
-  const goods = [...new Set([...Object.keys(r.produces), ...Object.keys(r.demands)])];
-  return goods.map((good) => {
-    const ref = (r.demands[good] ?? r.produces[good]) as Deniers;
-    const mk = state.empire?.markets?.[`${HOME}:${good}`];
-    const pressure = mk ? pressureAfterHours(mk.pressureBps, (now - mk.at) / HOUR_MS, s) : 10_000;
-    const sold = mk && mk.day === day ? mk.soldToday : 0;
-    const board = state.empire?.boards?.[`${HOME}:${good}`];
-    return {
-      good,
-      ref,
-      price: priceAt(ref, pressure, s),
-      asked: good in r.demands,
-      depthLeft: Math.max(0, depth - sold),
-      boardLeft: board?.day === day ? board.left : s.markets.boardPerHouse * awake,
-    };
+  const regions = s.regions.filter(
+    (r) =>
+      r.code === HOME || (h !== undefined && ((h.counters?.[r.code] ?? 0) > 0 || r.casa <= h.casa)),
+  );
+  return regions.flatMap((r) => {
+    const size = marketSize(houses, r.code, now, s);
+    const live = r.code === HOME || (h?.counters?.[r.code] ?? 0) > 0;
+    const intel = effectOf(h?.modules ?? {}, "intel", s);
+    const asOf = now - newsDelayMs(r.code, live, intel, s);
+    const goods = [...new Set([...Object.keys(r.produces), ...Object.keys(r.demands)])];
+    return goods.map((good) => {
+      const ref = (r.demands[good] ?? r.produces[good]) as Deniers;
+      const mk = state.empire?.markets?.[`${r.code}:${good}`];
+      const sold = mk && mk.day === day ? mk.soldToday : 0;
+      const board = state.empire?.boards?.[`${r.code}:${good}`];
+      return {
+        region: r.code,
+        good,
+        ref,
+        price: priceAt(ref, pressureAt(mk, asOf, s), s),
+        asked: good in r.demands,
+        depthLeft: Math.max(0, size.depth - sold),
+        boardLeft: board?.day === day ? board.left : size.board,
+        asOf,
+      };
+    });
   });
 }

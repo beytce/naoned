@@ -13,12 +13,12 @@ import { balanceOf } from "./house.js";
 import { toJson } from "./serialize.js";
 import type { GameWorld } from "./world.js";
 
-/** Venetia's goods in the socle: what its workshops make, and what they make it from. */
+/** The goods of the empire's regions: what their workshops make, and what they make it from. */
 function catalogOf(ctx: WorldContext) {
-  const s = ctx.settings.empire;
-  const veneto = s?.regions.find((r) => r.code === "veneto");
-  if (!veneto) return [];
-  const goods = new Set([...Object.keys(veneto.produces), ...Object.keys(veneto.demands)]);
+  const regions = ctx.settings.empire?.regions ?? [];
+  const goods = new Set(
+    regions.flatMap((r) => [...Object.keys(r.produces), ...Object.keys(r.demands)]),
+  );
   const useful = ctx.theme.recipes.filter((r) => Object.keys(r.outputs).some((g) => goods.has(g)));
   // One step up the chains: what those recipes need (the flour of the bread).
   for (const r of useful) for (const g of Object.keys(r.inputs)) goods.add(g);
@@ -48,7 +48,7 @@ export function empirePayload(ctx: WorldContext, state: WorldState, playerId: st
     view,
     cash: state.accounts[cashAccount(playerId)] ?? 0n,
     stock: Object.fromEntries(Object.entries(inv).map(([g, l]) => [g, l.available])),
-    market: empireQuotes(ctx, state, now),
+    market: empireQuotes(ctx, state, now, playerId),
     catalog: catalogOf(ctx),
     casa: (ctx.settings.empire?.casa ?? []).map((c, i) => ({ level: i + 1, opens: c.opens })),
     goods: Object.fromEntries(ctx.theme.resources.map((r) => [r.code, r.name])),
@@ -61,6 +61,7 @@ const action = z.discriminatedUnion("type", [
     type: z.literal("empireBuildWorkshop"),
     workshopType: z.string().max(40),
     recipe: z.string().max(40),
+    region: z.string().max(40).optional(),
   }),
   z.object({ type: z.literal("empireUpgrade"), workshopId: z.string().max(32) }),
   z.object({
@@ -73,13 +74,28 @@ const action = z.discriminatedUnion("type", [
     type: z.literal("empireSell"),
     good: z.string().max(40),
     qty: z.number().int().min(1).max(100_000),
+    region: z.string().max(40).optional(),
   }),
   z.object({
     type: z.literal("empireDeliver"),
     good: z.string().max(40),
     qty: z.number().int().min(1).max(100_000),
+    region: z.string().max(40).optional(),
   }),
   z.object({ type: z.literal("empireClaim"), index: z.number().int().min(0).max(40) }),
+  z.object({ type: z.literal("empireCharter"), region: z.string().max(40) }),
+  z.object({ type: z.literal("empireUpgradeCounter"), region: z.string().max(40) }),
+  z.object({ type: z.literal("empireBuyVehicle"), vehicleType: z.string().max(40) }),
+  z.object({
+    type: z.literal("empireVoyage"),
+    vehicleId: z.string().max(32),
+    from: z.string().max(40),
+    to: z.string().max(40),
+    good: z.string().max(40),
+    qty: z.number().int().min(1).max(100_000),
+  }),
+  z.object({ type: z.literal("empireResearch"), module: z.string().max(40) }),
+  z.object({ type: z.literal("empireTeam"), depositId: z.string().max(64) }),
 ]);
 
 export interface EmpireRouteDeps {

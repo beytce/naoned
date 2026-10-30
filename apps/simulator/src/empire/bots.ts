@@ -235,7 +235,7 @@ function landCapacity(w: World, h: House): number {
 
 function deliver(w: World, h: House, sinceHours: number) {
   let cap = Math.floor(
-    (landCapacity(w, h) * w.m.localTripsPerDay * Math.min(DAY, sinceHours)) / DAY,
+    (landCapacity(w, h) * w.s.localTripsPerDay * Math.min(DAY, sinceHours)) / DAY,
   );
   for (const [region] of h.counters) {
     const r = w.s.regions.find((x) => x.code === region);
@@ -823,7 +823,7 @@ function tryCounter(w: World, h: House): boolean {
   const region = w.s.regions.find(
     (r) => !h.counters.has(r.code) && r.casa <= h.casa && h.favour >= r.charterFavour,
   );
-  const cost = region ? levelCost(region.casa, w.s) * BigInt(w.m.counterCostTimes) : 0n;
+  const cost = region ? levelCost(region.casa, w.s) * BigInt(w.s.counters.costTimes) : 0n;
   // A new region is the house's growth: it is opened before saving, as soon as it pays back.
   if (region && (regionPaysBack(w, region.code, cost) ? h.cash : spendable(w, h)) >= cost) {
     h.favour -= region.charterFavour;
@@ -839,7 +839,7 @@ function tryCounter(w: World, h: House): boolean {
   // Else a counter grows (its private book with it), up to level 10.
   for (const [code, level] of h.counters) {
     if (level >= w.s.counters.maxLevel) continue;
-    const up = levelCost(level + 1, w.s) * BigInt(w.m.counterCostTimes);
+    const up = levelCost(level + 1, w.s) * BigInt(w.s.counters.costTimes);
     const quick = counterPaysBack(w, h, code, up);
     if ((quick ? h.cash : spendable(w, h)) < up) continue;
     destroy(w, h, up, "counters");
@@ -859,7 +859,7 @@ function tryVehicle(w: World, h: House): boolean {
     .sort((a, b) => b[1].capacity - a[1].capacity);
   // A land vehicle while Venice's own book outgrows the carts, else the largest ship.
   const book = localBookOf("veneto", h.counters.get("veneto") ?? 0, w.s);
-  const wantLand = landCapacity(w, h) * w.m.localTripsPerDay < book;
+  const wantLand = landCapacity(w, h) * w.s.localTripsPerDay < book;
   const pick = wantLand ? types.find(([, v]) => v.regions.length === 1) : types[0];
   if (!pick || (!wantLand && pick[1].regions.length === 1)) return false;
   const cost = d(pick[1].costDucats);

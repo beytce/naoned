@@ -73,10 +73,8 @@ export interface House {
   casa: number;
   /** The hour each Casa level was reached (index level − 1). */
   casaAt: number[];
-  /** The first day its Power reached the median of the older houses in its band. */
+  /** The first day its Power reached the median of its band (all its houses, whatever their age). */
   bandCaughtAt?: number;
-  /** The same, the absent houses (who build nothing) left out of the median. */
-  bandCaughtActiveAt?: number;
   workshops: Workshop[];
   counters: Map<string, number>;
   vehicles: Vehicle[];
@@ -218,8 +216,6 @@ export interface SimModel {
   foreignDepthPerActive: number;
   /** Booty of a won expedition: this many ducats × its tier². */
   bootyPerTierDucats: number;
-  /** The deposits' rate is per this many houses present in the region. */
-  housesPerDeposit: number;
   /** A miner's teams, against another house's. */
   minerTeams: number;
   /** Rialto's tax on market sales and purchases. */
@@ -228,10 +224,6 @@ export interface SimModel {
     string,
     { casa: number; capacity: number; costDucats: number; regions: string[]; speedBps: number }
   >;
-  /** Trips a day a land vehicle makes for the local books. */
-  localTripsPerDay: number;
-  /** A counter (new, or a level more) costs this many times a workshop's level. */
-  counterCostTimes: number;
   galleyCostDucats: number;
   galleyStrength: number;
   /** A house's raw goods count as young while its Casa is at most this. */

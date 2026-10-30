@@ -305,6 +305,8 @@ export interface MudaState {
 /** A workshop of the empire (CADRAGE-v3 § 3.2): a building of the theme, its recipe, its level. */
 export interface EmpireWorkshop {
   id: string;
+  /** Its region: Venetia when absent. */
+  region?: string;
   type: BuildingType;
   recipe: string;
   level: number;
@@ -314,7 +316,9 @@ export interface EmpireWorkshop {
 
 /** A building site: it ends at `endsAt`, settled at the next read. */
 export interface EmpireBuild {
-  kind: "casa" | "newWorkshop" | "upgrade";
+  kind: "casa" | "newWorkshop" | "upgrade" | "counter";
+  /** A counter's region (its first level: the charter's opening voyage and its building). */
+  region?: string;
   /** The level it builds. */
   level: number;
   /** The workshop it raises, or the new workshop's building and recipe. */
@@ -332,10 +336,24 @@ export interface EmpireHouse {
   lastActionAt: number;
   workshops: EmpireWorkshop[];
   builds: EmpireBuild[];
+  /** Its counters beyond Venetia, by region: their level (CADRAGE-v3 § 3.4). */
+  counters?: Record<string, number>;
   favour: number;
   seals: number;
-  /** What is left today of its private book of orders in Venetia. */
-  book?: { day: number; left: number };
+  /** Its vehicles: free again at `busyUntil` (a voyage's way there and back). */
+  vehicles?: { id: string; type: string; busyUntil: number }[];
+  /** The deposits its teams work, by id. */
+  teams?: string[];
+  /** Where it found each good it extracted: those regions hold it, as its workshops' do. */
+  found?: Record<string, string[]>;
+  /** Its modules researched, by code: their level (profondeur.md § B). */
+  modules?: Record<string, number>;
+  /** Its researches under way at the Scuola: settled at the next read, as the sites. */
+  research?: { code: string; level: number; startedAt: number; endsAt: number }[];
+  /** What its land vehicles carried to the cities today. */
+  hauled?: { day: number; units: number };
+  /** What is left today of its private book of orders, by region. */
+  books?: Record<string, { day: number; left: number }>;
   carnet?: EmpireCarnet;
   /** Receipts of the last days, today last: to read the next step in days of income. */
   income?: { day: number; days: Deniers[] };
@@ -369,11 +387,43 @@ export interface EmpireMarket {
   at: number;
   day: number;
   soldToday: number;
+  /** Its pressure after each trade of the last fortnight: the news a house learns late. */
+  history?: { at: number; pressureBps: number }[];
 }
 
 /** The persistent empire's part of a world (absent from the worlds of the monthly seasons). */
+/** A deposit (profondeur.md § A): it appears, the teams sent there share it, it runs out. */
+export interface EmpireDeposit {
+  id: string;
+  region: string;
+  good: string;
+  stock: number;
+  /** When its extraction was last settled. */
+  at: number;
+  /** The houses with a team on it. */
+  teams: PlayerId[];
+}
+
+/** A cargo on its way: sold at its arrival, settled at the next read. */
+export interface EmpireVoyage {
+  id: string;
+  house: PlayerId;
+  vehicleId: string;
+  good: string;
+  qty: number;
+  from: string;
+  to: string;
+  arrivesAt: number;
+  /** What the cargo cost, bought or own at its port's price: to read the voyage's margin. */
+  cost: Deniers;
+}
+
 export interface EmpireState {
   houses: Record<PlayerId, EmpireHouse>;
+  voyages?: EmpireVoyage[];
+  deposits?: EmpireDeposit[];
+  /** The last day the deposits were drawn for. */
+  depositsDay?: number;
   /** By "region:good". */
   markets?: Record<string, EmpireMarket>;
   /** The cities' common board, by "region:good": what is left of it today. */

@@ -35,15 +35,20 @@ import { standForDoge, voteDoge } from "./doge.js";
 import { knownTrait } from "./dynasty.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { advanceCarnet, claimObjective, ensureCarnet, windOnReturn } from "./empire/carnet.js";
+import { sendTeam, settleDeposits } from "./empire/extraction.js";
 import {
+  charterRegion,
   empireJoin,
   ownHouse,
   settleBuilds,
   startCasa,
+  startResearch,
   startUpgrade,
   startWorkshop,
+  upgradeCounter,
 } from "./empire/house.js";
 import { deliverOrders, sellToDogana } from "./empire/trade.js";
+import { buyEmpireVehicle, settleVoyages, startVoyage } from "./empire/voyages.js";
 import { relaunchAll, relaunchWorkshop } from "./empire/workshops.js";
 import { joinFamily, leaveFamily } from "./families.js";
 import { buildFondaco } from "./fondaci.js";
@@ -264,13 +269,34 @@ export type EmpireCommand =
       favour?: number;
     }
   | { type: "empireBuildCasa"; playerId: PlayerId }
-  | { type: "empireBuildWorkshop"; playerId: PlayerId; workshopType: string; recipe: string }
+  | {
+      type: "empireBuildWorkshop";
+      playerId: PlayerId;
+      workshopType: string;
+      recipe: string;
+      /** Venetia when absent. */
+      region?: string;
+    }
   | { type: "empireUpgrade"; playerId: PlayerId; workshopId: string }
   | { type: "empireRelaunch"; playerId: PlayerId; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll"; playerId: PlayerId }
-  | { type: "empireSell"; playerId: PlayerId; good: string; qty: number }
-  | { type: "empireDeliver"; playerId: PlayerId; good: string; qty: number }
-  | { type: "empireClaim"; playerId: PlayerId; index: number };
+  | { type: "empireSell"; playerId: PlayerId; good: string; qty: number; region?: string }
+  | { type: "empireDeliver"; playerId: PlayerId; good: string; qty: number; region?: string }
+  | { type: "empireClaim"; playerId: PlayerId; index: number }
+  | { type: "empireCharter"; playerId: PlayerId; region: string }
+  | { type: "empireUpgradeCounter"; playerId: PlayerId; region: string }
+  | { type: "empireBuyVehicle"; playerId: PlayerId; vehicleType: string }
+  | { type: "empireResearch"; playerId: PlayerId; module: string }
+  | { type: "empireTeam"; playerId: PlayerId; depositId: string }
+  | {
+      type: "empireVoyage";
+      playerId: PlayerId;
+      vehicleId: string;
+      from: string;
+      to: string;
+      good: string;
+      qty: number;
+    };
 
 export type DecideResult =
   | { ok: true; state: WorldState; effects: Effects }
@@ -373,6 +399,12 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
 }
 
 function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
+  // The cargoes arrived by now sell first, every house's, in the order they came in.
+  if (tx.ctx.settings.empire && tx.s.empire) {
+    settleVoyages(tx);
+    // The deposits' extraction up to now, then the days' new ones.
+    settleDeposits(tx);
+  }
   if (cmd.type === "empireJoin") {
     empireJoin(tx, cmd.playerId);
     const h = ownHouse(tx, cmd.playerId);
@@ -392,7 +424,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       startCasa(tx, cmd.playerId);
       break;
     case "empireBuildWorkshop":
-      startWorkshop(tx, cmd.playerId, cmd.workshopType, cmd.recipe);
+      startWorkshop(tx, cmd.playerId, cmd.workshopType, cmd.recipe, cmd.region);
       break;
     case "empireUpgrade":
       startUpgrade(tx, cmd.playerId, cmd.workshopId);
@@ -408,11 +440,29 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     case "empireClaim":
       claimObjective(tx, cmd.playerId, cmd.index);
       break;
+    case "empireCharter":
+      charterRegion(tx, cmd.playerId, cmd.region);
+      break;
+    case "empireUpgradeCounter":
+      upgradeCounter(tx, cmd.playerId, cmd.region);
+      break;
+    case "empireBuyVehicle":
+      buyEmpireVehicle(tx, cmd.playerId, cmd.vehicleType);
+      break;
+    case "empireResearch":
+      startResearch(tx, cmd.playerId, cmd.module);
+      break;
+    case "empireTeam":
+      sendTeam(tx, cmd.playerId, cmd.depositId);
+      break;
+    case "empireVoyage":
+      startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);
+      break;
     case "empireSell":
-      sellToDogana(tx, cmd.playerId, cmd.good, cmd.qty);
+      sellToDogana(tx, cmd.playerId, cmd.good, cmd.qty, cmd.region);
       break;
     case "empireDeliver":
-      deliverOrders(tx, cmd.playerId, cmd.good, cmd.qty);
+      deliverOrders(tx, cmd.playerId, cmd.good, cmd.qty, cmd.region);
       break;
   }
 }

@@ -10,11 +10,11 @@
 | Cohorte du mois 12 plus rapide jusqu'à la Casa 10 | 20 à 40 % plus vite | ✓ 30 % plus vite | ✓ 21 % plus vite | ✓ 25 % plus vite |
 | Tournées avec un objectif à moins de 24 h | ≥ 90 % | ✓ 95.9 % | ✓ 94.6 % | ✓ 94.9 % |
 | Prochain palier de Casa, en jours de revenu (médiane de chaque mois) | 2 à 7 chaque mois | ✗ 4.2 à 10.1 | ✗ 4.5 à 10.3 | ✗ 5.2 à 10.8 |
-| Cohorte du mois 12 à la Puissance médiane de sa bande (Maisons plus anciennes) | en 4 à 6 mois | ✗ 1.0 mois (hors absents : 1.0 mois) | ✗ 1.2 mois (hors absents : 1.2 mois) | ✗ 1.0 mois (hors absents : 1.0 mois) |
+| Cohorte du mois 12 à la Puissance médiane de sa bande (toutes ses Maisons) | en 4 à 6 mois | ✗ 0.0 mois | ✗ 0.0 mois | ✗ 0.0 mois |
 | Indice des prix | 80 à 130 | ✓ 86 à 101 | ✓ 87 à 101 | ✓ 86 à 101 |
 | Puits ÷ sources (médiane des mois), Maisons de moins de 3 mois puis plus anciennes | 0,6–0,8 puis 0,9–1,0 | ✗ 0.82 puis 0.99 | ✗ 0.83 puis 0.98 | ✗ 0.81 puis 1.01 |
 | Part de la Terraferme dans la progression | ≤ 15 % | ✓ 0.2 % | ✓ 0.2 % | ✓ 0.2 % |
-| Bruts des jeunes Maisons (Casa ≤ 8) vendus à Venise, part de leurs recettes ; part des bruts des vétérans venue d'elles | ≥ 10 % des recettes des jeunes | ✗ 5.9 % ; vétérans 1.2 % | ✗ 6.2 % ; vétérans 1.2 % | ✗ 6.3 % ; vétérans 1.6 % |
+| Bruts des jeunes Maisons (Casa ≤ 8) vendus à Venise, part de leurs recettes ; part des bruts des vétérans venue d'elles | ≥ 10 % des recettes des jeunes (cible du porteur) | ✗ 5.9 % ; vétérans 1.2 % | ✗ 6.2 % ; vétérans 1.2 % | ✗ 6.3 % ; vétérans 1.6 % |
 | Marge moyenne d'un voyage, et part des commandes dans les recettes | marge > 0, commandes ≥ 25 % | ✓ 846 d par voyage, commandes 34.4 % | ✓ 938 d par voyage, commandes 35.5 % | ✓ 872 d par voyage, commandes 31.1 % |
 | Part de son métier dans les recettes : voyages (négociant), gisements (exploitant), expéditions (armateur) | ≥ 25 % chacun | ✓ trader 26.9 %, miner 28.4 %, armourer 44.0 % | ✓ trader 29.7 %, miner 28.2 %, armourer 47.3 % | ✓ trader 27.9 %, miner 29.7 %, armourer 47.5 % |
 | Convois de la Muda financés en colleganza ; prix moyen d'une place, part des mises venue de plus grandes Maisons | ≥ 20 % des convois | ✓ 28.4 % de 14114 ; place 65575 d, plus grandes 7.3 % | ✓ 32.4 % de 15847 ; place 65006 d, plus grandes 5.3 % | ✓ 27.9 % de 13437 ; place 62041 d, plus grandes 10.3 % |
@@ -78,4 +78,4 @@ Colleganza : 183 223 081 d engagés, dont 0 d d'une grande Maison dans le vo
 
 Muda : 14148 places vendues pour 927 759 445 d ; 14114 convois, dont 4013 en colleganza (223 326 907 d de mises).
 
-Violations de la comptabilité : 0. Durée : 448 s, 444 s, 425 s.
+Violations de la comptabilité : 0. Durée : 382 s, 373 s, 409 s.
