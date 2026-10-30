@@ -230,7 +230,9 @@ export function newDay(w: World) {
       w.m.depthBase +
         w.m.depthPerActive * actives.filter((h) => h.counters.has(r.code)).length +
         // The great foreign markets (Bruges, Alexandria…) take goods whoever comes.
-        (r.hoursFromVenice > 0 ? w.m.foreignDepth : 0),
+        (r.hoursFromVenice > 0
+          ? w.m.foreignDepth + Math.round(w.m.foreignDepthPerActive * actives.length)
+          : 0),
     );
   for (const [key, mk] of w.markets) {
     mk.soldToday = 0;

@@ -186,6 +186,8 @@ export interface SimModel {
   depthPerActive: number;
   /** Units a day a foreign region's market takes of each good, whoever comes. */
   foreignDepth: number;
+  /** …and this much more per active house of the world: all Venice trades there. */
+  foreignDepthPerActive: number;
   /** Booty of a won expedition: this many ducats × its tier². */
   bootyPerTierDucats: number;
   /** The deposits' rate is per this many houses present in the region. */

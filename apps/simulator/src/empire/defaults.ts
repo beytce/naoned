@@ -32,10 +32,11 @@ export const DEFAULT_MODEL: SimModel = {
   favourPer100Ducats: 1,
   depthBase: 20,
   depthPerActive: 3,
-  foreignDepth: 400,
+  foreignDepth: 200,
+  foreignDepthPerActive: 1.5,
   bootyPerTierDucats: 250,
   minerTeams: 3,
-  housesPerDeposit: 20,
+  housesPerDeposit: 12,
   marketTaxBps: 300,
   vehicles: {
     mule: { casa: 1, capacity: 25, costDucats: 60, regions: VENETO, speedBps: 0 },
