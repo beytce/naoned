@@ -316,6 +316,35 @@ export const venice1450Empire: EmpireSettingsInput = {
       },
     ],
   },
+  // The staff (CADRAGE-v3 § 3 quinquies): the master of a workshop, the factor of a region, the
+  // captain of a vehicle; a path every five levels, a place more every four levels of the Casa.
+  staff: {
+    hireCostDucats: 200,
+    hireGrowthBps: 15_000,
+    slotsBase: 1,
+    casaPerSlot: 4,
+    xpPerLevel: 50,
+    maxLevel: 30,
+    tierEvery: 5,
+    rarityBps: { common: 10_000, rare: 15_000, illustrious: 20_000 },
+    roles: {
+      master: {
+        place: "workshop",
+        perLevel: { workshopYield: 30, quality: 20 },
+        paths: [{ quality: 300 }, { workshopYield: 300 }],
+      },
+      factor: {
+        place: "region",
+        perLevel: { book: 50 },
+        paths: [{ book: 500 }, { orderBonus: 200 }],
+      },
+      captain: {
+        place: "vehicle",
+        perLevel: { speed: 50, capacity: 50 },
+        paths: [{ speed: 500 }, { capacity: 500 }],
+      },
+    },
+  },
   // The Arti (CADRAGE-v3 § 3.5, the owner's choice of 30 October 2026): the chains of the theme.
   arte: {
     fromCasa: 7,

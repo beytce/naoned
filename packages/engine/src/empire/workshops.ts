@@ -14,6 +14,7 @@ import { houseEffect } from "./effects.js";
 import { empireSettings, ownHouse } from "./house.js";
 import { highRecipeRaw } from "./recipes.js";
 import type { EmpireSettings } from "./settings.js";
+import { gainXp } from "./staff.js";
 
 function recipeOf(tx: Tx, ws: EmpireWorkshop) {
   const r = tx.ctx.theme.recipes.find((x) => x.code === ws.recipe && x.building === ws.type);
@@ -47,6 +48,8 @@ export function collectWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop):
     addStock(tx, playerId, `${good}:fine`, better - exquisite, "production_output", ws.id);
     addStock(tx, playerId, `${good}:exquisite`, exquisite, "production_output", ws.id);
   }
+  // Its master grows with the lots of its workshop.
+  for (const m of h.staff ?? []) if (m.placedAt === ws.id) gainXp(m, done, s);
   job.batches -= done;
   job.startedAt += done * job.batchMs;
   if (job.batches === 0) ws.job = null;

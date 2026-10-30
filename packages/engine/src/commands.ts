@@ -49,6 +49,7 @@ import {
   upgradeCounter,
 } from "./empire/house.js";
 import { startLearning } from "./empire/knowledge.js";
+import { chooseSkill, hireStaff, placeStaff } from "./empire/staff.js";
 import { deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
 import { buyEmpireVehicle, settleVoyages, startVoyage } from "./empire/voyages.js";
 import { fitModule, relaunchAll, relaunchWorkshop, swapWorkshops } from "./empire/workshops.js";
@@ -295,6 +296,9 @@ export type EmpireCommand =
   | { type: "empireSwap"; playerId: PlayerId; a: string; b: string }
   | { type: "empireChooseArte"; playerId: PlayerId; arte: string; minor?: boolean }
   | { type: "empireLearn"; playerId: PlayerId; code: string }
+  | { type: "empireHire"; playerId: PlayerId; role: string }
+  | { type: "empirePlace"; playerId: PlayerId; staffId: string; at: string }
+  | { type: "empireSkill"; playerId: PlayerId; staffId: string; path: number }
   | {
       type: "empireVoyage";
       playerId: PlayerId;
@@ -476,6 +480,15 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireLearn":
       startLearning(tx, cmd.playerId, cmd.code);
+      break;
+    case "empireHire":
+      hireStaff(tx, cmd.playerId, cmd.role);
+      break;
+    case "empirePlace":
+      placeStaff(tx, cmd.playerId, cmd.staffId, cmd.at);
+      break;
+    case "empireSkill":
+      chooseSkill(tx, cmd.playerId, cmd.staffId, cmd.path);
       break;
     case "empireVoyage":
       startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);

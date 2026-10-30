@@ -2,6 +2,7 @@ import type { EmpireHouse } from "../state.js";
 import { knowledgeEffect } from "./knowledge.js";
 import { moduleEffectBps } from "./modules.js";
 import type { EmpireSettings } from "./settings.js";
+import { staffEffect } from "./staff.js";
 
 /** Where an effect is read: the staff placed there and the modules fitted there count too. */
 export interface EffectPlace {
@@ -33,6 +34,7 @@ export function houseEffect(
   const ws = place?.workshopId ? h.workshops.find((w) => w.id === place.workshopId) : undefined;
   for (const code of ws?.fitted ?? []) of(code, h.modules?.[code] ?? 0, true);
   total += knowledgeEffect(h, effect, s);
+  total += staffEffect(h, effect, s, place);
   // The Arte: its own effects, and its chain's yield where the workshop is of it.
   const arte = s.arte.artes.find((a) => a.code === h.arte);
   total += arte?.effects[effect] ?? 0;

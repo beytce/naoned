@@ -348,6 +348,10 @@ export interface EmpireHouse {
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */
   found?: Record<string, string[]>;
+  /** Its staff (CADRAGE-v3 § 3 quinquies). */
+  staff?: EmpireStaff[];
+  /** How many it hired: the next one costs more. */
+  hired?: number;
   /** Its knowledges learnt, and those being learnt (settled at the next read). */
   knowledge?: string[];
   learning?: { code: string; startedAt: number; endsAt: number }[];
@@ -369,6 +373,23 @@ export interface EmpireHouse {
   income?: { day: number; days: Deniers[] };
   /** A following wind after a long absence: the Carnet's Favour doubled until then. */
   windUntil?: number;
+}
+
+/** A member of the staff: a master, a factor, a captain… */
+export interface EmpireStaff {
+  id: string;
+  role: string;
+  rarity: string;
+  level: number;
+  xp: number;
+  /** The path chosen at each tier, by tier. */
+  skills: number[];
+  /** Where it works: a workshop's id, a region's code, a vehicle's id. */
+  placedAt?: string;
+  /** Since when it is placed (a factor's days). */
+  placedSince?: number;
+  /** A member of the family, with its name. */
+  family?: string;
 }
 
 export type CarnetKind = "relaunch" | "deliver" | "sell" | "sites" | "levels" | "casa" | "earn";

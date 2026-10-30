@@ -4,6 +4,7 @@ import { type Tx, addStock, fail, inventoryLine, nextId, removeStock, transfer }
 import { houseEffect } from "./effects.js";
 import { empireSettings, ownHouse } from "./house.js";
 import { priceAt, routeHours } from "./prices.js";
+import { gainXp } from "./staff.js";
 import { buyAt, counterLevel, fillOrders, homesOf, sellAt } from "./trade.js";
 
 /** Buys a vehicle at its Casa (CADRAGE-v3 § 3.3): its price is destroyed. */
@@ -96,6 +97,10 @@ export function settleVoyages(tx: Tx): void {
   for (const v of due) {
     if (!tx.s.empire.houses[v.house]) continue;
     addStock(tx, v.house, v.good, v.qty, "empire_voyage", v.id);
+    // Its captain grows with each voyage.
+    const s = empireSettings(tx.ctx);
+    for (const m of tx.s.empire.houses[v.house]?.staff ?? [])
+      if (m.placedAt === v.vehicleId) gainXp(m, s.staff.xpPerLevel, s);
     const delivered = fillOrders(tx, v.house, v.good, v.qty, v.to);
     sellAt(tx, v.house, v.good, v.qty - delivered, v.to);
   }
