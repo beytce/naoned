@@ -1807,6 +1807,11 @@ La Maison commence comme dans le socle, avec trois ateliers (argile, bois, scier
 
 Le rattrapage passe désormais : les chaînes du thème font monter plus vite les niveaux que beaucoup de Maisons possèdent. Les derniers paliers de la Casa coûtent un peu plus (jusqu'à 11 jours de revenu, contre 9,5). Restent ouverts les points déjà posés au porteur : la mesure du nouveau dans sa bande, et la cible des bruts.
 
+### Les deux décisions du 30 octobre, au simulateur
+
+- **Le nouveau se mesure contre toute sa bande**, quel que soit l'âge des Maisons. La mesure donne 0 mois : une cohorte de 200 nouveaux remplit elle-même la première bande, et chacun y est à la médiane dès le premier jour. Comparé aux seules Maisons plus anciennes, il fallait 1 à 1,2 mois. La cible de 4 à 6 mois ne peut donc se lire dans la bande ; elle est à redéfinir, par exemple « le nouveau quitte la première bande en 4 à 6 mois ».
+- **La cible des bruts des jeunes est confirmée** : ≥ 10 % de leurs recettes. Mesuré : 5,9 à 6,3 %. Le levier est la part de bruts des hautes recettes (`highRecipes.rawPerLevelBps`, 5 %), dont la hausse fait aussi passer les anciennes Maisons au-dessus de l'équilibre des puits.
+
 ### Refaire le calibrage
 
 ```

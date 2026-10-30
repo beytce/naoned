@@ -474,7 +474,7 @@ Un rapport public dit ce qui a été vendu.
 
 ## 12 bis. Arbitrages du 30 octobre 2026 (après le premier calibrage)
 
-1. **Le nouveau se mesure dans sa bande.** La cible « un nouveau dans un monde d'un an atteint la Puissance médiane en 4 à 6 mois » devient : « il atteint la Puissance médiane de sa bande en 4 à 6 mois ». C'est cohérent avec la règle d'or 4 : toute compétition se joue par bande.
+1. **Le nouveau se mesure dans sa bande.** La cible « un nouveau dans un monde d'un an atteint la Puissance médiane en 4 à 6 mois » devient : « il atteint la Puissance médiane de sa bande en 4 à 6 mois ». C'est cohérent avec la règle d'or 4 : toute compétition se joue par bande. La médiane se prend sur **toute la bande**, quel que soit l'âge des Maisons (décision du porteur, 30 octobre). Au simulateur, la mesure devient triviale (0 mois) : la cohorte des nouveaux fait elle-même la première bande. La cible est à redéfinir.
 2. **Les recettes de haut niveau demandent des bruts de Vénétie en quantité.** Au-delà du niveau 12, un atelier et les grands ouvrages consomment plus de bruts (blé, argile, bois, sel) qu'un vétéran ne peut en produire. Il les achète donc au Rialto, où vendent les jeunes Maisons, et le jeune devient utile au vétéran.
 3. **Les places de la Muda se gagnent cher.** Les grandes galères (galea grossa, galère de Flandre) ne partent qu'avec la Muda d'État. Leurs places s'achètent à l'incanto du soir, et les cargaisons de luxe (épices, soie) valent des semaines de revenu. On s'associe pour remplir une place : la colleganza vit de là.
 
@@ -495,11 +495,11 @@ Chaque étape fait l'objet d'un plan, validé avant le code.
    | Temps jusqu'à chaque palier de Casa | Proche du § 3.1 ; les cohortes tardives 20 à 40 % plus vite |
    | Objectif à moins de 24 h pour un joueur médian | Toujours |
    | Prochain palier de Casa, en jours de revenu | 2 à 7 |
-   | Nouveau à la Puissance médiane de sa bande (§ 12 bis) | 4 à 6 mois |
+   | Nouveau à la Puissance médiane de sa bande, toutes ses Maisons comptées quel que soit leur âge (§ 12 bis) | 4 à 6 mois (mesure triviale au simulateur : 0 mois, à redéfinir) |
    | Indice des prix | 80 à 130 sur 24 mois |
    | Ratio entre puits et sources | 0,6–0,8 avant 3 mois, 0,9–1,0 au-delà |
    | Part de la Terraferme dans la progression | ≤ 15 % |
-   | Bruts des jeunes Maisons vendus à Venise (§ 12 bis), en part de leurs recettes | ≥ 10 % (proposé ; la part des vétérans, ≥ 30 % au départ, est hors de portée avec des cohortes par paquets) |
+   | Bruts des jeunes Maisons vendus à Venise (§ 12 bis), en part de leurs recettes | ≥ 10 % (cible du porteur, 30 octobre ; la part des vétérans, ≥ 30 % au départ, est hors de portée avec des cohortes par paquets) |
    | Écart de prix entre régions (arbitrage) | Assez pour payer le voyage, jamais assez pour rendre les commandes inutiles |
    | Part des Maisons qui vivent surtout d'un seul métier | ≥ 30 % (la spécialisation est viable) |
    | Convois de la Muda financés en colleganza (§ 12 bis) | ≥ 20 % |
