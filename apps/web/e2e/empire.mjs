@@ -112,7 +112,7 @@ try {
       ["workshops", "4-ateliers"],
       ["venice", "5-casa"],
       ["ranking", "6-carnet"],
-      ["conquest", "6b-famille"],
+      ["conquest", "6b-terraferme"],
     ]) {
       await page.locator(`[data-tab=${tab}]`).click();
       await page.waitForSelector('[aria-modal="true"]');
@@ -138,6 +138,21 @@ try {
     if ((await page.getByRole("button", { name: /déplacer/i }).count()) === 0)
       faults.push(`${label}: no move on the workshop`);
     await shot("6c-atelier");
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(400);
+    // The Terraferma's tab: the week's theatre, its entry or the Contesa (CADRAGE-v3 § 8).
+    await page.locator("[data-tab=conquest]").click();
+    await page.waitForSelector("[data-terra]");
+    await page.locator("[data-tab=map]").click();
+    await page.waitForTimeout(400);
+    // The family, from the Casa's sheet.
+    await page.locator("[data-tab=venice]").click();
+    await page.getByRole("button", { name: /la famille/i }).click();
+    await page
+      .getByText(/traits de lignée/i)
+      .first()
+      .waitFor();
+    await shot("6e-famille");
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
     // The Casa's sheet holds the knowledge's tree, closed until the Casa 4.
