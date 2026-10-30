@@ -34,6 +34,17 @@ import {
 import { standForDoge, voteDoge } from "./doge.js";
 import { knownTrait } from "./dynasty.js";
 import { type Effects, emptyEffects } from "./effects.js";
+import { advanceCarnet, claimObjective, ensureCarnet, windOnReturn } from "./empire/carnet.js";
+import {
+  empireJoin,
+  ownHouse,
+  settleBuilds,
+  startCasa,
+  startUpgrade,
+  startWorkshop,
+} from "./empire/house.js";
+import { deliverOrders, sellToDogana } from "./empire/trade.js";
+import { relaunchAll, relaunchWorkshop } from "./empire/workshops.js";
 import { joinFamily, leaveFamily } from "./families.js";
 import { buildFondaco } from "./fondaci.js";
 import {
@@ -241,7 +252,25 @@ export type Command =
       vehicleId: string;
     }
   | TerraCommand
-  | { type: "tick" };
+  | { type: "tick" }
+  | EmpireCommand;
+
+/** The persistent empire's commands (CADRAGE-v3 § 13, the socle); refused without `empire`. */
+export type EmpireCommand =
+  | {
+      type: "empireJoin";
+      playerId: PlayerId;
+      /** The Influence of the monthly seasons, carried over as Favour, one for one (the switch). */
+      favour?: number;
+    }
+  | { type: "empireBuildCasa"; playerId: PlayerId }
+  | { type: "empireBuildWorkshop"; playerId: PlayerId; workshopType: string; recipe: string }
+  | { type: "empireUpgrade"; playerId: PlayerId; workshopId: string }
+  | { type: "empireRelaunch"; playerId: PlayerId; workshopId: string; recipe?: string }
+  | { type: "empireRelaunchAll"; playerId: PlayerId }
+  | { type: "empireSell"; playerId: PlayerId; good: string; qty: number }
+  | { type: "empireDeliver"; playerId: PlayerId; good: string; qty: number }
+  | { type: "empireClaim"; playerId: PlayerId; index: number };
 
 export type DecideResult =
   | { ok: true; state: WorldState; effects: Effects }
@@ -343,8 +372,61 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
   emit(tx, "player_reset", playerId);
 }
 
+function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
+  if (cmd.type === "empireJoin") {
+    empireJoin(tx, cmd.playerId);
+    const h = ownHouse(tx, cmd.playerId);
+    h.favour += Math.max(0, Math.floor(cmd.favour ?? 0));
+    ensureCarnet(tx, cmd.playerId, h);
+    return;
+  }
+  const h = ownHouse(tx, cmd.playerId);
+  settleBuilds(h, tx.now);
+  ensureCarnet(tx, cmd.playerId, h);
+  windOnReturn(tx, h);
+  h.lastActionAt = tx.now;
+  const player = tx.s.players[cmd.playerId];
+  if (player) player.lastActionAt = tx.now;
+  switch (cmd.type) {
+    case "empireBuildCasa":
+      startCasa(tx, cmd.playerId);
+      break;
+    case "empireBuildWorkshop":
+      startWorkshop(tx, cmd.playerId, cmd.workshopType, cmd.recipe);
+      break;
+    case "empireUpgrade":
+      startUpgrade(tx, cmd.playerId, cmd.workshopId);
+      break;
+    case "empireRelaunch":
+      relaunchWorkshop(tx, cmd.playerId, cmd.workshopId, cmd.recipe);
+      advanceCarnet(h, "relaunch", 1);
+      break;
+    case "empireRelaunchAll":
+      relaunchAll(tx, cmd.playerId);
+      advanceCarnet(h, "relaunch", 1);
+      break;
+    case "empireClaim":
+      claimObjective(tx, cmd.playerId, cmd.index);
+      break;
+    case "empireSell":
+      sellToDogana(tx, cmd.playerId, cmd.good, cmd.qty);
+      break;
+    case "empireDeliver":
+      deliverOrders(tx, cmd.playerId, cmd.good, cmd.qty);
+      break;
+  }
+}
+
+const isEmpire = (cmd: Command): cmd is EmpireCommand => cmd.type.startsWith("empire");
+
 function apply(tx: Tx, cmd: Command): void {
   const { ctx } = tx;
+  if (isEmpire(cmd)) {
+    applyEmpire(tx, cmd);
+    return;
+  }
+  // The monthly season's commands have no place in the empire (its bots, an old client).
+  if (ctx.settings.empire && cmd.type !== "tick") fail("season_over");
   if (cmd.type === "tick") {
     tick(tx);
     return;
@@ -616,9 +698,12 @@ export function decide(
     const next = produce(state, (draft) => {
       const tx = { ctx, s: draft, now, fx };
       apply(tx, cmd);
-      trackMissions(tx);
-      trackDaily(tx);
-      trackHouseMissions(tx);
+      // The monthly season's trackers: the empire has its Carnet instead.
+      if (!isEmpire(cmd)) {
+        trackMissions(tx);
+        trackDaily(tx);
+        trackHouseMissions(tx);
+      }
       if (fx.ledger.length > 0) markTurnoverPeaks(draft);
     });
     return { ok: true, state: next, effects: fx };

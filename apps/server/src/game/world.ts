@@ -23,6 +23,7 @@ import {
   upgradeLegacySettings,
   upgradeLegacyState,
   venice1450,
+  venice1450Empire,
   venice1450Settings,
   weekIndex,
 } from "@comptoirs/engine";
@@ -74,7 +75,17 @@ export interface WorldOptions {
   snapshotEveryVersions?: number;
   /** Settings forced on every world opened (tests: the Pass switched on). */
   settingsOverride?: Record<string, unknown>;
+  /**
+   * The persistent empire (CADRAGE-v3): opens the open world whose settings carry it, or creates
+   * one, never bounded by a month. The monthly world stays as it is until the switch.
+   */
+  empire?: boolean;
+  /** The switch: from this instant, the empire replaces the next monthly world. Off by default. */
+  empireFrom?: number;
 }
+
+const switched = (options: WorldOptions, now: number) =>
+  options.empire === true || (options.empireFrom !== undefined && now >= options.empireFrom);
 
 /**
  * One running world. Commands are serialised in memory (one server instance), applied by the
@@ -135,10 +146,14 @@ export class GameWorld {
     clock: () => number = Date.now,
     options: WorldOptions = {},
   ): Promise<GameWorld> {
-    let [world] = await db.select().from(worlds).where(eq(worlds.status, "open")).limit(1);
-    if (!world) {
+    let world: WorldRow | undefined;
+    if (switched(options, clock())) {
+      const open = await db.select().from(worlds).where(eq(worlds.status, "open"));
+      world = open.find((w) => isEmpireRow(w)) ?? (await createEmpireWorld(db, clock()));
+    } else {
+      [world] = await db.select().from(worlds).where(eq(worlds.status, "open")).limit(1);
       // Seasons follow calendar months: the first one runs to the end of this month.
-      world = await createWorld(db, seasonBounds(clock()));
+      if (!world) world = await createWorld(db, seasonBounds(clock()));
     }
     const instance = randomUUID();
     const loaded = await loadWorld(db, world, options, instance);
@@ -171,9 +186,11 @@ export class GameWorld {
     let bounds = nextSeasonBounds(seasonEnd(this.ctx));
     // A server stopped for a long time skips the months nobody could play.
     while (bounds.endsAt <= now) bounds = nextSeasonBounds(bounds.endsAt);
+    // The switch: past its instant, the last month gives way to the empire, for good.
+    const empire = switched(this.options, now);
     const next = await this.db.transaction(async (tx) => {
       await tx.update(worlds).set({ status: "closed" }).where(eq(worlds.id, closedId));
-      return createWorld(tx, bounds);
+      return empire ? createEmpireWorld(tx, now) : createWorld(tx, bounds);
     });
     const loaded = await loadWorld(this.db, next, this.options, this.instance);
     this.id = next.id;
@@ -532,7 +549,7 @@ export class GameWorld {
           at,
           props: {},
         });
-      } else if (command.type === "join") {
+      } else if (command.type === "join" || command.type === "empireJoin") {
         const player = next.players[command.playerId];
         if (player) {
           await tx.insert(players).values({
@@ -746,6 +763,32 @@ async function createWorld(db: Db, bounds: { startsAt: number; endsAt: number })
   return world;
 }
 
+/** A world of the persistent empire: its settings carry the empire's. */
+function isEmpireRow(world: WorldRow): boolean {
+  return Boolean((world.settings as { empire?: unknown } | null)?.empire);
+}
+
+/**
+ * Commerce has no end in the empire (CADRAGE-v3 § 12): the column keeps a date that never comes,
+ * and the engine never closes the season of a world that carries the empire.
+ */
+const EMPIRE_ENDS_AT = Date.UTC(9999, 11, 31);
+
+async function createEmpireWorld(db: Db, now: number) {
+  const [world] = await db
+    .insert(worlds)
+    .values({
+      name: "Venise 1450 · L'empire",
+      theme: "venice1450",
+      startsAt: new Date(now),
+      endsAt: new Date(EMPIRE_ENDS_AT),
+      settings: { ...venice1450Settings, empire: venice1450Empire },
+    })
+    .returning();
+  if (!world) throw new Error("could not create the empire's world");
+  return world;
+}
+
 /** Engine context and saved state of a world (a fresh state for a new one). */
 async function loadWorld(db: Db, world: WorldRow, options: WorldOptions, owner: string) {
   const theme = THEMES[world.theme as keyof typeof THEMES];
@@ -764,6 +807,14 @@ async function loadWorld(db: Db, world: WorldRow, options: WorldOptions, owner: 
     // New mechanics get their defaults; values already set in the world are kept.
     stored = mergeDefaults(venice1450Settings, world.settings);
   }
+  // The empire's own settings: the theme's current ones in beta, else the stored ones completed.
+  if (isEmpireRow(world)) {
+    const saved = (world.settings as { empire?: unknown }).empire;
+    const empire = options.settingsFromTheme
+      ? venice1450Empire
+      : mergeDefaults(venice1450Empire, saved);
+    stored = { ...(stored as object), empire };
+  }
   if (options.settingsOverride) stored = mergeDefaults(stored, options.settingsOverride);
   // A world saved before live-2: the Pass's retired perks go to zero, and are saved so.
   stored = upgradeLegacySettings(stored);
@@ -775,9 +826,13 @@ async function loadWorld(db: Db, world: WorldRow, options: WorldOptions, owner: 
     // The world id is never sent to players: it seeds draws (events, contracts, pirates).
     seed: world.id,
     // The month's mutator over the stored settings, never saved into them (E2-9).
-    settings: monthSettings(parseSettings(stored), world.endsAt.getTime()),
+    // The empire has no month: no Doge's mutator over it.
+    settings: isEmpireRow(world)
+      ? parseSettings(stored)
+      : monthSettings(parseSettings(stored), world.endsAt.getTime()),
     startAt: world.startsAt.getTime(),
-    endAt: world.endsAt.getTime(),
+    // The empire has no end: the season's systems, idle in it, see no bound to count weeks to.
+    ...(isEmpireRow(world) ? {} : { endAt: world.endsAt.getTime() }),
   };
   // Take over first, then read: an old instance can no longer write once we hold the state.
   await db.update(worldStates).set({ owner }).where(eq(worldStates.worldId, world.id));

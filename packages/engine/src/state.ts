@@ -302,8 +302,88 @@ export interface MudaState {
   bought: Record<PlayerId, Record<string, number>>;
 }
 
+/** A workshop of the empire (CADRAGE-v3 § 3.2): a building of the theme, its recipe, its level. */
+export interface EmpireWorkshop {
+  id: string;
+  type: BuildingType;
+  recipe: string;
+  level: number;
+  /** The night queue: lots queued from `startedAt`, their inputs already taken. */
+  job: ProductionJob | null;
+}
+
+/** A building site: it ends at `endsAt`, settled at the next read. */
+export interface EmpireBuild {
+  kind: "casa" | "newWorkshop" | "upgrade";
+  /** The level it builds. */
+  level: number;
+  /** The workshop it raises, or the new workshop's building and recipe. */
+  workshopId?: string;
+  workshopType?: BuildingType;
+  recipe?: string;
+  startedAt: number;
+  endsAt: number;
+}
+
+/** A house of the persistent empire: what it has built, never reset. */
+export interface EmpireHouse {
+  casa: number;
+  joinedAt: number;
+  lastActionAt: number;
+  workshops: EmpireWorkshop[];
+  builds: EmpireBuild[];
+  favour: number;
+  seals: number;
+  /** What is left today of its private book of orders in Venetia. */
+  book?: { day: number; left: number };
+  carnet?: EmpireCarnet;
+  /** Receipts of the last days, today last: to read the next step in days of income. */
+  income?: { day: number; days: Deniers[] };
+  /** A following wind after a long absence: the Carnet's Favour doubled until then. */
+  windUntil?: number;
+}
+
+export type CarnetKind = "relaunch" | "deliver" | "sell" | "sites" | "levels" | "casa" | "earn";
+
+export interface CarnetObjective {
+  kind: CarnetKind;
+  target: number;
+  progress: number;
+  claimed: boolean;
+}
+
+/** The Carnet of the week (CADRAGE-v3 § 4.2). */
+export interface EmpireCarnet {
+  /** Weeks since Monday 5 January 1970, UTC. */
+  week: number;
+  objectives: CarnetObjective[];
+  /** Last week's objectives still to catch up. */
+  carried: CarnetObjective[];
+  /** The Seal of the full carnet, given. */
+  full: boolean;
+}
+
+/** A market of the empire: its pressure (bps of the reference) and what the Dogana took today. */
+export interface EmpireMarket {
+  pressureBps: number;
+  at: number;
+  day: number;
+  soldToday: number;
+}
+
+/** The persistent empire's part of a world (absent from the worlds of the monthly seasons). */
+export interface EmpireState {
+  houses: Record<PlayerId, EmpireHouse>;
+  /** By "region:good". */
+  markets?: Record<string, EmpireMarket>;
+  /** The cities' common board, by "region:good": what is left of it today. */
+  boards?: Record<string, { day: number; left: number }>;
+}
+
 export interface WorldState {
   seq: number;
+  /** The persistent empire (CADRAGE-v3), in a world whose settings carry it. */
+  empire?: EmpireState;
   players: Record<PlayerId, Player>;
   buildings: Record<BuildingId, Building>;
   inventories: Record<PlayerId, Record<ResourceCode, InventoryLine>>;

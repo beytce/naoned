@@ -3,6 +3,7 @@ import { Admin } from "./Admin.js";
 import { type Account, ApiError, api, tokenFromLocation } from "./api.js";
 import { Emblem } from "./art/logo.js";
 import { LagoonNight } from "./art/scenes.js";
+import { EmpireOrSeason } from "./empire/Home.js";
 import { CanalHero } from "./game/Canal.js";
 import { Game } from "./game/Game.js";
 import { fr } from "./i18n.js";
@@ -83,10 +84,15 @@ export function App() {
   if (screen.name === "home" && window.location.pathname === "/admin") return <Admin />;
   if (screen.name === "home") {
     return (
-      <Game
+      <EmpireOrSeason
         account={screen.account}
-        onAccount={(account) => setScreen({ name: "home", account })}
-        onLogout={logout}
+        season={
+          <Game
+            account={screen.account}
+            onAccount={(account) => setScreen({ name: "home", account })}
+            onLogout={logout}
+          />
+        }
       />
     );
   }

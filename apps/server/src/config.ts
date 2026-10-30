@@ -43,6 +43,21 @@ const schema = z
      * Development only: JSON merged over the world's settings at start, e.g.
      * `{"terraferma":{"live":false}}` to play the families of the worlds before the Terraferma.
      */
+    /**
+     * The kind of world the server opens: the monthly seasons (by default, until the switch), or
+     * the persistent empire (CADRAGE-v3), for development and its end-to-end test.
+     */
+    WORLD_KIND: z.enum(["season", "empire"]).default("season"),
+    /**
+     * The switch (CADRAGE-v3 § 12), off unless set: from this instant (ISO), the month that ends
+     * opens the persistent empire in its place, and a server started after it opens the empire.
+     * Set in production only on the decision of the game's owner.
+     */
+    EMPIRE_FROM: z
+      .string()
+      .optional()
+      .refine((v) => v === undefined || Number.isFinite(Date.parse(v)), "an ISO date")
+      .transform((v) => (v ? Date.parse(v) : undefined)),
     WORLD_SETTINGS_OVERRIDE: z
       .string()
       .optional()

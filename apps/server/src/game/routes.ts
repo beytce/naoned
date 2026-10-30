@@ -59,6 +59,7 @@ import {
   nextGeneration,
   startGeneration,
 } from "./dynasty.js";
+import { registerEmpireRoutes } from "./empire.js";
 import {
   ChatError,
   familyThread,
@@ -364,6 +365,8 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     }
     return account;
   }
+
+  registerEmpireRoutes(app, { db, world, requireAccount, perMerchant });
 
   async function tutorialOf(accountId: string): Promise<string[]> {
     const [row] = await db

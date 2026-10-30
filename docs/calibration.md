@@ -1666,3 +1666,150 @@ Mesuré par `pnpm sim` sur 5 graines, avec les vagues 1 à 4. Nouveau dans l'éc
 - Les parts de Maison ne déplacent ni la monnaie payée (−0,6 % en moyenne, dans le bruit des graines) ni la masse monétaire. Les dividendes restent petits (jusqu'à 400 ducats pour toute une saison) : 30 % d'un gain de semaine, au prorata de parts surtout gardées par le fondateur. Le rachat du dernier jour est toujours payé en entier (aucune Maison à court), et le test du moteur montre qu'il ne dépasse jamais la caisse.
 - Sur la graine 5, les assidus finissent derrière les occasionnels en patrimoine médian (96,7 %) mais devant en ventes nettes (142,6 %), qui font le classement : diagnostic à suivre (l'avance des assidus varie beaucoup d'une graine à l'autre depuis la vague 1).
 - Restent sous leur cible, comme après les vagues 1 à 4 : la croissance du mois (1,12 à 1,19 pour 1,20) et le pain (54 à 58 % pour 65 %).
+
+## Empire persistant (CADRAGE-v3) : le simulateur de 24 mois
+
+*30 octobre 2026. Réglages : `packages/engine/src/themes/venice1450.empire.ts` (règles du jeu) et `apps/simulator/src/empire/defaults.ts` (paramètres du modèle : rythmes de production, habitudes des bots, véhicules). Rapport complet : `docs/refonte-2026-10-29/simulation-24-mois.md`.*
+
+### Méthode
+
+`pnpm --filter @comptoirs/simulator empire` ne fait pas tourner le moteur complet. C'est un **simulateur de modèle**, au pas d'une heure sur 24 mois, qui fait vivre les formules de `packages/engine/src/empire`. Ces formules sont testées et serviront telles quelles au socle :
+- courbes, salaires, Puissance, rattrapage ;
+- prix régionaux, retard des nouvelles ;
+- modules, gisements, colleganza, expéditions, corsaires.
+
+Le monde :
+- quatre cohortes de 200 Maisons, arrivées aux mois 0, 3, 6 et 12 ;
+- quatre profils d'activité (assidu, médian, occasionnel, absent par trous de 3 à 14 jours) ;
+- quatre penchants (négociant, exploitant, armateur, mixte).
+
+Chaque jour, on vérifie que la monnaie des Maisons est égale à « créé − détruit » : aucune violation sur les trois graines. Une graine prend environ 6 minutes.
+
+### Résultat (graines 1, 2 et 3)
+
+| Cible (CADRAGE-v3 § 13) | Visée | Résultat | |
+| --- | --- | --- | --- |
+| Calendrier de la Casa | Entre la moitié et le double du § 3.1 | Tous les paliers dans les bornes ; Casa 10 vers le jour 80, Casa 20 vers le jour 380–440 | ✓ |
+| Rattrapage des cohortes tardives | 20 à 40 % plus vite jusqu'à la Casa 10 | 12 à 20 % | ≈ |
+| Objectif à moins de 24 h | ≥ 90 % des tournées | 96–97 % | ✓ |
+| Prochain palier de Casa | 2 à 7 jours de revenu chaque mois | 4 à 7 jusqu'au mois 18, puis jusqu'à 10–11 | ≈ |
+| Nouveau à la Puissance médiane | En 4 à 6 mois | Jamais en 12 mois | ✗ |
+| Indice des prix | 80 à 130 | 84 à 101 | ✓ |
+| Puits ÷ sources | 0,6–0,8 (moins de 3 mois), 0,9–1,0 (au-delà) | 0,84 puis 0,97 | ≈ |
+| Part de la Terraferme | ≤ 15 % | 0,1 % | ✓ |
+| Bruts des vétérans achetés aux jeunes | ≥ 30 % | 2 % | ✗ |
+| Arbitrage | Marge > 0, commandes ≥ 25 % des recettes | Environ 5 500 d par voyage, commandes 36–37 % | ✓ |
+| Chaque métier fait vivre son penchant | ≥ 25 % chacun | Voyages 42–47 %, gisements 24–26 %, expéditions 48–49 % | ✓ (une graine à 24,1 %) |
+
+Revenu médian de la première cohorte (ducats par jour, sur 30 jours glissants) :
+
+| | J1 | S1 | M1 | M3 | M6 | A1 | A1,5 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Cible | 150 | 300 | 600 | 1 500 | 3 500 | 8 000 | 12 000 |
+| Obtenu | 132 | 231 | 478 | 2 700 | 5 000 | 6 800 | 7 500 |
+
+### Ce que le simulateur a appris
+
+1. **Les chiffres du v3 n'étaient pas cohérents entre eux.** Si chaque palier coûte 2 à 7 jours de revenu et que rien d'autre ne freine, les vingt paliers se font en quatre à cinq mois, pas en deux ans et demi. Le calibrage ajoute donc l'**exigence d'ateliers** : la Casa n demande n − 3 ateliers au niveau n − 1, à partir de la Casa 9, douze au plus. C'est le niveau maître d'Hades' Star. Ce changement de règle est reporté dans le v3, § 3.1.
+2. **Les marchandises doivent avoir un lieu.** Tant qu'une Maison vendait son stock dans toutes ses régions, le négoce et les voyages ne servaient à rien. Désormais :
+   - un bien se vend, ou se livre aux commandes, là où la Maison le fabrique, et à Venise ;
+   - ailleurs, il faut un voyage, qui livre d'abord les commandes du port.
+
+   Cette règle est à garder pour le socle.
+3. **Les trois métiers ne vivent que si l'on vend loin.** Les grands marchés étrangers (Bruges, Alexandrie) ont une profondeur à la mesure du monde : 200 unités par jour et par bien, plus 1,5 par Maison active.
+   - Les gisements naissent au prorata des Maisons présentes, un pour dix par jour, et les biens chers y sont plus fréquents.
+   - Le butin d'une expédition gagnée vaut 250 ducats × palier².
+4. **Les ventes à la Dogana doivent rester petites** : 20 unités par jour et par bien, plus 3 par Maison présente dans la région. Sinon elles impriment de la monnaie et passent devant les commandes des villes, qui doivent rester la première source (≈ 37 % ici, voyages compris).
+5. **Les bots qui produisent sans débouché se ruinent.** Ils achètent des intrants pour des biens que personne ne demande. Le socle devra montrer au joueur ce qui se vend, et où.
+
+### Les points ouverts, au porteur
+
+*Arbitrés le 30 octobre 2026 :*
+- *le nouveau se mesure contre la médiane de **sa bande** ;*
+- *les **recettes de haut niveau** demandent des bruts de Vénétie en quantité ;*
+- *les **places de la Muda** se gagnent cher à l'incanto, et les cargaisons de luxe valent des semaines de revenu.*
+
+*Le détail suit, tel qu'il a été posé.*
+
+- **Le nouveau à la Puissance médiane en 4 à 6 mois** n'est pas atteignable avec ce calendrier. À 18 mois, la plupart des Maisons anciennes sont à la Casa 20 : la médiane du monde est le sommet. Deux voies :
+  - mesurer le nouveau contre la médiane de sa bande ;
+  - prolonger le sommet (Maestria, Grandes Œuvres) pour que la Puissance des anciens ne plafonne pas.
+- **Le vétéran acheteur des bruts des jeunes** n'émerge pas : 2 % pour 30 % visés. Les grandes Maisons produisent leurs propres bruts. Il faudrait un levier de conception, par exemple des recettes de haut niveau qui demandent des bruts de Vénétie en quantité, ou des commandes de bruts que les vétérans passent aux jeunes.
+- **La colleganza ne se déclenche presque jamais.** Quand les voyages longs commencent (Casa 11 et plus), les Maisons ont déjà 200 000 à 500 000 ducats en caisse, et une cargaison coûte bien moins que cela. Pour que la colleganza vive, une cargaison longue doit coûter cher devant la trésorerie : galères de la Muda dont les places se gagnent à l'incanto, cargaisons de luxe.
+- **Les puits des jeunes Maisons** (0,84 contre 0,6–0,8 visé) : les bots réinvestissent presque tout. Ce n'est pas un risque d'inflation, plutôt l'inverse. La cible est peut-être à revoir.
+- **Le revenu au-delà de 18 mois** reste sous la cible (7 500 contre 12 000 à 20 000 ducats par jour) et les derniers paliers coûtent jusqu'à 10 jours. Il faudra le reprendre avec le contenu de fin de partie : Flandre, Maestria, charges.
+
+### Les trois arbitrages dans le simulateur (30 octobre 2026)
+
+Les décisions du porteur (CADRAGE-v3, § 12 bis) sont dans le moteur et dans le modèle :
+- **La mesure du nouveau.** Chaque jour, une Maison arrivée après le début est comparée à la Puissance médiane des Maisons plus anciennes de sa bande. Le rapport donne aussi, pour information, la même mesure sans les Maisons absentes.
+- **Les hautes recettes** (`highRecipes`, fonction `highRecipeRaw`). Dès le niveau 12, chaque unité faite mange une part d'unité de brut de Vénétie (blé, argile, bois, sel) par niveau à partir de 12. L'atelier la prend dans son stock ou l'achète à Venise ; les jeunes Maisons (Casa ≤ 8) y vendent leurs bruts tant que le prix est au moins la référence.
+- **L'incanto de la Muda** (`muda`, fonctions `mudaAuction`, `mudaPlaces`, `mudaReserve`).
+  - La galea et la galère de Flandre ne partent qu'avec une place gagnée à l'incanto. Il y a deux départs par semaine, et des places pour la moitié des Maisons qui ont une telle galère.
+  - L'enchère est de Vickrey : chaque gagnant paie l'enchère juste en dessous de la sienne, jamais moins que la réserve (un jour de revenu médian des enchérisseurs). Le prix est détruit.
+  - Le convoi part la cale pleine et vend à la foire du port, au-delà de la profondeur du jour.
+  - **Règle apprise en route.** Avec une mise plafonnée par la caisse, les Maisons les plus riches gagnaient toutes les places et payaient seules : aucune colleganza. Désormais chacun mise ce que vaut son convoi, et le gagnant à court lève le reste en colleganza sur ce convoi.
+
+**Réglages retenus** (essais à 100 Maisons par cohorte, trois graines, puis pleine taille) :
+- hautes recettes : 5 % d'une unité de brut par unité et par niveau. À 10 %, la colleganza vit mieux, mais les anciennes Maisons dépensent plus qu'elles ne gagnent (1,00 à 1,03) et les dernières Casa traînent ;
+- réserve de la Muda : un jour de revenu. À une demi-journée, la colleganza tombe à 10–15 % ;
+- les bots misent 70 % de la marge attendue (`mudaBidBps` du modèle). À 50 %, la colleganza reste sous 20 %.
+
+**Résultat** (graines 1, 2 et 3, quatre cohortes de 200) : 7, 7 et 8 cibles sur 12, contre 5 à 6 sur 11 avant.
+
+| Cible | Visée | Résultat | |
+| --- | --- | --- | --- |
+| Calendrier de la Casa | Entre la moitié et le double du § 3.1 | Tous les paliers dans les bornes | ✓ |
+| Rattrapage des cohortes tardives | 20 à 40 % plus vite | 10 %, 19 %, 24 % | ≈ |
+| Objectif à moins de 24 h | ≥ 90 % | 93–96 % | ✓ |
+| Prochain palier de Casa | 2 à 7 jours de revenu | 4,4 à 9,5 (les derniers mois) | ≈ |
+| Nouveau à la médiane de sa bande | 4 à 6 mois | 1,0 à 2,2 mois (de même hors absents) | ✗ |
+| Indice des prix | 80 à 130 | 85 à 101 | ✓ |
+| Puits ÷ sources | 0,6–0,8 puis 0,9–1,0 | 0,81–0,84 puis 0,97–1,01 | ≈ |
+| Part de la Terraferme | ≤ 15 % | 0,1 % | ✓ |
+| Bruts des jeunes vendus à Venise | ≥ 10 % de leurs recettes (cible proposée) | 5,6 à 6,0 % ; 0,8–1,0 % des bruts des vétérans | ✗ |
+| Arbitrage | Marge > 0, commandes ≥ 25 % | 700–870 d par voyage, commandes 33–35 % | ✓ |
+| Chaque métier fait vivre son penchant | ≥ 25 % chacun | Voyages 31–33 %, gisements 27 %, expéditions 44–48 % | ✓ |
+| Colleganza de la Muda | ≥ 20 % des convois | 23–28 % ; place à 55 000–63 000 d ; 9–19 % des mises venues de plus grandes Maisons | ✓ |
+
+La Muda est devenue le deuxième puits du monde, après les Grandes Œuvres : environ 1,1 milliard de ducats détruits sur 24 mois, pour 4,3 milliards créés.
+
+### Ce qui reste au porteur (30 octobre 2026)
+
+- **La mesure du nouveau dans sa bande est trop facile.** Une jeune Maison rejoint la médiane des plus anciennes de sa bande en un à deux mois, et le retrait des absents n'y change rien. La raison est structurelle : les Maisons plus anciennes qui partagent la bande d'un nouveau sont, par construction, celles qui ont pris du retard. Deux voies :
+  - comparer à la médiane de **toute** la bande, sans distinction d'âge ;
+  - comparer à la cohorte qui l'a précédé, au même âge.
+- **La part des vétérans venue des jeunes** (30 % visés) reste hors de portée : 1 %. Les jeunes cohortes arrivent par paquets et ne restent jeunes qu'un mois face à 800 Maisons. Le rapport mesure donc le côté des jeunes : la part de leurs recettes faite en vendant leurs bruts à Venise, 6 %. **La cible de 10 % est une proposition**, à confirmer ou à remplacer.
+- **Les derniers paliers de Casa** coûtent jusqu'à 9,5 jours de revenu, et le rattrapage reste entre 10 et 24 %. Ces points datent du premier calibrage ; ils seront à reprendre avec le contenu de fin de partie.
+
+### Le socle et les recettes du thème (30 octobre 2026)
+
+Le socle joue les chaînes de Vénétie avec les recettes du thème (`venice1450.ts`), pas avec les recettes simplifiées du simulateur. Les écarts étaient nets : le blé fait 16 unités à l'heure au niveau 1 (contre 10), le pain 20 (contre 5), et le pain passe par la farine. Le simulateur lit donc désormais, pour le blé, l'argile, le bois, la farine, le pain, les briques et les planches, le rythme et les intrants des recettes du thème. Les autres biens gardent les hypothèses du modèle jusqu'à leur étape.
+
+La Maison commence comme dans le socle, avec trois ateliers (argile, bois, scierie) et 500 ducats. La Casa 1 n'a que quatre places et la Casa 2 demande des briques : partir avec quatre ateliers sans briqueterie bloquait la Maison.
+
+**Résultat** (graines 1, 2 et 3, quatre cohortes de 200) : **8 cibles sur 12 sur chaque graine**, contre 7, 7 et 8 avant l'alignement.
+
+| Cible | Visée | Résultat | |
+| --- | --- | --- | --- |
+| Calendrier de la Casa | Entre la moitié et le double du § 3.1 | Tous les paliers dans les bornes | ✓ |
+| Rattrapage des cohortes tardives | 20 à 40 % plus vite | 30 %, 21 %, 25 % | ✓ |
+| Objectif à moins de 24 h | ≥ 90 % | 95–96 % | ✓ |
+| Prochain palier de Casa | 2 à 7 jours de revenu | 4,2 à 10,8 (les derniers mois) | ✗ |
+| Nouveau à la médiane de sa bande | 4 à 6 mois | 1,0 à 1,2 mois | ✗ |
+| Indice des prix | 80 à 130 | 86 à 101 | ✓ |
+| Puits ÷ sources | 0,6–0,8 puis 0,9–1,0 | 0,81–0,83 puis 0,98–1,01 | ≈ |
+| Part de la Terraferme | ≤ 15 % | 0,2 % | ✓ |
+| Bruts des jeunes vendus à Venise | ≥ 10 % de leurs recettes (proposé) | 5,9 à 6,3 % | ✗ |
+| Arbitrage | Marge > 0, commandes ≥ 25 % | 850–940 d par voyage, commandes 31–36 % | ✓ |
+| Chaque métier fait vivre son penchant | ≥ 25 % chacun | Voyages 27–30 %, gisements 28–30 %, expéditions 44–48 % | ✓ |
+| Colleganza de la Muda | ≥ 20 % des convois | 28–32 % ; place à 62 000–66 000 d | ✓ |
+
+Le rattrapage passe désormais : les chaînes du thème font monter plus vite les niveaux que beaucoup de Maisons possèdent. Les derniers paliers de la Casa coûtent un peu plus (jusqu'à 11 jours de revenu, contre 9,5). Restent ouverts les points déjà posés au porteur : la mesure du nouveau dans sa bande, et la cible des bruts.
+
+### Refaire le calibrage
+
+```
+pnpm --filter @comptoirs/simulator empire                 # 3 graines, 24 mois, 4 cohortes de 200
+pnpm --filter @comptoirs/simulator empire --cohort 30     # rapide (≈ 30 s), plus bruité
+```

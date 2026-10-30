@@ -56,6 +56,9 @@ export function serveRations(tx: Tx): void {
 
 /** Scheduled job, every 60 s in production. Does not advance production (it is lazy). */
 export function tick(tx: Tx): void {
+  // The persistent empire is lazy (its production and sites settle at the read): the monthly
+  // season's systems do not run in it.
+  if (tx.ctx.settings.empire) return;
   // States of the time of the sea and the bandits: settled, then forgotten.
   retireSeaAndBandits(tx);
   resolveDeliveries(tx);

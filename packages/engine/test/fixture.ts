@@ -1,4 +1,4 @@
-import type { Theme, WorldSettingsInput } from "../src/index.js";
+import type { EmpireSettingsInput, Theme, WorldSettingsInput } from "../src/index.js";
 import { venice1450 } from "../src/index.js";
 
 /**
@@ -337,4 +337,114 @@ export const testTerraferma = {
   fronts: { max: 3, cellsPerStep: 2, minShareBps: 1_000, maxHours: 0 },
   milan: { troops: 60, troopsPerActive: 5, regenBps: 500, everyHours: 4, shareBps: 3_000 },
   glory: { perCell: 1, perCity: 3 },
+};
+
+/** The persistent empire (CADRAGE-v3), frozen for the tests: five Casa levels, three regions. */
+export const testEmpire: EmpireSettingsInput = {
+  casa: [
+    { costDucats: 0, buildMinutes: 0, workshopSlots: 4, buildSlots: 1, researchSlots: 0 },
+    { costDucats: 10_000, buildMinutes: 2, workshopSlots: 5, buildSlots: 1, researchSlots: 0 },
+    {
+      costDucats: 20_000,
+      materials: { bricks: 20 },
+      buildMinutes: 10,
+      workshopSlots: 5,
+      buildSlots: 1,
+      researchSlots: 1,
+      opens: ["scuola"],
+    },
+    {
+      costDucats: 35_000,
+      buildMinutes: 30,
+      workshopSlots: 5,
+      buildSlots: 2,
+      researchSlots: 1,
+      opens: ["lombardia"],
+    },
+    { costDucats: 60_000, buildMinutes: 60, workshopSlots: 6, buildSlots: 2, researchSlots: 2 },
+  ],
+  workshops: {
+    yieldStepBps: 1_500,
+    costGrowthBps: 13_000,
+    baseCostDucats: 5_000,
+    buildMinutes: [1, 5, 15, 30, 60],
+    maxLevel: 20,
+  },
+  salaries: { minBps: 300, maxBps: 2_500, halfPower: 1_000 },
+  power: {
+    casa: 50,
+    workshopLevel: 5,
+    counterLevel: 20,
+    moduleLevel: 3,
+    staffLevel: 2,
+    vehicle: 10,
+    bands: [0, 200, 600, 1_500],
+  },
+  catchup: { fromShareBps: 5_000, maxCostCutBps: 5_000, maxTimeCutBps: 6_000 },
+  prices: { floorBps: 6_000, ceilBps: 15_000, impactBps: 2_000, halfLifeHours: 24 },
+  regions: [
+    {
+      code: "veneto",
+      casa: 1,
+      charterFavour: 0,
+      hoursFromVenice: 0,
+      workshopSlots: 0,
+      produces: { wheat: 400 },
+      demands: { bread: 1_200, spices: 6_000 },
+      localOrdersPerCounter: 40,
+      corsairRiskBps: 0,
+    },
+    {
+      code: "lombardia",
+      casa: 4,
+      charterFavour: 50,
+      hoursFromVenice: 6,
+      workshopSlots: 3,
+      produces: { iron: 900 },
+      demands: { salt: 700 },
+      localOrdersPerCounter: 30,
+      corsairRiskBps: 0,
+    },
+    {
+      code: "levante",
+      casa: 14,
+      charterFavour: 400,
+      hoursFromVenice: 96,
+      workshopSlots: 4,
+      produces: { spices: 2_500 },
+      demands: { cloth: 3_000 },
+      localOrdersPerCounter: 20,
+      corsairRiskBps: 1_200,
+    },
+  ],
+  modules: [
+    { code: "hold", kind: "trade", effect: "capacity", firstLevelBps: 1_000, perLevelBps: 500 },
+    { code: "sails", kind: "trade", effect: "speed", firstLevelBps: 800, perLevelBps: 400 },
+    { code: "yield", kind: "extract", effect: "yield", firstLevelBps: 1_500, perLevelBps: 700 },
+    {
+      code: "crossbow",
+      kind: "arms",
+      effect: "strength",
+      firstLevelBps: 2_000,
+      perLevelBps: 1_000,
+    },
+  ],
+  research: {
+    baseCostDucats: 2_000,
+    costGrowthBps: 14_000,
+    minutes: [30, 60, 120, 240, 480, 960, 1_440, 2_880, 7_200, 14_400],
+    plansFromLevel: 4,
+    plansPerLevel: 2,
+  },
+  deposits: { spawnBpsPerRegionDay: 3_000, minStock: 200, maxStock: 1_000, teamPerHour: 10 },
+  expeditions: {
+    tiers: [
+      { strength: 10, relics: 1 },
+      { strength: 25, relics: 2 },
+      { strength: 60, relics: 3 },
+    ],
+    baseSuccessBps: 6_000,
+  },
+  corsairs: { lossShareBps: 3_000, escortHalving: 20 },
+  colleganza: { travellerShareBps: 2_500 },
 };
