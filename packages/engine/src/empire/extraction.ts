@@ -3,8 +3,8 @@ import { Rng } from "../rng.js";
 import { DAY_MS, type EmpireDeposit, type EmpireHouse, HOUR_MS, type PlayerId } from "../state.js";
 import { type Tx, addStock, fail } from "../tx.js";
 import { depositStock, extract, teamRate } from "./deposits.js";
+import { houseEffect } from "./effects.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
-import { effectOf } from "./modules.js";
 import type { EmpireSettings } from "./settings.js";
 import { counterLevel } from "./trade.js";
 
@@ -83,9 +83,7 @@ function settleExtraction(tx: Tx): void {
     const hours = (tx.now - dep.at) / HOUR_MS;
     dep.at = tx.now;
     if (dep.teams.length === 0 || hours <= 0) continue;
-    const rates = dep.teams.map((id) =>
-      teamRate(effectOf(empire.houses[id]?.modules ?? {}, "yield", s), s),
-    );
+    const rates = dep.teams.map((id) => teamRate(houseEffect(empire.houses[id], "yield", s), s));
     const r = extract(dep.stock, rates, hours);
     dep.stock = r.left;
     dep.teams.forEach((id, i) => {
@@ -124,8 +122,7 @@ export function sendTeam(tx: Tx, playerId: PlayerId, depositId: string): void {
   if (!dep) fail("unknown_target");
   const teams = extractionTeams(h, s);
   if (teams === 0) fail("requirement_unmet");
-  if (counterLevel(h, dep.region) <= 0 && effectOf(h.modules ?? {}, "range", s) <= 0)
-    fail("unknown_region");
+  if (counterLevel(h, dep.region) <= 0 && houseEffect(h, "range", s) <= 0) fail("unknown_region");
   if ((h.teams ?? []).length >= teams || dep.teams.includes(playerId)) fail("no_build_slot");
   dep.teams.push(playerId);
   h.teams = [...(h.teams ?? []), dep.id];

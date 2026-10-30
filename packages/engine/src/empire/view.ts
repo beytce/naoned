@@ -17,9 +17,10 @@ import {
   levelCost,
   lotYieldBps,
 } from "./curves.js";
+import { houseEffect } from "./effects.js";
 import { extractionTeams as teamsOf } from "./extraction.js";
 import { empireHouseAt, isAsleep, regionOfWorkshop, workshopPlaces } from "./house.js";
-import { effectOf, plansFor, researchCost, researchMinutesOf } from "./modules.js";
+import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import { bandOf } from "./power.js";
 import type { EmpireSettings } from "./settings.js";
 import { counterLevel, incomePerDay, powerOfHouse } from "./trade.js";
@@ -250,9 +251,7 @@ export function empireView(
     vehicles: vehiclesOf(state, playerId, house, s),
     research: researchOf(house, s),
     deposits: (state.empire?.deposits ?? [])
-      .filter(
-        (d) => counterLevel(house, d.region) > 0 || effectOf(house.modules ?? {}, "range", s) > 0,
-      )
+      .filter((d) => counterLevel(house, d.region) > 0 || houseEffect(house, "range", s) > 0)
       .map((d) => ({
         id: d.id,
         region: d.region,
@@ -312,7 +311,7 @@ const plainSite = (cost: Deniers, minutes: number, level: number): EmpireSite =>
 });
 
 function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s: EmpireSettings) {
-  const hold = effectOf(house.modules ?? {}, "capacity", s);
+  const hold = houseEffect(house, "capacity", s);
   const capacity = (c: number) => Number(applyBpsFloor(BigInt(c), 10_000 + hold));
   const mine = (house.vehicles ?? []).map((v) => ({
     ...v,
