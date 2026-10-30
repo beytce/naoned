@@ -54,12 +54,43 @@ export function receive(tx: Tx, playerId: PlayerId, gross: Deniers, ref?: string
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   transfer(tx, SOURCE_ACCOUNT, cashAccount(playerId), gross, "empire_sale", ref);
+  recordIncome(h, tx.now, gross);
   advanceCarnet(h, "earn", Number(gross / DENIERS_PER_DUCAT));
   const wages = wagesOn(gross, powerOfHouse(h, s), s);
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, wages, "empire_wages", ref);
 }
 
 const dayOf = (now: number) => Math.floor(now / DAY_MS);
+
+/** Days of receipts kept: a week, today included. */
+const INCOME_DAYS = 7;
+
+/** The receipts of the last days, rolled to today (days without a sale count zero). */
+function rollIncome(h: EmpireHouse, now: number): { day: number; days: Deniers[] } {
+  const day = dayOf(now);
+  const income = h.income ?? { day, days: [0n] };
+  const gap = Math.min(INCOME_DAYS, Math.max(0, day - income.day));
+  const days = [...income.days, ...Array<Deniers>(gap).fill(0n)].slice(-INCOME_DAYS);
+  return { day, days };
+}
+
+function recordIncome(h: EmpireHouse, now: number, gross: Deniers): void {
+  const income = rollIncome(h, now);
+  income.days[income.days.length - 1] = (income.days.at(-1) ?? 0n) + gross;
+  h.income = income;
+}
+
+/**
+ * The house's income a day: the mean of its last full days since it opened (up to six), or today's
+ * receipts on its first day. Zero before any sale.
+ */
+export function incomePerDay(h: EmpireHouse, now: number): Deniers {
+  const { days } = rollIncome(h, now);
+  const opened = Math.max(1, dayOf(now) - dayOf(h.joinedAt));
+  const full = days.slice(0, -1).slice(-Math.min(opened, INCOME_DAYS - 1));
+  if (full.length === 0) return days.at(-1) ?? 0n;
+  return full.reduce((a, x) => a + x, 0n) / BigInt(full.length);
+}
 
 function awakeHouses(tx: Tx): number {
   const s = empireSettings(tx.ctx);

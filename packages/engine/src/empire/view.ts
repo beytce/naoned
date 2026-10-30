@@ -19,7 +19,7 @@ import {
 import { empireHouseAt, isAsleep } from "./house.js";
 import { bandOf } from "./power.js";
 import type { EmpireSettings } from "./settings.js";
-import { powerOfHouse } from "./trade.js";
+import { incomePerDay, powerOfHouse } from "./trade.js";
 
 export interface EmpireSite {
   level: number;
@@ -34,6 +34,8 @@ export interface EmpireView {
   house: EmpireHouse;
   power: number;
   band: number;
+  /** Receipts a day (the last full days), in deniers. */
+  incomePerDay: Deniers;
   asleep: boolean;
   /** The next Casa: absent at the top. */
   nextCasa:
@@ -146,6 +148,7 @@ export function empireView(
     house,
     power,
     band: bandOf(power, s),
+    incomePerDay: incomePerDay(house, now),
     asleep: isAsleep(house, now, s),
     nextCasa: nextLine
       ? {

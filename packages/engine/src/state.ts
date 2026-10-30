@@ -337,6 +337,8 @@ export interface EmpireHouse {
   /** What is left today of its private book of orders in Venetia. */
   book?: { day: number; left: number };
   carnet?: EmpireCarnet;
+  /** Receipts of the last days, today last: to read the next step in days of income. */
+  income?: { day: number; days: Deniers[] };
   /** A following wind after a long absence: the Carnet's Favour doubled until then. */
   windUntil?: number;
 }

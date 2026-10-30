@@ -4,6 +4,7 @@ import {
   SINK_ACCOUNT,
   cashAccount,
   empireHouseAt,
+  empireView,
   parseEmpireSettings,
   powerOfHouse,
   wagesOn,
@@ -124,5 +125,18 @@ describe("the high recipes", () => {
     expect(empireHouseAt(w.ctx, w.state, "a", w.now)?.workshops[0]?.job?.batches).toBe(6);
     expect(stock(w, "clay")).toBe(0);
     w.advance(HOUR);
+  });
+});
+
+describe("the income a day", () => {
+  it("reads today's receipts on the first day, then the mean of the full days", () => {
+    const w = world();
+    w.give("a", "bread", 40);
+    w.do({ type: "empireDeliver", playerId: "a", good: "bread", qty: 40 });
+    const first = empireView(w.ctx, w.state, "a", w.now)?.incomePerDay ?? 0n;
+    expect(first).toBe((40n * 1_200n * 11_000n) / 10_000n);
+    w.advance(2 * DAY);
+    // Two full days since: one with the sale, one without.
+    expect(empireView(w.ctx, w.state, "a", w.now)?.incomePerDay).toBe(first / 2n);
   });
 });

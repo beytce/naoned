@@ -23,6 +23,7 @@ function catalogOf(ctx: WorldContext) {
   const recipes = ctx.theme.recipes.filter((r) => Object.keys(r.outputs).some((g) => goods.has(g)));
   return [...new Set(recipes.map((r) => r.building))].map((type) => ({
     type,
+    name: ctx.theme.buildings.find((b) => b.type === type)?.name ?? type,
     recipes: recipes
       .filter((r) => r.building === type)
       .map((r) => ({
@@ -48,6 +49,7 @@ export function empirePayload(ctx: WorldContext, state: WorldState, playerId: st
     market: empireQuotes(ctx, state, now),
     catalog: catalogOf(ctx),
     casa: (ctx.settings.empire?.casa ?? []).map((c, i) => ({ level: i + 1, opens: c.opens })),
+    goods: Object.fromEntries(ctx.theme.resources.map((r) => [r.code, r.name])),
   });
 }
 

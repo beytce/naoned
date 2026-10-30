@@ -65,7 +65,16 @@ export type TabItem = {
   coach?: string;
 };
 
-export function TabBar({ active, items }: { active: TabId; items: TabItem[] }) {
+export function TabBar({
+  active,
+  items,
+  labels,
+}: {
+  active: TabId;
+  items: TabItem[];
+  /** Another screen's words for the same five places (the empire's Casa and Carnet). */
+  labels?: Partial<Record<TabId, string>>;
+}) {
   return (
     <nav
       aria-label={fr.game.map.nav.label}
@@ -77,22 +86,23 @@ export function TabBar({ active, items }: { active: TabId; items: TabItem[] }) {
         style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
       >
         {items.map((item) => (
-          <Tab key={item.id} item={item} on={item.id === active} />
+          <Tab key={item.id} item={item} on={item.id === active} label={labels?.[item.id]} />
         ))}
       </div>
     </nav>
   );
 }
 
-function Tab({ item, on }: { item: TabItem; on: boolean }) {
+function Tab({ item, on, label }: { item: TabItem; on: boolean; label?: string }) {
   const [why, setWhy] = useState(false);
   useEffect(() => {
     if (!why) return;
     const t = setTimeout(() => setWhy(false), 2600);
     return () => clearTimeout(t);
   }, [why]);
-  const tab = TABS.find((t) => t.id === item.id);
-  if (!tab) return null;
+  const found = TABS.find((t) => t.id === item.id);
+  if (!found) return null;
+  const tab = { ...found, label: label ?? found.label };
   const { locked, onForce } = item;
   return (
     <button
