@@ -1,7 +1,9 @@
 import { DENIERS_PER_DUCAT, type Deniers, applyBpsFloor } from "../money.js";
 import {
   type CarnetObjective,
+  DAY_MS,
   type EmpireHouse,
+  type EmpireStaff,
   type EmpireVoyage,
   HOUR_MS,
   type PlayerId,
@@ -28,10 +30,13 @@ import {
   workshopPlaces,
   workshopTop,
 } from "./house.js";
+import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import { bandOf } from "./power.js";
 import type { EmpireSettings } from "./settings.js";
+import { hireCost, staffSlots } from "./staff.js";
 import { counterLevel, incomePerDay, powerOfHouse } from "./trade.js";
+import { moduleSlotsOf, neighbourBonus } from "./workshops.js";
 
 export interface EmpireSite {
   level: number;
@@ -114,6 +119,47 @@ export interface EmpireView {
     mine: boolean;
   }[];
   teams: { max: number; used: number };
+  /** The workshops' places for modules, and their neighbourhood's bonus (bps). */
+  workshopPlaces: Record<string, { slots: number; neighbourBps: number }>;
+  /** What the court of Venice still takes today. */
+  courtLeft: number;
+  identity: EmpireIdentity;
+}
+
+export interface EmpireIdentity {
+  arte: {
+    current: string | null;
+    minor: string | null;
+    options: { code: string; buildings: string[]; effects: Record<string, number> }[];
+    fromCasa: number;
+    minorFromCasa: number;
+  };
+  knowledge: {
+    slots: number;
+    learning: { code: string; startedAt: number; endsAt: number }[];
+    branches: { code: string; nodes: KnowledgeNodeView[]; capstones: KnowledgeNodeView[] }[];
+  };
+  staff: {
+    slots: number;
+    hireCost: Deniers;
+    members: (EmpireStaff & { tiersOpen: number })[];
+    roles: { role: string; place: string; paths: Record<string, number>[] }[];
+  };
+  family: {
+    generation: number;
+    heritage: number;
+    lineage: string[];
+    traits: { code: string; effects: Record<string, number> }[];
+  };
+}
+
+export interface KnowledgeNodeView {
+  code: string;
+  depth: number;
+  effects: Record<string, number>;
+  state: "learnt" | "learning" | "open" | "locked";
+  cost: Deniers;
+  minutes: number;
 }
 
 export interface EmpireRegionView {
@@ -269,6 +315,97 @@ export function empireView(
         mine: d.teams.includes(playerId),
       })),
     teams: { max: teamsOf(house, s), used: (house.teams ?? []).length },
+    workshopPlaces: Object.fromEntries(
+      house.workshops.map((w) => [
+        w.id,
+        { slots: moduleSlotsOf(w.level, s, house), neighbourBps: neighbourBonus(ctx, house, w, s) },
+      ]),
+    ),
+    courtLeft:
+      house.court?.day === Math.floor(now / DAY_MS)
+        ? house.court.left
+        : s.qualities.courtPerCasa * house.casa,
+    identity: identityOf(house, s),
+  };
+}
+
+function identityOf(house: EmpireHouse, s: EmpireSettings): EmpireIdentity {
+  const learnt = house.knowledge ?? [];
+  const learning = house.learning ?? [];
+  const nodeView = (
+    code: string,
+    effects: Record<string, number>,
+    depth: number,
+    open: boolean,
+  ): KnowledgeNodeView => ({
+    code,
+    depth,
+    effects,
+    state: learnt.includes(code)
+      ? "learnt"
+      : learning.some((l) => l.code === code)
+        ? "learning"
+        : open
+          ? "open"
+          : "locked",
+    cost: knowledgeCost(depth, s),
+    minutes: knowledgeMinutes(depth, s),
+  });
+  return {
+    arte: {
+      current: house.arte ?? null,
+      minor: house.minorArte ?? null,
+      options: s.arte.artes.map((a) => ({
+        code: a.code,
+        buildings: a.buildings,
+        effects: a.effects,
+      })),
+      fromCasa: s.arte.fromCasa,
+      minorFromCasa: s.arte.minorFromCasa,
+    },
+    knowledge: {
+      slots: learningSlots(house, s),
+      learning,
+      branches: s.knowledge.branches.map((b) => {
+        const all = b.nodes.every((n) => learnt.includes(n.code));
+        const chosen = b.capstones.some(
+          (c) => learnt.includes(c.code) || learning.some((l) => l.code === c.code),
+        );
+        return {
+          code: b.code,
+          nodes: b.nodes.map((n, i) =>
+            nodeView(
+              n.code,
+              n.effects,
+              i + 1,
+              b.nodes.slice(0, i).every((x) => learnt.includes(x.code)),
+            ),
+          ),
+          capstones: b.capstones.map((c) =>
+            nodeView(c.code, c.effects, b.nodes.length + 1, all && !chosen),
+          ),
+        };
+      }),
+    },
+    staff: {
+      slots: staffSlots(house, s),
+      hireCost: hireCost(house, s),
+      members: (house.staff ?? []).map((m) => ({
+        ...m,
+        tiersOpen: Math.max(0, Math.floor(m.level / s.staff.tierEvery) - m.skills.length),
+      })),
+      roles: Object.entries(s.staff.roles).map(([role, r]) => ({
+        role,
+        place: r.place,
+        paths: r.paths,
+      })),
+    },
+    family: {
+      generation: house.generation?.number ?? 1,
+      heritage: house.heritage ?? 0,
+      lineage: house.lineage ?? [],
+      traits: s.family.traits,
+    },
   };
 }
 

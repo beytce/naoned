@@ -197,3 +197,21 @@ describe("the empire beyond Venetia", () => {
     expect(cart.json().error).toBe("requirement_unmet");
   });
 });
+
+describe("the house's identity", () => {
+  it("hires a master, places it, and reads its identity", async () => {
+    const cookie = await login("ada@example.org");
+    await post(cookie, "/api/empire/join");
+    const hired = await act(cookie, { type: "empireHire", role: "master" });
+    expect(hired.json().error).toBeUndefined();
+    const body = hired.json();
+    const member = body.view.identity.staff.members[0];
+    expect(member).toMatchObject({ role: "master", level: 1 });
+    const workshop = body.view.house.workshops[0].id;
+    const placed = await act(cookie, { type: "empirePlace", staffId: member.id, at: workshop });
+    expect(placed.json().view.identity.staff.members[0].placedAt).toBe(workshop);
+    expect(placed.json().view.identity.arte.options).toHaveLength(5);
+    const arte = await act(cookie, { type: "empireChooseArte", arte: "vetrai" });
+    expect(arte.json().error).toBe("requirement_unmet");
+  });
+});

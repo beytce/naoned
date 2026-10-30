@@ -4,6 +4,7 @@ import {
   HOUR_MS,
   MINUTE_MS,
   type PlayerId,
+  type WorldContext,
 } from "../state.js";
 import { type Tx, addStock, fail, inventoryLine, removeStock } from "../tx.js";
 
@@ -36,7 +37,7 @@ export function collectWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop):
   const h = ownHouse(tx, playerId);
   const yieldBps = applyBps(
     lotYieldBps(ws.level, s),
-    houseEffect(h, "workshopYield", s, { workshopId: ws.id }) + neighbourBonus(tx, h, ws, s),
+    houseEffect(h, "workshopYield", s, { workshopId: ws.id }) + neighbourBonus(tx.ctx, h, ws, s),
   );
   // A share of the lots comes out better (the master), a share of those exquisite.
   const quality = Math.min(10_000, houseEffect(h, "quality", s, { workshopId: ws.id }));
@@ -152,9 +153,11 @@ export function fitModule(
 }
 
 /** Does one workshop make what the other takes in? */
-function feeds(tx: Tx, a: EmpireWorkshop, b: EmpireWorkshop): boolean {
-  const out = Object.keys(recipeOf(tx, a).outputs);
-  return Object.keys(recipeOf(tx, b).inputs).some((g) => out.includes(g));
+function feeds(ctx: WorldContext, a: EmpireWorkshop, b: EmpireWorkshop): boolean {
+  const of = (w: EmpireWorkshop) =>
+    ctx.theme.recipes.find((x) => x.code === w.recipe && x.building === w.type);
+  const out = Object.keys(of(a)?.outputs ?? {});
+  return Object.keys(of(b)?.inputs ?? {}).some((g) => out.includes(g));
 }
 
 /**
@@ -163,7 +166,7 @@ function feeds(tx: Tx, a: EmpireWorkshop, b: EmpireWorkshop): boolean {
  * it) adds its share. The order is a little puzzle.
  */
 export function neighbourBonus(
-  tx: Tx,
+  ctx: WorldContext,
   h: EmpireHouse,
   ws: EmpireWorkshop,
   s: EmpireSettings,
@@ -174,7 +177,7 @@ export function neighbourBonus(
   const sides = new Set([ring[(i + 1) % ring.length], ring[(i - 1 + ring.length) % ring.length]]);
   sides.delete(ws);
   let links = 0;
-  for (const n of sides) if (n && (feeds(tx, n, ws) || feeds(tx, ws, n))) links++;
+  for (const n of sides) if (n && (feeds(ctx, n, ws) || feeds(ctx, ws, n))) links++;
   return (
     links * s.workshops.neighbourBps * (1 + Math.floor(houseEffect(h, "neighbour", s) / 10_000))
   );

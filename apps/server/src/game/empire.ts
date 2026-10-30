@@ -96,6 +96,32 @@ const action = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("empireResearch"), module: z.string().max(40) }),
   z.object({ type: z.literal("empireTeam"), depositId: z.string().max(64) }),
+  z.object({
+    type: z.literal("empireFit"),
+    workshopId: z.string().max(32),
+    slot: z.number().int().min(0).max(8),
+    module: z.string().max(40),
+  }),
+  z.object({
+    type: z.literal("empireCourt"),
+    good: z.string().max(60),
+    qty: z.number().int().min(1).max(100_000),
+  }),
+  z.object({ type: z.literal("empireSwap"), a: z.string().max(32), b: z.string().max(32) }),
+  z.object({
+    type: z.literal("empireChooseArte"),
+    arte: z.string().max(40),
+    minor: z.boolean().optional(),
+  }),
+  z.object({ type: z.literal("empireLearn"), code: z.string().max(40) }),
+  z.object({ type: z.literal("empireHire"), role: z.string().max(40) }),
+  z.object({ type: z.literal("empirePlace"), staffId: z.string().max(32), at: z.string().max(40) }),
+  z.object({
+    type: z.literal("empireSkill"),
+    staffId: z.string().max(32),
+    path: z.number().int().min(0).max(8),
+  }),
+  z.object({ type: z.literal("empireLineage"), trait: z.string().max(40) }),
 ]);
 
 export interface EmpireRouteDeps {
