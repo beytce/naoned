@@ -141,6 +141,8 @@ function payTheatre(tx: Tx, th: EmpireTheatre, week: number): void {
       rank: k + 1,
       of: close.ranking.length,
       glory: r.glory,
+      cells: r.cells,
+      signore: r.id === close.signore,
       tier,
       favour,
       seals: given,

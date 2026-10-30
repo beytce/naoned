@@ -312,7 +312,8 @@ export const empireSettingsSchema = z.object({
     .prefault({ casaOffset: 2, sealsByTier: [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3] }),
   /**
    * The Terraferma of the empire (CADRAGE-v3 § 8): a week from Monday, in theatres of at most
-   * `theatreMax` merchants of a band; the entry paid in goods; the Republic's ration of bread, the
+   * `theatreMax` merchants of a band; the entry paid in goods (planks, which a house makes from
+   * its first day: the war eats the bread and the bricks itself, in rations and buildings); the Republic's ration of bread, the
    * same for all, each day; Favour and Seals by rank, `sealsPerWeek` at most. Even weeks, the
    * Contesa: rosters of a company set down by Thursday (`deadlineDay` from Monday), 2 to
    * `maxCompanies` a theatre by their summed Power. Never ducats, never yield.
@@ -342,7 +343,7 @@ export const empireSettingsSchema = z.object({
       }),
     })
     .prefault({
-      entry: { bread: 20, bricks: 10, planks: 10 },
+      entry: { planks: 20 },
       theatreMax: 40,
       rationBread: 20,
       favour: { signore: 60, podium: 30, top10: 15, quarter: 8, participant: 4 },
