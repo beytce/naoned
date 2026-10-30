@@ -146,7 +146,11 @@ function spawnDeposits(w: World, rng: ReturnType<typeof newRng>) {
     const raws = Object.keys(r.produces);
     if (raws.length === 0) continue;
     // As many deposits a day as the rate says (1,5: one, and a second one day in two).
-    const rate = w.s.deposits.spawnBpsPerRegionDay;
+    // In proportion to the houses there: a crowded region is prospected more.
+    const there = w.houses.filter((h) => h.counters.has(r.code) && h.awayUntil <= w.now).length;
+    const rate = Math.round(
+      (w.s.deposits.spawnBpsPerRegionDay * Math.max(1, there)) / w.m.housesPerDeposit,
+    );
     const count = Math.floor(rate / 10_000) + (rng.next() * 10_000 < rate % 10_000 ? 1 : 0);
     for (let i = 0; i < count; i++)
       w.deposits.push({

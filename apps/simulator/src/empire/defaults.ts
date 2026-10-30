@@ -26,7 +26,7 @@ export const DEFAULT_MODEL: SimModel = {
   },
   queueHours: 12,
   boardPerActive: 5,
-  smallShareBps: 3_000,
+  smallShareBps: 5_000,
   smallCasa: 10,
   orderPremiumBps: 1_000,
   favourPer100Ducats: 1,
@@ -35,6 +35,7 @@ export const DEFAULT_MODEL: SimModel = {
   foreignDepth: 400,
   bootyPerTierDucats: 250,
   minerTeams: 3,
+  housesPerDeposit: 20,
   marketTaxBps: 300,
   vehicles: {
     mule: { casa: 1, capacity: 25, costDucats: 60, regions: VENETO, speedBps: 0 },

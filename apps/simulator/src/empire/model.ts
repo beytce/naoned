@@ -188,6 +188,8 @@ export interface SimModel {
   foreignDepth: number;
   /** Booty of a won expedition: this many ducats × its tier². */
   bootyPerTierDucats: number;
+  /** The deposits' rate is per this many houses present in the region. */
+  housesPerDeposit: number;
   /** A miner's teams, against another house's. */
   minerTeams: number;
   /** Rialto's tax on market sales and purchases. */
