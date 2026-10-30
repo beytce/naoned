@@ -52,8 +52,10 @@ export function settleBuilds(h: EmpireHouse, now: number): void {
       if (b.level > h.casa) advanceCarnet(h, "casa", 1);
       h.casa = Math.max(h.casa, b.level);
     } else if (b.kind === "newWorkshop" && b.workshopId && b.workshopType && b.recipe) {
+      // Its region rides on the build (Venetia when it says none).
       h.workshops.push({
         id: b.workshopId,
+        ...(b.region ? { region: b.region } : {}),
         type: b.workshopType,
         recipe: b.recipe,
         level: 1,
@@ -183,13 +185,41 @@ export function startCasa(tx: Tx, playerId: PlayerId): void {
   h.builds.push({ kind: "casa", level, ...site });
 }
 
-/** Starts a new workshop at level 1, in a free place of the Casa. */
-export function startWorkshop(tx: Tx, playerId: PlayerId, type: string, recipe: string): void {
+/** A workshop's region: Venetia when it says none. */
+export const regionOfWorkshop = (w: { region?: string }) => w.region ?? "veneto";
+
+/** The workshop places of a region: the Casa's in Venetia, its counter's elsewhere (none without). */
+export function workshopPlaces(h: EmpireHouse, region: string, s: EmpireSettings): number {
+  if (region === "veneto") return casaLevelOf(h.casa, s).workshopSlots;
+  if (!h.counters?.[region]) return 0;
+  return s.regions.find((r) => r.code === region)?.workshopSlots ?? 0;
+}
+
+/**
+ * Starts a new workshop at level 1, in a free place of its region: the Casa's in Venetia, the
+ * counter's elsewhere, where it makes no raw good the region does not make.
+ */
+export function startWorkshop(
+  tx: Tx,
+  playerId: PlayerId,
+  type: string,
+  recipe: string,
+  region = "veneto",
+): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   checkRecipe(tx, type, recipe);
-  const pending = h.builds.filter((b) => b.kind === "newWorkshop").length;
-  if (h.workshops.length + pending >= casaLevelOf(h.casa, s).workshopSlots) fail("no_room");
+  const r = s.regions.find((x) => x.code === region);
+  if (!r || (region !== "veneto" && !h.counters?.[region])) fail("unknown_region");
+  const def = tx.ctx.theme.recipes.find((x) => x.code === recipe);
+  const raw = def && Object.keys(def.inputs).length === 0;
+  if (region !== "veneto" && raw && !Object.keys(def.outputs).some((g) => g in r.produces))
+    fail("unknown_recipe");
+  const here = h.workshops.filter((w) => regionOfWorkshop(w) === region).length;
+  const pending = h.builds.filter(
+    (b) => b.kind === "newWorkshop" && (b.region ?? "veneto") === region,
+  ).length;
+  if (here + pending >= workshopPlaces(h, region, s)) fail("no_room");
   const share = shareOwningBps(tx, (x) => x.workshops.some((w) => w.level >= 1));
   const site = openSite(tx, playerId, h, levelCost(1, s), {}, buildMinutesOf(1, s), share);
   h.builds.push({
@@ -198,6 +228,7 @@ export function startWorkshop(tx: Tx, playerId: PlayerId, type: string, recipe: 
     workshopId: nextId(tx, "w"),
     workshopType: type,
     recipe,
+    ...(region !== "veneto" ? { region } : {}),
     ...site,
   });
 }

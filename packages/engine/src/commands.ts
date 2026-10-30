@@ -266,7 +266,14 @@ export type EmpireCommand =
       favour?: number;
     }
   | { type: "empireBuildCasa"; playerId: PlayerId }
-  | { type: "empireBuildWorkshop"; playerId: PlayerId; workshopType: string; recipe: string }
+  | {
+      type: "empireBuildWorkshop";
+      playerId: PlayerId;
+      workshopType: string;
+      recipe: string;
+      /** Venetia when absent. */
+      region?: string;
+    }
   | { type: "empireUpgrade"; playerId: PlayerId; workshopId: string }
   | { type: "empireRelaunch"; playerId: PlayerId; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll"; playerId: PlayerId }
@@ -396,7 +403,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       startCasa(tx, cmd.playerId);
       break;
     case "empireBuildWorkshop":
-      startWorkshop(tx, cmd.playerId, cmd.workshopType, cmd.recipe);
+      startWorkshop(tx, cmd.playerId, cmd.workshopType, cmd.recipe, cmd.region);
       break;
     case "empireUpgrade":
       startUpgrade(tx, cmd.playerId, cmd.workshopId);

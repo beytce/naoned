@@ -305,6 +305,8 @@ export interface MudaState {
 /** A workshop of the empire (CADRAGE-v3 § 3.2): a building of the theme, its recipe, its level. */
 export interface EmpireWorkshop {
   id: string;
+  /** Its region: Venetia when absent. */
+  region?: string;
   type: BuildingType;
   recipe: string;
   level: number;

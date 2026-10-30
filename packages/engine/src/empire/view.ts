@@ -16,7 +16,7 @@ import {
   levelCost,
   lotYieldBps,
 } from "./curves.js";
-import { empireHouseAt, isAsleep } from "./house.js";
+import { empireHouseAt, isAsleep, regionOfWorkshop } from "./house.js";
 import { bandOf } from "./power.js";
 import type { EmpireSettings } from "./settings.js";
 import { incomePerDay, powerOfHouse } from "./trade.js";
@@ -143,7 +143,9 @@ export function empireView(
             s,
           );
   }
-  const pending = house.builds.filter((b) => b.kind === "newWorkshop").length;
+  // Venetia's places, the Casa's: the regions' are their counters'.
+  const pending = house.builds.filter((b) => b.kind === "newWorkshop" && !b.region).length;
+  const inVenetia = house.workshops.filter((w) => regionOfWorkshop(w) === "veneto").length;
   return {
     house,
     power,
@@ -171,7 +173,7 @@ export function empireView(
       : null,
     upgrades,
     newWorkshop:
-      house.workshops.length + pending < line.workshopSlots
+      inVenetia + pending < line.workshopSlots
         ? site(
             levelCost(1, s),
             buildMinutesOf(1, s),
