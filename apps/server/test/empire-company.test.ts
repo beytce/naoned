@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
-import { companyMembers } from "../src/db/schema.js";
+import { companyMembers, ledgerEntries } from "../src/db/schema.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
@@ -144,5 +144,36 @@ describe("the empire's company (CADRAGE-v3 § 7)", () => {
     expect(after.members.map((m: { role: string | null }) => m.role)).toEqual([null, null, "capo"]);
     const rows = await database.db.select().from(companyMembers);
     expect(rows.filter((r) => r.role === "capo")).toHaveLength(1);
+  });
+
+  it("carries the entraide: a lot asked, supplied by a partner, in the ledger", async () => {
+    const a = await merchant("ada@example.org");
+    const b = await merchant("bea@example.org");
+    await company(a, b);
+    // Too new in the company; the client's own company is ignored.
+    const early = await act(a, {
+      type: "empireAsk",
+      good: "clay",
+      qty: 5,
+      company: { id: "x", since: 0 },
+    });
+    expect(early.json().error).toBe("too_new");
+    now += 3 * DAY + 60_000;
+    await act(b, { type: "empireRelaunchAll" });
+    now += 3 * 3_600_000;
+    await act(b, { type: "empireRelaunchAll" });
+    expect(
+      (await act(a, { type: "empireAsk", good: "clay", qty: 5 })).json().error,
+    ).toBeUndefined();
+    const seen = (await act(b, { type: "empireRelaunchAll" })).json();
+    const [request] = seen.view.aid.requests;
+    expect(request).toMatchObject({ good: "clay", qty: 5 });
+    const before = seen.stock.clay;
+    const done = (await act(b, { type: "empireSupply", requestId: request.id })).json();
+    expect(done.error).toBeUndefined();
+    expect(done.stock.clay).toBe(before - 5);
+    expect(done.view.aid.merit).toBeGreaterThanOrEqual(0);
+    const rows = await database.db.select().from(ledgerEntries).where(sql`reason = 'empire_aid'`);
+    expect(rows).toHaveLength(1);
   });
 });
