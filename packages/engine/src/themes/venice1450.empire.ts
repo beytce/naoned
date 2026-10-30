@@ -426,7 +426,7 @@ export const venice1450Empire: EmpireSettingsInput = {
     staffLevel: 3,
     vehicle: 20,
     // The first band left in 4 to 6 months (the owner's target of 30 October 2026).
-    bands: [0, 4_500, 7_000, 9_500, 12_000],
+    bands: [0, 4_000, 6_500, 9_000, 11_500],
   },
   catchup: { fromShareBps: 3_500, maxCostCutBps: 6_000, maxTimeCutBps: 7_000 },
   prices: { floorBps: 6_000, ceilBps: 15_000, impactBps: 1_200, halfLifeHours: 36 },
