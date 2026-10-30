@@ -229,6 +229,11 @@ export const empireSettingsSchema = z.object({
     maxStock: positive,
     /** Units an hour a team of base level takes. */
     teamPerHour: positive,
+    /** A region gets its daily chance once per so many houses present there (one at least). */
+    housesPerDeposit: positive.prefault(10),
+    /** The Casa of the first team, and a team more every so many levels. */
+    teamsFromCasa: positive.prefault(5),
+    casaPerTeam: positive.prefault(4),
   }),
   expeditions: z.object({
     /** Per tier (index tier − 1): the fleet strength it asks, and the relics it gives on success. */

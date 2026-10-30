@@ -31,7 +31,7 @@ import type { EmpireSettings } from "./settings.js";
 /** The socle plays in Venetia only (CADRAGE-v3 § 13, step 3): the counters come at step 4. */
 const HOME = "veneto";
 
-/** The Power of a house of the socle: its Casa and its workshops (CADRAGE-v3 § 3.6). */
+/** The Power of a house: what it built, Casa, workshops, counters, modules, vehicles (§ 3.6). */
 export function powerOfHouse(h: EmpireHouse, s: EmpireSettings): number {
   return powerOf(
     {
@@ -40,7 +40,7 @@ export function powerOfHouse(h: EmpireHouse, s: EmpireSettings): number {
       counterLevels: Object.values(h.counters ?? {}),
       moduleLevels: Object.values(h.modules ?? {}),
       staffLevels: [],
-      vehicles: 0,
+      vehicles: (h.vehicles ?? []).length,
     },
     s,
   );
@@ -135,6 +135,8 @@ export function homesOf(tx: Tx, h: EmpireHouse, good: string): Set<string> {
     const r = tx.ctx.theme.recipes.find((x) => x.code === w.recipe && x.building === w.type);
     if (r && good in r.outputs) homes.add(w.region ?? HOME);
   }
+  // And where its teams found it.
+  for (const region of h.found?.[good] ?? []) homes.add(region);
   return homes;
 }
 

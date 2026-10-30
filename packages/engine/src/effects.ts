@@ -115,6 +115,7 @@ export type StockReason =
   | "empire_purchase"
   | "empire_sale"
   | "empire_voyage"
+  | "empire_extract"
   | "starting_kit"
   | "fondaco_build"
   | "production_input"

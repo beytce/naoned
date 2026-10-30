@@ -35,6 +35,7 @@ import { standForDoge, voteDoge } from "./doge.js";
 import { knownTrait } from "./dynasty.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { advanceCarnet, claimObjective, ensureCarnet, windOnReturn } from "./empire/carnet.js";
+import { sendTeam, settleDeposits } from "./empire/extraction.js";
 import {
   charterRegion,
   empireJoin,
@@ -286,6 +287,7 @@ export type EmpireCommand =
   | { type: "empireUpgradeCounter"; playerId: PlayerId; region: string }
   | { type: "empireBuyVehicle"; playerId: PlayerId; vehicleType: string }
   | { type: "empireResearch"; playerId: PlayerId; module: string }
+  | { type: "empireTeam"; playerId: PlayerId; depositId: string }
   | {
       type: "empireVoyage";
       playerId: PlayerId;
@@ -398,7 +400,11 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
 
 function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   // The cargoes arrived by now sell first, every house's, in the order they came in.
-  if (tx.ctx.settings.empire) settleVoyages(tx);
+  if (tx.ctx.settings.empire && tx.s.empire) {
+    settleVoyages(tx);
+    // The deposits' extraction up to now, then the days' new ones.
+    settleDeposits(tx);
+  }
   if (cmd.type === "empireJoin") {
     empireJoin(tx, cmd.playerId);
     const h = ownHouse(tx, cmd.playerId);
@@ -445,6 +451,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireResearch":
       startResearch(tx, cmd.playerId, cmd.module);
+      break;
+    case "empireTeam":
+      sendTeam(tx, cmd.playerId, cmd.depositId);
       break;
     case "empireVoyage":
       startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);

@@ -342,6 +342,10 @@ export interface EmpireHouse {
   seals: number;
   /** Its vehicles: free again at `busyUntil` (a voyage's way there and back). */
   vehicles?: { id: string; type: string; busyUntil: number }[];
+  /** The deposits its teams work, by id. */
+  teams?: string[];
+  /** Where it found each good it extracted: those regions hold it, as its workshops' do. */
+  found?: Record<string, string[]>;
   /** Its modules researched, by code: their level (profondeur.md § B). */
   modules?: Record<string, number>;
   /** Its researches under way at the Scuola: settled at the next read, as the sites. */
@@ -388,6 +392,18 @@ export interface EmpireMarket {
 }
 
 /** The persistent empire's part of a world (absent from the worlds of the monthly seasons). */
+/** A deposit (profondeur.md § A): it appears, the teams sent there share it, it runs out. */
+export interface EmpireDeposit {
+  id: string;
+  region: string;
+  good: string;
+  stock: number;
+  /** When its extraction was last settled. */
+  at: number;
+  /** The houses with a team on it. */
+  teams: PlayerId[];
+}
+
 /** A cargo on its way: sold at its arrival, settled at the next read. */
 export interface EmpireVoyage {
   id: string;
@@ -405,6 +421,9 @@ export interface EmpireVoyage {
 export interface EmpireState {
   houses: Record<PlayerId, EmpireHouse>;
   voyages?: EmpireVoyage[];
+  deposits?: EmpireDeposit[];
+  /** The last day the deposits were drawn for. */
+  depositsDay?: number;
   /** By "region:good". */
   markets?: Record<string, EmpireMarket>;
   /** The cities' common board, by "region:good": what is left of it today. */

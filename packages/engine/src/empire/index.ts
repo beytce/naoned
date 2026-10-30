@@ -17,3 +17,4 @@ export * from "./trade.js";
 export * from "./view.js";
 export * from "./carnet.js";
 export * from "./voyages.js";
+export * from "./extraction.js";
