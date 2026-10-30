@@ -55,5 +55,20 @@ export function sitesByEnd(builds: EmpireBuild[]): EmpireBuild[] {
   return [...builds].sort((a, b) => a.endsAt - b.endsAt);
 }
 
+/**
+ * The Casa that opens a system, by the code its level names (`scuola`, `colleganza`…): null when
+ * no level names it.
+ */
+export function opensAt(p: EmpirePayload, code: string): number | null {
+  const level = p.casa.find((c) => c.opens.includes(code));
+  return level ? level.level : null;
+}
+
+/**
+ * A closed system is shown only from the Casa before its opening (lot A of the UX audit): what the
+ * house cannot touch yet stays out of sight.
+ */
+export const shownAt = (casa: number, at: number | null) => at === null || casa >= at - 1;
+
 /** Can the house pay this in ducats? */
 export const affordable = (cash: string, cost: string) => BigInt(cash) >= BigInt(cost);

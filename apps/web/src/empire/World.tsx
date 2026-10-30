@@ -3,7 +3,7 @@ import { GoodsMark } from "../art/goods.js";
 import { d, duration, hourOf, minutesLabel } from "../game/format.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Sheet, Slab, clock } from "../ui.js";
-import { affordable, buildingName, readyLots, recipeOf } from "./logic.js";
+import { affordable, buildingName, opensAt, readyLots, recipeOf, shownAt } from "./logic.js";
 import type { EmpireAction, EmpirePayload, EmpireRegion } from "./types.js";
 
 const t = fr.empire;
@@ -516,7 +516,7 @@ export function Charroi({
       </ul>
       <ul className="mt-3 space-y-2">
         {view.vehicles.shop
-          .filter((s) => !s.build)
+          .filter((s) => !s.build && shownAt(view.house.casa, s.casa))
           .map((s) => (
             <li
               key={s.type}
@@ -554,6 +554,7 @@ export function Scuola({ p, busy, act }: { p: EmpirePayload; busy: boolean; act:
   if (!view) return null;
   const sc = t.scuola;
   const r = view.research;
+  if (r.slots === 0 && !shownAt(view.house.casa, opensAt(p, "scuola"))) return null;
   return (
     <section className="mt-5">
       <div className="flex items-baseline justify-between">

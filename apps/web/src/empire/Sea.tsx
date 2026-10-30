@@ -3,7 +3,7 @@ import { d, hourOf, minutesLabel } from "../game/format.js";
 import { fr } from "../i18n.js";
 import { Label, Slab } from "../ui.js";
 import { Choice, regionName } from "./World.js";
-import { affordable } from "./logic.js";
+import { affordable, opensAt, shownAt } from "./logic.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
 type Act = (a: EmpireAction) => Promise<void>;
@@ -31,7 +31,8 @@ export function Arsenal({
 }) {
   const view = p.view;
   if (!view) return null;
-  const ships = view.vehicles.shop.filter((s) => s.build);
+  // The ships of the Casa reached, and the next one's: no further.
+  const ships = view.vehicles.shop.filter((s) => s.build && shownAt(view.house.casa, s.casa));
   if (ships.length === 0) return null;
   const mine = view.vehicles.mine.filter((v) => ships.some((s) => s.type === v.type));
   const researched = view.research.modules.filter((m) => m.kind === "trade" && m.level > 0);
@@ -185,7 +186,7 @@ function MudaBid({
 export function Colleganze({ p, busy, act }: { p: EmpirePayload; busy: boolean; act: Act }) {
   const view = p.view;
   const [amounts, setAmounts] = useState<Record<string, string>>({});
-  if (!view) return null;
+  if (!view || !shownAt(view.house.casa, opensAt(p, "colleganza"))) return null;
   const list = view.colleganze.open;
   const record = (r: { voyages: number; returnBps: number } | null) =>
     r && r.voyages > 0

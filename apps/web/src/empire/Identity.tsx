@@ -3,7 +3,7 @@ import { d, hourOf, minutesLabel } from "../game/format.js";
 import { fr } from "../i18n.js";
 import { Label, Sheet, Slab } from "../ui.js";
 import { Choice, regionName } from "./World.js";
-import { affordable, buildingName } from "./logic.js";
+import { affordable, buildingName, opensAt, shownAt } from "./logic.js";
 import type {
   EmpireAction,
   EmpirePayload,
@@ -126,6 +126,7 @@ export function ArteSection({ p, busy, act }: { p: EmpirePayload; busy: boolean;
   if (!view) return null;
   const a = view.identity.arte;
   const casa = view.house.casa;
+  if (!shownAt(casa, a.fromCasa)) return null;
   return (
     <section className="mt-5">
       <Label>{t.arte}</Label>
@@ -196,6 +197,7 @@ export function Knowledge({ p, busy, act }: { p: EmpirePayload; busy: boolean; a
   const view = p.view;
   if (!view) return null;
   const k = view.identity.knowledge;
+  if (k.slots === 0 && !shownAt(view.house.casa, opensAt(p, "scuola"))) return null;
   const full = k.learning.length >= k.slots;
   const row = (n: KnowledgeNode) => {
     const at = k.learning.find((l) => l.code === n.code);
