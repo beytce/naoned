@@ -218,6 +218,7 @@ export const venice1450Empire: EmpireSettingsInput = {
       10_800, 12_600, 14_400, 18_000, 18_000, 20_160, 20_160, 20_160,
     ],
     maxLevel: 25,
+    neighbourBps: 1_000,
   },
   counters: { maxLevel: 10, bookStepBps: 4_000 },
   // The socle in Venetia: the clay, the wood and the planks of the Casa 2; its bricks ask the

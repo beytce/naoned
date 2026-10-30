@@ -167,6 +167,8 @@ export const empireSettingsSchema = z.object({
     buildMinutes: z.array(qty).min(1),
     /** A workshop's level never passes the Casa's, nor this. */
     maxLevel: positive,
+    /** Two workshops side by side whose chain follows: each makes this share more (§ G). */
+    neighbourBps: bps.prefault(0),
     /** The levels that open a workshop's places for modules (profondeur.md § G): 1, 8, 15. */
     moduleSlotsAt: z.array(positive).prefault([1, 8, 15]),
   }),

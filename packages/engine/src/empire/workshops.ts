@@ -1,4 +1,10 @@
-import { type EmpireWorkshop, HOUR_MS, MINUTE_MS, type PlayerId } from "../state.js";
+import {
+  type EmpireHouse,
+  type EmpireWorkshop,
+  HOUR_MS,
+  MINUTE_MS,
+  type PlayerId,
+} from "../state.js";
 import { type Tx, addStock, fail, inventoryLine, removeStock } from "../tx.js";
 
 /** A rate raised by an effect in bps. */
@@ -29,7 +35,7 @@ export function collectWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop):
   const h = ownHouse(tx, playerId);
   const yieldBps = applyBps(
     lotYieldBps(ws.level, s),
-    houseEffect(h, "workshopYield", s, { workshopId: ws.id }),
+    houseEffect(h, "workshopYield", s, { workshopId: ws.id }) + neighbourBonus(tx, h, ws, s),
   );
   // A share of the lots comes out better (the master), a share of those exquisite.
   const quality = Math.min(10_000, houseEffect(h, "quality", s, { workshopId: ws.id }));
@@ -136,4 +142,46 @@ export function fitModule(
   if (fitted.some((x, i) => x === code && i !== slot)) fail("built");
   fitted[slot] = code;
   ws.fitted = fitted;
+}
+
+/** Does one workshop make what the other takes in? */
+function feeds(tx: Tx, a: EmpireWorkshop, b: EmpireWorkshop): boolean {
+  const out = Object.keys(recipeOf(tx, a).outputs);
+  return Object.keys(recipeOf(tx, b).inputs).some((g) => out.includes(g));
+}
+
+/**
+ * The neighbourhood's bonus (profondeur.md § G): the workshops of a region sit in a ring on its
+ * orbit, in their order; each neighbour whose chain follows this one's (it feeds it, or is fed by
+ * it) adds its share. The order is a little puzzle.
+ */
+export function neighbourBonus(
+  tx: Tx,
+  h: EmpireHouse,
+  ws: EmpireWorkshop,
+  s: EmpireSettings,
+): number {
+  const ring = h.workshops.filter((w) => (w.region ?? "veneto") === (ws.region ?? "veneto"));
+  const i = ring.findIndex((w) => w.id === ws.id);
+  if (i < 0 || ring.length < 2) return 0;
+  const sides = new Set([ring[(i + 1) % ring.length], ring[(i - 1 + ring.length) % ring.length]]);
+  sides.delete(ws);
+  let links = 0;
+  for (const n of sides) if (n && (feeds(tx, n, ws) || feeds(tx, ws, n))) links++;
+  return (
+    links * s.workshops.neighbourBps * (1 + Math.floor(houseEffect(h, "neighbour", s) / 10_000))
+  );
+}
+
+/** Swaps the places of two workshops of a region on its orbit: free, at once. */
+export function swapWorkshops(tx: Tx, playerId: PlayerId, a: string, b: string): void {
+  const h = ownHouse(tx, playerId);
+  const i = h.workshops.findIndex((w) => w.id === a);
+  const j = h.workshops.findIndex((w) => w.id === b);
+  const wa = h.workshops[i];
+  const wb = h.workshops[j];
+  if (!wa || !wb || i === j) fail("unknown_building");
+  if ((wa.region ?? "veneto") !== (wb.region ?? "veneto")) fail("unknown_region");
+  h.workshops[i] = wb;
+  h.workshops[j] = wa;
 }
