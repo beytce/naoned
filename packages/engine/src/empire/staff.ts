@@ -19,7 +19,7 @@ export function staffSlots(h: EmpireHouse, s: EmpireSettings): number {
 }
 
 /** The next hire's price: dearer with each one hired. */
-export function hireCost(h: EmpireHouse, s: EmpireSettings): Deniers {
+export function staffHireCost(h: EmpireHouse, s: EmpireSettings): Deniers {
   let cost = BigInt(s.staff.hireCostDucats) * DENIERS_PER_DUCAT;
   for (let n = 0; n < (h.hired ?? 0); n++) cost = applyBpsCeil(cost, s.staff.hireGrowthBps);
   return cost;
@@ -52,7 +52,14 @@ export function hireStaff(tx: Tx, playerId: PlayerId, role: string): void {
   const h = ownHouse(tx, playerId);
   if (!s.staff.roles[role]) fail("unknown_choice");
   if ((h.staff ?? []).length >= staffSlots(h, s)) fail("no_room");
-  transfer(tx, cashAccount(playerId), SINK_ACCOUNT, hireCost(h, s), "empire_build", `hire:${role}`);
+  transfer(
+    tx,
+    cashAccount(playerId),
+    SINK_ACCOUNT,
+    staffHireCost(h, s),
+    "empire_build",
+    `hire:${role}`,
+  );
   h.hired = (h.hired ?? 0) + 1;
   addStaff(tx, h, role, "common");
 }

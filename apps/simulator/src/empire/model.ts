@@ -1,4 +1,4 @@
-import type { Deniers, EmpireSettings } from "@comptoirs/engine";
+import type { Deniers, EmpireHouse, EmpireSettings } from "@comptoirs/engine";
 
 /**
  * The 24-month model simulator (CADRAGE-v3 § 13): houses aggregated hour by hour, living the
@@ -122,6 +122,12 @@ export interface House {
   terraValue: Deniers;
   /** The day of its last expedition: one a day. */
   expeditionDay: number;
+  /** Its identity as the engine reads it: Arte, knowledge, staff, lineage (step 5). */
+  ident: EmpireHouse;
+  /** Its fine and exquisite goods, for the court, and the court's book of the day. */
+  fine: Map<string, number>;
+  courtDay: number;
+  courtLeft: number;
 }
 
 export interface Deposit {

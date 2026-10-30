@@ -28,6 +28,15 @@ import {
   teamRate,
 } from "@comptoirs/engine";
 import {
+  growIdentity,
+  identityEffect,
+  makeFine,
+  masterWorked,
+  neighbourEffect,
+  newIdentity,
+  sellToCourt,
+} from "./identity.js";
+import {
   type Activity,
   type Bent,
   type Build,
@@ -35,6 +44,7 @@ import {
   type House,
   type Trade,
   type Voyage,
+  type Workshop,
   type World,
 } from "./model.js";
 import {
@@ -103,6 +113,10 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
     expeditionsTried: 0,
     terraValue: 0n,
     expeditionDay: -1,
+    ident: newIdentity(w.now),
+    fine: new Map(),
+    courtDay: -1,
+    courtLeft: 0,
   };
   w.houses.push(h);
   create(w, h, d(w.m.startCapitalDucats), "start");
@@ -131,7 +145,10 @@ export function playsNow(w: World, h: House, rng: Rng): boolean {
 function rateOf(w: World, h: House, ws: { good: string; level: number }): number {
   const base = w.m.rates[ws.good] ?? (w.m.recipes[ws.good] ? w.m.craftedPerHour : w.m.rawPerHour);
   const tools = h.modules.tools ? effectOf({ tools: h.modules.tools }, "workshopYield", w.s) : 0;
-  return (base * lotYieldBps(ws.level, w.s) * (10_000 + tools)) / 1e8;
+  // Its identity: the Arte's chain, the knowledge, its master, the lineage, its neighbourhood.
+  const i = h.workshops.indexOf(ws as Workshop);
+  const identity = identityEffect(w, h, "workshopYield", i) + neighbourEffect(w, h, i);
+  return (base * lotYieldBps(ws.level, w.s) * (10_000 + tools + identity)) / 1e8;
 }
 
 /** The raw goods of Venetia a workshop's high recipe may eat: the listed ones but its own good. */
@@ -155,7 +172,9 @@ function collect(w: World, h: House) {
   const until = Math.min(w.now, h.relaunchedAt + w.m.queueHours);
   const hours = Math.max(0, until - h.relaunchedAt);
   if (hours > 0)
-    for (const ws of h.workshops) {
+    for (const [i, ws] of h.workshops.entries()) {
+      masterWorked(w, h, i, hours);
+      const saved = Math.min(9_000, identityEffect(w, h, "inputs", i));
       let qty = Math.floor(rateOf(w, h, ws) * hours);
       const recipe = w.m.recipes[ws.good];
       if (recipe)
@@ -168,9 +187,10 @@ function collect(w: World, h: House) {
         qty = Math.floor((qty * have) / highRecipeRaw(ws.level, qty, w.s));
       if (qty <= 0) continue;
       if (recipe)
-        for (const [g, per] of Object.entries(recipe)) takeStock(h, g, Math.ceil(qty * per));
+        for (const [g, per] of Object.entries(recipe))
+          takeStock(h, g, Math.ceil((qty * per * (10_000 - saved)) / 10_000));
       takeRaw(h, raws, highRecipeRaw(ws.level, qty, w.s));
-      addStock(h, ws.good, qty);
+      addStock(h, ws.good, qty - makeFine(w, h, ws.good, qty, i));
     }
   h.relaunchedAt = w.now;
   // Inputs for the next queue, bought where the house is; Venetia's raw goods, in Venice.
@@ -268,7 +288,7 @@ function fillOrders(
   qty: number,
   trade: Trade,
 ): number {
-  const convoy = effectOf(h.modules, "orderBonus", w.s);
+  const convoy = effectOf(h.modules, "orderBonus", w.s) + identityEffect(w, h, "orderBonus");
   const small = h.casa <= w.m.smallCasa;
   const mk = market(w, region, good);
   let left = qty;
@@ -1008,9 +1028,11 @@ export function session(w: World, h: House, rng: Rng) {
   extractNow(w, h, worked);
   deliver(w, h, since);
   sellSurplus(w, h);
+  sellToCourt(w, h);
   if (h.bent !== "miner" || h.casa >= 8) planVoyages(w, h, rng);
   build(w, h);
   research(w, h);
+  growIdentity(w, h, () => spendable(w, h));
   if (h.bent === "armourer" || h.bent === "mixed") expedition(w, h, rng);
   h.sessions++;
   const soon = w.now + DAY;

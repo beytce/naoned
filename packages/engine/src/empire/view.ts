@@ -34,7 +34,7 @@ import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import { bandOf } from "./power.js";
 import type { EmpireSettings } from "./settings.js";
-import { hireCost, staffSlots } from "./staff.js";
+import { staffHireCost, staffSlots } from "./staff.js";
 import { counterLevel, incomePerDay, powerOfHouse } from "./trade.js";
 import { moduleSlotsOf, neighbourBonus } from "./workshops.js";
 
@@ -389,7 +389,7 @@ function identityOf(house: EmpireHouse, s: EmpireSettings): EmpireIdentity {
     },
     staff: {
       slots: staffSlots(house, s),
-      hireCost: hireCost(house, s),
+      hireCost: staffHireCost(house, s),
       members: (house.staff ?? []).map((m) => ({
         ...m,
         tiersOpen: Math.max(0, Math.floor(m.level / s.staff.tierEvery) - m.skills.length),
