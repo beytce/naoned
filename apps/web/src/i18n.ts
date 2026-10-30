@@ -188,6 +188,7 @@ const frDict = {
       none: "Aucun chantier en cours",
       casa: (n: number) => `Casa ${n}`,
       newWorkshop: (name: string) => `${name} neuf`,
+      ship: (name: string) => `${name} à l'Arsenal`,
       upgrade: (name: string, n: number) => `${name} niveau ${n}`,
     },
     workshop: {
@@ -265,6 +266,43 @@ const frDict = {
       ready: "Vos files ont produit",
       sites: (n: number) => (n === 1 ? "1 chantier achevé" : `${n} chantiers achevés`),
       action: "Tout ramasser",
+    },
+    sea: {
+      arsenal: "L'Arsenal privé",
+      shipLine: (cap: number, slots: number, routes: string) =>
+        `${cap} · ${slots} place${slots > 1 ? "s" : ""} de modules · ${routes}`,
+      mudaOnly: "part avec la Muda",
+      build: (cost: string, time: string) => `Construire · ${cost} · ${time}`,
+      nextMuda: (at: string) => `Prochain départ de la Muda : ${at}`,
+      myBid: (v: string) => `votre enchère : ${v}`,
+      bidPlaceholder: "Ducats",
+      bid: "Enchérir",
+      unbid: "Retirer",
+      pass: (until: string) =>
+        `Place gagnée : la galère peut partir jusqu'à ${until}, à l'heure de la Muda.`,
+      lastMuda: (places: number, reserve: string) =>
+        `Dernière Muda : ${places} places, réserve ${reserve}.`,
+      insure: (pct: number, premium: string) =>
+        `Assurer contre les corsaires (risque ${pct} %, prime ≈ ${premium})`,
+      noRisk: "Aucun corsaire sur cette route.",
+      targetPlaceholder: "Capital (ducats)",
+      openColleganza: "Ouvrir en colleganza",
+      colleganza: "La colleganza",
+      colleganzaRule:
+        "Un investisseur finance la cargaison d'un voyageur ; au retour, le bénéfice se partage, trois quarts aux mises. Une perte se partage aussi.",
+      noColleganza: "Aucun voyage ouvert aux mises.",
+      colleganzaLine: (ship: string, to: string, qty: number, good: string) =>
+        `${ship} vers ${to} : ${qty} ${good}`,
+      raised: (staked: string, target: string) => `${staked} sur ${target}`,
+      record: (voyages: number, pct: number) =>
+        `${voyages} voyage${voyages > 1 ? "s" : ""}, retour moyen ${pct} %`,
+      noRecord: "pas encore de voyage rendu",
+      sailing: "en mer",
+      sail: "Partir",
+      cancel: "Renoncer",
+      stakePlaceholder: "Ducats",
+      stake: "Miser",
+      withdraw: (v: string) => `Reprendre ${v}`,
     },
     terra: {
       tab: "Terraferme",
@@ -553,6 +591,10 @@ const frDict = {
       cart: "Charrette",
       burchio: "Burchio",
       chariot: "Chariot bâché",
+      marciliana: "Marciliana",
+      cocca: "Cocca",
+      galea: "Galea grossa",
+      fiandra: "Galère de Flandre",
     } as Record<string, string>,
     moduleNames: {
       hold: ["Cale", "+ capacité des véhicules"],
@@ -592,6 +634,11 @@ const frDict = {
       too_soon: "Une demande toutes les 8 heures.",
       over_limit: "Plafond du jour atteint.",
       unknown_order: "Cette demande n'existe plus.",
+      muda_only: "Une galère de la Muda ne part qu'avec une place gagnée à l'incanto.",
+      unknown_colleganza: "Cette colleganza n'existe plus.",
+      colleganza_closed: "Ce voyage est déjà parti.",
+      own_colleganza: "On ne mise pas sur son propre voyage.",
+      not_owner: "Ce n'est pas votre voyage.",
       not_in_theatre: "Entrez d'abord dans la Terraferme.",
       already_in_theatre: "Vous êtes déjà dans un théâtre.",
       contesa_week: "Semaine de la Contesa : seuls les associés inscrits jouent.",

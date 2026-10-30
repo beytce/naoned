@@ -318,7 +318,10 @@ export interface EmpireWorkshop {
 
 /** A building site: it ends at `endsAt`, settled at the next read. */
 export interface EmpireBuild {
-  kind: "casa" | "newWorkshop" | "upgrade" | "counter";
+  kind: "casa" | "newWorkshop" | "upgrade" | "counter" | "ship";
+  /** A ship of the Arsenal: its type and the id it will bear. */
+  vehicleType?: string;
+  vehicleId?: string;
   /** A counter's region (its first level: the charter's opening voyage and its building). */
   region?: string;
   /** The level it builds. */
@@ -343,7 +346,7 @@ export interface EmpireHouse {
   favour: number;
   seals: number;
   /** Its vehicles: free again at `busyUntil` (a voyage's way there and back). */
-  vehicles?: { id: string; type: string; busyUntil: number }[];
+  vehicles?: { id: string; type: string; busyUntil: number; fitted?: string[] }[];
   /** The deposits its teams work, by id. */
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */
@@ -366,6 +369,10 @@ export interface EmpireHouse {
   /** The Terraferma: the Seals of this week, its best tier ever (its honorary grade). */
   terraSeals?: { week: number; seals: number };
   terraBest?: string;
+  /** Places won at the Muda: its galley may leave until `until`, sailing at the departure's hour. */
+  mudaPasses?: { vehicleId: string; departure: number; until: number }[];
+  /** Its record as a traveller of colleganze: voyages returned, their summed return (bps). */
+  colleganzaRecord?: { voyages: number; returnBps: number };
   /** The day of its last won Condotta paid in Seals. */
   condottaDay?: number;
   /** The Merit its entraide earned, the last lot it asked, what it supplied today (deniers). */
@@ -464,6 +471,31 @@ export interface EmpireVoyage {
   arrivesAt: number;
   /** What the cargo cost, bought or own at its port's price: to read the voyage's margin. */
   cost: Deniers;
+  /** Insured at its departure: the units the corsairs take are paid back at the reference. */
+  insured?: boolean;
+  /** The colleganza that financed it: its return is shared at the arrival. */
+  colleganza?: string;
+}
+
+/**
+ * A colleganza (CADRAGE-v3 § 3 quater): a traveller's voyage, its investors' stakes in escrow; at
+ * the departure, the capital the cargo used; at the return, the share.
+ */
+export interface EmpireColleganza {
+  id: string;
+  traveller: PlayerId;
+  vehicleId: string;
+  from: string;
+  to: string;
+  good: string;
+  qty: number;
+  /** The capital sought, and what each investor put in (what the cargo used, once sailed). */
+  target: Deniers;
+  stakes: { house: PlayerId; amount: Deniers }[];
+  status: "open" | "sailing";
+  /** Once sailed: the capital used, and what the whole cargo cost. */
+  capital?: Deniers;
+  cargoCost?: Deniers;
 }
 
 /** A theatre of the empire's Terraferma (CADRAGE-v3 § 8): one map, its merchants, its rules. */
@@ -493,6 +525,15 @@ export interface EmpireTerra {
   >;
 }
 
+/** The Muda's incanto (CADRAGE-v3 § 12 bis): the bids for its next departures, held in escrow. */
+export interface EmpireMuda {
+  bids: { house: PlayerId; vehicleId: string; amount: Deniers; departure: number }[];
+  /** The last departure settled. */
+  last?: number;
+  /** The last departures' places and prices, for the view. */
+  lastResult?: { departure: number; places: number; reserve: Deniers; prices: Deniers[] };
+}
+
 /** A lot a partner asks its company for (CADRAGE-v3 § 7). */
 export interface EmpireAidRequest {
   id: string;
@@ -508,6 +549,8 @@ export interface EmpireState {
   /** The entraide's open requests. */
   aid?: EmpireAidRequest[];
   terra?: EmpireTerra;
+  muda?: EmpireMuda;
+  colleganze?: EmpireColleganza[];
   voyages?: EmpireVoyage[];
   deposits?: EmpireDeposit[];
   /** The last day the deposits were drawn for. */

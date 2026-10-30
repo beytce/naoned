@@ -349,6 +349,12 @@ export function VoyageSheet({
   const there = traded.find((q) => q.good === chosen);
   const here = p.market.find((q) => q.region === from && q.good === chosen);
   const margin = there && here ? BigInt(there.price) - BigInt(here.price) : null;
+  // The corsairs' risk there, and the insurance's premium on what the cargo is worth here.
+  const risk = reachable.find((r) => r.code === dest)?.corsairRiskBps ?? 0;
+  const premium =
+    here && risk > 0 ? (BigInt(here.price) * BigInt(amount) * BigInt(risk) * 12n) / 100_000n : 0n;
+  const [insured, setInsured] = useState(false);
+  const [target, setTarget] = useState("");
   return (
     <Sheet open={open} onClose={onClose} kicker={v.kicker} title={v.title} summary={v.summary}>
       {!vehicle ? (
@@ -388,6 +394,18 @@ export function VoyageSheet({
             />
           </label>
           {margin !== null && <p className="text-sm text-cream-dim">{v.margin(d(margin))}</p>}
+          {risk > 0 ? (
+            <label className="flex items-center gap-2 text-sm text-cream" data-insure>
+              <input
+                type="checkbox"
+                checked={insured}
+                onChange={(e) => setInsured(e.target.checked)}
+              />
+              {fr.empire.sea.insure(Math.round(risk / 100), d(premium))}
+            </label>
+          ) : (
+            <p className="text-xs text-cream-dim">{fr.empire.sea.noRisk}</p>
+          )}
           <Slab
             tone="gold"
             size="lg"
@@ -402,11 +420,41 @@ export function VoyageSheet({
                 to: dest,
                 good: chosen,
                 qty: amount,
+                ...(insured ? { insured: true } : {}),
               }).then(onClose)
             }
           >
             {v.action}
           </Slab>
+          <div className="flex gap-2" data-open-colleganza>
+            <input
+              inputMode="numeric"
+              value={target}
+              onChange={(e) => setTarget(e.target.value.replace(/\D/g, ""))}
+              placeholder={fr.empire.sea.targetPlaceholder}
+              aria-label={fr.empire.sea.targetPlaceholder}
+              className="min-h-11 w-32 bg-night-2 px-3 text-cream ring-1 ring-inset ring-line slab"
+            />
+            <Slab
+              size="sm"
+              tone="ghost"
+              busy={busy}
+              disabled={!target || !dest || !chosen}
+              onClick={() =>
+                void act({
+                  type: "empireColleganzaOpen",
+                  vehicleId: vehicle.id,
+                  from,
+                  to: dest,
+                  good: chosen,
+                  qty: amount,
+                  target: String(Number(target) * 100),
+                }).then(onClose)
+              }
+            >
+              {fr.empire.sea.openColleganza}
+            </Slab>
+          </div>
         </div>
       )}
     </Sheet>
@@ -467,32 +515,34 @@ export function Charroi({
         ))}
       </ul>
       <ul className="mt-3 space-y-2">
-        {view.vehicles.shop.map((s) => (
-          <li
-            key={s.type}
-            className="flex items-center gap-2 border-b border-line/60 pb-2 text-sm text-cream"
-          >
-            <span className="flex-1">
-              {t.vehicleNames[s.type] ?? s.type}
-              <span className="block text-xs text-cream-dim">
-                {s.capacity} · {s.regions.map(regionName).join(", ")}
+        {view.vehicles.shop
+          .filter((s) => !s.build)
+          .map((s) => (
+            <li
+              key={s.type}
+              className="flex items-center gap-2 border-b border-line/60 pb-2 text-sm text-cream"
+            >
+              <span className="flex-1">
+                {t.vehicleNames[s.type] ?? s.type}
+                <span className="block text-xs text-cream-dim">
+                  {s.capacity} · {s.regions.map(regionName).join(", ")}
+                </span>
               </span>
-            </span>
-            {view.house.casa < s.casa ? (
-              <span className="text-xs text-cream-dim">{c.opensAt(s.casa)}</span>
-            ) : (
-              <Slab
-                size="sm"
-                tone="ghost"
-                busy={busy}
-                disabled={!affordable(p.cash, s.cost)}
-                onClick={() => void act({ type: "empireBuyVehicle", vehicleType: s.type })}
-              >
-                {c.buy(d(s.cost))}
-              </Slab>
-            )}
-          </li>
-        ))}
+              {view.house.casa < s.casa ? (
+                <span className="text-xs text-cream-dim">{c.opensAt(s.casa)}</span>
+              ) : (
+                <Slab
+                  size="sm"
+                  tone="ghost"
+                  busy={busy}
+                  disabled={!affordable(p.cash, s.cost)}
+                  onClick={() => void act({ type: "empireBuyVehicle", vehicleType: s.type })}
+                >
+                  {c.buy(d(s.cost))}
+                </Slab>
+              )}
+            </li>
+          ))}
       </ul>
     </section>
   );

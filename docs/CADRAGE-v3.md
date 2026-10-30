@@ -579,7 +579,17 @@ Chaque étape fait l'objet d'un plan, validé avant le code.
    - **la Terraferme de l'empire** (`empire.terra`) : une semaine du lundi au dimanche (heure de Venise), en théâtres d'au plus 40 marchands d'une bande de Puissance, rangés par cote ; l'entrée en planches (la guerre mange elle-même le pain et les briques) ; la ration de la République, le même pain par jour pour tous ; les règles copiées à l'ouverture d'un théâtre ; à la clôture, Faveur par rang, Sceaux (2 au plus par semaine), grade honorifique ; la cote Elo par théâtre. Le décret du Signore et l'embargo, qui agissent sur l'économie du monde mensuel, n'y sont pas ;
    - **la Contesa**, les semaines paires : le roster de 5, 10 ou 15 associés posé par le Capo ou un Consigliere jusqu'au jeudi ; des théâtres de 2 à 4 compagnies par Puissance, en équipes par compagnie ; Sceaux à chaque membre et un de plus aux gagnants, trophée, Lustre et blason sur les villes tenues pour la compagnie gagnante ; une compagnie seule contre les nations gagne moitié moins ;
    - **l'écran** : l'onglet Terraferme (théâtre, carte, camp, fronts, roster, honneurs) où la Condotta se joue aussi ; la Famille passe dans la feuille de la Casa ;
-   - **les bandes de Puissance** élargies (0, 4 500, 7 000, 9 500, 12 000) pour la cible du nouveau.
+   - **les bandes de Puissance** élargies (0, 4 500, 7 000, 9 500, 12 000) pour la cible du nouveau, puis ajustées avec la mer (7a).
 7. **La mer et les armes** : la Dalmatie, l'Arsenal, les navires à modules, la Muda des joueurs, les corsaires ; puis les expéditions et les reliques, et la colleganza.
+
+   L'étape se fait en deux plans : 7a, la mer ; 7b, les armes, les expéditions et les reliques.
+
+   *7a fait le 30 octobre 2026*, dans le monde de l'empire :
+   - **l'Arsenal privé** : la marciliana (Casa 9), la cocca (11), la galea grossa (14) et la galère de Flandre (18) se construisent sur une place de chantier, jamais ne s'achètent ; leurs places (2, 3, 4, 4) reçoivent des modules de négoce recherchés, qui ne comptent que sur le navire qui les porte ;
+   - **la Muda d'État** : la galea grossa et la galère de Flandre ne partent qu'avec elle, le mardi et le vendredi à 18 h ; les enchères sous séquestre, l'incanto de Vickrey au départ (places pour la moitié des propriétaires, réserve d'un jour de revenu médian), le prix détruit ; une place gagnée laisse partir la galère dans les 24 h, à l'heure de la Muda ;
+   - **les corsaires** : à l'arrivée, un tirage sur la graine du monde contre le risque de la région prend un quart de la cargaison, jamais le navire ; **l'assurance** (prime : risque × valeur × 1,2, détruite) rembourse les unités perdues à la référence ;
+   - **la colleganza** (Casa 11) : un voyage publié, des mises sous séquestre, la cargaison achetée avec les mises d'abord, le partage au retour (un quart du bénéfice au voyageur, une perte partagée), la réputation publique du voyageur ;
+   - **l'écran** : l'Arsenal et la colleganza dans la feuille des ateliers ; le risque, l'assurance et « Ouvrir en colleganza » dans la feuille du voyage.
+   - **les bandes de Puissance** passent à 0, 4 000, 6 500, 9 000 et 11 500 : les navires et leurs matériaux ralentissaient le nouveau.
 8. **Les ères et les Annales**, la politique étendue, le Grand Canal en immobilier, le Levant.
 9. **La refonte visuelle et des interactions**, qui suit chaque étape : la carte qui s'étend, la façade qui monte, les trois flottes et leurs emplacements de modules, les convois, la carte d'expédition.

@@ -1,9 +1,30 @@
-import { applyBpsFloor } from "../money.js";
-import { type EmpireVoyage, HOUR_MS, type PlayerId, SINK_ACCOUNT, cashAccount } from "../state.js";
-import { type Tx, addStock, fail, inventoryLine, nextId, removeStock, transfer } from "../tx.js";
+import { draw } from "../draw.js";
+import { type Deniers, applyBpsFloor } from "../money.js";
+import {
+  type EmpireVoyage,
+  HOUR_MS,
+  type PlayerId,
+  SINK_ACCOUNT,
+  SOURCE_ACCOUNT,
+  cashAccount,
+} from "../state.js";
+import {
+  type Tx,
+  addStock,
+  emit,
+  fail,
+  inventoryLine,
+  nextId,
+  removeStock,
+  transfer,
+} from "../tx.js";
+import { returnSeaColleganza } from "./colleganzaSail.js";
+import { corsairRiskBps } from "./corsairs.js";
 import { houseEffect } from "./effects.js";
-import { empireSettings, ownHouse } from "./house.js";
+import { empireSettings, openSite, ownHouse } from "./house.js";
+import { mudaDeparture } from "./mudaSail.js";
 import { priceAt, routeHours } from "./prices.js";
+import type { EmpireSettings } from "./settings.js";
 import { gainXp } from "./staff.js";
 import { buyAt, counterLevel, fillOrders, homesOf, sellAt } from "./trade.js";
 
@@ -12,10 +33,55 @@ export function buyEmpireVehicle(tx: Tx, playerId: PlayerId, type: string): void
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   const spec = s.vehicles[type];
-  if (!spec) fail("unknown_building_type");
+  // A ship is built at the Arsenal, never bought.
+  if (!spec || spec.build) fail("unknown_building_type");
   if (h.casa < spec.casa) fail("requirement_unmet");
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, BigInt(spec.costDucats) * 100n, "empire_build");
   h.vehicles = [...(h.vehicles ?? []), { id: nextId(tx, "v"), type, busyUntil: 0 }];
+}
+
+/**
+ * Lays a ship down at the private Arsenal (CADRAGE-v3 § 3.3): a site of the Casa's, its price and
+ * its materials destroyed; the ship joins the house's vehicles when the site ends.
+ */
+export function buildShip(tx: Tx, playerId: PlayerId, type: string): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const spec = s.vehicles[type];
+  if (!spec?.build) fail("unknown_building_type");
+  if (h.casa < spec.casa) fail("requirement_unmet");
+  const site = openSite(
+    tx,
+    playerId,
+    h,
+    BigInt(spec.costDucats) * 100n,
+    spec.build.materials,
+    spec.build.minutes,
+    0,
+  );
+  h.builds.push({ kind: "ship", level: 1, vehicleType: type, vehicleId: nextId(tx, "v"), ...site });
+}
+
+/** Fits a researched trade module on one of a ship's places: free, at once, once each. */
+export function fitShip(
+  tx: Tx,
+  playerId: PlayerId,
+  vehicleId: string,
+  slot: number,
+  code: string,
+): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const v = h.vehicles?.find((x) => x.id === vehicleId);
+  if (!v) fail("unknown_building");
+  const m = s.modules.find((x) => x.code === code);
+  if (!m || m.kind !== "trade" || !(h.modules?.[code] ?? 0)) fail("unknown_building_type");
+  const slots = s.vehicles[v.type]?.slots ?? 0;
+  if (!Number.isInteger(slot) || slot < 0 || slot >= slots) fail("no_room");
+  const fitted = [...(v.fitted ?? [])];
+  if (fitted.some((x, i) => x === code && i !== slot)) fail("built");
+  fitted[slot] = code;
+  v.fitted = fitted;
 }
 
 /**
@@ -31,6 +97,7 @@ export function startVoyage(
   to: string,
   good: string,
   qty: number,
+  insured = false,
 ): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
@@ -49,6 +116,8 @@ export function startVoyage(
   )
     fail("unknown_region");
   if (v.busyUntil > tx.now) fail("building_busy");
+  // A galley of the Muda leaves only with a place won, at its departure's hour.
+  const start = mudaDeparture(tx, playerId, vehicleId, v.type);
   const hold = applyBpsFloor(
     BigInt(spec.capacity),
     10_000 + houseEffect(h, "capacity", s, { vehicleId }),
@@ -69,7 +138,7 @@ export function startVoyage(
   const paid = before - (tx.s.accounts[cashAccount(playerId)] ?? 0n);
   const ownValue = ref !== undefined ? priceAt(ref, 10_000, s) * BigInt(own) : 0n;
   const hours = routeHours(from, to, spec.speedBps + houseEffect(h, "speed", s, { vehicleId }), s);
-  v.busyUntil = tx.now + 2 * hours * HOUR_MS;
+  v.busyUntil = start + 2 * hours * HOUR_MS;
   const voyage: EmpireVoyage = {
     id: nextId(tx, "y"),
     house: playerId,
@@ -78,9 +147,15 @@ export function startVoyage(
     qty: carried,
     from,
     to,
-    arrivesAt: tx.now + hours * HOUR_MS,
+    arrivesAt: start + hours * HOUR_MS,
     cost: paid + ownValue,
   };
+  // The insurance: its premium destroyed now, against the risk of the way there.
+  const premium = insurancePremium(voyage.cost, to, s);
+  if (insured && premium > 0n) {
+    transfer(tx, cashAccount(playerId), SINK_ACCOUNT, premium, "empire_insurance", voyage.id);
+    voyage.insured = true;
+  }
   if (tx.s.empire) tx.s.empire.voyages = [...(tx.s.empire.voyages ?? []), voyage];
 }
 
@@ -97,13 +172,55 @@ export function settleVoyages(tx: Tx): void {
   for (const v of due) {
     if (!tx.s.empire.houses[v.house]) continue;
     addStock(tx, v.house, v.good, v.qty, "empire_voyage", v.id);
+    // A colleganza's return: what the traveller's purse gains at the arrival.
+    const purse = tx.s.accounts[cashAccount(v.house)] ?? 0n;
+    const lost = corsairsTake(tx, v);
     // Its captain grows with each voyage.
     const s = empireSettings(tx.ctx);
     for (const m of tx.s.empire.houses[v.house]?.staff ?? [])
       if (m.placedAt === v.vehicleId) gainXp(m, s.staff.xpPerLevel, s);
-    const delivered = fillOrders(tx, v.house, v.good, v.qty, v.to);
-    sellAt(tx, v.house, v.good, v.qty - delivered, v.to);
+    const left = v.qty - lost;
+    const delivered = fillOrders(tx, v.house, v.good, left, v.to);
+    sellAt(tx, v.house, v.good, left - delivered, v.to);
+    if (v.colleganza)
+      returnSeaColleganza(tx, v, (tx.s.accounts[cashAccount(v.house)] ?? 0n) - purse);
   }
+}
+
+/** The insurance's premium of a cargo of this value to a region: risk × value × the premium's rate. */
+export function insurancePremium(value: Deniers, to: string, s: EmpireSettings): Deniers {
+  const risk = corsairRiskBps(to, 0, s);
+  return (value * BigInt(risk) * BigInt(s.corsairs.premiumBps)) / 100_000_000n;
+}
+
+/**
+ * The corsairs (CADRAGE-v3 § 3 sexies), at the arrival: a draw on the world's seed and the voyage
+ * against its region's risk (none in Venetia, more far away); an attack takes a share of the
+ * cargo, never the ship, and an insured voyage has the units back at the reference. The escort
+ * comes with the armed galleys.
+ */
+function corsairsTake(tx: Tx, v: EmpireVoyage): number {
+  const s = empireSettings(tx.ctx);
+  const risk = corsairRiskBps(v.to, 0, s);
+  if (risk <= 0 || draw(tx.ctx, `corsairs:${v.id}`) % 10_000 >= risk) return 0;
+  const lost = Math.floor((v.qty * s.corsairs.lossShareBps) / 10_000);
+  if (lost <= 0) return 0;
+  removeStock(tx, v.house, v.good, lost, "empire_corsairs", v.id);
+  if (v.insured) {
+    const r = s.regions.find((x) => x.code === v.to);
+    const ref = r?.demands[v.good] ?? r?.produces[v.good] ?? 0n;
+    if (ref > 0n)
+      transfer(
+        tx,
+        SOURCE_ACCOUNT,
+        cashAccount(v.house),
+        ref * BigInt(lost),
+        "empire_insurance",
+        v.id,
+      );
+  }
+  emit(tx, "empire_corsairs", v.house, { voyage: v.id, lost, insured: v.insured === true });
+  return lost;
 }
 
 /** A voyage's expected margin a unit, for the view: the port's price less the cost, after tax. */

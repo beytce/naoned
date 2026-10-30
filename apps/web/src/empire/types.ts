@@ -21,7 +21,8 @@ export interface EmpireWorkshop {
 }
 
 export interface EmpireBuild {
-  kind: "casa" | "newWorkshop" | "upgrade" | "counter";
+  kind: "casa" | "newWorkshop" | "upgrade" | "counter" | "ship";
+  vehicleType?: string;
   region?: string;
   level: number;
   workshopId?: string;
@@ -90,8 +91,11 @@ export interface EmpireView {
       capacity: number;
       regions: string[];
       speedBps: number;
+      build: { minutes: number; materials: Record<string, number> } | null;
+      slots: number;
+      muda: boolean;
     }[];
-    mine: { id: string; type: string; busyUntil: number; capacity: number }[];
+    mine: { id: string; type: string; busyUntil: number; capacity: number; fitted?: string[] }[];
     voyages: EmpireVoyage[];
     haulPerDay: number;
   };
@@ -119,6 +123,30 @@ export interface EmpireView {
   workshopPlaces: Record<string, { slots: number; neighbourBps: number }>;
   courtLeft: number;
   identity: EmpireIdentity;
+  muda: {
+    next: number | null;
+    bids: { vehicleId: string; amount: string }[];
+    passes: { vehicleId: string; departure: number; until: number }[];
+    last: { departure: number; places: number; reserve: string; prices: string[] } | null;
+  };
+  colleganze: {
+    open: {
+      id: string;
+      traveller: string;
+      mine: boolean;
+      vehicleType: string;
+      from: string;
+      to: string;
+      good: string;
+      qty: number;
+      target: string;
+      staked: string;
+      myStake: string;
+      status: string;
+      record: { voyages: number; returnBps: number } | null;
+    }[];
+    record: { voyages: number; returnBps: number } | null;
+  };
   terra: {
     week: number;
     contesa: boolean;
@@ -199,6 +227,7 @@ export interface EmpireIdentity {
 export interface EmpireRegion {
   code: string;
   casa: number;
+  corsairRiskBps: number;
   charterFavour: number;
   hoursFromVenice: number;
   workshopSlots: number;
@@ -265,7 +294,31 @@ export type EmpireAction =
   | { type: "empireCharter"; region: string }
   | { type: "empireUpgradeCounter"; region: string }
   | { type: "empireBuyVehicle"; vehicleType: string }
-  | { type: "empireVoyage"; vehicleId: string; from: string; to: string; good: string; qty: number }
+  | {
+      type: "empireVoyage";
+      vehicleId: string;
+      from: string;
+      to: string;
+      good: string;
+      qty: number;
+      insured?: boolean;
+    }
+  | { type: "empireBuildShip"; vehicleType: string }
+  | { type: "empireFitShip"; vehicleId: string; slot: number; module: string }
+  | { type: "empireMudaBid"; vehicleId: string; amount: string }
+  | {
+      type: "empireColleganzaOpen";
+      vehicleId: string;
+      from: string;
+      to: string;
+      good: string;
+      qty: number;
+      target: string;
+    }
+  | { type: "empireColleganzaStake"; id: string; amount: string }
+  | { type: "empireColleganzaWithdraw"; id: string }
+  | { type: "empireColleganzaCancel"; id: string }
+  | { type: "empireColleganzaSail"; id: string; insured?: boolean }
   | { type: "empireResearch"; module: string }
   | { type: "empireTeam"; depositId: string }
   | { type: "empireFit"; workshopId: string; slot: number; module: string }

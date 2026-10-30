@@ -271,6 +271,7 @@ export const en: Dictionary = {
       none: "No site under way",
       casa: (n: number) => `Casa ${n}`,
       newWorkshop: (name: string) => `New ${name}`,
+      ship: (name: string) => `${name} at the Arsenal`,
       upgrade: (name: string, n: number) => `${name} level ${n}`,
     },
     workshop: {
@@ -347,6 +348,43 @@ export const en: Dictionary = {
       ready: "Your queues made",
       sites: (n: number) => (n === 1 ? "1 site finished" : `${n} sites finished`),
       action: "Collect everything",
+    },
+    sea: {
+      arsenal: "The private Arsenal",
+      shipLine: (cap: number, slots: number, routes: string) =>
+        `${cap} · ${slots} module place${slots > 1 ? "s" : ""} · ${routes}`,
+      mudaOnly: "sails with the Muda",
+      build: (cost: string, time: string) => `Build · ${cost} · ${time}`,
+      nextMuda: (at: string) => `Next Muda departure: ${at}`,
+      myBid: (v: string) => `your bid: ${v}`,
+      bidPlaceholder: "Ducats",
+      bid: "Bid",
+      unbid: "Withdraw",
+      pass: (until: string) =>
+        `Place won: the galley may leave until ${until}, at the Muda's hour.`,
+      lastMuda: (places: number, reserve: string) =>
+        `Last Muda: ${places} places, reserve ${reserve}.`,
+      insure: (pct: number, premium: string) =>
+        `Insure against the corsairs (risk ${pct}%, premium ≈ ${premium})`,
+      noRisk: "No corsair on this route.",
+      targetPlaceholder: "Capital (ducats)",
+      openColleganza: "Open as a colleganza",
+      colleganza: "The colleganza",
+      colleganzaRule:
+        "An investor funds a traveller's cargo; on its return, the profit is shared, three quarters to the stakes. A loss is shared too.",
+      noColleganza: "No voyage open to stakes.",
+      colleganzaLine: (ship: string, to: string, qty: number, good: string) =>
+        `${ship} to ${to}: ${qty} ${good}`,
+      raised: (staked: string, target: string) => `${staked} of ${target}`,
+      record: (voyages: number, pct: number) =>
+        `${voyages} voyage${voyages > 1 ? "s" : ""}, average return ${pct}%`,
+      noRecord: "no voyage returned yet",
+      sailing: "at sea",
+      sail: "Sail",
+      cancel: "Give up",
+      stakePlaceholder: "Ducats",
+      stake: "Stake",
+      withdraw: (v: string) => `Take back ${v}`,
     },
     terra: {
       tab: "Terraferma",
@@ -630,6 +668,10 @@ export const en: Dictionary = {
       cart: "Cart",
       burchio: "Burchio",
       chariot: "Covered wagon",
+      marciliana: "Marciliana",
+      cocca: "Cog",
+      galea: "Great galley",
+      fiandra: "Flanders galley",
     } as Record<string, string>,
     moduleNames: {
       hold: ["Hold", "+ vehicle capacity"],
@@ -669,6 +711,11 @@ export const en: Dictionary = {
       too_soon: "One request every 8 hours.",
       over_limit: "Today's cap is reached.",
       unknown_order: "This request is gone.",
+      muda_only: "A Muda galley sails only with a place won at the incanto.",
+      unknown_colleganza: "This colleganza is gone.",
+      colleganza_closed: "This voyage has sailed.",
+      own_colleganza: "No stake in one's own voyage.",
+      not_owner: "This is not your voyage.",
       not_in_theatre: "Enter the Terraferma first.",
       already_in_theatre: "You are already in a theatre.",
       contesa_week: "Contesa week: only the partners set down play.",

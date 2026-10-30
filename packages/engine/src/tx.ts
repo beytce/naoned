@@ -228,7 +228,8 @@ export type EngineErrorCode =
   | "contesa_week"
   | "not_contesa_week"
   | "roster_closed"
-  | "roster_size";
+  | "roster_size"
+  | "muda_only";
 
 export class EngineError extends Error {
   constructor(

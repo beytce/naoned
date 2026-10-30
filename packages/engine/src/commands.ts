@@ -36,6 +36,13 @@ import { knownTrait } from "./dynasty.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { type EmpireCompanyTag, askAid, settleAid, supplyAid, syncCompany } from "./empire/aid.js";
 import { advanceCarnet, claimObjective, ensureCarnet, windOnReturn } from "./empire/carnet.js";
+import {
+  cancelSeaColleganza,
+  openSeaColleganza,
+  sailSeaColleganza,
+  stakeSeaColleganza,
+  withdrawSeaColleganza,
+} from "./empire/colleganzaSail.js";
 import { rewardCondotta } from "./empire/condotta.js";
 import { sendTeam, settleDeposits } from "./empire/extraction.js";
 import { chooseLineage, passGenerations } from "./empire/family.js";
@@ -52,10 +59,17 @@ import {
   upgradeCounter,
 } from "./empire/house.js";
 import { startLearning } from "./empire/knowledge.js";
+import { bidMuda, settleMuda } from "./empire/mudaSail.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
 import { deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
-import { buyEmpireVehicle, settleVoyages, startVoyage } from "./empire/voyages.js";
+import {
+  buildShip,
+  buyEmpireVehicle,
+  fitShip,
+  settleVoyages,
+  startVoyage,
+} from "./empire/voyages.js";
 import { fitModule, relaunchAll, relaunchWorkshop, swapWorkshops } from "./empire/workshops.js";
 import { joinFamily, leaveFamily } from "./families.js";
 import { buildFondaco } from "./fondaci.js";
@@ -311,6 +325,24 @@ type EmpireCommandOf =
   | { type: "empireSkill"; playerId: PlayerId; staffId: string; path: number }
   | { type: "empireLineage"; playerId: PlayerId; trait: string }
   | { type: "empireAsk"; playerId: PlayerId; good: string; qty: number }
+  | { type: "empireBuildShip"; playerId: PlayerId; vehicleType: string }
+  | {
+      type: "empireColleganzaOpen";
+      playerId: PlayerId;
+      vehicleId: string;
+      from: string;
+      to: string;
+      good: string;
+      qty: number;
+      target: string;
+    }
+  | { type: "empireColleganzaStake"; playerId: PlayerId; id: string; amount: string }
+  | { type: "empireColleganzaWithdraw"; playerId: PlayerId; id: string }
+  | { type: "empireColleganzaCancel"; playerId: PlayerId; id: string }
+  | { type: "empireColleganzaSail"; playerId: PlayerId; id: string; insured?: boolean }
+  /** A bid for a place at the Muda's next departure, in deniers (0: taken back). */
+  | { type: "empireMudaBid"; playerId: PlayerId; vehicleId: string; amount: string }
+  | { type: "empireFitShip"; playerId: PlayerId; vehicleId: string; slot: number; module: string }
   /** The Terraferma (CADRAGE-v3 § 8): enter the week's theatre (the cote from the server). */
   | { type: "empireTerraJoin"; playerId: PlayerId; rating?: number }
   | { type: "empireTerra"; playerId: PlayerId; action: TerraPlayerCommand }
@@ -326,6 +358,8 @@ type EmpireCommandOf =
       to: string;
       good: string;
       qty: number;
+      /** Insured against the corsairs: its premium paid at the departure. */
+      insured?: boolean;
     };
 
 export type DecideResult =
@@ -428,6 +462,12 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
   emit(tx, "player_reset", playerId);
 }
 
+/** An amount of deniers as a command carries it (a string of digits), or why not. */
+function toDeniers(amount: string): bigint {
+  if (typeof amount !== "string" || !/^\d{1,15}$/.test(amount)) fail("invalid_quantity");
+  return BigInt(amount);
+}
+
 function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   // The cargoes arrived by now sell first, every house's, in the order they came in.
   if (tx.ctx.settings.empire && tx.s.empire) {
@@ -435,6 +475,8 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     // The deposits' extraction up to now, then the days' new ones.
     settleDeposits(tx);
     settleAid(tx);
+    // The Muda's departures passed: their incanti.
+    settleMuda(tx);
     // The week's Terraferma: last week's theatres closed and paid when the week turns.
     settleTerra(tx);
   }
@@ -527,6 +569,37 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     case "empireSupply":
       supplyAid(tx, cmd.playerId, cmd.requestId);
       break;
+    case "empireMudaBid":
+      bidMuda(tx, cmd.playerId, cmd.vehicleId, toDeniers(cmd.amount));
+      break;
+    case "empireColleganzaOpen":
+      openSeaColleganza(tx, cmd.playerId, {
+        vehicleId: cmd.vehicleId,
+        from: cmd.from,
+        to: cmd.to,
+        good: cmd.good,
+        qty: cmd.qty,
+        target: toDeniers(cmd.target),
+      });
+      break;
+    case "empireColleganzaStake":
+      stakeSeaColleganza(tx, cmd.playerId, cmd.id, toDeniers(cmd.amount));
+      break;
+    case "empireColleganzaWithdraw":
+      withdrawSeaColleganza(tx, cmd.playerId, cmd.id);
+      break;
+    case "empireColleganzaCancel":
+      cancelSeaColleganza(tx, cmd.playerId, cmd.id);
+      break;
+    case "empireColleganzaSail":
+      sailSeaColleganza(tx, cmd.playerId, cmd.id, cmd.insured === true);
+      break;
+    case "empireBuildShip":
+      buildShip(tx, cmd.playerId, cmd.vehicleType);
+      break;
+    case "empireFitShip":
+      fitShip(tx, cmd.playerId, cmd.vehicleId, cmd.slot, cmd.module);
+      break;
     case "empireCondotta":
       rewardCondotta(tx, cmd.playerId, cmd.tier);
       break;
@@ -540,7 +613,16 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       setRoster(tx, cmd.playerId, cmd.members);
       break;
     case "empireVoyage":
-      startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);
+      startVoyage(
+        tx,
+        cmd.playerId,
+        cmd.vehicleId,
+        cmd.from,
+        cmd.to,
+        cmd.good,
+        cmd.qty,
+        cmd.insured === true,
+      );
       break;
     case "empireSell":
       sellToDogana(tx, cmd.playerId, cmd.good, cmd.qty, cmd.region);

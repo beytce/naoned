@@ -1903,6 +1903,29 @@ Chaque bande peut donc remplir au moins un théâtre de 20 à 40 marchands, mêm
 
 La part de la Terraferme reste très loin du plafond de 15 % : la Faveur et les Sceaux y sont valorisés à 10 et 40 ducats (hypothèse du modèle), contre des recettes de commerce de plusieurs milliers de ducats par jour. Les gains pourront monter sans menacer le plafond, si l'on veut que la guerre compte davantage.
 
+### L'étape 7a au simulateur : la mer (30 octobre 2026)
+
+Le simulateur lit désormais les navires du jeu :
+- la marciliana, la cocca, la galea grossa et la galère de Flandre, avec leur prix et leur chantier à l'Arsenal (8 h à 4 jours) ;
+- leurs matériaux (planches, chêne, fer) sont pris dans le stock ou, à défaut, payés à leur valeur de référence ;
+- une Maison assure un voyage dont le risque atteint 5 % (`insureFromBps`), avec la prime du jeu (risque × valeur × 1,2) ; les unités perdues lui sont remboursées à la référence ;
+- la Muda, son incanto et la colleganza y étaient déjà, avec les mêmes formules que le moteur.
+
+**Premier essai, bandes de 6b** : 7, 8 et 8 cibles sur 12. Les matériaux des navires ralentissent la montée des Maisons moyennes, et le nouveau quitte la première bande en 6,3 à 6,9 mois.
+
+**Retenu** : les bandes de Puissance passent à `[0, 4 000, 6 500, 9 000, 11 500]`. **Résultat** (graines 1, 2 et 3, quatre cohortes de 200) : **8, 9 et 9 cibles sur 12**.
+
+| Mesure | Étape 6b | Étape 7a |
+| --- | --- | --- |
+| Nouveau hors de la première bande | 4,9 à 5,8 mois | 5,2 à 5,7 mois ✓ |
+| Prochain palier de Casa, en jours de revenu | 3,9 à 8,9 | 3,8 à 9,5 |
+| Puits ÷ sources, jeunes puis anciennes | 0,83–0,86 puis 0,94–1,01 | 0,82–0,87 puis 0,98–1,00 |
+| Part du négoce chez le négociant | 26 à 29 % | 24,9 % (graine 1), 29,5 % et 28,8 % |
+| Marge d'un voyage, part des commandes | 950 à 1 180 d, 31 à 34 % | 1 010 à 1 070 d, 31 à 33 % |
+| Convois de la Muda en colleganza | 29 à 33 % | 29 à 32 % |
+
+Sur la graine 3, l'assurance a coûté 15,0 millions de ducats de primes pour 8,8 millions remboursés : c'est un puits, comme voulu. Le négociant de la graine 1 frôle la cible (24,9 % pour 25 %) : l'assurance et les chantiers des navires prennent sur sa marge. C'est le point à surveiller avec l'escorte des galères armées (7b), qui réduira le risque.
+
 ### Refaire le calibrage
 
 ```

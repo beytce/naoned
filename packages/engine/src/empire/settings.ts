@@ -89,6 +89,12 @@ export const empireSettingsSchema = z.object({
         costDucats: qty,
         regions: z.array(z.string()).min(1),
         speedBps: bps,
+        /** A ship: built at the private Arsenal (its site's minutes and materials), not bought. */
+        build: z
+          .object({ minutes: positive, materials: z.record(z.string(), qty).prefault({}) })
+          .optional(),
+        /** Its places for trade modules: on a ship, they count only where they are fitted. */
+        slots: qty.prefault(0),
       }),
     )
     .prefault({}),
@@ -467,6 +473,8 @@ export const empireSettingsSchema = z.object({
     lossShareBps: bps.max(10_000),
     /** An escort of this strength halves the risk; each as much again halves it again. */
     escortHalving: positive,
+    /** The insurance's premium: the risk times the cargo's value times this (12 000: × 1,2). */
+    premiumBps: bps.prefault(12_000),
   }),
   /**
    * The Muda's galleys sail in convoy, twice a week; their places are auctioned (the incanto,
@@ -479,6 +487,16 @@ export const empireSettingsSchema = z.object({
       departuresPerWeek: positive,
       placesShareBps: bps,
       reserveDaysBps: bps,
+      /** The departures, by day from Monday (0) and hour in Venice: Tuesday and Friday at 18. */
+      departures: z
+        .array(z.object({ day: qty.max(6), hour: qty.max(23) }))
+        .min(1)
+        .prefault([
+          { day: 1, hour: 18 },
+          { day: 4, hour: 18 },
+        ]),
+      /** A place won lets its galley leave this long after the departure (it sails at its hour). */
+      passHours: positive.prefault(24),
     })
     .prefault({ vehicles: [], departuresPerWeek: 2, placesShareBps: 10_000, reserveDaysBps: 0 }),
   colleganza: z.object({
