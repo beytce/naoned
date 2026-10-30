@@ -18,13 +18,18 @@ export function houseEffect(
   h: EmpireHouse | undefined,
   effect: string,
   s: EmpireSettings,
-  _place?: EffectPlace,
+  place?: EffectPlace,
 ): number {
   if (!h) return 0;
   let total = 0;
-  for (const [code, level] of Object.entries(h.modules ?? {})) {
+  const of = (code: string, level: number, fitted: boolean) => {
     const m = s.modules.find((x) => x.code === code);
-    if (m && m.kind !== "workshop" && m.effect === effect) total += moduleEffectBps(code, level, s);
-  }
+    if (m && (m.kind === "workshop") === fitted && m.effect === effect)
+      total += moduleEffectBps(code, level, s);
+  };
+  for (const [code, level] of Object.entries(h.modules ?? {})) of(code, level, false);
+  // The workshop's own modules, at their researched level.
+  const ws = place?.workshopId ? h.workshops.find((w) => w.id === place.workshopId) : undefined;
+  for (const code of ws?.fitted ?? []) of(code, h.modules?.[code] ?? 0, true);
   return total;
 }

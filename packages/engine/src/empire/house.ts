@@ -312,6 +312,7 @@ export function startResearch(tx: Tx, playerId: PlayerId, code: string): void {
   const m = s.modules.find((x) => x.code === code);
   if (!m || (s.research.available.length > 0 && !s.research.available.includes(code)))
     fail("unknown_building_type");
+  if (!openedFor(h, m.kind, s)) fail("requirement_unmet");
   if ((h.research ?? []).some((r) => r.code === code)) fail("building_busy");
   if ((h.research ?? []).length >= casaLevelOf(h.casa, s).researchSlots) fail("no_build_slot");
   const level = (h.modules?.[code] ?? 0) + 1;
@@ -327,4 +328,14 @@ export function startResearch(tx: Tx, playerId: PlayerId, code: string): void {
   );
   const ms = researchMinutesOf(level, s) * MINUTE_MS;
   h.research = [...(h.research ?? []), { code, level, startedAt: tx.now, endsAt: tx.now + ms }];
+}
+
+/** What a kind of module waits for: the workshops' open with the Casa that opens them. */
+const OPENS_KIND: Record<string, string> = { workshop: "workshopModules" };
+
+/** Has the house reached the Casa that opens this kind of module (none named: open)? */
+function openedFor(h: EmpireHouse, kind: string, s: EmpireSettings): boolean {
+  const code = OPENS_KIND[kind];
+  const at = code ? s.casa.findIndex((c) => c.opens.includes(code)) : -1;
+  return at < 0 || h.casa >= at + 1;
 }

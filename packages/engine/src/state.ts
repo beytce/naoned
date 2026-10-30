@@ -310,6 +310,8 @@ export interface EmpireWorkshop {
   type: BuildingType;
   recipe: string;
   level: number;
+  /** The workshop modules fitted in its places, by place. */
+  fitted?: string[];
   /** The night queue: lots queued from `startedAt`, their inputs already taken. */
   job: ProductionJob | null;
 }

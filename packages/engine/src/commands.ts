@@ -49,7 +49,7 @@ import {
 } from "./empire/house.js";
 import { deliverOrders, sellToDogana } from "./empire/trade.js";
 import { buyEmpireVehicle, settleVoyages, startVoyage } from "./empire/voyages.js";
-import { relaunchAll, relaunchWorkshop } from "./empire/workshops.js";
+import { fitModule, relaunchAll, relaunchWorkshop } from "./empire/workshops.js";
 import { joinFamily, leaveFamily } from "./families.js";
 import { buildFondaco } from "./fondaci.js";
 import {
@@ -288,6 +288,7 @@ export type EmpireCommand =
   | { type: "empireBuyVehicle"; playerId: PlayerId; vehicleType: string }
   | { type: "empireResearch"; playerId: PlayerId; module: string }
   | { type: "empireTeam"; playerId: PlayerId; depositId: string }
+  | { type: "empireFit"; playerId: PlayerId; workshopId: string; slot: number; module: string }
   | {
       type: "empireVoyage";
       playerId: PlayerId;
@@ -454,6 +455,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireTeam":
       sendTeam(tx, cmd.playerId, cmd.depositId);
+      break;
+    case "empireFit":
+      fitModule(tx, cmd.playerId, cmd.workshopId, cmd.slot, cmd.module);
       break;
     case "empireVoyage":
       startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);

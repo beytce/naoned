@@ -130,7 +130,7 @@ export function playsNow(w: World, h: House, rng: Rng): boolean {
 
 function rateOf(w: World, h: House, ws: { good: string; level: number }): number {
   const base = w.m.rates[ws.good] ?? (w.m.recipes[ws.good] ? w.m.craftedPerHour : w.m.rawPerHour);
-  const tools = h.modules.tools ? effectOf({ tools: h.modules.tools }, "yield", w.s) : 0;
+  const tools = h.modules.tools ? effectOf({ tools: h.modules.tools }, "workshopYield", w.s) : 0;
   return (base * lotYieldBps(ws.level, w.s) * (10_000 + tools)) / 1e8;
 }
 

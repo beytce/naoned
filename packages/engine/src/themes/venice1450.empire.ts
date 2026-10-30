@@ -185,8 +185,8 @@ const MODULES = [
   module("victualler", "arms", "support", 1_000, 600),
   module("engineer", "arms", "support", 1_500, 800),
   module("trumpet", "arms", "support", 1_000, 600),
-  module("tools", "workshop", "yield", 1_000, 500),
-  module("apprentices", "workshop", "speed", 1_000, 500),
+  module("tools", "workshop", "workshopYield", 1_000, 500),
+  module("apprentices", "workshop", "workshopSpeed", 1_000, 500),
   module("master", "workshop", "quality", 1_000, 500),
   module("furnace", "workshop", "inputs", 500, 300),
 ];
@@ -275,7 +275,18 @@ export const venice1450Empire: EmpireSettingsInput = {
     plansFromLevel: 4,
     plansPerLevel: 2,
     // Step 4: the trade modules whose systems exist, and the deposits'; the others wait for theirs.
-    available: ["hold", "sails", "portolan", "convoy", "yield", "remote"],
+    available: [
+      "hold",
+      "sails",
+      "portolan",
+      "convoy",
+      "yield",
+      "remote",
+      "tools",
+      "apprentices",
+      "master",
+      "furnace",
+    ],
   },
   deposits: { spawnBpsPerRegionDay: 15_000, minStock: 1_000, maxStock: 5_000, teamPerHour: 30 },
   expeditions: {
