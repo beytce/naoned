@@ -137,6 +137,9 @@ export function empireJoin(tx: Tx, playerId: PlayerId): void {
     builds: [],
     favour: 0,
     seals: 0,
+    ...(s.start.vehicles.length > 0
+      ? { vehicles: s.start.vehicles.map((type) => ({ id: nextId(tx, "v"), type, busyUntil: 0 })) }
+      : {}),
   };
   const capital = BigInt(s.start.capitalDucats) * DENIERS_PER_DUCAT;
   transfer(tx, SOURCE_ACCOUNT, cashAccount(playerId), capital, "starting_capital");

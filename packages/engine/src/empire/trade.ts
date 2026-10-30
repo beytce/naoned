@@ -11,7 +11,7 @@ import {
   type WorldState,
   cashAccount,
 } from "../state.js";
-import { type Tx, fail, inventoryLine, removeStock, transfer } from "../tx.js";
+import { type Tx, addStock, fail, inventoryLine, removeStock, transfer } from "../tx.js";
 import { advanceCarnet } from "./carnet.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
 import { powerOf } from "./power.js";
@@ -198,17 +198,32 @@ export function sellToDogana(
   qty: number,
   region = HOME,
 ): number {
-  const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   if (!Number.isInteger(qty) || qty <= 0) fail("invalid_quantity");
-  const r = checkPlace(tx, h, region, good);
+  checkPlace(tx, h, region, good);
+  if (inventoryLine(tx, playerId, good).available <= 0) fail("insufficient_stock");
+  const n = sellAt(tx, playerId, good, qty, region);
+  if (n <= 0) fail("no_liquidity");
+  return n;
+}
+
+/** The Dogana's purchase itself (a sale, or a voyage's arrival): what it took, maybe nothing. */
+export function sellAt(
+  tx: Tx,
+  playerId: PlayerId,
+  good: string,
+  qty: number,
+  region: string,
+): number {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const r = regionOf(region, s);
   const ref = r.produces[good] ?? r.demands[good];
   if (ref === undefined) fail("unknown_resource");
   const mk = marketNow(tx, region, good);
   const { depth } = marketSize(tx.s.empire?.houses ?? {}, region, tx.now, s);
   const n = Math.min(qty, depth - mk.soldToday, inventoryLine(tx, playerId, good).available);
-  if (n <= 0)
-    fail(inventoryLine(tx, playerId, good).available <= 0 ? "insufficient_stock" : "no_liquidity");
+  if (n <= 0) return 0;
   removeStock(tx, playerId, good, n, "empire_sale");
   const bonus = isRaw(tx, good) ? rawBonusBps(h.casa, s) : 0;
   const gross = applyBpsFloor(priceAt(ref, mk.pressureBps, s) * BigInt(n), 10_000 + bonus);
@@ -228,9 +243,56 @@ export function sellToDogana(
 }
 
 /**
- * Delivers to a region's cities, where the house holds the good: its counter's private book first,
- * at the reference (the anchor), then the common board at the market's price, of which a large
- * house reaches only a share; the orders pay a premium. Returns what was delivered.
+ * Buys from a region's Dogana at its market's price and the tax (a voyage's cargo), as much as the
+ * house can pay: the price rises as it buys. Returns what was bought.
+ */
+export function buyAt(
+  tx: Tx,
+  playerId: PlayerId,
+  good: string,
+  qty: number,
+  region: string,
+): number {
+  const s = empireSettings(tx.ctx);
+  const r = regionOf(region, s);
+  const ref = r.produces[good] ?? r.demands[good];
+  if (ref === undefined) fail("unknown_resource");
+  const mk = marketNow(tx, region, good);
+  const unit = applyBpsFloor(priceAt(ref, mk.pressureBps, s), 10_000 + s.markets.taxBps);
+  const cash = tx.s.accounts[cashAccount(playerId)] ?? 0n;
+  const n = Math.min(qty, unit > 0n ? Number(cash / unit) : qty);
+  if (n <= 0) return 0;
+  transfer(
+    tx,
+    cashAccount(playerId),
+    SINK_ACCOUNT,
+    unit * BigInt(n),
+    "empire_purchase",
+    `${region}:${good}`,
+  );
+  addStock(tx, playerId, good, n, "empire_purchase");
+  const { depth } = marketSize(tx.s.empire?.houses ?? {}, region, tx.now, s);
+  mk.pressureBps = pressureAfterTrade(mk.pressureBps, n, Math.max(1, depth), "buy", s);
+  remember(mk, tx.now);
+  return n;
+}
+
+/** What the house's land vehicles still carry today to the cities (no vehicles set: no bound). */
+function haulLeft(tx: Tx, h: EmpireHouse): number {
+  const s = empireSettings(tx.ctx);
+  if (Object.keys(s.vehicles).length === 0) return Number.POSITIVE_INFINITY;
+  const capacity = (h.vehicles ?? [])
+    .map((v) => s.vehicles[v.type])
+    .filter((v) => v?.regions.length === 1)
+    .reduce((n, v) => n + (v?.capacity ?? 0), 0);
+  const day = dayOf(tx.now);
+  const used = h.hauled?.day === day ? h.hauled.units : 0;
+  return Math.max(0, capacity * s.localTripsPerDay - used);
+}
+
+/**
+ * Delivers to a region's cities, where the house holds the good and as much as its land vehicles
+ * carry today. Returns what was delivered.
  */
 export function deliverOrders(
   tx: Tx,
@@ -239,14 +301,36 @@ export function deliverOrders(
   qty: number,
   region = HOME,
 ): number {
-  const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   if (!Number.isInteger(qty) || qty <= 0) fail("invalid_quantity");
-  const ref = checkPlace(tx, h, region, good).demands[good];
-  if (ref === undefined) fail("unknown_resource");
+  checkPlace(tx, h, region, good);
+  if (inventoryLine(tx, playerId, good).available <= 0) fail("insufficient_stock");
+  const n = fillOrders(tx, playerId, good, Math.min(qty, haulLeft(tx, h)), region);
+  if (n <= 0) fail("no_liquidity");
+  const day = dayOf(tx.now);
+  h.hauled = { day, units: (h.hauled?.day === day ? h.hauled.units : 0) + n };
+  return n;
+}
+
+/**
+ * The cities' orders themselves (a delivery, or a voyage's arrival): the counter's private book
+ * first, at the reference (the anchor), then the common board at the market's price, of which a
+ * large house reaches only a share; the orders pay a premium. Returns what went, maybe nothing.
+ */
+export function fillOrders(
+  tx: Tx,
+  playerId: PlayerId,
+  good: string,
+  qty: number,
+  region: string,
+): number {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const ref = regionOf(region, s).demands[good];
+  if (ref === undefined) return 0;
   const day = dayOf(tx.now);
   let left = Math.min(qty, inventoryLine(tx, playerId, good).available);
-  if (left <= 0) fail("insufficient_stock");
+  if (left <= 0) return 0;
   const books = h.books ?? {};
   h.books = books;
   const mine =
@@ -273,7 +357,7 @@ export function deliverOrders(
   boards[key] = { day, left: open - board };
   if (board > 0) value += priceAt(ref, marketNow(tx, region, good).pressureBps, s) * BigInt(board);
   const delivered = book + board;
-  if (delivered <= 0) fail("no_liquidity");
+  if (delivered <= 0) return 0;
   removeStock(tx, playerId, good, delivered, "empire_sale");
   receive(
     tx,

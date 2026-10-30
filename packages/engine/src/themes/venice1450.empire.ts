@@ -229,7 +229,29 @@ export const venice1450Empire: EmpireSettingsInput = {
       { type: "lumber_camp", recipe: "cut_wood" },
       { type: "sawmill", recipe: "saw_planks" },
     ],
+    vehicles: ["mule", "mule"],
   },
+  // The vehicles of step 4 (CADRAGE-v3 § 3.3), as the 24-month simulator has them; the ships come
+  // with the sea.
+  vehicles: {
+    mule: { casa: 1, capacity: 25, costDucats: 60, regions: ["veneto"], speedBps: 0 },
+    cart: { casa: 3, capacity: 40, costDucats: 120, regions: ["veneto"], speedBps: 0 },
+    burchio: {
+      casa: 5,
+      capacity: 90,
+      costDucats: 400,
+      regions: ["veneto", "lombardia", "romagna"],
+      speedBps: 0,
+    },
+    chariot: {
+      casa: 6,
+      capacity: 70,
+      costDucats: 500,
+      regions: ["veneto", "lombardia", "friuli", "germania"],
+      speedBps: 0,
+    },
+  },
+  localTripsPerDay: 4,
   newcomers: { rawBonusBps: 2_000, untilCasa: 8 },
   highRecipes: { fromLevel: 12, rawPerLevelBps: 500, goods: ["wheat", "clay", "wood", "salt"] },
   salaries: { minBps: 300, maxBps: 2_500, halfPower: 4_000 },

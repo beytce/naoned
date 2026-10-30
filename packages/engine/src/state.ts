@@ -340,6 +340,10 @@ export interface EmpireHouse {
   counters?: Record<string, number>;
   favour: number;
   seals: number;
+  /** Its vehicles: free again at `busyUntil` (a voyage's way there and back). */
+  vehicles?: { id: string; type: string; busyUntil: number }[];
+  /** What its land vehicles carried to the cities today. */
+  hauled?: { day: number; units: number };
   /** What is left today of its private book of orders, by region. */
   books?: Record<string, { day: number; left: number }>;
   carnet?: EmpireCarnet;
@@ -380,8 +384,23 @@ export interface EmpireMarket {
 }
 
 /** The persistent empire's part of a world (absent from the worlds of the monthly seasons). */
+/** A cargo on its way: sold at its arrival, settled at the next read. */
+export interface EmpireVoyage {
+  id: string;
+  house: PlayerId;
+  vehicleId: string;
+  good: string;
+  qty: number;
+  from: string;
+  to: string;
+  arrivesAt: number;
+  /** What the cargo cost, bought or own at its port's price: to read the voyage's margin. */
+  cost: Deniers;
+}
+
 export interface EmpireState {
   houses: Record<PlayerId, EmpireHouse>;
+  voyages?: EmpireVoyage[];
   /** By "region:good". */
   markets?: Record<string, EmpireMarket>;
   /** The cities' common board, by "region:good": what is left of it today. */

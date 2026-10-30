@@ -46,6 +46,7 @@ import {
   upgradeCounter,
 } from "./empire/house.js";
 import { deliverOrders, sellToDogana } from "./empire/trade.js";
+import { buyEmpireVehicle, settleVoyages, startVoyage } from "./empire/voyages.js";
 import { relaunchAll, relaunchWorkshop } from "./empire/workshops.js";
 import { joinFamily, leaveFamily } from "./families.js";
 import { buildFondaco } from "./fondaci.js";
@@ -281,7 +282,17 @@ export type EmpireCommand =
   | { type: "empireDeliver"; playerId: PlayerId; good: string; qty: number; region?: string }
   | { type: "empireClaim"; playerId: PlayerId; index: number }
   | { type: "empireCharter"; playerId: PlayerId; region: string }
-  | { type: "empireUpgradeCounter"; playerId: PlayerId; region: string };
+  | { type: "empireUpgradeCounter"; playerId: PlayerId; region: string }
+  | { type: "empireBuyVehicle"; playerId: PlayerId; vehicleType: string }
+  | {
+      type: "empireVoyage";
+      playerId: PlayerId;
+      vehicleId: string;
+      from: string;
+      to: string;
+      good: string;
+      qty: number;
+    };
 
 export type DecideResult =
   | { ok: true; state: WorldState; effects: Effects }
@@ -384,6 +395,8 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
 }
 
 function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
+  // The cargoes arrived by now sell first, every house's, in the order they came in.
+  if (tx.ctx.settings.empire) settleVoyages(tx);
   if (cmd.type === "empireJoin") {
     empireJoin(tx, cmd.playerId);
     const h = ownHouse(tx, cmd.playerId);
@@ -424,6 +437,12 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireUpgradeCounter":
       upgradeCounter(tx, cmd.playerId, cmd.region);
+      break;
+    case "empireBuyVehicle":
+      buyEmpireVehicle(tx, cmd.playerId, cmd.vehicleType);
+      break;
+    case "empireVoyage":
+      startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);
       break;
     case "empireSell":
       sellToDogana(tx, cmd.playerId, cmd.good, cmd.qty, cmd.region);

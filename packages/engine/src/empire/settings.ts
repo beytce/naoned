@@ -72,8 +72,28 @@ export const empireSettingsSchema = z.object({
     .object({
       capitalDucats: qty,
       workshops: z.array(z.object({ type: z.string(), recipe: z.string() })),
+      /** Its first vehicles, by type. */
+      vehicles: z.array(z.string()).prefault([]),
     })
-    .prefault({ capitalDucats: 0, workshops: [] }),
+    .prefault({ capitalDucats: 0, workshops: [], vehicles: [] }),
+  /**
+   * The vehicles (CADRAGE-v3 § 3.3): the Casa that opens each, its hold, its price in ducats, the
+   * regions it goes between (one only: a land vehicle of the deliveries), its speed in bps.
+   */
+  vehicles: z
+    .record(
+      z.string(),
+      z.object({
+        casa: positive,
+        capacity: positive,
+        costDucats: qty,
+        regions: z.array(z.string()).min(1),
+        speedBps: bps,
+      }),
+    )
+    .prefault({}),
+  /** A land vehicle's round trips a day for the cities' orders. */
+  localTripsPerDay: positive.prefault(4),
   /** The night queue: a workshop is relaunched for this many hours at most, for everyone. */
   queueHours: positive.prefault(12),
   /**
