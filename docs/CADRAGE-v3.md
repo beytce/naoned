@@ -131,6 +131,22 @@ Les dix régions, dans l'ordre d'ouverture :
   - On place un membre par comptoir. Le fattore est le premier agent, et s'améliore.
   - **Une génération par trimestre**, alignée sur l'ère. L'héritier hérite de tout, et la Maison gagne un point d'**Héritage** qui ouvre un trait de lignée permanent. C'est un « prestige » qui ajoute sans rien retirer.
 
+*Contenu retenu (étape 5, 30 octobre 2026)* :
+- **Les Arti** et leurs chaînes : Lanaioli (bergerie, métier, tailleur), Vetrai (sablière, verrerie, miroiterie), Speziali (épicerie), Arsenalotti (bois, scierie, briqueterie), Banchieri (aucune chaîne : −1 point de taxe, +5 % de prime des commandes). La chaîne de l'Arte gagne +10 % de rendement et monte au niveau 25 ; l'Arte mineure, +5 %. L'atelier unique au sommet attend son dessin (`IDEAS.md`).
+- **Les savoirs**, dans `empire.knowledge` :
+
+  | Branche | Savoirs 1 à 4 | Capstone A ou B |
+  | --- | --- | --- |
+  | Abaco | taxe −0,5 pt, commandes +5 %, carnet local +10 %, taxe −0,5 pt | *Partita doppia* (salaires −15 %) ou *Banco* (commandes +15 %) |
+  | Navigazione | vitesse +10 %, capacité +10 %, nouvelles plus tôt, charroi +10 % | *Portolano* (nouvelles en direct partout) ou *Convoglio* (une tournée de plus) |
+  | Arti | rendement +5 %, chantiers −10 %, intrants −5 %, qualité +5 % | *Bottega maestra* (une place de module de plus) ou *Catena* (voisinages doublés) |
+  | Diplomazia | chartes −20 % de Faveur, comptoirs −10 %, Faveur du Carnet +20 %, une équipe de plus | *Ambasciata* (chartes à moitié) ou *Signoria* (un objectif du Carnet de plus) |
+
+- **Le personnel** (§ 3 quinquies) : le maître d'un atelier (rendement et qualité), le facteur d'une région (carnet local, et il relance les files de sa région à la lecture), le capitaine d'un véhicule (vitesse et capacité). Places : 1 + Casa ÷ 4. Un choix entre deux chemins tous les cinq niveaux.
+- **La famille** : un membre rare rejoint le personnel à chaque génération ; les traits de lignée sont Mercanti, Artigiani, Navigatori, Diplomatici et Prudenti. Le trait qui « donne et retire » de chaque membre attend le catalogue des Atouts (`IDEAS.md`).
+- **Les qualités** : une part des lots sort fine ou exquise ; la cour de Venise seule les achète (× 1,5 et × 3 de la référence), dans un carnet du jour de 5 unités par niveau de Casa.
+- **Les voisinages** : sur l'anneau d'une région, deux ateliers voisins dont la chaîne se suit gagnent chacun +10 % de rendement ; on échange leurs places sans frais.
+
 ### 3.6 Un seul chiffre : la Puissance
 
 La Puissance est la somme pondérée des niveaux bâtis : Casa, ateliers, comptoirs, flotte, savoirs. **Jamais la caisse.**
@@ -533,6 +549,16 @@ Chaque étape fait l'objet d'un plan, validé avant le code.
 
    La Romagne, que le burchio dessert déjà, s'ouvre avec la mer (étape 7). Les autres modules de négoce attendent leurs systèmes (`IDEAS.md`).
 5. **L'identité** : l'Arte, les savoirs, le personnel et la famille, les qualités et les voisinages d'ateliers.
+
+   *Fait le 30 octobre 2026*, dans le monde de l'empire (contenu au § 3.5) :
+   - **un seul calcul des effets** (`houseEffect`) : modules, modules posés sur l'atelier, savoirs, Arte, personnel placé, traits de lignée ;
+   - **l'atelier** : places de modules aux niveaux 1, 8 et 15, outillage, apprentis, maître et four à la Casa 7 ; les qualités et la cour ; les voisinages sur l'anneau ;
+   - **l'Arte** (Casa 7) et l'Arte mineure (Casa 13), avec le renoncement au niveau 15 ;
+   - **les savoirs** à la Scuola dès la Casa 4, un à la fois, deux dès la Casa 12 ;
+   - **le personnel** (maître, facteur, capitaine), l'expérience et les chemins ; **la famille** au trimestre civil, l'Héritage et ses traits ;
+   - **l'écran** : l'atelier et ses places, les voisinages en or sur l'orbite, l'Arte et l'arbre des savoirs dans la feuille de la Casa, l'onglet Famille à la place de la Terraferme fermée, la cour dans l'entrepôt.
+
+   Restent hors de l'étape : l'ambassadeur et le condottiere (avec les cours étrangères et les armes), les recettes alternatives, l'atelier unique de l'Arte, les reliques et les plans (étape 7).
 6. **La compagnie** : rôles, succession, entraide, Condotta à paliers, puis la Contesa et les théâtres de la Terraferme.
 7. **La mer et les armes** : la Dalmatie, l'Arsenal, les navires à modules, la Muda des joueurs, les corsaires ; puis les expéditions et les reliques, et la colleganza.
 8. **Les ères et les Annales**, la politique étendue, le Grand Canal en immobilier, le Levant.
