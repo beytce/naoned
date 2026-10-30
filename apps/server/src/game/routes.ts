@@ -366,7 +366,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
     return account;
   }
 
-  registerEmpireRoutes(app, { world, requireAccount, perMerchant });
+  registerEmpireRoutes(app, { db, world, requireAccount, perMerchant });
 
   async function tutorialOf(accountId: string): Promise<string[]> {
     const [row] = await db

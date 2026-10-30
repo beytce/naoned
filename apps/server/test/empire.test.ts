@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE, buildApp } from "../src/app.js";
 import { type Database, openDatabase } from "../src/db/client.js";
-import { ledgerEntries, players, worlds } from "../src/db/schema.js";
+import { accounts, influenceEntries, ledgerEntries, players, worlds } from "../src/db/schema.js";
 import { GameWorld } from "../src/game/world.js";
 import { MemoryMailer } from "../src/mail/mailer.js";
 import { testDatabase } from "./db.js";
@@ -142,5 +142,44 @@ describe("the empire's world", () => {
     expect(body.view.house.casa).toBe(1);
     expect(body.view.house.workshops[0].job).not.toBeNull();
     expect(await world.checkInvariants()).toEqual([]);
+  });
+});
+
+describe("the switch", () => {
+  it("opens the empire in place of the next month once its instant is past, Influence as Favour", async () => {
+    await app.close();
+    await database.db.execute(sql`truncate worlds cascade`);
+    now = Date.parse("2026-10-26T08:00:00Z");
+    world = await GameWorld.open(database.db, () => now, {
+      empireFrom: Date.parse("2026-10-31T00:00:00Z"),
+    });
+    app = await buildApp({
+      db: database.db,
+      mailer,
+      appUrl: "https://comptoirs.test",
+      production: false,
+      world,
+      now: () => new Date(now),
+    });
+    // A month of the seasons, until its end.
+    expect(world.ctx.settings.empire).toBeUndefined();
+    await login("ada@example.org");
+    const [account] = await database.db.select({ id: accounts.id }).from(accounts);
+    await database.db.insert(influenceEntries).values({
+      accountId: account?.id ?? "",
+      source: "season",
+      amount: 12,
+      key: "test:season",
+      at: new Date(now),
+    });
+    // Just past the month's end (the calendar's own, in Paris).
+    now = (world.ctx.endAt ?? 0) + 5 * 60_000;
+    await world.execute({ type: "tick" });
+    expect(world.ctx.settings.empire).toBeDefined();
+    const rows = await database.db.select().from(worlds);
+    expect(rows.filter((w) => w.status === "open")).toHaveLength(1);
+    // A month later, the session has run out: signed in again.
+    const joined = await post(await login("ada@example.org"), "/api/empire/join");
+    expect(joined.json().view.house.favour).toBe(12);
   });
 });

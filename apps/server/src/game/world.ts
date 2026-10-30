@@ -80,7 +80,12 @@ export interface WorldOptions {
    * one, never bounded by a month. The monthly world stays as it is until the switch.
    */
   empire?: boolean;
+  /** The switch: from this instant, the empire replaces the next monthly world. Off by default. */
+  empireFrom?: number;
 }
+
+const switched = (options: WorldOptions, now: number) =>
+  options.empire === true || (options.empireFrom !== undefined && now >= options.empireFrom);
 
 /**
  * One running world. Commands are serialised in memory (one server instance), applied by the
@@ -142,7 +147,7 @@ export class GameWorld {
     options: WorldOptions = {},
   ): Promise<GameWorld> {
     let world: WorldRow | undefined;
-    if (options.empire) {
+    if (switched(options, clock())) {
       const open = await db.select().from(worlds).where(eq(worlds.status, "open"));
       world = open.find((w) => isEmpireRow(w)) ?? (await createEmpireWorld(db, clock()));
     } else {
@@ -181,9 +186,11 @@ export class GameWorld {
     let bounds = nextSeasonBounds(seasonEnd(this.ctx));
     // A server stopped for a long time skips the months nobody could play.
     while (bounds.endsAt <= now) bounds = nextSeasonBounds(bounds.endsAt);
+    // The switch: past its instant, the last month gives way to the empire, for good.
+    const empire = switched(this.options, now);
     const next = await this.db.transaction(async (tx) => {
       await tx.update(worlds).set({ status: "closed" }).where(eq(worlds.id, closedId));
-      return createWorld(tx, bounds);
+      return empire ? createEmpireWorld(tx, now) : createWorld(tx, bounds);
     });
     const loaded = await loadWorld(this.db, next, this.options, this.instance);
     this.id = next.id;

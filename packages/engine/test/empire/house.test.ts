@@ -29,6 +29,18 @@ describe("a house of the empire", () => {
     expect(w.try({ type: "empireJoin", playerId: "a" }).ok).toBe(false);
   });
 
+  it("carries the Influence of the seasons over as Favour, one for one", () => {
+    const w = world();
+    w.do({ type: "empireJoin", playerId: "a", favour: 42 });
+    expect(house(w).favour).toBe(42);
+  });
+
+  it("refuses the monthly season's commands", () => {
+    const w = world();
+    const res = w.try({ type: "join", playerId: "b", region: "venezia" });
+    expect(res.ok ? "" : res.error).toBe("season_over");
+  });
+
   it("is refused in a world of the monthly seasons", () => {
     const w = new World(makeContext());
     const res = w.try({ type: "empireJoin", playerId: "a" });

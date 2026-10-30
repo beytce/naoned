@@ -8,6 +8,8 @@ import {
 } from "@comptoirs/engine";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import type { Db } from "../db/client.js";
+import { balanceOf } from "./house.js";
 import { toJson } from "./serialize.js";
 import type { GameWorld } from "./world.js";
 
@@ -81,6 +83,7 @@ const action = z.discriminatedUnion("type", [
 ]);
 
 export interface EmpireRouteDeps {
+  db: Db;
   world: GameWorld;
   requireAccount: (req: FastifyRequest, reply: FastifyReply) => Promise<{ id: string } | null>;
   perMerchant: (max: number) => object;
@@ -103,7 +106,13 @@ export function registerEmpireRoutes(app: FastifyInstance, deps: EmpireRouteDeps
     const account = await deps.requireAccount(req, reply);
     if (!account) return;
     if (!isEmpire()) return reply.code(409).send({ error: "not_empire_world" });
-    const res = await world.execute({ type: "empireJoin", playerId: account.id });
+    // The Influence of the monthly seasons becomes Favour, one for one (CADRAGE-v3 § 12).
+    const { influence } = await balanceOf(deps.db, account.id);
+    const res = await world.execute({
+      type: "empireJoin",
+      playerId: account.id,
+      ...(influence > 0 ? { favour: influence } : {}),
+    });
     if (!res.ok) return reply.code(409).send({ error: res.error });
     return payload(account.id);
   });
