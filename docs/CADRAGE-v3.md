@@ -478,6 +478,11 @@ Un rapport public dit ce qui a été vendu.
 2. **Les recettes de haut niveau demandent des bruts de Vénétie en quantité.** Au-delà du niveau 12, un atelier et les grands ouvrages consomment plus de bruts (blé, argile, bois, sel) qu'un vétéran ne peut en produire. Il les achète donc au Rialto, où vendent les jeunes Maisons, et le jeune devient utile au vétéran.
 3. **Les places de la Muda se gagnent cher.** Les grandes galères (galea grossa, galère de Flandre) ne partent qu'avec la Muda d'État. Leurs places s'achètent à l'incanto du soir, et les cargaisons de luxe (épices, soie) valent des semaines de revenu. On s'associe pour remplir une place : la colleganza vit de là.
 
+**Dans le simulateur** (calibration.md, § Empire persistant) :
+- le nouveau est comparé chaque jour à la médiane des Maisons plus anciennes de sa bande ;
+- dès le niveau 12, chaque unité faite mange 5 % d'une unité de brut de Vénétie par niveau à partir de 12 ;
+- la galea et la galère de Flandre ne partent qu'avec une place de la Muda. Il y a deux incanti par semaine et des places pour la moitié des armateurs. L'enchère est de Vickrey, avec une réserve d'un jour de revenu, et le prix est détruit. Le gagnant à court de caisse lève le reste en colleganza sur son convoi.
+
 ## 13. Le chemin
 
 Chaque étape fait l'objet d'un plan, validé avant le code.
@@ -490,13 +495,14 @@ Chaque étape fait l'objet d'un plan, validé avant le code.
    | Temps jusqu'à chaque palier de Casa | Proche du § 3.1 ; les cohortes tardives 20 à 40 % plus vite |
    | Objectif à moins de 24 h pour un joueur médian | Toujours |
    | Prochain palier de Casa, en jours de revenu | 2 à 7 |
-   | Nouveau à la Puissance médiane | 4 à 6 mois |
+   | Nouveau à la Puissance médiane de sa bande (§ 12 bis) | 4 à 6 mois |
    | Indice des prix | 80 à 130 sur 24 mois |
    | Ratio entre puits et sources | 0,6–0,8 avant 3 mois, 0,9–1,0 au-delà |
    | Part de la Terraferme dans la progression | ≤ 15 % |
-   | Part des achats de bruts des vétérans faits aux jeunes Maisons | ≥ 30 % |
+   | Bruts des jeunes Maisons vendus à Venise (§ 12 bis), en part de leurs recettes | ≥ 10 % (proposé ; la part des vétérans, ≥ 30 % au départ, est hors de portée avec des cohortes par paquets) |
    | Écart de prix entre régions (arbitrage) | Assez pour payer le voyage, jamais assez pour rendre les commandes inutiles |
    | Part des Maisons qui vivent surtout d'un seul métier | ≥ 30 % (la spécialisation est viable) |
+   | Convois de la Muda financés en colleganza (§ 12 bis) | ≥ 20 % |
 
    Le simulateur modélise aussi les marchés régionaux et le retard des nouvelles, les modules (en multiplicateurs), l'exploitation des gisements, les expéditions (en boîte noire de reliques) et la colleganza.
 

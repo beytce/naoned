@@ -1739,6 +1739,49 @@ Revenu médian de la première cohorte (ducats par jour, sur 30 jours glissants)
 - **Les puits des jeunes Maisons** (0,84 contre 0,6–0,8 visé) : les bots réinvestissent presque tout. Ce n'est pas un risque d'inflation, plutôt l'inverse. La cible est peut-être à revoir.
 - **Le revenu au-delà de 18 mois** reste sous la cible (7 500 contre 12 000 à 20 000 ducats par jour) et les derniers paliers coûtent jusqu'à 10 jours. Il faudra le reprendre avec le contenu de fin de partie : Flandre, Maestria, charges.
 
+### Les trois arbitrages dans le simulateur (30 octobre 2026)
+
+Les décisions du porteur (CADRAGE-v3, § 12 bis) sont dans le moteur et dans le modèle :
+- **La mesure du nouveau.** Chaque jour, une Maison arrivée après le début est comparée à la Puissance médiane des Maisons plus anciennes de sa bande. Le rapport donne aussi, pour information, la même mesure sans les Maisons absentes.
+- **Les hautes recettes** (`highRecipes`, fonction `highRecipeRaw`). Dès le niveau 12, chaque unité faite mange une part d'unité de brut de Vénétie (blé, argile, bois, sel) par niveau à partir de 12. L'atelier la prend dans son stock ou l'achète à Venise ; les jeunes Maisons (Casa ≤ 8) y vendent leurs bruts tant que le prix est au moins la référence.
+- **L'incanto de la Muda** (`muda`, fonctions `mudaAuction`, `mudaPlaces`, `mudaReserve`).
+  - La galea et la galère de Flandre ne partent qu'avec une place gagnée à l'incanto. Il y a deux départs par semaine, et des places pour la moitié des Maisons qui ont une telle galère.
+  - L'enchère est de Vickrey : chaque gagnant paie l'enchère juste en dessous de la sienne, jamais moins que la réserve (un jour de revenu médian des enchérisseurs). Le prix est détruit.
+  - Le convoi part la cale pleine et vend à la foire du port, au-delà de la profondeur du jour.
+  - **Règle apprise en route.** Avec une mise plafonnée par la caisse, les Maisons les plus riches gagnaient toutes les places et payaient seules : aucune colleganza. Désormais chacun mise ce que vaut son convoi, et le gagnant à court lève le reste en colleganza sur ce convoi.
+
+**Réglages retenus** (essais à 100 Maisons par cohorte, trois graines, puis pleine taille) :
+- hautes recettes : 5 % d'une unité de brut par unité et par niveau. À 10 %, la colleganza vit mieux, mais les anciennes Maisons dépensent plus qu'elles ne gagnent (1,00 à 1,03) et les dernières Casa traînent ;
+- réserve de la Muda : un jour de revenu. À une demi-journée, la colleganza tombe à 10–15 % ;
+- les bots misent 70 % de la marge attendue (`mudaBidBps` du modèle). À 50 %, la colleganza reste sous 20 %.
+
+**Résultat** (graines 1, 2 et 3, quatre cohortes de 200) : 7, 7 et 8 cibles sur 12, contre 5 à 6 sur 11 avant.
+
+| Cible | Visée | Résultat | |
+| --- | --- | --- | --- |
+| Calendrier de la Casa | Entre la moitié et le double du § 3.1 | Tous les paliers dans les bornes | ✓ |
+| Rattrapage des cohortes tardives | 20 à 40 % plus vite | 10 %, 19 %, 24 % | ≈ |
+| Objectif à moins de 24 h | ≥ 90 % | 93–96 % | ✓ |
+| Prochain palier de Casa | 2 à 7 jours de revenu | 4,4 à 9,5 (les derniers mois) | ≈ |
+| Nouveau à la médiane de sa bande | 4 à 6 mois | 1,0 à 2,2 mois (de même hors absents) | ✗ |
+| Indice des prix | 80 à 130 | 85 à 101 | ✓ |
+| Puits ÷ sources | 0,6–0,8 puis 0,9–1,0 | 0,81–0,84 puis 0,97–1,01 | ≈ |
+| Part de la Terraferme | ≤ 15 % | 0,1 % | ✓ |
+| Bruts des jeunes vendus à Venise | ≥ 10 % de leurs recettes (cible proposée) | 5,6 à 6,0 % ; 0,8–1,0 % des bruts des vétérans | ✗ |
+| Arbitrage | Marge > 0, commandes ≥ 25 % | 700–870 d par voyage, commandes 33–35 % | ✓ |
+| Chaque métier fait vivre son penchant | ≥ 25 % chacun | Voyages 31–33 %, gisements 27 %, expéditions 44–48 % | ✓ |
+| Colleganza de la Muda | ≥ 20 % des convois | 23–28 % ; place à 55 000–63 000 d ; 9–19 % des mises venues de plus grandes Maisons | ✓ |
+
+La Muda est devenue le deuxième puits du monde, après les Grandes Œuvres : environ 1,1 milliard de ducats détruits sur 24 mois, pour 4,3 milliards créés.
+
+### Ce qui reste au porteur (30 octobre 2026)
+
+- **La mesure du nouveau dans sa bande est trop facile.** Une jeune Maison rejoint la médiane des plus anciennes de sa bande en un à deux mois, et le retrait des absents n'y change rien. La raison est structurelle : les Maisons plus anciennes qui partagent la bande d'un nouveau sont, par construction, celles qui ont pris du retard. Deux voies :
+  - comparer à la médiane de **toute** la bande, sans distinction d'âge ;
+  - comparer à la cohorte qui l'a précédé, au même âge.
+- **La part des vétérans venue des jeunes** (30 % visés) reste hors de portée : 1 %. Les jeunes cohortes arrivent par paquets et ne restent jeunes qu'un mois face à 800 Maisons. Le rapport mesure donc le côté des jeunes : la part de leurs recettes faite en vendant leurs bruts à Venise, 6 %. **La cible de 10 % est une proposition**, à confirmer ou à remplacer.
+- **Les derniers paliers de Casa** coûtent jusqu'à 9,5 jours de revenu, et le rattrapage reste entre 10 et 24 %. Ces points datent du premier calibrage ; ils seront à reprendre avec le contenu de fin de partie.
+
 ### Refaire le calibrage
 
 ```
