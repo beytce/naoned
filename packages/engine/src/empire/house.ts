@@ -60,6 +60,11 @@ export function settleBuilds(h: EmpireHouse, now: number): void {
         job: null,
       });
       advanceCarnet(h, "levels", 1);
+    } else if (b.kind === "counter" && b.region) {
+      h.counters = {
+        ...(h.counters ?? {}),
+        [b.region]: Math.max(h.counters?.[b.region] ?? 0, b.level),
+      };
     } else if (b.kind === "upgrade") {
       const ws = h.workshops.find((x) => x.id === b.workshopId);
       if (ws && b.level > ws.level) {
@@ -209,4 +214,44 @@ export function startUpgrade(tx: Tx, playerId: PlayerId, workshopId: string): vo
   const share = shareOwningBps(tx, (x) => x.workshops.some((w) => w.level >= level));
   const site = openSite(tx, playerId, h, levelCost(level, s), {}, buildMinutesOf(level, s), share);
   h.builds.push({ kind: "upgrade", level, workshopId, ...site });
+}
+
+/** A region beyond Venetia, from the settings, or a refusal. */
+function farRegion(tx: Tx, code: string) {
+  const r = empireSettings(tx.ctx).regions.find((x) => x.code === code);
+  if (!r || r.hoursFromVenice === 0) fail("unknown_region");
+  return r;
+}
+
+/**
+ * Buys a region's charter with Favour (CADRAGE-v3 § 3.4) and opens the site of its counter: the
+ * opening voyage and the building, the hours from Venice and one more. Favour is no money: it only
+ * leaves the house.
+ */
+export function charterRegion(tx: Tx, playerId: PlayerId, code: string): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const r = farRegion(tx, code);
+  if (h.counters?.[code] || h.builds.some((b) => b.kind === "counter" && b.region === code))
+    fail("built");
+  if (h.casa < r.casa) fail("requirement_unmet");
+  if (h.favour < r.charterFavour) fail("insufficient_favour");
+  const cost = levelCost(r.casa, s) * BigInt(s.counters.costTimes);
+  const site = openSite(tx, playerId, h, cost, {}, r.hoursFromVenice * 60 + 60, 0);
+  h.favour -= r.charterFavour;
+  h.builds.push({ kind: "counter", level: 1, region: code, ...site });
+}
+
+/** Raises a counter one level: its private book grows with it. */
+export function upgradeCounter(tx: Tx, playerId: PlayerId, code: string): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  farRegion(tx, code);
+  const level = h.counters?.[code];
+  if (!level) fail("unknown_region");
+  if (h.builds.some((b) => b.kind === "counter" && b.region === code)) fail("building_busy");
+  if (level >= s.counters.maxLevel) fail("max_level");
+  const cost = levelCost(level + 1, s) * BigInt(s.counters.costTimes);
+  const site = openSite(tx, playerId, h, cost, {}, buildMinutesOf(level + 2, s), 0);
+  h.builds.push({ kind: "counter", level: level + 1, region: code, ...site });
 }

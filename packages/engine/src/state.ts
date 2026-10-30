@@ -314,7 +314,9 @@ export interface EmpireWorkshop {
 
 /** A building site: it ends at `endsAt`, settled at the next read. */
 export interface EmpireBuild {
-  kind: "casa" | "newWorkshop" | "upgrade";
+  kind: "casa" | "newWorkshop" | "upgrade" | "counter";
+  /** A counter's region (its first level: the charter's opening voyage and its building). */
+  region?: string;
   /** The level it builds. */
   level: number;
   /** The workshop it raises, or the new workshop's building and recipe. */
@@ -332,6 +334,8 @@ export interface EmpireHouse {
   lastActionAt: number;
   workshops: EmpireWorkshop[];
   builds: EmpireBuild[];
+  /** Its counters beyond Venetia, by region: their level (CADRAGE-v3 § 3.4). */
+  counters?: Record<string, number>;
   favour: number;
   seals: number;
   /** What is left today of its private book of orders in Venetia. */

@@ -36,12 +36,14 @@ import { knownTrait } from "./dynasty.js";
 import { type Effects, emptyEffects } from "./effects.js";
 import { advanceCarnet, claimObjective, ensureCarnet, windOnReturn } from "./empire/carnet.js";
 import {
+  charterRegion,
   empireJoin,
   ownHouse,
   settleBuilds,
   startCasa,
   startUpgrade,
   startWorkshop,
+  upgradeCounter,
 } from "./empire/house.js";
 import { deliverOrders, sellToDogana } from "./empire/trade.js";
 import { relaunchAll, relaunchWorkshop } from "./empire/workshops.js";
@@ -270,7 +272,9 @@ export type EmpireCommand =
   | { type: "empireRelaunchAll"; playerId: PlayerId }
   | { type: "empireSell"; playerId: PlayerId; good: string; qty: number }
   | { type: "empireDeliver"; playerId: PlayerId; good: string; qty: number }
-  | { type: "empireClaim"; playerId: PlayerId; index: number };
+  | { type: "empireClaim"; playerId: PlayerId; index: number }
+  | { type: "empireCharter"; playerId: PlayerId; region: string }
+  | { type: "empireUpgradeCounter"; playerId: PlayerId; region: string };
 
 export type DecideResult =
   | { ok: true; state: WorldState; effects: Effects }
@@ -407,6 +411,12 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireClaim":
       claimObjective(tx, cmd.playerId, cmd.index);
+      break;
+    case "empireCharter":
+      charterRegion(tx, cmd.playerId, cmd.region);
+      break;
+    case "empireUpgradeCounter":
+      upgradeCounter(tx, cmd.playerId, cmd.region);
       break;
     case "empireSell":
       sellToDogana(tx, cmd.playerId, cmd.good, cmd.qty);

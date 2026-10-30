@@ -140,8 +140,13 @@ export const empireSettingsSchema = z.object({
       maxLevel: positive,
       /** Each level past the first adds this share of the region's private book. */
       bookStepBps: bps,
+      /**
+       * A counter costs so many times a workshop of the level it stands for: its region's Casa
+       * for the first, the next level for the others (calibrated at the 24-month simulator).
+       */
+      costTimes: positive.prefault(4),
     })
-    .prefault({ maxLevel: 10, bookStepBps: 10_000 }),
+    .prefault({ maxLevel: 10, bookStepBps: 10_000, costTimes: 4 }),
   /** The young houses' raw goods sell this much dearer, up to a Casa (CADRAGE-v3 § 6). */
   newcomers: z
     .object({ rawBonusBps: bps, untilCasa: qty })

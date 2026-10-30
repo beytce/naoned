@@ -217,7 +217,8 @@ export type EngineErrorCode =
   | "already_paid"
   | "not_empire_world"
   | "no_build_slot"
-  | "requirement_unmet";
+  | "requirement_unmet"
+  | "insufficient_favour";
 
 export class EngineError extends Error {
   constructor(

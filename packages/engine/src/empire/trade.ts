@@ -35,7 +35,7 @@ export function powerOfHouse(h: EmpireHouse, s: EmpireSettings): number {
     {
       casa: h.casa,
       workshopLevels: h.workshops.map((w) => w.level),
-      counterLevels: [],
+      counterLevels: Object.values(h.counters ?? {}),
       moduleLevels: [],
       staffLevels: [],
       vehicles: 0,
