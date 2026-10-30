@@ -268,6 +268,18 @@ export const empireSettingsSchema = z.object({
       ),
     })
     .prefault({ roles: [], rarity: "rare", traits: [] }),
+  /**
+   * The company (CADRAGE-v3 § 7): up to `max` partners, `rejoinDays` before changing, a Capo
+   * absent `capoAbsentDays` gives way, two to four Consiglieri. Vocations, never a bonus.
+   */
+  company: z
+    .object({
+      max: positive,
+      rejoinDays: positive,
+      capoAbsentDays: positive,
+      consiglieriMax: positive,
+    })
+    .prefault({ max: 25, rejoinDays: 3, capoAbsentDays: 7, consiglieriMax: 4 }),
   /** Days without an action after which a house falls asleep (CADRAGE-v3 § 6). */
   sleepAfterDays: positive.prefault(14),
   workshops: z.object({

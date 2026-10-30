@@ -667,6 +667,8 @@ export const companyMembers = pgTable(
       .notNull()
       .references(() => companies.id, { onDelete: "cascade" }),
     joinedAt: timestamp("joined_at", { withTimezone: true }).notNull(),
+    /** The empire's vocation (CADRAGE-v3 § 7): capo, consigliere, cassiere, or none. */
+    role: text("role"),
   },
   (t) => [index("company_members_company_idx").on(t.companyId)],
 );

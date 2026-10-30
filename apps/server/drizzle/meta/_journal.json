@@ -232,6 +232,13 @@
       "when": 1793188574235,
       "tag": "0032_canal",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793380834244,
+      "tag": "0033_company_roles",
+      "breakpoints": true
     }
   ]
 }
