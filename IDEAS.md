@@ -117,14 +117,13 @@ Détails dans docs/expertise-2026-10-24/ (fichiers `*-final.md`).
 - Modules d'exploitation à venir : grande campagne, prospection, gestion durable, charrois.
 - Le Gazzettino du dimanche (palmarès par bande, promotions).
 - Le coût des derniers paliers de la Casa, au-delà de 7 jours de revenu : avec le contenu de fin de partie.
-- La première bande de Puissance (0 à 600) se quitte en une semaine : pour la cible « hors de la première bande en 4 à 6 mois », il faudra élargir les bandes, avec l'appariement de la Contesa (plan 6b).
+- La Terraferme de l'empire (après 6b) : le décret du Signore propre à l'empire, les bannières sur la façade, les sidegrades de guerre, le trophée de la Contesa en pièce du fondaco de compagnie ; les panneaux complets de la carte mensuelle (bâtiments, alliances, signaux, mer) sur l'écran de l'empire ; des bots marchands si les théâtres manquent de monde.
 - L'atelier unique au sommet de chaque Arte : il demande un dessin et un effet propre.
 - Les recettes alternatives d'un bâtiment : le thème n'en a qu'une par bâtiment, il faut d'abord du contenu.
 - L'ambassadeur (avec les cours étrangères) et le condottiere (avec les armes), les deux rôles du personnel qui manquent.
 - Le trait de chaque membre de la famille, qui donne et qui retire (catalogue des Atouts), et les portraits de la Dynastie.
 - Désaffecter un membre du personnel, le renvoyer.
 - La compagnie (après l'étape 6a) : l'Expédition de compagnie, le fondaco de compagnie, le Courrier de compagnie, la colleganza de compagnie, les contrats de fourniture et la réputation, le roulage, le *garzone* (l'apprenti d'une compagnie qui accueille les nouveaux) ; l'usage du Mérite ; l'annonce de la succession dans le fil.
-- La Condotta jouée depuis l'écran de l'empire : avec la carte de la Terraferme (plan 6b).
 
 ## V2
 - Plusieurs mondes en parallèle ; ouverture d'un nouveau monde quand le précédent dépasse J+14 (seulement si la population le permet sans vider les carnets).
