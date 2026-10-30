@@ -100,8 +100,43 @@ const action = z.discriminatedUnion("type", [
     to: z.string().max(40),
     good: z.string().max(40),
     qty: z.number().int().min(1).max(100_000),
+    insured: z.boolean().optional(),
   }),
   z.object({ type: z.literal("empireResearch"), module: z.string().max(40) }),
+  // The sea (CADRAGE-v3 § 3.3): the Arsenal, the Muda, the colleganza.
+  z.object({ type: z.literal("empireBuildShip"), vehicleType: z.string().max(40) }),
+  z.object({
+    type: z.literal("empireFitShip"),
+    vehicleId: z.string().max(32),
+    slot: z.number().int().min(0).max(8),
+    module: z.string().max(40),
+  }),
+  z.object({
+    type: z.literal("empireMudaBid"),
+    vehicleId: z.string().max(32),
+    amount: z.string().regex(/^\d{1,15}$/),
+  }),
+  z.object({
+    type: z.literal("empireColleganzaOpen"),
+    vehicleId: z.string().max(32),
+    from: z.string().max(40),
+    to: z.string().max(40),
+    good: z.string().max(40),
+    qty: z.number().int().min(1).max(100_000),
+    target: z.string().regex(/^\d{1,15}$/),
+  }),
+  z.object({
+    type: z.literal("empireColleganzaStake"),
+    id: z.string().max(40),
+    amount: z.string().regex(/^\d{1,15}$/),
+  }),
+  z.object({ type: z.literal("empireColleganzaWithdraw"), id: z.string().max(40) }),
+  z.object({ type: z.literal("empireColleganzaCancel"), id: z.string().max(40) }),
+  z.object({
+    type: z.literal("empireColleganzaSail"),
+    id: z.string().max(40),
+    insured: z.boolean().optional(),
+  }),
   z.object({ type: z.literal("empireTeam"), depositId: z.string().max(64) }),
   z.object({
     type: z.literal("empireFit"),
