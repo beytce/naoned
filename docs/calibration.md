@@ -1666,3 +1666,75 @@ Mesuré par `pnpm sim` sur 5 graines, avec les vagues 1 à 4. Nouveau dans l'éc
 - Les parts de Maison ne déplacent ni la monnaie payée (−0,6 % en moyenne, dans le bruit des graines) ni la masse monétaire. Les dividendes restent petits (jusqu'à 400 ducats pour toute une saison) : 30 % d'un gain de semaine, au prorata de parts surtout gardées par le fondateur. Le rachat du dernier jour est toujours payé en entier (aucune Maison à court), et le test du moteur montre qu'il ne dépasse jamais la caisse.
 - Sur la graine 5, les assidus finissent derrière les occasionnels en patrimoine médian (96,7 %) mais devant en ventes nettes (142,6 %), qui font le classement : diagnostic à suivre (l'avance des assidus varie beaucoup d'une graine à l'autre depuis la vague 1).
 - Restent sous leur cible, comme après les vagues 1 à 4 : la croissance du mois (1,12 à 1,19 pour 1,20) et le pain (54 à 58 % pour 65 %).
+
+## Empire persistant (CADRAGE-v3) : le simulateur de 24 mois
+
+*30 octobre 2026. Réglages : `packages/engine/src/themes/venice1450.empire.ts` (règles du jeu) et `apps/simulator/src/empire/defaults.ts` (paramètres du modèle : rythmes de production, habitudes des bots, véhicules). Rapport complet : `docs/refonte-2026-10-29/simulation-24-mois.md`.*
+
+### Méthode
+
+`pnpm --filter @comptoirs/simulator empire` ne fait pas tourner le moteur complet. C'est un **simulateur de modèle**, au pas d'une heure sur 24 mois, qui fait vivre les formules de `packages/engine/src/empire`. Ces formules sont testées et serviront telles quelles au socle :
+- courbes, salaires, Puissance, rattrapage ;
+- prix régionaux, retard des nouvelles ;
+- modules, gisements, colleganza, expéditions, corsaires.
+
+Le monde :
+- quatre cohortes de 200 Maisons, arrivées aux mois 0, 3, 6 et 12 ;
+- quatre profils d'activité (assidu, médian, occasionnel, absent par trous de 3 à 14 jours) ;
+- quatre penchants (négociant, exploitant, armateur, mixte).
+
+Chaque jour, on vérifie que la monnaie des Maisons est égale à « créé − détruit » : aucune violation sur les trois graines. Une graine prend environ 6 minutes.
+
+### Résultat (graines 1, 2 et 3)
+
+| Cible (CADRAGE-v3 § 13) | Visée | Résultat | |
+| --- | --- | --- | --- |
+| Calendrier de la Casa | Entre la moitié et le double du § 3.1 | Tous les paliers dans les bornes ; Casa 10 vers le jour 80, Casa 20 vers le jour 380–440 | ✓ |
+| Rattrapage des cohortes tardives | 20 à 40 % plus vite jusqu'à la Casa 10 | 12 à 20 % | ≈ |
+| Objectif à moins de 24 h | ≥ 90 % des tournées | 96–97 % | ✓ |
+| Prochain palier de Casa | 2 à 7 jours de revenu chaque mois | 4 à 7 jusqu'au mois 18, puis jusqu'à 10–11 | ≈ |
+| Nouveau à la Puissance médiane | En 4 à 6 mois | Jamais en 12 mois | ✗ |
+| Indice des prix | 80 à 130 | 84 à 101 | ✓ |
+| Puits ÷ sources | 0,6–0,8 (moins de 3 mois), 0,9–1,0 (au-delà) | 0,84 puis 0,97 | ≈ |
+| Part de la Terraferme | ≤ 15 % | 0,1 % | ✓ |
+| Bruts des vétérans achetés aux jeunes | ≥ 30 % | 2 % | ✗ |
+| Arbitrage | Marge > 0, commandes ≥ 25 % des recettes | Environ 5 500 d par voyage, commandes 36–37 % | ✓ |
+| Chaque métier fait vivre son penchant | ≥ 25 % chacun | Voyages 42–47 %, gisements 24–26 %, expéditions 48–49 % | ✓ (une graine à 24,1 %) |
+
+Revenu médian de la première cohorte (ducats par jour, sur 30 jours glissants) :
+
+| | J1 | S1 | M1 | M3 | M6 | A1 | A1,5 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Cible | 150 | 300 | 600 | 1 500 | 3 500 | 8 000 | 12 000 |
+| Obtenu | 132 | 231 | 478 | 2 700 | 5 000 | 6 800 | 7 500 |
+
+### Ce que le simulateur a appris
+
+1. **Les chiffres du v3 n'étaient pas cohérents entre eux.** Si chaque palier coûte 2 à 7 jours de revenu et que rien d'autre ne freine, les vingt paliers se font en quatre à cinq mois, pas en deux ans et demi. Le calibrage ajoute donc l'**exigence d'ateliers** : la Casa n demande n − 3 ateliers au niveau n − 1, à partir de la Casa 9, douze au plus. C'est le niveau maître d'Hades' Star. Ce changement de règle est reporté dans le v3, § 3.1.
+2. **Les marchandises doivent avoir un lieu.** Tant qu'une Maison vendait son stock dans toutes ses régions, le négoce et les voyages ne servaient à rien. Désormais :
+   - un bien se vend, ou se livre aux commandes, là où la Maison le fabrique, et à Venise ;
+   - ailleurs, il faut un voyage, qui livre d'abord les commandes du port.
+
+   Cette règle est à garder pour le socle.
+3. **Les trois métiers ne vivent que si l'on vend loin.** Les grands marchés étrangers (Bruges, Alexandrie) ont une profondeur à la mesure du monde : 200 unités par jour et par bien, plus 1,5 par Maison active.
+   - Les gisements naissent au prorata des Maisons présentes, un pour dix par jour, et les biens chers y sont plus fréquents.
+   - Le butin d'une expédition gagnée vaut 250 ducats × palier².
+4. **Les ventes à la Dogana doivent rester petites** : 20 unités par jour et par bien, plus 3 par Maison présente dans la région. Sinon elles impriment de la monnaie et passent devant les commandes des villes, qui doivent rester la première source (≈ 37 % ici, voyages compris).
+5. **Les bots qui produisent sans débouché se ruinent.** Ils achètent des intrants pour des biens que personne ne demande. Le socle devra montrer au joueur ce qui se vend, et où.
+
+### Les points ouverts, au porteur
+
+- **Le nouveau à la Puissance médiane en 4 à 6 mois** n'est pas atteignable avec ce calendrier. À 18 mois, la plupart des Maisons anciennes sont à la Casa 20 : la médiane du monde est le sommet. Deux voies :
+  - mesurer le nouveau contre la médiane de sa bande ;
+  - prolonger le sommet (Maestria, Grandes Œuvres) pour que la Puissance des anciens ne plafonne pas.
+- **Le vétéran acheteur des bruts des jeunes** n'émerge pas : 2 % pour 30 % visés. Les grandes Maisons produisent leurs propres bruts. Il faudrait un levier de conception, par exemple des recettes de haut niveau qui demandent des bruts de Vénétie en quantité, ou des commandes de bruts que les vétérans passent aux jeunes.
+- **La colleganza ne se déclenche presque jamais.** Quand les voyages longs commencent (Casa 11 et plus), les Maisons ont déjà 200 000 à 500 000 ducats en caisse, et une cargaison coûte bien moins que cela. Pour que la colleganza vive, une cargaison longue doit coûter cher devant la trésorerie : galères de la Muda dont les places se gagnent à l'incanto, cargaisons de luxe.
+- **Les puits des jeunes Maisons** (0,84 contre 0,6–0,8 visé) : les bots réinvestissent presque tout. Ce n'est pas un risque d'inflation, plutôt l'inverse. La cible est peut-être à revoir.
+- **Le revenu au-delà de 18 mois** reste sous la cible (7 500 contre 12 000 à 20 000 ducats par jour) et les derniers paliers coûtent jusqu'à 10 jours. Il faudra le reprendre avec le contenu de fin de partie : Flandre, Maestria, charges.
+
+### Refaire le calibrage
+
+```
+pnpm --filter @comptoirs/simulator empire                 # 3 graines, 24 mois, 4 cohortes de 200
+pnpm --filter @comptoirs/simulator empire --cohort 30     # rapide (≈ 30 s), plus bruité
+```
