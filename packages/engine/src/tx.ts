@@ -222,7 +222,13 @@ export type EngineErrorCode =
   | "not_here"
   | "no_company"
   | "not_same_company"
-  | "own_order";
+  | "own_order"
+  | "not_in_theatre"
+  | "already_in_theatre"
+  | "contesa_week"
+  | "not_contesa_week"
+  | "roster_closed"
+  | "roster_size";
 
 export class EngineError extends Error {
   constructor(

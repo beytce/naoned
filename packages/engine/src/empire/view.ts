@@ -10,7 +10,7 @@ import {
   type WorldContext,
   type WorldState,
 } from "../state.js";
-import { carnetPreview } from "./carnet.js";
+import { carnetPreview, carnetWeek } from "./carnet.js";
 import { catchupCut } from "./catchup.js";
 import {
   buildMinutesOf,
@@ -36,6 +36,7 @@ import { bandOf } from "./power.js";
 import { regionOf } from "./prices.js";
 import type { EmpireSettings } from "./settings.js";
 import { staffHireCost, staffSlots } from "./staff.js";
+import { isContesaWeek, terraWeekStart } from "./terra.js";
 import { counterLevel, incomePerDay, powerOfHouse } from "./trade.js";
 import { moduleSlotsOf, neighbourBonus } from "./workshops.js";
 
@@ -125,6 +126,28 @@ export interface EmpireView {
   /** What the court of Venice still takes today. */
   courtLeft: number;
   identity: EmpireIdentity;
+  /** The Terraferma (CADRAGE-v3 § 8): the week, the house's theatre, the Contesa's roster. */
+  terra: {
+    week: number;
+    contesa: boolean;
+    entry: Record<string, number>;
+    /** Until when a house may enter (or place on its map); null without the Terraferma. */
+    placementUntil: number | null;
+    theatre: {
+      id: string;
+      band: number;
+      kind: string;
+      members: number;
+      companies: string[];
+    } | null;
+    /** The company's roster for the next Contesa, and until when it may be set. */
+    roster: { week: number; members: string[] } | null;
+    rosterUntil: number | null;
+    nextContesa: boolean;
+    honours: { trophies: number; lustre: number; blazon: string[] } | null;
+    seals: number;
+    best: string | null;
+  };
   /** The entraide (CADRAGE-v3 § 7): its company's open requests, its Merit, its rhythm. */
   aid: {
     requests: {
@@ -345,6 +368,56 @@ export function empireView(
         : s.qualities.courtPerCasa * house.casa,
     identity: identityOf(house, s),
     aid: aidOf(state, house, now, s),
+    terra: terraOf(ctx, state, playerId, house, now, s),
+  };
+}
+
+function terraOf(
+  ctx: WorldContext,
+  state: WorldState,
+  playerId: string,
+  house: EmpireHouse,
+  now: number,
+  s: EmpireSettings,
+): EmpireView["terra"] {
+  const cfg = ctx.settings.terraferma;
+  const week = carnetWeek(now);
+  const t = state.empire?.terra?.week === week ? state.empire.terra : undefined;
+  const th = t?.theatres.find((x) => x.members.includes(playerId));
+  const start = terraWeekStart(week);
+  const roster = (state.empire?.terra?.rosters ?? []).find(
+    (r) => r.week === week + 1 && r.company === house.company,
+  );
+  const hon = house.company ? state.empire?.terra?.honours?.[house.company] : undefined;
+  return {
+    week,
+    contesa: isContesaWeek(week),
+    entry: s.terra.entry,
+    placementUntil:
+      cfg?.live && cfg.start.placementHours > 0 ? start + cfg.start.placementHours * HOUR_MS : null,
+    theatre: th
+      ? {
+          id: th.id,
+          band: th.band,
+          kind: th.kind,
+          members: th.members.length,
+          companies: th.companies ?? [],
+        }
+      : null,
+    roster: roster ? { week: roster.week, members: roster.members } : null,
+    rosterUntil: isContesaWeek(week + 1)
+      ? start + (s.terra.contesa.deadlineDay + 1) * DAY_MS
+      : null,
+    nextContesa: isContesaWeek(week + 1),
+    honours: hon
+      ? {
+          trophies: hon.trophies,
+          lustre: hon.lustre,
+          blazon: hon.blazon && hon.blazon.week >= week - 2 ? hon.blazon.cities : [],
+        }
+      : null,
+    seals: house.terraSeals?.week === week ? house.terraSeals.seals : 0,
+    best: house.terraBest ?? null,
   };
 }
 
