@@ -75,6 +75,8 @@ export interface House {
   casaAt: number[];
   /** The first day its Power reached the median of the older houses in its band. */
   bandCaughtAt?: number;
+  /** The same, the absent houses (who build nothing) left out of the median. */
+  bandCaughtActiveAt?: number;
   workshops: Workshop[];
   counters: Map<string, number>;
   vehicles: Vehicle[];

@@ -43,18 +43,29 @@ export function dailyIncome(h: House): number {
 function markBandCatch(w: World, powers: Map<House, number>) {
   const bands = new Map(w.houses.map((h) => [h, bandOf(powers.get(h) ?? 0, w.s)]));
   const medians = new Map<string, number | null>();
-  const medianBefore = (joinedAt: number, band: number) => {
-    const key = `${joinedAt}:${band}`;
+  const medianBefore = (joinedAt: number, band: number, active: boolean) => {
+    const key = `${joinedAt}:${band}:${active}`;
     if (!medians.has(key)) {
-      const older = w.houses.filter((o) => o.joinedAt < joinedAt && bands.get(o) === band);
+      const older = w.houses.filter(
+        (o) =>
+          o.joinedAt < joinedAt && bands.get(o) === band && (!active || o.activity !== "absent"),
+      );
       medians.set(key, older.length > 0 ? median(older.map((o) => powers.get(o) ?? 0)) : null);
     }
     return medians.get(key) ?? null;
   };
   for (const h of w.houses) {
-    if (h.bandCaughtAt !== undefined || h.joinedAt === 0) continue;
-    const m = medianBefore(h.joinedAt, bands.get(h) ?? 0);
-    if (m !== null && (powers.get(h) ?? 0) >= m) h.bandCaughtAt = w.now;
+    if (h.joinedAt === 0) continue;
+    const p = powers.get(h) ?? 0;
+    const band = bands.get(h) ?? 0;
+    if (h.bandCaughtAt === undefined) {
+      const m = medianBefore(h.joinedAt, band, false);
+      if (m !== null && p >= m) h.bandCaughtAt = w.now;
+    }
+    if (h.bandCaughtActiveAt === undefined) {
+      const m = medianBefore(h.joinedAt, band, true);
+      if (m !== null && p >= m) h.bandCaughtActiveAt = w.now;
+    }
   }
 }
 
