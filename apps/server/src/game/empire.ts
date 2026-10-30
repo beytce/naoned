@@ -2,17 +2,22 @@ import {
   type EmpireCommand,
   type WorldContext,
   type WorldState,
+  advanceTerra,
+  carnetWeek,
   cashAccount,
   empireQuotes,
   empireView,
+  terraWeekStart,
 } from "@comptoirs/engine";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { Db } from "../db/client.js";
-import { companyMembers } from "../db/schema.js";
+import { accounts, companyMembers } from "../db/schema.js";
 import { balanceOf } from "./house.js";
 import { toJson } from "./serialize.js";
+import { type TerraName, terraView } from "./terra.js";
+import { terraActionSchemas } from "./terraActions.js";
 import type { GameWorld } from "./world.js";
 
 /** The goods of the empire's regions: what their workshops make, and what they make it from. */
@@ -130,6 +135,12 @@ const action = z.discriminatedUnion("type", [
     qty: z.number().int().min(1).max(100_000),
   }),
   z.object({ type: z.literal("empireSupply"), requestId: z.string().max(80) }),
+  // The Terraferma's theatres (CADRAGE-v3 § 8): the cote comes from the server.
+  z.object({ type: z.literal("empireTerraJoin") }),
+  z.object({
+    type: z.literal("empireTerra"),
+    action: z.discriminatedUnion("type", [...terraActionSchemas]),
+  }),
 ]);
 
 export interface EmpireRouteDeps {
@@ -150,6 +161,65 @@ async function companyTag(db: Db, accountId: string) {
     .from(companyMembers)
     .where(eq(companyMembers.accountId, accountId));
   return row ? { id: row.id, since: row.since.getTime() } : null;
+}
+
+async function ratingOf(db: Db, accountId: string): Promise<number> {
+  const [row] = await db
+    .select({ rating: accounts.terraRating })
+    .from(accounts)
+    .where(eq(accounts.id, accountId));
+  return row?.rating ?? 1_000;
+}
+
+/**
+ * The house's theatre as a map of the Terraferma (CADRAGE-v3 § 8): its map advanced to now on a
+ * copy (the reading changes nothing), seen through the Terraferma's own view, its companions
+ * marked friends.
+ */
+async function theatreView(db: Db, world: GameWorld, accountId: string) {
+  const t = world.current.empire?.terra;
+  const th =
+    t?.week === carnetWeek(world.now())
+      ? t.theatres.find((x) => x.members.includes(accountId))
+      : undefined;
+  if (!t || !th) return null;
+  const map = structuredClone(th.map) as typeof th.map;
+  advanceTerra(map, th.cfg, Math.min(world.now(), terraWeekStart(t.week + 1)));
+  const ids = th.members;
+  const rows =
+    ids.length === 0
+      ? []
+      : await db
+          .select({ id: accounts.id, pseudo: accounts.pseudo, crest: accounts.crest })
+          .from(accounts)
+          .where(inArray(accounts.id, ids));
+  const mine = world.current.empire?.houses[accountId]?.company;
+  const names = new Map<string, TerraName>(
+    rows.map((r) => [
+      r.id,
+      {
+        pseudo: r.pseudo,
+        crest: r.crest,
+        bot: false,
+        friend: !!mine && world.current.empire?.houses[r.id]?.company === mine,
+      },
+    ]),
+  );
+  const ctx: WorldContext = {
+    ...world.ctx,
+    settings: { ...world.ctx.settings, terraferma: { ...th.cfg, live: true } },
+  };
+  const state = {
+    ...world.current,
+    terra: { week: t.week, map },
+  } as WorldState;
+  const view = terraView(ctx, state, accountId, world.now(), names);
+  return view
+    ? {
+        theatre: { id: th.id, band: th.band, kind: th.kind, companies: th.companies ?? [] },
+        view,
+      }
+    : null;
 }
 
 export function registerEmpireRoutes(app: FastifyInstance, deps: EmpireRouteDeps): void {
@@ -180,13 +250,59 @@ export function registerEmpireRoutes(app: FastifyInstance, deps: EmpireRouteDeps
     return payload(account.id);
   });
 
+  app.get("/api/empire/terra", async (req, reply) => {
+    const account = await deps.requireAccount(req, reply);
+    if (!account) return;
+    if (!isEmpire()) return reply.code(409).send({ error: "not_empire_world" });
+    return toJson({ terra: await theatreView(deps.db, world, account.id) });
+  });
+
+  // The Contesa's roster (CADRAGE-v3 § 7): the Capo or a Consigliere sets it, for partners only.
+  app.post("/api/empire/contesa/roster", deps.perMerchant(30), async (req, reply) => {
+    const account = await deps.requireAccount(req, reply);
+    if (!account) return;
+    if (!isEmpire()) return reply.code(409).send({ error: "not_empire_world" });
+    const parsed = z
+      .object({ members: z.array(z.string().uuid()).min(1).max(30) })
+      .safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "roster_size" });
+    const rows = await deps.db
+      .select({
+        id: companyMembers.accountId,
+        company: companyMembers.companyId,
+        role: companyMembers.role,
+      })
+      .from(companyMembers)
+      .where(inArray(companyMembers.accountId, [account.id, ...parsed.data.members]));
+    const me = rows.find((r) => r.id === account.id);
+    if (!me || (me.role !== "capo" && me.role !== "consigliere"))
+      return reply.code(403).send({ error: "not_capo" });
+    const company = await companyTag(deps.db, account.id);
+    const res = await world.execute({
+      type: "empireContesaRoster",
+      playerId: account.id,
+      members: parsed.data.members,
+      company,
+    });
+    if (!res.ok)
+      return reply.code(422).send({ error: res.error, ...(payload(account.id) as object) });
+    return payload(account.id);
+  });
+
   app.post("/api/empire/actions", deps.perMerchant(300), async (req, reply) => {
     const account = await deps.requireAccount(req, reply);
     if (!account) return;
     if (!isEmpire()) return reply.code(409).send({ error: "not_empire_world" });
     const a = action.parse(req.body);
     const company = await companyTag(deps.db, account.id);
-    const res = await world.execute({ ...a, playerId: account.id, company } as EmpireCommand);
+    const extra =
+      a.type === "empireTerraJoin" ? { rating: await ratingOf(deps.db, account.id) } : {};
+    const res = await world.execute({
+      ...a,
+      ...extra,
+      playerId: account.id,
+      company,
+    } as EmpireCommand);
     if (!res.ok)
       return reply.code(422).send({ error: res.error, ...(payload(account.id) as object) });
     return payload(account.id);

@@ -91,9 +91,6 @@ export const DEFAULT_MODEL: SimModel = {
   victualsPerTierDucats: 40,
   terra: {
     playBps: { assidu: 8_000, median: 5_000, occasional: 2_000, absent: 3_000 },
-    rationDucats: 60,
-    favour: [5, 40],
-    seals: [0, 3],
     favourValueDucats: 10,
     sealValueDucats: 40,
   },

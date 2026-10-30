@@ -37,20 +37,13 @@ export function dailyIncome(h: House): number {
 }
 
 /**
- * Marks the houses that reach the median Power of their band, all the houses of the band counted
- * whatever their age (CADRAGE-v3 § 12 bis, the owner's decision of 30 October 2026).
+ * Marks the houses that leave the first band of Power (CADRAGE-v3 § 12 bis, the owner's decision
+ * of 30 October 2026: the newcomer leaves the first band in 4 to 6 months).
  */
 function markBandCatch(w: World, powers: Map<House, number>) {
-  const byBand = new Map<number, number[]>();
-  for (const h of w.houses) {
-    const band = bandOf(powers.get(h) ?? 0, w.s);
-    byBand.set(band, [...(byBand.get(band) ?? []), powers.get(h) ?? 0]);
-  }
-  const medians = new Map([...byBand].map(([band, ps]) => [band, median(ps)]));
   for (const h of w.houses) {
     if (h.joinedAt === 0 || h.bandCaughtAt !== undefined) continue;
-    const p = powers.get(h) ?? 0;
-    if (p >= (medians.get(bandOf(p, w.s)) ?? Number.POSITIVE_INFINITY)) h.bandCaughtAt = w.now;
+    if (bandOf(powers.get(h) ?? 0, w.s) > 0) h.bandCaughtAt = w.now;
   }
 }
 

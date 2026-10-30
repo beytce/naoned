@@ -53,6 +53,7 @@ import {
 } from "./empire/house.js";
 import { startLearning } from "./empire/knowledge.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
+import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
 import { deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
 import { buyEmpireVehicle, settleVoyages, startVoyage } from "./empire/voyages.js";
 import { fitModule, relaunchAll, relaunchWorkshop, swapWorkshops } from "./empire/workshops.js";
@@ -99,6 +100,7 @@ import {
 import { bidTender, deliverTender } from "./tenders.js";
 import {
   type TerraCommand,
+  type TerraPlayerCommand,
   applyTerra,
   markNpc,
   paySkirmish,
@@ -309,6 +311,10 @@ type EmpireCommandOf =
   | { type: "empireSkill"; playerId: PlayerId; staffId: string; path: number }
   | { type: "empireLineage"; playerId: PlayerId; trait: string }
   | { type: "empireAsk"; playerId: PlayerId; good: string; qty: number }
+  /** The Terraferma (CADRAGE-v3 § 8): enter the week's theatre (the cote from the server). */
+  | { type: "empireTerraJoin"; playerId: PlayerId; rating?: number }
+  | { type: "empireTerra"; playerId: PlayerId; action: TerraPlayerCommand }
+  | { type: "empireContesaRoster"; playerId: PlayerId; members: PlayerId[] }
   /** A won match of the Condotta, told by the server: never a client's action. */
   | { type: "empireCondotta"; playerId: PlayerId; tier: number }
   | { type: "empireSupply"; playerId: PlayerId; requestId: string }
@@ -429,6 +435,8 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     // The deposits' extraction up to now, then the days' new ones.
     settleDeposits(tx);
     settleAid(tx);
+    // The week's Terraferma: last week's theatres closed and paid when the week turns.
+    settleTerra(tx);
   }
   if (cmd.type === "empireJoin") {
     empireJoin(tx, cmd.playerId);
@@ -521,6 +529,15 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireCondotta":
       rewardCondotta(tx, cmd.playerId, cmd.tier);
+      break;
+    case "empireTerraJoin":
+      joinTerra(tx, cmd.playerId, cmd.rating);
+      break;
+    case "empireTerra":
+      actOnTerra(tx, cmd.playerId, cmd.action);
+      break;
+    case "empireContesaRoster":
+      setRoster(tx, cmd.playerId, cmd.members);
       break;
     case "empireVoyage":
       startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);

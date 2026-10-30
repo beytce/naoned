@@ -1,4 +1,5 @@
 import { ApiError } from "../api.js";
+import type { TerraView } from "../game/types.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
 async function call(method: string, path: string, body?: unknown): Promise<unknown> {
@@ -27,4 +28,14 @@ export const empireApi = {
   view: () => call("GET", "/api/empire") as Promise<EmpireAnswer | { kind: "season" }>,
   join: () => call("POST", "/api/empire/join", {}) as Promise<EmpireAnswer>,
   act: (a: EmpireAction) => call("POST", "/api/empire/actions", a) as Promise<EmpireAnswer>,
+  /** The house's theatre of the Terraferma, as a map (null outside one). */
+  terra: () =>
+    call("GET", "/api/empire/terra") as Promise<{
+      terra: {
+        theatre: { id: string; band: number; kind: string; companies: string[] };
+        view: TerraView;
+      } | null;
+    }>,
+  roster: (members: string[]) =>
+    call("POST", "/api/empire/contesa/roster", { members }) as Promise<EmpireAnswer>,
 };

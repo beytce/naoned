@@ -10,6 +10,7 @@ import { Badge, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { CompanySection, suppliable } from "./Company.js";
 import { ArteSection, Court, FamilySheet, Knowledge, WorkshopIdentity } from "./Identity.js";
 import { EmpireOrbit } from "./Orbit.js";
+import { TerraSheet } from "./Terra.js";
 import { Charroi, Constellation, RegionPlace, Scuola, VoyageSheet, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
 import {
@@ -31,6 +32,7 @@ type SheetId =
   | "new"
   | "away"
   | "family"
+  | "terra"
   | `workshop:${string}`
   | `new:${string}`
   | `voyage:${string}`;
@@ -115,11 +117,13 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       ? "venice"
       : sheet === "carnet"
         ? "ranking"
-        : sheet === "family"
+        : sheet === "terra"
           ? "conquest"
-          : sheet === "workshops" || sheet?.startsWith("new") || sheet?.startsWith("workshop:")
-            ? "workshops"
-            : "map";
+          : sheet === "family"
+            ? "venice"
+            : sheet === "workshops" || sheet?.startsWith("new") || sheet?.startsWith("workshop:")
+              ? "workshops"
+              : "map";
   const close = () => setSheet(null);
 
   // The one gold action: what the house needs most now.
@@ -274,6 +278,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         busy={busy}
         canCasa={canCasa}
         onClose={close}
+        onFamily={() => setSheet("family")}
         act={act}
       />
       <CarnetSheet
@@ -285,6 +290,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         act={act}
       />
       <FamilySheet p={p} open={sheet === "family"} busy={busy} onClose={close} act={act} />
+      <TerraSheet p={p} now={now} open={sheet === "terra"} busy={busy} onClose={close} act={act} />
       <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
 
       <TabBar
@@ -294,7 +300,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           workshops: t.tabs.workshops,
           venice: t.tabs.casa,
           ranking: t.tabs.carnet,
-          conquest: t.identity.tab,
+          conquest: t.terra.tab,
         }}
         items={[
           {
@@ -303,18 +309,26 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             onClick: () => (sheet ? close() : setPlace(place === null ? "veneto" : null)),
           },
           { id: "workshops", onClick: () => setSheet("workshops"), dot: relaunch },
-          { id: "venice", onClick: () => setSheet("casa"), dot: canCasa },
+          { id: "venice", onClick: () => setSheet("casa"), dot: canCasa || familyCalls(p) },
           {
             id: "ranking",
             onClick: () => setSheet("carnet"),
             dot: claimable(p) || suppliable(p, account.id) > 0,
           },
-          { id: "conquest", onClick: () => setSheet("family"), dot: familyCalls(p) },
+          { id: "conquest", onClick: () => setSheet("terra"), dot: terraCalls(p, now) },
         ]}
       />
     </div>
   );
 }
+
+/** The week's Terraferma calls: entries open and the house in no theatre yet. */
+const terraCalls = (p: EmpirePayload, now: number) => {
+  const tv = p.view?.terra;
+  return (
+    !!tv && !tv.contesa && !tv.theatre && tv.placementUntil !== null && now < tv.placementUntil
+  );
+};
 
 /** A trait to take or a path to choose waits in the family. */
 const familyCalls = (p: EmpirePayload) => {
@@ -643,8 +657,9 @@ function CasaSheet({
   busy,
   canCasa,
   onClose,
+  onFamily,
   act,
-}: SheetProps & { open: boolean; canCasa: boolean }) {
+}: SheetProps & { open: boolean; canCasa: boolean; onFamily: () => void }) {
   const view = p.view;
   if (!view) return null;
   const next = view.nextCasa;
@@ -715,6 +730,9 @@ function CasaSheet({
           )}
         </div>
       )}
+      <Slab size="sm" tone="ghost" className="mt-5 w-full" onClick={onFamily}>
+        {t.identity.family} →
+      </Slab>
       <ArteSection p={p} busy={busy} act={act} />
       <Scuola p={p} busy={busy} act={act} />
       <Knowledge p={p} busy={busy} act={act} />

@@ -499,6 +499,12 @@ Un rapport public dit ce qui a été vendu.
 - dès le niveau 12, chaque unité faite mange 5 % d'une unité de brut de Vénétie par niveau à partir de 12 ;
 - la galea et la galère de Flandre ne partent qu'avec une place de la Muda. Il y a deux incanti par semaine et des places pour la moitié des armateurs. L'enchère est de Vickrey, avec une réserve d'un jour de revenu, et le prix est détruit. Le gagnant à court de caisse lève le reste en colleganza sur son convoi.
 
+**Décisions du porteur du 30 octobre 2026, au soir** :
+- la cible du nouveau devient « **il quitte la première bande de Puissance en 4 à 6 mois** » (la médiane de toute la bande donnait 0 mois) ;
+- la Condotta de l'empire **garde ses Sceaux** (une victoire par jour), au lieu du seul grade décidé le 24 octobre ;
+- le plan 6b (la Contesa et les théâtres) est lancé ;
+- **la bascule est décidée** : `EMPIRE_FROM` à la fin de la saison d'octobre (le 1er novembre 2026 à 0 h, heure de Paris), pour que le mois se clôture avec son classement.
+
 ## 13. Le chemin
 
 Chaque étape fait l'objet d'un plan, validé avant le code.
@@ -511,7 +517,7 @@ Chaque étape fait l'objet d'un plan, validé avant le code.
    | Temps jusqu'à chaque palier de Casa | Proche du § 3.1 ; les cohortes tardives 20 à 40 % plus vite |
    | Objectif à moins de 24 h pour un joueur médian | Toujours |
    | Prochain palier de Casa, en jours de revenu | 2 à 7 |
-   | Nouveau à la Puissance médiane de sa bande, toutes ses Maisons comptées quel que soit leur âge (§ 12 bis) | 4 à 6 mois (mesure triviale au simulateur : 0 mois, à redéfinir) |
+   | Nouveau hors de la première bande de Puissance (§ 12 bis, décision du porteur du 30 octobre) | 4 à 6 mois |
    | Indice des prix | 80 à 130 sur 24 mois |
    | Ratio entre puits et sources | 0,6–0,8 avant 3 mois, 0,9–1,0 au-delà |
    | Part de la Terraferme dans la progression | ≤ 15 % |
@@ -568,6 +574,12 @@ Chaque étape fait l'objet d'un plan, validé avant le code.
    - **l'entraide** (`empire.aid`) : un lot demandé toutes les 8 h (20 unités par niveau de Casa), fourni en un geste au prix de référence de Venise, sans taxe ni salaires, au grand livre et au journal des stocks ; 3 jours d'ancienneté, un plafond du jour par fournisseur, du Mérite ; la compagnie vient du serveur sur chaque commande, jamais du client ;
    - **la Condotta à paliers** (`empire.condotta`) : le palier n s'ouvre par la victoire du précédent et par la Casa n + 2 ; une victoire par jour rapporte des Sceaux selon le palier (1, puis 2 dès le 5, 3 dès le 9). Elle se joue sur la carte de la Terraferme, que l'écran de l'empire n'a pas encore : elle viendra avec 6b ;
    - **l'écran** : la compagnie dans la feuille du Carnet (associés, vocations, demandes, palier de Condotta, fil).
+
+   *6b fait le 30 octobre 2026* :
+   - **la Terraferme de l'empire** (`empire.terra`) : une semaine du lundi au dimanche (heure de Venise), en théâtres d'au plus 40 marchands d'une bande de Puissance, rangés par cote ; l'entrée en planches (la guerre mange elle-même le pain et les briques) ; la ration de la République, le même pain par jour pour tous ; les règles copiées à l'ouverture d'un théâtre ; à la clôture, Faveur par rang, Sceaux (2 au plus par semaine), grade honorifique ; la cote Elo par théâtre. Le décret du Signore et l'embargo, qui agissent sur l'économie du monde mensuel, n'y sont pas ;
+   - **la Contesa**, les semaines paires : le roster de 5, 10 ou 15 associés posé par le Capo ou un Consigliere jusqu'au jeudi ; des théâtres de 2 à 4 compagnies par Puissance, en équipes par compagnie ; Sceaux à chaque membre et un de plus aux gagnants, trophée, Lustre et blason sur les villes tenues pour la compagnie gagnante ; une compagnie seule contre les nations gagne moitié moins ;
+   - **l'écran** : l'onglet Terraferme (théâtre, carte, camp, fronts, roster, honneurs) où la Condotta se joue aussi ; la Famille passe dans la feuille de la Casa ;
+   - **les bandes de Puissance** élargies (0, 4 500, 7 000, 9 500, 12 000) pour la cible du nouveau.
 7. **La mer et les armes** : la Dalmatie, l'Arsenal, les navires à modules, la Muda des joueurs, les corsaires ; puis les expéditions et les reliques, et la colleganza.
 8. **Les ères et les Annales**, la politique étendue, le Grand Canal en immobilier, le Levant.
 9. **La refonte visuelle et des interactions**, qui suit chaque étape : la carte qui s'étend, la façade qui monte, les trois flottes et leurs emplacements de modules, les convois, la carte d'expédition.

@@ -84,6 +84,10 @@ L'image tourne sous l'utilisateur `node`, pas `root`. La CI échoue si `pnpm aud
 
 Avec `WORLD_KIND=empire`, ou après l'instant de `EMPIRE_FROM`, le serveur ouvre le monde « Venise 1450 · L'empire » : jamais borné par un mois (`ends_at` garde la date du 31 décembre 9999, que le moteur ignore), sans clôture de saison ni rollover. Les ateliers, la file de nuit et les chantiers se règlent à la lecture ; le tick n'y fait rien. Le client le reconnaît par `GET /api/empire` (`kind: "empire"`) et joue l'écran de l'empire ; les commandes des saisons mensuelles y sont refusées. En rejoignant l'empire, une Maison reprend son Influence en Faveur, un pour un.
 
+La Terraferme de l'empire n'a pas de tick : ses théâtres de la semaine (lundi 0 h, heure de Paris) se forment à la première inscription, et la semaine passée se clôt, et se paie, à la première action qui suit son dimanche. `GET /api/empire/terra` montre la carte du théâtre de la Maison ; le roster de la Contesa se pose par `POST /api/empire/contesa/roster`. La Condotta garde ses routes (`/api/game/condotta`).
+
+**La bascule**, décidée par le porteur le 30 octobre 2026 : régler `EMPIRE_FROM=2026-10-31T23:00:00Z` (le 1er novembre à 0 h, heure de Paris). Jusque-là rien ne change ; à la clôture d'octobre, après son classement, le monde de l'empire ouvre à la place de novembre. Un instant déjà passé ferait rouvrir le serveur sur l'empire sans clore le mois en cours.
+
 ## En local
 
 ```sh

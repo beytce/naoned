@@ -13,6 +13,7 @@ type Result = {
   glory: number;
   cells: number;
   signore: boolean;
+  theatre?: string;
 };
 
 /**
@@ -61,8 +62,20 @@ export async function recordTerra(
       glory: Number(e.data?.glory ?? 0),
       cells: Number(e.data?.cells ?? 0),
       signore: e.data?.signore === true,
+      theatre: typeof e.data?.theatre === "string" ? e.data.theatre : "",
     }));
   if (results.length === 0) return;
+  // The empire's theatres close together: each its own field of ratings.
+  for (const th of new Set(results.map((r) => r.theatre)))
+    await recordField(
+      tx,
+      worldId,
+      results.filter((r) => r.theatre === th),
+      at,
+    );
+}
+
+async function recordField(tx: Db, worldId: string, results: Result[], at: Date): Promise<void> {
   const ids = results.map((r) => r.accountId);
   const rows = await tx
     .select({ id: accounts.id, rating: accounts.terraRating })

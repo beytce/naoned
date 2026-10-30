@@ -310,6 +310,55 @@ export const empireSettingsSchema = z.object({
   condotta: z
     .object({ casaOffset: qty, sealsByTier: z.array(qty).min(1) })
     .prefault({ casaOffset: 2, sealsByTier: [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3] }),
+  /**
+   * The Terraferma of the empire (CADRAGE-v3 § 8): a week from Monday, in theatres of at most
+   * `theatreMax` merchants of a band; the entry paid in goods (planks, which a house makes from
+   * its first day: the war eats the bread and the bricks itself, in rations and buildings); the Republic's ration of bread, the
+   * same for all, each day; Favour and Seals by rank, `sealsPerWeek` at most. Even weeks, the
+   * Contesa: rosters of a company set down by Thursday (`deadlineDay` from Monday), 2 to
+   * `maxCompanies` a theatre by their summed Power. Never ducats, never yield.
+   */
+  terra: z
+    .object({
+      entry: z.record(z.string(), qty),
+      theatreMax: positive,
+      rationBread: qty,
+      favour: z.object({
+        signore: qty,
+        podium: qty,
+        top10: qty,
+        quarter: qty,
+        participant: qty,
+      }),
+      seals: z.object({ signore: qty, podium: qty }),
+      sealsPerWeek: qty,
+      contesa: z.object({
+        rosterSizes: z.array(positive).min(1),
+        deadlineDay: qty.max(6),
+        maxCompanies: positive,
+        sealsPerMember: qty,
+        winnerSeals: qty,
+        aloneBps: bps.max(10_000),
+        lustre: qty,
+      }),
+    })
+    .prefault({
+      entry: { planks: 20 },
+      theatreMax: 40,
+      rationBread: 20,
+      favour: { signore: 60, podium: 30, top10: 15, quarter: 8, participant: 4 },
+      seals: { signore: 2, podium: 1 },
+      sealsPerWeek: 2,
+      contesa: {
+        rosterSizes: [5, 10, 15],
+        deadlineDay: 3,
+        maxCompanies: 4,
+        sealsPerMember: 1,
+        winnerSeals: 1,
+        aloneBps: 5_000,
+        lustre: 10,
+      },
+    }),
   /** Days without an action after which a house falls asleep (CADRAGE-v3 § 6). */
   sleepAfterDays: positive.prefault(14),
   workshops: z.object({

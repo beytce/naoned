@@ -158,7 +158,7 @@ export function advanceTerraWorld(tx: Tx): TerraState | null {
  * The cells the merchants' fronts took since the history's line `from`, one event a merchant
  * (cells and cities), for the house's missions.
  */
-function tellCellsTaken(tx: Tx, map: TerraState, from: number): void {
+export function tellCellsTaken(tx: Tx, map: TerraState, from: number): void {
   const h = map.history;
   if (!h || h.cell.length <= from) return;
   const by = new Map<string, { count: number; cities: number }>();
@@ -205,10 +205,24 @@ function payHarvests(tx: Tx, map: TerraState): void {
  * stock cannot give is forgiven, and the merchant is unfed (it recruits no more) until a meal
  * finds its bread again.
  */
-function serveTerraRations(tx: Tx, map: TerraState): void {
+export function serveTerraRations(
+  tx: Tx,
+  map: TerraState,
+  republic?: (id: PlayerId, loaves: number) => number,
+): void {
   for (const [id, p] of Object.entries(map.players).sort(([a], [b]) => (a < b ? -1 : 1))) {
     if (isNation(id) || !tx.s.players[id]) continue;
-    const whole = Math.floor((p.breadOwed ?? 0) / 10_000);
+    let whole = Math.floor((p.breadOwed ?? 0) / 10_000);
+    // The Republic's ration first, the same for all (the empire's theatres): forgiven bread.
+    const given = republic && whole > 0 ? Math.min(whole, republic(id, whole)) : 0;
+    if (given > 0) {
+      p.breadOwed = (p.breadOwed ?? 0) - given * 10_000;
+      whole -= given;
+      if (whole === 0) {
+        p.unfed = undefined;
+        continue;
+      }
+    }
     const have = tx.s.inventories[id]?.bread?.available ?? 0;
     if (whole <= 0) {
       // Bread back in the stock: the troops will eat at their next meal.
@@ -451,22 +465,40 @@ export function withdrawTerra(tx: Tx, playerId: PlayerId): void {
   }
 }
 
-export function applyTerra(
-  tx: Tx,
-  cmd: Exclude<TerraCommand, TerraSkirmishPay | TerraWithdraw>,
-): void {
+export type TerraPlayerCommand = Exclude<TerraCommand, TerraSkirmishPay | TerraWithdraw>;
+
+export function applyTerra(tx: Tx, cmd: TerraPlayerCommand): void {
   const cfg = terraOn(tx.ctx);
   if (!cfg) fail("terra_off");
   if (!tx.s.players[cmd.playerId]) fail("unknown_player");
   const map = advanceTerraWorld(tx) as TerraState;
   if (map.closed) fail("terra_closed");
+  applyTerraOn(tx, cfg, map, cmd, {
+    team: tx.s.players[cmd.playerId]?.region ?? "",
+    decree: tx.s.terraDecree,
+    week: weekIndex(tx.ctx, tx.now),
+  });
+}
+
+/**
+ * A merchant's command on a map of the Terraferma: the week's map of the season, or a theatre of
+ * the empire. `team` is its side in a team week (its region, its company); `decree` the one in
+ * force, which may not be chosen twice running.
+ */
+export function applyTerraOn(
+  tx: Tx,
+  cfg: TerraConfig,
+  map: TerraState,
+  cmd: TerraPlayerCommand,
+  side: { team: string; decree?: TerraDecree; week: number },
+): void {
   const id = cmd.playerId;
   const now = tx.now;
   switch (cmd.type) {
     case "terraPlace":
       placeOnTerra(map, cfg, id, cmd.cell, now);
       if (tx.s.players[id]?.npc) markTerraNpc(map, id);
-      joinTeam(map, id, tx.s.players[id]?.region ?? "");
+      joinTeam(map, id, side.team);
       emit(tx, "terra_placed", id, { cell: cmd.cell });
       break;
     case "terraFront": {
@@ -559,9 +591,8 @@ export function applyTerra(
       setPeasants(map, id, cmd.shareBps);
       break;
     case "terraDecree": {
-      const inForce = tx.s.terraDecree;
-      if (inForce && inForce.week === weekIndex(tx.ctx, now) && inForce.code === cmd.code)
-        fail("decree_repeat");
+      const inForce = side.decree;
+      if (inForce && inForce.week === side.week && inForce.code === cmd.code) fail("decree_repeat");
       chooseDecree(
         map,
         cfg,

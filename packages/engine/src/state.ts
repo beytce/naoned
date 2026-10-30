@@ -1,6 +1,6 @@
 import type { Deniers } from "./money.js";
 import type { WorldSettings } from "./settings.js";
-import type { TerraState } from "./terraferma.js";
+import type { TerraConfig, TerraState } from "./terraferma.js";
 import type { BuildingType, ResourceCode, Theme } from "./theme.js";
 
 export type PlayerId = string;
@@ -363,6 +363,9 @@ export interface EmpireHouse {
   /** Its company, as the server knows it, and since when it is in it (CADRAGE-v3 § 7). */
   company?: string;
   companySince?: number;
+  /** The Terraferma: the Seals of this week, its best tier ever (its honorary grade). */
+  terraSeals?: { week: number; seals: number };
+  terraBest?: string;
   /** The day of its last won Condotta paid in Seals. */
   condottaDay?: number;
   /** The Merit its entraide earned, the last lot it asked, what it supplied today (deniers). */
@@ -463,6 +466,33 @@ export interface EmpireVoyage {
   cost: Deniers;
 }
 
+/** A theatre of the empire's Terraferma (CADRAGE-v3 § 8): one map, its merchants, its rules. */
+export interface EmpireTheatre {
+  id: string;
+  band: number;
+  kind: "open" | "contesa";
+  /** The week's rules, kept from its opening: a change waits for the next Monday. */
+  cfg: TerraConfig;
+  map: TerraState;
+  members: PlayerId[];
+  /** The Contesa's companies; the cote of each member (the open theatres keep like with like). */
+  companies?: string[];
+  ratings?: Record<PlayerId, number>;
+  /** The Republic's bread given today, by merchant. */
+  rations?: Record<PlayerId, { day: number; given: number }>;
+}
+
+/** The empire's Terraferma: this week's theatres, the Contesa's rosters, the companies' honours. */
+export interface EmpireTerra {
+  week: number;
+  theatres: EmpireTheatre[];
+  rosters?: { week: number; company: string; members: PlayerId[] }[];
+  honours?: Record<
+    string,
+    { trophies: number; lustre: number; blazon?: { week: number; cities: string[] } }
+  >;
+}
+
 /** A lot a partner asks its company for (CADRAGE-v3 § 7). */
 export interface EmpireAidRequest {
   id: string;
@@ -477,6 +507,7 @@ export interface EmpireState {
   houses: Record<PlayerId, EmpireHouse>;
   /** The entraide's open requests. */
   aid?: EmpireAidRequest[];
+  terra?: EmpireTerra;
   voyages?: EmpireVoyage[];
   deposits?: EmpireDeposit[];
   /** The last day the deposits were drawn for. */

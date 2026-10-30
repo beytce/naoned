@@ -120,7 +120,7 @@ export function evaluate(r: EmpireResult): Check[] {
     pass: steps.length > 0 && stepsOut.length === 0,
   });
 
-  // 4. A newcomer at the median Power of its band, all its houses counted whatever their age.
+  // 4. A newcomer leaves the first band of Power (the owner's target of 30 October 2026).
   const last = Math.max(...r.options.cohortMonths.filter((m) => m <= r.options.months - 1));
   const newcomers = hs.filter((h) => h.cohort === last);
   const monthsTo = (at: (h: (typeof hs)[number]) => number | undefined) => {
@@ -134,7 +134,7 @@ export function evaluate(r: EmpireResult): Check[] {
   const months = monthsTo((h) => h.bandCaughtAt);
   checks.push({
     code: "newcomer",
-    label: `Cohorte du mois ${last} à la Puissance médiane de sa bande (toutes ses Maisons)`,
+    label: `Cohorte du mois ${last} hors de la première bande de Puissance`,
     target: "en 4 à 6 mois",
     value: months === null ? "jamais dans la simulation" : `${months.toFixed(1)} mois`,
     pass: months !== null && months >= 4 && months <= 6,

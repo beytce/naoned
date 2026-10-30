@@ -1,3 +1,5 @@
+import type { TerraAction } from "../game/types.js";
+
 /** The empire's view as `/api/empire` sends it (amounts in deniers, as strings). */
 
 export interface EmpireJob {
@@ -117,6 +119,25 @@ export interface EmpireView {
   workshopPlaces: Record<string, { slots: number; neighbourBps: number }>;
   courtLeft: number;
   identity: EmpireIdentity;
+  terra: {
+    week: number;
+    contesa: boolean;
+    entry: Record<string, number>;
+    placementUntil: number | null;
+    theatre: {
+      id: string;
+      band: number;
+      kind: string;
+      members: number;
+      companies: string[];
+    } | null;
+    roster: { week: number; members: string[] } | null;
+    rosterUntil: number | null;
+    nextContesa: boolean;
+    honours: { trophies: number; lustre: number; blazon: string[] } | null;
+    seals: number;
+    best: string | null;
+  };
   aid: {
     requests: { id: string; house: string; good: string; qty: number; at: number; value: string }[];
     merit: number;
@@ -257,4 +278,6 @@ export type EmpireAction =
   | { type: "empireSkill"; staffId: string; path: number }
   | { type: "empireLineage"; trait: string }
   | { type: "empireAsk"; good: string; qty: number }
-  | { type: "empireSupply"; requestId: string };
+  | { type: "empireSupply"; requestId: string }
+  | { type: "empireTerraJoin" }
+  | { type: "empireTerra"; action: TerraAction };

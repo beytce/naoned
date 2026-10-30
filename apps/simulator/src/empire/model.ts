@@ -73,7 +73,7 @@ export interface House {
   casa: number;
   /** The hour each Casa level was reached (index level − 1). */
   casaAt: number[];
-  /** The first day its Power reached the median of its band (all its houses, whatever their age). */
+  /** The first day its Power took it out of the first band. */
   bandCaughtAt?: number;
   workshops: Workshop[];
   counters: Map<string, number>;
@@ -256,9 +256,6 @@ export interface SimModel {
   /** The Terraferma (CADRAGE-v3 § 8): who plays a week, its ration and its rewards. */
   terra: {
     playBps: Record<Activity, number>;
-    rationDucats: number;
-    favour: [number, number];
-    seals: [number, number];
     favourValueDucats: number;
     sealValueDucats: number;
   };
