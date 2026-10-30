@@ -16,6 +16,7 @@ import { type Tx, fail, nextId, removeStock, transfer } from "../tx.js";
 import { advanceCarnet } from "./carnet.js";
 import { catchupCut } from "./catchup.js";
 import { buildMinutesOf, casaLevelOf, casaRequirementMet, levelCost } from "./curves.js";
+import { settleLearning } from "./knowledge.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import type { EmpireSettings } from "./settings.js";
 
@@ -56,6 +57,7 @@ function settleResearch(h: EmpireHouse, now: number): void {
 /** Applies the building sites (and the researches) that ended by `now`, in the order they end. */
 export function settleBuilds(h: EmpireHouse, now: number): void {
   settleResearch(h, now);
+  settleLearning(h, now);
   const done = h.builds.filter((b) => b.endsAt <= now).sort((a, b) => a.endsAt - b.endsAt);
   if (done.length === 0) return;
   h.builds = h.builds.filter((b) => b.endsAt > now);

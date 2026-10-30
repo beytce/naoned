@@ -254,6 +254,68 @@ export const venice1450Empire: EmpireSettingsInput = {
   },
   localTripsPerDay: 4,
   newcomers: { rawBonusBps: 2_000, untilCasa: 8 },
+  // The knowledge (CADRAGE-v3 § 3.5): four branches, four knowledges and two capstones each,
+  // from 30 minutes to 10 days; one place from the Casa 4, two from the 12.
+  knowledge: {
+    baseCostDucats: 300,
+    costGrowthBps: 25_000,
+    minutes: [30, 240, 1_440, 4_320, 14_400],
+    slotsAt: [4, 12],
+    branches: [
+      {
+        code: "abaco",
+        nodes: [
+          { code: "tariffa", effects: { taxCut: 50 } },
+          { code: "scritta", effects: { orderBonus: 500 } },
+          { code: "libro", effects: { book: 1_000 } },
+          { code: "cambio", effects: { taxCut: 50 } },
+        ],
+        capstones: [
+          { code: "partita", effects: { wagesCut: 1_500 } },
+          { code: "banco", effects: { orderBonus: 1_500 } },
+        ],
+      },
+      {
+        code: "navigazione",
+        nodes: [
+          { code: "bussola", effects: { speed: 1_000 } },
+          { code: "stiva", effects: { capacity: 1_000 } },
+          { code: "corriere", effects: { intel: 3_333 } },
+          { code: "carri", effects: { haul: 1_000 } },
+        ],
+        capstones: [
+          { code: "portolano", effects: { newsLive: 1 } },
+          { code: "convoglio", effects: { tripsExtra: 1 } },
+        ],
+      },
+      {
+        code: "arti",
+        nodes: [
+          { code: "mestiere", effects: { workshopYield: 500 } },
+          { code: "cantiere", effects: { buildTime: 1_000 } },
+          { code: "risparmio", effects: { inputs: 500 } },
+          { code: "finezza", effects: { quality: 500 } },
+        ],
+        capstones: [
+          { code: "bottega", effects: { moduleSlotsExtra: 1 } },
+          { code: "catena", effects: { neighbour: 10_000 } },
+        ],
+      },
+      {
+        code: "diplomazia",
+        nodes: [
+          { code: "lettere", effects: { charterCut: 2_000 } },
+          { code: "patti", effects: { counterCut: 1_000 } },
+          { code: "favori", effects: { carnetFavour: 2_000 } },
+          { code: "squadre", effects: { teamsExtra: 1 } },
+        ],
+        capstones: [
+          { code: "ambasciata", effects: { charterCut: 5_000 } },
+          { code: "signoria", effects: { carnetExtra: 1 } },
+        ],
+      },
+    ],
+  },
   // The Arti (CADRAGE-v3 § 3.5, the owner's choice of 30 October 2026): the chains of the theme.
   arte: {
     fromCasa: 7,

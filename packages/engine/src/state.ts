@@ -348,6 +348,9 @@ export interface EmpireHouse {
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */
   found?: Record<string, string[]>;
+  /** Its knowledges learnt, and those being learnt (settled at the next read). */
+  knowledge?: string[];
+  learning?: { code: string; startedAt: number; endsAt: number }[];
   /** Its Arte, and its minor Arte (CADRAGE-v3 § 3.5). */
   arte?: string;
   minorArte?: string;

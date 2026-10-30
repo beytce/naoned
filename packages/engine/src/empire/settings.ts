@@ -186,6 +186,38 @@ export const empireSettingsSchema = z.object({
       renounceLevel: 15,
       artes: [],
     }),
+  /**
+   * The knowledge (CADRAGE-v3 § 3.5): branches of knowledges learnt in order, each ending in a
+   * choice between two capstones, for good; learnt at the Scuola, its own places (by Casa), its cost
+   * and time growing with the depth in the branch. The whole tree takes years: one chooses.
+   */
+  knowledge: z
+    .object({
+      baseCostDucats: qty,
+      costGrowthBps: positive,
+      /** Minutes of a knowledge by its depth in the branch (index depth − 1). */
+      minutes: z.array(qty).min(1),
+      /** The Casa levels that open a place of learning each. */
+      slotsAt: z.array(positive),
+      branches: z.array(
+        z.object({
+          code: z.string(),
+          nodes: z.array(
+            z.object({ code: z.string(), effects: z.record(z.string(), z.number().int()) }),
+          ),
+          capstones: z.array(
+            z.object({ code: z.string(), effects: z.record(z.string(), z.number().int()) }),
+          ),
+        }),
+      ),
+    })
+    .prefault({
+      baseCostDucats: 0,
+      costGrowthBps: 10_000,
+      minutes: [0],
+      slotsAt: [],
+      branches: [],
+    }),
   /** Days without an action after which a house falls asleep (CADRAGE-v3 § 6). */
   sleepAfterDays: positive.prefault(14),
   workshops: z.object({

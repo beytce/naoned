@@ -38,7 +38,8 @@ export function powerOfHouse(h: EmpireHouse, s: EmpireSettings): number {
       casa: h.casa,
       workshopLevels: h.workshops.map((w) => w.level),
       counterLevels: Object.values(h.counters ?? {}),
-      moduleLevels: Object.values(h.modules ?? {}),
+      // The modules' levels, and each knowledge learnt as one level.
+      moduleLevels: [...Object.values(h.modules ?? {}), ...(h.knowledge ?? []).map(() => 1)],
       staffLevels: [],
       vehicles: (h.vehicles ?? []).length,
     },

@@ -48,6 +48,7 @@ import {
   startWorkshop,
   upgradeCounter,
 } from "./empire/house.js";
+import { startLearning } from "./empire/knowledge.js";
 import { deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
 import { buyEmpireVehicle, settleVoyages, startVoyage } from "./empire/voyages.js";
 import { fitModule, relaunchAll, relaunchWorkshop, swapWorkshops } from "./empire/workshops.js";
@@ -293,6 +294,7 @@ export type EmpireCommand =
   | { type: "empireCourt"; playerId: PlayerId; good: string; qty: number }
   | { type: "empireSwap"; playerId: PlayerId; a: string; b: string }
   | { type: "empireChooseArte"; playerId: PlayerId; arte: string; minor?: boolean }
+  | { type: "empireLearn"; playerId: PlayerId; code: string }
   | {
       type: "empireVoyage";
       playerId: PlayerId;
@@ -471,6 +473,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireChooseArte":
       chooseArte(tx, cmd.playerId, cmd.arte, cmd.minor);
+      break;
+    case "empireLearn":
+      startLearning(tx, cmd.playerId, cmd.code);
       break;
     case "empireVoyage":
       startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);

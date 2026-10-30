@@ -1,4 +1,5 @@
 import type { EmpireHouse } from "../state.js";
+import { knowledgeEffect } from "./knowledge.js";
 import { moduleEffectBps } from "./modules.js";
 import type { EmpireSettings } from "./settings.js";
 
@@ -31,6 +32,7 @@ export function houseEffect(
   // The workshop's own modules, at their researched level.
   const ws = place?.workshopId ? h.workshops.find((w) => w.id === place.workshopId) : undefined;
   for (const code of ws?.fitted ?? []) of(code, h.modules?.[code] ?? 0, true);
+  total += knowledgeEffect(h, effect, s);
   // The Arte: its own effects, and its chain's yield where the workshop is of it.
   const arte = s.arte.artes.find((a) => a.code === h.arte);
   total += arte?.effects[effect] ?? 0;
