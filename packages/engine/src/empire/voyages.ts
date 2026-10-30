@@ -3,6 +3,7 @@ import { type EmpireVoyage, HOUR_MS, type PlayerId, SINK_ACCOUNT, cashAccount } 
 import { type Tx, addStock, fail, inventoryLine, nextId, removeStock, transfer } from "../tx.js";
 import { houseEffect } from "./effects.js";
 import { empireSettings, openSite, ownHouse } from "./house.js";
+import { mudaDeparture } from "./mudaSail.js";
 import { priceAt, routeHours } from "./prices.js";
 import { gainXp } from "./staff.js";
 import { buyAt, counterLevel, fillOrders, homesOf, sellAt } from "./trade.js";
@@ -94,6 +95,8 @@ export function startVoyage(
   )
     fail("unknown_region");
   if (v.busyUntil > tx.now) fail("building_busy");
+  // A galley of the Muda leaves only with a place won, at its departure's hour.
+  const start = mudaDeparture(tx, playerId, vehicleId, v.type);
   const hold = applyBpsFloor(
     BigInt(spec.capacity),
     10_000 + houseEffect(h, "capacity", s, { vehicleId }),
@@ -114,7 +117,7 @@ export function startVoyage(
   const paid = before - (tx.s.accounts[cashAccount(playerId)] ?? 0n);
   const ownValue = ref !== undefined ? priceAt(ref, 10_000, s) * BigInt(own) : 0n;
   const hours = routeHours(from, to, spec.speedBps + houseEffect(h, "speed", s, { vehicleId }), s);
-  v.busyUntil = tx.now + 2 * hours * HOUR_MS;
+  v.busyUntil = start + 2 * hours * HOUR_MS;
   const voyage: EmpireVoyage = {
     id: nextId(tx, "y"),
     house: playerId,
@@ -123,7 +126,7 @@ export function startVoyage(
     qty: carried,
     from,
     to,
-    arrivesAt: tx.now + hours * HOUR_MS,
+    arrivesAt: start + hours * HOUR_MS,
     cost: paid + ownValue,
   };
   if (tx.s.empire) tx.s.empire.voyages = [...(tx.s.empire.voyages ?? []), voyage];

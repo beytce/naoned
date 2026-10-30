@@ -485,6 +485,16 @@ export const empireSettingsSchema = z.object({
       departuresPerWeek: positive,
       placesShareBps: bps,
       reserveDaysBps: bps,
+      /** The departures, by day from Monday (0) and hour in Venice: Tuesday and Friday at 18. */
+      departures: z
+        .array(z.object({ day: qty.max(6), hour: qty.max(23) }))
+        .min(1)
+        .prefault([
+          { day: 1, hour: 18 },
+          { day: 4, hour: 18 },
+        ]),
+      /** A place won lets its galley leave this long after the departure (it sails at its hour). */
+      passHours: positive.prefault(24),
     })
     .prefault({ vehicles: [], departuresPerWeek: 2, placesShareBps: 10_000, reserveDaysBps: 0 }),
   colleganza: z.object({

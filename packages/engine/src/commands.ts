@@ -52,6 +52,7 @@ import {
   upgradeCounter,
 } from "./empire/house.js";
 import { startLearning } from "./empire/knowledge.js";
+import { bidMuda, settleMuda } from "./empire/mudaSail.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
 import { deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
@@ -318,6 +319,8 @@ type EmpireCommandOf =
   | { type: "empireLineage"; playerId: PlayerId; trait: string }
   | { type: "empireAsk"; playerId: PlayerId; good: string; qty: number }
   | { type: "empireBuildShip"; playerId: PlayerId; vehicleType: string }
+  /** A bid for a place at the Muda's next departure, in deniers (0: taken back). */
+  | { type: "empireMudaBid"; playerId: PlayerId; vehicleId: string; amount: string }
   | { type: "empireFitShip"; playerId: PlayerId; vehicleId: string; slot: number; module: string }
   /** The Terraferma (CADRAGE-v3 § 8): enter the week's theatre (the cote from the server). */
   | { type: "empireTerraJoin"; playerId: PlayerId; rating?: number }
@@ -436,6 +439,12 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
   emit(tx, "player_reset", playerId);
 }
 
+/** An amount of deniers as a command carries it (a string of digits), or why not. */
+function toDeniers(amount: string): bigint {
+  if (typeof amount !== "string" || !/^\d{1,15}$/.test(amount)) fail("invalid_quantity");
+  return BigInt(amount);
+}
+
 function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   // The cargoes arrived by now sell first, every house's, in the order they came in.
   if (tx.ctx.settings.empire && tx.s.empire) {
@@ -443,6 +452,8 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
     // The deposits' extraction up to now, then the days' new ones.
     settleDeposits(tx);
     settleAid(tx);
+    // The Muda's departures passed: their incanti.
+    settleMuda(tx);
     // The week's Terraferma: last week's theatres closed and paid when the week turns.
     settleTerra(tx);
   }
@@ -534,6 +545,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireSupply":
       supplyAid(tx, cmd.playerId, cmd.requestId);
+      break;
+    case "empireMudaBid":
+      bidMuda(tx, cmd.playerId, cmd.vehicleId, toDeniers(cmd.amount));
       break;
     case "empireBuildShip":
       buildShip(tx, cmd.playerId, cmd.vehicleType);

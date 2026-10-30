@@ -369,6 +369,8 @@ export interface EmpireHouse {
   /** The Terraferma: the Seals of this week, its best tier ever (its honorary grade). */
   terraSeals?: { week: number; seals: number };
   terraBest?: string;
+  /** Places won at the Muda: its galley may leave until `until`, sailing at the departure's hour. */
+  mudaPasses?: { vehicleId: string; departure: number; until: number }[];
   /** The day of its last won Condotta paid in Seals. */
   condottaDay?: number;
   /** The Merit its entraide earned, the last lot it asked, what it supplied today (deniers). */
@@ -496,6 +498,15 @@ export interface EmpireTerra {
   >;
 }
 
+/** The Muda's incanto (CADRAGE-v3 § 12 bis): the bids for its next departures, held in escrow. */
+export interface EmpireMuda {
+  bids: { house: PlayerId; vehicleId: string; amount: Deniers; departure: number }[];
+  /** The last departure settled. */
+  last?: number;
+  /** The last departures' places and prices, for the view. */
+  lastResult?: { departure: number; places: number; reserve: Deniers; prices: Deniers[] };
+}
+
 /** A lot a partner asks its company for (CADRAGE-v3 § 7). */
 export interface EmpireAidRequest {
   id: string;
@@ -511,6 +522,7 @@ export interface EmpireState {
   /** The entraide's open requests. */
   aid?: EmpireAidRequest[];
   terra?: EmpireTerra;
+  muda?: EmpireMuda;
   voyages?: EmpireVoyage[];
   deposits?: EmpireDeposit[];
   /** The last day the deposits were drawn for. */
