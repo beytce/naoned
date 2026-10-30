@@ -70,6 +70,31 @@ export function EmpireOrbit({
             />
           );
         })}
+        {/* The neighbourhoods: two workshops side by side whose chain follows, a gold link. */}
+        {workshops.map((ws, i) => {
+          const o = workshops[(i + 1) % workshops.length];
+          if (!o || o === ws || (i + 1 === workshops.length && workshops.length < 3)) return null;
+          if ((o.region ?? "veneto") !== (ws.region ?? "veneto")) return null;
+          const feeds = (x: EmpireWorkshop, y: EmpireWorkshop) =>
+            Object.keys(recipeOf(p, y)?.inputs ?? {}).some(
+              (g) => g in (recipeOf(p, x)?.outputs ?? {}),
+            );
+          if (!feeds(ws, o) && !feeds(o, ws)) return null;
+          const a = at(i);
+          const b = at((i + 1) % workshops.length);
+          return (
+            <line
+              key={`n:${ws.id}`}
+              data-neighbours={`${ws.id}:${o.id}`}
+              x1={a.x}
+              y1={a.y}
+              x2={b.x}
+              y2={b.y}
+              stroke="rgb(var(--gold))"
+              strokeWidth="1"
+            />
+          );
+        })}
       </svg>
       <button
         type="button"
