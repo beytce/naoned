@@ -61,6 +61,7 @@ const action = z.discriminatedUnion("type", [
     type: z.literal("empireBuildWorkshop"),
     workshopType: z.string().max(40),
     recipe: z.string().max(40),
+    region: z.string().max(40).optional(),
   }),
   z.object({ type: z.literal("empireUpgrade"), workshopId: z.string().max(32) }),
   z.object({
@@ -73,13 +74,28 @@ const action = z.discriminatedUnion("type", [
     type: z.literal("empireSell"),
     good: z.string().max(40),
     qty: z.number().int().min(1).max(100_000),
+    region: z.string().max(40).optional(),
   }),
   z.object({
     type: z.literal("empireDeliver"),
     good: z.string().max(40),
     qty: z.number().int().min(1).max(100_000),
+    region: z.string().max(40).optional(),
   }),
   z.object({ type: z.literal("empireClaim"), index: z.number().int().min(0).max(40) }),
+  z.object({ type: z.literal("empireCharter"), region: z.string().max(40) }),
+  z.object({ type: z.literal("empireUpgradeCounter"), region: z.string().max(40) }),
+  z.object({ type: z.literal("empireBuyVehicle"), vehicleType: z.string().max(40) }),
+  z.object({
+    type: z.literal("empireVoyage"),
+    vehicleId: z.string().max(32),
+    from: z.string().max(40),
+    to: z.string().max(40),
+    good: z.string().max(40),
+    qty: z.number().int().min(1).max(100_000),
+  }),
+  z.object({ type: z.literal("empireResearch"), module: z.string().max(40) }),
+  z.object({ type: z.literal("empireTeam"), depositId: z.string().max(64) }),
 ]);
 
 export interface EmpireRouteDeps {

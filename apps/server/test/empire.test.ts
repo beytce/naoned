@@ -183,3 +183,17 @@ describe("the switch", () => {
     expect(joined.json().view.house.favour).toBe(12);
   });
 });
+
+describe("the empire beyond Venetia", () => {
+  it("answers the new actions through the route: a vehicle bought, a research refused", async () => {
+    const cookie = await login("ada@example.org");
+    await post(cookie, "/api/empire/join");
+    const body = (await get(cookie)).json();
+    expect(body.view.vehicles.mine).toHaveLength(2);
+    expect(body.view.regions.map((r: { code: string }) => r.code)).toContain("lombardia");
+    const res = await act(cookie, { type: "empireResearch", module: "hold" });
+    expect(res.json().error).toBe("no_build_slot");
+    const cart = await act(cookie, { type: "empireBuyVehicle", vehicleType: "cart" });
+    expect(cart.json().error).toBe("requirement_unmet");
+  });
+});

@@ -13,7 +13,7 @@ const dayOf = (now: number) => Math.floor(now / DAY_MS);
 const CATCH_UP_DAYS = 14;
 
 /** The teams a house sends out (CADRAGE-v3 § 3 bis): none before the Casa that opens them. */
-export function teamsOf(h: EmpireHouse, s: EmpireSettings): number {
+export function extractionTeams(h: EmpireHouse, s: EmpireSettings): number {
   const { teamsFromCasa, casaPerTeam } = s.deposits;
   return h.casa < teamsFromCasa ? 0 : 1 + Math.floor((h.casa - teamsFromCasa) / casaPerTeam);
 }
@@ -122,7 +122,7 @@ export function sendTeam(tx: Tx, playerId: PlayerId, depositId: string): void {
   const h = ownHouse(tx, playerId);
   const dep: EmpireDeposit | undefined = tx.s.empire?.deposits?.find((d) => d.id === depositId);
   if (!dep) fail("unknown_target");
-  const teams = teamsOf(h, s);
+  const teams = extractionTeams(h, s);
   if (teams === 0) fail("requirement_unmet");
   if (counterLevel(h, dep.region) <= 0 && effectOf(h.modules ?? {}, "range", s) <= 0)
     fail("unknown_region");

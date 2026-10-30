@@ -3,6 +3,7 @@ import {
   type EmpireSettingsInput,
   cashAccount,
   empireHouseAt,
+  empireView,
   levelCost,
   parseEmpireSettings,
 } from "../../src/index.js";
@@ -114,5 +115,19 @@ describe("the workshops of a region", () => {
     }
     expect(error(build(w, "mill", "mill_flour", "lombardia"))).toBe("no_room");
     expect(error(build(w, "mill", "mill_flour"))).toBe("");
+  });
+});
+
+describe("the regions in the view", () => {
+  it("say what each region asks: a charter, then the counter's next level", () => {
+    const w = world();
+    const at = () =>
+      empireView(w.ctx, w.state, "a", w.now)?.regions.find((r) => r.code === "lombardia");
+    expect(at()?.next).toMatchObject({ charter: true, level: 1, cost: levelCost(4, s) * 4n });
+    w.do({ type: "empireCharter", playerId: "a", region: "lombardia" });
+    expect(at()?.next).toBeNull();
+    expect(at()?.buildingUntil).toBe(w.now + 7 * HOUR);
+    w.advance(7 * HOUR);
+    expect(at()).toMatchObject({ counter: 1, next: { charter: false, level: 2 } });
   });
 });
