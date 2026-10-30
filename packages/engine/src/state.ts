@@ -334,11 +334,25 @@ export interface EmpireHouse {
   builds: EmpireBuild[];
   favour: number;
   seals: number;
+  /** What is left today of its private book of orders in Venetia. */
+  book?: { day: number; left: number };
+}
+
+/** A market of the empire: its pressure (bps of the reference) and what the Dogana took today. */
+export interface EmpireMarket {
+  pressureBps: number;
+  at: number;
+  day: number;
+  soldToday: number;
 }
 
 /** The persistent empire's part of a world (absent from the worlds of the monthly seasons). */
 export interface EmpireState {
   houses: Record<PlayerId, EmpireHouse>;
+  /** By "region:good". */
+  markets?: Record<string, EmpireMarket>;
+  /** The cities' common board, by "region:good": what is left of it today. */
+  boards?: Record<string, { day: number; left: number }>;
 }
 
 export interface WorldState {

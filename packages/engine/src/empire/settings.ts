@@ -76,6 +76,30 @@ export const empireSettingsSchema = z.object({
     .prefault({ capitalDucats: 0, workshops: [] }),
   /** The night queue: a workshop is relaunched for this many hours at most, for everyone. */
   queueHours: positive.prefault(12),
+  /**
+   * The markets of a region (calibrated at the 24-month simulator): the Dogana buys up to its depth
+   * a day (a base, and so much a house awake), the cities' common board holds so many units a day
+   * a house awake, of which the large houses reach only a share; the orders pay a premium.
+   */
+  markets: z
+    .object({
+      depthBase: qty,
+      depthPerHouse: qty,
+      boardPerHouse: qty,
+      smallShareBps: bps.max(10_000),
+      smallCasa: qty,
+      orderPremiumBps: bps,
+      taxBps: bps.max(10_000),
+    })
+    .prefault({
+      depthBase: 20,
+      depthPerHouse: 3,
+      boardPerHouse: 5,
+      smallShareBps: 5_000,
+      smallCasa: 10,
+      orderPremiumBps: 1_000,
+      taxBps: 300,
+    }),
   /** Days without an action after which a house falls asleep (CADRAGE-v3 § 6). */
   sleepAfterDays: positive.prefault(14),
   workshops: z.object({

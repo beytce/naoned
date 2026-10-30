@@ -2,6 +2,7 @@ import { type EmpireWorkshop, HOUR_MS, MINUTE_MS, type PlayerId } from "../state
 import { type Tx, addStock, fail, inventoryLine, removeStock } from "../tx.js";
 import { lotYieldBps } from "./curves.js";
 import { empireSettings, ownHouse } from "./house.js";
+import { highRecipeRaw } from "./recipes.js";
 
 function recipeOf(tx: Tx, ws: EmpireWorkshop) {
   const r = tx.ctx.theme.recipes.find((x) => x.code === ws.recipe && x.building === ws.type);
@@ -62,9 +63,21 @@ export function relaunchWorkshop(
   let add = Math.floor((tx.now + s.queueHours * HOUR_MS - queueEnd) / batchMs);
   for (const [good, per = 0] of Object.entries(r.inputs))
     if (per > 0) add = Math.min(add, Math.floor(inventoryLine(tx, playerId, good).available / per));
+  // A high recipe also eats Venetia's raw goods, the ones it does not make (CADRAGE-v3 § 12 bis).
+  const raws = s.highRecipes.goods.filter((g) => !(g in r.outputs));
+  const rawHeld = raws.reduce((n, g) => n + inventoryLine(tx, playerId, g).available, 0);
+  while (add > 0 && highRecipeRaw(ws.level, add, s) > rawHeld) add--;
   if (add <= 0) return;
   for (const [good, per = 0] of Object.entries(r.inputs))
     removeStock(tx, playerId, good, per * add, "production_input", ws.id);
+  let raw = highRecipeRaw(ws.level, add, s);
+  for (const g of [...raws].sort(
+    (a, b) => inventoryLine(tx, playerId, b).available - inventoryLine(tx, playerId, a).available,
+  )) {
+    const take = Math.min(raw, inventoryLine(tx, playerId, g).available);
+    removeStock(tx, playerId, g, take, "production_input", ws.id);
+    raw -= take;
+  }
   if (ws.job) ws.job.batches += add;
   else ws.job = { recipe: ws.recipe, startedAt: tx.now, batches: add, level: ws.level, batchMs };
 }
