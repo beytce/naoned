@@ -103,6 +103,9 @@ export interface House {
   /** Raw goods bought on the market, and how many of them a young house had made. */
   rawBought: number;
   rawBoughtFromYoung: number;
+  /** While young (Casa ≤ youngCasa): its receipts, and those of its raw goods sold in Venice. */
+  youngEarned: Deniers;
+  youngRawSold: Deniers;
   voyagesDone: number;
   /** What the cities paid it for orders, by mules or by voyages. */
   ordersValue: Deniers;

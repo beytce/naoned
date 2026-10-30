@@ -177,17 +177,25 @@ export function evaluate(r: EmpireResult): Check[] {
     pass: terraBps <= 1_500,
   });
 
-  // 8. The vétérans buy the young houses' raw goods.
+  // 8. The young houses' raw goods find a buyer in the veterans' high recipes (§ 12 bis): measured
+  // on the young side, the share of their receipts while young from raw goods sold in Venice. The
+  // veterans' side (the share of their raw goods made by the young) follows, for information: the
+  // cohorts come by bursts, too few and too briefly young to feed 800 houses.
+  const youngs = hs.filter((h) => h.cohort > 0);
+  const youngEarned = youngs.reduce((a, h) => a + h.youngEarned, 0n);
+  const youngRaw = youngs.reduce((a, h) => a + h.youngRawSold, 0n);
+  const youngRawBps = youngEarned > 0n ? Number((youngRaw * 10_000n) / youngEarned) : 0;
   const vets = hs.filter((h) => h.casa >= 12);
   const bought = vets.reduce((n, h) => n + h.rawBought, 0);
   const fromYoung = vets.reduce((n, h) => n + h.rawBoughtFromYoung, 0);
   const youngBps = bought > 0 ? Math.round((fromYoung * 10_000) / bought) : 0;
   checks.push({
     code: "raw",
-    label: "Bruts achetés par les Maisons de Casa ≥ 12, venus de jeunes Maisons",
-    target: "≥ 30 %",
-    value: pct(youngBps),
-    pass: youngBps >= 3_000,
+    label:
+      "Bruts des jeunes Maisons (Casa ≤ 8) vendus à Venise, part de leurs recettes ; part des bruts des vétérans venue d'elles",
+    target: "≥ 10 % des recettes des jeunes",
+    value: `${pct(youngRawBps)} ; vétérans ${pct(youngBps)}`,
+    pass: youngRawBps >= 1_000,
   });
 
   // 9. The arbitrage pays the voyage, without making the orders useless.

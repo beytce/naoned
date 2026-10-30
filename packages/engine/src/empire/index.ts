@@ -9,3 +9,4 @@ export * from "./deposits.js";
 export * from "./colleganza.js";
 export * from "./expedition.js";
 export * from "./corsairs.js";
+export * from "./recipes.js";

@@ -89,6 +89,13 @@ export const empireSettingsSchema = z.object({
   newcomers: z
     .object({ rawBonusBps: bps, untilCasa: qty })
     .prefault({ rawBonusBps: 0, untilCasa: 0 }),
+  /**
+   * From a workshop level, each unit made also eats Venetia's raw goods (CADRAGE-v3 § 12 bis):
+   * this share of a unit per level from the threshold. The veterans buy what the young make.
+   */
+  highRecipes: z
+    .object({ fromLevel: positive, rawPerLevelBps: bps, goods: z.array(z.string()) })
+    .prefault({ fromLevel: 1, rawPerLevelBps: 0, goods: [] }),
   salaries: z.object({
     /** The share of receipts paid in wages by the smallest house, then the largest. */
     minBps: bps.max(10_000),

@@ -221,6 +221,7 @@ export const venice1450Empire: EmpireSettingsInput = {
   },
   counters: { maxLevel: 10, bookStepBps: 4_000 },
   newcomers: { rawBonusBps: 2_000, untilCasa: 8 },
+  highRecipes: { fromLevel: 12, rawPerLevelBps: 1_000, goods: ["wheat", "clay", "wood", "salt"] },
   salaries: { minBps: 300, maxBps: 2_500, halfPower: 4_000 },
   power: {
     casa: 100,

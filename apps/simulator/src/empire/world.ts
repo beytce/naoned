@@ -129,6 +129,7 @@ export function receive(w: World, h: House, gross: Deniers, why: string, trade: 
   create(w, h, gross, why, trade);
   destroy(w, h, wagesOn(gross, power(w, h), w.s), "wages");
   h.recent[h.recent.length - 1] = (h.recent.at(-1) ?? 0n) + gross;
+  if (h.casa <= w.m.youngCasa) h.youngEarned += gross;
 }
 
 export function depthOf(w: World, region: string): number {
@@ -155,6 +156,8 @@ export function sellToMarket(
   const bonus = w.m.recipes[good] ? 0 : rawBonusBps(h.casa, w.s);
   const gross = applyBpsFloor(priceOf(w, mk) * BigInt(n), 10_000 + bonus);
   receive(w, h, gross, "market", trade);
+  if (h.casa <= w.m.youngCasa && region === "veneto" && w.s.highRecipes.goods.includes(good))
+    h.youngRawSold += gross;
   destroy(w, h, applyBpsFloor(gross, w.m.marketTaxBps), "tax");
   mk.lots.push({ qty: n, young: h.casa <= w.m.youngCasa });
   mk.pressure = pressureAfterTrade(mk.pressure, n, depthOf(w, region), "sell", w.s);

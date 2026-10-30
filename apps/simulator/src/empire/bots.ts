@@ -11,6 +11,7 @@ import {
   effectOf,
   expeditionSuccessBps,
   extract,
+  highRecipeRaw,
   levelCost,
   localBookOf,
   lotYieldBps,
@@ -87,6 +88,8 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
     sessionsInSight: 0,
     rawBought: 0,
     rawBoughtFromYoung: 0,
+    youngEarned: 0n,
+    youngRawSold: 0n,
     voyagesDone: 0,
     ordersValue: 0n,
     voyageMargin: 0n,
@@ -125,6 +128,22 @@ function rateOf(w: World, h: House, ws: { good: string; level: number }): number
   return (base * lotYieldBps(ws.level, w.s) * (10_000 + tools)) / 1e8;
 }
 
+/** The raw goods of Venetia a workshop's high recipe may eat: the listed ones but its own good. */
+function highRawGoods(w: World, ws: { good: string }): string[] {
+  return w.s.highRecipes.goods.filter((g) => g !== ws.good);
+}
+
+const stockOf = (h: House, goods: string[]) => goods.reduce((n, g) => n + (h.stock.get(g) ?? 0), 0);
+
+/** Takes `qty` of Venetia's raw goods from the stock, the most plentiful first. */
+function takeRaw(h: House, goods: string[], qty: number) {
+  let left = qty;
+  for (const g of [...goods].sort((a, b) => (h.stock.get(b) ?? 0) - (h.stock.get(a) ?? 0))) {
+    if (left <= 0) return;
+    left -= takeStock(h, g, left);
+  }
+}
+
 /** The workshops' output since the last relaunch, never past the queue (12 h): then relaunched. */
 function collect(w: World, h: House) {
   const until = Math.min(w.now, h.relaunchedAt + w.m.queueHours);
@@ -136,18 +155,33 @@ function collect(w: World, h: House) {
       if (recipe)
         for (const [g, per] of Object.entries(recipe))
           qty = Math.min(qty, Math.floor((h.stock.get(g) ?? 0) / per));
+      // A high recipe makes no more than its share of Venetia's raw goods allows.
+      const raws = highRawGoods(w, ws);
+      const have = stockOf(h, raws);
+      while (qty > 0 && highRecipeRaw(ws.level, qty, w.s) > have)
+        qty = Math.floor((qty * have) / highRecipeRaw(ws.level, qty, w.s));
       if (qty <= 0) continue;
       if (recipe) for (const [g, per] of Object.entries(recipe)) takeStock(h, g, qty * per);
+      takeRaw(h, raws, highRecipeRaw(ws.level, qty, w.s));
       addStock(h, ws.good, qty);
     }
   h.relaunchedAt = w.now;
-  // Inputs for the next queue, bought where the house is.
+  // Inputs for the next queue, bought where the house is; Venetia's raw goods, in Venice.
   const wanted = wantedIn(w, h);
   for (const ws of h.workshops) {
     const recipe = w.m.recipes[ws.good];
+    const need = Math.floor(rateOf(w, h, ws) * w.m.queueHours);
+    const raw = highRecipeRaw(ws.level, need, w.s);
+    if (raw > 0 && !pilesUp(w, h, ws.good)) {
+      const raws = highRawGoods(w, ws);
+      const missing = raw - stockOf(h, raws);
+      const cheapest = [...raws].sort((a, b) =>
+        Number(priceOf(w, market(w, "veneto", a)) - priceOf(w, market(w, "veneto", b))),
+      )[0];
+      if (missing > 0 && cheapest) buyFromMarket(w, h, "veneto", cheapest, missing);
+    }
     // No inputs for a good no city of its regions asks, nor for one that piles up.
     if (!recipe || !wanted.has(ws.good) || pilesUp(w, h, ws.good)) continue;
-    const need = Math.floor(rateOf(w, h, ws) * w.m.queueHours);
     for (const [g, per] of Object.entries(recipe)) {
       const missing = need * per - (h.stock.get(g) ?? 0);
       if (missing > 0) buyFromMarket(w, h, ws.region, g, missing);
@@ -260,14 +294,25 @@ function payOrder(w: World, h: House, value: Deniers, convoyBps: number, trade: 
   h.favour += Number(gross / (100n * DENIERS_PER_DUCAT)) * w.m.favourPer100Ducats;
 }
 
-/** What is left after the orders is sold at the best market among its counters, but the Casa's materials. */
+/**
+ * What is left after the orders is sold at the best market among its counters, but the Casa's
+ * materials and its own inputs. A young house sells its raw goods in Venice, inputs or not, while
+ * the price there is good: the veterans' high recipes buy them (CADRAGE-v3 § 12 bis).
+ */
 function sellSurplus(w: World, h: House) {
   const keep = nextCasaMaterials(w, h);
   const inputs = new Set(h.workshops.flatMap((x) => Object.keys(w.m.recipes[x.good] ?? {})));
+  const young = h.casa <= w.s.newcomers.untilCasa;
   for (const [good, qty] of h.stock) {
-    if (qty <= 0 || inputs.has(good)) continue;
     const spare = qty - (keep[good] ?? 0);
     if (spare <= 0) continue;
+    const venice = market(w, "veneto", good);
+    if (young && !w.m.recipes[good] && w.s.highRecipes.goods.includes(good)) {
+      if (priceOf(w, venice) >= venice.ref)
+        takeStock(h, good, sellToMarket(w, h, "veneto", good, spare, "market"));
+      continue;
+    }
+    if (inputs.has(good)) continue;
     let best = "veneto";
     let bestPrice = -1n;
     for (const region of homesOf(h, good)) {
