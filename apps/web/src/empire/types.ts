@@ -76,6 +76,7 @@ export interface EmpireView {
 }
 
 export interface EmpireQuote {
+  region: string;
   good: string;
   ref: string;
   price: string;

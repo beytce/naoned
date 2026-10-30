@@ -92,9 +92,57 @@ export function incomePerDay(h: EmpireHouse, now: number): Deniers {
   return full.reduce((a, x) => a + x, 0n) / BigInt(full.length);
 }
 
-function awakeHouses(tx: Tx): number {
+/** Houses awake present in a region: all of them in Venetia, those with a counter elsewhere. */
+function presentIn(
+  houses: Record<string, EmpireHouse>,
+  region: string,
+  now: number,
+  s: EmpireSettings,
+): number {
+  return Object.values(houses).filter(
+    (h) => !isAsleep(h, now, s) && (region === HOME || (h.counters?.[region] ?? 0) > 0),
+  ).length;
+}
+
+/** What a region's Dogana takes a day, and its cities' common board: sized on the houses there. */
+function marketSize(
+  houses: Record<string, EmpireHouse>,
+  region: string,
+  now: number,
+  s: EmpireSettings,
+) {
+  const present = presentIn(houses, region, now, s);
+  return {
+    depth: s.markets.depthBase + s.markets.depthPerHouse * present,
+    board: s.markets.boardPerHouse * present,
+  };
+}
+
+/** The house's counter level in a region: its Casa stands for one in Venetia. */
+export function counterLevel(h: EmpireHouse, region: string): number {
+  return region === HOME ? 1 : (h.counters?.[region] ?? 0);
+}
+
+/**
+ * Where a house holds a good (calibrated at the 24-month simulator): in Venice, and in the regions
+ * of the workshops that make it. Elsewhere, a voyage carries it.
+ */
+export function homesOf(tx: Tx, h: EmpireHouse, good: string): Set<string> {
+  const homes = new Set([HOME]);
+  for (const w of h.workshops) {
+    const r = tx.ctx.theme.recipes.find((x) => x.code === w.recipe && x.building === w.type);
+    if (r && good in r.outputs) homes.add(w.region ?? HOME);
+  }
+  return homes;
+}
+
+/** The region of a sale: one the house is present in, where it holds the good. */
+function checkPlace(tx: Tx, h: EmpireHouse, region: string, good: string) {
   const s = empireSettings(tx.ctx);
-  return Object.values(tx.s.empire?.houses ?? {}).filter((h) => !isAsleep(h, tx.now, s)).length;
+  const r = s.regions.find((x) => x.code === region);
+  if (!r || counterLevel(h, region) <= 0) fail("unknown_region");
+  if (!homesOf(tx, h, good).has(region)) fail("not_here");
+  return r;
 }
 
 /** A market as it stands now: its pressure come back toward the reference, its day's sales. */
@@ -120,25 +168,31 @@ function isRaw(tx: Tx, good: string): boolean {
 }
 
 /**
- * Sells to the Dogana of Venetia at the market's price, no more than its depth today: the young
- * houses' raw goods sell dearer; the Rialto's tax is taken. Returns what was sold.
+ * Sells to a region's Dogana at its market's price, no more than its depth today, where the house
+ * holds the good: the young houses' raw goods sell dearer; the tax is taken. Returns what was sold.
  */
-export function sellToDogana(tx: Tx, playerId: PlayerId, good: string, qty: number): number {
+export function sellToDogana(
+  tx: Tx,
+  playerId: PlayerId,
+  good: string,
+  qty: number,
+  region = HOME,
+): number {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   if (!Number.isInteger(qty) || qty <= 0) fail("invalid_quantity");
-  const r = regionOf(HOME, s);
+  const r = checkPlace(tx, h, region, good);
   const ref = r.produces[good] ?? r.demands[good];
   if (ref === undefined) fail("unknown_resource");
-  const mk = marketNow(tx, HOME, good);
-  const depth = s.markets.depthBase + s.markets.depthPerHouse * awakeHouses(tx);
+  const mk = marketNow(tx, region, good);
+  const { depth } = marketSize(tx.s.empire?.houses ?? {}, region, tx.now, s);
   const n = Math.min(qty, depth - mk.soldToday, inventoryLine(tx, playerId, good).available);
   if (n <= 0)
     fail(inventoryLine(tx, playerId, good).available <= 0 ? "insufficient_stock" : "no_liquidity");
   removeStock(tx, playerId, good, n, "empire_sale");
   const bonus = isRaw(tx, good) ? rawBonusBps(h.casa, s) : 0;
   const gross = applyBpsFloor(priceAt(ref, mk.pressureBps, s) * BigInt(n), 10_000 + bonus);
-  receive(tx, playerId, gross, `dogana:${good}`);
+  receive(tx, playerId, gross, `dogana:${region}:${good}`);
   transfer(
     tx,
     cashAccount(playerId),
@@ -153,45 +207,65 @@ export function sellToDogana(tx: Tx, playerId: PlayerId, good: string, qty: numb
 }
 
 /**
- * Delivers to the cities of Venetia: its private book first, at the reference (the anchor), then
- * the common board at the market's price, of which a large house reaches only a share; the orders
- * pay a premium. Returns what was delivered.
+ * Delivers to a region's cities, where the house holds the good: its counter's private book first,
+ * at the reference (the anchor), then the common board at the market's price, of which a large
+ * house reaches only a share; the orders pay a premium. Returns what was delivered.
  */
-export function deliverOrders(tx: Tx, playerId: PlayerId, good: string, qty: number): number {
+export function deliverOrders(
+  tx: Tx,
+  playerId: PlayerId,
+  good: string,
+  qty: number,
+  region = HOME,
+): number {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
   if (!Number.isInteger(qty) || qty <= 0) fail("invalid_quantity");
-  const ref = regionOf(HOME, s).demands[good];
+  const ref = checkPlace(tx, h, region, good).demands[good];
   if (ref === undefined) fail("unknown_resource");
   const day = dayOf(tx.now);
   let left = Math.min(qty, inventoryLine(tx, playerId, good).available);
   if (left <= 0) fail("insufficient_stock");
-  if (!h.book || h.book.day !== day) h.book = { day, left: localBookOf(HOME, 1, s) };
-  const book = Math.min(h.book.left, left);
-  h.book.left -= book;
+  const books = h.books ?? {};
+  h.books = books;
+  const mine =
+    books[region]?.day === day
+      ? (books[region] as { day: number; left: number })
+      : { day, left: localBookOf(region, counterLevel(h, region), s) };
+  books[region] = mine;
+  const book = Math.min(mine.left, left);
+  mine.left -= book;
   left -= book;
   let value = ref * BigInt(book);
   const boards = tx.s.empire?.boards ?? {};
   if (tx.s.empire) tx.s.empire.boards = boards;
-  const key = `${HOME}:${good}`;
+  const key = `${region}:${good}`;
   const open =
-    boards[key]?.day === day ? (boards[key]?.left ?? 0) : s.markets.boardPerHouse * awakeHouses(tx);
+    boards[key]?.day === day
+      ? (boards[key]?.left ?? 0)
+      : marketSize(tx.s.empire?.houses ?? {}, region, tx.now, s).board;
   const reach =
     h.casa <= s.markets.smallCasa
       ? open
       : applyBpsFloor(BigInt(open), 10_000 - s.markets.smallShareBps);
   const board = Math.min(Number(reach), left);
   boards[key] = { day, left: open - board };
-  if (board > 0) value += priceAt(ref, marketNow(tx, HOME, good).pressureBps, s) * BigInt(board);
+  if (board > 0) value += priceAt(ref, marketNow(tx, region, good).pressureBps, s) * BigInt(board);
   const delivered = book + board;
   if (delivered <= 0) fail("no_liquidity");
   removeStock(tx, playerId, good, delivered, "empire_sale");
-  receive(tx, playerId, applyBpsFloor(value, 10_000 + s.markets.orderPremiumBps), `orders:${good}`);
+  receive(
+    tx,
+    playerId,
+    applyBpsFloor(value, 10_000 + s.markets.orderPremiumBps),
+    `orders:${region}:${good}`,
+  );
   advanceCarnet(h, "deliver", delivered);
   return delivered;
 }
 
 export interface EmpireQuote {
+  region: string;
   good: string;
   ref: Deniers;
   /** What the Dogana pays now, before the young houses' bonus. */
@@ -204,30 +278,40 @@ export interface EmpireQuote {
   boardLeft: number;
 }
 
-/** Venetia's market as it stands now, for the view: pure, the state untouched. */
-export function empireQuotes(ctx: WorldContext, state: WorldState, now: number): EmpireQuote[] {
+/**
+ * The markets as a house sees them now, for the view (pure, the state untouched): Venetia's and
+ * those of its counters' regions; without a house, Venetia's.
+ */
+export function empireQuotes(
+  ctx: WorldContext,
+  state: WorldState,
+  now: number,
+  playerId?: string,
+): EmpireQuote[] {
   const s = ctx.settings.empire;
   if (!s) return [];
-  const r = regionOf(HOME, s);
+  const houses = state.empire?.houses ?? {};
+  const h = playerId ? houses[playerId] : undefined;
   const day = dayOf(now);
-  const awake = Object.values(state.empire?.houses ?? {}).filter(
-    (h) => !isAsleep(h, now, s),
-  ).length;
-  const depth = s.markets.depthBase + s.markets.depthPerHouse * awake;
-  const goods = [...new Set([...Object.keys(r.produces), ...Object.keys(r.demands)])];
-  return goods.map((good) => {
-    const ref = (r.demands[good] ?? r.produces[good]) as Deniers;
-    const mk = state.empire?.markets?.[`${HOME}:${good}`];
-    const pressure = mk ? pressureAfterHours(mk.pressureBps, (now - mk.at) / HOUR_MS, s) : 10_000;
-    const sold = mk && mk.day === day ? mk.soldToday : 0;
-    const board = state.empire?.boards?.[`${HOME}:${good}`];
-    return {
-      good,
-      ref,
-      price: priceAt(ref, pressure, s),
-      asked: good in r.demands,
-      depthLeft: Math.max(0, depth - sold),
-      boardLeft: board?.day === day ? board.left : s.markets.boardPerHouse * awake,
-    };
+  const regions = s.regions.filter((r) => r.code === HOME || (h?.counters?.[r.code] ?? 0) > 0);
+  return regions.flatMap((r) => {
+    const size = marketSize(houses, r.code, now, s);
+    const goods = [...new Set([...Object.keys(r.produces), ...Object.keys(r.demands)])];
+    return goods.map((good) => {
+      const ref = (r.demands[good] ?? r.produces[good]) as Deniers;
+      const mk = state.empire?.markets?.[`${r.code}:${good}`];
+      const pressure = mk ? pressureAfterHours(mk.pressureBps, (now - mk.at) / HOUR_MS, s) : 10_000;
+      const sold = mk && mk.day === day ? mk.soldToday : 0;
+      const board = state.empire?.boards?.[`${r.code}:${good}`];
+      return {
+        region: r.code,
+        good,
+        ref,
+        price: priceAt(ref, pressure, s),
+        asked: good in r.demands,
+        depthLeft: Math.max(0, size.depth - sold),
+        boardLeft: board?.day === day ? board.left : size.board,
+      };
+    });
   });
 }

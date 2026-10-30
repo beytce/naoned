@@ -340,8 +340,8 @@ export interface EmpireHouse {
   counters?: Record<string, number>;
   favour: number;
   seals: number;
-  /** What is left today of its private book of orders in Venetia. */
-  book?: { day: number; left: number };
+  /** What is left today of its private book of orders, by region. */
+  books?: Record<string, { day: number; left: number }>;
   carnet?: EmpireCarnet;
   /** Receipts of the last days, today last: to read the next step in days of income. */
   income?: { day: number; days: Deniers[] };

@@ -428,7 +428,7 @@ function Store({ p, busy, act }: Omit<SheetProps, "onClose">) {
       {goods.length === 0 && <p className="mt-1 text-sm text-cream-dim">{t.stock.empty}</p>}
       <ul className="mt-2 space-y-2">
         {goods.map(([good, qty]) => {
-          const q = p.market.find((m) => m.good === good);
+          const q = p.market.find((m) => m.region === "veneto" && m.good === good);
           return (
             <li
               key={good}

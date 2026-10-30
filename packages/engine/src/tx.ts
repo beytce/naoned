@@ -218,7 +218,8 @@ export type EngineErrorCode =
   | "not_empire_world"
   | "no_build_slot"
   | "requirement_unmet"
-  | "insufficient_favour";
+  | "insufficient_favour"
+  | "not_here";
 
 export class EngineError extends Error {
   constructor(

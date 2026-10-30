@@ -277,8 +277,8 @@ export type EmpireCommand =
   | { type: "empireUpgrade"; playerId: PlayerId; workshopId: string }
   | { type: "empireRelaunch"; playerId: PlayerId; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll"; playerId: PlayerId }
-  | { type: "empireSell"; playerId: PlayerId; good: string; qty: number }
-  | { type: "empireDeliver"; playerId: PlayerId; good: string; qty: number }
+  | { type: "empireSell"; playerId: PlayerId; good: string; qty: number; region?: string }
+  | { type: "empireDeliver"; playerId: PlayerId; good: string; qty: number; region?: string }
   | { type: "empireClaim"; playerId: PlayerId; index: number }
   | { type: "empireCharter"; playerId: PlayerId; region: string }
   | { type: "empireUpgradeCounter"; playerId: PlayerId; region: string };
@@ -426,10 +426,10 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       upgradeCounter(tx, cmd.playerId, cmd.region);
       break;
     case "empireSell":
-      sellToDogana(tx, cmd.playerId, cmd.good, cmd.qty);
+      sellToDogana(tx, cmd.playerId, cmd.good, cmd.qty, cmd.region);
       break;
     case "empireDeliver":
-      deliverOrders(tx, cmd.playerId, cmd.good, cmd.qty);
+      deliverOrders(tx, cmd.playerId, cmd.good, cmd.qty, cmd.region);
       break;
   }
 }

@@ -48,7 +48,7 @@ export function empirePayload(ctx: WorldContext, state: WorldState, playerId: st
     view,
     cash: state.accounts[cashAccount(playerId)] ?? 0n,
     stock: Object.fromEntries(Object.entries(inv).map(([g, l]) => [g, l.available])),
-    market: empireQuotes(ctx, state, now),
+    market: empireQuotes(ctx, state, now, playerId),
     catalog: catalogOf(ctx),
     casa: (ctx.settings.empire?.casa ?? []).map((c, i) => ({ level: i + 1, opens: c.opens })),
     goods: Object.fromEntries(ctx.theme.resources.map((r) => [r.code, r.name])),
