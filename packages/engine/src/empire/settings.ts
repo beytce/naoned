@@ -280,6 +280,29 @@ export const empireSettingsSchema = z.object({
       consiglieriMax: positive,
     })
     .prefault({ max: 25, rejoinDays: 3, capoAbsentDays: 7, consiglieriMax: 4 }),
+  /**
+   * The entraide (CADRAGE-v3 § 7): a partner asks a lot every `everyHours`, up to `lotPerCasa`
+   * units a Casa; another supplies it at Venice's reference price, no tax, after `minDays` in the
+   * company, up to `dailyDucatsPerCasa` a day; Merit for the supplier. A request lapses after
+   * `expireHours`.
+   */
+  aid: z
+    .object({
+      everyHours: positive,
+      lotPerCasa: positive,
+      minDays: qty,
+      dailyDucatsPerCasa: positive,
+      expireHours: positive,
+      meritPer100Ducats: qty,
+    })
+    .prefault({
+      everyHours: 8,
+      lotPerCasa: 20,
+      minDays: 3,
+      dailyDucatsPerCasa: 300,
+      expireHours: 24,
+      meritPer100Ducats: 10,
+    }),
   /** Days without an action after which a house falls asleep (CADRAGE-v3 § 6). */
   sleepAfterDays: positive.prefault(14),
   workshops: z.object({

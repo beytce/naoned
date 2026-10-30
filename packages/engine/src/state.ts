@@ -360,6 +360,13 @@ export interface EmpireHouse {
   /** Its knowledges learnt, and those being learnt (settled at the next read). */
   knowledge?: string[];
   learning?: { code: string; startedAt: number; endsAt: number }[];
+  /** Its company, as the server knows it, and since when it is in it (CADRAGE-v3 § 7). */
+  company?: string;
+  companySince?: number;
+  /** The Merit its entraide earned, the last lot it asked, what it supplied today (deniers). */
+  merit?: number;
+  askedAt?: number;
+  supplied?: { day: number; value: Deniers };
   /** Its Arte, and its minor Arte (CADRAGE-v3 § 3.5). */
   arte?: string;
   minorArte?: string;
@@ -454,8 +461,20 @@ export interface EmpireVoyage {
   cost: Deniers;
 }
 
+/** A lot a partner asks its company for (CADRAGE-v3 § 7). */
+export interface EmpireAidRequest {
+  id: string;
+  house: PlayerId;
+  company: string;
+  good: string;
+  qty: number;
+  at: number;
+}
+
 export interface EmpireState {
   houses: Record<PlayerId, EmpireHouse>;
+  /** The entraide's open requests. */
+  aid?: EmpireAidRequest[];
   voyages?: EmpireVoyage[];
   deposits?: EmpireDeposit[];
   /** The last day the deposits were drawn for. */
