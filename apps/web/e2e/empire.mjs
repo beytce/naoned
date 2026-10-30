@@ -121,6 +121,18 @@ try {
       await page.waitForTimeout(400);
     }
 
+    // The map zoomed out: Venice and the regions, Lombardy fogged until the Casa 6.
+    await page.locator("[data-tab=map]").click();
+    await page.waitForSelector("[data-map=empire]");
+    if ((await page.locator("[data-region]").count()) < 4) faults.push(`${label}: regions missing`);
+    await shot("9-carte");
+    await page.locator("[data-region=lombardia]").click();
+    await page.getByRole("heading", { name: /lombardie/i }).waitFor();
+    await shot("10-lombardie");
+    await page.locator("[data-tab=map]").click();
+    await page.locator("[data-region=veneto]").click();
+    await page.locator("[data-workshop]").first().waitFor();
+
     // A new workshop on the free place: the brickworks of the Casa 2.
     await page
       .getByRole("button", { name: /nouvel atelier/i })

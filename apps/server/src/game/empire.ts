@@ -13,12 +13,12 @@ import { balanceOf } from "./house.js";
 import { toJson } from "./serialize.js";
 import type { GameWorld } from "./world.js";
 
-/** Venetia's goods in the socle: what its workshops make, and what they make it from. */
+/** The goods of the empire's regions: what their workshops make, and what they make it from. */
 function catalogOf(ctx: WorldContext) {
-  const s = ctx.settings.empire;
-  const veneto = s?.regions.find((r) => r.code === "veneto");
-  if (!veneto) return [];
-  const goods = new Set([...Object.keys(veneto.produces), ...Object.keys(veneto.demands)]);
+  const regions = ctx.settings.empire?.regions ?? [];
+  const goods = new Set(
+    regions.flatMap((r) => [...Object.keys(r.produces), ...Object.keys(r.demands)]),
+  );
   const useful = ctx.theme.recipes.filter((r) => Object.keys(r.outputs).some((g) => goods.has(g)));
   // One step up the chains: what those recipes need (the flour of the bread).
   for (const r of useful) for (const g of Object.keys(r.inputs)) goods.add(g);

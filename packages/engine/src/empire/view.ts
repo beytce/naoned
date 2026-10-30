@@ -51,8 +51,10 @@ export interface EmpireView {
     | null;
   /** Each workshop's next level: null at the Casa's, or at the top. */
   upgrades: Record<string, EmpireSite | null>;
-  /** A new workshop: null without a free place. */
+  /** A new workshop in Venetia: null without a free place. */
   newWorkshop: EmpireSite | null;
+  /** A new workshop's site anywhere (its region's places aside). */
+  workshopSite: EmpireSite;
   buildSlots: number;
   workshopSlots: number;
   /** Back after half a day or more: what the queues made and the sites that ended meanwhile. */
@@ -111,6 +113,9 @@ export interface EmpireRegionView {
   charterFavour: number;
   hoursFromVenice: number;
   workshopSlots: number;
+  /** The goods it makes cheaply (a workshop makes no other raw good there) and those it asks. */
+  produces: string[];
+  demands: string[];
   /** Its counter's level (Venetia: one, the Casa's), 0 without. */
   counter: number;
   /** A counter's site under way there: its end. */
@@ -202,6 +207,13 @@ export function empireView(
   // Venetia's places, the Casa's: the regions' are their counters'.
   const pending = house.builds.filter((b) => b.kind === "newWorkshop" && !b.region).length;
   const inVenetia = house.workshops.filter((w) => regionOfWorkshop(w) === "veneto").length;
+  const workshopSite = site(
+    levelCost(1, s),
+    buildMinutesOf(1, s),
+    1,
+    share((h) => h.workshops.length > 0),
+    s,
+  );
   return {
     house,
     power,
@@ -228,16 +240,8 @@ export function empireView(
         }
       : null,
     upgrades,
-    newWorkshop:
-      inVenetia + pending < line.workshopSlots
-        ? site(
-            levelCost(1, s),
-            buildMinutesOf(1, s),
-            1,
-            share((h) => h.workshops.length > 0),
-            s,
-          )
-        : null,
+    newWorkshop: inVenetia + pending < line.workshopSlots ? workshopSite : null,
+    workshopSite,
     buildSlots: line.buildSlots,
     workshopSlots: line.workshopSlots,
     carnet: carnetPreview(ctx, playerId, house, now, s),
@@ -291,6 +295,8 @@ function regionsOf(house: EmpireHouse, s: EmpireSettings): EmpireRegionView[] {
       charterFavour: r.charterFavour,
       hoursFromVenice: r.hoursFromVenice,
       workshopSlots: workshopPlaces(house, r.code, s) || r.workshopSlots,
+      produces: Object.keys(r.produces),
+      demands: Object.keys(r.demands),
       counter,
       buildingUntil: site?.endsAt ?? null,
       next,

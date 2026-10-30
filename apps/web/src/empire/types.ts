@@ -10,6 +10,7 @@ export interface EmpireJob {
 
 export interface EmpireWorkshop {
   id: string;
+  region?: string;
   type: string;
   recipe: string;
   level: number;
@@ -17,7 +18,8 @@ export interface EmpireWorkshop {
 }
 
 export interface EmpireBuild {
-  kind: "casa" | "newWorkshop" | "upgrade";
+  kind: "casa" | "newWorkshop" | "upgrade" | "counter";
+  region?: string;
   level: number;
   workshopId?: string;
   workshopType?: string;
@@ -47,6 +49,8 @@ export interface EmpireView {
     lastActionAt: number;
     workshops: EmpireWorkshop[];
     builds: EmpireBuild[];
+    counters?: Record<string, number>;
+    modules?: Record<string, number>;
     favour: number;
     seals: number;
   };
@@ -64,6 +68,7 @@ export interface EmpireView {
     | null;
   upgrades: Record<string, EmpireSite | null>;
   newWorkshop: EmpireSite | null;
+  workshopSite: EmpireSite;
   buildSlots: number;
   workshopSlots: number;
   carnet: {
@@ -73,6 +78,66 @@ export interface EmpireView {
     windUntil: number | null;
   };
   away: { since: number; ready: Record<string, number>; sitesDone: number } | null;
+  regions: EmpireRegion[];
+  vehicles: {
+    shop: {
+      type: string;
+      casa: number;
+      cost: string;
+      capacity: number;
+      regions: string[];
+      speedBps: number;
+    }[];
+    mine: { id: string; type: string; busyUntil: number; capacity: number }[];
+    voyages: EmpireVoyage[];
+    haulPerDay: number;
+  };
+  research: {
+    slots: number;
+    running: { code: string; level: number; startedAt: number; endsAt: number }[];
+    modules: {
+      code: string;
+      kind: string;
+      effect: string;
+      level: number;
+      next: EmpireSite | null;
+      plans: number;
+    }[];
+  };
+  deposits: {
+    id: string;
+    region: string;
+    good: string;
+    stock: number;
+    teams: number;
+    mine: boolean;
+  }[];
+  teams: { max: number; used: number };
+}
+
+export interface EmpireRegion {
+  code: string;
+  casa: number;
+  charterFavour: number;
+  hoursFromVenice: number;
+  workshopSlots: number;
+  produces: string[];
+  demands: string[];
+  counter: number;
+  buildingUntil: number | null;
+  next: (EmpireSite & { charter: boolean }) | null;
+}
+
+export interface EmpireVoyage {
+  id: string;
+  house: string;
+  vehicleId: string;
+  good: string;
+  qty: number;
+  from: string;
+  to: string;
+  arrivesAt: number;
+  cost: string;
 }
 
 export interface EmpireQuote {
@@ -109,10 +174,16 @@ export interface EmpirePayload {
 
 export type EmpireAction =
   | { type: "empireBuildCasa" }
-  | { type: "empireBuildWorkshop"; workshopType: string; recipe: string }
+  | { type: "empireBuildWorkshop"; workshopType: string; recipe: string; region?: string }
   | { type: "empireUpgrade"; workshopId: string }
   | { type: "empireRelaunch"; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll" }
-  | { type: "empireSell"; good: string; qty: number }
-  | { type: "empireDeliver"; good: string; qty: number }
-  | { type: "empireClaim"; index: number };
+  | { type: "empireSell"; good: string; qty: number; region?: string }
+  | { type: "empireDeliver"; good: string; qty: number; region?: string }
+  | { type: "empireClaim"; index: number }
+  | { type: "empireCharter"; region: string }
+  | { type: "empireUpgradeCounter"; region: string }
+  | { type: "empireBuyVehicle"; vehicleType: string }
+  | { type: "empireVoyage"; vehicleId: string; from: string; to: string; good: string; qty: number }
+  | { type: "empireResearch"; module: string }
+  | { type: "empireTeam"; depositId: string };
