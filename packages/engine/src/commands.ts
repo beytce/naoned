@@ -34,6 +34,14 @@ import {
 import { standForDoge, voteDoge } from "./doge.js";
 import { knownTrait } from "./dynasty.js";
 import { type Effects, emptyEffects } from "./effects.js";
+import {
+  empireJoin,
+  ownHouse,
+  settleBuilds,
+  startCasa,
+  startUpgrade,
+  startWorkshop,
+} from "./empire/house.js";
 import { joinFamily, leaveFamily } from "./families.js";
 import { buildFondaco } from "./fondaci.js";
 import {
@@ -241,7 +249,15 @@ export type Command =
       vehicleId: string;
     }
   | TerraCommand
-  | { type: "tick" };
+  | { type: "tick" }
+  | EmpireCommand;
+
+/** The persistent empire's commands (CADRAGE-v3 § 13, the socle); refused without `empire`. */
+export type EmpireCommand =
+  | { type: "empireJoin"; playerId: PlayerId }
+  | { type: "empireBuildCasa"; playerId: PlayerId }
+  | { type: "empireBuildWorkshop"; playerId: PlayerId; workshopType: string; recipe: string }
+  | { type: "empireUpgrade"; playerId: PlayerId; workshopId: string };
 
 export type DecideResult =
   | { ok: true; state: WorldState; effects: Effects }
@@ -343,8 +359,37 @@ function resetPlayer(tx: Tx, playerId: PlayerId): void {
   emit(tx, "player_reset", playerId);
 }
 
+function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
+  if (cmd.type === "empireJoin") {
+    empireJoin(tx, cmd.playerId);
+    return;
+  }
+  const h = ownHouse(tx, cmd.playerId);
+  settleBuilds(h, tx.now);
+  h.lastActionAt = tx.now;
+  const player = tx.s.players[cmd.playerId];
+  if (player) player.lastActionAt = tx.now;
+  switch (cmd.type) {
+    case "empireBuildCasa":
+      startCasa(tx, cmd.playerId);
+      break;
+    case "empireBuildWorkshop":
+      startWorkshop(tx, cmd.playerId, cmd.workshopType, cmd.recipe);
+      break;
+    case "empireUpgrade":
+      startUpgrade(tx, cmd.playerId, cmd.workshopId);
+      break;
+  }
+}
+
+const isEmpire = (cmd: Command): cmd is EmpireCommand => cmd.type.startsWith("empire");
+
 function apply(tx: Tx, cmd: Command): void {
   const { ctx } = tx;
+  if (isEmpire(cmd)) {
+    applyEmpire(tx, cmd);
+    return;
+  }
   if (cmd.type === "tick") {
     tick(tx);
     return;

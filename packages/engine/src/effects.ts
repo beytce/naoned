@@ -3,6 +3,9 @@ import type { AccountId, OrderId, PlayerId } from "./state.js";
 import type { ResourceCode } from "./theme.js";
 
 export type LedgerReason =
+  | "empire_build"
+  | "empire_sale"
+  | "empire_wages"
   | "starting_capital"
   | "city_sale"
   | "criee_sale"
@@ -106,6 +109,8 @@ export interface LedgerEntry {
 }
 
 export type StockReason =
+  | "empire_build"
+  | "empire_sale"
   | "starting_kit"
   | "fondaco_build"
   | "production_input"

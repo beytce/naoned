@@ -302,8 +302,49 @@ export interface MudaState {
   bought: Record<PlayerId, Record<string, number>>;
 }
 
+/** A workshop of the empire (CADRAGE-v3 § 3.2): a building of the theme, its recipe, its level. */
+export interface EmpireWorkshop {
+  id: string;
+  type: BuildingType;
+  recipe: string;
+  level: number;
+  /** The night queue: lots queued from `startedAt`, their inputs already taken. */
+  job: ProductionJob | null;
+}
+
+/** A building site: it ends at `endsAt`, settled at the next read. */
+export interface EmpireBuild {
+  kind: "casa" | "newWorkshop" | "upgrade";
+  /** The level it builds. */
+  level: number;
+  /** The workshop it raises, or the new workshop's building and recipe. */
+  workshopId?: string;
+  workshopType?: BuildingType;
+  recipe?: string;
+  startedAt: number;
+  endsAt: number;
+}
+
+/** A house of the persistent empire: what it has built, never reset. */
+export interface EmpireHouse {
+  casa: number;
+  joinedAt: number;
+  lastActionAt: number;
+  workshops: EmpireWorkshop[];
+  builds: EmpireBuild[];
+  favour: number;
+  seals: number;
+}
+
+/** The persistent empire's part of a world (absent from the worlds of the monthly seasons). */
+export interface EmpireState {
+  houses: Record<PlayerId, EmpireHouse>;
+}
+
 export interface WorldState {
   seq: number;
+  /** The persistent empire (CADRAGE-v3), in a world whose settings carry it. */
+  empire?: EmpireState;
   players: Record<PlayerId, Player>;
   buildings: Record<BuildingId, Building>;
   inventories: Record<PlayerId, Record<ResourceCode, InventoryLine>>;

@@ -1,4 +1,4 @@
-import type { Theme, WorldSettingsInput } from "../src/index.js";
+import type { EmpireSettingsInput, Theme, WorldSettingsInput } from "../src/index.js";
 import { venice1450 } from "../src/index.js";
 
 /**
@@ -340,7 +340,7 @@ export const testTerraferma = {
 };
 
 /** The persistent empire (CADRAGE-v3), frozen for the tests: five Casa levels, three regions. */
-export const testEmpire = {
+export const testEmpire: EmpireSettingsInput = {
   casa: [
     { costDucats: 0, buildMinutes: 0, workshopSlots: 4, buildSlots: 1, researchSlots: 0 },
     { costDucats: 10_000, buildMinutes: 2, workshopSlots: 5, buildSlots: 1, researchSlots: 0 },

@@ -214,7 +214,10 @@ export type EngineErrorCode =
   | "night"
   | "too_few_humans"
   | "already_ranked"
-  | "already_paid";
+  | "already_paid"
+  | "not_empire_world"
+  | "no_build_slot"
+  | "requirement_unmet";
 
 export class EngineError extends Error {
   constructor(

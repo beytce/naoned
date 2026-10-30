@@ -67,6 +67,17 @@ const moduleDef = z.object({
 
 export const empireSettingsSchema = z.object({
   casa: z.array(casaLevel).min(1),
+  /** What a new house is given: its capital, and its first workshops (a building of the theme and its recipe). */
+  start: z
+    .object({
+      capitalDucats: qty,
+      workshops: z.array(z.object({ type: z.string(), recipe: z.string() })),
+    })
+    .prefault({ capitalDucats: 0, workshops: [] }),
+  /** The night queue: a workshop is relaunched for this many hours at most, for everyone. */
+  queueHours: positive.prefault(12),
+  /** Days without an action after which a house falls asleep (CADRAGE-v3 § 6). */
+  sleepAfterDays: positive.prefault(14),
   workshops: z.object({
     /** k of Y(n) = n × (1 + k × (n − 1)), in bps (1 500 = 0,15). */
     yieldStepBps: bps,
