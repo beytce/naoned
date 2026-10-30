@@ -15,6 +15,8 @@ Un seul service : le serveur Fastify sert l'API (`/api/…`) et l'application we
 | `VAPID_SUBJECT` | non | Contact de l'émetteur, par défaut `mailto:contact@comptoirs.app` |
 | `ADMIN_EMAILS` | non | Adresses (séparées par des virgules) autorisées sur `/admin` : rétention, échanges suspects, répétition de fin de saison, attribution du Pass |
 | `ALERT_WEBHOOK_URL` | non | Webhook Discord ou Slack : alerte si le monde est bloqué, si une erreur serveur survient, si le grand livre a un écart ou lors d'une relève de déploiement |
+| `WORLD_KIND` | non | `season` par défaut (les saisons mensuelles) ; `empire` ouvre le monde persistant de CADRAGE-v3 (développement, e2e) |
+| `EMPIRE_FROM` | non | La bascule (instant ISO) : passé cet instant, le mois qui se clôt laisse place à l'empire, pour de bon. Absente par défaut ; ne la régler en production que sur décision du porteur |
 | `PORT` | non | Fourni par Railway |
 | `NODE_ENV` | non | `production` (déjà fixé dans le Dockerfile) |
 
@@ -78,12 +80,18 @@ Voir `docs/audit-securite-2026-10.md`. En production, le serveur :
 
 L'image tourne sous l'utilisateur `node`, pas `root`. La CI échoue si `pnpm audit --prod` signale une vulnérabilité haute.
 
+### Le monde de l'empire (CADRAGE-v3)
+
+Avec `WORLD_KIND=empire`, ou après l'instant de `EMPIRE_FROM`, le serveur ouvre le monde « Venise 1450 · L'empire » : jamais borné par un mois (`ends_at` garde la date du 31 décembre 9999, que le moteur ignore), sans clôture de saison ni rollover. Les ateliers, la file de nuit et les chantiers se règlent à la lecture ; le tick n'y fait rien. Le client le reconnaît par `GET /api/empire` (`kind: "empire"`) et joue l'écran de l'empire ; les commandes des saisons mensuelles y sont refusées. En rejoignant l'empire, une Maison reprend son Influence en Faveur, un pour un.
+
 ## En local
 
 ```sh
 pnpm install
 pnpm dev   # serveur sur :3000 (PGlite dans apps/server/.data), web sur :5173
 ```
+
+Le socle de l'empire : `WORLD_KIND=empire pnpm dev` (sur une base neuve, ou à côté d'un monde mensuel déjà ouvert : le serveur prend le monde ouvert de l'empire, ou le crée). Son parcours de bout en bout : `pnpm --filter @comptoirs/web build && pnpm --filter @comptoirs/web e2e:empire`.
 
 Ouvrir http://localhost:5173. Sans `RESEND_API_KEY`, l'e-mail de connexion est affiché dans le terminal du serveur : copier le lien dans le navigateur.
 

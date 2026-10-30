@@ -268,7 +268,7 @@ La profondeur s'ouvre progressivement, chaque fois avec un objectif du guide :
 ### 4.2 Sans culpabiliser
 
 - **Supprimés** : le coffre quotidien et sa série, les tâches du jour, les produits frais, le bonus de retardataire.
-- **Le Carnet de la semaine** les remplace : 10 à 12 objectifs à remplir n'importe quand du lundi au dimanche, et deux à rattraper de la semaine précédente.
+- **Le Carnet de la semaine** les remplace : 10 à 12 objectifs à remplir n'importe quand du lundi au dimanche, et deux à rattraper de la semaine précédente. Chaque objectif rapporte de la Faveur, le carnet plein un Sceau ; jamais de ducats ni de rendement (décision du porteur, 30 octobre 2026).
 - **Le retour du marchand** : après une absence, un résumé (Annales, compagnie, prix) et un vent en poupe (les objectifs du Carnet comptent double pendant 3 jours après 7 jours d'absence).
 
 ### 4.3 Le calendrier
@@ -514,6 +514,13 @@ Chaque étape fait l'objet d'un plan, validé avant le code.
    - le Carnet de la semaine ;
    - la file de nuit de 12 h ;
    - les Maisons endormies.
+
+   *Fait le 30 octobre 2026*, dans un monde « empire » qui vit à côté du monde mensuel jusqu'à la bascule (décision du porteur) :
+   - moteur : `packages/engine/src/empire/` (house, workshops, trade, carnet, view), commandes `empire*` ;
+   - serveur : `WORLD_KIND=empire`, routes `/api/empire` ;
+   - écran Lagune : `apps/web/src/empire/`, parcours `e2e:empire`.
+
+   Venise commence avec trois ateliers (argile, bois, scierie) et 500 ducats : la quatrième place est le premier choix, la briqueterie de la Casa 2. La bascule (`EMPIRE_FROM`) existe, désactivée : elle ne s'active en production que sur décision du porteur.
 4. **L'étendue et le négoce** : les comptoirs, la Lombardie et le Frioul, les marchés régionaux et les nouvelles datées, le chariot et le burchio, les modules de négoce et la recherche ; l'exploitation des gisements.
 5. **L'identité** : l'Arte, les savoirs, le personnel et la famille, les qualités et les voisinages d'ateliers.
 6. **La compagnie** : rôles, succession, entraide, Condotta à paliers, puis la Contesa et les théâtres de la Terraferme.

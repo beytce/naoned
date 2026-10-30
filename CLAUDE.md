@@ -6,7 +6,7 @@ Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage qui fait
 - Monorepo pnpm : apps/web (React + Vite + Tailwind, PWA), apps/server (Node + Fastify), apps/simulator (bots en mémoire, sortie CSV), packages/engine (logique pure en TypeScript).
 - PostgreSQL via Drizzle ORM, migrations versionnées.
 - Tests : Vitest. Temps réel : WebSocket.
-- Commandes : `pnpm dev`, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm sim` (simulation, rapport dans apps/simulator/out/report.md ; le simulateur de 24 mois par cohortes est à construire, CADRAGE-v3 § 13).
+- Commandes : `pnpm dev` (`WORLD_KIND=empire pnpm dev` pour le monde persistant), `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm sim` (saisons mensuelles, rapport dans apps/simulator/out/report.md), `pnpm --filter @comptoirs/simulator empire` (simulateur de 24 mois par cohortes, rapport dans apps/simulator/out/empire.md), `pnpm --filter @comptoirs/web e2e:empire` (parcours de l'empire, après le build du web).
 - Base locale : PGlite (`DATABASE_URL=pglite:…`) en dev et en test ; PostgreSQL en production. Nouvelle table → modifier apps/server/src/db/schema.ts puis `pnpm --filter @comptoirs/server db:generate --name <nom>`.
 - Déploiement : un seul service Railway (Dockerfile), voir docs/deploiement.md.
 
@@ -25,7 +25,8 @@ Jeu de commerce multijoueur 2D de niche, web/PWA (PC + mobile). Cadrage qui fait
 ## Façon de travailler
 - Commencer chaque tâche en mode plan, attendre validation avant de coder.
 - Écrire les tests avant le code pour packages/engine. Les tests du moteur utilisent la fixture figée test/fixture.ts, jamais les paramètres de Venise.
-- Tout changement d'équilibrage se valide au simulateur (`pnpm sim`, puis le simulateur de 24 mois dès qu'il existe : toutes les graines conformes) et se documente dans docs/calibration.md.
+- Tout changement d'équilibrage se valide au simulateur de 24 mois (toutes les graines) et se documente dans docs/calibration.md.
+- Le socle de l'empire (CADRAGE-v3 § 13, étape 3) vit à côté du monde mensuel : moteur `packages/engine/src/empire/` (commandes `empire*`), routes `/api/empire`, écran `apps/web/src/empire/`. La bascule (`EMPIRE_FROM`) ne s'active en production que sur décision du porteur.
 - Petits commits, un par fonctionnalité.
 - Hors périmètre MVP : noter dans IDEAS.md, ne pas coder.
 - Refonte totale du 29 octobre 2026 (docs/refonte-2026-10-29/ : synthèse, arbitrages du porteur, notes d'expert) : toute mécanique suit CADRAGE-v3 et son chemin (§ 13), une étape à la fois, chacune avec son plan validé. Les gels et chantiers antérieurs (recommandations du 20 octobre, plan de rupture du 27 octobre) sont clos ; une idée hors du chemin va dans IDEAS.md.

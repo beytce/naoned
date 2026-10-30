@@ -7,75 +7,75 @@
 | Cible | Visée | Graine 1 | Graine 2 | Graine 3 |
 | --- | --- | --- | --- | --- |
 | Calendrier de la Casa (cohorte 0), entre la moitié et le double de la cible (à 2 jours près au début) | 0 palier hors bornes | ✓ tous dans les bornes | ✓ tous dans les bornes | ✓ tous dans les bornes |
-| Cohorte du mois 12 plus rapide jusqu'à la Casa 10 | 20 à 40 % plus vite | ✗ 10 % plus vite | ✗ 19 % plus vite | ✓ 24 % plus vite |
-| Tournées avec un objectif à moins de 24 h | ≥ 90 % | ✓ 92.7 % | ✓ 94.0 % | ✓ 95.6 % |
-| Prochain palier de Casa, en jours de revenu (médiane de chaque mois) | 2 à 7 chaque mois | ✗ 4.4 à 9.4 | ✗ 4.5 à 8.7 | ✗ 5.4 à 9.5 |
-| Cohorte du mois 12 à la Puissance médiane de sa bande (Maisons plus anciennes) | en 4 à 6 mois | ✗ 1.9 mois (hors absents : 1.8 mois) | ✗ 1.0 mois (hors absents : 1.0 mois) | ✗ 2.2 mois (hors absents : 2.2 mois) |
-| Indice des prix | 80 à 130 | ✓ 86 à 101 | ✓ 86 à 101 | ✓ 85 à 101 |
-| Puits ÷ sources (médiane des mois), Maisons de moins de 3 mois puis plus anciennes | 0,6–0,8 puis 0,9–1,0 | ✗ 0.81 puis 0.97 | ✗ 0.84 puis 1.01 | ✗ 0.84 puis 0.98 |
-| Part de la Terraferme dans la progression | ≤ 15 % | ✓ 0.1 % | ✓ 0.1 % | ✓ 0.1 % |
-| Bruts des jeunes Maisons (Casa ≤ 8) vendus à Venise, part de leurs recettes ; part des bruts des vétérans venue d'elles | ≥ 10 % des recettes des jeunes | ✗ 6.0 % ; vétérans 1.0 % | ✗ 5.6 % ; vétérans 0.8 % | ✗ 5.9 % ; vétérans 0.8 % |
-| Marge moyenne d'un voyage, et part des commandes dans les recettes | marge > 0, commandes ≥ 25 % | ✓ 721 d par voyage, commandes 35.3 % | ✓ 707 d par voyage, commandes 34.8 % | ✓ 870 d par voyage, commandes 33.0 % |
-| Part de son métier dans les recettes : voyages (négociant), gisements (exploitant), expéditions (armateur) | ≥ 25 % chacun | ✓ trader 32.0 %, miner 26.7 %, armourer 43.9 % | ✓ trader 30.9 %, miner 27.2 %, armourer 48.4 % | ✓ trader 32.9 %, miner 26.9 %, armourer 47.2 % |
-| Convois de la Muda financés en colleganza ; prix moyen d'une place, part des mises venue de plus grandes Maisons | ≥ 20 % des convois | ✓ 23.3 % de 18634 ; place 57842 d, plus grandes 12.0 % | ✓ 27.8 % de 16372 ; place 62640 d, plus grandes 8.8 % | ✓ 24.6 % de 18490 ; place 54594 d, plus grandes 18.7 % |
+| Cohorte du mois 12 plus rapide jusqu'à la Casa 10 | 20 à 40 % plus vite | ✓ 30 % plus vite | ✓ 21 % plus vite | ✓ 25 % plus vite |
+| Tournées avec un objectif à moins de 24 h | ≥ 90 % | ✓ 95.9 % | ✓ 94.6 % | ✓ 94.9 % |
+| Prochain palier de Casa, en jours de revenu (médiane de chaque mois) | 2 à 7 chaque mois | ✗ 4.2 à 10.1 | ✗ 4.5 à 10.3 | ✗ 5.2 à 10.8 |
+| Cohorte du mois 12 à la Puissance médiane de sa bande (Maisons plus anciennes) | en 4 à 6 mois | ✗ 1.0 mois (hors absents : 1.0 mois) | ✗ 1.2 mois (hors absents : 1.2 mois) | ✗ 1.0 mois (hors absents : 1.0 mois) |
+| Indice des prix | 80 à 130 | ✓ 86 à 101 | ✓ 87 à 101 | ✓ 86 à 101 |
+| Puits ÷ sources (médiane des mois), Maisons de moins de 3 mois puis plus anciennes | 0,6–0,8 puis 0,9–1,0 | ✗ 0.82 puis 0.99 | ✗ 0.83 puis 0.98 | ✗ 0.81 puis 1.01 |
+| Part de la Terraferme dans la progression | ≤ 15 % | ✓ 0.2 % | ✓ 0.2 % | ✓ 0.2 % |
+| Bruts des jeunes Maisons (Casa ≤ 8) vendus à Venise, part de leurs recettes ; part des bruts des vétérans venue d'elles | ≥ 10 % des recettes des jeunes | ✗ 5.9 % ; vétérans 1.2 % | ✗ 6.2 % ; vétérans 1.2 % | ✗ 6.3 % ; vétérans 1.6 % |
+| Marge moyenne d'un voyage, et part des commandes dans les recettes | marge > 0, commandes ≥ 25 % | ✓ 846 d par voyage, commandes 34.4 % | ✓ 938 d par voyage, commandes 35.5 % | ✓ 872 d par voyage, commandes 31.1 % |
+| Part de son métier dans les recettes : voyages (négociant), gisements (exploitant), expéditions (armateur) | ≥ 25 % chacun | ✓ trader 26.9 %, miner 28.4 %, armourer 44.0 % | ✓ trader 29.7 %, miner 28.2 %, armourer 47.3 % | ✓ trader 27.9 %, miner 29.7 %, armourer 47.5 % |
+| Convois de la Muda financés en colleganza ; prix moyen d'une place, part des mises venue de plus grandes Maisons | ≥ 20 % des convois | ✓ 28.4 % de 14114 ; place 65575 d, plus grandes 7.3 % | ✓ 32.4 % de 15847 ; place 65006 d, plus grandes 5.3 % | ✓ 27.9 % de 13437 ; place 62041 d, plus grandes 10.3 % |
 
 ## Le calendrier de la Casa (graine 1)
 
 | Casa | Cible (jours) | Cohorte 0 | Cohorte 3 | Cohorte 6 | Cohorte 12 |
 | --- | --- | --- | --- | --- | --- |
 | 2 | 1 | 0.4 | 0.4 | 0.4 | 0.4 |
-| 3 | 1 | 2.4 | 2.4 | 1.4 | 1.4 |
-| 4 | 3 | 4.4 | 3.4 | 3.4 | 3.4 |
-| 5 | 7 | 12.4 | 9.4 | 7.4 | 6.4 |
-| 6 | 14 | 20.5 | 17.5 | 17.4 | 16.4 |
-| 7 | 21 | 32.5 | 28.5 | 27.5 | 22.5 |
-| 8 | 30 | 41.7 | 36.6 | 34.6 | 28.5 |
-| 9 | 45 | 67.8 | 65.8 | 61.7 | 54.6 |
-| 10 | 75 | 76.1 | 76.5 | 76.8 | 68.8 |
-| 11 | 90 | 84.6 | 85.4 | 89.3 | 79.7 |
-| 12 | 120 | 97.6 | 103.5 | 106.8 | 95.6 |
-| 13 | 150 | 114.4 | 124.2 | 126.3 | 116.1 |
-| 14 | 210 | 136.1 | 147.5 | 153.0 | 138.7 |
-| 15 | 270 | 180.8 | 188.8 | 248.5 | 204.0 |
-| 16 | 360 | 230.1 | 235.4 | 278.2 | 227.6 |
-| 17 | 390 | 329.3 | 293.9 | 315.0 | 301.7 |
-| 18 | 480 | 445.9 | 346.4 | 351.5 | — |
-| 19 | 600 | 546.5 | 429.9 | 412.5 | — |
-| 20 | 750 | 614.3 | 482.3 | 453.5 | — |
+| 3 | 1 | 2.4 | 1.4 | 1.4 | 1.4 |
+| 4 | 3 | 3.4 | 3.4 | 2.4 | 2.4 |
+| 5 | 7 | 9.4 | 6.4 | 5.4 | 5.4 |
+| 6 | 14 | 19.5 | 18.5 | 16.4 | 14.4 |
+| 7 | 21 | 32.5 | 23.5 | 21.5 | 19.5 |
+| 8 | 30 | 41.7 | 36.6 | 33.6 | 28.5 |
+| 9 | 45 | 67.8 | 61.8 | 56.7 | 48.7 |
+| 10 | 75 | 86.5 | 76.1 | 66.9 | 60.8 |
+| 11 | 90 | 107.3 | 87.5 | 79.9 | 73.3 |
+| 12 | 120 | 121.6 | 101.0 | 95.9 | 89.8 |
+| 13 | 150 | 143.4 | 122.3 | 121.4 | 117.2 |
+| 14 | 210 | 186.6 | 149.6 | 195.6 | 144.9 |
+| 15 | 270 | 224.5 | 192.9 | 255.4 | 196.5 |
+| 16 | 360 | 254.1 | 228.5 | 293.3 | 224.5 |
+| 17 | 390 | 308.4 | 269.1 | 331.3 | 252.8 |
+| 18 | 480 | 391.4 | 319.3 | 380.6 | 309.9 |
+| 19 | 600 | 609.1 | 376.3 | 424.3 | — |
+| 20 | 750 | 652.0 | 451.9 | 472.5 | — |
 
 ## Les métiers (graine 1)
 
 | Penchant | Maisons | Casa médiane | Recettes médianes (d) | Commandes | Marché | Voyages | Exploitation | Expéditions |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| trader | 200 | 18 | 3300879 | 30.7 % | 32.2 % | 32.0 % | 5.1 % | 0.0 % |
-| miner | 200 | 17 | 2500587 | 31.5 % | 32.5 % | 9.3 % | 26.7 % | 0.0 % |
-| armourer | 200 | 20 | 5814666 | 19.6 % | 26.2 % | 8.0 % | 2.8 % | 43.9 % |
-| mixed | 200 | 19 | 3254519 | 24.2 % | 30.9 % | 17.6 % | 6.8 % | 20.7 % |
+| trader | 200 | 18 | 2245543 | 34.5 % | 32.8 % | 26.9 % | 5.8 % | 0.0 % |
+| miner | 200 | 18 | 2213275 | 33.1 % | 30.4 % | 8.1 % | 28.4 % | 0.0 % |
+| armourer | 200 | 20 | 6205010 | 18.4 % | 28.2 % | 7.1 % | 2.9 % | 44.0 % |
+| mixed | 200 | 19 | 3414476 | 25.9 % | 30.8 % | 15.4 % | 7.4 % | 20.7 % |
 
 ## L'écrasement
 
-Puissance des dix premières Maisons : 13710, 13140, 12960, 12770, 12730, 12710, 12690, 12660, 12630, 12620 ; médiane du monde : 9500 (rapport 1.3).
+Puissance des dix premières Maisons : 13670, 13580, 13460, 13450, 13440, 13420, 13290, 13190, 13180, 13170 ; médiane du monde : 9370 (rapport 1.4).
 
 ## La monnaie
 
 | Créée par | Ducats | Détruite par | Ducats |
 | --- | --- | --- | --- |
-| market | 2 261 334 186 | works | 1 517 360 009 |
-| orders | 1 777 697 695 | muda | 1 079 924 145 |
-| booty | 979 068 750 | wages | 713 001 571 |
-| start | 400 000 | market | 632 180 365 |
-|  |  | workshops | 381 950 098 |
-|  |  | counters | 161 223 551 |
-|  |  | casa | 142 007 207 |
-|  |  | vehicles | 69 749 300 |
-|  |  | tax | 67 839 398 |
-|  |  | victuals | 31 543 080 |
-|  |  | research | 27 881 859 |
-|  |  | galleys | 6 691 200 |
-|  |  | ration | 1 563 840 |
+| market | 2 084 151 761 | works | 1 444 111 938 |
+| orders | 1 607 609 586 | muda | 927 759 445 |
+| booty | 964 270 500 | wages | 653 042 905 |
+| start | 400 000 | market | 532 269 149 |
+|  |  | workshops | 442 267 065 |
+|  |  | counters | 153 762 921 |
+|  |  | casa | 141 180 086 |
+|  |  | vehicles | 72 513 900 |
+|  |  | tax | 62 523 989 |
+|  |  | victuals | 31 201 400 |
+|  |  | research | 26 353 673 |
+|  |  | galleys | 6 403 200 |
+|  |  | ration | 1 662 900 |
 
-Colleganza : 182 454 507 d engagés, dont 0 d d'une grande Maison dans le voyage d'une plus jeune.
+Colleganza : 183 223 081 d engagés, dont 0 d d'une grande Maison dans le voyage d'une plus jeune.
 
-Muda : 18670 places vendues pour 1 079 924 145 d ; 18634 convois, dont 4335 en colleganza (217 201 517 d de mises).
+Muda : 14148 places vendues pour 927 759 445 d ; 14114 convois, dont 4013 en colleganza (223 326 907 d de mises).
 
-Violations de la comptabilité : 0. Durée : 408 s, 423 s, 482 s.
+Violations de la comptabilité : 0. Durée : 448 s, 444 s, 425 s.

@@ -1782,6 +1782,31 @@ La Muda est devenue le deuxième puits du monde, après les Grandes Œuvres : en
 - **La part des vétérans venue des jeunes** (30 % visés) reste hors de portée : 1 %. Les jeunes cohortes arrivent par paquets et ne restent jeunes qu'un mois face à 800 Maisons. Le rapport mesure donc le côté des jeunes : la part de leurs recettes faite en vendant leurs bruts à Venise, 6 %. **La cible de 10 % est une proposition**, à confirmer ou à remplacer.
 - **Les derniers paliers de Casa** coûtent jusqu'à 9,5 jours de revenu, et le rattrapage reste entre 10 et 24 %. Ces points datent du premier calibrage ; ils seront à reprendre avec le contenu de fin de partie.
 
+### Le socle et les recettes du thème (30 octobre 2026)
+
+Le socle joue les chaînes de Vénétie avec les recettes du thème (`venice1450.ts`), pas avec les recettes simplifiées du simulateur. Les écarts étaient nets : le blé fait 16 unités à l'heure au niveau 1 (contre 10), le pain 20 (contre 5), et le pain passe par la farine. Le simulateur lit donc désormais, pour le blé, l'argile, le bois, la farine, le pain, les briques et les planches, le rythme et les intrants des recettes du thème. Les autres biens gardent les hypothèses du modèle jusqu'à leur étape.
+
+La Maison commence comme dans le socle, avec trois ateliers (argile, bois, scierie) et 500 ducats. La Casa 1 n'a que quatre places et la Casa 2 demande des briques : partir avec quatre ateliers sans briqueterie bloquait la Maison.
+
+**Résultat** (graines 1, 2 et 3, quatre cohortes de 200) : **8 cibles sur 12 sur chaque graine**, contre 7, 7 et 8 avant l'alignement.
+
+| Cible | Visée | Résultat | |
+| --- | --- | --- | --- |
+| Calendrier de la Casa | Entre la moitié et le double du § 3.1 | Tous les paliers dans les bornes | ✓ |
+| Rattrapage des cohortes tardives | 20 à 40 % plus vite | 30 %, 21 %, 25 % | ✓ |
+| Objectif à moins de 24 h | ≥ 90 % | 95–96 % | ✓ |
+| Prochain palier de Casa | 2 à 7 jours de revenu | 4,2 à 10,8 (les derniers mois) | ✗ |
+| Nouveau à la médiane de sa bande | 4 à 6 mois | 1,0 à 1,2 mois | ✗ |
+| Indice des prix | 80 à 130 | 86 à 101 | ✓ |
+| Puits ÷ sources | 0,6–0,8 puis 0,9–1,0 | 0,81–0,83 puis 0,98–1,01 | ≈ |
+| Part de la Terraferme | ≤ 15 % | 0,2 % | ✓ |
+| Bruts des jeunes vendus à Venise | ≥ 10 % de leurs recettes (proposé) | 5,9 à 6,3 % | ✗ |
+| Arbitrage | Marge > 0, commandes ≥ 25 % | 850–940 d par voyage, commandes 31–36 % | ✓ |
+| Chaque métier fait vivre son penchant | ≥ 25 % chacun | Voyages 27–30 %, gisements 28–30 %, expéditions 44–48 % | ✓ |
+| Colleganza de la Muda | ≥ 20 % des convois | 28–32 % ; place à 62 000–66 000 d | ✓ |
+
+Le rattrapage passe désormais : les chaînes du thème font monter plus vite les niveaux que beaucoup de Maisons possèdent. Les derniers paliers de la Casa coûtent un peu plus (jusqu'à 11 jours de revenu, contre 9,5). Restent ouverts les points déjà posés au porteur : la mesure du nouveau dans sa bande, et la cible des bruts.
+
 ### Refaire le calibrage
 
 ```
