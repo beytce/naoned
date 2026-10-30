@@ -63,14 +63,21 @@ Le prochain palier coûte **2 à 7 jours de revenu courant**, jamais plus de 10.
 
 À partir du niveau 8, chaque palier demande un matériau d'une autre région : chêne de Dalmatie, fer, marbre d'Istrie, soie, alun. **La Casa oblige à commercer avec les joueurs des autres routes.**
 
-Le tableau détaillé, avec les coûts, est dans `expert-progression.md`, § 4.2.
+**À partir de la Casa 9, l'empire doit suivre** (ajout du calibrage, 30 octobre 2026). Bâtir la Casa n demande n − 3 ateliers au niveau n − 1, douze au plus, comme le niveau maître d'Hades' Star. Sans cette exigence, si chaque palier ne coûte que 2 à 7 jours de revenu, les vingt paliers se font en quelques mois. Le vrai frein du milieu et du haut de partie est donc d'élever ses ateliers, dont les chantiers s'allongent jusqu'à 12 jours.
+
+**Coûts calibrés** (ducats, plus les matériaux), au simulateur de 24 mois (`docs/calibration.md`, § Empire ; réglages : `venice1450.empire.ts`) :
+
+| Casa | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Ducats | 50 | 100 | 150 | 400 | 1 000 | 1 600 | 2 500 | 3 800 | 5 500 | 7 500 | 10 000 | 13 500 | 17 000 | 22 000 | 27 000 | 34 000 | 41 000 | 49 000 | 64 000 |
 
 ### 3.2 Les ateliers
 
 - **Places** : 4 en Vénétie au départ, +1 aux niveaux 2, 5, 8 et 12 de la Casa. Chaque comptoir de région en ajoute 2 à 4, avec le bonus des matières locales.
 - **Niveau maximum** : le niveau de la Casa.
 - **Production d'un lot** : Y(n) = n × (1 + 0,15 × (n − 1)) fois la base. Un niveau 20 produit environ 77 fois la base : **des chiffres qui se sentent**.
-- **Coût d'un niveau** : base × 1,3^(n − 1). Le coût croît plus vite que la production : le temps de remboursement passe de moins d'un jour (niveaux 1 à 5) à 3 à 5 semaines (niveaux 16 à 20).
+- **Coût d'un niveau** : base × 1,3^(n − 1), base calibrée à 120 ducats. Le coût croît plus vite que la production : le temps de remboursement passe de moins d'un jour (niveaux 1 à 5) à 3 à 5 semaines (niveaux 16 à 20).
+- **Chantier d'un niveau** : de 1 minute (niveau 1) à 12 jours (niveaux 20 et plus).
 
 ### 3.3 Le charroi et la flotte
 
@@ -323,7 +330,7 @@ Le point où un jeu persistant se gagne ou se perd. Les parades se cumulent :
 2. **Une demande privée par comptoir** : un carnet local que personne d'autre ne prend.
 3. **Des commandes réservées** : les petites commandes de Vénétie (moins de 30 unités) sont réservées aux Maisons de Casa 10 ou moins.
 4. **Le nouveau est utile au vétéran**, qui achète ses matières brutes. Jusqu'à la Casa 8, les bruts rapportent +20 %.
-5. **Le savoir circule** : ce que plus de la moitié des Maisons actives possèdent coûte jusqu'à 50 % moins cher et se bâtit jusqu'à 60 % plus vite. Le sommet n'est jamais rabaissé.
+5. **Le savoir circule** : un niveau de Casa ou d'atelier que plus de 35 % des Maisons actives possèdent coûte jusqu'à 60 % moins cher et se bâtit jusqu'à 70 % plus vite (calibré ; le cadrage disait la moitié, 50 % et 60 %). Le sommet n'est jamais rabaissé.
 6. **La protection** : 30 jours, tant qu'on reste dans la première bande. Le nouveau ne peut être visé ni par un espion, ni par une rumeur, ni par un front d'une bande supérieure. Il ne paie pas de droit de porte.
 7. **L'apprentissage** (*garzone*) : un nouveau se place chez une Maison qui accueille. Le maître gagne des Sceaux à chaque jalon de l'apprenti ; l'apprenti voit sa production achetée au prix de référence pendant 14 jours.
 8. **Aucun pillage** de ce qui est bâti, hors de la Terraferme.
