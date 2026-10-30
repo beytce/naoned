@@ -522,6 +522,16 @@ Chaque étape fait l'objet d'un plan, validé avant le code.
 
    Venise commence avec trois ateliers (argile, bois, scierie) et 500 ducats : la quatrième place est le premier choix, la briqueterie de la Casa 2. La bascule (`EMPIRE_FROM`) existe, désactivée : elle ne s'active en production que sur décision du porteur.
 4. **L'étendue et le négoce** : les comptoirs, la Lombardie et le Frioul, les marchés régionaux et les nouvelles datées, le chariot et le burchio, les modules de négoce et la recherche ; l'exploitation des gisements.
+
+   *Fait le 30 octobre 2026*, dans le monde de l'empire :
+   - **comptoirs** : la charte en Faveur, puis le chantier du comptoir, qui tient lieu de voyage d'ouverture (heures depuis Venise, plus une) ; quatre fois l'atelier du niveau de la région, jusqu'au niveau 10 ; les ateliers d'une région sur les places de son comptoir, sans autres bruts que les siens ;
+   - **un marché par région** : profondeur et tableau sur les Maisons présentes, un carnet par comptoir. Une marchandise n'est tenue qu'à Venise et là où on la fabrique ou l'extrait ; ailleurs, un convoi la porte ;
+   - **nouvelles datées** : en direct là où l'on a un comptoir, sinon aussi tard qu'un navire de là (le portulan réduit ce retard) ;
+   - **véhicules** : mule, charrette, burchio et chariot. Les livraisons d'un jour se bornent au charroi de terre. Le convoi achète au port ce qui manque et vend à l'arrivée ; l'arrivée se règle à la lecture, dans l'ordre ;
+   - **la Scuola** : les modules cale, voilure, portulan, prime de convoi, rendement et concession lointaine, jusqu'au niveau 3 (les plans viendront avec les reliques) ;
+   - **gisements** : tirés chaque jour par la graine du monde, partagés par les équipes (dès la Casa 5) au prorata de leur rythme.
+
+   La Romagne, que le burchio dessert déjà, s'ouvre avec la mer (étape 7). Les autres modules de négoce attendent leurs systèmes (`IDEAS.md`).
 5. **L'identité** : l'Arte, les savoirs, le personnel et la famille, les qualités et les voisinages d'ateliers.
 6. **La compagnie** : rôles, succession, entraide, Condotta à paliers, puis la Contesa et les théâtres de la Terraferme.
 7. **La mer et les armes** : la Dalmatie, l'Arsenal, les navires à modules, la Muda des joueurs, les corsaires ; puis les expéditions et les reliques, et la colleganza.
