@@ -73,7 +73,7 @@ export interface House {
   casa: number;
   /** The hour each Casa level was reached (index level − 1). */
   casaAt: number[];
-  /** The first day its Power reached the median of its band (all its houses, whatever their age). */
+  /** The first day its Power took it out of the first band. */
   bandCaughtAt?: number;
   workshops: Workshop[];
   counters: Map<string, number>;

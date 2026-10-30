@@ -499,6 +499,12 @@ Un rapport public dit ce qui a été vendu.
 - dès le niveau 12, chaque unité faite mange 5 % d'une unité de brut de Vénétie par niveau à partir de 12 ;
 - la galea et la galère de Flandre ne partent qu'avec une place de la Muda. Il y a deux incanti par semaine et des places pour la moitié des armateurs. L'enchère est de Vickrey, avec une réserve d'un jour de revenu, et le prix est détruit. Le gagnant à court de caisse lève le reste en colleganza sur son convoi.
 
+**Décisions du porteur du 30 octobre 2026, au soir** :
+- la cible du nouveau devient « **il quitte la première bande de Puissance en 4 à 6 mois** » (la médiane de toute la bande donnait 0 mois) ;
+- la Condotta de l'empire **garde ses Sceaux** (une victoire par jour), au lieu du seul grade décidé le 24 octobre ;
+- le plan 6b (la Contesa et les théâtres) est lancé ;
+- **la bascule est décidée** : `EMPIRE_FROM` à la fin de la saison d'octobre (le 1er novembre 2026 à 0 h, heure de Paris), pour que le mois se clôture avec son classement.
+
 ## 13. Le chemin
 
 Chaque étape fait l'objet d'un plan, validé avant le code.
@@ -511,7 +517,7 @@ Chaque étape fait l'objet d'un plan, validé avant le code.
    | Temps jusqu'à chaque palier de Casa | Proche du § 3.1 ; les cohortes tardives 20 à 40 % plus vite |
    | Objectif à moins de 24 h pour un joueur médian | Toujours |
    | Prochain palier de Casa, en jours de revenu | 2 à 7 |
-   | Nouveau à la Puissance médiane de sa bande, toutes ses Maisons comptées quel que soit leur âge (§ 12 bis) | 4 à 6 mois (mesure triviale au simulateur : 0 mois, à redéfinir) |
+   | Nouveau hors de la première bande de Puissance (§ 12 bis, décision du porteur du 30 octobre) | 4 à 6 mois |
    | Indice des prix | 80 à 130 sur 24 mois |
    | Ratio entre puits et sources | 0,6–0,8 avant 3 mois, 0,9–1,0 au-delà |
    | Part de la Terraferme dans la progression | ≤ 15 % |

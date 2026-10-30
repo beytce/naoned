@@ -1866,6 +1866,10 @@ La Condotta ne change rien au simulateur : ses Sceaux ne nourrissent pas l'écon
 
 Sur la graine 3, 48 compagnies ; 7 195 lots demandés, 333 fournis pour 295 000 ducats, dont 261 000 aux jeunes Maisons. L'entraide reste petite au regard du marché (2 milliards) : les intrants que demandent les jeunes (farine, bois, argile) sont aussi ceux des anciennes, qui n'en ont guère en trop. Elle rapproche un peu les jeunes Maisons de leur cible des puits (0,84 à 0,87 pour 0,6 à 0,8) sans toucher aux prix. Le modèle est prudent : de vrais associés se fourniraient sans doute plus qu'un bot qui garde tous ses intrants.
 
+### La cible du nouveau redéfinie (30 octobre 2026, au soir)
+
+Décision du porteur : le nouveau doit **quitter la première bande de Puissance en 4 à 6 mois**. Le simulateur mesure désormais le jour où la Puissance d'une Maison de la cohorte du mois 12 dépasse le seuil de la deuxième bande (600). Essai rapide (graine 1, cohortes de 30) : **0,2 mois**. La première bande, de 0 à 600, se quitte en une semaine : la Casa 2 et quelques niveaux d'ateliers y suffisent. Atteindre la cible demande d'élargir les bandes (`power.bands`), ce qui change aussi qui affronte qui ; ce sera calibré avec l'appariement de la Contesa (plan 6b).
+
 ### Refaire le calibrage
 
 ```
