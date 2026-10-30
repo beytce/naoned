@@ -266,6 +266,38 @@ const frDict = {
       sites: (n: number) => (n === 1 ? "1 chantier achevé" : `${n} chantiers achevés`),
       action: "Tout ramasser",
     },
+    company: {
+      title: "La compagnie",
+      members: (n: number, max: number) => `${n} sur ${max} associés`,
+      me: "vous",
+      vocation: "Vocation",
+      noRole: "Associé",
+      roles: { capo: "Capo", consigliere: "Consigliere", cassiere: "Cassiere" } as Record<
+        string,
+        string
+      >,
+      invite: "Copier le lien d'invitation",
+      leave: "Quitter la compagnie",
+      aid: {
+        rule: "Un lot demandé toutes les 8 h, fourni au prix de référence, sans taxe",
+        merit: (n: number) => `Mérite ${n}`,
+        supplyLeft: (v: string) => `encore ${v} à fournir aujourd'hui`,
+        tooNew: (at: string) => `L'entraide s'ouvre à vous à ${at} (3 jours dans la compagnie).`,
+        none: "Aucune demande ouverte.",
+        by: (name: string) => `demandé par ${name}`,
+        supply: "Fournir",
+        good: "Marchandise à demander",
+        qty: (max: number) => `Quantité (${max} au plus)`,
+        ask: "Demander à la compagnie",
+        nextAsk: (at: string) => `Prochaine demande à ${at}`,
+      },
+      condotta: {
+        title: "La Condotta",
+        tier: (level: number, cap: number) => `Palier ${level}, ouvert jusqu'au ${cap} par la Casa`,
+        seals: "une victoire par jour rapporte des Sceaux",
+        where: "Elle se joue sur la carte de la Terraferme, qui ouvre plus tard dans l'empire.",
+      },
+    },
     identity: {
       tab: "Famille",
       effects: {
@@ -496,6 +528,13 @@ const frDict = {
       unknown_target: "Cette place n'existe pas.",
       unknown_building: "Introuvable.",
       unknown_building_type: "Ce module n'est pas encore recherché.",
+      no_company: "Il faut une compagnie.",
+      not_same_company: "Cette demande est d'une autre compagnie.",
+      own_order: "C'est votre propre demande.",
+      too_new: "Trop tôt : 3 jours dans la compagnie d'abord.",
+      too_soon: "Une demande toutes les 8 heures.",
+      over_limit: "Plafond du jour atteint.",
+      unknown_order: "Cette demande n'existe plus.",
     } as Record<string, string>,
   },
 

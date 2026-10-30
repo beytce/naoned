@@ -122,6 +122,16 @@ try {
       await page.waitForTimeout(400);
     }
 
+    // The company, in the Carnet's sheet: founded, then the entraide's form (CADRAGE-v3 § 7).
+    await page.locator("[data-tab=ranking]").click();
+    await page.waitForSelector("[data-company] input");
+    await page.locator("[data-company] input").fill(`Ca ${width}`);
+    await page.locator("[data-company] input").press("Enter");
+    await page.getByRole("button", { name: /demander à la compagnie/i }).waitFor();
+    await shot("6d-compagnie");
+    await page.locator("[data-tab=map]").click();
+    await page.waitForTimeout(400);
+
     // A workshop up close: its place on the ring, to move it (CADRAGE-v3 § 13, step 5).
     await page.locator("[data-workshop]").first().click();
     await page.waitForSelector('[aria-modal="true"]');
