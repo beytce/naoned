@@ -14,6 +14,7 @@ import {
 import { type Tx, addStock, fail, inventoryLine, removeStock, transfer } from "../tx.js";
 import { advanceCarnet } from "./carnet.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
+import { effectOf } from "./modules.js";
 import { powerOf } from "./power.js";
 import {
   localBookOf,
@@ -37,7 +38,7 @@ export function powerOfHouse(h: EmpireHouse, s: EmpireSettings): number {
       casa: h.casa,
       workshopLevels: h.workshops.map((w) => w.level),
       counterLevels: Object.values(h.counters ?? {}),
-      moduleLevels: [],
+      moduleLevels: Object.values(h.modules ?? {}),
       staffLevels: [],
       vehicles: 0,
     },
@@ -281,10 +282,13 @@ export function buyAt(
 function haulLeft(tx: Tx, h: EmpireHouse): number {
   const s = empireSettings(tx.ctx);
   if (Object.keys(s.vehicles).length === 0) return Number.POSITIVE_INFINITY;
-  const capacity = (h.vehicles ?? [])
+  const base = (h.vehicles ?? [])
     .map((v) => s.vehicles[v.type])
     .filter((v) => v?.regions.length === 1)
     .reduce((n, v) => n + (v?.capacity ?? 0), 0);
+  const capacity = Number(
+    applyBpsFloor(BigInt(base), 10_000 + effectOf(h.modules ?? {}, "capacity", s)),
+  );
   const day = dayOf(tx.now);
   const used = h.hauled?.day === day ? h.hauled.units : 0;
   return Math.max(0, capacity * s.localTripsPerDay - used);
@@ -359,10 +363,12 @@ export function fillOrders(
   const delivered = book + board;
   if (delivered <= 0) return 0;
   removeStock(tx, playerId, good, delivered, "empire_sale");
+  // The convoy's premium on the orders, with the market's.
+  const convoy = effectOf(h.modules ?? {}, "orderBonus", s);
   receive(
     tx,
     playerId,
-    applyBpsFloor(value, 10_000 + s.markets.orderPremiumBps),
+    applyBpsFloor(value, 10_000 + s.markets.orderPremiumBps + convoy),
     `orders:${region}:${good}`,
   );
   advanceCarnet(h, "deliver", delivered);
@@ -408,7 +414,8 @@ export function empireQuotes(
   return regions.flatMap((r) => {
     const size = marketSize(houses, r.code, now, s);
     const live = r.code === HOME || (h?.counters?.[r.code] ?? 0) > 0;
-    const asOf = now - newsDelayMs(r.code, live, 0, s);
+    const intel = effectOf(h?.modules ?? {}, "intel", s);
+    const asOf = now - newsDelayMs(r.code, live, intel, s);
     const goods = [...new Set([...Object.keys(r.produces), ...Object.keys(r.demands)])];
     return goods.map((good) => {
       const ref = (r.demands[good] ?? r.produces[good]) as Deniers;

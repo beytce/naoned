@@ -16,6 +16,7 @@ import { type Tx, fail, nextId, removeStock, transfer } from "../tx.js";
 import { advanceCarnet } from "./carnet.js";
 import { catchupCut } from "./catchup.js";
 import { buildMinutesOf, casaLevelOf, casaRequirementMet, levelCost } from "./curves.js";
+import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import type { EmpireSettings } from "./settings.js";
 
 /** The empire's settings, or a refusal in a world of the monthly seasons. */
@@ -42,8 +43,19 @@ export function isAsleep(h: EmpireHouse, now: number, s: EmpireSettings): boolea
   return now - h.lastActionAt >= s.sleepAfterDays * DAY_MS;
 }
 
-/** Applies the building sites that ended by `now`, in the order they end. */
+/** Applies the researches that ended by `now`: their modules' new levels. */
+function settleResearch(h: EmpireHouse, now: number): void {
+  const done = (h.research ?? []).filter((r) => r.endsAt <= now);
+  if (done.length === 0) return;
+  h.research = (h.research ?? []).filter((r) => r.endsAt > now);
+  const modules = { ...(h.modules ?? {}) };
+  for (const r of done) modules[r.code] = Math.max(modules[r.code] ?? 0, r.level);
+  h.modules = modules;
+}
+
+/** Applies the building sites (and the researches) that ended by `now`, in the order they end. */
 export function settleBuilds(h: EmpireHouse, now: number): void {
+  settleResearch(h, now);
   const done = h.builds.filter((b) => b.endsAt <= now).sort((a, b) => a.endsAt - b.endsAt);
   if (done.length === 0) return;
   h.builds = h.builds.filter((b) => b.endsAt > now);
@@ -288,4 +300,31 @@ export function upgradeCounter(tx: Tx, playerId: PlayerId, code: string): void {
   const cost = levelCost(level + 1, s) * BigInt(s.counters.costTimes);
   const site = openSite(tx, playerId, h, cost, {}, buildMinutesOf(level + 2, s), 0);
   h.builds.push({ kind: "counter", level: level + 1, region: code, ...site });
+}
+
+/**
+ * Researches a module's next level at the Scuola (profondeur.md § B.4): a place of research of
+ * the Casa, its cost and its time; the levels that ask plans wait for the relics.
+ */
+export function startResearch(tx: Tx, playerId: PlayerId, code: string): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  const m = s.modules.find((x) => x.code === code);
+  if (!m || (s.research.available.length > 0 && !s.research.available.includes(code)))
+    fail("unknown_building_type");
+  if ((h.research ?? []).some((r) => r.code === code)) fail("building_busy");
+  if ((h.research ?? []).length >= casaLevelOf(h.casa, s).researchSlots) fail("no_build_slot");
+  const level = (h.modules?.[code] ?? 0) + 1;
+  if (level > s.research.minutes.length) fail("max_level");
+  if (plansFor(level, s) > 0) fail("requirement_unmet");
+  transfer(
+    tx,
+    cashAccount(playerId),
+    SINK_ACCOUNT,
+    researchCost(level, s),
+    "empire_research",
+    code,
+  );
+  const ms = researchMinutesOf(level, s) * MINUTE_MS;
+  h.research = [...(h.research ?? []), { code, level, startedAt: tx.now, endsAt: tx.now + ms }];
 }

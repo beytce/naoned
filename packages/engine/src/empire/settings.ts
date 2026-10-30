@@ -219,6 +219,8 @@ export const empireSettingsSchema = z.object({
     /** From this level on, a level also asks plans (from relics). */
     plansFromLevel: positive,
     plansPerLevel: qty,
+    /** The modules a house may research in this world (their systems exist); none listed: all. */
+    available: z.array(z.string()).prefault([]),
   }),
   deposits: z.object({
     /** Chance a day that a deposit appears in a region open to some house, in bps. */

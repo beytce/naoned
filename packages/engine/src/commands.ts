@@ -41,6 +41,7 @@ import {
   ownHouse,
   settleBuilds,
   startCasa,
+  startResearch,
   startUpgrade,
   startWorkshop,
   upgradeCounter,
@@ -284,6 +285,7 @@ export type EmpireCommand =
   | { type: "empireCharter"; playerId: PlayerId; region: string }
   | { type: "empireUpgradeCounter"; playerId: PlayerId; region: string }
   | { type: "empireBuyVehicle"; playerId: PlayerId; vehicleType: string }
+  | { type: "empireResearch"; playerId: PlayerId; module: string }
   | {
       type: "empireVoyage";
       playerId: PlayerId;
@@ -440,6 +442,9 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireBuyVehicle":
       buyEmpireVehicle(tx, cmd.playerId, cmd.vehicleType);
+      break;
+    case "empireResearch":
+      startResearch(tx, cmd.playerId, cmd.module);
       break;
     case "empireVoyage":
       startVoyage(tx, cmd.playerId, cmd.vehicleId, cmd.from, cmd.to, cmd.good, cmd.qty);

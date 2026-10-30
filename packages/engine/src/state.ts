@@ -342,6 +342,10 @@ export interface EmpireHouse {
   seals: number;
   /** Its vehicles: free again at `busyUntil` (a voyage's way there and back). */
   vehicles?: { id: string; type: string; busyUntil: number }[];
+  /** Its modules researched, by code: their level (profondeur.md § B). */
+  modules?: Record<string, number>;
+  /** Its researches under way at the Scuola: settled at the next read, as the sites. */
+  research?: { code: string; level: number; startedAt: number; endsAt: number }[];
   /** What its land vehicles carried to the cities today. */
   hauled?: { day: number; units: number };
   /** What is left today of its private book of orders, by region. */

@@ -5,6 +5,7 @@ import type { ResourceCode } from "./theme.js";
 export type LedgerReason =
   | "empire_build"
   | "empire_purchase"
+  | "empire_research"
   | "empire_sale"
   | "empire_wages"
   | "starting_capital"

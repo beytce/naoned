@@ -2,6 +2,7 @@ import { applyBpsFloor } from "../money.js";
 import { type EmpireVoyage, HOUR_MS, type PlayerId, SINK_ACCOUNT, cashAccount } from "../state.js";
 import { type Tx, addStock, fail, inventoryLine, nextId, removeStock, transfer } from "../tx.js";
 import { empireSettings, ownHouse } from "./house.js";
+import { effectOf } from "./modules.js";
 import { priceAt, routeHours } from "./prices.js";
 import { buyAt, counterLevel, fillOrders, homesOf, sellAt } from "./trade.js";
 
@@ -47,7 +48,14 @@ export function startVoyage(
   )
     fail("unknown_region");
   if (v.busyUntil > tx.now) fail("building_busy");
-  if (!Number.isInteger(qty) || qty <= 0 || qty > spec.capacity) fail("invalid_quantity");
+  const hold = applyBpsFloor(
+    BigInt(spec.capacity),
+    10_000 + effectOf(h.modules ?? {}, "capacity", s),
+  );
+  if (!Number.isInteger(qty) || qty <= 0 || qty > Number(hold)) fail("invalid_quantity");
+  // The port of arrival must trade the good: its cities ask it, or its Dogana takes it.
+  if (dest.produces[good] === undefined && dest.demands[good] === undefined)
+    fail("unknown_resource");
   const r = s.regions.find((x) => x.code === from);
   const ref = r?.produces[good] ?? r?.demands[good];
   const held = homesOf(tx, h, good).has(from) ? inventoryLine(tx, playerId, good).available : 0;
@@ -59,7 +67,7 @@ export function startVoyage(
   removeStock(tx, playerId, good, carried, "empire_voyage");
   const paid = before - (tx.s.accounts[cashAccount(playerId)] ?? 0n);
   const ownValue = ref !== undefined ? priceAt(ref, 10_000, s) * BigInt(own) : 0n;
-  const hours = routeHours(from, to, spec.speedBps, s);
+  const hours = routeHours(from, to, spec.speedBps + effectOf(h.modules ?? {}, "speed", s), s);
   v.busyUntil = tx.now + 2 * hours * HOUR_MS;
   const voyage: EmpireVoyage = {
     id: nextId(tx, "y"),

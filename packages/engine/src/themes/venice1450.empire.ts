@@ -274,6 +274,8 @@ export const venice1450Empire: EmpireSettingsInput = {
     minutes: [30, 90, 240, 480, 960, 1_440, 2_880, 5_760, 10_080, 14_400],
     plansFromLevel: 4,
     plansPerLevel: 2,
+    // Step 4: the trade modules whose systems exist, and the deposits'; the others wait for theirs.
+    available: ["hold", "sails", "portolan", "convoy", "yield", "remote"],
   },
   deposits: { spawnBpsPerRegionDay: 15_000, minStock: 1_000, maxStock: 5_000, teamPerHour: 30 },
   expeditions: {
