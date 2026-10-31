@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Galley } from "../art/scenes.js";
 import { d, hourOf, minutesLabel } from "../game/format.js";
 import { fr } from "../i18n.js";
 import { Label, Slab } from "../ui.js";
@@ -45,6 +46,7 @@ export function Arsenal({
             key={s.type}
             className="flex items-center gap-2 border-b border-line/60 pb-2 text-sm text-cream"
           >
+            <Galley ship={s.type} className="h-10 w-16 shrink-0" />
             <span className="flex-1">
               {vehicleName(s.type)}
               <span className="block text-xs text-cream-dim">

@@ -50,6 +50,8 @@ Les deux halos du fond suivent la palette (`--glow-a`, `--glow-b`) : cyan et ver
 
 Les illustrations (ressources, bâtiments, blasons) et la carte gardent leurs propres couleurs dans toutes les palettes, réglées sur la palette par défaut (`art/palette.ts`).
 
+**Illustrations générées** (lot D, 31 octobre 2026) : un atelier, un navire, une région, un palier de Casa, Lorenzo et le fond de la carte du monde peuvent venir d'un générateur d'images, d'après la bible de style et les textes de `docs/commandes-images.md`. Le porteur dépose les fichiers dans `apps/web/art-src/`, `apps/web/scripts/art.mjs` les sert en webp et les liste dans `src/art/raster.ts` ; `Illustration` montre l'image quand elle existe et le dessin SVG sinon. Le logo n'en fait jamais partie.
+
 ### Le code des marchandises (« astres de chaîne », 25 octobre 2026)
 
 Une marchandise se lit pareil partout (carte, Magasin, Rialto, Ateliers) : **la couleur dit sa chaîne, la forme dit son étape** (`art/goods.tsx`, d'après `chain` et `tier` du thème, `venice1450.ts`). Rond : brut ; carré : transformé ; hexagone : fini ; losange : outre-mer. Dès 20 px, son pictogramme est gravé dans la forme (`GoodsMark`) ; une forme creuse est une commande que le stock ne couvre pas encore. `ResourceIcon` pose l'illustration sur la forme de son étape, teintée de sa chaîne.

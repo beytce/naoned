@@ -1,3 +1,4 @@
+import { Illustration, artSource } from "./Illustration.js";
 import { P } from "./palette.js";
 
 /** Venice at dusk: campanile, domes, palaces, a gondola on the lagoon. */
@@ -56,6 +57,17 @@ export function Skyline({ className = "" }: { className?: string }) {
 
 /** Small scene per region, for the region choice. */
 export function RegionArt({ code, className = "" }: { code: string; className?: string }) {
+  return (
+    <Illustration
+      family="regions"
+      name={code}
+      className={`object-cover ${className}`}
+      fallback={<RegionDrawing code={code} className={className} />}
+    />
+  );
+}
+
+function RegionDrawing({ code, className }: { code: string; className: string }) {
   const sky = { terraferma: P.gold, lagoon: P.lagoon, dolomites: P.cream }[code] ?? P.gold;
   return (
     <svg
@@ -105,6 +117,19 @@ export function RegionArt({ code, className = "" }: { code: string; className?: 
 
 /** Lorenzo, the player's agent (facteur), who guides the first steps. */
 export function Lorenzo({ size = 56 }: { size?: number }) {
+  const portrait = artSource("people", "lorenzo");
+  if (portrait)
+    return (
+      <img
+        src={portrait.src}
+        srcSet={portrait.srcSet}
+        width={size}
+        height={size}
+        alt=""
+        aria-hidden="true"
+        className="shrink-0 rounded-full bg-night-3 object-cover ring-2 ring-gold"
+      />
+    );
   return (
     <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true">
       <circle cx="32" cy="32" r="31" fill={P.night3} stroke={P.gold} strokeWidth="2" />
@@ -134,7 +159,19 @@ export function Lorenzo({ size = 56 }: { size?: number }) {
 export function Galley({
   className = "",
   sailing = false,
-}: { className?: string; sailing?: boolean }) {
+  ship,
+}: {
+  className?: string;
+  sailing?: boolean;
+  /** A ship type of the empire (docs/commandes-images.md, ships/): its own image when there is one. */
+  ship?: string;
+}) {
+  const drawn = <GalleyDrawing className={className} sailing={sailing} />;
+  if (!ship) return drawn;
+  return <Illustration family="ships" name={ship} className={className} fallback={drawn} />;
+}
+
+function GalleyDrawing({ className, sailing }: { className: string; sailing: boolean }) {
   return (
     <svg viewBox="0 0 200 120" className={className} aria-hidden="true">
       <g>

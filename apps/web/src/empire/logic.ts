@@ -103,3 +103,26 @@ export const shownAt = (casa: number, at: number | null) => at === null || casa 
 
 /** Can the house pay this in ducats? */
 export const affordable = (cash: string, cost: string) => BigInt(cash) >= BigInt(cost);
+
+/** How a region shows on the world map: the house's own, a counter there, one to open, fogged. */
+export type RegionLook = "home" | "open" | "reachable" | "closed";
+
+export function regionLook(
+  r: { code: string; casa: number; counter: number },
+  casa: number,
+): RegionLook {
+  if (r.code === "veneto") return "home";
+  if (r.counter > 0) return "open";
+  return casa >= r.casa ? "reachable" : "closed";
+}
+
+/** A region's best paid good, as the news last brought its prices (null when none came). */
+export function bestQuote(p: EmpirePayload, region: string): string | null {
+  let best: { good: string; price: bigint } | null = null;
+  for (const q of p.market) {
+    if (q.region !== region) continue;
+    const price = BigInt(q.price);
+    if (!best || price > best.price) best = { good: q.good, price };
+  }
+  return best?.good ?? null;
+}

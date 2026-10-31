@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Illustration, casaArt } from "../art/Illustration.js";
 import { BuildingArt } from "../art/buildings.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
@@ -30,7 +31,12 @@ export function CasaMoment({
       aria-label={t.title(level)}
     >
       <div className="orbit-in w-56">
-        <BuildingArt type="palazzo" active className="w-full" />
+        <Illustration
+          family="casa"
+          name={casaArt(level)}
+          className="w-full"
+          fallback={<BuildingArt type="palazzo" active className="w-full" />}
+        />
       </div>
       <p className="font-mono text-xs uppercase tracking-[0.2em] text-gold">{t.kicker}</p>
       <h2 className="font-place text-3xl font-bold uppercase tracking-[0.12em] text-cream">

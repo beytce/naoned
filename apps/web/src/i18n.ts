@@ -677,6 +677,11 @@ const frDict = {
       plans: (n: number) => `${n} plans requis (les reliques)`,
       running: (at: string) => `En recherche, fini à ${at}`,
     },
+    /** On the world map, where room is short. */
+    mapNames: {
+      friuli: "Frioul",
+      romagna: "Romagne",
+    } as Record<string, string>,
     regionNames: {
       veneto: "Vénétie",
       lombardia: "Lombardie",
