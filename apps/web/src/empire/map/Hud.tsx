@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Coin } from "../../art/icons.js";
 import { P } from "../../art/palette.js";
 import { d } from "../../game/format.js";
@@ -98,7 +98,7 @@ export function Hud({
           onClick={onProduction}
           aria-label={t.scene.production}
           data-production
-          className="pointer-events-auto mt-1 flex h-9 w-9 items-center justify-center rounded-full bg-lagoon/90 text-night shadow-lg shadow-black/40 active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
+          className="pointer-events-auto mt-1 flex h-11 w-11 items-center justify-center rounded-full bg-lagoon/90 text-night shadow-lg shadow-black/40 active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
         >
           {Icon.plus()}
         </button>
@@ -107,6 +107,7 @@ export function Hud({
   );
 }
 
+/** A count of the corner: touched, a bubble says what it is, then fades. */
 function Count({
   id,
   label,
@@ -120,8 +121,30 @@ function Count({
   sign: ReactNode;
   gold?: boolean;
 }) {
+  const [said, setSaid] = useState(false);
+  useEffect(() => {
+    if (!said) return;
+    const t = setTimeout(() => setSaid(false), 2400);
+    return () => clearTimeout(t);
+  }, [said]);
+  const help = fr.empire.terms[id];
   return (
-    <div className="flex items-center gap-2" data-hud={id} title={label}>
+    <button
+      type="button"
+      className="pointer-events-auto relative flex min-h-8 items-center gap-2"
+      data-hud={id}
+      aria-label={label}
+      onClick={() => setSaid(!said)}
+    >
+      {said && (
+        <span
+          role="note"
+          className="absolute right-full top-1/2 mr-2 w-48 -translate-y-1/2 animate-fade rounded-lg bg-night-4 px-3 py-2 text-left text-xs text-cream shadow-lg"
+        >
+          <span className="block font-semibold">{label}</span>
+          {help && <span className="block text-cream-dim">{help}</span>}
+        </span>
+      )}
       <span
         className={`font-display text-base font-extrabold tabular-nums [text-shadow:0_1px_4px_rgb(0_0_0/0.8)] ${gold ? "text-gold" : "text-cream"}`}
         data-fx={gold ? "purse" : undefined}
@@ -132,7 +155,7 @@ function Count({
       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-night/80 ring-1 ring-line shadow-md shadow-black/40">
         {sign}
       </span>
-    </div>
+    </button>
   );
 }
 

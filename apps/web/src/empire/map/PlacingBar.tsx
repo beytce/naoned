@@ -30,7 +30,7 @@ export function PlacingBar({
   const none = placeable(p, placing).length === 0;
   return (
     <section
-      className="pointer-events-auto absolute inset-x-0 bottom-0 z-30 animate-sheet border-t border-info/40 bg-night-2/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl shadow-black/60 backdrop-blur-md lg:inset-x-auto lg:bottom-4 lg:left-1/2 lg:w-[30rem] lg:-translate-x-1/2 lg:rounded-2xl lg:border"
+      className="pointer-events-auto w-full border-t border-info/40 bg-night-2 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-xl shadow-black/50 lg:mb-4 lg:w-[30rem] lg:rounded-2xl lg:border"
       data-placing-bar={placing.kind}
     >
       <h3 className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">

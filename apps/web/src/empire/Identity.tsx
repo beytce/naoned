@@ -300,7 +300,6 @@ export function FamilySheet({
     <Sheet
       open={open}
       onClose={onClose}
-      docked
       kicker={t.tab}
       title={t.family}
       summary={`${t.generation(f.generation)} · ${t.heritage(f.heritage)}`}

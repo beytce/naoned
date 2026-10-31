@@ -45,14 +45,7 @@ export function MarketSheet({
         Number(BigInt(b.price) - BigInt(a.price)),
     );
   return (
-    <Sheet
-      open={open}
-      onClose={onClose}
-      docked
-      kicker={t.kicker}
-      title={t.title}
-      summary={t.summary}
-    >
+    <Sheet open={open} onClose={onClose} kicker={t.kicker} title={t.title} summary={t.summary}>
       {quotes.length === 0 ? (
         <p className="text-sm text-cream-dim">{t.none}</p>
       ) : (

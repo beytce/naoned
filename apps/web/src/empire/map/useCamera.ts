@@ -1,5 +1,5 @@
 import { type RefObject, useCallback, useEffect, useRef } from "react";
-import { type Camera, type Point, type Viewport, blend, zoomAt } from "../../game/map/geometry.js";
+import { type Camera, type Point, type Viewport, zoomAt } from "../../game/map/geometry.js";
 import { coverClamp, scaleBounds } from "./logic.js";
 
 /** A finger that moved less than this (px) touched; more, it dragged. */
@@ -16,23 +16,55 @@ export function useCamera({
   initial,
   onPaint,
   onDoubleTap,
+  onTap,
+  onRest,
 }: {
   root: RefObject<HTMLElement | null>;
   initial: (view: Viewport) => Camera;
   onPaint: (cam: Camera, view: Viewport) => void;
   onDoubleTap?: () => void;
+  /** A touch on the sea, not on a place. */
+  onTap?: () => void;
+  /** The camera at rest again, after a gesture or a glide. */
+  onRest?: (cam: Camera, view: Viewport) => void;
 }) {
   const cam = useRef<Camera | null>(null);
   const anim = useRef<{ from: Camera; to: Camera; t0: number; ms: number } | null>(null);
   const velocity = useRef<Point | null>(null);
   const frame = useRef(0);
-  const live = useRef({ onPaint, onDoubleTap, initial });
-  live.current = { onPaint, onDoubleTap, initial };
+  const live = useRef({ onPaint, onDoubleTap, onTap, onRest, initial });
+  live.current = { onPaint, onDoubleTap, onTap, onRest, initial };
+  // The screen's size, read when it changes (never in a frame), and one paint per frame.
+  const size = useRef<Viewport | null>(null);
+  const painting = useRef(0);
+  const resting = useRef(0);
 
   const view = useCallback((): Viewport => {
+    if (size.current) return size.current;
     const el = root.current;
-    return { w: el?.clientWidth || window.innerWidth, h: el?.clientHeight || window.innerHeight };
+    size.current = {
+      w: el?.clientWidth || window.innerWidth,
+      h: el?.clientHeight || window.innerHeight,
+    };
+    return size.current;
   }, [root]);
+
+  const paintSoon = useCallback(() => {
+    if (painting.current) return;
+    painting.current = requestAnimationFrame(() => {
+      painting.current = 0;
+      const c = cam.current;
+      if (!c) return;
+      const v = view();
+      live.current.onPaint(c, v);
+      // At rest a moment after the last move: the chart drawn sharp at its scale.
+      clearTimeout(resting.current);
+      resting.current = window.setTimeout(() => {
+        if (!anim.current && !velocity.current && cam.current)
+          live.current.onRest?.(cam.current, view());
+      }, 150);
+    });
+  }, [view]);
 
   const set = useCallback(
     (c: Camera) => {
@@ -43,9 +75,9 @@ export function useCamera({
       const k = s / c.s;
       const kept = { s, tx: v.w / 2 - (v.w / 2 - c.tx) * k, ty: v.h / 2 - (v.h / 2 - c.ty) * k };
       cam.current = coverClamp(kept, v);
-      live.current.onPaint(cam.current, v);
+      paintSoon();
     },
-    [view],
+    [view, paintSoon],
   );
 
   const current = useCallback((): Camera => {
@@ -60,7 +92,7 @@ export function useCamera({
       const a = anim.current;
       if (a) {
         const k = Math.min(1, (t - a.t0) / a.ms);
-        set(blend(a.from, a.to, k));
+        set(glide(a.from, a.to, k, view()));
         if (k >= 1) anim.current = null;
       } else if (velocity.current) {
         const v = velocity.current;
@@ -72,11 +104,11 @@ export function useCamera({
       if (anim.current || velocity.current) frame.current = requestAnimationFrame(step);
     };
     frame.current = requestAnimationFrame(step);
-  }, [set, current]);
+  }, [set, current, view]);
 
   /** Glides to a camera (or the one a function of the screen gives). */
   const easeTo = useCallback(
-    (to: Camera | ((v: Viewport) => Camera), ms = 520) => {
+    (to: Camera | ((v: Viewport) => Camera), ms = 450) => {
       const target = typeof to === "function" ? to(view()) : to;
       velocity.current = null;
       anim.current = { from: current(), to: target, t0: performance.now(), ms };
@@ -90,12 +122,22 @@ export function useCamera({
     set(current());
     const el = root.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    const sizes = new ResizeObserver(() => set(current()));
+    const sizes = new ResizeObserver(() => {
+      size.current = null;
+      set(current());
+    });
     sizes.observe(el);
     return () => sizes.disconnect();
   }, [root, set, current]);
 
-  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(frame.current);
+      cancelAnimationFrame(painting.current);
+      clearTimeout(resting.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     const el = root.current;
@@ -105,13 +147,16 @@ export function useCamera({
     let last: { p: Point; t: number } | null = null;
     let pinch: { d: number; mid: Point } | null = null;
     let lastTap = 0;
-    const local = (e: PointerEvent | WheelEvent): Point => {
-      const r = el.getBoundingClientRect();
-      return { x: e.clientX - r.left, y: e.clientY - r.top };
-    };
+    // The map's frame, read when a gesture starts, not at each move.
+    let rect = el.getBoundingClientRect();
+    const local = (e: PointerEvent | WheelEvent): Point => ({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
     const bounds = () => scaleBounds(view());
     const down = (e: PointerEvent) => {
       if (e.button !== 0 && e.pointerType === "mouse") return;
+      if (pointers.size === 0) rect = el.getBoundingClientRect();
       pointers.set(e.pointerId, local(e));
       anim.current = null;
       velocity.current = null;
@@ -147,7 +192,7 @@ export function useCamera({
       const dy = p.y - prev.y;
       moved += Math.abs(dx) + Math.abs(dy);
       if (moved <= TAP_SLOP) return;
-      el.dataset.dragging = "1";
+      if (!el.dataset.dragging) el.dataset.dragging = "1";
       const c = current();
       set({ ...c, tx: c.tx + dx, ty: c.ty + dy });
       const t = performance.now();
@@ -174,6 +219,7 @@ export function useCamera({
       if ((e.target as HTMLElement | null)?.closest("button")) return;
       const t = performance.now();
       if (t - lastTap < 300) live.current.onDoubleTap?.();
+      else live.current.onTap?.();
       lastTap = t;
     };
     // A drag that started on a place is not a touch on it.
@@ -185,6 +231,7 @@ export function useCamera({
     };
     const wheel = (e: WheelEvent) => {
       e.preventDefault();
+      rect = el.getBoundingClientRect();
       const { min, max } = bounds();
       anim.current = null;
       set(zoomAt(current(), Math.exp(-e.deltaY * 0.0015), local(e), min, max));
@@ -206,4 +253,20 @@ export function useCamera({
   }, [root, set, current, run, view]);
 
   return { cam: current, easeTo, view, repaint: () => set(current()) };
+}
+
+/**
+ * A step of a glide between two cameras (t from 0 to 1, eased out): the scale in log space, so
+ * that a zoom feels even, and the point at the screen's middle moving straight between the two.
+ */
+export function glide(a: Camera, b: Camera, t: number, v: Viewport): Camera {
+  const k = 1 - (1 - Math.min(1, Math.max(0, t))) ** 3;
+  const s = a.s * (b.s / a.s) ** k;
+  const ax = (v.w / 2 - a.tx) / a.s;
+  const ay = (v.h / 2 - a.ty) / a.s;
+  const bx = (v.w / 2 - b.tx) / b.s;
+  const by = (v.h / 2 - b.ty) / b.s;
+  const x = ax + (bx - ax) * k;
+  const y = ay + (by - ay) * k;
+  return { s, tx: v.w / 2 - x * s, ty: v.h / 2 - y * s };
 }

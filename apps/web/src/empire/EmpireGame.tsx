@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { type Account, ApiError } from "../api.js";
 import { BuildingArt } from "../art/buildings.js";
 import { GoodsMark } from "../art/goods.js";
@@ -11,7 +12,7 @@ import { sound } from "../sound.js";
 import { Badge, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { suppliable } from "./Company.js";
 import { CompanySheet } from "./CompanyTab.js";
-import { HouseSheet, Intro, NextStepCard } from "./Guide.js";
+import { HelpSheet, HouseSheet, Intro, NextStepCard } from "./Guide.js";
 import { ArteSection, FamilySheet, Knowledge, WorkshopIdentity } from "./Identity.js";
 import { MarketSheet } from "./Market.js";
 import { CasaMoment } from "./Moment.js";
@@ -31,13 +32,14 @@ import {
   sitesByEnd,
 } from "./logic.js";
 import { ActionPanel } from "./map/ActionPanel.js";
+import { BottomSlot } from "./map/BottomSlot.js";
 import { EmpireMap, type EmpireMapHandle } from "./map/EmpireMap.js";
 import { Hud } from "./map/Hud.js";
 import { PlacingBar } from "./map/PlacingBar.js";
 import { ProductionSheet } from "./map/Production.js";
 import { RoundButtons } from "./map/RoundButtons.js";
 import { type Placing, type Target, canCasa } from "./map/logic.js";
-import { nextStep } from "./next.js";
+import { inTutorial, nextStep } from "./next.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
 
 type SheetId =
@@ -49,6 +51,7 @@ type SheetId =
   | "away"
   | "family"
   | "house"
+  | "help"
   | "production"
   | "production:vehicles"
   | "arsenal"
@@ -172,6 +175,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     setPicked(null);
   };
   const step = nextStep(p, now);
+  const tutorial = inTutorial(p);
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-night">
@@ -195,64 +199,69 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         onProduction={() => setSheet("production")}
       />
 
-      {placing ? (
-        <PlacingBar
-          p={p}
-          placing={placing}
-          picked={picked}
-          busy={busy}
-          onPlace={() => void place()}
-          onCancel={() => {
-            setPlacing(null);
-            setPicked(null);
-          }}
-        />
-      ) : target ? (
-        <ActionPanel
-          p={p}
-          target={target}
-          now={now}
-          busy={busy}
-          act={act}
-          onOpen={open}
-          onClose={() => setTarget(null)}
-        />
-      ) : (
-        <>
-          {/* Lorenzo's next step, the screen's one gold action, over the round buttons. */}
-          <div className="pointer-events-none absolute inset-x-3 bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+4.25rem)] z-20 flex justify-center">
-            <NextStepCard
-              compact
-              p={p}
-              now={now}
-              step={step}
-              busy={busy}
-              act={act}
-              onBuild={(recipe) => {
-                setHighlight(recipe);
-                setSheet("production");
-              }}
-            />
-          </div>
-          <RoundButtons
-            onRecenter={() => map.current?.toggle()}
-            onMarket={() => setSheet("market")}
-            onCompany={() => setSheet("company")}
-            onFamily={() => setSheet("family")}
-            dots={{
-              company: claimable(p) || suppliable(p, account.id) > 0 || terraCalls(p, now),
-              family: familyCalls(p),
+      {/* The foot of the map: the round buttons, a place's panel, or the bar of placing. */}
+      <BottomSlot
+        id={placing ? "placing" : target ? "panel" : "idle"}
+        hidden={sheet !== null || good !== null}
+      >
+        {placing ? (
+          <PlacingBar
+            p={p}
+            placing={placing}
+            picked={picked}
+            busy={busy}
+            onPlace={() => void place()}
+            onCancel={() => {
+              setPlacing(null);
+              setPicked(null);
             }}
           />
-        </>
-      )}
+        ) : target ? (
+          <ActionPanel
+            p={p}
+            target={target}
+            now={now}
+            busy={busy}
+            act={act}
+            onOpen={open}
+            onClose={() => setTarget(null)}
+          />
+        ) : (
+          <>
+            {/* Lorenzo, the tutorial's: until the Casa 2 he says the next gesture, and its gold
+                button does it; then he withdraws behind the « ? », and the player plays. */}
+            {tutorial && (
+              <div className="w-full px-3 pb-2 lg:max-w-md">
+                <NextStepCard
+                  compact
+                  p={p}
+                  now={now}
+                  step={step}
+                  busy={busy}
+                  act={act}
+                  onBuild={(recipe) => {
+                    setHighlight(recipe);
+                    setSheet("production");
+                  }}
+                />
+              </div>
+            )}
+            <RoundButtons
+              onRecenter={() => map.current?.toggle()}
+              onHelp={tutorial ? undefined : () => setSheet("help")}
+              onMarket={() => setSheet("market")}
+              onCompany={() => setSheet("company")}
+              onFamily={() => setSheet("family")}
+              dots={{
+                company: claimable(p) || suppliable(p, account.id) > 0 || terraCalls(p, now),
+                family: familyCalls(p),
+              }}
+            />
+          </>
+        )}
+      </BottomSlot>
 
-      {toast && (
-        <output className="absolute inset-x-4 top-20 z-50 mx-auto block max-w-sm animate-fade bg-night-4 px-4 py-3 text-center text-sm text-cream shadow-lg slab">
-          {toast}
-        </output>
-      )}
-
+      <HelpSheet p={p} now={now} step={step} open={sheet === "help"} onClose={close} />
       <WorkshopsSheet
         p={p}
         now={now}
@@ -347,8 +356,20 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       </FamilySheet>
       <GoodSheet p={p} good={good} busy={busy} onClose={() => setGood(null)} act={act} />
       <HouseSheet p={p} open={sheet === "house"} onClose={close} />
-      <Intro p={p} />
-      <FxLayer />
+      {/* Over everything, the sheets included (on the body, as they are): the welcome, the toast,
+          the moment of a Casa, the goods and coins in flight. */}
+      {createPortal(
+        <>
+          <Intro p={p} />
+          {toast && (
+            <output className="fixed inset-x-4 top-[max(1rem,env(safe-area-inset-top))] z-[70] mx-auto block max-w-sm animate-fade bg-night-4 px-4 py-3 text-center text-sm text-cream shadow-lg slab">
+              {toast}
+            </output>
+          )}
+          <FxLayer />
+        </>,
+        document.body,
+      )}
       {moment !== null && (
         <CasaMoment
           level={moment}
@@ -490,7 +511,6 @@ function WorkshopsSheet({
     <Sheet
       open={sheet === "workshops" || focus !== null}
       onClose={onClose}
-      docked={focus === null}
       kicker={t.region}
       title={focus && one ? buildingName(p, one.type) : t.tabs.workshops}
       summary={t.workshop.queueRule}
@@ -602,7 +622,6 @@ function CasaSheet({
     <Sheet
       open={open}
       onClose={onClose}
-      docked
       kicker={t.casa.kicker}
       title={t.casa.title(view.house.casa)}
       summary={next ? undefined : t.casa.top}
