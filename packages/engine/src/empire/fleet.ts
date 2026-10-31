@@ -14,8 +14,11 @@ export const vehicleLevelOf = (h: EmpireHouse, type: string): number =>
  * knowledge): a tenth more a level beyond the first, by default.
  */
 export function capacityOf(h: EmpireHouse, type: string, s: EmpireSettings): number {
-  const base = s.vehicles[type]?.capacity ?? 0;
-  const step = s.vehicleLevels.stepBps * (vehicleLevelOf(h, type) - 1);
+  const spec = s.vehicles[type];
+  const base = spec?.capacity ?? 0;
+  const lv = s.vehicleLevels;
+  const per = spec?.build ? (lv.shipStepBps ?? lv.stepBps) : lv.stepBps;
+  const step = per * (vehicleLevelOf(h, type) - 1);
   return Math.floor((base * (10_000 + step)) / 10_000);
 }
 

@@ -270,7 +270,9 @@ function extractNow(w: World, h: House, hours: number) {
 /** A vehicle's hold at the house's level of its model (+10 % a level, by default). */
 function holdOf(w: World, h: House, type: string): number {
   const base = w.m.vehicles[type]?.capacity ?? 0;
-  const step = w.s.vehicleLevels.stepBps * ((h.levels[type] ?? 1) - 1);
+  const lv = w.s.vehicleLevels;
+  const per = w.s.vehicles[type]?.build ? (lv.shipStepBps ?? lv.stepBps) : lv.stepBps;
+  const step = per * ((h.levels[type] ?? 1) - 1);
   return Math.floor((base * (10_000 + step)) / 10_000);
 }
 
@@ -1024,7 +1026,8 @@ function tryModel(w: World, h: House): boolean {
     if (ship ? w.s.map.arsenal && !h.arsenal : w.s.map.depot && !h.depot) continue;
     const cost =
       d(Math.max(spec.costDucats, lv.minCostDucats)) * BigInt(lv.costTimes) * 2n ** BigInt(level);
-    const more = Math.floor((spec.capacity * lv.stepBps) / 10_000) * count;
+    const per = ship ? (lv.shipStepBps ?? lv.stepBps) : lv.stepBps;
+    const more = Math.floor((spec.capacity * per) / 10_000) * count;
     let perDay = 0n;
     if (spec.regions.length === 1) {
       const book = localBookOf("veneto", h.counters.get("veneto") ?? 0, w.s);

@@ -123,7 +123,7 @@ Les dix régions, dans l'ordre d'ouverture :
 - **Les villes cachées.** Chaque région a de deux à quatre villes, sur leurs cases. Une ville trouvée reçoit des livraisons, et porte **sa part du carnet de la région**. Toutes les villes trouvées font le carnet entier.
 - **L'Arsenal** se pose une fois, sur une côte qu'on voit, dès la Casa de la première marciliana. Les navires s'y construisent.
 - **La Remise** se pose une fois, sur un secteur qu'on voit, dès la Casa 2. On y **achète les véhicules de terre** (les deux mules du départ restent données). Une Maison qui en avait déjà acheté la reçoit à Venise.
-- **Le niveau d'un modèle**, de 1 à 5, se monte à la Remise pour la terre et à l'Arsenal pour la mer. Chaque niveau donne **+10 % de capacité à tous les véhicules du modèle**. Il coûte le prix du modèle, doublé à chaque niveau. À la Puissance, un niveau de modèle compte comme un niveau de module.
+- **Le niveau d'un modèle**, de 1 à 5, se monte à la Remise pour la terre et à l'Arsenal pour la mer. Chaque niveau donne **+10 % de capacité à tous les véhicules du modèle**, et +5 % pour un navire (décision du porteur, après le simulateur : à +10 %, les navires prenaient le commerce aux spécialistes). Il coûte le prix du modèle, doublé à chaque niveau. À la Puissance, un niveau de modèle compte comme un niveau de module.
 - **Le Campo** se pose une fois, sur un secteur qu'on voit, dès la Casa 4. Il **ouvre la Terraferme** : sans lui, on n'entre ni dans un théâtre ni dans la Contesa.
 
 **Stato da Mar ou Stato da Terra** ; Frioul et Istrie | Mois 1 |

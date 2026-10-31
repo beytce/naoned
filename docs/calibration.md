@@ -1981,7 +1981,7 @@ Le nouveau sort un peu plus tôt de la première bande, car il ne paie plus de F
 | Marge d'un voyage, part des commandes | — | 971 à 1 065 d, 31 à 32 % ✓ |
 | Convois de la Muda en colleganza | — | 25 à 28,5 % ✓ |
 
-### La Remise et le niveau des modèles (31 octobre 2026, le soir) — à arbitrer
+### La Remise et le niveau des modèles (31 octobre 2026, le soir)
 
 - **La Remise** (Casa 2, 200 ducats, 2 h) précède tout achat de véhicule de terre ; les deux mules du départ restent données.
 - **Le niveau d'un modèle** (1 à 5, +10 % de capacité par niveau, à la Remise ou à l'Arsenal) coûte le prix du modèle, 500 ducats au moins, doublé à chaque niveau (`vehicleLevels`).
@@ -2004,6 +2004,12 @@ Ce sont les niveaux des **navires** qui déplacent l'équilibre : sans eux, on r
 2. un plafond plus bas pour les navires (niveau 3) ;
 3. les niveaux réservés aux véhicules de terre, la mer gardant ses modules ;
 4. accepter l'écart et rehausser plus tard la part des gisements.
+
+**Décision du porteur : +5 % par niveau pour les navires** (`shipStepBps` 500), +10 % pour la terre. **Résultat : 9, 9 et 9 cibles sur 12**, comme avant la Remise.
+
+| Mesure | Sans niveaux | Navires à +5 % |
+| --- | --- | --- |
+| Part du métier : négociant, exploitant, armateur | 26,7–27,6 %, 25,5–26,0 %, 45,0–46,7 % | 28,9–30,3 %, 25,3–27,0 %, 44,3–45,7 % ✓ |
 
 ### Refaire le calibrage
 

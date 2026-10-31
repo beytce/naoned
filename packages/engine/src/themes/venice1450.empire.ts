@@ -313,8 +313,9 @@ export const venice1450Empire: EmpireSettingsInput = {
     },
   },
   // A model raised at the Remise or the Arsenal: its price, 500 ducats at the least, doubled at
-  // each level (at the mule's 60 ducats, the miners fell short of their share, calibration.md).
-  vehicleLevels: { max: 5, stepBps: 1_000, costTimes: 1, minCostDucats: 500 },
+  // each level; +10 % a level on land, +5 % at sea (at +10 %, the ships took the trade from the
+  // miners and the traders: decision of the owner, calibration.md).
+  vehicleLevels: { max: 5, stepBps: 1_000, shipStepBps: 500, costTimes: 1, minCostDucats: 500 },
   localTripsPerDay: 4,
   newcomers: { rawBonusBps: 2_000, untilCasa: 8 },
   // The knowledge (CADRAGE-v3 § 3.5): four branches, four knowledges and two capstones each,

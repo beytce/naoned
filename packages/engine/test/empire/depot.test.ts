@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   type EmpireSettingsInput,
+  capacityOf,
   empireHouseAt,
   empireView,
   ensureMap,
@@ -130,6 +131,21 @@ describe("a model's level", () => {
     const h = { casa: 2, workshops: [], builds: [] } as unknown as EmpireHouse;
     expect(upgradeCost(h, "cart", s)).toBe(500n * 2n * 100n);
     expect(upgradeCost(h, "cocca", s)).toBe(1_000n * 2n * 100n);
+  });
+
+  it("raises a ship by its own step, when the world sets one", () => {
+    const s = parseEmpireSettings({
+      ...empire,
+      vehicleLevels: { max: 5, stepBps: 1_000, shipStepBps: 500, costTimes: 1 },
+    });
+    const h = {
+      casa: 2,
+      workshops: [],
+      builds: [],
+      vehicleLevels: { cart: 3, cocca: 3 },
+    } as unknown as EmpireHouse;
+    expect(capacityOf(h, "cart", s)).toBe(36);
+    expect(capacityOf(h, "cocca", s)).toBe(110);
   });
 
   it("raises the hold of every vehicle of the model by a tenth a level, up to the fifth", () => {

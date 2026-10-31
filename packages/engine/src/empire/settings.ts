@@ -107,6 +107,8 @@ export const empireSettingsSchema = z.object({
     .object({
       max: positive.prefault(5),
       stepBps: bps.prefault(1_000),
+      /** A ship's step, when it differs (a ship's hold weighs on every port: 31 October). */
+      shipStepBps: bps.optional(),
       costTimes: positive.prefault(1),
       /** The price a level is reckoned from, at the least: a cheap model is not raised for nothing. */
       minCostDucats: qty.prefault(0),

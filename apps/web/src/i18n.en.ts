@@ -885,7 +885,8 @@ export const en: Dictionary = {
         `${built} built · ${hold} units · level ${level}`,
       upgrade: (cost: string) => `Improve the model · ${cost}`,
       top: "Model at its highest",
-      upgradeHint: "Each level gives +10 % capacity to every vehicle of the model.",
+      upgradeHint:
+        "Each level gives +10 % capacity to every vehicle of the model (+5 % for a ship).",
     },
     scuola: {
       title: "The Scuola",

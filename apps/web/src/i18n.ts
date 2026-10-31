@@ -813,7 +813,8 @@ const frDict = {
         `${built} construit${built > 1 ? "s" : ""} · ${hold} unités · niveau ${level}`,
       upgrade: (cost: string) => `Améliorer le modèle · ${cost}`,
       top: "Modèle au plus haut",
-      upgradeHint: "Chaque niveau donne +10 % de capacité à tous les véhicules du modèle.",
+      upgradeHint:
+        "Chaque niveau donne +10 % de capacité à tous les véhicules du modèle (+5 % pour un navire).",
     },
     scuola: {
       title: "La Scuola",
