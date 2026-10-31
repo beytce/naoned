@@ -94,6 +94,8 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("empirePlaceCounter"), cell: z.string().max(12) }),
   z.object({ type: z.literal("empireBuildArsenal"), cell: z.string().max(12) }),
   z.object({ type: z.literal("empireBuildCamp"), cell: z.string().max(12) }),
+  z.object({ type: z.literal("empireBuildDepot"), cell: z.string().max(12) }),
+  z.object({ type: z.literal("empireUpgradeVehicle"), vehicleType: z.string().max(40) }),
   z.object({ type: z.literal("empireUpgradeCounter"), region: z.string().max(40) }),
   z.object({ type: z.literal("empireBuyVehicle"), vehicleType: z.string().max(40) }),
   z.object({
