@@ -64,7 +64,10 @@ function setCash(tx: Tx, playerId: PlayerId, target: Deniers): void {
 function setStock(tx: Tx, playerId: PlayerId, good: string, qty: number): void {
   if (!tx.ctx.theme.resources.some((r) => r.code === good)) fail("unknown_resource");
   whole(qty, 0, 1_000_000_000);
-  const have = inventoryLine(tx, playerId, good).available;
+  // In the empire, the counters beyond Venice keep their own share: the qty set is Venice's.
+  const h = tx.s.empire?.houses[playerId];
+  const away = Object.values(h?.stores ?? {}).reduce((n, st) => n + (st[good] ?? 0), 0);
+  const have = inventoryLine(tx, playerId, good).available - away;
   if (qty > have) addStock(tx, playerId, good, qty - have, "admin_adjust");
   else if (qty < have) removeStock(tx, playerId, good, have - qty, "admin_adjust");
 }

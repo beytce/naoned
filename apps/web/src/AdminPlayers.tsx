@@ -260,7 +260,7 @@ function StockEditor({
   return (
     <Section
       title="Entrepôt"
-      hint="Le stock disponible de chaque marchandise, réglé à la quantité donnée."
+      hint="Le stock disponible de chaque marchandise, réglé à la quantité donnée (dans l'empire : celui de Venise ; les autres comptoirs gardent le leur)."
     >
       <div className="flex flex-wrap items-center gap-2">
         <input

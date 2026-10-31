@@ -203,8 +203,15 @@ export function registerAdminPlayerRoutes(app: FastifyInstance, deps: Deps): voi
       escrow: state.accounts[`escrow:${id.data}`] ?? 0n,
       stock: Object.fromEntries(
         Object.entries(inv)
-          .filter(([, l]) => l.available + l.escrow > 0)
-          .map(([g, l]) => [g, { available: l.available, escrow: l.escrow }]),
+          .map(([g, l]) => {
+            // In the empire, what the counters beyond Venice hold is theirs: Venice's share here.
+            const away = Object.values(state.empire?.houses[id.data]?.stores ?? {}).reduce(
+              (n, st) => n + (st[g] ?? 0),
+              0,
+            );
+            return [g, { available: l.available - away, escrow: l.escrow }] as const;
+          })
+          .filter(([, l]) => l.available + l.escrow > 0),
       ),
       goods: ctx.theme.resources.map((r) => ({ code: r.code, name: r.name })),
       level,

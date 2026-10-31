@@ -52,6 +52,22 @@ describe("the admin's hand", () => {
     expect(edit(w, { kind: "stock", good: "nothing", qty: 1 }).ok).toBe(false);
   });
 
+  it("sets Venice's share of a good, the other counters' left as they are", () => {
+    const w = world();
+    edit(w, { kind: "stock", good: "wheat", qty: 30 });
+    const empire = w.state.empire;
+    const h = empire?.houses.a;
+    if (!empire || !h) throw new Error("no house");
+    // A counter beyond Venice holding 20 of the 30 (as a delivery would leave it).
+    w.state = {
+      ...w.state,
+      empire: { ...empire, houses: { a: { ...h, stores: { p2: { wheat: 20 } } } } },
+    };
+    expect(edit(w, { kind: "stock", good: "wheat", qty: 5 }).ok).toBe(true);
+    expect(w.state.inventories.a?.wheat?.available).toBe(25);
+    expect(w.state.empire?.houses.a?.stores?.p2?.wheat).toBe(20);
+  });
+
   it("sets the Casa within its levels", () => {
     const w = world();
     expect(edit(w, { kind: "casa", level: 5 }).ok).toBe(true);
