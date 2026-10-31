@@ -233,8 +233,12 @@ export const venice1450Empire: EmpireSettingsInput = {
     cells: VENICE_MAP_CELLS,
     cities: VENICE_MAP_CITIES,
     revealRadius: 1,
-    // The third drawing: about thirty large sectors, several cities each (31 October, evening).
-    version: 3,
+    // The fourth drawing: some sixty sectors, two cities at most each (the map that grows, 31
+    // October, night); a counter put anywhere in a sector serves the cities within its reach.
+    version: 4,
+    hexSize: 24,
+    reach: { base: 14, perLevel: 7 },
+    postSpacing: 8,
     costStepBps: 2_500,
     arsenal: { costDucats: 3_000, casa: 9, minutes: 480 },
     // The Campo, the door of the Terraferma, from the Casa 4 (600 ducats: at 1 200 the miners

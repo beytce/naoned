@@ -320,7 +320,7 @@ type EmpireCommandOf =
       city?: string;
     }
   | { type: "empireClaim"; playerId: PlayerId; index: number }
-  | { type: "empirePlaceCounter"; playerId: PlayerId; cell: string }
+  | { type: "empirePlaceCounter"; playerId: PlayerId; cell: string; x?: number; y?: number }
   | { type: "empireBuildArsenal"; playerId: PlayerId; cell: string }
   | { type: "empireBuildCamp"; playerId: PlayerId; cell: string }
   | { type: "empireBuildDepot"; playerId: PlayerId; cell: string }
@@ -538,7 +538,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       claimObjective(tx, cmd.playerId, cmd.index);
       break;
     case "empirePlaceCounter":
-      placeCounter(tx, cmd.playerId, cmd.cell);
+      placeCounter(tx, cmd.playerId, cmd.cell, cmd.x, cmd.y);
       break;
     case "empireBuildArsenal":
       buildArsenal(tx, cmd.playerId, cmd.cell);
