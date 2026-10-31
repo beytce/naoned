@@ -31,3 +31,7 @@ export * from "./map.js";
 export * from "./fleet.js";
 export * from "./porta/settings.js";
 export * from "./porta/arms.js";
+export * from "./porta/battle/types.js";
+export * from "./porta/battle/map.js";
+export * from "./porta/battle/ai.js";
+export * from "./porta/battle/sim.js";

@@ -61,6 +61,99 @@ const component = z.object({
   rampMaxBps: bps.prefault(0),
 });
 
+/** The rarities of a relic, from the commonest (plan-porta.md § 6.3). */
+export const RARITIES = ["common", "rare", "precious", "legendary"] as const;
+export type Rarity = (typeof RARITIES)[number];
+
+/** Rome's units (plan-porta.md § 6.4), after Hades' Star's Cerberus. */
+export const ROME_KINDS = [
+  "crossbowman",
+  "halberdier",
+  "light_horse",
+  "bombard",
+  "gonfalonier",
+] as const;
+export type RomeKind = (typeof ROME_KINDS)[number];
+
+/** A unit of Rome, at tier strength 1. */
+const romeUnit = z.object({
+  hp: positive,
+  /** Damage a second; for a unit firing in shots (`periodS`), a shot's damage. */
+  power: positive,
+  rangeCenti: positive,
+  visionCenti: positive,
+  speedCenti: qty,
+  /** Seconds between two choices of target (the Guardian 8 s, the Colossus 20 s). */
+  reviewS: positive,
+  /** How far from its city it follows a target before it goes back. */
+  leashCenti: positive,
+  /** It falls back to its city below this share of its hp (0: never). */
+  retreatBelowBps: bps.prefault(0),
+  periodS: qty.prefault(0),
+  /** A shot that hurts all around the point it falls on (the bombard). */
+  areaCenti: qty.prefault(0),
+  rampBps: bps.prefault(0),
+  rampEveryS: qty.prefault(0),
+  rampMaxBps: bps.prefault(0),
+  /** The light horse: hunts the transports first. */
+  prefersTransport: z.boolean().prefault(false),
+  /** Roams between the cities instead of guarding one. */
+  roams: z.boolean().prefault(false),
+});
+
+const counts = z.partialRecord(z.enum(ROME_KINDS), qty).prefault({});
+
+/** A tier of the lands of Rome (plan-porta.md § 6.6). */
+const tier = z.object({
+  minPlayers: positive.prefault(1),
+  maxPlayers: positive.prefault(4),
+  /** The map's radius, in cells. */
+  radius: positive,
+  cities: positive,
+  /** Each city's garrison, by kind. */
+  garrison: counts,
+  /** The units roaming the map, by kind. */
+  roamers: counts,
+  /** The Gonfaloniers, in the city farthest from the gate. */
+  bosses: qty.prefault(0),
+  /** Rome's hp and damage at this tier, in bps of the units' own. */
+  strengthBps: positive,
+  /** Each player's relics in a city. */
+  relicsPerCity: z.object({ min: qty, max: qty }),
+  /** The odds of each rarity, as weights. */
+  rarityWeights: z.object({ common: qty, rare: qty, precious: qty, legendary: qty }),
+  /** The bread a vehicle eats to enter (lot 3). */
+  breadPerVehicle: qty.prefault(0),
+});
+
+/** The battle's own rules (plan-porta.md § 6). */
+const battle = z
+  .object({
+    stepMs: positive.prefault(250),
+    minutes: positive.prefault(10),
+    /** A vehicle within this of the gate may leave; a transport within that of a city loads. */
+    gateRadiusCenti: positive.prefault(100),
+    cityRadiusCenti: positive.prefault(100),
+    /** A unit of Rome that sees an enemy warns those of its city so near. */
+    alertRadiusCenti: positive.prefault(300),
+    /** A unit struck sees its striker so long, and counts it more threatening. */
+    hitMemoryS: positive.prefault(10),
+    /** A unit fallen back heals so much a second at its city, and comes out again at `backBps`. */
+    retreatHealBpsPerS: bps.prefault(200),
+    retreatBackBps: bps.prefault(8_000),
+    /** Units added for each player beyond the first, in bps. */
+    extraPlayerBps: bps.prefault(5_000),
+    /** A transport in battle: no defence. It carries a relic for every `holdPerRelic` of hold. */
+    transport: z
+      .object({
+        hp: positive.prefault(800),
+        speedCenti: positive.prefault(500),
+        holdPerRelic: positive.prefault(25),
+      })
+      .prefault({}),
+  })
+  .prefault({});
+
 export const portaSettingsSchema = z
   .object({
     models: z.record(z.string(), combatModel).prefault({}),
@@ -74,9 +167,18 @@ export const portaSettingsSchema = z
       .prefault({}),
     components: z.record(z.string(), component).prefault({}),
     componentMaxLevel: positive.prefault(5),
+    battle,
+    rome: z.partialRecord(z.enum(ROME_KINDS), romeUnit).prefault({}),
+    tiers: z.array(tier).prefault([]),
+    /** Each rarity: its loading in seconds, the antiquarian's price, the ranking's points. */
+    relics: z
+      .record(z.enum(RARITIES), z.object({ loadS: positive, priceDucats: qty, points: qty }))
+      .optional(),
   })
   .prefault({});
 
 export type PortaSettings = z.output<typeof portaSettingsSchema>;
 export type CombatModelSettings = z.output<typeof combatModel>;
 export type ComponentSettings = z.output<typeof component>;
+export type RomeUnitSettings = z.output<typeof romeUnit>;
+export type TierSettings = z.output<typeof tier>;

@@ -219,7 +219,7 @@ Au lot 6, le simulateur doit tenir l'indice des prix entre 80 et 130 sur 24 mois
 
 0. Ce document, le cadrage (§ 2, § 3 ter, § 12 quater, § 13), `IDEAS.md`.
 1. Le moteur des armes : véhicules de combat, composants, achat, pose, amélioration. *Fait le 31 octobre 2026* (`empire/porta/arms.ts`, `empire/porta/settings.ts`, réglages de Venise ; la Puissance compte les véhicules de combat, les niveaux de modèle et ceux des composants).
-2. Le moteur de bataille : carte, simulation, IA de Rome, ordres, reliques, fermeture.
+2. Le moteur de bataille : carte, simulation, IA de Rome, ordres, reliques, fermeture. *Fait le 31 octobre 2026* (`empire/porta/battle/` : `map.ts` tire la carte, `ai.ts` l'esprit de Rome, `sim.ts` le pas, les ordres et l'issue ; réglages `porta.battle`, `porta.rome`, `porta.tiers`, `porta.relics` ; un palier 1 se gagne seul avec un cavalier aux lances qui nettoie la ville la plus proche avant d'y mener son transport).
 3. La Porta et l'antiquaire : bâtiment, envoi, entrée, sortie, vente, points.
 4. Le serveur en direct : salon, file, invitation, départ seul, boucle, WebSocket, classement.
 5. L'écran : la Remise des armes, la Porta sur la carte, la bataille, l'antiquaire, le classement.
