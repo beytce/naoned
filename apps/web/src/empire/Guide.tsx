@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Lorenzo } from "../art/scenes.js";
 import { d, hourOf } from "../game/format.js";
 import { fr } from "../i18n.js";
-import { LorenzoCard, Sheet, Slab, Stat } from "../ui.js";
+import { LorenzoCard, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { Term } from "./Term.js";
-import { buildingName } from "./logic.js";
+import { buildingName, workshopStatus } from "./logic.js";
 import type { NextStep } from "./next.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
@@ -54,12 +54,14 @@ function wordsOf(p: EmpirePayload, s: NextStep): { what: string; why: string; bu
  */
 export function NextStepCard({
   p,
+  now,
   step,
   busy,
   act,
   onBuild,
 }: {
   p: EmpirePayload;
+  now: number;
   step: NextStep;
   busy: boolean;
   act: (a: EmpireAction) => Promise<void>;
@@ -85,9 +87,20 @@ export function NextStepCard({
       >
         <p className="font-display font-bold text-cream">{w.what}</p>
         <p className="mt-0.5 text-sm text-cream-dim">{w.why}</p>
+        {step.kind === "wait" && <WaitArc p={p} now={now} />}
       </LorenzoCard>
     </div>
   );
+}
+
+/** While waiting: the arc of the lot that comes soonest (Lagune: time reads in arcs). */
+function WaitArc({ p, now }: { p: EmpirePayload; now: number }) {
+  const soonest = (p.view?.house.workshops ?? [])
+    .map((w) => workshopStatus(p, w, now))
+    .filter((s) => s.state === "running")
+    .sort((a, b) => (a.state === "running" && b.state === "running" ? a.left - b.left : 0))[0];
+  if (!soonest || soonest.state !== "running") return null;
+  return <Ribbon value={soonest.progress} label={clock(soonest.left)} />;
 }
 
 const INTRO_KEY = "empireIntroSeen";

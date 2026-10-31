@@ -287,6 +287,7 @@ export const en: Dictionary = {
       relaunch: "Collect and relaunch",
       upgrade: (n: number) => `Raise to level ${n}`,
       upgradeCost: (cost: string, time: string) => `${cost} · ${time} of building`,
+      atCasaShort: "Casa's top",
       atCasa: "Top level: raise the Casa first",
       building: "Being built",
       queueRule:
@@ -398,6 +399,19 @@ export const en: Dictionary = {
       favour: "Favour",
       seals: "Seals",
       income: "Daily income",
+    },
+    orbit: {
+      build: "Build",
+      ready: "Ready · touch",
+      idle: "To launch",
+      waits: (good: string) => `waits for ${good.toLowerCase()}`,
+      level: (n: number) => `lvl ${n}`,
+    },
+    moment: {
+      kicker: "Your House grows",
+      title: (n: number) => `Casa ${n}`,
+      nothing: "More room for your workshops and your building sites.",
+      go: "Continue",
     },
     terms: {
       casa: "Your palace. Each Casa level opens workshop places, regions and new trades.",

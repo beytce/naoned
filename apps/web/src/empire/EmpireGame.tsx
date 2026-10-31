@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type Account, ApiError } from "../api.js";
+import { BuildingArt } from "../art/buildings.js";
 import { GoodsMark } from "../art/goods.js";
 import { d, hourOf, minutesLabel } from "../game/format.js";
 import { FxLayer, flyCoins, flyGoods } from "../game/fx.js";
@@ -13,6 +14,7 @@ import { Badge, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { CompanySection, suppliable } from "./Company.js";
 import { HouseSheet, Intro, NextStepCard } from "./Guide.js";
 import { ArteSection, Court, FamilySheet, Knowledge, WorkshopIdentity } from "./Identity.js";
+import { CasaMoment } from "./Moment.js";
 import { EmpireOrbit } from "./Orbit.js";
 import { GoodSheet, ResourceBar } from "./Resources.js";
 import { Arsenal, Colleganze } from "./Sea.js";
@@ -23,6 +25,7 @@ import { type EmpireAnswer, empireApi } from "./api.js";
 import {
   affordable,
   buildingName,
+  casaReached,
   daysOfIncome,
   queueEnd,
   readyLots,
@@ -68,8 +71,14 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   // The good opened from the resource bar, and the recipe the next step points at.
   const [good, setGood] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
+  // The Casa reached since the last view: its moment.
+  const [moment, setMoment] = useState<number | null>(null);
+  const last = useRef<EmpireAnswer | null>(first);
 
   const take = useCallback((next: EmpireAnswer) => {
+    const reached = casaReached(last.current, next);
+    if (reached) setMoment(reached);
+    last.current = next;
     skew.current = next.now - Date.now();
     setP(next);
     if (next.error) setToast(t.errors[next.error] ?? unknownError);
@@ -184,6 +193,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         {(place === null || place === "veneto") && (
           <NextStepCard
             p={p}
+            now={now}
             step={nextStep(p, now)}
             busy={busy}
             act={act}
@@ -194,13 +204,20 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           />
         )}
         {place !== null && (
-          <button
-            type="button"
-            onClick={() => setPlace(null)}
-            className="mx-auto mt-3 block w-full max-w-md text-left text-xs text-gold underline"
-          >
-            ← {t.world.back}
-          </button>
+          // The place's head (Lagune): the way back to the map, the place's name.
+          <div className="mx-auto mt-3 flex w-full max-w-md items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPlace(null)}
+              aria-label={t.world.back}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-line text-lg text-cream active:scale-95"
+            >
+              ‹
+            </button>
+            <span className="font-place text-base font-bold uppercase tracking-[0.2em] text-cream">
+              {regionName(place)}
+            </span>
+          </div>
         )}
         {place === null ? (
           <section className="mx-auto mt-4 w-full max-w-md">
@@ -212,6 +229,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             <EmpireOrbit
               p={p}
               now={now}
+              busy={busy}
+              act={act}
               onWorkshop={(id) => setSheet(`workshop:${id}`)}
               onCasa={() => setSheet("casa")}
               onFree={() => setSheet("new")}
@@ -293,6 +312,13 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       <HouseSheet p={p} open={sheet === "house"} onClose={close} />
       <Intro p={p} />
       <FxLayer />
+      {moment !== null && (
+        <CasaMoment
+          level={moment}
+          opens={p.casa.find((c) => c.level === moment)?.opens ?? []}
+          onClose={() => setMoment(null)}
+        />
+      )}
       <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
 
       <TabBar
@@ -468,7 +494,11 @@ function WorkshopsSheet({
           return (
             <li key={ws.id} className="cut bg-night-2 p-3 ring-1 ring-inset ring-line/70">
               <div className="flex items-center gap-3">
-                <GoodsMark code={Object.keys(r?.outputs ?? {})[0] ?? ""} size={32} />
+                <BuildingArt
+                  type={ws.type}
+                  active={!!end && end > now}
+                  className="h-14 w-20 shrink-0"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-display font-bold text-cream">
                     {buildingName(p, ws.type)}
@@ -492,6 +522,8 @@ function WorkshopsSheet({
                   </button>
                 )}
               </div>
+              {/* The night queue as a ribbon: its share of the 12 hours still to run. */}
+              {end && end > now && <Ribbon value={Math.min(1, (end - now) / (12 * 3_600_000))} />}
               {r && (
                 <p className="mt-2 text-xs text-cream-dim">
                   {t.workshop.makes}{" "}
@@ -528,7 +560,7 @@ function WorkshopsSheet({
                     {t.workshop.upgradeCost(d(up.cost), minutesLabel(up.minutes))}
                   </Slab>
                 ) : (
-                  <span className="self-center text-xs text-cream-dim">{t.workshop.atCasa}</span>
+                  <Badge>{t.workshop.atCasaShort}</Badge>
                 )}
               </div>
               {focus && <WorkshopIdentity p={p} ws={ws} busy={busy} act={act} />}

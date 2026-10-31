@@ -204,6 +204,7 @@ const frDict = {
       relaunch: "Ramasser et relancer",
       upgrade: (n: number) => `Monter au niveau ${n}`,
       upgradeCost: (cost: string, time: string) => `${cost} · ${time} de chantier`,
+      atCasaShort: "Max. de la Casa",
       atCasa: "Niveau maximum : montez d'abord la Casa",
       building: "En chantier",
       queueRule:
@@ -316,6 +317,19 @@ const frDict = {
       favour: "Faveur",
       seals: "Sceaux",
       income: "Revenu du jour",
+    },
+    orbit: {
+      build: "Bâtir",
+      ready: "Prêt · touchez",
+      idle: "À lancer",
+      waits: (good: string) => `attend ${good.toLowerCase()}`,
+      level: (n: number) => `niv. ${n}`,
+    },
+    moment: {
+      kicker: "Votre Maison grandit",
+      title: (n: number) => `Casa ${n}`,
+      nothing: "Une place de plus pour vos ateliers et vos chantiers.",
+      go: "Continuer",
     },
     terms: {
       casa: "Votre palais. Chaque niveau de Casa ouvre des places d'ateliers, des régions et de nouveaux métiers.",

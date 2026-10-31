@@ -111,6 +111,17 @@ try {
     await page.getByRole("button", { name: /tout relancer/i }).waitFor();
     if ((await page.locator("[data-workshop]").count()) !== 3)
       faults.push(`${label}: not three workshops`);
+    // Lot B: each workshop named on its star, the free place reads « Bâtir ».
+    for (const name of [/carrière d'argile/i, /camp de bûcherons/i, /scierie/i])
+      if ((await page.locator("[data-workshop]").filter({ hasText: name }).count()) !== 1)
+        faults.push(`${label}: a workshop unnamed on the orbit`);
+    if (
+      (await page
+        .locator("[data-orbit-empire]")
+        .getByText(/^bâtir$/i)
+        .count()) !== 1
+    )
+      faults.push(`${label}: no « Bâtir » on the free place`);
     await shot("2-maison");
     await page.getByRole("button", { name: /tout relancer/i }).click();
     // The Casa 2 asks bricks, made nowhere: the next step names the brickworks.
@@ -126,6 +137,8 @@ try {
     ]) {
       await page.locator(`[data-tab=${tab}]`).click();
       await page.waitForSelector('[aria-modal="true"]');
+      // The Carnet's company comes from its own request: its section in place before the check.
+      if (tab === "ranking") await page.waitForSelector("[data-company]");
       await assertSheetHead(page).catch((e) => faults.push(`${label} ${name}: ${e.message}`));
       await shot(name);
       await page.locator("[data-tab=map]").click();
