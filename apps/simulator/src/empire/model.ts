@@ -49,7 +49,7 @@ export interface Voyage {
 }
 
 export interface Build {
-  kind: "casa" | "workshop" | "newWorkshop" | "counter" | "vehicle" | "galley";
+  kind: "casa" | "workshop" | "newWorkshop" | "counter" | "vehicle" | "galley" | "post" | "arsenal";
   /** The workshop's index, the counter's region, the vehicle's type… */
   target: string;
   endsAt: number;
@@ -79,6 +79,10 @@ export interface House {
   bandCaughtAt?: number;
   workshops: Workshop[];
   counters: Map<string, number>;
+  /** The map (step 2): the cells it sees, the counters it put down, its Arsenal. */
+  revealed: Set<string>;
+  posts: number;
+  arsenal: boolean;
   vehicles: Vehicle[];
   galleys: number;
   modules: Record<string, number>;

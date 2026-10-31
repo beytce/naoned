@@ -1,9 +1,11 @@
 import {
   DENIERS_PER_DUCAT,
   type Deniers,
+  type EmpireHouse,
   type EmpireSettings,
   Rng,
   applyBpsFloor,
+  bookShareBps,
   localBookOf,
   powerOf,
   pressureAfterHours,
@@ -256,8 +258,7 @@ export function newDay(w: World) {
   for (const h of w.houses) {
     h.recent.push(0n);
     if (h.recent.length > w.m.incomeDays + 1) h.recent.shift();
-    for (const [region, level] of h.counters)
-      h.bookLeft.set(region, localBookOf(region, level, w.s));
+    for (const [region, level] of h.counters) h.bookLeft.set(region, bookOf(w, h, region, level));
   }
 }
 
@@ -280,3 +281,13 @@ export function newRng(seed: number, salt: number) {
 }
 
 export const days = (hours: number) => hours / DAY;
+
+/** The house as the engine's map reads it: what it sees, its Casa. */
+export const seen = (h: House) => ({ revealed: [...h.revealed], casa: h.casa }) as EmpireHouse;
+
+/** A region's daily book for the house: its counter's, for the share of its cities found. */
+export function bookOf(w: World, h: House, region: string, level: number): number {
+  return Number(
+    applyBpsFloor(BigInt(localBookOf(region, level, w.s)), bookShareBps(seen(h), region, w.s)),
+  );
+}
