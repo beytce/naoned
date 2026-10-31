@@ -6,7 +6,7 @@ import {
   type PlayerId,
   type WorldContext,
 } from "../state.js";
-import { type Tx, addStock, fail, inventoryLine, removeStock } from "../tx.js";
+import { type Tx, fail } from "../tx.js";
 
 /** A rate raised by an effect in bps. */
 const applyBps = (base: number, bps: number) => Math.floor((base * (10_000 + bps)) / 10_000);
@@ -16,6 +16,7 @@ import { empireSettings, ownHouse } from "./house.js";
 import { highRecipeRaw } from "./recipes.js";
 import type { EmpireSettings } from "./settings.js";
 import { gainXp } from "./staff.js";
+import { putAt, storeOf, takeAt, workshopPost } from "./stores.js";
 
 function recipeOf(tx: Tx, ws: EmpireWorkshop) {
   const r = tx.ctx.theme.recipes.find((x) => x.code === ws.recipe && x.building === ws.type);
@@ -45,9 +46,11 @@ export function collectWorkshop(tx: Tx, playerId: PlayerId, ws: EmpireWorkshop):
     const made = Math.floor((qty * done * yieldBps) / 10_000);
     const better = Math.floor((made * quality) / 10_000);
     const exquisite = Math.floor((better * s.qualities.exquisiteShareBps) / 10_000);
-    addStock(tx, playerId, good, made - better, "production_output", ws.id);
-    addStock(tx, playerId, `${good}:fine`, better - exquisite, "production_output", ws.id);
-    addStock(tx, playerId, `${good}:exquisite`, exquisite, "production_output", ws.id);
+    // Into its counter's stock (the map that grows).
+    const post = workshopPost(h, s, ws);
+    putAt(tx, h, playerId, post, good, made - better, "production_output", ws.id);
+    putAt(tx, h, playerId, post, `${good}:fine`, better - exquisite, "production_output", ws.id);
+    putAt(tx, h, playerId, post, `${good}:exquisite`, exquisite, "production_output", ws.id);
   }
   // Its master grows with the lots of its workshop.
   for (const m of h.staff ?? []) if (m.placedAt === ws.id) gainXp(m, done, s);
@@ -89,23 +92,23 @@ export function relaunchWorkshop(
   let add = Math.floor((tx.now + s.queueHours * HOUR_MS - queueEnd) / batchMs);
   // The furnace saves inputs: a share of a lot's, in whole units over the queue.
   const saved = Math.min(9_000, houseEffect(h, "inputs", s, place));
+  // From its counter's stock (the map that grows).
+  const post = workshopPost(h, s, ws);
+  const held = (good: string) => storeOf(tx, h, playerId, post, good);
   const need = (per: number, lots: number) => Math.ceil((per * lots * (10_000 - saved)) / 10_000);
   for (const [good, per = 0] of Object.entries(r.inputs))
-    if (per > 0)
-      while (add > 0 && need(per, add) > inventoryLine(tx, playerId, good).available) add--;
+    if (per > 0) while (add > 0 && need(per, add) > held(good)) add--;
   // A high recipe also eats Venetia's raw goods, the ones it does not make (CADRAGE-v3 § 12 bis).
   const raws = s.highRecipes.goods.filter((g) => !(g in r.outputs));
-  const rawHeld = raws.reduce((n, g) => n + inventoryLine(tx, playerId, g).available, 0);
+  const rawHeld = raws.reduce((n, g) => n + held(g), 0);
   while (add > 0 && highRecipeRaw(ws.level, add, s) > rawHeld) add--;
   if (add <= 0) return;
   for (const [good, per = 0] of Object.entries(r.inputs))
-    removeStock(tx, playerId, good, need(per, add), "production_input", ws.id);
+    takeAt(tx, h, playerId, post, good, need(per, add), "production_input", ws.id);
   let raw = highRecipeRaw(ws.level, add, s);
-  for (const g of [...raws].sort(
-    (a, b) => inventoryLine(tx, playerId, b).available - inventoryLine(tx, playerId, a).available,
-  )) {
-    const take = Math.min(raw, inventoryLine(tx, playerId, g).available);
-    removeStock(tx, playerId, g, take, "production_input", ws.id);
+  for (const g of [...raws].sort((a, b) => held(b) - held(a))) {
+    const take = Math.min(raw, held(g));
+    takeAt(tx, h, playerId, post, g, take, "production_input", ws.id);
     raw -= take;
   }
   if (ws.job) ws.job.batches += add;

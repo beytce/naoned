@@ -1,5 +1,6 @@
 import { type Draft, enableMapSet, produce } from "immer";
 import { claimDaily, rerollDaily, sellToCriee, trackDaily } from "./activity.js";
+import { type AdminCommand, applyAdmin } from "./admin.js";
 import { chooseAtout, unlockAtout } from "./atouts.js";
 import { grantStartingBales, openBale } from "./bales.js";
 import {
@@ -77,7 +78,8 @@ import {
 import type { Rarity } from "./empire/porta/settings.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
-import { deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
+import { buyGoods, deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
+import { settleTransfers, startTransfer } from "./empire/transfers.js";
 import {
   buildShip,
   buyEmpireVehicle,
@@ -295,6 +297,7 @@ export type Command =
     }
   | TerraCommand
   | { type: "tick" }
+  | AdminCommand
   | EmpireCommand;
 
 /**
@@ -323,6 +326,15 @@ type EmpireCommandOf =
   | { type: "empireRelaunch"; playerId: PlayerId; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll"; playerId: PlayerId }
   | { type: "empireSell"; playerId: PlayerId; good: string; qty: number; region?: string }
+  | { type: "empireBuy"; playerId: PlayerId; good: string; qty: number; post?: string }
+  | {
+      type: "empireTransfer";
+      playerId: PlayerId;
+      vehicleId: string;
+      to: string;
+      good: string;
+      qty: number;
+    }
   | {
       type: "empireDeliver";
       playerId: PlayerId;
@@ -525,6 +537,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   // The cargoes arrived by now sell first, every house's, in the order they came in.
   if (tx.ctx.settings.empire && tx.s.empire) {
     settleVoyages(tx);
+    settleTransfers(tx);
     // The deposits' extraction up to now, then the days' new ones.
     settleDeposits(tx);
     settleAid(tx);
@@ -730,6 +743,12 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
         cmd.insured === true,
       );
       break;
+    case "empireTransfer":
+      startTransfer(tx, cmd.playerId, cmd.vehicleId, cmd.to, cmd.good, cmd.qty);
+      break;
+    case "empireBuy":
+      buyGoods(tx, cmd.playerId, cmd.good, cmd.qty, cmd.post);
+      break;
     case "empireSell":
       sellToDogana(tx, cmd.playerId, cmd.good, cmd.qty, cmd.region);
       break;
@@ -743,6 +762,11 @@ const isEmpire = (cmd: Command): cmd is EmpireCommand => cmd.type.startsWith("em
 
 function apply(tx: Tx, cmd: Command): void {
   const { ctx } = tx;
+  // The admin's hand (server only): in either kind of world, before the empire's settling.
+  if (cmd.type === "adminEdit") {
+    applyAdmin(tx, cmd);
+    return;
+  }
   if (isEmpire(cmd)) {
     applyEmpire(tx, cmd);
     return;

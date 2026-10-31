@@ -307,6 +307,8 @@ export interface EmpireWorkshop {
   id: string;
   /** Its region: Venetia when absent. */
   region?: string;
+  /** Its counter (the map that grows): its region's first when absent. */
+  post?: string;
   type: BuildingType;
   recipe: string;
   level: number;
@@ -352,6 +354,18 @@ export interface EmpireBuild {
   endsAt: number;
 }
 
+/** Goods carried from a counter to another (the map that grows): in the stock again at arrival. */
+export interface EmpireTransfer {
+  id: string;
+  vehicleId: string;
+  from: string;
+  to: string;
+  good: string;
+  qty: number;
+  leftAt: number;
+  arrivesAt: number;
+}
+
 /** A house of the persistent empire: what it has built, never reset. */
 export interface EmpireHouse {
   casa: number;
@@ -372,6 +386,11 @@ export interface EmpireHouse {
   posts?: { id?: string; cell: string; region: string; x?: number; y?: number; level?: number }[];
   /** Venice's own counter's level: its reach on the map (1 when unset). */
   homeLevel?: number;
+  /**
+   * The stock of each counter beyond Venice, by counter, by good (the map that grows): Venice
+   * holds the rest of the house's inventory.
+   */
+  stores?: Record<string, Record<string, number>>;
   /** The Arsenal's cell, on a coast. */
   arsenal?: string;
   /** The Campo's cell: the door of the Terraferma. */
@@ -390,10 +409,14 @@ export interface EmpireHouse {
     fitted?: string[];
     /** A land vehicle at the Porta (`busyUntil` then holds it there). */
     porta?: PortaPlace;
+    /** The counter it stands at (the map that grows): Venice's when absent. */
+    at?: string;
   }[];
   /** The Porta's arms (docs/plan-porta.md): its combat vehicles, its components, their models. */
   arms?: EmpireArms;
   porta?: EmpirePorta;
+  /** Goods on the road between two counters, carried by a land vehicle. */
+  transfers?: EmpireTransfer[];
   /** The deposits its teams work, by id. */
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */
@@ -436,7 +459,7 @@ export interface EmpireHouse {
   /** What is left today of the court's book for its fine and exquisite goods. */
   court?: { day: number; left: number };
   /** What its land vehicles carried to the cities today. */
-  hauled?: { day: number; units: number };
+  hauled?: { day: number; units: number; at?: Record<string, number> };
   /** What is left today of its private book of orders, by region. */
   books?: Record<string, { day: number; left: number }>;
   carnet?: EmpireCarnet;

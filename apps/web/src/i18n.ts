@@ -286,6 +286,11 @@ const frDict = {
         "Les prix de la Dogana de Venise, comparés à leur cours. Touchez une marchandise pour la vendre ou la livrer.",
       held: (n: number) => `${n} en stock`,
       none: "Aucun prix n'est encore venu de Venise.",
+      to: "Pour le comptoir",
+      venice: "Venise",
+      post: (region: string, n: number) => `${region} ${n}`,
+      buy: (n: number, cost: string) => `+${n} · ${cost}`,
+      heldAt: (n: number) => `${n} au comptoir`,
       trend: { up: "au-dessus du cours", down: "sous le cours", flat: "au cours" } as Record<
         string,
         string
@@ -758,6 +763,7 @@ const frDict = {
       qualities: { fine: "fin", exquisite: "exquis" } as Record<string, string>,
     },
     world: {
+      stock: "Le stock de ses comptoirs",
       map: "La carte",
       back: "Carte",
       venice: "Venise",
@@ -817,6 +823,13 @@ const frDict = {
         `${built} construit${built > 1 ? "s" : ""} · ${hold} unités · niveau ${level}`,
       upgrade: (cost: string) => `Améliorer le modèle · ${cost}`,
       top: "Modèle au plus haut",
+      send: "Envoyer",
+      sendTitle: "Envoyer à un comptoir",
+      sendTo: "Vers",
+      sendGood: "Marchandise",
+      sendGo: (n: number, hours: string) => `Envoyer ${n} · ${hours}`,
+      sendNothing: "Rien en stock à ce comptoir.",
+      at: (post: string) => `à ${post}`,
       upgradeHint:
         "Chaque niveau donne +10 % de capacité à tous les véhicules du modèle (+5 % pour un navire).",
     },

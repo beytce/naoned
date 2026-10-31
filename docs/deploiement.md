@@ -13,7 +13,7 @@ Un seul service : le serveur Fastify sert l'API (`/api/…`) et l'application we
 | `VAPID_PUBLIC_KEY` | non | Clé publique des notifications push ; sans elle, notifications dans le jeu seulement |
 | `VAPID_PRIVATE_KEY` | non | Clé privée des notifications push (secrète) |
 | `VAPID_SUBJECT` | non | Contact de l'émetteur, par défaut `mailto:contact@comptoirs.app` |
-| `ADMIN_EMAILS` | non | Adresses (séparées par des virgules) autorisées sur `/admin` : rétention, échanges suspects, répétition de fin de saison, attribution du Pass |
+| `ADMIN_EMAILS` | non | Adresses (séparées par des virgules) autorisées sur `/admin` : fiche de chaque marchand (caisse, stock, Casa, ateliers, comptoirs, véhicules, modules, savoirs, personnel, raccourcis « tout terminer », compte), rétention, modération, vérification du grand livre, répétition de fin de saison, attribution du Pass |
 | `ALERT_WEBHOOK_URL` | non | Webhook Discord ou Slack : alerte si le monde est bloqué, si une erreur serveur survient, si le grand livre a un écart ou lors d'une relève de déploiement |
 | `WORLD_KIND` | non | `season` par défaut (les saisons mensuelles) ; `empire` ouvre le monde persistant de CADRAGE-v3 (développement, e2e) |
 | `EMPIRE_FROM` | non | La bascule (instant ISO) : passé cet instant, le mois qui se clôt laisse place à l'empire, pour de bon. Absente par défaut ; ne la régler en production que sur décision du porteur |

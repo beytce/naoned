@@ -314,6 +314,23 @@ try {
     // Then the next step waits for the site.
     await page.locator('[data-next-step="wait"]').waitFor();
     await shot("12-attente");
+    // Buying at the market goes into a counter's stock: ten units of a good, into Venice's.
+    await page.locator("[data-round=market]").click();
+    await page.waitForSelector("[data-market]");
+    if ((await page.locator("[data-market-buy] button:enabled").count()) === 0)
+      faults.push(`${label}: nothing to buy at the market`);
+    else {
+      const row = page
+        .locator("[data-market-buy]")
+        .filter({ has: page.locator("button:enabled") })
+        .first();
+      const good = await row.getAttribute("data-market-buy");
+      await row.locator("button").click();
+      await page
+        .locator(`[data-market-good=${good}]`)
+        .getByText(/en stock/)
+        .waitFor();
+    }
     await page.close();
   }
 } finally {

@@ -54,7 +54,7 @@ const error = (res: { ok: boolean; error?: string }) => (res.ok ? "" : res.error
 describe("a market for each region", () => {
   it("sells a good where the house makes it, and in Venice", () => {
     const w = world();
-    w.give("a", "flour", 5);
+    w.giveIn("a", "lombardia", "flour", 5);
     const before = cash(w);
     w.do({ type: "empireSell", playerId: "a", good: "flour", qty: 5, region: "lombardia" });
     expect(cash(w) > before).toBe(true);
@@ -82,7 +82,7 @@ describe("a market for each region", () => {
 
   it("sizes a region's Dogana on the houses present there", () => {
     const w = world();
-    w.give("a", "flour", 40);
+    w.giveIn("a", "lombardia", "flour", 40);
     // One house in Lombardy: 10 + 5.
     w.do({ type: "empireSell", playerId: "a", good: "flour", qty: 40, region: "lombardia" });
     expect(w.state.inventories.a?.flour?.available).toBe(25);
@@ -113,7 +113,7 @@ describe("the news travels at the speed of ships", () => {
   it("shows a region's price live where the house has a counter, dated elsewhere", () => {
     const w = world();
     const before = quote(w, "a")?.price ?? 0n;
-    w.give("a", "flour", 15);
+    w.giveIn("a", "lombardia", "flour", 15);
     w.do({ type: "empireSell", playerId: "a", good: "flour", qty: 15, region: "lombardia" });
     // a sees the price it made fall, at once.
     expect((quote(w, "a")?.price ?? 0n) < before).toBe(true);

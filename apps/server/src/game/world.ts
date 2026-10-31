@@ -471,8 +471,8 @@ export class GameWorld {
       }
 
       const playerEvents = fx.events.filter((e) => e.playerId && e.playerId in next.players);
-      // Bot sessions stay out of the telemetry (player KPIs).
-      if (command && playerEvents.length > 0) {
+      // Bot sessions and the admin's hand stay out of the telemetry (player KPIs).
+      if (command && command.type !== "adminEdit" && playerEvents.length > 0) {
         await tx.insert(telemetry).values(
           playerEvents.map((e) => ({
             accountId: e.playerId ?? null,
@@ -560,8 +560,12 @@ export class GameWorld {
             lastSeenAt: at,
           });
         }
-      } else if (command.type === "terraSkirmishPay" || command.type === "condottaWon") {
-        // A skirmish paid or a Condotta won, by the server: no one's step of the tutorial.
+      } else if (
+        command.type === "terraSkirmishPay" ||
+        command.type === "condottaWon" ||
+        command.type === "adminEdit"
+      ) {
+        // A skirmish paid, a Condotta won, the admin's hand: no one's step of the tutorial.
       } else if (command.type !== "tick") {
         await this.recordTutorial(tx, command.playerId, fx.events, at);
       } else {

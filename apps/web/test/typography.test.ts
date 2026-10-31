@@ -84,6 +84,7 @@ const TITLES = new Set([
   "Figure.label",
   "BookRows.title",
   "Podium.title",
+  "Section.title",
   "row.label",
   "Sheet.kicker",
   "LorenzoCard.name",
@@ -97,6 +98,7 @@ const FORWARDED: Record<string, string> = {
   Figure: "label",
   BookRows: "title",
   Podium: "title",
+  Section: "title",
   Sheet: "kicker",
   LorenzoCard: "name",
 };

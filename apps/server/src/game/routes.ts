@@ -30,6 +30,7 @@ import {
 } from "../notify/notifier.js";
 import { isPushEndpoint } from "../notify/push.js";
 import { retention, sharedMailboxes, suspiciousPairs } from "./admin.js";
+import { registerAdminPlayerRoutes } from "./adminPlayers.js";
 import { atoutPoolFor } from "./atouts.js";
 import { bankReport, ledgerCsv } from "./bank.js";
 import { broglioView } from "./broglio.js";
@@ -338,6 +339,7 @@ export function registerGameRoutes(app: FastifyInstance, deps: GameRouteDeps): v
       perMerchant,
       porta: deps.porta,
     });
+  registerAdminPlayerRoutes(app, { db, world, requireAccount, adminEmails: deps.adminEmails });
 
   async function tutorialOf(accountId: string): Promise<string[]> {
     const [row] = await db
