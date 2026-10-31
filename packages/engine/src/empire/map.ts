@@ -90,11 +90,20 @@ export function regionCities(s: EmpireSettings, region: string): { code: string;
  */
 export function revealedOf(h: EmpireHouse, s: EmpireSettings): Set<string> {
   const seen = new Set(h.revealed ?? regionCells(s, HOME));
-  for (const r of s.regions)
-    if (h.casa >= r.casa) {
-      const seat = regionSeat(s, r.code);
-      if (seat) seen.add(seat);
-    }
+  // A region the Casa reaches shows its sector nearest to what is known (step 4): never one far
+  // off on its own, which a finger would not find.
+  for (const r of s.regions) {
+    if (h.casa < r.casa) continue;
+    const cells = regionCells(s, r.code);
+    if (cells.length === 0 || cells.some((c) => seen.has(c))) continue;
+    const known = [...seen];
+    const near = [...cells].sort(
+      (a, b) =>
+        Math.min(...known.map((k) => cellDistance(a, k))) -
+          Math.min(...known.map((k) => cellDistance(b, k))) || a.localeCompare(b),
+    )[0];
+    if (near) seen.add(near);
+  }
   return seen;
 }
 
@@ -132,7 +141,9 @@ export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
     const home = regionCells(s, HOME)[0];
     if (home) h.camp = home;
   }
-  if (h.revealed) return;
+  // Taken up once per drawing of the map: a house of an older grid has its cells drawn again.
+  if (h.revealed && h.mapVersion === s.map.version) return;
+  const moved = h.revealed !== undefined;
   const seen = new Set(regionCells(s, HOME));
   const posts: { cell: string; region: string }[] = [];
   for (const region of Object.keys(h.counters ?? {})) {
@@ -142,12 +153,19 @@ export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
     posts.push({ cell: seat, region });
   }
   h.revealed = [...seen].sort();
-  if (posts.length > 0 && !h.posts) h.posts = posts;
+  h.mapVersion = s.map.version;
+  if (moved || !h.posts) h.posts = posts.length > 0 ? posts : undefined;
+  const coast = regionCells(s, HOME).find((c) => s.map.cells[c]?.coast);
   const ships = (h.vehicles ?? []).some((v) => s.vehicles[v.type]?.build);
-  if (ships && !h.arsenal) {
-    const coast = regionCells(s, HOME).find((c) => s.map.cells[c]?.coast);
-    if (coast) h.arsenal = coast;
-  }
+  if ((ships || h.arsenal) && (moved || !h.arsenal) && coast) h.arsenal = coast;
+  if (h.camp && moved) h.camp = regionCells(s, HOME)[0] ?? h.camp;
+  // The sites under way on the cells of before end where they now stand.
+  if (moved)
+    for (const b of h.builds)
+      if (b.cell && !s.map.cells[b.cell]) {
+        b.cell = regionCells(s, b.region ?? HOME)[0] ?? b.cell;
+        b.reveal = b.cell ? cellsWithin(b.cell, s.map.revealRadius) : b.reveal;
+      }
 }
 
 /** The counters the house has put down or is putting down. */

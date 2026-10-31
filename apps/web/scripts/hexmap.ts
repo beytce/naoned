@@ -29,14 +29,17 @@ const CITIES: { code: string; region: string; at: LonLat }[] = [
   { code: "venezia", region: "veneto", at: [12.33, 45.44] },
   { code: "padova", region: "veneto", at: [11.88, 45.41] },
   { code: "treviso", region: "veneto", at: [12.24, 45.67] },
+  { code: "vicenza", region: "veneto", at: [11.55, 45.55] },
   { code: "milano", region: "lombardia", at: [9.19, 45.46] },
-  { code: "brescia", region: "lombardia", at: [10.21, 45.54] },
-  { code: "mantova", region: "lombardia", at: [10.79, 45.16] },
+  { code: "brescia", region: "veneto", at: [10.21, 45.54] },
+  { code: "mantova", region: "veneto", at: [10.79, 45.16] },
+  { code: "bergamo", region: "lombardia", at: [9.67, 45.7] },
   { code: "udine", region: "friuli", at: [13.23, 46.06] },
   { code: "trieste", region: "friuli", at: [13.77, 45.65] },
   { code: "pola", region: "friuli", at: [13.85, 44.87] },
-  { code: "ravenna", region: "romagna", at: [12.2, 44.42] },
+  { code: "ravenna", region: "veneto", at: [12.2, 44.42] },
   { code: "ancona", region: "romagna", at: [13.52, 43.62] },
+  { code: "rimini", region: "romagna", at: [12.57, 44.06] },
   { code: "zara", region: "dalmazia", at: [15.23, 44.12] },
   { code: "spalato", region: "dalmazia", at: [16.44, 43.51] },
   { code: "ragusa", region: "dalmazia", at: [18.09, 42.65] },
@@ -85,20 +88,20 @@ for (const key of gridCells()) {
   if (!near || near.d > REACH) continue;
   cells[key] = { region: near.code };
 }
-// The cities: each on its cell, which is its region's whatever the nearest seat says; one city a
-// cell (a sector), the first of the list keeps it.
-const taken = new Map<string, string>();
+// The cities: each on the sector under its place, several a sector (step 4, the sectors
+// inhabited). A sector takes the region of its first city, the most important.
+const ruled = new Set<string>();
 const cities: { code: string; cell: string; region: string }[] = [];
+const spots: Record<string, [number, number]> = {};
 for (const c of CITIES) {
-  const cell = cellAt(...project(c.at));
-  const other = taken.get(cell);
-  if (other) {
-    console.warn(`${c.code} left out: ${cell} is ${other}'s`);
-    continue;
+  const at = project(c.at);
+  const cell = cellAt(...at);
+  if (!ruled.has(cell)) {
+    cells[cell] = { region: c.region };
+    ruled.add(cell);
   }
-  taken.set(cell, c.code);
-  cells[cell] = { region: c.region };
   cities.push({ code: c.code, cell, region: c.region });
+  spots[c.code] = [Number(at[0].toFixed(1)), Number(at[1].toFixed(1))];
 }
 for (const key of Object.keys(cells)) {
   const c = cellCentre(key);
@@ -121,6 +124,14 @@ export const VENICE_MAP_CELLS: Record<string, { region: string; coast?: boolean 
 
 /** The cities hidden on the map, each on its cell. */
 export const VENICE_MAP_CITIES: { code: string; cell: string; region: string }[] = ${JSON.stringify(cities)};
+`,
+);
+writeFileSync(
+  join(here, "../src/art/citySpots.ts"),
+  `// Written by scripts/hexmap.ts from the chart: do not edit by hand.
+
+/** Where each city stands on the chart (art/mediterranean.tsx units), inside its sector. */
+export const CITY_SPOTS: Record<string, [number, number]> = ${JSON.stringify(spots)};
 `,
 );
 const byRegion: Record<string, number> = {};

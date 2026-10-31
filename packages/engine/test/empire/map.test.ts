@@ -57,17 +57,21 @@ describe("the hex grid", () => {
 });
 
 describe("the cities hidden on the map", () => {
-  it("show Venetia's at the founding, then the seat of each region the Casa reaches", () => {
+  it("show Venetia's at the founding, then the nearest sector of each region the Casa reaches", () => {
     const w = new World(makeContext({ empire }));
     w.do({ type: "empireJoin", playerId: "a" });
     const map = () => empireView(w.ctx, w.state, "a", w.now)?.map;
     expect(map()?.cities.map((c) => c.code)).toEqual(["venezia", "padova"]);
     expect(Object.values(map()?.cells ?? {}).every((c) => c.region === "veneto")).toBe(true);
-    // Lombardy's Casa (4): its seat, Milan, comes in sight across the unknown.
+    // Lombardy's Casa (4): its sector nearest to what is known comes in sight, at the edge of
+    // Venetia, never one far off (step 4); Milan stays hidden beyond it.
     for (let i = 1; i < 4; i++) w.do({ type: "empireBuildCasa", playerId: "a" });
-    expect(map()?.cities.map((c) => c.code)).toEqual(["venezia", "padova", "milano"]);
-    expect(map()?.cells["3,0"]).toBeUndefined();
-    expect(error(w.try({ type: "empirePlaceCounter", playerId: "a", cell: "4,0" }))).toBe("");
+    expect(map()?.cells["3,0"]).toEqual({ region: "lombardia", coast: false });
+    expect(map()?.cities.map((c) => c.code)).toEqual(["venezia", "padova"]);
+    expect(error(w.try({ type: "empirePlaceCounter", playerId: "a", cell: "4,0" }))).toBe(
+      "hidden_cell",
+    );
+    expect(error(w.try({ type: "empirePlaceCounter", playerId: "a", cell: "3,0" }))).toBe("");
   });
 
   it("give each city found its share of its region's book, all of them the whole", () => {
@@ -102,6 +106,23 @@ describe("the cities hidden on the map", () => {
       ),
     ).toBe("");
     expect(w.state.inventories.a?.bread?.available).toBe(45);
+  });
+});
+
+describe("a house of an older drawing of the grid", () => {
+  it("is drawn again on the new one: no cell of before left far off", () => {
+    const h = {
+      casa: 4,
+      revealed: ["0,0", "17,9", "20,12"],
+      mapVersion: 0,
+      posts: [{ cell: "17,9", region: "veneto" }],
+      workshops: [],
+      builds: [],
+    } as unknown as EmpireHouse;
+    ensureMap(h, s);
+    expect(h.mapVersion).toBe(s.map.version);
+    expect(h.revealed).toEqual(["0,0", "0,1", "1,0", "1,1"]);
+    expect(h.posts).toBeUndefined();
   });
 });
 

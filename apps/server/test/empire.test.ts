@@ -203,7 +203,16 @@ describe("the map (the map at the centre, step 2)", () => {
     const cookie = await login("ada@example.org");
     await post(cookie, "/api/empire/join");
     const map = (await get(cookie)).json().view.map;
-    expect(map.cities.map((c: { code: string }) => c.code)).toEqual(["venezia"]);
+    // The first sector inhabited (step 4): Venice and the cities around it.
+    expect(map.cities.map((c: { code: string }) => c.code)).toEqual([
+      "venezia",
+      "padova",
+      "treviso",
+      "vicenza",
+      "brescia",
+      "mantova",
+      "ravenna",
+    ]);
     expect(
       Object.values(map.cells as Record<string, { region: string }>).every(
         (c) => c.region === "veneto",

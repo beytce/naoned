@@ -233,6 +233,8 @@ export const venice1450Empire: EmpireSettingsInput = {
     cells: VENICE_MAP_CELLS,
     cities: VENICE_MAP_CITIES,
     revealRadius: 1,
+    // The third drawing: about thirty large sectors, several cities each (31 October, evening).
+    version: 3,
     costStepBps: 2_500,
     arsenal: { costDucats: 3_000, casa: 9, minutes: 480 },
     // The Campo, the door of the Terraferma, from the Casa 4 (600 ducats: at 1 200 the miners
