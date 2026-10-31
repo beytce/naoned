@@ -6,7 +6,7 @@
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { cellAt, cellCentre, gridCells, neighbours } from "../src/art/hexmap.js";
+import { HEX_SIZE, cellAt, cellCentre, gridCells, neighbours } from "../src/art/hexmap.js";
 import {
   BISCAY,
   BLACK_SEA,
@@ -88,20 +88,35 @@ for (const key of gridCells()) {
   if (!near || near.d > REACH) continue;
   cells[key] = { region: near.code };
 }
-// The cities: each on the sector under its place, several a sector (step 4, the sectors
-// inhabited). A sector takes the region of its first city, the most important.
+// The cities: each on the sector under its place, two at most a sector (the map that grows,
+// 31 October): one more goes to the nearest land sector with room, drawn there toward its real
+// place. A sector takes the region of its first city, the most important.
+const MOST = 2;
 const ruled = new Set<string>();
-const cities: { code: string; cell: string; region: string }[] = [];
-const spots: Record<string, [number, number]> = {};
+const held: Record<string, number> = {};
+const cities: { code: string; cell: string; region: string; x: number; y: number }[] = [];
 for (const c of CITIES) {
-  const at = project(c.at);
-  const cell = cellAt(...at);
+  let at = project(c.at);
+  let cell = cellAt(...at);
+  if ((held[cell] ?? 0) >= MOST) {
+    const from = at;
+    const room = Object.keys(cells)
+      .filter((k) => (held[k] ?? 0) < MOST && land(cellCentre(k)))
+      .map((k) => ({ k, d: Math.hypot(cellCentre(k)[0] - from[0], cellCentre(k)[1] - from[1]) }))
+      .sort((a, b) => a.d - b.d)[0];
+    if (!room) throw new Error(`no room for ${c.code}`);
+    cell = room.k;
+    const [cx, cy] = cellCentre(cell);
+    const d = Math.max(1, room.d);
+    const k = Math.min(1, (0.45 * HEX_SIZE) / d);
+    at = [cx + (from[0] - cx) * k, cy + (from[1] - cy) * k];
+  }
+  held[cell] = (held[cell] ?? 0) + 1;
   if (!ruled.has(cell)) {
     cells[cell] = { region: c.region };
     ruled.add(cell);
   }
-  cities.push({ code: c.code, cell, region: c.region });
-  spots[c.code] = [Number(at[0].toFixed(1)), Number(at[1].toFixed(1))];
+  cities.push({ code: c.code, cell, region: c.region, x: Math.round(at[0]), y: Math.round(at[1]) });
 }
 for (const key of Object.keys(cells)) {
   const c = cellCentre(key);
@@ -122,16 +137,8 @@ writeFileSync(
 /** The map's land cells (« q,r »), each with its region and whether the sea touches it. */
 export const VENICE_MAP_CELLS: Record<string, { region: string; coast?: boolean }> = ${JSON.stringify(sorted)};
 
-/** The cities hidden on the map, each on its cell. */
-export const VENICE_MAP_CITIES: { code: string; cell: string; region: string }[] = ${JSON.stringify(cities)};
-`,
-);
-writeFileSync(
-  join(here, "../src/art/citySpots.ts"),
-  `// Written by scripts/hexmap.ts from the chart: do not edit by hand.
-
-/** Where each city stands on the chart (art/mediterranean.tsx units), inside its sector. */
-export const CITY_SPOTS: Record<string, [number, number]> = ${JSON.stringify(spots)};
+/** The cities hidden on the map, each on its cell, at its place on the chart (its units). */
+export const VENICE_MAP_CITIES: { code: string; cell: string; region: string; x: number; y: number }[] = ${JSON.stringify(cities)};
 `,
 );
 const byRegion: Record<string, number> = {};
