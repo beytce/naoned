@@ -23,6 +23,7 @@ import {
   newsDelayMs,
   plansFor,
   regionCells,
+  regionCities,
   regionSeat,
   relicsOf,
   researchCost,
@@ -872,13 +873,11 @@ function postCostOf(w: World, h: House, region: string): Deniers {
   return applyBpsFloor(base, 10_000 + w.s.map.costStepBps * h.posts);
 }
 
-/** The cities of a region a counter on `cell` would find, not found yet. */
-function newCities(w: World, h: House, region: string, cell: string): number {
-  const sees = revealedOf(seen(h), w.s);
-  const around = new Set(cellsWithin(cell, w.s.map.revealRadius));
-  return w.s.map.cities.filter(
-    (c) => c.region === region && !sees.has(c.cell) && around.has(c.cell),
-  ).length;
+/** The cities of a region a counter on `cell` would find, not seen yet. */
+function newCities(w: World, sees: Set<string>, region: string, cell: string): number {
+  const around = cellsWithin(cell, w.s.map.revealRadius);
+  const hidden = regionCities(w.s, region).filter((c) => !sees.has(c.cell));
+  return hidden.filter((c) => around.includes(c.cell)).length;
 }
 
 function tryCounter(w: World, h: House): boolean {
@@ -899,15 +898,17 @@ function tryCounter(w: World, h: House): boolean {
     return true;
   }
   // Else a counter more where it finds cities still hidden, when their book pays it back.
+  const sees = revealedOf(seen(h), w.s);
   for (const code of h.counters.keys()) {
-    const sees = revealedOf(seen(h), w.s);
+    // A region whose cities are all found asks no more counters.
+    if (regionCities(w.s, code).every((c) => sees.has(c.cell))) continue;
     const best = regionCells(w.s, code)
       .filter((c) => sees.has(c))
-      .map((c) => ({ c, n: newCities(w, h, code, c) }))
+      .map((c) => ({ c, n: newCities(w, sees, code, c) }))
       .sort((a, b) => b.n - a.n)[0];
     if (!best || best.n === 0) continue;
     const r = w.s.regions.find((x) => x.code === code);
-    const all = w.s.map.cities.filter((c) => c.region === code).length;
+    const all = regionCities(w.s, code).length;
     if (!r || all === 0) continue;
     const up = postCostOf(w, h, code);
     const goods = Object.keys(r.demands);

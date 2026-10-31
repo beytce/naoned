@@ -44,16 +44,43 @@ export function cellsWithin(cell: string, radius: number): string[] {
 /** Has the world a map: without one, the regions open as before (charters, whole books). */
 export const hasMap = (s: EmpireSettings) => Object.keys(s.map.cells).length > 0;
 
+/** The map read once per settings: each region's cells, its seat, its cities. */
+interface MapIndex {
+  cells: Map<string, string[]>;
+  seats: Map<string, string | null>;
+  cities: Map<string, { code: string; cell: string }[]>;
+}
+const indexes = new WeakMap<EmpireSettings, MapIndex>();
+
+function indexOf(s: EmpireSettings): MapIndex {
+  const known = indexes.get(s);
+  if (known) return known;
+  const cells = new Map<string, string[]>();
+  for (const [k, c] of Object.entries(s.map.cells))
+    cells.set(c.region, [...(cells.get(c.region) ?? []), k]);
+  const cities = new Map<string, { code: string; cell: string }[]>();
+  for (const c of s.map.cities) cities.set(c.region, [...(cities.get(c.region) ?? []), c]);
+  const seats = new Map<string, string | null>();
+  for (const r of s.regions)
+    seats.set(r.code, cities.get(r.code)?.[0]?.cell ?? cells.get(r.code)?.[0] ?? null);
+  const index = { cells, seats, cities };
+  indexes.set(s, index);
+  return index;
+}
+
 /** A region's land cells. */
 export function regionCells(s: EmpireSettings, region: string): string[] {
-  return Object.entries(s.map.cells)
-    .filter(([, c]) => c.region === region)
-    .map(([k]) => k);
+  return indexOf(s).cells.get(region) ?? [];
 }
 
 /** A region's seat: its first city's cell, else its first cell. */
 export function regionSeat(s: EmpireSettings, region: string): string | null {
-  return s.map.cities.find((c) => c.region === region)?.cell ?? regionCells(s, region)[0] ?? null;
+  return indexOf(s).seats.get(region) ?? regionCells(s, region)[0] ?? null;
+}
+
+/** A region's cities. */
+export function regionCities(s: EmpireSettings, region: string): { code: string; cell: string }[] {
+  return indexOf(s).cities.get(region) ?? [];
 }
 
 /**
@@ -77,7 +104,8 @@ export function citiesFound(
   region: string,
   s: EmpireSettings,
 ): { found: string[]; all: number } {
-  const all = s.map.cities.filter((c) => c.region === region);
+  const all = regionCities(s, region);
+  if (all.length === 0) return { found: [], all: 0 };
   const seen = revealedOf(h, s);
   return { found: all.filter((c) => seen.has(c.cell)).map((c) => c.code), all: all.length };
 }
