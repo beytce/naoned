@@ -374,6 +374,8 @@ export interface EmpireHouse {
   seals: number;
   /** Its vehicles: free again at `busyUntil` (a voyage's way there and back). */
   vehicles?: { id: string; type: string; busyUntil: number; fitted?: string[] }[];
+  /** The Porta's arms (docs/plan-porta.md): its combat vehicles, its components, their models. */
+  arms?: EmpireArms;
   /** The deposits its teams work, by id. */
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */
@@ -1025,4 +1027,28 @@ export function activePlayerCount(ctx: WorldContext, state: WorldState, now: num
   let n = 0;
   for (const p of Object.values(state.players)) if (isActive(ctx, p, now)) n++;
   return n;
+}
+
+/** A combat vehicle of the Remise: its model, its places (a component's id, or null). */
+export interface CombatVehicle {
+  id: string;
+  model: string;
+  slots: (string | null)[];
+  /** Away from the Remise: on the way, at the Porta, in a battle (lot 3). */
+  busy?: "porta" | "battle";
+}
+
+/** A component of the house, fitted on a combat vehicle or kept at the Remise. */
+export interface ArmComponent {
+  id: string;
+  code: string;
+  level: number;
+}
+
+/** The arms of a house (docs/plan-porta.md §§ 4–5). */
+export interface EmpireArms {
+  vehicles: CombatVehicle[];
+  components: ArmComponent[];
+  /** Each combat model's level (1 when unset). */
+  levels?: Record<string, number>;
 }

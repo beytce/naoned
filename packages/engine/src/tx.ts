@@ -234,7 +234,9 @@ export type EngineErrorCode =
   | "not_contesa_week"
   | "roster_closed"
   | "roster_size"
-  | "muda_only";
+  | "muda_only"
+  // The Porta (docs/plan-porta.md).
+  | "unknown_arm";
 
 export class EngineError extends Error {
   constructor(

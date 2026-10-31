@@ -51,7 +51,7 @@ Ce qu'on change :
 
 ## 4. Les véhicules de combat
 
-Ils s'achètent à la Remise, comme les transports, et leur niveau de modèle (1 à 5) se monte avec la commande existante `empireUpgradeVehicle`. Chaque niveau au-delà du premier donne **+10 % de PV et de dégâts** à tous les véhicules du modèle, au lieu de la cale.
+Ils s'achètent à la Remise, comme les transports, mais restent à part des véhicules de livraison (`h.arms`, sans cale). Leur niveau de modèle (1 à 5) se monte à la Remise (`empireUpgradeArm`), au prix du modèle doublé à chaque niveau. Chaque niveau au-delà du premier donne **+10 % de PV et de dégâts** à tous les véhicules du modèle, au lieu de la cale.
 
 | Modèle | Casa | Prix | PV | Vitesse (cases/min) | Places de composants |
 | --- | --- | --- | --- | --- | --- |
@@ -202,7 +202,7 @@ Au lot 6, le simulateur doit tenir l'indice des prix entre 80 et 130 sur 24 mois
   - `arms.ts` : acheter, poser, retirer, améliorer ;
   - `porta.ts` : bâtir la Porta, ses niveaux, l'envoi, l'entrée, la sortie, l'antiquaire, les points ;
   - `battle/map.ts`, `battle/sim.ts`, `battle/ai.ts`, `battle/orders.ts` : la bataille, pure et sans monnaie, comme `skirmish.ts`.
-- **Commandes** : `empireBuildPorta`, `empireUpgradePorta`, `empireBuyArm`, `empireUpgradeArm`, `empireFitArm`, `empireSendToPorta`, `empireRecallFromPorta`, `empirePortaEnter`, `empirePortaSettle`, `empireSellRelics`.
+- **Commandes** : `empireBuildPorta`, `empireUpgradePorta`, `empireBuyArm` et `empireUpgradeArm` (un véhicule de combat, son modèle), `empireBuyComponent`, `empireUpgradeComponent`, `empireFitArm`, `empireSendToPorta`, `empireRecallFromPorta`, `empirePortaEnter`, `empirePortaSettle`, `empireSellRelics`.
 - **Serveur** : `apps/server/src/game/porta.ts` :
   - le salon, la file et l'invitation ;
   - les batailles en mémoire, avancées à 4 Hz ;
@@ -218,7 +218,7 @@ Au lot 6, le simulateur doit tenir l'indice des prix entre 80 et 130 sur 24 mois
 ## 12. Les lots
 
 0. Ce document, le cadrage (§ 2, § 3 ter, § 12 quater, § 13), `IDEAS.md`.
-1. Le moteur des armes : véhicules de combat, composants, achat, pose, amélioration.
+1. Le moteur des armes : véhicules de combat, composants, achat, pose, amélioration. *Fait le 31 octobre 2026* (`empire/porta/arms.ts`, `empire/porta/settings.ts`, réglages de Venise ; la Puissance compte les véhicules de combat, les niveaux de modèle et ceux des composants).
 2. Le moteur de bataille : carte, simulation, IA de Rome, ordres, reliques, fermeture.
 3. La Porta et l'antiquaire : bâtiment, envoi, entrée, sortie, vente, points.
 4. Le serveur en direct : salon, file, invitation, départ seul, boucle, WebSocket, classement.

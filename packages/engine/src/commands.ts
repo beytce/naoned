@@ -62,6 +62,7 @@ import {
 import { startLearning } from "./empire/knowledge.js";
 import { buildArsenal, buildCamp, buildDepot, ensureMap, placeCounter } from "./empire/map.js";
 import { bidMuda, settleMuda } from "./empire/mudaSail.js";
+import { buyArm, buyComponent, fitArm, upgradeArm, upgradeComponent } from "./empire/porta/arms.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
 import { deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
@@ -327,6 +328,17 @@ type EmpireCommandOf =
   | { type: "empireUpgradeVehicle"; playerId: PlayerId; vehicleType: string }
   | { type: "empireUpgradeCounter"; playerId: PlayerId; region: string }
   | { type: "empireBuyVehicle"; playerId: PlayerId; vehicleType: string }
+  | { type: "empireBuyArm"; playerId: PlayerId; model: string }
+  | { type: "empireUpgradeArm"; playerId: PlayerId; model: string }
+  | { type: "empireBuyComponent"; playerId: PlayerId; code: string }
+  | { type: "empireUpgradeComponent"; playerId: PlayerId; componentId: string }
+  | {
+      type: "empireFitArm";
+      playerId: PlayerId;
+      vehicleId: string;
+      slot: number;
+      componentId: string | null;
+    }
   | { type: "empireResearch"; playerId: PlayerId; module: string }
   | { type: "empireTeam"; playerId: PlayerId; depositId: string }
   | { type: "empireFit"; playerId: PlayerId; workshopId: string; slot: number; module: string }
@@ -557,6 +569,21 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireBuyVehicle":
       buyEmpireVehicle(tx, cmd.playerId, cmd.vehicleType);
+      break;
+    case "empireBuyArm":
+      buyArm(tx, cmd.playerId, cmd.model);
+      break;
+    case "empireUpgradeArm":
+      upgradeArm(tx, cmd.playerId, cmd.model);
+      break;
+    case "empireBuyComponent":
+      buyComponent(tx, cmd.playerId, cmd.code);
+      break;
+    case "empireUpgradeComponent":
+      upgradeComponent(tx, cmd.playerId, cmd.componentId);
+      break;
+    case "empireFitArm":
+      fitArm(tx, cmd.playerId, cmd.vehicleId, cmd.slot, cmd.componentId);
       break;
     case "empireResearch":
       startResearch(tx, cmd.playerId, cmd.module);

@@ -891,6 +891,7 @@ const frDict = {
       over_limit: "Plafond du jour atteint.",
       unknown_order: "Cette demande n'existe plus.",
       muda_only: "Une galère de la Muda ne part qu'avec une place gagnée à l'incanto.",
+      unknown_arm: "Ce composant n'existe pas.",
       unknown_colleganza: "Cette colleganza n'existe plus.",
       colleganza_closed: "Ce voyage est déjà parti.",
       own_colleganza: "On ne mise pas sur son propre voyage.",

@@ -963,6 +963,7 @@ export const en: Dictionary = {
       over_limit: "Today's cap is reached.",
       unknown_order: "This request is gone.",
       muda_only: "A Muda galley sails only with a place won at the incanto.",
+      unknown_arm: "No such component.",
       unknown_colleganza: "This colleganza is gone.",
       colleganza_closed: "This voyage has sailed.",
       own_colleganza: "No stake in one's own voyage.",
