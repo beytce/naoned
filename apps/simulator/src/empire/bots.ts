@@ -96,6 +96,8 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
     posts: 0,
     arsenal: false,
     camp: false,
+    depot: false,
+    levels: {},
     vehicles: w.m.startVehicles.map((type) => ({ type, busyUntil: 0 })),
     galleys: 0,
     modules: {},
@@ -265,11 +267,17 @@ function extractNow(w: World, h: House, hours: number) {
 
 // ——— City orders ———
 
+/** A vehicle's hold at the house's level of its model (+10 % a level, by default). */
+function holdOf(w: World, h: House, type: string): number {
+  const base = w.m.vehicles[type]?.capacity ?? 0;
+  const step = w.s.vehicleLevels.stepBps * ((h.levels[type] ?? 1) - 1);
+  return Math.floor((base * (10_000 + step)) / 10_000);
+}
+
 function landCapacity(w: World, h: House): number {
   return h.vehicles
-    .map((v) => w.m.vehicles[v.type])
-    .filter((v) => v?.regions.length === 1)
-    .reduce((n, v) => n + (v?.capacity ?? 0), 0);
+    .filter((v) => w.m.vehicles[v.type]?.regions.length === 1)
+    .reduce((n, v) => n + holdOf(w, h, v.type), 0);
 }
 
 function deliver(w: World, h: House, sinceHours: number) {
@@ -410,7 +418,7 @@ function bestRoute(w: World, h: House, type: string): Route | null {
   const intel = effectOf(h.modules, "intel", w.s);
   const hold = effectOf(h.modules, "capacity", w.s);
   const speed = effectOf(h.modules, "speed", w.s);
-  const cap = Math.floor((spec.capacity * (10_000 + hold)) / 10_000);
+  const cap = Math.floor((holdOf(w, h, type) * (10_000 + hold)) / 10_000);
   const fair = w.s.muda.vehicles.includes(type);
   let best: Route | null = null;
   for (const from of spec.regions) {
@@ -967,6 +975,16 @@ function tryVehicle(w: World, h: House): boolean {
     startBuild(w, h, { kind: "arsenal", target: "arsenal" }, yard.minutes);
     return true;
   }
+  // A land vehicle is bought at the Remise (31 October, evening), put down first.
+  const depot = w.s.map.depot;
+  if (!build && depot && !h.depot) {
+    if (busy(h, "depot") || h.casa < depot.casa) return false;
+    const price = BigInt(depot.costDucats) * DENIERS_PER_DUCAT;
+    if (spendable(w, h) < price) return false;
+    destroy(w, h, price, "vehicles");
+    startBuild(w, h, { kind: "depot", target: "depot" }, depot.minutes);
+    return true;
+  }
   let cost = d(pick[1].costDucats);
   const lacking: [string, number][] = [];
   for (const [g, n] of Object.entries(build?.materials ?? {})) {
@@ -986,6 +1004,47 @@ function tryVehicle(w: World, h: House): boolean {
     build ? Math.ceil(build.minutes / 60) : 120,
   );
   return true;
+}
+
+/**
+ * A model raised a level at its Remise or Arsenal (31 October, evening), when the hold it adds to
+ * every vehicle of it pays its price back within `paybackDays`: on land while the carts fall short
+ * of Venice's book, at sea on the best route's margin.
+ */
+function tryModel(w: World, h: House): boolean {
+  if (busy(h, "model")) return false;
+  const lv = w.s.vehicleLevels;
+  const owned = new Map<string, number>();
+  for (const v of h.vehicles) owned.set(v.type, (owned.get(v.type) ?? 0) + 1);
+  for (const [type, count] of owned) {
+    const spec = w.m.vehicles[type];
+    const level = h.levels[type] ?? 1;
+    if (!spec || level >= lv.max) continue;
+    const ship = Boolean(w.s.vehicles[type]?.build);
+    if (ship ? w.s.map.arsenal && !h.arsenal : w.s.map.depot && !h.depot) continue;
+    const cost = d(spec.costDucats) * BigInt(lv.costTimes) * 2n ** BigInt(level);
+    const more = Math.floor((spec.capacity * lv.stepBps) / 10_000) * count;
+    let perDay = 0n;
+    if (spec.regions.length === 1) {
+      const book = localBookOf("veneto", h.counters.get("veneto") ?? 0, w.s);
+      if (landCapacity(w, h) * w.s.localTripsPerDay >= book) continue;
+      const r = w.s.regions.find((x) => x.code === "veneto");
+      const goods = Object.keys(r?.demands ?? {});
+      if (goods.length === 0) continue;
+      const avg = goods.reduce((a, g) => a + market(w, "veneto", g).ref, 0n) / BigInt(goods.length);
+      perDay = (avg * BigInt(more * w.s.localTripsPerDay)) / 10n;
+    } else {
+      const best = bestRoute(w, h, type);
+      if (!best || best.qty <= 0 || best.margin <= 0) continue;
+      const perUnit = best.margin / best.qty;
+      perDay = BigInt(Math.floor((perUnit * more * DAY) / (2 * Math.max(1, best.hours))));
+    }
+    if (perDay <= 0n || cost > perDay * BigInt(w.m.paybackDays) || spendable(w, h) < cost) continue;
+    destroy(w, h, cost, "vehicles");
+    startBuild(w, h, { kind: "model", target: type }, 1);
+    return true;
+  }
+  return false;
 }
 
 /** The Campo, the door of the Terraferma (31 October 2026): built once its Casa is reached. */
@@ -1010,8 +1069,26 @@ function tryGalley(w: World, h: House): boolean {
 }
 
 const PRIORITY: Record<Bent, ((w: World, h: House) => boolean)[]> = {
-  trader: [tryCasa, tryCounter, tryVehicle, tryNewWorkshop, tryWorkshop, tryCamp, tryWorks],
-  miner: [tryCasa, tryCounter, tryNewWorkshop, tryWorkshop, tryVehicle, tryCamp, tryWorks],
+  trader: [
+    tryCasa,
+    tryCounter,
+    tryVehicle,
+    tryModel,
+    tryNewWorkshop,
+    tryWorkshop,
+    tryCamp,
+    tryWorks,
+  ],
+  miner: [
+    tryCasa,
+    tryCounter,
+    tryNewWorkshop,
+    tryWorkshop,
+    tryVehicle,
+    tryModel,
+    tryCamp,
+    tryWorks,
+  ],
   armourer: [
     tryCasa,
     tryCounter,
@@ -1020,6 +1097,7 @@ const PRIORITY: Record<Bent, ((w: World, h: House) => boolean)[]> = {
     tryNewWorkshop,
     tryWorkshop,
     tryVehicle,
+    tryModel,
     tryWorks,
   ],
   mixed: [
@@ -1028,6 +1106,7 @@ const PRIORITY: Record<Bent, ((w: World, h: House) => boolean)[]> = {
     tryNewWorkshop,
     tryWorkshop,
     tryVehicle,
+    tryModel,
     tryGalley,
     tryCamp,
     tryWorks,
@@ -1078,6 +1157,10 @@ export function finishBuild(w: World, h: House, b: Build) {
     h.arsenal = true;
   } else if (b.kind === "camp") {
     h.camp = true;
+  } else if (b.kind === "depot") {
+    h.depot = true;
+  } else if (b.kind === "model") {
+    h.levels[b.target] = (h.levels[b.target] ?? 1) + 1;
   } else if (b.kind === "vehicle") {
     h.vehicles.push({ type: b.target, busyUntil: 0 });
   } else if (b.kind === "galley") {
