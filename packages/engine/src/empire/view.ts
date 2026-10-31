@@ -272,14 +272,18 @@ export interface EmpireMapView {
   revealed: string[];
   posts: { cell: string; region: string }[];
   /** The counters and the Arsenal under way, on their cell. */
-  sites: { kind: "post" | "arsenal"; cell: string; endsAt: number }[];
+  sites: { kind: "post" | "arsenal" | "camp"; cell: string; endsAt: number }[];
   arsenal: string | null;
+  /** The Campo's cell, the door of the Terraferma. */
+  camp: string | null;
   /** The cities found, on their cell. */
   cities: { code: string; cell: string; region: string }[];
   /** How far a counter reveals. */
   radius: number;
   /** The Arsenal to build: its ducats, its minutes, its Casa; null once it stands or without one. */
   arsenalSite: { cost: Deniers; minutes: number; casa: number } | null;
+  /** The Campo to build, likewise. */
+  campSite: { cost: Deniers; minutes: number; casa: number } | null;
 }
 
 /** What a house finds after an absence of half a day or more. */
@@ -672,14 +676,27 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     revealed: [...seen].sort(),
     posts: house.posts ?? [],
     sites: house.builds
-      .filter((b) => (b.kind === "post" || b.kind === "arsenal") && b.cell)
-      .map((b) => ({ kind: b.kind as "post" | "arsenal", cell: b.cell ?? "", endsAt: b.endsAt })),
+      .filter((b) => (b.kind === "post" || b.kind === "arsenal" || b.kind === "camp") && b.cell)
+      .map((b) => ({
+        kind: b.kind as "post" | "arsenal" | "camp",
+        cell: b.cell ?? "",
+        endsAt: b.endsAt,
+      })),
     arsenal: house.arsenal ?? null,
+    camp: house.camp ?? null,
     cities: s.map.cities.filter((c) => seen.has(c.cell)),
     radius: s.map.revealRadius,
     arsenalSite:
       a && !house.arsenal && !building
         ? { cost: arsenalCost(s), minutes: a.minutes, casa: a.casa }
+        : null,
+    campSite:
+      s.map.camp && !house.camp && !house.builds.some((b) => b.kind === "camp")
+        ? {
+            cost: BigInt(s.map.camp.costDucats) * DENIERS_PER_DUCAT,
+            minutes: s.map.camp.minutes,
+            casa: s.map.camp.casa,
+          }
         : null,
   };
 }

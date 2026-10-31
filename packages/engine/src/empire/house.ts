@@ -85,6 +85,8 @@ export function settleBuilds(h: EmpireHouse, now: number): void {
       settlePost(h, b.cell, b.region, b.reveal ?? [b.cell]);
     } else if (b.kind === "arsenal" && b.cell) {
       h.arsenal = b.cell;
+    } else if (b.kind === "camp" && b.cell) {
+      h.camp = b.cell;
     } else if (b.kind === "counter" && b.region) {
       h.counters = {
         ...(h.counters ?? {}),

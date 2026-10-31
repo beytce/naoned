@@ -19,6 +19,7 @@ export type EngineErrorCode =
   | "unknown_cell"
   | "hidden_cell"
   | "no_arsenal"
+  | "no_camp"
   | "registration_closed"
   | "season_over"
   | "unknown_building"

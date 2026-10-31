@@ -203,11 +203,7 @@ describe("the map (the map at the centre, step 2)", () => {
     const cookie = await login("ada@example.org");
     await post(cookie, "/api/empire/join");
     const map = (await get(cookie)).json().view.map;
-    expect(map.cities.map((c: { code: string }) => c.code).sort()).toEqual([
-      "padova",
-      "treviso",
-      "venezia",
-    ]);
+    expect(map.cities.map((c: { code: string }) => c.code)).toEqual(["venezia"]);
     expect(
       Object.values(map.cells as Record<string, { region: string }>).every(
         (c) => c.region === "veneto",
@@ -216,9 +212,8 @@ describe("the map (the map at the centre, step 2)", () => {
     // Milan's cell, far in the unknown at the Casa 1.
     const far = await act(cookie, { type: "empirePlaceCounter", cell: "-3,9" });
     expect(far.json().error).toMatch(/hidden_cell|unknown_cell/);
-    const cell = Object.keys(map.cells).find(
-      (k) => !map.cities.some((c: { cell: string }) => c.cell === k),
-    );
+    // Venice's own sector: the counter there reveals the six around it.
+    const cell = Object.keys(map.cells)[0];
     const put = await act(cookie, { type: "empirePlaceCounter", cell });
     expect(put.json().error).toBeUndefined();
     expect(put.json().view.map.sites).toEqual([expect.objectContaining({ kind: "post", cell })]);
@@ -229,6 +224,11 @@ describe("the map (the map at the centre, step 2)", () => {
       city: "milano",
     });
     expect(city.json().error).toBe("hidden_cell");
+    // The Terraferma waits for the Campo (from the Casa 4).
+    expect((await act(cookie, { type: "empireTerraJoin" })).json().error).toBe("no_camp");
+    expect((await act(cookie, { type: "empireBuildCamp", cell })).json().error).toBe(
+      "requirement_unmet",
+    );
   });
 });
 

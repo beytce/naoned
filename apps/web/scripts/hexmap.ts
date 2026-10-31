@@ -24,8 +24,7 @@ const out = join(here, "../../../packages/engine/src/themes/venice1450.map.ts");
 /** A land cell no further than this from its region's seat (chart units): Spain, Africa stay out. */
 const REACH = 62;
 
-/** The cities hidden in each region, at their real place, one a cell (Vicenza, Bergamo and Rimini
- * would share theirs with a neighbour). */
+/** The cities hidden in each region, at their real place, the most important first. */
 const CITIES: { code: string; region: string; at: LonLat }[] = [
   { code: "venezia", region: "veneto", at: [12.33, 45.44] },
   { code: "padova", region: "veneto", at: [11.88, 45.41] },
@@ -86,17 +85,20 @@ for (const key of gridCells()) {
   if (!near || near.d > REACH) continue;
   cells[key] = { region: near.code };
 }
-// The cities: each on its cell, which is its region's whatever the nearest seat says.
-const cities = CITIES.map((c) => {
-  const cell = cellAt(...project(c.at));
-  cells[cell] = { region: c.region };
-  return { code: c.code, cell, region: c.region };
-});
+// The cities: each on its cell, which is its region's whatever the nearest seat says; one city a
+// cell (a sector), the first of the list keeps it.
 const taken = new Map<string, string>();
-for (const c of cities) {
-  const other = taken.get(c.cell);
-  if (other) console.warn(`${c.code} shares ${c.cell} with ${other}`);
-  taken.set(c.cell, c.code);
+const cities: { code: string; cell: string; region: string }[] = [];
+for (const c of CITIES) {
+  const cell = cellAt(...project(c.at));
+  const other = taken.get(cell);
+  if (other) {
+    console.warn(`${c.code} left out: ${cell} is ${other}'s`);
+    continue;
+  }
+  taken.set(cell, c.code);
+  cells[cell] = { region: c.region };
+  cities.push({ code: c.code, cell, region: c.region });
 }
 for (const key of Object.keys(cells)) {
   const c = cellCentre(key);

@@ -11,6 +11,7 @@ import { type TerraConfig, advanceTerra, closeTerra, isNation, newTerra } from "
 import { type Tx, emit, fail, inventoryLine, removeStock } from "../tx.js";
 import { carnetWeek } from "./carnet.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
+import { checkCamp } from "./map.js";
 import { bandOf } from "./power.js";
 import { powerOfHouse } from "./trade.js";
 
@@ -174,9 +175,11 @@ const theatreOf = (t: EmpireTerra, id: PlayerId) =>
  * its own; a new theatre opens when none has room.
  */
 export function joinTerra(tx: Tx, playerId: PlayerId, rating = 1_000): void {
-  const cfg = cfgOf(tx);
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
+  // On the map, the Terraferma opens with the house's Campo.
+  checkCamp(h, s);
+  const cfg = cfgOf(tx);
   const t = settleTerra(tx);
   if (!t) fail("terra_off");
   if (isContesaWeek(t.week)) fail("contesa_week");
@@ -252,6 +255,7 @@ export function actOnTerra(tx: Tx, playerId: PlayerId, action: TerraPlayerComman
 export function setRoster(tx: Tx, playerId: PlayerId, members: PlayerId[]): void {
   const s = empireSettings(tx.ctx);
   const h = ownHouse(tx, playerId);
+  checkCamp(h, s);
   const t = settleTerra(tx);
   if (!t) fail("terra_off");
   const target = t.week + 1;
