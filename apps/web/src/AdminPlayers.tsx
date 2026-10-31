@@ -729,7 +729,7 @@ function PlayerSheet({ id, onChanged }: { id: string; onChanged: () => void }) {
             {a.isBot ? "Marchand de l'ordinateur" : a.email} · inscrit le {when(a.createdAt)} ·
             dernière connexion {when(a.lastLoginAt)}
           </p>
-          <p className="mt-0.5 break-all font-mono text-[11px] text-muted">{a.id}</p>
+          <p className="meta mt-0.5 break-all text-muted">{a.id}</p>
         </div>
         {status && (
           <output
