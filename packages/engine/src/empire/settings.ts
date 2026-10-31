@@ -430,6 +430,8 @@ export const empireSettingsSchema = z.object({
             /** Its place on the chart, in its units: its cell's centre when absent. */
             x: z.number().int().optional(),
             y: z.number().int().optional(),
+            /** Its weight in its region's book, against its region's other cities. */
+            weight: positive.prefault(1),
           }),
         )
         .prefault([]),

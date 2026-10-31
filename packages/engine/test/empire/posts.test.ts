@@ -133,6 +133,22 @@ describe("the reach of a counter", () => {
   });
 });
 
+describe("a city's weight in its region's book", () => {
+  it("counts Venice, weighing three, for three parts in four", () => {
+    const heavy = parseEmpireSettings({
+      ...empire,
+      map: {
+        ...empire.map,
+        cities: (testEmpire.map?.cities ?? []).map((c) =>
+          c.code === "venezia" ? { ...c, weight: 3 } : c,
+        ),
+      },
+    });
+    const h = { casa: 1, workshops: [], builds: [] } as unknown as EmpireHouse;
+    expect(bookShareBps(h, "veneto", heavy)).toBe(7_500);
+  });
+});
+
 describe("a house of before", () => {
   it("has its counters given a point, a level and a name", () => {
     const h = {

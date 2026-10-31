@@ -220,10 +220,13 @@ export function citiesFound(
 export function bookShareBps(h: EmpireHouse, region: string, s: EmpireSettings): number {
   // With a reach: the cities within reach of a counter, not merely those found.
   if (s.map.reach) {
-    const all = regionCities(s, region);
+    // Each city weighs its share (Venice, the capital, more than a market town).
+    const all = s.map.cities.filter((c) => c.region === region);
     if (all.length === 0) return 10_000;
     const covered = citiesCovered(h, s);
-    return Math.floor((all.filter((c) => covered.has(c.code)).length * 10_000) / all.length);
+    const total = all.reduce((n, c) => n + c.weight, 0);
+    const reached = all.filter((c) => covered.has(c.code)).reduce((n, c) => n + c.weight, 0);
+    return Math.floor((reached * 10_000) / total);
   }
   const { found, all } = citiesFound(h, region, s);
   if (all === 0) return 10_000;
