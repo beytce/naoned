@@ -32,7 +32,19 @@ import {
   workshopTop,
 } from "./house.js";
 import { knowledgeCost, knowledgeMinutes, learningSlots } from "./knowledge.js";
-import { arsenalCost, citiesFound, ensureMap, hasMap, postCost, revealedOf } from "./map.js";
+import {
+  arsenalCost,
+  citiesCovered,
+  citiesFound,
+  citySpot,
+  ensureMap,
+  hasMap,
+  homePost,
+  postCost,
+  reachOf,
+  revealedOf,
+  standingPosts,
+} from "./map.js";
 import { plansFor, researchCost, researchMinutesOf } from "./modules.js";
 import { mudaDepartureAfter } from "./mudaSail.js";
 import { bandOf } from "./power.js";
@@ -274,14 +286,31 @@ export interface EmpireMapView {
   cells: Record<string, { region: string; coast: boolean }>;
   /** Every cell seen, land or sea. */
   revealed: string[];
-  posts: { cell: string; region: string }[];
+  /** The counters put down: their name, their point, their level and their reach. */
+  posts: {
+    id: string;
+    cell: string;
+    region: string;
+    x: number;
+    y: number;
+    level: number;
+    reach: number;
+  }[];
+  /** Venice's own counter, likewise. */
+  home: { x: number; y: number; level: number; reach: number };
+  /** The hexes' size, the reach at each level (none: no reach), the spacing of the counters. */
+  hexSize: number;
+  reach: { base: number; perLevel: number } | null;
+  postSpacing: number;
+  /** The cities the house's counters serve. */
+  covered: string[];
   /** The counters and the Arsenal under way, on their cell. */
   sites: { kind: "post" | "arsenal" | "camp" | "depot"; cell: string; endsAt: number }[];
   arsenal: string | null;
   /** The Campo's cell, the door of the Terraferma. */
   camp: string | null;
-  /** The cities found, on their cell. */
-  cities: { code: string; cell: string; region: string }[];
+  /** The cities found, on their cell, at their point. */
+  cities: { code: string; cell: string; region: string; x: number; y: number }[];
   /** How far a counter reveals. */
   radius: number;
   /** The Arsenal to build: its ducats, its minutes, its Casa; null once it stands or without one. */
@@ -682,7 +711,17 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
         .map(([k, c]) => [k, { region: c.region, coast: c.coast }]),
     ),
     revealed: [...seen].sort(),
-    posts: house.posts ?? [],
+    posts: standingPosts(house, s)
+      .slice(1)
+      .map((p) => ({ ...p, reach: reachOf(p.level, s) })),
+    home: (() => {
+      const h = homePost(house, s);
+      return { x: h.x, y: h.y, level: h.level, reach: reachOf(h.level, s) };
+    })(),
+    hexSize: s.map.hexSize,
+    reach: s.map.reach,
+    postSpacing: s.map.postSpacing,
+    covered: s.map.reach ? [...citiesCovered(house, s)].sort() : [],
     sites: house.builds
       .filter(
         (b) =>
@@ -696,7 +735,12 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
       })),
     arsenal: house.arsenal ?? null,
     camp: house.camp ?? null,
-    cities: s.map.cities.filter((c) => seen.has(c.cell)),
+    cities: s.map.cities
+      .filter((c) => seen.has(c.cell))
+      .map((c) => {
+        const [x, y] = citySpot(c, s);
+        return { code: c.code, cell: c.cell, region: c.region, x, y };
+      }),
     radius: s.map.revealRadius,
     arsenalSite:
       a && !house.arsenal && !building

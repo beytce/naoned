@@ -44,7 +44,9 @@ const REGIONS: EmpireSettingsInput["regions"] = [
     workshopSlots: 0,
     produces: { wheat: 4 * D, clay: 3 * D, wood: 3 * D, salt: 5 * D },
     demands: { bread: 12 * D, bricks: 10 * D, planks: 10 * D, spices: 70 * D, cloth: 45 * D },
-    localOrdersPerCounter: 20,
+    // Shared by its seven cities, Venice weighing twenty (the map that grows): the founding serves
+    // twenty-one parts in twenty-six, every city found and reached adds to it (calibration.md).
+    localOrdersPerCounter: 22,
     corsairRiskBps: 0,
   },
   {
@@ -231,10 +233,15 @@ export const venice1450Empire: EmpireSettingsInput = {
   // last; the Arsenal on a coast, from the Casa of the first ship (calibrated at the simulator).
   map: {
     cells: VENICE_MAP_CELLS,
-    cities: VENICE_MAP_CITIES,
+    // Venice, the capital, weighs most in Venetia's book (the map that grows, calibration.md).
+    cities: VENICE_MAP_CITIES.map((c) => (c.code === "venezia" ? { ...c, weight: 20 } : c)),
     revealRadius: 1,
-    // The third drawing: about thirty large sectors, several cities each (31 October, evening).
-    version: 3,
+    // The fourth drawing: some sixty sectors, two cities at most each (the map that grows, 31
+    // October, night); a counter put anywhere in a sector serves the cities within its reach.
+    version: 4,
+    hexSize: 24,
+    reach: { base: 14, perLevel: 7 },
+    postSpacing: 8,
     costStepBps: 2_500,
     arsenal: { costDucats: 3_000, casa: 9, minutes: 480 },
     // The Campo, the door of the Terraferma, from the Casa 4 (600 ducats: at 1 200 the miners

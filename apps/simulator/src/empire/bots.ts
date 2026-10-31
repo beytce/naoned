@@ -8,7 +8,10 @@ import {
   casaLevelOf,
   casaRequirementMet,
   catchupCut,
+  cellCentreOf,
   cellsWithin,
+  citiesCovered,
+  citySpot,
   corsairRiskBps,
   effectOf,
   expeditionSuccessBps,
@@ -31,6 +34,8 @@ import {
   revealedOf,
   routeHours,
   settleColleganza,
+  standingPosts,
+  startCells,
   teamRate,
 } from "@comptoirs/engine";
 import { askAid, joinCompany, supplyAid } from "./company.js";
@@ -92,8 +97,10 @@ export function newHouse(w: World, cohort: number, activity: Activity, bent: Ben
     casaAt: [w.now],
     workshops: w.m.startWorkshops.map((x) => ({ ...x, level: 1 })),
     counters: new Map([["veneto", 1]]),
-    revealed: new Set(regionCells(w.s, "veneto")),
+    revealed: new Set(startCells(w.s)),
     posts: 0,
+    spots: [],
+    homeLevel: 1,
     arsenal: false,
     camp: false,
     depot: false,
@@ -891,6 +898,40 @@ function newCities(w: World, sees: Set<string>, region: string, cell: string): n
   return hidden.filter((c) => around.includes(c.cell)).length;
 }
 
+/**
+ * Where to put a counter in a cell (the map that grows): at the place of one of its cities still
+ * out of reach, or its centre, apart from the counters already down; the one that serves most.
+ */
+function bestPoint(
+  w: World,
+  h: House,
+  region: string,
+  cell: string,
+): { x: number; y: number; covers: number } | null {
+  if (!w.s.map.reach) return null;
+  const before = citiesCovered(seen(h), w.s);
+  const [cx, cy] = cellCentreOf(cell, w.s);
+  const points = [
+    ...w.s.map.cities
+      .filter((c) => c.cell === cell && !before.has(c.code))
+      .map((c) => citySpot(c, w.s)),
+    [Math.round(cx), Math.round(cy)] as [number, number],
+  ];
+  const others = standingPosts(seen(h), w.s);
+  const gap = w.s.map.postSpacing;
+  let best: { x: number; y: number; covers: number } | null = null;
+  for (const [x, y] of points) {
+    if (others.some((o) => (o.x - x) ** 2 + (o.y - y) ** 2 < gap * gap)) continue;
+    const after = citiesCovered(
+      { ...seen(h), posts: [...(seen(h).posts ?? []), { cell, region, x, y, level: 1 }] },
+      w.s,
+    );
+    const covers = [...after].filter((c) => !before.has(c)).length;
+    if (!best || covers > best.covers) best = { x, y, covers };
+  }
+  return best;
+}
+
 function tryCounter(w: World, h: House): boolean {
   if (busy(h, "counter") || busy(h, "post")) return false;
   // A new region, its seat in sight from its Casa (no Favour now): a counter put down there.
@@ -899,23 +940,26 @@ function tryCounter(w: World, h: House): boolean {
   const cost = region ? postCostOf(w, h, region.code) : 0n;
   // A new region is the house's growth: it is opened before saving, as soon as it pays back.
   if (region && seat && (regionPaysBack(w, region.code, cost) ? h.cash : spendable(w, h)) >= cost) {
+    const at = bestPoint(w, h, region.code, seat);
     destroy(w, h, cost, "counters");
     startBuild(
       w,
       h,
-      { kind: "post", target: `${region.code}@${seat}` },
+      { kind: "post", target: `${region.code}@${seat}@${at?.x ?? ""}@${at?.y ?? ""}` },
       region.hoursFromVenice * MINUTES_PER_HOUR + 60,
     );
     return true;
   }
-  // Else a counter more where it finds cities still hidden, when their book pays it back.
+  // Else a counter more where it finds cities still hidden, or serves those found and out of
+  // reach (the map that grows), when their book pays it back: a city served counts twice.
   const sees = revealedOf(seen(h), w.s);
   for (const code of h.counters.keys()) {
-    // A region whose cities are all found asks no more counters.
-    if (regionCities(w.s, code).every((c) => sees.has(c.cell))) continue;
     const best = regionCells(w.s, code)
       .filter((c) => sees.has(c))
-      .map((c) => ({ c, n: newCities(w, sees, code, c) }))
+      .map((c) => {
+        const at = bestPoint(w, h, code, c);
+        return { c, at, n: newCities(w, sees, code, c) + 2 * (at?.covers ?? 0) };
+      })
       .sort((a, b) => b.n - a.n)[0];
     if (!best || best.n === 0) continue;
     const r = w.s.regions.find((x) => x.code === code);
@@ -933,7 +977,7 @@ function tryCounter(w: World, h: House): boolean {
     startBuild(
       w,
       h,
-      { kind: "post", target: `${code}@${best.c}` },
+      { kind: "post", target: `${code}@${best.c}@${best.at?.x ?? ""}@${best.at?.y ?? ""}` },
       r.hoursFromVenice * MINUTES_PER_HOUR + 60,
     );
     return true;
@@ -1154,11 +1198,24 @@ export function finishBuild(w: World, h: House, b: Build) {
     const [region = "veneto", good = "wheat"] = b.target.split(":");
     h.workshops.push({ region, good, level: 1 });
   } else if (b.kind === "counter") {
-    h.counters.set(b.target, (h.counters.get(b.target) ?? 0) + 1);
+    const level = (h.counters.get(b.target) ?? 0) + 1;
+    h.counters.set(b.target, level);
+    // Its reach with it: Venice's own counter, or the region's first.
+    if (b.target === "veneto") h.homeLevel = level;
+    const first = h.spots.find((p) => p.region === b.target);
+    if (first) first.level = Math.max(first.level, level);
   } else if (b.kind === "post") {
     // A counter put down: the cells around it seen, its region opened if none stood there.
-    const [region = "veneto", cell = ""] = b.target.split("@");
+    const [region = "veneto", cell = "", x = "", y = ""] = b.target.split("@");
     h.posts++;
+    const [cx, cy] = cellCentreOf(cell, w.s);
+    h.spots.push({
+      region,
+      cell,
+      x: x === "" ? Math.round(cx) : Number(x),
+      y: y === "" ? Math.round(cy) : Number(y),
+      level: 1,
+    });
     for (const c of cellsWithin(cell, w.s.map.revealRadius)) h.revealed.add(c);
     if (!h.counters.has(region)) h.counters.set(region, 1);
   } else if (b.kind === "arsenal") {

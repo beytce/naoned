@@ -332,6 +332,10 @@ export interface EmpireBuild {
   cell?: string;
   /** The cells a counter put down reveals when it stands. */
   reveal?: string[];
+  /** A counter put down: its point on the chart, and the name it will bear. */
+  x?: number;
+  y?: number;
+  post?: string;
   /** A ship of the Arsenal: its type and the id it will bear. */
   vehicleType?: string;
   vehicleId?: string;
@@ -360,8 +364,13 @@ export interface EmpireHouse {
   revealed?: string[];
   /** The drawing of the grid those cells are of. */
   mapVersion?: number;
-  /** The counters put down on the map, each on its cell, in its region. */
-  posts?: { cell: string; region: string }[];
+  /**
+   * The counters put down on the map, each on its cell, in its region, at its point of the chart
+   * (its units) with its level: its reach grows with it (the map that grows, 31 October 2026).
+   */
+  posts?: { id?: string; cell: string; region: string; x?: number; y?: number; level?: number }[];
+  /** Venice's own counter's level: its reach on the map (1 when unset). */
+  homeLevel?: number;
   /** The Arsenal's cell, on a coast. */
   arsenal?: string;
   /** The Campo's cell: the door of the Terraferma. */

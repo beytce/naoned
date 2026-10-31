@@ -16,7 +16,7 @@ import { advanceCarnet } from "./carnet.js";
 import { houseEffect } from "./effects.js";
 import { capacityOf } from "./fleet.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
-import { bookShareBps, revealedOf } from "./map.js";
+import { bookShareBps, citiesCovered, revealedOf } from "./map.js";
 import { powerOf } from "./power.js";
 import {
   localBookOf,
@@ -225,6 +225,8 @@ export function sellToDogana(
     const c = s.map.cities.find((x) => x.code === city);
     if (!c) fail("unknown_city");
     if (!revealedOf(h, s).has(c.cell)) fail("hidden_cell");
+    // On a map with a reach, a city is served by a counter it lies within reach of.
+    if (s.map.reach && !citiesCovered(h, s).has(city)) fail("out_of_reach");
     region = c.region;
   }
   checkPlace(tx, h, region, good);
@@ -341,6 +343,7 @@ export function deliverOrders(
     const c = s.map.cities.find((x) => x.code === city);
     if (!c) fail("unknown_city");
     if (!revealedOf(h, s).has(c.cell)) fail("hidden_cell");
+    if (s.map.reach && !citiesCovered(h, s).has(city)) fail("out_of_reach");
     region = c.region;
   }
   checkPlace(tx, h, region, good);

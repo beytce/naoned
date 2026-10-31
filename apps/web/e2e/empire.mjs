@@ -108,14 +108,23 @@ try {
         .click();
     // The map at the centre: the whole screen, Venice's sector across it, inhabited (step 4).
     await page.waitForSelector("[data-map=empire]");
-    if ((await page.locator("[data-city]").count()) < 3)
-      faults.push(`${label}: Venice's sector without its cities`);
+    // The map that grows: Venice's sector alone, with Padua beside Venice, and Venice's reach.
+    if ((await page.locator("[data-city]").count()) !== 1)
+      faults.push(`${label}: Venice's sector without Padua, or with more`);
+    if ((await page.locator("[data-reach-of=home]").count()) !== 1)
+      faults.push(`${label}: no reach drawn around Venice`);
     if ((await page.locator("[data-orbit-open]").count()) > 0)
       faults.push(`${label}: the workshops shown before Venice is touched`);
     await shot("1c-secteur");
     // Venice touched: its workshops deploy around it.
     await page.locator("[data-region=veneto]").click();
-    await page.locator("[data-orbit-open=veneto] [data-workshop]").first().waitFor();
+    await page.locator("[data-orbit-open=home] [data-workshop]").first().waitFor();
+    // The bubble stays itself in the middle of its workshops: no second sun.
+    if (
+      (await page.locator("[data-home]").count()) !== 1 ||
+      (await page.locator("[data-casa-sun]").count()) > 0
+    )
+      faults.push(`${label}: Venice's bubble replaced when its workshops deploy`);
     // The corners: the ducats, and the two mules at home among two.
     await page.locator("[data-hud=ducats]").waitFor();
     if (!/2\s*\/\s*2/.test(await page.locator("[data-hud=fleet]").innerText()))
@@ -260,7 +269,18 @@ try {
     await page.locator("[data-placing-bar=post]").waitFor();
     await page.waitForTimeout(700);
     await shot("10b-poser");
-    await page.locator("[data-cell]").first().dispatchEvent("click");
+    // A point of a lit cell touched: the reach the counter would have there, and what it serves.
+    const lit = await page.locator("[data-cell]").first().boundingBox();
+    if (lit)
+      await page
+        .locator("[data-cell]")
+        .first()
+        .dispatchEvent("click", {
+          clientX: lit.x + lit.width * 0.5,
+          clientY: lit.y + lit.height * 0.8,
+        });
+    await page.locator("[data-picked-reach]").waitFor();
+    await page.locator("[data-point-check]").waitFor();
     await page.getByRole("button", { name: /poser ici/i }).waitFor();
     await shot("10c-comptoir");
     // Not now: the brickworks of the Casa 2 first (a counter here costs most of the purse).
@@ -276,7 +296,7 @@ try {
     if ((await page.locator("[data-orbit-open]").count()) > 0)
       faults.push(`${label}: the workshops deployed by a zoom`);
     await page.locator("[data-region=veneto]").click();
-    await page.locator("[data-orbit-open=veneto] [data-workshop]").first().waitFor();
+    await page.locator("[data-orbit-open=home] [data-workshop]").first().waitFor();
 
     // The next step opens the Production on the brickworks of the Casa 2.
     await page

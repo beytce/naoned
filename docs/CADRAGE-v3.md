@@ -110,9 +110,11 @@ Les dix régions, dans l'ordre d'ouverture :
 
 **Quatre sont ouvertes au lancement** : la Vénétie, la Lombardie, le Frioul et Istrie, la Romagne et les Marches. Les autres s'ouvrent au fil des ères (§ 4.3).
 
-**La carte** (décision du porteur du 31 octobre 2026, « la carte au centre du jeu ») est une grille de **grands secteurs** hexagonaux sur la Méditerranée : une trentaine de secteurs de terre, chacun dans une région. **Un secteur porte plusieurs villes** : celui de Venise compte d'emblée Venise, Padoue, Trévise, Vicence, Brescia, Mantoue et Ravenne. Un secteur que la mer touche est une côte.
+**La carte** (décisions du porteur du 31 octobre 2026, « la carte au centre du jeu » puis « la carte qui grandit ») est une grille de **grands secteurs** hexagonaux sur la Méditerranée : une soixantaine de secteurs de terre, chacun dans une région, **deux villes au plus par secteur**. Un secteur que la mer touche est une côte.
 
-- **Ce qu'on voit.** Au départ, le secteur de Venise et ses villes. Le reste est dans le brouillard, sauf, pour **chaque région que la Casa a atteinte**, **son secteur le plus proche de ce qu'on connaît déjà** : la nouvelle en vient à Venise, et la région apparaît au bord du connu, jamais isolée au loin.
+- **Ce qu'on voit.** Au départ, **le seul secteur de Venise, avec Venise et Padoue**. Le reste est dans le brouillard, sauf, pour **chaque région que la Casa a atteinte**, **son secteur le plus proche de ce qu'on connaît déjà**.
+- **Le comptoir se pose où l'on veut** dans un secteur qu'on voit, à l'écart des autres comptoirs. Il a **un cercle d'action**, qui grandit avec son niveau : il ne livre que les villes de ce cercle. Où le poser devient un choix.
+- **Le carnet d'une région** se partage entre ses villes ; on en tient la part des villes **dans le cercle d'un de ses comptoirs**. Venise, la capitale, pèse dix fois une autre ville dans le carnet de Vénétie.
 - **La grille porte une version.** Quand elle est redessinée, chaque Maison est reprise : ses secteurs vus recalculés, ses comptoirs, son Arsenal et son Campo reposés sur une case valide. Rien de bâti ne se perd.
 - **Ouvrir une région**, c'est **poser un comptoir** sur une case qu'on voit, d'une région dont la Casa est atteinte :
   1. on le paie en ducats : l'ancien prix de la charte de la région, **plus cher d'un quart pour chaque comptoir déjà posé** ;
@@ -606,6 +608,13 @@ La charte en Faveur disparaît (§ 3.4). Les effets qui l'allégeaient (lettres,
 - **de la texture** dans les secteurs développés ;
 - **plus de cases à l'écart** : la région atteinte apparaît au bord du connu (§ 3.4) ;
 - **la Remise** (terre) et **l'Arsenal** (mer) achètent et améliorent les véhicules : un niveau de modèle de 1 à 5, +10 % de capacité par niveau, pour tous les véhicules du type (§ 3.4).
+
+**La nuit**, l'objectif : **une grande carte qui se développe avec le temps**.
+- **deux villes seulement dans le secteur de départ** (Venise et Padoue), les autres à découvrir ; de grandes cases, sur une carte plus vaste ;
+- **le comptoir se pose librement** dans son secteur, avec **un cercle d'action** qui grandit avec son niveau ; il ne livre que les villes de son cercle ;
+- **les ateliers se déploient autour de la bulle du comptoir**, qui ne bouge pas ;
+- **« Poser un comptoir » dans le « + »** en haut à droite ;
+- puis, aux étapes suivantes : **un stock par comptoir** (l'achat au marché choisit son comptoir, au prix de sa région), **les véhicules à leur comptoir**, et **des livraisons entre comptoirs** par véhicule, en un temps selon la distance.
 
 ## 12 quater. Arbitrages du 31 octobre 2026 : la Porta, le PvE des terres de Rome
 
