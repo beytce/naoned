@@ -323,6 +323,7 @@ export const EmpireMap = forwardRef<
                 style={{ pointerEvents: "all", cursor: "pointer" }}
                 data-cell={cell}
                 onClick={() => onPick?.(cell)}
+                onKeyDown={(e) => e.key === "Enter" && onPick?.(cell)}
               />
             ))}
           </g>
