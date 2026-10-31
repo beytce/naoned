@@ -104,7 +104,7 @@ export function useCamera({
       if (anim.current || velocity.current) frame.current = requestAnimationFrame(step);
     };
     frame.current = requestAnimationFrame(step);
-  }, [set, current]);
+  }, [set, current, view]);
 
   /** Glides to a camera (or the one a function of the screen gives). */
   const easeTo = useCallback(

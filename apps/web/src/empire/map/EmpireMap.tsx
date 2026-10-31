@@ -161,6 +161,8 @@ export const EmpireMap = forwardRef<
   });
 
   const texture = artSource("world", "map")?.src;
+  // The chart changes with the house's map and the placing, never with the clock.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its view's map
   const chart = useMemo(
     () =>
       view ? (
@@ -173,8 +175,6 @@ export const EmpireMap = forwardRef<
           onPick={onPick}
         />
       ) : null,
-    // The chart changes with the house's map and the placing, never with the clock.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: p stands for its view's map
     [view?.map, view?.regions, base, texture, placing, picked, onPick],
   );
   if (!view) return null;

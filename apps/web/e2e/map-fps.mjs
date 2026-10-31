@@ -85,7 +85,10 @@ try {
   await page.getByRole("button", { name: /fonder la maison/i }).click();
   await page.waitForSelector("[data-intro]");
   for (let i = 0; i < 3; i++)
-    await page.locator("[data-intro]").getByRole("button", { name: /suivant|commencer/i }).click();
+    await page
+      .locator("[data-intro]")
+      .getByRole("button", { name: /suivant|commencer/i })
+      .click();
   await page.waitForSelector("[data-map=empire]");
   await page.waitForTimeout(800);
   const cdp = await page.context().newCDPSession(page);
