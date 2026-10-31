@@ -2029,6 +2029,17 @@ Ce sont les niveaux des **navires** qui déplacent l'équilibre : sans eux, on r
 
 **Retenu** : **Venise, la capitale, pèse 20** dans le carnet de Vénétie, contre 1 pour chaque autre ville, et ce carnet passe de 20 à 22. Au départ, Venise et Padoue servent 21 parts sur 26, soit à peu près le carnet d'avant ; chaque ville gagnée ensuite ajoute une part. Résultat : **9, 9 et 8 cibles sur 12**. La cible perdue sur la graine 3 est la part du négociant, 24,7 % pour 25 %, un écart de graine comme à l'étape 2. Les trois cibles manquées d'avant le restent.
 
+### Un stock par comptoir, et les livraisons entre comptoirs (31 octobre 2026, la nuit)
+
+- **Chaque comptoir garde son stock** ; on achète au marché pour un comptoir ; un comptoir vend et livre du sien, avec ses charrettes.
+- **Un véhicule de terre porte le stock d'un comptoir à l'autre**, à 20 unités de carte l'heure (Venise–Milan, environ 3 h).
+
+**Le stock par comptoir seul** fait tomber l'exploitant à 17 à 18 % sur les trois graines (8, 8 et 8 cibles sur 12). Les marchandises faites loin de Venise ne peuvent plus y revenir, encombrent les marchés de leur région, et y font baisser la vente des gisements : leurs recettes passent de 8,4 à 6,1 millions de deniers pour les exploitants (graine 1, cohortes de 50).
+
+**Les livraisons entre comptoirs** rendent ce chemin : le modèle compte de nouveau ce qui est fait au loin comme vendable à Venise, comme avant le stock par comptoir. Les résultats sont donc ceux de la carte qui grandit, **9, 9 et 8 cibles sur 12**.
+
+**Ce que le simulateur ne modélise pas** : le délai d'un transfert (quelques heures), et le charroi propre à chaque comptoir (il compte toujours un charroi pour toute la Maison). Les deux avantagent un peu le modèle sur le joueur ; à surveiller sur les premières semaines de jeu.
+
 ### Refaire le calibrage
 
 ```
