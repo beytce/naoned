@@ -286,6 +286,11 @@ const frDict = {
         "Les prix de la Dogana de Venise, comparés à leur cours. Touchez une marchandise pour la vendre ou la livrer.",
       held: (n: number) => `${n} en stock`,
       none: "Aucun prix n'est encore venu de Venise.",
+      to: "Pour le comptoir",
+      venice: "Venise",
+      post: (region: string, n: number) => `${region} ${n}`,
+      buy: (n: number, cost: string) => `+${n} · ${cost}`,
+      heldAt: (n: number) => `${n} au comptoir`,
       trend: { up: "au-dessus du cours", down: "sous le cours", flat: "au cours" } as Record<
         string,
         string
@@ -758,6 +763,7 @@ const frDict = {
       qualities: { fine: "fin", exquisite: "exquis" } as Record<string, string>,
     },
     world: {
+      stock: "Le stock de ses comptoirs",
       map: "La carte",
       back: "Carte",
       venice: "Venise",

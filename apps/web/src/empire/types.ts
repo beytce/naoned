@@ -84,6 +84,8 @@ export interface EmpireView {
   away: { since: number; ready: Record<string, number>; sitesDone: number } | null;
   regions: EmpireRegion[];
   map: EmpireMapView;
+  /** Each counter's stock, Venice's first (the map that grows). */
+  stores: { post: string; region: string; goods: Record<string, number> }[];
   vehicles: {
     shop: {
       type: string;
@@ -331,6 +333,7 @@ export type EmpireAction =
   | { type: "empireRelaunch"; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll" }
   | { type: "empireSell"; good: string; qty: number; region?: string }
+  | { type: "empireBuy"; good: string; qty: number; post?: string }
   | { type: "empireDeliver"; good: string; qty: number; region?: string; city?: string }
   | { type: "empireClaim"; index: number }
   | { type: "empirePlaceCounter"; cell: string }

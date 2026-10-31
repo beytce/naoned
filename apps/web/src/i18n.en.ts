@@ -365,6 +365,11 @@ export const en: Dictionary = {
       summary:
         "The prices of Venice's Dogana, against their usual rate. Touch a good to sell or deliver it.",
       held: (n: number) => `${n} in store`,
+      to: "For the counter",
+      venice: "Venice",
+      post: (region: string, n: number) => `${region} ${n}`,
+      buy: (n: number, cost: string) => `+${n} · ${cost}`,
+      heldAt: (n: number) => `${n} at the counter`,
       none: "No price has come from Venice yet.",
       trend: { up: "above its rate", down: "below its rate", flat: "at its rate" } as Record<
         string,
@@ -829,6 +834,7 @@ export const en: Dictionary = {
       qualities: { fine: "fine", exquisite: "exquisite" } as Record<string, string>,
     },
     world: {
+      stock: "Its counters' stock",
       map: "The map",
       back: "Map",
       venice: "Venice",

@@ -46,8 +46,30 @@ export function RegionPlace({
   const quotes = p.market.filter((q) => q.region === code);
   const workshops = view.house.workshops.filter((x) => (x.region ?? "veneto") === code);
   const deposits = view.deposits.filter((x) => x.region === code);
+  // The stock its counters hold (the map that grows): each counter sells and delivers its own.
+  const stock = view.stores
+    .filter((x) => x.region === code)
+    .flatMap((x) => Object.entries(x.goods))
+    .reduce<Record<string, number>>((acc, [g, n]) => {
+      acc[g] = (acc[g] ?? 0) + n;
+      return acc;
+    }, {});
   return (
     <section className="mx-auto mt-3 w-full max-w-md space-y-4">
+      {Object.keys(stock).length > 0 && (
+        <div data-post-stock>
+          <Label>{w.stock}</Label>
+          <ul className="mt-1 flex flex-wrap gap-2">
+            {Object.entries(stock).map(([g, n]) => (
+              <li key={g}>
+                <Badge tone="lagoon">
+                  {fr.themeNames.resource[g] ?? p.goods[g] ?? g} · {n}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {artSource("regions", code) && (
         <RegionArt code={code} className="h-32 w-full rounded-xl ring-1 ring-line" />
       )}
