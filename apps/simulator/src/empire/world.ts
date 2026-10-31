@@ -123,7 +123,8 @@ export function power(w: World, h: House): number {
       casa: h.casa,
       workshopLevels: h.workshops.map((x) => x.level),
       counterLevels: [...h.counters.values()],
-      moduleLevels: Object.values(h.modules),
+      // A model's levels beyond its first count as a module's.
+      moduleLevels: [...Object.values(h.modules), ...Object.values(h.levels).map((l) => l - 1)],
       staffLevels: [],
       vehicles: h.vehicles.length + h.galleys,
     },

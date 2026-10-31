@@ -87,6 +87,8 @@ export function settleBuilds(h: EmpireHouse, now: number): void {
       h.arsenal = b.cell;
     } else if (b.kind === "camp" && b.cell) {
       h.camp = b.cell;
+    } else if (b.kind === "depot" && b.cell) {
+      h.depot = b.cell;
     } else if (b.kind === "counter" && b.region) {
       h.counters = {
         ...(h.counters ?? {}),

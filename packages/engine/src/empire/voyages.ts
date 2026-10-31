@@ -21,8 +21,9 @@ import {
 import { returnSeaColleganza } from "./colleganzaSail.js";
 import { corsairRiskBps } from "./corsairs.js";
 import { houseEffect } from "./effects.js";
+import { capacityOf } from "./fleet.js";
 import { empireSettings, openSite, ownHouse } from "./house.js";
-import { checkArsenal } from "./map.js";
+import { checkArsenal, checkDepot, ensureMap } from "./map.js";
 import { mudaDeparture } from "./mudaSail.js";
 import { priceAt, routeHours } from "./prices.js";
 import type { EmpireSettings } from "./settings.js";
@@ -37,6 +38,9 @@ export function buyEmpireVehicle(tx: Tx, playerId: PlayerId, type: string): void
   // A ship is built at the Arsenal, never bought.
   if (!spec || spec.build) fail("unknown_building_type");
   if (h.casa < spec.casa) fail("requirement_unmet");
+  // On the map, the land vehicles are bought at the house's Remise.
+  ensureMap(h, s);
+  checkDepot(h, s);
   transfer(tx, cashAccount(playerId), SINK_ACCOUNT, BigInt(spec.costDucats) * 100n, "empire_build");
   h.vehicles = [...(h.vehicles ?? []), { id: nextId(tx, "v"), type, busyUntil: 0 }];
 }
@@ -122,7 +126,7 @@ export function startVoyage(
   // A galley of the Muda leaves only with a place won, at its departure's hour.
   const start = mudaDeparture(tx, playerId, vehicleId, v.type);
   const hold = applyBpsFloor(
-    BigInt(spec.capacity),
+    BigInt(capacityOf(h, v.type, s)),
     10_000 + houseEffect(h, "capacity", s, { vehicleId }),
   );
   if (!Number.isInteger(qty) || qty <= 0 || qty > Number(hold)) fail("invalid_quantity");

@@ -22,6 +22,7 @@ import {
 } from "./curves.js";
 import { houseEffect } from "./effects.js";
 import { extractionTeams as teamsOf } from "./extraction.js";
+import { capacityOf, upgradeCost, vehicleLevelOf } from "./fleet.js";
 import {
   counterCostOf,
   empireHouseAt,
@@ -100,6 +101,9 @@ export interface EmpireView {
       build: { minutes: number; materials: Record<string, number> } | null;
       slots: number;
       muda: boolean;
+      /** The house's level of the model, and the price of its next (null at the last). */
+      level: number;
+      upgrade: Deniers | null;
     }[];
     mine: {
       id: string;
@@ -272,7 +276,7 @@ export interface EmpireMapView {
   revealed: string[];
   posts: { cell: string; region: string }[];
   /** The counters and the Arsenal under way, on their cell. */
-  sites: { kind: "post" | "arsenal" | "camp"; cell: string; endsAt: number }[];
+  sites: { kind: "post" | "arsenal" | "camp" | "depot"; cell: string; endsAt: number }[];
   arsenal: string | null;
   /** The Campo's cell, the door of the Terraferma. */
   camp: string | null;
@@ -284,6 +288,10 @@ export interface EmpireMapView {
   arsenalSite: { cost: Deniers; minutes: number; casa: number } | null;
   /** The Campo to build, likewise. */
   campSite: { cost: Deniers; minutes: number; casa: number } | null;
+  /** The Remise's cell: the land vehicles bought and raised there. */
+  depot: string | null;
+  /** The Remise to build, likewise. */
+  depotSite: { cost: Deniers; minutes: number; casa: number } | null;
 }
 
 /** What a house finds after an absence of half a day or more. */
@@ -676,9 +684,13 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     revealed: [...seen].sort(),
     posts: house.posts ?? [],
     sites: house.builds
-      .filter((b) => (b.kind === "post" || b.kind === "arsenal" || b.kind === "camp") && b.cell)
+      .filter(
+        (b) =>
+          (b.kind === "post" || b.kind === "arsenal" || b.kind === "camp" || b.kind === "depot") &&
+          b.cell,
+      )
       .map((b) => ({
-        kind: b.kind as "post" | "arsenal" | "camp",
+        kind: b.kind as "post" | "arsenal" | "camp" | "depot",
         cell: b.cell ?? "",
         endsAt: b.endsAt,
       })),
@@ -696,6 +708,15 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
             cost: BigInt(s.map.camp.costDucats) * DENIERS_PER_DUCAT,
             minutes: s.map.camp.minutes,
             casa: s.map.camp.casa,
+          }
+        : null,
+    depot: house.depot ?? null,
+    depotSite:
+      s.map.depot && !house.depot && !house.builds.some((b) => b.kind === "depot")
+        ? {
+            cost: BigInt(s.map.depot.costDucats) * DENIERS_PER_DUCAT,
+            minutes: s.map.depot.minutes,
+            casa: s.map.depot.casa,
           }
         : null,
   };
@@ -716,7 +737,7 @@ function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s
     ...v,
     capacity: Number(
       applyBpsFloor(
-        BigInt(s.vehicles[v.type]?.capacity ?? 0),
+        BigInt(capacityOf(house, v.type, s)),
         10_000 + houseEffect(house, "capacity", s, { vehicleId: v.id }),
       ),
     ),
@@ -726,12 +747,14 @@ function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s
       type,
       casa: v.casa,
       cost: BigInt(v.costDucats) * DENIERS_PER_DUCAT,
-      capacity: capacity(v.capacity),
+      capacity: capacity(capacityOf(house, type, s)),
       regions: v.regions,
       speedBps: v.speedBps,
       build: v.build ?? null,
       slots: v.slots,
       muda: s.muda.vehicles.includes(type),
+      level: vehicleLevelOf(house, type),
+      upgrade: upgradeCost(house, type, s),
     })),
     mine,
     voyages: (state.empire?.voyages ?? []).filter((v) => v.house === playerId),

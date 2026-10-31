@@ -38,7 +38,7 @@ export function ProductionSheet({
   onClose: () => void;
   act: (a: EmpireAction) => Promise<void>;
   /** Puts a counter or the Arsenal down: the map in its mode of placing. */
-  onPlace: (kind: "post" | "arsenal" | "camp") => void;
+  onPlace: (kind: "post" | "arsenal" | "camp" | "depot") => void;
 }) {
   const [pane, setPane] = useState<ProductionPane>(first);
   useEffect(() => {
@@ -79,8 +79,12 @@ export function ProductionSheet({
         <>
           <p className="rounded-lg bg-info/15 px-3 py-2 text-sm font-semibold text-info" data-fleet>
             {t.fleet(fleet.free, fleet.total)}
+            <span className="block text-xs font-normal text-cream-dim">
+              {fr.empire.charroi.capacity(p.view.vehicles.mine.reduce((n, v) => n + v.capacity, 0))}{" "}
+              · {fr.empire.charroi.upgradeHint}
+            </span>
           </p>
-          <Charroi p={p} now={now} busy={busy} act={act} />
+          <Charroi p={p} now={now} busy={busy} act={act} onPlaceDepot={() => onPlace("depot")} />
           <Arsenal p={p} now={now} busy={busy} act={act} />
         </>
       )}
@@ -97,7 +101,7 @@ function Buildings({
   onPlace,
 }: {
   p: EmpirePayload;
-  onPlace: (kind: "post" | "arsenal" | "camp") => void;
+  onPlace: (kind: "post" | "arsenal" | "camp" | "depot") => void;
 }) {
   const view = p.view;
   if (!view) return null;
@@ -106,8 +110,9 @@ function Buildings({
   const cheapest = costs.length > 0 ? costs.reduce((a, b) => (b < a ? b : a)) : null;
   const yard = view.map.arsenalSite;
   const camp = view.map.campSite;
+  const depot = view.map.depotSite;
   const card = (
-    kind: "post" | "arsenal" | "camp",
+    kind: "post" | "arsenal" | "camp" | "depot",
     title: string,
     text: string,
     price: string | null,
@@ -115,7 +120,13 @@ function Buildings({
   ) => (
     <li key={kind} className="flex items-center gap-3 border-b border-line/60 pb-3">
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-night-3 text-gold ring-1 ring-gold/60 [&_svg]:h-6 [&_svg]:w-6">
-        {kind === "post" ? Icon.banner() : kind === "camp" ? Icon.troops() : Icon.anchor()}
+        {kind === "post"
+          ? Icon.banner()
+          : kind === "camp"
+            ? Icon.troops()
+            : kind === "depot"
+              ? Icon.cart()
+              : Icon.anchor()}
       </span>
       <span className="min-w-0 flex-1 text-sm text-cream">
         {title}
@@ -140,6 +151,15 @@ function Buildings({
           pl.arsenalText(yard.casa),
           d(yard.cost),
           view.house.casa >= yard.casa,
+        )}
+      {depot &&
+        shownAt(view.house.casa, depot.casa) &&
+        card(
+          "depot",
+          pl.depotCard,
+          pl.depotText(depot.casa),
+          d(depot.cost),
+          view.house.casa >= depot.casa,
         )}
       {camp &&
         shownAt(view.house.casa, camp.casa) &&

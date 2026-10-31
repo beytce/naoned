@@ -201,6 +201,12 @@ const frDict = {
     } as Record<string, string>,
     placing: {
       camp: "Poser le Campo",
+      depot: "Poser la Remise",
+      hintDepot: "Touchez une case éclairée : la Remise y vendra et améliorera vos charrettes.",
+      depotCard: "Remise",
+      depotText: (casa: number) =>
+        `Se pose sur une case. On y achète les véhicules de terre et on y améliore leurs modèles, dès la Casa ${casa}.`,
+      noDepot: "Les véhicules de terre s'achètent à la Remise, à poser sur la carte.",
       hintCamp: "Touchez une case éclairée : le Campo y ouvrira la Terraferme.",
       campCard: "Campo",
       campText: (casa: number) =>
@@ -226,6 +232,7 @@ const frDict = {
     scene: {
       unknown: "Terre inconnue",
       arsenal: "L'Arsenal",
+      depot: "La Remise",
       free: "Une place libre",
       help: "Conseil",
       recenter: "Recentrer",
@@ -256,6 +263,7 @@ const frDict = {
         deliver: (n: number) => `Livrer ${n}`,
         post: () => "Comptoir",
         ship: () => "Navires",
+        vehicles: () => "Véhicules",
       } as Record<string, (n: number) => string>,
     },
     /** The five tabs of the empire (lot C of the UX audit): the loop, from the house to the family. */
@@ -799,6 +807,14 @@ const frDict = {
       free: "libre",
       buy: (cost: string) => `Acheter · ${cost}`,
       opensAt: (casa: number) => `Casa ${casa}`,
+      models: "Les modèles",
+      capacity: (n: number) => `Capacité de la flotte : ${n} unités`,
+      model: (built: number, hold: number, level: number) =>
+        `${built} construit${built > 1 ? "s" : ""} · ${hold} unités · niveau ${level}`,
+      upgrade: (cost: string) => `Améliorer le modèle · ${cost}`,
+      top: "Modèle au plus haut",
+      upgradeHint:
+        "Chaque niveau donne +10 % de capacité à tous les véhicules du modèle (+5 % pour un navire).",
     },
     scuola: {
       title: "La Scuola",
@@ -859,6 +875,7 @@ const frDict = {
       unknown_cell: "Cette case ne s'y prête pas.",
       hidden_cell: "Cette case est encore dans le brouillard.",
       no_camp: "Posez d'abord le Campo sur la carte.",
+      no_depot: "Posez d'abord la Remise sur la carte.",
       no_arsenal: "Posez d'abord l'Arsenal sur une côte.",
       built: "Déjà ouvert.",
       invalid_quantity: "Quantité impossible.",

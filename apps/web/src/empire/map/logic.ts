@@ -112,7 +112,7 @@ export function hudOf(p: EmpirePayload): { id: "ducats" | "favour" | "seals"; va
 }
 
 /** What may be put on the map: a counter, or the Arsenal. */
-export type Placing = { kind: "post" | "arsenal" | "camp"; region?: string };
+export type Placing = { kind: "post" | "arsenal" | "camp" | "depot"; region?: string };
 
 /**
  * The cells where the house may put what it places: for a counter, the land cells it sees, of a
@@ -130,12 +130,13 @@ export function placeable(p: EmpirePayload, placing: Placing): string[] {
     ...map.sites.map((x) => x.cell),
     ...(map.arsenal ? [map.arsenal] : []),
     ...(map.camp ? [map.camp] : []),
+    ...(map.depot ? [map.depot] : []),
   ]);
   return Object.entries(map.cells)
     .filter(([cell, c]) =>
       placing.kind === "arsenal"
         ? c.coast && !taken.has(cell)
-        : placing.kind === "camp"
+        : placing.kind === "camp" || placing.kind === "depot"
           ? !taken.has(cell)
           : reached.has(c.region) &&
             !taken.has(cell) &&
@@ -151,6 +152,7 @@ export function placingCost(p: EmpirePayload, placing: Placing, cell: string): s
   if (!view) return null;
   if (placing.kind === "arsenal") return view.map.arsenalSite?.cost ?? null;
   if (placing.kind === "camp") return view.map.campSite?.cost ?? null;
+  if (placing.kind === "depot") return view.map.depotSite?.cost ?? null;
   const region = view.map.cells[cell]?.region;
   return view.regions.find((r) => r.code === region)?.postCost ?? null;
 }
@@ -185,7 +187,8 @@ export type Target =
   | { kind: "free" }
   | { kind: "region"; code: string }
   | { kind: "city"; code: string }
-  | { kind: "arsenal" };
+  | { kind: "arsenal" }
+  | { kind: "depot" };
 
 export type ActionIcon =
   | "harvest"
@@ -195,6 +198,7 @@ export type ActionIcon =
   | "send"
   | "banner"
   | "anchor"
+  | "cart"
   | "workshops"
   | "lock"
   | "details";
@@ -351,6 +355,10 @@ export function actionsOf(p: EmpirePayload, target: Target, now: number): MapAct
       return [
         { id: "ship", icon: "anchor", words: { key: "ship" }, open: "production:vehicles" },
         { id: "details", icon: "details", words: { key: "details" }, open: "arsenal" },
+      ];
+    case "depot":
+      return [
+        { id: "vehicles", icon: "cart", words: { key: "vehicles" }, open: "production:vehicles" },
       ];
   }
 }

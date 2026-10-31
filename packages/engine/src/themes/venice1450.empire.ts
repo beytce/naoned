@@ -240,6 +240,8 @@ export const venice1450Empire: EmpireSettingsInput = {
     // The Campo, the door of the Terraferma, from the Casa 4 (600 ducats: at 1 200 the miners
     // fell short of their share, calibration.md).
     camp: { costDucats: 600, casa: 4, minutes: 240 },
+    // The Remise, where the land vehicles are bought and their models raised (31 October, evening).
+    depot: { costDucats: 200, casa: 2, minutes: 120 },
   },
   // The socle in Venetia: the clay, the wood and the planks of the Casa 2; its bricks ask the
   // fourth place, a brickworks, the first choice (a farm instead would leave the Casa waiting).
@@ -310,6 +312,10 @@ export const venice1450Empire: EmpireSettingsInput = {
       slots: 4,
     },
   },
+  // A model raised at the Remise or the Arsenal: its price, 500 ducats at the least, doubled at
+  // each level; +10 % a level on land, +5 % at sea (at +10 %, the ships took the trade from the
+  // miners and the traders: decision of the owner, calibration.md).
+  vehicleLevels: { max: 5, stepBps: 1_000, shipStepBps: 500, costTimes: 1, minCostDucats: 500 },
   localTripsPerDay: 4,
   newcomers: { rawBonusBps: 2_000, untilCasa: 8 },
   // The knowledge (CADRAGE-v3 § 3.5): four branches, four knowledges and two capstones each,

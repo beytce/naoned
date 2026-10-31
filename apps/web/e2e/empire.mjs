@@ -168,6 +168,10 @@ try {
     await page.locator("[data-production-pane=vehicles]").click();
     await page.locator("[data-fleet]").waitFor();
     await shot("5-production");
+    // The land vehicles wait for the Remise, put on the map from the Casa 2.
+    await page.locator("[data-no-depot]").waitFor();
+    if (await page.locator("[data-no-depot] button").isEnabled())
+      faults.push(`${label}: the Remise offered before the Casa 2`);
     // At the Casa 1, the sea stays out of sight (lot A of the UX audit).
     if ((await page.locator("[data-arsenal]").count()) > 0)
       faults.push(`${label}: the Arsenal shown at the Casa 1`);

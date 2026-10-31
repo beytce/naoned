@@ -354,6 +354,25 @@ export const EmpireMap = forwardRef<
               </div>
             );
           })()}
+        {map.depot &&
+          (() => {
+            const [px, py] = cellCentre(map.depot);
+            return (
+              <div data-at={`${px - 9},${py + 9}`} className="map-pin">
+                <button
+                  type="button"
+                  onClick={() => onTarget({ kind: "depot" })}
+                  data-depot-mark
+                  className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-night-3 text-gold ring-2 ring-gold/70 shadow-md shadow-black/50 [&_svg]:h-5 [&_svg]:w-5">
+                    {Icon.cart()}
+                  </span>
+                  <span className="map-name">{t.scene.depot}</span>
+                </button>
+              </div>
+            );
+          })()}
         {map.arsenal &&
           (() => {
             const [px, py] = cellCentre(map.arsenal);

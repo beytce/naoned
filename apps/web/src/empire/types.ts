@@ -95,6 +95,9 @@ export interface EmpireView {
       build: { minutes: number; materials: Record<string, number> } | null;
       slots: number;
       muda: boolean;
+      /** The house's level of the model, and its next level's price (null at the last). */
+      level: number;
+      upgrade: string | null;
     }[];
     mine: { id: string; type: string; busyUntil: number; capacity: number; fitted?: string[] }[];
     voyages: EmpireVoyage[];
@@ -248,13 +251,16 @@ export interface EmpireMapView {
   cells: Record<string, { region: string; coast: boolean }>;
   revealed: string[];
   posts: { cell: string; region: string }[];
-  sites: { kind: "post" | "arsenal" | "camp"; cell: string; endsAt: number }[];
+  sites: { kind: "post" | "arsenal" | "camp" | "depot"; cell: string; endsAt: number }[];
   arsenal: string | null;
   camp: string | null;
   cities: { code: string; cell: string; region: string }[];
   radius: number;
   arsenalSite: { cost: string; minutes: number; casa: number } | null;
   campSite: { cost: string; minutes: number; casa: number } | null;
+  /** The Remise: where the land vehicles are bought and their models raised. */
+  depot: string | null;
+  depotSite: { cost: string; minutes: number; casa: number } | null;
 }
 
 export interface EmpireVoyage {
@@ -313,6 +319,8 @@ export type EmpireAction =
   | { type: "empirePlaceCounter"; cell: string }
   | { type: "empireBuildArsenal"; cell: string }
   | { type: "empireBuildCamp"; cell: string }
+  | { type: "empireBuildDepot"; cell: string }
+  | { type: "empireUpgradeVehicle"; vehicleType: string }
   | { type: "empireUpgradeCounter"; region: string }
   | { type: "empireBuyVehicle"; vehicleType: string }
   | {
