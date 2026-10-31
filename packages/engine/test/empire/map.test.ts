@@ -57,11 +57,17 @@ describe("the hex grid", () => {
 });
 
 describe("the cities hidden on the map", () => {
-  it("show Venetia's at the founding, and none beyond", () => {
-    const w = world();
-    const map = empireView(w.ctx, w.state, "a", w.now)?.map;
-    expect(map?.cities.map((c) => c.code)).toEqual(["venezia", "padova"]);
-    expect(Object.values(map?.cells ?? {}).every((c) => c.region === "veneto")).toBe(true);
+  it("show Venetia's at the founding, then the seat of each region the Casa reaches", () => {
+    const w = new World(makeContext({ empire }));
+    w.do({ type: "empireJoin", playerId: "a" });
+    const map = () => empireView(w.ctx, w.state, "a", w.now)?.map;
+    expect(map()?.cities.map((c) => c.code)).toEqual(["venezia", "padova"]);
+    expect(Object.values(map()?.cells ?? {}).every((c) => c.region === "veneto")).toBe(true);
+    // Lombardy's Casa (4): its seat, Milan, comes in sight across the unknown.
+    for (let i = 1; i < 4; i++) w.do({ type: "empireBuildCasa", playerId: "a" });
+    expect(map()?.cities.map((c) => c.code)).toEqual(["venezia", "padova", "milano"]);
+    expect(map()?.cells["3,0"]).toBeUndefined();
+    expect(error(w.try({ type: "empirePlaceCounter", playerId: "a", cell: "4,0" }))).toBe("");
   });
 
   it("give each city found its share of its region's book, all of them the whole", () => {

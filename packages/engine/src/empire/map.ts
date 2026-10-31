@@ -56,9 +56,19 @@ export function regionSeat(s: EmpireSettings, region: string): string | null {
   return s.map.cities.find((c) => c.region === region)?.cell ?? regionCells(s, region)[0] ?? null;
 }
 
-/** What the house sees, Venetia's cells at the least. */
+/**
+ * What the house sees: Venetia's cells at the least, what its counters revealed, and the seat of
+ * each region its Casa has reached (the news of it comes to Venice, across any sea): a counter
+ * put there reveals the rest.
+ */
 export function revealedOf(h: EmpireHouse, s: EmpireSettings): Set<string> {
-  return new Set(h.revealed ?? regionCells(s, HOME));
+  const seen = new Set(h.revealed ?? regionCells(s, HOME));
+  for (const r of s.regions)
+    if (h.casa >= r.casa) {
+      const seat = regionSeat(s, r.code);
+      if (seat) seen.add(seat);
+    }
+  return seen;
 }
 
 /** A region's cities the house has found, and all of them. */

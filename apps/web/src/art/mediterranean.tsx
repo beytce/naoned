@@ -8,7 +8,7 @@ import { P } from "./palette.js";
  * them on one another, and keeps the far ones where they belong.
  */
 
-type LonLat = readonly [number, number];
+export type LonLat = readonly [number, number];
 
 /** Venice, the centre of the chart. */
 const VENICE: LonLat = [12.33, 45.44];
@@ -165,7 +165,7 @@ export const pathOf = (pts: [number, number][]) =>
 const closed = (pts: LonLat[]) => `${pathOf(pts.map(project))} Z`;
 
 // The seas, coast by coast (longitude, latitude), simplified to what a phone shows.
-const MEDITERRANEAN: LonLat[] = [
+export const MEDITERRANEAN: LonLat[] = [
   [-6, 36.6],
   [-2, 36.7],
   [-0.5, 38.3],
@@ -289,7 +289,7 @@ const MEDITERRANEAN: LonLat[] = [
   [-0.6, 35.7],
   [-6, 35.0],
 ];
-const BLACK_SEA: LonLat[] = [
+export const BLACK_SEA: LonLat[] = [
   [29.05, 41.2],
   [28.0, 41.6],
   [27.9, 42.6],
@@ -312,7 +312,7 @@ const BLACK_SEA: LonLat[] = [
   [31.5, 41.3],
   [30.0, 41.2],
 ];
-const CHANNEL: LonLat[] = [
+export const CHANNEL: LonLat[] = [
   [-6, 50.0],
   [-2, 50.6],
   [-1, 50.7],
@@ -340,7 +340,7 @@ const CHANNEL: LonLat[] = [
   [-3, 48.8],
   [-6, 48.5],
 ];
-const BISCAY: LonLat[] = [
+export const BISCAY: LonLat[] = [
   [-6, 48.0],
   [-4.5, 47.8],
   [-2.2, 47.2],
@@ -350,7 +350,7 @@ const BISCAY: LonLat[] = [
   [-1.6, 43.4],
   [-6, 43.4],
 ];
-const ISLANDS: LonLat[][] = [
+export const ISLANDS: LonLat[][] = [
   // Sicily, Sardinia, Corsica, Crete, Cyprus, Majorca, Rhodes, Euboea.
   [
     [12.4, 38.0],

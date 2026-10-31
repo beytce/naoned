@@ -1,4 +1,5 @@
 import type { EmpireSettingsInput } from "../empire/settings.js";
+import { VENICE_MAP_CELLS, VENICE_MAP_CITIES } from "./venice1450.map.js";
 
 /**
  * The persistent empire of Venice (CADRAGE-v3 § 3, docs/refonte-2026-10-29/profondeur.md): orders
@@ -225,6 +226,16 @@ export const venice1450Empire: EmpireSettingsInput = {
     neighbourBps: 1_000,
   },
   counters: { maxLevel: 10, bookStepBps: 4_000 },
+  // The map at the centre of the game (step 2): the grid drawn from the chart, the cities hidden
+  // in it; a counter reveals two cells around, each one a quarter dearer than the last; the
+  // Arsenal on a coast, from the Casa of the first ship (calibrated at the 24-month simulator).
+  map: {
+    cells: VENICE_MAP_CELLS,
+    cities: VENICE_MAP_CITIES,
+    revealRadius: 2,
+    costStepBps: 2_500,
+    arsenal: { costDucats: 3_000, casa: 9, minutes: 480 },
+  },
   // The socle in Venetia: the clay, the wood and the planks of the Casa 2; its bricks ask the
   // fourth place, a brickworks, the first choice (a farm instead would leave the Casa waiting).
   start: {

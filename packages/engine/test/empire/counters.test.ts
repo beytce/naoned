@@ -132,7 +132,8 @@ describe("the regions in the view", () => {
     const at = () =>
       empireView(w.ctx, w.state, "a", w.now)?.regions.find((r) => r.code === "lombardia");
     expect(at()).toMatchObject({ next: null, postCost: levelCost(4, s) * 4n, counter: 0 });
-    expect(at()?.cities).toEqual({ found: 0, all: 3 });
+    // Its seat, Milan, in sight from its Casa on.
+    expect(at()?.cities).toEqual({ found: 1, all: 3 });
     w.do({ type: "empirePlaceCounter", playerId: "a", cell: "1,0" });
     w.advance(HOUR);
     w.do({ type: "empirePlaceCounter", playerId: "a", cell: "3,0" });
