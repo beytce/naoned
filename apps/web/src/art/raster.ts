@@ -5,7 +5,10 @@ export const RASTER: Record<string, Record<string, "webp" | "svg">> = {
   buildings: {
     bakery: "webp",
     brickworks: "webp",
+    clay_pit: "webp",
+    farm: "webp",
     glassworks: "webp",
+    lumber_camp: "webp",
     mill: "webp",
     mirrorworks: "webp",
     sand_pit: "webp",
