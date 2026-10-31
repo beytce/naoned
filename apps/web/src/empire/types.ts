@@ -84,6 +84,19 @@ export interface EmpireView {
   away: { since: number; ready: Record<string, number>; sitesDone: number } | null;
   regions: EmpireRegion[];
   map: EmpireMapView;
+  /** Each counter's stock, Venice's first (the map that grows). */
+  stores: { post: string; region: string; goods: Record<string, number> }[];
+  /** The goods on the road between two counters. */
+  transfers: {
+    id: string;
+    vehicleId: string;
+    from: string;
+    to: string;
+    good: string;
+    qty: number;
+    leftAt: number;
+    arrivesAt: number;
+  }[];
   vehicles: {
     shop: {
       type: string;
@@ -99,7 +112,15 @@ export interface EmpireView {
       level: number;
       upgrade: string | null;
     }[];
-    mine: { id: string; type: string; busyUntil: number; capacity: number; fitted?: string[] }[];
+    mine: {
+      id: string;
+      type: string;
+      busyUntil: number;
+      capacity: number;
+      fitted?: string[];
+      /** The counter it stands at, or is bound for. */
+      at: string;
+    }[];
     voyages: EmpireVoyage[];
     haulPerDay: number;
   };
@@ -266,6 +287,7 @@ export interface EmpireMapView {
   /** A counter's reach (the map that grows): none on a map without it. */
   reach: { base: number; perLevel: number } | null;
   postSpacing: number;
+  transferUnitsPerHour: number;
   /** The cities the house's counters serve. */
   covered: string[];
   sites: { kind: "post" | "arsenal" | "camp" | "depot"; cell: string; endsAt: number }[];
@@ -331,6 +353,8 @@ export type EmpireAction =
   | { type: "empireRelaunch"; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll" }
   | { type: "empireSell"; good: string; qty: number; region?: string }
+  | { type: "empireBuy"; good: string; qty: number; post?: string }
+  | { type: "empireTransfer"; vehicleId: string; to: string; good: string; qty: number }
   | { type: "empireDeliver"; good: string; qty: number; region?: string; city?: string }
   | { type: "empireClaim"; index: number }
   | { type: "empirePlaceCounter"; cell: string }

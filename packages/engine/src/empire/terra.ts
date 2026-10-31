@@ -13,6 +13,7 @@ import { carnetWeek } from "./carnet.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
 import { checkCamp } from "./map.js";
 import { bandOf } from "./power.js";
+import { HOME_POST, putAt, storeOf, takeAt, wherePut } from "./stores.js";
 import { powerOfHouse } from "./trade.js";
 
 /**
@@ -187,10 +188,11 @@ export function joinTerra(tx: Tx, playerId: PlayerId, rating = 1_000): void {
   const start = terraWeekStart(t.week);
   if (cfg.start.placementHours > 0 && tx.now >= start + cfg.start.placementHours * HOUR_MS)
     fail("placement_closed");
+  // From Venice's stock: the Terraferma is supplied from the lagoon.
   for (const [good, qty] of Object.entries(s.terra.entry))
-    if (inventoryLine(tx, playerId, good).available < qty) fail("insufficient_stock");
+    if (storeOf(tx, h, playerId, HOME_POST, good) < qty) fail("insufficient_stock");
   for (const [good, qty] of Object.entries(s.terra.entry))
-    removeStock(tx, playerId, good, qty, "terraferma", `terra:${t.week}`);
+    takeAt(tx, h, playerId, HOME_POST, good, qty, "terraferma", `terra:${t.week}`);
   const band = bandOf(powerOfHouse(h, s), s);
   const mean = (th: EmpireTheatre) => {
     const rs = Object.values(th.ratings ?? {});

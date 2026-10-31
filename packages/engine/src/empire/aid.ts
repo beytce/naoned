@@ -3,6 +3,7 @@ import { DAY_MS, type EmpireHouse, HOUR_MS, type PlayerId, cashAccount } from ".
 import { type Tx, addStock, fail, inventoryLine, removeStock, transfer } from "../tx.js";
 import { empireSettings, ownHouse } from "./house.js";
 import { regionOf } from "./prices.js";
+import { HOME_POST, putAt, storeOf, takeAt, wherePut } from "./stores.js";
 
 /** The company a command carries: the server's knowledge of it, never the client's. */
 export interface EmpireCompanyTag {
@@ -89,10 +90,13 @@ export function supplyAid(tx: Tx, playerId: PlayerId, requestId: string): void {
   const today = h.supplied?.day === day ? h.supplied.value : 0n;
   const cap = BigInt(s.aid.dailyDucatsPerCasa * h.casa) * DENIERS_PER_DUCAT;
   if (today + value > cap) fail("over_limit");
-  if (inventoryLine(tx, playerId, r.good).available < r.qty) fail("insufficient_stock");
+  // From Venice to Venice: the company's aid passes through the Rialto.
+  const giver = ownHouse(tx, playerId);
+  if (storeOf(tx, giver, playerId, HOME_POST, r.good) < r.qty) fail("insufficient_stock");
   transfer(tx, cashAccount(r.house), cashAccount(playerId), value, "empire_aid", requestId);
-  removeStock(tx, playerId, r.good, r.qty, "empire_aid", requestId);
-  addStock(tx, r.house, r.good, r.qty, "empire_aid", requestId);
+  takeAt(tx, giver, playerId, HOME_POST, r.good, r.qty, "empire_aid", requestId);
+  const taker = tx.s.empire?.houses[r.house];
+  if (taker) putAt(tx, taker, r.house, HOME_POST, r.good, r.qty, "empire_aid", requestId);
   h.supplied = { day, value: today + value };
   h.merit =
     (h.merit ?? 0) + Number((value * BigInt(s.aid.meritPer100Ducats)) / (100n * DENIERS_PER_DUCAT));

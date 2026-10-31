@@ -64,7 +64,8 @@ import { buildArsenal, buildCamp, buildDepot, ensureMap, placeCounter } from "./
 import { bidMuda, settleMuda } from "./empire/mudaSail.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
-import { deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
+import { buyGoods, deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
+import { settleTransfers, startTransfer } from "./empire/transfers.js";
 import {
   buildShip,
   buyEmpireVehicle,
@@ -310,6 +311,15 @@ type EmpireCommandOf =
   | { type: "empireRelaunch"; playerId: PlayerId; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll"; playerId: PlayerId }
   | { type: "empireSell"; playerId: PlayerId; good: string; qty: number; region?: string }
+  | { type: "empireBuy"; playerId: PlayerId; good: string; qty: number; post?: string }
+  | {
+      type: "empireTransfer";
+      playerId: PlayerId;
+      vehicleId: string;
+      to: string;
+      good: string;
+      qty: number;
+    }
   | {
       type: "empireDeliver";
       playerId: PlayerId;
@@ -486,6 +496,7 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
   // The cargoes arrived by now sell first, every house's, in the order they came in.
   if (tx.ctx.settings.empire && tx.s.empire) {
     settleVoyages(tx);
+    settleTransfers(tx);
     // The deposits' extraction up to now, then the days' new ones.
     settleDeposits(tx);
     settleAid(tx);
@@ -651,6 +662,12 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
         cmd.qty,
         cmd.insured === true,
       );
+      break;
+    case "empireTransfer":
+      startTransfer(tx, cmd.playerId, cmd.vehicleId, cmd.to, cmd.good, cmd.qty);
+      break;
+    case "empireBuy":
+      buyGoods(tx, cmd.playerId, cmd.good, cmd.qty, cmd.post);
       break;
     case "empireSell":
       sellToDogana(tx, cmd.playerId, cmd.good, cmd.qty, cmd.region);
