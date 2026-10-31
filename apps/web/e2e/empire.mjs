@@ -136,6 +136,12 @@ try {
     // A workshop touched: its panel, then its details (its place on the ring, to move it).
     await page.locator("[data-workshop]").first().click();
     await page.locator("[data-action-panel=workshop]").waitFor();
+    // The panel in the middle of a wide screen (its animation no longer moves it aside).
+    if (width >= 1024) {
+      const box = await page.locator("[data-action-panel]").boundingBox();
+      if (box && Math.abs(box.x + box.width / 2 - width / 2) > 4)
+        faults.push(`${label}: the panel not centred`);
+    }
     if ((await page.locator("[data-map-action=upgrade]").count()) !== 1)
       faults.push(`${label}: no level in the workshop's panel`);
     await shot("4-panneau");
@@ -176,6 +182,21 @@ try {
       await page.keyboard.press("Escape");
       await page.waitForTimeout(400);
     }
+    // A sheet covers the screen to its foot: no round button left to touch under it.
+    await page.locator("[data-round=market]").click();
+    await page.waitForSelector("[data-market]");
+    await page.waitForTimeout(450);
+    const under = await page.evaluate(() => {
+      const at = document.elementFromPoint(window.innerWidth - 30, window.innerHeight - 20);
+      return at?.closest("[data-round]") ? "round" : "";
+    });
+    if (under) faults.push(`${label}: a round button still under the open sheet`);
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(400);
+    // The corner's counts say what they are when touched.
+    await page.locator("[data-hud=favour]").click();
+    await page.locator("[data-hud=favour] [role=note]").waitFor();
+
     // The Market: a good touched opens its sheet, to sell or deliver.
     await page.locator("[data-round=market]").click();
     await page.locator("[data-market-good]").first().click();

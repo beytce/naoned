@@ -527,8 +527,11 @@ export const en: Dictionary = {
       go: "Continue",
     },
     terms: {
+      ducats: "Your purse, in ducats: it pays the sites, the counters and the ships.",
+      seals: "The Seals: the reward of great goals, a full Ledger and the Terraferma.",
+      fleet: "Your vehicles at home, out of all you own: one on a voyage comes back later.",
       casa: "Your palace. Each Casa level opens workshop places, regions and new trades.",
-      favour: "Venice's Favour: earned in the Ledger, it buys the regions' charters.",
+      favour: "Venice's Favour: earned in the Ledger and by mutual aid, it eases some prices.",
       power: "Power measures what you have built, never your purse.",
       band: "Your Power band: you are only compared with houses of your size.",
       dogana:

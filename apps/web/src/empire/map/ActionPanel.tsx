@@ -1,9 +1,10 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { GoodsMark } from "../../art/goods.js";
 import { Coin } from "../../art/icons.js";
 import { d } from "../../game/format.js";
 import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
+import { CloseButton } from "../../ui.js";
 import { regionName } from "../World.js";
 import { buildingName } from "../logic.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
@@ -80,6 +81,7 @@ export function ActionPanel({
   onOpen: (sheet: string) => void;
   onClose: () => void;
 }) {
+  const [pending, setPending] = useState<string | null>(null);
   const head = headOf(p, target);
   const actions = actionsOf(p, target, now);
   return (
@@ -95,38 +97,36 @@ export function ActionPanel({
           </h3>
           <p className="text-xs text-cream-dim">{head.sub}</p>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Fermer"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-cream-dim ring-1 ring-line active:scale-95"
-        >
-          ✕
-        </button>
+        <CloseButton onClick={onClose} className="shrink-0" />
       </div>
-      <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+      {/* A new place: its actions fade in, the panel stays. */}
+      <div key={JSON.stringify(target)} className="mt-2 flex animate-fade flex-wrap gap-1.5 pb-1">
         {actions.map((a) => (
           <button
             key={a.id}
             type="button"
-            disabled={a.disabled || (busy && !!a.action)}
+            disabled={a.disabled || pending !== null}
             data-map-action={a.id}
+            aria-busy={pending === a.id || undefined}
             onClick={() => {
-              if (a.action) void act(a.action);
-              else if (a.open) onOpen(a.open);
+              if (a.action) {
+                // Only the square touched waits for the answer.
+                setPending(a.id);
+                void act(a.action).finally(() => setPending(null));
+              } else if (a.open) onOpen(a.open);
             }}
-            className="flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-cream active:scale-95 disabled:opacity-40"
+            className={`flex w-[4.75rem] flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-cream active:scale-95 disabled:opacity-40 ${pending === a.id ? "animate-pulse" : ""}`}
           >
             <span
               className={`flex h-12 w-12 items-center justify-center rounded-lg border [&_svg]:h-6 [&_svg]:w-6 ${a.action && !a.disabled ? "border-info text-info" : "border-line text-cream"}`}
             >
               {a.good ? <GoodsMark code={a.good} size={26} /> : ICONS[a.icon]()}
             </span>
-            <span className="max-w-[5.5rem] truncate text-[0.6875rem] font-semibold">
+            <span className="line-clamp-2 text-center text-[0.6875rem] font-semibold leading-tight">
               {(t.scene.actions[a.words.key] ?? (() => a.words.key))(a.words.n ?? 0)}
             </span>
             {a.cost && (
-              <span className="flex items-center gap-1 text-[0.625rem] tabular-nums text-gold">
+              <span className="flex items-center gap-1 text-[0.6875rem] tabular-nums text-gold">
                 <Coin size={11} />
                 {d(a.cost)}
               </span>

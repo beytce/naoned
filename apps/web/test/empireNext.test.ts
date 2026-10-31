@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextStep } from "../src/empire/next.js";
+import { inTutorial, nextStep } from "../src/empire/next.js";
 import type { EmpirePayload, EmpireWorkshop } from "../src/empire/types.js";
 
 const HOUR = 3_600_000;
@@ -182,5 +182,14 @@ describe("the next step", () => {
     const step = nextStep(p, NOW);
     expect(step.kind).toBe("wait");
     expect(step.kind === "wait" && step.at).toBe(NOW - 10 + HOUR / 2);
+  });
+});
+
+describe("Lorenzo's tutorial (31 October 2026)", () => {
+  it("guides until the Casa 2, then withdraws behind the « ? »", () => {
+    const at = (casa: number) => ({ view: { house: { casa } } }) as unknown as EmpirePayload;
+    expect(inTutorial(at(1))).toBe(true);
+    expect(inTutorial(at(2))).toBe(false);
+    expect(inTutorial(at(9))).toBe(false);
   });
 });

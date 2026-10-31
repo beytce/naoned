@@ -526,8 +526,11 @@ function CityMark({
   const open = (r?.counter ?? 0) > 0;
   const best = open ? bestQuote(p, region) : null;
   const [x, y] = cellCentre(cell);
+  // Within Venice's orbit, a city gives way to the house as it opens.
+  const [vx, vy] = seatOf("veneto");
+  const inOrbit = Math.hypot(x - vx, y - vy) < ORBIT_UNITS / 2;
   return (
-    <div data-at={`${x},${y}`} className="map-pin">
+    <div data-at={`${x},${y}`} className={`map-pin ${inOrbit ? "map-home" : ""}`}>
       <button
         type="button"
         onClick={onClick}

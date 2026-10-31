@@ -446,9 +446,14 @@ const frDict = {
       go: "Continuer",
     },
     terms: {
+      ducats: "Votre caisse, en ducats : elle paie les chantiers, les comptoirs et les navires.",
+      seals:
+        "Les Sceaux : la récompense des grands objectifs, du Carnet plein et de la Terraferme.",
+      fleet:
+        "Vos véhicules à quai, sur tous ceux que vous avez : un véhicule en voyage revient ensuite.",
       casa: "Votre palais. Chaque niveau de Casa ouvre des places d'ateliers, des régions et de nouveaux métiers.",
       favour:
-        "La Faveur de Venise : elle se gagne au Carnet et sert à obtenir les chartes des régions.",
+        "La Faveur de Venise : elle se gagne au Carnet et à l'entraide, et allège certains prix.",
       power: "La Puissance mesure ce que vous avez bâti, jamais votre caisse.",
       band: "Votre bande de Puissance : vous n'êtes comparé qu'aux Maisons de votre taille.",
       dogana:
