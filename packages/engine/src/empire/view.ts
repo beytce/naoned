@@ -4,6 +4,7 @@ import {
   DAY_MS,
   type EmpireHouse,
   type EmpireStaff,
+  type EmpireTransfer,
   type EmpireVoyage,
   HOUR_MS,
   type PlayerId,
@@ -51,6 +52,7 @@ import { bandOf } from "./power.js";
 import { regionOf } from "./prices.js";
 import type { EmpireSettings } from "./settings.js";
 import { staffHireCost, staffSlots } from "./staff.js";
+import { storesOf } from "./stores.js";
 import { isContesaWeek, terraWeekStart } from "./terra.js";
 import { counterLevel, incomePerDay, powerOfHouse } from "./trade.js";
 import { moduleSlotsOf, neighbourBonus } from "./workshops.js";
@@ -100,6 +102,10 @@ export interface EmpireView {
   /** The regions (CADRAGE-v3 § 3.4): Venetia, then the others with their charter and counter. */
   regions: EmpireRegionView[];
   map: EmpireMapView;
+  /** Each counter's stock, Venice's first (the map that grows). */
+  stores: { post: string; region: string; goods: Record<string, number> }[];
+  /** The goods on the road between two counters. */
+  transfers: EmpireTransfer[];
   /** The vehicles one may buy, those of the house, and its voyages under way. */
   vehicles: {
     shop: {
@@ -123,6 +129,8 @@ export interface EmpireView {
       busyUntil: number;
       capacity: number;
       fitted?: string[];
+      /** The counter it stands at, or is bound for. */
+      at: string;
     }[];
     voyages: EmpireVoyage[];
     haulPerDay: number;
@@ -302,6 +310,8 @@ export interface EmpireMapView {
   hexSize: number;
   reach: { base: number; perLevel: number } | null;
   postSpacing: number;
+  /** A land vehicle between two counters: so many units an hour. */
+  transferUnitsPerHour: number;
   /** The cities the house's counters serve. */
   covered: string[];
   /** The counters and the Arsenal under way, on their cell. */
@@ -448,6 +458,8 @@ export function empireView(
     away: awayOf(ctx, state.empire?.houses[playerId], house, now, s),
     regions: regionsOf(house, s),
     map: mapOf(house, s),
+    stores: storesOf(state.inventories[playerId], house, s),
+    transfers: house.transfers ?? [],
     vehicles: vehiclesOf(state, playerId, house, s),
     research: researchOf(house, s),
     deposits: (state.empire?.deposits ?? [])
@@ -721,6 +733,7 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     hexSize: s.map.hexSize,
     reach: s.map.reach,
     postSpacing: s.map.postSpacing,
+    transferUnitsPerHour: s.map.transferUnitsPerHour,
     covered: s.map.reach ? [...citiesCovered(house, s)].sort() : [],
     sites: house.builds
       .filter(
@@ -779,6 +792,7 @@ function vehiclesOf(state: WorldState, playerId: PlayerId, house: EmpireHouse, s
   // A ship's hold counts its own fitted modules only.
   const mine = (house.vehicles ?? []).map((v) => ({
     ...v,
+    at: v.at ?? "home",
     capacity: Number(
       applyBpsFloor(
         BigInt(capacityOf(house, v.type, s)),

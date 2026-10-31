@@ -37,6 +37,7 @@ import {
   centredOn,
   farCamera,
   placeable,
+  postPoint,
 } from "./logic.js";
 import { useCamera } from "./useCamera.js";
 
@@ -344,6 +345,63 @@ export const EmpireMap = forwardRef<
                 {clock(x.endsAt - now)}
               </span>
             </div>
+          );
+        })}
+        {/* The vehicles around the bubble of the counter they stand at (the map that grows). */}
+        {[{ id: "home", x: map.home.x, y: map.home.y }, ...map.posts].map((x) => {
+          const here = view.vehicles.mine.filter(
+            (v) =>
+              v.at === x.id &&
+              v.busyUntil <= now &&
+              !view.vehicles.shop.find((q) => q.type === v.type)?.build,
+          );
+          if (here.length === 0) return null;
+          const r = x.id === "home" ? 46 : 34;
+          return (
+            <div
+              key={`f${x.id}`}
+              data-at={`${x.x},${x.y}`}
+              className="map-pin pointer-events-none"
+              data-fleet-at={x.id}
+            >
+              {here.slice(0, 8).map((v, i) => {
+                const a = ((-60 + i * 30) * Math.PI) / 180;
+                return (
+                  <span
+                    key={v.id}
+                    data-vehicle={v.id}
+                    className="absolute flex h-6 w-6 items-center justify-center rounded-full bg-night-3 text-cream ring-1 ring-lagoon/70 shadow-md shadow-black/50 [&_svg]:h-3.5 [&_svg]:w-3.5"
+                    style={{
+                      transform: `translate(${r * Math.cos(a) - 12}px, ${r * Math.sin(a) - 12}px)`,
+                    }}
+                  >
+                    {Icon.cart()}
+                  </span>
+                );
+              })}
+            </div>
+          );
+        })}
+        {/* The goods on the road between two counters: a cart gliding along the way. */}
+        {view.transfers.map((tr) => {
+          const a = postPoint(p, tr.from);
+          const b = postPoint(p, tr.to);
+          if (!a || !b) return null;
+          const k = Math.min(
+            1,
+            Math.max(0, (now - tr.leftAt) / Math.max(1, tr.arrivesAt - tr.leftAt)),
+          );
+          const x = a[0] + (b[0] - a[0]) * k;
+          const y = a[1] + (b[1] - a[1]) * k;
+          return (
+            <span
+              key={tr.id}
+              data-transfer={tr.id}
+              className="absolute left-0 top-0 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-ink ring-2 ring-night transition-transform duration-1000 ease-linear [&_svg]:h-3 [&_svg]:w-3"
+              style={{ transform: `translate(${x * base - 10}px, ${y * base - 10}px)` }}
+            >
+              {Icon.cart()}
+            </span>
           );
         })}
         {/* The convoys on their way: a point along their road, gliding from second to second. */}
