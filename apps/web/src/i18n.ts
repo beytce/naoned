@@ -823,6 +823,13 @@ const frDict = {
         `${built} construit${built > 1 ? "s" : ""} · ${hold} unités · niveau ${level}`,
       upgrade: (cost: string) => `Améliorer le modèle · ${cost}`,
       top: "Modèle au plus haut",
+      send: "Envoyer",
+      sendTitle: "Envoyer à un comptoir",
+      sendTo: "Vers",
+      sendGood: "Marchandise",
+      sendGo: (n: number, hours: string) => `Envoyer ${n} · ${hours}`,
+      sendNothing: "Rien en stock à ce comptoir.",
+      at: (post: string) => `à ${post}`,
       upgradeHint:
         "Chaque niveau donne +10 % de capacité à tous les véhicules du modèle (+5 % pour un navire).",
     },

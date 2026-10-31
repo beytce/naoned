@@ -894,6 +894,13 @@ export const en: Dictionary = {
         `${built} built · ${hold} units · level ${level}`,
       upgrade: (cost: string) => `Improve the model · ${cost}`,
       top: "Model at its highest",
+      send: "Send",
+      sendTitle: "Send to a counter",
+      sendTo: "To",
+      sendGood: "Goods",
+      sendGo: (n: number, hours: string) => `Send ${n} · ${hours}`,
+      sendNothing: "Nothing in stock at this counter.",
+      at: (post: string) => `at ${post}`,
       upgradeHint:
         "Each level gives +10 % capacity to every vehicle of the model (+5 % for a ship).",
     },

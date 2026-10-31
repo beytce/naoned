@@ -62,8 +62,8 @@ export function settleTransfers(tx: Tx): void {
   for (const [id, h] of Object.entries(houses)) {
     const due = (h.transfers ?? []).filter((t) => t.arrivesAt <= tx.now);
     if (due.length === 0) continue;
-    h.transfers = (h.transfers ?? []).filter((t) => t.arrivesAt > tx.now);
-    if (h.transfers.length === 0) delete h.transfers;
+    const left = (h.transfers ?? []).filter((t) => t.arrivesAt > tx.now);
+    h.transfers = left.length > 0 ? left : undefined;
     for (const t of due) putAt(tx, h, id, t.to, t.good, t.qty, "empire_voyage", t.id);
   }
 }

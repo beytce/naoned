@@ -3,6 +3,7 @@ import { cellCentre } from "../../art/hexmap.js";
 import { WORLD_VIEW, seatOf } from "../../art/mediterranean.js";
 import { d } from "../../game/format.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
+import { fr } from "../../i18n.js";
 import { affordable, queueEnd, readyLots } from "../logic.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 
@@ -389,4 +390,27 @@ export function pointCheck(
     .filter((c) => (c.x - at.x) ** 2 + (c.y - at.y) ** 2 <= r * r)
     .map((c) => c.code);
   return { tooClose, serves };
+}
+
+/** A counter's name: Venice, or its region and its rank there. */
+export function postLabel(
+  p: EmpirePayload,
+  post: string,
+  regionName: (r: string) => string,
+): string {
+  const stores = p.view?.stores ?? [];
+  const i = stores.findIndex((x) => x.post === post);
+  const at = stores[i];
+  if (!at || post === "home") return fr.empire.market.venice;
+  const n = stores.slice(1, i + 1).filter((x) => x.region === at.region).length;
+  return fr.empire.market.post(regionName(at.region), n);
+}
+
+/** Where a counter stands on the chart: Venice's, or one put down. */
+export function postPoint(p: EmpirePayload, post: string): [number, number] | null {
+  const map = p.view?.map;
+  if (!map) return null;
+  if (post === "home") return [map.home.x, map.home.y];
+  const x = map.posts.find((q) => q.id === post);
+  return x ? [x.x, x.y] : null;
 }

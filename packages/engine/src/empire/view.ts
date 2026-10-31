@@ -310,6 +310,8 @@ export interface EmpireMapView {
   hexSize: number;
   reach: { base: number; perLevel: number } | null;
   postSpacing: number;
+  /** A land vehicle between two counters: so many units an hour. */
+  transferUnitsPerHour: number;
   /** The cities the house's counters serve. */
   covered: string[];
   /** The counters and the Arsenal under way, on their cell. */
@@ -731,6 +733,7 @@ function mapOf(house: EmpireHouse, s: EmpireSettings): EmpireMapView {
     hexSize: s.map.hexSize,
     reach: s.map.reach,
     postSpacing: s.map.postSpacing,
+    transferUnitsPerHour: s.map.transferUnitsPerHour,
     covered: s.map.reach ? [...citiesCovered(house, s)].sort() : [],
     sites: house.builds
       .filter(

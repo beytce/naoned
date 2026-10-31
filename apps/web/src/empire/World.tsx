@@ -6,6 +6,7 @@ import { d, duration, hourOf, minutesLabel } from "../game/format.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Sheet, Slab, clock } from "../ui.js";
 import { affordable, buildingName, opensAt, readyLots, recipeOf, shownAt } from "./logic.js";
+import { postLabel, postPoint } from "./map/logic.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
 const t = fr.empire;
@@ -423,6 +424,7 @@ export function Charroi({
   /** The Remise to put down first, in a world that asks it. */
   onPlaceDepot?: () => void;
 }) {
+  const [sending, setSending] = useState<string | null>(null);
   const view = p.view;
   if (!view) return null;
   const c = t.charroi;
@@ -452,15 +454,32 @@ export function Charroi({
         </div>
       )}
       <ul className="mt-2 flex flex-wrap gap-2">
-        {view.vehicles.mine.map((v) => (
-          <li key={v.id}>
-            <Badge tone={v.busyUntil > now ? "ghost" : "lagoon"}>
-              {t.vehicleNames[v.type] ?? v.type} ·{" "}
-              {v.busyUntil > now ? c.busy(hourOf(v.busyUntil)) : c.free}
-            </Badge>
-          </li>
-        ))}
+        {view.vehicles.mine.map((v) => {
+          const land = !view.vehicles.shop.find((x) => x.type === v.type)?.build;
+          const free = v.busyUntil <= now;
+          return (
+            <li key={v.id} className="flex items-center gap-1">
+              <Badge tone={free ? "lagoon" : "ghost"}>
+                {t.vehicleNames[v.type] ?? v.type} · {free ? c.free : c.busy(hourOf(v.busyUntil))}
+                {view.stores.length > 1 ? ` · ${c.at(postLabel(p, v.at, regionName))}` : ""}
+              </Badge>
+              {land && free && view.stores.length > 1 && (
+                <button
+                  type="button"
+                  data-send={v.id}
+                  onClick={() => setSending(sending === v.id ? null : v.id)}
+                  className="rounded-full px-2 py-1 text-xs font-semibold text-info ring-1 ring-info/60 active:scale-95"
+                >
+                  {c.send}
+                </button>
+              )}
+            </li>
+          );
+        })}
       </ul>
+      {sending && (
+        <SendForm p={p} vehicleId={sending} busy={busy} act={act} onDone={() => setSending(null)} />
+      )}
       <ul className="mt-3 space-y-2">
         {view.vehicles.shop
           .filter((s) => !s.build && shownAt(view.house.casa, s.casa))
@@ -501,6 +520,95 @@ export function Charroi({
           })}
       </ul>
     </section>
+  );
+}
+
+/**
+ * A delivery between two counters (the map that grows): from the counter where the vehicle stands,
+ * a good of its stock, to another counter, in a time that grows with the distance.
+ */
+function SendForm({
+  p,
+  vehicleId,
+  busy,
+  act,
+  onDone,
+}: {
+  p: EmpirePayload;
+  vehicleId: string;
+  busy: boolean;
+  act: Act;
+  onDone: () => void;
+}) {
+  const view = p.view;
+  const v = view?.vehicles.mine.find((x) => x.id === vehicleId);
+  const from = view?.stores.find((x) => x.post === v?.at);
+  const goods = Object.entries(from?.goods ?? {}).filter(([, n]) => n > 0);
+  const [to, setTo] = useState(view?.stores.find((x) => x.post !== v?.at)?.post ?? "");
+  const [good, setGood] = useState(goods[0]?.[0] ?? "");
+  if (!view || !v || !from) return null;
+  const c = t.charroi;
+  const qty = Math.min(v.capacity, from.goods[good] ?? 0);
+  const a = postPoint(p, v.at);
+  const b = postPoint(p, to);
+  const units = a && b ? Math.hypot(b[0] - a[0], b[1] - a[1]) : 0;
+  const hours = units / Math.max(1, view.map.transferUnitsPerHour);
+  return (
+    <div
+      className="mt-2 space-y-2 rounded-lg bg-night-2 p-3 ring-1 ring-inset ring-line/70"
+      data-send-form
+    >
+      <p className="text-sm font-semibold text-cream">{c.sendTitle}</p>
+      {goods.length === 0 ? (
+        <p className="text-xs text-cream-dim">{c.sendNothing}</p>
+      ) : (
+        <>
+          <p className="text-xs text-cream-dim">{c.sendTo}</p>
+          <div className="flex flex-wrap gap-2">
+            {view.stores
+              .filter((x) => x.post !== v.at)
+              .map((x) => (
+                <button
+                  key={x.post}
+                  type="button"
+                  aria-pressed={to === x.post}
+                  data-send-to={x.post}
+                  onClick={() => setTo(x.post)}
+                  className={`min-h-9 rounded-full px-3 text-xs font-semibold ${to === x.post ? "bg-gold/15 text-gold ring-1 ring-gold" : "text-cream-dim ring-1 ring-line"}`}
+                >
+                  {postLabel(p, x.post, regionName)}
+                </button>
+              ))}
+          </div>
+          <p className="text-xs text-cream-dim">{c.sendGood}</p>
+          <div className="flex flex-wrap gap-2">
+            {goods.map(([g, n]) => (
+              <button
+                key={g}
+                type="button"
+                aria-pressed={good === g}
+                data-send-good={g}
+                onClick={() => setGood(g)}
+                className={`flex min-h-9 items-center gap-1 rounded-full px-2 text-xs font-semibold ${good === g ? "bg-gold/15 text-gold ring-1 ring-gold" : "text-cream-dim ring-1 ring-line"}`}
+              >
+                <GoodsMark code={g} size={18} /> {n}
+              </button>
+            ))}
+          </div>
+          <Slab
+            size="sm"
+            tone="gold"
+            busy={busy}
+            disabled={!to || qty <= 0}
+            onClick={() =>
+              void act({ type: "empireTransfer", vehicleId, to, good, qty }).then(onDone)
+            }
+          >
+            {c.sendGo(qty, duration(Math.round(hours * 3_600_000)))}
+          </Slab>
+        </>
+      )}
+    </div>
   );
 }
 
