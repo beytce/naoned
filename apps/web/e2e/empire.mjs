@@ -98,13 +98,34 @@ try {
     await shot("1-fonder");
     await found.click();
 
-    // The house up close: the Casa, three workshops in orbit, the one gold action.
+    // Lorenzo's three cards at the founding (lot A of the UX audit), then the house.
+    await page.waitForSelector("[data-intro]");
+    await shot("1b-intro");
+    for (let i = 0; i < 3; i++)
+      await page
+        .locator("[data-intro]")
+        .getByRole("button", { name: /suivant|commencer/i })
+        .click();
+    // The new player's road: the next step says what to do, its gold button does it.
+    await page.locator('[data-next-step="relaunch"]').waitFor();
     await page.getByRole("button", { name: /tout relancer/i }).waitFor();
     if ((await page.locator("[data-workshop]").count()) !== 3)
       faults.push(`${label}: not three workshops`);
+    // Lot B: each workshop named on its star, the free place reads « Bâtir ».
+    for (const name of [/carrière d'argile/i, /camp de bûcherons/i, /scierie/i])
+      if ((await page.locator("[data-workshop]").filter({ hasText: name }).count()) !== 1)
+        faults.push(`${label}: a workshop unnamed on the orbit`);
+    if (
+      (await page
+        .locator("[data-orbit-empire]")
+        .getByText(/^bâtir$/i)
+        .count()) !== 1
+    )
+      faults.push(`${label}: no « Bâtir » on the free place`);
     await shot("2-maison");
     await page.getByRole("button", { name: /tout relancer/i }).click();
-    await page.waitForTimeout(600);
+    // The Casa 2 asks bricks, made nowhere: the next step names the brickworks.
+    await page.locator('[data-next-step="build"]').waitFor();
     await shot("3-relance");
 
     // Each tab's sheet.
@@ -116,6 +137,8 @@ try {
     ]) {
       await page.locator(`[data-tab=${tab}]`).click();
       await page.waitForSelector('[aria-modal="true"]');
+      // The Carnet's company comes from its own request: its section in place before the check.
+      if (tab === "ranking") await page.waitForSelector("[data-company]");
       await assertSheetHead(page).catch((e) => faults.push(`${label} ${name}: ${e.message}`));
       await shot(name);
       await page.locator("[data-tab=map]").click();
@@ -140,12 +163,11 @@ try {
     await shot("6c-atelier");
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
-    // The sea, in the workshops' sheet: the private Arsenal and the colleganze (step 7a).
+    // At the Casa 1, the closed systems stay out of sight (lot A of the UX audit).
     await page.locator("[data-tab=workshops]").click();
-    await page.waitForSelector("[data-arsenal]");
-    await page.waitForSelector("[data-colleganze]");
-    await page.locator("[data-arsenal]").scrollIntoViewIfNeeded();
-    await shot("6f-arsenal");
+    await page.waitForSelector('[aria-modal="true"]');
+    if ((await page.locator("[data-arsenal], [data-colleganze]").count()) > 0)
+      faults.push(`${label}: the sea shown at the Casa 1`);
     await page.locator("[data-tab=map]").click();
     await page.waitForTimeout(400);
     // The Terraferma's tab: the week's theatre, its entry or the Contesa (CADRAGE-v3 § 8).
@@ -163,15 +185,11 @@ try {
     await shot("6e-famille");
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
-    // The Casa's sheet holds the knowledge's tree, closed until the Casa 4.
+    // The Casa's sheet: the knowledge and the Scuola wait out of sight until the Casa 3.
     await page.locator("[data-tab=venice]").click();
-    if (
-      !(await page
-        .getByText(/savoirs s'ouvrent/i)
-        .first()
-        .isVisible())
-    )
-      faults.push(`${label}: no knowledge in the Casa`);
+    await page.waitForSelector('[aria-modal="true"]');
+    if ((await page.getByText(/savoirs s'ouvrent/i).count()) > 0)
+      faults.push(`${label}: the knowledge shown at the Casa 1`);
     await page.locator("[data-tab=map]").click();
     await page.waitForTimeout(400);
 
@@ -187,10 +205,10 @@ try {
     await page.locator("[data-region=veneto]").click();
     await page.locator("[data-workshop]").first().waitFor();
 
-    // A new workshop on the free place: the brickworks of the Casa 2.
+    // The next step opens the new workshop's sheet on the brickworks of the Casa 2.
     await page
-      .getByRole("button", { name: /nouvel atelier/i })
-      .first()
+      .locator("[data-next-step=build]")
+      .getByRole("button", { name: /briqueterie/i })
       .click();
     await page.waitForSelector('[aria-modal="true"]');
     await shot("7-nouvel-atelier");
@@ -208,6 +226,12 @@ try {
         .isVisible())
     )
       faults.push(`${label}: no site shown`);
+    // Then the next step waits for the site; the resource bar says the stock is still empty (the
+    // first lots take half an hour of real time here).
+    await page.keyboard.press("Escape");
+    await page.locator('[data-next-step="wait"]').waitFor();
+    await page.locator("[data-resources]").waitFor();
+    await shot("8b-attente");
     await page.close();
   }
 } finally {

@@ -31,6 +31,37 @@ export function lotProgress(ws: EmpireWorkshop, now: number): number {
   return ((now - job.startedAt) % job.batchMs) / job.batchMs;
 }
 
+/**
+ * A workshop's state as its star shows it (lot B of the UX audit): ready (and how much), running
+ * (and the time to its next lot), at rest with its inputs there, or waiting for an input.
+ */
+export type WorkshopStatus =
+  | { state: "ready"; lots: number; quantity: number; good: string }
+  | { state: "running"; progress: number; left: number }
+  | { state: "idle" }
+  | { state: "blocked"; resource: string };
+
+export function workshopStatus(p: EmpirePayload, ws: EmpireWorkshop, now: number): WorkshopStatus {
+  const r = recipeOf(p, ws);
+  const [good = "", out = 0] = Object.entries(r?.outputs ?? {})[0] ?? [];
+  const lots = readyLots(ws, now);
+  if (lots > 0) return { state: "ready", lots, quantity: lots * out, good };
+  const job = ws.job;
+  if (job && lots < job.batches) {
+    const next = job.startedAt + (lots + 1) * job.batchMs;
+    return { state: "running", progress: lotProgress(ws, now), left: next - now };
+  }
+  const missing = Object.entries(r?.inputs ?? {}).find(([g, n]) => (p.stock[g] ?? 0) < n);
+  return missing ? { state: "blocked", resource: missing[0] } : { state: "idle" };
+}
+
+/** The Casa reached between two views: the level to celebrate, or null. */
+export function casaReached(before: EmpirePayload | null, after: EmpirePayload): number | null {
+  const a = before?.view?.house.casa;
+  const b = after.view?.house.casa;
+  return a !== undefined && b !== undefined && b > a ? b : null;
+}
+
 /** Something to do with the workshops: lots to take, or a queue that would take more. */
 export function wantsRelaunch(p: EmpirePayload, now: number): boolean {
   return (p.view?.house.workshops ?? []).some((ws) => {
@@ -54,6 +85,21 @@ export function daysOfIncome(cost: string, incomePerDay: string): number | null 
 export function sitesByEnd(builds: EmpireBuild[]): EmpireBuild[] {
   return [...builds].sort((a, b) => a.endsAt - b.endsAt);
 }
+
+/**
+ * The Casa that opens a system, by the code its level names (`scuola`, `colleganza`…): null when
+ * no level names it.
+ */
+export function opensAt(p: EmpirePayload, code: string): number | null {
+  const level = p.casa.find((c) => c.opens.includes(code));
+  return level ? level.level : null;
+}
+
+/**
+ * A closed system is shown only from the Casa before its opening (lot A of the UX audit): what the
+ * house cannot touch yet stays out of sight.
+ */
+export const shownAt = (casa: number, at: number | null) => at === null || casa >= at - 1;
 
 /** Can the house pay this in ducats? */
 export const affordable = (cash: string, cost: string) => BigInt(cash) >= BigInt(cost);

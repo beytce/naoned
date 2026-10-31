@@ -640,8 +640,13 @@ async function guide(page, check) {
       invested = false;
       continue;
     }
-    if ((await bubble.getByRole("button", { name: WORDS.skipExact }).count()) > 0)
-      throw new Error(`the guide skips a step: « ${text} »`);
+    if ((await bubble.getByRole("button", { name: WORDS.skipExact }).count()) > 0) {
+      // The text and the button are read apart: the guide may have moved on in between (to the
+      // first upgrade waiting, its « Passer »). Read again before calling it a skip.
+      const now = (await bubble.innerText()).replace(/\s+/g, " ");
+      if (INVEST_LATER.test(now)) continue;
+      throw new Error(`the guide skips a step: « ${now} »`);
+    }
     // The book's goals not yet met (a delivery still on the road): its reward comes, wait.
     if (LEDGER_LATER.test(text)) continue;
     if ((await ring.count()) === 0) {

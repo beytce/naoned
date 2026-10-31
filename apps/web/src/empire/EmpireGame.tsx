@@ -1,22 +1,31 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type Account, ApiError } from "../api.js";
+import { BuildingArt } from "../art/buildings.js";
 import { GoodsMark } from "../art/goods.js";
 import { d, hourOf, minutesLabel } from "../game/format.js";
+import { FxLayer, flyCoins, flyGoods } from "../game/fx.js";
 import { connectLive } from "../game/live.js";
 import { TabBar } from "../game/map/TabBar.js";
 import type { TabId } from "../game/map/actions.js";
+import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
+import { sound } from "../sound.js";
 import { Badge, Label, Ribbon, Sheet, Slab, Stat, clock } from "../ui.js";
 import { CompanySection, suppliable } from "./Company.js";
+import { HouseSheet, Intro, NextStepCard } from "./Guide.js";
 import { ArteSection, Court, FamilySheet, Knowledge, WorkshopIdentity } from "./Identity.js";
+import { CasaMoment } from "./Moment.js";
 import { EmpireOrbit } from "./Orbit.js";
+import { GoodSheet, ResourceBar } from "./Resources.js";
 import { Arsenal, Colleganze } from "./Sea.js";
+import { Term } from "./Term.js";
 import { TerraSheet } from "./Terra.js";
 import { Charroi, Constellation, RegionPlace, Scuola, VoyageSheet, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
 import {
   affordable,
   buildingName,
+  casaReached,
   daysOfIncome,
   queueEnd,
   readyLots,
@@ -24,6 +33,7 @@ import {
   sitesByEnd,
   wantsRelaunch,
 } from "./logic.js";
+import { nextStep } from "./next.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
 
 type SheetId =
@@ -34,6 +44,7 @@ type SheetId =
   | "away"
   | "family"
   | "terra"
+  | "house"
   | `workshop:${string}`
   | `new:${string}`
   | `voyage:${string}`;
@@ -57,8 +68,17 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const [place, setPlace] = useState<string | null>("veneto");
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  // The good opened from the resource bar, and the recipe the next step points at.
+  const [good, setGood] = useState<string | null>(null);
+  const [highlight, setHighlight] = useState<string | null>(null);
+  // The Casa reached since the last view: its moment.
+  const [moment, setMoment] = useState<number | null>(null);
+  const last = useRef<EmpireAnswer | null>(first);
 
   const take = useCallback((next: EmpireAnswer) => {
+    const reached = casaReached(last.current, next);
+    if (reached) setMoment(reached);
+    last.current = next;
     skew.current = next.now - Date.now();
     setP(next);
     if (next.error) setToast(t.errors[next.error] ?? unknownError);
@@ -92,7 +112,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const act = async (a: EmpireAction) => {
     setBusy(true);
     try {
-      take(await empireApi.act(a));
+      const answer = await empireApi.act(a);
+      if (!answer.error) feel(p, answer);
+      take(answer);
     } catch (err) {
       setToast(err instanceof ApiError ? (t.errors[err.code] ?? unknownError) : unknownError);
     } finally {
@@ -136,46 +158,66 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
     view.house.builds.length < view.buildSlots &&
     !view.house.builds.some((b) => b.kind === "casa");
   const relaunch = wantsRelaunch(p, now);
-  const nextLot = view.house.workshops
-    .map((ws) =>
-      ws.job && readyLots(ws, now) < ws.job.batches
-        ? ws.job.startedAt + (readyLots(ws, now) + 1) * ws.job.batchMs
-        : null,
-    )
-    .filter((x): x is number => x !== null)
-    .sort((a, b) => a - b)[0];
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-night">
       <div className="flex h-full flex-col overflow-y-auto px-4 pb-[calc(var(--tabbar)+1rem)] pt-[max(0.75rem,env(safe-area-inset-top))]">
         <header className="mx-auto flex w-full max-w-md items-start justify-between gap-3">
-          <div className="min-w-0">
+          <button
+            type="button"
+            className="min-w-0 text-left"
+            onClick={() => setSheet("house")}
+            data-house-header
+          >
             <p className="font-mono text-xs uppercase tracking-[0.12em] text-cream-dim">
-              {t.region} · {t.hud.casa(view.house.casa)}
+              {t.hud.casa(view.house.casa)} · {t.hud.more}
             </p>
             <p className="truncate font-display text-lg font-extrabold text-cream">
               {account.pseudo ?? t.title}
             </p>
-          </div>
+          </button>
           <div className="text-right">
-            <p className="font-display text-xl font-extrabold tabular-nums text-gold">
+            <p
+              className="font-display text-xl font-extrabold tabular-nums text-gold"
+              data-fx="purse"
+            >
               {d(p.cash)}
             </p>
             <p className="text-xs text-cream-dim">
-              {t.hud.power} {view.power} · {t.hud.band(view.band)} · {t.hud.favour}{" "}
-              {view.house.favour}
+              <Term code="income">{t.hud.income(d(view.incomePerDay))}</Term>
             </p>
           </div>
         </header>
 
+        <ResourceBar p={p} onGood={setGood} />
+        {(place === null || place === "veneto") && (
+          <NextStepCard
+            p={p}
+            now={now}
+            step={nextStep(p, now)}
+            busy={busy}
+            act={act}
+            onBuild={(recipe) => {
+              setHighlight(recipe);
+              setSheet("new");
+            }}
+          />
+        )}
         {place !== null && (
-          <button
-            type="button"
-            onClick={() => setPlace(null)}
-            className="mx-auto mt-3 block w-full max-w-md text-left text-xs text-gold underline"
-          >
-            ← {t.world.back}
-          </button>
+          // The place's head (Lagune): the way back to the map, the place's name.
+          <div className="mx-auto mt-3 flex w-full max-w-md items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPlace(null)}
+              aria-label={t.world.back}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-line text-lg text-cream active:scale-95"
+            >
+              ‹
+            </button>
+            <span className="font-place text-base font-bold uppercase tracking-[0.2em] text-cream">
+              {regionName(place)}
+            </span>
+          </div>
         )}
         {place === null ? (
           <section className="mx-auto mt-4 w-full max-w-md">
@@ -187,6 +229,8 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
             <EmpireOrbit
               p={p}
               now={now}
+              busy={busy}
+              act={act}
               onWorkshop={(id) => setSheet(`workshop:${id}`)}
               onCasa={() => setSheet("casa")}
               onFree={() => setSheet("new")}
@@ -196,35 +240,6 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         {place === null || place === "veneto" ? (
           <>
             <Sites p={p} now={now} />
-
-            <div className="mx-auto mt-4 w-full max-w-md">
-              {relaunch ? (
-                <Slab
-                  tone="gold"
-                  size="lg"
-                  className="w-full"
-                  busy={busy}
-                  shine
-                  onClick={() => void act({ type: "empireRelaunchAll" })}
-                >
-                  {t.gold.relaunch}
-                </Slab>
-              ) : canCasa && next ? (
-                <Slab
-                  tone="gold"
-                  size="lg"
-                  className="w-full"
-                  busy={busy}
-                  onClick={() => void act({ type: "empireBuildCasa" })}
-                >
-                  {t.gold.casa(next.level)}
-                </Slab>
-              ) : (
-                <p className="text-center text-sm text-cream-dim">
-                  {nextLot ? t.gold.waiting(hourOf(nextLot)) : ""}
-                </p>
-              )}
-            </div>
           </>
         ) : null}
         {place !== null && (
@@ -257,6 +272,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       />
       <NewWorkshopSheet
         p={p}
+        highlight={highlight}
         open={sheet === "new" || sheet?.startsWith("new:") === true}
         region={sheet?.startsWith("new:") ? sheet.slice(4) : "veneto"}
         busy={busy}
@@ -292,6 +308,17 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       />
       <FamilySheet p={p} open={sheet === "family"} busy={busy} onClose={close} act={act} />
       <TerraSheet p={p} now={now} open={sheet === "terra"} busy={busy} onClose={close} act={act} />
+      <GoodSheet p={p} good={good} busy={busy} onClose={() => setGood(null)} act={act} />
+      <HouseSheet p={p} open={sheet === "house"} onClose={close} />
+      <Intro p={p} />
+      <FxLayer />
+      {moment !== null && (
+        <CasaMoment
+          level={moment}
+          opens={p.casa.find((c) => c.level === moment)?.opens ?? []}
+          onClose={() => setMoment(null)}
+        />
+      )}
       <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
 
       <TabBar
@@ -330,6 +357,28 @@ const terraCalls = (p: EmpirePayload, now: number) => {
     !!tv && !tv.contesa && !tv.theatre && tv.placementUntil !== null && now < tv.placementUntil
   );
 };
+
+/**
+ * The gesture answers (lot A of the UX audit): the goods gained fly to the resource bar, the
+ * ducats to the purse, with the sound and the touch of the monthly game.
+ */
+function feel(before: EmpirePayload, after: EmpirePayload) {
+  const gains: Record<string, number> = {};
+  for (const [g, n] of Object.entries(after.stock)) {
+    const more = n - (before.stock[g] ?? 0);
+    if (more > 0 && !g.includes(":")) gains[g] = more;
+  }
+  const coins = BigInt(after.cash) - BigInt(before.cash);
+  if (Object.keys(gains).length > 0) {
+    flyGoods(gains);
+    sound("harvest");
+  }
+  if (coins > 0n) {
+    flyCoins(coins);
+    sound("coin");
+  }
+  if (coins > 0n || Object.keys(gains).length > 0) haptic("success");
+}
 
 /** A trait to take or a path to choose waits in the family. */
 const familyCalls = (p: EmpirePayload) => {
@@ -445,7 +494,11 @@ function WorkshopsSheet({
           return (
             <li key={ws.id} className="cut bg-night-2 p-3 ring-1 ring-inset ring-line/70">
               <div className="flex items-center gap-3">
-                <GoodsMark code={Object.keys(r?.outputs ?? {})[0] ?? ""} size={32} />
+                <BuildingArt
+                  type={ws.type}
+                  active={!!end && end > now}
+                  className="h-14 w-20 shrink-0"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-display font-bold text-cream">
                     {buildingName(p, ws.type)}
@@ -469,6 +522,8 @@ function WorkshopsSheet({
                   </button>
                 )}
               </div>
+              {/* The night queue as a ribbon: its share of the 12 hours still to run. */}
+              {end && end > now && <Ribbon value={Math.min(1, (end - now) / (12 * 3_600_000))} />}
               {r && (
                 <p className="mt-2 text-xs text-cream-dim">
                   {t.workshop.makes}{" "}
@@ -505,7 +560,7 @@ function WorkshopsSheet({
                     {t.workshop.upgradeCost(d(up.cost), minutesLabel(up.minutes))}
                   </Slab>
                 ) : (
-                  <span className="self-center text-xs text-cream-dim">{t.workshop.atCasa}</span>
+                  <Badge>{t.workshop.atCasaShort}</Badge>
                 )}
               </div>
               {focus && <WorkshopIdentity p={p} ws={ws} busy={busy} act={act} />}
@@ -513,7 +568,6 @@ function WorkshopsSheet({
           );
         })}
       </ul>
-      {!focus && <Store p={p} busy={busy} act={act} />}
       {!focus && <Court p={p} busy={busy} act={act} />}
       {!focus && <Charroi p={p} now={now} busy={busy} act={act} />}
       {!focus && <Arsenal p={p} now={now} busy={busy} act={act} />}
@@ -522,67 +576,15 @@ function WorkshopsSheet({
   );
 }
 
-/** What is in store, each good with its two outlets: the cities' orders and the Dogana. */
-function Store({ p, busy, act }: Omit<SheetProps, "onClose">) {
-  // The fine and exquisite goods go to the court alone.
-  const goods = Object.entries(p.stock).filter(([g, n]) => n > 0 && !g.includes(":"));
-  return (
-    <section className="mt-5">
-      <Label>{t.stock.title}</Label>
-      {goods.length === 0 && <p className="mt-1 text-sm text-cream-dim">{t.stock.empty}</p>}
-      <ul className="mt-2 space-y-2">
-        {goods.map(([good, qty]) => {
-          const q = p.market.find((m) => m.region === "veneto" && m.good === good);
-          return (
-            <li
-              key={good}
-              className="flex flex-wrap items-center gap-2 border-b border-line/60 pb-2"
-            >
-              <GoodsMark code={good} size={24} />
-              <span className="flex-1 text-sm text-cream">
-                {qty} {goodName(p, good)}
-                {q && (
-                  <span className="block text-xs text-cream-dim">{t.stock.price(d(q.price))}</span>
-                )}
-              </span>
-              {q?.asked && (
-                <Slab
-                  size="sm"
-                  tone="ghost"
-                  busy={busy}
-                  onClick={() => void act({ type: "empireDeliver", good, qty })}
-                >
-                  {t.stock.deliver}
-                </Slab>
-              )}
-              {q && (
-                <Slab
-                  size="sm"
-                  tone="ghost"
-                  busy={busy}
-                  disabled={q.depthLeft <= 0}
-                  onClick={() => void act({ type: "empireSell", good, qty })}
-                >
-                  {t.stock.sell}
-                </Slab>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      <p className="mt-2 text-xs text-cream-dim">{t.stock.book}</p>
-    </section>
-  );
-}
-
 function NewWorkshopSheet({
   p,
   open,
   region,
+  highlight,
   busy,
   onClose,
   act,
-}: SheetProps & { open: boolean; region: string }) {
+}: SheetProps & { open: boolean; region: string; highlight: string | null }) {
   const view = p.view;
   const r = view?.regions.find((x) => x.code === region);
   const here = (view?.house.workshops ?? []).filter(
@@ -612,43 +614,50 @@ function NewWorkshopSheet({
     >
       {site && (
         <ul className="space-y-2">
-          {p.catalog.flatMap((b) =>
-            b.recipes
-              .filter((x) => allowed(x.outputs, x.inputs))
-              .map((r) => (
-                <li key={r.code} className="flex items-center gap-3 border-b border-line/60 pb-2">
-                  <GoodsMark code={Object.keys(r.outputs)[0] ?? ""} size={28} />
-                  <span className="flex-1 text-sm text-cream">
-                    {b.name}
-                    <span className="block text-xs text-cream-dim">
-                      {Object.entries(r.outputs)
-                        .map(([g, n]) => `${n} ${goodName(p, g)}`)
-                        .join(", ")}
-                      {Object.keys(r.inputs).length > 0 &&
-                        ` · ${t.workshop.from} ${Object.entries(r.inputs)
+          {[...p.catalog]
+            // The workshop the next step points at comes first, its button in gold.
+            .sort(
+              (a, b) =>
+                Number(b.recipes.some((r) => r.code === highlight)) -
+                Number(a.recipes.some((r) => r.code === highlight)),
+            )
+            .flatMap((b) =>
+              b.recipes
+                .filter((x) => allowed(x.outputs, x.inputs))
+                .map((r) => (
+                  <li key={r.code} className="flex items-center gap-3 border-b border-line/60 pb-2">
+                    <GoodsMark code={Object.keys(r.outputs)[0] ?? ""} size={28} />
+                    <span className="flex-1 text-sm text-cream">
+                      {b.name}
+                      <span className="block text-xs text-cream-dim">
+                        {Object.entries(r.outputs)
                           .map(([g, n]) => `${n} ${goodName(p, g)}`)
-                          .join(", ")}`}
+                          .join(", ")}
+                        {Object.keys(r.inputs).length > 0 &&
+                          ` · ${t.workshop.from} ${Object.entries(r.inputs)
+                            .map(([g, n]) => `${n} ${goodName(p, g)}`)
+                            .join(", ")}`}
+                      </span>
                     </span>
-                  </span>
-                  <Slab
-                    size="sm"
-                    tone="ghost"
-                    busy={busy}
-                    disabled={!affordable(p.cash, site.cost)}
-                    onClick={() => {
-                      void act({
-                        type: "empireBuildWorkshop",
-                        workshopType: b.type,
-                        recipe: r.code,
-                        ...(region !== "veneto" ? { region } : {}),
-                      }).then(onClose);
-                    }}
-                  >
-                    {t.workshop.newAction(d(site.cost))}
-                  </Slab>
-                </li>
-              )),
-          )}
+                    <Slab
+                      size="sm"
+                      tone={r.code === highlight ? "gold" : "ghost"}
+                      busy={busy}
+                      disabled={!affordable(p.cash, site.cost)}
+                      onClick={() => {
+                        void act({
+                          type: "empireBuildWorkshop",
+                          workshopType: b.type,
+                          recipe: r.code,
+                          ...(region !== "veneto" ? { region } : {}),
+                        }).then(onClose);
+                      }}
+                    >
+                      {t.workshop.newAction(d(site.cost))}
+                    </Slab>
+                  </li>
+                )),
+            )}
         </ul>
       )}
     </Sheet>

@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  casaReached,
   daysOfIncome,
   lotProgress,
   queueEnd,
   readyLots,
   wantsRelaunch,
+  workshopStatus,
 } from "../src/empire/logic.js";
 import type { EmpirePayload, EmpireWorkshop } from "../src/empire/types.js";
 
@@ -78,5 +80,44 @@ describe("the empire's queue, read in the browser", () => {
     expect(daysOfIncome("5000", "1000")).toBe(5);
     expect(daysOfIncome("5000", "1500")).toBe(3.3);
     expect(daysOfIncome("5000", "0")).toBeNull();
+  });
+});
+
+describe("a workshop's star", () => {
+  const job = { recipe: "grow_wheat", startedAt: 0, batches: 24, level: 1, batchMs: HOUR / 2 };
+  const mill: EmpireWorkshop = {
+    id: "w2",
+    type: "mill",
+    recipe: "mill_flour",
+    level: 1,
+    job: null,
+  };
+
+  it("reads ready, running, at rest or waiting for an input", () => {
+    expect(workshopStatus(payload([ws(job)]), ws(job), HOUR)).toEqual({
+      state: "ready",
+      lots: 2,
+      quantity: 16,
+      good: "wheat",
+    });
+    expect(workshopStatus(payload([ws(job)]), ws(job), HOUR / 4)).toMatchObject({
+      state: "running",
+      left: HOUR / 4,
+    });
+    expect(workshopStatus(payload([ws(null)]), ws(null), 0)).toEqual({ state: "idle" });
+    expect(workshopStatus(payload([mill]), mill, 0)).toEqual({
+      state: "blocked",
+      resource: "wheat",
+    });
+  });
+
+  it("sees the Casa climb between two views", () => {
+    const at = (casa: number) =>
+      ({ ...payload([]), view: { house: { casa, workshops: [] } } }) as unknown as Parameters<
+        typeof casaReached
+      >[1];
+    expect(casaReached(at(1), at(2))).toBe(2);
+    expect(casaReached(at(2), at(2))).toBeNull();
+    expect(casaReached(null, at(2))).toBeNull();
   });
 });

@@ -368,7 +368,7 @@ const RAYS = Array.from({ length: 24 }, (_, i) => ({
  * counter a crown), with a dotted ring turning the other way. Drawn from the middle, under the
  * sun's disc: its length is a scale of the whole, which glides when it changes.
  */
-function SunCorona({ perHour }: { perHour: bigint }) {
+export function SunCorona({ perHour }: { perHour: bigint }) {
   const ducats = Math.max(0, Number(perHour) / 100);
   // A scale of display, not of the game: 400 d/h and more is the full crown.
   const share = Math.min(1, Math.max(0.08, Math.log10(1 + ducats) / Math.log10(401)));
@@ -420,7 +420,7 @@ function SunCorona({ perHour }: { perHour: bigint }) {
  * sun) and springs to its place, after those before it (`rank`); the square is a container, its
  * width the unit of the way back to the middle (index.css, .star-enter).
  */
-function Place({
+export function Place({
   x,
   y,
   rank,
