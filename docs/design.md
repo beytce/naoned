@@ -107,6 +107,13 @@ Le nom d'une ville est un marqueur à part, posé au-dessus des charrettes (`Cit
 
 ## Mouvement
 
+**La carte de l'empire et son pied (31 octobre 2026, passage d'expert UX)** :
+- **Les durées** (`index.css`) : `--t-tap` 90 ms (l'appui), `--t-quick` 160 ms (les sorties), `--t-base` 260 ms (les entrées), `--t-camera` 450 ms (la caméra), `--t-moment` 420 ms (les célébrations). Ce qui arrive décélère (`--ease-out`), ce qui part accélère (`--ease-in`). On n'anime que `transform` et `opacity`, jamais une taille, une ombre ou un flou.
+- **La carte** est dessinée à une échelle, puis déplacée et agrandie par la carte graphique pendant un geste. Elle est redessinée nette 150 ms après l'arrêt. Le zoom glisse en échelle logarithmique, le point visé reste fixe. Rien de flouté (`backdrop-blur`) ne flotte au-dessus d'elle.
+- **Le pied de la carte** (`BottomSlot`) est un seul emplacement, que se partagent les boutons ronds, le panneau d'un lieu et la barre de pose. Ce qui part descend et s'efface, ce qui vient monte. Une feuille ouverte fait descendre le pied entier.
+- **Les feuilles** couvrent l'écran jusqu'en bas : il n'y a plus de barre d'onglets à laisser voir. Les messages, les célébrations et les envols passent au-dessus d'elles.
+- **Lorenzo** guide jusqu'à la Casa 2, puis se retire derrière le bouton « ? ». Son conseil ne joue jamais à la place du joueur.
+
 - La carte ne bouge que sous le doigt : glisser la déplace (avec élan), deux doigts ou la molette zooment autour de leur milieu, un double toucher dans le vide la recadre. Un objet choisi glisse dans le champ s'il est caché sous le panneau, sans plus.
 - Le panneau de la sélection monte du pied de l'écran ; un médaillon choisi s'entoure de lapis, une ville que la charrette peut servir respire, les autres s'estompent. Les routes en cours défilent en pointillés vers leur ville.
 - Il n'y a plus de page : le Rialto, le Classement et le Profil sont des feuilles posées sur la carte ; la Famille est un calque de la même carte (la Campagne), que la porte « Commerce » ou le bouton retour ramène au commerce.
