@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { artSource } from "../art/Illustration.js";
 import { GoodsMark } from "../art/goods.js";
+import { RegionArt } from "../art/scenes.js";
 import { d, duration, hourOf, minutesLabel } from "../game/format.js";
 import { fr } from "../i18n.js";
 import { Badge, Label, Sheet, Slab, clock } from "../ui.js";
@@ -167,6 +169,9 @@ export function RegionPlace({
   const favourShort = r.next?.charter === true && view.house.favour < r.charterFavour;
   return (
     <section className="mx-auto mt-3 w-full max-w-md space-y-4">
+      {artSource("regions", code) && (
+        <RegionArt code={code} className="h-32 w-full rounded-xl ring-1 ring-line" />
+      )}
       <div className="flex items-baseline justify-between">
         <h2 className="font-display text-xl font-extrabold text-cream">{regionName(code)}</h2>
         <span className="text-xs text-cream-dim">

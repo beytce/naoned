@@ -1,11 +1,30 @@
+import { Illustration } from "./Illustration.js";
 import { P } from "./palette.js";
 
-/** Illustrations of the buildings, 120 × 90. `active` animates what turns. */
+/**
+ * Illustrations of the buildings, 120 × 90: the generated image when there is one
+ * (docs/commandes-images.md), else the drawing, whose `active` animates what turns.
+ */
 export function BuildingArt({
   type,
   active = false,
   className = "",
 }: { type: string; active?: boolean; className?: string }) {
+  return (
+    <Illustration
+      family="buildings"
+      name={type}
+      className={className}
+      fallback={<BuildingDrawing type={type} active={active} className={className} />}
+    />
+  );
+}
+
+function BuildingDrawing({
+  type,
+  active,
+  className,
+}: { type: string; active: boolean; className: string }) {
   return (
     <svg viewBox="0 0 120 90" className={className} aria-hidden="true">
       <defs>
