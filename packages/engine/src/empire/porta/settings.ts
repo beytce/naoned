@@ -154,8 +154,23 @@ const battle = z
   })
   .prefault({});
 
+/** The Porta itself (plan-porta.md § 3): put down like the Remise, raised to open the tiers. */
+const building = z.object({
+  casa: positive,
+  costDucats: positive,
+  minutes: positive,
+  /** Level n + 1 costs this × 2^n ducats and a site of `levelMinutes` × n. */
+  levelCostDucats: positive,
+  levelMinutes: positive,
+  /** Minutes of the way from the Remise to the Porta, a cell (one cell at the least). */
+  travelMinutesPerCell: positive,
+  /** The good the entry is paid in (the expedition's victuals). */
+  entryGood: z.string().prefault("bread"),
+});
+
 export const portaSettingsSchema = z
   .object({
+    building: building.optional(),
     models: z.record(z.string(), combatModel).prefault({}),
     /** A combat model's level: up to `max`, each beyond the first gives `stepBps` hp and damage. */
     modelLevels: z

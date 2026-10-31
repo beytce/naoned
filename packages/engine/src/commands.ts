@@ -63,6 +63,18 @@ import { startLearning } from "./empire/knowledge.js";
 import { buildArsenal, buildCamp, buildDepot, ensureMap, placeCounter } from "./empire/map.js";
 import { bidMuda, settleMuda } from "./empire/mudaSail.js";
 import { buyArm, buyComponent, fitArm, upgradeArm, upgradeComponent } from "./empire/porta/arms.js";
+import type { BattleOutcome } from "./empire/porta/battle/sim.js";
+import {
+  buildPorta,
+  cancelPorta,
+  enterPorta,
+  recallFromPorta,
+  sellRelics,
+  sendToPorta,
+  settlePorta,
+  upgradePorta,
+} from "./empire/porta/porta.js";
+import type { Rarity } from "./empire/porta/settings.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
 import { deliverOrders, sellToCourt, sellToDogana } from "./empire/trade.js";
@@ -332,6 +344,21 @@ type EmpireCommandOf =
   | { type: "empireUpgradeArm"; playerId: PlayerId; model: string }
   | { type: "empireBuyComponent"; playerId: PlayerId; code: string }
   | { type: "empireUpgradeComponent"; playerId: PlayerId; componentId: string }
+  | { type: "empireBuildPorta"; playerId: PlayerId; cell: string }
+  | { type: "empireUpgradePorta"; playerId: PlayerId }
+  | { type: "empireSendToPorta"; playerId: PlayerId; vehicleIds: string[] }
+  | { type: "empireRecallFromPorta"; playerId: PlayerId; vehicleIds: string[] }
+  | {
+      type: "empirePortaEnter";
+      playerId: PlayerId;
+      battleId: string;
+      tier: number;
+      combatId: string;
+      transportId: string;
+    }
+  | { type: "empirePortaSettle"; playerId: PlayerId; battleId: string; outcome: BattleOutcome }
+  | { type: "empirePortaCancel"; playerId: PlayerId; battleId: string }
+  | { type: "empireSellRelics"; playerId: PlayerId; rarity: Rarity; qty: number }
   | {
       type: "empireFitArm";
       playerId: PlayerId;
@@ -581,6 +608,30 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireUpgradeComponent":
       upgradeComponent(tx, cmd.playerId, cmd.componentId);
+      break;
+    case "empireBuildPorta":
+      buildPorta(tx, cmd.playerId, cmd.cell);
+      break;
+    case "empireUpgradePorta":
+      upgradePorta(tx, cmd.playerId);
+      break;
+    case "empireSendToPorta":
+      sendToPorta(tx, cmd.playerId, cmd.vehicleIds);
+      break;
+    case "empireRecallFromPorta":
+      recallFromPorta(tx, cmd.playerId, cmd.vehicleIds);
+      break;
+    case "empirePortaEnter":
+      enterPorta(tx, cmd.playerId, cmd.battleId, cmd.tier, cmd.combatId, cmd.transportId);
+      break;
+    case "empirePortaSettle":
+      settlePorta(tx, cmd.playerId, cmd.battleId, cmd.outcome);
+      break;
+    case "empirePortaCancel":
+      cancelPorta(tx, cmd.playerId, cmd.battleId);
+      break;
+    case "empireSellRelics":
+      sellRelics(tx, cmd.playerId, cmd.rarity, cmd.qty);
       break;
     case "empireFitArm":
       fitArm(tx, cmd.playerId, cmd.vehicleId, cmd.slot, cmd.componentId);

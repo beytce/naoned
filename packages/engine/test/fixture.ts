@@ -475,6 +475,14 @@ export const testEmpire: EmpireSettingsInput = {
   colleganza: { travellerShareBps: 2_500 },
   // The Porta (docs/plan-porta.md): two combat models and four components, round numbers.
   porta: {
+    building: {
+      casa: 2,
+      costDucats: 1_000,
+      minutes: 60,
+      levelCostDucats: 1_000,
+      levelMinutes: 60,
+      travelMinutesPerCell: 10,
+    },
     models: {
       rider: { casa: 2, costDucats: 1_000, hp: 1_000, speedCenti: 600, slots: 1 },
       wagon: { casa: 4, costDucats: 3_000, hp: 3_000, speedCenti: 400, slots: 2 },

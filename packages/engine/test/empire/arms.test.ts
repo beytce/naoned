@@ -140,10 +140,10 @@ describe("a component", () => {
     const v = h.arms?.vehicles[0];
     const c = h.arms?.components[0]?.id ?? "";
     w.do({ type: "empireFitArm", playerId: "a", vehicleId: v?.id ?? "", slot: 0, componentId: c });
-    // Lot 3 sends it to the Porta; here it is set away by hand, on a thawed copy of the state.
+    // Set at the Porta by hand, on a thawed copy of the state.
     w.state = structuredClone(w.state);
     const stored = w.state.empire?.houses.a?.arms?.vehicles[0];
-    if (stored) stored.busy = "battle";
+    if (stored) stored.porta = { arrivesAt: 0, battle: "b1" };
     expect(
       error(
         w.try({

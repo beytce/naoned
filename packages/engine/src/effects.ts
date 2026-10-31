@@ -116,6 +116,7 @@ export interface LedgerEntry {
 
 export type StockReason =
   | "empire_aid"
+  | "empire_porta"
   | "empire_corsairs"
   | "empire_build"
   | "empire_purchase"

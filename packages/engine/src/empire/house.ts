@@ -89,6 +89,11 @@ export function settleBuilds(h: EmpireHouse, now: number): void {
       h.camp = b.cell;
     } else if (b.kind === "depot" && b.cell) {
       h.depot = b.cell;
+    } else if (b.kind === "porta" && b.cell) {
+      // The Porta put down, then raised (docs/plan-porta.md § 3).
+      if (!h.porta)
+        h.porta = { cell: b.cell, level: 1, best: 0, relics: {}, week: { index: 0, points: 0 } };
+      else h.porta.level = Math.max(h.porta.level, b.level);
     } else if (b.kind === "counter" && b.post === "home") {
       h.homeLevel = Math.max(h.homeLevel ?? 1, b.level);
     } else if (b.kind === "counter" && b.region) {

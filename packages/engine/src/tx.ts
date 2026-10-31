@@ -238,7 +238,8 @@ export type EngineErrorCode =
   | "roster_size"
   | "muda_only"
   // The Porta (docs/plan-porta.md).
-  | "unknown_arm";
+  | "unknown_arm"
+  | "no_porta";
 
 export class EngineError extends Error {
   constructor(

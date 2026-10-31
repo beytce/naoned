@@ -100,6 +100,10 @@ export function buyComponent(tx: Tx, playerId: PlayerId, code: string): void {
   arms.components = [...arms.components, { id: nextId(tx, "cp"), code, level: 1 }];
 }
 
+/** A combat vehicle away from the Remise: at the Porta, or on its way back. */
+export const armAway = (v: CombatVehicle, now: number) =>
+  v.porta !== undefined || (v.backAt ?? 0) > now;
+
 /** The vehicle a component is fitted on, if any. */
 const carrierOf = (arms: EmpireArms, componentId: string): CombatVehicle | undefined =>
   arms.vehicles.find((v) => v.slots.includes(componentId));
@@ -110,7 +114,8 @@ export function upgradeComponent(tx: Tx, playerId: PlayerId, componentId: string
   const arms = armsOf(h);
   const c = arms.components.find((x) => x.id === componentId);
   if (!c) fail("unknown_arm");
-  if (carrierOf(arms, componentId)?.busy) fail("vehicle_busy");
+  const carrier = carrierOf(arms, componentId);
+  if (carrier && armAway(carrier, tx.now)) fail("vehicle_busy");
   const cost = componentUpgradeCost(h, componentId, s);
   if (cost === null) fail("max_level");
   pay(tx, playerId, cost);
@@ -133,11 +138,11 @@ export function fitArm(
   const v = arms.vehicles.find((x) => x.id === vehicleId);
   if (!v) fail("unknown_vehicle");
   if (!Number.isInteger(slot) || slot < 0 || slot >= v.slots.length) fail("no_room");
-  if (v.busy) fail("vehicle_busy");
+  if (armAway(v, tx.now)) fail("vehicle_busy");
   if (componentId !== null) {
     if (!arms.components.some((c) => c.id === componentId)) fail("unknown_arm");
     const from = carrierOf(arms, componentId);
-    if (from?.busy) fail("vehicle_busy");
+    if (from && armAway(from, tx.now)) fail("vehicle_busy");
     if (from) from.slots = from.slots.map((x) => (x === componentId ? null : x));
   }
   v.slots = v.slots.map((x, i) => (i === slot ? componentId : x));

@@ -499,6 +499,15 @@ export const venice1450Empire: EmpireSettingsInput = {
   colleganza: { travellerShareBps: 2_500 },
   // The Porta's arms (docs/plan-porta.md §§ 4–5), to calibrate at the 24-month simulator (lot 6).
   porta: {
+    // The Porta (plan-porta.md § 3), from the Casa 10.
+    building: {
+      casa: 10,
+      costDucats: 4_000,
+      minutes: 360,
+      levelCostDucats: 4_000,
+      levelMinutes: 120,
+      travelMinutesPerCell: 10,
+    },
     models: {
       cavaliere: { casa: 9, costDucats: 1_500, hp: 1_200, speedCenti: 600, slots: 1 },
       carro: { casa: 11, costDucats: 4_000, hp: 3_000, speedCenti: 400, slots: 2 },

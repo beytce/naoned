@@ -327,7 +327,8 @@ export interface EmpireBuild {
     | "post"
     | "arsenal"
     | "camp"
-    | "depot";
+    | "depot"
+    | "porta";
   /** A counter put down on the map, or the Arsenal: its cell (« q,r »). */
   cell?: string;
   /** The cells a counter put down reveals when it stands. */
@@ -382,9 +383,17 @@ export interface EmpireHouse {
   favour: number;
   seals: number;
   /** Its vehicles: free again at `busyUntil` (a voyage's way there and back). */
-  vehicles?: { id: string; type: string; busyUntil: number; fitted?: string[] }[];
+  vehicles?: {
+    id: string;
+    type: string;
+    busyUntil: number;
+    fitted?: string[];
+    /** A land vehicle at the Porta (`busyUntil` then holds it there). */
+    porta?: PortaPlace;
+  }[];
   /** The Porta's arms (docs/plan-porta.md): its combat vehicles, its components, their models. */
   arms?: EmpireArms;
+  porta?: EmpirePorta;
   /** The deposits its teams work, by id. */
   teams?: string[];
   /** Where it found each good it extracted: those regions hold it, as its workshops' do. */
@@ -1043,8 +1052,30 @@ export interface CombatVehicle {
   id: string;
   model: string;
   slots: (string | null)[];
-  /** Away from the Remise: on the way, at the Porta, in a battle (lot 3). */
-  busy?: "porta" | "battle";
+  /** Sent to the Porta (docked once `arrivesAt` is past), and in a battle there. */
+  porta?: PortaPlace;
+  /** On its way back to the Remise until then. */
+  backAt?: number;
+}
+
+/** A vehicle sent to the Porta: there once `arrivesAt` is past, engaged in a battle or not. */
+export interface PortaPlace {
+  arrivesAt: number;
+  battle?: string;
+}
+
+/** The house's Porta (docs/plan-porta.md §§ 3, 8, 9). */
+export interface EmpirePorta {
+  cell: string;
+  level: number;
+  /** The best tier won (0: none yet). */
+  best: number;
+  /** The relics kept, by rarity. */
+  relics: Partial<Record<"common" | "rare" | "precious" | "legendary", number>>;
+  /** The points of the week (the Carnet's week index), for the ranking. */
+  week: { index: number; points: number };
+  /** The battle the house is in: its tier, its vehicles, the victuals paid. */
+  battle?: { id: string; tier: number; combatId: string; transportId: string; paid: number };
 }
 
 /** A component of the house, fitted on a combat vehicle or kept at the Remise. */
