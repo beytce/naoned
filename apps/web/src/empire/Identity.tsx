@@ -280,12 +280,15 @@ export function FamilySheet({
   busy,
   onClose,
   act,
+  children,
 }: {
   p: EmpirePayload;
   open: boolean;
   busy: boolean;
   onClose: () => void;
   act: Act;
+  /** What the Famille tab adds after the lineage and the staff: the Arte, the Scuola, the knowledge. */
+  children?: React.ReactNode;
 }) {
   const view = p.view;
   if (!view) return null;
@@ -403,6 +406,7 @@ export function FamilySheet({
           ))}
         </div>
       </section>
+      {children}
     </Sheet>
   );
 }

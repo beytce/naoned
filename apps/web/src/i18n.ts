@@ -162,6 +162,34 @@ const frDict = {
       text: "Un comptoir à Venise, trois ateliers et cinq cents ducats. Rien de ce que vous bâtirez ne sera jamais remis à zéro.",
       action: "Fonder la Maison",
     },
+    /** The five tabs of the empire (lot C of the UX audit): the loop, from the house to the family. */
+    nav: {
+      home: "Maison",
+      market: "Marché",
+      world: "Monde",
+      company: "Compagnie",
+      family: "Famille",
+      allWorkshops: "Tous les ateliers",
+    },
+    market: {
+      kicker: "Le négoce",
+      title: "Le Marché",
+      summary:
+        "Les prix de la Dogana de Venise, comparés à leur cours. Touchez une marchandise pour la vendre ou la livrer.",
+      held: (n: number) => `${n} en stock`,
+      none: "Aucun prix n'est encore venu de Venise.",
+      trend: { up: "au-dessus du cours", down: "sous le cours", flat: "au cours" } as Record<
+        string,
+        string
+      >,
+    },
+    companyTab: {
+      kicker: "Ensemble",
+      panes: { carnet: "Carnet", company: "Associés", terra: "Terraferme" } as Record<
+        string,
+        string
+      >,
+    },
     tabs: {
       map: "Carte",
       workshops: "Ateliers",
@@ -383,7 +411,7 @@ const frDict = {
       sell: (n: number, good: string) => `Vendez ${n} ${good.toLowerCase()} à la Dogana.`,
       sellWhy: "Il vous manque des ducats, et ce stock ne sert ni à la Casa ni à vos ateliers.",
       sellAction: "Vendre",
-      claim: "Un objectif du Carnet est rempli.",
+      claim: "Un objectif du Carnet (onglet Compagnie) est rempli.",
       claimWhy: "Encaissez-le : il donne de la Faveur.",
       claimAction: "Encaisser",
       wait: (at: string) => `Tout tourne. Prochain lot à ${at}.`,

@@ -13,7 +13,7 @@ import {
 import { cellAt } from "../game/terraShapes.js";
 import type { CompanyView, TerraAction, TerraView } from "../game/types.js";
 import { fr } from "../i18n.js";
-import { Label, Sheet, Slab } from "../ui.js";
+import { Label, Slab } from "../ui.js";
 import { empireApi } from "./api.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
@@ -147,19 +147,19 @@ function CellActions({
  * theatre and its map, the entry, the Contesa's roster for the Capo and the Consiglieri, the
  * honours; and the Condotta, played on its own map.
  */
-export function TerraSheet({
+/** The Terraferma pane of the Compagnie tab: its theatre, the Contesa's roster, the Condotta. */
+export function TerraBody({
   p,
   now,
   open,
   busy,
-  onClose,
   act,
 }: {
   p: EmpirePayload;
   now: number;
+  /** The pane is shown: the board is fetched while it is. */
   open: boolean;
   busy: boolean;
-  onClose: () => void;
   act: Act;
 }) {
   const view = p.view;
@@ -197,15 +197,12 @@ export function TerraSheet({
   const condottaError = (e: unknown) =>
     setError(fr.empire.errors[e instanceof ApiError ? e.code : ""] ?? fr.errors.unknown ?? "");
   return (
-    <Sheet
-      open={open}
-      onClose={onClose}
-      docked
-      kicker={tv.contesa ? t.contesaWeek : t.openWeek}
-      title={t.title}
-      summary={t.summary}
-    >
-      <section data-terra>
+    <>
+      <p className="font-mono text-xs uppercase tracking-[0.12em] text-cream-dim">
+        {tv.contesa ? t.contesaWeek : t.openWeek}
+      </p>
+      <p className="mt-1 text-sm text-cream-dim">{t.summary}</p>
+      <section className="mt-3" data-terra>
         {theatre ? (
           <>
             <p className="text-sm text-cream">
@@ -319,7 +316,7 @@ export function TerraSheet({
         ) : null}
         {error && <p className="mt-2 text-sm text-vermilion">{error}</p>}
       </section>
-    </Sheet>
+    </>
   );
 }
 

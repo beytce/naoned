@@ -245,6 +245,34 @@ export const en: Dictionary = {
       text: "A counter in Venice, three workshops and five hundred ducats. Nothing you build will ever be reset.",
       action: "Found the House",
     },
+    /** The five tabs of the empire (lot C of the UX audit): the loop, from the house to the family. */
+    nav: {
+      home: "House",
+      market: "Market",
+      world: "World",
+      company: "Company",
+      family: "Family",
+      allWorkshops: "All workshops",
+    },
+    market: {
+      kicker: "Trade",
+      title: "The Market",
+      summary:
+        "The prices of Venice's Dogana, against their usual rate. Touch a good to sell or deliver it.",
+      held: (n: number) => `${n} in store`,
+      none: "No price has come from Venice yet.",
+      trend: { up: "above its rate", down: "below its rate", flat: "at its rate" } as Record<
+        string,
+        string
+      >,
+    },
+    companyTab: {
+      kicker: "Together",
+      panes: { carnet: "Ledger", company: "Partners", terra: "Terraferma" } as Record<
+        string,
+        string
+      >,
+    },
     tabs: {
       map: "Map",
       workshops: "Workshops",
@@ -464,7 +492,7 @@ export const en: Dictionary = {
       sellWhy:
         "You are short of ducats, and this stock serves neither the Casa nor your workshops.",
       sellAction: "Sell",
-      claim: "A Ledger goal is met.",
+      claim: "A Ledger goal (Company tab) is met.",
       claimWhy: "Claim it: it gives Favour.",
       claimAction: "Claim",
       wait: (at: string) => `All is running. Next lot at ${at}.`,

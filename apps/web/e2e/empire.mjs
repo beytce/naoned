@@ -128,32 +128,51 @@ try {
     await page.locator('[data-next-step="build"]').waitFor();
     await shot("3-relance");
 
-    // Each tab's sheet.
-    for (const [tab, name] of [
-      ["workshops", "4-ateliers"],
-      ["venice", "5-casa"],
-      ["ranking", "6-carnet"],
-      ["conquest", "6b-terraferme"],
+    // Back to the house: the Maison tab closes a sheet and brings Venetia up close.
+    const home = async () => {
+      await page.locator("[data-tab=workshops]").click();
+      await page.waitForTimeout(400);
+    };
+
+    // Each tab's sheet (lot C of the UX audit): the Marché, the Compagnie, the Famille.
+    for (const [tab, name, ready] of [
+      ["venice", "4-marche", "[data-market]"],
+      ["ranking", "5-compagnie", "[data-carnet]"],
+      ["conquest", "6-famille", '[aria-modal="true"]'],
     ]) {
       await page.locator(`[data-tab=${tab}]`).click();
-      await page.waitForSelector('[aria-modal="true"]');
-      // The Carnet's company comes from its own request: its section in place before the check.
-      if (tab === "ranking") await page.waitForSelector("[data-company]");
+      await page.waitForSelector(ready);
+      // The sheet still rising: its head checked once it has come to rest.
+      await page.waitForTimeout(450);
       await assertSheetHead(page).catch((e) => faults.push(`${label} ${name}: ${e.message}`));
       await shot(name);
-      await page.locator("[data-tab=map]").click();
-      await page.waitForTimeout(400);
+      await home();
     }
 
-    // The company, in the Carnet's sheet: founded, then the entraide's form (CADRAGE-v3 § 7).
+    // The Marché: a good touched opens its sheet, to sell or deliver.
+    await page.locator("[data-tab=venice]").click();
+    await page.locator("[data-market-good]").first().click();
+    await page
+      .getByText(/dogana/i)
+      .first()
+      .waitFor();
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(300);
+    await home();
+
+    // The Compagnie's panes: the company founded, then the entraide's form (CADRAGE-v3 § 7); the
+    // Terraferma's week, its entry or the Contesa (CADRAGE-v3 § 8).
     await page.locator("[data-tab=ranking]").click();
+    await page.locator("[data-pane=company]").click();
     await page.waitForSelector("[data-company] input");
     await page.locator("[data-company] input").fill(`Ca ${width}`);
     await page.locator("[data-company] input").press("Enter");
     await page.getByRole("button", { name: /demander à la compagnie/i }).waitFor();
     await shot("6d-compagnie");
-    await page.locator("[data-tab=map]").click();
-    await page.waitForTimeout(400);
+    await page.locator("[data-pane=terra]").click();
+    await page.waitForSelector("[data-terra]");
+    await shot("6b-terraferme");
+    await home();
 
     // A workshop up close: its place on the ring, to move it (CADRAGE-v3 § 13, step 5).
     await page.locator("[data-workshop]").first().click();
@@ -163,39 +182,34 @@ try {
     await shot("6c-atelier");
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
-    // At the Casa 1, the closed systems stay out of sight (lot A of the UX audit).
-    await page.locator("[data-tab=workshops]").click();
+    // All the workshops, from the house.
+    await page.getByRole("button", { name: /tous les ateliers/i }).click();
     await page.waitForSelector('[aria-modal="true"]');
-    if ((await page.locator("[data-arsenal], [data-colleganze]").count()) > 0)
-      faults.push(`${label}: the sea shown at the Casa 1`);
-    await page.locator("[data-tab=map]").click();
-    await page.waitForTimeout(400);
-    // The Terraferma's tab: the week's theatre, its entry or the Contesa (CADRAGE-v3 § 8).
-    await page.locator("[data-tab=conquest]").click();
-    await page.waitForSelector("[data-terra]");
-    await page.locator("[data-tab=map]").click();
-    await page.waitForTimeout(400);
-    // The family, from the Casa's sheet.
+    await page.waitForTimeout(450);
+    await assertSheetHead(page).catch((e) => faults.push(`${label} 4b-ateliers: ${e.message}`));
+    await shot("4b-ateliers");
+    await home();
+    // At the Casa 1, the closed systems stay out of sight (lot A of the UX audit): the sea on the
+    // map and in the Marché, the knowledge and the Scuola in the Famille.
     await page.locator("[data-tab=venice]").click();
-    await page.getByRole("button", { name: /la famille/i }).click();
+    await page.waitForSelector("[data-market]");
+    if ((await page.locator("[data-colleganze]").count()) > 0)
+      faults.push(`${label}: the colleganze shown at the Casa 1`);
+    await home();
+    await page.locator("[data-tab=conquest]").click();
     await page
       .getByText(/traits de lignée/i)
       .first()
       .waitFor();
-    await shot("6e-famille");
-    await page.keyboard.press("Escape");
-    await page.waitForTimeout(400);
-    // The Casa's sheet: the knowledge and the Scuola wait out of sight until the Casa 3.
-    await page.locator("[data-tab=venice]").click();
-    await page.waitForSelector('[aria-modal="true"]');
     if ((await page.getByText(/savoirs s'ouvrent/i).count()) > 0)
       faults.push(`${label}: the knowledge shown at the Casa 1`);
-    await page.locator("[data-tab=map]").click();
-    await page.waitForTimeout(400);
+    await home();
 
     // The map zoomed out: Venice and the regions, Lombardy fogged until the Casa 6.
     await page.locator("[data-tab=map]").click();
     await page.waitForSelector("[data-map=empire]");
+    if ((await page.locator("[data-arsenal]").count()) > 0)
+      faults.push(`${label}: the Arsenal shown at the Casa 1`);
     if ((await page.locator("[data-region]").count()) !== 10)
       faults.push(`${label}: the ten regions not all on the map`);
     if ((await page.locator("[data-fog=lombardia]").count()) !== 1)

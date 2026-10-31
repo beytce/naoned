@@ -126,3 +126,30 @@ export function bestQuote(p: EmpirePayload, region: string): string | null {
   }
   return best?.good ?? null;
 }
+
+/** A price against its usual rate: 5 % above or below, else at it. */
+export function trendOf(q: { price: string; ref: string }): "up" | "down" | "flat" {
+  const price = BigInt(q.price) * 100n;
+  const ref = BigInt(q.ref);
+  if (price >= ref * 105n) return "up";
+  if (price <= ref * 95n) return "down";
+  return "flat";
+}
+
+/** The empire's five tabs (lot C of the UX audit), by the ids of the shared tab bar. */
+export type EmpireTab = "workshops" | "venice" | "map" | "ranking" | "conquest";
+
+/**
+ * The tab a screen belongs to: its sheet first, then the place shown. The Maison holds the house
+ * and its workshops, the Marché the prices and the trade, the Monde the map and its regions, the
+ * Compagnie the Carnet, the partners and the Terraferma, the Famille the lineage and the arts.
+ */
+export function activeEmpireTab(sheet: string | null, place: string | null): EmpireTab {
+  const kind = (sheet ?? "").split(":")[0] ?? "";
+  if (["workshops", "workshop", "new", "casa"].includes(kind)) return "workshops";
+  if (kind === "market") return "venice";
+  if (kind === "voyage") return "map";
+  if (kind === "company") return "ranking";
+  if (kind === "family") return "conquest";
+  return place === "veneto" ? "workshops" : "map";
+}
