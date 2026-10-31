@@ -240,6 +240,8 @@ export const venice1450Empire: EmpireSettingsInput = {
     // The Campo, the door of the Terraferma, from the Casa 4 (600 ducats: at 1 200 the miners
     // fell short of their share, calibration.md).
     camp: { costDucats: 600, casa: 4, minutes: 240 },
+    // The Remise, where the land vehicles are bought and their models raised (31 October, evening).
+    depot: { costDucats: 200, casa: 2, minutes: 120 },
   },
   // The socle in Venetia: the clay, the wood and the planks of the Casa 2; its bricks ask the
   // fourth place, a brickworks, the first choice (a farm instead would leave the Casa waiting).

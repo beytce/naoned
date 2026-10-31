@@ -141,6 +141,12 @@ export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
     const home = regionCells(s, HOME)[0];
     if (home) h.camp = home;
   }
+  // A house that already bought a land vehicle keeps its Remise: in Venetia.
+  if (s.map.depot && !h.depot) {
+    const land = (h.vehicles ?? []).filter((v) => !s.vehicles[v.type]?.build).length;
+    const home = regionCells(s, HOME)[0];
+    if (home && (land > s.start.vehicles.length || h.vehicleLevels)) h.depot = home;
+  }
   // Taken up once per drawing of the map: a house of an older grid has its cells drawn again.
   if (h.revealed && h.mapVersion === s.map.version) return;
   const moved = h.revealed !== undefined;
@@ -159,6 +165,7 @@ export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
   const ships = (h.vehicles ?? []).some((v) => s.vehicles[v.type]?.build);
   if ((ships || h.arsenal) && (moved || !h.arsenal) && coast) h.arsenal = coast;
   if (h.camp && moved) h.camp = regionCells(s, HOME)[0] ?? h.camp;
+  if (h.depot && moved) h.depot = regionCells(s, HOME)[0] ?? h.depot;
   // The sites under way on the cells of before end where they now stand.
   if (moved)
     for (const b of h.builds)
@@ -263,6 +270,31 @@ export function buildCamp(tx: Tx, playerId: PlayerId, cell: string): void {
   const price = BigInt(camp.costDucats) * DENIERS_PER_DUCAT;
   const site = openSite(tx, playerId, h, price, {}, camp.minutes, 0);
   h.builds.push({ kind: "camp", level: 1, region: c.region, cell, ...site });
+}
+
+/**
+ * Puts the Remise on a land cell the house sees, from its Casa: there the land vehicles are bought
+ * and their models raised (decision of the owner, 31 October 2026, evening).
+ */
+export function buildDepot(tx: Tx, playerId: PlayerId, cell: string): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  ensureMap(h, s);
+  const depot = s.map.depot;
+  if (!depot) fail("unknown_building_type");
+  const c = s.map.cells[cell];
+  if (!c) fail("unknown_cell");
+  if (!revealedOf(h, s).has(cell)) fail("hidden_cell");
+  if (h.depot || h.builds.some((b) => b.kind === "depot")) fail("built");
+  if (h.casa < depot.casa) fail("requirement_unmet");
+  const price = BigInt(depot.costDucats) * DENIERS_PER_DUCAT;
+  const site = openSite(tx, playerId, h, price, {}, depot.minutes, 0);
+  h.builds.push({ kind: "depot", level: 1, region: c.region, cell, ...site });
+}
+
+/** The Remise asked by the land vehicles, in a world that sets one. */
+export function checkDepot(h: EmpireHouse, s: EmpireSettings): void {
+  if (hasMap(s) && s.map.depot && !h.depot) fail("no_depot");
 }
 
 /** The Campo asked by the Terraferma, in a world that sets one. */

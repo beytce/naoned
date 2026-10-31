@@ -318,7 +318,16 @@ export interface EmpireWorkshop {
 
 /** A building site: it ends at `endsAt`, settled at the next read. */
 export interface EmpireBuild {
-  kind: "casa" | "newWorkshop" | "upgrade" | "counter" | "ship" | "post" | "arsenal" | "camp";
+  kind:
+    | "casa"
+    | "newWorkshop"
+    | "upgrade"
+    | "counter"
+    | "ship"
+    | "post"
+    | "arsenal"
+    | "camp"
+    | "depot";
   /** A counter put down on the map, or the Arsenal: its cell (« q,r »). */
   cell?: string;
   /** The cells a counter put down reveals when it stands. */
@@ -357,6 +366,10 @@ export interface EmpireHouse {
   arsenal?: string;
   /** The Campo's cell: the door of the Terraferma. */
   camp?: string;
+  /** The Remise's cell: where the land vehicles are bought and raised. */
+  depot?: string;
+  /** Each model's level, by vehicle type (1 when unset). */
+  vehicleLevels?: Record<string, number>;
   favour: number;
   seals: number;
   /** Its vehicles: free again at `busyUntil` (a voyage's way there and back). */

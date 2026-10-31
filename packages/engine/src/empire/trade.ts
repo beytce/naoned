@@ -14,6 +14,7 @@ import {
 import { type Tx, addStock, fail, inventoryLine, removeStock, transfer } from "../tx.js";
 import { advanceCarnet } from "./carnet.js";
 import { houseEffect } from "./effects.js";
+import { capacityOf } from "./fleet.js";
 import { empireSettings, isAsleep, ownHouse } from "./house.js";
 import { bookShareBps, revealedOf } from "./map.js";
 import { powerOf } from "./power.js";
@@ -39,8 +40,12 @@ export function powerOfHouse(h: EmpireHouse, s: EmpireSettings): number {
       casa: h.casa,
       workshopLevels: h.workshops.map((w) => w.level),
       counterLevels: Object.values(h.counters ?? {}),
-      // The modules' levels, and each knowledge learnt as one level.
-      moduleLevels: [...Object.values(h.modules ?? {}), ...(h.knowledge ?? []).map(() => 1)],
+      // The modules' levels, each knowledge learnt as one level, a model's levels beyond its first.
+      moduleLevels: [
+        ...Object.values(h.modules ?? {}),
+        ...(h.knowledge ?? []).map(() => 1),
+        ...Object.values(h.vehicleLevels ?? {}).map((l) => l - 1),
+      ],
       staffLevels: (h.staff ?? []).map((m) => m.level),
       vehicles: (h.vehicles ?? []).length,
     },
@@ -301,9 +306,8 @@ function haulLeft(tx: Tx, h: EmpireHouse): number {
   const s = empireSettings(tx.ctx);
   if (Object.keys(s.vehicles).length === 0) return Number.POSITIVE_INFINITY;
   const base = (h.vehicles ?? [])
-    .map((v) => s.vehicles[v.type])
-    .filter((v) => v?.regions.length === 1)
-    .reduce((n, v) => n + (v?.capacity ?? 0), 0);
+    .filter((v) => s.vehicles[v.type]?.regions.length === 1)
+    .reduce((n, v) => n + capacityOf(h, v.type, s), 0);
   const capacity = Number(
     applyBpsFloor(BigInt(base), 10_000 + houseEffect(h, "capacity", s) + houseEffect(h, "haul", s)),
   );

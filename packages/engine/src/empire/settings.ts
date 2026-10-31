@@ -98,6 +98,18 @@ export const empireSettingsSchema = z.object({
       }),
     )
     .prefault({}),
+  /**
+   * A model's level (decision of the owner, 31 October 2026): up to `max`, each level beyond the
+   * first holds `stepBps` more for every vehicle of the model, and costs the model's price times
+   * `costTimes`, doubled at each level.
+   */
+  vehicleLevels: z
+    .object({
+      max: positive.prefault(5),
+      stepBps: bps.prefault(1_000),
+      costTimes: positive.prefault(1),
+    })
+    .prefault({}),
   /** A land vehicle's round trips a day for the cities' orders. */
   localTripsPerDay: positive.prefault(4),
   /** The night queue: a workshop is relaunched for this many hours at most, for everyone. */
@@ -419,6 +431,8 @@ export const empireSettingsSchema = z.object({
         .prefault(null),
       /** The Campo, on a land cell: the door of the Terraferma (decision of 31 October 2026). */
       camp: z.object({ costDucats: qty, casa: positive, minutes: qty }).nullable().prefault(null),
+      /** The Remise, on a land cell: where the land vehicles are bought and their models raised. */
+      depot: z.object({ costDucats: qty, casa: positive, minutes: qty }).nullable().prefault(null),
     })
     .prefault({}),
   /** The young houses' raw goods sell this much dearer, up to a Casa (CADRAGE-v3 § 6). */

@@ -28,3 +28,4 @@ export * from "./terra.js";
 export * from "./mudaSail.js";
 export * from "./colleganzaSail.js";
 export * from "./map.js";
+export * from "./fleet.js";

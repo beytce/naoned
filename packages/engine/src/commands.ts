@@ -46,6 +46,7 @@ import {
 import { rewardCondotta } from "./empire/condotta.js";
 import { sendTeam, settleDeposits } from "./empire/extraction.js";
 import { chooseLineage, passGenerations } from "./empire/family.js";
+import { upgradeModel } from "./empire/fleet.js";
 import {
   chooseArte,
   empireJoin,
@@ -59,7 +60,7 @@ import {
   upgradeCounter,
 } from "./empire/house.js";
 import { startLearning } from "./empire/knowledge.js";
-import { buildArsenal, buildCamp, ensureMap, placeCounter } from "./empire/map.js";
+import { buildArsenal, buildCamp, buildDepot, ensureMap, placeCounter } from "./empire/map.js";
 import { bidMuda, settleMuda } from "./empire/mudaSail.js";
 import { chooseSkill, hireStaff, placeStaff, runFactors } from "./empire/staff.js";
 import { actOnTerra, joinTerra, setRoster, settleTerra } from "./empire/terra.js";
@@ -322,6 +323,8 @@ type EmpireCommandOf =
   | { type: "empirePlaceCounter"; playerId: PlayerId; cell: string }
   | { type: "empireBuildArsenal"; playerId: PlayerId; cell: string }
   | { type: "empireBuildCamp"; playerId: PlayerId; cell: string }
+  | { type: "empireBuildDepot"; playerId: PlayerId; cell: string }
+  | { type: "empireUpgradeVehicle"; playerId: PlayerId; vehicleType: string }
   | { type: "empireUpgradeCounter"; playerId: PlayerId; region: string }
   | { type: "empireBuyVehicle"; playerId: PlayerId; vehicleType: string }
   | { type: "empireResearch"; playerId: PlayerId; module: string }
@@ -542,6 +545,12 @@ function applyEmpire(tx: Tx, cmd: EmpireCommand): void {
       break;
     case "empireBuildCamp":
       buildCamp(tx, cmd.playerId, cmd.cell);
+      break;
+    case "empireBuildDepot":
+      buildDepot(tx, cmd.playerId, cmd.cell);
+      break;
+    case "empireUpgradeVehicle":
+      upgradeModel(tx, cmd.playerId, cmd.vehicleType);
       break;
     case "empireUpgradeCounter":
       upgradeCounter(tx, cmd.playerId, cmd.region);
