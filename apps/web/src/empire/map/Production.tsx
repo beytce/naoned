@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
+import { d } from "../../game/format.js";
+import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
-import { Sheet } from "../../ui.js";
+import { Sheet, Slab } from "../../ui.js";
 import { NewWorkshopList } from "../NewWorkshop.js";
 import { Arsenal } from "../Sea.js";
 import { Charroi } from "../World.js";
+import { shownAt } from "../logic.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 import { fleetOf } from "./logic.js";
 
@@ -24,6 +27,7 @@ export function ProductionSheet({
   busy,
   onClose,
   act,
+  onPlace,
 }: {
   p: EmpirePayload;
   now: number;
@@ -33,6 +37,8 @@ export function ProductionSheet({
   busy: boolean;
   onClose: () => void;
   act: (a: EmpireAction) => Promise<void>;
+  /** Puts a counter or the Arsenal down: the map in its mode of placing. */
+  onPlace: (kind: "post" | "arsenal") => void;
 }) {
   const [pane, setPane] = useState<ProductionPane>(first);
   useEffect(() => {
@@ -58,14 +64,17 @@ export function ProductionSheet({
         ))}
       </div>
       {pane === "buildings" ? (
-        <NewWorkshopList
-          p={p}
-          region="veneto"
-          highlight={highlight}
-          busy={busy}
-          onDone={onClose}
-          act={act}
-        />
+        <>
+          <Buildings p={p} onPlace={onPlace} />
+          <NewWorkshopList
+            p={p}
+            region="veneto"
+            highlight={highlight}
+            busy={busy}
+            onDone={onClose}
+            act={act}
+          />
+        </>
       ) : (
         <>
           <p className="rounded-lg bg-info/15 px-3 py-2 text-sm font-semibold text-info" data-fleet>
@@ -76,5 +85,61 @@ export function ProductionSheet({
         </>
       )}
     </Sheet>
+  );
+}
+
+/**
+ * The buildings put on the map (the map at the centre, step 2): a counter, from the cheapest of
+ * the regions reached, and the Arsenal once its Casa nears.
+ */
+function Buildings({
+  p,
+  onPlace,
+}: {
+  p: EmpirePayload;
+  onPlace: (kind: "post" | "arsenal") => void;
+}) {
+  const view = p.view;
+  if (!view) return null;
+  const pl = fr.empire.placing;
+  const costs = view.regions.flatMap((r) => (r.postCost ? [BigInt(r.postCost)] : []));
+  const cheapest = costs.length > 0 ? costs.reduce((a, b) => (b < a ? b : a)) : null;
+  const yard = view.map.arsenalSite;
+  const card = (
+    kind: "post" | "arsenal",
+    title: string,
+    text: string,
+    price: string | null,
+    open: boolean,
+  ) => (
+    <li key={kind} className="flex items-center gap-3 border-b border-line/60 pb-3">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-night-3 text-gold ring-1 ring-gold/60 [&_svg]:h-6 [&_svg]:w-6">
+        {kind === "post" ? Icon.banner() : Icon.anchor()}
+      </span>
+      <span className="min-w-0 flex-1 text-sm text-cream">
+        {title}
+        <span className="block text-xs text-cream-dim">{text}</span>
+      </span>
+      <span data-place={kind}>
+        <Slab size="sm" tone="ghost" disabled={!open} onClick={() => onPlace(kind)}>
+          {price ?? "—"}
+        </Slab>
+      </span>
+    </li>
+  );
+  return (
+    <ul className="mb-4 space-y-3" data-buildings>
+      {cheapest !== null &&
+        card("post", pl.postCard, pl.postText, pl.from(d(cheapest.toString())), true)}
+      {yard &&
+        shownAt(view.house.casa, yard.casa) &&
+        card(
+          "arsenal",
+          pl.arsenalCard,
+          pl.arsenalText(yard.casa),
+          d(yard.cost),
+          view.house.casa >= yard.casa,
+        )}
+    </ul>
   );
 }

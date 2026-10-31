@@ -1,3 +1,4 @@
+import { cellsWithin } from "@comptoirs/engine";
 import {
   forwardRef,
   useCallback,
@@ -8,6 +9,7 @@ import {
 } from "react";
 import { artSource } from "../../art/Illustration.js";
 import { GoodsMark } from "../../art/goods.js";
+import { cellCentre, hexPath } from "../../art/hexmap.js";
 import {
   MediterraneanGround,
   ROUTES,
@@ -20,22 +22,22 @@ import { P } from "../../art/palette.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
 import { Icon } from "../../game/map/icons.js";
 import { fr } from "../../i18n.js";
+import { clock } from "../../ui.js";
 import { EmpireOrbit } from "../Orbit.js";
 import { regionName } from "../World.js";
 import { bestQuote } from "../logic.js";
-import type { EmpireAction, EmpirePayload, EmpireRegion } from "../types.js";
+import type { EmpireAction, EmpirePayload } from "../types.js";
 import {
   CHART,
   ORBIT_UNITS,
+  type Placing,
   type Target,
-  arsenalAt,
-  arsenalShown,
   centredOn,
   detailOf,
   farCamera,
-  fogOf,
   nearScale,
   nearness,
+  placeable,
 } from "./logic.js";
 import { useCamera } from "./useCamera.js";
 
@@ -46,6 +48,8 @@ export interface EmpireMapHandle {
   toggle(): void;
   /** Up close on Venice's house. */
   home(): void;
+  /** Out to the map. */
+  far(): void;
 }
 
 const nearOn = (v: Viewport) => centredOn(seatOf("veneto"), nearScale(v), v);
@@ -64,8 +68,12 @@ export const EmpireMap = forwardRef<
     busy: boolean;
     act: (a: EmpireAction) => Promise<void>;
     onTarget: (target: Target) => void;
+    /** Placing a counter or the Arsenal: the cells it may go on light up, a touch picks one. */
+    placing?: Placing | null;
+    picked?: string | null;
+    onPick?: (cell: string) => void;
   }
->(function EmpireMap({ p, now, busy, act, onTarget }, ref) {
+>(function EmpireMap({ p, now, busy, act, onTarget, placing = null, picked = null, onPick }, ref) {
   const root = useRef<HTMLDivElement>(null);
   const back = useRef<HTMLDivElement>(null);
   const mist = useRef<HTMLDivElement>(null);
@@ -122,16 +130,32 @@ export const EmpireMap = forwardRef<
   useImperativeHandle(ref, () => ({
     toggle: () => camera.easeTo(nearNow.current ? farOn : nearOn),
     home: () => camera.easeTo(nearOn),
+    far: () => camera.easeTo(farOn),
   }));
   // Every render puts the places where the camera says.
   useLayoutEffect(() => camera.repaint());
 
   if (!view) return null;
-  const fog = fogOf(p);
-  const shown = (code: string) => (fog[code] ?? "hidden") !== "hidden";
-  const open = (code: string) => fog[code] === "open";
+  const map = view.map;
+  const seen = new Set(map.revealed);
   const texture = artSource("world", "map")?.src;
-  const [ax, ay] = arsenalAt();
+  const lands = Object.entries(map.cells);
+  const allowed = placing ? new Set(placeable(p, placing)) : null;
+  const preview = picked && placing?.kind === "post" ? cellsWithin(picked, map.radius) : [];
+  // Each region named once, over the middle of its cells seen.
+  const names = Object.entries(
+    lands.reduce<Record<string, [number, number][]>>((acc, [cell, c]) => {
+      const list = acc[c.region] ?? [];
+      list.push(cellCentre(cell));
+      acc[c.region] = list;
+      return acc;
+    }, {}),
+  ).map(([region, pts]) => ({
+    region,
+    x: pts.reduce((n, q) => n + q[0], 0) / pts.length,
+    y: pts.reduce((n, q) => n + q[1], 0) / pts.length,
+  }));
+  const seatSeen = (code: string) => seen.has(seatCellOf(p, code));
 
   return (
     <div
@@ -139,6 +163,7 @@ export const EmpireMap = forwardRef<
       className="absolute inset-0 touch-none select-none overflow-hidden bg-[#08111F]"
       data-map="empire"
       data-near={near || undefined}
+      data-placing={placing?.kind}
     >
       {/* The night, far behind: a glow over the lagoon and its scattered lights. */}
       <div ref={back} className="pointer-events-none absolute -inset-[40%]" aria-hidden="true">
@@ -167,31 +192,14 @@ export const EmpireMap = forwardRef<
       >
         <MediterraneanGround texture={texture} />
         <defs>
-          <radialGradient id="fog-hole">
-            <stop offset="0%" stopColor="#000" />
-            <stop offset="65%" stopColor="#000" />
-            <stop offset="100%" stopColor="#fff" />
-          </radialGradient>
+          {/* The dark, all but the cells the house sees. */}
           <mask id="fog-mask" maskUnits="userSpaceOnUse">
             <rect x="-50" y="-50" width={CHART.w + 100} height={CHART.h + 100} fill="#fff" />
-            {view.regions
-              .filter((r) => shown(r.code))
-              .map((r) => {
-                const [x, y] = seatOf(r.code);
-                return (
-                  <circle
-                    key={r.code}
-                    cx={x}
-                    cy={y}
-                    r={open(r.code) ? 62 : 30}
-                    fill="url(#fog-hole)"
-                    opacity={open(r.code) ? 1 : 0.75}
-                  />
-                );
-              })}
+            {map.revealed.map((cell) => (
+              <path key={cell} d={hexPath(cell, -0.6)} fill="#000" />
+            ))}
           </mask>
         </defs>
-        {/* What the house has not reached: the dark, its lands unknown. */}
         <g mask="url(#fog-mask)" data-fog-layer>
           <rect
             x="-50"
@@ -199,7 +207,7 @@ export const EmpireMap = forwardRef<
             width={CHART.w + 100}
             height={CHART.h + 100}
             fill="#060C17"
-            opacity="0.95"
+            opacity="0.94"
           />
           {[
             [60, 250, 90],
@@ -219,8 +227,41 @@ export const EmpireMap = forwardRef<
             />
           ))}
         </g>
-        {ROUTES.filter((r) => shown(r.from) && shown(r.to)).map((r) => {
-          const lit = open(r.from) && open(r.to);
+        {/* The land cells seen, in the faint grid of the chart. */}
+        <g data-cells>
+          {lands.map(([cell]) => (
+            <path
+              key={cell}
+              d={hexPath(cell, 0.4)}
+              fill="#BFE3FF"
+              fillOpacity="0.04"
+              stroke="#BFE3FF"
+              strokeOpacity="0.16"
+              strokeWidth="0.8"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+        </g>
+        <g
+          fill="#BFE3FF"
+          fillOpacity="0.4"
+          fontFamily="Cinzel, serif"
+          fontSize="6"
+          letterSpacing="1.5"
+          textAnchor="middle"
+        >
+          {names
+            .filter((n) => n.region !== "veneto")
+            .map((n) => (
+              <text key={n.region} x={n.x} y={n.y - 8}>
+                {regionName(n.region).toUpperCase()}
+              </text>
+            ))}
+        </g>
+        {ROUTES.filter((r) => seatSeen(r.from) && seatSeen(r.to)).map((r) => {
+          const lit =
+            (view.regions.find((x) => x.code === r.from)?.counter ?? 0) > 0 &&
+            (view.regions.find((x) => x.code === r.to)?.counter ?? 0) > 0;
           return (
             <path
               key={`${r.from}:${r.to}`}
@@ -254,6 +295,38 @@ export const EmpireMap = forwardRef<
             />
           );
         })}
+        {/* Placing: the cells it may go on, lit; the one picked, and what it would reveal. */}
+        {allowed && (
+          <g data-placing-cells>
+            {preview.map((cell) => (
+              <path
+                key={`r${cell}`}
+                d={hexPath(cell, 0.8)}
+                fill={P.gold}
+                fillOpacity="0.08"
+                stroke={P.gold}
+                strokeOpacity="0.5"
+                strokeDasharray="2 2"
+                strokeWidth="1"
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+            {[...allowed].map((cell) => (
+              <path
+                key={cell}
+                d={hexPath(cell, 1)}
+                fill={cell === picked ? P.gold : P.info}
+                fillOpacity={cell === picked ? 0.35 : 0.14}
+                stroke={cell === picked ? P.gold : P.info}
+                strokeWidth={cell === picked ? 2.4 : 1.4}
+                vectorEffect="non-scaling-stroke"
+                style={{ pointerEvents: "all", cursor: "pointer" }}
+                data-cell={cell}
+                onClick={() => onPick?.(cell)}
+              />
+            ))}
+          </g>
+        )}
       </svg>
 
       {/* The mists, between the chart and the eye, drifting slowly. */}
@@ -264,37 +337,73 @@ export const EmpireMap = forwardRef<
 
       {/* The places, the same size at every zoom. */}
       <div ref={marks} className="pointer-events-none absolute inset-0">
-        {view.regions
-          .filter((r) => shown(r.code))
-          .map((r) => (
-            <RegionMark
-              key={r.code}
+        <HomeMark
+          p={p}
+          onClick={() =>
+            nearNow.current ? onTarget({ kind: "region", code: "veneto" }) : camera.easeTo(nearOn)
+          }
+        />
+        {map.cities
+          .filter((c) => c.code !== "venezia")
+          .map((c) => (
+            <CityMark
+              key={c.code}
               p={p}
-              r={r}
-              open={open(r.code)}
-              casa={casa}
-              onClick={() =>
-                r.code === "veneto" && !nearNow.current
-                  ? camera.easeTo(nearOn)
-                  : onTarget({ kind: "region", code: r.code })
-              }
+              code={c.code}
+              cell={c.cell}
+              region={c.region}
+              onClick={() => onTarget({ kind: "city", code: c.code })}
             />
           ))}
-        {arsenalShown(p) && (
-          <div data-at={`${ax},${ay}`} className="absolute left-0 top-0">
-            <button
-              type="button"
-              onClick={() => onTarget({ kind: "arsenal" })}
-              data-arsenal-mark
-              className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
+        {map.posts.map((x) => {
+          const [px, py] = cellCentre(x.cell);
+          return (
+            <div
+              key={`p${x.cell}`}
+              data-at={`${px},${py}`}
+              className="absolute left-0 top-0"
+              data-post={x.cell}
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-night-3 text-info ring-2 ring-info/70 shadow-md shadow-black/50 [&_svg]:h-5 [&_svg]:w-5">
-                {Icon.anchor()}
+              <span className="flex h-5 w-5 items-center justify-center rounded-sm bg-night-3 text-gold ring-1 ring-gold/70 shadow-md shadow-black/50 [&_svg]:h-3 [&_svg]:w-3">
+                {Icon.banner()}
               </span>
-              <span className="map-name">{t.scene.arsenal}</span>
-            </button>
-          </div>
-        )}
+            </div>
+          );
+        })}
+        {map.sites.map((x) => {
+          const [px, py] = cellCentre(x.cell);
+          return (
+            <div
+              key={`s${x.cell}`}
+              data-at={`${px},${py}`}
+              className="absolute left-0 top-0"
+              data-site={x.cell}
+            >
+              <span className="whitespace-nowrap rounded-full bg-night-3/90 px-1.5 py-0.5 font-display text-[0.625rem] font-bold tabular-nums text-info ring-1 ring-info/70">
+                {clock(x.endsAt - now)}
+              </span>
+            </div>
+          );
+        })}
+        {map.arsenal &&
+          (() => {
+            const [px, py] = cellCentre(map.arsenal);
+            return (
+              <div data-at={`${px},${py}`} className="absolute left-0 top-0">
+                <button
+                  type="button"
+                  onClick={() => onTarget({ kind: "arsenal" })}
+                  data-arsenal-mark
+                  className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
+                >
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-night-3 text-info ring-2 ring-info/70 shadow-md shadow-black/50 [&_svg]:h-5 [&_svg]:w-5">
+                    {Icon.anchor()}
+                  </span>
+                  <span className="map-name">{t.scene.arsenal}</span>
+                </button>
+              </div>
+            );
+          })()}
       </div>
 
       {/* Venice's house, opening where it stands as the map comes near. */}
@@ -319,62 +428,70 @@ export const EmpireMap = forwardRef<
   );
 });
 
-/** A region on the map: its round mark, its name, or for one still unknown the Casa it asks. */
-function RegionMark({
-  p,
-  r,
-  open,
-  casa,
-  onClick,
-}: {
-  p: EmpirePayload;
-  r: EmpireRegion;
-  open: boolean;
-  casa: number;
-  onClick: () => void;
-}) {
-  const home = r.code === "veneto";
-  const reachable = !open && casa >= r.casa;
-  const best = open ? bestQuote(p, r.code) : null;
-  const [x, y] = seatOf(r.code);
+/** The seat of a region on the map: its first city's cell, Venice for Venetia. */
+function seatCellOf(p: EmpirePayload, region: string): string {
+  return p.view?.map.cities.find((c) => c.region === region)?.cell ?? "";
+}
+
+/** Venice on the map: the house's gold sun, its Casa written in it. */
+function HomeMark({ p, onClick }: { p: EmpirePayload; onClick: () => void }) {
+  const [x, y] = seatOf("veneto");
   return (
-    <div data-at={`${x},${y}`} data-home={home || undefined} className="absolute left-0 top-0">
+    <div data-at={`${x},${y}`} data-home className="absolute left-0 top-0">
       <button
         type="button"
         onClick={onClick}
-        data-region={r.code}
-        data-look={home ? "home" : open ? "open" : reachable ? "reachable" : "closed"}
-        aria-label={
-          open || reachable ? regionName(r.code) : `${t.scene.unknown} : ${t.world.closed(r.casa)}`
-        }
+        data-region="veneto"
+        aria-label={t.world.venice}
+        className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
+      >
+        <span className="flex h-14 w-14 items-center justify-center rounded-full font-display text-sm font-bold text-ink shadow-lg shadow-black/50 [background:radial-gradient(circle_at_34%_30%,rgb(var(--gold-soft))_0%,rgb(var(--gold))_50%,rgb(var(--gold-deep))_100%)]">
+          {p.view?.house.casa ?? 1}
+        </span>
+        <span className="map-name">{t.world.venice}</span>
+      </button>
+    </div>
+  );
+}
+
+/**
+ * A city found on the map: its mark (the best paid good of its region where the house trades,
+ * else a plain dot), its name; a region's not open yet in gold, the counter to put down there.
+ */
+function CityMark({
+  p,
+  code,
+  cell,
+  region,
+  onClick,
+}: {
+  p: EmpirePayload;
+  code: string;
+  cell: string;
+  region: string;
+  onClick: () => void;
+}) {
+  const r = p.view?.regions.find((x) => x.code === region);
+  const open = (r?.counter ?? 0) > 0;
+  const best = open ? bestQuote(p, region) : null;
+  const [x, y] = cellCentre(cell);
+  return (
+    <div data-at={`${x},${y}`} className="absolute left-0 top-0">
+      <button
+        type="button"
+        onClick={onClick}
+        data-city={code}
+        data-city-region={region}
+        data-look={open ? "open" : "reachable"}
+        aria-label={t.cityNames[code] ?? code}
         className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
       >
         <span
-          className={`flex items-center justify-center rounded-full font-display text-sm font-bold shadow-lg shadow-black/50 ${
-            home
-              ? "h-14 w-14 text-ink [background:radial-gradient(circle_at_34%_30%,rgb(var(--gold-soft))_0%,rgb(var(--gold))_50%,rgb(var(--gold-deep))_100%)]"
-              : open
-                ? "h-11 w-11 bg-night-3 text-cream ring-2 ring-lagoon"
-                : reachable
-                  ? "h-11 w-11 bg-night-3 text-gold ring-2 ring-gold"
-                  : "h-10 w-10 bg-night-2/90 text-cream-dim ring-1 ring-line"
-          }`}
+          className={`flex h-9 w-9 items-center justify-center rounded-full bg-night-3 font-display text-xs font-bold shadow-lg shadow-black/50 ${open ? "text-cream ring-2 ring-lagoon" : "text-gold ring-2 ring-gold"}`}
         >
-          {home ? (
-            casa
-          ) : best ? (
-            <GoodsMark code={best} size={22} />
-          ) : reachable ? (
-            "+"
-          ) : open ? (
-            r.counter
-          ) : (
-            "?"
-          )}
+          {best ? <GoodsMark code={best} size={18} /> : open ? "•" : "+"}
         </span>
-        <span className="map-name">
-          {home ? t.world.venice : open || reachable ? regionName(r.code) : t.world.closed(r.casa)}
-        </span>
+        <span className="map-name">{t.cityNames[code] ?? code}</span>
       </button>
     </div>
   );

@@ -27,6 +27,7 @@ export function RegionPlace({
   act,
   onBuild,
   onConvoy,
+  onPlace,
 }: {
   p: EmpirePayload;
   code: string;
@@ -35,6 +36,8 @@ export function RegionPlace({
   act: Act;
   onBuild: () => void;
   onConvoy: () => void;
+  /** To put a counter down there: the map in its mode of placing. */
+  onPlace?: () => void;
 }) {
   const view = p.view;
   const r = view?.regions.find((x) => x.code === code);
@@ -43,7 +46,6 @@ export function RegionPlace({
   const quotes = p.market.filter((q) => q.region === code);
   const workshops = view.house.workshops.filter((x) => (x.region ?? "veneto") === code);
   const deposits = view.deposits.filter((x) => x.region === code);
-  const favourShort = r.next?.charter === true && view.house.favour < r.charterFavour;
   return (
     <section className="mx-auto mt-3 w-full max-w-md space-y-4">
       {artSource("regions", code) && (
@@ -58,33 +60,45 @@ export function RegionPlace({
               ? w.counter(r.counter)
               : view.house.casa < r.casa
                 ? w.closed(r.casa)
-                : w.charter(r.charterFavour)}
+                : w.toOpen}
         </span>
       </div>
+      {r.cities.all > 0 && (
+        <p className="text-sm text-cream-dim" data-region-cities>
+          {w.cities(r.cities.found, r.cities.all)}
+        </p>
+      )}
       {r.buildingUntil !== null && (
         <Badge tone="lagoon">{w.opening(clock(r.buildingUntil - now))}</Badge>
       )}
-      {r.next && (
+      {r.next ? (
         <Slab
           tone="gold"
           size="lg"
           className="w-full"
           busy={busy}
-          disabled={favourShort || !affordable(p.cash, r.next.cost)}
-          onClick={() =>
-            void act(
-              r.next?.charter
-                ? { type: "empireCharter", region: code }
-                : { type: "empireUpgradeCounter", region: code },
-            )
-          }
+          disabled={!affordable(p.cash, r.next.cost)}
+          onClick={() => void act({ type: "empireUpgradeCounter", region: code })}
         >
-          {r.next.charter
-            ? w.charterAction(d(r.next.cost))
-            : w.counterAction(r.next.level, d(r.next.cost))}
+          {w.counterAction(r.next.level, d(r.next.cost))}
         </Slab>
+      ) : (
+        r.postCost &&
+        onPlace &&
+        r.buildingUntil === null &&
+        // A first counter opens the region; more find its cities still hidden.
+        (r.counter === 0 || r.cities.found < r.cities.all) && (
+          <Slab
+            tone={r.counter > 0 ? "ghost" : "gold"}
+            size="lg"
+            className="w-full"
+            disabled={!affordable(p.cash, r.postCost)}
+            onClick={onPlace}
+          >
+            {w.postAction(d(r.postCost))}
+          </Slab>
+        )
       )}
-      {favourShort && <p className="text-xs text-vermilion">{w.favourShort}</p>}
 
       {r.counter > 0 && code !== "veneto" && (
         <div>

@@ -1,7 +1,9 @@
+import { cellsWithin } from "@comptoirs/engine";
+import { cellCentre } from "../../art/hexmap.js";
 import { WORLD_VIEW, seatOf } from "../../art/mediterranean.js";
 import { d } from "../../game/format.js";
 import type { Camera, Viewport } from "../../game/map/geometry.js";
-import { affordable, queueEnd, readyLots, shownAt } from "../logic.js";
+import { affordable, queueEnd, readyLots } from "../logic.js";
 import type { EmpireAction, EmpirePayload } from "../types.js";
 
 /**
@@ -63,25 +65,23 @@ export function nearness(s: number, view: Viewport): number {
 }
 
 /**
- * The camera far out: every region in sight (the house's and those on the edge of the dark),
- * framed with room around, never smaller than the screen.
+ * The camera far out: every land cell the house sees, framed with room around, never smaller
+ * than the screen, short of the house up close.
  */
 export function farCamera(p: EmpirePayload, view: Viewport): Camera {
-  const fog = fogOf(p);
-  const seats = Object.entries(fog)
-    .filter(([, f]) => f !== "hidden")
-    .map(([code]) => seatOf(code));
-  if (seats.length === 0) seats.push(seatOf("veneto"));
-  const margin = 45;
-  const x0 = Math.min(...seats.map((s) => s[0])) - margin;
-  const x1 = Math.max(...seats.map((s) => s[0])) + margin;
-  const y0 = Math.min(...seats.map((s) => s[1])) - margin;
-  const y1 = Math.max(...seats.map((s) => s[1])) + margin;
+  const seen = Object.keys(p.view?.map.cells ?? {}).map(cellCentre);
+  if (seen.length === 0) seen.push(seatOf("veneto"));
+  const margin = 40;
+  const x0 = Math.min(...seen.map((s) => s[0])) - margin;
+  const x1 = Math.max(...seen.map((s) => s[0])) + margin;
+  const y0 = Math.min(...seen.map((s) => s[1])) - margin;
+  const y1 = Math.max(...seen.map((s) => s[1])) + margin;
   const cover = coverScale(view);
   const fit = Math.min(view.w / (x1 - x0), view.h / (y1 - y0));
+  const far = (nearPx(view) - 30) / ORBIT_UNITS;
   return centredOn(
     [(x0 + x1) / 2, (y0 + y1) / 2],
-    Math.max(cover, Math.min(fit, cover * 1.6)),
+    Math.max(cover, Math.min(fit, cover * 1.6, far)),
     view,
   );
 }
@@ -111,28 +111,53 @@ export function hudOf(p: EmpirePayload): { id: "ducats" | "favour" | "seals"; va
   ];
 }
 
+/** What may be put on the map: a counter, or the Arsenal. */
+export type Placing = { kind: "post" | "arsenal"; region?: string };
+
 /**
- * What the fog leaves of each region: open (the house is there), on its edge (one the Casa
- * reached may open, and the next ones the Casa will reach, so that the way on shows), or hidden
- * in the dark, its name unknown.
+ * The cells where the house may put what it places: for a counter, the land cells it sees, of a
+ * region its Casa has reached, with no counter there yet (of one region when it says which); for
+ * the Arsenal, the coasts it sees.
  */
-export function fogOf(p: EmpirePayload): Record<string, "open" | "edge" | "hidden"> {
+export function placeable(p: EmpirePayload, placing: Placing): string[] {
   const view = p.view;
-  if (!view) return {};
+  if (!view) return [];
+  const map = view.map;
   const casa = view.house.casa;
-  const closed = view.regions.filter((r) => r.code !== "veneto" && r.counter === 0);
-  const ahead = closed.filter((r) => r.casa > casa).map((r) => r.casa);
-  const next = ahead.length > 0 ? Math.min(...ahead) : null;
-  return Object.fromEntries(
-    view.regions.map((r) => [
-      r.code,
-      r.code === "veneto" || r.counter > 0
-        ? "open"
-        : r.casa <= casa || r.casa === next || r.buildingUntil !== null
-          ? "edge"
-          : "hidden",
-    ]),
-  );
+  const reached = new Set(view.regions.filter((r) => r.casa <= casa).map((r) => r.code));
+  const taken = new Set([
+    ...map.posts.map((x) => x.cell),
+    ...map.sites.map((x) => x.cell),
+    ...(map.arsenal ? [map.arsenal] : []),
+  ]);
+  return Object.entries(map.cells)
+    .filter(([cell, c]) =>
+      placing.kind === "arsenal"
+        ? c.coast && !taken.has(cell)
+        : reached.has(c.region) &&
+          !taken.has(cell) &&
+          (placing.region === undefined || c.region === placing.region),
+    )
+    .map(([cell]) => cell)
+    .sort();
+}
+
+/** What a placing costs on a cell: its region's counter, or the Arsenal. */
+export function placingCost(p: EmpirePayload, placing: Placing, cell: string): string | null {
+  const view = p.view;
+  if (!view) return null;
+  if (placing.kind === "arsenal") return view.map.arsenalSite?.cost ?? null;
+  const region = view.map.cells[cell]?.region;
+  return view.regions.find((r) => r.code === region)?.postCost ?? null;
+}
+
+/** The cities a counter on `cell` would find: those within its radius, not seen yet. */
+export function wouldFind(p: EmpirePayload, cell: string): number {
+  const map = p.view?.map;
+  if (!map) return 0;
+  const seen = new Set(map.revealed);
+  const around = cellsWithin(cell, map.radius).filter((c) => !seen.has(c));
+  return around.length;
 }
 
 /** May the house build its next Casa now: its demands met, its cost and materials at hand. */
@@ -155,6 +180,7 @@ export type Target =
   | { kind: "casa" }
   | { kind: "free" }
   | { kind: "region"; code: string }
+  | { kind: "city"; code: string }
   | { kind: "arsenal" };
 
 export type ActionIcon =
@@ -175,6 +201,8 @@ export interface MapAction {
   icon: ActionIcon;
   /** Its price, in ducats, under it. */
   cost?: string;
+  /** A good it carries: its mark for a sign. */
+  good?: string;
   disabled?: boolean;
   action?: EmpireAction;
   open?: string;
@@ -252,26 +280,54 @@ export function actionsOf(p: EmpirePayload, target: Target, now: number): MapAct
     }
     case "free":
       return [{ id: "build", icon: "build", words: { key: "build" }, open: "new" }];
-    case "region": {
-      const r = view.regions.find((x) => x.code === target.code);
+    case "region":
+    case "city": {
+      const code =
+        target.kind === "region"
+          ? target.code
+          : (view.map.cities.find((c) => c.code === target.code)?.region ?? "");
+      const r = view.regions.find((x) => x.code === code);
       if (!r) return [];
       if (r.code !== "veneto" && r.counter === 0 && view.house.casa < r.casa)
         return [
           { id: "closed", icon: "lock", words: { key: "closed", n: r.casa }, disabled: true },
         ];
-      if (r.next && r.buildingUntil === null) {
-        const short = r.next.charter && view.house.favour < r.charterFavour;
+      // A city: its region's goods the house holds, delivered there (the engine counts the book).
+      if (target.kind === "city" && r.counter > 0)
+        for (const good of r.demands) {
+          const held = p.stock[good] ?? 0;
+          if (held > 0)
+            out.push({
+              id: `deliver:${good}`,
+              icon: "send",
+              good,
+              words: { key: "deliver", n: held },
+              action: { type: "empireDeliver", good, qty: held, city: target.code },
+            });
+        }
+      if (r.next && r.buildingUntil === null)
         out.push({
-          id: r.next.charter ? "charter" : "counter",
-          icon: r.next.charter ? "banner" : "upgrade",
-          words: r.next.charter ? { key: "charter" } : { key: "counter", n: r.next.level },
+          id: "counter",
+          icon: "upgrade",
+          words: { key: "counter", n: r.next.level },
           cost: r.next.cost,
-          disabled: short || !affordable(p.cash, r.next.cost),
-          action: r.next.charter
-            ? { type: "empireCharter", region: r.code }
-            : { type: "empireUpgradeCounter", region: r.code },
+          disabled: !affordable(p.cash, r.next.cost),
+          action: { type: "empireUpgradeCounter", region: r.code },
         });
-      }
+      // A counter put down: the first opens the region, more find its hidden cities.
+      if (
+        r.postCost &&
+        r.buildingUntil === null &&
+        (r.counter === 0 || r.cities.found < r.cities.all)
+      )
+        out.push({
+          id: "post",
+          icon: "banner",
+          words: { key: "post" },
+          cost: r.postCost,
+          disabled: !affordable(p.cash, r.postCost),
+          open: `place:post:${r.code}`,
+        });
       if (r.counter > 0)
         out.push({
           id: "convoy",
@@ -295,15 +351,8 @@ export function actionsOf(p: EmpirePayload, target: Target, now: number): MapAct
   }
 }
 
-/** The Arsenal, on the lagoon beside Venice (step 1: a fixed place; step 2 will let it be put). */
-export function arsenalAt(): [number, number] {
-  const [x, y] = seatOf("veneto");
-  return [x + 26, y + 14];
-}
-
-/** Is the Arsenal on the map: its first ship near the Casa reached. */
-export function arsenalShown(p: EmpirePayload): boolean {
-  const view = p.view;
-  if (!view) return false;
-  return view.vehicles.shop.some((s) => s.build && shownAt(view.house.casa, s.casa));
+/** The Arsenal's place on the chart: its cell's centre, once it stands. */
+export function arsenalAt(p: EmpirePayload): [number, number] | null {
+  const cell = p.view?.map.arsenal;
+  return cell ? cellCentre(cell) : null;
 }

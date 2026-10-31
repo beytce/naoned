@@ -83,6 +83,7 @@ export interface EmpireView {
   };
   away: { since: number; ready: Record<string, number>; sitesDone: number } | null;
   regions: EmpireRegion[];
+  map: EmpireMapView;
   vehicles: {
     shop: {
       type: string;
@@ -228,14 +229,30 @@ export interface EmpireRegion {
   code: string;
   casa: number;
   corsairRiskBps: number;
-  charterFavour: number;
   hoursFromVenice: number;
   workshopSlots: number;
   produces: string[];
   demands: string[];
   counter: number;
   buildingUntil: number | null;
-  next: (EmpireSite & { charter: boolean }) | null;
+  /** Its counter's next level (none before a counter stands there). */
+  next: EmpireSite | null;
+  /** A counter put down there next, once its Casa is reached. */
+  postCost: string | null;
+  /** Its cities found, and all of them. */
+  cities: { found: number; all: number };
+}
+
+/** The map as the house sees it (the map at the centre, step 2). */
+export interface EmpireMapView {
+  cells: Record<string, { region: string; coast: boolean }>;
+  revealed: string[];
+  posts: { cell: string; region: string }[];
+  sites: { kind: "post" | "arsenal"; cell: string; endsAt: number }[];
+  arsenal: string | null;
+  cities: { code: string; cell: string; region: string }[];
+  radius: number;
+  arsenalSite: { cost: string; minutes: number; casa: number } | null;
 }
 
 export interface EmpireVoyage {
@@ -289,9 +306,10 @@ export type EmpireAction =
   | { type: "empireRelaunch"; workshopId: string; recipe?: string }
   | { type: "empireRelaunchAll" }
   | { type: "empireSell"; good: string; qty: number; region?: string }
-  | { type: "empireDeliver"; good: string; qty: number; region?: string }
+  | { type: "empireDeliver"; good: string; qty: number; region?: string; city?: string }
   | { type: "empireClaim"; index: number }
-  | { type: "empireCharter"; region: string }
+  | { type: "empirePlaceCounter"; cell: string }
+  | { type: "empireBuildArsenal"; cell: string }
   | { type: "empireUpgradeCounter"; region: string }
   | { type: "empireBuyVehicle"; vehicleType: string }
   | {
