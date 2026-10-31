@@ -69,7 +69,7 @@ describe("a counter put at a free point of a cell", () => {
     // Too near Venice's own counter.
     expect(
       error(w.try({ type: "empirePlaceCounter", playerId: "a", cell: "0,0", x: 4, y: 3 })),
-    ).toBe("too_close");
+    ).toBe("post_too_close");
     expect(
       error(w.try({ type: "empirePlaceCounter", playerId: "a", cell: "0,0", x: 12, y: 5 })),
     ).toBe("");
@@ -79,7 +79,7 @@ describe("a counter put at a free point of a cell", () => {
     expect(post?.id).toBeTruthy();
     expect(
       error(w.try({ type: "empirePlaceCounter", playerId: "a", cell: "0,0", x: 15, y: 8 })),
-    ).toBe("too_close");
+    ).toBe("post_too_close");
   });
 
   it("sits at its cell's centre when no point is given", () => {

@@ -217,7 +217,7 @@ describe("the map (the map at the centre, step 2)", () => {
     // Venice's own sector: a counter put there, apart from Venice, reveals the six around it.
     const cell = Object.keys(map.cells)[0];
     const near = await act(cookie, { type: "empirePlaceCounter", cell, ...map.home });
-    expect(near.json().error).toBe("too_close");
+    expect(near.json().error).toBe("post_too_close");
     const put = await act(cookie, {
       type: "empirePlaceCounter",
       cell,

@@ -21,7 +21,7 @@ export type EngineErrorCode =
   | "no_arsenal"
   | "no_camp"
   | "no_depot"
-  | "too_close"
+  | "post_too_close"
   | "out_of_reach"
   | "registration_closed"
   | "season_over"

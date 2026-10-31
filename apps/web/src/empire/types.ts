@@ -250,11 +250,28 @@ export interface EmpireRegion {
 export interface EmpireMapView {
   cells: Record<string, { region: string; coast: boolean }>;
   revealed: string[];
-  posts: { cell: string; region: string }[];
+  /** The counters put down: their name, their point, their level and their reach. */
+  posts: {
+    id: string;
+    cell: string;
+    region: string;
+    x: number;
+    y: number;
+    level: number;
+    reach: number;
+  }[];
+  /** Venice's own counter, likewise. */
+  home: { x: number; y: number; level: number; reach: number };
+  hexSize: number;
+  /** A counter's reach (the map that grows): none on a map without it. */
+  reach: { base: number; perLevel: number } | null;
+  postSpacing: number;
+  /** The cities the house's counters serve. */
+  covered: string[];
   sites: { kind: "post" | "arsenal" | "camp" | "depot"; cell: string; endsAt: number }[];
   arsenal: string | null;
   camp: string | null;
-  cities: { code: string; cell: string; region: string }[];
+  cities: { code: string; cell: string; region: string; x: number; y: number }[];
   radius: number;
   arsenalSite: { cost: string; minutes: number; casa: number } | null;
   campSite: { cost: string; minutes: number; casa: number } | null;

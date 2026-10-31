@@ -26,6 +26,7 @@ export function EmpireOrbit({
   onCasa,
   onFree,
   region = "veneto",
+  bare = false,
 }: {
   p: EmpirePayload;
   now: number;
@@ -36,6 +37,11 @@ export function EmpireOrbit({
   onFree: () => void;
   /** The counter whose workshops these are (step 4): Venice's Casa, or a region's counter. */
   region?: string;
+  /**
+   * Around the counter's own bubble on the map (the map that grows): no sun of its own, the
+   * bubble stays in the middle where it was.
+   */
+  bare?: boolean;
 }) {
   const view = p.view;
   const [hop, setHop] = useState(0);
@@ -115,29 +121,31 @@ export function EmpireOrbit({
           })}
         </g>
       </svg>
-      <button
-        type="button"
-        onClick={onCasa}
-        aria-label={
-          home
-            ? fr.empire.hud.casa(view.house.casa)
-            : fr.empire.world.counter(counter?.counter ?? 1)
-        }
-        data-casa-sun
-        className="sun-breathe absolute left-1/2 top-1/2 flex h-[24%] w-[24%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full text-ink shadow-[0_0_48px_rgb(var(--gold)/0.45),inset_-6px_-8px_14px_rgb(0_0_0/0.35)] transition [background:radial-gradient(circle_at_34%_30%,rgb(var(--gold-soft))_0%,rgb(var(--gold))_45%,rgb(var(--gold-deep))_80%,#5A3D12_100%)] active:scale-95"
-      >
-        <span className="font-mono text-[0.625rem] uppercase tracking-[0.14em]">
-          {home ? "Casa" : fr.empire.placing.postCard}
-        </span>
-        <span className="font-display text-3xl font-extrabold leading-none">
-          {home ? view.house.casa : (counter?.counter ?? 1)}
-        </span>
-        {home && casaSite && (
-          <span className="mt-0.5 font-display text-[0.6875rem] font-bold tabular-nums">
-            {clock(casaSite.endsAt - now)}
+      {!bare && (
+        <button
+          type="button"
+          onClick={onCasa}
+          aria-label={
+            home
+              ? fr.empire.hud.casa(view.house.casa)
+              : fr.empire.world.counter(counter?.counter ?? 1)
+          }
+          data-casa-sun
+          className="sun-breathe absolute left-1/2 top-1/2 flex h-[24%] w-[24%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full text-ink shadow-[0_0_48px_rgb(var(--gold)/0.45),inset_-6px_-8px_14px_rgb(0_0_0/0.35)] transition [background:radial-gradient(circle_at_34%_30%,rgb(var(--gold-soft))_0%,rgb(var(--gold))_45%,rgb(var(--gold-deep))_80%,#5A3D12_100%)] active:scale-95"
+        >
+          <span className="font-mono text-[0.625rem] uppercase tracking-[0.14em]">
+            {home ? "Casa" : fr.empire.placing.postCard}
           </span>
-        )}
-      </button>
+          <span className="font-display text-3xl font-extrabold leading-none">
+            {home ? view.house.casa : (counter?.counter ?? 1)}
+          </span>
+          {home && casaSite && (
+            <span className="mt-0.5 font-display text-[0.6875rem] font-bold tabular-nums">
+              {clock(casaSite.endsAt - now)}
+            </span>
+          )}
+        </button>
+      )}
       {stars.map((s, i) => (
         <Star
           key={s.ws.id}

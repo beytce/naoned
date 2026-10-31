@@ -349,7 +349,7 @@ export function placeCounter(
         .filter((b) => b.kind === "post" && b.x !== undefined && b.y !== undefined)
         .map((b): [number, number] => [b.x ?? 0, b.y ?? 0]),
     ];
-    if (others.some((o) => within(o, at, s.map.postSpacing - 1))) fail("too_close");
+    if (others.some((o) => within(o, at, s.map.postSpacing - 1))) fail("post_too_close");
   } else if (
     (h.posts ?? []).some((p) => p.cell === cell) ||
     h.builds.some((b) => b.kind === "post" && b.cell === cell)
