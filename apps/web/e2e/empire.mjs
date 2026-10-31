@@ -106,9 +106,16 @@ try {
         .locator("[data-intro]")
         .getByRole("button", { name: /suivant|commencer/i })
         .click();
-    // The map at the centre (step 1): the whole screen, the house up close for a new player.
+    // The map at the centre: the whole screen, Venice's sector across it, inhabited (step 4).
     await page.waitForSelector("[data-map=empire]");
-    await page.locator("[data-orbit-near] [data-workshop]").first().waitFor();
+    if ((await page.locator("[data-city]").count()) < 3)
+      faults.push(`${label}: Venice's sector without its cities`);
+    if ((await page.locator("[data-orbit-open]").count()) > 0)
+      faults.push(`${label}: the workshops shown before Venice is touched`);
+    await shot("1c-secteur");
+    // Venice touched: its workshops deploy around it.
+    await page.locator("[data-region=veneto]").click();
+    await page.locator("[data-orbit-open=veneto] [data-workshop]").first().waitFor();
     // The corners: the ducats, and the two mules at home among two.
     await page.locator("[data-hud=ducats]").waitFor();
     if (!/2\s*\/\s*2/.test(await page.locator("[data-hud=fleet]").innerText()))
@@ -236,7 +243,7 @@ try {
     // Out to the map (step 3): Venice's sector seen, the six around it in silhouette, Lombardy
     // still in the dark.
     await page.locator("[data-round=recenter]").click();
-    await page.locator("[data-map=empire]:not([data-near])").waitFor();
+    await page.locator("[data-map=empire]:not([data-orbit])").waitFor();
     await page.waitForTimeout(300);
     if ((await page.locator("[data-frontier] path").count()) < 6)
       faults.push(`${label}: no silhouettes around Venice's sector`);
@@ -255,14 +262,17 @@ try {
     // Not now: the brickworks of the Casa 2 first (a counter here costs most of the purse).
     await page.getByRole("button", { name: /annuler/i }).click();
     await page.locator("[data-placing-bar]").waitFor({ state: "detached" });
-    // The wheel brings Venice near again: its house opens where it stands.
+    // A zoom never deploys the workshops; Venice touched does.
     const venice = await page.locator("[data-region=veneto]").boundingBox();
     if (venice) {
       await page.mouse.move(venice.x + venice.width / 2, venice.y + venice.height / 2);
       for (let i = 0; i < 8; i++) await page.mouse.wheel(0, -300);
     }
-    await page.waitForSelector("[data-map][data-near]");
-    await page.locator("[data-orbit-near] [data-workshop]").first().waitFor();
+    await page.waitForTimeout(500);
+    if ((await page.locator("[data-orbit-open]").count()) > 0)
+      faults.push(`${label}: the workshops deployed by a zoom`);
+    await page.locator("[data-region=veneto]").click();
+    await page.locator("[data-orbit-open=veneto] [data-workshop]").first().waitFor();
 
     // The next step opens the Production on the brickworks of the Casa 2.
     await page
