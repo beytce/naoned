@@ -136,3 +136,11 @@ export function nextStep(p: EmpirePayload, now: number): NextStep {
   ].filter((t): t is number => t !== null && t > now);
   return { kind: "wait", at: times.length > 0 ? Math.min(...times) : null };
 }
+
+/**
+ * Lorenzo guides the founding (decision of the owner, 31 October 2026): until the Casa 2 his next
+ * step and its gold button lead the first gestures; past it he withdraws, and the player plays.
+ */
+export function inTutorial(p: EmpirePayload): boolean {
+  return (p.view?.house.casa ?? 1) < 2;
+}

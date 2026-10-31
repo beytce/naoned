@@ -217,6 +217,7 @@ const frDict = {
       unknown: "Terre inconnue",
       arsenal: "L'Arsenal",
       free: "Une place libre",
+      help: "Conseil",
       recenter: "Recentrer",
       production: "Production",
       buildings: "Bâtiments",

@@ -299,6 +299,7 @@ export const en: Dictionary = {
       unknown: "Unknown land",
       arsenal: "The Arsenal",
       free: "A free place",
+      help: "Advice",
       recenter: "Recentre",
       production: "Production",
       buildings: "Buildings",

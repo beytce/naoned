@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Illustration, casaArt } from "../art/Illustration.js";
 import { BuildingArt } from "../art/buildings.js";
 import { haptic } from "../haptics.js";
@@ -24,9 +25,9 @@ export function CasaMoment({
     sound("bell");
     haptic("success");
   }, []);
-  return (
+  return createPortal(
     <section
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-night/90 px-6 text-center backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-4 bg-night/90 px-6 text-center backdrop-blur-sm"
       data-casa-moment={level}
       aria-label={t.title(level)}
     >
@@ -54,6 +55,7 @@ export function CasaMoment({
       <Slab tone="gold" size="lg" className="mt-2 w-full max-w-xs" onClick={onClose}>
         {t.go}
       </Slab>
-    </section>
+    </section>,
+    document.body,
   );
 }

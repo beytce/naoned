@@ -1199,3 +1199,50 @@ body[data-coach-top] [data-toast] {
     animation: none;
   }
 }
+
+/* The foot of the map (BottomSlot): what comes rises, what leaves sinks and fades. */
+:root {
+  --t-camera: 450ms;
+  --t-moment: 420ms;
+}
+.slot-in {
+  animation: slot-in var(--t-base) var(--ease-out) both;
+}
+.slot-out {
+  pointer-events: none;
+  animation: slot-out var(--t-quick) var(--ease-in) both;
+}
+@keyframes slot-in {
+  from {
+    transform: translate3d(0, 24px, 0);
+    opacity: 0;
+  }
+}
+@keyframes slot-out {
+  to {
+    transform: translate3d(0, 24px, 0);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slot-in,
+  .slot-out {
+    animation: none;
+  }
+}
+
+/* The map's places (EmpireMap): put at their point of the chart, kept at their size on screen
+   while the chart is scaled (--inv), Venice's own fading as its house opens (--home). */
+.map-layer {
+  will-change: transform;
+}
+.map-pin {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(var(--inv, 1));
+}
+.map-home {
+  opacity: var(--home, 1);
+}
+[data-dragging] .mist-drift {
+  animation-play-state: paused;
+}

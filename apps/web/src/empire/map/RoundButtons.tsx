@@ -12,12 +12,15 @@ const t = fr.empire;
  */
 export function RoundButtons({
   onRecenter,
+  onHelp,
   onMarket,
   onCompany,
   onFamily,
   dots,
 }: {
   onRecenter: () => void;
+  /** Lorenzo's advice, past the tutorial: words only, never a gesture made for the player. */
+  onHelp?: () => void;
   onMarket: () => void;
   onCompany: () => void;
   onFamily: () => void;
@@ -26,12 +29,19 @@ export function RoundButtons({
   return (
     <nav
       aria-label={t.scene.owner}
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-between px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      className="pointer-events-none flex w-full items-end justify-between px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       data-round-buttons
     >
-      <Round label={t.scene.recenter} onClick={onRecenter} id="recenter">
-        {Icon.locate()}
-      </Round>
+      <div className="flex gap-2.5">
+        <Round label={t.scene.recenter} onClick={onRecenter} id="recenter">
+          {Icon.locate()}
+        </Round>
+        {onHelp && (
+          <Round label={t.scene.help} onClick={onHelp} id="help">
+            {Icon.help()}
+          </Round>
+        )}
+      </div>
       <div className="flex gap-2.5">
         <Round label={t.nav.market} onClick={onMarket} dot={dots.market} id="market" store>
           {Icon.rialto()}
@@ -72,7 +82,7 @@ function Round({
     >
       <span
         data-goods-to={store ? "store" : undefined}
-        className="relative flex h-12 w-12 items-center justify-center rounded-full bg-night/85 text-cream ring-1 ring-line shadow-lg shadow-black/50 backdrop-blur-sm [&_svg]:h-6 [&_svg]:w-6"
+        className="relative flex h-12 w-12 items-center justify-center rounded-full bg-night/95 text-cream ring-1 ring-line shadow-lg shadow-black/50 [&_svg]:h-6 [&_svg]:w-6"
       >
         {children}
         {dot && (

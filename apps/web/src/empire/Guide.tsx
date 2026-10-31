@@ -149,7 +149,7 @@ export function Intro({ p }: { p: EmpirePayload }) {
   const last = page === t.intro.length - 1;
   return (
     <div
-      className="fixed inset-0 z-40 flex items-end justify-center bg-night/80 p-4 pb-[calc(var(--tabbar)+1rem)] backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-night/85 p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
       data-intro
     >
       <div className="w-full max-w-md">
@@ -209,6 +209,38 @@ export function HouseSheet({
       <div className="mt-6">
         {/* The palettes of the monthly profile; the Pass's own stays out of the empire. */}
         <PalettePicker pass={false} offered={false} />
+      </div>
+    </Sheet>
+  );
+}
+
+/**
+ * Lorenzo's advice, past the tutorial (behind the « ? »): what he would do now and why, in words;
+ * the gesture is the player's.
+ */
+export function HelpSheet({
+  p,
+  now,
+  step,
+  open,
+  onClose,
+}: {
+  p: EmpirePayload;
+  now: number;
+  step: NextStep;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const w = wordsOf(p, step);
+  return (
+    <Sheet open={open} onClose={onClose} kicker={t.name} title={fr.empire.scene.help}>
+      <div className="flex items-start gap-3" data-help>
+        <Lorenzo size={48} />
+        <div className="min-w-0">
+          <p className="font-display font-bold text-cream">{w.what}</p>
+          <p className="mt-1 text-sm text-cream-dim">{w.why}</p>
+          {step.kind === "wait" && <WaitArc p={p} now={now} />}
+        </div>
       </div>
     </Sheet>
   );
