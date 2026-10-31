@@ -104,18 +104,6 @@ export const shownAt = (casa: number, at: number | null) => at === null || casa 
 /** Can the house pay this in ducats? */
 export const affordable = (cash: string, cost: string) => BigInt(cash) >= BigInt(cost);
 
-/** How a region shows on the world map: the house's own, a counter there, one to open, fogged. */
-export type RegionLook = "home" | "open" | "reachable" | "closed";
-
-export function regionLook(
-  r: { code: string; casa: number; counter: number },
-  casa: number,
-): RegionLook {
-  if (r.code === "veneto") return "home";
-  if (r.counter > 0) return "open";
-  return casa >= r.casa ? "reachable" : "closed";
-}
-
 /** A region's best paid good, as the news last brought its prices (null when none came). */
 export function bestQuote(p: EmpirePayload, region: string): string | null {
   let best: { good: string; price: bigint } | null = null;
@@ -134,22 +122,4 @@ export function trendOf(q: { price: string; ref: string }): "up" | "down" | "fla
   if (price >= ref * 105n) return "up";
   if (price <= ref * 95n) return "down";
   return "flat";
-}
-
-/** The empire's five tabs (lot C of the UX audit), by the ids of the shared tab bar. */
-export type EmpireTab = "workshops" | "venice" | "map" | "ranking" | "conquest";
-
-/**
- * The tab a screen belongs to: its sheet first, then the place shown. The Maison holds the house
- * and its workshops, the Marché the prices and the trade, the Monde the map and its regions, the
- * Compagnie the Carnet, the partners and the Terraferma, the Famille the lineage and the arts.
- */
-export function activeEmpireTab(sheet: string | null, place: string | null): EmpireTab {
-  const kind = (sheet ?? "").split(":")[0] ?? "";
-  if (["workshops", "workshop", "new", "casa"].includes(kind)) return "workshops";
-  if (kind === "market") return "venice";
-  if (kind === "voyage") return "map";
-  if (kind === "company") return "ranking";
-  if (kind === "family") return "conquest";
-  return place === "veneto" ? "workshops" : "map";
 }

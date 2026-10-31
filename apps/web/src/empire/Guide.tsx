@@ -60,6 +60,7 @@ export function NextStepCard({
   busy,
   act,
   onBuild,
+  compact = false,
 }: {
   p: EmpirePayload;
   now: number;
@@ -67,12 +68,32 @@ export function NextStepCard({
   busy: boolean;
   act: (a: EmpireAction) => Promise<void>;
   onBuild: (recipe: string) => void;
+  /** On the map (the map at the centre, step 1): one line and its button, over the map. */
+  compact?: boolean;
 }) {
   const w = wordsOf(p, step);
   const go = () => {
     if (step.kind === "build") onBuild(step.recipe);
     else if (step.kind !== "wait") void act(step.action);
   };
+  if (compact)
+    return (
+      <div
+        className="pointer-events-auto flex w-full max-w-md items-center gap-2.5 rounded-2xl border border-info/40 bg-night-2/90 p-2 pr-2.5 shadow-xl shadow-black/50 backdrop-blur-md"
+        data-next-step={step.kind}
+      >
+        <Lorenzo size={36} />
+        <div className="min-w-0 flex-1">
+          <p className="line-clamp-2 text-sm font-bold leading-snug text-cream">{w.what}</p>
+          {step.kind === "wait" && <WaitArc p={p} now={now} />}
+        </div>
+        {w.button && (
+          <Slab tone="gold" size="sm" busy={busy} shine onClick={go}>
+            {w.button}
+          </Slab>
+        )}
+      </div>
+    );
   return (
     <div className="mx-auto mt-3 w-full max-w-md" data-next-step={step.kind}>
       <LorenzoCard

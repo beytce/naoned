@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  activeEmpireTab,
   casaReached,
   daysOfIncome,
   lotProgress,
@@ -124,21 +123,7 @@ describe("a workshop's star", () => {
   });
 });
 
-describe("the empire's five tabs (lot C)", () => {
-  it("send each sheet and place to its tab", () => {
-    expect(activeEmpireTab(null, "veneto")).toBe("workshops");
-    expect(activeEmpireTab("casa", null)).toBe("workshops");
-    expect(activeEmpireTab("workshops", null)).toBe("workshops");
-    expect(activeEmpireTab("workshop:w1", "veneto")).toBe("workshops");
-    expect(activeEmpireTab("new:lombardia", "lombardia")).toBe("workshops");
-    expect(activeEmpireTab("market", "veneto")).toBe("venice");
-    expect(activeEmpireTab(null, null)).toBe("map");
-    expect(activeEmpireTab(null, "lombardia")).toBe("map");
-    expect(activeEmpireTab("voyage:veneto", "veneto")).toBe("map");
-    expect(activeEmpireTab("company", null)).toBe("ranking");
-    expect(activeEmpireTab("family", "veneto")).toBe("conquest");
-  });
-
+describe("the market (lot C)", () => {
   it("read a price against its rate, 5 % either way", () => {
     expect(trendOf({ price: "1050", ref: "1000" })).toBe("up");
     expect(trendOf({ price: "1049", ref: "1000" })).toBe("flat");

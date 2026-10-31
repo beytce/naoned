@@ -5,8 +5,6 @@ import { GoodsMark } from "../art/goods.js";
 import { d, hourOf, minutesLabel } from "../game/format.js";
 import { FxLayer, flyCoins, flyGoods } from "../game/fx.js";
 import { connectLive } from "../game/live.js";
-import { TabBar } from "../game/map/TabBar.js";
-import { Icon } from "../game/map/icons.js";
 import { haptic } from "../haptics.js";
 import { fr } from "../i18n.js";
 import { sound } from "../sound.js";
@@ -17,14 +15,12 @@ import { HouseSheet, Intro, NextStepCard } from "./Guide.js";
 import { ArteSection, FamilySheet, Knowledge, WorkshopIdentity } from "./Identity.js";
 import { MarketSheet } from "./Market.js";
 import { CasaMoment } from "./Moment.js";
-import { EmpireOrbit } from "./Orbit.js";
-import { GoodSheet, ResourceBar } from "./Resources.js";
+import { NewWorkshopSheet } from "./NewWorkshop.js";
+import { GoodSheet } from "./Resources.js";
 import { Arsenal } from "./Sea.js";
-import { Term } from "./Term.js";
-import { RegionPlace, Scuola, VoyageSheet, WorldMap, regionName } from "./World.js";
+import { RegionPlace, Scuola, VoyageSheet, regionName } from "./World.js";
 import { type EmpireAnswer, empireApi } from "./api.js";
 import {
-  activeEmpireTab,
   affordable,
   buildingName,
   casaReached,
@@ -33,8 +29,13 @@ import {
   readyLots,
   recipeOf,
   sitesByEnd,
-  wantsRelaunch,
 } from "./logic.js";
+import { ActionPanel } from "./map/ActionPanel.js";
+import { EmpireMap, type EmpireMapHandle } from "./map/EmpireMap.js";
+import { Hud } from "./map/Hud.js";
+import { ProductionSheet } from "./map/Production.js";
+import { RoundButtons } from "./map/RoundButtons.js";
+import { type Target, canCasa } from "./map/logic.js";
 import { nextStep } from "./next.js";
 import type { EmpireAction, EmpireBuild, EmpirePayload } from "./types.js";
 
@@ -47,6 +48,10 @@ type SheetId =
   | "away"
   | "family"
   | "house"
+  | "production"
+  | "production:vehicles"
+  | "arsenal"
+  | `region:${string}`
   | `workshop:${string}`
   | `new:${string}`
   | `voyage:${string}`;
@@ -66,8 +71,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   const skew = useRef(first.now - Date.now());
   const [now, setNow] = useState(first.now);
   const [sheet, setSheet] = useState<SheetId | null>(first.view?.away ? "away" : null);
-  // The map's depth: null for the map zoomed out, a region's code for the place up close.
-  const [place, setPlace] = useState<string | null>("veneto");
+  // The place of the map touched, its panel open at the foot of the screen.
+  const [target, setTarget] = useState<Target | null>(null);
+  const map = useRef<EmpireMapHandle>(null);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   // The good opened from the resource bar, and the recipe the next step points at.
@@ -137,123 +143,68 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
   if (!p.joined || !p.view)
     return <Founding busy={busy} onJoin={join} name={account.pseudo ?? ""} />;
   const view = p.view;
-  const tab = activeEmpireTab(sheet, place);
   const close = () => setSheet(null);
-
-  // The one gold action: what the house needs most now.
-  const next = view.nextCasa;
-  const canCasa =
-    next?.requirementMet === true &&
-    affordable(p.cash, next.cost) &&
-    Object.entries(next.materials).every(([g, n]) => (p.stock[g] ?? 0) >= n) &&
-    view.house.builds.length < view.buildSlots &&
-    !view.house.builds.some((b) => b.kind === "casa");
-  const relaunch = wantsRelaunch(p, now);
+  // A panel's action that opens a sheet: the panel gives way to it.
+  const open = (id: string) => {
+    setTarget(null);
+    setSheet(id as SheetId);
+  };
+  const step = nextStep(p, now);
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-night">
-      <div className="flex h-full flex-col overflow-y-auto px-4 pb-[calc(var(--tabbar)+1rem)] pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <header className="mx-auto flex w-full max-w-md items-start justify-between gap-3">
-          <button
-            type="button"
-            className="min-w-0 text-left"
-            onClick={() => setSheet("house")}
-            data-house-header
-          >
-            <p className="font-mono text-xs uppercase tracking-[0.12em] text-cream-dim">
-              {t.hud.casa(view.house.casa)} · {t.hud.more}
-            </p>
-            <p className="truncate font-display text-lg font-extrabold text-cream">
-              {account.pseudo ?? t.title}
-            </p>
-          </button>
-          <div className="text-right">
-            <p
-              className="font-display text-xl font-extrabold tabular-nums text-gold"
-              data-fx="purse"
-            >
-              {d(p.cash)}
-            </p>
-            <p className="text-xs text-cream-dim">
-              <Term code="income">{t.hud.income(d(view.incomePerDay))}</Term>
-            </p>
-          </div>
-        </header>
+      <EmpireMap ref={map} p={p} now={now} busy={busy} act={act} onTarget={setTarget} />
 
-        <ResourceBar p={p} onGood={setGood} />
-        {place === "veneto" && (
-          <NextStepCard
-            p={p}
-            now={now}
-            step={nextStep(p, now)}
-            busy={busy}
-            act={act}
-            onBuild={(recipe) => {
-              setHighlight(recipe);
-              setSheet("new");
-            }}
-          />
-        )}
-        {place !== null && (
-          // The place's head (Lagune): the way back to the map, the place's name.
-          <div className="mx-auto mt-3 flex w-full max-w-md items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPlace(null)}
-              aria-label={t.world.back}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-line text-lg text-cream active:scale-95"
-            >
-              ‹
-            </button>
-            <span className="font-place text-base font-bold uppercase tracking-[0.2em] text-cream">
-              {regionName(place)}
-            </span>
-          </div>
-        )}
-        {place === null ? (
-          <section className="mx-auto mt-4 w-full max-w-md">
-            <Label>{t.world.map}</Label>
-            <WorldMap p={p} now={now} onPlace={setPlace} />
-            <Arsenal p={p} now={now} busy={busy} act={act} />
-          </section>
-        ) : place === "veneto" ? (
-          <section className="mx-auto mt-2 w-full max-w-md">
-            <EmpireOrbit
+      <Hud
+        p={p}
+        now={now}
+        name={account.pseudo ?? t.title}
+        onHouse={() => setSheet("house")}
+        onProduction={() => setSheet("production")}
+      />
+
+      {target ? (
+        <ActionPanel
+          p={p}
+          target={target}
+          now={now}
+          busy={busy}
+          act={act}
+          onOpen={open}
+          onClose={() => setTarget(null)}
+        />
+      ) : (
+        <>
+          {/* Lorenzo's next step, the screen's one gold action, over the round buttons. */}
+          <div className="pointer-events-none absolute inset-x-3 bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+4.25rem)] z-20 flex justify-center">
+            <NextStepCard
+              compact
               p={p}
               now={now}
+              step={step}
               busy={busy}
               act={act}
-              onWorkshop={(id) => setSheet(`workshop:${id}`)}
-              onCasa={() => setSheet("casa")}
-              onFree={() => setSheet("new")}
+              onBuild={(recipe) => {
+                setHighlight(recipe);
+                setSheet("production");
+              }}
             />
-          </section>
-        ) : null}
-        {place === "veneto" && (
-          <>
-            <Sites p={p} now={now} />
-            <div className="mx-auto mt-3 w-full max-w-md">
-              <Slab size="sm" tone="ghost" className="w-full" onClick={() => setSheet("workshops")}>
-                {t.nav.allWorkshops}
-              </Slab>
-            </div>
-          </>
-        )}
-        {place !== null && (
-          <RegionPlace
-            p={p}
-            code={place}
-            now={now}
-            busy={busy}
-            act={act}
-            onBuild={() => setSheet(`new:${place}`)}
-            onConvoy={() => setSheet(`voyage:${place}`)}
+          </div>
+          <RoundButtons
+            onRecenter={() => map.current?.toggle()}
+            onMarket={() => setSheet("market")}
+            onCompany={() => setSheet("company")}
+            onFamily={() => setSheet("family")}
+            dots={{
+              company: claimable(p) || suppliable(p, account.id) > 0 || terraCalls(p, now),
+              family: familyCalls(p),
+            }}
           />
-        )}
-      </div>
+        </>
+      )}
 
       {toast && (
-        <output className="absolute inset-x-4 top-4 z-50 mx-auto block max-w-sm animate-fade bg-night-4 px-4 py-3 text-center text-sm text-cream shadow-lg slab">
+        <output className="absolute inset-x-4 top-20 z-50 mx-auto block max-w-sm animate-fade bg-night-4 px-4 py-3 text-center text-sm text-cream shadow-lg slab">
           {toast}
         </output>
       )}
@@ -276,6 +227,16 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         onClose={close}
         act={act}
       />
+      <ProductionSheet
+        p={p}
+        now={now}
+        open={sheet?.startsWith("production") === true}
+        pane={sheet === "production:vehicles" ? "vehicles" : "buildings"}
+        highlight={highlight}
+        busy={busy}
+        onClose={close}
+        act={act}
+      />
       {sheet?.startsWith("voyage:") && (
         <VoyageSheet
           p={p}
@@ -286,11 +247,28 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
           act={act}
         />
       )}
+      {sheet?.startsWith("region:") && (
+        <Sheet open onClose={close} kicker={t.world.map} title={regionName(sheet.slice(7))}>
+          <RegionPlace
+            p={p}
+            code={sheet.slice(7)}
+            now={now}
+            busy={busy}
+            act={act}
+            onBuild={() => setSheet(`new:${sheet.slice(7)}`)}
+            onConvoy={() => setSheet(`voyage:${sheet.slice(7)}`)}
+          />
+        </Sheet>
+      )}
+      <Sheet open={sheet === "arsenal"} onClose={close} title={t.scene.arsenal}>
+        <Arsenal p={p} now={now} busy={busy} act={act} />
+      </Sheet>
       <CasaSheet
         p={p}
+        now={now}
         open={sheet === "casa"}
         busy={busy}
-        canCasa={canCasa}
+        canCasa={canCasa(p)}
         onClose={close}
         act={act}
       />
@@ -333,50 +311,6 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         />
       )}
       <AwaySheet p={p} open={sheet === "away"} busy={busy} onClose={close} act={act} />
-
-      <TabBar
-        active={tab}
-        labels={{
-          workshops: t.nav.home,
-          venice: t.nav.market,
-          map: t.nav.world,
-          ranking: t.nav.company,
-          conquest: t.nav.family,
-        }}
-        items={[
-          {
-            id: "workshops",
-            icon: Icon.home,
-            // The house: a sheet closes, and the Venetia comes back up close.
-            onClick: () => {
-              close();
-              setPlace("veneto");
-            },
-            dot: relaunch || canCasa,
-          },
-          { id: "venice", icon: Icon.rialto, onClick: () => setSheet("market") },
-          {
-            id: "map",
-            icon: Icon.map,
-            onClick: () => {
-              close();
-              setPlace(null);
-            },
-          },
-          {
-            id: "ranking",
-            icon: Icon.banner,
-            onClick: () => setSheet("company"),
-            dot: claimable(p) || suppliable(p, account.id) > 0 || terraCalls(p, now),
-          },
-          {
-            id: "conquest",
-            icon: Icon.family,
-            onClick: () => setSheet("family"),
-            dot: familyCalls(p),
-          },
-        ]}
-      />
     </div>
   );
 }
@@ -455,7 +389,7 @@ function Sites({ p, now }: { p: EmpirePayload; now: number }) {
   const sites = sitesByEnd(view.house.builds);
   const free = view.buildSlots - sites.length;
   return (
-    <section className="mx-auto mt-2 w-full max-w-md">
+    <section className="mb-4">
       <div className="flex items-baseline justify-between">
         <Label>{t.sites.title}</Label>
         <span className="text-xs text-cream-dim">{free > 0 ? t.sites.free(free) : ""}</span>
@@ -603,103 +537,16 @@ function WorkshopsSheet({
   );
 }
 
-function NewWorkshopSheet({
-  p,
-  open,
-  region,
-  highlight,
-  busy,
-  onClose,
-  act,
-}: SheetProps & { open: boolean; region: string; highlight: string | null }) {
-  const view = p.view;
-  const r = view?.regions.find((x) => x.code === region);
-  const here = (view?.house.workshops ?? []).filter(
-    (w) => (w.region ?? "veneto") === region,
-  ).length;
-  const pending = (view?.house.builds ?? []).filter(
-    (b) => b.kind === "newWorkshop" && (b.region ?? "veneto") === region,
-  ).length;
-  const site =
-    region === "veneto"
-      ? (view?.newWorkshop ?? null)
-      : r && here + pending < r.workshopSlots
-        ? (view?.workshopSite ?? null)
-        : null;
-  // Beyond Venetia, a workshop makes no raw good its region does not make.
-  const allowed = (outputs: Record<string, number>, inputs: Record<string, number>) =>
-    region === "veneto" ||
-    Object.keys(inputs).length > 0 ||
-    Object.keys(outputs).some((g) => r?.produces.includes(g));
-  return (
-    <Sheet
-      open={open}
-      onClose={onClose}
-      kicker={t.workshop.newTitle}
-      title={regionName(region)}
-      summary={site ? undefined : t.workshop.noRoom}
-    >
-      {site && (
-        <ul className="space-y-2">
-          {[...p.catalog]
-            // The workshop the next step points at comes first, its button in gold.
-            .sort(
-              (a, b) =>
-                Number(b.recipes.some((r) => r.code === highlight)) -
-                Number(a.recipes.some((r) => r.code === highlight)),
-            )
-            .flatMap((b) =>
-              b.recipes
-                .filter((x) => allowed(x.outputs, x.inputs))
-                .map((r) => (
-                  <li key={r.code} className="flex items-center gap-3 border-b border-line/60 pb-2">
-                    <GoodsMark code={Object.keys(r.outputs)[0] ?? ""} size={28} />
-                    <span className="flex-1 text-sm text-cream">
-                      {b.name}
-                      <span className="block text-xs text-cream-dim">
-                        {Object.entries(r.outputs)
-                          .map(([g, n]) => `${n} ${goodName(p, g)}`)
-                          .join(", ")}
-                        {Object.keys(r.inputs).length > 0 &&
-                          ` · ${t.workshop.from} ${Object.entries(r.inputs)
-                            .map(([g, n]) => `${n} ${goodName(p, g)}`)
-                            .join(", ")}`}
-                      </span>
-                    </span>
-                    <Slab
-                      size="sm"
-                      tone={r.code === highlight ? "gold" : "ghost"}
-                      busy={busy}
-                      disabled={!affordable(p.cash, site.cost)}
-                      onClick={() => {
-                        void act({
-                          type: "empireBuildWorkshop",
-                          workshopType: b.type,
-                          recipe: r.code,
-                          ...(region !== "veneto" ? { region } : {}),
-                        }).then(onClose);
-                      }}
-                    >
-                      {t.workshop.newAction(d(site.cost))}
-                    </Slab>
-                  </li>
-                )),
-            )}
-        </ul>
-      )}
-    </Sheet>
-  );
-}
-
 /** The Casa tab: the next step, its cost in days of income, its materials, what it asks and opens. */
 function CasaSheet({
   p,
   open,
   busy,
+  now,
   canCasa,
   onClose,
   act,
-}: SheetProps & { open: boolean; canCasa: boolean }) {
+}: SheetProps & { now: number; open: boolean; canCasa: boolean }) {
   const view = p.view;
   if (!view) return null;
   const next = view.nextCasa;
@@ -714,6 +561,7 @@ function CasaSheet({
       title={t.casa.title(view.house.casa)}
       summary={next ? undefined : t.casa.top}
     >
+      <Sites p={p} now={now} />
       {next && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
