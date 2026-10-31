@@ -409,6 +409,8 @@ export const empireSettingsSchema = z.object({
         .array(z.object({ code: z.string(), cell: z.string(), region: z.string() }))
         .prefault([]),
       revealRadius: positive.prefault(2),
+      /** The drawing of the grid: a house of another drawing is taken up again on it. */
+      version: positive.prefault(1),
       /** Each counter already put down makes the next this much dearer. */
       costStepBps: bps.prefault(2_500),
       arsenal: z

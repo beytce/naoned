@@ -10,8 +10,9 @@ import {
   useState,
 } from "react";
 import { artSource } from "../../art/Illustration.js";
+import { CITY_SPOTS } from "../../art/citySpots.js";
 import { GoodsMark } from "../../art/goods.js";
-import { cellCentre, hexPath, neighbours } from "../../art/hexmap.js";
+import { HEX_SIZE, cellCentre, hexPath, neighbours } from "../../art/hexmap.js";
 import {
   MediterraneanGround,
   ROUTES,
@@ -35,11 +36,7 @@ import {
   type Placing,
   type Target,
   centredOn,
-  coverScale,
-  detailOf,
   farCamera,
-  nearScale,
-  nearness,
   placeable,
 } from "./logic.js";
 import { useCamera } from "./useCamera.js";
@@ -55,7 +52,16 @@ export interface EmpireMapHandle {
   far(): void;
 }
 
-const nearOn = (v: Viewport) => centredOn(seatOf("veneto"), nearScale(v), v);
+/** A sector across the screen, as the example's systems (step 4): Venice's, at the start. */
+const sectorOn = (v: Viewport) =>
+  centredOn(
+    seatOf("veneto"),
+    Math.min((v.w * 0.95) / (Math.sqrt(3) * HEX_SIZE), (v.h * 0.62) / (2 * HEX_SIZE)),
+    v,
+  );
+/** Up close on a counter, its workshops in orbit around it. */
+const orbitOn = (at: [number, number]) => (v: Viewport) =>
+  centredOn(at, (Math.min(v.w, v.h) * 0.86) / ORBIT_UNITS, v);
 
 /** The chart is never drawn larger than this across (px): a phone's GPU keeps up with it. */
 const MAX_RASTER = 4_096;
@@ -89,16 +95,17 @@ export const EmpireMap = forwardRef<
   const mist = useRef<HTMLDivElement>(null);
   const ground = useRef<HTMLDivElement>(null);
   const pins = useRef<HTMLDivElement>(null);
-  const orbit = useRef<HTMLDivElement>(null);
-  const [near, setNear] = useState(false);
-  const nearNow = useRef(false);
+  // The counter whose workshops are deployed around it, opened at its touch (never by a zoom).
+  const [opened, setOpened] = useState<string | null>(null);
+  const openedNow = useRef<string | null>(null);
+  openedNow.current = opened;
   const view = p.view;
   const casa = view?.house.casa ?? 1;
   const farOn = (v: Viewport) => farCamera(p, v);
   // The scale the chart is drawn at; between two rests the GPU scales it.
   const [base, setBase] = useState(() => {
     const v = { w: window.innerWidth, h: window.innerHeight };
-    return Math.min(MAX_RASTER / CHART.w, casa <= 2 ? nearScale(v) : coverScale(v) * 1.3);
+    return Math.min(MAX_RASTER / CHART.w, sectorOn(v).s);
   });
   const drawn = useRef(base);
   drawn.current = base;
@@ -112,43 +119,47 @@ export const EmpireMap = forwardRef<
     if (mist.current) mist.current.style.transform = `translate3d(${tx * 0.5}px, ${ty * 0.5}px, 0)`;
     const moved = `translate3d(${tx}px, ${ty}px, 0) scale(${k})`;
     if (ground.current) ground.current.style.transform = moved;
-    const near = nearness(s, v);
     const layer = pins.current;
     if (layer) {
       layer.style.transform = moved;
-      // The places keep their size on screen; Venice's own mark gives way to its house.
+      // The places keep their size on screen.
       layer.style.setProperty("--inv", String(1 / k));
-      layer.style.setProperty("--home", String(1 - near));
     }
-    const o = orbit.current;
-    if (o) {
-      o.style.opacity = String(near);
-      o.style.pointerEvents = near > 0.6 ? "auto" : "none";
-    }
-    const isNear = detailOf(s, v) === "near";
-    if (isNear !== nearNow.current) {
-      nearNow.current = isNear;
-      setNear(isNear);
-    }
+    void v;
   }, []);
 
-  // A new house starts up close on its own; an older one on the map.
+  // Every house starts on Venice's sector, across the screen.
   const camera = useCamera({
     root,
-    initial: (v) => (casa <= 2 ? nearOn(v) : farOn(v)),
+    initial: sectorOn,
     onPaint: paint,
-    onDoubleTap: () => camera.easeTo(nearNow.current ? farOn : nearOn),
-    onTap: () => onTarget(null),
+    onDoubleTap: () => camera.easeTo(farOn),
+    // The sea touched: the panel and the deployed workshops fold away.
+    onTap: () => {
+      onTarget(null);
+      setOpened(null);
+    },
     // At rest: the chart drawn again at the camera's scale, when it has moved far from it.
     onRest: (cam) => {
       const want = Math.min(MAX_RASTER / CHART.w, cam.s);
       if (Math.abs(want / drawn.current - 1) > 0.12) setBase(want);
     },
   });
+  /** A counter touched: the camera comes to it and its workshops deploy around it. */
+  const deploy = (region: string, at: [number, number]) => {
+    setOpened(region);
+    camera.easeTo(orbitOn(at));
+  };
   useImperativeHandle(ref, () => ({
-    toggle: () => camera.easeTo(nearNow.current ? farOn : nearOn),
-    home: () => camera.easeTo(nearOn),
-    far: () => camera.easeTo(farOn),
+    toggle: () => {
+      if (openedNow.current) setOpened(null);
+      camera.easeTo(openedNow.current ? sectorOn : farOn);
+    },
+    home: () => deploy("veneto", seatOf("veneto")),
+    far: () => {
+      setOpened(null);
+      camera.easeTo(farOn);
+    },
   }));
   // The places put on the chart at its scale, when they or the scale change (never per frame).
   useLayoutEffect(() => {
@@ -179,14 +190,20 @@ export const EmpireMap = forwardRef<
   );
   if (!view) return null;
   const map = view.map;
-  const [vx, vy] = seatOf("veneto");
+  // The cities under the workshops deployed give way to them.
+  const centre = opened ? orbitAt(p, opened) : null;
+  const underOrbit = (code: string, cell: string) => {
+    if (!centre) return false;
+    const [x, y] = CITY_SPOTS[code] ?? cellCentre(cell);
+    return Math.hypot(x - centre[0], y - centre[1]) < ORBIT_UNITS / 2;
+  };
 
   return (
     <div
       ref={root}
       className="absolute inset-0 touch-none select-none overflow-hidden bg-[#08111F]"
       data-map="empire"
-      data-near={near || undefined}
+      data-orbit={opened ?? undefined}
       data-placing={placing?.kind}
     >
       {/* The night, far behind: a glow over the lagoon and its scattered lights. */}
@@ -227,31 +244,45 @@ export const EmpireMap = forwardRef<
         className="map-layer pointer-events-none absolute left-0 top-0 origin-top-left"
         style={{ width: CHART.w * base, height: CHART.h * base }}
       >
-        {/* Venice's house, opening where it stands as the map comes near (the map's own size). */}
-        <div
-          ref={orbit}
-          className="absolute -translate-x-1/2 -translate-y-1/2 opacity-0"
-          style={{ left: vx * base, top: vy * base, width: ORBIT_UNITS * base }}
-          data-orbit-near={near || undefined}
-        >
-          {near && (
-            <EmpireOrbit
-              p={p}
-              now={now}
-              busy={busy}
-              act={act}
-              onWorkshop={(id) => onTarget({ kind: "workshop", id })}
-              onCasa={() => onTarget({ kind: "casa" })}
-              onFree={() => onTarget({ kind: "free" })}
-            />
-          )}
-        </div>
+        {/* The workshops of the counter touched, deployed around it (the map's own size). */}
+        {opened &&
+          (() => {
+            const [ox, oy] = orbitAt(p, opened);
+            return (
+              <div
+                key={opened}
+                className="orbit-in absolute -translate-x-1/2 -translate-y-1/2"
+                style={{ left: ox * base, top: oy * base, width: ORBIT_UNITS * base }}
+                data-orbit-open={opened}
+              >
+                <div className="pointer-events-auto">
+                  <EmpireOrbit
+                    p={p}
+                    now={now}
+                    busy={busy}
+                    act={act}
+                    region={opened}
+                    onWorkshop={(id) => onTarget({ kind: "workshop", id })}
+                    onCasa={() =>
+                      onTarget(
+                        opened === "veneto" ? { kind: "casa" } : { kind: "region", code: opened },
+                      )
+                    }
+                    onFree={() =>
+                      opened === "veneto"
+                        ? onTarget({ kind: "free" })
+                        : onTarget({ kind: "region", code: opened })
+                    }
+                  />
+                </div>
+              </div>
+            );
+          })()}
         <Names p={p} />
         <HomeMark
           p={p}
-          onClick={() =>
-            nearNow.current ? onTarget({ kind: "region", code: "veneto" }) : camera.easeTo(nearOn)
-          }
+          hidden={opened === "veneto"}
+          onClick={() => deploy("veneto", seatOf("veneto"))}
         />
         {map.cities
           .filter((c) => c.code !== "venezia")
@@ -262,16 +293,23 @@ export const EmpireMap = forwardRef<
               code={c.code}
               cell={c.cell}
               region={c.region}
+              hidden={underOrbit(c.code, c.cell)}
               onClick={() => onTarget({ kind: "city", code: c.code })}
             />
           ))}
         {map.posts.map((x) => {
-          const [px, py] = cellCentre(x.cell);
+          const [px, py] = postSpot(x.cell);
           return (
             <div key={`p${x.cell}`} data-at={`${px},${py}`} className="map-pin" data-post={x.cell}>
-              <span className="flex h-6 w-6 items-center justify-center rounded-sm bg-night-3 text-gold ring-1 ring-gold/70 shadow-md shadow-black/50 [&_svg]:h-4 [&_svg]:w-4">
+              {/* A counter touched: its region's workshops deploy around it. */}
+              <button
+                type="button"
+                onClick={() => deploy(x.region, [px, py])}
+                aria-label={t.placing.postCard}
+                className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-lg bg-night-3 text-gold ring-2 ring-gold/70 shadow-md shadow-black/50 active:scale-95 [&_svg]:h-5 [&_svg]:w-5"
+              >
                 {Icon.banner()}
-              </span>
+              </button>
             </div>
           );
         })}
@@ -413,20 +451,58 @@ const Chart = memo(function Chart({
           />
         ))}
       </g>
-      {/* The sectors seen: a tile each, outlined. */}
-      <g data-cells>
-        {lands.map(([cell]) => (
+      {/* The sectors seen: a tile each, washed in its region's colour, grained, hatched with
+          fields and hills, lit in its middle and shaded to its edges, outlined. */}
+      <defs>
+        <pattern id="tex-grain" width="5" height="5" patternUnits="userSpaceOnUse">
+          <circle cx="1" cy="1.2" r="0.32" fill="#F6E8CC" opacity="0.18" />
+          <circle cx="3.6" cy="3.4" r="0.24" fill="#BFE3FF" opacity="0.14" />
+        </pattern>
+        <pattern
+          id="tex-fields"
+          width="6"
+          height="6"
+          patternUnits="userSpaceOnUse"
+          patternTransform="rotate(28)"
+        >
+          <path d="M0 2 H6 M0 4.6 H3.5" stroke="#F6E8CC" strokeOpacity="0.07" strokeWidth="0.5" />
+        </pattern>
+        <pattern id="tex-hills" width="18" height="12" patternUnits="userSpaceOnUse">
           <path
-            key={cell}
-            d={hexPath(cell, 1.2)}
-            fill="#BFE3FF"
-            fillOpacity="0.05"
+            d="M1 9 Q5 4 9 9 M10 6 Q13 2.5 16 6"
+            fill="none"
             stroke="#BFE3FF"
-            strokeOpacity="0.3"
-            strokeWidth="1.2"
-            vectorEffect="non-scaling-stroke"
+            strokeOpacity="0.1"
+            strokeWidth="0.6"
           />
-        ))}
+        </pattern>
+        <radialGradient id="tex-light" cx="45%" cy="40%" r="65%">
+          <stop offset="0%" stopColor="#F6E8CC" stopOpacity="0.14" />
+          <stop offset="60%" stopColor="#F6E8CC" stopOpacity="0" />
+          <stop offset="100%" stopColor="#060C17" stopOpacity="0.45" />
+        </radialGradient>
+      </defs>
+      <g data-cells>
+        {lands.map(([cell, c]) => {
+          const d = hexPath(cell, 1.2);
+          return (
+            <g key={cell}>
+              <path d={d} fill={tintOf(c.region)} fillOpacity="0.12" />
+              <path d={d} fill="url(#tex-fields)" />
+              <path d={d} fill="url(#tex-hills)" />
+              <path d={d} fill="url(#tex-grain)" />
+              <path d={d} fill="url(#tex-light)" />
+              <path
+                d={d}
+                fill="none"
+                stroke={tintOf(c.region)}
+                strokeOpacity="0.45"
+                strokeWidth="1.4"
+                vectorEffect="non-scaling-stroke"
+              />
+            </g>
+          );
+        })}
       </g>
       {ROUTES.filter((r) => seatSeen(r.from) && seatSeen(r.to)).map((r) => {
         const lit =
@@ -516,11 +592,51 @@ function seatCellOf(p: EmpirePayload, region: string): string {
   return p.view?.map.cities.find((c) => c.region === region)?.cell ?? "";
 }
 
-/** Venice on the map: the house's gold sun, its Casa written in it. */
-function HomeMark({ p, onClick }: { p: EmpirePayload; onClick: () => void }) {
+/** Each region's colour on the map: its sectors' wash and its cities' globes. */
+const REGION_TINT: Record<string, string> = {
+  veneto: "#E8B24C",
+  lombardia: "#7DB596",
+  friuli: "#6EC8F5",
+  romagna: "#C98E52",
+  dalmazia: "#4C8366",
+  germania: "#93B95C",
+  grecia: "#F6E8CC",
+  levante: "#E36A4A",
+  costantinopoli: "#8E6BD8",
+  fiandra: "#A6A3B5",
+};
+const tintOf = (region: string) => REGION_TINT[region] ?? "#BFE3FF";
+
+/** Where a counter stands in its sector: below its middle, clear of the cities. */
+function postSpot(cell: string): [number, number] {
+  const [x, y] = cellCentre(cell);
+  return [x + HEX_SIZE * 0.25, y + HEX_SIZE * 0.5];
+}
+
+/** Where a counter's workshops deploy: Venice's Casa, or the region's first counter. */
+function orbitAt(p: EmpirePayload, region: string): [number, number] {
+  if (region === "veneto") return seatOf("veneto");
+  const post = p.view?.map.posts.find((x) => x.region === region);
+  return post ? postSpot(post.cell) : seatOf(region);
+}
+
+/** Venice on the map: the house's gold sun, its Casa written in it; touched, its workshops deploy. */
+function HomeMark({
+  p,
+  hidden,
+  onClick,
+}: {
+  p: EmpirePayload;
+  hidden: boolean;
+  onClick: () => void;
+}) {
   const [x, y] = seatOf("veneto");
   return (
-    <div data-at={`${x},${y}`} data-home className="map-pin map-home">
+    <div
+      data-at={`${x},${y}`}
+      data-home
+      className={`map-pin transition-opacity duration-[var(--t-base)] ${hidden ? "pointer-events-none opacity-0" : ""}`}
+    >
       <button
         type="button"
         onClick={onClick}
@@ -528,7 +644,7 @@ function HomeMark({ p, onClick }: { p: EmpirePayload; onClick: () => void }) {
         aria-label={t.world.venice}
         className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
       >
-        <span className="flex h-14 w-14 items-center justify-center rounded-full font-display text-sm font-bold text-ink shadow-lg shadow-black/50 [background:radial-gradient(circle_at_34%_30%,rgb(var(--gold-soft))_0%,rgb(var(--gold))_50%,rgb(var(--gold-deep))_100%)]">
+        <span className="sun-breathe flex h-16 w-16 items-center justify-center rounded-full font-display text-base font-bold text-ink shadow-[0_0_32px_rgb(var(--gold)/0.45)] [background:radial-gradient(circle_at_34%_30%,rgb(var(--gold-soft))_0%,rgb(var(--gold))_50%,rgb(var(--gold-deep))_100%)]">
           {p.view?.house.casa ?? 1}
         </span>
         <span className="map-name">{t.world.venice}</span>
@@ -538,31 +654,35 @@ function HomeMark({ p, onClick }: { p: EmpirePayload; onClick: () => void }) {
 }
 
 /**
- * A city found on the map: its mark (the best paid good of its region where the house trades,
- * else a plain dot), its name; a region's not open yet in gold, the counter to put down there.
+ * A city found on the map, a globe at its real place in its sector (as the example's planets):
+ * its region's colour, a ring of lagoon where the house trades, of gold where a counter would
+ * open it; its region's best paid good on it.
  */
 function CityMark({
   p,
   code,
   cell,
   region,
+  hidden,
   onClick,
 }: {
   p: EmpirePayload;
   code: string;
   cell: string;
   region: string;
+  hidden: boolean;
   onClick: () => void;
 }) {
   const r = p.view?.regions.find((x) => x.code === region);
   const open = (r?.counter ?? 0) > 0;
   const best = open ? bestQuote(p, region) : null;
-  const [x, y] = cellCentre(cell);
-  // Within Venice's orbit, a city gives way to the house as it opens.
-  const [vx, vy] = seatOf("veneto");
-  const inOrbit = Math.hypot(x - vx, y - vy) < ORBIT_UNITS / 2;
+  const [x, y] = CITY_SPOTS[code] ?? cellCentre(cell);
+  const tint = tintOf(region);
   return (
-    <div data-at={`${x},${y}`} className={`map-pin ${inOrbit ? "map-home" : ""}`}>
+    <div
+      data-at={`${x},${y}`}
+      className={`map-pin transition-opacity duration-[var(--t-base)] ${hidden ? "pointer-events-none opacity-0" : ""}`}
+    >
       <button
         type="button"
         onClick={onClick}
@@ -573,9 +693,16 @@ function CityMark({
         className="pointer-events-auto flex flex-col items-center gap-0.5 active:scale-95"
       >
         <span
-          className={`flex h-11 w-11 items-center justify-center rounded-full bg-night-3 font-display text-xs font-bold shadow-lg shadow-black/50 ${open ? "text-cream ring-2 ring-lagoon" : "text-gold ring-2 ring-gold"}`}
+          className={`relative flex h-11 w-11 items-center justify-center rounded-full shadow-lg shadow-black/60 ring-2 ${open ? "ring-lagoon" : "ring-gold/80"}`}
+          style={{
+            background: `radial-gradient(circle at 34% 30%, #F6E8CC 0%, ${tint} 38%, #16263E 100%)`,
+          }}
         >
-          {best ? <GoodsMark code={best} size={18} /> : open ? "•" : "+"}
+          {best && (
+            <span className="rounded-full bg-night/70 p-0.5">
+              <GoodsMark code={best} size={18} />
+            </span>
+          )}
         </span>
         <span className="map-name">{t.cityNames[code] ?? code}</span>
       </button>

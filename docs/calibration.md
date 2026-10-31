@@ -1966,6 +1966,21 @@ Le nouveau sort un peu plus tôt de la première bande, car il ne paie plus de F
 | Prochain palier de Casa, en jours de revenu | 4,3 à 9,2 | 4,5 à 9,4 |
 | Part du métier : négociant, exploitant, armateur | 26,9–30,2 %, 24,6–27,0 %, 40,9–44,5 % | 26,3–28,0 %, 25,6–25,9 %, 44,7–47,2 % ✓ |
 
+### Les secteurs habités (31 octobre 2026, le soir)
+
+- **La grille** passe à une trentaine de grands secteurs (hexagones de 34), et **plusieurs villes par secteur** : les 34 villes reviennent. Le secteur de Venise en porte sept dès le départ, qui se partagent le carnet de la Vénétie.
+- **La Casa ouvre le secteur de la région le plus proche du connu**, et plus son siège isolé. La grille porte une version (`map.version` 3) ; une Maison d'une ancienne version est reprise sans rien perdre.
+
+**Retenu sans réglage** : **9, 9 et 9 cibles sur 12**, comme à l'étape précédente. Les cibles manquées restent les mêmes (palier de Casa en jours de revenu, puits ÷ sources des jeunes, bruts vendus à Venise).
+
+| Mesure | Secteurs et Campo | Secteurs habités |
+| --- | --- | --- |
+| Prochain palier de Casa, en jours de revenu | 4,5 à 9,4 | 4,5 à 9,3 |
+| Bruts des jeunes vendus à Venise | — | 6,1 à 6,9 % |
+| Part du métier : négociant, exploitant, armateur | 26,3–28,0 %, 25,6–25,9 %, 44,7–47,2 % | 26,7–27,6 %, 25,5–26,0 %, 45,0–46,7 % ✓ |
+| Marge d'un voyage, part des commandes | — | 971 à 1 065 d, 31 à 32 % ✓ |
+| Convois de la Muda en colleganza | — | 25 à 28,5 % ✓ |
+
 ### Refaire le calibrage
 
 ```

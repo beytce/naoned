@@ -349,6 +349,8 @@ export interface EmpireHouse {
   counters?: Record<string, number>;
   /** The map's cells the house sees (« q,r »): Venetia's, and what its counters revealed. */
   revealed?: string[];
+  /** The drawing of the grid those cells are of. */
+  mapVersion?: number;
   /** The counters put down on the map, each on its cell, in its region. */
   posts?: { cell: string; region: string }[];
   /** The Arsenal's cell, on a coast. */
