@@ -1,4 +1,5 @@
 import type { TerraAction } from "../game/types.js";
+import type { PortaAction, PortaView } from "./porta/types.js";
 
 /** The empire's view as `/api/empire` sends it (amounts in deniers, as strings). */
 
@@ -84,6 +85,8 @@ export interface EmpireView {
   away: { since: number; ready: Record<string, number>; sitesDone: number } | null;
   regions: EmpireRegion[];
   map: EmpireMapView;
+  /** The Porta and its arms (docs/plan-porta.md). */
+  porta?: PortaView;
   vehicles: {
     shop: {
       type: string;
@@ -325,6 +328,7 @@ export interface EmpirePayload {
 }
 
 export type EmpireAction =
+  | PortaAction
   | { type: "empireBuildCasa" }
   | { type: "empireBuildWorkshop"; workshopType: string; recipe: string; region?: string }
   | { type: "empireUpgrade"; workshopId: string }

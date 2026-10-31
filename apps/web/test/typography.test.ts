@@ -52,6 +52,10 @@ function isLabel(opening: ts.JsxOpeningElement): boolean {
  * one of them is a title too, as long as none of its arguments formats a datum: « ACTE III »,
  * « NIVEAU 4 », a city's name. Any other value in a label is a datum.
  */
+/** A table of texts: fr, and the Porta's own words (src/empire/porta/texts.ts). */
+const isText = (path: string | null | undefined) =>
+  !!path && (path.startsWith("fr.") || path.startsWith("pt."));
+
 const TITLES = new Set([
   // Texts of fr called with a number or a name: « ACTE III », « NIVEAU 4 », « SAISON D'AVRIL ».
   "fr.game.acts.kicker",
@@ -275,17 +279,17 @@ function shown(e: ts.Expression): string | null {
   if (ts.isElementAccessExpression(e)) {
     // A text of fr picked by a code (fr.game.events[code]), a numeral, a glyph.
     const head = qualify(e.expression);
-    return head?.startsWith("fr.") || (head && TITLES.has(head)) ? null : e.getText();
+    return isText(head) || (head && TITLES.has(head)) ? null : e.getText();
   }
   if (ts.isCallExpression(e)) {
     const path = qualify(e.expression);
     if (path && TITLES.has(path)) return formats(e) ? e.getText() : null;
     // A zero-argument text of fr (t().title is a property, not this).
-    if (path?.startsWith("fr.") && e.arguments.length === 0) return null;
+    if (isText(path) && e.arguments.length === 0) return null;
     return e.getText();
   }
   const path = qualify(e);
-  if (path?.startsWith("fr.") || (path && TITLES.has(path))) return null;
+  if (isText(path) || (path && TITLES.has(path))) return null;
   return `${e.getText()} [${path}]`;
 }
 

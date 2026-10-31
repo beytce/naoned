@@ -4,6 +4,7 @@ import {
   type EmpireSettingsInput,
   createBattle,
   empireHouseAt,
+  empireView,
   parseEmpireSettings,
   portaEntrant,
   portaTravelMinutes,
@@ -231,5 +232,26 @@ describe("the antiquarian", () => {
     // A new week starts again from zero.
     w.advance(7 * 24 * HOUR);
     expect(weekPoints(house(w), w.now)).toBe(0);
+  });
+});
+
+describe("the Porta's view", () => {
+  it("shows the tiers, the vehicles' places, the components and their carriers", () => {
+    const { w, rider, cart, lances } = docked();
+    const v = empireView(w.ctx, w.state, "a", w.now)?.porta;
+    expect(v).toMatchObject({ cell: "1,1", level: 1, best: 0, travelMinutes: 10 });
+    expect(v?.tiers.map((t) => t.open)).toEqual([true, false, false]);
+    expect(v?.vehicles).toEqual([
+      expect.objectContaining({
+        id: rider,
+        place: "porta",
+        stats: expect.objectContaining({ hp: 1_000 }),
+      }),
+    ]);
+    expect(v?.transports).toEqual([
+      expect.objectContaining({ id: cart, hold: 50, place: "porta" }),
+    ]);
+    expect(v?.inventory).toEqual([expect.objectContaining({ id: lances, on: rider })]);
+    expect(v?.relicPrices.rare).toEqual({ price: 500n * D, points: 3, loadS: 20 });
   });
 });

@@ -36,3 +36,4 @@ export * from "./porta/battle/map.js";
 export * from "./porta/battle/ai.js";
 export * from "./porta/battle/sim.js";
 export * from "./porta/porta.js";
+export * from "./porta/view.js";
