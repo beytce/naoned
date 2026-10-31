@@ -34,10 +34,16 @@ export function PlacingBar({
       data-placing-bar={placing.kind}
     >
       <h3 className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
-        {placing.kind === "arsenal" ? t.arsenal : t.post}
+        {placing.kind === "arsenal" ? t.arsenal : placing.kind === "camp" ? t.camp : t.post}
       </h3>
       <p className="mt-1 text-xs text-cream-dim">
-        {none ? t.none : placing.kind === "arsenal" ? t.hintArsenal : t.hintPost}
+        {none
+          ? t.none
+          : placing.kind === "arsenal"
+            ? t.hintArsenal
+            : placing.kind === "camp"
+              ? t.hintCamp
+              : t.hintPost}
       </p>
       <div className="mt-3 flex gap-2">
         <Slab size="md" tone="ghost" onClick={onCancel}>
@@ -51,7 +57,7 @@ export function PlacingBar({
           disabled={!picked || !cost || !affordable(p.cash, cost)}
           onClick={onPlace}
         >
-          {cost ? t.here(d(cost)) : placing.kind === "arsenal" ? t.arsenal : t.post}
+          {cost ? t.here(d(cost)) : t.post}
         </Slab>
       </div>
     </section>

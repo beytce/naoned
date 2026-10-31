@@ -27,7 +27,9 @@ afterAll(async () => {
 async function start() {
   world = await GameWorld.open(database.db, () => now, {
     empire: true,
-    settingsOverride: { terraferma: { live: true } },
+    // The Campo, the door of the Terraferma, is tested on its own (empire.test.ts): here the
+    // theatres themselves.
+    settingsOverride: { terraferma: { live: true }, empire: { map: { camp: null } } },
   });
   app = await buildApp({
     db: database.db,

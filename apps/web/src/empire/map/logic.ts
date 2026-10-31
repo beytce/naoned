@@ -112,7 +112,7 @@ export function hudOf(p: EmpirePayload): { id: "ducats" | "favour" | "seals"; va
 }
 
 /** What may be put on the map: a counter, or the Arsenal. */
-export type Placing = { kind: "post" | "arsenal"; region?: string };
+export type Placing = { kind: "post" | "arsenal" | "camp"; region?: string };
 
 /**
  * The cells where the house may put what it places: for a counter, the land cells it sees, of a
@@ -129,14 +129,17 @@ export function placeable(p: EmpirePayload, placing: Placing): string[] {
     ...map.posts.map((x) => x.cell),
     ...map.sites.map((x) => x.cell),
     ...(map.arsenal ? [map.arsenal] : []),
+    ...(map.camp ? [map.camp] : []),
   ]);
   return Object.entries(map.cells)
     .filter(([cell, c]) =>
       placing.kind === "arsenal"
         ? c.coast && !taken.has(cell)
-        : reached.has(c.region) &&
-          !taken.has(cell) &&
-          (placing.region === undefined || c.region === placing.region),
+        : placing.kind === "camp"
+          ? !taken.has(cell)
+          : reached.has(c.region) &&
+            !taken.has(cell) &&
+            (placing.region === undefined || c.region === placing.region),
     )
     .map(([cell]) => cell)
     .sort();
@@ -147,6 +150,7 @@ export function placingCost(p: EmpirePayload, placing: Placing, cell: string): s
   const view = p.view;
   if (!view) return null;
   if (placing.kind === "arsenal") return view.map.arsenalSite?.cost ?? null;
+  if (placing.kind === "camp") return view.map.campSite?.cost ?? null;
   const region = view.map.cells[cell]?.region;
   return view.regions.find((r) => r.code === region)?.postCost ?? null;
 }

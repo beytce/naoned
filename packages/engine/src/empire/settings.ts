@@ -415,6 +415,8 @@ export const empireSettingsSchema = z.object({
         .object({ costDucats: qty, casa: positive, minutes: qty })
         .nullable()
         .prefault(null),
+      /** The Campo, on a land cell: the door of the Terraferma (decision of 31 October 2026). */
+      camp: z.object({ costDucats: qty, casa: positive, minutes: qty }).nullable().prefault(null),
     })
     .prefault({}),
   /** The young houses' raw goods sell this much dearer, up to a Casa (CADRAGE-v3 § 6). */

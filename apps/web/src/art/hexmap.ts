@@ -6,7 +6,7 @@ import { WORLD_VIEW } from "./mediterranean.js";
  * engine knows the cells (packages/engine/src/themes/venice1450.map.ts, written by
  * scripts/hexmap.ts from this grid); the screen knows where they lie.
  */
-export const HEX_SIZE = 11;
+export const HEX_SIZE = 22;
 const W = Math.sqrt(3) * HEX_SIZE;
 const H = 1.5 * HEX_SIZE;
 

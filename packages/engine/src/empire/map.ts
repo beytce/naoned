@@ -126,7 +126,13 @@ export function bookShareBps(h: EmpireHouse, region: string, s: EmpireSettings):
  * coast when it has a ship. Never undoes what it already has.
  */
 export function ensureMap(h: EmpireHouse, s: EmpireSettings): void {
-  if (!hasMap(s) || h.revealed) return;
+  if (!hasMap(s)) return;
+  // A house that already played the Terraferma keeps its door: its Campo in Venetia.
+  if ((h.terraBest || h.terraSeals) && !h.camp) {
+    const home = regionCells(s, HOME)[0];
+    if (home) h.camp = home;
+  }
+  if (h.revealed) return;
   const seen = new Set(regionCells(s, HOME));
   const posts: { cell: string; region: string }[] = [];
   for (const region of Object.keys(h.counters ?? {})) {
@@ -219,6 +225,31 @@ export function buildArsenal(tx: Tx, playerId: PlayerId, cell: string): void {
   if (h.casa < a.casa) fail("requirement_unmet");
   const site = openSite(tx, playerId, h, arsenalCost(s), {}, a.minutes, 0);
   h.builds.push({ kind: "arsenal", level: 1, region: c.region, cell, ...site });
+}
+
+/**
+ * Puts the Campo on a land cell the house sees, with nothing else on it, from its Casa: the door
+ * of the Terraferma (decision of the owner, 31 October 2026).
+ */
+export function buildCamp(tx: Tx, playerId: PlayerId, cell: string): void {
+  const s = empireSettings(tx.ctx);
+  const h = ownHouse(tx, playerId);
+  ensureMap(h, s);
+  const camp = s.map.camp;
+  if (!camp) fail("unknown_building_type");
+  const c = s.map.cells[cell];
+  if (!c) fail("unknown_cell");
+  if (!revealedOf(h, s).has(cell)) fail("hidden_cell");
+  if (h.camp || h.builds.some((b) => b.kind === "camp")) fail("built");
+  if (h.casa < camp.casa) fail("requirement_unmet");
+  const price = BigInt(camp.costDucats) * DENIERS_PER_DUCAT;
+  const site = openSite(tx, playerId, h, price, {}, camp.minutes, 0);
+  h.builds.push({ kind: "camp", level: 1, region: c.region, cell, ...site });
+}
+
+/** The Campo asked by the Terraferma, in a world that sets one. */
+export function checkCamp(h: EmpireHouse, s: EmpireSettings): void {
+  if (hasMap(s) && s.map.camp && !h.camp) fail("no_camp");
 }
 
 /** The Arsenal's ducats, in deniers. */

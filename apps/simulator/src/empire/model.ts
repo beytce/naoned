@@ -49,7 +49,16 @@ export interface Voyage {
 }
 
 export interface Build {
-  kind: "casa" | "workshop" | "newWorkshop" | "counter" | "vehicle" | "galley" | "post" | "arsenal";
+  kind:
+    | "casa"
+    | "workshop"
+    | "newWorkshop"
+    | "counter"
+    | "vehicle"
+    | "galley"
+    | "post"
+    | "arsenal"
+    | "camp";
   /** The workshop's index, the counter's region, the vehicle's type… */
   target: string;
   endsAt: number;
@@ -83,6 +92,8 @@ export interface House {
   revealed: Set<string>;
   posts: number;
   arsenal: boolean;
+  /** Its Campo: the door of the Terraferma. */
+  camp: boolean;
   vehicles: Vehicle[];
   galleys: number;
   modules: Record<string, number>;

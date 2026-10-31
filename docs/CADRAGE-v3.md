@@ -110,17 +110,18 @@ Les dix régions, dans l'ordre d'ouverture :
 
 **Quatre sont ouvertes au lancement** : la Vénétie, la Lombardie, le Frioul et Istrie, la Romagne et les Marches. Les autres s'ouvrent au fil des ères (§ 4.3).
 
-**La carte** (décision du porteur du 31 octobre 2026, « la carte au centre du jeu ») est une grille d'hexagones sur la Méditerranée. Chaque case de terre appartient à une région ; une case que la mer touche est une côte.
+**La carte** (décision du porteur du 31 octobre 2026, « la carte au centre du jeu ») est une grille de **grands secteurs** hexagonaux sur la Méditerranée : 63 secteurs de terre, chacun dans une région. Chaque secteur porte au plus une ville. Un secteur que la mer touche est une côte.
 
 - **Ce qu'on voit.** Au départ, les cases de la Vénétie et leurs villes. Le reste est dans le brouillard, sauf le **siège de chaque région que la Casa a atteinte** : la nouvelle en vient à Venise, par terre ou par mer.
 - **Ouvrir une région**, c'est **poser un comptoir** sur une case qu'on voit, d'une région dont la Casa est atteinte :
   1. on le paie en ducats : l'ancien prix de la charte de la région, **plus cher d'un quart pour chaque comptoir déjà posé** ;
   2. on fait le voyage d'ouverture, qu'on regarde avancer sur la carte ;
-  3. il se dresse et **révèle les cases à deux pas autour**.
+  3. il se dresse et **révèle les six secteurs voisins**.
 
   Le premier comptoir d'une région l'ouvre. Les suivants y découvrent ses autres cases.
 - **Les villes cachées.** Chaque région a de deux à quatre villes, sur leurs cases. Une ville trouvée reçoit des livraisons, et porte **sa part du carnet de la région**. Toutes les villes trouvées font le carnet entier.
 - **L'Arsenal** se pose une fois, sur une côte qu'on voit, dès la Casa de la première marciliana. Les navires s'y construisent.
+- **Le Campo** se pose une fois, sur un secteur qu'on voit, dès la Casa 4. Il **ouvre la Terraferme** : sans lui, on n'entre ni dans un théâtre ni dans la Contesa.
 
 **Stato da Mar ou Stato da Terra** ; Frioul et Istrie | Mois 1 |
 | 9–10 | 12 à 18 h | Marciliana, Romagne et Marches ; l'Arsenal privé et la Dalmatie | Mois 1,5 à 2,5 |
@@ -586,6 +587,12 @@ Le porteur, après avoir joué : « le jeu est devenu vraiment nul », il faut u
 - **l'ordre** : l'écran d'abord, le moteur ensuite.
 
 La charte en Faveur disparaît (§ 3.4). Les effets qui l'allégeaient (lettres, ambassade) allègent désormais le prix du comptoir.
+
+**Le même jour, l'après-midi**, après avoir joué la carte :
+- **Lorenzo ne guide que jusqu'à la Casa 2.** Ensuite, plus aucun bouton ne joue à la place du joueur. Il ne reste qu'un « ? » qui donne son conseil, en mots.
+- **La carte en grands secteurs**, comme l'exemple : une tuile par secteur vu, et les secteurs voisins inconnus en silhouettes.
+- **La Terraferme devient un bâtiment** à poser sur la carte, le Campo, dès la Casa 4.
+- **Un passage d'expert UX** sur tout l'écran : la fluidité de la carte, les feuilles jusqu'en bas, les transitions.
 
 ## 13. Le chemin
 

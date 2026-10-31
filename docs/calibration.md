@@ -1951,6 +1951,21 @@ La carte ne déplace presque rien : la charte est remplacée à prix égal, et l
 
 Le nouveau sort un peu plus tôt de la première bande, car il ne paie plus de Faveur et ouvre la Lombardie dès sa Casa. Le négociant passe au-dessus de 25 % sur les trois graines. L'exploitant de la graine 3 frôle la cible (24,6 % pour 25 %), comme le négociant de la graine 1 à l'étape 7a : ce sont des écarts de graine, à surveiller.
 
+### La carte en grands secteurs, et le Campo (31 octobre 2026, après-midi)
+
+- **La grille** passe à 63 grands secteurs de terre, avec une ville au plus par secteur (25 villes). Un comptoir révèle maintenant les six secteurs voisins (`revealRadius` 1).
+- **Le Campo** (Casa 4, 4 h) ouvre la Terraferme. Le simulateur le bâtit avant la première semaine de théâtre ; sans lui, la Maison ne joue pas.
+
+**Premier essai, le Campo à 1 200 ducats** : 8, 8 et 8 cibles sur 12. L'exploitant passe juste sous sa cible (24,3 à 25,0 %) : le Campo prend sur ses premiers ducats, qui vont d'habitude aux gisements.
+
+**Retenu, le Campo à 600 ducats** : **9, 9 et 9 cibles sur 12**, une de plus qu'à l'étape 2 (9, 9 et 8).
+
+| Mesure | Étape 2 | Secteurs et Campo |
+| --- | --- | --- |
+| Nouveau hors de la première bande | 4,3 à 5,6 mois | 4,6 à 5,0 mois ✓ |
+| Prochain palier de Casa, en jours de revenu | 4,3 à 9,2 | 4,5 à 9,4 |
+| Part du métier : négociant, exploitant, armateur | 26,9–30,2 %, 24,6–27,0 %, 40,9–44,5 % | 26,3–28,0 %, 25,6–25,9 %, 44,7–47,2 % ✓ |
+
 ### Refaire le calibrage
 
 ```

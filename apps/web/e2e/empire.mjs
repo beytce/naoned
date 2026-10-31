@@ -217,7 +217,8 @@ try {
     await page.locator("[data-company] input").press("Enter");
     await page.getByRole("button", { name: /demander à la compagnie/i }).waitFor();
     await page.locator("[data-pane=terra]").click();
-    await page.waitForSelector("[data-terra]");
+    // The Terraferma waits for the Campo, put on the map from the Casa 4.
+    await page.waitForSelector("[data-no-camp]");
     await shot("7b-terraferme");
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
@@ -232,20 +233,16 @@ try {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(400);
 
-    // Out to the map (step 2): Venetia's cities in sight, Lombardy's still in the dark.
+    // Out to the map (step 3): Venice's sector seen, the six around it in silhouette, Lombardy
+    // still in the dark.
     await page.locator("[data-round=recenter]").click();
     await page.locator("[data-map=empire]:not([data-near])").waitFor();
     await page.waitForTimeout(300);
-    if ((await page.locator("[data-city=padova]").count()) !== 1)
-      faults.push(`${label}: Padua not on the map`);
+    if ((await page.locator("[data-frontier] path").count()) < 6)
+      faults.push(`${label}: no silhouettes around Venice's sector`);
     if ((await page.locator("[data-city=milano], [data-region=lombardia]").count()) > 0)
       faults.push(`${label}: Lombardy seen through the dark at the Casa 1`);
     await shot("9-carte");
-    // A city touched: its panel.
-    await page.locator("[data-city=padova]").click();
-    await page.locator("[data-action-panel=city]").waitFor();
-    await shot("10-padoue");
-    await page.getByRole("button", { name: "Fermer" }).first().click();
     // A counter put down from the Production: the cells light up, one is picked, it is put.
     await page.locator("[data-production]").click();
     await page.locator("[data-place=post] button").click();
