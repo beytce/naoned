@@ -2,6 +2,7 @@ export { baleOdds, balesFor, drawBale, expectedBaleValue } from "./bales.js";
 export * from "./buildings.js";
 export * from "./cities.js";
 export * from "./commands.js";
+export type { AdminCommand, AdminEdit } from "./admin.js";
 export { type Contract, contractsFor, rerollsOf } from "./contracts.js";
 export { draw } from "./draw.js";
 export * from "./events.js";

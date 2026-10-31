@@ -1,4 +1,5 @@
 import { type Draft, enableMapSet, produce } from "immer";
+import { type AdminCommand, applyAdmin } from "./admin.js";
 import { claimDaily, rerollDaily, sellToCriee, trackDaily } from "./activity.js";
 import { chooseAtout, unlockAtout } from "./atouts.js";
 import { grantStartingBales, openBale } from "./bales.js";
@@ -282,6 +283,7 @@ export type Command =
     }
   | TerraCommand
   | { type: "tick" }
+  | AdminCommand
   | EmpireCommand;
 
 /**
@@ -665,6 +667,11 @@ const isEmpire = (cmd: Command): cmd is EmpireCommand => cmd.type.startsWith("em
 
 function apply(tx: Tx, cmd: Command): void {
   const { ctx } = tx;
+  // The admin's hand (server only): in either kind of world, before the empire's settling.
+  if (cmd.type === "adminEdit") {
+    applyAdmin(tx, cmd);
+    return;
+  }
   if (isEmpire(cmd)) {
     applyEmpire(tx, cmd);
     return;
