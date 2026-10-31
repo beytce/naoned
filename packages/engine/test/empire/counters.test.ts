@@ -60,7 +60,7 @@ describe("a counter put down on the map (step 2)", () => {
     expect(house(w).revealed).not.toContain("3,0");
     w.advance(HOUR);
     expect(house(w).revealed).toContain("3,0");
-    expect(house(w).posts).toEqual([{ cell: "1,0", region: "veneto" }]);
+    expect(house(w).posts).toEqual([expect.objectContaining({ cell: "1,0", region: "veneto" })]);
     const before = cash(w);
     w.do({ type: "empirePlaceCounter", playerId: "a", cell: "3,0" });
     // The second counter: Lombardy's charter of before, a quarter dearer.

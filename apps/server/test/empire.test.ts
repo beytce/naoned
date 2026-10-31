@@ -203,16 +203,9 @@ describe("the map (the map at the centre, step 2)", () => {
     const cookie = await login("ada@example.org");
     await post(cookie, "/api/empire/join");
     const map = (await get(cookie)).json().view.map;
-    // The first sector inhabited (step 4): Venice and the cities around it.
-    expect(map.cities.map((c: { code: string }) => c.code)).toEqual([
-      "venezia",
-      "padova",
-      "treviso",
-      "vicenza",
-      "brescia",
-      "mantova",
-      "ravenna",
-    ]);
+    // The map that grows: Venice's sector alone at first, with Venice and Padua.
+    expect(map.cities.map((c: { code: string }) => c.code)).toEqual(["venezia", "padova"]);
+    expect(Object.keys(map.cells)).toHaveLength(1);
     expect(
       Object.values(map.cells as Record<string, { region: string }>).every(
         (c) => c.region === "veneto",
@@ -221,9 +214,16 @@ describe("the map (the map at the centre, step 2)", () => {
     // Milan's cell, far in the unknown at the Casa 1.
     const far = await act(cookie, { type: "empirePlaceCounter", cell: "-3,9" });
     expect(far.json().error).toMatch(/hidden_cell|unknown_cell/);
-    // Venice's own sector: the counter there reveals the six around it.
+    // Venice's own sector: a counter put there, apart from Venice, reveals the six around it.
     const cell = Object.keys(map.cells)[0];
-    const put = await act(cookie, { type: "empirePlaceCounter", cell });
+    const near = await act(cookie, { type: "empirePlaceCounter", cell, ...map.home });
+    expect(near.json().error).toBe("post_too_close");
+    const put = await act(cookie, {
+      type: "empirePlaceCounter",
+      cell,
+      x: map.home.x,
+      y: map.home.y + 12,
+    });
     expect(put.json().error).toBeUndefined();
     expect(put.json().view.map.sites).toEqual([expect.objectContaining({ kind: "post", cell })]);
     const city = await act(cookie, {

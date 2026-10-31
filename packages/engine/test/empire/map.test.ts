@@ -149,7 +149,7 @@ describe("a house of before, taken up on the map", () => {
       },
     });
     ensureMap(h, ships);
-    expect(h.posts).toEqual([{ cell: "4,0", region: "lombardia" }]);
+    expect(h.posts).toEqual([expect.objectContaining({ cell: "4,0", region: "lombardia" })]);
     expect(h.revealed).toEqual(expect.arrayContaining(["0,0", "1,1", "4,0", "6,0", "3,1"]));
     expect(h.arsenal).toBe("0,0");
     // Taken up once: what it has stays.

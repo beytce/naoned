@@ -91,7 +91,12 @@ const action = z.discriminatedUnion("type", [
     city: z.string().max(40).optional(),
   }),
   z.object({ type: z.literal("empireClaim"), index: z.number().int().min(0).max(40) }),
-  z.object({ type: z.literal("empirePlaceCounter"), cell: z.string().max(12) }),
+  z.object({
+    type: z.literal("empirePlaceCounter"),
+    cell: z.string().max(12),
+    x: z.number().int().min(-10_000).max(10_000).optional(),
+    y: z.number().int().min(-10_000).max(10_000).optional(),
+  }),
   z.object({ type: z.literal("empireBuildArsenal"), cell: z.string().max(12) }),
   z.object({ type: z.literal("empireBuildCamp"), cell: z.string().max(12) }),
   z.object({ type: z.literal("empireBuildDepot"), cell: z.string().max(12) }),

@@ -139,7 +139,8 @@ export function placeable(p: EmpirePayload, placing: Placing): string[] {
         : placing.kind === "camp" || placing.kind === "depot"
           ? !taken.has(cell)
           : reached.has(c.region) &&
-            !taken.has(cell) &&
+            // With a reach, counters share a cell, apart (the map that grows).
+            (map.reach ? true : !taken.has(cell)) &&
             (placing.region === undefined || c.region === placing.region),
     )
     .map(([cell]) => cell)
@@ -367,4 +368,25 @@ export function actionsOf(p: EmpirePayload, target: Target, now: number): MapAct
 export function arsenalAt(p: EmpirePayload): [number, number] | null {
   const cell = p.view?.map.arsenal;
   return cell ? cellCentre(cell) : null;
+}
+
+/**
+ * A point picked for a counter (the map that grows): too close to another counter, and the
+ * cities it would serve that no counter serves yet.
+ */
+export function pointCheck(
+  p: EmpirePayload,
+  at: { x: number; y: number },
+): { tooClose: boolean; serves: string[] } {
+  const map = p.view?.map;
+  if (!map?.reach) return { tooClose: false, serves: [] };
+  const gap = map.postSpacing;
+  const posts = [map.home, ...map.posts];
+  const tooClose = gap > 0 && posts.some((x) => (x.x - at.x) ** 2 + (x.y - at.y) ** 2 < gap * gap);
+  const r = map.reach.base;
+  const serves = map.cities
+    .filter((c) => !map.covered.includes(c.code))
+    .filter((c) => (c.x - at.x) ** 2 + (c.y - at.y) ** 2 <= r * r)
+    .map((c) => c.code);
+  return { tooClose, serves };
 }
