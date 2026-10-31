@@ -98,10 +98,7 @@ describe("the admin's desk on the merchants", () => {
       .where(sql`reason = 'admin_adjust'`);
     expect(given).toHaveLength(1);
     // The admin's hand is no visit of the merchant's.
-    const visits = await database.db
-      .select()
-      .from(telemetry)
-      .where(sql`type = 'admin_edit'`);
+    const visits = await database.db.select().from(telemetry).where(sql`type = 'admin_edit'`);
     expect(visits).toHaveLength(0);
     const check = (await post(boss, "/api/admin/invariants")).json();
     expect(check.ok).toBe(true);

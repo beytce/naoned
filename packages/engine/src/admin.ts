@@ -1,8 +1,17 @@
-import { regionSeat, revealedBy, settlePost } from "./empire/map.js";
 import { empireSettings, ownHouse, settleBuilds } from "./empire/house.js";
+import { regionSeat, revealedBy, settlePost } from "./empire/map.js";
 import type { Deniers } from "./money.js";
 import { type PlayerId, SINK_ACCOUNT, SOURCE_ACCOUNT, cashAccount } from "./state.js";
-import { type Tx, addStock, emit, fail, inventoryLine, nextId, removeStock, transfer } from "./tx.js";
+import {
+  type Tx,
+  addStock,
+  emit,
+  fail,
+  inventoryLine,
+  nextId,
+  removeStock,
+  transfer,
+} from "./tx.js";
 
 /**
  * The admin's hand on a merchant (tests, support): sets a value outright instead of earning it.
@@ -150,7 +159,8 @@ function editHouse(tx: Tx, playerId: PlayerId, edit: AdminEdit): void {
       for (const l of h.learning ?? []) l.endsAt = Math.min(l.endsAt, tx.now);
       settleBuilds(h, tx.now);
       for (const w of h.workshops)
-        if (w.job) w.job.startedAt = Math.min(w.job.startedAt, tx.now - w.job.batches * w.job.batchMs);
+        if (w.job)
+          w.job.startedAt = Math.min(w.job.startedAt, tx.now - w.job.batches * w.job.batchMs);
       for (const v of tx.s.empire?.voyages ?? [])
         if (v.house === playerId) v.arrivesAt = Math.min(v.arrivesAt, tx.now);
       for (const v of h.vehicles ?? []) v.busyUntil = Math.min(v.busyUntil, tx.now);
@@ -175,4 +185,3 @@ function editHouse(tx: Tx, playerId: PlayerId, edit: AdminEdit): void {
     }
   }
 }
-
