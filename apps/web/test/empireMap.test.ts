@@ -97,6 +97,8 @@ function payload(over: Partial<NonNullable<EmpirePayload["view"]>> = {}, cash = 
         ],
         radius: 2,
         arsenalSite: { cost: "300000", minutes: 480, casa: 9 },
+        depot: null,
+        depotSite: { cost: "20000", minutes: 120, casa: 2 },
       },
       vehicles: {
         shop: [],
@@ -187,6 +189,14 @@ describe("putting down on the map (step 2)", () => {
   it("lights the coasts for the Arsenal, its price from the view", () => {
     expect(placeable(payload(), { kind: "arsenal" })).toEqual(["1,3", "2,2"]);
     expect(placingCost(payload(), { kind: "arsenal" }, "1,3")).toBe("300000");
+  });
+
+  it("lights every free cell for the Remise, and opens its vehicles once it stands", () => {
+    expect(placeable(payload(), { kind: "depot" })).toEqual(["0,3", "1,3", "2,2"]);
+    expect(placingCost(payload(), { kind: "depot" }, "2,2")).toBe("20000");
+    expect(actionsOf(payload(), { kind: "depot" }, HOUR).map((a) => a.open)).toEqual([
+      "production:vehicles",
+    ]);
   });
 });
 

@@ -34,7 +34,13 @@ export function PlacingBar({
       data-placing-bar={placing.kind}
     >
       <h3 className="font-place text-sm font-bold uppercase tracking-[0.12em] text-cream">
-        {placing.kind === "arsenal" ? t.arsenal : placing.kind === "camp" ? t.camp : t.post}
+        {placing.kind === "arsenal"
+          ? t.arsenal
+          : placing.kind === "camp"
+            ? t.camp
+            : placing.kind === "depot"
+              ? t.depot
+              : t.post}
       </h3>
       <p className="mt-1 text-xs text-cream-dim">
         {none
@@ -43,7 +49,9 @@ export function PlacingBar({
             ? t.hintArsenal
             : placing.kind === "camp"
               ? t.hintCamp
-              : t.hintPost}
+              : placing.kind === "depot"
+                ? t.hintDepot
+                : t.hintPost}
       </p>
       <div className="mt-3 flex gap-2">
         <Slab size="md" tone="ghost" onClick={onCancel}>

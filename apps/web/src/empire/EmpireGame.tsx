@@ -159,7 +159,7 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
       setSheet(null);
       setPicked(null);
       setPlacing({
-        kind: kind === "arsenal" || kind === "camp" ? kind : "post",
+        kind: kind === "arsenal" || kind === "camp" || kind === "depot" ? kind : "post",
         ...(region ? { region } : {}),
       });
       map.current?.far();
@@ -174,7 +174,9 @@ export function EmpireGame({ account, first }: { account: Account; first: Empire
         ? { type: "empireBuildArsenal", cell: picked }
         : placing.kind === "camp"
           ? { type: "empireBuildCamp", cell: picked }
-          : { type: "empirePlaceCounter", cell: picked },
+          : placing.kind === "depot"
+            ? { type: "empireBuildDepot", cell: picked }
+            : { type: "empirePlaceCounter", cell: picked },
     );
     setPlacing(null);
     setPicked(null);

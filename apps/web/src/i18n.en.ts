@@ -284,6 +284,12 @@ export const en: Dictionary = {
     } as Record<string, string>,
     placing: {
       camp: "Put the Campo down",
+      depot: "Put the Remise down",
+      hintDepot: "Touch a lit cell: the Remise will sell and improve your carts there.",
+      depotCard: "Remise",
+      depotText: (casa: number) =>
+        `Put on a cell. Land vehicles are bought there and their models improved, from Casa ${casa}.`,
+      noDepot: "Land vehicles are bought at the Remise, to put on the map.",
       hintCamp: "Touch a lit cell: the Campo will open the Terraferma there.",
       campCard: "Campo",
       campText: (casa: number) => `Put on a cell. It opens the Terraferma, from Casa ${casa}.`,
@@ -307,6 +313,7 @@ export const en: Dictionary = {
     scene: {
       unknown: "Unknown land",
       arsenal: "The Arsenal",
+      depot: "The Remise",
       free: "A free place",
       help: "Advice",
       recenter: "Recentre",
@@ -337,6 +344,7 @@ export const en: Dictionary = {
         deliver: (n: number) => `Deliver ${n}`,
         post: () => "Counter",
         ship: () => "Ships",
+        vehicles: () => "Vehicles",
       } as Record<string, (n: number) => string>,
     },
     /** The five tabs of the empire (lot C of the UX audit): the loop, from the house to the family. */
@@ -871,6 +879,13 @@ export const en: Dictionary = {
       free: "free",
       buy: (cost: string) => `Buy · ${cost}`,
       opensAt: (casa: number) => `Casa ${casa}`,
+      models: "The models",
+      capacity: (n: number) => `Fleet capacity: ${n} units`,
+      model: (built: number, hold: number, level: number) =>
+        `${built} built · ${hold} units · level ${level}`,
+      upgrade: (cost: string) => `Improve the model · ${cost}`,
+      top: "Model at its highest",
+      upgradeHint: "Each level gives +10 % capacity to every vehicle of the model.",
     },
     scuola: {
       title: "The Scuola",
@@ -931,6 +946,7 @@ export const en: Dictionary = {
       unknown_cell: "This cell will not do.",
       hidden_cell: "This cell is still in the fog.",
       no_camp: "Put the Campo on the map first.",
+      no_depot: "Put the Remise on the map first.",
       no_arsenal: "Put the Arsenal on a coast first.",
       built: "Already open.",
       invalid_quantity: "Impossible quantity.",

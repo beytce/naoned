@@ -3,7 +3,7 @@ import { Galley } from "../art/scenes.js";
 import { d, hourOf, minutesLabel } from "../game/format.js";
 import { fr } from "../i18n.js";
 import { Label, Slab } from "../ui.js";
-import { Choice, regionName } from "./World.js";
+import { Choice, ModelUpgrade, regionName } from "./World.js";
 import { affordable, opensAt, shownAt } from "./logic.js";
 import type { EmpireAction, EmpirePayload } from "./types.js";
 
@@ -53,6 +53,18 @@ export function Arsenal({
                 {t.shipLine(s.capacity, s.slots, s.regions.map(regionName).join(", "))}
                 {s.muda ? ` · ${t.mudaOnly}` : ""}
               </span>
+              {view.map.arsenal !== null && mine.some((v) => v.type === s.type) && (
+                <span className="mt-1 block">
+                  <span className="mb-1 block text-xs text-cream-dim">
+                    {fr.empire.charroi.model(
+                      mine.filter((v) => v.type === s.type).length,
+                      s.capacity,
+                      s.level,
+                    )}
+                  </span>
+                  <ModelUpgrade p={p} type={s.type} upgrade={s.upgrade} busy={busy} act={act} />
+                </span>
+              )}
             </span>
             {view.house.casa < s.casa ? (
               <span className="text-xs text-cream-dim">{fr.empire.charroi.opensAt(s.casa)}</span>

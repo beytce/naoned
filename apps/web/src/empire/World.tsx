@@ -392,14 +392,43 @@ export function Charroi({
   now,
   busy,
   act,
-}: { p: EmpirePayload; now: number; busy: boolean; act: Act }) {
+  onPlaceDepot,
+}: {
+  p: EmpirePayload;
+  now: number;
+  busy: boolean;
+  act: Act;
+  /** The Remise to put down first, in a world that asks it. */
+  onPlaceDepot?: () => void;
+}) {
   const view = p.view;
   if (!view) return null;
   const c = t.charroi;
+  // Without its Remise, the house buys no land vehicle and raises no model.
+  const noDepot = view.map.depot === null && view.map.depotSite !== null;
+  const site = view.map.depotSite;
   return (
-    <section className="mt-5">
+    <section className="mt-5" data-charroi>
       <Label>{c.title}</Label>
       <p className="mt-1 text-xs text-cream-dim">{c.haul(view.vehicles.haulPerDay)}</p>
+      {noDepot && site && (
+        <div
+          className="mt-2 space-y-2 rounded-lg bg-night-2 p-3 ring-1 ring-inset ring-line/70"
+          data-no-depot
+        >
+          <p className="text-sm text-cream-dim">{t.placing.noDepot}</p>
+          {onPlaceDepot && (
+            <Slab
+              size="sm"
+              tone="ghost"
+              disabled={view.house.casa < site.casa}
+              onClick={onPlaceDepot}
+            >
+              {view.house.casa < site.casa ? c.opensAt(site.casa) : t.placing.depot}
+            </Slab>
+          )}
+        </div>
+      )}
       <ul className="mt-2 flex flex-wrap gap-2">
         {view.vehicles.mine.map((v) => (
           <li key={v.id}>
@@ -413,34 +442,77 @@ export function Charroi({
       <ul className="mt-3 space-y-2">
         {view.vehicles.shop
           .filter((s) => !s.build && shownAt(view.house.casa, s.casa))
-          .map((s) => (
-            <li
-              key={s.type}
-              className="flex items-center gap-2 border-b border-line/60 pb-2 text-sm text-cream"
-            >
-              <span className="flex-1">
-                {t.vehicleNames[s.type] ?? s.type}
-                <span className="block text-xs text-cream-dim">
-                  {s.capacity} · {s.regions.map(regionName).join(", ")}
-                </span>
-              </span>
-              {view.house.casa < s.casa ? (
-                <span className="text-xs text-cream-dim">{c.opensAt(s.casa)}</span>
-              ) : (
-                <Slab
-                  size="sm"
-                  tone="ghost"
-                  busy={busy}
-                  disabled={!affordable(p.cash, s.cost)}
-                  onClick={() => void act({ type: "empireBuyVehicle", vehicleType: s.type })}
-                >
-                  {c.buy(d(s.cost))}
-                </Slab>
-              )}
-            </li>
-          ))}
+          .map((s) => {
+            const built = view.vehicles.mine.filter((v) => v.type === s.type).length;
+            return (
+              <li
+                key={s.type}
+                className="space-y-2 border-b border-line/60 pb-2 text-sm text-cream"
+                data-model={s.type}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="flex-1">
+                    {t.vehicleNames[s.type] ?? s.type}
+                    <span className="block text-xs text-cream-dim">
+                      {c.model(built, s.capacity, s.level)} · {s.regions.map(regionName).join(", ")}
+                    </span>
+                  </span>
+                  {view.house.casa < s.casa ? (
+                    <span className="text-xs text-cream-dim">{c.opensAt(s.casa)}</span>
+                  ) : (
+                    <Slab
+                      size="sm"
+                      tone="ghost"
+                      busy={busy}
+                      disabled={noDepot || !affordable(p.cash, s.cost)}
+                      onClick={() => void act({ type: "empireBuyVehicle", vehicleType: s.type })}
+                    >
+                      {c.buy(d(s.cost))}
+                    </Slab>
+                  )}
+                </div>
+                {built > 0 && !noDepot && (
+                  <ModelUpgrade p={p} type={s.type} upgrade={s.upgrade} busy={busy} act={act} />
+                )}
+              </li>
+            );
+          })}
       </ul>
     </section>
+  );
+}
+
+/**
+ * A model's next level (decision of the owner, 31 October 2026): at the Remise for the land
+ * vehicles, the Arsenal for the ships, +10 % hold for every vehicle of it.
+ */
+export function ModelUpgrade({
+  p,
+  type,
+  upgrade,
+  busy,
+  act,
+}: {
+  p: EmpirePayload;
+  type: string;
+  upgrade: string | null;
+  busy: boolean;
+  act: Act;
+}) {
+  const c = t.charroi;
+  if (upgrade === null) return <p className="text-xs font-semibold text-lagoon">{c.top}</p>;
+  return (
+    <span data-upgrade-model={type} className="block">
+      <Slab
+        size="sm"
+        tone="ghost"
+        busy={busy}
+        disabled={!affordable(p.cash, upgrade)}
+        onClick={() => void act({ type: "empireUpgradeVehicle", vehicleType: type })}
+      >
+        {c.upgrade(d(upgrade))}
+      </Slab>
+    </span>
   );
 }
 

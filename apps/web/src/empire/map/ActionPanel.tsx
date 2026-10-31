@@ -20,6 +20,7 @@ const ICONS: Record<ActionIcon, () => ReactNode> = {
   send: Icon.send,
   banner: Icon.banner,
   anchor: Icon.anchor,
+  cart: Icon.cart,
   workshops: Icon.workshops,
   lock: Icon.lock,
   details: Icon.chevronRight,
@@ -56,6 +57,8 @@ function headOf(p: EmpirePayload, target: Target): { title: string; sub: string 
     }
     case "arsenal":
       return { title: s.arsenal, sub: s.owner };
+    case "depot":
+      return { title: s.depot, sub: s.owner };
   }
 }
 
